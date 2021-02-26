@@ -4,66 +4,66 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_NONE,URIBL_BLOCKED,USER_AGENT_GIT
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9240FC433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:37:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 308DEC433DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:37:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3E99664EB7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:37:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D113664EB7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:37:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230305AbhBZJgt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Feb 2021 04:36:49 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:36887 "EHLO
+        id S230339AbhBZJhY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Feb 2021 04:37:24 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:36886 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230144AbhBZJgh (ORCPT
+        with ESMTP id S229550AbhBZJhT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Feb 2021 04:36:37 -0500
+        Fri, 26 Feb 2021 04:37:19 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1614332197; x=1645868197;
+  t=1614332239; x=1645868239;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=7kdtAsbTBP00lyhU+B3B7OsH8iutl9wuwNn5sytkkY0=;
-  b=TkRnobmiRLr+Mc5Ceyls8O4c/07kt9BEl+ujNIOYThJGEyR+jOxnwWS/
-   XOKb3E+fvbPpNqIeKUBV2Fb+/EErrDViy810HG3R6pMDzbpCp9L3Wbxb0
-   +1UfeBg0laUMW3s5YWGa/CE0qAQz8Uz61LKFoXCvvoq3skP+nHGEbSakP
-   eREqBb3mQBa6dxoMu6RSY47t04xuQNA6DdqrPnBf/xoUsMz7IvavWDWmq
-   u4JqHnkACmX1zdyGRhHd/iXXiK02fOv5sTIzJEKvVyvbFAU9BTpecyB/7
-   XbQgu0DFdB+Pm7w/13iGKMSh9YsJWLNUzeBu3WYXEPCU4qEEiTs2DCZZL
-   g==;
-IronPort-SDR: l2H7TpW8thheAF/tGELuipf3nr/J4r3CM2kvz7/FO39y4FLrxWuQz8Srf1EMMYEGvxRBRbrRUz
- cjWwW3LhcR69ic1IRTubnDeNkqWHXo/GOcmnrOYsQoPLfmrU7WJ/ry/VKPhM8NBz5izsCQwXoG
- GU7sN+tI/UCXIizYSVlMrpBk5uG/49Zll2la7KvMg+kf4Is3cLjt/mdm4oaqAS3ZeGam7IpO66
- 9781v+z6ONQuDEE3rP+qJH4FSBcZfuLPjan28a2cQrPK8OnK6U9zPorPXoezqYmMM2gjALSqGy
- wH4=
+  bh=hT5t8N9+1eafwIxw5Z/2lU8vPYtbe54WI5/O9RtLDqQ=;
+  b=LygYnrwgulcFfYAm8dMPl+MQlFvOKh8tRQsIk9Vx596KoD6V562ZyhHZ
+   FUuW+nRIb9sPSKYF56Fya+/i1XY5wBgcJAyzh9PYsA6v6MHUpdyurWjWW
+   0Au0liV23CsECwQnk38HzsqhkVbf6v1tEw0909EbROkXRx3uE8b5uAy3J
+   h+NwfVNUcQ2BkFnmiJEARLFN/VsXU5Mu5CRpDP2BQQXmikEixagWhxqya
+   SqkpgqAHaztbHvP9Ya4bga9pwu7hmyxVGJtRAikixRuAJrd85i0KinUdE
+   PBtliU5EnJlpV1UDUzM1UkMrqL0ovmfbPtcBkDozw28Kh1dH7BpUc3ZzD
+   Q==;
+IronPort-SDR: otu9uoHpNrbL1TslNo3zG9DkTnS/qQD6visVGoFIzKxjOwoTelJO7T8ghbszSPdSWFdWOjSVyt
+ JufEY1koZQeBpMGVg3QbnNDR4mnQY7+b747IoWGscMemccPoOQVdE+ccdQbFZE6zSxiLsm+LyF
+ 2pD3v8Ic+bbTdQYxdSwqdPikxMrgsn7qerqwq3Px9rRJVmRDj8ZTrO41V5JrBHXNJaefmvu67W
+ izkHEHRPLYMmfJgQ9D5eg9rIYI847Vjsdlg59ny+3Qo4fi2Lym+mIYwe0C8no3smmRnEryND7r
+ SZg=
 X-IronPort-AV: E=Sophos;i="5.81,208,1610380800"; 
-   d="scan'208";a="162045392"
+   d="scan'208";a="162045397"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Feb 2021 17:35:32 +0800
-IronPort-SDR: BjN50WzRePzsbEsIuYyip46If5HqRRexfHkdN+mWuMUrIAEuXx/49ucYqlYiD1xRsRYM8GBQpG
- zCSn2QyRnCqK9Fclo7kjN2dgD6EBoMLuc2I4YNbi1JwtWwoTfHgaT4UN1FXWPKHWfA2JuF7fYT
- uYyQceM6h5gS/UQpdGtW0hvI4yVjwHiqTb/SU4h/UlFRSfQnf5UcAvm4TWp42tiHKljMKbf4IT
- xYRGcfgaMCpBQpRRFaXGV1Y3JWjSNMlhb9TBiHtMmbLdTIEeiuVqJUuhfXPk/6jmf0idNiytEB
- av1vTD1/Z36+6F1ohl1OYIhI
+  by ob1.hgst.iphmx.com with ESMTP; 26 Feb 2021 17:35:34 +0800
+IronPort-SDR: /Jx6IOo8eELqGLY4d3tqzWKYySasKA1m7DFRsDhx2WnVZMj5946QYoYgws9yYMD4ptbf307IWs
+ +52ASnwLwb5esbxtq9jaJ4ReofiFi0yWtyxUKZm0nW7j2ttNvghI9sRw0ocBz1MioHBkaivLm7
+ EGTiWDHk/iCPTLoceY6xrGPfcykRmfbb6Tt2V2cKAkMko0MWoR9/4SxbOSSSPVEplwe9N3AmMI
+ u9DTxTqzGD550SXgw6rjIHWc1Bpcg219HMHNPAM09zLI1y81QyD8yCn4f2RQiUBY5SP1mytZqg
+ edrb9FcVNjjWTHePZ6AE80SV
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Feb 2021 01:18:45 -0800
-IronPort-SDR: KMg/wyzgb6QBiws6ahYx/c7soGesUbyOjyGoxbf4Mx6A+5Rxwy1EzODwX8AfZKu/CXdpaQiSF5
- S6k+EEhLlsEgM6Yn5Vs5pecNmDrGpN/BczAiLV1XBjBO8hsO33GwtRmpTOCYALhvyipWLlSIhy
- y8wwl0guqSZcgzSYzVTMCGWtmEQeeJYZ0/UjuSoaw8h9hPP7UQAtxN70X2xQdXWOYoSBwlWdWz
- 048H7Aj8AgO3P+13zzVGIVm7sG8ELoCRCgQ1/k+qMCmgESV4PQOEGon9em0gd6kGTMeEoy8JhQ
- Bj4=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Feb 2021 01:18:47 -0800
+IronPort-SDR: KVPvnn8FqPPI3MOwHBgw975ZAYAc+WIyq7kQuCMuXcO58SUwPTQSsZt5dRunR1J66o1Fp04CEU
+ RvT3IZOclR6liGqAm67zs9RsjL6ZkxEebNBQGTRB0UsbW78ib2QUT4MJyTFfeaYfisGMFcgDyE
+ JCHwuEKfM+3Wx8WIGAmSa6k4URPSYgv8HAUQDH5dlXyNbYcHbgFhP4O5GEK/ME2deFNJV8pI+X
+ GqWYGFhWWITye5DRuFhyDKgpgmCTKsjQxpqU5USO9t6lkp7tRbf9lkAsOUupA1RSY71YCPRDGz
+ lFY=
 WDCIronportException: Internal
 Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.63.216])
-  by uls-op-cesaip01.wdc.com with ESMTP; 26 Feb 2021 01:35:31 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 26 Feb 2021 01:35:33 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 1/3] btrfs: zoned: move superblock logging zone location
-Date:   Fri, 26 Feb 2021 18:34:36 +0900
-Message-Id: <7d02b9117f15101e70d2cd37da05ca93c2fd624d.1614331998.git.naohiro.aota@wdc.com>
+Subject: [PATCH 3/3] btrfs: zoned: do not account freed region of read-only block group as zone_unusable
+Date:   Fri, 26 Feb 2021 18:34:38 +0900
+Message-Id: <a2006373b8dc2e13e902f846ee7b2c5a9444fcb6.1614331998.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.30.1
 In-Reply-To: <cover.1614331998.git.naohiro.aota@wdc.com>
 References: <cover.1614331998.git.naohiro.aota@wdc.com>
@@ -73,70 +73,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This commit moves the location of superblock logging zones basing on the
-static address instead of the static zone number.
+We migrate zone unusable bytes to read-only bytes when a block group is set
+to read-only, and account all the free region as bytes_readonly. Thus, we
+should not increase block_group->zone_unusable when the block group is
+read-only.
 
-The following zones are reserved as the circular buffer on zoned btrfs.
-  - The primary superblock: zone at LBA 0 and the next zone
-  - The first copy: zone at LBA 16G and the next zone
-  - The second copy: zone at LBA 256G and the next zone
-
-We disallow zone size larger than 8GB not to overlap the superblock log
-zones.
-
-Since the superblock zones overlap, we disallow zone size larger than 8GB.
-
+Fixes: 169e0da91a21 ("btrfs: zoned: track unusable bytes for zones")
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/zoned.c | 21 +++++++++++++++------
- 1 file changed, 15 insertions(+), 6 deletions(-)
+ fs/btrfs/free-space-cache.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 9a5cf153da89..40cb99854844 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -112,10 +112,9 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 711a6a751ae9..81835153f747 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2555,7 +2555,12 @@ static int __btrfs_add_free_space_zoned(struct btrfs_block_group *block_group,
+ 	to_unusable = size - to_free;
  
- /*
-  * The following zones are reserved as the circular buffer on ZONED btrfs.
-- *  - The primary superblock: zones 0 and 1
-- *  - The first copy: zones 16 and 17
-- *  - The second copy: zones 1024 or zone at 256GB which is minimum, and
-- *                     the following one
-+ *  - The primary superblock: zone at LBA 0 and the next zone
-+ *  - The first copy: zone at LBA 16G and the next zone
-+ *  - The second copy: zone at LBA 256G and the next zone
-  */
- static inline u32 sb_zone_number(int shift, int mirror)
- {
-@@ -123,8 +122,8 @@ static inline u32 sb_zone_number(int shift, int mirror)
- 
- 	switch (mirror) {
- 	case 0: return 0;
--	case 1: return 16;
--	case 2: return min_t(u64, btrfs_sb_offset(mirror) >> shift, 1024);
-+	case 1: return 1 << (const_ilog2(SZ_16G) - shift);
-+	case 2: return 1 << (const_ilog2(SZ_1G) + 8 - shift);
- 	}
- 
- 	return 0;
-@@ -300,6 +299,16 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
- 		zone_sectors = bdev_zone_sectors(bdev);
- 	}
- 
-+	/* We don't support zone size > 8G that SB log zones overlap. */
-+	if (zone_sectors > (SZ_8G >> SECTOR_SHIFT)) {
-+		btrfs_err_in_rcu(fs_info,
-+				 "zoned: %s: zone size %llu is too large",
-+				 rcu_str_deref(device->name),
-+				 (u64)zone_sectors << SECTOR_SHIFT);
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+
- 	nr_sectors = bdev_nr_sectors(bdev);
- 	/* Check if it's power of 2 (see is_power_of_2) */
- 	ASSERT(zone_sectors != 0 && (zone_sectors & (zone_sectors - 1)) == 0);
+ 	ctl->free_space += to_free;
+-	block_group->zone_unusable += to_unusable;
++	/*
++	 * If the block group is read-only, we should account freed
++	 * space into bytes_readonly.
++	 */
++	if (!block_group->ro)
++		block_group->zone_unusable += to_unusable;
+ 	spin_unlock(&ctl->tree_lock);
+ 	if (!used) {
+ 		spin_lock(&block_group->lock);
 -- 
 2.30.1
 

@@ -2,92 +2,99 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 057B6C433E0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:36:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CA61C433E9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:37:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A868C64EB7
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:36:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BE0D764EB7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 09:37:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230260AbhBZJgl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Feb 2021 04:36:41 -0500
-Received: from esa6.hgst.iphmx.com ([216.71.154.45]:36886 "EHLO
+        id S230340AbhBZJg7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Feb 2021 04:36:59 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:36890 "EHLO
         esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229990AbhBZJgg (ORCPT
+        with ESMTP id S230209AbhBZJgj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Feb 2021 04:36:36 -0500
+        Fri, 26 Feb 2021 04:36:39 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1614332196; x=1645868196;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=PO/xiueYIa1AfvbL+2OAjCVUgROFhH0Saq97eSICpCY=;
-  b=kZY9oIpoorvGGyH7T/W9mHb6XsLDH6kNVbgpbokCPEMcO7hHlSGh/pg7
-   iM1JE0flyEkDTkn/wKqb/eUeYkrhUSnb+5GmEOAGU8X6SByCsu3urodAw
-   On68iTAj0WJfNfjMjuaEp2tSQep7u7lQUMhIMop89WB/KhuwKgPR/JBdK
-   TsOZ2I0p9FBXTcJXvahp5htgZFlIBueU2CsWrtYRl5ETRxta8sbLkiliH
-   ThPgk5uOfzhtOV0A1jBehPD1U7Stxn9lAGQsHJL1CQeCvemwcGywd/qcx
-   mKk26UKD42S1AhW7oU4ILwzHkyGiCDN2jFaF0Ahkf+LAq4Bacw2SjtdX1
-   Q==;
-IronPort-SDR: ONPm5BH+EVTjfp/4jlr80f0IJ06ff0WOTu3V+EdkVch8VTOOpvMd301BjGQ4W/DuS0agFNscQi
- 3QJjzrubjijJqNAyJqXyyh3YO/9mnCbq//42Mji7iWES2JhtwNayfkSPsLnlrRNa2ME8n7Mu1s
- hEPoAlBlTWYiX0MtWLIv1BAB094v71WsVFf8qGJLWMpALUhRjiBcb2dvz9SCfncY/pGsHq1Xud
- I8aDSLP6MlSFPE4q5Q/ZqYMMuWyQZYAr3AOw53hPh1rYGJgpWeczdJ2OIUvOkpDQzlAm/DRuL1
- ogk=
+  t=1614332199; x=1645868199;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=SoX56XfySXk87m1h2JIWoGOGVh2sjp3JwBTbIeAArTI=;
+  b=PbcJoZvO/scSnKrr0TgJRrDbEmpFVv2U6Uf3rx9FnmgJOBcGi6xi+Dda
+   bVevd7e+XJYIWFed8ciNL3+NbsVeZMVDZ5U/p9f6TycvOLHXhITR4FW2a
+   8SLsBFoGfBmea4ifu092f+P73in9+cSruS46Zammas5ZZD5XwbcEeB0e+
+   4qmUF42oK25IQaYZt6gJTq6EpwOz5N4+gD3+Y0E+ywwwV7Mkj6uQ2r0oj
+   sGyJuC+emzewqN/iXO3EEuQVduKE8+JMiMH+ChVP+ep8Muo+WvMpSgQ1n
+   e9/MrUu0pU49918+kmrbFi/Xu92Yy7oZcTGm/9UMBw227DO1w1ji2y5Ap
+   A==;
+IronPort-SDR: Ft2TbW0XSIjYUzdsBVF0vnt7M1HW3zeHLvxbiGs0ZZZTu7TAPrasWwK08ZOYJ0IkY65KPwWb9E
+ CxiB+9f/xQUtXG6KHvhitiKqypHbYbgFqwadUXzyr+tIhoGtIaCPZMnzOMo6EtKDpf/3nFvKGI
+ pNwQMzvoSoOH/CFAL9P99LGQ/sWv5h/YpJ3ty1GZnKCunVBZLbvIvUkwe3q+XLH9OEsdvIS+S/
+ RJkslft2qeAdjITC26/u5OXY7PcwKAmhWmGS4GfMuTfaGDRhqLI6HnIakCXCmUwcVVgfSpSXGW
+ Ur8=
 X-IronPort-AV: E=Sophos;i="5.81,208,1610380800"; 
-   d="scan'208";a="162045389"
+   d="scan'208";a="162045395"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Feb 2021 17:35:31 +0800
-IronPort-SDR: bEgSHSKzUIC8IPToUAHH7hX6AUtyyVJpOUm+0+lKOw8x440LJFWPjfHLlU4Zu3QSgO1hTJuuEt
- D7AEZqM+NqTN7KmhotN2Ys2PMgtE4B/y5Aand0yW9IX3cv7NU5M9iB6HPfhctzgw3zcFQJWKoE
- sGrdEy9No4tSn2dgZeam3+/9dAG7stqrm6FBILT/bRCJ/dTF0SzDncg3kPdfMExlnS5B9aFSjM
- 1JNo3sd1+yuZWddeu0dgTJRdxwmwah+HaCCFqNCwbOjSKQMs42BMx0KRoIzKEaQTwr17bP2eyN
- fnFJ1t42QaaTzU1RPpFO9ziU
+  by ob1.hgst.iphmx.com with ESMTP; 26 Feb 2021 17:35:33 +0800
+IronPort-SDR: GK/luGfZrNye6wdHTMuGF7XC9i6IG16xk0N/B60Z9t34qBCK9+lQ260WlsvFNhT95ndbh0OLFz
+ i2/pjpymARUlmo03cx9XMvKAf/frSd0BSW7bb9pJWp+HG+KnJe/1chkgeCKBJ7KszEwxR4e92P
+ meYUDsWJuiWgs+1vz+MPVtMvLQ/LB2sJBpEbeFbrzc0erG3D8SdmP1J3j3x7SSZFLMMWcdif+q
+ oUV65K5Fen+83uZHgw8Z/HybndSSWCto+cf67nkG0zJ6TwGRgXJj8h1vECRCuTAf59sDHoEgLT
+ T6WP8WBfZPLvRUGoVAJh51I7
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Feb 2021 01:18:44 -0800
-IronPort-SDR: bzj4NkJVlAaTP6rv5BvOg2APHWMBZjAHxNvr7hZr7mIUjQSfZIlAzw06f2tX5cQQHpbAVq6WzA
- PrtdfYFcLhXXrYdwJVEFPw4qy2kMGFt7WEX1kRmmNvFbXu9fJ1G/JBTHNDJi8Js9TlIIsKMuTa
- Tg62xp9GQdYq3lzpGvAYS1eerprB28PuSMOcxPdgatCQAtT3PY5ei6E54c0EiaTKApKQyoCajF
- vgoikCgNiuqqQef0FK99qIENpC9JIg4GF4fonjpsibNKeDFFp+3ntXZH2jrw41e4Nj2bd/wEEy
- 8qc=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Feb 2021 01:18:46 -0800
+IronPort-SDR: c4YoJ7CGewNGsmT4JQC5n4rtfrovShVKufppnieaVLcFEZ7xBB9iRokEPwH6gCVJf030HakMvk
+ YYS4ET8n3OcthdIRc1ZUd7HiEg09a2uvIxQ0V1aDRnSfFkDpl4IVFi8ivsdJxehcWvC6gVAYha
+ wxV0m2bzg2nVXFWh+Vz751/SXLSnwcVBzGAQ3pItqVPYIcaRwqHahyb0w2fJ9iZ1tnhhmnBeNb
+ fbhU0jEGO8HJD1XZ4f/aAh7LGTj7OlDZHJsmci7kBuNR//0X9lrNbu/6ucjs3aGFBRz/v1uA1N
+ PY4=
 WDCIronportException: Internal
 Received: from unknown (HELO naota-xeon.wdc.com) ([10.225.63.216])
-  by uls-op-cesaip01.wdc.com with ESMTP; 26 Feb 2021 01:35:29 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 26 Feb 2021 01:35:32 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     hare@suse.com, linux-fsdevel@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 0/3] Fixes for zoned mode
-Date:   Fri, 26 Feb 2021 18:34:35 +0900
-Message-Id: <cover.1614331998.git.naohiro.aota@wdc.com>
+Subject: [PATCH 2/3] btrfs: zoned: add missing type conversion
+Date:   Fri, 26 Feb 2021 18:34:37 +0900
+Message-Id: <e6519c3681550015fbeeb0565f707d72705a39f1.1614331998.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.30.1
+In-Reply-To: <cover.1614331998.git.naohiro.aota@wdc.com>
+References: <cover.1614331998.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These are fixes for zoned btrfs.
+We need to cast zone_sectors from u32 to u64 when setting the zone_size, or
+it set the zone size = 0 when the size >= 4G.
 
-Patch 01 moves the superblock location to address based. Patch 02 fixes
-type conversion for zone size >= 4G. Patch 03 fixes zone_unusable acconting
-when a block group is read-only.
+Fixes: 5b316468983d ("btrfs: get zone information of zoned block devices")
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/zoned.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-
-Naohiro Aota (3):
-  btrfs: zoned: move superblock logging zone location
-  btrfs: zoned: add missing type conversion
-  btrfs: zoned: do not account freed region of read-only block group as
-    zone_unusable
-
- fs/btrfs/free-space-cache.c |  7 ++++++-
- fs/btrfs/zoned.c            | 23 ++++++++++++++++-------
- 2 files changed, 22 insertions(+), 8 deletions(-)
-
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 40cb99854844..4de82da39c10 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -312,7 +312,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ 	nr_sectors = bdev_nr_sectors(bdev);
+ 	/* Check if it's power of 2 (see is_power_of_2) */
+ 	ASSERT(zone_sectors != 0 && (zone_sectors & (zone_sectors - 1)) == 0);
+-	zone_info->zone_size = zone_sectors << SECTOR_SHIFT;
++	zone_info->zone_size = (u64)zone_sectors << SECTOR_SHIFT;
+ 	zone_info->zone_size_shift = ilog2(zone_info->zone_size);
+ 	zone_info->max_zone_append_size =
+ 		(u64)queue_max_zone_append_sectors(queue) << SECTOR_SHIFT;
 -- 
 2.30.1
 

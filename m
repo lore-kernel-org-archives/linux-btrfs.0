@@ -2,135 +2,102 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D49B6C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 18:48:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC17CC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 19:06:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9BACA64F27
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 18:48:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A8AA464F2B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 19:06:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231215AbhBZSrx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Feb 2021 13:47:53 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56940 "EHLO mx2.suse.de"
+        id S230198AbhBZTFj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Feb 2021 14:05:39 -0500
+Received: from mail.kernel.org ([198.145.29.99]:37980 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231217AbhBZSro (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Feb 2021 13:47:44 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 60EC6AAAE
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Feb 2021 18:47:02 +0000 (UTC)
-Date:   Fri, 26 Feb 2021 12:47:20 -0600
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Remove force argument from run_delalloc_nocow()
-Message-ID: <20210226184720.7ul23jknjth4h6j2@fiona>
-References: <20210225205822.mgx5ei3tzcqmlts6@fiona>
- <20210226171421.GO7604@twin.jikos.cz>
+        id S229545AbhBZTFi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Feb 2021 14:05:38 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 2B1D464F1B;
+        Fri, 26 Feb 2021 19:04:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1614366295;
+        bh=PfeQuDYBIjQHtNJ4RxOXOTAV74C+Re27WPBrWtzUDU4=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=nGGKVLRykjmczWP3FyivF6q0SYw6J8EAG4OIZIx2MxP8mAiZ/Isk3756eCG1HlOdt
+         E/oCaXcPPD8hThBiCj/+yfoWeN0n2CjA/Z/05xkmNmTvaxvC1Tmwpj9PM+P6+2q7zT
+         1w2DKcFQSLF7aMWyQc2Zr1L3FiSB1ZR1/RjUmfWcmebygeM6qp0oenFuBe1DutDFWw
+         2iXkgZarGC5e6UNsbo+wm3l93zCTzETISjYVwRYJZGJwUvovCL9yboyyXfx4sLxw+y
+         qGOl89rmrHNo9QgYn5VEseoY1bwzOSPMtj4cw8YtZWrBYgo4prpP+aUsJsoXaYAW5S
+         kdxN4BoF0OWHg==
+Date:   Fri, 26 Feb 2021 11:04:54 -0800
+From:   "Darrick J. Wong" <djwong@kernel.org>
+To:     "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>
+Cc:     "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
+        "willy@infradead.org" <willy@infradead.org>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ocfs2-devel@oss.oracle.com" <ocfs2-devel@oss.oracle.com>,
+        "david@fromorbit.com" <david@fromorbit.com>,
+        "hch@lst.de" <hch@lst.de>, "rgoldwyn@suse.de" <rgoldwyn@suse.de>,
+        "y-goto@fujitsu.com" <y-goto@fujitsu.com>,
+        "qi.fuli@fujitsu.com" <qi.fuli@fujitsu.com>,
+        "fnstml-iaas@cn.fujitsu.com" <fnstml-iaas@cn.fujitsu.com>
+Subject: Re: Question about the "EXPERIMENTAL" tag for dax in XFS
+Message-ID: <20210226190454.GD7272@magnolia>
+References: <20210226002030.653855-1-ruansy.fnst@fujitsu.com>
+ <OSBPR01MB2920899F1D71E7B054A04E39F49D9@OSBPR01MB2920.jpnprd01.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210226171421.GO7604@twin.jikos.cz>
+In-Reply-To: <OSBPR01MB2920899F1D71E7B054A04E39F49D9@OSBPR01MB2920.jpnprd01.prod.outlook.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 18:14 26/02, David Sterba wrote:
-> On Thu, Feb 25, 2021 at 02:58:22PM -0600, Goldwyn Rodrigues wrote:
-> > force_nocow can be calculated by btrfs_inode and does not need to be
-> > passed as an argument.
-> > 
-> > This simplifies run_delalloc_nocow() call from btrfs_run_delalloc_range()
-> > since the decision whether the extent is cow'd or not can be derived
-> > from need_force_cow(). Since BTRFS_INODE_NODATACOW and
-> > BTRFS_INODE_PREALLOC flags are checked in need_force_cow(), there is
-> > no need to check it again.
-> > 
-> > Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> > 
-> > Change since v1:
-> >  - Kept need_force_cow() as it is
+On Fri, Feb 26, 2021 at 09:45:45AM +0000, ruansy.fnst@fujitsu.com wrote:
+> Hi, guys
 > 
-> Added to misc-next, thanks.
+> Beside this patchset, I'd like to confirm something about the
+> "EXPERIMENTAL" tag for dax in XFS.
 > 
-> > ---
-> >  fs/btrfs/inode.c | 12 ++++--------
-> >  1 file changed, 4 insertions(+), 8 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 4f2f1e932751..e5dd8d7ef0c8 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -1516,7 +1516,7 @@ static int fallback_to_cow(struct btrfs_inode *inode, struct page *locked_page,
-> >  static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
-> >  				       struct page *locked_page,
-> >  				       const u64 start, const u64 end,
-> > -				       int *page_started, int force,
-> > +				       int *page_started,
-> >  				       unsigned long *nr_written)
-> >  {
-> >  	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-> > @@ -1530,6 +1530,7 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
-> >  	u64 ino = btrfs_ino(inode);
-> >  	bool nocow = false;
-> >  	u64 disk_bytenr = 0;
-> > +	bool force = inode->flags & BTRFS_INODE_NODATACOW;
-> >  
-> >  	path = btrfs_alloc_path();
-> >  	if (!path) {
-> > @@ -1891,17 +1892,12 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
-> >  		struct writeback_control *wbc)
-> >  {
-> >  	int ret;
-> > -	int force_cow = need_force_cow(inode, start, end);
-> >  	const bool zoned = btrfs_is_zoned(inode->root->fs_info);
-> >  
-> > -	if (inode->flags & BTRFS_INODE_NODATACOW && !force_cow) {
-> > +	if (!need_force_cow(inode, start, end)) {
+> In XFS, the "EXPERIMENTAL" tag, which is reported in waring message
+> when we mount a pmem device with dax option, has been existed for a
+> while.  It's a bit annoying when using fsdax feature.  So, my initial
+> intention was to remove this tag.  And I started to find out and solve
+> the problems which prevent it from being removed.
 > 
-> We may want to reverse the logic and naming so it says
-> 'need_force_nocow', right now it's "we don't need to force COW, so let's
-> do NOCOW", because COW is the default and the condition should pick the
-> exceptional case.
+> As is talked before, there are 3 main problems.  The first one is "dax
+> semantics", which has been resolved.  The rest two are "RMAP for
+> fsdax" and "support dax reflink for filesystem", which I have been
+> working on.  
 
-Calling it need_force_nocow() or should_nocow() will result in the same
-concept as previous patch where EXTENT_DEFRAG range would need to be
-checked before checking inode flags BTRFS_INODE_NODATACOW and
-BTRFS_INODE_PREALLOC. That's because EXTENT_DEFRAG in range
-should result in a COW sequence immaterial of what CoW sequence the
-inode flags say. Isn't it?
+<nod>
 
-Maybe something like this would keep inode flags checks earlier than
-test_range_bit():
+> So, what I want to confirm is: does it means that we can remove the
+> "EXPERIMENTAL" tag when the rest two problem are solved?
 
-static inline bool should_nocow(struct btrfs_inode *inode, u64 start, u64 end)
-{
-        if (inode->flags & (BTRFS_INODE_NODATACOW | BTRFS_INODE_PREALLOC)) {
-                if (inode->defrag_bytes &&
-                    test_range_bit(&inode->io_tree, start, end, EXTENT_DEFRAG, 0, NULL))
-                        return false;
-                return true;
-        }
-        return false;
-}
+Yes.  I'd keep the experimental tag for a cycle or two to make sure that
+nothing new pops up, but otherwise the two patchsets you've sent close
+those two big remaining gaps.  Thank you for working on this!
 
+> Or maybe there are other important problems need to be fixed before
+> removing it?  If there are, could you please show me that?
 
+That remains to be seen through QA/validation, but I think that's it.
+
+Granted, I still have to read through the two patchsets...
+
+--D
 
 > 
-> >  		ASSERT(!zoned);
-> >  		ret = run_delalloc_nocow(inode, locked_page, start, end,
-> > -					 page_started, 1, nr_written);
-> > -	} else if (inode->flags & BTRFS_INODE_PREALLOC && !force_cow) {
-> > -		ASSERT(!zoned);
-> > -		ret = run_delalloc_nocow(inode, locked_page, start, end,
-> > -					 page_started, 0, nr_written);
-> > +					 page_started, nr_written);
-> >  	} else if (!inode_can_compress(inode) ||
-> >  		   !inode_need_compress(inode, start, end)) {
-> >  		if (zoned)
-
--- 
-Goldwyn
+> Thank you.
+> 
+> 
+> --
+> Ruan Shiyang.

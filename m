@@ -2,92 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6A93C433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 00:22:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 610FBC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 00:23:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5846E64F21
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 00:22:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 14D8D64F21
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Feb 2021 00:23:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231274AbhBZAWZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Feb 2021 19:22:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39796 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230100AbhBZAWX (ORCPT
+        id S232139AbhBZAWp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Feb 2021 19:22:45 -0500
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:12518 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S231530AbhBZAWo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Feb 2021 19:22:23 -0500
-Received: from mail-yb1-xb33.google.com (mail-yb1-xb33.google.com [IPv6:2607:f8b0:4864:20::b33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F133DC061574;
-        Thu, 25 Feb 2021 16:21:42 -0800 (PST)
-Received: by mail-yb1-xb33.google.com with SMTP id u75so7227547ybi.10;
-        Thu, 25 Feb 2021 16:21:42 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=9wtvzsP9n0ZRp/18oaJpo+a9Pw9RY5ZydEKMoj+prZQ=;
-        b=KWnxoUuLankb6FZHjOMUSUEwdZNfjyWKrzwnCCL5JzhoYAhH0xkXSoKkBYy2tfNOYD
-         Z0T7gvEAHVXB8TlSBL9mQ2xwNuEcWRQpSz9hPBiNr/b7IuaWojQpg+RR8JrdKs02YO/d
-         c5wAQ5sIsZ+JeQaYXVW5yQdrWkMJkL19aTcpYzFCRyZwDgY9BZBCwTkyMi1MqWK6yMyn
-         yUw83JCCya+OTPrDDWsnyXL5Bny21naIpnd2efprgcJ7Nj1MANBp1lxlrzPPU0LU+BQC
-         y6h0ETobPoQvAoOI/NlH7/7vWK+bc5Vg+frflhdIJTaydK8pwctzu4Jt86ES6ek3MSKB
-         +f9w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=9wtvzsP9n0ZRp/18oaJpo+a9Pw9RY5ZydEKMoj+prZQ=;
-        b=oVsE+WGqbpGW+d9pacTrg4p+T4h2S9ojgNG0KzYFLEugNJpJ7P8o3KhW8M7LLSwEAl
-         /FUu+ncR4cT7vzNy+f/4nWrZhjUoH5LntLetnR0JBR7zn+SO+PBR6CVEMNwgswDKw5lJ
-         esUvTwclhEPgS8rdigFt9fomk3qTxTMf4gmlqJL6QI1AR6m2K1ZSB3Np+qZNK/r1VREA
-         qB65W0tCtCTrYudoSCtDhHWHSizIHOKRm4d1M2fRV5oHyDEoe6cHQ5PVpsn5rXhQJ4to
-         gsXF2FMCutf3P7imwbMDJppkzsUPYyQfmkIm+bVS1rM6Hf7WN1rT8jqnIBI/cwiV4Iu3
-         N2WQ==
-X-Gm-Message-State: AOAM5313i9GV4b+xUHE2aCxlXXSNxW9srqnFidMxmcM1X2J9TONXT+Pv
-        Zsw62C2p21r5NoJ6q66EVFGCSESY8JOCzEETNm4=
-X-Google-Smtp-Source: ABdhPJxdpwta3sQHIacZtRXurLpIYJ0uo+xxbZR6oqhEoUcPjg1cME7UKVdDk6sd05qQ9g06g6hkZkKew8q12rFHFoI=
-X-Received: by 2002:a25:424f:: with SMTP id p76mr720182yba.109.1614298902249;
- Thu, 25 Feb 2021 16:21:42 -0800 (PST)
+        Thu, 25 Feb 2021 19:22:44 -0500
+X-IronPort-AV: E=Sophos;i="5.81,207,1610380800"; 
+   d="scan'208";a="104882807"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 26 Feb 2021 08:20:41 +0800
+Received: from G08CNEXMBPEKD04.g08.fujitsu.local (unknown [10.167.33.201])
+        by cn.fujitsu.com (Postfix) with ESMTP id E41984CE1A08;
+        Fri, 26 Feb 2021 08:20:38 +0800 (CST)
+Received: from G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.200) by
+ G08CNEXMBPEKD04.g08.fujitsu.local (10.167.33.201) with Microsoft SMTP Server
+ (TLS) id 15.0.1497.2; Fri, 26 Feb 2021 08:20:34 +0800
+Received: from irides.mr.mr.mr (10.167.225.141) by
+ G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.209) with Microsoft SMTP Server
+ id 15.0.1497.2 via Frontend Transport; Fri, 26 Feb 2021 08:20:33 +0800
+From:   Shiyang Ruan <ruansy.fnst@fujitsu.com>
+To:     <linux-kernel@vger.kernel.org>, <linux-xfs@vger.kernel.org>,
+        <linux-nvdimm@lists.01.org>, <linux-fsdevel@vger.kernel.org>
+CC:     <darrick.wong@oracle.com>, <dan.j.williams@intel.com>,
+        <willy@infradead.org>, <jack@suse.cz>, <viro@zeniv.linux.org.uk>,
+        <linux-btrfs@vger.kernel.org>, <ocfs2-devel@oss.oracle.com>,
+        <david@fromorbit.com>, <hch@lst.de>, <rgoldwyn@suse.de>
+Subject: [PATCH v2 00/10] fsdax,xfs: Add reflink&dedupe support for fsdax
+Date:   Fri, 26 Feb 2021 08:20:20 +0800
+Message-ID: <20210226002030.653855-1-ruansy.fnst@fujitsu.com>
+X-Mailer: git-send-email 2.30.1
 MIME-Version: 1.0
-References: <CAE1WUT53F+xPT-Rt83EStGimQXKoU-rE+oYgcib87pjP4Sm0rw@mail.gmail.com>
- <CAEg-Je-Hs3+F9yshrW2MUmDNTaN-y6J-YxeQjneZx=zC5=58JA@mail.gmail.com>
- <20210225132647.GB7604@twin.jikos.cz> <CAPkEcwjcRgnaWLmqM1jEvH5A9PijsQEY5BKFyKdt_+TeugaJ_g@mail.gmail.com>
- <CAE1WUT7JOyeWi8DHZS3fNMAq+GX9qsm7iPC01x60m1W84ZdPrA@mail.gmail.com>
-In-Reply-To: <CAE1WUT7JOyeWi8DHZS3fNMAq+GX9qsm7iPC01x60m1W84ZdPrA@mail.gmail.com>
-From:   Neal Gompa <ngompa13@gmail.com>
-Date:   Thu, 25 Feb 2021 19:21:06 -0500
-Message-ID: <CAEg-Je-QP+6ad649L-vQDctfQbsHm_d4-NpGOwCKATHM0LamTA@mail.gmail.com>
-Subject: Re: Adding LZ4 compression support to Btrfs
-To:     Amy Parker <enbyamy@gmail.com>
-Cc:     Jim N <northrup.james@gmail.com>, dsterba@suse.cz,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-yoursite-MailScanner-ID: E41984CE1A08.A2B24
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: ruansy.fnst@fujitsu.com
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 25, 2021 at 6:18 PM Amy Parker <enbyamy@gmail.com> wrote:
->
-> Thanks for your comments, Jim. I was originally going to abandon my
-> thoughts about LZ4 on btrfs - but I didn't realize that FAQ was from
-> 2014.
->
-> > lz4 has had ongoing development and now exists in other linux kernel fs=
-'s.
-> What other filesystems currently employ LZ4? Not as familiar with it
-> being used on other filesystems.
->
+This patchset is attempt to add CoW support for fsdax, and take XFS,
+which has both reflink and fsdax feature, as an example.
 
-In the Linux kernel, both SquashFS and F2FS have LZ4 compression support.
+Changes from V1:
+ - Factor some helper functions to simplify dax fault code
+ - Introduce iomap_apply2() for dax_dedupe_file_range_compare()
+ - Fix mistakes and other problems
+ - Rebased on v5.11
+
+One of the key mechanism need to be implemented in fsdax is CoW.  Copy
+the data from srcmap before we actually write data to the destance
+iomap.  And we just copy range in which data won't be changed.
+
+Another mechanism is range comparison.  In page cache case, readpage()
+is used to load data on disk to page cache in order to be able to
+compare data.  In fsdax case, readpage() does not work.  So, we need
+another compare data with direct access support.
+
+With the two mechanism implemented in fsdax, we are able to make reflink
+and fsdax work together in XFS.
+
+
+Some of the patches are picked up from Goldwyn's patchset.  I made some
+changes to adapt to this patchset.
+
+(Rebased on v5.11)
+==
+
+Shiyang Ruan (10):
+  fsdax: Factor helpers to simplify dax fault code
+  fsdax: Factor helper: dax_fault_actor()
+  fsdax: Output address in dax_iomap_pfn() and rename it
+  fsdax: Introduce dax_iomap_cow_copy()
+  fsdax: Replace mmap entry in case of CoW
+  fsdax: Add dax_iomap_cow_copy() for dax_iomap_zero
+  iomap: Introduce iomap_apply2() for operations on two files
+  fsdax: Dedup file range to use a compare function
+  fs/xfs: Handle CoW for fsdax write() path
+  fs/xfs: Add dedupe support for fsdax
+
+ fs/dax.c               | 532 +++++++++++++++++++++++++++--------------
+ fs/iomap/apply.c       |  51 ++++
+ fs/iomap/buffered-io.c |   2 +-
+ fs/remap_range.c       |  45 +++-
+ fs/xfs/xfs_bmap_util.c |   3 +-
+ fs/xfs/xfs_file.c      |  29 ++-
+ fs/xfs/xfs_inode.c     |   8 +-
+ fs/xfs/xfs_inode.h     |   1 +
+ fs/xfs/xfs_iomap.c     |  30 ++-
+ fs/xfs/xfs_iomap.h     |   1 +
+ fs/xfs/xfs_iops.c      |  11 +-
+ fs/xfs/xfs_reflink.c   |  16 +-
+ include/linux/dax.h    |   7 +-
+ include/linux/fs.h     |  15 +-
+ include/linux/iomap.h  |   7 +-
+ 15 files changed, 550 insertions(+), 208 deletions(-)
+
+-- 
+2.30.1
 
 
 
---=20
-=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
-=BC=81/ Always, there's only one truth!

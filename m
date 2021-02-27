@@ -2,153 +2,185 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DCB83C433DB
-	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Feb 2021 20:06:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 749D5C433E6
+	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Feb 2021 22:37:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 84E7764E6B
-	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Feb 2021 20:06:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4058A64E4D
+	for <linux-btrfs@archiver.kernel.org>; Sat, 27 Feb 2021 22:37:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230019AbhB0UFW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 27 Feb 2021 15:05:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34286 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229991AbhB0UFT (ORCPT
+        id S230202AbhB0WhL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 27 Feb 2021 17:37:11 -0500
+Received: from mail110.syd.optusnet.com.au ([211.29.132.97]:50640 "EHLO
+        mail110.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S230141AbhB0WhG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 27 Feb 2021 15:05:19 -0500
-Received: from mail-wm1-x333.google.com (mail-wm1-x333.google.com [IPv6:2a00:1450:4864:20::333])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CBFACC06174A
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Feb 2021 12:04:37 -0800 (PST)
-Received: by mail-wm1-x333.google.com with SMTP id n4so9265270wmq.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 27 Feb 2021 12:04:37 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=zT/MzT1WKOx33vxc0wD87nB1Pa0QFbqgjB9bXUcc8kI=;
-        b=kM26UIXNPbX0FBD7YGf/FV06tThMU8MlTaZ+AsXuGDq5qzQLVJB7SfqQGqj3+JXvCn
-         bwb219ULOaTxnBRK+ojnU6jeMU1OCE+qegv0RsHGJt1BnlE300d9yOkWbNsx8syGOhJ2
-         7nZGNIfbUeT4waGqAAtVeLQca51XjB61imrqQ+04KvUQ0xXWUdmCxtwvwC6RMb9TPShL
-         6l3VLilf2OSeyLeBFaKJw+w9retRLVs6qt/SBNZV6NvLneh/NJqnvfmDINwtp93s1P6i
-         /8ZiwW2OmWw5MajXdS0/Q0AT466eDDC/nARged70DJ1z8NHYYhtAgC+DE1yNGfpJhmVD
-         i2Ow==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=zT/MzT1WKOx33vxc0wD87nB1Pa0QFbqgjB9bXUcc8kI=;
-        b=PGhVqfzdth+oBiBBnhicbk5JKnfrTtPZgWyN2JrOlZuMBAw65FOQrq/JggW8dCedYN
-         1SeSpwDTrDvy4VdmDcZtxKsbl1w++pYVAwwQTbeeLciSx7c9lF4xpYZyrAab8rnTfWK0
-         IpOupYNRqxsquN73SDYNErhK77/bY0vxy9GkVT6ilM5x7FZNOakg26/JaPKMZVqOlvSy
-         CZGLihC9V2UgBmzv0JtBnaItOVbqb4RSZOVSFwELXL/QhsLEQnUOoRWLD05UvoNGoUAB
-         FnQUKIu8GpLmjIq4vMgMKwjKrjZH/ciU3L7vGJCR9CQbsaRJJB29HvqN9o+t5sWqNekE
-         W37g==
-X-Gm-Message-State: AOAM532d6kYeutAaLA9ATwdCRYEB+QpY7Wsmby0Vgc5j12z+b8lRx5S5
-        TPToH1+eYiL2ZM8DkdVD6pjthrEBMorchw==
-X-Google-Smtp-Source: ABdhPJzE/ljJi2iAOeXqygwhMYAYVETbM24kWyYpJUOQ0r0idqzg/pg8FLl+/O7tBRCnUatnsdH/WQ==
-X-Received: by 2002:a1c:1d14:: with SMTP id d20mr8542228wmd.36.1614456276309;
-        Sat, 27 Feb 2021 12:04:36 -0800 (PST)
-Received: from localhost.localdomain ([46.109.188.78])
-        by smtp.gmail.com with ESMTPSA id j12sm4566939wrt.27.2021.02.27.12.04.35
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 27 Feb 2021 12:04:35 -0800 (PST)
-From:   =?UTF-8?q?D=C4=81vis=20Mos=C4=81ns?= <davispuh@gmail.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     =?UTF-8?q?D=C4=81vis=20Mos=C4=81ns?= <davispuh@gmail.com>
-Subject: [PATCH] btrfs-progs: Fix checksum output for "checksum verify failed"
-Date:   Sat, 27 Feb 2021 22:07:02 +0200
-Message-Id: <20210227200702.11977-1-davispuh@gmail.com>
-X-Mailer: git-send-email 2.30.1
+        Sat, 27 Feb 2021 17:37:06 -0500
+Received: from dread.disaster.area (pa49-179-130-210.pa.nsw.optusnet.com.au [49.179.130.210])
+        by mail110.syd.optusnet.com.au (Postfix) with ESMTPS id CC7D3102B0D;
+        Sun, 28 Feb 2021 09:36:12 +1100 (AEDT)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+        (envelope-from <david@fromorbit.com>)
+        id 1lG8C3-007Rz9-F6; Sun, 28 Feb 2021 09:36:11 +1100
+Date:   Sun, 28 Feb 2021 09:36:11 +1100
+From:   Dave Chinner <david@fromorbit.com>
+To:     Dan Williams <dan.j.williams@intel.com>
+Cc:     "Darrick J. Wong" <djwong@kernel.org>,
+        "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
+        "willy@infradead.org" <willy@infradead.org>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ocfs2-devel@oss.oracle.com" <ocfs2-devel@oss.oracle.com>,
+        "hch@lst.de" <hch@lst.de>, "rgoldwyn@suse.de" <rgoldwyn@suse.de>,
+        "y-goto@fujitsu.com" <y-goto@fujitsu.com>,
+        "qi.fuli@fujitsu.com" <qi.fuli@fujitsu.com>,
+        "fnstml-iaas@cn.fujitsu.com" <fnstml-iaas@cn.fujitsu.com>
+Subject: Re: Question about the "EXPERIMENTAL" tag for dax in XFS
+Message-ID: <20210227223611.GZ4662@dread.disaster.area>
+References: <20210226002030.653855-1-ruansy.fnst@fujitsu.com>
+ <OSBPR01MB2920899F1D71E7B054A04E39F49D9@OSBPR01MB2920.jpnprd01.prod.outlook.com>
+ <20210226190454.GD7272@magnolia>
+ <CAPcyv4iJiYsM5FQdpMvCi24aCi7RqUnnxC6sM0umFqiN+Q59cg@mail.gmail.com>
+ <20210226205126.GX4662@dread.disaster.area>
+ <CAPcyv4iDefA3Y0wUW=p080SYAsM_2TPJba-V-sxdK_BeJMkmsw@mail.gmail.com>
+ <20210226212748.GY4662@dread.disaster.area>
+ <CAPcyv4jryJ32R5vOwwEdoU3V8C0B7zu_pCt=7f6A3Gk-9h6Dfg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAPcyv4jryJ32R5vOwwEdoU3V8C0B7zu_pCt=7f6A3Gk-9h6Dfg@mail.gmail.com>
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.3 cv=Tu+Yewfh c=1 sm=1 tr=0 cx=a_idp_d
+        a=JD06eNgDs9tuHP7JIKoLzw==:117 a=JD06eNgDs9tuHP7JIKoLzw==:17
+        a=kj9zAlcOel0A:10 a=qa6Q16uM49sA:10 a=7-415B0cAAAA:8 a=VwQbUJbxAAAA:8
+        a=pGLkceISAAAA:8 a=iSifgx3cvDvq2X9g5s4A:9 a=CjuIK1q_8ugA:10
+        a=biEYGPWJfzWAr4FL6Ov7:22 a=AjGcO6oz07-iQ99wixmX:22
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently only single checksum byte is outputted.
-This fixes it so that full checksum is outputted.
+On Fri, Feb 26, 2021 at 02:41:34PM -0800, Dan Williams wrote:
+> On Fri, Feb 26, 2021 at 1:28 PM Dave Chinner <david@fromorbit.com> wrote:
+> > On Fri, Feb 26, 2021 at 12:59:53PM -0800, Dan Williams wrote:
+> > > On Fri, Feb 26, 2021 at 12:51 PM Dave Chinner <david@fromorbit.com> wrote:
+> > > > > My immediate concern is the issue Jason recently highlighted [1] with
+> > > > > respect to invalidating all dax mappings when / if the device is
+> > > > > ripped out from underneath the fs. I don't think that will collide
+> > > > > with Ruan's implementation, but it does need new communication from
+> > > > > driver to fs about removal events.
+> > > > >
+> > > > > [1]: http://lore.kernel.org/r/CAPcyv4i+PZhYZiePf2PaH0dT5jDfkmkDX-3usQy1fAhf6LPyfw@mail.gmail.com
+> > > >
+> > > > Oh, yay.
+> > > >
+> > > > The XFS shutdown code is centred around preventing new IO from being
+> > > > issued - we don't actually do anything about DAX mappings because,
+> > > > well, I don't think anyone on the filesystem side thought they had
+> > > > to do anything special if pmem went away from under it.
+> > > >
+> > > > My understanding -was- that the pmem removal invalidates
+> > > > all the ptes currently mapped into CPU page tables that point at
+> > > > the dax device across the system. THe vmas that manage these
+> > > > mappings are not really something the filesystem really manages,
+> > > > but a function of the mm subsystem. What the filesystem cares about
+> > > > is that it gets page faults triggered when a change of state occurs
+> > > > so that it can remap the page to it's backing store correctly.
+> > > >
+> > > > IOWs, all the mm subsystem needs to when pmem goes away is clear the
+> > > > CPU ptes, because then when then when userspace tries to access the
+> > > > mapped DAX pages we get a new page fault. In processing the fault, the
+> > > > filesystem will try to get direct access to the pmem from the block
+> > > > device. This will get an ENODEV error from the block device because
+> > > > because the backing store (pmem) has been unplugged and is no longer
+> > > > there...
+> > > >
+> > > > AFAICT, as long as pmem removal invalidates all the active ptes that
+> > > > point at the pmem being removed, the filesystem doesn't need to
+> > > > care about device removal at all, DAX or no DAX...
+> > >
+> > > How would the pmem removal do that without walking all the active
+> > > inodes in the fs at the time of shutdown and call
+> > > unmap_mapping_range(inode->i_mapping, 0, 0, 1)?
+> >
+> > Which then immediately ends up back at the vmas that manage the ptes
+> > to unmap them.
+> >
+> > Isn't finding the vma(s) that map a specific memory range exactly
+> > what the rmap code in the mm subsystem is supposed to address?
+> 
+> rmap can lookup only vmas from a virt address relative to a given
+> mm_struct. The driver has neither the list of mm_struct objects nor
+> virt addresses to do a lookup. All it knows is that someone might have
+> mapped pages through the fsdax interface.
 
-Signed-off-by: Dāvis Mosāns <davispuh@gmail.com>
----
- kernel-shared/disk-io.c | 47 ++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 42 insertions(+), 5 deletions(-)
+So there's no physical addr to vma translation in the mm subsystem
+at all?
 
-diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 6f584986..8773eed7 100644
---- a/kernel-shared/disk-io.c
-+++ b/kernel-shared/disk-io.c
-@@ -160,10 +160,45 @@ int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
- 	return -1;
- }
- 
-+int btrfs_format_csum(u16 csum_type, const char *data, char *output)
-+{
-+	int i;
-+	int csum_len = 0;
-+	int position = 0;
-+	int direction = 1;
-+	switch (csum_type) {
-+		case BTRFS_CSUM_TYPE_CRC32:
-+			csum_len = 4;
-+			position = csum_len - 1;
-+			direction = -1;
-+			break;
-+		case BTRFS_CSUM_TYPE_XXHASH:
-+			csum_len = 8;
-+			position = csum_len - 1;
-+			direction = -1;
-+			break;
-+		case BTRFS_CSUM_TYPE_SHA256:
-+		case BTRFS_CSUM_TYPE_BLAKE2:
-+			csum_len = 32;
-+			break;
-+		default:
-+			fprintf(stderr, "ERROR: unknown csum type: %d\n", csum_type);
-+			ASSERT(0);
-+	}
-+
-+	for (i = 0; i < csum_len; i++) {
-+		sprintf(output + i*2, "%02X", data[position + i*direction] & 0xFF);
-+	}
-+
-+	return csum_len;
-+}
-+
- static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
- 				  int verify, int silent, u16 csum_type)
- {
- 	u8 result[BTRFS_CSUM_SIZE];
-+	char found[BTRFS_CSUM_SIZE * 2 + 1]; // 2 hex chars for each byte + null
-+	char expected[BTRFS_CSUM_SIZE * 2 + 1];
- 	u32 len;
- 
- 	len = buf->len - BTRFS_CSUM_SIZE;
-@@ -172,12 +207,14 @@ static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
- 
- 	if (verify) {
- 		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
--			/* FIXME: format */
--			if (!silent)
--				printk("checksum verify failed on %llu found %08X wanted %08X\n",
-+			if (!silent) {
-+				btrfs_format_csum(csum_type, (char *)result, found);
-+				btrfs_format_csum(csum_type, buf->data, expected);
-+				printk("checksum verify failed on %llu found %s wanted %s\n",
- 				       (unsigned long long)buf->start,
--				       result[0],
--				       buf->data[0]);
-+				       found,
-+				       expected);
-+			}
- 			return 1;
- 		}
- 	} else {
+That doesn't make sense. We do exactly this for hwpoison for DAX
+mappings. While we don't look at ptes, we get a pfn, grab the page
+it points to, check if it points to the PMEM that is being removed,
+grab the page it points to, map that to the relevant struct page,
+run collect_procs() on that page, then kill the user processes that
+map that page.
+
+So why can't we walk the ptes, check the physical pages that they
+map to and if they map to a pmem page we go poison that
+page and that kills any user process that maps it.
+
+i.e. I can't see how unexpected pmem device unplug is any different
+to an MCE delivering a hwpoison event to a DAX mapped page.  Both
+indicate a physical address range now contains invalid data and the
+filesystem has to take the same action...
+
+IOWs, we could just call ->corrupted_range(0, EOD) here to tell the
+filesystem the entire device went away. Then the filesystem deal
+with this however it needs to. However, it would be more efficient
+from an invalidation POV to just call it on the pages that have
+currently active ptes because once the block device is dead
+new page faults on DAX mappings will get a SIGBUS naturally.
+
+> To me this looks like a notifier that fires from memunmap_pages()
+> after dev_pagemap_kill() to notify any block_device associated with
+> that dev_pagemap() to say that any dax mappings arranged through this
+> block_device are now invalid. The reason to do this after
+> dev_pagemap_kill() is so that any new mapping attempts that are racing
+> the removal will be blocked.
+
+I don't see why this needs a unique notifier. At the filesystem
+level, we want a single interface that tells us "something bad
+happened to the block device", not a proliferation of similar but
+subtly different "bad thing X happened to block device" interfaces
+that are unique to specific physical device drivers...
+
+> The receiver of that notification needs to go from a block_device to a
+> superblock that has mapped inodes and walk ->sb_inodes triggering the
+> unmap/invalidation.
+
+Not necessarily.
+
+What if the filesystem is managing mirrored data across multiple
+devices and this device is only one leg of the mirror? Or that the
+pmem was used by the RT device in XFS and the data/log devices are
+still fine? What if the pmem is just being used as a cache tier, and
+no data was actually lost?
+
+IOWs, what needs to happen at this point is very filesystem
+specific. Assuming that "device unplug == filesystem dead" is not
+correct, nor is specifying a generic action that assumes the
+filesystem is dead because a device it is using went away.
+
+Cheers,
+
+Dave.
 -- 
-2.30.1
-
+Dave Chinner
+david@fromorbit.com

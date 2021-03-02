@@ -2,287 +2,234 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C978CC28CBC
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2922C28D13
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B9F2C64EC3
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4663C64EC9
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242751AbhCCB6Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 20:58:16 -0500
-Received: from out20-25.mail.aliyun.com ([115.124.20.25]:36417 "EHLO
-        out20-25.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349559AbhCBKhc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 05:37:32 -0500
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04436282|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_alarm|0.0193764-0.000440993-0.980183;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047201;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.JfNvPw0_1614681394;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.JfNvPw0_1614681394)
-          by smtp.aliyun-inc.com(10.147.42.241);
-          Tue, 02 Mar 2021 18:36:34 +0800
-Date:   Tue, 02 Mar 2021 18:36:38 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: check: detect and warn about tree blocks cross 64K page boundary
-Cc:     linux-btrfs@vger.kernel.org
-In-Reply-To: <e478e495-e2f6-452d-c615-a7e1f32805e7@suse.com>
-References: <20210302164758.28C1.409509F4@e16-tech.com> <e478e495-e2f6-452d-c615-a7e1f32805e7@suse.com>
-Message-Id: <20210302183637.96B4.409509F4@e16-tech.com>
+        id S243342AbhCCB6Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 20:58:25 -0500
+Received: from mx2.suse.de ([195.135.220.15]:40620 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1383065AbhCBKqR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Mar 2021 05:46:17 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1614681930; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=gMhegv0wURC2UGRjyU5EPTwJONbebSYq4WXPIKrC3ec=;
+        b=NEAPSJkugybimN6OXpVf9gb/isEeU8uUP66ePPsNGFQ5Kx//glmxZoR3SjoFkH2XJJXQJ7
+        R4JbMdzTkl5LJIeCIllgcSNNT/w21cqd/x+uTx93SvduckOS7JAdLva5mciK0X/i3Y3PNQ
+        tC2FtehmgTkVDLfykvk+vhr4+ksKOCA=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 9CCF5AD2B;
+        Tue,  2 Mar 2021 10:45:30 +0000 (UTC)
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: Refactor error handling in btrfs_zero_range
+Date:   Tue,  2 Mar 2021 12:45:29 +0200
+Message-Id: <20210302104529.2319101-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset="GB2312"
 Content-Transfer-Encoding: 8bit
-X-Mailer: Becky! ver. 2.75.03 [en]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+The major complexity when it comes to error handling in btrfs_zero_range
+stems from the code executed under the 'reserve_space' label. Rather
+than it having an effect on the whole of btrfs_zero_range refactor it
+so that error handling specific to the functions called in this branch
+is contained only within the branch itself. This obviates the need for
+having the 'space_reserved' local flag since btrfs_free_reserved_data_space
+is called from the 2 error branches it's needed. Furthermore, this
+rids the code from the out label and enables converting most 'goto out'
+statements to simiple 'return ret' making the function easier to read.
 
-This is a full mkfs.btrtfs log
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/file.c | 70 +++++++++++++++++++++++--------------------------
+ 1 file changed, 33 insertions(+), 37 deletions(-)
 
-[root@T7610 ~]# mkfs.btrfs -O no-holes -R free-space-tree /dev/sdb1 -f
-btrfs-progs v5.10.1
-See http://btrfs.wiki.kernel.org for more information.
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index d0cb513d0019..de86372dba48 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3113,23 +3113,19 @@ static int btrfs_zero_range(struct inode *inode,
+ {
+ 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+ 	struct extent_map *em;
+-	struct extent_changeset *data_reserved = NULL;
+ 	int ret;
+ 	u64 alloc_hint = 0;
+ 	const u64 sectorsize = btrfs_inode_sectorsize(BTRFS_I(inode));
+ 	u64 alloc_start = round_down(offset, sectorsize);
+ 	u64 alloc_end = round_up(offset + len, sectorsize);
+ 	u64 bytes_to_reserve = 0;
+-	bool space_reserved = false;
 
-Detected a SSD, turning off metadata duplication.  Mkfs with -m dup if you want to force metadata duplication.
-Label:              (null)
-UUID:               8c745f77-3cdb-45f0-9b67-c69a9bd491a1
-Node size:          16384
-Sector size:        4096
-Filesystem size:    60.00GiB
-Block group profiles:
-  Data:             single            8.00MiB
-  Metadata:         single            8.00MiB
-  System:           single            4.00MiB
-SSD detected:       yes
-Incompat features:  extref, skinny-metadata, no-holes
-Runtime features:   free-space-tree
-Checksum:           crc32c
-Number of devices:  1
-Devices:
-   ID        SIZE  PATH
-    1    60.00GiB  /dev/sdb1
+ 	inode_dio_wait(inode);
 
-[root@T7610 ~]# btrfs check /dev/sdb1
-Opening filesystem to check...
-Checking filesystem on /dev/sdb1
-UUID: 8c745f77-3cdb-45f0-9b67-c69a9bd491a1
-[1/7] checking root items
-[2/7] checking extents
-WARNING: tree block [5292032, 5308416) crosses 64K page boudnary, may cause problem for 64K page system
-WARNING: tree block [5357568, 5373952) crosses 64K page boudnary, may cause problem for 64K page system
-[3/7] checking free space tree
-[4/7] checking fs roots
-[5/7] checking only csums items (without verifying data)
-[6/7] checking root refs
-[7/7] checking quota groups skipped (not enabled on this FS)
-found 147456 bytes used, no error found
-total csum bytes: 0
-total tree bytes: 147456
-total fs tree bytes: 32768
-total extent tree bytes: 16384
-btree space waste bytes: 140356
-file data blocks allocated: 0
- referenced 0
-[root@T7610 ~]# mount /dev/sdb1 /mnt/scratch/
-[root@T7610 ~]# btrfs filesystem usage /mnt/scratch
-Overall:
-    Device size:                  60.00GiB
-    Device allocated:             20.00MiB
-    Device unallocated:           59.98GiB
-    Device missing:                  0.00B
-    Used:                        144.00KiB
-    Free (estimated):             59.99GiB      (min: 59.99GiB)
-    Free (statfs, df):            59.99GiB
-    Data ratio:                       1.00
-    Metadata ratio:                   1.00
-    Global reserve:                3.25MiB      (used: 0.00B)
-    Multiple profiles:                  no
+ 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
+ 			      alloc_end - alloc_start);
+-	if (IS_ERR(em)) {
+-		ret = PTR_ERR(em);
+-		goto out;
+-	}
++	if (IS_ERR(em))
++		return PTR_ERR(em);
 
-Data,single: Size:8.00MiB, Used:0.00B (0.00%)
-   /dev/sdb1       8.00MiB
+ 	/*
+ 	 * Avoid hole punching and extent allocation for some cases. More cases
+@@ -3150,9 +3146,8 @@ static int btrfs_zero_range(struct inode *inode,
+ 			 * needed.
+ 			 */
+ 			free_extent_map(em);
+-			ret = btrfs_fallocate_update_isize(inode, offset + len,
+-							   mode);
+-			goto out;
++			return btrfs_fallocate_update_isize(inode, offset + len,
++							    mode);
+ 		}
+ 		/*
+ 		 * Part of the range is already a prealloc extent, so operate
+@@ -3170,26 +3165,22 @@ static int btrfs_zero_range(struct inode *inode,
+ 	    BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1)) {
+ 		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
+ 				      sectorsize);
+-		if (IS_ERR(em)) {
+-			ret = PTR_ERR(em);
+-			goto out;
+-		}
++		if (IS_ERR(em))
++			return PTR_ERR(em);
 
-Metadata,single: Size:8.00MiB, Used:128.00KiB (1.56%)
-   /dev/sdb1       8.00MiB
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
+ 			free_extent_map(em);
+-			ret = btrfs_fallocate_update_isize(inode, offset + len,
+-							   mode);
+-			goto out;
++			return btrfs_fallocate_update_isize(inode,
++							offset + len, mode);
+ 		}
+ 		if (len < sectorsize && em->block_start != EXTENT_MAP_HOLE) {
+ 			free_extent_map(em);
+ 			ret = btrfs_truncate_block(BTRFS_I(inode), offset, len,
+ 						   0);
+-			if (!ret)
+-				ret = btrfs_fallocate_update_isize(inode,
+-								   offset + len,
+-								   mode);
+-			return ret;
++			if (ret)
++				return ret;
++			return btrfs_fallocate_update_isize(inode,
++							    offset + len, mode);
+ 		}
+ 		free_extent_map(em);
+ 		alloc_start = round_down(offset, sectorsize);
+@@ -3210,14 +3201,14 @@ static int btrfs_zero_range(struct inode *inode,
+ 		ret = btrfs_zero_range_check_range_boundary(BTRFS_I(inode),
+ 							    offset);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		if (ret == RANGE_BOUNDARY_HOLE) {
+ 			alloc_start = round_down(offset, sectorsize);
+ 			ret = 0;
+ 		} else if (ret == RANGE_BOUNDARY_WRITTEN_EXTENT) {
+ 			ret = btrfs_truncate_block(BTRFS_I(inode), offset, 0, 0);
+ 			if (ret)
+-				goto out;
++				return ret;
+ 		} else {
+ 			ret = 0;
+ 		}
+@@ -3227,7 +3218,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 		ret = btrfs_zero_range_check_range_boundary(BTRFS_I(inode),
+ 							    offset + len);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		if (ret == RANGE_BOUNDARY_HOLE) {
+ 			alloc_end = round_up(offset + len, sectorsize);
+ 			ret = 0;
+@@ -3235,7 +3226,7 @@ static int btrfs_zero_range(struct inode *inode,
+ 			ret = btrfs_truncate_block(BTRFS_I(inode), offset + len,
+ 						   0, 1);
+ 			if (ret)
+-				goto out;
++				return ret;
+ 		} else {
+ 			ret = 0;
+ 		}
+@@ -3243,6 +3234,7 @@ static int btrfs_zero_range(struct inode *inode,
 
-System,single: Size:4.00MiB, Used:16.00KiB (0.39%)
-   /dev/sdb1       4.00MiB
+ reserve_space:
+ 	if (alloc_start < alloc_end) {
++		struct extent_changeset *data_reserved = NULL;
+ 		struct extent_state *cached_state = NULL;
+ 		const u64 lockstart = alloc_start;
+ 		const u64 lockend = alloc_end - 1;
+@@ -3251,18 +3243,27 @@ static int btrfs_zero_range(struct inode *inode,
+ 		ret = btrfs_alloc_data_chunk_ondemand(BTRFS_I(inode),
+ 						      bytes_to_reserve);
+ 		if (ret < 0)
+-			goto out;
+-		space_reserved = true;
++			return ret;
+ 		ret = btrfs_punch_hole_lock_range(inode, lockstart, lockend,
+ 						  &cached_state);
+-		if (ret)
+-			goto out;
++		if (ret) {
++			btrfs_free_reserved_data_space(BTRFS_I(inode),
++						       data_reserved,
++						       alloc_start,
++						       bytes_to_reserve);
++			return ret;
++		}
+ 		ret = btrfs_qgroup_reserve_data(BTRFS_I(inode), &data_reserved,
+ 						alloc_start, bytes_to_reserve);
+ 		if (ret) {
++			btrfs_free_reserved_data_space(BTRFS_I(inode),
++						       data_reserved,
++						       alloc_start,
++						       bytes_to_reserve);
+ 			unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart,
+ 					     lockend, &cached_state);
+-			goto out;
++			extent_changeset_free(data_reserved);
++			return ret;
+ 		}
+ 		ret = btrfs_prealloc_file_range(inode, mode, alloc_start,
+ 						alloc_end - alloc_start,
+@@ -3272,16 +3273,11 @@ static int btrfs_zero_range(struct inode *inode,
+ 				     lockend, &cached_state);
+ 		/* btrfs_prealloc_file_range releases reserved space on error */
+ 		if (ret) {
+-			space_reserved = false;
+-			goto out;
++			extent_changeset_free(data_reserved);
++			return ret;
+ 		}
+ 	}
+ 	ret = btrfs_fallocate_update_isize(inode, offset + len, mode);
+- out:
+-	if (ret && space_reserved)
+-		btrfs_free_reserved_data_space(BTRFS_I(inode), data_reserved,
+-					       alloc_start, bytes_to_reserve);
+-	extent_changeset_free(data_reserved);
 
-Unallocated:
-   /dev/sdb1      59.98GiB
-
-
-[root@T7610 ~]# parted /dev/sdb unit s print
-Model: TOSHIBA PX05SMQ040 (scsi)
-Disk /dev/sdb: 97677846s
-Sector size (logical/physical): 4096B/4096B
-Partition Table: gpt
-Disk Flags:
-
-Number  Start      End        Size       File system  Name     Flags
- 1      262144s    15990783s  15728640s  btrfs        primary
- 2      15990784s  31719423s  15728640s               primary
- 3      31719424s  47448063s  15728640s               primary
- 4      47448064s  63176703s  15728640s               primary
- 5      63176704s  78905343s  15728640s               primary
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2021/03/02
-
-> 
-> 
-> On 2021/3/2 ÏÂÎç4:48, Wang Yugui wrote:
-> > Hi, Qu Wenruo
-> >
-> > This warning message happen even in new created filesystem on amd64
-> > system.
-> >
-> > Should we slicent it before mkfs.btrfs is ready for  64K page system?
-> 
-> Nope.
-> 
-> If your fs reports such problem, it means your metadata chunk is not properly aligned.
-> 
-> The behavior of chunk allocator alignment has been there for a long long time, thus most metadata chunks should already been properly aligned to 64K.
-> 
-> Either btrfs kernel module or mkfs.btrfs has something wrong.
-> 
-> 
-> >
-> > The paration is aligned in 1GiB
-> >
-> > btrfs-progs: v5.10.x branch
-> >
-> > # mkfs.btrfs /dev/sdb1 -f
-> > 
-> And running v5.10.1 I can't reproduce it.
-> 
-> > # btrfs check /dev/sdb1
-> > Opening filesystem to check...
-> > Checking filesystem on /dev/sdb1
-> > UUID: b298271d-6d1d-4792-a579-fb93653aa811
-> > [1/7] checking root items
-> > [2/7] checking extents
-> > WARNING: tree block [5292032, 5308416) crosses 64K page boudnary, may cause problem for 64K page system
-> > WARNING: tree block [5357568, 5373952) crosses 64K page boudnary, may cause problem for 64K page system
-> 
-> I doubt if you're really using v5.10.x mkfs.btrfs.
-> 
-> As for default btrfs, the metadata chunk is after DATA and SYS chunks, this means metadata chunks should only exist after bytenr 16M, but here your metadata is only at around 5M.
-> 
-> I strongly doubt your mkfs parameters.
-> 
-> Please attach the full mkfs output.
-> 
-> Thanks,
-> Qu
-> 
-> > [3/7] checking free space tree
-> > [4/7] checking fs roots
-> > [5/7] checking only csums items (without verifying data)
-> > [6/7] checking root refs
-> > [7/7] checking quota groups skipped (not enabled on this FS)
-> > found 147456 bytes used, no error found
-> > total csum bytes: 0
-> > total tree bytes: 147456
-> > total fs tree bytes: 32768
-> > total extent tree bytes: 16384
-> > btree space waste bytes: 140356
-> > file data blocks allocated: 0
-> >   referenced 0
-> >
-> > # parted /dev/sdb unit KiB print
-> > Model: TOSHIBA PX05SMQ040 (scsi)
-> > Disk /dev/sdb: 390711384kiB
-> > Sector size (logical/physical): 4096B/4096B
-> > Partition Table: gpt
-> > Disk Flags:
-> >
-> > Number  Start         End           Size         File system  Name     Flags
-> >   1      1048576kiB    63963136kiB   62914560kiB  btrfs        primary
-> >
-> >
-> > Best Regards
-> > Wang Yugui (wangyugui@e16-tech.com)
-> > 2021/03/02
-> >
-> >> For the incoming subpage support, there is a new requirement for tree
-> >> blocks.
-> >> Tree blocks should not cross 64K page boudnary.
-> >>
-> >> For current btrfs-progs and kernel, there shouldn't be any causes to
-> >> create such tree blocks.
-> >>
-> >> But still, we want to detect such tree blocks in the wild before subpage
-> >> support fully lands in upstream.
-> >>
-> >> This patch will add such check for both lowmem and original mode.
-> >> Currently it's just a warning, since there aren't many users using 64K
-> >> page size yet.
-> >>
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >>   check/main.c        |  2 ++
-> >>   check/mode-common.h | 18 ++++++++++++++++++
-> >>   check/mode-lowmem.c |  2 ++
-> >>   3 files changed, 22 insertions(+)
-> >>
-> >> diff --git a/check/main.c b/check/main.c
-> >> index e7996b7c8c0e..0ce9c2f334b4 100644
-> >> --- a/check/main.c
-> >> +++ b/check/main.c
-> >> @@ -5375,6 +5375,8 @@ static int process_extent_item(struct btrfs_root *root,
-> >>   		      num_bytes, gfs_info->sectorsize);
-> >>   		return -EIO;
-> >>   	}
-> >> +	if (metadata)
-> >> +		btrfs_check_subpage_eb_alignment(key.objectid, num_bytes);
-> >>  >>   	memset(&tmpl, 0, sizeof(tmpl));
-> >>   	tmpl.start = key.objectid;
-> >> diff --git a/check/mode-common.h b/check/mode-common.h
-> >> index 4efc07a4f44d..bcda0f53e2c4 100644
-> >> --- a/check/mode-common.h
-> >> +++ b/check/mode-common.h
-> >> @@ -171,4 +171,22 @@ static inline u32 btrfs_type_to_imode(u8 type)
-> >>  >>   	return imode_by_btrfs_type[(type)];
-> >>   }
-> >> +
-> >> +/*
-> >> + * Check tree block alignement for future subpage support on 64K page system.
-> >> + *
-> >> + * Subpage support on 64K page size require one eb to be completely contained
-> >> + * by a page. Not allowing a tree block to cross 64K page boudanry.
-> >> + *
-> >> + * Since subpage support is still under development, this check only provides
-> >> + * warning.
-> >> + */
-> >> +static inline void btrfs_check_subpage_eb_alignment(u64 start, u32 len)
-> >> +{
-> >> +	if (start / BTRFS_MAX_METADATA_BLOCKSIZE !=
-> >> +	    (start + len) / BTRFS_MAX_METADATA_BLOCKSIZE)
-> >> +		warning(
-> >> +"tree block [%llu, %llu) crosses 64K page boudnary, may cause problem for 64K page system",
-> >> +			start, start + len);
-> >> +}
-> >>   #endif
-> >> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> >> index 2b689b2abf63..6dbfe829bb7c 100644
-> >> --- a/check/mode-lowmem.c
-> >> +++ b/check/mode-lowmem.c
-> >> @@ -4206,6 +4206,8 @@ static int check_extent_item(struct btrfs_path *path)
-> >>   		      key.objectid, key.objectid + nodesize);
-> >>   		err |= CROSSING_STRIPE_BOUNDARY;
-> >>   	}
-> >> +	if (metadata)
-> >> +		btrfs_check_subpage_eb_alignment(key.objectid, nodesize);
-> >>  >>   	ptr = (unsigned long)(ei + 1);
-> >>  >> --
-> >> 2.29.2
-> >
-> > 
-
+ 	return ret;
+ }
+--
+2.25.1
 

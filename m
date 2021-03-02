@@ -2,108 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 59ED9C433E9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 874C6C4332D
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 25B0464E75
+	by mail.kernel.org (Postfix) with ESMTP id 5FC4C64E6F
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238422AbhCCB5R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 20:57:17 -0500
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:44674 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1837936AbhCBJOh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 04:14:37 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1614676476; x=1646212476;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=pWho99CX8J/m+QKCgx9e31BS+yKKfXPSH+48+ad5uGE=;
-  b=PA6Ww37fbmhjl4yxvNiOSjLMa37ZXPNrZqgl/xeV6wPwCbeXeasKfnRg
-   2okgHOy4DyBRwiOYuKXNDCMLRB1pIfgaYJdwnLG2MjCvIxutX15t2Se5l
-   nWST97IK98605NqIYoJQLJjcElo2ERmVN7iFv+49e3vsya4q05EMm8Hro
-   zP6H33bD5fJ9rXUEUTWEXgbvAIbL8oktFprVAwiaghry53TBWTg4nEFrT
-   K53GOX2VLk8Hns4/LX1wEr9qI9mHO2de3v3bOuBGr/JcABlyfVkI9mPib
-   RzysVytPdixoI8Ty/r6oYLfDZ93pu1x1F+7UZ349QARAjQFrLLsn7CMEz
-   Q==;
-IronPort-SDR: BV5pPDCkyU6ZOzOEE9dzcq2K5sLJJxJEPxdJEtUpdDmrayUD8NNIxWfJN5GQv8zPuNtZ//TUiI
- dPmZBq9YCI49MYigXBuLxrrJRFnWUdHzBRRYepzik+sobeWSDfYxkasb7fnRr+GrO/lSCISSMS
- Xnm0uh/DLtVRO61rtf12IVPBP+in1cfgBTRhYEW18oDzB7ur3KJ8DnwHDN2CIG82V+C6iP9IRt
- S4XRbd+zubENvnY02jBZAIWGVhvzggAfvp6MsTzeTZ7O7qwP6iPDMzCg1s8w1DVkX0R/glT6n2
- WHc=
-X-IronPort-AV: E=Sophos;i="5.81,216,1610380800"; 
-   d="scan'208";a="165623455"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Mar 2021 17:13:13 +0800
-IronPort-SDR: ypIhiug/dnybepMxppDQd2Tl4db4zSL51QjkZ5JUXZAqE8uwJHStMj9xAbCXC9+HBOKDLHakE+
- AwIKZu4kDxYtnLo2dzjk9/55tIGxyhMDSJ9aqevw4RoD4T2bqsPXXlSU41dH72XSX35win1PT+
- 3RCM7582MJA2ZtlcspjqxlzcvdXRGKH2jojX458APVU1VK5NzcDXFTu6C8tpIybiLDqjhA1HC8
- QGezHVGk87Ak2mn8DYluL+dR2L0gREOW0eIDHb6Y5C8kto+WKMWMC2RROISCmJwJyDh5+sd9oN
- 4tQ1ZCEDAy4Ony3aaK8USgrB
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Mar 2021 00:54:29 -0800
-IronPort-SDR: jtxGDu0vt0Qu3USRoL+MTat/Qiwdc7RWDCpfJffIkjBJW2A0oZW3fzrdzpjO7ckDI3fySmhh8b
- nNzztvOxl0xs28rwoyrtyCCvO18kiCqUlEtsRSyBNrJ6hMGKWyT+rKNS2zd2f02HzFI44vAap/
- A/khX6dVsxLfjZWqkNlcJYCpnx3IFXEjJYUBDsGmdH9orY6c9hXh1Tq6gs0fqm7WyhFJClbHSZ
- 3NXfkZykTDcmuT0nCXYB6JB1AQDrRI6wyS4rttGC06ukORLXoV24V+CC4mdBBo96P/WZu0R8XI
- 2JI=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 02 Mar 2021 01:13:14 -0800
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc:     Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 0/2] fstests: two preperation patches for zoned device support
-Date:   Tue,  2 Mar 2021 18:13:03 +0900
-Message-Id: <20210302091305.27828-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.30.0
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        id S239001AbhCCB5E (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 20:57:04 -0500
+Received: from out30-45.freemail.mail.aliyun.com ([115.124.30.45]:40024 "EHLO
+        out30-45.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1837777AbhCBI6p (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Mar 2021 03:58:45 -0500
+X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R351e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e04400;MF=yang.lee@linux.alibaba.com;NM=1;PH=DS;RN=6;SR=0;TI=SMTPD_---0UQ4eebS_1614675481;
+Received: from j63c13417.sqa.eu95.tbsite.net(mailfrom:yang.lee@linux.alibaba.com fp:SMTPD_---0UQ4eebS_1614675481)
+          by smtp.aliyun-inc.com(127.0.0.1);
+          Tue, 02 Mar 2021 16:58:02 +0800
+From:   Yang Li <yang.lee@linux.alibaba.com>
+To:     clm@fb.com
+Cc:     josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Yang Li <yang.lee@linux.alibaba.com>
+Subject: [PATCH] btrfs: turn btrfs_destroy_all_ordered_extents() into void functions
+Date:   Tue,  2 Mar 2021 16:57:56 +0800
+Message-Id: <1614675476-79534-1-git-send-email-yang.lee@linux.alibaba.com>
+X-Mailer: git-send-email 1.8.3.1
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As btrfs zoned device support was merged with 5.12 here are the 1st two
-preparational patches for zoned device support in fstests.
+These functions always return '0' and no callers use the return
+value. So make it a void function.
+It fixes the following warning detected by coccinelle:
+./fs/btrfs/disk-io.c:4522:5-8: Unneeded variable: "ret". Return "0" on
+line 4530
 
-The 1st patch adds missing checks for fallocate support to tests that are
-lacking it and the second patch checks for discard support availability.
+Reported-by: Abaci Robot <abaci@linux.alibaba.com>
+Signed-off-by: Yang Li <yang.lee@linux.alibaba.com>
+---
+ fs/btrfs/disk-io.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-Johannes Thumshirn (1):
-  btrfs: require discard functionality from scratch device
-
-Naohiro Aota (1):
-  fstests: add missing checks of fallocate feature
-
- common/rc         | 8 ++++++++
- tests/btrfs/013   | 1 +
- tests/btrfs/016   | 1 +
- tests/btrfs/025   | 1 +
- tests/btrfs/034   | 1 +
- tests/btrfs/037   | 1 +
- tests/btrfs/046   | 1 +
- tests/btrfs/107   | 1 +
- tests/btrfs/116   | 1 +
- tests/btrfs/156   | 1 +
- tests/ext4/001    | 1 +
- tests/f2fs/001    | 1 +
- tests/generic/456 | 1 +
- tests/xfs/042     | 1 +
- tests/xfs/114     | 1 +
- tests/xfs/118     | 1 +
- tests/xfs/331     | 1 +
- tests/xfs/341     | 1 +
- tests/xfs/342     | 1 +
- tests/xfs/423     | 1 +
- 20 files changed, 27 insertions(+)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 41b718c..7c9e1b4 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4513,13 +4513,12 @@ static void btrfs_destroy_all_ordered_extents(struct btrfs_fs_info *fs_info)
+ 	btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
+ }
+ 
+-static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
++static void btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 				      struct btrfs_fs_info *fs_info)
+ {
+ 	struct rb_node *node;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_delayed_ref_node *ref;
+-	int ret = 0;
+ 
+ 	delayed_refs = &trans->delayed_refs;
+ 
+@@ -4527,7 +4526,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 	if (atomic_read(&delayed_refs->num_entries) == 0) {
+ 		spin_unlock(&delayed_refs->lock);
+ 		btrfs_debug(fs_info, "delayed_refs has NO entry");
+-		return ret;
++		return;
+ 	}
+ 
+ 	while ((node = rb_first_cached(&delayed_refs->href_root)) != NULL) {
+@@ -4593,7 +4592,7 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 
+ 	spin_unlock(&delayed_refs->lock);
+ 
+-	return ret;
++	return;
+ }
+ 
+ static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
 -- 
-2.30.0
+1.8.3.1
 

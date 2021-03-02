@@ -2,168 +2,245 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24D25C4161F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:01:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99308C433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F2A9E64E76
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:01:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5138364E6F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238829AbhCCB4l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 20:56:41 -0500
-Received: from out20-25.mail.aliyun.com ([115.124.20.25]:42432 "EHLO
-        out20-25.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1382058AbhCBIso (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 03:48:44 -0500
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04436387|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_alarm|0.0684223-0.00531382-0.926264;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047190;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.JfKtegF_1614674878;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.JfKtegF_1614674878)
-          by smtp.aliyun-inc.com(10.147.41.138);
-          Tue, 02 Mar 2021 16:47:58 +0800
-Date:   Tue, 02 Mar 2021 16:48:01 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: check: detect and warn about tree blocks cross 64K page boundary
-Cc:     linux-btrfs@vger.kernel.org
-In-Reply-To: <20201109053952.490678-2-wqu@suse.com>
-References: <20201109053952.490678-1-wqu@suse.com> <20201109053952.490678-2-wqu@suse.com>
-Message-Id: <20210302164758.28C1.409509F4@e16-tech.com>
+        id S239417AbhCCB5L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 20:57:11 -0500
+Received: from out20-85.mail.aliyun.com ([115.124.20.85]:34770 "EHLO
+        out20-85.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1382242AbhCBJIH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 04:08:07 -0500
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04436282|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_alarm|0.0172881-0.000414947-0.982297;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047193;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.JfLImVn_1614676043;
+Received: from T640.e16-tech.com(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.JfLImVn_1614676043)
+          by smtp.aliyun-inc.com(10.147.42.197);
+          Tue, 02 Mar 2021 17:07:23 +0800
+From:   wangyugui <wangyugui@e16-tech.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     wangyugui <wangyugui@e16-tech.com>
+Subject: [PATCH] btrfs-progs: add error message when btrfs check failed
+Date:   Tue,  2 Mar 2021 17:07:23 +0800
+Message-Id: <20210302090723.19953-1-wangyugui@e16-tech.com>
+X-Mailer: git-send-email 2.30.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.03 [en]
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi, Qu Wenruo
+fstests btrfs/028 failed once, but there is no clear error message in
+the output of 'btrfs check' [*1].
 
-This warning message happen even in new created filesystem on amd64
-system.
+There is some places in 'btrfs check' where 'err' is set, but no error("")
+message is outputed, so we add them.
 
-Should we slicent it before mkfs.btrfs is ready for  64K page system?
+[*1]
 
-The paration is aligned in 1GiB
-
-btrfs-progs: v5.10.x branch
-
-# mkfs.btrfs /dev/sdb1 -f
-
-# btrfs check /dev/sdb1
-Opening filesystem to check...
-Checking filesystem on /dev/sdb1
-UUID: b298271d-6d1d-4792-a579-fb93653aa811
+# cat /ssd/git/os/xfstests/results//btrfs/028.full
+# /usr/sbin/btrfs quota enable /mnt/scratch
+# /usr/sbin/btrfs quota rescan -w /mnt/scratch
+quota rescan started
+Run fsstress  -z -f write=10 -f unlink=10 -f creat=10 -f fsync=10 -f fsync=10 -n 100000 -p 2 -d /mnt/scratch/stress_dir
+Start balance
+Done, had to relocate 1 out of 3 chunks
+*** Done, had to relocate 1 out of 3 chunks *** many times
+Done, had to relocate 1 out of 3 chunks
+# /usr/sbin/btrfs filesystem sync /mnt/scratch
+_check_btrfs_filesystem: filesystem on /dev/sdb1 is inconsistent
+*** fsck.btrfs output ***
 [1/7] checking root items
 [2/7] checking extents
-WARNING: tree block [5292032, 5308416) crosses 64K page boudnary, may cause problem for 64K page system
-WARNING: tree block [5357568, 5373952) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [7979008, 7995392) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [8830976, 8847360) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [9093120, 9109504) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [9158656, 9175040) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [9224192, 9240576) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [9289728, 9306112) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [9486336, 9502720) crosses 64K page boudnary, may cause problem for 64K page system
+WARNING: tree block [9682944, 9699328) crosses 64K page boudnary, may cause problem for 64K page system
 [3/7] checking free space tree
 [4/7] checking fs roots
 [5/7] checking only csums items (without verifying data)
 [6/7] checking root refs
-[7/7] checking quota groups skipped (not enabled on this FS)
-found 147456 bytes used, no error found
-total csum bytes: 0
-total tree bytes: 147456
-total fs tree bytes: 32768
-total extent tree bytes: 16384
-btree space waste bytes: 140356
-file data blocks allocated: 0
- referenced 0
+[7/7] checking quota groups
+Opening filesystem to check...
+Checking filesystem on /dev/sdb1
+UUID: 40e72eb2-7e47-4d1d-a020-db2b441a3747
+Counts for qgroup id: 0/5 are different
+our:            referenced 33431552 referenced compressed 33431552
+disk:           referenced 33558528 referenced compressed 33558528
+diff:           referenced -126976 referenced compressed -126976
+our:            exclusive 33431552 exclusive compressed 33431552
+disk:           exclusive 33558528 exclusive compressed 33558528
+diff:           exclusive -126976 exclusive compressed -126976
+found 33693696 bytes used, error(s) found
+total csum bytes: 32360
+total tree bytes: 557056
+total fs tree bytes: 311296
+total extent tree bytes: 81920
+btree space waste bytes: 256606
+file data blocks allocated: 33411072
+ referenced 32354304
+*** end fsck.btrfs output
+*** mount output ***
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)
+proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)
+devtmpfs on /dev type devtmpfs (rw,nosuid,size=98960292k,nr_inodes=24740073,mode=755,inode64)
+securityfs on /sys/kernel/security type securityfs (rw,nosuid,nodev,noexec,relatime)
+tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev,inode64)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000)
+tmpfs on /run type tmpfs (rw,nosuid,nodev,mode=755,inode64)
+tmpfs on /sys/fs/cgroup type tmpfs (ro,nosuid,nodev,noexec,mode=755,inode64)
+cgroup on /sys/fs/cgroup/systemd type cgroup (rw,nosuid,nodev,noexec,relatime,xattr,release_agent=/usr/lib/systemd/systmd-cgroups-agent,name=systemd)
+pstore on /sys/fs/pstore type pstore (rw,nosuid,nodev,noexec,relatime)
+none on /sys/fs/bpf type bpf (rw,nosuid,nodev,noexec,relatime,mode=700)
+cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
+cgroup on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
+cgroup on /sys/fs/cgroup/cpu,cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpu,cpuacct)
+cgroup on /sys/fs/cgroup/hugetlb type cgroup (rw,nosuid,nodev,noexec,relatime,hugetlb)
+cgroup on /sys/fs/cgroup/freezer type cgroup (rw,nosuid,nodev,noexec,relatime,freezer)
+cgroup on /sys/fs/cgroup/blkio type cgroup (rw,nosuid,nodev,noexec,relatime,blkio)
+cgroup on /sys/fs/cgroup/devices type cgroup (rw,nosuid,nodev,noexec,relatime,devices)
+cgroup on /sys/fs/cgroup/net_cls,net_prio type cgroup (rw,nosuid,nodev,noexec,relatime,net_cls,net_prio)
+cgroup on /sys/fs/cgroup/pids type cgroup (rw,nosuid,nodev,noexec,relatime,pids)
+cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,nosuid,nodev,noexec,relatime,perf_event)
+none on /sys/kernel/tracing type tracefs (rw,relatime)
+configfs on /sys/kernel/config type configfs (rw,relatime)
+/dev/sda1 on / type xfs (rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+rpc_pipefs on /var/lib/nfs/rpc_pipefs type rpc_pipefs (rw,relatime)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=28,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipeino=56668)
+mqueue on /dev/mqueue type mqueue (rw,relatime)
+hugetlbfs on /dev/hugepages type hugetlbfs (rw,relatime,pagesize=2M)
+debugfs on /sys/kernel/debug type debugfs (rw,relatime)
+T640:/ssd on /ssd type nfs4 (rw,noatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retran=2,sec=sys,clientaddr=10.0.1.76,local_lock=none,addr=10.0.1.64)
+T640:/ssd/bio-ref on /usr/bio-ref type nfs4 (rw,noatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,imeo=600,retrans=2,sec=sys,clientaddr=10.0.1.76,local_lock=none,addr=10.0.1.64)
+tmpfs on /run/user/0 type tmpfs (rw,nosuid,nodev,relatime,size=19800940k,mode=700,inode64)
+*** end mount output
 
-# parted /dev/sdb unit KiB print
-Model: TOSHIBA PX05SMQ040 (scsi)
-Disk /dev/sdb: 390711384kiB
-Sector size (logical/physical): 4096B/4096B
-Partition Table: gpt
-Disk Flags:
+---
+ check/main.c | 31 +++++++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 6 deletions(-)
 
-Number  Start         End           Size         File system  Name     Flags
- 1      1048576kiB    63963136kiB   62914560kiB  btrfs        primary
-
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2021/03/02
-
-> For the incoming subpage support, there is a new requirement for tree
-> blocks.
-> Tree blocks should not cross 64K page boudnary.
-> 
-> For current btrfs-progs and kernel, there shouldn't be any causes to
-> create such tree blocks.
-> 
-> But still, we want to detect such tree blocks in the wild before subpage
-> support fully lands in upstream.
-> 
-> This patch will add such check for both lowmem and original mode.
-> Currently it's just a warning, since there aren't many users using 64K
-> page size yet.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  check/main.c        |  2 ++
->  check/mode-common.h | 18 ++++++++++++++++++
->  check/mode-lowmem.c |  2 ++
->  3 files changed, 22 insertions(+)
-> 
-> diff --git a/check/main.c b/check/main.c
-> index e7996b7c8c0e..0ce9c2f334b4 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -5375,6 +5375,8 @@ static int process_extent_item(struct btrfs_root *root,
->  		      num_bytes, gfs_info->sectorsize);
->  		return -EIO;
->  	}
-> +	if (metadata)
-> +		btrfs_check_subpage_eb_alignment(key.objectid, num_bytes);
->  
->  	memset(&tmpl, 0, sizeof(tmpl));
->  	tmpl.start = key.objectid;
-> diff --git a/check/mode-common.h b/check/mode-common.h
-> index 4efc07a4f44d..bcda0f53e2c4 100644
-> --- a/check/mode-common.h
-> +++ b/check/mode-common.h
-> @@ -171,4 +171,22 @@ static inline u32 btrfs_type_to_imode(u8 type)
->  
->  	return imode_by_btrfs_type[(type)];
->  }
-> +
-> +/*
-> + * Check tree block alignement for future subpage support on 64K page system.
-> + *
-> + * Subpage support on 64K page size require one eb to be completely contained
-> + * by a page. Not allowing a tree block to cross 64K page boudanry.
-> + *
-> + * Since subpage support is still under development, this check only provides
-> + * warning.
-> + */
-> +static inline void btrfs_check_subpage_eb_alignment(u64 start, u32 len)
-> +{
-> +	if (start / BTRFS_MAX_METADATA_BLOCKSIZE !=
-> +	    (start + len) / BTRFS_MAX_METADATA_BLOCKSIZE)
-> +		warning(
-> +"tree block [%llu, %llu) crosses 64K page boudnary, may cause problem for 64K page system",
-> +			start, start + len);
-> +}
->  #endif
-> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> index 2b689b2abf63..6dbfe829bb7c 100644
-> --- a/check/mode-lowmem.c
-> +++ b/check/mode-lowmem.c
-> @@ -4206,6 +4206,8 @@ static int check_extent_item(struct btrfs_path *path)
->  		      key.objectid, key.objectid + nodesize);
->  		err |= CROSSING_STRIPE_BOUNDARY;
->  	}
-> +	if (metadata)
-> +		btrfs_check_subpage_eb_alignment(key.objectid, nodesize);
->  
->  	ptr = (unsigned long)(ei + 1);
->  
-> -- 
-> 2.29.2
-
+diff --git a/check/main.c b/check/main.c
+index 0c4eb3ca..97265d90 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -10423,20 +10423,24 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 	    !extent_buffer_uptodate(gfs_info->dev_root->node) ||
+ 	    !extent_buffer_uptodate(gfs_info->chunk_root->node)) {
+ 		error("critical roots corrupted, unable to check the filesystem");
+-		err |= !!ret;
+ 		ret = -EIO;
++		err |= !!ret;
+ 		goto close_out;
+ 	}
+ 
+ 	if (clear_space_cache) {
+ 		ret = do_clear_free_space_cache(clear_space_cache);
++		if (ret)
++			error("failed to clear free space cache");
+ 		err |= !!ret;
+ 		goto close_out;
+ 	}
+ 
+ 	if (clear_ino_cache) {
+ 		ret = clear_ino_cache_items();
+-		err = ret;
++		if (ret)
++			error("failed to clear inode cache");
++		err |= !!ret;
+ 		goto close_out;
+ 	}
+ 
+@@ -10464,6 +10468,8 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		       uuidbuf);
+ 		ret = qgroup_verify_all(gfs_info);
+ 		err |= !!ret;
++		if (ret)
++			error("failed to verify all qgroup");
+ 		if (ret >= 0)
+ 			report_qgroups(1);
+ 		goto close_out;
+@@ -10472,6 +10478,8 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		printf("Print extent state for subvolume %llu on %s\nUUID: %s\n",
+ 		       subvolid, argv[optind], uuidbuf);
+ 		ret = print_extent_state(gfs_info, subvolid);
++		if (ret)
++			error("failed to print extend state");
+ 		err |= !!ret;
+ 		goto close_out;
+ 	}
+@@ -10493,8 +10501,10 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 			ret = reinit_extent_tree(trans,
+ 					 check_mode == CHECK_MODE_ORIGINAL);
+ 			err |= !!ret;
+-			if (ret)
++			if (ret) {
++				error("failed to create a new extent tree");
+ 				goto close_out;
++			}
+ 		}
+ 
+ 		if (init_csum_tree) {
+@@ -10522,8 +10532,10 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		 */
+ 		ret = btrfs_commit_transaction(trans, gfs_info->extent_root);
+ 		err |= !!ret;
+-		if (ret)
++		if (ret) {
++			error("failed to commit btrfs transaction: %d", ret);
+ 			goto close_out;
++		}
+ 	}
+ 	if (!extent_buffer_uptodate(gfs_info->extent_root->node)) {
+ 		error("critical: extent_root, unable to check the filesystem");
+@@ -10558,7 +10570,6 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 			 */
+ 			if (repair)
+ 				goto close_out;
+-			err |= 1;
+ 		} else {
+ 			if (repair) {
+ 				fprintf(stderr, "Fixed %d roots.\n", ret);
+@@ -10591,7 +10602,10 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		"errors found in extent allocation tree or chunk allocation");
+ 
+ 	/* Only re-check super size after we checked and repaired the fs */
+-	err |= !is_super_size_valid();
++	ret = !is_super_size_valid();
++	if (ret)
++		error("super size is not valid");
++	err |= !!ret;
+ 
+ 	is_free_space_tree = btrfs_fs_compat_ro(gfs_info, FREE_SPACE_TREE);
+ 
+@@ -10607,6 +10621,8 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 
+ 	ret = validate_free_space_cache(root);
+ 	task_stop(ctx.info);
++	if (ret)
++		error("failed to validate free space cache");
+ 	err |= !!ret;
+ 
+ 	/*
+@@ -10694,6 +10710,9 @@ static int cmd_check(const struct cmd_struct *cmd, int argc, char **argv)
+ 		list_del_init(&bad->list);
+ 		if (repair) {
+ 			ret = delete_bad_item(root, bad);
++			if (ret) {
++				error("failed to delete orphan items");
++			}
+ 			err |= !!ret;
+ 		}
+ 		free(bad);
+-- 
+2.30.1
 

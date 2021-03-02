@@ -2,130 +2,205 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-6.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CD98C46461
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Mar 2021 08:12:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B1C0C433E6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Mar 2021 08:12:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1F9C664D9E
+	by mail.kernel.org (Postfix) with ESMTP id DB56A64D74
 	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Mar 2021 08:12:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347686AbhCBFxL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 00:53:11 -0500
-Received: from mout.gmx.net ([212.227.15.19]:56067 "EHLO mout.gmx.net"
+        id S1347721AbhCBFy6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 00:54:58 -0500
+Received: from mail.kernel.org ([198.145.29.99]:37130 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231936AbhCBBUd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 1 Mar 2021 20:20:33 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1614647900;
-        bh=xzHQQXnRWOVAIrfNeKZ6iuMquVzug2ij0ZajqJOV4WA=;
-        h=X-UI-Sender-Class:To:References:From:Subject:Date:In-Reply-To;
-        b=cfRDH4+nX3Xj3Gs2RxoDsyrkc4wLcIHCfH8a5JoGY2oNGoa7fTWq1rLR0AJLB5Q5c
-         J59Ea79aQJuvlyiwN2zDQ+tLrUiAq4FcHqHRj6wUp22NKGwX5oITqSGAgUG1p0K8Zp
-         N513XGfHFKchjSyw6srJ59r+97jdcNq7KRco0g04=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mqb1W-1lcmAV1EZ6-00mdul; Tue, 02
- Mar 2021 02:18:20 +0100
-To:     =?UTF-8?Q?Christian_V=c3=b6lker?= <cvoelker@knebb.de>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-References: <36a13b99-7003-d114-568d-6c03b66190b2@knebb.de>
- <4744a69e-0adb-7cad-577e-7f17741519be@knebb.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: Adding Device Fails - Why?
-Message-ID: <6e37dc95-cca7-a7fc-774a-87068f03c16b@gmx.com>
-Date:   Tue, 2 Mar 2021 09:18:16 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.8.0
+        id S1574056AbhCBD2w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 1 Mar 2021 22:28:52 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 0054864DA1;
+        Tue,  2 Mar 2021 03:28:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1614655689;
+        bh=njnpqWgDUywctLU8re245zucCInirLZ0Faloa4U9qbI=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=GvL/x9Tpqz6m8FQXD5ws5fn/ZM69cUoM3sgNDVBxnwB+hYeHHhjRrh4qTIK5VB/0m
+         vmIKCf042K4H9/ZSOe4n49g9257ztZmVzEQRuMFbUuTDKVhmEGU+xy71qEzvsOeQZC
+         Wyuc1K6VafR9bO0pQoh2aC8dwS8fdgR+f6pmSWQVfc0sViPhMou67WMOSD9SWNu+Ti
+         E4+jqHitv53Zqra/Y6SgZzxoaXGhHMi5IS1S6Fy70iCBMFfCR5KObs0Wh7WCwf9OWx
+         IlkI5IaZ05Vi79Nb6iCae7TOrlCKATr3ZBpShdsPaoaY9gd8vc6hhziUVZjD3wKVOP
+         pOrQVXU52iREg==
+Date:   Mon, 1 Mar 2021 19:28:05 -0800
+From:   "Darrick J. Wong" <djwong@kernel.org>
+To:     Dan Williams <dan.j.williams@intel.com>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
+        "willy@infradead.org" <willy@infradead.org>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ocfs2-devel@oss.oracle.com" <ocfs2-devel@oss.oracle.com>,
+        "hch@lst.de" <hch@lst.de>, "rgoldwyn@suse.de" <rgoldwyn@suse.de>,
+        "y-goto@fujitsu.com" <y-goto@fujitsu.com>,
+        "qi.fuli@fujitsu.com" <qi.fuli@fujitsu.com>,
+        "fnstml-iaas@cn.fujitsu.com" <fnstml-iaas@cn.fujitsu.com>
+Subject: Re: Question about the "EXPERIMENTAL" tag for dax in XFS
+Message-ID: <20210302032805.GM7272@magnolia>
+References: <20210226190454.GD7272@magnolia>
+ <CAPcyv4iJiYsM5FQdpMvCi24aCi7RqUnnxC6sM0umFqiN+Q59cg@mail.gmail.com>
+ <20210226205126.GX4662@dread.disaster.area>
+ <CAPcyv4iDefA3Y0wUW=p080SYAsM_2TPJba-V-sxdK_BeJMkmsw@mail.gmail.com>
+ <20210226212748.GY4662@dread.disaster.area>
+ <CAPcyv4jryJ32R5vOwwEdoU3V8C0B7zu_pCt=7f6A3Gk-9h6Dfg@mail.gmail.com>
+ <20210227223611.GZ4662@dread.disaster.area>
+ <CAPcyv4h7XA3Jorcy_J+t9scw0A4KdT2WEwAhE-Nbjc=C2qmkMw@mail.gmail.com>
+ <20210228223846.GA4662@dread.disaster.area>
+ <CAPcyv4jzV2RUij2BEvDJLLiK_67Nf1v3M6-jRLKf32x4iOzqng@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <4744a69e-0adb-7cad-577e-7f17741519be@knebb.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:UU+8xm83/ilrWrQ4hl4a3IYbMfl8eFilmYYnZ+Kjhz7h6aB+QKX
- iaipFk8dcI1Geg+GP+tsENbnEHA3B879mHgY+OPESCD2q0mOqdcmFovWGd9xTP894/zAbfn
- BGFbx9MoelatXceYzCySQ4oIVawoi6sHy7mebKNfO/I9CrOH1dF9+qVSwcwwmOGkskHPcDH
- bt/7A0diRbtElRVWNx43g==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:IzW9SlHAdS0=:xhaqn0tFLcgQesW9rAjUjk
- w0lWLc+521zlXonE0LWnghbOcNe6b53U6PfMXBq4m72lFZUTX0E0lUyJMRuiRzC0y/fyp0KWr
- udCljgDCFWWn4P5UvPkrRM9QDBnIeW05hut3jOJhklsblNABiZ3W2qBUdyVfgZ2+cJLCeKWUy
- xuAH04UoMGDwAUTFopxiS+/elcElDUha02f9DaxmUpwdmzVZxHLT6BcTWCNwA0qoYejupSqVD
- RDMXOH2msAKnzaLTQm+LvV52Ud+qSB1Mp7fb4afWJKPo0r4rvLrXxNFwXmpIMUAYWhkdzvoWC
- JDRMBUkTvnMMB/1ZxuUGTs66es4Isv5Aum5kF363N6vbq/FrRdifc1v+neh9Mv22an5+QDadx
- 7VW61/5Yukc/O22FPeeW1buOr9eC9sf1vQdpbke7KGbpZFrJD0dtFq+OYcrcoOFwnMFS9fnhh
- VJyio8WkI88uZP5GAJkmKsgbAiO/G/t00lN6Sy7o5riYmJkHdUv5kwNDEwi24MnF9wZic5eGF
- lbHf2qQKO3braCOqu4Yq/FgignWqDCvbgPXyL0BdxREDuRf+KVThGayuCKCjNidmIN9ZxTRMd
- 5DBscvKD3u4ptbVywQXd+y7Slhk6wu4R0c3hOYiV11jTDVimLjYlacTnGLKehO10z+Z1hP/3Z
- 35Fjrt7yryTXvTLKU1l1a60tUC67ubA7NrZGQtejJa4Kiy4K2eNJ63bSImk73ilQX9kmWFRdt
- 7/FmRru//pBXxzcvohTLygd3g2lp/WoNCvJE6OFlxRBxnVdV5fNc0pvvjHyrGs+xe1gQ8ucft
- ZCkNO89Dw2aazQYOYfcsQhpr7hPL/0MAPKkwI2dHjMdmnUpaIoTcqhadnVrg2Hg4uNE236eXx
- TxkhqxgsK5gmnieZG4bg==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAPcyv4jzV2RUij2BEvDJLLiK_67Nf1v3M6-jRLKf32x4iOzqng@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Mon, Mar 01, 2021 at 12:55:53PM -0800, Dan Williams wrote:
+> On Sun, Feb 28, 2021 at 2:39 PM Dave Chinner <david@fromorbit.com> wrote:
+> >
+> > On Sat, Feb 27, 2021 at 03:40:24PM -0800, Dan Williams wrote:
+> > > On Sat, Feb 27, 2021 at 2:36 PM Dave Chinner <david@fromorbit.com> wrote:
+> > > > On Fri, Feb 26, 2021 at 02:41:34PM -0800, Dan Williams wrote:
+> > > > > On Fri, Feb 26, 2021 at 1:28 PM Dave Chinner <david@fromorbit.com> wrote:
+> > > > > > On Fri, Feb 26, 2021 at 12:59:53PM -0800, Dan Williams wrote:
+> > > > it points to, check if it points to the PMEM that is being removed,
+> > > > grab the page it points to, map that to the relevant struct page,
+> > > > run collect_procs() on that page, then kill the user processes that
+> > > > map that page.
+> > > >
+> > > > So why can't we walk the ptescheck the physical pages that they
+> > > > map to and if they map to a pmem page we go poison that
+> > > > page and that kills any user process that maps it.
+> > > >
+> > > > i.e. I can't see how unexpected pmem device unplug is any different
+> > > > to an MCE delivering a hwpoison event to a DAX mapped page.
+> > >
+> > > I guess the tradeoff is walking a long list of inodes vs walking a
+> > > large array of pages.
+> >
+> > Not really. You're assuming all a filesystem has to do is invalidate
+> > everything if a device goes away, and that's not true. Finding if an
+> > inode has a mapping that spans a specific device in a multi-device
+> > filesystem can be a lot more complex than that. Just walking inodes
+> > is easy - determining whihc inodes need invalidation is the hard
+> > part.
+> 
+> That inode-to-device level of specificity is not needed for the same
+> reason that drop_caches does not need to be specific. If the wrong
+> page is unmapped a re-fault will bring it back, and re-fault will fail
+> for the pages that are successfully removed.
+> 
+> > That's where ->corrupt_range() comes in - the filesystem is already
+> > set up to do reverse mapping from physical range to inode(s)
+> > offsets...
+> 
+> Sure, but what is the need to get to that level of specificity with
+> the filesystem for something that should rarely happen in the course
+> of normal operation outside of a mistake?
 
+I can't tell if we're conflating the "a bunch of your pmem went bad"
+case with the "all your dimms fell out of the machine" case.
 
-On 2021/3/2 =E4=B8=8A=E5=8D=881:24, Christian V=C3=B6lker wrote:
-> Hi,
->
-> just a little update on the issue.
->
-> As soon as I omit the encryption part I can easily add the device to the
-> btrfs filesystem. It does not matter if the crypted device is on top of
-> DRBD or directly on the /dev/sdc. In both cases btrs refuses to add the
-> device when a luks-encrypted device is on top.
->
-> In case I am swapping my setup (drbd on top of encryption) and add the
-> drbd device to btrfs it works without any issues.
->
-> However, I prefer the other way round- and as the other two btrfs
-> devices are both encryption on top of drbd it should work...
->
-> It appears it does not like to add a third device-mapper device...
->
-> Let me know how I can help in debugging. If i have some time I will
-> setup a machine trying to reproduce this.
+If, say, a single cacheline's worth of pmem goes bad on a node with 2TB
+of pmem, I certainly want that level of specificity.  Just notify the
+users of the dead piece, don't flush the whole machine down the drain.
 
-Got the problem reproduced here.
+> > > There's likely always more pages than inodes, but perhaps it's more
+> > > efficient to walk the 'struct page' array than sb->s_inodes?
+> >
+> > I really don't see you seem to be telling us that invalidation is an
+> > either/or choice. There's more ways to convert physical block
+> > address -> inode file offset and mapping index than brute force
+> > inode cache walks....
+> 
+> Yes, but I was trying to map it to an existing mechanism and the
+> internals of drop_pagecache_sb() are, in coarse terms, close to what
+> needs to happen here.
 
-And surprisingly, it's something related to btrfs-progs, not the kernel.
+Yes.  XFS (with rmap enabled) can do all the iteration and walking in
+that function except for the invalidate_mapping_* call itself.  The goal
+of this series is first to wire up a callback within both the block and
+pmem subsystems so that they can take notifications and reverse-map them
+through the storage stack until they reach an fs superblock.
 
-I just added one debug info in btrfs-progs, it shows:
+Once the information has reached XFS, it can use its own reverse
+mappings to figure out which pages of which inodes are now targetted.
+The future of DAX hw error handling can be that you throw the spitwad at
+us, and it's our problem to distill that into mm invalidation calls.
+XFS' reverse mapping data is indexed by storage location and isn't
+sharded by address_space, so (except for the DIMMs falling out), we
+don't need to walk the entire inode list or scan the entire mapping.
 
-$ sudo ./btrfs dev add /dev/test/scratch2  /mnt/btrfs
-cmd_device_add: path=3Ddm-5
-ERROR: error adding device 'dm-5': No such file or directory
+Between XFS and DAX and mm, the mm already has the invalidation calls,
+xfs already has the distiller, and so all we need is that first bit.
+The current mm code doesn't fully solve the problem, nor does it need
+to, since it handles DRAM errors acceptably* already.
 
-See the problem?
+* Actually, the hwpoison code should _also_ be calling ->corrupted_range
+when DRAM goes bad so that we can detect metadata failures and either
+reload the buffer or (if it was dirty) shut down.
 
-The path which should be passed to kernel lacks the "/dev/test/" prefix,
-thus it's not pointing to correct path and cause the ENOENT error, since
-there is no "dm-5" in current path.
+> >
+> > .....
+> >
+> > > > IOWs, what needs to happen at this point is very filesystem
+> > > > specific. Assuming that "device unplug == filesystem dead" is not
+> > > > correct, nor is specifying a generic action that assumes the
+> > > > filesystem is dead because a device it is using went away.
+> > >
+> > > Ok, I think I set this discussion in the wrong direction implying any
+> > > mapping of this action to a "filesystem dead" event. It's just a "zap
+> > > all ptes" event and upper layers recover from there.
+> >
+> > Yes, that's exactly what ->corrupt_range() is intended for. It
+> > allows the filesystem to lock out access to the bad range
+> > and then recover the data. Or metadata, if that's where the bad
+> > range lands. If that recovery fails, it can then report a data
+> > loss/filesystem shutdown event to userspace and kill user procs that
+> > span the bad range...
+> >
+> > FWIW, is this notification going to occur before or after the device
+> > has been physically unplugged?
+> 
+> Before. This will be operations that happen in the pmem driver
+> ->remove() callback.
+> 
+> > i.e. what do we do about the
+> > time-of-unplug-to-time-of-invalidation window where userspace can
+> > still attempt to access the missing pmem though the
+> > not-yet-invalidated ptes? It may not be likely that people just yank
+> > pmem nvdimms out of machines, but with NVMe persistent memory
+> > spaces, there's every chance that someone pulls the wrong device...
+> 
+> The physical removal aspect is only theoretical today. While the pmem
+> driver has a ->remove() path that's purely a software unbind
+> operation. That said the vulnerability window today is if a process
+> acquires a dax mapping, the pmem device hosting that filesystem goes
+> through an unbind / bind cycle, and then a new filesystem is created /
+> mounted. That old pte may be able to access data that is outside its
+> intended protection domain.
+> 
+> Going forward, for buses like CXL, there will be a managed physical
+> remove operation via PCIE native hotplug. The flow there is that the
+> PCIE hotplug driver will notify the OS of a pending removal, trigger
+> ->remove() on the pmem driver, and then notify the technician (slot
+> status LED) that the card is safe to pull.
 
-Thankfully it's already fixed in devel branch with commit 2347b34af4d8
-("btrfs-progs: fix device mapper path canonicalization").
+Well, that's a relief.  Can we cancel longterm RDMA leases now too?
+<duck>
 
-The offending patch is 922eaa7b5472 ("btrfs-progs: build: fix linking
-with static libmount"), which is in v5.10.1.
-
-You can revert back to v5.10 to workaroud it.
-
-
-TO David,
-
-Would you consider to add a new v5.10.2 to fix the problem? As it seems
-to affect the end user quite badly.
-
-Thanks,
-Qu
->
-> any ideas otherwise? Let me know!
->
-> Thanks!
->
-> /KNEBB
->
+--D

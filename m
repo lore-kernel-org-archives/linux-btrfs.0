@@ -2,296 +2,251 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3AD8C46461
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1DBF3C28D14
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7072D64EC0
+	by mail.kernel.org (Postfix) with ESMTP id F3E8864E76
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242181AbhCCB6O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 20:58:14 -0500
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:56517 "EHLO
-        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379933AbhCBK3L (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 05:29:11 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1614682032; x=1646218032;
-  h=from:to:subject:date:message-id:
-   content-transfer-encoding:mime-version;
-  bh=oP97R3KibnlnG+/nuk2X0Hz+DqD1WsEEdErTssm2LrA=;
-  b=owk4clOId3ekMQlEF1YCCCsWpVCYMjDMDCaLrbkYzITLNY4Dz/xPCbUk
-   1FeMIlO2dXKbA8tVkCuOtRcjV8cU51cQCXMqFo86thbLbQSP8jFpEVPP2
-   MwGb66yeqdxXI82JOcyMftC8NeAQkQHLETTbyCi5BWl+mbtlguhMivAit
-   P7PlHF75fVw0J0dwcE2npiSYZ2QD81RcBenaOdpMC0q7IkGKkAZj8N3lg
-   E87V1NXKMUldzWagyWsX6QdUnq5WcSBdejz0fh3l9u56Oydm4564M+mAq
-   f24FnZccdyvtbMGm87s5Sft4dSL2sBJ6IdfRRfIbP8twpgO/G5AAkj/db
-   Q==;
-IronPort-SDR: 7Y9ug100r99JITZyd5CIedviJJ/ERifdxLQNNhcl7a6s/1Lhw1XNThT7uSn4zu1S5hYWxocYZd
- R/lTABREMfJRycWGzY9pfUcu4HdpmZ238pfsL7Ige3d3UUShl/VlymPegfSZQi3cWoibKA42FK
- hYXjSkVMxNB6O20lQkd6ufuR0gnOb5l6r56elmjzyi2zb4STcdCob4s5I8osSQwYsau/qaLI8a
- sJJMJPR6jnDYL/hcAaJeiWme76GiEQT7rydxRHVpM8QxsFwdnsRGpTi0s/vx1Z4x9BiQNxkkcV
- vPA=
-X-IronPort-AV: E=Sophos;i="5.81,216,1610380800"; 
-   d="scan'208";a="265428581"
-Received: from mail-bn7nam10lp2102.outbound.protection.outlook.com (HELO NAM10-BN7-obe.outbound.protection.outlook.com) ([104.47.70.102])
-  by ob1.hgst.iphmx.com with ESMTP; 02 Mar 2021 18:44:54 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=JcmmEOL4ai50Ew9TNtCuNLSmQ/ook5zFKJ/voNOhy2fYPnbIT+eIgoBv2+d51iw00AGKdXIuacPbVxUq0kkO9JFRVvR5Pwpo08es0URWYZvwUp3aQtXEJc/4C4WS0cAqc4mp5lqfU1CwLEiiDnB5XdvYQh7rbhO065aMEgqEoyMO7dT3tUOWUZc9YyzB9tetX3kqmfkN+a7vGpPzL4c5HelOjr4s5YQe3u2q+Vjw9r5kj3Uqam6UYBlxuG5l9d8BcmwNxwIcF789GGpj+QBdIHwtZ/lj5vwl1yN/YBFR8qvl2A0t2r0IEG8P9Kn46+dnVCbLMuQlTxn8zWaSXu3cyA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=wVjArujLuPX1+isnXStz5MVfezueis4DmcWtZtzyfWE=;
- b=ThFc8E1o5krLHWKKuYjQ2+ZZgTvQkQx/5lsM9/OjhiqI2aqmNK+0ynFj0zW0Xs3eDiBilgBEpJlLX1SMqgs56UtFbVLq5jhfizOfbEOPv76P1xMUoH06HQKWlfFGz8JuGf2PaNA1Qx53aAN4rdVxEQTPr9xsrjB/iCjFjEA6cIAU76DrSW0L0sE3r3ecioZG2vFVgoEIrArIi6wyxWd08FZPfivqiR7x3duG03mOwGBP+LjtOa/gwRSG7npVHMWtAQtkfwsD0RBWFCz9Ko6W1EoJbkpVzZAJ8ZBAfX1l+sN1MUDuVMOP5NigAdOSv/UQDXx++XXWEu+KU7bjtFofEQ==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+        id S243461AbhCCB6e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 20:58:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36882 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1839537AbhCBQhX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 11:37:23 -0500
+Received: from mail-qk1-x72b.google.com (mail-qk1-x72b.google.com [IPv6:2607:f8b0:4864:20::72b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5420C0611BE
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Mar 2021 08:24:31 -0800 (PST)
+Received: by mail-qk1-x72b.google.com with SMTP id d20so19798613qkc.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Mar 2021 08:24:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=wVjArujLuPX1+isnXStz5MVfezueis4DmcWtZtzyfWE=;
- b=M0v+X/IeRQubSpOXnELsdrSYG1MUAfnJn/zghMA/uwpDcjMqThlHX104PNCrbvQ2KyEDY3HDwlpdZRZy3Frwgv1WhFa44bPWpXfGvRAUCvgDO897c6+eMAFDu70DwBYPMhZtgnXwOFG5b/nvvHC0tgpexZldUJkOfZuw0ZiYoPU=
-Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
- by PH0PR04MB7397.namprd04.prod.outlook.com (2603:10b6:510:1d::19) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3890.20; Tue, 2 Mar
- 2021 10:27:28 +0000
-Received: from PH0PR04MB7416.namprd04.prod.outlook.com
- ([fe80::3c7d:5381:1232:e725]) by PH0PR04MB7416.namprd04.prod.outlook.com
- ([fe80::3c7d:5381:1232:e725%7]) with mapi id 15.20.3890.028; Tue, 2 Mar 2021
- 10:27:28 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>
-Subject: BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
-Thread-Topic: BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
-Thread-Index: AQHXD06lWpni3H/DnUiny8ST2cCO2g==
-Date:   Tue, 2 Mar 2021 10:27:28 +0000
-Message-ID: <PH0PR04MB74169B4B92CC269611F54BF09B999@PH0PR04MB7416.namprd04.prod.outlook.com>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: vger.kernel.org; dkim=none (message not signed)
- header.d=none;vger.kernel.org; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [2001:a62:1542:e101:cf6:7682:fb45:6590]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-ht: Tenant
-x-ms-office365-filtering-correlation-id: 4ec908c4-9c32-454b-699e-08d8dd65c7f4
-x-ms-traffictypediagnostic: PH0PR04MB7397:
-x-microsoft-antispam-prvs: <PH0PR04MB73977B4F44DEAE360C0CF2C29B999@PH0PR04MB7397.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:3173;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: bGoPVbf8EA2xLQZJlW8qAsiDmlIpB8GAN7smhHd1xxn9RioASOsNNhPdFXzgJUhc7xSjXXoh+WVnG1UQNm3lNTN8P9xhlq1wTu02/STmK715BBcNL0v1JHzhHZp9Qqcw6oIy06bMxGNYRqgfJ5UIuhQTsIKQpDupPhsA3Q7NvvUdXb26JB+6xxFhntXinyon8+KVynBMGWoLOgL5gSBFmlpavgfZcZ4hGulVXp5ujWXxsu0V4Dqfibw4B+YdeZssH72C7S41w2ks/S2k/ZLcme2qGique6TfMwTuR6biMa1nUPNdEBDvdxZa/RCdj2GnTAlfiHjbAFYUA59YbCpf2EfwH0e1hnMQIe79CVgCLBZ00G/zOlT504MXZDhBYhmeE7MrdazZ4SQhx37nRVyYd+Z8RqVXyDMuMF4v5TQZpWr88hnVZYJXitb4RL11uKyxEZW4hhqzItlaLQ8qamDMsV/tJiRK3eF5bfsW9U1RGQsURJ1hE6N2e+e+PPsW5PPNr5m3YMBS6BhiU19UZtKoTQ==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(136003)(366004)(39860400002)(346002)(376002)(396003)(66946007)(9686003)(5660300002)(64756008)(33656002)(316002)(52536014)(6916009)(2906002)(86362001)(83380400001)(91956017)(478600001)(186003)(71200400001)(66476007)(7696005)(8676002)(8936002)(6506007)(66556008)(76116006)(66446008)(7116003)(55016002);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: =?us-ascii?Q?mltaRpGW9bGwq9upE6hyrdpZn0QcunFWFAscVVjTCrArpgg07jY82hYFrx4/?=
- =?us-ascii?Q?o5p0k65ihXDP4osnv3SUdEzHx9MdMbljGZUNn0eQInb98tZhE9q16roAogOq?=
- =?us-ascii?Q?LHgNolWAkOvT64r5ryJtkutJO/Min7/OyNjXGJKf65aS9nH8Ic8W5hd7si0J?=
- =?us-ascii?Q?ZFwU61QO5Gm7r2UIZOEgexMbSUvwGcX9jBaHlxJC1sRKakW7Za629d/h0RUK?=
- =?us-ascii?Q?wWyCcfiDwqNQVOZwDb2JlK6TBfosa9BoMWu1Gcm8hyAdsBtoEZULUYqxu7tT?=
- =?us-ascii?Q?PSDQmMXM1S5mt03sigtYhignnp0EHJ9tque90iJ/SyPXyCfFdguQvGvkc20i?=
- =?us-ascii?Q?UuCpmBnsHEAaouY79wyKzaXdjKng2HojFirP+sZKl1rwTj5e/3B9i2xg04CN?=
- =?us-ascii?Q?6ypVvVxNfTteurHeuA7RaMrFEBnsL9PNty7wvtnCB7Uhf4aEjFxaGo0kzfhV?=
- =?us-ascii?Q?dhe99TY6QqVjOPd8V2g34NHMh436mhHNCKXF3TcFO3jXYmz/Cix5Z7QfKYjK?=
- =?us-ascii?Q?wgOiDZB6c2tmhFKoyaZW+WqIFCV3vMzyPtpUUhDjvd9KbKiy+bTav8mNBg5G?=
- =?us-ascii?Q?5GZMxbD5lAQb6DyPnDqhT4A48v1z3TCDlGg5lmIY8f6XPDH+NBmHyAanh5MQ?=
- =?us-ascii?Q?DUTXBJXoqERjkvuoTv4CNgvBvINOPoem5YpgWeMkksASzBzxlX/v/VXmoSH7?=
- =?us-ascii?Q?HFL/gPmVqILYeUPF3vyWRZQQa0AD7c/2G/UfSbDsX9SBALduOHIJ4eY2MwzZ?=
- =?us-ascii?Q?QXswwTMc63/4+fy1Y7tSKipSe3Ji29y1eBvIelZREd+ACxUyRMYHhZOxu+N2?=
- =?us-ascii?Q?2E3uoMfCcTQkoGx7hz6OYZgakl56eq9+uXIShfk0rEYvYgbZF78pdYVn3RwE?=
- =?us-ascii?Q?i9dImvhUBF45RzYGOYk68X6RgV/NhUnca98HQS7XyWcR7pO6iCyWh/WsYGeG?=
- =?us-ascii?Q?/iWR56qYnyiQaFlhMZXxu9ngqxkWDEDMEqAKUYdmQLUGrwVcdsgvxOf0KbeF?=
- =?us-ascii?Q?LPfUTnabDtHg3OdHnTySoZfoWJbH2/Y4mW2sfrDqX5zs0tQWiZ/2Ai9YxUDL?=
- =?us-ascii?Q?9f1rWk284QVa2+DWhfKHa7JuL+oK8inLB+UDLcX9szTc9r9nSDKU5oCEMX+E?=
- =?us-ascii?Q?VWBB43nfTDvH7G5tVtHxrwIb4pNanePt1msxcFS+u9rtaR2NP+PdiSlCfmfp?=
- =?us-ascii?Q?YKV1qMEJXj4C7jn3f+1j1B337YLRw1j4fbqz2Y+plt3eZExyHDLtWiFsAWeP?=
- =?us-ascii?Q?Eezb45CnoGKkRgjQszPkheCFGKjXBnqTVM9WOZUAPcvRZ9kxGWieqEhQW3qR?=
- =?us-ascii?Q?L6PUU9R2y4dj6d0okTpV0jg9t0xV6m5qZzAWEH/kRu3WUk5BxeXbr83wLBnU?=
- =?us-ascii?Q?+bhddaRA9axCWcmL3/+SkOVihZl9Fuj670OpuGy2hLCVOwxTjQ=3D=3D?=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=M5QaVIGNAv/U+pdRhzKnDcfyu90+nx2iqEm+SllLj8k=;
+        b=t7I4K313TMBOQpSzfp16//EJt+4mrSl76IwEIj/TVgZMWcpKVuFsUENGtn0/e9WHTa
+         8TtuHRxuLpW9XAbjXYcYlmwMtEY9ZbAb0Bgfnp+7Sv7gmUMFnt7vKoTtfCZy+c/S0Mu+
+         kcNk4Oi3x36jW79aVPx17UOKvwV1P1l6PNEbbOBvmsCZoEFo/DfpgVg3O5zQpcZn00OK
+         OF0hmRsdbcvLvhCpeaA92ks1SYg/jDD15Daooy2Eqciqd+ORc4TXlWYFVJuw85cjTncV
+         Wfe1x0IY8KWKvtF5JBFwDvzowGFWT1cFMGDxZ+MLomN3iKEq6CZkWjlvMV/UuImpSJ37
+         iNdw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=M5QaVIGNAv/U+pdRhzKnDcfyu90+nx2iqEm+SllLj8k=;
+        b=UQZrE8v13oWHtN3XEsI3C8p3Bp5N5Ljw0t07it3k4n0X1n+o3gH4jT/FZHA5oe3cyS
+         zzoBtVW1HoKH5tjpMuYBXStgg7whRsmtoU1BYGnIXmrNZSY1+cZdTlzEejfasLdhb11l
+         IlH490XMTzwS1oeN2ykZjjjPXCqGPg+PIgNgeETfGJnQu0OtkwwiOagW50WWbX4vycHg
+         L92/n+k3J+3FQOFSEeCO3C7PRzk5SRVYvM7EQe1NH4LokSqaF/pE24jzVMfemPwL84nK
+         upNe+klhrVUBNVi5H+oNnHtU4uC7cpavy0UKTGp4g+QWVpHx/efzoE/uURHBRGpJIKd/
+         rBOA==
+X-Gm-Message-State: AOAM532li+NMMFfvPRddHWVeHwsRw0IwI+oG5B8J606U0mfCSG3iwIWf
+        g28Zz8V+u8JsjkHTMwEWm8VGqxPCdiFBUIyRCHrcZPz3yZ8X3w==
+X-Google-Smtp-Source: ABdhPJw1gE/kXoqdI3izfhLfbNCX3YukW9By7+bGFAwzKF140OXIYo4VsM4qOeBvUGB9/6QvSTt+mgNPBYMFHEWdb2Q=
+X-Received: by 2002:a37:a8d3:: with SMTP id r202mr21034550qke.383.1614702270822;
+ Tue, 02 Mar 2021 08:24:30 -0800 (PST)
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 4ec908c4-9c32-454b-699e-08d8dd65c7f4
-X-MS-Exchange-CrossTenant-originalarrivaltime: 02 Mar 2021 10:27:28.7849
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: MyiRhvAY8uTk3Q3C5fVfwjQD8KW1dfli0jEfJDAv9YBmUn0obklHb3S8//pP1EuYXYITpPZLqYXtwjRskISM8nYgKbYC/WjXs7BGiIUwnyY=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7397
+References: <20210227155037.GN28049@hungrycats.org>
+In-Reply-To: <20210227155037.GN28049@hungrycats.org>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Tue, 2 Mar 2021 16:24:19 +0000
+Message-ID: <CAL3q7H6UbqwM+vbxNDpLKq7Ld1+Z1MrQr3v6s21QtSF8Ro+ePw@mail.gmail.com>
+Subject: Re: misc-next a646ddc2bba2: kernel BUG at fs/btrfs/ctree.c:1210! tree
+ mod log
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I've just tripped over this lockdep splat on v5.12-rc1 (Linus' tree not mis=
-c-next),=0A=
-while investigating a different bug report.=0A=
-=0A=
-=0A=
-[ 1250.721882] BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!=0A=
-[ 1250.722641] turning off the locking correctness validator.=0A=
-[ 1250.723486] CPU: 0 PID: 468 Comm: fsstress Not tainted 5.12.0-rc1 #950=
-=0A=
-[ 1250.724483] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS =
-rel-1.14.0-0-g155821a-rebuilt.opensuse.org 04/01/2014=0A=
-[ 1250.726180] Call Trace:=0A=
-[ 1250.726551]  dump_stack+0x6d/0x89=0A=
-[ 1250.727052]  __lock_acquire.cold+0x2dd/0x2e2=0A=
-[ 1250.727676]  lock_acquire+0xab/0x350=0A=
-[ 1250.728204]  ? btrfs_add_delayed_tree_ref+0x1ae/0x4a0 [btrfs]=0A=
-[ 1250.729215]  ? debug_mutex_init+0x33/0x40=0A=
-[ 1250.729822]  _raw_spin_lock+0x2c/0x40=0A=
-[ 1250.730340]  ? btrfs_add_delayed_tree_ref+0x1ae/0x4a0 [btrfs]=0A=
-[ 1250.731208]  btrfs_add_delayed_tree_ref+0x1ae/0x4a0 [btrfs]=0A=
-[ 1250.732047]  ? kmem_cache_alloc+0x17a/0x300=0A=
-[ 1250.732635]  btrfs_alloc_tree_block+0x292/0x320 [btrfs]=0A=
-[ 1250.733417]  alloc_tree_block_no_bg_flush+0x4f/0x60 [btrfs]=0A=
-[ 1250.734253]  __btrfs_cow_block+0x13b/0x5e0 [btrfs]=0A=
-[ 1250.734964]  btrfs_cow_block+0x117/0x240 [btrfs]=0A=
-[ 1250.735662]  btrfs_search_slot+0x688/0xc60 [btrfs]=0A=
-[ 1250.736378]  ? mark_held_locks+0x49/0x70=0A=
-[ 1250.736927]  btrfs_insert_empty_items+0x58/0xa0 [btrfs]=0A=
-[ 1250.737706]  btrfs_insert_file_extent+0x8d/0x1c0 [btrfs]=0A=
-[ 1250.738494]  btrfs_cont_expand+0x359/0x4c0 [btrfs]=0A=
-[ 1250.739226]  btrfs_setattr+0x380/0x660 [btrfs]=0A=
-[ 1250.739900]  ? ktime_get_coarse_real_ts64+0xcb/0xe0=0A=
-[ 1250.740578]  ? current_time+0x1b/0xd0=0A=
-[ 1250.741088]  notify_change+0x27b/0x490=0A=
-[ 1250.741613]  ? do_truncate+0x6d/0xb0=0A=
-[ 1250.742122]  do_truncate+0x6d/0xb0=0A=
-[ 1250.742604]  vfs_truncate+0x108/0x140=0A=
-[ 1250.743122]  do_sys_truncate.part.0+0x6a/0x80=0A=
-[ 1250.743738]  do_syscall_64+0x33/0x40=0A=
-[ 1250.744250]  entry_SYSCALL_64_after_hwframe+0x44/0xae=0A=
-[ 1250.744946] RIP: 0033:0x7f38d7819b8b=0A=
-[ 1250.745453] Code: 48 8b 4c 24 28 64 48 2b 0c 25 28 00 00 00 75 05 48 83 =
-c4 38 c3 e8 c5 69 01 00 0f 1f 44 00 00 f3 0f 1e fa b8 4c 00 00 00 0f 05 <48=
-> 3d 00 f0 ff ff 77 05 c3 0f 1f 40 00 48 8b 15 b1 92 0c 00 f7 d8=0A=
-[ 1250.748044] RSP: 002b:00007ffdf2983ed8 EFLAGS: 00000202 ORIG_RAX: 000000=
-000000004c=0A=
-[ 1250.749096] RAX: ffffffffffffffda RBX: 00007ffdf2984030 RCX: 00007f38d78=
-19b8b=0A=
-[ 1250.750081] RDX: 00000000001b92a2 RSI: 00000000001b92a2 RDI: 0000000000b=
-db380=0A=
-[ 1250.751061] RBP: 00000000001b92a2 R08: 0000000000000029 R09: 00007ffdf29=
-8402c=0A=
-[ 1250.752052] R10: 0000000000000002 R11: 0000000000000202 R12: 00000000000=
-00010=0A=
-[ 1250.753040] R13: 00000000001b92a2 R14: 0000000000000000 R15: 00000000000=
-00001=0A=
-[ 1260.719289] BTRFS info (device md0): scrub: started on devid 1=0A=
-[ 1262.030768] BTRFS info (device md0): scrub: finished on devid 1 with sta=
-tus: 0=0A=
-=0A=
-To trigger the bug I did several (4-5 I think) runs of this script:=0A=
-=0A=
-rapido1:/home/johannes/src/xfstests-dev# cat test.sh =0A=
-#!/bin/sh=0A=
-=0A=
-SCRATCH_DIR=3D/mnt/scratch=0A=
-=0A=
-echo "running fsstress"=0A=
-./ltp/fsstress -w -f unlink=3D1 -f rmdir=3D1 -f symlink=3D1 -f sync=3D1 -f =
-link=3D1 \=0A=
-        -f rename=3D1 -f fdatasync=3D1 -f removefattr=3D1 -f fsync=3D1 -f s=
-etfattr=3D1 \=0A=
-        -f setxattr=3D1 -f unresvsp=3D1 -f mkdir=3D1 -f mknod=3D1 -f chown=
-=3D1 -f fiemap=3D1 \=0A=
-        -f freesp=3D1 -f snapshot=3D1 -f rnoreplace=3D1 -f rexchange=3D1 -f=
- rwhiteout=3D1 \=0A=
-        -f allocsp=3D1 -f subvol_create=3D1 -f subvol_delete=3D1 -f awrite=
-=3D1 \=0A=
-        -f writev=3D1 -f write=3D1 -f splice=3D1 -f mread=3D1 -f deduperang=
-e=3D1 \=0A=
-        -f mwrite=3D1 -f dwrite=3D1 -f clonerange=3D1 -f copyrange=3D1 -f t=
-runcate=3D1 \=0A=
-        -f fallocate=3D1 -f punch=3D1 -f zero=3D1 -f collapse=3D1 -f insert=
-=3D1 -p 30 \=0A=
-        -n 1000 -S t -d $SCRATCH_DIR=0A=
-=0A=
-echo "scrubbing"=0A=
-btrfs scrub start -Bd $SCRATCH_DIR || exit 1=0A=
-=0A=
-echo "cleaning up"=0A=
-rm -rf $SCRATCH_DIR/*=0A=
-=0A=
-=0A=
-$SCRATCH_DIR is mounted on top of a md-raid1 array: =0A=
-=0A=
-rapido1:/home/johannes/src/xfstests-dev# mdadm --detail /dev/md0=0A=
-/dev/md0:=0A=
-           Version : 1.2=0A=
-     Creation Time : Tue Mar  2 09:38:17 2021=0A=
-        Raid Level : raid1=0A=
-        Array Size : 3142656 (3.00 GiB 3.22 GB)=0A=
-     Used Dev Size : 3142656 (3.00 GiB 3.22 GB)=0A=
-      Raid Devices : 4=0A=
-     Total Devices : 4=0A=
-       Persistence : Superblock is persistent=0A=
-=0A=
-       Update Time : Tue Mar  2 09:58:57 2021=0A=
-             State : clean =0A=
-    Active Devices : 4=0A=
-   Working Devices : 4=0A=
-    Failed Devices : 0=0A=
-     Spare Devices : 0=0A=
-=0A=
-Consistency Policy : resync=0A=
-=0A=
-              Name : rapido1:0  (local to host rapido1)=0A=
-              UUID : 10a4866b:6da1ccdc:e069e6da:79196fb1=0A=
-            Events : 19=0A=
-=0A=
-    Number   Major   Minor   RaidDevice State=0A=
-       0     251        1        0      active sync   /dev/zram1=0A=
-       1     251        4        1      active sync   /dev/zram4=0A=
-       2     251        2        2      active sync   /dev/zram2=0A=
-       3     251        3        3      active sync   /dev/zram3=0A=
-=0A=
-=0A=
-=0A=
-johannes@redsun60:linux(master)$ ./scripts/faddr2line fs/btrfs/btrfs.ko btr=
-fs_add_delayed_tree_ref+0x1ae=0A=
-btrfs_add_delayed_tree_ref+0x1ae/0x4a0:=0A=
-btrfs_add_delayed_tree_ref at /home/johannes/src/linux/fs/btrfs/delayed-ref=
-.c:999=0A=
-johannes@redsun60:linux(master)$ cat -n fs/btrfs/delayed-ref.c | grep -C 10=
- 999=0A=
-   989                                is_system);=0A=
-   990          head_ref->extent_op =3D extent_op;=0A=
-   991=0A=
-   992          delayed_refs =3D &trans->transaction->delayed_refs;=0A=
-   993          spin_lock(&delayed_refs->lock);=0A=
-   994=0A=
-   995          /*=0A=
-   996           * insert both the head node and the new ref without droppi=
-ng=0A=
-   997           * the spin lock=0A=
-   998           */=0A=
-   999          head_ref =3D add_delayed_ref_head(trans, head_ref, record,=
-=0A=
-  1000                                          action, &qrecord_inserted);=
-=0A=
-  1001=0A=
-  1002          ret =3D insert_delayed_ref(trans, delayed_refs, head_ref, &=
-ref->node);=0A=
-  1003          spin_unlock(&delayed_refs->lock);=0A=
-  1004=0A=
-  1005          /*=0A=
-  1006           * Need to update the delayed_refs_rsv with any changes we =
-may have=0A=
-  1007           * made.=0A=
-  1008           */=0A=
-  1009          btrfs_update_delayed_refs_rsv(trans);=0A=
-=0A=
-Has anyone seen this before?=0A=
+On Sat, Feb 27, 2021 at 3:53 PM Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote:
+>
+> Hit this twice so far, while running the usual
+> balance/dedupe/rsync/snapshots/all at once on:
+>
+>         a646ddc2bba2 (kdave-gitlab/misc-next) btrfs: unlock extents in bt=
+rfs_zero_range in case of quota reservation errors
+>
+> Looks like tree mod log bugs are back (or never went away?).
+
+Different bugs causing similar problems.
+
+Try this:   https://pastebin.com/VkesNs4R
+
+Thanks.
+
+>
+>         [40422.398920][T28995] BTRFS info (device dm-0): balance: cancele=
+d
+>         [40607.394003][T11577] BTRFS info (device dm-0): balance: start -=
+dlimit=3D9
+>         [40607.398597][T11577] BTRFS info (device dm-0): relocating block=
+ group 315676950528 flags data
+>         [40643.279661][T11577] BTRFS info (device dm-0): found 12686 exte=
+nts, loops 1, stage: move data extents
+>         [40692.752695][T11577] BTRFS info (device dm-0): found 12686 exte=
+nts, loops 2, stage: update data pointers
+>         [40704.860522][T11577] BTRFS info (device dm-0): relocating block=
+ group 314603208704 flags data
+>         [40704.919977][T19054] ------------[ cut here ]------------
+>         [40704.921895][T19054] kernel BUG at fs/btrfs/ctree.c:1210!
+>         [40704.923497][T19054] invalid opcode: 0000 [#1] SMP KASAN PTI
+>         [40704.925549][T19054] CPU: 1 PID: 19054 Comm: crawl_335 Tainted:=
+ G        W         5.11.0-2d11c0084b02-misc-next+ #89
+>         [40704.929192][T19054] Hardware name: QEMU Standard PC (i440FX + =
+PIIX, 1996), BIOS 1.12.0-1 04/01/2014
+>         [40704.931640][T19054] RIP: 0010:__tree_mod_log_rewind+0x3b1/0x3c=
+0
+>         [40704.933301][T19054] Code: 05 48 8d 74 10 65 ba 19 00 00 00 e8 =
+89 f3 06 00 e9 a7 fd ff ff 4c 8d 7b 2c 4c 89 ff e8 f8 bd c8 ff 48 63 43 2c =
+e9 a2 fe ff ff <0f> 0b 0f 0b 66 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 0=
+0 55 48
+>         [40704.938566][T19054] RSP: 0018:ffffc90001eb70b8 EFLAGS: 0001029=
+7
+>         [40704.940483][T19054] RAX: 0000000000000000 RBX: ffff88812344e40=
+0 RCX: ffffffffb28933b6
+>         [40704.942668][T19054] RDX: 0000000000000007 RSI: dffffc000000000=
+0 RDI: ffff88812344e42c
+>         [40704.945002][T19054] RBP: ffffc90001eb7108 R08: 1ffff11020b60a2=
+0 R09: ffffed1020b60a20
+>         [40704.948513][T19054] R10: ffff888105b050f9 R11: ffffed1020b60a1=
+f R12: 00000000000000ee
+>         [40704.951601][T19054] R13: ffff8880195520c0 R14: ffff8881bc95850=
+0 R15: ffff88812344e42c
+>         [40704.954607][T19054] FS:  00007fd1955e8700(0000) GS:ffff8881f56=
+00000(0000) knlGS:0000000000000000
+>         [40704.957704][T19054] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008=
+0050033
+>         [40704.960125][T19054] CR2: 00007efdb7928718 CR3: 000000010103a00=
+6 CR4: 0000000000170ee0
+>         [40704.963186][T19054] Call Trace:
+>         [40704.964229][T19054]  btrfs_search_old_slot+0x265/0x10d0
+>         [40704.967068][T19054]  ? lock_acquired+0xbb/0x600
+>         [40704.969148][T19054]  ? btrfs_search_slot+0x1090/0x1090
+>         [40704.971106][T19054]  ? free_extent_buffer.part.61+0xd7/0x140
+>         [40704.973020][T19054]  ? free_extent_buffer+0x13/0x20
+>         [40704.974537][T19054]  resolve_indirect_refs+0x3e9/0xfc0
+>         [40704.976154][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40704.977602][T19054]  ? __kasan_check_read+0x11/0x20
+>         [40704.980765][T19054]  ? add_prelim_ref.part.11+0x150/0x150
+>         [40704.983136][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40704.985206][T19054]  ? __kasan_check_read+0x11/0x20
+>         [40704.987403][T19054]  ? lock_acquired+0xbb/0x600
+>         [40704.989309][T19054]  ? __kasan_check_write+0x14/0x20
+>         [40704.991385][T19054]  ? do_raw_spin_unlock+0xa8/0x140
+>         [40704.993454][T19054]  ? rb_insert_color+0x30/0x360
+>         [40704.995402][T19054]  ? prelim_ref_insert+0x12d/0x430
+>         [40704.997247][T19054]  find_parent_nodes+0x5c3/0x1830
+>         [40704.999305][T19054]  ? resolve_indirect_refs+0xfc0/0xfc0
+>         [40705.000951][T19054]  ? lock_release+0xc8/0x620
+>         [40705.002748][T19054]  ? fs_reclaim_acquire+0x67/0xf0
+>         [40705.004753][T19054]  ? lock_acquire+0xc7/0x510
+>         [40705.006233][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40705.007683][T19054]  ? lockdep_hardirqs_on_prepare+0x160/0x210
+>         [40705.009677][T19054]  ? lock_release+0xc8/0x620
+>         [40705.011405][T19054]  ? fs_reclaim_acquire+0x67/0xf0
+>         [40705.012937][T19054]  ? lock_acquire+0xc7/0x510
+>         [40705.014293][T19054]  ? poison_range+0x38/0x40
+>         [40705.015635][T19054]  ? unpoison_range+0x14/0x40
+>         [40705.017166][T19054]  ? trace_hardirqs_on+0x55/0x120
+>         [40705.018827][T19054]  btrfs_find_all_roots_safe+0x142/0x1e0
+>         [40705.020610][T19054]  ? find_parent_nodes+0x1830/0x1830
+>         [40705.022573][T19054]  ? btrfs_inode_flags_to_xflags+0x50/0x50
+>         [40705.024743][T19054]  iterate_extent_inodes+0x20e/0x580
+>         [40705.026839][T19054]  ? tree_backref_for_extent+0x230/0x230
+>         [40705.029021][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40705.030432][T19054]  ? read_extent_buffer+0xdd/0x110
+>         [40705.031909][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40705.033274][T19054]  ? __kasan_check_read+0x11/0x20
+>         [40705.034782][T19054]  ? lock_acquired+0xbb/0x600
+>         [40705.036234][T19054]  ? __kasan_check_write+0x14/0x20
+>         [40705.037670][T19054]  ? _raw_spin_unlock+0x22/0x30
+>         [40705.039014][T19054]  ? __kasan_check_write+0x14/0x20
+>         [40705.040419][T19054]  iterate_inodes_from_logical+0x129/0x170
+>         [40705.044668][T19054]  ? iterate_inodes_from_logical+0x129/0x170
+>         [40705.047340][T19054]  ? btrfs_inode_flags_to_xflags+0x50/0x50
+>         [40705.049936][T19054]  ? iterate_extent_inodes+0x580/0x580
+>         [40705.051938][T19054]  ? __vmalloc_node+0x92/0xb0
+>         [40705.053270][T19054]  ? init_data_container+0x34/0xb0
+>         [40705.054903][T19054]  ? init_data_container+0x34/0xb0
+>         [40705.056876][T19054]  ? kvmalloc_node+0x60/0x80
+>         [40705.058372][T19054]  btrfs_ioctl_logical_to_ino+0x158/0x230
+>         [40705.060233][T19054]  btrfs_ioctl+0x205e/0x4040
+>         [40705.061465][T19054]  ? __might_sleep+0x71/0xe0
+>         [40705.063108][T19054]  ? btrfs_ioctl_get_supported_features+0x30=
+/0x30
+>         [40705.065188][T19054]  ? getrusage+0x4b6/0x9c0
+>         [40705.066678][T19054]  ? __kasan_check_read+0x11/0x20
+>         [40705.071937][T19054]  ? lock_release+0xc8/0x620
+>         [40705.075584][T19054]  ? __might_fault+0x64/0xd0
+>         [40705.084175][T19054]  ? lock_acquire+0xc7/0x510
+>         [40705.091566][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40705.095180][T19054]  ? lockdep_hardirqs_on_prepare+0x210/0x210
+>         [40705.099880][T19054]  ? lockdep_hardirqs_on_prepare+0x210/0x210
+>         [40705.101645][T19054]  ? __kasan_check_read+0x11/0x20
+>         [40705.103977][T19054]  ? do_vfs_ioctl+0xfc/0x9d0
+>         [40705.105936][T19054]  ? ioctl_file_clone+0xe0/0xe0
+>         [40705.107658][T19054]  ? lock_downgrade+0x3d0/0x3d0
+>         [40705.109423][T19054]  ? lockdep_hardirqs_on_prepare+0x210/0x210
+>         [40705.119233][T19054]  ? __kasan_check_read+0x11/0x20
+>         [40705.123581][T19054]  ? lock_release+0xc8/0x620
+>         [40705.125226][T19054]  ? __task_pid_nr_ns+0xd3/0x250
+>         [40705.126984][T19054]  ? lock_acquire+0xc7/0x510
+>         [40705.128678][T19054]  ? __fget_files+0x160/0x230
+>         [40705.130365][T19054]  ? __fget_light+0xf2/0x110
+>         [40705.131959][T19054]  __x64_sys_ioctl+0xc3/0x100
+>         [40705.133637][T19054]  do_syscall_64+0x37/0x80
+>         [40705.138627][T19054]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+>         [40705.140552][T19054] RIP: 0033:0x7fd1976e2427
+>         [40705.142005][T19054] Code: 00 00 90 48 8b 05 69 aa 0c 00 64 c7 =
+00 26 00 00 00 48 c7 c0 ff ff ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 b8 10 =
+00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 39 aa 0c 00 f7 d8 64 8=
+9 01 48
+>         [40705.148519][T19054] RSP: 002b:00007fd1955e5cf8 EFLAGS: 0000024=
+6 ORIG_RAX: 0000000000000010
+>         [40705.151247][T19054] RAX: ffffffffffffffda RBX: 00007fd1955e5f4=
+0 RCX: 00007fd1976e2427
+>         [40705.153903][T19054] RDX: 00007fd1955e5f48 RSI: 00000000c038943=
+b RDI: 0000000000000004
+>         [40705.156554][T19054] RBP: 0000000001000000 R08: 000000000000000=
+0 R09: 00007fd1955e6120
+>         [40705.159228][T19054] R10: 0000557835366b00 R11: 000000000000024=
+6 R12: 0000000000000004
+>         [40705.161902][T19054] R13: 00007fd1955e5f48 R14: 00007fd1955e5f4=
+0 R15: 00007fd1955e5ef8
+>         [40705.164567][T19054] Modules linked in:
+>         [40705.165991][T19054] ---[ end trace ec8931a1c36e57be ]---
+>
+>         (gdb) l *(__tree_mod_log_rewind+0x3b1)
+>         0xffffffff81893521 is in __tree_mod_log_rewind (fs/btrfs/ctree.c:=
+1210).
+>         1205                     * the modification. as we're going backw=
+ards, we do the
+>         1206                     * opposite of each operation here.
+>         1207                     */
+>         1208                    switch (tm->op) {
+>         1209                    case MOD_LOG_KEY_REMOVE_WHILE_FREEING:
+>         1210                            BUG_ON(tm->slot < n);
+>         1211                            fallthrough;
+>         1212                    case MOD_LOG_KEY_REMOVE_WHILE_MOVING:
+>         1213                    case MOD_LOG_KEY_REMOVE:
+>         1214                            btrfs_set_node_key(eb, &tm->key, =
+tm->slot);
+
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

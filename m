@@ -2,90 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E50FDC433E9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 506AAC28E82
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9377564E76
+	by mail.kernel.org (Postfix) with ESMTP id 2D90364E6F
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243553AbhCCB6m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 20:58:42 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39872 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1835353AbhCBTDM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 14:03:12 -0500
-Received: from mail-qk1-x72c.google.com (mail-qk1-x72c.google.com [IPv6:2607:f8b0:4864:20::72c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23710C061225
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Mar 2021 11:01:26 -0800 (PST)
-Received: by mail-qk1-x72c.google.com with SMTP id g185so2091196qkf.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Mar 2021 11:01:26 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=p2qCytR6zRNKiZWuYiRHR+WxxWR1vAMBzRaW1PCDw0E=;
-        b=GeZjJQCxwgeIW4amlv5BU7igYRcwtmz+N1n+FZqQMDeaVdsf18eCOg+umC27V4rFp1
-         2jdNQVwm21LQS5ideeWKHPPB14s85bzo1Ian5VhtqbGWS5xcz5OrTpyLMCunxfs+xYQW
-         gkYb7YyyZgDwCrYmoZ/iKYudm+Krv2OdAfALDPgsfW0X5zrFm9yw4u0mh9QmbpuwY56o
-         NX1k+NyxopdgU96kLxFzbJ3BuN0shn2hMCeiwXILt7hFj1kKT3KGUhDpKOoLYovGKJxV
-         PjDEhWD9gvjpWEuFJEA2RiXxMkSiDZcMzewSRNL8ZjBrVI5vyKASdtX+Np/1PwlyV8fH
-         eEHw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=p2qCytR6zRNKiZWuYiRHR+WxxWR1vAMBzRaW1PCDw0E=;
-        b=EbmDy7xnEFelmP7GJAdZHMlJ70XjJDzbaT4Gf7JnlP1bRdHI38ZDdUOLpeiwvGY45K
-         eVeoftzyxSIs/r7YBtBnfN24jFB/Yrsp0hgV6aoUsN07yynOU+XVeb3+4uJ4aBLJ+8T5
-         apmwqtGRNMXWWjTnHBnD9DXaJduulhyqAICSiZ4woz+QHwHOtbd6uGjqko/outNUZ0Nq
-         9hLr+Ru//mejYmcgUxKoothuqzVbGefSmF1f0T/c4VL9DTMoz6OMNJFRSsv6iVRlLbuc
-         jU93dNd6yew1WL7PU0rhLr5ONZyFw7sL8+mUGxfq7fhCCk5i3pPrw5m2QgAWSl5Y5cKU
-         Wx6Q==
-X-Gm-Message-State: AOAM530AoRPIjZ36v/tEbUhoAczKB9pe8Q4dI58ec/oB91kqXLH84Liz
-        hC7KWZaJYpGivfHW8QEeeyFM6g==
-X-Google-Smtp-Source: ABdhPJwv5srtWHUzLdvxM7KGrcpcoCsuqzEB1q/RLowjkD06mAUZ9ZEJ4n29EWXH3HlxIehCLpQfEQ==
-X-Received: by 2002:a05:620a:2206:: with SMTP id m6mr20812907qkh.176.1614711685344;
-        Tue, 02 Mar 2021 11:01:25 -0800 (PST)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id e190sm15733981qkd.122.2021.03.02.11.01.24
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 02 Mar 2021 11:01:24 -0800 (PST)
-Subject: Re: [PATCH 2/2] btrfs: require discard functionality from scratch
- device
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-References: <20210302091305.27828-1-johannes.thumshirn@wdc.com>
- <20210302091305.27828-3-johannes.thumshirn@wdc.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <e8f7bf4b-c1ba-3aaa-a92a-a057d163d4e6@toxicpanda.com>
-Date:   Tue, 2 Mar 2021 14:01:24 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.7.1
+        id S243511AbhCCB6j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 20:58:39 -0500
+Received: from mx2.suse.de ([195.135.220.15]:56358 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S236573AbhCBSYf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Mar 2021 13:24:35 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id ABE86AAC5;
+        Tue,  2 Mar 2021 17:24:10 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 033A0DA8BB; Tue,  2 Mar 2021 18:22:14 +0100 (CET)
+Date:   Tue, 2 Mar 2021 18:22:14 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Remove unused variable ret
+Message-ID: <20210302172214.GJ7604@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Jiapeng Chong <jiapeng.chong@linux.alibaba.com>, clm@fb.com,
+        josef@toxicpanda.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <1613715538-90761-1-git-send-email-jiapeng.chong@linux.alibaba.com>
 MIME-Version: 1.0
-In-Reply-To: <20210302091305.27828-3-johannes.thumshirn@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <1613715538-90761-1-git-send-email-jiapeng.chong@linux.alibaba.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/2/21 4:13 AM, Johannes Thumshirn wrote:
-> Some test cases for btrfs require the scratch device to support discard.
-> Check if the scratch device does support discard before trying to execute
-> the test.
+On Fri, Feb 19, 2021 at 02:18:58PM +0800, Jiapeng Chong wrote:
+> Fix the following coccicheck warnings:
 > 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ./fs/btrfs/disk-io.c:4403:5-8: Unneeded variable: "ret". Return "0" on
+> line 4411.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-Thanks,
-
-Josef
+That maybe stops the check to report the warning but it's not the right
+way to fix the code. The callees do not properly handle and propagate
+errors so that needs to be fixed, and the return value propagated from
+btrfs_destroy_delayed_refs.

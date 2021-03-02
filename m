@@ -2,100 +2,146 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9073C433E6
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0413CC4646B
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 72D0A64E6C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D2DDC64E7A
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Mar 2021 02:02:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243529AbhCCB6k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Mar 2021 20:58:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40612 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1835350AbhCBTCw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Mar 2021 14:02:52 -0500
-Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2EE85C061221
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Mar 2021 11:01:00 -0800 (PST)
-Received: by mail-qt1-x82e.google.com with SMTP id d11so14865159qtx.9
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Mar 2021 11:01:00 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=Tg+d/LRAGTG1IKdq5Ummz9Q9xop/B7Brr9jOYccccKA=;
-        b=n6pNUm287vSvGSyr7zvGBfEzlAVYTW2evomGesAJj9yVD9S3k26NRxpuGXe3mjAxm+
-         Im43Y3/DXYF29dAXQ6ELxWwOGH+xyMn8bHf3X8YqEI7v5XGuXSMWmYSw4VFnrpIKVC8F
-         4qmXKMYk1boECNWIMnj3tRDj2cxkeO243F4uD44uEyUEJfOvohmLAajyNRl86unJc4FU
-         8zXtwAcYPxbnfDw2kIT9cCWpSB0gWjQzUN1fAGyNjZQRpiS8ZcxPgF1Ep/5i2BR7Gpwm
-         IWE5aohKPuWVVTQ0z+LpmXVftNbaltd6Ym4thCJDsC28mc8H0uvrgZfq/54bI1J+RaEw
-         QCKg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=Tg+d/LRAGTG1IKdq5Ummz9Q9xop/B7Brr9jOYccccKA=;
-        b=I81JEvAkvJUuQf+gNyTKKQCafYyS3uMiErGJ1gKSP7hrg619z9GZUBC4Eb+xyShcpS
-         PcGffMTVBInDVwTfewzi7r1XnvewQrUneVzgGhMTQdpse6OQAzZP7MGKm0nItrSmJtsW
-         p51JK6/thmT84qK3lJOD+JleSvjq2wjJb5YKSbMcUJQT2ar0n7tY1dUgbw+kk3XPd8A0
-         tuYU7cWDb+S3pW0Ezs1Kbq4eCpYhWWlI+JVlNdJN+OInN76qqiTbmmHMpKUH3BAoWzj/
-         lYwrWmEidx9PNimK56Xaa6yEjGGRZzWJBjVWTyBeijVxLEqdwKEiA6ALwM9CnoNOp1HS
-         w0NA==
-X-Gm-Message-State: AOAM533nK5DpXEE6BzmbQ+VfVyA/CK5vN/SDQHuJy2iTQ/vKGQkOiGfM
-        WoWXncEAAZpr5Y25RtuV6qtLdg==
-X-Google-Smtp-Source: ABdhPJybx4b2Gt14q622BA8N8N+z50TDJQ9SNZUk6Te3jjSzIFqsB1fUftwzJfOfp17OcbLFbUWe2w==
-X-Received: by 2002:a05:622a:408:: with SMTP id n8mr19875757qtx.64.1614711659117;
-        Tue, 02 Mar 2021 11:00:59 -0800 (PST)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id a14sm12150294qkc.47.2021.03.02.11.00.58
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 02 Mar 2021 11:00:58 -0800 (PST)
-Subject: Re: [PATCH 1/2] fstests: add missing checks of fallocate feature
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-References: <20210302091305.27828-1-johannes.thumshirn@wdc.com>
- <20210302091305.27828-2-johannes.thumshirn@wdc.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <fe0829c9-b719-a155-2404-a43640d8df70@toxicpanda.com>
-Date:   Tue, 2 Mar 2021 14:00:57 -0500
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.7.1
+        id S243440AbhCCB6c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Mar 2021 20:58:32 -0500
+Received: from mx2.suse.de ([195.135.220.15]:57980 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1448306AbhCBOTj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 2 Mar 2021 09:19:39 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 722C6B12F;
+        Tue,  2 Mar 2021 14:18:56 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 6A952DA8BB; Tue,  2 Mar 2021 15:17:01 +0100 (CET)
+Date:   Tue, 2 Mar 2021 15:17:01 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     =?utf-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Fix checksum output for "checksum verify
+ failed"
+Message-ID: <20210302141701.GI7604@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        =?utf-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210227200702.11977-1-davispuh@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20210302091305.27828-2-johannes.thumshirn@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20210227200702.11977-1-davispuh@gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/2/21 4:13 AM, Johannes Thumshirn wrote:
-> From: Naohiro Aota <naohiro.aota@wdc.com>
-> 
-> Many test cases use xfs_io -c 'falloc' but forgot to add
-> _require_xfs_io_command "falloc". This will fail the test case if we run
-> the test case on a file system without fallcoate support e.g. F2FS ZZ
-> 
-> While we believe that normal fallocate(mode = 0) is always supported on
-> Linux, it is not true. Fallocate is disabled in several implementations of
-> zoned block support for file systems because the pre-allocated region will
-> break the sequential writing rule.
-> 
-> Currently, several test cases unconditionally call fallocate(). Let's add
-> _require_xfs_io_command "falloc" to properly check the feature is supported
-> by a testing file system.
-> 
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+On Sat, Feb 27, 2021 at 10:07:02PM +0200, Dāvis Mosāns wrote:
+> Currently only single checksum byte is outputted.
+> This fixes it so that full checksum is outputted.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Thanks, that really needs fixing.
 
-Thanks,
+> Signed-off-by: Dāvis Mosāns <davispuh@gmail.com>
+> ---
+>  kernel-shared/disk-io.c | 47 ++++++++++++++++++++++++++++++++++++-----
+>  1 file changed, 42 insertions(+), 5 deletions(-)
+> 
+> diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+> index 6f584986..8773eed7 100644
+> --- a/kernel-shared/disk-io.c
+> +++ b/kernel-shared/disk-io.c
+> @@ -160,10 +160,45 @@ int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
+>  	return -1;
+>  }
+>  
+> +int btrfs_format_csum(u16 csum_type, const char *data, char *output)
+> +{
+> +	int i;
+> +	int csum_len = 0;
+> +	int position = 0;
+> +	int direction = 1;
+> +	switch (csum_type) {
+> +		case BTRFS_CSUM_TYPE_CRC32:
+> +			csum_len = 4;
 
-Josef
+This duplicates the per-csum size, you could use btrfs_csum_type_size
+
+> +			position = csum_len - 1;
+> +			direction = -1;
+> +			break;
+> +		case BTRFS_CSUM_TYPE_XXHASH:
+> +			csum_len = 8;
+> +			position = csum_len - 1;
+> +			direction = -1;
+
+So the direction says if it's big endian or little endian, right, so for
+xxhash it's bigendian but the crc32c above it's little.
+
+In kernel the format is 0x%*phN, which translates to 'hexadecimal with
+variable length', so all the work is hidden inside printk. But still
+there are no changes in the 'direction'.
+
+I haven't actually checked if the printed format matches what kernel
+does but would think that there should be no direction adjustment
+needed.
+
+> +			break;
+> +		case BTRFS_CSUM_TYPE_SHA256:
+> +		case BTRFS_CSUM_TYPE_BLAKE2:
+> +			csum_len = 32;
+> +			break;
+> +		default:
+> +			fprintf(stderr, "ERROR: unknown csum type: %d\n", csum_type);
+> +			ASSERT(0);
+> +	}
+> +
+> +	for (i = 0; i < csum_len; i++) {
+> +		sprintf(output + i*2, "%02X", data[position + i*direction] & 0xFF);
+> +	}
+> +
+> +	return csum_len;
+> +}
+> +
+>  static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
+>  				  int verify, int silent, u16 csum_type)
+>  {
+>  	u8 result[BTRFS_CSUM_SIZE];
+> +	char found[BTRFS_CSUM_SIZE * 2 + 1]; // 2 hex chars for each byte + null
+> +	char expected[BTRFS_CSUM_SIZE * 2 + 1];
+>  	u32 len;
+>  
+>  	len = buf->len - BTRFS_CSUM_SIZE;
+> @@ -172,12 +207,14 @@ static int __csum_tree_block_size(struct extent_buffer *buf, u16 csum_size,
+>  
+>  	if (verify) {
+>  		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+> -			/* FIXME: format */
+> -			if (!silent)
+> -				printk("checksum verify failed on %llu found %08X wanted %08X\n",
+> +			if (!silent) {
+> +				btrfs_format_csum(csum_type, (char *)result, found);
+> +				btrfs_format_csum(csum_type, buf->data, expected);
+> +				printk("checksum verify failed on %llu found %s wanted %s\n",
+>  				       (unsigned long long)buf->start,
+> -				       result[0],
+> -				       buf->data[0]);
+> +				       found,
+> +				       expected);
+> +			}
+>  			return 1;
+>  		}
+>  	} else {
+> -- 
+> 2.30.1

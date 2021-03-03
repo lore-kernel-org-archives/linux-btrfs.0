@@ -2,90 +2,63 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.9 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,
-	URIBL_BLOCKED autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F631C4360C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:21:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB048C433E6
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:21:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 11A3C6146D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:21:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C2EE464E59
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:21:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1447856AbhCDATv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Mar 2021 19:19:51 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56206 "EHLO mx2.suse.de"
+        id S1447287AbhCDATu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Mar 2021 19:19:50 -0500
+Received: from verein.lst.de ([213.95.11.211]:36473 "EHLO verein.lst.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S240729AbhCCM4m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Mar 2021 07:56:42 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id BD28FAD29
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Mar 2021 12:55:21 +0000 (UTC)
-Date:   Wed, 3 Mar 2021 06:55:37 -0600
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Remove mirror argument from btrfs_csum_verify_data()
-Message-ID: <20210303125537.x2moj2kocknnsm6n@fiona>
+        id S1358241AbhCCL5l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Mar 2021 06:57:41 -0500
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 5C59368B02; Wed,  3 Mar 2021 11:43:37 +0100 (CET)
+Date:   Wed, 3 Mar 2021 11:43:36 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>
+Cc:     Christoph Hellwig <hch@lst.de>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
+        "dan.j.williams@intel.com" <dan.j.williams@intel.com>,
+        "willy@infradead.org" <willy@infradead.org>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "ocfs2-devel@oss.oracle.com" <ocfs2-devel@oss.oracle.com>,
+        "david@fromorbit.com" <david@fromorbit.com>,
+        "rgoldwyn@suse.de" <rgoldwyn@suse.de>
+Subject: Re: [PATCH v2 09/10] fs/xfs: Handle CoW for fsdax write() path
+Message-ID: <20210303104336.GA20371@lst.de>
+References: <20210226002030.653855-1-ruansy.fnst@fujitsu.com> <OSBPR01MB2920500BEA2DF0D47885A8FDF4989@OSBPR01MB2920.jpnprd01.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+In-Reply-To: <OSBPR01MB2920500BEA2DF0D47885A8FDF4989@OSBPR01MB2920.jpnprd01.prod.outlook.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Unused variable: mirror.
+On Wed, Mar 03, 2021 at 09:57:48AM +0000, ruansy.fnst@fujitsu.com wrote:
+> > What is the advantage of the ioemap_end handler here?  It adds another
+> > indirect funtion call to the fast path, so if we can avoid it, I'd
+> > rather do that.
+> 
+> These code were in xfs_file_dax_write().  I moved them into the iomap_end
+> because the mmaped CoW need this.
+> 
+> I know this is not so good, but I could not find another better way. Do you
+> have any ideas? 
 
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/ctree.h     | 2 +-
- fs/btrfs/extent_io.c | 3 +--
- fs/btrfs/inode.c     | 3 +--
- 3 files changed, 3 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 014afeb8d626..5776026c532e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3083,7 +3083,7 @@ u64 btrfs_file_extent_end(const struct btrfs_path *path);
- blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- 				   int mirror_num, unsigned long bio_flags);
- int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
--			   struct page *page, u64 start, u64 end, int mirror);
-+			   struct page *page, u64 start, u64 end);
- struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- 					   u64 start, u64 len);
- noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4dfb3ead1175..9fd7e8366119 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2954,8 +2954,7 @@ static void end_bio_extent_readpage(struct bio *bio)
- 		if (likely(uptodate)) {
- 			if (is_data_inode(inode))
- 				ret = btrfs_verify_data_csum(io_bio,
--						bio_offset, page, start, end,
--						mirror);
-+						bio_offset, page, start, end);
- 			else
- 				ret = btrfs_validate_metadata_buffer(io_bio,
- 					page, start, end, mirror);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d5ac45c264e5..0b133fda4f5d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3145,10 +3145,9 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
-  * @bio_offset:	offset to the beginning of the bio (in bytes)
-  * @start:	file offset of the range start
-  * @end:	file offset of the range end (inclusive)
-- * @mirror:	mirror number
-  */
- int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
--			   struct page *page, u64 start, u64 end, int mirror)
-+			   struct page *page, u64 start, u64 end)
- {
- 	struct inode *inode = page->mapping->host;
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
--- 
-2.30.1
+mmaped copy is the copy_edge case?  Maybe just use different iomap_ops for
+that case vs plain write?

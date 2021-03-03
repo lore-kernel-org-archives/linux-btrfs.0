@@ -2,63 +2,67 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EB048C433E6
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:21:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5501BC4161F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:27:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C2EE464E59
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:21:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2286864E68
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:27:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1447287AbhCDATu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Mar 2021 19:19:50 -0500
-Received: from verein.lst.de ([213.95.11.211]:36473 "EHLO verein.lst.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1358241AbhCCL5l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Mar 2021 06:57:41 -0500
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id 5C59368B02; Wed,  3 Mar 2021 11:43:37 +0100 (CET)
-Date:   Wed, 3 Mar 2021 11:43:36 +0100
-From:   Christoph Hellwig <hch@lst.de>
-To:     "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>
-Cc:     Christoph Hellwig <hch@lst.de>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
-        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
-        "dan.j.williams@intel.com" <dan.j.williams@intel.com>,
-        "willy@infradead.org" <willy@infradead.org>,
-        "jack@suse.cz" <jack@suse.cz>,
-        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ocfs2-devel@oss.oracle.com" <ocfs2-devel@oss.oracle.com>,
-        "david@fromorbit.com" <david@fromorbit.com>,
-        "rgoldwyn@suse.de" <rgoldwyn@suse.de>
-Subject: Re: [PATCH v2 09/10] fs/xfs: Handle CoW for fsdax write() path
-Message-ID: <20210303104336.GA20371@lst.de>
-References: <20210226002030.653855-1-ruansy.fnst@fujitsu.com> <OSBPR01MB2920500BEA2DF0D47885A8FDF4989@OSBPR01MB2920.jpnprd01.prod.outlook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <OSBPR01MB2920500BEA2DF0D47885A8FDF4989@OSBPR01MB2920.jpnprd01.prod.outlook.com>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+        id S1383097AbhCDATO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Mar 2021 19:19:14 -0500
+Received: from out30-43.freemail.mail.aliyun.com ([115.124.30.43]:58887 "EHLO
+        out30-43.freemail.mail.aliyun.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1356728AbhCCKsO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 3 Mar 2021 05:48:14 -0500
+X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R111e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e01424;MF=jiapeng.chong@linux.alibaba.com;NM=1;PH=DS;RN=6;SR=0;TI=SMTPD_---0UQELT1u_1614764730;
+Received: from j63c13417.sqa.eu95.tbsite.net(mailfrom:jiapeng.chong@linux.alibaba.com fp:SMTPD_---0UQELT1u_1614764730)
+          by smtp.aliyun-inc.com(127.0.0.1);
+          Wed, 03 Mar 2021 17:45:37 +0800
+From:   Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+To:     clm@fb.com
+Cc:     josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+Subject: [PATCH] btrfs: Assign boolean values to a bool variable
+Date:   Wed,  3 Mar 2021 17:45:28 +0800
+Message-Id: <1614764728-14857-1-git-send-email-jiapeng.chong@linux.alibaba.com>
+X-Mailer: git-send-email 1.8.3.1
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 03, 2021 at 09:57:48AM +0000, ruansy.fnst@fujitsu.com wrote:
-> > What is the advantage of the ioemap_end handler here?  It adds another
-> > indirect funtion call to the fast path, so if we can avoid it, I'd
-> > rather do that.
-> 
-> These code were in xfs_file_dax_write().  I moved them into the iomap_end
-> because the mmaped CoW need this.
-> 
-> I know this is not so good, but I could not find another better way. Do you
-> have any ideas? 
+Fix the following coccicheck warnings:
 
-mmaped copy is the copy_edge case?  Maybe just use different iomap_ops for
-that case vs plain write?
+./fs/btrfs/volumes.c:1462:10-11: WARNING: return of 0/1 in function
+'dev_extent_hole_check_zoned' with return type bool.
+
+Reported-by: Abaci Robot <abaci@linux.alibaba.com>
+Signed-off-by: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+---
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bc3b33e..995920f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1458,8 +1458,8 @@ static bool dev_extent_hole_check_zoned(struct btrfs_device *device,
+ 		/* Given hole range was invalid (outside of device) */
+ 		if (ret == -ERANGE) {
+ 			*hole_start += *hole_size;
+-			*hole_size = 0;
+-			return 1;
++			*hole_size = false;
++			return true;
+ 		}
+ 
+ 		*hole_start += zone_size;
+-- 
+1.8.3.1
+

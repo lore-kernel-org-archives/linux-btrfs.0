@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37D19C432C3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:20:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4238CC4332D
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:20:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 063BC64E6C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:20:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0D2F264E59
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:20:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1392433AbhCDATY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Mar 2021 19:19:24 -0500
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:11621 "EHLO
+        id S1385549AbhCDATT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Mar 2021 19:19:19 -0500
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:53180 "EHLO
         esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1378454AbhCCKuO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Mar 2021 05:50:14 -0500
+        with ESMTP id S1356764AbhCCKsU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Mar 2021 05:48:20 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1614768613; x=1646304613;
+  t=1614768500; x=1646304500;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=hT5t8N9+1eafwIxw5Z/2lU8vPYtbe54WI5/O9RtLDqQ=;
-  b=r3onRhWraccP8NtIfMo/pmi4+jFQt7zxFag2uZUo+423coegr+dsf+fn
-   8Y8+QFgYmm+NWcWckI8k1SNIrM0yEJdu6R1MGBxR7iHEOudjCasgEjdMR
-   LqjvaWEI/C6VFj3CLHz0D3O95pi8SMfaL3vbGpPiHmQE4EKp7eCZwdI6z
-   P7zLp2y7/Qv29tst2cYDijVfbGbLjbzwRzy+KZgE4eRXfTY50pgnvE1GA
-   Kwg6JyaR9afgTVDS+4zGGisDtT/pdW8SgvD5D9AfwCV/s/p7xvvn+25ci
-   saTfnlFDQ/LOx2dW+4HNgPVyGe8gTSMd0MZLuonMlXUD39YpLxdbBPhE9
-   Q==;
-IronPort-SDR: jhyTxsC2MffB0Gz96Lk43wYm88FzsSQWJxpkFyBulAJ/TSpGJZM+eRQm9IzBUXuBl6EV+XbpVK
- ZEzRW5Qwtun3YSpN0iPILAdKvDYL6gi8PN3GZYJIhV6ARdqH53szfKxhE5GAmBLSPilktk54X6
- FIAMNgcC4qlt3bw/OYSX2DBdHM5DnEWmmOi3neoyWABHqLsy+6qFTAr4V3Nkowh2KGWWWu9emq
- iVoy++sU0W7MiLn6hYhqFgxPAgfGjIg0A26tnvnbri9PDiIiJtHfMJRAvBt4Yd4LeDyI0r+wYM
- GoA=
+  bh=f6ImAg6emvQmJv8zhWVsxpXCRemcjfAsHZ2qZ7dGbPg=;
+  b=BcGmyhco+312lIDqQuBkGJKDZJQQmtMp4sl5BOYGRLLo92kIBM13g9J/
+   6eU6O5Iuq0vInE8K4sU0RXH2INXbmAwDa5fofrxCIoYtp8e/YAlGcPZQr
+   KZtQ1nknxKqETH3BUTGEPCxViTx/1YJZHkwLjNn3/DYjgWX+gdj6aCVUY
+   5FLWlQPrRTLvAQeCmcMFswg5aAMi+AXBywpPb3D8Z+GjptkJOUZIlydFn
+   P5IXydfsF6B8WrxXFJVU0jtg44JLCvMEJByXh5uY/WloYgTXwgtX+v3c+
+   7bmL7Fhp2MKeo5IWGC6fh95Rs/Z40dJL3WN5p1Uqpfv+YJhCfDl/IXsFF
+   g==;
+IronPort-SDR: q7fmtAaUGHpsOiaMt7kBT4OrTZeXZkf9NbbWSJjjYDSUrF8k1iAocZTLKjhlJx35G/C5HPqvPU
+ Ayj+3J2iVuXVop8oklhaGWFq+TfoQk2GTAhuvqJp44lvE/4tk8OBTlA2W5yBk8sQ8UWZBj3ua/
+ rZMrVUd5zFOBKGeJqJwlWhSeTPrfHLpnajrpBVdz0jVaCiFsbAbTEU8FH+UzDLpdX6P/xKjTes
+ bDhSHeQLTGzdLX4PKU2193uJmliuS9v7BILKzAyDYBlSxrItwFnjJg9YuaPdEmUcy/qHKVBDPC
+ wRE=
 X-IronPort-AV: E=Sophos;i="5.81,219,1610380800"; 
-   d="scan'208";a="271857773"
+   d="scan'208";a="271857768"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 03 Mar 2021 16:55:56 +0800
-IronPort-SDR: xOaPvzZflYV/TvHvT9Ki0qRJUfb18FBwgodMtrPMmsZyRncYNEznkAOtJTZGaGk3MwZeThBVFq
- 1Iy3WlyaOVCO0UvjFUpSzETW82BJ+JQpGRMYSg7G9JF+4LYBZB7uai3XLYRMj9UszBswvDqNPI
- TGWSEoyVVKDtmdU37EuNE8W5hzfZ8C+ryroUBIc3yYU74i/zjQNWvMRDBY9byX5POctA2+XOtg
- QAymv/v6Fa++8mJx03eO6AeHeUFUDaF8/YPsTfqWuFWs3UQMYeHUHKeRIwC5+G2VT+Z2ryd/4E
- mjNXhYVGhE8hW283UTDx3ygc
+  by ob1.hgst.iphmx.com with ESMTP; 03 Mar 2021 16:55:54 +0800
+IronPort-SDR: UZ6+B6i7DkX2b29PKy4+TzIle9Qim/0gIGVWimah7BZSfe/1MhGfGvdUP77pAA7uz9mvL408oR
+ C0XeVF1bNoOWn/gG2kSAHECh++k+T040ynhIwKl1VyU7mPgcuap9543Z4yVDn30f/k6Fgzbqqd
+ B+i9NA1Zr0DnGw1UYdWScaSpMWIfzDfc6hK9vDiyPEdcPgxgxnGvoGkKp0B/Jj+Ig15BLariu5
+ zesEpy+D/CxWPn0044KepbpasrIyb+U0S9F9QavS2GrTmTiFc8tqzlNIFz/UHvYwh/YZDiPl5H
+ RO4NoJ+4sVzR3f4L99HtMX/h
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 03 Mar 2021 00:37:11 -0800
-IronPort-SDR: DB1WoSh8PWnnFqVj03JC+stgK7jcvRhtLjJwqM7pOlB13+nJI8JMe1C7R27zQkuoLayls0D+12
- 0o+ayc/3urcnvZvRpQkIM50sG7DolxU0Lk6UU9B3/XfsoyFxj49prY/NLvATNxsRliiWQwiI/s
- vk1sZKJda2LsF5dEEfWW2GZBFRQlnvX99AGPAoPZV1SXUY95PxxubWt1dFcXPYtmh+JMAfwMpz
- t41Rb5NQ55nRACAlszwYCtjcs83pKZi/KjjGY7Bou78a75Ch8h8uuevTKuP+M2hqgfso0/rFQX
- SrU=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 03 Mar 2021 00:37:09 -0800
+IronPort-SDR: AcZK7KjqGCFQSlCRBsi8M9LBlj02tVGtu4hgm4vHTWat777MVgS/BlbiLFWPSqchkwbLFjCztT
+ jBVuSCJOJFFIG//jwpT7eZXXHwF3vZ5EHfiDBfvecuiiFuGPL3Oe/vM4L65qRpiHCpC1Ug/UVV
+ DAdTggdicLSggBrlJF55PSZTq5iBDz04Ld4NohHhsLwSwVyr2IqlhJvi8t4len1GkUNZ6uZvUI
+ MBht5Ep+xxCTtqGoQ3gkT62hgQ6Wjj3XCMDRKZV9oVJBHM2JyMdMmXm6QFyX6TGycxW2LcLvdW
+ f6s=
 WDCIronportException: Internal
 Received: from jpf010014.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.91])
-  by uls-op-cesaip01.wdc.com with ESMTP; 03 Mar 2021 00:55:55 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 03 Mar 2021 00:55:53 -0800
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
 Cc:     linux-fsdevel@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 3/3] btrfs: zoned: do not account freed region of read-only block group as zone_unusable
-Date:   Wed,  3 Mar 2021 17:55:48 +0900
-Message-Id: <1ce4bb0b205a2068770ca310f9217e761c0916c7.1614760899.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 1/3] btrfs: zoned: use sector_t to get zone sectors
+Date:   Wed,  3 Mar 2021 17:55:46 +0900
+Message-Id: <8068e2e54817aff858207101677e442a21eb10e3.1614760899.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.30.1
 In-Reply-To: <cover.1614760899.git.naohiro.aota@wdc.com>
 References: <cover.1614760899.git.naohiro.aota@wdc.com>
@@ -71,35 +71,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We migrate zone unusable bytes to read-only bytes when a block group is set
-to read-only, and account all the free region as bytes_readonly. Thus, we
-should not increase block_group->zone_unusable when the block group is
-read-only.
+We need to use sector_t for zone_sectors, or it set the zone size = 0 when
+the size >= 4GB (=  2^24 sectors) by shifting the zone_sectors value by
+SECTOR_SHIFT.
 
-Fixes: 169e0da91a21 ("btrfs: zoned: track unusable bytes for zones")
+Fixes: 5b316468983d ("btrfs: get zone information of zoned block devices")
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/free-space-cache.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/zoned.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 711a6a751ae9..81835153f747 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2555,7 +2555,12 @@ static int __btrfs_add_free_space_zoned(struct btrfs_block_group *block_group,
- 	to_unusable = size - to_free;
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 9a5cf153da89..1324bb6c3946 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -269,7 +269,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ 	sector_t sector = 0;
+ 	struct blk_zone *zones = NULL;
+ 	unsigned int i, nreported = 0, nr_zones;
+-	unsigned int zone_sectors;
++	sector_t zone_sectors;
+ 	char *model, *emulated;
+ 	int ret;
  
- 	ctl->free_space += to_free;
--	block_group->zone_unusable += to_unusable;
-+	/*
-+	 * If the block group is read-only, we should account freed
-+	 * space into bytes_readonly.
-+	 */
-+	if (!block_group->ro)
-+		block_group->zone_unusable += to_unusable;
- 	spin_unlock(&ctl->tree_lock);
- 	if (!used) {
- 		spin_lock(&block_group->lock);
 -- 
 2.30.1
 

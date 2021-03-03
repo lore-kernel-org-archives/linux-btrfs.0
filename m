@@ -2,55 +2,240 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	UNPARSEABLE_RELAY,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84DB7C15503
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E929C15501
 	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:20:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4766764E56
+	by mail.kernel.org (Postfix) with ESMTP id 08F0A64E6C
 	for <linux-btrfs@archiver.kernel.org>; Thu,  4 Mar 2021 00:20:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1447092AbhCDATp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Mar 2021 19:19:45 -0500
-Received: from verein.lst.de ([213.95.11.211]:36454 "EHLO verein.lst.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S245522AbhCCLrm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 3 Mar 2021 06:47:42 -0500
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id BC24D68B05; Wed,  3 Mar 2021 10:13:32 +0100 (CET)
-Date:   Wed, 3 Mar 2021 10:13:32 +0100
-From:   Christoph Hellwig <hch@lst.de>
-To:     Shiyang Ruan <ruansy.fnst@fujitsu.com>
-Cc:     linux-kernel@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-nvdimm@lists.01.org, linux-fsdevel@vger.kernel.org,
-        darrick.wong@oracle.com, dan.j.williams@intel.com,
-        willy@infradead.org, jack@suse.cz, viro@zeniv.linux.org.uk,
-        linux-btrfs@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        david@fromorbit.com, hch@lst.de, rgoldwyn@suse.de
-Subject: Re: [PATCH v2 01/10] fsdax: Factor helpers to simplify dax fault
- code
-Message-ID: <20210303091332.GB12784@lst.de>
-References: <20210226002030.653855-1-ruansy.fnst@fujitsu.com> <20210226002030.653855-2-ruansy.fnst@fujitsu.com>
+        id S1450694AbhCDAT6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Mar 2021 19:19:58 -0500
+Received: from userp2120.oracle.com ([156.151.31.85]:52004 "EHLO
+        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1839068AbhCCTCn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Mar 2021 14:02:43 -0500
+Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
+        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 123I8xxI183036;
+        Wed, 3 Mar 2021 18:10:52 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : mime-version : content-transfer-encoding;
+ s=corp-2020-01-29; bh=sb0eqPcq7THpSiTmE02zpypTZ6+zwW40UmjFbCBzqfE=;
+ b=qzEwE68/GrhE7RYVBmDbwTfz7V0csKxoX8AIMEKUBxKRc8Z2kUuM08KcyteoaLAAJg/D
+ SpX8kSA7cN+WDqbWixEA8B9sGnldRwg+uY8OAtv3jmrvCULpu8B/j4KqWgoiiJmjDU9r
+ g/1gGdLwQWPnoeEV6GDEI0wy2Ca8ShC3czLYXpEweJKgSE6ni6XhnfTnb7W87GYtueSj
+ zR4Ld/Ogxx+chN/vS3+nQW1fCZTmGjv9dIpJudYVkQLvSY5GXRgXomCKoveB071Jwn5O
+ eEjZBXnObCuiIfTy0q0m23mT4HPeXQGo6xHEH99skH7SVF0QwI9dMw2uF2xGkwDOM0hp CA== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by userp2120.oracle.com with ESMTP id 36yeqn4cfw-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 03 Mar 2021 18:10:52 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 123I16FG058486;
+        Wed, 3 Mar 2021 18:10:49 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+        by aserp3020.oracle.com with ESMTP id 370001m8bk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 03 Mar 2021 18:10:49 +0000
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+        by aserv0122.oracle.com (8.14.4/8.14.4) with ESMTP id 123IAmtO021306;
+        Wed, 3 Mar 2021 18:10:48 GMT
+Received: from localhost.localdomain (/39.109.186.25)
+        by default (Oracle Beehive Gateway v4.0)
+        with ESMTP ; Wed, 03 Mar 2021 10:10:48 -0800
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Anand Jain <anand.jain@oracle.com>, Su Yue <l@damenly.su>
+Subject: [PATCH v2] btrfs: fix lockdep warning while mounting sprout fs
+Date:   Thu,  4 Mar 2021 02:10:35 +0800
+Message-Id: <23a8830f3be500995e74b45f18862e67c0634c3d.1614793362.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.29.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210226002030.653855-2-ruansy.fnst@fujitsu.com>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+Content-Transfer-Encoding: 8bit
+X-Proofpoint-IMR: 1
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9912 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 mlxlogscore=999
+ phishscore=0 bulkscore=0 mlxscore=0 spamscore=0 suspectscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2103030127
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9912 signatures=668683
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 lowpriorityscore=0 clxscore=1015
+ priorityscore=1501 mlxlogscore=999 suspectscore=0 malwarescore=0
+ impostorscore=0 bulkscore=0 adultscore=0 mlxscore=0 phishscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2009150000 definitions=main-2103030128
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 26, 2021 at 08:20:21AM +0800, Shiyang Ruan wrote:
-> The dax page fault code is too long and a bit difficult to read. And it
-> is hard to understand when we trying to add new features. Some of the
-> PTE/PMD codes have similar logic. So, factor them as helper functions to
-> simplify the code.
-> 
-> Signed-off-by: Shiyang Ruan <ruansy.fnst@fujitsu.com>
+Following test case reproduces lockdep warning.
 
-Looks good,
+Test case:
+DEV1=/dev/vdb
+DEV2=/dev/vdc
+umount /btrfs
+run mkfs.btrfs -f $DEV1
+run btrfstune -S 1 $DEV1
+run mount $DEV1 /btrfs
+run btrfs device add $DEV2 /btrfs -f
+run umount /btrfs
+run mount $DEV2 /btrfs
+run umount /btrfs
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+The warning claims a possible ABBA deadlock between the threads initiated by
+[#1] btrfs device add and [#0] the mount.
+
+======================================================
+[ 540.743122] WARNING: possible circular locking dependency detected
+[ 540.743129] 5.11.0-rc7+ #5 Not tainted
+[ 540.743135] ------------------------------------------------------
+[ 540.743142] mount/2515 is trying to acquire lock:
+[ 540.743149] ffffa0c5544c2ce0 (&fs_devs->device_list_mutex){+.+.}-{4:4}, at: clone_fs_devices+0x6d/0x210 [btrfs]
+[ 540.743458] but task is already holding lock:
+[ 540.743461] ffffa0c54a7932b8 (btrfs-chunk-00){++++}-{4:4}, at: __btrfs_tree_read_lock+0x32/0x200 [btrfs]
+[ 540.743541] which lock already depends on the new lock.
+[ 540.743543] the existing dependency chain (in reverse order) is:
+
+[ 540.743546] -> #1 (btrfs-chunk-00){++++}-{4:4}:
+[ 540.743566] down_read_nested+0x48/0x2b0
+[ 540.743585] __btrfs_tree_read_lock+0x32/0x200 [btrfs]
+[ 540.743650] btrfs_read_lock_root_node+0x70/0x200 [btrfs]
+[ 540.743733] btrfs_search_slot+0x6c6/0xe00 [btrfs]
+[ 540.743785] btrfs_update_device+0x83/0x260 [btrfs]
+[ 540.743849] btrfs_finish_chunk_alloc+0x13f/0x660 [btrfs] <--- device_list_mutex
+[ 540.743911] btrfs_create_pending_block_groups+0x18d/0x3f0 [btrfs]
+[ 540.743982] btrfs_commit_transaction+0x86/0x1260 [btrfs]
+[ 540.744037] btrfs_init_new_device+0x1600/0x1dd0 [btrfs]
+[ 540.744101] btrfs_ioctl+0x1c77/0x24c0 [btrfs]
+[ 540.744166] __x64_sys_ioctl+0xe4/0x140
+[ 540.744170] do_syscall_64+0x4b/0x80
+[ 540.744174] entry_SYSCALL_64_after_hwframe+0x44/0xa9
+
+[ 540.744180] -> #0 (&fs_devs->device_list_mutex){+.+.}-{4:4}:
+[ 540.744184] __lock_acquire+0x155f/0x2360
+[ 540.744188] lock_acquire+0x10b/0x5c0
+[ 540.744190] __mutex_lock+0xb1/0xf80
+[ 540.744193] mutex_lock_nested+0x27/0x30
+[ 540.744196] clone_fs_devices+0x6d/0x210 [btrfs]
+[ 540.744270] btrfs_read_chunk_tree+0x3c7/0xbb0 [btrfs]
+[ 540.744336] open_ctree+0xf6e/0x2074 [btrfs]
+[ 540.744406] btrfs_mount_root.cold.72+0x16/0x127 [btrfs]
+[ 540.744472] legacy_get_tree+0x38/0x90
+[ 540.744475] vfs_get_tree+0x30/0x140
+[ 540.744478] fc_mount+0x16/0x60
+[ 540.744482] vfs_kern_mount+0x91/0x100
+[ 540.744484] btrfs_mount+0x1e6/0x670 [btrfs]
+[ 540.744536] legacy_get_tree+0x38/0x90
+[ 540.744537] vfs_get_tree+0x30/0x140
+[ 540.744539] path_mount+0x8d8/0x1070
+[ 540.744541] do_mount+0x8d/0xc0
+[ 540.744543] __x64_sys_mount+0x125/0x160
+[ 540.744545] do_syscall_64+0x4b/0x80
+[ 540.744547] entry_SYSCALL_64_after_hwframe+0x44/0xa9
+
+[ 540.744551] other info that might help us debug this:
+[ 540.744552] Possible unsafe locking scenario:
+
+[ 540.744553] CPU0 				CPU1
+[ 540.744554] ---- 				----
+[ 540.744555] lock(btrfs-chunk-00);
+[ 540.744557] 					lock(&fs_devs->device_list_mutex);
+[ 540.744560] 					lock(btrfs-chunk-00);
+[ 540.744562] lock(&fs_devs->device_list_mutex);
+[ 540.744564]
+ *** DEADLOCK ***
+
+[ 540.744565] 3 locks held by mount/2515:
+[ 540.744567] #0: ffffa0c56bf7a0e0 (&type->s_umount_key#42/1){+.+.}-{4:4}, at: alloc_super.isra.16+0xdf/0x450
+[ 540.744574] #1: ffffffffc05a9628 (uuid_mutex){+.+.}-{4:4}, at: btrfs_read_chunk_tree+0x63/0xbb0 [btrfs]
+[ 540.744640] #2: ffffa0c54a7932b8 (btrfs-chunk-00){++++}-{4:4}, at: __btrfs_tree_read_lock+0x32/0x200 [btrfs]
+[ 540.744708]
+ stack backtrace:
+[ 540.744712] CPU: 2 PID: 2515 Comm: mount Not tainted 5.11.0-rc7+ #5
+
+
+But the device_list_mutex in clone_fs_devices() is redundant, as explained
+below.
+Two threads [1]  and [2] (below) could lead to clone_fs_device().
+
+[1]
+open_ctree <== mount sprout fs
+ btrfs_read_chunk_tree()
+  mutex_lock(&uuid_mutex) <== global lock
+  read_one_dev()
+   open_seed_devices()
+    clone_fs_devices() <== seed fs_devices
+     mutex_lock(&orig->device_list_mutex) <== seed fs_devices
+
+[2]
+btrfs_init_new_device() <== sprouting
+ mutex_lock(&uuid_mutex); <== global lock
+ btrfs_prepare_sprout()
+   lockdep_assert_held(&uuid_mutex)
+   clone_fs_devices(seed_fs_device) <== seed fs_devices
+
+Both of these threads hold uuid_mutex which is sufficient to protect
+getting the seed device(s) freed while we are trying to clone it for
+sprouting [2] or mounting a sprout [1] (as above). A mounted seed
+device can not free/write/replace because it is read-only. An unmounted
+seed device can free by btrfs_free_stale_devices(), but it needs uuid_mutex.
+So this patch removes the unnecessary device_list_mutex in clone_fs_devices().
+And adds a lockdep_assert_held(&uuid_mutex) in clone_fs_devices().
+
+Reported-by: Su Yue <l@damenly.su>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: Remove Martin's Reported-by and Tested-by.
+    Add Su's Reported-by.
+    Add lockdep_assert_held check.
+    Update the changelog, make it relevant to the current misc-next
+
+ fs/btrfs/volumes.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bc3b33efddc5..4188edbad2ef 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -570,6 +570,8 @@ static int btrfs_free_stale_devices(const char *path,
+ 	struct btrfs_device *device, *tmp_device;
+ 	int ret = 0;
+ 
++	lockdep_assert_held(&uuid_mutex);
++
+ 	if (path)
+ 		ret = -ENOENT;
+ 
+@@ -1000,11 +1002,12 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+ 	struct btrfs_device *orig_dev;
+ 	int ret = 0;
+ 
++	lockdep_assert_held(&uuid_mutex);
++
+ 	fs_devices = alloc_fs_devices(orig->fsid, NULL);
+ 	if (IS_ERR(fs_devices))
+ 		return fs_devices;
+ 
+-	mutex_lock(&orig->device_list_mutex);
+ 	fs_devices->total_devices = orig->total_devices;
+ 
+ 	list_for_each_entry(orig_dev, &orig->devices, dev_list) {
+@@ -1036,10 +1039,8 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+ 		device->fs_devices = fs_devices;
+ 		fs_devices->num_devices++;
+ 	}
+-	mutex_unlock(&orig->device_list_mutex);
+ 	return fs_devices;
+ error:
+-	mutex_unlock(&orig->device_list_mutex);
+ 	free_fs_devices(fs_devices);
+ 	return ERR_PTR(ret);
+ }
+-- 
+2.27.0
+

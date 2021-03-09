@@ -2,44 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98DE6C433E0
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Mar 2021 21:22:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 581E2C43381
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Mar 2021 21:22:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5926E65259
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Mar 2021 21:22:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 255B265267
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Mar 2021 21:22:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231864AbhCIVWS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Mar 2021 16:22:18 -0500
-Received: from mga12.intel.com ([192.55.52.136]:18988 "EHLO mga12.intel.com"
+        id S231941AbhCIVWU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Mar 2021 16:22:20 -0500
+Received: from mga06.intel.com ([134.134.136.31]:60761 "EHLO mga06.intel.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230173AbhCIVVu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 9 Mar 2021 16:21:50 -0500
-IronPort-SDR: ZCkBKzL6/4Gh58jkLjZ2nEFTBZNTKNmh68Bo/RFlgQtimiAnq8XQzdD7e3ZTWmfqrszBdqKLfA
- TXowhzDCuDSQ==
-X-IronPort-AV: E=McAfee;i="6000,8403,9917"; a="167597023"
+        id S230266AbhCIVVw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 9 Mar 2021 16:21:52 -0500
+IronPort-SDR: kb2KjBP6Zlhv/wu7311KlRETGLSymZFVw6L/lLQIMkwIa4ZHAVfZvr/frK7Kj+hwirUa5ciYwF
+ XCLDh1cmnSZg==
+X-IronPort-AV: E=McAfee;i="6000,8403,9917"; a="249698113"
 X-IronPort-AV: E=Sophos;i="5.81,236,1610438400"; 
-   d="scan'208";a="167597023"
-Received: from orsmga002.jf.intel.com ([10.7.209.21])
-  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Mar 2021 13:21:48 -0800
-IronPort-SDR: f5gFzJRA3Q243esLlPA/Y3Tdx/L/Tuyzj16PiDwlgENALpXu2RUhoeX7/rnoHk3hI9nK5yoo5O
- L7zU4V21G10A==
+   d="scan'208";a="249698113"
+Received: from fmsmga001.fm.intel.com ([10.253.24.23])
+  by orsmga104.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Mar 2021 13:21:50 -0800
+IronPort-SDR: DZHac8nRvPxZ4s8fABJrstCU7clqI57Eh+j7MKulxeGFSlLyq0h7Am51PRgQTPeESnFm99kgGQ
+ 0aukMtcCbysA==
 X-IronPort-AV: E=Sophos;i="5.81,236,1610438400"; 
-   d="scan'208";a="386373791"
+   d="scan'208";a="509424712"
 Received: from iweiny-desk2.sc.intel.com (HELO localhost) ([10.3.52.147])
-  by orsmga002-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Mar 2021 13:21:47 -0800
+  by fmsmga001-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Mar 2021 13:21:50 -0800
 From:   ira.weiny@intel.com
 To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     Ira Weiny <ira.weiny@intel.com>, David Sterba <dsterba@suse.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+Cc:     Ira Weiny <ira.weiny@intel.com>,
+        Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>,
+        David Sterba <dsterba@suse.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: Convert kmap/memset/kunmap to memzero_user()
-Date:   Tue,  9 Mar 2021 13:21:34 -0800
-Message-Id: <20210309212137.2610186-1-ira.weiny@intel.com>
+Subject: [PATCH 2/3] mm/highmem: Convert memzero_page() to kmap_local_page()
+Date:   Tue,  9 Mar 2021 13:21:36 -0800
+Message-Id: <20210309212137.2610186-3-ira.weiny@intel.com>
 X-Mailer: git-send-email 2.28.0.rc0.12.gb6a658bd00c9
+In-Reply-To: <20210309212137.2610186-1-ira.weiny@intel.com>
+References: <20210309212137.2610186-1-ira.weiny@intel.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -48,35 +53,32 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Ira Weiny <ira.weiny@intel.com>
 
-Previously this was submitted to convert to zero_user()[1].  zero_user() is not
-the same as memzero_user() and in fact some zero_user() calls may be better off
-as memzero_user().  Regardless it was incorrect to convert btrfs to
-zero_user().
+The memset() does not need to be performed atomically.  Use
+kmap_local_page() which will improved performance for this call.
 
-This series corrects this by lifting memzero_user(), converting it to
-kmap_local_page(), and then using it in btrfs.
+Cc: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+Cc: David Sterba <dsterba@suse.com>
+Signed-off-by: Ira Weiny <ira.weiny@intel.com>
+---
+ include/linux/highmem.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Thanks,
-Ira
-
-[1] https://lore.kernel.org/lkml/20210223192506.GY3014244@iweiny-DESK2.sc.intel.com/
-
-
-Ira Weiny (3):
-  iov_iter: Lift memzero_page() to highmem.h
-  mm/highmem: Convert memzero_page() to kmap_local_page()
-  btrfs: Use memzero_page() instead of open coded kmap pattern
-
- fs/btrfs/compression.c  |  5 +----
- fs/btrfs/extent_io.c    | 22 ++++------------------
- fs/btrfs/inode.c        | 33 ++++++++++-----------------------
- fs/btrfs/reflink.c      |  6 +-----
- fs/btrfs/zlib.c         |  5 +----
- fs/btrfs/zstd.c         |  5 +----
- include/linux/highmem.h |  7 +++++++
- lib/iov_iter.c          |  8 +-------
- 8 files changed, 26 insertions(+), 65 deletions(-)
-
+diff --git a/include/linux/highmem.h b/include/linux/highmem.h
+index 832b49b50c7b..0dc0451cf1d1 100644
+--- a/include/linux/highmem.h
++++ b/include/linux/highmem.h
+@@ -334,9 +334,9 @@ static inline void memcpy_to_page(struct page *page, size_t offset,
+ 
+ static inline void memzero_page(struct page *page, size_t offset, size_t len)
+ {
+-	char *addr = kmap_atomic(page);
++	char *addr = kmap_local_page(page);
+ 	memset(addr + offset, 0, len);
+-	kunmap_atomic(addr);
++	kunmap_local(addr);
+ }
+ 
+ #endif /* _LINUX_HIGHMEM_H */
 -- 
 2.28.0.rc0.12.gb6a658bd00c9
 

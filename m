@@ -2,96 +2,117 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54749C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 08:17:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EEE15C433E6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:09:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 12B1D64FDE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 08:17:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9FF5A64F2D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:09:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231926AbhCJIRL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Mar 2021 03:17:11 -0500
-Received: from smtp01.belwue.de ([129.143.71.86]:35611 "EHLO smtp01.belwue.de"
+        id S232628AbhCJJIq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Mar 2021 04:08:46 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34620 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231378AbhCJIRF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Mar 2021 03:17:05 -0500
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-        by smtp01.belwue.de (Postfix) with SMTP id 1AA2E6B19
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 09:17:04 +0100 (MET)
-Date:   Wed, 10 Mar 2021 09:17:03 +0100
-From:   Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+        id S231492AbhCJJIm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Mar 2021 04:08:42 -0500
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1615367321; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=nhxYry9B7c4mBcS/1AHL4IzReTFn42XjEB3MOL9i5d0=;
+        b=IaNgxMX+++M9AVEEPh5+R6gDheFynfK8P4HhqVbeDolHv5aBcf/E3UFExGQ9k0OySlHRys
+        gjQjCcL/HymTTxlr0kcC5GVhkeKAiuBuGDeNrVmM29WaD8jvVNvQjG/IV63hg+S+U9mWF7
+        3Bz6SlYD3Gmyst/xzy3bGAPLQLPVts0=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 5181DAD74
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 09:08:41 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: Re: nfs subvolume access?
-Message-ID: <20210310081703.GC2158@tik.uni-stuttgart.de>
-Mail-Followup-To: linux-btrfs@vger.kernel.org
-References: <20210310074620.GA2158@tik.uni-stuttgart.de>
+Subject: [PATCH v2 01/15] btrfs: add sysfs interface for supported sectorsize
+Date:   Wed, 10 Mar 2021 17:08:19 +0800
+Message-Id: <20210310090833.105015-2-wqu@suse.com>
+X-Mailer: git-send-email 2.30.1
+In-Reply-To: <20210310090833.105015-1-wqu@suse.com>
+References: <20210310090833.105015-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210310074620.GA2158@tik.uni-stuttgart.de>
-User-Agent: Mutt/1.5.23 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed 2021-03-10 (08:46), Ulli Horlacher wrote:
-> When I try to access a btrfs filesystem via nfs, I get the error:
-> 
-> root@tsmsrvi:~# mount tsmsrvj:/data/fex /nfs/tsmsrvj/fex
-> root@tsmsrvi:~# time find /nfs/tsmsrvj/fex | wc -l
-> find: File system loop detected; '/nfs/tsmsrvj/fex/spool' is part of the same file system loop as '/nfs/tsmsrvj/fex'.
-> 1
+Add extra sysfs interface features/supported_ro_sectorsize and
+features/supported_rw_sectorsize to indicate subpage support.
 
-> tsmsrvi and tsmsrvj (nfs client and server) both run Ubuntu 20.04 with
-> btrfs-progs v5.4.1 
+Currently for supported_rw_sectorsize all architectures only have their
+PAGE_SIZE listed.
 
-On Ubuntu 18.04 this setup works without errors:
+While for supported_ro_sectorsize, for systems with 64K page size, 4K
+sectorsize is also supported.
 
-root@mutter:/backup/rsync# grep tandem /etc/exports 
-/backup/rsync/tandem            176.9.135.138(rw,async,no_subtree_check,no_root_squash)
+This new sysfs interface would help mkfs.btrfs to do more accurate
+warning.
 
-root@mutter:/backup/rsync# btrfs subvolume list /backup/rsync | grep tandem
-ID 257 gen 62652 top level 5 path tandem
-ID 5898 gen 62284 top level 257 path tandem/.snapshot/2021-03-01_0300.rsync
-ID 5906 gen 62284 top level 257 path tandem/.snapshot/2021-03-02_0300.rsync
-ID 5914 gen 62284 top level 257 path tandem/.snapshot/2021-03-03_0300.rsync
-ID 5924 gen 62284 top level 257 path tandem/.snapshot/2021-03-04_0300.rsync
-ID 5932 gen 62284 top level 257 path tandem/.snapshot/2021-03-05_0300.rsync
-ID 5941 gen 62284 top level 257 path tandem/.snapshot/2021-03-06_0300.rsync
-ID 5950 gen 62284 top level 257 path tandem/.snapshot/2021-03-07_0300.rsync
-ID 5962 gen 62413 top level 257 path tandem/.snapshot/2021-03-08_0300.rsync
-ID 5970 gen 62522 top level 257 path tandem/.snapshot/2021-03-09_0300.rsync
-ID 5978 gen 62626 top level 257 path tandem/.snapshot/2021-03-10_0300.rsync
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/sysfs.c | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
-root@mutter:/backup/rsync# btrfs version
-btrfs-progs v4.15.1
-
-root@tandem:/backup# mount | grep backup
-mutter:/backup/rsync/tandem on /backup type nfs (ro,relatime,vers=3,rsize=1048576,wsize=1048576,namlen=255,soft,proto=tcp,timeo=600,retrans=1,sec=sys,mountaddr=176.9.68.251,mountvers=3,mountport=52943,mountproto=tcp,local_lock=none,addr=176.9.68.251)
-
-root@tandem:/backup# ls -l .snapshot/
-total 0
-drwxr-xr-x 1 root root 392 Mar  1 03:00 2021-03-01_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  2 03:00 2021-03-02_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  3 03:00 2021-03-03_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  4 03:00 2021-03-04_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  5 03:00 2021-03-05_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  6 03:00 2021-03-06_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  7 03:00 2021-03-07_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  8 03:00 2021-03-08_0300.rsync
-drwxr-xr-x 1 root root 392 Mar  9 03:00 2021-03-09_0300.rsync
-drwxr-xr-x 1 root root 392 Mar 10 03:00 2021-03-10_0300.rsync
-
-So, it is an issue with the newer btrfs version on Ubuntu 20.04? 
-
-
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 6eb1c50fa98c..3ef419899472 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -360,11 +360,45 @@ static ssize_t supported_rescue_options_show(struct kobject *kobj,
+ BTRFS_ATTR(static_feature, supported_rescue_options,
+ 	   supported_rescue_options_show);
+ 
++static ssize_t supported_ro_sectorsize_show(struct kobject *kobj,
++					    struct kobj_attribute *a,
++					    char *buf)
++{
++	ssize_t ret = 0;
++	int i = 0;
++
++	/* For 64K page size, 4K sector size is supported */
++	if (PAGE_SIZE == SZ_64K) {
++		ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%u", SZ_4K);
++		i++;
++	}
++	/* Other than above subpage, only support PAGE_SIZE as sectorsize yet */
++	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%s%lu\n",
++			 (i ? " " : ""), PAGE_SIZE);
++	return ret;
++}
++BTRFS_ATTR(static_feature, supported_ro_sectorsize,
++	   supported_ro_sectorsize_show);
++
++static ssize_t supported_rw_sectorsize_show(struct kobject *kobj,
++					    struct kobj_attribute *a,
++					    char *buf)
++{
++	ssize_t ret = 0;
++
++	/* Only PAGE_SIZE as sectorsize is supported */
++	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%lu\n", PAGE_SIZE);
++	return ret;
++}
++BTRFS_ATTR(static_feature, supported_rw_sectorsize,
++	   supported_rw_sectorsize_show);
+ static struct attribute *btrfs_supported_static_feature_attrs[] = {
+ 	BTRFS_ATTR_PTR(static_feature, rmdir_subvol),
+ 	BTRFS_ATTR_PTR(static_feature, supported_checksums),
+ 	BTRFS_ATTR_PTR(static_feature, send_stream_version),
+ 	BTRFS_ATTR_PTR(static_feature, supported_rescue_options),
++	BTRFS_ATTR_PTR(static_feature, supported_ro_sectorsize),
++	BTRFS_ATTR_PTR(static_feature, supported_rw_sectorsize),
+ 	NULL
+ };
+ 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum TIK         
-Universitaet Stuttgart         E-Mail: horlacher@tik.uni-stuttgart.de
-Allmandring 30a                Tel:    ++49-711-68565868
-70569 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20210310074620.GA2158@tik.uni-stuttgart.de>
+2.30.1
+

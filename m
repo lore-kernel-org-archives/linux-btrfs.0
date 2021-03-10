@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8FD0FC15506
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:09:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FE4AC43331
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:09:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6218D64FEF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:09:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C97C064F2D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:09:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232731AbhCJJJ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Mar 2021 04:09:27 -0500
-Received: from mx2.suse.de ([195.135.220.15]:34954 "EHLO mx2.suse.de"
+        id S232622AbhCJJJU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Mar 2021 04:09:20 -0500
+Received: from mx2.suse.de ([195.135.220.15]:34694 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232484AbhCJJJI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Mar 2021 04:09:08 -0500
+        id S232650AbhCJJIt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Mar 2021 04:08:49 -0500
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1615367347; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1615367328; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=KxRgcwsMK3F+Z+3D43e74I6ovMwLmD7YbuYjLdo16oQ=;
-        b=cfMmjTWkfHmgdfYeAT7GfWog/8UPCNfCbyIdEKKWnodWbpu64zq9QntXF5srl38wvsXOQl
-        l+sjZNtklp6TQ2aCfYYEhAKoMVywnUrrJLo9+0TQ7ZfYg43og8hya4/4biv7szDjqMUf+k
-        tnUeUOgsmLvibmAJ847OfmIeXsk3z4s=
+        bh=eUmlLACjPZRfmfGAttrIRfclTqYGN9oP/leQd0P3xDw=;
+        b=k08SeQNI0t9sq94LcPZt1uX49Mng4gU3Ty1if3sG2XixSSb2l/rpXpK4pZRB80sepudSuC
+        1st50UA6KJ6wO/gk+zvdQSCneqDDDqLSR+8qxg4uWBYbXFdbDzgV/tA8lj5/vKLr6RaMlE
+        MM8YyeFVahxyCA37Jqoj1jI39a7dP68=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 5B496AE1B
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 09:09:07 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 62A4AAD74
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 09:08:48 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 14/15] btrfs: make lock_extent_buffer_for_io() to be subpage compatible
-Date:   Wed, 10 Mar 2021 17:08:32 +0800
-Message-Id: <20210310090833.105015-15-wqu@suse.com>
+Subject: [PATCH v2 04/15] btrfs: introduce helpers for subpage dirty status
+Date:   Wed, 10 Mar 2021 17:08:22 +0800
+Message-Id: <20210310090833.105015-5-wqu@suse.com>
 X-Mailer: git-send-email 2.30.1
 In-Reply-To: <20210310090833.105015-1-wqu@suse.com>
 References: <20210310090833.105015-1-wqu@suse.com>
@@ -46,35 +46,129 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For subpage metadata, we don't use page locking at all.
-So just skip the page locking part for subpage.
+This patch introduce the following functions to handle btrfs subpage
+dirty status:
+- btrfs_subpage_set_dirty()
+- btrfs_subpage_clear_dirty()
+- btrfs_subpage_test_dirty()
+  Those helpers can only be called when the range is ensured to be
+  inside the page.
 
-All the remaining routine can be reused.
+- btrfs_page_set_dirty()
+- btrfs_page_clear_dirty()
+- btrfs_page_test_dirty()
+  Those helpers can handle both regular sector size and subpage without
+  problem.
+  Thus those would be used to replace PageDirty() related calls in
+  later commits.
+
+There is one special point to note here, just like set_page_dirty() and
+clear_page_dirty_for_io(), btrfs_*page_set_dirty() and
+btrfs_*page_clear_dirty() must be called with page locked.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/subpage.c | 43 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/subpage.h | 15 +++++++++++++++
+ 2 files changed, 58 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 74525ebf2b83..18730d3ab50f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3937,7 +3937,13 @@ static noinline_for_stack int lock_extent_buffer_for_io(struct extent_buffer *eb
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index c69049e7daa9..183925902031 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -220,6 +220,46 @@ void btrfs_subpage_clear_error(const struct btrfs_fs_info *fs_info,
+ 	spin_unlock_irqrestore(&subpage->lock, flags);
+ }
  
- 	btrfs_tree_unlock(eb);
++void btrfs_subpage_set_dirty(const struct btrfs_fs_info *fs_info,
++		struct page *page, u64 start, u32 len)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
++	unsigned long flags;
++
++	spin_lock_irqsave(&subpage->lock, flags);
++	subpage->dirty_bitmap |= tmp;
++	spin_unlock_irqrestore(&subpage->lock, flags);
++	set_page_dirty(page);
++}
++
++bool btrfs_subpage_clear_and_test_dirty(const struct btrfs_fs_info *fs_info,
++		struct page *page, u64 start, u32 len)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++	u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
++	unsigned long flags;
++	bool last = false;
++
++
++	spin_lock_irqsave(&subpage->lock, flags);
++	subpage->dirty_bitmap &= ~tmp;
++	if (subpage->dirty_bitmap == 0)
++		last = true;
++	spin_unlock_irqrestore(&subpage->lock, flags);
++	return last;
++}
++
++void btrfs_subpage_clear_dirty(const struct btrfs_fs_info *fs_info,
++		struct page *page, u64 start, u32 len)
++{
++	bool last;
++
++	last = btrfs_subpage_clear_and_test_dirty(fs_info, page, start, len);
++	if (last)
++		clear_page_dirty_for_io(page);
++}
++
+ /*
+  * Unlike set/clear which is dependent on each page status, for test all bits
+  * are tested in the same way.
+@@ -240,6 +280,7 @@ bool btrfs_subpage_test_##name(const struct btrfs_fs_info *fs_info,	\
+ }
+ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(uptodate);
+ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(error);
++IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(dirty);
  
--	if (!ret)
-+	/*
-+	 * Either we don't need to submit any tree block, or we're submitting
-+	 * subpage.
-+	 * Subpage metadata doesn't use page locking at all, so we can skip
-+	 * the page locking.
-+	 */
-+	if (!ret || fs_info->sectorsize < PAGE_SIZE)
- 		return ret;
+ /*
+  * Note that, in selftests (extent-io-tests), we can have empty fs_info passed
+@@ -276,3 +317,5 @@ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
+ IMPLEMENT_BTRFS_PAGE_OPS(uptodate, SetPageUptodate, ClearPageUptodate,
+ 			 PageUptodate);
+ IMPLEMENT_BTRFS_PAGE_OPS(error, SetPageError, ClearPageError, PageError);
++IMPLEMENT_BTRFS_PAGE_OPS(dirty, set_page_dirty, clear_page_dirty_for_io,
++			 PageDirty);
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+index b86a4881475d..adaece5ce294 100644
+--- a/fs/btrfs/subpage.h
++++ b/fs/btrfs/subpage.h
+@@ -20,6 +20,7 @@ struct btrfs_subpage {
+ 	spinlock_t lock;
+ 	u16 uptodate_bitmap;
+ 	u16 error_bitmap;
++	u16 dirty_bitmap;
+ 	union {
+ 		/*
+ 		 * Structures only used by metadata
+@@ -87,5 +88,19 @@ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
  
- 	num_pages = num_extent_pages(eb);
+ DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
+ DECLARE_BTRFS_SUBPAGE_OPS(error);
++DECLARE_BTRFS_SUBPAGE_OPS(dirty);
++
++/*
++ * Extra clear_and_test function for subpage dirty bitmap.
++ *
++ * Return true if we're the last bits in the dirty_bitmap and clear the
++ * dirty_bitmap.
++ * Return false otherwise.
++ *
++ * NOTE: Callers should manually clear page dirty for true case, as we have
++ * extra handling for tree blocks.
++ */
++bool btrfs_subpage_clear_and_test_dirty(const struct btrfs_fs_info *fs_info,
++		struct page *page, u64 start, u32 len);
+ 
+ #endif
 -- 
 2.30.1
 

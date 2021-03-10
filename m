@@ -2,75 +2,115 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A57B7C433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:10:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE710C433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:36:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4CC8D64FF1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:10:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4FD4964FFB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 10 Mar 2021 09:36:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232323AbhCJJKV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 10 Mar 2021 04:10:21 -0500
-Received: from mx2.suse.de ([195.135.220.15]:35566 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232646AbhCJJKK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 10 Mar 2021 04:10:10 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 85CD8AE27;
-        Wed, 10 Mar 2021 09:10:09 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E3C60DA7D7; Wed, 10 Mar 2021 10:08:10 +0100 (CET)
-Date:   Wed, 10 Mar 2021 10:08:10 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: output sectorsize related warning message
- into stdout
-Message-ID: <20210310090810.GL7604@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20210309073909.74043-1-wqu@suse.com>
- <20210309133325.GH7604@twin.jikos.cz>
- <49c16359-3ce0-c021-608d-b05c9d4c1fda@gmx.com>
+        id S232583AbhCJJfa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 10 Mar 2021 04:35:30 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52260 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231738AbhCJJfU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 10 Mar 2021 04:35:20 -0500
+Received: from zaphod.cobb.me.uk (zaphod.cobb.me.uk [IPv6:2001:41c8:51:983::131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E1B2C06174A
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 01:35:20 -0800 (PST)
+Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
+        id 75DF89C1C4; Wed, 10 Mar 2021 09:35:16 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1615368916;
+        bh=bFKAvxzw9OeSfFmWlrdcucr/ewfk/i+JlFjKQN01Rs8=;
+        h=From:To:References:Subject:Date:In-Reply-To:From;
+        b=CrPME3t9hF4s9HeJ4TyVpMhIdcpyy7pXtniub7PGqpvFaKiT5Oqu2Q7Re0pCZFZ5v
+         8vS5o/RPrQHNL4D/9Ba0Er4h0HxxwFln2yMG7XLMUIWXVpWlRz1q+qnIwTjwnizgTu
+         AY+Wa6qr1Zg84S86fmI4xqk/YSelvKn/SwTCmZ7GJWxs5GVMM3Oo0BqN/RHQbcGdDU
+         6nNRUs4Cw7RbaZiRQA646uy1Uv3f8ENIsRz2/nW4vzkYYnhct5hm3+rvnDJY9TcDQH
+         AT4rdwnTIYVbLJYlL8NBWR6cZg9JJacbCHze3tX0hF+JwfhDxGMEAwExenQsBuPGqe
+         qtLhti2jN4I4Q==
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 447479B966
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 09:35:11 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1615368911;
+        bh=bFKAvxzw9OeSfFmWlrdcucr/ewfk/i+JlFjKQN01Rs8=;
+        h=From:To:References:Subject:Date:In-Reply-To:From;
+        b=aaQ9+2Cg7s+jPLDgex9fxbi211c3fc7M9vBcsRfN5hKo61nw5ulXjemppXmAgLmM3
+         /Qd+HXjyDtOsvuROJQ1P/pc4d8hBLkU0kvKSn1F5hWHnZf6jTpbmIjsFxnOBalcDor
+         fWvtsl7gOHhOwQ82ZmCf9WKlfa5RJIYOv05J3xkUA8P/EsvAPCAhxjuwHU4C0AGQdd
+         cfiBg+k1BSAGBCi1pvnsLedf6SXyFOKxIQBAh9+Xz4k41zC7fytTiCbxBYD294ymwJ
+         sNpEe0dV9+6kL5Engc/wmhu5vVJKWkIEWcPGnIHK89NnnvbxntiozEaPilKWUG/fbB
+         7ImExeLXS0EAw==
+Received: from [192.168.0.202] (ryzen.home.cobb.me.uk [192.168.0.202])
+        by black.home.cobb.me.uk (Postfix) with ESMTP id BDE1620F7D6
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Mar 2021 09:35:10 +0000 (GMT)
+From:   Graham Cobb <g.btrfs@cobb.uk.net>
+To:     linux-btrfs@vger.kernel.org
+References: <20210310074620.GA2158@tik.uni-stuttgart.de>
+ <20210310075957.GG22502@savella.carfax.org.uk>
+ <20210310080940.GB2158@tik.uni-stuttgart.de>
+Subject: Re: Re: nfs subvolume access?
+Message-ID: <5bded122-8adf-e5e7-dceb-37a3875f1a4b@cobb.uk.net>
+Date:   Wed, 10 Mar 2021 09:35:10 +0000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.7.1
 MIME-Version: 1.0
+In-Reply-To: <20210310080940.GB2158@tik.uni-stuttgart.de>
 Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <49c16359-3ce0-c021-608d-b05c9d4c1fda@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 10, 2021 at 08:18:16AM +0800, Qu Wenruo wrote:
+On 10/03/2021 08:09, Ulli Horlacher wrote:
+> On Wed 2021-03-10 (07:59), Hugo Mills wrote:
 > 
+>>> On tsmsrvj I have in /etc/exports:
+>>>
+>>> /data/fex       tsmsrvi(rw,async,no_subtree_check,no_root_squash)
+>>>
+>>> This is a btrfs subvolume with snapshots:
+>>>
+>>> root@tsmsrvj:~# btrfs subvolume list /data
+>>> ID 257 gen 35 top level 5 path fex
+>>> ID 270 gen 36 top level 257 path fex/spool
+>>> ID 271 gen 21 top level 270 path fex/spool/.snapshot/2021-03-07_1453.test
+>>> ID 272 gen 23 top level 270 path fex/spool/.snapshot/2021-03-07_1531.test
+>>> ID 273 gen 25 top level 270 path fex/spool/.snapshot/2021-03-07_1532.test
+>>> ID 274 gen 27 top level 270 path fex/spool/.snapshot/2021-03-07_1718.test
+>>>
+>>> root@tsmsrvj:~# find /data/fex | wc -l
+>>> 489887
 > 
-> On 2021/3/9 下午9:33, David Sterba wrote:
-> > On Tue, Mar 09, 2021 at 03:39:09PM +0800, Qu Wenruo wrote:
-> >> Since commit 90020a760584 ("btrfs-progs: mkfs: refactor how we handle
-> >> sectorsize override") we have extra warning message if the sectorsize of
-> >> mkfs doesn't match page size.
-> >>
-> >> But this warning is show as stderr, which makes a lot of fstests cases
-> >> failure due to golden output mismatch.
-> >
-> > Well, no. Using message helpers in progs is what we want to do
-> > everywhere, working around fstests output matching design is fixing the
-> > problem in the wrong place. That this is fragile has been is known and
-> > I want to keep the liberty to adjust output in progs as users need, not
-> > as fstests require.
+>>    I can't remember if this is why, but I've had to put a distinct
+>> fsid field in each separate subvolume being exported:
+>>
+>> /srv/nfs/home     -rw,async,fsid=0x1730,no_subtree_check,no_root_squash
 > 
-> OK, then I guess the best way to fix the problem is to add sysfs
-> interface to export supported rw/ro sectorsize.
-> 
-> It shouldn't be that complex and would be small enough for next merge
-> window.
+> I must export EACH subvolume?!
 
-The subpage support should be advertised somewhere in sysfs so the range
-of supported sector sizes sounds like a good idea.
+I have had similar problems. I *think* the current case is that modern
+NFS, using NFS V4, can cope with the whole disk being accessible without
+giving each subvolume its own FSID (which I have stopped doing).
+
+HOWEVER, I think that find (and anything else which uses fsids and inode
+numbers) will see subvolumes as having duplicated inodes.
+
+> The snapshots are generated automatically (via cron)!
+> I cannot add them to /etc/exports
+
+Well, you could write some scripts... but I don't think it is necessary.
+I *think* it is only necessary if you want `find` to be able to cross
+between subvolumes on the NFS mounted disks.
+
+However, I am NOT an NFS expert, nor have I done a lot of work on this.
+I might be wrong. But I do NFS mount my snapshots disk remotely and use
+it. And I do see occasional complaints from find, but I live with it.

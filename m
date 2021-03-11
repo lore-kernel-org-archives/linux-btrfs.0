@@ -2,126 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3044C433E9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7701AC433E6
 	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 16:24:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6392064F9A
+	by mail.kernel.org (Postfix) with ESMTP id 3428464F9C
 	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 16:24:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234574AbhCKQXp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Mar 2021 11:23:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55788 "EHLO
+        id S234515AbhCKQXl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Mar 2021 11:23:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55768 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234527AbhCKQXZ (ORCPT
+        with ESMTP id S234543AbhCKQXV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Mar 2021 11:23:25 -0500
-Received: from mail-qv1-xf31.google.com (mail-qv1-xf31.google.com [IPv6:2607:f8b0:4864:20::f31])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 06433C061574
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Mar 2021 08:23:25 -0800 (PST)
-Received: by mail-qv1-xf31.google.com with SMTP id i15so2806348qvr.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Mar 2021 08:23:24 -0800 (PST)
+        Thu, 11 Mar 2021 11:23:21 -0500
+Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E500DC061574
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Mar 2021 08:23:20 -0800 (PST)
+Received: by mail-qv1-xf2b.google.com with SMTP id h3so2801172qvh.8
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Mar 2021 08:23:20 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=BGIY45p/s4D+aX/Z7SVLmuYErsSA/3rb9cNdveUclgc=;
-        b=EcMsJkVYkfRoweDGnWVj2pZo5xe8wY9VJgWClWnXulRIDfaFFoB8KJVurYcTbGNW0c
-         vU9PUSR7hyU/9QhTIpF8dTdexGQBDJ63DUeIwOtgw8ER/EU5tg4gti/p6HSoWcn5JniQ
-         GeL7f+UCp9T+pDmtVB/7RYSCHdxdpq8LQGFw5qo3bZYi3prl5xajrfJCsuwwv2ZInwwG
-         TLV9IF2EYQ/86k85uTrvLeIGQgYh4YQUnqUNfQ4uptuCdnJLwo2zCNjyuqz76Mkf2Iyh
-         DZlwhiR5jQ0TlgsyDHaMTArL3Ur20SZQRRXfbuRk1ftpizNZTBIU4fh90NoPzfUSVKro
-         l7Ng==
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=NM3nnOE1zLE0lT6z8sOa23/HrGz4g7tEBeuXVUEo6j4=;
+        b=Aua/4VDPTLesJHtQG+88bC1dM2szh7qQl/Efgl6UTUgquF73rdKCMOgcHckudk/Akn
+         FgeVK0Pvo8vZt46S6EJ7OjMc/GbU11FeYUxZfk9MJWp173/UYLOZph/HRjIyE2QV4pRD
+         zkBcXazr13UPNc8kM+RtpzQ921fW6ORwV3WBH0k0A1fbP9t+9pLdvPA5DL63ou8r2YVh
+         aU0wOXsE9ugFeAhXX3+a5D74T4PSoKCgdGGkK5eGSW7DhX+DmUQZrljzp/0qGnZm/OcW
+         Q9bvBYMqwyH8vmGKlRHzw6AYtRR+mm9QqDtayhVYYtz4GftO8+PRPycSMMIlJyenNVD8
+         VE+g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=BGIY45p/s4D+aX/Z7SVLmuYErsSA/3rb9cNdveUclgc=;
-        b=cf7XzhMSGCHvZc1UMBGJHWJ3FkL6mg2lKBk+CTRJEtVcTxIO/2146O4NvaRwLgE5to
-         9vjRdf9Z5k1GHv9dFKcbTYyvLEpG0tUGHS1ZaJ0tmUhNqsX9+1ofURamCQ1sVoC0+aJi
-         aZPsG3Gyq2cDiH3WthwRrmNzrRe1RYTyaHwCiabtMdsYHe90+xbm8mQODq6TtLgXvtmv
-         sSLUhHN5h/kfL+XzjR5a70o0FzKkUZseTlXQSCn6E7lZ4WSjVAaZTjq+kN9taRjMLQiP
-         GSeYtA+qM0FUqzdz2ZtZtCAuO4wLKt+JG3GXFE58E6YQNCsLmFR0Jzjgf1rGBPMFn3Cm
-         /XKA==
-X-Gm-Message-State: AOAM531yghYD5JLQCsOaBL+hjitueIjkVWpGLux+68Fy5GS7u90//LAv
-        dofcBCoc8j7TqQdzIROoOXx9bIzgwHNXUqFd
-X-Google-Smtp-Source: ABdhPJy/HfODkAz4rJeZxsvlzYW66AF3LwToNg4hUI8LC2stFkX5loQm63YPG95Iri/c3uznMfBjoA==
-X-Received: by 2002:a05:6214:20a1:: with SMTP id 1mr8442631qvd.30.1615479803811;
-        Thu, 11 Mar 2021 08:23:23 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=NM3nnOE1zLE0lT6z8sOa23/HrGz4g7tEBeuXVUEo6j4=;
+        b=U3ix0vZa4wp0kAvzMMGUjqbPh+dMno6mPvtqUMABhTZpRNOu5978x+NG2TDm6Hl4Ao
+         UPzxfsSprAY4ojl08AvdU/QkTZv60/xiAGbLeKWpRMYktiIZekb+zbGrDxizuwNbvqeR
+         28JT6hsOHXX+f18hkvn7gssrZTLx/SFio+WHUdv1VidWXeBa15t/2uHDgSacvWgOWL/Q
+         PCgBAb6Fk/KGhbJKZoXSThuhDOnSTa4lseoaiU8Ugrh7vZguAKEDOUKOqUwrJsZaZNK8
+         L5HvRBtPJRvUZRq5RD5GqXmltclHA+w9h3AuvPxdiDZZuDTM9ewnMrTCE90lSyBlIXLd
+         /vJQ==
+X-Gm-Message-State: AOAM530jpRY0t2uC37MxsKP3PuyFoIAwvuFO32Ma7y2r4os+/nLIfEl4
+        MNyh35+tTPK3LThdxhQ9EUPdlJldK8yEoPMN
+X-Google-Smtp-Source: ABdhPJw54Cxof2ybQ/2SQsjr6Jc9s+XvS1RWNjbWDNdG5pEMbHg5fXTkmFqVEaH7Cu+i3vmC7LLV3w==
+X-Received: by 2002:a05:6214:1424:: with SMTP id o4mr8445713qvx.34.1615479798968;
+        Thu, 11 Mar 2021 08:23:18 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d2sm2314251qkk.42.2021.03.11.08.23.23
+        by smtp.gmail.com with ESMTPSA id v4sm2041946qte.18.2021.03.11.08.23.18
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 11 Mar 2021 08:23:23 -0800 (PST)
+        Thu, 11 Mar 2021 08:23:18 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Neal Gompa <ngompa13@gmail.com>
-Subject: [PATCH 3/3] btrfs: don't init dev replace for bad dev root
-Date:   Thu, 11 Mar 2021 11:23:16 -0500
-Message-Id: <b6183586bd5d9dd6f26ff4aaf3bab0a6629c6018.1615479658.git.josef@toxicpanda.com>
+Subject: [PATCH 0/3] Handle bad dev_root properly with rescue=all
+Date:   Thu, 11 Mar 2021 11:23:13 -0500
+Message-Id: <cover.1615479658.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1615479658.git.josef@toxicpanda.com>
-References: <cover.1615479658.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-While helping Neal fix his broken file system I added a debug patch to
-catch if we were calling btrfs_search_slot with a NULL root, and this
-stack trace popped
+Hello,
 
-we tried to search with a NULL root
-CPU: 0 PID: 1760 Comm: mount Not tainted 5.11.0-155.nealbtrfstest.1.fc34.x86_64 #1
-Hardware name: VMware, Inc. VMware Virtual Platform/440BX Desktop Reference Platform, BIOS 6.00 07/22/2020
-Call Trace:
- dump_stack+0x6b/0x83
- btrfs_search_slot.cold+0x11/0x1b
- ? btrfs_init_dev_replace+0x36/0x450
- btrfs_init_dev_replace+0x71/0x450
- open_ctree+0x1054/0x1610
- btrfs_mount_root.cold+0x13/0xfa
- legacy_get_tree+0x27/0x40
- vfs_get_tree+0x25/0xb0
- vfs_kern_mount.part.0+0x71/0xb0
- btrfs_mount+0x131/0x3d0
- ? legacy_get_tree+0x27/0x40
- ? btrfs_show_options+0x640/0x640
- legacy_get_tree+0x27/0x40
- vfs_get_tree+0x25/0xb0
- path_mount+0x441/0xa80
- __x64_sys_mount+0xf4/0x130
- do_syscall_64+0x33/0x40
- entry_SYSCALL_64_after_hwframe+0x44/0xa9
-RIP: 0033:0x7f644730352e
+My recent debugging session with Neal's broken filesystem uncovered a glaring
+hole in my rescue=all patches, they don't deal with a NULL dev_root properly.
+In testing I only ever tested corrupting the extent tree or the csum tree, since
+those are the most problematic.  The following 3 fixes allowed Neal to get
+rescue=all working without panicing the machine, and I verified everything by
+using btrfs-corrupt-block to corrupt a dev root of a file system.  Thanks,
 
-Fix this by not starting the device replace stuff if we do not have a
-NULL dev root.
+Josef
 
-Reported-by: Neal Gompa <ngompa13@gmail.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
+Josef Bacik (3):
+  btrfs: init devices always
+  btrfs: do not init dev stats if we have no dev_root
+  btrfs: don't init dev replace for bad dev root
+
  fs/btrfs/dev-replace.c | 3 +++
- 1 file changed, 3 insertions(+)
+ fs/btrfs/disk-io.c     | 2 +-
+ fs/btrfs/volumes.c     | 3 +++
+ 3 files changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 3a9c1e046ebe..d05f73530af7 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -81,6 +81,9 @@ int btrfs_init_dev_replace(struct btrfs_fs_info *fs_info)
- 	struct btrfs_dev_replace_item *ptr;
- 	u64 src_devid;
- 
-+	if (!dev_root)
-+		return 0;
-+
- 	path = btrfs_alloc_path();
- 	if (!path) {
- 		ret = -ENOMEM;
 -- 
 2.26.2
 

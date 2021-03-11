@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-19.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CFC8C433E6
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A30DFC4332D
 	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 14:32:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CAFE464FE2
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 14:32:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5904A64FEE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 14:32:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233910AbhCKOb5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Mar 2021 09:31:57 -0500
-Received: from mail.kernel.org ([198.145.29.99]:56994 "EHLO mail.kernel.org"
+        id S233930AbhCKOb7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Mar 2021 09:31:59 -0500
+Received: from mail.kernel.org ([198.145.29.99]:57012 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233671AbhCKObZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Mar 2021 09:31:25 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 50D7764FE8;
-        Thu, 11 Mar 2021 14:31:24 +0000 (UTC)
+        id S233906AbhCKOb3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 11 Mar 2021 09:31:29 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 2CE1E64FD6;
+        Thu, 11 Mar 2021 14:31:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1615473085;
-        bh=y1RZTQszhrd9706ZBPIDfFMuO+2g/xMo9Agaer091Vs=;
+        s=k20201202; t=1615473089;
+        bh=qz1ZVBbatiRI2o/5VInRcVgXpTEjFJ8/El+flUY9fTM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Yn/ZoC3SkQUsFlyoDKWK3Kmpy6ZQIpfHoaGIfp5L2nty3yks++ON9tSMFhytGdLxv
-         40/+c3Paaod4lrRg/TdKKs+HV5iiW6Oj1jyb2DSmegQt6BiNZD5rFlyXSXkLdA+LLO
-         hYhP7BiD4oFhaMfFFKMw6d8Thhn0hMoaz/LSdpQEXsi/uj+8zlf4VgkTIlVGZlyb7Y
-         5fZSxuZ9PDtcmr5bmtIjKoz/ObFwMdcodj6LG83n6HkfOj4jGpZk4LsKcOvMvn+V+a
-         jJDFevBAXr/dqXOB0KEEH8K3GCxJvbxc41VeEephJ+ljsO/rjxnLucdYiFLBuZtL83
-         Z4dhr62Rg+mGg==
+        b=LUSu8Mbo9x8+1mceh3fl22OMjKxhs6lAFYwhhVxqPjenrVM7CHgba7y+QIMQ+YIun
+         NCLPAJcCtfNcFjRigs0TuH2FnP8sJNEozYOl3qRqsqi9CWeCuY6u8LcmdwmNNYcIxe
+         SdwjrlAecKJQkARxcEqjL2kneaicLW9Ar9U5PNg6BVmkP1p10m36ZuAdVCooG2Jyuy
+         6tkmfF4UtG92CmlvSpV7PmTl53SX1cB2GbUc8ApDfQ1HlbZ2AVSwhOS7PV3dKDYMcn
+         1HcAhqtxFThYRKSXT9Yb+NwhQ6+YryLP7hmqEDPRoAuXNh2aFdsiO/WTVf/raDzGU/
+         fX3GZPrW8DnDw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
 Cc:     ce3g8jdj@umail.furryterror.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/9] btrfs: always pin deleted leaves when there are active tree mod log users
-Date:   Thu, 11 Mar 2021 14:31:06 +0000
-Message-Id: <d9d8cda5b3ab2a262d4d66e9fe8abd75912f252f.1615472583.git.fdmanana@suse.com>
+Subject: [PATCH 5/9] btrfs: use a bit to track the existence of tree mod log users
+Date:   Thu, 11 Mar 2021 14:31:09 +0000
+Message-Id: <08ccdf842ceb0e05bccbdd087b9ef48efc4144db.1615472583.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1615472583.git.fdmanana@suse.com>
 References: <cover.1615472583.git.fdmanana@suse.com>
@@ -48,91 +48,84 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When freeing a tree block we may end up adding its extent back to the
-free space cache/tree, as long as there are no more references for it,
-it was created in the current transaction and writeback for it never
-happened. This is generally fine, however when we have tree mod log
-operations it can result in inconsistent versions of a btree after
-unwinding extent buffers with the recorded tree mod log operations.
+The tree modification log functions are called very frequently, basically
+they are called everytime a btree is modified (a pointer added or removed
+to a node, a new root for a btree is set, etc). Because of that, to avoid
+heavy lock contention on the lock that protects the list of tree mod log
+users, we have checks that test the emptiness of the list with a full
+memory barrier before the checks, so that when there are no tree mod log
+users we avoid taking the lock.
 
-This is because:
-
-* We only log operations for nodes (adding and removing key/pointers),
-  for leaves we don't do anything;
-
-* This means that we can log a MOD_LOG_KEY_REMOVE_WHILE_FREEING operation
-  for a node that points to a leaf that was deleted;
-
-* Before we apply the logged operation to unwind a node, we can have
-  that leaf's extent allocated again, either as a node or as a leaf, and
-  possibly for another btree. This is possible if the leaf was created in
-  the current transaction and writeback for it never started, in which
-  case btrfs_free_tree_block() returns its extent back to the free space
-  cache/tree;
-
-* Then, before applying the tree mod log operation, some task allocates
-  the metadata extent just freed before, and uses it either as a leaf or
-  as a node for some btree (can be the same or another one, it does not
-  matter);
-
-* After applying the MOD_LOG_KEY_REMOVE_WHILE_FREEING operation we now
-  get the target node with an item pointing to the metadata extent that
-  now has content different from what it had before the leaf was deleted.
-  It might now belong to a different btree and be a node and not a leaf
-  anymore.
-
-  As a consequence, the results of searches after the unwinding can be
-  unpredictable and produce unexpected results.
-
-So make sure we pin extent buffers corresponding to leaves when there
-are tree mod log users.
+Replace the memory barrier and list emptiness check with a test for a new
+bit set at fs_info->flags. This bit is used to indicate when there are
+tree mod log users, set whenever a user is added to the list and cleared
+when the last user is removed from the list. This makes the intention a
+bit more obvious and possibly more efficient (assuming test_bit() may be
+cheaper than a full memory barrier on some architectures).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 23 ++++++++++++++++++++++-
- 1 file changed, 22 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h        |  3 +++
+ fs/btrfs/tree-mod-log.c | 11 ++++++-----
+ 2 files changed, 9 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5e228d6ad63f..2482b26b1971 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3310,6 +3310,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 50208673bd55..90184ee2f832 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -580,6 +580,9 @@ enum {
  
- 	if (last_ref && btrfs_header_generation(buf) == trans->transid) {
- 		struct btrfs_block_group *cache;
-+		bool must_pin = false;
- 
- 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
- 			ret = check_ref_cleanup(trans, buf->start);
-@@ -3327,7 +3328,27 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 			goto out;
- 		}
- 
--		if (btrfs_is_zoned(fs_info)) {
-+		/*
-+		 * If this is a leaf and there are tree mod log users, we may
-+		 * have recorded mod log operations that point to this leaf.
-+		 * So we must make sure no one reuses this leaf's extent before
-+		 * mod log operations are applied to a node, otherwise after
-+		 * rewinding a node using the mod log operations we get an
-+		 * inconsistent btree, as the leaf's extent may now be used as
-+		 * a node or leaf for another different btree.
-+		 * We are safe from races here because at this point no other
-+		 * node or root points to this extent buffer, so if after this
-+		 * check a new tree mod log user joins, it will not be able to
-+		 * find a node pointing to this leaf and record operations that
-+		 * point to this leaf.
-+		 */
-+		if (btrfs_header_level(buf) == 0) {
-+			read_lock(&fs_info->tree_mod_log_lock);
-+			must_pin = !list_empty(&fs_info->tree_mod_seq_list);
-+			read_unlock(&fs_info->tree_mod_log_lock);
-+		}
+ 	/* Indicate that we can't trust the free space tree for caching yet */
+ 	BTRFS_FS_FREE_SPACE_TREE_UNTRUSTED,
 +
-+		if (must_pin || btrfs_is_zoned(fs_info)) {
- 			btrfs_redirty_list_add(trans->transaction, buf);
- 			pin_down_extent(trans, cache, buf->start, buf->len, 1);
- 			btrfs_put_block_group(cache);
++	/* Indicate whether there are any tree modification log users. */
++	BTRFS_FS_TREE_MOD_LOG_USERS,
+ };
+ 
+ /*
+diff --git a/fs/btrfs/tree-mod-log.c b/fs/btrfs/tree-mod-log.c
+index f2a6da1b2903..b912b82c36c9 100644
+--- a/fs/btrfs/tree-mod-log.c
++++ b/fs/btrfs/tree-mod-log.c
+@@ -60,6 +60,7 @@ u64 btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ 	if (!elem->seq) {
+ 		elem->seq = btrfs_inc_tree_mod_seq(fs_info);
+ 		list_add_tail(&elem->list, &fs_info->tree_mod_seq_list);
++		set_bit(BTRFS_FS_TREE_MOD_LOG_USERS, &fs_info->flags);
+ 	}
+ 	write_unlock(&fs_info->tree_mod_log_lock);
+ 
+@@ -83,7 +84,9 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ 	list_del(&elem->list);
+ 	elem->seq = 0;
+ 
+-	if (!list_empty(&fs_info->tree_mod_seq_list)) {
++	if (list_empty(&fs_info->tree_mod_seq_list)) {
++		clear_bit(BTRFS_FS_TREE_MOD_LOG_USERS, &fs_info->flags);
++	} else {
+ 		struct btrfs_seq_list *first;
+ 
+ 		first = list_first_entry(&fs_info->tree_mod_seq_list,
+@@ -166,8 +169,7 @@ static noinline int tree_mod_log_insert(struct btrfs_fs_info *fs_info,
+ static inline bool tree_mod_dont_log(struct btrfs_fs_info *fs_info,
+ 				    struct extent_buffer *eb)
+ {
+-	smp_mb();
+-	if (list_empty(&(fs_info)->tree_mod_seq_list))
++	if (!test_bit(BTRFS_FS_TREE_MOD_LOG_USERS, &fs_info->flags))
+ 		return true;
+ 	if (eb && btrfs_header_level(eb) == 0)
+ 		return true;
+@@ -185,8 +187,7 @@ static inline bool tree_mod_dont_log(struct btrfs_fs_info *fs_info,
+ static inline bool tree_mod_need_log(const struct btrfs_fs_info *fs_info,
+ 				    struct extent_buffer *eb)
+ {
+-	smp_mb();
+-	if (list_empty(&(fs_info)->tree_mod_seq_list))
++	if (!test_bit(BTRFS_FS_TREE_MOD_LOG_USERS, &fs_info->flags))
+ 		return false;
+ 	if (eb && btrfs_header_level(eb) == 0)
+ 		return false;
 -- 
 2.28.0
 

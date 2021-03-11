@@ -2,93 +2,109 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7701AC433E6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 16:24:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 173E1C433E6
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 16:48:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3428464F9C
-	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 16:24:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D188B64FEE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 11 Mar 2021 16:48:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234515AbhCKQXl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 11 Mar 2021 11:23:41 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55768 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234543AbhCKQXV (ORCPT
+        id S229677AbhCKQsP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 11 Mar 2021 11:48:15 -0500
+Received: from mail-40134.protonmail.ch ([185.70.40.134]:49734 "EHLO
+        mail-40134.protonmail.ch" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229459AbhCKQsB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 11 Mar 2021 11:23:21 -0500
-Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E500DC061574
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Mar 2021 08:23:20 -0800 (PST)
-Received: by mail-qv1-xf2b.google.com with SMTP id h3so2801172qvh.8
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Mar 2021 08:23:20 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=NM3nnOE1zLE0lT6z8sOa23/HrGz4g7tEBeuXVUEo6j4=;
-        b=Aua/4VDPTLesJHtQG+88bC1dM2szh7qQl/Efgl6UTUgquF73rdKCMOgcHckudk/Akn
-         FgeVK0Pvo8vZt46S6EJ7OjMc/GbU11FeYUxZfk9MJWp173/UYLOZph/HRjIyE2QV4pRD
-         zkBcXazr13UPNc8kM+RtpzQ921fW6ORwV3WBH0k0A1fbP9t+9pLdvPA5DL63ou8r2YVh
-         aU0wOXsE9ugFeAhXX3+a5D74T4PSoKCgdGGkK5eGSW7DhX+DmUQZrljzp/0qGnZm/OcW
-         Q9bvBYMqwyH8vmGKlRHzw6AYtRR+mm9QqDtayhVYYtz4GftO8+PRPycSMMIlJyenNVD8
-         VE+g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=NM3nnOE1zLE0lT6z8sOa23/HrGz4g7tEBeuXVUEo6j4=;
-        b=U3ix0vZa4wp0kAvzMMGUjqbPh+dMno6mPvtqUMABhTZpRNOu5978x+NG2TDm6Hl4Ao
-         UPzxfsSprAY4ojl08AvdU/QkTZv60/xiAGbLeKWpRMYktiIZekb+zbGrDxizuwNbvqeR
-         28JT6hsOHXX+f18hkvn7gssrZTLx/SFio+WHUdv1VidWXeBa15t/2uHDgSacvWgOWL/Q
-         PCgBAb6Fk/KGhbJKZoXSThuhDOnSTa4lseoaiU8Ugrh7vZguAKEDOUKOqUwrJsZaZNK8
-         L5HvRBtPJRvUZRq5RD5GqXmltclHA+w9h3AuvPxdiDZZuDTM9ewnMrTCE90lSyBlIXLd
-         /vJQ==
-X-Gm-Message-State: AOAM530jpRY0t2uC37MxsKP3PuyFoIAwvuFO32Ma7y2r4os+/nLIfEl4
-        MNyh35+tTPK3LThdxhQ9EUPdlJldK8yEoPMN
-X-Google-Smtp-Source: ABdhPJw54Cxof2ybQ/2SQsjr6Jc9s+XvS1RWNjbWDNdG5pEMbHg5fXTkmFqVEaH7Cu+i3vmC7LLV3w==
-X-Received: by 2002:a05:6214:1424:: with SMTP id o4mr8445713qvx.34.1615479798968;
-        Thu, 11 Mar 2021 08:23:18 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id v4sm2041946qte.18.2021.03.11.08.23.18
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 11 Mar 2021 08:23:18 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/3] Handle bad dev_root properly with rescue=all
-Date:   Thu, 11 Mar 2021 11:23:13 -0500
-Message-Id: <cover.1615479658.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
+        Thu, 11 Mar 2021 11:48:01 -0500
+Date:   Thu, 11 Mar 2021 16:47:53 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fomin.one;
+        s=protonmail3; t=1615481277;
+        bh=8z4oCF/Cxpc3mG5/bI3kpA/G+lREs3qwLwFBxtl2/kM=;
+        h=Date:To:From:Reply-To:Subject:In-Reply-To:References:From;
+        b=L+XQq6J4j5K8KbYF99sfbT/1MdN6gWFKlt23kT8yujVvoZw5oUiKxbHNy7LbPE7FD
+         kUFOjX4ZA0XhOJO65iIevEd6HEdYEhU2Id9gnATe+BNDcQQc2XlcwxV0MXmEE01TfA
+         NoB6P0IoXAXV8jwHYico5KEMMRsyOnmheKzKummCoArp7TSV67ApQYln4BZaU2Sa5b
+         yQ9au8zxLwHTD7xUz3rPWcDegTqJXQx6RoguWD/RZQ2XU9aZMcOt19ebWNnWYfSqHT
+         gCcjI/Dc5A2AgUGFCoUF9hNfWk3D6ngtvg4QoMvnthc5xODS9f9aJMC88RuUL4fqzk
+         FAp5RCoEOyCoA==
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From:   Maksim Fomin <maxim@fomin.one>
+Reply-To: Maksim Fomin <maxim@fomin.one>
+Subject: Multiple files with the same name in one directory
+Message-ID: <gpmixArD-r8A5adzNpKZzMuEXbuhabkOg1kZECF3t4fL1PWIXuqKVfHKOEnkng0Geku1USZskpjNvrDdgce0y-96ADaSbTYPdbE-7HSKUX0=@fomin.one>
+In-Reply-To: <010201781d22d3e9-78ba2d74-fc45-4455-813d-367e789d3e9b-000000@eu-west-1.amazonses.com>
+References: <010201781d22d3e9-78ba2d74-fc45-4455-813d-367e789d3e9b-000000@eu-west-1.amazonses.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90 Original Me=
+ssage =E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90=E2=80=90
+On Wednesday, 10 March 2021 =D0=B3., 20:15, Martin Raiber <martin@urbackup.=
+org> wrote:
 
-My recent debugging session with Neal's broken filesystem uncovered a glaring
-hole in my rescue=all patches, they don't deal with a NULL dev_root properly.
-In testing I only ever tested corrupting the extent tree or the csum tree, since
-those are the most problematic.  The following 3 fixes allowed Neal to get
-rescue=all working without panicing the machine, and I verified everything by
-using btrfs-corrupt-block to corrupt a dev root of a file system.  Thanks,
+> Hi,
+>
+> I have this in a btrfs directory. Linux kernel 5.10.16, no errors in dmes=
+g, no scrub errors:
+>
+> ls -lh
+> total 19G
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> -rwxr-x--- 1 root=C2=A0=C2=A0=C2=A0=C2=A0 root=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0 783 Mar 10 14:56 disk_config.dat
+> ...
+>
+> disk_config.dat gets written to using fsync rename ( write new version to=
+ disk_config.dat.new, fsync disk_config.dat.new, then rename to disk_config=
+.dat -- it is missing the parent directory fsync).
+>
+> So far no negative consequences... (except that programs might get confus=
+ed).
+>
+> echo 3 > /proc/sys/vm/drop_caches doesn't help.
+>
+> Regards,
+> Martin Raiber
 
-Josef
+I can say that approx 1 month ago I also was surprised by having several fi=
+les with duplicate names (listed by pcmanfm file manager and ls in console)=
+. In my case I had duplicates for several different files in one folder, no=
+t 10 copies of one file. I resolved the problem by renaming files and delet=
+ing duplicates. I decided not to report that issue because I thought I have=
+ unintentionally done something crazy. Btw, they likely occured also after =
+power loss.
 
-Josef Bacik (3):
-  btrfs: init devices always
-  btrfs: do not init dev stats if we have no dev_root
-  btrfs: don't init dev replace for bad dev root
-
- fs/btrfs/dev-replace.c | 3 +++
- fs/btrfs/disk-io.c     | 2 +-
- fs/btrfs/volumes.c     | 3 +++
- 3 files changed, 7 insertions(+), 1 deletion(-)
-
--- 
-2.26.2
-
+Regards,
+Maxim Fomin

@@ -7,60 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE2B5C43331
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:26:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DF63C43142
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:26:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9F88A64FB2
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:26:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6AF1E64F77
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:26:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234833AbhCLU0M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Mar 2021 15:26:12 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51708 "EHLO
+        id S234863AbhCLU0U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Mar 2021 15:26:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51766 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234799AbhCLUZt (ORCPT
+        with ESMTP id S234808AbhCLU0C (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Mar 2021 15:25:49 -0500
-Received: from mail-qk1-x72e.google.com (mail-qk1-x72e.google.com [IPv6:2607:f8b0:4864:20::72e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5AC8C061574
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:25:49 -0800 (PST)
-Received: by mail-qk1-x72e.google.com with SMTP id a9so25667739qkn.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:25:49 -0800 (PST)
+        Fri, 12 Mar 2021 15:26:02 -0500
+Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1A11C061574
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:01 -0800 (PST)
+Received: by mail-qk1-x72d.google.com with SMTP id 130so25672317qkh.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:01 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=yGZq1T84yQVr050eCKw8GJf16/T74xYoC5HGNX6oqj4=;
-        b=jsQ3rS+sOfT2pv7XIOzXxDdTZ9geBGOAoLHPy1Gsgg8h7Onx6Cz1Ccz3nv3vrrAs+r
-         PEaGucKOpKfoK7b3q6YHqmms2kMgl1KuVRp0bT11DXJGK0YT7UhCPmcImb0Y5GDnWvdb
-         ZdMTW2wIhmsK1ZLuSGvO+84ibagQpFoZH9Knqc+SNiSFBaROolC+WhFekuSAjZ2rpPQW
-         KMkzTaeQ4+d5FzgPTzvtECupAMcDbmJVrq3iQCQuDLXaT2423CszvQd9GUcAxbMh1KgY
-         j40D5YPBEedrIBlcJMSqclk1SE9zoYZFaFfjNXOx6jL4Ejfstmfvtxbv5JN8FKnQ2j6i
-         PD+w==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=4FFcEtxwSgtNWqhcRxM+yT++TU/naLF4VcA5kbiH73Y=;
+        b=sN4TSMoI+B7xLo5YICtMkO3Ncj20FrZb8rxKQaoNoP7te6iOd8HOVKyIqlJzFuqLsU
+         u9mC/pYaqkDWIhuWzGaIWRekPJzmCLaVBR7RsDzXy0R9xb9ZMH93N6gdJlUZbot9nJkJ
+         Hos7jWSVghP3m3XuJ6ltb1gWzlwJ+L+AB0SXY2wPmWI1lusxmOYcUqPthRmwlZles+Ak
+         R5nbMfq2kuYd4YkU6Iz6Cei0yR8j/8xME+BewrxiPH/Cu1KwR5X+H+76v03AX9i3aqJq
+         ISkyYdOH6eFWOS1v+P+bDt98kH+DZfw8rgyPWUXt6heY1bZT+fcFQXHMYNJR15pZG0K+
+         ZQKQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=yGZq1T84yQVr050eCKw8GJf16/T74xYoC5HGNX6oqj4=;
-        b=ctuSXqerZ2H9A1Uhb8ZliS1dTyQd1FHFIzC3MJ0YmbBr1SJk6TJRYx97Q2UepRH3aV
-         JdRmEaaqMfQ0vN6StEGaPHRIxFGjk3CQMnbf4O46dqjlC4J4MTAZl3siAVQl3QLiiGf1
-         ACw4lCO/rUZOU56f2//ipee/oKLdSDPg/SMBVI5RTWHqR29RR7wmOF36cqaXqpPQV+U4
-         B+C+OEAZPRxr/+k2+fvfb6MxU2cStAK17J5p3gMecYM9A25md0EFQorG5HhA73dmtTvW
-         vsVW/1++Ml//ffVOF2bmEZCGsAwp7/qzloOrCFoTTt234bsBEnUejMRsYmWIjWkZSWI6
-         GZxg==
-X-Gm-Message-State: AOAM5314ISUXNj8kNO+mN8NTeaotDEqgG12PwikASqXIxDDSDGpWTAd+
-        zUkWwAjEQWEywTRt5GOyH3JlRWnPjSWCKRJX
-X-Google-Smtp-Source: ABdhPJxlDlkCJobFot3eiBDTaMpHIbljcDT1AaGrgDRAlqy+M+D+Nnw6jRe4dB2SHezWRjZoJkGOBA==
-X-Received: by 2002:a37:65d4:: with SMTP id z203mr13946982qkb.254.1615580748649;
-        Fri, 12 Mar 2021 12:25:48 -0800 (PST)
+        bh=4FFcEtxwSgtNWqhcRxM+yT++TU/naLF4VcA5kbiH73Y=;
+        b=ZDHFqvV6SlHj7tCwShquK4TEwHYDpAhQBStyl4wxM18h/57z3TmwhreEGT4AMvNjOT
+         VD2/0WqMuwaIwgKnKIsXJq5wLacGyPWCTmlyW283TIPlkB3U/YMvikzVMSbWi4Lg9wL4
+         XglIW6/+QS0QRM1vUjjbIq9WYn2VjpbUS+9hPir+4urLT5yiY7vx1d02oP+Xm8VhCdiV
+         EqlntW3QM+aCAzQMJBOTxRWjZ0jjqq2HqOOukQhhU8cU+Fe8etlGE8AIHCmUBGP7KOei
+         89OrTbAl572b8t3pk2ky+cqcEDdi+eHSPUo7YUd3190Bqf7MS7txtXo312FKDEAdiYSP
+         OUEg==
+X-Gm-Message-State: AOAM531EWSLX7ny6Isgtyxuys5lkkNZHLOo/bi7GIvyrCBDp4kBdzW+P
+        SljzsRMCtxmB/CUUfeBLl16fSwT4U/ELF+Ot
+X-Google-Smtp-Source: ABdhPJw/opq8sDnkCCoB97qwgKWRatoISdcHbmCV5PnlhBLBBmFTOyHcjG0fbM3xPdFEw4lJgmlOlA==
+X-Received: by 2002:a05:620a:555:: with SMTP id o21mr14705192qko.207.1615580760908;
+        Fri, 12 Mar 2021 12:26:00 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id m17sm5212400qkh.82.2021.03.12.12.25.48
+        by smtp.gmail.com with ESMTPSA id i93sm4690293qtd.48.2021.03.12.12.26.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 12 Mar 2021 12:25:48 -0800 (PST)
+        Fri, 12 Mar 2021 12:26:00 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v8 08/39] btrfs: handle btrfs_record_root_in_trans failure in btrfs_rename
-Date:   Fri, 12 Mar 2021 15:25:03 -0500
-Message-Id: <7416cf0c51b510cf4b8f5e2505f8684d8c2630a4.1615580595.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v8 16/39] btrfs: handle record_root_in_trans failure in create_pending_snapshot
+Date:   Fri, 12 Mar 2021 15:25:11 -0500
+Message-Id: <a4ea225b5cd56d936a9655c3e5497121d8f0635f.1615580595.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1615580595.git.josef@toxicpanda.com>
 References: <cover.1615580595.git.josef@toxicpanda.com>
@@ -70,32 +71,44 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_record_root_in_trans will return errors in the future, so handle
-the error properly in btrfs_rename.
+record_root_in_trans can currently fail, so handle this failure
+properly.
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/inode.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/transaction.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a9fde9a22fff..c64a5e3eca47 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9410,8 +9410,11 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
- 		goto out_notrans;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7ee0199fbb95..93464b93ee9d 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1593,8 +1593,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	dentry = pending->dentry;
+ 	parent_inode = pending->dir;
+ 	parent_root = BTRFS_I(parent_inode)->root;
+-	record_root_in_trans(trans, parent_root, 0);
+-
++	ret = record_root_in_trans(trans, parent_root, 0);
++	if (ret)
++		goto fail;
+ 	cur_time = current_time(parent_inode);
+ 
+ 	/*
+@@ -1630,7 +1631,11 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 		goto fail;
  	}
  
--	if (dest != root)
--		btrfs_record_root_in_trans(trans, dest);
-+	if (dest != root) {
-+		ret = btrfs_record_root_in_trans(trans, dest);
-+		if (ret)
-+			goto out_fail;
+-	record_root_in_trans(trans, root, 0);
++	ret = record_root_in_trans(trans, root, 0);
++	if (ret) {
++		btrfs_abort_transaction(trans, ret);
++		goto fail;
 +	}
- 
- 	ret = btrfs_set_inode_index(BTRFS_I(new_dir), &index);
- 	if (ret)
+ 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+ 	btrfs_check_and_init_root_item(new_root_item);
 -- 
 2.26.2
 

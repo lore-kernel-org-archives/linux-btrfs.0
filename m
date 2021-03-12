@@ -7,61 +7,60 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 870A1C43603
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7CC7C4321A
 	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:27:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 452A964F80
+	by mail.kernel.org (Postfix) with ESMTP id 8F45264F8F
 	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:27:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234892AbhCLU0o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Mar 2021 15:26:44 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51880 "EHLO
+        id S234896AbhCLU0p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Mar 2021 15:26:45 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51894 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234869AbhCLU0Z (ORCPT
+        with ESMTP id S234872AbhCLU02 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Mar 2021 15:26:25 -0500
-Received: from mail-qt1-x82b.google.com (mail-qt1-x82b.google.com [IPv6:2607:f8b0:4864:20::82b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C796C061574
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:25 -0800 (PST)
-Received: by mail-qt1-x82b.google.com with SMTP id 6so4829882qty.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:25 -0800 (PST)
+        Fri, 12 Mar 2021 15:26:28 -0500
+Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65DADC061574
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:28 -0800 (PST)
+Received: by mail-qt1-x835.google.com with SMTP id u7so4832983qtq.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:28 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=g1uEgOSpXoD2jR96iEnRQSqCDRpwYRl1rnc/KDZZlLo=;
-        b=x0pWYXUNTS04QiBA9YeuHplp5zSLbkkASju9tDC9cykoiutJXX9ZbCK7NZEEDKg3Ya
-         xw1/ticop59RXiUp3mzd1M7ae/vsmZy3CTy4JkusCb1uPV0AJpcdWfd1CuENoDWHD74v
-         xUF17ThutCTymFD4/KnxrAw+A3f34WoFf5SYERxTGwgZT+UzOYqRnMFzIXr/x6gyyRrX
-         QvenQB0ne4y45eZ2xK4S1E5YRQ53Srq+CU0IpMUDkj6wiTfOuZlJjMihIUdvDuhzBCz1
-         GRO3uGtiNUAD9figmGC1hnH3oIH3LriJS8zKPGMTVig0cjRxl0pcqBGXW30AwANsvOVT
-         mfpw==
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=VJeRDVtsShdZ/YnML0L/8HRbj02FsVdcpDFIMPC6hBg=;
+        b=v+1VGNOgK91dBBpn4B4nERYRw6zVpv9bAzMrFCzw3Wl5N2YTfVYkxMCy3uLQgL8tva
+         XbezOAzOjAsz6oHoB6z6peYgyskY+B+ml30P6y9ulFf4DGkeNJlFniKolfaMxucutx9D
+         lAMWPvD+X4AZHoamfYKbqFn2NSyf23tRl8CnP8xre+poNeDq2NsedPSmuXMMCmk000Q7
+         DUd0Y8xMFtu+2pIkwUBaNnopqK9BafjZycMxmtlnMFRDC6b8TQv7n8YZgMb/OY8a8W83
+         mL6vMmSjcv94L9HIPeVLR5NKUUVevr7zP6qQHIDXO7AP3lY0zx+0pbTa3VDQorPYHC3v
+         t7WA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=g1uEgOSpXoD2jR96iEnRQSqCDRpwYRl1rnc/KDZZlLo=;
-        b=EUK2H0z2P4Vz0fmlO17c/re/0mnjfadBqGDkIMMZZyHAhcnRYUxSl8tLV+D/ddIaaB
-         8Z47cTos/mh8IWOlOghH8NICUs31FSfEDSh4ovBt3nQrL/Ps0oj1HBmYsJUp+LR1c7vr
-         Ow64FvvJxn6I8isWh6VS4HpPmP3eWuw8N/zQdOxDIgMeLmUirzLAy2crUx8yha+blDyN
-         ZNiNBVHcfDphVNoocscmy4qh7EK/MTrRjyOVMDx/3nb+gPaqkQIQp1jGEALPVdvDwnQW
-         HLN1Nppd0WCQPXFXYgRrtUHwM7EP7kmAL6PkTN1O8frWrvA+JFnj7DZD31/YiTjNnfrr
-         ryBQ==
-X-Gm-Message-State: AOAM5302h5fU8HWnpsf/xm+p6N44EQCMt3cYt2NLMWf7PDWpzd/NQNLY
-        qBqCF1CuncK5yGB9C4n2SnMLXXPFo7kml2qH
-X-Google-Smtp-Source: ABdhPJzWJdwHZ2TGSLuBDPVJr7lKihixFOUeThBX98jzkNyqmt95IIwiqMPlJpbAVO3nSg6A5aQ+jA==
-X-Received: by 2002:ac8:590c:: with SMTP id 12mr2421979qty.291.1615580784170;
-        Fri, 12 Mar 2021 12:26:24 -0800 (PST)
+        bh=VJeRDVtsShdZ/YnML0L/8HRbj02FsVdcpDFIMPC6hBg=;
+        b=qUbIIEQIvWAZkGiIEmK/tdHBzeeRybl1MK5MSs6wytyUpDHDjPVCf3rhKiFV7CE36T
+         F0a76IViH1kaJAXvySts/aqvSEITiaNxnY+WslCOZU9rMeWSVksdJBC46vHblr6GfsRr
+         dCNOAjOFkNu5t87oq3j9WYNb58z3OIOkLEeNG8HckPPQJm5/exdl0453LZf/g1FOHEyr
+         MgqmIfApOpvJHvtTlhCQ4CYx4BxJB0L1WtSb/wy+YWMVBwekXJvNrY6eYTMuptq9ze0Z
+         yW244zhVGhynI8X2fYY7qdu4bCmjeFqRRp+6x9tT7+8nNUM0SRaPS4ndnxwmhuB3fquT
+         HPDQ==
+X-Gm-Message-State: AOAM530NIEm6iL89WebKjVK6r8FgI+bt1OzI4db71SX7doxfUie8OANZ
+        7R4kYTFCSCB4AQ5qlAQA7yKIVrCj/v9pAGDd
+X-Google-Smtp-Source: ABdhPJw6WQ8X1jF7G0wQaEL/Sri0RM9wYBIW6hGR2Tg2olJlHKq8DeyF8dzBAYfrUuTDLy8FK/6eLA==
+X-Received: by 2002:ac8:6e85:: with SMTP id c5mr13142795qtv.299.1615580787286;
+        Fri, 12 Mar 2021 12:26:27 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id d70sm5312673qkg.30.2021.03.12.12.26.23
+        by smtp.gmail.com with ESMTPSA id m25sm4552198qtq.59.2021.03.12.12.26.26
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 12 Mar 2021 12:26:23 -0800 (PST)
+        Fri, 12 Mar 2021 12:26:26 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v8 31/39] btrfs: check for BTRFS_BLOCK_FLAG_FULL_BACKREF being set improperly
-Date:   Fri, 12 Mar 2021 15:25:26 -0500
-Message-Id: <d6963a2bf1e8a8711bc18bca954fc95e5eb9fefc.1615580595.git.josef@toxicpanda.com>
+Subject: [PATCH v8 33/39] btrfs: do proper error handling in create_reloc_inode
+Date:   Fri, 12 Mar 2021 15:25:28 -0500
+Message-Id: <d1a48c450d207e922607c373f6d6cf4bec344961.1615580595.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1615580595.git.josef@toxicpanda.com>
 References: <cover.1615580595.git.josef@toxicpanda.com>
@@ -71,31 +70,82 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We need to validate that a data extent item does not have the
-FULL_BACKREF flag set on it's flags.
+We already handle some errors in this function, and the callers do the
+correct error handling, so clean up the rest of the function to do the
+appropriate error handling.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+There's a little extra work that needs to be done here, as we create the
+inode item before we create the orphan item.  We could potentially add
+the orphan item, but if we failed to create the inode item we would have
+to abort the transaction.  Instead add a helper to delete the inode item
+we created in the case that we're unable to look up the inode (this
+would likely be caused by an ENOMEM), which if it succeeds means we can
+avoid a transaction abort in this particular error case.
+
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/tree-checker.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/relocation.c | 39 +++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 37 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index f4ade821307d..8e5926232d1e 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1290,6 +1290,11 @@ static int check_extent_item(struct extent_buffer *leaf,
- 				   key->offset, fs_info->sectorsize);
- 			return -EUCLEAN;
- 		}
-+		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
-+			extent_err(leaf, slot,
-+			"invalid extent flag, data has full backref set");
-+			return -EUCLEAN;
-+		}
- 	}
- 	ptr = (unsigned long)(struct btrfs_extent_item *)(ei + 1);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 288d5df39fa0..43037cb302fd 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3648,6 +3648,35 @@ static int __insert_orphan_inode(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
  
++static void delete_orphan_inode(struct btrfs_trans_handle *trans,
++				struct btrfs_root *root, u64 objectid)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	int ret = 0;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	key.objectid = objectid;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++	if (ret) {
++		if (ret > 0)
++			ret = -ENOENT;
++		goto out;
++	}
++	ret = btrfs_del_item(trans, root, path);
++out:
++	if (ret)
++		btrfs_abort_transaction(trans, ret);
++	btrfs_free_path(path);
++}
++
+ /*
+  * helper to create inode for data relocation.
+  * the inode is in data relocation tree and its link count is 0
+@@ -3674,10 +3703,16 @@ struct inode *create_reloc_inode(struct btrfs_fs_info *fs_info,
+ 		goto out;
+ 
+ 	err = __insert_orphan_inode(trans, root, objectid);
+-	BUG_ON(err);
++	if (err)
++		goto out;
+ 
+ 	inode = btrfs_iget(fs_info->sb, objectid, root);
+-	BUG_ON(IS_ERR(inode));
++	if (IS_ERR(inode)) {
++		delete_orphan_inode(trans, root, objectid);
++		err = PTR_ERR(inode);
++		inode = NULL;
++		goto out;
++	}
+ 	BTRFS_I(inode)->index_cnt = group->start;
+ 
+ 	err = btrfs_orphan_add(trans, BTRFS_I(inode));
 -- 
 2.26.2
 

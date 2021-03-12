@@ -7,60 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93DEFC433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:27:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67EEAC1550B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:27:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7276F64F8E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:27:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 50ED564F88
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Mar 2021 20:27:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234890AbhCLU0o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Mar 2021 15:26:44 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51872 "EHLO
+        id S234905AbhCLU0t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Mar 2021 15:26:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51914 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234868AbhCLU0X (ORCPT
+        with ESMTP id S234876AbhCLU0d (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Mar 2021 15:26:23 -0500
+        Fri, 12 Mar 2021 15:26:33 -0500
 Received: from mail-qv1-xf2d.google.com (mail-qv1-xf2d.google.com [IPv6:2607:f8b0:4864:20::f2d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1BB2C061574
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:23 -0800 (PST)
-Received: by mail-qv1-xf2d.google.com with SMTP id j17so4903571qvo.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:23 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0834C061574
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:32 -0800 (PST)
+Received: by mail-qv1-xf2d.google.com with SMTP id 30so4898989qva.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Mar 2021 12:26:32 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=Sn4OcrDan8zF8s42MF9N+ux5UFalwxVMfpouWmmTaKY=;
-        b=hX2hyNIWv5cnjqSfiFyXeDaazrJIlf46voTE46B86bshWwMH6Epkh3pmkt4U1e6Z37
-         aMyLbHhrWGxzO/d64kjtJqyZ7kaW0Mnr2pp/nj2WoKIxbUmbZ2B8bEO7Q+zn57GLpO5y
-         SwFLWgghwy8dnaOe3TjEjFaPLWME5x3nE6BffirfKfWN1AuCfsfJki2mq8yhLnzwGPE0
-         J86HjzH8fkgWbkAUkzMOhdX4ALwYmMjc4+sVUc/8xDKWVoLwXSDPyIE9v0vMeagyavkt
-         UhRTl37Y4vPnsRhLqjDXhRRpcNO8ovX7LqTgTklxrxwWwQVEmXw1GjM0sqTrbBTPUpUj
-         obrw==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=o8PwcbYLcI09qfDxINxVvRFFpl2xsi4kodsIzZZ1JII=;
+        b=TqN8g9uNjkhLNemyweQ5Gz5RLNOHwSwANe2TolNZ/PD6ftjj648iXeyI8AzkOxQQZv
+         ObvkpGTyZCziD/S5To4X6oFcPM+O583OY8dtUHSx+59hi8MzoajnhHZHV3cPChOGRIX/
+         5Be9d1lcwZrezFlVq/WO1AVvFPe/eI1XfHpiRe5gU2knrAt64sipJE8OUGGFEunGLLao
+         9Up07Pt0gsSLepyqbjQF7CycmeUEIRp0OWyDofaKn7/ZQbKaIWHyaCs3uJzR6xjgJ75g
+         g+jCkLtDNdIFIuZE3ipMS3tx5R0cPfEDnsF58y6KIUI3H8tNn7EyqWSoWf1vtoLjb5b2
+         0eVg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Sn4OcrDan8zF8s42MF9N+ux5UFalwxVMfpouWmmTaKY=;
-        b=ZkJhBI3DCioP5feOWnKfMZhNLutCSp1ukAX6Zgc0PMxJiKYGKr82A6TmVJFY/g7m7Z
-         s94wMQC3bIUJ8Y8PSrHNAsYrSn2Nb38wn98dnuKYIkWNw7PAbceXfIYO82EhSvePfRqy
-         PtwfWUCYzl6inyUbPI3uKJcPTemqPDir4ssC4HwfDHXpUiv5wdY74sfIirKEKCRZyDA+
-         V1oQcj5Q/LR8cZD4qlJFJiFGYt1m8dcGuVRX95JLBWW/tZQi0pojfIhyGdIWft43qB+d
-         TkZ2MozZmYU+z3h2r2RvwBSEsBagT5nnF2rGcOkdrOQoek77Z+apIF4FJ57yPNtDyhPR
-         /0yQ==
-X-Gm-Message-State: AOAM533r9bqc8Tx4BcH4UcVta0u3YH4MgziCuEEKVJiDL//QSQ9x4Rt/
-        Frkk7m7qMY3dShe2P9z1Hr7+ukHg5iZ7mPqT
-X-Google-Smtp-Source: ABdhPJy1zSawBaJB97TYoL/HMdRB2Ho0WuqsCkeGHNfYpr2vAbOUtFcMDNvou3+iW7FBQgCmvlp3Hg==
-X-Received: by 2002:a0c:c68f:: with SMTP id d15mr24376qvj.20.1615580782614;
-        Fri, 12 Mar 2021 12:26:22 -0800 (PST)
+        bh=o8PwcbYLcI09qfDxINxVvRFFpl2xsi4kodsIzZZ1JII=;
+        b=kWTytBZAB2MzZ4dGTMDGQ3lyG5S3pxTIxsbv+tQi7dg6Dz6Y386YgYNtRIMYUNHHUP
+         qqYgULmA+o06InFoAmHEIqmmDxOtZDhTi9R+gTCTsMeTAy+hSZ9Kabg1MbunDuh6xPny
+         u0RV2v3LRIoakG+2c+7CavG83wbNvwf1o5GGe85CrvHfbLXs3qio2a8vqETZeO3ADpUi
+         oiZVH5OrHVpwxsAq5ep89YKyzqf9hzYCzLVs1Oyr/SqZRs8b9ab2Wb+rMTNXoGPwuw31
+         BWeO/QV1JEapj5Ppt/m6iOn57Dr5evqkM51JDzotQGGjtGwN9VXgyu8RTyLwlPma1R6z
+         BD0Q==
+X-Gm-Message-State: AOAM532LqzhDCM3xg2KhERfKz9IvBAFVjmaVAsI3pY2IONI/2H7xqPQ0
+        tV6GbnsHyBemi22qfcoRMHYhdv3796AH4pje
+X-Google-Smtp-Source: ABdhPJwov7Y+INTtQQIDet83ulQtzAkb49KQzHfpmiQzMPGBwjNdKu1xZBFeG77Ip3GOg8H5nONWqg==
+X-Received: by 2002:ad4:4dc6:: with SMTP id cw6mr14216786qvb.31.1615580791616;
+        Fri, 12 Mar 2021 12:26:31 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id t128sm5312242qka.46.2021.03.12.12.26.22
+        by smtp.gmail.com with ESMTPSA id g14sm5127137qkm.98.2021.03.12.12.26.31
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 12 Mar 2021 12:26:22 -0800 (PST)
+        Fri, 12 Mar 2021 12:26:31 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v8 30/39] btrfs: handle extent reference errors in do_relocation
-Date:   Fri, 12 Mar 2021 15:25:25 -0500
-Message-Id: <1f31bf3a150a7ca530e91faa03cc12aa5058d2e4.1615580595.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v8 36/39] btrfs: cleanup error handling in prepare_to_merge
+Date:   Fri, 12 Mar 2021 15:25:31 -0500
+Message-Id: <aac09cbaabad84cf0bf15f069023d5cafbb1ee9d.1615580595.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1615580595.git.josef@toxicpanda.com>
 References: <cover.1615580595.git.josef@toxicpanda.com>
@@ -70,36 +71,38 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We can already deal with errors appropriately from do_relocation, simply
-handle any errors that come from changing the refs at this point
-cleanly.  We have to abort the transaction if we fail here as we've
-modified metadata at this point.
+This probably can't happen even with a corrupt file system, because we
+would have failed much earlier on than here.  However there's no reason
+we can't just check and bail out as appropriate, so do that and convert
+the correctness BUG_ON() to an ASSERT().
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/relocation.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/relocation.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 1a0e07507796..71a3db66c1ab 100644
+index 857da684d415..8f7760f8fcc3 100644
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -2432,10 +2432,11 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 			btrfs_init_tree_ref(&ref, node->level,
- 					    btrfs_header_owner(upper->eb));
- 			ret = btrfs_inc_extent_ref(trans, &ref);
--			BUG_ON(ret);
--
--			ret = btrfs_drop_subtree(trans, root, eb, upper->eb);
--			BUG_ON(ret);
-+			if (!ret)
-+				ret = btrfs_drop_subtree(trans, root, eb,
-+							 upper->eb);
-+			if (ret)
-+				btrfs_abort_transaction(trans, ret);
- 		}
- next:
- 		if (!upper->pending)
+@@ -1880,8 +1880,14 @@ int prepare_to_merge(struct reloc_control *rc, int err)
+ 
+ 		root = btrfs_get_fs_root(fs_info, reloc_root->root_key.offset,
+ 				false);
+-		BUG_ON(IS_ERR(root));
+-		BUG_ON(root->reloc_root != reloc_root);
++		if (IS_ERR(root)) {
++			list_add(&reloc_root->root_list, &reloc_roots);
++			btrfs_abort_transaction(trans, (int)PTR_ERR(root));
++			if (!err)
++				err = PTR_ERR(root);
++			break;
++		}
++		ASSERT(root->reloc_root == reloc_root);
+ 
+ 		/*
+ 		 * set reference count to 1, so btrfs_recover_relocation
 -- 
 2.26.2
 

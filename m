@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DCFE9C4332D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:46:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61F1FC43333
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:46:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B7AAD64F7B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:46:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3DCF464E33
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:46:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240669AbhCPTqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Mar 2021 15:46:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35834 "EHLO
+        id S240678AbhCPTqV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Mar 2021 15:46:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35716 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240616AbhCPTpC (ORCPT
+        with ESMTP id S240622AbhCPTpF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Mar 2021 15:45:02 -0400
-Received: from mail-pj1-x1036.google.com (mail-pj1-x1036.google.com [IPv6:2607:f8b0:4864:20::1036])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 91E7CC0613DD
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:39 -0700 (PDT)
-Received: by mail-pj1-x1036.google.com with SMTP id nh23-20020a17090b3657b02900c0d5e235a8so64211pjb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:39 -0700 (PDT)
+        Tue, 16 Mar 2021 15:45:05 -0400
+Received: from mail-pg1-x52b.google.com (mail-pg1-x52b.google.com [IPv6:2607:f8b0:4864:20::52b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9EB9AC0613E1
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:43 -0700 (PDT)
+Received: by mail-pg1-x52b.google.com with SMTP id l2so23323818pgb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:43 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=fuAw0ppT0ABvcb7CD6nxV0FbeYlL2sIG10J+yY2raCU=;
-        b=ztqOvQUthnoojW1c4C5JqRJk0YckO3BPtl5/hMvtBD3/GNsDPIwfazyld3BbiRGdwC
-         E0loKHEIiJ6N31sXfk+LxGOxDdgXnRM0l3r0hpklJ6P/d8fMc2Ox9tsb0Z1O11sDKUqn
-         juMFavGAu9dONm/5NPSUJW1SBJwIslofq3lLpW2T66UTF+Dx4SkBg0iGQ0en9NfINIDa
-         /aiGC54mei1nF/hDK1giqhpfTpXSgtN2I04hkx3hFMI5/FMexuD1gi1QQI7ku7JrlYju
-         vI2yKnN+YYqk4WgnUZtTJBqAE1NO0xeIBMRMgJty4ze27g49WLiH5qI/wCw9xwB7EPAq
-         aqeA==
+        bh=X1awuXo2o21+U9RKljM1ZM6ezbmkIQlYdJCeBAFiTbI=;
+        b=nAgyoscW/bSw2aT9vdLmiwiUPeHJuTL/YHiU93JzvVS5E6KLG8h88TOqeCCaM9ybzE
+         R7jp5Sw3mf3d/c8kDiDP7U7EEyJsmnfbrQOGXIUvN4EEfRKWBUenQ/+iMK4ktLx8aKHc
+         f4xPpEtYGuXbaZ5V8u1eepSvnN0oRSLrdezjlba1FK+Nj1xRFWinw5gH4f+SyRa+9PmI
+         A2k4jNj+fqtmnPvE4ddFw9AyDkyvcYESdafMRhfYFZipu3dI5hW5eRQWNARSTmCCKwCA
+         sXvyFT7b0FTFQ5TxiXDbZSmRWzSiKKf9UWF6ERTepUBjGR0k67wO/Itq9V3t9JZj0raZ
+         866w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=fuAw0ppT0ABvcb7CD6nxV0FbeYlL2sIG10J+yY2raCU=;
-        b=UBQig6OJ+G8YttIp/zeSze4tW12NPo4joo/RJPqfZ76VI3jqXVoZVFiw0zj2y455LV
-         mrfVFIvkJ2TNR9myOqYaD5h7acOlHX1Qb9SoQIXcNAHKH0FvHNGjmZT6oY3hguX04oLU
-         c0iV+ntIJIRux8JYPpT24z+naCwHJMO7pdbZyox7ML/VBMaw9HAiG8GgA88OG57EyVQM
-         AdXppiRLCFY8tw+kEzjpxmWyyDh16r5MzLyA8yKiPjFiSJ/wugWQkMkGtdZu2xZUJt9k
-         cDJ+er2eyplcdBlWyO3oamvPtiGgq2y1b6WROApreH9fGZLcnzxdMsE1QzQzAmUOkqpw
-         dUwg==
-X-Gm-Message-State: AOAM531MTsfm7UY2gnchngx+O3Uoub5L1HG955fHpaNp0q2rDzyT+Olt
-        5pWDIwk8quizsc0loGvRz7NBfghM4EsDMw==
-X-Google-Smtp-Source: ABdhPJzwOvxll0bc3dCRKvFwG94j5cEcrVnjYBlSnyRXrEmITN+aTln6aLaxs/NBjTH1aekjVGqX6g==
-X-Received: by 2002:a17:90a:d907:: with SMTP id c7mr611393pjv.45.1615923878427;
-        Tue, 16 Mar 2021 12:44:38 -0700 (PDT)
+        bh=X1awuXo2o21+U9RKljM1ZM6ezbmkIQlYdJCeBAFiTbI=;
+        b=IszY9Uh+UT3TzC4ftTseFCqaHVWsa/Vh7RuzOWjE3Qjf5g0Daae9E84mIqSKfqtWJo
+         T4/CGLgGZG9fapSw1g+zWfS2Zth1356CL9Gnai/Rd8Brqv3MEJS+Z3H0zW0qrffRZHE8
+         EypkHOVkrEoWxvpfekqteQJqDuLpfykF5P6ZOHIGGbiFjzGgaxvrBNe/fIcaEaozy3bL
+         5zhe0IAZBLzAyw4UYp8jAVpdAPHEfeynA8T/P7C/oi+Hqbj0acBIDAAm+ILfQSG3H7a6
+         26ocL+CUQPdivVN9x1UgfVzNhxJnYbgknd43JLhPLEo7WbpmAsK0SrAR/IewyO5kcihy
+         WjbA==
+X-Gm-Message-State: AOAM531VspU8sEaqPd8BQstU0nIapOC+Lymok3WkDTAhw8fUS/Trnld/
+        v2L2Rl2lHDOLvH02yt+sWP5FOzC04V/FHA==
+X-Google-Smtp-Source: ABdhPJw42dgJ10zSKLwz1DaUShq4KEvpZ8N/vo6GYx60QkZ0yxgBeBqiR+VAtsXYs2lEXDtzsozudw==
+X-Received: by 2002:aa7:9f52:0:b029:1ee:db83:dac6 with SMTP id h18-20020aa79f520000b02901eedb83dac6mr871586pfr.45.1615923882245;
+        Tue, 16 Mar 2021 12:44:42 -0700 (PDT)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:532])
-        by smtp.gmail.com with ESMTPSA id w22sm16919104pfi.133.2021.03.16.12.44.36
+        by smtp.gmail.com with ESMTPSA id w22sm16919104pfi.133.2021.03.16.12.44.40
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 16 Mar 2021 12:44:37 -0700 (PDT)
+        Tue, 16 Mar 2021 12:44:41 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 05/11] btrfs-progs: receive: add stub implementation for pwritev2
-Date:   Tue, 16 Mar 2021 12:43:58 -0700
-Message-Id: <e6817cbd8ba926eb5b4e0d19e10ac6a2af6ad05b.1615922859.git.osandov@osandov.com>
+Subject: [PATCH v4 06/11] btrfs-progs: receive: process encoded_write commands
+Date:   Tue, 16 Mar 2021 12:44:00 -0700
+Message-Id: <9815618fabedbcc9d980f9e7ff3bfe0c0a258cf3.1615922859.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <cover.1615922753.git.osandov@fb.com>
 References: <cover.1615922753.git.osandov@fb.com>
@@ -73,101 +73,363 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Boris Burkov <borisb@fb.com>
 
-Encoded writes in receive will use pwritev2. It is possible that the
-system libc does not export this function, so we stub it out and detect
-whether to build the stub code with autoconf.
+Add a new btrfs_send_op and support for both dumping and proper receive
+processing which does actual encoded writes.
 
-This syscall has special semantics in x32 (no hi lo, just takes loff_t)
-so we have to detect that case and use the appropriate arguments.
+Encoded writes are only allowed on a file descriptor opened with an
+extra flag that allows encoded writes, so we also add support for this
+flag when opening or reusing a file for writing.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- Makefile     |  4 ++--
- configure.ac |  1 +
- stubs.c      | 24 ++++++++++++++++++++++++
- stubs.h      | 11 +++++++++++
- 4 files changed, 38 insertions(+), 2 deletions(-)
- create mode 100644 stubs.c
- create mode 100644 stubs.h
+ cmds/receive-dump.c  |  16 ++++++-
+ cmds/receive.c       | 104 ++++++++++++++++++++++++++++++++++++++++---
+ common/send-stream.c |  22 +++++++++
+ common/send-stream.h |   4 ++
+ stubs.h              |  46 +++++++++++++++++++
+ 5 files changed, 186 insertions(+), 6 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 498588cd..b91daeb6 100644
---- a/Makefile
-+++ b/Makefile
-@@ -173,12 +173,12 @@ libbtrfs_objects = common/send-stream.o common/send-utils.o kernel-lib/rbtree.o
- 		   kernel-lib/raid56.o kernel-lib/tables.o \
- 		   common/device-scan.o common/path-utils.o \
- 		   common/utils.o libbtrfsutil/subvolume.o libbtrfsutil/stubs.o \
--		   crypto/hash.o crypto/xxhash.o $(CRYPTO_OBJECTS)
-+		   crypto/hash.o crypto/xxhash.o $(CRYPTO_OBJECTS) stubs.o
- libbtrfs_headers = common/send-stream.h common/send-utils.h send.h kernel-lib/rbtree.h btrfs-list.h \
- 	       crypto/crc32c.h kernel-lib/list.h kerncompat.h \
- 	       kernel-lib/radix-tree.h kernel-lib/sizes.h kernel-lib/raid56.h \
- 	       common/extent-cache.h kernel-shared/extent_io.h ioctl.h \
--	       kernel-shared/ctree.h btrfsck.h version.h
-+	       kernel-shared/ctree.h btrfsck.h version.h stubs.h
- libbtrfsutil_major := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MAJOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
- libbtrfsutil_minor := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_MINOR ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
- libbtrfsutil_patch := $(shell sed -rn 's/^\#define BTRFS_UTIL_VERSION_PATCH ([0-9])+$$/\1/p' libbtrfsutil/btrfsutil.h)
-diff --git a/configure.ac b/configure.ac
-index aa3f7824..4e85436f 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -57,6 +57,7 @@ AC_CHECK_FUNCS([openat], [],
- 	[AC_MSG_ERROR([cannot find openat() function])])
+diff --git a/cmds/receive-dump.c b/cmds/receive-dump.c
+index 648d9314..20ec2b70 100644
+--- a/cmds/receive-dump.c
++++ b/cmds/receive-dump.c
+@@ -316,6 +316,19 @@ static int print_update_extent(const char *path, u64 offset, u64 len,
+ 			  offset, len);
+ }
  
- AC_CHECK_FUNCS([reallocarray])
-+AC_CHECK_FUNCS([pwritev2])
- 
- m4_ifndef([PKG_PROG_PKG_CONFIG],
-   [m4_fatal([Could not locate the pkg-config autoconf
-diff --git a/stubs.c b/stubs.c
-new file mode 100644
-index 00000000..ab68a411
---- /dev/null
-+++ b/stubs.c
-@@ -0,0 +1,24 @@
-+#if HAVE_PWRITEV2 != 1
-+
-+#include "stubs.h"
-+
-+#include "kerncompat.h"
-+
-+#include <unistd.h>
-+#include <sys/syscall.h>
-+#include <sys/uio.h>
-+
-+ssize_t pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset,
-+		 int flags)
++static int print_encoded_write(const char *path, const void *data, u64 offset,
++			       u64 len, u64 unencoded_file_len,
++			       u64 unencoded_len, u64 unencoded_offset,
++			       u32 compression, u32 encryption, void *user)
 +{
-+/* these conditions indicate an x32 system, which has a different pwritev2 */
-+#if defined(__x86_64__) && defined(__ILP32__)
-+	return syscall(SYS_pwritev2, fd, iov, iovcnt, offset, flags);
-+#else
-+	unsigned long hi = offset >> (BITS_PER_LONG / 2) >> (BITS_PER_LONG / 2);
-+	unsigned long lo = offset;
-+
-+	return syscall(SYS_pwritev2, fd, iov, iovcnt, lo, hi, flags);
-+#endif // X32
++	return PRINT_DUMP(user, path, "encoded_write",
++			  "offset=%llu len=%llu, unencoded_file_len=%llu, "
++			  "unencoded_len=%llu, unencoded_offset=%llu, "
++			  "compression=%u, encryption=%u",
++			  offset, len, unencoded_file_len, unencoded_len,
++			  unencoded_offset, compression, encryption);
 +}
-+#endif /* HAVE_PWRIVEV2 */
++
+ struct btrfs_send_ops btrfs_print_send_ops = {
+ 	.subvol = print_subvol,
+ 	.snapshot = print_snapshot,
+@@ -337,5 +350,6 @@ struct btrfs_send_ops btrfs_print_send_ops = {
+ 	.chmod = print_chmod,
+ 	.chown = print_chown,
+ 	.utimes = print_utimes,
+-	.update_extent = print_update_extent
++	.update_extent = print_update_extent,
++	.encoded_write = print_encoded_write,
+ };
+diff --git a/cmds/receive.c b/cmds/receive.c
+index b4099bc4..ad1e3021 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -30,12 +30,14 @@
+ #include <assert.h>
+ #include <getopt.h>
+ #include <limits.h>
++#include <errno.h>
+ 
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/ioctl.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
++#include <sys/uio.h>
+ #include <sys/xattr.h>
+ #include <uuid/uuid.h>
+ 
+@@ -52,6 +54,7 @@
+ #include "cmds/receive-dump.h"
+ #include "common/help.h"
+ #include "common/path-utils.h"
++#include "stubs.h"
+ 
+ struct btrfs_receive
+ {
+@@ -60,6 +63,7 @@ struct btrfs_receive
+ 
+ 	int write_fd;
+ 	char write_path[PATH_MAX];
++	int write_fd_allow_encoded;
+ 
+ 	char *root_path;
+ 	char *dest_dir_path; /* relative to root_path */
+@@ -635,24 +639,65 @@ out:
+ 	return ret;
+ }
+ 
+-static int open_inode_for_write(struct btrfs_receive *rctx, const char *path)
++static int set_write_fd_allow_encoded(struct btrfs_receive *rctx)
++{
++	int ret;
++	int flags;
++
++	flags = fcntl(rctx->write_fd, F_GETFL);
++	if (flags < 0) {
++		ret = -errno;
++		error("failed to fetch old fd flags");
++		goto close_fd;
++	}
++	ret = fcntl(rctx->write_fd, F_SETFL, flags | O_ALLOW_ENCODED);
++	if (ret < 0) {
++		ret = -errno;
++		error("failed to enable encoded writes");
++		goto close_fd;
++	}
++	rctx->write_fd_allow_encoded = true;
++	ret = 0;
++	goto out;
++close_fd:
++	close(rctx->write_fd);
++	rctx->write_fd = -1;
++	rctx->write_fd_allow_encoded = false;
++out:
++	return ret;
++}
++
++static int open_inode_for_write(struct btrfs_receive *rctx, const char *path,
++				bool allow_encoded)
+ {
+ 	int ret = 0;
++	int flags = O_RDWR;
+ 
+ 	if (rctx->write_fd != -1) {
+-		if (strcmp(rctx->write_path, path) == 0)
++		/*
++		 * if the existing fd is for this path and the needed flags are
++		 * satisfied, no need to open a new one
++		 */
++		if (strcmp(rctx->write_path, path) == 0) {
++			/* fixup the allow encoded flag, if necessary */
++			if (allow_encoded && !rctx->write_fd_allow_encoded)
++				ret = set_write_fd_allow_encoded(rctx);
+ 			goto out;
++		}
+ 		close(rctx->write_fd);
+ 		rctx->write_fd = -1;
+ 	}
+ 
+-	rctx->write_fd = open(path, O_RDWR);
++	if (allow_encoded)
++		flags |= O_ALLOW_ENCODED;
++	rctx->write_fd = open(path, flags);
+ 	if (rctx->write_fd < 0) {
+ 		ret = -errno;
+ 		error("cannot open %s: %m", path);
+ 		goto out;
+ 	}
+ 	strncpy_null(rctx->write_path, path);
++	rctx->write_fd_allow_encoded = allow_encoded;
+ 
+ out:
+ 	return ret;
+@@ -683,7 +728,7 @@ static int process_write(const char *path, const void *data, u64 offset,
+ 		goto out;
+ 	}
+ 
+-	ret = open_inode_for_write(rctx, full_path);
++	ret = open_inode_for_write(rctx, full_path, false);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -726,7 +771,7 @@ static int process_clone(const char *path, u64 offset, u64 len,
+ 		goto out;
+ 	}
+ 
+-	ret = open_inode_for_write(rctx, full_path);
++	ret = open_inode_for_write(rctx, full_path, false);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -987,6 +1032,54 @@ static int process_update_extent(const char *path, u64 offset, u64 len,
+ 	return 0;
+ }
+ 
++static int process_encoded_write(const char *path, const void *data, u64 offset,
++	u64 len, u64 unencoded_file_len, u64 unencoded_len,
++	u64 unencoded_offset, u32 compression, u32 encryption, void *user)
++{
++	int ret;
++	ssize_t w;
++	struct btrfs_receive *rctx = user;
++	char full_path[PATH_MAX];
++	struct encoded_iov encoded = {
++		.len = unencoded_file_len,
++		.unencoded_len = unencoded_len,
++		.unencoded_offset = unencoded_offset,
++		.compression = compression,
++		.encryption = encryption,
++	};
++	struct iovec iov[2] = {
++		{ &encoded, sizeof(encoded) },
++		{ (char *)data, len }
++	};
++
++	if (encryption) {
++		error("encoded_write: encryption not supported");
++		return -EOPNOTSUPP;
++	}
++
++	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
++	if (ret < 0) {
++		error("encoded_write: path invalid: %s", path);
++		return ret;
++	}
++
++	ret = open_inode_for_write(rctx, full_path, true);
++	if (ret < 0)
++		return ret;
++
++	/*
++	 * NOTE: encoded writes guarantee no partial writes, so we don't need to
++	 * handle that possibility.
++	 */
++	w = pwritev2(rctx->write_fd, iov, 2, offset, RWF_ENCODED);
++	if (w < 0) {
++		ret = -errno;
++		error("encoded_write: writing to %s failed: %m", path);
++		return ret;
++	}
++	return 0;
++}
++
+ static struct btrfs_send_ops send_ops = {
+ 	.subvol = process_subvol,
+ 	.snapshot = process_snapshot,
+@@ -1009,6 +1102,7 @@ static struct btrfs_send_ops send_ops = {
+ 	.chown = process_chown,
+ 	.utimes = process_utimes,
+ 	.update_extent = process_update_extent,
++	.encoded_write = process_encoded_write,
+ };
+ 
+ static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
+diff --git a/common/send-stream.c b/common/send-stream.c
+index 4d819185..044e101b 100644
+--- a/common/send-stream.c
++++ b/common/send-stream.c
+@@ -354,6 +354,8 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
+ 	struct timespec mt;
+ 	u8 uuid[BTRFS_UUID_SIZE];
+ 	u8 clone_uuid[BTRFS_UUID_SIZE];
++	u32 compression;
++	u32 encryption;
+ 	u64 tmp;
+ 	u64 tmp2;
+ 	u64 ctransid;
+@@ -362,6 +364,9 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
+ 	u64 dev;
+ 	u64 clone_offset;
+ 	u64 offset;
++	u64 unencoded_file_len;
++	u64 unencoded_len;
++	u64 unencoded_offset;
+ 	int len;
+ 	int xattr_len;
+ 
+@@ -436,6 +441,23 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
+ 		TLV_GET(sctx, BTRFS_SEND_A_DATA, &data, &len);
+ 		ret = sctx->ops->write(path, data, offset, len, sctx->user);
+ 		break;
++	case BTRFS_SEND_C_ENCODED_WRITE:
++		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
++		TLV_GET_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, &offset);
++		TLV_GET_U64(sctx, BTRFS_SEND_A_UNENCODED_FILE_LEN,
++			    &unencoded_file_len);
++		TLV_GET_U64(sctx, BTRFS_SEND_A_UNENCODED_LEN, &unencoded_len);
++		TLV_GET_U64(sctx, BTRFS_SEND_A_UNENCODED_OFFSET,
++			    &unencoded_offset);
++		TLV_GET_U32(sctx, BTRFS_SEND_A_COMPRESSION, &compression);
++		TLV_GET_U32(sctx, BTRFS_SEND_A_ENCRYPTION, &encryption);
++		TLV_GET(sctx, BTRFS_SEND_A_DATA, &data, &len);
++		ret = sctx->ops->encoded_write(path, data, offset, len,
++					       unencoded_file_len,
++					       unencoded_len, unencoded_offset,
++					       compression, encryption,
++					       sctx->user);
++		break;
+ 	case BTRFS_SEND_C_CLONE:
+ 		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
+ 		TLV_GET_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, &offset);
+diff --git a/common/send-stream.h b/common/send-stream.h
+index 39901f86..607bc007 100644
+--- a/common/send-stream.h
++++ b/common/send-stream.h
+@@ -66,6 +66,10 @@ struct btrfs_send_ops {
+ 		      struct timespec *mt, struct timespec *ct,
+ 		      void *user);
+ 	int (*update_extent)(const char *path, u64 offset, u64 len, void *user);
++	int (*encoded_write)(const char *path, const void *data, u64 offset,
++			     u64 len, u64 unencoded_file_len, u64 unencoded_len,
++			     u64 unencoded_offset, u32 compression,
++			     u32 encryption, void *user);
+ };
+ 
+ int btrfs_read_and_process_send_stream(int fd,
 diff --git a/stubs.h b/stubs.h
-new file mode 100644
-index 00000000..b39f8a69
---- /dev/null
+index b39f8a69..69e7fe23 100644
+--- a/stubs.h
 +++ b/stubs.h
-@@ -0,0 +1,11 @@
-+#ifndef _BTRFS_STUBS_H
-+#define _BTRFS_STUBS_H
-+
-+#include <sys/types.h>
-+
-+struct iovec;
-+
-+ssize_t pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset,
-+		 int flags);
-+
+@@ -1,6 +1,8 @@
+ #ifndef _BTRFS_STUBS_H
+ #define _BTRFS_STUBS_H
+ 
++#include <fcntl.h>
++#include <linux/fs.h>
+ #include <sys/types.h>
+ 
+ struct iovec;
+@@ -8,4 +10,48 @@ struct iovec;
+ ssize_t pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset,
+ 		 int flags);
+ 
++#ifndef O_ALLOW_ENCODED
++#if defined(__alpha__)
++#define O_ALLOW_ENCODED      0200000000
++#elif defined(__hppa__)
++#define O_ALLOW_ENCODED      100000000
++#elif defined(__sparc__)
++#define O_ALLOW_ENCODED      0x8000000
++#else
++#define O_ALLOW_ENCODED      040000000
+ #endif
 +#endif
++
++#ifndef ENCODED_IOV_SIZE_VER0
++
++#define ENCODED_IOV_COMPRESSION_NONE 0
++#define ENCODED_IOV_COMPRESSION_BTRFS_ZLIB 1
++#define ENCODED_IOV_COMPRESSION_BTRFS_ZSTD 2
++#define ENCODED_IOV_COMPRESSION_BTRFS_LZO_4K 3
++#define ENCODED_IOV_COMPRESSION_BTRFS_LZO_8K 4
++#define ENCODED_IOV_COMPRESSION_BTRFS_LZO_16K 5
++#define ENCODED_IOV_COMPRESSION_BTRFS_LZO_32K 6
++#define ENCODED_IOV_COMPRESSION_BTRFS_LZO_64K 7
++#define ENCODED_IOV_COMPRESSION_TYPES 8
++
++#define ENCODED_IOV_ENCRYPTION_NONE 0
++#define ENCODED_IOV_ENCRYPTION_TYPES 1
++
++struct encoded_iov {
++	__aligned_u64 len;
++	__aligned_u64 unencoded_len;
++	__aligned_u64 unencoded_offset;
++	__u32 compression;
++	__u32 encryption;
++};
++
++#define ENCODED_IOV_SIZE_VER0 32
++
++#endif /* ENCODED_IOV_SIZE_VER0 */
++
++#ifndef RWF_ENCODED
++/* encoded (e.g., compressed and/or encrypted) IO */
++#define RWF_ENCODED    ((__kernel_rwf_t)0x00000020)
++#endif
++
++#endif /* _BTRFS_STUBS_H */
 -- 
 2.30.2
 

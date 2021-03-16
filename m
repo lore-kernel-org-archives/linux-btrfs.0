@@ -7,61 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 315D9C433DB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 373D4C433E6
 	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:47:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 070E464F6B
+	by mail.kernel.org (Postfix) with ESMTP id 19C9A64F77
 	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:47:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240683AbhCPTq3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Mar 2021 15:46:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35856 "EHLO
+        id S240652AbhCPTqb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Mar 2021 15:46:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35894 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240629AbhCPTpG (ORCPT
+        with ESMTP id S240585AbhCPTpQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Mar 2021 15:45:06 -0400
-Received: from mail-pl1-x62f.google.com (mail-pl1-x62f.google.com [IPv6:2607:f8b0:4864:20::62f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FFD5C0613E5
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:47 -0700 (PDT)
-Received: by mail-pl1-x62f.google.com with SMTP id c16so17475315ply.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:47 -0700 (PDT)
+        Tue, 16 Mar 2021 15:45:16 -0400
+Received: from mail-pj1-x1036.google.com (mail-pj1-x1036.google.com [IPv6:2607:f8b0:4864:20::1036])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 236BFC0613EF
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:54 -0700 (PDT)
+Received: by mail-pj1-x1036.google.com with SMTP id lr1-20020a17090b4b81b02900ea0a3f38c1so4120646pjb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:54 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=Wge42oy0DQ6NR7o79fLXvBmuilouGkgkiyMUSGJksCk=;
-        b=yh5kyUAgt/XzkRvSLUngbm+49zedTzhVfIqb9E/l2FoBTv+IGejH/DM/u6CSYb5irq
-         oziGF0qdK/pF7gh4rh1xbBdaLc11o6ck46mUbzZ6MKn3DVl4B7h7IqEmIv8HzNYQ4pAz
-         FZP5Ao5YxrUT9dG/+F1/9bsAB3+N4Ba+C2FpbStzEo+ap6YuwPZE9JcSPBnrRHD1vTyd
-         24qh5cOh9Nk0QGRcy1eF3tPo8GbmUAX7kArqSNXsCUhVpe/LBlE4cDlUG9nYSwwolCBv
-         q9wBhTN7PzcoIndiZEffhz334cAziwNvARleiswB0evP9EoGTnKd51leD+oVCa5BBiSf
-         jJ0w==
+        bh=csjtCPkdL7tZ0Hw4uLrgE01zyi/QWaclx9nbiJQ12+k=;
+        b=GlL1MupUUCck+C58n+nknBl7BOsxQ+q7L/a0RohyN9atfW008/oLMhFh/JYB5MXOme
+         uUXN0HwwkFb2X3hbCWr6Fo5fcP1jBhQ71cP1N039j/kNVPBH7OIAtuv1C4is9lTPl/Uv
+         saj/z5nRwCi6DnEVZkUkuDoHRqGn3Kn2D+pfRS3xn/jiMzELKxxjN9HqgK5XqiZCB8N0
+         iGFr/bpmf2NEszY28pZQXXLrR6OjUz4+GvU/qorIVndkVzTbKf17AHxIJf6THypXoKj5
+         h5julzh0zItmnmrIeTpdQXCrRcv7DQaFgmh7vZx3qpeSDNqbv4+gyEKdyW7jJB2Cjefc
+         iS0Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Wge42oy0DQ6NR7o79fLXvBmuilouGkgkiyMUSGJksCk=;
-        b=kX5fso0xnlXMhwmHx+kM5oh9S5JNghRg0tUiGgOzWwYGlTNiQloVUigYdC9B8WfEM5
-         u8maXa8EfH4knaJiNFSgWLqYVVziKQ5cnz3nAT3NWJdHwJT9Zjj6QLw0DWwhR8aVTnuD
-         KTz/tv2Sqx48zevgFfSLRbbT4AdtXSs1m1llGDbZNnuHVBbg+41G5k6PmFTXm/gIiARU
-         Dsbo02X/SOyusO0Isd3nuzFQTp8lnTNkpnG12iJetBQcqf6AZN/GmUQw40cjiLNPszsm
-         lV2LC2zSe1kuiqZw7kMhVBzHaofMiNaymGeu6coo5xg+5pcGPVWanrqihO2T1yCpmbaa
-         /r/w==
-X-Gm-Message-State: AOAM5339bbhXFNa70fm8KuRvnh1gWMN+PLlq9Ot2B2YJ3bzIVwhgBt7M
-        R9We0p6S5hAmdunKUfQs8uEiaYiRIOydOA==
-X-Google-Smtp-Source: ABdhPJwv2xuBFNcCxrY/DI9K/OQyCvg0WLQg1qiCLzeS7ufzXwOWb7okENo5JC/ZISaFGOXYSAy8rA==
-X-Received: by 2002:a17:902:e74e:b029:e5:bde4:2b80 with SMTP id p14-20020a170902e74eb02900e5bde42b80mr967896plf.44.1615923885902;
-        Tue, 16 Mar 2021 12:44:45 -0700 (PDT)
+        bh=csjtCPkdL7tZ0Hw4uLrgE01zyi/QWaclx9nbiJQ12+k=;
+        b=TgT5HjBtrvaiengPL3/6j8wIRd0U3y1mXz6s8rd5uNorwxT4a4qcpQ6/EabLzbfQn1
+         D1+Q+oN32Hs9tZ9KSfOgIboj1fxDdLYs670e+PI4ryVfpvzGNYt7EPmsrpGlyrx6yr4Q
+         a/moB1Igs1JA9URGsN/5q/OhWhYAe2zhYlPUsKpQcmDQMTuYKj5cEuNdcHRs4x1oGQ+J
+         yqKTN0DnR9BGOV/k1rGHg3pZR0k7zxSShqo+XX63kheM1BoOXcss79ZzdfuF/9Fyqhcq
+         Emasq/OFdk6FB52GAZdzn4L1iwMUXyVuue5Ozd1XCDE8rn1yKV9TAECOFYXEkE4ySjbZ
+         gqfA==
+X-Gm-Message-State: AOAM5332vn2D3OpExa5B0Z3ME0sT4BIEa/Yd1+j72Mj3ecBC3QsdqIkH
+        LQNaqkQCAhvYBXvt8roCnM/tkBEB0dkwZA==
+X-Google-Smtp-Source: ABdhPJxDtOJ9qNhyYBLvbG6xRRmNP/szyGhfc6LFfiT/+MN1/08xcVlqFYTKrPS8tuqVNVZhF8W3Zg==
+X-Received: by 2002:a17:902:ee95:b029:e5:e2c7:5f76 with SMTP id a21-20020a170902ee95b02900e5e2c75f76mr864196pld.25.1615923892239;
+        Tue, 16 Mar 2021 12:44:52 -0700 (PDT)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:532])
-        by smtp.gmail.com with ESMTPSA id w22sm16919104pfi.133.2021.03.16.12.44.44
+        by smtp.gmail.com with ESMTPSA id w22sm16919104pfi.133.2021.03.16.12.44.50
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 16 Mar 2021 12:44:45 -0700 (PDT)
+        Tue, 16 Mar 2021 12:44:51 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 08/11] btrfs-progs: receive: process fallocate commands
-Date:   Tue, 16 Mar 2021 12:44:02 -0700
-Message-Id: <b86c55da3e62e3253884a2aeb8575fd4feebe4ef.1615922859.git.osandov@osandov.com>
+Subject: [PATCH v4 11/11] btrfs-progs: receive: add tests for basic encoded_write send/receive
+Date:   Tue, 16 Mar 2021 12:44:05 -0700
+Message-Id: <10e4ab8447fd360b103229d866923f265204d940.1615922859.git.osandov@osandov.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <cover.1615922753.git.osandov@fb.com>
 References: <cover.1615922753.git.osandov@fb.com>
@@ -73,127 +73,138 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Boris Burkov <boris@bur.io>
 
-Send stream v2 can emit fallocate commands, so receive must support them
-as well. The implementation simply passes along the arguments to the
-syscall. Note that mode is encoded as a u32 in send stream but fallocate
-takes an int, so there is a unsigned->signed conversion there.
+Adapt the existing send/receive tests by passing '-o --force-compress'
+to the mount commands in a new test. After writing a few files in the
+various compression formats, send/receive them with and without
+--force-decompress to test both the encoded_write path and the
+fallback to decode+write.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- cmds/receive-dump.c  |  9 +++++++++
- cmds/receive.c       | 25 +++++++++++++++++++++++++
- common/send-stream.c |  9 +++++++++
- common/send-stream.h |  2 ++
- 4 files changed, 45 insertions(+)
+ .../043-receive-write-encoded/test.sh         | 114 ++++++++++++++++++
+ 1 file changed, 114 insertions(+)
+ create mode 100755 tests/misc-tests/043-receive-write-encoded/test.sh
 
-diff --git a/cmds/receive-dump.c b/cmds/receive-dump.c
-index 20ec2b70..acc0ba32 100644
---- a/cmds/receive-dump.c
-+++ b/cmds/receive-dump.c
-@@ -329,6 +329,14 @@ static int print_encoded_write(const char *path, const void *data, u64 offset,
- 			  unencoded_offset, compression, encryption);
- }
- 
-+static int print_fallocate(const char *path, int mode, u64 offset, u64 len,
-+			   void *user)
-+{
-+	return PRINT_DUMP(user, path, "fallocate",
-+			  "mode=%d offset=%llu len=%llu",
-+			  mode, offset, len);
+diff --git a/tests/misc-tests/043-receive-write-encoded/test.sh b/tests/misc-tests/043-receive-write-encoded/test.sh
+new file mode 100755
+index 00000000..b9390e88
+--- /dev/null
++++ b/tests/misc-tests/043-receive-write-encoded/test.sh
+@@ -0,0 +1,114 @@
++#!/bin/bash
++#
++# test that we can send and receive encoded writes for three modes of
++# transparent compression: zlib, lzo, and zstd.
++
++source "$TEST_TOP/common"
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++prepare_test_dev
++
++here=`pwd`
++
++# assumes the filesystem exists, and does mount, write, snapshot, send, unmount
++# for the specified encoding option
++send_one() {
++	local str
++	local subv
++	local snap
++
++	algorithm="$1"
++	shift
++	str="$1"
++	shift
++
++	subv="subv-$algorithm"
++	snap="snap-$algorithm"
++
++	run_check_mount_test_dev "-o" "compress-force=$algorithm"
++	cd "$TEST_MNT" || _fail "cannot chdir to TEST_MNT"
++
++	run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "$subv"
++	run_check $SUDO_HELPER dd if=/dev/zero of="$subv/file1" bs=1M count=1
++	run_check $SUDO_HELPER dd if=/dev/zero of="$subv/file2" bs=500K count=1
++	run_check $SUDO_HELPER "$TOP/btrfs" subvolume snapshot -r "$subv" "$snap"
++	run_check $SUDO_HELPER "$TOP/btrfs" send -f "$str" "$snap" "$@"
++
++	cd "$here" || _fail "cannot chdir back to test directory"
++	run_check_umount_test_dev
 +}
 +
- struct btrfs_send_ops btrfs_print_send_ops = {
- 	.subvol = print_subvol,
- 	.snapshot = print_snapshot,
-@@ -352,4 +360,5 @@ struct btrfs_send_ops btrfs_print_send_ops = {
- 	.utimes = print_utimes,
- 	.update_extent = print_update_extent,
- 	.encoded_write = print_encoded_write,
-+	.fallocate = print_fallocate,
- };
-diff --git a/cmds/receive.c b/cmds/receive.c
-index f0236f50..9103dabb 100644
---- a/cmds/receive.c
-+++ b/cmds/receive.c
-@@ -1312,6 +1312,30 @@ static int process_encoded_write(const char *path, const void *data, u64 offset,
- 				    compression);
- }
- 
-+static int process_fallocate(const char *path, int mode, u64 offset, u64 len,
-+			     void *user)
-+{
-+	int ret;
-+	struct btrfs_receive *rctx = user;
-+	char full_path[PATH_MAX];
++receive_one() {
++	local str
++	str="$1"
++	shift
 +
-+	ret = path_cat_out(full_path, rctx->full_subvol_path, path);
-+	if (ret < 0) {
-+		error("fallocate: path invalid: %s", path);
-+		return ret;
-+	}
-+	ret = open_inode_for_write(rctx, full_path, false);
-+	if (ret < 0)
-+		return ret;
-+	ret = fallocate(rctx->write_fd, mode, offset, len);
-+	if (ret < 0) {
-+		ret = -errno;
-+		error("fallocate: fallocate on %s failed: %m", path);
-+		return ret;
-+	}
-+	return 0;
++	run_check_mkfs_test_dev
++	run_check_mount_test_dev
++	run_check $SUDO_HELPER "$TOP/btrfs" receive "$@" -v -f "$str" "$TEST_MNT"
++	run_check_umount_test_dev
++	run_check rm -f -- "$str"
 +}
 +
- static struct btrfs_send_ops send_ops = {
- 	.subvol = process_subvol,
- 	.snapshot = process_snapshot,
-@@ -1335,6 +1359,7 @@ static struct btrfs_send_ops send_ops = {
- 	.utimes = process_utimes,
- 	.update_extent = process_update_extent,
- 	.encoded_write = process_encoded_write,
-+	.fallocate = process_fallocate,
- };
- 
- static int do_receive(struct btrfs_receive *rctx, const char *tomnt,
-diff --git a/common/send-stream.c b/common/send-stream.c
-index 044e101b..bc41396e 100644
---- a/common/send-stream.c
-+++ b/common/send-stream.c
-@@ -369,6 +369,7 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
- 	u64 unencoded_offset;
- 	int len;
- 	int xattr_len;
-+	int fallocate_mode;
- 
- 	ret = read_cmd(sctx);
- 	if (ret)
-@@ -514,6 +515,14 @@ static int read_and_process_cmd(struct btrfs_send_stream *sctx)
- 	case BTRFS_SEND_C_END:
- 		ret = 1;
- 		break;
-+	case BTRFS_SEND_C_FALLOCATE:
-+		TLV_GET_STRING(sctx, BTRFS_SEND_A_PATH, &path);
-+		TLV_GET_U32(sctx, BTRFS_SEND_A_FALLOCATE_MODE, &fallocate_mode);
-+		TLV_GET_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, &offset);
-+		TLV_GET_U64(sctx, BTRFS_SEND_A_SIZE, &tmp);
-+		ret = sctx->ops->fallocate(path, fallocate_mode, offset, tmp,
-+					   sctx->user);
-+		break;
- 	}
- 
- tlv_get_failed:
-diff --git a/common/send-stream.h b/common/send-stream.h
-index 607bc007..a58739bb 100644
---- a/common/send-stream.h
-+++ b/common/send-stream.h
-@@ -70,6 +70,8 @@ struct btrfs_send_ops {
- 			     u64 len, u64 unencoded_file_len, u64 unencoded_len,
- 			     u64 unencoded_offset, u32 compression,
- 			     u32 encryption, void *user);
-+	int (*fallocate)(const char *path, int mode, u64 offset, u64 len,
-+			 void *user);
- };
- 
- int btrfs_read_and_process_send_stream(int fd,
++test_one_write_encoded() {
++	local str
++	local algorithm
++	algorithm="$1"
++	shift
++	str="$here/stream-$algorithm.stream"
++
++	run_check_mkfs_test_dev
++	send_one "$algorithm" "$str" --compressed-data
++	receive_one "$str" "$@"
++}
++
++test_one_stream_v1() {
++	local str
++	local algorithm
++	algorithm="$1"
++	shift
++	str="$here/stream-$algorithm.stream"
++
++	run_check_mkfs_test_dev
++	send_one "$algorithm" "$str" --stream-version 1
++	receive_one "$str" "$@"
++}
++
++test_mix_write_encoded() {
++	local strzlib
++	local strlzo
++	local strzstd
++	strzlib="$here/stream-zlib.stream"
++	strlzo="$here/stream-lzo.stream"
++	strzstd="$here/stream-zstd.stream"
++
++	run_check_mkfs_test_dev
++
++	send_one "zlib" "$strzlib" --compressed-data
++	send_one "lzo" "$strlzo" --compressed-data
++	send_one "zstd" "$strzstd" --compressed-data
++
++	receive_one "$strzlib"
++	receive_one "$strlzo"
++	receive_one "$strzstd"
++}
++
++test_one_write_encoded "zlib"
++test_one_write_encoded "lzo"
++test_one_write_encoded "zstd"
++
++# with decompression forced
++test_one_write_encoded "zlib" "--force-decompress"
++test_one_write_encoded "lzo" "--force-decompress"
++test_one_write_encoded "zstd" "--force-decompress"
++
++# send stream v1
++test_one_stream_v1 "zlib"
++test_one_stream_v1 "lzo"
++test_one_stream_v1 "zstd"
++
++# files use a mix of compression algorithms
++test_mix_write_encoded
 -- 
 2.30.2
 

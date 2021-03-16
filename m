@@ -2,180 +2,241 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B3B5BC43333
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91F72C4332E
 	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:45:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9CED164F52
+	by mail.kernel.org (Postfix) with ESMTP id 6C16764F52
 	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Mar 2021 19:45:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240633AbhCPTpL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Mar 2021 15:45:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35678 "EHLO
+        id S240626AbhCPTpG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Mar 2021 15:45:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35656 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240585AbhCPToZ (ORCPT
+        with ESMTP id S240575AbhCPToU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Mar 2021 15:44:25 -0400
-Received: from mail-pf1-x42f.google.com (mail-pf1-x42f.google.com [IPv6:2607:f8b0:4864:20::42f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81E84C06175F
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:24 -0700 (PDT)
-Received: by mail-pf1-x42f.google.com with SMTP id a188so9547184pfb.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:24 -0700 (PDT)
+        Tue, 16 Mar 2021 15:44:20 -0400
+Received: from mail-pg1-x52f.google.com (mail-pg1-x52f.google.com [IPv6:2607:f8b0:4864:20::52f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9384FC06174A
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:20 -0700 (PDT)
+Received: by mail-pg1-x52f.google.com with SMTP id w34so22251828pga.8
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Mar 2021 12:44:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=jZrSTcmazmtFthQfVzPJZ2x5Gg/YBmitG9JH3bMhW2M=;
-        b=k1emE4N9PeUn+HjoBCWU3u042syqDlmnav39G4fD/cmD1EuvIT4hTnRuffrvXoNpcs
-         j20WIHTbi03ahcJZT6j7oCeAqMsSf5Ie7JcXItgJkPQa9npbKZv8lC2V3iKETfyRF42M
-         tUrTpuQ/lGd2LwU8mLx48D+2H8am/t/stSVUJ9AuC56F0HC4eOYp7VL4FTioVK4gRlx0
-         82wRRkT6aa/qE1nB9c1zt4U0uy8xX65xvOzm2FyZdQKgTo3BkiOJOaYfwD3T0fHqlQ72
-         huIbgiEtZ07F+58Q2M2RW5X+Hh2Q8Imc40l8ZKlUDjS6A6bF78t5lpzpWmvuvcdH0Zdz
-         mGAw==
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=RgW7hnF9c6s7+FBn7LV2hshi72WY217NOlobehQ4kg4=;
+        b=WOEVOSgJD4QOUP/QNqCNAshTtWBzZG01noojI+C0tHFKCg+zgNSXdQGNRL0ycEg0sx
+         hwNrQt+GoNhV8i+8x6cX9n1Ct54rgbsg2maJ2Nr8rSU1QBNRXLy4G5efwjMshQ1zDShs
+         fcjOjCbq4KzOgoR6SExBevxTCgDeFPL7EVswviy7VX+sM1bcZ+X7aJCFMvpzVJVOhY5e
+         ZkCd6SmHBgHl9vQW+1eEbDmhicUQ9frHi7ZbiIqe119G1hNYkNB38h0PGx+qCN265XnO
+         pej8b6GgeJ7wy+bPndynmfGfABaxj6YiyX54zTSB5VEBhEKG6blBHKbIAnlW7hsfuqBd
+         ChoA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=jZrSTcmazmtFthQfVzPJZ2x5Gg/YBmitG9JH3bMhW2M=;
-        b=siY6CW9XRfLdTro8Mzcc9Ce/rotP6wJ+mCRBCI8f+GU/X9uMtpdsc1ODfUAyqc6QqQ
-         QyA/qvKuoftAhzV6O6oWaVTKh+Go0OQkIsgg3MSOidqnTEMq+pmRqDjnbPSSAocnI4r9
-         tL3j6lOBKj+2L0LBFMTvv6/AnxF4jkzM163NtCdJwXEk/ISTmMgknCrfeEbhen2TF7IR
-         Dha9tcJWL5iVsOWk4adDT6Flk7IkyIDBTepu3Lv8jFY3xu7aLAwHKfjX9OZl/LOFLjst
-         LXB5u2nRU9C/Zu/K+z035Bmes3bBNgoDuc/h6KN5CNNVl70nmxaa/XiW3QZIk/LNTk2J
-         Wgxw==
-X-Gm-Message-State: AOAM531701LlOymAiVlkXi27v11xKyDsFemvIX82Ur2h6I8Ph29e2b7+
-        uZK/eZPSpatpbpHkHRAFyhey52atOzrzmA==
-X-Google-Smtp-Source: ABdhPJz5l3OpzRSIAlAbcB2PScfh0mtc6vJvWgoS5gx2k3I3zCWnnzd1VEfVKcN88nIHuhGG0Juo1g==
-X-Received: by 2002:a63:1350:: with SMTP id 16mr1120350pgt.85.1615923863404;
-        Tue, 16 Mar 2021 12:44:23 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=RgW7hnF9c6s7+FBn7LV2hshi72WY217NOlobehQ4kg4=;
+        b=OPoSBgaPken/5MXGCPbiTkC3oyIP0UZSGiFawD2V+g727YKDvgyn2POO/3nUegniPe
+         ykIfG9fLyLmSrKGm559XsX22t9tkTt3ArADOUSqyAUUED8JEyyPuoVpjqQNuNOaL9XNO
+         SUiHniGB+GH9cMN9jimCuDEI6ElWE8u0SY4bU2sGBlhfQcpZPOMsBF3FU1XS0+cxZ+xP
+         WklmRE7rWBYGN0pLVmzh13Y/WiCjfps/nVgqoCng2JD42kV5aj6DsMAFkZmxoCgQD4ET
+         Pk4fjGpdXBVj2s6BTzUlujHsXRICjGiL4hKYZqHvFIDj2J48UI7gnMioCMcYi77yJTUL
+         cinQ==
+X-Gm-Message-State: AOAM530ruxkuBDrLaQOh41IRcOX66sHYjljHVDRB88lQQ9WEv3jXsQdX
+        SRz5OX8bw+lVa5pz5ip8A/5Eb7VelC5/2A==
+X-Google-Smtp-Source: ABdhPJxoyOXBNQxVQITG19pAR+jhh8gYRUcxImzPsYJsJmWTmrnIwgEC2CmfVFetLibJu7qmPNnVCA==
+X-Received: by 2002:a63:d1c:: with SMTP id c28mr1096053pgl.113.1615923859139;
+        Tue, 16 Mar 2021 12:44:19 -0700 (PDT)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:532])
-        by smtp.gmail.com with ESMTPSA id w22sm16919104pfi.133.2021.03.16.12.44.21
+        by smtp.gmail.com with ESMTPSA id w22sm16919104pfi.133.2021.03.16.12.44.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 16 Mar 2021 12:44:22 -0700 (PDT)
+        Tue, 16 Mar 2021 12:44:17 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 01/11] btrfs-progs: receive: support v2 send stream larger tlv_len
-Date:   Tue, 16 Mar 2021 12:43:51 -0700
-Message-Id: <69201100820c1c8df863eb353d02a8f5e35f44d5.1615922859.git.osandov@osandov.com>
+Subject: [PATCH v4 0/5] btrfs: implement send/receive of compressed extents without decompressing
+Date:   Tue, 16 Mar 2021 12:43:49 -0700
+Message-Id: <cover.1615922753.git.osandov@fb.com>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <cover.1615922753.git.osandov@fb.com>
-References: <cover.1615922753.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Boris Burkov <borisb@fb.com>
+From: Omar Sandoval <osandov@fb.com>
 
-An encoded extent can be up to 128K in length, which exceeds the largest
-value expressible by the current send stream format's 16 bit tlv_len
-field. Since encoded writes cannot be split into multiple writes by
-btrfs send, the send stream format must change to accommodate encoded
-writes.
+This series uses the interface added in "fs: interface for directly
+reading/writing compressed data" to send and receive compressed data
+without wastefully decompressing and recompressing it. It does so by
 
-Supporting this changed format requires retooling how we store the
-commands we have processed. Since we can no longer use btrfs_tlv_header
-to describe every attribute, we define a new struct btrfs_send_attribute
-which has a 32 bit length field, and use that to store the attribute
-information needed for receive processing. This is transparent to users
-of the various TLV_GET macros.
+1. Bumping the send stream protocol version to 2.
+2. Adding a new command, BTRFS_SEND_C_ENCODED_WRITE, and its associated
+   attributes that indicates a write using the new encoded I/O
+   interface.
+3. Sending compressed extents with BTRFS_SEND_C_ENCODED_WRITE when
+   requested by the user.
+4. Falling back to decompressing and writing the decompressed data if
+   encoded I/O fails.
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- common/send-stream.c | 34 +++++++++++++++++++++++++---------
- 1 file changed, 25 insertions(+), 9 deletions(-)
+Benchmarks
+==========
 
-diff --git a/common/send-stream.c b/common/send-stream.c
-index a0c52f79..cd5aa311 100644
---- a/common/send-stream.c
-+++ b/common/send-stream.c
-@@ -24,13 +24,23 @@
- #include "crypto/crc32c.h"
- #include "common/utils.h"
- 
-+struct btrfs_send_attribute {
-+	u16 tlv_type;
-+	/*
-+	 * Note: in btrfs_tlv_header, this is __le16, but we need 32 bits for
-+	 * attributes with file data as of version 2 of the send stream format
-+	 */
-+	u32 tlv_len;
-+	char *data;
-+};
-+
- struct btrfs_send_stream {
- 	char read_buf[BTRFS_SEND_BUF_SIZE];
- 	int fd;
- 
- 	int cmd;
- 	struct btrfs_cmd_header *cmd_hdr;
--	struct btrfs_tlv_header *cmd_attrs[BTRFS_SEND_A_MAX + 1];
-+	struct btrfs_send_attribute cmd_attrs[BTRFS_SEND_A_MAX + 1];
- 	u32 version;
- 
- 	/*
-@@ -152,6 +162,7 @@ static int read_cmd(struct btrfs_send_stream *sctx)
- 		struct btrfs_tlv_header *tlv_hdr;
- 		u16 tlv_type;
- 		u16 tlv_len;
-+		struct btrfs_send_attribute *send_attr;
- 
- 		tlv_hdr = (struct btrfs_tlv_header *)data;
- 		tlv_type = le16_to_cpu(tlv_hdr->tlv_type);
-@@ -164,10 +175,15 @@ static int read_cmd(struct btrfs_send_stream *sctx)
- 			goto out;
- 		}
- 
--		sctx->cmd_attrs[tlv_type] = tlv_hdr;
-+		send_attr = &sctx->cmd_attrs[tlv_type];
-+		send_attr->tlv_type = tlv_type;
-+		send_attr->tlv_len = tlv_len;
-+		pos += sizeof(*tlv_hdr);
-+		data += sizeof(*tlv_hdr);
- 
--		data += sizeof(*tlv_hdr) + tlv_len;
--		pos += sizeof(*tlv_hdr) + tlv_len;
-+		send_attr->data = data;
-+		pos += send_attr->tlv_len;
-+		data += send_attr->tlv_len;
- 	}
- 
- 	sctx->cmd = cmd;
-@@ -180,7 +196,7 @@ out:
- static int tlv_get(struct btrfs_send_stream *sctx, int attr, void **data, int *len)
- {
- 	int ret;
--	struct btrfs_tlv_header *hdr;
-+	struct btrfs_send_attribute *send_attr;
- 
- 	if (attr <= 0 || attr > BTRFS_SEND_A_MAX) {
- 		error("invalid attribute requested, attr = %d", attr);
-@@ -188,15 +204,15 @@ static int tlv_get(struct btrfs_send_stream *sctx, int attr, void **data, int *l
- 		goto out;
- 	}
- 
--	hdr = sctx->cmd_attrs[attr];
--	if (!hdr) {
-+	send_attr = &sctx->cmd_attrs[attr];
-+	if (!send_attr->data) {
- 		error("attribute %d requested but not present", attr);
- 		ret = -ENOENT;
- 		goto out;
- 	}
- 
--	*len = le16_to_cpu(hdr->tlv_len);
--	*data = hdr + 1;
-+	*len = send_attr->tlv_len;
-+	*data = send_attr->data;
- 
- 	ret = 0;
- 
+I ran some benchmarks on send and receive of a zstd (level 3) compressed
+snapshot of a server's root filesystem which is about 23GB when
+compressed and 50GB when decompressed.
+
+Send v1:
+0.41user 81.97system 2:21.71elapsed 58%CPU (0avgtext+0avgdata 2900maxresident)k
+47182656inputs+0outputs (10major+119minor)pagefaults 0swaps
+
+Send compressed:
+0.43user 60.53system 2:20.62elapsed 43%CPU (0avgtext+0avgdata 2836maxresident)k
+47778864inputs+0outputs (8major+117minor)pagefaults 0swaps
+
+In this case, the bottleneck for send is reading the metadata trees and
+data from disk, so there's not much of a wall time improvement, but
+since the kernel doesn't have to decompress the data in the compressed
+case, it uses significantly less CPU and system time.
+
+Receive v1 into a filesystem with compress=none:
+15.58user 62.36system 7:34.44elapsed 17%CPU (0avgtext+0avgdata 3028maxresident)k
+104719648inputs+105333248outputs (1major+140minor)pagefaults 0swaps
+
+Receive v1 into a filesystem with compress-force=zstd:
+15.45user 63.99system 5:11.57elapsed 25%CPU (0avgtext+0avgdata 3100maxresident)k
+104587240inputs+105379328outputs (1major+143minor)pagefaults 0swaps
+
+Receive compressed into a filesystem with compress-force=zstd:
+7.95user 44.53system 3:42.79elapsed 23%CPU (0avgtext+0avgdata 2992maxresident)k
+46909600inputs+21603216outputs (2major+176minor)pagefaults 0swaps
+
+Without compressed receive, recompressing the data is still a wall time
+win because it requires much less I/O. However, compressed receive
+reduces the wall time even further.
+
+The v1 send stream is 50GB, and the v2 send stream is 23 GB. The v1 send
+stream compresses down to 17GB with zstd (level 3), so compressed send
+gets pretty close with no extra CPU overhead (the reason that compressed
+send is still larger is of course that we compress extents individually,
+which does not compress as efficiently as compressing the entire
+filesystem representation in one go).
+
+# ls -lh v1.send v1.send.zst compressed.send
+-rw-r--r-- 1 root root 23G Aug 17 12:34 compressed.send                 
+-rw-r--r-- 1 root root 50G Aug 17 12:13 v1.send                           
+-rw-r--r-- 1 root root 17G Aug 17 12:28 v1.send.zst               
+
+Protocol Updates
+================
+
+This series makes some changes to the send stream protocol beyond adding
+the encoded write command/attributes and bumping the version. Namely, v1
+has a 64k limit on the size of a write due to the 16-bit attribute
+length. This is not enough for encoded writes, as compressed extents may
+be up to 128k and cannot be split up. To address this, the
+BTRFS_SEND_A_DATA is treated specially in v2: its length is implicitly
+the remaining length of the command (which has a 32-bit length). This
+was the least bad of the options I considered.
+
+There are other commands that we've been wanting to add to the protocol:
+fallocate and FS_IOC_SETFLAGS. This series reserves their command and
+attribute numbers but does not implement kernel support for emitting
+them. However, it does implement support in receive for them, so the
+kernel can start emitting those whenever we get around to implementing
+them.
+
+Interface
+=========
+
+For the send ioctl, stream version 2 is opt-in, and compressed writes
+are opt-in separately (but dependent on) stream version 2.
+
+Accordingly, `btrfs send` now accepts a `--stream-version` option and a
+`--compressed-data` option; the latter implies `--stream-version 2`.
+
+`btrfs receive` also accepts a `--force-decompress` option that forces
+the fallback to decompressing and writing the decompressed data.
+
+These options are provided to give the user flexibility in case they
+don't want their receiving filesytem to be compressed.
+
+Patches
+=======
+
+The kernel patches are based on kdave/misc-next plus v8 of my "fs:
+interface for directly reading/writing compressed data" series. Patches
+1-3 do some preparation for stream v2 and compressed send. Patch 4
+implements compressed send. Patch 5 modifies the ioctl to accept the new
+flags and enable the new feature.
+
+Changes since v3 [1]:
+
+- Rebased on current kdave/misc-next (v5.12-rc3).
+
+Omar Sandoval (5):
+  btrfs: add send stream v2 definitions
+  btrfs: send: write larger chunks when using stream v2
+  btrfs: send: allocate send buffer with alloc_page() and vmap() for v2
+  btrfs: send: send compressed extents with encoded writes
+  btrfs: send: enable support for stream v2 and compressed writes
+
+ fs/btrfs/ctree.h           |   4 +
+ fs/btrfs/inode.c           |   6 +-
+ fs/btrfs/send.c            | 307 +++++++++++++++++++++++++++++++++----
+ fs/btrfs/send.h            |  32 +++-
+ include/uapi/linux/btrfs.h |  17 +-
+ 5 files changed, 332 insertions(+), 34 deletions(-)
+
+The btrfs-progs patches were written by Boris Burkov with some updates
+from me. Patches 1-5 are preparation. Patch 6 implements encoded writes.
+Patch 7 implements the fallback to decompressing. Patches 9 and 10
+implement the other commands. Patch 10 adds the new `btrfs send`
+options. Patch 11 adds a test case.
+
+Changes since v3 [1]:
+
+- Rebased on latest devel branch.
+
+Boris Burkov (11):
+  btrfs-progs: receive: support v2 send stream larger tlv_len
+  btrfs-progs: receive: dynamically allocate sctx->read_buf
+  btrfs-progs: receive: support v2 send stream DATA tlv format
+  btrfs-progs: receive: add send stream v2 cmds and attrs to send.h
+  btrfs-progs: receive: add stub implementation for pwritev2
+  btrfs-progs: receive: process encoded_write commands
+  btrfs-progs: receive: encoded_write fallback to explicit decode and
+    write
+  btrfs-progs: receive: process fallocate commands
+  btrfs-progs: receive: process setflags ioctl commands
+  btrfs-progs: send: stream v2 ioctl flags
+  btrfs-progs: receive: add tests for basic encoded_write send/receive
+
+ Documentation/btrfs-receive.asciidoc          |   4 +
+ Documentation/btrfs-send.asciidoc             |  16 +-
+ Makefile                                      |   4 +-
+ cmds/receive-dump.c                           |  31 +-
+ cmds/receive.c                                | 403 +++++++++++++++++-
+ cmds/send.c                                   |  54 ++-
+ common/send-stream.c                          | 157 +++++--
+ common/send-stream.h                          |   7 +
+ configure.ac                                  |   1 +
+ ioctl.h                                       |  17 +-
+ libbtrfsutil/btrfs.h                          |  17 +-
+ send.h                                        |  19 +-
+ stubs.c                                       |  24 ++
+ stubs.h                                       |  57 +++
+ .../043-receive-write-encoded/test.sh         | 114 +++++
+ 15 files changed, 874 insertions(+), 51 deletions(-)
+ create mode 100644 stubs.c
+ create mode 100644 stubs.h
+ create mode 100755 tests/misc-tests/043-receive-write-encoded/test.sh
+
 -- 
 2.30.2
 

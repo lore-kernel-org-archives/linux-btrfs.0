@@ -2,110 +2,117 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.1 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6512CC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 16:05:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28E5AC433E9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 16:07:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1F5AB64E61
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 16:05:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB09964F33
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 16:07:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232164AbhCQQEu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Mar 2021 12:04:50 -0400
-Received: from mail.xmyslivec.cz ([83.167.247.77]:49662 "EHLO
-        mail.xmyslivec.cz" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231993AbhCQQEi (ORCPT
+        id S232257AbhCQQG1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Mar 2021 12:06:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47706 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232023AbhCQQFz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Mar 2021 12:04:38 -0400
-X-Greylist: delayed 536 seconds by postgrey-1.27 at vger.kernel.org; Wed, 17 Mar 2021 12:04:38 EDT
-Received: from [172.23.0.68] (mh1-fw.logicworks.mh.etn.cz [82.113.58.199])
-        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.xmyslivec.cz (Postfix) with ESMTPSA id 60EF640246;
-        Wed, 17 Mar 2021 16:55:38 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=xmyslivec.cz;
-        s=master; t=1615996538;
-        bh=JBMyqbIihgalcArsZ+QbCW8HrguuuQNErHtTO+I+rG0=;
-        h=To:Cc:References:From:Subject:Date:In-Reply-To:From;
-        b=Y4kAB/OmYBJU7x2IkPa+FBCO9lXmtna1WDvYmgg/bZrDZhYbdHbq+f/2QyPDpzF/u
-         VpcR9fLwzAByj5lEIFKWWrehQV2eeeOJA2s9sBmAhUPuRYM3fCslJNzM34XdPEBDVn
-         F3DDwC3XQhrGNrG+YiRFjBRrVnCVqMSo5AQZblmvE2iUpQEh1LaEE/mLBBeVBxs4k8
-         hVjnLBcbFnxY5n1OdecPeE+vxdiI8pal1P29pM/QAkbRlzQc+sAs4MR85EymrrQxrk
-         7v+jZ+pSg2M1pq+uzc+rxd4Hsc90Jd+XYj2A72WFbM04HUeI7t9i3gU8QkgV7pQ2xS
-         T8u0H5KsJHAOQ==
-To:     Manuel Riel <manu@snapdragon.cc>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Michal Moravec <michal.moravec@logicworks.cz>,
-        songliubraving@fb.com, guoqing.jiang@cloud.ionos.com,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux-RAID <linux-raid@vger.kernel.org>
-References: <d3fced3f-6c2b-5ffa-fd24-b24ec6e7d4be@xmyslivec.cz>
- <CAJCQCtSfz+b38fW3zdcHwMMtO1LfXSq+0xgg_DaKShmAumuCWQ@mail.gmail.com>
- <29509e08-e373-b352-d696-fcb9f507a545@xmyslivec.cz>
- <CAJCQCtRx7NJP=-rX5g_n5ZL7ypX-5z_L6d6sk120+4Avs6rJUw@mail.gmail.com>
- <695936b4-67a2-c862-9cb6-5545b4ab3c42@xmyslivec.cz>
- <CAJCQCtQWNSd123OJ_Rp8NO0=upY2Mn+SE7pdMqmyizJP028Yow@mail.gmail.com>
- <2f2f1c21-c81b-55aa-6f77-e2d3f32d32cb@xmyslivec.cz>
- <CAJCQCtTQN60V=DEkNvDedq+usfmFB+SQP2SBezUaSeUjjY46nA@mail.gmail.com>
- <4b0dd0aa-f77b-16c8-107b-0182378f34e6@xmyslivec.cz>
- <CAJCQCtQWh2JBAL_SDRG-gMd9Z1TXad7aKjZVUGdY1Akj7fn5Qg@mail.gmail.com>
- <5e79d1f8-7632-48ef-de56-9e79cba87434@xmyslivec.cz>
- <CAJCQCtTR1JZTLr+xTEZxrwh8xSfb+zpKjc+_S2tJGFofVMUdSQ@mail.gmail.com>
- <0c792470-6ee9-8254-dd57-a7a90ac95bcd@xmyslivec.cz>
- <DBB07C8C-0D83-47DC-9B91-78AD385775E3@snapdragon.cc>
- <D3026A55-A7F2-4432-87A8-3E9B2CACE4C2@snapdragon.cc>
- <56AD80D0-6853-4E3A-A94C-AD1477D3FDA4@snapdragon.cc>
-From:   Vojtech Myslivec <vojtech@xmyslivec.cz>
-Subject: Re: Linux RAID with btrfs stuck and consume 100 % CPU
-Message-ID: <5e9e627f-7f73-c243-8084-58f156b984c5@xmyslivec.cz>
-Date:   Wed, 17 Mar 2021 16:55:36 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.8.0
+        Wed, 17 Mar 2021 12:05:55 -0400
+Received: from mail-qt1-x831.google.com (mail-qt1-x831.google.com [IPv6:2607:f8b0:4864:20::831])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87F4AC06174A
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 09:05:55 -0700 (PDT)
+Received: by mail-qt1-x831.google.com with SMTP id c6so1799802qtc.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 09:05:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=727DeB6qw5yjA3Fg1TvNxOFCNoi6AqTXsVoRgzYlGSo=;
+        b=UXvlQygvFZurg5JhF0JrHOGGb+vh8SlMrd+omJcRX7u+beK1wGNsc9hf89qtAopVm+
+         +Z3F5WMy6+UlsN1bJnfNjDq5u/htsKIcj4zgUxv2ggIt75L1QktFEliWILIz8nhRDFDa
+         W8YmnjLElml3BNIcnhXEN2aT2QZWgbve4njsLwb97TFb37Z2DWVDMI+LeChrI92lNJX4
+         vtwFFkvyhaefV4kcDIgBLLGt8fArqG3xEGfj5EVtGP2uxkJqkLyw4S0gtAdijdOCCWH7
+         /+u4uDCa+er5JljWUOOBxdqwIaAk5PrsuuspQ43qMmZK4/bm2WC7UyQt7G6A/SAMxVqT
+         ZJXw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=727DeB6qw5yjA3Fg1TvNxOFCNoi6AqTXsVoRgzYlGSo=;
+        b=SL6+/U+PIELQIMmawr47QH2cYVLRNA6FOqCmMMUEndfF9QVQeZYWmse1gWJr3YM3xT
+         KbtFrdQR44NEqjXN1OkkPDo0+SMFEzPL6PWdp0VrcbQX4k+GuXKOiqxR4vpseVzOvZrR
+         4b8MnXe7rkKL9vVPsNkcGBhbZDCnpmcvDrW++5vGFWp7oy2mCkAKYADQOxHKm1zOQVh+
+         yqbC6jTrugmZ9Np+modQwNvQ4cP9RZ6Yt8SjwPD4h0Se6ujCFcgUelmyiMc9GdgxTNG3
+         TByFasKtsBKyz/UX/BLRIA0HuZf8F4mWjnvxmu8cLgt86+BlGILRckeBXAy27PdPYsIY
+         w1Kw==
+X-Gm-Message-State: AOAM533pWHrYR9UaB0v4gqYrDcsByz3QAKHjxn4QRMdTmLMkUVH3RKFa
+        20bkFqk6Bje3XJdM/cYy65seAwRYwGdza824
+X-Google-Smtp-Source: ABdhPJz0IlEUx0G9g32/OqDa1RCRqhC39v+C4P7g6+J3r1wicpAn6gnFhH2M+C3VLSy0+nCg/OaRnQ==
+X-Received: by 2002:ac8:5cc4:: with SMTP id s4mr4549795qta.214.1615994932343;
+        Wed, 17 Mar 2021 08:28:52 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id c13sm17289575qkc.99.2021.03.17.08.28.51
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 17 Mar 2021 08:28:51 -0700 (PDT)
+Subject: Re: [PATCH] btrfs: zoned: automatically reclaim zones
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
+        Naohiro Aota <naohiro.aota@wdc.com>
+References: <321e2ff322469047563dfce030814d58a8632a60.1615977471.git.johannes.thumshirn@wdc.com>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <0467cd28-efb8-cf31-89dc-3094cb02d96c@toxicpanda.com>
+Date:   Wed, 17 Mar 2021 11:28:51 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.7.1
 MIME-Version: 1.0
-In-Reply-To: <56AD80D0-6853-4E3A-A94C-AD1477D3FDA4@snapdragon.cc>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <321e2ff322469047563dfce030814d58a8632a60.1615977471.git.johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Thanks a lot Manuel for your findings and information.
+On 3/17/21 6:38 AM, Johannes Thumshirn wrote:
+> When a file gets deleted on a zoned file system, the space freed is no
+> returned back into the block group's free space, but is migrated to
+> zone_unusable.
+> 
+> As this zone_unusable space is behind the current write pointer it is not
+> possible to use it for new allocations. In the current implementation a
+> zone is reset once all of the block group's space is accounted as zone
+> unusable.
+> 
+> This behaviour can lead to premature ENOSPC errors on a busy file system.
+> 
+> Instead of only reclaiming the zone once it is completely unusable,
+> kick off a reclaim job once the amount of unusable bytes exceeds a user
+> configurable threshold between 51% and 100%.
+> 
+> Similar to reclaiming unused block groups, these dirty block groups are
+> added to a to_reclaim list and then on a transaction commit, the reclaim
+> process is triggered but after we deleted unused block groups, which will
+> free space for the relocation process.
+> 
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-It's good to know btrfs is not causing this issue and the common symptom 
-is an MD journal on another RAID device.
+I think this is generally useful, but we should indicate to the user that it's 
+happening via automatic cleanup and not because of somebody using btrfs balance 
+start.
 
-I have moved journal from logical volume on RAID1 to a plain partition 
-on a SSD and I will monitor the state.
+As for doing it on non-zoned, I'm still hesitant to do this simply because I 
+haven't been able to finish working on the relocation stuff.  Once my current 
+set of patches get merged I'll pick it back up, but there still remains some 
+pretty unpleasant side-effects of balance.
 
-Vojtech
+Chris and I have been discussing your RAID5/6 plan, and we both really, really 
+like the idea of the stripe root from the point of view that it makes relocation 
+insanely straightforward and simple.  I think once we have that in place I'd 
+feel a lot more comfortable running relocation automatically everywhere, as 
+it'll be a much faster and less error prone operation.  Thanks,
 
-
-
-On 17. 03. 21 5:35, Manuel Riel wrote:
-> Final update on this issue for anyone who encounters a similar problem in the future:
-> 
-> I didn't observe any "hanging" RAID devices after using an ordinary NVMe partition as journal. So using e.g. another md-RAID1 array as journal doesn't seem to be supported.
-> 
-> The docs[1] say "This means the cache disk must be ... sustainable." The sustainable part motivated me to use a md-RAID1 array. I think the docs should mention that the journal can't be on another RAID array.
-> 
-> I'm sending in a patch to emphasize this in the docs.
-> 
-> 
-> 1: https://www.kernel.org/doc/html/latest/driver-api/md/raid5-cache.html
-> 
->> On Feb 28, 2021, at 4:34 PM, Manuel Riel <manu@snapdragon.cc> wrote:
->>
->> Hit another mdadm "hanger" today. No more reading possible and md4_raid6 stuck at 100% CPU.
->>
->> I've now moved the write journal off the RAID1 device. So it's not a "nested" RAID any more. Hope this will help.
->>
->> With only one hardware device used as write cache, I suppose only write-through mode[1] is suggested now.
->>
->>
->> 1: https://www.kernel.org/doc/Documentation/md/raid5-cache.txt
-> 
+Josef

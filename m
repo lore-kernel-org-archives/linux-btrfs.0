@@ -2,160 +2,111 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B67DC433E0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 21:04:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A348FC433DB
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 21:24:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1024264F21
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 21:04:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C8FA64EF9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 21:24:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233472AbhCQVEI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Mar 2021 17:04:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55744 "EHLO
+        id S232064AbhCQVXy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Mar 2021 17:23:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60014 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233416AbhCQVDm (ORCPT
+        with ESMTP id S232557AbhCQVXg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Mar 2021 17:03:42 -0400
-Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5217FC06174A;
-        Wed, 17 Mar 2021 14:03:42 -0700 (PDT)
-Received: by mail-qt1-x836.google.com with SMTP id a11so2532694qto.2;
-        Wed, 17 Mar 2021 14:03:42 -0700 (PDT)
+        Wed, 17 Mar 2021 17:23:36 -0400
+Received: from mail-pg1-x52b.google.com (mail-pg1-x52b.google.com [IPv6:2607:f8b0:4864:20::52b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C454C06174A
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 14:23:36 -0700 (PDT)
+Received: by mail-pg1-x52b.google.com with SMTP id l1so55276pgb.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 14:23:36 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=tTumWXKPeirhih82vHznyEMQk5Ce5y7T8VwAjdW2rck=;
-        b=ULJSbzvSp3lAK8KFEC2FYoyxm69IHXmIJw7sepUgvC9EJcKa08CasMwgmLxHTtRpe8
-         9dgklWrWwxQHY/bhVE3zMDHxls23888cxRZtsgn785MKaS3Jude6twOPs0cxvqo6MKsh
-         IWiUa9DLfc0zv22dBhexoNvpquxvtoXM7GSdDMdPqZbxbAdBoyjlid+aZC9S7bwOFSrW
-         sdaIaQdxBH+mH3KTqReqbPkqOlBdVi2Fo9oxnNoXK90wwKV/RJbzZKX/tuWBDpYLAKxJ
-         2AEeB/LoamYa9KCb8+r1twE1DaAkGicMds+d25eixoRM6DwoB4nMiuLwOH7sShpxiyJT
-         wj2w==
+        d=osandov-com.20150623.gappssmtp.com; s=20150623;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=qp5c9x3nOU8h6pgNJeP+blSWvNnrMvnJCkTmYvTynUg=;
+        b=1aU2OKI48n+reHztQK6CVSN/UA/lrhKXc50grxTThB42G2/tr7h0uqmVtpt6/tYF5L
+         lVG80/Ya3RFWvilrDctzFQYUrCyDSfRBRaBSbf6Afsx1OGQC/daeDcByEBCwe/JQl1Mr
+         KafklOAAcAF4zNsHb7uyP4bOuyY4fFXO0AiuAfAU7GoOm06m+1TfjMHNL4y20udqdVTh
+         g+BB3n1rrindN/cllN9YODhiIidZNXg7VWTNWHrM0jvl29rGH7wlEn6U+XtyDwGaYJAR
+         S7tMAiOB/mWTLJfDcV1mdi93W6kNLFoR5OPdmsECTOvvp3xZhgdpxrsbshMhHvbFdKiD
+         a4Lw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=tTumWXKPeirhih82vHznyEMQk5Ce5y7T8VwAjdW2rck=;
-        b=ptAjExRH6wmCVRMaDBFUZtvol3Nxv+FgsA1mQbK2DUS5GFVua4Qctt9g+e2DmgcR6H
-         pp4Fq4hDsWkbav/2tEk4dcGFuwZNCgRfv+EbHFgmoYoD0qyIDJ8SGornODGKggEqLXhM
-         KcEg7W9wwQ6ifcLQVIt1jeSDsCtCAV/9pTa5+L3GFGIXxrKWlIzufQnnhlpvvN/KXKpV
-         8Y/mCbx60UO2qpl+7dofH0VQn9prpUR4KzrZOrHNCtC8sR3atz9qYxXU8JlNZjN/nN/p
-         ZphjRPu/GwBR38mZqkKmtARE3BxU9uhoj4XAc5mqUAOpE4sYrpoDxq1bS6DR8tKvOHDQ
-         gohw==
-X-Gm-Message-State: AOAM533Cvoud3Vb9QaqkUwuQahdI6pG7u3lLV8qo9CwcUCy0AIevUxBs
-        v9dqmHkMXXnx4wds0K/P/5I6kKTZSh5/7bLAwwg=
-X-Google-Smtp-Source: ABdhPJwm4YvE1JcC4KfXSPzAnKJUBMfzQq22eckkZK6VJ1P9qKUWPqTKUDP/DQPj9k0Z66fn2QxQbFjcAfG5alIeZL0=
-X-Received: by 2002:ac8:66d6:: with SMTP id m22mr926873qtp.56.1616015021448;
- Wed, 17 Mar 2021 14:03:41 -0700 (PDT)
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=qp5c9x3nOU8h6pgNJeP+blSWvNnrMvnJCkTmYvTynUg=;
+        b=YmleACFN9p4PvKz9bsY5FXqM7+lEa23KwCbFUfJCdHh4ERw+9BmXk75ws21OJzbW+e
+         GhawLZ5rWxtApxyLFm0EjsWMpc9qNPqXSrCOLLfOCydqIgZjAAiJE1pF1hsFBdoX2U4q
+         rEceo7BhuD3Ed6TKtvFD6hZS+e/9mcvXk+HAP4I/dx1FcIDSyOHTx6Ipbdwrw3c9W4ct
+         LFYs8FpEeHW4ppA5BJY+1JDDtrcPQVJSnV2776tFKnRLoWuerCks2OvnnUUOYxxL5/Vf
+         C+YIGdiYe8fwbFibJU3LYszn2JB4LyFrIR5qV4K0/X7jC5C/SHvzU8O1t1OKWJZ//4Vd
+         S6Bw==
+X-Gm-Message-State: AOAM532EaudxcN4zto3BbZbUCDI38NVVCTlG5cTCJOEOjBVuyAJ9YkCS
+        0lo94I43n+qJAQqvQSVnauWbXdHN0JhYug==
+X-Google-Smtp-Source: ABdhPJzP4pRrcsiFGm4/yBK6/K9kZS2iz5mvKIZhaQv+BzA+uEva9WWRF529zgMOvB39xayBlxjVlQ==
+X-Received: by 2002:a63:e942:: with SMTP id q2mr4185376pgj.217.1616016215456;
+        Wed, 17 Mar 2021 14:23:35 -0700 (PDT)
+Received: from relinquished.localdomain ([2620:10d:c090:400::5:156])
+        by smtp.gmail.com with ESMTPSA id v1sm74133pjt.1.2021.03.17.14.23.32
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 17 Mar 2021 14:23:34 -0700 (PDT)
+Date:   Wed, 17 Mar 2021 14:23:31 -0700
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Neal Gompa <ngompa@fedoraproject.org>
+Cc:     linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: Re: [PATCH 0/1] btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
+Message-ID: <YFJzU5xSxpU2vjTJ@relinquished.localdomain>
+References: <20210317200144.1067314-1-ngompa@fedoraproject.org>
 MIME-Version: 1.0
-References: <20210317012054.238334-1-davispuh@gmail.com> <CAOE4rSwj9_DMWLszPE5adiTsQeK+G_Hqya_HkDR=uEC7L4Fj3A@mail.gmail.com>
- <20a5d997-740a-ca57-8cbc-b88c1e34c8fc@gmx.com>
-In-Reply-To: <20a5d997-740a-ca57-8cbc-b88c1e34c8fc@gmx.com>
-From:   =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>
-Date:   Wed, 17 Mar 2021 23:03:30 +0200
-Message-ID: <CAOE4rSyX-qTWKS_MTS5dLpfuVnqS=LwfqThyCTP=iBEH5x2bOQ@mail.gmail.com>
-Subject: Re: [RFC] btrfs: Allow read-only mount with corrupted extent tree
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>, clm@fb.com,
-        Josef Bacik <josef@toxicpanda.com>, dsterba@suse.com,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210317200144.1067314-1-ngompa@fedoraproject.org>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-tre=C5=A1d., 2021. g. 17. marts, plkst. 12:28 =E2=80=94 lietot=C4=81js Qu W=
-enruo
-(<quwenruo.btrfs@gmx.com>) rakst=C4=ABja:
->
->
->
-> On 2021/3/17 =E4=B8=8A=E5=8D=889:29, D=C4=81vis Mos=C4=81ns wrote:
-> > tre=C5=A1d., 2021. g. 17. marts, plkst. 03:18 =E2=80=94 lietot=C4=81js =
-D=C4=81vis Mos=C4=81ns
-> > (<davispuh@gmail.com>) rakst=C4=ABja:
-> >>
-> >> Currently if there's any corruption at all in extent tree
-> >> (eg. even single bit) then mounting will fail with:
-> >> "failed to read block groups: -5" (-EIO)
-> >> It happens because we immediately abort on first error when
-> >> searching in extent tree for block groups.
-> >>
-> >> Now with this patch if `ignorebadroots` option is specified
-> >> then we handle such case and continue by removing already
-> >> created block groups and creating dummy block groups.
-> >>
-> >> Signed-off-by: D=C4=81vis Mos=C4=81ns <davispuh@gmail.com>
-> >> ---
-> >>   fs/btrfs/block-group.c | 14 ++++++++++++++
-> >>   fs/btrfs/disk-io.c     |  4 ++--
-> >>   fs/btrfs/disk-io.h     |  2 ++
-> >>   3 files changed, 18 insertions(+), 2 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> >> index 48ebc106a606..827a977614b3 100644
-> >> --- a/fs/btrfs/block-group.c
-> >> +++ b/fs/btrfs/block-group.c
-> >> @@ -2048,6 +2048,20 @@ int btrfs_read_block_groups(struct btrfs_fs_inf=
-o *info)
-> >>          ret =3D check_chunk_block_group_mappings(info);
-> >>   error:
-> >>          btrfs_free_path(path);
-> >> +
-> >> +       if (ret =3D=3D -EIO && btrfs_test_opt(info, IGNOREBADROOTS)) {
-> >> +               btrfs_put_block_group_cache(info);
-> >> +               btrfs_stop_all_workers(info);
-> >> +               btrfs_free_block_groups(info);
-> >> +               ret =3D btrfs_init_workqueues(info, NULL);
-> >> +               if (ret)
-> >> +                       return ret;
-> >> +               ret =3D btrfs_init_space_info(info);
-> >> +               if (ret)
-> >> +                       return ret;
-> >> +               return fill_dummy_bgs(info);
->
-> When we hit bad things in extent tree, we should ensure we're mounting
-> the fs RO, or we can't continue.
->
-> And we should also refuse to mount back to RW if we hit such case, so
-> that we don't need anything complex, just ignore the whole extent tree
-> and create the dummy block groups.
->
+On Wed, Mar 17, 2021 at 04:01:43PM -0400, Neal Gompa wrote:
+> This is a patch requesting all substantial copyright owners to sign off
+> on changing the license of the libbtrfsutil code to LGPLv2.1+ in order
+> to resolve various concerns around the mixture of code in btrfs-progs
+> with libbtrfsutil.
+> 
+> Each significant (i.e. non-trivial) commit author has been CC'd to
+> request their sign-off on this. Please reply to this to acknowledge
+> whether or not this is acceptable for your code.
+> 
+> Neal Gompa (1):
+>   btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
+> 
+>  libbtrfsutil/COPYING              | 1130 ++++++++++++-----------------
+>  libbtrfsutil/COPYING.LESSER       |  165 -----
+>  libbtrfsutil/btrfsutil.h          |    2 +-
+>  libbtrfsutil/btrfsutil_internal.h |    2 +-
+>  libbtrfsutil/errors.c             |    2 +-
+>  libbtrfsutil/filesystem.c         |    2 +-
+>  libbtrfsutil/python/btrfsutilpy.h |    2 +-
+>  libbtrfsutil/python/error.c       |    2 +-
+>  libbtrfsutil/python/filesystem.c  |    2 +-
+>  libbtrfsutil/python/module.c      |    2 +-
+>  libbtrfsutil/python/qgroup.c      |    2 +-
+>  libbtrfsutil/python/setup.py      |    4 +-
+>  libbtrfsutil/python/subvolume.c   |    2 +-
+>  libbtrfsutil/qgroup.c             |    2 +-
+>  libbtrfsutil/stubs.c              |    2 +-
+>  libbtrfsutil/stubs.h              |    2 +-
+>  libbtrfsutil/subvolume.c          |    2 +-
+>  17 files changed, 495 insertions(+), 832 deletions(-)
+>  delete mode 100644 libbtrfsutil/COPYING.LESSER
 
-That's what we're doing here, `ignorebadroots` implies RO mount and
-without specifying it doesn't mount at all.
-
-> >
-> > This isn't that nice, but I don't really know how to properly clean up
-> > everything related to already created block groups so this was easiest
-> > way. It seems to work fine.
-> > But looks like need to do something about replay log aswell because if
-> > it's not disabled then it fails with:
-> >
-> > [ 1397.246869] BTRFS info (device sde): start tree-log replay
-> > [ 1398.218685] BTRFS warning (device sde): sde checksum verify failed
-> > on 21057127661568 wanted 0xd1506ed9 found 0x22ab750a level 0
-> > [ 1398.218803] BTRFS warning (device sde): sde checksum verify failed
-> > on 21057127661568 wanted 0xd1506ed9 found 0x7dd54bb9 level 0
-> > [ 1398.218813] BTRFS: error (device sde) in __btrfs_free_extent:3054:
-> > errno=3D-5 IO failure
-> > [ 1398.218828] BTRFS: error (device sde) in
-> > btrfs_run_delayed_refs:2124: errno=3D-5 IO failure
-> > [ 1398.219002] BTRFS: error (device sde) in btrfs_replay_log:2254:
-> > errno=3D-5 IO failure (Failed to recover log tree)
-> > [ 1398.229048] BTRFS error (device sde): open_ctree failed
->
-> This is because we shouldn't allow to do anything write to the fs if we
-> have anything wrong in extent tree.
->
-
-This is happening when mounting read-only. My assumption is that it
-only tries to replay in memory without writing anything to disk.
+Acked-by: Omar Sandoval <osandov@fb.com>

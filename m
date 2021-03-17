@@ -2,201 +2,96 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35CC3C433E6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 18:46:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C6A1C433E0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 20:02:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E17C664F5E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 18:46:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4D36164F04
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Mar 2021 20:02:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232966AbhCQSph (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Mar 2021 14:45:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54114 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231152AbhCQSpG (ORCPT
+        id S233300AbhCQUCZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Mar 2021 16:02:25 -0400
+Received: from mail-qk1-f174.google.com ([209.85.222.174]:37336 "EHLO
+        mail-qk1-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233280AbhCQUCS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Mar 2021 14:45:06 -0400
-Received: from mail-pf1-x431.google.com (mail-pf1-x431.google.com [IPv6:2607:f8b0:4864:20::431])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2DC6BC06174A
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 11:45:06 -0700 (PDT)
-Received: by mail-pf1-x431.google.com with SMTP id l3so1758291pfc.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 11:45:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=YW9sFjqp97bhdYt8JWFRpF7hWLMW5DjM6fbGxnWtY+o=;
-        b=qRVekhfIMfv7kOhCjx92EP04cJ7NFnIbK+JUar9xuUADE/SZtoO2Mnp5j06V6rrhKc
-         03WsQTyU7zJzDZtZswqzqjq3QAp0go01d+84h32IMSDKHPLTlFMwDte3VB22Pr1w/1EX
-         Ohv3akLBTaQNBTvVQGqJM9vAzqeoRgzGMJVrE7K9ctIBdS5pqZKY1p6YTC6boti9bmEI
-         yisWy16lVNeqXsBXveiAlGiAErkxz2sUjIcZXwP+IzkHn0zGAQteOLjccunOdiFsfudU
-         /yy3jjyAEqZoQ/5gNxe0fNOI9Uoi1D3O0qbl6QUeh40Z3ErpUYimol/BFadN43aPTI0B
-         /m5A==
+        Wed, 17 Mar 2021 16:02:18 -0400
+Received: by mail-qk1-f174.google.com with SMTP id s7so40230039qkg.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 13:02:18 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=YW9sFjqp97bhdYt8JWFRpF7hWLMW5DjM6fbGxnWtY+o=;
-        b=raTBwXNASbHP/z/ysaMm15H6uQgDs1S/cBCfzjc/Y20wDHydNQPoj0flqbkTBMQkn7
-         CiOLlY/b2B2RWJjsZ+cAtroGztFoBQJoMiPR8uqtg4qHZx06plyVENkhRtBX/SnxbkSG
-         4QiGSueALD5u7GJWUlfbYhrcCNc8zzCyKyffTmdPfdPxXQhDFK2zmGkcSeEymE+g34Rj
-         xLzBnNXgO4g3no5L/GnlmQChWMJDuH6PW2tZwgcnPLS8XFlPZMEPisN0vxWtSh5rZMS0
-         ZlPIJXBG/W9B1X9qwthtaiNeyJIaEIXlAgaoyX2Fh/VTwTY5xtesi6agXI7UyZurZSsB
-         kbqw==
-X-Gm-Message-State: AOAM5335ru2cKtg48qm50553NG3Q7REXjwVj1ncst8UUUVkWHKZG0lyT
-        G48LoIp+wqPf7s4oieqjNVB0ww==
-X-Google-Smtp-Source: ABdhPJz9efKjQ397r3XHjnIbO8SP5XzgDEGsZDKGvjc79HWGrMxTZ1v9osdmfdQJJWRLzdDbWSpFAg==
-X-Received: by 2002:a63:40c5:: with SMTP id n188mr3755030pga.255.1616006705636;
-        Wed, 17 Mar 2021 11:45:05 -0700 (PDT)
-Received: from relinquished.localdomain ([2620:10d:c090:400::5:156])
-        by smtp.gmail.com with ESMTPSA id c22sm19556419pfl.169.2021.03.17.11.45.03
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=fnzH94MNJV0M/I0n0poISZw+N7PhJjGhM1WIS1MMhIk=;
+        b=C4l4hhEagsv3okj+Nc2PRnIlD1oXUuy2+7qiDedPbsNiT/+NShD3KRSpWjENTmsFOm
+         N6Yl0EXeM5h2iAmuh4qvOaK9jR0F/RHcvAocxEnwxWz6OT+DiIb77EmBNg/iQC/rjg6f
+         VN4RCPrjB57px9Lh2tRvB1lAOBXkNYgcusel09nf/xiRh6AJxaTBFg9cS9or/b6Ygj4b
+         0gQFpdVvtLW+OC3WyocXqpfoQW11tydH3m2PkW4Gs2poRwBXVRBRcU7i4yAce3uJLTOV
+         LN8jdV5sPl6ta0BKMTmMv0PXEW9jO2Sg0vLNd7zOR1JW9/i4OWXuED/NEQqmFhpoAAb7
+         gkew==
+X-Gm-Message-State: AOAM532cKUKV80ggync/CVgm6AHGCDXo54cVLTcktoRbuzFQ264IwJIE
+        c+YN8feEinRhKq5Q0nTzCn5gyjFhgEb9zdHP
+X-Google-Smtp-Source: ABdhPJygiIYWu0c2m9+nIm36/O0FlL3N+OAYgIiWZaH3C3LKXFLveUyRFFBs1tvan2j4Sj+SGnc9Lg==
+X-Received: by 2002:a37:a941:: with SMTP id s62mr972885qke.404.1616011337672;
+        Wed, 17 Mar 2021 13:02:17 -0700 (PDT)
+Received: from Belldandy-Slimbook.datto.net (ool-18e49371.dyn.optonline.net. [24.228.147.113])
+        by smtp.gmail.com with ESMTPSA id q65sm11772qkb.51.2021.03.17.13.02.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 17 Mar 2021 11:45:04 -0700 (PDT)
-Date:   Wed, 17 Mar 2021 11:45:02 -0700
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Christian Brauner <christian.brauner@ubuntu.com>
-Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>,
-        Dave Chinner <david@fromorbit.com>,
-        Jann Horn <jannh@google.com>,
-        Amir Goldstein <amir73il@gmail.com>,
-        Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH v8 01/10] iov_iter: add copy_struct_from_iter()
-Message-ID: <YFJOLlm3GuZgoVSi@relinquished.localdomain>
-References: <cover.1615922644.git.osandov@fb.com>
- <e71e712d27b2e2c19efc5b1454bd8581ad98d900.1615922644.git.osandov@fb.com>
- <20210317175611.adntftl6w3avptvk@wittgenstein>
+        Wed, 17 Mar 2021 13:02:17 -0700 (PDT)
+From:   Neal Gompa <ngompa@fedoraproject.org>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Neal Gompa <ngompa@fedoraproject.org>,
+        Omar Sandoval <osandov@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH 0/1] btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
+Date:   Wed, 17 Mar 2021 16:01:43 -0400
+Message-Id: <20210317200144.1067314-1-ngompa@fedoraproject.org>
+X-Mailer: git-send-email 2.30.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210317175611.adntftl6w3avptvk@wittgenstein>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 17, 2021 at 06:56:11PM +0100, Christian Brauner wrote:
-> On Tue, Mar 16, 2021 at 12:42:57PM -0700, Omar Sandoval wrote:
-> > From: Omar Sandoval <osandov@fb.com>
-> > 
-> > This is essentially copy_struct_from_user() but for an iov_iter.
-> > 
-> > Suggested-by: Aleksa Sarai <cyphar@cyphar.com>
-> > Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-> > Signed-off-by: Omar Sandoval <osandov@fb.com>
-> > ---
-> >  include/linux/uio.h |  2 ++
-> >  lib/iov_iter.c      | 82 +++++++++++++++++++++++++++++++++++++++++++++
-> >  2 files changed, 84 insertions(+)
-> > 
-> > diff --git a/include/linux/uio.h b/include/linux/uio.h
-> > index 72d88566694e..f4e6ea85a269 100644
-> > --- a/include/linux/uio.h
-> > +++ b/include/linux/uio.h
-> > @@ -121,6 +121,8 @@ size_t copy_page_to_iter(struct page *page, size_t offset, size_t bytes,
-> >  			 struct iov_iter *i);
-> >  size_t copy_page_from_iter(struct page *page, size_t offset, size_t bytes,
-> >  			 struct iov_iter *i);
-> > +int copy_struct_from_iter(void *dst, size_t ksize, struct iov_iter *i,
-> > +			  size_t usize);
-> >  
-> >  size_t _copy_to_iter(const void *addr, size_t bytes, struct iov_iter *i);
-> >  size_t _copy_from_iter(void *addr, size_t bytes, struct iov_iter *i);
-> > diff --git a/lib/iov_iter.c b/lib/iov_iter.c
-> > index a21e6a5792c5..f45826ed7528 100644
-> > --- a/lib/iov_iter.c
-> > +++ b/lib/iov_iter.c
-> > @@ -948,6 +948,88 @@ size_t copy_page_from_iter(struct page *page, size_t offset, size_t bytes,
-> >  }
-> >  EXPORT_SYMBOL(copy_page_from_iter);
-> >  
-> > +/**
-> > + * copy_struct_from_iter - copy a struct from an iov_iter
-> > + * @dst: Destination buffer.
-> > + * @ksize: Size of @dst struct.
-> > + * @i: Source iterator.
-> > + * @usize: (Alleged) size of struct in @i.
-> > + *
-> > + * Copies a struct from an iov_iter in a way that guarantees
-> > + * backwards-compatibility for struct arguments in an iovec (as long as the
-> > + * rules for copy_struct_from_user() are followed).
-> > + *
-> > + * The recommended usage is that @usize be taken from the current segment:
-> > + *
-> > + *   int do_foo(struct iov_iter *i)
-> > + *   {
-> > + *     size_t usize = iov_iter_single_seg_count(i);
-> > + *     struct foo karg;
-> > + *     int err;
-> > + *
-> > + *     if (usize > PAGE_SIZE)
-> > + *       return -E2BIG;
-> > + *     if (usize < FOO_SIZE_VER0)
-> > + *       return -EINVAL;
-> > + *     err = copy_struct_from_iter(&karg, sizeof(karg), i, usize);
-> > + *     if (err)
-> > + *       return err;
-> > + *
-> > + *     // ...
-> > + *   }
-> > + *
-> > + * Return: 0 on success, -errno on error (see copy_struct_from_user()).
-> > + *
-> > + * On success, the iterator is advanced @usize bytes. On error, the iterator is
-> > + * not advanced.
-> > + */
-> > +int copy_struct_from_iter(void *dst, size_t ksize, struct iov_iter *i,
-> > +			  size_t usize)
-> > +{
-> > +	if (usize <= ksize) {
-> > +		if (!copy_from_iter_full(dst, usize, i))
-> > +			return -EFAULT;
-> > +		memset(dst + usize, 0, ksize - usize);
-> > +	} else {
-> > +		size_t copied = 0, copy;
-> > +		int ret;
-> > +
-> > +		if (WARN_ON(iov_iter_is_pipe(i)) || unlikely(i->count < usize))
-> > +			return -EFAULT;
-> > +		if (iter_is_iovec(i))
-> > +			might_fault();
-> > +		iterate_all_kinds(i, usize, v, ({
-> > +			copy = min(ksize - copied, v.iov_len);
-> > +			if (copy && copyin(dst + copied, v.iov_base, copy))
-> > +				return -EFAULT;
-> > +			copied += copy;
-> > +			ret = check_zeroed_user(v.iov_base + copy,
-> > +						v.iov_len - copy);
-> > +			if (ret <= 0)
-> > +				return ret ?: -E2BIG;
-> > +			0;}), ({
-> > +			char *addr = kmap_atomic(v.bv_page);
-> > +			copy = min_t(size_t, ksize - copied, v.bv_len);
-> > +			memcpy(dst + copied, addr + v.bv_offset, copy);
-> > +			copied += copy;
-> > +			ret = memchr_inv(addr + v.bv_offset + copy, 0,
-> > +					 v.bv_len - copy) ? -E2BIG : 0;
-> > +			kunmap_atomic(addr);
-> > +			if (ret)
-> > +				return ret;
-> > +			}), ({
-> > +			copy = min(ksize - copied, v.iov_len);
-> > +			memcpy(dst + copied, v.iov_base, copy);
-> > +			if (memchr_inv(v.iov_base, 0, v.iov_len))
-> > +				return -E2BIG;
-> > +			})
-> > +		)
-> 
-> 
-> Following the semantics of copy_struct_from_user() is certainly a good
-> idea but can this in any way be rewritten to not look like this; at
-> least not as crammed. It's a bit painful to follow here what's going.
+This is a patch requesting all substantial copyright owners to sign off
+on changing the license of the libbtrfsutil code to LGPLv2.1+ in order
+to resolve various concerns around the mixture of code in btrfs-progs
+with libbtrfsutil.
 
-I think that's just the nature of the iov_iter code :) I'm just
-following the rest of this file, which uses some mind-expanding macros.
-Do you have any suggestions for how to clean this function up?
+Each significant (i.e. non-trivial) commit author has been CC'd to
+request their sign-off on this. Please reply to this to acknowledge
+whether or not this is acceptable for your code.
+
+Neal Gompa (1):
+  btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
+
+ libbtrfsutil/COPYING              | 1130 ++++++++++++-----------------
+ libbtrfsutil/COPYING.LESSER       |  165 -----
+ libbtrfsutil/btrfsutil.h          |    2 +-
+ libbtrfsutil/btrfsutil_internal.h |    2 +-
+ libbtrfsutil/errors.c             |    2 +-
+ libbtrfsutil/filesystem.c         |    2 +-
+ libbtrfsutil/python/btrfsutilpy.h |    2 +-
+ libbtrfsutil/python/error.c       |    2 +-
+ libbtrfsutil/python/filesystem.c  |    2 +-
+ libbtrfsutil/python/module.c      |    2 +-
+ libbtrfsutil/python/qgroup.c      |    2 +-
+ libbtrfsutil/python/setup.py      |    4 +-
+ libbtrfsutil/python/subvolume.c   |    2 +-
+ libbtrfsutil/qgroup.c             |    2 +-
+ libbtrfsutil/stubs.c              |    2 +-
+ libbtrfsutil/stubs.h              |    2 +-
+ libbtrfsutil/subvolume.c          |    2 +-
+ 17 files changed, 495 insertions(+), 832 deletions(-)
+ delete mode 100644 libbtrfsutil/COPYING.LESSER
+
+-- 
+2.30.2
+

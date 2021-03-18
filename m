@@ -2,118 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A789C433E0
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Mar 2021 00:33:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CB7CC433DB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Mar 2021 02:23:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BB62864E74
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Mar 2021 00:33:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E15E564F24
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Mar 2021 02:23:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229903AbhCRAdE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Mar 2021 20:33:04 -0400
-Received: from mout.gmx.net ([212.227.15.19]:41289 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229946AbhCRAdB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Mar 2021 20:33:01 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1616027556;
-        bh=7BOnls/q5YoPCACZel63r/xbtNyIIi7mobj32uwgYB4=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=IjU26H3qU99qSyaSDnN7Wx18x+f7CAZvd9zBfTXRBX3Fv8U9LwreMubBIbOytmRlf
-         B3husx8oaZflsN4st0cGrHJ5uiUcKZBVld+P4vVIPdGBb1QU+zlq0q5Mg+eqEVQI4g
-         s+4F7YGszaMLsxbW43+rKwXcschBV2p3+6m4xbBc=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MDywo-1lWcCt2sp2-009uIb; Thu, 18
- Mar 2021 01:32:36 +0100
-Subject: Re: [PATCH 0/1] btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
-To:     Neal Gompa <ngompa@fedoraproject.org>, linux-btrfs@vger.kernel.org
-Cc:     Omar Sandoval <osandov@fb.com>, David Sterba <dsterba@suse.com>,
-        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
-        Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Marcos Paulo de Souza <mpdesouza@suse.com>
-References: <20210317200144.1067314-1-ngompa@fedoraproject.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <012ab078-c026-6894-80e0-ba5bbe697dc6@gmx.com>
-Date:   Thu, 18 Mar 2021 08:32:30 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.8.0
+        id S229702AbhCRCWv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Mar 2021 22:22:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39296 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230105AbhCRCW2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 17 Mar 2021 22:22:28 -0400
+Received: from mail-pf1-x42c.google.com (mail-pf1-x42c.google.com [IPv6:2607:f8b0:4864:20::42c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EA30C06174A
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 19:22:28 -0700 (PDT)
+Received: by mail-pf1-x42c.google.com with SMTP id j25so2432244pfe.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Mar 2021 19:22:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=TGgQZQU+8sbQ5/aAdrgi6EODbW//Nnppo0uXJCUoFEQ=;
+        b=PmydZvH4DDdFd5lms2AKCVgL9k8z3stVLhr2Os8VZqKpT+1VZUezGhjEbHZ6iTZ3Bv
+         h7ZAl/sCavgR+2YvAsbM/6DCWH9mFdKcuzjX2hVpQvLycxhSc3aOnFSG3p1XKJzYFbK4
+         MryhkB+3NCcfrrB1Y86F7nnT1TM87KOaNR901UuNgI+sMQSlyMqVnvdQhTooYYwlpLHx
+         6C5bCj21aFuQmfsI4Myyun2xKR87tljPZKdMcCKwVR0kmZ5erP6HU8NXemn8RTsNxumc
+         fC17SbukLdbAV+p21bEktpwuTfayRG1X/IrUhlT2QPWGsoo4ZI1mN6meBRK3rQTNkKJg
+         6/+g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=TGgQZQU+8sbQ5/aAdrgi6EODbW//Nnppo0uXJCUoFEQ=;
+        b=oBroECNNJaxwNhfRbBqpYJDxtLNmMFn8VFOdT4+1FxlIXh+4aFWimhZ0FHZjES4S9i
+         q3EhA4x7Wnlwz3/FAt62jh94V9GCzBA3ZZOZ7y+V4y2GK1k19bGyQP0rIY9DvpYmu8FR
+         qu/5U7xkAoxgzb3VofWwwKg2iFwyXjEg51ddc9aCyinW6v9a4aslJht5f3SMq1buw7Qu
+         +kDGX/k7JHAQ7PMZgpHPw2RWsqrurMZ8KPxVZKY2VCKQ9BI77P3AmLVuN92pEAD+0Vnm
+         aWHYbvAzUIvU8fqjaH91VtqSsp5HgTF3WCleIbh+DZ+8/jqjgChQNTfn1cwrVvYwf+F1
+         T3BA==
+X-Gm-Message-State: AOAM5315YnQlw15DhyyjKoVx2xO9KKrW4g3POwBg6PprZ3SI9rMNirx6
+        YN7pBj7pQp4zDwpUMgrOuyFQz1TSu6ifDw==
+X-Google-Smtp-Source: ABdhPJxdbpNfSj403kOVeYfO7br1dBVI0iEbUgOVZpKMkO+653dCbB1swCSIG7i2pG3Lol+rm311vw==
+X-Received: by 2002:aa7:858e:0:b029:1f1:5df2:1f70 with SMTP id w14-20020aa7858e0000b02901f15df21f70mr1841538pfn.46.1616034147647;
+        Wed, 17 Mar 2021 19:22:27 -0700 (PDT)
+Received: from realwakka ([59.12.165.26])
+        by smtp.gmail.com with ESMTPSA id t12sm317836pga.85.2021.03.17.19.22.26
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 17 Mar 2021 19:22:27 -0700 (PDT)
+Date:   Thu, 18 Mar 2021 02:22:20 +0000
+From:   Sidong Yang <realwakka@gmail.com>
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: [PATCH v2] btrfs-progs: common: make sure that qgroup id is in
+ range
+Message-ID: <20210318022208.GA34562@realwakka>
+References: <20210316132746.19979-1-realwakka@gmail.com>
+ <20210317183647.GW7604@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20210317200144.1067314-1-ngompa@fedoraproject.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:zGlSpvo5w4/Tk1I48x0Y9Yw39bYslP/9GxDhYfog0QHXAH6yTOt
- c6D4w18P+7YG4IqoaKP5aIelPLAa2Qn1xHUg47oF5L9tZueCOBgS5nEm6evfVqRxLaGLxox
- /++01F2QU0ahFURm1mqg23jvvdNLNssWMk9zwL3LD1dQFjICtoYekUKJJzsqsfu5PvTnp2W
- 1OdaN7IBqmwKXu6NFKmVA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:XAAiSjBHITk=:qE4MYwAEyVaYfMYI2jrCJ/
- N0ukGNUhd/Nbn/RgBJzXix/N/ESeVQAVAaDbvSKUfmDyLgCGlc0QrypB0N6Z6+D0XZnvjIoPV
- 1vSLRvUnvRmIbMJwMz1CKznxzEfo/6QzVUqkCy52HQpYb/t4RYaigEcZrEDMoR5fa84wZMvQb
- HS5OLNZ42Jfsg4OLcwZh44Gsy+4uBPEmAdXy0LXbvlI6/pjwnFFe4Rb2iCbzRknIKMDKMouch
- VASy/wrxI1CKYeKDop1zyRkRaAeD5kn1jqQNeGHxmvWWZZphCGopxBgRdG+qOpa0i9ZYfaseV
- OCuL1LUOar2wOWKcZOnRznjPOdmNHN0WSlYrnCFFspWRs68o+Xo1MDy9N9CmA33LMvwvmeBtu
- +eCQbKM7ZDrKb4NWwnYrs8zIOYo5Hsgz6ZgqGMYUiM7QKTw4HKi8HLWnpN3gwvM4Y5diEYumc
- Fn5DScgqbKpMu0QSCi8AvZkf0iEivD72HS4ylEn+uJb7SWEWFu6rwN/wVYWk1zqAcSp8h800v
- 4/l3Wr/DCoT7SHaIrn0xHdfDPUwZMc7HfDtI3mTu1f/vxbcYdNnJynV8JYZmJSIT9kW2kviO9
- QboBaKsJITXfZen7csGH+92cNFumo9+FB3y1lX91paLDL5CixBqnhZ1DTJnEXsDbJOskgZPhl
- srCaZ5PgE2amX/0dsxFQVHVIVHSV58dV3oVL8ijUYuqazl/Zle0zx3R+tnv6icPA9r3OvSV7O
- fpFLvxBZo4rR0OvUowaJGNo96R69u4D2/tnJRN18GtYx7FPHZz6yQkDvdVC4hzsx7SEJgHhpH
- oPWnDQbXYEhkSnn/gPJL2Y820PSCk9TLOB8WdJeFXgP1F87jXf77q8UlTpxtpi7MKBaeTQhM5
- nHPsr/tl1NYpYAU52joQ==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210317183647.GW7604@twin.jikos.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Mar 17, 2021 at 07:36:47PM +0100, David Sterba wrote:
+> On Tue, Mar 16, 2021 at 01:27:46PM +0000, Sidong Yang wrote:
+> > When user assign qgroup with qgroup id that is too big to exceeds
+> > range and invade level value, and it works without any error. but
+> > this action would be make undefined error. this code make sure that
+> > qgroup id doesn't exceed range(0 ~ 2^48-1).
+> 
+> Should the level be also validate? The function parse_qgroupid does not
+> do full validation, so eg 0//0 would be parsed as a path and not as a
+> typo, level larger than 64K will be silently clamped.
 
+I agree. 0//0 would be parsed as path but it failed in
+btrfs_util_is_subvolume() and goes to err. I understand that upper 16
+bits of qgroupid is for level. so, The valid llevel range is [0~2^16-1].
+But I can't get it that level larger than 64K will be clampled. 
 
-On 2021/3/18 =E4=B8=8A=E5=8D=884:01, Neal Gompa wrote:
-> This is a patch requesting all substantial copyright owners to sign off
-> on changing the license of the libbtrfsutil code to LGPLv2.1+ in order
-> to resolve various concerns around the mixture of code in btrfs-progs
-> with libbtrfsutil.
->
-> Each significant (i.e. non-trivial) commit author has been CC'd to
-> request their sign-off on this. Please reply to this to acknowledge
-> whether or not this is acceptable for your code.
-
-I'm a little surprised that I got CCed, as I can't remember any
-contribution from me to libbtrfstuil.
-
-But still the license change looks OK to me.
-
-Acked-by: Qu Wenruo <wqu@suse.com>
-
-Thanks,
-Qu
-
->
-> Neal Gompa (1):
->    btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
->
->   libbtrfsutil/COPYING              | 1130 ++++++++++++-----------------
->   libbtrfsutil/COPYING.LESSER       |  165 -----
->   libbtrfsutil/btrfsutil.h          |    2 +-
->   libbtrfsutil/btrfsutil_internal.h |    2 +-
->   libbtrfsutil/errors.c             |    2 +-
->   libbtrfsutil/filesystem.c         |    2 +-
->   libbtrfsutil/python/btrfsutilpy.h |    2 +-
->   libbtrfsutil/python/error.c       |    2 +-
->   libbtrfsutil/python/filesystem.c  |    2 +-
->   libbtrfsutil/python/module.c      |    2 +-
->   libbtrfsutil/python/qgroup.c      |    2 +-
->   libbtrfsutil/python/setup.py      |    4 +-
->   libbtrfsutil/python/subvolume.c   |    2 +-
->   libbtrfsutil/qgroup.c             |    2 +-
->   libbtrfsutil/stubs.c              |    2 +-
->   libbtrfsutil/stubs.h              |    2 +-
->   libbtrfsutil/subvolume.c          |    2 +-
->   17 files changed, 495 insertions(+), 832 deletions(-)
->   delete mode 100644 libbtrfsutil/COPYING.LESSER
->
+one more question about that, I see that the ioctl calls just store the
+qgroupid without any opeartion with level. is the level meaningless in
+kernel?

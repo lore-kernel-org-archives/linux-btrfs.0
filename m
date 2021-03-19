@@ -4,40 +4,43 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20E64C432C3
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E42DFC4360C
 	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 01:54:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F36BB64E99
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 01:54:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A2A4464EE2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 01:54:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230203AbhCSBxb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Mar 2021 21:53:31 -0400
+        id S231864AbhCSBxe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Mar 2021 21:53:34 -0400
 Received: from mail.cn.fujitsu.com ([183.91.158.132]:41484 "EHLO
         heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S231440AbhCSBxI (ORCPT
+        with ESMTP id S231475AbhCSBxO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Mar 2021 21:53:08 -0400
-IronPort-HdrOrdr: =?us-ascii?q?A9a23=3AIHRCo65wLKeSV+wgWwPXwCjXdLJzesId70hD?=
- =?us-ascii?q?6mlaTxtJfsuE0/2/hfhz726RtB89elEF3eqBNq6JXG/G+fdOjLU5EL++UGDd1l?=
- =?us-ascii?q?eAA41v4IDryT+lOwCWzIRg/Ih6dawWMrzNJHxbqeq/3wWiCdYnx7C8gcWVrMPT?=
- =?us-ascii?q?1W1kQw0vS4wI1XYbNi+hHkd7RBZLCPMCffLy2uN8uzGidX4LB/7LZEUtYu6rnb?=
- =?us-ascii?q?32vaOjSRsHKjpi0wOWkA6vgYSQLzGomjsYTBNDqI1PzVT4?=
+        Thu, 18 Mar 2021 21:53:14 -0400
+IronPort-HdrOrdr: =?us-ascii?q?A9a23=3ApE5d1aAKLoV80fXlHelM55DYdL4zR+YMi2QD?=
+ =?us-ascii?q?/UZ3VBBTb4ikh9mj9c5rsSPcpRQwfDUbmd6GMLSdWn+0z/NIyKQYILvKZmfbkU?=
+ =?us-ascii?q?SlIIxo5YHhhx3McheVysdzzqFlGpIeNPTVLXxXyfn3+xO5FdFI+qjjzImNif3F?=
+ =?us-ascii?q?x3lgCSFGApsQjDtRMQqQHk1oSAQuP/NQe6a03NZNpDarZB0sH6aGL0QCNtKim/?=
+ =?us-ascii?q?T70LriYTMjQyUs8RSyi1qTg4LSIly12Qg/Xlp0rYsfzQ=3D=3D?=
 X-IronPort-AV: E=Sophos;i="5.81,259,1610380800"; 
-   d="scan'208";a="105876682"
+   d="scan'208";a="105876689"
 Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
-  by heian.cn.fujitsu.com with ESMTP; 19 Mar 2021 09:53:06 +0800
-Received: from G08CNEXMBPEKD06.g08.fujitsu.local (unknown [10.167.33.206])
-        by cn.fujitsu.com (Postfix) with ESMTP id 5AB894CEB2B4;
-        Fri, 19 Mar 2021 09:53:06 +0800 (CST)
+  by heian.cn.fujitsu.com with ESMTP; 19 Mar 2021 09:53:12 +0800
+Received: from G08CNEXMBPEKD05.g08.fujitsu.local (unknown [10.167.33.204])
+        by cn.fujitsu.com (Postfix) with ESMTP id 5AF5E4CEA871;
+        Fri, 19 Mar 2021 09:53:09 +0800 (CST)
+Received: from G08CNEXJMPEKD02.g08.fujitsu.local (10.167.33.202) by
+ G08CNEXMBPEKD05.g08.fujitsu.local (10.167.33.204) with Microsoft SMTP Server
+ (TLS) id 15.0.1497.2; Fri, 19 Mar 2021 09:53:09 +0800
 Received: from G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.200) by
- G08CNEXMBPEKD06.g08.fujitsu.local (10.167.33.206) with Microsoft SMTP Server
- (TLS) id 15.0.1497.2; Fri, 19 Mar 2021 09:52:56 +0800
+ G08CNEXJMPEKD02.g08.fujitsu.local (10.167.33.202) with Microsoft SMTP Server
+ (TLS) id 15.0.1497.2; Fri, 19 Mar 2021 09:53:09 +0800
 Received: from irides.mr.mr.mr (10.167.225.141) by
  G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.209) with Microsoft SMTP Server
- id 15.0.1497.2 via Frontend Transport; Fri, 19 Mar 2021 09:52:55 +0800
+ id 15.0.1497.2 via Frontend Transport; Fri, 19 Mar 2021 09:53:08 +0800
 From:   Shiyang Ruan <ruansy.fnst@fujitsu.com>
 To:     <linux-kernel@vger.kernel.org>, <linux-xfs@vger.kernel.org>,
         <linux-nvdimm@lists.01.org>, <linux-fsdevel@vger.kernel.org>
@@ -45,176 +48,87 @@ CC:     <darrick.wong@oracle.com>, <dan.j.williams@intel.com>,
         <willy@infradead.org>, <jack@suse.cz>, <viro@zeniv.linux.org.uk>,
         <linux-btrfs@vger.kernel.org>, <ocfs2-devel@oss.oracle.com>,
         <david@fromorbit.com>, <hch@lst.de>, <rgoldwyn@suse.de>
-Subject: [PATCH v3 04/10] fsdax: Introduce dax_iomap_cow_copy()
-Date:   Fri, 19 Mar 2021 09:52:31 +0800
-Message-ID: <20210319015237.993880-5-ruansy.fnst@fujitsu.com>
+Subject: [PATCH v3 06/10] fsdax: Add dax_iomap_cow_copy() for dax_iomap_zero
+Date:   Fri, 19 Mar 2021 09:52:33 +0800
+Message-ID: <20210319015237.993880-7-ruansy.fnst@fujitsu.com>
 X-Mailer: git-send-email 2.30.1
 In-Reply-To: <20210319015237.993880-1-ruansy.fnst@fujitsu.com>
 References: <20210319015237.993880-1-ruansy.fnst@fujitsu.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7BIT
 Content-Type:   text/plain; charset=US-ASCII
-X-yoursite-MailScanner-ID: 5AB894CEB2B4.A4A01
+X-yoursite-MailScanner-ID: 5AF5E4CEA871.A38BC
 X-yoursite-MailScanner: Found to be clean
 X-yoursite-MailScanner-From: ruansy.fnst@fujitsu.com
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In the case where the iomap is a write operation and iomap is not equal
-to srcmap after iomap_begin, we consider it is a CoW operation.
-
-The destance extent which iomap indicated is new allocated extent.
-So, it is needed to copy the data from srcmap to new allocated extent.
-In theory, it is better to copy the head and tail ranges which is
-outside of the non-aligned area instead of copying the whole aligned
-range. But in dax page fault, it will always be an aligned range.  So,
-we have to copy the whole range in this case.
+Punch hole on a reflinked file needs dax_copy_edge() too.  Otherwise,
+data in not aligned area will be not correct.  So, add the srcmap to
+dax_iomap_zero() and replace memset() as dax_copy_edge().
 
 Signed-off-by: Shiyang Ruan <ruansy.fnst@fujitsu.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/dax.c | 71 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 66 insertions(+), 5 deletions(-)
+ fs/dax.c               | 9 +++++++--
+ fs/iomap/buffered-io.c | 2 +-
+ include/linux/dax.h    | 3 ++-
+ 3 files changed, 10 insertions(+), 4 deletions(-)
 
 diff --git a/fs/dax.c b/fs/dax.c
-index a70e6aa285bb..181aad97136a 100644
+index cfe513eb111e..348297b38f76 100644
 --- a/fs/dax.c
 +++ b/fs/dax.c
-@@ -1037,6 +1037,51 @@ static int dax_iomap_direct_access(struct iomap *iomap, loff_t pos, size_t size,
- 	return rc;
+@@ -1174,7 +1174,8 @@ static vm_fault_t dax_pmd_load_hole(struct xa_state *xas, struct vm_fault *vmf,
  }
+ #endif /* CONFIG_FS_DAX_PMD */
  
-+/*
-+ * Copy the head and tail part of the pages not included in the write but
-+ * required for CoW, because pos/pos+length are not page aligned.  But in dax
-+ * page fault case, the range is page aligned, we need to copy the whole range
-+ * of data.  Use copy_edge to distinguish these cases.
-+ */
-+static int dax_iomap_cow_copy(loff_t pos, loff_t length, size_t align_size,
-+		struct iomap *srcmap, void *daddr, bool copy_edge)
-+{
-+	loff_t head_off = pos & (align_size - 1);
-+	size_t size = ALIGN(head_off + length, align_size);
-+	loff_t end = pos + length;
-+	loff_t pg_end = round_up(end, align_size);
-+	void *saddr = 0;
-+	int ret = 0;
-+
-+	ret = dax_iomap_direct_access(srcmap, pos, size, &saddr, NULL);
-+	if (ret)
-+		return ret;
-+
-+	if (!copy_edge)
-+		return copy_mc_to_kernel(daddr, saddr, length);
-+
-+	/* Copy the head part of the range.  Note: we pass offset as length. */
-+	if (head_off) {
-+		if (saddr)
-+			ret = copy_mc_to_kernel(daddr, saddr, head_off);
-+		else
-+			memset(daddr, 0, head_off);
-+	}
-+	/* Copy the tail part of the range */
-+	if (end < pg_end) {
-+		loff_t tail_off = head_off + length;
-+		loff_t tail_len = pg_end - end;
-+
-+		if (saddr)
-+			ret = copy_mc_to_kernel(daddr + tail_off,
-+					saddr + tail_off, tail_len);
-+		else
-+			memset(daddr + tail_off, 0, tail_len);
-+	}
-+
-+	return ret;
-+}
-+
- /*
-  * The user has performed a load from a hole in the file.  Allocating a new
-  * page in the file would cause excessive storage usage for workloads with
-@@ -1166,11 +1211,12 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 	struct dax_device *dax_dev = iomap->dax_dev;
- 	struct iov_iter *iter = data;
- 	loff_t end = pos + length, done = 0;
-+	bool write = iov_iter_rw(iter) == WRITE;
- 	ssize_t ret = 0;
- 	size_t xfer;
- 	int id;
- 
--	if (iov_iter_rw(iter) == READ) {
-+	if (!write) {
- 		end = min(end, i_size_read(inode));
- 		if (pos >= end)
- 			return 0;
-@@ -1179,7 +1225,8 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 			return iov_iter_zero(min(length, end - pos), iter);
+-s64 dax_iomap_zero(loff_t pos, u64 length, struct iomap *iomap)
++s64 dax_iomap_zero(loff_t pos, u64 length, struct iomap *iomap,
++		struct iomap *srcmap)
+ {
+ 	sector_t sector = iomap_sector(iomap, pos & PAGE_MASK);
+ 	pgoff_t pgoff;
+@@ -1204,7 +1205,11 @@ s64 dax_iomap_zero(loff_t pos, u64 length, struct iomap *iomap)
  	}
  
--	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED))
-+	if (WARN_ON_ONCE(iomap->type != IOMAP_MAPPED &&
-+			!(iomap->flags & IOMAP_F_SHARED)))
- 		return -EIO;
+ 	if (!page_aligned) {
+-		memset(kaddr + offset, 0, size);
++		if (iomap->addr != srcmap->addr)
++			dax_iomap_cow_copy(offset, size, PAGE_SIZE, srcmap,
++					   kaddr, true);
++		else
++			memset(kaddr + offset, 0, size);
+ 		dax_flush(iomap->dax_dev, kaddr + offset, size);
+ 	}
+ 	dax_read_unlock(id);
+diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
+index 16a1e82e3aeb..d754b1f1a05d 100644
+--- a/fs/iomap/buffered-io.c
++++ b/fs/iomap/buffered-io.c
+@@ -933,7 +933,7 @@ static loff_t iomap_zero_range_actor(struct inode *inode, loff_t pos,
+ 		s64 bytes;
  
- 	/*
-@@ -1218,6 +1265,13 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 			break;
- 		}
- 
-+		if (write && srcmap->addr != iomap->addr) {
-+			ret = dax_iomap_cow_copy(pos, length, PAGE_SIZE, srcmap,
-+						 kaddr, true);
-+			if (ret)
-+				break;
-+		}
-+
- 		map_len = PFN_PHYS(map_len);
- 		kaddr += offset;
- 		map_len -= offset;
-@@ -1229,7 +1283,7 @@ dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
- 		 * validated via access_ok() in either vfs_read() or
- 		 * vfs_write(), depending on which operation we are doing.
- 		 */
--		if (iov_iter_rw(iter) == WRITE)
-+		if (write)
- 			xfer = dax_copy_from_iter(dax_dev, pgoff, kaddr,
- 					map_len, iter);
+ 		if (IS_DAX(inode))
+-			bytes = dax_iomap_zero(pos, length, iomap);
++			bytes = dax_iomap_zero(pos, length, iomap, srcmap);
  		else
-@@ -1379,6 +1433,7 @@ static vm_fault_t dax_fault_actor(struct vm_fault *vmf, pfn_t *pfnp,
- 	bool sync = dax_fault_is_synchronous(flags, vmf->vma, iomap);
- 	int err = 0;
- 	pfn_t pfn;
-+	void *kaddr;
- 
- 	/* if we are reading UNWRITTEN and HOLE, return a hole. */
- 	if (!write &&
-@@ -1389,18 +1444,24 @@ static vm_fault_t dax_fault_actor(struct vm_fault *vmf, pfn_t *pfnp,
- 			return dax_pmd_load_hole(xas, vmf, iomap, &entry);
- 	}
- 
--	if (iomap->type != IOMAP_MAPPED) {
-+	if (iomap->type != IOMAP_MAPPED && !(iomap->flags & IOMAP_F_SHARED)) {
- 		WARN_ON_ONCE(1);
- 		return VM_FAULT_SIGBUS;
- 	}
- 
--	err = dax_iomap_direct_access(iomap, pos, size, NULL, &pfn);
-+	err = dax_iomap_direct_access(iomap, pos, size, &kaddr, &pfn);
- 	if (err)
- 		return dax_fault_return(err);
- 
- 	entry = dax_insert_entry(xas, mapping, vmf, entry, pfn, 0,
- 				 write && !sync);
- 
-+	if (write && srcmap->addr != iomap->addr) {
-+		err = dax_iomap_cow_copy(pos, size, size, srcmap, kaddr, false);
-+		if (err)
-+			return dax_fault_return(err);
-+	}
-+
- 	if (sync)
- 		return dax_fault_synchronous_pfnp(pfnp, pfn);
- 
+ 			bytes = iomap_zero(inode, pos, length, iomap, srcmap);
+ 		if (bytes < 0)
+diff --git a/include/linux/dax.h b/include/linux/dax.h
+index b52f084aa643..3275e01ed33d 100644
+--- a/include/linux/dax.h
++++ b/include/linux/dax.h
+@@ -237,7 +237,8 @@ vm_fault_t dax_finish_sync_fault(struct vm_fault *vmf,
+ int dax_delete_mapping_entry(struct address_space *mapping, pgoff_t index);
+ int dax_invalidate_mapping_entry_sync(struct address_space *mapping,
+ 				      pgoff_t index);
+-s64 dax_iomap_zero(loff_t pos, u64 length, struct iomap *iomap);
++s64 dax_iomap_zero(loff_t pos, u64 length, struct iomap *iomap,
++		struct iomap *srcmap);
+ static inline bool dax_mapping(struct address_space *mapping)
+ {
+ 	return mapping->host && IS_DAX(mapping->host);
 -- 
 2.30.1
 

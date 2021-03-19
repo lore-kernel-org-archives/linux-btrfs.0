@@ -2,346 +2,186 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3F02C4332B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 10:50:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42EAFC433DB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 15:35:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7E46F64F10
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 10:50:05 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 030E161939
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Mar 2021 15:35:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229996AbhCSKte (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Mar 2021 06:49:34 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:6295 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229952AbhCSKtC (ORCPT
+        id S230373AbhCSPfH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Mar 2021 11:35:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41150 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230159AbhCSPe6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Mar 2021 06:49:02 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1616150941; x=1647686941;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=Fs+M56z/E0o3BVf2n40mS/yUsNv9C26IEd6XBxvdH4g=;
-  b=foMkNlRImzX70Cvaha2W17mZBBo+iCQUPzVs3umxcuBiwKe7LF1Sohhb
-   LFSPyb0Q2DjvCCrb0qdMjijvEBVrrQNHdaf2AaO2t5ZM+NnjCnHfNQin0
-   3sisDNmfmWmDGfEGns4fajYLvX43Noa4gnU5QRrIJTs5LhJVnFOHnpoi8
-   XCIw0Lcjh+Nb1/cx3Ojk4KuPVguRgySJk6oOL47cqUs55bgiLzUI58Fnw
-   QAPVP+HCoLcuXzv0/dxpAMenpQ5wZUMmjulzV3zE0Nw5qouUtbX9R7sQI
-   F04tU+x9Q9HKOOhN6XXWYLeNbZZfuth2IKWsnbRI1dueLPVZ5L8bL4uy9
-   g==;
-IronPort-SDR: JcfdYzgfEJoZfSQ7jCCBGQAHNgph84UmEUcc0VRa9jLPUYOX80l3ekumcPm+JNbxkzRthx60mc
- mhQTZBrmMT+746rquwlrgCfh3avE30nLIEPlKPy4DyaIdOCVCQsk/kR1uj4Oa8cjoWNCikATlm
- ctqL0mhOwb141dxK8kz2nLLQNFXV1BGv2Gn0vLecWDEzI7tHOq5vV6bPV9Us0ABHYKty3PRREA
- GRtT2IaCOx6fv+bORiRh4jPIP9pEDvdOnpGv1JruNbC0wjRC1pUYFPBfTZNykjFw0dbX+7NdC7
- y/0=
-X-IronPort-AV: E=Sophos;i="5.81,261,1610380800"; 
-   d="scan'208";a="167028611"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Mar 2021 18:49:01 +0800
-IronPort-SDR: sGtCt7bsjF+ICQ2H/nntUxC0REBQ2jGEkp4mJnnrQahyzYKpg1VKxuDPMrxpnoWp7c9qApiPjs
- jf0b3bfz5B3X91y3gn/CfEFeSY3JSZp0j6IPVDPxLgF8baiuH550hTLUCUOcsPNsERoh/2zI0S
- lpHec63Q3kDh92MVuSd0VTnWF7kLYnG4oRttgL7brNRPfuSXorPcbppA57BeVLYh4ln/YrHtt5
- 0jTS8hNGKbPwXHjOs5H17GLmnWcCaAhFireESj2+l12hQDHJpWP3beG8NJVt4eneDJp12GyaEd
- yXdPRKu88cdd9g0KmeIP+Wav
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 19 Mar 2021 03:29:35 -0700
-IronPort-SDR: adbCLCvVQiNhlL2nqiqFvjef+VTOzEO8JDWrb0uMMeOsJgKRZcHi+nff91hOQunE5M4FJGEhNK
- iMYaIzJBs81uC4QXwqJMdX+U4tg6E5T6MC90THscIw5KXd+yS6M574PbjW+2zYWYPXOBNxNyDq
- Xjp0euJmPz6eH75i/uSUNbtxfLLDUIiJlf7gQWrxNeIXDxPmUbffeyQ08z45lwlkqDk5z+wGyU
- pchtSdpyxfRFzR+G5bBx6rR6BinXlF1e4Q+p4XqMbSP9L+p655WOZXSAmywdV9pWOKVV4N0Qi8
- xbc=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 19 Mar 2021 03:49:01 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2 1/2] btrfs: rename delete_unused_bgs_mutex
-Date:   Fri, 19 Mar 2021 19:48:51 +0900
-Message-Id: <e08335fd919473b3da296514c4148f9fc9461cfc.1616149060.git.johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.30.0
-In-Reply-To: <cover.1616149060.git.johannes.thumshirn@wdc.com>
-References: <cover.1616149060.git.johannes.thumshirn@wdc.com>
+        Fri, 19 Mar 2021 11:34:58 -0400
+Received: from mail-qt1-x831.google.com (mail-qt1-x831.google.com [IPv6:2607:f8b0:4864:20::831])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E101AC06174A;
+        Fri, 19 Mar 2021 08:34:57 -0700 (PDT)
+Received: by mail-qt1-x831.google.com with SMTP id y2so4577421qtw.13;
+        Fri, 19 Mar 2021 08:34:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=1wToAptgvmx1pP3W3ajbBz+OQPaL9E12cpuwf2DkE1Y=;
+        b=FcKIp5MUMsntTvqGYoWiWNhtlY1Ky+/4+hKwKgoT52yg00EU7YBmAJBvHvuWdE83rn
+         2pySaZPCS5hFnCATk5INZwAIX4q2MgbmTZJCLioozM21jeAHDdhG87z93OF9gp+oE/oa
+         rhx3cqzkPmpci+0fxTqz6E2QiGAl5WPwq01t29tfy6ESgudm+T5HIWs3nO3ISe5mOHLI
+         nv+IaQZGJwn1zuNitQzdNE/I9U+6A/nMSQgaGZB8NwIhMT3aHBXAyiETVtV3dgxXO4Se
+         XroqPFfYLerZaXq4DhpNXJH4WN5OLFXpFfNJVKVa/+ek/sOklUP6Znfk2UZ1nsbaypae
+         LSSQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=1wToAptgvmx1pP3W3ajbBz+OQPaL9E12cpuwf2DkE1Y=;
+        b=l25aw0fdd2QNEfcUewZipBrfaznq7yu54SSRRu+e7l/rlMh7fdjAQ44mlpqa2VWeaJ
+         4hONrOLrVGQgMsvROhlYmLYLICwjOv5NEoIqqesEang7igLi5neEcXNbMi926iQx2lqW
+         3F9awby4SVQ8v5Tnpt+uw1XI44hy5E0LPQiYYsZAwEIizMuVJdBwbDEhPpDXYUu6QXtT
+         HVgNSea3WlX28AeDMI3jl1+KSTLv0H+/ch9AHIMvYIFDAgfUFFUJ4cXQy3PQ1ZWfC9La
+         iwBOUpte+Ktyg6ly/rjR6XBSAKAe+jQJUKhtkb28/zyHOXy5r+vgKb8Zv85QKndICsTo
+         i9Xg==
+X-Gm-Message-State: AOAM530DOgvBFaiivTcSKc1GTk3LH6c6w8hAvvs1JiwYq40IJrwQ0+cV
+        RkDtoEiIzyg7e6ZD3seuXU/hkjr96usiCoWRHOU=
+X-Google-Smtp-Source: ABdhPJwHsSx5PwzChJ/Z6OOE1z7Kcl1SoVN80Zxwhhg845SFYRTatt3lo3KhLXiY/8pe4sWk6KUdKk1HWHc035PUYk8=
+X-Received: by 2002:ac8:57cf:: with SMTP id w15mr8735375qta.336.1616168097075;
+ Fri, 19 Mar 2021 08:34:57 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20210317012054.238334-1-davispuh@gmail.com> <CAOE4rSwj9_DMWLszPE5adiTsQeK+G_Hqya_HkDR=uEC7L4Fj3A@mail.gmail.com>
+ <20a5d997-740a-ca57-8cbc-b88c1e34c8fc@gmx.com> <CAOE4rSyX-qTWKS_MTS5dLpfuVnqS=LwfqThyCTP=iBEH5x2bOQ@mail.gmail.com>
+ <01129192-1b93-2a93-2edd-f29f544fe340@gmx.com>
+In-Reply-To: <01129192-1b93-2a93-2edd-f29f544fe340@gmx.com>
+From:   =?UTF-8?B?RMSBdmlzIE1vc8SBbnM=?= <davispuh@gmail.com>
+Date:   Fri, 19 Mar 2021 17:34:45 +0200
+Message-ID: <CAOE4rSwOLQY1JWr-Mdq06Y9nwU_WcQBnfXZx3VWhRQGnBThHUQ@mail.gmail.com>
+Subject: Re: [RFC] btrfs: Allow read-only mount with corrupted extent tree
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>, clm@fb.com,
+        Josef Bacik <josef@toxicpanda.com>, dsterba@suse.com,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As a preparation for another user, rename the unused_bgs_mutex into
-reclaim_bgs_lock.
+ceturtd., 2021. g. 18. marts, plkst. 01:49 =E2=80=94 lietot=C4=81js Qu Wenr=
+uo
+(<quwenruo.btrfs@gmx.com>) rakst=C4=ABja:
+>
+>
+>
+> On 2021/3/18 =E4=B8=8A=E5=8D=885:03, D=C4=81vis Mos=C4=81ns wrote:
+> > tre=C5=A1d., 2021. g. 17. marts, plkst. 12:28 =E2=80=94 lietot=C4=81js =
+Qu Wenruo
+> > (<quwenruo.btrfs@gmx.com>) rakst=C4=ABja:
+> >>
+> >>
+> >>
+> >> On 2021/3/17 =E4=B8=8A=E5=8D=889:29, D=C4=81vis Mos=C4=81ns wrote:
+> >>> tre=C5=A1d., 2021. g. 17. marts, plkst. 03:18 =E2=80=94 lietot=C4=81j=
+s D=C4=81vis Mos=C4=81ns
+> >>> (<davispuh@gmail.com>) rakst=C4=ABja:
+> >>>>
+> >>>> Currently if there's any corruption at all in extent tree
+> >>>> (eg. even single bit) then mounting will fail with:
+> >>>> "failed to read block groups: -5" (-EIO)
+> >>>> It happens because we immediately abort on first error when
+> >>>> searching in extent tree for block groups.
+> >>>>
+> >>>> Now with this patch if `ignorebadroots` option is specified
+> >>>> then we handle such case and continue by removing already
+> >>>> created block groups and creating dummy block groups.
+> >>>>
+> >>>> Signed-off-by: D=C4=81vis Mos=C4=81ns <davispuh@gmail.com>
+> >>>> ---
+> >>>>    fs/btrfs/block-group.c | 14 ++++++++++++++
+> >>>>    fs/btrfs/disk-io.c     |  4 ++--
+> >>>>    fs/btrfs/disk-io.h     |  2 ++
+> >>>>    3 files changed, 18 insertions(+), 2 deletions(-)
+> >>>>
+> >>>> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> >>>> index 48ebc106a606..827a977614b3 100644
+> >>>> --- a/fs/btrfs/block-group.c
+> >>>> +++ b/fs/btrfs/block-group.c
+> >>>> @@ -2048,6 +2048,20 @@ int btrfs_read_block_groups(struct btrfs_fs_i=
+nfo *info)
+> >>>>           ret =3D check_chunk_block_group_mappings(info);
+> >>>>    error:
+> >>>>           btrfs_free_path(path);
+> >>>> +
+> >>>> +       if (ret =3D=3D -EIO && btrfs_test_opt(info, IGNOREBADROOTS))=
+ {
+> >>>> +               btrfs_put_block_group_cache(info);
+> >>>> +               btrfs_stop_all_workers(info);
+> >>>> +               btrfs_free_block_groups(info);
+> >>>> +               ret =3D btrfs_init_workqueues(info, NULL);
+> >>>> +               if (ret)
+> >>>> +                       return ret;
+> >>>> +               ret =3D btrfs_init_space_info(info);
+> >>>> +               if (ret)
+> >>>> +                       return ret;
+> >>>> +               return fill_dummy_bgs(info);
+> >>
+> >> When we hit bad things in extent tree, we should ensure we're mounting
+> >> the fs RO, or we can't continue.
+> >>
+> >> And we should also refuse to mount back to RW if we hit such case, so
+> >> that we don't need anything complex, just ignore the whole extent tree
+> >> and create the dummy block groups.
+> >>
+> >
+> > That's what we're doing here, `ignorebadroots` implies RO mount and
+> > without specifying it doesn't mount at all.
+> >
+> >>>
+> >>> This isn't that nice, but I don't really know how to properly clean u=
+p
+> >>> everything related to already created block groups so this was easies=
+t
+> >>> way. It seems to work fine.
+> >>> But looks like need to do something about replay log aswell because i=
+f
+> >>> it's not disabled then it fails with:
+> >>>
+> >>> [ 1397.246869] BTRFS info (device sde): start tree-log replay
+> >>> [ 1398.218685] BTRFS warning (device sde): sde checksum verify failed
+> >>> on 21057127661568 wanted 0xd1506ed9 found 0x22ab750a level 0
+> >>> [ 1398.218803] BTRFS warning (device sde): sde checksum verify failed
+> >>> on 21057127661568 wanted 0xd1506ed9 found 0x7dd54bb9 level 0
+> >>> [ 1398.218813] BTRFS: error (device sde) in __btrfs_free_extent:3054:
+> >>> errno=3D-5 IO failure
+> >>> [ 1398.218828] BTRFS: error (device sde) in
+> >>> btrfs_run_delayed_refs:2124: errno=3D-5 IO failure
+> >>> [ 1398.219002] BTRFS: error (device sde) in btrfs_replay_log:2254:
+> >>> errno=3D-5 IO failure (Failed to recover log tree)
+> >>> [ 1398.229048] BTRFS error (device sde): open_ctree failed
+> >>
+> >> This is because we shouldn't allow to do anything write to the fs if w=
+e
+> >> have anything wrong in extent tree.
+> >>
+> >
+> > This is happening when mounting read-only. My assumption is that it
+> > only tries to replay in memory without writing anything to disk.
+> >
+>
+> We lacks the check on log tree.
+>
+> Normally for such forced RO mount, log replay is not allowed.
+>
+> We should output a warning to prompt user to use nologreplay, and reject
+> the mount.
+>
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/block-group.c |  6 +++---
- fs/btrfs/ctree.h       |  2 +-
- fs/btrfs/disk-io.c     |  6 +++---
- fs/btrfs/volumes.c     | 46 +++++++++++++++++++++---------------------
- 4 files changed, 30 insertions(+), 30 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 85077c95b4f7..9ae3ac96a521 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1289,7 +1289,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 	 * Long running balances can keep us blocked here for eternity, so
- 	 * simply skip deletion if we're unable to get the mutex.
- 	 */
--	if (!mutex_trylock(&fs_info->delete_unused_bgs_mutex))
-+	if (!mutex_trylock(&fs_info->reclaim_bgs_lock))
- 		return;
- 
- 	spin_lock(&fs_info->unused_bgs_lock);
-@@ -1462,12 +1462,12 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		spin_lock(&fs_info->unused_bgs_lock);
- 	}
- 	spin_unlock(&fs_info->unused_bgs_lock);
--	mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+	mutex_unlock(&fs_info->reclaim_bgs_lock);
- 	return;
- 
- flip_async:
- 	btrfs_end_transaction(trans);
--	mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+	mutex_unlock(&fs_info->reclaim_bgs_lock);
- 	btrfs_put_block_group(block_group);
- 	btrfs_discard_punt_unused_bgs_list(fs_info);
- }
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f2fd73e58ee6..34ec82d6df3e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -937,7 +937,7 @@ struct btrfs_fs_info {
- 	spinlock_t unused_bgs_lock;
- 	struct list_head unused_bgs;
- 	struct mutex unused_bg_unpin_mutex;
--	struct mutex delete_unused_bgs_mutex;
-+	struct mutex reclaim_bgs_lock;
- 
- 	/* Cached block sizes */
- 	u32 nodesize;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 289f1f09481d..f9250f14fc1e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1807,10 +1807,10 @@ static int cleaner_kthread(void *arg)
- 		btrfs_run_defrag_inodes(fs_info);
- 
- 		/*
--		 * Acquires fs_info->delete_unused_bgs_mutex to avoid racing
-+		 * Acquires fs_info->reclaim_bgs_lock to avoid racing
- 		 * with relocation (btrfs_relocate_chunk) and relocation
- 		 * acquires fs_info->cleaner_mutex (btrfs_relocate_block_group)
--		 * after acquiring fs_info->delete_unused_bgs_mutex. So we
-+		 * after acquiring fs_info->reclaim_bgs_lock. So we
- 		 * can't hold, nor need to, fs_info->cleaner_mutex when deleting
- 		 * unused block groups.
- 		 */
-@@ -2793,7 +2793,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	spin_lock_init(&fs_info->treelog_bg_lock);
- 	rwlock_init(&fs_info->tree_mod_log_lock);
- 	mutex_init(&fs_info->unused_bg_unpin_mutex);
--	mutex_init(&fs_info->delete_unused_bgs_mutex);
-+	mutex_init(&fs_info->reclaim_bgs_lock);
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
- 	mutex_init(&fs_info->zoned_meta_io_lock);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d4ca721c1d91..fb785ff53a27 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3117,7 +3117,7 @@ static int btrfs_relocate_chunk(struct btrfs_fs_info *fs_info, u64 chunk_offset)
- 	 * we release the path used to search the chunk/dev tree and before
- 	 * the current task acquires this mutex and calls us.
- 	 */
--	lockdep_assert_held(&fs_info->delete_unused_bgs_mutex);
-+	lockdep_assert_held(&fs_info->reclaim_bgs_lock);
- 
- 	/* step one, relocate all the extents inside this chunk */
- 	btrfs_scrub_pause(fs_info);
-@@ -3172,10 +3172,10 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
- 
- 	while (1) {
--		mutex_lock(&fs_info->delete_unused_bgs_mutex);
-+		mutex_lock(&fs_info->reclaim_bgs_lock);
- 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
- 		if (ret < 0) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			goto error;
- 		}
- 		BUG_ON(ret == 0); /* Corruption */
-@@ -3183,7 +3183,7 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
- 		ret = btrfs_previous_item(chunk_root, path, key.objectid,
- 					  key.type);
- 		if (ret)
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 		if (ret < 0)
- 			goto error;
- 		if (ret > 0)
-@@ -3204,7 +3204,7 @@ static int btrfs_relocate_sys_chunks(struct btrfs_fs_info *fs_info)
- 			else
- 				BUG_ON(ret);
- 		}
--		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+		mutex_unlock(&fs_info->reclaim_bgs_lock);
- 
- 		if (found_key.offset == 0)
- 			break;
-@@ -3744,10 +3744,10 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 			goto error;
- 		}
- 
--		mutex_lock(&fs_info->delete_unused_bgs_mutex);
-+		mutex_lock(&fs_info->reclaim_bgs_lock);
- 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
- 		if (ret < 0) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			goto error;
- 		}
- 
-@@ -3761,7 +3761,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 		ret = btrfs_previous_item(chunk_root, path, 0,
- 					  BTRFS_CHUNK_ITEM_KEY);
- 		if (ret) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			ret = 0;
- 			break;
- 		}
-@@ -3771,7 +3771,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
- 
- 		if (found_key.objectid != key.objectid) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			break;
- 		}
- 
-@@ -3788,12 +3788,12 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 
- 		btrfs_release_path(path);
- 		if (!ret) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			goto loop;
- 		}
- 
- 		if (counting) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			spin_lock(&fs_info->balance_lock);
- 			bctl->stat.expected++;
- 			spin_unlock(&fs_info->balance_lock);
-@@ -3818,7 +3818,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 					count_meta < bctl->meta.limit_min)
- 				|| ((chunk_type & BTRFS_BLOCK_GROUP_SYSTEM) &&
- 					count_sys < bctl->sys.limit_min)) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			goto loop;
- 		}
- 
-@@ -3832,7 +3832,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 			ret = btrfs_may_alloc_data_chunk(fs_info,
- 							 found_key.offset);
- 			if (ret < 0) {
--				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+				mutex_unlock(&fs_info->reclaim_bgs_lock);
- 				goto error;
- 			} else if (ret == 1) {
- 				chunk_reserved = 1;
-@@ -3840,7 +3840,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 		}
- 
- 		ret = btrfs_relocate_chunk(fs_info, found_key.offset);
--		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+		mutex_unlock(&fs_info->reclaim_bgs_lock);
- 		if (ret == -ENOSPC) {
- 			enospc_errors++;
- 		} else if (ret == -ETXTBSY) {
-@@ -4725,16 +4725,16 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 
- 	do {
--		mutex_lock(&fs_info->delete_unused_bgs_mutex);
-+		mutex_lock(&fs_info->reclaim_bgs_lock);
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 		if (ret < 0) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			goto done;
- 		}
- 
- 		ret = btrfs_previous_item(root, path, 0, key.type);
- 		if (ret) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			if (ret < 0)
- 				goto done;
- 			ret = 0;
-@@ -4747,7 +4747,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		btrfs_item_key_to_cpu(l, &key, path->slots[0]);
- 
- 		if (key.objectid != device->devid) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			btrfs_release_path(path);
- 			break;
- 		}
-@@ -4756,7 +4756,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		length = btrfs_dev_extent_length(l, dev_extent);
- 
- 		if (key.offset + length <= new_size) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			btrfs_release_path(path);
- 			break;
- 		}
-@@ -4772,12 +4772,12 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 		 */
- 		ret = btrfs_may_alloc_data_chunk(fs_info, chunk_offset);
- 		if (ret < 0) {
--			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+			mutex_unlock(&fs_info->reclaim_bgs_lock);
- 			goto done;
- 		}
- 
- 		ret = btrfs_relocate_chunk(fs_info, chunk_offset);
--		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+		mutex_unlock(&fs_info->reclaim_bgs_lock);
- 		if (ret == -ENOSPC) {
- 			failed++;
- 		} else if (ret) {
-@@ -8001,7 +8001,7 @@ static int relocating_repair_kthread(void *data)
- 		return -EBUSY;
- 	}
- 
--	mutex_lock(&fs_info->delete_unused_bgs_mutex);
-+	mutex_lock(&fs_info->reclaim_bgs_lock);
- 
- 	/* Ensure block group still exists */
- 	cache = btrfs_lookup_block_group(fs_info, target);
-@@ -8023,7 +8023,7 @@ static int relocating_repair_kthread(void *data)
- out:
- 	if (cache)
- 		btrfs_put_block_group(cache);
--	mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+	mutex_unlock(&fs_info->reclaim_bgs_lock);
- 	btrfs_exclop_finish(fs_info);
- 
- 	return ret;
--- 
-2.30.0
-
+I'm not familiar with log replay but couldn't there be something
+useful (ignoring ref counts) that would still be worth replaying in
+memory?

@@ -2,43 +2,42 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FA20C433C1
-	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Mar 2021 12:03:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F08C6C433DB
+	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Mar 2021 12:03:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D898A61997
+	by mail.kernel.org (Postfix) with ESMTP id B150D61980
 	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Mar 2021 12:03:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230189AbhCTMCc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S230179AbhCTMCc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Sat, 20 Mar 2021 08:02:32 -0400
-Received: from smtp26.services.sfr.fr ([93.17.128.192]:3877 "EHLO
+Received: from smtp26.services.sfr.fr ([93.17.128.192]:46506 "EHLO
         smtp26.services.sfr.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229544AbhCTMCP (ORCPT
+        with ESMTP id S230002AbhCTMCP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Sat, 20 Mar 2021 08:02:15 -0400
 Received: from neuf.fr (91-171-27-54.subs.proxad.net [91.171.27.54])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by msfrf2606.sfr.fr (SMTP Server) with ESMTPS id 90ED81C003141
+        by msfrf2606.sfr.fr (SMTP Server) with ESMTPS id 801E21C003140
         for <linux-btrfs@vger.kernel.org>; Sat, 20 Mar 2021 10:27:28 +0100 (CET)
 X-mail-filterd: 1.0.0
 X-sfr-mailing: LEGIT
 X-sfr-spamrating: 40
 X-sfr-spam: not-spam
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=neuf.fr; s=202006;
- t=1616232448; h=From:To:Subject:Date:In-Reply-To:References; bh=Pe0uuzTO8HLH
-  wwyDm3wSDd8j/unr9DzefX/dQBcqtYg=; b=Q/XkLOTHVc8tDrg9DUQuFMPSTIvAhGvQ3DdPZZPv
-  IehzZfJ1pdhoSVFEii83jv9ImIQZBYmTpESfFB/5YLonInP0pCgj3FFyRDWmtTYufKSnln3cxnyY
-  CaXKlUngOJgzjPuQ1a6WdTnHUszHV9i7b55HsjOJX4sJwVVbBzWiVN6UdhE1n+hnHEE6PFJUbsjJ
-  A47qjruFMjFazntnwG+jgB7NgMmWwEDkv5+TqUWh4nqx2PvQ8kqHTuFLwVZa8Pn1CmUd7z0QLlgf
-  fTUKJ/DOcwYj8GNojaAQmu9GjMuciVHueZkPeMyKMWj51epoJxRKnoMlUYsb0SHTGghHPVvqpw==
-  ;
+ t=1616232448; h=From:To:Subject:Date; bh=Y1Q1rKZbY2sV8waQ3wnMxKDYaTXbj7LtXjn
+  zS9QE0as=; b=DN6xmwlvHVspUFqfQoXQL46nHP6wbcqXGMwD9c67bI34CKQ5/TFDem5xVIXUqs+
+  qsCBYQmsfkqLtD6dsQfJTSmGpRd3kBXKywaCe016wcKnFYjXWNlhTNwM4P6egOAUiYK6xyZ+huGf
+  +EwseKIgHg21JmglQcn3XrlwIgZcj1ctJ+2zUhoRt+FIEThsQy9hPsYOiyIROAfDh954a1oBfRgR
+  ZGPbtCB/WBT+nYU1uDb4n0splXSEBMUll6JZ7YwEpL2IP6LnpMRB2GJR1nowtINKoTvfO7p0K2UG
+  kuLKbxfMQM/wjvjQVaoWwsO+MbJUyqjIyRC+jrSX7OMlZzIiyKw==;
 Received: from neuf.fr (91-171-27-54.subs.proxad.net [91.171.27.54])
-        by msfrf2606.sfr.fr (SMTP Server) with ESMTP id 775131C00203B
+        by msfrf2606.sfr.fr (SMTP Server) with ESMTP id 6A5C31C001036
         for <linux-btrfs@vger.kernel.org>; Sat, 20 Mar 2021 10:27:28 +0100 (CET)
 Received: from neuf.fr (91-171-27-54.subs.proxad.net [91.171.27.54])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
@@ -49,16 +48,14 @@ Received: from neuf.fr (91-171-27-54.subs.proxad.net [91.171.27.54])
 Authentication-Results: sfr.fr; auth=pass (PLAIN) smtp.auth=pierre.labastie@neuf.fr
 Received: from pierre by neuf.fr with local (Exim 4.94)
         (envelope-from <pierre@neuf.fr>)
-        id 1lNXtI-0006Qk-41
+        id 1lNXtI-0006Qi-1D
         for linux-btrfs@vger.kernel.org; Sat, 20 Mar 2021 10:27:28 +0100
 From:   pierre.labastie@neuf.fr
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/1] btrfs-progs: build system - do not use AC_DEFINE twice
-Date:   Sat, 20 Mar 2021 10:27:28 +0100
-Message-Id: <20210320092728.24673-2-pierre.labastie@neuf.fr>
+Subject: [PATCH 0/1] btrfs-progs: build system - do not use AC_DEFINE twice
+Date:   Sat, 20 Mar 2021 10:27:27 +0100
+Message-Id: <20210320092728.24673-1-pierre.labastie@neuf.fr>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210320092728.24673-1-pierre.labastie@neuf.fr>
-References: <20210320092728.24673-1-pierre.labastie@neuf.fr>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Sender: Pierre Labastie <pierre.labastie@neuf.fr>
@@ -77,35 +74,21 @@ HAVE_OWN_FIEMAP_EXTENT_DEFINE, preserving the logic (using the
 fact that an undefined identifier in a preprocessor directive is
 taken as zero).
 
-Signed-off-by: Pierre Labastie <pierre.labastie@neuf.fr>
----
+Note that I doubt this check is needed in configure:
+HAVE_OWN_FIEMAP_EXTENT_DEFINE is used only once in cmds/filesystem-du.c
+in:
+#if !defined(FIEMAP_EXTENT_SHARED) && (HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE == 1)
+but HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE is set to 1 by configure only if
+FIEMAP_EXTENT_SHARED is not defined in the kernel headers.
+
+If you agree, I'll send a patch to completely remove this check.
+
+Pierre Labastie (1):
+  btrfs-progs: build system - do not use AC_DEFINE twice
+
  configure.ac | 10 ++--------
  1 file changed, 2 insertions(+), 8 deletions(-)
 
-diff --git a/configure.ac b/configure.ac
-index aa3f7824..6ea29e0a 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -240,17 +240,11 @@ fi
- AC_SUBST([CRYPTOPROVIDER_BUILTIN])
- AC_DEFINE_UNQUOTED([CRYPTOPROVIDER],["$cryptoprovider"],[Crypto implementation source name])
- 
--HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE=0
- AX_CHECK_DEFINE([linux/fiemap.h], [FIEMAP_EXTENT_SHARED], [],
--		[HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE=1
-+		[AC_DEFINE([HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE], [1],
-+                           [Define to 1 if kernel headers do not define FIEMAP_EXTENT_SHARED])
- 		 AC_MSG_WARN([no definition of FIEMAP_EXTENT_SHARED found, probably old kernel, will use own definition, 'btrfs fi du' might report wrong numbers])])
- 
--if test "x$HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE" == "x1"; then
--AC_DEFINE([HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE], [1], [We defined FIEMAP_EXTENT_SHARED])
--else
--AC_DEFINE([HAVE_OWN_FIEMAP_EXTENT_SHARED_DEFINE], [0], [We did not define FIEMAP_EXTENT_SHARED])
--fi
--
- AX_CHECK_DEFINE([ext2fs/ext2_fs.h], [EXT4_EPOCH_MASK],
- 		[AC_DEFINE([HAVE_EXT4_EPOCH_MASK_DEFINE], [1],
- 			   [Define to 1 if e2fsprogs defines EXT4_EPOCH_MASK])],
 -- 
 2.30.2
 

@@ -2,84 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EF2EEC433DB
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Mar 2021 15:44:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20FEFC433DB
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Mar 2021 15:53:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B4EA9619BA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Mar 2021 15:44:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CF0AC619C0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Mar 2021 15:53:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232923AbhCWPn6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Mar 2021 11:43:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36780 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232956AbhCWPnn (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Mar 2021 11:43:43 -0400
-Received: from mail-pj1-x1036.google.com (mail-pj1-x1036.google.com [IPv6:2607:f8b0:4864:20::1036])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 85CC5C061574
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Mar 2021 08:43:42 -0700 (PDT)
-Received: by mail-pj1-x1036.google.com with SMTP id ot17-20020a17090b3b51b0290109c9ac3c34so10090606pjb.4
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 Mar 2021 08:43:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=date:from:to:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=csNaPeK69Mldh17cXgEvQIP+wSOJR6sOOCrD3Sif/Go=;
-        b=A0IPH5nMVYQwU6P3FyMEXWToTbCB63VrOJEzuSaPwjhOFCtGLWZy8QiL7CH97+RRWm
-         gZSICwwlWaDPLekqu9s0cK388Rb/fOQM5zFw1GX/55ClsQsTxwrjtAJtFBWqs9TQt3XX
-         8k3j5liv5cyzkuDi1WV4UBeotkDx6q0TqAiMGIrJfYTue0lKVn3HnUsXtE6HZ3M2GrcE
-         RTL9gHSnR05zXLompI7xRA0fkjw94MQhV9Nc2kgPiWSrlK2M1C7DIO3x7VEZ4cVA1Kvr
-         qneXBAwTUxrMXva6bmgQmSLwOwuZeO9StkTt5YxsDWiAR98JrMyi+WAQCIS0nFfw5lhC
-         62Jg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=csNaPeK69Mldh17cXgEvQIP+wSOJR6sOOCrD3Sif/Go=;
-        b=FBSYmyCbfQk+1SeBn/hC9HUB2Drru/Iqw1pVx+RRnuES41mghJOq2pJphAKvaqk2Yz
-         ObfmDVxMJMiT3fvowrye28mprkEPtv8pz8G4PDt/Dt/h9qIYQeG+bAllyFEK0avYgAsQ
-         hnB907lbWtcGzYWAIU2hEq/DYlL3/MewiIgCqeXI8idKNKeKQ5jJ5Ki+3FOBdHf4DckR
-         hjmoNKrivfZSY0JAIuWkL1t3G77NeMflx/L8926eRdMX/ocwwGhgGAr/Pxp5EtSJZD8F
-         B81LO2POgZFJebtZohmP3AD11xy6JH1mLyDideStKvFDeijKJBEsg4ER2G2FlzgfLSvU
-         0p/A==
-X-Gm-Message-State: AOAM530/H8FQc7csNG3zGRLWdy1ukcdiIQE7rBOXph4CNfJmr/tP+qJT
-        hGquHCRIW7IJU5OUS379DxuIc5PaR4J70A==
-X-Google-Smtp-Source: ABdhPJzLBhvJjyvQFVUv3SxvmSmFa0zBx6k90No7B2pMyfO50HzLeCWCd4W3rsFBcpqoo0uPCvbP2g==
-X-Received: by 2002:a17:90b:f15:: with SMTP id br21mr5170839pjb.234.1616514222075;
-        Tue, 23 Mar 2021 08:43:42 -0700 (PDT)
-Received: from realwakka ([59.12.165.26])
-        by smtp.gmail.com with ESMTPSA id l22sm3474414pjl.14.2021.03.23.08.43.41
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 23 Mar 2021 08:43:41 -0700 (PDT)
-Date:   Tue, 23 Mar 2021 15:43:34 +0000
-From:   Sidong Yang <realwakka@gmail.com>
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: qgroup: remove outdated comment
-Message-ID: <20210323154334.GA2652@realwakka>
-References: <20210322140316.384012-1-realwakka@gmail.com>
- <20210323144816.GG7604@twin.jikos.cz>
+        id S232733AbhCWPxB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Mar 2021 11:53:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:35698 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232902AbhCWPwj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 23 Mar 2021 11:52:39 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 0A565AE37;
+        Tue, 23 Mar 2021 15:52:38 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 04553DA7AE; Tue, 23 Mar 2021 16:50:32 +0100 (CET)
+Date:   Tue, 23 Mar 2021 16:50:32 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Neal Gompa <ngompa@fedoraproject.org>
+Cc:     linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Marcos Paulo de Souza <mpdesouza@suse.com>,
+        Sheng Mao <shngmao@gmail.com>
+Subject: Re: [PATCH 0/1] btrfs-progs: libbtrfsutil: Relicense to LGPLv2.1+
+Message-ID: <20210323155032.GH7604@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Neal Gompa <ngompa@fedoraproject.org>,
+        linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Misono Tomohiro <misono.tomohiro@jp.fujitsu.com>,
+        Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Marcos Paulo de Souza <mpdesouza@suse.com>,
+        Sheng Mao <shngmao@gmail.com>
+References: <20210317200144.1067314-1-ngompa@fedoraproject.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210323144816.GG7604@twin.jikos.cz>
+In-Reply-To: <20210317200144.1067314-1-ngompa@fedoraproject.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 23, 2021 at 03:48:16PM +0100, David Sterba wrote:
-> On Mon, Mar 22, 2021 at 02:03:16PM +0000, Sidong Yang wrote:
-> > This comment is outdated and this patch remove
-> > it to avoid confusion.
+On Wed, Mar 17, 2021 at 04:01:43PM -0400, Neal Gompa wrote:
+> This is a patch requesting all substantial copyright owners to sign off
+> on changing the license of the libbtrfsutil code to LGPLv2.1+ in order
+> to resolve various concerns around the mixture of code in btrfs-progs
+> with libbtrfsutil.
 > 
-> Even if it's just a comment removal, changelog should say why it's
-> outated, I have no idea and would have to do the research myself.
+> Each significant (i.e. non-trivial) commit author has been CC'd to
+> request their sign-off on this. Please reply to this to acknowledge
+> whether or not this is acceptable for your code.
 
-Understood, Thanks for advice. I'll fix changelog for patch v2.
+Thanks! I think we have acks for all non-trivial contirbutions. For the
+record, the trivial one are:
 
-Thanks,
-Sidong
+* dbf60b488e3b ("libbtrfsutil: update btrfs_util_delete_subvolume docs")
+  a comment update, clarifying usage
+
+* 2e67bf0ed69d ("btrfs-progs: docs: fix typos in READMEs, INSTALL and * CHANGES")
+* b1d39a42a4ef ("btrfs-progs: fix typos in comments")
+  treewide comment typo fixes
+
+* 01e35d9f53eb ("btrfs-progs: treewide: Fix missing declarations")
+  code changes, but adding static or missing includes
+
+* 9fd37f951be6 ("btrfs-progs: complete the implementation RAID1C34 definitions")
+  copied definitions from kernel code
+
+I'm not sure about the commit adding pkg-config spec file, it's not code
+but it's beyond what I'd consider trivial. I've added Sheng Mao to CC,
+please acknowledge the change.
+
+* 4498fe1a2a7c ("libbtrfsutil: add pkg-config spec file")
+
+I'll update the changelog with all the reasons for relicensing that have
+been brought up.

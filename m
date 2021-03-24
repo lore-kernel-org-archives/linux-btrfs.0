@@ -2,196 +2,126 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47DAAC433DB
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Mar 2021 13:45:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF247C433C1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Mar 2021 14:24:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 07D1E619FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Mar 2021 13:45:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9C33F619FC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Mar 2021 14:24:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235593AbhCXNol (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Mar 2021 09:44:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40120 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235589AbhCXNoZ (ORCPT
+        id S236134AbhCXOXo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Mar 2021 10:23:44 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:52181 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236125AbhCXOXV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Mar 2021 09:44:25 -0400
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A7050C061763
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Mar 2021 06:44:25 -0700 (PDT)
-Received: by mail-qt1-x82c.google.com with SMTP id s2so17532089qtx.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Mar 2021 06:44:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=6ZjwwMOBrIHq5S4DkYKcB8i97cxKen44qLQ7L7XKZCQ=;
-        b=r6ioVOEXSf0Jmp+uMQK1EhMcW4dccG1p6raDXMTFW6KBl+SVP8DubtK9jFdCObJMnQ
-         5m+TaJE7KCXxr+ahmmVpVPJFRFmDQwJqRTb/AhPsVj3TBi7nMhPf90X0CRmtxkixgMfz
-         Kjj7y7y9vJX7X9EwVIRsBk6te3YIDnGzBgDHbWVyTCDbYMp4/Z/7HvSDthH1LHzgKvpi
-         x4BzNu7OVvLQ1aFhIqaVW7rw8PeUJedFFD+RUtB5HuTfq8XIPGx8B2piIEVXW1OPvAx6
-         wwU/yN505ZlFUVB/8IBtoAQm4SIr6CQnrk9LVpkl1+CFngLff9sVAiOLk25QrYYKnYSH
-         TIjw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=6ZjwwMOBrIHq5S4DkYKcB8i97cxKen44qLQ7L7XKZCQ=;
-        b=iqqoB4y7LXqRgVNVV+4ubGDLx25oz6Ds+fIOS0BuuRxK3/7vIedaqSuMwt+y9KTnmV
-         uYyB0S+evi4nyOlA8ZCGOneiTvoEpuXxEl+jnMEqDH/w2OLf+ahNNTQQoFp5amGuVzEB
-         uE8UmYAARotbv+zY/LTQtsG8E9L5vxlS0WCVQpTASPImGGCoEZ78P8klItUrXykD3RTB
-         UICZm9P6A5t/xqbLBjnEkI2wV38nvR/Y+Vdv0e+ypjLLjFtOP2MKF7vMm2WVnKJYOxhf
-         Dt1je24eg2xS0bVwOMLxE6NQnkCUkZziHxB9KB2oAK8Bh0hkg5HMU3GwAZYhWXmU1gEW
-         84Zw==
-X-Gm-Message-State: AOAM532n7qvyheMgm2Dj602s0L0ionpe66hNTVsN34p/PhJ1VxNXzNFI
-        dNM83thc3jQpTAn9/00qBSxpw0ulDPp1AW7/
-X-Google-Smtp-Source: ABdhPJwmrsqnykAHVr28fgDczXnjbtmxl55L/Fb2IHusTRO0aMtaapRNman/4D4vKRcwteitoWDydA==
-X-Received: by 2002:aed:2c22:: with SMTP id f31mr2894869qtd.219.1616593463356;
-        Wed, 24 Mar 2021 06:44:23 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id s6sm1714059qke.44.2021.03.24.06.44.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 24 Mar 2021 06:44:22 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH] btrfs: use percpu_read_positive instead of sum_positive for need_preempt
-Date:   Wed, 24 Mar 2021 09:44:21 -0400
-Message-Id: <d500e1b1337e9b36e6dc7ade4e9fad36931c44f4.1616593448.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.2
+        Wed, 24 Mar 2021 10:23:21 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1616595801; x=1648131801;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=MSwEuRKj8KR/TKUM4pyPK8/5zvA9g5RtLAxBO+68Dog=;
+  b=EvP9OtS0obttbFO1IbyGYoR7JSgWPwDQL7YTJBNOA+khQ1vgNl3iqeKD
+   Kf4kyPyqImo1Ze66ASWqJUaGaIuTEijeNHUwIRIg+aOCt2KRQhITOd/TZ
+   UHyXu3nvz80ohPPiBqtfR7aA43Nx0iwltS48kcv7sqkni6RXs71ky52Ch
+   hz8f0lsyeDJRMsvc0OWtFxapwDsexbo8VI1y9WWF66RNEH4MkJQk+E4UG
+   j0WOx3ZvuP3cLlqhFYLbrXD4pEth4ys9cEWOL9fBDvL9uu611ntgE23G5
+   XKibZhlZ5BdIXVfETVMqhpYsHXFrRkgUFd5Uir1si7cqH2CUVIP/S/z60
+   g==;
+IronPort-SDR: YvVTBBmv2emUt+uYYOaDbeLG+bmZJvU6t8gvavQdqRPj3TPU82bprB1PySp33pw1mjak4dOAyF
+ exYwZev5FnFP/+3KNoAlSUWxEwZhkhRIa8gw5DhfDG/vjMtsld8BF+EsvdnqBRtEoNx9WakEhL
+ oYSRP9ksYYRiPdEEM7coKfZxP14djhHsYwGuvCRTgTGOWyK/7Rtr9xBDDYRqzcTrHugVUFuIsL
+ sGO87VVUAu0d7e9HlDN9c5VRoFJX4Gt2xpiydzZh6MflKxB/wh6IYPL3ItpWiVu+WSKWR8jWwX
+ 9rw=
+X-IronPort-AV: E=Sophos;i="5.81,274,1610380800"; 
+   d="scan'208";a="167379126"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 24 Mar 2021 22:23:21 +0800
+IronPort-SDR: nz1ssueNzXBBBVRrJ/lqDLvgNUybQir0T/k4bEkuGxQ9Qyii3jsc0Ho81kDcNtYAyvZix3AvDY
+ Kl/JiEySClwMHZnmgehMm9jG1JnW+MigaQBODzUOwij0z97hdiwkqF/7fMKtiycP/vj/i+yLVG
+ LHxzh+ME5gqftE/nlTflwjHFho7722u43U/zIad4xnjYPxnc5asKX+ajMFM9+DazTGhs1K2yIR
+ fmU1N57w0caCws0oNzUGjJ8qlvj/EJgNy010QHVgPSiQ2a+rhoBLwYtpVN99fWT65J5iyBY6Yp
+ Qfy2HXY1fyFRRBxjigbo/Zp2
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Mar 2021 07:05:25 -0700
+IronPort-SDR: 5zoM2uv+VUI9k00eOKcIVTvGr42dgqfSx9pIkMmvbOMIdip0hgfJpJhBpkpbHL82wt7nOkmrhM
+ HV4E6/WalgTJo6HcTOVqZ5TLOK/HYKucGg2mr4BnoWFUAiYOxLrJEUm4KGmaNwUsbt1m5Mxh4l
+ d1+9Q2UXnctKS+rWKUA1VMAyke7INB3oj0UQ8twbNLZVn7AqiLrDAJGj44L5VgRDzRzn78xEot
+ Z83UF6WkXpLyGdtREFylJ7nqBbZHL69wlPcfvdo96Ljoal+fQYBz7O43hyizRvTYWa5vIZG52i
+ M3U=
+WDCIronportException: Internal
+Received: from fbvx1z2.ad.shared (HELO naota-xeon.wdc.com) ([10.225.48.15])
+  by uls-op-cesaip02.wdc.com with ESMTP; 24 Mar 2021 07:23:20 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Cc:     Naohiro Aota <naohiro.aota@wdc.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH] btrfs: zoned: move log tree node allocation out of log_root_tree->log_mutex
+Date:   Wed, 24 Mar 2021 23:23:11 +0900
+Message-Id: <984c070461f31182e87d1b4f27c4565088a31b40.1616595693.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.31.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looking at perf data for a fio workload I noticed that we were spending
-a pretty large chunk of time (around 5%) doing percpu_counter_sum() in
-need_preemptive_reclaim.  This is silly, as we only want to know if we
-have more ordered than delalloc to see if we should be counting the
-delayed items in our threshold calculation.  Change this to
-percpu_read_positive() to avoid the overhead.
+Commit 6e37d2459941 ("btrfs: zoned: fix deadlock on log sync") pointed out
+a deadlock warning and removed
+mutex_{lock,unlock}(&fs_info->tree_root->log_mutex). While it looks like it
+always cause a deadlock, we didn't see actual deadlock in fstests runs. The
+reason is log_root_tree->log_mutex != fs_info->tree_root->log_mutex, not
+taking the same lock. So, the warning was actually a false-positive.
 
-I ran this through fsperf to validate the changes, obviously the latency
-numbers in dbench and fio are quite jittery, so take them as you wish,
-but overall the improvements on throughput, iops, and bw are all
-positive.  Each test was run two times, the given value is the average
-of both runs for their respective column.
+Since btrfs_alloc_log_tree_node() is protected only by
+fs_info->tree_root->log_mutex, we can (and should) move the code out of the
+lock scope of log_root_tree->log_mutex and silence the warning.
 
-btrfs ssd normal test results
-
-bufferedrandwrite16g results
-     metric         baseline   current          diff
-==========================================================
-write_io_kbytes     16777216   16777216     0.00%
-read_clat_ns_p99           0          0     0.00%
-write_bw_bytes      1.04e+08   1.05e+08     1.12%
-read_iops                  0          0     0.00%
-write_clat_ns_p50      13888      11840   -14.75%
-read_io_kbytes             0          0     0.00%
-read_io_bytes              0          0     0.00%
-write_clat_ns_p99      35008      29312   -16.27%
-read_bw_bytes              0          0     0.00%
-elapsed                  170        167    -1.76%
-write_lat_ns_min     4221.50    3762.50   -10.87%
-sys_cpu                39.65      35.37   -10.79%
-write_lat_ns_max    2.67e+10   2.50e+10    -6.63%
-read_lat_ns_min            0          0     0.00%
-write_iops          25270.10   25553.43     1.12%
-read_lat_ns_max            0          0     0.00%
-read_clat_ns_p50           0          0     0.00%
-
-dbench60 results
-  metric     baseline   current         diff
-==================================================
-qpathinfo       11.12     12.73    14.52%
-throughput     416.09    445.66     7.11%
-flush         3485.63   1887.55   -45.85%
-qfileinfo        0.70      1.92   173.86%
-ntcreatex      992.60    695.76   -29.91%
-qfsinfo          2.43      3.71    52.48%
-close            1.67      3.14    88.09%
-sfileinfo       66.54    105.20    58.10%
-rename         809.23    619.59   -23.43%
-find            16.88     15.46    -8.41%
-unlink         820.54    670.86   -18.24%
-writex        3375.20   2637.91   -21.84%
-deltree        386.33    449.98    16.48%
-readx            3.43      3.41    -0.60%
-mkdir            0.05      0.03   -38.46%
-lockx            0.26      0.26    -0.76%
-unlockx          0.81      0.32   -60.33%
-
-dio4kbs16threads results
-     metric          baseline       current           diff
-================================================================
-write_io_kbytes         5249676       3357150   -36.05%
-read_clat_ns_p99              0             0     0.00%
-write_bw_bytes      89583501.50   57291192.50   -36.05%
-read_iops                     0             0     0.00%
-write_clat_ns_p50        242688        263680     8.65%
-read_io_kbytes                0             0     0.00%
-read_io_bytes                 0             0     0.00%
-write_clat_ns_p99      15826944      36732928   132.09%
-read_bw_bytes                 0             0     0.00%
-elapsed                      61            61     0.00%
-write_lat_ns_min          42704         42095    -1.43%
-sys_cpu                    5.27          3.45   -34.52%
-write_lat_ns_max       7.43e+08      9.27e+08    24.71%
-read_lat_ns_min               0             0     0.00%
-write_iops             21870.97      13987.11   -36.05%
-read_lat_ns_max               0             0     0.00%
-read_clat_ns_p50              0             0     0.00%
-
-randwrite2xram results
-     metric          baseline       current           diff
-================================================================
-write_io_kbytes        24831972      28876262    16.29%
-read_clat_ns_p99              0             0     0.00%
-write_bw_bytes      83745273.50   92182192.50    10.07%
-read_iops                     0             0     0.00%
-write_clat_ns_p50         13952         11648   -16.51%
-read_io_kbytes                0             0     0.00%
-read_io_bytes                 0             0     0.00%
-write_clat_ns_p99         50176         52992     5.61%
-read_bw_bytes                 0             0     0.00%
-elapsed                     314           332     5.73%
-write_lat_ns_min        5920.50          5127   -13.40%
-sys_cpu                    7.82          7.35    -6.07%
-write_lat_ns_max       5.27e+10      3.88e+10   -26.44%
-read_lat_ns_min               0             0     0.00%
-write_iops             20445.62      22505.42    10.07%
-read_lat_ns_max               0             0     0.00%
-read_clat_ns_p50              0             0     0.00%
-
-untarfirefox results
-metric    baseline   current        diff
-==============================================
-elapsed      47.41     47.40   -0.03%
-
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Cc: Filipe Manana <fdmanana@suse.com>
+Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/space-info.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/tree-log.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 2da6177f4b0b..2dc674b7c3b1 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -861,8 +861,8 @@ static bool need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
- 	 * of heavy DIO or ordered reservations, preemptive flushing will just
- 	 * waste time and cause us to slow down.
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 92a368627791..72c4b66ed516 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3165,20 +3165,22 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
  	 */
--	ordered = percpu_counter_sum_positive(&fs_info->ordered_bytes);
--	delalloc = percpu_counter_sum_positive(&fs_info->delalloc_bytes);
-+	ordered = percpu_counter_read_positive(&fs_info->ordered_bytes);
-+	delalloc = percpu_counter_read_positive(&fs_info->delalloc_bytes);
- 	if (ordered >= delalloc)
- 		used += fs_info->delayed_refs_rsv.reserved +
- 			fs_info->delayed_block_rsv.reserved;
+ 	mutex_unlock(&root->log_mutex);
+ 
+-	btrfs_init_log_ctx(&root_log_ctx, NULL);
+-
+-	mutex_lock(&log_root_tree->log_mutex);
+-
+ 	if (btrfs_is_zoned(fs_info)) {
++		mutex_lock(&fs_info->tree_root->log_mutex);
+ 		if (!log_root_tree->node) {
+ 			ret = btrfs_alloc_log_tree_node(trans, log_root_tree);
+ 			if (ret) {
+-				mutex_unlock(&log_root_tree->log_mutex);
++				mutex_unlock(&fs_info->tree_log_mutex);
+ 				goto out;
+ 			}
+ 		}
++		mutex_unlock(&fs_info->tree_root->log_mutex);
+ 	}
+ 
++	btrfs_init_log_ctx(&root_log_ctx, NULL);
++
++	mutex_lock(&log_root_tree->log_mutex);
++
+ 	index2 = log_root_tree->log_transid % 2;
+ 	list_add_tail(&root_log_ctx.list, &log_root_tree->log_ctxs[index2]);
+ 	root_log_ctx.log_transid = log_root_tree->log_transid;
 -- 
-2.26.2
+2.31.0
 

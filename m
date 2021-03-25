@@ -2,202 +2,162 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62662C433E8
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Mar 2021 07:16:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6E07C433E1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Mar 2021 09:56:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4F06361A12
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Mar 2021 07:16:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7B11661A28
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Mar 2021 09:56:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229832AbhCYHPr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Mar 2021 03:15:47 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37018 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229716AbhCYHPW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Mar 2021 03:15:22 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1616656521; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=qBQc8zKiKqGsjulBg8bz5lJtIvIIqShtvogk6D9Zdtg=;
-        b=rQJCZQi/ZrM+2NzEzSj00z1JxZlx8uHF0TO1Cb11BWaNyWOvezABzylyBSycPBTKz23B9E
-        qZfhXTy1RQH3sNvqHE2Hu4d8LHOGGiml/MtxrNYveTyHhXm2q8QndlPNSqlMWf8BRRbeRn
-        ODALmbU1BIidsk4rz9MHIFkTKlkDcrs=
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 6AFF2AD4A
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Mar 2021 07:15:21 +0000 (UTC)
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 11/13] btrfs: make set/clear_extent_buffer_dirty() to be subpage compatible
-Date:   Thu, 25 Mar 2021 15:14:43 +0800
-Message-Id: <20210325071445.90896-12-wqu@suse.com>
-X-Mailer: git-send-email 2.30.1
-In-Reply-To: <20210325071445.90896-1-wqu@suse.com>
-References: <20210325071445.90896-1-wqu@suse.com>
+        id S229695AbhCYJz6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Mar 2021 05:55:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48004 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229508AbhCYJzd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Mar 2021 05:55:33 -0400
+Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79F7CC06174A;
+        Thu, 25 Mar 2021 02:55:33 -0700 (PDT)
+Received: by mail-qk1-x736.google.com with SMTP id v70so1116012qkb.8;
+        Thu, 25 Mar 2021 02:55:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=RrZqSUgV0o2n+fC0ATR2Inwg8tiJ8Mrky0FeiVi+KiM=;
+        b=rBwT8ok5vLPaKX3Wj0F4xnAOyDCodRRIM9F399QnknLuMLa58h6KCi4DQPUXD3OoEI
+         LeAmDiYQjJhF/BjsUbsQWFlB1Dc9BojVinlYeq7eSf51pMTop/KRUCTGI2tYTwoIevE/
+         ppwqnxlKxbddbbXLwQYUBYBmjHnhkCWtiw+M2pjBUHubfVDoUDyw4iPsmfUQ9SDztPPK
+         dQZkbuA5bONlFNrgievfPPJkX6X+L1gzakrERpaDGJcx8ZGA8bCQW9qGFKNyDg0Is7XU
+         yJ3aJ4f9vDbBO0GX9cfD6CVf86tnfiG+Qk+F6dP1pHTy0UEwYxrt+ID9clC4fFK33K2C
+         9k+A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=RrZqSUgV0o2n+fC0ATR2Inwg8tiJ8Mrky0FeiVi+KiM=;
+        b=tw7KgqOvwN6zehoQpyo6Hy9eHuBFzDEUmsHf5lXFlJ2qdZU9RTdsmtAlSZJnAeds94
+         tTpiZ7wgEwPZkdPTSoTaLjtQQWVNHHecAe5b1WCaEHd5H0V7+9QF0LcRk2K7Xo+v37AL
+         OmLg1iW+OIXAmTFK5h2LKpP5It/UBcwqfaguLjJbyxHylMJ4ANyTjRn26CKYrPyisWYJ
+         yr0g3Vho1B5Do9pZRkd03cL4P1oogKJYCbQ1dI7wVOC2FyvamOEg4IgJVq40FUSpUYwV
+         X4UvQKH/29klxns9RqwuDKV9jLIm4fOKCRoxSfsvd6S8H0PzMMez8QO9xiSP5XTyotmW
+         A8MQ==
+X-Gm-Message-State: AOAM531Bu8n6pH/5Mx7dAJXT2IT3GcsQ9XiS9VOqcX44wi0VrOkiuDPK
+        rJwQKq+88pnLWHDbOHWhpOf4u1ynOg/hCBBUNIM=
+X-Google-Smtp-Source: ABdhPJwdQ21ro+wX/t1ZDuDtyGk5jKXHzmeVfFfrMH31CKbHaKVf0vXYN9Y/yl3XlrjW8ig68t8wFFpstkJ3/C0sH58=
+X-Received: by 2002:a37:a44:: with SMTP id 65mr6934972qkk.479.1616666132779;
+ Thu, 25 Mar 2021 02:55:32 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <1616637382-27311-1-git-send-email-bingjingc@synology.com>
+In-Reply-To: <1616637382-27311-1-git-send-email-bingjingc@synology.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Thu, 25 Mar 2021 09:55:21 +0000
+Message-ID: <CAL3q7H6G6owDc0nD4gK=YdnApTgL_02XqRq_FpP=05W6oxvjFw@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: fix a potential hole-punching failure
+To:     bingjingc <bingjingc@synology.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        cccheng@synology.com, Robbie Ko <robbieko@synology.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For set_extent_buffer_dirty() to support subpage sized metadata, just
-call btrfs_page_set_dirty() to handle both cases.
+On Thu, Mar 25, 2021 at 3:42 AM bingjingc <bingjingc@synology.com> wrote:
+>
+> From: BingJing Chang <bingjingc@synology.com>
+>
+> In commit d77815461f04 ("btrfs: Avoid trucating page or punching hole
+> in a already existed hole."), existed holes can be skipped by calling
+> find_first_non_hole() to adjust *start and *len. However, if the given
+> len is invalid and large, when an EXTENT_MAP_HOLE extent is found, the
+> *len will not be set to zero because (em->start + em->len) is less than
+> (*start + *len). Then the ret will be 1 but the *len will not be set to
+> 0. The propagated non-zero ret will result in fallocate failure.
+>
+> In the while-loop of btrfs_replace_file_extents(), len is not updated
+> every time before it calls find_first_non_hole(). That is, after
+> btrfs_drop_extents() successfully drops the last non-hole file extent,
+> it may fail with -ENOSPC when attempting to drop a file extent item
+> representing a hole. The problem can happen. After it calls
+> find_first_non_hole(), the cur_offset will be adjusted to be larger
+> than or equal to end. However, since the len is not set to zero. The
+> break-loop condition (ret && !len) will not meet. After it leaves the
+> while-loop, fallocate will return 1, which is an unexpected return
+> value.
+>
+> We're not able to construct a reproducible way to let
+> btrfs_drop_extents() fail with -ENOSPC after it drops the last non-hole
+> file extent but with remaining holes left. However, it's quite easy to
+> fix. We just need to update and check the len every time before we call
+> find_first_non_hole(). To make the while loop more readable, we also
+> pull the variable updates to the bottom of loop like this:
+> while (cur_offset < end) {
+>         ...
+>         // update cur_offset & len
+>         // advance cur_offset & len in hole-punching case if needed
+> }
+>
+> Reported-by: Robbie Ko <robbieko@synology.com>
+> Fixes: d77815461f04 ("btrfs: Avoid trucating page or punching hole in a
+> already existed hole.")
+> Reviewed-by: Robbie Ko <robbieko@synology.com>
+> Reviewed-by: Chung-Chiang Cheng <cccheng@synology.com>
+> Signed-off-by: BingJing Chang <bingjingc@synology.com>
 
-For clear_extent_buffer_dirty(), it needs to clear the page dirty if and
-only if all extent buffers in the page range are no longer dirty.
-Also do the same for page error.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-This is pretty different from the exist clear_extent_buffer_dirty()
-routine, so add a new helper function,
-clear_subpage_extent_buffer_dirty() to do this for subpage metadata.
+Looks good, thanks.
 
-Also since the main part of clearing page dirty code is still the same,
-extract that into btree_clear_page_dirty() so that it can be utilized
-for both cases.
+> ---
+>  fs/btrfs/file.c | 6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 0e155f0..dccb017 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2735,8 +2735,6 @@ int btrfs_replace_file_extents(struct inode *inode,=
+ struct btrfs_path *path,
+>                         extent_info->file_offset +=3D replace_len;
+>                 }
+>
+> -               cur_offset =3D drop_args.drop_end;
+> -
+>                 ret =3D btrfs_update_inode(trans, root, BTRFS_I(inode));
+>                 if (ret)
+>                         break;
+> @@ -2756,7 +2754,9 @@ int btrfs_replace_file_extents(struct inode *inode,=
+ struct btrfs_path *path,
+>                 BUG_ON(ret);    /* shouldn't happen */
+>                 trans->block_rsv =3D rsv;
+>
+> -               if (!extent_info) {
+> +               cur_offset =3D drop_args.drop_end;
+> +               len =3D end - cur_offset;
+> +               if (!extent_info && len) {
+>                         ret =3D find_first_non_hole(BTRFS_I(inode), &cur_=
+offset,
+>                                                   &len);
+>                         if (unlikely(ret < 0))
+> --
+> 2.7.4
+>
 
-But there is a special race between set_extent_buffer_dirty() and
-clear_extent_buffer_dirty(), where we can clear the page dirty.
 
-[POSSIBLE RACE WINDOW]
-For the race window between clear_subpage_extent_buffer_dirty() and
-set_extent_buffer_dirty(), due to the fact that we can't call
-clear_page_dirty_for_io() under subpage spin lock, we can race like
-below:
+--=20
+Filipe David Manana,
 
-   T1 (eb1 in the same page)	|  T2 (eb2 in the same page)
- -------------------------------+------------------------------
- set_extent_buffer_dirty()	| clear_extent_buffer_dirty()
- |- was_dirty = false;		| |- clear_subpagE_extent_buffer_dirty()
- |				|    |- btrfs_clear_and_test_dirty()
- |				|    |  Since eb2 is the last dirty page
- |				|    |  we got:
- |				|    |  last == true;
- |				|    |
- |- btrfs_page_set_dirty()	|    |
- |  We set the page dirty and   |    |
- |  subpage dirty bitmap	|    |
- |				|    |- if (last)
- |				|    |  Since we don't have subpage lock
- |				|    |  hold, now @last is no longer
- |				|    |  correct
- |				|    |- btree_clear_page_dirty()
- |				|	Now PageDirty == false, even we
- |				|       have dirty_bitmap not zero.
- |- ASSERT(PageDirty());	|
-    ^^^^ CRASH
-
-The solution here is to also lock the eb->pages[0] for subpage case of
-set_extent_buffer_dirty(), to prevent racing with
-clear_extent_buffer_dirty().
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent_io.c | 65 ++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 53 insertions(+), 12 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 24e1cd00e15e..6844d951f2c1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5814,28 +5814,51 @@ void free_extent_buffer_stale(struct extent_buffer *eb)
- 	release_extent_buffer(eb);
- }
- 
-+static void btree_clear_page_dirty(struct page *page)
-+{
-+	ASSERT(PageDirty(page));
-+	ASSERT(PageLocked(page));
-+	clear_page_dirty_for_io(page);
-+	xa_lock_irq(&page->mapping->i_pages);
-+	if (!PageDirty(page))
-+		__xa_clear_mark(&page->mapping->i_pages,
-+				page_index(page), PAGECACHE_TAG_DIRTY);
-+	xa_unlock_irq(&page->mapping->i_pages);
-+}
-+
-+static void clear_subpage_extent_buffer_dirty(const struct extent_buffer *eb)
-+{
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
-+	struct page *page = eb->pages[0];
-+	bool last;
-+
-+	/* btree_clear_page_dirty() needs page locked */
-+	lock_page(page);
-+	last = btrfs_subpage_clear_and_test_dirty(fs_info, page, eb->start,
-+						  eb->len);
-+	if (last)
-+		btree_clear_page_dirty(page);
-+	unlock_page(page);
-+	WARN_ON(atomic_read(&eb->refs) == 0);
-+}
-+
- void clear_extent_buffer_dirty(const struct extent_buffer *eb)
- {
- 	int i;
- 	int num_pages;
- 	struct page *page;
- 
-+	if (eb->fs_info->sectorsize < PAGE_SIZE)
-+		return clear_subpage_extent_buffer_dirty(eb);
-+
- 	num_pages = num_extent_pages(eb);
- 
- 	for (i = 0; i < num_pages; i++) {
- 		page = eb->pages[i];
- 		if (!PageDirty(page))
- 			continue;
--
- 		lock_page(page);
--		WARN_ON(!PagePrivate(page));
--
--		clear_page_dirty_for_io(page);
--		xa_lock_irq(&page->mapping->i_pages);
--		if (!PageDirty(page))
--			__xa_clear_mark(&page->mapping->i_pages,
--					page_index(page), PAGECACHE_TAG_DIRTY);
--		xa_unlock_irq(&page->mapping->i_pages);
-+		btree_clear_page_dirty(page);
- 		ClearPageError(page);
- 		unlock_page(page);
- 	}
-@@ -5856,10 +5879,28 @@ bool set_extent_buffer_dirty(struct extent_buffer *eb)
- 	WARN_ON(atomic_read(&eb->refs) == 0);
- 	WARN_ON(!test_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags));
- 
--	if (!was_dirty)
--		for (i = 0; i < num_pages; i++)
--			set_page_dirty(eb->pages[i]);
-+	if (!was_dirty) {
-+		bool subpage = eb->fs_info->sectorsize < PAGE_SIZE;
- 
-+		/*
-+		 * For subpage case, we can have other extent buffers in the
-+		 * same page, and in clear_subpage_extent_buffer_dirty() we
-+		 * have to clear page dirty without subapge lock hold.
-+		 * This can cause race where our page gets dirty cleared after
-+		 * we just set it.
-+		 *
-+		 * Thankfully, clear_subpage_extent_buffer_dirty() has locked
-+		 * its page for other reasons, we can use page lock to
-+		 * prevent above race.
-+		 */
-+		if (subpage)
-+			lock_page(eb->pages[0]);
-+		for (i = 0; i < num_pages; i++)
-+			btrfs_page_set_dirty(eb->fs_info, eb->pages[i],
-+					     eb->start, eb->len);
-+		if (subpage)
-+			unlock_page(eb->pages[0]);
-+	}
- #ifdef CONFIG_BTRFS_DEBUG
- 	for (i = 0; i < num_pages; i++)
- 		ASSERT(PageDirty(eb->pages[i]));
--- 
-2.30.1
-
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

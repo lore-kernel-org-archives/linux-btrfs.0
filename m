@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EF67C433EB
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62662C433E8
 	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Mar 2021 07:16:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5EB9461A2A
+	by mail.kernel.org (Postfix) with ESMTP id 4F06361A12
 	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Mar 2021 07:16:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229847AbhCYHPs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Mar 2021 03:15:48 -0400
-Received: from mx2.suse.de ([195.135.220.15]:37158 "EHLO mx2.suse.de"
+        id S229832AbhCYHPr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Mar 2021 03:15:47 -0400
+Received: from mx2.suse.de ([195.135.220.15]:37018 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229733AbhCYHP0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Mar 2021 03:15:26 -0400
+        id S229716AbhCYHPW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Mar 2021 03:15:22 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1616656525; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1616656521; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=/Oooa8vclbzVAq1az0XFOyb+rSSQGFzmtjqYPGdN2Ug=;
-        b=uLYozO6Cti0hvjmIVrjX+KvSkKVlAiJXIGUWerN51HnGUQf/d/Xi7PvR9261F59WpUiyp5
-        DK7DX1cBAGow8COyt1lsx3FS1mHQ5NXszpnEragHgw6mjYLuS2H55o3+Eo1Gpw0UXLxYdp
-        25ZZnslFXp4hLIwgqCL1Vqcou4QQL6E=
+        bh=qBQc8zKiKqGsjulBg8bz5lJtIvIIqShtvogk6D9Zdtg=;
+        b=rQJCZQi/ZrM+2NzEzSj00z1JxZlx8uHF0TO1Cb11BWaNyWOvezABzylyBSycPBTKz23B9E
+        qZfhXTy1RQH3sNvqHE2Hu4d8LHOGGiml/MtxrNYveTyHhXm2q8QndlPNSqlMWf8BRRbeRn
+        ODALmbU1BIidsk4rz9MHIFkTKlkDcrs=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 43D04AA55
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Mar 2021 07:15:25 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 6AFF2AD4A
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Mar 2021 07:15:21 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 13/13] btrfs: add subpage overview comments
-Date:   Thu, 25 Mar 2021 15:14:45 +0800
-Message-Id: <20210325071445.90896-14-wqu@suse.com>
+Subject: [PATCH v3 11/13] btrfs: make set/clear_extent_buffer_dirty() to be subpage compatible
+Date:   Thu, 25 Mar 2021 15:14:43 +0800
+Message-Id: <20210325071445.90896-12-wqu@suse.com>
 X-Mailer: git-send-email 2.30.1
 In-Reply-To: <20210325071445.90896-1-wqu@suse.com>
 References: <20210325071445.90896-1-wqu@suse.com>
@@ -46,82 +46,158 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch will add an overview for how btrfs subpage support,
-including:
+For set_extent_buffer_dirty() to support subpage sized metadata, just
+call btrfs_page_set_dirty() to handle both cases.
 
-- Limitations
-- Behaviors
-- Basic implementation points
+For clear_extent_buffer_dirty(), it needs to clear the page dirty if and
+only if all extent buffers in the page range are no longer dirty.
+Also do the same for page error.
+
+This is pretty different from the exist clear_extent_buffer_dirty()
+routine, so add a new helper function,
+clear_subpage_extent_buffer_dirty() to do this for subpage metadata.
+
+Also since the main part of clearing page dirty code is still the same,
+extract that into btree_clear_page_dirty() so that it can be utilized
+for both cases.
+
+But there is a special race between set_extent_buffer_dirty() and
+clear_extent_buffer_dirty(), where we can clear the page dirty.
+
+[POSSIBLE RACE WINDOW]
+For the race window between clear_subpage_extent_buffer_dirty() and
+set_extent_buffer_dirty(), due to the fact that we can't call
+clear_page_dirty_for_io() under subpage spin lock, we can race like
+below:
+
+   T1 (eb1 in the same page)	|  T2 (eb2 in the same page)
+ -------------------------------+------------------------------
+ set_extent_buffer_dirty()	| clear_extent_buffer_dirty()
+ |- was_dirty = false;		| |- clear_subpagE_extent_buffer_dirty()
+ |				|    |- btrfs_clear_and_test_dirty()
+ |				|    |  Since eb2 is the last dirty page
+ |				|    |  we got:
+ |				|    |  last == true;
+ |				|    |
+ |- btrfs_page_set_dirty()	|    |
+ |  We set the page dirty and   |    |
+ |  subpage dirty bitmap	|    |
+ |				|    |- if (last)
+ |				|    |  Since we don't have subpage lock
+ |				|    |  hold, now @last is no longer
+ |				|    |  correct
+ |				|    |- btree_clear_page_dirty()
+ |				|	Now PageDirty == false, even we
+ |				|       have dirty_bitmap not zero.
+ |- ASSERT(PageDirty());	|
+    ^^^^ CRASH
+
+The solution here is to also lock the eb->pages[0] for subpage case of
+set_extent_buffer_dirty(), to prevent racing with
+clear_extent_buffer_dirty().
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/subpage.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ fs/btrfs/extent_io.c | 65 ++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 53 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 2a326d6385ed..c35db695886b 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -1,5 +1,59 @@
- // SPDX-License-Identifier: GPL-2.0
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 24e1cd00e15e..6844d951f2c1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5814,28 +5814,51 @@ void free_extent_buffer_stale(struct extent_buffer *eb)
+ 	release_extent_buffer(eb);
+ }
  
-+/*
-+ * Subpage (sectorsize < PAGE_SIZE) support for btrfs overview:
-+ *
-+ * Limitation:
-+ * - Only support 64K page size yet
-+ *   This is to make metadata handling easier, as 64K page would ensure
-+ *   all nodesize would fit inside one page, thus we don't need to handle
-+ *   cases where a tree block crosses several pages.
-+ *
-+ * - Only metadata read-write yet
-+ *   The data read-write part is under heavy tests, while still have several
-+ *   bugs remaining.
-+ *
-+ * - Metadata can't cross 64K page boundary
-+ *   btrfs-progs and kernel has done such behavior for a while, thus only
-+ *   ancient btrfs could have such problem.
-+ *   For such case, btrfs will do a graceful rejection.
-+ *
-+ * Special behaviors:
-+ * - Metadata
-+ *   Metadata read is fully subpage.
-+ *   Meaning when reading one tree block will only trigger the read for the
-+ *   needed range, other unrelated range in the same page will not be touched.
-+ *
-+ *   Metadata write is partial subpage.
-+ *   The writeback is still for the full page, but btrfs will only submit
-+ *   the dirty extent buffers in the page.
-+ *
-+ *   This means, if we have a metadata page like this:
-+ *   Page offset
-+ *   0         16K         32K         48K        64K
-+ *   |/////////|           |///////////|
-+ *        \- Tree block A        \- Tree block B
-+ *
-+ *   Even if we just want to writeback tree block A, we will also writeback
-+ *   tree block B if it's also dirty.
-+ *
-+ *   This may cause extra metadata writeback which results more COW.
-+ *
-+ * Implementation:
-+ * - Common
-+ *   Both metadata and data will use an new structure, btrfs_subpage, to
-+ *   record the status of each sector inside a page.
-+ *   This provides the extra granularity needed.
-+ *
-+ * - Metadata
-+ *   Since we have multiple tree blocks inside one page, we can't rely on page
-+ *   locking anymore, or we will have greatly reduced concurrency or even
-+ *   deadlock (hold one tree lock while try to lock another tree lock in the
-+ *   same page).
-+ *
-+ *   Thus for metadata locking, subpage support relies on io_tree locking only.
-+ *   This means a slightly more tree locking latency.
-+ */
- #include <linux/slab.h>
- #include "ctree.h"
- #include "subpage.h"
++static void btree_clear_page_dirty(struct page *page)
++{
++	ASSERT(PageDirty(page));
++	ASSERT(PageLocked(page));
++	clear_page_dirty_for_io(page);
++	xa_lock_irq(&page->mapping->i_pages);
++	if (!PageDirty(page))
++		__xa_clear_mark(&page->mapping->i_pages,
++				page_index(page), PAGECACHE_TAG_DIRTY);
++	xa_unlock_irq(&page->mapping->i_pages);
++}
++
++static void clear_subpage_extent_buffer_dirty(const struct extent_buffer *eb)
++{
++	struct btrfs_fs_info *fs_info = eb->fs_info;
++	struct page *page = eb->pages[0];
++	bool last;
++
++	/* btree_clear_page_dirty() needs page locked */
++	lock_page(page);
++	last = btrfs_subpage_clear_and_test_dirty(fs_info, page, eb->start,
++						  eb->len);
++	if (last)
++		btree_clear_page_dirty(page);
++	unlock_page(page);
++	WARN_ON(atomic_read(&eb->refs) == 0);
++}
++
+ void clear_extent_buffer_dirty(const struct extent_buffer *eb)
+ {
+ 	int i;
+ 	int num_pages;
+ 	struct page *page;
+ 
++	if (eb->fs_info->sectorsize < PAGE_SIZE)
++		return clear_subpage_extent_buffer_dirty(eb);
++
+ 	num_pages = num_extent_pages(eb);
+ 
+ 	for (i = 0; i < num_pages; i++) {
+ 		page = eb->pages[i];
+ 		if (!PageDirty(page))
+ 			continue;
+-
+ 		lock_page(page);
+-		WARN_ON(!PagePrivate(page));
+-
+-		clear_page_dirty_for_io(page);
+-		xa_lock_irq(&page->mapping->i_pages);
+-		if (!PageDirty(page))
+-			__xa_clear_mark(&page->mapping->i_pages,
+-					page_index(page), PAGECACHE_TAG_DIRTY);
+-		xa_unlock_irq(&page->mapping->i_pages);
++		btree_clear_page_dirty(page);
+ 		ClearPageError(page);
+ 		unlock_page(page);
+ 	}
+@@ -5856,10 +5879,28 @@ bool set_extent_buffer_dirty(struct extent_buffer *eb)
+ 	WARN_ON(atomic_read(&eb->refs) == 0);
+ 	WARN_ON(!test_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags));
+ 
+-	if (!was_dirty)
+-		for (i = 0; i < num_pages; i++)
+-			set_page_dirty(eb->pages[i]);
++	if (!was_dirty) {
++		bool subpage = eb->fs_info->sectorsize < PAGE_SIZE;
+ 
++		/*
++		 * For subpage case, we can have other extent buffers in the
++		 * same page, and in clear_subpage_extent_buffer_dirty() we
++		 * have to clear page dirty without subapge lock hold.
++		 * This can cause race where our page gets dirty cleared after
++		 * we just set it.
++		 *
++		 * Thankfully, clear_subpage_extent_buffer_dirty() has locked
++		 * its page for other reasons, we can use page lock to
++		 * prevent above race.
++		 */
++		if (subpage)
++			lock_page(eb->pages[0]);
++		for (i = 0; i < num_pages; i++)
++			btrfs_page_set_dirty(eb->fs_info, eb->pages[i],
++					     eb->start, eb->len);
++		if (subpage)
++			unlock_page(eb->pages[0]);
++	}
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	for (i = 0; i < num_pages; i++)
+ 		ASSERT(PageDirty(eb->pages[i]));
 -- 
 2.30.1
 

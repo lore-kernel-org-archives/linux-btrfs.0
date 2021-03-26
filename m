@@ -2,165 +2,139 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A60BC433DB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Mar 2021 16:52:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6A3FC433E6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Mar 2021 19:15:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5749A61A2B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Mar 2021 16:52:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9853E61A0A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Mar 2021 19:15:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230319AbhCZQwQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Mar 2021 12:52:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54334 "EHLO
+        id S230334AbhCZTOf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Mar 2021 15:14:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56924 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230076AbhCZQvw (ORCPT
+        with ESMTP id S230272AbhCZTOU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Mar 2021 12:51:52 -0400
-Received: from mail-ua1-x932.google.com (mail-ua1-x932.google.com [IPv6:2607:f8b0:4864:20::932])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4BA8CC0613AA;
-        Fri, 26 Mar 2021 09:51:52 -0700 (PDT)
-Received: by mail-ua1-x932.google.com with SMTP id g5so1809687uan.8;
-        Fri, 26 Mar 2021 09:51:52 -0700 (PDT)
+        Fri, 26 Mar 2021 15:14:20 -0400
+Received: from mail-pl1-x629.google.com (mail-pl1-x629.google.com [IPv6:2607:f8b0:4864:20::629])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1B5DBC0613AA;
+        Fri, 26 Mar 2021 12:14:20 -0700 (PDT)
+Received: by mail-pl1-x629.google.com with SMTP id v23so1380348ple.9;
+        Fri, 26 Mar 2021 12:14:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=2D8fKe1kJmw+FqMP6GSfjkKnsl+eOZTz7WSG9AS6Ffo=;
-        b=pABaX4UEl9W8qQyUvGc5sV7j+b7QBbKN4OI8CqgMCuOLI3PJ9RF3Dw4KUmcloMqcFl
-         +zzzvin+q7ewM2VkBvZt2enXBP4Os2eUIMWMPsblwdhCUnBjTg9DRfV49G5EsPlYpu8W
-         g7+mRhWV/nXdcrZBlFIIaGnfDelV7QoGlKQgr3VaVDTyB8Nofmw6SA5tR/VvSXeRJQQ0
-         wdMmsRe+ZbZOw49xpPAD4al0iHcRIG+QY4XtcAuRchXWf4az9ZwzHM6Ummbq+kKWHmHv
-         /2vQBvl69S/RiozUHeGIbQ8Zd0bkuEgVRqN1GqoSMzvCxm3lYN7yPLpnSW/3mfVCANT3
-         nTwA==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=3eZ1XyrRmWI9aSyLAK6XW+5gukvn2M+SvfUE70SUpDQ=;
+        b=Jl6NIyEEkokUTYkrd5gDZszVhtnDTLPQZnzzowtNmfnfe/k/eDnmFmtOdCwNtQEfOz
+         ASHjeC7TO3Q6WqVBlLuahcUDTayqS70gvIV1DQOL5ssz59nP3pdzSS2Rq7m8WT4COuAn
+         2n6QEwqMIRdrxW4edFPe6EauqlbjPA5VPxjCGu/fWdHzslSe02Ec1LcwC48GuOQEbzyk
+         /xLbpj93pniQTBqj9RXjL2mZ9l9mgvLQ5yXYbWd53pQn+sPlLBbjxN2mdskdKBj8kd2H
+         PfNwnOSplZ8gAjjwfqFNDhzvHLjypauL9hXKgGKRKoJfhf8JK1JuulpxNJjDV62GH/NA
+         nXfQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=2D8fKe1kJmw+FqMP6GSfjkKnsl+eOZTz7WSG9AS6Ffo=;
-        b=GaVlLdILTryOSP+DScdj18n50f9r/WBjlVGzI1lIDJJgTHVmXaHDBbJNuCA4hPHf1j
-         lajK1Ty0uh4C7cx02gNcH4ZykMn0FXFuKeIpkE9lTUhfPRR/OMAS/bxi30szDRdm2iF9
-         3XR3kDYOr/PnEpYpJx1RLby/QTwLiHBfDFA2zaj/7hp7kiBYNR4WrNLqn9P1+NK3+0gx
-         m/ItJXzBHlrzja2X1DuRod2zqFEw1C96pNqvWtrGUWPDZtqVrx0gRf3cBPbsmnHMxTCs
-         VPd5t/rKXyefZzvURrzsDu833Xa22XVCwYFvdRUwB/Qf/EZxTLJerx3o3d7BR/siZj2t
-         lhhw==
-X-Gm-Message-State: AOAM533r3Mhk31hT/6I7D0blC0wUgSLP00TLG8pHuBE3/9z4XO8Rdzfc
-        bBiGuiGnzDwT1quKIDDkBPnZBxsTpb1WMbyjV/M=
-X-Google-Smtp-Source: ABdhPJyxGLF8mF7Ms9BXiw8q6alUi3XVkTnCbTDpARXnbS9SC9YJOrSBzKMEmd6ktO8475x3nBR5H09CBHx7RqA3AYU=
-X-Received: by 2002:ab0:7254:: with SMTP id d20mr8851582uap.98.1616777511557;
- Fri, 26 Mar 2021 09:51:51 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=3eZ1XyrRmWI9aSyLAK6XW+5gukvn2M+SvfUE70SUpDQ=;
+        b=b8LBo6USgz9uv3Q0kxxeJrGr5v60fzH5pW37dykm7juU6R9X4C+yAtGz3bBfGnLSVi
+         RLo9T0H/VgvmH57E+rLluzg7b0lh6rRJWwMb7lOHT4LdejjwLKhgWemsTzFwC4+zNBpg
+         hPaoKa0JEQJSTYLWKet/Gv5JrhBnqfqay4eynmwgNf84kNoSdvtui3OQCMLuC2Qu5ZpI
+         hmaR51dPU8BcM8eaF9E0aUuLnZfIl8pVQ+Bi6bCPPPs1aQRA8NL9jZCXp9ULnD7BbRAw
+         +k5atovo2IHYwDuPgnHxkYX3kEiEbFgqHL/PxeKRcSWsCdqxsSei6T4w+/kKF+CmMptZ
+         HPtA==
+X-Gm-Message-State: AOAM530T9nnZOXIPIr+V6NdAO8Y9QgjtxKYvhUJpCCOxs8s3FydhpnyK
+        Atp5j0eRID7Mx44g4zmB/48=
+X-Google-Smtp-Source: ABdhPJwC5GQ5QiIvjxNM+oEQ5vB0p6D7E7m6FIhXTLkEZ1knmX0LiYX6gLmUXgQ0AlQ2xFoFn/C5eA==
+X-Received: by 2002:a17:902:ead2:b029:e5:ba7a:a232 with SMTP id p18-20020a170902ead2b02900e5ba7aa232mr16732246pld.19.1616786059579;
+        Fri, 26 Mar 2021 12:14:19 -0700 (PDT)
+Received: from nickserv.localdomain (c-98-33-101-203.hsd1.ca.comcast.net. [98.33.101.203])
+        by smtp.gmail.com with ESMTPSA id j20sm13113765pji.3.2021.03.26.12.14.18
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 26 Mar 2021 12:14:19 -0700 (PDT)
+From:   Nick Terrell <nickrterrell@gmail.com>
+To:     Herbert Xu <herbert@gondor.apana.org.au>
+Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        squashfs-devel@lists.sourceforge.net,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-kernel@vger.kernel.org, Kernel Team <Kernel-team@fb.com>,
+        Nick Terrell <nickrterrell@gmail.com>,
+        Nick Terrell <terrelln@fb.com>, Chris Mason <clm@fb.com>,
+        Petr Malat <oss@malat.biz>, Johannes Weiner <jweiner@fb.com>,
+        Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        =?UTF-8?q?Micha=C5=82=20Miros=C5=82aw?= <mirq-linux@rere.qmqm.pl>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH v8 2/3] lib: zstd: Add decompress_sources.h for decompress_unzstd
+Date:   Fri, 26 Mar 2021 12:18:58 -0700
+Message-Id: <20210326191859.1542272-3-nickrterrell@gmail.com>
+X-Mailer: git-send-email 2.31.0
+In-Reply-To: <20210326191859.1542272-1-nickrterrell@gmail.com>
+References: <20210326191859.1542272-1-nickrterrell@gmail.com>
 MIME-Version: 1.0
-References: <CALaQ_hrZZmAi2AKtmCm2QUXeg9VWuyeWmmk__OFEG1ycHMiX8A@mail.gmail.com>
-In-Reply-To: <CALaQ_hrZZmAi2AKtmCm2QUXeg9VWuyeWmmk__OFEG1ycHMiX8A@mail.gmail.com>
-From:   Nathan Royce <nroycea+kernel@gmail.com>
-Date:   Fri, 26 Mar 2021 11:51:40 -0500
-Message-ID: <CALaQ_hoXDSP7Fe4SWFArHbv2ppmoKKPVEXTkO-Ex0FsjKaYd=w@mail.gmail.com>
-Subject: Re: BTRFS Balance Hard System Crash (Blinking LEDs)
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        LKML <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Oh man, I'm hoping things aren't starting to fall apart here.
-I was doing my normal routine (tv, browsing, ... (no filesystem
-manipulations)) and out of the blue "kodi" just crashes. It's actually
-not all that uncommon, and I fired up "iotop" to make sure "coredump"
-was happening, and it was.
-I then did something else in the terminal, maybe an "ls", and that came up with:
-*****
-error while loading shared libraries: /usr/lib/libutil.so.1: ELF file
-version does not match current one
-*****
-Again, it was just out of the blue. Same with other commands like
-"coredumpctl" or "sync". Even "pacman -Qo /usr/lib/libutil.so.1"
-caused SEGV.
-Everything seemed fine after I had last booted (minus what I wrote in
-my last email).
-And the oddest thing is that, like I said before, my system/root stuff
-(eg, /usr/lib/libutil.so.1) is being run from my sd-card (F2FS, not
-BTRFS).
+From: Nick Terrell <terrelln@fb.com>
 
-I see the coredumps were written out ~11:05, and journalctl started
-showing issues arise ~10:56 (typically takes a long time to write out
-on a slow sd-card):
-*****
-...
-Mar 26 11:05:13 computerName systemd-coredump[70088]: Process 70078
-(pacman) of user 1000 dumped core.
+Adds decompress_sources.h which includes every .c file necessary for
+zstd decompression. This is used in decompress_unzstd.c so the internal
+structure of the library isn't exposed.
 
-                                                Stack trace of thread 70078:
-                                                #0  0x000075cf62ee58a5
-do_lookup_x (ld-linux-x86-64.so.2 + 0xa8a5)
-                                                #1  0x000075cf62ee6231
-_dl_lookup_symbol_x (ld-linux-x86-64.so.2 + 0xb231)
-                                                #2  0x000075cf62ee7dc7
-_dl_relocate_object (ld-linux-x86-64.so.2 + 0xcdc7)
-                                                #3  0x000075cf62edfcdd
-dl_main (ld-linux-x86-64.so.2 + 0x4cdd)
-                                                #4  0x000075cf62ef769f
-_dl_sysdep_start (ld-linux-x86-64.so.2 + 0x1c69f)
-                                                #5  0x000075cf62edd063
-_dl_start (ld-linux-x86-64.so.2 + 0x2063)
-                                                #6  0x000075cf62edc098
-_start (ld-linux-x86-64.so.2 + 0x1098)
-...
-Mar 26 11:05:10 computerName kernel: Code: b4 24 d0 00 00 00 49 89 df
-48 89 44 24 38 48 89 fb 4c 89 5c 24 60 eb 12 0f 1f 44 00 00 49 83 c4
-04 83 e2 01 0f 85 f3 05 00 00 <41> 8b 04 24 48 89 c2 48 31 d8 48 d1 e8
-75 e4 48 83 ec 08 4c 89 e0
-Mar 26 11:05:09 computerName kernel: pacman[70078]: segfault at
-75d29d0d5640 ip 000075cf62ee58a5 sp 00007ffffad0e460 error 4 in
-ld-2.33.so[75cf62edc000+24000]
-...
-Mar 26 10:58:59 computerName kernel: Code: 84 e7 05 00 00 44 8b 33 45
-85 f5 74 e4 66 0f ef ff 66 0f ef f6 66 0f ef e4 48 89 ef f3 0f 10 44
-24 48 66 0f ef db 66 0f ef d2 <66> 0f 42 a0 61 72 70 cb ee 33 bb 14 5f
-79 1d 76 e5 28 0f 11 44 24
-Mar 26 10:58:59 computerName kernel: chrome[41222]: segfault at
-ffffffffcb707262 ip 000077cb36b101ae sp 00007fff250007c0 error 5 in
-i965_dri.so[77cb36aa9000+8fa000]
-...
-Mar 26 10:58:25 computerName plasmashell[43148]: KCrash: Application
-Name = kate path = /usr/bin pid = 43148
-Mar 26 10:58:25 computerName plasmashell[43148]: KCrash: crashing...
-crashRecursionCounter = 2
-Mar 26 10:58:07 computerName systemd[1424]: Started Kate - Advanced Text Editor.
-...
-Mar 26 10:56:51 computerName sudo[69237]:    userName : TTY=pts/3 ;
-PWD=/<path> ; USER=root ; COMMAND=/usr/bin/iotop
-...
-Mar 26 10:56:32 computerName kernel: audit: type=1701
-audit(1616774192.320:455): auid=1000 uid=1000 gid=1000 ses=3 pid=54221
-comm="VideoPlayer" exe="/usr/local/lib/kodi/kodi.bin" sig=11 res=1
-Mar 26 10:56:32 computerName kernel: Code: 00 00 01 00 00 00 00 00 00
-00 02 04 00 00 48 7b 00 00 10 49 4a d0 48 7b 00 00 00 00 00 00 01 00
-00 00 55 00 00 00 00 00 00 00 <d9> d8 8f 34 4f 7b 00 00 00 39 10 d0 48
-7b 00 00 00 00 fa 00 00 fa
-Mar 26 10:56:32 computerName kernel: VideoPlayer[61823]: segfault at
-7b48d0579730 ip 00007b48d0579730 sp 00007b48ff043248 error 15
-...
-*****
-As you can see, pretty much everything was crashing (probably not
-surprising if glibc is involved).
-Now, like I said, I don't believe it's related to my BTRFS drive since
-glibc was referenced which is located on my F2FS drive.
-I ended up rebooting (again) and everything seems fine (so far) as I
-write this and have the recorded DVR playing (kodi).
-I don't know what those "kernel: Code:" is supposed to be/mean to me.
+This allows us to upgrade the zstd library version without modifying any
+callers. Instead we just need to update decompress_sources.h.
 
-On Fri, Mar 26, 2021 at 8:29 AM Nathan Royce <nroycea+kernel@gmail.com> wrote:
->
-> *****
-> ...I "think" this is where the "emergency" drop out of boot occurred,
-> and I just did a "systemctl reboot" which had the next boot succeed.
-> Nope, I'm wrong. For whatever reason, this appears to be the boot that
-> ended up working (searching for the first "microcode" reference
-> indicating the start of a boot).
-> Mar 25 21:44:17 computerName kernel: BTRFS critical (device dm-3):
-> unable to add free space :-17
-...
+Signed-off-by: Nick Terrell <terrelln@fb.com>
+---
+ lib/decompress_unzstd.c       |  6 +-----
+ lib/zstd/decompress_sources.h | 14 ++++++++++++++
+ 2 files changed, 15 insertions(+), 5 deletions(-)
+ create mode 100644 lib/zstd/decompress_sources.h
+
+diff --git a/lib/decompress_unzstd.c b/lib/decompress_unzstd.c
+index dab2d55cf08d..e6897a5063a7 100644
+--- a/lib/decompress_unzstd.c
++++ b/lib/decompress_unzstd.c
+@@ -68,11 +68,7 @@
+ #ifdef STATIC
+ # define UNZSTD_PREBOOT
+ # include "xxhash.c"
+-# include "zstd/entropy_common.c"
+-# include "zstd/fse_decompress.c"
+-# include "zstd/huf_decompress.c"
+-# include "zstd/zstd_common.c"
+-# include "zstd/decompress.c"
++# include "zstd/decompress_sources.h"
+ #endif
+ 
+ #include <linux/decompress/mm.h>
+diff --git a/lib/zstd/decompress_sources.h b/lib/zstd/decompress_sources.h
+new file mode 100644
+index 000000000000..d2fe10af0043
+--- /dev/null
++++ b/lib/zstd/decompress_sources.h
+@@ -0,0 +1,14 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++
++/*
++ * This file includes every .c file needed for decompression.
++ * It is used by lib/decompress_unzstd.c to include the decompression
++ * source into the translation-unit, so it can be used for kernel
++ * decompression.
++ */
++
++#include "entropy_common.c"
++#include "fse_decompress.c"
++#include "huf_decompress.c"
++#include "zstd_common.c"
++#include "decompress.c"
+-- 
+2.31.0
+

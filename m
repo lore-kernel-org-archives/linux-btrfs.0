@@ -8,63 +8,63 @@ X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BFC2C433E1
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DAA42C433E2
 	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 543AB619A0
+	by mail.kernel.org (Postfix) with ESMTP id A4FA461999
 	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229485AbhC1EVc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Mar 2021 00:21:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56832 "EHLO
+        id S229503AbhC1EVd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Mar 2021 00:21:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56870 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229516AbhC1EVR (ORCPT
+        with ESMTP id S229525AbhC1EV0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Mar 2021 00:21:17 -0400
-Received: from mail-qt1-x82d.google.com (mail-qt1-x82d.google.com [IPv6:2607:f8b0:4864:20::82d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B8A7AC061762;
-        Sat, 27 Mar 2021 21:21:17 -0700 (PDT)
-Received: by mail-qt1-x82d.google.com with SMTP id u8so7117619qtq.12;
-        Sat, 27 Mar 2021 21:21:17 -0700 (PDT)
+        Sun, 28 Mar 2021 00:21:26 -0400
+Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5CB31C061762;
+        Sat, 27 Mar 2021 21:21:26 -0700 (PDT)
+Received: by mail-qk1-x734.google.com with SMTP id o5so9402753qkb.0;
+        Sat, 27 Mar 2021 21:21:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=IUmy8TdHTWDgZfaERPbj0x2K8eavYxhsZdGg737lx4w=;
-        b=q31OxssgvUpVW9DgawAOQ4GsZMRdrHuXMRePKNgQJ3VN2aaUB6UdNfqHT2QIVkwwQL
-         t1ECEnDcYlAkTpMrJ/wefJBY4LqNH0CdU43f2mn4v7+GPTcA+0HjbPXEcdtBMjrLBkCK
-         6+l0rWOK2D4GGQxBWFXlFOTH3pb1Z6nXwWFE2QgQCcOkSCbqWfSsvX4eLWOuDJwShF4Z
-         N+6iM+9mazQQP7vSvqUuIfxyNPPRjvCMVxDNr6iPkYsFSop8S53PWdUPLLdhKUKHB1Y5
-         HBIUmy6D1YvD7GUtjGt7lIhuihTxEXkJeyYVGKRBB8Cmunu66os3/o4bcGW2gXDQp8H1
-         ErFA==
+        bh=H+s2ZHU4MLGwgPKXvljdliWpBcEZHkmbEZLjfYsEP/0=;
+        b=WeT8Ko6IQUX2cug0963eXwC7iC3m/fCvQ0pD7X64n100rYt9ED/3TQAWwg4iRc6EoE
+         89Y+PC1phZcqhZyCMaN9XtgrdBKleoQMjvenTM/hcUk0OQH/au7zTj1ZrKJ6js1P8Tbn
+         KCdt4oqkrLUwNQly87BRrIhaE0r1IlFAocOA2tI6G9yZycPzhEqNarjSxW7EbwyG6N6G
+         EeU2SttKFiMdsNC/+6TvkHUKTgYfVW1CS9cQ4aeKhAC64eH+jW7IThDPf2RcDvJUWV8F
+         tnW9a35Rske2s0PkYwHN9P/BYmcHjz86uObA35OTO4R06k7zUurVQaLf6b5zxmexa1pZ
+         cr6Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=IUmy8TdHTWDgZfaERPbj0x2K8eavYxhsZdGg737lx4w=;
-        b=GsIH7p/6ImEqV3/uVog/NPp0Ryoit/fTuiHu2aZs0rr/tqcY3JFvAP/+HnY/xTscp7
-         P65soS/IbX/VG+zCuBGvwb2PUjekXUX+okBwEBPeTDIXg3a7Y/x5amd4E5n1eYw5rGkF
-         rBxOm0W1tdGnSXU8YHERWYV9AHzoh4UscwOIj/NgIoB5YKjElZNBySjtAUWA39f4x6+z
-         vRuvzVZtGnUiUdnlWPAJK3/MegN1nb/4xGtkBM939vczKTdmh/JWJMfDin3e0L2Y1N3l
-         uV7Z5s2M5hSpnNeonIKmEdwsArVw3HP1K6PF/jctD5DvSj07Isi7VOIwVXaEeJDx8tt0
-         IUTA==
-X-Gm-Message-State: AOAM5309FRby5pai+BBcOYsSNV/e9AP+9HDxzsFBkmKQT8u2KO14CSrM
-        XBCdW4W9T2V8UoAlGKOjUQA=
-X-Google-Smtp-Source: ABdhPJySqiYqUreL0rBbvfR2AopSgYXVh58qX17IDRvRk9mvW7sWgcmkvIqiX97GUMP4ZhzLWhaK9g==
-X-Received: by 2002:a05:622a:15d4:: with SMTP id d20mr12207970qty.85.1616905277037;
-        Sat, 27 Mar 2021 21:21:17 -0700 (PDT)
+        bh=H+s2ZHU4MLGwgPKXvljdliWpBcEZHkmbEZLjfYsEP/0=;
+        b=iHqDjMiyz0/8+InrsJcuWovS1NBe8uZOhNh1tj+T9VRK7pI7McNFQ/VYCuceIyduMW
+         H3QjIhcrV8sMDXyM60BW0va+Pw51gURO/nW3VTTIUqRCzYreWS4CDfOKkLRW36FO+Y+C
+         7ia7ZrZ+5cG/dYCyun1EmTwZggbi0mmZebNU2dbN1PVC6x5CjoDLEFJJndLD0CfR9/VL
+         Rp8Kt2cbp1gViJerwYVaHxqQYq2V4Q0iPAbsjwjbk7XITSHRgU+uptN1WvRWHOHA+cF1
+         nrX8/5Jgj3BqDHqqludsuo/g+EkUeOZCE7dyTSawzxqRTC9YyqN2N5BSUaEJC9+eeWIK
+         7zeA==
+X-Gm-Message-State: AOAM533mTRlXpW0BlA2CI/0kes7waG7p1xRCNMXVrryWCM636MJ1n9vK
+        4xKJ+QkBkHOOrvVyu6h/uEU=
+X-Google-Smtp-Source: ABdhPJzzYusB6538+ZVzYEUTF/ZAC7Aj1ztKQig4Z6Ojh+EZWfPsoZqXtPIr5TbuSnIx8NMFH5HGLA==
+X-Received: by 2002:a37:589:: with SMTP id 131mr20187750qkf.97.1616905285694;
+        Sat, 27 Mar 2021 21:21:25 -0700 (PDT)
 Received: from localhost.localdomain ([156.146.55.118])
-        by smtp.gmail.com with ESMTPSA id i6sm10092237qkf.96.2021.03.27.21.21.13
+        by smtp.gmail.com with ESMTPSA id i6sm10092237qkf.96.2021.03.27.21.21.22
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 27 Mar 2021 21:21:16 -0700 (PDT)
+        Sat, 27 Mar 2021 21:21:25 -0700 (PDT)
 From:   Bhaskar Chowdhury <unixbhaskar@gmail.com>
 To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
         linux-btrfs@vger.kernel.org
 Cc:     Bhaskar Chowdhury <unixbhaskar@gmail.com>, rdunlap@infradead.org,
         linux-kernel@vger.kernel.org
-Subject: [PATCH 02/10] dev-replace.c: A typo fix
-Date:   Sun, 28 Mar 2021 09:48:26 +0530
-Message-Id: <e0d13ea5381aafd917eaad8382e79a1fbc62a45b.1616904353.git.unixbhaskar@gmail.com>
+Subject: [PATCH 04/10] zoned.c: A typo fix
+Date:   Sun, 28 Mar 2021 09:48:28 +0530
+Message-Id: <7eb66663f50d873df4a7290ed316802885729c30.1616904353.git.unixbhaskar@gmail.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1616904353.git.unixbhaskar@gmail.com>
 References: <cover.1616904353.git.unixbhaskar@gmail.com>
@@ -74,26 +74,26 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-s/contans/contains/
+s/beggining/beginning/
 
 Signed-off-by: Bhaskar Chowdhury <unixbhaskar@gmail.com>
 ---
- fs/btrfs/dev-replace.c | 2 +-
+ fs/btrfs/zoned.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index d05f73530af7..d029be40ea6f 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -37,7 +37,7 @@
-  * - Write duplication
-  *
-  *   All new writes will be written to both target and source devices, so even
-- *   if replace gets canceled, sources device still contans up-to-date data.
-+ *   if replace gets canceled, sources device still contains up-to-date data.
-  *
-  *   Location:		handle_ops_on_dev_replace() from __btrfs_map_block()
-  *   Start:		btrfs_dev_replace_start()
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 1f972b75a9ab..d6cd0d4eb1a9 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -383,7 +383,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device)
+ 		}
+
+ 		/*
+-		 * If zones[0] is conventional, always use the beggining of the
++		 * If zones[0] is conventional, always use the beginning of the
+ 		 * zone to record superblock. No need to validate in that case.
+ 		 */
+ 		if (zone_info->sb_zones[BTRFS_NR_SB_LOG_ZONES * i].type ==
 --
 2.26.2
 

@@ -2,151 +2,242 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B9C9C433C1
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 17:19:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BBB97C433C1
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 20:03:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 109596192F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 17:19:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 869ED61949
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 20:03:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231267AbhC1RTT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Mar 2021 13:19:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53050 "EHLO
+        id S231463AbhC1UDF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Mar 2021 16:03:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59768 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231354AbhC1RTL (ORCPT
+        with ESMTP id S231425AbhC1UCw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Mar 2021 13:19:11 -0400
-Received: from mail-lj1-x22b.google.com (mail-lj1-x22b.google.com [IPv6:2a00:1450:4864:20::22b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 12296C061756
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Mar 2021 10:19:11 -0700 (PDT)
-Received: by mail-lj1-x22b.google.com with SMTP id s17so13310517ljc.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 28 Mar 2021 10:19:10 -0700 (PDT)
+        Sun, 28 Mar 2021 16:02:52 -0400
+Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8714FC061756
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Mar 2021 13:02:52 -0700 (PDT)
+Received: by mail-pj1-x1035.google.com with SMTP id w8so4998389pjf.4
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Mar 2021 13:02:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=subject:to:references:from:message-id:date:user-agent:mime-version
-         :in-reply-to:content-language:content-transfer-encoding;
-        bh=jQvg2OH8vmLJ4pyHNw+zUztfb4oy75+pPttCvvDMsH8=;
-        b=ej7jVfJEyiOV51fqevA5G/Xr1ceW47/x1X1B73ynoilpKQpGnUTWns5w8uAJ27PwAW
-         79R/XPCbGTqiVJhAJuSxNlrRXH3koDNppM0iWkaAxVxtteeptS5yudeajD8JvJhVsodC
-         9MKmqWA9/tz4ZcL8oUv/F3XjAcSYTtovzxppVSzEvnluq84NQylm6RwmRgPrklk80EgF
-         TukWRaxnI1EpmN8CznyT2G7GRc1WMT7gLUhYb97cdiTCQWcq5tMJubp19jDMtgUjbYq0
-         Bzhkn2Rh2kZpUT/wrxb1fDPpVLWTaOYjdauHM6M9PYiy7TCKWJNE3hYQyGEOC67pPK4k
-         eTYA==
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:content-transfer-encoding:in-reply-to;
+        bh=1bX38xDgQBkiHIqltbjAQiLDAH1CFYr3yOguDUYlnqw=;
+        b=A1j25huLf1da32PHkoqLb6UfzJbWZE/WAqQeK3djoGC/LZLMCHWQTVFFCjVrAkY/Ds
+         3dbVhOGwKHqLd760VDMahRmAuLjrcanfTm66DBBsNXujmMWuRjzqwofDelW86FaG06Im
+         pgiYrcfRCt/rvmTScfF4bz+M2p4S0WuxEVz0srWWD2bdGoinNIBT92A8OilebhMoEGW6
+         slP5lLbCjCBj/W2xZy1fYiGgKEIl21ynARUl5a0rToyV2o0OYAHyMsGCNfOBLVCtpRkh
+         PBXlCC9KrDTTcDCkAlyyrjlDsZc1rPfEaBF++UbmU8dinpe0CG34C1fMUgq60okfcaVF
+         ucnA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=jQvg2OH8vmLJ4pyHNw+zUztfb4oy75+pPttCvvDMsH8=;
-        b=HkJ4NWG8MHkrTWheQLmbZXmWjPluosS9BdDQymUgnz/o8GrDiiefYe6LBYpmuMDc0v
-         vA3Ris2J758Vvk7I5dMFMqX/GOKNQ+rSmsAHGNwGRcAvZCWlusyiNyO2tPFYRrhn/Mcw
-         ALHD7JMP2IYCpmMkBlDUu0K1U1neFFId5NZrbuhVOHqBEy98KA+Uz9I2BlnfauYgTMyF
-         P18WI1BsezOb8BprR6+6cFOsAbPIHtDoXYoddEVGp0wFOdiF5E94FuE7GfY9uKTUJ8A8
-         A4cQF/UoLGQG2Aiy1nWWdzug//C/vYiKlKZdHYTTYsyFnyN3yVZ6ENSpA1IBN/BWwHJO
-         tlrg==
-X-Gm-Message-State: AOAM531JEDoOdk/oyIkPwa96+vI3kS50fL/yoKHk+GG8TBG2pq+8luZH
-        hf5slM/rqCfsbUkKaEIsqM/kSkW+pkY=
-X-Google-Smtp-Source: ABdhPJwRUd4905cxKP0mphmqT6h/3FgHHg8N/HNMvxTtyWJq4YzXYxq0eK9hge1Pc+qR/sSp4UdQoA==
-X-Received: by 2002:a2e:8919:: with SMTP id d25mr9311612lji.187.1616951949421;
-        Sun, 28 Mar 2021 10:19:09 -0700 (PDT)
-Received: from ?IPv6:2a00:1370:812d:f67d:23b0:24c5:db70:4d19? ([2a00:1370:812d:f67d:23b0:24c5:db70:4d19])
-        by smtp.gmail.com with ESMTPSA id z1sm2121956ljo.134.2021.03.28.10.19.08
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 28 Mar 2021 10:19:08 -0700 (PDT)
-Subject: Re: Disk usage difference in the output of `btrfs fi show` vs. `btrfs
- fi du`
-To:     =?UTF-8?Q?Zolt=c3=a1n?= <zoltan1980@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAGtRCvfHfjFFZZQCEHR+ff-JfNCCOMq=B0PxaCc-_+a6XKEg+A@mail.gmail.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-Message-ID: <eb075afb-e9ca-5783-f8a2-1bd6b1192dd7@gmail.com>
-Date:   Sun, 28 Mar 2021 20:19:08 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.1
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:content-transfer-encoding
+         :in-reply-to;
+        bh=1bX38xDgQBkiHIqltbjAQiLDAH1CFYr3yOguDUYlnqw=;
+        b=NmxjYUtKo1/i+zQaYDAiteNh9p+VYGhlsOq5adTk8QTHLeWXuLy31VQUHC3bhlFQL7
+         l27i5upCbXYH7PnTo3ch5IDyMMnjUMZw6eWpNxdmmThEfNpACeKI6cpzooNVxthOXnEO
+         vKglq4qcy/7Sx15zZlB7pimx2K8GvWp7Aio8vU4eim5GtmDAyM9NpBZJhQR3ZvJqAZae
+         SkWJr+3KpnNL03RkHTh/9UAK9CAfvfB/zFPykMENW6Q7j2MkOsu4Qq8+LfRE7P4tn8LH
+         6DjUoDfLjSMTvOuKYNmJgwFbMtrA28PbjLhz1LXfvYZn8uvrU4d9DR6MClYFJLDfLiOd
+         g5ng==
+X-Gm-Message-State: AOAM5309FuDb3fo2si2UjG2ZuM/aCRFY/Y3d4SOXwbpVHlkwXk7CPcuZ
+        qwhzgCrTFiIcS7ulBLeH36s=
+X-Google-Smtp-Source: ABdhPJxEjlJFJGVTAjGnyx5DvLCqwxvcN8Lm7hHVl/iLANHBcRj9vEHhxDtcuQ7BGMXnggOuNs0B1A==
+X-Received: by 2002:a17:90a:8981:: with SMTP id v1mr24265764pjn.230.1616961771947;
+        Sun, 28 Mar 2021 13:02:51 -0700 (PDT)
+Received: from localhost ([122.182.250.63])
+        by smtp.gmail.com with ESMTPSA id z11sm15001992pgj.22.2021.03.28.13.02.48
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 28 Mar 2021 13:02:49 -0700 (PDT)
+Date:   Mon, 29 Mar 2021 01:32:46 +0530
+From:   Ritesh Harjani <ritesh.list@gmail.com>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Neal Gompa <ngompa13@gmail.com>, Qu Wenruo <wqu@suse.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 00/13] btrfs: support read-write for subpage metadata
+Message-ID: <20210328200246.xz23dz5iba2qet7v@riteshh-domain>
+References: <20210325071445.90896-1-wqu@suse.com>
+ <CAEg-Je_Bx6Yu6JHB0XXjBt0+0Ox_=kAUAVWWZan1DsiqvybYrQ@mail.gmail.com>
+ <bc0306b6-da2c-b8c1-a88d-f19004331765@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <CAGtRCvfHfjFFZZQCEHR+ff-JfNCCOMq=B0PxaCc-_+a6XKEg+A@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <bc0306b6-da2c-b8c1-a88d-f19004331765@gmx.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 28.03.2021 15:28, Zoltán wrote:
-> Hi,
-> 
-> I have read a lot of caveats about interpreting the free space
-> reported for btrfs volumes, but could not find anything about the
-> perceived inconsistency in the disk usage reporting described below.
-> 
-> I have a btrfs volume with about 135GiB used for data, as reported by
-> `df`, `btrfs fi show` and `btrfs fi usage` alike:
-> 
-> # btrfs filesystem show /volumes/main/
-> Label: 'main'  uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
->         Total devices 1 FS bytes used 134.12GiB
->         devid    1 size 193.43GiB used 165.01GiB path /dev/sda2
-> 
-> However, `btrfs fi du` reports ~17GiB exclusive usage and ~80GiB
-> shared usage, which adds up to only 97GiB (compared to the 135GiB I
-> would expect):
-> 
-> # btrfs filesystem du -s /volumes/main/
->      Total   Exclusive  Set shared  Filename
->    1.73TiB    17.20GiB    80.13GiB  /volumes/main/
-> 
-> (The reported total usage exceeding the disk capacity by an order of
-> magnitude is expected as the volume contains many snapshots.)
-> 
-> The mount point corresponds to the root subvolume, thus all subvolumes
-> should be accounted for by `btrfs fi du` (according to its
-> documentation):
-> 
-> # mount | grep /volumes/main
-> /dev/sda2 on /volumes/main type btrfs
-> (rw,noatime,ssd,space_cache,autodefrag,subvolid=5,subvol=/)
-> 
-> Do I misunderstand the meaning of exclusive and shared usage or is
-> there some other issue causing this behaviour? I would expect the disk
+On 21/03/25 09:16PM, Qu Wenruo wrote:
+>
+>
+> On 2021/3/25 下午8:20, Neal Gompa wrote:
+> > On Thu, Mar 25, 2021 at 3:17 AM Qu Wenruo <wqu@suse.com> wrote:
+> > >
+> > > This patchset can be fetched from the following github repo, along with
+> > > the full subpage RW support:
+> > > https://github.com/adam900710/linux/tree/subpage
+> > >
+> > > This patchset is for metadata read write support.
+> > >
+> > > [FULL RW TEST]
+> > > Since the data write path is not included in this patchset, we can't
+> > > really test the patchset itself, but anyone can grab the patch from
+> > > github repo and do fstests/generic tests.
+> > >
+> > > But at least the full RW patchset can pass -g generic/quick -x defrag
+> > > for now.
+> > >
+> > > There are some known issues:
+> > >
+> > > - Defrag behavior change
+> > >    Since current defrag is doing per-page defrag, to support subpage
+> > >    defrag, we need some change in the loop.
+> > >    E.g. if a page has both hole and regular extents in it, then defrag
+> > >    will rewrite the full 64K page.
+> > >
+> > >    Thus for now, defrag related failure is expected.
+> > >    But this should only cause behavior difference, no crash nor hang is
+> > >    expected.
+> > >
+> > > - No compression support yet
+> > >    There are at least 2 known bugs if forcing compression for subpage
+> > >    * Some hard coded PAGE_SIZE screwing up space rsv
+> > >    * Subpage ASSERT() triggered
+> > >      This is because some compression code is unlocking locked_page by
+> > >      calling extent_clear_unlock_delalloc() with locked_page == NULL.
+> > >    So for now compression is also disabled.
+> > >
+> > > - Inode nbytes mismatch
+> > >    Still debugging.
+> > >    The fastest way to trigger is fsx using the following parameters:
+> > >
+> > >      fsx -l 262144 -o 65536 -S 30073 -N 256 -R -W $mnt/file > /tmp/fsx
+> > >
+> > >    Which would cause inode nbytes differs from expected value and
+> > >    triggers btrfs check error.
+> > >
+> > > [DIFFERENCE AGAINST REGULAR SECTORSIZE]
+> > > The metadata part in fact has more new code than data part, as it has
+> > > some different behaviors compared to the regular sector size handling:
+> > >
+> > > - No more page locking
+> > >    Now metadata read/write relies on extent io tree locking, other than
+> > >    page locking.
+> > >    This is to allow behaviors like read lock one eb while also try to
+> > >    read lock another eb in the same page.
+> > >    We can't rely on page lock as now we have multiple extent buffers in
+> > >    the same page.
+> > >
+> > > - Page status update
+> > >    Now we use subpage wrappers to handle page status update.
+> > >
+> > > - How to submit dirty extent buffers
+> > >    Instead of just grabbing extent buffer from page::private, we need to
+> > >    iterate all dirty extent buffers in the page and submit them.
+> > >
+> > > [CHANGELOG]
+> > > v2:
+> > > - Rebased to latest misc-next
+> > >    No conflicts at all.
+> > >
+> > > - Add new sysfs interface to grab supported RO/RW sectorsize
+> > >    This will allow mkfs.btrfs to detect unmountable fs better.
+> > >
+> > > - Use newer naming schema for each patch
+> > >    No more "extent_io:" or "inode:" schema anymore.
+> > >
+> > > - Move two pure cleanups to the series
+> > >    Patch 2~3, originally in RW part.
+> > >
+> > > - Fix one uninitialized variable
+> > >    Patch 6.
+> > >
+> > > v3:
+> > > - Rename the sysfs to supported_sectorsizes
+> > >
+> > > - Rebased to latest misc-next branch
+> > >    This removes 2 cleanup patches.
+> > >
+> > > - Add new overview comment for subpage metadata
+> > >
+> > > Qu Wenruo (13):
+> > >    btrfs: add sysfs interface for supported sectorsize
+> > >    btrfs: use min() to replace open-code in btrfs_invalidatepage()
+> > >    btrfs: remove unnecessary variable shadowing in btrfs_invalidatepage()
+> > >    btrfs: refactor how we iterate ordered extent in
+> > >      btrfs_invalidatepage()
+> > >    btrfs: introduce helpers for subpage dirty status
+> > >    btrfs: introduce helpers for subpage writeback status
+> > >    btrfs: allow btree_set_page_dirty() to do more sanity check on subpage
+> > >      metadata
+> > >    btrfs: support subpage metadata csum calculation at write time
+> > >    btrfs: make alloc_extent_buffer() check subpage dirty bitmap
+> > >    btrfs: make the page uptodate assert to be subpage compatible
+> > >    btrfs: make set/clear_extent_buffer_dirty() to be subpage compatible
+> > >    btrfs: make set_btree_ioerr() accept extent buffer and to be subpage
+> > >      compatible
+> > >    btrfs: add subpage overview comments
+> > >
+> > >   fs/btrfs/disk-io.c   | 143 ++++++++++++++++++++++++++++++++++---------
+> > >   fs/btrfs/extent_io.c | 127 ++++++++++++++++++++++++++++----------
+> > >   fs/btrfs/inode.c     | 128 ++++++++++++++++++++++----------------
+> > >   fs/btrfs/subpage.c   | 127 ++++++++++++++++++++++++++++++++++++++
+> > >   fs/btrfs/subpage.h   |  17 +++++
+> > >   fs/btrfs/sysfs.c     |  15 +++++
+> > >   6 files changed, 441 insertions(+), 116 deletions(-)
+> > >
+> > > --
+> > > 2.30.1
+> > >
+> >
+> > Why wouldn't we just integrate full read-write support with the
+> > caveats as described now? It seems to be relatively reasonable to do
+> > that, and this patch set is essentially unusable without the rest of
+> > it that does enable full read-write support.
+>
+> The metadata part is much more stable than data path (almost not touched
+> for several months), and the metadata part already has some difference
+> in its behavior, which needs review.
+>
+> You point makes some sense, but I still don't believe pushing a super
+> large patchset does any help for the review.
+>
+> If you want to test, you can grab the branch from the github repo.
+> If you want to review, the mails are all here for review.
+>
+> In fact, we used to have subpage support sent as a big patchset from IBM
+> guys, but the result is only some preparation patches get merged, and
+> nothing more.
+>
+> Using this multi-series method, we're already doing better work and
+> received more testing (to ensure regular sectorsize is not affected at
+> least).
 
-It probably does not take in account exclusive usage of other
-subvolumes, likely snapshots.
+Hi Qu Wenruo,
 
-> usage reported by `df`, `btrfs fi show` and `btrfs fi usage` to be the
-> sum of the exclusive and shared usage reported by `btrfs fi du`.
-> 
-> The output of `btrfs fi usage`, for completeness's sake:
-> 
-> # btrfs filesystem usage /volumes/main/
-> Overall:
->     Device size:                 193.43GiB
->     Device allocated:            165.01GiB
->     Device unallocated:           28.41GiB
->     Device missing:                  0.00B
->     Used:                        134.12GiB
->     Free (estimated):             57.00GiB      (min: 57.00GiB)
->     Data ratio:                       1.00
->     Metadata ratio:                   1.00
->     Global reserve:              194.72MiB      (used: 0.00B)
-> 
-> Data,single: Size:162.00GiB, Used:133.41GiB (82.35%)
->    /dev/sda2                     162.00GiB
-> 
-> Metadata,single: Size:3.01GiB, Used:720.88MiB (23.41%)
->    /dev/sda2                       3.01GiB
-> 
-> System,single: Size:4.00MiB, Used:48.00KiB (1.17%)
->    /dev/sda2                       4.00MiB
-> 
-> Unallocated:
->    /dev/sda2                      28.41GiB
-> 
-> Thanks,
-> 
-> Zoltan
-> 
+Sorry about chiming in late on this. I don't have any strong objection on either
+approach. Although sometime back when I tested your RW support git tree on
+Power, the unmount patch itself was crashing. I didn't debug it that time
+(this was a month back or so), so I also didn't bother testing xfstests on Power.
+
+But we do have an interest in making sure this patch series work on bs < ps
+on Power platform. I can try helping with testing, reviewing (to best of my
+knowledge) and fixing anything is possible :)
+
+Let me try and pull your tree and test it on Power. Please let me know if there
+is anything needs to be taken care apart from your github tree and btrfs-progs
+branch with bs < ps support.
+
+-ritesh
+
 

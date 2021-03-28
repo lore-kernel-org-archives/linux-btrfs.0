@@ -2,98 +2,102 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A095BC433EC
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D5A4C433C1
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 05:23:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 73E8C6194B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 19DA5619A9
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 05:23:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231342AbhC1EWE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Mar 2021 00:22:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56902 "EHLO
+        id S229563AbhC1FWf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Mar 2021 01:22:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41504 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231241AbhC1EVe (ORCPT
+        with ESMTP id S229516AbhC1FVv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Mar 2021 00:21:34 -0400
-Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A202AC061762;
-        Sat, 27 Mar 2021 21:21:34 -0700 (PDT)
-Received: by mail-qk1-x736.google.com with SMTP id 7so9356895qka.7;
-        Sat, 27 Mar 2021 21:21:34 -0700 (PDT)
+        Sun, 28 Mar 2021 01:21:51 -0400
+Received: from mail-wr1-x435.google.com (mail-wr1-x435.google.com [IPv6:2a00:1450:4864:20::435])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 76EE8C061762
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Mar 2021 22:21:50 -0700 (PDT)
+Received: by mail-wr1-x435.google.com with SMTP id k8so9546515wrc.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 27 Mar 2021 22:21:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=jOOp0h2yVPN/f0Eod/KKvQYmCFRRcb0rcd4xmykcQJs=;
-        b=Vsoi6NNETbFsZ6eFciLqoimy4OcE5kjqBhejIN4frrqM+XYxjW7lEuFfglq5eXZU3S
-         Ay8shb+zO7DO8yQY9uz7irke6ckBsin6e73Fi5EidCFWFcos10m9yhzejzqsY7dbT711
-         ej3M8cnYOOdqEPW+GzZGtJdtd/Oaz3Ulo/XbWKEnzyJPeCqrrHZriJ4MjvepXPYwkSxY
-         CegRhwYMyT+sKm0hYEWNamm3mlOKHoRlWzs2biFHNInAaxCLhPQB7x4F1V9xgbnz7KWk
-         Hw7UAci/YQ2XI/A5aEZs1DJpObqVRbccJYsrpU0wVd8LawuytfvuYf3WWAkrn7JDhjkR
-         FquQ==
+        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=/K+gCsIPZ3sn1cI+Va5CjwFfp/h+DRTjb/2VqR+I21A=;
+        b=G2EM2COkBE3eJk4fVjuY3IdBG8x97lPeToJT82k+d9Me8thskOi7B7gPVNERiPTt+S
+         OfeJ2D2RQI987nDcGwDXr64vZ2YWjtZqjO2TnPMUHH5mZXyJg3GabO5ACmz2XFh7zsOx
+         4XehFySXqZpNzGmupDSij5BEa+Y/tegToQSUky+B7rmvQ0ZHwMi/pN+4kGlQosXO+VQg
+         1lSEHud8LtOrQs6KpCuRliC/wNoktN6ZS1YTgMIVxiW5QVqbyZjGavo8Jm3XPnoobadV
+         U87i/A6xh5X26QLl6AoXBwGpDP88ldMdQS8JBFk2hevhJu77Cpb5v51FI4sva1pSYQMI
+         nE/w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=jOOp0h2yVPN/f0Eod/KKvQYmCFRRcb0rcd4xmykcQJs=;
-        b=LcSqQ98gUiBM9cxWvXQTRRYuhXp83pJuF7kEI5AHwgCopRx2ulx/nN1K+VHkdGypT4
-         LrtNzlouBtS4c/imTkub1JPQBzJ2xLfG4E456JA1Rk4haLM9eYZ+g8NISVkJA0nQjzG/
-         3nHDis5HlktvZ6gHCpUdcCqflfvlI5Hs1B6AJMYUEk2343TuF/9G9XRoFJnt1mWtak9y
-         rGexpfNM5A4RhUpIRFWxHO/4ru0ad9ptHF3KdQ0z4mwxt/ARnJSBgNqaJwGte7iAsFM4
-         VUyZtFt3zns1N3HRL2X3+grc7CqhvIy+V7f4VjtoCjFdhN9+lCC/s4eX5mXKXWXv33Sy
-         PoSA==
-X-Gm-Message-State: AOAM530ZUrYmwZQqpQQrhwzfadvwSXsScHRv+Fjuw52DBC8jwFhaM6Sr
-        kikSY157pHvVWsXpxrQu7d0=
-X-Google-Smtp-Source: ABdhPJzh97Po64m6fSxl5LvpcheBVIWr4k4YFBHHztS8K9cXM232RAd1CmnvQBlUwOjiImLZxDaemg==
-X-Received: by 2002:a37:a183:: with SMTP id k125mr20157241qke.332.1616905293946;
-        Sat, 27 Mar 2021 21:21:33 -0700 (PDT)
-Received: from localhost.localdomain ([156.146.55.118])
-        by smtp.gmail.com with ESMTPSA id i6sm10092237qkf.96.2021.03.27.21.21.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 27 Mar 2021 21:21:33 -0700 (PDT)
-From:   Bhaskar Chowdhury <unixbhaskar@gmail.com>
-To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org
-Cc:     Bhaskar Chowdhury <unixbhaskar@gmail.com>, rdunlap@infradead.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH 06/10] scrub.c: Fix a typo
-Date:   Sun, 28 Mar 2021 09:48:30 +0530
-Message-Id: <d9da818223f9e4a82d6a4260347915d2407d822a.1616904353.git.unixbhaskar@gmail.com>
-X-Mailer: git-send-email 2.26.2
-In-Reply-To: <cover.1616904353.git.unixbhaskar@gmail.com>
-References: <cover.1616904353.git.unixbhaskar@gmail.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=/K+gCsIPZ3sn1cI+Va5CjwFfp/h+DRTjb/2VqR+I21A=;
+        b=I4ZJ7zz0TuhdOwNR+Q1jHbfwBfRpWMwxnto8byqwUgIaJY+4qtcMs01BdAao6B0Pmn
+         erRD4VpMPBOo7BEaY7TLrYIYk+NgS+JEXZSQFpoBR4SY4pXG3RuVDJWzg6/6K6LB4Qpw
+         kSXkg2XmkGnuUOBk3pbrspuZB2/FUBNLGN+Tr9Hp4UlKInpVFFD3Az/UxTiEvW6XDfE3
+         fIvarp0W66fb4ztSoobqih7wSJxtF3RgRGTtNMHbydZIB/UCP8I0ct3k2wp7nJsbVURB
+         Y/FwvCQOWGt1oxY69a3w3mYjLfC/opQsUwos/RNBJo54P95NXLlk/blHKQTRleR29IUK
+         aiLw==
+X-Gm-Message-State: AOAM531t8AwbT0muVcUhbaP50n58chfkbAZEi/YOFi0RKYjBqf3782zG
+        sDFdp/7086Mcwv70C+TL3FaUXB58CjsusWyXxJaT6YEB2Jv901kG
+X-Google-Smtp-Source: ABdhPJzW2mAMsK6F9oCxs7oD3KeNyj6QAktSZJG4BupueB8ymkOGqRr3X/TtgIh/WP3PtTcG2iXTXQ/Iu9veEtYmm6g=
+X-Received: by 2002:a5d:6c6a:: with SMTP id r10mr22363035wrz.42.1616908909105;
+ Sat, 27 Mar 2021 22:21:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <CAJCQCtTv-xmDgRtoZFgmz=ny+SFYiTXqJS05VdRfkbST0L-ijQ@mail.gmail.com>
+In-Reply-To: <CAJCQCtTv-xmDgRtoZFgmz=ny+SFYiTXqJS05VdRfkbST0L-ijQ@mail.gmail.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sat, 27 Mar 2021 23:21:32 -0600
+Message-ID: <CAJCQCtRFM-qcAhwQPrEF1g4iG9Vamnk8rgh49HfT2Nty7H+OZg@mail.gmail.com>
+Subject: Re: 5.12-rc4: rm directory hangs for > 1m on an idle system
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-s/reponsible/responsible/
+Fresh boot, this time no compression, everything else the same. Time
+to delete both directories takes as long as it takes to copy one of
+them ~1m17s. This time I took an early and late sysrq t pair, and
+maybe caught some extra stuff.
 
-Signed-off-by: Bhaskar Chowdhury <unixbhaskar@gmail.com>
----
- fs/btrfs/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+[ 1190.094618] kernel: Workqueue: events_unbound
+btrfs_preempt_reclaim_metadata_space
+[ 1190.094633] kernel: Call Trace:
+[ 1190.094641] kernel:  ? find_extent_buffer+0x5/0x200
+[ 1190.094656] kernel:  ? find_held_lock+0x32/0x90
+[ 1190.094683] kernel:  ? __lock_acquire+0x172/0x1e10
+[ 1190.094694] kernel:  ? lock_is_held_type+0xa7/0x120
+[ 1190.094714] kernel:  ? btrfs_search_slot+0x6d2/0x9f0
+[ 1190.094729] kernel:  ? btrfs_get_64+0x5e/0x100
+[ 1190.094751] kernel:  ? lock_acquire+0xc2/0x3a0
+[ 1190.094768] kernel:  ? _raw_spin_unlock+0x1f/0x30
+[ 1190.094779] kernel:  ? rcu_read_lock_sched_held+0x3f/0x80
+[ 1190.094798] kernel:  ? __lock_acquire+0x172/0x1e10
+[ 1190.094811] kernel:  ? lookup_extent_backref+0x43/0xd0
+[ 1190.094829] kernel:  ? release_extent_buffer+0xa3/0xe0
+[ 1190.094846] kernel:  ? __btrfs_free_extent+0x49c/0x8f0
+[ 1190.094878] kernel:  ? __btrfs_run_delayed_refs+0x29a/0x1270
+[ 1190.094912] kernel:  ? _raw_spin_unlock+0x1f/0x30
+[ 1190.094934] kernel:  ? btrfs_run_delayed_refs+0x86/0x210
+[ 1190.094954] kernel:  ? flush_space+0x570/0x6d0
+[ 1190.094966] kernel:  ? lock_release+0x280/0x410
+[ 1190.094987] kernel:  ? btrfs_preempt_reclaim_metadata_space+0x170/0x2f0
+[ 1190.095007] kernel:  ? process_one_work+0x2b0/0x5e0
+[ 1190.095035] kernel:  ? worker_thread+0x55/0x3c0
+[ 1190.095045] kernel:  ? process_one_work+0x5e0/0x5e0
+[ 1190.095060] kernel:  ? kthread+0x13a/0x150
+[ 1190.095070] kernel:  ? __kthread_bind_mask+0x60/0x60
+[ 1190.095085] kernel:  ? ret_from_fork+0x1f/0x30
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 3d9088eab2fc..14de898967bf 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2426,7 +2426,7 @@ static void drop_csum_range(struct scrub_ctx *sctx, struct btrfs_ordered_sum *su
-  * the csum into @csum.
-  *
-  * The search source is sctx->csum_list, which is a pre-populated list
-- * storing bytenr ordered csum ranges.  We're reponsible to cleanup any range
-+ * storing bytenr ordered csum ranges.  We're responsible to cleanup any range
-  * that is before @logical.
-  *
-  * Return 0 if there is no csum for the range.
---
-2.26.2
-
+dmesg
+https://drive.google.com/file/d/1VQNAVynVTJo6VqsRX9K5-Z0dMsLmb-vH/view?usp=sharing

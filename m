@@ -5,66 +5,66 @@ X-Spam-Level:
 X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 125B9C433F7
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A095BC433EC
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F0903619A9
+	by mail.kernel.org (Postfix) with ESMTP id 73E8C6194B
 	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Mar 2021 04:22:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231388AbhC1EWH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Mar 2021 00:22:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56956 "EHLO
+        id S231342AbhC1EWE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Mar 2021 00:22:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56902 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231299AbhC1EVs (ORCPT
+        with ESMTP id S231241AbhC1EVe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Mar 2021 00:21:48 -0400
-Received: from mail-qk1-x72b.google.com (mail-qk1-x72b.google.com [IPv6:2607:f8b0:4864:20::72b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CBFAAC061762;
-        Sat, 27 Mar 2021 21:21:47 -0700 (PDT)
-Received: by mail-qk1-x72b.google.com with SMTP id c3so9358845qkc.5;
-        Sat, 27 Mar 2021 21:21:47 -0700 (PDT)
+        Sun, 28 Mar 2021 00:21:34 -0400
+Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A202AC061762;
+        Sat, 27 Mar 2021 21:21:34 -0700 (PDT)
+Received: by mail-qk1-x736.google.com with SMTP id 7so9356895qka.7;
+        Sat, 27 Mar 2021 21:21:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=MjFxH6W+ZybR4edl89mWPAzbMOMm8KxZjCSoxISwkqA=;
-        b=n58o3xJRy5NlEskE0I0AAgAGGJaHEddLIDA5uQED8QBpP66zI4Zy6SIDcGHHjQTkXT
-         //PHxHkrZzT4/lGvhyBpFiDV+NewJEcFvJw4Xy0VhDKbp89Bkmot4pWopbLMKeSP9z+r
-         RKtKZDx5svfa4IyFQ364pSCaEfquj9qrhFGQ5a8kK8bOOTwRzW5+SnEGczrvvVZTiQV5
-         JEbtE308N7B4B4wEopPnuATdKt4YwASXVDz/K8G9iL+/0FXf9NL1CntFzvCFoI3126vV
-         AXpRHvB4sUR3RvDbFmm2dwq7kVdE6iXkvoZfcL4kX8CsHKdw3gbt1pgpdzgSGm9p5vYh
-         /PbA==
+        bh=jOOp0h2yVPN/f0Eod/KKvQYmCFRRcb0rcd4xmykcQJs=;
+        b=Vsoi6NNETbFsZ6eFciLqoimy4OcE5kjqBhejIN4frrqM+XYxjW7lEuFfglq5eXZU3S
+         Ay8shb+zO7DO8yQY9uz7irke6ckBsin6e73Fi5EidCFWFcos10m9yhzejzqsY7dbT711
+         ej3M8cnYOOdqEPW+GzZGtJdtd/Oaz3Ulo/XbWKEnzyJPeCqrrHZriJ4MjvepXPYwkSxY
+         CegRhwYMyT+sKm0hYEWNamm3mlOKHoRlWzs2biFHNInAaxCLhPQB7x4F1V9xgbnz7KWk
+         Hw7UAci/YQ2XI/A5aEZs1DJpObqVRbccJYsrpU0wVd8LawuytfvuYf3WWAkrn7JDhjkR
+         FquQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=MjFxH6W+ZybR4edl89mWPAzbMOMm8KxZjCSoxISwkqA=;
-        b=kjEi0PGIkgLfprBY6GvRNazM77noPEm0qYnqTRC5WkTmwuFHtkZdoafgBtkimVO91J
-         dqU31BbHGzB1ctpRqYiNQa19NkhhaONDEA1al4sA5sMIxQyvRfQuC3n1fq4u39cCJMM7
-         unS3V/xut0MSoTFQS2KJP9qQNAi52JZJ5+5zW1yVXR+zPes4R6+SHom9a3CiIuSxHPNV
-         YG6CAwATv9GMbLHAdk5XY04/et1/5FHrfIlrRZ2EXB/JQ3YH5y5Q8soEdL8nq0nptrck
-         +U4UQZvZKYD+YWAMVVkD+BxUkxba9uPuUmgySOiKoLU0ehTFUvJkenNIsHrkt6UcXiuK
-         1R1A==
-X-Gm-Message-State: AOAM532ftk61G10y8jqGom4KICwDFdCaZ8N1LY1pLCMsaoOSPFDGweOy
-        q1B+XB9j8owa5Tio1HqbVnI=
-X-Google-Smtp-Source: ABdhPJxGCGwtg7as8hUzsWvdPBcJNuaQUPAdDV8ozRxDCqv/WKsmfNv42/2CimIJoq6qb/8mDTcUhA==
-X-Received: by 2002:a05:620a:16b6:: with SMTP id s22mr19861116qkj.240.1616905307163;
-        Sat, 27 Mar 2021 21:21:47 -0700 (PDT)
+        bh=jOOp0h2yVPN/f0Eod/KKvQYmCFRRcb0rcd4xmykcQJs=;
+        b=LcSqQ98gUiBM9cxWvXQTRRYuhXp83pJuF7kEI5AHwgCopRx2ulx/nN1K+VHkdGypT4
+         LrtNzlouBtS4c/imTkub1JPQBzJ2xLfG4E456JA1Rk4haLM9eYZ+g8NISVkJA0nQjzG/
+         3nHDis5HlktvZ6gHCpUdcCqflfvlI5Hs1B6AJMYUEk2343TuF/9G9XRoFJnt1mWtak9y
+         rGexpfNM5A4RhUpIRFWxHO/4ru0ad9ptHF3KdQ0z4mwxt/ARnJSBgNqaJwGte7iAsFM4
+         VUyZtFt3zns1N3HRL2X3+grc7CqhvIy+V7f4VjtoCjFdhN9+lCC/s4eX5mXKXWXv33Sy
+         PoSA==
+X-Gm-Message-State: AOAM530ZUrYmwZQqpQQrhwzfadvwSXsScHRv+Fjuw52DBC8jwFhaM6Sr
+        kikSY157pHvVWsXpxrQu7d0=
+X-Google-Smtp-Source: ABdhPJzh97Po64m6fSxl5LvpcheBVIWr4k4YFBHHztS8K9cXM232RAd1CmnvQBlUwOjiImLZxDaemg==
+X-Received: by 2002:a37:a183:: with SMTP id k125mr20157241qke.332.1616905293946;
+        Sat, 27 Mar 2021 21:21:33 -0700 (PDT)
 Received: from localhost.localdomain ([156.146.55.118])
-        by smtp.gmail.com with ESMTPSA id i6sm10092237qkf.96.2021.03.27.21.21.43
+        by smtp.gmail.com with ESMTPSA id i6sm10092237qkf.96.2021.03.27.21.21.30
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 27 Mar 2021 21:21:46 -0700 (PDT)
+        Sat, 27 Mar 2021 21:21:33 -0700 (PDT)
 From:   Bhaskar Chowdhury <unixbhaskar@gmail.com>
 To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
         linux-btrfs@vger.kernel.org
 Cc:     Bhaskar Chowdhury <unixbhaskar@gmail.com>, rdunlap@infradead.org,
         linux-kernel@vger.kernel.org
-Subject: [PATCH 09/10] extent-tree.c: Fix a typo
-Date:   Sun, 28 Mar 2021 09:48:33 +0530
-Message-Id: <4fad841cb82c0daaaba4daf445a1c0b27f1285f5.1616904353.git.unixbhaskar@gmail.com>
+Subject: [PATCH 06/10] scrub.c: Fix a typo
+Date:   Sun, 28 Mar 2021 09:48:30 +0530
+Message-Id: <d9da818223f9e4a82d6a4260347915d2407d822a.1616904353.git.unixbhaskar@gmail.com>
 X-Mailer: git-send-email 2.26.2
 In-Reply-To: <cover.1616904353.git.unixbhaskar@gmail.com>
 References: <cover.1616904353.git.unixbhaskar@gmail.com>
@@ -74,26 +74,26 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-s/Otheriwse/Otherwise/
+s/reponsible/responsible/
 
 Signed-off-by: Bhaskar Chowdhury <unixbhaskar@gmail.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/scrub.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 36a3c973fda1..d0532754af15 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1421,7 +1421,7 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-  *		    bytenr of the parent block. Since new extents are always
-  *		    created with indirect references, this will only be the case
-  *		    when relocating a shared extent. In that case, root_objectid
-- *		    will be BTRFS_TREE_RELOC_OBJECTID. Otheriwse, parent must
-+ *		    will be BTRFS_TREE_RELOC_OBJECTID. Otherwise, parent must
-  *		    be 0
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3d9088eab2fc..14de898967bf 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2426,7 +2426,7 @@ static void drop_csum_range(struct scrub_ctx *sctx, struct btrfs_ordered_sum *su
+  * the csum into @csum.
   *
-  * @root_objectid:  The id of the root where this modification has originated,
+  * The search source is sctx->csum_list, which is a pre-populated list
+- * storing bytenr ordered csum ranges.  We're reponsible to cleanup any range
++ * storing bytenr ordered csum ranges.  We're responsible to cleanup any range
+  * that is before @logical.
+  *
+  * Return 0 if there is no csum for the range.
 --
 2.26.2
 

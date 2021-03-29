@@ -2,290 +2,345 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A4B7C433DB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 03:34:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63184C433DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 07:36:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DB93161956
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 03:34:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 38F3661919
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 07:36:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230247AbhC2Ddy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Mar 2021 23:33:54 -0400
-Received: from userp2120.oracle.com ([156.151.31.85]:60696 "EHLO
-        userp2120.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230210AbhC2DdU (ORCPT
+        id S231192AbhC2HgX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Mar 2021 03:36:23 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:49787 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229655AbhC2HgL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Mar 2021 23:33:20 -0400
-Received: from pps.filterd (userp2120.oracle.com [127.0.0.1])
-        by userp2120.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 12T3Ob9U097721;
-        Mon, 29 Mar 2021 03:33:16 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to :
- references : from : message-id : date : in-reply-to : content-type :
- content-transfer-encoding : mime-version; s=corp-2020-01-29;
- bh=Rkrta8jLQRFROFkxHDIp7trk86ALkAWTZ5YdeBtzvtA=;
- b=u+y+9YL8BxzE/2UP/96ioU/I94Xpr3sZORvo07NaHKlzxasmZ2lziRVGV8KnnUmRPMhj
- HMLrCo6sxYsSKMF/LP0xBtYr4xxInfjjcCBgdBDw5i05vmHU7FDK0DRUrA6jeL23ZhvO
- a/1uERLawrIkMHYjcnIdt27F0zfcgqumUwoFiKchQUCrf+/Wvq/ZzTI3vSqB4DvuEnWe
- nC1JmQKYsipA63f+CGdSkyIWBtrGxSYKxxKBJU6+BNIpOAYb8ECYVprKR+ZOZhD2Np+i
- VA3k8aP/6/pb1bI984XqomukmqWA838aBPyykhwM+lphCTtef0LlOnwutm4zTOJDSlfh 3g== 
-Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
-        by userp2120.oracle.com with ESMTP id 37hwbna3sj-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 29 Mar 2021 03:33:15 +0000
-Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
-        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 12T3OgJf023331;
-        Mon, 29 Mar 2021 03:33:15 GMT
-Received: from nam10-dm6-obe.outbound.protection.outlook.com (mail-dm6nam10lp2103.outbound.protection.outlook.com [104.47.58.103])
-        by aserp3020.oracle.com with ESMTP id 37jekwmdvs-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Mon, 29 Mar 2021 03:33:14 +0000
+        Mon, 29 Mar 2021 03:36:11 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1617003371; x=1648539371;
+  h=from:to:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=2cGUaspp+JBB8JPPPtUQmpuOpeUuFWCUCT+zawpe/4E=;
+  b=V+zRmS1PkaNZE3FNmDFyRPfQOuS1IrH5o7twQ1Z/qSfhpTQlGbHEwkOw
+   JA5W/T/3mMW/W4nPcQAfAOfvn2l40HQhOeSLQfRpJ6ZxUr0DMp38FGcQD
+   XNTZeGAiJr8wYmd6zwYZbyBgBXyiw2hy0QJBW8amTInUlpZOj6bSpl2GI
+   g5bkPGbPGsE3/BmCQspR3KfLNVnXnDLZJuNMwQKkp3k63t5rB/ftprAV/
+   i5EevnOOUb7XvS2ax7bnYcur1aRJ18d8d1PvN/kEgmJKYnFeO150m8+sW
+   j8m5JMTyuopQlr9cYBxKcM1z1Yn/iYPQ1zdc/erR3jpD9Pto52uVSbf+6
+   Q==;
+IronPort-SDR: 7rXFeBCAh3ZFGNImeuTzJisXf2S4JGaDOGtBHNcNs0PfmdnnFYNsFJue6KewUK5x6kMHBmMJsa
+ zp0gu2cMKNxT+PYYO1mTPpqHQt6fC0bMKzmGKLzmQkioldi0c3HS6ETTt/E3NTWPjn135Dwold
+ Qf7oYYeqVnb7hoanswzZZYrJF2Z+2EUaBC9ZgiXctN2C2JRiM+5dUC5L/tOO7g+lGLhJu9b03C
+ iIEh6dpluY1CfapU4mBtdZZ3l61zXXpmCXpgudKlF18d7hTRE3mzFWRhMlTFNO6ah3/JHI7PSV
+ Efg=
+X-IronPort-AV: E=Sophos;i="5.81,287,1610380800"; 
+   d="scan'208";a="163221107"
+Received: from mail-dm6nam12lp2170.outbound.protection.outlook.com (HELO NAM12-DM6-obe.outbound.protection.outlook.com) ([104.47.59.170])
+  by ob1.hgst.iphmx.com with ESMTP; 29 Mar 2021 15:36:10 +0800
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=iIE178uJhMDxciqpxBPVAQPGIP7h751z9nY5P0qy1FGAZ2ISXPR2g99XrsBtEK3TEVQv3WI0Fi8SE9/dInRs1UmayiSUYhP/bYwdhHs2OcfS+OnQc/Z9EayIB6Dq2aQYSrNaGF21POryJcn2bV9j24dKsfm+bzdYUx9hqDATAb5sqQExoWffs0nbd8F1S47WRBISF8GfVth6iXA1hEuX99tjHCJGsK6xjM7tQPcD3wSzoSt4xoauBEysMGoqNW5xLJvcXt/36QAdXp0oeDEyUjXQs6b+TW3ONo7oGvQUaKGD8PEGFQrA/itL1RfHA8+Un2OKAotLVuAAGuV+SqpNHg==
+ b=AqnKpY6oFZ3aBpn1gk5K9jxuzkL/HBjDD23St1shkncFGdsaVoia11m8dX8bJxmZscT8wjOM4Mc83y8HSVVc/mpbgydnyQ70+74SLNJmqh5D4QbtYWx0Coh1I2BI6io9uU8KYet5jl72unLr3bWtjuPgepFzQRKvcPm13UzvcinhJg3OM1lESnGTMtYtB10DAgn/68YcgEwald0SSJEMpy/b5zSsBtEsR0WSNLkVpM5lhVd69GonpimG6+iZEJbbsBk4mIiotNUj5AkzEDPV35MkMpQKJGGGZ/Gin6OBTU6jQZd+IFRrG7btSZfY2CJ8bJPlsDukx7hi0G0jdWFW3g==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=Rkrta8jLQRFROFkxHDIp7trk86ALkAWTZ5YdeBtzvtA=;
- b=LH4PBN8IXvsyH1Ca/12OajmOIh/B4nBCnNHfQHDOdNHAnDEIU7B++J+pjdHzOE3tI24e/YyaVxRfqEImyPl8WuCFW0Og9KIppruxCO5wvE9hzcpIbTqCon1XDlLhg6BJa7f9Y2FbS0Pz6xvP+3CAweep3G2qqAWp2TtFCn6NNUqaUyIF1uMxgepHKrk39K558TfIT9HSEZRiUQwdTOn+4jTxi7iQNivXGLbFInbQ3ZeGlRjQiWjZnYiC+4jEdwFVvKzdGc1ZKf7EFbBCJpou3MhfPS2JLDCL4sdwWkIaVe1pzxHLOywmzWXPhssl8/pvrLY16D/LBllrF1P2tCd6UQ==
+ bh=dAvne0iskGomdE8ofk4cWchX9rpfRevtgtlJqay+S4c=;
+ b=jSfvAKoRwisqRI9Qgp7VBfQZ9ZKuO/DsTQbefadXDLXd4YF18SCICh+hdZyVtAEfqIwC1w7ZFoFQxrGLxlTkys1r2KhzynVmJl2EwyLQg4ELOwEnNw0rTTjP/1vPZnT8SyXxW/rCaMPI34T9rnpFrkT11sEoPvRVVFVwOpzPjNjhq6FhV/laHLFqx1VFbBWqLgYQD1CdYV2uDVXqgY1QCQ44zK2bLfK5x4Irsv9StR2MJ5yW00Ypl9M/8JGpTVmHrTWTE3sgzNsSJuZllPFMbULVcU4BWTcFMdVrzUz4jQQbkhxYe/heWziCS8Si/58ogaOenjdTBBgiOg8DIzm4bQ==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
- dkim=pass header.d=oracle.com; arc=none
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=Rkrta8jLQRFROFkxHDIp7trk86ALkAWTZ5YdeBtzvtA=;
- b=UkW5veZiiaWxM82hspxxxHzOf5qVR9SliezRRgIOnvor3tbuHUOfUtv04ZG3d1XOpMdc5BuOs4okPGEJ7KA7ftA81557OOfv6Un3QKZYgYmBghpa4DDKn8DuF9ONxY/kuIXBhYtrS8IAl51opUkvZUWUU+XJ5hIuZFAISpROh+E=
-Authentication-Results: suse.com; dkim=none (message not signed)
- header.d=none;suse.com; dmarc=none action=none header.from=oracle.com;
-Received: from MN2PR10MB4128.namprd10.prod.outlook.com (2603:10b6:208:1d2::24)
- by MN2PR10MB4095.namprd10.prod.outlook.com (2603:10b6:208:11b::10) with
+ bh=dAvne0iskGomdE8ofk4cWchX9rpfRevtgtlJqay+S4c=;
+ b=CbNgtkqJqLXLBQxhRpW6+A09HdUEyMHyTMBgVAHKkkqKgeKgNYH4kV8D1SVTwF1Iws7Z5GYbLpXWgn03gDuxaaSDs+nVQuVY11uZAb3wZlWs2OGLX5O5lNE2i3kWndLPfYFzBQHSnJzgWvyjurcEu/xkB00rs2s1a9KkjkOLMGc=
+Received: from BL0PR04MB6514.namprd04.prod.outlook.com (2603:10b6:208:1ca::23)
+ by MN2PR04MB6352.namprd04.prod.outlook.com (2603:10b6:208:1ab::23) with
  Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3977.24; Mon, 29 Mar
- 2021 03:33:13 +0000
-Received: from MN2PR10MB4128.namprd10.prod.outlook.com
- ([fe80::9aa:6ac:8d40:c076]) by MN2PR10MB4128.namprd10.prod.outlook.com
- ([fe80::9aa:6ac:8d40:c076%6]) with mapi id 15.20.3977.033; Mon, 29 Mar 2021
- 03:33:13 +0000
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3977.30; Mon, 29 Mar
+ 2021 07:36:05 +0000
+Received: from BL0PR04MB6514.namprd04.prod.outlook.com
+ ([fe80::e9c5:588:89e:6887]) by BL0PR04MB6514.namprd04.prod.outlook.com
+ ([fe80::e9c5:588:89e:6887%3]) with mapi id 15.20.3977.033; Mon, 29 Mar 2021
+ 07:36:05 +0000
+From:   Damien Le Moal <Damien.LeMoal@wdc.com>
+To:     Anand Jain <anand.jain@oracle.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dsterba@suse.com" <dsterba@suse.com>
 Subject: Re: [PATCH 0/1] zoned: moving superblock logging zones
-To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
-        dsterba@suse.com
+Thread-Topic: [PATCH 0/1] zoned: moving superblock logging zones
+Thread-Index: AQHXGV/O21Uszgiz9ECwVkRv5CqopA==
+Date:   Mon, 29 Mar 2021 07:36:05 +0000
+Message-ID: <BL0PR04MB6514A9AAD4C124BF7BCE0AEBE77E9@BL0PR04MB6514.namprd04.prod.outlook.com>
 References: <cover.1615773143.git.naohiro.aota@wdc.com>
-From:   Anand Jain <anand.jain@oracle.com>
-Message-ID: <814c44b8-b700-7878-a881-f89cd99982e8@oracle.com>
-Date:   Mon, 29 Mar 2021 11:33:02 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.8.1
-In-Reply-To: <cover.1615773143.git.naohiro.aota@wdc.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+ <814c44b8-b700-7878-a881-f89cd99982e8@oracle.com>
+Accept-Language: en-US
 Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [2406:3003:2006:2288:d853:d2aa:de3d:de6c]
-X-ClientProxiedBy: SG2PR03CA0163.apcprd03.prod.outlook.com
- (2603:1096:4:c9::18) To MN2PR10MB4128.namprd10.prod.outlook.com
- (2603:10b6:208:1d2::24)
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: oracle.com; dkim=none (message not signed)
+ header.d=none;oracle.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [2400:2411:43c0:6000:8539:9440:76cc:73ac]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-ht: Tenant
+x-ms-office365-filtering-correlation-id: 8d17be9a-1813-4132-2389-08d8f2854fe9
+x-ms-traffictypediagnostic: MN2PR04MB6352:
+x-ms-exchange-transport-forked: True
+x-microsoft-antispam-prvs: <MN2PR04MB635267D0BD2F6953540B5A71E77E9@MN2PR04MB6352.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:9508;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: E99epIT8c8GnPp53Z+6SjBU+smf/K11cecb6NRynws1RP5jpSfw1hMV1HrZ0l1y/h1U4frVRpN5CgcpChfiDgrBWyXT1YEtxnQN2Jc1hPEIVYZVHSiz8Gn/7vIHofE75ib1VpYE1Vpi1JaBt/4M4HjWTZ6LVXKDj0EXDNU6cdz8rx0+rr+RMDTt6o2ATBS1s83PRco3Di4JfYOIcVhN0eUWbnGdiYS/8lO7eLvLGNZ5vFxsiGLFipk8TopK1HkTnlQwPHULpVcyAp0z7NFfIb9MxYa5JNV8lsCIi+pRxzZf6aTjiRWwnjC4Lzgg6SLnXKxqqTX3BsJrXvWY4qGyzhWfdRsdpiRTWaWZjUlyVczCJqTg2VN3/q+vaKAleDWWm0ddl/VVeM/RTo8dM4KUmyBJ+0ALi5koekcSDZbJEFmccYQI/VeguULl6K2kg32A1sLu9ipNmL5tTlvVhWUrviRv0Qesy0yZ+9AuAn6zJzgK5r4qD/4jJDpUgCyZSxmUCWmlZIJBOiEujFxQtgGbKfttKSXTQeCOE5RAzVP7eiNAQta7Y6s5abH/ahUKZb0PqUoQY8+pDVD9wyn3Uu9mCVElsa2uzf9JgTvMsc6aA9Q496wGqeEvLbcAh/uiCJPhGjoAEX1wpBwcL7BE7kYp7A82f3xPj3zTk+hEsGhpscfU=
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BL0PR04MB6514.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(346002)(136003)(39860400002)(376002)(366004)(316002)(7696005)(478600001)(91956017)(8676002)(2906002)(5660300002)(86362001)(110136005)(186003)(66446008)(8936002)(52536014)(55016002)(38100700001)(66946007)(83380400001)(53546011)(76116006)(6506007)(66556008)(9686003)(71200400001)(66476007)(64756008)(33656002);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: =?us-ascii?Q?H6z8UHMpk14VE6roJnrrWN6nLUpnro98PZqFgijK1RVBbasax5O9sdP2+rTN?=
+ =?us-ascii?Q?GjxDmiTp/aAOE78owTCp+tW8qDseQaqi7A4YyraWpkxvf5bMOKaH0flukrpB?=
+ =?us-ascii?Q?BC9YZPTRDjvt8groLgfUfs94wVdCkmefmogPWTM0CZudiW2CixNjJdPmhcxm?=
+ =?us-ascii?Q?fpgCLum2LK9KE3pIs8bQP6J397jg9XCED/5U0gECdFd/oUHgDu29Fab9ddc4?=
+ =?us-ascii?Q?ErmZ/Mb0VQCubLAxXdSxcRQlGtHFy3xY+ifYy40xFeFMQkN5YE9msmk2xHk9?=
+ =?us-ascii?Q?mH8PHdnUd/YINBGgFX9Ykh1tTcNZfMIbCBe8SfugiaJqLiiY5Cq6ChmgF5pb?=
+ =?us-ascii?Q?QIRgnTScVyDkFfHicoIXe46VJJZ5uOiwl371oFt7d59tMOiWC2LPRh6p2wFt?=
+ =?us-ascii?Q?dGW/VjS5XacnFX+LC3Eh02HBbI380ANAJhCGanuJ8ZBjOpupbrlH5GoKYxaa?=
+ =?us-ascii?Q?+IdJxCLgZV1Muerr1E+aXGddOHZIGjGXb6/bVhxge520vxMgjFIhYaXfgN8G?=
+ =?us-ascii?Q?5zVhE77fFAR1AyNntvyd2605dtg1SmAxFTKoL8zvsvWpSXN4PjrF37vKnRH8?=
+ =?us-ascii?Q?f1Yiw0K1vONHNso8AIo6EATeGvHX0QZoMrFgIUilKailFLDPm+sZTJU8hsqB?=
+ =?us-ascii?Q?CvOzRrMPXEHFiN9yOXswNwdShWjdkrR4REmmf/tvG0h/gvHU663792r2t45u?=
+ =?us-ascii?Q?1HxKhWupfpzAEKXu/okZKJaNhhU6THHS5thLdPFe5wjnzXskrPt9yivffRIX?=
+ =?us-ascii?Q?CVduPKwA8MYLcDnVMohXpcEesKwuQkKEAmoEnJZQD1q/vkQKa4HIvB5RkmEa?=
+ =?us-ascii?Q?cU0lNtkiXG9AZgGfWCp1nMmrL4sHrfx+ytZ9Jevp5M2c7IjK29XkMcZFs4OH?=
+ =?us-ascii?Q?HhVO/tBvb7g4G7j7xaF5CIaH8C66Y/86Cvi8GtfqVk/MMhUv3PeecLdko9uy?=
+ =?us-ascii?Q?q2mr3mSVazWldBrQ1awT6V9vbNQCBeHnzx8351yQvdznhg9aUs83mW0pkJ7D?=
+ =?us-ascii?Q?hkV2gDwGucTOeDgrOkbMnUr6OxlPPJ0Q2vhvu+TOptcVr0boL2hVBY25mcHA?=
+ =?us-ascii?Q?w62ZNLdtPfIrH8UvHiVM9CnNa4iPSzHEegSAJL50HHtyfRiEoexOyXg5O+0k?=
+ =?us-ascii?Q?Z0/FHtlaLcclJc3pXCTvI6Se86GbjU23rmONBoSOJGwWD0Gz0yFgncrV4iMa?=
+ =?us-ascii?Q?wu7r8VBSw4xBh/M61VgOsYEkgvStjnBDU0pNAmOwCL6zWXnrTtMV/HO/47Do?=
+ =?us-ascii?Q?dHfM6SDoWxXXTSQqkoyMnNy8OPoEWvkwKRob4YEhIlvF1Ujzlttt9T8e6iNY?=
+ =?us-ascii?Q?e2MuiV5meqbfeTgP4aIT/x+c5HJJ+G6xJRWRT05s9X4EV1sPUunc/17StakH?=
+ =?us-ascii?Q?kmBHxHcnzsXOYLMfLC+kWMmPdvu3jFd/D81LuH6dXl1y4eQHYA=3D=3D?=
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-X-MS-Exchange-MessageSentRepresentingType: 1
-Received: from [IPv6:2406:3003:2006:2288:d853:d2aa:de3d:de6c] (2406:3003:2006:2288:d853:d2aa:de3d:de6c) by SG2PR03CA0163.apcprd03.prod.outlook.com (2603:1096:4:c9::18) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3999.16 via Frontend Transport; Mon, 29 Mar 2021 03:33:11 +0000
-X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: 88843004-81ef-4af3-f148-08d8f2636197
-X-MS-TrafficTypeDiagnostic: MN2PR10MB4095:
-X-Microsoft-Antispam-PRVS: <MN2PR10MB4095858CEDBBDB310BB50B54E57E9@MN2PR10MB4095.namprd10.prod.outlook.com>
-X-MS-Oob-TLC-OOBClassifiers: OLM:9508;
-X-MS-Exchange-SenderADCheck: 1
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: MBesma+j/IadIEr0nft7dAHf5YwqtENl2VuDu8WAycmSk+Qwcz9kpntRHPssYFoPNcIRCWR2yzMMy6FBxSAt61olxdLtsAEPySKQorINcPEKeuHEHO6p1XXhNLdr+iWxnTtIsc+IbL+ojnYmvdkpj8S8HivzXL+Bzy0LtwAvEe/PWn9vKFf9jqKmISN1btpvW+fakrZoS463DaLp32XCeM2ZqOB7SmVQbFfNYwerG8O2Zp+We15E4iC6FBchuRvVcsSSkIYE7JVaVqmqTfyr01pZYxF9HUbGx26K6qMaV7b6ep2j53VuVQpY3ZCS6lG3Q2QauxrsIOcocnGWv9QGrMAyCgJTHtO/BxFALllmjh75GA1dOWx3sQ6pVz0BLMGO/Vm8W4euCDVVIImRwiDa6qaUBhxZu4SavWlFEZl+GvA2zplWudkogVUNoeE58q97KH0WXErXPqAFsiQuCB0GjTzp2jBiH/S3ztpT5K1Y6LoWPGEJJpo+tT0ZoTY04LR4B9yLq2QI41YjSW+4/UuivKpY9uq7mYDOlXVQPSTTaP7yWppZPSs4e05r5qgi/BDoSXQTAA0ETK3WkbJ/VyWaUxOSe7kAYbp7VSa9yAUUegsconHmfLGFBTjkKmy/eXadvptkCNBVopMCRVOnovLk3I98MsCLG6Bx1W0IbvzVD+j+5ppwZaeTeoaoluFlSSKNm7uCwfVj/iow5ltgq+2oUQ==
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MN2PR10MB4128.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(376002)(346002)(396003)(366004)(39860400002)(136003)(5660300002)(66946007)(86362001)(66476007)(186003)(16526019)(66556008)(8676002)(2616005)(478600001)(36756003)(53546011)(83380400001)(38100700001)(44832011)(31686004)(6486002)(2906002)(316002)(31696002)(6666004)(8936002)(43740500002)(45980500001);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData: =?utf-8?B?VE5FUzlYVDBqSjF6Wmp5WmpsdExqcUdXUXpxOVo2SWRDR2Rza1JGbExBNE1U?=
- =?utf-8?B?dENGUDczeG1JUktDam5PeUdaVnlra2M0Q0pVOU5YOGZ1YVFVZUpIYmlyRmln?=
- =?utf-8?B?cVlrVTlTVmtidGFnWVF4MG5tdU9wMTQzRTdVNEVhSU1KS0MyYXhOVS9BdTZm?=
- =?utf-8?B?UVhXcXRNOFoxYWRueitWSnVIcW8rVzNVaEtjUFkzTXdwRmovNk85VHFiMzFx?=
- =?utf-8?B?dHVmWFJSZUhPK2o5cTQzYmRjYWtyc3dyUzVVTWV5T3RlbDlNWmNPZDBWR01C?=
- =?utf-8?B?enBSb1dsUVVkdDZ5SThQU1JkVTNNdU5hUUVrcG55aEkyWmFQNjBxQmNIMDFV?=
- =?utf-8?B?VE9ubDQzQkRseFgrWEJnZmpZNUpSK0lUZDZYWW5mS2RsM3N3R0wrU0srQ0xF?=
- =?utf-8?B?cndCZ2pPTTVLVU9rRFVBSnFVUFNrQ1luUnFxNXVHSndON1JmYnpzWUlpWTUv?=
- =?utf-8?B?Z1ZhU1UzSEs3N1lzRFppUWN4L3U1cXcrZGt0K1hiRHZXSnNZekNRNm00ZTkx?=
- =?utf-8?B?V28yUEhObFdodUxGSkxXeU4wZExVaTdIbEFEUjdwSjZRVkVpaFBVMjFtbWVq?=
- =?utf-8?B?bCtIUUZvZFFQUFFablk1VE1iMzFaMmpoSTBhbDNpUkJqeDVLblBXOFQ1dDFT?=
- =?utf-8?B?WDUwaE9Gd0I5SFVVR0k1bWFIOUdMeThLM3V3OHpTdTJTNEl4NjVVUTNRYnk4?=
- =?utf-8?B?Y2VZazBhNmdHN0FsRURGSHJQekJqc2JPcDlRVVhlQjIvdjdkQkIvVWJUcFVo?=
- =?utf-8?B?MHRqWmVOM0lrNUlzYU4xY3dScEV2TFk5d3ljNVU4QTZiaHoyckM2Lyt4a25u?=
- =?utf-8?B?SDU5YWFsMWFGY29kdVZWL052aTdseE14M0p4QWtTYVFIaGZKcFl5RUVFK3ZH?=
- =?utf-8?B?VWY0V3l4a1NqekdwcXRUSHFTcTJQTUNVM2RSSE1VRkVQbEczR0NrRkxuUW9B?=
- =?utf-8?B?Q1NXVXl0RkMvUHIybElFK0JrRTUrSEpGOWZZVGRJVGhNNW02eWdKNzFHbXlU?=
- =?utf-8?B?ay9vQlpnaXltYlpyNTlZRkwrVUdOSWxleWNqY01VN3RnWGNWYzd2akJLNm5K?=
- =?utf-8?B?NWJjd2RVL0pFZ2NOYXJ4TlRrMkRvc3NBZFprTXNzem8vMzIyZWhPVmVJcjZ0?=
- =?utf-8?B?ay9yQzRMTDEvQndKaXMvbkw4SWgyK1FxZ09NRytIZmY2aDBqQmpwTWRwdDZo?=
- =?utf-8?B?am9vSmlFaW5wTTk1TTlteUE2WXdmT1JLcVZwNmV2VWpjT2lvUGZFS0NIN3hY?=
- =?utf-8?B?d0hyUDZjRFBIditJeUtqOTA2bUhTRXA1SjVvaFB2NTBTVHMzM1d6aW4xT0hY?=
- =?utf-8?B?U2NtNTZEeXN1WUdOdGRBQ0gyTWs3NzVjclQwQ3JrZUZMdlNRSjZOcldHL21x?=
- =?utf-8?B?eUVadkFDWElHVXp4NE5HMEcxU2tuRmJSZ3MvZ1hMbFFvYU9wWG51VzVsM3RW?=
- =?utf-8?B?ZWhBNi94dVNKOHZ3Z1lDa0JRS2xrV2U2TW9PVWNCQTFmSjgzd29PVEVzd1dE?=
- =?utf-8?B?ZURXb0g4RVpkMCtiUVZQdjkrOG00Nm5UTW45aThtaUtlaUI0R052K3BhSVNH?=
- =?utf-8?B?S2ZqUzNqODlwTzd6cjhHaDkrRzk0RHVtYVNjK0RBT3lVYnlkVUZDQjhIV1hK?=
- =?utf-8?B?empVNEZxSjFVaEMyVTZEZTUxdVJGSEYreTloQTJDUzk3N3NXenM0M29Vcnh2?=
- =?utf-8?B?eXRBZmhYS3RDV1QwUjRXNGtRTkdTck1NNXdPUmI5ZmJKcWxUamFxM1d1ZENv?=
- =?utf-8?B?djRhMmRYdVFyc2JLQUVaT0xabXdKb2hxOHpwamxwdU5KdzNIOWYrY0tRU3FD?=
- =?utf-8?B?bDRRYmVrMXJROWRhM1d5YlhXTUs5bTA3UXBpT1hiOWZWQVQraVFCQUJwMW5B?=
- =?utf-8?Q?yB8KyJ1SjxqMA?=
-X-OriginatorOrg: oracle.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 88843004-81ef-4af3-f148-08d8f2636197
-X-MS-Exchange-CrossTenant-AuthSource: MN2PR10MB4128.namprd10.prod.outlook.com
+X-OriginatorOrg: wdc.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 29 Mar 2021 03:33:12.9282
+X-MS-Exchange-CrossTenant-AuthSource: BL0PR04MB6514.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 8d17be9a-1813-4132-2389-08d8f2854fe9
+X-MS-Exchange-CrossTenant-originalarrivaltime: 29 Mar 2021 07:36:05.6822
  (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: +Ev46n7bCS4Fvp7dQONvIGrRN2qKmh0C3JomS/dbDmKZWkCvZ39gfeHtqjEm3kgYQXE5gciPKcNStxV4bT0Jgw==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR10MB4095
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9937 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 bulkscore=0 malwarescore=0 mlxscore=0
- phishscore=0 suspectscore=0 mlxlogscore=999 adultscore=0 spamscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2103250000
- definitions=main-2103290025
-X-Proofpoint-GUID: 4WNIU0HwJFCw8Pu2rfbIX3UhwvTTxVj9
-X-Proofpoint-ORIG-GUID: 4WNIU0HwJFCw8Pu2rfbIX3UhwvTTxVj9
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=9937 signatures=668683
-X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 impostorscore=0 clxscore=1015
- phishscore=0 mlxscore=0 malwarescore=0 mlxlogscore=999 suspectscore=0
- spamscore=0 bulkscore=0 priorityscore=1501 adultscore=0 lowpriorityscore=0
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2103250000
- definitions=main-2103290025
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: aZtEb+fqXEITyRbtEw/E9ttFYoxa975EQEYbJJQ3hrabppw4y9IReWnZVVbLd8clR9gGwzzHB/WqkxnYHa0S1g==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR04MB6352
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 15/03/2021 13:53, Naohiro Aota wrote:
-> The following patch will change the superblock logging zones' location from
-> fixed zone number to fixed LBAs.
-> 
-> Here is a background of how the superblock is working on zoned btrfs.
-> 
-> This document will be promoted to btrfs-dev-docs in the future.
-> 
-> # Superblock logging for zoned btrfs
-> 
-> The superblock and its copies are the only data structures in btrfs with a
-> fixed location on a device. Since we cannot overwrite these blocks if they
-> are placed in sequential write required zones, we cannot use the regular
-> method of updating superblocks with zoned btrfs.
-
-  Looks like a ZBC which does the write pointer reset and write could 
-have helped here.
-
-> We also cannot limit the
-> position of superblocks to conventional zones as that would prevent using
-> zoned block devices that do not have this zone type (e.g. NVMe ZNS SSDs).
-> 
-> To solve this problem, we use superblock log writing. This method uses two
-> sequential write required zones as a circular buffer to write updated
-> superblocks. Once the first zone is filled up, start writing into the
-> second zone. When both zones are filled up and before start writing to the
-> first zone again, the first zone is reset and writing continues in the
-> first zone. Once the first zone is full, reset the second zone, and write
-> the latest superblock in the second zone. With this logging, we can always
-> determine the position of the latest superblock by inspecting the zones'
-> write pointer information provided by the device. One corner case is when
-> both zones are full. For this situation, we read out the last superblock of
-> each zone and compare them to determine which copy is the latest one.
-> 
-> ## Placement of superblock logging zones
-> 
-> We use the following three pairs of zones containing fixed offset
-> locations, regardless of the device zone size.
-> 
->    - Primary superblock: zone starting at offset 0 and the following zone
->    - First copy: zone containing offset 64GB and the following zone
->    - Second copy: zone containing offset 256GB and the following zone
-> 
-> These zones are reserved for superblock logging and never used for data or
-> metadata blocks. Zones containing the offsets used to store superblocks in
-> a regular btrfs volume (no zoned case) are also reserved to avoid
-> confusion.
-> 
-> The first copy position is much larger than for a regular btrfs volume
-> (64M).  This increase is to avoid overlapping with the log zones for the
-> primary superblock. This higher location is arbitrary but allows supporting
-> devices with very large zone size, up to 32GB. But we only allow zone sizes
-> up to 8GB for now.
-> 
-> ## Writing superblock in conventional zones
-> 
-> Conventional zones do not have a write pointer. This zone type thus cannot
-> be used with superblock logging since determining the position of the
-> latest copy of the superblock in a zone pair would be impossible.
-> 
-> To address this problem, if either of the zones containing the fixed offset
-> locations for zone logging is a conventional zone, superblock updates are
-> done in-place using the first block of the conventional zone.
-> 
-> ## Reading zoned btrfs dump image without zone information
-> 
-> Reading a zoned btrfs image without zone information is challenging but
-> possible.
-> 
-> We can always find a superblock copy at or after the fixed offset locations
-> determining the logging zones position. With such copy, the superblock
-> incompatible flags indicates if the volume is zoned or not. With a chunk
-> item in the sys_chunk_array, we can determine the zone size from the size
-> of a device extent, itself determined from the chunk length, num_stripes,
-> and sub_stripes.  With this information, all blocks within the 2 logging
-> zones containing the fixed locations can be inspected to find the newest
-> superblock copy.
-> 
-> The first zone of a log pair may be empty and have no superblock copy. This
-> can happen if a system crashes after resetting the first zone of a pair and
-> before writing out a new superblock. In this case, a superblock copy can be
-> found in the second zone of a log pair. The start of this second zone can
-> be found by inspecting the blocks located at the fixed offset of the log
-> pair plus the possible zone size (4M [1], 8M, 16M, 32M, 64M, 128M, 256M,
-> 512M, 1G, 2G, 4G, 8G [2])[3]. Once we find a superblock, we can follow the
-> same instruction above to find the latest superblock copy within the zone
-> log pair.
-> 
-> [1] 4M = BTRFS_MKFS_SYSTEM_GROUP_SIZE. We cannot mkfs on a device with a
-> zone size less than 4MB because we cannot create the initial temporary
-> system chunk with the size.
-> [2] The maximum size we support for now.
-> [3] The zone size is limited to these 11 cases, as it must be a power of 2.
-> 
-> Once we find the latest superblock, it is no different than reading a
-> regular btrfs image. You can further confirm the determined zone size by
-> comparing it with the size of a device extent because it is the same as the
-> zone size.
-> 
-> Actually, since the writing offset within the logging buffer is different
-> from the primary to copies [4], the timing when resetting the former zone
-> will become different. So, we can also try reading the head of the buffer
-> of a copy in case of missing superblock at offset 0.
-> 
-> [4] Because mkfs update the primary in the initial process, advancing only
-> the write pointer of the primary log buffer
-> 
-> ## Superblock writing on an emulated zoned device
-> 
-> By mounting a regular device in zoned mode, btrfs emulates conventional
-> zones by slicing the device with a fixed size. In this case, however, we do
-> not follow the above rule of writing superblocks at the head of the logging
-> zones if they are conventional. Doing so would introduce a chicken-and-egg
-> problem. To know the given btrfs is zoned btrfs, we need to read a
-> superblock to see the incompatible flags. But, to read a superblock
-> properly from a zoned position, we need to know the file-system is zoned a
-> priori (e.g. resided in a zoned device), leading to a recursive dependency.
-> 
-> We can use the regular super block update method on an emulated zoned
-> device to break the recursion. Since the zones containing the regular
-> locations are always reserved, it is safe to do so. Then, we can naturally
-> read a regular superblock on a regular device and determine the file-system
-> is zoned or not.
-> 
-> Naohiro Aota (1):
->    btrfs: zoned: move superblock logging zone location
-> 
->   fs/btrfs/zoned.c | 40 ++++++++++++++++++++++++++++++----------
->   1 file changed, 30 insertions(+), 10 deletions(-)
-> 
-
+On 2021/03/29 12:34, Anand Jain wrote:=0A=
+> On 15/03/2021 13:53, Naohiro Aota wrote:=0A=
+>> The following patch will change the superblock logging zones' location f=
+rom=0A=
+>> fixed zone number to fixed LBAs.=0A=
+>>=0A=
+>> Here is a background of how the superblock is working on zoned btrfs.=0A=
+>>=0A=
+>> This document will be promoted to btrfs-dev-docs in the future.=0A=
+>>=0A=
+>> # Superblock logging for zoned btrfs=0A=
+>>=0A=
+>> The superblock and its copies are the only data structures in btrfs with=
+ a=0A=
+>> fixed location on a device. Since we cannot overwrite these blocks if th=
+ey=0A=
+>> are placed in sequential write required zones, we cannot use the regular=
+=0A=
+>> method of updating superblocks with zoned btrfs.=0A=
+> =0A=
+>   Looks like a ZBC which does the write pointer reset and write could =0A=
+> have helped here.=0A=
+=0A=
+Yes and no. A two-part command like this could fail either on the reset par=
+t or=0A=
+the write part (which would leave the zone empty). So in the end, the possi=
+ble=0A=
+error patterns are very similar to using 2 commands, and for the SB logging=
+, we=0A=
+would still need 2 zones to make sure we do not end up with an SB log that =
+is empty.=0A=
+=0A=
+> =0A=
+>> We also cannot limit the=0A=
+>> position of superblocks to conventional zones as that would prevent usin=
+g=0A=
+>> zoned block devices that do not have this zone type (e.g. NVMe ZNS SSDs)=
+.=0A=
+>>=0A=
+>> To solve this problem, we use superblock log writing. This method uses t=
+wo=0A=
+>> sequential write required zones as a circular buffer to write updated=0A=
+>> superblocks. Once the first zone is filled up, start writing into the=0A=
+>> second zone. When both zones are filled up and before start writing to t=
+he=0A=
+>> first zone again, the first zone is reset and writing continues in the=
+=0A=
+>> first zone. Once the first zone is full, reset the second zone, and writ=
+e=0A=
+>> the latest superblock in the second zone. With this logging, we can alwa=
+ys=0A=
+>> determine the position of the latest superblock by inspecting the zones'=
+=0A=
+>> write pointer information provided by the device. One corner case is whe=
+n=0A=
+>> both zones are full. For this situation, we read out the last superblock=
+ of=0A=
+>> each zone and compare them to determine which copy is the latest one.=0A=
+>>=0A=
+>> ## Placement of superblock logging zones=0A=
+>>=0A=
+>> We use the following three pairs of zones containing fixed offset=0A=
+>> locations, regardless of the device zone size.=0A=
+>>=0A=
+>>    - Primary superblock: zone starting at offset 0 and the following zon=
+e=0A=
+>>    - First copy: zone containing offset 64GB and the following zone=0A=
+>>    - Second copy: zone containing offset 256GB and the following zone=0A=
+>>=0A=
+>> These zones are reserved for superblock logging and never used for data =
+or=0A=
+>> metadata blocks. Zones containing the offsets used to store superblocks =
+in=0A=
+>> a regular btrfs volume (no zoned case) are also reserved to avoid=0A=
+>> confusion.=0A=
+>>=0A=
+>> The first copy position is much larger than for a regular btrfs volume=
+=0A=
+>> (64M).  This increase is to avoid overlapping with the log zones for the=
+=0A=
+>> primary superblock. This higher location is arbitrary but allows support=
+ing=0A=
+>> devices with very large zone size, up to 32GB. But we only allow zone si=
+zes=0A=
+>> up to 8GB for now.=0A=
+>>=0A=
+>> ## Writing superblock in conventional zones=0A=
+>>=0A=
+>> Conventional zones do not have a write pointer. This zone type thus cann=
+ot=0A=
+>> be used with superblock logging since determining the position of the=0A=
+>> latest copy of the superblock in a zone pair would be impossible.=0A=
+>>=0A=
+>> To address this problem, if either of the zones containing the fixed off=
+set=0A=
+>> locations for zone logging is a conventional zone, superblock updates ar=
+e=0A=
+>> done in-place using the first block of the conventional zone.=0A=
+>>=0A=
+>> ## Reading zoned btrfs dump image without zone information=0A=
+>>=0A=
+>> Reading a zoned btrfs image without zone information is challenging but=
+=0A=
+>> possible.=0A=
+>>=0A=
+>> We can always find a superblock copy at or after the fixed offset locati=
+ons=0A=
+>> determining the logging zones position. With such copy, the superblock=
+=0A=
+>> incompatible flags indicates if the volume is zoned or not. With a chunk=
+=0A=
+>> item in the sys_chunk_array, we can determine the zone size from the siz=
+e=0A=
+>> of a device extent, itself determined from the chunk length, num_stripes=
+,=0A=
+>> and sub_stripes.  With this information, all blocks within the 2 logging=
+=0A=
+>> zones containing the fixed locations can be inspected to find the newest=
+=0A=
+>> superblock copy.=0A=
+>>=0A=
+>> The first zone of a log pair may be empty and have no superblock copy. T=
+his=0A=
+>> can happen if a system crashes after resetting the first zone of a pair =
+and=0A=
+>> before writing out a new superblock. In this case, a superblock copy can=
+ be=0A=
+>> found in the second zone of a log pair. The start of this second zone ca=
+n=0A=
+>> be found by inspecting the blocks located at the fixed offset of the log=
+=0A=
+>> pair plus the possible zone size (4M [1], 8M, 16M, 32M, 64M, 128M, 256M,=
+=0A=
+>> 512M, 1G, 2G, 4G, 8G [2])[3]. Once we find a superblock, we can follow t=
+he=0A=
+>> same instruction above to find the latest superblock copy within the zon=
+e=0A=
+>> log pair.=0A=
+>>=0A=
+>> [1] 4M =3D BTRFS_MKFS_SYSTEM_GROUP_SIZE. We cannot mkfs on a device with=
+ a=0A=
+>> zone size less than 4MB because we cannot create the initial temporary=
+=0A=
+>> system chunk with the size.=0A=
+>> [2] The maximum size we support for now.=0A=
+>> [3] The zone size is limited to these 11 cases, as it must be a power of=
+ 2.=0A=
+>>=0A=
+>> Once we find the latest superblock, it is no different than reading a=0A=
+>> regular btrfs image. You can further confirm the determined zone size by=
+=0A=
+>> comparing it with the size of a device extent because it is the same as =
+the=0A=
+>> zone size.=0A=
+>>=0A=
+>> Actually, since the writing offset within the logging buffer is differen=
+t=0A=
+>> from the primary to copies [4], the timing when resetting the former zon=
+e=0A=
+>> will become different. So, we can also try reading the head of the buffe=
+r=0A=
+>> of a copy in case of missing superblock at offset 0.=0A=
+>>=0A=
+>> [4] Because mkfs update the primary in the initial process, advancing on=
+ly=0A=
+>> the write pointer of the primary log buffer=0A=
+>>=0A=
+>> ## Superblock writing on an emulated zoned device=0A=
+>>=0A=
+>> By mounting a regular device in zoned mode, btrfs emulates conventional=
+=0A=
+>> zones by slicing the device with a fixed size. In this case, however, we=
+ do=0A=
+>> not follow the above rule of writing superblocks at the head of the logg=
+ing=0A=
+>> zones if they are conventional. Doing so would introduce a chicken-and-e=
+gg=0A=
+>> problem. To know the given btrfs is zoned btrfs, we need to read a=0A=
+>> superblock to see the incompatible flags. But, to read a superblock=0A=
+>> properly from a zoned position, we need to know the file-system is zoned=
+ a=0A=
+>> priori (e.g. resided in a zoned device), leading to a recursive dependen=
+cy.=0A=
+>>=0A=
+>> We can use the regular super block update method on an emulated zoned=0A=
+>> device to break the recursion. Since the zones containing the regular=0A=
+>> locations are always reserved, it is safe to do so. Then, we can natural=
+ly=0A=
+>> read a regular superblock on a regular device and determine the file-sys=
+tem=0A=
+>> is zoned or not.=0A=
+>>=0A=
+>> Naohiro Aota (1):=0A=
+>>    btrfs: zoned: move superblock logging zone location=0A=
+>>=0A=
+>>   fs/btrfs/zoned.c | 40 ++++++++++++++++++++++++++++++----------=0A=
+>>   1 file changed, 30 insertions(+), 10 deletions(-)=0A=
+>>=0A=
+> =0A=
+> =0A=
+=0A=
+=0A=
+-- =0A=
+Damien Le Moal=0A=
+Western Digital Research=0A=

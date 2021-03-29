@@ -7,38 +7,39 @@ X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
 	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55D73C433E0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 07:36:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3202AC433DB
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 07:40:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 164DD61981
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 07:36:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C9F7761936
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Mar 2021 07:40:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231297AbhC2HgY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Mar 2021 03:36:24 -0400
-Received: from mout.web.de ([212.227.17.12]:48013 "EHLO mout.web.de"
+        id S231296AbhC2Hjh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Mar 2021 03:39:37 -0400
+Received: from mout.web.de ([217.72.192.78]:35747 "EHLO mout.web.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229483AbhC2HgT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Mar 2021 03:36:19 -0400
+        id S230274AbhC2Hj2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Mar 2021 03:39:28 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=web.de;
-        s=dbaedf251592; t=1617003378;
-        bh=kGPsVp5O90aQFL1xj2wieOyYURVdxa2Bw/2deoDUoOI=;
-        h=X-UI-Sender-Class:From:To:Subject:Date:In-Reply-To:References;
-        b=pQ9xDu56kAyx6GnXAt8JK+vG/ocv/zdm3YezP+Mrf/WcKViwAtHuYJuPTKB8pFjgs
-         9O0B9c+rpCgbTcWpfHME+3Oou3haYs9EKbN9nMpSutyg/7e73JaeBtMjSgAH+mnfJ6
-         7YQXvsw+mOkk5o8MYdh/END5UkKjv5/4QDY+Nbq0=
+        s=dbaedf251592; t=1617003567;
+        bh=k3QehrJSQ1b6746ilGhC/gEJsaZ4ozh1XzxlGyl65fc=;
+        h=X-UI-Sender-Class:From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=SyIXq9mlsPG6TAdTB1Uxy51lhoJ0hmiyFgAff5Q3lV27Yz/BwR/HoLKvQwtjHfLRx
+         UCn8BKe6ZECt5KcevKSCqISxDre8CFGl0A2K5j9HPrLfEXLAt+kJEurFc70wbDIoBV
+         iutZg9+IYybLgGCMFAFtlgG8Gc1lzT8xSZc6kxqA=
 X-UI-Sender-Class: c548c8c5-30a9-4db5-a2e7-cb6cb037b8f9
 Received: from [62.216.205.228] ([62.216.205.228]) by web-mail.web.de
  (3c-app-webde-bap09.server.lan [172.19.172.9]) (via HTTP); Mon, 29 Mar 2021
- 09:36:17 +0200
+ 09:34:17 +0200
 MIME-Version: 1.0
-Message-ID: <trinity-3cf7e5f0-b110-4855-80cb-6c298e256745-1617003377615@3c-app-webde-bap09>
+Message-ID: <trinity-10b6732b-bd13-45e0-b795-66e3c9a869c4-1617003257785@3c-app-webde-bap09>
 From:   B A <chris.std@web.de>
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Aw: Re: Help needed with filesystem errors: parent transid verify
  failed
 Content-Type: multipart/mixed;
- boundary=refeik-6cb6eb45-1e60-40ce-8b9d-fafd6486a6f6
-Date:   Mon, 29 Mar 2021 09:36:17 +0200
+ boundary=sgnirk-6242f507-9a97-4a6f-97db-9a115f43d938
+Date:   Mon, 29 Mar 2021 09:34:17 +0200
 Importance: normal
 Sensitivity: Normal
 In-Reply-To: <CAJCQCtQZOywtL+sz1XBC54ew=JJaLsx=UkgmeZi3q-ob39vgjw@mail.gmail.com>
@@ -46,30 +47,30 @@ References: <trinity-ed62f670-6e98-4395-85c0-2a7ea4415ee4-1616946036541@3c-app-w
  <CAJCQCtQZOywtL+sz1XBC54ew=JJaLsx=UkgmeZi3q-ob39vgjw@mail.gmail.com>
 X-UI-Message-Type: mail
 X-Priority: 3
-X-Provags-ID: V03:K1:IvEFmR5LVxykIQMyxIncp7oHYXjVDK4tYevi8Moy0Wu0sj6J67A0NicZGHCHtIXu9N0Xu
- MuD3E1sS4+WkMDFE83vYpsU2ImqWGyGDFKoAZcL0k4eD0j8cnS1v07hFECucrrRU0dAfb527UZRK
- 1pNZWYjiiQeQakLcdaqKemKOEwUKCf5MMaaIvGw6priju9zFskNcLMS/+JpFbo82iLCYu4eU4+lO
- CzXcYNMzQJjQ8/E98az938ixV3QqzG9uBqaCLuQRbtnw3hcwb+Dy2gy6Z0FXXBX2RihZ4BiOjqrl
- QA=
-X-UI-Out-Filterresults: notjunk:1;V03:K0:aslRLTmXkuA=:FZKv7sDLrTj2lo49vKdgk2
- /8jExMJNBH1DLYBI0/6edC05LmsYD0n/wdz6EqPap+Tx5v94mls4ZqQrGIPC+s21jmJsgtNcu
- FvVb7GW1oYzFeVpCZLGYv3hufHqjktAOPtmZ2/DB/OwZRWVOkAd301ZWRChb0pAGLnPlwQmnr
- D3Sq94oe4Exiyx4iSifqbnjNwP4XAfq081xfeFBHxmPlu649JjMX1wf6jor6sxUpY3FKJghLv
- ZF/QLIl2xjpZTCmNI6GIqkijXdlWzpn6B6S3mN6D44Ak8tN7urb509xuBa7AOlu6tB3P8n8Mi
- NNxZyhf4VcpMb1U9+SXf7i9Yx7kIw17VJfxLt9oMBZTAykWuoYocYm2iYlcItus4MhEo/xj0B
- JeeGEXgtH+wvGYD4qj5REzsq4BzeeOupmNeCjkeVl7DHmj032+4OZPmUB+g6RiF48EtyJAoZX
- oSbKAw9olVW7/1uDG3PXNepvlrhkuZ2ifpP96yEwbqaexaqjjucd1jW7FgKtIK1KCDL29bEUE
- o9bvq5RgIDCOz+zXxwurHiHWrRLl3ZEDeHfJgXH9emOxySZop2HbAQajM1fg/0hb3hOv3Y0i3
- L9TgLsFxwgY+Z0GGnpl+Sal8/0Wq2d1iaEmJffMa+FzH8U3NJL/SLforr3hhdype7YLFqGJOW
- UHU5+MVmWmEDoQ35+4OSFlL6VDHkPjqzUT15lqcGA8QmRTCFGF/M2FFFeN6ZEwO+6szkHskFw
- +8RNeWke8N9WoTLFdlj1is155PL7S5aWW+L6L9E50/GyykJOnYG3jq2tM4ciPzTRfzvggov8F
- k3+t5KJt6aROb3a3AdK3Ocog5tlQGFWyftQid3K2IQG8Xqm7DW39T8RGydxytUiq01mkprDDy
- 97GEkpz/RG0YtPr4kGEF8ccuONzjAYLCk9T4P/U1hzB5fBKYX0YybmaemosWzO
+X-Provags-ID: V03:K1:9FWfj/jMibh6oK12xIGfQGVBocvlHSagBJXv0tlvrSXJWDb3GoFSU0NSVHPGPx2FjoE6n
+ NI4P5O8XhDSKPYg1kICrGr5ZBguT7HJj3b1oY+W1zOKnaZaqQNjyeme9bQKy9JvWOtY75PYcP2LJ
+ r/tRUVA163qwbymwNoY2VfKfsw4Qq499+AnuJYzBzctKfH+TBHoEkFQgbT11ECvoeY1yJQLQCuOr
+ z5h4Kf6cqMax59G41REBxFGEo726cPmwyD0JsUdkGh2MARU3IG2egWSqCss0lXDEDT4pnOaRQgO+
+ iY=
+X-UI-Out-Filterresults: notjunk:1;V03:K0:8RnF49aW+zU=:WnkeYCMDIyZvtMzPRDc6ik
+ aaKU98AD5o7nFM6W/hmYiBNjn1krBttbSn+qVbqXwG+fJUKHEBmGNd/QOlLG5m9sQauTVbdfu
+ 5gko7KcWk2Odz0TQL48d3p6PXwQg0kFAJsh1wyasiiC7HcQn+IRQ7DlfnRpPiyBxEqeK7Wk7t
+ 5usdNX8SwBeMs5r05GsDKHpc0ng1Q0C5Z1B9biv4Jqt8IykU6Lg149Rm5V6ItR5AdFZIQeTGl
+ yne4ok+Z8D70YRXdwEL/jQHv5yaO03EuOEkZx3PqE4VcfAo8dWAIpWRzK9oo+x8UWdObCnGMK
+ a/4+x9jH2PdWPTG1JusDHFBCj2ToRZtH0iigwBI4Qn9gspH033Eetif7IAlhmQ6bFlMDFdgWU
+ 53dHV3rUuBpdxfSGhXza0WcgsW1CpHuhaTrnD4iZgNvpvOKS8ltYZGyUlNQbP77pgPo4tm2DW
+ fa5GPCxT4Q2pPRdbvpBx9jcCfsXZ1Ti/1+B0K4JZdT07TpFm5B4c+xgZ0R4/nPMJiiger+Tqf
+ FLijI2xGH70opf4VIt0j7eaNGX6aMTMn6XvCOh/5jspQ0lgd97o/1gJn6cVqpTbwCTjV2VpqQ
+ 44Ii6tOg4bSVG4oP0hv/Pe9TYosc8sy/0yYwdMzosTVeUS02J5g4SN07RShRTv42U/gn7srfz
+ zOVQQ9ZGf2kz/8tUuV8sm44JT18QQSYc20k6pnGEiVOQrPtjb5Berx8XMMQID8KZahAfG7kT9
+ 3O9cAQEiHYaZ36HXZZmUCdxbro8Wa2VQkqgkuberwSLgI9y7+6oqabIb2CSV08AcjNhjr0dhC
+ 0J1nIaAVofyEe0FhUAsectAoP5/mobWU9P9vFRqNe2cVg9N4TBFoGUaocfyy1miCQSe5WISHq
+ sODoeBxj/eDnfL21itJYzs+gn+EPXMcS98caZafpDcinTjqlsYeewx0mYZPaB9
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---refeik-6cb6eb45-1e60-40ce-8b9d-fafd6486a6f6
+--sgnirk-6242f507-9a97-4a6f-97db-9a115f43d938
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
@@ -127,11 +128,11 @@ t
 >
 > btrfs insp dump-t -b 1144783093760 /dev/dm-0
 
-See attached file "btrfs_insp_dump-t_[=E2=80=A6]x60=2Etxt"
+See attached file "btrfs_insp_dump-t_-b_x60=2Etxt"
 
 > btrfs insp dump-t -b 1144881201152 /dev/dm-0
 
-See attached file "btrfs_insp_dump-t_[=E2=80=A6]x52=2Etxt"
+See attached file "btrfs_insp_dump-t_-b_x52=2Etxt"
 
 > > What shall I do now? Do I need any of the invasive methods (`btrfs res=
 cue` or `btrfs check --repair`) and if yes, which method do I choose?
@@ -151,7 +152,7 @@ Thanks for your help so far!
 
 Kind regards,
 Chris
---refeik-6cb6eb45-1e60-40ce-8b9d-fafd6486a6f6
+--sgnirk-6242f507-9a97-4a6f-97db-9a115f43d938
 Content-Type: text/plain
 Content-Disposition: attachment; filename=btrfs_insp_dump-t_-b_x52.txt
 Content-Transfer-Encoding: quoted-printable
@@ -489,7 +490,7 @@ chunk uuid 66e88af8-618f-4dc9-8b88-908eb1904318
 	key (1070659387392 EXTENT_ITEM 20480) block 1151310512128 gen 2731877
 	key (1070661054464 EXTENT_ITEM 8192) block 1151401197568 gen 2731888
 
---refeik-6cb6eb45-1e60-40ce-8b9d-fafd6486a6f6
+--sgnirk-6242f507-9a97-4a6f-97db-9a115f43d938
 Content-Type: text/plain
 Content-Disposition: attachment; filename=btrfs_insp_dump-t_-b_x60.txt
 Content-Transfer-Encoding: quoted-printable
@@ -641,5 +642,5 @@ chunk uuid 66e88af8-618f-4dc9-8b88-908eb1904318
 	key (EXTENT_CSUM EXTENT_CSUM 1340210253824) block 1146594689024 gen 27318=
 66
 
---refeik-6cb6eb45-1e60-40ce-8b9d-fafd6486a6f6--
+--sgnirk-6242f507-9a97-4a6f-97db-9a115f43d938--
 

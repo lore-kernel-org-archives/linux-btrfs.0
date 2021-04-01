@@ -2,93 +2,132 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.2 required=3.0 tests=BAYES_00,DATE_IN_PAST_06_12,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF362C433ED
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 18:27:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5006CC43461
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 19:04:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 98B18601FC
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 18:27:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C64760FEE
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 19:04:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235352AbhDAS1S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Apr 2021 14:27:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38244 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239439AbhDASUs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Apr 2021 14:20:48 -0400
-X-Greylist: delayed 458 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Thu, 01 Apr 2021 08:07:27 PDT
-Received: from mail.tuxforce.de (mail.tuxforce.de [IPv6:2a00:5080:1:16d::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B42B5C00F7D6
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Apr 2021 08:07:27 -0700 (PDT)
-Received: from [IPv6:2001:4dd5:b099:0:19b2:6b8c:f4bb:b22d] (2001-4dd5-b099-0-19b2-6b8c-f4bb-b22d.ipv6dyn.netcologne.de [IPv6:2001:4dd5:b099:0:19b2:6b8c:f4bb:b22d])
-        by mail.tuxforce.de (Postfix) with ESMTPSA id 0A22152007A;
-        Thu,  1 Apr 2021 16:59:48 +0200 (CEST)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mail.tuxforce.de 0A22152007A
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tuxforce.de;
-        s=202009; t=1617289188;
-        bh=3a6WlI18tPbA5gRTLysYpeWkw8mZwnceMr/ns0Zzj1w=;
-        h=Subject:To:Cc:References:From:Date:In-Reply-To:From;
-        b=EfoCDaI0jR5YqXlG8sUTB9/OXuhCp/xJ3sDumLcZMYQWJ6dtRePXG86osxhpa375u
-         jlKUtBmN+xE1pKPDHIoSf/n/7ylPgD/Qd2hd1sCILzCJB1C7OFThwGpNQufTdXaSba
-         z9cAosTiPFT0dxbVdsDDFmTW1uOfwj1UnMAGQTRYXhX6TKY/1mXE5cnVJqt5PYpFGs
-         Ft1OiKiJRcalYM3pzDY5nRx+pxzTJD3vf7w8GJgRp9kcG9DVYYkvU5Pyc77puFU+rG
-         JFKy5ACNyNj6orNBnuDU/LBBoNBNA7mCuk61dc8mEMyNP/qSqjQdu0JOfQsubKUY02
-         h5p7uLPSAvtAw==
-Subject: Re: Is request_firmware() really safe to call in resume callback when
- /usr/lib/firmware is on btrfs?
-To:     Luis Chamberlain <mcgrof@kernel.org>
-Cc:     linux-btrfs@vger.kernel.org, Antti Palosaari <crope@iki.fi>,
-        Mauro Carvalho Chehab <mchehab@kernel.org>,
-        linux-media@vger.kernel.org, Lukas Middendorf <kernel@tuxforce.de>
-References: <c79e24a5-f808-d1f0-1f09-ee6f135d9679@tuxforce.de>
- <20200813163749.GV4332@42.do-not-panic.com>
- <0b1621bf-fc82-1a56-c11f-c5c46677e59e@tuxforce.de>
- <20200813221348.GB4332@42.do-not-panic.com>
- <fc887e06-874c-79d8-0607-4e27ae788446@tuxforce.de>
- <20200814163723.GC4332@42.do-not-panic.com>
- <a79f1a0c-012d-bebe-c9c7-b505f59079c2@tuxforce.de>
- <20200817152056.GD4332@42.do-not-panic.com>
- <9e5c716e-1736-9890-54be-75739ea5462f@tuxforce.de>
- <20200818143715.GF4332@42.do-not-panic.com>
-From:   Lukas Middendorf <kernel@tuxforce.de>
-Message-ID: <6b61e549-42b8-8e71-ff57-43b7c5b4291f@tuxforce.de>
-Date:   Thu, 1 Apr 2021 16:59:47 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.0
+        id S236859AbhDATEu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Apr 2021 15:04:50 -0400
+Received: from mout.web.de ([212.227.15.3]:34639 "EHLO mout.web.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S234238AbhDAS5l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 1 Apr 2021 14:57:41 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=web.de;
+        s=dbaedf251592; t=1617303460;
+        bh=lVg0vBbUQd7acNMgRKbrzaJ+GlS/XxikrXcPbLEA3EU=;
+        h=X-UI-Sender-Class:From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=hVi+a4w9+dIS2fGASGa1cD2wM9oFPhzh7E4rIVDldx9YHtnVQ38xvOJesEgo6HZs7
+         wHYnkJl1//OdgO0Zzf5ZXPx70266J9vEnu4aa/nSseiwYBvyZRg65WoXdrlE5XmPlH
+         mAC0QP39XRDaXMEhDC5Aj37iesxLAQm3LuoB+UUg=
+X-UI-Sender-Class: c548c8c5-30a9-4db5-a2e7-cb6cb037b8f9
+Received: from [62.216.205.36] ([62.216.205.36]) by web-mail.web.de
+ (3c-app-webde-bs39.server.lan [172.19.170.39]) (via HTTP); Thu, 1 Apr 2021
+ 14:42:06 +0200
 MIME-Version: 1.0
-In-Reply-To: <20200818143715.GF4332@42.do-not-panic.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Message-ID: <trinity-ccc8c959-c9de-4327-aa3e-dab2ffd0b7e5-1617280926216@3c-app-webde-bs39>
+From:   B A <chris.std@web.de>
+To:     btrfs kernel mailing list <linux-btrfs@vger.kernel.org>
+Cc:     Chris Murphy <lists@colorremedies.com>
+Subject: Aw: Re: Re: Help needed with filesystem errors: parent transid
+ verify failed
+Content-Type: text/plain; charset=UTF-8
+Date:   Thu, 1 Apr 2021 14:42:06 +0200
+Importance: normal
+Sensitivity: Normal
+In-Reply-To: <CAJCQCtQ7qtNU4tjWKf8VcmjZiij5nHd0cUAbh4rRO+NWWnQ=BA@mail.gmail.com>
+References: <trinity-ed62f670-6e98-4395-85c0-2a7ea4415ee4-1616946036541@3c-app-webde-bs48>
+ <CAJCQCtQWtnjyN88gif-tmA_cxcs+6HPgVxB5XwNmAVj3qMKmfw@mail.gmail.com>
+ <trinity-6258eac7-550c-402f-9280-6f529e372d32-1617093845116@3c-app-webde-bs38>
+ <CAJCQCtQ7qtNU4tjWKf8VcmjZiij5nHd0cUAbh4rRO+NWWnQ=BA@mail.gmail.com>
+Content-Transfer-Encoding: quoted-printable
+X-UI-Message-Type: mail
+X-Priority: 3
+X-Provags-ID: V03:K1:m+r1d12JW4Fi9DKuaB2AI/R+kNC39Lj4q9TBwIEyiJpXplocsdI1OwO5Z8MU7dZFJaj94
+ kvTkVPhYiDLt0wdGMrFEZXTvMcCPMSedZWfkVhcZkJRdafbuy1BjmwnkeXzw/ZEnz3uZNe7AC2Es
+ CrIyQQFlKQ2NuZT3QI4LyUKDpPf9Oq/M/w1G3tutLKv3D6T7t3/3EOy2Hm6ODnyMs2epKeRAAGOw
+ y8XjkIf8CWjTKaZ7rFBwUIApX58MS+QONkBpki0+S0fjJRDZBnV5CsDuVmrxc+h8JuWwKrl1dLnV
+ iw=
+X-UI-Out-Filterresults: notjunk:1;V03:K0:tgpp64ZM0+Y=:BEGlVi9qLPLqYZZv7YhrgY
+ EKJnaRmVu15fjyeZgoYF5gUdYPD5S89HXjZGh6dkrIjZutMkfUuPxuOjumYxI8IelevJ2hVXi
+ 9aOkFKOHhbQER55+zWEI4e3hVk2XLHLFPmaCWf+4nEdIaD6ZLeiuxYyub0Y0wVimFYEuXgqz9
+ CgyJDILpxFAFwAeIrnKqpAmlQi3BpFJMxkU45hmHHiRT16JvrPqWtaYLAVHT6zVFD9wu3gdfV
+ ODn02mXteI7JoffgNk5AltJxbZJE44k0tw0cv8EYAWCKHVkYPojQRfgTPWFv80cc8vhFUTzr9
+ Pguu5A+GV9eB4cdC5NjoBsP8QKTUur71mrEB1Ax4iECJbzdwCHvNMy6EpLUAdE3Yup+/1Npjp
+ pthKY2126HG/Ds0mtmUQQ/NwrpruxZ139O0Jz8/lXTcUuSFojDbX73j28/OaUtqud00tVfegJ
+ 5v6c/Scn+3zpEpMLg1Kjf1svwry1Cvtk0p5nItBN6i0ofW0nAM98bejz1wXCyNWYrLU38a0MH
+ lwOZx8PdScEf+7OOqNGefAAAHOR7Q39b7y63LGDtw7eQuLSyPaxac44JbmKq5Cl/6TwcQSIRX
+ gkJkRHrfJvViitlu1rnBSPE7750Gb0GG7/Jk+dfr+Nr27cFSYxZ7spmMFjO66GgYuJehEWyhY
+ qD7AJ1E/0rcfYnFrEOV0XP5MaL+aND1G3mqA+h/aOmOlaycGxLFh9BM8wXFGn1jYdWlUQ1w/C
+ 6AkXsKZKdifIXQF/E0zIeH5sMf5Nu4ILSiH5/k5cYtHnOuMuSfpjGT8UMm0lYNPDBv990pMDc
+ sAldeJ+xBwt2S0G/qV41HU6r7g+UAOu2pxz+6Gmgwxya5adgyFCVQ4kg5eaQ5c4GZGTDyocCD
+ csTQNaK2CM1O+6xGBhsN2n64DFHrdD/PBlgML1UDd5it8ztpzUwXr561xUvfuA
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello Luis,
+Hi Chris,
 
+> Gesendet: Dienstag, 30=2E M=C3=A4rz 2021 um 20:17 Uhr
+> Von: "Chris Murphy" <lists@colorremedies=2Ecom>
+>
+> On Tue, Mar 30, 2021 at 2:44 AM B A <chris=2Estd@web=2Ede> wrote:
+> >
+> > > Gesendet: Dienstag, 30=2E M=C3=A4rz 2021 um 00:07 Uhr
+> > > Von: "Chris Murphy" <lists@colorremedies=2Ecom>
+> > > [=E2=80=A6]
+> > > EVO or PRO? And what does its /proc/mounts line look like?
+> >
+> > Model is MZ-7TD500, which seems to be an EVO=2E Firmware is DXT08B0Q=
+=2E
+>=20
+> For me smartctl reports
+> Device Model:     Samsung SSD 840 EVO 250GB
+> Firmware Version: EXT0DB6Q
+>=20
+> Yours might be a PRO or it could just be a different era EVO=2E Last I
+> checked, Samsung had no firmware updates on their website for the 840
+> EVO=2E While I'm aware of some minor firmware bugs related to smartctl
+> testing, so far I've done well over 100 pull the power cord tests
+> while doing heavy writes (with Btrfs), and have never had a problem=2E
+> So I'd say there's probably not a "per se" problem with this model=2E
+> Best guess is that since the leaves pass checksum, it's not
+> corruption, but some SSD equivalent of a misdirected write (?) if
+> that's possible=2E It just looks like these two leaves are in the wrong
+> place=2E
 
-On 18/08/2020 16:37, Luis Chamberlain wrote:
-> On Tue, Aug 18, 2020 at 12:04:51AM +0200, Lukas Middendorf wrote:
->> On 17/08/2020 17:20, Luis Chamberlain wrote:
->>> This helps, thanks so much, now we'll have to write a reproducer, thanks
->>> for the report!!
->>
->> Will you do it yourself or do you expect me to do anything for this?
-> 
-> I meant to imply that we'd do this, now that we understand the problem. Thanks
-> for your report!
+I'd rather go with the theory you (indirectly) raised a few days ago that =
+my RAM may misbehave (when you suggested I run memtest)=2E This is rather p=
+ossible because I had difficulties understanding my BIOS and at some point =
+I have accidentally enabled some overclocking=2E As I know this may cause t=
+he RAM to misbehave (and I don't have ECC RAM), this may as well be the rea=
+son=2E
 
-any news on this issue? Did you succeed with reproducing this at your end?
+>=20
+> > > Total_LBAs_Written?
+> >
+> > Raw value:
+> 92857573119
+>=20
+> OK I'm at 33063832698
+>=20
+> Well hopefully --repair will fix it (let us know either way) and if
+> not, then we'll see what Josef can come up with, or alternatively you
+> can just mkfs and restore from backups which will surely be faster=2E
 
-I retested this with 5.12-rc5 and everything still seems unchanged. I 
-still get freezes on resume under the same circumstances described 
-previously if /usr/lib/firmware is on btrfs. My patches to si2168.c were 
-not merged.
-The documentation of request_firmware() seems unchanged and does not 
-reflect the fact that prerequisites exist for making it safe to call 
-during resume callbacks.
+Sadly it didn't (see other e-mail) but I think I'll go for the latter (mkf=
+s and restore from backups) as I *think* my backups are fine and I don't wa=
+nt to waste more of your time (unless Josef wants to get his changes tested=
+)=2E
 
-Lukas
+Thanks very much so far for the support and thanks for maintaining BTRFS :=
+-)
+
+Kind regards,
+Chris

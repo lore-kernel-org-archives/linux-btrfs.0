@@ -2,160 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_NONE,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_NONE,URIBL_BLOCKED autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 57D4FC41602
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5592AC001B3
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3F86B61165
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0E13761277
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236638AbhDARqG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Apr 2021 13:46:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59154 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234772AbhDARkB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 1 Apr 2021 13:40:01 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id EE707AF21;
-        Thu,  1 Apr 2021 17:39:58 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 68D51DA790; Thu,  1 Apr 2021 19:37:49 +0200 (CEST)
-Date:   Thu, 1 Apr 2021 19:37:49 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: improve btree readahead for full send operations
-Message-ID: <20210401173748.GZ7604@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <ec7b0d5e27fc3f54c888fb7b71510f3a6d793cd7.1617188079.git.fdmanana@suse.com>
+        id S236670AbhDARqK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Apr 2021 13:46:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57266 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234829AbhDARkd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Apr 2021 13:40:33 -0400
+Received: from mail-lf1-x12b.google.com (mail-lf1-x12b.google.com [IPv6:2a00:1450:4864:20::12b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02819C02FE9B
+        for <linux-btrfs@vger.kernel.org>; Thu,  1 Apr 2021 09:05:43 -0700 (PDT)
+Received: by mail-lf1-x12b.google.com with SMTP id m12so3580261lfq.10
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Apr 2021 09:05:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=iP5XcIUiB65F0LLqCoqPxiX0Svs4vaWqQzfjqgIZ9Cs=;
+        b=FPeG12D75gTLYSxzhBVuCFWZ7afdxQScJL/saT72QoEEkvkmu4OPQw4w4cozkk1n20
+         XGxo2yvy2/NQ44qtUM+WNWfgCPAl37mw1L1LrAe/r3PRY8uK8TbAN3gNKWlLrgAsry3t
+         3RGscXoiWR2M5XVNZ7QurRIJZkl+KHhoU2ZaE=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=iP5XcIUiB65F0LLqCoqPxiX0Svs4vaWqQzfjqgIZ9Cs=;
+        b=pGRpgNaGyNVJf7m8+Ollf2n6gQhwuyfQhzcakES6uZa/H23FQkS9MfKLHD4RjgwpoK
+         0g4IjlUhj5OSdC9z6AIBFjbq744oNEVcDEps2TDNIumu5Tt2pjJy2pCbaesfzCuviHxd
+         8EiToiOdFJ644vBpcNR5rcoYhN49NjfAzTsb83mgFCqGaFPG4lko2EY40APrEadsxNVt
+         lwehuOCrS4JF51fKD/vYCExc7inZW9PMLKUzmeFKdPtKEOCgSsxISG0h1PFTIqxi/JwG
+         QCqcTTwhoD8AVsbPqeNzNKc1lH3Zn67c8JsHCi8ES1n3WiE6EZOI4JHZ3RfyQERq0VnX
+         GjLw==
+X-Gm-Message-State: AOAM530lZDDAq4RaQanmKKxiDPLKhigouhnzZxNbBf/D+tzzL6Fu2K2c
+        fyqPq6bNEVoDdPXq6C24EBsI68fZvicY6A==
+X-Google-Smtp-Source: ABdhPJwnURi5ghalsFvo0Be8jV6wKwv90h20RQI59vxHxYBlErhsST05N7cXxeKBCnh6rHNFTsYYKg==
+X-Received: by 2002:a05:6512:3484:: with SMTP id v4mr5766337lfr.137.1617293141162;
+        Thu, 01 Apr 2021 09:05:41 -0700 (PDT)
+Received: from mail-lj1-f181.google.com (mail-lj1-f181.google.com. [209.85.208.181])
+        by smtp.gmail.com with ESMTPSA id h10sm581790lfc.266.2021.04.01.09.05.39
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 01 Apr 2021 09:05:40 -0700 (PDT)
+Received: by mail-lj1-f181.google.com with SMTP id u20so2779449lja.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Apr 2021 09:05:39 -0700 (PDT)
+X-Received: by 2002:a05:651c:3c1:: with SMTP id f1mr5836522ljp.507.1617293139746;
+ Thu, 01 Apr 2021 09:05:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ec7b0d5e27fc3f54c888fb7b71510f3a6d793cd7.1617188079.git.fdmanana@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <cover.1617258892.git.osandov@fb.com> <0e7270919b461c4249557b12c7dfce0ad35af300.1617258892.git.osandov@fb.com>
+In-Reply-To: <0e7270919b461c4249557b12c7dfce0ad35af300.1617258892.git.osandov@fb.com>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Thu, 1 Apr 2021 09:05:22 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wgpn=GYW=2ZNizdVdM0qGGk_iM_Ho=0eawhNaKHifSdpg@mail.gmail.com>
+Message-ID: <CAHk-=wgpn=GYW=2ZNizdVdM0qGGk_iM_Ho=0eawhNaKHifSdpg@mail.gmail.com>
+Subject: Re: [PATCH v9 1/9] iov_iter: add copy_struct_from_iter()
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Jann Horn <jannh@google.com>,
+        Amir Goldstein <amir73il@gmail.com>,
+        Aleksa Sarai <cyphar@cyphar.com>,
+        Linux API <linux-api@vger.kernel.org>,
+        Kernel Team <kernel-team@fb.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 31, 2021 at 11:56:21AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Currently a full send operation uses the standard btree readahead when
-> iterating over the subvolume/snapshot btree, which despite bringing good
-> performance benefits, it could be improved in a few aspects for use cases
-> such as full send operations, which are guaranteed to visit every node
-> and leaf of a btree, in ascending and sequential order. The limitations
-> of that standard btree readahead implementation are the following:
-> 
-> 1) It only triggers readahead for for leaves that are physically close
->    to the leaf being read, within a 64K range;
-> 
-> 2) It only triggers readahead for the next or previous leaves if the
->    leaf being read is not currently in memory;
-> 
-> 3) It never triggers readahead for nodes.
-> 
-> So add a new readahead mode that addresses all these points and use it
-> for full send operations.
-> 
-> The following test script was used to measure the improvement on a box
-> using an average, consumer grade, spinning disk and with 16Gb of ram:
-> 
->   $ cat test.sh
->   #!/bin/bash
-> 
->   DEV=/dev/sdj
->   MNT=/mnt/sdj
->   MKFS_OPTIONS="--nodesize 16384"     # default, just to be explicit
->   MOUNT_OPTIONS="-o max_inline=2048"  # default, just to be explicit
-> 
->   mkfs.btrfs -f $MKFS_OPTIONS $DEV > /dev/null
->   mount $MOUNT_OPTIONS $DEV $MNT
-> 
->   # Create files with inline data to make it easier and faster to create
->   # large btrees.
->   add_files()
->   {
->       local total=$1
->       local start_offset=$2
->       local number_jobs=$3
->       local total_per_job=$(($total / $number_jobs))
-> 
->       echo "Creating $total new files using $number_jobs jobs"
->       for ((n = 0; n < $number_jobs; n++)); do
->           (
->               local start_num=$(($start_offset + $n * $total_per_job))
->               for ((i = 1; i <= $total_per_job; i++)); do
->                   local file_num=$((start_num + $i))
->                   local file_path="$MNT/file_${file_num}"
->                   xfs_io -f -c "pwrite -S 0xab 0 2000" $file_path > /dev/null
->                   if [ $? -ne 0 ]; then
->                       echo "Failed creating file $file_path"
->                       break
->                   fi
->               done
->           ) &
->           worker_pids[$n]=$!
->       done
-> 
->       wait ${worker_pids[@]}
-> 
->       sync
->       echo
->       echo "btree node/leaf count: $(btrfs inspect-internal dump-tree -t 5 $DEV | egrep '^(node|leaf) ' | wc -l)"
->   }
-> 
->   initial_file_count=500000
->   add_files $initial_file_count 0 4
-> 
->   echo
->   echo "Creating first snapshot..."
->   btrfs subvolume snapshot -r $MNT $MNT/snap1
-> 
->   echo
->   echo "Adding more files..."
->   add_files $((initial_file_count / 4)) $initial_file_count 4
-> 
->   echo
->   echo "Updating 1/50th of the initial files..."
->   for ((i = 1; i < $initial_file_count; i += 50)); do
->       xfs_io -c "pwrite -S 0xcd 0 20" $MNT/file_$i > /dev/null
->   done
-> 
->   echo
->   echo "Creating second snapshot..."
->   btrfs subvolume snapshot -r $MNT $MNT/snap2
-> 
->   umount $MNT
-> 
->   echo 3 > /proc/sys/vm/drop_caches
->   blockdev --flushbufs $DEV &> /dev/null
->   hdparm -F $DEV &> /dev/null
-> 
->   mount $MOUNT_OPTIONS $DEV $MNT
-> 
->   echo
->   echo "Testing full send..."
->   start=$(date +%s)
->   btrfs send $MNT/snap1 > /dev/null
->   end=$(date +%s)
->   echo
->   echo "Full send took $((end - start)) seconds"
-> 
->   umount $MNT
-> 
-> The durations of the full send operation in seconds were the following:
-> 
-> Before this change:  217 seconds
-> After this change:   205 seconds (-5.7%)
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+On Wed, Mar 31, 2021 at 11:51 PM Omar Sandoval <osandov@osandov.com> wrote:
+>
+> + *
+> + * The recommended usage is something like the following:
+> + *
+> + *     if (usize > PAGE_SIZE)
+> + *       return -E2BIG;
 
-Added to misc-next, thanks.
+Maybe this should be more than a recommendation, and just be inside
+copy_struct_from_iter(), because otherwise the "check_zeroed_user()"
+call might be quite the timesink for somebody who does something
+stupid.
+
+But otherwise this new version (still) looks fine to me.
+
+            Linus

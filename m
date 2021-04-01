@@ -2,98 +2,161 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_NONE,URIBL_BLOCKED autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_NONE
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5592AC001B3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A78C3C43140
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0E13761277
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 902C861284
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Apr 2021 17:46:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236670AbhDARqK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Apr 2021 13:46:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57266 "EHLO
+        id S236658AbhDARqI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Apr 2021 13:46:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57130 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234829AbhDARkd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Apr 2021 13:40:33 -0400
-Received: from mail-lf1-x12b.google.com (mail-lf1-x12b.google.com [IPv6:2a00:1450:4864:20::12b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02819C02FE9B
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Apr 2021 09:05:43 -0700 (PDT)
-Received: by mail-lf1-x12b.google.com with SMTP id m12so3580261lfq.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Apr 2021 09:05:42 -0700 (PDT)
+        with ESMTP id S234780AbhDARkE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Apr 2021 13:40:04 -0400
+Received: from mail-wr1-x42d.google.com (mail-wr1-x42d.google.com [IPv6:2a00:1450:4864:20::42d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2B8E3C08ECB9
+        for <linux-btrfs@vger.kernel.org>; Thu,  1 Apr 2021 07:00:06 -0700 (PDT)
+Received: by mail-wr1-x42d.google.com with SMTP id c8so1921795wrq.11
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Apr 2021 07:00:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
+        d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=iP5XcIUiB65F0LLqCoqPxiX0Svs4vaWqQzfjqgIZ9Cs=;
-        b=FPeG12D75gTLYSxzhBVuCFWZ7afdxQScJL/saT72QoEEkvkmu4OPQw4w4cozkk1n20
-         XGxo2yvy2/NQ44qtUM+WNWfgCPAl37mw1L1LrAe/r3PRY8uK8TbAN3gNKWlLrgAsry3t
-         3RGscXoiWR2M5XVNZ7QurRIJZkl+KHhoU2ZaE=
+         :cc:content-transfer-encoding;
+        bh=FPFA61vKfECcdI9cRIN30iC5eaHjX7gQxGzxBtGA5Bs=;
+        b=eUa+e5iTkKSN1H6ln4Nb0Pi/yg/SaJWctgFhOG2kogvvcEPoM1ifaZ3LzAdfZ0sFuz
+         FP4LNe+ORIb5uHVoS4nQp3KJhROjMJTy6j4NRC/vbBSZik83b1VIQccSVK1iiv+Et8mU
+         I8PZDh7vCcH7b/w30Fi6kIf3MhUJ1EYRdfH30Wx5a8kWE4hnsvCAO+Jd+D8PcWmSnfUm
+         rWdqZt2EPnttJ3bJ7GcHRrlc6EWkFLeZcXzMeZIHqd2uwR/rEJYCKj1K9KdwRL+5LKwK
+         pV9W33PN22AZQGlkYIyuInrSPd+Vt6wDFkvxuc/KUyjmnc9eSvKzWs/RZ9oci6loD4xQ
+         u+SA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=iP5XcIUiB65F0LLqCoqPxiX0Svs4vaWqQzfjqgIZ9Cs=;
-        b=pGRpgNaGyNVJf7m8+Ollf2n6gQhwuyfQhzcakES6uZa/H23FQkS9MfKLHD4RjgwpoK
-         0g4IjlUhj5OSdC9z6AIBFjbq744oNEVcDEps2TDNIumu5Tt2pjJy2pCbaesfzCuviHxd
-         8EiToiOdFJ644vBpcNR5rcoYhN49NjfAzTsb83mgFCqGaFPG4lko2EY40APrEadsxNVt
-         lwehuOCrS4JF51fKD/vYCExc7inZW9PMLKUzmeFKdPtKEOCgSsxISG0h1PFTIqxi/JwG
-         QCqcTTwhoD8AVsbPqeNzNKc1lH3Zn67c8JsHCi8ES1n3WiE6EZOI4JHZ3RfyQERq0VnX
-         GjLw==
-X-Gm-Message-State: AOAM530lZDDAq4RaQanmKKxiDPLKhigouhnzZxNbBf/D+tzzL6Fu2K2c
-        fyqPq6bNEVoDdPXq6C24EBsI68fZvicY6A==
-X-Google-Smtp-Source: ABdhPJwnURi5ghalsFvo0Be8jV6wKwv90h20RQI59vxHxYBlErhsST05N7cXxeKBCnh6rHNFTsYYKg==
-X-Received: by 2002:a05:6512:3484:: with SMTP id v4mr5766337lfr.137.1617293141162;
-        Thu, 01 Apr 2021 09:05:41 -0700 (PDT)
-Received: from mail-lj1-f181.google.com (mail-lj1-f181.google.com. [209.85.208.181])
-        by smtp.gmail.com with ESMTPSA id h10sm581790lfc.266.2021.04.01.09.05.39
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 01 Apr 2021 09:05:40 -0700 (PDT)
-Received: by mail-lj1-f181.google.com with SMTP id u20so2779449lja.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Apr 2021 09:05:39 -0700 (PDT)
-X-Received: by 2002:a05:651c:3c1:: with SMTP id f1mr5836522ljp.507.1617293139746;
- Thu, 01 Apr 2021 09:05:39 -0700 (PDT)
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=FPFA61vKfECcdI9cRIN30iC5eaHjX7gQxGzxBtGA5Bs=;
+        b=OR+pJQG2Vh1GeDwBD7ijrt9+Peq012ALHmYSVyI0BWXBNSNCew5474yXresU+hPeWx
+         fbVl1k2xT+xGkOVG8HTElW9kzQNQDShpnLYAhev6jrYv9LGtGtEtxaddtIfLlkp+bTG5
+         a9Dx3mGlgcBnQfnp8sbxCd3FlPT8QwHdubksKvJotrBImPNPQfbxjbTMIdjZuHdWibUD
+         0DS82gQwlxZV9MqekSjmfD127EeAIFfVu0/52tbbN/g4ANYhmpZnh8WY1P3AnrFsWNVJ
+         xYkQ/v+n4akNdgBGNdMN2YG1eYGFHculvRF1cS9f2I/s2OZ4TmYQDkMCQk6o6GxD483j
+         TqhQ==
+X-Gm-Message-State: AOAM5324nqYnsPkW2Ej7L7O0Bfe0+PPxD9tw1d/n8YCByYIFhaNTWVx9
+        Qr2ZuAiOVZqkqQL8ISdWY3FVMweHP4YtSrxcIKf3oFDohng=
+X-Google-Smtp-Source: ABdhPJxDQ2wuNZ84DoK0Daaf5xcOP55PXAcxJkqNgI85d++ugrLiy67VNR6aQ0KfB+af79j1BeUKWT2XzhTq856Br6I=
+X-Received: by 2002:a5d:518c:: with SMTP id k12mr9944500wrv.15.1617285604918;
+ Thu, 01 Apr 2021 07:00:04 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1617258892.git.osandov@fb.com> <0e7270919b461c4249557b12c7dfce0ad35af300.1617258892.git.osandov@fb.com>
-In-Reply-To: <0e7270919b461c4249557b12c7dfce0ad35af300.1617258892.git.osandov@fb.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Thu, 1 Apr 2021 09:05:22 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wgpn=GYW=2ZNizdVdM0qGGk_iM_Ho=0eawhNaKHifSdpg@mail.gmail.com>
-Message-ID: <CAHk-=wgpn=GYW=2ZNizdVdM0qGGk_iM_Ho=0eawhNaKHifSdpg@mail.gmail.com>
-Subject: Re: [PATCH v9 1/9] iov_iter: add copy_struct_from_iter()
-To:     Omar Sandoval <osandov@osandov.com>
-Cc:     linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>,
-        Dave Chinner <david@fromorbit.com>,
-        Jann Horn <jannh@google.com>,
-        Amir Goldstein <amir73il@gmail.com>,
-        Aleksa Sarai <cyphar@cyphar.com>,
-        Linux API <linux-api@vger.kernel.org>,
-        Kernel Team <kernel-team@fb.com>
+References: <CABDFzMi0AXwBaiL-aFW1G5-UMwgTffza5hbr-9MNHWyGfmyDAQ@mail.gmail.com>
+ <CABDFzMg1J_CDkNJ8JSvu2CkQT_ARHPw4_72C5BozbmYRxLKO6w@mail.gmail.com>
+ <20210331142327.09af250d@gecko.fritz.box> <CABDFzMiR=b6N+1mp_F4W1awig+kC2Qb3w18C6ev_S3jcQSKchQ@mail.gmail.com>
+ <20210401110419.53c8bfbc@gecko.fritz.box>
+In-Reply-To: <20210401110419.53c8bfbc@gecko.fritz.box>
+From:   Thierry Testeur <thierry.testeur@gmail.com>
+Date:   Thu, 1 Apr 2021 15:59:52 +0200
+Message-ID: <CABDFzMhAQVTe101PysBAqzN3iisd-thg947FXHH74pYHWmpT_w@mail.gmail.com>
+Subject: Re: Support demand on Btrfs crashed fs.
+To:     Lukas Straub <lukasstraub2@web.de>
+Cc:     linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 31, 2021 at 11:51 PM Omar Sandoval <osandov@osandov.com> wrote:
+Thanks for your return, but i think the writing of this type of
+programs is far away for me. Haven't really coded since the amiga 68k
+assembly time, so... :/
+
+I have appreciated your efforts to trying to help me, but i can't
+handle this type of solution.
+
+I will let this raid RIP until i will find a solution, maybe with
+futur evolutions of Btrfs-Tools.
+
+I wish you a nice day,
+Thierry
+
+Le jeu. 1 avr. 2021 =C3=A0 11:04, Lukas Straub <lukasstraub2@web.de> a =C3=
+=A9crit :
 >
-> + *
-> + * The recommended usage is something like the following:
-> + *
-> + *     if (usize > PAGE_SIZE)
-> + *       return -E2BIG;
-
-Maybe this should be more than a recommendation, and just be inside
-copy_struct_from_iter(), because otherwise the "check_zeroed_user()"
-call might be quite the timesink for somebody who does something
-stupid.
-
-But otherwise this new version (still) looks fine to me.
-
-            Linus
+> On Wed, 31 Mar 2021 23:44:28 +0200
+> Thierry Testeur <thierry.testeur@gmail.com> wrote:
+>
+> > Yep, compression enabled (original fstab before having tried restore
+> > options): compress=3Dlzo
+>
+> Okay, that explains why photorec couldn't recover a lot. If you want to
+> get your hands dirty, I guess you could write a program that does the
+> following:
+> For every 4k block/address on the filesystem, attempt to decompress it
+> using the btrfs lzo implementation (see fs/btrfs/lzo.c and
+> lib/lzo/lzo1x_decompress_safe.c in the kernel).
+> Do some sanity checks:
+>
+> Like, check that the length of the compressed data is reasonable. The
+> decompressed size of an compressed extend can be a maximum of 128k, so
+> considering the case that data which doesn't compress well may take up
+> more space in compressed from, the maximum length of the compressed
+> data should be a bit larger than 128k. I'd say like 256k.
+>
+> Also check that the length of the segments is reasonable, etc.
+>
+> If all sanity checks passed and decompression worked, look at the
+> decompressed size:
+>
+> If it is exactly 128k, it is likely part of a bigger file. Append all
+> such data to a output file.
+>
+> If it is below 128k, chances are pretty good you just recovered a small
+> file, save it directly somewhere. You can use the file(1) utility later
+> to figure out the file-format.
+> Or it could be the last part of a large file, so always append it to
+> the output file as well and fill up with zeroes so the end is aligned
+> to 4k.
+>
+> Finally, you can run photorec on the output file that you appended
+> everything to, to rescue files that are larger than 128k.
+>
+> I wish you luck.
+>
+> Regards,
+> Lukas Straub
+>
+> > Best regards,
+> > Thierry
+> >
+> > Le mer. 31 mars 2021 =C3=A0 14:23, Lukas Straub <lukasstraub2@web.de> a
+> > =C3=A9crit :
+> > >
+> > > On Wed, 31 Mar 2021 02:17:48 +0200
+> > > Thierry Testeur <thierry.testeur@gmail.com> wrote:
+> > >
+> > > > Hello,
+> > > >
+> > > > if anyone can help me with the problem above?
+> > > > Have tried a Photorec (even if i know the chance are really
+> > > > poor), and have got some non-sens files, lkie pdf of 2Gb, ....
+> > > > most of them are unusable, except smal size file, like jpg pic...
+> > > >
+> > > > thanks for any help.
+> > > > Thierry
+> > >
+> > > Weird, I would have expected photorec to recover more. Did you have
+> > > compression enabled?
+> > >
+> > > Regards,
+> > > Lukas Straub
+> > >
+> > > --
+> > >
+>
+>
+>
+> --
+>

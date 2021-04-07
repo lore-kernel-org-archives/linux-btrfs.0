@@ -2,149 +2,290 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,UNPARSEABLE_RELAY,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6458C43460
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Apr 2021 13:09:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D094AC433B4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Apr 2021 13:38:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A325861284
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Apr 2021 13:09:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9689461284
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Apr 2021 13:38:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344328AbhDGNJW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Apr 2021 09:09:22 -0400
-Received: from out20-2.mail.aliyun.com ([115.124.20.2]:48730 "EHLO
-        out20-2.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244018AbhDGNJO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Apr 2021 09:09:14 -0400
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04462136|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.0133605-0.000248439-0.986391;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047188;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=4;RT=4;SR=0;TI=SMTPD_---.JwOA6aC_1617800942;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.JwOA6aC_1617800942)
-          by smtp.aliyun-inc.com(10.147.40.200);
-          Wed, 07 Apr 2021 21:09:02 +0800
-Date:   Wed, 07 Apr 2021 21:09:07 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     Vlastimil Babka <vbabka@suse.cz>
-Subject: Re: unexpected -ENOMEM from percpu_counter_init()
-Cc:     linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        wangyugui@e16-tech.com
-In-Reply-To: <60e9b994-e37c-d059-4af5-0cb7860ca4f3@suse.cz>
-References: <20210401185158.3275.409509F4@e16-tech.com> <60e9b994-e37c-d059-4af5-0cb7860ca4f3@suse.cz>
-Message-Id: <20210407210905.F790.409509F4@e16-tech.com>
+        id S235495AbhDGNiv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Apr 2021 09:38:51 -0400
+Received: from mail.cn.fujitsu.com ([183.91.158.132]:46698 "EHLO
+        heian.cn.fujitsu.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S1344660AbhDGNis (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Apr 2021 09:38:48 -0400
+IronPort-HdrOrdr: =?us-ascii?q?A9a23=3ApWCfXKh67mioTgRJmmJ+vRZ9aHBQXjoji2hD?=
+ =?us-ascii?q?6mlwRA09T+WzkceykPMHkSLlkTp5YgBFpfmsGomlBUnd+5l8/JULMd6ZMTXOlW?=
+ =?us-ascii?q?O0IOhZg7fK7DHtFib3/OwY9YoIScJDIfLqC1wSt6fHyS2ZN/pl/9Wd6qCvgo7l?=
+ =?us-ascii?q?vhJQZCVncbtp4Qs8KivzKDwUeCB8CZA0FIWR66N8zlLORV0scs+5CnMZNtKzxe?=
+ =?us-ascii?q?HjqZSOW347Li9iwAyPoBft07TiDiWfty10bxp/hZsk7kjJ+jaU2pme?=
+X-IronPort-AV: E=Sophos;i="5.82,203,1613404800"; 
+   d="scan'208";a="106746628"
+Received: from unknown (HELO cn.fujitsu.com) ([10.167.33.5])
+  by heian.cn.fujitsu.com with ESMTP; 07 Apr 2021 21:38:31 +0800
+Received: from G08CNEXMBPEKD05.g08.fujitsu.local (unknown [10.167.33.204])
+        by cn.fujitsu.com (Postfix) with ESMTP id 6D9EF4D0B8A2;
+        Wed,  7 Apr 2021 21:38:28 +0800 (CST)
+Received: from G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.200) by
+ G08CNEXMBPEKD05.g08.fujitsu.local (10.167.33.204) with Microsoft SMTP Server
+ (TLS) id 15.0.1497.2; Wed, 7 Apr 2021 21:38:28 +0800
+Received: from irides.mr.mr.mr (10.167.225.141) by
+ G08CNEXCHPEKD04.g08.fujitsu.local (10.167.33.209) with Microsoft SMTP Server
+ id 15.0.1497.2 via Frontend Transport; Wed, 7 Apr 2021 21:38:27 +0800
+From:   Shiyang Ruan <ruansy.fnst@fujitsu.com>
+To:     <linux-kernel@vger.kernel.org>, <linux-xfs@vger.kernel.org>,
+        <linux-nvdimm@lists.01.org>, <linux-fsdevel@vger.kernel.org>
+CC:     <darrick.wong@oracle.com>, <dan.j.williams@intel.com>,
+        <willy@infradead.org>, <jack@suse.cz>, <viro@zeniv.linux.org.uk>,
+        <linux-btrfs@vger.kernel.org>, <david@fromorbit.com>, <hch@lst.de>,
+        <rgoldwyn@suse.de>, Ritesh Harjani <riteshh@linux.ibm.com>
+Subject: [PATCH v2 1/3] fsdax: Factor helpers to simplify dax fault code
+Date:   Wed, 7 Apr 2021 21:38:21 +0800
+Message-ID: <20210407133823.828176-2-ruansy.fnst@fujitsu.com>
+X-Mailer: git-send-email 2.31.0
+In-Reply-To: <20210407133823.828176-1-ruansy.fnst@fujitsu.com>
+References: <20210407133823.828176-1-ruansy.fnst@fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.03 [en]
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-yoursite-MailScanner-ID: 6D9EF4D0B8A2.A3947
+X-yoursite-MailScanner: Found to be clean
+X-yoursite-MailScanner-From: ruansy.fnst@fujitsu.com
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+The dax page fault code is too long and a bit difficult to read. And it
+is hard to understand when we trying to add new features. Some of the
+PTE/PMD codes have similar logic. So, factor them as helper functions to
+simplify the code.
 
-> +CC btrfs
-> 
-> On 4/1/21 12:51 PM, Wang Yugui wrote:
-> > Hi,
-> > 
-> > an unexpected -ENOMEM from percpu_counter_init() happened when xfstest 
-> > with kernel 5.11.10 and 5.10.27
-> 
-> Is there a dmesg log showing allocation failure or something?
+Signed-off-by: Shiyang Ruan <ruansy.fnst@fujitsu.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Ritesh Harjani <riteshh@linux.ibm.com>
+---
+ fs/dax.c | 153 ++++++++++++++++++++++++++++++-------------------------
+ 1 file changed, 84 insertions(+), 69 deletions(-)
 
-When unexpected -ENOMEM of percpu_counter_init(), btrfs as upper caller
-finally output something to dmesg.
-
-And we add one trace to btrfs source to make sure that.
->     if (ret == -ENOMEM) printk("ENOMEM btrfs_drew_lock_init\n");
-
-
-Now the reproduce frequency become from >50% to not happen or very slow
-with the flowing change.
-
-diff --git a/mm/percpu.c b/mm/percpu.c
-index 6596a0a..0127be1 100644
---- a/mm/percpu.c
-+++ b/mm/percpu.c
-@@ -104,8 +104,8 @@
- /* chunks in slots below this are subject to being sidelined on failed alloc */
- #define PCPU_SLOT_FAIL_THRESHOLD	3
+diff --git a/fs/dax.c b/fs/dax.c
+index b3d27fdc6775..f843fb8fbbf1 100644
+--- a/fs/dax.c
++++ b/fs/dax.c
+@@ -1244,6 +1244,53 @@ static bool dax_fault_is_synchronous(unsigned long flags,
+ 		&& (iomap->flags & IOMAP_F_DIRTY);
+ }
  
--#define PCPU_EMPTY_POP_PAGES_LOW	2
--#define PCPU_EMPTY_POP_PAGES_HIGH	4
-+#define PCPU_EMPTY_POP_PAGES_LOW	8
-+#define PCPU_EMPTY_POP_PAGES_HIGH	16
++/*
++ * If we are doing synchronous page fault and inode needs fsync, we can insert
++ * PTE/PMD into page tables only after that happens. Skip insertion for now and
++ * return the pfn so that caller can insert it after fsync is done.
++ */
++static vm_fault_t dax_fault_synchronous_pfnp(pfn_t *pfnp, pfn_t pfn)
++{
++	if (WARN_ON_ONCE(!pfnp))
++		return VM_FAULT_SIGBUS;
++
++	*pfnp = pfn;
++	return VM_FAULT_NEEDDSYNC;
++}
++
++static vm_fault_t dax_fault_cow_page(struct vm_fault *vmf, struct iomap *iomap,
++		loff_t pos)
++{
++	int error = 0;
++	vm_fault_t ret;
++	unsigned long vaddr = vmf->address;
++	sector_t sector = dax_iomap_sector(iomap, pos);
++
++	switch (iomap->type) {
++	case IOMAP_HOLE:
++	case IOMAP_UNWRITTEN:
++		clear_user_highpage(vmf->cow_page, vaddr);
++		break;
++	case IOMAP_MAPPED:
++		error = copy_cow_page_dax(iomap->bdev, iomap->dax_dev,
++						sector, vmf->cow_page, vaddr);
++		break;
++	default:
++		WARN_ON_ONCE(1);
++		error = -EIO;
++		break;
++	}
++
++	if (error)
++		return dax_fault_return(error);
++
++	__SetPageUptodate(vmf->cow_page);
++	ret = finish_fault(vmf);
++	if (!ret)
++		ret = VM_FAULT_DONE_COW;
++	return ret;
++}
++
+ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 			       int *iomap_errp, const struct iomap_ops *ops)
+ {
+@@ -1312,30 +1359,7 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 	}
  
- #ifdef CONFIG_SMP
- /* default addr <-> pcpu_ptr mapping, override in asm/percpu.h if necessary */
-diff --git a/include/linux/percpu.h b/include/linux/percpu.h
-index 5e76af7..8cc091b 100644
---- a/include/linux/percpu.h
-+++ b/include/linux/percpu.h
-@@ -14,7 +14,7 @@
+ 	if (vmf->cow_page) {
+-		sector_t sector = dax_iomap_sector(&iomap, pos);
+-
+-		switch (iomap.type) {
+-		case IOMAP_HOLE:
+-		case IOMAP_UNWRITTEN:
+-			clear_user_highpage(vmf->cow_page, vaddr);
+-			break;
+-		case IOMAP_MAPPED:
+-			error = copy_cow_page_dax(iomap.bdev, iomap.dax_dev,
+-						  sector, vmf->cow_page, vaddr);
+-			break;
+-		default:
+-			WARN_ON_ONCE(1);
+-			error = -EIO;
+-			break;
+-		}
+-
+-		if (error)
+-			goto error_finish_iomap;
+-
+-		__SetPageUptodate(vmf->cow_page);
+-		ret = finish_fault(vmf);
+-		if (!ret)
+-			ret = VM_FAULT_DONE_COW;
++		ret = dax_fault_cow_page(vmf, &iomap, pos);
+ 		goto finish_iomap;
+ 	}
  
- /* enough to cover all DEFINE_PER_CPUs in modules */
- #ifdef CONFIG_MODULES
--#define PERCPU_MODULE_RESERVE		(8 << 10)
-+#define PERCPU_MODULE_RESERVE		(32 << 10)
- #else
- #define PERCPU_MODULE_RESERVE		0
- #endif
+@@ -1355,19 +1379,8 @@ static vm_fault_t dax_iomap_pte_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
+ 						 0, write && !sync);
+ 
+-		/*
+-		 * If we are doing synchronous page fault and inode needs fsync,
+-		 * we can insert PTE into page tables only after that happens.
+-		 * Skip insertion for now and return the pfn so that caller can
+-		 * insert it after fsync is done.
+-		 */
+ 		if (sync) {
+-			if (WARN_ON_ONCE(!pfnp)) {
+-				error = -EIO;
+-				goto error_finish_iomap;
+-			}
+-			*pfnp = pfn;
+-			ret = VM_FAULT_NEEDDSYNC | major;
++			ret = dax_fault_synchronous_pfnp(pfnp, pfn);
+ 			goto finish_iomap;
+ 		}
+ 		trace_dax_insert_mapping(inode, vmf, entry);
+@@ -1466,13 +1479,45 @@ static vm_fault_t dax_pmd_load_hole(struct xa_state *xas, struct vm_fault *vmf,
+ 	return VM_FAULT_FALLBACK;
+ }
+ 
++static bool dax_fault_check_fallback(struct vm_fault *vmf, struct xa_state *xas,
++		pgoff_t max_pgoff)
++{
++	unsigned long pmd_addr = vmf->address & PMD_MASK;
++	bool write = vmf->flags & FAULT_FLAG_WRITE;
++
++	/*
++	 * Make sure that the faulting address's PMD offset (color) matches
++	 * the PMD offset from the start of the file.  This is necessary so
++	 * that a PMD range in the page table overlaps exactly with a PMD
++	 * range in the page cache.
++	 */
++	if ((vmf->pgoff & PG_PMD_COLOUR) !=
++	    ((vmf->address >> PAGE_SHIFT) & PG_PMD_COLOUR))
++		return true;
++
++	/* Fall back to PTEs if we're going to COW */
++	if (write && !(vmf->vma->vm_flags & VM_SHARED))
++		return true;
++
++	/* If the PMD would extend outside the VMA */
++	if (pmd_addr < vmf->vma->vm_start)
++		return true;
++	if ((pmd_addr + PMD_SIZE) > vmf->vma->vm_end)
++		return true;
++
++	/* If the PMD would extend beyond the file size */
++	if ((xas->xa_index | PG_PMD_COLOUR) >= max_pgoff)
++		return true;
++
++	return false;
++}
++
+ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 			       const struct iomap_ops *ops)
+ {
+ 	struct vm_area_struct *vma = vmf->vma;
+ 	struct address_space *mapping = vma->vm_file->f_mapping;
+ 	XA_STATE_ORDER(xas, &mapping->i_pages, vmf->pgoff, PMD_ORDER);
+-	unsigned long pmd_addr = vmf->address & PMD_MASK;
+ 	bool write = vmf->flags & FAULT_FLAG_WRITE;
+ 	bool sync;
+ 	unsigned int iomap_flags = (write ? IOMAP_WRITE : 0) | IOMAP_FAULT;
+@@ -1495,33 +1540,12 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 
+ 	trace_dax_pmd_fault(inode, vmf, max_pgoff, 0);
+ 
+-	/*
+-	 * Make sure that the faulting address's PMD offset (color) matches
+-	 * the PMD offset from the start of the file.  This is necessary so
+-	 * that a PMD range in the page table overlaps exactly with a PMD
+-	 * range in the page cache.
+-	 */
+-	if ((vmf->pgoff & PG_PMD_COLOUR) !=
+-	    ((vmf->address >> PAGE_SHIFT) & PG_PMD_COLOUR))
+-		goto fallback;
+-
+-	/* Fall back to PTEs if we're going to COW */
+-	if (write && !(vma->vm_flags & VM_SHARED))
+-		goto fallback;
+-
+-	/* If the PMD would extend outside the VMA */
+-	if (pmd_addr < vma->vm_start)
+-		goto fallback;
+-	if ((pmd_addr + PMD_SIZE) > vma->vm_end)
+-		goto fallback;
+-
+ 	if (xas.xa_index >= max_pgoff) {
+ 		result = VM_FAULT_SIGBUS;
+ 		goto out;
+ 	}
+ 
+-	/* If the PMD would extend beyond the file size */
+-	if ((xas.xa_index | PG_PMD_COLOUR) >= max_pgoff)
++	if (dax_fault_check_fallback(vmf, &xas, max_pgoff))
+ 		goto fallback;
+ 
+ 	/*
+@@ -1573,17 +1597,8 @@ static vm_fault_t dax_iomap_pmd_fault(struct vm_fault *vmf, pfn_t *pfnp,
+ 		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
+ 						DAX_PMD, write && !sync);
+ 
+-		/*
+-		 * If we are doing synchronous page fault and inode needs fsync,
+-		 * we can insert PMD into page tables only after that happens.
+-		 * Skip insertion for now and return the pfn so that caller can
+-		 * insert it after fsync is done.
+-		 */
+ 		if (sync) {
+-			if (WARN_ON_ONCE(!pfnp))
+-				goto finish_iomap;
+-			*pfnp = pfn;
+-			result = VM_FAULT_NEEDDSYNC;
++			result = dax_fault_synchronous_pfnp(pfnp, pfn);
+ 			goto finish_iomap;
+ 		}
+ 
+-- 
+2.31.0
 
-
-Just some guess,
-1) maybe some releationship to the trigger of 'vm.dirty_bytes=10737418240'.
-
-this problem happen in 
-server/T7610 with E5-2660v2 *2 and SSD/SAS(6Gb/s) and 192G memory
-but not happen in
-server/T620 with E5-2680v2 *2 and SSD/NVMe and 192G memory.
-
-2) maybe some releationship to numa.
-128G memory in node1(CPU1), and 64G in node2(CPU2)
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2021/04/07
-
-
-> > direct caller:
-> > int btrfs_drew_lock_init(struct btrfs_drew_lock *lock)
-> > {
-> >     int ret;
-> > 
-> >     ret = percpu_counter_init(&lock->writers, 0, GFP_KERNEL);
-> >     if (ret)
-> >         return ret;
-> > 
-> >     atomic_set(&lock->readers, 0);
-> >     init_waitqueue_head(&lock->pending_readers);
-> >     init_waitqueue_head(&lock->pending_writers);
-> > 
-> >     return 0;
-> > }
-> > 
-> > upper caller:
-> >     nofs_flag = memalloc_nofs_save();
-> >     ret = btrfs_drew_lock_init(&root->snapshot_lock);
-> >     memalloc_nofs_restore(nofs_flag);
-> >     if (ret == -ENOMEM) printk("ENOMEM btrfs_drew_lock_init\n");
-> >     if (ret)
-> >         goto fail;
-> > 
-> > The hardware of this server:
-> > CPU:  Xeon(R) CPU E5-2660 v2(10 core)  *2
-> > memory:  192G, no swap
-> > 
-> > Only one xfstests job is running in this server, and about 7% of memory
-> > is used.
-> > 
-> > Any advice please.
-> > 
-> > Best Regards
-> > Wang Yugui (wangyugui@e16-tech.com)
-> > 2021/04/01
-> > 
-> > 
 
 

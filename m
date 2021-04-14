@@ -2,75 +2,150 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-8.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CC81C433B4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 14:10:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B6A8C43460
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 15:04:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F239F613C8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 14:10:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C121610FC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 15:04:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233509AbhDNOLC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Apr 2021 10:11:02 -0400
-Received: from us-smtp-delivery-124.mimecast.com ([216.205.24.124]:56878 "EHLO
-        us-smtp-delivery-124.mimecast.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S233506AbhDNOLA (ORCPT
+        id S1348046AbhDNPFK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Apr 2021 11:05:10 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:61698 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1347874AbhDNPFI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Apr 2021 10:11:00 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1618409438;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=V4ByqTfXJ8k+NvlvYhIt4aLMU+a1YsezIFT8EQWJI2k=;
-        b=F/V+UhuHsOVoXTUsWvV0ANh0Tkx7BFRg9iewBxKGe/HFMsoCxw0pEr4ZO/vtIeLF4AVCjH
-        CvknYJLPTv5DzMTXyzfoSNgGoUbNv2SE5+PBg3K89XHMLmGETn+wepSyHXiiEdjUxU5W9t
-        d7agr6rnxWnDcav5Gq0eH8PTFbGQHDw=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
- us-mta-171-rXG25RV7Mkas5mSNzxTU0g-1; Wed, 14 Apr 2021 10:10:26 -0400
-X-MC-Unique: rXG25RV7Mkas5mSNzxTU0g-1
-Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 24B3A83DD2B;
-        Wed, 14 Apr 2021 14:09:50 +0000 (UTC)
-Received: from ws.net.home (ovpn-115-34.ams2.redhat.com [10.36.115.34])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id ADEFC19D9B;
-        Wed, 14 Apr 2021 14:09:48 +0000 (UTC)
-Date:   Wed, 14 Apr 2021 16:09:46 +0200
-From:   Karel Zak <kzak@redhat.com>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
+        Wed, 14 Apr 2021 11:05:08 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1618412705; x=1649948705;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=AxHV9CquGv4LpokLwlUcIh8zYRqTqA2vlXv6HiT3TuA=;
+  b=VlZ16tPNyaga1UkUNpLRrfTQa73qO1QWWoHuyzBcp1LHkzEONmbJaREV
+   PlZKRXFZbdfKECBr+Dcrn0VHOkZ/jzoBT7t7/MYeaKXcWD4N3Fjw04SNK
+   7uedNDF0sH3zq80QwA/QX6wkPUUEpLzUIssTCm7/N8+7agBKeCHThW3qC
+   qlc1SaTZ5j+M6vhlvELYns52HZsw4jf1fp4eRO/9slA6y3KzuOTUePQI3
+   hqJ0NXFo7Hv0lI+vVUwf2Z72FypymYMPIeEb7MJVnDWmoBvpt2m9euwTE
+   qLFBasORgVh+c/21efRr0MAWS9kgwa6r3TDRXVUluwUEUQjOfjCdT0mtl
+   A==;
+IronPort-SDR: NgD8113IFAg0jD0J/6uanLuPww8mLryrd4FJEfOQIGOjFmmxoqnZc3BfJEJRwUD+HInUHHdKuS
+ emdfKgyhSLyUCg7fyxJZQcqPoDpe1K4GDf7pPs0BytbWaVwbw7Um3Qo++FnWnef1t/HXzLMAk/
+ R4zbbg76lW50oo+IxPQC1oeY2W8cE4USKQ1yvSJNNLqvBtTPHLkrx0DH1OZDalXshChilD6deG
+ +HTnYj2aOII4EPs+Ld9Reqso+VveaquGYDfy9KC3TbzS9+OA8WK0nVa3LSfUBAXhN9l2yYylom
+ ROE=
+X-IronPort-AV: E=Sophos;i="5.82,222,1613404800"; 
+   d="scan'208";a="268925356"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 14 Apr 2021 23:04:03 +0800
+IronPort-SDR: hy2R08h06yi/lk8DS1LIetG2uSkyVnMk/EpTvHJNCl6SmR8WwOEGHGMPgzqPGyKOfboARJt6iM
+ EGmK540G78rvjUzRyr5U4PuN82s4bMkFEX1F6jWYsqcaA5pp8K9prO/AVGpT+F10G/ddwmGIJ3
+ Hw+hQKS32EZqBNRcFA9cvC5v1iIEKIiM+KW9RfgkB3zdC00hiB+n0lckvVWINn00UpXXzHkQpW
+ nkkhfig7g9fDzcwYvoFx8x3zzomt7y4i/X95RwKzf/ligTbyuW7YCVBhj3zDgybsWfqFJSHmiL
+ bq5b0pp1qnCnSLai6SiOFm8S
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 14 Apr 2021 07:43:15 -0700
+IronPort-SDR: 7mz8XM1d3p25L4d789LPzov85JL895gDdDVgWqQkJ4PK4ZemKVKSentdJEN6EAesr9nrv2UgsQ
+ q/oRJfdlRWQ/LVyZBH59eOJyQs+L6e3AiPsu9oGLkUGBDhWn/R3izDoYUsCxj0QkaBF0+Nyaq1
+ wEt3JFedl8EWkxDtf+dq3o2ZuRIVkrsWueIAJlkpNf6Tx3k01hNYctUmCBO30yWchXZFjh8VEu
+ 09PfktfQIGyPdWqyiZ15dpF4aFOhoC8XlVGke65Px7EMMica0mqddcfyKn/1oxJkpfNupYgnHG
+ n7Q=
+WDCIronportException: Internal
+Received: from ind006838.ad.shared (HELO naota-xeon) ([10.225.53.197])
+  by uls-op-cesaip01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 14 Apr 2021 08:03:51 -0700
+Date:   Thu, 15 Apr 2021 00:03:50 +0900
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     Karel Zak <kzak@redhat.com>
 Cc:     util-linux@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: Re: [PATCH v2 0/3] implement zone-aware probing/wiping for zoned
- btrfs
-Message-ID: <20210414140946.j57uo7kvlfkpwsz3@ws.net.home>
+Subject: Re: [PATCH v2 1/3] blkid: implement zone-aware probing
+Message-ID: <20210414150350.srqsmzyoscec6phy@naota-xeon>
 References: <20210414013339.2936229-1-naohiro.aota@wdc.com>
+ <20210414013339.2936229-2-naohiro.aota@wdc.com>
+ <20210414133101.p5amev6tkfroiyw5@ws.net.home>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210414013339.2936229-1-naohiro.aota@wdc.com>
-X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
+In-Reply-To: <20210414133101.p5amev6tkfroiyw5@ws.net.home>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 14, 2021 at 10:33:36AM +0900, Naohiro Aota wrote:
-> This series implements probing and wiping of the superblock of zoned btrfs.
+On Wed, Apr 14, 2021 at 03:31:01PM +0200, Karel Zak wrote:
+> On Wed, Apr 14, 2021 at 10:33:37AM +0900, Naohiro Aota wrote:
+> > --- a/configure.ac
+> > +++ b/configure.ac
+> > @@ -302,6 +302,7 @@ AC_CHECK_HEADERS([ \
+> >  	lastlog.h \
+> >  	libutil.h \
+> >  	linux/btrfs.h \
+> > +	linux/blkzoned.h \
+> 
+> unnecessary, there is already AC_CHECK_HEADERS([linux/blkzoned.h]) on
+> another place.
 
-I have no disk with zones support, but it seems scsi_debug supports
-it. Do you have any step by step example how to test with btrfs? If
-yes, I will add a test to our test suite.
+Ah, I missed that. I will drop it.
 
-  Karel
+> >  	linux/capability.h \
+> >  	linux/cdrom.h \
+> >  	linux/falloc.h \
+> > diff --git a/libblkid/src/blkidP.h b/libblkid/src/blkidP.h
+> > index a3fe6748a969..e3a160aa97c0 100644
+> > --- a/libblkid/src/blkidP.h
+> > +++ b/libblkid/src/blkidP.h
+> > @@ -150,6 +150,10 @@ struct blkid_idmag
+> >  	const char	*hoff;		/* hint which contains byte offset to kboff */
+> >  	long		kboff;		/* kilobyte offset of superblock */
+> >  	unsigned int	sboff;		/* byte offset within superblock */
+> > +
+> > +	int		is_zoned;	/* indicate magic location is calcluated based on zone position  */
+> > +	long		zonenum;	/* zone number which has superblock */
+> > +	long		kboff_inzone;	/* kilobyte offset of superblock in a zone */
+> 
+> It would be better to use 'flags' struct field and
+> 
+>   #define BLKID_FL_ZONED_DEV (1 << 6)
+> 
+> like we use for another stuff.
 
--- 
- Karel Zak  <kzak@redhat.com>
- http://karelzak.blogspot.com
+BLKID_FL_* flags looks like to indicate a device's property. Instead,
+this one indicates a magic is placed relative to a zone. I do not see
+blkid_idmag is currently using "flags" filed. Should we really add it
+and follow the flag style? I thought, we can do it later when other
+use case exists.
 
+> > diff --git a/libblkid/src/probe.c b/libblkid/src/probe.c
+> > index a47a8720d4ac..9d180aab5242 100644
+> > --- a/libblkid/src/probe.c
+> > +++ b/libblkid/src/probe.c
+> > @@ -94,6 +94,9 @@
+> >  #ifdef HAVE_LINUX_CDROM_H
+> >  #include <linux/cdrom.h>
+> >  #endif
+> > +#ifdef HAVE_LINUX_BLKZONED_H
+> > +#include <linux/blkzoned.h>
+> > +#endif
+> >  #ifdef HAVE_SYS_STAT_H
+> >  #include <sys/stat.h>
+> >  #endif
+> > @@ -897,6 +900,7 @@ int blkid_probe_set_device(blkid_probe pr, int fd,
+> >  	pr->wipe_off = 0;
+> >  	pr->wipe_size = 0;
+> >  	pr->wipe_chain = NULL;
+> > +	pr->zone_size = 0;
+> 
+> you also need to update blkid_clone_probe() function
+
+Will do. I completely missed that. Thanks.
+
+>   Karel
+> 
+> -- 
+>  Karel Zak  <kzak@redhat.com>
+>  http://karelzak.blogspot.com
+> 

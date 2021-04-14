@@ -2,204 +2,213 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A14BC43603
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 01:34:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99936C433ED
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 07:49:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 059E2613B6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 01:34:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 62F98613A9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Apr 2021 07:49:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349075AbhDNBeW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Apr 2021 21:34:22 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:18400 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231878AbhDNBeE (ORCPT
+        id S233315AbhDNHtw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Apr 2021 03:49:52 -0400
+Received: from de-smtp-delivery-102.mimecast.com ([62.140.7.102]:37917 "EHLO
+        de-smtp-delivery-102.mimecast.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S232940AbhDNHtv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Apr 2021 21:34:04 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1618364024; x=1649900024;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=83kyN5f/gaEoADXr8s+jQJ7fslqUI+KQk9/TLXZBRBo=;
-  b=mlECpj3zrJ2/x1Z5CW9xAxvctrMSFgWtbL/iPsqb3TG1xpczgtO7A/Ck
-   F9+UIW8MBugNkJsbUl1M49hdG4/psGQ7JYgeiL9L5sjtboCC5JWT5g2o3
-   RlZKnT0ilMJyTfi7o4c+9ABPHLqraq0M5rWQNLaDzEKjdLWEv3SpYbLwZ
-   Gy/VBupT4K70mY7gtWtc2wU7rljWlTWyUEqfV/1KjgiX+MS9lGXYC7F9Q
-   4cmOmMyrBnAMZg6KS4YDfjqnI1hxA3R9tsxEUMjmqLzGVUkjjKOp8vNwY
-   pMHXUPpYCfg7s4MG8I22dG6FEaJY1qucUvczRkHn9hO9kBbBsvkQWeK7Q
-   A==;
-IronPort-SDR: ySYhUrDisXDAIkWzdJjEVCWHVznuEVGDiuryFKvla6/HEyxwTO8AQeNgFuy+kxQ0pnlGkeKU1T
- titKB0NKbIHi0/Sp9/xlPy2Gj4xwv5MDbecC498YNjG+LhvfT1Eq/QIHaP9Y6ejVOO23D4JLde
- a2xR3QbS43zvPBcBpP6gwX8e/k0DVE8x1bOG4fFbTuylbbKf4X/5D2BrJRqiIPd91M6TNuFMKl
- hJV8pGRUs4nRK+BSiejmmR3hrQsfJn4BZy+L8Lo6elBeKucLiHjrCHaKgRAKC5i0PgMSoflCQ2
- 7kY=
-X-IronPort-AV: E=Sophos;i="5.82,221,1613404800"; 
-   d="scan'208";a="169210799"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 14 Apr 2021 09:33:43 +0800
-IronPort-SDR: rLWgn+VrCQALg97mW0Ndkt+qISnYihYAXi4weGuMZf4jI5ou9QVjfj0eC8Uzj4ieRNt1bkL5wi
- mWPXeTgqWsJytvtrzvdZl7HiEkg4aOESiQ6fAdgvCJe3Ikx5bP8ElQP6Wry6aM2OifYya+VKHn
- 2IlnvKQKWRNZEvtZ6/G/G2O8B9RoYBYEXJmAMilj2WEzRrOD88J7wRdCr7+vfLbOl9Kzm5ujWl
- MGVbibSrBqR5F9umehFko8H6IDZFdsMTWBzidvZgMJFH/dnr2dztCNvHLB77PKZi/1jG2aH6VE
- VPPTqqA7GjhAKC+jIkfypFx1
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Apr 2021 18:14:46 -0700
-IronPort-SDR: IvpUHBlcp0DJxhTt2Lwt+nDn3Rn7FiA9B4m/qg8TUxVMcBx0QR5QHvI8NjO93oNNSYTSl9bRgD
- 9bB76rMPrSA5/ynjrM0c67hFOAYrLa0bihC2DjHW8t9RvVGGBwFZZiTJDn9AROX30s/ma0k2Nz
- MMfCsIZPO5/vOvs905uE3lqeJNOQH+LgaI8y1aOFNC+qgXEr921mCqr+JFoqMWF1d4UF4tKjWj
- TXcdpFQUP6ke6kE3bGTjhfagG8LMfyImnM6GKgxVW5WLGTfc7DdXQO8wzprAeHyUOzbjZFVKcv
- d0c=
-WDCIronportException: Internal
-Received: from jpf004864.ad.shared (HELO naota-xeon.wdc.com) ([10.225.53.142])
-  by uls-op-cesaip02.wdc.com with ESMTP; 13 Apr 2021 18:33:43 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     Karel Zak <kzak@redhat.com>
-Cc:     util-linux@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 1/3] blkid: implement zone-aware probing
-Date:   Wed, 14 Apr 2021 10:33:37 +0900
-Message-Id: <20210414013339.2936229-2-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.31.1
-In-Reply-To: <20210414013339.2936229-1-naohiro.aota@wdc.com>
-References: <20210414013339.2936229-1-naohiro.aota@wdc.com>
+        Wed, 14 Apr 2021 03:49:51 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=mimecast20200619;
+        t=1618386569;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=u8bjVzxFIQhFUZ9pLUhtd9MpUqYckYN/FoONsOqbNlM=;
+        b=mNzN5MMykswjSAvS7nk2qrTCPTv6ozncdoo8b9lHA27rsxc7TjlfQLghndlt+dx4g3FbXi
+        VcAsGwhfOLOrL7CLlRHebLtXArNeUHx8uWM+9mGBmsD0Hz0ZKElRy684mVQadu2wawX78o
+        kZaYDp16MaQG5K0TRWoUaJmmE+iLeNQ=
+Received: from EUR04-HE1-obe.outbound.protection.outlook.com
+ (mail-he1eur04lp2053.outbound.protection.outlook.com [104.47.13.53]) (Using
+ TLS) by relay.mimecast.com with ESMTP id
+ de-mta-20-1FH4MhN2MTGjeJ1IYeHQoQ-1; Wed, 14 Apr 2021 09:49:28 +0200
+X-MC-Unique: 1FH4MhN2MTGjeJ1IYeHQoQ-1
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=mAugkCWoU39hiocAlu1evJugtNMrya7+g0o238+oLu5d15b4znmH+P7huJXK1AX9UFjXYSVXMgZs1ifXDLbSQDCWEcqy6rRYHr1Fedc1atTtoY5C7Mgbvko+QRDUbah18PK4mXr3A8xNJoN5DRoGrjZ7VD5nezXYmHBp1yth+JZVvE3bK55yE9iFyUd86/kcJRKJpadR1gKb7rzEhjCoLz2KYH0gst4MtQ2ip1+Au3yq51kd7z2VSYd+lJqgUqTLyWlGeWubpoxk7JUG4MtebLsTE5sC7k0AibgfOTIB0CgssqJB1rgI18+6ebcSYlM9hsjN9JiiNca+cNqCXPcrPA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=q/PjstyKeP8A8DxzMOXJ63Xcx97jUe7AHaVzdIQjRnU=;
+ b=EJErPm1K98RPt6iBxTRA0JDn/pydbSEzyNDQhEyCRctNB8CR3OtMLM/QsPnYmDmpwJFeRlbnqoJ6Iwh/pSAltyWxXUhQeHyJDldzTq4Vyna+ekIpvl31vrq/Trbn8ilhktbSWnlDJk9qRJm0UwdWN1NgwUe8Ic2c0XYqDks25E/yciecRhALj9btxN+nRA5md6n7cC0iOmeDIEmXnUihfijFcMglirW3wvdthdw+Bla1t2mnx5GwYC2uq949bv4wx93PCi0BvOVSvlRiat4RSnoyuYCRB/SWVI6RSIUVMYsgmSJcVQuA1qPN9zCG7plzZrp9mOGMcbiCPgU1YSHH4A==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
+ dkim=pass header.d=suse.com; arc=none
+Authentication-Results: vger.kernel.org; dkim=none (message not signed)
+ header.d=none;vger.kernel.org; dmarc=none action=none header.from=suse.com;
+Received: from AM6PR04MB6630.eurprd04.prod.outlook.com (2603:10a6:20b:f4::33)
+ by AM6PR04MB4215.eurprd04.prod.outlook.com (2603:10a6:209:4f::13) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4020.18; Wed, 14 Apr
+ 2021 07:49:26 +0000
+Received: from AM6PR04MB6630.eurprd04.prod.outlook.com
+ ([fe80::89d0:f959:1d33:55e7]) by AM6PR04MB6630.eurprd04.prod.outlook.com
+ ([fe80::89d0:f959:1d33:55e7%7]) with mapi id 15.20.4020.023; Wed, 14 Apr 2021
+ 07:49:26 +0000
+From:   An Long <lan@suse.com>
+To:     linux-btrfs@vger.kernel.org
+CC:     An Long <lan@suse.com>
+Subject: [PATCH] btrfs-progs: tests: add misc test for enqueue parameter
+Date:   Wed, 14 Apr 2021 15:49:06 +0800
+Message-ID: <20210414074906.17715-1-lan@suse.com>
+X-Mailer: git-send-email 2.26.2
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain
+X-Originating-IP: [222.129.56.156]
+X-ClientProxiedBy: HKAPR04CA0007.apcprd04.prod.outlook.com
+ (2603:1096:203:d0::17) To AM6PR04MB6630.eurprd04.prod.outlook.com
+ (2603:10a6:20b:f4::33)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from localhost.localdomain (222.129.56.156) by HKAPR04CA0007.apcprd04.prod.outlook.com (2603:1096:203:d0::17) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4042.16 via Frontend Transport; Wed, 14 Apr 2021 07:49:25 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 1c048fca-5a89-43de-74ac-08d8ff19d3bf
+X-MS-TrafficTypeDiagnostic: AM6PR04MB4215:
+X-MS-Exchange-Transport-Forked: True
+X-Microsoft-Antispam-PRVS: <AM6PR04MB4215AC6169269BECDBAA5865C64E9@AM6PR04MB4215.eurprd04.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:5516;
+X-MS-Exchange-SenderADCheck: 1
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: =?us-ascii?Q?hLPWQIyaMJqEl8CWRqRUYlsUGRJnjMQPFMOoq7cD+a89CSeNB5roC51uz3Jh?=
+ =?us-ascii?Q?kUVqYoiG0hss66bZU1P2groCWMvYCWQRBKhzuIdSxMPSEDSKh23JsLtTXiDS?=
+ =?us-ascii?Q?1bzeaoAwMeQXYrvar/p0jFdaTOyye7wR61w/cNX6fa7QpPIKdhFD1F1u+TuN?=
+ =?us-ascii?Q?tcxQBRYscH+9+i7oc4wbTmo3d75rGmetd//JNvLaHf5PE8PzIfAWecDn0gkc?=
+ =?us-ascii?Q?B7keapym32GhVk65TJ1fz/Qd82Py6C+4SEOzHQuRrGEYME9Jys2nLInhFe2s?=
+ =?us-ascii?Q?LhQP5b1vWKe+cBkKAJTZ5VaY7Yp3pTl3Fpi+WAtzqwN/myhp+RKLkLYPKxY3?=
+ =?us-ascii?Q?l1UUuN6z2Y22pKPRSldAvpQKHIMDAlvq242xdSQEN4c+6FQjFG4WC2plbHVB?=
+ =?us-ascii?Q?RaZ84p5PzO24k941MbgqNxYCvpsstlTZMh3uUZqUAdyF3qQSTK0sA9Fw7uMD?=
+ =?us-ascii?Q?ss4a5XkzVQdwmxegSd7FCmzvRK1zCpFQp+YRupqwqUvzafJVBeqjbBVC8zRz?=
+ =?us-ascii?Q?gLFuj5Riju2Wc3oCiwai0NtcEVQqv0MlqAFxGJB16hJIyfeWneH1YSjlIU8f?=
+ =?us-ascii?Q?871vYoQFJ5WFwPn8d75fHxvGP55392lqJPV9RJo1jTMeWI3QC14aEGWdi/KR?=
+ =?us-ascii?Q?Dm1COmi2uEF+wHm4oD+Nxh71KWPCVo/BpoI2s0/bpSVvkUOYAN29uCE10Z5a?=
+ =?us-ascii?Q?XXHe1MIbnXPpBupaadKPvlfK3jJAzqv96z8MhxId0OpfIZPmrEcK91u3Khwd?=
+ =?us-ascii?Q?nspVAEYtLBDntAYhR+Ir2DAWCrfwAMOAb5G7yirVQNp196278UT+axLyIEHN?=
+ =?us-ascii?Q?bk9FR8NduV0brmrJ6K27i9v5roVXADguLwetxV29cu4A30Nzrjlm4SOg4a5l?=
+ =?us-ascii?Q?misRpVk5aCzY7DnWVGPwPiJOaas9xKvjbTEIYjv+hf9ACMtnVKFlueOYUdV1?=
+ =?us-ascii?Q?BZR0OQbDWOz4JBR04lGkyniQQ15g3U0sBZtj5xS5trN+ilTyT5KyDYT6XliI?=
+ =?us-ascii?Q?Glb9?=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:5;SRV:;IPV:NLI;SFV:SPM;H:AM6PR04MB6630.eurprd04.prod.outlook.com;PTR:;CAT:OSPM;SFS:(366004)(396003)(346002)(39860400002)(376002)(136003)(69590400012)(478600001)(8936002)(6506007)(38350700002)(38100700002)(2906002)(86362001)(5660300002)(52116002)(956004)(83380400001)(186003)(6666004)(36756003)(26005)(2616005)(66946007)(66556008)(8676002)(1076003)(107886003)(66476007)(6916009)(6512007)(316002)(6486002)(16526019)(4326008)(8496004);DIR:OUT;SFP:1501;
+X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?i1NOpbQNuZo5+XBARGV1gyRgrU7L7afcmNge8dZxHjReU3vUhHbXfm61JZHO?=
+ =?us-ascii?Q?xHnfjzls1mAYWkM/saIyQNvM0vxaDzCit9Ewl9d39x6YcgoqlQom6bGmXo7S?=
+ =?us-ascii?Q?5tcETSnHo2ctfe85/5OIoHcfHyEm2rnfgwMg8aUbOmbzisUdmnF5pHhZwIOM?=
+ =?us-ascii?Q?zyqzS8I9INFzzc74gg59xd2qdqpt229TAIEqroxrJ4uqzzsLii802wU2MDP9?=
+ =?us-ascii?Q?8Tk/eX2qHjGtuZM40OpZ5n97YG8hMrhjK+7L+5fQRXkDCztM5otyc2Ui2dMm?=
+ =?us-ascii?Q?IScp+36cR9BtUXP13IJ6HzTtUFWnTq23qBxBFdcBfyppiFI3E0gyXGQjbBMd?=
+ =?us-ascii?Q?HYnRbHztmHpOdx9WtHimJ/qm968edk9ne6AC+wnvaRKODiXu2u5ogToq23OW?=
+ =?us-ascii?Q?uvIEY63i9Om1B7YVSyUJwUJxC/4DsEcDh/V2aYTeT+gQzuptN2doqgMbQvnL?=
+ =?us-ascii?Q?RwwRDL4OfgdNuuKavAbKpS0kuG8HpRBKHV02zcP74iPySjHmUQvkT+NqBFq2?=
+ =?us-ascii?Q?P6/xJzOMHWLY5Zvhbu0pQgE5ysn8eSZvhdJ5hVtiAxlOZSngQ3blwVKUQMnz?=
+ =?us-ascii?Q?p0xGPJl49DY1cRD/kwQvosa3m9ko00mCvOt1yF/0g6RvE8UhaudWl7x0miT8?=
+ =?us-ascii?Q?ux7/g2eeSzGZr0MUDw9iXUU+mWIK21pa/Y1OCO9mSm++vsWZgrUP76xInUEc?=
+ =?us-ascii?Q?ll6+4l9mhYLtWNubMNVD7rrrWcr0p3Pu3qTML3ooCZiol36vpXNX2Lo6Bu5d?=
+ =?us-ascii?Q?NLSpdaNnMO0LSUD9c3/mdhGHHdj+vfjDh+NCQuV16w4Dft2cJCxtz0+iNguL?=
+ =?us-ascii?Q?rV0X80laf78qXl1A5eyHaNghw0w+EZNoh8dcK7X+hCimvb+rfCZFD4tejrhw?=
+ =?us-ascii?Q?GySCJeuU2XLLhfBZzKZRWICTMV6huLTao064zeMD1oCXXX+2nrqowf5jvkCn?=
+ =?us-ascii?Q?SFLUG9UJoYL2SOCuwx35F7mWLOfb4GfqElZkE8MkdFiaz8GL5gHfX+XX/afv?=
+ =?us-ascii?Q?W8VaGzknd2wP6xSk1Tyjy0lsFzUbWodZelsQLLcJbqoiU3YoMLA/viMMZLtF?=
+ =?us-ascii?Q?anS7mwngGuYYQWTg+QAr5sV/Ow+EVu6j+3obSRaLD9OhrGtPcQrmzpG/DaNa?=
+ =?us-ascii?Q?o5G8kd0sHUuXpshjdZl2ypEziuAYrSrBf6FHRyAEUwHmA+1VQ0lT7lIyDAv0?=
+ =?us-ascii?Q?Aru+HTbYpy9Q0rBCvvHOmKXrMMb6ENBa2A30NfDUn4Ou22KK3AzyQLiy8TMa?=
+ =?us-ascii?Q?VIfR56GJnGZ1/iymC48K75nepRWGVmb06Eoq5RhlkAuu+AEiYy174lO+Fu0a?=
+ =?us-ascii?Q?iJeeN2ewMIg/+YGXYGgdovCw?=
+X-OriginatorOrg: suse.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 1c048fca-5a89-43de-74ac-08d8ff19d3bf
+X-MS-Exchange-CrossTenant-AuthSource: AM6PR04MB6630.eurprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 14 Apr 2021 07:49:26.7198
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: OU4HQVWkuZaVQXEII6I33e4OcBwa/ERILIJ53tbNfJTxP8tNo39kudRBjJCfZAF7
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM6PR04MB4215
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch makes libblkid zone-aware. It can probe the magic located at
-some offset from the beginning of some specific zone of a device.
+The exclusive ops will not start if there's one already running. The
+enqueue parameter allows operations to be queued.
 
-Ths patch introduces some new fields to struct blkid_idmag. They indicate
-the magic location is placed related to a zone, and the offset in the zone.
-
-Also, this commit introduces `zone_size` to struct blkid_struct_probe. It
-stores the size of zones of a device.
-
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+Signed-off-by: An Long <lan@suse.com>
 ---
- configure.ac          |  1 +
- libblkid/src/blkidP.h |  5 +++++
- libblkid/src/probe.c  | 29 +++++++++++++++++++++++++++--
- 3 files changed, 33 insertions(+), 2 deletions(-)
+ .../misc-tests/048-enqueue-parameter/test.sh  | 52 +++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+ create mode 100755 tests/misc-tests/048-enqueue-parameter/test.sh
 
-diff --git a/configure.ac b/configure.ac
-index bebb4085425a..52b164e834db 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -302,6 +302,7 @@ AC_CHECK_HEADERS([ \
- 	lastlog.h \
- 	libutil.h \
- 	linux/btrfs.h \
-+	linux/blkzoned.h \
- 	linux/capability.h \
- 	linux/cdrom.h \
- 	linux/falloc.h \
-diff --git a/libblkid/src/blkidP.h b/libblkid/src/blkidP.h
-index a3fe6748a969..e3a160aa97c0 100644
---- a/libblkid/src/blkidP.h
-+++ b/libblkid/src/blkidP.h
-@@ -150,6 +150,10 @@ struct blkid_idmag
- 	const char	*hoff;		/* hint which contains byte offset to kboff */
- 	long		kboff;		/* kilobyte offset of superblock */
- 	unsigned int	sboff;		/* byte offset within superblock */
+diff --git a/tests/misc-tests/048-enqueue-parameter/test.sh b/tests/misc-te=
+sts/048-enqueue-parameter/test.sh
+new file mode 100755
+index 00000000..4be7d466
+--- /dev/null
++++ b/tests/misc-tests/048-enqueue-parameter/test.sh
+@@ -0,0 +1,52 @@
++#!/bin/bash
++# Check if --enqueue can enqueueing of the operations correctly
 +
-+	int		is_zoned;	/* indicate magic location is calcluated based on zone position  */
-+	long		zonenum;	/* zone number which has superblock */
-+	long		kboff_inzone;	/* kilobyte offset of superblock in a zone */
- };
- 
- /*
-@@ -206,6 +210,7 @@ struct blkid_struct_probe
- 	dev_t			disk_devno;	/* devno of the whole-disk or 0 */
- 	unsigned int		blkssz;		/* sector size (BLKSSZGET ioctl) */
- 	mode_t			mode;		/* struct stat.sb_mode */
-+	uint64_t		zone_size;	/* zone size (BLKGETZONESZ ioctl) */
- 
- 	int			flags;		/* private library flags */
- 	int			prob_flags;	/* always zeroized by blkid_do_*() */
-diff --git a/libblkid/src/probe.c b/libblkid/src/probe.c
-index a47a8720d4ac..9d180aab5242 100644
---- a/libblkid/src/probe.c
-+++ b/libblkid/src/probe.c
-@@ -94,6 +94,9 @@
- #ifdef HAVE_LINUX_CDROM_H
- #include <linux/cdrom.h>
- #endif
-+#ifdef HAVE_LINUX_BLKZONED_H
-+#include <linux/blkzoned.h>
-+#endif
- #ifdef HAVE_SYS_STAT_H
- #include <sys/stat.h>
- #endif
-@@ -897,6 +900,7 @@ int blkid_probe_set_device(blkid_probe pr, int fd,
- 	pr->wipe_off = 0;
- 	pr->wipe_size = 0;
- 	pr->wipe_chain = NULL;
-+	pr->zone_size = 0;
- 
- 	if (fd < 0)
- 		return 1;
-@@ -996,6 +1000,15 @@ int blkid_probe_set_device(blkid_probe pr, int fd,
- #endif
- 	free(dm_uuid);
- 
-+# ifdef HAVE_LINUX_BLKZONED_H
-+	if (S_ISBLK(sb.st_mode)) {
-+		uint32_t zone_size_sector;
++source "$TEST_TOP/common"
 +
-+		if (!ioctl(pr->fd, BLKGETZONESZ, &zone_size_sector))
-+			pr->zone_size = zone_size_sector << 9;
-+	}
-+# endif
++check_prereq mkfs.btrfs
++check_prereq btrfs
++check_global_prereq fallocate
 +
- 	DBG(LOWPROBE, ul_debug("ready for low-probing, offset=%"PRIu64", size=%"PRIu64"",
- 				pr->off, pr->size));
- 	DBG(LOWPROBE, ul_debug("whole-disk: %s, regfile: %s",
-@@ -1064,12 +1077,24 @@ int blkid_probe_get_idmag(blkid_probe pr, const struct blkid_idinfo *id,
- 	/* try to detect by magic string */
- 	while(mag && mag->magic) {
- 		unsigned char *buf;
-+		uint64_t kboff;
- 		uint64_t hint_offset;
- 
- 		if (!mag->hoff || blkid_probe_get_hint(pr, mag->hoff, &hint_offset) < 0)
- 			hint_offset = 0;
- 
--		off = hint_offset + ((mag->kboff + (mag->sboff >> 10)) << 10);
-+		/* If the magic is for zoned device, skip non-zoned device */
-+		if (mag->is_zoned && !pr->zone_size) {
-+			mag++;
-+			continue;
-+		}
++setup_loopdevs 3
++prepare_loopdevs
++dev1=3D${loopdevs[1]}
++dev2=3D${loopdevs[2]}
++dev3=3D${loopdevs[3]}
++run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$dev1"
++run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$dev2"
++run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f "$dev3"
++run_check $SUDO_HELPER mount "$dev1" "$TEST_MNT"
++run_check $SUDO_HELPER "$TOP/btrfs" device add -f "$dev2" "$TEST_MNT"
 +
-+		if (!mag->is_zoned)
-+			kboff = mag->kboff;
-+		else
-+			kboff = ((mag->zonenum * pr->zone_size) >> 10) + mag->kboff_inzone;
++test_run_commands() {
++        run_check $SUDO_HELPER "$TOP/btrfs" balance start --enqueue --full=
+-balance "$TEST_MNT" &
++        run_check $SUDO_HELPER "$TOP/btrfs" filesystem resize --enqueue -1=
+00M "$TEST_MNT" &
++        run_check $SUDO_HELPER "$TOP/btrfs" device add --enqueue -f "$dev3=
+" "$TEST_MNT" &
++        run_check $SUDO_HELPER "$TOP/btrfs" device delete --enqueue "$dev2=
+" "$TEST_MNT" &
++}
 +
-+		off = hint_offset + ((kboff + (mag->sboff >> 10)) << 10);
- 		buf = blkid_probe_get_buffer(pr, off, 1024);
- 
- 		if (!buf && errno)
-@@ -1079,7 +1104,7 @@ int blkid_probe_get_idmag(blkid_probe pr, const struct blkid_idinfo *id,
- 				buf + (mag->sboff & 0x3ff), mag->len)) {
- 
- 			DBG(LOWPROBE, ul_debug("\tmagic sboff=%u, kboff=%ld",
--				mag->sboff, mag->kboff));
-+				mag->sboff, kboff));
- 			if (offset)
- 				*offset = off + (mag->sboff & 0x3ff);
- 			if (res)
--- 
-2.31.1
++get_fs_uuid() {
++        run_check_stdout "$TOP/btrfs" inspect-internal dump-super "$1" | \
++                grep '^fsid' | awk '{print $2}'
++}
++
++fsid=3D$(get_fs_uuid "$dev1")
++if ! [ -f "/sys/fs/btrfs/$fsid/exclusive_operation" ]; then
++        run_check_umount_test_dev "$TEST_MNT"
++        cleanup_loopdevs
++        _not_run "kernel does not support exclusive_operation"
++        exit
++fi
++
++# Generate 1G data, for enough balance time for exclusive_operation
++for i in $(seq 1 5); do
++        run_check $SUDO_HELPER fallocate -l 200M "$TEST_MNT/file$i"
++done
++
++# Do btrfs balance in background, then try commands with enqueue parameter
++run_check $SUDO_HELPER "$TOP/btrfs" balance start --full-balance "$TEST_MN=
+T" &
++test_run_commands
++wait
++
++run_check_umount_test_dev "$TEST_MNT"
++cleanup_loopdevs
+--=20
+2.26.2
 

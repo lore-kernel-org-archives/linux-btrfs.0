@@ -2,268 +2,236 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97520C433ED
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Apr 2021 12:15:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 776F3C433ED
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Apr 2021 13:29:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 58BB060FEE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Apr 2021 12:15:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 414ED61449
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Apr 2021 13:29:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238217AbhDUMQU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Apr 2021 08:16:20 -0400
-Received: from mx0a-001b2d01.pphosted.com ([148.163.156.1]:65050 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S237991AbhDUMQS (ORCPT
+        id S242083AbhDUNaH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Apr 2021 09:30:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44116 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S240921AbhDUNaG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Apr 2021 08:16:18 -0400
-Received: from pps.filterd (m0098409.ppops.net [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 13LC4WTX045705;
-        Wed, 21 Apr 2021 08:15:42 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
- subject : message-id : references : mime-version : content-type :
- content-transfer-encoding : in-reply-to; s=pp1;
- bh=uxCzdffhFIp2wHJ/Q85yiqBnsmIzF/WM82mQwuzoPvc=;
- b=AJGn7hH/5UTbTjeSiJM8POBM/JWMk+cCwg0hPdX+aBw8rl+njlcH29m6UaBFUXNKaVCd
- KK9/WNZfhExckb5BZlmAFDxMMkbTyRr1n/jGzaSg8NLFCfg73oS3Rq79YG/zhiTij8Db
- Udf61LpPFifIH2M0FljJ+Wn1v+brAgdI7EXe7I2Sdl6VYsti833fcW6aRlZnzazRsRfi
- 2TmRo2ovc/LmKqBeInZ/Ym3eQH2sm7vpVZqE5jjhxAB+FHSneOToVUORFDH8Nry4ZsUk
- E2YdoAKuSJQCKAOfCukP27IzoVwLLvujOCMhlggsbUcfA2AO2vBO0GFzOd6HVKpw15oJ iA== 
-Received: from pps.reinject (localhost [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com with ESMTP id 382f8qg369-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Wed, 21 Apr 2021 08:15:42 -0400
-Received: from m0098409.ppops.net (m0098409.ppops.net [127.0.0.1])
-        by pps.reinject (8.16.0.43/8.16.0.43) with SMTP id 13LC53wu049059;
-        Wed, 21 Apr 2021 08:15:41 -0400
-Received: from ppma01fra.de.ibm.com (46.49.7a9f.ip4.static.sl-reverse.com [159.122.73.70])
-        by mx0a-001b2d01.pphosted.com with ESMTP id 382f8qg35p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Wed, 21 Apr 2021 08:15:41 -0400
-Received: from pps.filterd (ppma01fra.de.ibm.com [127.0.0.1])
-        by ppma01fra.de.ibm.com (8.16.0.43/8.16.0.43) with SMTP id 13LCCqhV022422;
-        Wed, 21 Apr 2021 12:15:39 GMT
-Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
-        by ppma01fra.de.ibm.com with ESMTP id 37yqa8993a-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Wed, 21 Apr 2021 12:15:39 +0000
-Received: from d06av23.portsmouth.uk.ibm.com (d06av23.portsmouth.uk.ibm.com [9.149.105.59])
-        by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 13LCFbsD44761542
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Wed, 21 Apr 2021 12:15:37 GMT
-Received: from d06av23.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id 54778A4053;
-        Wed, 21 Apr 2021 12:15:37 +0000 (GMT)
-Received: from d06av23.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id EB00CA404D;
-        Wed, 21 Apr 2021 12:15:36 +0000 (GMT)
-Received: from localhost (unknown [9.85.71.45])
-        by d06av23.portsmouth.uk.ibm.com (Postfix) with ESMTP;
-        Wed, 21 Apr 2021 12:15:36 +0000 (GMT)
-Date:   Wed, 21 Apr 2021 17:45:36 +0530
-From:   riteshh <riteshh@linux.ibm.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Qu Wenruo <wqu@suse.com>, Ritesh Harjani <ritesh.list@gmail.com>,
-        Neal Gompa <ngompa13@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v3 00/13] btrfs: support read-write for subpage metadata
-Message-ID: <20210421121536.vgaaycsw6vzgj65a@riteshh-domain>
-References: <20210416165253.mexotq7ixpcvcvov@riteshh-domain>
- <20210419055915.valqohgrgrdy4pvf@riteshh-domain>
- <93a2422e-6d5d-1c97-49ad-d166fe851575@gmx.com>
- <03236bad-ecb5-96c7-2724-64a793d669bf@suse.com>
- <344f81af-f36d-1484-3a0c-894d111d0605@gmx.com>
- <20210421070331.r4enns6ticwpan35@riteshh-domain>
- <20210421073020.fwu7a5t4ihl7gzao@riteshh-domain>
- <ca952f24-d0cd-fda7-c9c5-85eba3e7d04a@suse.com>
- <20210421111310.q2g2fhzhlcoaykff@riteshh-domain>
- <639219d8-26cd-1b8d-ce80-0fffd547e61a@gmx.com>
+        Wed, 21 Apr 2021 09:30:06 -0400
+Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A2A3C06174A
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Apr 2021 06:29:32 -0700 (PDT)
+Received: by mail-qk1-x735.google.com with SMTP id q136so21780950qka.7
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Apr 2021 06:29:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=Z8wDCMAuJXGtOnYgrJ5SSFxvWpSac6xOsyspaDCBifI=;
+        b=vNeQe8iwjcGyHAX/bZUlhAr9KZcwCH3nqeo+FIp1SvhfOAYDcOSX02f3mvCC+cMlNQ
+         nkkyawsfAjM3i+Sok7sD1qNXyk6ZbuKgR2+oBMYDgdeNUtA9Wvdx7vYKaLzLBiEB4gDS
+         Uh3km57QClftFDLISfTBJ2i9nUoHn0ntlAP4r3U/YdLvaz6hEVs60bpu6pfm06Y+h95k
+         2cMM/IlPmSliP7njdBbGIlsEzY4VSLmR/0t9Ihkbw05C4IbankLOwn2hoIWvjeTCZiIM
+         iyN8cbJy6SZMRdKpqWnFhaa3LI1Tg3Q7+yKYrDGm3DZp/SlRogrZEghMOZBEo3/ZaSNN
+         W6ow==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=Z8wDCMAuJXGtOnYgrJ5SSFxvWpSac6xOsyspaDCBifI=;
+        b=XBjnHW+tjnooXFG425NDFqqunTO/MOcS08GO7LvSZVCz/+tNkg2N93U+xby/C9JHBW
+         voVlbrZreF+4QrQ5mChv1rnYjBBuHUVOCOdW6eG65XFwnvrYKxNkXKIoog1FcLe5WYlY
+         q7DpRp5zqLQ1bddHF6o9EFxaa+DXAxut+hAANGrXHLKtvnpmvO28+Ys3dSNEDlGkiGV1
+         /ufiAuZZyOxS6HWgotoQwsB3JuI8utsQh7yJhSCp5ZDPEir88fvaVpPnlT1DYLmbv0mV
+         ru4Vrozr9Z5tVprqYVMiTqaXNC/GewubYyt13ar1fln017GPbNSMxl4Omof54u3VtGbM
+         9MHg==
+X-Gm-Message-State: AOAM530narIcGbt2M2o4Kzs8c/9ryccwFV6meqieYCsHN8KW+SBo4X8C
+        1G/slqCv6RqtBywjdjCKFkmhtQlLuEajIuG8LuaP5hyR+vom8nqo
+X-Google-Smtp-Source: ABdhPJyIxpFv8WUCbdSpUb+MGmm8eKKxcKlZD3j+t/lVYCldxV60a0dBzLkatRGU9RhJ5vH9qEytk7nyKalaGSnvljs=
+X-Received: by 2002:a37:bb04:: with SMTP id l4mr23585712qkf.383.1619011771400;
+ Wed, 21 Apr 2021 06:29:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <639219d8-26cd-1b8d-ce80-0fffd547e61a@gmx.com>
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: JCX_pZA0LE8QkgGrhV1uzac-_A51llG7
-X-Proofpoint-GUID: NXo4NUp2nu1fia6VRHynFmWTNdP3ZPQW
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.391,18.0.761
- definitions=2021-04-21_04:2021-04-21,2021-04-21 signatures=0
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxlogscore=999
- suspectscore=0 adultscore=0 mlxscore=0 malwarescore=0 spamscore=0
- priorityscore=1501 bulkscore=0 phishscore=0 lowpriorityscore=0
- impostorscore=0 clxscore=1015 classifier=spam adjust=0 reason=mlx
- scancount=1 engine=8.12.0-2104060000 definitions=main-2104210094
+References: <20210421083137.31E3.409509F4@e16-tech.com> <20210421201725.577C.409509F4@e16-tech.com>
+In-Reply-To: <20210421201725.577C.409509F4@e16-tech.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Wed, 21 Apr 2021 14:29:20 +0100
+Message-ID: <CAL3q7H6V+x_Pu=bxTFGsuZLHf2mh_DOcthJx7HCSYCL79rjzxw@mail.gmail.com>
+Subject: Re: 'ls /mnt/scratch/' freeze(deadlock?) when run xfstest(btrfs/232)
+To:     Wang Yugui <wangyugui@e16-tech.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 21/04/21 07:42PM, Qu Wenruo wrote:
+On Wed, Apr 21, 2021 at 2:04 PM Wang Yugui <wangyugui@e16-tech.com> wrote:
+>
+> Hi,
+>
+> This is the output of sysrq t/l command.
+>
+> there seems some unexpected block in the call trace of some btrfs
+> threads.
+>
+> [72747.556262] task:kworker/u81:9   state:D stack:    0 pid:  225 ppid:  =
+   2 flags:0x00004000
+> [72747.556268] Workqueue: writeback wb_workfn (flush-btrfs-1142)
+> [72747.556271] Call Trace:
+> [72747.556273]  __schedule+0x296/0x760
+> [72747.556277]  schedule+0x3c/0xa0
+> [72747.556279]  io_schedule+0x12/0x40
+> [72747.556284]  __lock_page+0x13c/0x280
+> [72747.556287]  ? generic_file_readonly_mmap+0x70/0x70
+> [72747.556325]  extent_write_cache_pages+0x22a/0x440 [btrfs]
+> [72747.556331]  ? __set_page_dirty_nobuffers+0xe7/0x160
+> [72747.556358]  ? set_extent_buffer_dirty+0x5e/0x80 [btrfs]
+> [72747.556362]  ? update_group_capacity+0x25/0x210
+> [72747.556366]  ? cpumask_next_and+0x1a/0x20
+> [72747.556391]  extent_writepages+0x44/0xa0 [btrfs]
+> [72747.556394]  do_writepages+0x41/0xd0
+> [72747.556398]  __writeback_single_inode+0x39/0x2a0
+> [72747.556403]  writeback_sb_inodes+0x1ea/0x440
+> [72747.556407]  __writeback_inodes_wb+0x5f/0xc0
+> [72747.556410]  wb_writeback+0x235/0x2b0
+> [72747.556414]  ? get_nr_inodes+0x35/0x50
+> [72747.556417]  wb_workfn+0x354/0x490
+> [72747.556420]  ? newidle_balance+0x2c5/0x3e0
+> [72747.556424]  process_one_work+0x1aa/0x340
+> [72747.556426]  worker_thread+0x30/0x390
+> [72747.556429]  ? create_worker+0x1a0/0x1a0
+> [72747.556432]  kthread+0x116/0x130
+> [72747.556435]  ? kthread_park+0x80/0x80
+> [72747.556438]  ret_from_fork+0x1f/0x30
 >
 >
-> On 2021/4/21 下午7:13, riteshh wrote:
-> > On 21/04/21 04:26PM, Qu Wenruo wrote:
-> > >
-> > >
-> > > On 2021/4/21 下午3:30, riteshh wrote:
-> > > > On 21/04/21 12:33PM, riteshh wrote:
-> > > > > On 21/04/19 09:24PM, Qu Wenruo wrote:
-> > > > > > [...]
-> > > > > > > >
-> > > > > > > > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > > > > > > > index 45ec3f5ef839..49f78d643392 100644
-> > > > > > > > --- a/fs/btrfs/file.c
-> > > > > > > > +++ b/fs/btrfs/file.c
-> > > > > > > > @@ -1341,7 +1341,17 @@ static int prepare_uptodate_page(struct inode
-> > > > > > > > *inode,
-> > > > > > > >                           unlock_page(page);
-> > > > > > > >                           return -EIO;
-> > > > > > > >                   }
-> > > > > > > > -               if (page->mapping != inode->i_mapping) {
-> > > > > > > > +
-> > > > > > > > +               /*
-> > > > > > > > +                * Since btrfs_readpage() will get the page unlocked, we
-> > > > > > > > have
-> > > > > > > > +                * a window where fadvice() can try to release the page.
-> > > > > > > > +                * Here we check both inode mapping and PagePrivate() to
-> > > > > > > > +                * make sure the page is not released.
-> > > > > > > > +                *
-> > > > > > > > +                * The priavte flag check is essential for subpage as we
-> > > > > > > > need
-> > > > > > > > +                * to store extra bitmap using page->private.
-> > > > > > > > +                */
-> > > > > > > > +               if (page->mapping != inode->i_mapping ||
-> > > > > > > > PagePrivate(page)) {
-> > > > > > >     ^ Obviously it should be !PagePrivate(page).
-> > > > > >
-> > > > > > Hi Ritesh,
-> > > > > >
-> > > > > > Mind to have another try on generic/095?
-> > > > > >
-> > > > > > This time the branch is updated with the following commit at top:
-> > > > > >
-> > > > > > commit d700b16dced6f2e2b47e1ca5588a92216ce84dfb (HEAD -> subpage,
-> > > > > > github/subpage)
-> > > > > > Author: Qu Wenruo <wqu@suse.com>
-> > > > > > Date:   Mon Apr 19 13:41:31 2021 +0800
-> > > > > >
-> > > > > >       btrfs: fix a crash caused by race between prepare_pages() and
-> > > > > >       btrfs_releasepage()
-> > > > > >
-> > > > > > The fix uses the PagePrivate() check to avoid the problem, and passes
-> > > > > > several generic/auto loops without any sign of crash.
-> > > > > >
-> > > > > > But considering I always have difficult in reproducing the bug with previous
-> > > > > > improper fix, your verification would be very helpful.
-> > > > > >
-> > > > >
-> > > > > Hi Qu,
-> > > > >
-> > > > > Thanks for the patch. I did try above patch but even with this I could still
-> > > > > reproduce the issue.
-> > > > >
-> > > > > 1. I think the original problem could be due to below logs.
-> > > > > 	[   79.079641] run fstests generic/095 at 2021-04-21 06:46:23
-> > > > > 	<...>
-> > > > > 	[   83.634710] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> > > > >
-> > > > > Meaning, there might be a race here between DIO and buffered IO.
-> > > > > So from DIO path we call invalidate_inode_pages2_range(). Somehow this maybe
-> > > > > causing call of btrfs_releasepage().
-> > > > >
-> > > > > Now from code, invalidate_inode_pages2_range() can be called from both
-> > > > > __iomap_dio_rw() and from iomap_dio_complete(). So it is not clear as to from
-> > > > > where this might be triggering this bug.
-> > > >
-> > > > I think I got one of the problem.
-> > > > 1. we use page->private pointer as btrfs_subpage struct which also happens to
-> > > >      hold spinlock within it.
-> > > >
-> > > >      Now in btrfs_subpage_clear_writeback()
-> > > >      -> we take this spinlock  spin_lock_irqsave(&subpage->lock, flags);
-> > > >      -> we call end_page_writeback(page);
-> > > >      		  -> this may end up waking up invalidate_inode_pages2_range()
-> > > > 		  which is waiting for writeback to complete.
-> > > > 			  -> this then may also call btrfs_releasepage() on the
-> > > > 			  same page and also free the subpage structure.
-> > >
-> > > This indeeds looks like a problem.
-> > >
-> > > This really means we need to have such a small race window below:
-> > > (btrfs_invalidatepage() doesn't seem to be possible to race considering
-> > >   how much work needed to be done in that function)
-> > >
-> > > 	Thread 1		|		Thread 2
-> > > --------------------------------+------------------------------------
-> > >   end_bio_extent_writepage()	| btrfs_releasepage()
-> > >   |- spin_lock_irqsave()		| |
-> > >   |- end_page_writeback()	| |
-> > >   |				| |- if (PageWriteback() ||...)
-> > >   |				| |- clear_page_extent_mapped()
-> > >   |- spin_unlock_irqrestore().
-> > >
-> > > It looks like my arm boards are not fast enough to trigger the race.
-> > >
-> > > Although it can be fixed by doing the same thing as dirty bit, by checking
-> > > the bitmap first and then call end_page_writeback() with spinlock unlocked.
-> > >
-> > > Would you please try the following fix? (based on the latest branch, which
-> > > already has the previous fixes included).
-> > >
-> > > I'm also running the tests on all my arm boards to make sure it doesn't
-> > > cause extra problem, so far so good, but my board is far from fast, thus not
-> > > yet 100% tested.
-> > >
-> > > Thanks,
-> > > Qu
-> > >
-> > > diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-> > > index 696485ab68a2..c5abf9745c10 100644
-> > > --- a/fs/btrfs/subpage.c
-> > > +++ b/fs/btrfs/subpage.c
-> > > @@ -420,13 +420,16 @@ void btrfs_subpage_clear_writeback(const struct
-> > > btrfs_fs_info *fs_info,
-> > >   {
-> > >          struct btrfs_subpage *subpage = (struct btrfs_subpage
-> > > *)page->private;
-> > >          u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
-> > > +       bool finished = false;
-> > >          unsigned long flags;
-> > >
-> > >          spin_lock_irqsave(&subpage->lock, flags);
-> > >          subpage->writeback_bitmap &= ~tmp;
-> > >          if (subpage->writeback_bitmap == 0)
-> > > -               end_page_writeback(page);
-> > > +               finished = true;
-> > >          spin_unlock_irqrestore(&subpage->lock, flags);
-> > > +       if (finished)
-> > > +               end_page_writeback(page);
-> > >   }
-> > >
-> > >   void btrfs_subpage_set_ordered(const struct btrfs_fs_info *fs_info,
-> >
-> > Thanks for this patch. I have re-tested generic/095 with 100 iterations and -g
-> > quick (with both of your patches). I don't see this issue anymore.
-> > So with the two patches (including above one) the race with
-> > btrfs_releasepage() is now fixed.
-> >
-> >
-> > For both of these patches, please feel free to add:
-> >
-> > Reported-by: Ritesh Harjani <riteshh@linux.ibm.com>
-> > Tested-by: Ritesh Harjani <riteshh@linux.ibm.com>
+> [72747.566958] Workqueue: btrfs-flush_delalloc btrfs_work_helper [btrfs]
+> [72747.566961] Call Trace:
+> [72747.566964]  __schedule+0x296/0x760
+> [72747.566968]  ? finish_wait+0x80/0x80
+> [72747.566970]  schedule+0x3c/0xa0
+> [72747.566995]  wait_extent_bit.constprop.68+0x13b/0x1c0 [btrfs]
+> [72747.566999]  ? finish_wait+0x80/0x80
+> [72747.567024]  lock_extent_bits+0x37/0x90 [btrfs]
+> [72747.567047]  btrfs_invalidatepage+0x299/0x2c0 [btrfs]
+> [72747.567051]  ? find_get_pages_range_tag+0x2cd/0x380
+> [72747.567076]  __extent_writepage+0x203/0x320 [btrfs]
+> [72747.567102]  extent_write_cache_pages+0x2bb/0x440 [btrfs]
+> [72747.567106]  ? update_load_avg+0x7e/0x5f0
+> [72747.567109]  ? enqueue_entity+0xf4/0x6f0
+> [72747.567134]  extent_writepages+0x44/0xa0 [btrfs]
+> [72747.567137]  ? enqueue_task_fair+0x93/0x6f0
+> [72747.567140]  do_writepages+0x41/0xd0
+> [72747.567144]  __filemap_fdatawrite_range+0xc7/0x100
+> [72747.567167]  btrfs_run_delalloc_work+0x17/0x40 [btrfs]
+> [72747.567195]  btrfs_work_helper+0xc2/0x300 [btrfs]
+> [72747.567200]  process_one_work+0x1aa/0x340
+> [72747.567202]  worker_thread+0x30/0x390
+> [72747.567205]  ? create_worker+0x1a0/0x1a0
+> [72747.567208]  kthread+0x116/0x130
+> [72747.567211]  ? kthread_park+0x80/0x80
+> [72747.567214]  ret_from_fork+0x1f/0x30
 >
-> Thanks for the test.
 >
-> I really feel a little envy for your fast Power system.
-:)
+> [72747.569686] task:fsstress        state:D stack:    0 pid:841421 ppid:8=
+41417 flags:0x00000000
+> [72747.569689] Call Trace:
+> [72747.569691]  __schedule+0x296/0x760
+> [72747.569694]  schedule+0x3c/0xa0
+> [72747.569721]  try_flush_qgroup+0x95/0x140 [btrfs]
+> [72747.569725]  ? finish_wait+0x80/0x80
+> [72747.569753]  btrfs_qgroup_reserve_data+0x34/0x50 [btrfs]
+> [72747.569781]  btrfs_check_data_free_space+0x5f/0xa0 [btrfs]
+> [72747.569804]  btrfs_buffered_write+0x1f7/0x7f0 [btrfs]
+> [72747.569810]  ? path_lookupat.isra.48+0x97/0x140
+> [72747.569833]  btrfs_file_write_iter+0x81/0x410 [btrfs]
+> [72747.569836]  ? __kmalloc+0x16a/0x2c0
+> [72747.569839]  do_iter_readv_writev+0x160/0x1c0
+> [72747.569843]  do_iter_write+0x80/0x1b0
+> [72747.569847]  vfs_writev+0x84/0x140
+> [72747.569869]  ? btrfs_file_llseek+0x38/0x270 [btrfs]
+> [72747.569873]  do_writev+0x65/0x100
+> [72747.569876]  do_syscall_64+0x33/0x40
+> [72747.569879]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+>
+>
+> [72747.569899] task:fsstress        state:D stack:    0 pid:841424 ppid:8=
+41417 flags:0x00004000
+> [72747.569903] Call Trace:
+> [72747.569906]  __schedule+0x296/0x760
+> [72747.569909]  schedule+0x3c/0xa0
+> [72747.569936]  try_flush_qgroup+0x95/0x140 [btrfs]
 
-> As my ARM board hasn't even finished one generic/auto run...
-auto run could be slower. I am yet to do the full auto run testing with
-your patch series on Power.
-I just wanted to ensure that all the required configs(debug configs) required
-are enabled, hence the delay.
+That's the problem, qgroup flushing triggers writeback for an inode
+for which we have a page dirtied and locked.
+This should fix it:  https://pastebin.com/raw/U9GUZiEf
 
--ritesh
+Try it out and I'll write a changelog later.
+Thanks.
+
+> [72747.569940]  ? finish_wait+0x80/0x80
+> [72747.569967]  __btrfs_qgroup_reserve_meta+0x36/0x50 [btrfs]
+> [72747.569989]  start_transaction+0x279/0x580 [btrfs]
+> [72747.570014]  clone_copy_inline_extent+0x332/0x490 [btrfs]
+> [72747.570041]  btrfs_clone+0x5b7/0x7a0 [btrfs]
+> [72747.570068]  ? lock_extent_bits+0x64/0x90 [btrfs]
+> [72747.570095]  btrfs_clone_files+0xfc/0x150 [btrfs]
+> [72747.570122]  btrfs_remap_file_range+0x3d8/0x4a0 [btrfs]
+> [72747.570126]  do_clone_file_range+0xed/0x200
+> [72747.570131]  vfs_clone_file_range+0x37/0x110
+> [72747.570134]  ioctl_file_clone+0x7d/0xb0
+> [72747.570137]  do_vfs_ioctl+0x138/0x630
+> [72747.570140]  __x64_sys_ioctl+0x62/0xc0
+> [72747.570143]  do_syscall_64+0x33/0x40
+> [72747.570146]  entry_SYSCALL_64_after_hwframe+0x44/0xa9
+>
+> Best Regards
+> Wang Yugui (wangyugui@e16-tech.com)
+> 2021/04/21
+>
+> > Hi,
+> >
+> > When I run all xfstests on btrfs, it freeze(deadlock?)  on btrfs/232.
+> >
+> > the output of './check.
+> > ....
+> > btrfs/231 0s ...  0s
+> > btrfs/232 34s ...
+> >
+> > The os is still response.
+> >
+> > 'ls /mnt/scratch/' freeze(deadlock?) without any output.
+> >
+> > 'ps -ef' output something and then freeze. see ps.txt
+> > we found no OOPS info in dmesg. see dmesg.txt
+> >
+> > Any advice to gather more info for troubleshooting?
+> > This is a server with ECC memory, and no ECC error deteced. I will keep
+> > it for 24 hours for any info gather.
+> >
+> > The last two patches added to btrfs code are
+> >  From:    fdmanana@kernel.org
+> >  Date:    Tue, 20 Apr 2021 10:55:12 +0100
+> >  Subject: [PATCH] btrfs: fix metadata extent leak after failure to crea=
+te subvolume
+> >
+> >  From:    fdmanana@kernel.org
+> >  Date:    Tue, 20 Apr 2021 10:55:44 +0100
+> >  Subject: [PATCH] btrfs: fix race when picking most recent mod log oper=
+ation for an old root
+> >
+> > Best Regards
+> > Wang Yugui (wangyugui@e16-tech.com)
+> > 2021/04/21
+> >
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

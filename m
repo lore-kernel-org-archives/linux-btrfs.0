@@ -2,118 +2,132 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBFBFC43461
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5084EC433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AB745613B0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0DD5E600CC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229942AbhDWL1R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Apr 2021 07:27:17 -0400
+        id S230521AbhDWL1S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Apr 2021 07:27:18 -0400
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:21581 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229479AbhDWL1Q (ORCPT
+        with ESMTP id S230072AbhDWL1S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Apr 2021 07:27:16 -0400
+        Fri, 23 Apr 2021 07:27:18 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1619177200; x=1650713200;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=PnY7VxeJzkWGSF/sas0OXVPr+eFtl33l1V8Wtrbt61s=;
-  b=RY29W4HzcC/20QOOQoGiJ5VKTpettLbUJOuaDRW8dJA7locK0YJUodXr
-   SxhmYNCl68nxNljG6+KmgwdMHbjN/BL4nIk+0ZydxRpm6vQ7KoxYyOGot
-   XZZ5D0/lFzzB7/vx1wTVqeleITErfZuTq9zvWb0PwnGWDyAvtlKurHLtT
-   LWLcN1BR6vxqGmuNYAQTLfZVk37V0wVAeBur6/STRVJ8qYkpV2YLt3uAI
-   RnuVLEIk4VXIfrNJ2GYJh8VYcOhttMev684rFK/Vf373gy+8MOkTIm1Ba
-   UBvbjFiReywiGnWL+0KNHsS0RDRuGZgYNxUZx46bvFvtStbvybAsxMAUC
-   w==;
-IronPort-SDR: ++b3V06eeldfxsI8QsrmF5CxAk6leXzBCWNrBBellwe3L+mgufopIsDXjQMg8qfDiPcqbdF/+j
- NCLwfTMDoi4l0rCyfp9LsTf6VobJypIYlzjr1F1W/7u0/+Eh9rwgceUG+wzUbJn4Ck4kGdFYH6
- 53lpI23xj++su7FOCZp+de2/lkiYg3A1q3QUb7goMQOPjLibc5rG/MqMrfy/oSNvHJ+cT3hrVb
- +7a66iCXcdUbU3q32K4Tx9YEPWSQGnShkUHrS4IqyiNJv59V8o/olE/NlKDYxKq0Zs0LMSJseY
- 6nw=
+  t=1619177202; x=1650713202;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=z60KLyNq2AWMe9YzqvZt4u/Lx64f02p6j1PomXmYUGs=;
+  b=SqgABVnGPxPSDT+YQa8llyIatWqMVuCMuzFCmftg21PR/bjKZ6TVDQWz
+   8SW3kmKBoH0R6gOVLO/IaSrBZ3S70moCa8LWLyoGDo5KTq3i8iVVjJfS1
+   6KLmAgVfsPqSQtEJFh2ScrMFk3n2uc8uxxT7WUNWO0O/OY1F/yNsr9Te0
+   qLPvWk9pWxi3l8Lu8Sp5c14NM0sEvSJCo7LLKr9s9KVNycskwErNdTvAf
+   /dNCttBeSCJrLiAy6cYMak0JhPgF/hcDY1il+KkPbIJ56qxu/X8hN7CiS
+   Bwmhb3ZWknKCu37h8BerpFQstFyHuEsfzBvDswMeTtT1+7oRRporatJPZ
+   g==;
+IronPort-SDR: cIy/vm5R9dUW6NfHqWCUUZVPSwRZaBD0ehxlFibpuscET9WsVTpThxiypeK+W0uL2xsUYHAq37
+ C4Ce3XMxlGjgIYpDwH+PYnWjPHAfEia53a35VhGqodFGHexnPAbFPLGlxofW97HLx5MZEYSHFZ
+ GrCfNuZSUcZVgNku0USzzKCE1DZ0Y7O6g8GS8JEK+57SG/mS0kHak7s926ETSbj/9ZeF7e62oO
+ /+3KcbL1Ubb3Xplzo/nIgXKGUg5QqMn4kdUQDJX8jSSxh/K40BdlDApQ8FwoSYPSmZK3qzYWiT
+ Aag=
 X-IronPort-AV: E=Sophos;i="5.82,245,1613404800"; 
-   d="scan'208";a="165365021"
+   d="scan'208";a="165365026"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Apr 2021 19:26:40 +0800
-IronPort-SDR: igPmVvqVlDFhiwbH4c0a8xUmfPLFCiAUjwHhIgQsNAZ5z+a6IIzVnjREs2eHYFKPLtaw748wQl
- 8sUpNJIIrYCb3KSRgiYpPDTa59m+IzPnZnmKUMsxPSxA21LTMSRLdb5WWYNx3idBg6uG103YPB
- 7czhZhh041vF8krOUzW15TmQnkFXn9cx88ymJKz7gcOjZHGHOux6qQTRe0DIK/2QW1lisN2yWh
- 7+0RM64NNgXItPH0TahbiMUCcsDX3mZIrIxK4d7my6bbutrh0xufbxfEuzyPRzqO2Voazhx2n3
- vo/GAoMhT1Ft9h649VXmyaPZ
+  by ob1.hgst.iphmx.com with ESMTP; 23 Apr 2021 19:26:42 +0800
+IronPort-SDR: 23mLjuL/p6XRqKDS9qqu/5Wx/dLhQ8J6VYRHabKVAxe7ctyUQXLxKVeFOb1xOmVRIwN2UQlKfX
+ xdpqicR2gk1E+eVVJpRKpR7ulsK+qujbMnjtGLMbUIXqZMCm95XJ1r85vmD9oknGW3oSuF6ech
+ LaaNL2KLpu26R33VUbwX/MLQIDMTsPewBn6buTv0eos5r3iJC9UJguxYBgH0eW1xe+VNWtBex4
+ d5Pomisuh2BdmX5KyG96qv9TC2bRkQ+2iSez/llHxIxvanE+4SZUWBTXWk6Ze1vUNOHBEQHfx5
+ mEAgIeBgAp0AjJ7fx4S2wm9x
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Apr 2021 04:07:14 -0700
-IronPort-SDR: lyp6Oiq75CJ7AsVhwVsTtXK+Gy2rI5LQPUYpx6z0jzhKCM6xyFRkhgXPxVnriX26oqwB7T/1dq
- 7czE8hcvRKMSs/DwiWByWWe7NHGLz/eB1SYdCatapB3K55PM0wvkMH1NvcyqnZVUXtWnUag95w
- QbyGqbxF3+GJpeFMfIs08Ry9MIUA8s/ccCZdMUPgjQmphpCqiqU6rxdTPLr9cp3f7d50/0Jc2L
- C1qa6LZ1Bhbjgvzca/RoFAT27F0M1ZytiY91d3SgA0vagVoo1lvvpK+yCa1CbmHNQzB2xCZqHf
- wGU=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Apr 2021 04:07:16 -0700
+IronPort-SDR: z6NFRIOzId/X6P4Q9cKU9tYVVZkcKpcw7sss4wAgIerFaiKKRqaiZMnxtIZt+TLd/coRBNU87p
+ 0pypJUXW7Yivt0qEPadP1VH4/TqyW482FaveyKT9Y+rJK/q5rfzt+BeB7iMDj6WU/a9pufECmL
+ 9H+gLxDnbpW9pNPvBJefjIdAv41STNPz44fleO1zStlZhxqTRvBLmPf1hNKUZ8Cr5AZ+uvvBKp
+ LGHf5qpfph1nXJiiELNwAC+CWEHRFHdH3GkX89oxCVZNmxHebFstJ9BC9T7J1rdiIms+SLj6aS
+ 0Xg=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 23 Apr 2021 04:26:39 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 23 Apr 2021 04:26:41 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     Eryu Guan <guan@eryu.me>
 Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 0/4] fstests: first few support patches for zoned btrfs
-Date:   Fri, 23 Apr 2021 20:26:30 +0900
-Message-Id: <20210423112634.6067-1-johannes.thumshirn@wdc.com>
+Subject: [PATCH 2/4] btrfs: require discard functionality from scratch device
+Date:   Fri, 23 Apr 2021 20:26:32 +0900
+Message-Id: <20210423112634.6067-3-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.30.0
+In-Reply-To: <20210423112634.6067-1-johannes.thumshirn@wdc.com>
+References: <20210423112634.6067-1-johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This series adds 3 tests to prepare xfstests for testing on zoned block
-devices and a first test for btrfs' zoned block device support.
+Some test cases for btrfs require the scratch device to support discard.
+Check if the scratch device does support discard before trying to execute
+the test.
 
-General zoned block device support for btrfs was merged with v5.12 and the
-zone auto reclaim feature is staged to be merged with v5.13.
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ common/rc       | 8 ++++++++
+ tests/btrfs/116 | 1 +
+ tests/btrfs/156 | 1 +
+ 3 files changed, 10 insertions(+)
 
-Johannes Thumshirn (2):
-  btrfs: require discard functionality from scratch device
-  btrfs: add test for zone auto reclaim
-
-Naohiro Aota (2):
-  fstests: add missing checks of fallocate feature
-  common/rc: introduce zone check commands
-
- common/config       |   1 +
- common/rc           |  52 ++++++++++++++++++++++
- tests/btrfs/013     |   1 +
- tests/btrfs/016     |   1 +
- tests/btrfs/025     |   1 +
- tests/btrfs/034     |   1 +
- tests/btrfs/037     |   1 +
- tests/btrfs/046     |   1 +
- tests/btrfs/107     |   1 +
- tests/btrfs/116     |   1 +
- tests/btrfs/156     |   1 +
- tests/btrfs/236     | 102 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/236.out |   2 +
- tests/btrfs/group   |   1 +
- tests/ext4/001      |   1 +
- tests/f2fs/001      |   1 +
- tests/generic/456   |   1 +
- tests/xfs/042       |   1 +
- tests/xfs/114       |   1 +
- tests/xfs/118       |   1 +
- tests/xfs/331       |   1 +
- tests/xfs/341       |   1 +
- tests/xfs/342       |   1 +
- tests/xfs/423       |   1 +
- 24 files changed, 177 insertions(+)
- create mode 100755 tests/btrfs/236
- create mode 100644 tests/btrfs/236.out
-
+diff --git a/common/rc b/common/rc
+index 11ff7635700b..76a7265e23ba 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3587,6 +3587,14 @@ _require_batched_discard()
+ 	$FSTRIM_PROG $1 > /dev/null 2>&1 || _notrun "FITRIM not supported on $1"
+ }
+ 
++_require_scratch_discard()
++{
++	local sdev="$(_short_dev $SCRATCH_DEV)"
++	local discard=$(cat /sys/block/$sdev/queue/discard_granularity)
++
++	[ $discard -gt 0 ] || _notrun "discard not supported"
++}
++
+ _require_dumpe2fs()
+ {
+ 	if [ -z "$DUMPE2FS_PROG" ]; then
+diff --git a/tests/btrfs/116 b/tests/btrfs/116
+index 3ed097eccf03..f4db439caef8 100755
+--- a/tests/btrfs/116
++++ b/tests/btrfs/116
+@@ -29,6 +29,7 @@ _cleanup()
+ # real QA test starts here
+ _supported_fs btrfs
+ _require_scratch
++_require_scratch_discard
+ 
+ rm -f $seqres.full
+ 
+diff --git a/tests/btrfs/156 b/tests/btrfs/156
+index 89c80e7161e2..56206d99c801 100755
+--- a/tests/btrfs/156
++++ b/tests/btrfs/156
+@@ -42,6 +42,7 @@ rm -f $seqres.full
+ _supported_fs btrfs
+ _require_scratch
+ _require_fstrim
++_require_scratch_discard
+ 
+ # 1024fs size
+ fs_size=$((1024 * 1024 * 1024))
 -- 
 2.30.0
 

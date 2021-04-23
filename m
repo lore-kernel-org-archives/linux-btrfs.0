@@ -7,63 +7,63 @@ X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EFD0AC43470
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7779C43603
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CE047613DE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69CE9600CC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Apr 2021 11:26:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229965AbhDWL1R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Apr 2021 07:27:17 -0400
+        id S231394AbhDWL1U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Apr 2021 07:27:20 -0400
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:21581 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229928AbhDWL1R (ORCPT
+        with ESMTP id S230072AbhDWL1T (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Apr 2021 07:27:17 -0400
+        Fri, 23 Apr 2021 07:27:19 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1619177201; x=1650713201;
+  t=1619177203; x=1650713203;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=bVK+caetvJJtwehTs2HyCVjZz9IBwItr31BdpSGpynQ=;
-  b=oCkF4TE1J+5xR4pHCpslM9IYljTIICAwV6YdLobmsusiJ/8L9urtbooq
-   Oxgqa7y3kMfLCNea+QCwItEWLf9lgHIhtf9tGNY2aHlbogWZi8goAJQOV
-   VRqQMjZZ4LSrF8csdmkuZHeRRWWUlEKxZ2L/w23HOAnc4hVpbRv2B4Ojv
-   TD9f29yTpgk3Yalr67AHS/BVlCzxgYc715qZ/jcZ14+y9yrEj8hDB4BUU
-   lAMe7g8F3qJqMQ978YUrkyV1iuhqgFC/ntipShXzHTQjFbUKnlA5IkFum
-   Ji0WnsQB5w97MFlTT1U8wpiWueTfdIHUShmKq1hTWdAOJnIjanC1niM4E
-   w==;
-IronPort-SDR: nZ6UL0H9LwRXZveAAKmiDgw1+V9vyaSXjh6I6haI26+Jo2g7PwH7WV/XcY4vbxs8vTAw6hAFdI
- AMN69602B8i+ivUNw3aUlzOvEke5AfmurEu9+DXuQ7+lSWfby16ycnyl4JqA3Pps7O3s463EGZ
- QJsFObDqEcTV1hS5EwZxjVih5FGSryChDZxVsD95PkWZKhgKBYUwE9j65iC3Hhrxfg0Eijodbo
- XmLeudTSU6SZH6AvJpmMA75MTBLIFoIDxx//y2OxEMPsSv3EbKK3kQ1340jXNS/Bv/TyrU5Inf
- 3HE=
+  bh=HVL8OW7L0ggpKA0j/PbdNF5sAD6Isv4zfpQMacmVhVc=;
+  b=LUF4XjzcKl33lUMpMry/oEGIRsATymVDoWaU5qk37qsoCLwBe59ebD+8
+   hdIvrHpBW9bDgXqDfBjtGvrCxpbaSVGAI13xONpjD0GMO5jTG2AgsjGR3
+   9Jx58iHCkvz/iiZrqvMXLBc6O0+FCgi/DKZmrvGV2XfMsNnnt3aQbdIZH
+   I1xiJboGbT8ipz4LUjhgTI8OwHol9Yg0CdRrKQNHPCLDi7pMD1tkozLRE
+   cpFsox96dnQMkoSSYpA8/noaAKpppWwyr6PhVyRriWppAby6QLeZ6HZVw
+   /quk6ZE+b9wR7JUXZA721Nqx5ezTFzExMauph0VYVMalznokr1Jr8OejX
+   A==;
+IronPort-SDR: CD3b8p9kWfrvs9hLR9lEuhOk1QdV/QyEbOpyyTXBWT//2/muBtHPuXa5CnDvi0bYcP7kNKL7Wb
+ gVOPlewbIg/mZWbwiJco9TJ7lGjmOsIZya7Vz3LZSQCAm0HDMhdM/+XbekDvyZ693lAT3NBCAy
+ LKjNYQfrBlfL3maRB0v+zEZeBlQm0g3CUWl3UqySiBkTJQT8gSQQ8KHaVArNnTHk16e5Q+Vqbt
+ i+zuY+4+26evRQmc9j9duGSJSOwVHHjXb0Wh0Hise47qeJgzbN4OALHX5YBRsbEwj8DXL9dHXq
+ GhI=
 X-IronPort-AV: E=Sophos;i="5.82,245,1613404800"; 
-   d="scan'208";a="165365023"
+   d="scan'208";a="165365027"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 23 Apr 2021 19:26:41 +0800
-IronPort-SDR: 5I/2PFd+qdBVxH/sR0C1GXkWOMloPFCZqrYmLj3siqE4Hx2Q4l3NrImMuYeK7dUHXm1uTTNvdm
- sNy2vZkgcHEcEa4XuIjogBlUz5y3KOVsAiKEH5dOMWF94YzMc94tITGDN3O4Gr+IYg6msaBt7C
- y9aMQeR98kRpI4sQKeh1ohK+AryuMvhbDJ7ORRKBA8GLKqp6n5utuNyxXO8SKpqmgGolvyTLGI
- Mpu/9GMLZTgkKX33S+aBVYBnqh7FL1+ESABoagI58186oxJVBiCY/R636oQPbppiibbvVO78yQ
- r6tp4H+p8yWfPCi27OYvyrpW
+  by ob1.hgst.iphmx.com with ESMTP; 23 Apr 2021 19:26:43 +0800
+IronPort-SDR: D/Nq6ZfLfJKl6ps0WxugGtTZerFL6OWvTUKr+MHbuU0ZyVAz7fJd38o47EWdzmI4bCemQ0AbGa
+ OcS5W3cRbTCuKOTD+s82mdoFU1y94vZtldFDXOfXhY19u+znt1ccSwtWS2kRDf118KZdsfxzN5
+ tO3klh49BpASoJO0JtrLD6TpMzvHAevfxv28QEKgn1Tk6Pvh/ZYCU4SdzihV4k/ZrpCKGmfyHV
+ xdwx+sXlUJrSclU3QgNqCxz+Srnp03OYSwxMx7VF6AOnooKpVZhSpk3dCl/X85W1fxSjGTbsIQ
+ NbFGeagRnvnnYS+50if1/Ggo
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Apr 2021 04:07:15 -0700
-IronPort-SDR: K7Dv7fqpZHAkQEuKOWsf86RNmRJ58aZb9b/jZDPEAF1Jfl39W/9nTxhKSB7JsLVo3aKwswuqZg
- yuWyebv7uRrL1TNiMhA7NeKX0whAiUkG2gaSJQA8C4fGTL0OzC4I809GL/hND7Cxi+0mPyUVPm
- 2Cb6Q/wGn56QvWtIyUz94kYUf744qSEsv0y7t6DgztyTsmQojChuyHmxhuRFPi1D3RsVi+AkhU
- 92KTQFjHq1F2wFYtSmTBR/j6vzt/oWkEVXUOce4qRD6OlvMXJ/hUKkROP/Jek8U8Owg2IMiPww
- wb8=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Apr 2021 04:07:17 -0700
+IronPort-SDR: XSmQreHo4nP5+/HtmjOipsUjEs3LRCa4OOo97BUIVwXGkTFb85fxEIG7LVONYmxUAyF0er6tZy
+ DFekOSa/IA8vpHji39JjKnmrCysCcS4veIfsVXRi1VKiuTkON16Y3n0Q/pGH++3limhMscHIgV
+ xioirSVpWPNp1FK9kQAenU4duDq/Zyc24hkllbLILprio29bvJ5VZM5GqqGjnNGnXlt8+sClgO
+ 6PscS8XqA39GGXGsKw9miNgPA5tMPnNCblfq8x1yHxb6hzBdX2aTlfvJVvEK4CqLjUx0BlIYyS
+ xlk=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip02.wdc.com with ESMTP; 23 Apr 2021 04:26:40 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 23 Apr 2021 04:26:42 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     Eryu Guan <guan@eryu.me>
 Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 1/4] fstests: add missing checks of fallocate feature
-Date:   Fri, 23 Apr 2021 20:26:31 +0900
-Message-Id: <20210423112634.6067-2-johannes.thumshirn@wdc.com>
+Subject: [PATCH 3/4] common/rc: introduce zone check commands
+Date:   Fri, 23 Apr 2021 20:26:33 +0900
+Message-Id: <20210423112634.6067-4-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.30.0
 In-Reply-To: <20210423112634.6067-1-johannes.thumshirn@wdc.com>
 References: <20210423112634.6067-1-johannes.thumshirn@wdc.com>
@@ -75,244 +75,77 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Naohiro Aota <naohiro.aota@wdc.com>
 
-Many test cases use xfs_io -c 'falloc' but forgot to add
-_require_xfs_io_command "falloc". This will fail the test case if we run
-the test case on a file system without fallcoate support e.g. F2FS.
+Introduce some zone related helper functions: _zone_type(),
+_require_zoned_device(), and _require_non_zoned_device(). They all take a
+device path as an argument.
 
-While we believe that normal fallocate(mode = 0) is always supported on
-Linux, it is not true. Fallocate is disabled in several implementations of
-zoned block support for file systems because the pre-allocated region will
-break the sequential writing rule.
+_zone_type() return the zone type of the device according to the value
+returned from "/sys/block/<disk>/queue/zoned". See
+Documentation/ABI/testing/sysfs-block for a detail.
 
-Currently, several test cases unconditionally call fallocate(). Let's add
-_require_xfs_io_command "falloc" to properly check the feature is supported
-by a testing file system.
+_require_zoned_device() checks if the device is zoned. If not, it skips the
+current test. _require_non_zoned_device() does the opposite.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- tests/btrfs/013   | 1 +
- tests/btrfs/016   | 1 +
- tests/btrfs/025   | 1 +
- tests/btrfs/034   | 1 +
- tests/btrfs/037   | 1 +
- tests/btrfs/046   | 1 +
- tests/btrfs/107   | 1 +
- tests/ext4/001    | 1 +
- tests/f2fs/001    | 1 +
- tests/generic/456 | 1 +
- tests/xfs/042     | 1 +
- tests/xfs/114     | 1 +
- tests/xfs/118     | 1 +
- tests/xfs/331     | 1 +
- tests/xfs/341     | 1 +
- tests/xfs/342     | 1 +
- tests/xfs/423     | 1 +
- 17 files changed, 17 insertions(+)
+ common/rc | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-diff --git a/tests/btrfs/013 b/tests/btrfs/013
-index 9252c82a2076..5e03ed4a4b4b 100755
---- a/tests/btrfs/013
-+++ b/tests/btrfs/013
-@@ -33,6 +33,7 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-+_require_xfs_io_command "falloc"
+diff --git a/common/rc b/common/rc
+index 76a7265e23ba..18436e33dcf3 100644
+--- a/common/rc
++++ b/common/rc
+@@ -1931,6 +1931,50 @@ _require_dm_target()
+ 	fi
+ }
  
- rm -f $seqres.full
- 
-diff --git a/tests/btrfs/016 b/tests/btrfs/016
-index 8fd237cbdb64..015ec17f93d6 100755
---- a/tests/btrfs/016
-+++ b/tests/btrfs/016
-@@ -35,6 +35,7 @@ _supported_fs btrfs
- _require_test
- _require_scratch
- _require_fssum
-+_require_xfs_io_command "falloc"
- 
- _scratch_mkfs > /dev/null 2>&1
- 
-diff --git a/tests/btrfs/025 b/tests/btrfs/025
-index 42cd7cefe825..5c8140552bfb 100755
---- a/tests/btrfs/025
-+++ b/tests/btrfs/025
-@@ -31,6 +31,7 @@ _cleanup()
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-+_require_xfs_io_command "falloc"
- 
- rm -f $seqres.full
- 
-diff --git a/tests/btrfs/034 b/tests/btrfs/034
-index bc7a4aae3886..07c84c347d3b 100755
---- a/tests/btrfs/034
-+++ b/tests/btrfs/034
-@@ -28,6 +28,7 @@ _cleanup()
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-+_require_xfs_io_command "falloc"
- 
- rm -f $seqres.full
- 
-diff --git a/tests/btrfs/037 b/tests/btrfs/037
-index 1cfaf5be58c8..9ef199a93413 100755
---- a/tests/btrfs/037
-+++ b/tests/btrfs/037
-@@ -35,6 +35,7 @@ _cleanup()
- # real QA test starts here
- _supported_fs btrfs
- _require_scratch
-+_require_xfs_io_command "falloc"
- 
- rm -f $seqres.full
- 
-diff --git a/tests/btrfs/046 b/tests/btrfs/046
-index 882db8eacc4e..a1d82e1cdd54 100755
---- a/tests/btrfs/046
-+++ b/tests/btrfs/046
-@@ -37,6 +37,7 @@ _cleanup()
- _supported_fs btrfs
- _require_test
- _require_scratch
-+_require_xfs_io_command "falloc"
- _require_fssum
- 
- rm -f $seqres.full
-diff --git a/tests/btrfs/107 b/tests/btrfs/107
-index e57c9dead499..80db5ab9822d 100755
---- a/tests/btrfs/107
-+++ b/tests/btrfs/107
-@@ -34,6 +34,7 @@ rm -f $seqres.full
- 
- _supported_fs btrfs
- _require_scratch
-+_require_xfs_io_command "falloc"
- 
- # Use 64K file size to match any sectorsize
- # And with a unaligned tailing range to ensure it will be at least 2 pages
-diff --git a/tests/ext4/001 b/tests/ext4/001
-index bbb74f1ea5bc..9650303d15b5 100755
---- a/tests/ext4/001
-+++ b/tests/ext4/001
-@@ -29,6 +29,7 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
- 
- # real QA test starts here
- _supported_fs ext4
-+_require_xfs_io_command "falloc"
- _require_xfs_io_command "fzero"
- _require_test
- 
-diff --git a/tests/f2fs/001 b/tests/f2fs/001
-index 98bd2682d60f..0753a09b5576 100755
---- a/tests/f2fs/001
-+++ b/tests/f2fs/001
-@@ -36,6 +36,7 @@ _cleanup()
- 
- _supported_fs f2fs
- _require_scratch
-+_require_xfs_io_command "falloc"
- 
- testfile=$SCRATCH_MNT/testfile
- dummyfile=$SCRATCH_MNT/dummyfile
-diff --git a/tests/generic/456 b/tests/generic/456
-index 2f9df5e5edc4..65667d449dd3 100755
---- a/tests/generic/456
-+++ b/tests/generic/456
-@@ -38,6 +38,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- # real QA test starts here
- _supported_fs generic
- _require_scratch
-+_require_xfs_io_command "falloc"
- _require_dm_target flakey
- _require_xfs_io_command "falloc" "-k"
- _require_xfs_io_command "fzero"
-diff --git a/tests/xfs/042 b/tests/xfs/042
-index b55d642c5170..fcd5181cf590 100755
---- a/tests/xfs/042
-+++ b/tests/xfs/042
-@@ -31,6 +31,7 @@ trap "_cleanup ; exit \$status" 0 1 2 3 15
- 
- # real QA test starts here
- _supported_fs xfs
-+_require_xfs_io_command "falloc"
- 
- _require_scratch
- 
-diff --git a/tests/xfs/114 b/tests/xfs/114
-index b936452461c6..3f5575a61dfb 100755
---- a/tests/xfs/114
-+++ b/tests/xfs/114
-@@ -32,6 +32,7 @@ _cleanup()
- _supported_fs xfs
- _require_test_program "punch-alternating"
- _require_xfs_scratch_rmapbt
-+_require_xfs_io_command "falloc"
- _require_xfs_io_command "fcollapse"
- _require_xfs_io_command "finsert"
- 
-diff --git a/tests/xfs/118 b/tests/xfs/118
-index 5e23617b39dd..9a431821aa62 100755
---- a/tests/xfs/118
-+++ b/tests/xfs/118
-@@ -41,6 +41,7 @@ _supported_fs xfs
- 
- _require_scratch
- _require_command "$XFS_FSR_PROG" "xfs_fsr"
-+_require_xfs_io_command "falloc"
- 
- # 50M
- _scratch_mkfs_sized $((50 * 1024 * 1024)) >> $seqres.full 2>&1
-diff --git a/tests/xfs/331 b/tests/xfs/331
-index 4ea54e2a534b..8e92b2e36a8d 100755
---- a/tests/xfs/331
-+++ b/tests/xfs/331
-@@ -33,6 +33,7 @@ _require_xfs_scratch_rmapbt
- _require_scratch_reflink
- _require_xfs_io_command "falloc"
- _require_test_program "punch-alternating"
-+_require_xfs_io_command "falloc"
- 
- rm -f "$seqres.full"
- 
-diff --git a/tests/xfs/341 b/tests/xfs/341
-index e1fbe588d9eb..8bf05087e1ba 100755
---- a/tests/xfs/341
-+++ b/tests/xfs/341
-@@ -31,6 +31,7 @@ _require_realtime
- _require_xfs_scratch_rmapbt
- _require_test_program "punch-alternating"
- _disable_dmesg_check
-+_require_xfs_io_command "falloc"
- 
- rm -f "$seqres.full"
- 
-diff --git a/tests/xfs/342 b/tests/xfs/342
-index 2be5f7698f01..4db222d65fb2 100755
---- a/tests/xfs/342
-+++ b/tests/xfs/342
-@@ -30,6 +30,7 @@ _supported_fs xfs
- _require_realtime
- _require_xfs_scratch_rmapbt
- _require_test_program "punch-alternating"
-+_require_xfs_io_command "falloc"
- 
- rm -f "$seqres.full"
- 
-diff --git a/tests/xfs/423 b/tests/xfs/423
-index 8d51a9a60585..183c9cf5eded 100755
---- a/tests/xfs/423
-+++ b/tests/xfs/423
-@@ -35,6 +35,7 @@ _cleanup()
- _supported_fs xfs
- _require_test_program "punch-alternating"
- _require_xfs_io_command "scrub"
-+_require_xfs_io_command "falloc"
- _require_scratch
- 
- echo "Format and populate"
++_zone_type()
++{
++	local target=$1
++	if [ -z $target ]; then
++		echo "Usage: _zone_type <device>"
++		exit 1
++	fi
++	local sdev=`_short_dev $target`
++
++	if [ -e /sys/block/${sdev}/queue/zoned ]; then
++		cat /sys/block/${sdev}/queue/zoned
++	else
++		echo none
++	fi
++}
++
++_require_zoned_device()
++{
++	local target=$1
++	if [ -z $target ]; then
++		echo "Usage: _require_zoned_device <device>"
++		exit 1
++	fi
++
++	local type=`_zone_type ${target}`
++	if [ "${type}" = "none" ]; then
++		_notrun "this test require zoned block device"
++	fi
++}
++
++_require_non_zoned_device()
++{
++	local target=$1
++	if [ -z $target ]; then
++		echo "Usage: _require_non_zoned_device <device>"
++		exit 1
++	fi
++
++	local type=`_zone_type ${target}`
++	if [ "${type}" != "none" ]; then
++		_notrun "this test require non-zoned block device"
++	fi
++}
++
+ # this test requires the ext4 kernel support crc feature on scratch device
+ #
+ _require_scratch_ext4_crc()
 -- 
 2.30.0
 

@@ -7,63 +7,63 @@ X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A820C433ED
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 17DFEC433B4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E47F160FE5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EC45F611CC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231944AbhDZG27 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Apr 2021 02:28:59 -0400
+        id S231960AbhDZG3B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Apr 2021 02:29:01 -0400
 Received: from esa3.hgst.iphmx.com ([216.71.153.141]:41929 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231937AbhDZG26 (ORCPT
+        with ESMTP id S231937AbhDZG3A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Apr 2021 02:28:58 -0400
+        Mon, 26 Apr 2021 02:29:00 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1619418496; x=1650954496;
+  t=1619418498; x=1650954498;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=tUSU1R6uYdSefDdZrLuIvSJhhlRTRNNwQAAC8iniTis=;
-  b=a+NpKD0YlJKhvoWub1x5/CMF3t434s8yEmOqed/BMEQ3ofwlP1ihRHyT
-   0U7MqOFurMWbDSbmu5hwFlYDOhZkE8C0Iynpoi4eAycyDqXWfZn0jm3A0
-   vVFnMfY+r+ENZNr9EAC2V3dGegqsFfYMlKFQ5tNauMz0uFmxwUpqSa2Ie
-   5iJNfQ5onF8ltYsyQMShiPfNneFTAZDaeCrTn7X21YwjvO4Wc40uKO9QW
-   jzAVyZcYE/tCdH32+StHem//AJnYtd4o39a0cJrGEIAHQQmmJpF9lY8xp
-   TYpUr1xIUvaoOjTalw9x5/5Jyi5mNM9jofv1qD+NnWDMuXLGiZT1xmM8h
-   w==;
-IronPort-SDR: KzJ3k/ZeoG1NXE2RfBjVLDVymh4jY+dNMslXE/OkmQYS1TwcuvzUsUn4177yy2+1HZE2Mw+Ile
- g6kSsdCAU7t1jdcOR/dG3vmU+yYm3mpX2iUNMn18ylYUH/E/JExGUK3avwvazMZt6FDiw5ncmK
- 1kt/PRNK0n4NhKjEKp3bHPm2kxRXSjLIrvWBYb7Baq7RfEM1OieGV5XIoyOahjGi5MgvEm5FfR
- LfZGCP3SvmFFJRccWmpQIvuVsJeeEOk4aZgyTrVOCYvkgVvLCt3SzNAOGwW117/RC5I/Pwes5b
- b9M=
+  bh=sczYZgfONl8x2jLo9BD68Jlw4NkITHMuKlvjtlVTGug=;
+  b=p68JrY97bYS53MwGnD0JWrNOED/EL3N2ZKQ9m36HqlrvnPad6dCLuY/e
+   N3P6Y2CmNSw3ea+9vFhzDZHZlxfVXYpmzOnm4rWT5lkRxv6ngFxccOxxX
+   j3wF81OVm0N7ZA6g+oanG9XZxS1yEzbcrzn1XTQhEAF0nODY/vn6rz9l5
+   J/LgRxQwN3ZBduILJ/KK9h0b3w1bzpYC1GdN2jAevcTi+Bi5He5QHKuFr
+   VDda50BNPkhCG5wews1GhVgkvqcDczRFksRBND5zWVsywhLzT3efaGIZW
+   CiWCfEEC7BR7Z1XF7X2W2Ja5WwT77IRP5hzfX9S0VEFxF4ormR39BLspe
+   Q==;
+IronPort-SDR: XqI4I8y77pMiAsCUns5hlL4BefoEFW+4vnifiyfw9QNaM80uriz5iBGVnAFK2cxt/7rSBXl48N
+ FKhSoKvz+F/Owme9UHxnXCD4krIzeD1Bwl6bpatDPCzYd+Z1USXuY7WlqHD8GJu1WgqwYPAfhc
+ TNXbKq3p+yZJ1coHcvopGCE+FHP6ARSc60Wzdv18Mzr5BH/be5DrbeKXW5HecTsRNdoRVrQWKU
+ Fn0hclDs3fhzJVYhi/xJth9FnCmQ/yAqBDFgysYN3CgHo1g1n6O72NK47zftFEpP4kDe1QZQk7
+ yqo=
 X-IronPort-AV: E=Sophos;i="5.82,251,1613404800"; 
-   d="scan'208";a="170788115"
+   d="scan'208";a="170788121"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Apr 2021 14:28:16 +0800
-IronPort-SDR: w5QMKhHu8H4n+Q2tFI9sPFoY3Zgze+AtwKFWQvmcUgkQEotjzSCqILiqRA4dHrwWM+7Er8Hy2U
- WOoF6lCAyGmngyA+JZzseNnRA0xO+YrZB5feqRUUVq0PaXXA9fLPH7M7G5KKRi4DoqOY40EnQe
- Ug0kDy51AKjqILBkCySYZ2alG3HV/T5n9/v+Hpb+leKODg7p0d/I7uppxVPd/JeHdfZ9hbPOni
- QNs3NLssUa5+MDMrLaHCi416YTXmzPNN9r19Bhg2LCSDMD1w6RKEmdeSChw5m8cH2M4jADzQdf
- qdk8CQez0rLvX6k0F9v0rLcZ
+  by ob1.hgst.iphmx.com with ESMTP; 26 Apr 2021 14:28:18 +0800
+IronPort-SDR: YMjep2Bt73icod7grhp+h6k2MjeFYiD9W3j01yoD+I7PBtxC4LglFUcjmu+tPJvmlLGEJd2atX
+ gTOKLMZnn/xmz+cxcKBjJd7PRYH5GIlgAN82v9/8ije3SeCJJ7x0g8HrXh26oyLoIKoPS2ifbr
+ BxVGzYOczQLVyZ1H+EtDWsag/c1ajcKoo/wZYulLBzShkD/ofx0UL29CwEqIAtEjbObcOFRnN8
+ kmv4fHRuHi7rPLdxd3a1t7F5H9yldRwwc+yv40WJTOOikuXvdtXCaDqG2W6xmtuBDAUjY2WuLv
+ v4A6CvWIbnkIvMvea2AOqbE8
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Apr 2021 23:08:41 -0700
-IronPort-SDR: VGxuJn/PUjbHuissdAbt6FNywGtxfHPHOVezfbjtV6ecy+llcSQMcuXf80/G7V84A6giqs2raj
- R5P0yPOy37LpgixOLW6C9RtvmpU5RybLPV9fQmeCugEydAiEuu++mlwxq20GyKwdfvJ+r5jDPj
- O507BiWNRq4Hd23UczwkrDf8KH8UDVUVBycL5NYdQi7aV5qiZVMNjRoKVHFhJEMyrX2v3Fn/+/
- yZSxTYIo9XRyjZvGgF2guxL/ZnVUcHNzXPkvhte85qPlNGEVtE6T7xUH5fBXiBachJWR5MDXVE
- mLA=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Apr 2021 23:08:43 -0700
+IronPort-SDR: MWBaLVLRjy4c/W//N9boEMwCB+wh/DJQ8VLKbeLFgXl4y90cn1fC43oeGWZAbkTL1Rg29aGP8B
+ xLR7hd0WxejwECleghFkWjW6co1nJV+8QxB19FVbFd7zX4ZxMRUFt1TaQ7SsW85+mNoIzIrX16
+ k2XAJs0gs+J00s60PAuKvn1LGQeEP+WYyg3y+Tl3qpDN5tWcR8hNLZW5ShO+uuUBmuFwHwh/H5
+ 7gWJJeGyupK568stXo8YX0YcNqbpDxI++s/+fVx7JoQT8tz9Er5Pl+pIsu6Uq3kzka6ENpfdg/
+ l2w=
 WDCIronportException: Internal
 Received: from bgy2573.ad.shared (HELO naota-xeon.wdc.com) ([10.225.48.58])
-  by uls-op-cesaip02.wdc.com with ESMTP; 25 Apr 2021 23:28:16 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Apr 2021 23:28:18 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 07/26] btrfs-progs: zoned: introduce max_zone_append_size
-Date:   Mon, 26 Apr 2021 15:27:23 +0900
-Message-Id: <1023703371dbf8239f11f7fe8061b26dde480511.1619416549.git.naohiro.aota@wdc.com>
+Subject: [PATCH 09/26] btrfs-progs: zoned: allow zoned filesystems on non-zoned block devices
+Date:   Mon, 26 Apr 2021 15:27:25 +0900
+Message-Id: <3ecdd9e85e977d87443a503a41fc349944687d6c.1619416549.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1619416549.git.naohiro.aota@wdc.com>
 References: <cover.1619416549.git.naohiro.aota@wdc.com>
@@ -73,122 +73,143 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The zone append write command has a maximum IO size restriction it
-accepts. This is because a zone append write command cannot be split, as
-we ask the device to place the data into a specific target zone and the
-device responds with the actual written location of the data.
+Run a zoned filesystem on non-zoned devices. This is done by "slicing up"
+the block device into static sized chunks and fake a conventional zone on
+each of them. The emulated zone size is determined from the size of device
+extent.
 
-Introduce max_zone_append_size to zone_info and fs_info to track the
-value, so we can limit all I/O to a zoned block device that we want to
-write using the zone append command to the device's limits.
+This is mainly aimed at testing of zoned filesystems, i.e. the zoned chunk
+allocator, on regular block devices.
 
-Zone append command is mandatory for zoned btrfs. So, reject a device with
-max_zone_append_size == 0.
+Currently, we always use EMULATED_ZONE_SIZE (= 256MB) for the emulated zone
+size. In the future, this will be customized by mkfs option.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- kernel-shared/ctree.h |  3 +++
- kernel-shared/zoned.c | 29 +++++++++++++++++++++++++++++
- kernel-shared/zoned.h |  1 +
- 3 files changed, 33 insertions(+)
+ kerncompat.h          |  1 +
+ kernel-shared/zoned.c | 67 +++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 62 insertions(+), 6 deletions(-)
 
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index aab631a44785..5023db474784 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -1222,6 +1222,9 @@ struct btrfs_fs_info {
- 		u64 zone_size;
- 		u64 zoned;
- 	};
-+
-+	/* Max size to emit ZONE_APPEND write command */
-+	u64 max_zone_append_size;
- };
+diff --git a/kerncompat.h b/kerncompat.h
+index a39b79cba767..b2983ed60c4a 100644
+--- a/kerncompat.h
++++ b/kerncompat.h
+@@ -166,6 +166,7 @@ typedef long long s64;
+ typedef int s32;
+ #endif
  
- static inline bool btrfs_is_zoned(const struct btrfs_fs_info *fs_info)
++typedef u64 sector_t;
+ 
+ struct vma_shared { int prio_tree_node; };
+ struct vm_area_struct {
 diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index 7cb5262ba481..ee879a57b716 100644
+index 7b05fe6cc70f..ebaa2a81b2c8 100644
 --- a/kernel-shared/zoned.c
 +++ b/kernel-shared/zoned.c
-@@ -58,6 +58,18 @@ u64 zone_size(const char *file)
- 	return strtoull((const char *)chunk, NULL, 10) << SECTOR_SHIFT;
+@@ -14,6 +14,8 @@
+ /* Maximum number of zones to report per ioctl(BLKREPORTZONE) call */
+ #define BTRFS_REPORT_NR_ZONES   4096
+ 
++#define EMULATED_ZONE_SIZE SZ_256M
++
+ static int btrfs_get_dev_zone_info(struct btrfs_device *device);
+ 
+ enum btrfs_zoned_model zoned_model(const char *file)
+@@ -51,6 +53,10 @@ u64 zone_size(const char *file)
+ 	char chunk[32];
+ 	int ret;
+ 
++	/* zoned emulation on regular device */
++	if (zoned_model(file) == ZONED_NONE)
++		return EMULATED_ZONE_SIZE;
++
+ 	ret = queue_param(file, "chunk_sectors", chunk, sizeof(chunk));
+ 	if (ret <= 0)
+ 		return 0;
+@@ -71,6 +77,46 @@ u64 max_zone_append_size(const char *file)
  }
  
-+u64 max_zone_append_size(const char *file)
+ #ifdef BTRFS_ZONED
++/*
++ * Emulate blkdev_report_zones() for a non-zoned device. It slices up the block
++ * device into static sized chunks and fake a conventional zone on each of
++ * them.
++ */
++static int emulate_report_zones(const char *file, int fd, u64 pos,
++				struct blk_zone *zones, unsigned int nr_zones)
 +{
-+	char chunk[32];
++	const sector_t zone_sectors = EMULATED_ZONE_SIZE >> SECTOR_SHIFT;
++	struct stat st;
++	sector_t bdev_size;
++	unsigned int i;
 +	int ret;
 +
-+	ret = queue_param(file, "zone_append_max_bytes", chunk, sizeof(chunk));
-+	if (ret <= 0)
-+		return 0;
-+
-+	return strtoull((const char *)chunk, NULL, 10);
-+}
-+
- #ifdef BTRFS_ZONED
- static int report_zones(int fd, const char *file,
- 			struct btrfs_zoned_device_info *zinfo)
-@@ -102,9 +114,19 @@ static int report_zones(int fd, const char *file,
- 
- 	/* Allocate the zone information array */
- 	zinfo->zone_size = zone_bytes;
-+	zinfo->max_zone_append_size = max_zone_append_size(file);
- 	zinfo->nr_zones = device_size / zone_bytes;
- 	if (device_size & (zone_bytes - 1))
- 		zinfo->nr_zones++;
-+
-+	if (zoned_model(file) != ZONED_NONE &&
-+	    zinfo->max_zone_append_size == 0) {
-+		error(
-+		"zoned: zoned device %s does not support ZONE_APPEND command",
-+		      file);
-+		exit(1);
++	ret = fstat(fd, &st);
++	if (ret < 0) {
++		error("unable to stat %s: %m", file);
++		return -EIO;
 +	}
 +
- 	zinfo->zones = calloc(zinfo->nr_zones, sizeof(struct blk_zone));
- 	if (!zinfo->zones) {
- 		error("zoned: no memory for zone information");
-@@ -248,6 +270,7 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
- 	u64 zoned_devices = 0;
- 	u64 nr_devices = 0;
- 	u64 zone_size = 0;
-+	u64 max_zone_append_size = 0;
- 	const bool incompat_zoned = btrfs_fs_incompat(fs_info, ZONED);
- 	int ret = 0;
++	bdev_size = btrfs_device_size(fd, &st) >> SECTOR_SHIFT;
++
++	pos >>= SECTOR_SHIFT;
++	for (i = 0; i < nr_zones; i++) {
++		zones[i].start = i * zone_sectors + pos;
++		zones[i].len = zone_sectors;
++		zones[i].capacity = zone_sectors;
++		zones[i].wp = zones[i].start + zone_sectors;
++		zones[i].type = BLK_ZONE_TYPE_CONVENTIONAL;
++		zones[i].cond = BLK_ZONE_COND_NOT_WP;
++
++		if (zones[i].wp >= bdev_size) {
++			i++;
++			break;
++		}
++	}
++
++	return i;
++}
++
+ static int report_zones(int fd, const char *file,
+ 			struct btrfs_zoned_device_info *zinfo)
+ {
+@@ -149,12 +195,23 @@ static int report_zones(int fd, const char *file,
+ 		rep->sector = sector;
+ 		rep->nr_zones = BTRFS_REPORT_NR_ZONES;
  
-@@ -282,6 +305,11 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
- 				ret = -EINVAL;
- 				goto out;
- 			}
-+			if (!max_zone_append_size ||
-+			    (zone_info->max_zone_append_size &&
-+			     zone_info->max_zone_append_size < max_zone_append_size))
-+				max_zone_append_size =
-+					zone_info->max_zone_append_size;
+-		ret = ioctl(fd, BLKREPORTZONE, rep);
+-		if (ret != 0) {
+-			error("zoned: ioctl BLKREPORTZONE failed (%m)");
+-			exit(1);
++		if (zinfo->model != ZONED_NONE) {
++			ret = ioctl(fd, BLKREPORTZONE, rep);
++			if (ret != 0) {
++				error("zoned: ioctl BLKREPORTZONE failed (%m)");
++				exit(1);
++			}
++		} else {
++			ret = emulate_report_zones(file, fd,
++						   sector << SECTOR_SHIFT,
++						   zone, BTRFS_REPORT_NR_ZONES);
++			if (ret < 0) {
++				error("zoned: failed to emulate BLKREPORTZONE");
++				exit(1);
++			}
  		}
- 		nr_devices++;
- 	}
-@@ -321,6 +349,7 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
- 	}
  
- 	fs_info->zone_size = zone_size;
-+	fs_info->max_zone_append_size = max_zone_append_size;
++
+ 		if (!rep->nr_zones)
+ 			break;
  
- out:
- 	return ret;
-diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
-index a6134babdf41..fcf2ccf34f26 100644
---- a/kernel-shared/zoned.h
-+++ b/kernel-shared/zoned.h
-@@ -29,6 +29,7 @@ enum btrfs_zoned_model {
- struct btrfs_zoned_device_info {
- 	enum btrfs_zoned_model	model;
- 	u64			zone_size;
-+	u64		        max_zone_append_size;
- 	u32			nr_zones;
- 	struct blk_zone		*zones;
- };
+@@ -231,8 +288,6 @@ int btrfs_get_zone_info(int fd, const char *file,
+ 
+ 	/* Check zone model */
+ 	model = zoned_model(file);
+-	if (model == ZONED_NONE)
+-		return 0;
+ 
+ #ifdef BTRFS_ZONED
+ 	zinfo = calloc(1, sizeof(*zinfo));
 -- 
 2.31.1
 

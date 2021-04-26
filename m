@@ -2,68 +2,68 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5423AC43461
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F566C43462
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 353DD60FE5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7426A61263
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Apr 2021 06:28:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232027AbhDZG3P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Apr 2021 02:29:15 -0400
+        id S231985AbhDZG3Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Apr 2021 02:29:16 -0400
 Received: from esa3.hgst.iphmx.com ([216.71.153.141]:41951 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231985AbhDZG3J (ORCPT
+        with ESMTP id S231998AbhDZG3L (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Apr 2021 02:29:09 -0400
+        Mon, 26 Apr 2021 02:29:11 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1619418507; x=1650954507;
+  t=1619418509; x=1650954509;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=V06DWIQPAuC54kVXygCBbgmdtbthaINtC6mttwoRURo=;
-  b=Azc1DWxQpIFTyZzUbkQElGQxeiwN4svH5yKicNfldUcr7GP41CvsFiQM
-   ghjwAAgiwtZIwaAz/d8W+LrlMy9LihJLSGk9pvNX1KBVagK5kZAHPNNSE
-   crVpVRS9wNpt/8RajpQz/uCpvORygc0yxUEcRjhYjVsipD9/12O8YZJrp
-   tRmNx7G4e1AKPb+lg0lYyxreevx3d0r/XLInquhZPJyLUdPB+UmqbQhlP
-   kDm+X0RdfKji8JQ0CrH9E202tNoEhq8MGhmjwpudbmyMFNQD2/8SFEbCz
-   hwqokL/eU4ztz5H3VCJHa+tn3vP7RYE9CHkROkdEowIqjyq/NxrNG+ya9
-   Q==;
-IronPort-SDR: dzfXKTM+VPEPTt3NegSYTZnF/LqoLkTNKFazmv/ocvtAbIl4+4mR5o35reOmImApKD10SfEU3z
- j8U0DjfejrYNicoQsFa6W/x4BMcidpB/DGyb60tn0t5BgSexDwC8PdhkjKN7C7rQyRE2TBlwV7
- EsWt62MGdL2xPEJPcOjQsWt6BcMz/uBTW+jL6pABpaMWVNkl5AEAPUrUzX2vdzIuqNdtFZj6Op
- iG77PGWxkRYb+HmG2A/4IqqPWOyv84vgpMXzsFDxz3uSnmRg+aJ2nxvh7BEVNcEc9c8zEzPJG7
- LVc=
+  bh=0YA7DcbyvtO3SDNosMcpRwVPiz2Do5MC3wVv1b8aPKs=;
+  b=S260SYDTAVkBPt8eegODHv8YwYaLO+Tx3rvxvzdsmQ24FHo3r81B2u8M
+   ArB1NaC/YFS3dgl2g+Fd/4vaNqAMr706Qu/yK8LqJ55SF92o9U7vA24Dz
+   klfc5DGa1qoK3BF/frqiemoyszv58PTnJgX2OGHgYgW7wWkSz44sMxpRt
+   M6goPg5+bo5wb44iOmCv60nBakakOjURpq+Ik/R2j+QPU1K8kFYhYXbwC
+   dva3JE8gieftKfxkgHz4A7ROrNDoOTV8lPJ+uOBfAmpaFr6VfIJrVXT1N
+   xu4QtnA3873xuKuoWmUDrd3mVenUWLXdtW5R/IG00lcju+2SNUGr6Ftjo
+   w==;
+IronPort-SDR: cqicdXCZda9Egz39XURh34BsdNPMjV/eJbmoP70FlS8eZcjhZIOgwp9mPNaBc2QmPL/fsBUqn8
+ hIefdy2AGQbJN0v9dpidFxYLl3B074HMOzB3YzJ2kbSq8AZ6y3Bgu/E55PWiILZKqIQ66c8+bj
+ pWFb4j4lfzSWfjSnPeHsL6/zL+dIBwMV90RMtuO8u/05xM4AIVTbhyB3ktnDN5B+p/q3Dm+R2P
+ BwsgoKlY1nK5r/H58l5yM7BQ/2TZI/0QxvHXFRzXrGu6cbeiL5H7Lz2//ajFhTooOlE2IUzY7l
+ RXg=
 X-IronPort-AV: E=Sophos;i="5.82,251,1613404800"; 
-   d="scan'208";a="170788133"
+   d="scan'208";a="170788136"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Apr 2021 14:28:27 +0800
-IronPort-SDR: 2QKZ9Z6RWn1/MRmtxQKtoFqzpBb0DOCnObOAzbVAkq8TVio6B+QVXQESk4Xczi4i+TcrTpPS6k
- 8FM8RoDuvqfzEY+4QFla03PvzL9B2CX4fEDZoeBBvGvVDByE2hTD2j4psHGyCJV62ZELDGKxio
- DJ/Tl/wnZbMefTp+2jnyaW1GHP8V1z1kga4d/1wGXNmkslAIAf0EM9Y0rGz8qcLqb8O5CJoxHX
- c3MUjFWh+COFI0jCLrCpGqTK3RFxBUI/ITAbz31NCrfzKP76aDrgTTnWhrIBPnxZjpII0MhDbW
- BtNEfcz6sORswpNfvFj0bG0R
+  by ob1.hgst.iphmx.com with ESMTP; 26 Apr 2021 14:28:28 +0800
+IronPort-SDR: 6504aNTL6yb5GxMMNAZJ0LwcmuA/mKQrqMHF2pjbeAmUS1U/Y4CbpoUV0WtdyG6B1KfTQhtVOa
+ k/F4aYs3E8DxUciRgkJpqVCTI7nTNu/I5RjwPZztaLl48iHS5kVamV1cjQZIDO2S7wkqwFxEJq
+ q9N559ylfu1R0KYEFXLt3y6suLomwQ8DrLCiScyesPN+0cDSdIxBpV2wOYpKQexNOa5ehop7+g
+ eU4pWyUjv8ViHe2Rg+xAoSbG3Nwe4HaRt+GYGDFsv3TeTxRx6gWYbFMrO1rGM1g+5Rxru1JgR0
+ tMSzdEuAvqu4mpAIarijvOXf
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Apr 2021 23:08:51 -0700
-IronPort-SDR: 1SjEG1dBd9BnnjnTgZ8RBbFIwgtaEZ9463LtcKuJhSmtFjrbIEiZG2fKHQ8lBTPatrBzTu2MWs
- /YMVa+WfP3N3xaXrPaZQf5NRewUx77tmuNTUtFakJ1P2Rika6mdvEQv4rd73dsYUDMBB0b+o/+
- wI47uiFOcM3dZo72KDuLaEXtYWrmSb1Nixuh3bgkeUHqyYqqFH3hO00cdu7XrF9edKzuVIiK9Z
- cxVVScBLVp7zRsl/YuSD5+w3bAQOt695p5ubwpp/9eW6tMelcbSnVzZJND8DMQt5QtZDcQPQSL
- 5YE=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Apr 2021 23:08:53 -0700
+IronPort-SDR: /tAlQBwlfX1ey15QYHGklUNDFWZZ/0C+sVNDr+W9tXXO05k3qU6YuaXD8/BCKMvwoJ3eaVXhAV
+ VVEyexv0bJ21qCeG6bzfZYxPtUwHHm1Il9c47lUTAScNAdwswukaoNhjBNu79y9CnJ5RVfa53a
+ Bd6rjM5LxpKK0fPbTxsk4um4nUl+IdZFjPujvgLjUzNYXAWlsgWbJJLwO/r5TRC37CTED5nUpW
+ H//JW2K/CKr5iYW6JzS52BeNwF8ALp5nXHf+4Is9DdaBZPJ7uqQ6/RuQHu0Qk85TeP+P+7Q2PJ
+ X70=
 WDCIronportException: Internal
 Received: from bgy2573.ad.shared (HELO naota-xeon.wdc.com) ([10.225.48.58])
-  by uls-op-cesaip02.wdc.com with ESMTP; 25 Apr 2021 23:28:27 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 25 Apr 2021 23:28:29 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 17/26] btrfs-progs: zoned: support resetting zoned device
-Date:   Mon, 26 Apr 2021 15:27:33 +0900
-Message-Id: <cb5ce84c0621e714bdbf57a5ad6935444fecfd92.1619416549.git.naohiro.aota@wdc.com>
+Subject: [PATCH 19/26] btrfs-progs: zoned: support wiping SB on sequential write zone
+Date:   Mon, 26 Apr 2021 15:27:35 +0900
+Message-Id: <f364599e85396d50becbc7179b5dc00e0d9a9cc2.1619416549.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1619416549.git.naohiro.aota@wdc.com>
 References: <cover.1619416549.git.naohiro.aota@wdc.com>
@@ -73,186 +73,71 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All zones of zoned block devices should be reset before writing. Support
-this by introducing PREP_DEVICE_ZONED.
-
-btrfs_reset_all_zones() walk all the zones on a device, and reset a zone if
-it is sequential required zone, or discard the zone range otherwise.
+We cannot overwrite superblock magic in a sequential required zone.
+Instead, we can reset the zone to wipe it.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- common/device-utils.c | 35 +++++++++++++++++++++++++++++++----
- common/device-utils.h |  2 ++
- kernel-shared/zoned.c | 33 +++++++++++++++++++++++++++++++++
- kernel-shared/zoned.h |  7 +++++++
- 4 files changed, 73 insertions(+), 4 deletions(-)
+ common/device-utils.c | 32 ++++++++++++++++++++++----------
+ 1 file changed, 22 insertions(+), 10 deletions(-)
 
 diff --git a/common/device-utils.c b/common/device-utils.c
-index f5d5277e8fce..2687f1884619 100644
+index c1006c501555..4230654653aa 100644
 --- a/common/device-utils.c
 +++ b/common/device-utils.c
-@@ -25,6 +25,7 @@
- #include <blkid/blkid.h>
- #include "kernel-lib/sizes.h"
- #include "kernel-shared/disk-io.h"
-+#include "kernel-shared/zoned.h"
- #include "common/device-utils.h"
- #include "common/internal.h"
- #include "common/messages.h"
-@@ -49,7 +50,7 @@ static int discard_range(int fd, u64 start, u64 len)
- /*
-  * Discard blocks in the given range in 1G chunks, the process is interruptible
-  */
--static int discard_blocks(int fd, u64 start, u64 len)
-+int discard_blocks(int fd, u64 start, u64 len)
- {
- 	while (len > 0) {
- 		/* 1G granularity */
-@@ -155,6 +156,7 @@ out:
- int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 		u64 max_block_count, unsigned opflags)
- {
-+	struct btrfs_zoned_device_info *zinfo = NULL;
- 	u64 block_count;
- 	struct stat st;
- 	int i, ret;
-@@ -173,7 +175,27 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 	if (max_block_count)
- 		block_count = min(block_count, max_block_count);
+@@ -106,7 +106,7 @@ static int zero_dev_clamped(int fd, struct btrfs_zoned_device_info *zinfo,
+ 	return zero_blocks(fd, start, end - start);
+ }
  
--	if (opflags & PREP_DEVICE_DISCARD) {
-+	if (opflags & PREP_DEVICE_ZONED) {
-+		ret = btrfs_get_zone_info(fd, file, &zinfo);
-+		if (ret < 0 || !zinfo) {
-+			error("zoned: unable to load zone information of %s",
-+			      file);
-+			return 1;
+-static int btrfs_wipe_existing_sb(int fd)
++static int btrfs_wipe_existing_sb(int fd, struct btrfs_zoned_device_info *zinfo)
+ {
+ 	const char *off = NULL;
+ 	size_t len = 0;
+@@ -141,14 +141,26 @@ static int btrfs_wipe_existing_sb(int fd)
+ 	if (len > sizeof(buf))
+ 		len = sizeof(buf);
+ 
+-	memset(buf, 0, len);
+-	ret = pwrite(fd, buf, len, offset);
+-	if (ret < 0) {
+-		error("cannot wipe existing superblock: %m");
+-		ret = -1;
+-	} else if (ret != len) {
+-		error("cannot wipe existing superblock: wrote %d of %zd", ret, len);
+-		ret = -1;
++	if (!zone_is_sequential(zinfo, offset)) {
++		memset(buf, 0, len);
++		ret = pwrite(fd, buf, len, offset);
++		if (ret < 0) {
++			error("cannot wipe existing superblock: %m");
++			ret = -1;
++		} else if (ret != len) {
++			error("cannot wipe existing superblock: wrote %d of %zd",
++			      ret, len);
++			ret = -1;
 +		}
-+		if (opflags & PREP_DEVICE_VERBOSE)
-+			printf("Resetting device zones %s (%u zones) ...\n",
-+			       file, zinfo->nr_zones);
-+		/*
-+		 * We cannot ignore zone reset errors for a zoned block
-+		 * device as this could result in the inability to write to
-+		 * non-empty sequential zones of the device.
-+		 */
-+		if (btrfs_reset_all_zones(fd, zinfo)) {
-+			error("zoned: failed to reset device '%s' zones: %m",
-+			      file);
-+			goto err;
++	} else {
++		struct blk_zone *zone = &zinfo->zones[offset / zinfo->zone_size];
++
++		ret = btrfs_reset_dev_zone(fd, zone);
++		if (ret < 0) {
++			error(
++		"zoned: failed to wipe zones containing superblock: %m");
++			ret = -1;
 +		}
-+	} else if (opflags & PREP_DEVICE_DISCARD) {
- 		/*
- 		 * We intentionally ignore errors from the discard ioctl.  It
- 		 * is not necessary for the mkfs functionality but just an
-@@ -198,17 +220,22 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 	if (ret < 0) {
- 		errno = -ret;
- 		error("failed to zero device '%s': %m", file);
--		return 1;
-+		goto err;
+ 	}
+ 	fsync(fd);
+ 
+@@ -227,7 +239,7 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
+ 		goto err;
  	}
  
- 	ret = btrfs_wipe_existing_sb(fd);
+-	ret = btrfs_wipe_existing_sb(fd);
++	ret = btrfs_wipe_existing_sb(fd, zinfo);
  	if (ret < 0) {
  		error("cannot wipe superblocks on %s", file);
--		return 1;
-+		goto err;
- 	}
- 
-+	free(zinfo);
- 	*block_count_ret = block_count;
- 	return 0;
-+
-+err:
-+	free(zinfo);
-+	return 1;
- }
- 
- u64 btrfs_device_size(int fd, struct stat *st)
-diff --git a/common/device-utils.h b/common/device-utils.h
-index d1799323d002..e7e638a57eb2 100644
---- a/common/device-utils.h
-+++ b/common/device-utils.h
-@@ -23,7 +23,9 @@
- #define	PREP_DEVICE_ZERO_END	(1U << 0)
- #define	PREP_DEVICE_DISCARD	(1U << 1)
- #define	PREP_DEVICE_VERBOSE	(1U << 2)
-+#define	PREP_DEVICE_ZONED	(1U << 3)
- 
-+int discard_blocks(int fd, u64 start, u64 len);
- u64 get_partition_size(const char *dev);
- u64 disk_size(const char *path);
- u64 btrfs_device_size(int fd, struct stat *st);
-diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index 22e0245abaf6..ba1399cce04d 100644
---- a/kernel-shared/zoned.c
-+++ b/kernel-shared/zoned.c
-@@ -361,6 +361,39 @@ static int report_zones(int fd, const char *file,
- 	return 0;
- }
- 
-+/*
-+ * Discard blocks in the zones of a zoned block device. Process this with
-+ * zone size granularity so that blocks in conventional zones are discarded
-+ * using discard_range and blocks in sequential zones are reset though a
-+ * zone reset.
-+ */
-+int btrfs_reset_all_zones(int fd, struct btrfs_zoned_device_info *zinfo)
-+{
-+	unsigned int i;
-+	int ret = 0;
-+
-+	ASSERT(zinfo);
-+
-+	/* Zone size granularity */
-+	for (i = 0; i < zinfo->nr_zones; i++) {
-+		if (zinfo->zones[i].type == BLK_ZONE_TYPE_CONVENTIONAL) {
-+			ret = discard_blocks(fd,
-+					     zinfo->zones[i].start << SECTOR_SHIFT,
-+					     zinfo->zone_size);
-+			if (ret == EOPNOTSUPP)
-+				ret = 0;
-+		} else if (zinfo->zones[i].cond != BLK_ZONE_COND_EMPTY) {
-+			ret = btrfs_reset_dev_zone(fd, &zinfo->zones[i]);
-+		} else {
-+			ret = 0;
-+		}
-+
-+		if (ret)
-+			return ret;
-+	}
-+	return fsync(fd);
-+}
-+
- static int sb_log_location(int fd, struct blk_zone *zones, int rw,
- 			   u64 *bytenr_ret)
- {
-diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
-index 70044acc4d94..88831d2d787c 100644
---- a/kernel-shared/zoned.h
-+++ b/kernel-shared/zoned.h
-@@ -91,6 +91,7 @@ bool btrfs_redirty_extent_buffer_for_zoned(struct btrfs_fs_info *fs_info,
- 					   u64 start, u64 end);
- int btrfs_reset_chunk_zones(struct btrfs_fs_info *fs_info, u64 devid,
- 			    u64 offset, u64 length);
-+int btrfs_reset_all_zones(int fd, struct btrfs_zoned_device_info *zinfo);
- #else
- #define sbread(fd, buf, offset) \
- 	pread64(fd, buf, BTRFS_SUPER_INFO_SIZE, offset)
-@@ -138,6 +139,12 @@ static inline int btrfs_reset_chunk_zones(struct btrfs_fs_info *fs_info,
- 	return 0;
- }
- 
-+static inline int btrfs_reset_all_zones(int fd,
-+					struct btrfs_zoned_device_info *zinfo)
-+{
-+	return -EOPNOTSUPP;
-+}
-+
- #endif /* BTRFS_ZONED */
- 
- static inline bool btrfs_dev_is_sequential(struct btrfs_device *device, u64 pos)
+ 		goto err;
 -- 
 2.31.1
 

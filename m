@@ -2,121 +2,131 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3EBDC43461
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Apr 2021 16:34:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F31BC433ED
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Apr 2021 16:46:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BF24861182
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Apr 2021 16:34:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D107661077
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Apr 2021 16:46:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237040AbhD0QfL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Apr 2021 12:35:11 -0400
-Received: from mga06.intel.com ([134.134.136.31]:7390 "EHLO mga06.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236572AbhD0QfK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Apr 2021 12:35:10 -0400
-IronPort-SDR: HYRBlxVa1vrEPy+SPu0HGOHo217i1v6Yl+w9Z2c+pbzQqNqfrYGNuYLQp2fZLNn0BS6irPJ2ld
- RKb0la7tLlTQ==
-X-IronPort-AV: E=McAfee;i="6200,9189,9967"; a="257849526"
-X-IronPort-AV: E=Sophos;i="5.82,254,1613462400"; 
-   d="scan'208";a="257849526"
-Received: from orsmga008.jf.intel.com ([10.7.209.65])
-  by orsmga104.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 27 Apr 2021 09:34:26 -0700
-IronPort-SDR: 56D78GrkzT0gyka0rNNSqxAB64SKTQBfDo09R45Rx5juh+b57u47vkvt8mJ1A0sUvLEYL9+9Ep
- DD9gzPzKoa8w==
-X-IronPort-AV: E=Sophos;i="5.82,254,1613462400"; 
-   d="scan'208";a="429877058"
-Received: from iweiny-desk2.sc.intel.com (HELO localhost) ([10.3.52.147])
-  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 27 Apr 2021 09:34:26 -0700
-Date:   Tue, 27 Apr 2021 09:34:26 -0700
-From:   Ira Weiny <ira.weiny@intel.com>
-To:     "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>
-Cc:     "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
-        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
-        "dan.j.williams@intel.com" <dan.j.williams@intel.com>,
-        "willy@infradead.org" <willy@infradead.org>,
-        "jack@suse.cz" <jack@suse.cz>,
-        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "david@fromorbit.com" <david@fromorbit.com>,
-        "hch@lst.de" <hch@lst.de>, "rgoldwyn@suse.de" <rgoldwyn@suse.de>,
-        Ritesh Harjani <riteshh@linux.ibm.com>
-Subject: Re: [PATCH v3 1/3] fsdax: Factor helpers to simplify dax fault code
-Message-ID: <20210427163425.GW1904484@iweiny-DESK2.sc.intel.com>
-References: <20210422134501.1596266-1-ruansy.fnst@fujitsu.com>
- <20210422134501.1596266-2-ruansy.fnst@fujitsu.com>
- <20210426233823.GT1904484@iweiny-DESK2.sc.intel.com>
- <OSBPR01MB292025E6E88319A902C980FEF4419@OSBPR01MB2920.jpnprd01.prod.outlook.com>
+        id S236405AbhD0Qqu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Apr 2021 12:46:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57146 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236320AbhD0Qqt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Apr 2021 12:46:49 -0400
+Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CF883C061574
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Apr 2021 09:46:05 -0700 (PDT)
+Received: by mail-qt1-x82a.google.com with SMTP id o1so2978702qta.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Apr 2021 09:46:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=konsulko.com; s=google;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=Bd2sVLsulUz/H6wMEcloj2GBKX9/LiSxzfvXHAlEIhc=;
+        b=LClO9lsbYcauU6S1A8KD9fKjqEI+PJ+L9xuIZLOAoufPQ7gGChNYyJ6cMFsqXIDFK7
+         /ygW6SnYGywtiOsEHsXvdqLnXo2e+MqnatyfWBRDmqhO6Z5rW9kRZKDkhxg01ZbfdduC
+         633A71uQ6K+YaaworRaPbFrrd28+q9KmJ4Esc=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to:user-agent;
+        bh=Bd2sVLsulUz/H6wMEcloj2GBKX9/LiSxzfvXHAlEIhc=;
+        b=PeKz7NFwBB61bQhnIqE3xPZU+A3XceJwBNgIXakOyKC1aCkGfY3VIziPPwZ9KwjwhT
+         XIRmGPraejufiAr0RRTiCGgl5dvEtLoTbYPLsY5U2Re09P8Bs6m3zWxo0ncJQd8iY+wa
+         SQt1tBDF6Pvc/stvpLPRhxQzWRiAYldIbc3E/Wx9ANwbHsAX2K/GASdW664IjqHhCvYQ
+         YtkOb0F2lcKsS20PYaK5o9Feon1mzHzeVRmfu0XTvAJfAcFt6Vy30wk5ARFhoCKyxH2p
+         IvaLWdyGhSwktE6Cd+Kh0zaTByAxeIgQnW8fZNlEM7vpmI8nILNVNM1HIWINqxiCwgxN
+         zVWg==
+X-Gm-Message-State: AOAM531iWe8gHLKpjlaStoRtX+GyswjIFTo+IK5Jgxk2AdfRzVDYKBC7
+        rSDoEi3sc/4YM6sBPx1tW72aIw==
+X-Google-Smtp-Source: ABdhPJw/nA77my/mPW0b3y7nwMVVxfwgZ2nRHOUEJ5htgNo/28OdiIYCCxhn3tzxGBVUQNFm9GSz9Q==
+X-Received: by 2002:ac8:7947:: with SMTP id r7mr22015141qtt.104.1619541965039;
+        Tue, 27 Apr 2021 09:46:05 -0700 (PDT)
+Received: from bill-the-cat (cpe-65-184-140-239.ec.res.rr.com. [65.184.140.239])
+        by smtp.gmail.com with ESMTPSA id a29sm309344qtd.15.2021.04.27.09.46.04
+        (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
+        Tue, 27 Apr 2021 09:46:04 -0700 (PDT)
+Date:   Tue, 27 Apr 2021 12:46:02 -0400
+From:   Tom Rini <trini@konsulko.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     u-boot@lists.denx.de, linux-btrfs@vger.kernel.org,
+        Matwey Kornilov <matwey.kornilov@gmail.com>
+Subject: Re: [PATCH U-boot v2] fs: btrfs: fix the false alert of
+ decompression failure
+Message-ID: <20210427164602.GS17669@bill-the-cat>
+References: <20210417125213.132066-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="37cJpJlYZwAfNbm5"
 Content-Disposition: inline
-In-Reply-To: <OSBPR01MB292025E6E88319A902C980FEF4419@OSBPR01MB2920.jpnprd01.prod.outlook.com>
-User-Agent: Mutt/1.11.1 (2018-12-01)
+In-Reply-To: <20210417125213.132066-1-wqu@suse.com>
+X-Clacks-Overhead: GNU Terry Pratchett
+User-Agent: Mutt/1.9.4 (2018-02-28)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 27, 2021 at 02:44:33AM +0000, ruansy.fnst@fujitsu.com wrote:
-> > -----Original Message-----
-> > From: Ira Weiny <ira.weiny@intel.com>
-> > Sent: Tuesday, April 27, 2021 7:38 AM
-> > Subject: Re: [PATCH v3 1/3] fsdax: Factor helpers to simplify dax fault code
-> > 
-> > On Thu, Apr 22, 2021 at 09:44:59PM +0800, Shiyang Ruan wrote:
-> > > The dax page fault code is too long and a bit difficult to read. And
-> > > it is hard to understand when we trying to add new features. Some of
-> > > the PTE/PMD codes have similar logic. So, factor them as helper
-> > > functions to simplify the code.
-> > >
-> > > Signed-off-by: Shiyang Ruan <ruansy.fnst@fujitsu.com>
-> > > Reviewed-by: Christoph Hellwig <hch@lst.de>
-> > > Reviewed-by: Ritesh Harjani <riteshh@linux.ibm.com>
-> > > ---
-> > >  fs/dax.c | 153
-> > > ++++++++++++++++++++++++++++++-------------------------
-> > >  1 file changed, 84 insertions(+), 69 deletions(-)
-> > >
-> > > diff --git a/fs/dax.c b/fs/dax.c
-> > > index b3d27fdc6775..f843fb8fbbf1 100644
-> > > --- a/fs/dax.c
-> > > +++ b/fs/dax.c
-> > 
-> > [snip]
-> > 
-> > > @@ -1355,19 +1379,8 @@ static vm_fault_t dax_iomap_pte_fault(struct
-> > vm_fault *vmf, pfn_t *pfnp,
-> > >  		entry = dax_insert_entry(&xas, mapping, vmf, entry, pfn,
-> > >  						 0, write && !sync);
-> > >
-> > > -		/*
-> > > -		 * If we are doing synchronous page fault and inode needs fsync,
-> > > -		 * we can insert PTE into page tables only after that happens.
-> > > -		 * Skip insertion for now and return the pfn so that caller can
-> > > -		 * insert it after fsync is done.
-> > > -		 */
-> > >  		if (sync) {
-> > > -			if (WARN_ON_ONCE(!pfnp)) {
-> > > -				error = -EIO;
-> > > -				goto error_finish_iomap;
-> > > -			}
-> > > -			*pfnp = pfn;
-> > > -			ret = VM_FAULT_NEEDDSYNC | major;
-> > > +			ret = dax_fault_synchronous_pfnp(pfnp, pfn);
-> > 
-> > I commented on the previous version...  So I'll ask here too.
-> > 
-> > Why is it ok to drop 'major' here?
-> 
-> This dax_iomap_pte_fault () finally returns 'ret | major', so I think the major here is not dropped.  The origin code seems OR the return value and major twice.
-> 
 
-Thanks I missed that!
-Ira
+--37cJpJlYZwAfNbm5
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
+On Sat, Apr 17, 2021 at 08:52:13PM +0800, Qu Wenruo wrote:
+
+> There are some cases where decompressed sectors can have padding zeros.
+>=20
+> In kernel code, we have lines to address such situation:
+>=20
+>         /*
+>          * btrfs_getblock is doing a zero on the tail of the page too,
+>          * but this will cover anything missing from the decompressed
+>          * data.
+>          */
+>         if (bytes < destlen)
+>                 memset(kaddr+bytes, 0, destlen-bytes);
+>         kunmap_local(kaddr);
+>=20
+> But not in U-boot code, thus we have some reports of U-boot failed to
+> read compressed files in btrfs.
+>=20
+> Fix it by doing the same thing of the kernel, for both inline and
+> regular compressed extents.
+>=20
+> Reported-by: Matwey Kornilov <matwey.kornilov@gmail.com>
+> Link: https://bugzilla.suse.com/show_bug.cgi?id=3D1183717
+> Fixes: a26a6bedafcf ("fs: btrfs: Introduce btrfs_read_extent_inline() and=
+ btrfs_read_extent_reg()")
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+
+Applied to u-boot/master, thanks!
+
+--=20
+Tom
+
+--37cJpJlYZwAfNbm5
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQGzBAABCgAdFiEEGjx/cOCPqxcHgJu/FHw5/5Y0tywFAmCIP8oACgkQFHw5/5Y0
+tyzu9Av/YvmzPOqQ88xAC9o+X1rQgdFPFHPQmfBnYYz/yIMhLoGhXu5dKYhj/+DI
+v6efBLj/aN/MleH6FSYdzFV3YWvbZHDv7uw3KeprqPS9kXvJs0n1LyIiUn5jm68Q
+U+YR461xHJ+83AIgmviqxoks3KsMKeRpAeF4zCvcZA3s6bDvZYKi2JPkwkcXv0NU
+a8ffIwvumCQRRQNuimpWXTzrOVgMwpj7MxuSvPTAOaOGW/btKiTm722MQIRV6XHy
+61XL0lRfDtCAJcd+bleTzdmXboY9JAUr1H6k/PIsgj8mvEbbX96R49uGWI2tieei
+RRb+G+F3yHnjY7BDYtJpVZPsbFNVjuNUGM5k+5sVv3U362KTij70q+9O/4Vt1pd8
+95SEEDU89Apl8KT/wbObgX2UTvUF3MXIjXRMASAQuuneOtCcfd5suIsCGLYKSMgR
+SVi3w68hVhb2iiXmzNYIhVixYtMB2y9pmWd1Iht5Zuh67fnGzBt5JQEplIpPFboD
+la64rOU9
+=pN2c
+-----END PGP SIGNATURE-----
+
+--37cJpJlYZwAfNbm5--

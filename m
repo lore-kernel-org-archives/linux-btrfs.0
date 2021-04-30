@@ -2,124 +2,140 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-20.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55A35C433B4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Apr 2021 01:26:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8172C433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Apr 2021 01:27:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3876261446
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Apr 2021 01:26:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A878E61433
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Apr 2021 01:27:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230132AbhD3B1i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Apr 2021 21:27:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44668 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230112AbhD3B1e (ORCPT
+        id S230050AbhD3B2U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Apr 2021 21:28:20 -0400
+Received: from szxga06-in.huawei.com ([45.249.212.32]:17410 "EHLO
+        szxga06-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229637AbhD3B2U (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Apr 2021 21:27:34 -0400
-Received: from mail-pf1-x432.google.com (mail-pf1-x432.google.com [IPv6:2607:f8b0:4864:20::432])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81D4FC06138B;
-        Thu, 29 Apr 2021 18:26:43 -0700 (PDT)
-Received: by mail-pf1-x432.google.com with SMTP id m11so4211262pfc.11;
-        Thu, 29 Apr 2021 18:26:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=tjglHgCdOo9aNmUJ+U7eL0Rhds1mEanZ0rRyCnAz6WU=;
-        b=pj5P1pc1D/l2b4G37TELLspq5umpYDb7fJAakA5nU9s2OKvky8Gr2sOFZBsmSZcVzn
-         0dapmB3JMg75SErVUxSLYE3xSIWfTGQIWmLLfoweixXhjLGXckATDL3tG5ujCt3mp3wO
-         Kfk1VRKOmWkCqMqo2p9IfYiz25m9eSi5rdqKPTPluwhJcDkvHVhBLtmTtwdxUwtBLhRT
-         nNhz7eco5j0Sa+zXo9BPUAFFH1X0ZEHWo0icezreb17kzhPxQ8tXaqpD2EViZAAtx4DW
-         NBMKUKqg4YQiG7O3BE3OxzU+hTJvt58VO+KU0Rp9D/6CtWI7vCs1j/v3cM10D4HmUduI
-         c9EA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=tjglHgCdOo9aNmUJ+U7eL0Rhds1mEanZ0rRyCnAz6WU=;
-        b=fadz1KwbYtJ7AepB8PTe+La7SF2lWIexfjXGE3uDPpbrBxMgCtbr2Q2nujF1lzKahg
-         F7PNY0d/fts4NMTOFgvZfv/8+X+ISnu3qj0m6EAzYo4vzMU5JBkB0RHOpWe7inZyaeoi
-         EXCO9NLi7LCpnPtvAkKbK8KxVhVp+PTxZMjujB0RzjitgEK2cE+T3+8+GmhBxNTtNtzY
-         1Xr2YFnfgZiPNZ2oxsGwhjaUy3ZyXFnUPZnErx+lKhZzGNBDLZsnG7sIr0JlrfCBxO0g
-         wD6E3nIA2kLM0kjyZ/u85KKHGXiAipU46O6q7X/Ey33LXcW5Wa4HqOJqpSAkIk7czI94
-         x+sw==
-X-Gm-Message-State: AOAM532NXYPgFXjI0ng6u0AZa5esNoBj7FliioNZLtvOg+r/qAVZikzY
-        yS+JJIVq9zmBFsAZsBlYemI=
-X-Google-Smtp-Source: ABdhPJySKjyTMc6tGPbKhCO1pK7lKmK7mC+K3AwnlUS/dsZ1CseFwgiVdGcS+MV9xytaOCrYZFANbg==
-X-Received: by 2002:a63:a16:: with SMTP id 22mr2310271pgk.345.1619746002964;
-        Thu, 29 Apr 2021 18:26:42 -0700 (PDT)
-Received: from nickserv.localdomain (c-98-33-101-203.hsd1.ca.comcast.net. [98.33.101.203])
-        by smtp.gmail.com with ESMTPSA id b186sm311004pfb.27.2021.04.29.18.26.41
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 29 Apr 2021 18:26:42 -0700 (PDT)
-From:   Nick Terrell <nickrterrell@gmail.com>
-To:     Herbert Xu <herbert@gondor.apana.org.au>
-Cc:     linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        squashfs-devel@lists.sourceforge.net,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-kernel@vger.kernel.org, Kernel Team <Kernel-team@fb.com>,
-        Nick Terrell <nickrterrell@gmail.com>,
-        Nick Terrell <terrelln@fb.com>, Chris Mason <clm@fb.com>,
-        Petr Malat <oss@malat.biz>, Johannes Weiner <jweiner@fb.com>,
-        Niket Agarwal <niketa@fb.com>, Yann Collet <cyan@fb.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        =?UTF-8?q?Micha=C5=82=20Miros=C5=82aw?= <mirq-linux@rere.qmqm.pl>,
-        David Sterba <dsterba@suse.cz>,
-        Oleksandr Natalenko <oleksandr@natalenko.name>,
-        Felix Handte <felixh@fb.com>,
-        Eric Biggers <ebiggers@kernel.org>,
-        Randy Dunlap <rdunlap@infradead.org>
-Subject: [PATCH v11 4/4] MAINTAINERS: Add maintainer entry for zstd
-Date:   Thu, 29 Apr 2021 18:31:57 -0700
-Message-Id: <20210430013157.747152-5-nickrterrell@gmail.com>
-X-Mailer: git-send-email 2.31.1
-In-Reply-To: <20210430013157.747152-1-nickrterrell@gmail.com>
-References: <20210430013157.747152-1-nickrterrell@gmail.com>
+        Thu, 29 Apr 2021 21:28:20 -0400
+Received: from DGGEMS410-HUB.china.huawei.com (unknown [172.30.72.58])
+        by szxga06-in.huawei.com (SkyGuard) with ESMTP id 4FWZS843nyzlbkc;
+        Fri, 30 Apr 2021 09:25:28 +0800 (CST)
+Received: from [127.0.0.1] (10.40.188.144) by DGGEMS410-HUB.china.huawei.com
+ (10.3.19.210) with Microsoft SMTP Server id 14.3.498.0; Fri, 30 Apr 2021
+ 09:27:22 +0800
+Subject: Re: [PATCH] btrfs: delete unneeded assignments in btrfs_defrag_file
+To:     <dsterba@suse.cz>, Tian Tao <tiantao6@hisilicon.com>, <clm@fb.com>,
+        <josef@toxicpanda.com>, <dsterba@suse.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <1619488221-29490-1-git-send-email-tiantao6@hisilicon.com>
+ <20210428180243.GS7604@twin.jikos.cz>
+ <0c116d82-3334-ed4e-fb69-76c1c6c8343a@huawei.com>
+ <20210429132233.GV7604@twin.jikos.cz>
+From:   "tiantao (H)" <tiantao6@huawei.com>
+Message-ID: <64eef0c6-4353-7738-124a-8ddfe4edda66@huawei.com>
+Date:   Fri, 30 Apr 2021 09:27:21 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
+In-Reply-To: <20210429132233.GV7604@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Originating-IP: [10.40.188.144]
+X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Nick Terrell <terrelln@fb.com>
 
-Adds a maintainer entry for zstd listing myself as the maintainer for
-all zstd code, pointing to the upstream issues tracker for bugs, and
-listing my linux repo as the tree.
-
-Signed-off-by: Nick Terrell <terrelln@fb.com>
----
- MAINTAINERS | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
-
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 9450e052f1b1..7025c67248f7 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -19912,6 +19912,18 @@ F:	Documentation/vm/zsmalloc.rst
- F:	include/linux/zsmalloc.h
- F:	mm/zsmalloc.c
- 
-+ZSTD
-+M:	Nick Terrell <terrelln@fb.com>
-+S:	Maintained
-+B:	https://github.com/facebook/zstd/issues
-+T:	git git://github.com/terrelln/linux.git
-+F:	include/linux/zstd*
-+F:	lib/zstd/
-+F:	lib/decompress_unzstd.c
-+F:	crypto/zstd.c
-+N:	zstd
-+K:	zstd
-+
- ZSWAP COMPRESSED SWAP CACHING
- M:	Seth Jennings <sjenning@redhat.com>
- M:	Dan Streetman <ddstreet@ieee.org>
--- 
-2.31.1
+在 2021/4/29 21:22, David Sterba 写道:
+> On Thu, Apr 29, 2021 at 09:16:53AM +0800, tiantao (H) wrote:
+>> 在 2021/4/29 2:02, David Sterba 写道:
+>>> On Tue, Apr 27, 2021 at 09:50:21AM +0800, Tian Tao wrote:
+>>>> ret is assigned -EAGAIN at line 1455 and then reassigned defrag_count
+>>>> at line 1547 after exiting the while loop, but the btrfs_defrag_file
+>>>> function returns a negative number indicating that the execution failed
+>>>> because it does not make sense to reassign defrag_count to ret, so
+>>>> delete it.
+>>> The line references are fragile, so the 1455 is after defrag is
+>>> cancelled.
+>>>
+>>>> Signed-off-by: Tian Tao <tiantao6@hisilicon.com>
+>>>> ---
+>>>>    fs/btrfs/ioctl.c | 2 --
+>>>>    1 file changed, 2 deletions(-)
+>>>>
+>>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>>> index ee1dbab..2b3b228 100644
+>>>> --- a/fs/btrfs/ioctl.c
+>>>> +++ b/fs/btrfs/ioctl.c
+>>>> @@ -1544,8 +1544,6 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>>>>    		btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
+>>>>    	}
+>>>>    
+>>>> -	ret = defrag_count;
+>>> But this would change semantics of the whole function, after deleting
+>>> this line any stale value of 'ret' would be returned, it's used for some
+>>> intermediate return values in the whole while loop.
+>>>
+>>> 1597                 if (btrfs_defrag_cancelled(fs_info)) {
+>>> 1598                         btrfs_debug(fs_info, "defrag_file cancelled");
+>>> 1599                         ret = -EAGAIN;
+>>> 1600                         break;
+>>> 1601                 }
+>>>
+>>> Jumping to the 'out_ra' label looks like a candidate fix but that also
+>>> jumps around all the incompat bit setting, so that could in some cases
+>>> miss to set them properly. And actually this is a problem with all the
+>>> other error cases.
+>>>
+>>> I'm not yet sure what's the proper fix, but the errors from within the
+>>> while loop should be returned and incompat bits set.
+>> How does the following change look?
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index ee1dbab..b8e496e 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -1453,7 +1453,7 @@ int btrfs_defrag_file(struct inode *inode, struct
+>> file *file,
+>>                   if (btrfs_defrag_cancelled(fs_info)) {
+>>                           btrfs_debug(fs_info, "defrag_file cancelled");
+>>                           ret = -EAGAIN;
+>> -                       break;
+>> +                      goto error;
+>>                   }
+>>
+>>                   if (!should_defrag_range(inode, (u64)i << PAGE_SHIFT,
+>> @@ -1531,6 +1531,9 @@ int btrfs_defrag_file(struct inode *inode, struct
+>> file *file,
+>>                   }
+>>           }
+>>
+>> +       ret = defrag_count;
+>> +
+>> +error:
+>>           if ((range->flags & BTRFS_DEFRAG_RANGE_START_IO)) {
+>>                   filemap_flush(inode->i_mapping);
+>>                   if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+>> @@ -1544,8 +1547,6 @@ int btrfs_defrag_file(struct inode *inode, struct
+>> file *file,
+>>                   btrfs_set_fs_incompat(fs_info, COMPRESS_ZSTD);
+>>           }
+>>
+>> -       ret = defrag_count;
+>> -
+>>    out_ra:
+>>           if (do_compress) {
+>>                   btrfs_inode_lock(inode, 0);
+> Yes that looks like covering all the issues. One more thing is the change on
+> the userspace where the cancelled defrag returns non-error, but now it would be
+> EAGAIN. So far I haven't found anything that would go wrong, all errors
+> are reported and the whole defrag loop continues. Pressing ctrl-c should
+> cancel it completely.
+> .
+Would you give ack-by if v2 was sent according to this code above?
+>
 

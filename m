@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02A29C433B4
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20D63C43462
 	for <linux-btrfs@archiver.kernel.org>; Mon,  3 May 2021 02:09:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C7201611AC
+	by mail.kernel.org (Postfix) with ESMTP id EFDED61260
 	for <linux-btrfs@archiver.kernel.org>; Mon,  3 May 2021 02:09:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232835AbhECCJ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 2 May 2021 22:09:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:60080 "EHLO mx2.suse.de"
+        id S232828AbhECCKB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 2 May 2021 22:10:01 -0400
+Received: from mx2.suse.de ([195.135.220.15]:60100 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232770AbhECCJ5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 2 May 2021 22:09:57 -0400
+        id S232770AbhECCKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 2 May 2021 22:10:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1620007744; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1620007747; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=wL/HWuziAMcj5s7gFIOphsGiAkFtYVLOC3blHTczmxg=;
-        b=ZyXmoGcPdHkzh+upkq2ZdbbO+CFoC8Ni2UfX3XykDYUe2h9igeFymW4eoYVE7RXq3z+mIh
-        Z/0PctiLg7VF8/WCeoAGQZbu27UM6Rg4UF1tXuJOrc8OjFM29KBxs6c5su/vV5lkpzpyYT
-        JuYEEw7eSZdJSLK4OaPTEVvPGf9XeT0=
+        bh=bslJ8TmqbqIUfkpy3Qxz4YwBHQOVqLEYmoC1sQq+tV0=;
+        b=OfGZydqwDAcTZqxH3D4rINuu82Hx6wsuL4JPuWpyACRpWTLrZnj+Q0kvCvy5mPhi84E0v+
+        43YS6f42dah/zWA5zqZN7oHO6rU4sdzCaPFuiOEdcmAz3sF1FjRaNLrXRrIFseaEVOlYLv
+        8lVxgFPa9cQMg+mhNtdjefF+xS9BSXk=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 607FCB198
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 May 2021 02:09:04 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id DABD6B18F
+        for <linux-btrfs@vger.kernel.org>; Mon,  3 May 2021 02:09:07 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/4] btrfs: make btrfs_verify_data_csum() to return a bitmap
-Date:   Mon,  3 May 2021 10:08:54 +0800
-Message-Id: <20210503020856.93333-3-wqu@suse.com>
+Subject: [PATCH v3 4/4] btrfs: remove io_failure_record::in_validation
+Date:   Mon,  3 May 2021 10:08:56 +0800
+Message-Id: <20210503020856.93333-5-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210503020856.93333-1-wqu@suse.com>
 References: <20210503020856.93333-1-wqu@suse.com>
@@ -46,83 +46,235 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This will provide the basis for later per-sector repair for subpage,
-while still keep the existing code happy.
+The io_failure_record::in_validation was introduced to handle failed bio
+which cross several sectors.
+In such case, we still need to verify which sectors are corrupted.
 
-As if all csum matches, the return value is still 0.
-Only when csum mismatches, the return value is different.
+But since we're changed the way how we handle corrupted sectors, by only
+submitting repair for each corrupted sector, there is no need for extra
+validation any more.
 
-The new return value will be a bitmap, for 4K sectorsize and 4K page
-size, it will be either 1, instead of the old -EIO.
-
-But for 4K sectorsize and 64K page size, aka subpage case, since the
-bvec can contain multiple sectors, knowing which sectors are corrupted
-will allow us to submit repair only for corrupted sectors.
+This patch will cleanup all io_failure_record::in_validation related
+code.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h |  4 ++--
- fs/btrfs/inode.c | 17 ++++++++++++-----
- 2 files changed, 14 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_io.c | 113 ++++++++-----------------------------------
+ fs/btrfs/extent_io.h |   3 +-
+ 2 files changed, 21 insertions(+), 95 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 80670a631714..7bb4212b90d3 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3100,8 +3100,8 @@ u64 btrfs_file_extent_end(const struct btrfs_path *path);
- /* inode.c */
- blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- 				   int mirror_num, unsigned long bio_flags);
--int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
--			   struct page *page, u64 start, u64 end);
-+unsigned int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
-+				    struct page *page, u64 start, u64 end);
- struct extent_map *btrfs_get_extent_fiemap(struct btrfs_inode *inode,
- 					   u64 start, u64 len);
- noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 294d8d98280d..e9db33afcb5d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3135,15 +3135,19 @@ static int check_data_csum(struct inode *inode, struct btrfs_io_bio *io_bio,
-  * @bio_offset:	offset to the beginning of the bio (in bytes)
-  * @start:	file offset of the range start
-  * @end:	file offset of the range end (inclusive)
-+ *
-+ * Return a bitmap where bit set means a csum mismatch, and bit not set means
-+ * csum match.
-  */
--int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
--			   struct page *page, u64 start, u64 end)
-+unsigned int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
-+				    struct page *page, u64 start, u64 end)
- {
- 	struct inode *inode = page->mapping->host;
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	const u32 sectorsize = root->fs_info->sectorsize;
- 	u32 pg_off;
-+	unsigned int result = 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index dca204730d17..11dae53525f6 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2426,13 +2426,6 @@ int clean_io_failure(struct btrfs_fs_info *fs_info,
  
- 	if (PageChecked(page)) {
- 		ClearPageChecked(page);
-@@ -3171,10 +3175,13 @@ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
+ 	BUG_ON(!failrec->this_mirror);
  
- 		ret = check_data_csum(inode, io_bio, bio_offset, page, pg_off,
- 				      page_offset(page) + pg_off);
--		if (ret < 0)
--			return -EIO;
-+		if (ret < 0) {
-+			int nr_bit = (pg_off - offset_in_page(start)) /
-+				     sectorsize;
-+			result |= (1 << nr_bit);
-+		}
- 	}
--	return 0;
-+	return result;
+-	if (failrec->in_validation) {
+-		/* there was no real error, just free the record */
+-		btrfs_debug(fs_info,
+-			"clean_io_failure: freeing dummy error at %llu",
+-			failrec->start);
+-		goto out;
+-	}
+ 	if (sb_rdonly(fs_info->sb))
+ 		goto out;
+ 
+@@ -2509,9 +2502,8 @@ static struct io_failure_record *btrfs_get_io_failure_record(struct inode *inode
+ 	failrec = get_state_failrec(failure_tree, start);
+ 	if (!IS_ERR(failrec)) {
+ 		btrfs_debug(fs_info,
+-			"Get IO Failure Record: (found) logical=%llu, start=%llu, len=%llu, validation=%d",
+-			failrec->logical, failrec->start, failrec->len,
+-			failrec->in_validation);
++	"Get IO Failure Record: (found) logical=%llu, start=%llu, len=%llu",
++			failrec->logical, failrec->start, failrec->len);
+ 		/*
+ 		 * when data can be on disk more than twice, add to failrec here
+ 		 * (e.g. with a list for failed_mirror) to make
+@@ -2529,7 +2521,6 @@ static struct io_failure_record *btrfs_get_io_failure_record(struct inode *inode
+ 	failrec->len = sectorsize;
+ 	failrec->this_mirror = 0;
+ 	failrec->bio_flags = 0;
+-	failrec->in_validation = 0;
+ 
+ 	read_lock(&em_tree->lock);
+ 	em = lookup_extent_mapping(em_tree, start, failrec->len);
+@@ -2580,7 +2571,7 @@ static struct io_failure_record *btrfs_get_io_failure_record(struct inode *inode
+ 	return failrec;
  }
  
- /*
+-static bool btrfs_check_repairable(struct inode *inode, bool needs_validation,
++static bool btrfs_check_repairable(struct inode *inode,
+ 				   struct io_failure_record *failrec,
+ 				   int failed_mirror)
+ {
+@@ -2600,39 +2591,22 @@ static bool btrfs_check_repairable(struct inode *inode, bool needs_validation,
+ 		return false;
+ 	}
+ 
++	/* The failure record should only contain one sector */
++	ASSERT(failrec->len == fs_info->sectorsize);
++
+ 	/*
+-	 * there are two premises:
+-	 *	a) deliver good data to the caller
+-	 *	b) correct the bad sectors on disk
++	 * There are two premises:
++	 * a) deliver good data to the caller
++	 * b) correct the bad sectors on disk
++	 *
++	 * Since we're only doing repair for one sector, we only need to get
++	 * a good copy of the failed sector and if we succeed, we have setup
++	 * everything for repair_io_failure to do the rest for us.
+ 	 */
+-	if (needs_validation) {
+-		/*
+-		 * to fulfill b), we need to know the exact failing sectors, as
+-		 * we don't want to rewrite any more than the failed ones. thus,
+-		 * we need separate read requests for the failed bio
+-		 *
+-		 * if the following BUG_ON triggers, our validation request got
+-		 * merged. we need separate requests for our algorithm to work.
+-		 */
+-		BUG_ON(failrec->in_validation);
+-		failrec->in_validation = 1;
+-		failrec->this_mirror = failed_mirror;
+-	} else {
+-		/*
+-		 * we're ready to fulfill a) and b) alongside. get a good copy
+-		 * of the failed sector and if we succeed, we have setup
+-		 * everything for repair_io_failure to do the rest for us.
+-		 */
+-		if (failrec->in_validation) {
+-			BUG_ON(failrec->this_mirror != failed_mirror);
+-			failrec->in_validation = 0;
+-			failrec->this_mirror = 0;
+-		}
+-		failrec->failed_mirror = failed_mirror;
++	failrec->failed_mirror = failed_mirror;
++	failrec->this_mirror++;
++	if (failrec->this_mirror == failed_mirror)
+ 		failrec->this_mirror++;
+-		if (failrec->this_mirror == failed_mirror)
+-			failrec->this_mirror++;
+-	}
+ 
+ 	if (failrec->this_mirror > num_copies) {
+ 		btrfs_debug(fs_info,
+@@ -2644,46 +2618,6 @@ static bool btrfs_check_repairable(struct inode *inode, bool needs_validation,
+ 	return true;
+ }
+ 
+-static bool btrfs_io_needs_validation(struct inode *inode, struct bio *bio)
+-{
+-	struct bio_vec *bvec;
+-	u64 len = 0;
+-	const u32 blocksize = inode->i_sb->s_blocksize;
+-	int i;
+-
+-	/*
+-	 * If bi_status is BLK_STS_OK, then this was a checksum error, not an
+-	 * I/O error. In this case, we already know exactly which sector was
+-	 * bad, so we don't need to validate.
+-	 */
+-	if (bio->bi_status == BLK_STS_OK)
+-		return false;
+-
+-	/*
+-	 * For subpage case, read bio are always submitted as multiple-sector
+-	 * bio if the range is in the same page.
+-	 * For now, let's just skip the validation, and do page sized repair.
+-	 *
+-	 * This reduce the granularity for repair, meaning if we have two
+-	 * copies with different csum mismatch at different location, we're
+-	 * unable to repair in subpage case.
+-	 *
+-	 * TODO: Make validation code to be fully subpage compatible
+-	 */
+-	if (blocksize < PAGE_SIZE)
+-		return false;
+-	/*
+-	 * We're ensured we won't get cloned bio in end_bio_extent_readpage(),
+-	 * thus we can get the length from the bvecs.
+-	 */
+-	bio_for_each_bvec_all(bvec, bio, i) {
+-		len += bvec->bv_len;
+-		if (len > blocksize)
+-			return true;
+-	}
+-	return false;
+-}
+-
+ static int repair_one_sector(struct inode *inode,
+ 			     struct bio *failed_bio, u32 bio_offset,
+ 			     struct page *page, unsigned int pgoff,
+@@ -2696,7 +2630,6 @@ static int repair_one_sector(struct inode *inode,
+ 	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
+ 	struct btrfs_io_bio *failed_io_bio = btrfs_io_bio(failed_bio);
+ 	const int icsum = bio_offset >> fs_info->sectorsize_bits;
+-	bool need_validation;
+ 	struct bio *repair_bio;
+ 	struct btrfs_io_bio *repair_io_bio;
+ 	blk_status_t status;
+@@ -2713,13 +2646,9 @@ static int repair_one_sector(struct inode *inode,
+ 	/*
+ 	 * We will only submit repair for one sector, thus we don't need
+ 	 * extra validation anymore.
+-	 *
+-	 * TODO: All those extra validation related code will be cleaned up
+-	 * later.
+ 	 */
+-	need_validation = false;
+-	if (!btrfs_check_repairable(inode, need_validation, failrec,
+-				    failed_mirror)) {
++
++	if (!btrfs_check_repairable(inode, failrec, failed_mirror)) {
+ 		free_io_failure(failure_tree, tree, failrec);
+ 		return -EIO;
+ 	}
+@@ -2727,8 +2656,6 @@ static int repair_one_sector(struct inode *inode,
+ 	repair_bio = btrfs_io_bio_alloc(1);
+ 	repair_io_bio = btrfs_io_bio(repair_bio);
+ 	repair_bio->bi_opf = REQ_OP_READ;
+-	if (need_validation)
+-		repair_bio->bi_opf |= REQ_FAILFAST_DEV;
+ 	repair_bio->bi_end_io = failed_bio->bi_end_io;
+ 	repair_bio->bi_iter.bi_sector = failrec->logical >> 9;
+ 	repair_bio->bi_private = failed_bio->bi_private;
+@@ -2746,8 +2673,8 @@ static int repair_one_sector(struct inode *inode,
+ 	repair_io_bio->iter = repair_bio->bi_iter;
+ 
+ 	btrfs_debug(btrfs_sb(inode->i_sb),
+-"repair read error: submitting new read to mirror %d, in_validation=%d",
+-		    failrec->this_mirror, failrec->in_validation);
++		    "repair read error: submitting new read to mirror %d",
++		    failrec->this_mirror);
+ 
+ 	status = submit_bio_hook(inode, repair_bio, failrec->this_mirror,
+ 				 failrec->bio_flags);
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 89820028c4bc..95affaf2e503 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -292,7 +292,7 @@ int btrfs_repair_eb_io_failure(const struct extent_buffer *eb, int mirror_num);
+  * When IO fails, either with EIO or csum verification fails, we
+  * try other mirrors that might have a good copy of the data.  This
+  * io_failure_record is used to record state as we go through all the
+- * mirrors.  If another mirror has good data, the page is set up to date
++ * mirrors.  If another mirror has good data, the sector is set up to date
+  * and things continue.  If a good mirror can't be found, the original
+  * bio end_io callback is called to indicate things have failed.
+  */
+@@ -304,7 +304,6 @@ struct io_failure_record {
+ 	unsigned long bio_flags;
+ 	int this_mirror;
+ 	int failed_mirror;
+-	int in_validation;
+ };
+ 
+ 
 -- 
 2.31.1
 

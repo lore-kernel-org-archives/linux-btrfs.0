@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FBAEC433ED
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 May 2021 06:25:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3B2AC433B4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 May 2021 06:25:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 02D72610FC
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 May 2021 06:25:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8FA07613AA
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 May 2021 06:25:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229813AbhEDG02 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 May 2021 02:26:28 -0400
-Received: from mx2.suse.de ([195.135.220.15]:49922 "EHLO mx2.suse.de"
+        id S229830AbhEDG03 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 May 2021 02:26:29 -0400
+Received: from mx2.suse.de ([195.135.220.15]:49958 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229773AbhEDG00 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 4 May 2021 02:26:26 -0400
+        id S229773AbhEDG03 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 4 May 2021 02:26:29 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1620109531; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1620109534; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=1qTwqK6tTKyXyAEhBuwNr9U4EdyPjD4oqirrODoiY4A=;
-        b=Q+JgMO1lmIwHslovkMNY9mWT98Grf4RWook4UWSxT2I3pHWFtE2QQbuuUB4ABg46vFlKK9
-        Eq00wPewmVCyq6sTKdEjnXo63XawCjL0pTCJKDwSxFlLxx8449Vysn1p8XLhcaWzHbG/ya
-        HKMXWeSepUL4qf2hLr18ykfl2pQrk8c=
+        bh=KAvWGoZpjMWKnUlvBdiMuvuubFzJ1HBM4J3lo3l4BnY=;
+        b=YvDnmw1LHxRxmQqfK+7oT8QUpN7GdBLZr5CpreWs4wIEnssNvKaKUmEvrFfcNn2i0M1o79
+        GOH2UnNRi8knZFjGt/U487Kucc5nIfB/mNHAxdTBHDYtXXllKPf7pqPZNefWTau7ey6v29
+        6UStplq1xyfYyJzjqtZ6VSaaW2jrRW4=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id AD88EAE03
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 May 2021 06:25:31 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 19057AE95
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 May 2021 06:25:34 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/4] btrfs-progs: check/original: add the "0x" prefix for hex error number
-Date:   Tue,  4 May 2021 14:25:22 +0800
-Message-Id: <20210504062525.152540-2-wqu@suse.com>
+Subject: [PATCH 2/4] btrfs-progs: check/original: detect and report mixed inline and regular data extents
+Date:   Tue,  4 May 2021 14:25:23 +0800
+Message-Id: <20210504062525.152540-3-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210504062525.152540-1-wqu@suse.com>
 References: <20210504062525.152540-1-wqu@suse.com>
@@ -46,29 +46,74 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In print_inode_error(), it print the error number in hex, but without
-"0x" prefix.
+When a btrfs filesystem has mixed inline and regular data extents, btrfs
+check original mode won't detect it as an error.
 
-Just add the prefix.
+Considering how much effort we have done just to avoid such cases, we
+really want btrfs check to detect such problem.
+
+This error detection is even more important for the incoming btrfs
+subpage support, as subpage data rw support can cause such problem much
+easier.
+
+So this patch will just add such ability to original mode.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/main.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ check/main.c          | 5 +++++
+ check/mode-original.h | 2 ++
+ 2 files changed, 7 insertions(+)
 
 diff --git a/check/main.c b/check/main.c
-index 0c4eb3ca5ded..1e65f8da4c6c 100644
+index 1e65f8da4c6c..7837c3647f6f 100644
 --- a/check/main.c
 +++ b/check/main.c
-@@ -578,7 +578,7 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
- 		root_objectid = root->root_key.offset;
- 		fprintf(stderr, "reloc");
- 	}
--	fprintf(stderr, "root %llu inode %llu errors %x",
-+	fprintf(stderr, "root %llu inode %llu errors 0x%x",
- 		(unsigned long long) root_objectid,
- 		(unsigned long long) rec->ino, rec->errors);
+@@ -621,6 +621,8 @@ static void print_inode_error(struct btrfs_root *root, struct inode_record *rec)
+ 			rec->imode & ~07777);
+ 	if (errors & I_ERR_INVALID_GEN)
+ 		fprintf(stderr, ", invalid inode generation or transid");
++	if (errors & I_ERR_MIXED_EXTENTS)
++		fprintf(stderr, ", mixed regular and inline extents");
+ 	fprintf(stderr, "\n");
  
+ 	/* Print the holes if needed */
+@@ -1583,6 +1585,7 @@ static int process_file_extent(struct btrfs_root *root,
+ 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+ 		struct btrfs_item *item = btrfs_item_nr(slot);
+ 
++		rec->found_inline_extent = 1;
+ 		num_bytes = btrfs_file_extent_ram_bytes(eb, fi);
+ 		if (num_bytes == 0)
+ 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
+@@ -1602,6 +1605,8 @@ static int process_file_extent(struct btrfs_root *root,
+ 		num_bytes = (num_bytes + mask) & ~mask;
+ 	} else if (extent_type == BTRFS_FILE_EXTENT_REG ||
+ 		   extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
++		if (rec->found_inline_extent)
++			rec->errors |= I_ERR_MIXED_EXTENTS;
+ 		num_bytes = btrfs_file_extent_num_bytes(eb, fi);
+ 		disk_bytenr = btrfs_file_extent_disk_bytenr(eb, fi);
+ 		extent_offset = btrfs_file_extent_offset(eb, fi);
+diff --git a/check/mode-original.h b/check/mode-original.h
+index b075a95c9757..f7efc06ec7c7 100644
+--- a/check/mode-original.h
++++ b/check/mode-original.h
+@@ -186,6 +186,7 @@ struct unaligned_extent_rec_t {
+ #define I_ERR_MISMATCH_DIR_HASH		(1 << 18)
+ #define I_ERR_INVALID_IMODE		(1 << 19)
+ #define I_ERR_INVALID_GEN		(1 << 20)
++#define I_ERR_MIXED_EXTENTS		(1 << 21)
+ 
+ struct inode_record {
+ 	struct list_head backrefs;
+@@ -197,6 +198,7 @@ struct inode_record {
+ 	unsigned int found_csum_item:1;
+ 	unsigned int some_csum_missing:1;
+ 	unsigned int nodatasum:1;
++	unsigned int found_inline_extent:1;
+ 	int errors;
+ 
+ 	struct list_head unaligned_extent_recs;
 -- 
 2.31.1
 

@@ -2,242 +2,166 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF16C433ED
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 May 2021 05:14:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B2AFC43461
+	for <linux-btrfs@archiver.kernel.org>; Sat,  8 May 2021 05:26:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D3E66613E8
-	for <linux-btrfs@archiver.kernel.org>; Fri,  7 May 2021 05:14:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3A8B161104
+	for <linux-btrfs@archiver.kernel.org>; Sat,  8 May 2021 05:26:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233456AbhEGFPQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 7 May 2021 01:15:16 -0400
-Received: from mout.gmx.net ([212.227.17.20]:42663 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229666AbhEGFPQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 7 May 2021 01:15:16 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1620364452;
-        bh=434PC1cGdsd00gx2BwtILvrK67PWPItA7s4AbX87IQQ=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=gA09BBbT3/mUqVPQ4nu6qFBTrD/QI/4kFNdWTTOYfozwaq5q/2cFe0GjMD11HFKaT
-         GeLmok4Y4LawdMbyjUq5A2Piv9TLEC09xPcnh5ngaGaiDLD/932Pc3mhKUZ9Ul174+
-         +EBTNdZxeYQ8iaq1ohARqR9onBBOzmK8hu4XPdEU=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([45.77.180.217]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MJmKX-1lysfq1RST-00K9PO; Fri, 07
- May 2021 07:14:12 +0200
-Subject: Re: [Patch v2 41/42] btrfs: fix the use-after-free bug in writeback
- subpage helper
-To:     Ritesh Harjani <riteshh@linux.ibm.com>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20210427230349.369603-1-wqu@suse.com>
- <20210427230349.369603-42-wqu@suse.com>
- <46a8cbb7-4c3a-024d-4ee3-cbeb4068e92e@suse.com>
- <20210507045735.jjtc76whburjmnvt@riteshh-domain>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5d406b40-23d9-8542-792a-2cd6a7d95afe@gmx.com>
-Date:   Fri, 7 May 2021 13:14:07 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.0
+        id S230324AbhEHF1n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 8 May 2021 01:27:43 -0400
+Received: from esa6.fujitsucc.c3s2.iphmx.com ([68.232.159.83]:48728 "EHLO
+        esa6.fujitsucc.c3s2.iphmx.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S229749AbhEHF1m (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 8 May 2021 01:27:42 -0400
+IronPort-SDR: sDHXWIVpvAjtMaVQC0yuKmAnHkOqJ/3Whja4/WqPTZXtkr10druYH/z5gzzuZVnGNn5Ho+33wv
+ e5j7fVxOcXNmBHZw1XtGOzGLaAf+e9zvtVO4lQ25qhRhkoE5hHAlichlsVZgU7DLHO/k+Jkpw7
+ cxZSIcS+NIdlvYWIP+cx22LqUpxeXN4l1IczDbu+gONtqWT8MbeMTHVYAfyBm7lixmrbLcWlBs
+ w1os0YzrZ7B8L3opeObhMhho6Nh7xhFBcpvoLlEniHcglNxsXdhiRhWJI4t8XgRhJBNuOqMAoe
+ GkE=
+X-IronPort-AV: E=McAfee;i="6200,9189,9977"; a="31107942"
+X-IronPort-AV: E=Sophos;i="5.82,282,1613401200"; 
+   d="scan'208";a="31107942"
+Received: from mail-os2jpn01lp2056.outbound.protection.outlook.com (HELO JPN01-OS2-obe.outbound.protection.outlook.com) ([104.47.92.56])
+  by ob1.fujitsucc.c3s2.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 08 May 2021 14:26:35 +0900
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=L1IggSGYzbkNfUj3P18LztakePeTkcHiDulieEBJBddeF7fZx1g0BeFFC71V0HLOC+7PveX785faIbiNgD/Vlk+dMPh/nQiR1FXfVa9OgzF3wa8md9rV1L2uHhjZTVcExSqUdrgus3mbR4b41ytvfjKxwYjTdMT5Z/DURuQXVyx6GNtFdRUVXtYs1amhe4EKXk3uU30aMjSUTIg+jSc3eoT/PrRIK7DldD3mk0KEMV22TSIJm9VFo8SiZwowiDdwOMQZzA/A7Tn7VEYU7E5QTn9cEZ92CuM9DRmbQ3vNM6gJ1FWwA11iTgt5zw/7+ixatFFoY3yDtZfh1z1RxzFvcA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=kOeC3vu+7clFPbAHDHS3thSf5/YASS1sMfLbA5OMCBA=;
+ b=RXdBx9V44F3xhpL8+5aP33B/N4fKYoWPLbvaFH8+yLxvlYjBpNm4gO3rqvCMShy++elevHYutGKZLKnINYDUGX+4C9/BrowWbHT+gf1mOj34q+lkMuTXIH+UVOZBLqtxTwss5D9qFhWHqLQHYQIPm4lnjVqXXS4xkYyhhVaaU3pTioc1rTYI0EPGiZacV34F7c0+r/sgNuhL752Y268GX0CJt7v2f/YJScrwkJ2iNB0J61hhy8GfnIAjiPKi0HujWzFkcWtFMP4m/NmivG4y2HgLubJgGSrVFlZyNbt6jqRgiYrD/bqrEEEC8czcXieoF6bhwi7treYSlmpecgqdww==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=fujitsu.com; dmarc=pass action=none header.from=fujitsu.com;
+ dkim=pass header.d=fujitsu.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=fujitsu.onmicrosoft.com; s=selector2-fujitsu-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=kOeC3vu+7clFPbAHDHS3thSf5/YASS1sMfLbA5OMCBA=;
+ b=WatrRG8c2VKu7SYHO4uIHb1OOrVwft4sgWQvgokI2kVotwYcSDNQsVNoe1VIQUiUuvomyU/5s/VK9v66yu1ME23OhUkdUXO26MslOWK2yePCSInYwlYWNww6YaqTuAuW6jHxo6WlzR0OgkK4WDwwz2C4cbGOdLcOl4nCNuVLG/k=
+Received: from OSBPR01MB2920.jpnprd01.prod.outlook.com (2603:1096:604:18::16)
+ by OSZPR01MB6293.jpnprd01.prod.outlook.com (2603:1096:604:ed::8) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4108.25; Sat, 8 May
+ 2021 05:26:32 +0000
+Received: from OSBPR01MB2920.jpnprd01.prod.outlook.com
+ ([fe80::b985:8239:6cf0:1228]) by OSBPR01MB2920.jpnprd01.prod.outlook.com
+ ([fe80::b985:8239:6cf0:1228%7]) with mapi id 15.20.4108.031; Sat, 8 May 2021
+ 05:26:32 +0000
+From:   "ruansy.fnst@fujitsu.com" <ruansy.fnst@fujitsu.com>
+To:     "dan.j.williams@intel.com" <dan.j.williams@intel.com>,
+        "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>
+CC:     "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "darrick.wong@oracle.com" <darrick.wong@oracle.com>,
+        "willy@infradead.org" <willy@infradead.org>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "david@fromorbit.com" <david@fromorbit.com>,
+        "hch@lst.de" <hch@lst.de>, "rgoldwyn@suse.de" <rgoldwyn@suse.de>
+Subject: RE: [PATCH v3 0/3] fsdax: Factor helper functions to simplify the
+ code
+Thread-Topic: [PATCH v3 0/3] fsdax: Factor helper functions to simplify the
+ code
+Thread-Index: AQHXN325ZvNg0AwKgEyTZt/tgpBu/qrZJMtA
+Date:   Sat, 8 May 2021 05:26:32 +0000
+Message-ID: <OSBPR01MB29205D645B33F4721E890660F4569@OSBPR01MB2920.jpnprd01.prod.outlook.com>
+References: <20210422134501.1596266-1-ruansy.fnst@fujitsu.com>
+In-Reply-To: <20210422134501.1596266-1-ruansy.fnst@fujitsu.com>
+Accept-Language: en-US, zh-CN
+Content-Language: zh-CN
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: intel.com; dkim=none (message not signed)
+ header.d=none;intel.com; dmarc=none action=none header.from=fujitsu.com;
+x-originating-ip: [223.111.68.150]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 5df88144-5d5d-4a9f-739b-08d911e1d701
+x-ms-traffictypediagnostic: OSZPR01MB6293:
+x-microsoft-antispam-prvs: <OSZPR01MB6293271876D5981797A260B3F4569@OSZPR01MB6293.jpnprd01.prod.outlook.com>
+x-ms-oob-tlc-oobclassifiers: OLM:9508;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: cc9u2bdaMbUkID9Edub3sB5dBGouniStjSEfaSRKtCH/OcGR5QlpTIfjIjtK8sjSh5jqpJuSfAgfMdclVzDRjICWSu/qmx7SWxn8kmu6zXSHAyEOSRVVsEW4S7gqlvqrro71S3NGN12WuW0COx+yuGDBsw7GJgKw4OzFAFGO4S3byVrjXdD16vKX6VTQXFeayvu1al5GnqUVIRft+X91hIskl+CAyv2DHXsHT6aAJRr30ILBfEHhVho1frm9tyavOmM8bvrrQJ+i31pHFeDYx6kgvQBKDogrNec0vKCeqX7dpr04LkmrWKdgYobUntMd15i+wC4NTB8ap5LWR+Wgd9hNWMXZdhRu68NDbx6syUNWbxTkVASSQU4uC7NkTHOm5l189fnxrKuh0Vl4QjjdCVIET1UifpyR8wMqV8H1PeCpF6HwPvikUHzYm5/4Xn9w1GjiXuQngD6VNakdQFwFmrWSyX+YT212Mem9/zkqyfUcBM/0FlxCKOLByeD8SRbdGc0WrviVQ9usrKTvOtkj2Potx/RnsZY5Z3gmU9XucR7p6+nkt+NUlyGysRP3DnpdxI3EOmIVpUPZ0Jj6oyCOFMjIiSGKk0bQF1R8jXHeMKXdl7kspntxOZfs1DlH4doDgHIkK7kVciDKkiUzuC95htOF9b7l7vNysHlO7nHUwtK4nBijOpnx3Ds6IY6uHhbc
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:OSBPR01MB2920.jpnprd01.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(346002)(366004)(136003)(376002)(39860400002)(396003)(33656002)(7416002)(186003)(316002)(8936002)(8676002)(85182001)(26005)(71200400001)(7696005)(4326008)(110136005)(54906003)(122000001)(52536014)(76116006)(66946007)(66556008)(2906002)(66476007)(66446008)(9686003)(38100700002)(64756008)(5660300002)(966005)(6506007)(478600001)(86362001)(53546011)(83380400001)(55016002);DIR:OUT;SFP:1101;
+x-ms-exchange-antispam-messagedata: =?gb2312?B?S3E5cHNsY0t2V2tiZ2lBdmcvSUNwVksrNWg4Q2ZEWm5OTCs5aXVwUkpTOGxq?=
+ =?gb2312?B?SkJ4ZW1OTTVCSnI3RnpoUlJXR2FiNFpRK3JoS296eVAzVWM4TVJJUFlVZUUr?=
+ =?gb2312?B?M1NNN0JrY3laWnZDd2FZdjQ0RjVVaE5jS3NlQ09neUxZM2FxaDJZdkVSR1Qv?=
+ =?gb2312?B?b1BieDhhRENaN3B1YkNOMVk5TWdWcjdKYy8rMjVhOEVsdDQwQ0pKZ0R2Zisy?=
+ =?gb2312?B?S0xTYXppR0h2V3hQVmlvTEprWUVrMnZkNmNaYzB5MktuREpFTm8zRXNvK3BX?=
+ =?gb2312?B?VTRKMTRzQ3A2dFZ5V0RiclhQZFdzdTVVblNOVkhiUnlJMlVKY2xoV2tyNTdJ?=
+ =?gb2312?B?YjV4RGRLd3Z5SVRxSlBqbUlKMVMzV0RQZ3RpRlhCVUhqNlJnSXhmbjFZU3Z2?=
+ =?gb2312?B?M0NoQ3pvQzVBOXJIUFFaejNmb29CbThOQkJ5cmRsN1loSVMxVkNuWTc2MEpw?=
+ =?gb2312?B?NTdPOW9EOGRVeXg1RklHV0RjWUJHcGpzMlN6MXFTMksxTjJtVDI4dHBrUkJl?=
+ =?gb2312?B?aDRZbEdjOUhiQnNwcVRKTHpmRUFlRWN3WlcvOUtEdEJneGllallKZFY1NWd6?=
+ =?gb2312?B?eVdnajRrQXBGNjNvcXdHKzIwUlJLTWh6TG5pZXFOQU5oR1ROWDJENDFVZVF3?=
+ =?gb2312?B?amQ5dW1nT2NJOWdPcDdJVEhsZlJHNWY0NXR3SVlkRDBsUVNraHRwWmRVbzR2?=
+ =?gb2312?B?Uy9QTUtidlh5ZFJUbEZGOWprMmVORXVuOFhBMEt1VnAveWtjalFjeGN3dHVo?=
+ =?gb2312?B?WTFmMVdIYTZybFNsbVFnMCtQU1RyTWF1M2d4SzN1ZmtrczFqUUhYMnVxalRB?=
+ =?gb2312?B?cHlkVnM4TlBhaXRpelZxSmZGekFtK0pYOWhTeFBUWWRCUjRzekdHemF2NjJp?=
+ =?gb2312?B?N1plcHlScTZnUFR3WTVRRDU0eVZhVmVRU0ZXcFdYaUQ1UElOVHNaeXpKaTdn?=
+ =?gb2312?B?RGdCOWRRQ3AwZTJEOUQ4cjJ4VGRBdTVEMXhpb2RLTTRWQjdNcDFSbk9heWg1?=
+ =?gb2312?B?TWRCZUlDTTdWbGZBUzFKbFJLMExlQW5Ld2d3bTF1ZHVDVGVhWmorbG5KbTl6?=
+ =?gb2312?B?bXVSYnN6aStKWVFoemw1VUw3TWpJMkJTSGRvczRsT3M3WURiY0N3S2R1SHJR?=
+ =?gb2312?B?Z0ZseGoyRWVkaWlLaDhZSWpnWktzczFoY2xiaDNNMnlwa0RnUWg1SVRWb2la?=
+ =?gb2312?B?c3VQdWdkdy9KTXAvdkVyYkVTU3NRTEhnU3owWnNDR2NwRjA1RXArSXlNTjky?=
+ =?gb2312?B?aEVRcmhmdi9QMXpRVU9zU0crTkEreE1IMXF5L0RLdktWN1I2bFU4V0xybkNW?=
+ =?gb2312?B?MkJIOTJseko2VU9sQVN1YnE1cVd6Z2pqeUFZZ2wxNlpnOERaVExQSjF6aDgv?=
+ =?gb2312?B?ZGcvWTBucWNlMk1GWTZ6ZUVoZjdxcFZUNUtWNDVZaW1TbTlDWUU4djUzMFla?=
+ =?gb2312?B?MVFiOStwVmEwRHJWL0tDNmtMei9mdzVnRnNRTXU1TlQ5KzRVV293cWF0RGsx?=
+ =?gb2312?B?bGlUamkxaFM1WmZFVWFLKy9ENVdOZXJSeUVrU2RJMUtuMUxqcWV1VHRjaGY1?=
+ =?gb2312?B?Y2tobndDMkRqaW1yOGI2djVVb2txVFRray9GWUhnWW8vU1VLbXVKSFE5aEZE?=
+ =?gb2312?B?WHJtajBjVDgwNzB3TUoxS3RlZHprbTBNc2ZLU3RZdDZCSGVYVytXMGEzVkVF?=
+ =?gb2312?B?WmFHNnZPVyt2R2dFTmtaam1adEYzK2Rpa2FpdHRxNmRJM21iSTh6WU5PZEYw?=
+ =?gb2312?Q?chKMTlGsrX2bHXeDlJr8xF8o1RSPkaSRgR9rcTc?=
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-In-Reply-To: <20210507045735.jjtc76whburjmnvt@riteshh-domain>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:SJseENiwRJOqTdwLJ/ZIKrOr7L74yHDNwpufWMFUe+A/kSx7EDo
- J3mLkD3bA0sw3InRCAR3OrCCACXSxbmT3hwkSmT47rVFeoORvzDsbzy0TC49gsY6iATJqs+
- qokgfdza3QmBjmedGldN9FLYZWQE1vgfEfSzZsgiNoUY67Uf7Faf6/q/DCbONiHjiMzQI4b
- yZEd9cl6mVYtXQBi9/tVw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:5xmL7IGfW08=:oZve1FMtbMLkeh26ywhPyQ
- h9qGUV8ozJNG9QO0bYfcj2wbbtV5GbegLPcnG9FrDqhVHqkTxm2mSXv5PsT8mA6H01ri5L538
- giSU/Vb2FJwQYI9/7dnAcDDkTlpgeqcFTf7dhgs3W/DNaopaf3QWLlHwQ4d4ZoaSBaSNHG8Rj
- uWRL967i/HYOalUsUk5R26/AUg4MUx8hL5V6yY6wKqXCa5l34GgkDVtGoZPVIasgdsBPDYFVF
- YmChs6/GdkdHustPMJaI9sBsxD/+3G2pGPkx/Pl7WIHyiJ26M1t1ZkaMOCT7tl0So8SIB4HDy
- WZN6kWxxCqaiIA0zZBUDzXrojajj3VwzZafHo19B7gA4B+vA0WMYyrXNOn46FCcjNpVP/HcCV
- WwPsLwiD09jJKnBPbHa5E5tP+q0BpGZxt5t20m0t0puUIUG+pnHhcCrFTe2x/BG/hmZwXB5FW
- 0+brdQWUKcJauRIuNiM8RUn5IWzZgFnQlHLNFWzfn+pOheGh1VpvJbWEOZsvR0EVePm4SiXha
- lEKUOPlHy0erWdgCOH32K5YWNtpo7WNtlGXZNwW8oTitA5Qgt3vLi+w1EgQoLKOFzIQDYhpxX
- 5Qt739kQPljKaNZghAqOyeqNgDiEAstEgEbM0/eGhK41mQjOigPqZzpeY4o6R+0JDRoEWbUYj
- rTeXFUmAi9xHM63zKFkUPOr2JcsWVvAdebycxyoxvziJsCTbnkwLBcTQZ5MVhX2+crSTTmkOS
- fYb8fXH4m95PkQghYlPsczN4uRTolQsfzTC+OyFDzVNEM4VZAzKFpSQSDArzWUXQBC+MOCdqm
- 91fYPHiR1uHqW6tFsqHYNd7ppVVvuxO1201cpyAGhAdiIITdmNeSoBey3ilnR/kTyoCWj+jiU
- ykJUp0GRpwr1Mq5s2ut/RhXpYFYCKxoXD95c3XVfa/omS6h9rqcDNaCSDeQs7+/MEd0okBRhR
- qH2tahhwfqBQvLzg72aFynL+R+nUYA4e7jjrgblIGJqlozv0vI+uZY72AqaEVC6sc2pdGCN3i
- xoqnyal91BSYvgFri3qDmV5DJYgbt4ZwlyrlDwoa0XJIBRZYi7SHWpZMQ75yGtrhGJfJmwePo
- 8BfzoDhkffjSJ2WMPJNtIdPBEFfJPuDhK4ji2NJ5Zt7SJoFWq9ynQYUR1I6HbMD0ACzDnI0HD
- X+pJd61zTXsPZuwYov9BqvF2JaWsyvMZ59LrwWJMHZ9eYNJC243sbA1mlj8vc/7uz42gbEgJf
- +ZwZsiYKEFI1N0uvE
+X-OriginatorOrg: fujitsu.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: OSBPR01MB2920.jpnprd01.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 5df88144-5d5d-4a9f-739b-08d911e1d701
+X-MS-Exchange-CrossTenant-originalarrivaltime: 08 May 2021 05:26:32.1596
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: a19f121d-81e1-4858-a9d8-736e267fd4c7
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: Tmc3JVee0tT5HXUWFd/ubGa0FB96bemoZrISCS1DQzugBq3SRFE1oQZbyIqfcjvQva1vChKRFrMBfDPziVV7CA==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: OSZPR01MB6293
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 2021/5/7 =E4=B8=8B=E5=8D=8812:57, Ritesh Harjani wrote:
-> On 21/05/07 07:46AM, Qu Wenruo wrote:
->>
->>
->> On 2021/4/28 =E4=B8=8A=E5=8D=887:03, Qu Wenruo wrote:
->>> [BUG]
->>> There is a possible use-after-free bug when running generic/095.
->>>
->>>    BUG: Unable to handle kernel data access on write at 0x6b6b6b6b6b6b=
-725b
->>>    Faulting instruction address: 0xc000000000283654
->>>    c000000000283078 do_raw_spin_unlock+0x88/0x230
->>>    c0000000012b1e14 _raw_spin_unlock_irqrestore+0x44/0x90
->>>    c000000000a918dc btrfs_subpage_clear_writeback+0xac/0xe0
->>>    c0000000009e0458 end_bio_extent_writepage+0x158/0x270
->>>    c000000000b6fd14 bio_endio+0x254/0x270
->>>    c0000000009fc0f0 btrfs_end_bio+0x1a0/0x200
->>>    c000000000b6fd14 bio_endio+0x254/0x270
->>>    c000000000b781fc blk_update_request+0x46c/0x670
->>>    c000000000b8b394 blk_mq_end_request+0x34/0x1d0
->>>    c000000000d82d1c lo_complete_rq+0x11c/0x140
->>>    c000000000b880a4 blk_complete_reqs+0x84/0xb0
->>>    c0000000012b2ca4 __do_softirq+0x334/0x680
->>>    c0000000001dd878 irq_exit+0x148/0x1d0
->>>    c000000000016f4c do_IRQ+0x20c/0x240
->>>    c000000000009240 hardware_interrupt_common_virt+0x1b0/0x1c0
->>>
->>> [CAUSE]
->>> There is very small race window like the following in generic/095.
->>>
->>> 	Thread 1		|		Thread 2
->>> --------------------------------+------------------------------------
->>>     end_bio_extent_writepage()	| btrfs_releasepage()
->>>     |- spin_lock_irqsave()	| |
->>>     |- end_page_writeback()	| |
->>>     |				| |- if (PageWriteback() ||...)
->>>     |				| |- clear_page_extent_mapped()
->>>     |				|    |- kfree(subpage);
->>>     |- spin_unlock_irqrestore().
->>>
->>> The race can also happen between writeback and btrfs_invalidatepage(),
->>> although that would be much harder as btrfs_invalidatepage() has much
->>> more work to do before the clear_page_extent_mapped() call.
->>>
->>> [FIX]
->>> For btrfs_subpage_clear_writeback(), we don't really need to put
->>> end_page_writepage() call into the spinlock critical section.
->>>
->>> By just checking the bitmap in the critical section and call
->>> end_page_writeback() outside of the critical section, we can avoid suc=
-h
->>> use-after-free bug.
->>>
->>> Reported-by: Ritesh Harjani <riteshh@linux.ibm.com>
->>> Tested-by: Ritesh Harjani <riteshh@linux.ibm.com>
->>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>> ---
->>>    fs/btrfs/subpage.c | 5 ++++-
->>>    1 file changed, 4 insertions(+), 1 deletion(-)
->>>
->>> diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
->>> index 696485ab68a2..c5abf9745c10 100644
->>> --- a/fs/btrfs/subpage.c
->>> +++ b/fs/btrfs/subpage.c
->>
->> Hi Ritesh,
->>
->> Unfortunately I have to bother you again for testing the latest subpage
->> branch.
->
-> Yes, this was anyway on my mind to test the latest subpage branch.
-> Sure, I will do the testing.
->
->>
->> This particular fix seems to be incomplete, as I have hit several BUG_O=
-N()s
->> related to end_page_writeback() called on page without writeback flag.
->
-> ok.
->
->>
->>> @@ -420,13 +420,16 @@ void btrfs_subpage_clear_writeback(const struct =
-btrfs_fs_info *fs_info,
->>>    {
->>>    	struct btrfs_subpage *subpage =3D (struct btrfs_subpage *)page->pr=
-ivate;
->>>    	u16 tmp =3D btrfs_subpage_calc_bitmap(fs_info, page, start, len);
->>> +	bool finished =3D false;
->>>    	unsigned long flags;
->>>    	spin_lock_irqsave(&subpage->lock, flags);
->>>    	subpage->writeback_bitmap &=3D ~tmp;
->>>    	if (subpage->writeback_bitmap =3D=3D 0)
->>> -		end_page_writeback(page);
->>> +		finished =3D true;
->>>    	spin_unlock_irqrestore(&subpage->lock, flags);
->>> +	if (finished)
->>> +		end_page_writeback(page);
->>
->> The race can happen like this:
->>
->>                T1                  |              T2
->> ----------------------------------+----------------------------------
->> __extent_writepage()              |
->> |<< The 1st sector of the page >> |
->> |- writepage_delalloc()           |
->> |  Now the subpage range has      |
->> |  Writeback flag                 |
->> |- __extent_writepage_io()        |
->> |  |- submit_extent_page()        | << endio of the 1st sector >>
->> |                                 | end_bio_extent_writepage()
->> |<< The 2nd sector of the page >> | |- spin_lock_irqsave()
->> |- writepage_delalloc()           | |- finished =3D true
->> |  |- spin_lock()                 | |- spin_unlock_irqstore()
->> |  |- set_page_writeback();       | |
->> |  |- spin_unlock()               | |- end_page_writeback()
->> |                                 | << Now page has no writeback >>
->> |- __extent_writepagE_io()        |
->>     |- submit_extent_page()        | << endio of the 2nd sector >>
->>                                    | end_bio_extent_writepage()
->>                                    | |- finished =3D true;
->>                                    | |- end_page_writeback()
->>                                     !!! BUG_ON() triggered !!!
->>
->> The reproducibility is pretty low, so far I have only hit 3 times such
->> BUG_ON().
->> No special test case number for it, all 3 BUG_ON() happens for differen=
-t
->> test cases.
->>
->> Thus newer fix will still keep the end_page_writeback() inside the spin=
-lock,
->> but btrfs_releasepage() and btrfs_invalidatepage() will "wait" for the
->> spinlock to be released before detaching the subpage structure.
->>
->> Currently the fix runs fine, but extra test will always help.
->
-> Sorry, just to be clear, do you mean the latest subpage branch still
-> has some issues where we can hit the BUG_ON() or have you identifed and =
-added
-> some patches to fix it?
-
-Above race is how the old fix (with end_page_writeback() called outside
-of the spinlock) could lead to a BUG_ON().
-
-I believe the new fix, with the same title, can fix the problem.
-
->
-> Let me clone below branch and re-test xfstests on Power.
-> https://github.com/adam900710/linux/commits/subpage
->
-> Also if you would like me to test any extra mount option or mkfs option =
-testing
-> too, then pls do let me know. For now I will be testing with default opt=
-ions.
-
-Thanks, let's just focus on the default mount option first.
-
-Thanks for your great help!
-Qu
-
->
-> -ritesh
->
+SGksIERhbg0KDQpEbyB5b3UgaGF2ZSBhbnkgY29tbWVudHMgb24gdGhpcz8NCg0KDQotLQ0KVGhh
+bmtzLA0KUnVhbiBTaGl5YW5nLg0KDQo+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+IEZy
+b206IFNoaXlhbmcgUnVhbiA8cnVhbnN5LmZuc3RAZnVqaXRzdS5jb20+DQo+IFNlbnQ6IFRodXJz
+ZGF5LCBBcHJpbCAyMiwgMjAyMSA5OjQ1IFBNDQo+IFN1YmplY3Q6IFtQQVRDSCB2MyAwLzNdIGZz
+ZGF4OiBGYWN0b3IgaGVscGVyIGZ1bmN0aW9ucyB0byBzaW1wbGlmeSB0aGUgY29kZQ0KPiANCj4g
+RnJvbTogU2hpeWFuZyBSdWFuIDxydWFuc3kuZm5zdEBjbi5mdWppdHN1LmNvbT4NCj4gDQo+IFRo
+ZSBwYWdlIGZhdWx0IHBhcnQgb2YgZnNkYXggY29kZSBpcyBsaXR0bGUgY29tcGxleC4gSW4gb3Jk
+ZXIgdG8gYWRkIENvVyBmZWF0dXJlDQo+IGFuZCBtYWtlIGl0IGVhc3kgdG8gdW5kZXJzdGFuZCwg
+SSB3YXMgc3VnZ2VzdGVkIHRvIGZhY3RvciBzb21lIGhlbHBlciBmdW5jdGlvbnMNCj4gdG8gc2lt
+cGxpZnkgdGhlIGN1cnJlbnQgZGF4IGNvZGUuDQo+IA0KPiBUaGlzIGlzIHNlcGFyYXRlZCBmcm9t
+IHRoZSBwcmV2aW91cyBwYXRjaHNldCBjYWxsZWQgIlYzIGZzZGF4LHhmczogQWRkDQo+IHJlZmxp
+bmsmZGVkdXBlIHN1cHBvcnQgZm9yIGZzZGF4IiwgYW5kIHRoZSBwcmV2aW91cyBjb21tZW50cyBh
+cmUgaGVyZVsxXS4NCj4gDQo+IFsxXToNCj4gaHR0cHM6Ly9wYXRjaHdvcmsua2VybmVsLm9yZy9w
+cm9qZWN0L2xpbnV4LW52ZGltbS9wYXRjaC8yMDIxMDMxOTAxNTIzNy45OQ0KPiAzODgwLTMtcnVh
+bnN5LmZuc3RAZnVqaXRzdS5jb20vDQo+IA0KPiBDaGFuZ2VzIGZyb20gVjI6DQo+ICAtIGZpeCB0
+aGUgdHlwZSBvZiAnbWFqb3InIGluIHBhdGNoIDINCj4gIC0gUmViYXNlZCBvbiB2NS4xMi1yYzgN
+Cj4gDQo+IENoYW5nZXMgZnJvbSBWMToNCj4gIC0gZml4IFJpdGVzaCdzIGVtYWlsIGFkZHJlc3MN
+Cj4gIC0gc2ltcGxpZnkgcmV0dXJuIGxvZ2ljIGluIGRheF9mYXVsdF9jb3dfcGFnZSgpDQo+IA0K
+PiAoUmViYXNlZCBvbiB2NS4xMi1yYzgpDQo+ID09DQo+IA0KPiBTaGl5YW5nIFJ1YW4gKDMpOg0K
+PiAgIGZzZGF4OiBGYWN0b3IgaGVscGVycyB0byBzaW1wbGlmeSBkYXggZmF1bHQgY29kZQ0KPiAg
+IGZzZGF4OiBGYWN0b3IgaGVscGVyOiBkYXhfZmF1bHRfYWN0b3IoKQ0KPiAgIGZzZGF4OiBPdXRw
+dXQgYWRkcmVzcyBpbiBkYXhfaW9tYXBfcGZuKCkgYW5kIHJlbmFtZSBpdA0KPiANCj4gIGZzL2Rh
+eC5jIHwgNDQzICsrKysrKysrKysrKysrKysrKysrKysrKysrKysrLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0NCj4gIDEgZmlsZSBjaGFuZ2VkLCAyMzQgaW5zZXJ0aW9ucygrKSwgMjA5IGRlbGV0
+aW9ucygtKQ0KPiANCj4gLS0NCj4gMi4zMS4xDQoNCg==

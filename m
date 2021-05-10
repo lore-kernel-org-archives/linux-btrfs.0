@@ -2,243 +2,100 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1506FC43470
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:40:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFAC0C433B4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:49:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CFE6961421
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:40:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C2A4561584
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:49:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232036AbhEJNlF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 May 2021 09:41:05 -0400
-Received: from mout.gmx.net ([212.227.15.15]:58251 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1351561AbhEJNLc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 May 2021 09:11:32 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1620652221;
-        bh=ek9dOklXAVhiUNCc5tblaWDG9yuRkjDTbOwHjd+UyyY=;
-        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
-        b=QaxYKJ1ld6k1druT6s7ONy/8ru18Q9aq6RXwdKi0EFccGe006iET8rUZL9YeAQhgG
-         RrjbvgCcOTrhNH5P0YTGzYm79moX0kplsQbQM6IAnyUiFlTFXBhadOUWFERq9izowA
-         E7Dg2FvEwzMeB4zQkuBhlFUTxjbyh4qdPo4g5zCM=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([45.77.180.217]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mnpns-1l9jqo16Ve-00pJRG; Mon, 10
- May 2021 15:10:21 +0200
-Subject: Re: [Patch v2 41/42] btrfs: fix the use-after-free bug in writeback
- subpage helper
-To:     Ritesh Harjani <riteshh@linux.ibm.com>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20210427230349.369603-1-wqu@suse.com>
- <20210427230349.369603-42-wqu@suse.com>
- <46a8cbb7-4c3a-024d-4ee3-cbeb4068e92e@suse.com>
- <20210507045735.jjtc76whburjmnvt@riteshh-domain>
- <5d406b40-23d9-8542-792a-2cd6a7d95afe@gmx.com>
- <e7e6ebdd-a220-e4ec-64e4-d031d7a9b181@gmx.com>
- <20210510122933.mcg2sac2ugdennbs@riteshh-domain>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <95d7bc8a-5593-cc71-aee3-349dd6fd060d@gmx.com>
-Date:   Mon, 10 May 2021 21:10:15 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.0
+        id S237170AbhEJNtE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 May 2021 09:49:04 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:24578 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232483AbhEJNk5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 May 2021 09:40:57 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1620653994; x=1652189994;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=XSRhxM+G5WZK1ccouFva6ftK9cB1n/tpIByythmG9Zc=;
+  b=E7d6CZr5I/CSeXf2HRQGHkIhJeaTPptwCoS0nyvdxlz6wclb467MkQ/u
+   wdcKqSzXKTfrepW7m3sTBIibGOU+4un4SiiG+tXqP3FOaewYKpQQ2A98s
+   aMWJGikuFTyVVYXDOGScjIFqp9uLQ7A4qFOTS0l89DqLCRBl0wllRI3s/
+   1s01I2Z7gOR4afaz/Dh46gJMgQckkbt8+TcnGE132JIPo9BiV+Q4GgkNr
+   iruLWOGhA+5cUpvJXNvTY/Ew69VTmqMla862TnhQJbawohzykCXddX8Rk
+   ZvQcinUM9+LylCQeM1crII/2Z5Ldvy4MZzbHgZYInzZpCn+kkHmijy4Be
+   A==;
+IronPort-SDR: wUUA6Rno9LJqLFcOGSlrQ5QdgFX4W0vqhutDpWG2jlFb9fBOKwe4Dtsoyen6ISKXggOehtlvv1
+ Bii8fdlO2y5UraKe5ooFkeSdLsdnrvnodAxrxOliWOQBI1qc3LEdf8blwRsQgWY4qagCZOA1pz
+ tYQCRozKMvSNyCoxspM/lnbPdiRB/N8sjXtBIO5ViwqTZiv2a7gPVyWocp/fRSoyMXYOpWcZmZ
+ Sl7jZ6jbFhcuIyThIX4RtthK6BQAWM8ebXSUXCBBbiTppZHB9m9khM6Ypxf7SM/kReP68majeD
+ jD0=
+X-IronPort-AV: E=Sophos;i="5.82,287,1613404800"; 
+   d="scan'208";a="271624363"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 10 May 2021 21:39:51 +0800
+IronPort-SDR: m4haG4ARaLdrZDDT1yn01QAxHiqD8PJC2VLu53JPONg41Tz9fOTfP2fUmri0+O7qe7sCbUCByQ
+ cF+ctRVS01juqNpk6jySSBsob/7PO0Mff2GR1gw0xXxN3LRZIF0/99PihIqf85nJi13yP2R7zg
+ UdCwLMcgTXKNT+ZAU8e1cLtWU5bAEyp+EYbqEip4RzdJXxuIbYMpU3ai5QVWrjFCJr/7CVXHBm
+ 0wey+D5BClGObueooCiZS9B5RLApEOawnTe6dkKHJk1HWMJeO8waoOzqXMEdbKeu+xHDzLji+3
+ ic1YXIT4GZtf5OX3/xWzAcT5
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 May 2021 06:18:25 -0700
+IronPort-SDR: eT8smzeaUZ7g/sL0vBe2FL/bR8FwFSAF5mjHO21ykF+P92UDW7MZTX5anQhf4xRuXbbLC1twyR
+ B6em7KOyl9oTFX+mqH45k9knFVuruHnJVsoFkDtkR0jLYoIysi/5uelQHImg1GjXOur6Nqtf/X
+ x0O2VfsVTsJYlUw3z6Y9g8JIPFvOyjxEP3TGvfM0eQSgn5v1Ynllaz0fqAsqq44AA66thDMPg8
+ OvV+7hKzmP9ZZWfWv/YNBkLw/3b8ez4d2EDqvIx2F178CwZ1wT4L/FpgT+1baOZ7kCdCmMFUeS
+ OBs=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
+  by uls-op-cesaip02.wdc.com with ESMTP; 10 May 2021 06:39:50 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH] btrfs: return 0 for dev_extent_hole_check_zoned hole_start in case of error
+Date:   Mon, 10 May 2021 22:39:38 +0900
+Message-Id: <145b97e8743f76c436971d3066d94d5073e7ffa0.1620653896.git.johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.31.1
 MIME-Version: 1.0
-In-Reply-To: <20210510122933.mcg2sac2ugdennbs@riteshh-domain>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:MqMVn2Fskl3SWhCgqBTV08r3PtJJ1v2Hn067mxC21YP2VBpImsH
- 6h1PthdzO8PzARMkrcxuBFEi/P/+SRd59XqD0pD1VcbdhGpgZg6TwxLUH/dLInoAm1acj+c
- zRBZA6qaHmAsRkFv2fIKAr3y6Am0CKFvh7yQ8LRgoBBddxWVU2aMl/W06nlDsV33T/dDjAT
- 4x3vEIsEeB9LHh6fK2GYg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:XLiKslcRlIM=:qyM6tXspglNFAYvIFbz5Ng
- MzvpAjwGtPvTTpS+CQW9VEZQFVQP45ZQ8FE3FoHbqLH90tkRPA7zANVb9EQCj0MRQ4DlLhCAn
- KiCaLVllyIDMh3hVaHRMYUdgKi8+3OU4NdOK+4e4Ne+uMrat2YYkAhBWFOrq0uhKJUj7ruLmn
- nXpRxB6/mcAtoiKfVIL6EiS6cGUlWljFPkmLuZblVk6MzZBaEbt91bqC0/Itz7onVPK8Oz3OE
- aHcYavUs5Q6zZIgdWz9ub/RW/DAayg3jj7J4FKOz4HFihzxDUdTu+I+ojcuJwnxJXFULv6HoX
- 8/tbcSVkW0NjvfCme0VLVwi7AIAXnwy5mRJpaO3nBwt+X4EwxkyyUyjsJeh1umEVlZnBBr5qo
- WG66F0TufLkTw6UbFGy9wv0BTczhyI7R4JVimXwgOEKOGDKLFT71hcNbw+5sMhFuMt0JqBqLz
- Lrr93+naxZhX0jx7GMdzaP78Myb7t98zKJCirDOauPk0vttS+AV9gK/x+QFewtyfztqd7mAe2
- N95iY5n/zwz9xFp3IL4hZ9yd908SevvtvBOrdhBUbqpP9OuPj5wqfvgCmiDMQQGHhrWgfwIU3
- 5KEGTKNv/vuVEeZv3hQE0ntlO5yq7aSbnj5RO8As9GYDkGtLCk07R+MZJIq3Q3BUKqDJ/9bnR
- zfveWgNBPopJN9SPfjPeRaecLVfyCUX0aiccH4NWpHcoBtMUPDIa5t6zO2Ato/+NQIV5NeHMz
- ZIGP0810fErKXo1Sqkw4xIDW1GtudupW5w0kIvN2fKkMWG883AraYMXBvYB8ksO5a9n/TxZuq
- HDAQmmmzhqgMn00yEkhhE6FtJQGxakIICUDFEmQI1z2Y/xvaR/xkRAlJyMblV3kQFVjWp9gpR
- EK+jHqySazrVFAQ7DN0ehELa1E49QH6Vz39KS7X6m/V7cc4EeqbdzqasVBsjS2k0wOwk4P0E8
- 3GJFruojbdUjjEgsWVdu/R+L+HTdiznS83opYeurNR4xACPxltli1NBxNJxMFFx9UvBk3Nu+E
- OTEm0NFOfUFID+HT5UgrfxTILlI6Xbi6qT+ReYVPXXeDEfWC8MPbt/ZtX0UmpkgoDqICbePpM
- if21eof8ixNKg9p8SswPCt4NaS5/1Q8Pa9b3qR7qrOxVY8IWB0kVpmI82dbHA/kfYbteF+5Af
- DD6cD/JWaobsegu+RfLuB5rjuXiH16K6L4LMvSz/OWdobOLgp8o88QxkksBFQ55VlzWDMLcKC
- NyVieFueA1iAFwHgY
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Commit 7000babddac6 ("btrfs: assign proper values to a bool variable in
+dev_extent_hole_check_zoned") assigned false to the hole_start parameter
+of dev_extent_hole_check_zoned().
 
+The hole_start parameter is not boolean and returns the start location of
+the found hole.
 
-On 2021/5/10 =E4=B8=8B=E5=8D=888:29, Ritesh Harjani wrote:
-> On 21/05/10 04:38PM, Qu Wenruo wrote:
->> Hi Ritesh,
->>
->> I guess no error report so far is a good thing?
-> Sorry about the delay in starting of my testing. Was not keeping well si=
-nce
-> Friday onwards, hence could not start the testing. (Feeling much better =
-now).
->
-> So -g quick passed w/o any fatal issues. But with -g auto I got a kernel=
- bug
-> with btrfs/28. Below is the report.
->
->>
->> Just to report what my result is, I ran my latest github branch for the
->> full weekend, over 50 hours, and around 20 runs of full generic/auto
->> without defrag groups.
->>
->> And I see no crash at all.
->>
->> But there is a special note, there is a new patch, introduced just
->> before the weekend (Fri May 7 09:31:43 2021 +0800), titled "btrfs: fix =
-a
->> possible use-after-free race in metadata read path", is a new fix for a
->> bug I reproduced once locally.
->
-> Yes,  I already have this in my tree. This is the latest patch in my tre=
-e which
-> I am testing.
-> "btrfs: remove io_failure_record::in_validation"
->
->>
->> The bug should only happen when read is slow and only happens for
->> metadata read path.
->>
->> The details can be found in the commit message, although it's rare to
->> hit, I have hit such problem around 3 times in total.
->>
->> Hopes you didn't hit any crash during your test.
->
-> I am hitting below bug_on(). Since I saw your email just now, so I am di=
-rectly
-> reporting this failure, w/o analyzing. Please let me know if you need an=
-ything
-> else from my end for this.
->
-> I will halt the testing of "-g auto" for now. Once we have some conclusi=
-on on
-> this one, then will resume the testing.
+Fixes: 7000babddac6 ("btrfs: assign proper values to a bool variable in dev_extent_hole_check_zoned")
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks for the reporting, I was still just looping generic tests, thus
-didn't yet start testing the btrfs tests.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0ba7b3c5933b..e020447b25a2 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1459,7 +1459,7 @@ static bool dev_extent_hole_check_zoned(struct btrfs_device *device,
+ 		/* Given hole range was invalid (outside of device) */
+ 		if (ret == -ERANGE) {
+ 			*hole_start += *hole_size;
+-			*hole_size = false;
++			*hole_size = 0;
+ 			return true;
+ 		}
+ 
+-- 
+2.31.1
 
-But considering no new crash in generic tests, I guess it's time to move
-forward.
-
->
-> btrfs/028 32s ... 	[10:41:18][  780.104573] run fstests btrfs/028 at 202=
-1-05-10 10:41:18
->
-> [  780.732073] BTRFS: device fsid be9b827d-28ee-4a5e-80a0-e19971061a58 d=
-evid 1 transid 5 /dev/vdc scanned by mkfs.btrfs (21129)
-> [  780.759754] BTRFS info (device vdc): disk space caching is enabled
-> [  780.759848] BTRFS info (device vdc): has skinny extents
-> [  780.759888] BTRFS warning (device vdc): read-write for sector size 40=
-96 with page size 65536 is experimental
-> <...>
-> [  784.580404] BTRFS info (device vdc): found 21 extents, stage: move da=
-ta extents
-> [  784.878376] BTRFS info (device vdc): found 13 extents, stage: update =
-data pointers
-> [  785.175349] BTRFS info (device vdc): balance: ended with status: 0
-> [  785.367729] BTRFS info (device vdc): balance: start -d
-> [  785.400884] BTRFS info (device vdc): relocating block group 244632780=
-8 flags data
-> [  785.527858] btrfs_print_data_csum_error: 18 callbacks suppressed
-> [  785.527865] BTRFS warning (device vdc): csum failed root -9 ino 262 o=
-ff 393216 csum 0x8941f998 expected csum 0x9439dda4 mirror 1
-
-Checking the test case btrfs/028, it shouldn't have any error when
-relocating the block groups, thus it's definitely something wrong in the
-balance code.
-
-Thanks for the report, I'll give you an update after finishing the local
-btrfs test groups.
-
-Thanks for your confirmation, really helps a lot!
-Qu
-
-> [  785.528406] btrfs_dev_stat_print_on_error: 18 callbacks suppressed
-> [  785.528409] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 1, gen 0
-> [  785.528857] BTRFS warning (device vdc): csum failed root -9 ino 262 o=
-ff 397312 csum 0x8941f998 expected csum 0x9439dda4 mirror 1
-> [  785.529166] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 2, gen 0
-> [  785.529412] BTRFS warning (device vdc): csum failed root -9 ino 262 o=
-ff 401408 csum 0x8941f998 expected csum 0x667b7e1e mirror 1
-> [  785.529714] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 3, gen 0
-> [  785.530321] BTRFS warning (device vdc): csum failed root -9 ino 262 o=
-ff 393216 csum 0x8941f998 expected csum 0x9439dda4 mirror 1
-> [  785.530637] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 4, gen 0
-> [  785.530882] BTRFS warning (device vdc): csum failed root -9 ino 262 o=
-ff 397312 csum 0x8941f998 expected csum 0x9439dda4 mirror 1
-> [  785.531185] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 5, gen 0
-> [  785.531428] BTRFS warning (device vdc): csum failed root -9 ino 262 o=
-ff 401408 csum 0x8941f998 expected csum 0x667b7e1e mirror 1
-> [  785.531719] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 6, gen 0
-> <...>
-> [  803.459877] BTRFS info (device vdc): relocating block group 104993914=
-88 flags data
-> [  803.776810] BTRFS info (device vdc): found 29 extents, stage: move da=
-ta extents
-> [  803.979572] BTRFS info (device vdc): found 18 extents, stage: update =
-data pointers
-> [  804.276370] BTRFS info (device vdc): balance: ended with status: 0
-> [  804.427621] BTRFS info (device vdc): balance: start -d
-> [  804.454527] BTRFS info (device vdc): relocating block group 110362624=
-00 flags data
-> [  804.623962] BTRFS warning (device vdc): csum failed root -9 ino 282 o=
-ff 684032 csum 0x8941f998 expected csum 0x605aaa22 mirror 1
-> [  804.624147] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 15, gen 0
-> [  804.624277] BTRFS warning (device vdc): csum failed root -9 ino 282 o=
-ff 688128 csum 0x8941f998 expected csum 0xe90a7889 mirror 1
-> [  804.624435] BTRFS error (device vdc): bdev /dev/vdc errs: wr 0, rd 0,=
- flush 0, corrupt 16, gen 0
-> [  804.624682] assertion failed: atomic_read(&subpage->readers) >=3D nbi=
-ts, in fs/btrfs/subpage.c:203
-> [  804.624902] ------------[ cut here ]------------
-> [  804.624989] kernel BUG at fs/btrfs/ctree.h:3415!
-> cpu 0x1: Vector: 700 (Program Check) at [c000000007b47640]
->      pc: c000000000af297c: assertfail.constprop.11+0x34/0x38
->      lr: c000000000af2978: assertfail.constprop.11+0x30/0x38
->      sp: c000000007b478e0
->     msr: 800000000282b033
->    current =3D 0xc000000007999800
->    paca    =3D 0xc00000003fffee00	 irqmask: 0x03	 irq_happened: 0x01
->      pid   =3D 23, comm =3D kworker/u4:1
-> kernel BUG at fs/btrfs/ctree.h:3415!
-> Linux version 5.12.0-rc8-00160-gcd0da6627caa (root@ltctulc6a-p1) (gcc (U=
-buntu 8.4.0-1ubuntu1~18.04) 8.4.0, GNU ld (GNU Binutils for Ubuntu) 2.30) =
-#25 SMP Mon May 10 01:31:44 CDT 2021
-> enter ? for help
-> [c000000007b47940] c000000000aefdac btrfs_subpage_end_reader+0x5c/0xb0
-> [c000000007b47980] c000000000a379f0 end_page_read+0x1d0/0x200
-> [c000000007b479c0] c000000000a41554 end_bio_extent_readpage+0x784/0x9b0
-> [c000000007b47b30] c000000000b4a234 bio_endio+0x254/0x270
-> [c000000007b47b70] c0000000009f6178 end_workqueue_fn+0x48/0x80
-> [c000000007b47ba0] c000000000a5c960 btrfs_work_helper+0x260/0x8e0
-> [c000000007b47c40] c00000000020a7f4 process_one_work+0x434/0x7d0
-> [c000000007b47d10] c00000000020ae94 worker_thread+0x304/0x570
-> [c000000007b47da0] c0000000002173cc kthread+0x1bc/0x1d0
-> [c000000007b47e10] c00000000000d6ec ret_from_kernel_thread+0x5c/0x70
->
-> -ritesh
->

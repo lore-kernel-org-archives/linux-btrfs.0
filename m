@@ -7,81 +7,72 @@ X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9A92C433ED
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:50:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96186C433B4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:50:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C22D161448
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:50:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69AC96142D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 13:50:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235446AbhEJNvG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 May 2021 09:51:06 -0400
-Received: from mx2.suse.de ([195.135.220.15]:47256 "EHLO mx2.suse.de"
+        id S237505AbhEJNvJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 May 2021 09:51:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:51552 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S237505AbhEJNmN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 May 2021 09:42:13 -0400
+        id S241357AbhEJNor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 10 May 2021 09:44:47 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1164EB0BE;
-        Mon, 10 May 2021 13:41:04 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1CEF1AF33;
+        Mon, 10 May 2021 13:43:31 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 39C57DB226; Mon, 10 May 2021 15:38:35 +0200 (CEST)
-Date:   Mon, 10 May 2021 15:38:35 +0200
+        id 49BE9DB226; Mon, 10 May 2021 15:41:02 +0200 (CEST)
+Date:   Mon, 10 May 2021 15:41:02 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     Jiapeng Chong <jiapeng.chong@linux.alibaba.com>,
-        "clm@fb.com" <clm@fb.com>,
-        "josef@toxicpanda.com" <josef@toxicpanda.com>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: Assign boolean values to a bool variable
-Message-ID: <20210510133835.GU7604@twin.jikos.cz>
+To:     Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Remove redundant assignment to ret
+Message-ID: <20210510134102.GV7604@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        Jiapeng Chong <jiapeng.chong@linux.alibaba.com>,
-        "clm@fb.com" <clm@fb.com>,
-        "josef@toxicpanda.com" <josef@toxicpanda.com>,
-        "dsterba@suse.com" <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-References: <1614764728-14857-1-git-send-email-jiapeng.chong@linux.alibaba.com>
- <PH0PR04MB7416EC8C9020EAE3E074E21E9B549@PH0PR04MB7416.namprd04.prod.outlook.com>
+        Jiapeng Chong <jiapeng.chong@linux.alibaba.com>, clm@fb.com,
+        josef@toxicpanda.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <1620470329-27792-1-git-send-email-jiapeng.chong@linux.alibaba.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <PH0PR04MB7416EC8C9020EAE3E074E21E9B549@PH0PR04MB7416.namprd04.prod.outlook.com>
+In-Reply-To: <1620470329-27792-1-git-send-email-jiapeng.chong@linux.alibaba.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 10, 2021 at 09:37:58AM +0000, Johannes Thumshirn wrote:
-> On 04/03/2021 02:51, Jiapeng Chong wrote:
-> > Fix the following coccicheck warnings:
-> > 
-> > ./fs/btrfs/volumes.c:1462:10-11: WARNING: return of 0/1 in function
-> > 'dev_extent_hole_check_zoned' with return type bool.
-> > 
-> > Reported-by: Abaci Robot <abaci@linux.alibaba.com>
-> > Signed-off-by: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
-> > ---
-> >  fs/btrfs/volumes.c | 4 ++--
-> >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> > index bc3b33e..995920f 100644
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -1458,8 +1458,8 @@ static bool dev_extent_hole_check_zoned(struct btrfs_device *device,
-> >  		/* Given hole range was invalid (outside of device) */
-> >  		if (ret == -ERANGE) {
-> >  			*hole_start += *hole_size;
-> > -			*hole_size = 0;
-> > -			return 1;
-> > +			*hole_size = false;
+On Sat, May 08, 2021 at 06:38:49PM +0800, Jiapeng Chong wrote:
+> Variable ret is set to zero, but this value is never read as it is
+> overwritten or not used later on, hence it is a redundant assignment
+> and can be removed.
 > 
+> Clean up the following clang-analyzer warning:
 > 
-> Erm, hole_size is u64 and not bool
+> fs/btrfs/extent_io.c:5357:4: warning: Value stored to 'ret' is never
+> read [clang-analyzer-deadcode.DeadStores].
+> 
+> Reported-by: Abaci Robot <abaci@linux.alibaba.com>
+> Signed-off-by: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+> ---
+>  fs/btrfs/extent_io.c | 1 -
+>  1 file changed, 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 074a78a..cea58be 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -5354,7 +5354,6 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+>  				goto out_free;
+>  			if (ret)
+>  				flags |= FIEMAP_EXTENT_SHARED;
+> -			ret = 0;
 
-Thanks for catching it, I should have spotted that.
+This leaves the scope where the value of 'ret' has been used for
+something and it's reset to 0 for clarity. This is a pattern that we use
+and will not change it just to silence clang analyzer.

@@ -2,205 +2,199 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MSGID_FROM_MTA_HEADER,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9702AC433ED
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 23:56:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 591BAC433B4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 May 2021 01:07:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6957961164
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 May 2021 23:56:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2404461621
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 May 2021 01:07:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230003AbhEJX6C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 May 2021 19:58:02 -0400
-Received: from de-smtp-delivery-102.mimecast.com ([194.104.109.102]:47304 "EHLO
+        id S230063AbhEKBIr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 May 2021 21:08:47 -0400
+Received: from de-smtp-delivery-102.mimecast.com ([62.140.7.102]:41754 "EHLO
         de-smtp-delivery-102.mimecast.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S229599AbhEJX6B (ORCPT
+        by vger.kernel.org with ESMTP id S229980AbhEKBIq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 May 2021 19:58:01 -0400
+        Mon, 10 May 2021 21:08:46 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=mimecast20200619;
-        t=1620691015;
+        t=1620695260;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=UZ7ZGxa3N6VlA0EkLljz4xlFBBJyG/bT+mL2wkY2cs4=;
-        b=UwgnUx6EbUBbfk/rQgTYwyfui1XZvVjsmZPx22FzW/GMNJm3Qw+KE032nwBJoyxdS1iE3I
-        WIKFwBj7Y3SCbnMP7xsZEd6QuNs6iRzMeO1q3dnyN3QQ2DuPfB91OtIIvQd4zO6Fi1D0lb
-        EmxU6pn9pEW7vaZOt7Ey1/VEikax4gU=
-Received: from EUR05-VI1-obe.outbound.protection.outlook.com
- (mail-vi1eur05lp2170.outbound.protection.outlook.com [104.47.17.170])
- (Using TLS) by relay.mimecast.com with ESMTP id
- de-mta-37-wPD5vpk3N7qzcm9QE9OKNQ-1; Tue, 11 May 2021 01:56:54 +0200
-X-MC-Unique: wPD5vpk3N7qzcm9QE9OKNQ-1
+        bh=SNynS9gezeld+ZFFgTRwM/R7x29vwlv+dNtw0DLwYlM=;
+        b=LzrqWZ41jv8v2M52GmDro9x36wGMynnTJg5gPDZZosVIt/qX1jwS/qkspaW2i7xMTfDbSl
+        FHxwTQMXjwGNx5odC3U2AKFuDmNU6RM+BGAfu0PlxVb+O7vcBzT9MgRLXJsq9sGg16+AxW
+        sZZzy8RZNGCQTrm20r64UOLSFOaEfwk=
+Received: from EUR01-DB5-obe.outbound.protection.outlook.com
+ (mail-db5eur01lp2051.outbound.protection.outlook.com [104.47.2.51]) (Using
+ TLS) by relay.mimecast.com with ESMTP id
+ de-mta-36-vfGLF4LgPAyXrpyK0J38Yg-1; Tue, 11 May 2021 03:07:39 +0200
+X-MC-Unique: vfGLF4LgPAyXrpyK0J38Yg-1
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=VzUS3rD/iHl1Q7a6aBjxf5hbgTzRPC5IdX+bkGZF4yChj4n8+ddZSCQMPTSBDW32RqG6gtypw17s0eu5twztek/xO2ASLIguVB0LZqPPXjexsnQ+5QfeOj1xytaFoMZWzqjQfOu+jABtY72Fiui+blvdF8lGmSxXQ5XDSGxSWnKwtOvSa1nzrs/8ZSAA+i02zeIPB7Lc0m2JcdpMe5V5nSpmt7kMPbZ/SJcdRG/wfChwCPACSo2DHP/CzsMI55Z/t7skKGxQWHa2XLZzwkIDC9oYc0NLoDoNsKI0iUE0hvF6UPSVvvJrvBBu0L1iQESR4vRRycd00jA42mmUixPLkw==
+ b=C7XIHoQWpXmsPIzJgYnsIfVwxGdtjmgCRIkak/S25NY89pcC4KfI34OhD+aKFIjXAO/mCGTOQy5oDLvv4tomNbQxYdfmvz+DVomDB10HchWcB83nz2nYVNWvhq7nx6VuDsWSlPjU24PL0svwArn59uj7vgob2AbqH3RhA3hp0tNSn8g0NhhfoICAG+d05h6t1ZAP+fHsj/ZApPCgf/8IvLr961cbA+HRSBKy3vAxWehJl6Oa0f3m9+BnyNLRl6uxEk4OcRouMkGBKE3p4TeU/IteVt8mXE0Uw3QOvY/Wqar5WQ46sZtBm8SrMv0PnagxTxX5480GYtd2mYNT9hlD+A==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=CjCSowAONadVbkI3QoKmaNDOJwS3ATfvpkhMrXx9Xvk=;
- b=dvHeFQBpP4rpxvpdr6fj08GEeeWsLKYzLedNd7KZbK6c0RXpBYtMQ+9pSH9iPkAOvfKOjEpzS7mEna1/7YUULPQWI1DcTxWfj+4sBZ4PsPN+CBfET0+UXFaVN5xKYrz8U2oLzcNLlLMWmi1f0kKhbsRkxRuAvdkaruUq6L6pOuyFU+0LkejNVfmgUqMNAISqT6stgZL1ncHW670Ubl3ujIjN8CX7Qb4cq9VSP/4MLWS01MJ2wJqpl6p0dT3HK5M2574h75jlZvzqcckjF1nzcDvfQnQ9LY04x/GDaxDpi50Bb8arfQu/9N0OGxWFhWNtGZyWclgD9uHmtoPRVqIdTA==
+ bh=Vl6BF3rdZGTa1uyhSdOn7ocZ7xIrFtyN0m6QFRDp6hs=;
+ b=iJzr8COdT25wL51iI+mx4FSYHlkq71PbQiJnyn5XTgR+Yyzx0f9Aa3CA8OG/3KqUJkdOCYImFgIRKLlogNlDsHx3WFkDm2dfl0MXigve5cgI3L3SsXB0t6HjHgH0L1Vuyt7p/ymKpmMo5StMJwCxZStNd/ydn0Un5FQQ2d7rNjiwFmPcMHCh+kYDUUE7WFmYwx7rhxDnNTyBuUlLIMkL3hJl/FAHGrBwStwNrt02J1NeGtw7EQstcl3HXOrQGU42nnADEZw7KUi5+a9CJ4TgcD6x6xi41qJxYxAQRyHq//QNih+2XUayUmt4td5S1vxro5XpB7DkLSLbZKXfGlRDRg==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
  dkim=pass header.d=suse.com; arc=none
 Authentication-Results: vger.kernel.org; dkim=none (message not signed)
  header.d=none;vger.kernel.org; dmarc=none action=none header.from=suse.com;
 Received: from AM7PR04MB6821.eurprd04.prod.outlook.com (2603:10a6:20b:105::22)
- by AM6PR04MB5702.eurprd04.prod.outlook.com (2603:10a6:20b:b0::33) with
+ by AM5PR0402MB2898.eurprd04.prod.outlook.com (2603:10a6:203:9a::12) with
  Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4108.28; Mon, 10 May
- 2021 23:56:52 +0000
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4108.26; Tue, 11 May
+ 2021 01:07:36 +0000
 Received: from AM7PR04MB6821.eurprd04.prod.outlook.com
  ([fe80::85d1:2535:1b6e:71d7]) by AM7PR04MB6821.eurprd04.prod.outlook.com
- ([fe80::85d1:2535:1b6e:71d7%7]) with mapi id 15.20.4108.031; Mon, 10 May 2021
- 23:56:51 +0000
+ ([fe80::85d1:2535:1b6e:71d7%7]) with mapi id 15.20.4108.031; Tue, 11 May 2021
+ 01:07:35 +0000
 To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <20210503020856.93333-1-wqu@suse.com>
- <20210503020856.93333-2-wqu@suse.com> <20210510201431.GC7604@twin.jikos.cz>
+ <20210510204141.GE7604@twin.jikos.cz>
 From:   Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH v3 1/4] btrfs: remove the dead branch in
- btrfs_io_needs_validation()
-Message-ID: <07444aed-81a3-4f1a-aaf4-e3462167383f@suse.com>
-Date:   Tue, 11 May 2021 07:56:42 +0800
+Subject: Re: [PATCH v3 0/4] btrfs: make read time repair to be only submitted
+ for each corrupted sector
+Message-ID: <67f8a098-3e54-da13-129c-7dce08e1d310@suse.com>
+Date:   Tue, 11 May 2021 09:07:26 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.10.1
-In-Reply-To: <20210510201431.GC7604@twin.jikos.cz>
+In-Reply-To: <20210510204141.GE7604@twin.jikos.cz>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
 Content-Transfer-Encoding: quoted-printable
 X-Originating-IP: [149.28.201.231]
-X-ClientProxiedBy: SJ0PR03CA0300.namprd03.prod.outlook.com
- (2603:10b6:a03:39e::35) To AM7PR04MB6821.eurprd04.prod.outlook.com
+X-ClientProxiedBy: SJ0PR05CA0191.namprd05.prod.outlook.com
+ (2603:10b6:a03:330::16) To AM7PR04MB6821.eurprd04.prod.outlook.com
  (2603:10a6:20b:105::22)
 MIME-Version: 1.0
 X-MS-Exchange-MessageSentRepresentingType: 1
-Received: from [0.0.0.0] (149.28.201.231) by SJ0PR03CA0300.namprd03.prod.outlook.com (2603:10b6:a03:39e::35) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4108.25 via Frontend Transport; Mon, 10 May 2021 23:56:50 +0000
+Received: from [0.0.0.0] (149.28.201.231) by SJ0PR05CA0191.namprd05.prod.outlook.com (2603:10b6:a03:330::16) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4129.20 via Frontend Transport; Tue, 11 May 2021 01:07:34 +0000
 X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: d653f99f-27ca-4881-2b54-08d9140f47ff
-X-MS-TrafficTypeDiagnostic: AM6PR04MB5702:
-X-Microsoft-Antispam-PRVS: <AM6PR04MB57020B9B3D70746F64A7E4E9D6549@AM6PR04MB5702.eurprd04.prod.outlook.com>
-X-MS-Oob-TLC-OOBClassifiers: OLM:9508;
+X-MS-Office365-Filtering-Correlation-Id: 16ef890f-00d8-4581-4e82-08d9141929ad
+X-MS-TrafficTypeDiagnostic: AM5PR0402MB2898:
+X-Microsoft-Antispam-PRVS: <AM5PR0402MB2898B6AD506E8D5D0D709F26D6539@AM5PR0402MB2898.eurprd04.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:389;
 X-MS-Exchange-SenderADCheck: 1
 X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: ZB3UFETzyHO4XMlMsGKoMyknEU3vzbmh6CEc9vMm1yaM7e+qootp1qw+vkd1ExMVATRmGUR1QLn2bTcXrJ5b16EP1Vtp8+BahEW9/+lPPldsXg+LoXHrZFbsMqRvp8C/OeOl01bHa69z+i7NFkgk5S4BI8b6KKGG0N5DRw9VbHd2Y+OcnSyI1pamVk7ENyPj/6QS/GyCR7zcB4GO/s1B9bmOJXGABZ0Z9crFJRSCV8QzMVkPcLVTcfrIL7C/FWLpKBiSi933rXtdqZjkNSL+Dwt/7mHvhhvPStwMTOXbVqEarnKX6CNpqn8QX+PjJe1XlAhNo00ZW92P/Jt4eLI18tMSflmwig4qCWaeoin7jSJ45RlX1E8BtH7IX1+e5ggDUgtV+OzyYvcfiiWWXO2A9bfPMj/GcfR50epR/034Js4BoxLQp2ax3rcwft9QTK7QNsGnBSqFsFPyn1wbkmDZaBrUawl8n+69jtU9BoqB7RHhfN5z8A3bXfsAldNKs95N1fh7xmfoViJMIptc/4DOJ0EPM9V99WtBPDG5yF2/FeppOfLHvIkpSFZxaTEeaVxAR99ZSxjkmJAxDDiClU6Utriy0Xb1D95aMSMgydA7iZCVgTMlJWVAaJC4i5j96xjiSW53DtcxkEjqnGE14cFP0qFdG0AEOy9zdRL/yXYQDfwkmBJschaYm/5K9u2VaiGXhnzmXTzaD75T91wt9r5QIrn0e2Ek+PzXRsq3RP2IOWk=
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:AM7PR04MB6821.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(346002)(136003)(376002)(396003)(366004)(39850400004)(16526019)(186003)(5660300002)(36756003)(6666004)(31696002)(66476007)(31686004)(478600001)(2906002)(38100700002)(6486002)(66946007)(52116002)(83380400001)(8676002)(38350700002)(66556008)(26005)(8936002)(2616005)(16576012)(956004)(316002)(6706004)(86362001)(78286007)(45980500001)(43740500002);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?egXFUAQdiXN4Iy3tu1LH66yP4//cFn1Cmoaqr8HG7/7kDdp1YGCAolAool1n?=
- =?us-ascii?Q?cy/LNGyl3xBtNAcEYgO1S2mFRFKpi1BH0GFnWjVgYvvR8+go1W2vMDxltRNi?=
- =?us-ascii?Q?P2RAQM610Hcfd1EZfj+mZBtn+PFrgy8PjiICFAqD61v0aRsbML4kCiNf/uVO?=
- =?us-ascii?Q?/UqBFNrd0T9vXmgrGPbQAt42efXrNXgSx5kLkffDSyb9hO+CvB9xO88zenSt?=
- =?us-ascii?Q?kXOg70EBTba7xHOuWJxKkuM4U+l3c18Z6UsV0IaWcqr34bUhRehD7IvbcZjR?=
- =?us-ascii?Q?tDjvZTleI3uCnvpDyOEmdJwLfdLi3gqkF8qKrZCmngnf8y0VFuzGJ/ZcTsE6?=
- =?us-ascii?Q?sRhmTVzKuvoJQW94jSf0nCDQr8acqbKfE6stFdlc12wa0X+aO6FNLXuqBCwk?=
- =?us-ascii?Q?BUOhBqBa0208KHpYy4QlH9aBUAGSu/6dIy0w107aL+Yk++NvHi7Qmp8tOyOK?=
- =?us-ascii?Q?D2btqOJ0QmJb0mkL4w6F5pmb6pp/C7xt5bkSff7IbFaUkicu0knvbAGzqykK?=
- =?us-ascii?Q?jwY+ICDlSMkgVBpqtewY45Knjj5ToIHX/2ld2Ix3Cikh7C8KgABRIRUWIvAn?=
- =?us-ascii?Q?KFlZK1giiRI1O5EcFfzHxwvcUkrExlcJdoaSzer4KCR+p42AutosuKhWPrt7?=
- =?us-ascii?Q?N9wraFYZM1+GAFFbJi9EZiFgd39wXLlokSvI5uUatuSopKEaW9VxMPodh8Qe?=
- =?us-ascii?Q?1Apqq0tyZWMe1s/j3kuMCSYwJTNZRx0HYcnP/8MZv8LQHg48uexTS7cYiU+J?=
- =?us-ascii?Q?WOGXKuoDHWw4/1CodrRiHbTt2xI+LFSZEJFddOtAPY+ZHvFWtGdqmUT4A+UK?=
- =?us-ascii?Q?IfufzfDNs7FzagdpDb/OPaLnPacaiK/4pn9y4KmMZfDMFn588AxBahuTfwid?=
- =?us-ascii?Q?GGkplwzQrzdCDq+V1N3NRpFdkn/eimrbGvQrWkgSVIvuSUePvczLINFr8bEC?=
- =?us-ascii?Q?KAPKjxN0ts5hRR90byDa0J22j99/8G/hOYeXjgYskP7XPARTTJT37V+EXVnJ?=
- =?us-ascii?Q?EtX/C3o7V6Gjfi75LB6Xov7cO7N6MoHKoCKz3vc1IH4iPPFhaTKR5QUa/dVQ?=
- =?us-ascii?Q?YwI1NMDtVuAcVz+pAObgVJ7C7oj2xJPwf7A3AuWM8nEUdUS5eu+AuJXt8Qsl?=
- =?us-ascii?Q?7SlmeBJoC3I9o8V6SX4THHs253VeggbObsAKuy9++g7bEqXtmlza5tOhLtJB?=
- =?us-ascii?Q?ktayggMwlU97qPnC0R4NC3T1FU9/79raQlfx15ZrsaIZ6B0PJVjPM0kfZTDd?=
- =?us-ascii?Q?dbcWJW7SHZj2g7zNrvVkznxR5Pbzb8iD1W1cUpt6Yy0FFCoSvr7A2QkdF5aN?=
- =?us-ascii?Q?sb/DQdo+wdkeuwQZNXDaC+39?=
+X-Microsoft-Antispam-Message-Info: v4GgBT0YjmJHiiunOkEBF7ItScBi10KYzv55C7Gwa2uXlUbtAOl5OzrbIAOcl8JScg1HwaFGkjxCfL0cSdAER60x5m3OBgQiVLRXVTQOHZPaDj94GrWDF36pCkYUR7T5Rwu83sYSISEU0HeiAHZLBr8ZZyC03QVequuDY6EpFk3Lkx++Kh3BzmN0KMzud7qjbRp50u++pvE9PfArMivzlk4/Gy7tC7hklVWVUswgcqfcd8akcJqbAfQZaiuGVGv4cpSyQYSXH111rm1fT49+FzfnjPsDqn+yVbX1xLzS05P9aVfOLzo03nRri1GFfIGS8KU+wqRfr7ybYUo1EepHETSO30lPB9pws29E6u8Wabe7QWhPgtQHUu5gpFvrZuqF+PMnJeulMgyxLSDzMxDF17/fmP9CdXDjl+ohmgJyLOUqXYi51X1rOpPyHgKvWVxy06r2IIeX85QdAlFVcS9+12jsa45xrsEFRpKUfnKH+OIt+2Bfw5CDhjlq44Sfjf+GLqlL2S72DCRmuxc1rUNL5+tB8TEfiVdaxcnWaQr+1VBCfEOjMbr8TEZBQCKYkYuIPL33CciVv3jOuT8d4M7IfMUk7mEAvV/2hrCFKlPebUhJoToVqAXiIoNNahA6kzs28zyeqTJZML7di5tPvk4dByGIxgYrGWxw3KP9bjD0tt7H0oLvbCjX+KfKf2CWp9J5ogtdTMpZMFvFub5kFwfjEc2yyg20v6cxWJqJyIkzPweRc5ZXIUVWhdHll6QCs/VO
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:AM7PR04MB6821.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(346002)(396003)(366004)(376002)(39850400004)(136003)(31686004)(66946007)(26005)(16526019)(186003)(66556008)(6486002)(6706004)(16576012)(316002)(2616005)(956004)(83380400001)(31696002)(6666004)(38100700002)(66476007)(2906002)(38350700002)(52116002)(86362001)(478600001)(8936002)(5660300002)(8676002)(36756003)(78286007)(45980500001)(43740500002);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData: =?us-ascii?Q?18MWPEv4jBYA1e2cPT0JqlVufpaZKemUqWazarXCo/hVQcLu0D0XefEScU29?=
+ =?us-ascii?Q?SWGnNCNKX6AQRoxWov1Dxu6cSj4Glj7acXGhKa1tuOA1mlPAAMk3qdRcmP3q?=
+ =?us-ascii?Q?duLUgMRhik27IumS3+ktMRQHFM5fvJA7VuO6HltPLLhnRWu+98lxmOsaaA1e?=
+ =?us-ascii?Q?Kx1qSCHsUkHfukIqcITmDMz0vknqjOV2Z5J9j4dn59GmH4QSr2A5e45Y7hmG?=
+ =?us-ascii?Q?FQJ3M260EYuzHYrq8ePnmiQz+yV+1tRUYUmild4v0g54fZoZ0BhXPsuSBLCj?=
+ =?us-ascii?Q?4dUudmUrM9rGL6sQ6t2dSW5aD1V5CPdZKZQokss4XQyPvt9SXz3WhTz1bghu?=
+ =?us-ascii?Q?PGeDEZKQGCQVyg5SpK72BFRfsz+GxMhncH6C+UdCCqcD8IXoGPIbxNp6lZGJ?=
+ =?us-ascii?Q?cOt84iP8uhP/CfPq+itwBqckGd26QlYQsBIonkfb51NPMcXMMJOh/7T8Ufh8?=
+ =?us-ascii?Q?qC2tzLeUeDX15vnihjDGU2fQ/QB+tELsVwIwd2BkKREcO2qk1Z2h9QmErLa7?=
+ =?us-ascii?Q?q2SroRPE9dd8h6q4hJ47TrRAsigLs58AQdM14WCUHL437g+voBfR1FlCfoSa?=
+ =?us-ascii?Q?Ep0BpcjYFfBzjKua1MgQgXKKL74teFTz3VqImFHh8koRPhev3le70Tl7G8Em?=
+ =?us-ascii?Q?HI1pjhgOUvfrqKFJu8bLTjBryZxVaJT5OzjoFyXz/WCIf2k1a0waTJn+o6BT?=
+ =?us-ascii?Q?tA3Ae9FnyMFOPGmzh1+RMkChHD0sz9vSpj0iobL0KTbdTqdz6oi2Ip7aGET9?=
+ =?us-ascii?Q?v2us5CK1BOtw15zeekrVZ0tMFp14hvncW1FSDdqavcxtTI2Qf3JH4YidyHIQ?=
+ =?us-ascii?Q?RdI0id1Yvq5hD40QC5MsaERTif1CSq5ZD17xptOmyRqxIicKbAnoSygv4jFK?=
+ =?us-ascii?Q?qZdd/VhT6YeqWvBgnTeDM8XBNU4gL4zqcHvrCHZJUhwCxdz1XbjOfqHr81ie?=
+ =?us-ascii?Q?/rA7R+9ftbPpswVj4YFjJlb9amiMT86uTT1rtsEu61jMmbZbQfKiePU87Ifu?=
+ =?us-ascii?Q?MWd60UiQfzijWHTH8Hjney+QJfTG6beTAagss9AAwAOGSaygWakyHWijCaQY?=
+ =?us-ascii?Q?EKR1JKO1IBNx0H+NuzhxwV0e9X7oEiCu/AZQsccqW2Ixo0EfmHDE1PjwxiJi?=
+ =?us-ascii?Q?e7S5YfuMfvvJQV4EhQgEyBSjMZJvQhQ1X1PfdGl/RiDBTlCc57yYwcl+U8Wu?=
+ =?us-ascii?Q?9kNdBJXoBW5jrKXBqeVHeujcTxmpj9csy71/TZcGE6igMZUTieOHL3mLDedf?=
+ =?us-ascii?Q?crwkB2aXQY+GPimDvQcXeYOTyrGLNi0c4fk/mOzttV7S72yM0tF1Q10snzYa?=
+ =?us-ascii?Q?vOHAIwO6AdhVBcMVXQ9CRndP?=
 X-OriginatorOrg: suse.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: d653f99f-27ca-4881-2b54-08d9140f47ff
+X-MS-Exchange-CrossTenant-Network-Message-Id: 16ef890f-00d8-4581-4e82-08d9141929ad
 X-MS-Exchange-CrossTenant-AuthSource: AM7PR04MB6821.eurprd04.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 10 May 2021 23:56:51.5870
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 11 May 2021 01:07:35.8514
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: M0KfWtGmO4pdcfjSsqiOrzAWxFIp/3xiTRhZn3etBCEEBeEWZVyennQrKCpO6Nmg
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM6PR04MB5702
+X-MS-Exchange-CrossTenant-UserPrincipalName: H5U+nhNzlehtNz6v4BankKgYgiEZkqfXnZgHhVrX0i5PgIfevMgA6TVvRz/4SAz0
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM5PR0402MB2898
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2021/5/11 =E4=B8=8A=E5=8D=884:14, David Sterba wrote:
-> On Mon, May 03, 2021 at 10:08:53AM +0800, Qu Wenruo wrote:
->>   	/*
->> -	 * We need to validate each sector individually if the failed I/O was
->> -	 * for multiple sectors.
->> -	 *
->> -	 * There are a few possible bios that can end up here:
->> -	 * 1. A buffered read bio, which is not cloned.
->> -	 * 2. A direct I/O read bio, which is cloned.
->> -	 * 3. A (buffered or direct) repair bio, which is not cloned.
->> -	 *
->> -	 * For cloned bios (case 2), we can get the size from
->> -	 * btrfs_io_bio->iter; for non-cloned bios (cases 1 and 3), we can get
->> -	 * it from the bvecs.
->> +	 * We're ensured we won't get cloned bio in end_bio_extent_readpage(),
->> +	 * thus we can get the length from the bvecs.
->>   	 */
->> -	if (bio_flagged(bio, BIO_CLONED)) {
->> -		if (btrfs_io_bio(bio)->iter.bi_size > blocksize)
->> +	bio_for_each_bvec_all(bvec, bio, i) {
->> +		len +=3D bvec->bv_len;
->> +		if (len > blocksize)
->>   			return true;
+On 2021/5/11 =E4=B8=8A=E5=8D=884:41, David Sterba wrote:
+> On Mon, May 03, 2021 at 10:08:52AM +0800, Qu Wenruo wrote:
+>> Btrfs read time repair has to handle two different cases when a corrupti=
+on
+>> or read failure is hit:
+>> - The failed bio contains only one sector
+>>    Then it only need to find a good copy
+>>
+>> - The failed bio contains several sectors
+>>    Then it needs to find which sectors really need to be repaired
+>>
+>> But this different behaviors are not really needed, as we can teach btrf=
+s
+>> to only submit read repair for each corrupted sector.
+>> By this, we only need to handle the one-sector corruption case.
+>>
+>> This not only makes the code smaller and simpler, but also benefits subp=
+age,
+>> allow subpage case to use the same infrastructure.
+>>
+>> For current subpage code, we hacked the read repair code to make full
+>> bvec read repair, which has less granularity compared to regular sector
+>> size.
+>>
+>> The code is still based on subpage branch, but can be forward ported to
+>> non-subpage code basis with minor conflicts.
+>>
+>> Changelog:
+>> v2:
+>> - Split the original patch
+>>    Now we have two preparation patches, then the core change.
+>>    And finally a cleanup.
+>>
+>> - Fix the uninitialize @error_bitmap when the bio read fails.
+>>
+>> v3:
+>> - Fix the return value type mismatch in repair_one_sector()
+>>    An error happens in v2 patch split, which can lead to hang when
+>>    we can't repair the error.
 >=20
-> I've looked if the bio cloning is used at all so we could potentially
-> get rid of all the BIO_CLONED assertions. There are still two cases:
+> Patchset added to for-next. The cleanups and simplifications look good
+> to me, thanks.
 >=20
-> * btrfs_submit_direct calling btrfs_bio_clone_partial
+I'm afraid there is a bug in the patchset.
 
-This is what I missed.
+If we had a data read for 16 sectors in one page, one sector is bad and=20
+can't be repaired, we will under flow subage::readers number.
 
-In fact for DIO read repair we can still hit a cloned bio.
+The cause is there are two call sites calling end_page_read().
 
-But in that case, we still don't need any validation since the DIO read=20
-repair is ensured to only submit sector sized repair.
-So the patchset is still fine, but will break the bisect.
+One in btrfs_submit_read_repair(), one in end_bio_extent_readpage().
+The former one is just calling end_page_read() for the good copy, while=20
+the latter one is calling end_page_read() for the full range.
 
-> * btrfs_map_bio calling btrfs_bio_clone
+The direct fix is to make btrfs_submit_read_repair() to handle both=20
+cases, and skip the call in end_bio_extent_readpage().
 
-This is not a problem, as the generated bio are for real device, not for=20
-the inode pages, and read repair only happens for inode pages, we're=20
-completely fine.
+So I need to update the patchset to include a proper fix for it.
 
->=20
-> So in this case I'd rather add an assertion before
-> bio_for_each_bvec_all, as this fits the usecase "this never happens".
-> The original assertions were added everywhere once the bio iteration
-> behaviour changed without much notice, so we need to be cautious.
->=20
-> Applied with the following fixup
+But on the other hand, I'm also wondering should we use=20
+btrfs_subpage::readers as an atomic.
+For a more idiot proof way, we can also go 16bit map for reader/writer=20
+accounting, by that even we call end_page_read() twice for the same=20
+range, it won't cause anything.
 
-Then bisect will be broken.
-
-If one is testing just this patch, DIO read repair will trigger the=20
-ASSERT().
-
-Is it possible to discard this patch and completely rely on the last=20
-patch to remove btrfs_io_needs_validation()?
+Any advice on btrfs_subpage::readers implementation?
+Should it be really idiot (me) proof, or just current atomic way to=20
+catch more idiots like me?
 
 Thanks,
 Qu
-
->=20
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2616,6 +2616,7 @@ static bool btrfs_io_needs_validation(struct inode =
-*inode, struct bio *bio)
->           * We're ensured we won't get cloned bio in end_bio_extent_readp=
-age(),
->           * thus we can get the length from the bvecs.
->           */
-> +       ASSERT(!bio_flagged(bio, BIO_CLONED));
->          bio_for_each_bvec_all(bvec, bio, i) {
->                  len +=3D bvec->bv_len;
->                  if (len > blocksize)
-> ---
->=20
 

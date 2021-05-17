@@ -3,59 +3,59 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F70CC43461
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 May 2021 18:35:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 76D65C433ED
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 May 2021 18:35:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7FD06611CC
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 May 2021 18:35:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 53524611EE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 May 2021 18:35:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237255AbhEQShC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 May 2021 14:37:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39956 "EHLO
+        id S237275AbhEQShF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 May 2021 14:37:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39978 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237246AbhEQShB (ORCPT
+        with ESMTP id S237246AbhEQShE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 May 2021 14:37:01 -0400
-Received: from mail-pf1-x431.google.com (mail-pf1-x431.google.com [IPv6:2607:f8b0:4864:20::431])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4CCBDC061756
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 May 2021 11:35:44 -0700 (PDT)
-Received: by mail-pf1-x431.google.com with SMTP id g18so3908751pfr.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 May 2021 11:35:44 -0700 (PDT)
+        Mon, 17 May 2021 14:37:04 -0400
+Received: from mail-pj1-x102e.google.com (mail-pj1-x102e.google.com [IPv6:2607:f8b0:4864:20::102e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 24618C061756
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 May 2021 11:35:48 -0700 (PDT)
+Received: by mail-pj1-x102e.google.com with SMTP id gm21so4149334pjb.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 May 2021 11:35:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=kb+bSgN9yADabRHy63xxJUT7vh6UiCpcnBuE5iUxb9U=;
-        b=A4+ttFLlksWJIAhRvNzfBmQreUOPvW4WKqg/aCHCHRD/zTX4gNX9pu1DaCFvsKmwoM
-         m4wzD8y1zi3O50Gvv8EafBRBHZf3lyyYfci0AJOqd7/FgDGc4FIE67g5V2oXmYKEYmND
-         d4rNLJy1Al/I/BcYXZ82sIbvZV0FBUczjxDUhQIyQRWoOwaUhqXky9qbrf+TDquuWtHP
-         tXaZy3S1o6ENteuq8RBr9hwN3XJplq37knNH/duxM4mFI/tPWqsmDJspMfCYj/YW2sfG
-         QI3MQT+eZuD/6S6Kw4WqqsavDQFcJ2JpFmMsv/UMElxOADdszoNQbH5Ih2vDTceiKkgI
-         3rZw==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=kjaKJuPg24WMM0B2D7qxQum77MyM4W16RR2mAmo/IF4=;
+        b=uShP3AxPxz6sO2ua0uYTf8/k6zA1Hb4WE8Kt3EbIG+fuzIgBwCiY+f03n/bZbWmD49
+         SL1OZXVZD3GqmCFr4h0+3Nhufe1rKoa3N10lOHgtHva0QLliI2NPUhgsYI7D1jUFFbrl
+         Qam4tVLkysALwqeC4nkpUeNKcVrJ/UqX91XSiU9a5tUVrlLOGyU3lknxy8rM4mAxmfgq
+         cOjJW0/iVxAJ619xpMLn8PHFHbdfxGJxIVpi99nIOXSeyJe/KepEsu9c81RC7Qcpsgsn
+         HuVkwBLZXulQJgdRG8erxyiRlftdezaRmeXwPi07COZKLrgXzgO4B6yLQnMOfkJecyEu
+         RYSw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=kb+bSgN9yADabRHy63xxJUT7vh6UiCpcnBuE5iUxb9U=;
-        b=HyviVyLV0kVCreLIyi3fpVq+gXBOloeSJABmhMCjFP39XBFk2/fvJ9vd4kJsKvdz/1
-         2MliaxepMxfvWvOvVV2vsKLtqErMwAzmI5Fh4ot+ZJsruAEx47SMtJRCeLmaNwGWoFtz
-         cGUyDxJ/7zjBT83ZbaL4oRwujGcqaOfw26tX7hrjAcqMCNPcny2/vhOJb3nqYmDqp7Tx
-         M13tUNpGbf+anqKryy/pN6kBlJC79ZIpeiwfJq+yeQqy1jLIoEAHgpXwPZ5UNUXwL3HQ
-         pw+ZzH0Q0v9+n3qN9HIKRjWVKbbZB0Hy62ytEClppf/6wG88HGghcVzibiefdUFWkBaP
-         rOpQ==
-X-Gm-Message-State: AOAM533tnqgaglZ9MEw3fNSfudmV3aHDFDTStzC03WXrLv8ojXYWJi+n
-        V2CPqq/ByFrhSLcFjJHTy/3HBl+l5EwMmA==
-X-Google-Smtp-Source: ABdhPJz7C30B/YfGxIxPqigr5aagx53G9Qf93HwHNPZcdzRmG3OlezZVduDX0QNQ2ktJhjZkoo7TWg==
-X-Received: by 2002:a63:610b:: with SMTP id v11mr853482pgb.291.1621276543611;
-        Mon, 17 May 2021 11:35:43 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=kjaKJuPg24WMM0B2D7qxQum77MyM4W16RR2mAmo/IF4=;
+        b=ZWssZ3DKr0+d7aO//A33yp39CPe09JwC4ODgcIsWRusjDZ159IZTnXkeGjiFQ4Tdn3
+         du39Tn9mE2ccE+M/olYNonjP4+y3dSg6Yg367xui2OV6IfgQr5dSSxmtD97ZWbcBqd/Y
+         wN430hmn4RsVVTw4rhBSbWizNnfrw5Ll5C6b2GX255dRTqSZl2U7amFUhJvltjUvkLr6
+         Vs568BXA9/lvDQiw0dg0IqYBK0RgoZGRn9yL1XyOe/vN9fuaGb45v2kbCcpzSkofbg8t
+         UcXtywMsdUR3z7Sl+cnZfwvlINg+c3zI+2PHALlWlPhq5ap/QL7HniGxLk7yf3tb6Q2C
+         v/ww==
+X-Gm-Message-State: AOAM5301XO483rLYteSVqEA3MX0fbjerPZYX0zR2LaENfZc2WWanQ8mx
+        Bdo9tZ8tuwualbVtr+R795dAfQ==
+X-Google-Smtp-Source: ABdhPJw7SSgcTdHIHJ5DgK5kXdU1I3O8d+Z4YR4aU3fERslSDh3T0W+XcaN5xcvBWEpAQFhJfP6ZJg==
+X-Received: by 2002:a17:902:c406:b029:ef:7ba2:f308 with SMTP id k6-20020a170902c406b02900ef7ba2f308mr1262764plk.9.1621276547609;
+        Mon, 17 May 2021 11:35:47 -0700 (PDT)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:19a9])
-        by smtp.gmail.com with ESMTPSA id v15sm5498763pfm.187.2021.05.17.11.35.42
+        by smtp.gmail.com with ESMTPSA id v15sm5498763pfm.187.2021.05.17.11.35.46
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 17 May 2021 11:35:42 -0700 (PDT)
+        Mon, 17 May 2021 11:35:46 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         Al Viro <viro@zeniv.linux.org.uk>,
@@ -66,10 +66,12 @@ Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
         Amir Goldstein <amir73il@gmail.com>,
         Aleksa Sarai <cyphar@cyphar.com>, linux-api@vger.kernel.org,
         kernel-team@fb.com
-Subject: [PATCH RERESEND v9 0/9] fs: interface for directly reading/writing compressed data
-Date:   Mon, 17 May 2021 11:35:18 -0700
-Message-Id: <cover.1621276134.git.osandov@fb.com>
+Subject: [PATCH RERESEND v9 2/9] fs: add O_ALLOW_ENCODED open flag
+Date:   Mon, 17 May 2021 11:35:20 -0700
+Message-Id: <0bdad6c8f03be64bc0a7ea9fcd525df7fa5b3ca5.1621276134.git.osandov@fb.com>
 X-Mailer: git-send-email 2.31.1
+In-Reply-To: <cover.1621276134.git.osandov@fb.com>
+References: <cover.1621276134.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -78,77 +80,148 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-This series adds an API for reading compressed data on a filesystem
-without decompressing it as well as support for writing compressed data
-directly to the filesystem. I have test cases (including fsstress
-support) and example programs which I'll send up once the dust settles
-[1].
+The upcoming RWF_ENCODED operation introduces some security concerns:
 
-The main use-case is Btrfs send/receive: currently, when sending data
-from one compressed filesystem to another, the sending side decompresses
-the data and the receiving side recompresses it before writing it out.
-This is wasteful and can be avoided if we can just send and write
-compressed extents. The patches implementing the send/receive support
-were sent with the last submission of this series [2].
+1. Compressed writes will pass arbitrary data to decompression
+   algorithms in the kernel.
+2. Compressed reads can leak truncated/hole punched data.
 
-Patches 1-3 add the VFS support, UAPI, and documentation. Patches 4-7
-are Btrfs prep patches. Patch 8 adds Btrfs encoded read support and
-patch 9 adds Btrfs encoded write support.
+Therefore, we need to require privilege for RWF_ENCODED. It's not
+possible to do the permissions checks at the time of the read or write
+because, e.g., io_uring submits IO from a worker thread. So, add an open
+flag which requires CAP_SYS_ADMIN. It can also be set and cleared with
+fcntl(). The flag is not cleared in any way on fork or exec.
 
-These patches are based on Dave Sterba's Btrfs misc-next branch [3],
-which is in turn currently based on v5.13-rc2.
+Note that the usual issue that unknown open flags are ignored doesn't
+really matter for O_ALLOW_ENCODED; if the kernel doesn't support
+O_ALLOW_ENCODED, then it doesn't support RWF_ENCODED, either.
 
-This is a _resend of a resend_ of v9 [4], rebased on the latest
-kdave/misc-next branch.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ arch/alpha/include/uapi/asm/fcntl.h  |  1 +
+ arch/parisc/include/uapi/asm/fcntl.h |  1 +
+ arch/sparc/include/uapi/asm/fcntl.h  |  1 +
+ fs/fcntl.c                           | 10 ++++++++--
+ fs/namei.c                           |  4 ++++
+ include/linux/fcntl.h                |  2 +-
+ include/uapi/asm-generic/fcntl.h     |  4 ++++
+ 7 files changed, 20 insertions(+), 3 deletions(-)
 
-1: https://github.com/osandov/xfstests/tree/rwf-encoded
-2: https://lore.kernel.org/linux-btrfs/cover.1615922753.git.osandov@fb.com/
-3: https://github.com/kdave/btrfs-devel/tree/misc-next
-4: https://lore.kernel.org/linux-fsdevel/cover.1619463858.git.osandov@fb.com/
-
-Omar Sandoval (9):
-  iov_iter: add copy_struct_from_iter()
-  fs: add O_ALLOW_ENCODED open flag
-  fs: add RWF_ENCODED for reading/writing compressed data
-  btrfs: don't advance offset for compressed bios in
-    btrfs_csum_one_bio()
-  btrfs: add ram_bytes and offset to btrfs_ordered_extent
-  btrfs: support different disk extent size for delalloc
-  btrfs: optionally extend i_size in cow_file_range_inline()
-  btrfs: implement RWF_ENCODED reads
-  btrfs: implement RWF_ENCODED writes
-
- Documentation/filesystems/encoded_io.rst | 240 ++++++
- Documentation/filesystems/index.rst      |   1 +
- arch/alpha/include/uapi/asm/fcntl.h      |   1 +
- arch/parisc/include/uapi/asm/fcntl.h     |   1 +
- arch/sparc/include/uapi/asm/fcntl.h      |   1 +
- fs/btrfs/compression.c                   |  12 +-
- fs/btrfs/compression.h                   |   6 +-
- fs/btrfs/ctree.h                         |   9 +-
- fs/btrfs/delalloc-space.c                |  18 +-
- fs/btrfs/file-item.c                     |  35 +-
- fs/btrfs/file.c                          |  46 +-
- fs/btrfs/inode.c                         | 929 +++++++++++++++++++++--
- fs/btrfs/ordered-data.c                  | 124 +--
- fs/btrfs/ordered-data.h                  |  25 +-
- fs/btrfs/relocation.c                    |   4 +-
- fs/fcntl.c                               |  10 +-
- fs/namei.c                               |   4 +
- fs/read_write.c                          | 168 +++-
- include/linux/encoded_io.h               |  17 +
- include/linux/fcntl.h                    |   2 +-
- include/linux/fs.h                       |  13 +
- include/linux/uio.h                      |   1 +
- include/uapi/asm-generic/fcntl.h         |   4 +
- include/uapi/linux/encoded_io.h          |  30 +
- include/uapi/linux/fs.h                  |   5 +-
- lib/iov_iter.c                           |  91 +++
- 26 files changed, 1563 insertions(+), 234 deletions(-)
- create mode 100644 Documentation/filesystems/encoded_io.rst
- create mode 100644 include/linux/encoded_io.h
- create mode 100644 include/uapi/linux/encoded_io.h
-
+diff --git a/arch/alpha/include/uapi/asm/fcntl.h b/arch/alpha/include/uapi/asm/fcntl.h
+index 50bdc8e8a271..391e0d112e41 100644
+--- a/arch/alpha/include/uapi/asm/fcntl.h
++++ b/arch/alpha/include/uapi/asm/fcntl.h
+@@ -34,6 +34,7 @@
+ 
+ #define O_PATH		040000000
+ #define __O_TMPFILE	0100000000
++#define O_ALLOW_ENCODED	0200000000
+ 
+ #define F_GETLK		7
+ #define F_SETLK		8
+diff --git a/arch/parisc/include/uapi/asm/fcntl.h b/arch/parisc/include/uapi/asm/fcntl.h
+index 03dee816cb13..0feb31faaefa 100644
+--- a/arch/parisc/include/uapi/asm/fcntl.h
++++ b/arch/parisc/include/uapi/asm/fcntl.h
+@@ -19,6 +19,7 @@
+ 
+ #define O_PATH		020000000
+ #define __O_TMPFILE	040000000
++#define O_ALLOW_ENCODED	0100000000
+ 
+ #define F_GETLK64	8
+ #define F_SETLK64	9
+diff --git a/arch/sparc/include/uapi/asm/fcntl.h b/arch/sparc/include/uapi/asm/fcntl.h
+index 67dae75e5274..ac3e8c9cb32c 100644
+--- a/arch/sparc/include/uapi/asm/fcntl.h
++++ b/arch/sparc/include/uapi/asm/fcntl.h
+@@ -37,6 +37,7 @@
+ 
+ #define O_PATH		0x1000000
+ #define __O_TMPFILE	0x2000000
++#define O_ALLOW_ENCODED	0x8000000
+ 
+ #define F_GETOWN	5	/*  for sockets. */
+ #define F_SETOWN	6	/*  for sockets. */
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index dfc72f15be7f..eca4eb008194 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -31,7 +31,8 @@
+ #include <asm/siginfo.h>
+ #include <linux/uaccess.h>
+ 
+-#define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
++#define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME | \
++		    O_ALLOW_ENCODED)
+ 
+ static int setfl(int fd, struct file * filp, unsigned long arg)
+ {
+@@ -50,6 +51,11 @@ static int setfl(int fd, struct file * filp, unsigned long arg)
+ 		if (!inode_owner_or_capable(file_mnt_user_ns(filp), inode))
+ 			return -EPERM;
+ 
++	/* O_ALLOW_ENCODED can only be set by superuser */
++	if ((arg & O_ALLOW_ENCODED) && !(filp->f_flags & O_ALLOW_ENCODED) &&
++	    !capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	/* required for strict SunOS emulation */
+ 	if (O_NONBLOCK != O_NDELAY)
+ 	       if (arg & O_NDELAY)
+@@ -1043,7 +1049,7 @@ static int __init fcntl_init(void)
+ 	 * Exceptions: O_NONBLOCK is a two bit define on parisc; O_NDELAY
+ 	 * is defined as O_NONBLOCK on some platforms and not on others.
+ 	 */
+-	BUILD_BUG_ON(21 - 1 /* for O_RDONLY being 0 */ !=
++	BUILD_BUG_ON(22 - 1 /* for O_RDONLY being 0 */ !=
+ 		HWEIGHT32(
+ 			(VALID_OPEN_FLAGS & ~(O_NONBLOCK | O_NDELAY)) |
+ 			__FMODE_EXEC | __FMODE_NONOTIFY));
+diff --git a/fs/namei.c b/fs/namei.c
+index 79b0ff9b151e..b05f121b3947 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -2997,6 +2997,10 @@ static int may_open(struct user_namespace *mnt_userns, const struct path *path,
+ 	if (flag & O_NOATIME && !inode_owner_or_capable(mnt_userns, inode))
+ 		return -EPERM;
+ 
++	/* O_ALLOW_ENCODED can only be set by superuser */
++	if ((flag & O_ALLOW_ENCODED) && !capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/fcntl.h b/include/linux/fcntl.h
+index 766fcd973beb..2cd6a9185d4c 100644
+--- a/include/linux/fcntl.h
++++ b/include/linux/fcntl.h
+@@ -10,7 +10,7 @@
+ 	(O_RDONLY | O_WRONLY | O_RDWR | O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC | \
+ 	 O_APPEND | O_NDELAY | O_NONBLOCK | __O_SYNC | O_DSYNC | \
+ 	 FASYNC	| O_DIRECT | O_LARGEFILE | O_DIRECTORY | O_NOFOLLOW | \
+-	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE)
++	 O_NOATIME | O_CLOEXEC | O_PATH | __O_TMPFILE | O_ALLOW_ENCODED)
+ 
+ /* List of all valid flags for the how->upgrade_mask argument: */
+ #define VALID_UPGRADE_FLAGS \
+diff --git a/include/uapi/asm-generic/fcntl.h b/include/uapi/asm-generic/fcntl.h
+index 9dc0bf0c5a6e..75321c7a66ac 100644
+--- a/include/uapi/asm-generic/fcntl.h
++++ b/include/uapi/asm-generic/fcntl.h
+@@ -89,6 +89,10 @@
+ #define __O_TMPFILE	020000000
+ #endif
+ 
++#ifndef O_ALLOW_ENCODED
++#define O_ALLOW_ENCODED	040000000
++#endif
++
+ /* a horrid kludge trying to make sure that this will fail on old kernels */
+ #define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
+ #define O_TMPFILE_MASK (__O_TMPFILE | O_DIRECTORY | O_CREAT)      
 -- 
 2.31.1
 

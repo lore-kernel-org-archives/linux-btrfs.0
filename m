@@ -2,120 +2,126 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A47C2C433ED
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 May 2021 13:26:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 76E5AC433ED
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 May 2021 13:38:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 84F2B60FE7
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 May 2021 13:26:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2035D610CD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 May 2021 13:38:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353668AbhESN1q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 May 2021 09:27:46 -0400
-Received: from mail106.syd.optusnet.com.au ([211.29.132.42]:39242 "EHLO
-        mail106.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1353674AbhESN1i (ORCPT
+        id S1345463AbhESNju (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 May 2021 09:39:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57562 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S240097AbhESNju (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 May 2021 09:27:38 -0400
-X-Greylist: delayed 1709 seconds by postgrey-1.27 at vger.kernel.org; Wed, 19 May 2021 09:27:37 EDT
-Received: from dread.disaster.area (pa49-195-118-180.pa.nsw.optusnet.com.au [49.195.118.180])
-        by mail106.syd.optusnet.com.au (Postfix) with ESMTPS id 7F83080BA7C;
-        Wed, 19 May 2021 22:57:44 +1000 (AEST)
-Received: from dave by dread.disaster.area with local (Exim 4.92.3)
-        (envelope-from <david@fromorbit.com>)
-        id 1ljLlf-002mpn-8h; Wed, 19 May 2021 22:57:43 +1000
-Date:   Wed, 19 May 2021 22:57:43 +1000
-From:   Dave Chinner <david@fromorbit.com>
-To:     Avi Kivity <avi@scylladb.com>
-Cc:     David Howells <dhowells@redhat.com>, Theodore Ts'o <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        "Darrick J. Wong" <djwong@kernel.org>, Chris Mason <clm@fb.com>,
-        linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-cachefs@redhat.com,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: How capacious and well-indexed are ext4, xfs and btrfs
- directories?
-Message-ID: <20210519125743.GP2893@dread.disaster.area>
-References: <206078.1621264018@warthog.procyon.org.uk>
- <20210517232237.GE2893@dread.disaster.area>
- <ad2e8757-41ce-41e3-a22e-0cf9e356e656@scylladb.com>
+        Wed, 19 May 2021 09:39:50 -0400
+Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1C76C06175F
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 May 2021 06:38:30 -0700 (PDT)
+Received: by mail-qk1-x72d.google.com with SMTP id k127so12681827qkc.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 May 2021 06:38:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=DoN2/x/gh51SW7zBtlDdw8kguoXam//AdkUVcaB613Y=;
+        b=Qedz2JxWXtWSa3mHyYUucp1tBc8YVg1s0hujrAgecYREIZorJTCINsy5chzfhTxmh2
+         BPlCkpH94n3lAF5Ig6SppcXKo60wnR2cJXW2U+Br2engZVq6AdcrGLUsC7JUdgOjB2U/
+         Lli5uZ6U/Eg3F938J5XC6Gv6lgXDSKnDkm3MMsiuU/1LafqCkxejrlJFH4G/BSchQpw1
+         Z0cXpVfJstSDJPDwoVfQ4Fi6rlDI3hk19W0APkiQqN6c8Vgo/HmENhuZXTLklHUokrWY
+         Yl0+gHm7FRJt4NANFhIzCJ5metqAj8qF4IZGXN7blcmjs9E2zK3mK2LuehiGtCPfJ/Qs
+         xlbQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=DoN2/x/gh51SW7zBtlDdw8kguoXam//AdkUVcaB613Y=;
+        b=cbyF1+G/PYCfJdIsDYB4GCClwzs5P2NwyJH9XgIwqdl1Is+ZkXQn/Tc9HeGw9/soBC
+         Pb/axfAUxTelibb3cvAL4n1pHIUqrdcfVRbPbfZ9zMgcnAqSxANvVtD7C4r+YTsOHxkX
+         OAqAuHVZpEJvbpD0A8n2Bsw4uBrd6ZCPxSgAI9KsHG+cOAmnKCovUBjKP3K+YeKBvwYn
+         AF4Bu0YUJmmqYJIoH4JIfQjrBs3ICoEi+H4RpKIzOuNcEh1PgBBtUukDkY3hFLv84cNz
+         4bofsVoRl494ZnRTbmkVYUxuV/lrx/d+OSKNihJZ4N1b3I9FwqviznXDWV2vPcIQ4nGb
+         Wmcg==
+X-Gm-Message-State: AOAM532YnHiEIQCLo7BWv/z5kEjAi5Ht5JLX23mxKAk53p5UlYOpdAfu
+        fDyNLzUEJMeq6FoYD64wN6uW9qgdBxtkpA==
+X-Google-Smtp-Source: ABdhPJwcEz3Nbm+ucmUtzh62V0Mc1rygdmwiquvrYWMo4GIJZz3vsAIg4JNlkSwlB1p+PkQuDXjuMw==
+X-Received: by 2002:a05:620a:248f:: with SMTP id i15mr12701638qkn.239.1621431509269;
+        Wed, 19 May 2021 06:38:29 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id n64sm3269832qkb.111.2021.05.19.06.38.28
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 19 May 2021 06:38:28 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v2] btrfs: mark ordered extent and inode with error if we fail to finish
+Date:   Wed, 19 May 2021 09:38:27 -0400
+Message-Id: <5b855fadb3c1de5be46d01b23c77e512933de3b9.1621431374.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ad2e8757-41ce-41e3-a22e-0cf9e356e656@scylladb.com>
-X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.3 cv=Tu+Yewfh c=1 sm=1 tr=0
-        a=xcwBwyABtj18PbVNKPPJDQ==:117 a=xcwBwyABtj18PbVNKPPJDQ==:17
-        a=kj9zAlcOel0A:10 a=5FLXtPjwQuUA:10 a=7-415B0cAAAA:8
-        a=JUdNrTaQNZjwa7RRXdQA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 19, 2021 at 11:00:03AM +0300, Avi Kivity wrote:
-> 
-> On 18/05/2021 02.22, Dave Chinner wrote:
-> > 
-> > > What I'd like to do is remove the fanout directories, so that for each logical
-> > > "volume"[*] I have a single directory with all the files in it.  But that
-> > > means sticking massive amounts of entries into a single directory and hoping
-> > > it (a) isn't too slow and (b) doesn't hit the capacity limit.
-> > Note that if you use a single directory, you are effectively single
-> > threading modifications to your file index. You still need to use
-> > fanout directories if you want concurrency during modification for
-> > the cachefiles index, but that's a different design criteria
-> > compared to directory capacity and modification/lookup scalability.
-> 
-> Something that hit us with single-large-directory and XFS is that
-> XFS will allocate all files in a directory using the same
-> allocation group.  If your entire filesystem is just for that one
-> directory, then that allocation group will be contended.
+While doing error injection testing I saw that sometimes we'd get an
+abort that wouldn't stop the current transaction commit from completing.
+This abort was coming from finish ordered IO, but at this point in the
+transaction commit we should have gotten an error and stopped.
 
-There is more than one concurrency problem that can arise from using
-single large directories. Allocation policy is just another aspect
-of the concurrency picture.
+It turns out the abort came from finish ordered io while trying to write
+out the free space cache.  It occurred to me that any failure inside of
+finish_ordered_io isn't actually raised to the person doing the writing,
+so we could have any number of failures in this path and think the
+ordered extent completed successfully and the inode was fine.
 
-Indeed, you can avoid this specific problem simply by using the
-inode32 allocator - this policy round-robins files across allocation
-groups instead of trying to keep files physically local to their
-parent directory. Hence if you just want one big directory with lots
-of files that index lots of data, using the inode32 allocator will
-allow the files in the filesytsem to allocate/free space at maximum
-concurrency at all times...
+Fix this by marking the ordered extent with BTRFS_ORDERED_IOERR, and
+marking the mapping of the inode with mapping_set_error, so any callers
+that simply call fdatawait will also get the error.
 
-> We saw spurious ENOSPC when that happened, though that
-> may have related to bad O_DIRECT management by us.
+With this we're seeing the IO error on the free space inode when we fail
+to do the finish_ordered_io.
 
-You should not see spurious ENOSPC at all.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+v1->v2:
+- Wang Yugui noticed that this failed with btrfs/146, this is because we had
+  already marked the mapping with the error when writeback failed, so we were
+  double marking the mapping with an error and thus getting an extra report of
+  the error.  Fix this by only setting the mapping error if we're the first ones
+  to set ORDERED_IOERR.
 
-The only time I've recall this sort of thing occurring is when large
-extent size hints are abused by applying them to every single file
-and allocation regardless of whether they are needed, whilst
-simultaneously mixing long term and short term data in the same
-physical locality. Over time the repeated removal and reallocation
-of short term data amongst long term data fragments the crap out of
-free space until there are no large contiguous free spaces left to
-allocate contiguous extents from.
+ fs/btrfs/inode.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
-> We ended up creating files in a temporary directory and moving them to the
-> main directory, since for us the directory layout was mandated by
-> compatibility concerns.
-
-inode32 would have done effectively the same thing but without
-needing to change the application....
-
-> We are now happy with XFS large-directory management, but are nowhere close
-> to a million files.
-
-I think you are conflating directory scalability with problems
-arising from file allocation policies not being ideal for your data
-set organisation, layout and longevity characteristics.
-
-Cheers,
-
-Dave.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 955d0f5849e3..32a62ec4f127 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3000,6 +3000,19 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+ 	if (ret || truncated) {
+ 		u64 unwritten_start = start;
+ 
++		/*
++		 * If we failed to finish this ordered extent for any reason we
++		 * need to make sure BTRFS_ORDERED_IOERR is set on the ordered
++		 * extent, and mark the inode with the error if it wasn't
++		 * already set.  Any error during writeback would have already
++		 * set the mapping error, so we need to set it if we're the ones
++		 * marking this ordered extent as failed.
++		 */
++		if (ret && !test_and_set_bit(BTRFS_ORDERED_IOERR,
++					     &ordered_extent->flags))
++			mapping_set_error(ordered_extent->inode->i_mapping,
++					  -EIO);
++
+ 		if (truncated)
+ 			unwritten_start += logical_len;
+ 		clear_extent_uptodate(io_tree, unwritten_start, end, NULL);
 -- 
-Dave Chinner
-david@fromorbit.com
+2.26.3
+

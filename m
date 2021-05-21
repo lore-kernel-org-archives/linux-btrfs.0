@@ -2,1214 +2,297 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,FROM_LOCAL_HEX,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA415C433B4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:28:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7936AC433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8CD9961353
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:28:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 50C3D6135C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232262AbhEUG3q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:29:46 -0400
-Received: from mail-il1-f199.google.com ([209.85.166.199]:49703 "EHLO
-        mail-il1-f199.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229782AbhEUG3p (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 02:29:45 -0400
-Received: by mail-il1-f199.google.com with SMTP id w11-20020a92db4b0000b02901bb97fba647so12615427ilq.16
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 May 2021 23:28:23 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:date:message-id:subject:from:to;
-        bh=L1o9dROJQsgdwlXXsYssiQHRONQMaom05fZRhnUzMaM=;
-        b=mgmKMTt/2mINdwdo11TyG5L0fNji03SFX2EhbsFrWLR+wb+BMFp/eFgJnE9jMLEqel
-         XiDzICr1/wjoXxOyHMrV1kOkPyDgPjl7rDe+xz6G5PRfgbp4d6/Ewf/sXtUbbr2nJMSY
-         ug2dKXVfl2K7Nm+bJYTK9qqqjtO3K/3P/d7bpJh+GOM5pzmk+DdO3tHM5pBXroco6513
-         694TR66vDQKHh1ogiUV2f1FSfVVoHBX/HOC92rYeR1sMtwkebfOhtqoI+HD1iAz3Z315
-         g8Slr45u9xbgKJg2LSkaUZwzsuoIcI9zYrQMoNzjAgpx3QSoPwobya0ax8QbjjKA78I+
-         YNcQ==
-X-Gm-Message-State: AOAM533YvH49eJYnHeBlT8/1AXpGptM5BuhQMTUE06AoFTG23mSxamVT
-        HGaQBbCOR6Nhx8brIgGzYMlpZz30/O4mPtrd9RymRAcipMgC
-X-Google-Smtp-Source: ABdhPJxcYZB3q/3R2kRQcoGb8XOt0BHkwlXCztiZlwj7eUE3aneFnpS3zjSscvuvv9GtZM+H20iVnIQzAswuVkZ6WMMGqdMk3HoL
+        id S234565AbhEUGny (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:43:54 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57736 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S234467AbhEUGm1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 02:42:27 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1621579258; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=QATExfCUf3J+e5cZIe2WK2lef4CickjkZYd9of5Qq4A=;
+        b=dlj++btk5jtfoyfOaHzA+R5oWj502rIZWrKGLnwbJbLpS2p9AcKpBTffCJde86iCz5K3mx
+        xm9OH2SkaXll0U4rVjRRUiyI+qqanpq3Z+3WJ0OK//Cv3Aj0jVIvNMXAA13BAO/BX2fUX4
+        1cVnCBKnlbpvhDVMNIjao/Dq7X48Vk8=
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id 1E4FFAC1A;
+        Fri, 21 May 2021 06:40:58 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v3 02/31] btrfs: refactor the page status update into process_one_page()
+Date:   Fri, 21 May 2021 14:40:21 +0800
+Message-Id: <20210521064050.191164-3-wqu@suse.com>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
+References: <20210521064050.191164-1-wqu@suse.com>
 MIME-Version: 1.0
-X-Received: by 2002:a92:dd89:: with SMTP id g9mr10620062iln.209.1621578502682;
- Thu, 20 May 2021 23:28:22 -0700 (PDT)
-Date:   Thu, 20 May 2021 23:28:22 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <000000000000a0c15e05c2d12ae5@google.com>
-Subject: [syzbot] KMSAN: uninit-value in btrfs_get_64
-From:   syzbot <syzbot+8831c9d3fefed7e973a3@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, glider@google.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+In __process_pages_contig() we update page status according to page_ops.
 
-syzbot found the following issue on:
+That update process is a bunch of if () {} branches, which lies inside
+two loops, this makes it pretty hard to expand for later subpage
+operations.
 
-HEAD commit:    bdefec9a minor fix
-git tree:       https://github.com/google/kmsan.git master
-console output: https://syzkaller.appspot.com/x/log.txt?x=12346a1dd00000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=4e6842a91012889c
-dashboard link: https://syzkaller.appspot.com/bug?extid=8831c9d3fefed7e973a3
-compiler:       Debian clang version 11.0.1-2
-userspace arch: i386
+So this patch will extract this operations into its own function,
+process_one_pages().
 
-Unfortunately, I don't have any reproducer for this issue yet.
+Also since we're refactoring __process_pages_contig(), also move the new
+helper and __process_pages_contig() before the first caller of them, to
+remove the forward declaration.
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+8831c9d3fefed7e973a3@syzkaller.appspotmail.com
-
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in btrfs_get_64+0x4bb/0x680 fs/btrfs/struct-funcs.c:163
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- btrfs_get_64+0x4bb/0x680 fs/btrfs/struct-funcs.c:163
- btrfs_extent_refs fs/btrfs/ctree.h:1794 [inline]
- __btrfs_free_extent+0x2427/0x4df0 fs/btrfs/extent-tree.c:3123
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in check_setget_bounds fs/btrfs/struct-funcs.c:15 [inline]
-BUG: KMSAN: uninit-value in btrfs_get_64+0x4d8/0x680 fs/btrfs/struct-funcs.c:163
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- check_setget_bounds fs/btrfs/struct-funcs.c:15 [inline]
- btrfs_get_64+0x4d8/0x680 fs/btrfs/struct-funcs.c:163
- btrfs_extent_refs fs/btrfs/ctree.h:1794 [inline]
- __btrfs_free_extent+0x2427/0x4df0 fs/btrfs/extent-tree.c:3123
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in check_setget_bounds fs/btrfs/struct-funcs.c:21 [inline]
-BUG: KMSAN: uninit-value in btrfs_get_64+0x4ef/0x680 fs/btrfs/struct-funcs.c:163
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- check_setget_bounds fs/btrfs/struct-funcs.c:21 [inline]
- btrfs_get_64+0x4ef/0x680 fs/btrfs/struct-funcs.c:163
- btrfs_extent_refs fs/btrfs/ctree.h:1794 [inline]
- __btrfs_free_extent+0x2427/0x4df0 fs/btrfs/extent-tree.c:3123
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in btrfs_get_64+0x4fb/0x680 fs/btrfs/struct-funcs.c:163
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- btrfs_get_64+0x4fb/0x680 fs/btrfs/struct-funcs.c:163
- btrfs_extent_refs fs/btrfs/ctree.h:1794 [inline]
- __btrfs_free_extent+0x2427/0x4df0 fs/btrfs/extent-tree.c:3123
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in btrfs_get_64+0x508/0x680 fs/btrfs/struct-funcs.c:163
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- btrfs_get_64+0x508/0x680 fs/btrfs/struct-funcs.c:163
- btrfs_extent_refs fs/btrfs/ctree.h:1794 [inline]
- __btrfs_free_extent+0x2427/0x4df0 fs/btrfs/extent-tree.c:3123
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in __btrfs_free_extent+0x3088/0x4df0 fs/btrfs/extent-tree.c:3124
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- __btrfs_free_extent+0x3088/0x4df0 fs/btrfs/extent-tree.c:3124
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in __btrfs_free_extent+0x309f/0x4df0 fs/btrfs/extent-tree.c:3133
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- __btrfs_free_extent+0x309f/0x4df0 fs/btrfs/extent-tree.c:3133
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in __btrfs_free_extent+0x3e62/0x4df0 fs/btrfs/extent-tree.c:3172
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- __btrfs_free_extent+0x3e62/0x4df0 fs/btrfs/extent-tree.c:3172
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was stored to memory at:
- kmsan_save_stack_with_flags mm/kmsan/kmsan.c:121 [inline]
- kmsan_internal_chain_origin+0xad/0x130 mm/kmsan/kmsan.c:289
- __msan_chain_origin+0x54/0xa0 mm/kmsan/kmsan_instr.c:147
- lookup_inline_extent_backref+0x3001/0x38e0 fs/btrfs/extent-tree.c:963
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in check_eb_range fs/btrfs/extent_io.c:6115 [inline]
-BUG: KMSAN: uninit-value in memmove_extent_buffer+0x996/0xd30 fs/btrfs/extent_io.c:6573
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- check_eb_range fs/btrfs/extent_io.c:6115 [inline]
- memmove_extent_buffer+0x996/0xd30 fs/btrfs/extent_io.c:6573
- btrfs_del_items+0x763/0x1a50 fs/btrfs/ctree.c:4936
- __btrfs_free_extent+0x29d6/0x4df0 fs/btrfs/extent-tree.c:3200
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in check_eb_range fs/btrfs/extent_io.c:6115 [inline]
-BUG: KMSAN: uninit-value in memmove_extent_buffer+0x9a2/0xd30 fs/btrfs/extent_io.c:6573
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- check_eb_range fs/btrfs/extent_io.c:6115 [inline]
- memmove_extent_buffer+0x9a2/0xd30 fs/btrfs/extent_io.c:6573
- btrfs_del_items+0x763/0x1a50 fs/btrfs/ctree.c:4936
- __btrfs_free_extent+0x29d6/0x4df0 fs/btrfs/extent-tree.c:3200
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in check_eb_range fs/btrfs/extent_io.c:6115 [inline]
-BUG: KMSAN: uninit-value in memmove_extent_buffer+0x9ca/0xd30 fs/btrfs/extent_io.c:6574
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- check_eb_range fs/btrfs/extent_io.c:6115 [inline]
- memmove_extent_buffer+0x9ca/0xd30 fs/btrfs/extent_io.c:6574
- btrfs_del_items+0x763/0x1a50 fs/btrfs/ctree.c:4936
- __btrfs_free_extent+0x29d6/0x4df0 fs/btrfs/extent-tree.c:3200
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-RIP: 0023:0xf7f94549
-Code: 03 74 c0 01 10 05 03 74 b8 01 10 06 03 74 b4 01 10 07 03 74 b0 01 10 08 03 74 d8 01 00 00 00 00 00 51 52 55 89 e5 0f 34 cd 80 <5d> 5a 59 c3 90 90 90 90 8d b4 26 00 00 00 00 8d b4 26 00 00 00 00
-RSP: 002b:00000000ffc5528c EFLAGS: 00000292 ORIG_RAX: 0000000000000034
-RAX: 0000000000000000 RBX: 00000000ffc55330 RCX: 0000000000000002
-RDX: 000000000816c000 RSI: 0000000000000000 RDI: 00000000080ea118
-RBP: 00000000ffc55330 R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000000 R12: 0000000000000000
-R13: 0000000000000000 R14: 0000000000000000 R15: 0000000000000000
-
-Uninit was created at:
- kmsan_save_stack_with_flags+0x3c/0x90 mm/kmsan/kmsan.c:121
- kmsan_alloc_page+0xd0/0x1e0 mm/kmsan/kmsan_shadow.c:274
- __alloc_pages_nodemask+0x827/0xf90 mm/page_alloc.c:5044
- alloc_pages_current+0x7b6/0xb60 mm/mempolicy.c:2277
- alloc_pages include/linux/gfp.h:561 [inline]
- __page_cache_alloc mm/filemap.c:978 [inline]
- pagecache_get_page+0x111d/0x2040 mm/filemap.c:1797
- find_or_create_page include/linux/pagemap.h:405 [inline]
- alloc_extent_buffer+0x8f8/0x33d0 fs/btrfs/extent_io.c:5618
- btrfs_find_create_tree_block+0xb6/0xd0 fs/btrfs/disk-io.c:1024
- btrfs_init_new_buffer fs/btrfs/extent-tree.c:4743 [inline]
- btrfs_alloc_tree_block+0x545/0x2140 fs/btrfs/extent-tree.c:4845
- alloc_tree_block_no_bg_flush fs/btrfs/ctree.c:992 [inline]
- __btrfs_cow_block+0xb93/0x2760 fs/btrfs/ctree.c:1048
- btrfs_cow_block+0xa3c/0xc90 fs/btrfs/ctree.c:1495
- btrfs_search_slot+0x1ad5/0x3f20 fs/btrfs/ctree.c:2676
- lookup_inline_extent_backref+0x73a/0x38e0 fs/btrfs/extent-tree.c:829
- lookup_extent_backref fs/btrfs/extent-tree.c:1045 [inline]
- __btrfs_free_extent+0x4e8/0x4df0 fs/btrfs/extent-tree.c:2984
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_32+0x14f/0x180 arch/x86/entry/common.c:145
- do_fast_syscall_32+0x6a/0xc0 arch/x86/entry/common.c:167
- do_SYSENTER_32+0x73/0x90 arch/x86/entry/common.c:210
- entry_SYSENTER_compat_after_hwframe+0x4d/0x5c
-=====================================================
-=====================================================
-BUG: KMSAN: uninit-value in check_eb_range fs/btrfs/extent_io.c:6115 [inline]
-BUG: KMSAN: uninit-value in memmove_extent_buffer+0x9db/0xd30 fs/btrfs/extent_io.c:6574
-CPU: 0 PID: 9464 Comm: syz-executor.3 Tainted: G    B             5.12.0-rc6-syzkaller #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 01/01/2011
-Call Trace:
- __dump_stack lib/dump_stack.c:79 [inline]
- dump_stack+0x24c/0x2e0 lib/dump_stack.c:120
- kmsan_report+0xfb/0x1e0 mm/kmsan/kmsan_report.c:118
- __msan_warning+0x5c/0xa0 mm/kmsan/kmsan_instr.c:197
- check_eb_range fs/btrfs/extent_io.c:6115 [inline]
- memmove_extent_buffer+0x9db/0xd30 fs/btrfs/extent_io.c:6574
- btrfs_del_items+0x763/0x1a50 fs/btrfs/ctree.c:4936
- __btrfs_free_extent+0x29d6/0x4df0 fs/btrfs/extent-tree.c:3200
- run_delayed_tree_ref+0x806/0xa30 fs/btrfs/extent-tree.c:1683
- run_one_delayed_ref fs/btrfs/extent-tree.c:1707 [inline]
- btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:1961 [inline]
- __btrfs_run_delayed_refs+0xf48/0x2c20 fs/btrfs/extent-tree.c:2026
- btrfs_run_delayed_refs+0x2cc/0x910 fs/btrfs/extent-tree.c:2157
- commit_cowonly_roots+0xea1/0x1560 fs/btrfs/transaction.c:1272
- btrfs_commit_transaction+0x212b/0x5640 fs/btrfs/transaction.c:2293
- btrfs_commit_super+0x1b7/0x1f0 fs/btrfs/disk-io.c:4210
- close_ctree+0x4b1/0xf57 fs/btrfs/disk-io.c:4275
- btrfs_put_super+0x53/0x70 fs/btrfs/super.c:325
- generic_shutdown_super+0x2ab/0x650 fs/super.c:464
- kill_anon_super+0x63/0xb0 fs/super.c:1056
- btrfs_kill_super+0x61/0x90 fs/btrfs/super.c:2353
- deactivate_locked_super+0x10d/0x1e0 fs/super.c:335
- deactivate_super+0x1b7/0x1d0 fs/super.c:366
- cleanup_mnt+0x7a0/0x870 fs/namespace.c:1136
- __cleanup_mnt+0x3b/0x50 fs/namespace.c:1143
- task_work_run+0x140/0x280 kernel/task_work.c:140
- tracehook_notify_resume include/linux/tracehook.h:189 [inline]
- exit_to_user_mode_loop kernel/entry/common.c:174 [inline]
- exit_to_user_mode_prepare+0x486/0x560 kernel/entry/common.c:208
- __syscall_exit_to_user_mode_work kernel/entry/common.c:290 [inline]
- syscall_exit_to_user_mode+0x35/0x60 kernel/entry/common.c:301
- __do_fast_syscall_
-
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ fs/btrfs/extent_io.c | 206 +++++++++++++++++++++++--------------------
+ 1 file changed, 109 insertions(+), 97 deletions(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c2914f851692..aa112a51b0d6 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1808,10 +1808,118 @@ bool btrfs_find_delalloc_range(struct extent_io_tree *tree, u64 *start,
+ 	return found;
+ }
+ 
++/*
++ * Process one page for __process_pages_contig().
++ *
++ * Return >0 if we hit @page == @locked_page.
++ * Return 0 if we updated the page status.
++ * Return -EGAIN if the we need to try again.
++ * (For PAGE_LOCK case but got dirty page or page not belong to mapping)
++ */
++static int process_one_page(struct address_space *mapping,
++			    struct page *page, struct page *locked_page,
++			    unsigned long page_ops)
++{
++	if (page_ops & PAGE_SET_ORDERED)
++		SetPageOrdered(page);
++
++	if (page == locked_page)
++		return 1;
++
++	if (page_ops & PAGE_SET_ERROR)
++		SetPageError(page);
++	if (page_ops & PAGE_START_WRITEBACK) {
++		clear_page_dirty_for_io(page);
++		set_page_writeback(page);
++	}
++	if (page_ops & PAGE_END_WRITEBACK)
++		end_page_writeback(page);
++	if (page_ops & PAGE_LOCK) {
++		lock_page(page);
++		if (!PageDirty(page) || page->mapping != mapping) {
++			unlock_page(page);
++			return -EAGAIN;
++		}
++	}
++	if (page_ops & PAGE_UNLOCK)
++		unlock_page(page);
++	return 0;
++}
++
+ static int __process_pages_contig(struct address_space *mapping,
+ 				  struct page *locked_page,
+ 				  u64 start, u64 end, unsigned long page_ops,
+-				  u64 *processed_end);
++				  u64 *processed_end)
++{
++	pgoff_t start_index = start >> PAGE_SHIFT;
++	pgoff_t end_index = end >> PAGE_SHIFT;
++	pgoff_t index = start_index;
++	unsigned long nr_pages = end_index - start_index + 1;
++	unsigned long pages_processed = 0;
++	struct page *pages[16];
++	int err = 0;
++	int i;
++
++	if (page_ops & PAGE_LOCK) {
++		ASSERT(page_ops == PAGE_LOCK);
++		ASSERT(processed_end && *processed_end == start);
++	}
++
++	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
++		mapping_set_error(mapping, -EIO);
++
++	while (nr_pages > 0) {
++		int found_pages;
++
++		found_pages = find_get_pages_contig(mapping, index,
++				     min_t(unsigned long,
++				     nr_pages, ARRAY_SIZE(pages)), pages);
++		if (found_pages == 0) {
++			/*
++			 * Only if we're going to lock these pages,
++			 * can we find nothing at @index.
++			 */
++			ASSERT(page_ops & PAGE_LOCK);
++			err = -EAGAIN;
++			goto out;
++		}
++
++		for (i = 0; i < found_pages; i++) {
++			int process_ret;
++
++			process_ret = process_one_page(mapping, pages[i],
++					locked_page, page_ops);
++			if (process_ret < 0) {
++				for (; i < found_pages; i++)
++					put_page(pages[i]);
++				err = -EAGAIN;
++				goto out;
++			}
++			put_page(pages[i]);
++			pages_processed++;
++		}
++		nr_pages -= found_pages;
++		index += found_pages;
++		cond_resched();
++	}
++out:
++	if (err && processed_end) {
++		/*
++		 * Update @processed_end. I know this is awful since it has
++		 * two different return value patterns (inclusive vs exclusive).
++		 *
++		 * But the exclusive pattern is necessary if @start is 0, or we
++		 * underflow and check against processed_end won't work as
++		 * expected.
++		 */
++		if (pages_processed)
++			*processed_end = min(end,
++			((u64)(start_index + pages_processed) << PAGE_SHIFT) - 1);
++		else
++			*processed_end = start;
++	}
++	return err;
++}
+ 
+ static noinline void __unlock_for_delalloc(struct inode *inode,
+ 					   struct page *locked_page,
+@@ -1939,102 +2047,6 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
+ 	return found;
+ }
+ 
+-static int __process_pages_contig(struct address_space *mapping,
+-				  struct page *locked_page,
+-				  u64 start, u64 end, unsigned long page_ops,
+-				  u64 *processed_end)
+-{
+-	pgoff_t start_index = start >> PAGE_SHIFT;
+-	pgoff_t end_index = end >> PAGE_SHIFT;
+-	pgoff_t index = start_index;
+-	unsigned long nr_pages = end_index - start_index + 1;
+-	unsigned long pages_processed = 0;
+-	struct page *pages[16];
+-	unsigned ret;
+-	int err = 0;
+-	int i;
+-
+-	if (page_ops & PAGE_LOCK) {
+-		ASSERT(page_ops == PAGE_LOCK);
+-		ASSERT(processed_end && *processed_end == start);
+-	}
+-
+-	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
+-		mapping_set_error(mapping, -EIO);
+-
+-	while (nr_pages > 0) {
+-		int found_pages;
+-
+-		found_pages = find_get_pages_contig(mapping, index,
+-				     min_t(unsigned long,
+-				     nr_pages, ARRAY_SIZE(pages)), pages);
+-		if (found_pages == 0) {
+-			/*
+-			 * Only if we're going to lock these pages,
+-			 * can we find nothing at @index.
+-			 */
+-			ASSERT(page_ops & PAGE_LOCK);
+-			err = -EAGAIN;
+-			goto out;
+-		}
+-
+-		for (i = 0; i < ret; i++) {
+-			if (page_ops & PAGE_SET_ORDERED)
+-				SetPageOrdered(pages[i]);
+-
+-			if (locked_page && pages[i] == locked_page) {
+-				put_page(pages[i]);
+-				pages_processed++;
+-				continue;
+-			}
+-			if (page_ops & PAGE_START_WRITEBACK) {
+-				clear_page_dirty_for_io(pages[i]);
+-				set_page_writeback(pages[i]);
+-			}
+-			if (page_ops & PAGE_SET_ERROR)
+-				SetPageError(pages[i]);
+-			if (page_ops & PAGE_END_WRITEBACK)
+-				end_page_writeback(pages[i]);
+-			if (page_ops & PAGE_UNLOCK)
+-				unlock_page(pages[i]);
+-			if (page_ops & PAGE_LOCK) {
+-				lock_page(pages[i]);
+-				if (!PageDirty(pages[i]) ||
+-				    pages[i]->mapping != mapping) {
+-					unlock_page(pages[i]);
+-					for (; i < ret; i++)
+-						put_page(pages[i]);
+-					err = -EAGAIN;
+-					goto out;
+-				}
+-			}
+-			put_page(pages[i]);
+-			pages_processed++;
+-		}
+-		nr_pages -= found_pages;
+-		index += found_pages;
+-		cond_resched();
+-	}
+-out:
+-	if (err && processed_end) {
+-		/*
+-		 * Update @processed_end. I know this is awful since it has
+-		 * two different return value patterns (inclusive vs exclusive).
+-		 *
+-		 * But the exclusive pattern is necessary if @start is 0, or we
+-		 * underflow and check against processed_end won't work as
+-		 * expected.
+-		 */
+-		if (pages_processed)
+-			*processed_end = min(end,
+-			((u64)(start_index + pages_processed) << PAGE_SHIFT) - 1);
+-		else
+-			*processed_end = start;
+-
+-	}
+-	return err;
+-}
+-
+ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
+ 				  struct page *locked_page,
+ 				  u32 clear_bits, unsigned long page_ops)
+-- 
+2.31.1
+

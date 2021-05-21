@@ -2,90 +2,141 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C6A4C47076
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 16:48:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D241C4707A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 20:11:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 178CC61090
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 16:48:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 258C361244
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 20:11:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237031AbhEUQtu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 12:49:50 -0400
-Received: from mx2.suse.de ([195.135.220.15]:45382 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236380AbhEUQtt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 12:49:49 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1621615705;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=mfj6iEHPRFaCl3Qabo8cNDYUinIXvFRcKw0xWTVhVf4=;
-        b=zFNekmj/zZUsQYFtx6Tvhkf9biKBM7sxyMaIwQldfJaVuNeC02/ELXWI4ghV4C7bk4jSmS
-        SU5PtMCm3UDPthIwXolUfX5PVoV3OC310oB5IT0Ij9Ls+ZGKvKnth7KdtSddQVpDNgG2AF
-        Z4xF40uJW3cUPC6PB8OY/CidISdUq3U=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1621615705;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=mfj6iEHPRFaCl3Qabo8cNDYUinIXvFRcKw0xWTVhVf4=;
-        b=N1INBTIVzIoEmmL4fi9Q5wuKQtBfzXaLC5QatKtDb6QIR/1SHBszUb6FzAbu7E4JNtH728
-        6AqW1iGQB3LxM7Dg==
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id C7297AB64;
-        Fri, 21 May 2021 16:48:25 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 51A7DDA730; Fri, 21 May 2021 18:45:51 +0200 (CEST)
-Date:   Fri, 21 May 2021 18:45:51 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/6] btrfs: add wrapper for conditional start of
- exclusive operation
-Message-ID: <20210521164551.GP7604@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1621526221.git.dsterba@suse.com>
- <fe9738eb5db055e06eafb178bf6aea41c48b2890.1621526221.git.dsterba@suse.com>
- <80f75399-9dee-e26c-6433-6e361bc9136b@toxicpanda.com>
+        id S229939AbhEUUNG convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 16:13:06 -0400
+Received: from ste-pvt-msa1.bahnhof.se ([213.80.101.70]:34858 "EHLO
+        ste-pvt-msa1.bahnhof.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229547AbhEUUNF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 16:13:05 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by ste-pvt-msa1.bahnhof.se (Postfix) with ESMTP id 8F42C3F911;
+        Fri, 21 May 2021 22:11:40 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from ste-pvt-msa1.bahnhof.se ([127.0.0.1])
+        by localhost (ste-pvt-msa1.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id J58RQGoFTDEo; Fri, 21 May 2021 22:11:39 +0200 (CEST)
+Received: by ste-pvt-msa1.bahnhof.se (Postfix) with ESMTPA id 7758A3F54E;
+        Fri, 21 May 2021 22:11:38 +0200 (CEST)
+Received: from [192.168.0.126] (port=37254)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.94.2)
+        (envelope-from <forza@tnonline.net>)
+        id 1lkBUf-0001fh-Ll; Fri, 21 May 2021 22:11:37 +0200
+Date:   Fri, 21 May 2021 22:11:38 +0200 (GMT+02:00)
+From:   Forza <forza@tnonline.net>
+To:     Leszek Dubiel <leszek@dubiel.pl>, linux-btrfs@vger.kernel.org
+Message-ID: <89853f6.7deb9c63.179908e0b59@tnonline.net>
+In-Reply-To: <63123a58-18a4-24ff-3b30-9a0668c167c4@dubiel.pl>
+References: <63123a58-18a4-24ff-3b30-9a0668c167c4@dubiel.pl>
+Subject: Re: Btrfs not using all devices in raid1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <80f75399-9dee-e26c-6433-6e361bc9136b@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8BIT
+X-Mailer: R2Mail2
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, May 21, 2021 at 09:29:16AM -0400, Josef Bacik wrote:
-> On 5/21/21 8:06 AM, David Sterba wrote:
-> > +		/*
-> > +		 * This blocks any exclop finish from setting it to NONE, so we
-> > +		 * request cancelation. Either it runs and we will wait for it,
-> > +		 * or it has finished and no waiting will happen.
-> > +		 */
-> > +		atomic_inc(&fs_info->reloc_cancel_req);
-> > +		btrfs_exclop_start_unlock(fs_info);
-> > +
-> > +		if (test_bit(BTRFS_FS_RELOC_RUNNING, &fs_info->flags))
-> > +			wait_on_bit(&fs_info->flags, BTRFS_FS_RELOC_RUNNING,
-> > +				    TASK_INTERRUPTIBLE);
+
+
+---- From: Leszek Dubiel <leszek@dubiel.pl> -- Sent: 2021-05-21 - 18:34 ----
+
 > 
-> Do we want to capture the return value here, in case the user hit's ctrl+c we 
-> can return -EINTR instead so we don't think it succeeded?  Thanks,
+> Hello!
+> 
+> Why Btrfs is not using /dev/sdc2?
+> There is no line "Data,RAID1" for this disk.
+> Isn't it supposed to use disk that has most of free space?
+> 
+> Thanks for help :) :)
+> Using Btrfs in production.
+> 
+> 
+> Here are some command outputs:
+> 
+> 
+> 
+> ### btrfs fi show /
+> 
+> Label: none  uuid: ea6ae51d-d9b0-4628-a8f3-3406e1dc59c6
+>      Total devices 4 FS bytes used 2.96TiB
+>      devid    1 size 7.25TiB used 3.20TiB path /dev/sda2
+>      devid    2 size 7.25TiB used 3.20TiB path /dev/sdb2
+>      devid    3 size 7.25TiB used 3.21TiB path /dev/sdd2
+>      devid    4 size 7.25TiB used 32.00MiB path /dev/sdc2
+> 
+> 
+> 
+> ### btrfs fi df /
+> 
+> Data, RAID1: total=4.49TiB, used=2.90TiB
+> System, RAID1: total=64.00MiB, used=784.00KiB
+> Metadata, RAID1: total=321.00GiB, used=56.08GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> 
+> 
+> 
+> ### btrfs dev usa /
+> 
+> /dev/sda2, ID: 1
+>     Device size:             7.25TiB
+>     Device slack:              0.00B
+>     Data,RAID1:              2.99TiB
+>     Metadata,RAID1:        210.00GiB
+>     System,RAID1:           64.00MiB
+>     Unallocated:             4.05TiB
+> 
+> /dev/sdb2, ID: 2
+>     Device size:             7.25TiB
+>     Device slack:              0.00B
+>     Data,RAID1:              3.00TiB
+>     Metadata,RAID1:        210.00GiB
+>     Unallocated:             4.04TiB
+> 
+> /dev/sdc2, ID: 4
+>     Device size:             7.25TiB
+>     Device slack:              0.00B   ... no Data/RAID1
+>     System,RAID1:           32.00MiB
+>     Unallocated:             7.25TiB
+> 
+> /dev/sdd2, ID: 3
+>     Device size:             7.25TiB
+>     Device slack:              0.00B
+>     Data,RAID1:              2.99TiB
+>     Metadata,RAID1:        222.00GiB
+>     System,RAID1:           32.00MiB
+>     Unallocated:             4.04TiB
+> 
+> 
+> 
+> ### time btrfs balance start -dconvert=raid1,soft -mconvert=raid1,soft /
+> 
+> Done, had to relocate 0 out of 4922 chunks
+> 
+> real    0m0,522s
+> user    0m0,000s
+> sys    0m0,033s
+> 
+> 
 
-The cancel request will stay, so only the waiting part won't happen. I'm
-not sure if this is worth to distinguish the two states, eg. allow progs
-to print a different message.
+Raid1 means two copies on different devices. This is fulfilled with the previous 3 drives so the  'soft' keyword is not going to help here. 
 
-Maybe a waiting and non-waiting cancel modes would be also useful. As
-the interface is string-based we can also add 'status' that would say if
-it's running or not. This should cover the usecases, but would be
-a bit more complicated in the state transitions.
+You can do a full data balance (-dusage=100) to move some data across to the new disk. There is no need to do a metadata balance in this case, unless you want to convert to raid1c3 to have three copies of metadata. 
+
+If you do nothing, the filesystem will eventually balance itself as you add abs delete data. 
+
+https://btrfs.wiki.kernel.org/index.php/Balance_Filters
+
+

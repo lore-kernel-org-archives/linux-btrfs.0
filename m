@@ -7,62 +7,62 @@ X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02BD8C43470
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BEA4C43603
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CD89F61074
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3A9766138C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234697AbhEUFAD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 01:00:03 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:33623 "EHLO
+        id S237449AbhEUFAG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 01:00:06 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:33628 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232956AbhEUE77 (ORCPT
+        with ESMTP id S234175AbhEUFAC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 00:59:59 -0400
+        Fri, 21 May 2021 01:00:02 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1621573115; x=1653109115;
+  t=1621573118; x=1653109118;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=GPKlneebGRfzv1TU74qOb8uhhF4+ljzDSNaTz9A4GvU=;
-  b=mh3I6FQFim5JPngBmzCigZvbYBR+xx4OAGpayw7eOmkTwxCojOhY+sTV
-   1KZjxUUQq6MdVgmoAj7Um6m6GyTZMjXhIYkXehJSnihNYNG5Qj08oNWUo
-   BPhAIZyfYG8p7u+VVimABVsX73ZFudYsAwyiKfjYREQAHa3qnxdDmjg9E
-   LJVI4jIvBaT79g/GKkdam60/NtH2In79+TzATdeLP3I6DItadRslkB/d7
-   /SZAQ/XzgT5tGjWwKmGagjGxaH3rjV/cU6re3mB92plx0mxX8jvMMagei
-   Z7C8qf7OARsRh/ZAMrZ8Z2ip+uDa1qBlu9h20vBgMMJk0DbTsU7Ia0eiY
-   Q==;
-IronPort-SDR: 86WoBdxNE9M78ZRKrQ1EGKP9YvZXwedh19CxMwV1J9dWoO70lQVI9Is7mGnUEqbZ2TRdFjFUnb
- 0Gy7Lxe9JL122Cf3vSdYFqt/WpEbhh5lWNJqDkxtS4/AeTZWJ3qYS1/TMrUsD10b7TS8tXHpFk
- +2XEcwd8s7p/97MaKrV9eISjCWGA75xE9IOnICK8g+TCZ5zCaQXB+N4Yls+TmUQ8fp9FArHWl9
- KmZM3SdtB5mpnxtfho/vcliWEXkzep9+Jys2pjOm7eq3M+zgnz3yBJR4dVhrTA1TGQUSdna8Q+
- /sU=
+  bh=SrFjFY56fR+Rp22UAHX43bKEVCdx/FdHUM8fBb3hNus=;
+  b=VPfewvVGpk8Fh9JfThicgvITfwtDxo358mBRjDSNSIbZ3Ey6iAjE7IYq
+   tb0/zOAHOV2HdO+9U9P/RFbvw79FGL5gXCF2LqRDQJeAQNTpPw3Wn4EAt
+   mkUV0KNjAjOxtO4auOe33PGcWOiDvDaiPxvjBmaan0AWBnHnwFu/9Qyfu
+   nkVTv7lxA74qDTx9PAJFWETdRAYnEifPOJ6J2RQPUzrEg7PUAeLI7PGI+
+   bX/S/88ChNSoEJXuMK+D0GYrPO6IYmlfoOLZE9C0AZiMFcVoNIp+89fjb
+   J+WLrNdn/ewfzZGRU9BENZ9jSq2Mvf4gFw28ulug7cPYmpM5rWNZnTCYS
+   g==;
+IronPort-SDR: /xaIB8mAx+oOHh9eldnY6aDZbSz27N7DTC9AVcNt/AdUruUumBiflCa8+zCiVBRZ73a9/dHJjQ
+ tkqc47ZtGEILB4UOvoyKmoDD/j88TcrrHCDOOoMhrt2w8v0tB7TNsxvdoehuGqqPwmbFRViU/K
+ WnWzkMZPMAHVMmPxtb/18FVhSQnkwX/UZ4h788S/anFrp9sqPMrrrCe93uLbEkJ2ICghsMLfNH
+ x+zp+t0TeEaqLwS6sRTg7V2SYGQFcZqdlQpp2LEZBR28xuRltxw7tX8eGkam24Hwy+nS9Y+ro2
+ Wpk=
 X-IronPort-AV: E=Sophos;i="5.82,313,1613404800"; 
-   d="scan'208";a="168955588"
+   d="scan'208";a="168955592"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 May 2021 12:58:35 +0800
-IronPort-SDR: PKGcKz0qr4v1RxhcF1i2qfHVmFcf/+jy023nLAsb9NMHr/s83CBw4OeEnWxxcTTz6XbkuSDQTY
- SH0M0JSwfHPeAXPDiib541u07L18OCaWmOUk5Jmf4P7Kq+oLtu2mjYT/SiGLAO6jXcFBfBhoWS
- QSzJvDXU2AAW84XfVxePbcNG4S5g+/zctN7T1NshNzm2mYctJHoG1WQ7aWlHYAIjY0SFv5UOO0
- cBy2ZGSdAhJEzpZwiiUSRgQN2baPlqIomKP2FuAMtwCzASLMlsI6+HGXS0FrOT8825X+UPeinT
- KrFwq6/Jo1sL7RexmDTp64C0
+  by ob1.hgst.iphmx.com with ESMTP; 21 May 2021 12:58:38 +0800
+IronPort-SDR: edtZB23USbtceAITH6G+RtiVr/J4gUaWmuCBXFnzxZZUxFV6Qad79+cVm3inVStt/y1zfIkadB
+ gMW14vlhwxIb7z2CjQWvU0au8ujruNaAsuBvc+i7Sm3fmfTvJB1uksGHAlyiDw3GAG6TtkR/r/
+ 2Op9qnSaEVkGp5D12++h+ycN1IlSdV3crEVGnoWb2lViSrE8D9tC6eQlQ+0fBrkHwyZ9cqz0Q6
+ UsI1jKA58T8Vtg/+0MuzLKyIH5bfmefA0vgZAO4n6KvqCX1isV9WF2o8ek3zLzdIBYgbwItiNl
+ Ncae6KPIZqMqu2lsLiD+uBdJ
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 May 2021 21:37:00 -0700
-IronPort-SDR: BWi14BB6BBcCRfvR0Le93yYKJiNB3YXYtkYAQUriq3lnw/jTje/51R8G56PrFc95daZ2R52pAx
- DKfF5p8WTLsPN6Gb6fHRNKJsgucpzZn6qaa3Uy/b7Qel8P1T9NqfCFUyREhjaptLyGuWJnkOwD
- lsOHwNHZX+8p1IxpkjLUJL07HfPG0pOP0H+Axj8PzfxZ9kE6jpL5Cwe4P+SBz+g6ZYmpNd6KHZ
- o+KpqP839QFHLbY1n8sXjzQ5+SqLliMQw76qRyxX/I2VM8glYqC31ozRGyygYnnSABDH4wzOrt
- 6nM=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 May 2021 21:37:02 -0700
+IronPort-SDR: 64OVi2vKgFGMYpKgonKeeiu2FblrbDfuAL47mSRxUL374ggoRpwR1nG2qEJxNNsjLf8bC8gvy4
+ vjWag2nNU6GSfsV/8C3qgvzWktqiykiNSBl/xnMHSl8ZerppNSD1SySq6SZ7mYCUXlqQ0Z5+cI
+ T7yVeLJ2AISWw3M8qfN2HS5BQFzLiy9dlTaV1tTKklP5flEvFoC1+TkY+C05e6uhoikXeyUCtX
+ v0zHoFxejpjlA0BKEXNX83JbJbgkftEvivlBB+odh9bCjYHCKOj8uBPt9swYV2ngDMcc9xD3RS
+ ODo=
 WDCIronportException: Internal
 Received: from 9rp4l33.ad.shared (HELO naota-xeon.wdc.com) ([10.225.48.75])
-  by uls-op-cesaip02.wdc.com with ESMTP; 20 May 2021 21:58:37 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 20 May 2021 21:58:40 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 2/5] btrfs/057: use _scratch_mkfs_sized to set filesystem size
-Date:   Fri, 21 May 2021 13:58:22 +0900
-Message-Id: <20210521045825.1720305-3-naohiro.aota@wdc.com>
+Subject: [PATCH 5/5] shared/032: add check for zoned block device
+Date:   Fri, 21 May 2021 13:58:25 +0900
+Message-Id: <20210521045825.1720305-6-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521045825.1720305-1-naohiro.aota@wdc.com>
 References: <20210521045825.1720305-1-naohiro.aota@wdc.com>
@@ -72,28 +72,27 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Btrfs/057 is using _scratch_mkfs directly to set filesystem size. This
-can be _scratch_mkfs_sized instead, to go through several
-checks (e.g., minimal filesystem size check).
+Mkfs on zoned block device won't work on most filesystem. Let's
+disable the test.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- tests/btrfs/057 | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ tests/shared/032 | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/tests/btrfs/057 b/tests/btrfs/057
-index bf9ab14a89b2..e2c651911ded 100755
---- a/tests/btrfs/057
-+++ b/tests/btrfs/057
-@@ -31,7 +31,7 @@ _require_scratch
+diff --git a/tests/shared/032 b/tests/shared/032
+index 360087ee1fb9..31ac52303dde 100755
+--- a/tests/shared/032
++++ b/tests/shared/032
+@@ -25,6 +25,8 @@ _supported_fs xfs btrfs
  
- rm -f $seqres.full
+ _require_scratch_nocheck
+ _require_no_large_scratch_dev
++# not all the FS support zoned block device
++_require_non_zoned_device "${SCRATCH_DEV}"
  
--run_check _scratch_mkfs "-b 1g"
-+_scratch_mkfs_sized $((1024 * 1024 * 1024))
- 
- _scratch_mount
- 
+ # mkfs.btrfs did not have overwrite detection at first
+ if [ "$FSTYP" == "btrfs" ]; then
 -- 
 2.31.1
 

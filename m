@@ -5,64 +5,64 @@ X-Spam-Level:
 X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EE17C433ED
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE13AC43600
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 305486135C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A006F6139A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233205AbhEUFAB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 01:00:01 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:33623 "EHLO
+        id S236324AbhEUFAD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 01:00:03 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:33627 "EHLO
         esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232498AbhEUE76 (ORCPT
+        with ESMTP id S233661AbhEUFAC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 00:59:58 -0400
+        Fri, 21 May 2021 01:00:02 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1621573114; x=1653109114;
+  t=1621573117; x=1653109117;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=mPGgMAweEGvRR91DavcmPlyA9iS6PleDUIzgcMY0930=;
-  b=qFHIXWJqaxViVFp2JtQQuRurLwFgPzTBGzio92qEw+ZOfmOzBlPRmJut
-   xhm+hzTfvTVDm7GNjCmCciBjcO485/HiiUxprSMS4d+CxvqWmCrblAoZ5
-   +ihX1rj+1YDVniGQBDFkZIQOyxnhmo3BzSktsTdZbuldlI2SqdCHerDGJ
-   XjUBffOqM1HdH1GfG04Xi/7shFCmkE5/p/pvKNLnSieGpg0RTxepxVFpf
-   nEqHHmUJ4jpTqT+MqeGVWBnHOzCFy/AbrESp+gOUqTn6LC8qXTp5FVI0A
-   BOG4NemkK8arcb4fObw5c6crWMo5PLz8MoYXzk9iYHs5w26v2YvqcB9do
-   A==;
-IronPort-SDR: v23UgeuDovguCvOUNxyxFcfVxB78L0nOfo4YFHYjGcLpwVmxSrZGlaHLJFhObli9QdxsOPgxX7
- WUmvY4jJafhY1Fo+0QAti/LEbVwbzyFrb202dw5Fti5BePxvHRSMEbNzE4i7aGmXgeGyloJV9d
- dS6kDtjd5PHAallZjHCKiRy5UDhelkAD+O1fbOCww2eS+/389TOJ4zfHuV42M3P2HlN/+K+MFX
- TKo6gPcLyscvw8HiYAqKRxj8uaxvjVxHtZMgtFeq8liGp3O0/RiP3UoMNhDEc3hgg1maahoyAR
- WnM=
+  bh=XaiGk7DPa4yauZ2+CAQdUSL1Nno7tKoh6bHxWLJe3PU=;
+  b=T1LqI2VUHg05zUL/brPmZU93K3SJvIAXJ7paJM9C0SbQ26lWltjofPo9
+   9ozNxKKOtrhs58ABMQO++4fxbV8+ROfC/V3f3JFSY/O2GpQd+xfBAnF8u
+   88EIWxLsnuFWLAd37D2cOlQKQK40/dOnPau6WM/8ksojkB7tw/IWckt4M
+   hl2by6RYfP4nnbQgZUxpTICdoOT4ur+6KGWCf1iY/d4ZkDNZWL8ZyRuN5
+   ZhFFUezmBlICETCCmAU2BTWTos5PVRlq7m0YsjxiBgB/ZwHsrX3nBMnwT
+   hAgIaLTZw+LCInYBk3DlYKE6nAg6Lr7A8LE2eBiQH/rj+NBd7tSKpPaaW
+   g==;
+IronPort-SDR: wC4wzxhOHZ+YJ827pblKCFltqUzuiIgBCmEIV2bqD1+qgl+eKWmjYb84oPNLU9VEn/s/yVd2T/
+ sJ8jWU6JHsL6+wy8/Ohtsq0kJ8DvaI0KnZxPNLrNCni7jfeUUoM8pdbmZERAQaKeIrDVrJkc5m
+ ygc5MkozOOpfDlvsrSleJBpnskeSrGb/5wTul29i7XkFGuA21qNPqfb+3s/4rmgheOA5ctPUmJ
+ CDoMhhqYjiMn7sKkxkCkX22rC6kSf3ws3jm3Ft/uVcZ9cfHI6aQFwUVeJ/OmKu2RT2TpVEUpsJ
+ nqk=
 X-IronPort-AV: E=Sophos;i="5.82,313,1613404800"; 
-   d="scan'208";a="168955585"
+   d="scan'208";a="168955591"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 May 2021 12:58:34 +0800
-IronPort-SDR: q0ec/fyrYYh8xOF8IUF3Ssf4IYncV3cViSOcLuA5vJogSs7bm+k/vbBHkoj3STeeHQBo0PKwJV
- fBq6+rhyqrHt2t8ifjAcJ+bPEQmTkRIXwjjTUQ+N1t0feAMW8fFEQ6Vz3nf7qxnplw8KC8Rwok
- 2YE8Z7yqe7PMmM3H1iDCWphXcTnsKVrE55Gr3HaieJxS+FdXek/Qg3b0wBclxCJlos4fsyUfNY
- bMpZ05WUZR2u43EZGSM2Qp4H7LrSrsAODaiqNOh947tUtKDjWEt/iiQP5X8qeNR541XLHZ7JSB
- z6xib/TyhXltmW1t/shl9yPt
+  by ob1.hgst.iphmx.com with ESMTP; 21 May 2021 12:58:37 +0800
+IronPort-SDR: y+jo2P2O3RcCV3AEo3TM2Q/zzySRS2xv78PI2BVKW17yzLZ4PqZHfQ/G/iTzjKWGdasb60PpZc
+ fngicsw3KF8ao71Wro8FkR03hbyWcDxvxiPRHA5BCee+aGsXZUEbxaFADtIYtYWJ8zgN/dmg1H
+ 1OXit8LG92ngiEG4LMLXait4FvWUClwGLd3dNKrTkr3zr3NMDaNmZ2nCloF1YI0GSkLkmrGwCh
+ TLiOg1O5WMnZPmGAKw6nNNJXdLqH2qzaAl0FVPSBmwE14HplB8IBSzIaDN4gW0u3MTh8f3T0wv
+ mMdp99TnkQk73NRA3w+P/X3z
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 May 2021 21:36:59 -0700
-IronPort-SDR: AWR4TYUiikVOA06yxx/ryFrI88w8fjONnJY4tgj/XAQOm6uBKQejqvK0K/qvpFUV9j0I0aKLQX
- Ytuby/L+pXN6Fc314roDf4hFwnSLdX6qilbhmEKV+2QbZlj2qXLMoIhzeseWXMyNGVDgLabOHt
- qT/ov5baYpN1YZ6/OcGsugN3iMGiAeKcvslexARXdbh9zV1Eb9kcmxpAuSYhIPcCanjcwo9vMH
- DPxiDnyUZor/LQQKfcDfetiJE5JbRyTUC+uncnuta3ud8e0N5xtK617WJSasTEKpQ0nUCj2JyQ
- bNk=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 May 2021 21:37:01 -0700
+IronPort-SDR: P+cYQJS9arhUjNOyoTa6zx3nRlrq3ED20ofHlt34PHEPlMLjOojA1yjcBJk7Jm6K3+Y+fB0Ce8
+ swAQsUmNJRcHkgJS/KJhWSF13sUIc2GEPaOgj5Fl1C+0IP0KfEbAlg/AYcVtNWsws/IhLKvjs0
+ U23mjlRiL53JuPCZNMVdwsPyssxk05JJXudAltWzCp0mR4bUZdSzOj8QAL9CMcXu4SOL61sz20
+ u3Nyjba7W6wLW724o88/on5RXv46Vw0tjSRKt2RyhUblVWS/+N7zZ8HmA9Vhu0aZ5X4Vw0EARx
+ QuQ=
 WDCIronportException: Internal
 Received: from 9rp4l33.ad.shared (HELO naota-xeon.wdc.com) ([10.225.48.75])
-  by uls-op-cesaip02.wdc.com with ESMTP; 20 May 2021 21:58:36 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 20 May 2021 21:58:39 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 1/5] common/rc: introduce minimal fs size check
-Date:   Fri, 21 May 2021 13:58:21 +0900
-Message-Id: <20210521045825.1720305-2-naohiro.aota@wdc.com>
+Subject: [PATCH 4/5] common: add zoned block device checks
+Date:   Fri, 21 May 2021 13:58:24 +0900
+Message-Id: <20210521045825.1720305-5-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521045825.1720305-1-naohiro.aota@wdc.com>
 References: <20210521045825.1720305-1-naohiro.aota@wdc.com>
@@ -72,65 +72,65 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-_scratch_mkfs_sized() create a file system with specified size
-limit. It can, however, too small for certain kind of devices. For
-example, zoned btrfs requires at least 5 zones to make a file system.
+dm-error and dm-snapshot does not have DM_TARGET_ZONED_HM nor
+DM_TARGET_MIXED_ZONED_MODEL feature and does not implement
+.report_zones(). So, it cannot pass the zone information from the down
+layer (zoned device) to the upper layer.
 
-This commit introduces MIN_FSSIZE, which specify the minimum size of the
-possible file system. We can set this variable e.g. $ZONE_SIZE *
-$MIN_ZONE_COUNT.
+Loop device also cannot pass the zone information.
+
+This patch requires non-zoned block device for the tests using these
+ones.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- README    |  4 ++++
- common/rc | 12 ++++++++++++
- 2 files changed, 16 insertions(+)
+ common/dmerror    | 3 +++
+ common/dmhugedisk | 3 +++
+ common/rc         | 3 +++
+ 3 files changed, 9 insertions(+)
 
-diff --git a/README b/README
-index 048491a68838..a7888281aa09 100644
---- a/README
-+++ b/README
-@@ -117,6 +117,10 @@ Preparing system for tests:
-                name of a file to compress; and it must accept '-d -f -k' and
-                the name of a file to decompress.  In other words, it must
-                emulate gzip.
-+	     - Set MIN_FSSIZE to specify the minimal size (bytes) of a
-+               filesystem we can create. Setting this parameter will
-+               skip the tests creating a filesystem less than
-+               MIN_FSSIZE.
+diff --git a/common/dmerror b/common/dmerror
+index 7d12e0a1843c..84d2c338df11 100644
+--- a/common/dmerror
++++ b/common/dmerror
+@@ -15,6 +15,9 @@ _dmerror_setup()
+ 	DMLINEAR_TABLE="0 $blk_dev_size linear $dm_backing_dev 0"
  
-         - or add a case to the switch in common/config assigning
-           these variables based on the hostname of your test
-diff --git a/common/rc b/common/rc
-index b18cf61e8a96..9a8458d4a3b6 100644
---- a/common/rc
-+++ b/common/rc
-@@ -956,6 +956,16 @@ _available_memory_bytes()
- 	fi
+ 	DMERROR_TABLE="0 $blk_dev_size error $dm_backing_dev 0"
++
++	# dm-error cannot handle zone information
++	_require_non_zoned_device "${dm_backing_dev}"
  }
  
-+_check_minimal_fs_size()
-+{
-+	local fssize=$1
-+
-+	if [ -n "$MIN_FSSIZE" ]; then
-+		[ $MIN_FSSIZE -gt "$fssize" ] &&
-+			_notrun "specified filesystem size is too small"
-+	fi
-+}
-+
- # Create fs of certain size on scratch device
- # _scratch_mkfs_sized <size in bytes> [optional blocksize]
- _scratch_mkfs_sized()
-@@ -989,6 +999,8 @@ _scratch_mkfs_sized()
+ _dmerror_init()
+diff --git a/common/dmhugedisk b/common/dmhugedisk
+index 502f0243772d..715f95efde29 100644
+--- a/common/dmhugedisk
++++ b/common/dmhugedisk
+@@ -16,6 +16,9 @@ _dmhugedisk_init()
+ 	local dm_backing_dev=$SCRATCH_DEV
+ 	local chunk_size="$2"
  
- 	local blocks=`expr $fssize / $blocksize`
- 
-+	_check_minimal_fs_size $fssize
++	# We cannot ensure sequential writes on the backing device
++	_require_non_zoned_device $dm_backing_dev
 +
- 	if [ -b "$SCRATCH_DEV" ]; then
- 		local devsize=`blockdev --getsize64 $SCRATCH_DEV`
- 		[ "$fssize" -gt "$devsize" ] && _notrun "Scratch device too small"
+ 	if [ -z "$chunk_size" ]; then
+ 		chunk_size=512
+ 	fi
+diff --git a/common/rc b/common/rc
+index 9a8458d4a3b6..55cd8e8df8f6 100644
+--- a/common/rc
++++ b/common/rc
+@@ -1812,6 +1812,9 @@ _require_loop()
+     else
+ 	_notrun "This test requires loopback device support"
+     fi
++
++    # loop device does not handle zone information
++    _require_non_zoned_device ${TEST_DEV}
+ }
+ 
+ # this test requires kernel support for a secondary filesystem
 -- 
 2.31.1
 

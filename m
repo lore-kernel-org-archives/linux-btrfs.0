@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61B82C43460
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B77A9C433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4398A613BB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9C616611AB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233952AbhEUGo4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:44:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59016 "EHLO mx2.suse.de"
+        id S233747AbhEUGpA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:45:00 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58788 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233658AbhEUGoT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 02:44:19 -0400
+        id S233652AbhEUGoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 02:44:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579300; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1621579305; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=WLHcUwwjfYxfLurPu42tf5So5XuGiiZl4dK1bK6l8dM=;
-        b=d25hnYUPo6QwwywSbiw9406F9sVNin4jjqX0iINWZLb3cC25TN9Gwf13qfV+K9A9KL2NBZ
-        YYs2yKcxhNRpa1qAXic6MRNeVdb8DK8IoB6UJ9eMKSuRHpSrZuR6Y7KX9xCXHzC5s39Xjx
-        aaRPNURrzBG2heDTnN/Tmp92g6MejwQ=
+        bh=niiS2122snVOgNpQjHKCdlHtK2vHKjkwYFUob0o3Zgo=;
+        b=CfNkA+VPjhUgpO7Pcxr3h/GiP/pMlnh+eBUtZH6eqydDZcqYRL/rPD4Lg046F5H2ILIYY2
+        B2RDnJen6o2njf4Gw3VhqqNMeXLqeCWM7UBW0ZPkRhu0l6AFCwEgh1Xr/ADElO++83pPX8
+        cMrtUd+N4wi0Anf+htPBvfmuAi/tGbw=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 08260AE93
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:40 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 91582AE99
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:45 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 26/31] btrfs: reject raid5/6 fs for subpage
-Date:   Fri, 21 May 2021 14:40:45 +0800
-Message-Id: <20210521064050.191164-27-wqu@suse.com>
+Subject: [PATCH v3 29/31] btrfs: fix a subpage false alert for relocating partial preallocated data extents
+Date:   Fri, 21 May 2021 14:40:48 +0800
+Message-Id: <20210521064050.191164-30-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -46,62 +46,88 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Raid5/6 is not only unsafe due to its write-hole problem, but also has
-tons of hardcoded PAGE_SIZE.
+[BUG]
+When relocating partial preallocated data extents (part of the
+preallocated extent is written) for subpage, it can cause the following
+false alert and make the relocation to fail:
 
-So disable it for subpage support for now.
+  BTRFS info (device dm-3): balance: start -d
+  BTRFS info (device dm-3): relocating block group 13631488 flags data
+  BTRFS warning (device dm-3): csum failed root -9 ino 257 off 4096 csum 0x98757625 expected csum 0x00000000 mirror 1
+  BTRFS error (device dm-3): bdev /dev/mapper/arm_nvme-test errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+  BTRFS warning (device dm-3): csum failed root -9 ino 257 off 4096 csum 0x98757625 expected csum 0x00000000 mirror 1
+  BTRFS error (device dm-3): bdev /dev/mapper/arm_nvme-test errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+  BTRFS info (device dm-3): balance: ended with status: -5
+
+The minimal script to reproduce looks like this:
+
+  mkfs.btrfs -f -s 4k $dev
+  mount $dev -o nospace_cache $mnt
+  xfs_io -f -c "falloc 0 8k" $mnt/file
+  xfs_io -f -c "pwrite 0 4k" $mnt/file
+  btrfs balance start -d $mnt
+
+[CAUSE]
+Function btrfs_verify_data_csum() checks if the full range has
+EXTENT_NODATASUM bit for data reloc inode, if *all* bytes of the range
+has EXTENT_NODATASUM bit, then it skip the range.
+
+This works pretty well for regular sectorsize, as in that case
+btrfs_verify_data_csum() is called for each sector, thus no problem at
+all.
+
+But for subpage case, btrfs_verify_data_csum() is called on each bvec,
+which can contain several sectors, and since it checks *all* bytes for
+EXTENT_NODATASUM bit, if we have some range with csum, then we will
+continue checking all the sectors.
+
+For the preallocated sectors, it doesn't have any csum, thus obviously
+the csum won't match and cause the false alert.
+
+[FIX]
+Move the EXTENT_NODATASUM check into the main loop, so that we can check
+each sector for EXTENT_NODATASUM bit for subpage case.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 10 ++++++++++
- fs/btrfs/volumes.c |  8 ++++++++
- 2 files changed, 18 insertions(+)
+ fs/btrfs/inode.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8c3db9076988..2dd48f4bec8f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3406,6 +3406,16 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 			goto fail_alloc;
- 		}
- 	}
-+	if (sectorsize != PAGE_SIZE) {
-+		if (btrfs_super_incompat_flags(fs_info->super_copy) &
-+			BTRFS_FEATURE_INCOMPAT_RAID56) {
-+			btrfs_err(fs_info,
-+	"raid5/6 is not yet supported for sector size %u with page size %lu",
-+				sectorsize, PAGE_SIZE);
-+			err = -EINVAL;
-+			goto fail_alloc;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 53b21a8228c7..45baae1ad4db 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3176,19 +3176,24 @@ unsigned int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
+ 	if (!root->fs_info->csum_root)
+ 		return 0;
+ 
+-	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
+-	    test_range_bit(io_tree, start, end, EXTENT_NODATASUM, 1, NULL)) {
+-		clear_extent_bits(io_tree, start, end, EXTENT_NODATASUM);
+-		return 0;
+-	}
+-
+ 	ASSERT(page_offset(page) <= start &&
+ 	       end <= page_offset(page) + PAGE_SIZE - 1);
+ 	for (pg_off = offset_in_page(start);
+ 	     pg_off < offset_in_page(end);
+ 	     pg_off += sectorsize, bio_offset += sectorsize) {
++		u64 file_offset = pg_off + page_offset(page);
+ 		int ret;
+ 
++		if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
++		    test_range_bit(io_tree, file_offset,
++				   file_offset + sectorsize - 1,
++				   EXTENT_NODATASUM, 1, NULL)) {
++			/* Skip the range without csum for data reloc inode */
++			clear_extent_bits(io_tree, file_offset,
++					  file_offset + sectorsize - 1,
++					  EXTENT_NODATASUM);
++			continue;
 +		}
-+	}
- 
- 	ret = btrfs_init_workqueues(fs_info, fs_devices);
- 	if (ret) {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 80e962788396..5a0a0f23184e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3937,11 +3937,19 @@ static inline int validate_convert_profile(struct btrfs_fs_info *fs_info,
- 	if (!(bargs->flags & BTRFS_BALANCE_ARGS_CONVERT))
- 		return true;
- 
-+	if (fs_info->sectorsize < PAGE_SIZE &&
-+		bargs->target & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+		btrfs_err(fs_info,
-+	"RAID5/6 is not supported yet for sectorsize %u with page size %lu",
-+			  fs_info->sectorsize, PAGE_SIZE);
-+		goto invalid;
-+	}
- 	/* Profile is valid and does not have bits outside of the allowed set */
- 	if (alloc_profile_is_valid(bargs->target, 1) &&
- 	    (bargs->target & ~allowed) == 0)
- 		return true;
- 
-+invalid:
- 	btrfs_err(fs_info, "balance: invalid convert %s profile %s",
- 			type, btrfs_bg_type_to_raid_name(bargs->target));
- 	return false;
+ 		ret = check_data_csum(inode, io_bio, bio_offset, page, pg_off,
+ 				      page_offset(page) + pg_off);
+ 		if (ret < 0) {
 -- 
 2.31.1
 

@@ -7,37 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E07FC433ED
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9283DC433B4
 	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E4FF7611AB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 796A0611AD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233317AbhEUGoU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:44:20 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58778 "EHLO mx2.suse.de"
+        id S233394AbhEUGoV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:44:21 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58784 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234441AbhEUGny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S231924AbhEUGny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 21 May 2021 02:43:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579267; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1621579273; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=5L+CbCEacPDaeqbln1oS/6uiCaNyI132WrCSbJfyAg0=;
-        b=Xe8xiv3fe/GITfXoATcRXzc3be6BK7zojcY3A0c+KxoVJO0e2XHZkLIDwB1uf94kFGyOF8
-        DUoJI5kD8KgZxA7eYH71mrYeMrUzGywDd8aJ1cdXWj8sNEixrLAU4kBno5syBE1W9bFSyP
-        yz/IcxGumEI6VrEg5MLBaKwqftK7XJY=
+        bh=jcBMRyy175QVKM/4mflTvgb4PX/FFU5suS/GcvnKzjA=;
+        b=DvnFH7t7pfbfcWmN1DJSJ4j+pPm7OphppPPIh/Jamm/GSYz03rAf3iSgFWYhJvZhdAfWu8
+        8XDm+HUfj/PqMHBp07CDysy5jR0Gz4gBzL9EEI2qPKQSXqozySpgr59e1VLaaOA/BLa6N6
+        MZO2rWAG3B92zKqQ5Uzwt/0rOgstW90=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id AFC52ACF4;
-        Fri, 21 May 2021 06:41:07 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 03EDAAD10
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:13 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v3 07/31] btrfs: make end_bio_extent_writepage() to be subpage compatible
-Date:   Fri, 21 May 2021 14:40:26 +0800
-Message-Id: <20210521064050.191164-8-wqu@suse.com>
+Subject: [PATCH v3 10/31] btrfs: make page Ordered bit to be subpage compatible
+Date:   Fri, 21 May 2021 14:40:29 +0800
+Message-Id: <20210521064050.191164-11-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -47,31 +46,143 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now in end_bio_extent_writepage(), the only subpage incompatible code is
-the end_page_writeback().
+This involves the following modication:
+- Ordered extent creation
+  This is done in process_one_page(), now PAGE_SET_ORDERED will call
+  subpage helper to do the work.
 
-Just call the subpage helpers.
+- endio functions
+  This is done in btrfs_mark_ordered_io_finished().
+
+- btrfs_invalidatepage()
+
+- btrfs_cleanup_ordered_extents()
+  Use the subpage page helper, and add an extra branch to exit if the
+  locked page have covered the full range.
+
+Now the usage of page Ordered flag for ordered extent accounting is fully
+subpage compatible.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent_io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c    |  2 +-
+ fs/btrfs/inode.c        | 19 ++++++++++++++-----
+ fs/btrfs/ordered-data.c |  5 +++--
+ 3 files changed, 18 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 30bbd1b08c8d..d16c84430981 100644
+index 8f32c2e64936..4ee0bd03c0d1 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2853,7 +2853,8 @@ static void end_bio_extent_writepage(struct bio *bio)
- 		}
+@@ -1827,7 +1827,7 @@ static int process_one_page(struct btrfs_fs_info *fs_info,
+ 	len = end + 1 - start;
  
- 		end_extent_writepage(page, error, start, end);
--		end_page_writeback(page);
-+
-+		btrfs_page_clear_writeback(fs_info, page, start, bvec->bv_len);
+ 	if (page_ops & PAGE_SET_ORDERED)
+-		SetPageOrdered(page);
++		btrfs_page_clamp_set_ordered(fs_info, page, start, len);
+ 
+ 	if (page == locked_page)
+ 		return 1;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 83b014c40d42..a18881c7c916 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -51,6 +51,7 @@
+ #include "block-group.h"
+ #include "space-info.h"
+ #include "zoned.h"
++#include "subpage.h"
+ 
+ struct btrfs_iget_args {
+ 	u64 ino;
+@@ -191,18 +192,22 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
+ 		 * range, then __endio_write_update_ordered() will handle
+ 		 * the ordered extent accounting for the range.
+ 		 */
+-		ClearPageOrdered(page);
++		btrfs_page_clamp_clear_ordered(inode->root->fs_info, page,
++					       offset, bytes);
+ 		put_page(page);
  	}
  
- 	bio_put(bio);
++	/* The locked page covers the full range, nothing needs to be done */
++	if (bytes + offset <= page_offset(locked_page) + PAGE_SIZE)
++		return;
+ 	/*
+ 	 * In case this page belongs to the delalloc range being instantiated
+ 	 * then skip it, since the first page of a range is going to be
+ 	 * properly cleaned up by the caller of run_delalloc_range
+ 	 */
+ 	if (page_start >= offset && page_end <= (offset + bytes - 1)) {
+-		offset += PAGE_SIZE;
+-		bytes -= PAGE_SIZE;
++		bytes = offset + bytes - page_offset(locked_page) - PAGE_SIZE;
++		offset = page_offset(locked_page) + PAGE_SIZE;
+ 	}
+ 
+ 	return __endio_write_update_ordered(inode, offset, bytes, false);
+@@ -8308,6 +8313,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 				 unsigned int length)
+ {
+ 	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct extent_io_tree *tree = &inode->io_tree;
+ 	struct extent_state *cached_state = NULL;
+ 	u64 page_start = page_offset(page);
+@@ -8343,6 +8349,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 		struct btrfs_ordered_extent *ordered;
+ 		bool delete_states;
+ 		u64 range_end;
++		u32 range_len;
+ 
+ 		ordered = btrfs_lookup_first_ordered_range(inode, cur,
+ 							   page_end + 1 - cur);
+@@ -8369,7 +8376,9 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 
+ 		range_end = min(ordered->file_offset + ordered->num_bytes - 1,
+ 				page_end);
+-		if (!PageOrdered(page)) {
++		ASSERT(range_end + 1 - cur < U32_MAX);
++		range_len = range_end + 1 - cur;
++		if (!btrfs_page_test_ordered(fs_info, page, cur, range_len)) {
+ 			/*
+ 			 * If Ordered (Private2) is cleared, it means endio has
+ 			 * already been executed for the range.
+@@ -8379,7 +8388,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 			delete_states = false;
+ 			goto next;
+ 		}
+-		ClearPageOrdered(page);
++		btrfs_page_clear_ordered(fs_info, page, cur, range_len);
+ 
+ 		/*
+ 		 * IO on this page will never be started, so we need to account
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index b1b377ad99a0..6eb41b7c0c84 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -16,6 +16,7 @@
+ #include "compression.h"
+ #include "delalloc-space.h"
+ #include "qgroup.h"
++#include "subpage.h"
+ 
+ static struct kmem_cache *btrfs_ordered_extent_cache;
+ 
+@@ -395,11 +396,11 @@ void btrfs_mark_ordered_io_finished(struct btrfs_inode *inode,
+ 			 *
+ 			 * If there's no such bit, we need to skip to next range.
+ 			 */
+-			if (!PageOrdered(page)) {
++			if (!btrfs_page_test_ordered(fs_info, page, cur, len)) {
+ 				cur += len;
+ 				continue;
+ 			}
+-			ClearPageOrdered(page);
++			btrfs_page_clear_ordered(fs_info, page, cur, len);
+ 		}
+ 
+ 		/* Now we're fine to update the accounting */
 -- 
 2.31.1
 

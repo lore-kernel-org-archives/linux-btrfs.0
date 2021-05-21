@@ -2,126 +2,128 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77C92C47076
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 15:38:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7ED9FC47078
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 16:39:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 51124613EB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 15:38:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5BC93613EC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 16:39:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236669AbhEUPjn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 11:39:43 -0400
-Received: from mail-vs1-f50.google.com ([209.85.217.50]:36353 "EHLO
-        mail-vs1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232837AbhEUPjm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 11:39:42 -0400
-Received: by mail-vs1-f50.google.com with SMTP id x2so4508569vss.3;
-        Fri, 21 May 2021 08:38:18 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=p+cQg0XqSw6N2gR6iurEXLJBxBLY4iIdtLsf7ZxFkHA=;
-        b=Gd33xmQjcPQLtCh31ouFnzrMC/ButHylb/kg7/ghIjXPlaNvoqBC6qDAbHMpfUFQHa
-         e37w0EKt1AvqrYoA11VN4iMlp09niV7CLQQOZ2oKGalJJ1uiLIIlHGn1M//TssvXxEPr
-         4N0hG5nEwxkbQdsdg7ur0zNjEZ7b3+fkJKzs1DkiB4iVVSGmL/3C2yu7iIlexoFtyxKs
-         +X1yMODpBAZwnFT/MGU6uO+FORRXQCreFzPtZW/4w2L5eSbjhKcJnZhVnrzNab8b/OFH
-         KD+1Y05rLn4mlD5lCVwY+X+yK37KZWYZT+jx667aUcv5i1aqVKHN/4T7/U5/gd5VNCK9
-         5lhw==
-X-Gm-Message-State: AOAM533Rq5PuHgCTpFFVjxMfqgtUcn5MK4nhD95DzZhE7RfQwTB2/QS8
-        EgtiDrQBbfCQSiFb2QCugjUcTZNvJckXHYFihqnHhVfqMQI=
-X-Google-Smtp-Source: ABdhPJzvJ6WAm5Hd6nkVmcmFxZ/wnRKHwpbIb8qxtfhirrBSKX76Fi7A4Ucyyvc1V2uDsyLj6XOuWg+ZbNvd5ylWB/0=
-X-Received: by 2002:a67:fb52:: with SMTP id e18mr11604406vsr.18.1621611498180;
- Fri, 21 May 2021 08:38:18 -0700 (PDT)
+        id S235237AbhEUQlE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 12:41:04 -0400
+Received: from mx2.suse.de ([195.135.220.15]:40318 "EHLO mx2.suse.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S233011AbhEUQlE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 12:41:04 -0400
+X-Virus-Scanned: by amavisd-new at test-mx.suse.de
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1621615180;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=KqVUIt9aMEn5aAyhlri/tMQaKHYNLmmuM+Q611tFHbI=;
+        b=DzogU2Bxzj6JlmJFtSE/rVBjGfOwVbvHJzLW/1EeXBIbe8x3aTNpw6xXMyK8s7Xi/iC9cF
+        EGAulJeR55TnVC38UcuM+aO9Ecs+ieP0zTwF8O9JhdC4abILHZao/cozm1hB+62ZBH9+Ge
+        W+XJDAP1hl2c8XvYk+TfC8GD/XA7K04=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1621615180;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=KqVUIt9aMEn5aAyhlri/tMQaKHYNLmmuM+Q611tFHbI=;
+        b=alOFS+YHJc44ueuSdK1qQkv5ce7fgxtKI+ADOMYaKRvE0reY1acO5RfVNW+U8XhTmEbJdO
+        2JaeL/h/8bLCayAQ==
+Received: from relay2.suse.de (unknown [195.135.221.27])
+        by mx2.suse.de (Postfix) with ESMTP id F072CAAA6;
+        Fri, 21 May 2021 16:39:39 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 561B6DA730; Fri, 21 May 2021 18:37:05 +0200 (CEST)
+Date:   Fri, 21 May 2021 18:37:05 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>
+Subject: Re: [PATCH] btrfs: zoned: limit ordered extent to zoned append size
+Message-ID: <20210521163705.GO7604@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>
+References: <65f1b716324a06c5cad99f2737a8669899d4569f.1621588229.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
-References: <20210518144935.15835-1-dsterba@suse.com> <alpine.DEB.2.22.394.2105200927570.1771368@ramsan.of.borg>
- <CAK8P3a3_O5CdbUqvJsnTh5p0RbSCsXyFhkO6afaLsnwf176Kiw@mail.gmail.com> <20210521151613.GN7604@twin.jikos.cz>
-In-Reply-To: <20210521151613.GN7604@twin.jikos.cz>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 21 May 2021 17:38:06 +0200
-Message-ID: <CAMuHMdWJC3PhD7ScnkG3kg_yjAh_UpfmyBOHrOq0e8dJ18ANew@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: scrub: per-device bandwidth control
-To:     David Sterba <dsterba@suse.cz>, Arnd Bergmann <arnd@arndb.de>,
-        David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <65f1b716324a06c5cad99f2737a8669899d4569f.1621588229.git.johannes.thumshirn@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi David,
+On Fri, May 21, 2021 at 06:11:04PM +0900, Johannes Thumshirn wrote:
+> Damien reported a test failure with btrfs/209. The test itself ran fine,
+> but the fsck run afterwards reported a corrupted filesystem.
+> 
+> The filesystem corruption happens because we're splitting an extent and
+> then writing the extent twice. We have to split the extent though, because
+> we're creating too large extents for a REQ_OP_ZONE_APPEND operation.
+> 
+> When dumping the extent tree, we can see two EXTENT_ITEMs at the same
+> start address but different lengths.
+> 
+> $ btrfs inspect dump-tree /dev/nullb1 -t extent
+> ...
+>    item 19 key (269484032 EXTENT_ITEM 126976) itemoff 15470 itemsize 53
+>            refs 1 gen 7 flags DATA
+>            extent data backref root FS_TREE objectid 257 offset 786432 count 1
+>    item 20 key (269484032 EXTENT_ITEM 262144) itemoff 15417 itemsize 53
+>            refs 1 gen 7 flags DATA
+>            extent data backref root FS_TREE objectid 257 offset 786432 count 1
+> 
+> On a zoned filesystem, limit the size of an ordered extent to the maximum
+> size that can be issued as a single REQ_OP_ZONE_APPEND operation.
+> 
+> Note: This patch breaks fstests btrfs/079, as it increases the number of
+> on-disk extents from 80 to 83 per 10M write.
+> 
+> Reported-by: Damien Le Moal <damien.lemoal@wdc.com>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/extent_io.c | 4 ++++
+>  1 file changed, 4 insertions(+)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 78d3f2ec90e0..e823b2c74af5 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -1860,6 +1860,7 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
+>  				    u64 *end)
+>  {
+>  	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+> +	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	u64 max_bytes = BTRFS_MAX_EXTENT_SIZE;
+>  	u64 delalloc_start;
+>  	u64 delalloc_end;
+> @@ -1868,6 +1869,9 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
+>  	int ret;
+>  	int loops = 0;
+>  
+> +	if (fs_info && fs_info->max_zone_append_size)
+> +		max_bytes = ALIGN_DOWN(fs_info->max_zone_append_size,
+> +				       PAGE_SIZE);
 
-On Fri, May 21, 2021 at 5:18 PM David Sterba <dsterba@suse.cz> wrote:
-> On Thu, May 20, 2021 at 03:14:03PM +0200, Arnd Bergmann wrote:
-> > On Thu, May 20, 2021 at 9:43 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> > > On Tue, 18 May 2021, David Sterba wrote:
-> > > > +     /* Start new epoch, set deadline */
-> > > > +     now = ktime_get();
-> > > > +     if (sctx->throttle_deadline == 0) {
-> > > > +             sctx->throttle_deadline = ktime_add_ms(now, time_slice / div);
-> > >
-> > > ERROR: modpost: "__udivdi3" [fs/btrfs/btrfs.ko] undefined!
-> > >
-> > > div_u64(bwlimit, div)
-> >
-> > If 'time_slice' is in nanoseconds, the best interface to use
-> > is ktime_divns().
->
-> It's in miliseconds and the division above is int/int, the problematic
-> one is below.
+Why is the alignment needed? Are the max zone append values expected to
+be so random? Also it's using memory-related value for something that's
+more hw related, or at least extent size (which ends up on disk).
 
-Yep, sorry for the wrong pointer.
-
-> >
-> > > > +             sctx->throttle_sent = 0;
-> > > > +     }
-> > > > +
-> > > > +     /* Still in the time to send? */
-> > > > +     if (ktime_before(now, sctx->throttle_deadline)) {
-> > > > +             /* If current bio is within the limit, send it */
-> > > > +             sctx->throttle_sent += sbio->bio->bi_iter.bi_size;
-> > > > +             if (sctx->throttle_sent <= bwlimit / div)
-> > > > +                     return;
-> >
-> > Doesn't this also need to be changed?
-> >
-> > > > +             /* We're over the limit, sleep until the rest of the slice */
-> > > > +             delta = ktime_ms_delta(sctx->throttle_deadline, now);
-> > > > +     } else {
-> > > > +             /* New request after deadline, start new epoch */
-> > > > +             delta = 0;
-> > > > +     }
-> > > > +
-> > > > +     if (delta)
-> > > > +             schedule_timeout_interruptible(delta * HZ / 1000);
-> > >
-> > > ERROR: modpost: "__divdi3" [fs/btrfs/btrfs.ko] undefined!
-> > >
-> > > I'm a bit surprised gcc doesn't emit code for the division by the
-> > > constant 1000, but emits a call to __divdi3().  So this has to become
-> > > div_u64(), too.
-> >
-> > There is schedule_hrtimeout(), which takes a ktime_t directly
-> > but has slightly different behavior. There is also an msecs_to_jiffies
-> > helper that should produce a fast division.
->
-> I'll use msecs_to_jiffies, thanks. If 'hr' in schedule_hrtimeout stands
-> for high resolution, it's not necessary here.
-
-msecs_to_jiffies() takes (32-bit) "unsigned int", while delta is "s64".
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+>  again:
+>  	/* step one, find a bunch of delalloc bytes starting at start */
+>  	delalloc_start = *start;
+> -- 
+> 2.31.1

@@ -2,196 +2,159 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF1CCC433B4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8516CC43460
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 86342613B6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6457A6135C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232975AbhEUGnz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:43:55 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57716 "EHLO mx2.suse.de"
+        id S232524AbhEUGn4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:43:56 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57748 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234442AbhEUGm1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 02:42:27 -0400
+        id S234534AbhEUGm2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 02:42:28 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579254; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=SFrg2W9cn4+gW1wWr6EbLQiHrxo/nutmNSsP5mzkAoQ=;
-        b=PuZ7d0Mafv9wqo1J9/ZuLpruz0f2LFWkmVxeelBglMYudfog45nmlF99UZwaHDAhGpWqNV
-        3AbHZiVCigS1guKkg2qo6db2Ih2uphbA7dqeD1x1Nly9vkEQU04xyIssjfNy4l1XZ4hBdm
-        NldBwdtETwiCCaJzYI2m3fg3BzLzJio=
+        t=1621579260; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=JP9j8HnUfIRsWheW/HlFksCo1hCsZvfEoApzqE6MwyY=;
+        b=jBqw9iigFBMjwUKq7PbRVuTOEWHtDdI8zlSfBjdMNonpD6hiT2YOqkqMjEgWNxx6h1iXKZ
+        GjDsd6bOFQ7peidlzHPd7AFcsDOUQpGko6SweKM7QGi4sxf5F+71/OUcj/Pre7gv3ggYVE
+        DojHbFMbpomWRqbCRoiPpJ8Q/hciETk=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1D180AB64
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:40:54 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 13512AC47;
+        Fri, 21 May 2021 06:41:00 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 00/31] btrfs: add data write support for subpage
-Date:   Fri, 21 May 2021 14:40:19 +0800
-Message-Id: <20210521064050.191164-1-wqu@suse.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v3 03/31] btrfs: provide btrfs_page_clamp_*() helpers
+Date:   Fri, 21 May 2021 14:40:22 +0800
+Message-Id: <20210521064050.191164-4-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
+In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
+References: <20210521064050.191164-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This huge patchset can be fetched from github:
-https://github.com/adam900710/linux/tree/subpage
+In the coming subpage RW supports, there are a lot of page status update
+calls which need to be converted to subpage compatible version, which
+needs @start and @len.
 
-=== Current stage ===
-The tests on x86 pass without new failure, and generic test group on
-arm64 with 64K page size passes except known failure and defrag group.
+Some call sites already have such @start/@len and are already in
+page range, like various endio functions.
 
-For btrfs test group, all pass except compression/raid56.
-(As the btrfs defrag group doesn't require that restrict defrag result,
-btrfs/defrag group also passes here)
+But there are also call sites which need to clamp the range for subpage
+case, like btrfs_dirty_pagse() and __process_contig_pages().
 
-For anyone who is interested in testing, please apply this patch for
-btrfs-progs before testing.
-https://patchwork.kernel.org/project/linux-btrfs/patch/20210420073036.243715-1-wqu@suse.com/
-Or there will be too many false alerts.
+Here we introduce new helpers, btrfs_page_clamp_*(), to do and only do the
+clamp for subpage version.
 
-=== Limitation ===
-There are several limitations introduced just for subpage:
-- No compressed write support
-  Read is no problem, but compression write path has more things left to
-  be modified.
-  Thus for current patchset, no matter what inode attribute or mount
-  option is, no new compressed extent can be created for subpage case.
+Although in theory all existing btrfs_page_*() calls can be converted to
+use btrfs_page_clamp_*() directly, but that would make us to do
+unnecessary clamp operations.
 
-- No inline extent will be created
-  This is mostly due to the fact that filemap_fdatawrite_range() will
-  trigger more write than the range specified.
-  In fallocate calls, this behavior can make us to writeback which can
-  be inlined, before we enlarge the isize, causing inline extent being
-  created along with regular extents.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/subpage.c | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/subpage.h | 10 ++++++++++
+ 2 files changed, 48 insertions(+)
 
-- No support for RAID56
-  There are still too many hardcoded PAGE_SIZE in raid56 code.
-  Considering it's already considered unsafe due to its write-hole
-  problem, disabling RAID56 for subpage looks sane to me.
-
-- No sector-sized defrag support
-  Currently defrag is still done in PAGE_SIZE, meaning if there is a
-  hole in a 64K page, we still write a full 64K back to disk.
-  This causes more disk space usage.
-
-=== Patchset structure ===
-
-Patch 01~19:	Make data write path to be subpage compatible
-Patch 20~21:	Make data relocation path to be subpage compatible
-Patch 22~30:	Various fixes for subpage corner cases
-Patch 31:	Enable subpage data write
-
-=== Changelog ===
-v2:
-- Rebased to latest misc-next
-  Now metadata write patches are removed from the series, as they are
-  already merged into misc-next.
-
-- Added new Reviewed-by/Tested-by/Reported-by tags
-
-- Use separate endio functions to subpage metadata write path
-
-- Re-order the patches, to make refactors at the top of the series
-  One refactor, the submit_extent_page() one, should benefit 4K page
-  size more than 64K page size, thus it's worthy to be merged early
-
-- New bug fixes exposed by Ritesh Harjani on Power
-
-- Reject RAID56 completely
-  Exposed by btrfs test group, which caused BUG_ON() for various sites.
-  Considering RAID56 is already not considered safe, it's better to
-  reject them completely for now.
-
-- Fix subpage scrub repair failure
-  Caused by hardcoded PAGE_SIZE
-
-- Fix free space cache inode size
-  Same cause as scrub repair failure
-
-v3:
-- Rebased to remove write path prepration patches
-
-- Properly enable btrfs defrag
-  Previsouly, btrfs defrag is in fact just disabled.
-  This makes tons of tests in btrfs/defrag to fail.
-
-- More bug fixes for rare race/crashes
-  * Fix relocation false alert on csum mismatch
-  * Fix relocation data corruption
-  * Fix a rare case of false ASSERT()
-    The fix already get merged into the prepration patches, thus no
-    longer in this patchset though.
-  
-  Mostly reported by Ritesh from IBM.
-
-Qu Wenruo (31):
-  btrfs: pass bytenr directly to __process_pages_contig()
-  btrfs: refactor the page status update into process_one_page()
-  btrfs: provide btrfs_page_clamp_*() helpers
-  btrfs: only require sector size alignment for
-    end_bio_extent_writepage()
-  btrfs: make btrfs_dirty_pages() to be subpage compatible
-  btrfs: make __process_pages_contig() to handle subpage
-    dirty/error/writeback status
-  btrfs: make end_bio_extent_writepage() to be subpage compatible
-  btrfs: make process_one_page() to handle subpage locking
-  btrfs: introduce helpers for subpage ordered status
-  btrfs: make page Ordered bit to be subpage compatible
-  btrfs: update locked page dirty/writeback/error bits in
-    __process_pages_contig
-  btrfs: prevent extent_clear_unlock_delalloc() to unlock page not
-    locked by __process_pages_contig()
-  btrfs: make btrfs_set_range_writeback() subpage compatible
-  btrfs: make __extent_writepage_io() only submit dirty range for
-    subpage
-  btrfs: make btrfs_truncate_block() to be subpage compatible
-  btrfs: make btrfs_page_mkwrite() to be subpage compatible
-  btrfs: reflink: make copy_inline_to_page() to be subpage compatible
-  btrfs: fix the filemap_range_has_page() call in
-    btrfs_punch_hole_lock_range()
-  btrfs: don't clear page extent mapped if we're not invalidating the
-    full page
-  btrfs: extract relocation page read and dirty part into its own
-    function
-  btrfs: make relocate_one_page() to handle subpage case
-  btrfs: fix wild subpage writeback which does not have ordered extent.
-  btrfs: disable inline extent creation for subpage
-  btrfs: allow submit_extent_page() to do bio split for subpage
-  btrfs: make defrag to be semi subpage compatible
-  btrfs: reject raid5/6 fs for subpage
-  btrfs: fix a crash caused by race between prepare_pages() and
-    btrfs_releasepage()
-  btrfs: fix a use-after-free bug in writeback subpage helper
-  btrfs: fix a subpage false alert for relocating partial preallocated
-    data extents
-  btrfs: fix a subpage relocation data corruption
-  btrfs: allow read-write for 4K sectorsize on 64K page size systems
-
- fs/btrfs/ctree.h        |   2 +-
- fs/btrfs/disk-io.c      |  13 +-
- fs/btrfs/extent_io.c    | 551 +++++++++++++++++++++++++++-------------
- fs/btrfs/file.c         |  31 ++-
- fs/btrfs/inode.c        | 147 +++++++++--
- fs/btrfs/ioctl.c        |  12 +-
- fs/btrfs/ordered-data.c |   5 +-
- fs/btrfs/reflink.c      |  14 +-
- fs/btrfs/relocation.c   | 287 +++++++++++++--------
- fs/btrfs/subpage.c      | 156 +++++++++++-
- fs/btrfs/subpage.h      |  31 +++
- fs/btrfs/super.c        |   7 -
- fs/btrfs/sysfs.c        |   5 +
- fs/btrfs/volumes.c      |   8 +
- 14 files changed, 937 insertions(+), 332 deletions(-)
-
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index 2d19089ab625..a6cf1776f3f9 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -354,6 +354,16 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
+ 	spin_unlock_irqrestore(&subpage->lock, flags);
+ }
+ 
++static void btrfs_subpage_clamp_range(struct page *page, u64 *start, u32 *len)
++{
++	u64 orig_start = *start;
++	u32 orig_len = *len;
++
++	*start = max_t(u64, page_offset(page), orig_start);
++	*len = min_t(u64, page_offset(page) + PAGE_SIZE,
++		     orig_start + orig_len) - *start;
++}
++
+ /*
+  * Unlike set/clear which is dependent on each page status, for test all bits
+  * are tested in the same way.
+@@ -408,6 +418,34 @@ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
+ 	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE)	\
+ 		return test_page_func(page);				\
+ 	return btrfs_subpage_test_##name(fs_info, page, start, len);	\
++}									\
++void btrfs_page_clamp_set_##name(const struct btrfs_fs_info *fs_info,	\
++		struct page *page, u64 start, u32 len)			\
++{									\
++	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
++		set_page_func(page);					\
++		return;							\
++	}								\
++	btrfs_subpage_clamp_range(page, &start, &len);			\
++	btrfs_subpage_set_##name(fs_info, page, start, len);		\
++}									\
++void btrfs_page_clamp_clear_##name(const struct btrfs_fs_info *fs_info, \
++		struct page *page, u64 start, u32 len)			\
++{									\
++	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
++		clear_page_func(page);					\
++		return;							\
++	}								\
++	btrfs_subpage_clamp_range(page, &start, &len);			\
++	btrfs_subpage_clear_##name(fs_info, page, start, len);		\
++}									\
++bool btrfs_page_clamp_test_##name(const struct btrfs_fs_info *fs_info,	\
++		struct page *page, u64 start, u32 len)			\
++{									\
++	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE)	\
++		return test_page_func(page);				\
++	btrfs_subpage_clamp_range(page, &start, &len);			\
++	return btrfs_subpage_test_##name(fs_info, page, start, len);	\
+ }
+ IMPLEMENT_BTRFS_PAGE_OPS(uptodate, SetPageUptodate, ClearPageUptodate,
+ 			 PageUptodate);
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+index bfd626e955be..291cb1932f27 100644
+--- a/fs/btrfs/subpage.h
++++ b/fs/btrfs/subpage.h
+@@ -72,6 +72,10 @@ void btrfs_subpage_end_reader(const struct btrfs_fs_info *fs_info,
+  * btrfs_page_*() are for call sites where the page can either be subpage
+  * specific or regular page. The function will handle both cases.
+  * But the range still needs to be inside the page.
++ *
++ * btrfs_page_clamp_*() are similar to btrfs_page_*(), except the range doesn't
++ * need to be inside the page. Those functions will truncate the range
++ * automatically.
+  */
+ #define DECLARE_BTRFS_SUBPAGE_OPS(name)					\
+ void btrfs_subpage_set_##name(const struct btrfs_fs_info *fs_info,	\
+@@ -85,6 +89,12 @@ void btrfs_page_set_##name(const struct btrfs_fs_info *fs_info,		\
+ void btrfs_page_clear_##name(const struct btrfs_fs_info *fs_info,	\
+ 		struct page *page, u64 start, u32 len);			\
+ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
++		struct page *page, u64 start, u32 len);			\
++void btrfs_page_clamp_set_##name(const struct btrfs_fs_info *fs_info,	\
++		struct page *page, u64 start, u32 len);			\
++void btrfs_page_clamp_clear_##name(const struct btrfs_fs_info *fs_info,	\
++		struct page *page, u64 start, u32 len);			\
++bool btrfs_page_clamp_test_##name(const struct btrfs_fs_info *fs_info,	\
+ 		struct page *page, u64 start, u32 len);
+ 
+ DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
 -- 
 2.31.1
 

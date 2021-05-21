@@ -7,37 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EEFEC433ED
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 408C1C433B4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 16B87611AD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2708A613B6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234181AbhEUGpI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:45:08 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59018 "EHLO mx2.suse.de"
+        id S232861AbhEUGpJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:45:09 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58802 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233199AbhEUGoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S233688AbhEUGoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 21 May 2021 02:44:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579303; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1621579309; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=xek06VCcXJeGA0FPJENhSogIfByHmK7Igl9C5gGJW2M=;
-        b=ipe8lxW2JsjJQGSSi4AC5e82uRG0Msivf5fnYLrYLYGjhxPdccBCLpduj/Yfiky9j94QZr
-        6Jv8khf1uyarPiQn59yCQUQEJCOQXdyAXuWtWTYjUYIUfwDoukjiGJP9yp5ZfPW+ea4iAr
-        M2L/iqJKz+/q25WyYFNx5X57SpyFIQ8=
+        bh=Q7F97P4AFH+GI3DD0plLLQzQQ1+RPtCjOjgsprU0GSs=;
+        b=hQHHMZpSDzhDEzacoZNXqN1sWNLX8kTT32oSYMrN/8ajG8WC/y3eL2C3Y0wpiamw2wan6I
+        nk5nTuURliEtYCdalBDjv4b4fNa9TKnkYzGh33i528Gaat5zw9vDaPzE2vAnVmgQ9DtXx2
+        99CgLaOGhImC1/h3Nz/5kaseQIAhnaM=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id D1E8AAE95;
-        Fri, 21 May 2021 06:41:43 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1C548AEA6
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:49 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Ritesh Harjani <riteshh@linux.ibm.com>
-Subject: [PATCH v3 28/31] btrfs: fix a use-after-free bug in writeback subpage helper
-Date:   Fri, 21 May 2021 14:40:47 +0800
-Message-Id: <20210521064050.191164-29-wqu@suse.com>
+Subject: [PATCH v3 31/31] btrfs: allow read-write for 4K sectorsize on 64K page size systems
+Date:   Fri, 21 May 2021 14:40:50 +0800
+Message-Id: <20210521064050.191164-32-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -47,141 +46,131 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-There is a possible use-after-free bug when running generic/095.
+Since now we support data and metadata read-write for subpage, remove
+the RO requirement for subpage mount.
 
- BUG: Unable to handle kernel data access on write at 0x6b6b6b6b6b6b725b
- Faulting instruction address: 0xc000000000283654
- c000000000283078 do_raw_spin_unlock+0x88/0x230
- c0000000012b1e14 _raw_spin_unlock_irqrestore+0x44/0x90
- c000000000a918dc btrfs_subpage_clear_writeback+0xac/0xe0
- c0000000009e0458 end_bio_extent_writepage+0x158/0x270
- c000000000b6fd14 bio_endio+0x254/0x270
- c0000000009fc0f0 btrfs_end_bio+0x1a0/0x200
- c000000000b6fd14 bio_endio+0x254/0x270
- c000000000b781fc blk_update_request+0x46c/0x670
- c000000000b8b394 blk_mq_end_request+0x34/0x1d0
- c000000000d82d1c lo_complete_rq+0x11c/0x140
- c000000000b880a4 blk_complete_reqs+0x84/0xb0
- c0000000012b2ca4 __do_softirq+0x334/0x680
- c0000000001dd878 irq_exit+0x148/0x1d0
- c000000000016f4c do_IRQ+0x20c/0x240
- c000000000009240 hardware_interrupt_common_virt+0x1b0/0x1c0
+There are some extra limits though:
+- For now, subpage RW mount is still considered experimental
+  Thus that mount warning will still be there.
 
-[CAUSE]
-There is very small race window like the following in generic/095.
+- No compression support
+  There are still quite some PAGE_SIZE hard coded and quite some call
+  sites use extent_clear_unlock_delalloc() to unlock locked_page.
+  This will screw up subpage helpers
 
-	Thread 1		|		Thread 2
---------------------------------+------------------------------------
-  end_bio_extent_writepage()	| btrfs_releasepage()
-  |- spin_lock_irqsave()	| |
-  |- end_page_writeback()	| |
-  |				| |- if (PageWriteback() ||...)
-  |				| |- clear_page_extent_mapped()
-  |				|    |- kfree(subpage);
-  |- spin_unlock_irqrestore().
+  Now for subpage RW mount, no matter whatever mount option or inode
+  attr is set, all write will not be compressed.
+  Although reading compressed data has no problem.
 
-The race can also happen between writeback and btrfs_invalidatepage(),
-although that would be much harder as btrfs_invalidatepage() has much
-more work to do before the clear_page_extent_mapped() call.
+- No sectorsize defrag
+  The problem here is, defrag is still done in full page size (64K).
+  This means, if a page only has 4K data while the remaining 60K is all
+  hole, after defrag it will be full 64K.
 
-[FIX]
-Here we "wait" for the subapge spinlock to be released before we detach
-subpage structure.
-So this patch will introduce a new function, wait_subpage_spinlock(), to
-do the "wait" by acquiring the spinlock and release it.
+  This should not cause any kernel warning/hang nor data corruption, but
+  it's still a behavior difference.
 
-Since the caller has ensured the page is not dirty nor writeback, and
-page is already locked, the only way to hold the subpage spinlock is
-from endio function.
-Thus we only need to acquire the spinlock to wait for any existing
-holder.
+- No inline extent will be created
+  This is mostly due to the fact that filemap_fdatawrite_range() will
+  trigger more write than the range specified.
+  In fallocate calls, this behavior can make us to writeback which can
+  be inlined, before we enlarge the isize.
 
-Reported-by: Ritesh Harjani <riteshh@linux.ibm.com>
-Tested-by: Ritesh Harjani <riteshh@linux.ibm.com>
+  This is a very special corner case, and even current btrfs check won't
+  report error on such inline extent + regular extent.
+  But considering how much effort has been put to prevent such inline +
+  regular, I'd prefer to cut off inline extent completely until we have
+  a good solution.
+
+- Read-time data repair is in bvec size
+  This is different from original sector size repair.
+  Bvec size is a floating number between 4K to 64K (page size).
+  If the extent is only 4K sized then we can do the repair in 4K size.
+  But if the extent is larger, our repair unit grows follows the
+  extent size, until it reaches PAGE_SIZE.
+
+  This is mostly due to the design of the repair code, it can be
+  enhanced later.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c   | 40 +++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/subpage.c |  4 +++-
- 2 files changed, 42 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c | 13 ++++---------
+ fs/btrfs/inode.c   |  3 +++
+ fs/btrfs/super.c   |  7 -------
+ fs/btrfs/sysfs.c   |  5 +++++
+ 4 files changed, 12 insertions(+), 16 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2dd48f4bec8f..7c17cb7cf4fe 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3396,15 +3396,10 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 		goto fail_alloc;
+ 	}
+ 
+-	/* For 4K sector size support, it's only read-only */
+-	if (PAGE_SIZE == SZ_64K && sectorsize == SZ_4K) {
+-		if (!sb_rdonly(sb) || btrfs_super_log_root(disk_super)) {
+-			btrfs_err(fs_info,
+-	"subpage sectorsize %u only supported read-only for page size %lu",
+-				sectorsize, PAGE_SIZE);
+-			err = -EINVAL;
+-			goto fail_alloc;
+-		}
++	if (sectorsize != PAGE_SIZE) {
++		btrfs_warn(fs_info,
++	"read-write for sector size %u with page size %lu is experimental",
++			   sectorsize, PAGE_SIZE);
+ 	}
+ 	if (sectorsize != PAGE_SIZE) {
+ 		if (btrfs_super_incompat_flags(fs_info->super_copy) &
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f90cb8676e36..53b21a8228c7 100644
+index 45baae1ad4db..c6a5db2ebe16 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8296,11 +8296,48 @@ static void btrfs_readahead(struct readahead_control *rac)
- 	extent_readahead(rac);
- }
- 
-+/*
-+ * For releasepage() and invalidatepage() we have a race window where
-+ * end_page_writeback() is called but the subpage spinlock is not yet
-+ * released.
-+ * If we continue to release/invalidate the page, we could cause
-+ * use-after-free for subpage spinlock.
-+ * So this function is to spin wait for subpage spinlock.
-+ */
-+static void wait_subpage_spinlock(struct page *page)
-+{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
-+	struct btrfs_subpage *subpage;
-+
-+	if (fs_info->sectorsize == PAGE_SIZE)
-+		return;
-+
-+	ASSERT(PagePrivate(page) && page->private);
-+	subpage = (struct btrfs_subpage *)page->private;
-+
-+	/*
-+	 * This may look insane as we just acquire the spinlock and release it,
-+	 * without doing anything.
-+	 * But we just want to make sure no one is still holding the subpage
-+	 * spinlock.
-+	 * And since the page is not dirty nor writeback, and we have page
-+	 * locked, the only possible way to hold a spinlock is from the endio
-+	 * function to clear page writeback.
-+	 *
-+	 * Here we just acquire the spinlock so that all existing callers
-+	 * should exit and we're safe to release/invalidate the page.
-+	 */
-+	spin_lock_irq(&subpage->lock);
-+	spin_unlock_irq(&subpage->lock);
-+}
-+
- static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+@@ -490,6 +490,9 @@ static noinline int add_async_extent(struct async_chunk *cow,
+  */
+ static inline bool inode_can_compress(struct btrfs_inode *inode)
  {
- 	int ret = try_release_extent_mapping(page, gfp_flags);
--	if (ret == 1)
-+	if (ret == 1) {
-+		wait_subpage_spinlock(page);
- 		clear_page_extent_mapped(page);
-+	}
- 	return ret;
- }
++	/* Subpage doesn't support compress yet */
++	if (inode->root->fs_info->sectorsize < PAGE_SIZE)
++		return false;
+ 	if (inode->flags & BTRFS_INODE_NODATACOW ||
+ 	    inode->flags & BTRFS_INODE_NODATASUM)
+ 		return false;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4a396c1147f1..b18d268abfbb 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2053,13 +2053,6 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 			ret = -EINVAL;
+ 			goto restore;
+ 		}
+-		if (fs_info->sectorsize < PAGE_SIZE) {
+-			btrfs_warn(fs_info,
+-	"read-write mount is not yet allowed for sectorsize %u page size %lu",
+-				   fs_info->sectorsize, PAGE_SIZE);
+-			ret = -EINVAL;
+-			goto restore;
+-		}
  
-@@ -8364,6 +8401,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 	 * do double ordered extent accounting on the same page.
- 	 */
- 	wait_on_page_writeback(page);
-+	wait_subpage_spinlock(page);
+ 		/*
+ 		 * NOTE: when remounting with a change that does writes, don't
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 436ac7b4b334..752461a79364 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -366,6 +366,11 @@ static ssize_t supported_sectorsizes_show(struct kobject *kobj,
+ {
+ 	ssize_t ret = 0;
  
- 	/*
- 	 * For subpage case, we have call sites like
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 696485ab68a2..552410fba0bd 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -424,8 +424,10 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
- 
- 	spin_lock_irqsave(&subpage->lock, flags);
- 	subpage->writeback_bitmap &= ~tmp;
--	if (subpage->writeback_bitmap == 0)
-+	if (subpage->writeback_bitmap == 0) {
-+		ASSERT(PageWriteback(page));
- 		end_page_writeback(page);
-+	}
- 	spin_unlock_irqrestore(&subpage->lock, flags);
- }
++	/* 4K sector size is also support with 64K page size */
++	if (PAGE_SIZE == SZ_64K)
++		ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%u ",
++				 SZ_4K);
++
+ 	/* Only sectorsize == PAGE_SIZE is now supported */
+ 	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%lu\n", PAGE_SIZE);
  
 -- 
 2.31.1

@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3B30C43460
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16361C433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C0192611AB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F07B4611AB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232234AbhEUGoW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:44:22 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58782 "EHLO mx2.suse.de"
+        id S233963AbhEUGoX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:44:23 -0400
+Received: from mx2.suse.de ([195.135.220.15]:58788 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234749AbhEUGny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S234763AbhEUGny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 21 May 2021 02:43:54 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579271; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1621579276; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=SDn4VMTjdSk8A06e4ZuQlZmj6wRQRHg6TgqgNAVFEgU=;
-        b=QsyIKZiwIKNnHAngwFy8F83zhER5E9bTezdhjxOG39aq/BxUjeegPYqaXl2TL0iFQ06O6I
-        APMvtQ3kWRWVzjcwCGMmt5RXQQdBzDK7fyq7/cmeNtjwvognggOhnxFFwZrt4COib81gBw
-        a8OyAwp1TIDhMWFT5ZwtQ1Epe/Xj56U=
+        bh=j6wwqZ2NHQ98V9BxCk2fJD9t3QEV7jgtGjgySMsAl/o=;
+        b=UJv9cl1r/+c7NHy+G9VBOs++Ylyb09tw6klKqSgVb/YPDUm2ccTSgD/o2TGRqqLmrPLEiP
+        c5TBcsVKknGP2IhfsapQLOHPvVnMfMbSCLkEaduicLLwUJ/CvjSdpQT5avmQS+mpI7t8kV
+        7NvVfvtf1hwpIhrYs6+LkVaKr0eIF6Q=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 58577ACF2
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:11 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id AC1C6AD1B
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:16 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 09/31] btrfs: introduce helpers for subpage ordered status
-Date:   Fri, 21 May 2021 14:40:28 +0800
-Message-Id: <20210521064050.191164-10-wqu@suse.com>
+Subject: [PATCH v3 12/31] btrfs: prevent extent_clear_unlock_delalloc() to unlock page not locked by __process_pages_contig()
+Date:   Fri, 21 May 2021 14:40:31 +0800
+Message-Id: <20210521064050.191164-13-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -46,103 +46,79 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch introduces the following functions to handle btrfs subpage
-ordered (private2) status:
-- btrfs_subpage_set_ordered()
-- btrfs_subpage_clear_ordered()
-- btrfs_subpage_test_ordered()
-  Those helpers can only be called when the range is ensured to be
-  inside the page.
+In cow_file_range(), after we have succeeded creating an inline extent,
+we unlock the page with extent_clear_unlock_delalloc() by passing
+locked_page == NULL.
 
-- btrfs_page_set_ordered()
-- btrfs_page_clear_ordered()
-- btrfs_page_test_ordered()
-  Those helpers can handle both regular sector size and subpage without
-  problem.
+For sectorsize == PAGE_SIZE case, this is just making the page lock and
+unlock harder to grab.
 
-Those functions are here to coordinate btrfs_invalidatepage() with
-btrfs_writepage_endio_finish_ordered(), to make sure only one of those
-functions can finish the ordered extent.
+But for incoming subpage case, it can be a big problem.
+
+For incoming subpage case, page locking have two entrace:
+- __process_pages_contig()
+  In that case, we know exactly the range we want to lock (which only
+  requires sector alignment).
+  To handle the subpage requirement, we introduce btrfs_subpage::writers
+  to page::private, and will update it in __process_pages_contig().
+
+- Other directly lock/unlock_page() call sites
+  Those won't touch btrfs_subpage::writers at all.
+
+This means, page locked by __process_pages_contig() can only be unlocked
+by __process_pages_contig().
+Thankfully we already have the existing infrastructure in the form of
+@locked_page in various call sites.
+
+Unfortunately, extent_clear_unlock_delalloc() in cow_file_range() after
+creating an inline extent is the exception.
+It intentionally call extent_clear_unlock_delalloc() with locked_page ==
+NULL, to also unlock current page (and clear its dirty/writeback bits).
+
+To co-operate with incoming subpage modifications, and make the page
+lock/unlock pair easier to understand, this patch will still call
+extent_clear_unlock_delalloc() with locked_page, and only unlock the
+page in __extent_writepage().
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/subpage.c | 29 +++++++++++++++++++++++++++++
- fs/btrfs/subpage.h |  4 ++++
- 2 files changed, 33 insertions(+)
+ fs/btrfs/inode.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index f728e5009487..516e0b3f2ed9 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -429,6 +429,32 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
- 	spin_unlock_irqrestore(&subpage->lock, flags);
- }
- 
-+void btrfs_subpage_set_ordered(const struct btrfs_fs_info *fs_info,
-+		struct page *page, u64 start, u32 len)
-+{
-+	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
-+	const u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&subpage->lock, flags);
-+	subpage->ordered_bitmap |= tmp;
-+	SetPageOrdered(page);
-+	spin_unlock_irqrestore(&subpage->lock, flags);
-+}
-+
-+void btrfs_subpage_clear_ordered(const struct btrfs_fs_info *fs_info,
-+		struct page *page, u64 start, u32 len)
-+{
-+	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
-+	const u16 tmp = btrfs_subpage_calc_bitmap(fs_info, page, start, len);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&subpage->lock, flags);
-+	subpage->ordered_bitmap &= ~tmp;
-+	if (subpage->ordered_bitmap == 0)
-+		ClearPageOrdered(page);
-+	spin_unlock_irqrestore(&subpage->lock, flags);
-+}
- /*
-  * Unlike set/clear which is dependent on each page status, for test all bits
-  * are tested in the same way.
-@@ -451,6 +477,7 @@ IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(uptodate);
- IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(error);
- IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(dirty);
- IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(writeback);
-+IMPLEMENT_BTRFS_SUBPAGE_TEST_OP(ordered);
- 
- /*
-  * Note that, in selftests (extent-io-tests), we can have empty fs_info passed
-@@ -519,3 +546,5 @@ IMPLEMENT_BTRFS_PAGE_OPS(dirty, set_page_dirty, clear_page_dirty_for_io,
- 			 PageDirty);
- IMPLEMENT_BTRFS_PAGE_OPS(writeback, set_page_writeback, end_page_writeback,
- 			 PageWriteback);
-+IMPLEMENT_BTRFS_PAGE_OPS(ordered, SetPageOrdered, ClearPageOrdered,
-+			 PageOrdered);
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index 9d087ab3244e..3419b152c00f 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -34,6 +34,9 @@ struct btrfs_subpage {
- 		struct {
- 			atomic_t readers;
- 			atomic_t writers;
-+
-+			/* If a sector has pending ordered extent */
-+			u16 ordered_bitmap;
- 		};
- 	};
- };
-@@ -111,6 +114,7 @@ DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
- DECLARE_BTRFS_SUBPAGE_OPS(error);
- DECLARE_BTRFS_SUBPAGE_OPS(dirty);
- DECLARE_BTRFS_SUBPAGE_OPS(writeback);
-+DECLARE_BTRFS_SUBPAGE_OPS(ordered);
- 
- bool btrfs_subpage_clear_and_test_dirty(const struct btrfs_fs_info *fs_info,
- 		struct page *page, u64 start, u32 len);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a18881c7c916..119834aa3587 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1091,7 +1091,8 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 			 * our outstanding extent for clearing delalloc for this
+ 			 * range.
+ 			 */
+-			extent_clear_unlock_delalloc(inode, start, end, NULL,
++			extent_clear_unlock_delalloc(inode, start, end,
++				     locked_page,
+ 				     EXTENT_LOCKED | EXTENT_DELALLOC |
+ 				     EXTENT_DELALLOC_NEW | EXTENT_DEFRAG |
+ 				     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
+@@ -1099,6 +1100,19 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 			*nr_written = *nr_written +
+ 			     (end - start + PAGE_SIZE) / PAGE_SIZE;
+ 			*page_started = 1;
++			/*
++			 * locked_page is locked by the caller of
++			 * writepage_delalloc(), not locked by
++			 * __process_pages_contig().
++			 *
++			 * We can't let __process_pages_contig() to unlock it,
++			 * as it doesn't have any subpage::writers recorded.
++			 *
++			 * Here we manually unlock the page, since the caller
++			 * can't use page_started to determine if it's an
++			 * inline extent or a compressed extent.
++			 */
++			unlock_page(locked_page);
+ 			goto out;
+ 		} else if (ret < 0) {
+ 			goto out_unlock;
 -- 
 2.31.1
 

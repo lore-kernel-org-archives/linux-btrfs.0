@@ -7,37 +7,37 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 172CBC433B4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EEFEC433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F073F611AB
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 16B87611AD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:43:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233868AbhEUGpF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:45:05 -0400
-Received: from mx2.suse.de ([195.135.220.15]:59020 "EHLO mx2.suse.de"
+        id S234181AbhEUGpI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:45:08 -0400
+Received: from mx2.suse.de ([195.135.220.15]:59018 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233671AbhEUGoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S233199AbhEUGoU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 21 May 2021 02:44:20 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579307; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1621579303; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=dWgfRwbtwCkoqW9q0cP9ufVBzZzsz90Zwg/X0XQ+wbE=;
-        b=VMFdO/G0eXD42xMxIU3fS2z08xyyg2g1Fvwl6mh4GkVt2MeVmSaYIbi/BgjULI3ePm5Xup
-        BonlA810iXMMG4PMdckLHggwv3rAX4ApupufHTaW0/5/SSEXlPWtRzfl1FyLfUgnvExEwW
-        1M2S5n4kiM6tePdeDn55sseHgx6I5Ag=
+        bh=xek06VCcXJeGA0FPJENhSogIfByHmK7Igl9C5gGJW2M=;
+        b=ipe8lxW2JsjJQGSSi4AC5e82uRG0Msivf5fnYLrYLYGjhxPdccBCLpduj/Yfiky9j94QZr
+        6Jv8khf1uyarPiQn59yCQUQEJCOQXdyAXuWtWTYjUYIUfwDoukjiGJP9yp5ZfPW+ea4iAr
+        M2L/iqJKz+/q25WyYFNx5X57SpyFIQ8=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 6CF27AEA3;
-        Fri, 21 May 2021 06:41:47 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id D1E8AAE95;
+        Fri, 21 May 2021 06:41:43 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Ritesh Harjani <riteshh@linux.ibm.com>
-Subject: [PATCH v3 30/31] btrfs: fix a subpage relocation data corruption
-Date:   Fri, 21 May 2021 14:40:49 +0800
-Message-Id: <20210521064050.191164-31-wqu@suse.com>
+Subject: [PATCH v3 28/31] btrfs: fix a use-after-free bug in writeback subpage helper
+Date:   Fri, 21 May 2021 14:40:47 +0800
+Message-Id: <20210521064050.191164-29-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -48,125 +48,141 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 [BUG]
-When using the following script, btrfs will report data corruption after
-one data balance with subpage support:
+There is a possible use-after-free bug when running generic/095.
 
-  mkfs.btrfs -f -s 4k $dev
-  mount $dev -o nospace_cache $mnt
-  $fsstress -w -n 8 -s 1620948986 -d $mnt/ -v > /tmp/fsstress
-  sync
-  btrfs balance start -d $mnt
-  btrfs scrub start -B $mnt
-
-Similar problem can be easily observed in btrfs/028 test case, there
-will be tons of balance failure with -EIO.
+ BUG: Unable to handle kernel data access on write at 0x6b6b6b6b6b6b725b
+ Faulting instruction address: 0xc000000000283654
+ c000000000283078 do_raw_spin_unlock+0x88/0x230
+ c0000000012b1e14 _raw_spin_unlock_irqrestore+0x44/0x90
+ c000000000a918dc btrfs_subpage_clear_writeback+0xac/0xe0
+ c0000000009e0458 end_bio_extent_writepage+0x158/0x270
+ c000000000b6fd14 bio_endio+0x254/0x270
+ c0000000009fc0f0 btrfs_end_bio+0x1a0/0x200
+ c000000000b6fd14 bio_endio+0x254/0x270
+ c000000000b781fc blk_update_request+0x46c/0x670
+ c000000000b8b394 blk_mq_end_request+0x34/0x1d0
+ c000000000d82d1c lo_complete_rq+0x11c/0x140
+ c000000000b880a4 blk_complete_reqs+0x84/0xb0
+ c0000000012b2ca4 __do_softirq+0x334/0x680
+ c0000000001dd878 irq_exit+0x148/0x1d0
+ c000000000016f4c do_IRQ+0x20c/0x240
+ c000000000009240 hardware_interrupt_common_virt+0x1b0/0x1c0
 
 [CAUSE]
-Above fsstress will result the following data extents layout in extent
-tree:
-        item 10 key (13631488 EXTENT_ITEM 98304) itemoff 15889 itemsize 82
-                refs 2 gen 7 flags DATA
-                extent data backref root FS_TREE objectid 259 offset 1339392 count 1
-                extent data backref root FS_TREE objectid 259 offset 647168 count 1
-        item 11 key (13631488 BLOCK_GROUP_ITEM 8388608) itemoff 15865 itemsize 24
-                block group used 102400 chunk_objectid 256 flags DATA
-        item 12 key (13733888 EXTENT_ITEM 4096) itemoff 15812 itemsize 53
-                refs 1 gen 7 flags DATA
-                extent data backref root FS_TREE objectid 259 offset 729088 count 1
+There is very small race window like the following in generic/095.
 
-Then when creating the data reloc inode, the data reloc inode will look
-like this:
+	Thread 1		|		Thread 2
+--------------------------------+------------------------------------
+  end_bio_extent_writepage()	| btrfs_releasepage()
+  |- spin_lock_irqsave()	| |
+  |- end_page_writeback()	| |
+  |				| |- if (PageWriteback() ||...)
+  |				| |- clear_page_extent_mapped()
+  |				|    |- kfree(subpage);
+  |- spin_unlock_irqrestore().
 
-	0	32K	64K	96K 100K	104K
-	|<------ Extent A ----->|   |<- Ext B ->|
-
-Then when we first try to relocate extent A, we setup the data reloc
-inode with iszie 96K, then read both page [0, 64K) and page [64K, 128K).
-
-For page 64K, since the isize is just 96K, we fill range [96K, 128K)
-with 0 and set it uptodate.
-
-Then when we come to extent B, we update isize to 104K, then try to read
-page [64K, 128K).
-Then we find the page is already uptodate, so we skip the read.
-But range [96K, 128K) is filled with 0, not the real data.
-
-Then we writeback the data reloc inode to disk, with 0 filling range
-[96K, 128K), corrupting the content of extent B.
-
-The behavior is caused by the fact that we still do full page read for
-subpage case.
-
-The bug won't really happen for regular sectorsize, as one page only
-contains one sector.
+The race can also happen between writeback and btrfs_invalidatepage(),
+although that would be much harder as btrfs_invalidatepage() has much
+more work to do before the clear_page_extent_mapped() call.
 
 [FIX]
-This patch will fix the problem by invalidating range [isize, PAGE_END]
-in prealloc_file_extent_cluster().
+Here we "wait" for the subapge spinlock to be released before we detach
+subpage structure.
+So this patch will introduce a new function, wait_subpage_spinlock(), to
+do the "wait" by acquiring the spinlock and release it.
 
-So that if above example happens, when we preallocate the file extent
-for extent B, we will clear the uptodate bits for range [96K, 128K),
-allowing later relocate_one_page() to re-read the needed range.
+Since the caller has ensured the page is not dirty nor writeback, and
+page is already locked, the only way to hold the subpage spinlock is
+from endio function.
+Thus we only need to acquire the spinlock to wait for any existing
+holder.
 
 Reported-by: Ritesh Harjani <riteshh@linux.ibm.com>
+Tested-by: Ritesh Harjani <riteshh@linux.ibm.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/relocation.c | 38 ++++++++++++++++++++++++++++++++++++++
- 1 file changed, 38 insertions(+)
+ fs/btrfs/inode.c   | 40 +++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/subpage.c |  4 +++-
+ 2 files changed, 42 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index cd50559c6d17..b50ee800993d 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2782,10 +2782,48 @@ static noinline_for_stack int prealloc_file_extent_cluster(
- 	u64 num_bytes;
- 	int nr;
- 	int ret = 0;
-+	u64 isize = i_size_read(&inode->vfs_inode);
- 	u64 prealloc_start = cluster->start - offset;
- 	u64 prealloc_end = cluster->end - offset;
- 	u64 cur_offset = prealloc_start;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f90cb8676e36..53b21a8228c7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8296,11 +8296,48 @@ static void btrfs_readahead(struct readahead_control *rac)
+ 	extent_readahead(rac);
+ }
  
++/*
++ * For releasepage() and invalidatepage() we have a race window where
++ * end_page_writeback() is called but the subpage spinlock is not yet
++ * released.
++ * If we continue to release/invalidate the page, we could cause
++ * use-after-free for subpage spinlock.
++ * So this function is to spin wait for subpage spinlock.
++ */
++static void wait_subpage_spinlock(struct page *page)
++{
++	struct btrfs_fs_info *fs_info = btrfs_sb(page->mapping->host->i_sb);
++	struct btrfs_subpage *subpage;
++
++	if (fs_info->sectorsize == PAGE_SIZE)
++		return;
++
++	ASSERT(PagePrivate(page) && page->private);
++	subpage = (struct btrfs_subpage *)page->private;
++
 +	/*
-+	 * For subpage case, previous isize may not be aligned to PAGE_SIZE.
-+	 * This means the range [isize, PAGE_END + 1) is filled with 0 by
-+	 * btrfs_do_readpage() call of previously relocated file cluster.
++	 * This may look insane as we just acquire the spinlock and release it,
++	 * without doing anything.
++	 * But we just want to make sure no one is still holding the subpage
++	 * spinlock.
++	 * And since the page is not dirty nor writeback, and we have page
++	 * locked, the only possible way to hold a spinlock is from the endio
++	 * function to clear page writeback.
 +	 *
-+	 * If the current cluster starts in above range, btrfs_do_readpage()
-+	 * will skip the read, and relocate_one_page() will later writeback
-+	 * the padding 0 as new data, causing data corruption.
-+	 *
-+	 * Here we have to manually invalidate the range (isize, PAGE_END + 1).
++	 * Here we just acquire the spinlock so that all existing callers
++	 * should exit and we're safe to release/invalidate the page.
 +	 */
-+	if (!IS_ALIGNED(isize, PAGE_SIZE)) {
-+		struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+		const u32 sectorsize = fs_info->sectorsize;
-+		struct page *page;
++	spin_lock_irq(&subpage->lock);
++	spin_unlock_irq(&subpage->lock);
++}
 +
-+		ASSERT(sectorsize < PAGE_SIZE);
-+		ASSERT(IS_ALIGNED(isize, sectorsize));
-+
-+		page = find_lock_page(inode->vfs_inode.i_mapping,
-+				      isize >> PAGE_SHIFT);
-+		/*
-+		 * If page is freed we don't need to do anything then, as
-+		 * we will re-read the whole page anyway.
-+		 */
-+		if (page) {
-+			u64 page_end = page_offset(page) + PAGE_SIZE - 1;
-+
-+			clear_extent_bits(&inode->io_tree, isize, page_end,
-+					  EXTENT_UPTODATE);
-+			btrfs_subpage_clear_uptodate(fs_info, page, isize,
-+						     page_end + 1 - isize);
-+			unlock_page(page);
-+			put_page(page);
-+		}
+ static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+ {
+ 	int ret = try_release_extent_mapping(page, gfp_flags);
+-	if (ret == 1)
++	if (ret == 1) {
++		wait_subpage_spinlock(page);
+ 		clear_page_extent_mapped(page);
 +	}
-+
- 	BUG_ON(cluster->start != cluster->boundary[0]);
- 	ret = btrfs_alloc_data_chunk_ondemand(inode,
- 					      prealloc_end + 1 - prealloc_start);
+ 	return ret;
+ }
+ 
+@@ -8364,6 +8401,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 	 * do double ordered extent accounting on the same page.
+ 	 */
+ 	wait_on_page_writeback(page);
++	wait_subpage_spinlock(page);
+ 
+ 	/*
+ 	 * For subpage case, we have call sites like
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index 696485ab68a2..552410fba0bd 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -424,8 +424,10 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
+ 
+ 	spin_lock_irqsave(&subpage->lock, flags);
+ 	subpage->writeback_bitmap &= ~tmp;
+-	if (subpage->writeback_bitmap == 0)
++	if (subpage->writeback_bitmap == 0) {
++		ASSERT(PageWriteback(page));
+ 		end_page_writeback(page);
++	}
+ 	spin_unlock_irqrestore(&subpage->lock, flags);
+ }
+ 
 -- 
 2.31.1
 

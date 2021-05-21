@@ -7,37 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8516CC43460
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4674C433ED
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6457A6135C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B00F8611AD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232524AbhEUGn4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:43:56 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57748 "EHLO mx2.suse.de"
+        id S234442AbhEUGn6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:43:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57726 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234534AbhEUGm2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 02:42:28 -0400
+        id S234444AbhEUGm1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 02:42:27 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579260; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1621579256; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=JP9j8HnUfIRsWheW/HlFksCo1hCsZvfEoApzqE6MwyY=;
-        b=jBqw9iigFBMjwUKq7PbRVuTOEWHtDdI8zlSfBjdMNonpD6hiT2YOqkqMjEgWNxx6h1iXKZ
-        GjDsd6bOFQ7peidlzHPd7AFcsDOUQpGko6SweKM7QGi4sxf5F+71/OUcj/Pre7gv3ggYVE
-        DojHbFMbpomWRqbCRoiPpJ8Q/hciETk=
+        bh=0A2xSZRREX8FsXTdqEJSZz4vVoDheWd55fZtt3iXWjE=;
+        b=qzlLYqVnF8L2nasJB8O2pCNLQJCzkbgxOwXRCSV71AJKx8fRAEf7l8eQXHhdWEBFWtfGgF
+        UpcT0w5iONkJE7Oo0eITK1x02ruldFOgxW7ARdAV3hj7jjPzCfgIeOWK3FDrywwbrm8oGU
+        0+OHzynxsnTJhiNOG9elXbiMWFAYH+4=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 13512AC47;
-        Fri, 21 May 2021 06:41:00 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id 1AC81ABED
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:40:56 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH v3 03/31] btrfs: provide btrfs_page_clamp_*() helpers
-Date:   Fri, 21 May 2021 14:40:22 +0800
-Message-Id: <20210521064050.191164-4-wqu@suse.com>
+Subject: [PATCH v3 01/31] btrfs: pass bytenr directly to __process_pages_contig()
+Date:   Fri, 21 May 2021 14:40:20 +0800
+Message-Id: <20210521064050.191164-2-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -47,114 +46,167 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In the coming subpage RW supports, there are a lot of page status update
-calls which need to be converted to subpage compatible version, which
-needs @start and @len.
+As a preparation for incoming subpage support, we need bytenr passed to
+__process_pages_contig() directly, not the current page index.
 
-Some call sites already have such @start/@len and are already in
-page range, like various endio functions.
+So change the parameter and all callers to pass bytenr in.
 
-But there are also call sites which need to clamp the range for subpage
-case, like btrfs_dirty_pagse() and __process_contig_pages().
+With the modification, here we need to replace the old @index_ret with
+@processed_end for __process_pages_contig(), but this brings a small
+problem.
 
-Here we introduce new helpers, btrfs_page_clamp_*(), to do and only do the
-clamp for subpage version.
+Normally we follow the inclusive return value, meaning @processed_end
+should be the last byte we processed.
 
-Although in theory all existing btrfs_page_*() calls can be converted to
-use btrfs_page_clamp_*() directly, but that would make us to do
-unnecessary clamp operations.
+If parameter @start is 0, and we failed to lock any page, then we would
+return @processed_end as -1, causing more problems for
+__unlock_for_delalloc().
+
+So here for @processed_end, we use two different return value patterns.
+If we have locked any page, @processed_end will be the last byte of
+locked page.
+Or it will be @start otherwise.
+
+This change will impact lock_delalloc_pages(), so it needs to check
+@processed_end to only unlock the range if we have locked any.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/subpage.c | 38 ++++++++++++++++++++++++++++++++++++++
- fs/btrfs/subpage.h | 10 ++++++++++
- 2 files changed, 48 insertions(+)
+ fs/btrfs/extent_io.c | 57 ++++++++++++++++++++++++++++----------------
+ 1 file changed, 37 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
-index 2d19089ab625..a6cf1776f3f9 100644
---- a/fs/btrfs/subpage.c
-+++ b/fs/btrfs/subpage.c
-@@ -354,6 +354,16 @@ void btrfs_subpage_clear_writeback(const struct btrfs_fs_info *fs_info,
- 	spin_unlock_irqrestore(&subpage->lock, flags);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f538bcb129fd..c2914f851692 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1810,8 +1810,8 @@ bool btrfs_find_delalloc_range(struct extent_io_tree *tree, u64 *start,
+ 
+ static int __process_pages_contig(struct address_space *mapping,
+ 				  struct page *locked_page,
+-				  pgoff_t start_index, pgoff_t end_index,
+-				  unsigned long page_ops, pgoff_t *index_ret);
++				  u64 start, u64 end, unsigned long page_ops,
++				  u64 *processed_end);
+ 
+ static noinline void __unlock_for_delalloc(struct inode *inode,
+ 					   struct page *locked_page,
+@@ -1824,7 +1824,7 @@ static noinline void __unlock_for_delalloc(struct inode *inode,
+ 	if (index == locked_page->index && end_index == index)
+ 		return;
+ 
+-	__process_pages_contig(inode->i_mapping, locked_page, index, end_index,
++	__process_pages_contig(inode->i_mapping, locked_page, start, end,
+ 			       PAGE_UNLOCK, NULL);
  }
  
-+static void btrfs_subpage_clamp_range(struct page *page, u64 *start, u32 *len)
-+{
-+	u64 orig_start = *start;
-+	u32 orig_len = *len;
+@@ -1834,19 +1834,19 @@ static noinline int lock_delalloc_pages(struct inode *inode,
+ 					u64 delalloc_end)
+ {
+ 	unsigned long index = delalloc_start >> PAGE_SHIFT;
+-	unsigned long index_ret = index;
+ 	unsigned long end_index = delalloc_end >> PAGE_SHIFT;
++	u64 processed_end = delalloc_start;
+ 	int ret;
+ 
+ 	ASSERT(locked_page);
+ 	if (index == locked_page->index && index == end_index)
+ 		return 0;
+ 
+-	ret = __process_pages_contig(inode->i_mapping, locked_page, index,
+-				     end_index, PAGE_LOCK, &index_ret);
+-	if (ret == -EAGAIN)
++	ret = __process_pages_contig(inode->i_mapping, locked_page, delalloc_start,
++				     delalloc_end, PAGE_LOCK, &processed_end);
++	if (ret == -EAGAIN && processed_end > delalloc_start)
+ 		__unlock_for_delalloc(inode, locked_page, delalloc_start,
+-				      (u64)index_ret << PAGE_SHIFT);
++				      processed_end);
+ 	return ret;
+ }
+ 
+@@ -1941,12 +1941,14 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
+ 
+ static int __process_pages_contig(struct address_space *mapping,
+ 				  struct page *locked_page,
+-				  pgoff_t start_index, pgoff_t end_index,
+-				  unsigned long page_ops, pgoff_t *index_ret)
++				  u64 start, u64 end, unsigned long page_ops,
++				  u64 *processed_end)
+ {
++	pgoff_t start_index = start >> PAGE_SHIFT;
++	pgoff_t end_index = end >> PAGE_SHIFT;
++	pgoff_t index = start_index;
+ 	unsigned long nr_pages = end_index - start_index + 1;
+ 	unsigned long pages_processed = 0;
+-	pgoff_t index = start_index;
+ 	struct page *pages[16];
+ 	unsigned ret;
+ 	int err = 0;
+@@ -1954,17 +1956,19 @@ static int __process_pages_contig(struct address_space *mapping,
+ 
+ 	if (page_ops & PAGE_LOCK) {
+ 		ASSERT(page_ops == PAGE_LOCK);
+-		ASSERT(index_ret && *index_ret == start_index);
++		ASSERT(processed_end && *processed_end == start);
+ 	}
+ 
+ 	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
+ 		mapping_set_error(mapping, -EIO);
+ 
+ 	while (nr_pages > 0) {
+-		ret = find_get_pages_contig(mapping, index,
++		int found_pages;
 +
-+	*start = max_t(u64, page_offset(page), orig_start);
-+	*len = min_t(u64, page_offset(page) + PAGE_SIZE,
-+		     orig_start + orig_len) - *start;
-+}
++		found_pages = find_get_pages_contig(mapping, index,
+ 				     min_t(unsigned long,
+ 				     nr_pages, ARRAY_SIZE(pages)), pages);
+-		if (ret == 0) {
++		if (found_pages == 0) {
+ 			/*
+ 			 * Only if we're going to lock these pages,
+ 			 * can we find nothing at @index.
+@@ -2007,13 +2011,27 @@ static int __process_pages_contig(struct address_space *mapping,
+ 			put_page(pages[i]);
+ 			pages_processed++;
+ 		}
+-		nr_pages -= ret;
+-		index += ret;
++		nr_pages -= found_pages;
++		index += found_pages;
+ 		cond_resched();
+ 	}
+ out:
+-	if (err && index_ret)
+-		*index_ret = start_index + pages_processed - 1;
++	if (err && processed_end) {
++		/*
++		 * Update @processed_end. I know this is awful since it has
++		 * two different return value patterns (inclusive vs exclusive).
++		 *
++		 * But the exclusive pattern is necessary if @start is 0, or we
++		 * underflow and check against processed_end won't work as
++		 * expected.
++		 */
++		if (pages_processed)
++			*processed_end = min(end,
++			((u64)(start_index + pages_processed) << PAGE_SHIFT) - 1);
++		else
++			*processed_end = start;
 +
++	}
+ 	return err;
+ }
+ 
+@@ -2024,8 +2042,7 @@ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
+ 	clear_extent_bit(&inode->io_tree, start, end, clear_bits, 1, 0, NULL);
+ 
+ 	__process_pages_contig(inode->vfs_inode.i_mapping, locked_page,
+-			       start >> PAGE_SHIFT, end >> PAGE_SHIFT,
+-			       page_ops, NULL);
++			       start, end, page_ops, NULL);
+ }
+ 
  /*
-  * Unlike set/clear which is dependent on each page status, for test all bits
-  * are tested in the same way.
-@@ -408,6 +418,34 @@ bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
- 	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE)	\
- 		return test_page_func(page);				\
- 	return btrfs_subpage_test_##name(fs_info, page, start, len);	\
-+}									\
-+void btrfs_page_clamp_set_##name(const struct btrfs_fs_info *fs_info,	\
-+		struct page *page, u64 start, u32 len)			\
-+{									\
-+	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
-+		set_page_func(page);					\
-+		return;							\
-+	}								\
-+	btrfs_subpage_clamp_range(page, &start, &len);			\
-+	btrfs_subpage_set_##name(fs_info, page, start, len);		\
-+}									\
-+void btrfs_page_clamp_clear_##name(const struct btrfs_fs_info *fs_info, \
-+		struct page *page, u64 start, u32 len)			\
-+{									\
-+	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE) {	\
-+		clear_page_func(page);					\
-+		return;							\
-+	}								\
-+	btrfs_subpage_clamp_range(page, &start, &len);			\
-+	btrfs_subpage_clear_##name(fs_info, page, start, len);		\
-+}									\
-+bool btrfs_page_clamp_test_##name(const struct btrfs_fs_info *fs_info,	\
-+		struct page *page, u64 start, u32 len)			\
-+{									\
-+	if (unlikely(!fs_info) || fs_info->sectorsize == PAGE_SIZE)	\
-+		return test_page_func(page);				\
-+	btrfs_subpage_clamp_range(page, &start, &len);			\
-+	return btrfs_subpage_test_##name(fs_info, page, start, len);	\
- }
- IMPLEMENT_BTRFS_PAGE_OPS(uptodate, SetPageUptodate, ClearPageUptodate,
- 			 PageUptodate);
-diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
-index bfd626e955be..291cb1932f27 100644
---- a/fs/btrfs/subpage.h
-+++ b/fs/btrfs/subpage.h
-@@ -72,6 +72,10 @@ void btrfs_subpage_end_reader(const struct btrfs_fs_info *fs_info,
-  * btrfs_page_*() are for call sites where the page can either be subpage
-  * specific or regular page. The function will handle both cases.
-  * But the range still needs to be inside the page.
-+ *
-+ * btrfs_page_clamp_*() are similar to btrfs_page_*(), except the range doesn't
-+ * need to be inside the page. Those functions will truncate the range
-+ * automatically.
-  */
- #define DECLARE_BTRFS_SUBPAGE_OPS(name)					\
- void btrfs_subpage_set_##name(const struct btrfs_fs_info *fs_info,	\
-@@ -85,6 +89,12 @@ void btrfs_page_set_##name(const struct btrfs_fs_info *fs_info,		\
- void btrfs_page_clear_##name(const struct btrfs_fs_info *fs_info,	\
- 		struct page *page, u64 start, u32 len);			\
- bool btrfs_page_test_##name(const struct btrfs_fs_info *fs_info,	\
-+		struct page *page, u64 start, u32 len);			\
-+void btrfs_page_clamp_set_##name(const struct btrfs_fs_info *fs_info,	\
-+		struct page *page, u64 start, u32 len);			\
-+void btrfs_page_clamp_clear_##name(const struct btrfs_fs_info *fs_info,	\
-+		struct page *page, u64 start, u32 len);			\
-+bool btrfs_page_clamp_test_##name(const struct btrfs_fs_info *fs_info,	\
- 		struct page *page, u64 start, u32 len);
- 
- DECLARE_BTRFS_SUBPAGE_OPS(uptodate);
 -- 
 2.31.1
 

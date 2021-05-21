@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4674C433ED
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2917C433B4
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B00F8611AD
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C49DA611AD
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 06:42:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234442AbhEUGn6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 02:43:58 -0400
-Received: from mx2.suse.de ([195.135.220.15]:57726 "EHLO mx2.suse.de"
+        id S231496AbhEUGn7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 02:43:59 -0400
+Received: from mx2.suse.de ([195.135.220.15]:57772 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234444AbhEUGm1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 02:42:27 -0400
+        id S233472AbhEUGma (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 21 May 2021 02:42:30 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1621579256; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1621579261; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=0A2xSZRREX8FsXTdqEJSZz4vVoDheWd55fZtt3iXWjE=;
-        b=qzlLYqVnF8L2nasJB8O2pCNLQJCzkbgxOwXRCSV71AJKx8fRAEf7l8eQXHhdWEBFWtfGgF
-        UpcT0w5iONkJE7Oo0eITK1x02ruldFOgxW7ARdAV3hj7jjPzCfgIeOWK3FDrywwbrm8oGU
-        0+OHzynxsnTJhiNOG9elXbiMWFAYH+4=
+        bh=sDzNsfAICvIDuRxUiWMT4bomDdzAtlDXzTUlb7hFiwA=;
+        b=OfIo8hP7Sml99tWL28FspirroCiLn4RhEx224fQ+pe+H8AJtCS+HxNcfaQr/v749l2j3cq
+        nPMxHwcBcgIauWQKF2aT+maeeAlEmLUMX406sR+eS9tZu+Se1QS18zkL1epNdb0+pvSMfo
+        2KLNKWhXU7FsNryHDlOYnb+Wn7FUkd0=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 1AC81ABED
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:40:56 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id BA8D5AC46
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 May 2021 06:41:01 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 01/31] btrfs: pass bytenr directly to __process_pages_contig()
-Date:   Fri, 21 May 2021 14:40:20 +0800
-Message-Id: <20210521064050.191164-2-wqu@suse.com>
+Subject: [PATCH v3 04/31] btrfs: only require sector size alignment for end_bio_extent_writepage()
+Date:   Fri, 21 May 2021 14:40:23 +0800
+Message-Id: <20210521064050.191164-5-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210521064050.191164-1-wqu@suse.com>
 References: <20210521064050.191164-1-wqu@suse.com>
@@ -46,167 +46,61 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As a preparation for incoming subpage support, we need bytenr passed to
-__process_pages_contig() directly, not the current page index.
+Just like read page, for subpage support we only require sector size
+alignment.
 
-So change the parameter and all callers to pass bytenr in.
+So change the error message condition to only require sector alignment.
 
-With the modification, here we need to replace the old @index_ret with
-@processed_end for __process_pages_contig(), but this brings a small
-problem.
-
-Normally we follow the inclusive return value, meaning @processed_end
-should be the last byte we processed.
-
-If parameter @start is 0, and we failed to lock any page, then we would
-return @processed_end as -1, causing more problems for
-__unlock_for_delalloc().
-
-So here for @processed_end, we use two different return value patterns.
-If we have locked any page, @processed_end will be the last byte of
-locked page.
-Or it will be @start otherwise.
-
-This change will impact lock_delalloc_pages(), so it needs to check
-@processed_end to only unlock the range if we have locked any.
+This should not affect existing code, as for regular sectorsize ==
+PAGE_SIZE case, we are still requiring page alignment.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 57 ++++++++++++++++++++++++++++----------------
- 1 file changed, 37 insertions(+), 20 deletions(-)
+ fs/btrfs/extent_io.c | 29 ++++++++++++-----------------
+ 1 file changed, 12 insertions(+), 17 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f538bcb129fd..c2914f851692 100644
+index aa112a51b0d6..28ebaa28dce2 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1810,8 +1810,8 @@ bool btrfs_find_delalloc_range(struct extent_io_tree *tree, u64 *start,
+@@ -2824,25 +2824,20 @@ static void end_bio_extent_writepage(struct bio *bio)
+ 		struct page *page = bvec->bv_page;
+ 		struct inode *inode = page->mapping->host;
+ 		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++		const u32 sectorsize = fs_info->sectorsize;
  
- static int __process_pages_contig(struct address_space *mapping,
- 				  struct page *locked_page,
--				  pgoff_t start_index, pgoff_t end_index,
--				  unsigned long page_ops, pgoff_t *index_ret);
-+				  u64 start, u64 end, unsigned long page_ops,
-+				  u64 *processed_end);
+-		/* We always issue full-page reads, but if some block
+-		 * in a page fails to read, blk_update_request() will
+-		 * advance bv_offset and adjust bv_len to compensate.
+-		 * Print a warning for nonzero offsets, and an error
+-		 * if they don't add up to a full page.  */
+-		if (bvec->bv_offset || bvec->bv_len != PAGE_SIZE) {
+-			if (bvec->bv_offset + bvec->bv_len != PAGE_SIZE)
+-				btrfs_err(fs_info,
+-				   "partial page write in btrfs with offset %u and length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-			else
+-				btrfs_info(fs_info,
+-				   "incomplete page write in btrfs with offset %u and length %u",
+-					bvec->bv_offset, bvec->bv_len);
+-		}
++		/* Btrfs read write should always be sector aligned. */
++		if (!IS_ALIGNED(bvec->bv_offset, sectorsize))
++			btrfs_err(fs_info,
++		"partial page write in btrfs with offset %u and length %u",
++				  bvec->bv_offset, bvec->bv_len);
++		else if (!IS_ALIGNED(bvec->bv_len, sectorsize))
++			btrfs_info(fs_info,
++		"incomplete page write with offset %u and length %u",
++				   bvec->bv_offset, bvec->bv_len);
  
- static noinline void __unlock_for_delalloc(struct inode *inode,
- 					   struct page *locked_page,
-@@ -1824,7 +1824,7 @@ static noinline void __unlock_for_delalloc(struct inode *inode,
- 	if (index == locked_page->index && end_index == index)
- 		return;
+-		start = page_offset(page);
+-		end = start + bvec->bv_offset + bvec->bv_len - 1;
++		start = page_offset(page) + bvec->bv_offset;
++		end = start + bvec->bv_len - 1;
  
--	__process_pages_contig(inode->i_mapping, locked_page, index, end_index,
-+	__process_pages_contig(inode->i_mapping, locked_page, start, end,
- 			       PAGE_UNLOCK, NULL);
- }
- 
-@@ -1834,19 +1834,19 @@ static noinline int lock_delalloc_pages(struct inode *inode,
- 					u64 delalloc_end)
- {
- 	unsigned long index = delalloc_start >> PAGE_SHIFT;
--	unsigned long index_ret = index;
- 	unsigned long end_index = delalloc_end >> PAGE_SHIFT;
-+	u64 processed_end = delalloc_start;
- 	int ret;
- 
- 	ASSERT(locked_page);
- 	if (index == locked_page->index && index == end_index)
- 		return 0;
- 
--	ret = __process_pages_contig(inode->i_mapping, locked_page, index,
--				     end_index, PAGE_LOCK, &index_ret);
--	if (ret == -EAGAIN)
-+	ret = __process_pages_contig(inode->i_mapping, locked_page, delalloc_start,
-+				     delalloc_end, PAGE_LOCK, &processed_end);
-+	if (ret == -EAGAIN && processed_end > delalloc_start)
- 		__unlock_for_delalloc(inode, locked_page, delalloc_start,
--				      (u64)index_ret << PAGE_SHIFT);
-+				      processed_end);
- 	return ret;
- }
- 
-@@ -1941,12 +1941,14 @@ noinline_for_stack bool find_lock_delalloc_range(struct inode *inode,
- 
- static int __process_pages_contig(struct address_space *mapping,
- 				  struct page *locked_page,
--				  pgoff_t start_index, pgoff_t end_index,
--				  unsigned long page_ops, pgoff_t *index_ret)
-+				  u64 start, u64 end, unsigned long page_ops,
-+				  u64 *processed_end)
- {
-+	pgoff_t start_index = start >> PAGE_SHIFT;
-+	pgoff_t end_index = end >> PAGE_SHIFT;
-+	pgoff_t index = start_index;
- 	unsigned long nr_pages = end_index - start_index + 1;
- 	unsigned long pages_processed = 0;
--	pgoff_t index = start_index;
- 	struct page *pages[16];
- 	unsigned ret;
- 	int err = 0;
-@@ -1954,17 +1956,19 @@ static int __process_pages_contig(struct address_space *mapping,
- 
- 	if (page_ops & PAGE_LOCK) {
- 		ASSERT(page_ops == PAGE_LOCK);
--		ASSERT(index_ret && *index_ret == start_index);
-+		ASSERT(processed_end && *processed_end == start);
- 	}
- 
- 	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
- 		mapping_set_error(mapping, -EIO);
- 
- 	while (nr_pages > 0) {
--		ret = find_get_pages_contig(mapping, index,
-+		int found_pages;
-+
-+		found_pages = find_get_pages_contig(mapping, index,
- 				     min_t(unsigned long,
- 				     nr_pages, ARRAY_SIZE(pages)), pages);
--		if (ret == 0) {
-+		if (found_pages == 0) {
- 			/*
- 			 * Only if we're going to lock these pages,
- 			 * can we find nothing at @index.
-@@ -2007,13 +2011,27 @@ static int __process_pages_contig(struct address_space *mapping,
- 			put_page(pages[i]);
- 			pages_processed++;
- 		}
--		nr_pages -= ret;
--		index += ret;
-+		nr_pages -= found_pages;
-+		index += found_pages;
- 		cond_resched();
- 	}
- out:
--	if (err && index_ret)
--		*index_ret = start_index + pages_processed - 1;
-+	if (err && processed_end) {
-+		/*
-+		 * Update @processed_end. I know this is awful since it has
-+		 * two different return value patterns (inclusive vs exclusive).
-+		 *
-+		 * But the exclusive pattern is necessary if @start is 0, or we
-+		 * underflow and check against processed_end won't work as
-+		 * expected.
-+		 */
-+		if (pages_processed)
-+			*processed_end = min(end,
-+			((u64)(start_index + pages_processed) << PAGE_SHIFT) - 1);
-+		else
-+			*processed_end = start;
-+
-+	}
- 	return err;
- }
- 
-@@ -2024,8 +2042,7 @@ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- 	clear_extent_bit(&inode->io_tree, start, end, clear_bits, 1, 0, NULL);
- 
- 	__process_pages_contig(inode->vfs_inode.i_mapping, locked_page,
--			       start >> PAGE_SHIFT, end >> PAGE_SHIFT,
--			       page_ops, NULL);
-+			       start, end, page_ops, NULL);
- }
- 
- /*
+ 		if (first_bvec) {
+ 			btrfs_record_physical_zoned(inode, start, bio);
 -- 
 2.31.1
 

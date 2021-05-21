@@ -2,201 +2,167 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42290C433B4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5790DC43461
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 05:13:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 230D6613AC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 04:58:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 36E63613BB
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 May 2021 05:13:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237416AbhEUFAF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 May 2021 01:00:05 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:33623 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232596AbhEUFAA (ORCPT
+        id S231365AbhEUFO4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 May 2021 01:14:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57038 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231135AbhEUFOz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 May 2021 01:00:00 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1621573116; x=1653109116;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=MF2LJE+HSh/d2JlhawBe0V32G0zPYLXgSPA8047NK8g=;
-  b=WzzYpinJHOCDcDlBHwGD5lMOq1HndEPTB2dEeIEuYyhzy63TahxHynF1
-   jAaR5PoGcmoE8Jnay5ScTxghhEI4CqKjYm6zOwq/uJuIbL535Bn9yGBFY
-   m5Ll/7fAqdFyg5vLmeJzc1Ukv1FLlpxoixrbUT88eJTpvP3w/LVwZ165b
-   hPGN4anJgyIlbRfL/9EaWzaQQuMEfyoqJQy1ZFIRccJFxHWn1rqsiJjnu
-   1hr2VRHBCvz9GNDrbfF+lvKFCnVJoGTS5YXqMDoKk/VCK/5bB5xODDWAM
-   SR1eSjxI126ao1S6lg4j5O1iHi4mxbkv4i7Hke8lngV3hxjXdizb8+JJ9
-   A==;
-IronPort-SDR: pqKntqq8NbAGCKHCPnv5Ud2giX7gvEWewbHuIVIWptfLI7+FltVsvi/52j0obejXNviyPnG2+C
- dKfAHixqxXRlAKdQc2i+aGk8sM9eMMq9+42bJJWInUNS5fE/7cV9Uz53Tx9uWhR/BCE3NphigE
- igCMYoOH2ilILOGDnxItpzetE6CeLlo5IokiBlzSC7Xe7M0VbAAaJATeL6TqzRw4owI0X+ENBW
- pvV0XlnaaPZjwM1g79aBBzohIKDxksp24Gw84esDdlFM+ptoQ9kT/MQskQskZolm3WRuVpoDfB
- 4r0=
-X-IronPort-AV: E=Sophos;i="5.82,313,1613404800"; 
-   d="scan'208";a="168955589"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 May 2021 12:58:36 +0800
-IronPort-SDR: SeqF+LyqKL+fl0ODr/fvncYJZmaMBCAoiLrIXqvz9NKABiQtjNOt4QDo2g9bbwkBSVdy8mTFmr
- Vy/uCueSRkar0S1QX8h9Xww9A+TohtpYOqNLJwJ8Cx7cA+IZ1wdWE8VT6sSmAp/rqC8ZYJyJRx
- o0EaOqgGXiLB8R8D7wkxWPEAs+UsK6vlcmfQ2X2gkLNmkgoagFwM889C2ah+WZ0+GUkiD+GySv
- GDuWuetThCC0GWpvVpMySwcEKO7WZFI1Qm0uS4Rk83FkDpKMtXJjL6bhq8Seoel5msiMvjODfC
- 1Tt6Hm2+L+C1yLHKAXBlrwFG
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 May 2021 21:37:00 -0700
-IronPort-SDR: QK6cN/jwHBWq2Z8904Zx+PSqmMnm9a53azs0R5NfedizsQ5OHP8lT/JIXIGHGGVG/ah2nm0cIO
- nUY8TpfQWZ3PrYPaOfo24swqMHRAjLKDUvExN9ELlHIADthtMLeGg/+ziX/RnM3L6amTnIxr6D
- eXxLdCRvvFbsTfHnBIrIG7drERXY07X+iYUKn6nycJ5kuMr1CS0P+q8le7o+SNZrSRAyiOLrYm
- 64xdAgQ3NyxRJuWNfOsPx+hJ5wtLdDRSppCTgOCqkv8wnp5Kf4vxTuFrEzGpoEeqrluIiqEfD8
- T7U=
-WDCIronportException: Internal
-Received: from 9rp4l33.ad.shared (HELO naota-xeon.wdc.com) ([10.225.48.75])
-  by uls-op-cesaip02.wdc.com with ESMTP; 20 May 2021 21:58:38 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 3/5] btrfs: add minimal file system size check
-Date:   Fri, 21 May 2021 13:58:23 +0900
-Message-Id: <20210521045825.1720305-4-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.31.1
-In-Reply-To: <20210521045825.1720305-1-naohiro.aota@wdc.com>
-References: <20210521045825.1720305-1-naohiro.aota@wdc.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        Fri, 21 May 2021 01:14:55 -0400
+Received: from mail-pj1-x1033.google.com (mail-pj1-x1033.google.com [IPv6:2607:f8b0:4864:20::1033])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C446C0613ED
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 May 2021 22:13:33 -0700 (PDT)
+Received: by mail-pj1-x1033.google.com with SMTP id b13-20020a17090a8c8db029015cd97baea9so6505057pjo.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 May 2021 22:13:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dilger-ca.20150623.gappssmtp.com; s=20150623;
+        h=from:message-id:mime-version:subject:date:in-reply-to:cc:to
+         :references;
+        bh=bgS4pF9Ne9nJ3937pRt34Uv0EWKH/eisWTbh6rzbM2w=;
+        b=H7YCLMRndDIQtTj6d8jQriGetGwG4I300X506G4hPwBq8a4n2I2NZQzF7tomfz4sfo
+         XcCfuvIU9xiUuJlVfA2W9pGVXtv+5fnlaRrYyxu4HpQ/IpTa+MlPwfbq9J56mg3OYDkm
+         w48ZefoatPt2VudvdYTxqF4DQRC7Z4dNz6vx8T7bdmDis5Th3R7RjwmgU2rQr3Xv2VRT
+         M5SMZnhnsjREFoE8AGFO/IQaRoGavNPIqZGY1OWy9Ocdz/GrLeg8bfJWeXtAmlxvEq4O
+         2Quwnfw1tA9Mj5UARwdueHmvmJ59a2E/YBbtXnhax+e4iuvjw9C1ttc0DE+1UBIy04yD
+         zU6g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:message-id:mime-version:subject:date
+         :in-reply-to:cc:to:references;
+        bh=bgS4pF9Ne9nJ3937pRt34Uv0EWKH/eisWTbh6rzbM2w=;
+        b=XrQOe9O6cXgnMoQmfT27T2Jq9Ik8awfH7XogrZ4C842mfoOVj9BIMj7ZbjvInUhwz4
+         jMJruN2pM8Oav+xVf0qGMxU0D1smhrVyYr8XEhfYQrWwH7WMbP68Z0YHpTwN100xkzmO
+         8CmpABFhFmZe5ZrFJTgfRel9iOewiw0vQOH5Hp5EgiNrXLO1OzeYe6tv+RrJ23oVSIXi
+         Sbj/bJAjfGnnRamDkiLe/wkSAO3dZ4e/yqIPIFAWdJHyXD3EoGVcbX5qH+0dNRhExl/X
+         DQLHGY74dQSRGLJQ9YWslCGQmEcUmsKKMm5sDkEcp0RxRorX8uoreTXVOHDz1U+T5c/O
+         zSlA==
+X-Gm-Message-State: AOAM533asH+vavflJaX1LZhlnkxsTT62JB2Rd2y5+1W0to3LlQJ5HBr2
+        qHW4H2mGgoqbw0lrfduScxeftQ==
+X-Google-Smtp-Source: ABdhPJw+V5ShgApxNxW34140eavfSn3skDwRCF9/zx690qZo2q8BklpLFc4augcHT2DreEMSI2l/lw==
+X-Received: by 2002:a17:90a:a106:: with SMTP id s6mr8815490pjp.170.1621574012699;
+        Thu, 20 May 2021 22:13:32 -0700 (PDT)
+Received: from cabot.adilger.int (S01061cabc081bf83.cg.shawcable.net. [70.77.221.9])
+        by smtp.gmail.com with ESMTPSA id cv24sm3519057pjb.7.2021.05.20.22.13.30
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 20 May 2021 22:13:31 -0700 (PDT)
+From:   Andreas Dilger <adilger@dilger.ca>
+Message-Id: <6E4DE257-4220-4B5B-B3D0-B67C7BC69BB5@dilger.ca>
+Content-Type: multipart/signed;
+ boundary="Apple-Mail=_9ABD2FFE-ADCA-4E79-B98F-629817F7E7A3";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
+Mime-Version: 1.0 (Mac OS X Mail 10.3 \(3273\))
+Subject: Re: How capacious and well-indexed are ext4, xfs and btrfs
+ directories?
+Date:   Thu, 20 May 2021 23:13:28 -0600
+In-Reply-To: <206078.1621264018@warthog.procyon.org.uk>
+Cc:     Theodore Ts'o <tytso@mit.edu>,
+        "Darrick J. Wong" <djwong@kernel.org>, Chris Mason <clm@fb.com>,
+        Ext4 Developers List <linux-ext4@vger.kernel.org>,
+        xfs <linux-xfs@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-cachefs@redhat.com,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        NeilBrown <neilb@suse.com>
+To:     David Howells <dhowells@redhat.com>
+References: <206078.1621264018@warthog.procyon.org.uk>
+X-Mailer: Apple Mail (2.3273)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Some btrfs tests call _scratch_pool_mkfs or _scratch_mkfs by themselves to
-specify file system size limit. It slips through the check in
-_scratch_mkfs_sized(). Let's add size check call for each of them.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- tests/btrfs/141 | 1 +
- tests/btrfs/142 | 1 +
- tests/btrfs/143 | 1 +
- tests/btrfs/150 | 1 +
- tests/btrfs/151 | 1 +
- tests/btrfs/156 | 1 +
- tests/btrfs/157 | 1 +
- tests/btrfs/158 | 1 +
- tests/btrfs/175 | 1 +
- 9 files changed, 9 insertions(+)
+--Apple-Mail=_9ABD2FFE-ADCA-4E79-B98F-629817F7E7A3
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+	charset=us-ascii
 
-diff --git a/tests/btrfs/141 b/tests/btrfs/141
-index bc4ba52d011d..409cb8ee4099 100755
---- a/tests/btrfs/141
-+++ b/tests/btrfs/141
-@@ -71,6 +71,7 @@ _scratch_dev_pool_get 2
- # step 1, create a raid1 btrfs which contains one 128k file.
- echo "step 1......mkfs.btrfs" >>$seqres.full
- 
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- mkfs_opts="-d raid1 -b 1G"
- _scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/142 b/tests/btrfs/142
-index c8660fd60e5e..e7170cb4e20b 100755
---- a/tests/btrfs/142
-+++ b/tests/btrfs/142
-@@ -49,6 +49,7 @@ _scratch_dev_pool_get 2
- # step 1, create a raid1 btrfs which contains one 128k file.
- echo "step 1......mkfs.btrfs" >>$seqres.full
- 
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- mkfs_opts="-d raid1 -b 1G"
- _scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/143 b/tests/btrfs/143
-index 88fdbe60c123..399146063c40 100755
---- a/tests/btrfs/143
-+++ b/tests/btrfs/143
-@@ -56,6 +56,7 @@ _scratch_dev_pool_get 2
- # step 1, create a raid1 btrfs which contains one 128k file.
- echo "step 1......mkfs.btrfs" >>$seqres.full
- 
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- mkfs_opts="-d raid1 -b 1G"
- _scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/150 b/tests/btrfs/150
-index 0840e0a0cc7d..12826dc0469e 100755
---- a/tests/btrfs/150
-+++ b/tests/btrfs/150
-@@ -59,6 +59,7 @@ disable_io_failure()
- 	echo 0 > $SYSFS_BDEV/make-it-fail
- }
- 
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- _scratch_pool_mkfs "-d raid1 -b 1G" >> $seqres.full 2>&1
- 
- # It doesn't matter which compression algorithm we use.
-diff --git a/tests/btrfs/151 b/tests/btrfs/151
-index cd18f895fd69..d363874f491a 100755
---- a/tests/btrfs/151
-+++ b/tests/btrfs/151
-@@ -39,6 +39,7 @@ _supported_fs btrfs
- _require_scratch
- _require_scratch_dev_pool 3
- _require_btrfs_dev_del_by_devid
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- 
- # We need exactly 3 disks to form a fixed stripe layout for this test.
- _scratch_dev_pool_get 3
-diff --git a/tests/btrfs/156 b/tests/btrfs/156
-index 89c80e7161e2..9126dbab1dde 100755
---- a/tests/btrfs/156
-+++ b/tests/btrfs/156
-@@ -53,6 +53,7 @@ nr_files=$(( $fs_size / $file_size / 2))
- # Force to use single data and meta profile.
- # Since the test relies on fstrim output, which will differ for different
- # profiles
-+_check_minimal_fs_size $fs_size
- _scratch_mkfs -b $fs_size -m single -d single > /dev/null
- _scratch_mount
- 
-diff --git a/tests/btrfs/157 b/tests/btrfs/157
-index e7118dbcad0f..e90349b8ce16 100755
---- a/tests/btrfs/157
-+++ b/tests/btrfs/157
-@@ -76,6 +76,7 @@ _scratch_dev_pool_get 4
- # step 1: create a raid6 btrfs and create a 128K file
- echo "step 1......mkfs.btrfs" >>$seqres.full
- 
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- mkfs_opts="-d raid6 -b 1G"
- _scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/158 b/tests/btrfs/158
-index 803d6b9ea37f..e5bf2f102e15 100755
---- a/tests/btrfs/158
-+++ b/tests/btrfs/158
-@@ -68,6 +68,7 @@ _scratch_dev_pool_get 4
- # step 1: create a raid6 btrfs and create a 128K file
- echo "step 1......mkfs.btrfs" >>$seqres.full
- 
-+_check_minimal_fs_size $(( 1024 * 1024 * 1024 ))
- mkfs_opts="-d raid6 -b 1G"
- _scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
- 
-diff --git a/tests/btrfs/175 b/tests/btrfs/175
-index 94f56284a717..75704c43e27d 100755
---- a/tests/btrfs/175
-+++ b/tests/btrfs/175
-@@ -29,6 +29,7 @@ rm -f $seqres.full
- _supported_fs btrfs
- _require_scratch_dev_pool 2
- _require_scratch_swapfile
-+_check_minimal_fs_size $((1024 * 1024 * 1024))
- 
- cycle_swapfile() {
- 	local sz=${1:-$(($(get_page_size) * 10))}
--- 
-2.31.1
+On May 17, 2021, at 9:06 AM, David Howells <dhowells@redhat.com> wrote:
+> With filesystems like ext4, xfs and btrfs, what are the limits on =
+directory
+> capacity, and how well are they indexed?
+>=20
+> The reason I ask is that inside of cachefiles, I insert fanout =
+directories
+> inside index directories to divide up the space for ext2 to cope with =
+the
+> limits on directory sizes and that it did linear searches (IIRC).
+>=20
+> For some applications, I need to be able to cache over 1M entries =
+(render
+> farm) and even a kernel tree has over 100k.
+>=20
+> What I'd like to do is remove the fanout directories, so that for each =
+logical
+> "volume"[*] I have a single directory with all the files in it.  But =
+that
+> means sticking massive amounts of entries into a single directory and =
+hoping
+> it (a) isn't too slow and (b) doesn't hit the capacity limit.
 
+Ext4 can comfortably handle ~12M entries in a single directory, if the
+filenames are not too long (e.g. 32 bytes or so).  With the "large_dir"
+feature (since 4.13, but not enabled by default) a single directory can
+hold around 4B entries, basically all the inodes of a filesystem.
+
+There are performance knees as the index grows to a new level (~50k, =
+10M,
+depending on filename length)
+
+As described elsewhere in the thread, allowing concurrent create and =
+unlink
+in a directory (rename probably not needed) would be invaluable for =
+scaling
+multi-threaded workloads.  Neil Brown posted a prototype patch to add =
+this
+to the VFS for NFS:
+
+=
+https://lore.kernel.org/lustre-devel/8736rsbdx1.fsf@notabene.neil.brown.na=
+me/
+
+Maybe it's time to restart that discussion?
+
+Cheers, Andreas
+
+
+
+
+
+
+--Apple-Mail=_9ABD2FFE-ADCA-4E79-B98F-629817F7E7A3
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+	filename=signature.asc
+Content-Type: application/pgp-signature;
+	name=signature.asc
+Content-Description: Message signed with OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Comment: GPGTools - http://gpgtools.org
+
+iQIzBAEBCAAdFiEEDb73u6ZejP5ZMprvcqXauRfMH+AFAmCnQXgACgkQcqXauRfM
+H+CtAhAArkAICuRAycDLoFhi3+HEtLyGeg8lvr/V0czSXjKcz0kgsjnpRjQKWW3M
+k4bKUagfH8Y0i3oN2BQ6Tdra0KDtyTFzOGCNFj4u6mnFNwK5ONw3xdrVG7AEmrqj
+Xw9a0yQ46vvcUNXnTYVD9yL4Rzb9NSqbJStenwhO7OdG0kYY8WcS9sWo2ycnsHmc
+oxWFFTaM+CRe0SIirT92MbzJtDdbEPBxVHLtdw9tE9+jSfc547+42N0UmEO/kAxL
+cbObKq9zPsNICHraAoBKusp66p6r4TxlTVXt8sS72PBIn2zKjvYRBdhRZy8DcnCi
+7+uj4VQp9JpeSCB7hqDdUQuUCXkJs2emvxiQv+F1mGjyYSXveDhdQwbcF/6zKqjk
+aCFJNDKH4xvVQpUg7diBKnuf0nhdOgn18m+RnGidSFH52xYR1AI3vtzN9BuN76At
+w0vhpElqyfj6CpJuKh+uAnyAWgE+tqebaSOXQbFGBx6rpelp9kKxzpmusjn5Xpj6
+DWIiSqSLGtJnBQo1PyqWQykqR7het6xNCTIn6TWMDqZNSZ2vCZ4smrVWgl+CZthn
+o6gBqI6SsXwRPCUh5qIMVqVPWcFvvdFUoYltKDG6w7sNaON+UhtcMSrLxwiJA9FA
+/7Ezr8zglU/AB4wrGwd/4aTHrQWdLwn6Ww0HpYTqNNqpMAsSMgA=
+=A2zI
+-----END PGP SIGNATURE-----
+
+--Apple-Mail=_9ABD2FFE-ADCA-4E79-B98F-629817F7E7A3--

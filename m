@@ -4,41 +4,40 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CAD77C2B9F7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:36:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CB57C2B9F7
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:37:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B204060FE7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:36:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 23A3D6109F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:37:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232519AbhEXKhu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 May 2021 06:37:50 -0400
-Received: from mail.kernel.org ([198.145.29.99]:49564 "EHLO mail.kernel.org"
+        id S232582AbhEXKjG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 May 2021 06:39:06 -0400
+Received: from mail.kernel.org ([198.145.29.99]:50164 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232516AbhEXKho (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 May 2021 06:37:44 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 0746360FE7
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 May 2021 10:36:00 +0000 (UTC)
+        id S232653AbhEXKi4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 May 2021 06:38:56 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 3C636606A5;
+        Mon, 24 May 2021 10:37:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1621852561;
-        bh=b19Z5w6DtbTmkxnSbvLdZtRBnFA/XwXiutEZvJSczCA=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=ZhxWLD1Q7MeaYyh1utNCws5qStgEZfamgndD/iJBjCh9+sl02oePklWOhGkZ8wC4r
-         1L75p5w1gGNzm82hAWsuZk6fAiBbUGXwthYMMwYsZryzeJLVZgtq16vUuS7RTTQ1JF
-         y3YaC8tDYGUZlHpBnQQyjIxK/iCI3Yg6u0VrRnITyXYTnZB3bXUPtPOeaSTKHqBm7n
-         77FDQ5tLTaD6rt0YFb8FWfNkW/JCK4el5APClJPm2f41UuFlDBp8XWWsCLDh0swIQZ
-         d0o9b7ZOYS2+X03odlmw7D6DYLK5HVRKjhANMFr8FbtLD4jl0/EFmCGO81oa7p4z4i
-         BRIw8wrCd8yLQ==
+        s=k20201202; t=1621852648;
+        bh=ZDUflN/w0O2X3GCUnXx303dn+nfQtLVu2pQXJm8MF/4=;
+        h=From:To:Cc:Subject:Date:From;
+        b=Dnx0UehvtPPFICyN6LcB+HsLB/JSIpFAdO2BmxMODXoqUDshjWOwn+fuwhvmR2kgp
+         k9efXahrq5++Z2BvOiLlzM7h9TknNSBj1UkKunIuB6PVlhjA7tCSZ6X6RoTVLyu3ZX
+         ymCpYeQBCha2wzP3tI4tU3ju6AAVccOliJQnCLlhARWKKx14833Qh1reBMEzf7qW4z
+         ynGloQbV7Tum23uTP90u7yIImyiISyNYxUs8a7GLqdla9H/5G86kzYx0dSEvZcnnNh
+         Z5ut4ju5xa5YjmjZ9U+UM6AYXDtJwHrJOC85Q6oS8YJemlYi1v3KfHbsnShfIFgqyl
+         /k0qgPJm5jztg==
 From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs: fix misleading and incomplete comment of btrfs_truncate()
-Date:   Mon, 24 May 2021 11:35:54 +0100
-Message-Id: <361f63991d09b69adec418326ce058b850648bd1.1621851896.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1621851896.git.fdmanana@suse.com>
-References: <cover.1621851896.git.fdmanana@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: add test for multiple fsync with adjacent preallocated extents
+Date:   Mon, 24 May 2021 11:37:21 +0100
+Message-Id: <4c3dd698cb68ea0c465ea5028d677b3443b8cf3c.1621852397.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.28.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -47,58 +46,248 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The comment at the top of btrfs_truncate() mentions that csum items are
-dropped or truncated to the new i_size, but this is wrong and non sense,
-as they are unrelated to the i_size and are located in the csums tree and
-not on a tree with inode items (fs/subvolume tree or a log tree). Instead
-that claim applies to file extent items, so fix the comment to refer to
-them instead.
+Test a scenario where we do several partial writes into multiple
+preallocated extents across two transactions and with several fsyncs
+in between. The goal is to check that the fsyncs succeed.
 
-While at it make the whole comment for the function more descriptive and
-follow the kernel doc style.
+Currently the last fsync fails with an -EIO error, and it aborts the
+current transaction. This issue is fixed by a patch with the following
+subject:
+
+  "btrfs: fix fsync failure and transaction abort after writes to prealloc extents"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 24 +++++++++++++++++-------
- 1 file changed, 17 insertions(+), 7 deletions(-)
+ tests/btrfs/240     | 173 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/240.out |  29 ++++++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 203 insertions(+)
+ create mode 100755 tests/btrfs/240
+ create mode 100644 tests/btrfs/240.out
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 23854d180e94..64ddad66ded0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4456,15 +4456,25 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
- #define NEED_TRUNCATE_BLOCK 1
- 
- /*
-- * this can truncate away extent items, csum items and directory items.
-- * It starts at a high offset and removes keys until it can't find
-- * any higher than new_size
-+ * Remove inode items from a given root.
-  *
-- * csum items that cross the new i_size are truncated to the new size
-- * as well.
-+ * @trans:		A transaction handle.
-+ * @root:		The root from which to remove items.
-+ * @inode:		The inode whose items we want to remove.
-+ * @new_size:		The new i_size for the inode. This is only applicable when
-+ *			@min_type is BTRFS_EXTENT_DATA_KEY, must be 0 otherwise.
-+ * @min_type:		The minimum key type to remove. All keys with a type
-+ *			greater than this value are removed and all keys with
-+ *			this type are removed only if their offset is >= @new_size.
-  *
-- * min_type is the minimum key type to truncate down to.  If set to 0, this
-- * will kill all the items on this inode, including the INODE_ITEM_KEY.
-+ * Remove all keys associated with the inode from the given root that have a key
-+ * with a type greater than or equals to @min_type. When @min_type has a value of
-+ * BTRFS_EXTENT_DATA_KEY, only remove file extent items that have an offset value
-+ * greater than or equals to @new_size. If a file extent item that starts before
-+ * @new_size and ends after it is found, its length is adjusted.
-+ *
-+ * Returns: 0 on success, < 0 on error and NEED_TRUNCATE_BLOCK when @min_type is
-+ * BTRFS_EXTENT_DATA_KEY and the caller must truncate the last block.
-  */
- int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root,
+diff --git a/tests/btrfs/240 b/tests/btrfs/240
+new file mode 100755
+index 00000000..c799848f
+--- /dev/null
++++ b/tests/btrfs/240
+@@ -0,0 +1,173 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2021 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FSQA Test No. 240
++#
++# Test a scenario where we do several partial writes into multiple preallocated
++# extents across two transactions and with several fsyncs in between. The goal
++# is to check that the fsyncs succeed. This scenario used to trigger an -EIO
++# failure on the last fsync and turn the filesystem to RO mode because of a
++# transaction abort.
++#
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	_cleanup_flakey
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs btrfs
++_require_scratch
++_require_dm_target flakey
++_require_xfs_io_command "falloc"
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_require_metadata_journaling $SCRATCH_DEV
++_init_flakey
++_mount_flakey
++
++
++# Create our test file with 2 preallocated extents. Leave a 1M hole between them
++# to ensure that we get two file extent items that will never be merged into a
++# single one. The extents are contiguous on disk, which will later result in the
++# checksums for their data to be merged into a single checksum item in the csums
++# btree.
++#
++$XFS_IO_PROG -f \
++	     -c "falloc 0 1M" \
++	     -c "falloc 3M 3M" \
++	     $SCRATCH_MNT/foobar
++
++# Now write to the second extent and leave only 1M of it as unwritten, which
++# corresponds to the file range [4M, 5M[.
++#
++# Then fsync the file to flush delalloc and to clear full sync flag from the
++# inode, so that a future fsync will use the fast code path.
++#
++# After the writeback triggered by the fsync we have 3 file extent items that
++# point to the second extent we previously allocated with fallocate():
++#
++# 1) One file extent item of type BTRFS_FILE_EXTENT_REG that covers the file
++#    range [3M, 4M[
++#
++# 2) One file extent item of type BTRFS_FILE_EXTENT_PREALLOC that covers the
++#    file range [4M, 5M[
++#
++# 3) One file extent item of type BTRFS_FILE_EXTENT_REG that covers the file
++#    range [5M, 6M[
++#
++# All these file extent items have a generation of 6, which is the ID of the
++# transaction where they were created. The split of the original file extent
++# item is done at btrfs_mark_extent_written() when ordered extents complete for
++# the file ranges [3M, 4M[ and [5M, 6M[.
++#
++$XFS_IO_PROG -c "pwrite -S 0xab 3M 1M" \
++	     -c "pwrite -S 0xef 5M 1M" \
++	     -c "fsync" \
++	     $SCRATCH_MNT/foobar | _filter_xfs_io
++
++# Commit the current transaction. This wipes out the log tree created by the
++# previous fsync.
++sync
++
++# Now write to the unwritten range of the second extent we allocated,
++# corresponding to the file range [4M, 5M[, and fsync the file, which triggers
++# the fast fsync code path.
++#
++# The fast fsync code path sees that there is a new extent map covering the file
++# range [4M, 5M[ and therefore it will log a checksum item covering the range
++# [1M, 2M[ of the second extent we allocated.
++#
++# Also, after the fsync finishes we no longer have the 3 file extent items that
++# pointed to 3 sections of the second extent we allocated. Instead we end up
++# with a single file extent item pointing to the whole extent, with a type of
++# BTRFS_FILE_EXTENT_REG and a generation of 7 (the current transaction ID). This
++# is due to the file extent item merging we do when completing ordered extents
++# into ranges that point to unwritten (preallocated) extents. This merging is
++# done at btrfs_mark_extent_written().
++#
++$XFS_IO_PROG -c "pwrite -S 0xcd 4M 1M" \
++	     -c "fsync" \
++	     $SCRATCH_MNT/foobar | _filter_xfs_io
++
++# Now do some write to our file outside the range of the second extent that we
++# allocated with fallocate() and truncate the file size from 6M down to 5M.
++#
++# The truncate operation sets the full sync runtime flag on the inode, forcing
++# the next fsync to use the slow code path. It also changes the length of the
++# second file extent item so that it represents the file range [3M, 5M[ and not
++# the range [3M, 6M[ anymore.
++#
++# Finally fsync the file. Since this is a fsync that triggers the slow code path,
++# it will remove all items associated to the inode from the log tree and then it
++# will scan for file extent items in the fs/subvolume tree that have a generation
++# matching the current transaction ID, which is 7. This means it will log 2 file
++# extent items:
++#
++# 1) One for the first extent we allocated, covering the file range [0, 1M[
++#
++# 2) Another for the first 2M of the second extent we allocated, covering the
++#    file range [3M, 5M[
++#
++# When logging the first file extent item we log a single checksum item that has
++# all the checksums for the entire extent.
++#
++# When logging the second file extent item, we also lookup for the checksums that
++# are associated with the range [0, 2M[ of the second extent we allocated (file
++# range [3M, 5M[), and then we log them with btrfs_csum_file_blocks(). However
++# that results in ending up with a log that has two checksum items with ranges
++# that overlap:
++#
++# 1) One for the range [1M, 2M[ of the second extent we allocated, corresponding
++#    to the file range [4M, 5M[, which we logged in the previous fsync that used
++#    the fast code path;
++#
++# 2) One for the ranges [0, 1M[ and [0, 2M[ of the first and second extents,
++#    respectively, corresponding to the files ranges [0, 1M[ and [3M, 5M[.
++#    This one was added during this last fsync that uses the slow code path
++#    and overlaps with the previous one logged by the previous fast fsync.
++#
++# This happens because when logging the checksums for the second extent, we
++# notice they start at an offset that matches the end of the checksums item that
++# we logged for the first extent, and because both extents are contiguous on
++# disk, btrfs_csum_file_blocks() decides to extend that existing checksums item
++# and append the checksums for the second extent to this item. The end result is
++# we end up with two checksum items in the log tree that have overlapping ranges,
++# as listed before, resulting in the fsync to fail with -EIO and aborting the
++# transaction, turning the filesystem into RO mode.
++#
++$XFS_IO_PROG -c "pwrite -S 0xff 0 1M" \
++	     -c "truncate 5M" \
++	     -c "fsync" \
++	     $SCRATCH_MNT/foobar | _filter_xfs_io
++
++echo "File content before power failure:"
++od -A d -t x1 $SCRATCH_MNT/foobar
++
++# Simulate a power failure and mount again the filesystem. The file content
++# must be the same that we had before.
++_flakey_drop_and_remount
++
++echo "File content before after failure:"
++od -A d -t x1 $SCRATCH_MNT/foobar
++
++_unmount_flakey
++
++status=0
++exit
+diff --git a/tests/btrfs/240.out b/tests/btrfs/240.out
+new file mode 100644
+index 00000000..ffd03ee6
+--- /dev/null
++++ b/tests/btrfs/240.out
+@@ -0,0 +1,29 @@
++QA output created by 240
++wrote 1048576/1048576 bytes at offset 3145728
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1048576/1048576 bytes at offset 5242880
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1048576/1048576 bytes at offset 4194304
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 1048576/1048576 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content before power failure:
++0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++1048576 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++3145728 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
++*
++4194304 cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd
++*
++5242880
++File content before after failure:
++0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++*
++1048576 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++3145728 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
++*
++4194304 cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd
++*
++5242880
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index d7f2f3e5..ad59ed3e 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -242,3 +242,4 @@
+ 237 auto quick zone balance
+ 238 auto quick seed trim
+ 239 auto quick log
++240 auto quick prealloc log
 -- 
 2.28.0
 

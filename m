@@ -2,292 +2,155 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CB57C2B9F7
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:37:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7356EC04FF3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:48:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 23A3D6109F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:37:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 580B9610FA
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 10:48:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232582AbhEXKjG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 May 2021 06:39:06 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50164 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232653AbhEXKi4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 May 2021 06:38:56 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3C636606A5;
-        Mon, 24 May 2021 10:37:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1621852648;
-        bh=ZDUflN/w0O2X3GCUnXx303dn+nfQtLVu2pQXJm8MF/4=;
-        h=From:To:Cc:Subject:Date:From;
-        b=Dnx0UehvtPPFICyN6LcB+HsLB/JSIpFAdO2BmxMODXoqUDshjWOwn+fuwhvmR2kgp
-         k9efXahrq5++Z2BvOiLlzM7h9TknNSBj1UkKunIuB6PVlhjA7tCSZ6X6RoTVLyu3ZX
-         ymCpYeQBCha2wzP3tI4tU3ju6AAVccOliJQnCLlhARWKKx14833Qh1reBMEzf7qW4z
-         ynGloQbV7Tum23uTP90u7yIImyiISyNYxUs8a7GLqdla9H/5G86kzYx0dSEvZcnnNh
-         Z5ut4ju5xa5YjmjZ9U+UM6AYXDtJwHrJOC85Q6oS8YJemlYi1v3KfHbsnShfIFgqyl
-         /k0qgPJm5jztg==
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: add test for multiple fsync with adjacent preallocated extents
-Date:   Mon, 24 May 2021 11:37:21 +0100
-Message-Id: <4c3dd698cb68ea0c465ea5028d677b3443b8cf3c.1621852397.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.28.0
+        id S232570AbhEXKuQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 May 2021 06:50:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38580 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232422AbhEXKuQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 May 2021 06:50:16 -0400
+Received: from mail-qt1-x830.google.com (mail-qt1-x830.google.com [IPv6:2607:f8b0:4864:20::830])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AFC80C061574;
+        Mon, 24 May 2021 03:48:48 -0700 (PDT)
+Received: by mail-qt1-x830.google.com with SMTP id h21so20280562qtu.5;
+        Mon, 24 May 2021 03:48:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=l+yuPCcYzjeH7rGjqqAffdPfdpOmTydJVYtjWgZ35uY=;
+        b=XedBne4/YiA/RtYMeTuK6773wAuTlp8NQzHAPHkt6WrGB//7ReEz/Uelp3NubD7Gqu
+         qYjTc3MtyPGZC+Kv8x6ZY0NYNNhVDRVVFzdoxlgyGKc14mc16bYEDLvDjYb/HwyszLdX
+         REkA3ZbE2ME4c7hRwsJNx6RVMWtsw2R3StGWICxu2W6wEqXAP5OpZL5/1cl4nEHSisR8
+         TpePEEuuygaBHY8osm1rX7qYKdbE3K8+Q9+vZmh+xfStsVYnnWAcDVIncRqb9VMSR9o+
+         V+eFEKDJZ1qD7T7pKkOC4Q732jh+T0feiM7EsY70rgMNDYsKF3C5BcxnJfIOqiIZgawV
+         nCJw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=l+yuPCcYzjeH7rGjqqAffdPfdpOmTydJVYtjWgZ35uY=;
+        b=JO+f808+Uo1sfTSe013//HfDfRCL1VEr4rInyzxrojisUMFCsJlTxrtn5jmevvhnbX
+         dxEKYidhd9k5VGNEeXEoogSJS+EKXFZZOTMR8TxAGrw6GFi1bpN6A0DS6XrDRcr66Jzf
+         Ek0JPkmakESo5g9Ek4sorCsOlmZFr1gyyumgdwkHQEeD28xo3d+ZvKIo/kliF2DhrkYG
+         6YZVwmNSzujH3goUFoXVMLFIn5D0JGajhUQJfhS3sSthFsUTdRm64Kq1uzQ5id3UqFd1
+         WsiZZl4ZSlp9QojJ7pcLEHzk+EVRYiWwyS22XM0Hc81vyGcblefCjDq6KE5uyp8culhT
+         GLNQ==
+X-Gm-Message-State: AOAM531SaFuXCLEW18RQ5lEYk+/jcQaF8RMfC2UX7FOI88P/Ecmsxawd
+        PqcTKnCFqL5slTmUba8ZIKvlv7uLqNW+gIBYWrA3xLLA
+X-Google-Smtp-Source: ABdhPJx+yw5Mq1iULEcB97vUXpNhUymOSOZcgEqRCyBNDiF1DMQ3HBFb5bsScegMNU025TPWj5XXhvsOen/+LDNpIPU=
+X-Received: by 2002:ac8:5402:: with SMTP id b2mr6961416qtq.259.1621853327881;
+ Mon, 24 May 2021 03:48:47 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <58fd56f2942d80bee34108035bd5708a19ac56ed.1621458943.git.josef@toxicpanda.com>
+In-Reply-To: <58fd56f2942d80bee34108035bd5708a19ac56ed.1621458943.git.josef@toxicpanda.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Mon, 24 May 2021 11:48:37 +0100
+Message-ID: <CAL3q7H5O8_KRfRQfxm4ri0yefM0_iN9-sJeJg7EKoSt3K+=cOw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: do not write supers if we have an fs error
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com,
+        stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, May 19, 2021 at 10:20 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> Error injection testing uncovered a pretty severe problem where we could
+> end up committing a super that pointed to the wrong tree roots,
+> resulting in transid mismatch errors.
+>
+> The way we commit the transaction is we update the super copy with the
+> current generations and bytenrs of the important roots, and then copy
+> that into our super_for_commit.  Then we allow transactions to continue
+> again, we write out the dirty pages for the transaction, and then we
+> write the super.  If the write out fails we'll bail and skip writing the
+> supers.
+>
+> However since we've allowed a new transaction to start, we can have a
+> log attempting to sync at this point, which would be blocked on
+> fs_info->tree_log_mutex.  Once the commit fails we're allowed to do the
+> log tree commit, which uses super_for_commit, which now points at fs
+> tree's that were not written out.
+>
+> Fix this by checking BTRFS_FS_STATE_ERROR once we acquire the
+> tree_log_mutex.  This way if the transaction commit fails we're sure to
+> see this bit set and we can skip writing the super out.  This patch
+> fixes this specific transid mismatch error I was seeing with this
+> particular error path.
+>
+> cc: stable@vger.kernel.org
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/tree-log.c | 16 ++++++++++++++++
+>  1 file changed, 16 insertions(+)
+>
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index 0278f489e7d9..83e8f105869b 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -3302,6 +3302,22 @@ int btrfs_sync_log(struct btrfs_trans_handle *tran=
+s,
+>          *    begins and releases it only after writing its superblock.
+>          */
+>         mutex_lock(&fs_info->tree_log_mutex);
+> +
+> +       /*
+> +        * The transaction writeout phase could have failed, and thus mar=
+ked the
 
-Test a scenario where we do several partial writes into multiple
-preallocated extents across two transactions and with several fsyncs
-in between. The goal is to check that the fsyncs succeed.
+To be more clear, it would be better to say "The previous
+transaction", as otherwise it will be
+confusing when reading the comment.
 
-Currently the last fsync fails with an -EIO error, and it aborts the
-current transaction. This issue is fixed by a patch with the following
-subject:
+Other than that, it looks good, great catch.
 
-  "btrfs: fix fsync failure and transaction abort after writes to prealloc extents"
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/240     | 173 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/240.out |  29 ++++++++
- tests/btrfs/group   |   1 +
- 3 files changed, 203 insertions(+)
- create mode 100755 tests/btrfs/240
- create mode 100644 tests/btrfs/240.out
+> +        * fs in an error state.  We must not commit here, as we could ha=
+ve
+> +        * updated our generation in the super_for_commit and writing the=
+ super
+> +        * here would result in transid mismatches.  If there is an error=
+ here
+> +        * just bail.
+> +        */
+> +       if (test_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state)) {
+> +               ret =3D -EIO;
+> +               btrfs_set_log_full_commit(trans);
+> +               btrfs_abort_transaction(trans, ret);
+> +               mutex_unlock(&fs_info->tree_log_mutex);
+> +               goto out_wake_log_root;
+> +       }
+> +
+>         btrfs_set_super_log_root(fs_info->super_for_commit, log_root_star=
+t);
+>         btrfs_set_super_log_root_level(fs_info->super_for_commit, log_roo=
+t_level);
+>         ret =3D write_all_supers(fs_info, 1);
+> --
+> 2.26.3
+>
 
-diff --git a/tests/btrfs/240 b/tests/btrfs/240
-new file mode 100755
-index 00000000..c799848f
---- /dev/null
-+++ b/tests/btrfs/240
-@@ -0,0 +1,173 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2021 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FSQA Test No. 240
-+#
-+# Test a scenario where we do several partial writes into multiple preallocated
-+# extents across two transactions and with several fsyncs in between. The goal
-+# is to check that the fsyncs succeed. This scenario used to trigger an -EIO
-+# failure on the last fsync and turn the filesystem to RO mode because of a
-+# transaction abort.
-+#
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_require_scratch
-+_require_dm_target flakey
-+_require_xfs_io_command "falloc"
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_require_metadata_journaling $SCRATCH_DEV
-+_init_flakey
-+_mount_flakey
-+
-+
-+# Create our test file with 2 preallocated extents. Leave a 1M hole between them
-+# to ensure that we get two file extent items that will never be merged into a
-+# single one. The extents are contiguous on disk, which will later result in the
-+# checksums for their data to be merged into a single checksum item in the csums
-+# btree.
-+#
-+$XFS_IO_PROG -f \
-+	     -c "falloc 0 1M" \
-+	     -c "falloc 3M 3M" \
-+	     $SCRATCH_MNT/foobar
-+
-+# Now write to the second extent and leave only 1M of it as unwritten, which
-+# corresponds to the file range [4M, 5M[.
-+#
-+# Then fsync the file to flush delalloc and to clear full sync flag from the
-+# inode, so that a future fsync will use the fast code path.
-+#
-+# After the writeback triggered by the fsync we have 3 file extent items that
-+# point to the second extent we previously allocated with fallocate():
-+#
-+# 1) One file extent item of type BTRFS_FILE_EXTENT_REG that covers the file
-+#    range [3M, 4M[
-+#
-+# 2) One file extent item of type BTRFS_FILE_EXTENT_PREALLOC that covers the
-+#    file range [4M, 5M[
-+#
-+# 3) One file extent item of type BTRFS_FILE_EXTENT_REG that covers the file
-+#    range [5M, 6M[
-+#
-+# All these file extent items have a generation of 6, which is the ID of the
-+# transaction where they were created. The split of the original file extent
-+# item is done at btrfs_mark_extent_written() when ordered extents complete for
-+# the file ranges [3M, 4M[ and [5M, 6M[.
-+#
-+$XFS_IO_PROG -c "pwrite -S 0xab 3M 1M" \
-+	     -c "pwrite -S 0xef 5M 1M" \
-+	     -c "fsync" \
-+	     $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+# Commit the current transaction. This wipes out the log tree created by the
-+# previous fsync.
-+sync
-+
-+# Now write to the unwritten range of the second extent we allocated,
-+# corresponding to the file range [4M, 5M[, and fsync the file, which triggers
-+# the fast fsync code path.
-+#
-+# The fast fsync code path sees that there is a new extent map covering the file
-+# range [4M, 5M[ and therefore it will log a checksum item covering the range
-+# [1M, 2M[ of the second extent we allocated.
-+#
-+# Also, after the fsync finishes we no longer have the 3 file extent items that
-+# pointed to 3 sections of the second extent we allocated. Instead we end up
-+# with a single file extent item pointing to the whole extent, with a type of
-+# BTRFS_FILE_EXTENT_REG and a generation of 7 (the current transaction ID). This
-+# is due to the file extent item merging we do when completing ordered extents
-+# into ranges that point to unwritten (preallocated) extents. This merging is
-+# done at btrfs_mark_extent_written().
-+#
-+$XFS_IO_PROG -c "pwrite -S 0xcd 4M 1M" \
-+	     -c "fsync" \
-+	     $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+# Now do some write to our file outside the range of the second extent that we
-+# allocated with fallocate() and truncate the file size from 6M down to 5M.
-+#
-+# The truncate operation sets the full sync runtime flag on the inode, forcing
-+# the next fsync to use the slow code path. It also changes the length of the
-+# second file extent item so that it represents the file range [3M, 5M[ and not
-+# the range [3M, 6M[ anymore.
-+#
-+# Finally fsync the file. Since this is a fsync that triggers the slow code path,
-+# it will remove all items associated to the inode from the log tree and then it
-+# will scan for file extent items in the fs/subvolume tree that have a generation
-+# matching the current transaction ID, which is 7. This means it will log 2 file
-+# extent items:
-+#
-+# 1) One for the first extent we allocated, covering the file range [0, 1M[
-+#
-+# 2) Another for the first 2M of the second extent we allocated, covering the
-+#    file range [3M, 5M[
-+#
-+# When logging the first file extent item we log a single checksum item that has
-+# all the checksums for the entire extent.
-+#
-+# When logging the second file extent item, we also lookup for the checksums that
-+# are associated with the range [0, 2M[ of the second extent we allocated (file
-+# range [3M, 5M[), and then we log them with btrfs_csum_file_blocks(). However
-+# that results in ending up with a log that has two checksum items with ranges
-+# that overlap:
-+#
-+# 1) One for the range [1M, 2M[ of the second extent we allocated, corresponding
-+#    to the file range [4M, 5M[, which we logged in the previous fsync that used
-+#    the fast code path;
-+#
-+# 2) One for the ranges [0, 1M[ and [0, 2M[ of the first and second extents,
-+#    respectively, corresponding to the files ranges [0, 1M[ and [3M, 5M[.
-+#    This one was added during this last fsync that uses the slow code path
-+#    and overlaps with the previous one logged by the previous fast fsync.
-+#
-+# This happens because when logging the checksums for the second extent, we
-+# notice they start at an offset that matches the end of the checksums item that
-+# we logged for the first extent, and because both extents are contiguous on
-+# disk, btrfs_csum_file_blocks() decides to extend that existing checksums item
-+# and append the checksums for the second extent to this item. The end result is
-+# we end up with two checksum items in the log tree that have overlapping ranges,
-+# as listed before, resulting in the fsync to fail with -EIO and aborting the
-+# transaction, turning the filesystem into RO mode.
-+#
-+$XFS_IO_PROG -c "pwrite -S 0xff 0 1M" \
-+	     -c "truncate 5M" \
-+	     -c "fsync" \
-+	     $SCRATCH_MNT/foobar | _filter_xfs_io
-+
-+echo "File content before power failure:"
-+od -A d -t x1 $SCRATCH_MNT/foobar
-+
-+# Simulate a power failure and mount again the filesystem. The file content
-+# must be the same that we had before.
-+_flakey_drop_and_remount
-+
-+echo "File content before after failure:"
-+od -A d -t x1 $SCRATCH_MNT/foobar
-+
-+_unmount_flakey
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/240.out b/tests/btrfs/240.out
-new file mode 100644
-index 00000000..ffd03ee6
---- /dev/null
-+++ b/tests/btrfs/240.out
-@@ -0,0 +1,29 @@
-+QA output created by 240
-+wrote 1048576/1048576 bytes at offset 3145728
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 1048576/1048576 bytes at offset 5242880
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 1048576/1048576 bytes at offset 4194304
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 1048576/1048576 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File content before power failure:
-+0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
-+*
-+1048576 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+3145728 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
-+*
-+4194304 cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd
-+*
-+5242880
-+File content before after failure:
-+0000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
-+*
-+1048576 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+3145728 ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab ab
-+*
-+4194304 cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd cd
-+*
-+5242880
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index d7f2f3e5..ad59ed3e 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -242,3 +242,4 @@
- 237 auto quick zone balance
- 238 auto quick seed trim
- 239 auto quick log
-+240 auto quick prealloc log
--- 
-2.28.0
 
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

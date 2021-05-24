@@ -7,41 +7,41 @@ X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EF4FBC04FF3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 15:07:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCC72C04FF3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 15:13:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D5FD261376
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 15:07:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C18FC6100C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 May 2021 15:13:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234709AbhEXPIl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 May 2021 11:08:41 -0400
-Received: from mail.kernel.org ([198.145.29.99]:40002 "EHLO mail.kernel.org"
+        id S232835AbhEXPPN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 May 2021 11:15:13 -0400
+Received: from mail.kernel.org ([198.145.29.99]:40004 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234999AbhEXPFl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 May 2021 11:05:41 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 85B566162E;
-        Mon, 24 May 2021 14:51:00 +0000 (UTC)
+        id S234409AbhEXPHm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 24 May 2021 11:07:42 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id D5276616EA;
+        Mon, 24 May 2021 14:51:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1621867861;
-        bh=Dv1gPJz98h71tKkFr3ikWvxAKFWRsMK+BBbWvj2Tgjc=;
+        s=k20201202; t=1621867887;
+        bh=BeSBxUMoeujGn0kO7erzpPXEwEl53/NqmbSzEjAyfr4=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=CxAPNmHALSt0YJPpik/+NzkL9ky97cRVprRMtynzsajjYeR89PkfxDr9IJFNyN7Eb
-         TZjya69jwd3/rfnrJWC+wuMFKmWkltu8FyDRQMJBqCq0GWlV8ZnlWjoCtVlCThoMSQ
-         hGj0FHCMj+Ax6BBWRF3aiQajs8YYDqS5x8DHIwj3ZdhEyiR+LVT8vBc+s2yAN9xXUf
-         nrUrEAvkFTi6oBJiDo+Fn9HHSlsfLEswfIalZQ/qeVtsyCp0aK56q0rLE+scIRwMq+
-         0sQhrirfQWpHB3kTipP8WmGBBZ7kR2IFI2Ib13v/Cr8SiRV8kFgpu/Ot3ZCTcbBBHI
-         n913eoClgMXig==
+        b=BlnkLmGj1BotYGRSxiHwjG1WLXFvRF5NVjU+GMThsUrFB9HbEV6QMhFHnksnf7heR
+         uoKleh03MMG4jgLgZ2KFkNeknZQnni79wdiJtmv/cO0OLdi4TTAXWyfNNgRFUKt4Ow
+         ruczFfxzHbgUYlBt3EPxteuHUslIRIKOmVRyFncGtHPHdlnhKh4Q548fVVIFkPgUYv
+         ykfifmvIuMJgHFXqn+JlElHi6D0o3bVpgFG1LodUFhqZxn3DL4emiaXH5aHVp+NEq+
+         O2BiFQh9/sncDyzNPekWASpmHR7MlsoFVfe4Q3JOu5ePhOkEn+UDvTe/n2qco3VzPv
+         HAgiIlONWbpAA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.14 17/21] btrfs: do not BUG_ON in link_to_fixup_dir
-Date:   Mon, 24 May 2021 10:50:36 -0400
-Message-Id: <20210524145040.2499322-17-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.9 17/19] btrfs: do not BUG_ON in link_to_fixup_dir
+Date:   Mon, 24 May 2021 10:51:04 -0400
+Message-Id: <20210524145106.2499571-17-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210524145040.2499322-1-sashal@kernel.org>
-References: <20210524145040.2499322-1-sashal@kernel.org>
+In-Reply-To: <20210524145106.2499571-1-sashal@kernel.org>
+References: <20210524145106.2499571-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -106,10 +106,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 2 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index e40c27aec949..035a2e2be156 100644
+index 9909b63d2acd..5c86fecaf167 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -1629,8 +1629,6 @@ static noinline int link_to_fixup_dir(struct btrfs_trans_handle *trans,
+@@ -1600,8 +1600,6 @@ static noinline int link_to_fixup_dir(struct btrfs_trans_handle *trans,
  		ret = btrfs_update_inode(trans, root, inode);
  	} else if (ret == -EEXIST) {
  		ret = 0;

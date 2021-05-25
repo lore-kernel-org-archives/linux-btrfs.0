@@ -7,178 +7,129 @@ X-Spam-Status: No, score=-17.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8626C2B9F8
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 May 2021 16:14:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63CA5C2B9F8
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 May 2021 16:23:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 97986611C2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 May 2021 16:14:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4708561413
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 May 2021 16:23:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233265AbhEYQPx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 May 2021 12:15:53 -0400
-Received: from mx2.suse.de ([195.135.220.15]:58176 "EHLO mx2.suse.de"
+        id S233209AbhEYQZC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 May 2021 12:25:02 -0400
+Received: from mx2.suse.de ([195.135.220.15]:50578 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233235AbhEYQPw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 May 2021 12:15:52 -0400
+        id S232200AbhEYQZB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 May 2021 12:25:01 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1621959262;
+        t=1621959810;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=psS28WF+ZcFHjH62yflSirSQ16bOQfcoFKAEUSUXyuw=;
-        b=iazdDzOj6MtLMutvjJeylxOvx+Xyh4H5n3Z1s5Z+V3aTkA+r+sj5UrD/jF9MZjDrvxrQmZ
-        0dkUhHQrLJkQ9hr+Ra0J5qRSzz+kWNKXMstpQdE+cNYDP57LrX8pBLgqy23jad92qbzh9I
-        xKOqhBYPkbld75rXnDHMP6Tmn6l5B3o=
+        bh=1TwJ77aoSrIKHt+YYhTUhNCgRJxHRSGsYbOWq/ep6Po=;
+        b=VwZVhomB8KvnHx9kWDcEdlnKbMcd2msZIcM7M3X7PZci+mGwzqAer66EkHSeYLcfvGtFWe
+        YaR9BDQrB2vtCfybcuMm3e1cvQcrM3lupAC8umyQ+sSWvPL67PhsM9A7+fubjf5Qa3FmGF
+        3fdIf5wpfc1UsslpQ6xAJRFzmRfHNK0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1621959262;
+        s=susede2_ed25519; t=1621959810;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=psS28WF+ZcFHjH62yflSirSQ16bOQfcoFKAEUSUXyuw=;
-        b=1b0W4MarlKWEKONBJCiVQWGIM+rhB5yKe9X1gQdRYtxc/eJefJz4cXepN2B6j/nNvAo/ky
-        /S1PY1APukZfM7Bw==
+        bh=1TwJ77aoSrIKHt+YYhTUhNCgRJxHRSGsYbOWq/ep6Po=;
+        b=PWxz5/zT1uV7lYYIHmBjqj/V84QAyb2YIMER6WzpsqLH2zkspcuizqyy71ExlrKAO8U+OM
+        UxFInCU9+4VLJ7BQ==
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id 0B09BAE99;
-        Tue, 25 May 2021 16:14:22 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id C6AC2AF38;
+        Tue, 25 May 2021 16:23:30 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 935C0DA70B; Tue, 25 May 2021 18:11:45 +0200 (CEST)
-Date:   Tue, 25 May 2021 18:11:45 +0200
+        id 5B54BDA704; Tue, 25 May 2021 18:20:54 +0200 (CEST)
+Date:   Tue, 25 May 2021 18:20:54 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix deadlock when cloning inline extents and low
- on available space
-Message-ID: <20210525161145.GD7604@twin.jikos.cz>
+To:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, wqu@suse.com
+Subject: Re: [PATCH] btrfs: Add new flag to rescan quota after subvolume
+ creation
+Message-ID: <20210525162054.GE7604@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <fe861a6c4f23f3980fcf198bdbd7e92cdc6847b9.1621936270.git.fdmanana@suse.com>
+Mail-Followup-To: dsterba@suse.cz,
+        Marcos Paulo de Souza <mpdesouza@suse.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, wqu@suse.com
+References: <20210521143811.16227-1-mpdesouza@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <fe861a6c4f23f3980fcf198bdbd7e92cdc6847b9.1621936270.git.fdmanana@suse.com>
+In-Reply-To: <20210521143811.16227-1-mpdesouza@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 25, 2021 at 11:05:28AM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Fri, May 21, 2021 at 11:38:11AM -0300, Marcos Paulo de Souza wrote:
+> Adding a new subvolume/snapshot makes the qgroup data inconsistent, so
+> add a new flag to inform the subvolume ioctl to do a quota rescan right
+> after the subvolume/snapshot creation.
 > 
-> There are a few cases where cloning an inline extent requires copying data
-> into a page of the destination inode. For these cases we are allocating
-> the required data and metadata space while holding a leaf locked. This can
-> result in a deadlock when we are low on available space because allocating
-> the space may flush delalloc and two deadlock scenarios can happen:
-> 
-> 1) When starting writeback for an inode with a very small dirty range that
->    fits in an inline extent, we deadlock during the writeback when trying
->    to insert the inline extent, at cow_file_range_inline(), if the extent
->    is going to be located in the leaf for which we are already holding a
->    read lock;
-> 
-> 2) After successfully starting writeback, for non-inline extent cases,
->    the async reclaim thread will hang waiting for an ordered extent to
->    complete if the ordered extent completion needs to modify the leaf
->    for which the clone task is holding a read lock (for adding or
->    replacing file extent items). So the cloning task will wait forever
->    on the async reclaim thread to make progress, which in turn is
->    waiting for the ordered extent completion which in turn is waiting
->    to acquire a write lock on the same leaf.
-> 
-> So fix this by making sure we release the path (and therefore the leaf)
-> everytime we need to copy the inline extent's data into a page of the
-> destination inode, as by that time we do not need to have the leaf locked.
-> 
-> Fixes: 05a5a7621ce66c ("Btrfs: implement full reflink support for inline extents")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
-Added to misc-next, thanks.
-
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 > ---
->  fs/btrfs/reflink.c | 38 ++++++++++++++++++++++----------------
->  1 file changed, 22 insertions(+), 16 deletions(-)
 > 
-> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-> index 06682128d8fa..58ddc7ed9e84 100644
-> --- a/fs/btrfs/reflink.c
-> +++ b/fs/btrfs/reflink.c
-> @@ -207,10 +207,7 @@ static int clone_copy_inline_extent(struct inode *dst,
->  			 * inline extent's data to the page.
->  			 */
->  			ASSERT(key.offset > 0);
-> -			ret = copy_inline_to_page(BTRFS_I(dst), new_key->offset,
-> -						  inline_data, size, datal,
-> -						  comp_type);
-> -			goto out;
-> +			goto copy_to_page;
->  		}
->  	} else if (i_size_read(dst) <= datal) {
->  		struct btrfs_file_extent_item *ei;
-> @@ -226,13 +223,10 @@ static int clone_copy_inline_extent(struct inode *dst,
->  		    BTRFS_FILE_EXTENT_INLINE)
->  			goto copy_inline_extent;
->  
-> -		ret = copy_inline_to_page(BTRFS_I(dst), new_key->offset,
-> -					  inline_data, size, datal, comp_type);
-> -		goto out;
-> +		goto copy_to_page;
->  	}
->  
->  copy_inline_extent:
-> -	ret = 0;
->  	/*
->  	 * We have no extent items, or we have an extent at offset 0 which may
->  	 * or may not be inlined. All these cases are dealt the same way.
-> @@ -244,11 +238,13 @@ static int clone_copy_inline_extent(struct inode *dst,
->  		 * clone. Deal with all these cases by copying the inline extent
->  		 * data into the respective page at the destination inode.
->  		 */
-> -		ret = copy_inline_to_page(BTRFS_I(dst), new_key->offset,
-> -					  inline_data, size, datal, comp_type);
-> -		goto out;
-> +		goto copy_to_page;
->  	}
->  
-> +	/*
-> +	 * Release path before starting a new transaction so we don't hold locks
-> +	 * that would confuse lockdep.
-> +	 */
->  	btrfs_release_path(path);
->  	/*
->  	 * If we end up here it means were copy the inline extent into a leaf
-> @@ -285,11 +281,6 @@ static int clone_copy_inline_extent(struct inode *dst,
->  	ret = btrfs_inode_set_file_extent_range(BTRFS_I(dst), 0, aligned_end);
->  out:
->  	if (!ret && !trans) {
-> -		/*
-> -		 * Release path before starting a new transaction so we don't
-> -		 * hold locks that would confuse lockdep.
-> -		 */
-> -		btrfs_release_path(path);
->  		/*
->  		 * No transaction here means we copied the inline extent into a
->  		 * page of the destination inode.
-> @@ -310,6 +301,21 @@ static int clone_copy_inline_extent(struct inode *dst,
->  		*trans_out = trans;
->  
->  	return ret;
-> +
-> +copy_to_page:
-> +	/*
-> +	 * Release our path because we don't need it anymore and also because
-> +	 * copy_inline_to_page() needs to reserve data and metadata, which may
-> +	 * need to flush delalloc when we are low on available space and
-> +	 * therefore cause a deadlock if writeback of an inline extent needs to
-> +	 * write to the same leaf or an ordered extent completion needs to write
-> +	 * to the same leaf.
-> +	 */
-> +	btrfs_release_path(path);
-> +
-> +	ret = copy_inline_to_page(BTRFS_I(dst), new_key->offset,
-> +				  inline_data, size, datal, comp_type);
-> +	goto out;
->  }
+>  This is an attempt to help snapper to create snapshots with 'timeline'
+>  cleanup-policy to keep the qgroup data consistent after a new snapshot is
+>  created.
 
-I don't like to see the pattern with the chained labels but in this case
-I don't see a better way, so ok.
+I'm not sure adding something like rescan into subvolume creation. It
+can be started separately as a workaround. The problem I see is that
+there are two big things happening and both can fail, but there's only
+one return value and the user can tell which one failed.
+
+> +	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_RESCAN) {
+> +		if (!capable(CAP_SYS_ADMIN)) {
+> +			ret = -EPERM;
+
+Eg. here, did the subvolume creation fail due to EPERM, or the rescan?
+
+> +			goto free_args;
+> +		}
+> +
+> +		quota_rescan = true;
+> +	}
+> +
+>  	if (vol_args->flags & BTRFS_SUBVOL_RDONLY)
+>  		readonly = true;
+>  	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
+> @@ -1843,6 +1869,22 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
+>  					subvol, readonly, inherit);
+>  	if (ret)
+>  		goto free_inherit;
+> +
+> +	if (quota_rescan) {
+> +		ret = do_quota_rescan(file);
+> +		/*
+> +		 * EINVAL is returned if quota is not enabled. There is already
+> +		 * a warning issued if quota rescan is started when quota is not
+> +		 * enabled, so skip a warning here if it is the case.
+> +		 */
+> +		if (ret < 0 && ret != -EINVAL)
+> +			btrfs_warn(btrfs_sb(file_inode(file)->i_sb),
+> +		"Couldn't execute quota rescan after snapshot creation: %d",
+> +					ret);
+> +		else
+> +			ret = 0;
+
+That's another special case and the system error message is required to
+interpret the error code but we've seen in the past that this is not a
+good usability pattern.
+
+> +#define BTRFS_SUBVOL_QGROUP_RESCAN	(1ULL << 5)
+> +
+>  #define BTRFS_VOL_ARG_V2_FLAGS_SUPPORTED		\
+>  			(BTRFS_SUBVOL_RDONLY |		\
+>  			BTRFS_SUBVOL_QGROUP_INHERIT |	\
+>  			BTRFS_DEVICE_SPEC_BY_ID |	\
+> -			BTRFS_SUBVOL_SPEC_BY_ID)
+> +			BTRFS_SUBVOL_SPEC_BY_ID |	\
+> +			BTRFS_SUBVOL_QGROUP_RESCAN)
+
+The idea of bits is to extend mode of operation of the ioctls, not to
+proxy other functionality. What I'd see as reasonable would be something
+like conditionally marking the quotas inconsistent by setting a bit
+after snapshot creation and when quotas are enabled. But the snapshot
+creation should do only snapshot creation.

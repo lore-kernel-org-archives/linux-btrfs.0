@@ -7,36 +7,36 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 402B5C4708F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 08:52:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28D2CC47094
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 08:52:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 22FCB61278
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 08:52:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0A93A6124B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 08:52:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231167AbhEaIxv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 May 2021 04:53:51 -0400
-Received: from mx2.suse.de ([195.135.220.15]:41508 "EHLO mx2.suse.de"
+        id S231209AbhEaIxz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 May 2021 04:53:55 -0400
+Received: from mx2.suse.de ([195.135.220.15]:41612 "EHLO mx2.suse.de"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231172AbhEaIxl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 May 2021 04:53:41 -0400
+        id S231177AbhEaIxp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 May 2021 04:53:45 -0400
 X-Virus-Scanned: by amavisd-new at test-mx.suse.de
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1622451121; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1622451124; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=8MLhAvYuwDU6vws7oow0Ndh/f7C4oFYU0y0qdMnjAq8=;
-        b=Hd9RRWnZyINa71V81jlLloqktoclc5WJIFX25WQUeYHZGoCV5o4r+r/DARo7osn2gQyB/W
-        +wKQfLZXXylq7ri8jM1K1G+Gswk/+RZLpASSVahOwly2SToMPg0SeWtevpSBC0hR/QZtkg
-        03jKskq7qug6HTT3hdIJTRMS2MJthrk=
+        bh=m2/pNN8wxcjrcZnHpRLevhx4DTmJhZDlIlwzJHjKRp4=;
+        b=RZUo2Eq365PfsyV9leebSM216xn9NsxZsjkpBza5GWVdWSuVpt5uI/Ydy1qQwpkXabbFrt
+        Y1f39YfZxgUAjjgdwTcklchIwvCNpVZR/jYoaChZyuPRm6xiYCM4VR/B42H1stC9o5MiXN
+        t6AQnuGHgBQKqt/2/bleksyxSAA5cbo=
 Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id EC936B2E9
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 May 2021 08:52:00 +0000 (UTC)
+        by mx2.suse.de (Postfix) with ESMTP id A88C3B2E9
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 May 2021 08:52:04 +0000 (UTC)
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 28/30] btrfs: fix a subpage false alert for relocating partial preallocated data extents
-Date:   Mon, 31 May 2021 16:51:04 +0800
-Message-Id: <20210531085106.259490-29-wqu@suse.com>
+Subject: [PATCH v4 30/30] btrfs: allow read-write for 4K sectorsize on 64K page size systems
+Date:   Mon, 31 May 2021 16:51:06 +0800
+Message-Id: <20210531085106.259490-31-wqu@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210531085106.259490-1-wqu@suse.com>
 References: <20210531085106.259490-1-wqu@suse.com>
@@ -46,88 +46,136 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-When relocating partial preallocated data extents (part of the
-preallocated extent is written) for subpage, it can cause the following
-false alert and make the relocation to fail:
+Since now we support data and metadata read-write for subpage, remove
+the RO requirement for subpage mount.
 
-  BTRFS info (device dm-3): balance: start -d
-  BTRFS info (device dm-3): relocating block group 13631488 flags data
-  BTRFS warning (device dm-3): csum failed root -9 ino 257 off 4096 csum 0x98757625 expected csum 0x00000000 mirror 1
-  BTRFS error (device dm-3): bdev /dev/mapper/arm_nvme-test errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-  BTRFS warning (device dm-3): csum failed root -9 ino 257 off 4096 csum 0x98757625 expected csum 0x00000000 mirror 1
-  BTRFS error (device dm-3): bdev /dev/mapper/arm_nvme-test errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
-  BTRFS info (device dm-3): balance: ended with status: -5
+There are some extra limits though:
+- For now, subpage RW mount is still considered experimental
+  Thus that mount warning will still be there.
 
-The minimal script to reproduce looks like this:
+- No compression support
+  There are still quite some PAGE_SIZE hard coded and quite some call
+  sites use extent_clear_unlock_delalloc() to unlock locked_page.
+  This will screw up subpage helpers
 
-  mkfs.btrfs -f -s 4k $dev
-  mount $dev -o nospace_cache $mnt
-  xfs_io -f -c "falloc 0 8k" $mnt/file
-  xfs_io -f -c "pwrite 0 4k" $mnt/file
-  btrfs balance start -d $mnt
+  Now for subpage RW mount, no matter whatever mount option or inode
+  attr is set, all write will not be compressed.
+  Although reading compressed data has no problem.
 
-[CAUSE]
-Function btrfs_verify_data_csum() checks if the full range has
-EXTENT_NODATASUM bit for data reloc inode, if *all* bytes of the range
-has EXTENT_NODATASUM bit, then it skip the range.
+- No defrag for subpage case
+  The defrag support for subpage case will come in later patches, which
+  will also rework the defrag workflow.
 
-This works pretty well for regular sectorsize, as in that case
-btrfs_verify_data_csum() is called for each sector, thus no problem at
-all.
+- No inline extent will be created
+  This is mostly due to the fact that filemap_fdatawrite_range() will
+  trigger more write than the range specified.
+  In fallocate calls, this behavior can make us to writeback which can
+  be inlined, before we enlarge the isize.
 
-But for subpage case, btrfs_verify_data_csum() is called on each bvec,
-which can contain several sectors, and since it checks *all* bytes for
-EXTENT_NODATASUM bit, if we have some range with csum, then we will
-continue checking all the sectors.
-
-For the preallocated sectors, it doesn't have any csum, thus obviously
-the csum won't match and cause the false alert.
-
-[FIX]
-Move the EXTENT_NODATASUM check into the main loop, so that we can check
-each sector for EXTENT_NODATASUM bit for subpage case.
+  This is a very special corner case, and even current btrfs check won't
+  report error on such inline extent + regular extent.
+  But considering how much effort has been put to prevent such inline +
+  regular, I'd prefer to cut off inline extent completely until we have
+  a good solution.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 17 +++++++++++------
- 1 file changed, 11 insertions(+), 6 deletions(-)
+ fs/btrfs/disk-io.c | 13 ++++---------
+ fs/btrfs/inode.c   |  3 +++
+ fs/btrfs/ioctl.c   |  6 ++++++
+ fs/btrfs/super.c   |  7 -------
+ fs/btrfs/sysfs.c   |  5 +++++
+ 5 files changed, 18 insertions(+), 16 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2dd48f4bec8f..7c17cb7cf4fe 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3396,15 +3396,10 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 		goto fail_alloc;
+ 	}
+ 
+-	/* For 4K sector size support, it's only read-only */
+-	if (PAGE_SIZE == SZ_64K && sectorsize == SZ_4K) {
+-		if (!sb_rdonly(sb) || btrfs_super_log_root(disk_super)) {
+-			btrfs_err(fs_info,
+-	"subpage sectorsize %u only supported read-only for page size %lu",
+-				sectorsize, PAGE_SIZE);
+-			err = -EINVAL;
+-			goto fail_alloc;
+-		}
++	if (sectorsize != PAGE_SIZE) {
++		btrfs_warn(fs_info,
++	"read-write for sector size %u with page size %lu is experimental",
++			   sectorsize, PAGE_SIZE);
+ 	}
+ 	if (sectorsize != PAGE_SIZE) {
+ 		if (btrfs_super_incompat_flags(fs_info->super_copy) &
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d3c67411f683..85f465328ab2 100644
+index 85f465328ab2..27d56a77aa5f 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3188,19 +3188,24 @@ unsigned int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
- 	if (!root->fs_info->csum_root)
- 		return 0;
+@@ -490,6 +490,9 @@ static noinline int add_async_extent(struct async_chunk *cow,
+  */
+ static inline bool inode_can_compress(struct btrfs_inode *inode)
+ {
++	/* Subpage doesn't support compress yet */
++	if (inode->root->fs_info->sectorsize < PAGE_SIZE)
++		return false;
+ 	if (inode->flags & BTRFS_INODE_NODATACOW ||
+ 	    inode->flags & BTRFS_INODE_NODATASUM)
+ 		return false;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 49cfa9772c1b..11adf4670c55 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3028,6 +3028,12 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
+ 		goto out;
+ 	}
  
--	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
--	    test_range_bit(io_tree, start, end, EXTENT_NODATASUM, 1, NULL)) {
--		clear_extent_bits(io_tree, start, end, EXTENT_NODATASUM);
--		return 0;
--	}
--
- 	ASSERT(page_offset(page) <= start &&
- 	       end <= page_offset(page) + PAGE_SIZE - 1);
- 	for (pg_off = offset_in_page(start);
- 	     pg_off < offset_in_page(end);
- 	     pg_off += sectorsize, bio_offset += sectorsize) {
-+		u64 file_offset = pg_off + page_offset(page);
- 		int ret;
++	/* Subpage defrag will be supported in later commits */
++	if (root->fs_info->sectorsize < PAGE_SIZE) {
++		ret = -ENOTTY;
++		goto out;
++	}
++
+ 	switch (inode->i_mode & S_IFMT) {
+ 	case S_IFDIR:
+ 		if (!capable(CAP_SYS_ADMIN)) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4a396c1147f1..b18d268abfbb 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2053,13 +2053,6 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 			ret = -EINVAL;
+ 			goto restore;
+ 		}
+-		if (fs_info->sectorsize < PAGE_SIZE) {
+-			btrfs_warn(fs_info,
+-	"read-write mount is not yet allowed for sectorsize %u page size %lu",
+-				   fs_info->sectorsize, PAGE_SIZE);
+-			ret = -EINVAL;
+-			goto restore;
+-		}
  
-+		if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
-+		    test_range_bit(io_tree, file_offset,
-+				   file_offset + sectorsize - 1,
-+				   EXTENT_NODATASUM, 1, NULL)) {
-+			/* Skip the range without csum for data reloc inode */
-+			clear_extent_bits(io_tree, file_offset,
-+					  file_offset + sectorsize - 1,
-+					  EXTENT_NODATASUM);
-+			continue;
-+		}
- 		ret = check_data_csum(inode, io_bio, bio_offset, page, pg_off,
- 				      page_offset(page) + pg_off);
- 		if (ret < 0) {
+ 		/*
+ 		 * NOTE: when remounting with a change that does writes, don't
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 436ac7b4b334..752461a79364 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -366,6 +366,11 @@ static ssize_t supported_sectorsizes_show(struct kobject *kobj,
+ {
+ 	ssize_t ret = 0;
+ 
++	/* 4K sector size is also support with 64K page size */
++	if (PAGE_SIZE == SZ_64K)
++		ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%u ",
++				 SZ_4K);
++
+ 	/* Only sectorsize == PAGE_SIZE is now supported */
+ 	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%lu\n", PAGE_SIZE);
+ 
 -- 
 2.31.1
 

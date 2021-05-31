@@ -2,144 +2,150 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.3 required=3.0 tests=BAYES_00,DKIMWL_WL_MED,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_IN_DEF_DKIM_WL autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 543CAC47080
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 10:32:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC0D3C47080
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 11:36:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 25E0760FF1
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 10:32:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 88E3C6135C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 11:36:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231124AbhEaKdv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 May 2021 06:33:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47224 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230521AbhEaKdv (ORCPT
+        id S231430AbhEaLiJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 May 2021 07:38:09 -0400
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:31018 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230521AbhEaLiG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 May 2021 06:33:51 -0400
-Received: from mail-qk1-x72e.google.com (mail-qk1-x72e.google.com [IPv6:2607:f8b0:4864:20::72e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5BC9CC06174A
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 May 2021 03:32:11 -0700 (PDT)
-Received: by mail-qk1-x72e.google.com with SMTP id o27so10735413qkj.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 May 2021 03:32:11 -0700 (PDT)
+        Mon, 31 May 2021 07:38:06 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1622460986; x=1653996986;
+  h=from:to:cc:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=7xaLn9tmA7MNlUyPWkZFD8cfTaYJaQQuf6+1Gn+xBAE=;
+  b=gniN+wlppORHy10TB8n6HAk5PzimlPpKEz5ZFx6EkXautUBV/Ix+3Mfg
+   NQMaP84yae9KVuHt+1+EE72VYQeve46yKCLzT9vpoV87JtgOR1JWNjWA3
+   CYZJVACWYwTQroAKy47DT6+2hT0s2Xjr3aaGjuDYq2t9jcH1wl559BgTb
+   6ikwxes1uhR4J4JG1VgZOEkomuDYmuousRFf02awGRjbx5l+ybX9+iQ2S
+   VZaouvRtoH3Vu6Hq9I3hwjwK49shGpgfV+h+YS796B3Wqrl6NcL1vGLte
+   vHbYYbhOrm5jrhYr36XAziP3RgDIUJ5r5BNVk6BjTK+C5jNEGSn9SR+9B
+   g==;
+IronPort-SDR: +Q8T2vqFHJ80k5lpcntvUE/CBgHvul1/6/49zCmJ/JU9iYuRhi2qoQ8lgk1VllF3jOSKIvpYhr
+ sbQEKw1/gbA/kMqM2jUH3K8B+P1UkccxuMhlIEnKy/rfq5PhhF6iAKpff8x/Lyawc9VwEx2ur6
+ 4GXD1tDX7SCkPPRW6tpEupn0csSk3aDPW25PDj0ERP7Hu4F0PPS9s5y+gDcbWerbk4IYGaJG7L
+ NqervfgnOobo6FbZxHiNP3K59jDVdR6qUzmBL25tvRzFbgbULTm6ERo3Q5QhGaA0IykdoYgBSa
+ bng=
+X-IronPort-AV: E=Sophos;i="5.83,237,1616428800"; 
+   d="scan'208";a="281517363"
+Received: from mail-mw2nam12lp2045.outbound.protection.outlook.com (HELO NAM12-MW2-obe.outbound.protection.outlook.com) ([104.47.66.45])
+  by ob1.hgst.iphmx.com with ESMTP; 31 May 2021 19:36:25 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=fjsR/7UFYOeNRLqB/RRNISoG4dlQlAsv/9mrvE78t3b3UCQ9484l4VcPh/VUw06JUh1lkykflgezchzmf6Alw8ZYsBmvIwg5n1wwtyPBTK/wl4Pe6EHsOwqJQjp8MLkjiDH0a9wTIhVTd6CWlhpvyt6G12wheWo8NfZ+7kbAAItLXdH5G6GS/hio5zRqpHn+DdAy1tP7oN2AZwXd6+FLio+q7p59xyLJ8FwLp5sKnATmELJTCtqIby1wNs/LcDUeFX+1koxuaTpSR0JerzDB8crGWS8xUxYs61pxg0pviZ46+jYZ1EZFBEquFVdUczs/WPWIbL5CrHzl1bggmk9I/Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=7xaLn9tmA7MNlUyPWkZFD8cfTaYJaQQuf6+1Gn+xBAE=;
+ b=l2RbQDFhgZTI9gw44tEXdhhgzm8Q5OtxRhITDdKHACiHwsT5p7ef00XsSSc58r11jeiIW+98Eh4lmLoL2jwaEcSatm1O240o1J4Kw8xeR8sC8NHJjOWiK9/G0M1UD/2Ysvg4mfKPkp0rVOlJU8GO5jywcign2yhd4gV1TUBopCSwxVPhtbCN18FWveEE/HxDVhBCTfUkMO6dELvzLZf0Kz/0Ah6W86Zqy5Yy18MsL/swm/YlvlLR+X0k6VMMNV0snGA0B2yIfOhheJkeKk24WMOseMTElsIscjDhxBlBMHZI4L1fIy+YR36oq742HwWw+h5kdLJlQAwoig+6HN9idw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=zh9IO265bie667jVCIBNqCamDa33CHtZDFaDzM5abhY=;
-        b=Jc8xXzVxJE3s+/WbL+pQubUsDQ5TAkfs+6Ftd/5j6q/9ysHzjxe/hLn0IEf7gtd0pk
-         kgOwgu5eyLgwTeE8tHa0ysLs4JhOh9IHOzTf2aZZDiyDp0UC5QikpSuxQ8I1wyh/fiz9
-         osY3QyRQAwsLR9PbhcJ4BbnS1knej4yEjW3Kkox1BQkOcYRAjZ25BPUn2h/YZDdWUf/w
-         7WRe5iB9vSVr/nTa4K/7mldSxgtswrb8EQU2opZ/N3Q4TEsixCc5FXJNLDWkGf8VbVx8
-         lqUf9/liy4BPjn7XeRUWv+FbdgtAiyTsY0NAOhDH9TOth29Q5eCuTQb+0Lf1FrJLfdAk
-         nVcA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=zh9IO265bie667jVCIBNqCamDa33CHtZDFaDzM5abhY=;
-        b=snUh6FIWlo9p45qp6btuLbf82jd+c3bLr6Dy0Uj5QzJrW/uEaCNKCemK3Q3ZWRRpDv
-         y28YmOElqQ2YzPsWOsRt9YcZkUeTGvMgjg75RX+KLzMABkRrMOPhhYHfiny9vIl+UQPA
-         PV1vu6fKT68nIyLg2zzcFh13UD4B00ayI691VwzzdOlTT5IAXHwnErRojIJaCTXQfktH
-         tzuk/Dq1QdMX5u76S18tMB+PNkhSzXG43lNhyPDmahXIk0dGnB+SfWCrwgvaH1edhYVp
-         d/ydkQ+l8+hnYziFYDE7KUoW1RcNpQA911Ya0aBzjfhj2gzRDWyEuuTqBsKtoTkEh9vp
-         vspw==
-X-Gm-Message-State: AOAM532c0GWnnOJksteFM9A1ecagJJC1YU5pEgro8DTaHxaFov30yKf3
-        dRiobz06bGXGHHg6Wzbbsl2u9vpVbBf3ZGASFTnbJA==
-X-Google-Smtp-Source: ABdhPJxvsHbIH3aFgNxYXuc3RHhW/RPNDBluWMG4Zp1PqA2dmIECsKqKJuiMGeycw3Y7V92ETgti/lScWmBTFIBXYXY=
-X-Received: by 2002:a37:4694:: with SMTP id t142mr15978446qka.265.1622457130194;
- Mon, 31 May 2021 03:32:10 -0700 (PDT)
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=7xaLn9tmA7MNlUyPWkZFD8cfTaYJaQQuf6+1Gn+xBAE=;
+ b=Lk5RYgTosLOMjNUXJ5vnkAR50holroHpMB6sso7ZfrZARIxVPJuJhAdxd0jPJ9ftTxCp5PxfkybCOitjIpO9ipcM6QNe06Pjc0NFqjX3BJH2wm+8q1Qq8eOe9yIF4G3gH2qy78AgQJV1McnQcUGcr48wSDnV7eUO4Gp+IuDnHwg=
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
+ by PH0PR04MB7141.namprd04.prod.outlook.com (2603:10b6:510:17::19) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4173.24; Mon, 31 May
+ 2021 11:36:25 +0000
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::99a5:9eaa:4863:3ef3]) by PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::99a5:9eaa:4863:3ef3%4]) with mapi id 15.20.4173.030; Mon, 31 May 2021
+ 11:36:24 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Nikolay Borisov <nborisov@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC:     "syzbot+a6bf271c02e4fe66b4e4@syzkaller.appspotmail.com" 
+        <syzbot+a6bf271c02e4fe66b4e4@syzkaller.appspotmail.com>
+Subject: Re: [PATCH] btrfs: Promote debugging asserts to full-flegded checks
+ in validate_super
+Thread-Topic: [PATCH] btrfs: Promote debugging asserts to full-flegded checks
+ in validate_super
+Thread-Index: AQHXVf8AV2Tc+tiUaUqnbEkZTl7v4g==
+Date:   Mon, 31 May 2021 11:36:24 +0000
+Message-ID: <PH0PR04MB7416A269CDA4992B520F82679B3F9@PH0PR04MB7416.namprd04.prod.outlook.com>
+References: <20210531092601.107452-1-nborisov@suse.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: suse.com; dkim=none (message not signed)
+ header.d=none;suse.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [129.253.240.84]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 5554b2f3-15ec-4a68-a053-08d92428526a
+x-ms-traffictypediagnostic: PH0PR04MB7141:
+x-microsoft-antispam-prvs: <PH0PR04MB714194377A27C4FFBB9253AD9B3F9@PH0PR04MB7141.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:6430;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: g+auFYqG1f/ENkmEy9ghbzjgnq8g88Q/eQ8JRP85NVDVuWj60haYao8fSntSqlrpuJZiGpt3nMscLzO3OyKOqQgEbZF4QjpaFGw/u63phqOPE9elmYNqRt3nAwMZKnleKOJeoBn4CFwaTedm/p7o7sZCb5HPlmJckX6Sy0VGHgEeE0FS5SL7jyBvrDtfzijnwCgTPcg22fKyFPaL0K+NLrxqKMYdBpal64IpZT9ncd5CxiRc9OiyOXn9hGQDpIyKaum/ZUc7/izOThurgQZotsqF3vNMSw1TM58oIzjzfyOkcN3MBxJDyXihE1T1nR+/B16cGvN1XDj1Y7ngCorelKFZnZ3/lwV3Xr7a6NSBuNDZaR+yEQuRqQUr4V6lPaiPhTfNws1WllWJb0Ee+bhluYVv1mDNLKQhSZg5jgznz7nDDjzoz66HUMOWlY1M2Ofe4pGS9QiJldptbqjWguX3dDJCLiWa7V/JlIG2jIf6Slt8SKyWTfWkdBDphF+ttDVlG3LVH1glJb++/6imKol6fCx348PDGTrk7ZSl4S6IArkwY0psgKHMq7wV7DC8UF20oT3+mcQZUC1Y+n0bzP5AOtJNyukNv0c7CRnOA6XrsCg=
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(346002)(366004)(376002)(39850400004)(136003)(26005)(86362001)(5660300002)(478600001)(53546011)(6506007)(55016002)(7696005)(2906002)(316002)(9686003)(8676002)(4744005)(8936002)(52536014)(83380400001)(66946007)(66446008)(64756008)(66556008)(66476007)(33656002)(110136005)(4326008)(122000001)(186003)(71200400001)(38100700002)(76116006);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata: =?us-ascii?Q?5yMtahwfMRkQZaDzGuK4+MIceHrbWY+Q6GnzaCM+BpozGWOrDEnPgXQcJy6t?=
+ =?us-ascii?Q?fU1d9AVtyWnWl1cHBLLzNBX9Tlq9gIE5PPsk5Vyj4+FbZkFBNNRDiuByakLO?=
+ =?us-ascii?Q?+QPj9wlIN43I3RoYDFpCh9z7L1Z31s9Ex0h20uYa92vt83TQTXDF17ffBMIO?=
+ =?us-ascii?Q?NnoaF6azUUTmfdSYrlW0VrtTmIm4lcWhHVeqkb+Tc5bz99v2A3o2fPSNipWh?=
+ =?us-ascii?Q?TuNhRqTYH2p2THuM+ReOlU2ZFleKmCMbAs7nPO7+5+mskaeearAf2MvfNrdb?=
+ =?us-ascii?Q?cw/m/Bhu2VRw3cEjLvwrPIusDL0ng76uJHjfgVeEDh4jSrX8/PDgnuIHSjmF?=
+ =?us-ascii?Q?NNBa7s+EMBDCZUupCoEOMVqrTejqDxNLKteTV5rUOwgOhAFpGh/t68jSzexB?=
+ =?us-ascii?Q?fBzjrdwIOxIbW1y9fiCo2SFRca1SgUIZcMmSD/rJmVfwatOf4g5/XJDGJQEz?=
+ =?us-ascii?Q?+RY7DUWRM1F/zKSRlMC7NgbX3ymfxpMu34VKb/WAj+iLxbUboPX8lJNNgA0j?=
+ =?us-ascii?Q?vvwoHytKWmFPxG9PWo+r3m7dGOdz/y11vvoJ6OYOVPu1cD0N4ZrcdGVGLSsN?=
+ =?us-ascii?Q?gjxFPrHdqqxq/2HDAqaBiMvZENV/72WxHy72D2IQhajxXken8DrwIpnFrgsI?=
+ =?us-ascii?Q?uta9p9dVMVWUgMyLWnmQn1wIilwvOmGDzJhLnWmiTt5zeDoqJo+QV8676qFi?=
+ =?us-ascii?Q?MzY99VqOpQevVi22tZG6w6cLaxKxUI1F0T6veHSvyMAxlJ76wbPAFQPJfK9+?=
+ =?us-ascii?Q?rOIRUpiCUSDtwVQvJBpjVTdm/ey0HpWe5XWfbLfqQwsIXSU5SZwkCcrXqltd?=
+ =?us-ascii?Q?UMoiNippR3H0AOJg2DrD+h25Mphrtm//J0vUKWPczbxBSplqkTmtk/WzvYTb?=
+ =?us-ascii?Q?jCeHsFRgLp3kZpjGSWhUmgRt2NQqpvvyRru2XWv4wPzYLzGrcDqgEp0AsgVu?=
+ =?us-ascii?Q?zqk+tXk2xr7Of5AiOdEG4ZP10b0DgyNpwcYdfnMBXzdGv+Y/x4ARAfFa066S?=
+ =?us-ascii?Q?MBlgmTKGyEI68hehYTUZp6JUVtYlmSORPtGtrqTxFDcjiSOPlVOlYaOB5xr1?=
+ =?us-ascii?Q?CtUkvOPDL4wEM+Q9D71PrGK2GodX5hwL8d+2SZ/8DKDezV4VHwQH3WTpxEtw?=
+ =?us-ascii?Q?qgT+nvmhzcPldRW6ghATdzCGLAVp+Ok3AMXNYhvFKIpMlAoYZMC9zQLe1cRz?=
+ =?us-ascii?Q?QYr7+Eqqo8BFm1aVch2L/Be/jqmkS6o4HjFdIwPKLui6MvBNoUWXVBFt+OFc?=
+ =?us-ascii?Q?dY2zBM9IOl8Jc88OX6BRMtKyneSyXdkWAfOVHmB4fCDQSrGD9WFRlYAcyhiB?=
+ =?us-ascii?Q?p5DkmcT3EsqUBbkc2vbLjkPth5EspD3/qXz2dvLQ7X9gqg=3D=3D?=
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-References: <000000000000f9136f05c39b84e4@google.com> <21666193-5ad7-2656-c50f-33637fabb082@suse.com>
- <CACT4Y+bqevMT3cD5sXjSv9QYM_7CwjYmN_Ne5LSj=3-REZ+oTw@mail.gmail.com>
- <224f1e6a-76fa-6356-fe11-af480cee5cf2@suse.com> <CACT4Y+ZJ7Oi9ChXJNuF_+e4FRnN1rJBde4tsjiTtkOV+MM-hgA@mail.gmail.com>
- <fcf25b03-e48e-8cda-3c87-25c2c3332719@suse.com>
-In-Reply-To: <fcf25b03-e48e-8cda-3c87-25c2c3332719@suse.com>
-From:   Dmitry Vyukov <dvyukov@google.com>
-Date:   Mon, 31 May 2021 12:31:59 +0200
-Message-ID: <CACT4Y+YrLLiaKnM3uVHZvRtj-UrDW-cwx4k6Lsh8no12nwvpNw@mail.gmail.com>
-Subject: Re: [syzbot] kernel BUG in assertfail
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     syzbot <syzbot+a6bf271c02e4fe66b4e4@syzkaller.appspotmail.com>,
-        Chris Mason <clm@fb.com>, dsterba@suse.com,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>,
-        syzkaller-bugs <syzkaller-bugs@googlegroups.com>
-Content-Type: text/plain; charset="UTF-8"
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 5554b2f3-15ec-4a68-a053-08d92428526a
+X-MS-Exchange-CrossTenant-originalarrivaltime: 31 May 2021 11:36:24.7805
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: rlXvm8CLxHwwCfbBe40PMt0cwhtGeNdnOqjgC1MhIkKo28YgKWFngx5ookZoz6Fyw/1fgl3KWDiqVlEoD3rj2ItwC7d3IQ9SvyTKn5mo13k=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7141
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 31, 2021 at 11:27 AM Nikolay Borisov <nborisov@suse.com> wrote:
-> >>>>>
-> >>>>> syzbot found the following issue on:
-> >>>>>
-> >>>>> HEAD commit:    1434a312 Merge branch 'for-5.13-fixes' of git://git.kernel..
-> >>>>> git tree:       upstream
-> >>>>> console output: https://syzkaller.appspot.com/x/log.txt?x=162843f3d00000
-> >>>>> kernel config:  https://syzkaller.appspot.com/x/.config?x=9f3da44a01882e99
-> >>>>> dashboard link: https://syzkaller.appspot.com/bug?extid=a6bf271c02e4fe66b4e4
-> >>>>>
-> >>>>> Unfortunately, I don't have any reproducer for this issue yet.
-> >>>>>
-> >>>>> IMPORTANT: if you fix the issue, please add the following tag to the commit:
-> >>>>> Reported-by: syzbot+a6bf271c02e4fe66b4e4@syzkaller.appspotmail.com
-> >>>>>
-> >>>>> assertion failed: !memcmp(fs_info->fs_devices->fsid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE), in fs/btrfs/disk-io.c:3282
-> >>>>
-> >>>> This means a device contains a btrfs filesystem which has a different
-> >>>> FSID in its superblock than the fsid which all devices part of the same
-> >>>> fs_devices should have. This can happen in 2 ways - memory corruption
-> >>>> where either of the ->fsid member are corrupted or if there was a crash
-> >>>> while a filesystem's fsid was being changed. We need more context about
-> >>>> what the test did?
-> >>>
-> >>> Hi Nikolay,
-> >>>
-> >>> From a semantic point of view we can consider that it just mounts /dev/random.
-> >>> If syzbot comes up with a reproducer it will post it, but you seem to
-> >>> already figure out what happened, so I assume you can write a unit
-> >>> test for this.
-> >>>
-> >>
-> >> Well no, under normal circumstances this shouldn't trigger. So if syzbot
-> >> is doing something stupid as mounting /dev/random then I don't see a
-> >> problem here. The assert is there to catch inconsistencies during normal
-> >> operation which doesn't seem to be the case here.
-> >
-> >
-> > Does this mean that CONFIG_BTRFS_ASSERT needs to be disabled in any testing?
-> > What is it intended for? Or it can only be enabled when mounting known
-> > good images? But then I assume even btrfs unit tests mount some
-> > invalid images, so it would mean it can't be used even  during unit
-> > testing?
-> >
-> > Looking at the output of "grep ASSERT fs/btrfs/*.c" it looks like most
-> > of these actually check for something that "must never happen". E.g.
-> > some lists/pointers are empty/non-empty in particular states. And
-> > "must never happen" checks are for testing scenarios...
-> >
-> > Taking this particular FSID mismatch assert, should such corrupted
-> > images be mounted for end users? Should users be notified? Currently
-> > they are mounted and users are not notified, what is the purpose of
-> > this assertion?
-> >
-> > Perhaps CONFIG_BTRFS_ASSERT needs to be split into "must never happen"
-> > checks that are enabled during testing and normal if's with pr_err for
-> > user notifications?
->
-> After going through the code you've convinced me. I just sent a patch
-> turning the 2 debugging asserts into full-fledged checks in
-> validate_super. So now the correct behavior is to prevent mounting of
-> such images.  How can I force syzbot to retest with the given patch applied?
-
-syzbot can test patches for issues with reproducers:
-http://bit.do/syzbot#testing-patches
-but this issue doesn't have a reproducer unfortunately. But I hope
-this change is going to be reasonably straightforward. And if/when
-this issue happens again after this report is closed with a fix,
-syzbot will notify us again. So an absence of any new reports from
-syzbot will implicitly mean that everything is fine.
+On 31/05/2021 11:26, Nikolay Borisov wrote:=0A=
+> Syzbot managed to trigger this assert while performing its fuzzing.=0A=
+> Turns out it's better to have those asserts turned into full-fledged=0A=
+> checks so that in case buggy btrfs images are mounted the users gets=0A=
+> an error and mounting is stopped. Alternatively with CONFIG_BTRFS_ASSERT=
+=0A=
+> disabled such image would have been erroneously allowed to be mounted.=0A=
+=0A=
+Agreed,=0A=
+=0A=
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=

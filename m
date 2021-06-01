@@ -2,102 +2,132 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85BBCC47080
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 19:05:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A522DC47082
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Jun 2021 00:22:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 606B860FDB
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 May 2021 19:05:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 78879610A6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Jun 2021 00:22:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231680AbhEaTHW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 May 2021 15:07:22 -0400
-Received: from mx2.suse.de ([195.135.220.15]:35834 "EHLO mx2.suse.de"
+        id S232317AbhFAAXj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 May 2021 20:23:39 -0400
+Received: from mout.gmx.net ([212.227.17.20]:50423 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231542AbhEaTHS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 May 2021 15:07:18 -0400
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1622487935;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=bpDehEt995L/bn7m/mGaEnXDy5JlLUBaNIOPonc8cmc=;
-        b=ZzX4SdQ0Tu06Aot4ijuhS3BgJaE1pkqj/AoqQ/aE0IoQhce1z3hqrRoSTqlmmozyHn3a4w
-        kLf04/soguFw9C6qll1JYbTSWL0SVPevskZ135O5EARzMFEg1k6Bj3FNgUGhc2cn0nxSzj
-        9okM39Smab/gPVcCgveupfhDy5ysKFw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1622487935;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=bpDehEt995L/bn7m/mGaEnXDy5JlLUBaNIOPonc8cmc=;
-        b=41PlB1nuM+KSQJXVTC2Udstmn7t+Kz0QBeAd2VMk6eaUZEEPH6WEOJxRJS/QuDh/v0lN2W
-        NDQHeamBzEuGx4Cg==
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id B6C79AD6C;
-        Mon, 31 May 2021 19:05:35 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3C66ADA77B; Mon, 31 May 2021 21:02:56 +0200 (CEST)
-Date:   Mon, 31 May 2021 21:02:56 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     Damien Le Moal <Damien.LeMoal@wdc.com>,
-        "dsterba@suse.cz" <dsterba@suse.cz>,
-        David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>
-Subject: Re: [PATCH] btrfs: zoned: limit ordered extent to zoned append size
-Message-ID: <20210531190256.GG31483@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        Damien Le Moal <Damien.LeMoal@wdc.com>,
-        David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>
-References: <65f1b716324a06c5cad99f2737a8669899d4569f.1621588229.git.johannes.thumshirn@wdc.com>
- <20210521163705.GO7604@twin.jikos.cz>
- <DM6PR04MB7081AF42EBA082FD09A07BD5E7279@DM6PR04MB7081.namprd04.prod.outlook.com>
- <PH0PR04MB7416299E1493D6A243375B9F9B259@PH0PR04MB7416.namprd04.prod.outlook.com>
+        id S232081AbhFAAXi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 May 2021 20:23:38 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1622506916;
+        bh=AGRV79e2qh5ZlQadnMSAuJJXJgyZHa82otkCUWznDv0=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=DoLw03VolhCB5JBajvigmzKWBFn6jdLn9MtT1cFoWmrCDjbnJHny9agZvigK9XpE+
+         OYQUpZCtxHnt+ik9UmoLV2dCIqbh2Dsw4hxK/h+33i+Oa/dzaU01HEImJ1ziWf1grn
+         jhnOliDvppf062mdcVhImzuW+TogF4hfmX8LvJyA=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MYeMt-1lsQcK1i3H-00VjI0; Tue, 01
+ Jun 2021 02:21:56 +0200
+Subject: Re: [PATCH v4 00/30] btrfs: add data write support for subpage
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210531085106.259490-1-wqu@suse.com>
+ <20210531140902.GD14136@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <3fb550f3-e8cc-6beb-51df-da9415205913@gmx.com>
+Date:   Tue, 1 Jun 2021 08:21:52 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <PH0PR04MB7416299E1493D6A243375B9F9B259@PH0PR04MB7416.namprd04.prod.outlook.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20210531140902.GD14136@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:EC9twRgLWjHOB0i+OWaUWrXQmuzmv8IEWUZk/w95GgyILSwIl66
+ 0jn0kWAvPoz5vZ4iJEg9xwYOTAaJ1fNmq/LQDi7faTXJOeWTmM2YFaTu1Xm2Gwflwd06zoH
+ Hy8UZttYc+bhg8JGi8XTsh4kNSjPDeXvjqmndqtq2/VxzCdu9d3o6CeY23l6jlVzp+PS2BO
+ ygdCtZcqwSewtdqpbMtCg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:9yBzGZwqPoM=:XwZMgYcTYsGCUIWn2bps93
+ jcJQEhT4vfzZMsGaC9XL3nnvWpGW1sPxRC/hCymixFeOaDbn57bTw3T9zAmZdZUD820pXNJEV
+ MpL7p+bSGFQmrizoNfOUOqfWa0aEvaDIjoWnl+anScSvQzV4vCfli5gGB/fF6PSuE2RAXunNa
+ Qxf2HHHIR7PgtLTJw5QsYY2NrMUT4aCH2g2GjhIxmMxDd3cusL+OpHRCita7u7pX7+1/1n4s9
+ Isezmc07jXIYftFWeT6qXG12kJsk6jiEJtDuNbiBVU6DyzwP2cqEBxF/vK9GEhNcMbVMSNLci
+ 7i9tcLtXV2hhGrKLTl1WcOZl8uSvOcCfK+qW4j5dr2iGkgNvN926w2AX568yyfU6uLs0tRbr8
+ ftaOmTAHhajX/Wpv9Hr3JM7nOW7kIRAyeEYkKRx7R8fMTqp7eHlENIkR7LdS1mMA6MXAaOmaX
+ rBl+pwo6fDF8/o3ivitiKDe2ASVmO5XJmdFHHyRg2a5HouaouIslKr4Xo5z4eQr5hYY84D+S6
+ yknYcB9QN3BBryRpYpmdWfy5t0mH0pZ2bp4jPiAf/FwDby4fYMzCiSxYsPOhc/lTjV0gszdJV
+ HkQ0eCsZCr0qKlxgGsbgX5DOreiY4UU74QrmrT2us8bpVulrfcQ49HlmPXExDCHDIg72LGMPT
+ OdUbGbi+kJ51PwN43IxpM0A155NT2PficBvntNmYTIdzsbM5kcoBWXCSVDQTNkh1aqX9rMlx8
+ EIEW6JRXDO1pPtfqlJ5zjI7jbw5m04sNKZQ3usiAWMShaGbgLWVF5iflErYIlnIlaK8se3mC5
+ 54LMx+yHgmos5bHJn54ocAnjc6BeTG5H7Rj5ubKf9vOSrdFY3hKOf4cC/bfV8MWxkNhBsqZ3D
+ GJg38njuB1ePRLBQId765/4PtU4+/gHrebjaEh/Jef8p1ISRw1AWt1MGq1qX4s1ConuKYyg4t
+ 8gETqZMtUBoyytNTTbXHnA+hCYoVoecT6oX0MTX79JwYJQBZexhzkmdzMPt35xBvoO/l3/vuN
+ eFd4SY2qF0w31Ew2Gtnp1rqUDltY+8BOYbPOm8hPlx5xjD17epjjts9ePdZto5dwy7qk7yS6m
+ GoaRZQ4F9qgpAfRn+mIHUd9W1otKQXMcyguEyEeq601BjEZp4dWhnquOg==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 25, 2021 at 09:40:22AM +0000, Johannes Thumshirn wrote:
-> On 24/05/2021 01:05, Damien Le Moal wrote: 
-> >>> +	if (fs_info && fs_info->max_zone_append_size)
-> >>> +		max_bytes = ALIGN_DOWN(fs_info->max_zone_append_size,
-> >>> +				       PAGE_SIZE);
-> >>
-> >> Why is the alignment needed? Are the max zone append values expected to
-> >> be so random? Also it's using memory-related value for something that's
-> >> more hw related, or at least extent size (which ends up on disk).
-> 
-> I did the ALIGN_DOWN() call because we want to have complete pages added.
-> 
-> > It is similar to max_hw_sectors: the hardware decides what the value is. So we
-> > cannot assume anything about what max_zone_append_size is.
-> > 
-> > I think that Johannes patch here limits the extent size to the HW value to avoid
-> > having to split the extent later one. That is efficient but indeed is a bit of a
-> > layering violation here.
-> 
-> Damien just brought up a good idea: what about a function to lookup the max extent
-> size depending on the block group. For regular btrfs it'll for now just return 
-> BTRFS_MAX_EXTENT_SIZE, for zoned btrfs it'll return 
-> ALIGN_DOWN(fs_info->max_zone_append_size, PAGE_SIZE) and it also gives us some 
-> headroom for future improvements in this area.
 
-Hm, right that sounds safer. I've grepped for BTRFS_MAX_EXTENT_SIZE and
-it's used in many places so it's not just the one you fixed. If the
-maximum extent size is really limited by max_zone_append it needs to be
-used consistently everywhere, thus needing a helper.
+
+On 2021/5/31 =E4=B8=8B=E5=8D=8810:09, David Sterba wrote:
+> On Mon, May 31, 2021 at 04:50:36PM +0800, Qu Wenruo wrote:
+>> This huge patchset can be fetched from github:
+>> https://github.com/adam900710/linux/tree/subpage
+>>
+>> =3D=3D=3D Current stage =3D=3D=3D
+>> The tests on x86 pass without new failure, and generic test group on
+>> arm64 with 64K page size passes except known failure and defrag group.
+>>
+>> For btrfs test group, all pass except compression/raid56/defrag.
+>>
+>> For anyone who is interested in testing, please apply this patch for
+>> btrfs-progs before testing.
+>> https://patchwork.kernel.org/project/linux-btrfs/patch/20210420073036.2=
+43715-1-wqu@suse.com/
+>> Or there will be too many false alerts.
+>
+> This patch has been merged to progs 5.12.
+>>
+>> =3D=3D=3D Limitation =3D=3D=3D
+>> There are several limitations introduced just for subpage:
+>> - No compressed write support
+>>    Read is no problem, but compression write path has more things left =
+to
+>>    be modified.
+>>    Thus for current patchset, no matter what inode attribute or mount
+>>    option is, no new compressed extent can be created for subpage case.
+>>
+>> - No inline extent will be created
+>>    This is mostly due to the fact that filemap_fdatawrite_range() will
+>>    trigger more write than the range specified.
+>>    In fallocate calls, this behavior can make us to writeback which can
+>>    be inlined, before we enlarge the isize, causing inline extent being
+>>    created along with regular extents.
+>>
+>> - No support for RAID56
+>>    There are still too many hardcoded PAGE_SIZE in raid56 code.
+>>    Considering it's already considered unsafe due to its write-hole
+>>    problem, disabling RAID56 for subpage looks sane to me.
+>>
+>> - No defrag support for subpage
+>>    The support for subpage defrag has already an initial version
+>>    submitted to the mail list.
+>>    Thus the correct support won't be included in this patchset.
+>>
+>> =3D=3D=3D Patchset structure =3D=3D=3D
+>>
+>> Patch 01~19:	Make data write path to be subpage compatible
+>
+> We can chop the first series batch again as this is still preparatory
+> and we need to make sure it does not interfere with other patches.
+>
+Considering how many tests those patches haven been tested, and how
+little they get modified during development, I'm totally fine to get
+them merged first.
+
+Thanks,
+Qu

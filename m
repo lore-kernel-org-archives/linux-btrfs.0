@@ -2,91 +2,125 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56205C4708F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Jun 2021 13:02:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF9CC47080
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Jun 2021 13:02:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 24EDA613C5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Jun 2021 13:02:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DAFD0613CE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Jun 2021 13:02:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233336AbhFAND7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Jun 2021 09:03:59 -0400
+        id S233847AbhFANEC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Jun 2021 09:04:02 -0400
 Received: from esa3.hgst.iphmx.com ([216.71.153.141]:2437 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233064AbhFAND7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jun 2021 09:03:59 -0400
+        with ESMTP id S233584AbhFANEB (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Jun 2021 09:04:01 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1622552537; x=1654088537;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=K51YucXN1SDaJeq05L+F9kuzqV/n5/TLR9iFKMsbsiI=;
-  b=V4g0XZMgNAQqHoMKM0ky1wCMmGSSbhX03bJ1cUTbJSlr+5e2QqeK7x1I
-   DiXTXJd8IYY0YwKULHBjMVPHZghrNpEqRNYFzeTOAmRIFJ5xvuXADP8w8
-   fH9PS1NxsGGowyAzuFINcF3malXNJ5inZI9nWOPsaBW206j10q49FP2+M
-   LxZKlpTZyxiN64CsvTYu8fXYQSH1Z9dstXevQewxxdjrYXiJfD3d4MOvQ
-   PWR0Ao4fJ7nJiQJkHlf2dgabXf0oQiKjM2GxIrAcF1XeFF/kyAB/6inek
-   0j7VHFcigyVUDYKPaQ27FrTn/rO3QhRHIDDqjBdckblcxSojm8OkfLopC
-   A==;
-IronPort-SDR: Oxhtao4emKnrBuAwRBQbvKljnxBdiG0RtvLsgp5IwZktzKWxU52LDeaXtj+mWnfrEQUbtWzc9Q
- NIFi9A/mTMTqGRC9FUDsaoslPvtu7Il3uyKth/l0ipHirueBpDXzj5DyyID1RWO5TeeO+M9NrU
- nRjGR2bFEOeZ6UR1KAIDiKimOpofVkjPOZW+wtYFndH0ydSC2peMM9lsSlJ5BiZ/fXiK4MwvHE
- /sEu8aLfVDk3FFTR95h/K+DbaGJ3h3J/UCYn2rTfJPkCrcEteJ6GBexbBhbOgAa92m/isPSJ3D
- 4RM=
+  t=1622552539; x=1654088539;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=SbB7BFb7NtQBeFytSNxdRRro5KT/vbl/BUVZpKE9qv4=;
+  b=VudPcVm4H90f4Fp3wP9FOWbrFNnySgIzUU/AstbHjrmGZ9ttYgGNmV5V
+   cCEa+aduZ3Y8uSPsiE5BP+OMn+Pvme2NFotEzeJ2NlAjZm56IBoSPSokm
+   5xhjYBzSDcvN3pvs5V2P3+W2eIby9RFIW/YTX9bPCWrDitw732MkP6xFu
+   2ZmE5YxMvWl8rNIW41BsJU/gWD1vo1KRoZi0o9xV+DkXgYFMy0mXcd2Vm
+   GlhSiJjFL2nobJdsQ4JphhO1XQMsSwShXWP0y1fzktL224GrB3Okc7vvJ
+   5K8zBWQ8YhNcGQjAhT8w5ZMX0z5x5WUWrk4mMCPdZfzBCyS8jkh9yD4HF
+   w==;
+IronPort-SDR: EfmHEVWqY323pTtAbQP2L2ComB0HattBQDYt1CtvCacUUQUmq+MdqYYhvBMchrmRDXl5tjWNkp
+ mgBl+6ONegb9cFQ9EFhIS+tXZ/a2rfy3vh/7a/21hpXgNyZNp1A+A+x2wcnBgiJ9FSpudZmysZ
+ hXmNKjhV/eZ3eMazmJPrFmHHaqSbqHYZ5MyJkGwAbA8faZ7IumWP7bzUe3ysQaMWfR/M0ZQHTF
+ J2qbaVjihEogkXGkE+K2Zi9FamgP4ll23gBEflEDoAwo83E8TpJPO3A88X33O1t6jT7cl+/Hl2
+ yfE=
 X-IronPort-AV: E=Sophos;i="5.83,239,1616428800"; 
-   d="scan'208";a="174991974"
+   d="scan'208";a="174991979"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 01 Jun 2021 21:02:17 +0800
-IronPort-SDR: 8JqpI98VhmgzbhhyEo6L1lBcuuew3we0s8SYzavx+YeNZFJT6s9y3dhO3tHrS0DG9Bgzig/Xa8
- pnfzTZ5jol55KASZXoA2U96nXD8X43sTCs9omulrbke/eE29u7O126IxwB1yLMgIcdCbHFKYHQ
- J3m1ymnW5EROL/s1mnVzGywLTB9Q6vrB8PjVkLQQKYlXz/d436HVGDb3d9HHA1XmUOKJYiBrg0
- Rg+jFSUOvX3tSyis7L9tlr8wRSVnx39kTdppFH0kHZ7h8GfYlF3JTHIoqYDZZQN+FS8bQ6REJB
- iZYnOWxxoQpwwfDsQAMGSsD/
+  by ob1.hgst.iphmx.com with ESMTP; 01 Jun 2021 21:02:19 +0800
+IronPort-SDR: QjeJTRQwdGyNhAhB0VB9qCQlnddDJBAZuDxIl+RvuXXPPtces19YJ9J6lSTc5ARx8poC7NtXnk
+ dVPEOKLpQBK/SBTHM8s8Q8Ckx6XEFwH2QtJoypVG386W0kgi9VyyiyV+d/I3tEWL7ZGEcPaAe7
+ 7bbUsaJaA5ylcE8HyPZLWFwzYbcN8eWeKKGzs5AvLqLQvltaTTKfIK6/4PYnZDJsPepx27CUu5
+ 01vHF6i0Rj8h5DYcp0FVngveF7S/HrCk0NFH9UxfeXAIZCuXWttti9Pgsv/hdqzKdGabTFhJla
+ HOrOpOl+ZogmQ3gT+vwKUeZg
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jun 2021 05:40:10 -0700
-IronPort-SDR: DOeyK+s3+KxfeF8k7kCsiUqkSb8clMHFjGg/A45Lb/J32MnNPmvfesAPjxTwcyDvPMefpdo75I
- EM6pmawrwjjYkqnQPzUxpHerwhHcmv/HStwaA8PgZSHUAYje9dG2Q3r6mWCnDTtOvdMecG9iXi
- ZWTpNGkNU41HQAufpXNV7rz6Fci5NeGa3CGAIuUDoLZsdeHncUXRyrHcbDJwccQf4EqtCL8hL+
- YVIYCHKclYnJfARW15Uhuo1LnipBpqIYweEMOYWhqJ+zImQWNQRfZ2j4Af48ucYq8bj4NjIReJ
- zRg=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jun 2021 05:40:12 -0700
+IronPort-SDR: pUAyKM25UTrkQw0Ex3oXFUVrtPxGanpOJdtT1TjTML971arU6qxO5rVO6kDM0UtET/s7XehxtV
+ Tx9AzEncnYKRc26sDZIRqGecwiwptgxTTekh/MsT/LaurFImRSo0OMlTFXToCi5zx77C3t5bcW
+ 0+X0HeMLOpdJ6D0B8X+7YhsueFNfcnIxy/mEo/1QV8xJ97bbwGZSbgjppRu0zR/tHlg5HcVHh9
+ K8KKRU1RND2YPe7QyETvGJFRGC3j7HSt44K/26ELNhZS4kM774qd/z/DiyAsWU2skSo+mnIYlV
+ Yh4=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 01 Jun 2021 06:02:16 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 01 Jun 2021 06:02:19 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         Damien Le Moal <damien.lemoal@wdc.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: zoned: limit max extent size to max zone append
-Date:   Tue,  1 Jun 2021 22:02:08 +0900
-Message-Id: <cover.1622552385.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH 2/2] btrfs: zoned: limit ordered extent to zoned append size
+Date:   Tue,  1 Jun 2021 22:02:10 +0900
+Message-Id: <da3a097233a87541120dbb2a9624841c7a9e3962.1622552385.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.31.1
+In-Reply-To: <cover.1622552385.git.johannes.thumshirn@wdc.com>
+References: <cover.1622552385.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The first patch factors out retrieving BTRFS_MAX_EXTENT_SIZE into a helper and
-the second patch fixes the actual problem for zoned btrfs.
+Damien reported a test failure with btrfs/209. The test itself ran fine,
+but the fsck run afterwards reported a corrupted filesystem.
 
-Johannes Thumshirn (2):
-  btrfs: add a helper for retrieving BTRFS_MAX_EXTENT_SIZE
-  btrfs: zoned: limit ordered extent to zoned append size
+The filesystem corruption happens because we're splitting an extent and
+then writing the extent twice. We have to split the extent though, because
+we're creating too large extents for a REQ_OP_ZONE_APPEND operation.
 
- fs/btrfs/ctree.h                 | 26 ++++++++++++++++++--------
- fs/btrfs/delalloc-space.c        |  6 +++---
- fs/btrfs/extent_io.c             |  2 +-
- fs/btrfs/inode.c                 | 22 ++++++++++++----------
- fs/btrfs/tests/extent-io-tests.c |  2 +-
- fs/btrfs/tests/inode-tests.c     | 31 ++++++++++++++++---------------
- 6 files changed, 51 insertions(+), 38 deletions(-)
+When dumping the extent tree, we can see two EXTENT_ITEMs at the same
+start address but different lengths.
 
+$ btrfs inspect dump-tree /dev/nullb1 -t extent
+...
+   item 19 key (269484032 EXTENT_ITEM 126976) itemoff 15470 itemsize 53
+           refs 1 gen 7 flags DATA
+           extent data backref root FS_TREE objectid 257 offset 786432 count 1
+   item 20 key (269484032 EXTENT_ITEM 262144) itemoff 15417 itemsize 53
+           refs 1 gen 7 flags DATA
+           extent data backref root FS_TREE objectid 257 offset 786432 count 1
+
+On a zoned filesystem, limit the size of an ordered extent to the maximum
+size that can be issued as a single REQ_OP_ZONE_APPEND operation.
+
+Note: This patch breaks fstests btrfs/079, as it increases the number of
+on-disk extents from 80 to 83 per 10M write.
+
+Reported-by: Damien Le Moal <damien.lemoal@wdc.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/ctree.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5d0398528a7a..6fbafaaebda0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1373,7 +1373,10 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ 
+ static inline u64 btrfs_get_max_extent_size(struct btrfs_fs_info *fs_info)
+ {
+-	return BTRFS_MAX_EXTENT_SIZE;
++	if (!fs_info || !fs_info->max_zone_append_size)
++		return BTRFS_MAX_EXTENT_SIZE;
++	return min_t(u64, BTRFS_MAX_EXTENT_SIZE,
++		     ALIGN_DOWN(fs_info->max_zone_append_size, PAGE_SIZE));
+ }
+ 
+ /*
 -- 
 2.31.1
 

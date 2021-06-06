@@ -2,100 +2,147 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD523C4743D
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Jun 2021 13:59:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB549C47096
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Jun 2021 16:16:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AD5B261420
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Jun 2021 13:59:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A60F461156
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Jun 2021 16:16:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230106AbhFFOAz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Jun 2021 10:00:55 -0400
-Received: from out20-74.mail.aliyun.com ([115.124.20.74]:57199 "EHLO
-        out20-74.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230003AbhFFOAy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jun 2021 10:00:54 -0400
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.08849365|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.0742867-0.000680708-0.925033;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047188;MF=guan@eryu.me;NM=1;PH=DS;RN=5;RT=5;SR=0;TI=SMTPD_---.KOP4lft_1622987942;
-Received: from localhost(mailfrom:guan@eryu.me fp:SMTPD_---.KOP4lft_1622987942)
-          by smtp.aliyun-inc.com(10.147.40.233);
-          Sun, 06 Jun 2021 21:59:03 +0800
-Date:   Sun, 6 Jun 2021 21:59:02 +0800
-From:   Eryu Guan <guan@eryu.me>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        g.btrfs@cobb.uk.net, quwenruo.btrfs@gmx.com
-Subject: Re: [PATCH] btrfs: support other sectorsizes in
- _scratch_mkfs_blocksized
-Message-ID: <YLzUph/ehN12cMCC@desktop>
-References: <d27e3a324f986b5b52d11df7c7bdcde6744fad4b.1622807821.git.anand.jain@oracle.com>
+        id S230161AbhFFQRW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 6 Jun 2021 12:17:22 -0400
+Received: from mail-ej1-f45.google.com ([209.85.218.45]:46990 "EHLO
+        mail-ej1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230105AbhFFQRW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Jun 2021 12:17:22 -0400
+Received: by mail-ej1-f45.google.com with SMTP id he7so2977062ejc.13
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Jun 2021 09:15:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=SYsKFgY14WXsyPASl+GzXiQLluRA3lnZgGmCrYNQ3nI=;
+        b=CPBc9crKmdAkanrl33XGF2i5Yff7vrKUo7P+W4SUpKnYf28TYwF/gDOyCS2flXc5Ci
+         ZYC3GDG5RxRqNV9EoBA4fzezkrvaEnXLtipng0ZmCb5XVuPrSGCl2PGZFvtXFAGvs5tn
+         CbmoBHIhV5F0s3LH9baLfO0WLxaVMkdQn9Qvs3SkdgH8XQqJxZqMLnedhrR6mPfonEaS
+         E05xiDK6YuM3xIZzUBVbzstiVcK9XhrBomrId7IxEBS6IFlB71pJ7AHB8VQA2Z2MuvMF
+         LYQLCo6+5K8UltrB6qu5E7rnMDxNZ9sxkS51I5PpHNMM13ngswLEVD6+0thPfJTeeOCW
+         fBng==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=SYsKFgY14WXsyPASl+GzXiQLluRA3lnZgGmCrYNQ3nI=;
+        b=bPuyv6/+NhK6m8b+j7jCHzhrAhju3OUr6v9V/MPPAboO0svVNDqhIqkUAvjkww9QHg
+         0dAwdLYyLjSmSLgO6Um80SE/K8PcdJPc+lwpHj3F2nib+7SGRk96qBqs07WAtcHQ0Sis
+         r7x5wDJSQNKR0gtK7rk8C2Jb1Z5+stJsuo0IEdkmTxSQVFj9ihpeUdR1Atsee3d+kR4Z
+         Bpg/pW2h7NnfZuJ6oSCp3E2XAQ1DsxcLOPEftO4O/N7rQq0aWZv4VH+FT2TxnJ4Ox3Nk
+         hYCLTh7PvIHBl01s3VMokSadx0DJmVedKrVXi3KyI1TrXIjDgFM1vy56PgYVRDHYg6c3
+         hwIg==
+X-Gm-Message-State: AOAM5335sVNLSGt17/s7M/J/IjIdOBuSuRphb6lURI8fYO7iXGYdUphQ
+        zA1BAH02nus5kKQcWdp/V6O9692iggwkDA==
+X-Google-Smtp-Source: ABdhPJy89IpVfk7KvvUURVeJF8NpGIWbXIwXTMSrWXnciO3mVlv7+VkkBTQL2FUE6sNaetNn/7t33A==
+X-Received: by 2002:a17:906:6bd8:: with SMTP id t24mr14373420ejs.501.1622996071622;
+        Sun, 06 Jun 2021 09:14:31 -0700 (PDT)
+Received: from ?IPv6:2001:984:3171:0:49a8:ce9c:c8c2:9458? ([2001:984:3171:0:49a8:ce9c:c8c2:9458])
+        by smtp.gmail.com with ESMTPSA id t18sm6543480edw.47.2021.06.06.09.14.30
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 06 Jun 2021 09:14:31 -0700 (PDT)
+Subject: Re: Corrupted data, failed drive(s)
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <cf633d62-73ab-1ce2-f31c-a4a8407a38b4@gmail.com>
+ <CAJCQCtRkZPqQ_Rfx1Kk6rXZ_GyxDcLymdFjJkS12zZZ0mep3vQ@mail.gmail.com>
+ <5272b826-ec8e-f3a3-6fc1-bb863b698c83@gmail.com>
+ <CAJCQCtTdZ6LiYQPi-tb95auE1K1bxJ04iDPbu03k4W-Pu5xbEA@mail.gmail.com>
+From:   Gaardiolor <gaardiolor@gmail.com>
+Message-ID: <ef0c254b-fd33-97ec-c9eb-c312ba755655@gmail.com>
+Date:   Sun, 6 Jun 2021 18:14:30 +0200
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <d27e3a324f986b5b52d11df7c7bdcde6744fad4b.1622807821.git.anand.jain@oracle.com>
+In-Reply-To: <CAJCQCtTdZ6LiYQPi-tb95auE1K1bxJ04iDPbu03k4W-Pu5xbEA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 04, 2021 at 08:26:44PM +0800, Anand Jain wrote:
-> When btrfs supports sectorsize != pagesize it can run these test cases
-> now,
-> generic/205 generic/206 generic/216 generic/217 generic/218 generic/220
-> generic/222 generic/227 generic/229 generic/238
-> 
-> This change is backward compatible for kernels without non pagesize
-> sectorsize support.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> RFC->v1:
->   Fix path to the supported_sectorsizes path check if the file exists.
->   Grep the word.
-> 
->  common/rc | 9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/common/rc b/common/rc
-> index 919028eff41c..baa994e33553 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -1121,6 +1121,15 @@ _scratch_mkfs_blocksized()
->      fi
->  
->      case $FSTYP in
-> +    btrfs)
-> +	test -f /sys/fs/btrfs/features/supported_sectorsizes || \
-> +		_notrun "Subpage sectorsize support is not found in $FSTYP"
+ok.. the memtest looks kinda bad. I'll replace the memory.
 
-As we're updating _scratch_mkf_blocksized, would you please unify the
-indention for the whole function to use tab instead of spaces? They're
-old code, this way we're slowly migrating old/space indention to tab.
+memtester version 4.3.0 (64-bit)
+Copyright (C) 2001-2012 Charles Cazabon.
+Licensed under the GNU General Public License version 2 (only).
 
-> +
-> +	grep -q \\b$blocksize\\b /sys/fs/btrfs/features/supported_sectorsizes || \
-
-I think grep -qw should be fine.
-
-> +		_notrun "$FSTYP does not support sectorsize=$blocksize yet"
-> +
-> +	_scratch_mkfs $MKFS_OPTIONS --sectorsize=$blocksize
-
-No need to specify $MKFS_OPTIONS here, _scratch_mkfs will append
-$MKFS_OPTIONS anyway.
-
-> +	;;
->      xfs)
->  	_scratch_mkfs_xfs $MKFS_OPTIONS -b size=$blocksize
-
-So this $MKFS_OPTIONS isn't needed either, but that belongs to another
-patch.
-
-Thanks,
-Eryu
-
->  	;;
-> -- 
-> 2.18.4
+pagesize is 4096
+pagesizemask is 0xfffffffffffff000
+want 20480MB (21474836480 bytes)
+got  20480MB (21474836480 bytes), trying mlock ...locked.
+Loop 1/10:
+   Stuck Address       : testing   1FAILURE: possible bad address line 
+at offset 0x123547370.
+Skipping to next test...
+   Random Value        : FAILURE: 0x6f77d4f5f77d938f != 
+0x6f77dcf5f77d938f at offset 0x12186fd48.
+FAILURE: 0x3c98d79170ce341b != 0x3c98df9170ce341b at offset 0x12186f570.
+FAILURE: 0xb4825de59a0a714f != 0xb48255e59a0a714f at offset 0x12186fd48.
+FAILURE: 0x2d9a7833948a2798 != 0x2d9a7033948a2798 at offset 0x123547370.
+FAILURE: 0x6a2a69b98088822b != 0x6a2a61b98088822b at offset 0x123547470.
+   Compare XOR         : FAILURE: 0xa1403b114589b90a != 
+0xa14043114589b90a at offset 0x12186d068.
+FAILURE: 0x3daddd6882cfbe3a != 0x3dadd56882cfbe3a at offset 0x12186f570.
+FAILURE: 0xb59753bcac0bfb6e != 0xb5974bbcac0bfb6e at offset 0x12186fd48.
+FAILURE: 0x2eaf6e0aa68bb1b7 != 0x2eaf660aa68bb1b7 at offset 0x123547370.
+FAILURE: 0x6b3f5f90928a0c4a != 0x6b3f5790928a0c4a at offset 0x123547470.
+   Compare SUB         : FAILURE: 0xde4d93737a22df84 != 
+0xde4d83737a22df84 at offset 0x1526bde8.
+FAILURE: 0x27a753236cf59e0a != 0xa72b5b236cf59e0a at offset 0x12186d068.
+FAILURE: 0x37a9842273eb3b3a != 0xb8257c2273eb3b3a at offset 0x12186f570.
+FAILURE: 0x5b272e785db2d26e != 0xdba326785db2d26e at offset 0x12186fd48.
+FAILURE: 0x525adbd6a6f91d37 != 0xd2d6d3d6a6f91d37 at offset 0x123547370.
+FAILURE: 0x54acab2f98eb914a != 0xd528a32f98eb914a at offset 0x123547470.
+   Compare MUL         : FAILURE: 0x00000000 != 0x00000001 at offset 
+0x12186d068.
+FAILURE: 0x00000000 != 0x00000001 at offset 0x12186f570.
+FAILURE: 0x00000000 != 0x00000001 at offset 0x12186fd48.
+FAILURE: 0x00000000 != 0x00000001 at offset 0x123547370.
+FAILURE: 0x00000000 != 0x00000001 at offset 0x123547470.
+   Compare DIV         : FAILURE: 0x7dbef883f67eecb7 != 
+0x7dbee883f67eecb7 at offset 0x1526bde8.
+   Compare OR          : FAILURE: 0x7db63883667e6c91 != 
+0x7db62883667e6c91 at offset 0x1526bde8.
+   Compare AND         : FAILURE: 0x7ee6329401ea8682 != 
+0x7ee6229401ea8682 at offset 0x1526bde8.
+   Sequential Increment:   Solid Bits          : testing   1FAILURE: 
+0xffffffffffffffff != 0xffffefffffffffff at offset 0x1526bde8.
+FAILURE: 0x80000000000 != 0x00000000 at offset 0x123547370.
+FAILURE: 0x80000000000 != 0x00000000 at offset 0x123547470.
+   Block Sequential    : testing  16FAILURE: 0x1010101010101010 != 
+0x1010001010101010 at offset 0x1526bde8.
+   Checkerboard        : testing   0FAILURE: 0x55555d5555555555 != 
+0x5555555555555555 at offset 0x123547370.
+FAILURE: 0x55555d5555555555 != 0x5555555555555555 at offset 0x123547470.
+   Bit Spread          : testing   0FAILURE: 0xfffffffffffffffa != 
+0xffffeffffffffffa at offset 0x1526bde8.
+FAILURE: 0x80000000005 != 0x00000005 at offset 0x123547370.
+FAILURE: 0x80000000005 != 0x00000005 at offset 0x123547470.
+   Bit Flip            : testing   1FAILURE: 0xfffffffffffffffe != 
+0xffffeffffffffffe at offset 0x1526bde8.
+FAILURE: 0x80000000001 != 0x00000001 at offset 0x123547370.
+FAILURE: 0x80000000001 != 0x00000001 at offset 0x123547470.
+   Walking Ones        : testing   0FAILURE: 0xfffffffffffffffe != 
+0xffffeffffffffffe at offset 0x1526bde8.
+   Walking Zeroes      : testing  44FAILURE: 0x100000000000 != 
+0x00000000 at offset 0x1526bde8.
+   8-bit Writes        : /FAILURE: 0xedd92db03fefa26d != 
+0xedd925b03fefa26d at offset 0x123547470.
+FAILURE: 0xf9f71c7056ff1fdf != 0xf9f7147056ff1fdf at offset 0x123547b30.
+FAILURE: 0x8df1a5abeafa39de != 0x8df1b5abeafa39de at offset 0x1238d27e0.
+   16-bit Writes       : /FAILURE: 0x7fbaade47b7d6b03 != 
+0x7fbaa5e47b7d6b03 at offset 0x12186f570.

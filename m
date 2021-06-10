@@ -2,333 +2,170 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.9 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7AB6C47094
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 08:28:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA693C47094
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 13:54:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 89C3E613F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 08:28:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C2502613F8
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 13:54:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230230AbhFJIaW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Jun 2021 04:30:22 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:20638 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229770AbhFJIaU (ORCPT
+        id S231202AbhFJN4k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Jun 2021 09:56:40 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:65152 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S230035AbhFJN4k (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Jun 2021 04:30:20 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1623313703; x=1654849703;
-  h=from:to:subject:date:message-id:references:
-   content-transfer-encoding:mime-version;
-  bh=0iU870zn+shlaNG/jpIoIywz7kYD36bVpcsTO9XZqmM=;
-  b=rvf7Q6zM4KToOjbbUdckZIUM8ndQ+NuBZeSbmYr2inXNtlc8CCo8HMoc
-   0cGK/vu7g1nNW8GhlLlG+ogzXoR01xQ+rZVxesINIsQVBIlB0zkhAdw5l
-   bE/RFQskCKu6WmxxKLXy858PGHB4CSOFG4kuxQp0nN59zplsuHcxN9aiT
-   1AkI8zlkmUFdeIb7SO0g2fWGwJjb+Pxni33AZNgLOe2QyDTCjmyuYdD7S
-   GEJwoFJyrvlRA09EYqB3OJWgsChN4vr4GN5shFHqjxKv9L5LQwxg8tZqE
-   ITughA4KNlVAdH6xrvbaZFSAJyTLJ6c70fYOWFg83kwHFsOxUJ3c0pTjV
-   w==;
-IronPort-SDR: YJxeM9RLR6olqYVy3JY/8j5RnGyNzVVczVpPwKDh92tq/UGh2gKa9y8JHIhl9+VydobmJBzOKe
- JhkmjasyQGBTLzcLGZLLgkRZYx0LnwRmay/Snwq5ieujvQVfT/8dCfh4X9F1+nVxIT0Dhznx0N
- IHzHnsw9muVzwIRq7gIt9fVIMd9mzxABML+8WYSyakgBHYmyF2n5Rf6M9vj+M27U1DbNSRyMK4
- ScvA2Ygu+CMwi+6HsL0KQrkgedNtQgZ8G6+lCdBYkQ0nXJTUj+kuouw4L98mW6JFIxCmUZZ7BN
- OCY=
-X-IronPort-AV: E=Sophos;i="5.83,263,1616428800"; 
-   d="scan'208";a="171427077"
-Received: from mail-bn8nam12lp2175.outbound.protection.outlook.com (HELO NAM12-BN8-obe.outbound.protection.outlook.com) ([104.47.55.175])
-  by ob1.hgst.iphmx.com with ESMTP; 10 Jun 2021 16:28:22 +0800
+        Thu, 10 Jun 2021 09:56:40 -0400
+Received: from pps.filterd (m0109331.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 15ADm0sB001824;
+        Thu, 10 Jun 2021 06:54:30 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : references : in-reply-to : content-type : content-id
+ : content-transfer-encoding : mime-version; s=facebook;
+ bh=tKeWZwrbZWPBqmrF8s472Q4a1fYd4dLM6zjPEUlZa8c=;
+ b=opVB72hJXdjQRdwvy60NwQTGvVAtzG/KQS/g7lglALJRD3mu4a8G2E0gfZen9zvyq0Ek
+ 8pv5SjP68oTYlyRR88ETLHuYZ5LB2TnRM4vI57AlW4KSn/yZKBhyRAa2vs4QXKLPa0Ow
+ Kg5/QvYv5AUU3t4njQsU7vPcMXk651YW4Oo= 
+Received: from mail.thefacebook.com ([163.114.132.120])
+        by mx0a-00082601.pphosted.com with ESMTP id 392wj37rc3-2
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT);
+        Thu, 10 Jun 2021 06:54:30 -0700
+Received: from NAM12-MW2-obe.outbound.protection.outlook.com (100.104.98.9) by
+ o365-in.thefacebook.com (100.104.94.198) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2176.2; Thu, 10 Jun 2021 06:54:29 -0700
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=c1g7kfRU4AEseG6egu6fU9PD8FWfj02RKcl4P/ynQ9aCsG7J+65976WrjEpO9K90V3Mvh+gHH5kzl6aGxGm4aDzPCQa8hd80SEdOt/ulcG5J202mMR0gSPCChMWuLFaioS7gMt44S/0bmMV8zeRJxnjbExBVZviL2ddgD36cSTVHfPANJacdeN3kl/IEMavwzglrjxywp81pRQC9kwaOX9+9XMs0Ro+nMHFLOzKB1QeJNu4kvQBVhK1oINOk0qVX8ex39EGUsLe/Jcz6l9lM3L4mFk8EDkXYh2zDL9NZCSGIDJ73hIYJPrqUQ7bQpxrnfxXeLE/2OSK6rcEzmmujlA==
+ b=Mr3xKT795CmmS+fB00al6AD0cqbvvKuXK2AM1bIHsnUdUPEh0lMjPmzEbRSZCvHCFeUibUwA691Fif5Jmw5Y1eqiGyYRt1WiLRXK7cywoi7LAjb4wkhhFBhcTr7Owli17R+dCeXeIPplq9/FVgAMAebF9S+nuW1Sw2EYg3q7vP5D7qzN4huQjfcchck9HUBJiJ+BdBKiU+4Z8150OddkZrv1eCwTFeGkYUL/iu//a1UH5blO48uSTDQjW6NGIrKyQlHLs+NqocjajBZzwFl7wtWUR6XeYE3H/bkB/aRkO4RFQhQaf42uW3Jbl2x69a0t37qDMM0PTgwgxnyMTaxysA==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=zRQgbuyTdWjFoe2ssHO+y0fj0UnEEqyz75LhqJC4JIs=;
- b=DQ9FSytYAyASw4wrxRtCRB9z5oeosezJvzRcX1wrxAYjUkwctJgbfOm9rhjxaTjMSjOh5fh9KjM5IlukZbbCjZiZzqFNK1uz2sqnHvcsqLi8YcRbZmzbWYZM0v866CnvRHZ79QXrshQ83d9x1KuK32WWt9GUK+btfJ8ntqqlUtqlp3JIrBmxo64RvIXXFxJU0m3wNOkS+NjlY+R2H86aVgJozM8LmwCUmGT7B2xBuaxWKDnAC6d++LFqGxCEZRb9Vozkofuwk8TAYb1xfurQNZBFlRlXWZvzMSr3D5VgkNE27umD+f4VIJAjpozp2ydAFRzJ9m1yBAVoJpTphJXmnQ==
+ bh=tKeWZwrbZWPBqmrF8s472Q4a1fYd4dLM6zjPEUlZa8c=;
+ b=cal5FfeKtDIaUhYSQ0MVPC+AnzgMHcEE8FF6ir6XLEt+t4vu08451DBRTgDVZiqHuRfghpMj5OVRVzgqQtt75n6vaqaCgsDZPEw0o9yBXVURg9443sSyrRcflHpeD+/aLoHf/J9hhCMEkfgK6zZSuSSx7+nI3EVfGw1P6TYeornwIZORgSZghRwZSq7BUwmlxuMXxVSx6NncdUJ7PdX9FEZkdV/DQCRg+LaNjbGudRvrxAMid5XqfZyiYPnWFjnfUwqcppF0NxNwnewydz/UuTuAjgJ30rdbfckKrp6AA1mT2IfRU7qMC0elBaDqbnkG4BszGvR2anpddq6qpteAsw==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=zRQgbuyTdWjFoe2ssHO+y0fj0UnEEqyz75LhqJC4JIs=;
- b=qN3X93rqhBU2ko9c7xfzBHAMI4FZTVP4ubc3d4ACKkq5vwbbJxCdNcLeLHwQG6XN5yn0Zm2PHy30tk97qy7v5HOnIYkrjWSl+4fyjAldEw6wsgkutyNPVysbWEn6N5l8fRKf7xhgDKGss4a6eLrXKy00pLePGwem/TNIIAhVMOc=
-Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
- by PH0PR04MB7637.namprd04.prod.outlook.com (2603:10b6:510:5e::11) with
+ smtp.mailfrom=fb.com; dmarc=pass action=none header.from=fb.com; dkim=pass
+ header.d=fb.com; arc=none
+Received: from CO1PR15MB4924.namprd15.prod.outlook.com (2603:10b6:303:e3::16)
+ by MWHPR15MB1375.namprd15.prod.outlook.com (2603:10b6:300:ba::21) with
  Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4219.22; Thu, 10 Jun
- 2021 08:28:20 +0000
-Received: from PH0PR04MB7416.namprd04.prod.outlook.com
- ([fe80::99a5:9eaa:4863:3ef3]) by PH0PR04MB7416.namprd04.prod.outlook.com
- ([fe80::99a5:9eaa:4863:3ef3%4]) with mapi id 15.20.4195.031; Thu, 10 Jun 2021
- 08:28:20 +0000
-From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-To:     Damien Le Moal <Damien.LeMoal@wdc.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4195.25; Thu, 10 Jun
+ 2021 13:54:29 +0000
+Received: from CO1PR15MB4924.namprd15.prod.outlook.com
+ ([fe80::2d50:36f7:4bce:9b01]) by CO1PR15MB4924.namprd15.prod.outlook.com
+ ([fe80::2d50:36f7:4bce:9b01%6]) with mapi id 15.20.4219.022; Thu, 10 Jun 2021
+ 13:54:29 +0000
+From:   Chris Mason <clm@fb.com>
+To:     Christophe Leroy <christophe.leroy@csgroup.eu>
+CC:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 2/3] btrfs: zoned: fix compressed writes
-Thread-Topic: [PATCH v2 2/3] btrfs: zoned: fix compressed writes
-Thread-Index: AQHXS/wyoE+7u2fw/k+3p3TOtvxw4g==
-Date:   Thu, 10 Jun 2021 08:28:20 +0000
-Message-ID: <PH0PR04MB7416687F366BAFA48E0FA3EB9B359@PH0PR04MB7416.namprd04.prod.outlook.com>
-References: <cover.1621351444.git.johannes.thumshirn@wdc.com>
- <1220142568f5b5f0d06fbc3ee28a08060afc0a53.1621351444.git.johannes.thumshirn@wdc.com>
- <9464ea87-6d50-9015-a6f5-c7b3d61458ca@gmx.com>
- <DM6PR04MB70813C91EEB7952FC3EF917EE7359@DM6PR04MB7081.namprd04.prod.outlook.com>
- <2ceddf4f-f2b9-fe7c-0201-46835cc27c45@gmx.com>
- <DM6PR04MB7081051CDED378C54A364E68E7359@DM6PR04MB7081.namprd04.prod.outlook.com>
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "linux-hexagon@vger.kernel.org" <linux-hexagon@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: Disable BTRFS on platforms having 256K pages
+Thread-Topic: [PATCH] btrfs: Disable BTRFS on platforms having 256K pages
+Thread-Index: AQHXXgAh61zPzPytEE23ALEqr0QZPA==
+Date:   Thu, 10 Jun 2021 13:54:28 +0000
+Message-ID: <185278AF-1D87-432D-87E9-C86B3223113E@fb.com>
+References: <a16c31f3caf448dda5d9315e056585b6fafc22c5.1623302442.git.christophe.leroy@csgroup.eu>
+In-Reply-To: <a16c31f3caf448dda5d9315e056585b6fafc22c5.1623302442.git.christophe.leroy@csgroup.eu>
 Accept-Language: en-US
 Content-Language: en-US
 X-MS-Has-Attach: 
 X-MS-TNEF-Correlator: 
-authentication-results: wdc.com; dkim=none (message not signed)
- header.d=none;wdc.com; dmarc=none action=none header.from=wdc.com;
-x-originating-ip: [2001:a62:141b:f301:e91f:9de6:cb32:f149]
+x-mailer: Apple Mail (2.3654.100.0.2.22)
+authentication-results: csgroup.eu; dkim=none (message not signed)
+ header.d=none;csgroup.eu; dmarc=none action=none header.from=fb.com;
+x-originating-ip: [2620:10d:c091:480::1:c4b0]
 x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 99377ac1-db54-4391-90e0-08d92be9b48a
-x-ms-traffictypediagnostic: PH0PR04MB7637:
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <PH0PR04MB7637568DC799846BFFDF65A29B359@PH0PR04MB7637.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:10000;
+x-ms-office365-filtering-correlation-id: a296f9ab-231d-4709-5602-08d92c174438
+x-ms-traffictypediagnostic: MWHPR15MB1375:
+x-microsoft-antispam-prvs: <MWHPR15MB13757180DB2249244D35253DD3359@MWHPR15MB1375.namprd15.prod.outlook.com>
+x-fb-source: Internal
+x-ms-oob-tlc-oobclassifiers: OLM:4125;
 x-ms-exchange-senderadcheck: 1
 x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: nZ/xuo3YCWIFrcugEAdYVvzDNdKYE9Ek6HeKFcOCBJm+85KDRxNpgJeoLIWZGJQZwCd1O+oAh9PaiVPL1+yPMWOSVWgB2zmfrN0oN3z+9TSts8mpFqzDu53YAM5stigFtLsSzA1LkZDhPiixYN6vS/xSneY0o0R+KEpzo62fTdmaMKFIOzxLN6x5k9qtNBYfl0NMtMmQ25fbyctAB5A/tTOeDEvyF9EB80RUMYDxfLHWAQHsttMqm48N111Vh3+Qxi149LZlXmzIYYKWSC3CG+ig1v9sZvGwrJdKS55PH4riAZn215bdaDOJu7RywrUVAayrolJxQEaN9qFPSFGrRk1oit/9qxBzYn10yOtpisPz/M9IKJBYjwwyJWZlnTUvgoojPn0XFG+1GbDfksI4COmwlE9CECLwnHMFtDE498IBcMcFr3f6tZ3wS2XPXv0jr4AESikqBm81DIBhXvysYZ9N4M20ethWpR25FjY5orxCZnyz3+mOXQoQJdhbV9ceoQtI7zx525FpbMB5eT3U1gMn3VWDOJ2bk81xIngKu3+ZcFlmrOFYAVXerNFsSVVlXnTihaGE1efVI66bsnDCIEhiEkyvRKGdsT7l+glVei4=
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(366004)(396003)(39860400002)(376002)(136003)(346002)(5660300002)(52536014)(33656002)(2906002)(66946007)(478600001)(64756008)(66446008)(66476007)(66556008)(7696005)(6506007)(186003)(38100700002)(122000001)(53546011)(83380400001)(8936002)(110136005)(316002)(76116006)(55016002)(9686003)(86362001)(71200400001)(8676002);DIR:OUT;SFP:1102;
+x-microsoft-antispam-message-info: ayBFybNUVDIBHa+CJzWoHnHDaCKopP477vmW1w/lJaNgicKm1SUrZkWBAWGskCurZvCJc9o7fe2YnrEGTzMeOJ61wzBLbSiqHJ5hI4KG+zIsB4S3eDpM2/OcE75LQ63sdwCtjeEy4m+EAA2EaqDiRS0b/N8ZK3gXbRTYPXu3K2yT3DI3aD4FUkXy1+gWPqLsIJk9L9lq0RLXtSDRT9IFTYqy24L5WegRQElhLSxlFEskpeLNtaTzy1gV5p9xrx280Pw14kDHXnoGHlLAwFATSo/7elapeNGGKzl+JzR7nYrKcSbu1kqVoca0PAzJcPZa53ELxmr91Jw8l25hTJigg0vSWYTa6z8fr5J6T/9wmrQ6G2ZSoMWbCPREn9Fmq6JvXml2XW6dBdwQTIAgrrMcWzYGpPfHrKh9sUKiN9Uut8cJ7KDiitcI6d2JMIVhjsh7bvktJosTYABMaZuEdtbC4vE65rNxTOr+7gT1waD75MLGp6xnMxpCvC2hUZc/583ZPYIOYLt5SXTCm2KZiAbHFf84fVUDeRfwDDWhyHxdkydiP0llNoiBroQuJ4boN+Z69T1i6bpI5SgEbj2qK6DmDIs+HDPsCFj6Zjt2x+ImBNgcp3eEegqrkbMwgr4Yers4F33Nj4/uDUQEDm68dcN7yA==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:CO1PR15MB4924.namprd15.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(376002)(366004)(396003)(39860400002)(346002)(136003)(76116006)(4326008)(91956017)(6486002)(54906003)(66446008)(66556008)(64756008)(186003)(5660300002)(66476007)(66946007)(2906002)(86362001)(53546011)(6506007)(2616005)(83380400001)(6512007)(478600001)(33656002)(8936002)(36756003)(71200400001)(4744005)(8676002)(38100700002)(122000001)(6916009)(316002)(45980500001);DIR:OUT;SFP:1102;
 x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0: =?iso-2022-jp?B?ZnRzNWR0TitodTBZcHNkNkRaL3J0dkFOeGRCTTJjRkVmVTRFYi9QbHlV?=
- =?iso-2022-jp?B?QjRMdm9LbHNmRU8waDRUeUJvREpHVnBUaHJKWmhrYlR5WkVWNmRpUHdK?=
- =?iso-2022-jp?B?MDgvUk5Bd3lyS094anYrRUR2Vkd0dXNuN1VYNnd2RmRNTzlkUENUcWwz?=
- =?iso-2022-jp?B?b2lVblNCcUlRM1JCcmh6YTcyUTRlQVRzOXdMcVUxa1k3SWZISFRnTTE0?=
- =?iso-2022-jp?B?VVpkR1J2QUptVjRiZ2FoVEU1a3dKdnRqeWlwQTFJRko3NlFlU3BndEQw?=
- =?iso-2022-jp?B?ZzhTVWUwa1AyNHl4QmgxME9mVmJtUVJKaGI5MVBQUWxyR0NHOVVlSm1U?=
- =?iso-2022-jp?B?cS95Njc1d2J5dXlLUG82K05XazJoK1k4YXN0ek9qRkVsc1RLMlJkSHY3?=
- =?iso-2022-jp?B?blhyMVFITktkaUhQaFg4UUlCRmxTMjlNTDM3am02bG9xMTNndy9yNnhQ?=
- =?iso-2022-jp?B?dlRlN0QvcDF1NzBIc3VmR1FSZzJqYlV4cUZOSTF3V2xTcmtUWGVxM1FY?=
- =?iso-2022-jp?B?czIvR3JLbElrUG9rbGFLQ0VyeUIxQjZsMm1NSVQrMXBwclNtOWMvUDRI?=
- =?iso-2022-jp?B?cUlPaTRVMEU5SnZ0QzU5RjYvRVpvczQ1WGNoeDJSN1FHSGtvNnVSck4v?=
- =?iso-2022-jp?B?SkpoYkw5SGpoU1dCWUFpTlJTbDZFeVJwbkhlWFdMeGRTY1NUcnQyZ0Qx?=
- =?iso-2022-jp?B?TVBWNTJoSFdFQ0lrM1FZVDJNUG5rUXBRRVE3TVpPV2VqRHYrV0o3UTNt?=
- =?iso-2022-jp?B?eUJEK2xTbmRWcVVoaEZpbWlnZXg2NDN2b0pOc2FzVHF3TldaUXVYam02?=
- =?iso-2022-jp?B?dmdmRUE2RkMrazdtVlF5NXAzYUM4Y2tIaTJlWERSbEpYbVhTZStKUUUv?=
- =?iso-2022-jp?B?MTV2MjJzRnlYLzZUSG1WOVFhOHYrN0gySzlta3FQWGJ2RFpTRW1aYTQv?=
- =?iso-2022-jp?B?Y2M2STVkS0VUU1JMWk82QUlWK29VazY3NndrdUw5SWNCMGV0cE42N3pU?=
- =?iso-2022-jp?B?OW91WVNEc1V1S0E4eDFRMWZuNWpzYmRzMlVrNEZHaXZxNFA3cG1Bd3dL?=
- =?iso-2022-jp?B?OEZhREh1UlZzUzhWS2dJSjMvZjdDWXhPQjlJdVV4RVczNDNxdUZ2UVFZ?=
- =?iso-2022-jp?B?S2JJd0xTcEVtaHMyaWp2YTR6UEU3SGgyaVR6dUVQcEI1c0NmckcyRFVQ?=
- =?iso-2022-jp?B?TUIxcWQ5Q1pqZWthYnQzaUw3Qi9ubVN2OTI2bmVJY3lFZTEwbEl5VnFt?=
- =?iso-2022-jp?B?SnBEWjVxTWJ6S2l4ZkdNd3hVOVg4TXdZWkRmRWRxQXFHNTdoZTZpWkNV?=
- =?iso-2022-jp?B?REhXYitJZVZsakFJb1dUcE9ldWYrUGsvTW82a2UvZWdHYzBLWmVrQmhw?=
- =?iso-2022-jp?B?SkY2MUh6UW54THRXeHFCWjlTdDIwOWVqNnBZSVpPSmVQbzlDWjdLUk9y?=
- =?iso-2022-jp?B?Vys3cks1b214a2lXazZQTisvRlczVEV4cFNLaGh3TXNlcXVPUVpKN0Zu?=
- =?iso-2022-jp?B?eEpPdUZHTmt3eUM5ckVhbVVwaWRoellVYWNxWVd6M3I3TksxbjV3WnZ6?=
- =?iso-2022-jp?B?K3FJdk5HeG9uczVid2NoYnphbDhpWWQ4ZmdiU1FJcFZ6dURhL1liUkRK?=
- =?iso-2022-jp?B?Y2QyR0tDQXdBNCtGM3l3Z3p3VUd1bldQU290RmRKalB2SDhUQjVmT0p0?=
- =?iso-2022-jp?B?QlNtVG8yREpQZ0dLV3lsZEtMVTlKaUpvVHdNcXdmcUhXcU1qclFZbzZZ?=
- =?iso-2022-jp?B?dmxZUlcyYU5haUNlVGhKb1pxOXlNTTMyY2V4Nk5mVFlsQUlwdTI2dVR2?=
- =?iso-2022-jp?B?NlVNTVhEWVVnK0QyK0FsZVpWNDRxNUtqY09QUUNaaHo1d3hMWC93Z3g0?=
- =?iso-2022-jp?B?WldIRi9jL1RrWmxTS0FSakRiNFVkeUpZR3lBNDNyNUMwRHhVMUlKT2ZE?=
- =?iso-2022-jp?B?bjc2bTgrZmVhOGtzYUpoU0xTZGREZVFXVEVuSXYyWlFueklXVCtHV0VM?=
- =?iso-2022-jp?B?SnhEL1JrVHRHb2xBZmI2emJkM3lYNXorVHRUMStCN3MrWHBOeXhFNUl6?=
- =?iso-2022-jp?B?SEE9PQ==?=
-Content-Type: text/plain; charset="iso-2022-jp"
-Content-Transfer-Encoding: quoted-printable
+x-ms-exchange-antispam-messagedata-0: =?utf-8?B?RTF0aGYybHdGVk5wTzVGTm5IZDZoMVB5NWZxeCt6OGYzbFBaek1uYk1MNW5h?=
+ =?utf-8?B?MGZxOUJmUGJPZ3ZVa2RTWnVCekZTTytrVC9TTGIwNjkyY3JQeTk3aUlMRkE2?=
+ =?utf-8?B?V3lPSHpjZWxuMGV3T3MrSWFrMEVTaTYxUVJMdHNWeDJkeFlhRGZQamNDVWNZ?=
+ =?utf-8?B?bjdWenFBcVBnYUF3b2N4YkZOdFJNcHdEdzBDVmt4aFVkOWNWd1M3amsyWjU1?=
+ =?utf-8?B?SVNjQmhGODNuQnhiQ0l4dEZCaXdvdXpYTU54Z0dSTXh0NDV0OGFCMytWU3J4?=
+ =?utf-8?B?Y1FoMlhIMjJKTTR1U0ZhNnFCbXRqZ0UrRGFTdFN5eEZNVTMxbk1SVndFc0c0?=
+ =?utf-8?B?d0N1cmxkamZzU3JFNzZOZm05L0pWeUl4U0VzWXh2Um1ITkZIV1pEUWFzZzF5?=
+ =?utf-8?B?aE9xMjJ0d3hZUVIyVWJGd2ZOeUw5OWZITlZUbjdJblhwSHk0VVloV1RWZ1dT?=
+ =?utf-8?B?YlFVVEkybDZSRFdYa0c1S2pGd1k4YmNiZHVDUWs1ZHRmMkJCWHQ1Q2VSYVpv?=
+ =?utf-8?B?NTFrcE9uSzN6ZnNTb2dVeHM4VDJ2Tkd4Ym5rdDFTOG02T21Uc3FBYm5UbXJ5?=
+ =?utf-8?B?ay93R0JLd3J1dWY1YnlrTW05RWVVOEhTdnF6Z1N5UGJ6d2RwOHhRc1o3NHR0?=
+ =?utf-8?B?M0lBU1o0dldmc253bWpkNjhxOS9TY01RYzNMT1p6bVRKR1lLdVJsWlVIQm9o?=
+ =?utf-8?B?SC9HSHBZVVF4YnpFNEpKVzFZQXFaSGM2d0NTb21EVUtFNDY2dHRqYTVZclBO?=
+ =?utf-8?B?ZTlXQjdMT3RZdXRTZTZ2VUViMFhUenFwSWYrcXh5aHBVZEQ2TzVTMGFMVk9N?=
+ =?utf-8?B?WXdKNkdRWDJPWFFEUjRNS0pHNkZlaWF1WUpVMjUxSW10MVNlRUFiTXU1aUZx?=
+ =?utf-8?B?Y0FlNHRsZmpIcDc5cmp5VXE3VEt4LzJZQitRRVI3TEFhOXBIVldJRnpSOUZ2?=
+ =?utf-8?B?TVBxKyszOVQ1K1d3Z014enJOQnE0a0dobkdyZndVbm5Cd2R0UGhWcE0xWnRQ?=
+ =?utf-8?B?Mkg3ajJVS2ZTcHZ3ZDl6Q3ExeXQ1M3JIc1l3SVFidDV4dmhpYUxVUzNQZGFQ?=
+ =?utf-8?B?QmpydENuR0hlT2J5dGR6cCtrYVVrb2N0ei93aGlmRGZ3Q0FTSzJDa3MrN2JD?=
+ =?utf-8?B?UzhDdUxDQ0Y1bzJpdUphaGVqZ0FGTHo3d0J0cGhubk9ZTk1XcFVjK1ZxYjZu?=
+ =?utf-8?B?Zmg3RVZoeERXZGEySmZVUEJXWHF0eG9kRFBsUm9GaVFWQW50RERVTzF3WHZ5?=
+ =?utf-8?B?VzMvS0dtNnZGMXBTeWlwckJGSlllcCtHeE9yUzV4cThIRktjbzNUY0ZFRWJB?=
+ =?utf-8?B?d1BXWENVM3JwbDVPOEZkVmFZOU44ZHlESit3UTd4M3RadXNVYzdlck9KQnFP?=
+ =?utf-8?B?YlhIMTBsQmVFdGdscElWV3AxeDVhZG1xamFEMWVRMkUxM3MvSm1HYm9aTnRN?=
+ =?utf-8?B?UHYvbzB2RnV3Z0tEZVRybXdoMWtrTHpnL2Fkdm5iWlpULzU2T2taeFlHeUUz?=
+ =?utf-8?B?VjE5RXQ4bXJBVlQ3QlB2OW5ISlBSUVVKK2tBdlZrdVRXRjZzZlA2bTl2VWNr?=
+ =?utf-8?B?MXV4OVdtemdXcEtwaXVUSmpzRzh6a202NWVOSDhBbGZsUVM0QmhlZlFvQmM3?=
+ =?utf-8?B?WmFlODMxWTl6SitaY3hvNGVQQnhMRXJEQ1BUWWN3cWpwazA3VkQ0TjlwaFVI?=
+ =?utf-8?B?NzNzNXRGM1pYMmF5bVBET1M2aHFCS3JWUmRZekVjRUJMckRQUXNHa1RhVFU2?=
+ =?utf-8?B?YjNzZmw3NGk1UGJ6VFpWR3orYWZ5Mk1KS0MrZzdvdU9keEJPWkZsd29QNXJN?=
+ =?utf-8?Q?QZld4SP5mrcqQdAr2WPqD6YfpaWGEDvRJ6WhQ=3D?=
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <8C74CC486588ED45B87C30682826B4BF@namprd15.prod.outlook.com>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 99377ac1-db54-4391-90e0-08d92be9b48a
-X-MS-Exchange-CrossTenant-originalarrivaltime: 10 Jun 2021 08:28:20.4546
+X-MS-Exchange-CrossTenant-AuthSource: CO1PR15MB4924.namprd15.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: a296f9ab-231d-4709-5602-08d92c174438
+X-MS-Exchange-CrossTenant-originalarrivaltime: 10 Jun 2021 13:54:28.8425
  (UTC)
 X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-id: 8ae927fe-1255-47a7-a2af-5f3a069daaa2
 X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: VYjZqkqAsfHchwZbkB7kTAGXw22V5tAZzZ9fhShBC8gt8oHVDkO/rzJqC7sCTIQ36t7uRVQATxCAPkryWDf/rTEjb0XIcsBQhNKE7eQwJ/Y=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7637
+X-MS-Exchange-CrossTenant-userprincipalname: 5ka7H7RVXvbQhmpBuFBTEDlnzPca77He9v9Tmd7fbTthAAKaOun0vBRwDBbJ9qCP
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MWHPR15MB1375
+X-OriginatorOrg: fb.com
+X-Proofpoint-GUID: FYzy0Bnet3FGnI3-X3WMmxlWHTnM3XEO
+X-Proofpoint-ORIG-GUID: FYzy0Bnet3FGnI3-X3WMmxlWHTnM3XEO
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.391,18.0.761
+ definitions=2021-06-10_07:2021-06-10,2021-06-10 signatures=0
+X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 impostorscore=0
+ malwarescore=0 mlxscore=0 clxscore=1011 phishscore=0 spamscore=0
+ lowpriorityscore=0 suspectscore=0 mlxlogscore=999 adultscore=0
+ priorityscore=1501 bulkscore=0 classifier=spam adjust=0 reason=mlx
+ scancount=1 engine=8.12.0-2104190000 definitions=main-2106100090
+X-FB-Internal: deliver
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 10/06/2021 09:45, Damien Le Moal wrote:=0A=
-> On 2021/06/10 16:41, Qu Wenruo wrote:=0A=
->>=0A=
->>=0A=
->> On 2021/6/10 =1B$B2<8a=1B(B3:36, Damien Le Moal wrote:=0A=
->>> On 2021/06/10 16:28, Qu Wenruo wrote:=0A=
->>>>=0A=
->>>>=0A=
->>>> On 2021/5/18 =1B$B2<8a=1B(B11:40, Johannes Thumshirn wrote:=0A=
->>>>> When multiple processes write data to the same block group on a compr=
-essed=0A=
->>>>> zoned filesystem, the underlying device could report I/O errors and d=
-ata=0A=
->>>>> corruption is possible.=0A=
->>>>>=0A=
->>>>> This happens because on a zoned file system, compressed data writes w=
-here=0A=
->>>>> sent to the device via a REQ_OP_WRITE instead of a REQ_OP_ZONE_APPEND=
-=0A=
->>>>> operation. But with REQ_OP_WRITE and parallel submission it cannot be=
-=0A=
->>>>> guaranteed that the data is always submitted aligned to the underlyin=
-g=0A=
->>>>> zone's write pointer.=0A=
->>>>>=0A=
->>>>> The change to using REQ_OP_ZONE_APPEND instead of REQ_OP_WRITE on a z=
-oned=0A=
->>>>> filesystem is non intrusive on a regular file system or when submitti=
-ng to=0A=
->>>>> a conventional zone on a zoned filesystem, as it is guarded by=0A=
->>>>> btrfs_use_zone_append.=0A=
->>>>>=0A=
->>>>> Reported-by: David Sterba <dsterba@suse.com>=0A=
->>>>> Fixes: 9d294a685fbc ("btrfs: zoned: enable to mount ZONED incompat fl=
-ag")=0A=
->>>>> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>=0A=
->>>>=0A=
->>>> Now working on compression support for subpage, just noticed some=0A=
->>>> strange code behavior, I'm not sure if it's designed or just a typo.=
-=0A=
->>>>=0A=
->>>> So please correct me if possible.=0A=
->>>>=0A=
->>>> [...]=0A=
->>>>>=0A=
->>>>>    	bio =3D btrfs_bio_alloc(first_byte);=0A=
->>>>> -	bio->bi_opf =3D REQ_OP_WRITE | write_flags;=0A=
->>>>> +	bio->bi_opf =3D bio_op | write_flags;=0A=
->>>>>    	bio->bi_private =3D cb;=0A=
->>>>>    	bio->bi_end_io =3D end_compressed_bio_write;=0A=
->>>>>=0A=
->>>>> +	if (use_append) {=0A=
->>>>> +		struct extent_map *em;=0A=
->>>>> +		struct map_lookup *map;=0A=
->>>>> +		struct block_device *bdev;=0A=
->>>>> +=0A=
->>>>> +		em =3D btrfs_get_chunk_map(fs_info, disk_start, PAGE_SIZE);=0A=
->>>>> +		if (IS_ERR(em)) {=0A=
->>>>> +			kfree(cb);=0A=
->>>>> +			bio_put(bio);=0A=
->>>>> +			return BLK_STS_NOTSUPP;=0A=
->>>>> +		}=0A=
->>>>> +=0A=
->>>>> +		map =3D em->map_lookup;=0A=
->>>>> +		/* We only support single profile for now */=0A=
->>>>> +		ASSERT(map->num_stripes =3D=3D 1);=0A=
->>>>> +		bdev =3D map->stripes[0].dev->bdev;=0A=
->>>=0A=
->>> This variable seems rather useless...=0A=
->>=0A=
->> No need to bother that, that has already been removed by later refactor.=
-=0A=
->>=0A=
->>>=0A=
->>>>> +=0A=
->>>>> +		bio_set_dev(bio, bdev);=0A=
->>>>> +		free_extent_map(em);=0A=
->>>>> +	}=0A=
->>>>> +=0A=
->>>>=0A=
->>>> Here for the newly created bio, we will try to call bio_set_dev() for=
-=0A=
->>>> it. (although later patch refactor this part a little)=0A=
->>>>=0A=
->>>> So far so good.=0A=
->>>>=0A=
->>>>>    	if (blkcg_css) {=0A=
->>>>>    		bio->bi_opf |=3D REQ_CGROUP_PUNT;=0A=
->>>>>    		kthread_associate_blkcg(blkcg_css);=0A=
->>>>> @@ -432,6 +458,7 @@ blk_status_t btrfs_submit_compressed_write(struct=
- btrfs_inode *inode, u64 start,=0A=
->>>>>    	bytes_left =3D compressed_len;=0A=
->>>>>    	for (pg_index =3D 0; pg_index < cb->nr_pages; pg_index++) {=0A=
->>>>>    		int submit =3D 0;=0A=
->>>>> +		int len;=0A=
->>>>>=0A=
->>>>>    		page =3D compressed_pages[pg_index];=0A=
->>>>>    		page->mapping =3D inode->vfs_inode.i_mapping;=0A=
->>>>> @@ -439,9 +466,13 @@ blk_status_t btrfs_submit_compressed_write(struc=
-t btrfs_inode *inode, u64 start,=0A=
->>>>>    			submit =3D btrfs_bio_fits_in_stripe(page, PAGE_SIZE, bio,=0A=
->>>>>    							  0);=0A=
->>>>>=0A=
->>>>> +		if (pg_index =3D=3D 0 && use_append)=0A=
->>>>> +			len =3D bio_add_zone_append_page(bio, page, PAGE_SIZE, 0);=0A=
->>>>> +		else=0A=
->>>>> +			len =3D bio_add_page(bio, page, PAGE_SIZE, 0);=0A=
->>>>> +=0A=
->>>>>    		page->mapping =3D NULL;=0A=
->>>>> -		if (submit || bio_add_page(bio, page, PAGE_SIZE, 0) <=0A=
->>>>> -		    PAGE_SIZE) {=0A=
->>>>> +		if (submit || len < PAGE_SIZE) {=0A=
->>>>>    			/*=0A=
->>>>>    			 * inc the count before we submit the bio so=0A=
->>>>>    			 * we know the end IO handler won't happen before=0A=
->>>>> @@ -465,11 +496,15 @@ blk_status_t btrfs_submit_compressed_write(stru=
-ct btrfs_inode *inode, u64 start,=0A=
->>>>>    			}=0A=
->>>>>=0A=
->>>>>    			bio =3D btrfs_bio_alloc(first_byte);=0A=
->>>>> -			bio->bi_opf =3D REQ_OP_WRITE | write_flags;=0A=
->>>>> +			bio->bi_opf =3D bio_op | write_flags;=0A=
->>>>=0A=
->>>> But here, for the newly allocated bio, we didn't call bio_set_dev() at=
- all.=0A=
->>>>=0A=
->>>> Shouldn't all zoned write bio need that bio_set_dev() call?=0A=
->>>=0A=
->>> Yep, bio->bi_bdev must be set before bio_add_zone_append_page() is call=
-ed.=0A=
->>> Otherwise, there will be a crash (first line of bio_add_zone_append_pag=
-e() gets=0A=
->>> the request queue from bio->bi_bdev). I wonder why we do not see NULL p=
-ointer=0A=
->>> oops here... Johannes ?=0A=
->>=0A=
->> That's because it's really really rare/hard to have a compressed extent=
-=0A=
->> just lies at the stripe boundary.=0A=
->>=0A=
->> For most cases, the data we provide for compression tests is either:=0A=
->> - Too compressible=0A=
->>    Thus the whole range can be compressed into just one sector, thus=0A=
->>    it will never cross stripe boundary.=0A=
->>=0A=
->> - Not compressible at all=0A=
->>    We fall back to regular buffered write, which will do their proper=0A=
->>    stripe boundary check correctly.=0A=
->>=0A=
->> Thus it's really near impossible to hit it in various tests.=0A=
-> =0A=
-> But this is a data write, isn't it ? So in the zoned case, it means a zon=
-e=0A=
-> append write. And adding a page for even a single sector using=0A=
-> bio_add_zone_append_page() will oops if the bio bdev is not set, regardle=
-ss of=0A=
-> the bio size... Am I misunderstanding something here about this IO path ?=
-=0A=
-=0A=
-Because we're not using bio_add_zone_append_page() but bio_add_page() as we=
- only add=0A=
-one page to a newly allocated bio. It's a bit complicated.  =0A=
-=0A=
->>>>> +			/*=0A=
->>>>> +			 * Use bio_add_page() to ensure the bio has at least one=0A=
->>>>> +			 * page.=0A=
->>>>> +			 */=0A=
->>>>>    			bio_add_page(bio, page, PAGE_SIZE, 0);=0A=
->>>>>    		}=0A=
->>>>>    		if (bytes_left < PAGE_SIZE) {=0A=
->>>>>=0A=
->>>>=0A=
->>>=0A=
->>>=0A=
->>=0A=
-> =0A=
-> =0A=
-=0A=
+DQo+IE9uIEp1biAxMCwgMjAyMSwgYXQgMToyMyBBTSwgQ2hyaXN0b3BoZSBMZXJveSA8Y2hyaXN0
+b3BoZS5sZXJveUBjc2dyb3VwLmV1PiB3cm90ZToNCj4gDQo+IFdpdGggYSBjb25maWcgaGF2aW5n
+IFBBR0VfU0laRSBzZXQgdG8gMjU2SywgQlRSRlMgYnVpbGQgZmFpbHMNCj4gd2l0aCB0aGUgZm9s
+bG93aW5nIG1lc3NhZ2UNCj4gDQo+IGluY2x1ZGUvbGludXgvY29tcGlsZXJfdHlwZXMuaDozMjY6
+Mzg6IGVycm9yOiBjYWxsIHRvICdfX2NvbXBpbGV0aW1lX2Fzc2VydF83OTEnIGRlY2xhcmVkIHdp
+dGggYXR0cmlidXRlIGVycm9yOiBCVUlMRF9CVUdfT04gZmFpbGVkOiAoQlRSRlNfTUFYX0NPTVBS
+RVNTRUQgJSBQQUdFX1NJWkUpICE9IDANCj4gDQo+IEJUUkZTX01BWF9DT01QUkVTU0VEIGJlaW5n
+IDEyOEssIEJUUkZTIGNhbm5vdCBzdXBwb3J0IHBsYXRmb3JtcyB3aXRoDQo+IDI1NksgcGFnZXMg
+YXQgdGhlIHRpbWUgYmVpbmcuDQo+IA0KPiBUaGVyZSBhcmUgdHdvIHBsYXRmb3JtcyB0aGF0IGNh
+biBzZWxlY3QgMjU2SyBwYWdlczoNCj4gLSBoZXhhZ29uDQo+IC0gcG93ZXJwYw0KPiANCj4gRGlz
+YWJsZSBCVFJGUyB3aGVuIDI1NksgcGFnZSBzaXplIGlzIHNlbGVjdGVkLg0KPiANCg0KV2XigJls
+bCBoYXZlIG90aGVyIHN1YnBhZ2UgYmxvY2tzaXplIGNvbmNlcm5zIHdpdGggMjU2SyBwYWdlcywg
+YnV0IHRoaXMgQlRSRlNfTUFYX0NPTVBSRVNTRUQgI2RlZmluZSBpcyBhcmJpdHJhcnkuICBJdOKA
+mXMganVzdCB0cnlpbmcgdG8gaGF2ZSBhbiB1cHBlciBib3VuZCBvbiB0aGUgYW1vdW50IG9mIG1l
+bW9yeSB3ZeKAmWxsIG5lZWQgdG8gdW5jb21wcmVzcyBhIHNpbmdsZSBwYWdl4oCZcyB3b3J0aCBv
+ZiByYW5kb20gcmVhZHMuDQoNCldlIGNvdWxkIGNoYW5nZSBpdCB0byBtYXgoUEFHRV9TSVpFLCAx
+MjhLKSBvciBqdXN0IGJ1bXAgdG8gMjU2Sy4NCg0KLWNocmlzDQoNCg==

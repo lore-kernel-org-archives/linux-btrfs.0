@@ -3,129 +3,195 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2F66C48BCF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 00:55:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BBF27C47094
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 05:09:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C79ED613F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 00:55:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9A3E3613D0
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Jun 2021 05:09:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229792AbhFJA5U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Jun 2021 20:57:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36016 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229507AbhFJA5T (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Jun 2021 20:57:19 -0400
-Received: from mail-pf1-x42d.google.com (mail-pf1-x42d.google.com [IPv6:2607:f8b0:4864:20::42d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 367B6C061574
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Jun 2021 17:55:08 -0700 (PDT)
-Received: by mail-pf1-x42d.google.com with SMTP id c12so185450pfl.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Jun 2021 17:55:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20150623.gappssmtp.com; s=20150623;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=7pVCGEXkr1tatvMc/wXTps5uCsG/QvWeA1meTH3kKAM=;
-        b=Fz5KUjUWxqzwKVKHSSs4h+o8oG6iQUt0hVBa0KNyTlwyXIdQD7HxHdaPRK9GLSROwG
-         /YbjjOtqSGHgQDYwDGtypkFuhwK6leGFXUWeYO8D/IEVcaPe/yzV7wf///MMQHe6MGYP
-         V6m0TyO7oLydb8USntdZ/k2Y60tVa2voPqppIhSmHqfajaMzkqf19ysuOLz5yclyaYws
-         S+cKLKXUXCVe3iOIgXb2cwoyVxuJLnQFH2/qJlXoEDK2CryuCB4T9qfIkJkwzC1D+TJs
-         3Jq23bi9k4OznQ8MajbrLdTZyHz2KyscPbwWI/GvP524/XunlBQaJ5QjLSavTF/nP8qV
-         vI9g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=7pVCGEXkr1tatvMc/wXTps5uCsG/QvWeA1meTH3kKAM=;
-        b=cIZKsjvDamRc9QbYg8U52swJYEQ+cpSY2VINj0iGys2v4DfvUBsz9u73H89vHkPGxE
-         xlbmJhj43ofMhDMivA1GoTeduqsZHlqyZVY+0TiyWhc86QE9beGnmSZrfjfVFBIog/cD
-         gHjN/e14ZeagAhrd7giEoAraloJBXHoFIv1APFJXSEFPpL1T9WBKtPGVHnhRpJzjfq1K
-         E0tYggfgINnHVPHa6TKqwOHOSzizmhacoRAZNfOcUc/Rh0x3eM+iq3vgS8tbzkQuyJoI
-         YKgf/Xyli0kTfqSVK8IMzltUePadgt0WyoAPSqTli0uYSELVNvJ52JOFfUvvEUwZq/gN
-         tBrA==
-X-Gm-Message-State: AOAM533V+cqsuyXipckJep1YmyUfTsKmirBdR+01yqkUSWk+acOCdHI+
-        ri681OxSG6VYEOWpCWAeAMFL4A==
-X-Google-Smtp-Source: ABdhPJwTG1HP956gFqP3xkxdsOfBFb4HG09WHYUSHmdZ9VFvrFJGyu35yipKo7B41wWBSV5UgITBcw==
-X-Received: by 2002:a63:5442:: with SMTP id e2mr2352056pgm.365.1623286507012;
-        Wed, 09 Jun 2021 17:55:07 -0700 (PDT)
-Received: from relinquished.localdomain ([2620:10d:c090:400::5:a169])
-        by smtp.gmail.com with ESMTPSA id s123sm607006pfb.78.2021.06.09.17.55.05
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 09 Jun 2021 17:55:06 -0700 (PDT)
-Date:   Wed, 9 Jun 2021 17:55:05 -0700
-From:   Omar Sandoval <osandov@osandov.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: sysfs: export dev stats in devinfo directory
-Message-ID: <YMFi6fSxMUDCU/C9@relinquished.localdomain>
-References: <20210604132058.11334-1-dsterba@suse.com>
- <YMEHVWTrcJ6ol5bH@relinquished.localdomain>
- <20210609185014.GE27283@twin.jikos.cz>
+        id S229725AbhFJFLR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Jun 2021 01:11:17 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:58990 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229529AbhFJFLR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 10 Jun 2021 01:11:17 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id E80AA2199E
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jun 2021 05:09:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1623301760; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=E5Nr+QIwNiWNmgjunl/7LRcA1XAhk8b96iz3CHP9gvU=;
+        b=FzLwgLOnOahYE5CpqQV/pqFiy+PW5VAPdE+/SmVGSHVoAVvHzRgDmIOj5Ufxabq3fI7+ni
+        8GA+QqLcZMhuoOSm7KmDEYnclB2FYLBUlu2BxcrPmfYHpMDd+2ABNGbFzabGSDrg6hoIuI
+        sXW7rosbN3nVgse3DpvP8wJ7b1jPMxU=
+Received: from adam-pc.lan (unknown [10.163.16.38])
+        by relay2.suse.de (Postfix) with ESMTP id F3EF7A3B81
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Jun 2021 05:09:19 +0000 (UTC)
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v4 00/10] btrfs: defrag: rework to support sector perfect defrag
+Date:   Thu, 10 Jun 2021 13:09:07 +0800
+Message-Id: <20210610050917.105458-1-wqu@suse.com>
+X-Mailer: git-send-email 2.32.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210609185014.GE27283@twin.jikos.cz>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 09, 2021 at 08:50:14PM +0200, David Sterba wrote:
-> On Wed, Jun 09, 2021 at 11:24:21AM -0700, Omar Sandoval wrote:
-> > On Fri, Jun 04, 2021 at 03:20:58PM +0200, David Sterba wrote:
-> > > The device stats can be read by ioctl, wrapped by command 'btrfs device
-> > > stats'. Provide another source where to read the information in
-> > > /sys/fs/btrfs/FSID/devinfo/DEVID/stats . The format is a list of
-> > > 'key value' pairs one per line, which is common in other stat files.
-> > > The names are the same as used in other device stat outputs.
-> > > 
-> > > The stats are all in one file as it's the snapshot of all available
-> > > stats. The 'one value per file' is not very suitable here. The stats
-> > > should be valid right after the stats item is read from disk, shortly
-> > > after initializing the device, but in any case also print the validity
-> > > status.
-> > > 
-> > > Signed-off-by: David Sterba <dsterba@suse.com>
-> > > ---
-> > >  fs/btrfs/sysfs.c | 28 ++++++++++++++++++++++++++++
-> > >  1 file changed, 28 insertions(+)
-> > > 
-> > > diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> > > index 4b508938e728..3d4c806c4f73 100644
-> > > --- a/fs/btrfs/sysfs.c
-> > > +++ b/fs/btrfs/sysfs.c
-> > > @@ -1495,11 +1495,39 @@ static ssize_t btrfs_devinfo_writeable_show(struct kobject *kobj,
-> > >  }
-> > >  BTRFS_ATTR(devid, writeable, btrfs_devinfo_writeable_show);
-> > >  
-> > > +static ssize_t btrfs_devinfo_stats_show(struct kobject *kobj,
-> > > +		struct kobj_attribute *a, char *buf)
-> > > +{
-> > > +	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
-> > > +						   devid_kobj);
-> > > +
-> > > +	/*
-> > > +	 * Print all at once so we get a snapshot of all values from the same
-> > > +	 * time. Keep them in sync and in order of definition of
-> > > +	 * btrfs_dev_stat_values.
-> > > +	 */
-> > > +	return scnprintf(buf, PAGE_SIZE,
-> > > +		"stats_valid %d\n",
-> > > +		"write_errs %d\n"
-> > > +		"read_errs %d\n"
-> > > +		"flush_errs %d\n"
-> > > +		"corruption_errs %d\n"
-> > > +		"generation_errs %d\n",
-> > > +		!!(device->dev_stats_valid),
-> > 
-> > The ioctl returns ENODEV is !dev_stats_valid, maybe this file should do
-> > the same? It seems a little awkward to have a flag that means that the
-> > rest of the file is meaningless.
-> 
-> You mean returning -ENODEV when reading the stats file? Or return 0 but
-> the contents is something like 'stats invalid' or similar.
+This branch is based on subpage RW branch, as the last patch needs to
+enable defrag support for subpage cases.
 
-I'd vote for returning -ENODEV when reading the stats file, but I think
-either one is fine.
+But despite that one, all other patches can be applied on current
+misc-next.
+
+[BACKGROUND]
+In subpage rw branch, we disable defrag completely due to the fact that
+current code can only work on page basis.
+
+This could lead to problems like btrfs/062 crash.
+
+Thus this patchset will make defrag to work on both regular and subpage
+sectorsize.
+
+[SOLUTION]
+To defrag a file range, what we do is pretty much like buffered write,
+except we don't really write any new data to page cache, but just mark
+the range dirty.
+
+Then let later writeback to merge the range into a larger extent.
+
+But current defrag code is working on per-page basis, not per-sector,
+thus we have to refactor it a little to make it to work properly for
+subpage.
+
+This patch will separate the code into 3 layers:
+Layer 0:	btrfs_defrag_file()
+		The defrag entrace
+		Just do proper inode lock and split the file into
+		page aligned 256K clusters to defrag
+
+Layer 1:	defrag_one_cluster()
+		Will collect the initial targets file extents, and pass
+		each continuous target to defrag_one_range()
+
+Layer 2:	defrag_one_range()
+		Will prepare the needed page and extent locking.
+		Then re-check the range for real target list, as initial
+		target list is not consistent as it doesn't hage
+		page/extent locking to prevent hole punching.
+
+Layer 3:	defrag_one_locked_target()
+		The real work, to make the extent range defrag and
+		update involved page status
+
+[BEHAVIOR CHANGE]
+In the refactor, there is one behavior change:
+
+- Defraged sector counter is based on the initial target list
+  This is mostly to avoid the paremters to be passed too deep into
+  defrag_one_locked_target().
+  Considering the accounting is not that important, we can afford some
+  difference.
+
+[PATCH STRUTURE]
+Patch 01~03:	Small independent refactor to improve readability
+Patch 04~08:	Implement the more readable and subpage friendly defrag
+Patch 09:	Cleanup of old infrastruture
+Patch 10:	Enable defrag for subpage case
+
+Now both regular sectorsize and subpage sectorsize can pass defrag test
+group.
+
+Although the tests no longer crashes, I still see random test failure on
+64K page size with 4K sectorsize, reporting nbytes mismatch for fsstress
++ defrag workload.
+
+So please don't merge the branch into v5.14 merge window at least.
+
+This normally means defrag has defragged some hole without setting it
+with DELALLOC_NEW.
+But I haven't find any location which makes it possible, as the new
+defrag_collect_targets() call timing (with both page and extent locked,
+no ordered extents) should be as safe as the original one.
+
+Thus I'm wondering if the check timing is even correct for the existing
+code.
+But at least I can't reproduce the nbytes problem on x86_64, thus no yet
+sure what the real cause is.
+
+[CHANGELOG]
+v2:
+- Make sure we won't defrag hole
+  This is done by re-collect the target list after have page and extent
+  locked. So that we can have a consistent view of the extent map.
+
+- Add a new layer to avoid variable naming bugs
+  Since we need to handle real target list inside defrag_one_range(),
+  and that function has parameters like "start" and "len", while inside
+  the loop we need things like "entry->start" and "entry->len", it has
+  already caused hard to debug bugs during development.
+
+  Thus introduce a new layer, defrag_one_ragen() to prepare pages/extent
+  lock then pass the entry to defrag_one_locked_target().
+
+v3:
+- Fix extent_state leak
+  Now we pass the @cached_state to defrag_one_locked_target() other
+  than allowing it to allocate a new one.
+
+  This can be reproduced by enabling "TEST_FS_MODULE_RELOAD" environment
+  variable for fstests and run "-g defrag" group.
+
+- Fix a random hang in test cases like btrfs/062
+  Since defrag_one_range() will lock the extent range first, then
+  call defrag_collect_targets(), which will in turn call
+  defrag_lookup_extent() and lock extent range again.
+
+  This will cause a dead lock, and this only happens when the
+  extent range is smaller than the original locked range.
+  Thus sometimes the test can pass, but sometimes it can hang.
+
+  Fix it by teaching defrag_collect_targets() and defrag_lookup_extent()
+  to skip extent lock for certain call sites.
+  Thus this needs some loops for btrfs/062.
+  The hang possibility is around 1/2 ~ 1/3 when run in a loop.
+
+v4:
+- Fix a callsite which can cause hang due to extent locking
+  The call site is defrag_lookup_extent() in defrag_collect_tagets(),
+  which has one call site called with extent lock hold.
+  Thus it also need to pass the @locked parameter
+
+- Fix a typo
+  "defraged" -> "defragged"
+
+Qu Wenruo (10):
+  btrfs: defrag: pass file_ra_state instead of file for
+    btrfs_defrag_file()
+  btrfs: defrag: extract the page preparation code into one helper
+  btrfs: defrag: replace hard coded PAGE_SIZE to sectorsize for
+    defrag_lookup_extent()
+  btrfs: defrag: introduce a new helper to collect target file extents
+  btrfs: defrag: introduce a helper to defrag a continuous prepared
+    range
+  btrfs: defrag: introduce a helper to defrag a range
+  btrfs: defrag: introduce a new helper to defrag one cluster
+  btrfs: defrag: use defrag_one_cluster() to implement
+    btrfs_defrag_file()
+  btrfs: defrag: remove the old infrastructure
+  btrfs: defrag: enable defrag for subpage case
+
+ fs/btrfs/ctree.h |   4 +-
+ fs/btrfs/ioctl.c | 908 ++++++++++++++++++++++-------------------------
+ 2 files changed, 426 insertions(+), 486 deletions(-)
+
+-- 
+2.32.0
+

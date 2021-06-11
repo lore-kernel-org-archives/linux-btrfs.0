@@ -2,162 +2,259 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ED98C48BE5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 13:55:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB1DFC48BD1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:17:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 093CA61404
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 13:55:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8C0F16141D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:17:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232101AbhFKN5q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jun 2021 09:57:46 -0400
-Received: from mail-qt1-f173.google.com ([209.85.160.173]:40540 "EHLO
-        mail-qt1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231929AbhFKN5L (ORCPT
+        id S231428AbhFKOTF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jun 2021 10:19:05 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:43730 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231180AbhFKOTE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jun 2021 09:57:11 -0400
-Received: by mail-qt1-f173.google.com with SMTP id t9so2595302qtw.7
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jun 2021 06:55:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=eo3uPuIkk9g5eY7Rh3Yd/RH0ZC3R9OIWSjFlpNNl+A0=;
-        b=QH7H+0U/TZrduBv7bS/WtqmhqtW4M3mbJa2V2UcFl2EQ7bOsYfIDqSyWSnRMkxuets
-         j2RJntbj9wwT4oJUkcVoY9jZYBPlikdQCR5zZxKnNNTV62+pieXV4O+Aj7bVPwzarI6Q
-         eY61aKiwFvinUeP+vMbwjyAAwdTZmCBMXdJ8sW/670fkHE6NwAnqeMSAm7nIR/eU6C+c
-         jx5FgaUOSGAb9wMFf2Ooj0nt4B+FlwsVD5C3ZnerlCP3VX9OQHxn26G3E2u2xx8+axMw
-         +wnR/Y9PUJ8W8cvZA6sOfXd4jZu0lk3l9PSwWejyJ8W7NKCt6qjQAWl0RxXkbOBnmOAf
-         JSFg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=eo3uPuIkk9g5eY7Rh3Yd/RH0ZC3R9OIWSjFlpNNl+A0=;
-        b=FVCr8BDLGnRmu8dGx1CwXqCRTMVIh2BUiHnZDKceQN0gvpHBfyKC23lPZwa2vpnerS
-         Ali1vCrz+oyxJP4+9Ug7qAyQ6sGTjItkj8OUuosnqaFNRvtGV2cDwWM95686srBFP7Br
-         Dn98APhXQC4bjd3xCLIbQBh3pwPyIa4TI2HqE2B5GM6AI256m/DymuN5kPPKdmVADHwS
-         cQkcuRlqaYx++jX0zy9O7jS68Nfkhc8VHOo/MMKpl7SvhPMPturUnly9OFgePeKh1Ej4
-         is366bS8DtUYjCl5CMJlkelLtNOCGYcVnN4OkN9kwsDATfz+hJRdJN3N651/wvtf3xKB
-         QnNw==
-X-Gm-Message-State: AOAM5330jmnd0BbR/tKPojFOs30hrMTB00yUq7/DD3/JOJ8eHsJMIo00
-        eQXye9oNzScaALGdotGsLtJ0gcBymXuaCw==
-X-Google-Smtp-Source: ABdhPJzC6mdMVKkHKoSKFZXQ2ZXipRe/EkwTjCiKIU22fLcbSCmYS/uGzoiEbGumEBoaX7yXVJN4dg==
-X-Received: by 2002:a05:622a:1c1:: with SMTP id t1mr3836184qtw.27.1623419643508;
-        Fri, 11 Jun 2021 06:54:03 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id u123sm4376478qkh.83.2021.06.11.06.54.02
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 11 Jun 2021 06:54:03 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/4] btrfs: wait on async extents when flushing delalloc
-Date:   Fri, 11 Jun 2021 09:53:57 -0400
-Message-Id: <f2a18e6cf6553f9b886768d86d5580561d9c279e.1623419155.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1623419155.git.josef@toxicpanda.com>
-References: <cover.1623419155.git.josef@toxicpanda.com>
+        Fri, 11 Jun 2021 10:19:04 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 2EF4321A4A;
+        Fri, 11 Jun 2021 14:17:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1623421026;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=x77g8I5Ih+3ET0wY2gaaVc8GP2NEtgMolsMiVW/aIYA=;
+        b=0jQiQw3IiMIYVLHl/epeo2ea2GG8Y4AywX+abYYebbdD3Z0Opc8LcoJCiBd739MA6E5xHC
+        IIizKCynm43RJ3C8ZQoDtuULHsnFWjZKcTPrnuvMlax3eeO0dty/GXghEsKIZ2zImgDZYk
+        6ywBiX74O25S4qrvUyMyyiAYE+M83vU=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1623421026;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=x77g8I5Ih+3ET0wY2gaaVc8GP2NEtgMolsMiVW/aIYA=;
+        b=JgSEfwgpY5GZTnO95UpVcn1L/w88oyj9N+ic2K2CnlIRgHcHZaS2TOuHp4Jot5H7bRnLCl
+        Hl+Lk0/UtW6YtJCQ==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 29A18A3BD6;
+        Fri, 11 Jun 2021 14:17:06 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 207E5DA7B4; Fri, 11 Jun 2021 16:14:21 +0200 (CEST)
+Date:   Fri, 11 Jun 2021 16:14:21 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: check: add the ability to reset
+ btrfs_dev_item::bytes_used
+Message-ID: <20210611141420.GG28158@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210609062743.190936-1-wqu@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210609062743.190936-1-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I've been debugging an early ENOSPC problem in production and finally
-root caused it to this problem.  When we switched to the per-inode
-flushing code I pulled out the async extent handling, because we were
-doing the correct thing by calling filemap_flush() if we had async
-extents set.  This would properly wait on any async extents by locking
-the page in the second flush, thus making sure our ordered extents were
-properly set up.
+On Wed, Jun 09, 2021 at 02:27:42PM +0800, Qu Wenruo wrote:
+> There is a report from the mail list that one user got its filesystem
+> with device item bytes_used mismatch.
+> 
+> This problem leaves the device item with some ghost bytes_used, meaning
+> even if we delete all device extents of that device, the bytes_used
+> still won't be 0.
+> 
+> This itself is not a big deal, but when the user used up all its
+> unallocated space, write time tree-checker can be triggered and make the
+> fs RO, as the new device::bytes_used can be larger than
+> device::total_bytes.
+> 
+> Thus we need to fix the problem in btrfs-check to avoid above write-time
+> tree check warning.
+> 
+> This patch will add the ability to reset a device's bytes_used to both
+> original mode and lowmem mode.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-However when I switched us back to page based flushing, I used
-sync_inode(), which allows us to pass in our own wbc.  The problem here
-is that sync_inode() is smarter than the filemap_* helpers, it tries to
-avoid calling writepages at all.  This means that our second call could
-skip calling do_writepages altogether, and thus not wait on the pagelock
-for the async helpers.  This means we could come back before any ordered
-extents were created and then simply continue on in our flushing
-mechanisms and ENOSPC out when we have plenty of space to use.
+Added to devel, with some fixups, thanks.
 
-Fix this by putting back the async pages logic in shrink_delalloc.  This
-allows us to bulk write out everything that we need to, and then we can
-wait in one place for the async helpers to catch up, and then wait on
-any ordered extents that are created.
+> ---
+>  check/main.c        |  8 ++++++-
+>  check/mode-common.c | 57 +++++++++++++++++++++++++++++++++++++++++++++
+>  check/mode-common.h |  2 ++
+>  check/mode-lowmem.c | 14 +++++++++--
+>  4 files changed, 78 insertions(+), 3 deletions(-)
+> 
+> diff --git a/check/main.c b/check/main.c
+> index ee6cf793251c..6cf96b1a9b3b 100644
+> --- a/check/main.c
+> +++ b/check/main.c
+> @@ -8397,11 +8397,17 @@ static int check_device_used(struct device_record *dev_rec,
+>  	}
+>  
+>  	if (total_byte != dev_rec->byte_used) {
+> +		int ret = -1;
+> +
+>  		fprintf(stderr,
+>  			"Dev extent's total-byte(%llu) is not equal to byte-used(%llu) in dev[%llu, %u, %llu]\n",
+>  			total_byte, dev_rec->byte_used,	dev_rec->objectid,
+>  			dev_rec->type, dev_rec->offset);
+> -		return -1;
+> +		if (repair) {
+> +			ret = repair_dev_item_bytes_used(gfs_info,
+> +					dev_rec->devid, total_byte);
+> +		}
+> +		return ret;
+>  	} else {
+>  		return 0;
+>  	}
+> diff --git a/check/mode-common.c b/check/mode-common.c
+> index cb22f3233c00..5764bf6ee54c 100644
+> --- a/check/mode-common.c
+> +++ b/check/mode-common.c
+> @@ -21,6 +21,7 @@
+>  #include "kernel-shared/transaction.h"
+>  #include "common/utils.h"
+>  #include "kernel-shared/disk-io.h"
+> +#include "kernel-shared/volumes.h"
+>  #include "common/repair.h"
+>  #include "check/mode-common.h"
+>  
+> @@ -1243,3 +1244,59 @@ out:
+>  	btrfs_release_path(&path);
+>  	return ret;
+>  }
+> +
+> +int repair_dev_item_bytes_used(struct btrfs_fs_info *fs_info,
+> +			       u64 devid, u64 bytes_used_expected)
+> +{
+> +	struct btrfs_trans_handle *trans;
+> +	struct btrfs_device *device;
+> +	int ret;
+> +
+> +	device = btrfs_find_device_by_devid(fs_info->fs_devices, devid, 0);
+> +	if (!device) {
+> +		error("failed to find device with devid %llu", devid);
+> +		return -ENOENT;
+> +	}
+> +
+> +	/* Bytes_used matches, not what we can repair */
+> +	if (device->bytes_used == bytes_used_expected)
+> +		return -ENOTSUP;
+> +
+> +	/*
+> +	 * We have to set the device bytes used right now, before
+> +	 * starting a new transaction, as it may allocate new chunk and
+> +	 * modify device->bytes_used.
+> +	 */
+> +	device->bytes_used = bytes_used_expected;
+> +	trans = btrfs_start_transaction(fs_info->chunk_root, 1);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+> +		errno = -ret;
+> +		error("failed to start transaction: %d (\"%m\")", ret);
 
-Fixes: e076ab2a2ca7 ("btrfs: shrink delalloc pages instead of full inodes")
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/inode.c      |  4 ----
- fs/btrfs/space-info.c | 33 +++++++++++++++++++++++++++++++++
- 2 files changed, 33 insertions(+), 4 deletions(-)
+It's enough to print just %m.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8ba4b194cd3e..6cb73ff59c7c 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9681,10 +9681,6 @@ static int start_delalloc_inodes(struct btrfs_root *root,
- 					 &work->work);
- 		} else {
- 			ret = sync_inode(inode, wbc);
--			if (!ret &&
--			    test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
--				     &BTRFS_I(inode)->runtime_flags))
--				ret = sync_inode(inode, wbc);
- 			btrfs_add_delayed_iput(inode);
- 			if (ret || wbc->nr_to_write <= 0)
- 				goto out;
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index af467e888545..3c89af4fd729 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -547,9 +547,42 @@ static void shrink_delalloc(struct btrfs_fs_info *fs_info,
- 	while ((delalloc_bytes || ordered_bytes) && loops < 3) {
- 		u64 temp = min(delalloc_bytes, to_reclaim) >> PAGE_SHIFT;
- 		long nr_pages = min_t(u64, temp, LONG_MAX);
-+		int async_pages;
- 
- 		btrfs_start_delalloc_roots(fs_info, nr_pages, true);
- 
-+		/*
-+		 * We need to make sure any outstanding async pages are now
-+		 * processed before we continue.  This is because things like
-+		 * sync_inode() try to be smart and skip writing if the inode is
-+		 * marked clean.  We don't use filemap_fwrite for flushing
-+		 * because we want to control how many pages we write out at a
-+		 * time, thus this is the only safe way to make sure we've
-+		 * waited for outstanding compressed workers to have started
-+		 * their jobs and thus have ordered extents set up properly.
-+		 * Josef, when you think you are smart enough to remove this in
-+		 * the future, read this comment 4 times and explain in the
-+		 * commit message why it makes sense to remove it, and then
-+		 * delete the commit and don't remove it.
-+		 */
-+		async_pages = atomic_read(&fs_info->async_delalloc_pages);
-+		if (!async_pages)
-+			goto skip_async;
-+
-+		/*
-+		 * We don't want to wait forever, if we wrote less pages in this
-+		 * loop than we have outstanding, only wait for that number of
-+		 * pages, otherwise we can wait for all async pages to finish
-+		 * before continuing.
-+		 */
-+		if (async_pages > nr_pages)
-+			async_pages -= nr_pages;
-+		else
-+			async_pages = 0;
-+		wait_event(fs_info->async_submit_wait,
-+			   atomic_read(&fs_info->async_delalloc_pages) <=
-+			   async_pages);
-+skip_async:
- 		loops++;
- 		if (wait_ordered && !trans) {
- 			btrfs_wait_ordered_roots(fs_info, items, 0, (u64)-1);
--- 
-2.26.3
+> +		return ret;
+> +	}
+> +
+> +	/* Manually update the device item in chunk tree */
+> +	ret = btrfs_update_device(trans, device);
+> +	if (ret < 0) {
+> +		error(
+> +		"failed to update device item for devid %llu: %d (\"%m\")",
+> +		      devid, ret);
+> +		goto error;
+> +	}
+> +
+> +	/*
+> +	 * Commit transaction not only to save above change but also update
+> +	 * the device item in super block.
+> +	 */
+> +	ret = btrfs_commit_transaction(trans, fs_info->chunk_root);
+> +	if (ret < 0)
+> +		error("failed to commit transaction: %d (\"%m\")", ret);
 
+But when %m is used, errno must be set li
+
+		errno = -ret;
+		error("... %m");
+
+> +	else
+> +		printf("reset devid %llu bytes_used to %llu\n", devid,
+> +		       device->bytes_used);
+> +	return ret;
+> +error:
+> +	btrfs_abort_transaction(trans, ret);
+> +	return ret;
+> +}
+> diff --git a/check/mode-common.h b/check/mode-common.h
+> index 3ba29ecab6cd..711eced3acf0 100644
+> --- a/check/mode-common.h
+> +++ b/check/mode-common.h
+> @@ -192,4 +192,6 @@ static inline void btrfs_check_subpage_eb_alignment(u64 start, u32 len)
+>  			start, start + len);
+>  }
+>  
+> +int repair_dev_item_bytes_used(struct btrfs_fs_info *fs_info,
+> +			       u64 devid, u64 bytes_used_expected);
+>  #endif
+> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+> index 2f736712bc7f..64f09e68516c 100644
+> --- a/check/mode-lowmem.c
+> +++ b/check/mode-lowmem.c
+> @@ -4454,7 +4454,8 @@ out:
+>  /*
+>   * Check if the used space is correct with the dev item
+>   */
+> -static int check_dev_item(struct extent_buffer *eb, int slot)
+> +static int check_dev_item(struct extent_buffer *eb, int slot,
+> +			  u64 *bytes_used_expected)
+>  {
+>  	struct btrfs_root *dev_root = gfs_info->dev_root;
+>  	struct btrfs_dev_item *dev_item;
+> @@ -4543,6 +4544,7 @@ next:
+>  	}
+>  	btrfs_release_path(&path);
+>  
+> +	*bytes_used_expected = total;
+>  	if (used != total) {
+>  		btrfs_item_key_to_cpu(eb, &key, slot);
+>  		error(
+> @@ -4744,6 +4746,7 @@ static int repair_chunk_item(struct btrfs_root *chunk_root,
+>  static int check_leaf_items(struct btrfs_root *root, struct btrfs_path *path,
+>  			    struct node_refs *nrefs, int account_bytes)
+>  {
+> +	u64 bytes_used_expected = (u64)-1;
+>  	struct btrfs_key key;
+>  	struct extent_buffer *eb;
+>  	int slot;
+> @@ -4782,7 +4785,14 @@ again:
+>  		err |= ret;
+>  		break;
+>  	case BTRFS_DEV_ITEM_KEY:
+> -		ret = check_dev_item(eb, slot);
+> +		ret = check_dev_item(eb, slot, &bytes_used_expected);
+> +		if (repair && ret & ACCOUNTING_MISMATCH &&
+> +		    bytes_used_expected != (u64)-1) {
+> +			ret = repair_dev_item_bytes_used(root->fs_info,
+> +					key.offset, bytes_used_expected);
+> +			if (ret < 0)
+> +				ret = ACCOUNTING_MISMATCH;
+> +		}
+>  		err |= ret;
+>  		break;
+>  	case BTRFS_CHUNK_ITEM_KEY:
+> -- 
+> 2.32.0

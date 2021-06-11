@@ -2,259 +2,330 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB1DFC48BD1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:17:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48E77C48BE0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:23:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8C0F16141D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:17:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 244E86141E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:23:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231428AbhFKOTF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jun 2021 10:19:05 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:43730 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231180AbhFKOTE (ORCPT
+        id S231445AbhFKOZ3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jun 2021 10:25:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53184 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230346AbhFKOZ0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jun 2021 10:19:04 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 2EF4321A4A;
-        Fri, 11 Jun 2021 14:17:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1623421026;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=x77g8I5Ih+3ET0wY2gaaVc8GP2NEtgMolsMiVW/aIYA=;
-        b=0jQiQw3IiMIYVLHl/epeo2ea2GG8Y4AywX+abYYebbdD3Z0Opc8LcoJCiBd739MA6E5xHC
-        IIizKCynm43RJ3C8ZQoDtuULHsnFWjZKcTPrnuvMlax3eeO0dty/GXghEsKIZ2zImgDZYk
-        6ywBiX74O25S4qrvUyMyyiAYE+M83vU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1623421026;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=x77g8I5Ih+3ET0wY2gaaVc8GP2NEtgMolsMiVW/aIYA=;
-        b=JgSEfwgpY5GZTnO95UpVcn1L/w88oyj9N+ic2K2CnlIRgHcHZaS2TOuHp4Jot5H7bRnLCl
-        Hl+Lk0/UtW6YtJCQ==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 29A18A3BD6;
-        Fri, 11 Jun 2021 14:17:06 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 207E5DA7B4; Fri, 11 Jun 2021 16:14:21 +0200 (CEST)
-Date:   Fri, 11 Jun 2021 16:14:21 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: check: add the ability to reset
- btrfs_dev_item::bytes_used
-Message-ID: <20210611141420.GG28158@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210609062743.190936-1-wqu@suse.com>
+        Fri, 11 Jun 2021 10:25:26 -0400
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 624D5C061574
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jun 2021 07:23:19 -0700 (PDT)
+Received: by mail-qk1-x731.google.com with SMTP id i67so31084531qkc.4
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jun 2021 07:23:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
+         :content-transfer-encoding;
+        bh=4y37BT3TyqjSkYgL4kliFSLhuITwVKI0eMiMhzPCIFA=;
+        b=Dz8pAqsTMDZb+H6cS2UbiXszJArW+7uoegphtftI0cI+Wlf684cYgyD9Jlz9uw8GT5
+         0a/G9MfczmYpI2pEf4KhsOHeDSbomTC1NntfE1azAboclvwJTb+AMuK8sQ/INwm3efVU
+         hdstwLbbMgEB77aDH8WLTyRwcQnzCUyxxDX+ci39GRDAMZn48TO1dh/dywPi+tSp+ffp
+         Xm1Tf7+mHGVCskDiHzmH9feoB6/CufbAVR9o9zGqtvnAhpNUWtBW0SmCS92kMFzEKCNm
+         uFbcNQnp9pCuA1K2Tjhhe3Kp3i4PvJTrV3g5JCFyy9sjLbjUiIOy1Mvu3xHEAFAsCXtT
+         erSQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=4y37BT3TyqjSkYgL4kliFSLhuITwVKI0eMiMhzPCIFA=;
+        b=CdNLIy1mZ/9BguXwC21ZYojdzGqvgtO4F1zHKVLyCarHWpwf5KNVUOueu2Mqx+vAUi
+         rnVcHKYA/TnCueJrHZw2YSZA/tn5/6zh/ZmWq/7Wubkr4rrRC4supJ9iR8mf41JbUjnn
+         kQ1XVIrsJBUFPSthpmxMtYHHWptGyAYEwerEz7T6XbULqtVFW6jdEL/5/tzlLbOSBWXa
+         BY3av3xOKGC2lrgsxq7IxfS96+BBo3tEVe+ug5aKHpQ9uVg4nd9cj9/QvK5GQyGzZgE4
+         Lb6tjn5zznHT50b4Def6oPIavq97YMT2p3mxSLzjOiUt0tCfV2BjrX1QU9gD7WhOG8Ei
+         oLyw==
+X-Gm-Message-State: AOAM532gn71zUQBWd1ytGU4ixFE8W8OUePuBo9DfbTkLcY8I7FSa71vS
+        ydt6u5wevqjvc3sQgLOhRoyNv76wM0Xl9Q==
+X-Google-Smtp-Source: ABdhPJy2Kx+Knu/lOslFD2kzE4xRYsvMJZ83vmGqYi67OVtd8k81C7AEYXt5OmoIXoK/iY4KX2LAhg==
+X-Received: by 2002:a37:7287:: with SMTP id n129mr3892767qkc.457.1623421398154;
+        Fri, 11 Jun 2021 07:23:18 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id p199sm4560070qka.128.2021.06.11.07.23.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 11 Jun 2021 07:23:16 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 3/3] btrfs: rip out ->total_bytes_pinned
+Date:   Fri, 11 Jun 2021 10:23:10 -0400
+Message-Id: <072e28fb01c2b17c0f48d9315a84530e5917f899.1623421213.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1623421213.git.josef@toxicpanda.com>
+References: <cover.1623421213.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210609062743.190936-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 09, 2021 at 02:27:42PM +0800, Qu Wenruo wrote:
-> There is a report from the mail list that one user got its filesystem
-> with device item bytes_used mismatch.
-> 
-> This problem leaves the device item with some ghost bytes_used, meaning
-> even if we delete all device extents of that device, the bytes_used
-> still won't be 0.
-> 
-> This itself is not a big deal, but when the user used up all its
-> unallocated space, write time tree-checker can be triggered and make the
-> fs RO, as the new device::bytes_used can be larger than
-> device::total_bytes.
-> 
-> Thus we need to fix the problem in btrfs-check to avoid above write-time
-> tree check warning.
-> 
-> This patch will add the ability to reset a device's bytes_used to both
-> original mode and lowmem mode.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+We used this in may_commit_transaction() in order to determine if we
+needed to commit the transaction.  However we no longer have that logic
+and thus have no use of this counter anymore, so delete it.
 
-Added to devel, with some fixups, thanks.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/block-group.c |  3 ---
+ fs/btrfs/delayed-ref.c | 26 --------------------------
+ fs/btrfs/disk-io.c     |  3 ---
+ fs/btrfs/extent-tree.c | 15 ---------------
+ fs/btrfs/space-info.c  |  7 -------
+ fs/btrfs/space-info.h  | 30 ------------------------------
+ fs/btrfs/sysfs.c       | 13 -------------
+ 7 files changed, 97 deletions(-)
 
-> ---
->  check/main.c        |  8 ++++++-
->  check/mode-common.c | 57 +++++++++++++++++++++++++++++++++++++++++++++
->  check/mode-common.h |  2 ++
->  check/mode-lowmem.c | 14 +++++++++--
->  4 files changed, 78 insertions(+), 3 deletions(-)
-> 
-> diff --git a/check/main.c b/check/main.c
-> index ee6cf793251c..6cf96b1a9b3b 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -8397,11 +8397,17 @@ static int check_device_used(struct device_record *dev_rec,
->  	}
->  
->  	if (total_byte != dev_rec->byte_used) {
-> +		int ret = -1;
-> +
->  		fprintf(stderr,
->  			"Dev extent's total-byte(%llu) is not equal to byte-used(%llu) in dev[%llu, %u, %llu]\n",
->  			total_byte, dev_rec->byte_used,	dev_rec->objectid,
->  			dev_rec->type, dev_rec->offset);
-> -		return -1;
-> +		if (repair) {
-> +			ret = repair_dev_item_bytes_used(gfs_info,
-> +					dev_rec->devid, total_byte);
-> +		}
-> +		return ret;
->  	} else {
->  		return 0;
->  	}
-> diff --git a/check/mode-common.c b/check/mode-common.c
-> index cb22f3233c00..5764bf6ee54c 100644
-> --- a/check/mode-common.c
-> +++ b/check/mode-common.c
-> @@ -21,6 +21,7 @@
->  #include "kernel-shared/transaction.h"
->  #include "common/utils.h"
->  #include "kernel-shared/disk-io.h"
-> +#include "kernel-shared/volumes.h"
->  #include "common/repair.h"
->  #include "check/mode-common.h"
->  
-> @@ -1243,3 +1244,59 @@ out:
->  	btrfs_release_path(&path);
->  	return ret;
->  }
-> +
-> +int repair_dev_item_bytes_used(struct btrfs_fs_info *fs_info,
-> +			       u64 devid, u64 bytes_used_expected)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_device *device;
-> +	int ret;
-> +
-> +	device = btrfs_find_device_by_devid(fs_info->fs_devices, devid, 0);
-> +	if (!device) {
-> +		error("failed to find device with devid %llu", devid);
-> +		return -ENOENT;
-> +	}
-> +
-> +	/* Bytes_used matches, not what we can repair */
-> +	if (device->bytes_used == bytes_used_expected)
-> +		return -ENOTSUP;
-> +
-> +	/*
-> +	 * We have to set the device bytes used right now, before
-> +	 * starting a new transaction, as it may allocate new chunk and
-> +	 * modify device->bytes_used.
-> +	 */
-> +	device->bytes_used = bytes_used_expected;
-> +	trans = btrfs_start_transaction(fs_info->chunk_root, 1);
-> +	if (IS_ERR(trans)) {
-> +		ret = PTR_ERR(trans);
-> +		errno = -ret;
-> +		error("failed to start transaction: %d (\"%m\")", ret);
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 38885b29e6e5..e624e1d9840f 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1399,7 +1399,6 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		btrfs_space_info_update_bytes_pinned(fs_info, space_info,
+ 						     -block_group->pinned);
+ 		space_info->bytes_readonly += block_group->pinned;
+-		__btrfs_mod_total_bytes_pinned(space_info, -block_group->pinned);
+ 		block_group->pinned = 0;
+ 
+ 		spin_unlock(&block_group->lock);
+@@ -3062,8 +3061,6 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+ 			spin_unlock(&cache->lock);
+ 			spin_unlock(&cache->space_info->lock);
+ 
+-			__btrfs_mod_total_bytes_pinned(cache->space_info,
+-						       num_bytes);
+ 			set_extent_dirty(&trans->transaction->pinned_extents,
+ 					 bytenr, bytenr + num_bytes - 1,
+ 					 GFP_NOFS | __GFP_NOFAIL);
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index c92d9d4f5f46..06bc842ecdb3 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -641,7 +641,6 @@ static noinline void update_existing_head_ref(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_root *delayed_refs =
+ 		&trans->transaction->delayed_refs;
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+-	u64 flags = btrfs_ref_head_to_space_flags(existing);
+ 	int old_ref_mod;
+ 
+ 	BUG_ON(existing->is_data != update->is_data);
+@@ -711,26 +710,6 @@ static noinline void update_existing_head_ref(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
+ 
+-	/*
+-	 * This handles the following conditions:
+-	 *
+-	 * 1. We had a ref mod of 0 or more and went negative, indicating that
+-	 *    we may be freeing space, so add our space to the
+-	 *    total_bytes_pinned counter.
+-	 * 2. We were negative and went to 0 or positive, so no longer can say
+-	 *    that the space would be pinned, decrement our counter from the
+-	 *    total_bytes_pinned counter.
+-	 * 3. We are now at 0 and have ->must_insert_reserved set, which means
+-	 *    this was a new allocation and then we dropped it, and thus must
+-	 *    add our space to the total_bytes_pinned counter.
+-	 */
+-	if (existing->total_ref_mod < 0 && old_ref_mod >= 0)
+-		btrfs_mod_total_bytes_pinned(fs_info, flags, existing->num_bytes);
+-	else if (existing->total_ref_mod >= 0 && old_ref_mod < 0)
+-		btrfs_mod_total_bytes_pinned(fs_info, flags, -existing->num_bytes);
+-	else if (existing->total_ref_mod == 0 && existing->must_insert_reserved)
+-		btrfs_mod_total_bytes_pinned(fs_info, flags, existing->num_bytes);
+-
+ 	spin_unlock(&existing->lock);
+ }
+ 
+@@ -835,17 +814,12 @@ add_delayed_ref_head(struct btrfs_trans_handle *trans,
+ 		kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
+ 		head_ref = existing;
+ 	} else {
+-		u64 flags = btrfs_ref_head_to_space_flags(head_ref);
+-
+ 		if (head_ref->is_data && head_ref->ref_mod < 0) {
+ 			delayed_refs->pending_csums += head_ref->num_bytes;
+ 			trans->delayed_ref_updates +=
+ 				btrfs_csum_bytes_to_leaves(trans->fs_info,
+ 							   head_ref->num_bytes);
+ 		}
+-		if (head_ref->ref_mod < 0)
+-			btrfs_mod_total_bytes_pinned(trans->fs_info, flags,
+-						     head_ref->num_bytes);
+ 		delayed_refs->num_heads++;
+ 		delayed_refs->num_heads_ready++;
+ 		atomic_inc(&delayed_refs->num_entries);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d1d5091a8385..9966168ac324 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4696,9 +4696,6 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 			cache->space_info->bytes_reserved -= head->num_bytes;
+ 			spin_unlock(&cache->lock);
+ 			spin_unlock(&cache->space_info->lock);
+-			percpu_counter_add_batch(
+-				&cache->space_info->total_bytes_pinned,
+-				head->num_bytes, BTRFS_TOTAL_BYTES_PINNED_BATCH);
+ 
+ 			btrfs_put_block_group(cache);
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d2f39a122d89..ae33b4418395 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1804,19 +1804,6 @@ void btrfs_cleanup_ref_head_accounting(struct btrfs_fs_info *fs_info,
+ 		nr_items += btrfs_csum_bytes_to_leaves(fs_info, head->num_bytes);
+ 	}
+ 
+-	/*
+-	 * We were dropping refs, or had a new ref and dropped it, and thus must
+-	 * adjust down our total_bytes_pinned, the space may or may not have
+-	 * been pinned and so is accounted for properly in the pinned space by
+-	 * now.
+-	 */
+-	if (head->total_ref_mod < 0 ||
+-	    (head->total_ref_mod == 0 && head->must_insert_reserved)) {
+-		u64 flags = btrfs_ref_head_to_space_flags(head);
+-
+-		btrfs_mod_total_bytes_pinned(fs_info, flags, -head->num_bytes);
+-	}
+-
+ 	btrfs_delayed_refs_rsv_release(fs_info, nr_items);
+ }
+ 
+@@ -2551,7 +2538,6 @@ static int pin_down_extent(struct btrfs_trans_handle *trans,
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&cache->space_info->lock);
+ 
+-	__btrfs_mod_total_bytes_pinned(cache->space_info, num_bytes);
+ 	set_extent_dirty(&trans->transaction->pinned_extents, bytenr,
+ 			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
+ 	return 0;
+@@ -2762,7 +2748,6 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 		cache->pinned -= len;
+ 		btrfs_space_info_update_bytes_pinned(fs_info, space_info, -len);
+ 		space_info->max_extent_size = 0;
+-		__btrfs_mod_total_bytes_pinned(space_info, -len);
+ 		if (cache->ro) {
+ 			space_info->bytes_readonly += len;
+ 			readonly = true;
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index a2bf13206d8b..c46d2b9998be 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -192,13 +192,6 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+ 	if (!space_info)
+ 		return -ENOMEM;
+ 
+-	ret = percpu_counter_init(&space_info->total_bytes_pinned, 0,
+-				 GFP_KERNEL);
+-	if (ret) {
+-		kfree(space_info);
+-		return ret;
+-	}
+-
+ 	for (i = 0; i < BTRFS_NR_RAID_TYPES; i++)
+ 		INIT_LIST_HEAD(&space_info->block_groups[i]);
+ 	init_rwsem(&space_info->groups_sem);
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index 11eff2139aae..46a024f5aa70 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -43,18 +43,6 @@ struct btrfs_space_info {
+ 
+ 	u64 flags;
+ 
+-	/*
+-	 * bytes_pinned is kept in line with what is actually pinned, as in
+-	 * we've called update_block_group and dropped the bytes_used counter
+-	 * and increased the bytes_pinned counter.  However this means that
+-	 * bytes_pinned does not reflect the bytes that will be pinned once the
+-	 * delayed refs are flushed, so this counter is inc'ed every time we
+-	 * call btrfs_free_extent so it is a realtime count of what will be
+-	 * freed once the transaction is committed.  It will be zeroed every
+-	 * time the transaction commits.
+-	 */
+-	struct percpu_counter total_bytes_pinned;
+-
+ 	struct list_head list;
+ 	/* Protected by the spinlock 'lock'. */
+ 	struct list_head ro_bgs;
+@@ -163,22 +151,4 @@ static inline void btrfs_space_info_free_bytes_may_use(
+ }
+ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
+ 			     enum btrfs_reserve_flush_enum flush);
+-
+-static inline void __btrfs_mod_total_bytes_pinned(
+-					struct btrfs_space_info *space_info,
+-					s64 mod)
+-{
+-	percpu_counter_add_batch(&space_info->total_bytes_pinned, mod,
+-				 BTRFS_TOTAL_BYTES_PINNED_BATCH);
+-}
+-
+-static inline void btrfs_mod_total_bytes_pinned(struct btrfs_fs_info *fs_info,
+-						u64 flags, s64 mod)
+-{
+-	struct btrfs_space_info *space_info = btrfs_find_space_info(fs_info, flags);
+-
+-	ASSERT(space_info);
+-	__btrfs_mod_total_bytes_pinned(space_info, mod);
+-}
+-
+ #endif /* BTRFS_SPACE_INFO_H */
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 52c5311873d3..e68c0afb7ada 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -665,15 +665,6 @@ static ssize_t btrfs_space_info_show_##field(struct kobject *kobj,	\
+ }									\
+ BTRFS_ATTR(space_info, field, btrfs_space_info_show_##field)
+ 
+-static ssize_t btrfs_space_info_show_total_bytes_pinned(struct kobject *kobj,
+-						       struct kobj_attribute *a,
+-						       char *buf)
+-{
+-	struct btrfs_space_info *sinfo = to_space_info(kobj);
+-	s64 val = percpu_counter_sum(&sinfo->total_bytes_pinned);
+-	return scnprintf(buf, PAGE_SIZE, "%lld\n", val);
+-}
+-
+ static ssize_t btrfs_space_info_show_enospc_events(struct kobject *kobj,
+ 						   struct kobj_attribute *a,
+ 						   char *buf)
+@@ -693,8 +684,6 @@ SPACE_INFO_ATTR(bytes_readonly);
+ SPACE_INFO_ATTR(bytes_zone_unusable);
+ SPACE_INFO_ATTR(disk_used);
+ SPACE_INFO_ATTR(disk_total);
+-BTRFS_ATTR(space_info, total_bytes_pinned,
+-	   btrfs_space_info_show_total_bytes_pinned);
+ BTRFS_ATTR(space_info, enospc_events,
+ 	   btrfs_space_info_show_enospc_events);
+ 
+@@ -709,7 +698,6 @@ static struct attribute *space_info_attrs[] = {
+ 	BTRFS_ATTR_PTR(space_info, bytes_zone_unusable),
+ 	BTRFS_ATTR_PTR(space_info, disk_used),
+ 	BTRFS_ATTR_PTR(space_info, disk_total),
+-	BTRFS_ATTR_PTR(space_info, total_bytes_pinned),
+ 	BTRFS_ATTR_PTR(space_info, enospc_events),
+ 	NULL,
+ };
+@@ -718,7 +706,6 @@ ATTRIBUTE_GROUPS(space_info);
+ static void space_info_release(struct kobject *kobj)
+ {
+ 	struct btrfs_space_info *sinfo = to_space_info(kobj);
+-	percpu_counter_destroy(&sinfo->total_bytes_pinned);
+ 	kfree(sinfo);
+ }
+ 
+-- 
+2.26.3
 
-It's enough to print just %m.
-
-> +		return ret;
-> +	}
-> +
-> +	/* Manually update the device item in chunk tree */
-> +	ret = btrfs_update_device(trans, device);
-> +	if (ret < 0) {
-> +		error(
-> +		"failed to update device item for devid %llu: %d (\"%m\")",
-> +		      devid, ret);
-> +		goto error;
-> +	}
-> +
-> +	/*
-> +	 * Commit transaction not only to save above change but also update
-> +	 * the device item in super block.
-> +	 */
-> +	ret = btrfs_commit_transaction(trans, fs_info->chunk_root);
-> +	if (ret < 0)
-> +		error("failed to commit transaction: %d (\"%m\")", ret);
-
-But when %m is used, errno must be set li
-
-		errno = -ret;
-		error("... %m");
-
-> +	else
-> +		printf("reset devid %llu bytes_used to %llu\n", devid,
-> +		       device->bytes_used);
-> +	return ret;
-> +error:
-> +	btrfs_abort_transaction(trans, ret);
-> +	return ret;
-> +}
-> diff --git a/check/mode-common.h b/check/mode-common.h
-> index 3ba29ecab6cd..711eced3acf0 100644
-> --- a/check/mode-common.h
-> +++ b/check/mode-common.h
-> @@ -192,4 +192,6 @@ static inline void btrfs_check_subpage_eb_alignment(u64 start, u32 len)
->  			start, start + len);
->  }
->  
-> +int repair_dev_item_bytes_used(struct btrfs_fs_info *fs_info,
-> +			       u64 devid, u64 bytes_used_expected);
->  #endif
-> diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-> index 2f736712bc7f..64f09e68516c 100644
-> --- a/check/mode-lowmem.c
-> +++ b/check/mode-lowmem.c
-> @@ -4454,7 +4454,8 @@ out:
->  /*
->   * Check if the used space is correct with the dev item
->   */
-> -static int check_dev_item(struct extent_buffer *eb, int slot)
-> +static int check_dev_item(struct extent_buffer *eb, int slot,
-> +			  u64 *bytes_used_expected)
->  {
->  	struct btrfs_root *dev_root = gfs_info->dev_root;
->  	struct btrfs_dev_item *dev_item;
-> @@ -4543,6 +4544,7 @@ next:
->  	}
->  	btrfs_release_path(&path);
->  
-> +	*bytes_used_expected = total;
->  	if (used != total) {
->  		btrfs_item_key_to_cpu(eb, &key, slot);
->  		error(
-> @@ -4744,6 +4746,7 @@ static int repair_chunk_item(struct btrfs_root *chunk_root,
->  static int check_leaf_items(struct btrfs_root *root, struct btrfs_path *path,
->  			    struct node_refs *nrefs, int account_bytes)
->  {
-> +	u64 bytes_used_expected = (u64)-1;
->  	struct btrfs_key key;
->  	struct extent_buffer *eb;
->  	int slot;
-> @@ -4782,7 +4785,14 @@ again:
->  		err |= ret;
->  		break;
->  	case BTRFS_DEV_ITEM_KEY:
-> -		ret = check_dev_item(eb, slot);
-> +		ret = check_dev_item(eb, slot, &bytes_used_expected);
-> +		if (repair && ret & ACCOUNTING_MISMATCH &&
-> +		    bytes_used_expected != (u64)-1) {
-> +			ret = repair_dev_item_bytes_used(root->fs_info,
-> +					key.offset, bytes_used_expected);
-> +			if (ret < 0)
-> +				ret = ACCOUNTING_MISMATCH;
-> +		}
->  		err |= ret;
->  		break;
->  	case BTRFS_CHUNK_ITEM_KEY:
-> -- 
-> 2.32.0

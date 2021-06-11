@@ -2,123 +2,122 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF03C48BE0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:24:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32135C48BD1
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:26:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E4EB96141C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:24:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 14C356141E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Jun 2021 14:26:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231481AbhFKO02 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Jun 2021 10:26:28 -0400
-Received: from mail-qv1-f49.google.com ([209.85.219.49]:33429 "EHLO
-        mail-qv1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229722AbhFKO01 (ORCPT
+        id S230233AbhFKO2O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Jun 2021 10:28:14 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:45008 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230129AbhFKO2N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Jun 2021 10:26:27 -0400
-Received: by mail-qv1-f49.google.com with SMTP id l3so9554310qvl.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Jun 2021 07:24:15 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=jguRLqyoY0BLNK40bNclOF99S1l9fUwa49OWi7NY7bk=;
-        b=hnoRCjhEfGTwcz15wKU6CridYMwp9py2h/xuiRRYFs16e7IOpY+sCp4RPbCyYFsxuG
-         quRvKAwIhJNiix15w5aPJXOKRQRl/x8KnzsogjI1GiDZQX74Uf9g7nYnOijWyDn2ETmJ
-         YwXVxrvWR+lkO0e2u8J+hsu9/s1rePmvcbOuoDDN23Z+qXnNySpQcQylacw5jleeDAdK
-         beMfqmyjPeoEezCN378/RCUTH0K0ZKUWcyoB7W6C+HMerJ08Xod9F1iUeDYlBs3lXjPX
-         duJBv0nYpnvW7PAtB8MeqO2j6BdZdwX7laTXR0msxWzMA93gCGNvQcXqjkBEK5HnHyWY
-         mUgw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=jguRLqyoY0BLNK40bNclOF99S1l9fUwa49OWi7NY7bk=;
-        b=Hg8lz1fij9D2l7JFXpLHVTfdOiBwauZcfkjFJW9KY3+c1K+RFy8sXsgBfRECkyQ3y2
-         clffehEWwJIOsw1kVOJrSjMPdF5wcCivYz3BN2uqo9f/eBDNqu8TbHKXo/wd8ubh28S0
-         2TgIdV+3Z/YZkSEU6w77YpYbSdt6+7J17WwLaRyLe+cojrgbVhf5NPzsrs9yG/v/gyXI
-         U/3PW7MMKQ9x/ncyutBOUaY3gA3Iw3KV+QJhS7FZ+X5qcaV6mBT30VlN9+mMwZMhHGxr
-         7cBJFefg/tp9Bx6XTUvrUAqjZ9hP2XBsKeMynxi1rGnZGrk3s9+us3CujAp2yIbuLXTw
-         2IZQ==
-X-Gm-Message-State: AOAM532RS7Cw/d6VtREb1qNuPMc8tcFKVAEvaGXg+lwymTJ6KD/wol/U
-        BVc5lWHh8NYJwwY7jw6SW1bnVipx8IyWGw==
-X-Google-Smtp-Source: ABdhPJywpaP+on7dVFPclq6BA4WfpHklQwxlH1iQNA1IeYFDdG0NwFpFX6MLk6c5nUvv2+xzhFNttw==
-X-Received: by 2002:ad4:5227:: with SMTP id r7mr4992144qvq.41.1623421395079;
-        Fri, 11 Jun 2021 07:23:15 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id f9sm4637217qkl.46.2021.06.11.07.23.14
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 11 Jun 2021 07:23:14 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/3] btrfs: rip the first_ticket_bytes logic from fail_all_tickets
-Date:   Fri, 11 Jun 2021 10:23:09 -0400
-Message-Id: <7b31dc91dbdb59dfb3fec45a6d16309d7f0b9c4f.1623421213.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1623421213.git.josef@toxicpanda.com>
-References: <cover.1623421213.git.josef@toxicpanda.com>
+        Fri, 11 Jun 2021 10:28:13 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id BE5A32199B;
+        Fri, 11 Jun 2021 14:26:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1623421574;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=/4adyuLTnStUYKANwbhJkMxTn3XLkCvf7SXHOESTut0=;
+        b=XpFuCnnN7O9gmCqg/VrZ3ztJGyg5JTXkHKy/1bVN5aPRzgmTkrZu3kvBHesqIvY9g1MfNp
+        KKz9o8Kbh+NKH41oJAyGcYnhGcwmXufd0nddqR+vI+wD2ANMYdvqYw/TVCBtodFLB7p124
+        gDokqVxSKToItB4BTiOWKrsJUTC/Ths=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1623421574;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=/4adyuLTnStUYKANwbhJkMxTn3XLkCvf7SXHOESTut0=;
+        b=VqWHxSUResnSZz0uz5jfXgxEpk+r4FVqhd6f4wOAfmAeta8flC/+0MKKB+fKO0csRs5QL+
+        3CxIDcej19pBWnBw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id B80DBA3BB1;
+        Fri, 11 Jun 2021 14:26:14 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A6DDADA7B4; Fri, 11 Jun 2021 16:23:29 +0200 (CEST)
+Date:   Fri, 11 Jun 2021 16:23:29 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Sidong Yang <realwakka@gmail.com>, dsterba@suse.cz,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: subvolume: destroy associated qgroup when
+ delete subvolume
+Message-ID: <20210611142329.GH28158@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20210515023624.8065-1-realwakka@gmail.com>
+ <7702abe4-f150-44c0-8328-f62d68f5a56c@gmx.com>
+ <20210515133523.GC7604@twin.jikos.cz>
+ <f52f74ad-d0e9-babe-b555-455fc185dbd7@gmx.com>
+ <20210518160623.GA38825@realwakka>
+ <a907270f-26c4-be08-e149-b0e0f8f56152@gmx.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <a907270f-26c4-be08-e149-b0e0f8f56152@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This was a trick implemented to handle the case where we had a giant
-reservation in front of a bunch of little reservations in the ticket
-queue.  If the giant reservation was too large for the transaction
-commit to make a difference we'd ENOSPC everybody out instead of
-committing the transaction.  This logic was put in to force us to go
-back and re-try the transaction commit logic to see if we could make
-progress.
+On Wed, May 19, 2021 at 08:09:45AM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2021/5/19 上午12:06, Sidong Yang wrote:
+> > On Sun, May 16, 2021 at 07:55:25AM +0800, Qu Wenruo wrote:
+> >>
+> >>
+> >> On 2021/5/15 下午9:35, David Sterba wrote:
+> >>> On Sat, May 15, 2021 at 10:42:15AM +0800, Qu Wenruo wrote:
+> >>>> On 2021/5/15 上午10:36, Sidong Yang wrote:
+> >>>>> This patch adds the options --delete-qgroup and --no-delete-qgroup. When
+> >>>>> the option is enabled, delete subvolume command destroies associated
+> >>>>> qgroup together. This patch make it as default option. Even though quota
+> >>>>> is disabled, it enables quota temporary and restore it after.
+> >>>>
+> >>>> No, this is not a good idea at all.
+> >>>>
+> >>>> First thing first, if quota is disabled, all qgroup info including the
+> >>>> level 0 qgroups will also be deleted, thus no need to enable in the
+> >>>> first place.
+> >>>>
+> >>>> Secondly, there is already a patch in the past to delete level 0 qgroups
+> >>>> in kernel space, which should be a much better solution.
+> >>>
+> >>> I've filed the issue to do it in the userspace because it gives user
+> >>> more control whether to do the deletion or not and to also cover all
+> >>> kernels that won't get the patch (ie. old stable kernels).
+> >>>
+> >>> Changing the default behaviour is always risky and has a potential to
+> >>> break user scripts. IMO adding the option to progs and changing the
+> >>> default there is safer in this case.
+> >>>
+> >> Then shouldn't it still go through ioctl options?
+> >>
+> >> Doing it completely in user space doesn't seem correct to me.
+> >
+> > Yes, It still use ioctl calls for destroying qgroup.
+> 
+> What I mean is to add new ioctl flags for the existing destory subvolume.
 
-Instead now we know we've committed the transaction, so any space that
-would have been recovered is now available, and would be caught by the
-btrfs_try_granting_tickets() in this loop, so we no longer need this
-code and can simply delete it.
+Which is what I don't want to do. Why: it's doing more than operation so
+the error code is unclear what it's related to. Either subvolume
+deletion or qgroup deletion.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/space-info.c | 16 ----------------
- 1 file changed, 16 deletions(-)
-
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index a4cfc8feadf1..a2bf13206d8b 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -873,7 +873,6 @@ static bool maybe_fail_all_tickets(struct btrfs_fs_info *fs_info,
- {
- 	struct reserve_ticket *ticket;
- 	u64 tickets_id = space_info->tickets_id;
--	u64 first_ticket_bytes = 0;
- 
- 	if (btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
- 		btrfs_info(fs_info, "cannot satisfy tickets, dumping space info");
-@@ -889,21 +888,6 @@ static bool maybe_fail_all_tickets(struct btrfs_fs_info *fs_info,
- 		    steal_from_global_rsv(fs_info, space_info, ticket))
- 			return true;
- 
--		/*
--		 * may_commit_transaction will avoid committing the transaction
--		 * if it doesn't feel like the space reclaimed by the commit
--		 * would result in the ticket succeeding.  However if we have a
--		 * smaller ticket in the queue it may be small enough to be
--		 * satisified by committing the transaction, so if any
--		 * subsequent ticket is smaller than the first ticket go ahead
--		 * and send us back for another loop through the enospc flushing
--		 * code.
--		 */
--		if (first_ticket_bytes == 0)
--			first_ticket_bytes = ticket->bytes;
--		else if (first_ticket_bytes > ticket->bytes)
--			return true;
--
- 		if (btrfs_test_opt(fs_info, ENOSPC_DEBUG))
- 			btrfs_info(fs_info, "failing ticket with %llu bytes",
- 				   ticket->bytes);
--- 
-2.26.3
-
+A similar suggestion was in for subvolume creation to force quota rescan,
+https://lore.kernel.org/linux-btrfs/20210525162054.GE7604@twin.jikos.cz/333
+same reason why not.

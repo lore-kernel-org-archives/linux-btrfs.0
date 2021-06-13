@@ -2,133 +2,125 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8F05C48BCF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Jun 2021 14:44:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 495B6C48BCF
+	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Jun 2021 13:40:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B465D613AD
-	for <linux-btrfs@archiver.kernel.org>; Sat, 12 Jun 2021 14:44:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C19A61285
+	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Jun 2021 13:40:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231380AbhFLOqb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 12 Jun 2021 10:46:31 -0400
-Received: from so254-9.mailgun.net ([198.61.254.9]:40212 "EHLO
-        so254-9.mailgun.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231165AbhFLOqa (ORCPT
+        id S231782AbhFMNmQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 13 Jun 2021 09:42:16 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:34492 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231738AbhFMNmP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 12 Jun 2021 10:46:30 -0400
-DKIM-Signature: a=rsa-sha256; v=1; c=relaxed/relaxed; d=mg.codeaurora.org; q=dns/txt;
- s=smtp; t=1623509070; h=Content-Transfer-Encoding: Content-Type:
- MIME-Version: Message-ID: Date: Subject: In-Reply-To: References: Cc:
- To: From: Reply-To: Sender;
- bh=RhtvN2QTW0JZFH6Rjd3vbX9yOl+YFdfv0SB17b2868c=; b=eHQjgFG3YEl+bYnfVmZWGTf+2DhM9d0MLqbdvNN7JhKtxnubR7IcusMz6ejwHzJgw4z6+CWp
- CZbsNOe+VnG1R793sEjgpyxj7Vrd0E2BzRXlJ8iCR5nPrXlmad8Ly2T7ykXjZkr47is9Yk+d
- UkyzG5zTsyYrpnOLunYpTxvfeuM=
-X-Mailgun-Sending-Ip: 198.61.254.9
-X-Mailgun-Sid: WyIyMzg3MiIsICJsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmciLCAiYmU5ZTRhIl0=
-Received: from smtp.codeaurora.org
- (ec2-35-166-182-171.us-west-2.compute.amazonaws.com [35.166.182.171]) by
- smtp-out-n06.prod.us-west-2.postgun.com with SMTP id
- 60c4c838ed59bf69ccbbf388 (version=TLS1.2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256); Sat, 12 Jun 2021 14:44:08
- GMT
-Sender: bcain=codeaurora.org@mg.codeaurora.org
-Received: by smtp.codeaurora.org (Postfix, from userid 1001)
-        id BFE3EC4323A; Sat, 12 Jun 2021 14:44:07 +0000 (UTC)
-Received: from BCAIN (104-54-226-75.lightspeed.austtx.sbcglobal.net [104.54.226.75])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        Sun, 13 Jun 2021 09:42:15 -0400
+Received: from imap.suse.de (imap-alt.suse-dmz.suse.de [192.168.254.47])
+        (using TLSv1.2 with cipher ECDHE-ECDSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        (Authenticated sender: bcain)
-        by smtp.codeaurora.org (Postfix) with ESMTPSA id EAC33C433D3;
-        Sat, 12 Jun 2021 14:44:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.3.2 smtp.codeaurora.org EAC33C433D3
-Authentication-Results: aws-us-west-2-caf-mail-1.web.codeaurora.org; dmarc=none (p=none dis=none) header.from=codeaurora.org
-Authentication-Results: aws-us-west-2-caf-mail-1.web.codeaurora.org; spf=fail smtp.mailfrom=bcain@codeaurora.org
-Reply-To: <bcain@codeaurora.org>
-From:   "Brian Cain" <bcain@codeaurora.org>
-To:     "'Christophe Leroy'" <christophe.leroy@csgroup.eu>,
-        "'Chris Mason'" <clm@fb.com>
-Cc:     "'Josef Bacik'" <josef@toxicpanda.com>,
-        "'David Sterba'" <dsterba@suse.com>,
-        <linux-kernel@vger.kernel.org>, <linuxppc-dev@lists.ozlabs.org>,
-        "'linux-btrfs'" <linux-btrfs@vger.kernel.org>,
-        <linux-hexagon@vger.kernel.org>
-References: <a16c31f3caf448dda5d9315e056585b6fafc22c5.1623302442.git.christophe.leroy@csgroup.eu> <185278AF-1D87-432D-87E9-C86B3223113E@fb.com> <cdadf66e-0a6e-4efe-0326-7236c43b2735@csgroup.eu>
-In-Reply-To: <cdadf66e-0a6e-4efe-0326-7236c43b2735@csgroup.eu>
-Subject: RE: [PATCH] btrfs: Disable BTRFS on platforms having 256K pages
-Date:   Sat, 12 Jun 2021 09:44:05 -0500
-Message-ID: <17a401d75f99$662cdc50$328694f0$@codeaurora.org>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id DF54F21972;
+        Sun, 13 Jun 2021 13:40:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1623591612; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=kF9mUTKWAgird3A2WvETQdl4IQRcEa9mc2Hk3dPUiUc=;
+        b=hs9/Iy46YvQMyuJcZnETN8CVdq1P4YXl1d6KRScezKajdV2+dIYBDs2Jpe4VRL2xp3orCr
+        56Lu+DC0tr2hFasR7KDF9qgyyMaCfRyfFoSvbz9LxujfcPnKiMcjOoXE4iwhEN98ZyAaeG
+        +bUV8d0drvCN/3bPnzCadnKRkI3C1ew=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1623591612;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=kF9mUTKWAgird3A2WvETQdl4IQRcEa9mc2Hk3dPUiUc=;
+        b=AC/6Co1bKEFys5YjlOORGZfXrF02CR8PZTJIT/yxf7Ju2cUeAvMGNNMNBVTONjhokdDOqt
+        O/5LvDuOlKfy9mDQ==
+Received: from imap3-int (imap-alt.suse-dmz.suse.de [192.168.254.47])
+        by imap.suse.de (Postfix) with ESMTP id 8827D118DD;
+        Sun, 13 Jun 2021 13:40:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1623591612; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=kF9mUTKWAgird3A2WvETQdl4IQRcEa9mc2Hk3dPUiUc=;
+        b=hs9/Iy46YvQMyuJcZnETN8CVdq1P4YXl1d6KRScezKajdV2+dIYBDs2Jpe4VRL2xp3orCr
+        56Lu+DC0tr2hFasR7KDF9qgyyMaCfRyfFoSvbz9LxujfcPnKiMcjOoXE4iwhEN98ZyAaeG
+        +bUV8d0drvCN/3bPnzCadnKRkI3C1ew=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1623591612;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=kF9mUTKWAgird3A2WvETQdl4IQRcEa9mc2Hk3dPUiUc=;
+        b=AC/6Co1bKEFys5YjlOORGZfXrF02CR8PZTJIT/yxf7Ju2cUeAvMGNNMNBVTONjhokdDOqt
+        O/5LvDuOlKfy9mDQ==
+Received: from director2.suse.de ([192.168.254.72])
+        by imap3-int with ESMTPSA
+        id omzkGLwKxmAtJAAALh3uQQ
+        (envelope-from <rgoldwyn@suse.de>); Sun, 13 Jun 2021 13:40:12 +0000
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+Subject: [RFC PATCH 01/31] iomap: Check if blocksize == PAGE_SIZE in to_iomap_page()
+Date:   Sun, 13 Jun 2021 08:39:29 -0500
+Message-Id: <79781ca99470475ff33382e67571eeb914edac63.1623567940.git.rgoldwyn@suse.com>
+X-Mailer: git-send-email 2.32.0
+In-Reply-To: <cover.1623567940.git.rgoldwyn@suse.com>
+References: <cover.1623567940.git.rgoldwyn@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain;
-        charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-X-Mailer: Microsoft Outlook 16.0
-Content-Language: en-us
-Thread-Index: AQFXZSsKSQYV21VAkXhEQlQXq32SZQKLFB0ZAuYFiEqr5N8nYA==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
+btrfs requires page->private set to get a callback to releasepage(). So,
+for normal circumstances of blocksize==PAGE_SIZE, btrfs will have
+page->private set to 1. In order to avoid a crash, check for the
+blocksize==PAGE_SIZE in to_iomap_page().
+---
+ fs/iomap/buffered-io.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-> -----Original Message-----
-> From: Christophe Leroy <christophe.leroy@csgroup.eu>
-...
-> Le 10/06/2021 =C3=A0 15:54, Chris Mason a =C3=A9crit :
-> >
-> >> On Jun 10, 2021, at 1:23 AM, Christophe Leroy
-> <christophe.leroy@csgroup.eu> wrote:
-> >>
-> >> With a config having PAGE_SIZE set to 256K, BTRFS build fails
-> >> with the following message
-> >>
-> >> include/linux/compiler_types.h:326:38: error: call to
-> '__compiletime_assert_791' declared with attribute error: BUILD_BUG_ON
-> failed: (BTRFS_MAX_COMPRESSED % PAGE_SIZE) !=3D 0
-> >>
-> >> BTRFS_MAX_COMPRESSED being 128K, BTRFS cannot support platforms
-> with
-> >> 256K pages at the time being.
-> >>
-> >> There are two platforms that can select 256K pages:
-> >> - hexagon
-> >> - powerpc
-> >>
-> >> Disable BTRFS when 256K page size is selected.
-> >>
-> >
-> > We=E2=80=99ll have other subpage blocksize concerns with 256K pages, =
-but this
-> BTRFS_MAX_COMPRESSED #define is arbitrary.  It=E2=80=99s just trying =
-to have an
-> upper bound on the amount of memory we=E2=80=99ll need to uncompress a =
-single
-> page=E2=80=99s worth of random reads.
-> >
-> > We could change it to max(PAGE_SIZE, 128K) or just bump to 256K.
-> >
->=20
-> But if 256K is problematic in other ways, is it worth bumping
-> BTRFS_MAX_COMPRESSED to 256K ?
->=20
-> David, in below mail, said that 256K support would require deaper =
-changes. So
-> disabling BTRFS
-> support seems the easiest solution for the time being, at least for =
-Stable (I
-> forgot the Fixes: tag
-> and the CC: to stable).
->=20
-> On powerpc, 256k pages is a corner case, it requires customised =
-binutils, so I
-> don't think disabling
-> BTRFS is a issue there. For hexagon I don't know.
-
-Larger page sizes like this are typical for hexagon.  Disabling btrfs on =
-hexagon seems appropriate.
-
--Brian
+diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
+index 9023717c5188..d30683734d01 100644
+--- a/fs/iomap/buffered-io.c
++++ b/fs/iomap/buffered-io.c
+@@ -41,9 +41,11 @@ static inline struct iomap_page *to_iomap_page(struct page *page)
+ 	 */
+ 	VM_BUG_ON_PGFLAGS(PageTail(page), page);
+ 
+-	if (page_has_private(page))
+-		return (struct iomap_page *)page_private(page);
+-	return NULL;
++	if (i_blocksize(page->mapping->host) == PAGE_SIZE)
++		return NULL;
++	if (!page_has_private(page))
++		return NULL;
++	return (struct iomap_page *)page_private(page);
+ }
+ 
+ static struct bio_set iomap_ioend_bioset;
+@@ -163,7 +165,7 @@ iomap_set_range_uptodate(struct page *page, unsigned off, unsigned len)
+ 	if (PageError(page))
+ 		return;
+ 
+-	if (page_has_private(page))
++	if (i_blocksize(page->mapping->host) != PAGE_SIZE)
+ 		iomap_iop_set_range_uptodate(page, off, len);
+ 	else
+ 		SetPageUptodate(page);
+-- 
+2.31.1
 

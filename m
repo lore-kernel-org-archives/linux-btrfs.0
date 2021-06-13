@@ -2,71 +2,81 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32D7DC48BDF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Jun 2021 13:40:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 53E43C49360
+	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Jun 2021 13:40:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F32C261284
-	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Jun 2021 13:40:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 321C961284
+	for <linux-btrfs@archiver.kernel.org>; Sun, 13 Jun 2021 13:40:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231755AbhFMNmP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 13 Jun 2021 09:42:15 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:55380 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231733AbhFMNmN (ORCPT
+        id S231793AbhFMNmR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 13 Jun 2021 09:42:17 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:34502 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231785AbhFMNmQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 13 Jun 2021 09:42:13 -0400
+        Sun, 13 Jun 2021 09:42:16 -0400
 Received: from imap.suse.de (imap-alt.suse-dmz.suse.de [192.168.254.47])
         (using TLSv1.2 with cipher ECDHE-ECDSA-AES128-GCM-SHA256 (128/128 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id E88D81FD32;
-        Sun, 13 Jun 2021 13:40:10 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id F3E2621973;
+        Sun, 13 Jun 2021 13:40:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1623591610; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=3af5kMw7B67kqD1PWVbxZh/Jo3GD1EbCYn0NnRFsQyg=;
-        b=a2/20eULzyC4PxvEwQID5sWxlrfMiTCVDRxhS7igTxAtd0WcB6wXNz5TGW9Wd3dJYufkRD
-        J+8t5cy7tIQZskDK+0WTO4I1WqD0+0QzQgSBm7Vs8kmqsJnl5X9eg+OrXdIUp5s3nwY4l9
-        BM8cqITG89CGRts1ltNmvh6EntBn6xc=
+        t=1623591614; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=mSEaLkVpkKswEMClQZajPDa8Ztrho6+KzaxTdXhJHkc=;
+        b=12erQFm2dI14QpGCBFVVW6Q+OiVgDww8lx7D/HMzcjH52ob/mO9ds+ywEBVKLadZ4I+rb+
+        VHL+fKIlvpwnODaApNzwAq3nudLxqf9dYQeVH59JSrdvDoY3xFNDqNgxJBtCzE75MZQSgC
+        z6oYUTswLodupEtQ7sNq0B6QEiaFUu8=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1623591610;
+        s=susede2_ed25519; t=1623591614;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=3af5kMw7B67kqD1PWVbxZh/Jo3GD1EbCYn0NnRFsQyg=;
-        b=AKFt4B7Wn3EDMn4osrN2U5uDj2YC1oGseQd51E95L+5UMQjmnw0z4sNxUEwiSNV075lu0N
-        5zXEWBb1bXawmbBQ==
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=mSEaLkVpkKswEMClQZajPDa8Ztrho6+KzaxTdXhJHkc=;
+        b=SR52TwsqXC1ucvVp4SpcvGamM7kbRp1xM69nQOuMmXgJ7VugjQY3Dp1jKDgKpLFVDSwJQu
+        JUnH9iOFzocjboDw==
 Received: from imap3-int (imap-alt.suse-dmz.suse.de [192.168.254.47])
-        by imap.suse.de (Postfix) with ESMTP id 94776118DD;
-        Sun, 13 Jun 2021 13:40:10 +0000 (UTC)
+        by imap.suse.de (Postfix) with ESMTP id 9D421118DD;
+        Sun, 13 Jun 2021 13:40:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1623591610; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=3af5kMw7B67kqD1PWVbxZh/Jo3GD1EbCYn0NnRFsQyg=;
-        b=a2/20eULzyC4PxvEwQID5sWxlrfMiTCVDRxhS7igTxAtd0WcB6wXNz5TGW9Wd3dJYufkRD
-        J+8t5cy7tIQZskDK+0WTO4I1WqD0+0QzQgSBm7Vs8kmqsJnl5X9eg+OrXdIUp5s3nwY4l9
-        BM8cqITG89CGRts1ltNmvh6EntBn6xc=
+        t=1623591614; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=mSEaLkVpkKswEMClQZajPDa8Ztrho6+KzaxTdXhJHkc=;
+        b=12erQFm2dI14QpGCBFVVW6Q+OiVgDww8lx7D/HMzcjH52ob/mO9ds+ywEBVKLadZ4I+rb+
+        VHL+fKIlvpwnODaApNzwAq3nudLxqf9dYQeVH59JSrdvDoY3xFNDqNgxJBtCzE75MZQSgC
+        z6oYUTswLodupEtQ7sNq0B6QEiaFUu8=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1623591610;
+        s=susede2_ed25519; t=1623591614;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=3af5kMw7B67kqD1PWVbxZh/Jo3GD1EbCYn0NnRFsQyg=;
-        b=AKFt4B7Wn3EDMn4osrN2U5uDj2YC1oGseQd51E95L+5UMQjmnw0z4sNxUEwiSNV075lu0N
-        5zXEWBb1bXawmbBQ==
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=mSEaLkVpkKswEMClQZajPDa8Ztrho6+KzaxTdXhJHkc=;
+        b=SR52TwsqXC1ucvVp4SpcvGamM7kbRp1xM69nQOuMmXgJ7VugjQY3Dp1jKDgKpLFVDSwJQu
+        JUnH9iOFzocjboDw==
 Received: from director2.suse.de ([192.168.254.72])
         by imap3-int with ESMTPSA
-        id SliiG7oKxmAoJAAALh3uQQ
-        (envelope-from <rgoldwyn@suse.de>); Sun, 13 Jun 2021 13:40:10 +0000
+        id 0XYyGr4KxmAzJAAALh3uQQ
+        (envelope-from <rgoldwyn@suse.de>); Sun, 13 Jun 2021 13:40:14 +0000
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [RFC PATCH 00/31] btrfs buffered iomap support
-Date:   Sun, 13 Jun 2021 08:39:28 -0500
-Message-Id: <cover.1623567940.git.rgoldwyn@suse.com>
+Subject: [RFC PATCH 02/31] iomap: Add submit_io to writepage_ops
+Date:   Sun, 13 Jun 2021 08:39:30 -0500
+Message-Id: <999c273a4d4fd73ecd9fe80a20e7008eb1124b35.1623567940.git.rgoldwyn@suse.com>
 X-Mailer: git-send-email 2.32.0
+In-Reply-To: <cover.1623567940.git.rgoldwyn@suse.com>
+References: <cover.1623567940.git.rgoldwyn@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -75,94 +85,66 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-This is an attempt to perform the bufered read and write using iomap on btrfs.
-I propose these changes as an RFC because I would like to know on your comments on the feasibility of going ahead with the design. It is not feature complete
-with the most important support missing is multi-device and compression.
-Sending to BTRFS mailing only for perspective from btrfs developers first.
+Filesystems such as btrfs need to perform pre and post bio operations
+such as csum calculations, device mapping etc.
 
-Locking sequence change
-One of the biggest architecture changes is locking extents before pages.
-writepage(), called during memory pressure provides the page which is locked
-already. Perform a best effort locking and work with what is feasible.
-For truncate->invalidatepage(), lock the pages before calling setsize().
-Are there any other areas which need to be covered?
+Add a submit_io() function to writepage_ops so filesystems can control
+how the bio is submitted.
 
-TODO
-====
+Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+---
+ fs/iomap/buffered-io.c | 11 ++++++++++-
+ include/linux/iomap.h  |  6 ++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
 
-Bio submission for multi-device
-  Multi-device submission would require some work with respect to asynchronous
-  completions. iomap can merge bio's making it larger than extent_map's
-  map_length. There is a check in btrfs_map_bio which WARN()s on this.
-  Perhaps a more modular approach of having callbacks would be easier to
-  deal with.
-
-Compression
-  This would require extra flags to iomap, say type IOMAP_ENCODED, which would
-  require iomap to read/write complete extents as opposed to performing I/O on
-  only what is requested. An additional field io_size would be required to
-  know how much of compressed size maps to uncompressed size.
-
-
-Known issues
-============
- BIO Submission: described above
- Random WARN_ON in kernel/locking/lockdep.c:895 points to memory corruption.
-
-Finally, I have added some questions in the patch headers as well.
-
-
--- 
-Goldwyn
-
-
-Goldwyn Rodrigues (31):
-  iomap: Check if blocksize == PAGE_SIZE in to_iomap_page()
-  iomap: Add submit_io to writepage_ops
-  iomap: Export iomap_writepage_end_bio()
-  iomap: Introduce iomap_readpage_ops
-  btrfs: writepage() lock extent before pages
-  btrfs: lock extents while truncating
-  btrfs: write() perform extent locks before locking page
-  btrfs: btrfs_em_to_iomap () to convert em to iomap
-  btrfs: Don't process pages if locked_page is NULL
-  btrfs: Add btrfs_map_blocks to for iomap_writeback_ops
-  btrfs: Use submit_io to submit btrfs writeback bios
-  btrfs: endio sequence for writepage
-  btrfs: do not checksum for free space inode
-  btrfs: end EXTENT_MAP_INLINE writeback early
-  btrfs: Switch to iomap_writepages()
-  btrfs: remove force_page_uptodate
-  btrfs: Introduce btrfs_iomap
-  btrfs: Add btrfs_iomap_release()
-  btrfs: Add reservation information to btrfs_iomap
-  btrfs: Carve out btrfs_buffered_iomap_begin() from write path
-  btrfs: Carve out btrfs_buffered_iomap_end from the write path
-  btrfs: Set extents delalloc in iomap_end
-  btrfs: define iomap_page_ops
-  btrfs: Switch to iomap_file_buffered_write()
-  btrfs: remove all page related functions
-  btrfs: use srcmap for read-before-write cases
-  btrfs: Rename end_bio_extent_readpage to btrfs_readpage_endio
-  btrfs: iomap_begin() for buffered read
-  btrfs: Use iomap_readpage_ops to allocate and submit bio
-  btrfs: Do not call btrfs_io_bio_free_csum() if BTRFS_INODE_NODATASUM
-    is not set
-  btrfs: Switch to iomap_readpage() and iomap_readahead()
-
- fs/btrfs/ctree.h       |   3 +
- fs/btrfs/disk-io.c     |   9 +-
- fs/btrfs/extent_io.c   | 103 +++++--
- fs/btrfs/extent_io.h   |   4 +
- fs/btrfs/file.c        | 642 ++++++++++++++---------------------------
- fs/btrfs/inode.c       | 219 ++++++++++++--
- fs/gfs2/aops.c         |   4 +-
- fs/iomap/buffered-io.c |  80 +++--
- fs/xfs/xfs_aops.c      |   4 +-
- fs/zonefs/super.c      |   4 +-
- include/linux/iomap.h  |  26 +-
- 11 files changed, 601 insertions(+), 497 deletions(-)
-
+diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
+index d30683734d01..b6fd6d6118a6 100644
+--- a/fs/iomap/buffered-io.c
++++ b/fs/iomap/buffered-io.c
+@@ -1209,7 +1209,11 @@ iomap_submit_ioend(struct iomap_writepage_ctx *wpc, struct iomap_ioend *ioend,
+ 		return error;
+ 	}
+ 
+-	submit_bio(ioend->io_bio);
++	if (wpc->ops->submit_io)
++		wpc->ops->submit_io(ioend->io_inode, ioend->io_bio);
++	else
++		submit_bio(ioend->io_bio);
++
+ 	return 0;
+ }
+ 
+@@ -1305,8 +1309,13 @@ iomap_add_to_ioend(struct inode *inode, loff_t offset, struct page *page,
+ 
+ 	if (!merged) {
+ 		if (bio_full(wpc->ioend->io_bio, len)) {
++			struct bio *bio = wpc->ioend->io_bio;
+ 			wpc->ioend->io_bio =
+ 				iomap_chain_bio(wpc->ioend->io_bio);
++			if (wpc->ops->submit_io)
++				wpc->ops->submit_io(inode, bio);
++			else
++				submit_bio(bio);
+ 		}
+ 		bio_add_page(wpc->ioend->io_bio, page, len, poff);
+ 	}
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index c87d0cb0de6d..689d799b1915 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -223,6 +223,12 @@ struct iomap_writeback_ops {
+ 	 * we failed to submit any I/O.
+ 	 */
+ 	void (*discard_page)(struct page *page, loff_t fileoff);
++
++	/*
++	 * Optional, allows the filesystem to perform a custom submission of
++	 * bio, such as csum calculations or multi-device bio split
++	 */
++	void (*submit_io)(struct inode *inode, struct bio *bio);
+ };
+ 
+ struct iomap_writepage_ctx {
 -- 
 2.31.1
 

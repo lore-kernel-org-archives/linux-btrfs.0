@@ -2,64 +2,184 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33CE9C48BE5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jun 2021 04:42:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C9E5C48BE6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jun 2021 06:42:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 11DFE610CA
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jun 2021 04:42:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 33EF9613B9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Jun 2021 06:42:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230084AbhFPEoY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Jun 2021 00:44:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33366 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229549AbhFPEoX (ORCPT
+        id S231391AbhFPGoR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Jun 2021 02:44:17 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:54852 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229559AbhFPGoR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Jun 2021 00:44:23 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7DFDBC061574
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Jun 2021 21:42:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=r0x35Jl28I1SAtioj+6G7nfdWL88GFGlvGRhfogoufM=; b=ThKJ1inIDxtTCFIDOVEGxlRJxP
-        IUJCcuMp7bC/8U17IWCDSaFxCHXleBwdCPmDxz0fxn98SglLHhjp1P/+gLTvl4eqNXl9kz/2BQHwT
-        NEiG8X/iVfJfkN3pUPGCmFCQJViP0LNA1ydQKFR67yy6s60+7UXzMmkY0DtNzo+89C8IMy7PiSDTi
-        Fmc85181Pet8tTWlMfe63xsU0MEZ6Nn0KAGXSgKe4vCYW+j9HXaQsyMjn9TaCPIqarmT0h8qdYxEy
-        zX27tZeKd6hp+L3K0oo7fJtP8czHVKDj2XwIg3KpjuUai2dyjwbqDoKZrELH1VSzdlPdOAaURyHG1
-        iTl0K0Ug==;
-Received: from hch by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1ltNN2-007b9E-Ih; Wed, 16 Jun 2021 04:41:47 +0000
-Date:   Wed, 16 Jun 2021 05:41:44 +0100
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH 3/4] fs: add a filemap_fdatawrite_wbc helper
-Message-ID: <YMmBCL23eCLnROJx@infradead.org>
-References: <cover.1623419155.git.josef@toxicpanda.com>
- <b7ce962335474c7b0e96849cd9fb650b1138cbb3.1623419155.git.josef@toxicpanda.com>
- <83038b23-71df-962c-167f-db0b21b83025@suse.com>
- <8c1d5edb-8149-f0e3-6170-2b25fdaa4e9f@toxicpanda.com>
+        Wed, 16 Jun 2021 02:44:17 -0400
+Received: from imap.suse.de (imap-alt.suse-dmz.suse.de [192.168.254.47])
+        (using TLSv1.2 with cipher ECDHE-ECDSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id C3D0A1FD47;
+        Wed, 16 Jun 2021 06:42:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1623825730; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=UjPRNNLHnON5LMLw0A1rbYvJrkBgmwc3jStEDZxCt/0=;
+        b=DZGsY1mZe/Zobp67AI7l937K38NWkqwHkZNRbiaNXaS9fTNvUc0wqzG3t4OnWNsTE5Lrnx
+        Fv6v0l9LdMskrXEC1SUJURLM4LZSHaq8vEpUeMXYYeasTO6lJXI7unyvuFGEsH8jPiZbze
+        cE5NbRkpolLFWXaT3YEZlMKN8iHiU/Y=
+Received: from imap3-int (imap-alt.suse-dmz.suse.de [192.168.254.47])
+        by imap.suse.de (Postfix) with ESMTP id 85FCB118DD;
+        Wed, 16 Jun 2021 06:42:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1623825730; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=UjPRNNLHnON5LMLw0A1rbYvJrkBgmwc3jStEDZxCt/0=;
+        b=DZGsY1mZe/Zobp67AI7l937K38NWkqwHkZNRbiaNXaS9fTNvUc0wqzG3t4OnWNsTE5Lrnx
+        Fv6v0l9LdMskrXEC1SUJURLM4LZSHaq8vEpUeMXYYeasTO6lJXI7unyvuFGEsH8jPiZbze
+        cE5NbRkpolLFWXaT3YEZlMKN8iHiU/Y=
+Received: from director2.suse.de ([192.168.254.72])
+        by imap3-int with ESMTPSA
+        id fGq+HUKdyWD1TAAALh3uQQ
+        (envelope-from <nborisov@suse.com>); Wed, 16 Jun 2021 06:42:10 +0000
+Subject: Re: [RFC PATCH 06/31] btrfs: lock extents while truncating
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Cc:     Goldwyn Rodrigues <rgoldwyn@suse.com>
+References: <cover.1623567940.git.rgoldwyn@suse.com>
+ <6a65ad8036c65f0d484dc98ee30ba21d4c4812fc.1623567940.git.rgoldwyn@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <1edfe59b-a446-39f5-f8d1-8e7d0d9a5670@suse.com>
+Date:   Wed, 16 Jun 2021 09:42:10 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.8.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <8c1d5edb-8149-f0e3-6170-2b25fdaa4e9f@toxicpanda.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <6a65ad8036c65f0d484dc98ee30ba21d4c4812fc.1623567940.git.rgoldwyn@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 15, 2021 at 09:37:33AM -0400, Josef Bacik wrote:
-> Yeah I'd like to clean this up at some point, but that's outside the scope
-> of this patch.  I want to get a helper in without needing to run it by
-> everybody, we can take up cleaning this up at a later point with input from
-> everybody else.  Thanks,
 
-But you _do_ need to run a new core writeback function past "everybody".
-Just posting it on the btrfs list like for this series is definitely
-not enough.
+
+On 13.06.21 г. 16:39, Goldwyn Rodrigues wrote:
+> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> 
+> Lock order change: Lock extents before pages.
+> 
+> This removes extent locking in invalidatepages().
+> invalidatepage() is either called during truncating or while evicting
+> inode. Inode eviction does not require locking.
+
+Imo the changelog of that patch warrants an explicit mention why its
+correct, namely that it's lifting the locking from btrfs_invalidatepage
+and putting it in btrfs_setsize, wrapping truncate_setsize which
+eventually boils down to calling invalidatepage,
+
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  fs/btrfs/inode.c | 29 +++++++++++++++++++++++------
+>  1 file changed, 23 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 794d906cba6c..7761a60788d0 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5201,6 +5201,9 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+>  		btrfs_end_transaction(trans);
+>  	} else {
+>  		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+> +		u64 start = round_down(oldsize, fs_info->sectorsize);
+> +		u64 end = round_up(newsize, fs_info->sectorsize) - 1;
+> +		struct extent_state **cached = NULL;
+>  
+>  		if (btrfs_is_zoned(fs_info)) {
+>  			ret = btrfs_wait_ordered_range(inode,
+> @@ -5219,7 +5222,10 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr)
+>  			set_bit(BTRFS_INODE_FLUSH_ON_CLOSE,
+>  				&BTRFS_I(inode)->runtime_flags);
+>  
+> +		lock_extent_bits(&BTRFS_I(inode)->io_tree, start, end, cached);
+>  		truncate_setsize(inode, newsize);
+> +		unlock_extent_cached(&BTRFS_I(inode)->io_tree, start, end,
+> +				cached);
+
+This effectively lifts the granular locking, which is performed on a
+per-page basis and turns it into one coarse lock, which covers the whole
+region. This might have some performance repercussions which can go
+either way:
+
+1. On the one hand you are keeping the whole ranged locked from the
+start until the page cache is truncated.
+
+2. On the other you reduce the overall number of extent lock/unlocks.
+
+In either we should think about quantifying the impact, if any.
+
+>  
+>  		inode_dio_wait(inode);
+>  
+> @@ -8322,9 +8328,23 @@ static int __btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+>  
+>  static int btrfs_releasepage(struct page *page, gfp_t gfp_flags)
+>  {
+> +	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
+> +	struct extent_map *em;
+> +	int ret;
+> +
+>  	if (PageWriteback(page) || PageDirty(page))
+>  		return 0;
+> -	return __btrfs_releasepage(page, gfp_flags);
+> +
+> +	em = lookup_extent_mapping(&inode->extent_tree, page_offset(page),
+> +			PAGE_SIZE - 1);
+> +	if (!em)
+> +		return 0;
+> +	if (!try_lock_extent(&inode->io_tree, em->start, extent_map_end(em) - 1))
+> +		return 0;
+> +	ret = __btrfs_releasepage(page, gfp_flags);
+> +	unlock_extent(&inode->io_tree, em->start, extent_map_end(em));
+> +	free_extent_map(em);
+> +	return ret;
+>  }
+>  
+>  #ifdef CONFIG_MIGRATION
+> @@ -8398,9 +8418,6 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+>  		return;
+>  	}
+>  
+> -	if (!inode_evicting)
+> -		lock_extent_bits(tree, page_start, page_end, &cached_state);
+> -
+>  	cur = page_start;
+>  	while (cur < page_end) {
+>  		struct btrfs_ordered_extent *ordered;
+> @@ -8458,7 +8475,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+>  		if (!inode_evicting)
+>  			clear_extent_bit(tree, cur, range_end,
+>  					 EXTENT_DELALLOC |
+> -					 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+> +					 EXTENT_DO_ACCOUNTING |
+>  					 EXTENT_DEFRAG, 1, 0, &cached_state);
+>  
+>  		spin_lock_irq(&inode->ordered_tree.lock);
+> @@ -8503,7 +8520,7 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+>  		 */
+>  		btrfs_qgroup_free_data(inode, NULL, cur, range_end + 1 - cur);
+>  		if (!inode_evicting) {
+> -			clear_extent_bit(tree, cur, range_end, EXTENT_LOCKED |
+> +			clear_extent_bit(tree, cur, range_end,
+>  				 EXTENT_DELALLOC | EXTENT_UPTODATE |
+>  				 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 1,
+>  				 delete_states, &cached_state);
+> 

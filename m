@@ -2,284 +2,73 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-14.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D71BC2B9F4
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jun 2021 09:18:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55AB0C2B9F4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jun 2021 10:12:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 028CD613DF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jun 2021 09:18:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 371E0613F1
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Jun 2021 10:12:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231499AbhFQJUv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Jun 2021 05:20:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50410 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231433AbhFQJUX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Jun 2021 05:20:23 -0400
-Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B76FFC061574
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jun 2021 02:18:14 -0700 (PDT)
-Received: by mail-qk1-x734.google.com with SMTP id f70so2363615qke.13
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jun 2021 02:18:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=MmczpXOBUAw6RcYv0O4IIae4aA7s3COA8geAr4BgEvs=;
-        b=FLxokDjzOniGUNY711/1RsEb+FybSJS/73Jx+3oCAK0Si3KbpLVRTsBBEEyUZoDCqF
-         HDDrZAMcg+b0/b0WNPrSnYbxDinuxW/XnyOXwThClLGu7lCfKqebmbjjSRBGLjUzkLKS
-         mrGr5hPakvNnhiDzUQddSk366DeFrvdwURfA99RzltzVWO4+E8k7ePAa1L6eZgHfxcHe
-         ZOS5FcBd75YMmIbsC2PWMQ/sv5PJuLTGHp8SUAM4nspJ2Z2MWvgy5q4WfWDdqgxfwGox
-         44ZNZ7MDcGYJak45vm9wp3gEpiRdkhHlecD52Vnjo5FdYkZQpv/mIVIoIUvgYfoj7O95
-         lz9Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=MmczpXOBUAw6RcYv0O4IIae4aA7s3COA8geAr4BgEvs=;
-        b=bdz/+qtdIcE/NWhlS26WYs3lc4iykjJybZuWklOYvMnalejsl2mQ8Rx3xzJZ7mZQs2
-         7QMhrltzxt1Nw0VZg/U9qxK+9MmSvauID0Fxi1SEKPAUzxN3nVZS4u6XAdSk4uPvLgyZ
-         x9nkldBeQlqpsBGzlEJOhwk76SV1ss7TCFS2eoPqawxnYTpIkAQjJTRUfW9hUm5nEyWC
-         OR4YfelgofOe2FDFlHANt+cWldqsSeqNiQWwC3kWUibIe5HY4PfiKVc7tRfwsqwDMxF8
-         l2A/kcoed+9d/dN7Za1eWZMYuhV/kFm6x6Rk+30/0+bb/IQz//MpJZP0stwYeMqW0NA3
-         O0cQ==
-X-Gm-Message-State: AOAM531kD+U2MghzkjlH+hOz/EldMoUC7vmZSXy09TvX/YOclwdsz1dE
-        uI79iQhZgvGQSCVRyS0hDkZa/P/cbuAJVAKyhJM=
-X-Google-Smtp-Source: ABdhPJzvrwyQDmN7lXg0bupQ/ChxTafgrhgmjyFdcCNpBaeAHpIKS02MeqjGU4DT+Bgv3WiwHNWRZDV1KucOV4lRTDM=
-X-Received: by 2002:a05:620a:2f9:: with SMTP id a25mr2697215qko.479.1623921493934;
- Thu, 17 Jun 2021 02:18:13 -0700 (PDT)
+        id S231229AbhFQKOS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Jun 2021 06:14:18 -0400
+Received: from mail.kernel.org ([198.145.29.99]:40428 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230272AbhFQKOS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 17 Jun 2021 06:14:18 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 73336613E7
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Jun 2021 10:12:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1623924730;
+        bh=zSJA62zGCOLSVbR3m0pRWQfx4zV/FZiJ/01HBNLYtXw=;
+        h=From:To:Subject:Date:From;
+        b=BBpnLzAoFIk3QvuS5cVPDITPcnmVqILmuO0kdEI/MKM1HknUaUMhWt8rELrVbrOI7
+         MDsy3eCGRHKW5M+4gFLrM27N/gX+v8F5c13o0jw7Y/pBOx7OnPeA/SWyLNv0VnbCYs
+         gjqbX/19f1uOtvjLYXVNFG2dHgswgDnoguIIhDE9CV39pSz2kKCAuZ0xwc59NvdPg1
+         CEbJYS31QHYmZheiWHWUebyDRnKoV+GRqw9FYGBU3BrauvjFd3CgItRB4lJCvRk5TP
+         WqpeUkK56fBspP6qqu6kSkPMCwJBsP0JdvFCAe/QjtYGLKbzdenHp671aUwbdnbk9O
+         NN/ii5Eo5RAMQ==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: fixes for send with relocation and reclaim
+Date:   Thu, 17 Jun 2021 11:12:06 +0100
+Message-Id: <cover.1623924268.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-References: <CAL3q7H4xwZwZaBVXjJ8n9152D39eomfKOS1j0QQBFAWn7kYUxQ@mail.gmail.com>
- <20210616155828.13703-1-dsterba@suse.com>
-In-Reply-To: <20210616155828.13703-1-dsterba@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Thu, 17 Jun 2021 10:18:02 +0100
-Message-ID: <CAL3q7H6U2Usjk=sZ9r5uuaoLYD8REqE+pOezVhp1HrvoRNJNhQ@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: add cancellable chunk relocation support
-To:     David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 16, 2021 at 5:01 PM David Sterba <dsterba@suse.com> wrote:
->
-> Add support code that will allow canceling relocation on the chunk
-> granularity. This is different and independent of balance, that also
-> uses relocation but is a higher level operation and manages it's own
-> state and pause/cancellation requests.
->
-> Relocation is used for resize (shrink) and device deletion so this will
-> be a common point to implement cancellation for both. The context is
-> entirely in btrfs_relocate_block_group and btrfs_recover_relocation,
-> enclosing one chunk relocation. The status bit is set and unset between
-> the chunks. As relocation can take long, the effects may not be
-> immediate and the request and actual action can slightly race.
->
-> The fs_info::reloc_cancel_req is only supposed to be increased and does
-> not pair with decrement like fs_info::balance_cancel_req.
->
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->
-> v2:
-> - put the blockgroup by the original pointer 'bg' in
->   btrfs_relocate_block_group
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+There's a recent report from Chris Murphy on a crash caused by send
+triggering reclaim and inode eviction due to page/memory allocation,
+the second patch fixes that. The first one just prevents relocation from
+happening while there are send operations in progress, as currently only
+balance is prevented from running but other operations can trigger
+relocation too (device shrinking and automatic chunk relocation on zoned
+filesystems). Details are in the changelogs of the patches.
 
-Looks good now, thanks.
+Filipe Manana (2):
+  btrfs: ensure relocation never runs while we have send operations
+    running
+  btrfs: send: fix crash when memory allocations trigger reclaim
 
->
->  fs/btrfs/ctree.h      |  9 +++++++
->  fs/btrfs/disk-io.c    |  1 +
->  fs/btrfs/relocation.c | 62 +++++++++++++++++++++++++++++++++++++++++--
->  3 files changed, 70 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 4049f533e35e..b7c36aad45ef 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -565,6 +565,12 @@ enum {
->          */
->         BTRFS_FS_BALANCE_RUNNING,
->
-> +       /*
-> +        * Indicate that relocation of a chunk has started, it's set per =
-chunk
-> +        * and is toggled between chunks.
-> +        */
-> +       BTRFS_FS_RELOC_RUNNING,
-> +
->         /* Indicate that the cleaner thread is awake and doing something.=
- */
->         BTRFS_FS_CLEANER_RUNNING,
->
-> @@ -871,6 +877,9 @@ struct btrfs_fs_info {
->         struct btrfs_balance_control *balance_ctl;
->         wait_queue_head_t balance_wait_q;
->
-> +       /* Cancellation requests for chunk relocation */
-> +       atomic_t reloc_cancel_req;
-> +
->         u32 data_chunk_allocations;
->         u32 metadata_ratio;
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 34bcd986f738..d1d5091a8385 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2251,6 +2251,7 @@ static void btrfs_init_balance(struct btrfs_fs_info=
- *fs_info)
->         atomic_set(&fs_info->balance_cancel_req, 0);
->         fs_info->balance_ctl =3D NULL;
->         init_waitqueue_head(&fs_info->balance_wait_q);
-> +       atomic_set(&fs_info->reloc_cancel_req, 0);
->  }
->
->  static void btrfs_init_btree_inode(struct btrfs_fs_info *fs_info)
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index b70be2ac2e9e..420a89869889 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -2876,11 +2876,12 @@ int setup_extent_mapping(struct inode *inode, u64=
- start, u64 end,
->  }
->
->  /*
-> - * Allow error injection to test balance cancellation
-> + * Allow error injection to test balance/relocation cancellation
->   */
->  noinline int btrfs_should_cancel_balance(struct btrfs_fs_info *fs_info)
->  {
->         return atomic_read(&fs_info->balance_cancel_req) ||
-> +               atomic_read(&fs_info->reloc_cancel_req) ||
->                 fatal_signal_pending(current);
->  }
->  ALLOW_ERROR_INJECTION(btrfs_should_cancel_balance, TRUE);
-> @@ -3780,6 +3781,47 @@ struct inode *create_reloc_inode(struct btrfs_fs_i=
-nfo *fs_info,
->         return inode;
->  }
->
-> +/*
-> + * Mark start of chunk relocation that is cancellable. Check if the canc=
-ellation
-> + * has been requested meanwhile and don't start in that case.
-> + *
-> + * Return:
-> + *   0             success
-> + *   -EINPROGRESS  operation is already in progress, that's probably a b=
-ug
-> + *   -ECANCELED    cancellation request was set before the operation sta=
-rted
-> + */
-> +static int reloc_chunk_start(struct btrfs_fs_info *fs_info)
-> +{
-> +       if (test_and_set_bit(BTRFS_FS_RELOC_RUNNING, &fs_info->flags)) {
-> +               /* This should not happen */
-> +               btrfs_err(fs_info, "reloc already running, cannot start")=
-;
-> +               return -EINPROGRESS;
-> +       }
-> +
-> +       if (atomic_read(&fs_info->reloc_cancel_req) > 0) {
-> +               btrfs_info(fs_info, "chunk relocation canceled on start")=
-;
-> +               /*
-> +                * On cancel, clear all requests but let the caller mark
-> +                * the end after cleanup operations.
-> +                */
-> +               atomic_set(&fs_info->reloc_cancel_req, 0);
-> +               return -ECANCELED;
-> +       }
-> +       return 0;
-> +}
-> +
-> +/*
-> + * Mark end of chunk relocation that is cancellable and wake any waiters=
-.
-> + */
-> +static void reloc_chunk_end(struct btrfs_fs_info *fs_info)
-> +{
-> +       /* Requested after start, clear bit first so any waiters can cont=
-inue */
-> +       if (atomic_read(&fs_info->reloc_cancel_req) > 0)
-> +               btrfs_info(fs_info, "chunk relocation canceled during ope=
-ration");
-> +       clear_and_wake_up_bit(BTRFS_FS_RELOC_RUNNING, &fs_info->flags);
-> +       atomic_set(&fs_info->reloc_cancel_req, 0);
-> +}
-> +
->  static struct reloc_control *alloc_reloc_control(struct btrfs_fs_info *f=
-s_info)
->  {
->         struct reloc_control *rc;
-> @@ -3862,6 +3904,12 @@ int btrfs_relocate_block_group(struct btrfs_fs_inf=
-o *fs_info, u64 group_start)
->                 return -ENOMEM;
->         }
->
-> +       ret =3D reloc_chunk_start(fs_info);
-> +       if (ret < 0) {
-> +               err =3D ret;
-> +               goto out_put_bg;
-> +       }
-> +
->         rc->extent_root =3D extent_root;
->         rc->block_group =3D bg;
->
-> @@ -3952,7 +4000,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info=
- *fs_info, u64 group_start)
->         if (err && rw)
->                 btrfs_dec_block_group_ro(rc->block_group);
->         iput(rc->data_inode);
-> -       btrfs_put_block_group(rc->block_group);
-> +out_put_bg:
-> +       btrfs_put_block_group(bg);
-> +       reloc_chunk_end(fs_info);
->         free_reloc_control(rc);
->         return err;
->  }
-> @@ -4073,6 +4123,12 @@ int btrfs_recover_relocation(struct btrfs_root *ro=
-ot)
->                 goto out;
->         }
->
-> +       ret =3D reloc_chunk_start(fs_info);
-> +       if (ret < 0) {
-> +               err =3D ret;
-> +               goto out_end;
-> +       }
-> +
->         rc->extent_root =3D fs_info->extent_root;
->
->         set_reloc_control(rc);
-> @@ -4137,6 +4193,8 @@ int btrfs_recover_relocation(struct btrfs_root *roo=
-t)
->                 err =3D ret;
->  out_unset:
->         unset_reloc_control(rc);
-> +out_end:
-> +       reloc_chunk_end(fs_info);
->         free_reloc_control(rc);
->  out:
->         free_reloc_roots(&reloc_roots);
-> --
-> 2.31.1
->
+ fs/btrfs/block-group.c | 10 ++++++++--
+ fs/btrfs/ctree.h       |  5 +++--
+ fs/btrfs/disk-io.c     | 19 ++-----------------
+ fs/btrfs/qgroup.c      |  8 +-------
+ fs/btrfs/relocation.c  | 13 +++++++++++++
+ fs/btrfs/send.c        | 12 +++++-------
+ fs/btrfs/transaction.c |  3 ---
+ fs/btrfs/transaction.h |  2 --
+ fs/btrfs/volumes.c     |  8 --------
+ 9 files changed, 32 insertions(+), 48 deletions(-)
 
+-- 
+2.28.0
 
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

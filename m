@@ -2,113 +2,64 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.1 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8B19C48BE8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jun 2021 15:18:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87726C48BDF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jun 2021 16:18:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A392B613E9
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jun 2021 15:18:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 650EA61164
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Jun 2021 16:18:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234861AbhFRPUw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Jun 2021 11:20:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56678 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233674AbhFRPUv (ORCPT
+        id S233856AbhFRQUx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Jun 2021 12:20:53 -0400
+Received: from a4-4.smtp-out.eu-west-1.amazonses.com ([54.240.4.4]:49605 "EHLO
+        a4-4.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S233773AbhFRQUv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Jun 2021 11:20:51 -0400
-Received: from mail-qv1-xf30.google.com (mail-qv1-xf30.google.com [IPv6:2607:f8b0:4864:20::f30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FB03C061574
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jun 2021 08:18:38 -0700 (PDT)
-Received: by mail-qv1-xf30.google.com with SMTP id g19so847608qvx.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Jun 2021 08:18:38 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=pa7WqzlkGj1GJHxzQHfvUnK6wJsL28bK7prt2qLcuMg=;
-        b=BOtZ2IIoz95MPAI+7OeUuQvY0+TPRHtosqF8cdsHdKkl1vuoXpnXev79OMt1yVrxp2
-         m+efQu4Hmpk4I6v5JjWm5zsFXud5h6VCq12WYpA2aiAg3WzzNwBHbvR7M5M7qPM1jzYt
-         PUjNzRaNGoBvlMQUQj9spUB3oUScQf1bRK5zTkrhrSrCOkFUDP5CX1FwBAJgxV76mTMN
-         5ZatnuQRyo8B9DHHAq/6ViDh5SYLVc3aR+gTIUhqJobyP2shsxOXa+IaJreVvWHgIutq
-         h4d9yhb7UGlWG+RybVlItb/6Q3O7FsmJUwjm3hV1gWYpq1/F8BCjI/2U6St5wrL9n6YE
-         vM/w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=pa7WqzlkGj1GJHxzQHfvUnK6wJsL28bK7prt2qLcuMg=;
-        b=G3XM6bUfx7FUmRihaoNGKJX3JCk8UVBI64y02jwexj71XnsbQOo8qb9/ONix/7ntut
-         u5Zzi7zbj9bekDV8+e1h42bfMByltHBBpIbUALvnmObL3pZGFWTtRnl7VqXeeyUILzzH
-         NAm227H9rRHWn+ElXSfJkJT7uyECwY18rbE0JVzUsudEuBfjWCajItHeKfn7Lx8dT6s1
-         +wH8p71/8wifDbqKLl7ZP4x3Of3CGlWvklSOJXcVMJOe1uccp/keEuetfv+zmDu6yOpH
-         UeLsKxLVGMcj6Ata1R46u++3neMgjJ+XSSaV9HrWMOmyWcEJ9oJMC9Mvl3G1xnHnjLKg
-         f7fA==
-X-Gm-Message-State: AOAM533hRnqrTQTwY8XQmzARhE5Acvys2Zrfdtt5LO7anF4R7Wbcflcg
-        4eELtQD+vcssFPhtzevGATEQabqQQYoy2Q==
-X-Google-Smtp-Source: ABdhPJzyplAdfMRLn7Yd8UViO3Xh/NFDzM8BhHaI9wKfXz2lDmHXIi7Re5rkFHiW+VkZKBJrqe2APg==
-X-Received: by 2002:ad4:514a:: with SMTP id g10mr6338210qvq.28.1624029517068;
-        Fri, 18 Jun 2021 08:18:37 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 85sm4226150qko.14.2021.06.18.08.18.36
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 18 Jun 2021 08:18:36 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/4] btrfs: remove FLUSH_DELAYED_REFS from data enospc flushing
-Date:   Fri, 18 Jun 2021 11:18:30 -0400
-Message-Id: <acd6cd59ff60acde8ca7f1d1b032319b69831280.1624029337.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1624029337.git.josef@toxicpanda.com>
-References: <cover.1624029337.git.josef@toxicpanda.com>
+        Fri, 18 Jun 2021 12:20:51 -0400
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+        s=vbsgq4olmwpaxkmtpgfbbmccllr2wq3g; d=urbackup.org; t=1624033120;
+        h=Subject:From:To:References:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+        bh=zq98km0XPJCh8VSM54HfSyx8khGbG7gBS1cVPf62HMo=;
+        b=S15vGIpDcfZnaYUBvA6Fm1CjTMq79PMgpz2Ecx2KLvI+96qkH03nGcUjmhKb/+z9
+        +e06XyYl16erQY+mF4W5sarWRg99awgiiISIcT5TVlzMX8Eqo4OQxfX9Abitku+fjHd
+        5wx9qT70XxTU+V1Nvr6sS/prol82K288zXv8xLno=
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
+        s=uku4taia5b5tsbglxyj6zym32efj7xqv; d=amazonses.com; t=1624033120;
+        h=Subject:From:To:References:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding:Feedback-ID;
+        bh=zq98km0XPJCh8VSM54HfSyx8khGbG7gBS1cVPf62HMo=;
+        b=ZymNFf8l9FB9DAsEmrxQpzscgWibWjP80o78jEW+ZBwQWCOeWCRg+g+VrGeubNG4
+        FTPknB+pTA5cp3KpIF+J495zYWKsYraw+qxFjPsu0EX7GZdOywRDgzh4+SuDitO7yfP
+        ANRlJL9nFv1FmTote88geh0woVDgQphCXUdDQjTQ=
+Subject: Re: IO failure without other (device) error
+From:   Martin Raiber <martin@urbackup.org>
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <010201795331ffe5-6933accd-b72f-45f0-be86-c2832b6fe306-000000@eu-west-1.amazonses.com>
+Message-ID: <0102017a1fead031-e0b49bda-297e-42f8-8fde-5567c5cfdec9-000000@eu-west-1.amazonses.com>
+Date:   Fri, 18 Jun 2021 16:18:40 +0000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <010201795331ffe5-6933accd-b72f-45f0-be86-c2832b6fe306-000000@eu-west-1.amazonses.com>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
+X-SES-Outgoing: 2021.06.18-54.240.4.4
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since we unconditionally commit the transaction now we no longer need to
-run the delayed refs to make sure our total_bytes_pinned value is
-uptodate, we can simply commit the transaction.  Remove this stage from
-the data flushing list.
+On 10.05.2021 00:14 Martin Raiber wrote:
+> I get this (rare) issue where btrfs reports an IO error in run_delayed_refs or finish_ordered_io with no underlying device errors being reported. This is with 5.10.26 but with a few patches like the pcpu ENOMEM fix or work-arounds for btrfs ENOSPC issues:
+>
+> [1885197.101981] systemd-sysv-generator[2324776]: SysV service '/etc/init.d/exim4' lacks a native systemd unit file. Automatically generating a unit file for compatibility. Please update package to include a native systemd unit file, in order to make it more safe and robust.
+> [2260628.156893] BTRFS: error (device dm-0) in btrfs_finish_ordered_io:2736: errno=-5 IO failure
+> [2260628.156980] BTRFS info (device dm-0): forced readonly
+>
+> This issue occured on two different machines now (on one twice). Both with ECC RAM. One bare metal (where dm-0 is on a NVMe) and one in a VM (where dm-0 is a ceph volume).
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/space-info.c | 11 -----------
- 1 file changed, 11 deletions(-)
-
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 441a1b94806b..5645f9667d90 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1137,16 +1137,6 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
-  *   immediately re-usable, it comes in the form of a delayed ref, which must be
-  *   run and then the transaction must be committed.
-  *
-- * FLUSH_DELAYED_REFS
-- *   The above two cases generate delayed refs that will affect
-- *   ->total_bytes_pinned.  However this counter can be inconsistent with
-- *   reality if there are outstanding delayed refs.  This is because we adjust
-- *   the counter based solely on the current set of delayed refs and disregard
-- *   any on-disk state which might include more refs.  So for example, if we
-- *   have an extent with 2 references, but we only drop 1, we'll see that there
-- *   is a negative delayed ref count for the extent and assume that the space
-- *   will be freed, and thus increase ->total_bytes_pinned.
-- *
-  * COMMIT_TRANS
-  *   This is where we reclaim all of the pinned space generated by running the
-  *   iputs.
-@@ -1159,7 +1149,6 @@ static void btrfs_preempt_reclaim_metadata_space(struct work_struct *work)
- static const enum btrfs_flush_state data_flush_states[] = {
- 	FLUSH_DELALLOC_FULL,
- 	RUN_DELAYED_IPUTS,
--	FLUSH_DELAYED_REFS,
- 	COMMIT_TRANS,
- 	ALLOC_CHUNK_FORCE,
- };
--- 
-2.26.3
+Just got it again (5.10.43). So I guess the question is how can I trace where this error comes from... The error message points at btrfs_csum_file_blocks but nothing beyond that. Grep for EIO and put a WARN_ON at each location?
 

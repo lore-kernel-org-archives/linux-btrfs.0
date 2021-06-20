@@ -2,106 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2ACAAC49361
-	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Jun 2021 16:49:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83769C48BDF
+	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Jun 2021 20:38:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1259960FF4
-	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Jun 2021 16:49:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5CBC96108E
+	for <linux-btrfs@archiver.kernel.org>; Sun, 20 Jun 2021 20:38:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230032AbhFTQvx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 20 Jun 2021 12:51:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53878 "EHLO
+        id S229901AbhFTUkZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 20 Jun 2021 16:40:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47328 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229897AbhFTQvv (ORCPT
+        with ESMTP id S229632AbhFTUkY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 20 Jun 2021 12:51:51 -0400
-Received: from mail-wm1-x335.google.com (mail-wm1-x335.google.com [IPv6:2a00:1450:4864:20::335])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 11A6BC06175F
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jun 2021 09:49:36 -0700 (PDT)
-Received: by mail-wm1-x335.google.com with SMTP id k42so6982489wms.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jun 2021 09:49:35 -0700 (PDT)
+        Sun, 20 Jun 2021 16:40:24 -0400
+Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8DEE7C061574
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jun 2021 13:38:11 -0700 (PDT)
+Received: by mail-qk1-x72d.google.com with SMTP id bm25so10442259qkb.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Jun 2021 13:38:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20150623.gappssmtp.com; s=20150623;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=hi9XxFsg2+njf5eiHTo2moqMzPZF5FcImYbk5S3IWc0=;
-        b=OUTh+M7ooVvCWgCATgkrD4eCQ8LG5pNIxhGt3UKg96pN8kAuyVmIXMkOFtSfLvkA38
-         BAgTCd2kvGMT7fFENQSx2DlabpEhWTpKMTkrRIjgFHnLBU0O78+JwwM4IU1Q1STRJIjE
-         Z2JDCDlKawuJK5jYYKPUvO3ouxoazXI3+cA4zHqNfm9r+oF/eZzd+QfV+FHW/ZVASkZm
-         8wknwogdfM+YbhFRGIIpJz6/fdo/tAfBuDW0QwmVkoAFjxhwuLhe/iBqvjYuIrQ8ZpGq
-         a+T3/nlVtSe5M1HNRA7FIkwLFR9DE7xTAXUt/DP9kvUW16EFettMt7HTbCVmFeKHijsi
-         kI8A==
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=ldk8tA65+m2606pOo410IHGd50z2oZhqcb48l6BDpQk=;
+        b=M4uV5U0b5prZ6RClmNN3cmFNIwvMJBs15TpRKdKKYuaAwU24RD5RJtolTxBSpTN9lD
+         GkpiI3fG6uLjPvHXc5ZPPeKfvJiPaeWIsYPWtg+67yLC0OjMU10e4g6s1I70sKC5oWo1
+         wCZe6a3dkZxvwAtrXLkIWLrLwyexp29xxW3oiVa+AJIxK74GT3sB6c108RH1tQCHyUVp
+         v8FssA7IONQUQ9h/3VKw/AjLjVmHQlsZ96cs9HtpyEzMn3TRxrVy9voPq0Y9mNdmruj6
+         uBlriy56cM5s7p6mp2T1qayoToD8GMOO7LnoC6yPbGCSZkwBx61JchcHcYBueBxjjyzy
+         VQZA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=hi9XxFsg2+njf5eiHTo2moqMzPZF5FcImYbk5S3IWc0=;
-        b=nX/N1KxnSvhgC/QSKMfvMOOaP9Z9OtA0f5b7VNcRiWIL2CdslY6ULINBQljY5N454G
-         4wlPuK3j2fIIjRjDFWe2xFnLvinFVf8RlkbyI7sIYtEPC/FrSyFkdXpJPLnQZm28el2I
-         pJA18Hc25sTA52xjRtUL4uvtI4IS+jPXD9lDKCNwSjqlYbbFDgkahjtfgqsD1kZLERXN
-         xOjUsnrXQaOeXIoI7ctbWIFtiz68BbBj1GrdUH4FTQm4TRqLPHs35oToGcvb518fuor2
-         Got7imdKSr+XflNy5QIlsYxXGs6KgAYEurNxkYvPji/BKptYBW7v4BeSBdNDsWBpgM9X
-         qBcA==
-X-Gm-Message-State: AOAM5308A5aFEF7y49fUANeQvTcLuQts1aFCzy55tHvp9N0GTwkzF9i9
-        Em3WNngksAoFTARZ/HMHQoB513Mu2zc1d828Etnajw==
-X-Google-Smtp-Source: ABdhPJxT4x187dNB8RaTqUBpAoCej9kyxOkLd2GmYSyTYXB0gLiWGI70VYAIkPIkTYgKYeMpp5229+oS0atvlFRrnBQ=
-X-Received: by 2002:a05:600c:1d0a:: with SMTP id l10mr22790265wms.124.1624207774199;
- Sun, 20 Jun 2021 09:49:34 -0700 (PDT)
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=ldk8tA65+m2606pOo410IHGd50z2oZhqcb48l6BDpQk=;
+        b=BPqVeFGe5V+Ne+7IOOS6HLx9gN5SDxMwK25Ob0TxQUfWkdPZnu3EKUPbo7FP8/Thla
+         cneCA4sw5G76PlZIOZSVi+b6TrBELtiDFSsN/bqXDDiGSc1KQXPa3M8v3uqZZrH9j1Di
+         yBoZyrLw4JBJivPe7PQWtXtggFxnbBiVSWg2ezaft3DkjzexGzAcC2vQb1onGl0Gv70E
+         6pIQpL1OIYDNKB/5JMr3h4Luc0/q9xelf9S+fUS0ih8d/Jxnwt0VVyVdgw9jq0MitWeg
+         YEKA4LyD+0Bbmv776/g2FaINYrGS8WrDHgE9W4vukRMMLU4p+Ah+EpE1+CFTRVINsiWk
+         nEiA==
+X-Gm-Message-State: AOAM5324qdhk5y69V8N5MAtiS/vHQm6v0yPNsHFw7/CpabGIum856kkh
+        ATuExodfMr7mVPDcgitba/UfyfsJ1Z5aK3UQNKjHuCQ7/e0=
+X-Google-Smtp-Source: ABdhPJxLH4NwPgybxyJc3zf+Vw6l8yqhY4kTGSGP4F6WDxpSbMp2s207xS2PwLJhrkR2WIa7S4HmB/tf44hkYRq5j7s=
+X-Received: by 2002:a05:6902:50b:: with SMTP id x11mr27425126ybs.133.1624221490461;
+ Sun, 20 Jun 2021 13:38:10 -0700 (PDT)
 MIME-Version: 1.0
-References: <2bb832db-3c33-d3ba-d9ae-4ebd44c1c7f3@gmail.com>
- <CAJCQCtSWxp+=nEJRFzEjEA0Lxt-rC+6Dq_CtpCNPmapzFw6WPA@mail.gmail.com>
- <ab0e8705-e18f-90eb-c42b-318c04a2101c@gmail.com> <CAJCQCtQXOgHTDAiGCWEN8_RaLNk26o9iDvtNcEBg9EVZ0yfdLg@mail.gmail.com>
-In-Reply-To: <CAJCQCtQXOgHTDAiGCWEN8_RaLNk26o9iDvtNcEBg9EVZ0yfdLg@mail.gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Sun, 20 Jun 2021 10:49:18 -0600
-Message-ID: <CAJCQCtScnSxgou39cdAGTNsjUQNkXiinatiCqDi22PeRo1PGmA@mail.gmail.com>
-Subject: Re: Filesystem goes readonly soon after mount, cannot free space or rebalance
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Asif Youssuff <yoasif@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From:   Nathan Dehnel <ncdehnel@gmail.com>
+Date:   Sun, 20 Jun 2021 20:37:59 +0000
+Message-ID: <CAEEhgEss-SusbDdw1qz-7hB3SbQyWhkYNkVLHdQuE+NhMXe27A@mail.gmail.com>
+Subject: Recover from "couldn't read tree root"?
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jun 20, 2021 at 10:24 AM Chris Murphy <lists@colorremedies.com> wrote:
->
-> On Sun, Jun 20, 2021 at 3:07 AM Asif Youssuff <yoasif@gmail.com> wrote:
-> >
-> > My complete mount options are:
-> > noatime,nodiratime,space_cache=v2,clear_cache,nospace_cache,skip_balance,commit=120,compress-force=zstd:9
->
-> space_cache=v2 is in conflict with nospace_cache and probably also
-> clear_cache; I'm not sure clear_cache can clear v2. Also once v2 is
-> used, there is a feature flag set on the super block so it always gets
-> used, and I'm not sure if nospace_cache means anything in the presence
-> of a free space tree feature flag.
+A machine failed to boot, so I tried to mount its root partition from
+systemrescuecd, which failed:
 
-clear_cache does clear v2 as well as v1, and nospace_cache overrides
-space_cache.
+[ 5404.240019] BTRFS info (device bcache3): disk space caching is enabled
+[ 5404.240022] BTRFS info (device bcache3): has skinny extents
+[ 5404.243195] BTRFS error (device bcache3): parent transid verify
+failed on 3004631449600 wanted 1420882 found 1420435
+[ 5404.243279] BTRFS error (device bcache3): parent transid verify
+failed on 3004631449600 wanted 1420882 found 1420435
+[ 5404.243362] BTRFS error (device bcache3): parent transid verify
+failed on 3004631449600 wanted 1420882 found 1420435
+[ 5404.243432] BTRFS error (device bcache3): parent transid verify
+failed on 3004631449600 wanted 1420882 found 1420435
+[ 5404.243435] BTRFS warning (device bcache3): couldn't read tree root
+[ 5404.244114] BTRFS error (device bcache3): open_ctree failed
 
-So I think your mount options should be:
+btrfs rescue super-recover -v /dev/bcache0 returned this:
 
-skip_balance,nospace_cache
+parent transid verify failed on 3004631449600 wanted 1420882 found 1420435
+parent transid verify failed on 3004631449600 wanted 1420882 found 1420435
+parent transid verify failed on 3004631449600 wanted 1420882 found 1420435
+parent transid verify failed on 3004631449600 wanted 1420882 found 1420435
+parent transid verify failed on 3004631449600 wanted 1420882 found 1420435
+Ignoring transid failure
+ERROR: could not setup extent tree
+Failed to recover bad superblocks
 
-That way space cache v1 isn't created. If you've already mounted
-before seeing this and it went read-only, you might need to do:
+uname -a:
 
-skip_balance,clear_cache,nospace_cache
+Linux sysrescue 5.10.34-1-lts #1 SMP Sun, 02 May 2021 12:41:09 +0000
+x86_64 GNU/Linux
 
-You can deal with rebuilding v2 later once everything else is fixed,
-so for now you definitely want to keep nospace_cache for all mounts in
-order to prevent any writes. v1 space cache creates bitmaps in data
-block groups, but it also involves some extent tree writes to reflect
-that used space; whereas v2 space cache creates a dedicate free space
-b-tree. Either way, there's metadata writes happening to create it,
-and the issue right now is you can't have any writes at all, except
-the ones we need to get the file system unwedged.
+btrfs --version:
 
+btrfs-progs v5.10.1
 
--- 
-Chris Murphy
+btrfs fi show:
+
+Label: none  uuid: 76189222-b60d-4402-a7ff-141f057e8574
+        Total devices 10 FS bytes used 1.50TiB
+        devid    1 size 931.51GiB used 311.03GiB path /dev/bcache3
+        devid    2 size 931.51GiB used 311.00GiB path /dev/bcache2
+        devid    3 size 931.51GiB used 311.00GiB path /dev/bcache1
+        devid    4 size 931.51GiB used 311.00GiB path /dev/bcache0
+        devid    5 size 931.51GiB used 311.00GiB path /dev/bcache4
+        devid    6 size 931.51GiB used 311.00GiB path /dev/bcache8
+        devid    7 size 931.51GiB used 311.00GiB path /dev/bcache6
+        devid    8 size 931.51GiB used 311.03GiB path /dev/bcache9
+        devid    9 size 931.51GiB used 311.03GiB path /dev/bcache7
+        devid   10 size 931.51GiB used 311.03GiB path /dev/bcache5
+
+Is this filesystem recoverable?
+
+(Sorry, re-sending because I forgot to add a subject)

@@ -2,140 +2,262 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8837C48BE5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jun 2021 06:09:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 816FCC4743C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jun 2021 06:56:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C571F61186
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jun 2021 06:09:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69E0B6128A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Jun 2021 06:56:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229886AbhFWGLS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Jun 2021 02:11:18 -0400
-Received: from mail-me3aus01on2068.outbound.protection.outlook.com ([40.107.108.68]:8479
-        "EHLO AUS01-ME3-obe.outbound.protection.outlook.com"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S229665AbhFWGLS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Jun 2021 02:11:18 -0400
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=c7Aeja29Njnbz3iTm2zAYT1oz5iiZt5fLuWR9cgSJUSaHPcFqEGdkqBM8GVYaqGOhdRJcBEeCBRcUE3M6hWMLX+qcEXTyInMMyhx08xg+0oDXYaNsmxi8fKvUrE+NcbuMH2IZ4K2AdK1M7y3Ji8HKwNYIiOSQo1PGCSCzxqycSAcrPA6yrMRM9rvM1f0xDSoA5lZgKdmLyy9oxhsBNBa2fMvQGoTGoSLbTSdXqHgiqET9yO8q0EGiU67z9TnMqZ3jy6b574X2QCyDK6N9A7WYcvPVb84EmyUJVHIz+iFPlMJW8AelVqC8WkKwHzmfNYkZFX4wJbpktdVhzWk5m8a1A==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=Fb0/rfGjg7qRQHEgRg/yapKWUYgBYt7jVXFVPTqHTcs=;
- b=nklnQlrhPPH3LOvpuGUZqodeIGOaN5VuQBe6wuXjcTQY7OOgG0ZoLZJpz7LSObuZvLMOGLb8ZUwybTnn/5p+Ya4eXkyV1hZgOfuKjbukPCzf+H0UPv30hD6RjFjQhvZqgUUjpjQDaW9Rx6oiUwlaUtgEdmQKm8rz2TKkbT+jP+F5ubfhpnQcJtFlzDcj/aPFUrwhEYwh3l5nboDFTzC8AplGYcYHO+gFFLbEcHkzi9SNMOq2289wy92A2um1glTPDX/LiaslxRVlUS8A2C4I507zTDg9y94lAHY3NhhZ5nauFlhiCxVBnNCsNPwINxh+serWev8dYKn7lIUSKX9w8w==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=pauljones.id.au; dmarc=pass action=none
- header.from=pauljones.id.au; dkim=pass header.d=pauljones.id.au; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=oakvillepondscapes.onmicrosoft.com;
- s=selector2-oakvillepondscapes-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=Fb0/rfGjg7qRQHEgRg/yapKWUYgBYt7jVXFVPTqHTcs=;
- b=H1VVFKoOe1F1HjR7KKTPPXYXPpHQNaePF+FQ+DWDYRCfDNhHd1FUKxAhVU+7YNauvoeqaPJHgOzrgyRSU1GU5xYyRD+NXENvtTbsFn0m/2Hqwm6GTYmAogqsfBfJwWCm4NwrdXOWsi5GwV8ZJBVo2IV4zwWnQSaTVzvPb6+kJkY=
-Received: from SYXPR01MB1918.ausprd01.prod.outlook.com (2603:10c6:0:2b::11) by
- SYXPR01MB1007.ausprd01.prod.outlook.com (2603:10c6:0:b::14) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.20.4242.21; Wed, 23 Jun 2021 06:08:58 +0000
-Received: from SYXPR01MB1918.ausprd01.prod.outlook.com
- ([fe80::5c09:faee:58ba:65b6]) by SYXPR01MB1918.ausprd01.prod.outlook.com
- ([fe80::5c09:faee:58ba:65b6%5]) with mapi id 15.20.4242.024; Wed, 23 Jun 2021
- 06:08:58 +0000
-From:   Paul Jones <paul@pauljones.id.au>
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Asif Youssuff <yoasif@gmail.com>
-CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Filesystem goes readonly soon after mount, cannot free space or
- rebalance
-Thread-Topic: Filesystem goes readonly soon after mount, cannot free space or
- rebalance
-Thread-Index: AQHXZMpevWC96VF9tUqaU1trL8NahashGMmAgAAIrUA=
-Date:   Wed, 23 Jun 2021 06:08:58 +0000
-Message-ID: <SYXPR01MB191839844E7C773F755E110B9E089@SYXPR01MB1918.ausprd01.prod.outlook.com>
-References: <2bb832db-3c33-d3ba-d9ae-4ebd44c1c7f3@gmail.com>
- <20210623053240.GJ11733@hungrycats.org>
-In-Reply-To: <20210623053240.GJ11733@hungrycats.org>
-Accept-Language: en-AU, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: umail.furryterror.org; dkim=none (message not signed)
- header.d=none;umail.furryterror.org; dmarc=none action=none
- header.from=pauljones.id.au;
-x-originating-ip: [124.171.130.175]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: be5eba14-b9c6-42cd-a17f-08d9360d639e
-x-ms-traffictypediagnostic: SYXPR01MB1007:
-x-microsoft-antispam-prvs: <SYXPR01MB1007015E843BAEC4A02462299E089@SYXPR01MB1007.ausprd01.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:9508;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: 5R0YHOnBIVEDU6zzxB0uyLEiDUVJJbP6EZxYofdZZGwuLG/0OSLNIbtV239+Nn6fXu/Y7Yn3t+1prwNtTff8EJnCepzpRPuT2mzXWX6f0LJrZYsx7mzf2kC6sP/XOAzjLHyXvyanaV+wp8fqu3IWTUlgPXX6V//gbfIuEKXewYPjlTJ8CJzPwT2VI+OxwJc+CnEPgFocNjIW5OfScBjTqf5RaOsYe0yBkIPB98KfuSA4a2gspqJvSmwRbiw5LFmaKHbyR5AYfmsSoiZtiSBPI2QEqONiuwvuhTtosBso3d6ajV/flSb0006926Sndzwh4oI+D4ksrVanmE+sCNKiRSIGbuQEQ/OQ4ZDcyWmfvmpicfK77msaUHck9aswi04wrt7s+EnEOWSH0+h90ibSnbl3uzpIdcXbDB8LbcOtHsl8dJNPVnHudZNKg24YgIVWYc+hIHAIXaFZprXB8ZTzWPWVFiWU2b8efVUoLJqoHpN8zktVAt6f6mrcMZ7A3pOp3jXFulRhCgW6pWr69cw4gcNtLpZgCRI0BIM+PEcOO2ZPbagToHuZ4tsofAhlEZ2ds5ta2WD2t/O9fz8wXDBHoYwdAwJCRFJIfMQixPOXsQg=
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SYXPR01MB1918.ausprd01.prod.outlook.com;PTR:;CAT:NONE;SFS:(346002)(366004)(376002)(136003)(396003)(39830400003)(4326008)(478600001)(66476007)(8676002)(66946007)(33656002)(76116006)(86362001)(316002)(110136005)(5660300002)(64756008)(8936002)(66446008)(52536014)(66556008)(71200400001)(4744005)(6506007)(2906002)(53546011)(26005)(83380400001)(7696005)(9686003)(38100700002)(122000001)(55016002)(186003);DIR:OUT;SFP:1101;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0: =?us-ascii?Q?rTX6LdzSBWhv++PUK3wOOguCWJvDzHcFHqZrJ8hDYAqtxPMf4VqhP44aW0HN?=
- =?us-ascii?Q?3uYaWeBBufxq5sV96pehPkU68bc7mwdRIvuXbUGpFGaxAZy2PGIiwQ6tAhZr?=
- =?us-ascii?Q?Dau5aBMScngyJJUkEClrJTp23IxnsR0ciVydxl5CVGOygAx/UePJELQb5duZ?=
- =?us-ascii?Q?yonrbWK2pYEqlkUnYGy5YIPn5DPePYwfzGjJeJOYM+KPT8D/0/K1fuHUGZzS?=
- =?us-ascii?Q?UHXD1UDAmdGMf0UP07Oou6+ZKVzAmp0r/NNvUbXjnY9H76BxvHhWnVeICQZy?=
- =?us-ascii?Q?7sihGK+ugZLYRAFe4RZpgNO0dQ3B7X1jOA7G5kasiTq4+RH09m4CYJ8aQviH?=
- =?us-ascii?Q?abmO0mIQY602YZnL12ZVh7uWOdMo8tnpDB8afK0z1dWgTt4eEG9PsMPAZVsn?=
- =?us-ascii?Q?RxVwVo+dE7X+VzMYvwHKE02a5ZI+6p58U+yAhBJMV3IR2jDOvCF7wj2v2kkz?=
- =?us-ascii?Q?ba7PMDfdUUjbiAR1x22hNnbMw7AYvQRasF2NW3Y9RiaovbUYoPTaZO0ko63i?=
- =?us-ascii?Q?Njwn5XE0bKmX6jgDosyK2ZlKnHdy2U+WChymgVEvgQDh3U3e11cW2kvo5YR+?=
- =?us-ascii?Q?O/KpMaW2I5nno/N69c3TzypLsyJXG51AhytXIdgBaulfw3UkO2CIOR4558M5?=
- =?us-ascii?Q?2bxB3od7GQm7Ix7e2fbVz8aHm7KRKB9kKfzJSVN/p0J5y96dbnrYikRImGl9?=
- =?us-ascii?Q?RPhrurXeP5vwb2x94Z55dnf8+PEYl3ETqEOMNdCMbNbYhBB4h6Xf32V1h7lh?=
- =?us-ascii?Q?Up+oR2M10yX7Ip6zC73eGGiiWaayRi3NHVRsU+UZ1CY8RJsWowz5T3XjNEHE?=
- =?us-ascii?Q?k1f2VrG0y0UrhbsNFBY82GjbpUOfkJRY9oWTKaBAlwPvKrXhQrqFG1o+2rZ/?=
- =?us-ascii?Q?JOboxxYKRQLkNnEYCwKOia2H2qLNifj+I4fYkh8OGfh1ehMsaKmhurjVpCN6?=
- =?us-ascii?Q?PewdTbo99u6btiFAofgarYpGP16auqFsCF0CGGBaY178Wu6CgZ0sZBaFawav?=
- =?us-ascii?Q?cX3Joccmnq2fCrGHjiUGB2xUZ7W/lTkhd7HM+mmKpcvpTVJcOihzxLdCx6Tc?=
- =?us-ascii?Q?rcX2kCpPQQtszkxjVlAJ0xIx6pz4P6w/0z0MstmqnWs46o5EMUYM7T5q2ta6?=
- =?us-ascii?Q?XQdJ7fcySS1vOM+a8ZEDIC6GmNg57TfnlsOOi3Pa6LjE9eT0GBHIcfL1px/0?=
- =?us-ascii?Q?wJXh+Hp+FpqoyDWnpsN+ji/hxTYvsX0K1R6Ltx8E2GYS80yUAapR7bQKKWbO?=
- =?us-ascii?Q?3XmyHP3jGQ/kW43DORFZ5BW+6uSXhFybKFpTTulPfkzZsHZVpisCDPgMM7ci?=
- =?us-ascii?Q?GYChNhwtzO47T4EQWehwT3R6?=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        id S229844AbhFWG7C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Jun 2021 02:59:02 -0400
+Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:12052 "EHLO
+        mx0b-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S229801AbhFWG7C (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 23 Jun 2021 02:59:02 -0400
+Received: from pps.filterd (m0098417.ppops.net [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 15N6WX52026702;
+        Wed, 23 Jun 2021 02:56:42 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
+ subject : message-id : references : content-type : in-reply-to :
+ mime-version; s=pp1; bh=qAhqpwKrPL/Wf3Apg5E9yUNXCMGcscfxC4OKW0jFBQs=;
+ b=pyZlu6dSIyz8AQ6gf6lWCddXqibT5YIdkPhTtxWo29Wj/sG+o/e1z1tajiuNuwz4yl5t
+ adbx/MhQuLQobWrTmo2uBRqajo7BQBH12wAmOF9xFRk3wA7/LU/ZGcY78gz+lvltICAg
+ gWEDQXU0lQMztU28wHyBl6G9QeRJcW2Bf7oA//ej2UgtgNUBtRcJlWaTPEv4V6iJTj0c
+ JsH1wmNteMEIbkZdkA52iFAfSTupivW5A5bMCebKMCXNYrdMrvk6VFq+nfyM+wHhSdP4
+ AFgP2EMORitFPbUv9chdmIYUz6kZSgTiin8vt8a65FLvw9RGJaY376RG2mdbnPbaxxXG hA== 
+Received: from ppma03fra.de.ibm.com (6b.4a.5195.ip4.static.sl-reverse.com [149.81.74.107])
+        by mx0a-001b2d01.pphosted.com with ESMTP id 39btvqy872-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Wed, 23 Jun 2021 02:56:42 -0400
+Received: from pps.filterd (ppma03fra.de.ibm.com [127.0.0.1])
+        by ppma03fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 15N6pq0f026473;
+        Wed, 23 Jun 2021 06:56:40 GMT
+Received: from b06cxnps4075.portsmouth.uk.ibm.com (d06relay12.portsmouth.uk.ibm.com [9.149.109.197])
+        by ppma03fra.de.ibm.com with ESMTP id 3998789072-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Wed, 23 Jun 2021 06:56:40 +0000
+Received: from d06av22.portsmouth.uk.ibm.com (d06av22.portsmouth.uk.ibm.com [9.149.105.58])
+        by b06cxnps4075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 15N6ub1W30146972
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 23 Jun 2021 06:56:37 GMT
+Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 8DAC24C064;
+        Wed, 23 Jun 2021 06:56:37 +0000 (GMT)
+Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 3A3CB4C046;
+        Wed, 23 Jun 2021 06:56:37 +0000 (GMT)
+Received: from localhost (unknown [9.199.33.234])
+        by d06av22.portsmouth.uk.ibm.com (Postfix) with ESMTP;
+        Wed, 23 Jun 2021 06:56:37 +0000 (GMT)
+Date:   Wed, 23 Jun 2021 12:26:36 +0530
+From:   riteshh <riteshh@linux.ibm.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 00/10] btrfs: defrag: rework to support sector perfect
+ defrag
+Message-ID: <20210623065636.l7uqokq7dcf6m5tc@riteshh-domain>
+References: <20210610050917.105458-1-wqu@suse.com>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210610050917.105458-1-wqu@suse.com>
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: 5M3B-Wis8A_d1-5846ysvaTG_23AkBkS
+X-Proofpoint-ORIG-GUID: 5M3B-Wis8A_d1-5846ysvaTG_23AkBkS
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 MIME-Version: 1.0
-X-OriginatorOrg: pauljones.id.au
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SYXPR01MB1918.ausprd01.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: be5eba14-b9c6-42cd-a17f-08d9360d639e
-X-MS-Exchange-CrossTenant-originalarrivaltime: 23 Jun 2021 06:08:58.2241
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 8f216723-e13f-4cce-b84c-58d8f16a0082
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: dk5uneRyQnRltfqIzh0qV9FCW6Tu+GnojgmgCd7U6JVCcn2pi0esNIhqTVW3DwOM/Sh0gQIawMV1C2YibjzrjQ==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SYXPR01MB1007
+X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.391,18.0.790
+ definitions=2021-06-23_02:2021-06-22,2021-06-23 signatures=0
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 suspectscore=0 phishscore=0
+ mlxlogscore=999 clxscore=1015 bulkscore=0 lowpriorityscore=0
+ malwarescore=0 adultscore=0 impostorscore=0 priorityscore=1501 mlxscore=0
+ spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2104190000 definitions=main-2106230037
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> -----Original Message-----
-> From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-> Sent: Wednesday, 23 June 2021 3:33 PM
-> To: Asif Youssuff <yoasif@gmail.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: Filesystem goes readonly soon after mount, cannot free space
-> or rebalance
-> =20
-> You might be able to recover by booting a kernel with a patch to delay
-> startup of the btrfs-cleaner thread, thereby preventing the snapshot
-> delete from restarting immediately and breaking the filesystem.  I haven'=
-t
-> tried it, but it was my plan B if reverting to 4.19 hadn't worked.
+On 21/06/10 01:09PM, Qu Wenruo wrote:
+> This branch is based on subpage RW branch, as the last patch needs to
+> enable defrag support for subpage cases.
+>
+> But despite that one, all other patches can be applied on current
+> misc-next.
+>
+> [BACKGROUND]
+> In subpage rw branch, we disable defrag completely due to the fact that
+> current code can only work on page basis.
+>
+> This could lead to problems like btrfs/062 crash.
+>
+> Thus this patchset will make defrag to work on both regular and subpage
+> sectorsize.
+>
+> [SOLUTION]
+> To defrag a file range, what we do is pretty much like buffered write,
+> except we don't really write any new data to page cache, but just mark
+> the range dirty.
+>
+> Then let later writeback to merge the range into a larger extent.
+>
+> But current defrag code is working on per-page basis, not per-sector,
+> thus we have to refactor it a little to make it to work properly for
+> subpage.
+>
+> This patch will separate the code into 3 layers:
+> Layer 0:	btrfs_defrag_file()
+> 		The defrag entrace
+> 		Just do proper inode lock and split the file into
+> 		page aligned 256K clusters to defrag
+>
+> Layer 1:	defrag_one_cluster()
+> 		Will collect the initial targets file extents, and pass
+> 		each continuous target to defrag_one_range()
+>
+> Layer 2:	defrag_one_range()
+> 		Will prepare the needed page and extent locking.
+> 		Then re-check the range for real target list, as initial
+> 		target list is not consistent as it doesn't hage
+> 		page/extent locking to prevent hole punching.
+>
+> Layer 3:	defrag_one_locked_target()
+> 		The real work, to make the extent range defrag and
+> 		update involved page status
+>
+> [BEHAVIOR CHANGE]
+> In the refactor, there is one behavior change:
+>
+> - Defraged sector counter is based on the initial target list
+>   This is mostly to avoid the paremters to be passed too deep into
+>   defrag_one_locked_target().
+>   Considering the accounting is not that important, we can afford some
+>   difference.
+>
+> [PATCH STRUTURE]
+> Patch 01~03:	Small independent refactor to improve readability
+> Patch 04~08:	Implement the more readable and subpage friendly defrag
+> Patch 09:	Cleanup of old infrastruture
+> Patch 10:	Enable defrag for subpage case
+>
+> Now both regular sectorsize and subpage sectorsize can pass defrag test
+> group.
+>
+> Although the tests no longer crashes, I still see random test failure on
+> 64K page size with 4K sectorsize, reporting nbytes mismatch for fsstress
+> + defrag workload.
+>
+> So please don't merge the branch into v5.14 merge window at least.
+>
+> This normally means defrag has defragged some hole without setting it
+> with DELALLOC_NEW.
+> But I haven't find any location which makes it possible, as the new
+> defrag_collect_targets() call timing (with both page and extent locked,
+> no ordered extents) should be as safe as the original one.
+>
+> Thus I'm wondering if the check timing is even correct for the existing
+> code.
+> But at least I can't reproduce the nbytes problem on x86_64, thus no yet
+> sure what the real cause is.
 
-Yes, I had to do that and it worked nicely. I don't remember the details, b=
-ut I just commented out the part that forced a RO remount. The cleaner thre=
-ad would still run and fail, but at least I could add two drives to my raid=
- array for long enough to fix the problem.
+Hi Qu,
 
+Sorry for getting back late on this. I was using my test machines for other
+tests hence this got delayed.
 
-Paul.
+I did test this whole patch series from your github https://github.com/adam900710/linux/commits/defrag_refactor.
+I didn't find any crashes (as you also mentioned). But some tests did fail e.g. btrfs/072.
+
+Is this(btrfs/072) what you are referring to in above (random test failues with subpage
+sectorsize)?
+
+Please do let me know if you would like me to try any of the fstest in loop for
+reproducing any error. Or if there is any other tests that you would like me to
+run?
+
+1. output from btrfs/072 test.
+	_check_btrfs_filesystem: filesystem on /dev/vdc is inconsistent
+	*** fsck.btrfs output ***
+	[1/7] checking root items
+	[2/7] checking extents
+	[3/7] checking free space cache
+	btrfs: csum mismatch on free space cache
+	failed to load free space cache for block group 22020096
+	btrfs: csum mismatch on free space cache
+	failed to load free space cache for block group 1095761920
+	btrfs: csum mismatch on free space cache
+	failed to load free space cache for block group 1364197376
+	[4/7] checking fs roots
+	root 5 inode 323 errors 400, nbytes wrong
+	ERROR: errors found in fs roots
+	Opening filesystem to check...
+	Checking filesystem on /dev/vdc
+	UUID: b638db59-981c-4502-831e-038930e65cf4
+	found 28282880 bytes used, error(s) found
+	total csum bytes: 15196
+	total tree bytes: 442368
+	total fs tree bytes: 331776
+	total extent tree bytes: 36864
+	btree space waste bytes: 163191
+	file data blocks allocated: 37101568
+	 referenced 27430912
+	*** end fsck.btrfs output
+
+2. btrfs/124 (- I guess this we have seen in past w/o your changes too).
+	[ 2565.969989] BTRFS info (device vdc): balance: start -d -m -s
+	[ 2565.970727] BTRFS info (device vdc): relocating block group 1513488384 flags data
+	[ 2570.693594] BTRFS error (device vdc): bad tree block start, want 31821824 have 0
+	[ 2570.725804] BTRFS info (device vdc): read error corrected: ino 0 off 31821824 (dev /dev/vdi sector 21192)
+	[ 2581.579592] BTRFS info (device vdc): found 5 extents, stage: move data extents
+	[ 2581.818799] BTRFS info (device vdc): found 5 extents, stage: update data pointers
+	[ 2582.086796] BTRFS info (device vdc): relocating block group 976617472 flags data
+	[ 2598.759264] BTRFS info (device vdc): found 6 extents, stage: move data extents
+	[ 2598.991059] BTRFS info (device vdc): found 6 extents, stage: update data pointers
+	[ 2599.274253] BTRFS info (device vdc): relocating block group 943063040 flags system
+	[ 2599.525191] BTRFS info (device vdc): relocating block group 674627584 flags metadata
+	[ 2599.788734] BTRFS info (device vdc): relocating block group 298844160 flags data|raid1
+	[ 2609.746593] BTRFS info (device vdc): found 4 extents, stage: move data extents
+	[ 2609.989663] BTRFS info (device vdc): found 3 extents, stage: update data pointers
+	[ 2610.234642] BTRFS info (device vdc): relocating block group 30408704 flags metadata|raid1
+	[ 2610.234889] ------------[ cut here ]------------
+	[ 2610.234970] BTRFS: Transaction aborted (error -28)
+	[ 2610.235172] WARNING: CPU: 3 PID: 26186 at fs/btrfs/extent-tree.c:2163 btrfs_run_delayed_refs+0x108/0x330
+	[ 2610.235364] Modules linked in:
+	[ 2610.235426] CPU: 3 PID: 26186 Comm: btrfs Not tainted 5.13.0-rc2-00393-gc0e4bc6f271f #43
+	[ 2610.235547] NIP:  c0000000009f0bb8 LR: c0000000009f0bb4 CTR: c000000000e5fb30
+	[ 2610.235665] REGS: c000000078fb7320 TRAP: 0700   Not tainted  (5.13.0-rc2-00393-gc0e4bc6f271f)
+	[ 2610.235802] MSR:  800000000282b033 &lt;SF,VEC,VSX,EE,FP,ME,IR,DR,RI,LE&gt;  CR: 48004222  XER: 20000000
+	[ 2610.235961] CFAR: c0000000001cea40 IRQMASK: 0
+	               GPR00: c0000000009f0bb4 c000000078fb75c0 c000000001c5dc00 0000000000000026
+	               GPR04: 00000000fffff5ff c000000078fb7280 0000000000000027 c0000000ff507e98
+	               GPR08: 0000000000000023 0000000000000000 c00000000c286580 c000000001a11050
+	               GPR12: 0000000000004400 c00000003ffeae00 0000000000000002 c000000045e4e088
+	               GPR16: c000000045e4e000 c000000001334eb0 c000000012654000 0000000001d00000
+	               GPR20: c000000012654000 0000000000000e5c 0000000000000000 c000000001662dc8
+	               GPR24: 0000000000000014 c000000009ec9800 c000000009ec9b48 c0000000410f6e08
+	               GPR28: 0000000000000000 0000000000000001 c000000012654000 ffffffffffffffe4
+	[ 2610.237012] NIP [c0000000009f0bb8] btrfs_run_delayed_refs+0x108/0x330
+	[ 2610.237111] LR [c0000000009f0bb4] btrfs_run_delayed_refs+0x104/0x330
+	[ 2610.237213] Call Trace:
+	[ 2610.237254] [c000000078fb75c0] [c0000000009f0bb4] btrfs_run_delayed_refs+0x104/0x330 (unreliable)
+	[ 2610.237404] [c000000078fb7680] [c000000000a0c4e4] btrfs_commit_transaction+0xf4/0x1330
+	[ 2610.237533] [c000000078fb7770] [c000000000a96e74] prepare_to_relocate+0x104/0x140
+	[ 2610.237657] [c000000078fb77a0] [c000000000a9d524] relocate_block_group+0x74/0x5f0
+	[ 2610.237770] [c000000078fb7860] [c000000000a9dcd0] btrfs_relocate_block_group+0x230/0x4a0
+	[ 2610.237886] [c000000078fb7920] [c000000000a56a60] btrfs_relocate_chunk+0x80/0x1c0
+	[ 2610.238002] [c000000078fb79a0] [c000000000a57d3c] btrfs_balance+0x103c/0x1560
+	[ 2610.238117] [c000000078fb7b30] [c000000000a6ab98] btrfs_ioctl_balance+0x2d8/0x450
+	[ 2610.238232] [c000000078fb7b90] [c000000000a6eb90] btrfs_ioctl+0x1df0/0x3be0
+	[ 2610.238328] [c000000078fb7d10] [c00000000058e048] sys_ioctl+0xa8/0x120
+	[ 2610.238435] [c000000078fb7d60] [c000000000036524] system_call_exception+0x3d4/0x410
+	[ 2610.238551] [c000000078fb7e10] [c00000000000d45c] system_call_common+0xec/0x278
+	[ 2610.238666] --- interrupt: c00 at 0x7ffff7be2990
+
+3. There were other failues, but I guess those were either due to mount failure
+   or since no compression support yet for subpage blocksize.
+
+-ritesh

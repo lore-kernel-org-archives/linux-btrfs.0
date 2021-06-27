@@ -2,101 +2,139 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0224BC49EA5
-	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Jun 2021 21:45:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44034C48BC2
+	for <linux-btrfs@archiver.kernel.org>; Sun, 27 Jun 2021 10:56:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CC6B96140E
-	for <linux-btrfs@archiver.kernel.org>; Sat, 26 Jun 2021 21:45:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C6FD61C35
+	for <linux-btrfs@archiver.kernel.org>; Sun, 27 Jun 2021 10:56:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230189AbhFZVr3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 26 Jun 2021 17:47:29 -0400
-Received: from mout.gmx.net ([212.227.17.22]:52941 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230151AbhFZVr3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 26 Jun 2021 17:47:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1624743904;
-        bh=sA0s19y/chRlYaT3npkOMwKS1popPXPHwXik+qF8iHA=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=PPmSss7pd0WuKPUdaEQjGevOkTGfwsoKPsjz5zN/vACEwCv7FmSf56J8oMBPuWXZf
-         /fRMQIY17l/LQgh6RJ2OXOnCgODUSOUrT1rg4y9wEL0/k72hRTjoT0kQnDKKaKJY95
-         MnZ8CA/LlAUpJHtu9Wbw7lbD3QMdpVoUcebCYjvc=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N63VY-1lD07D3AKG-016RGp; Sat, 26
- Jun 2021 23:45:04 +0200
-Subject: Re: [PATCH] btrfs-progs: zoned: fix memory leak in btrfs_sb_io()
-To:     Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20210626150344.25860-1-realwakka@gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <ec29b7c7-a5ff-0557-47d8-6d1f1814a0a2@gmx.com>
-Date:   Sun, 27 Jun 2021 05:45:01 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+        id S230235AbhF0K67 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 27 Jun 2021 06:58:59 -0400
+Received: from pio-pvt-msa2.bahnhof.se ([79.136.2.41]:48758 "EHLO
+        pio-pvt-msa2.bahnhof.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229526AbhF0K64 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 27 Jun 2021 06:58:56 -0400
+Received: from localhost (localhost [127.0.0.1])
+        by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTP id D22BE3F39C;
+        Sun, 27 Jun 2021 12:56:30 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from pio-pvt-msa2.bahnhof.se ([127.0.0.1])
+        by localhost (pio-pvt-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id Y2lkU5931y7i; Sun, 27 Jun 2021 12:56:29 +0200 (CEST)
+Received: by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id AD5183F319;
+        Sun, 27 Jun 2021 12:56:28 +0200 (CEST)
+Received: from [192.168.0.10] (port=52546)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.94.2)
+        (envelope-from <mail@lechevalier.se>)
+        id 1lxSSh-000IY6-Po; Sun, 27 Jun 2021 12:56:27 +0200
+Subject: Re: bug#48833: reflink copying does not check/set No_COW attribute
+ and fail
+To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Paul Eggert <eggert@cs.ucla.edu>
+Cc:     48833@debbugs.gnu.org, linux-btrfs@vger.kernel.org,
+        Tom Yan <tom.ty89@gmail.com>
+References: <CAGnHSEkr0N_hnxvm89prL3vObYgvVoPFHLL4Z7wnQCSem6hB_A@mail.gmail.com>
+ <CAGnHSEkeu1hW-7YQO0HrYK__aY-eMdxfgSbcOTvnMu3jUcu4iw@mail.gmail.com>
+ <20210604201630.GH11733@hungrycats.org>
+ <CAGnHSEk-+2tA21+sN4dioYbs_u4m_NiLPkG8u6ONJS=JbCACoA@mail.gmail.com>
+ <20210606054242.GI11733@hungrycats.org>
+ <4354c814-9f9f-0c26-fb11-36567da6f530@cs.ucla.edu>
+ <20210608024144.GB11713@hungrycats.org>
+From:   A L <mail@lechevalier.se>
+Message-ID: <14a60f28-6a74-3315-b756-56ee4b84d583@lechevalier.se>
+Date:   Sun, 27 Jun 2021 12:56:28 +0200
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
  Thunderbird/78.11.0
 MIME-Version: 1.0
-In-Reply-To: <20210626150344.25860-1-realwakka@gmail.com>
+In-Reply-To: <20210608024144.GB11713@hungrycats.org>
 Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:z3Upck6kOEtqMhvz+usAq5Y2wnWsjcnAMoZYQ+cCxVZTtmEMb4p
- 2gdw2N4q+U5KSvZkZC35kWlyTpGOhNU16PLoAfbeGvx58G8GVhqyYaMu7BUyu3wHG/xM6CS
- VOluRS2m6mzQmSFhrm+UUdczRMzgPKs8GMposTZcCelos+H8lQ2CcFmcScEwaA+KQdULsqY
- nGHNZ6KR32qeAeL9/8UXg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:jk5nLVHKQpA=:tAD95yiNxIpVEhlCQkpVBj
- uomVnWa+L5UHjfKb1+BEaewWdrXM9KMzyw8Ebu9ODaFk0++PUbmil9U0SNwo+LvH42HTbke7K
- hOTyFIr5olaPqKe6zQbATQ4Aaq+JwMrPkGOyc4GHji+IKOc/rLnTi9Hv8g6CwbTRB36DyQqoX
- sgUX52s2ACT8xEzTsdm0TW83KTS7euBeDd5zP5S6HcY9/b56/++RCPJzu5m7jf+pxM0X6ArHv
- /ULh96O6uUipGttbZRu1gRqv/xakGOsEtUX6tNr8w7gvIQDICoduQnw0VF/2oYpTB2aLFwY2k
- bwqkRtJ6D6sx2GR28b7zJ6OXl6L/+Y/b8OisoiqkrW/4IzAlLYegDt1HXu5AtggO0T+bfQIb9
- QDg6vXnpyunJ6A/BHLrII9WdW10nEvv5AutsRukP/NwB3bk4MvgBO9cVa0wASAsxFFdQCi1p1
- vvk6L4+i9E++PIUadqEI8GkURIVX5NbJDfB39cP0/gvUatpbRqLcQcV8bh8hepqzeiAqBcF4b
- ZWjsdJx+8BIhzxfVepSJpbeUlHNdoKMx/iLLJ2IjZwoUwPYVnL+ktH5tQ58+sPx79yXc7j8b2
- JwHQyQBN6exI+YLrVbEYCJbyiBfXR//zBsEswJbVkIN0dHC7xX8jX5FLZnhoATnjhTqwoVnaL
- kbDzSe853j9JfPOCJ9ufyesIBq+TWlUOtJ++7M3rPMsOPEoTTHOo5lW4af0/yX67379LgZaXR
- UYGr0xnJhW8a98Y3ynAvQXSBkgao54uZGSjoVTpXH3DarUnfxRe+Y8PUjiIaCxY7srXOf9vVE
- lcRSfkBmPkeXMyn68PT8G6qW+L2cafhEj7T868Tun9J+wkWiRKjqzrkva0r05Jr5kBdvbiRpA
- utUeJDl4KgmmsK/7snkeuhJ/uoZJEfMDCwmYO9iTXBI7t+CgonlY0X08r5noiS+fVb1sM1+JN
- XI4BuA51PpM7VW6nnPtK7uNaPHqtR5LKs8GciqZv+8KStNGwdERbOhIQ3FE7dHVDuzS4njA7I
- VDc/2KG+VsQGcHcAw3M/maZ5xpP9EOeYWNmpAwQpyurXECTDBubc6lawRoj2ixeg04Alswc3G
- p8Z/xT4hSK1HTE2FtvKbsfQfATO2ahlqmvPmbUgCRilVwbowQW9r6f05g==
+Content-Language: en-GB
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+On 2021-06-08 04:41, Zygo Blaxell wrote:
+ > On Sun, Jun 06, 2021 at 10:47:05PM -0700, Paul Eggert wrote:
+ >> On 6/5/21 10:42 PM, Zygo Blaxell wrote:
+ >>> If cp -a implements the inode attribute propagation (or 
+inheritance), then
+ >>> only users of cp -a are impacted.  They are more likely to be aware 
+that
+ >>> they may be creating new files with reduced-integrity storage 
+attributes.
+ >>
+ >> True, although I think this aspect of attribute-copying will 
+typically come
+ >> as a surprise even to "cp -a" users.
+ >
+ > Existing users might be surprised when "cp -a" starts replicating storage
+ > attributes when it did not do so before, but I suspect most future cp
+ > users would expect "cp -a" to preserve storage-policy attributes the same
+ > way it currently preserves ownership, permissions, timestamps, extended
+ > attributes, and security context--a list that initially contained only
+ > the ownership, permissions, and timestamps in the past, the others were
+ > added over time.  If not by default, then at least have the ability to
+ > do it when requested with a "--preserve=datacow" switch.
 
-On 2021/6/26 =E4=B8=8B=E5=8D=8811:03, Sidong Yang wrote:
-> In btrfs_sb_io(), blk_zone_report is used for getting information about
-> zones. But it is not freed if code goes in usual path. This patch frees
-> the variable just after it used.
->
-> Signed-off-by: Sidong Yang <realwakka@gmail.com>
+...
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+ > The cp doc could be clearer that filesystems that support reflink
+ > don't guarantee every file can be reflinked to every other file.
+ > reflink is expected to fail in a growing number of cases over time,
+ > as more filesystem features are created that are incompatible with it
+ > (e.g. encryption, where reflinks between files with different owners 
+could
+ > be unimplementable).  I've seen a number of users get burned by 
+making big
+ > --reflink=always copies and not checking the results for errors, assuming
+ > that only lack of space for metadata could cause a reflink copy to fail.
+ > There are good reasons why --reflink=auto exists and is the default,
+ > and users ignore them at their peril.
+ >
 
-Thanks,
-Qu
-> ---
->   kernel-shared/zoned.c | 1 +
->   1 file changed, 1 insertion(+)
->
-> diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-> index 2a6892b3..75eade84 100644
-> --- a/kernel-shared/zoned.c
-> +++ b/kernel-shared/zoned.c
-> @@ -543,6 +543,7 @@ size_t btrfs_sb_io(int fd, void *buf, off_t offset, =
-int rw)
->   	zones =3D (struct blk_zone *)(rep + 1);
->
->   	ret =3D sb_log_location(fd, zones, rw, &mapped);
-> +	free(rep);
->   	/*
->   	 * Special case: no superblock found in the zones. This case happens
->   	 * when initializing a file-system.
->
+Hello everyone,
+I made a similar thread[1] about a year ago on the coreutils 
+mailing-list and I think it is also relevant to this bug-report.
+
+It is true as Zygo mentions, that reflinking nocow and cow files does 
+not work, and cannot work due to the nature of how nocow works.
+
+What I would like to add to this bug-report is what elaborated on in the 
+other thread, that we can move forward with preserving all attributes by 
+setting them in the correct order. I show in the message that reflinking 
+works between two nocow files and that ‘cp -a’ could preserve nocow and 
+other attributes if ‘cp -a’ sets those attributes in correct order.
+
+As a normal end-user, IMHO, ‘cp -a’ should preserve all attributes where 
+possible, which is also what the manual[2] currently states:
+
+‘--archive’
+Preserve as much as possible of the structure and attributes of the 
+original files in the copy (but do not attempt to preserve internal 
+directory structure; i.e., ‘ls -U’ may list the entries in a copied 
+directory in a different order). Try to preserve SELinux security 
+context and extended attributes (xattr), but ignore any failure to do 
+that and print no corresponding diagnostic. Equivalent to -dR 
+--preserve=all with the reduced diagnostics.
+
+
+Only when using --reflink=always, we should fail if the target cannot 
+support reflinks.
+
+Thanks!
+
+~A
+
+
+[1] https://lists.gnu.org/archive/html/coreutils/2021-06/msg00005.html that
+[2] 
+https://www.gnu.org/software/coreutils/manual/html_node/cp-invocation.html#cp-invocation
+

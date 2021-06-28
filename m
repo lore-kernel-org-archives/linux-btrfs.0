@@ -2,139 +2,170 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44034C48BC2
-	for <linux-btrfs@archiver.kernel.org>; Sun, 27 Jun 2021 10:56:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E8C4C2B9F4
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jun 2021 04:44:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2C6FD61C35
-	for <linux-btrfs@archiver.kernel.org>; Sun, 27 Jun 2021 10:56:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7943561C2F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jun 2021 04:44:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230235AbhF0K67 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 27 Jun 2021 06:58:59 -0400
-Received: from pio-pvt-msa2.bahnhof.se ([79.136.2.41]:48758 "EHLO
-        pio-pvt-msa2.bahnhof.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229526AbhF0K64 (ORCPT
+        id S230203AbhF1Eqb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Jun 2021 00:46:31 -0400
+Received: from esa2.hgst.iphmx.com ([68.232.143.124]:43036 "EHLO
+        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229778AbhF1Eq3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 27 Jun 2021 06:58:56 -0400
-Received: from localhost (localhost [127.0.0.1])
-        by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTP id D22BE3F39C;
-        Sun, 27 Jun 2021 12:56:30 +0200 (CEST)
-X-Virus-Scanned: Debian amavisd-new at bahnhof.se
-Received: from pio-pvt-msa2.bahnhof.se ([127.0.0.1])
-        by localhost (pio-pvt-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id Y2lkU5931y7i; Sun, 27 Jun 2021 12:56:29 +0200 (CEST)
-Received: by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id AD5183F319;
-        Sun, 27 Jun 2021 12:56:28 +0200 (CEST)
-Received: from [192.168.0.10] (port=52546)
-        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
-        (Exim 4.94.2)
-        (envelope-from <mail@lechevalier.se>)
-        id 1lxSSh-000IY6-Po; Sun, 27 Jun 2021 12:56:27 +0200
-Subject: Re: bug#48833: reflink copying does not check/set No_COW attribute
- and fail
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Paul Eggert <eggert@cs.ucla.edu>
-Cc:     48833@debbugs.gnu.org, linux-btrfs@vger.kernel.org,
-        Tom Yan <tom.ty89@gmail.com>
-References: <CAGnHSEkr0N_hnxvm89prL3vObYgvVoPFHLL4Z7wnQCSem6hB_A@mail.gmail.com>
- <CAGnHSEkeu1hW-7YQO0HrYK__aY-eMdxfgSbcOTvnMu3jUcu4iw@mail.gmail.com>
- <20210604201630.GH11733@hungrycats.org>
- <CAGnHSEk-+2tA21+sN4dioYbs_u4m_NiLPkG8u6ONJS=JbCACoA@mail.gmail.com>
- <20210606054242.GI11733@hungrycats.org>
- <4354c814-9f9f-0c26-fb11-36567da6f530@cs.ucla.edu>
- <20210608024144.GB11713@hungrycats.org>
-From:   A L <mail@lechevalier.se>
-Message-ID: <14a60f28-6a74-3315-b756-56ee4b84d583@lechevalier.se>
-Date:   Sun, 27 Jun 2021 12:56:28 +0200
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+        Mon, 28 Jun 2021 00:46:29 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1624855445; x=1656391445;
+  h=from:to:cc:subject:date:message-id:references:
+   in-reply-to:content-id:content-transfer-encoding:
+   mime-version;
+  bh=Ku/fXwxj0L95pa1Wi03NxYDPzqlKeVwU5H46S0pKtLs=;
+  b=cE94amFwyIqfbGTucYSfm3yh5z5hiDRpGxVsqIKUaIW30UHdRH2dJZtJ
+   ByZKkLEq1BrDKwaSxRsaCwu/6v3ObxNBTS5uSmCocHQ9qMg8rrDXuvt+p
+   hUnrEZDkcCG0FBjFZrpXA+oAmAAU3DxJzL3d2MeemskDtS4eYitEFFMa8
+   yybQpp3NMs7ay87Duy6H/5xmTzJtrgqmR9Cx1CaVpyrcajcIuNAwgmXlz
+   N/uRgE04Lc1k8u84UrdqT4R78j772nZGGuCqXMZTfhQExST4pYCq9tGJx
+   WhKDSp9GtSXxj5BABomgyBPjHZvbLOKo3B8MKDsRFgFmh+nsijghJIn/5
+   w==;
+IronPort-SDR: tTyW8JmZNPfbUD6SUZ2tAmk0+bgBUDG9wPXmv+2kcm2q2zsTNZE3cpxzZwEIyzKvJ9Hy2kfV2z
+ TRRIN1c2shMSrLLwHNIxR20mC9QudJeBtodTKBm+Tkqx0ctQpDD0RBBCexk4Wk74FRwkUrjEnI
+ PsZcLdL48nEkcUwgYHKbOf8sRJrYJGj3i4F6HXp8U8FStxnRu+0dzBpNZ7CyNmtjUX73l28UpR
+ OoZv2rf6qUM6VOBn20GC/MtJEWsX246kAuEJFRdWJaVkuXZsT34dQWc4jjcx//TOVkngDfHp5l
+ AaQ=
+X-IronPort-AV: E=Sophos;i="5.83,305,1616428800"; 
+   d="scan'208";a="276850140"
+Received: from mail-mw2nam10lp2109.outbound.protection.outlook.com (HELO NAM10-MW2-obe.outbound.protection.outlook.com) ([104.47.55.109])
+  by ob1.hgst.iphmx.com with ESMTP; 28 Jun 2021 12:44:06 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=Uw2mALizjByN89ZtKKMRnAHV6rokclu+FZy//n6IverFij/xXIlcqVgOwVTA6Ebdn1v0wIAQI27gbrWaPWG7YpAgGUp3kMVEX6c/HWBVjB3SaZUsIss78VyJeCiH2hNEafWL6/WJGIaMEO2c3HIeEJw0oQIf1bPDNPdgBIzmWHu2w38WgsZwRa1EfO9C85cRpweXSCYwNW33Pn1pUHJiXAYAWiiYTgtQg9s61/8/1Tg2QPzrcR9U25K7DpJdyOJLieeVYPnk43qduT8N/S0EmQ5xA9umMCV9eSxDMiuz7uLAqi9nrt4RonNBq/Wp//hI9WbDnAklrpAGTmpNGtMOSA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=HoggfUpKZYGnTnVPNOPFBjqt4pLyWmDGySMlpMdjaw8=;
+ b=EcTJ/nGRjH8+n2OctL3WM2fSEItdfu5kHiBmjOYzK1GqmxA0qGP2cw4DRSgpIAj962ljemyXch1NXzlA7uc7gy/Z5jgnxJ/gO08lXitUPltcpi+aTdOSGPwdkx76jYgJzTd241klV5kXkLlmFv5/JDTiOMorTUPq+F8u/KE0LbsI7KJkSmcHyfpDn//zL1GXKTPpf3/IuHgtGta/kgkoz3pFg2bxRWagI+8CNouy33xNO7sg13zOogLv9RG8KZtcYVp3kgIW7W3dxIl1AAzSstjjn+lP4XDJummXL+Hbh6vtOdyhtIuSznqQjgi2KbK+DduBGjt4ciNqbeBGo8LMXg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=HoggfUpKZYGnTnVPNOPFBjqt4pLyWmDGySMlpMdjaw8=;
+ b=x+0ppDJ6D8vQcGv8XAOIrzAWryYpYJxuvbDzEt+FeApMVk+AcPql8ZipvXu1WrbQnaOBOzLeyHof/bal5NFlAtSOcPap0sFaZQcktmocXndbqgfdcEsVTG65TJ3J2+gNJttp3Wf7hEgiMWhaClU7TNGDbXn2/w1z4XdJImrOum4=
+Received: from BN6PR04MB0707.namprd04.prod.outlook.com (2603:10b6:404:d2::15)
+ by BN7PR04MB3841.namprd04.prod.outlook.com (2603:10b6:406:cd::16) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4264.18; Mon, 28 Jun
+ 2021 04:44:00 +0000
+Received: from BN6PR04MB0707.namprd04.prod.outlook.com
+ ([fe80::2dd7:4b71:80b1:9a71]) by BN6PR04MB0707.namprd04.prod.outlook.com
+ ([fe80::2dd7:4b71:80b1:9a71%3]) with mapi id 15.20.4264.026; Mon, 28 Jun 2021
+ 04:44:00 +0000
+From:   Naohiro Aota <Naohiro.Aota@wdc.com>
+To:     Sidong Yang <realwakka@gmail.com>
+CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs-progs: zoned: fix memory leak in btrfs_sb_io()
+Thread-Topic: [PATCH] btrfs-progs: zoned: fix memory leak in btrfs_sb_io()
+Thread-Index: AQHXapyB+t0UIKJWrEiLUKU7X3iQ9aso2zKA
+Date:   Mon, 28 Jun 2021 04:44:00 +0000
+Message-ID: <20210628044359.wuhbmthp6metdixg@naota-xeon>
+References: <20210626150344.25860-1-realwakka@gmail.com>
+In-Reply-To: <20210626150344.25860-1-realwakka@gmail.com>
+Accept-Language: ja-JP, en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: gmail.com; dkim=none (message not signed)
+ header.d=none;gmail.com; dmarc=none action=none header.from=wdc.com;
+x-originating-ip: [164.70.191.144]
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 7dff7e9b-bfe9-4235-64e7-08d939ef593a
+x-ms-traffictypediagnostic: BN7PR04MB3841:
+x-microsoft-antispam-prvs: <BN7PR04MB384199503F47E188DAC8BEBC8C039@BN7PR04MB3841.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:7219;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: +f2dNdYI4uGXdBbvlbCyT/CQBdvEtg5v/aEDeqxaACPvh+oyART/0kI1oFJPCi+cPXXd6G2r8i3r3TdV3+CQx5JucjElrxc2UB0+KDRM3hYQIG2okQVx3aQtTBs9KctiaUlyWsrwAEam6P9Y0HZMSxr2NpR+R6mBQ+JlFLI+qxhx4UOqD85fF455RkaA8FdjVcFn/295EBP2g9tkeo/65l73eqfCLyRjze2HSBPCPerPCNwLVSM42U882lXaONNZDo3nMZAv9zCVca/YWzb6kiXEOmTN40THNeuoo7ECA6/S5+CCguOPBW5QRtifpYzr3pXazmFLm9Ece+kiNhAWK6wevfOeFUq9/B+i9anZU+WnZu3DEbH3EmlXdEAo0l0QhsLSjccXVguIx8qQ9qsB0LHLkZLP3DstsiIgXqG79KjAEXZcfMPFo81gOmyU1k0QmxNaiH/ftzV0pJzZN5JM7O7KCAebjrLvc+Ecda77p4eb2Ng2njculvLR+QSC6hwu1ZgWgENvFXKHC0qJZQkQaUlalRbwuTwoOj1trH8msNX/dCtM7EIk6w1FUuwwRTJBLjUH1po2CJ9+EHcBynEPEvTzU9CVtJ1Ltja+snHeknRwoMVR0xetP3gih7LbJV1HFAIBgQm9bnT5c5xaervXYg==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BN6PR04MB0707.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(7916004)(396003)(39860400002)(346002)(376002)(366004)(136003)(26005)(316002)(1076003)(4744005)(186003)(76116006)(4326008)(91956017)(66476007)(66946007)(2906002)(6506007)(5660300002)(66446008)(64756008)(66556008)(83380400001)(8936002)(86362001)(122000001)(6916009)(71200400001)(33716001)(8676002)(9686003)(6512007)(478600001)(38100700002)(6486002);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0: =?us-ascii?Q?o65EA3jp4g7j2OaUz6VDOzgfF40pL67mhmhw+kHFT5pL2OcEtCfENwhda812?=
+ =?us-ascii?Q?+Y+8FxsEHbeugpq+G9mansP+AT5J2Wzf7CFUqYB+Ss9zpdVJXqfcSbld7D8l?=
+ =?us-ascii?Q?QeQJR3Ow0Uu6+c53JIql6yPpqPdk9bqwk3NCV3swPZNGuJtZvXKiNtn3dIap?=
+ =?us-ascii?Q?3PyXNW/k0ShWg8oOGi0SVgXW/FqA0Nii+DIgEenSMIxftsNkUXj5a+01/GGC?=
+ =?us-ascii?Q?gOdiGwD6RjiFSqTZHLrUSpX1FCpjVMw+pAVDGlG++yBgi3JsNHRlSmHE8ams?=
+ =?us-ascii?Q?eD8q/jNXLvG591b77GzFN38s1CKl+xxGgMaKDN9acaEEOUOkFKySoMDU9ni9?=
+ =?us-ascii?Q?ESDDboJObHkfrcZv5k4J+f6G9vusAFjbTUgZdX0zar8JsLy77PavsK8tsiP/?=
+ =?us-ascii?Q?MAEaUVdoNH6kbclxHTyoGszlRX6gjks7wPs0V3dyS3YMZy8bj0kmAewg4PWQ?=
+ =?us-ascii?Q?Ma+exjcD9mUSxhtVVRZ5noVKlz9KyXaZAr8rC0wdrK1Enpg/fRl0oYD0TVlv?=
+ =?us-ascii?Q?Fzr0xS5EZJXt1vC3J5TX3WyW8nM8zdXYdEi2KwmvumZve9TksbgkFuCGC9df?=
+ =?us-ascii?Q?LmfaXlJ5Y25S9J8TzpFhi9v0LJMQYdwZrTTSX9+BUZtQZtipVwvjtW2Vh6d7?=
+ =?us-ascii?Q?/w3Ro+BD/p7bKerBgjOJX6o+he4uqEET1mOtucB3qTEBg5PFHDJQQXfg8xBB?=
+ =?us-ascii?Q?2vLuuV6ilio7qQraWT0HWrFSNA2pMcUd3xjSVHtjjk2cjpqXO9XYoDNGRpjn?=
+ =?us-ascii?Q?3otLzEKky8kNeT0+9E1SDjSCwt64fYr8pKH92tzSyF8k5qCG8CJ+kzzfWUe+?=
+ =?us-ascii?Q?7NYxHhKFgrjLdXXUa5rLbXjLI0onWnXGYXFRNvKmv86BljT2vugr2bknwPmc?=
+ =?us-ascii?Q?TbvHnrwbehNYiu1DUinjQLb7xmMqcJDy5AL1Ec3j3OUc2lIUQ7bjexwHxAQi?=
+ =?us-ascii?Q?tnvdsHKAbKoEl5GRe7e2Pl6zGo38VjasL/3eciZt//zxspSoqgH+KaSRViP1?=
+ =?us-ascii?Q?MDbvYj+x8RwcuNHF2arTtHCc0YL1wC+O6sPJZ7+juV2RY+/4/Xe9cK5hPoiV?=
+ =?us-ascii?Q?876nSHoLrD0pMuZoCWtMDK2/sJycAAO15PHCLjNwdMRAnzmDhtZ8J1OS0u/C?=
+ =?us-ascii?Q?mYn1qjDjw+VrrHpyBVGpOG7unPSzZsR8XMW0wI3d4uW4MZyK+j6zAmMLeKYV?=
+ =?us-ascii?Q?8Cy/63NQfvqkMbtpYKU7W1pgeoE8r3HIQsl3pd028vYu0Jdn/IQpqYbOh3aT?=
+ =?us-ascii?Q?Zqar1N7wl2wZHSdgrhyXREXrWz5t4/zRdk27kCd13LFeF6kXk/ueB8DprDFG?=
+ =?us-ascii?Q?DSIrUJhHDgh9f30QYlqMhmpD?=
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-ID: <042AD4397556534A9A8C313710E0CC54@namprd04.prod.outlook.com>
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-In-Reply-To: <20210608024144.GB11713@hungrycats.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-GB
-Content-Transfer-Encoding: 8bit
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: BN6PR04MB0707.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 7dff7e9b-bfe9-4235-64e7-08d939ef593a
+X-MS-Exchange-CrossTenant-originalarrivaltime: 28 Jun 2021 04:44:00.5742
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: /y2rvVO0loN0YpZ1SZIxgpOMK+eypKE4hR1vMNZqm/9t63x3MQF+6bh282MyuceYuy3L8JTRsEtis0BKUpSEpg==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BN7PR04MB3841
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Sat, Jun 26, 2021 at 03:03:44PM +0000, Sidong Yang wrote:
+> In btrfs_sb_io(), blk_zone_report is used for getting information about
+> zones. But it is not freed if code goes in usual path. This patch frees
+> the variable just after it used.
+>=20
+> Signed-off-by: Sidong Yang <realwakka@gmail.com>
 
-On 2021-06-08 04:41, Zygo Blaxell wrote:
- > On Sun, Jun 06, 2021 at 10:47:05PM -0700, Paul Eggert wrote:
- >> On 6/5/21 10:42 PM, Zygo Blaxell wrote:
- >>> If cp -a implements the inode attribute propagation (or 
-inheritance), then
- >>> only users of cp -a are impacted.  They are more likely to be aware 
-that
- >>> they may be creating new files with reduced-integrity storage 
-attributes.
- >>
- >> True, although I think this aspect of attribute-copying will 
-typically come
- >> as a surprise even to "cp -a" users.
- >
- > Existing users might be surprised when "cp -a" starts replicating storage
- > attributes when it did not do so before, but I suspect most future cp
- > users would expect "cp -a" to preserve storage-policy attributes the same
- > way it currently preserves ownership, permissions, timestamps, extended
- > attributes, and security context--a list that initially contained only
- > the ownership, permissions, and timestamps in the past, the others were
- > added over time.  If not by default, then at least have the ability to
- > do it when requested with a "--preserve=datacow" switch.
+Thanks for catching this. Looks good.
 
-...
+Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>
 
- > The cp doc could be clearer that filesystems that support reflink
- > don't guarantee every file can be reflinked to every other file.
- > reflink is expected to fail in a growing number of cases over time,
- > as more filesystem features are created that are incompatible with it
- > (e.g. encryption, where reflinks between files with different owners 
-could
- > be unimplementable).  I've seen a number of users get burned by 
-making big
- > --reflink=always copies and not checking the results for errors, assuming
- > that only lack of space for metadata could cause a reflink copy to fail.
- > There are good reasons why --reflink=auto exists and is the default,
- > and users ignore them at their peril.
- >
-
-Hello everyone,
-I made a similar thread[1] about a year ago on the coreutils 
-mailing-list and I think it is also relevant to this bug-report.
-
-It is true as Zygo mentions, that reflinking nocow and cow files does 
-not work, and cannot work due to the nature of how nocow works.
-
-What I would like to add to this bug-report is what elaborated on in the 
-other thread, that we can move forward with preserving all attributes by 
-setting them in the correct order. I show in the message that reflinking 
-works between two nocow files and that ‘cp -a’ could preserve nocow and 
-other attributes if ‘cp -a’ sets those attributes in correct order.
-
-As a normal end-user, IMHO, ‘cp -a’ should preserve all attributes where 
-possible, which is also what the manual[2] currently states:
-
-‘--archive’
-Preserve as much as possible of the structure and attributes of the 
-original files in the copy (but do not attempt to preserve internal 
-directory structure; i.e., ‘ls -U’ may list the entries in a copied 
-directory in a different order). Try to preserve SELinux security 
-context and extended attributes (xattr), but ignore any failure to do 
-that and print no corresponding diagnostic. Equivalent to -dR 
---preserve=all with the reduced diagnostics.
-
-
-Only when using --reflink=always, we should fail if the target cannot 
-support reflinks.
-
-Thanks!
-
-~A
-
-
-[1] https://lists.gnu.org/archive/html/coreutils/2021-06/msg00005.html that
-[2] 
-https://www.gnu.org/software/coreutils/manual/html_node/cp-invocation.html#cp-invocation
-
+> ---
+>  kernel-shared/zoned.c | 1 +
+>  1 file changed, 1 insertion(+)
+>=20
+> diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
+> index 2a6892b3..75eade84 100644
+> --- a/kernel-shared/zoned.c
+> +++ b/kernel-shared/zoned.c
+> @@ -543,6 +543,7 @@ size_t btrfs_sb_io(int fd, void *buf, off_t offset, i=
+nt rw)
+>  	zones =3D (struct blk_zone *)(rep + 1);
+> =20
+>  	ret =3D sb_log_location(fd, zones, rw, &mapped);
+> +	free(rep);=09
+>  	/*
+>  	 * Special case: no superblock found in the zones. This case happens
+>  	 * when initializing a file-system.
+> --=20
+> 2.25.1
+> =

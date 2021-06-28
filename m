@@ -2,102 +2,124 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE528C11F66
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jun 2021 18:13:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 856A9C11F64
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jun 2021 18:17:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9346D61C7E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jun 2021 18:13:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 569D961C3D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Jun 2021 18:17:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233670AbhF1SQL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Jun 2021 14:16:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58488 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233360AbhF1SQK (ORCPT
+        id S234822AbhF1ST0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Jun 2021 14:19:26 -0400
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:30707 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233965AbhF1STZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Jun 2021 14:16:10 -0400
-Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FCE1C061760
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jun 2021 11:13:44 -0700 (PDT)
-Received: by mail-qv1-xf2b.google.com with SMTP id m15so9722528qvc.9
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Jun 2021 11:13:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=vih7lSeTueBCbjEmdntDrRfbr0j6t6TO5019BI4IVz8=;
-        b=BUI3E5FdSxd3eykuWBo+Kh3VHoZZLi4cas8a7XA505tyOYJh10M4yrU3ku5xXb8iTa
-         tr+CBwa8dOUPCWI+OLhG5NpFnrmrYIHYjBY6TnC/Fe3SXNtZlnAdSPZ3v2Mi+93dhnK8
-         aBeWk+bxvSuUbT/EY6vXwe++ywJU5nswLqvuF8hLsEvH2Tv2NsYyMxSuEggiTaBLf+81
-         6x8lCconqx3aNCd733qG+zoUBBhpQQNWNi+FdVeVjcDRlHxjRGnTb+KOl6pqnWWRy35Y
-         mo7dJwHw060iU8aJN8mvNthrDRdj7yY1KFgFnzdoyMwyJ6h2keHfLQpUveE3hRGt73Pf
-         rteg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=vih7lSeTueBCbjEmdntDrRfbr0j6t6TO5019BI4IVz8=;
-        b=BSaeVLs8Qc/guMAoVt9Esxobtq6nTNaLalqZbLBGYOrGlO3PfGkUXudBgbnCJjtXqD
-         fA+2DQv3g6BXFkFKRC2saqrBT9RwhojFFkUOLvE895EIz4tg+PD1DX8w/C1kKjAbbDCF
-         FOl+P9KKnzIrYR4VyuwPQJGINkznE0YejZX/1IUuaxT239Lj31Vnl3q2eWFMyFjPjxZK
-         WbXXt7hBpPQRhJkauLhRaytExW/No4vJQxlBczuSiOJqi5Ud+403sHSaRxd46nHbGMe4
-         ITSdCj/ELmOvqH1CDPT1Zj6rzp8NegrQH+quzSoy5oHbhMc2uK+Bq2fWMenea+AciDdI
-         Jnig==
-X-Gm-Message-State: AOAM53320ohKDX28gz+p7btUT3v99fgEIFO16YmoT789ZZ7x0+YwI4lH
-        heVCFs/Wl2xdRSN/RCyXFa+Vsw==
-X-Google-Smtp-Source: ABdhPJzoHxRC7qixtkNunlPX+yGAv8qJ76J2a1Dno9M4Fyatrrdc4dJtQ8JCOK/8bbflfCx4Ndf4zg==
-X-Received: by 2002:a0c:fbc7:: with SMTP id n7mr26851932qvp.36.1624904023622;
-        Mon, 28 Jun 2021 11:13:43 -0700 (PDT)
-Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id z22sm3901173qki.42.2021.06.28.11.13.42
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 28 Jun 2021 11:13:43 -0700 (PDT)
-Subject: Re: [PATCH 6/6] btrfs: use the filemap_fdatawrite_wbc helper for
- delalloc shrinking
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        kernel-team@fb.com
-References: <cover.1624894102.git.josef@toxicpanda.com>
- <2acb56dd851d31d7b5547099821f0cbf6dfb5d29.1624894102.git.josef@toxicpanda.com>
- <YNn90xi1imSwCDr/@infradead.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Message-ID: <435f0d30-9a6d-85fb-6ba9-bbc17517ebcf@toxicpanda.com>
-Date:   Mon, 28 Jun 2021 14:13:42 -0400
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
- Gecko/20100101 Thunderbird/78.11.0
+        Mon, 28 Jun 2021 14:19:25 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1624904219; x=1656440219;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=g2T44wYnvNaikOM4Cwrz1M9UPoAlv39rBl1uiBr5pJM=;
+  b=cLJDP6VMqpuGF4slVtukTyJKqapHHvRb4ik2ogK47S+K5IRagW8MlZNp
+   roq07TSG+Z+QbRXUVgr4q99FrXV/NLRNRwvaFfNynLb07BEGhn9xCatqO
+   fwHDf2HeOn1x5eNcnhBmQ8to9GdQgZ0BQ0L3HWoPhv9m79ZYs2BLzhrgV
+   QBwYDWTDs86dhHPSCYyS7ndfptWf7O90KBcoQtZokhTrVFFDyTbQ7i1d+
+   8k/0na+sNjcDmX1QJ6W6D+uVgePuzP0LZOleqIvmY3gPnzVJMEWO+ExU2
+   pCYvYBfRHpECzjW/V2N5040Xixet5UMWVJQ2l9eQWpw7lUAiitWUDNY9p
+   w==;
+IronPort-SDR: gYM8wcrlvQcpRox3KD70zxhkaMsZahLIzwwZVYyi8uG1H8rwDgjmgno011JrXfDiqg0vQ0I/mz
+ JhAW6MlLRtmJtDyxtyFxvjNoVtgJSPlFE8t7rXnMr3W1NPy/uw4vDzqwWasQIoAPRWN9uARxvJ
+ Cu2pux+YYaz8MHM6694aYcxcPOMxlu2k3FqzVUpx7g9KM0BZhucKbtKsP/s+vEfI8wqZiG4TEe
+ i84onMvVpfQGgYQf5TTaEASuyCi6fZjNXJgzB3q1gueBydNhv9p6tmmm/ssjAaqPAjm7mU8MRs
+ l14=
+X-IronPort-AV: E=Sophos;i="5.83,306,1616428800"; 
+   d="scan'208";a="173119855"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 29 Jun 2021 02:16:58 +0800
+IronPort-SDR: blfdT5vmgNg3m8uwt7iqhEYOqyD/2BveECaY1hTMfFmBCsFx2CFbvIo2OfbUMUV8KixTPxn8C5
+ z6DU3vP9hF+RDSWStY+fpHhLYLXj6VaHZrBoU5yuWkNgEg23GloR5pcilu9sPWsZ89yI8jiGky
+ 2v5h4JrzJEY53BUfN5lKQmdLdSwCcVvmEjCixaSSNWdK/L3NRhHwm2VP7rtdqkjnSVT52L/Ww9
+ raujL1X68izbfs4A0jv/FB1JKrQanS4gn5gh5tjA3DN5S/7xPOIWByOsYvzLaZfOFpuctY7pXH
+ xBAQ31PEwU5szoKfm2o23tdL
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 28 Jun 2021 10:55:28 -0700
+IronPort-SDR: kEGxciTQPVV2fzOBSPXZ7UzR5um2dIqoz00IL6wGuVcoEwWnbxptj6opZFRl/A95dpBfdCoDFB
+ O5eHmisFwiHUAjSpG5xoqhTBAZZsyfZO9X0DA/8qtffrZo4Tr920JnYvwtI6iITKKTPyiinMDv
+ MisBzUIXv1glVERYwP42cBgaT8WmIolj/vUARgVa3skfa7ARaLWfkp/EhINBO2ykFwCpH6vRsp
+ EDKDx0BlIZOATQts+g7qdGlng2Iowzb0oSlny6uI7g83PJEJGoCMZwbNbrioLSSyoQAb6ctCaq
+ E1g=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
+  by uls-op-cesaip02.wdc.com with ESMTP; 28 Jun 2021 11:16:59 -0700
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH] btrfs: zoned: improve logging message for auto reclaim
+Date:   Tue, 29 Jun 2021 03:16:46 +0900
+Message-Id: <3786140da052ad5067bc6d2990325519c4abd1e0.1624904192.git.johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.31.1
 MIME-Version: 1.0
-In-Reply-To: <YNn90xi1imSwCDr/@infradead.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 6/28/21 12:50 PM, Christoph Hellwig wrote:
-> On Mon, Jun 28, 2021 at 11:37:11AM -0400, Josef Bacik wrote:
->> sync_inode() has some holes that can cause problems if we're under heavy
->> ENOSPC pressure.  If there's writeback running on a separate thread
->> sync_inode() will skip writing the inode altogether.  What we really
->> want is to make sure writeback has been started on all the pages to make
->> sure we can see the ordered extents and wait on them if appropriate.
->> Switch to this new helper which will allow us to accomplish this and
->> avoid ENOSPC'ing early.
-> 
-> The only other exported user of sync_inode is in btrfs as well.  What
-> is the difference vs this caller?  Mostly I'd like to kill sync_inode
-> to reduce the surface of different hooks into the writeback code, and
-> for something externally callable your new filemap_fdatawrite_wbc
-> helpers looks nassively preferable of sync_inode /
-> writeback_single_inode.
-> 
+When we're automatically reclaiming a zone, because its zone_unusable
+value is above the reclaim threshold, we're only logging how much percent
+of the zone's capacity are used, but not how much of the capacity is unusable.
 
-Sounds good, if you don't hate this helper I'll go through and clean up all the 
-various helpers.  Thanks,
+Also print the percentage of the unusable space in the block group before
+we're reclaiming it.
 
-Josef
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/block-group.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 38b127b9edfc..98296eef561e 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1501,6 +1501,7 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
+ 	mutex_lock(&fs_info->reclaim_bgs_lock);
+ 	spin_lock(&fs_info->unused_bgs_lock);
+ 	while (!list_empty(&fs_info->reclaim_bgs)) {
++		u64 zone_unusable;
+ 		int ret = 0;
+ 
+ 		bg = list_first_entry(&fs_info->reclaim_bgs,
+@@ -1534,13 +1535,22 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
+ 			goto next;
+ 		}
+ 
++		/*
++		 * Cache the zone_unusable value before tunring the block group
++		 * to read only. As soon as the blog group is read only it's
++		 * zone_unusable value gets moved to the block group's read-only
++		 * bytes and isn't available for calculations anymore.
++		 */
++		zone_unusable = bg->zone_unusable;
+ 		ret = inc_block_group_ro(bg, 0);
+ 		up_write(&space_info->groups_sem);
+ 		if (ret < 0)
+ 			goto next;
+ 
+-		btrfs_info(fs_info, "reclaiming chunk %llu with %llu%% used",
+-				bg->start, div_u64(bg->used * 100, bg->length));
++		btrfs_info(fs_info,
++		   "reclaiming chunk %llu with %llu%% used %llu%% unusable",
++				bg->start, div_u64(bg->used * 100, bg->length),
++				div64_u64(zone_unusable * 100, bg->length));
+ 		trace_btrfs_reclaim_block_group(bg);
+ 		ret = btrfs_relocate_chunk(fs_info, bg->start);
+ 		if (ret)
+-- 
+2.31.1
+

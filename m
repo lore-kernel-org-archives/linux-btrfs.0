@@ -2,114 +2,136 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FFBBC11F65
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jun 2021 08:35:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A430EC11F6A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jun 2021 09:32:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2DE3561CA5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jun 2021 08:35:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8EC9461CAD
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Jun 2021 09:32:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232982AbhF3Ih2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Jun 2021 04:37:28 -0400
-Received: from youngberry.canonical.com ([91.189.89.112]:58185 "EHLO
-        youngberry.canonical.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232831AbhF3Ih2 (ORCPT
+        id S233914AbhF3JfI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Jun 2021 05:35:08 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:60188 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233906AbhF3JfH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Jun 2021 04:37:28 -0400
-Received: from mail-ed1-f69.google.com ([209.85.208.69])
-        by youngberry.canonical.com with esmtps  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.93)
-        (envelope-from <krzysztof.kozlowski@canonical.com>)
-        id 1lyVgQ-0006BI-Bs
-        for linux-btrfs@vger.kernel.org; Wed, 30 Jun 2021 08:34:58 +0000
-Received: by mail-ed1-f69.google.com with SMTP id h11-20020a50ed8b0000b02903947b9ca1f3so756085edr.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Jun 2021 01:34:58 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=1IFtEhzs0Lv1y9+UgWa0DfCZGcuW1gInwvipY/SR0mg=;
-        b=d4/1Y+i4JHgWoNol91NaUF8eSwFCNoIxr4vMGOeoWIVHlb4RzR94XaPIb3RbcD+69k
-         5NFdU9Sdyvbn4hQpBuhrac1wcMsCzKiH0Xjhn90159IQIqG7Eif6xy1tZIS5YB/Mcqm2
-         YieYU96IJw8HZfk00mALt6gxI9vjhDtujJqQzmE6METMdkM6CUDSGrUF6WNq56Tj6xJs
-         pWZRCRdbG7aP2jrRxo421Glhte+Gq3FSkLtBQqM48EWb994e4Ac/F5XHXWu+OGpZrxEF
-         yPFGHxMd+DVgwSMtGej3plGwLdUTje9v2qi4s59qJIKVmybOghPqa3YO5BHD6m9uC0nb
-         W0Xw==
-X-Gm-Message-State: AOAM531bC6BldwnXBvUxw9m5c6UmAw3j3AAQHnm83iJ5ChQQm71yEepC
-        UWdGv+Brq7/JfRCBnAup2Zs2OToRKzxnDk0Z38BKQx79q/rm5wQO/fW3S8Q4+/bJc4ujOlZ8WzG
-        ls9wqR9u887ljH15hLeSXr2T1TCxZD0FOjWY208Zu
-X-Received: by 2002:a05:6402:510d:: with SMTP id m13mr44656743edd.179.1625042098154;
-        Wed, 30 Jun 2021 01:34:58 -0700 (PDT)
-X-Google-Smtp-Source: ABdhPJzNgwxmBwrzLvr9noQ+vvLunox3/nAXTETv/38X874mVuhLyMIBpETi86RVWG3SYS6/SBEvBQ==
-X-Received: by 2002:a05:6402:510d:: with SMTP id m13mr44656731edd.179.1625042097973;
-        Wed, 30 Jun 2021 01:34:57 -0700 (PDT)
-Received: from [192.168.1.115] (xdsl-188-155-177-222.adslplus.ch. [188.155.177.222])
-        by smtp.gmail.com with ESMTPSA id gl26sm410271ejb.72.2021.06.30.01.34.57
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 30 Jun 2021 01:34:57 -0700 (PDT)
-Subject: Re: [BUG] btrfs potential failure on 32 core LTP test (fallocate05)
-To:     Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        "kernel-team@lists.ubuntu.com" <kernel-team@lists.ubuntu.com>,
-        "ltp@lists.linux.it" <ltp@lists.linux.it>,
-        Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>
-References: <a3b42abc-6996-ab06-ea9f-238e7c6f08d7@canonical.com>
- <124d7ead-6600-f369-7af1-a1bc27df135c@toxicpanda.com>
- <667133e5-44cb-8d95-c40a-12ac82f186f0@canonical.com>
- <0b6a502a-8db8-ef27-f48e-5001f351ef24@toxicpanda.com>
- <2576a472-1c99-889a-685c-a12bbfb08052@canonical.com>
- <9e2214b1-999d-90cf-a5c2-2dbb5a2eadd4@canonical.com>
- <57cfa398-8a33-06e2-dfcd-fa959c27ac47@toxicpanda.com>
-From:   Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>
-Message-ID: <30d510db-df48-e499-6e46-bd84c85d4b41@canonical.com>
-Date:   Wed, 30 Jun 2021 10:34:56 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+        Wed, 30 Jun 2021 05:35:07 -0400
+Received: from imap.suse.de (imap-alt.suse-dmz.suse.de [192.168.254.47])
+        (using TLSv1.2 with cipher ECDHE-ECDSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 5E34F1FE5F;
+        Wed, 30 Jun 2021 09:32:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1625045558; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=KyU/x4OsFTOgK8JG0QU+epFDTuC6jL58APtB5n/wF70=;
+        b=GdpLhqXE1bir63UuYUPg+nd/dgSW4RAxUgx21cEOIbyN+ZZRVqtkmnm+wcHeiqdlmP1ycw
+        QX+L5olKYcD4RmKA5xTSlpnT0S+LToL69GY6nVdVY6ER3flbn7m/7VS8+qlUaAIf5TVbQt
+        NSe5meRdOxCRuxsZJHl12iXYNlC0o4M=
+Received: from imap3-int (imap-alt.suse-dmz.suse.de [192.168.254.47])
+        by imap.suse.de (Postfix) with ESMTP id 3834611906;
+        Wed, 30 Jun 2021 09:32:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1625045558; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=KyU/x4OsFTOgK8JG0QU+epFDTuC6jL58APtB5n/wF70=;
+        b=GdpLhqXE1bir63UuYUPg+nd/dgSW4RAxUgx21cEOIbyN+ZZRVqtkmnm+wcHeiqdlmP1ycw
+        QX+L5olKYcD4RmKA5xTSlpnT0S+LToL69GY6nVdVY6ER3flbn7m/7VS8+qlUaAIf5TVbQt
+        NSe5meRdOxCRuxsZJHl12iXYNlC0o4M=
+Received: from director2.suse.de ([192.168.254.72])
+        by imap3-int with ESMTPSA
+        id P6BIOTQ63GAjZwAALh3uQQ
+        (envelope-from <wqu@suse.com>); Wed, 30 Jun 2021 09:32:36 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH 0/4] btrfs: subpage compressed read path fixes
+Date:   Wed, 30 Jun 2021 17:32:29 +0800
+Message-Id: <20210630093233.238032-1-wqu@suse.com>
+X-Mailer: git-send-email 2.32.0
 MIME-Version: 1.0
-In-Reply-To: <57cfa398-8a33-06e2-dfcd-fa959c27ac47@toxicpanda.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 29/06/2021 20:32, Josef Bacik wrote:
-> On 6/29/21 2:28 PM, Krzysztof Kozlowski wrote:
->> On 29/06/2021 20:06, Krzysztof Kozlowski wrote:
->>> Minor update - it's not only Azure's. AWS m5.8xlarge and m5.16xlarge (32
->>> and 64 cores) fail similarly. I'll try later also QEMU machines with
->>> different amount of CPUs.
->>>
->>
->> Test on QEMU machine with 31 CPUs passes. With 32 CPUs - failure as
->> reported.
->>
->> dmesg is empty - no error around this.
->>
->> Maybe something with per-cpu variables?
-> 
-> Ah yeah, so since you are further into this than I am, want to give my recent 
-> batch of fixes a try?
-> 
-> https://github.com/josefbacik/linux/tree/delalloc-shrink
-> 
-> This might actually resolve the problems.  If not I'm getting one of our 64cpu 
-> boxes setup to test this, I also couldn't reproduce it on my smaller local 
-> machines.  Thanks,
+During the development of subpage write support for compressed file
+extents, there is a strange failure in btrfs/038 which results -EIO
+during file read on compressed extents.
 
-I just gave ita try on v5.13 + merge of your branch and it fixes the
-issue, at least on QEMU with 32 and 64 CPUs.
+It exposed a rabbit hole of problems inside compression code, especially
+for subpage case. Those problems including:
 
-Would be good to find the exact commit fixing it to be sure it gets
-backported to stables.
+- bv_offset is not taken into consideration
+  This involves several functions:
+
+  * btrfs_submit_compressed_read()
+    Without bv_offset taken into consideration, it can get a wrong
+    extent map (can even be uncompressed extent) and cause tons
+    of problems when doing decompression
+
+  * btrfs_decompress_buf2page()
+    It doesn't take bv_offset into consideration, which means it can
+    copy wrong data into inode pages.
+
+- PAGE_SIZE abuse inside lzo decompress code
+  This makes padding zero behavior differ between different page size.
+
+- Super awful code quality
+  Anything involving two page switching is way more complex than it
+  needs to be.
+  Tons of comments for parameters are completely meaningless.
+  Way too many helper variables, that makes it super hard to grab which
+  is the main iteration cursor.
+
+This patchset will fix them by:
+
+- Make btrfs_submit_compressed_read() to do proper calculation
+  Just a small fix
+
+- Rework btrfs_decompress_buf2page()
+  Not only to make it subpage compatible, but also introduce ASCII art
+  to explain the parameter list.
+  As there are several different offsets involved.
+
+  Use single cursor for the main loop, separate page switching to
+  different loops
+
+- Rework lzo_decompress_bio()
+  The same style applied to lzo_decompress_bio(), with proper
+  sectorsize/PAGE_SIZE usage.
+
+All the rework result smaller code size, even with the excessive
+comments style and extra ASSERT()s.
+
+Since this affects the enablement of basic subpage support (affects the
+ability to read existing compressed extents), thus this patchset needs
+to be merged before the enablement patch.
+
+Thankfully all those patches should bring minimal amount of conflicts as
+they are in compression path, not a location touched by subpage support.
 
 
-Best regards,
-Krzysztof
+If possible, please merge this patchset early so that we can get more
+tests to ensure everything at least works fine for 4K page size.
+
+Qu Wenruo (4):
+  btrfs: grab correct extent map for subpage compressed extent read
+  btrfs: remove the GFP_HIGHMEM flag for compression code
+  btrfs: rework btrfs_decompress_buf2page()
+  btrfs: rework lzo_decompress_bio() to make it subpage compatible
+
+ fs/btrfs/compression.c | 171 +++++++++++++++++----------------
+ fs/btrfs/compression.h |   5 +-
+ fs/btrfs/lzo.c         | 210 +++++++++++++++++------------------------
+ fs/btrfs/zlib.c        |  18 ++--
+ fs/btrfs/zstd.c        |  12 +--
+ 5 files changed, 188 insertions(+), 228 deletions(-)
+
+-- 
+2.32.0
+

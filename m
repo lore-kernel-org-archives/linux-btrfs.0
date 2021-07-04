@@ -5,40 +5,40 @@ X-Spam-Level:
 X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62FD1C11F6A
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 00062C07E96
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 495FF6135D
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DFA9D6135D
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231740AbhGDXJE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:09:04 -0400
-Received: from mail.kernel.org ([198.145.29.99]:47874 "EHLO mail.kernel.org"
+        id S231755AbhGDXJF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:09:05 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47722 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231325AbhGDXIf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:08:35 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 0C18661946;
-        Sun,  4 Jul 2021 23:05:58 +0000 (UTC)
+        id S231213AbhGDXIc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:08:32 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 75AE8613F3;
+        Sun,  4 Jul 2021 23:05:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625439959;
-        bh=mwyT0CnTFy0k8PpQGR1TNJY0zisSRYQ8wl4PXiE2MaY=;
+        s=k20201202; t=1625439956;
+        bh=v9NfhrdmT/yY3Jyhz3QV5NgnWhv//Ot5pm9nThVIXMo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=sNXLuiBCkdAHZWoLYD1QYLD03EoV2i5syqYuW5nTP2gS8RD1/NtdWnNIeO44goWHi
-         0yalzQ9NkNAfyrw9pXicnQQ/ZnQqeVXW3iZ7YRD991NWzohM+WVavqcgY4/l0BqFvm
-         4GBeWxFygZk199qz6bnxyUImCERKTgC5ni1lrA429w3bdA6EkgFBvuNY9pH2UxvB+I
-         MJK5MfmjWteV2HQv1T0lmPAVG4VwUjx/YFfx2JVgI0k3iLwC6QGu3pJCzZDh/XRIDm
-         tSqES7sSQn6Ay+AWk4IwihVUzdW1dMCIjQ7BAbbfSEvb7D0+ruJ+j/EhG99fUEl3Ro
-         ma9IrY3uyJf9g==
+        b=EGHAxx5dt03xLFn67rbHRSs3O0VSDrLmA+ko8Mc6fJWwaCnVxBArAEiNqbDMr9ZOY
+         sLSgX1xGcYam5lvQFTNUxjFkT7hWGfMbCGhyBLk8tDwz7r77+XDftiqzrZ3HrGeHWo
+         glRmYsv/4pIQjewANz3DrCGfggMJzeN7RlhJAt1m9K5Diew1n0N83TI5UGHipCqTRH
+         9UqvxMvDCK2l6II28yztSG0tnNDeZDk5VCAyEDj/KBSNsZEmHX8DV5J6UJVMaawtx2
+         SCcnJSVjkvk0Py3IMxnR4LNT+Ij0M9P5JTrqdropUuE4iFB/Em0+9w+shVVjM27hD2
+         UDa2FgGRXBJOg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Anand Jain <anand.jain@oracle.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.13 73/85] btrfs: sysfs: fix format string for some discard stats
-Date:   Sun,  4 Jul 2021 19:04:08 -0400
-Message-Id: <20210704230420.1488358-73-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.13 70/85] btrfs: fix error handling in __btrfs_update_delayed_inode
+Date:   Sun,  4 Jul 2021 19:04:05 -0400
+Message-Id: <20210704230420.1488358-70-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704230420.1488358-1-sashal@kernel.org>
 References: <20210704230420.1488358-1-sashal@kernel.org>
@@ -50,44 +50,71 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: David Sterba <dsterba@suse.com>
+From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit 8c5ec995616f1202ab92e195fd75d6f60d86f85c ]
+[ Upstream commit bb385bedded3ccbd794559600de4a09448810f4a ]
 
-The type of discard_bitmap_bytes and discard_extent_bytes is u64 so the
-format should be %llu, though the actual values would hardly ever
-overflow to negative values.
+If we get an error while looking up the inode item we'll simply bail
+without cleaning up the delayed node.  This results in this style of
+warning happening on commit:
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+  WARNING: CPU: 0 PID: 76403 at fs/btrfs/delayed-inode.c:1365 btrfs_assert_delayed_root_empty+0x5b/0x90
+  CPU: 0 PID: 76403 Comm: fsstress Tainted: G        W         5.13.0-rc1+ #373
+  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
+  RIP: 0010:btrfs_assert_delayed_root_empty+0x5b/0x90
+  RSP: 0018:ffffb8bb815a7e50 EFLAGS: 00010286
+  RAX: 0000000000000000 RBX: ffff95d6d07e1888 RCX: ffff95d6c0fa3000
+  RDX: 0000000000000002 RSI: 000000000029e91c RDI: ffff95d6c0fc8060
+  RBP: ffff95d6c0fc8060 R08: 00008d6d701a2c1d R09: 0000000000000000
+  R10: ffff95d6d1760ea0 R11: 0000000000000001 R12: ffff95d6c15a4d00
+  R13: ffff95d6c0fa3000 R14: 0000000000000000 R15: ffffb8bb815a7e90
+  FS:  00007f490e8dbb80(0000) GS:ffff95d73bc00000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 00007f6e75555cb0 CR3: 00000001101ce001 CR4: 0000000000370ef0
+  Call Trace:
+   btrfs_commit_transaction+0x43c/0xb00
+   ? finish_wait+0x80/0x80
+   ? vfs_fsync_range+0x90/0x90
+   iterate_supers+0x8c/0x100
+   ksys_sync+0x50/0x90
+   __do_sys_sync+0xa/0x10
+   do_syscall_64+0x3d/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xae
+
+Because the iref isn't dropped and this leaves an elevated node->count,
+so any release just re-queues it onto the delayed inodes list.  Fix this
+by going to the out label to handle the proper cleanup of the delayed
+node.
+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/sysfs.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/delayed-inode.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 436ac7b4b334..4f5b14cd3a19 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -429,7 +429,7 @@ static ssize_t btrfs_discard_bitmap_bytes_show(struct kobject *kobj,
- {
- 	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 1a88f6214ebc..3091540fc22a 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1009,12 +1009,10 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+ 	nofs_flag = memalloc_nofs_save();
+ 	ret = btrfs_lookup_inode(trans, root, path, &key, mod);
+ 	memalloc_nofs_restore(nofs_flag);
+-	if (ret > 0) {
+-		btrfs_release_path(path);
+-		return -ENOENT;
+-	} else if (ret < 0) {
+-		return ret;
+-	}
++	if (ret > 0)
++		ret = -ENOENT;
++	if (ret < 0)
++		goto out;
  
--	return scnprintf(buf, PAGE_SIZE, "%lld\n",
-+	return scnprintf(buf, PAGE_SIZE, "%llu\n",
- 			fs_info->discard_ctl.discard_bitmap_bytes);
- }
- BTRFS_ATTR(discard, discard_bitmap_bytes, btrfs_discard_bitmap_bytes_show);
-@@ -451,7 +451,7 @@ static ssize_t btrfs_discard_extent_bytes_show(struct kobject *kobj,
- {
- 	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
- 
--	return scnprintf(buf, PAGE_SIZE, "%lld\n",
-+	return scnprintf(buf, PAGE_SIZE, "%llu\n",
- 			fs_info->discard_ctl.discard_extent_bytes);
- }
- BTRFS_ATTR(discard, discard_extent_bytes, btrfs_discard_extent_bytes_show);
+ 	leaf = path->nodes[0];
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
 -- 
 2.30.2
 

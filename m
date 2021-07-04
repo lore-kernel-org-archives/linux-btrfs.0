@@ -7,41 +7,41 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82E9FC07E9C
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7040C07E9A
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6C88660234
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CFC2461363
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233554AbhGDXSv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:18:51 -0400
-Received: from mail.kernel.org ([198.145.29.99]:55624 "EHLO mail.kernel.org"
+        id S233605AbhGDXSx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:18:53 -0400
+Received: from mail.kernel.org ([198.145.29.99]:50862 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233791AbhGDXOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:14:40 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id CBB0861987;
-        Sun,  4 Jul 2021 23:10:30 +0000 (UTC)
+        id S234127AbhGDXOy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:14:54 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 5B4E8619B7;
+        Sun,  4 Jul 2021 23:11:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440231;
-        bh=dCj9ICJeg4mgXnknTYKWEMI6svp4hO0x0Yk8UiVoHH4=;
+        s=k20201202; t=1625440278;
+        bh=436KjXPDUAyaRo0vyJMFZ7Eo5h0pkw77g6hLestQpYE=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=pDkcDY43KCjXJtBB5jXkJMJ4lqNQK6FeaWMmWQ9pBC1pEVfj4bAiQ5z+F7nuYmSe3
-         aHrPNotnmJ/1x9n56crCOfJyvo/Y2KGXn4PHSCHWQPaWj29O2AJBmKnQ8hkk6aKgaW
-         iAy2d4dd0KSdW5R1ADIsJi+gukeicT5EObCp81kysIT8GpaBnTRLYHEKLi55uO2/WP
-         XdJ/j8MKot+Ec+0bJpoA62nuPdnUiYkgwxGAulN6O3KUI+CnNNKsQ8EMBlBIj7LZu5
-         DVzaQQisl8ZPvYkpLIg1NCtZhlnov9KEDhUmrl3gOuLkGEu3507ZBZYnLN/Rg8cInl
-         3fIX94qJ4tguQ==
+        b=u6D9CQJ6hg9z/NdBggD2iJ/A21vdsgN7SlhbY/fVMPhw7Z80Hcb7OvZIlzus7XBat
+         Oa1uLU0fwgwMO+FR+OTxBLS0OeSA6xl0RZZCxN8r6+4IXG85H+icp/j+iUKqvlHdnQ
+         xA86iw52j1MQgwJ8QCPZZxA3kv6XotM5z098yBXVTOXIX8IaSpvOwF0xPwrp9aQf6n
+         hjkC+h3MU5IupcmBmV1gkCdTiGIN5cf8AkNA3fIOI//P0bvALWMHH388QzP+vvoZvW
+         7y1eDY35EbYRjbuwTlhPdNGTqKU7B/o2FfOxHDlDiMjt0uMd7qQrpDWq5YRPZ90P63
+         2UpDvdkrFeJjg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 41/50] btrfs: abort transaction if we fail to update the delayed inode
-Date:   Sun,  4 Jul 2021 19:09:29 -0400
-Message-Id: <20210704230938.1490742-41-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 27/31] btrfs: abort transaction if we fail to update the delayed inode
+Date:   Sun,  4 Jul 2021 19:10:39 -0400
+Message-Id: <20210704231043.1491209-27-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210704230938.1490742-1-sashal@kernel.org>
-References: <20210704230938.1490742-1-sashal@kernel.org>
+In-Reply-To: <20210704231043.1491209-1-sashal@kernel.org>
+References: <20210704231043.1491209-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -67,10 +67,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 8 insertions(+)
 
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index c93254c9d67a..3dccbbe4a658 100644
+index f3994ee1a6e6..1fbe2dee1e70 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -1074,6 +1074,14 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+@@ -1071,6 +1071,14 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
  	btrfs_delayed_inode_release_metadata(fs_info, node, (ret < 0));
  	btrfs_release_delayed_inode(node);
  

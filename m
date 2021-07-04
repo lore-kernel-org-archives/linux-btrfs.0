@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 219A3C11F67
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:17:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85E2AC07E9B
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:17:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 09A3E61378
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:17:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6AB6C61364
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:17:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233707AbhGDXTN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:19:13 -0400
-Received: from mail.kernel.org ([198.145.29.99]:57002 "EHLO mail.kernel.org"
+        id S233751AbhGDXTR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:19:17 -0400
+Received: from mail.kernel.org ([198.145.29.99]:57548 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234354AbhGDXPF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:15:05 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 7E54E613E5;
-        Sun,  4 Jul 2021 23:12:19 +0000 (UTC)
+        id S230480AbhGDXPR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:15:17 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 260F06135A;
+        Sun,  4 Jul 2021 23:12:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440340;
+        s=k20201202; t=1625440360;
         bh=iH675z0iLoR4ouZjcFqt7YDLzj9VRNuDKSKrS7DDiIo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=IRd8UP4JDmqb+a8NYsBC8mpEk1vmobUu/TWJGKFSr4K/6tw+F5H3dDGBcHb6+om9x
-         tJo0iAQi1HVZ6M5xfFelwpQWlr61hdJAbKdR3Delhpf+eZPIl4RCttsT1NAKyl2fn+
-         tnwuCTVe4I7qRf17MbT+MWVVzZukMIhErR23MyyqAVIwt3a1FBh37SWua/WHtArHKS
-         L1G8nnpT9JSOFiAh3LyRXa04fsYLcvICS9/olpX0F0REQIPBcrhZlSV3VlkBBY2qEt
-         3vPTi7gpnDuCe0vMlseQRi47y038sPmI4F9XUsvFcG5tHHx+xt3LtLpRlCdJJujE3P
-         YyMJbsWB93/6g==
+        b=XWVd/MPm+3tWsLsSMSp4q3G2Wrtk10ftQRzC0MK2XLkUqbtUP5HJ/XfSnQzQBTey5
+         hNLpIuPlG+74KNhGhCSBIeHoEVC1JXGEdn/DKaTfYCzmqA3q62Iwy38lnO3xVKAslg
+         /PYmf/caftOs6qZdZVJfmeAeMTcVOKCD2zGcEhkB9nfdQyupgfOfMisD96q4cPG3Am
+         HyglcA0mkXlDrV6ofkV3Ayk1hhdL7a5KLLpTuclYaFC4U+EItTZdTjPsDAPQmNvmpx
+         On67u27YKaP47HeAE1i73wuaqXgclZ6kmPKvv5CgODjgvetGK0YmXBDv4U4efGFlkL
+         A+tjmM5oyz8KA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Christophe Leroy <christophe.leroy@csgroup.eu>,
         kernel test robot <lkp@intel.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.9 19/20] btrfs: disable build on platforms having page size 256K
-Date:   Sun,  4 Jul 2021 19:11:54 -0400
-Message-Id: <20210704231155.1491795-19-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.4 14/15] btrfs: disable build on platforms having page size 256K
+Date:   Sun,  4 Jul 2021 19:12:20 -0400
+Message-Id: <20210704231222.1492037-14-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210704231155.1491795-1-sashal@kernel.org>
-References: <20210704231155.1491795-1-sashal@kernel.org>
+In-Reply-To: <20210704231222.1492037-1-sashal@kernel.org>
+References: <20210704231222.1492037-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore

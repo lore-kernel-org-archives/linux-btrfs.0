@@ -7,39 +7,38 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE0ECC07E96
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D48E0C07E96
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CD17F6135D
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C455561416
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231433AbhGDXS6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:18:58 -0400
-Received: from mail.kernel.org ([198.145.29.99]:55624 "EHLO mail.kernel.org"
+        id S233027AbhGDXTA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:19:00 -0400
+Received: from mail.kernel.org ([198.145.29.99]:56956 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234137AbhGDXOz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S234132AbhGDXOz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Sun, 4 Jul 2021 19:14:55 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 072B8619B0;
-        Sun,  4 Jul 2021 23:11:20 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 78061619B9;
+        Sun,  4 Jul 2021 23:11:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440281;
-        bh=b/CIhG+SKlQx6SI8ki7u97CIeZH13CqdD0xfsr05kgU=;
+        s=k20201202; t=1625440279;
+        bh=acRR1lv3wQeW0kLkEZF3PhUuMkq+/NkySZaHoolhYiw=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=nsG3bBCW+GpfvqgKWRhRrdo2Q5v7ZJqPtXjv9NoOawkjH1W3Rxfq0OG3iKxhBlWdQ
-         jIOKPbgbrkNcvpO3PDQwesvTttsIhX95aoo/TBTJA9hNkHhz9Icq8/NK7xO9i1IG1r
-         BugFFakoaTRPU7Dsck0I4zpOAc+KF3ibIY77m+n2ICVd/8/s9HkqolIsGTd5zHul0j
-         E2nqivIqGx3JriQ8hHhI9CO29XX+8vyPv48Sj6fGR13o2xWiX2tOjnvtLp+lD16qSO
-         ZOhR+L1pB4lc1PXAiCFle6/LZ8uStexRZgdsEBirvh0mJsF1tXrhq66/w54xeYMy9/
-         2hFuCEXL3rUIg==
+        b=OQQDvcxnN1u126b8KKxBfI5DAcAl5fds9922IgGOLKPB66sjY7nBLgJAXmg/UGr7v
+         Sj0jWhggvxXTB1kOqi1wPhtCkXDAduqraEuwCDz1ojx80vKawZtDViXEyAg97egxg8
+         ru4Mudogl3zfBafcUwuhYYjFC8Wx77PSmEen31vMdCJ0KXdnpsOvfD9Rq1yVOuFvbZ
+         s9uKCFqAEeeTeN1hJ87M9JhhF/rzqVoXRhDmawetDHihApC82x5/2KNB/T/fSjjr/s
+         C/sL215PfSSfapTBR/vsJO+xTeGjMKnF4yFbwcXRjoA4XnhNm1wplzc2aSOL8j4LKE
+         UHolAT6xY6Ggw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Christophe Leroy <christophe.leroy@csgroup.eu>,
-        kernel test robot <lkp@intel.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 30/31] btrfs: disable build on platforms having page size 256K
-Date:   Sun,  4 Jul 2021 19:10:42 -0400
-Message-Id: <20210704231043.1491209-30-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.19 28/31] btrfs: make Private2 lifespan more consistent
+Date:   Sun,  4 Jul 2021 19:10:40 -0400
+Message-Id: <20210704231043.1491209-28-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704231043.1491209-1-sashal@kernel.org>
 References: <20210704231043.1491209-1-sashal@kernel.org>
@@ -51,52 +50,84 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Christophe Leroy <christophe.leroy@csgroup.eu>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit b05fbcc36be1f8597a1febef4892053a0b2f3f60 ]
+[ Upstream commit 87b4d86baae219a9a79f6b0a1434b2a42fd40d09 ]
 
-With a config having PAGE_SIZE set to 256K, BTRFS build fails
-with the following message
+Currently we use page Private2 bit to indicate that we have ordered
+extent for the page range.
 
-  include/linux/compiler_types.h:326:38: error: call to
-  '__compiletime_assert_791' declared with attribute error:
-  BUILD_BUG_ON failed: (BTRFS_MAX_COMPRESSED % PAGE_SIZE) != 0
+But the lifespan of it is not consistent, during regular writeback path,
+there are two locations to clear the same PagePrivate2:
 
-BTRFS_MAX_COMPRESSED being 128K, BTRFS cannot support platforms with
-256K pages at the time being.
+    T ----- Page marked Dirty
+    |
+    + ----- Page marked Private2, through btrfs_run_dealloc_range()
+    |
+    + ----- Page cleared Private2, through btrfs_writepage_cow_fixup()
+    |       in __extent_writepage_io()
+    |       ^^^ Private2 cleared for the first time
+    |
+    + ----- Page marked Writeback, through btrfs_set_range_writeback()
+    |       in __extent_writepage_io().
+    |
+    + ----- Page cleared Private2, through
+    |       btrfs_writepage_endio_finish_ordered()
+    |       ^^^ Private2 cleared for the second time.
+    |
+    + ----- Page cleared Writeback, through
+            btrfs_writepage_endio_finish_ordered()
 
-There are two platforms that can select 256K pages:
- - hexagon
- - powerpc
+Currently PagePrivate2 is mostly to prevent ordered extent accounting
+being executed for both endio and invalidatepage.
+Thus only the one who cleared page Private2 is responsible for ordered
+extent accounting.
 
-Disable BTRFS when 256K page size is selected. Supporting this would
-require changes to the subpage mode that's currently being developed.
-Given that 256K is many times larger than page sizes commonly used and
-for what the algorithms and structures have been tuned, it's out of
-scope and disabling build is a reasonable option.
+But the fact is, in btrfs_writepage_endio_finish_ordered(), page
+Private2 is cleared and ordered extent accounting is executed
+unconditionally.
 
-Reported-by: kernel test robot <lkp@intel.com>
-Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
-[ update changelog ]
+The race prevention only happens through btrfs_invalidatepage(), where
+we wait for the page writeback first, before checking the Private2 bit.
+
+This means, Private2 is also protected by Writeback bit, and there is no
+need for btrfs_writepage_cow_fixup() to clear Priavte2.
+
+This patch will change btrfs_writepage_cow_fixup() to just check
+PagePrivate2, not to clear it.
+The clearing will happen in either btrfs_invalidatepage() or
+btrfs_writepage_endio_finish_ordered().
+
+This makes the Private2 bit easier to understand, just meaning the page
+has unfinished ordered extent attached to it.
+
+And this patch is a hard requirement for the incoming refactoring for
+how we finished ordered IO for endio context, as the coming patch will
+check Private2 to determine if we need to do the ordered extent
+accounting.  Thus this patch is definitely needed or we will hang due to
+unfinished ordered extent.
+
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 23537bc8c827..7233127bb93a 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -12,6 +12,8 @@ config BTRFS_FS
- 	select RAID6_PQ
- 	select XOR_BLOCKS
- 	select SRCU
-+	depends on !PPC_256K_PAGES	# powerpc
-+	depends on !PAGE_SIZE_256KB	# hexagon
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bf0e0e3e09c5..acf91542b477 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2223,7 +2223,7 @@ static int btrfs_writepage_start_hook(struct page *page, u64 start, u64 end)
+ 	struct btrfs_writepage_fixup *fixup;
  
- 	help
- 	  Btrfs is a general purpose copy-on-write filesystem with extents,
+ 	/* this page is properly in the ordered list */
+-	if (TestClearPagePrivate2(page))
++	if (PagePrivate2(page))
+ 		return 0;
+ 
+ 	if (PageChecked(page))
 -- 
 2.30.2
 

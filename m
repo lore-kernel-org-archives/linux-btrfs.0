@@ -7,38 +7,39 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63B0EC07E96
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CADEEC07E9B
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 52DFE6135D
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB2D161364
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233483AbhGDXSo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:18:44 -0400
-Received: from mail.kernel.org ([198.145.29.99]:56966 "EHLO mail.kernel.org"
+        id S233160AbhGDXSn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:18:43 -0400
+Received: from mail.kernel.org ([198.145.29.99]:56968 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233790AbhGDXOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S233805AbhGDXOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Sun, 4 Jul 2021 19:14:40 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id AC83A61483;
-        Sun,  4 Jul 2021 23:10:29 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 71E7461999;
+        Sun,  4 Jul 2021 23:10:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440230;
-        bh=+wex8CcuWs025pv3rwmdk9iuAFH6n7WJAFTfmi2V8hY=;
+        s=k20201202; t=1625440235;
+        bh=d91l8YOMkXlStC5R05sJlbRKTozf270BCQBHcP2Iu4A=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=r1NHa8orSjQynw0o1I2cKKxc5s0WEEPtI6hUqYk8lWLWIkgSEwfgosaM7ZNhWUnx/
-         1x7FE2LV6KiGJl2GH2hwZ8RIvIq/IqrXjWCItnnEApHTbMq+MEdSxgZ3jNvgqSPtPg
-         OR3Q44Xn3PrEUgxAjsT+dYIliCU190OdCT0AZXWEdO3wLqd+rANxOJw6rMr3sq7Kr9
-         cOxu3PJsZzDCdpsB8FhGnaeJGZnio+fOZA7MN81az1rdRaaOkIrRj34i+pFQ/72jrE
-         rwxc2L2UOe6WgEKaAFEpHeG30H9WJHxtj7zdYVXtZZdbonZyH+D6+i9/c5fHGiMUap
-         hc4thhS27KaHg==
+        b=KORuoefTpW4ZxmZbh5Yw4ryLvJjv30n43bzIQNYCW7kr1c/3irAFGPwLXUpbXrvd4
+         fAHqxN7mOyLziNdlLdyVKiqvJBY+DaGZmco7dQTbDo9eM5Zt1zfeQX81f7KcQfRieY
+         z7eGBOqafcBqZrBglIddQg844fBxzxKgAXnA7i48gaPmZzCAqIG1+GUOqPr8YLHkgA
+         OCVn5q2XjXE82UcCadYIouXbYSc+fvygC9UuDpjalGNuTbepa9ARgKAZItrDwTEe1p
+         AiKmPulV+uxRq78u/wIx7exI2l7HGkIiKw3gKI8hO7JpL2nArkBbSRkeSXiXhYygMk
+         iCDvLzAX2Ujcw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
+Cc:     Christophe Leroy <christophe.leroy@csgroup.eu>,
+        kernel test robot <lkp@intel.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 40/50] btrfs: fix error handling in __btrfs_update_delayed_inode
-Date:   Sun,  4 Jul 2021 19:09:28 -0400
-Message-Id: <20210704230938.1490742-40-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 44/50] btrfs: disable build on platforms having page size 256K
+Date:   Sun,  4 Jul 2021 19:09:32 -0400
+Message-Id: <20210704230938.1490742-44-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704230938.1490742-1-sashal@kernel.org>
 References: <20210704230938.1490742-1-sashal@kernel.org>
@@ -50,71 +51,52 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+From: Christophe Leroy <christophe.leroy@csgroup.eu>
 
-[ Upstream commit bb385bedded3ccbd794559600de4a09448810f4a ]
+[ Upstream commit b05fbcc36be1f8597a1febef4892053a0b2f3f60 ]
 
-If we get an error while looking up the inode item we'll simply bail
-without cleaning up the delayed node.  This results in this style of
-warning happening on commit:
+With a config having PAGE_SIZE set to 256K, BTRFS build fails
+with the following message
 
-  WARNING: CPU: 0 PID: 76403 at fs/btrfs/delayed-inode.c:1365 btrfs_assert_delayed_root_empty+0x5b/0x90
-  CPU: 0 PID: 76403 Comm: fsstress Tainted: G        W         5.13.0-rc1+ #373
-  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
-  RIP: 0010:btrfs_assert_delayed_root_empty+0x5b/0x90
-  RSP: 0018:ffffb8bb815a7e50 EFLAGS: 00010286
-  RAX: 0000000000000000 RBX: ffff95d6d07e1888 RCX: ffff95d6c0fa3000
-  RDX: 0000000000000002 RSI: 000000000029e91c RDI: ffff95d6c0fc8060
-  RBP: ffff95d6c0fc8060 R08: 00008d6d701a2c1d R09: 0000000000000000
-  R10: ffff95d6d1760ea0 R11: 0000000000000001 R12: ffff95d6c15a4d00
-  R13: ffff95d6c0fa3000 R14: 0000000000000000 R15: ffffb8bb815a7e90
-  FS:  00007f490e8dbb80(0000) GS:ffff95d73bc00000(0000) knlGS:0000000000000000
-  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-  CR2: 00007f6e75555cb0 CR3: 00000001101ce001 CR4: 0000000000370ef0
-  Call Trace:
-   btrfs_commit_transaction+0x43c/0xb00
-   ? finish_wait+0x80/0x80
-   ? vfs_fsync_range+0x90/0x90
-   iterate_supers+0x8c/0x100
-   ksys_sync+0x50/0x90
-   __do_sys_sync+0xa/0x10
-   do_syscall_64+0x3d/0x80
-   entry_SYSCALL_64_after_hwframe+0x44/0xae
+  include/linux/compiler_types.h:326:38: error: call to
+  '__compiletime_assert_791' declared with attribute error:
+  BUILD_BUG_ON failed: (BTRFS_MAX_COMPRESSED % PAGE_SIZE) != 0
 
-Because the iref isn't dropped and this leaves an elevated node->count,
-so any release just re-queues it onto the delayed inodes list.  Fix this
-by going to the out label to handle the proper cleanup of the delayed
-node.
+BTRFS_MAX_COMPRESSED being 128K, BTRFS cannot support platforms with
+256K pages at the time being.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+There are two platforms that can select 256K pages:
+ - hexagon
+ - powerpc
+
+Disable BTRFS when 256K page size is selected. Supporting this would
+require changes to the subpage mode that's currently being developed.
+Given that 256K is many times larger than page sizes commonly used and
+for what the algorithms and structures have been tuned, it's out of
+scope and disabling build is a reasonable option.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
+[ update changelog ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/delayed-inode.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ fs/btrfs/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 7dad8794ee38..c93254c9d67a 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1033,12 +1033,10 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
- 	nofs_flag = memalloc_nofs_save();
- 	ret = btrfs_lookup_inode(trans, root, path, &key, mod);
- 	memalloc_nofs_restore(nofs_flag);
--	if (ret > 0) {
--		btrfs_release_path(path);
--		return -ENOENT;
--	} else if (ret < 0) {
--		return ret;
--	}
-+	if (ret > 0)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
+diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
+index 38651fae7f21..0aa1bee24d80 100644
+--- a/fs/btrfs/Kconfig
++++ b/fs/btrfs/Kconfig
+@@ -14,6 +14,8 @@ config BTRFS_FS
+ 	select RAID6_PQ
+ 	select XOR_BLOCKS
+ 	select SRCU
++	depends on !PPC_256K_PAGES	# powerpc
++	depends on !PAGE_SIZE_256KB	# hexagon
  
- 	leaf = path->nodes[0];
- 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 	help
+ 	  Btrfs is a general purpose copy-on-write filesystem with extents,
 -- 
 2.30.2
 

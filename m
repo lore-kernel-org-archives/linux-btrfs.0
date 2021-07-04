@@ -5,41 +5,41 @@ X-Spam-Level:
 X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2D67C11F6A
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:07:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8872FC07E96
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:07:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 89B5B61483
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:07:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7394A613F1
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:07:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231917AbhGDXJf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:09:35 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48098 "EHLO mail.kernel.org"
+        id S231969AbhGDXJm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:09:42 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47420 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231236AbhGDXIm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:08:42 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 40B0261416;
-        Sun,  4 Jul 2021 23:06:05 +0000 (UTC)
+        id S231392AbhGDXIj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:08:39 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id AACBA61364;
+        Sun,  4 Jul 2021 23:06:02 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625439966;
-        bh=9brvtHm5P1xX4on/zdIiSZ+3b4pLzhJ4IaEBj2zRwds=;
+        s=k20201202; t=1625439963;
+        bh=hF2Or2ggfZNj/iZ/CwzyC43xYr5V3icu8Dg9dnD9xV0=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=mprrkMbXqBDE6h0i2DF708JTAxiuVL+944iY9VLlgBFuEyW1Vuh/O/LrR4WWQxdXj
-         fOAZO52xUn1vSY8ZrHr8Pg6q1d4NhDEAiGO+v0km/sqGuWjvQ6PImrv2LP+lLUiWtv
-         PoF4OVGgAttuitWPRtLDhX1ns0RVYuUrz3OaQeCwc5satUC5jxfEhjS/NT87Ny7HuR
-         AMs4vrv97WrzK4mxiJWyu91H0CKoGabe//0ZEXSV2RnrHEgcXQppJMXf24mbVW+Qfc
-         zsZsd9/wLWjd8xN6ip4xuJMUrdGeIrgE+LbM4zhYNcCaIyRcDekj5m9+GPUYDV9Xbf
-         UM4NZENpyejGA==
+        b=u3hPidvl97zsUgD2rP3tx42skK1ZtWQbUKckKEYmPiHQKZs2PCdKW3AD4wXoMDaEs
+         fkOVRX1ybd/lrQOXl4kqZjSFq1AllqSZRca/q4QSBk+yWv+FrAgaC4YptC7WtfYR+h
+         1327Pfhr54T8tEWLeKcgZJCIPT1T0YMcWDQghg0B8rSkSg0DBS5mxHfUkFFPFl7WaK
+         NdnXJAD0VnGeZRqYObySEupF+AwBgSZdkGXqf5H/guW+87/rNrzAs+WYgNjcOpB6uo
+         0CQV6cXuy/yQit93LE5KOmRfPl1NVTYeCIWM6/jwg7o6psFBObDlueniKVWv1OnGg/
+         XGuc8GI2pxkwg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Christophe Leroy <christophe.leroy@csgroup.eu>,
-        kernel test robot <lkp@intel.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, Ritesh Harjani <riteshh@linux.ibm.com>,
+        Anand Jain <anand.jain@oracle.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.13 78/85] btrfs: disable build on platforms having page size 256K
-Date:   Sun,  4 Jul 2021 19:04:13 -0400
-Message-Id: <20210704230420.1488358-78-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.13 76/85] btrfs: fix the filemap_range_has_page() call in btrfs_punch_hole_lock_range()
+Date:   Sun,  4 Jul 2021 19:04:11 -0400
+Message-Id: <20210704230420.1488358-76-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704230420.1488358-1-sashal@kernel.org>
 References: <20210704230420.1488358-1-sashal@kernel.org>
@@ -51,52 +51,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Christophe Leroy <christophe.leroy@csgroup.eu>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit b05fbcc36be1f8597a1febef4892053a0b2f3f60 ]
+[ Upstream commit 0528476b6ac7832f31e2ed740a57ae31316b124e ]
 
-With a config having PAGE_SIZE set to 256K, BTRFS build fails
-with the following message
+[BUG]
+With current subpage RW support, the following script can hang the fs
+with 64K page size.
 
-  include/linux/compiler_types.h:326:38: error: call to
-  '__compiletime_assert_791' declared with attribute error:
-  BUILD_BUG_ON failed: (BTRFS_MAX_COMPRESSED % PAGE_SIZE) != 0
+ # mkfs.btrfs -f -s 4k $dev
+ # mount $dev -o nospace_cache $mnt
+ # fsstress -w -n 50 -p 1 -s 1607749395 -d $mnt
 
-BTRFS_MAX_COMPRESSED being 128K, BTRFS cannot support platforms with
-256K pages at the time being.
+The kernel will do an infinite loop in btrfs_punch_hole_lock_range().
 
-There are two platforms that can select 256K pages:
- - hexagon
- - powerpc
+[CAUSE]
+In btrfs_punch_hole_lock_range() we:
 
-Disable BTRFS when 256K page size is selected. Supporting this would
-require changes to the subpage mode that's currently being developed.
-Given that 256K is many times larger than page sizes commonly used and
-for what the algorithms and structures have been tuned, it's out of
-scope and disabling build is a reasonable option.
+- Truncate page cache range
+- Lock extent io tree
+- Wait any ordered extents in the range.
 
-Reported-by: kernel test robot <lkp@intel.com>
-Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
-[ update changelog ]
+We exit the loop until we meet all the following conditions:
+
+- No ordered extent in the lock range
+- No page is in the lock range
+
+The latter condition has a pitfall, it only works for sector size ==
+PAGE_SIZE case.
+
+While can't handle the following subpage case:
+
+  0       32K     64K     96K     128K
+  |       |///////||//////|       ||
+
+lockstart=32K
+lockend=96K - 1
+
+In this case, although the range crosses 2 pages,
+truncate_pagecache_range() will invalidate no page at all, but only zero
+the [32K, 96K) range of the two pages.
+
+Thus filemap_range_has_page(32K, 96K-1) will always return true, thus we
+will never meet the loop exit condition.
+
+[FIX]
+Fix the problem by doing page alignment for the lock range.
+
+Function filemap_range_has_page() has already handled lend < lstart
+case, we only need to round up @lockstart, and round_down @lockend for
+truncate_pagecache_range().
+
+This modification should not change any thing for sector size ==
+PAGE_SIZE case, as in that case our range is already page aligned.
+
+Tested-by: Ritesh Harjani <riteshh@linux.ibm.com> # [ppc64]
+Tested-by: Anand Jain <anand.jain@oracle.com> # [aarch64]
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/Kconfig | 2 ++
- 1 file changed, 2 insertions(+)
+ fs/btrfs/file.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 68b95ad82126..520a0f6a7d9e 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -18,6 +18,8 @@ config BTRFS_FS
- 	select RAID6_PQ
- 	select XOR_BLOCKS
- 	select SRCU
-+	depends on !PPC_256K_PAGES	# powerpc
-+	depends on !PAGE_SIZE_256KB	# hexagon
- 
- 	help
- 	  Btrfs is a general purpose copy-on-write filesystem with extents,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 55f68422061d..7e6ed97a6d08 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2483,6 +2483,17 @@ static int btrfs_punch_hole_lock_range(struct inode *inode,
+ 				       const u64 lockend,
+ 				       struct extent_state **cached_state)
+ {
++	/*
++	 * For subpage case, if the range is not at page boundary, we could
++	 * have pages at the leading/tailing part of the range.
++	 * This could lead to dead loop since filemap_range_has_page()
++	 * will always return true.
++	 * So here we need to do extra page alignment for
++	 * filemap_range_has_page().
++	 */
++	const u64 page_lockstart = round_up(lockstart, PAGE_SIZE);
++	const u64 page_lockend = round_down(lockend + 1, PAGE_SIZE) - 1;
++
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+ 		int ret;
+@@ -2503,7 +2514,7 @@ static int btrfs_punch_hole_lock_range(struct inode *inode,
+ 		    (ordered->file_offset + ordered->num_bytes <= lockstart ||
+ 		     ordered->file_offset > lockend)) &&
+ 		     !filemap_range_has_page(inode->i_mapping,
+-					     lockstart, lockend)) {
++					     page_lockstart, page_lockend)) {
+ 			if (ordered)
+ 				btrfs_put_ordered_extent(ordered);
+ 			break;
 -- 
 2.30.2
 

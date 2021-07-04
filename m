@@ -2,281 +2,223 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF7DDC07E95
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Jul 2021 22:47:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D35DC07E95
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 11:15:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C076061208
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Jul 2021 22:47:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7C80E613C9
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 11:15:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234290AbhGBWtm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Jul 2021 18:49:42 -0400
-Received: from mout.gmx.net ([212.227.17.22]:41945 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233350AbhGBWtH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 2 Jul 2021 18:49:07 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1625265993;
-        bh=9uSNEwfOAig3kQU4xhBjXHa1y3JxyCvkPxGBO6+QKEs=;
-        h=X-UI-Sender-Class:To:References:From:Subject:Date:In-Reply-To;
-        b=bF78y9wD6YPMNqH1UBxw/Y/gvOoz6JwCi0KkXCqHEJCStusE7PC+Oh89xCD4FCArf
-         nKLMerYO7XpstdYCaHSEI1ApB6TWeDu3IlXlUF8msK2Cc+6l3BIO7N9qI4Y91eZ9au
-         W93vfO8UfK3or0kSRH34l0w1H59qGKGmmGQO7xes=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mof9F-1lS43t1QQD-00p6pD; Sat, 03
- Jul 2021 00:46:33 +0200
-To:     Martin Raiber <martin@urbackup.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <010201795331ffe5-6933accd-b72f-45f0-be86-c2832b6fe306-000000@eu-west-1.amazonses.com>
- <0102017a1fead031-e0b49bda-297e-42f8-8fde-5567c5cfdec9-000000@eu-west-1.amazonses.com>
- <0102017a5e38aa40-fb2774c8-5be1-4022-abfa-c59fe23f46a3-000000@eu-west-1.amazonses.com>
- <4e6c3598-92b4-30d6-3df8-6b70badbd893@gmx.com>
- <0102017a631abd46-c29f6d05-e5b2-44b1-a945-53f43026154f-000000@eu-west-1.amazonses.com>
- <6422009e-be80-f753-2243-2a13178a1763@gmx.com>
- <0102017a680d637c-4a958f96-dd8b-433d-84a6-8fc6a84abf47-000000@eu-west-1.amazonses.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: IO failure without other (device) error
-Message-ID: <a5357b44-6c1c-3174-a76c-09f01802386a@gmx.com>
-Date:   Sat, 3 Jul 2021 06:46:29 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+        id S229529AbhGDLRe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 07:17:34 -0400
+Received: from mx0a-00069f02.pphosted.com ([205.220.165.32]:24294 "EHLO
+        mx0a-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S229492AbhGDLRe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 07:17:34 -0400
+Received: from pps.filterd (m0246627.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 164BBXh5023176
+        for <linux-btrfs@vger.kernel.org>; Sun, 4 Jul 2021 11:14:59 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : content-transfer-encoding : content-type :
+ mime-version; s=corp-2020-01-29;
+ bh=x60uvfBipJALuEUlGRUwfPDiyi3qyS+lShdHyx3junI=;
+ b=e4sW0antsfWVnyNnCdOXReCdExxkbqAQTINhY+U1yJgb13exbFPIe7Pd3C9ELYGMHKgH
+ ZSmHGgjZW0pjgfrOxOyEume3SDpdVwXj17Qp6z3FeAZB506nWrlaXe2ZboA2ot58EiiD
+ T5q45Yg2ImGp2Fmn8534R9HjEQ7hNCvZWgCUX0UTQipmlhxGzG99YG+wJbW6gTMCSbN8
+ J883aIFZAFjM1wP0XMYAeYNHDOkuHR28b90QJCwPxGvmabyc6+SlEtk7zBXTN8u4XghA
+ 0RSOmU5jpxpO+3xAH0pWG/RR0vg+smOne3DeGYZWC8qmAzMnfmfVR5DDaHzwBYRCrASS YQ== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by mx0b-00069f02.pphosted.com with ESMTP id 39jeg1h4k2-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jul 2021 11:14:58 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 164BAL61058662
+        for <linux-btrfs@vger.kernel.org>; Sun, 4 Jul 2021 11:14:57 GMT
+Received: from nam10-mw2-obe.outbound.protection.outlook.com (mail-mw2nam10lp2102.outbound.protection.outlook.com [104.47.55.102])
+        by aserp3030.oracle.com with ESMTP id 39jdxd3dkk-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK)
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Jul 2021 11:14:57 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=T+JSR/ttfec6D8wl9cmFXXYDuVqI6au9bMJ5SXMyfhBzkQLqzesauIIKEYH9BG1YFpt/+kn4BjxuuMf3Yu2uvtKZf73/GCCx5Pwx8t0vaObvfUMP0u0wjnOD8hD0HYRwXdB5y26c+diVeHORB5FiSEC+XywAXKgaibOFcT68/iZFRwcQWPsJke5uqE/cEqm8bR4LKYaBOEBsso6UDbL7eH+WFih44bBF7CIvSRn+6vRvqQks9kBckR+qarPEE0z8y0LnYhT8/EnRgv4L3CEXf7KQPhhIaXn4gQ+c0ZK4I2GGmhxyCR6ulCsNpDIQLkJXDOtNC0X8QA770nZ3qxSZ+A==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=x60uvfBipJALuEUlGRUwfPDiyi3qyS+lShdHyx3junI=;
+ b=ZTQi9JQCEXMc8wILg6EqVIfUR1hDslJCwYBbDIKzbYiXoiqGeBGzehYTg7WaDqoGZ761XM0o3IbHup1HYNBJmrHaHvxg3S4v+cB65phOpB+yLiGPi/ydxNzlZax6Az6Y94BZcTEya8KhLlRuCZHdiHivydg4vT4NOMHs1JvsatprLVvGcTi8hkVUEFsjeRo02IJi8LtpnkvXLVwNcMI+r/Fg+8kDGxmln/P4PuaLViuJx3WWSd3+9sucrYKS5TtAy4eLgL1wTKbEVICWfJKcf4FOsU6E+sarrUyQ6ZtIU16oKlO2HGXTQABuzqxHnxu3zqrgIhyHXp32YdX1UmXOoQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=x60uvfBipJALuEUlGRUwfPDiyi3qyS+lShdHyx3junI=;
+ b=OapGVgBP7pKQjP0BXUI1ELIsCukWox6hlbBQwi8dJLqEbNCxscTAff03brXxS2i3ajE+nrAZEAAu7QVGGHAB5Jy2qNw02ifaE7p6Z4+rRY3JHGSsbeWZvOUASiluqq56WAyojBbSld82DjMiSb4aksC+sKUG5OjOYtq5f1Y504Y=
+Authentication-Results: vger.kernel.org; dkim=none (message not signed)
+ header.d=none;vger.kernel.org; dmarc=none action=none header.from=oracle.com;
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com (2603:10b6:208:1d2::24)
+ by MN2PR10MB4240.namprd10.prod.outlook.com (2603:10b6:208:1d9::18) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4287.23; Sun, 4 Jul
+ 2021 11:14:55 +0000
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::b10f:7144:1abb:4255]) by MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::b10f:7144:1abb:4255%4]) with mapi id 15.20.4287.033; Sun, 4 Jul 2021
+ 11:14:55 +0000
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH] btrfs: check for missing device in btrfs_trim_fs
+Date:   Sun,  4 Jul 2021 19:14:39 +0800
+Message-Id: <fce2724eaa78b9666c2ac4f0a1b806ae14c55cd0.1625236214.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.31.1
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-Originating-IP: [39.109.186.25]
+X-ClientProxiedBy: SG2PR02CA0078.apcprd02.prod.outlook.com
+ (2603:1096:4:90::18) To MN2PR10MB4128.namprd10.prod.outlook.com
+ (2603:10b6:208:1d2::24)
 MIME-Version: 1.0
-In-Reply-To: <0102017a680d637c-4a958f96-dd8b-433d-84a6-8fc6a84abf47-000000@eu-west-1.amazonses.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:41zb8gVxen2a1UpIklfZYRJ/bDfKA4Aq2aWvEBU1D3wsnHbuauW
- fXUyB03pDuM4Fjey+V0yKLEOXdIlpOpe/0Ck+MYE/u7G5rpz/TdL/zqo67Bv6KSuasFRUio
- e4yzQUr32pKd/AX9ifkMYWEgWkReZCEb6fxqzEJuY47OpZBrw2UAcZbjLI7bheH1qPhaQIy
- LDkNX+1UB6XqZXUosUinw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:NPdpqHC0i7o=:R3ZvNRIpCWoiYbKUcIqM0m
- y0WMkJrTHQXVxxmGf8cmDX3A5juL8yV3S1BFfH0kbzQb4cu9tK1fyQJck38a7Iw7sh4gOkUjY
- Wf2/9RUxQMwmHwwcRgFUaIPWJLRKVsloV3/Wjn8HQIjAzTLoro3JJwaJaX58PzX6IMN7fVerI
- QkuaGsk19DWGBkFtsJD8I1dVF0UKYrL6FS6NQz3yOGIguaQeEUhzw9PG19wNgN0W6XaMM90iy
- GWOh5J5zkkf545HOuBDHBYIEPC076FAoDiuUwlHuM1jUtnpVjDJCyYqF/TWMenT1uM6JFsiKh
- rsXTwW+M1S8MBqNeLjdODHhCt8lwGUH7u/QIymWOC2aCcnKqUL2ZJzNrWA+Za0nZ4DSe9nkrr
- N22XERpcp1k7D5hRJPKYufxaecY/yTV4HqhcS4MhDiIyN0HucLm0KJ4B2vKqcO+a6+rBCXWae
- wi151sbrnvpgZJoHOZ76ixndtZOJVyBDUT4N9y16gofCLO50ACSNPkJFp49Yw4Bl9GHNzYvjk
- iEelvBa/1WQfV4gN5jHHgEqvzB5buzLojhV9Hm6OSJriVqB4hCOlvoLr6KSeZ2jTJA2kGmKVT
- TeDksCBknqDZL1bxkCrB1tohE5sp6dHAoD2IlWHw1wHGtwImhA8eO9EQFZKIq1QgyLgYLjKcU
- PynvwAExJHyxZAHYCDXb040/fAd/7ZTfqw8eoNP6gBWSg9XTrXEQWKonZIYIfhfJcTd0dAEKb
- oM0RUBhPnlUTnO/XYIAEXDLTOF8TXkDT2ZMs8jnBcBxBxAxaSkoGOt3Frrwo02ZxFOD0XyWtj
- RECkMNBcfVOmartVpZN5eZyMqpCKgTcshgqOAVpSC1eqPCszK0DnC8a3ekhTLYZbH+p4KXVt7
- ZqES8Fk49QKSekfyKc3+I0kYhTd4XyohoXr7sQNas9m0rdO0JaAVex4fPAzR0CKII8bR1dyc3
- Wq17cREAb25LdCHNyT+KRxha6/Q7OQiusp0aPSSk9bsU05+kh3yN1b8945UsPzc1QBQomGIv3
- 1oKJo9x3JuV6b/l6WPEY5QPf9+vIDqHp51Asb6ZgpzZYMGZPjftF8x0HtPN+OAIzyNhy+ZXV4
- 0wXJ9BfuVW6JxIdPXYjOUCm2y7oC2h7aesqdRb8oAcnF5mkjBkZ3bEY9g==
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from localhost.localdomain (39.109.186.25) by SG2PR02CA0078.apcprd02.prod.outlook.com (2603:1096:4:90::18) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4287.23 via Frontend Transport; Sun, 4 Jul 2021 11:14:53 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: ce464255-263d-4dfd-accc-08d93edcf399
+X-MS-TrafficTypeDiagnostic: MN2PR10MB4240:
+X-MS-Exchange-Transport-Forked: True
+X-Microsoft-Antispam-PRVS: <MN2PR10MB42406EF8A76925C92807B3ECE51D9@MN2PR10MB4240.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:5797;
+X-MS-Exchange-SenderADCheck: 1
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: mPswNm6OxwKzUn3Cz0wwCF7VrxGShGLt3pGWaqcLeZLcZddgsWZ7YP6T/U/pi2faaN885bOHIANmp7Fd4L9F22YBHd0X1X/YJR5+FK18nr7LOGJaQtCx+VgEK9QQ3PxfUO1dHVBPze2+Xnw0w29xdtZJE8i/qN0fBjfSaB+3tiYaVFXlBzGt34eyrSLwVKBiTTQTEOxXTPuDMdlTS6Qhz/a15j0YpfPHGzagAzOzdLD68wCBErP+P5zLu1GdVKk9IFia+ilMUTLBevx92nYyEm+YkU2CPDQY5C7p0R9+HRhxlpUfkOsVfhuupMfeKUzZaQy137kUMEYim+GYmbd48fxIFmceAL97pyvcpld58DAJ0l0fLwlrvWLUb2H71/5LhsLGrtm0DKk+FG8g8Ig/dpMSAlYPMZfXKjpjwAjjcfzjyQVCdpeps1I8oVtjSNYOx+fy+4GdXbDOF1QP2IN5mvHvgwO29eat67BxgOipHzBHCvaelhlAN+1WgplX/3tE9/SNEDzE2EDENOyYp3+EyXTIPlqyCQFabk9Fvb33JYJ79iv+alxU3yloiAF2vZxkVWkgHLzMGiUvgEbokB0Duz4sWq0O/twrHnTUpOd0kh79Amgeg/6mN9jlCNRPB1Qr0LqHsdpoZX6aiuAWaPSp4+MSLSiH0IlrSI9o5LSc+DMUbFpInYN3EXh12L481+eGisBiQFsUIw71hgc0KT8xzsF7+HLMIcStsiCiC9BkSfM=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MN2PR10MB4128.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(136003)(376002)(346002)(396003)(39860400002)(366004)(6666004)(38350700002)(44832011)(2906002)(16526019)(38100700002)(66556008)(66476007)(66946007)(186003)(36756003)(86362001)(8676002)(478600001)(83380400001)(52116002)(6506007)(5660300002)(6512007)(6916009)(316002)(26005)(4326008)(6486002)(2616005)(8936002)(956004)(107886003)(69590400013);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?cD1clGnKP7oKyYORt1V0iNIB3EJuHQHfBmxgkc6CB1d028yaHnF+vlQeoGNO?=
+ =?us-ascii?Q?JXKAb2femHcCw/z4mwpvBXbsOxeiW+Q1MugguVKshZnjiLNUcSMUhIU1oElS?=
+ =?us-ascii?Q?1OB1hSIkBUb2SW2L+1VXAQyAl9YnRxStqpevKxj8qaKTRigcp10/rxBFf4Ls?=
+ =?us-ascii?Q?mreLbdiJuX9Hori5+MytOPYC2ad/bE2WaEQzwlgAgDtwjkx+lKFXr3TWDCBX?=
+ =?us-ascii?Q?dlK/UK/noMzds79CB4LM1Votv/Y3hU9H00jaLd1ffywAGWI4kem/Vxc7O397?=
+ =?us-ascii?Q?WbJkW5d4/XX3B+ogP9agZp1ioayxsqf9x3bWsYm8HSzdVpLTwEkuW8+SzSh6?=
+ =?us-ascii?Q?ehaW5ISb7gap556trlHqXsdqA6Q+sJFHFINg9RXusM6SLSkrVNsRgi4Sfj/M?=
+ =?us-ascii?Q?l+ZGyB3XgLd7FlcO/Zn/niDUt7J+G5VdlL5SIINVzmuooOyG8XJWjJMaCxrR?=
+ =?us-ascii?Q?senIL1PmtUQM2p2WkN1p/C4tzcbfVCMBaCWZKhOI7Fm76jtFNGCd63Y/Kg26?=
+ =?us-ascii?Q?oBGV69P5FmZYMUFKrM47Q9QT9sMY9E42htkySDZD53X6jq5i8BkhtZwSU7M6?=
+ =?us-ascii?Q?oKH0DtubbsmAv46hHknKtZX4BLUAqUMAxHa6L1WL1hrZLUOyG236F0CdSvbo?=
+ =?us-ascii?Q?tZOQmm3woG9Cn3cVepKkYBeRkZdmm5zJTIXN7XpLmXgpSXp/heGi6h9QaDbl?=
+ =?us-ascii?Q?4IMa+LoOJstYP7trm+nXWJcqhVlX2TC10Mvp2ChOYMc0Du4C6ZHwaPSolmoW?=
+ =?us-ascii?Q?9+gp2R8W4t9H14YfkFdPF2JDHsdxpe612WjR9kGHoHf29gaCTg1izaoWioiv?=
+ =?us-ascii?Q?Tp/TLf/G+y0wVT5lAkFRBRDDn1ZKW79DGlLG6YVXTMLBRN2R5LyC8kStV8Ct?=
+ =?us-ascii?Q?KbmmCvoMFMXVswrfTamuH3OH91tMzKW4+KgguOIYAus3gydw8wvrfJ7E1YKB?=
+ =?us-ascii?Q?OE9DV1uhbYA+UvbdaSoAjPFl87EPi/Z7cJZeb5zxljTfXKPQwFSDpCZJlknG?=
+ =?us-ascii?Q?7q0O1FlU5aw+6IKdeRsIsaWam6dB2FwpJTOokEJwOAno7UiT7q29OdzVcpdm?=
+ =?us-ascii?Q?pKTHS86rOQhwyYKPPK+5cpwMDCBgWFxylQ7+lAwOeLXkCJmL1HCVUxdEuvsO?=
+ =?us-ascii?Q?GOh8rjco2HMmGd9q/XNFBmjGj6fQAeelmRTMWU3V/c5JuE2FnMD21BUsjkGu?=
+ =?us-ascii?Q?cY7vHSwfZ0Gwg9Xea7iyJfuI+4CdqEgfmPQCeJIRIELlE7+FEDlsMHxQe9dB?=
+ =?us-ascii?Q?Sv+ycsXo1/dIe8KDyEKFtUEew0yTuXHP0Z6Xiet7nmQoM72dQ6xxACbGaBol?=
+ =?us-ascii?Q?JXPlsEvmy+z+eZbG/FFEBVRr?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: ce464255-263d-4dfd-accc-08d93edcf399
+X-MS-Exchange-CrossTenant-AuthSource: MN2PR10MB4128.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 04 Jul 2021 11:14:55.4051
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: WqcJASGPAcmRh0inuZ96VavwFpIRsL6XDzGR6CG1VOYGTOZHxfXvauwvsDMXOeYR/64E789SFdjP4aAuUZGzPg==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR10MB4240
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=10034 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxlogscore=999 suspectscore=0
+ spamscore=0 adultscore=0 malwarescore=0 mlxscore=0 phishscore=0
+ bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2104190000 definitions=main-2107040071
+X-Proofpoint-GUID: 5VzalR5Vhn12ap57IXBeEXMKCXKYw2oH
+X-Proofpoint-ORIG-GUID: 5VzalR5Vhn12ap57IXBeEXMKCXKYw2oH
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+A fstrim on a degraded raid1 can trigger the following null pointer
+dereference:
 
+BTRFS info (device loop0): allowing degraded mounts
+BTRFS info (device loop0): disk space caching is enabled
+BTRFS info (device loop0): has skinny extents
+BTRFS warning (device loop0): devid 2 uuid 97ac16f7-e14d-4db1-95bc-3d489b424adb is missing
+BTRFS warning (device loop0): devid 2 uuid 97ac16f7-e14d-4db1-95bc-3d489b424adb is missing
+BTRFS info (device loop0): enabling ssd optimizations
+BUG: kernel NULL pointer dereference, address: 0000000000000620
+PGD 0 P4D 0
+Oops: 0000 [#1] SMP NOPTI
+CPU: 0 PID: 4574 Comm: fstrim Not tainted 5.13.0-rc7+ #31
+Hardware name: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+RIP: 0010:btrfs_trim_fs+0x199/0x4a0 [btrfs]
+Code: 24 10 65 4c 8b 34 25 00 70 01 00 48 c7 44 24 38 00 00 10 00 48 8b 45 50 48 c7 44 24 40 00 00 00 00 48 c7 44 24 30 00 00 00 00 <48> 8b 80 20 06 00 00 48 8b 80 90 00 00 00 48 8b 40 68 f6 c4 01 0f
+RSP: 0018:ffff959541797d28 EFLAGS: 00010293
+RAX: 0000000000000000 RBX: ffff946f84eca508 RCX: a7a67937adff8608
+RDX: ffff946e8122d000 RSI: 0000000000000000 RDI: ffffffffc02fdbf0
+RBP: ffff946ea4615000 R08: 0000000000000001 R09: 0000000000000000
+R10: 0000000000000000 R11: ffff946e8122d960 R12: 0000000000000000
+R13: ffff959541797db8 R14: ffff946e8122d000 R15: ffff959541797db8
+FS:  00007f55917a5080(0000) GS:ffff946f9bc00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 0000000000000620 CR3: 000000002d2c8001 CR4: 00000000000706f0
+Call Trace:
+btrfs_ioctl_fitrim+0x167/0x260 [btrfs]
+btrfs_ioctl+0x1c00/0x2fe0 [btrfs]
+? selinux_file_ioctl+0x140/0x240
+? syscall_trace_enter.constprop.0+0x188/0x240
+? __x64_sys_ioctl+0x83/0xb0
+__x64_sys_ioctl+0x83/0xb0
+do_syscall_64+0x40/0x80
+entry_SYSCALL_64_after_hwframe+0x44/0xae
 
-On 2021/7/3 =E4=B8=8A=E5=8D=8812:29, Martin Raiber wrote:
-> On 02.07.2021 00:19 Qu Wenruo wrote:
->>
->>
->> On 2021/7/2 =E4=B8=8A=E5=8D=881:25, Martin Raiber wrote:
->>> On 01.07.2021 03:40 Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2021/7/1 =E4=B8=8A=E5=8D=882:40, Martin Raiber wrote:
->>>>> On 18.06.2021 18:18 Martin Raiber wrote:
->>>>>> On 10.05.2021 00:14 Martin Raiber wrote:
->>>>>>> I get this (rare) issue where btrfs reports an IO error in run_del=
-ayed_refs or finish_ordered_io with no underlying device errors being repo=
-rted. This is with 5.10.26 but with a few patches like the pcpu ENOMEM fix=
- or work-arounds for btrfs ENOSPC issues:
->>>>>>>
->>>>>>> [1885197.101981] systemd-sysv-generator[2324776]: SysV service '/e=
-tc/init.d/exim4' lacks a native systemd unit file. Automatically generatin=
-g a unit file for compatibility. Please update package to include a native=
- systemd unit file, in order to make it more safe and robust.
->>>>>>> [2260628.156893] BTRFS: error (device dm-0) in btrfs_finish_ordere=
-d_io:2736: errno=3D-5 IO failure
->>>>>>> [2260628.156980] BTRFS info (device dm-0): forced readonly
->>>>>>>
->>>>>>> This issue occured on two different machines now (on one twice). B=
-oth with ECC RAM. One bare metal (where dm-0 is on a NVMe) and one in a VM=
- (where dm-0 is a ceph volume).
->>>>>> Just got it again (5.10.43). So I guess the question is how can I t=
-race where this error comes from... The error message points at btrfs_csum=
-_file_blocks but nothing beyond that. Grep for EIO and put a WARN_ON at ea=
-ch location?
->>>>>>
->>>>> Added the WARN_ON -EIOs. And hit it. It points at read_extent_buffer=
-_pages (this time), this part before unlock_exit:
->>>>
->>>> Well, this is quite different from your initial report.
->>>>
->>>> Your initial report is EIO in btrfs_finish_ordered_io(), which happen=
-s
->>>> after all data is written back to disk.
->>>>
->>>> But in this particular case, it happens before we submit the data to =
-disk.
->>>>
->>>> In this case, we search csum tree first, to find the csum for the ran=
-ge
->>>> we want to read, before submit the read bio.
->>>>
->>>> Thus they are at completely different path.
->>> Yes it fails to read the csum, because read_extent_buffer_pages return=
-s -EIO. I made the, I think, reasonable assumption that there is only one =
-issue in btrfs where -EIO happens without an actual IO error on the underl=
-ying device. The original issue has line numbers that point at btrfs_csum_=
-file_blocks which calls btrfs_lookup_csum which is in the call path of thi=
-s issue. Can't confirm it's the same issue because the original report did=
-n't have the WARN_ONs in there, so feel free to treat them as separate iss=
-ues.
->>>>
->>>>>
->>>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 for (i =3D 0; i < num_pages; i++) {
->>>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 page =3D eb->page=
-s[i];
->>>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 wait_on_page_lock=
-ed(page);
->>>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 if (!PageUptodate=
-(page))
->>>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=
-=A0 -->ret =3D -EIO;
->>>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
->>>>>
->>>>> Complete dmesg output. In this instance it seems to not be able to r=
-ead a csum. It doesn't go read only in this case... Maybe it should?
->>>>>
->>>>> [Wed Jun 30 10:31:11 2021] kernel log
->>>>
->>>> For this particular case, btrfs first can't find the csum for the ran=
-ge
->>>> of read, and just left the csum as all zeros and continue.
->>>>
->>>> Then the data read from disk will definitely cause a csum mismatch.
->>>>
->>>> This normally means a csum tree corruption.
->>>>
->>>> Can you run btrfs-check on that fs?
->>>
->>> It didn't "find" the csum because it has an -EIO error reading the ext=
-ent where the csum is supposed to be stored. It is not a csum tree corrupt=
-ion because that would cause different log messages like transid not match=
-ing or csum of tree nodes being wrong, I think.
->>
->> Yes, that's what I expect, and feel strange about.
->>
->>>
->>> Sorry, the file is long deleted. Scrub comes back as clean and I guess=
- the -EIO error causing the csum read failure was only transient anyway.
->>>
->>> I'm not sufficiently familiar with btrfs/block device/mm subsystem obv=
-iously but here is one guess what could be wrong.
->>>
->>> It waits for completion for the read of the extent buffer page like th=
-is:
->>>
->>> wait_on_page_locked(page);
->>> if (!PageUptodate(page))
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 ret =3D -EIO;
->>>
->>> while in filemap.c it reads a page like this:
->>>
->>> wait_on_page_locked(page);
->>> if (PageUptodate(page))
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 goto out;
->>> lock_page(page);
->>> if (!page->mapping) {
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 unlock_page(page);
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 put_page(page);
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 goto repeat;
->>> }
->>
->> Yes, that what we do for data read path, as each time a page get
->> unlocked, we can get page invalidator trigger for the page, and when we
->> re-lock the page, it may has been invalidated.
->>
->> Although above check has been updated to do extra check including
->> page->mapping and page->private check to be extra sure.
->>
->>> /* Someone else locked and filled the page in a very small window */
->>> if (PageUptodate(page)) {
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 unlock_page(page);
->>>  =C2=A0=C2=A0=C2=A0=C2=A0 =C2=A0=C2=A0=C2=A0 goto out;
->>>
->>> }
->>>
->>> With the comment:
->>>
->>>> /*
->>>> * Page is not up to date and may be locked due to one of the followin=
-g
->>>> * case a: Page is being filled and the page lock is held
->>>> * case b: Read/write error clearing the page uptodate status
->>>> * case c: Truncation in progress (page locked)
->>>> * case d: Reclaim in progress
->>>> *=C2=A0 [...]
->>>> */
->>> So maybe the extent buffer page gets e.g. reclaimed in the small windo=
-w between unlock and PageUptodate check?
->>
->> But for metadata case, unlike data path, we have very limited way to
->> invalidate/release a page.
->>
->> Unlike data path, metadata page uses it page->private as pointer to
->> extent buffer.
->>
->> And each time we want to drop a metadata page, we can only do that if
->> the extent buffer owning the page can be removed from the extent buffer
->> cache.
->>
->> Thus a unlock metadata page get released halfway is not expected
->> behavior at all.
-> I see. It mainly checks extent_buffer->refs and it increments that after=
- allocating/finding the extent... No further idea what could be the proble=
-m...
->>
->>>
->>> Another option is case b (read/write error), but the NVMe/dm subsystem=
- doesn't log any error for some reason.
->>
->> I don't believe that's the case neither, or we should have csum mismatc=
-h
->> report from btrfs.
->>
->>>
->>> I guess I could add the lock and check for mapping and PageError(page)=
- to narrow it down further?
->>>
->> If you have a proper way to reproduce the bug reliable, I could craft a
->> diff for you to debug (with everything output to ftrace buffer to debug=
-)
->
-> Unfortunately I can't reproduce it and it is really rare. I could add fu=
-rther output at that location. E.g. checking for mapping presence if the p=
-age has an error or if it was submitted for read or was Uptodate before?
->
-> For now I'll just extent the retry logic in btree_read_extent_buffer_pag=
-es to try the same mirror multiple times (The problematic btrfs filesystem=
-s have single metadata). That should do it as work-around.
->
-My recommendation for debugging is to add extra trace_printk() on
-btree_releasepage() to see when a metadata page really get freed, and
-read_extent_buffer_pages() to see what's the possible race.
+Reproducer:
 
-Another idea is to add extra debug output in end_bio_extent_readpage()
-for metadata pages.
+  Create raid1 btrfs:
+	mkfs.btrfs -fq -draid1 -mraid1 /dev/loop0 /dev/loop1
+	mount /dev/loop0 /btrfs
 
-As I'm still wondering if there is something wrong detected by btrfs
-module but without any error message.
+  Create some data:
+	_sysbench prepare /btrfs 10 2g 6
 
-In that case, we definitely want to add a proper error message.
+  Mount with one the device missing:
+	umount /btrfs
+	btrfs dev scan --forget
+	mount -o degraded /dev/loop0 /btrfs
 
-Finally, it's never a bad idea to run btrfs-check, maybe it can find
-some hidden problems.
+  Run fstrim:
+	fstrim /btrfs
 
-Thanks,
-Qu
+The reason is we call btrfs_trim_free_extents() for the missing device,
+which uses device->bdev (NULL for missing device) to find if the device
+supports discard.
+
+Fix is to check if the device is missing before calling
+btrfs_trim_free_extents().
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/extent-tree.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index d296483d148f..268ce58d4569 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6019,6 +6019,9 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+ 	devices = &fs_info->fs_devices->devices;
+ 	list_for_each_entry(device, devices, dev_list) {
++		if (test_bit(BTRFS_DEV_STATE_MISSING, &device->dev_state))
++			continue;
++
+ 		ret = btrfs_trim_free_extents(device, &group_trimmed);
+ 		if (ret) {
+ 			dev_failed++;
+-- 
+2.31.1
+

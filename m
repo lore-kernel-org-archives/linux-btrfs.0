@@ -7,41 +7,41 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37498C07E9A
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:09:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 306BAC07E9B
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:15:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 217CD61979
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:09:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 17B786135D
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:15:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232431AbhGDXLx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:11:53 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50794 "EHLO mail.kernel.org"
+        id S233196AbhGDXSb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:18:31 -0400
+Received: from mail.kernel.org ([198.145.29.99]:49110 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232432AbhGDXKV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:10:21 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 814A0613FB;
-        Sun,  4 Jul 2021 23:07:44 +0000 (UTC)
+        id S231693AbhGDXOB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:14:01 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id AC2BC61979;
+        Sun,  4 Jul 2021 23:09:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440065;
-        bh=VwRlZiLTbCfPY5lCJz26oA+JISwGZcszfAtIyxzFzC8=;
+        s=k20201202; t=1625440162;
+        bh=rlvV/JhLZudQmHtFQLEX4Mi1rHrSwgdrLrMFQxZOZQU=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=oL1tYj/xHQcaGeBgFFDGMlgsicngrDoGtETkQXp/Fu1kPBDA/8e1Xu7AR7H5VyAkM
-         PKTBndjnQqAljd7hwPomK3iCjGf+ReNNr0vQITWvVbIrDUgsjsy3A8LO2xVtsZ45ss
-         8PRD8F9Z6WYDIDfC1ITqpjr5xrSYGIXGuYFP16DRZmmGssUvOyE9flWufSIV6RV6Xd
-         zTqcTmoKs+EhFpVAEeM1tGa6WtXqCetmZezdrGHWdv+j5dBkh4ciiUufJyEXl66ht7
-         5PLGcYnsXPdr5xzz8K5Bov9FFqC6nZAknOr7iWLaJbs0E5nJRfEmXoy8+QgsZLQ093
-         DflORbw1W2WAw==
+        b=Gcxk5QDEUv94bw0oUpHW10xX5Vv7HEhizxV5IviLXAD5E1L8A8Asc82I0n34AZgnY
+         i6d2Aan5BwJJI0D4GbmE6PhHzUMAPhDhy6oLNmoGtT4/Dh9i8lcQumv/9qau5nbJod
+         1g1tkWMypclOX62zg9nzz2MH1CO8q2lRdgD7uDpOykXZk/gMFCFb5hqFyXaeZ+PXin
+         cTS1HLvlVE8I4kFctQVe+Ooys5yVVx75lNWSu+oChjbiqsJUCIHg7DdXJGxrdZ36nW
+         JOdabppesu7/rsyVCHqxrZEWaS4zuAE9DIlnEGM5olTt1z+A0BaqN6X3aQgKCUAmrP
+         AyJvaaaRzYGaw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.12 66/80] btrfs: fix error handling in __btrfs_update_delayed_inode
-Date:   Sun,  4 Jul 2021 19:06:02 -0400
-Message-Id: <20210704230616.1489200-66-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 58/70] btrfs: fix error handling in __btrfs_update_delayed_inode
+Date:   Sun,  4 Jul 2021 19:07:51 -0400
+Message-Id: <20210704230804.1490078-58-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210704230616.1489200-1-sashal@kernel.org>
-References: <20210704230616.1489200-1-sashal@kernel.org>
+In-Reply-To: <20210704230804.1490078-1-sashal@kernel.org>
+References: <20210704230804.1490078-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -95,10 +95,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 4 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index c1d2b6786129..2f73846d712f 100644
+index 4e2cce5ca7f6..3af06ef98b12 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -1025,12 +1025,10 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+@@ -1032,12 +1032,10 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
  	nofs_flag = memalloc_nofs_save();
  	ret = btrfs_lookup_inode(trans, root, path, &key, mod);
  	memalloc_nofs_restore(nofs_flag);

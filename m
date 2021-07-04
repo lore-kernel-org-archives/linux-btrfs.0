@@ -7,38 +7,38 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9245C07E9B
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62FD1C11F6A
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AD243613E5
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 495FF6135D
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:06:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231707AbhGDXJD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:09:03 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46804 "EHLO mail.kernel.org"
+        id S231740AbhGDXJE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:09:04 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47874 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230312AbhGDXId (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:08:33 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 930706144E;
-        Sun,  4 Jul 2021 23:05:56 +0000 (UTC)
+        id S231325AbhGDXIf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:08:35 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 0C18661946;
+        Sun,  4 Jul 2021 23:05:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625439957;
-        bh=gqGBzck34BEkVkHDOZOaqwSNwL8eNePvLSHbK4K9Jx8=;
+        s=k20201202; t=1625439959;
+        bh=mwyT0CnTFy0k8PpQGR1TNJY0zisSRYQ8wl4PXiE2MaY=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=d+y5HaHObdcKWQ+dho+NVpXESl12Eygiv/bhJ5ViJoVd2N9ShprFI0biEU8nScHVN
-         Jm6vawxU8+NXj1EoDIZggwuiuipWF9R0zQ/tgGaCz5Dfr1e/hv3/xyEr3Qb3ueceST
-         1V5u2vVAPfrSIR6I+yBffoLuxBJn0jsSuEWX1L92xgEHp2R9AYW8VMfGdBv/u6ruVG
-         Ge9WR+AehhuDKjCMRs6U8jvIoWZ2da/7pP2kPjWz1BYqk5WcXNRBWUkBRbVRZ19gCF
-         5fLnP6EnMAzxOSAo30gqwLJotNZWO0PLz7d1wMgmzAczS7F/KuIhkNO60tR9kzjgxc
-         9jvyE0Kh6sTeg==
+        b=sNXLuiBCkdAHZWoLYD1QYLD03EoV2i5syqYuW5nTP2gS8RD1/NtdWnNIeO44goWHi
+         0yalzQ9NkNAfyrw9pXicnQQ/ZnQqeVXW3iZ7YRD991NWzohM+WVavqcgY4/l0BqFvm
+         4GBeWxFygZk199qz6bnxyUImCERKTgC5ni1lrA429w3bdA6EkgFBvuNY9pH2UxvB+I
+         MJK5MfmjWteV2HQv1T0lmPAVG4VwUjx/YFfx2JVgI0k3iLwC6QGu3pJCzZDh/XRIDm
+         tSqES7sSQn6Ay+AWk4IwihVUzdW1dMCIjQ7BAbbfSEvb7D0+ruJ+j/EhG99fUEl3Ro
+         ma9IrY3uyJf9g==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Anand Jain <anand.jain@oracle.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.13 71/85] btrfs: abort transaction if we fail to update the delayed inode
-Date:   Sun,  4 Jul 2021 19:04:06 -0400
-Message-Id: <20210704230420.1488358-71-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.13 73/85] btrfs: sysfs: fix format string for some discard stats
+Date:   Sun,  4 Jul 2021 19:04:08 -0400
+Message-Id: <20210704230420.1488358-73-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704230420.1488358-1-sashal@kernel.org>
 References: <20210704230420.1488358-1-sashal@kernel.org>
@@ -50,41 +50,44 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+From: David Sterba <dsterba@suse.com>
 
-[ Upstream commit 04587ad9bef6ce9d510325b4ba9852b6129eebdb ]
+[ Upstream commit 8c5ec995616f1202ab92e195fd75d6f60d86f85c ]
 
-If we fail to update the delayed inode we need to abort the transaction,
-because we could leave an inode with the improper counts or some other
-such corruption behind.
+The type of discard_bitmap_bytes and discard_extent_bytes is u64 so the
+format should be %llu, though the actual values would hardly ever
+overflow to negative values.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/delayed-inode.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/sysfs.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 3091540fc22a..3bb8b919d2c1 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1050,6 +1050,14 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
- 	btrfs_delayed_inode_release_metadata(fs_info, node, (ret < 0));
- 	btrfs_release_delayed_inode(node);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 436ac7b4b334..4f5b14cd3a19 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -429,7 +429,7 @@ static ssize_t btrfs_discard_bitmap_bytes_show(struct kobject *kobj,
+ {
+ 	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
  
-+	/*
-+	 * If we fail to update the delayed inode we need to abort the
-+	 * transaction, because we could leave the inode with the improper
-+	 * counts behind.
-+	 */
-+	if (ret && ret != -ENOENT)
-+		btrfs_abort_transaction(trans, ret);
-+
- 	return ret;
+-	return scnprintf(buf, PAGE_SIZE, "%lld\n",
++	return scnprintf(buf, PAGE_SIZE, "%llu\n",
+ 			fs_info->discard_ctl.discard_bitmap_bytes);
+ }
+ BTRFS_ATTR(discard, discard_bitmap_bytes, btrfs_discard_bitmap_bytes_show);
+@@ -451,7 +451,7 @@ static ssize_t btrfs_discard_extent_bytes_show(struct kobject *kobj,
+ {
+ 	struct btrfs_fs_info *fs_info = discard_to_fs_info(kobj);
  
- search:
+-	return scnprintf(buf, PAGE_SIZE, "%lld\n",
++	return scnprintf(buf, PAGE_SIZE, "%llu\n",
+ 			fs_info->discard_ctl.discard_extent_bytes);
+ }
+ BTRFS_ATTR(discard, discard_extent_bytes, btrfs_discard_extent_bytes_show);
 -- 
 2.30.2
 

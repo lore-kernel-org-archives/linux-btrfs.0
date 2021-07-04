@@ -2,43 +2,43 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,URIBL_BLOCKED,USER_AGENT_GIT
+X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BED0C07E96
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:08:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDD9FC07E9D
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:08:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 32EE961965
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:08:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BAC6561936
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:08:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231906AbhGDXLX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:11:23 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50832 "EHLO mail.kernel.org"
+        id S232616AbhGDXLb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:11:31 -0400
+Received: from mail.kernel.org ([198.145.29.99]:48840 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232434AbhGDXKW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 4 Jul 2021 19:10:22 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id A53C561474;
-        Sun,  4 Jul 2021 23:07:45 +0000 (UTC)
+        id S231612AbhGDXKf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 4 Jul 2021 19:10:35 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 9A3DA61936;
+        Sun,  4 Jul 2021 23:07:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440066;
-        bh=GeLV7MXhGJlzEIXUxEdmRAGvCyJSUmieVB1v6u/xxqA=;
+        s=k20201202; t=1625440071;
+        bh=ooDoa5LK2XWg786cHyEyoZk3ubl/7Q4thWH336cMvOw=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=LVTsXBgg3KwfRNDdOIUY5/MzKm21HxC0hhsB6lZ/BRnUrSEh6R6AY/WRFtATjjWUs
-         R9MI9Wzv5hxKs0+OcmyIZXz94ET+O8O92I6Jh2fsnFqM8DQdAiumonB3TJ9fku61jA
-         lBYCL5P4ZuELAap0wiAnuO1HmVQeh85u2Mc0kAfB3huBnyrZaQESfjWmjnHt78lQur
-         mHKMml7EYfzWW7dtp3P4dI96vOS2UCy31Zx39U5r/Ha+fUcaIwIZcEYkd7JJfsfVCz
-         vYOBqEA+5Jrk1lp/QfUx7epgY3923fWh+hs7avy94GwgTXxWhvu+ipgRvNJj1YLzvE
-         rhQkHblHW44Gg==
+        b=h5HGDOiSdaX6EZYdPUJKdFI9Ae5S4QZAJOnyCtvHzzu2pSc8JZGKZ5LwGt04hbrLZ
+         6KbVbc7W38QZs77X+B/QAFccx3nQnz0Soz0NS3eQxGAqByAOPzvX+KQ4sHuHeZ55Q5
+         1EQypa8OvithBFha4W/ZawizYqwzt1sHyNk4F78WIm2+vVy3vw4f6Rfjf/8HFbGQcF
+         CMrXbuX4TXQyXTBp1wNQlsaVTaKfH9kS6qBYCJmcYJlEFU2LBC8mzERY0RjYT88MKM
+         9ygegEZr1Jwc4KhOjN42J08P7XQyBfevo1Y7Q2s+mSnGEJ2+jLd/uJ5Ep8ivknLUQL
+         LgWzvdx38CPww==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.12 67/80] btrfs: abort transaction if we fail to update the delayed inode
-Date:   Sun,  4 Jul 2021 19:06:03 -0400
-Message-Id: <20210704230616.1489200-67-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.12 71/80] btrfs: make Private2 lifespan more consistent
+Date:   Sun,  4 Jul 2021 19:06:07 -0400
+Message-Id: <20210704230616.1489200-71-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704230616.1489200-1-sashal@kernel.org>
 References: <20210704230616.1489200-1-sashal@kernel.org>
@@ -50,41 +50,84 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit 04587ad9bef6ce9d510325b4ba9852b6129eebdb ]
+[ Upstream commit 87b4d86baae219a9a79f6b0a1434b2a42fd40d09 ]
 
-If we fail to update the delayed inode we need to abort the transaction,
-because we could leave an inode with the improper counts or some other
-such corruption behind.
+Currently we use page Private2 bit to indicate that we have ordered
+extent for the page range.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+But the lifespan of it is not consistent, during regular writeback path,
+there are two locations to clear the same PagePrivate2:
+
+    T ----- Page marked Dirty
+    |
+    + ----- Page marked Private2, through btrfs_run_dealloc_range()
+    |
+    + ----- Page cleared Private2, through btrfs_writepage_cow_fixup()
+    |       in __extent_writepage_io()
+    |       ^^^ Private2 cleared for the first time
+    |
+    + ----- Page marked Writeback, through btrfs_set_range_writeback()
+    |       in __extent_writepage_io().
+    |
+    + ----- Page cleared Private2, through
+    |       btrfs_writepage_endio_finish_ordered()
+    |       ^^^ Private2 cleared for the second time.
+    |
+    + ----- Page cleared Writeback, through
+            btrfs_writepage_endio_finish_ordered()
+
+Currently PagePrivate2 is mostly to prevent ordered extent accounting
+being executed for both endio and invalidatepage.
+Thus only the one who cleared page Private2 is responsible for ordered
+extent accounting.
+
+But the fact is, in btrfs_writepage_endio_finish_ordered(), page
+Private2 is cleared and ordered extent accounting is executed
+unconditionally.
+
+The race prevention only happens through btrfs_invalidatepage(), where
+we wait for the page writeback first, before checking the Private2 bit.
+
+This means, Private2 is also protected by Writeback bit, and there is no
+need for btrfs_writepage_cow_fixup() to clear Priavte2.
+
+This patch will change btrfs_writepage_cow_fixup() to just check
+PagePrivate2, not to clear it.
+The clearing will happen in either btrfs_invalidatepage() or
+btrfs_writepage_endio_finish_ordered().
+
+This makes the Private2 bit easier to understand, just meaning the page
+has unfinished ordered extent attached to it.
+
+And this patch is a hard requirement for the incoming refactoring for
+how we finished ordered IO for endio context, as the coming patch will
+check Private2 to determine if we need to do the ordered extent
+accounting.  Thus this patch is definitely needed or we will hang due to
+unfinished ordered extent.
+
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/delayed-inode.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 2f73846d712f..55dad12a5ce0 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1066,6 +1066,14 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
- 	btrfs_delayed_inode_release_metadata(fs_info, node, (ret < 0));
- 	btrfs_release_delayed_inode(node);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3bb8ce4969f3..d29451b839fb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2688,7 +2688,7 @@ int btrfs_writepage_cow_fixup(struct page *page, u64 start, u64 end)
+ 	struct btrfs_writepage_fixup *fixup;
  
-+	/*
-+	 * If we fail to update the delayed inode we need to abort the
-+	 * transaction, because we could leave the inode with the improper
-+	 * counts behind.
-+	 */
-+	if (ret && ret != -ENOENT)
-+		btrfs_abort_transaction(trans, ret);
-+
- 	return ret;
+ 	/* this page is properly in the ordered list */
+-	if (TestClearPagePrivate2(page))
++	if (PagePrivate2(page))
+ 		return 0;
  
- search:
+ 	/*
 -- 
 2.30.2
 

@@ -7,39 +7,38 @@ X-Spam-Status: No, score=-20.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B3486C07E9A
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82E9FC07E9C
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9EA726135D
-	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6C88660234
+	for <linux-btrfs@archiver.kernel.org>; Sun,  4 Jul 2021 23:16:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232167AbhGDXSq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 4 Jul 2021 19:18:46 -0400
-Received: from mail.kernel.org ([198.145.29.99]:56970 "EHLO mail.kernel.org"
+        id S233554AbhGDXSv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 4 Jul 2021 19:18:51 -0400
+Received: from mail.kernel.org ([198.145.29.99]:55624 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233804AbhGDXOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S233791AbhGDXOk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Sun, 4 Jul 2021 19:14:40 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 2878061982;
-        Sun,  4 Jul 2021 23:10:33 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id CBB0861987;
+        Sun,  4 Jul 2021 23:10:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1625440234;
-        bh=z3BXUPzwUi9o7tN4WMvZUmXZh/lWJK4IWAuJaZ2qiZw=;
+        s=k20201202; t=1625440231;
+        bh=dCj9ICJeg4mgXnknTYKWEMI6svp4hO0x0Yk8UiVoHH4=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=bgdVUWUmiuJojNVLuTgUrpT+NNRYmaR5R5YWzVmcFFGx/yxixOAvo9Uqr2ov8Td6d
-         xEDJ/p5NzrPTXrf/VE4I7p5N8BrewS5mFgciJ9De8Z9GyZU3WSXPEwDUy2CaeJV1M5
-         q/a3ITToUTrvVOoLBDNyRF38wECxubSArtuMMb9Gc8XTt0FPE93bm1UKXJAYBnJrXf
-         +EoWCeahPIh9K8OBW3F/E5QktzRchZ2wdF48yg4nejHVEbrKfrIRYaAaMJuM5kPr6a
-         m1x4D2Fpzy2qMZ9QZvH7QoIc0fVksa7o9yxKgsw1CeVFdWqJHFt573Ixlc1eX+oden
-         H6w0YxRzxU6FA==
+        b=pDkcDY43KCjXJtBB5jXkJMJ4lqNQK6FeaWMmWQ9pBC1pEVfj4bAiQ5z+F7nuYmSe3
+         aHrPNotnmJ/1x9n56crCOfJyvo/Y2KGXn4PHSCHWQPaWj29O2AJBmKnQ8hkk6aKgaW
+         iAy2d4dd0KSdW5R1ADIsJi+gukeicT5EObCp81kysIT8GpaBnTRLYHEKLi55uO2/WP
+         XdJ/j8MKot+Ec+0bJpoA62nuPdnUiYkgwxGAulN6O3KUI+CnNNKsQ8EMBlBIj7LZu5
+         DVzaQQisl8ZPvYkpLIg1NCtZhlnov9KEDhUmrl3gOuLkGEu3507ZBZYnLN/Rg8cInl
+         3fIX94qJ4tguQ==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Ritesh Harjani <riteshh@linux.ibm.com>,
-        Anand Jain <anand.jain@oracle.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 43/50] btrfs: fix the filemap_range_has_page() call in btrfs_punch_hole_lock_range()
-Date:   Sun,  4 Jul 2021 19:09:31 -0400
-Message-Id: <20210704230938.1490742-43-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.4 41/50] btrfs: abort transaction if we fail to update the delayed inode
+Date:   Sun,  4 Jul 2021 19:09:29 -0400
+Message-Id: <20210704230938.1490742-41-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210704230938.1490742-1-sashal@kernel.org>
 References: <20210704230938.1490742-1-sashal@kernel.org>
@@ -51,101 +50,41 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit 0528476b6ac7832f31e2ed740a57ae31316b124e ]
+[ Upstream commit 04587ad9bef6ce9d510325b4ba9852b6129eebdb ]
 
-[BUG]
-With current subpage RW support, the following script can hang the fs
-with 64K page size.
+If we fail to update the delayed inode we need to abort the transaction,
+because we could leave an inode with the improper counts or some other
+such corruption behind.
 
- # mkfs.btrfs -f -s 4k $dev
- # mount $dev -o nospace_cache $mnt
- # fsstress -w -n 50 -p 1 -s 1607749395 -d $mnt
-
-The kernel will do an infinite loop in btrfs_punch_hole_lock_range().
-
-[CAUSE]
-In btrfs_punch_hole_lock_range() we:
-
-- Truncate page cache range
-- Lock extent io tree
-- Wait any ordered extents in the range.
-
-We exit the loop until we meet all the following conditions:
-
-- No ordered extent in the lock range
-- No page is in the lock range
-
-The latter condition has a pitfall, it only works for sector size ==
-PAGE_SIZE case.
-
-While can't handle the following subpage case:
-
-  0       32K     64K     96K     128K
-  |       |///////||//////|       ||
-
-lockstart=32K
-lockend=96K - 1
-
-In this case, although the range crosses 2 pages,
-truncate_pagecache_range() will invalidate no page at all, but only zero
-the [32K, 96K) range of the two pages.
-
-Thus filemap_range_has_page(32K, 96K-1) will always return true, thus we
-will never meet the loop exit condition.
-
-[FIX]
-Fix the problem by doing page alignment for the lock range.
-
-Function filemap_range_has_page() has already handled lend < lstart
-case, we only need to round up @lockstart, and round_down @lockend for
-truncate_pagecache_range().
-
-This modification should not change any thing for sector size ==
-PAGE_SIZE case, as in that case our range is already page aligned.
-
-Tested-by: Ritesh Harjani <riteshh@linux.ibm.com> # [ppc64]
-Tested-by: Anand Jain <anand.jain@oracle.com> # [aarch64]
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/file.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ fs/btrfs/delayed-inode.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f6308a7b761d..b678bf7692d5 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2439,6 +2439,17 @@ static int btrfs_punch_hole_lock_range(struct inode *inode,
- 				       const u64 lockend,
- 				       struct extent_state **cached_state)
- {
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index c93254c9d67a..3dccbbe4a658 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1074,6 +1074,14 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+ 	btrfs_delayed_inode_release_metadata(fs_info, node, (ret < 0));
+ 	btrfs_release_delayed_inode(node);
+ 
 +	/*
-+	 * For subpage case, if the range is not at page boundary, we could
-+	 * have pages at the leading/tailing part of the range.
-+	 * This could lead to dead loop since filemap_range_has_page()
-+	 * will always return true.
-+	 * So here we need to do extra page alignment for
-+	 * filemap_range_has_page().
++	 * If we fail to update the delayed inode we need to abort the
++	 * transaction, because we could leave the inode with the improper
++	 * counts behind.
 +	 */
-+	const u64 page_lockstart = round_up(lockstart, PAGE_SIZE);
-+	const u64 page_lockend = round_down(lockend + 1, PAGE_SIZE) - 1;
++	if (ret && ret != -ENOENT)
++		btrfs_abort_transaction(trans, ret);
 +
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
- 		int ret;
-@@ -2458,7 +2469,7 @@ static int btrfs_punch_hole_lock_range(struct inode *inode,
- 		    (ordered->file_offset + ordered->len <= lockstart ||
- 		     ordered->file_offset > lockend)) &&
- 		     !filemap_range_has_page(inode->i_mapping,
--					     lockstart, lockend)) {
-+					     page_lockstart, page_lockend)) {
- 			if (ordered)
- 				btrfs_put_ordered_extent(ordered);
- 			break;
+ 	return ret;
+ 
+ search:
 -- 
 2.30.2
 

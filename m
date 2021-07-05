@@ -7,49 +7,49 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF08BC07E9A
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3697C07E95
 	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Jul 2021 02:01:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8F444613F1
+	by mail.kernel.org (Postfix) with ESMTP id 81EB261279
 	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Jul 2021 02:01:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229941AbhGECEB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S229814AbhGECEB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Sun, 4 Jul 2021 22:04:01 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:53504 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229930AbhGECEA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Jul 2021 22:04:00 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:34324 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229865AbhGECD7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Jul 2021 22:03:59 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 69C792210E
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jul 2021 02:01:23 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 35BE71FDDF
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jul 2021 02:01:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1625450483; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1625450482; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=v1jbH47rwKMgPrrSm8XeDL7T2mEt1KmUvVRNATJYYS0=;
-        b=fE4VkRWCmVhhZ+MZXm6pYzj+8hFGlaNgEpUSYby9Tra5PX6S1noADjgNafqKwx4jTUOgQX
-        qmI7jH30jUup6Kxm+9Qv+9EfzK4aCRLr0/xWOwB6OWk0+1+twLrO+99+7Srupwd3VR/rY+
-        ih7mCq9QPLtAiqyMcG9x9bRpJEMaJLE=
+        bh=O921WLZB3qnlwzje5nYAU8o5WXNnsuCssv8+DQdnPCQ=;
+        b=JMjQoOzH8FWJ1SX/MiyW82h9gdYyYi22fuspAblqp+WpbsJ0XRjN6s/9MhWintBB35X7jg
+        Uw+sAkFbta5nCdKz4v3GEK7rl7aDO9HHlBsPLgkTf8irae+pXhzH8Bv/5gJRmNZZsYk+MO
+        E6dQGoIT6Q51cWcxgKYG32QIfy3Ecoc=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A749313522
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jul 2021 02:01:22 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7289713522
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jul 2021 02:01:21 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id wLxjGvJn4mAVSQAAMHmgww
+        id iCGADfFn4mAVSQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jul 2021 02:01:22 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jul 2021 02:01:21 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v6 08/15] btrfs: disable inline extent creation for subpage
-Date:   Mon,  5 Jul 2021 10:01:03 +0800
-Message-Id: <20210705020110.89358-9-wqu@suse.com>
+Subject: [PATCH v6 07/15] btrfs: fix wild subpage writeback which does not have ordered extent.
+Date:   Mon,  5 Jul 2021 10:01:02 +0800
+Message-Id: <20210705020110.89358-8-wqu@suse.com>
 X-Mailer: git-send-email 2.32.0
 In-Reply-To: <20210705020110.89358-1-wqu@suse.com>
 References: <20210705020110.89358-1-wqu@suse.com>
@@ -60,103 +60,147 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 [BUG]
-When running the following fsx command (extracted from generic/127) on
-subpage btrfs, it can create inline extent with regular extents:
+When running fsstress with subpage RW support, there are random
+BUG_ON()s triggered with the following trace:
 
-  fsx -q -l 262144 -o 65536 -S 191110531 -N 9057 -R -W $mnt/file > /tmp/fsx
-
-The offending extent would look like:
-
-  item 9 key (257 INODE_REF 256) itemoff 15703 itemsize 14
-    index 2 namelen 4 name: file
-  item 10 key (257 EXTENT_DATA 0) itemoff 14975 itemsize 728
-    generation 7 type 0 (inline)
-    inline extent data size 707 ram_bytes 707 compression 0 (none)
-  item 11 key (257 EXTENT_DATA 4096) itemoff 14922 itemsize 53
-    generation 7 type 2 (prealloc)
-    prealloc data disk byte 102346752 nr 4096
-    prealloc data offset 0 nr 4096
+ kernel BUG at fs/btrfs/file-item.c:667!
+ Internal error: Oops - BUG: 0 [#1] SMP
+ CPU: 1 PID: 3486 Comm: kworker/u13:2 5.11.0-rc4-custom+ #43
+ Hardware name: Radxa ROCK Pi 4B (DT)
+ Workqueue: btrfs-worker-high btrfs_work_helper [btrfs]
+ pstate: 60000005 (nZCv daif -PAN -UAO -TCO BTYPE=--)
+ pc : btrfs_csum_one_bio+0x420/0x4e0 [btrfs]
+ lr : btrfs_csum_one_bio+0x400/0x4e0 [btrfs]
+ Call trace:
+  btrfs_csum_one_bio+0x420/0x4e0 [btrfs]
+  btrfs_submit_bio_start+0x20/0x30 [btrfs]
+  run_one_async_start+0x28/0x44 [btrfs]
+  btrfs_work_helper+0x128/0x1b4 [btrfs]
+  process_one_work+0x22c/0x430
+  worker_thread+0x70/0x3a0
+  kthread+0x13c/0x140
+  ret_from_fork+0x10/0x30
 
 [CAUSE]
-For subpage btrfs, the writeback is triggered in page unit, which means,
-even if we just want to writeback range [16K, 20K) for 64K page system,
-we will still try to writeback any dirty sector of range [0, 64K).
+Above BUG_ON() means there are some bio range which doesn't have ordered
+extent, which indeed is worthy a BUG_ON().
 
-This is never a problem if sectorsize == PAGE_SIZE, but for subpage,
-this can cause unexpected problems.
+Unlike regular sectorsize == PAGE_SIZE case, in subpage we have extra
+subpage dirty bitmap to record which range is dirty and should be
+written back.
 
-For above test case, the last several operations from fsx are:
+This means, if we submit bio for a subpage range, we do not only need to
+clear page dirty, but also need to clear subpage dirty bits.
 
- 9055 trunc      from 0x40000 to 0x2c3
- 9057 falloc     from 0x164c to 0x19d2 (0x386 bytes)
+In __extent_writepage_io(), we will call btrfs_page_clear_dirty() for
+any range we submit a bio.
 
-In operation 9055, we dirtied sector [0, 4096), then in falloc, we call
-btrfs_wait_ordered_range(inode, start=4096, len=4096), only expecting to
-writeback any dirty data in [4096, 8192), but nothing else.
+But there is loophole, if we hit a range which is beyond isize, we just
+call btrfs_writepage_endio_finish_ordered() to finish the ordered io,
+then break out, without clearing the subpage dirty.
 
-Unfortunately, in subpage case, above btrfs_wait_ordered_range() will
-trigger writeback of the range [0, 64K), which includes the data at [0,
-4096).
+This means, if we hit above branch, the subpage dirty bits are still
+there, if other range of the page get dirtied and we need to writeback
+that page again, we will submit bio for the old range, leaving a wild
+bio range which doesn't have ordered extent.
 
-And since at the call site, we haven't yet increased i_size, which is
-still 707, this means cow_file_range() can insert an inline extent.
+[FIX]
+Fix it by always calling btrfs_page_clear_dirty() in
+__extent_writepage_io().
 
-Resulting above inline + regular extent.
-
-[WORKAROUND]
-I don't really have any good short-term solution yet, as this means all
-operations that would trigger writeback need to be reviewed for any
-isize change.
-
-So here I choose to disable inline extent creation for subpage case as a
-workaround.
-We have done tons of work just to avoid such extent, so I don't to
-create an exception just for subpage.
-
-This only affects inline extent creation, btrfs subpage support has no
-problem reading existing inline extents at all.
+Also to avoid such problem from happening again, add a new assert,
+btrfs_page_assert_not_dirty(), to make sure both page dirty and subpage
+dirty bits are cleared before exiting __extent_writepage_io().
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/inode.c | 18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c | 17 +++++++++++++++++
+ fs/btrfs/subpage.c   | 16 ++++++++++++++++
+ fs/btrfs/subpage.h   |  7 +++++++
+ 3 files changed, 40 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6eb20987351..25af1256dc74 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -682,7 +682,11 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 9e81d25dea70..003285687b58 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3866,6 +3866,16 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		if (cur >= i_size) {
+ 			btrfs_writepage_endio_finish_ordered(inode, page, cur,
+ 							     end, 1);
++			/*
++			 * This range is beyond isize, thus we don't need to
++			 * bother writing back.
++			 * But we still need to clear the dirty subpage bit, or
++			 * the next time the page get dirtied, we will try to
++			 * writeback the sectors with subpage diryt bits,
++			 * causing writeback without ordered extent.
++			 */
++			btrfs_page_clear_dirty(fs_info, page, cur,
++					       end + 1 - cur);
+ 			break;
  		}
+ 
+@@ -3916,6 +3926,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 			else
+ 				btrfs_writepage_endio_finish_ordered(inode,
+ 						page, cur, cur + iosize - 1, 1);
++			btrfs_page_clear_dirty(fs_info, page, cur, iosize);
+ 			cur += iosize;
+ 			continue;
+ 		}
+@@ -3951,6 +3962,12 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
+ 		cur += iosize;
+ 		nr++;
  	}
- cont:
--	if (start == 0) {
 +	/*
-+	 * Check cow_file_range() for why we don't even try to create
-+	 * inline extent for subpage case.
++	 * If we finishes without problem, we should not only clear page dirty,
++	 * but also emptied subpage dirty bits
 +	 */
-+	if (start == 0 && fs_info->sectorsize == PAGE_SIZE) {
- 		/* lets try to make an inline extent */
- 		if (ret || total_in < actual_end) {
- 			/* we didn't compress the entire range, try
-@@ -1080,7 +1084,17 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
++	if (!ret)
++		btrfs_page_assert_not_dirty(fs_info, page);
+ 	*nr_ret = nr;
+ 	return ret;
+ }
+diff --git a/fs/btrfs/subpage.c b/fs/btrfs/subpage.c
+index 640bcd21bf28..b2bad9a0295f 100644
+--- a/fs/btrfs/subpage.c
++++ b/fs/btrfs/subpage.c
+@@ -559,3 +559,19 @@ IMPLEMENT_BTRFS_PAGE_OPS(writeback, set_page_writeback, end_page_writeback,
+ 			 PageWriteback);
+ IMPLEMENT_BTRFS_PAGE_OPS(ordered, SetPageOrdered, ClearPageOrdered,
+ 			 PageOrdered);
++
++void btrfs_page_assert_not_dirty(const struct btrfs_fs_info *fs_info,
++				 struct page *page)
++{
++	struct btrfs_subpage *subpage = (struct btrfs_subpage *)page->private;
++
++	if (!IS_ENABLED(CONFIG_BTRFS_ASSERT))
++		return;
++
++	ASSERT(!PageDirty(page));
++	if (fs_info->sectorsize == PAGE_SIZE)
++		return;
++
++	ASSERT(PagePrivate(page) && page->private);
++	ASSERT(subpage->dirty_bitmap == 0);
++}
+diff --git a/fs/btrfs/subpage.h b/fs/btrfs/subpage.h
+index 4d7aca85d915..9aa40d795ba9 100644
+--- a/fs/btrfs/subpage.h
++++ b/fs/btrfs/subpage.h
+@@ -126,4 +126,11 @@ DECLARE_BTRFS_SUBPAGE_OPS(ordered);
+ bool btrfs_subpage_clear_and_test_dirty(const struct btrfs_fs_info *fs_info,
+ 		struct page *page, u64 start, u32 len);
  
- 	inode_should_defrag(inode, start, end, num_bytes, SZ_64K);
- 
--	if (start == 0) {
-+	/*
-+	 * Due to the page size limit, for subpage we can only trigger the
-+	 * writeback for the dirty sectors of page, that means data writeback
-+	 * is doing more writeback than what we want.
-+	 *
-+	 * This is especially unexpected for some call sites like fallocate,
-+	 * where we only increase isize after everything is done.
-+	 * This means we can trigger inline extent even we didn't want.
-+	 * So here we skip inline extent creation completely.
-+	 */
-+	if (start == 0 && fs_info->sectorsize == PAGE_SIZE) {
- 		/* lets try to make an inline extent */
- 		ret = cow_file_range_inline(inode, start, end, 0,
- 					    BTRFS_COMPRESS_NONE, NULL);
++/*
++ * Extra assert to make sure not only the page dirty bit is cleared, but also
++ * subpage dirty bit is cleared.
++ */
++void btrfs_page_assert_not_dirty(const struct btrfs_fs_info *fs_info,
++				 struct page *page);
++
+ #endif
 -- 
 2.32.0
 

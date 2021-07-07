@@ -7,72 +7,66 @@ X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0160FC07E95
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jul 2021 15:09:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38A29C07E95
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jul 2021 15:12:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E17D061CC2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jul 2021 15:09:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 16CF461CC0
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jul 2021 15:12:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232274AbhGGPLm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jul 2021 11:11:42 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:59244 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232271AbhGGPLl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jul 2021 11:11:41 -0400
+        id S232225AbhGGPPK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jul 2021 11:15:10 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:41822 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232223AbhGGPPH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jul 2021 11:15:07 -0400
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 6E2AB200B4;
-        Wed,  7 Jul 2021 15:09:00 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id D142D225D4;
+        Wed,  7 Jul 2021 15:12:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1625670540;
+        t=1625670746;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=alPfmuXblRsHjbU++YBWcXUoC5Ck+NXWce/JREmJI9s=;
-        b=dtK7KNtiFjwoRDe7TgDJTY67gqK9+MLTWBgcQP5ARVCIEZxQwPf4L98uiybzheUVoVthiN
-        g92fg1NkAI+4lfSxSycN6Dzfku/Dmtqy6DsjFhnH8MltEZS5BcsXyWhNeBtmWLMEzkHbw2
-        +rA6SS7HqBfDO76cAfv5y2LKIK1mfpU=
+        bh=ZMAhYfgwZ6ktGU+w3NcAWSM90d1zd/UrZ0R+FT/l/iw=;
+        b=b8ifOig0vWWQdOlfTGn5t++GOh5OiQgRBV6MGtxPDwE6YtYmnvXWNrev9SORJ7TJPcjJij
+        GBib7aOFsNLDDSVWUCx8VBGFQuICq45wcT/0umdwQS045UsO8V26MxYxYMggZfURMYWdf/
+        viBY7P6IseqK8BQ1Yz+ZBVq/1U/tEIw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1625670540;
+        s=susede2_ed25519; t=1625670746;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=alPfmuXblRsHjbU++YBWcXUoC5Ck+NXWce/JREmJI9s=;
-        b=6S0aMLuU9uI4wGp6A6QGEEGZkt3sPvwdYA2Bdc8R7Z2tE6rWm64y3Q4Me4c0N+x2J2AWxK
-        r4JuoRMnOwTtDwBQ==
+        bh=ZMAhYfgwZ6ktGU+w3NcAWSM90d1zd/UrZ0R+FT/l/iw=;
+        b=8c9/JvFQeFGCsA+2sHDBTkQB786SF1uPDB64it3XRKg6EEZVsmS0N5hPekLktKZtjfnIbj
+        feX2+W4O2PjNpoBg==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 6711AA3B98;
-        Wed,  7 Jul 2021 15:09:00 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id CA555A3B9A;
+        Wed,  7 Jul 2021 15:12:26 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id AE344DA6FD; Wed,  7 Jul 2021 17:06:26 +0200 (CEST)
-Date:   Wed, 7 Jul 2021 17:06:26 +0200
+        id 224ABDA6FD; Wed,  7 Jul 2021 17:09:53 +0200 (CEST)
+Date:   Wed, 7 Jul 2021 17:09:53 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Anand Jain <anand.jain@oracle.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: cleanup fs_devices pointer usage in
- btrfs_trim_fs
-Message-ID: <20210707150626.GM2610@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs: check-integrity.c: drop unnecessary function
+ prototype
+Message-ID: <20210707150953.GN2610@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
         linux-btrfs@vger.kernel.org
-References: <cover.1625237377.git.anand.jain@oracle.com>
- <f2c9215ef5edac3b142c78043249e69600f2c557.1625237377.git.anand.jain@oracle.com>
+References: <4c86a5893d4d89f71e99f531b27728680f9c9e1b.1625475957.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <f2c9215ef5edac3b142c78043249e69600f2c557.1625237377.git.anand.jain@oracle.com>
+In-Reply-To: <4c86a5893d4d89f71e99f531b27728680f9c9e1b.1625475957.git.anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jul 04, 2021 at 08:04:57PM +0800, Anand Jain wrote:
-> Drop variable
->   struct list_head *devices
-> and add new variable
->   struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-> 
-> so that fs_devices is used at two locations within btrfs_trim_fs() function
-> and also helps to access fs_devices->devices.
+On Mon, Jul 05, 2021 at 05:06:18PM +0800, Anand Jain wrote:
+> The functions prototype deleted as below aren't necessary as those
+> functions are first defined before called. So they are removed here.
 > 
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 

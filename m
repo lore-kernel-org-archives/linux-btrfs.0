@@ -2,98 +2,117 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31B5BC07E99
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jul 2021 13:12:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B96EEC07E9C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jul 2021 13:12:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1031561469
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jul 2021 13:12:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 992AD61878
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Jul 2021 13:12:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231794AbhGHNPV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 8 Jul 2021 09:15:21 -0400
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:42289 "EHLO
+        id S231838AbhGHNPW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 8 Jul 2021 09:15:22 -0400
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:42294 "EHLO
         esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230080AbhGHNPS (ORCPT
+        with ESMTP id S231747AbhGHNPS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Jul 2021 09:15:18 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
   t=1625749957; x=1657285957;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=K55IK1qJ90+xK8LWJZ2Gq3Z48X4FJF+uzLeS5uvkHc4=;
-  b=Q7OhO6AMwtEXR95QtHl8dKCcXYFRpwpbN6suZS4Ts6ryfYzJtyz6hvuM
-   Nj6BX5v03DIYBIvtwjnPWq3YteOmARI5/9F8YIp1AwsEbTMoQZl0KCNkW
-   qfIMxdiZeTE7BhmEFBJRZzbjSUCH8OkijNJPc0f+Kp1qfsZTqS50ysYn3
-   DOvlnWIrAFLox2tS1iHTBJ9db+I/PE6PX1WK99pjw686VQNP2zYRti0mJ
-   99kjiVfV5X9x0Oq1p5sSQ2nPedeNoGA3ez8BUE2LYU4Faxw2pqoCaaJ+P
-   gIuNNrQ7ngeFRetAJTIvUyhv5g2N3+c8zJqRzE5UtIyZAp1Qe94cLcXtM
-   g==;
-IronPort-SDR: P+I7Ql9LVLVUYHMD7Hv3TFq8Sf5Lp52XhVJ/2ZDuuzQUzB5FjWZgNRkpz9jHZVE1sEmHvMrRdU
- 3pEoEuRwSTxGUbcyMfHqNHkL6XSaFz38ZxqF/daCI0/0Zkf/Ze2xwSl7M/Yva0grpzVvY6P+E/
- BEIf/6DDNx2wMd1p0EhvuE+8Q9fn41B+vq4WZqyNv8noGBqkw7X1CHc92+lv+QpkRuCw6DKfXh
- PVyrgJPDoLd1Bd4aeOF8VGk1N6plAqvAaKet9aG53EwlIxhAqyTVOmrUiyqIob7X+fy/4N8+Qj
- Ajk=
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=nWtyhCb7dS+Dg9n3hRx6LlJZ3mZVgdbPHDJlobS6lHw=;
+  b=X8oT9+3NqeGwOfqGqdC+R6cfqiAaa8ShAe2UIEcqp1BzTY3hcvHNEo9T
+   d8lce7TPCK08l7jFWXY9O5aWXtKDmZpEbxfZ4nnWgAvpcND+9k7+VhZsD
+   nV1siFGr4H/fAGRlVl10/0mgibDPLu2dB+h5rnazrJIGTYVkZuejbfRRM
+   guVxuUYfMFcfI4rIJEa+antabaKngUOuD+dZU8Pbm6Oiqgjua4/df1bnm
+   /4Z9/IkghFwDMqror9pU//aYAj7TZ/tsSYQc7DI28w+2svmrJh5XhLINW
+   SmuF0kczNz5h45WlaclB7BNMsKYQbnGIBVoi4sb6m+ojj5y10rhss2d6v
+   A==;
+IronPort-SDR: vkrF57WcqKqmUZsiUC0qNr7k3KGqGc2/B+ROcLCInRw9HnCb/NOHRPKmS/YThIBzu2+HIQnfd8
+ bSS1qON54fRG1VVZDR7U9lNA1qHaWKvxueER+vEi6/n5/cIvxPdoFw2bVItOMQddUclWKJ/X0w
+ m1XeQAsx7z9hD2Ge/WaAA+WtWWvg8Xn/1ZxKdexCtNKYb8A/qPwEc0z+OUxWvzBvSjxEx0wLh8
+ AmWGYK3bqgjjQR2418r37nFfF2DxSHAyUvEbDadEH1jgmvSN22puXJEniey38iLL0wLsQxBNh9
+ 7gE=
 X-IronPort-AV: E=Sophos;i="5.84,222,1620662400"; 
-   d="scan'208";a="285562703"
+   d="scan'208";a="285562708"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 08 Jul 2021 21:12:33 +0800
-IronPort-SDR: RpTruAzdwohSGjcBN3jaaKOfcfkOwTqWAi2GCkQl2p98KHDe5+tAhIOm5PzWr8JhqLiFODAn8T
- pHnzvZS2v9Ve3m2rodbKLUP17p/HKyM2ebVhQ5EudHFPuATpvry1IQW2I4kyLxwAiQganuyz42
- pOloyDHHJHwZa4b+0q66R+xo/5NnwmwVLZyXlThNpQMo5XPCKX+0TurGgCBooyNUl7bncdz+0M
- v9iJmlA+2FqEjdJsNSbNCYTBcmJAsxo3wn2hrjLe/8D55T5qCtMMxAhR/WHKmdPArv1MTNEV+V
- z8vntGIo5PSLVQvemr0qjTBz
+  by ob1.hgst.iphmx.com with ESMTP; 08 Jul 2021 21:12:36 +0800
+IronPort-SDR: 1fac1nnRXNgUuZYPTa/RnmygpqgmOgHXGo54Sm570ERLjyuvugEeXAza92mutLiiOtv/le58WO
+ HgicC8zWa5knWTWqhoEjAutYLYdupmDOfhxNuH8bBmTABAeZsJYQLoiIxOh8r6KwFhqq7M+Mix
+ 81wnW8MuoS3v3PwndeNutkFA3Ntr5OUKo/W0dcNZf0ghsEVImwimf2XvOmyRGo08Lig5CNp+1h
+ ZNYXZ4Re4PelwmaOUmSkexpn+vlhnhvbx/AxT98wmRKY1i8DU6Ugcpl8nU6RtYa9n89Qce+uAb
+ If5OrW6IQyoAcNwbUk7twuw1
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 08 Jul 2021 05:49:32 -0700
-IronPort-SDR: SblVYdyZXkNSEnIPSrhyaPhUAe0xYsG8e0ubQsJ881zMU+/oBBveMgcM0qe7DuwesAgc2tIReh
- PkTmNtsITb85NQUzz8YD3vLHrTup1tFU/lNJlq/9qN1evf5fCXkfcy2cyWtIyCOr9dERAEJw6/
- nWSjNBnrjG312yVwQ162k9akBOe3QdVMYJISu8yKxijb0I+E29nwjvpoYs10dkZgQrfAvcu+Yt
- 0WNN4xMATCv/FIkklayjX5rhNqvk2iW2uBx4KrCLZ+r2wTrxSOCdl+Zy29eWRFXi1A+QUcvDUA
- B0I=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 08 Jul 2021 05:49:34 -0700
+IronPort-SDR: z4D3x52j96aOjYhJBr2TBF630/KjE7N397mktHkDdQkZ/0yS1oLwcRWwDXAC+jVFKTzu58lOiU
+ iAx9L7ykoa+Ob8JUOZ7NKAq6hMNxxvqmjdGUw0jctFkgvM83+hzJKDxeGMaCYdNR7Rtb6KNIdZ
+ Dl0tdQzJL4NGqhKLYn5Ixww4kLgFsRfT550AoS7d7VRRi6lgTIffSHnO3oLW4+gMwCH9cTH6HB
+ zh5yymG5rtWv6M28KSdv83rktSn3LzSJkr7vIr1fKbOS6n9oqf0vw2ND3bOZ+8KEws7NleQJOl
+ KBE=
 WDCIronportException: Internal
 Received: from b1j4fb3.ad.shared (HELO naota-xeon.wdc.com) ([10.225.50.95])
-  by uls-op-cesaip02.wdc.com with ESMTP; 08 Jul 2021 06:12:33 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 08 Jul 2021 06:12:36 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
 Cc:     Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
         Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 0/3] fix argument type of bio_trim()
-Date:   Thu,  8 Jul 2021 22:10:54 +0900
-Message-Id: <20210708131057.259327-1-naohiro.aota@wdc.com>
+Subject: [PATCH 2/3] btrfs: fix argument type of btrfs_bio_clone_partial()
+Date:   Thu,  8 Jul 2021 22:10:56 +0900
+Message-Id: <20210708131057.259327-3-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.32.0
+In-Reply-To: <20210708131057.259327-1-naohiro.aota@wdc.com>
+References: <20210708131057.259327-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function bio_trim has offset and size arguments that are declared as
-int. But it actually expects sector value and the range of int is not
-enough for bio->bi_iter.bi_size and bio_advance() which is/takes unsigned
-int. So, let's fix the argument type of bio_trim() and its callers.
+From: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
 
-Patches 1 and 2 fix bio_trim() argument and its caller's argument.
+The offset and can never be negative use unsigned int instead of int type
+for them.
 
-Patch 3 is depending on patch 1 and 2 and do some cleanup for btrfs.
+Tested-by: Naohiro Aota <naohiro.aota@wdc.com>
+Signed-off-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+---
+ fs/btrfs/extent_io.c | 3 ++-
+ fs/btrfs/extent_io.h | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
 
-Chaitanya Kulkarni (2):
-  block: fix arg type of bio_trim()
-  btrfs: fix argument type of btrfs_bio_clone_partial()
-
-Naohiro Aota (1):
-  btrfs: drop unnecessary ASSERT from btrfs_submit_direct()
-
- block/bio.c          |  2 +-
- fs/btrfs/extent_io.c |  3 ++-
- fs/btrfs/extent_io.h |  3 ++-
- fs/btrfs/inode.c     | 12 ++++++++----
- include/linux/bio.h  |  2 +-
- 5 files changed, 14 insertions(+), 8 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 1f947e24091a..082f135bb3de 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3153,7 +3153,8 @@ struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs)
+ 	return bio;
+ }
+ 
+-struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
++struct bio *btrfs_bio_clone_partial(struct bio *orig, unsigned int offset,
++				    unsigned int size)
+ {
+ 	struct bio *bio;
+ 	struct btrfs_io_bio *btrfs_bio;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 62027f551b44..f78b365b56cf 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -280,7 +280,8 @@ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
+ struct bio *btrfs_bio_alloc(u64 first_byte);
+ struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs);
+ struct bio *btrfs_bio_clone(struct bio *bio);
+-struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size);
++struct bio *btrfs_bio_clone_partial(struct bio *orig, unsigned int offset,
++				    unsigned int size);
+ 
+ int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+ 		      u64 length, u64 logical, struct page *page,
 -- 
 2.32.0
 

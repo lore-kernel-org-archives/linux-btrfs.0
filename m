@@ -2,378 +2,186 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE759C11F69
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 06:52:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E36BC07E99
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 06:52:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A4DB160FD8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 06:52:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6F98F61132
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 06:52:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239367AbhGLGzW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Jul 2021 02:55:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60286 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240701AbhGLGwB (ORCPT
+        id S239793AbhGLGzg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Jul 2021 02:55:36 -0400
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:23671 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S238554AbhGLGzS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jul 2021 02:52:01 -0400
-Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com [IPv6:2607:f8b0:4864:20::1029])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19F59C069B59
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Jul 2021 23:40:14 -0700 (PDT)
-Received: by mail-pj1-x1029.google.com with SMTP id p9so9540854pjl.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Jul 2021 23:40:14 -0700 (PDT)
+        Mon, 12 Jul 2021 02:55:18 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1626072750; x=1657608750;
+  h=from:to:subject:date:message-id:references:
+   content-transfer-encoding:mime-version;
+  bh=AXbVvy1wnbgW+NYs34BOGQaRlctY9W0V9xIdoXaB+20=;
+  b=mbuiP3omDp7eyY9myjko7YLM4pa2F9+aZ36GnbLgEh6reendF13RmddS
+   GJSCtVobkS8R1ngp6iDLoXstzkW+ixmC8IsYZZg1HTKN7Q3FNk8vc1ItR
+   c0HDAcshCX7dlPifeMNx5AwC8GwTJhu4jO/qEEyK+3dfNmuv/dFdhR2ew
+   lNdzpuDRPSThvZmZGkJ789ruTCMiH3/Z2slufL/GvcUdAk5bcFpIXYy99
+   O5PGUak4n6A/5KfVMru3NsPYLwgr8U1Gk/Wdqq+EcI7LsALebYTzS2mtl
+   frWtx0ITfpIfpBPeSfI5daeF/rnOfpCyoAXfQ3ATFcGWxG3n0IIeEpjH1
+   w==;
+IronPort-SDR: YdQBICx5JGwT/KhY9qWAkuNK1XcZx24B9UXaAsv7H+oBK+lqesplzN6ZKqXzgqD8XZD2/61gnG
+ 4si9AbkVdbqq+QgXbVxvsHY9LMnwmaTmt5+dzQ1X8KZ+kgB0LflbwiDVTCrXS3aERZnHWHP6x2
+ +TyCrr5Chi/OlmmCmJaoLVBcrmKeHE124VZ3HAx/3HejDEkeE1/UlwmbxE3no3nZREuKZg0Yf6
+ j9bguL/fJ1wRLsN5ybJaCaR+VSEXm699mw2cbsnd86pWPWSV41CXI82T1eFdte0rhyX2sk7muO
+ 02k=
+X-IronPort-AV: E=Sophos;i="5.84,232,1620662400"; 
+   d="scan'208";a="285863969"
+Received: from mail-co1nam11lp2172.outbound.protection.outlook.com (HELO NAM11-CO1-obe.outbound.protection.outlook.com) ([104.47.56.172])
+  by ob1.hgst.iphmx.com with ESMTP; 12 Jul 2021 14:52:29 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=AJjFH9C88I32eIVO6zrEFdNCQAOnHX+Byc2v8NV3ifchszl7hoCDxp9wCZRl8yErrX9Vac/UZB0dO+o0q1qBN4CnWdUkrwR3cT17al0aNtg8FMSjK+gfKm8cb1a1V7DQTR30DIJYxyuTKQo8XbrZ8/q1KI/gCetAJ9oEdMfzjkCKnN+oZPx9X9tTKJcrPEp7LlY75AmwRUcYvUMLWmtpEE5phglSrPuP0W1AHtUb6ev16ixRG+M2V07RbJQZPSHFAUm/oKInyxsIIMPcS2iCqXXWLkvp+ds13aKs5DmWhxJJap+kBSjlPt37QMFyFD2AOmcb6LsuzVAHeg5M+Q37EQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=A6C+mRfxpE6tk5ttjmokz+/nGK5IoLSA1VygopaACgg=;
+ b=YYFNclXOW44Lb/BxIvWRcYZ4W576vz7O/y8XtEMEladeXdutGwVHTREFfa4Ms/JOKjf1+3jhXoOh4YErtgKQ4yAUpxxkOedU78xnv5GCInHnwFPKPe2yl7NCkKCVx237Si6sQsk1b1+cjOZ1RPvFgKjTJYmPTVGzNsaZvQF/+mvsDo7HwIwFUoy8A2J94X7O5QEVqmQn+LU40f0mk/ZgMuI+NBxKriSs6zv/fTuxLglYmFNK5ni6nbwjZrnLF8RLlIiW/r7e2BhoMhoT7u52LZ+4IZ4K/C66OG3xnLxh2L0PYUxXxbtgkaKDkAmn4tLVxWLlcuZ+WNBbwQ8w0MQwIw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to;
-        bh=RFM3edb+2uTv+QR4X/Y/f055tR17SszBT4RoOjEYeuo=;
-        b=gAgwgWD/BJH6CE35RTHbmnwqe2ABgZJsOFdzC1VFlmezCrq1TGbTT7cK76/NfKNu5g
-         hANuGYMEkaaaGjxqKiFa+H9HDfsnRAkOJjPiVFDJPi7zIF1gf2pSk+gAl6k1p9tS0GNR
-         uK2cGyCPgso+g3N79i8eoZE1tHKUXZENx+jHoLBvD1vqV7ZxbQb4XJbNO+QJqtyZw8ja
-         5GLyBO0rfdasmbaIdIlKxg7bQ+fwj0cmtQs+4Lmt+VMNLH8/7KjP5XD86x3k641WLaTz
-         OVZc2hohNxIzXX5L2moHF8R0z6BvJQujSEBZbcIhLRGuJfRlyI3lpt+N9UOavgielYmW
-         16Kw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to;
-        bh=RFM3edb+2uTv+QR4X/Y/f055tR17SszBT4RoOjEYeuo=;
-        b=taLRNq81y2wiol0JtatuSp7h1SEftHe7ThH5GY6bG4uaRaVPxU9ZwaBr2w+RYM2bHu
-         yz374Lngv0RZj9AAjvXM3xGR16w9bo34G4woUjKmlHK3tprGlNH9qg3mZdRelXc8256Z
-         A7lEz2DFe6boOKTLUVlFLR52z2zNvHyVTBTEDMjqJXSW+tci4vGLt2r3ydbhTfSyeKOj
-         6vzXFTib5l+ECjlx9l5QMR9MsVP6eJcfQIEpMCh3ek8Pcg+DJ5/K4+aEz89LHqio/T7x
-         WIyX8W/J2n/BEhmTNiXfJKVhxhrf7FYWTOFXvJobqmljhwZBGj8DkNupz0e+w50q+wYd
-         T1Og==
-X-Gm-Message-State: AOAM533fgaBLsSXLhC24h1sgDIwubQWUrk4Yn75/ASB7eDfRRArmEdQQ
-        mb61IKjNMJelzncLjMyaz/Q=
-X-Google-Smtp-Source: ABdhPJyh9dQn//3aBsuSbj+/tTzfPpHGUfRMacD8RQfgNuv/BIc3ZWwFeHoHSW9dNFhc94KUv+t+bA==
-X-Received: by 2002:a17:902:bc47:b029:129:dd30:1c30 with SMTP id t7-20020a170902bc47b0290129dd301c30mr18859534plz.4.1626072013530;
-        Sun, 11 Jul 2021 23:40:13 -0700 (PDT)
-Received: from realwakka ([59.12.165.26])
-        by smtp.gmail.com with ESMTPSA id v5sm16238240pgi.74.2021.07.11.23.40.12
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 11 Jul 2021 23:40:13 -0700 (PDT)
-Date:   Mon, 12 Jul 2021 06:40:08 +0000
-From:   Sidong Yang <realwakka@gmail.com>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.cz>
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=A6C+mRfxpE6tk5ttjmokz+/nGK5IoLSA1VygopaACgg=;
+ b=rjXW9KqLANWI8wGAMpZSw8v/hYgMkMLLSZUPUVPP1tUHS7W1C2Xgikwa7OX8gMXkrqBkQdOqB8BlenG8u/vLtTSp4Vpe66GBQNHfJ4QIXgL+dvl6h6B+dBo5//0otQzHnlfTtBxsj8eeWQim62dzfFWBmYqPUOClBAujSXaizrM=
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
+ by PH0PR04MB7144.namprd04.prod.outlook.com (2603:10b6:510:1e::10) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4308.22; Mon, 12 Jul
+ 2021 06:52:29 +0000
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::d978:d61e:2fc4:b8a3]) by PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::d978:d61e:2fc4:b8a3%8]) with mapi id 15.20.4308.026; Mon, 12 Jul 2021
+ 06:52:29 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Sidong Yang <realwakka@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
 Subject: Re: [PATCH v2] btrfs-progs: cmds: Add subcommand that dumps file
  extents
-Message-ID: <20210712064008.GB68357@realwakka>
+Thread-Topic: [PATCH v2] btrfs-progs: cmds: Add subcommand that dumps file
+ extents
+Thread-Index: AQHXdm9EHlPaAOJvPEyD5OqEOntJUA==
+Date:   Mon, 12 Jul 2021 06:52:28 +0000
+Message-ID: <PH0PR04MB7416299F37110AAD9FC7131E9B159@PH0PR04MB7416.namprd04.prod.outlook.com>
 References: <20210711161007.68589-1-realwakka@gmail.com>
- <20d7b0a8-8e1c-c13a-6a94-525a110a6b0e@suse.com>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+authentication-results: gmail.com; dkim=none (message not signed)
+ header.d=none;gmail.com; dmarc=none action=none header.from=wdc.com;
+x-ms-publictraffictype: Email
+x-ms-office365-filtering-correlation-id: 2b9bb828-42d3-41c4-4988-08d945019d8d
+x-ms-traffictypediagnostic: PH0PR04MB7144:
+x-microsoft-antispam-prvs: <PH0PR04MB7144775BD60B39BF74AC0D419B159@PH0PR04MB7144.namprd04.prod.outlook.com>
+wdcipoutbound: EOP-TRUE
+x-ms-oob-tlc-oobclassifiers: OLM:6430;
+x-ms-exchange-senderadcheck: 1
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: uWAXv6eK0xYElPJmWrcGJ2K8bJcVr4LsxhCj5wr+oygdXQnV4VMPIHTzIeyl5PPWH7YOjqhJVd5WjUDfSvfuc+RSGCT6etH25hmhHydqbu6jY6YDbn6RBflMSge2BNW50Cy4pxzS0Cbx2YTZaWopkNIF1/Ol/C3GSJwZPx0xJZuiFFJOtgPKxzdfiYRIFztUB6MW3T0woAb7h+mY32l6NyqI5LdTP7FXNzzXvuPPFJZ/2QQwWO8ksvAAlCIYTc8fQdbg32YQ+1SuTrSZsgyvdqClgqe6p3bGygHoIr8HQZMkCff0dmSR+TExleJGIMRmEz+WuPxessG4aizlg8arPPLMgDKzs7tsbJAJBgL/kOgby1voFHLEJ1TkWBTbJCjJfVa345JL54A/HdMCYdfiLZSOX9QZpo78FxRKXJuYPtOH5053NYzebN7y6ECfkMsbITIaYS6JGAxBRizG0fKPy3/AF7EnUPZib3TotBK2g2eO83vOwFDSG0Z7+PWUoE9/qhgfJBD5PuSXhaaGXkPnNjW77n2LecTzxCmh0MCXQxtZfVHJASa8yjoRfgNVbFVUjOxtPZARrdQbN0Z5woAwMXmUKgiXKS9TJmuPJ2rOk2eDcKILNutkdzzBpvavdScI4pRBE+X1Jsgr6UdYIt4b3A==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(396003)(366004)(346002)(39860400002)(136003)(376002)(71200400001)(186003)(52536014)(8676002)(53546011)(33656002)(316002)(110136005)(9686003)(122000001)(86362001)(38100700002)(8936002)(66946007)(6506007)(4744005)(5660300002)(91956017)(76116006)(7696005)(66446008)(64756008)(478600001)(66556008)(66476007)(2906002)(55016002);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0: =?us-ascii?Q?4EEX0HZklmJJ8blJBWBMUV5a9FeHU0rICNFtt2Q1KGgymQddICUQtoXp5eWv?=
+ =?us-ascii?Q?N8mPm8uXxcORxtrFlBfk0crTl/QCkur4fqIR7f1zEAelqj7ClgrThgp/o9ix?=
+ =?us-ascii?Q?DDOlVYiEm0YpGm+egBjHa70Vpij88ohO+W7hvPlfJiITq3jjocejURQJ1o0T?=
+ =?us-ascii?Q?mbVsRxdO8bgN869E4oQN6Xd6XzkmXBIYRCZcnPbOT4G3bObCt56aNxZxH8Ia?=
+ =?us-ascii?Q?YPY49vNEKVkTj/dIPknrCIDa482YQLJmVCE6nYSLo7vaAxx+MP9s/OJF2KII?=
+ =?us-ascii?Q?r3fiVHPh2Fgu00aLXBE1Mn64XFvOKwvEaj8OfrQ9j2b4ONyNiBXWIspXWmJ2?=
+ =?us-ascii?Q?N4KywsMsoans+V/RLxJKEWdGePaQ3ZuXXMl9QsqpcDa2wOCV/D7PxBg2eTHu?=
+ =?us-ascii?Q?9C2fWqnTzfyXXTDYw3jDPVnAGYXMETultP81r4icQvH0Ml17sxBYrUiS+RF0?=
+ =?us-ascii?Q?pSWVG07jLMDYG/b1NEflBsaoUmbqyWGdwXVMxyyBFdPLqF/PFyyysShihqCa?=
+ =?us-ascii?Q?Rw5zSBw9JCifKIlqZgqhni3bROfHScPjdF2Pzpnzo7vnegyUeKmO/ff9hJOi?=
+ =?us-ascii?Q?DKoTQBwfTf/RZV0k2kUkwuyCh/+FqsurHaHn5ytWy5dk5d5/mOvRZhZ6NDMl?=
+ =?us-ascii?Q?ZLXw3KWikwPs/78V3Y77HHyVD58navQQRZ4UCtyl3OefgEPm920iqeO18dLh?=
+ =?us-ascii?Q?1ip9WsE99aDSwno/bZZ+I6J4pCYUSi69ZgCAPXH8NhDYLsMyAW67pKYPvdki?=
+ =?us-ascii?Q?d4GulXOMlTO5tmHr77rJpqDGMpKvNApqV1NpXSLbTkPOgktEJaUV/1+iLalk?=
+ =?us-ascii?Q?Ro7GHx0zqhJlkcfg9zEjuUAJIjpqzf/X1Riy1LDVv0OxI1KWJUJNXgRsQJbC?=
+ =?us-ascii?Q?96J2Q46NiJqOC5nyKT5GPztsDzEpjCJ/oF5lYa16CnT1ygBTcD0/mTyAHY92?=
+ =?us-ascii?Q?8P0dpK5DJL2dU73Z5m2GbTUClq4gcweTJ/mtgit37IV8pOp77Sn8tipkJ5Ly?=
+ =?us-ascii?Q?Y12zINJs6BS+V2rFrwC7czVjxFdgjSD5oTBw2kOaOtohh26N4BcH4PCkfekh?=
+ =?us-ascii?Q?ft1XuZis7NLSM0LtAK3YNx8I+zsxBz6XyF0svutUBp7BIsdJXqEJj7ToC7Qd?=
+ =?us-ascii?Q?Qu1i3emnfKxHOsMTMs9pY/dpLAnY9FukqVpm6BpVqKc9F08Az6onDo5gQ3cI?=
+ =?us-ascii?Q?2iqu/F2Pxwl7Mx+EC+UaykRAyyvKQp9Wp/5tVz0BaRq92nF+WWo0dc/6Aqg2?=
+ =?us-ascii?Q?o4d0K0Cj8ueSqhkWZcUHUksq9moHtAipJvplsYpnLszLH24OIxuNqnO0Jajw?=
+ =?us-ascii?Q?mpiYAsYMJusSMuV1C9xrKLw5fsGXcGlslLwNaE+mk92jxK50jvxsvK7BNZoT?=
+ =?us-ascii?Q?mc5LDZfJHU2Rfec/MVbPFEv1QIimuvx9QNnDz6aF0W2ORXC6ow=3D=3D?=
+x-ms-exchange-transport-forked: True
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20d7b0a8-8e1c-c13a-6a94-525a110a6b0e@suse.com>
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 2b9bb828-42d3-41c4-4988-08d945019d8d
+X-MS-Exchange-CrossTenant-originalarrivaltime: 12 Jul 2021 06:52:28.9465
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: cjP4o6DTOrs4CjMvSaJw2LYVikD14XzULPSFvs+sdiWnLTmeojLvPRDCPzwv0N46jH7548B5fwpuYKERiqIKgdlyCfUyEb7k+SS1jgF7PnY=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR04MB7144
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 12, 2021 at 09:16:17AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2021/7/12 上午12:10, Sidong Yang wrote:
-> > This patch adds an subcommand in inspect-internal. It dumps file extents of
-> > the file that user provided. It helps to show the internal information
-> > about file extents comprise the file.
-> 
-> Despite the comments inlined below for the technical details, I'm not
-> determined if we really want the tool.
-> 
-> On one hand, fiemap doesn't provide all detailed btrfs specific info, and
-> it's common to utilize the tree search ioctl to do the work, just like
-> "compsize".
-> 
-> But on the other hand, I'm not sure if it provides enough info compared to
-> things like "btrfs ins dump-tree".
-> 
-> For now I don't have any objection nor preference.
-> 
-> Thus it's again David's call on this.
-> 
-> > 
-> > Signed-off-by: Sidong Yang <realwakka@gmail.com>
-> > ---
-> > v2:
-> >   - Prints type and compression
-> >   - Use the terms from file_extents_item like disk_bytenr not like physical"
-> > ---
-> >   Makefile                         |   2 +-
-> >   cmds/commands.h                  |   2 +-
-> >   cmds/inspect-dump-file-extents.c | 165 +++++++++++++++++++++++++++++++
-> >   cmds/inspect.c                   |   1 +
-> >   4 files changed, 168 insertions(+), 2 deletions(-)
-> >   create mode 100644 cmds/inspect-dump-file-extents.c
-> > 
-> > diff --git a/Makefile b/Makefile
-> > index a1cc457b..911e16de 100644
-> > --- a/Makefile
-> > +++ b/Makefile
-> > @@ -156,7 +156,7 @@ cmds_objects = cmds/subvolume.o cmds/filesystem.o cmds/device.o cmds/scrub.o \
-> >   	       cmds/restore.o cmds/rescue.o cmds/rescue-chunk-recover.o \
-> >   	       cmds/rescue-super-recover.o \
-> >   	       cmds/property.o cmds/filesystem-usage.o cmds/inspect-dump-tree.o \
-> > -	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/filesystem-du.o \
-> > +	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/inspect-dump-file-extents.o cmds/filesystem-du.o \
-> >   	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
-> >   libbtrfs_objects = common/send-stream.o common/send-utils.o kernel-lib/rbtree.o btrfs-list.o \
-> >   		   kernel-lib/radix-tree.o common/extent-cache.o kernel-shared/extent_io.o \
-> > diff --git a/cmds/commands.h b/cmds/commands.h
-> > index 8fa85d6c..55de248e 100644
-> > --- a/cmds/commands.h
-> > +++ b/cmds/commands.h
-> > @@ -154,5 +154,5 @@ DECLARE_COMMAND(select_super);
-> >   DECLARE_COMMAND(dump_super);
-> >   DECLARE_COMMAND(debug_tree);
-> 
-> Off-topic here.
-> 
-> Those "dump_super" and "debug_tree" makes me wonder, do we need to cleanup
-> them?
-> 
-> I mean, we have inspect_dump_super for "btrfs ins dump-super", but what's
-> "dump_super" here for?
-> And what's the "debug_tree" here for?
-there is no command dump_super and debug_tree. And these aren't need to
-compile.
-> 
-> >   DECLARE_COMMAND(rescue);
-> > -
-> > +DECLARE_COMMAND(inspect_dump_file_extents);
-> 
-> I would be better to put this line where the other "inpsect" subcommands
-> are.
-
-Okay, I'll do it.
-> 
-> >   #endif
-> > diff --git a/cmds/inspect-dump-file-extents.c b/cmds/inspect-dump-file-extents.c
-> > new file mode 100644
-> > index 00000000..8574a1d0
-> > --- /dev/null
-> > +++ b/cmds/inspect-dump-file-extents.c
-> > @@ -0,0 +1,165 @@
-> > +/*
-> > + * This program is free software; you can redistribute it and/or
-> > + * modify it under the terms of the GNU General Public
-> > + * License v2 as published by the Free Software Foundation.
-> > + *
-> > + * This program is distributed in the hope that it will be useful,
-> > + * but WITHOUT ANY WARRANTY; without even the implied warranty of
-> > + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-> > + * General Public License for more details.
-> > + *
-> > + * You should have received a copy of the GNU General Public
-> > + * License along with this program; if not, write to the
-> > + * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-> > + * Boston, MA 021110-1307, USA.
-> > + */
-> > +
-> > +#include <unistd.h>
-> > +#include <stdio.h>
-> > +#include <fcntl.h>
-> > +
-> > +#include <sys/ioctl.h>
-> > +
-> > +#include "common/utils.h"
-> > +#include "cmds/commands.h"
-> > +
-> > +static const char * const cmd_inspect_dump_file_extents_usage[] = {
-> > +	"btrfs inspect-internal dump-extent path",
-> > +	"Dump file extent in a textual form",
-> > +	NULL
-> > +};
-> > +
-> > +static void compress_type_to_str(u8 compress_type, char *ret)
-> > +{
-> > +	switch (compress_type) {
-> > +	case BTRFS_COMPRESS_NONE:
-> > +		strcpy(ret, "none");
-> > +		break;
-> > +	case BTRFS_COMPRESS_ZLIB:
-> > +		strcpy(ret, "zlib");
-> > +		break;
-> > +	case BTRFS_COMPRESS_LZO:
-> > +		strcpy(ret, "lzo");
-> > +		break;
-> > +	case BTRFS_COMPRESS_ZSTD:
-> > +		strcpy(ret, "zstd");
-> > +		break;
-> > +	default:
-> > +		sprintf(ret, "UNKNOWN.%d", compress_type);
-> > +	}
-> > +}
-> 
-> It would be better to just export the function with the same name in
-> "kernel-shared/print-tree.c" so we don't have duplicated code.
-
-Yes, I would be better.
-> 
-> > +
-> > +static const char* file_extent_type_to_str(u8 type)
-> > +{
-> > +	switch (type) {
-> > +	case BTRFS_FILE_EXTENT_INLINE: return "inline";
-> > +	case BTRFS_FILE_EXTENT_PREALLOC: return "prealloc";
-> > +	case BTRFS_FILE_EXTENT_REG: return "regular";
-> > +	default: return "unknown";
-> > +	}
-> > +}
-> 
-> The same here.
-Okay.
-> 
-> > +
-> > +static int cmd_inspect_dump_file_extents(const struct cmd_struct *cmd,
-> > +										 int argc, char **argv)
-> > +{
-> > +	int fd;
-> > +	struct stat statbuf;
-> > +	struct btrfs_ioctl_ino_lookup_args lookup;
-> > +	struct btrfs_ioctl_search_args args;
-> > +	struct btrfs_ioctl_search_key *sk = &args.key;
-> > +	struct btrfs_file_extent_item *extent_item;
-> > +	struct btrfs_ioctl_search_header *header;
-> > +	u64 pos;
-> > +	u64 buf_off;
-> > +	u64 len;
-> > +	u64 begin;
-> > +	u64 disk_bytenr;
-> > +	u64 disk_num_bytes;
-> > +	u64 offset;
-> > +	int ret;
-> > +	int i;
-> > +	char compress_str[16];
-> > +
-> > +	fd = open(argv[optind], O_RDONLY);
-> > +	if (fd < 0) {
-> > +		error("cannot open %s: %m", argv[optind]);
-> > +		ret = 1;
-> > +		goto out;
-> > +	}
-> > +
-> > +	if (fstat(fd, &statbuf) < 0) {
-> > +		error("failed to fstat %s: %m", argv[optind]);
-> > +		ret = 1;
-> > +		goto out;
-> > +	}
-> > +
-> > +	lookup.treeid = 0;
-> > +	lookup.objectid = BTRFS_FIRST_FREE_OBJECTID;
-> > +
-> > +	if (ioctl(fd, BTRFS_IOC_INO_LOOKUP, &lookup) < 0) {
-> > +		error("failed to lookup inode %s: %m", argv[optind]);
-> > +		ret = 1;
-> > +		goto out;
-> > +	}
-> > +
-> > +	pos = 0;
-> > +
-> > +	sk->tree_id = lookup.treeid;
-> > +	sk->min_objectid = statbuf.st_ino;
-> > +	sk->max_objectid = statbuf.st_ino;
-> > +
-> > +	sk->max_offset = UINT64_MAX;
-> > +	sk->min_transid = 0;
-> > +	sk->max_transid = UINT64_MAX;
-> > +	sk->min_type = sk->max_type = BTRFS_EXTENT_DATA_KEY;
-> > +	sk->nr_items = 4096;
-> 
-> You may want to do the tree search ioctl in a loop, as it's pretty common
-> for super large or heavily fragmented inode to have way more items than one
-> ioctl can return.
-
-I don't think much about this. I wonder if it's proper way to search
-tree. is there any better way than this code?
-
-> 
-> > +
-> > +	while (statbuf.st_size > pos) {
-> > +		sk->min_offset = pos;
-> > +		if (ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args)) {
-> > +			error("failed to search tree ioctl %s: %m", argv[optind]);
-> > +			ret = 1;
-> > +			goto out;
-> > +		}
-> > +
-> > +		buf_off = 0;
-> > +		for(i=0; i<sk->nr_items; ++i) {
-> > +			header = (struct btrfs_ioctl_search_header *)(args.buf + buf_off);
-> > +
-> > +			if (btrfs_search_header_type(header) == BTRFS_EXTENT_DATA_KEY) {
-> > +				extent_item = (struct btrfs_file_extent_item *)(header + 1);
-> > +				begin = btrfs_search_header_offset(header);
-> > +
-> > +				printf("type = %s, begin = %llu, ",
-> > +					   file_extent_type_to_str(extent_item->type), begin);
-> > +				switch (extent_item->type) {
-> > +				case BTRFS_FILE_EXTENT_INLINE:
-> > +					len = le64_to_cpu(extent_item->ram_bytes);
-> > +					printf("end = %llu\n", begin + len);
-> > +					break;
-> > +				case BTRFS_FILE_EXTENT_REG:
-> > +				case BTRFS_FILE_EXTENT_PREALLOC:
-> > +					len = le64_to_cpu(extent_item->num_bytes);
-> > +					disk_bytenr = le64_to_cpu(extent_item->disk_bytenr);
-> > +					disk_num_bytes = le64_to_cpu(extent_item->disk_num_bytes);
-> > +					offset = le64_to_cpu(extent_item->offset);
-> > +					compress_type_to_str(extent_item->compression, compress_str);
-> > +					printf("end = %llu, disk_bytenr = %llu, disk_num_bytes = %llu,"
-> 
-> For "end" we normally mean inclusive end.
-> E.g, for @start = 1M, @len = 4K, then the @end should be 1M + 4K - 1.
-> 
-> Thus it would be better to just output the length, not the end.
-
-Okay, Printing output as start and len would be more explicit.
-
-Thanks,
-Sidong
-> 
-> (I know this sounds a little nitpicking, but trust me, when you have seen
-> too many bugs caused by such offset-by-one behavior, you will be as
-> sensitive as me on this)
-> 
-> Thanks,
-> Qu
-> 
-> > +						   " offset = %llu, compression = %s\n",
-> > +						   begin + len, disk_bytenr, disk_num_bytes, offset, compress_str); > +
-> > +					break;
-> > +				}
-> > +
-> > +			}
-> > +			buf_off += sizeof(*header) + btrfs_search_header_len(header);
-> > +			pos += len;
-> > +		}
-> > +
-> > +	}
-> > +	ret = 0;
-> > +out:
-> > +	close(fd);
-> > +	return ret;
-> > +}
-> > +DEFINE_SIMPLE_COMMAND(inspect_dump_file_extents, "dump-file-extents");
-> > diff --git a/cmds/inspect.c b/cmds/inspect.c
-> > index 2ef5f4b6..dfb0e27b 100644
-> > --- a/cmds/inspect.c
-> > +++ b/cmds/inspect.c
-> > @@ -696,6 +696,7 @@ static const struct cmd_group inspect_cmd_group = {
-> >   		&cmd_struct_inspect_dump_tree,
-> >   		&cmd_struct_inspect_dump_super,
-> >   		&cmd_struct_inspect_tree_stats,
-> > +		&cmd_struct_inspect_dump_file_extents,
-> >   		NULL
-> >   	}
-> >   };
-> > 
-> 
+On 11/07/2021 18:10, Sidong Yang wrote:=0A=
+> +static void compress_type_to_str(u8 compress_type, char *ret)=0A=
+> +{=0A=
+> +	switch (compress_type) {=0A=
+> +	case BTRFS_COMPRESS_NONE:=0A=
+> +		strcpy(ret, "none");=0A=
+> +		break;=0A=
+> +	case BTRFS_COMPRESS_ZLIB:=0A=
+> +		strcpy(ret, "zlib");=0A=
+> +		break;=0A=
+> +	case BTRFS_COMPRESS_LZO:=0A=
+> +		strcpy(ret, "lzo");=0A=
+> +		break;=0A=
+> +	case BTRFS_COMPRESS_ZSTD:=0A=
+> +		strcpy(ret, "zstd");=0A=
+> +		break;=0A=
+> +	default:=0A=
+> +		sprintf(ret, "UNKNOWN.%d", compress_type);=0A=
+> +	}=0A=
+> +}=0A=
+=0A=
+[....]=0A=
+> +	char compress_str[16];=0A=
+=0A=
+[...]=0A=
+=0A=
+> +					compress_type_to_str(extent_item->compression, compress_str);=0A=
+=0A=
+While this looks safe at a first glance, can we change this to:=0A=
+=0A=
+#define COMPRESS_STR_LEN 5=0A=
+=0A=
+[...]=0A=
+=0A=
+switch (compress_type) {=0A=
+case BTRFS_COMPRESS_NONE:=0A=
+	strncpy(ret, "none", COMPRESS_STR_LEN);=0A=
+=0A=
+[...]=0A=
+=0A=
+char compress_str[COMPRESS_STR_LEN];=0A=
+=0A=
+One day someone will factor out 'compress_type_to_str()' and make it public=
+, read user=0A=
+supplied input and then it's a disaster waiting to happen.=0A=
+=0A=
+Thanks,=0A=
+	Johannes=0A=

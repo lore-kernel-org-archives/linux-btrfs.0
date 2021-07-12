@@ -7,50 +7,50 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA0CBC11F66
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:35:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDC2CC07E99
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:35:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CF3C7611AD
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:35:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A7E2A610D0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:35:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1358954AbhGLIhm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Jul 2021 04:37:42 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:60708 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345779AbhGLIdd (ORCPT
+        id S1354127AbhGLIht (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Jul 2021 04:37:49 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:49558 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1377034AbhGLIfL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jul 2021 04:33:33 -0400
+        Mon, 12 Jul 2021 04:35:11 -0400
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 23BCE22108;
-        Mon, 12 Jul 2021 08:30:44 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id EA5791FF65;
+        Mon, 12 Jul 2021 08:30:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1626078644; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1626078658; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=JAcQ0casqzCJ5UoA+wL8J0HdEMzj6C429jYwjFHMGF0=;
-        b=LAVzuchgVqw37odmksTpvwTk7hGXcqlkcd/5HmG3R8Y6PTwmbjBh6NdEYLPKq1oiGHk7J+
-        5LXDn4zZjqviXZqm8Sg0SP8FYKcgxkL54dom1Qowm6/CIBskmypnut6Yt/zA+N10XK9Yv3
-        XWjkMdVNC8S5dSa37VbRo4qTkG0L1Ms=
+        bh=57xH6HzMiLqmBUAiqR9cDA0U9XcPKwU06hNry21MAm0=;
+        b=oHM8nh1P44OOlDJWeMj8/XH7Dl7MX2sTdb0fWSL/9EWNcPQxXdMlEttHPjy95JDTPV4Pot
+        zPrco50cLkDK9rl4ONmSDpqGfL2dpZXEsTaqYbe+pEOX/m6CKI7E2yqfK+9nXomF5sRZDE
+        GTFatnJJM7H9wmLBQKKBpj4Rq9idWcg=
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 1BBC913455;
-        Mon, 12 Jul 2021 08:30:42 +0000 (UTC)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id DE58013455;
+        Mon, 12 Jul 2021 08:30:57 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap1.suse-dmz.suse.de with ESMTPSA
-        id OBEQM7L962ByEAAAGKfGzw
-        (envelope-from <wqu@suse.com>); Mon, 12 Jul 2021 08:30:42 +0000
+        id KLchJ8H962ByEAAAGKfGzw
+        (envelope-from <wqu@suse.com>); Mon, 12 Jul 2021 08:30:57 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v7 08/17] btrfs: make relocate_one_page() to handle subpage case
-Date:   Mon, 12 Jul 2021 16:30:18 +0800
-Message-Id: <20210712083027.212734-9-wqu@suse.com>
+Subject: [PATCH v7 17/17] btrfs: allow read-write for 4K sectorsize on 64K page size systems
+Date:   Mon, 12 Jul 2021 16:30:27 +0800
+Message-Id: <20210712083027.212734-18-wqu@suse.com>
 X-Mailer: git-send-email 2.32.0
 In-Reply-To: <20210712083027.212734-1-wqu@suse.com>
 References: <20210712083027.212734-1-wqu@suse.com>
@@ -60,208 +60,135 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For subpage case, one page of data reloc inode can contain several file
-extents, like this:
+Since now we support data and metadata read-write for subpage, remove
+the RO requirement for subpage mount.
 
-|<--- File extent A --->| FE B | FE C |<--- File extent D -->|
-		|<--------- Page --------->|
+There are some extra limits though:
+- For now, subpage RW mount is still considered experimental
+  Thus that mount warning will still be there.
 
-We can no longer use PAGE_SIZE directly for various operations.
+- No compression support
+  There are still quite some PAGE_SIZE hard coded and quite some call
+  sites use extent_clear_unlock_delalloc() to unlock locked_page.
+  This will screw up subpage helpers
 
-This patch will relocate_one_page() to handle subpage case by:
-- Iterating through all extents of a cluster when marking pages
-  When marking pages dirty and delalloc, we need to check the cluster
-  extent boundary.
-  Now we introduce a loop to go extent by extent of a page, until we
-  either finished the last extent, or reach the page end.
+  Now for subpage RW mount, no matter whatever mount option or inode
+  attr is set, all write will not be compressed.
+  Although reading compressed data has no problem.
 
-  By this, regular sectorsize == PAGE_SIZE can still work as usual, since
-  we will do that loop only once.
+- No defrag for subpage case
+  The defrag support for subpage case will come in later patches, which
+  will also rework the defrag workflow.
 
-- Iteration start from max(page_start, extent_start)
-  Since we can have the following case:
-			| FE B | FE C |<--- File extent D -->|
-		|<--------- Page --------->|
-  Thus we can't always start from page_start, but do a
-  max(page_start, extent_start)
+- No inline extent will be created
+  This is mostly due to the fact that filemap_fdatawrite_range() will
+  trigger more write than the range specified.
+  In fallocate calls, this behavior can make us to writeback which can
+  be inlined, before we enlarge the isize.
 
-- Iteration end when the cluster is exhausted
-  Similar to previous case, the last file extent can end before the page
-  end:
-|<--- File extent A --->| FE B | FE C |
-		|<--------- Page --------->|
-  In this case, we need to manually exit the loop after we have finished
-  the last extent of the cluster.
-
-- Reserve metadata space for each extent range
-  Since now we can hit multiple ranges in one page, we should reserve
-  metadata for each range, not simply PAGE_SIZE.
+  This is a very special corner case, and even current btrfs check won't
+  report error on such inline extent + regular extent.
+  But considering how much effort has been put to prevent such inline +
+  regular, I'd prefer to cut off inline extent completely until we have
+  a good solution.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/relocation.c | 108 ++++++++++++++++++++++++++++++------------
- 1 file changed, 79 insertions(+), 29 deletions(-)
+ fs/btrfs/disk-io.c | 13 ++++---------
+ fs/btrfs/inode.c   |  3 +++
+ fs/btrfs/ioctl.c   |  6 ++++++
+ fs/btrfs/super.c   |  7 -------
+ fs/btrfs/sysfs.c   |  5 +++++
+ 5 files changed, 18 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 9353fbc1a07c..72ffeb34b92b 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -24,6 +24,7 @@
- #include "block-group.h"
- #include "backref.h"
- #include "misc.h"
-+#include "subpage.h"
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3de8e86f3170..1510a9d92858 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3392,15 +3392,10 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 		goto fail_alloc;
+ 	}
  
- /*
-  * Relocation overview
-@@ -2886,6 +2887,17 @@ noinline int btrfs_should_cancel_balance(struct btrfs_fs_info *fs_info)
- }
- ALLOW_ERROR_INJECTION(btrfs_should_cancel_balance, TRUE);
- 
-+static u64 get_cluster_boundary_end(struct file_extent_cluster *cluster,
-+				    int cluster_nr)
-+{
-+	/* Last extent, use cluster end directly */
-+	if (cluster_nr >= cluster->nr - 1)
-+		return cluster->end;
-+
-+	/* Use next boundary start*/
-+	return cluster->boundary[cluster_nr + 1] - 1;
-+}
-+
- static int relocate_one_page(struct inode *inode, struct file_ra_state *ra,
- 			     struct file_extent_cluster *cluster,
- 			     int *cluster_nr, unsigned long page_index)
-@@ -2897,22 +2909,17 @@ static int relocate_one_page(struct inode *inode, struct file_ra_state *ra,
- 	struct page *page;
- 	u64 page_start;
- 	u64 page_end;
-+	u64 cur;
- 	int ret;
- 
- 	ASSERT(page_index <= last_index);
--	ret = btrfs_delalloc_reserve_metadata(BTRFS_I(inode), PAGE_SIZE);
--	if (ret)
--		return ret;
--
- 	page = find_lock_page(inode->i_mapping, page_index);
- 	if (!page) {
- 		page_cache_sync_readahead(inode->i_mapping, ra, NULL,
- 				page_index, last_index + 1 - page_index);
- 		page = find_or_create_page(inode->i_mapping, page_index, mask);
--		if (!page) {
--			ret = -ENOMEM;
--			goto release_delalloc;
+-	/* For 4K sector size support, it's only read-only */
+-	if (PAGE_SIZE == SZ_64K && sectorsize == SZ_4K) {
+-		if (!sb_rdonly(sb) || btrfs_super_log_root(disk_super)) {
+-			btrfs_err(fs_info,
+-	"subpage sectorsize %u only supported read-only for page size %lu",
+-				sectorsize, PAGE_SIZE);
+-			err = -EINVAL;
+-			goto fail_alloc;
 -		}
-+		if (!page)
-+			return -ENOMEM;
++	if (sectorsize != PAGE_SIZE) {
++		btrfs_warn(fs_info,
++	"read-write for sector size %u with page size %lu is experimental",
++			   sectorsize, PAGE_SIZE);
  	}
- 	ret = set_page_extent_mapped(page);
- 	if (ret < 0)
-@@ -2934,30 +2941,76 @@ static int relocate_one_page(struct inode *inode, struct file_ra_state *ra,
- 	page_start = page_offset(page);
- 	page_end = page_start + PAGE_SIZE - 1;
- 
--	lock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
--
--	if (*cluster_nr < cluster->nr &&
--	    page_start + offset == cluster->boundary[*cluster_nr]) {
--		set_extent_bits(&BTRFS_I(inode)->io_tree, page_start, page_end,
--				EXTENT_BOUNDARY);
--		(*cluster_nr)++;
--	}
-+	/*
-+	 * Start from the cluster, as for subpage case, the cluster can start
-+	 * inside the page.
-+	 */
-+	cur = max(page_start, cluster->boundary[*cluster_nr] - offset);
-+	while (cur <= page_end) {
-+		u64 extent_start = cluster->boundary[*cluster_nr] - offset;
-+		u64 extent_end = get_cluster_boundary_end(cluster,
-+						*cluster_nr) - offset;
-+		u64 clamped_start = max(page_start, extent_start);
-+		u64 clamped_end = min(page_end, extent_end);
-+		u32 clamped_len = clamped_end + 1 - clamped_start;
-+
-+		/* Reserve metadata for this range */
-+		ret = btrfs_delalloc_reserve_metadata(BTRFS_I(inode),
-+						      clamped_len);
-+		if (ret)
-+			goto release_page;
- 
--	ret = btrfs_set_extent_delalloc(BTRFS_I(inode), page_start, page_end,
--					0, NULL);
--	if (ret) {
--		clear_extent_bits(&BTRFS_I(inode)->io_tree, page_start,
--				  page_end, EXTENT_LOCKED | EXTENT_BOUNDARY);
--		goto release_page;
-+		/* Mark the range delalloc and dirty for later writeback */
-+		lock_extent(&BTRFS_I(inode)->io_tree, clamped_start,
-+				clamped_end);
-+		ret = btrfs_set_extent_delalloc(BTRFS_I(inode), clamped_start,
-+				clamped_end, 0, NULL);
-+		if (ret) {
-+			clear_extent_bits(&BTRFS_I(inode)->io_tree,
-+					clamped_start, clamped_end,
-+					EXTENT_LOCKED | EXTENT_BOUNDARY);
-+			btrfs_delalloc_release_metadata(BTRFS_I(inode),
-+							clamped_len, true);
-+			btrfs_delalloc_release_extents(BTRFS_I(inode),
-+							clamped_len);
-+			goto release_page;
-+		}
-+		btrfs_page_set_dirty(fs_info, page, clamped_start, clamped_len);
- 
-+		/*
-+		 * Set the boundary if it's inside the page.
-+		 * Data relocation requires the destination extents have the
-+		 * same size as the source.
-+		 * EXTENT_BOUNDARY bit prevent current extent from being merged
-+		 * with previous extent.
-+		 */
-+		if (in_range(cluster->boundary[*cluster_nr] - offset,
-+			     page_start, PAGE_SIZE)) {
-+			u64 boundary_start = cluster->boundary[*cluster_nr] -
-+						offset;
-+			u64 boundary_end = boundary_start +
-+					   fs_info->sectorsize - 1;
-+
-+			set_extent_bits(&BTRFS_I(inode)->io_tree,
-+					boundary_start, boundary_end,
-+					EXTENT_BOUNDARY);
-+		}
-+		unlock_extent(&BTRFS_I(inode)->io_tree, clamped_start,
-+			      clamped_end);
-+		btrfs_delalloc_release_extents(BTRFS_I(inode), clamped_len);
-+		cur += clamped_len;
-+
-+		/* Crossed extent end, go to next extent */
-+		if (cur >= extent_end) {
-+			(*cluster_nr)++;
-+			/* Just finished the last extent of the cluster, exit. */
-+			if (*cluster_nr >= cluster->nr)
-+				break;
-+		}
+ 	if (sectorsize != PAGE_SIZE) {
+ 		if (btrfs_super_incompat_flags(fs_info->super_copy) &
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 41d5f7f420d0..c8f4d1f8cc82 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -489,6 +489,9 @@ static noinline int add_async_extent(struct async_chunk *cow,
+  */
+ static inline bool inode_can_compress(struct btrfs_inode *inode)
+ {
++	/* Subpage doesn't support compress yet */
++	if (inode->root->fs_info->sectorsize < PAGE_SIZE)
++		return false;
+ 	if (inode->flags & BTRFS_INODE_NODATACOW ||
+ 	    inode->flags & BTRFS_INODE_NODATASUM)
+ 		return false;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0ba98e08a029..4d809899c076 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3115,6 +3115,12 @@ static int btrfs_ioctl_defrag(struct file *file, void __user *argp)
+ 		goto out;
  	}
--	set_page_dirty(page);
--
--	unlock_extent(&BTRFS_I(inode)->io_tree, page_start, page_end);
- 	unlock_page(page);
- 	put_page(page);
  
--	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
- 	balance_dirty_pages_ratelimited(inode->i_mapping);
- 	btrfs_throttle(fs_info);
- 	if (btrfs_should_cancel_balance(fs_info))
-@@ -2967,9 +3020,6 @@ static int relocate_one_page(struct inode *inode, struct file_ra_state *ra,
- release_page:
- 	unlock_page(page);
- 	put_page(page);
--release_delalloc:
--	btrfs_delalloc_release_metadata(BTRFS_I(inode), PAGE_SIZE, true);
--	btrfs_delalloc_release_extents(BTRFS_I(inode), PAGE_SIZE);
- 	return ret;
- }
++	/* Subpage defrag will be supported in later commits */
++	if (root->fs_info->sectorsize < PAGE_SIZE) {
++		ret = -ENOTTY;
++		goto out;
++	}
++
+ 	switch (inode->i_mode & S_IFMT) {
+ 	case S_IFDIR:
+ 		if (!capable(CAP_SYS_ADMIN)) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d07b18b2b250..77d727868dff 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2041,13 +2041,6 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 			ret = -EINVAL;
+ 			goto restore;
+ 		}
+-		if (fs_info->sectorsize < PAGE_SIZE) {
+-			btrfs_warn(fs_info,
+-	"read-write mount is not yet allowed for sectorsize %u page size %lu",
+-				   fs_info->sectorsize, PAGE_SIZE);
+-			ret = -EINVAL;
+-			goto restore;
+-		}
+ 
+ 		/*
+ 		 * NOTE: when remounting with a change that does writes, don't
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 9d1d140118ff..22d788a3715c 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -366,6 +366,11 @@ static ssize_t supported_sectorsizes_show(struct kobject *kobj,
+ {
+ 	ssize_t ret = 0;
+ 
++	/* 4K sector size is also support with 64K page size */
++	if (PAGE_SIZE == SZ_64K)
++		ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%u ",
++				 SZ_4K);
++
+ 	/* Only sectorsize == PAGE_SIZE is now supported */
+ 	ret += scnprintf(buf + ret, PAGE_SIZE - ret, "%lu\n", PAGE_SIZE);
  
 -- 
 2.32.0

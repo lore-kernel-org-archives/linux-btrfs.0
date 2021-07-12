@@ -7,50 +7,50 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E036C07E99
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:34:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3AF1C07E99
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:34:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 37AA461002
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:34:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CB59661003
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Jul 2021 08:34:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353036AbhGLIg6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Jul 2021 04:36:58 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:49268 "EHLO
+        id S1353551AbhGLIhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Jul 2021 04:37:03 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:49286 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1353981AbhGLId2 (ORCPT
+        with ESMTP id S1355005AbhGLId3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Jul 2021 04:33:28 -0400
+        Mon, 12 Jul 2021 04:33:29 -0400
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 0B3151FF5C;
-        Mon, 12 Jul 2021 08:30:38 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 171BB1FF5F;
+        Mon, 12 Jul 2021 08:30:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1626078638; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1626078641; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=v/UfTuo7OALdy/3G2F1KaK+MUh+gVUjcd35B7aUYLMY=;
-        b=VGNVpCHMnitRlOPvkA4P17zH5siuH70Sf3N4ToeligWaYKYMJUkGTlSvSFDNY+y8vVv4sC
-        yGuW225yw1d7kRZu0iHJklP3HvygRFFLEKm5IiXZseYotFDTbeeXQQdtaRW13NU7abus8Y
-        XRZwhehEni7xQy3GcB4bLnvKD2X1acw=
+        bh=0XLRLRizTDiTrRlwYHyyyQgoWQpLX5UJ4puUcuPGib4=;
+        b=IrGZAjOdkXjXVr+VS3faY0D9+MTL5tqGd8ZsaUDIPc3D730uVDSTCPWPBWftuPJuGg4Sbk
+        xtXDw9mKmluREifAGWNYiqEZwHIMtz/636eR14e1xNWNft59jOyDHXYBvEH2OHQdIneD0u
+        8Q8pJORjjdMz+3652lKgwJG2c1BIAhE=
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id B65D213455;
-        Mon, 12 Jul 2021 08:30:36 +0000 (UTC)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 0E73D13455;
+        Mon, 12 Jul 2021 08:30:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap1.suse-dmz.suse.de with ESMTPSA
-        id eL0+Haz962ByEAAAGKfGzw
-        (envelope-from <wqu@suse.com>); Mon, 12 Jul 2021 08:30:36 +0000
+        id sPgNMK/962ByEAAAGKfGzw
+        (envelope-from <wqu@suse.com>); Mon, 12 Jul 2021 08:30:39 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v7 04/17] btrfs: grab correct extent map for subpage compressed extent read
-Date:   Mon, 12 Jul 2021 16:30:14 +0800
-Message-Id: <20210712083027.212734-5-wqu@suse.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v7 06/17] btrfs: rework lzo_decompress_bio() to make it subpage compatible
+Date:   Mon, 12 Jul 2021 16:30:16 +0800
+Message-Id: <20210712083027.212734-7-wqu@suse.com>
 X-Mailer: git-send-email 2.32.0
 In-Reply-To: <20210712083027.212734-1-wqu@suse.com>
 References: <20210712083027.212734-1-wqu@suse.com>
@@ -60,119 +60,278 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-When subpage compressed read write support is enabled, btrfs/038 always
-fail with EIO.
+For the initial subpage support, although we won't support compressed
+write, we still need to support compressed read.
 
-A simplified script can easily trigger the problem:
+But for lzo_decompress_bio() it has several problems:
 
-  mkfs.btrfs -f -s 4k $dev
-  mount $dev $mnt -o compress=lzo
+- The abuse of PAGE_SIZE for boundary detection
+  For subpage case, we should follow sectorsize to detect the padding
+  zeros.
+  Using PAGE_SIZE will cause subpage compress read to skip certain
+  bytes, and causing read error.
 
-  xfs_io -f -c "truncate 118811" $mnt/foo
-  xfs_io -c "pwrite -S 0x0d -b 39987 92267 39987" $mnt/foo > /dev/null
+- Too many helper variables
+  There are half a dozen helper variables, which is only making things
+  harder to read
 
-  sync
-  btrfs subvolume snapshot -r $mnt $mnt/mysnap1
+This patch will rework lzo_decompress_bio() to make it work for subpage:
 
-  xfs_io -c "pwrite -S 0x3e -b 80000 200000 80000" $mnt/foo > /dev/null
-  sync
+- Use sectorsize to do boundary check, while still use PAGE_SIZE for
+  page switching
+  This allows us to have the same on-disk format for 4K sectorsize fs,
+  while take advantage of larger page size.
 
-  xfs_io -c "pwrite -S 0xdc -b 10000 250000 10000" $mnt/foo > /dev/null
-  xfs_io -c "pwrite -S 0xff -b 10000 300000 10000" $mnt/foo > /dev/null
+- Use two main cursor
+  Only @cur_in and @cur_out is utilized as the main cursor.
+  The helper variables will only be declared inside the loop, and only 2
+  helper variables needed.
 
-  sync
-  btrfs subvolume snapshot -r $mnt $mnt/mysnap2
+- Introduce a helper function to copy compressed segment payload
+  Introduce a new helper, copy_compressed_segment(), to copy a
+  compressed segment to workspace buffer.
+  This function will handle the page switching.
 
-  cat $mnt/mysnap2/foo
-  # Above cat will fail due to EIO
+Now the net result is, with all the excessive comments and new helper
+function, the refactored code is still smaller, and easier to read.
 
-[CAUSE]
-The problem is in btrfs_submit_compressed_read().
+For other decompression code, they have no special padding rule, thus no
+need to bother for initial subpage support, but will be refactored to
+the same style later.
 
-When it tries to grab the extent map of the read range, it uses the
-following call:
-
-	em = lookup_extent_mapping(em_tree,
-  				   page_offset(bio_first_page_all(bio)),
-				   fs_info->sectorsize);
-
-The problem is in the page_offset(bio_first_page_all(bio)) part.
-
-The offending inode has the following file extent layout
-
-        item 10 key (257 EXTENT_DATA 131072) itemoff 15639 itemsize 53
-                generation 8 type 1 (regular)
-                extent data disk byte 13680640 nr 4096
-                extent data offset 0 nr 4096 ram 4096
-                extent compression 0 (none)
-        item 11 key (257 EXTENT_DATA 135168) itemoff 15586 itemsize 53
-                generation 8 type 1 (regular)
-                extent data disk byte 0 nr 0
-        item 12 key (257 EXTENT_DATA 196608) itemoff 15533 itemsize 53
-                generation 8 type 1 (regular)
-                extent data disk byte 13676544 nr 4096
-                extent data offset 0 nr 53248 ram 86016
-                extent compression 2 (lzo)
-
-And the bio passed in has the following parameters:
-
-page_offset(bio_first_page_all(bio))	= 131072
-bio_first_bvec_all(bio)->bv_offset	= 65536
-
-If we use page_offset(bio_first_page_all(bio) without adding bv_offset,
-we will get an extent map for file offset 131072, not 196608.
-
-This means we read uncompressed data from disk, and later decompression
-will definitely fail.
-
-[FIX]
-Take bv_offset into consideration when trying to grab an extent map.
-
-And add an ASSERT() to ensure we're really getting a compressed extent.
-
-Thankfully this won't affect anything but subpage, thus we wonly need to
-ensure this patch get merged before we enabled basic subpage support.
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ fs/btrfs/lzo.c | 192 ++++++++++++++++++++++---------------------------
+ 1 file changed, 86 insertions(+), 106 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index f17be6398d2c..22945189287b 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -682,6 +682,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	struct page *page;
- 	struct bio *comp_bio;
- 	u64 cur_disk_byte = bio->bi_iter.bi_sector << 9;
-+	u64 file_offset;
- 	u64 em_len;
- 	u64 em_start;
- 	struct extent_map *em;
-@@ -691,15 +692,17 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index 6cab15e52cec..3ad10bb41723 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -14,6 +14,7 @@
+ #include <linux/lzo.h>
+ #include <linux/refcount.h>
+ #include "compression.h"
++#include "ctree.h"
  
- 	em_tree = &BTRFS_I(inode)->extent_tree;
+ #define LZO_LEN	4
  
-+	file_offset = bio_first_bvec_all(bio)->bv_offset +
-+		      page_offset(bio_first_page_all(bio));
+@@ -271,130 +272,109 @@ int lzo_compress_pages(struct list_head *ws, struct address_space *mapping,
+ 	return ret;
+ }
+ 
++/*
++ * Copy the compressed segment payload into @dest.
++ *
++ * For the payload there will be no padding, just need to do page switching.
++ */
++static void copy_compressed_segment(struct compressed_bio *cb,
++				    char *dest, u32 len, u32 *cur_in)
++{
++	u32 orig_in = *cur_in;
 +
- 	/* we need the actual starting offset of this extent in the file */
- 	read_lock(&em_tree->lock);
--	em = lookup_extent_mapping(em_tree,
--				   page_offset(bio_first_page_all(bio)),
--				   fs_info->sectorsize);
-+	em = lookup_extent_mapping(em_tree, file_offset, fs_info->sectorsize);
- 	read_unlock(&em_tree->lock);
- 	if (!em)
- 		return BLK_STS_IOERR;
++	while (*cur_in < orig_in + len) {
++		struct page *cur_page;
++		u32 copy_len = min_t(u32, PAGE_SIZE - offset_in_page(*cur_in),
++					  orig_in + len - *cur_in);
++
++		ASSERT(copy_len);
++		cur_page = cb->compressed_pages[*cur_in / PAGE_SIZE];
++
++		memcpy(dest + *cur_in - orig_in,
++			page_address(cur_page) + offset_in_page(*cur_in),
++			copy_len);
++
++		*cur_in += copy_len;
++	}
++}
++
+ int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
+ {
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
+-	int ret = 0, ret2;
+-	char *data_in;
+-	unsigned long page_in_index = 0;
+-	size_t srclen = cb->compressed_len;
+-	unsigned long total_pages_in = DIV_ROUND_UP(srclen, PAGE_SIZE);
+-	unsigned long buf_start;
+-	unsigned long buf_offset = 0;
+-	unsigned long bytes;
+-	unsigned long working_bytes;
+-	size_t in_len;
+-	size_t out_len;
+-	const size_t max_segment_len = lzo1x_worst_compress(PAGE_SIZE);
+-	unsigned long in_offset;
+-	unsigned long in_page_bytes_left;
+-	unsigned long tot_in;
+-	unsigned long tot_out;
+-	unsigned long tot_len;
+-	char *buf;
+-	struct page **pages_in = cb->compressed_pages;
++	const struct btrfs_fs_info *fs_info = btrfs_sb(cb->inode->i_sb);
++	const u32 sectorsize = fs_info->sectorsize;
++	int ret;
++	u32 len_in;		/* Compressed data length, can be unaligned */
++	u32 cur_in = 0;         /* Offset inside the compressed data */
++	u32 cur_out = 0;        /* Bytes decompressed so far */
++
++	len_in = read_compress_length(page_address(cb->compressed_pages[0]));
++	cur_in += LZO_LEN;
  
-+	ASSERT(em->compress_type != BTRFS_COMPRESS_NONE);
- 	compressed_len = em->block_len;
- 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
- 	if (!cb)
+-	data_in = page_address(pages_in[0]);
+-	tot_len = read_compress_length(data_in);
+ 	/*
+-	 * Compressed data header check.
++	 * LZO header length check
+ 	 *
+-	 * The real compressed size can't exceed the maximum extent length, and
+-	 * all pages should be used (whole unused page with just the segment
+-	 * header is not possible).  If this happens it means the compressed
+-	 * extent is corrupted.
++	 * The total length should not exceed the maximum extent lenght,
++	 * and all sectors should be used.
++	 * If this happens, it means the compressed extent is corrupted.
+ 	 */
+-	if (tot_len > min_t(size_t, BTRFS_MAX_COMPRESSED, srclen) ||
+-	    tot_len < srclen - PAGE_SIZE) {
+-		ret = -EUCLEAN;
+-		goto done;
++	if (len_in > min_t(size_t, BTRFS_MAX_COMPRESSED, cb->compressed_len) ||
++	    round_up(len_in, sectorsize) < cb->compressed_len) {
++		btrfs_err(fs_info,
++			"invalid lzo header, lzo len %u compressed len %u",
++			  len_in, cb->compressed_len);
++		return -EUCLEAN;
+ 	}
+ 
+-	tot_in = LZO_LEN;
+-	in_offset = LZO_LEN;
+-	in_page_bytes_left = PAGE_SIZE - LZO_LEN;
+-
+-	tot_out = 0;
+-
+-	while (tot_in < tot_len) {
+-		in_len = read_compress_length(data_in + in_offset);
+-		in_page_bytes_left -= LZO_LEN;
+-		in_offset += LZO_LEN;
+-		tot_in += LZO_LEN;
++	/* Go through each lzo segment */
++	while (cur_in < len_in) {
++		struct page *cur_page;
++		u32 seg_len;	/* Length of the compressed segment */
++		u32 sector_bytes_left;
++		size_t out_len = lzo1x_worst_compress(sectorsize);
+ 
+ 		/*
+-		 * Segment header check.
+-		 *
+-		 * The segment length must not exceed the maximum LZO
+-		 * compression size, nor the total compressed size.
++		 * We should always have enough space for one segment header
++		 * inside current sector.
+ 		 */
+-		if (in_len > max_segment_len || tot_in + in_len > tot_len) {
+-			ret = -EUCLEAN;
+-			goto done;
+-		}
+-
+-		tot_in += in_len;
+-		working_bytes = in_len;
+-
+-		/* fast path: avoid using the working buffer */
+-		if (in_page_bytes_left >= in_len) {
+-			buf = data_in + in_offset;
+-			bytes = in_len;
+-			goto cont;
+-		}
+-
+-		/* copy bytes from the pages into the working buffer */
+-		buf = workspace->cbuf;
+-		buf_offset = 0;
+-		while (working_bytes) {
+-			bytes = min(working_bytes, in_page_bytes_left);
+-
+-			memcpy(buf + buf_offset, data_in + in_offset, bytes);
+-			buf_offset += bytes;
+-cont:
+-			working_bytes -= bytes;
+-			in_page_bytes_left -= bytes;
+-			in_offset += bytes;
+-
+-			/* check if we need to pick another page */
+-			if ((working_bytes == 0 && in_page_bytes_left < LZO_LEN)
+-			    || in_page_bytes_left == 0) {
+-				tot_in += in_page_bytes_left;
+-
+-				if (working_bytes == 0 && tot_in >= tot_len)
+-					break;
+-
+-				if (page_in_index + 1 >= total_pages_in) {
+-					ret = -EIO;
+-					goto done;
+-				}
+-
+-				page_in_index++;
+-				data_in = page_address(pages_in[page_in_index]);
+-
+-				in_page_bytes_left = PAGE_SIZE;
+-				in_offset = 0;
+-			}
+-		}
+-
+-		out_len = max_segment_len;
+-		ret = lzo1x_decompress_safe(buf, in_len, workspace->buf,
+-					    &out_len);
++		ASSERT(cur_in / sectorsize ==
++		       (cur_in + LZO_LEN - 1) / sectorsize);
++		cur_page = cb->compressed_pages[cur_in / PAGE_SIZE];
++		ASSERT(cur_page);
++		seg_len = read_compress_length(page_address(cur_page) +
++					       offset_in_page(cur_in));
++		cur_in += LZO_LEN;
++
++		/* Copy the compressed segment payload into workspace */
++		copy_compressed_segment(cb, workspace->cbuf, seg_len, &cur_in);
++
++		/* Decompress the data */
++		ret = lzo1x_decompress_safe(workspace->cbuf, seg_len,
++					    workspace->buf, &out_len);
+ 		if (ret != LZO_E_OK) {
+-			pr_warn("BTRFS: decompress failed\n");
++			btrfs_err(fs_info, "failed to decompress");
+ 			ret = -EIO;
+-			break;
++			goto out;
+ 		}
+ 
+-		buf_start = tot_out;
+-		tot_out += out_len;
++		/* Copy the data into inode pages */
++		ret = btrfs_decompress_buf2page(workspace->buf, out_len, cb, cur_out);
++		cur_out += out_len;
+ 
+-		ret2 = btrfs_decompress_buf2page(workspace->buf, out_len,
+-						 cb, buf_start);
+-		if (ret2 == 0)
+-			break;
++		/* All data read, exit */
++		if (ret == 0)
++			goto out;
++		ret = 0;
++
++		/* Check if the sector has enough space for a segment header */
++		sector_bytes_left = sectorsize - cur_in % sectorsize;
++		if (sector_bytes_left >= LZO_LEN)
++			continue;
++
++		/* Skip the padding zeros */
++		cur_in += sector_bytes_left;
+ 	}
+-done:
++out:
+ 	if (!ret)
+ 		zero_fill_bio(cb->orig_bio);
+ 	return ret;
 -- 
 2.32.0
 

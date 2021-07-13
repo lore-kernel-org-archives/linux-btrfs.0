@@ -2,67 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CAE49C11F66
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Jul 2021 13:59:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 211AEC07E96
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Jul 2021 13:59:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B0B8761288
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Jul 2021 13:59:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F293B608FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Jul 2021 13:59:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236820AbhGMOCL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Jul 2021 10:02:11 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48158 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236774AbhGMOCL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Jul 2021 10:02:11 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id D9FB461279;
-        Tue, 13 Jul 2021 13:59:18 +0000 (UTC)
-Date:   Tue, 13 Jul 2021 15:59:16 +0200
-From:   Christian Brauner <christian.brauner@ubuntu.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Christian Brauner <brauner@kernel.org>,
-        Christoph Hellwig <hch@lst.de>, Chris Mason <clm@fb.com>,
+        id S236737AbhGMOCr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Jul 2021 10:02:47 -0400
+Received: from zeniv-ca.linux.org.uk ([142.44.231.140]:55722 "EHLO
+        zeniv-ca.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236696AbhGMOCr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 13 Jul 2021 10:02:47 -0400
+X-Greylist: delayed 1493 seconds by postgrey-1.27 at vger.kernel.org; Tue, 13 Jul 2021 10:02:47 EDT
+Received: from viro by zeniv-ca.linux.org.uk with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1m3IWg-000J3s-K9; Tue, 13 Jul 2021 13:32:42 +0000
+Date:   Tue, 13 Jul 2021 13:32:42 +0000
+From:   Al Viro <viro@zeniv.linux.org.uk>
+To:     Christian Brauner <brauner@kernel.org>
+Cc:     Christoph Hellwig <hch@lst.de>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Al Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH 00/24] btrfs: support idmapped mounts
-Message-ID: <20210713135916.qzlvtu5kcsb2z3ve@wittgenstein>
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org,
+        Christian Brauner <christian.brauner@ubuntu.com>,
+        Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 01/24] namei: handle mappings in lookup_one_len()
+Message-ID: <YO2V+n1Cttrky+bD@zeniv-ca.linux.org.uk>
 References: <20210713111344.1149376-1-brauner@kernel.org>
- <14addf76-b6f7-11ab-119b-4a1138bbd458@gmx.com>
+ <20210713111344.1149376-2-brauner@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <14addf76-b6f7-11ab-119b-4a1138bbd458@gmx.com>
+In-Reply-To: <20210713111344.1149376-2-brauner@kernel.org>
+Sender: Al Viro <viro@ftp.linux.org.uk>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jul 13, 2021 at 07:23:14PM +0800, Qu Wenruo wrote:
+On Tue, Jul 13, 2021 at 01:13:21PM +0200, Christian Brauner wrote:
+> From: Christian Brauner <christian.brauner@ubuntu.com>
 > 
-> 
-> On 2021/7/13 下午7:13, Christian Brauner wrote:
-> > From: Christian Brauner <christian.brauner@ubuntu.com>
-> > 
-> > Hey everyone,
-> > 
-> > This series enables the creation of idmapped mounts on btrfs.
-> 
-> Any doc on the "idmapped" part?
+> Various filesystems use the lookup_one_len() helper to lookup a single path
+> component relative to a well-known starting point. Allow such filesystems to
+> support idmapped mounts by enabling lookup_one_len() to take the idmap into
+> account when calling inode_permission(). This change is a required to let btrfs
+> (and other filesystems) support idmapped mounts.
 
-Yes, I've written a long manpage for it that hasn't been merged for
-manpages yet. Things seem to move a little slow there currently:
-https://lore.kernel.org/linux-man/20210301093459.1876707-1-christian.brauner@ubuntu.com/
-
-For an easily readable version you can also see:
-https://github.com/brauner/mount-idmapped
-
-> 
-> Not familiar with that, the only thing I can thing of is from NFSv4
-> idmapd, is that related or a completely new thing?
-
-Unrelated.
+NAK.  Expose a new variant if you must, but leave the old one alone.

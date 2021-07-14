@@ -7,61 +7,62 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97D4FC11F68
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Jul 2021 18:47:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E2F9C11F6A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Jul 2021 18:47:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 87E1D613C9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Jul 2021 18:47:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1AB94613C9
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Jul 2021 18:47:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240096AbhGNSu0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Jul 2021 14:50:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36260 "EHLO
+        id S230075AbhGNSu1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Jul 2021 14:50:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36240 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240079AbhGNSuY (ORCPT
+        with ESMTP id S240080AbhGNSuY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 14 Jul 2021 14:50:24 -0400
-Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB428C061764
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jul 2021 11:47:32 -0700 (PDT)
-Received: by mail-qt1-x82a.google.com with SMTP id z25so2575842qto.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jul 2021 11:47:32 -0700 (PDT)
+Received: from mail-qv1-xf30.google.com (mail-qv1-xf30.google.com [IPv6:2607:f8b0:4864:20::f30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C55D1C061765
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jul 2021 11:47:29 -0700 (PDT)
+Received: by mail-qv1-xf30.google.com with SMTP id a10so1252694qvj.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Jul 2021 11:47:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=EpdgEcRiBqQsZrOSnIk/qayn286ESnYWwrM6gnsT55M=;
-        b=vdlXEiXebSuhkKjwBpAIpgZ3LlMhHVhskWGVr159+4cRz0cwgUPfSWGu3ECkOSOKfF
-         bCDl3gbl9GP1t8J8GPIdWpRF/Zj0DWZEQrvnMrZe1X21bHjd9wCBZVvt3uH34Imos7No
-         49w0BZYuxupZOO/auWGB5z8YbREYpqtWAE/55WQFbPjTMxT/sSEcZPSp8fXrf/JPxBnq
-         uR8Ubag1J4XqHY79BKiz6YDoe4k7+pyhV+xAwQ1fjiBR4yB1q5PuZ8Sp7X5TgRIeWBjP
-         0xfWnHUv7xsLd6bud3cYYEBxOCv6f71cAzfKn7ZIOKdl+NzLjxBLziuIg1uYWBsfcPcy
-         qaDA==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=NEIgkiTj4t3jttXcyN/5zz8YqcqMXxtRu1nEAsbHwxE=;
+        b=p+t/WKtRaf1tvAClAUr+ZmzhvTPUK1x9+pxpPkUkK9ebhmfVYlIezYHVv5zK8FI0EC
+         dOS9cdzvmSuG/oXQ7jwhUdwwolA2ZtTOQqP115r4SFQR8iaZUuNnF2phPKQTzCoKEqhs
+         B63TppqB5ueS98zoW2li+i9GcNO+iokQJpwOKXm/lh0ruStga2kj1s3UONzCxtt//8lT
+         o7lOzjkzs+i1M9TkP4ZfKWbmzokra4mxYfYEkM9VMSIH8OEPzN+n2/GmyilJ1F+3Ed+V
+         OosJ8lNyw44JzjXumqin6jJvOJqoFGfMpNJPTjiCycK7kPks4XB9N50Wdk/Cu03ga2Qq
+         uFcg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=EpdgEcRiBqQsZrOSnIk/qayn286ESnYWwrM6gnsT55M=;
-        b=IedsTttYhFpmrZXalfwVKEG+QZODPfd7j711yHdBnawURE5Ox2LRzwNTNevWUokAoX
-         dVBvPDaBFbd6CaqRnQiYqsFHbJtwe2z8HiBAZPj4rUgQLVZghPE+HrVetw1NvAD7i4D9
-         ap2jdUgeat5haLqmAreq3NmPj/mcWuEB5FNGYkmIEDoXoSRu1V+dWn/wwRzQOh4jWugt
-         ZXYF4c/f1FLLdsccM5jtwwtefERwj2jBMYfIkp/JFSBqs4vEJHwkj8cpFQSSwCEr8MK8
-         1b1/TRJhvmHLtZGk5K0AELm5rCb67zXJhFDeCJrzijdt3wzPdm3DyyY+XISNfCHqIyUH
-         y6mw==
-X-Gm-Message-State: AOAM531e2M14A5MGaGsPChOSssZoFLd4bNPfIN+7NVeYaGh4B4zFA7nK
-        PW1Z2hS2s2C1Mj731f4T7vvDC+oq/+SUs4j7
-X-Google-Smtp-Source: ABdhPJzMXWWzEW1xNgRG2YJ6Ri2c+pRxiSkNfTQbuAUVeuozGxwrmS5brLLpNVP4YFy5tTOkSmvteA==
-X-Received: by 2002:ac8:1347:: with SMTP id f7mr1455871qtj.70.1626288451514;
-        Wed, 14 Jul 2021 11:47:31 -0700 (PDT)
+        bh=NEIgkiTj4t3jttXcyN/5zz8YqcqMXxtRu1nEAsbHwxE=;
+        b=JEZuJIYNKG3X6nq1cAAobgLvdXPysLigBMxXlBVSGKry2FxtmMG+BRmfECIBPPYVT8
+         HEfmuRjJ1HHMVLM/lIOLHLt9s03vl9Ot4ZFHDVqtNzUewCvSSXO+o7oqDwuBd3B/FQ3u
+         UCBu6BVvoJrurOGQxwJW3nCjqUAP5gPF3lEHTzrqyFFqTFdJEAjpme9YsLA6CZAdMj11
+         oyh/bjg/1j3tOteWo4Xd/xj7GhQFaj2Fs0aTcazKKUURZrFi/pAQK5k4i4rdlzR0CXrQ
+         onElh0UHxK+P3kHZ9T9kK0avPYga18oK1AL7PgiZy4i77L8IQA+QsA4EZMAxHK27viwN
+         t3Gw==
+X-Gm-Message-State: AOAM533tEMTS7rijFBRGV+fcydxAL3eCvng29Znfmaq2y9I79WEKdkpX
+        aAuO+ayExL4TnXtiwEqPu0epVps+Y10FMQ1y
+X-Google-Smtp-Source: ABdhPJxZG8yTJlXAWrF55wKnikwJzt6/9WAyS7O1ymLPDGQRhmqUeoOYUjprybts1WfL3aPcNUKmsw==
+X-Received: by 2002:a05:6214:d08:: with SMTP id 8mr12484989qvh.32.1626288448684;
+        Wed, 14 Jul 2021 11:47:28 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id s3sm1406472qke.85.2021.07.14.11.47.31
+        by smtp.gmail.com with ESMTPSA id 3sm1077237qtz.5.2021.07.14.11.47.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 14 Jul 2021 11:47:31 -0700 (PDT)
+        Wed, 14 Jul 2021 11:47:28 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH v3 3/9] btrfs: enable a tracepoint when we fail tickets
-Date:   Wed, 14 Jul 2021 14:47:19 -0400
-Message-Id: <e8840708de6be39bf0f34c5c3da2b52271546e37.1626288241.git.josef@toxicpanda.com>
+Cc:     stable@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v3 1/9] btrfs: wake up async_delalloc_pages waiters after submit
+Date:   Wed, 14 Jul 2021 14:47:17 -0400
+Message-Id: <dac85f4251481dcee67e93f0dd1e119c68041fab.1626288241.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1626288241.git.josef@toxicpanda.com>
 References: <cover.1626288241.git.josef@toxicpanda.com>
@@ -71,47 +72,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When debugging early enospc problems it was useful to have a tracepoint
-where we failed all tickets so I could check the state of the enospc
-counters at failure time to validate my fixes.  This adds the tracpoint
-so you can easily get that information.
+We use the async_delalloc_pages mechanism to make sure that we've
+completed our async work before trying to continue our delalloc
+flushing.  The reason for this is we need to see any ordered extents
+that were created by our delalloc flushing.  However we're waking up
+before we do the submit work, which is before we create the ordered
+extents.  This is a pretty wide race window where we could potentially
+think there are no ordered extents and thus exit shrink_delalloc
+prematurely.  Fix this by waking us up after we've done the work to
+create ordered extents.
 
+cc: stable@vger.kernel.org
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/space-info.c        | 2 ++
- include/trace/events/btrfs.h | 6 ++++++
- 2 files changed, 8 insertions(+)
+ fs/btrfs/inode.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 392997376a1c..af161eb808a2 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -825,6 +825,8 @@ static bool maybe_fail_all_tickets(struct btrfs_fs_info *fs_info,
- 	struct reserve_ticket *ticket;
- 	u64 tickets_id = space_info->tickets_id;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e6eb20987351..0f42864d5dd4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1290,11 +1290,6 @@ static noinline void async_cow_submit(struct btrfs_work *work)
+ 	nr_pages = (async_chunk->end - async_chunk->start + PAGE_SIZE) >>
+ 		PAGE_SHIFT;
  
-+	trace_btrfs_fail_all_tickets(fs_info, space_info);
+-	/* atomic_sub_return implies a barrier */
+-	if (atomic_sub_return(nr_pages, &fs_info->async_delalloc_pages) <
+-	    5 * SZ_1M)
+-		cond_wake_up_nomb(&fs_info->async_submit_wait);
+-
+ 	/*
+ 	 * ->inode could be NULL if async_chunk_start has failed to compress,
+ 	 * in which case we don't have anything to submit, yet we need to
+@@ -1303,6 +1298,11 @@ static noinline void async_cow_submit(struct btrfs_work *work)
+ 	 */
+ 	if (async_chunk->inode)
+ 		submit_compressed_extents(async_chunk);
 +
- 	if (btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
- 		btrfs_info(fs_info, "cannot satisfy tickets, dumping space info");
- 		__btrfs_dump_space_info(fs_info, space_info);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index a87953e74573..d754c6ec1797 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -2104,6 +2104,12 @@ DEFINE_EVENT(btrfs_dump_space_info, btrfs_done_preemptive_reclaim,
- 	TP_ARGS(fs_info, sinfo)
- );
++	/* atomic_sub_return implies a barrier */
++	if (atomic_sub_return(nr_pages, &fs_info->async_delalloc_pages) <
++	    5 * SZ_1M)
++		cond_wake_up_nomb(&fs_info->async_submit_wait);
+ }
  
-+DEFINE_EVENT(btrfs_dump_space_info, btrfs_fail_all_tickets,
-+	TP_PROTO(struct btrfs_fs_info *fs_info,
-+		 const struct btrfs_space_info *sinfo),
-+	TP_ARGS(fs_info, sinfo)
-+);
-+
- TRACE_EVENT(btrfs_reserve_ticket,
- 	TP_PROTO(const struct btrfs_fs_info *fs_info, u64 flags, u64 bytes,
- 		 u64 start_ns, int flush, int error),
+ static noinline void async_cow_free(struct btrfs_work *work)
 -- 
 2.26.3
 

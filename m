@@ -2,103 +2,266 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9827CC636C8
-	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Jul 2021 06:46:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0565DC636CB
+	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Jul 2021 06:46:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 69FA261108
-	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Jul 2021 06:46:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D7B1A61108
+	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Jul 2021 06:46:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229705AbhGRGtJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 18 Jul 2021 02:49:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35264 "EHLO
+        id S230267AbhGRGtX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 18 Jul 2021 02:49:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35276 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229480AbhGRGtI (ORCPT
+        with ESMTP id S229842AbhGRGtK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 18 Jul 2021 02:49:08 -0400
-Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B972C061762
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jul 2021 23:46:10 -0700 (PDT)
-Received: by mail-pj1-x102a.google.com with SMTP id p4-20020a17090a9304b029016f3020d867so10206221pjo.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jul 2021 23:46:10 -0700 (PDT)
+        Sun, 18 Jul 2021 02:49:10 -0400
+Received: from mail-pl1-x62a.google.com (mail-pl1-x62a.google.com [IPv6:2607:f8b0:4864:20::62a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1233FC061762
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jul 2021 23:46:13 -0700 (PDT)
+Received: by mail-pl1-x62a.google.com with SMTP id h1so7807885plf.6
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Jul 2021 23:46:13 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=rbYEnk+YW3fmvpYPf2Soz9Ngvmh3VY/PwbH5LjdKdas=;
-        b=vafhro4gkcyPlU8Ye47jp0ZoIgJ9rzT25Ytsh7huZIaxLcP+VOq2I9L25zwyewMdFz
-         FCMZlCcZym9mDkZP+2yYsm8HQk89YSLu2OZa4Uh0SOIbdbYnSk1RxgmrwKz5v9i9ovmL
-         CJxvS3u7wCW3Kt4jaVD56rX8kDT85OU0n66wCM9QsLEhkwx8jHpu12hT1s2GuCuF7rpT
-         R5aP8pd6j1kNKSaTkZCoXMWpIBlGVYTRrUir7Z/uV0O6+elz6eVjD9RiLCgmEZ7/Pg4a
-         jbneuDxM85V+3PyymCh4aVlJqC+EpsX4yq1pvoJxcHuokFvvLC519Bx+oXSUxOj0dOUT
-         OhJg==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=djS4yHu9H9HvU5bm2lyOGyHsUSZNFJ8qFoaLocKNOVM=;
+        b=U64PQYfRkpeMRO95RQNWM/y9PRLUM1tCovkpP35KiuHrtZ9qqRsczyG9J1HVjZCqcO
+         EjqwG3IhAYVtTOKTBz+EpSRT1++FgZUv3oBj2PvxXj76tqCSwhdcDFTNPUg3x2jY/4/Z
+         qop/drsQggG5JBk3gD6xYb/XRY+2E0ddw26knCHtqqo7DBXq0soH/1FBiVgoVYphFsa9
+         h5GXl1ZRq64xrWkkp//XX6t5Hf6Wzc1NrOEQl14NcMNV7KZzm3HYsKhEooAINQ8I0TYh
+         8oc7Qs4atTFxNRSyr8apSDp1Hyuuc2W4Id2VZ3yBrbLORPCzFaEKRAkWdnxEsxiTkhHB
+         MPRw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=rbYEnk+YW3fmvpYPf2Soz9Ngvmh3VY/PwbH5LjdKdas=;
-        b=czjjRL7dYseDTyJR0r8hUj5t7N+hRNt6OGG8P6JasWsyFQdgtkNbO88j/tF3PLGsjq
-         +2ITrQEdjgt37F8DDax7sh2mWwL1sPkeKQyzBno+pQFl9zFUg8o7ZgPaj1eNKui9ayKO
-         IXlKDi4ahMeiBliugDIRSozVmHJuq40LmVPcMy4YbEyPKWZHQAmFhCgjh5y/hj4Ni331
-         tU4Nkx2Cdl4UIWOyqlHOB+HGjoFp+X3ZcxvTocJQgyK5liYK3qI7glUeQAMGJMUbEjVz
-         PDistromQYwDCGe8gjxjn3WoovijJ879emuGqB3x9tQxEOufdswmWniJcryYY9DdIcoY
-         2Wfw==
-X-Gm-Message-State: AOAM530vtqH/a33D5ID3yuLk0NtRQJ5tJOGzrq29AZxEWtIpDuwQhYQn
-        wfgiGoZjKmNgqZIujwWopcPEnroMxpU=
-X-Google-Smtp-Source: ABdhPJx6DJgt7280tVPiHCCXv2FWkSLCp7xfs/JI07sDrNkSNcZOLzSI821HEVyhecQqgow5bOunxw==
-X-Received: by 2002:a17:90a:6097:: with SMTP id z23mr7206285pji.172.1626590769592;
-        Sat, 17 Jul 2021 23:46:09 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=djS4yHu9H9HvU5bm2lyOGyHsUSZNFJ8qFoaLocKNOVM=;
+        b=MudQl6lqpvbp9nP4zINbs35sMhfIP7ckoWj/Uwmzg2xAfhLTP+U/VylWHlxkWAHcd8
+         U6nhSjNmbkYLOKHaPliZWXR3M7g8UkiWVc1DnUMsFq3NNJy20ShW6UX8JHbQXlkuTQFH
+         z5tPqVnQud96ABhYVB7/E64k7kcCIaSlXAQxZO3Olo+tCbRRC+rtPzQ8L/pIoa9yXj/j
+         Dt0mEuNaYyW7ze6e81OQjzN/cIrE1nMUfI8yDC8tbSkRGHZSM9/w560hs0W0/HeKW//Y
+         667jwTHheNVviZtuk5PAR4nhseFF0uTzI7KU/HS6/pTmW7GAWIEBvQybGKWyT9J5Z6xs
+         rpbQ==
+X-Gm-Message-State: AOAM53152Yv7JVUdwTJNhN0VfOnaPGoDDCGX6VpaqzwXsU45qPxcbDzJ
+        CIlRUwNK/ByfkPyNUxrPp1Huunopvxg=
+X-Google-Smtp-Source: ABdhPJwZtpQdFwIWTNDvoUWAGeJFcl06xP3SbNSxsSCBt1ah/PAxK6a6uOjzFhmDERIsuOfcRxeo7Q==
+X-Received: by 2002:a17:90a:a087:: with SMTP id r7mr24398538pjp.84.1626590772472;
+        Sat, 17 Jul 2021 23:46:12 -0700 (PDT)
 Received: from localhost.localdomain ([59.12.165.26])
-        by smtp.gmail.com with ESMTPSA id w23sm1302741pfc.60.2021.07.17.23.46.08
+        by smtp.gmail.com with ESMTPSA id w23sm1302741pfc.60.2021.07.17.23.46.11
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 17 Jul 2021 23:46:09 -0700 (PDT)
+        Sat, 17 Jul 2021 23:46:12 -0700 (PDT)
 From:   Sidong Yang <realwakka@gmail.com>
 To:     linux-btrfs <linux-btrfs@vger.kernel.org>,
         Qu Wenruo <quwenruo.btrfs@gmx.com>
 Cc:     Sidong Yang <realwakka@gmail.com>
-Subject: [PATCH v4 0/2] Add subcommand that dumps file extents
-Date:   Sun, 18 Jul 2021 06:45:59 +0000
-Message-Id: <20210718064601.3435-1-realwakka@gmail.com>
+Subject: [PATCH v4 2/2] btrfs-progs: cmds: Add subcommand that dumps file extents
+Date:   Sun, 18 Jul 2021 06:46:01 +0000
+Message-Id: <20210718064601.3435-3-realwakka@gmail.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210718064601.3435-1-realwakka@gmail.com>
+References: <20210718064601.3435-1-realwakka@gmail.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch series add an subcommand in inspect-internal. It dumps file extents of
-the file that user provided. For avoiding duplicated code, the patch that export
-functions is in this series.
+This patch adds an subcommand in inspect-internal. It dumps file extents of
+the file that user provided. It helps to show the internal information
+about file extents comprise the file.
 
-Sidong Yang (2):
-  btrfs-progs: export util functions about file extent items
-  btrfs-progs: cmds: Add subcommand that dumps file extents
-
+Signed-off-by: Sidong Yang <realwakka@gmail.com>
 ---
-v2:
- - Prints type and compression
- - Use the terms from file_extents_item like disk_bytenr not like
-   "physical"
-v3:
- - export util functions for removing duplication
- - change the way to loop with search ioctl
-v4:
- - export COMPRESS_STR_LEN for using function safely
----
-
  Makefile                         |   2 +-
  cmds/commands.h                  |   2 +-
  cmds/inspect-dump-file-extents.c | 134 +++++++++++++++++++++++++++++++
  cmds/inspect.c                   |   1 +
- kernel-shared/print-tree.c       |  18 ++---
- kernel-shared/print-tree.h       |   5 ++
- 6 files changed, 151 insertions(+), 11 deletions(-)
+ 4 files changed, 137 insertions(+), 2 deletions(-)
  create mode 100644 cmds/inspect-dump-file-extents.c
 
+diff --git a/Makefile b/Makefile
+index a1cc457b..911e16de 100644
+--- a/Makefile
++++ b/Makefile
+@@ -156,7 +156,7 @@ cmds_objects = cmds/subvolume.o cmds/filesystem.o cmds/device.o cmds/scrub.o \
+ 	       cmds/restore.o cmds/rescue.o cmds/rescue-chunk-recover.o \
+ 	       cmds/rescue-super-recover.o \
+ 	       cmds/property.o cmds/filesystem-usage.o cmds/inspect-dump-tree.o \
+-	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/filesystem-du.o \
++	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/inspect-dump-file-extents.o cmds/filesystem-du.o \
+ 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
+ libbtrfs_objects = common/send-stream.o common/send-utils.o kernel-lib/rbtree.o btrfs-list.o \
+ 		   kernel-lib/radix-tree.o common/extent-cache.o kernel-shared/extent_io.o \
+diff --git a/cmds/commands.h b/cmds/commands.h
+index 8fa85d6c..55de248e 100644
+--- a/cmds/commands.h
++++ b/cmds/commands.h
+@@ -154,5 +154,5 @@ DECLARE_COMMAND(select_super);
+ DECLARE_COMMAND(dump_super);
+ DECLARE_COMMAND(debug_tree);
+ DECLARE_COMMAND(rescue);
+-
++DECLARE_COMMAND(inspect_dump_file_extents);
+ #endif
+diff --git a/cmds/inspect-dump-file-extents.c b/cmds/inspect-dump-file-extents.c
+new file mode 100644
+index 00000000..5e5bc6f7
+--- /dev/null
++++ b/cmds/inspect-dump-file-extents.c
+@@ -0,0 +1,134 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <unistd.h>
++#include <stdio.h>
++#include <fcntl.h>
++
++#include <sys/ioctl.h>
++
++#include "common/utils.h"
++#include "cmds/commands.h"
++#include "kernel-shared/print-tree.h"
++
++static const char * const cmd_inspect_dump_file_extents_usage[] = {
++	"btrfs inspect-internal dump-extent path",
++	"Dump file extent in a textual form",
++	NULL
++};
++
++static int cmd_inspect_dump_file_extents(const struct cmd_struct *cmd,
++										 int argc, char **argv)
++{
++	int fd;
++	struct stat statbuf;
++	struct btrfs_ioctl_ino_lookup_args lookup;
++	struct btrfs_ioctl_search_args args;
++	struct btrfs_ioctl_search_key *sk = &args.key;
++	struct btrfs_file_extent_item *extent_item;
++	struct btrfs_ioctl_search_header *header;
++	u64 buf_off;
++	u64 len;
++	u64 start;
++	u64 disk_bytenr;
++	u64 disk_num_bytes;
++	u64 offset;
++	int ret;
++	int i;
++	char compress_str[BTRFS_COMPRESS_STR_LEN];
++
++	fd = open(argv[optind], O_RDONLY);
++	if (fd < 0) {
++		error("cannot open %s: %m", argv[optind]);
++		ret = 1;
++		goto out;
++	}
++
++	if (fstat(fd, &statbuf) < 0) {
++		error("failed to fstat %s: %m", argv[optind]);
++		ret = 1;
++		goto out;
++	}
++
++	lookup.treeid = 0;
++	lookup.objectid = BTRFS_FIRST_FREE_OBJECTID;
++
++	if (ioctl(fd, BTRFS_IOC_INO_LOOKUP, &lookup) < 0) {
++		error("failed to lookup inode %s: %m", argv[optind]);
++		ret = 1;
++		goto out;
++	}
++
++	sk->tree_id = lookup.treeid;
++	sk->min_objectid = statbuf.st_ino;
++	sk->max_objectid = statbuf.st_ino;
++	sk->min_offset = 0;
++	sk->max_offset = UINT64_MAX;
++	sk->min_transid = 0;
++	sk->max_transid = UINT64_MAX;
++	sk->min_type = sk->max_type = BTRFS_EXTENT_DATA_KEY;
++	sk->nr_items = UINT32_MAX;
++
++again:
++	if (ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args)) {
++		error("failed to search tree ioctl %s: %m", argv[optind]);
++		ret = 1;
++		goto out;
++	}
++
++	buf_off = 0;
++	for(i=0; i<sk->nr_items; ++i) {
++		header = (struct btrfs_ioctl_search_header *)(args.buf + buf_off);
++
++		if (btrfs_search_header_type(header) == BTRFS_EXTENT_DATA_KEY) {
++			extent_item = (struct btrfs_file_extent_item *)(header + 1);
++			start = btrfs_search_header_offset(header);
++
++			printf("type = %s, start = %llu, ",
++				   btrfs_file_extent_type_to_str(extent_item->type), start);
++			switch (extent_item->type) {
++			case BTRFS_FILE_EXTENT_INLINE:
++				len = le64_to_cpu(extent_item->ram_bytes);
++				printf("len = %llu\n", len);
++				break;
++			case BTRFS_FILE_EXTENT_REG:
++			case BTRFS_FILE_EXTENT_PREALLOC:
++				len = le64_to_cpu(extent_item->num_bytes);
++				disk_bytenr = le64_to_cpu(extent_item->disk_bytenr);
++				disk_num_bytes = le64_to_cpu(extent_item->disk_num_bytes);
++				offset = le64_to_cpu(extent_item->offset);
++				btrfs_compress_type_to_str(extent_item->compression, compress_str);
++				printf("len = %llu, disk_bytenr = %llu, disk_num_bytes = %llu,"
++					   " offset = %llu, compression = %s\n",
++					   len, disk_bytenr, disk_num_bytes, offset, compress_str);
++
++				break;
++			}
++
++		}
++		buf_off += sizeof(*header) + btrfs_search_header_len(header);
++	}
++	if (sk->nr_items > 512) {
++		sk->nr_items = UINT32_MAX;
++		sk->min_offset = start + 1;
++		goto again;
++	}
++	ret = 0;
++out:
++	close(fd);
++	return ret;
++}
++DEFINE_SIMPLE_COMMAND(inspect_dump_file_extents, "dump-file-extents");
+diff --git a/cmds/inspect.c b/cmds/inspect.c
+index 2ef5f4b6..dfb0e27b 100644
+--- a/cmds/inspect.c
++++ b/cmds/inspect.c
+@@ -696,6 +696,7 @@ static const struct cmd_group inspect_cmd_group = {
+ 		&cmd_struct_inspect_dump_tree,
+ 		&cmd_struct_inspect_dump_super,
+ 		&cmd_struct_inspect_tree_stats,
++		&cmd_struct_inspect_dump_file_extents,
+ 		NULL
+ 	}
+ };
 -- 
 2.25.1
 

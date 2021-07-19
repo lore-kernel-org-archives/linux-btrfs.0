@@ -2,148 +2,164 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DDBFC07E9B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 16:11:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1041AC07E9B
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 16:11:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6B109613EE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 16:11:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EE33261435
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 16:11:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347630AbhGSPaj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Jul 2021 11:30:39 -0400
-Received: from mail.kernel.org ([198.145.29.99]:38164 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1348300AbhGSPYm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jul 2021 11:24:42 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 9691F61166;
-        Mon, 19 Jul 2021 16:04:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1626710659;
-        bh=gd5dU6PkN6n3psoB6r/nMJWAoD1wfs+t/3q7sqpMzrI=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=iz0vjtB7RJTj7yLZWJK6qLDeoD8sQCsT+UbdgWDNdvYbk9DIw9Td3/H7MQmnoyEOf
-         uDBIeQsEzDRfWqLrl+Tjbeto/oyR76kjHVPb5jQxPirr1mtrOCPYGaaVJ7DLEvJ+Bz
-         2Q056LedVMTJUbi60BbDr1VGlsFtGL2es+RyHK65mhV5czHyYMoN4SVFttrvoxetOx
-         yFs/UGw/F3axJi+buFO1+vZgKMpRY3LmOtrJiQczTxG1evKGdr6s4XF93ylwCNkNt7
-         pLhukA2GE8c43xxZcuFuwgm8E/2IhiPKdC2HcR14gV0dPXQBcKECKusiLDVeW7B2+D
-         jIZ5RxvZlUdig==
-Date:   Mon, 19 Jul 2021 09:04:19 -0700
-From:   "Darrick J. Wong" <djwong@kernel.org>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Dan Williams <dan.j.williams@intel.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        Shiyang Ruan <ruansy.fnst@fujitsu.com>,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, nvdimm@lists.linux.dev,
-        cluster-devel@redhat.com
-Subject: Re: [PATCH 02/27] iomap: remove the iomap arguments to
- ->page_{prepare,done}
-Message-ID: <20210719160419.GD22402@magnolia>
-References: <20210719103520.495450-1-hch@lst.de>
- <20210719103520.495450-3-hch@lst.de>
+        id S240773AbhGSPao (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Jul 2021 11:30:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47478 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1348949AbhGSPZN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Jul 2021 11:25:13 -0400
+Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54EECC080090
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jul 2021 08:17:38 -0700 (PDT)
+Received: by mail-qk1-x72d.google.com with SMTP id bm6so4284987qkb.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Jul 2021 08:44:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=c/B7bNcE9Phu7269FlyezAjEUnJf0M11TkizgrrFZ/c=;
+        b=a/sTjqQEnCS7lyyy2OXazSYpOjCRbSVrYJ2YSiyIVw1upkLd6aRWClL1jfGmW4H16r
+         LhksSaPDwU0QjDLDlIv8x84KMmWOGlwPaPFi55YR/l2FKurhkXwteiyP9SCNsZaTjqOW
+         37blyGzj/CcpW0qiUpTBcarFCp3J5IIia7/JZTZrWSyfL7SB1dwCwijbIehAuPxmsXwk
+         HlGBZMPdGgb7dqB8El9Ap6uO/SaO9uv48ccnRzfUXchET4jmU70cPYTcd06aeh58sKiI
+         WqMFuWGycYoclwpXRSQ6NuAwrzD1KTtMGnoUNRuSB9AEDMjNeEdpW1Aij7bbIoHHglNG
+         qzjA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=c/B7bNcE9Phu7269FlyezAjEUnJf0M11TkizgrrFZ/c=;
+        b=K40ZrGrl3CqjKQRDIlkAnvlH/AZsl8Dmlz4sIBIocOxPE2hbDFcBcPCpNpyaHAt4hY
+         8KPRC9r3uOt25EweN+JbTph0wy6BZglSBfVp+NvI5kElU3UEip0Gcm/wH3I8NzSmhPE/
+         cI2peaE/DeWUWNxBzYcY9WwaZ7EzuGgN6L14M/k9uaiGpdhLdILd8WTf3ziGieV79pkN
+         sVkOTPyDTUxLS6eFRiEwyVLGgWw9+GyKgfPTaRSlDYMSxml/Cq2fBNfhAPuX6r++MWPc
+         d7u7v9bhxc4IcfwmrJ0QmWCokJgHhycYcU6aDOC4SVTPbQ+7ujOs64LZwIUSGmoG2l46
+         4D6g==
+X-Gm-Message-State: AOAM533J/zRsQt6bjJZhyeepOiXug0Ea+j/KdOkUD1+PuW4/LOZNFrZD
+        jZ02SIMO461TKfHUm5Qm9uuOYg==
+X-Google-Smtp-Source: ABdhPJwRpLwx/aqwRX8tty8BvuxvF3O4THl7l9vegQx2FFn4OVc23smYTG/RD8ZrpzFqZMIHrE4Q7A==
+X-Received: by 2002:a05:620a:893:: with SMTP id b19mr13964751qka.487.1626709496981;
+        Mon, 19 Jul 2021 08:44:56 -0700 (PDT)
+Received: from [192.168.1.45] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id v4sm3437785qkf.52.2021.07.19.08.44.55
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 19 Jul 2021 08:44:55 -0700 (PDT)
+Subject: Re: [PATCH RESEND x3 v9 1/9] iov_iter: add copy_struct_from_iter()
+To:     Omar Sandoval <osandov@osandov.com>,
+        Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Matthew Wilcox <willy@infradead.org>,
+        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Dave Chinner <david@fromorbit.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux API <linux-api@vger.kernel.org>,
+        Kernel Team <kernel-team@fb.com>,
+        Dave Chinner <dchinner@redhat.com>
+References: <YNOuiMfRO51kLcOE@relinquished.localdomain>
+ <YNPnRyasHVq9NF79@casper.infradead.org>
+ <YNQi3vgCLVs/ExiK@relinquished.localdomain>
+ <CAHk-=whmRQWm_gVek32ekPqBi3zAKOsdK6_6Hx8nHp3H5JAMew@mail.gmail.com>
+ <YNTO1T6BEzmG6Uj5@relinquished.localdomain>
+ <CAHk-=wi37_ccWmq1EKTduS8ms_=KpyY2LwJV7roD+s=ZkBkjCw@mail.gmail.com>
+ <yq1tulmoqxf.fsf@ca-mkp.ca.oracle.com>
+ <YNVPp/Pgqshami3U@casper.infradead.org>
+ <CAHk-=wgH5pUbrL7CM5v6TWyNzDYpVM9k1qYCEgmY+b3Gx9nEAA@mail.gmail.com>
+ <YNZFr7oJj1nkrwJY@relinquished.localdomain>
+ <YOXrmbi81Fr14fUV@relinquished.localdomain>
+From:   Josef Bacik <josef@toxicpanda.com>
+Message-ID: <84e667ce-0a26-3a2f-0fe8-4a56bfa43006@toxicpanda.com>
+Date:   Mon, 19 Jul 2021 11:44:54 -0400
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:78.0)
+ Gecko/20100101 Thunderbird/78.12.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210719103520.495450-3-hch@lst.de>
+In-Reply-To: <YOXrmbi81Fr14fUV@relinquished.localdomain>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 19, 2021 at 12:34:55PM +0200, Christoph Hellwig wrote:
-> These aren't actually used by the only instance implementing the methods.
+On 7/7/21 1:59 PM, Omar Sandoval wrote:
+> On Fri, Jun 25, 2021 at 02:07:59PM -0700, Omar Sandoval wrote:
+>> On Fri, Jun 25, 2021 at 09:16:15AM -0700, Linus Torvalds wrote:
+>>> On Thu, Jun 24, 2021 at 8:38 PM Matthew Wilcox <willy@infradead.org> wrote:
+>>>>
+>>>> Does it make any kind of sense to talk about doing this for buffered I/O,
+>>>> given that we can't generate them for (eg) mmaped files?
+>>>
+>>> Sure we can.
+>>>
+>>> Or rather, some people might very well like to do it even for mutable
+>>> data. In fact, _especially_ for mutable data.
+>>>
+>>> You might want to do things like "write out the state I verified just
+>>> a moment ago", and if it has changed since then, you *want* the result
+>>> to be invalid because the checksums no longer match - in case somebody
+>>> else changed the data you used for the state calculation and
+>>> verification in the meantime. It's very much why you'd want a separate
+>>> checksum in the first place.
+>>>
+>>> Yeah, yeah,  you can - and people do - just do things like this with a
+>>> separate checksum. But if you know that the filesystem has internal
+>>> checksumming support _anyway_, you might want to use it, and basically
+>>> say "use this checksum, if the data doesn't match when I read it back
+>>> I want to get an IO error".
+>>>
+>>> (The "data doesn't match" _could_ be just due to DRAM corruption etc,
+>>> of course. Some people care about things like that. You want
+>>> "verified" filesystem contents - it might not be about security, it
+>>> might simply be about "I have validated this data and if it's not the
+>>> same data any more it's useless and I need to re-generate it").
+>>>
+>>> Am I a big believer in this model? No. Portability concerns (across
+>>> OS'es, across filesystems, even just across backups on the same exact
+>>> system) means that even if we did this, very few people would use it.
+>>>
+>>> People who want this end up using an external checksum instead and do
+>>> it outside of and separately from the actual IO, because then they can
+>>> do it on existing systems.
+>>>
+>>> So my argument is not "we want this". My argument is purely that some
+>>> buffered filesystem IO case isn't actually any different from the
+>>> traditional "I want access to the low-level sector hardware checksum
+>>> data". The use cases are basically exactly the same.
+>>>
+>>> Of course, basically nobody does that hw sector checksum either, for
+>>> all the same reasons, even if it's been around for decades.
+>>>
+>>> So my "checksum metadata interface" is not something I'm a big
+>>> believer in, but I really don't think it's really all _that_ different
+>>> from the whole "compressed format interface" that this whole patch
+>>> series is about. They are pretty much the same thing in many ways.
+>>
+>> I see the similarity in the sense that we basically want to pass some
+>> extra metadata down with the read or write. So then do we want to add
+>> preadv3/pwritev3 for encoded I/O now so that checksums can use it in the
+>> future? The encoding metadata could go in this "struct io_how", either
+>> directly or in a separate structure with a pointer in "struct io_how".
+>> It could get messy with compat syscalls.
 > 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-
-/me finds it kind of amusing that we still don't have any ->page_prepare
-use cases for actually passing the page in, but if nobody /else/ has any
-objection or imminently wants to use the iomap argument, then...
-
-Reviewed-by: Darrick J. Wong <djwong@kernel.org>
-
---D
-
-> ---
->  fs/gfs2/bmap.c         | 5 ++---
->  fs/iomap/buffered-io.c | 6 +++---
->  include/linux/iomap.h  | 5 ++---
->  3 files changed, 7 insertions(+), 9 deletions(-)
+> Ping. What's the path forward here? At this point, it seems like an
+> ioctl is the path of least resistance.
 > 
-> diff --git a/fs/gfs2/bmap.c b/fs/gfs2/bmap.c
-> index ed8b67b2171817..5414c2c3358092 100644
-> --- a/fs/gfs2/bmap.c
-> +++ b/fs/gfs2/bmap.c
-> @@ -1002,7 +1002,7 @@ static void gfs2_write_unlock(struct inode *inode)
->  }
->  
->  static int gfs2_iomap_page_prepare(struct inode *inode, loff_t pos,
-> -				   unsigned len, struct iomap *iomap)
-> +				   unsigned len)
->  {
->  	unsigned int blockmask = i_blocksize(inode) - 1;
->  	struct gfs2_sbd *sdp = GFS2_SB(inode);
-> @@ -1013,8 +1013,7 @@ static int gfs2_iomap_page_prepare(struct inode *inode, loff_t pos,
->  }
->  
->  static void gfs2_iomap_page_done(struct inode *inode, loff_t pos,
-> -				 unsigned copied, struct page *page,
-> -				 struct iomap *iomap)
-> +				 unsigned copied, struct page *page)
->  {
->  	struct gfs2_trans *tr = current->journal_info;
->  	struct gfs2_inode *ip = GFS2_I(inode);
-> diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
-> index 87ccb3438becd9..75310f6fcf8401 100644
-> --- a/fs/iomap/buffered-io.c
-> +++ b/fs/iomap/buffered-io.c
-> @@ -605,7 +605,7 @@ iomap_write_begin(struct inode *inode, loff_t pos, unsigned len, unsigned flags,
->  		return -EINTR;
->  
->  	if (page_ops && page_ops->page_prepare) {
-> -		status = page_ops->page_prepare(inode, pos, len, iomap);
-> +		status = page_ops->page_prepare(inode, pos, len);
->  		if (status)
->  			return status;
->  	}
-> @@ -638,7 +638,7 @@ iomap_write_begin(struct inode *inode, loff_t pos, unsigned len, unsigned flags,
->  
->  out_no_page:
->  	if (page_ops && page_ops->page_done)
-> -		page_ops->page_done(inode, pos, 0, NULL, iomap);
-> +		page_ops->page_done(inode, pos, 0, NULL);
->  	return status;
->  }
->  
-> @@ -714,7 +714,7 @@ static size_t iomap_write_end(struct inode *inode, loff_t pos, size_t len,
->  	if (old_size < pos)
->  		pagecache_isize_extended(inode, old_size, pos);
->  	if (page_ops && page_ops->page_done)
-> -		page_ops->page_done(inode, pos, ret, page, iomap);
-> +		page_ops->page_done(inode, pos, ret, page);
->  	put_page(page);
->  
->  	if (ret < len)
-> diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-> index 479c1da3e2211e..093519d91cc9cc 100644
-> --- a/include/linux/iomap.h
-> +++ b/include/linux/iomap.h
-> @@ -108,10 +108,9 @@ iomap_sector(struct iomap *iomap, loff_t pos)
->   * associated page could not be obtained.
->   */
->  struct iomap_page_ops {
-> -	int (*page_prepare)(struct inode *inode, loff_t pos, unsigned len,
-> -			struct iomap *iomap);
-> +	int (*page_prepare)(struct inode *inode, loff_t pos, unsigned len);
->  	void (*page_done)(struct inode *inode, loff_t pos, unsigned copied,
-> -			struct page *page, struct iomap *iomap);
-> +			struct page *page);
->  };
->  
->  /*
-> -- 
-> 2.30.2
-> 
+
+At this point we've been deadlocked on this for too long.  Put it in a btrfs 
+IOCTL, if somebody wants to extend it generically in the future then godspeed, 
+we can tie into that interface after the fact.  Thanks,
+
+Josef

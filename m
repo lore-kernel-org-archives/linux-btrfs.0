@@ -2,132 +2,280 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-17.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C8C3C07E9B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 16:12:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89B3AC07E9D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 17:01:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2D94561166
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 16:12:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7202A60E0C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 17:01:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235649AbhGSPcJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Jul 2021 11:32:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48804 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348273AbhGSPaN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jul 2021 11:30:13 -0400
-Received: from fieldses.org (fieldses.org [IPv6:2600:3c00:e000:2f7::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4633DC025476;
-        Mon, 19 Jul 2021 08:22:10 -0700 (PDT)
-Received: by fieldses.org (Postfix, from userid 2815)
-        id 8978869C3; Mon, 19 Jul 2021 11:49:07 -0400 (EDT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 fieldses.org 8978869C3
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fieldses.org;
-        s=default; t=1626709747;
-        bh=ti8Lix6DTW58HSt/kKrKpzmA8A16cLxRx7tBsW4gCcI=;
+        id S245694AbhGSQUy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Jul 2021 12:20:54 -0400
+Received: from mail.kernel.org ([198.145.29.99]:45200 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1352822AbhGSQPV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Jul 2021 12:15:21 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 7F46960E0C;
+        Mon, 19 Jul 2021 16:56:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1626713760;
+        bh=DfRnT5y0id7pZf/hBiHUkDnGPfAQFz+iA7+ps6oy2S0=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=q+7IBwT4bCVh4ZkXH6Pfu7BgB2qcElqNyADOVa5xC43rFJ4vsYfF0EWd8NkZG5Kir
-         PFmx/3LYVqkCXmYBT5pdxjKMxDA5uFyKsRrrzm6YkaPz01WWTYcoPOwRc9V/w4xYx4
-         pDg5hxPqnR+UYHhNZOPJO4xeCz88ha+peHkes0Iw=
-Date:   Mon, 19 Jul 2021 11:49:07 -0400
-From:   "J. Bruce Fields" <bfields@fieldses.org>
-To:     NeilBrown <neilb@suse.de>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        Chuck Lever <chuck.lever@oracle.com>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-nfs@vger.kernel.org,
-        Wang Yugui <wangyugui@e16-tech.com>,
-        Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH/RFC] NFSD: handle BTRFS subvolumes better.
-Message-ID: <20210719154907.GA28482@fieldses.org>
-References: <20210613115313.BC59.409509F4@e16-tech.com>
- <20210310074620.GA2158@tik.uni-stuttgart.de>
- <162632387205.13764.6196748476850020429@noble.neil.brown.name>
- <edd94b15-90df-c540-b9aa-8eac89b6713b@toxicpanda.com>
- <YPBmGknHpFb06fnD@infradead.org>
- <28bb883d-8d14-f11a-b37f-d8e71118f87f@toxicpanda.com>
- <YPBvUfCNmv0ElBpo@infradead.org>
- <e1d9caad-e4c7-09d4-b145-5397b24e1cc7@toxicpanda.com>
- <162638862766.13764.8566962032225976326@noble.neil.brown.name>
+        b=PmiVc0VAZw52T6x8VpkCMLVF0xHnmv3PHwKyjOG7A2Cgh5KDQz94QAU+7wN6FBg37
+         zG0lUvKGIn5lNTyi44buzs2ubLuX3EDwZVeb1R6kYBwYmxOirWm2DRM8eyBukW5HSV
+         D2evYICHVJqZWHgFK5A6EBIWlJHmYC9zdCF0eal2Y23IHhECSQ9oglx2y9PVr7GOBf
+         TOL/donlPB7qMYh9GFDeaJ8mkkdNTQV3i8cW2IaJ4oBSFZTA+atPVqpiazVJrEI0jT
+         HdKA5HNnxAFnKNpQKv7bbMZzt9IWotptqQgYtpkOp2MGY/2LArhQbPRdRTDiH/TqaU
+         aXk8SmIaJY8Uw==
+Date:   Mon, 19 Jul 2021 09:56:00 -0700
+From:   "Darrick J. Wong" <djwong@kernel.org>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Dan Williams <dan.j.williams@intel.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
+        Shiyang Ruan <ruansy.fnst@fujitsu.com>,
+        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, nvdimm@lists.linux.dev,
+        cluster-devel@redhat.com
+Subject: Re: [PATCH 08/27] iomap: add the new iomap_iter model
+Message-ID: <20210719165600.GG23236@magnolia>
+References: <20210719103520.495450-1-hch@lst.de>
+ <20210719103520.495450-9-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <162638862766.13764.8566962032225976326@noble.neil.brown.name>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <20210719103520.495450-9-hch@lst.de>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jul 16, 2021 at 08:37:07AM +1000, NeilBrown wrote:
-> On Fri, 16 Jul 2021, Josef Bacik wrote:
-> > On 7/15/21 1:24 PM, Christoph Hellwig wrote:
-> > > On Thu, Jul 15, 2021 at 01:11:29PM -0400, Josef Bacik wrote:
-> > >> Because there's no alternative.  We need a way to tell userspace they've
-> > >> wandered into a different inode namespace.  There's no argument that what
-> > >> we're doing is ugly, but there's never been a clear "do X instead".  Just a
-> > >> lot of whinging that btrfs is broken.  This makes userspace happy and is
-> > >> simple and straightforward.  I'm open to alternatives, but there have been 0
-> > >> workable alternatives proposed in the last decade of complaining about it.
-> > > 
-> > > Make sure we cross a vfsmount when crossing the "st_dev" domain so
-> > > that it is properly reported.   Suggested many times and ignored all
-> > > the time beause it requires a bit of work.
-> > > 
-> > 
-> > You keep telling me this but forgetting that I did all this work when you 
-> > originally suggested it.  The problem I ran into was the automount stuff 
-> > requires that we have a completely different superblock for every vfsmount. 
-> > This is fine for things like nfs or samba where the automount literally points 
-> > to a completely different mount, but doesn't work for btrfs where it's on the 
-> > same file system.  If you have 1000 subvolumes and run sync() you're going to 
-> > write the superblock 1000 times for the same file system.  You are going to 
-> > reclaim inodes on the same file system 1000 times.  You are going to reclaim 
-> > dcache on the same filesytem 1000 times.  You are also going to pin 1000 
-> > dentries/inodes into memory whenever you wander into these things because the 
-> > super is going to hold them open.
-> > 
-> > This is not a workable solution.  It's not a matter of simply tying into 
-> > existing infrastructure, we'd have to completely rework how the VFS deals with 
-> > this stuff in order to be reasonable.  And when I brought this up to Al he told 
-> > me I was insane and we absolutely had to have a different SB for every vfsmount, 
-> > which means we can't use vfsmount for this, which means we don't have any other 
-> > options.  Thanks,
+On Mon, Jul 19, 2021 at 12:35:01PM +0200, Christoph Hellwig wrote:
+> The iomap_iter struct provides a convenient way to package up and
+> maintain all the arguments to the various mapping and operation
+> functions.  It is operated on using the iomap_iter() function that
+> is called in loop until the whole range has been processed.  Compared
+> to the existing iomap_apply() function this avoid an indirect call
+> for each iteration.
 > 
-> When I was first looking at this, I thought that separate vfsmnts
-> and auto-mounting was the way to go "just like NFS".  NFS still shares a
-> lot between the multiple superblock - certainly it shares the same
-> connection to the server.
+> For now iomap_iter() calls back into the existing ->iomap_begin and
+> ->iomap_end methods, but in the future this could be further optimized
+> to avoid indirect calls entirely.
 > 
-> But I dropped the idea when Bruce pointed out that nfsd is not set up to
-> export auto-mounted filesystems.
-
-Yes.  I wish it was....  But we'd need some way to look a
-not-currently-mounted filesystem by filehandle:
-
-> It needs to be able to find a
-> filesystem given a UUID (extracted from a filehandle), and it does this
-> by walking through the mount table to find one that matches.  So unless
-> all btrfs subvols were mounted all the time (which I wouldn't propose),
-> it would need major work to fix.
+> Based on an earlier patch from Matthew Wilcox <willy@infradead.org>.
 > 
-> NFSv4 describes the fsid as having a "major" and "minor" component.
-> We've never treated these as having an important meaning - just extra
-> bits to encode uniqueness in.  Maybe we should have used "major" for the
-> vfsmnt, and kept "minor" for the subvol.....
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  fs/iomap/Makefile     |  1 +
+>  fs/iomap/iter.c       | 74 +++++++++++++++++++++++++++++++++++++++++++
+>  fs/iomap/trace.h      | 37 +++++++++++++++++++++-
+>  include/linux/iomap.h | 56 ++++++++++++++++++++++++++++++++
+>  4 files changed, 167 insertions(+), 1 deletion(-)
+>  create mode 100644 fs/iomap/iter.c
+> 
+> diff --git a/fs/iomap/Makefile b/fs/iomap/Makefile
+> index eef2722d93a183..85034deb5a2f19 100644
+> --- a/fs/iomap/Makefile
+> +++ b/fs/iomap/Makefile
+> @@ -10,6 +10,7 @@ obj-$(CONFIG_FS_IOMAP)		+= iomap.o
+>  
+>  iomap-y				+= trace.o \
+>  				   apply.o \
+> +				   iter.o \
+>  				   buffered-io.o \
+>  				   direct-io.o \
+>  				   fiemap.o \
+> diff --git a/fs/iomap/iter.c b/fs/iomap/iter.c
+> new file mode 100644
+> index 00000000000000..b21e2489700b7c
+> --- /dev/null
+> +++ b/fs/iomap/iter.c
+> @@ -0,0 +1,74 @@
+> +// SPDX-License-Identifier: GPL-2.0
+> +/*
+> + * Copyright (c) 2021 Christoph Hellwig.
+> + */
+> +#include <linux/fs.h>
+> +#include <linux/iomap.h>
+> +#include "trace.h"
+> +
+> +static inline int iomap_iter_advance(struct iomap_iter *iter)
+> +{
+> +	/* handle the previous iteration (if any) */
+> +	if (iter->iomap.length) {
+> +		if (iter->processed <= 0)
+> +			return iter->processed;
 
-So nfsd would use the "major" ID to find the parent export, and then
-btrfs would use the "minor" ID to identify the subvolume?
+Hmm, converting ssize_t to int here... I suppose that's fine since we're
+merely returning "the usual negative errno code", but read on.
 
---b.
+> +		WARN_ON_ONCE(iter->processed > iomap_length(iter));
+> +		iter->pos += iter->processed;
+> +		iter->len -= iter->processed;
+> +		if (!iter->len)
+> +			return 0;
+> +	}
+> +
+> +	/* clear the state for the next iteration */
+> +	iter->processed = 0;
+> +	memset(&iter->iomap, 0, sizeof(iter->iomap));
+> +	memset(&iter->srcmap, 0, sizeof(iter->srcmap));
+> +	return 1;
+> +}
+> +
+> +static inline void iomap_iter_done(struct iomap_iter *iter)
+> +{
+> +	WARN_ON_ONCE(iter->iomap.offset > iter->pos);
+> +	WARN_ON_ONCE(iter->iomap.length == 0);
+> +	WARN_ON_ONCE(iter->iomap.offset + iter->iomap.length <= iter->pos);
+> +
+> +	trace_iomap_iter_dstmap(iter->inode, &iter->iomap);
+> +	if (iter->srcmap.type != IOMAP_HOLE)
+> +		trace_iomap_iter_srcmap(iter->inode, &iter->srcmap);
+> +}
+> +
+> +/**
+> + * iomap_iter - iterate over a ranges in a file
+> + * @iter: iteration structue
+> + * @ops: iomap ops provided by the file system
+> + *
+> + * Iterate over file system provided contiguous ranges of blocks with the same
+> + * state.  Should be called in a loop that continues as long as this function
+> + * returns a positive value.  If 0 or a negative value is returned the caller
+> + * should break out of the loop - a negative value is an error either from the
+> + * file system or from the last iteration stored in @iter.copied.
+> + */
+> +int iomap_iter(struct iomap_iter *iter, const struct iomap_ops *ops)
+> +{
+> +	int ret;
+> +
+> +	if (iter->iomap.length && ops->iomap_end) {
+> +		ret = ops->iomap_end(iter->inode, iter->pos, iomap_length(iter),
+> +				iter->processed > 0 ? iter->processed : 0,
+> +				iter->flags, &iter->iomap);
+> +		if (ret < 0 && !iter->processed)
+> +			return ret;
+> +	}
+> +
+> +	trace_iomap_iter(iter, ops, _RET_IP_);
+> +	ret = iomap_iter_advance(iter);
+> +	if (ret <= 0)
+> +		return ret;
+> +
+> +	ret = ops->iomap_begin(iter->inode, iter->pos, iter->len, iter->flags,
+> +			       &iter->iomap, &iter->srcmap);
+> +	if (ret < 0)
+> +		return ret;
+> +	iomap_iter_done(iter);
+> +	return 1;
+> +}
 
-> The idea for a single vfsmnt exposing multiple inode-name-spaces does
-> appeal to me.  The "st_dev" is just part of the name, and already a
-> fairly blurry part.  Thanks to bind mounts, multiple mounts can have the
-> same st_dev.  I see no intrinsic reason that a single mount should not
-> have multiple fsids, provided that a coherent picture is provided to
-> userspace which doesn't contain too many surprises.
+<snip out macro hell>
+
+> diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+> index f9c36df6a3061b..a9f3f736017989 100644
+> --- a/include/linux/iomap.h
+> +++ b/include/linux/iomap.h
+> @@ -143,6 +143,62 @@ struct iomap_ops {
+>  			ssize_t written, unsigned flags, struct iomap *iomap);
+>  };
+>  
+> +/**
+> + * struct iomap_iter - Iterate through a range of a file
+> + * @inode: Set at the start of the iteration and should not change.
+> + * @pos: The current file position we are operating on.  It is updated by
+> + *	calls to iomap_iter().  Treat as read-only in the body.
+> + * @len: The remaining length of the file segment we're operating on.
+> + *	It is updated at the same time as @pos.
+> + * @processed: The number of bytes processed by the body in the most recent
+> + *	iteration, or a negative errno. 0 causes the iteration to stop.
+> + * @flags: Zero or more of the iomap_begin flags above.
+> + * @iomap: Map describing the I/O iteration
+> + * @srcmap: Source map for COW operations
+> + */
+> +struct iomap_iter {
+> +	struct inode *inode;
+> +	loff_t pos;
+> +	u64 len;
+> +	ssize_t processed;
+
+I looked a the SEEK_HOLE/SEEK_DATA conversion a few patches ahead, and
+noticed that it does things like:
+
+	iter.processed = iomap_seek_hole_iter(&iter, &offset);
+
+where iomap_seek_hole_iter returns a loff_t.  This will not do the right
+thing handling large extents on 32-bit architectures because ssize_t
+will a 32-bit signed int whereas loff_t is always a 64-bit signed int.
+
+Linus previously complained to me about filesystem code (especially
+iomap since it was "newer") (ab)using loff_t variables to store the
+lengths of byte ranges.  It was "loff_t length;" (or so willy
+recollects) that tripped him up.
+
+ISTR he also said we should use size_t for all lengths because nobody
+should do operations larger than ~2G, but I reject that because iomap
+has users that iterate large ranges of data without generating any IO
+(e.g. fiemap, seek, swapfile activation).
+
+So... rather than confusing things even more by mixing u64 and ssize_t
+for lengths, can we introduce a new 64-bit length typedef for iomap?
+Last summer, Dave suggested[1] something like:
+
+	typedef long long lsize_t;
+
+That would enable cleanup of all the count/size/length parameters in
+fs/remap_range.c and fs/xfs/xfs_reflink.c to use the new 64-bit length
+type, since those operations have never been limited to 32-bit sizes.
+
+--D
+
+[1] https://lore.kernel.org/linux-xfs/20200825042711.GL12131@dread.disaster.area/
+
+> +	unsigned flags;
+> +	struct iomap iomap;
+> +	struct iomap srcmap;
+> +};
+> +
+> +int iomap_iter(struct iomap_iter *iter, const struct iomap_ops *ops);
+> +
+> +/**
+> + * iomap_length - length of the current iomap iteration
+> + * @iter: iteration structure
+> + *
+> + * Returns the length that the operation applies to for the current iteration.
+> + */
+> +static inline u64 iomap_length(const struct iomap_iter *iter)
+> +{
+> +	u64 end = iter->iomap.offset + iter->iomap.length;
+> +
+> +	if (iter->srcmap.type != IOMAP_HOLE)
+> +		end = min(end, iter->srcmap.offset + iter->srcmap.length);
+> +	return min(iter->len, end - iter->pos);
+> +}
+> +
+> +/**
+> + * iomap_iter_srcmap - return the source map for the current iomap iteration
+> + * @i: iteration structure
+> + *
+> + * Write operations on file systems with reflink support might require a
+> + * source and a destination map.  This function retourns the source map
+> + * for a given operation, which may or may no be identical to the destination
+> + * map in &i->iomap.
+> + */
+> +static inline struct iomap *iomap_iter_srcmap(struct iomap_iter *i)
+> +{
+> +	if (i->srcmap.type != IOMAP_HOLE)
+> +		return &i->srcmap;
+> +	return &i->iomap;
+> +}
+> +
+>  /*
+>   * Main iomap iterator function.
+>   */
+> -- 
+> 2.30.2
+> 

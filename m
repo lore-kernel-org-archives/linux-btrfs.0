@@ -2,61 +2,88 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3054C6377C
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF5A4C6377E
 	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 15:40:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 90B336120E
+	by mail.kernel.org (Postfix) with ESMTP id B68C561241
 	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 15:40:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242118AbhGTO7a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Jul 2021 10:59:30 -0400
-Received: from mail.kernel.org ([198.145.29.99]:34730 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S240241AbhGTOYr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jul 2021 10:24:47 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 5F26760FDA
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jul 2021 15:05:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1626793525;
-        bh=PRwx6Lp7GxP7P0/m3KxyjhI8B47cmJ+6pEhisaZ4jP4=;
-        h=From:To:Subject:Date:From;
-        b=I4lWG0ybmqwMSQPs4TbtbUKBoRFDSa52s1z9YAwN8SIbXcnJctNFr+3JEekcXUMA7
-         p/WKL0L1z7j14+0uvR9wI0hn+D2+R6M67vyMYXYQEz2mnrNn0Sm23zdzYiEuu4kRBG
-         NB70fS3jNrQJcvNh0O6XD2ijyuf3yxEmjBrTpGubztlT936i8PC2TzXqR0gMvWVihu
-         s/pFa3dNjc0VKlpg1rA/OAxCqFjJuOofs0iKpDIL5NK81+cDau3JwqD5yMchq3X9F5
-         1G981MQqg/A2Av415+w576bEO/5ady8lIOD/5sr7KIgH1RsvmCYLrnnUi7m6r0QVsJ
-         4nXxnyhGP2Kng==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs: make the batch insertion of dir index keys more efficient
-Date:   Tue, 20 Jul 2021 16:05:21 +0100
-Message-Id: <cover.1626791739.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
+        id S242188AbhGTO7x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Jul 2021 10:59:53 -0400
+Received: from outgoing-auth-1.mit.edu ([18.9.28.11]:36581 "EHLO
+        outgoing.mit.edu" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S241953AbhGTO54 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jul 2021 10:57:56 -0400
+Received: from callcc.thunk.org (guestnat-104-133-0-100.corp.google.com [104.133.0.100] (may be forged))
+        (authenticated bits=0)
+        (User authenticated as tytso@ATHENA.MIT.EDU)
+        by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 16KFc3L1021009
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Tue, 20 Jul 2021 11:38:04 -0400
+Received: by callcc.thunk.org (Postfix, from userid 15806)
+        id 2949A4202F5; Tue, 20 Jul 2021 11:38:02 -0400 (EDT)
+Date:   Tue, 20 Jul 2021 11:38:02 -0400
+From:   "Theodore Y. Ts'o" <tytso@mit.edu>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Eryu Guan <eguan@linux.alibaba.com>,
+        Dave Chinner <david@fromorbit.com>, Qu Wenruo <wqu@suse.com>,
+        fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] fstests: allow running custom hooks
+Message-ID: <YPbt2ohi62VyWN7e@mit.edu>
+References: <20210719071337.217501-1-wqu@suse.com>
+ <20210720002536.GA2031856@dread.disaster.area>
+ <3f2d4ebd-bf75-b283-45be-3fa81e65d5bf@gmx.com>
+ <20210720021437.GB2031856@dread.disaster.area>
+ <cb2bf09e-91fd-2976-4366-4daf29664890@gmx.com>
+ <20210720064317.GC2031856@dread.disaster.area>
+ <20210720075748.GJ60846@e18g06458.et15sqa>
+ <3fd6494b-8f03-4d97-9d00-21343e0e8152@gmx.com>
+ <6b7699a9-fc5e-32d9-78c5-9c0e3cf92895@gmx.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <6b7699a9-fc5e-32d9-78c5-9c0e3cf92895@gmx.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Jul 20, 2021 at 04:44:29PM +0800, Qu Wenruo wrote:
+> Anyway, if building a stable and complex API just for hooks, then it's
+> completely against my initial purpose.
 
-The first patch makes the batch insertion of dir index keys (delayed items)
-more efficient. The second patch is a cleanup, but only applies cleanly after
-the first patch.
+So you said you are only using this for debugging purposes; at least
+in my workflow, when I'm trying to debug a particular test case, I'm
+*only* run a single test.  So today, the way I handle this is to run
+hook scripts in the gce-xfstests framework before and after running
+the check script.  It does mean that there is excess work which gets
+traced from the check script setting up and cleaning up, but it's
+mainly been good enough for me.
 
-Filipe Manana (2):
-  btrfs: improve the batch insertion of delayed items
-  btrfs: stop doing GFP_KERNEL memory allocations in the ref verify tool
+It would be slightly nicer if there was a way to start and stop
+various debugging hooks (e.g., starting and stopping traces, clearing
+and grabing the lock_Stat info), etc.,) jut before and starting the
+test.  But it was never important to me to propose changes to the
+upstream xfstests.
 
- fs/btrfs/delayed-inode.c | 218 ++++++++++++++-------------------------
- fs/btrfs/ref-verify.c    |  10 +-
- 2 files changed, 81 insertions(+), 147 deletions(-)
+In answer to the question which Darrick and Dave asked, yes, I could
+do this via the exclude list.  It just seemed that if we're going to
+add a programmtic hook, maybe it would make sense to do it via the
+hook script.  It is true that there are ways to do this, though,
+although there is a difference to a static excldue list that has to
+get created for all tests that might be run, versus hook script that
+is run for each test.  <Shrug>  There are other ways of doing things;
+the question is whether the hook script approach is sufficiently
+better that it's worth getting something like this upstream.  It may
+be that keeping things like this in each developer's own private test
+runner is the right thing.   I have "gce-xfstests --hooks <hookdir>" for
+my own use, and have had it for years.
 
--- 
-2.30.2
+Cheers,
+
+					- Ted
 

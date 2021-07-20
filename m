@@ -4,39 +4,41 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-20.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CCF1C07E95
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 15:39:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39265C07E9B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 15:40:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 88AA460E0C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 15:39:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1C7ED61003
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 15:40:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239047AbhGTO6c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Jul 2021 10:58:32 -0400
-Received: from mail.kernel.org ([198.145.29.99]:59238 "EHLO mail.kernel.org"
+        id S241991AbhGTO6u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Jul 2021 10:58:50 -0400
+Received: from mail.kernel.org ([198.145.29.99]:60294 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S239984AbhGTOWd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Jul 2021 10:22:33 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id C2765610F7
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jul 2021 15:03:05 +0000 (UTC)
+        id S239993AbhGTOXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 20 Jul 2021 10:23:08 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 15EEF610FB
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Jul 2021 15:03:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1626793386;
-        bh=Ucl24oHM5iW+cRQ6rEKKDwivQC2Y561F7tGhfogogHk=;
-        h=From:To:Subject:Date:From;
-        b=V/ArZUp83/qBCKcqDnexzvd4NS4z6znpdn4fv2Z8M5r4wcjFNazWu+Pwd3b8sr7RP
-         7vTqypCuAqJplRN3ILfKPKia4Q7IfJ3kOZv3K8NXo66Es9s1t0ipBxhK398gsz/cqF
-         +hgcVqn3pjCg21bx64TV40ZdFEvmHJYZyX3jlxZz6T82CkmAHHblWhJ/VMBLNkKZ9p
-         lrjvuv4eJa6u4EhIQ40LFCU94/vNr+Uv0d6DXQLo8xu2HXkzvJF315voe3AsR8I0rG
-         eQoGmJz/cdcsJQmXFPXcMvIFjjcY0omY0rvuUXYRFbxZiRfGpY28T/ldj83x6mDjFz
-         HZYiXV8Je5/YA==
+        s=k20201202; t=1626793426;
+        bh=9N4WjH7sXRNmBL9Ta+r4pzi3PyRLH07eyPU17lh4Uhw=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=eeSjbdvVJyndcORzrdGB4EbD0DGqIi1JSlH2WNM9GbDN3yPw4fU5bCpLSPn+mPldo
+         CklDyum0UBo19DU/EFRAIRgHrkxEPfDklB3+5hHzSdVR6PPr2f7oSv7BXXK8X5DZjQ
+         QcDNISL4XeaQacjilURB5WnXcNvq2RmrQYNZvKMSAYdtSJeF67zfrDSR0M26Jjunq1
+         ER60zUiRytj6mNe0BGSPrkCrGo6oJ1TkTJXpsqOuyraI9HtIFTagGKYx5VxUiVqjw2
+         C5dRZMfHHI+hdQkrqQkmqWA/jGkrT3Epum+1/dQU3Vjtl8C8g5IitQe5+0kKWq47RO
+         UMVoE/QPOz9+Q==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: continue readahead of siblings even if target node is in memory
-Date:   Tue, 20 Jul 2021 16:03:03 +0100
-Message-Id: <1589fffc3a30631b2268b4f64e55fcf9ce664fb6.1626792325.git.fdmanana@suse.com>
+Subject: [PATCH 1/4] btrfs: remove racy and unnecessary inode transaction update when using no-holes
+Date:   Tue, 20 Jul 2021 16:03:40 +0100
+Message-Id: <e38de96eb87e6de46d13e9dc23e2d29151b8a002.1626791500.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1626791500.git.fdmanana@suse.com>
+References: <cover.1626791500.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -45,134 +47,66 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At reada_for_search(), when attempting to readahead a node or leaf's
-siblings, we skip the readahead of the siblings if the node/leaf is
-already in memory. That is probably fine for the READA_FORWARD and
-READA_BACK readahead types, as they are used on contextes where we
-end up reading some consecutive leaves, but usually not the whole btree.
+When using the NO_HOLES feature and expanding the size of an inode, we
+update the inode's last_trans, last_sub_trans and last_log_commit fields
+at maybe_insert_hole() so that a fsync does know that the inode needs to
+be logged (by making sure that btrfs_inode_in_log() returns false). This
+happens for expanding truncate operations, buffered writes, direct IO
+writes and when cloning extents to an offset greater than the inode's
+i_size.
 
-However for a READA_FORWARD_ALWAYS mode, currently only used for full
-send operations, it does not make sense to skip the readahead if the
-target node or leaf is already loaded in memory, since we know the caller
-is visiting every node and leaf of the btree in ascending order.
+However the way we do it is racy, because in between setting the inode's
+last_sub_trans and last_log_commit fields, the log transaction ID that was
+assigned to last_sub_trans might be committed before we read the root's
+last_log_commit and assign that value to last_log_commit. If that happens
+it would make a future call to btrfs_inode_in_log() return true. This is
+a race that should be extremely unlikely to be hit in practice, and it is
+the same that was described by commit bc0939fcfab0d7 ("btrfs: fix race
+between marking inode needs to be logged and log syncing").
 
-So change the behaviour to not skip the readahead when the target node is
-already in memory and the readahead mode is READA_FORWARD_ALWAYS.
+The fix would simply be to set last_log_commit to the value we assigned
+to last_sub_trans minus 1, like it was done in that commit. However
+updating these two fields plus the last_trans field is pointless here
+because all the callers of btrfs_cont_expand() (which is the only
+caller of maybe_insert_hole()) always call btrfs_set_inode_last_trans()
+or btrfs_update_inode() after calling btrfs_cont_expand(). Calling either
+btrfs_set_inode_last_trans() or btrfs_update_inode() guarantees that the
+next fsync will log the inode, as it makes btrfs_inode_in_log() return
+false.
 
-The following test script was used to measure the improvement on a box
-using an average, consumer grade, spinning disk, with 32GiB of RAM and
-using a non-debug kernel config (Debian's default config).
-
-  $ cat test.sh
-  #!/bin/bash
-
-  DEV=/dev/sdj
-  MNT=/mnt/sdj
-  MKFS_OPTIONS="--nodesize 16384"     # default, just to be explicit
-  MOUNT_OPTIONS="-o max_inline=2048"  # default, just to be explicit
-
-  mkfs.btrfs -f $MKFS_OPTIONS $DEV > /dev/null
-  mount $MOUNT_OPTIONS $DEV $MNT
-
-  # Create files with inline data to make it easier and faster to create
-  # large btrees.
-  add_files()
-  {
-      local total=$1
-      local start_offset=$2
-      local number_jobs=$3
-      local total_per_job=$(($total / $number_jobs))
-
-      echo "Creating $total new files using $number_jobs jobs"
-      for ((n = 0; n < $number_jobs; n++)); do
-          (
-              local start_num=$(($start_offset + $n * $total_per_job))
-              for ((i = 1; i <= $total_per_job; i++)); do
-                  local file_num=$((start_num + $i))
-                  local file_path="$MNT/file_${file_num}"
-                  xfs_io -f -c "pwrite -S 0xab 0 2000" $file_path > /dev/null
-                  if [ $? -ne 0 ]; then
-                      echo "Failed creating file $file_path"
-                      break
-                  fi
-              done
-          ) &
-          worker_pids[$n]=$!
-      done
-
-      wait ${worker_pids[@]}
-
-      sync
-      echo
-      echo "btree node/leaf count: $(btrfs inspect-internal dump-tree -t 5 $DEV | egrep '^(node|leaf) ' | wc -l)"
-  }
-
-  file_count=2000000
-  add_files $file_count 0 4
-
-  echo
-  echo "Creating snapshot..."
-  btrfs subvolume snapshot -r $MNT $MNT/snap1
-
-  umount $MNT
-
-  echo 3 > /proc/sys/vm/drop_caches
-  blockdev --flushbufs $DEV &> /dev/null
-  hdparm -F $DEV &> /dev/null
-
-  mount $MOUNT_OPTIONS $DEV $MNT
-
-  echo
-  echo "Testing full send..."
-  start=$(date +%s)
-  btrfs send $MNT/snap1 > /dev/null
-  end=$(date +%s)
-  echo
-  echo "Full send took $((end - start)) seconds"
-
-  umount $MNT
-
-The duration of the full send operations, in seconds, were the following:
-
-Before this change:  85 seconds
-After this change:   76 seconds (-11.2%)
+So just remove the code that explicitly sets the inode's last_trans,
+last_sub_trans and last_log_commit fields.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index c212f1218fdd..63c026495193 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1233,7 +1233,6 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
- 	u64 target;
- 	u64 nread = 0;
- 	u64 nread_max;
--	struct extent_buffer *eb;
- 	u32 nr;
- 	u32 blocksize;
- 	u32 nscan = 0;
-@@ -1262,10 +1261,14 @@ static void reada_for_search(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e6eb20987351..5798c6191908 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4999,15 +4999,13 @@ static int maybe_insert_hole(struct btrfs_root *root, struct btrfs_inode *inode,
+ 	int ret;
  
- 	search = btrfs_node_blockptr(node, slot);
- 	blocksize = fs_info->nodesize;
--	eb = find_extent_buffer(fs_info, search);
--	if (eb) {
--		free_extent_buffer(eb);
--		return;
-+	if (path->reada != READA_FORWARD_ALWAYS) {
-+		struct extent_buffer *eb;
-+
-+		eb = find_extent_buffer(fs_info, search);
-+		if (eb) {
-+			free_extent_buffer(eb);
-+			return;
-+		}
- 	}
+ 	/*
+-	 * Still need to make sure the inode looks like it's been updated so
+-	 * that any holes get logged if we fsync.
++	 * If NO_HOLES is enabled, we don't need to do anything.
++	 * Later, up in the call chain, either btrfs_set_inode_last_sub_trans()
++	 * or btrfs_update_inode() will be called, which guarantee that the next
++	 * fsync will know this inode was changed and needs to be logged.
+ 	 */
+-	if (btrfs_fs_incompat(fs_info, NO_HOLES)) {
+-		inode->last_trans = fs_info->generation;
+-		inode->last_sub_trans = root->log_transid;
+-		inode->last_log_commit = root->last_log_commit;
++	if (btrfs_fs_incompat(fs_info, NO_HOLES))
+ 		return 0;
+-	}
  
- 	target = search;
+ 	/*
+ 	 * 1 - for the one we're dropping
 -- 
 2.30.2
 

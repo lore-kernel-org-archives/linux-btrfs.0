@@ -2,93 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2233C07E9D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 23:34:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 391F3C07E95
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 00:33:38 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B7E236113B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Jul 2021 23:34:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1656161107
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 00:33:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351400AbhGSWsI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Jul 2021 18:48:08 -0400
-Received: from mail105.syd.optusnet.com.au ([211.29.132.249]:46293 "EHLO
-        mail105.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1354249AbhGSVaq (ORCPT
+        id S236545AbhGSXwZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Jul 2021 19:52:25 -0400
+Received: from mail104.syd.optusnet.com.au ([211.29.132.246]:44747 "EHLO
+        mail104.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1379500AbhGSXpE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jul 2021 17:30:46 -0400
+        Mon, 19 Jul 2021 19:45:04 -0400
 Received: from dread.disaster.area (pa49-181-34-10.pa.nsw.optusnet.com.au [49.181.34.10])
-        by mail105.syd.optusnet.com.au (Postfix) with ESMTPS id 608471045436;
-        Tue, 20 Jul 2021 08:10:06 +1000 (AEST)
+        by mail104.syd.optusnet.com.au (Postfix) with ESMTPS id 804E086780F;
+        Tue, 20 Jul 2021 10:25:37 +1000 (AEST)
 Received: from dave by dread.disaster.area with local (Exim 4.92.3)
         (envelope-from <david@fromorbit.com>)
-        id 1m5bSf-008Ug1-At; Tue, 20 Jul 2021 08:10:05 +1000
-Date:   Tue, 20 Jul 2021 08:10:05 +1000
+        id 1m5dZo-008Wuz-5h; Tue, 20 Jul 2021 10:25:36 +1000
+Date:   Tue, 20 Jul 2021 10:25:36 +1000
 From:   Dave Chinner <david@fromorbit.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     "Darrick J. Wong" <djwong@kernel.org>,
-        Dan Williams <dan.j.williams@intel.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        Shiyang Ruan <ruansy.fnst@fujitsu.com>,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, nvdimm@lists.linux.dev,
-        cluster-devel@redhat.com
-Subject: Re: [PATCH 20/27] fsdax: switch dax_iomap_rw to use iomap_iter
-Message-ID: <20210719221005.GL664593@dread.disaster.area>
-References: <20210719103520.495450-1-hch@lst.de>
- <20210719103520.495450-21-hch@lst.de>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] fstests: allow running custom hooks
+Message-ID: <20210720002536.GA2031856@dread.disaster.area>
+References: <20210719071337.217501-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210719103520.495450-21-hch@lst.de>
+In-Reply-To: <20210719071337.217501-1-wqu@suse.com>
 X-Optus-CM-Score: 0
-X-Optus-CM-Analysis: v=2.3 cv=YKPhNiOx c=1 sm=1 tr=0
+X-Optus-CM-Analysis: v=2.3 cv=F8MpiZpN c=1 sm=1 tr=0
         a=hdaoRb6WoHYrV466vVKEyw==:117 a=hdaoRb6WoHYrV466vVKEyw==:17
         a=kj9zAlcOel0A:10 a=e_q4qTt1xDgA:10 a=7-415B0cAAAA:8
-        a=ptF0LWpzHeEXjmLxdvQA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
+        a=A28zH0UQg-Nq1e7uk5gA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 19, 2021 at 12:35:13PM +0200, Christoph Hellwig wrote:
-> Switch the dax_iomap_rw implementation to use iomap_iter.
+On Mon, Jul 19, 2021 at 03:13:37PM +0800, Qu Wenruo wrote:
+> This patch will allow fstests to run custom hooks before and after each
+> test case.
 > 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  fs/dax.c | 49 ++++++++++++++++++++++++-------------------------
->  1 file changed, 24 insertions(+), 25 deletions(-)
+> These hooks will need to follow requirements:
 > 
-> diff --git a/fs/dax.c b/fs/dax.c
-> index 4d63040fd71f56..51da45301350a6 100644
-> --- a/fs/dax.c
-> +++ b/fs/dax.c
-> @@ -1103,20 +1103,21 @@ s64 dax_iomap_zero(loff_t pos, u64 length, struct iomap *iomap)
->  	return size;
->  }
->  
-> -static loff_t
-> -dax_iomap_actor(struct inode *inode, loff_t pos, loff_t length, void *data,
-> -		struct iomap *iomap, struct iomap *srcmap)
-> +static loff_t dax_iomap_iter(const struct iomap_iter *iomi,
-> +		struct iov_iter *iter)
+> - Both hook files needs to be executable
+>   Or they will just be ignored
+> 
+> - Stderr and stdout will be redirected to "$seqres.full"
+>   With extra separator to distinguish the hook output with real
+>   test output
+> 
+>   Thus if any of the hook is specified, all tests will generate
+>   "$seqres.full" which may increase the disk usage for results.
+> 
+> - Error in hooks script will be ignored completely
+> 
+> - Environment variable "$HOOK_TEMP" will be exported for both hooks
+>   And the variable will be ensured not to change for both hooks.
+> 
+>   Thus it's possible to store temporary values between the two hooks,
+>   like pid.
+> 
+> - Start hook has only one parameter passed in
+>   $1 is "$seq" from "check" script. The content will the path of current
+>   test case. E.g "tests/btrfs/001"
+> 
+> - End hook has two parameters passed in
+>   $1 is the same as start hook.
+>   $2 is the return value of the test case.
+>   NOTE: $2 doesn't take later golden output mismatch check nor dmesg/kmemleak
+>   check.
+> 
+> For more info, please refer to "README.hooks".
 
-At first I wondered "iomi? Strange name, why is this one-off name
-used?" and then I realised it's because this function also takes an
-struct iov_iter named "iter".
+This is all info that should be in README.hooks, not in the commit
+message.  Commit messages are about explaining why something needs
+to exist or be changed, not to describe the change being made. This
+commit message doesn't tell me anything about what this is for, so I
+can't really make any value judgement on it - exactly what is this
+intended to be used for?
 
-That's going to cause confusion in the long run - iov_iter and
-iomap_iter both being generally named "iter", and then one or the
-other randomly changing when both are used in the same function.
-
-Would it be better to avoid any possible confusion simply by using
-"iomi" for all iomap_iter variables throughout the patchset from the
-start? That way nobody is going to confuse iov_iter with iomap_iter
-iteration variables and code that uses both types will naturally
-have different, well known names...
+FWIW, if a test needs something to be run before/after the test, it
+really should be in the test, run as part of the test. Adding
+overhead to every test being just to check for something that
+doesn't actually have a defined use, nor will exist or be used on
+the vast majority of systems running fstests doesn't seem like the
+best idea to me.
 
 Cheers,
 

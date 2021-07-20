@@ -2,103 +2,149 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98AC9C12002
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 00:33:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2042FC07E95
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 00:59:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 847E6601FF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 00:33:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EBCF56108B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Jul 2021 00:58:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241957AbhGSXwV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Jul 2021 19:52:21 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:34946 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243971AbhGSXOe (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Jul 2021 19:14:34 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 9F78822238;
-        Mon, 19 Jul 2021 23:54:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1626738891; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=2e30UxNRYI81qzFHTtrwJ5lwISEqhM5uW8QAmbxdFV8=;
-        b=T89awzIfzFFHwjP8S+ng7M6sirVcdMJI1lUO350U/K4A3V/Rvo1aUICYwZOK9hxSOAxGbR
-        Yjh5F3bC5BwPWN7/YgcKNH55iEb8vRuAUCYv3Dr24/9u7iUiOd8LkcghFAgCpIpAG8q1YY
-        UK7+rmUzk3bjyHjZ1SfvSTXQC8rgT80=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1626738891;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=2e30UxNRYI81qzFHTtrwJ5lwISEqhM5uW8QAmbxdFV8=;
-        b=Ea5DnS1JyVG2sIt78v1Ii+XDeLaV73dQWYRUXkBQLkdokH3lLP5DZu8V3OsI9r/23Aujr4
-        Zl56hnPTW5quthBw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3AD2A13D45;
-        Mon, 19 Jul 2021 23:54:47 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id mo+HN8cQ9mCOGgAAMHmgww
-        (envelope-from <neilb@suse.de>); Mon, 19 Jul 2021 23:54:47 +0000
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+        id S1380984AbhGTASA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Jul 2021 20:18:00 -0400
+Received: from mout.gmx.net ([212.227.17.20]:35499 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1353336AbhGSX4Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 19 Jul 2021 19:56:25 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1626741413;
+        bh=ulyEvw4No4EfJFJSjOQgzHVLnWd4RfvP0axlH2vg9kk=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=kWfDSR4udF3HkAolomudovCWAMSE3+D/x69HFmch0t8NyZFgfX2FV0biKHbhU34DD
+         hwTVotejVRT8SEfQPDOFaDovyDgbSQ+1DL3iipe8noNRaP55H8dn2tc+TERpqMFPsH
+         tUVhs3L8M+tgpjr62dtK4c94EM1QOZY0bqXM4kAM=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M4b1y-1m3zal0DeY-001fMu; Tue, 20
+ Jul 2021 02:36:53 +0200
+Subject: Re: [PATCH RFC] fstests: allow running custom hooks
+To:     Dave Chinner <david@fromorbit.com>, Qu Wenruo <wqu@suse.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+References: <20210719071337.217501-1-wqu@suse.com>
+ <20210720002536.GA2031856@dread.disaster.area>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <3f2d4ebd-bf75-b283-45be-3fa81e65d5bf@gmx.com>
+Date:   Tue, 20 Jul 2021 08:36:49 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.12.0
 MIME-Version: 1.0
-From:   "NeilBrown" <neilb@suse.de>
-To:     "Christoph Hellwig" <hch@infradead.org>
-Cc:     "Josef Bacik" <josef@toxicpanda.com>,
-        "Christoph Hellwig" <hch@infradead.org>,
-        "J. Bruce Fields" <bfields@fieldses.org>,
-        "Chuck Lever" <chuck.lever@oracle.com>, "Chris Mason" <clm@fb.com>,
-        "David Sterba" <dsterba@suse.com>, linux-nfs@vger.kernel.org,
-        "Wang Yugui" <wangyugui@e16-tech.com>,
-        "Ulli Horlacher" <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH/RFC] NFSD: handle BTRFS subvolumes better.
-In-reply-to: <YPVC/w4kw3y/14oF@infradead.org>
-References: <20210613115313.BC59.409509F4@e16-tech.com>,
- <20210310074620.GA2158@tik.uni-stuttgart.de>,
- <162632387205.13764.6196748476850020429@noble.neil.brown.name>,
- <edd94b15-90df-c540-b9aa-8eac89b6713b@toxicpanda.com>,
- <YPBmGknHpFb06fnD@infradead.org>,
- <28bb883d-8d14-f11a-b37f-d8e71118f87f@toxicpanda.com>,
- <YPBvUfCNmv0ElBpo@infradead.org>,
- <e1d9caad-e4c7-09d4-b145-5397b24e1cc7@toxicpanda.com>,
- <YPVC/w4kw3y/14oF@infradead.org>
-Date:   Tue, 20 Jul 2021 09:54:44 +1000
-Message-id: <162673888433.4136.7451392112850411713@noble.neil.brown.name>
+In-Reply-To: <20210720002536.GA2031856@dread.disaster.area>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:xIQyieE+8AnwKrR0CZwTQbwASh5VLLJsyMHqJU64/AMa+Az2PMR
+ Txx+v79INZZD0z4lJbSLzvVu/tCsHR0qAs6zEvPEM1/UEPmTUg0BNu8BL5/Wu+ARbsM0/kG
+ XAOg9EWUceHcCb8t79kstYlJz8Nd2l1SDwx3c2U74w3niZTDwG7KMvE+WqLnAud57fH608L
+ yCgoZjzxi39J7mKCrnKWQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:sZaeM+5luWE=:WxyS4ALzab/RYcuXKHHiNx
+ FOk7DxP/e7uKwYjZp6aKNn0441Oag8iASP9bAwgT8A8dIk+hGLZ79c0q2xBYCkgBdNrGB1+f7
+ BoTsVS7mNi7ELG9nNPT8Tx2TAyPbdrNEVDbcUL2UlqfMTZChpXhk1z926MUcLfJbN2XC44RmW
+ uNCLmSCRQIvmTCHKCS21x6Uu42AuqE9XYHfHvctE72d/RbK4AawayvZJsnp7DfptUgTjX0WXz
+ ZwL9febrJtUeCU2loUocM1uzxhyTGLxCHtiAHAC57fQ0vso2rYIxFwQ2A7avpmXUz/9deKvU6
+ zyAIJWyiflv5oxSci3y3F+e815Htft9EJmUPgA7BCkq083m+jMXbE3kftf8QxPubMCsNwTzgl
+ PDweUmOHXhbc25BTcNQsF9X/dp1JyxmTW152ssLRg/VWAi52qDRoZGZZ4iymRBxtg3/tmDKbL
+ GmynfKb5LlBEK/aNH0P5gz7O7nd3tMaZc/A8Z0RJtvAYttB3UYmd7jCA2Vz10lUCz07jo9T6S
+ kCM57yCaeReM3pHgvGMs1z+cWPJnAY2ZjJo9FhM5UNB8peNXoriuP1W9l9ayCmtrcQigA9tpt
+ g65iwVESV5g2Mi+d4vb7pOZn+mRqqHUm49jC9l8xLq2coqEf/uRBl2HeJa9g3ZqqBgz3GhpHm
+ HYK1arvDdpQxKDSyrAYflP1A0h7W7HmtzqZfoQq8yRSuuQwZaKUga3kYuEZU33mSjPKme706O
+ ZdylppO4gVGhoM1mIp4saY1KjCVvUrKPXYT/J+Rsf4ZVBgDzcan/4CF0i6+JWpCQ7AdC1RSdX
+ OAewvSeqKExAHNg7l0OzyTCctukHn5cf2a2z6x3JOCCt7GvvhvwRY5TLcoa0TjukrPGWZmNns
+ umgreXYBkN3tLFOJvY1Tx/7KoMfyPhs+Td9Dweae6la3Q0cDqh3xxQz/6/VhIewME86LGtcPZ
+ NpdgD8sDq6C9mYmq+H3kHJa+UxeiXxns3UjqnPUdUfOHBKU8UVrFPgOB5vyxBAwW4Kp/Rf+qV
+ wzbbRj2fS69fiRjxNqQ1qOzMMJ7pTMb/K4TnzzALrPbXIlbnqJeEDTIwYtVhnLgzRiNFfM+be
+ 9n7zkfOIbDSmzB+F2HGvqpszYlrxJQWzoNrUAuOfD9NKR6wzFkOdqKWFA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, 19 Jul 2021, Christoph Hellwig wrote:
-> On Thu, Jul 15, 2021 at 02:01:11PM -0400, Josef Bacik wrote:
-> > This is not a workable solution.  It's not a matter of simply tying into
-> > existing infrastructure, we'd have to completely rework how the VFS deals
-> > with this stuff in order to be reasonable.  And when I brought this up to=
- Al
-> > he told me I was insane and we absolutely had to have a different SB for
-> > every vfsmount, which means we can't use vfsmount for this, which means we
-> > don't have any other options.  Thanks,
->=20
-> Then fix the problem another way.  The problem is known, old and keeps
-> breaking stuff.  Don't paper over it, fix it.=20
 
-Do you have any pointers to other breakage caused by this particular
-behaviour of btrfs? It would to have all requirements clearly on the
-table while designing a solution.
+
+On 2021/7/20 =E4=B8=8A=E5=8D=888:25, Dave Chinner wrote:
+> On Mon, Jul 19, 2021 at 03:13:37PM +0800, Qu Wenruo wrote:
+>> This patch will allow fstests to run custom hooks before and after each
+>> test case.
+>>
+>> These hooks will need to follow requirements:
+>>
+>> - Both hook files needs to be executable
+>>    Or they will just be ignored
+>>
+>> - Stderr and stdout will be redirected to "$seqres.full"
+>>    With extra separator to distinguish the hook output with real
+>>    test output
+>>
+>>    Thus if any of the hook is specified, all tests will generate
+>>    "$seqres.full" which may increase the disk usage for results.
+>>
+>> - Error in hooks script will be ignored completely
+>>
+>> - Environment variable "$HOOK_TEMP" will be exported for both hooks
+>>    And the variable will be ensured not to change for both hooks.
+>>
+>>    Thus it's possible to store temporary values between the two hooks,
+>>    like pid.
+>>
+>> - Start hook has only one parameter passed in
+>>    $1 is "$seq" from "check" script. The content will the path of curre=
+nt
+>>    test case. E.g "tests/btrfs/001"
+>>
+>> - End hook has two parameters passed in
+>>    $1 is the same as start hook.
+>>    $2 is the return value of the test case.
+>>    NOTE: $2 doesn't take later golden output mismatch check nor dmesg/k=
+memleak
+>>    check.
+>>
+>> For more info, please refer to "README.hooks".
+>
+> This is all info that should be in README.hooks, not in the commit
+> message.  Commit messages are about explaining why something needs
+> to exist or be changed, not to describe the change being made. This
+> commit message doesn't tell me anything about what this is for, so I
+> can't really make any value judgement on it - exactly what is this
+> intended to be used for?
+
+To run whatever you may want.
+
+Don't you want to run some trace-cmd to record the ftrace buffer for
+certain tests to debug?
+
+>
+> FWIW, if a test needs something to be run before/after the test, it
+> really should be in the test, run as part of the test.
+
+Not the trace-cmd things one is going to debug.
+
+> Adding
+> overhead to every test being just to check for something that
+> doesn't actually have a defined use, nor will exist or be used on
+> the vast majority of systems running fstests doesn't seem like the
+> best idea to me.
+
+Then you can do whatever you did when you debug certain test case like
+before, adding whatever commands you need into "check" script.
+
+If you believe that's the cleanest way to debug, then sure.
 
 Thanks,
-NeilBrown
+Qu
+
+>
+> Cheers,
+>
+> Dave.
+>

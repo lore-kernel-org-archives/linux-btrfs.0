@@ -2,126 +2,96 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC85DC12002
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:27:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31D79C07E9B
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:36:50 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9830C60FED
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:27:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 14A2A6113C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:36:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233467AbhGUFqs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Jul 2021 01:46:48 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:34917 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233607AbhGUFqf (ORCPT
+        id S233554AbhGUF4L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Jul 2021 01:56:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33398 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234201AbhGUFzs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jul 2021 01:46:35 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1626848832; x=1658384832;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=obmUbAlWbL9nndI5TgkOch831uwFiyDsYEvXx5RWrwo=;
-  b=XZVp/mGbTtWODrrQl8Zqm0xkyzXU10iYKvI2cf557m9ub+Nbd/UBEPr+
-   yTXrMh2oxQeMaXGXvo75R8eR+r/sbq1WOsPkAfZ5aB6CrIwDf3m2gzMAq
-   2W2yar9cd6O+ygmJ5Y4KMqDBSb+ZNlhb5ZaYrJE1Ef6aQFHw//6RwiOBk
-   MFIGZxOa/d3Hv+wcfMgQCLf4ySTIpoV5EYbU7eYzTk5abeLE72UbLibts
-   IL87Bj6Y95zh0C8XmE1GofhZV/QyT0KNJ5nGt7/UyDOXAhFIGkIdICsvh
-   7r0AUn3n7Ue33EJy7lRgskDlaRO+NVh36m4RzPhyRiGqOhGvM92Owrdx1
-   Q==;
-X-IronPort-AV: E=Sophos;i="5.84,257,1620662400"; 
-   d="scan'208";a="179924896"
-Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 Jul 2021 14:27:11 +0800
-IronPort-SDR: ShfAYJ3a6bhTxrf6TYFZA1JQXfnsEEjo87rlt9up7xZcYvwvhfRZ8d7/z37z4I8eAoQl/n6nEo
- +Z/972Yz4xO9yeU6Rm2TJEcnyqC7NSaVhdgmjW8XL3dAHC6fImPM8WRfw1bIBsfOKZi17FSNR8
- KJ4OmwWa1XRrpFQiqIuzrLyeQG2oeG0syJRfy7Cs/hcJZyqSEb9cz0gEBL+sKXijtOZQzUo1Er
- VSUUO6X3ZsWdizWS5y4GKv57eO8E8BQlx7KinpjRuc8VZCDaE7I0H2RncwQn/VixmL6RCOVO22
- G5I7Vi5DQFs3GTAlULZr1uSu
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 Jul 2021 23:03:27 -0700
-IronPort-SDR: DjI/fC4xzWDbttXeu4K/6UCGUCd4OXaEk5gnC/mKHF1sFrQXy6esqx+HsBXiypT8YNAyh0UXeR
- 60RLVHig1UY9Xqgxk4rFJgPKUu8LHFY/OU/YzNKGz9PCkzTSq+LMR5YtV7lquhK7iMcB2cNTW5
- cXzno+l0N4LRPQqJYHLosT1ZMBb5yI9NezwNl73B/8UguX9lYTyIXN4GiPN77UMOOsvzW2VKnZ
- YOwjaV1Fv492XgFNxB6pfOsohj6TBMBAHMsnt2BukV8H7ScPfwkjXdFOY7s55UHn8bbP+rtbZH
- 1o0=
-WDCIronportException: Internal
-Received: from d1zj3x2.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.44])
-  by uls-op-cesaip01.wdc.com with ESMTP; 20 Jul 2021 23:27:11 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Cc:     Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
-        Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 2/3] btrfs: fix argument type of btrfs_bio_clone_partial()
-Date:   Wed, 21 Jul 2021 15:26:59 +0900
-Message-Id: <c69cf6f0b81a28dd04b62537e3b8b4f46bd36e1e.1626848677.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.32.0
-In-Reply-To: <cover.1626848677.git.naohiro.aota@wdc.com>
+        Wed, 21 Jul 2021 01:55:48 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D517FC061574;
+        Tue, 20 Jul 2021 23:36:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=TbetRsKmJc4IgD/wnR8skOFHfIgN2EmIYkeFzfwMtwE=; b=FzU9XxYcf8Q7kjO/1HTYSIzGg3
+        0Q9Pbl+gGc8RIppnpiCw2Dld12vkhsRDiGtzeQO7+Oo7vcV73isvt6D/Ldjat1pdYN2+JBiQDd1Zk
+        Z6VYe1gEQrr3PzU83XiFqJGlhgi9fZgHVL0JFt5mofrd2CWO/MskD+ex2O78CNq/0pnhiqItebIqa
+        WteWReKXWpzKJS2DIy16YOsqam6lOKxgoI/y5tKTAG68P1+I5uuYEZaGfb3+DsoWwlhA9ubzgTMqa
+        WbXd7Z1Z0NvGtAhnKp9IJQvpRADzHCM59icCcLHNzaDdADssm4AZJFsaRwKJZjLNhGFvBNNMnUY+j
+        ZLM+cxUw==;
+Received: from hch by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1m65pt-008sny-FX; Wed, 21 Jul 2021 06:36:09 +0000
+Date:   Wed, 21 Jul 2021 07:36:05 +0100
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+        Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
+        Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+Subject: Re: [PATCH v2 1/3] block: fix arg type of bio_trim()
+Message-ID: <YPfAVSlYdM+TAe2z@infradead.org>
 References: <cover.1626848677.git.naohiro.aota@wdc.com>
+ <6bd02746905e41dfee04f2500d6d15f9b9b73fc9.1626848677.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <6bd02746905e41dfee04f2500d6d15f9b9b73fc9.1626848677.git.naohiro.aota@wdc.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+On Wed, Jul 21, 2021 at 03:26:58PM +0900, Naohiro Aota wrote:
+> +void bio_trim(struct bio *bio, sector_t offset, sector_t size)
+>  {
+> +	const sector_t uint_max_sectors = UINT_MAX >> SECTOR_SHIFT;
 
-The offset and can never be negative use unsigned int instead of int type
-for them.
+I'd make this a #define and keep it close to the struct bio definition
+named something like BIO_MAX_SECTORS
 
-Signed-off-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- fs/btrfs/extent_io.c | 6 ++++--
- fs/btrfs/extent_io.h | 2 +-
- 2 files changed, 5 insertions(+), 3 deletions(-)
+> +
+> +	/*
+> +	 * 'bio' is a cloned bio which we need to trim to match the given
+> +	 * offset and size.
+>  	 */
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1f947e24091a..0040577c2f4e 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3153,11 +3153,13 @@ struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs)
- 	return bio;
- }
- 
--struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
-+struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 size)
- {
- 	struct bio *bio;
- 	struct btrfs_io_bio *btrfs_bio;
- 
-+	ASSERT(offset <= UINT_MAX && size <= UINT_MAX);
-+
- 	/* this will never fail when it's backed by a bioset */
- 	bio = bio_clone_fast(orig, GFP_NOFS, &btrfs_bioset);
- 	ASSERT(bio);
-@@ -3165,7 +3167,7 @@ struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size)
- 	btrfs_bio = btrfs_io_bio(bio);
- 	btrfs_io_bio_init(btrfs_bio);
- 
--	bio_trim(bio, offset >> 9, size >> 9);
-+	bio_trim(bio, (sector_t)offset >> 9, (sector_t)size >> 9);
- 	btrfs_bio->iter = bio->bi_iter;
- 	return bio;
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 62027f551b44..53abdc280451 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -280,7 +280,7 @@ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
- struct bio *btrfs_bio_alloc(u64 first_byte);
- struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs);
- struct bio *btrfs_bio_clone(struct bio *bio);
--struct bio *btrfs_bio_clone_partial(struct bio *orig, int offset, int size);
-+struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 size);
- 
- int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
- 		      u64 length, u64 logical, struct page *page,
--- 
-2.32.0
+This should go into the kernel doc comment.
 
+Something like:
+
+/**
+ * bio_trim - trim a bio to the given offset and size
+ * @bio:        bio to trim
+ * @offset:     number of sectors to trim from the front of @bio
+ * @size:       size we want to trim @bio to, in sectors
+ *
+ * This function is typically used for bios that are cloned and
+ * submitted to the underlying device in parts.
+ */
+
+
+> +	/* sanity check */
+> +	if (WARN_ON(offset > uint_max_sectors || size > uint_max_sectors ||
+> +		    offset + size > bio->bi_iter.bi_size))
+> +		return;
+
+No real need for the comment. WARN_ON pretty much implies a sanity
+check.  I'd make this a WARN_ON_ONCE as otherwise you'll probably
+drown in these warnings if they ever hit.
+
+> -extern void bio_trim(struct bio *bio, int offset, int size);
+> +extern void bio_trim(struct bio *bio, sector_t offset, sector_t size);
+
+Please drop the extern while you're at it.

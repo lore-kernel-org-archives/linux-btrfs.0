@@ -4,62 +4,62 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
 	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BA0EC636C9
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:27:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 214DAC12002
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:27:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 313416120D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:27:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0B07061181
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Jul 2021 06:27:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233642AbhGUFqh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Jul 2021 01:46:37 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:34917 "EHLO
+        id S233799AbhGUFql (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Jul 2021 01:46:41 -0400
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:34924 "EHLO
         esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233523AbhGUFqd (ORCPT
+        with ESMTP id S233627AbhGUFqg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Jul 2021 01:46:33 -0400
+        Wed, 21 Jul 2021 01:46:36 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1626848830; x=1658384830;
+  t=1626848832; x=1658384832;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=7BdpVKhW5llu876IYs9lOPTAZLYKqKV1WZQpNucWVQ0=;
-  b=rLShFKeYiabkDMKansZxoervhYtjFwZ9fYYT0KTZf68g59V5V5TpsCeX
-   KHTcMevPb+Y8sj1BDA8qPA4zvwDMdftlC01xAJ5yILOQiAGfXG0yTpRoq
-   JqSOykWSJx8TiLJj6XzYsj+74odietC8Q7/P7PutTlfKIOlP/vNakHH/W
-   xXlFMYWiscmayNFORqA1l93YlIbyhZUgDgvKMcupgaByHJd+QD0f+KNQ2
-   R7eaSh+JiO+6f1o2Da0my69T8FhCQ//Ap/HxvhSfupoIrh2OcIIkv3n23
-   0EwdD8Q+5OvzcQZInYOGvKHAmoxGbOR6mUuwRSugS5QOJZEPQswVPZxHO
+  bh=+AOmYnp5eWwCpHbiJveVjM12q0Aiis7WZQe+HfKdN1k=;
+  b=OAI9Ivzv2S8R9Xc0m5P6raT3LQUDlMy7coYZheRU5m/DUsBLcQRZEVDo
+   bYdnloEggD4+QisaEeqqHiPx55XPADe0daT588U769jmQ+nKF0/2HleAi
+   UR2lvHIMDmBL2WAw+9b7ORcrJAy2kiIKrimPgWH1AvjrMcVhm1vroDoIm
+   +F3jOxuP/kPRA151qDgY1EBA2hFYaFBoYUlMDThgd/0XMAxonVg7CZDxp
+   lQdLYkh5j4xdHbik2n4+Znko9eD4lq3yl4V3b/U2+Sd5ulncdtJNceLET
+   f8A4U6k62xIhdgVa10wCut4yy0CndCyOhAv8P39MAABwaAmkdGtKj5cgT
    Q==;
 X-IronPort-AV: E=Sophos;i="5.84,257,1620662400"; 
-   d="scan'208";a="179924892"
+   d="scan'208";a="179924897"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 21 Jul 2021 14:27:10 +0800
-IronPort-SDR: ORF9zoC9RTIiMK65GDjIWoJjS3aCnW2nWrmEDrfXKNDaWvyAhV+z4UzYQsbpudFFkvtjZRD4vY
- k8PYMjut2PNWuI0T3wwd7Q0/qVd8pF0/Og9GEvQZ2Dk8gWHOVvsCoGyx8XckcsFYJV0A8gLQVk
- w805dKK9Rhgze4geDq3AvcCJkFmqmrsTJaQSxlzJ9/RTmvEnCNWIeVbyyKGQPIqZke4zo4Rx0X
- kcIXkNRs70lMykqCL8GsZLsPGBtqKh6khrLGAWSCeR0QGogcADddqxx+0mnltZNpZsca+qD+iT
- fye7A89Rp0XiLzc0cfbvbTOh
+  by ob1.hgst.iphmx.com with ESMTP; 21 Jul 2021 14:27:11 +0800
+IronPort-SDR: yvlT6ylXMk2TItEeXi1Y/M7VyKX5/C/1XNYswZ2SnN18I18bZSSY/snd+5extLwI1P22rXq97t
+ LDlTWTq3XiRVkLiPI6p1WNa4RaraF6EtsKu74rNE45puAQFIa/BJ8KPcRLZ60zGYVPqikmNKVS
+ LEU0fAlbaJzEWxuajUpin7DZvZd/tG+NEygQwN5wVVX7P2Jhg9iiMBgaLu7HplX4UQHQIEcxeh
+ KmZjCrzEFnYFimncFdkU9u+C2H/2+fJ0ai2qllObs6Cxm1wXoARaEUsKpPQfkmhzfKZKIk/glG
+ IIOF5ZoyiUhUK9PFW3XcFnTO
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 Jul 2021 23:03:25 -0700
-IronPort-SDR: uXOoQQH9qZ3YKkXYcO7gFrMjiZFs3Pe6qtaq33pgCP/+Ib8l/77e4hvtdNyVHw9Yz/UvbYsxIs
- MGFjQy6tkRT5ozYDvrJLfKjQ3zxE5EJk0jnzKTMyPbR/3pdOMLbrw4qe5PaUKOcdkL1oxusrm9
- i+2Fobt22SdNofrEUnp/2cX6UIiq5IRBDHIeD5GUtlw7boX4DGqvr219rmhgx3BenPu8RqQHfC
- qJSYrwIvTQFfIFMH+QUx53j/Ln5CYqob8wJm1N3WCp8GOI5Wmw6kZpACWvxinfyZDPa4syDxhM
- weI=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 Jul 2021 23:03:28 -0700
+IronPort-SDR: PifVdPbGthqZpATuv53MJ0qoTQz/4uE01lPDuhH77vMdnel7/wM89eOlMqwLJCDRzESQcaduG8
+ Ft9Go4XHDR76qn6xj8DFJNVgzbiWpWyzPK23O/B0q/i0Ccm5JWxSaqAgy3CsrNHEnkfzPHsMet
+ UlbwnhZY7F4Frigq2alvE108u1BBtbTYpEYde+mMxECXVOPQFSnJZWbumqcjqjiSPZ9Ml7nhCQ
+ psWI4ZtyzwiauNaNlLTjK27geLB2OwKR2NFQK59OZUQw4y8b9OzkF5znO8KPEo5rouS/lxHmf3
+ eZM=
 WDCIronportException: Internal
 Received: from d1zj3x2.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.44])
-  by uls-op-cesaip01.wdc.com with ESMTP; 20 Jul 2021 23:27:10 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 20 Jul 2021 23:27:12 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
 Cc:     Jens Axboe <axboe@kernel.dk>, David Sterba <dsterba@suse.com>,
         Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 1/3] block: fix arg type of bio_trim()
-Date:   Wed, 21 Jul 2021 15:26:58 +0900
-Message-Id: <6bd02746905e41dfee04f2500d6d15f9b9b73fc9.1626848677.git.naohiro.aota@wdc.com>
+Subject: [PATCH v2 3/3] btrfs: drop unnecessary ASSERT from btrfs_submit_direct()
+Date:   Wed, 21 Jul 2021 15:27:00 +0900
+Message-Id: <68fa575a3c35b3ac68e6afd7d697bcdac86dd484.1626848677.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.32.0
 In-Reply-To: <cover.1626848677.git.naohiro.aota@wdc.com>
 References: <cover.1626848677.git.naohiro.aota@wdc.com>
@@ -69,66 +69,54 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
+When on SINGLE block group, btrfs_get_io_geometry() will return "the
+size of the block group - the offset of the logical address within the
+block group" as geom.len. Since we allow up to 8 GB zone size on zoned
+btrfs, we can have up to 8 GB block group, so can have up to 8 GB
+geom.len. With this setup, we easily hit the "ASSERT(geom.len <=
+INT_MAX);".
 
-The function bio_trim has offset and size arguments that are declared
-as int.
+The ASSERT looks like to guard btrfs_bio_clone_partial() and bio_trim()
+which both take "int" (now "unsigned int" with the previous patch). So to
+be precise the ASSERT should check if clone_len <= UINT_MAX. But
+actually, clone_len is already capped by bio.bi_iter.bi_size which is
+unsigned int. So the ASSERT is not necessary.
 
-The callers of this function uses sector_t type when passing the offset
-and size e,g. drivers/md/raid1.c:narrow_write_error() and
-drivers/md/raid1.c:narrow_write_error().
+Drop the ASSERT and properly compare submit_len and geom.len in u64. Then,
+let the implicit casting to convert it to unsigned int.
 
-Change offset and size arguments to sector_t type for bio_trim(). Also, add
-WARN_ON() to catch their overflow.
-
-Signed-off-by: Chaitanya Kulkarni <chaitanya.kulkarni@wdc.com>
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- block/bio.c         | 14 +++++++++++---
- include/linux/bio.h |  2 +-
- 2 files changed, 12 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/block/bio.c b/block/bio.c
-index 44205dfb6b60..69a9751b18e7 100644
---- a/block/bio.c
-+++ b/block/bio.c
-@@ -1465,12 +1465,20 @@ EXPORT_SYMBOL(bio_split);
-  * @offset:	number of sectors to trim from the front of @bio
-  * @size:	size we want to trim @bio to, in sectors
-  */
--void bio_trim(struct bio *bio, int offset, int size)
-+void bio_trim(struct bio *bio, sector_t offset, sector_t size)
- {
--	/* 'bio' is a cloned bio which we need to trim to match
--	 * the given offset and size.
-+	const sector_t uint_max_sectors = UINT_MAX >> SECTOR_SHIFT;
-+
-+	/*
-+	 * 'bio' is a cloned bio which we need to trim to match the given
-+	 * offset and size.
- 	 */
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8f60314c36c5..8cd1a4f0174a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8206,8 +8206,8 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
+ 	u64 start_sector;
+ 	int async_submit = 0;
+ 	u64 submit_len;
+-	int clone_offset = 0;
+-	int clone_len;
++	u64 clone_offset = 0;
++	u64 clone_len;
+ 	u64 logical;
+ 	int ret;
+ 	blk_status_t status;
+@@ -8255,9 +8255,9 @@ static blk_qc_t btrfs_submit_direct(struct inode *inode, struct iomap *iomap,
+ 			status = errno_to_blk_status(ret);
+ 			goto out_err_em;
+ 		}
+-		ASSERT(geom.len <= INT_MAX);
  
-+	/* sanity check */
-+	if (WARN_ON(offset > uint_max_sectors || size > uint_max_sectors ||
-+		    offset + size > bio->bi_iter.bi_size))
-+		return;
-+
- 	size <<= 9;
- 	if (offset == 0 && size == bio->bi_iter.bi_size)
- 		return;
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index a0b4cfdf62a4..c91bc70add06 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -379,7 +379,7 @@ static inline void bip_set_seed(struct bio_integrity_payload *bip,
+-		clone_len = min_t(int, submit_len, geom.len);
++		clone_len = min(submit_len, geom.len);
++		ASSERT(clone_len <= UINT_MAX);
  
- #endif /* CONFIG_BLK_DEV_INTEGRITY */
- 
--extern void bio_trim(struct bio *bio, int offset, int size);
-+extern void bio_trim(struct bio *bio, sector_t offset, sector_t size);
- extern struct bio *bio_split(struct bio *bio, int sectors,
- 			     gfp_t gfp, struct bio_set *bs);
- 
+ 		/*
+ 		 * This will never fail as it's passing GPF_NOFS and
 -- 
 2.32.0
 

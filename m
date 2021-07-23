@@ -2,62 +2,135 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D6CAC4338F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Jul 2021 17:27:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46A04C4320A
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Jul 2021 18:17:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1D24560EB4
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Jul 2021 17:27:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3206060EB2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Jul 2021 18:17:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231317AbhGWQrA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Jul 2021 12:47:00 -0400
-Received: from rin.romanrm.net ([51.158.148.128]:40722 "EHLO rin.romanrm.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231171AbhGWQq7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Jul 2021 12:46:59 -0400
-Received: from natsu (natsu2.home.romanrm.net [IPv6:fd39::e99e:8f1b:cfc9:ccb8])
-        by rin.romanrm.net (Postfix) with SMTP id DF96C15F;
-        Fri, 23 Jul 2021 17:27:30 +0000 (UTC)
-Date:   Fri, 23 Jul 2021 22:27:30 +0500
-From:   Roman Mamedov <rm@romanrm.net>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: allow degenerate raid0/raid10
-Message-ID: <20210723222730.1d23f9b4@natsu>
-In-Reply-To: <20210723140843.GE19710@twin.jikos.cz>
-References: <20210722192955.18709-1-dsterba@suse.com>
-        <db9e2f31-73a5-0d0d-a1da-7acde6fb118e@gmx.com>
-        <20210723140843.GE19710@twin.jikos.cz>
+        id S229761AbhGWRhK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Jul 2021 13:37:10 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:47992 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229626AbhGWRhK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 23 Jul 2021 13:37:10 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id BCEA91FFEA;
+        Fri, 23 Jul 2021 18:17:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1627064261; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=s1T7j8FIb6Q+H+/BcThktyQbkBkucVK47GjySEZArZc=;
+        b=ultZQ+1aXw1wqRIxKE8nLI9bdgQx3tsIVvT/1FqH1GnZI59YLltEzjCCV1q2BBpAU2uVDa
+        FZjsGF7UIXzmXJuDyhCRRc8LO9SSoVUysj7uiQDEm3MQvQy3eKtxjGg6k7EVC7peWnM6Td
+        0vEmK75zLrFpWM/EzsteDFBA+II8IG8=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 33B4C13697;
+        Fri, 23 Jul 2021 18:17:39 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id YSWbOsMH+2CpXgAAGKfGzw
+        (envelope-from <mpdesouza@suse.com>); Fri, 23 Jul 2021 18:17:39 +0000
+From:   Marcos Paulo de Souza <mpdesouza@suse.com>
+To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Cc:     dsterba@suse.com, guaneryu@gmail.com,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH] btrfs: Source common/module when requiring module reload
+Date:   Fri, 23 Jul 2021 15:18:00 -0300
+Message-Id: <20210723181800.26884-1-mpdesouza@suse.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, 23 Jul 2021 16:08:43 +0200
-David Sterba <dsterba@suse.cz> wrote:
+Tests 163, 219, 225 and 242 require the btrfs module to be reloaded in
+the middle of the test. If btrfs is compiled builtin, these tests
+should be skipped, since we cannot unload it.
 
-> > Can we slightly enhance the output?
-> > RAID0/1 really looks like a new profile now, even the "1" really means
-> > the number of device.
-> 
-> Do you have a concrete suggestion? This format was inspired by a
-> discussion and suggested by users so I guess this is what people expect
-> and I find it clear. It's also documented in manual page so if you think
-> it's not clear or missing some important information, please let me
-> know.
+Today, this is what happens:
 
-It really reads like another RAID level, easily confused with RAID10.
+    QA output created by 242
+    +./common/btrfs: line 405: _require_loadable_fs_module: command not found
 
-Or that it would flip between RAID0 and RAID1 depending on something.
+Sourcing common/module in these tests fixes the issue by skipping the
+test:
+    btrfs/242       [not run] btrfs: must be a module.
+    Ran: btrfs/242
+    Not run: btrfs/242
 
-Maybe something like RAID0d1?
+Other tests liker btrfs/124 and btrfs/125 already source the same file
+for the same reason, so follow the pattern.
 
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ tests/btrfs/163 | 1 +
+ tests/btrfs/219 | 1 +
+ tests/btrfs/225 | 1 +
+ tests/btrfs/242 | 1 +
+ 4 files changed, 4 insertions(+)
+
+diff --git a/tests/btrfs/163 b/tests/btrfs/163
+index 1dc081f1..76553831 100755
+--- a/tests/btrfs/163
++++ b/tests/btrfs/163
+@@ -27,6 +27,7 @@ _cleanup()
+ # Import common functions.
+ . ./common/filter
+ . ./common/filter.btrfs
++. ./common/module
+ 
+ # real QA test starts here
+ 
+diff --git a/tests/btrfs/219 b/tests/btrfs/219
+index 528175b8..1cd5daae 100755
+--- a/tests/btrfs/219
++++ b/tests/btrfs/219
+@@ -35,6 +35,7 @@ _cleanup()
+ 
+ # Import common functions.
+ . ./common/filter
++. ./common/module
+ 
+ # real QA test starts here
+ 
+diff --git a/tests/btrfs/225 b/tests/btrfs/225
+index 408c03d2..ce1818db 100755
+--- a/tests/btrfs/225
++++ b/tests/btrfs/225
+@@ -25,6 +25,7 @@ _cleanup()
+ 
+ # Import common functions.
+ . ./common/filter
++. ./common/module
+ 
+ # real QA test starts here
+ 
+diff --git a/tests/btrfs/242 b/tests/btrfs/242
+index 6ce62081..e1c102ae 100755
+--- a/tests/btrfs/242
++++ b/tests/btrfs/242
+@@ -13,6 +13,7 @@ _begin_fstest auto quick volume trim
+ 
+ # Import common functions.
+ . ./common/filter
++. ./common/module
+ 
+ # real QA test starts here
+ _supported_fs btrfs
 -- 
-With respect,
-Roman
+2.26.2
+

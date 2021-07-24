@@ -2,45 +2,74 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-1.3 required=3.0 tests=BAYES_05,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD600C4338F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 16:54:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB57EC4338F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 20:33:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9D11860E0C
-	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 16:54:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 980AB60E96
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 20:33:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229648AbhGXQNw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 24 Jul 2021 12:13:52 -0400
-Received: from verein.lst.de ([213.95.11.211]:40992 "EHLO verein.lst.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229530AbhGXQNv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Jul 2021 12:13:51 -0400
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id 7E83467373; Sat, 24 Jul 2021 18:54:20 +0200 (CEST)
-Date:   Sat, 24 Jul 2021 18:54:20 +0200
-From:   Christoph Hellwig <hch@lst.de>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     Christoph Hellwig <hch@lst.de>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: fixes and cleanups for block_device refcounting v3
-Message-ID: <20210724165420.GA22350@lst.de>
-References: <20210724071249.1284585-1-hch@lst.de> <20210724072223.GA2930@lst.de> <718272a2-de67-c849-7c6e-2232f8762b23@kernel.dk>
+        id S229700AbhGXTwv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 24 Jul 2021 15:52:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38988 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229510AbhGXTws (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 24 Jul 2021 15:52:48 -0400
+Received: from mail-wr1-x433.google.com (mail-wr1-x433.google.com [IPv6:2a00:1450:4864:20::433])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 40FF2C061575
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jul 2021 13:33:19 -0700 (PDT)
+Received: by mail-wr1-x433.google.com with SMTP id p5so1042295wro.7
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jul 2021 13:33:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=2HQzZz8CgWbQEOqKdPMfch3t10c7+Vhywforo3J7lfo=;
+        b=mjQeLwc5Vo57eL2ahhXZwJhTS95ls7MnURJxAZr4RBrpqQCEx3WcRGwwow9xtBVThs
+         LKQ11G/SEUtEmXdIwii8ziLipYl9q9ptxsOvGI2ao/yrsdLFadtmTZY1XWwieFuXGekN
+         w4bijWK00bOQ581kUqEEdGgdqiL6F0kqSKq3S9vo5AH4MSpbCiXqTlFCRQVpD0n2LnuS
+         6XuWQ4JhSDsXx7m0BBsCSWL8D8GeEjDgQN9yhTekZDofB8ye87req4oGujZmmP5wwPJG
+         QYOI3zzjO7kfn3naKE8mrUa+5gK/WqUheUf7mgOUgEOfJyT5UIYLfSVesajVYlcWlnbB
+         Bvgw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=2HQzZz8CgWbQEOqKdPMfch3t10c7+Vhywforo3J7lfo=;
+        b=g7Xrz/vKritLTmBPIHkrzo8Qyjga9Aic1dI9pSVqo0VEmgQg54YrBD2Z4wmDzxZZDJ
+         qTxaQKi8fLBLhJPeVbdvE7Ac1Pfw3apH8GTijxoSU/zu+3QHrj2NB0yPiclZp8xyPjfZ
+         ZOpbQ6vioIQIjPpxU5C6IJleMQNcQ+R0Z0FZvDAjt/GRoW3Dm6np2r5/dwUaujfu1cWp
+         BaFuiiTndjd0QC134wN5E3FIkIGr3P0LG4YJ9TwjNeh6cfQr+Z2ph02j/PqeatwZccEB
+         fUfhQlQNtPm8D+l5NkzJE6DKAAi2vZL0KNA5Pqx0Dvm4s6vOCG7KMtPPdXJbJGn5jkHj
+         dvug==
+X-Gm-Message-State: AOAM530aDUc0uHZzgJoHEjSZ/E5InK9xUnLmhYNLnLgeYuoWP0vt4C4t
+        8zB5/02rO3N5EUf+ieFzxCI4uBh5314zhyMQO+pmpdtES2M=
+X-Google-Smtp-Source: ABdhPJxA7U+r4Omb4NufNvvC20XwuZyGIDUWbPcy9TOo6exVNyoenhVNMMWJ18g/WQfr8dj3nxNDsQzxhXUgDxx4Ox8=
+X-Received: by 2002:adf:fc0d:: with SMTP id i13mr1138686wrr.276.1627158797828;
+ Sat, 24 Jul 2021 13:33:17 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <718272a2-de67-c849-7c6e-2232f8762b23@kernel.dk>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+From:   Matthew Warren <matthewwarren101010@gmail.com>
+Date:   Sat, 24 Jul 2021 15:33:07 -0500
+Message-ID: <CA+H1V9watMYVkFXy_P06H_8WXY9GOjfaM0rX6pW8HObT6nU4vA@mail.gmail.com>
+Subject: Btrfs can become unmountable if a drive dies during a replace
+ operation even though it should still be mountable
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Jul 24, 2021 at 10:06:31AM -0600, Jens Axboe wrote:
-> Shall we get patch 1 queued up for next week, and then look at the rest
-> for the 5.15 block tree once the btrfs fix lands in mainline?
+One of my drives in a raid1 array died the other day, so I ran a
+replace on it with a spare drive I had. The process froze during the
+replace from some issue which I assume is possibly caused by my
+automated backup running during the replace, but regardless I rebooted
+without the replacement drive plugged in and the fs failed to mount
+because a replace was in progress but the replacement drive was not
+attached. I was able to plug the drive back in to let it successfully
+mount but had that drive died during the replace, the fs would have
+been unmountable.
 
-Sounds good.  The btrfs patch is in fact in mainline already as of today.
+Matthew Warren

@@ -2,147 +2,129 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77D83C4338F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 22:25:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BA88C4338F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 23:16:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4B50860E92
-	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 22:25:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E898960698
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 23:16:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229601AbhGXVpA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 24 Jul 2021 17:45:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35578 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229549AbhGXVpA (ORCPT
+        id S229609AbhGXWfu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 24 Jul 2021 18:35:50 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:38742 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229573AbhGXWfu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 24 Jul 2021 17:45:00 -0400
-Received: from smtp.domeneshop.no (smtp.domeneshop.no [IPv6:2a01:5b40:0:3005::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59924C061575
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jul 2021 15:25:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=dirtcellar.net; s=ds202012; h=Content-Transfer-Encoding:Content-Type:
-        In-Reply-To:MIME-Version:Date:Message-ID:From:References:To:Subject:Reply-To:
-        Sender:Cc:Content-ID:Content-Description:Resent-Date:Resent-From:
-        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=ay4wSjpLPspEAlbGolFvfkRoDFyFUhjMuap9Lj6xkhA=; b=GDwnVCt2AquHJeouE+JAMwBQLN
-        +Izj/mLKnWCaDzr137QvOV4NVX/Xdp9ZZoKzuZZ3inQ7xYHsVg9cz87JhHfmECwJ028Z0xFnyxa//
-        RbB4DDqrizfEgOWRN1VfmW2kqx1UmUpyLI8QD3OAGgUO5LP6fGJRlzqNePP6ZhT0AJWQKMjI9oFPs
-        Jmvga2URLWZua0z/cJlB5/yBkmC4MZ0io7YHEvMw0THqEjIjuUEz5rY9vR42ojIUzalD/qcyUNr9R
-        cc3qOpQCFL68lfM1zLhTt24Q8ka02C1b4u7MDDI+NYmAlqM3euIRQrQJEGkJv8t5hbH2caS/oDB/Y
-        +X9rynLg==;
-Received: from 254.79-160-170.customer.lyse.net ([79.160.170.254]:11554 helo=[10.0.0.10])
-        by smtp.domeneshop.no with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
-        (Exim 4.92)
-        (envelope-from <waxhead@dirtcellar.net>)
-        id 1m7Q5I-0001fk-4R; Sun, 25 Jul 2021 00:25:28 +0200
-Reply-To: waxhead@dirtcellar.net
-Subject: Re: [PATCH] btrfs: allow degenerate raid0/raid10
-To:     Hugo Mills <hugo@carfax.org.uk>, dsterba@suse.cz,
-        Roman Mamedov <rm@romanrm.net>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20210722192955.18709-1-dsterba@suse.com>
- <db9e2f31-73a5-0d0d-a1da-7acde6fb118e@gmx.com>
- <20210723140843.GE19710@twin.jikos.cz> <20210723222730.1d23f9b4@natsu>
- <20210723192145.GF19710@suse.cz>
- <18a1bdd5-321e-68d3-517f-84c8d9bacb9c@dirtcellar.net>
- <20210724123050.GD992@savella.carfax.org.uk>
-From:   waxhead <waxhead@dirtcellar.net>
-Message-ID: <5c56924d-8391-a796-a331-0ac837b8435d@dirtcellar.net>
-Date:   Sun, 25 Jul 2021 00:25:26 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101
- Firefox/60.0 SeaMonkey/2.53.8.1
+        Sat, 24 Jul 2021 18:35:50 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 6EFA4AFE5A4; Sat, 24 Jul 2021 19:15:27 -0400 (EDT)
+Date:   Sat, 24 Jul 2021 19:15:27 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Jorge Bastos <jorge.mrbastos@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Maybe we want to maintain a bad driver list? (Was 'Re: "bad tree
+ block start, want 419774464 have 0" after a clean shutdown, could it be a
+ disk firmware issue?')
+Message-ID: <20210724231527.GF10170@hungrycats.org>
+References: <CAHzMYBT+pMxrnDXrbTJqP-ZrPN5iDHEsW_nSjjD3R_w3wq5ZLg@mail.gmail.com>
+ <20210721174433.GO19710@twin.jikos.cz>
+ <8b830dc8-11d4-9b21-abe4-5f44e6baa013@gmx.com>
+ <20210722135455.GU19710@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <20210724123050.GD992@savella.carfax.org.uk>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20210722135455.GU19710@twin.jikos.cz>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-Hugo Mills wrote:
-> On Sat, Jul 24, 2021 at 01:04:19PM +0200, waxhead wrote:
->> David Sterba wrote:
->>
->>> Maybe it's still too new so nobody is used to it and we've always had
->>> problems with the raid naming scheme anyway.
->>
->> Perhaps slightly off topic , but I see constantly that people do not
->> understand how BTRFS "RAID" implementation works. They tend to confuse it
->> with regular RAID and get angry because they run into "issues" simply
->> because they do not understand the differences.
->>
->> I have been an enthusiastic BTRFS user for years, and I actually caught
->> myself incorrectly explaining how regular RAID works to a guy a while ago.
->> This happened simply because my mind was so used to how BTRFS uses this
->> terminology that I did not think about it.
->>
->> As BTRFS is getting used more and more it may be increasingly difficult (if
->> not impossible) to get rid of the "RAID" terminology, but in my opinion also
->> increasingly more important as well.
->>
->> Some years ago (2018) there was some talk about a new naming scheme
->> https://marc.info/?l=linux-btrfs&m=136286324417767
->>
->> While technically spot on I found Hugo's naming scheme difficult. It was
->> based on this idea:
->> numCOPIESnumSTRIPESnumPARITY
->>
->> 1CmS1P = Raid5 or 1 copy, max stripes, 1 parity.
->>
->> I also do not agree with the use of 'copy'. The Oxford dictionary defines
->> 'copy' as "a thing that is made to be the same as something else, especially
->> a document or a work of art"
->>
->> And while some might argue that copying something on disk from memory makes
->> it a copy, it ceases to be a copy once the memory contents is erased. I
->> therefore think that replicas is a far better terminology.
->>
->> I earlier suggested Rnum.Snum.Pnum as a naming scheme which I think is far
->> more readable so if I may dare to be as bold....
->>
->> SINGLE  = R0.S0.P0 (no replicas, no stripes (any device), no parity)
->> DUP     = R1.S1.P0 (1 replica, 1 stripe (one device), no parity)
->> RAID0   = R0.Sm.P0 (no replicas, max stripes, no parity)
->> RAID1   = R1.S0.P0 (1 replica, no stripes (any device), no parity)
->> RAID1c2 = R2.S0.P0 (2 replicas, no stripes (any device), no parity)
->> RAID1c3 = R3.S0.P0 (3 replicas, no stripes (any device), no parity)
->> RAID10  = R1.Sm.P0 (1 replica, max stripes, no parity)
->> RAID5   = R0.Sm.P1 (no replicas, max stripes, 1 parity)
->> RAID5   = R0.Sm.P2 (no replicas, max stripes, 2 parity)
+On Thu, Jul 22, 2021 at 03:54:55PM +0200, David Sterba wrote:
+> On Thu, Jul 22, 2021 at 08:18:21AM +0800, Qu Wenruo wrote:
+> > 
+> > 
+> > On 2021/7/22 上午1:44, David Sterba wrote:
+> > > On Fri, Jul 16, 2021 at 11:44:21PM +0100, Jorge Bastos wrote:
+> > >> Hi,
+> > >>
+> > >> This was a single disk filesystem, DUP metadata, and this week it stop
+> > >> mounting out of the blue, the data is not a concern since I have a
+> > >> full fs snapshot in another server, just curious why this happened, I
+> > >> remember reading that some WD disks have firmware with write caches
+> > >> issues, and I believe this disk is affected:
+> > >>
+> > >> Model family:Western Digital Green
+> > >> Device model:WDC WD20EZRX-00D8PB0
+> > >> Firmware version:80.00A80
+> > >
+> > > For the record summing up the discussion from IRC with Zygo, this
+> > > particular firmware 80.00A80 on WD Green is known to have problematic
+> > > firmware and would explain the observed errors.
+> > >
+> > > Recommendation is not to use WD Green or periodically disable the write
+> > > cache by 'hdparm -W0'.
+> > 
+> > Zygo is always the god to expose bad hardware.
+> > 
+> > Can we maintain a list of known bad hardware inside btrfs-wiki?
+> > And maybe escalate it to other fses too?
 > 
->     Sorry, I missed a detail here that someone pointed out on IRC.
-> 
->     "r0" makes no sense to me, as that says there's no data. I would
-> argue strongly to add one to all of your r values. (Note that
+> Yeah a list on wiki would be great, though I'm a bit skeptical about
+> keeping it up up to date, there are very few active wiki editors, the
+> knowledge is still mostly stored in the IRC logs. But without a landing
+> page on wiki we can't even start, so I'll create it.
 
-I disagree. R0 means no replicas of stored data. All filesystems have 
-stored data so adding one seems rather pointless to me.
+Some points to note:
 
-R0 would easily be interpreted as you can loose NO device.
-Rn would also easily be interpreted as you can loose n device(s).
+Most HDD *models* are good (all but 4% of models I've tested, and the
+ones that failed were mostly 8?.00A8?), but the very few models that
+are bad form a significant portion of drives in use:  they are the cheap
+drives that consumers and OEMs buy millions of every year.
 
-> "RAID1c2" isn't one of the current btrfs RAID levels, and by extension
-> from the others, it's equivalent to the current RAID1, and we have
-> RAID1c4 which is four complete instances of any item of data).
-> 
->     My proposal counted *instances* of the data, not the redundancy.
-> 
->     Hugo.
-> 
-You are correct that RAID1c2 does not exist, my mistake- it should have 
-been RAID1c3 which is r2.s0.p0 which is 3 instances of data.
+80.00A80 keeps popping up in parent-transid-verify-failed reports from
+IRC users.  Sometimes also 81.00A81 and 82.00A82 (those two revisions
+appear on some NAS vendor blacklists as well).  I've never seen 83.00A83
+fail--I have some drives with that firmware, and they seem OK, and I
+have not seen any reports about it.
 
-I am not directly against using instances of data, but since all 
-filesystems have at least one instance to be meaningful I personally 
-prefer using replicas as this would also clearer indicate how many 
-devices you can loose. (for instances you have to subtract one anyway).
+80.00A80 may appear in a lot of low-end WD drive models (here "low end"
+is "anything below Gold and Ultrastar"), marketed under other names like
+White Label, or starring as the unspecified model inside USB external
+drives.
 
+The bad WD firmware has been sold over a period of at least 8 years.
+Retail consumers can buy new drives today with this firmware (the most
+recent instance we found was a WD Blue 1TB if I'm decoding the model
+string correctly).  Even though WD seems to have fixed the bugs years
+ago (in 83.00A83), the bad firmware doesn't die out as hardware ages
+out of the user population because users keep buying new drives with
+the old firmware.
 
+It seems that _any_ HDD might have write cache issues if it is having
+some kind of hardware failure at the same time (e.g. UNC sectors or
+power supply issues).  A failing drive is a failing drive, it might blow
+up a btrfs with dup profile that would otherwise have survived.  It is
+possible that firmware bugs are involved in these cases, but it's hard
+to make a test fleet large enough for meaningful and consistent results.
+
+SSDs are a different story:  there are so many models, firmware revisions
+are far more diverse, and vendors are still rapidly updating their
+designs, so we never see exactly the same firmware in any two incident
+reports.  A firmware list would be obsolete in days.  There is nothing
+in SSD firmware like the decade-long stability there is in HDD firmware.
+
+IRC users report occasional parent-transid-verify-failure or similar
+metadata corruption failures on SSDs, but they don't seem to be repeatable
+with other instances of the same model device.  Samsung dominates the
+SSD problem reports, but Samsung also dominates the consumer SSD market,
+so I think we are just seeing messy-but-normal-for-SSD hardware failures,
+not evidence of firmware bugs.
+
+It's also possible that the window for exploiting a powerfail write cache
+bug is much, much shorter for SSD than HDD, so even if the bugs do exist,
+the probability of hitting one is negligible.

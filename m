@@ -2,215 +2,73 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FD2DC432BE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jul 2021 16:47:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD7EAC4338F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 20:32:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 323A86023F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jul 2021 16:47:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 87A7D60E96
+	for <linux-btrfs@archiver.kernel.org>; Sat, 24 Jul 2021 20:32:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235250AbhGZQGt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Jul 2021 12:06:49 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:45454 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239691AbhGZQG1 (ORCPT
+        id S229682AbhGXTwW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 24 Jul 2021 15:52:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38884 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229510AbhGXTwV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jul 2021 12:06:27 -0400
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 0566820077;
-        Mon, 26 Jul 2021 16:46:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1627318010; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type;
-        bh=2ymNgL3HPaI/Y/4VueLdgsmWtvpUDU+GH8v3Sanfm3Q=;
-        b=KJChXHWgqEoqrfG1+j7ucbGuqbwsVcnK0CcQlqbtpUPUWiOZnoU+lRUSzNAL/J+LpLCS8s
-        4HVYeCay4x0AhtYih8Wzo/eiU+cdtLKDEMYOpw3keJQx5zHIaK21OE+vVa7Oct6HjS1IiM
-        vzR2KxVEx8zqzZM9p3QY3lKgEkYY020=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1627318010;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type;
-        bh=2ymNgL3HPaI/Y/4VueLdgsmWtvpUDU+GH8v3Sanfm3Q=;
-        b=7+BDS5HI0xXUMbCRDuXkIwcV4wY0ToWFmSVE2n3cdth6RbR4FvOn0oJzWu9hCDgsu43HQV
-        BMtpqWvMEXR4veCg==
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 96CA713A91;
-        Mon, 26 Jul 2021 16:46:49 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap1.suse-dmz.suse.de with ESMTPSA
-        id RkI6G/nm/mB3OgAAGKfGzw
-        (envelope-from <rgoldwyn@suse.de>); Mon, 26 Jul 2021 16:46:49 +0000
-Date:   Mon, 26 Jul 2021 11:46:47 -0500
-From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
-        linux-nfs@vger.kernel.org
-Subject: [PATCH] fs: reduce pointers while using file_ra_state_init()
-Message-ID: <20210726164647.brx3l2ykwv3zz7vr@fiona>
+        Sat, 24 Jul 2021 15:52:21 -0400
+Received: from mail-wm1-x32f.google.com (mail-wm1-x32f.google.com [IPv6:2a00:1450:4864:20::32f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01F22C061575
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jul 2021 13:32:52 -0700 (PDT)
+Received: by mail-wm1-x32f.google.com with SMTP id b128so2831887wmb.4
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Jul 2021 13:32:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=2HQzZz8CgWbQEOqKdPMfch3t10c7+Vhywforo3J7lfo=;
+        b=OgNe+ZS7NH2TYu/sKpyyJmmjv0rCh0jXTdZ0YqMfxcL7ksVDhqVgBmtKIm2lQmxtHK
+         Hdn3C6yyzlaLfv60y23IQpH1SRnaAocCKf8vMVPaRqEM+8aD+QitaA+K3EatpJWrC0M9
+         HSkCcsbGNSz0h6NPW44iKvj1lgIL9Yb7dyL1N3NQuGlSGL3/9QrNvCkAb3b8Hb1ubU+2
+         13Qp2SLjwKp3yDSNtwC/zvkkApB3l4krMvY35lbyEAuQ9hXiviNDb478qSPXbmmgSdaX
+         ZNQa4TBPNXKq9Ba6+Tp/3sm2dMIZSfZBjVtD9p08NoKTIetc8sKhGs7P6ZjsTAaCdYHy
+         Akcw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=2HQzZz8CgWbQEOqKdPMfch3t10c7+Vhywforo3J7lfo=;
+        b=XFDv8nHE8ek5x5+AtZxVrJ7pwbif0QDYj7kTOXTJCgmyOaeJa/wI8/CJr1hZRD3t5v
+         0qPNZDk4qD7pbvno/cC9n4/9E9DgiXtzgzjnsqcT2c8bmcAMk5nOoeVcQ7cF52sYFvEZ
+         22Oj3+fZSTpT6Deuh3FjMYGTKOSLBjV4cgx2wR01GKfo1T3EJUCS7YT+jNMe22N9CoY6
+         kpwJpAOxENCrEgdQZJeuM7Y3+LzLCUq6s65pFoMny+5uq//Jr0WvRIMAw6na9Ixf5jV3
+         YQxdikGPDg7T+SYQrDNezvzhwQmilPUyuWR09Vl2xjPgOMBdGotld45JRHXfiqXcDGLA
+         ueew==
+X-Gm-Message-State: AOAM531KfOkgqOWl72dVu7RdD8AfeUta38wwhMzZDuRPM3K7x/VUa/CI
+        B3cDj9NtnOvlMZ7Y9VOS/EyTAxYHGb6i9mvdB047EY8i+nY=
+X-Google-Smtp-Source: ABdhPJwA9PP17KgrqLaEidl03wZ9wTcjKyOuLF0Q4y5trI4A/FZQtXfOlLzIjxIHEsHgkAJhjyNWbbUaNGv+jSGzvOw=
+X-Received: by 2002:a1c:3505:: with SMTP id c5mr19429212wma.53.1627158770542;
+ Sat, 24 Jul 2021 13:32:50 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+From:   Matthew Warren <matthewwarren101010@gmail.com>
+Date:   Sat, 24 Jul 2021 15:32:40 -0500
+Message-ID: <CA+H1V9yDPy++WLfxGqwXf0MkszN8aZ0Zu5xQuKQx2zHvrL4Xjg@mail.gmail.com>
+Subject: 
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Simplification.
+One of my drives in a raid1 array died the other day, so I ran a
+replace on it with a spare drive I had. The process froze during the
+replace from some issue which I assume is possibly caused by my
+automated backup running during the replace, but regardless I rebooted
+without the replacement drive plugged in and the fs failed to mount
+because a replace was in progress but the replacement drive was not
+attached. I was able to plug the drive back in to let it successfully
+mount but had that drive died during the replace, the fs would have
+been unmountable.
 
-file_ra_state_init() take struct address_space *, just to use inode
-pointer by dereferencing from mapping->host.
-
-The callers also derive mapping either by file->f_mapping, or
-even file->f_mapping->host->i_mapping.
-
-Change file_ra_state_init() to accept struct inode * to reduce pointer
-dereferencing, both in the callee and the caller.
-
-Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
----
- fs/btrfs/free-space-cache.c | 2 +-
- fs/btrfs/ioctl.c            | 2 +-
- fs/btrfs/relocation.c       | 2 +-
- fs/btrfs/send.c             | 2 +-
- fs/nfs/nfs4file.c           | 2 +-
- fs/open.c                   | 2 +-
- fs/verity/enable.c          | 2 +-
- include/linux/fs.h          | 2 +-
- mm/readahead.c              | 4 ++--
- 9 files changed, 10 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 4806295116d8..c43bf9915cda 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -351,7 +351,7 @@ static void readahead_cache(struct inode *inode)
- 	if (!ra)
- 		return;
- 
--	file_ra_state_init(ra, inode->i_mapping);
-+	file_ra_state_init(ra, inode);
- 	last_index = (i_size_read(inode) - 1) >> PAGE_SHIFT;
- 
- 	page_cache_sync_readahead(inode->i_mapping, ra, NULL, 0, last_index);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5dc2fd843ae3..b3508887d466 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1399,7 +1399,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 	if (!file) {
- 		ra = kzalloc(sizeof(*ra), GFP_KERNEL);
- 		if (ra)
--			file_ra_state_init(ra, inode->i_mapping);
-+			file_ra_state_init(ra, inode);
- 	} else {
- 		ra = &file->f_ra;
- 	}
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index b70be2ac2e9e..4f35672b93a5 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2911,7 +2911,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 	if (ret)
- 		goto out;
- 
--	file_ra_state_init(ra, inode->i_mapping);
-+	file_ra_state_init(ra, inode);
- 
- 	ret = setup_extent_mapping(inode, cluster->start - offset,
- 				   cluster->end - offset, cluster->start);
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index bd69db72acc5..3eb8d2277a3d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4949,7 +4949,7 @@ static int put_file_data(struct send_ctx *sctx, u64 offset, u32 len)
- 
- 	/* initial readahead */
- 	memset(&sctx->ra, 0, sizeof(struct file_ra_state));
--	file_ra_state_init(&sctx->ra, inode->i_mapping);
-+	file_ra_state_init(&sctx->ra, inode);
- 
- 	while (index <= last_index) {
- 		unsigned cur_len = min_t(unsigned, len,
-diff --git a/fs/nfs/nfs4file.c b/fs/nfs/nfs4file.c
-index a1e5c6b85ded..c810a6151c93 100644
---- a/fs/nfs/nfs4file.c
-+++ b/fs/nfs/nfs4file.c
-@@ -385,7 +385,7 @@ static struct file *__nfs42_ssc_open(struct vfsmount *ss_mnt,
- 	nfs_file_set_open_context(filep, ctx);
- 	put_nfs_open_context(ctx);
- 
--	file_ra_state_init(&filep->f_ra, filep->f_mapping->host->i_mapping);
-+	file_ra_state_init(&filep->f_ra, file_inode(filep));
- 	res = filep;
- out_free_name:
- 	kfree(read_name);
-diff --git a/fs/open.c b/fs/open.c
-index e53af13b5835..9c6773a4fb30 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -840,7 +840,7 @@ static int do_dentry_open(struct file *f,
- 	f->f_write_hint = WRITE_LIFE_NOT_SET;
- 	f->f_flags &= ~(O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC);
- 
--	file_ra_state_init(&f->f_ra, f->f_mapping->host->i_mapping);
-+	file_ra_state_init(&f->f_ra, inode);
- 
- 	/* NB: we're sure to have correct a_ops only after f_op->open */
- 	if (f->f_flags & O_DIRECT) {
-diff --git a/fs/verity/enable.c b/fs/verity/enable.c
-index 77e159a0346b..460d881080ac 100644
---- a/fs/verity/enable.c
-+++ b/fs/verity/enable.c
-@@ -66,7 +66,7 @@ static int build_merkle_tree_level(struct file *filp, unsigned int level,
- 		dst_block_num = 0; /* unused */
- 	}
- 
--	file_ra_state_init(&ra, filp->f_mapping);
-+	file_ra_state_init(&ra, inode);
- 
- 	for (i = 0; i < num_blocks_to_hash; i++) {
- 		struct page *src_page;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index c3c88fdb9b2a..3b8ce0221477 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -3260,7 +3260,7 @@ extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
- 
- 
- extern void
--file_ra_state_init(struct file_ra_state *ra, struct address_space *mapping);
-+file_ra_state_init(struct file_ra_state *ra, struct inode *inode);
- extern loff_t noop_llseek(struct file *file, loff_t offset, int whence);
- extern loff_t no_llseek(struct file *file, loff_t offset, int whence);
- extern loff_t vfs_setpos(struct file *file, loff_t offset, loff_t maxsize);
-diff --git a/mm/readahead.c b/mm/readahead.c
-index d589f147f4c2..3541941df5e7 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -31,9 +31,9 @@
-  * memset *ra to zero.
-  */
- void
--file_ra_state_init(struct file_ra_state *ra, struct address_space *mapping)
-+file_ra_state_init(struct file_ra_state *ra, struct inode *inode)
- {
--	ra->ra_pages = inode_to_bdi(mapping->host)->ra_pages;
-+	ra->ra_pages = inode_to_bdi(inode)->ra_pages;
- 	ra->prev_pos = -1;
- }
- EXPORT_SYMBOL_GPL(file_ra_state_init);
--- 
-2.32.0
-
-
--- 
-Goldwyn
+Matthew Warren

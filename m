@@ -2,394 +2,271 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5BB7C4338F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jul 2021 12:42:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 95B5FC4338F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jul 2021 14:03:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B348460F45
-	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jul 2021 12:42:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6AA7960F55
+	for <linux-btrfs@archiver.kernel.org>; Mon, 26 Jul 2021 14:03:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234037AbhGZMBe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 26 Jul 2021 08:01:34 -0400
-Received: from mout.gmx.net ([212.227.15.15]:38865 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233754AbhGZMBd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 26 Jul 2021 08:01:33 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1627303320;
-        bh=vhn8A8Xairmk1qI0+exkxxsz7haGr8UVBsGpykaa/0w=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=Ox5cCehnf68qjvTdln5eiCtfeuAlE/DqZY0lJgsvGawgoFjKiYXI3OpdHZ9rOa4O+
-         k2bS+KdoMYWN2tQwESUiOvVJun5ee5Ks0nFofNj49BV8Z5V9wR5PcBTKh/0ViBsn5K
-         y3mT210g5uLZzCJT7tjO0qRA6+5XQUMm2WFfF7Wk=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MjjCL-1lNLWG30eJ-00lCW7; Mon, 26
- Jul 2021 14:42:00 +0200
-Subject: Re: [PATCH 10/10] btrfs: add and use simple page/bio to inode/fs_info
- helpers
-To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1627300614.git.dsterba@suse.com>
- <4d3594dcca4dd8a8e58b134409922c2787b6a757.1627300614.git.dsterba@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <6cac34b2-39ba-f344-d601-b78a3f0c7698@gmx.com>
-Date:   Mon, 26 Jul 2021 20:41:57 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.12.0
+        id S233968AbhGZNWp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 26 Jul 2021 09:22:45 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:45466 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233713AbhGZNWp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 26 Jul 2021 09:22:45 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id E7BE121F60;
+        Mon, 26 Jul 2021 14:03:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1627308192; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=/D92rzVKZ6sCPAVdehwONjT2JdMifZzBTbDzN4jCypE=;
+        b=ZO8c4AWt+wq6htpJc+PGUoTk6OGbmt05HsiNAPkiPdzd/C40/KUpvH3jZoJ6PcvXpn8e3T
+        D1doIJWphOe3MYSwyLW9tFkdQWzSAxLn4ec5wjr5JQWtEnGTwbzv4CU0jYZc22CEzOVKMG
+        /ysDxg/gb5+Rdf0hKyKRtqFn3Bc+e6M=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7BEDA13AB2;
+        Mon, 26 Jul 2021 14:03:11 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id nljWD5/A/mAITAAAMHmgww
+        (envelope-from <mpdesouza@suse.com>); Mon, 26 Jul 2021 14:03:11 +0000
+From:   Marcos Paulo de Souza <mpdesouza@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, nborisov@suse.com,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH] btrfs: Introduce btrfs_search_backwards function
+Date:   Mon, 26 Jul 2021 11:03:17 -0300
+Message-Id: <20210726140317.4907-1-mpdesouza@suse.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-In-Reply-To: <4d3594dcca4dd8a8e58b134409922c2787b6a757.1627300614.git.dsterba@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:q0vUOBIuGbi+09jd+60o4rax14FfLP1xL8QtyIqYAUasJRG6/Rq
- JjUqqhx2llogS+t6q7EZpbhEyGhKtk+SjCGFkOoPp8+GemTq/YhR6NCrJPr+jaKzqSmtFiQ
- I+vL2KOeLG3qzafwMeMrwv11Qq3cldKqO3+CyS2t3dQ6DnrQAIjfanpIga1UzFVWgbxdHwX
- wTKlSFR9A8Bur1WV0flFg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:P155t1sopO8=:fiQmRHKnBC9gspLEyGHvIv
- 4/K44McnrYCbQgeOnbyRdUc95Uq6jzO+kkO+ge180c/SsKrJyhc1XbpUtAmDj60OKhwEknbuc
- VBi686wvzmS5fLvH7Y6dKI9g3HHwIHKbbhdmRIVtlj2t9Rh39WVICaDiTfm+On4UpCPBOKA8Z
- Ef7okcPUrnsJ6uNU9yZ4kMB5T4jVaFlx96pV3HYAWz21tKsq8pw9zITq0cm3Vbe9Un3DjvCQ4
- qpNoh90paka7BCPflPYs/nHHN5AQkAMqZvyMTCMFKCoKfvYQvlQ6cp4u+Pc46bQq7D3sl/enU
- g1QTCDWWPQoWmZFV1jLOLTTO/20CfSVQIDbbzkyCncDCwT4GM48jmuZ3YKDc3KULXovcWzcwa
- yo4y0gLZlJgiKN7zLp5Ro9N3zoMDlpNIQ2ZZfPL6f8XvFD0Ry50ynoAk/KIC8IB5LmVMu6nPP
- Xpoqhp50MoRM9t2v7xE8S0vw77jEPwz+cmulb/JYw9gn7h+TMK6MgjYSgYCNnIZVEhFyLdTW1
- aAJOx1HepsOloR08ztugKF+L7VihGEtkrrjezGBvp8MrPgYCsD8GV1fDUCERMkN+NLWipxfpl
- 7gVkBBw+3SSucayOUx2Cia9Cv/GMGp38D4P4aGfF5oiiHZzLk7MQP4AyLaCadCVszzjJASms4
- LC/0NqhZOvCvcASW7A9NJHv5um03orCzSlkuczH4z0XfF67ylXm8kiHCSslqz4IC6If9ZhFPn
- XtHBRSA7qWgyMjNMm4239peijOyn55j3rVVX9uDusMFpu0SRCqso3TaKzceLAwRqaOf3PMfGc
- U7ptHsi1iCxGjxMN1ccuo/ZnN7Xdmb6Zk4Rj+fRFPd+9axWYGGmMoWDpc1WwO4NdAT4aWk6uK
- 31zvH3bJinMOFqmJSxTH+OWEBNVLKwBUrx3xiek4bo0libBKEzczIyoyXNCpdiTaxagGyRHDI
- h1rSGl+cgTgf1WNumaYk6RwJe/copwAxRtVKHNrVfygUMhUnLbpTeNFWCJtPD44q2bRydb2Fo
- cOyFZR1r8wY7YtJBnb5W1SBUtqP72g0pzQRTDoEIBBFH/j9bl+KnlmnE2OPLJlHn2CaVGcGz6
- 7TZPSd4s5fQgIB6mh0lxyg0SKcxJgDA53tBKBFoS1Wze2pktfaOf5dmYg==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+It's a common practice to start a search using offset (u64)-1, which is
+the u64 maximum value, meaning that we want the search_slot function to
+be set in the last item with the same objectid and type.
 
+Once we are in this position, it's a matter to start a search backwards
+by calling btrfs_previous_item, which will check if we'll need to go to
+a previous leaf and other necessary checks, only to be sure that we are
+in last offset of the same object and type. If the item is found,
+convert the ondisk structure to the current endianness of the machine
+running the code.
 
-On 2021/7/26 =E4=B8=8B=E5=8D=888:15, David Sterba wrote:
-> We have lots of places where we want to obtain inode from page, fs_info
-> from page and open code the pointer chains.
+The new btrfs_search_backwards function does the all these procedures when
+necessary, and can be used to avoid code duplication.
 
-All those inode/fs_info grabbing from just a page is dangerous.
+No functional changes.
 
-If an anonymous page is passed in unintentionally, it can easily crash
-the system.
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+---
+ fs/btrfs/ctree.c   | 23 +++++++++++++++++++++++
+ fs/btrfs/ctree.h   |  6 ++++++
+ fs/btrfs/ioctl.c   | 30 ++++++++----------------------
+ fs/btrfs/super.c   | 26 ++++++--------------------
+ fs/btrfs/volumes.c |  7 +------
+ 5 files changed, 44 insertions(+), 48 deletions(-)
 
-Thus at least some ASSERT() here is a must to me.
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 394fec1d3fd9..2991ee845813 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2100,6 +2100,29 @@ int btrfs_search_slot_for_read(struct btrfs_root *root,
+ 	return 0;
+ }
+ 
++/*
++ * Execute search and call btrfs_previous_item to traverse backwards if the item
++ * was not found. If found, convert the stored item to the correct endianness.
++ *
++ * Return 0 if found, 1 if not found and < 0 if error.
++ */
++int btrfs_search_backwards(struct btrfs_root *root,
++				struct btrfs_key *key,
++				struct btrfs_key *found_key,
++				struct btrfs_path *path)
++{
++	int ret;
++
++	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
++	if (ret > 0)
++		ret = btrfs_previous_item(root, path, key->objectid, key->type);
++
++	if (ret == 0)
++		btrfs_item_key_to_cpu(path->nodes[0], found_key,
++					path->slots[0]);
++	return ret;
++}
++
+ /*
+  * adjust the pointers going up the tree, starting at level
+  * making sure the right key of each node is points to 'key'.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 4a69aa604ac5..27aa2b959861 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2903,6 +2903,12 @@ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+ 			u64 time_seq);
++
++int btrfs_search_backwards(struct btrfs_root *root,
++				struct btrfs_key *key,
++				struct btrfs_key *found_key,
++				struct btrfs_path *path);
++
+ static inline int btrfs_next_old_item(struct btrfs_root *root,
+ 				      struct btrfs_path *p, u64 time_seq)
+ {
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0ba98e08a029..ac6c0530a941 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2382,23 +2382,16 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+ 	key.offset = (u64)-1;
+ 
+ 	while (1) {
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		ret = btrfs_search_backwards(root, &key, &key, path);
+ 		if (ret < 0)
+ 			goto out;
+ 		else if (ret > 0) {
+-			ret = btrfs_previous_item(root, path, dirid,
+-						  BTRFS_INODE_REF_KEY);
+-			if (ret < 0)
+-				goto out;
+-			else if (ret > 0) {
+-				ret = -ENOENT;
+-				goto out;
+-			}
++			ret = -ENOENT;
++			goto out;
+ 		}
+ 
+ 		l = path->nodes[0];
+ 		slot = path->slots[0];
+-		btrfs_item_key_to_cpu(l, &key, slot);
+ 
+ 		iref = btrfs_item_ptr(l, slot, struct btrfs_inode_ref);
+ 		len = btrfs_inode_ref_name_len(l, iref);
+@@ -2473,23 +2466,16 @@ static int btrfs_search_path_in_tree_user(struct inode *inode,
+ 		key.type = BTRFS_INODE_REF_KEY;
+ 		key.offset = (u64)-1;
+ 		while (1) {
+-			ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-			if (ret < 0) {
++			ret = btrfs_search_backwards(root, &key, &key, path);
++			if (ret < 0)
++				goto out_put;
++			else if (ret > 0) {
++				ret = -ENOENT;
+ 				goto out_put;
+-			} else if (ret > 0) {
+-				ret = btrfs_previous_item(root, path, dirid,
+-							  BTRFS_INODE_REF_KEY);
+-				if (ret < 0) {
+-					goto out_put;
+-				} else if (ret > 0) {
+-					ret = -ENOENT;
+-					goto out_put;
+-				}
+ 			}
+ 
+ 			leaf = path->nodes[0];
+ 			slot = path->slots[0];
+-			btrfs_item_key_to_cpu(leaf, &key, slot);
+ 
+ 			iref = btrfs_item_ptr(leaf, slot, struct btrfs_inode_ref);
+ 			len = btrfs_inode_ref_name_len(leaf, iref);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d07b18b2b250..2960219f7299 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1201,21 +1201,14 @@ char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
+ 		key.type = BTRFS_ROOT_BACKREF_KEY;
+ 		key.offset = (u64)-1;
+ 
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		ret = btrfs_search_backwards(root, &key, &key, path);
+ 		if (ret < 0) {
+ 			goto err;
+ 		} else if (ret > 0) {
+-			ret = btrfs_previous_item(root, path, subvol_objectid,
+-						  BTRFS_ROOT_BACKREF_KEY);
+-			if (ret < 0) {
+-				goto err;
+-			} else if (ret > 0) {
+-				ret = -ENOENT;
+-				goto err;
+-			}
++			ret = -ENOENT;
++			goto err;
+ 		}
+ 
+-		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+ 		subvol_objectid = key.offset;
+ 
+ 		root_ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+@@ -1248,21 +1241,14 @@ char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
+ 			key.type = BTRFS_INODE_REF_KEY;
+ 			key.offset = (u64)-1;
+ 
+-			ret = btrfs_search_slot(NULL, fs_root, &key, path, 0, 0);
++			ret = btrfs_search_backwards(fs_root, &key, &key, path);
+ 			if (ret < 0) {
+ 				goto err;
+ 			} else if (ret > 0) {
+-				ret = btrfs_previous_item(fs_root, path, dirid,
+-							  BTRFS_INODE_REF_KEY);
+-				if (ret < 0) {
+-					goto err;
+-				} else if (ret > 0) {
+-					ret = -ENOENT;
+-					goto err;
+-				}
++				ret = -ENOENT;
++				goto err;
+ 			}
+ 
+-			btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+ 			dirid = key.offset;
+ 
+ 			inode_ref = btrfs_item_ptr(path->nodes[0],
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d57ad0c9bb99..8d08e200b712 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1597,14 +1597,9 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
+ 	key.offset = search_start;
+ 	key.type = BTRFS_DEV_EXTENT_KEY;
+ 
+-	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	ret = btrfs_search_backwards(root, &key, &key, path);
+ 	if (ret < 0)
+ 		goto out;
+-	if (ret > 0) {
+-		ret = btrfs_previous_item(root, path, key.objectid, key.type);
+-		if (ret < 0)
+-			goto out;
+-	}
+ 
+ 	while (1) {
+ 		l = path->nodes[0];
+-- 
+2.26.2
 
-Thanks,
-Qu
-
->
-> Add helpers for the most common actions where the types match. There are
-> still unconverted cases that don't have btrfs_inode and need this
-> conversion first.
->
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->   fs/btrfs/disk-io.c   | 24 +++++++++++++-----------
->   fs/btrfs/extent_io.c | 33 ++++++++++++++++-----------------
->   fs/btrfs/inode.c     |  4 ++--
->   fs/btrfs/misc.h      |  4 ++++
->   4 files changed, 35 insertions(+), 30 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index b117dd3b8172..cdb7791b00d7 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -19,6 +19,7 @@
->   #include <linux/sched/mm.h>
->   #include <asm/unaligned.h>
->   #include <crypto/hash.h>
-> +#include "misc.h"
->   #include "ctree.h"
->   #include "disk-io.h"
->   #include "transaction.h"
-> @@ -633,7 +634,7 @@ static int validate_extent_buffer(struct extent_buff=
-er *eb)
->   static int validate_subpage_buffer(struct page *page, u64 start, u64 e=
-nd,
->   				   int mirror)
->   {
-> -	struct btrfs_fs_info *fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> +	struct btrfs_fs_info *fs_info =3D page_to_fs_info(page);
->   	struct extent_buffer *eb;
->   	bool reads_done;
->   	int ret =3D 0;
-> @@ -693,7 +694,7 @@ int btrfs_validate_metadata_buffer(struct btrfs_io_b=
-io *io_bio,
->
->   	ASSERT(page->private);
->
-> -	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-> +	if (page_to_fs_info(page)->sectorsize < PAGE_SIZE)
->   		return validate_subpage_buffer(page, start, end, mirror);
->
->   	eb =3D (struct extent_buffer *)page->private;
-> @@ -876,14 +877,14 @@ blk_status_t btrfs_wq_submit_bio(struct inode *ino=
-de, struct bio *bio,
->   static blk_status_t btree_csum_one_bio(struct bio *bio)
->   {
->   	struct bio_vec *bvec;
-> -	struct btrfs_root *root;
->   	int ret =3D 0;
->   	struct bvec_iter_all iter_all;
->
->   	ASSERT(!bio_flagged(bio, BIO_CLONED));
->   	bio_for_each_segment_all(bvec, bio, iter_all) {
-> -		root =3D BTRFS_I(bvec->bv_page->mapping->host)->root;
-> -		ret =3D csum_dirty_buffer(root->fs_info, bvec);
-> +		struct btrfs_fs_info *fs_info =3D page_to_fs_info(bvec->bv_page);
-> +
-> +		ret =3D csum_dirty_buffer(fs_info, bvec);
->   		if (ret)
->   			break;
->   	}
-> @@ -1010,11 +1011,13 @@ static void btree_invalidatepage(struct page *pa=
-ge, unsigned int offset,
->   				 unsigned int length)
->   {
->   	struct extent_io_tree *tree;
-> -	tree =3D &BTRFS_I(page->mapping->host)->io_tree;
-> +	struct btrfs_inode *inode =3D page_to_inode(page);
-> +
-> +	tree =3D &inode->io_tree;
->   	extent_invalidatepage(tree, page, offset);
->   	btree_releasepage(page, GFP_NOFS);
->   	if (PagePrivate(page)) {
-> -		btrfs_warn(BTRFS_I(page->mapping->host)->root->fs_info,
-> +		btrfs_warn(inode->root->fs_info,
->   			   "page private not zero on page %llu",
->   			   (unsigned long long)page_offset(page));
->   		detach_page_private(page);
-> @@ -1024,7 +1027,7 @@ static void btree_invalidatepage(struct page *page=
-, unsigned int offset,
->   static int btree_set_page_dirty(struct page *page)
->   {
->   #ifdef DEBUG
-> -	struct btrfs_fs_info *fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> +	struct btrfs_fs_info *fs_info =3D page_to_fs_info(page);
->   	struct btrfs_subpage *subpage;
->   	struct extent_buffer *eb;
->   	int cur_bit =3D 0;
-> @@ -4437,14 +4440,13 @@ int btrfs_buffer_uptodate(struct extent_buffer *=
-buf, u64 parent_transid,
->   			  int atomic)
->   {
->   	int ret;
-> -	struct inode *btree_inode =3D buf->pages[0]->mapping->host;
-> +	struct btrfs_inode *inode =3D page_to_inode(buf->pages[0]);
->
->   	ret =3D extent_buffer_uptodate(buf);
->   	if (!ret)
->   		return ret;
->
-> -	ret =3D verify_parent_transid(&BTRFS_I(btree_inode)->io_tree, buf,
-> -				    parent_transid, atomic);
-> +	ret =3D verify_parent_transid(&inode->io_tree, buf, parent_transid, at=
-omic);
->   	if (ret =3D=3D -EAGAIN)
->   		return ret;
->   	return !ret;
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index f7e58c304fc9..d8ce7588de77 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2682,7 +2682,7 @@ int btrfs_repair_one_sector(struct inode *inode,
->
->   static void end_page_read(struct page *page, bool uptodate, u64 start,=
- u32 len)
->   {
-> -	struct btrfs_fs_info *fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> +	struct btrfs_fs_info *fs_info =3D page_to_fs_info(page);
->
->   	ASSERT(page_offset(page) <=3D start &&
->   	       start + len <=3D page_offset(page) + PAGE_SIZE);
-> @@ -2783,7 +2783,7 @@ void end_extent_writepage(struct page *page, int e=
-rr, u64 start, u64 end)
->   	int ret =3D 0;
->
->   	ASSERT(page && page->mapping);
-> -	inode =3D BTRFS_I(page->mapping->host);
-> +	inode =3D page_to_inode(page);
->   	btrfs_writepage_endio_finish_ordered(inode, page, start, end, uptodat=
-e);
->
->   	if (!uptodate) {
-> @@ -2815,8 +2815,8 @@ static void end_bio_extent_writepage(struct bio *b=
-io)
->   	ASSERT(!bio_flagged(bio, BIO_CLONED));
->   	bio_for_each_segment_all(bvec, bio, iter_all) {
->   		struct page *page =3D bvec->bv_page;
-> -		struct inode *inode =3D page->mapping->host;
-> -		struct btrfs_fs_info *fs_info =3D btrfs_sb(inode->i_sb);
-> +		struct btrfs_inode *inode =3D page_to_inode(page);
-> +		struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->   		const u32 sectorsize =3D fs_info->sectorsize;
->
->   		/* Our read/write should always be sector aligned. */
-> @@ -2833,7 +2833,7 @@ static void end_bio_extent_writepage(struct bio *b=
-io)
->   		end =3D start + bvec->bv_len - 1;
->
->   		if (first_bvec) {
-> -			btrfs_record_physical_zoned(inode, start, bio);
-> +			btrfs_record_physical_zoned(&inode->vfs_inode, start, bio);
->   			first_bvec =3D false;
->   		}
->
-> @@ -3306,7 +3306,7 @@ static int submit_extent_page(unsigned int opf,
->   	int ret =3D 0;
->   	struct bio *bio;
->   	size_t io_size =3D min_t(size_t, size, PAGE_SIZE);
-> -	struct btrfs_inode *inode =3D BTRFS_I(page->mapping->host);
-> +	struct btrfs_inode *inode =3D page_to_inode(page);
->   	struct extent_io_tree *tree =3D &inode->io_tree;
->   	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->
-> @@ -3334,7 +3334,7 @@ static int submit_extent_page(unsigned int opf,
->   	bio_add_page(bio, page, io_size, pg_offset);
->   	bio->bi_end_io =3D end_io_func;
->   	bio->bi_private =3D tree;
-> -	bio->bi_write_hint =3D page->mapping->host->i_write_hint;
-> +	bio->bi_write_hint =3D inode->vfs_inode.i_write_hint;
->   	bio->bi_opf =3D opf;
->   	if (wbc) {
->   		struct block_device *bdev;
-> @@ -3410,8 +3410,7 @@ int set_page_extent_mapped(struct page *page)
->   	if (PagePrivate(page))
->   		return 0;
->
-> -	fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> -
-> +	fs_info =3D page_to_fs_info(page);
->   	if (fs_info->sectorsize < PAGE_SIZE)
->   		return btrfs_attach_subpage(fs_info, page, BTRFS_SUBPAGE_DATA);
->
-> @@ -3428,7 +3427,7 @@ void clear_page_extent_mapped(struct page *page)
->   	if (!PagePrivate(page))
->   		return;
->
-> -	fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> +	fs_info =3D page_to_fs_info(page);
->   	if (fs_info->sectorsize < PAGE_SIZE)
->   		return btrfs_detach_subpage(fs_info, page);
->
-> @@ -3670,7 +3669,7 @@ static inline void contiguous_readpages(struct pag=
-e *pages[], int nr_pages,
->   					struct btrfs_bio_ctrl *bio_ctrl,
->   					u64 *prev_em_start)
->   {
-> -	struct btrfs_inode *inode =3D BTRFS_I(pages[0]->mapping->host);
-> +	struct btrfs_inode *inode =3D page_to_inode(pages[0]);
->   	int index;
->
->   	btrfs_lock_and_flush_ordered_range(inode, start, end, NULL);
-> @@ -4259,7 +4258,7 @@ static void end_bio_subpage_eb_writepage(struct bi=
-o *bio)
->   	struct bio_vec *bvec;
->   	struct bvec_iter_all iter_all;
->
-> -	fs_info =3D btrfs_sb(bio_first_page_all(bio)->mapping->host->i_sb);
-> +	fs_info =3D bio_to_fs_info(bio);
->   	ASSERT(fs_info->sectorsize < PAGE_SIZE);
->
->   	ASSERT(!bio_flagged(bio, BIO_CLONED));
-> @@ -4481,7 +4480,7 @@ static int submit_eb_subpage(struct page *page,
->   			     struct writeback_control *wbc,
->   			     struct extent_page_data *epd)
->   {
-> -	struct btrfs_fs_info *fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> +	struct btrfs_fs_info *fs_info =3D page_to_fs_info(page);
->   	int submitted =3D 0;
->   	u64 page_start =3D page_offset(page);
->   	int bit_start =3D 0;
-> @@ -4587,7 +4586,7 @@ static int submit_eb_page(struct page *page, struc=
-t writeback_control *wbc,
->   	if (!PagePrivate(page))
->   		return 0;
->
-> -	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-> +	if (page_to_fs_info(page)->sectorsize < PAGE_SIZE)
->   		return submit_eb_subpage(page, wbc, epd);
->
->   	spin_lock(&mapping->private_lock);
-> @@ -5123,7 +5122,7 @@ int try_release_extent_mapping(struct page *page, =
-gfp_t mask)
->   	struct extent_map *em;
->   	u64 start =3D page_offset(page);
->   	u64 end =3D start + PAGE_SIZE - 1;
-> -	struct btrfs_inode *btrfs_inode =3D BTRFS_I(page->mapping->host);
-> +	struct btrfs_inode *btrfs_inode =3D page_to_inode(page);
->   	struct extent_io_tree *tree =3D &btrfs_inode->io_tree;
->   	struct extent_map_tree *map =3D &btrfs_inode->extent_tree;
->
-> @@ -7081,7 +7080,7 @@ static struct extent_buffer *get_next_extent_buffe=
-r(
->
->   static int try_release_subpage_extent_buffer(struct page *page)
->   {
-> -	struct btrfs_fs_info *fs_info =3D btrfs_sb(page->mapping->host->i_sb);
-> +	struct btrfs_fs_info *fs_info =3D page_to_fs_info(page);
->   	u64 cur =3D page_offset(page);
->   	const u64 end =3D page_offset(page) + PAGE_SIZE;
->   	int ret;
-> @@ -7153,7 +7152,7 @@ int try_release_extent_buffer(struct page *page)
->   {
->   	struct extent_buffer *eb;
->
-> -	if (btrfs_sb(page->mapping->host->i_sb)->sectorsize < PAGE_SIZE)
-> +	if (page_to_fs_info(page)->sectorsize < PAGE_SIZE)
->   		return try_release_subpage_extent_buffer(page);
->
->   	/*
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index ba0bba9f5505..19db7f18da42 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -8348,7 +8348,7 @@ static int btrfs_fiemap(struct inode *inode, struc=
-t fiemap_extent_info *fieinfo,
->
->   int btrfs_readpage(struct file *file, struct page *page)
->   {
-> -	struct btrfs_inode *inode =3D BTRFS_I(page->mapping->host);
-> +	struct btrfs_inode *inode =3D page_to_inode(page);
->   	u64 start =3D page_offset(page);
->   	u64 end =3D start + PAGE_SIZE - 1;
->   	struct btrfs_bio_ctrl bio_ctrl =3D { 0 };
-> @@ -8443,7 +8443,7 @@ static int btrfs_migratepage(struct address_space =
-*mapping,
->   static void btrfs_invalidatepage(struct page *page, unsigned int offse=
-t,
->   				 unsigned int length)
->   {
-> -	struct btrfs_inode *inode =3D BTRFS_I(page->mapping->host);
-> +	struct btrfs_inode *inode =3D page_to_inode(page);
->   	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
->   	struct extent_io_tree *tree =3D &inode->io_tree;
->   	struct extent_state *cached_state =3D NULL;
-> diff --git a/fs/btrfs/misc.h b/fs/btrfs/misc.h
-> index 6461ebc3a1c1..cb6dc975a159 100644
-> --- a/fs/btrfs/misc.h
-> +++ b/fs/btrfs/misc.h
-> @@ -10,6 +10,10 @@
->
->   #define in_range(b, first, len) ((b) >=3D (first) && (b) < (first) + (=
-len))
->
-> +#define page_to_fs_info(page)	(BTRFS_I((page)->mapping->host)->root->fs=
-_info)
-> +#define page_to_inode(page)	(BTRFS_I((page)->mapping->host))
-> +#define bio_to_fs_info(bio)	(page_to_fs_info(bio_first_page_all(bio)))
-> +
->   static inline void cond_wake_up(struct wait_queue_head *wq)
->   {
->   	/*
->

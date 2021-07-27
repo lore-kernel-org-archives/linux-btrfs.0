@@ -2,142 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.7 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C00CC432BE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:25:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 422FBC4320A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:25:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 194D5617E5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:25:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2B6B76187F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:25:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236331AbhG0KZJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Jul 2021 06:25:09 -0400
-Received: from mail.kernel.org ([198.145.29.99]:47420 "EHLO mail.kernel.org"
+        id S236264AbhG0KZV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Jul 2021 06:25:21 -0400
+Received: from mout.gmx.net ([212.227.17.20]:55239 "EHLO mout.gmx.net"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236186AbhG0KYs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jul 2021 06:24:48 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3F8CC61882
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 10:24:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1627381488;
-        bh=q6Wxsyz5iHTfrTlSvZ6w3uTROgvfLLAqXFO5j2Vslbo=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=ljh2G4cv2uRflj04y0amub4G8GP4c4kBuO8fg81a8CNvYtrJbl3Ulum1jL+oe6Nh5
-         UktfQAUZ7gLAdpVE7dakmnFsEOL0cCkgUAv7cmaOQAFzgliQzilLq2pDxiwjA4zG15
-         Gn7uYhIKgvFcFlHNBin8YD4O3w0L0obSdQ0cHMiqgNb6MA/zBmmDA+GOZT+/FjLMNm
-         /HlY0k6u3WicDxnbdj1fsOAF/4geaTtp5IPNS4ImQiidx44XhUOqeozf0ptiCZws0C
-         obn6hAADxaBd3GXsvMS+GqgL+LlyH9eal2J9zPZKl7cFPyPQOFgMXnpHVCBGp5RapM
-         7KOT1m17JQ0jA==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: fix lost inode on log replay after mix of fsync, rename and inode eviction
-Date:   Tue, 27 Jul 2021 11:24:43 +0100
-Message-Id: <237d613fab410aa98a0b9fcf6186c5368d561207.1627379796.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1627379796.git.fdmanana@suse.com>
-References: <cover.1627379796.git.fdmanana@suse.com>
+        id S236325AbhG0KZO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Jul 2021 06:25:14 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1627381510;
+        bh=kfM7XvERjnFrcvWTCCSV2kYaw33PGHc7cQpXoEBlQLo=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=ddGdBy6M9X/4MsETo6X3ZLJlHQe1Cs6lFzI/7hAJL9vgQ4/TRJZLcUxMaY4TNVko1
+         004QngpTFY7vz2IodFJ5mL78pVdUYacdnrfgVhKzaNJa134va8u7Sc8BLOeqdT7wEb
+         j67zrKHfzpqqLeFhWfCUtx5k3Gr/BCrdDk9jp0BM=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M4Jqb-1m839g3blZ-000Mzw; Tue, 27
+ Jul 2021 12:25:10 +0200
+Subject: Re: [PATCH] btrfs: remove the unused @start and @end parameter for
+ btrfs_run_delalloc_range()
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210727054132.164462-1-wqu@suse.com>
+ <20210727101509.GP5047@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <1c41b21e-4900-eab2-8f01-8e54245a570e@gmx.com>
+Date:   Tue, 27 Jul 2021 18:25:07 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.12.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20210727101509.GP5047@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:+8e1HhTcaVd8HAp1Nr2nFNkcduQmf06kLQhSPNeyVCdELnpLmKp
+ I0EYU2E5kMwMALczo+PJzASOFOz9HY74cFxi/bW7XkqFHw8IGrfoGmAY9UuhD8xiCj8j9RG
+ x10qASFwpm4HwIeRY74PRj75cTgaRUxKzpWrnrm6zMRL+QR32mD2WzUZ6cU3WmFdew0/JjV
+ cseSLt0mG74HgzVhv467w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:YQPjwmXSNSc=:G4GpA9Zke6Cf85iDF/NQUm
+ J/dhE/4Si780ApQiRnOT2WBgkYqz6BBhQEucT9sEYZ0GJCsqfiacQ4d7pqoJA8X2q2XNPONSN
+ lRdNVjyK15ruhZkIUSAgpcjFf44D26EmpEI9sXEJ52lSg8zOJZEhiqlA/BZfwonsZ8ibsySXf
+ heXxNOl/eqSiQcFl1dNnA9n0On10se3XGAWO4XXvKLT54c75uNV0YrVysiMF3MmsKAW6WQcG3
+ DfMrBsCACzr1yJYKrJBchOQ1368NOnkl0NBSGzwzQhKA4czphvlaTbrswwiLcrSIX07VodJZy
+ 4SLhRxdj2QLQo0gRzTpRk3vWQWGsy/LuzXoKcuwN2Qfl54iERwCPNurpYz6BTRTzVpeazvgSp
+ ksJuNg8nFyEjGejjuEDaLPHn+9FGjyptmSwUSp0nSrW9P6ytnGIdT4Wj62i4/sBsWSaIBfj4N
+ Q3Csfb5eBuIyaV3axhHNcpmYmsQ0lQozb67/jX9bsQg//u0Xoo4iCYEigoDlVI71VH0YSoB+W
+ 5Q8FOt/kAv/jbzew/zJb1NHh7IsDNroFcJkmolwphFiNnYaDoo3zZ1DVJG0lkKIXw2a8as0lA
+ nIjFN+fcKhZp+4VjYz8UBWyR96hfu7Ba86DtpUN1FmDmiAJ35AywzuQR2RoiMlQTOrOnIVV/C
+ ToDu0t7uYnoj8J3FOkbVDTLO76Io5Px1LLFSjhwOk4wptgVIwgXftW4B1dQ0/nu7n5hgC3nsN
+ kGS/ZIvrSnzi22SwcWcQQUbB6VrGW/lhbF+QR8WO4+/Sgqojayj6ia8/0E0sBdFBk/032/8uz
+ zeJT6maEaN6Tg6ZRHKQgOUmIQ+pQAOCTpOhpJanpDweiIZiTLlVD4rjmOJPigCN/wOWr2z+UR
+ FFZD5GkSgxBQQpJjMwauPbmrZazfAk0OvprULPsm8zEeO+tXid8YsRLO8AzA526pE62DsJVkS
+ 22KYh2HbRGzT527AR5OIr1ikbnPQ5gxPXyHgoCzN4Rjns3wdqWl18KKNoS31aLgZlZTd8jN6N
+ AAL4IsWAge99/KSv8ZBquADkn7OGJc9MKA9BhK5ii0W2voBmlit9CEYsByQkSEd1bmUZB5P7l
+ 9+nXNgkwShDE/d4YKl9qJaZoWvFYmlsYJJelyhbLHjvkW0lNUSgy7+wgA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
 
-When checking if we need to log the new name of a renamed inode, we are
-checking if the inode and its parent inode have been logged before, and if
-not we don't log the new name. The check however is buggy, as it directly
-compares the logged_trans field of the inodes versus the ID of the current
-transaction. The problem is that logged_trans is a transient field, only
-stored in memory and never persisted in the inode item, so if an inode
-was logged before, evicted and reloaded, its logged_trans field is set to
-a value of 0, meaning the check will return false and the new name of the
-renamed inode is not logged. If the old parent directory was previously
-fsynced and we deleted the logged directory entries corresponding to the
-old name, we end up with a log that when replayed will delete the renamed
-inode.
 
-The following example triggers the problem:
+On 2021/7/27 =E4=B8=8B=E5=8D=886:15, David Sterba wrote:
+> On Tue, Jul 27, 2021 at 01:41:32PM +0800, Qu Wenruo wrote:
+>> Since commit d75855b4518b ("btrfs: Remove
+>> extent_io_ops::writepage_start_hook") removes the writepage_start_hook(=
+)
+>> and added btrfs_writepage_cow_fixup() function, there is no need to
+>> follow the old hook parameters.
+>>
+>> This patch just remove the @start and @end hook, since currently the
+>> fixup check is full page check, it doesn't need @start and @end hook.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>
+> Then at least start can be removed from __extent_writepage_io too with
+> the following
+>
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3828,9 +3828,8 @@ static noinline_for_stack int __extent_writepage_i=
+o(struct btrfs_inode *inode,
+>                                   int *nr_ret)
+>   {
+>          struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
+> -       u64 start =3D page_offset(page);
+> -       u64 end =3D start + PAGE_SIZE - 1;
+> -       u64 cur =3D start;
+> +       u64 cur =3D page_offset(page);
+> +       u64 end =3D cur + PAGE_SIZE - 1;
+>          u64 extent_offset;
+>          u64 block_start;
+>          struct extent_map *em;
+> ---
+>
+> There's no warning because start is set and used.
+>
+Awesome finding!
 
-  $ mkfs.btrfs -f /dev/sdc
-  $ mount /dev/sdc /mnt
+Will update the patch to also include this one.
 
-  $ mkdir /mnt/A
-  $ mkdir /mnt/B
-  $ echo -n "hello world" > /mnt/A/foo
-
-  $ sync
-
-  # Add some new file to A and fsync directory A.
-  $ touch /mnt/A/bar
-  $ xfs_io -c "fsync" /mnt/A
-
-  # Now trigger inode eviction. We are only interested in triggering
-  # eviction for the inode of directory A.
-  $ echo 2 > /proc/sys/vm/drop_caches
-
-  # Move foo from directory A to directory B.
-  # This deletes the directory entries for foo in A from the log, and
-  # does not add the new name for foo in directory B to the log, because
-  # logged_trans of A is 0, which is less than the current transaction ID.
-  $ mv /mnt/A/foo /mnt/B/foo
-
-  # Now make an fsync to anything except A, B or any file inside them,
-  # like for example create a file at the root directory and fsync this
-  # new file. This syncs the log that contains all the changes done by
-  # previous rename operation.
-  $ touch /mnt/baz
-  $ xfs_io -c "fsync" /mnt/baz
-
-  <power fail>
-
-  # Mount the filesystem and replay the log.
-  $ mount /dev/sdc /mnt
-
-  # Check the filesystem content.
-  $ ls -1R /mnt
-  /mnt/:
-  A
-  B
-  baz
-
-  /mnt/A:
-  bar
-
-  /mnt/B:
-  $
-
-  # File foo is gone, it's neither in A/ nor in B/.
-
-Fix this by using the inode_logged() helper at btrfs_log_new_name(), which
-safely checks if an inode was logged before in the current transaction.
-
-A test case for fstests will follow soon.
-
-CC: stable@vger.kernel.org # 4.14+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c2ebe700d6e2..8dde5c08a48f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -6536,8 +6536,8 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 	 * if this inode hasn't been logged and directory we're renaming it
- 	 * from hasn't been logged, we don't need to log it
- 	 */
--	if (inode->logged_trans < trans->transid &&
--	    (!old_dir || old_dir->logged_trans < trans->transid))
-+	if (!inode_logged(trans, inode) &&
-+	    (!old_dir || !inode_logged(trans, old_dir)))
- 		return;
- 
- 	/*
--- 
-2.28.0
-
+Thanks,
+Qu

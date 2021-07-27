@@ -2,97 +2,67 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.7 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30AA8C4338F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:17:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF800C4338F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:24:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0E24C615A6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:17:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B76AB617E5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 10:24:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236140AbhG0KRy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Jul 2021 06:17:54 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:37602 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236098AbhG0KRy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jul 2021 06:17:54 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id C913422186;
-        Tue, 27 Jul 2021 10:17:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1627381073;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=4mcrNqb+b2oF2YjDIVV+R4msZXTUJTbehNMzziO55Bk=;
-        b=HspGhS1uKy6rIK6nsFLMqtGDLRlnvmNXj7+zDpvqgUdTxWy8kDUaksaNSfDJtLBAnggMeo
-        RCDwKMSTPbJL4I3vIoa4xsfasLfTifvr2+UCeWs37/c1PWcaK9BdlxiTk5UAWYMBbQp+/X
-        ySVZ2qsOMNXLGk4XqZXp5X+lZ3xh4DQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1627381073;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=4mcrNqb+b2oF2YjDIVV+R4msZXTUJTbehNMzziO55Bk=;
-        b=N9coNHNAS6df1nT34IDY75SHlzzkzfuEYp1Laq1aKhpxri5Rn7cQAz3aQaZMdlkk+dU8Mz
-        0Cfyxh95uCgWBQCw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id C2CFFA3B84;
-        Tue, 27 Jul 2021 10:17:53 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 75204DA8CC; Tue, 27 Jul 2021 12:15:09 +0200 (CEST)
-Date:   Tue, 27 Jul 2021 12:15:09 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove the unused @start and @end parameter for
- btrfs_run_delalloc_range()
-Message-ID: <20210727101509.GP5047@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210727054132.164462-1-wqu@suse.com>
+        id S236303AbhG0KYx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Jul 2021 06:24:53 -0400
+Received: from mail.kernel.org ([198.145.29.99]:47398 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S236280AbhG0KYr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 27 Jul 2021 06:24:47 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 74949619BB
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 10:24:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1627381487;
+        bh=1+g4QRp3uzQNzhHnAW5PaxoRp1WyYKxz6xFMrAJNalo=;
+        h=From:To:Subject:Date:From;
+        b=u3oa5asBkkjm63dEjwNYR6lx0DQTuDdozOSdaVkHSPVqrGxvTNNAI58xAco12+/VA
+         fhgF7JYYqbnPF6+mgeJhlAAexlxqR8Sp0bQ1mL3Wh/bnJBNF/39XOqEwKerieclSwn
+         XmF1k+KOlVJ+HGHOqAxG18SQDtYEvr9ly7xGG5phn7b7//YdT2TwXbnetduoUE1lFC
+         ay3KhcH7Mxesu7bvfr8IEaSWpCFHd+X9pUYbyMX9ojsdItJFZ5zkUYP/g+GfL0NVNb
+         aLebErzsKLiTd8kQIDY4jxXjOqnpTNTPN6fD1veqVhZUMSEQNhxQZGKTcfAL/IvTOJ
+         GoJnDVIRtwvPA==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/3] btrfs: fsync changes, a bug fix and a couple improvements
+Date:   Tue, 27 Jul 2021 11:24:42 +0100
+Message-Id: <cover.1627379796.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210727054132.164462-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jul 27, 2021 at 01:41:32PM +0800, Qu Wenruo wrote:
-> Since commit d75855b4518b ("btrfs: Remove
-> extent_io_ops::writepage_start_hook") removes the writepage_start_hook()
-> and added btrfs_writepage_cow_fixup() function, there is no need to
-> follow the old hook parameters.
-> 
-> This patch just remove the @start and @end hook, since currently the
-> fixup check is full page check, it doesn't need @start and @end hook.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Then at least start can be removed from __extent_writepage_io too with
-the following
+The first patch in the series fixes a bug where a directory fsync, following
+by inode eviction, followed by renaming a file and syncing the log results
+in losing a file if a power failure happens and the log is replayed.
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3828,9 +3828,8 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
-                                 int *nr_ret)
- {
-        struct btrfs_fs_info *fs_info = inode->root->fs_info;
--       u64 start = page_offset(page);
--       u64 end = start + PAGE_SIZE - 1;
--       u64 cur = start;
-+       u64 cur = page_offset(page);
-+       u64 end = cur + PAGE_SIZE - 1;
-        u64 extent_offset;
-        u64 block_start;
-        struct extent_map *em;
----
+The remaining two changes are independent, and are about avoiding unnecessary
+work during operations that need to check or modify the log (renames, adding
+a hard link, unlinks) and making renames hold log commits for a shorter
+period.
 
-There's no warning because start is set and used.
+Filipe Manana (3):
+  btrfs: fix lost inode on log replay after mix of fsync, rename and inode eviction
+  btrfs: eliminate some false positives when checking if inode was logged
+  btrfs: do not pin logs too early during renames
+
+ fs/btrfs/inode.c    | 48 +++++++++++++++++++++++++++++++++++++++------
+ fs/btrfs/tree-log.c | 29 ++++++++++++++++-----------
+ 2 files changed, 60 insertions(+), 17 deletions(-)
+
+-- 
+2.28.0
+

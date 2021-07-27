@@ -2,65 +2,65 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA725C432BE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:03:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D05BC4338F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:03:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C9F1F60FA0
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:03:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 386AC60F6E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:03:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232511AbhG0VDv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S231719AbhG0VDv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 27 Jul 2021 17:03:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54060 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232057AbhG0VDq (ORCPT
+        with ESMTP id S232306AbhG0VDq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 27 Jul 2021 17:03:46 -0400
-Received: from mail-qv1-xf29.google.com (mail-qv1-xf29.google.com [IPv6:2607:f8b0:4864:20::f29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD570C08EAEC
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 14:01:27 -0700 (PDT)
-Received: by mail-qv1-xf29.google.com with SMTP id d3so430800qvq.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 14:01:27 -0700 (PDT)
+Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5634DC08EAF4
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 14:01:32 -0700 (PDT)
+Received: by mail-qt1-x82c.google.com with SMTP id d2so10606766qto.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 14:01:32 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=5rMIw2iXQ+ZslafDm4rxX6vuabpT8K8FLSsrZItpAlo=;
-        b=ni2mvTyBjhw50tNkDG1KoQur+Girhf+7kSu+940UGb+qHBJvMeFaM4/yVSfaaGSWUH
-         WeYrf71mm50QV9dHuOGq9NGIIBwGljo0HNhMNHvY7uMW4ht//25h2iBzcGmgHqSHco5O
-         fUnnFGc09+15N/tlY3gLxQY61dIDphZWULUTEtw4U7LsRBguscZLIeqWbooZ7wpmlqzJ
-         sHip0LlzL+AXnxDzOlyrtCacGpibSzunz9sS1IlDGXW5SuCnYVd0EOB0ezFPn10jFONz
-         tVk8y/waGoXGkdhzOIIcY274tv9/sYuIE8acftzrtHeI+Gu8gY08Pkvtvre7bDO3fzhB
-         c8QQ==
+        bh=2wRRI6yAObgb7kEWDxwxrtz55hTG6kt2Wi+5lMlpdAo=;
+        b=sg4HVxHmdlHy2Af4iyihe8hjRy+9MLmDGGzrUV5EmEZXuV4LWq3a1DC73JJZcjIxrW
+         c5tIihifTn+Cq/vQs7T58MMRn5qXrVpNZajN40NqzgGad7y1HhDvrmLEs7Q5QYDKyfF+
+         uL03GccfEKSo2pOE3n95wyHabMAUdY69N0w2Q276wLAinW6IBBZ8YqQw4Iq8Xol0R+Nh
+         S4SDfjFi3/ExaQgAwLVoVpkHtWy6utJkfc6sZVIboOhQL5c1Frlrfgn2EjaqMOSsJjZC
+         DvqPHMn8b3AtrTRAaQm18wACHUVcdFxlODgfnXXkR/z4oTT+JkwLXn8qWK5u9Nb+FriK
+         QfVg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=5rMIw2iXQ+ZslafDm4rxX6vuabpT8K8FLSsrZItpAlo=;
-        b=AFUv2SqpLTZ7iCoeqWfqcZfv7Kvx3LsRLmw1JYW1C2v/4dNtO4eUxLDYoZjGa3D+u8
-         LlyHWrA1YZDYFqldwph1OK9L/FFChib6Y4KU/9sIIMcBNctK48ie4TcVg0X90GTv7aPc
-         U+SPIZuDB7/M3G3NJ+SJhY2B6Je3tbmW4FG1mQo37Wdodv8YFH5rF5beEhVhfU5vF8Ul
-         NEfHrzkEIVi0PiwNSjpcWnHthkcnAzvTbZyVJ+gZI0Ca4/yUUdGuYN1X2x2jV/ce3DTL
-         QPvwhTk4l/+gxGm4T2dQc7ql93cFWcxKe5Omld/cVVYnS6Q2866OzaeBxbpOi9hEpvaf
-         0jZw==
-X-Gm-Message-State: AOAM531BvueusjxmRZ3gnnY1g7vYyUGV3kTFeF43Xi8DtqpuDrcsVUB5
-        zZDlNm69IUwKuqAPAdEqK4cj3NaDSnl+32ED
-X-Google-Smtp-Source: ABdhPJzRy+V3aKFomsCVdqvTE77EZ+yYbvg3creSjCDsNhaQ/KvCBzTBHOZ77+Qe4CE3+D3pTm4nJg==
-X-Received: by 2002:a05:6214:21ec:: with SMTP id p12mr7731958qvj.8.1627419686723;
-        Tue, 27 Jul 2021 14:01:26 -0700 (PDT)
+        bh=2wRRI6yAObgb7kEWDxwxrtz55hTG6kt2Wi+5lMlpdAo=;
+        b=EOlodWmhVnvFRpCzBz3VuR0QmCUI6HSlfynxC0XoRtyU6ny1rt78F/iBOlnMkxJI5W
+         rijBv1CsVTeoImRcWoGspvaIS07Ev1Vh3fFVI0/BAeh9ZsbBNICssDA0xaYfJBPhDhnU
+         NPg/mx6bOraA6PQLvdGBpQdOmZOYjx54j38/h0c5UblnipOUTHyBj2iCr01Xwy5Nqcoc
+         rmCpzBeD38YiEBslguMvjMHKKGhzuzMxsgbwHaKRSPaasXpJlzXZ78i4QXclm2scQPas
+         QNbdLySsKY++NRIoH3XFwZcekIM7nu2aAWOjr14YGfspQPQ2DhPpKt74vmKJRB4BXG1C
+         gvig==
+X-Gm-Message-State: AOAM533uBE07y8h0PlCNDNmehz1bP7uMjQv7H5RlOqYKNwK2kbAuNUKS
+        Cgs1ouFa4u0QaXz6O/kkElAprdYmbUuu5/md
+X-Google-Smtp-Source: ABdhPJwcc2h4oM2Fapm8natz4k6WLepoErAOL7c5v02giyl79i9PomIk4Yr8NAAYi/KCkxPPCKZa/Q==
+X-Received: by 2002:ac8:5546:: with SMTP id o6mr21523208qtr.69.1627419691139;
+        Tue, 27 Jul 2021 14:01:31 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id l11sm2335077qke.23.2021.07.27.14.01.26
+        by smtp.gmail.com with ESMTPSA id a3sm1819682qtx.56.2021.07.27.14.01.30
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 27 Jul 2021 14:01:26 -0700 (PDT)
+        Tue, 27 Jul 2021 14:01:30 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 4/7] btrfs: update the bdev time directly when closing
-Date:   Tue, 27 Jul 2021 17:01:16 -0400
-Message-Id: <7a02499fac5a53031b333ce58d84089c8ce9e329.1627419595.git.josef@toxicpanda.com>
+Subject: [PATCH v2 7/7] btrfs: do not take the device_list_mutex in clone_fs_devices
+Date:   Tue, 27 Jul 2021 17:01:19 -0400
+Message-Id: <c3eb810f0b0505757dd2733531c9338c99b8444a.1627419595.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1627419595.git.josef@toxicpanda.com>
 References: <cover.1627419595.git.josef@toxicpanda.com>
@@ -70,177 +70,172 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We update the ctime/mtime of a block device when we remove it so that
-blkid knows the device changed.  However we do this by re-opening the
-block device and calling filp_update_time.  This is more correct because
-it'll call the inode->i_op->update_time if it exists, but the block dev
-inodes do not do this.  Instead call generic_update_time() on the
-bd_inode in order to avoid the blkdev_open path and get rid of the
-following lockdep splat
+I got the following lockdep splat while testing seed devices
 
 ======================================================
 WARNING: possible circular locking dependency detected
-5.14.0-rc2+ #406 Not tainted
+5.14.0-rc2+ #409 Not tainted
 ------------------------------------------------------
-losetup/11596 is trying to acquire lock:
-ffff939640d2f538 ((wq_completion)loop0){+.+.}-{0:0}, at: flush_workqueue+0x67/0x5e0
+mount/34004 is trying to acquire lock:
+ffff9eaac48188e0 (&fs_devs->device_list_mutex){+.+.}-{3:3}, at: clone_fs_devices+0x4d/0x170
 
 but task is already holding lock:
-ffff939655510c68 (&lo->lo_mutex){+.+.}-{3:3}, at: __loop_clr_fd+0x41/0x660 [loop]
+ffff9eaac766d438 (btrfs-chunk-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x24/0x100
 
 which lock already depends on the new lock.
 
 the existing dependency chain (in reverse order) is:
 
--> #4 (&lo->lo_mutex){+.+.}-{3:3}:
-       __mutex_lock+0x7d/0x750
-       lo_open+0x28/0x60 [loop]
-       blkdev_get_whole+0x25/0xf0
-       blkdev_get_by_dev.part.0+0x168/0x3c0
-       blkdev_open+0xd2/0xe0
-       do_dentry_open+0x161/0x390
-       path_openat+0x3cc/0xa20
-       do_filp_open+0x96/0x120
-       do_sys_openat2+0x7b/0x130
-       __x64_sys_openat+0x46/0x70
-       do_syscall_64+0x38/0x90
-       entry_SYSCALL_64_after_hwframe+0x44/0xae
-
--> #3 (&disk->open_mutex){+.+.}-{3:3}:
-       __mutex_lock+0x7d/0x750
-       blkdev_get_by_dev.part.0+0x56/0x3c0
-       blkdev_open+0xd2/0xe0
-       do_dentry_open+0x161/0x390
-       path_openat+0x3cc/0xa20
-       do_filp_open+0x96/0x120
-       file_open_name+0xc7/0x170
-       filp_open+0x2c/0x50
-       btrfs_scratch_superblocks.part.0+0x10f/0x170
-       btrfs_rm_device.cold+0xe8/0xed
-       btrfs_ioctl+0x2a31/0x2e70
+-> #2 (btrfs-chunk-00){++++}-{3:3}:
+       down_read_nested+0x46/0x60
+       __btrfs_tree_read_lock+0x24/0x100
+       btrfs_read_lock_root_node+0x31/0x40
+       btrfs_search_slot+0x480/0x930
+       btrfs_update_device+0x63/0x180
+       btrfs_chunk_alloc_add_chunk_item+0xdc/0x3a0
+       btrfs_chunk_alloc+0x281/0x540
+       find_free_extent+0x10ca/0x1790
+       btrfs_reserve_extent+0xbf/0x1d0
+       btrfs_alloc_tree_block+0xb1/0x320
+       __btrfs_cow_block+0x136/0x5f0
+       btrfs_cow_block+0x107/0x210
+       btrfs_search_slot+0x56a/0x930
+       btrfs_truncate_inode_items+0x187/0xef0
+       btrfs_truncate_free_space_cache+0x11c/0x210
+       delete_block_group_cache+0x6f/0xb0
+       btrfs_relocate_block_group+0xf8/0x350
+       btrfs_relocate_chunk+0x38/0x120
+       btrfs_balance+0x79b/0xf00
+       btrfs_ioctl_balance+0x327/0x400
        __x64_sys_ioctl+0x80/0xb0
        do_syscall_64+0x38/0x90
        entry_SYSCALL_64_after_hwframe+0x44/0xae
 
--> #2 (sb_writers#12){.+.+}-{0:0}:
-       lo_write_bvec+0xc2/0x240 [loop]
-       loop_process_work+0x238/0xd00 [loop]
-       process_one_work+0x26b/0x560
-       worker_thread+0x55/0x3c0
-       kthread+0x140/0x160
-       ret_from_fork+0x1f/0x30
+-> #1 (&fs_info->chunk_mutex){+.+.}-{3:3}:
+       __mutex_lock+0x7d/0x750
+       btrfs_init_new_device+0x6d6/0x1540
+       btrfs_ioctl+0x1b12/0x2d30
+       __x64_sys_ioctl+0x80/0xb0
+       do_syscall_64+0x38/0x90
+       entry_SYSCALL_64_after_hwframe+0x44/0xae
 
--> #1 ((work_completion)(&lo->rootcg_work)){+.+.}-{0:0}:
-       process_one_work+0x245/0x560
-       worker_thread+0x55/0x3c0
-       kthread+0x140/0x160
-       ret_from_fork+0x1f/0x30
-
--> #0 ((wq_completion)loop0){+.+.}-{0:0}:
+-> #0 (&fs_devs->device_list_mutex){+.+.}-{3:3}:
        __lock_acquire+0x10ea/0x1d90
        lock_acquire+0xb5/0x2b0
-       flush_workqueue+0x91/0x5e0
-       drain_workqueue+0xa0/0x110
-       destroy_workqueue+0x36/0x250
-       __loop_clr_fd+0x9a/0x660 [loop]
-       block_ioctl+0x3f/0x50
-       __x64_sys_ioctl+0x80/0xb0
+       __mutex_lock+0x7d/0x750
+       clone_fs_devices+0x4d/0x170
+       btrfs_read_chunk_tree+0x32f/0x800
+       open_ctree+0xae3/0x16f0
+       btrfs_mount_root.cold+0x12/0xea
+       legacy_get_tree+0x2d/0x50
+       vfs_get_tree+0x25/0xc0
+       vfs_kern_mount.part.0+0x71/0xb0
+       btrfs_mount+0x10d/0x380
+       legacy_get_tree+0x2d/0x50
+       vfs_get_tree+0x25/0xc0
+       path_mount+0x433/0xb60
+       __x64_sys_mount+0xe3/0x120
        do_syscall_64+0x38/0x90
        entry_SYSCALL_64_after_hwframe+0x44/0xae
 
 other info that might help us debug this:
 
 Chain exists of:
-  (wq_completion)loop0 --> &disk->open_mutex --> &lo->lo_mutex
+  &fs_devs->device_list_mutex --> &fs_info->chunk_mutex --> btrfs-chunk-00
 
  Possible unsafe locking scenario:
 
        CPU0                    CPU1
        ----                    ----
-  lock(&lo->lo_mutex);
-                               lock(&disk->open_mutex);
-                               lock(&lo->lo_mutex);
-  lock((wq_completion)loop0);
+  lock(btrfs-chunk-00);
+                               lock(&fs_info->chunk_mutex);
+                               lock(btrfs-chunk-00);
+  lock(&fs_devs->device_list_mutex);
 
  *** DEADLOCK ***
 
-1 lock held by losetup/11596:
- #0: ffff939655510c68 (&lo->lo_mutex){+.+.}-{3:3}, at: __loop_clr_fd+0x41/0x660 [loop]
+3 locks held by mount/34004:
+ #0: ffff9eaad75c00e0 (&type->s_umount_key#47/1){+.+.}-{3:3}, at: alloc_super+0xd5/0x3b0
+ #1: ffffffffbd2dcf08 (uuid_mutex){+.+.}-{3:3}, at: btrfs_read_chunk_tree+0x59/0x800
+ #2: ffff9eaac766d438 (btrfs-chunk-00){++++}-{3:3}, at: __btrfs_tree_read_lock+0x24/0x100
 
 stack backtrace:
-CPU: 1 PID: 11596 Comm: losetup Not tainted 5.14.0-rc2+ #406
+CPU: 0 PID: 34004 Comm: mount Not tainted 5.14.0-rc2+ #409
 Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.13.0-2.fc32 04/01/2014
 Call Trace:
  dump_stack_lvl+0x57/0x72
  check_noncircular+0xcf/0xf0
- ? stack_trace_save+0x3b/0x50
  __lock_acquire+0x10ea/0x1d90
  lock_acquire+0xb5/0x2b0
- ? flush_workqueue+0x67/0x5e0
+ ? clone_fs_devices+0x4d/0x170
+ ? lock_is_held_type+0xa5/0x120
+ __mutex_lock+0x7d/0x750
+ ? clone_fs_devices+0x4d/0x170
+ ? clone_fs_devices+0x4d/0x170
  ? lockdep_init_map_type+0x47/0x220
- flush_workqueue+0x91/0x5e0
- ? flush_workqueue+0x67/0x5e0
- ? verify_cpu+0xf0/0x100
- drain_workqueue+0xa0/0x110
- destroy_workqueue+0x36/0x250
- __loop_clr_fd+0x9a/0x660 [loop]
- ? blkdev_ioctl+0x8d/0x2a0
- block_ioctl+0x3f/0x50
- __x64_sys_ioctl+0x80/0xb0
+ ? debug_mutex_init+0x33/0x40
+ clone_fs_devices+0x4d/0x170
+ ? lock_is_held_type+0xa5/0x120
+ btrfs_read_chunk_tree+0x32f/0x800
+ ? find_held_lock+0x2b/0x80
+ open_ctree+0xae3/0x16f0
+ btrfs_mount_root.cold+0x12/0xea
+ ? rcu_read_lock_sched_held+0x3f/0x80
+ ? kfree+0x1f6/0x410
+ legacy_get_tree+0x2d/0x50
+ vfs_get_tree+0x25/0xc0
+ vfs_kern_mount.part.0+0x71/0xb0
+ btrfs_mount+0x10d/0x380
+ ? kfree+0x1f6/0x410
+ legacy_get_tree+0x2d/0x50
+ vfs_get_tree+0x25/0xc0
+ path_mount+0x433/0xb60
+ __x64_sys_mount+0xe3/0x120
  do_syscall_64+0x38/0x90
  entry_SYSCALL_64_after_hwframe+0x44/0xae
+RIP: 0033:0x7f6cbcd9788e
+
+It is because we take the ->device_list_mutex in this path while holding
+onto the tree locks in the chunk root.  However we do not need the lock
+here, because we're already holding onto the uuid_mutex, and in fact
+have removed all other uses of the ->device_list_mutex in this path
+because of this.  Remove the ->device_list_mutex locking here, add an
+assert for the uuid_mutex and the problem is fixed.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 18 ++++++++++--------
- 1 file changed, 10 insertions(+), 8 deletions(-)
+ fs/btrfs/volumes.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index bf2449cdb2ab..3ab6c78e6eb2 100644
+index f622e93a6ff1..bdfcc35335c3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1882,15 +1882,17 @@ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,
-  * Function to update ctime/mtime for a given device path.
-  * Mainly used for ctime/mtime based probe like libblkid.
-  */
--static void update_dev_time(const char *path_name)
-+static void update_dev_time(struct block_device *bdev)
- {
--	struct file *filp;
-+	struct inode *inode = bdev->bd_inode;
-+	struct timespec64 now;
+@@ -1000,11 +1000,12 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+ 	struct btrfs_device *orig_dev;
+ 	int ret = 0;
  
--	filp = filp_open(path_name, O_RDWR, 0);
--	if (IS_ERR(filp))
-+	/* Shouldn't happen but just in case. */
-+	if (!inode)
- 		return;
--	file_update_time(filp);
--	filp_close(filp, NULL);
++	lockdep_assert_held(&uuid_mutex);
 +
-+	now = current_time(inode);
-+	generic_update_time(inode, &now, S_MTIME|S_CTIME);
+ 	fs_devices = alloc_fs_devices(orig->fsid, NULL);
+ 	if (IS_ERR(fs_devices))
+ 		return fs_devices;
+ 
+-	mutex_lock(&orig->device_list_mutex);
+ 	fs_devices->total_devices = orig->total_devices;
+ 
+ 	list_for_each_entry(orig_dev, &orig->devices, dev_list) {
+@@ -1036,10 +1037,8 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+ 		device->fs_devices = fs_devices;
+ 		fs_devices->num_devices++;
+ 	}
+-	mutex_unlock(&orig->device_list_mutex);
+ 	return fs_devices;
+ error:
+-	mutex_unlock(&orig->device_list_mutex);
+ 	free_fs_devices(fs_devices);
+ 	return ERR_PTR(ret);
  }
- 
- static int btrfs_rm_dev_item(struct btrfs_device *device)
-@@ -2070,7 +2072,7 @@ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
- 	btrfs_kobject_uevent(bdev, KOBJ_CHANGE);
- 
- 	/* Update ctime/mtime for device path for libblkid */
--	update_dev_time(device_path);
-+	update_dev_time(bdev);
- }
- 
- int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
-@@ -2711,7 +2713,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	btrfs_forget_devices(device_path);
- 
- 	/* Update ctime/mtime for blkid or udev */
--	update_dev_time(device_path);
-+	update_dev_time(bdev);
- 
- 	return ret;
- 
 -- 
 2.26.3
 

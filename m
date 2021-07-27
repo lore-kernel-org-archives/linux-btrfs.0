@@ -2,233 +2,95 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79A21C43216
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:03:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9862CC432BE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:19:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5CCC560F6D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:03:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 834CA60F6E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 27 Jul 2021 21:19:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232730AbhG0VD4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 27 Jul 2021 17:03:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54054 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232005AbhG0VDp (ORCPT
+        id S232643AbhG0VTZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 27 Jul 2021 17:19:25 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:45956 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233774AbhG0VRr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 27 Jul 2021 17:03:45 -0400
-Received: from mail-qk1-x72f.google.com (mail-qk1-x72f.google.com [IPv6:2607:f8b0:4864:20::72f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C839DC08EAF0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 14:01:30 -0700 (PDT)
-Received: by mail-qk1-x72f.google.com with SMTP id az7so139744qkb.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 14:01:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=yZxDUrf5YWF8xmdZRZwfW5IfNetp3a9EI1uOanSCoGY=;
-        b=MKyTRBw7TRX2M5/S4IQfDS3OmHqcyJ6M0V6nfUbMrNyXVUABy1OOfQZz3G7uZF+jbK
-         3eS6YVYMf4yCZ0ylcmfzDUTgqPfh8HWn9YQ90QH5CAeyoUZLAsZq9jWBT7ETpB9paxH+
-         RCT0lWeXj3j5nHvLQ4hWCl7q53m/giylhEFE9ZcFcsgt7S0rsomJOpJS+IPfRelAVg+u
-         oZ3Rway76Y0+oX2/g1aUS+SrZP9o2Bl5RKTtdC9gkmGhbPFaegJRvgoLp2zXbS0Qphek
-         iCx5XFNPaECjl7NVCr38Ipw1d5FzAv9c3lIhy9VwjvXqVo60E4OiCrK99YKNpxehXe0Z
-         S5nw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=yZxDUrf5YWF8xmdZRZwfW5IfNetp3a9EI1uOanSCoGY=;
-        b=blb73VMIZwVgpnF222Sz21NTuaosy9xAmftTYcgiBK1TZ5Bb9BqQLZF9LKemuCQgvC
-         Rw9OonN2ywpfu7YejKFgt2F+N4uuQ+Xwg0ArYWhc1c3IrarfYU6JLAFmjk4ZkfV5/bxw
-         WjxrR1QixIVKK+BOyOdS3Excjc0J12/vrx/lR33ShGGH9YVzgs6YyxVH7vq9H2m5eZcw
-         zYpfYWkXaNaE5UgI0II18oOmd5f2EVjHUgNd6gs55KE7rfRg5M6QytTUtzYb8A0ed6pr
-         YHn0nSOKKqar+QrVyOJzP3Dy5WFHldTQqOnSgRVGjkXOJWsfIPPNQ48TXuHl223uxsew
-         jE/w==
-X-Gm-Message-State: AOAM532AY1OksPPfbeslVeASW8lffwk3BuNB5UJRXQiC0d+byA/cAAHO
-        vmDxGq63hN8M6GsQRGjQuFZdEOo5pP+ddrlg
-X-Google-Smtp-Source: ABdhPJwh+htlJlZTCkQW0u7Po2HcppcWmiICOkYXSnzesqp/P9vK5pHtM6l0akUuafGLDhaFs4eSqA==
-X-Received: by 2002:ae9:e105:: with SMTP id g5mr24041237qkm.322.1627419689589;
-        Tue, 27 Jul 2021 14:01:29 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id s3sm1936285qtn.4.2021.07.27.14.01.28
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 27 Jul 2021 14:01:29 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 6/7] btrfs: unify common code for the v1 and v2 versions of device remove
-Date:   Tue, 27 Jul 2021 17:01:18 -0400
-Message-Id: <2107b5db383aa3dfb54a30e5b0de015be1ff6d1f.1627419595.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1627419595.git.josef@toxicpanda.com>
-References: <cover.1627419595.git.josef@toxicpanda.com>
+        Tue, 27 Jul 2021 17:17:47 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id C7A101FD62
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 21:17:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1627420663; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=smBE+TPvsN+SCKMCucEZRKrFrj+CVP/2SA6v6E9N+EQ=;
+        b=Zl94nG9q4mWinYRezblWVotahBHr4LWPjJeQBYf8NRF6JI9JEJO6F5TrUUez2oJrd0B1h4
+        ZtSrg4fYJottA4YVtXZdceYl7AMgWmJqavfkHHm6KsulqkoAZN/IkKSYiOxu0aQYMzmPpH
+        4xy8OlJAyv6woRCGwJRKpK26Dn5Y/mk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1627420663;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=smBE+TPvsN+SCKMCucEZRKrFrj+CVP/2SA6v6E9N+EQ=;
+        b=MzIJ5hmOzdgkgtMFWxeGH4NOeNHXiT9sdMcOVrX2s9ta5T4fzliNcrt8GbWMHYi3hqDV5J
+        te0+41bWKj+emGAw==
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 630B9133DE
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 21:17:43 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id KH3tC/d3AGFmdQAAGKfGzw
+        (envelope-from <rgoldwyn@suse.de>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Jul 2021 21:17:43 +0000
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/7] Allocate structures on stack instead of kmalloc()
+Date:   Tue, 27 Jul 2021 16:17:24 -0500
+Message-Id: <20210727211731.23394-1-rgoldwyn@suse.de>
+X-Mailer: git-send-email 2.32.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These things share a lot of common code, v2 simply allows you to specify
-devid.  Abstract out this common code and use the helper by both the v1
-and v2 interfaces to save us some lines of code.
+Here are some structs which can be converted to allocation on stack in order
+to save on post-checks on kmalloc() and kfree() each of them.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/ioctl.c | 99 +++++++++++++++++++-----------------------------
- 1 file changed, 38 insertions(+), 61 deletions(-)
+Sizes of the structures are also in the commit message in case you feel they
+are too bit to be allocated on stack.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index fabbfdfa56f5..e3a7e8544609 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3200,15 +3200,14 @@ static long btrfs_ioctl_add_dev(struct btrfs_fs_info *fs_info, void __user *arg)
- 	return ret;
- }
- 
--static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
-+static long btrfs_do_device_removal(struct file *file, const char *path,
-+				    u64 devid, bool cancel)
- {
- 	struct inode *inode = file_inode(file);
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_ioctl_vol_args_v2 *vol_args;
- 	struct block_device *bdev = NULL;
- 	fmode_t mode;
- 	int ret;
--	bool cancel = false;
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -3217,11 +3216,37 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 	if (ret)
- 		return ret;
- 
--	vol_args = memdup_user(arg, sizeof(*vol_args));
--	if (IS_ERR(vol_args)) {
--		ret = PTR_ERR(vol_args);
--		goto err_drop;
-+	ret = exclop_start_or_cancel_reloc(fs_info, BTRFS_EXCLOP_DEV_REMOVE,
-+					   cancel);
-+	if (ret)
-+		goto out;
-+
-+	/* Exclusive operation is now claimed */
-+	ret = btrfs_rm_device(fs_info, path, devid, &bdev, &mode);
-+	btrfs_exclop_finish(fs_info);
-+
-+	if (!ret) {
-+		if (path)
-+			btrfs_info(fs_info, "device deleted: %s", path);
-+		else
-+			btrfs_info(fs_info, "device deleted: id %llu", devid);
- 	}
-+out:
-+	mnt_drop_write_file(file);
-+	if (bdev)
-+		blkdev_put(bdev, mode);
-+	return ret;
-+}
-+
-+static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
-+{
-+	struct btrfs_ioctl_vol_args_v2 *vol_args;
-+	int ret = 0;
-+	bool cancel = false;
-+
-+	vol_args = memdup_user(arg, sizeof(*vol_args));
-+	if (IS_ERR(vol_args))
-+		return PTR_ERR(vol_args);
- 
- 	if (vol_args->flags & ~BTRFS_DEVICE_REMOVE_ARGS_MASK) {
- 		ret = -EOPNOTSUPP;
-@@ -3232,79 +3257,31 @@ static long btrfs_ioctl_rm_dev_v2(struct file *file, void __user *arg)
- 	    strcmp("cancel", vol_args->name) == 0)
- 		cancel = true;
- 
--	ret = exclop_start_or_cancel_reloc(fs_info, BTRFS_EXCLOP_DEV_REMOVE,
--					   cancel);
--	if (ret)
--		goto out;
--	/* Exclusive operation is now claimed */
--
- 	if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID)
--		ret = btrfs_rm_device(fs_info, NULL, vol_args->devid, &bdev,
--				      &mode);
-+		ret = btrfs_do_device_removal(file, NULL, vol_args->devid,
-+					      cancel);
- 	else
--		ret = btrfs_rm_device(fs_info, vol_args->name, 0, &bdev,
--				      &mode);
--
--	btrfs_exclop_finish(fs_info);
--
--	if (!ret) {
--		if (vol_args->flags & BTRFS_DEVICE_SPEC_BY_ID)
--			btrfs_info(fs_info, "device deleted: id %llu",
--					vol_args->devid);
--		else
--			btrfs_info(fs_info, "device deleted: %s",
--					vol_args->name);
--	}
-+		ret = btrfs_do_device_removal(file, vol_args->name, 0, cancel);
- out:
- 	kfree(vol_args);
--err_drop:
--	mnt_drop_write_file(file);
--	if (bdev)
--		blkdev_put(bdev, mode);
- 	return ret;
- }
- 
- static long btrfs_ioctl_rm_dev(struct file *file, void __user *arg)
- {
--	struct inode *inode = file_inode(file);
--	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_ioctl_vol_args *vol_args;
--	struct block_device *bdev = NULL;
--	fmode_t mode;
- 	int ret;
- 	bool cancel;
- 
--	if (!capable(CAP_SYS_ADMIN))
--		return -EPERM;
--
--	ret = mnt_want_write_file(file);
--	if (ret)
--		return ret;
--
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
--	if (IS_ERR(vol_args)) {
--		ret = PTR_ERR(vol_args);
--		goto out_drop_write;
--	}
-+	if (IS_ERR(vol_args))
-+		return PTR_ERR(vol_args);
- 	vol_args->name[BTRFS_PATH_NAME_MAX] = '\0';
- 	cancel = (strcmp("cancel", vol_args->name) == 0);
- 
--	ret = exclop_start_or_cancel_reloc(fs_info, BTRFS_EXCLOP_DEV_REMOVE,
--					   cancel);
--	if (ret == 0) {
--		ret = btrfs_rm_device(fs_info, vol_args->name, 0, &bdev,
--				      &mode);
--		if (!ret)
--			btrfs_info(fs_info, "disk deleted %s", vol_args->name);
--		btrfs_exclop_finish(fs_info);
--	}
-+	ret = btrfs_do_device_removal(file, vol_args->name, 0, cancel);
- 
- 	kfree(vol_args);
--out_drop_write:
--	mnt_drop_write_file(file);
--
--	if (bdev)
--		blkdev_put(bdev, mode);
- 	return ret;
- }
- 
--- 
-2.26.3
+There are two more structs in ioctl.c which can be converted, but
+I was not sure of them:
+
+1. In create_snapshot(), pending_snapshot can be converted. pending_snapshot
+   is used in the transaction.
+2. In btrfs_ioctl_set_received_subvol_32, args64 can be converted, but args32
+   cannot. All Pointers associated with memdup_user() can also be converted
+   by using copy_from_user() instead. This would include many more structs.
+
+Goldwyn Rodrigues (7):
+  btrfs: Allocate walk_control on stack
+  btrfs: Allocate file_ra_state on stack
+  btrfs: Allocate btrfs_ioctl_get_subvol_info_args on stack
+  btrfs: Allocate btrfs_ioctl_balance_args on stack
+  btrfs: Allocate btrfs_ioctl_quota_rescan_args on stack
+  btrfs: Allocate btrfs_ioctl_defrag_range_args on stack
+  btrfs: Alloc backref_ctx on stack
+
+ fs/btrfs/extent-tree.c      |  89 +++++++++++++-----------------
+ fs/btrfs/free-space-cache.c |  12 ++---
+ fs/btrfs/ioctl.c            | 105 ++++++++++++++----------------------
+ fs/btrfs/send.c             |  29 ++++------
+ 4 files changed, 89 insertions(+), 146 deletions(-)
+
 

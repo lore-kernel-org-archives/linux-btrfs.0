@@ -7,68 +7,123 @@ X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CF36C4338F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 12:52:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7AD1C4338F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 13:00:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DAE8560F9E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 12:52:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C60E860C41
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 13:00:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235136AbhG1Mw0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jul 2021 08:52:26 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:52388 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235130AbhG1MwZ (ORCPT
+        id S236073AbhG1NAx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jul 2021 09:00:53 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:43784 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235954AbhG1NAw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jul 2021 08:52:25 -0400
+        Wed, 28 Jul 2021 09:00:52 -0400
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 6742C22289;
-        Wed, 28 Jul 2021 12:52:23 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id 351D91FFAB;
+        Wed, 28 Jul 2021 13:00:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1627476743;
+        t=1627477250;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=oRqwjLY1lMsx5G7GBghoCJ1wbxI2ogqQgpF3xp29uJ4=;
-        b=PKfleePcsLW3LrHXGyfz7l3I5ijcdBctD3otSb9BGoYAnD7NuFztFyx/pUQvqbTSOuv3lh
-        K1RsN6iNxvIjj16m/agVPuzd24Dd4mdDPciL9QdRlr+poYHkFdFgvCbq34zPfrRfVbvTpi
-        oyvaSm+if0Y3izTqTNh7P6V1U4vbr7E=
+        bh=qBVxtrSmWVlOscO72s3n1kpnLDIq1UYxTJT1qArgmmQ=;
+        b=v9G2MRBI9ZC4oh0wXp76nkFZulbeIh/X9Kl1ZGYf/vBtLRwjYZPKCWMjGaRiT7QKYSZ90s
+        i2rYnube6FOkbpHqj9DPbp0cx+VKOZb1YjHEpJqCBf25YPC8FoasiJ5BPJ1X7OLwnWRPBA
+        sU8h+anD6jFn6PPXXnDbdwGz2vDQy+M=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1627476743;
+        s=susede2_ed25519; t=1627477250;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=oRqwjLY1lMsx5G7GBghoCJ1wbxI2ogqQgpF3xp29uJ4=;
-        b=QI0Tu6HLmW6Jcs0yD3R3kxqShG0VQ4V8kgLvUjCJbaHJCb31Ye946W1BOShezUnbWAMYoP
-        u17QoHeIZK6++PAw==
+        bh=qBVxtrSmWVlOscO72s3n1kpnLDIq1UYxTJT1qArgmmQ=;
+        b=+dVFHCK5TxbazeQB9uIkp8YvmgS+oT8ugRDKduJ54Ig3smLynu17XhzYkBjIKnruYW57R2
+        r6oB1pCP3NPKd9Bg==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 5F6A3A3B81;
-        Wed, 28 Jul 2021 12:52:23 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 1D3ACA3B93;
+        Wed, 28 Jul 2021 13:00:50 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 7DC48DA8A7; Wed, 28 Jul 2021 14:49:38 +0200 (CEST)
-Date:   Wed, 28 Jul 2021 14:49:38 +0200
+        id 49595DA8A7; Wed, 28 Jul 2021 14:58:05 +0200 (CEST)
+Date:   Wed, 28 Jul 2021 14:58:05 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: optimize check_raid_min_devices drop ret
-Message-ID: <20210728124938.GD5047@twin.jikos.cz>
+To:     Desmond Cheong Zhi Xi <desmondcheongzx@gmail.com>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        anand.jain@oracle.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, skhan@linuxfoundation.org,
+        gregkh@linuxfoundation.org,
+        linux-kernel-mentees@lists.linuxfoundation.org,
+        syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com
+Subject: Re: [PATCH v2] btrfs: fix rw device counting in
+ __btrfs_free_extra_devids
+Message-ID: <20210728125805.GE5047@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-References: <1523fbf731f23108f3b490600d1dbb1c9a6360fc.1627426829.git.anand.jain@oracle.com>
+Mail-Followup-To: dsterba@suse.cz,
+        Desmond Cheong Zhi Xi <desmondcheongzx@gmail.com>, clm@fb.com,
+        josef@toxicpanda.com, dsterba@suse.com, anand.jain@oracle.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        skhan@linuxfoundation.org, gregkh@linuxfoundation.org,
+        linux-kernel-mentees@lists.linuxfoundation.org,
+        syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com
+References: <20210727071303.113876-1-desmondcheongzx@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1523fbf731f23108f3b490600d1dbb1c9a6360fc.1627426829.git.anand.jain@oracle.com>
+In-Reply-To: <20210727071303.113876-1-desmondcheongzx@gmail.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 28, 2021 at 07:03:05AM +0800, Anand Jain wrote:
-> Function btrfs_check_raid_min_devices() returns error code from the enum
-> btrfs_err_code and it starts from 1. So there is no need to check if ret
-> is > 0. So drop this check and also drop the local variable ret.
+On Tue, Jul 27, 2021 at 03:13:03PM +0800, Desmond Cheong Zhi Xi wrote:
+> When removing a writeable device in __btrfs_free_extra_devids, the rw
+> device count should be decremented.
 > 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> This error was caught by Syzbot which reported a warning in
+> close_fs_devices because fs_devices->rw_devices was not 0 after
+> closing all devices. Here is the call trace that was observed:
+> 
+>   btrfs_mount_root():
+>     btrfs_scan_one_device():
+>       device_list_add();   <---------------- device added
+>     btrfs_open_devices():
+>       open_fs_devices():
+>         btrfs_open_one_device();   <-------- writable device opened,
+> 	                                     rw device count ++
+>     btrfs_fill_super():
+>       open_ctree():
+>         btrfs_free_extra_devids():
+> 	  __btrfs_free_extra_devids();  <--- writable device removed,
+> 	                              rw device count not decremented
+> 	  fail_tree_roots:
+> 	    btrfs_close_devices():
+> 	      close_fs_devices();   <------- rw device count off by 1
+> 
+> As a note, prior to commit cf89af146b7e ("btrfs: dev-replace: fail
+> mount if we don't have replace item with target device"), rw_devices
+> was decremented on removing a writable device in
+> __btrfs_free_extra_devids only if the BTRFS_DEV_STATE_REPLACE_TGT bit
+> was not set for the device. However, this check does not need to be
+> reinstated as it is now redundant and incorrect.
+> 
+> In __btrfs_free_extra_devids, we skip removing the device if it is the
+> target for replacement. This is done by checking whether device->devid
+> == BTRFS_DEV_REPLACE_DEVID. Since BTRFS_DEV_STATE_REPLACE_TGT is set
+> only on the device with devid BTRFS_DEV_REPLACE_DEVID, no devices
+> should have the BTRFS_DEV_STATE_REPLACE_TGT bit set after the check,
+> and so it's redundant to test for that bit.
+> 
+> Additionally, following commit 82372bc816d7 ("Btrfs: make
+> the logic of source device removing more clear"), rw_devices is
+> incremented whenever a writeable device is added to the alloc
+> list (including the target device in btrfs_dev_replace_finishing), so
+> all removals of writable devices from the alloc list should also be
+> accompanied by a decrement to rw_devices.
+> 
+> Fixes: cf89af146b7e ("btrfs: dev-replace: fail mount if we don't have replace item with target device")
+> Reported-by: syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com
+> Tested-by: syzbot+a70e2ad0879f160b9217@syzkaller.appspotmail.com
+> Signed-off-by: Desmond Cheong Zhi Xi <desmondcheongzx@gmail.com>
+> Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
 Added to misc-next, thanks.

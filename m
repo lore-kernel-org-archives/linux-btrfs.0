@@ -2,88 +2,100 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30A6EC4338F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 12:50:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DBF3C4338F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 12:51:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1AAB360FC2
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 12:50:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E0CE260FC0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Jul 2021 12:51:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236185AbhG1MuQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Jul 2021 08:50:16 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:42324 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236151AbhG1MuP (ORCPT
+        id S234966AbhG1Mvm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Jul 2021 08:51:42 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:52298 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234256AbhG1Mvl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Jul 2021 08:50:15 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 60CDD1FFA6;
-        Wed, 28 Jul 2021 12:50:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1627476613;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=tKv8fl5qQxSCbokW1Zc/e1B2jFRjIjFKdYiMDzPPLdE=;
-        b=BSxTJI+qwHLnzA8CZkfWutD1+bxUZam1AKg0VXSXzi0y3iNifp3JUD1O+Sf+agPhXtIeeW
-        CRRUMGD217do1c4BpHrxXLYd7lgO0Q7XbN7EwznRmqP5Tepne/GE+0AJVt4ik7x93RtpVs
-        x/QZa/rfn3ICjfXM3MNiZC0y6tgZHJo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1627476613;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=tKv8fl5qQxSCbokW1Zc/e1B2jFRjIjFKdYiMDzPPLdE=;
-        b=1FZUZgqCQVM17jkrxgh7Ytf9+5Kg29vojEkNcORo0UqVttYf/oH4Tp2ubI8WekJ5dhUMeb
-        wJ1SM59JTpjNx3Cg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 58248A3B84;
-        Wed, 28 Jul 2021 12:50:13 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 32D3DDA8A7; Wed, 28 Jul 2021 14:47:28 +0200 (CEST)
-Date:   Wed, 28 Jul 2021 14:47:28 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove the dead comment in writepage_delalloc()
-Message-ID: <20210728124727.GC5047@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210728060505.105119-1-wqu@suse.com>
+        Wed, 28 Jul 2021 08:51:41 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 84E06222C1
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jul 2021 12:51:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1627476699; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:  in-reply-to:in-reply-to;
+        bh=NvHWG2w4SVTpxrEjsIR5/oTyjso/XP+2+2r8iAE5FVU=;
+        b=tmI1TeTIsGgHxi/N3/DgOwqUhGkSnVdSiMjuHIPxa7GRGexyQH6Z5Qls3HGvUSmDTePRXM
+        7ZLORb73xyiVUAjpjFBIR2Sf2dzrAlYx7fdYpFAC4JpKQU4vGKYNcNrHC55DpbaeZWjZWP
+        TfCAkOoe0wpRlBVhUOZfNgAT1kTbrl4=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1627476699;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:  in-reply-to:in-reply-to;
+        bh=NvHWG2w4SVTpxrEjsIR5/oTyjso/XP+2+2r8iAE5FVU=;
+        b=zUAvvtNY06KbILsEKMYVcxTqFfsWPz3hs8YYuKYmvzrggAR8VGZBe8r7NR+dkDzSiHKZru
+        AGLmwtHX6YAfa4Ag==
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 3408213318
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jul 2021 12:51:38 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id ra8HNNpSAWFtXQAAGKfGzw
+        (envelope-from <rgoldwyn@suse.de>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Jul 2021 12:51:38 +0000
+Date:   Wed, 28 Jul 2021 07:51:37 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/7] Change allocation from kmalloc() to stack
+Message-ID: <cover.1627418762.git.rgoldwyn@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210728060505.105119-1-wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <cover.1627418762.git.rgoldwyn@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 28, 2021 at 02:05:05PM +0800, Qu Wenruo wrote:
-> When btrfs_run_delalloc_range() failed, we will error out.
-> 
-> But there is a strange comment mentioning that
-> btrfs_run_delalloc_range() could have return value >0 to indicate the IO
-> has already started.
-> 
-> Commit 40f765805f08 ("Btrfs: split up __extent_writepage to lower stack
-> usage") introduced the comment, but unfortunately at that time, we are
-> already using @page_started to indicate that case, and still return 0.
-> 
-> Furthermore, even if that comment is right (which is not), we would
-> return -EIO if the IO is already started.
-> 
-> By all means the comment is incorrect, just remove the comment along
-> with the dead check.
-> 
-> Just to be extra safe, add an ASSERT() in btrfs_run_delalloc_range() to
-> make sure we either return 0 or error, no positive return value.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Apparently, git send-email --compose missed to send PATCH 0/7. So
+sending again and hoping it lands in the right place...
 
-Added to misc-next, thanks.
+Here are some structs which can be converted to allocation on stack in order
+to save on post-checks on kmalloc() and kfree() each of them.
+
+Sizes of the structures are also in the commit message in case you feel they
+are too bit to be allocated on stack.
+
+There are two more structs in ioctl.c which can be converted, but
+I was not sure of them:
+
+1. In create_snapshot(), pending_snapshot can be converted. pending_snapshot
+   is used in the transaction.
+2. In btrfs_ioctl_set_received_subvol_32, args64 can be converted, but args32
+   cannot. All Pointers associated with memdup_user() can also be converted
+   by using copy_from_user() instead. This would include many more structs.
+
+Goldwyn Rodrigues (7):
+  btrfs: Allocate walk_control on stack
+  btrfs: Allocate file_ra_state on stack
+  btrfs: Allocate btrfs_ioctl_get_subvol_info_args on stack
+  btrfs: Allocate btrfs_ioctl_balance_args on stack
+  btrfs: Allocate btrfs_ioctl_quota_rescan_args on stack
+  btrfs: Allocate btrfs_ioctl_defrag_range_args on stack
+  btrfs: Alloc backref_ctx on stack
+
+ fs/btrfs/extent-tree.c      |  89 +++++++++++++-----------------
+ fs/btrfs/free-space-cache.c |  12 ++---
+ fs/btrfs/ioctl.c            | 105 ++++++++++++++----------------------
+ fs/btrfs/send.c             |  29 ++++------
+ 4 files changed, 89 insertions(+), 146 deletions(-)
+
+-- 
+Goldwyn

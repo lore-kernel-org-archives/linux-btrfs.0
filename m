@@ -2,270 +2,212 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26AC9C4320A
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jul 2021 09:40:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94FC5C4338F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jul 2021 09:47:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0F5B461057
-	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jul 2021 09:40:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7453861052
+	for <linux-btrfs@archiver.kernel.org>; Thu, 29 Jul 2021 09:47:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236285AbhG2JkI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 29 Jul 2021 05:40:08 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:57126 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236273AbhG2JkI (ORCPT
+        id S235197AbhG2Jri (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 29 Jul 2021 05:47:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49478 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235019AbhG2Jrh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 29 Jul 2021 05:40:08 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5FC99223FB;
-        Thu, 29 Jul 2021 09:40:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1627551604; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=DjQETP2MjqNmkVBtGh/V/+uaUy/Hhl/JvA0br2yUK2Y=;
-        b=JHy2l2EMoqCAWLWgxacTUu+/Z5MXLfKJAhkJhj5J8seeFxAjCREfUJjCy6lIgo+grnGUpv
-        Jtjxlnim9BzP8V4BfjK5mYZze43LELIutXTO2ptn/Gtx1eX6QWTORZ+9BF6Fey8N0k8Bpf
-        FQoYQfzJszWlBqk1VGQD9k+cyDQ3IVk=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BE01213ECF;
-        Thu, 29 Jul 2021 08:21:53 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id j4eYISFlAmHjHgAAMHmgww
-        (envelope-from <mpdesouza@suse.com>); Thu, 29 Jul 2021 08:21:53 +0000
-From:   Marcos Paulo de Souza <mpdesouza@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH v2] btrfs: Introduce btrfs_search_backwards function
-Date:   Thu, 29 Jul 2021 05:22:16 -0300
-Message-Id: <20210729082216.22886-1-mpdesouza@suse.com>
-X-Mailer: git-send-email 2.26.2
+        Thu, 29 Jul 2021 05:47:37 -0400
+Received: from mail-oi1-x230.google.com (mail-oi1-x230.google.com [IPv6:2607:f8b0:4864:20::230])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 14B6AC061757
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jul 2021 02:47:34 -0700 (PDT)
+Received: by mail-oi1-x230.google.com with SMTP id o185so7645372oih.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Jul 2021 02:47:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=o2Qz6Jnn0AIZ5Opzbe+EnCnVh2/aU7Y7xLpEI4FG8hc=;
+        b=OOvTrQkbA1aE9nveiXilkrDLvBTW1k7w1PjDkjWt8D6zlQ/Jd0W8avagF0wszYiDHZ
+         L4Ycy6/d+wWdJqrFlEUupKAJZNzOxDAaepD6T4YgAiorqmr8ZZ6dyjmMuv3GCC3xjWFB
+         QEXMawPDYrKIJTd3d9d4ali4iqS10VRvegYmgcDux0ucyTjvXF9N18JAJf478vppPnzv
+         KwHpbR7EL3RB9xVjgTdbnbkKepnLeUfGVTccw2F00vfQQEPKiD5SNA3WCE8bqw7rck7z
+         Y7kJtm9Zeu1weC1JLZ9Z8s11LnMHX9W2N2GZOtxrM3y/zG0AI8+Rjlq162ipFGW6/CYI
+         ozHQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=o2Qz6Jnn0AIZ5Opzbe+EnCnVh2/aU7Y7xLpEI4FG8hc=;
+        b=YVgnpII3hYsAiWtQCG6/gMOk5dYrjqZLc7U1blnKdnTCyEQeIY1G6ol8FHjCFQa+h5
+         dkmQilNjtFe3+d2zodmkG+2ZukbRcfwv07ih6OKgCZMFId+viPmUUKYKC2rLPb9w8v3b
+         FOayqfynEpKbQgkFt3ObjxubyKWcWCEwvX+Qv7r74JrjmbL0J5boXnmFXhxnuk4ZzyO1
+         wUWJdWArVjWD25tk0D9afLwjIO+3a7j1qslZZprwTNnr0TiyqjnImALql5gYm5MDj+xm
+         KErosi2NyDsjfZaDh5t7ELzhGNAwhJ0loRj4QF5FI1itova/cIWOZoPR4Uee6v4ljqSv
+         aGhg==
+X-Gm-Message-State: AOAM531lsu6Kp1K+Nj/ZgKS4FK4tXrZ7nBBQoZN4HScQHV3yKwrvzY3B
+        El+aW+AgUATQs7MQvVNy3gz2Ii6ozpfVr6imeqvn7i+IRK4=
+X-Google-Smtp-Source: ABdhPJweRVy/ytJaGIi+ESfrNvbC8S9YgGsOImtfQGYobsaNgwwlp6/45Kd0YqN0BG8G5npTLEn4n/EWM5PLiBl/Xg0=
+X-Received: by 2002:aca:a8cd:: with SMTP id r196mr2446820oie.160.1627552053340;
+ Thu, 29 Jul 2021 02:47:33 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From:   Jorge Bastos <jorge.mrbastos@gmail.com>
+Date:   Thu, 29 Jul 2021 10:47:22 +0100
+Message-ID: <CAHzMYBSap30NbnPnv4ka+fDA2nYGHfjYvD-NgT04t4vvN4q2sw@mail.gmail.com>
+Subject: Why usable space can be so different?
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's a common practice to start a search using offset (u64)-1, which is
-the u64 maximum value, meaning that we want the search_slot function to
-be set in the last item with the same objectid and type.
+HI,
 
-Once we are in this position, it's a matter to start a search backwards
-by calling btrfs_previous_item, which will check if we'll need to go to
-a previous leaf and other necessary checks, only to be sure that we are
-in last offset of the same object and type.
+This is not a big deal, but mostly out of curiosity, I've noticed
+before that sometimes I couldn't fill up a single device btrfs
+filesystem as much as I would expect, recently I've been farming some
+chia and here is a very good example, both are 8TB disks, filled up
+sequentially with 100MiB chia plots, this one looks about what I would
+expect:
 
-The new btrfs_search_backwards function does the all these procedures when
-necessary, and can be used to avoid code duplication.
+btrfs fi usage /mnt/disk4
+Overall:
+    Device size:                   7.28TiB
+    Device allocated:              7.28TiB
+    Device unallocated:            1.04MiB
+    Device missing:                  0.00B
+    Used:                          7.24TiB
+    Free (estimated):             34.55GiB      (min: 34.55GiB)
+    Free (statfs, df):            34.55GiB
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+    Multiple profiles:                  no
 
-No functional changes.
+Data,single: Size:7.26TiB, Used:7.22TiB (99.54%)
+   /dev/md4        7.26TiB
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
----
+Metadata,DUP: Size:9.50GiB, Used:8.45GiB (88.93%)
+   /dev/md4       19.00GiB
 
- Changes from v1:
- * Remove the found_key argument (David)
- * Remove endinness mentiones (David)
+System,DUP: Size:32.00MiB, Used:800.00KiB (2.44%)
+   /dev/md4       64.00MiB
 
- fs/btrfs/ctree.c   | 22 ++++++++++++++++++++++
- fs/btrfs/ctree.h   |  4 ++++
- fs/btrfs/ioctl.c   | 30 ++++++++----------------------
- fs/btrfs/super.c   | 26 ++++++--------------------
- fs/btrfs/volumes.c |  7 +------
- 5 files changed, 41 insertions(+), 48 deletions(-)
+Unallocated:
+   /dev/md4        1.04MiB
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 99b33a5b33c8..f4b2c5d48d8c 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2101,6 +2101,28 @@ int btrfs_search_slot_for_read(struct btrfs_root *root,
- 	return 0;
- }
- 
-+/*
-+ * Execute search and call btrfs_previous_item to traverse backwards if the item
-+ * was not found.
-+ *
-+ * Return 0 if found, 1 if not found and < 0 if error.
-+ */
-+int btrfs_search_backwards(struct btrfs_root *root,
-+				struct btrfs_key *key,
-+				struct btrfs_path *path)
-+{
-+	int ret;
-+
-+	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
-+	if (ret > 0)
-+		ret = btrfs_previous_item(root, path, key->objectid, key->type);
-+
-+	if (ret == 0)
-+		btrfs_item_key_to_cpu(path->nodes[0], key, path->slots[0]);
-+
-+	return ret;
-+}
-+
- /*
-  * adjust the pointers going up the tree, starting at level
-  * making sure the right key of each node is points to 'key'.
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f17be4b023cb..a898257ad2b5 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2908,6 +2908,10 @@ static inline int btrfs_insert_empty_item(struct btrfs_trans_handle *trans,
- int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
- 			u64 time_seq);
-+
-+int btrfs_search_backwards(struct btrfs_root *root, struct btrfs_key *key,
-+			   struct btrfs_path *path);
-+
- static inline int btrfs_next_old_item(struct btrfs_root *root,
- 				      struct btrfs_path *p, u64 time_seq)
- {
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 85c8b5a87a6a..ba1dab6a5012 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2389,23 +2389,16 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
- 	key.offset = (u64)-1;
- 
- 	while (1) {
--		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		ret = btrfs_search_backwards(root, &key, path);
- 		if (ret < 0)
- 			goto out;
- 		else if (ret > 0) {
--			ret = btrfs_previous_item(root, path, dirid,
--						  BTRFS_INODE_REF_KEY);
--			if (ret < 0)
--				goto out;
--			else if (ret > 0) {
--				ret = -ENOENT;
--				goto out;
--			}
-+			ret = -ENOENT;
-+			goto out;
- 		}
- 
- 		l = path->nodes[0];
- 		slot = path->slots[0];
--		btrfs_item_key_to_cpu(l, &key, slot);
- 
- 		iref = btrfs_item_ptr(l, slot, struct btrfs_inode_ref);
- 		len = btrfs_inode_ref_name_len(l, iref);
-@@ -2480,23 +2473,16 @@ static int btrfs_search_path_in_tree_user(struct inode *inode,
- 		key.type = BTRFS_INODE_REF_KEY;
- 		key.offset = (u64)-1;
- 		while (1) {
--			ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--			if (ret < 0) {
-+			ret = btrfs_search_backwards(root, &key, path);
-+			if (ret < 0)
-+				goto out_put;
-+			else if (ret > 0) {
-+				ret = -ENOENT;
- 				goto out_put;
--			} else if (ret > 0) {
--				ret = btrfs_previous_item(root, path, dirid,
--							  BTRFS_INODE_REF_KEY);
--				if (ret < 0) {
--					goto out_put;
--				} else if (ret > 0) {
--					ret = -ENOENT;
--					goto out_put;
--				}
- 			}
- 
- 			leaf = path->nodes[0];
- 			slot = path->slots[0];
--			btrfs_item_key_to_cpu(leaf, &key, slot);
- 
- 			iref = btrfs_item_ptr(leaf, slot, struct btrfs_inode_ref);
- 			len = btrfs_inode_ref_name_len(leaf, iref);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d444338db3c6..409bee3e7587 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1201,21 +1201,14 @@ char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
- 		key.type = BTRFS_ROOT_BACKREF_KEY;
- 		key.offset = (u64)-1;
- 
--		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		ret = btrfs_search_backwards(root, &key, path);
- 		if (ret < 0) {
- 			goto err;
- 		} else if (ret > 0) {
--			ret = btrfs_previous_item(root, path, subvol_objectid,
--						  BTRFS_ROOT_BACKREF_KEY);
--			if (ret < 0) {
--				goto err;
--			} else if (ret > 0) {
--				ret = -ENOENT;
--				goto err;
--			}
-+			ret = -ENOENT;
-+			goto err;
- 		}
- 
--		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
- 		subvol_objectid = key.offset;
- 
- 		root_ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
-@@ -1248,21 +1241,14 @@ char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
- 			key.type = BTRFS_INODE_REF_KEY;
- 			key.offset = (u64)-1;
- 
--			ret = btrfs_search_slot(NULL, fs_root, &key, path, 0, 0);
-+			ret = btrfs_search_backwards(fs_root, &key, path);
- 			if (ret < 0) {
- 				goto err;
- 			} else if (ret > 0) {
--				ret = btrfs_previous_item(fs_root, path, dirid,
--							  BTRFS_INODE_REF_KEY);
--				if (ret < 0) {
--					goto err;
--				} else if (ret > 0) {
--					ret = -ENOENT;
--					goto err;
--				}
-+				ret = -ENOENT;
-+				goto err;
- 			}
- 
--			btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
- 			dirid = key.offset;
- 
- 			inode_ref = btrfs_item_ptr(path->nodes[0],
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 230192d097c4..536e60c6ade3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1586,14 +1586,9 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
- 	key.offset = search_start;
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 
--	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	ret = btrfs_search_backwards(root, &key, path);
- 	if (ret < 0)
- 		goto out;
--	if (ret > 0) {
--		ret = btrfs_previous_item(root, path, key.objectid, key.type);
--		if (ret < 0)
--			goto out;
--	}
- 
- 	while (1) {
- 		l = path->nodes[0];
--- 
-2.26.2
 
+
+
+In this one, filled exactly the same way, could only fit 2 less plots:
+
+btrfs fi usage /mnt/disk3
+Overall:
+    Device size:                   7.28TiB
+    Device allocated:              7.28TiB
+    Device unallocated:            1.04MiB
+    Device missing:                  0.00B
+    Used:                          7.04TiB
+    Free (estimated):            239.04GiB      (min: 239.04GiB)
+    Free (statfs, df):           239.04GiB
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+    Multiple profiles:                  no
+
+Data,single: Size:7.26TiB, Used:7.03TiB (96.78%)
+   /dev/md3        7.26TiB
+
+Metadata,DUP: Size:8.51GiB, Used:7.96GiB (93.51%)
+   /dev/md3       17.02GiB
+
+System,DUP: Size:32.00MiB, Used:864.00KiB (2.64%)
+   /dev/md3       64.00MiB
+
+Unallocated:
+   /dev/md3        1.04MiB
+
+
+
+
+Maybe a full balance would help, but the disk was filled sequentially
+with one plot (100MiB file) at a time, there shouldn't be any
+fragmentation, it's as if it can't fully use the data chunks as the
+other one, kernel is 5.10.21, balance with -dusage=88 doesn't relocate
+any chunks, above that it fails with ENOSPC:
+
+btrfs balance start -dusage=88 /mnt/disk3
+Done, had to relocate 0 out of 7446 chunks
+
+btrfs balance start -dusage=89 /mnt/disk3
+ERROR: error during balancing '/mnt/disk3': No space left on device
+
+
+Any idea what could cause this difference, also two more disks (12 and
+10TB) that fall somewhere in between:
+
+btrfs fi usage /mnt/disk1
+Overall:
+    Device size:                  10.91TiB
+    Device allocated:             10.91TiB
+    Device unallocated:            3.94GiB
+    Device missing:                  0.00B
+    Used:                         10.71TiB
+    Free (estimated):            202.03GiB      (min: 200.06GiB)
+    Free (statfs, df):           202.03GiB
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+    Multiple profiles:                  no
+
+Data,single: Size:10.88TiB, Used:10.69TiB (98.22%)
+   /dev/md1       10.88TiB
+
+Metadata,DUP: Size:13.00GiB, Used:11.79GiB (90.74%)
+   /dev/md1       26.00GiB
+
+System,DUP: Size:32.00MiB, Used:1.25MiB (3.91%)
+   /dev/md1       64.00MiB
+
+Unallocated:
+   /dev/md1        3.94GiB
+
+
+
+
+
+
+btrfs fi usage /mnt/disk2
+Overall:
+    Device size:                   9.09TiB
+    Device allocated:              9.09TiB
+    Device unallocated:           13.01MiB
+    Device missing:                  0.00B
+    Used:                          8.93TiB
+    Free (estimated):            169.67GiB      (min: 169.67GiB)
+    Free (statfs, df):           169.68GiB
+    Data ratio:                       1.00
+    Metadata ratio:                   2.00
+    Global reserve:              512.00MiB      (used: 0.00B)
+    Multiple profiles:                  no
+
+Data,single: Size:9.07TiB, Used:8.91TiB (98.17%)
+   /dev/md2        9.07TiB
+
+Metadata,DUP: Size:11.00GiB, Used:9.98GiB (90.76%)
+   /dev/md2       22.00GiB
+
+System,DUP: Size:8.00MiB, Used:992.00KiB (12.11%)
+   /dev/md2       16.00MiB
+
+Unallocated:
+   /dev/md2       13.01MiB
+
+
+
+
+
+
+
+Thanks,
+Jorge

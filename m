@@ -2,78 +2,119 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EDE7C4338F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Jul 2021 13:57:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3EA0C4338F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Jul 2021 14:11:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3C64260F12
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Jul 2021 13:57:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D68FE61040
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Jul 2021 14:11:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238993AbhG3N5e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Jul 2021 09:57:34 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:52570 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231220AbhG3N5d (ORCPT
+        id S239052AbhG3OL4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Jul 2021 10:11:56 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:45142 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S239018AbhG3OL4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Jul 2021 09:57:33 -0400
+        Fri, 30 Jul 2021 10:11:56 -0400
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 1D4B02024F;
-        Fri, 30 Jul 2021 13:57:28 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id C2EA622432;
+        Fri, 30 Jul 2021 14:11:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1627653448;
+        t=1627654310;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=TPT4usxJd+kaQnZME4NRyK66nDEYB5bQxudz5ltsfWw=;
-        b=MD6X6jYwQ6xoNdknN1ZBHaJ9UflwHrMdM6ibA8EIITqcxTl40ChrFHvMiVAaTpyjRfFaXe
-        MXcJ0k8csBvNbPsGgl0nhypT4fmngYF6zjFlbkvgUE8YEFBxDmU0S1lEfZeovFfoNrEvD7
-        8OuZtiJnWD+C9re7TMDMqKyKa5q2kRI=
+        bh=z9o7YQTHmdx0FR49MiBWv0nfaKZkXtyBxrWlrh+W6WU=;
+        b=cX4IwOgT3IDlDLlDXsNzX31hFaW249fbk5NKeZeIe4MlehRnbvKckUATW7tvh/4FsWqQgG
+        oMTwhqtu/cEtXRuVr2q3tkn7zO9W4EMTPHeiHbRkeav2GUQV81njmt7zYXdRx/ZLLVf5Nn
+        e4g1IAOFm9aNnv1KiY9BfR2YVxZ8MHQ=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1627653448;
+        s=susede2_ed25519; t=1627654310;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=TPT4usxJd+kaQnZME4NRyK66nDEYB5bQxudz5ltsfWw=;
-        b=cL67+jMWJtMyC3j53+oaGEY4XGZ9CoThNml2Du8W8v031rxtd05ZZLptkrXdWNBpRYePr5
-        cPiKu1yYUCkdfQBA==
+        bh=z9o7YQTHmdx0FR49MiBWv0nfaKZkXtyBxrWlrh+W6WU=;
+        b=dQHm1IXJjW+PgqmWNeL/SmE7M5LkM8FOQUKidmLMjwlOFc0Xjw8JoRtSB+FdoEWRcincZ+
+        BlJszbMJeEUsTFDA==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 15800A3B88;
-        Fri, 30 Jul 2021 13:57:28 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 95229A3B87;
+        Fri, 30 Jul 2021 14:11:50 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 35906DB284; Fri, 30 Jul 2021 15:54:39 +0200 (CEST)
-Date:   Fri, 30 Jul 2021 15:54:38 +0200
+        id 8F8DEDB284; Fri, 30 Jul 2021 16:09:04 +0200 (CEST)
+Date:   Fri, 30 Jul 2021 16:09:04 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: check/original: detect directory inode
- with nlinks >= 2
-Message-ID: <20210730135438.GG5047@twin.jikos.cz>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     "dsterba@suse.cz" <dsterba@suse.cz>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Damien Le Moal <Damien.LeMoal@wdc.com>
+Subject: Re: [PATCH] btrfs-progs: default to SINGLE profile on zoned devices
+Message-ID: <20210730140904.GH5047@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210718125449.311815-1-wqu@suse.com>
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Damien Le Moal <Damien.LeMoal@wdc.com>
+References: <20210706091922.38650-1-johannes.thumshirn@wdc.com>
+ <20210707145048.GK2610@twin.jikos.cz>
+ <PH0PR04MB74164EDF2921DB4141CD40579B1A9@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <PH0PR04MB74163E89A308E4A7760B41119B159@PH0PR04MB7416.namprd04.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210718125449.311815-1-wqu@suse.com>
+In-Reply-To: <PH0PR04MB74163E89A308E4A7760B41119B159@PH0PR04MB7416.namprd04.prod.outlook.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Jul 18, 2021 at 08:54:48PM +0800, Qu Wenruo wrote:
-> Linux VFS doesn't allow directory to have hard links, thus for btrfs
-> on-disk directory inode items, their nlinks should never go beyond 1.
+On Mon, Jul 12, 2021 at 07:16:36PM +0000, Johannes Thumshirn wrote:
+> On 07/07/2021 17:02, Johannes Thumshirn wrote:
+> > On 07/07/2021 16:53, David Sterba wrote:
+> >> On Tue, Jul 06, 2021 at 06:19:22PM +0900, Johannes Thumshirn wrote:
+> >>> On zoned devices we're currently not supporting any other block group
+> >>> profile than the SINGLE profile, so pick it as default value otherwise a
+> >>> user would have to specify it manually at mkfs time for rotational zoned
+> >>> devices.
+> >>
+> >> Yes this is annoying but careful with setting defaults, it's hard to
+> >> change them. And in case of zoned devices it will be possible to set
+> >> something else in the future so defaulting to single/single needs to be
+> >> justified in another way than "currently we don't support anything
+> >> else".
+> >>
+> >> The SSD fallback to single is not showing as useful and there's ongoing
+> >> work to make it default to dup for metadata again. For consistency I'd
+> >> rather have simple logic for selecting defaults and give hints
+> >> eventually instead of checking random things in the system and then
+> >> selectin on behalf of the user. Unfortunatelly it's not that easy as
+> >> there are conflicting valid interests and we don't have defaults that
+> >> fits all scenarios.
+> >>
+> > 
+> > Agreed, but without this patch mkfs with default parameters on a rotational
+> > zoned device will fail with:
+> > 
+> > johannes@redsun60:btrfs-progs(master)$ sudo ./mkfs.btrfs /dev/sda
+> > btrfs-progs v5.12.1 
+> > See http://btrfs.wiki.kernel.org for more information.
+> > 
+> > Zoned: /dev/sda: host-managed device detected, setting zoned feature
+> > ERROR: cannot use RAID/DUP profile in zoned mode
+> > 
+> > So defaulting to not creating a filesystem won't work either.
+> > 
+> > We could improve the error message hinting the user to specify 
+> > "-m single -d single" on mkfs but that feels more hacky than setting 
+> > the defaults to something working.
+> > 
 > 
-> Lowmem mode already has the check and will report it without problem.
-> Only original mode needs this update.
-> 
-> Reported-by: Pepperpoint <pepperpoint@mb.ardentcoding.com>
-> Link: https://lore.kernel.org/linux-btrfs/162648632340.7.1932907459648384384.10178178@mb.ardentcoding.com/
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> So what's the way to go here? The current default won't create a file
+> system so it's unusable.
 
-Added to devel, thanks.
+I've updated the message to ask for -d single -m single.

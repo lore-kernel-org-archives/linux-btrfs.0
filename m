@@ -2,203 +2,141 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CE40C4338F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Aug 2021 23:52:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 97E87C4338F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Aug 2021 02:49:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 405B661040
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 Aug 2021 23:52:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6334260EEA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Aug 2021 02:49:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234627AbhHCXwM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 Aug 2021 19:52:12 -0400
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:3690 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233784AbhHCXwL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Aug 2021 19:52:11 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1628034720; x=1659570720;
-  h=from:to:subject:date:message-id:references:in-reply-to:
-   content-id:content-transfer-encoding:mime-version;
-  bh=x8vcsgSynFdfBY72tup9BW9c/r3mUJwaoZm30RCmTk4=;
-  b=QI2K2AenM4huT3HS8dnmR6XXQ+NRemMPoU1OMmqqHKXXIqgumbKN4gtB
-   7IkWcfomUKFeoTJBenm9BVeGHbNrXUqHYdwzNaaNJrV4j1jr/3W+SX4tZ
-   UYMWjZwieTt6CH9XyD+KhCaTaKh1z4aPNEY0XSA5OBQj9BcYB+FMyH2A5
-   GbJwYb/4npot0xaLDP2L6yeOiVWke6NMOKb5Ygd9fuI6bqEYyTEbMCV7b
-   G2EsawpGw9SmTt/pdLB4X+tiYTNqoRnBYeUAzMiWPLVOrM8iNGL+92dYh
-   isUW6EH69U5wUDY38gxfx2mKIIadIEHw4vWRUKj3Y42HK7VmcSS9Ixudy
-   g==;
-X-IronPort-AV: E=Sophos;i="5.84,292,1620662400"; 
-   d="scan'208";a="287810886"
-Received: from mail-bn8nam11lp2175.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.175])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Aug 2021 07:51:59 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=CHOT6RkjgiGw28FaqBrhuUU0lySF8LopiaFjZPNCIxeA9VTq8OfHQkFDvpb7LmwLDhk9CvoSXoiewY7E23klGNm/IjDBkBAQig1lwon7wtW6YTRkUJ199QckS14ju7++6pVwfjg0Q24aKViNbLZ1vF0hynMI96aoxqGbsDL1BYawzU1x0oQqIERDzhSDIUyb/6AmF/aQVT/dxRZ5SXpAthmNXXl05eD+FVW/gJ1QV1CNXI5ecse78AhrVi8T35W4AcW72oPNeRnvuQE1M2aY6zPYOzzCptynrrJOumu9Pn51U4urDtE6ykjvxZqXCwizDD5xUJ4fVHSlHpyz8HQ0BQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=bTEg+a0AIN/Pb1LtxR42U4ohc817nlMGRGw8LFnc5oI=;
- b=SxVR1gKv1tquZudLFioM0edXE8XOl0y19BkxI+yqNgo/WL2/ahd5qCQ1qHZMcV9rbwRkC8Jii5sQXBc8tbzfKMa8v0coFq1KS05lkA6JgU0dx3n7rJf0FkBol6Ca4IeIDjQwpPFDikYKVpJww6a4XagkZbA7U7O3ffQBLmE5rWyyRIkrwrKEp/xBj/dzvKTQQeJCQIS+tVGSLonZI6SGwITxnYwlzgxjF8hW53Ee81W4Uy6nfRVhBNfF0V1iOBBEP9AdDVCmbsEAfANmknCH5lcYnkA2YFPW2MzBHV/QSp/9KbSTlBN4+tqbPtfX39dT7cbj35asX4CvWgINF0gK6g==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=bTEg+a0AIN/Pb1LtxR42U4ohc817nlMGRGw8LFnc5oI=;
- b=S3wgQPU1tNA9cxAoWwtF5lag+PSgRvZyjVlaSrcESJ3IqoqcUCSWvAeWSb+eVBPO6QWN6iGASoyCusg2nmNfFCEGPq0T/ukmGDFVmjxIgGbmXFlbw/zrL+q1pnv5kqWtSVZjzeIQ0ZcX1lVf9gNESEJFIjfrR1uWYJJkByZWgsE=
-Received: from SJ0PR04MB7776.namprd04.prod.outlook.com (2603:10b6:a03:300::11)
- by SJ0PR04MB8247.namprd04.prod.outlook.com (2603:10b6:a03:3fa::13) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4373.21; Tue, 3 Aug
- 2021 23:51:58 +0000
-Received: from SJ0PR04MB7776.namprd04.prod.outlook.com
- ([fe80::c12a:749f:475d:a04d]) by SJ0PR04MB7776.namprd04.prod.outlook.com
- ([fe80::c12a:749f:475d:a04d%5]) with mapi id 15.20.4373.026; Tue, 3 Aug 2021
- 23:51:58 +0000
-From:   Naohiro Aota <Naohiro.Aota@wdc.com>
-To:     "dsterba@suse.cz" <dsterba@suse.cz>,
-        Filipe Manana <fdmanana@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>,
-        Damien Le Moal <Damien.LeMoal@wdc.com>,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Subject: Re: [PATCH] btrfs: properly split extent_map for REQ_OP_ZONE_APPEND
-Thread-Topic: [PATCH] btrfs: properly split extent_map for REQ_OP_ZONE_APPEND
-Thread-Index: AQHXa/ytxJjeP3wsJk2N//EMaf0z9qsuWCcAgAADxICAKlu6gIAJ9XeA
-Date:   Tue, 3 Aug 2021 23:51:57 +0000
-Message-ID: <20210803235157.seskvbshficvsymz@naota-xeon>
-References: <20210628085728.2813793-1-naohiro.aota@wdc.com>
- <CAL3q7H4LsXDK8rTr3yEkftMm9ok9kWdQuwxk57Pke5oJ+EZOZQ@mail.gmail.com>
- <CAL3q7H6dMNGQ+RKrK91pZsbXQO9852fE+pqZDzo53xOvDAeYFA@mail.gmail.com>
- <20210728154703.GO5047@twin.jikos.cz>
-In-Reply-To: <20210728154703.GO5047@twin.jikos.cz>
-Accept-Language: ja-JP, en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-authentication-results: suse.cz; dkim=none (message not signed)
- header.d=none;suse.cz; dmarc=none action=none header.from=wdc.com;
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: a73fb0f9-5d90-4f95-9bff-08d956d9ae48
-x-ms-traffictypediagnostic: SJ0PR04MB8247:
-x-ms-exchange-transport-forked: True
-x-microsoft-antispam-prvs: <SJ0PR04MB824798D538C35F09436DE23D8CF09@SJ0PR04MB8247.namprd04.prod.outlook.com>
-wdcipoutbound: EOP-TRUE
-x-ms-oob-tlc-oobclassifiers: OLM:10000;
-x-ms-exchange-senderadcheck: 1
-x-ms-exchange-antispam-relay: 0
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: JsByOG1WZ4WLz6aMX33/HeS1Mwpa8ORZYw024zv0ADJ7LmVFJAPQJgwIajiO7IRM+1vRjgTsnVsymS5V/w1b6yTnLfjU2GntaIvdWhh1ChKlAZrNxRSqzAy5caHsOg9obBCF2hY6ukQ68G3G2AHUR8vrGV6QDqLaFC/UO0hVgR9T+lEg//XKEWzqtvXsA8h9OpAnz58C1w1LoIHwFht8jh3oqvQF/pMqchwr/aS6SrX74iD3ddBy41JPeD+JwoIXTAS5xi0jEqLgrLl3pOQrmganLS0jJgSORKIT4zPcs8FpA0lQg5xldVm0FpDdasoczoTknE8TvBVZKj0bYplhYmdQJlYPC5Y+7HHD3YfHE2Gnfw+8BSh0c9rinOwbN4b6oaNajbhCcHpeygVS2+xQK6oCSO+nl066mFc+rPbzLwnjbHOAzpG7mNhOrQk0BYrJxFg5V0NqPbTdRdwzEL6lpvfzAM3xuD3kNDNoO3OnDAqDqpyxYmS0PghZU+6yCruOMlarG2aWTDcO7wmpexODbxj+LmoPw/RZOyJAFwDiBZ8WAJyvw9N13nz0Xg5JNxMFGWkwUOEA8GtU3GnMnirJOYxGcfzRIVmSaWLjHgpUkgc0/k6dFgB2+bhog8oUnSB07HaRjgRdsdKJGhYo/OV9QwMtm/kPzczhjF2+HIQknHcuuoIqbjZLlKScfUp+x9oC1KMS0SVLApusULA9c9jApA==
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR04MB7776.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(4636009)(7916004)(346002)(39860400002)(366004)(376002)(136003)(396003)(2906002)(3716004)(8676002)(5660300002)(186003)(8936002)(83380400001)(1076003)(38070700005)(71200400001)(66476007)(33716001)(6512007)(66556008)(66946007)(478600001)(122000001)(316002)(6636002)(6506007)(76116006)(64756008)(38100700002)(91956017)(9686003)(6486002)(26005)(110136005)(66446008)(86362001);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata-chunkcount: 1
-x-ms-exchange-antispam-messagedata-0: =?us-ascii?Q?T1ynaoWazV9PzUMUTEFSC4Yy2Mxkn1+3AhliWiUZ22/3B8WSq/pJ7fIpv8D9?=
- =?us-ascii?Q?xLfaSjgPZUcWBhabKQsitqowNtWXyanj8aa9y616J9KSds447sKtjDiPJsb2?=
- =?us-ascii?Q?X1oJ7FCDu2knaqNZHON3p4/YKF5hcFBV2UXVZrqJKDIJb+EaFwgJTKD0kw0U?=
- =?us-ascii?Q?YALcSRAGUpBWE0BkYdjVuka1Eu95wbMyc8XagGGhnFkqcvytb40nXHJ6b+I6?=
- =?us-ascii?Q?KnhkGJoOKATigKL/fJyC+Bhk/E1lIpP73agvVPW8C6Zcp/yIe53q+54ce4Wl?=
- =?us-ascii?Q?wj5yJCVUIZIjlTp7nP+D1aUkUodA9pjr/2LjMseLAmHIMxHRLIQEeRYWwL6d?=
- =?us-ascii?Q?M1Og0ZKJFfRH7Jn/asBVMNE9aidByTQq75Ix1CoKmFob0xqRQL7C7agUMqAJ?=
- =?us-ascii?Q?B4d5mqPBgQOp191yXUIga+o010mR4X77TPlsr7J6Yq4OsTzKx2b0iuOkLtAo?=
- =?us-ascii?Q?YyZsafmOt3aqLQHcTiyn9EQKvjPyOom288qm0HIqjwBLXg7d70REyIZBBVmt?=
- =?us-ascii?Q?ESPz65Eaio5MuucNLRNEjv5S96jvrMgpVfVpV88uhqJjdhxp5huzy2jrKzWb?=
- =?us-ascii?Q?j78Wb8fGs+XzVktb5atP/e4qW7Wh4Sw6KdV8iYKKQK3/9IMDIXYcuhnzoz3q?=
- =?us-ascii?Q?sE1Zzdr8SlJ3D5v+Zdt8oi4Uf+Rq0tSqPqzpf0klE3mmlPKgu9BpVsHEeANS?=
- =?us-ascii?Q?PB2k+26GNeEmOX2dQf2gfodqaf46sYPu/VN30ATeIdF0+p0klc5Tvo0CHbMk?=
- =?us-ascii?Q?xptxRSqTFZr7u7gc5kJr21p67MMSwaDZv8WY42f8+/EFEkl2TbHRY1txeyKb?=
- =?us-ascii?Q?2MpW599ricdnrCPwMP1sl/N3Ddwf9HRtIbxSoXAFHMC/TW424yYK726CCQa1?=
- =?us-ascii?Q?zJCWWFx6kv7xFoNwfka0fMt+6MUIriBsZ8HyBBjOM0JnVlIHUkopEW1mp/i3?=
- =?us-ascii?Q?QRaFhmJANtzvDY0GLaGsmFPAlrLr/UbKin9XjYcaFTUboKeiwLO2BL1sTvYy?=
- =?us-ascii?Q?FnAoHL6QM9r6iHA4kjuZvbXIRMFmkzy0watklKEF255c3HNsyMPg8ZBDdgDS?=
- =?us-ascii?Q?P5Ssr2LpAozwSULXRYVUEKvHZWu1g90UV08LjeLrAYAQQ9ZB9uh5aVB/OjRP?=
- =?us-ascii?Q?PYIWRGAbyUyImiYAqfKVc878yY4DKAbYQ3AwzHwfnusR5I2ZTl7GGHi5ijoH?=
- =?us-ascii?Q?afRepQYYzV69zHtiVC6YnqXdq+jYtIvPnd66b+SJeYYgGCJb7XXxV/DJk0fp?=
- =?us-ascii?Q?9+X1bFXeTw4iMiWcpac2vTJ/sU/YBLSAEZ1eOpNjGTKKiwZCVy8YZdBeGn8d?=
- =?us-ascii?Q?pvdZ5OpEA92p8dGFnhLdLuYx?=
-Content-Type: text/plain; charset="us-ascii"
-Content-ID: <4F56633BAE692F4CB4ACFC6393A3D9D2@namprd04.prod.outlook.com>
-Content-Transfer-Encoding: quoted-printable
-MIME-Version: 1.0
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: SJ0PR04MB7776.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: a73fb0f9-5d90-4f95-9bff-08d956d9ae48
-X-MS-Exchange-CrossTenant-originalarrivaltime: 03 Aug 2021 23:51:57.9222
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: Dn7xPf1yW9DZrLNHK7eGSDj33PH5b0BIA+A7Npg7U9bqu8wJLU/7cEgMVpcemXFqZAUjiPPgGNiMWdGkWuc37g==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ0PR04MB8247
+        id S231339AbhHDCta (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 Aug 2021 22:49:30 -0400
+Received: from mail.synology.com ([211.23.38.101]:34024 "EHLO synology.com"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S229949AbhHDCt3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 3 Aug 2021 22:49:29 -0400
+Received: from localhost.localdomain (unknown [10.17.32.181])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+        (No client certificate requested)
+        by synology.com (Postfix) with ESMTPSA id BCFDC2E7C7D6;
+        Wed,  4 Aug 2021 10:49:16 +0800 (CST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
+        t=1628045356; bh=R8S6qBj9HXmslu6hVjv0JQs76b6GwuoypjvZXvVRyuQ=;
+        h=From:To:Cc:Subject:Date;
+        b=gyq6IuArVRwDoec7+WU7bbrIkHmQNywJvTcKY0XV7VLAiC+sHWqlTviT4EU9o6PT2
+         DKo1vKc+u8SBDU/vaZVMyViS7d51PwhDIBMN2VDZwOF1ny/5ybLDc5xVs+Kc/S0e5T
+         IRwsq0R6tMotZDyPUDjNPltAwgZc6ZKXiwuQBlrQ=
+From:   robbieko <robbieko@synology.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Robbie Ko <robbieko@synology.com>
+Subject: [PATCH v2] btrfs: fix root drop key inconsistent when drop subvolume/snapshot fails
+Date:   Wed,  4 Aug 2021 10:49:04 +0800
+Message-Id: <20210804024904.2598-1-robbieko@synology.com>
+X-Mailer: git-send-email 2.17.1
+X-Synology-MCP-Status: no
+X-Synology-Spam-Flag: no
+X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
+X-Synology-Virus-Status: no
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jul 28, 2021 at 05:47:03PM +0200, David Sterba wrote:
-> On Thu, Jul 01, 2021 at 05:55:51PM +0100, Filipe Manana wrote:
-> > > > +       if (pre) {
-> > > > +               /* Insert the middle extent_map */
-> > > > +               split_mid->start =3D em->start + pre;
-> > > > +               split_mid->len =3D em->len - pre - post;
-> > > > +               split_mid->orig_start =3D split_mid->start;
-> > > > +               split_mid->block_start =3D em->block_start + pre;
-> > > > +               split_mid->block_len =3D split_mid->len;
-> > > > +               split_mid->orig_block_len =3D split_mid->block_len;
-> > > > +               split_mid->ram_bytes =3D split_mid->len;
-> > > > +               split_mid->flags =3D flags;
-> > > > +               split_mid->compress_type =3D em->compress_type;
-> > > > +               split_mid->generation =3D em->generation;
-> > > > +               add_extent_mapping(em_tree, split_mid, modified);
-> > > > +       }
-> > > > +
-> > > > +       if (post) {
-> > > > +               split_post->start =3D em->start + em->len - post;
-> > > > +               split_post->len =3D post;
-> > > > +               split_post->orig_start =3D split_post->start;
-> > > > +               split_post->block_start =3D em->block_start + em->l=
-en - post;
-> > > > +               split_post->block_len =3D split_post->len;
-> > > > +               split_post->orig_block_len =3D split_post->block_le=
-n;
-> > > > +               split_post->ram_bytes =3D split_post->len;
-> > > > +               split_post->flags =3D flags;
-> > > > +               split_post->compress_type =3D em->compress_type;
-> > > > +               split_post->generation =3D em->generation;
-> > > > +               add_extent_mapping(em_tree, split_post, modified);
-> > > > +       }
-> > >
-> > > So this happens when running delalloc, after creating the original
-> > > extent map and ordered extent, the original "em" must have had the
-> > > PINNED flag set.
-> > >
-> > > The "pre" and "post" extent maps should have the PINNED flag set. It'=
-s
-> > > important to have the flag set to prevent extent map merging, which
-> > > could result in a log corruption if the file is being fsync'ed
-> > > multiple times in the current transaction and running delalloc was
-> > > triggered precisely by an fsync. The corruption result would be
-> > > logging extent items with overlapping ranges, since we construct them
-> > > based on extent maps, and that's why we have the PINNED flag to
-> > > prevent merging.
-> >=20
-> > Well, it actually happens that merging should not happen because the
-> > original extent map was in the list of modified extents, and so should
-> > be the new extent maps.
-> > But we are really supposed to have the PINNED flag from the moment we
-> > run delalloc and create a new extent map until the respective ordered
-> > extent completes and unpins it.
-> >=20
-> > Also EXTENT_FLAG_LOGGING should not be set at this point - if it were
-> > we would screw up with a task logging the extent map.
-> >=20
-> > Maybe assert that it is not set in the original extent map?
-> > And also assert that the original em is in the list of modified
-> > extents and has the PINNED flag set?
->=20
-> Agreed, the asserts should be here, Naohiro, please send a followup,
-> thanks.
+From: Robbie Ko <robbieko@synology.com>
 
-Sure. I'll soon send an update.=
+When walk down/up tree fails, we did not aborting the transaction,
+nor did modify the root drop key, but the refs of some tree blocks
+may have been removed in the transaction.
+
+Therefore when we retry to delete the subvolume in the future,
+we will fail due to the fact that some references were deleted
+in the previous attempt.
+
+------------[ cut here ]------------
+WARNING: at fs/btrfs/extent-tree.c:898 btrfs_lookup_extent_info+0x40a/0x4c0 [btrfs]()
+CPU: 2 PID: 11618 Comm: btrfs-cleaner Tainted: P
+Hardware name: Synology Inc. RS3617xs Series/Type2 - Board Product Name1, BIOS M.017 2019/10/16
+ffffffff814c2246 ffffffff81036536 ffff88024a911d08 ffff880262de45b0
+ffff8802448b5f20 ffff88024a9c1ad8 0000000000000000 ffffffffa08eb05a
+000008f84e72c000 0000000000000000 0000000000000001 0000000100000000
+Call Trace:
+[<ffffffff814c2246>] ? dump_stack+0xc/0x15
+[<ffffffff81036536>] ? warn_slowpath_common+0x56/0x70
+[<ffffffffa08eb05a>] ? btrfs_lookup_extent_info+0x40a/0x4c0 [btrfs]
+[<ffffffffa08ee558>] ? do_walk_down+0x128/0x750 [btrfs]
+[<ffffffffa08ebab4>] ? walk_down_proc+0x314/0x330 [btrfs]
+[<ffffffffa08eec42>] ? walk_down_tree+0xc2/0xf0 [btrfs]
+[<ffffffffa08f2bce>] ? btrfs_drop_snapshot+0x40e/0x9a0 [btrfs]
+[<ffffffffa09096db>] ? btrfs_clean_one_deleted_snapshot+0xab/0xe0 [btrfs]
+[<ffffffffa08fe970>] ? cleaner_kthread+0x280/0x320 [btrfs]
+[<ffffffff81052eaf>] ? kthread+0xaf/0xc0
+[<ffffffff81052e00>] ? kthread_create_on_node+0x110/0x110
+[<ffffffff814c8c0d>] ? ret_from_fork+0x5d/0xb0
+[<ffffffff81052e00>] ? kthread_create_on_node+0x110/0x110
+------------[ end trace ]-----------
+BTRFS error (device dm-1): Missing references.
+BTRFS: error (device dm-1) in btrfs_drop_snapshot:9557: errno=-5 IO failure
+
+By not aborting the transaction, every future attempt to delete the
+subvolume fails and we end up never freeing all the extents used by
+the subvolume/snapshot.
+
+By aborting the transaction we have a least the possibility to
+succeeded after unmounting and mounting again the filesystem.
+
+So we fix this problem by aborting the transaction when the walk down/up
+tree fails, which is a safer approach.
+
+In addition, we also added the initialization of drop_progress and
+drop_level.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+ fs/btrfs/extent-tree.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 268ce58d4569..032a257fdb65 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5539,10 +5539,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
+ 		path->locks[level] = BTRFS_WRITE_LOCK;
+ 		memset(&wc->update_progress, 0,
+ 		       sizeof(wc->update_progress));
++		memset(&wc->drop_progress, 0,
++		       sizeof(wc->drop_progress));
+ 	} else {
+ 		btrfs_disk_key_to_cpu(&key, &root_item->drop_progress);
+ 		memcpy(&wc->update_progress, &key,
+ 		       sizeof(wc->update_progress));
++		memcpy(&wc->drop_progress, &key,
++		       sizeof(wc->drop_progress));
+ 
+ 		level = btrfs_root_drop_level(root_item);
+ 		BUG_ON(level == 0);
+@@ -5588,6 +5592,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
+ 
+ 	wc->restarted = test_bit(BTRFS_ROOT_DEAD_TREE, &root->state);
+ 	wc->level = level;
++	wc->drop_level = level;
+ 	wc->shared_level = -1;
+ 	wc->stage = DROP_REFERENCE;
+ 	wc->update_ref = update_ref;
+@@ -5659,8 +5664,10 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
+ 		}
+ 	}
+ 	btrfs_release_path(path);
+-	if (err)
++	if (err) {
++		btrfs_abort_transaction(trans, err);
+ 		goto out_end_trans;
++	}
+ 
+ 	ret = btrfs_del_root(trans, &root->root_key);
+ 	if (ret) {
+-- 
+2.17.1
+

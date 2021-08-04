@@ -7,50 +7,50 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55CB8C4320A
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Aug 2021 18:49:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A18FC43216
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Aug 2021 18:49:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 42D9D61040
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Aug 2021 18:49:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7031A61050
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Aug 2021 18:49:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239080AbhHDSts (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 Aug 2021 14:49:48 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:34854 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239078AbhHDSto (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Aug 2021 14:49:44 -0400
+        id S239162AbhHDStt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 Aug 2021 14:49:49 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:39570 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S239055AbhHDStr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Aug 2021 14:49:47 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C8789201D3;
-        Wed,  4 Aug 2021 18:49:30 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 32E12222ED;
+        Wed,  4 Aug 2021 18:49:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1628102970; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1628102974; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=3o9BYEj6GOmieJldwceTT4Fh2sgpeOi0UtaU17AGc8E=;
-        b=TfgE0JpeurFPtKeqMncUFD0zQnLon9EeaG6w2GzzQO2MHp8Ct2K8p8abAcaDNCzwMe2QBF
-        cYlQLytHOHKIFQWnCpz3pUZJIC7SgsAV66PMFrt35eAUIg2wzEcH13FlmHrrHq51jWFPLx
-        LLVnQon2fKptg0iVBQvxyTdOD9JL1bA=
+        bh=rRsycK7Oj2BSBfmsGE+1jES0lQihLv0tkwk9gFaK21w=;
+        b=U+UHfE8cqFkYGxu9s5jatl4nq7UMFTcMYiLAoTY72okvmeOX1qnQ+cd1j2uZ5CI06G/oH6
+        YPIrf242q+f/jz2G4SzwGNWKU0aC5xlFdCVBSOJfQLgm3zSyLYCuycbz/2DfQoKMQtK3Bb
+        JH7Nov7Se1ver6EbFgQO+H3KpCxOwc4=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 76BCA13D24;
-        Wed,  4 Aug 2021 18:49:29 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DE22B13D24;
+        Wed,  4 Aug 2021 18:49:32 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id CFMIEDnhCmGFOQAAMHmgww
-        (envelope-from <mpdesouza@suse.com>); Wed, 04 Aug 2021 18:49:29 +0000
+        id CGR+KTzhCmGFOQAAMHmgww
+        (envelope-from <mpdesouza@suse.com>); Wed, 04 Aug 2021 18:49:32 +0000
 From:   Marcos Paulo de Souza <mpdesouza@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com, nborisov@suse.com,
         Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH 5/7] btrfs: scrub: Use btrfs_find_item in scrub_enumerate_chunks
-Date:   Wed,  4 Aug 2021 15:48:52 -0300
-Message-Id: <20210804184854.10696-6-mpdesouza@suse.com>
+Subject: [PATCH 7/7] btrfs: ioctl: Simplify btrfs_ioctl_get_subvol_info
+Date:   Wed,  4 Aug 2021 15:48:54 -0300
+Message-Id: <20210804184854.10696-8-mpdesouza@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210804184854.10696-1-mpdesouza@suse.com>
 References: <20210804184854.10696-1-mpdesouza@suse.com>
@@ -60,105 +60,112 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Prefer btrfs_find_item instead of btrfs_search_slot, since it calls
-btrfs_next_leaf if needed and checks if the item found has the same
-objectid and type passed in the search key.
-
-As result, we can remove one btrfs_key from this function.
+By using btrfs_find_item we can simplify the code. Also, remove the
+-ENOENT error condition, since it'll never hit. If find_item returns 0,
+it means it found the desired objectid and type, so it won't reach the -ENOENT
+condition.
 
 No functional changes.
 
 Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 ---
- fs/btrfs/scrub.c | 52 +++++++++++++-----------------------------------
- 1 file changed, 14 insertions(+), 38 deletions(-)
+ fs/btrfs/ioctl.c | 56 +++++++++++++++++++-----------------------------
+ 1 file changed, 22 insertions(+), 34 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 088641ba7a8e..008eeb502267 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3657,11 +3657,10 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 	struct btrfs_root *root = fs_info->dev_root;
- 	u64 length;
- 	u64 chunk_offset;
-+	u64 offset = 0;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d09eaa83b5d2..2c57bea16c92 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2685,6 +2685,7 @@ static int btrfs_ioctl_get_subvol_info(struct file *file, void __user *argp)
+ 	unsigned long item_off;
+ 	unsigned long item_len;
+ 	struct inode *inode;
++	u64 treeid;
+ 	int slot;
  	int ret = 0;
- 	int ro_set;
--	int slot;
- 	struct extent_buffer *l;
--	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 	struct btrfs_block_group *cache;
- 	struct btrfs_dev_replace *dev_replace = &fs_info->dev_replace;
-@@ -3674,47 +3673,24 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 	path->search_commit_root = 1;
- 	path->skip_locking = 1;
  
--	key.objectid = scrub_dev->devid;
--	key.offset = 0ull;
--	key.type = BTRFS_DEV_EXTENT_KEY;
--
- 	while (1) {
--		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--		if (ret < 0)
--			break;
--		if (ret > 0) {
--			if (path->slots[0] >=
--			    btrfs_header_nritems(path->nodes[0])) {
--				ret = btrfs_next_leaf(root, path);
--				if (ret < 0)
--					break;
--				if (ret > 0) {
--					ret = 0;
--					break;
--				}
--			} else {
--				ret = 0;
+@@ -2702,15 +2703,15 @@ static int btrfs_ioctl_get_subvol_info(struct file *file, void __user *argp)
+ 	fs_info = BTRFS_I(inode)->root->fs_info;
+ 
+ 	/* Get root_item of inode's subvolume */
+-	key.objectid = BTRFS_I(inode)->root->root_key.objectid;
+-	root = btrfs_get_fs_root(fs_info, key.objectid, true);
++	treeid = BTRFS_I(inode)->root->root_key.objectid;
++	root = btrfs_get_fs_root(fs_info, treeid, true);
+ 	if (IS_ERR(root)) {
+ 		ret = PTR_ERR(root);
+ 		goto out_free;
+ 	}
+ 	root_item = &root->root_item;
+ 
+-	subvol_info->treeid = key.objectid;
++	subvol_info->treeid = treeid;
+ 
+ 	subvol_info->generation = btrfs_root_generation(root_item);
+ 	subvol_info->flags = btrfs_root_flags(root_item);
+@@ -2737,44 +2738,31 @@ static int btrfs_ioctl_get_subvol_info(struct file *file, void __user *argp)
+ 	subvol_info->rtime.sec = btrfs_stack_timespec_sec(&root_item->rtime);
+ 	subvol_info->rtime.nsec = btrfs_stack_timespec_nsec(&root_item->rtime);
+ 
+-	if (key.objectid != BTRFS_FS_TREE_OBJECTID) {
++	if (treeid != BTRFS_FS_TREE_OBJECTID) {
+ 		/* Search root tree for ROOT_BACKREF of this subvolume */
+-		key.type = BTRFS_ROOT_BACKREF_KEY;
+-		key.offset = 0;
+-		ret = btrfs_search_slot(NULL, fs_info->tree_root, &key, path, 0, 0);
++		ret = btrfs_find_item(fs_info->tree_root, path, treeid,
++					BTRFS_ROOT_BACKREF_KEY, 0, &key);
+ 		if (ret < 0) {
+ 			goto out;
+-		} else if (path->slots[0] >=
+-			   btrfs_header_nritems(path->nodes[0])) {
+-			ret = btrfs_next_leaf(fs_info->tree_root, path);
+-			if (ret < 0) {
+-				goto out;
+-			} else if (ret > 0) {
+-				ret = -EUCLEAN;
+-				goto out;
 -			}
--		}
--
--		l = path->nodes[0];
--		slot = path->slots[0];
--
--		btrfs_item_key_to_cpu(l, &found_key, slot);
--
--		if (found_key.objectid != scrub_dev->devid)
-+		ret = btrfs_find_item(root, path, scrub_dev->devid,
-+				BTRFS_DEV_EXTENT_KEY, offset, &found_key);
-+		if (ret < 0) {
- 			break;
--
--		if (found_key.type != BTRFS_DEV_EXTENT_KEY)
--			break;
--
--		if (found_key.offset >= end)
 +		} else if (ret > 0) {
-+			/* Reset error if not found. */
-+			ret = 0;
- 			break;
-+		}
- 
--		if (found_key.offset < key.offset)
-+		if (found_key.offset >= end ||
-+		    found_key.offset < offset)
- 			break;
- 
--		dev_extent = btrfs_item_ptr(l, slot, struct btrfs_dev_extent);
-+		l = path->nodes[0];
-+		dev_extent = btrfs_item_ptr(l, path->slots[0],
-+						struct btrfs_dev_extent);
- 		length = btrfs_dev_extent_length(l, dev_extent);
- 
- 		if (found_key.offset + length <= start)
-@@ -3938,7 +3914,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 			break;
++			ret = -EUCLEAN;
++			goto out;
  		}
- skip:
--		key.offset = found_key.offset + length;
-+		offset = found_key.offset + length;
- 		btrfs_release_path(path);
+ 
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+-		btrfs_item_key_to_cpu(leaf, &key, slot);
+-		if (key.objectid == subvol_info->treeid &&
+-		    key.type == BTRFS_ROOT_BACKREF_KEY) {
+-			subvol_info->parent_id = key.offset;
+-
+-			rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
+-			subvol_info->dirid = btrfs_root_ref_dirid(leaf, rref);
+-
+-			item_off = btrfs_item_ptr_offset(leaf, slot)
+-					+ sizeof(struct btrfs_root_ref);
+-			item_len = btrfs_item_size_nr(leaf, slot)
+-					- sizeof(struct btrfs_root_ref);
+-			read_extent_buffer(leaf, subvol_info->name,
+-					   item_off, item_len);
+-		} else {
+-			ret = -ENOENT;
+-			goto out;
+-		}
++
++		subvol_info->parent_id = key.offset;
++
++		rref = btrfs_item_ptr(leaf, slot, struct btrfs_root_ref);
++		subvol_info->dirid = btrfs_root_ref_dirid(leaf, rref);
++
++		item_off = btrfs_item_ptr_offset(leaf, slot)
++				+ sizeof(struct btrfs_root_ref);
++		item_len = btrfs_item_size_nr(leaf, slot)
++				- sizeof(struct btrfs_root_ref);
++		read_extent_buffer(leaf, subvol_info->name,
++				   item_off, item_len);
  	}
  
+ 	if (copy_to_user(argp, subvol_info, sizeof(*subvol_info)))
 -- 
 2.31.1
 

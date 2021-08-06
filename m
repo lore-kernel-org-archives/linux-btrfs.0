@@ -2,190 +2,185 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78CB9C4338F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Aug 2021 12:15:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B04E0C4320A
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Aug 2021 15:48:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 511596103B
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Aug 2021 12:15:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 93FF6611B0
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Aug 2021 15:48:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343664AbhHFMPy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Aug 2021 08:15:54 -0400
-Received: from mout.gmx.net ([212.227.17.21]:45229 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1343646AbhHFMPn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 6 Aug 2021 08:15:43 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1628252126;
-        bh=9hq2jaSkj+EGen58CEpicWyEhH6Rz7lv/r1kVoHXO9s=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=Vi6D0Uhu8LUM1FcpBp8w8JWSlGN13ECPsbMiP9tmjK90VnJx7Y4ZRmmj84F7egjP8
-         FQoFGVMOV2VbN60Nx9T4lG6fIE0bORKnFZC/te7QJmJQetSb+5QXvAMvuIynKgghx8
-         g84NUNW+NXuIeRvkYSr0SXTCBRk8JuLyzJgfHnGU=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MAfUe-1mIYL7190C-00B4aK; Fri, 06
- Aug 2021 14:15:25 +0200
+        id S243317AbhHFPsu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Aug 2021 11:48:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48820 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S242813AbhHFPst (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Aug 2021 11:48:49 -0400
+Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D4717C0613CF;
+        Fri,  6 Aug 2021 08:48:32 -0700 (PDT)
+Received: by mail-qk1-x735.google.com with SMTP id e14so10364820qkg.3;
+        Fri, 06 Aug 2021 08:48:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
+         :subject:to:cc:content-transfer-encoding;
+        bh=OtZt8qM9sbwy1i6+/2/hCgWKYLHClyQEK23+gxuhs4M=;
+        b=Q7Z8V6aN53MFXZVFYifk8wUr77qdgQgeX1UAmZ1rs/M4swcmUkBT4cIWTmWtJR+Vlt
+         iUKKGSDi2OecEf1RWVlVLg6o6JqpZEECAxjAEhAMM/kd4B7MvBycG5hMx8uEsBqrYixo
+         IpUMJju/7xuAZkSsR5zk+5W+RZIw2whcLiA6bgksni68OKTDbJb/HqXnW+/cgOtN96qm
+         YELYQEveksZQ8EuiTIi45bOv3aZy6M/4KfxHOvxLWeBa1kC5eYcTg5DAizDGMHcbVQaF
+         vOkq+ABc5T8VgdyraLL+ek9ICqCR9dpaVBNRHnAX8kjH2nkO0/UcDNwcBKy5dtp/u7fV
+         DnIQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
+         :from:date:message-id:subject:to:cc:content-transfer-encoding;
+        bh=OtZt8qM9sbwy1i6+/2/hCgWKYLHClyQEK23+gxuhs4M=;
+        b=hYXCZX/UVEiuTgS74+lXhpv/s9f7d1pS7cwcz6n0bnvQpzKTDemKPeZVzvHnP3laL5
+         oBhWe0TNbjDt+9iVOGrsHxKYKwS/UHBjAjdn1WJhkpGcA0FHFPuWAjp4F+Tr/rpl09cX
+         FWi9PxQtjRmo3P09j9BnL9xrDHcn5kqcHZbbIZYg7YnojFar9QWBTgCMCAxEeHrMCN9o
+         k8GbNod9LjRTV9TCHb6g8jQHSLV2rZIIQtypKq+4tYCvMAIiTjcDRtAwreM0C/8CxuSc
+         aR9/rbbHd/opuFln9AiSy8yL0LYaWq9ph5AVNUCFvev0WR5VJFu3BDis/pOlZ7XnANe4
+         koJA==
+X-Gm-Message-State: AOAM5315zEufqVAxuuDO1pqmV01qHhTToMii7o2SuSOUtn3Xo90nWCOa
+        7ojbcLQGZ6lT/KriZAzoQx7SUl+l2peMcKAeqMw=
+X-Google-Smtp-Source: ABdhPJxCz7sKabHVy/8nTkiBii6cI7a3qVdFTWpyBQtthEQU2AQ+Tk1MczC/O66MtLio1Hy6eQN5SPitEkxHPAgh9+Q=
+X-Received: by 2002:a05:620a:22b5:: with SMTP id p21mr10792711qkh.0.1628264912071;
+ Fri, 06 Aug 2021 08:48:32 -0700 (PDT)
+MIME-Version: 1.0
+References: <20210806113333.328261-1-wqu@suse.com>
+In-Reply-To: <20210806113333.328261-1-wqu@suse.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Fri, 6 Aug 2021 16:48:21 +0100
+Message-ID: <CAL3q7H7-SQS3--oijfty8SRnqqbwCi8S0dGrymKc1_NVe1Mq3w@mail.gmail.com>
 Subject: Re: [PATCH v2] fstests: btrfs/244: add test case to verify the
  behavior of deleting non-existing device
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-References: <20210806113333.328261-1-wqu@suse.com>
- <5547039c-2989-e9d7-6126-15877758b3f0@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <2760b7ed-d216-1d5c-e73d-1569ac4c702d@gmx.com>
-Date:   Fri, 6 Aug 2021 20:15:21 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.12.0
-MIME-Version: 1.0
-In-Reply-To: <5547039c-2989-e9d7-6126-15877758b3f0@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        fstests <fstests@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:D8Ec7M62ZFgH7+h0DrAeqP1C5KTyg9Std2l4J8qE9NS2a26zrUQ
- Zi3q4Z8/wie8yExzK1XDEAJC2QFY+oFwiljFYSKWGa+VGuCstyjqNNM8McGzgPdL3Ej7r/4
- c/Wxbuz1aMDYcZ3A+OkcEn2bjdjZAfYd2QX9K+KKF59/Tw4pynJONLlCzmvNHMOJJpoC5In
- yGT8D/W7mM/aTuRxMfMfw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:C4YvHmS6z18=:hChThROdBWljpT9pApMIUG
- rEfiBtdRqvlWUZeXFnyCXlencVzC2NmtfnNx2ntYvqFVvCPIOKl3HGAU9z/f4K0pNFvxRlaXy
- NVNHGD2k7rXHYyoYTS51ZSIeteeTsuJrRpGct8F014xF7YFrgdfyQnnzgGDJ3Pqhskyta+v5L
- j1noxFgVOTKtvAsZYWlgNNptA4g/pzMA7wIY+5vXdl2jFTb4csm0lDIJNQd1topq9nsTjAXsq
- Ht6O4DyeX1+U/IjPQT+32pKW8EnCnk0IFXH+K9n2EAvXUW6d0yDyDAZeoXW0iFnl9wefPVtxC
- saGmIxYVVjzSyd2aiTQ6Ohtq8WyES17AJZxZF2vT1TZAThFF0q331bBnJ4FEiBdzxtCccqMVe
- Li4ifaWuOsbAj6mBPESqgjcIUmbSfKGEjxjAmKZXUAm6PFvJgAScCxr2EnC5u7aF/Wr0JkAz2
- OD4wbBTmveUKZQXRsDhEzfWz/vU518LHmBzO7HtJvwa3TIqZldridxyxrl0WtrziLitTTMvjf
- 4wKtFJrdjf6fEpMealtUQSmE5w+3B1vh2uwuVpRn4orMFIE9ip8ENhAgCOaCy4AnL4i8GfhwK
- yw//UDrqYEHjgp6/1i26SB7jqbJRk+j8HxzTpN+K64qh0JaiEMppUpvI0+6r4EmKe+MSQ1eEX
- bVcLWi8adAesrBV9VsWC41Oxbn78diafZvCjUaO8JGqikZZXcQV3gEAdbO84Bbw6tfstfnM7m
- gNn18rW6TE158ltJC5JWg8bZiScx+m4IgVVZA9gXet86Ub5UKpyH/c/vLbxeMlQaVa0Sjbwoc
- CNjFH8bORo/94cN6H4hqFEtE2/ZdkiQeD+Y9Oo1iv301TAtE520KvmcgqkvMotuMxGko+XR/e
- 7Z8X02yvO4I0Ra/uoRMNjkKpNbqrxtA3aj4bwwUMrF6zqRKX2VeekOxmwtKUN7msuAcXRRRY8
- lcOlByXvWiaeSqu+lb2Pe9fKqH6RA16GyP1evF6qSaaTmZ591rc4dTd3I3gwNnWPLTW+TNmOH
- go+gsm0NKnNhO2ZEDFCZML0zwnO6yIOgZxN2PiYJXNQU9QE4xGOD+Livm6xwMtLTunLCLlLA/
- PJCai9XqYFvgQBhj3WuVnAYm9XZBTLOYcxdEKOMZmxQu4S0vUYrWHaVKA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Fri, Aug 6, 2021 at 4:44 PM Qu Wenruo <wqu@suse.com> wrote:
+>
+> There is a kernel regression for btrfs, that when passing non-existing
+> devid to "btrfs device remove" command, kernel will crash due to NULL
+> pointer dereference.
+>
+> The test case is for such regression, it will:
+>
+> - Create and mount an empty single-device btrfs
+> - Try to remove devid 3, which doesn't exist for above fs
+> - Make sure the command exits properly with expected error message
+>
+> The kernel fix is titled "btrfs: fix NULL pointer dereference when
+> deleting device by invalid id".
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Changelog:
+> v2:
+> - Change the subject to also verify the error behavior
+> - Include the error message into golden output
+> - Also verify the return value of btrfs command
+> ---
+>  tests/btrfs/244     | 47 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/244.out |  2 ++
+>  2 files changed, 49 insertions(+)
+>  create mode 100755 tests/btrfs/244
+>  create mode 100644 tests/btrfs/244.out
+>
+> diff --git a/tests/btrfs/244 b/tests/btrfs/244
+> new file mode 100755
+> index 00000000..fbefeedf
+> --- /dev/null
+> +++ b/tests/btrfs/244
+> @@ -0,0 +1,47 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2021 SUSE Linux Products GmbH.  All Rights Reserved.
+> +#
+> +# FS QA Test 244
+> +#
+> +# Make sure "btrfs device remove" won't crash when non-existing devid
+> +# is provided
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick volume dangerous
+> +
+> +# Override the default cleanup function.
+> +# _cleanup()
+> +# {
+> +#      cd /
+> +#      rm -r -f $tmp.*
+> +# }
+> +
+> +# Import common functions.
+> +# . ./common/filter
+> +
+> +# real QA test starts here
+> +
+> +# Modify as appropriate.
+> +_supported_fs btrfs
+> +_require_scratch
+> +
+> +_scratch_mkfs >> $seqres.full 2>&1
+> +_scratch_mount
+> +
+> +# Above created fs only contains one device with devid 1, device remove =
+3
+> +# should just fail with proper error message showing devid 3 can't be fo=
+und.
+> +# Although on unpatched kernel, this will trigger a NULL pointer derefer=
+ence.
+> +$BTRFS_UTIL_PROG device remove 3 $SCRATCH_MNT
+> +ret=3D$?
+> +
+> +if [ $ret -ne 1 ]; then
+> +       echo "Unexpected return value from btrfs command, has $ret expect=
+ed 1"
+> +fi
+
+I think I would just do "-eq 0" instead, but it's more about a
+preferred style than anything else, and can always be changed later if
+needed.
+
+Looks good, thanks.
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+> +
+> +# Fstests will automatically check the filesystem to make sure metadata =
+is not
+> +# corrupted.
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/244.out b/tests/btrfs/244.out
+> new file mode 100644
+> index 00000000..629adf2a
+> --- /dev/null
+> +++ b/tests/btrfs/244.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 244
+> +ERROR: error removing devid 3: No such file or directory
+> --
+> 2.31.1
+>
 
 
-On 2021/8/6 =E4=B8=8B=E5=8D=887:42, Nikolay Borisov wrote:
->
->
-> On 6.08.21 =D0=B3. 14:33, Qu Wenruo wrote:
->> There is a kernel regression for btrfs, that when passing non-existing
->> devid to "btrfs device remove" command, kernel will crash due to NULL
->> pointer dereference.
->>
->> The test case is for such regression, it will:
->>
->> - Create and mount an empty single-device btrfs
->> - Try to remove devid 3, which doesn't exist for above fs
->> - Make sure the command exits properly with expected error message
->>
->> The kernel fix is titled "btrfs: fix NULL pointer dereference when
->> deleting device by invalid id".
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->> Changelog:
->> v2:
->> - Change the subject to also verify the error behavior
->> - Include the error message into golden output
->> - Also verify the return value of btrfs command
->> ---
->>   tests/btrfs/244     | 47 ++++++++++++++++++++++++++++++++++++++++++++=
-+
->>   tests/btrfs/244.out |  2 ++
->>   2 files changed, 49 insertions(+)
->>   create mode 100755 tests/btrfs/244
->>   create mode 100644 tests/btrfs/244.out
->>
->> diff --git a/tests/btrfs/244 b/tests/btrfs/244
->> new file mode 100755
->> index 00000000..fbefeedf
->> --- /dev/null
->> +++ b/tests/btrfs/244
->> @@ -0,0 +1,47 @@
->> +#! /bin/bash
->> +# SPDX-License-Identifier: GPL-2.0
->> +# Copyright (c) 2021 SUSE Linux Products GmbH.  All Rights Reserved.
->> +#
->> +# FS QA Test 244
->> +#
->> +# Make sure "btrfs device remove" won't crash when non-existing devid
->> +# is provided
->> +#
->> +. ./common/preamble
->> +_begin_fstest auto quick volume dangerous
->> +
->> +# Override the default cleanup function.
->> +# _cleanup()
->> +# {
->> +# 	cd /
->> +# 	rm -r -f $tmp.*
->> +# }
->> +
->> +# Import common functions.
->> +# . ./common/filter
->> +
->> +# real QA test starts here
->> +
->> +# Modify as appropriate.
->> +_supported_fs btrfs
->> +_require_scratch
->> +
->> +_scratch_mkfs >> $seqres.full 2>&1
->> +_scratch_mount
->> +
->> +# Above created fs only contains one device with devid 1, device remov=
-e 3
->> +# should just fail with proper error message showing devid 3 can't be =
-found.
->> +# Although on unpatched kernel, this will trigger a NULL pointer deref=
-erence.
->> +$BTRFS_UTIL_PROG device remove 3 $SCRATCH_MNT
->> +ret=3D$?
->> +
->> +if [ $ret -ne 1 ]; then
->> +	echo "Unexpected return value from btrfs command, has $ret expected 1=
-"
->> +fi
->
-> <rant>
-> This just shows how broken progs are w.r.t return values. The generally
-> accepted return value is 0 on success, yet it returns 1 on success since
-> the functions implementing this functionality in progs treat the return
-> value as a boolean.
-> </rant>
+--=20
+Filipe David Manana,
 
-
-Nope, we're testing a failure case, thus returning 1 is what we expect.
-
-Thanks,
-Qu
->
->
->
->> +
->> +# Fstests will automatically check the filesystem to make sure metadat=
-a is not
->> +# corrupted.
->> +
->> +# success, all done
->> +status=3D0
->> +exit
->> diff --git a/tests/btrfs/244.out b/tests/btrfs/244.out
->> new file mode 100644
->> index 00000000..629adf2a
->> --- /dev/null
->> +++ b/tests/btrfs/244.out
->> @@ -0,0 +1,2 @@
->> +QA output created by 244
->> +ERROR: error removing devid 3: No such file or directory
->>
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

@@ -2,137 +2,154 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4FABC4338F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Aug 2021 00:29:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F59CC4338F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Aug 2021 03:58:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 984DB60C3F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Aug 2021 00:29:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F3ABB60E97
+	for <linux-btrfs@archiver.kernel.org>; Mon,  9 Aug 2021 03:58:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232507AbhHIAaC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 8 Aug 2021 20:30:02 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:31977 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229903AbhHIAaB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Aug 2021 20:30:01 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1628468981; x=1660004981;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=9MfgdTU+OuJF9DJCe0UQvJ3Kcx9XBdCcw+YjW85Lp5o=;
-  b=Rb5NzTbFjBUOYY7KsY1qfuTsvsy4nXt7sc7gNprrE55gJydxZjfw7bjI
-   f3ggrSbBzxdWdlgTNVm7ABMlWMr3aKCtBvYC0BqMkF3+eX0U9ooriQKBW
-   ibxj/YZwlusxE4um44unT5x0G2rqZ3JQnWY61XDYREDAEehZAOug42sBk
-   Kk0xMwI3wqX5i9l60W/wailC02VCZy8rsTIzJcmyAxAue1me1N0rMXP6L
-   1f9D8uhdkHrGKxjBAxy0VK/IDDJNrY9ObQU7LnoN8iG6fE8uyGQVHcn/k
-   2TofX6e8G7yzY6hW17qdHHY1Wo+JnUb7mhVhrLqpgh32PvZIkcZPtyEee
-   A==;
-X-IronPort-AV: E=Sophos;i="5.84,305,1620662400"; 
-   d="scan'208";a="176633342"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 09 Aug 2021 08:29:41 +0800
-IronPort-SDR: XWkD3FAjOHLiVM9WWnulRnWrCorEFhUi9cx16x+fnua8ftIovJ9fS2bDwiJMySz75zQc1qE+ir
- xLNKg3tfR7ph+90mWj8sVDnR5gwVRN23fXvmLMCuWgP5hoattgtZ5jkXfJauMGyMrCk6e1GsKT
- R1F6OI0VU7c4suHz1CmhB3R9lFs/qhykfjlfsKlo1lBV99paHnZd8dUmpssT/5XdL3fTUlaGgG
- X0ZcCIZIK39xj7oYUFT5Wpmpw2MktijSBZlj/d/PA1jMtTruhSgrJ8ShwlJys3lMr9hvPSGUyx
- P1wk9aW3P8PdHnPY5gzf/B3h
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 08 Aug 2021 17:05:15 -0700
-IronPort-SDR: b/34ndMxNroQHe2mAqPhMx12Hd+U6tH8buC8jVxrO8xu1viLhTAzFpv/gU/ALQiHdriZHrGyDh
- aFRWKFKJoQflA5nu9xd702Lg7XTBHzOji/K8A5gAJYadFpHzzvnwURfLUjxHwSsQt0tdwvXCgz
- SSXwWi9o1IO6j1mQfS8EP+O5/uG6bYU6w4ZjiR8R/Ie9ijtA5b0UXLgG+0ozSBhruKEP/kgNpy
- mFB9ENd1Up+Br++Wyx64khfyHNqwHYbnRQcDiqtoh6AQJnyjkb8Lnr6ZmE1k8cM6BMEQSzy4Po
- dnU=
-WDCIronportException: Internal
-Received: from gczpn73.ad.shared (HELO naota-xeon.wdc.com) ([10.225.57.167])
-  by uls-op-cesaip02.wdc.com with ESMTP; 08 Aug 2021 17:29:39 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: zoned: add ASSERTs on splitting extent_map
-Date:   Mon,  9 Aug 2021 09:29:18 +0900
-Message-Id: <20210809002918.2686884-1-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.32.0
+        id S232859AbhHID6j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 8 Aug 2021 23:58:39 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:56414 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232680AbhHID6i (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Aug 2021 23:58:38 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 353DF21E55;
+        Mon,  9 Aug 2021 03:58:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1628481497; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=Sb1QA97NgQTxNE9aFEJpXFBCpCFiUGgr0naZO+lLRCk=;
+        b=KzG4GFORXeMkvnlSFrT1yn+WfPYF3LvxsokNV1wFl106F18UNkhAxdKOAXpF5A9A36RHm9
+        ibzdubEpKPP8VEm/Lf0QyjkMMrJj7HRDCDnba3KcfN1dSlpwS+/l5ODYr1RYtnzyF6J13Z
+        MRs056zY/oXOSUs8+cybs9NiXGkxv5w=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1628481497;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=Sb1QA97NgQTxNE9aFEJpXFBCpCFiUGgr0naZO+lLRCk=;
+        b=W+yBQz1VKF0Yrm8tgHBsuIYABA07f5kSfl4AG8iPDxD6IzMSTKixf5LPvKzAHF8n5gEODc
+        S7C/+a6enIEvPfBQ==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 45AB613A9F;
+        Mon,  9 Aug 2021 03:58:15 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 1hoKAdenEGG7BgAAMHmgww
+        (envelope-from <neilb@suse.de>); Mon, 09 Aug 2021 03:58:15 +0000
+Subject: [PATCH/RFC 0/4] Attempt to make progress with btrfs dev number
+  strangeness.
+From:   NeilBrown <neilb@suse.de>
+To:     Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-fsdevel@vger.kernel.org,
+        Linux NFS list <linux-nfs@vger.kernel.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date:   Mon, 09 Aug 2021 13:55:27 +1000
+Message-ID: <162848123483.25823.15844774651164477866.stgit@noble.brown>
+User-Agent: StGit/0.23
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We call split_zoned_em() on an extent_map on submitting a bio for it. Thus,
-we can assume the extent_map is PINNED, not LOGGING, and in the modified
-list. Add ASSERT()s to ensure the  extent_maps after the split also has the
-proper flags set and are in the modified list.
+I continue to search for a way forward for btrfs so that its behaviour
+with respect to device numbers and subvols is somewhat coherent.
 
-Cc: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Suggested-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+This series implements some of the ideas in my "A Third perspective"[1],
+though with changes is various details.
+
+I introduce two new mount options, which default to
+no-change-in-behaviour.
+
+ -o inumbits=  causes inode numbers to be more unique across a whole btrfs
+               filesystem, and is many cases completely unique.  Mounting
+               with "-i inumbits=56" will resolve the NFS issues that
+               started me tilting at this particular windmill.
+
+ -o numdevs=  can reduce the number of distinct devices reported by
+              stat(), either to 2 or to 1.
+              Both ease problems for sites that exhaust their supply of
+              device numbers.
+              '2' allows "du -x" to continue to work, but is otherwise
+              rather strange.
+              '1' breaks the use of "du -x" and similar to examine a
+              single subvol which might have subvol descendants, but
+              provides generally sane behaviour
+              "-o numdevs=1" also forces inumbits to have a useful value.
+
+I introduce a "tree id" which can be discovered using statx().  Two
+files with the same dev and ino might still be different if the tree-ids
+are different.  Connected files with the same tree-id may be usefully
+considered to be related.
+
+I also change various /proc files (only when numdevs=1 is used) to
+provide extra information so they are useful with btrfs despite subvols.
+/proc/maps /proc/smaps /proc/locks /proc/X/fdinfo/Y are affected.
+The inode number becomes "XX:YY" where XX is the subvol number (tree id)
+and YY is the inode number.
+
+An alternate might be to report a number which might use up to 128 bits.
+Which is less likely to seriously break code?
+
+Note that code which ignores badly formatted lines is safe, because it
+will never currently find a match for a btrfs file in these files
+anyway.  The device number they report is never returned in st_dev for
+stat() on any file.
+
+The audit subsystem and one or two other places report dev/ino and so
+need enhanced, but I haven't tried to address those.
+
+Various trace points also report dev/ino.  I haven't tried thinking
+about those either.
+
+Thanks for your upcoming replies!
+
+NeilBrown
+
 ---
- fs/btrfs/inode.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0c40dfaf6c0d..7d3882e9ef10 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2303,7 +2303,6 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 	struct extent_map *split_mid = NULL;
- 	struct extent_map *split_post = NULL;
- 	int ret = 0;
--	int modified;
- 	unsigned long flags;
- 
- 	/* Sanity check */
-@@ -2333,11 +2332,12 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 	ASSERT(em->len == len);
- 	ASSERT(!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags));
- 	ASSERT(em->block_start < EXTENT_MAP_LAST_BYTE);
-+	ASSERT(test_bit(EXTENT_FLAG_PINNED, &em->flags));
-+	ASSERT(!test_bit(EXTENT_FLAG_LOGGING, &em->flags));
-+	ASSERT(!list_empty(&em->list));
- 
- 	flags = em->flags;
- 	clear_bit(EXTENT_FLAG_PINNED, &em->flags);
--	clear_bit(EXTENT_FLAG_LOGGING, &flags);
--	modified = !list_empty(&em->list);
- 
- 	/* First, replace the em with a new extent_map starting from * em->start */
- 	split_pre->start = em->start;
-@@ -2351,7 +2351,7 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 	split_pre->compress_type = em->compress_type;
- 	split_pre->generation = em->generation;
- 
--	replace_extent_mapping(em_tree, em, split_pre, modified);
-+	replace_extent_mapping(em_tree, em, split_pre, 1);
- 
- 	/*
- 	 * Now we only have an extent_map at:
-@@ -2371,7 +2371,7 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 		split_mid->flags = flags;
- 		split_mid->compress_type = em->compress_type;
- 		split_mid->generation = em->generation;
--		add_extent_mapping(em_tree, split_mid, modified);
-+		add_extent_mapping(em_tree, split_mid, 1);
- 	}
- 
- 	if (post) {
-@@ -2385,7 +2385,7 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 		split_post->flags = flags;
- 		split_post->compress_type = em->compress_type;
- 		split_post->generation = em->generation;
--		add_extent_mapping(em_tree, split_post, modified);
-+		add_extent_mapping(em_tree, split_post, 1);
- 	}
- 
- 	/* Once for us */
--- 
-2.32.0
+NeilBrown (4):
+      btrfs: include subvol identifier in inode number if -o inumbits=...
+      btrfs: add numdevs= mount option.
+      VFS/btrfs: add STATX_TREE_ID
+      Add "tree" number to "inode" number in various /proc files.
+
+
+ fs/btrfs/ctree.h          | 17 +++++++++++++++--
+ fs/btrfs/disk-io.c        | 24 +++++++++++++++++++++---
+ fs/btrfs/inode.c          | 39 ++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/ioctl.c          |  6 ++++--
+ fs/btrfs/super.c          | 31 +++++++++++++++++++++++++++++++
+ fs/inode.c                |  1 +
+ fs/locks.c                | 12 +++++++++---
+ fs/notify/fdinfo.c        | 19 ++++++++++++++-----
+ fs/proc/nommu.c           | 11 ++++++++---
+ fs/proc/task_mmu.c        | 17 ++++++++++++-----
+ fs/proc/task_nommu.c      | 11 ++++++++---
+ fs/stat.c                 |  2 ++
+ include/linux/fs.h        |  3 ++-
+ include/linux/stat.h      | 13 +++++++++++++
+ include/uapi/linux/stat.h |  3 ++-
+ samples/vfs/test-statx.c  |  4 +++-
+ 16 files changed, 183 insertions(+), 30 deletions(-)
+
+--
+Signature
 

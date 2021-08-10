@@ -2,75 +2,83 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 740CCC4338F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Aug 2021 13:57:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27FDAC4320A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Aug 2021 14:07:26 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 56A5660FDA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Aug 2021 13:57:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id F336260F41
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Aug 2021 14:07:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241288AbhHJN56 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Aug 2021 09:57:58 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:58536 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240350AbhHJN5t (ORCPT
+        id S238889AbhHJOHq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Aug 2021 10:07:46 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:34852 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S237375AbhHJOHq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Aug 2021 09:57:49 -0400
+        Tue, 10 Aug 2021 10:07:46 -0400
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 207D722073;
-        Tue, 10 Aug 2021 13:57:27 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id 2D695200B9;
+        Tue, 10 Aug 2021 14:07:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1628603847;
+        t=1628604443;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Ie7mA0Me1kv4uWKA3LMC0JwDjJsGQFAKtoj6vlLZkyk=;
-        b=GU0Cn6dHJsmmsIt2GkshUmgIc+E387o2SxiTnEMWAl8sPCupPWZKfNcOVCrFq2x68sHxHe
-        Zf4uAOWss9laTdC0a59+qIqXqbIS7Qx+J710rIVYMBYRn3YE4zPRK2aj5bheosJwycquZb
-        Ez62PDdCu0vDDSn6kXp/fXKi+ZlV3UU=
+        bh=ok+5PZ4Wccz0hdrjClnsxQOONPiU0T6dDCCUsxFO3j8=;
+        b=mLY4XBs/Jo2O3j6m2412n0TZL2Loqn9h2T89v3X1Huu+HJ33kEEsEEqCfBbcpdm2EUbh8F
+        BAkYRUrA3XdNf/bHfrnjNyTDKFsuSkx5pnmq8pwyfVYco2uB8xRZ4vG5Rmkab4LV4gZ87Z
+        Wv3Mdz//fwS6MWAfFRpPXCV5p/Fsgv0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1628603847;
+        s=susede2_ed25519; t=1628604443;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Ie7mA0Me1kv4uWKA3LMC0JwDjJsGQFAKtoj6vlLZkyk=;
-        b=wXyc2+mW4TLehc9/WN84NWipyoAcxY3rRNvx8TDmlohEUGQ1muDqFC3pUGwHLEBikf5tMJ
-        jkaRcuyUvgHgPIBw==
+        bh=ok+5PZ4Wccz0hdrjClnsxQOONPiU0T6dDCCUsxFO3j8=;
+        b=CJgslxqRLCzaUehonPi9WY+8ncC257RT3iRB1WwnFy4v4kBv0x26wiydrzF4xLG6XIH1tP
+        hGg4OxjbrvCbbMBg==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 1888FA3B93;
-        Tue, 10 Aug 2021 13:57:27 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 23BFEA3B8A;
+        Tue, 10 Aug 2021 14:07:23 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D0CD0DA880; Tue, 10 Aug 2021 15:54:34 +0200 (CEST)
-Date:   Tue, 10 Aug 2021 15:54:34 +0200
+        id AE002DA880; Tue, 10 Aug 2021 16:04:30 +0200 (CEST)
+Date:   Tue, 10 Aug 2021 16:04:30 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH] btrfs: zoned: fix alloc offset calculation
-Message-ID: <20210810135434.GU5047@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org
+Subject: Re: [PATCH v2] fstests: btrfs/244: add test case to verify the
+ behavior of deleting non-existing device
+Message-ID: <20210810140430.GV5047@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-References: <20210809041344.3002897-1-naohiro.aota@wdc.com>
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org
+References: <20210806113333.328261-1-wqu@suse.com>
+ <5547039c-2989-e9d7-6126-15877758b3f0@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210809041344.3002897-1-naohiro.aota@wdc.com>
+In-Reply-To: <5547039c-2989-e9d7-6126-15877758b3f0@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 09, 2021 at 01:13:44PM +0900, Naohiro Aota wrote:
-> alloc_offset is offset from the start of a block group and @offset is
-> actually an address in logical space. Thus, we need to consider
-> block_group->start when calculating them.
+On Fri, Aug 06, 2021 at 02:42:36PM +0300, Nikolay Borisov wrote:
+> > +if [ $ret -ne 1 ]; then
+> > +	echo "Unexpected return value from btrfs command, has $ret expected 1"
+> > +fi
 > 
-> Fixes: 011b41bffa3d ("btrfs: zoned: advance allocation pointer after tree log node")
-> Cc: stable@vger.kernel.org # 5.12+
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> <rant>
+> This just shows how broken progs are w.r.t return values. The generally
+> accepted return value is 0 on success, yet it returns 1 on success since
+> the functions implementing this functionality in progs treat the return
+> value as a boolean.
+> </rant>
 
-Added to misc-next, thanks.
+Heh, not following the common convention of 0 for success, !0 for errors
+would be crazy and hardly left unnoticed by users.

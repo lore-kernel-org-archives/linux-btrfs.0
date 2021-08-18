@@ -2,312 +2,88 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+X-Spam-Status: No, score=-9.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30962C4320A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 07:45:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FE16C432BE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 07:54:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 137C86108D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 07:45:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 13F2C610A6
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 07:54:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239540AbhHRHqB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Aug 2021 03:46:01 -0400
-Received: from eu-shark2.inbox.eu ([195.216.236.82]:58538 "EHLO
-        eu-shark2.inbox.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239533AbhHRHpY (ORCPT
+        id S239187AbhHRHzb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Aug 2021 03:55:31 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:47236 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S239119AbhHRHz3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Aug 2021 03:45:24 -0400
-Received: from eu-shark2.inbox.eu (localhost [127.0.0.1])
-        by eu-shark2-out.inbox.eu (Postfix) with ESMTP id AE6621E006F2;
-        Wed, 18 Aug 2021 10:44:48 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=inbox.eu; s=20140211;
-        t=1629272688; bh=bmh8d2jNUJ35/R0HDY8zFTfjioLwB4D4zLCZ6PwnzDU=;
-        h=References:From:To:Cc:Subject:Date:In-reply-to;
-        b=WYHsSHblNVh7MywaTVU2ABxnTX/qrNQQmX80zMpZ7FxZBq4tuhugHWPf35OQKzi8Y
-         ZSV+Besrcu/p5UiH6RQvnh/ZIRk3t6InEjPf2BalH4hGlqQW7kYdaprqSehO48gsAS
-         sLxGBUB2674nspzzwxWnRSXuMryOvC/k5dg7Y3R0=
-Received: from localhost (localhost [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id A565A1E0063D;
-        Wed, 18 Aug 2021 10:44:48 +0300 (EEST)
-Received: from eu-shark2.inbox.eu ([127.0.0.1])
-        by localhost (eu-shark2.inbox.eu [127.0.0.1]) (spamfilter, port 35)
-        with ESMTP id D7M-PWgiJNNA; Wed, 18 Aug 2021 10:44:48 +0300 (EEST)
-Received: from mail.inbox.eu (eu-pop1 [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id 14C3C1E0063C;
-        Wed, 18 Aug 2021 10:44:48 +0300 (EEST)
-Received: from nas (unknown [49.65.73.48])
-        (Authenticated sender: l@damenly.su)
-        by mail.inbox.eu (Postfix) with ESMTPA id AA2D21BE00FE;
-        Wed, 18 Aug 2021 10:44:46 +0300 (EEST)
-References: <20210818041944.5793-1-l@damenly.su>
- <1b42b3aa-0363-36ad-df5c-4d9d86b8cc97@oracle.com>
-User-agent: mu4e 1.5.8; emacs 27.2
-From:   Su Yue <l@damenly.su>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2] btrfs: traverse seed devices if fs_devices::devices
- is empty in show_devname
-Date:   Wed, 18 Aug 2021 15:30:19 +0800
-Message-ID: <7dgjfbca.fsf@damenly.su>
-In-reply-to: <1b42b3aa-0363-36ad-df5c-4d9d86b8cc97@oracle.com>
+        Wed, 18 Aug 2021 03:55:29 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id B2CF622046;
+        Wed, 18 Aug 2021 07:54:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629273293; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=colFvJxrPe7DiDKrNpM7KohPGzcy7Ebt8ZyReMUgPzY=;
+        b=FHzAypluh2ET2RrR7RbgUm+hXs1/uPpZw3McqWCZqytKPH0raZDh8KTXHuDrB5lI7kAckx
+        iAYZlA90GrlkgLMvv2l1rtniSTWoKoG2dGRQSdQUSlooBlPZKN4W8IoYg74ZraxAlg0WGf
+        bfo72+HdMBHXH9Bsu3JRH9IEq/ANomg=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 828C413357;
+        Wed, 18 Aug 2021 07:54:53 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id /KciHc28HGGpBAAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Wed, 18 Aug 2021 07:54:53 +0000
+Subject: Re: fstests btrfs/232 cause kworker rcu_gp CPU stalls on linux
+ 5.4.141
+To:     Wang Yugui <wangyugui@e16-tech.com>, linux-btrfs@vger.kernel.org,
+        anand.jain@oracle.com
+References: <20210818152913.813E.409509F4@e16-tech.com>
+ <20210818153723.8142.409509F4@e16-tech.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <d0531cfc-acd2-ebdb-175d-59233a05830c@suse.com>
+Date:   Wed, 18 Aug 2021 10:54:52 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
-X-Virus-Scanned: OK
-X-ESPOL: 6N1mlpY9aTPX9ELSPXaeWkYr1kpEWOT7/eKk1x5HmHPmU1qJf04NURK/nm1yS2A=
+In-Reply-To: <20210818153723.8142.409509F4@e16-tech.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-On Wed 18 Aug 2021 at 14:48, Anand Jain <anand.jain@oracle.com> 
-wrote:
 
-> On 18/08/2021 12:19, Su Yue wrote:
->> while running btrfs/238 in my test box, the following warning 
->> occurs
->> in high chance:
->>
->> ------------[ cut here  ]------------
->> WARNING: CPU: 3 PID: 481 at fs/btrfs/super.c:2509 
->> btrfs_show_devname+0x104/0x1e8 [btrfs]
->> CPU: 2 PID: 1 Comm: systemd Tainted: G        W  O 
->> 5.14.0-rc1-custom #72
->> Hardware name: QEMU QEMU Virtual Machine, BIOS 0.0.0 02/06/2015
->> Call trace:
->>    btrfs_show_devname+0x108/0x1b4 [btrfs]
->>    show_mountinfo+0x234/0x2c4
->>    m_show+0x28/0x34
->>    seq_read_iter+0x12c/0x3c4
->>    vfs_read+0x29c/0x2c8
->>    ksys_read+0x80/0xec
->>    __arm64_sys_read+0x28/0x34
->>    invoke_syscall+0x50/0xf8
->>    do_el0_svc+0x88/0x138
->>    el0_svc+0x2c/0x8c
->>    el0t_64_sync_handler+0x84/0xe4
->>    el0t_64_sync+0x198/0x19c
->> ---[ end trace 3efd7e5950b8af05  ]---
->>
->
->> It's also reproducible by creating a sprout filesystem and 
->> reading
->> /proc/self/mounts in parallel.
->
->   ok. This explains.
->
->>
->> The warning is produced if btrfs_show_devname() can't find any 
->> available
->> device in fs_info->fs_devices->devices which is protected by 
->> RCU.
->
->
->> The warning is desirable to exercise there is at least one 
->> device in the
->> mounted filesystem. However, it's not always true for a 
->> sprouting fs.
->
->
-> Right. When the code is running from line 2596 (including) until 
-> line
-> 2607, there are chances that the fs_info->fs_devices->devices 
-> list is
-> empty. Or those devices are moving to 
-> fs_info->fs_devices->seed_list.
->
->
-> 2596                 ret = btrfs_prepare_sprout(fs_info);
-> 2597                 if (ret) {
-> 2598                         btrfs_abort_transaction(trans, 
-> ret);
-> 2599                         goto error_trans;
-> 2600                 }
-> 2601         }
-> 2602
-> 2603         device->fs_devices = fs_devices;
-> 2604
-> 2605         mutex_lock(&fs_devices->device_list_mutex);
-> 2606         mutex_lock(&fs_info->chunk_mutex);
-> 2607         list_add_rcu(&device->dev_list, 
-> &fs_devices->devices);
->
->
->>
->> While a new device is being added into fs to be sprouted, call 
->> stack is:
->>   btrfs_ioctl_add_dev
->>    btrfs_init_new_device
->>      btrfs_prepare_sprout
->>        list_splice_init_rcu(&fs_devices->devices, 
->>        &seed_devices->devices,
->>        synchronize_rcu);
->>      list_add_rcu(&device->dev_list, &fs_devices->devices);
->>
->> Looking at btrfs_prepare_sprout(), every new RCU reader will 
->> read a
->> empty fs_devices->devices once synchronize_rcu() is called.
->> After commit 4faf55b03823 ("btrfs: don't traverse into the seed 
->> devices
->> in show_devname"), btrfs_show_devname() won't looking into
->> fs_devices->seed_list even there is no device in 
->> fs_devices->devices.
->>
->> And since commit 88c14590cdd6 ("btrfs: use RCU in 
->> btrfs_show_devname for
->> device list traversal"), btrfs_show_devname() only uses RCU 
->> without mutex
->> lock taken for device list traversal. The function read an 
->> empty
->> fs_devices->devices and found no device in the list then 
->> triggers the
->> warning. The commit just enlarged the window that the fs device 
->> list
->> could be empty. Even btrfs_show_devname() uses mutex_lock(), 
->> there is a
->> tiny chance to read an empty devices list between 
->> mutex_unlock() in
->> btrfs_prepare_sprout() and next mutex_lock() in 
->> btrfs_init_new_device().
->>
->> So take device_list_mutex then traverse fs_devices->seed_list 
->> to seek
->> for a seed device if no device was found in 
->> fs_devices->devices.
->> Since a normal fs always has devices in fs_device->devices and 
->> the
->> window is small enough, the mutex lock is not too heavy.
->>
->> Signed-off-by: Su Yue <l@damenly.su>
->>
->> ---
->> Changelog:
->> v2:
->>      Try to traverse fs_devices->seed_list instead of removing 
->>      the
->>        WARN_ON().
->>      Change the subject.
->>      Add description of fix.
->> ---
->>   fs/btrfs/super.c | 41 
->>   ++++++++++++++++++++++++++++++++++++++---
->>   1 file changed, 38 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index d07b18b2b250..31e723eb2ccf 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -2482,7 +2482,9 @@ static int btrfs_unfreeze(struct 
->> super_block *sb)
->>   static int btrfs_show_devname(struct seq_file *m, struct 
->>   dentry *root)
->>   {
->>   	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
->> +	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
->>   	struct btrfs_device *dev, *first_dev = NULL;
->> +	struct btrfs_fs_devices *seed_devices;
->>
->>   	/*
->>   	 * Lightweight locking of the devices. We should not need
->> @@ -2492,7 +2494,7 @@ static int btrfs_show_devname(struct 
->> seq_file *m, struct dentry *root)
->>   	 * least until the rcu_read_unlock.
->>   	 */
->>   	rcu_read_lock();
->> -	list_for_each_entry_rcu(dev, 
->> &fs_info->fs_devices->devices, dev_list) {
->> +	list_for_each_entry_rcu(dev, &fs_devices->devices, 
->> dev_list) {
->>   		if (test_bit(BTRFS_DEV_STATE_MISSING, 
->>   &dev->dev_state))
->>   			continue;
->>   		if (!dev->name)
->> @@ -2503,9 +2505,42 @@ static int btrfs_show_devname(struct 
->> seq_file *m, struct dentry *root)
->>
->>   	if (first_dev)
->>   		seq_escape(m, rcu_str_deref(first_dev->name), " 
->>   \t\n\\");
->> -	else
->> -		WARN_ON(1);
->>   	rcu_read_unlock();
->> +
->> +	if (first_dev)
->> +		return 0;
->> +
->> +	/*
->> +	 * While the fs is sprouting, above fs_devices->devices 
->> could be empty
->> +	 * if the RCU read happened in the window between when
->> +	 * fs_devices->devices was spliced into 
->> seed_devices->devices in
->> +	 * btrfs_prepare_sprout() and new device is not added to
->> +	 * fs_devices->devices in btrfs_init_new_device().
->> +	 *
->> +	 * Take device_list_mutex to make sure seed_devices has 
->> been added into
->> +	 * fs_devices->seed_list then we can traverse it.
->> +	 */
->> +	mutex_lock(&fs_devices->device_list_mutex);
->
->
-> possible fix:
->   As the problem is from line 2596 to 2607 (above) can we move
->      list_add_rcu(&device->dev_list, &fs_devices->devices);
->   into btrfs_prepare_sprout() so that it shall reduce the racing 
->   window.
->
-Seems a feasible fix in another way. If the new device is to be 
-added
-by btrfs_prepare_sprout(), then almost everything (num_devices, 
-total
-bytes) what is updated in the mutex block starting from line 2607 
-should
-be moved into the mutex blcok btrfs_prepare_sprout() inside?
-Then the code path looks more complex...
+On 18.08.21 г. 10:37, Wang Yugui wrote:
+> Hi,
+> 
+> We gathered the output of of 'sysrq-trigger t'  again.
+> 
 
-> And,
->   We have learned that taking device_list_mutex in this thread 
->   will end
->   up with a lockdep warning. We might need a new fs_info state 
->   to
->   indicate that FS is sprouting.
->
-Not confident in design :) I guess it's up to David.
+Well you are running some vendor-specific kernel based off 5.4 Also you
+seem to be using qgroups and are likely missing a bunch of fixing around
+try_flush_qgroup and transactions deadlock:
 
-Thanks.
-
---
-Su
-> Thanks, Anand
->
->> +	list_for_each_entry(seed_devices, &fs_devices->seed_list, 
->> seed_list) {
->> +		list_for_each_entry(dev, &seed_devices->devices, 
->> dev_list) {
->> +			if (test_bit(BTRFS_DEV_STATE_MISSING, 
->> &dev->dev_state))
->> +				continue;
->> +			if (!dev->name)
->> +				continue;
->> +			if (!first_dev || dev->devid < first_dev->devid)
->> +				first_dev = dev;
->> +		}
->> +	}
->> +
->> +	if (first_dev) {
->> +		rcu_read_lock();
->> +		seq_escape(m, rcu_str_deref(first_dev->name), " 
->> \t\n\\");
->> +		rcu_read_unlock();
->> +	} else {
->> +		WARN_ON(1);
->> +	}
->> +	mutex_unlock(&fs_devices->device_list_mutex);
->> +
->>   	return 0;
->>   }
->>
->>
+f9baa501b4fd btrfs: fix deadlock when cloning inline extents and using
+qgroups (4 months ago) <Filipe Manana>
+ae396a3b7ad0 btrfs: simplify commit logic in try_flush_qgroup (6 months
+ago) <Nikolay Borisov>
+4d14c5cde5c2 btrfs: don't flush from
+btrfs_delayed_inode_reserve_metadata (6 months ago) <Nikolay Borisov>
+ae5e070eaca9 btrfs: qgroup: don't try to wait flushing if we're already
+holding a transaction (9 months ago) <Qu Wenruo>
+6f23277a49e6 btrfs: qgroup: don't commit transaction when we already
+hold the handle (9 months ago) <Qu Wenruo>

@@ -2,88 +2,105 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FE16C432BE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 07:54:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40BD6C4338F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 09:32:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 13F2C610A6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 07:54:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 25D7B60551
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 09:32:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239187AbhHRHzb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Aug 2021 03:55:31 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:47236 "EHLO
+        id S233139AbhHRJco (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Aug 2021 05:32:44 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:39800 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239119AbhHRHz3 (ORCPT
+        with ESMTP id S233703AbhHRJcU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Aug 2021 03:55:29 -0400
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B2CF622046;
-        Wed, 18 Aug 2021 07:54:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1629273293; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
+        Wed, 18 Aug 2021 05:32:20 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 6BDC422065;
+        Wed, 18 Aug 2021 09:31:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1629279084;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=colFvJxrPe7DiDKrNpM7KohPGzcy7Ebt8ZyReMUgPzY=;
-        b=FHzAypluh2ET2RrR7RbgUm+hXs1/uPpZw3McqWCZqytKPH0raZDh8KTXHuDrB5lI7kAckx
-        iAYZlA90GrlkgLMvv2l1rtniSTWoKoG2dGRQSdQUSlooBlPZKN4W8IoYg74ZraxAlg0WGf
-        bfo72+HdMBHXH9Bsu3JRH9IEq/ANomg=
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 828C413357;
-        Wed, 18 Aug 2021 07:54:53 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap1.suse-dmz.suse.de with ESMTPSA
-        id /KciHc28HGGpBAAAGKfGzw
-        (envelope-from <nborisov@suse.com>); Wed, 18 Aug 2021 07:54:53 +0000
-Subject: Re: fstests btrfs/232 cause kworker rcu_gp CPU stalls on linux
- 5.4.141
-To:     Wang Yugui <wangyugui@e16-tech.com>, linux-btrfs@vger.kernel.org,
-        anand.jain@oracle.com
-References: <20210818152913.813E.409509F4@e16-tech.com>
- <20210818153723.8142.409509F4@e16-tech.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <d0531cfc-acd2-ebdb-175d-59233a05830c@suse.com>
-Date:   Wed, 18 Aug 2021 10:54:52 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+        bh=MjEVLCKBlTSswofPN1pNmxlP19qpFPg2jUD4se0XdyA=;
+        b=Vce+IAwmUDcfv2b7QGyi2Dv7EKo/Co6jwhdkPnVadZs3PhYLf7tUr6B9fRUUxtOcBZk6+N
+        B9XQg+cRWkemeBBWnWGk1wfHVQuq5Xnz4OC/hrrv7YBobuFDHB3iZwPRwWeZB5fMRC+UY8
+        0ZVGoxSYWv4akI4SI4AnM5BUhMcP4k4=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1629279084;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=MjEVLCKBlTSswofPN1pNmxlP19qpFPg2jUD4se0XdyA=;
+        b=SFOFKtThDem3M1F/rOZMlyJlFmdOZ4+c7ISuV48nRhjMQ1VbfvtT61ULNqlr3zoJHsVSVM
+        ACnXbdzsW0b8HLBQ==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 4E36EA3B94;
+        Wed, 18 Aug 2021 09:31:24 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B0437DA72C; Wed, 18 Aug 2021 11:28:27 +0200 (CEST)
+Date:   Wed, 18 Aug 2021 11:28:27 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Kees Cook <keescook@chromium.org>
+Cc:     linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-staging@lists.linux.dev,
+        linux-block@vger.kernel.org, linux-kbuild@vger.kernel.org,
+        clang-built-linux@googlegroups.com,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        linux-hardening@vger.kernel.org
+Subject: Re: [PATCH v2 49/63] btrfs: Use memset_startat() to clear end of
+ struct
+Message-ID: <20210818092827.GO5047@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Kees Cook <keescook@chromium.org>,
+        linux-kernel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org,
+        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-staging@lists.linux.dev,
+        linux-block@vger.kernel.org, linux-kbuild@vger.kernel.org,
+        clang-built-linux@googlegroups.com,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        linux-hardening@vger.kernel.org
+References: <20210818060533.3569517-1-keescook@chromium.org>
+ <20210818060533.3569517-50-keescook@chromium.org>
 MIME-Version: 1.0
-In-Reply-To: <20210818153723.8142.409509F4@e16-tech.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210818060533.3569517-50-keescook@chromium.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 18.08.21 г. 10:37, Wang Yugui wrote:
-> Hi,
+On Tue, Aug 17, 2021 at 11:05:19PM -0700, Kees Cook wrote:
+> In preparation for FORTIFY_SOURCE performing compile-time and run-time
+> field bounds checking for memset(), avoid intentionally writing across
+> neighboring fields.
 > 
-> We gathered the output of of 'sysrq-trigger t'  again.
+> Use memset_startat() so memset() doesn't get confused about writing
+> beyond the destination member that is intended to be the starting point
+> of zeroing through the end of the struct.
 > 
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <josef@toxicpanda.com>
+> Cc: David Sterba <dsterba@suse.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Signed-off-by: Kees Cook <keescook@chromium.org>
 
-Well you are running some vendor-specific kernel based off 5.4 Also you
-seem to be using qgroups and are likely missing a bunch of fixing around
-try_flush_qgroup and transactions deadlock:
-
-f9baa501b4fd btrfs: fix deadlock when cloning inline extents and using
-qgroups (4 months ago) <Filipe Manana>
-ae396a3b7ad0 btrfs: simplify commit logic in try_flush_qgroup (6 months
-ago) <Nikolay Borisov>
-4d14c5cde5c2 btrfs: don't flush from
-btrfs_delayed_inode_reserve_metadata (6 months ago) <Nikolay Borisov>
-ae5e070eaca9 btrfs: qgroup: don't try to wait flushing if we're already
-holding a transaction (9 months ago) <Qu Wenruo>
-6f23277a49e6 btrfs: qgroup: don't commit transaction when we already
-hold the handle (9 months ago) <Qu Wenruo>
+Acked-by: David Sterba <dsterba@suse.com>

@@ -2,100 +2,164 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AA5FC4338F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 10:38:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4176BC4338F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 10:41:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F350560FE6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 10:38:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1AFC7604D7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 10:41:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234618AbhHRKjY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Aug 2021 06:39:24 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:40148 "EHLO
+        id S234489AbhHRKmF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Aug 2021 06:42:05 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:41518 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230072AbhHRKjO (ORCPT
+        with ESMTP id S233902AbhHRKl4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Aug 2021 06:39:14 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id A89C41FFB2;
-        Wed, 18 Aug 2021 10:38:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1629283119;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=gh5oD6NiNI8ERzrlEi/6l99jHJ9GGjIt4IojBXOrGQM=;
-        b=I54rpaREMC23a9Z2mDVNyLBWfVskoeyUi0EA6+/bmzYbAfYSzuKpVmeNtjZriLxuqJZS/Z
-        gD/UQ0M5QpmQ3zWMs2GkNTHOfVuUJMrjrnJ6SedoiN3P6Lr+RKkrlZWRrRMmfjPnRjMNAL
-        wtDh4G7ro7u07fJjlv1+IF6M0EgiOuU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1629283119;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=gh5oD6NiNI8ERzrlEi/6l99jHJ9GGjIt4IojBXOrGQM=;
-        b=TFms3kg3LlB1QfoRxwkhw/AtoFGMYwKpAnVLnmq032pPwa/YeLsSPaNqZbHo8DQJ2yaCid
-        gjEPhi+cCVCDELAg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id A0B98A3B94;
-        Wed, 18 Aug 2021 10:38:39 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E9501DA72C; Wed, 18 Aug 2021 12:35:42 +0200 (CEST)
-Date:   Wed, 18 Aug 2021 12:35:42 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Marcos Paulo de Souza <mpdesouza@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com
-Subject: Re: [PATCH] btrfs-progs: Drop the type check in
- init_alloc_chunk_ctl_policy_regular
-Message-ID: <20210818103542.GR5047@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Marcos Paulo de Souza <mpdesouza@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com
-References: <20210809182613.4466-1-mpdesouza@suse.com>
- <20210817132419.GK5047@twin.jikos.cz>
- <04abaf84-12e3-3983-dee4-a5073ec786f1@gmx.com>
+        Wed, 18 Aug 2021 06:41:56 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 2D8601FFB6;
+        Wed, 18 Aug 2021 10:41:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629283281; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=szhxHtNPfbRL5zQSG2eFYRKi1H2pHbXK93lInDZ0NkU=;
+        b=HaOxxRjHue+x6BkbOkQiewNbP748qThW0epQluHf3d7QuJ2dCMrUR6OFNkI7sPA4FAulr7
+        pnJQ2Oxw9Yg0P5QJ3qtyVAz8mHbhCfT37FpXuYI+WN1cyl8MG2twpJLIVfmVRUUnDkW1CV
+        l4CUtN08JO9vXNlANlkSFnDj2VaGXpE=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id E704E1371C;
+        Wed, 18 Aug 2021 10:41:20 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id ONbiNdDjHGGgLQAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Wed, 18 Aug 2021 10:41:20 +0000
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>,
+        Filipe Manana <fdmanana@suse.com>
+Subject: [RESEND PATCH] btrfs: rename btrfs_alloc_chunk to btrfs_create_chunk
+Date:   Wed, 18 Aug 2021 13:41:19 +0300
+Message-Id: <20210818104119.172294-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <04abaf84-12e3-3983-dee4-a5073ec786f1@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Aug 18, 2021 at 01:17:46PM +0800, Qu Wenruo wrote:
-> On 2021/8/17 下午9:24, David Sterba wrote:
-> > On Mon, Aug 09, 2021 at 03:26:13PM -0300, Marcos Paulo de Souza wrote:
-> >>
-> >> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
-> >> ---
-> >>
-> >>   This change mimics what the kernel currently does, which is set the stripe_size
-> >>   regardless of the profile. Any thoughts on it? Thanks!
-> >
-> > Makes sense to unify that, it works well for the large sizes. Please
-> > write tests that verify that the chunk sizes are correct after mkfs on
-> > various device sizes. Patch added to devel, thanks.
-> 
-> It in fact makes fsck/025 to fail, bisection points to this patch
-> surprisingly.
-> 
-> Now "mkfs.btrfs -f" on a 128M file will just fail.
-> 
-> This looks like a big problem to me though...
+The user facing function used to allocate new chunks is
+btrfs_chunk_alloc, unfortunately there is yet another similar sounding
+function - btrfs_alloc_chunk. This creates confusion, especially since
+the latter function can be considered "private" in the sense that it
+implements the first stage of chunk creation and as such is called by
+btrfs_chunk_alloc.
 
-This is known that the small filesystem size and intial chunk layout is
-not scaled properly, the patch OTOH fixes the more common case where the
-normal block group sizes fit and leave enough room for the rest.
+To avoid the awkwardness that comes with having similarly named but
+distinctly different in their purpose function rename btrfs_alloc_chunk
+to btrfs_create_chunk, given that the main purpose of this function is
+to orchestrate the whole process of allocating a chunk - reserving space
+into devices, deciding on characteristics of the stripe size and
+creating the in-memory structures.
 
-Can the test 025 be scaled up so we don't have to create the 128M
-filesystem? I'd rather go that way.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/block-group.c | 6 +++---
+ fs/btrfs/volumes.c     | 8 ++++----
+ fs/btrfs/volumes.h     | 2 +-
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index a3b830b8410a..1f8b06afbd03 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -3380,7 +3380,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags)
+ 	 */
+ 	check_system_chunk(trans, flags);
+
+-	bg = btrfs_alloc_chunk(trans, flags);
++	bg = btrfs_create_chunk(trans, flags);
+ 	if (IS_ERR(bg)) {
+ 		ret = PTR_ERR(bg);
+ 		goto out;
+@@ -3441,7 +3441,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans, u64 flags)
+ 		const u64 sys_flags = btrfs_system_alloc_profile(trans->fs_info);
+ 		struct btrfs_block_group *sys_bg;
+
+-		sys_bg = btrfs_alloc_chunk(trans, sys_flags);
++		sys_bg = btrfs_create_chunk(trans, sys_flags);
+ 		if (IS_ERR(sys_bg)) {
+ 			ret = PTR_ERR(sys_bg);
+ 			btrfs_abort_transaction(trans, ret);
+@@ -3734,7 +3734,7 @@ void check_system_chunk(struct btrfs_trans_handle *trans, u64 type)
+ 		 * could deadlock on an extent buffer since our caller may be
+ 		 * COWing an extent buffer from the chunk btree.
+ 		 */
+-		bg = btrfs_alloc_chunk(trans, flags);
++		bg = btrfs_create_chunk(trans, flags);
+ 		if (IS_ERR(bg)) {
+ 			ret = PTR_ERR(bg);
+ 		} else if (!(type & BTRFS_BLOCK_GROUP_SYSTEM)) {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7fec0c68b744..26f8d5825121 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3066,7 +3066,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans, u64 chunk_offset)
+ 		const u64 sys_flags = btrfs_system_alloc_profile(fs_info);
+ 		struct btrfs_block_group *sys_bg;
+
+-		sys_bg = btrfs_alloc_chunk(trans, sys_flags);
++		sys_bg = btrfs_create_chunk(trans, sys_flags);
+ 		if (IS_ERR(sys_bg)) {
+ 			ret = PTR_ERR(sys_bg);
+ 			btrfs_abort_transaction(trans, ret);
+@@ -5347,7 +5347,7 @@ static struct btrfs_block_group *create_chunk(struct btrfs_trans_handle *trans,
+ 	return block_group;
+ }
+
+-struct btrfs_block_group *btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
++struct btrfs_block_group *btrfs_create_chunk(struct btrfs_trans_handle *trans,
+ 					    u64 type)
+ {
+ 	struct btrfs_fs_info *info = trans->fs_info;
+@@ -5548,12 +5548,12 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans)
+ 	 */
+
+ 	alloc_profile = btrfs_metadata_alloc_profile(fs_info);
+-	meta_bg = btrfs_alloc_chunk(trans, alloc_profile);
++	meta_bg = btrfs_create_chunk(trans, alloc_profile);
+ 	if (IS_ERR(meta_bg))
+ 		return PTR_ERR(meta_bg);
+
+ 	alloc_profile = btrfs_system_alloc_profile(fs_info);
+-	sys_bg = btrfs_alloc_chunk(trans, alloc_profile);
++	sys_bg = btrfs_create_chunk(trans, alloc_profile);
+ 	if (IS_ERR(sys_bg))
+ 		return PTR_ERR(sys_bg);
+
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index b082250b42e0..4efdfaa68e76 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -450,7 +450,7 @@ int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, struct extent_map *map,
+ 			  struct btrfs_io_geometry *io_geom);
+ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info);
+ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info);
+-struct btrfs_block_group *btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
++struct btrfs_block_group *btrfs_create_chunk(struct btrfs_trans_handle *trans,
+ 					    u64 type);
+ void btrfs_mapping_tree_free(struct extent_map_tree *tree);
+ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+--
+2.25.1
+

@@ -2,129 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C4BDAC432BE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 09:32:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37E71C4320A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 09:39:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A6FFE61053
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 09:32:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1D26D60F39
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 09:39:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233444AbhHRJc7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Aug 2021 05:32:59 -0400
-Received: from mail-m972.mail.163.com ([123.126.97.2]:49314 "EHLO
-        mail-m972.mail.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233655AbhHRJcU (ORCPT
+        id S231539AbhHRJkV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Aug 2021 05:40:21 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:58910 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231569AbhHRJkU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Aug 2021 05:32:20 -0400
-X-Greylist: delayed 930 seconds by postgrey-1.27 at vger.kernel.org; Wed, 18 Aug 2021 05:32:16 EDT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-        s=s110527; h=From:Subject:Date:Message-Id:MIME-Version; bh=qijfI
-        FoL/35EH+Z6y3n8GDDoiZ8v1xXSaNfWOq3SWIY=; b=Y49H+YW2dMTSqyE2c2cJQ
-        sFpeiHlIgnW5yCf0JMlyqYiajub+Wkou7shBGsLgvg51vvQTOPllurXkXFxGvCNU
-        WvUIKkQz9+OEU3lW2/6Elm9SFA+fSv1iKIhuH6eoKxvQMq6jBYdcZIrRcN0GnhlR
-        ++I8Isee7ruHWlv7VUTjL8=
-Received: from localhost.localdomain (unknown [218.106.182.47])
-        by smtp2 (Coremail) with SMTP id GtxpCgDHxvWozxxhjERKOw--.2267S4;
-        Wed, 18 Aug 2021 17:15:32 +0800 (CST)
-From:   Wentao_Liang <Wentao_Liang_g@163.com>
-To:     clm@fb.com
-Cc:     josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Wentao_Liang <Wentao_Liang_g@163.com>
-Subject: [PATCH] btrfs: fix a potential double put bug and some related use-after-free bugs
-Date:   Wed, 18 Aug 2021 17:15:18 +0800
-Message-Id: <20210818091518.4825-1-Wentao_Liang_g@163.com>
-X-Mailer: git-send-email 2.25.1
+        Wed, 18 Aug 2021 05:40:20 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id 8E88B1FF9D;
+        Wed, 18 Aug 2021 09:39:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1629279585;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=q25E3lESNFvdjWR7/jgy/qknNSvv2mT1La7ECgqQIxU=;
+        b=oE+XgT1isj1PujMDKlEulEAhcX6Zj9WxZB04CHcg6oIXybHPNotkzIX6kP5J8GPDojnFnQ
+        f1BQI3/wObEw+vFfKhPexKZRgyd3p9KIKZExGfBQUSjaFtHW2RGpSEMm3/tJ8XS4Ez2AEq
+        bIWPOlZV1amtA6Vyt5efufElTQfbXFc=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1629279585;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=q25E3lESNFvdjWR7/jgy/qknNSvv2mT1La7ECgqQIxU=;
+        b=aq4aD0IK9jDDBRrQKIXaTI2i2DPbvldIFuqKSAk4lgYUUX5g9SFV4mNZjMQpzCxHBeBxYZ
+        OBn6qv25McxAwIBA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 5E32FA3B93;
+        Wed, 18 Aug 2021 09:39:45 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C3D9BDA72C; Wed, 18 Aug 2021 11:36:48 +0200 (CEST)
+Date:   Wed, 18 Aug 2021 11:36:48 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>
+Subject: Re: [PATCH] btrfs: zoned: exclude relocation and page writeback
+Message-ID: <20210818093648.GP5047@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>
+References: <a858fb2ff980db27b3638e92f7d2d7a416b8e81e.1628776260.git.johannes.thumshirn@wdc.com>
+ <20210812142558.GI5047@suse.cz>
+ <PH0PR04MB7416785CF79EF72CCDCF931E9BF99@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <20210812145017.GJ5047@suse.cz>
+ <PH0PR04MB741690FBBB6A43279E9F1ED89BFE9@PH0PR04MB7416.namprd04.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-CM-TRANSID: GtxpCgDHxvWozxxhjERKOw--.2267S4
-X-Coremail-Antispam: 1Uf129KBjvJXoW7uw15ZFy3Ww4fJry7GryxAFb_yoW8Kr13p3
-        y3uF4DKa4kZFnrZw4xGrWUW34fKa4kCa4j9rn8Crsru3W3X34Iya4kKw1qvF1qqF95JFZr
-        ZryYvry5Crs8A3DanT9S1TB71UUUUUUqnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-        9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07j6dgXUUUUU=
-X-Originating-IP: [218.106.182.47]
-X-CM-SenderInfo: xzhq3t5rboxtpqjbwqqrwthudrp/1tbiWxTyL1SIrOr8DQAAs5
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <PH0PR04MB741690FBBB6A43279E9F1ED89BFE9@PH0PR04MB7416.namprd04.prod.outlook.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In line 2955 (#1), "btrfs_put_block_group(cache);" drops the reference to
-cache and may cause the cache to be released. However, in line 3014, the
-cache is dropped again by the same put function (#4). Double putting the
-cache can lead to an incorrect reference count.
+On Tue, Aug 17, 2021 at 02:21:51PM +0000, Johannes Thumshirn wrote:
+> On 12/08/2021 16:53, David Sterba wrote:
+> > On Thu, Aug 12, 2021 at 02:40:59PM +0000, Johannes Thumshirn wrote:
+> >> On 12/08/2021 16:28, David Sterba wrote:
 
-Furthermore, according to the definition of btrfs_put_block_group() in fs/
-btrfs/block-group.c, if the reference count of the cache is one at the
-first put, it will be freed by kfree(). Using it again may result in the
-use-after-free flaw. In fact, after the first put (line 2955), the cache
-is also accessed in a few places (#2, #3), e.g., lines 2967, 2973, 2974,
-….
+> I did some testing with the inode lock and it looks good but does not 
+> necessarily fix all possible problems, i.e. if a ordered extent is being
+> split due to whatever device limits (zone append, max sector size, etc),
+> the assumptions we have in relocation code aren't met again.
+> 
+> So the heavy lifting solution with having a dedicated temporary relocation
+> block group (like the treelog block group we already have for zoned) and using
+> regular writes looks like the only solution taking care of all of these problems.
 
-We believe that the first put of the cache is unnecessary (#1).
-We can fix the above bugs by removing the redundant
-"btrfs_put_block_group(cache);" in line 2955 (#1).
+So that means that the minimum number of zones increases again, right.
+If the separate relocation zone fixes this and possibly other problems
+then fine, but as you said this is heavy weight solution.
 
-2951         if (!list_empty(&cache->io_list)) {
-...
-2955             btrfs_put_block_group(cache);
-				 //#1 the first drop to cache (unnecessary)
-...
-2957         }
-...
-2967         cache_save_setup(cache, trans, path); //#2 use the cache
-...
-2972          //#3 use the cache several times
-
-2973         if (!ret && cache->disk_cache_state == BTRFS_DC_SETUP) {
-2974             cache->io_ctl.inode = NULL;
-2975             ret = btrfs_write_out_cache(trans, cache, path);
-2976             if (ret == 0 && cache->io_ctl.inode) {
-2977                 num_started++;
-2978                 should_put = 0;
-2979                 list_add_tail(&cache->io_list, io);
-2980             } else {
-...
-2985                 ret = 0;
-2986             }
-2987         }
-2988         if (!ret) {
-2989             ret = update_block_group_item(trans, path, cache);
-...
-3003             if (ret == -ENOENT) {
-...
-3006                 ret = update_block_group_item(trans, path, cache);
-3007             }
-...
-3010         }
-3011
-...
-3013         if (should_put)
-3014             btrfs_put_block_group(cache);
-				//#4 the second drop to cache
-
-Signed-off-by: Wentao_Liang <Wentao_Liang_g@163.com>
----
- fs/btrfs/block-group.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 9e7d9d0c763d..c510c821b1be 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2953,7 +2953,6 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
- 			spin_unlock(&cur_trans->dirty_bgs_lock);
- 			list_del_init(&cache->io_list);
- 			btrfs_wait_cache_io(trans, cache, path);
--			btrfs_put_block_group(cache);
- 			spin_lock(&cur_trans->dirty_bgs_lock);
- 		}
- 
--- 
-2.25.1
-
+We will need a mechanims with a spare block group/zone for emergency
+cases where we're running out of usable metadata space and need to
+relocate so this could be building on the same framework. But for first
+implementation reserving another block group sounds easier.

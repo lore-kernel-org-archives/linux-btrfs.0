@@ -2,83 +2,128 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+X-Spam-Status: No, score=-9.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE298C4338F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 23:51:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EA92C432BE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 01:11:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A29A661051
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 Aug 2021 23:51:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E4913610FB
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 01:11:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235060AbhHRXwN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 Aug 2021 19:52:13 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:33852 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234998AbhHRXwM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 Aug 2021 19:52:12 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 6634520091;
-        Wed, 18 Aug 2021 23:51:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1629330696;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=j6FsTlAP2zTj/pKxPLSr2qM/vhbp+kKoEMRX7OhFqQ8=;
-        b=KkBDy6NPC+DnNA/uA6OlWgpkCFlrO/Uh0NyCqN21uauhGuK+q4bJvRxnCknyzzKpBTYiwC
-        LSfone6wMl+3tB+9jNIGB93DK48vD+GFzDON9uyP2InTIL67cHS3joR4ysLbFZBH0itZej
-        4ufdotOgAAFGEkb05fCbEtdzZ2j80JM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1629330696;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=j6FsTlAP2zTj/pKxPLSr2qM/vhbp+kKoEMRX7OhFqQ8=;
-        b=mVDwP7w7yGzdWerGG/M0hlJaNfIJlV9WwBOlKREd/OuoJpzNTRegOhclQCpMjfQxyLwHGn
-        MIumwAOfr+7PBDCw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 32131A3B98;
-        Wed, 18 Aug 2021 23:51:36 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 42A22DA72C; Thu, 19 Aug 2021 01:48:39 +0200 (CEST)
-Date:   Thu, 19 Aug 2021 01:48:38 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        johannes.thumshirn@wdc.com, damien.lemoal@wdc.com,
-        naohiro.aota@wdc.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: sysfs: advertise zoned support among features
-Message-ID: <20210818234838.GB5047@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>, johannes.thumshirn@wdc.com,
-        damien.lemoal@wdc.com, naohiro.aota@wdc.com,
-        linux-btrfs@vger.kernel.org
-References: <20210728165632.11813-1-dsterba@suse.com>
- <5d40cac5-2048-6a9b-292b-52046a1793cd@oracle.com>
- <20210809091916.GJ5047@suse.cz>
- <a246559d-8eed-7885-d20e-df651d73d146@oracle.com>
+        id S234211AbhHSBIx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 Aug 2021 21:08:53 -0400
+Received: from mout.gmx.net ([212.227.17.20]:43191 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232954AbhHSBIw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 18 Aug 2021 21:08:52 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1629335294;
+        bh=eP6+VzoRXtDR+YIQcVWFmUgAIwChPqG3d133bwHRAOw=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=JBfrMyo2C5zuecNaKiAS5m6B25AHuCjD5oEiVEhFgGfoauMhgxE8jLrNg4kbxg+d2
+         xt8H3YIpJBz3KxuRfdOOalvHqq23W+vXqbjTT6zEHn66aQRJsfE89v7hnaj8ukLN5i
+         1hiH2IDVkd9wF8pFew1QSQOKatdoePCi/P+Ph6Ec=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mel81-1moCnQ18tR-00apzn; Thu, 19
+ Aug 2021 03:08:14 +0200
+Subject: Re: [PATCH v2] btrfs: replace BUG_ON() in btrfs_csum_one_bio() with
+ proper error handling
+To:     dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20210816235540.9475-1-wqu@suse.com>
+ <8babcc1b-2456-8632-7b56-f9867d333a0d@suse.com>
+ <ac42cd2a-82dd-1987-4e18-e9d27e127172@gmx.com>
+ <20210818230032.GA5047@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <0f469eae-d30f-64cf-b07f-fb0a097e6741@gmx.com>
+Date:   Thu, 19 Aug 2021 09:08:00 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <a246559d-8eed-7885-d20e-df651d73d146@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20210818230032.GA5047@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:SAWUnJl9807SWQjaPWMAjZbfqWkEzw+Fjcfk6wLqtY19x9notGm
+ g4Z3yUMojcX5JcxGd9W+14D2ZatCoKHgrXEdFkH7cWPymF8czQlu3fW5Vkg4UHALRwH/sEC
+ 3AT2cMtCDX25FViSdpZ90K6rr4L1ShblAAkqmfmo7ZAC8U6L83UuR99t/0dnAx7pqQt6RyY
+ 8MmS2ElixEGj3M+o8rKdw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:v012VPRs8V4=:2J4qpNRM5yS64BqRmyZ+jI
+ J1A8Wj2E2itPCkTAKhpDBfBm1sLjpHngXoVbUBBqz+51lNM83oteaE+4RyHYwAbt0w3skc/Uz
+ jLsuRT6A7z39uSx8XM+lzd+V5AHngFmJUisRD5hXqUS6IjmrniZ1EIzY0ISEX2ukkgCzlreZe
+ gwUbcVOlucXYT6RG3Jfu6vYr8SCh7T6vYM6kncQPa2+2yQK19+WntOuRb3g5q7RjJ6BgNeSwj
+ irSjgb3iyCJlcPhAzHQAG0hZUxrU2t7UB6bKaN4xfqzFxKE/22HuB4h36iVTuBgeZSB9nTBdg
+ xVDk3O0al0sDihtZWU7MhitclJ5/D9g8JxEkleD+V41Ih8LOotGh7SLSC80pK2Adl4C34nrhh
+ AVviWg/6sE0BjdOfyIN924YMtJFrGnXF0mPSwKOW6fWrOFepwT9xWMwM9bBK3EaicR7N8KGCn
+ xOwoNZAFofDwYggE+aEC3NYVhcU3NusxGriw95+8xeG5tgGURPxNMmt8duCuIMz9/MsVggoRg
+ AmqPPdZSOUXds4fDPqof/aK0okT3CcAozNgQQDVLtBlpF59pv4da6OWosVRRxTu76imar9WMg
+ mSWy7MtQyzUCFiyY7CsfIoRCOnxDMX4IwWO8fGvOi2fyfSTsX81Cx1s6j1o7Nblu5p7p4cE6j
+ WrJ7JjSSRv3PGwyhlhm9fvClmzAzqgW5rhqZIj/yy3v46b3ZMmnroERDvwaCJInl9Kpzc+NV6
+ cYHkBVo7y47VGx8HkTwE+bgiBAhbK3MCRe85OHNic7iUQq0EipZrpNP9cGXNj0WCiQ9KVNRWp
+ OJ1je/GOylA7KtvWYqP7RfbFqC2IJBeuDB5PuUBwXM51wrWAfVkSnQ99VrVMsOGjtXswKqXcN
+ 8P3Mbl9LOlXzGVvI1zjySEYQBLRO2Iu1M3KBwC8uwuIU6iv6wixCVrh3486mWBDhwKAwNsaVe
+ TPnA2PyDR7J1FItVnyQIaR6nz5D6d8UlZXoE7EuhrvJtmNRBYkliK9IZ1WCb6HRacUcbCl3VF
+ eEAzuF5GQ8qiHXv9xvnBvOkfbqUNYLBhCIcaeOjf6ZqL24b1znIjIjOYNvIvLQT0arPfgtf8H
+ K61usWESEK1I1+bAW/33+kZFUTghz5EsG/512vkR4d73PVM5EB/fM4/lQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 10, 2021 at 08:30:51AM +0800, Anand Jain wrote:
->   As in the proposed patch which adds a table to figure out the correct 
-> table to add the attribute, adding to the 
-> btrfs_supported_static_feature_attrs attribute list will add only to 
-> /sys/fs/btrfs/features, however adding the attribute to 
-> btrfs_supported_feature_attrs adds to both /sys/fs/btrfs/features and 
-> /sys/fs/btrfs/uuid/features.
 
-I can't see it in the code right now, but that would mean that eg. zoned
-would show up in static features once such filesystem is mounted. And
-that does not happen or I'm missing something.
+
+On 2021/8/19 =E4=B8=8A=E5=8D=887:00, David Sterba wrote:
+> On Tue, Aug 17, 2021 at 04:10:43PM +0800, Qu Wenruo wrote:
+>> On 2021/8/17 =E4=B8=8B=E5=8D=883:55, Nikolay Borisov wrote:
+>>> On 17.08.21 =D0=B3. 2:55, Qu Wenruo wrote:
+>>>> @@ -665,7 +665,18 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_ino=
+de *inode, struct bio *bio,
+>>>>
+>>>>    		if (!ordered) {
+>>>>    			ordered =3D btrfs_lookup_ordered_extent(inode, offset);
+>>>> -			BUG_ON(!ordered); /* Logic error */
+>>>> +			/*
+>>>> +			 * The bio range is not covered by any ordered extent,
+>>>> +			 * must be a code logic error.
+>>>> +			 */
+>>>> +			if (unlikely(!ordered)) {
+>>>> +				WARN(1, KERN_WARNING
+>>>> +		"no ordered extent for root %llu ino %llu offset %llu\n",
+>>>> +				     inode->root->root_key.objectid,
+>>>> +				     btrfs_ino(inode), offset);
+>>>> +				kvfree(sums);
+>>>> +				return BLK_STS_IOERR;
+>>>> +			}
+>>>
+>>> nit: How about :
+>>>
+>>> if (WARN_ON(!ordered)  {
+>>
+>> I still remember that if (WARN_ON()) usage is not recommended by David.
+>>
+>> Is that still the case?
+>
+> Quick grep shows there are many if (WARN_ON(...)) so as long as it's a
+> simple "if (WARN_ON(condition))" and the code is readable I won't
+> object.
+>
+> The problematic one is "if (!WARN_ON(condition))", because it warns when
+> condition is true, but the if does not continue and that breaks the
+> reading flow. The acceptable pattern read like "if condition and warn
+> eventually and continue".
+>
+
+I want to play safe by never bothering the WARN_ON() in if () condition
+anymore.
+
+The fact that some if (WARN_ON()) is acceptable and some is not is
+already worrying.
+
+Can we just stick to no-WARN_ON-in-if policy?
+
+Thanks,
+Qu

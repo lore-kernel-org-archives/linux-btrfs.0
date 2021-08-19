@@ -2,101 +2,155 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4376CC432BE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 12:27:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D84AC4338F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 12:30:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 29AD061130
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 12:27:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DDE9A6113B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 12:30:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239493AbhHSM2G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Aug 2021 08:28:06 -0400
-Received: from esa5.hgst.iphmx.com ([216.71.153.144]:46907 "EHLO
-        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239212AbhHSM2C (ORCPT
+        id S236481AbhHSMal (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Aug 2021 08:30:41 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:52752 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231179AbhHSMaj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Aug 2021 08:28:02 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1629376046; x=1660912046;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=R2Nna96c4js3hoGzXcDP7F0m3ZA/YEJruB6k/OwVLbI=;
-  b=OwqkngVqU1KSn3edCdsTH1mnrBsR5OFr5LieAELGPFJO/eU/8D6JyN+d
-   Uk6N6tdunOMc+5sRB1fuUgtNQJE7rqXsT1d1gDw7r+8CB77oD15tqCBkA
-   e3ABR5mtJmoD1e8twzL6+6fRJ1VPTRyiMCPSYgRlrS+44OTiOP2LzLe7W
-   v47s7lpezy0hULqVVobkFN4XzX/63rotVMRjNCamGVTS+rQ2IInI1+8XT
-   9/rOjhkWiRiYwiaTKtgvId2TcH37/GTkxMwmPdYDYimcI/wbAN9e9qMDa
-   R4UfoJRDJCtY0WXztBu5KGfZ6vC5f8qGOQXThvrnw9EAt2+qA8fg8p1Uw
-   Q==;
-X-IronPort-AV: E=Sophos;i="5.84,334,1620662400"; 
-   d="scan'208";a="177773636"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 19 Aug 2021 20:27:26 +0800
-IronPort-SDR: WWn35kOZk2ugrGRrucUjfcdLuf8iEpnqSrx3y9i44oiLZjdJCwgMFuIoE8kd7H1Yfct9kht6Tk
- F6OSZi/Se5qeG2s1+CnAzHC9TSLYy/jhv/ldITodJTgUIUyxbSbJ8J+n/ZafrtuoJyB279PLy6
- Uz4aS+7rLEPCXzpJ+9N/HCctyAbfBSKkqqvke3a8KriXA/tgpuAdOmG4qDzG+zCy01hhZ6hbKC
- Yzk22rpDs9lJecDE31RJfSSnFv5pZ6wfT7eyNYgcZQ+Guo5EHqqUc2nOm5lBHhnztCzEeBsa3U
- rqU6uSPELv4ZGRM1E7S6qrCH
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 19 Aug 2021 05:04:34 -0700
-IronPort-SDR: hokmOs3jT+2oxyqCiOi4tY2lO1zGvejeqHcQLDTCgPvP2k9M52PrHFa8Vz5aAkzNXa/102zM6u
- uQVz3fia9QLghr1I9KgQAmX4k9990O96A2wSqaJ4flkWVCPdnGE+S57vgA6OyT185eWaTbRUY6
- A/+G+XbZ9okLbo4Y0xnsScDHlkrKG/RgDp4MWYl8pXoIMRIW1jRIrcviXPHU9el+fRi5pdAjWW
- Nnpnk4rY2QEAPxGu6dt3uH4hNRpE6LaxKHIRGbbli/KhSSqxj5YT3RfS5iI6pjEWWWbYwHtmGN
- GiU=
-WDCIronportException: Internal
-Received: from gkg9hr2.ad.shared (HELO naota-xeon.wdc.com) ([10.225.52.110])
-  by uls-op-cesaip02.wdc.com with ESMTP; 19 Aug 2021 05:27:25 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH v2 17/17] btrfs: zoned: finish relocating block group
-Date:   Thu, 19 Aug 2021 21:19:24 +0900
-Message-Id: <be3dcaf4b7ea90874d3a7724ad4768034f3603bf.1629349224.git.naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.33.0
-In-Reply-To: <cover.1629349224.git.naohiro.aota@wdc.com>
-References: <cover.1629349224.git.naohiro.aota@wdc.com>
+        Thu, 19 Aug 2021 08:30:39 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id D630E21EF5;
+        Thu, 19 Aug 2021 12:30:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1629376202;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=bkeCCdyMS0n9/A1nAyKJdsLnIi2d7+s2i+qdhDqOl50=;
+        b=EZ4DQawKKXNDmUTe8vya/CBsw2OOCsJYA+msYTxdD70MZ0yIMqfJXI2GbhhZN+0nXhOKN+
+        zwlR2CXg54/WuILvxzXkfbpj2esbRNjhM4+VtUT8jIE2tLU5SjRfAsEODIcthWPoLS5v/l
+        NruiA7CpiVZuROOnYCBMCWUwwOxdszE=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1629376202;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=bkeCCdyMS0n9/A1nAyKJdsLnIi2d7+s2i+qdhDqOl50=;
+        b=bApaXujvFoG3XJBPR3Nn4npYubRxqpxQtcsYWDHoY1UljR1HwQk0Fu6WrUQhcFnSPAXUoD
+        uh5bZS372hVin4Bw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 499E1A3B94;
+        Thu, 19 Aug 2021 12:29:45 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 9B413DA72C; Thu, 19 Aug 2021 14:27:05 +0200 (CEST)
+Date:   Thu, 19 Aug 2021 14:27:05 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Marcos Paulo de Souza <mpdesouza@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com
+Subject: Re: [PATCH RFC] btrfs: Introduce btrfs_for_each_slot
+Message-ID: <20210819122705.GE5047@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Marcos Paulo de Souza <mpdesouza@suse.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com
+References: <20210802125738.22588-1-mpdesouza@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210802125738.22588-1-mpdesouza@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We will no longer write to a relocating block group. So, we can finish it
-now.
+On Mon, Aug 02, 2021 at 09:57:38AM -0300, Marcos Paulo de Souza wrote:
+> There is a common pattern when search for a key in btrfs:
+> 
+>  * Call btrfs_search_slot
+>  * Endless loop
+> 	 * If the found slot is bigger than the current items in the leaf, check the
+> 	   next one
+> 	 * If still not found in the next leaf, return 1
+> 	 * Do something with the code
+> 	 * Increment current slot, and continue
+> 
+> This pattern can be improved by creating an iterator macro, similar to
+> those for_each_X already existing in the linux kernel. using this
+> approach means to reduce significantly boilerplate code, along making it
+> easier to newcomers to understand how to code works.
+> 
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+> ---
+> 
+>  I've being testing this approach in the last few weeks, and using this macro
+>  all over the btrfs codebase, and not issues found yet. This is just a RFC
+>  showing how the xattr code would benefit using the macro.
+> 
+>  The only part that I didn't like was using the ret variable as a macro
+>  argument, but I couldn't find a better way to do it...
+> 
+>  That's why this is an RFC, so please comment :)
+> 
+>  fs/btrfs/ctree.c | 23 +++++++++++++++++++++++
+>  fs/btrfs/ctree.h | 12 ++++++++++++
+>  fs/btrfs/xattr.c | 37 +++++++++----------------------------
+>  3 files changed, 44 insertions(+), 28 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index 4f8d8fa1e085..a49b256d78f7 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -2123,6 +2123,29 @@ int btrfs_search_backwards(struct btrfs_root *root,
+>  	return ret;
+>  }
+>  
+> +int btrfs_valid_slot(struct btrfs_root *root, struct btrfs_key *key,
+> +		     struct btrfs_path *path)
+> +{
+> +	struct extent_buffer *leaf;
+> +	int slot;
+> +	int ret;
+> +
+> +	while (1) {
+> +		slot = path->slots[0];
+> +		leaf = path->nodes[0];
+> +		if (slot >= btrfs_header_nritems(leaf)) {
+> +			ret = btrfs_next_leaf(root, path);
+> +			if (ret)
+> +				return ret;
+> +			continue;
+> +		}
+> +		btrfs_item_key_to_cpu(leaf, key, slot);
+> +		break;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+>  /*
+>   * adjust the pointers going up the tree, starting at level
+>   * making sure the right key of each node is points to 'key'.
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 0a971e98f5f9..cff2a94700b2 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2912,6 +2912,18 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+>  int btrfs_search_backwards(struct btrfs_root *root, struct btrfs_key *key,
+>  			   struct btrfs_path *path);
+>  
+> +int btrfs_valid_slot(struct btrfs_root *root, struct btrfs_key *f,
+> +		     struct btrfs_path *path);
+> +
+> +#define btrfs_for_each_slot(root, key, found_key, path, ret)		\
+> +	for (ret = btrfs_search_slot(NULL, root, key, path, 0, 0);		\
+> +		({								\
+> +			ret >= 0 &&						\
+> +			(ret = btrfs_valid_slot(root, found_key, path)) == 0;	\
+> +		});								\
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- fs/btrfs/relocation.c | 4 ++++
- 1 file changed, 4 insertions(+)
+Why is this using the ({ }) block?
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 914d403b4415..63d2b22cf438 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -25,6 +25,7 @@
- #include "backref.h"
- #include "misc.h"
- #include "subpage.h"
-+#include "zoned.h"
- 
- /*
-  * Relocation overview
-@@ -4063,6 +4064,9 @@ int btrfs_relocate_block_group(struct btrfs_fs_info *fs_info, u64 group_start)
- 				 rc->block_group->start,
- 				 rc->block_group->length);
- 
-+	ret = btrfs_zone_finish(rc->block_group);
-+	WARN_ON(ret && ret != -EAGAIN);
-+
- 	while (1) {
- 		int finishes_stage;
- 
--- 
-2.33.0
-
+> +		path->slots[0]++						\
+> +	)

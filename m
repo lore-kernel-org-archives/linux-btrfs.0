@@ -2,60 +2,106 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+X-Spam-Status: No, score=-9.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99565C4320E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 08:24:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 118B7C4338F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 09:08:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 80E1E6113D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 08:24:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EDAC36113D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Aug 2021 09:08:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237323AbhHSIYm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Aug 2021 04:24:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42348 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237167AbhHSIYl (ORCPT
+        id S234640AbhHSJIo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Aug 2021 05:08:44 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:60264 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232653AbhHSJIm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Aug 2021 04:24:41 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 46829C061575;
-        Thu, 19 Aug 2021 01:24:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=l2WBiCb5duYJRA9nKpihqrJOH1Qjg6utSrFiu8qAdtc=; b=O/9AmCHEhTz3mJ3YpncuUEt6iO
-        kel653nzgWmdKxIvSSrCDfzar+eekblcqnPWTzAqliQkouejC4fJqDmdCrlhgi3fyabZfoP1sQ06e
-        LEIUtsZ8tqasFIlJRFnIhDAKzDwQm6IGLtxyArCv5fWL4rJwNrbarDTjin+jbYygUxI9ggC+JxajT
-        g+Fyd6gfFxHzvT9BFQ0k/lyhllNb+OgK8EmgcpdfmAyln74CAY8cHYzdbMORGVSHNe9i36ZnPBOPv
-        N4lQOgAG8xKiaHKASpTBS/hf1TcAZ20h5KMoYv+ctKP62mq8yNUQRDLzELiz7De3numt48njVPeD/
-        2GLzyHNA==;
-Received: from hch by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1mGdKB-004oaT-8c; Thu, 19 Aug 2021 08:23:13 +0000
-Date:   Thu, 19 Aug 2021 09:22:55 +0100
-From:   Christoph Hellwig <hch@infradead.org>
-To:     "Darrick J. Wong" <djwong@kernel.org>
-Cc:     Xu Yu <xuyu@linux.alibaba.com>, linux-fsdevel@vger.kernel.org,
-        linux-mm@kvack.org, hch@infradead.org, riteshh@linux.ibm.com,
-        tytso@mit.edu, gavin.dg@linux.alibaba.com,
-        fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] generic: add swapfile maxpages regression test
-Message-ID: <YR4U30PIGlBNv7P1@infradead.org>
-References: <db99c25a8e2a662046e498fd13e5f0c35364164a.1629286473.git.xuyu@linux.alibaba.com>
- <20210819014326.GC12597@magnolia>
+        Thu, 19 Aug 2021 05:08:42 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 4853821BDD;
+        Thu, 19 Aug 2021 09:08:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629364086; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=tTYK0druirEOfQtJd9m156weel8ay2/wOHUG6TNlKyY=;
+        b=SJOVuw2MwTkBuCx/aaF27iFOijh1AvFwG2JC3AuZ1hnpKXKGRMr2udEhp9Js9lc/npViJW
+        uEtI+5YmvLpZladwBrlfYI86RhSvBkqFQTi+D0U78h6BLIaSS0vX/LaTYf1EA0t/NYM39h
+        Xnd3GOdmXabLuWA75RVHEVgCytE7URI=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id D7A3B1340C;
+        Thu, 19 Aug 2021 09:08:05 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id DWYsMnUfHmEHJQAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Thu, 19 Aug 2021 09:08:05 +0000
+Subject: Re: [PATCH] btrfs: sysfs: advertise zoned support among features
+To:     dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        David Sterba <dsterba@suse.com>, johannes.thumshirn@wdc.com,
+        damien.lemoal@wdc.com, naohiro.aota@wdc.com,
+        linux-btrfs@vger.kernel.org
+References: <20210728165632.11813-1-dsterba@suse.com>
+ <5d40cac5-2048-6a9b-292b-52046a1793cd@oracle.com>
+ <20210809091916.GJ5047@suse.cz>
+ <a246559d-8eed-7885-d20e-df651d73d146@oracle.com>
+ <20210818234838.GB5047@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <2f902c42-fc4d-05f1-7a7a-fe4e3a20e7c4@suse.com>
+Date:   Thu, 19 Aug 2021 12:08:05 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210819014326.GC12597@magnolia>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <20210818234838.GB5047@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good,
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+On 19.08.21 г. 2:48, David Sterba wrote:
+> On Tue, Aug 10, 2021 at 08:30:51AM +0800, Anand Jain wrote:
+>>   As in the proposed patch which adds a table to figure out the correct 
+>> table to add the attribute, adding to the 
+>> btrfs_supported_static_feature_attrs attribute list will add only to 
+>> /sys/fs/btrfs/features, however adding the attribute to 
+>> btrfs_supported_feature_attrs adds to both /sys/fs/btrfs/features and 
+>> /sys/fs/btrfs/uuid/features.
+> 
+> I can't see it in the code right now, but that would mean that eg. zoned
+> would show up in static features once such filesystem is mounted. And
+> that does not happen or I'm missing something.
+> 
+
+This happens because when initialising sysfs we create the
+btrfs_feature_attr_group which contains btrfs_supported_feature_attrs
+attributes, which have
+#ifdef CONFIG_BLK_DEV_ZONED
+
+         BTRFS_FEAT_ATTR_PTR(zoned),
+
+#endif
+
+Subsequently you define the static feature via
+BTRFS_ATTR(static_feature, zoned, zoned_show);
+
+and finally we call:
+
+ret = sysfs_merge_group(&btrfs_kset->kobj,
+&btrfs_static_feature_attr_group);
+
+
+Which merges the static feature to the feature group. That's why the
+message about duplication. So one of the 2 definitions needs to go.

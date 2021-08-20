@@ -2,98 +2,139 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-17.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4158AC4338F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 12:32:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8558CC4338F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 12:45:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 179016103B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 12:32:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 63F66610FA
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 12:45:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233006AbhHTMcu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Aug 2021 08:32:50 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:37114 "EHLO
+        id S237885AbhHTMqC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Aug 2021 08:46:02 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:38374 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233303AbhHTMct (ORCPT
+        with ESMTP id S236181AbhHTMqB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Aug 2021 08:32:49 -0400
+        Fri, 20 Aug 2021 08:46:01 -0400
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 35F9820152;
-        Fri, 20 Aug 2021 12:32:03 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id 23F2820159;
+        Fri, 20 Aug 2021 12:45:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1629462723;
+        t=1629463523;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=nrF6d3yKEqBzD8ixFKCs+XKcdTWJyakdv0ayt1EYbQk=;
-        b=sZI0QOJvTOc/1OsHiLFJdWdBGe3ZSk0P9Aucq5u1MtHm9TpFY7EedNcUFTwhfm1C7H8GD8
-        fxRk+s2Pa6JICRqvnWj5INcjyKzt6Vgb5VlgB1A2bGwfe5oxa6rfaDlsUqVdI4qQeKnLO8
-        3WYk8hdZZhVFBAEnWJJWKWFsIDulotQ=
+        bh=rI3dxgVKpfvq+OnPnj13U7DxAhtcO/GYTmYdTz7nD78=;
+        b=q9nyNp9zqD3Hevo6v/SoZU440byXGkPqnE+wDmjTKylTq1B92PvHxFyfCiAeWQ3q5hmjxu
+        9kOFIs1Iz+zoD3TCcjYpt25DYEpJLaIUZ0+ar0VUl4eSw2npEfpJScrYPru4IPWlCySMo8
+        23lhtg64l3ilwl6aVEgv/Tq9Om6PVZM=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1629462723;
+        s=susede2_ed25519; t=1629463523;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=nrF6d3yKEqBzD8ixFKCs+XKcdTWJyakdv0ayt1EYbQk=;
-        b=SeyhD80+zsHAJ6DMNs5Un3wUVfhK1aiRA8ruT9CHUiBhMyNLs58ZVkvs30ncx4SaKpSJJa
-        3X4EM9mnmdRo4qCQ==
+        bh=rI3dxgVKpfvq+OnPnj13U7DxAhtcO/GYTmYdTz7nD78=;
+        b=2xbPxigxOeBwZzKdwV6Z+yRniXynKAGWteg1W+jPn1iZ2kKgk6i1Tzn7DVNQEQVSAKrMa1
+        Cj7+1RG0F9JdAkDA==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 290B4A3B87;
-        Fri, 20 Aug 2021 12:32:03 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 1A4F1A3B84;
+        Fri, 20 Aug 2021 12:45:23 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 7162EDA72C; Fri, 20 Aug 2021 14:29:05 +0200 (CEST)
-Date:   Fri, 20 Aug 2021 14:29:05 +0200
+        id 5C3F0DA892; Fri, 20 Aug 2021 14:42:25 +0200 (CEST)
+Date:   Fri, 20 Aug 2021 14:42:25 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Anand Jain <anand.jain@oracle.com>,
-        Marcos Paulo de Souza <mpdesouza@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com
-Subject: Re: [PATCH] btrfs-progs: Drop the type check in
- init_alloc_chunk_ctl_policy_regular
-Message-ID: <20210820122905.GP5047@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs-progs: tests: also check subpage warning for
+ type 2 test cases
+Message-ID: <20210820124225.GQ5047@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Anand Jain <anand.jain@oracle.com>,
-        Marcos Paulo de Souza <mpdesouza@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com, nborisov@suse.com
-References: <20210809182613.4466-1-mpdesouza@suse.com>
- <63cd4e76-72b4-7b99-ae94-075dfaf78bb7@oracle.com>
- <39f171e0-7c3c-7194-4265-e688d2df097e@gmx.com>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210818064420.866803-1-wqu@suse.com>
+ <20210818064420.866803-2-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <39f171e0-7c3c-7194-4265-e688d2df097e@gmx.com>
+In-Reply-To: <20210818064420.866803-2-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Aug 18, 2021 at 01:36:32PM +0800, Qu Wenruo wrote:
-> > Looks good to me.
-> > 
-> > I hope there isn't any xfstests/tests/btrfs test case that is hardcoded
-> > to the older block group alloc (like swap file test with relocation?).
-> > But then the test case will need a fix, not btrfs-progs. So
+On Wed, Aug 18, 2021 at 02:44:18PM +0800, Qu Wenruo wrote:
 > 
-> Well, fsck/025 will fail, and it's not the test case needs a fix...
+> And it will make sure the subpage related warnings are really from this
+> test case, to prevent false alerts.
 > 
-> We just suddenly can't mkfs on a 128MiB device due to the enlarged 
-> minimal stripe length of data chunks.
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  tests/common | 14 ++++++++++++--
+>  1 file changed, 12 insertions(+), 2 deletions(-)
 > 
-> This still exposes a behavior difference between kernel and btrfs-progs...
+> diff --git a/tests/common b/tests/common
+> index 805a447c84ce..a6f75c7ce237 100644
+> --- a/tests/common
+> +++ b/tests/common
+> @@ -423,13 +423,23 @@ check_image()
+>  {
+>  	local image
+>  
+> +	tmp_output=$(mktemp --tmpdir btrfs-progs-test-check-image.XXXXXX)
+> +
+>  	image=$1
+>  	echo "testing image $(basename $image)" >> "$RESULTS"
+> -	"$TOP/btrfs" check "$image" >> "$RESULTS" 2>&1
+> +	"$TOP/btrfs" check "$image" &> "$tmp_output"
+>  	[ $? -eq 0 ] && _fail "btrfs check should have detected corruption"
+>  
+> +	cat "$tmp_output" >> "$RESULTS"
+> +	# Also make sure no subpage related warnings
+> +	check_test_results "$tmp_output" "$testname"
+> +
+>  	run_check "$TOP/btrfs" check --repair --force "$image"
+> -	run_check "$TOP/btrfs" check "$image"
+> +	run_check_stdout "$TOP/btrfs" check "$image" &> "$tmp_output"
+> +
+> +	# Also make sure no subpage related warnings for the repaired image
+> +	check_test_results "$tmp_output" "$testname"
+> +	rm -f "$tmp_output"
+>  }
 
-So I'll reply here as all people involved are also CCed - I'm dropping
-this patch for now.
+Applied with the following fixup
 
-The test 025 fails and my idea was to skip it for now but that still
-leaves the problems with creating small filesystems, that's something
-that has been working and it should keep doing so.
-
-Proper fix: scale the chunk size for large filesystems and also small
-filesystems. We can probably set the minimum size to somewhere like 64M
-(for non-mixed setups), and scale the chunk sizes according to that.
-
-d.
+--- a/tests/common
++++ b/tests/common
+@@ -422,15 +422,17 @@ check_dm_target_support()
+ check_image()
+ {
+        local image
++       local tmp_output
+ 
+        tmp_output=$(mktemp --tmpdir btrfs-progs-test-check-image.XXXXXX)
+ 
+        image=$1
+        echo "testing image $(basename $image)" >> "$RESULTS"
+        "$TOP/btrfs" check "$image" &> "$tmp_output"
+-       [ $? -eq 0 ] && _fail "btrfs check should have detected corruption"
+-
++       ret=$?
+        cat "$tmp_output" >> "$RESULTS"
++       [ "$ret" -eq 0 ] && _fail "btrfs check should have detected corruption"
++
+        # Also make sure no subpage related warnings
+        check_test_results "$tmp_output" "$testname"
+ 
+@@ -439,7 +441,7 @@ check_image()
+ 
+        # Also make sure no subpage related warnings for the repaired image
+        check_test_results "$tmp_output" "$testname"
+-       rm -f "$tmp_output"
++       rm -f -- "$tmp_output"
+ }
+ 
+ # Extract a usable image from packed formats

@@ -2,240 +2,206 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
-	version=3.4.0
+	MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF595C432BE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 08:56:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 362BEC4338F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 09:13:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B317061004
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 08:56:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 186D161131
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 09:13:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232331AbhHTI5S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Aug 2021 04:57:18 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:52974 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231142AbhHTI5R (ORCPT
+        id S235887AbhHTJOa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Aug 2021 05:14:30 -0400
+Received: from mx0a-00069f02.pphosted.com ([205.220.165.32]:19276 "EHLO
+        mx0a-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S232991AbhHTJO3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Aug 2021 04:57:17 -0400
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id D2D301FDE9;
-        Fri, 20 Aug 2021 08:56:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1629449798; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=DiuxsGRlZyf5U39p+AGHvsaZvfBZfheC+GT5DYQNN6k=;
-        b=AYaaIsaIkOUbT/cUJ6qbEYzn8v2C9zEYL47JIuuaq+HUfRszVLNU55mc/1hLq6WuCqZEdS
-        cmXAQlEgIAogdC7gNMNE7DXQmgbI8i8+Qwmerz+pWe93uJgrlSfLeJayNMlgKzAHfKMXTT
-        mn7YU1/r3c3VRLeVebtG7p9UPSziVfo=
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 63DF71333E;
-        Fri, 20 Aug 2021 08:56:38 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap1.suse-dmz.suse.de with ESMTPSA
-        id 3hQdFUZuH2GNUQAAGKfGzw
-        (envelope-from <nborisov@suse.com>); Fri, 20 Aug 2021 08:56:38 +0000
-Subject: Re: [PATCH v10 07/14] btrfs: add definitions + documentation for
- encoded I/O ioctls
-To:     Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com, linux-fsdevel@vger.kernel.org,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-api@vger.kernel.org
-References: <cover.1629234193.git.osandov@fb.com>
- <9bd601f8c5494342d8c7d8aaa86aa815c2118173.1629234193.git.osandov@fb.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <1e9a95f4-01a3-c356-a348-2992d63c867f@suse.com>
-Date:   Fri, 20 Aug 2021 11:56:37 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
-MIME-Version: 1.0
-In-Reply-To: <9bd601f8c5494342d8c7d8aaa86aa815c2118173.1629234193.git.osandov@fb.com>
-Content-Type: text/plain; charset=utf-8
+        Fri, 20 Aug 2021 05:14:29 -0400
+Received: from pps.filterd (m0246627.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 17K9Agg2001324;
+        Fri, 20 Aug 2021 09:13:44 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=corp-2021-07-09;
+ bh=QKnFeLwtF7T2/jbSQV9Dgfcko+I3N+dFh9MnzUH60g8=;
+ b=lZ/hCvkDxwT7XD6uyf8oID4tacH9airp2oeAaeJUXswXzyd3ENb3UHnsoybhDxl2C0hY
+ PYzYLBNAvKB/qL+pE9LIr3VNoGwAA0qxXoGkpAlOoraO7QH+FR3pp2wzXZUR2w7fBfDR
+ BXjUcX7SpLFTjpPNbcC6FUHH3NhwGWL1iq+HzO+14NoeCeGIlzdRL/iCV5Ld7hs2c3Lz
+ xlDVhbj7ugu+q8K2/I9gHRLCckuK5Os4auoqOZlPnT6ODnj9S/bGr+8oXHl9D/5+Mjc2
+ tbcH3LXdq012tPugaoPg8vcT7zJFpHbLgw6mnAl/TyX8YR058DVWwEGOfLfG2LKsoVpW IQ== 
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=subject : to : cc :
+ references : from : message-id : date : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=corp-2020-01-29;
+ bh=QKnFeLwtF7T2/jbSQV9Dgfcko+I3N+dFh9MnzUH60g8=;
+ b=BEopjs55TRqQkMEfxYBDQc6XgDKDesNnxIP79UhUDeXLXqwot79tna7XPRNMvnSQ4Me4
+ FRfplRN3aAn+GRdPWGYxG/kLDTXauKAmrk1WHuwyXAhuRMWKfr0NYYmDbYm51NHqofGI
+ ZgjZJ4RNGIJaN4uDSCsuSIZoc0UpUGHrqwNFcb29nxpxPIVDlyf6SAKYLh6THTgmkrdk
+ xS8kMCPO4sj09VIXC8KCO4QWDL4fi4vTrm0wIH26+oZmlTefGO2ChgBLJ8r3kriX/3iC
+ +ACmzlyiColgUJqG5NKFIRyTgRJYClxPU23DC6DUgXdcFjOPcnwc6eueTCT2Iavq2Uhk ug== 
+Received: from aserp3030.oracle.com (aserp3030.oracle.com [141.146.126.71])
+        by mx0b-00069f02.pphosted.com with ESMTP id 3agu24p276-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 20 Aug 2021 09:13:43 +0000
+Received: from pps.filterd (aserp3030.oracle.com [127.0.0.1])
+        by aserp3030.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 17K95AAk015961;
+        Fri, 20 Aug 2021 09:13:41 GMT
+Received: from nam12-mw2-obe.outbound.protection.outlook.com (mail-mw2nam12lp2048.outbound.protection.outlook.com [104.47.66.48])
+        by aserp3030.oracle.com with ESMTP id 3ae3vn73d9-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Fri, 20 Aug 2021 09:13:41 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=YMopZ2kLx3+1d8X+OiBRC6PtzBKSPrzYGm770wjxWMC4SkJziGl+eT6360xnxRosQ35EDK6HQrx7zy4HQT5AGvFDvtLwqbgSU2pU20sPksX+seoNnJbVqBQG9trzfgUOaWWNMC0mfOsi71qTP7S0NBcoXHj6vhawIMPlnt9G4kzGSd40E1kkY9SqiabtD16OYwOMXXIur4HMLkNRBb8PFNR5zsjkJIqhv+/WhFywMQs14dj4mePyuUB10Y2TT26iFf2nzLDIPGEas7Awlz7eUzvA3YuaTg5QzBsFGoKRIT4hV6stF+WhxWZbJxR4S0l7uCLYsoUa54266roSAF1QXw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=QKnFeLwtF7T2/jbSQV9Dgfcko+I3N+dFh9MnzUH60g8=;
+ b=LurtcXxHtTCIZklVub/Rjl8bemdKG55iGN5MayZLu5L5BFvbd9zfVkuwCWUGa1XEeKdJv1NIIqZWghconBHBwx93cIuVNZsTc2PNLv64xwYBBKuAi1VKcKynLmvqnyFrCx3NWCC+dfXJeinGRQHpuoysVkKVbPQECkbbGf2Iz6xfXrwuXVI5OlFnAKgDbUkHZBMYIy5/JUVJltr/MHvCAVMTzyEtdSzVZlRpcXlQj8I8nBnykeI0bXsQ/+Sv8YCwcQmEd1nwvWHnz/5tnBVl/XreYJ1zQcmID+SU5/TlbeZNrjSJeZywirDyioAoECi5DJkH7bCeQBv9N3a9bXxzRw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=QKnFeLwtF7T2/jbSQV9Dgfcko+I3N+dFh9MnzUH60g8=;
+ b=Z+k7qLofdRBkhuhSjuA8oldg1AW7JaSJYE7AcGwExwDrldEZ9N3k5cEGVxq3CpMwc7+OyWGUWsI2Q34djqESWPijWLaHA7IvAO6TLbvS7L/Ae8iX/XlyB5eX0/MyE+DRXPSEZ9/LDQKOkqpBqH05vSrU3Ea5yYUKAOS3AbmZhes=
+Authentication-Results: suse.com; dkim=none (message not signed)
+ header.d=none;suse.com; dmarc=none action=none header.from=oracle.com;
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com (2603:10b6:208:1d2::24)
+ by MN2PR10MB3982.namprd10.prod.outlook.com (2603:10b6:208:1bc::28) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4415.19; Fri, 20 Aug
+ 2021 09:13:39 +0000
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::b813:4805:31e:d36a]) by MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::b813:4805:31e:d36a%5]) with mapi id 15.20.4415.023; Fri, 20 Aug 2021
+ 09:13:39 +0000
+Subject: Re: [PATCH RFC 3/3] btrfs: use latest_bdev in btrfs_show_devname
+To:     Su Yue <l@damenly.su>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+References: <cover.1629396187.git.anand.jain@oracle.com>
+ <9a06b04b9003f86c3300e497b35b0ef0310c84c0.1629396187.git.anand.jain@oracle.com>
+ <1r6ofu54.fsf@damenly.su>
+From:   Anand Jain <anand.jain@oracle.com>
+Message-ID: <332e2d65-a258-8bf8-8f26-9571535e7075@oracle.com>
+Date:   Fri, 20 Aug 2021 17:13:32 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
+In-Reply-To: <1r6ofu54.fsf@damenly.su>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: SG2PR02CA0091.apcprd02.prod.outlook.com
+ (2603:1096:4:90::31) To MN2PR10MB4128.namprd10.prod.outlook.com
+ (2603:10b6:208:1d2::24)
+MIME-Version: 1.0
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from [192.168.10.109] (39.109.186.25) by SG2PR02CA0091.apcprd02.prod.outlook.com (2603:1096:4:90::31) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4436.19 via Frontend Transport; Fri, 20 Aug 2021 09:13:38 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 2a667363-19a6-4bf5-1d0c-08d963bacc56
+X-MS-TrafficTypeDiagnostic: MN2PR10MB3982:
+X-Microsoft-Antispam-PRVS: <MN2PR10MB3982BAC053D68C3814F56BD0E5C19@MN2PR10MB3982.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:10000;
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: byxoSMXkLSxW6R+MJshix0loBJcMXGxm/mdl0MONUjTB3hdxs5oG+60LN0LvcxE5z4QJd+0wf3HDVBMqN0Ja5Lmzp/DbDPrQ4oQLnTbIZZ4uJaV5XVGeNaNwAyewaO0ctOweV4huWfrT9kXGC3b+gd63niUctHYqXffqrRfj2Kv/rfFfqP5FjQp+ENay7eOtC+ZMofl6jlUsx/8pwSDwQnbnFirzH1tI/ZP3beQTQyK3EFP0awZw/hdwc2JznHnon4v1PoTPOGbXR4Bqe0uci5zoESFc4Os7FTKq0NFrFyIvoStnGSUy6OQVE3/JwQV1NVy2KnuutPha+RfzLp1sljOVOJCTZtjENHOLJ72EymztvLIRC+vzTL/mtON3q8CBvn2EpXd3oQ6C7syDyfapHzAeK4/GZHbpLgX3ZyDi0PXcfAqmWH4aqqzL8CW+pecDW2EqFXkIsU26Q81mA0Xy1C+PRrVW0HAYWoSWi7XOHP9Hzo6RM+/TrJyDKBvsDcI83C32wvPNLDO1Zn5QKKq+Iq+8kcIH051SPoqf/s2ekDQQ8jJLpSMEgdxBViMM53rZjbV6yS3yNnYRRntxUlNGAqHLx4QV8MUWdzvK7oAiaTjiDkPkB6t+X5BxBHF9SQ0Bq8P3ZSy7wpkoU0MBVvyETEQBO1j0jnaHuW6DuOS7W1ups/Q/bIIEbfxB+PUxzWaLWTY/3f5nIHI7AOAlsCvXo/G3gjPopKNhCwU6jmk7S1HkOErbo9ejsFHdEF2iEg2/
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MN2PR10MB4128.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(366004)(66476007)(66556008)(2616005)(186003)(508600001)(2906002)(4326008)(44832011)(5660300002)(6486002)(53546011)(6666004)(66946007)(8936002)(31686004)(38100700002)(83380400001)(316002)(16576012)(36756003)(86362001)(31696002)(26005)(6916009)(8676002)(956004)(781001)(43740500002)(45980500001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?aW1uVlM4c1RnWllENTFvZ29xaHAxNURMVlY1dE9TWGF3NjZQQm52RmZMUHBH?=
+ =?utf-8?B?QnovdDdQaDNEK29NUXNsWEU1dVF0ZFExV2wwOHBTMmZObkdOS2p2WTA0TVVH?=
+ =?utf-8?B?Tk1pY01tMXM2TjA5VmpWOUE5VWRlNHQ0TjI3YlJKTytCdFZoNDVXZkJGWGlj?=
+ =?utf-8?B?aVFkVENNTTgrREVDRlRhSnJWbks5WTZJUVBPZDFld01TWURNcFNZOWZ3Umw0?=
+ =?utf-8?B?aG54YkJYYjRjQlJEc3E4WnJwZmYyV3FOdno3Tk5jaTBCZXcraitYZjZCZUFB?=
+ =?utf-8?B?cmk4WVh0QkdUS2VGYTk3Z1g0Yi91R1Z2TE02Z0lFK0YrYUZvUmY0M1QwbHlX?=
+ =?utf-8?B?NzZYS2hLbG5OVWZPY0lhVldSdTRUMktTODl4d3lCSWpZNDg4TTNETmtKQW50?=
+ =?utf-8?B?VmRyY3JDVm90WUFMOUwxT3dEZDlieTc2Q1J5dklZeWM5VjNIY0tISG9FY1pI?=
+ =?utf-8?B?c1hGWEJNMm1nSUNWZmI1VUNWSmdVRkhhVkR2SHBUVmpqRUF3eThLdlhHWWZs?=
+ =?utf-8?B?R01BcFhhYUUzV21XMTBXU3pFZFNiZ2E0bHRmS3VjVFVVdGpVS1FSdis1KzVR?=
+ =?utf-8?B?VDRqdEtvd2cycndGZXFnbGJNZU5VbVRRS21BVUl2NVdPRGZrTy9zVWVkU2xH?=
+ =?utf-8?B?dXBqTCs0cmxPZ2p1NGJMeGlGN0hiZldaUTFJQWtoay90dHFHSmp6ZDBZOGdx?=
+ =?utf-8?B?bE8zbnMrL3BKcmRYalJlcFlaMloyaE4xd3VudkZwRTRUZ3JiL0VaR2liUzE4?=
+ =?utf-8?B?Y1BMSGZTdjZ4NE5jN1huMjNlY0Z4U21YN29Kc1hUaUNDWlFML3c1SFJrRy94?=
+ =?utf-8?B?ZFVUZmZZYWxhS3MxcDBoYnN2eEJrTnN1em9JMjhDenBna0paR2I2SHpvVWZt?=
+ =?utf-8?B?R1NSenlMczhWS1p4YjlBVnlZRzMyTUR2RHhUeVpJeXZ5REJnMXc2eENTeHln?=
+ =?utf-8?B?RDZFck5lMG0zZytDR1d4cU5zVWxaaWJtUnVwdnN4OXJaYmxGUE1JeGVFeWxL?=
+ =?utf-8?B?RmNSVUV2Z3B2OFQ5LzdoZXBsd1JwNWtNdUFvakhFWkNMM3haVi96U25sK0tX?=
+ =?utf-8?B?OEh4VHpMSnRwNWlhbDFxTFg3QTd4U1orSFFMRjlVS0hoRGgzRU5PQjk4b1pC?=
+ =?utf-8?B?YjJpN0RIWlg2Smg1RCtVNnZkRXd0ZjIyM0JNSmp5UkhDWVJKZlBVb1lmN2VV?=
+ =?utf-8?B?LzlqTTdyZTRFeUZrdHVRMjlmQjllY3Fvc1o3V1IvWVdMTFlDR2ZvclRVMlF2?=
+ =?utf-8?B?TkEzUDJ2c3hoVTF2b0EzSldYQ3FFV0lIUEs0cGcwNXBhSVdPQWdGMzhDOXU0?=
+ =?utf-8?B?bHFkUDlxQ0V5bnRHMVRyNnJ1MnJuVXljTDNjSVJETGVaR2ltdDZsR2ZDM2N4?=
+ =?utf-8?B?bFpLS2hUTURSVjNienJ3Q2luaS9sUFFLVE00M21xTXRkTlBnMjJvbXVyOTNy?=
+ =?utf-8?B?SnJEVDV5cFBsUDRaRU1rcFhET1lWL1l5Q3lKdDRxaWdCUlY4Yk5ycDFQN1dR?=
+ =?utf-8?B?STI1QXppeDYzTW54a09RS2krYnNBcDNFaEdkcTl4cjlNL2tXZGVtM3B2NVpM?=
+ =?utf-8?B?STExbXlLU1Q3ZXpYejRVN091Z1o4K0lkUDRvNlN0a25LV25KZWg1aFkwMkI2?=
+ =?utf-8?B?VXJpOWtFMUpFdGFWd1RabnlFS3AvODhYWHB1WnNpbnhpdVBzY2Q5U2tib3Bj?=
+ =?utf-8?B?L0Flb3lrMGVOZXdUbG1WcHhSd2c2bzVXSTRQemRYMURZNWFvaGZxSjNlcnp4?=
+ =?utf-8?Q?qk9COJlje+GEUrb+EfQkiNLOWyKA9VxB96LkrUL?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 2a667363-19a6-4bf5-1d0c-08d963bacc56
+X-MS-Exchange-CrossTenant-AuthSource: MN2PR10MB4128.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 20 Aug 2021 09:13:39.4232
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: tBBZHOz4QLtIWKu7b88f7Tv7sa7zrKcQiC65Y+mAnNeWEqqysxh4wh9dYeyLuzkRGJG5r8c3u1LgO6TahVJtnw==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR10MB3982
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=10081 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 adultscore=0 mlxscore=0
+ malwarescore=0 mlxlogscore=999 spamscore=0 bulkscore=0 phishscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2107140000
+ definitions=main-2108200052
+X-Proofpoint-GUID: ywlA13JCPXlddVdR3Bhhm5R-j7yCIpCO
+X-Proofpoint-ORIG-GUID: ywlA13JCPXlddVdR3Bhhm5R-j7yCIpCO
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 18.08.21 г. 0:06, Omar Sandoval wrote:
-> From: Omar Sandoval <osandov@fb.com>
+On 20/08/2021 15:31, Su Yue wrote:
 > 
-> In order to allow sending and receiving compressed data without
-> decompressing it, we need an interface to write pre-compressed data
-> directly to the filesystem and the matching interface to read compressed
-> data without decompressing it. This adds the definitions for ioctls to
-> do that and detailed explanations of how to use them.
+> On Fri 20 Aug 2021 at 02:18, Anand Jain <anand.jain@oracle.com> wrote:
 > 
-> Signed-off-by: Omar Sandoval <osandov@fb.com>
-> ---
->  include/uapi/linux/btrfs.h | 132 +++++++++++++++++++++++++++++++++++++
->  1 file changed, 132 insertions(+)
-> 
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index d7d3cfead056..95da52955894 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -861,6 +861,134 @@ struct btrfs_ioctl_get_subvol_rootref_args {
->  		__u8 align[7];
->  };
->  
-> +/*
-> + * Data and metadata for an encoded read or write.
-> + *
-> + * Encoded I/O bypasses any encoding automatically done by the filesystem (e.g.,
-> + * compression). This can be used to read the compressed contents of a file or
-> + * write pre-compressed data directly to a file.
-> + *
-> + * BTRFS_IOC_ENCODED_READ and BTRFS_IOC_ENCODED_WRITE are essentially
-> + * preadv/pwritev with additional metadata about how the data is encoded and the
-> + * size of the unencoded data.
-> + *
-> + * BTRFS_IOC_ENCODED_READ fills the given iovecs with the encoded data, fills
-> + * the metadata fields, and returns the size of the encoded data. It reads one
-> + * extent per call. It can also read data which is not encoded.
-> + *
-> + * BTRFS_IOC_ENCODED_WRITE uses the metadata fields, writes the encoded data
-> + * from the iovecs, and returns the size of the encoded data. Note that the
-> + * encoded data is not validated when it is written; if it is not valid (e.g.,
-> + * it cannot be decompressed), then a subsequent read may return an error.
-> + *
-> + * Since the filesystem page cache contains decoded data, encoded I/O bypasses
-> + * the page cache. Encoded I/O requires CAP_SYS_ADMIN.
-> + */
-> +struct btrfs_ioctl_encoded_io_args {
-> +	/* Input parameters for both reads and writes. */
-> +
-> +	/*
-> +	 * iovecs containing encoded data.
-> +	 *
-> +	 * For reads, if the size of the encoded data is larger than the sum of
-> +	 * iov[n].iov_len for 0 <= n < iovcnt, then the ioctl fails with
-> +	 * ENOBUFS.
-> +	 *
-> +	 * For writes, the size of the encoded data is the sum of iov[n].iov_len
-> +	 * for 0 <= n < iovcnt. This must be less than 128 KiB (this limit may
-> +	 * increase in the future). This must also be less than or equal to
-> +	 * unencoded_len.
-> +	 */
-> +	const struct iovec __user *iov;
-> +	/* Number of iovecs. */
-> +	unsigned long iovcnt;
-> +	/*
-> +	 * Offset in file.
-> +	 *
-> +	 * For writes, must be aligned to the sector size of the filesystem.
-> +	 */
-> +	__s64 offset;
-> +	/* Currently must be zero. */
-> +	__u64 flags;
-> +
-> +	/*
-> +	 * For reads, the following members are filled in with the metadata for
-> +	 * the encoded data.
-> +	 * For writes, the following members must be set to the metadata for the
-> +	 * encoded data.
-> +	 */
-> +
-> +	/*
-> +	 * Length of the data in the file.
-> +	 *
-> +	 * Must be less than or equal to unencoded_len - unencoded_offset. For
-> +	 * writes, must be aligned to the sector size of the filesystem unless
-> +	 * the data ends at or beyond the current end of the file.
-> +	 */
-> +	__u64 len;
-> +	/*
-> +	 * Length of the unencoded (i.e., decrypted and decompressed) data.
-> +	 *
-> +	 * For writes, must be no more than 128 KiB (this limit may increase in
-> +	 * the future). If the unencoded data is actually longer than
-> +	 * unencoded_len, then it is truncated; if it is shorter, then it is
-> +	 * extended with zeroes.
-> +	 */
-> +	__u64 unencoded_len;
-> +	/*
-> +	 * Offset from the first byte of the unencoded data to the first byte of
-> +	 * logical data in the file.
-> +	 *
-> +	 * Must be less than unencoded_len.
-> +	 */
-> +	__u64 unencoded_offset;
-> +	/*
-> +	 * BTRFS_ENCODED_IO_COMPRESSION_* type.
-> +	 *
-> +	 * For writes, must not be BTRFS_ENCODED_IO_COMPRESSION_NONE.
-> +	 */
-> +	__u32 compression;
-> +	/* Currently always BTRFS_ENCODED_IO_ENCRYPTION_NONE. */
-> +	__u32 encryption;
-> +	/*
-> +	 * Reserved for future expansion.
-> +	 *
-> +	 * For reads, always returned as zero. Users should check for non-zero
-> +	 * bytes. If there are any, then the kernel has a newer version of this
-> +	 * structure with additional information that the user definition is
-> +	 * missing.
-> +	 *
-> +	 * For writes, must be zeroed.
-> +	 */
-> +	__u8 reserved[32];
-> +};
-> +
-> +/* Data is not compressed. */
-> +#define BTRFS_ENCODED_IO_COMPRESSION_NONE 0
-> +/* Data is compressed as a single zlib stream. */
-> +#define BTRFS_ENCODED_IO_COMPRESSION_ZLIB 1
-> +/*
-> + * Data is compressed as a single zstd frame with the windowLog compression
-> + * parameter set to no more than 17.
-> + */
-> +#define BTRFS_ENCODED_IO_COMPRESSION_ZSTD 2
-> +/*
-> + * Data is compressed page by page (using the page size indicated by the name of
-> + * the constant) with LZO1X and wrapped in the format documented in
-> + * fs/btrfs/lzo.c. For writes, the compression page size must match the
-> + * filesystem page size.
-> + */
-> +#define BTRFS_ENCODED_IO_COMPRESSION_LZO_4K 3
-> +#define BTRFS_ENCODED_IO_COMPRESSION_LZO_8K 4
-> +#define BTRFS_ENCODED_IO_COMPRESSION_LZO_16K 5
-> +#define BTRFS_ENCODED_IO_COMPRESSION_LZO_32K 6
-> +#define BTRFS_ENCODED_IO_COMPRESSION_LZO_64K 7
-> +#define BTRFS_ENCODED_IO_COMPRESSION_TYPES 8
-> +
-> +/* Data is not encrypted. */
-> +#define BTRFS_ENCODED_IO_ENCRYPTION_NONE 0
-> +#define BTRFS_ENCODED_IO_ENCRYPTION_TYPES 1
-
-How about an enums for encryption/compression.
+>> latest_bdev is updated according to the changes to the device list.
+>> That means we could use the latest_bdev to show the device name in
+>> /proc/self/mounts. So this patch makes that change.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> ---
+>>
+>> RFC because
+>> 1. latest_bdev might not be the lowest devid but, we showed
+>> the lowest devid in /proc/self/mount.
 
 
-> +
->  /* Error codes as returned by the kernel */
->  enum btrfs_err_code {
->  	BTRFS_ERROR_DEV_RAID1_MIN_NOT_MET = 1,
-> @@ -989,5 +1117,9 @@ enum btrfs_err_code {
->  				struct btrfs_ioctl_ino_lookup_user_args)
->  #define BTRFS_IOC_SNAP_DESTROY_V2 _IOW(BTRFS_IOCTL_MAGIC, 63, \
->  				struct btrfs_ioctl_vol_args_v2)
-> +#define BTRFS_IOC_ENCODED_READ _IOR(BTRFS_IOCTL_MAGIC, 64, \
-> +				    struct btrfs_ioctl_encoded_io_args)
-> +#define BTRFS_IOC_ENCODED_WRITE _IOW(BTRFS_IOCTL_MAGIC, 64, \
-> +				     struct btrfs_ioctl_encoded_io_args)
->  
->  #endif /* _UAPI_LINUX_BTRFS_H */
-> 
+>> 2. The device's path is not shown now but, previously we did.
+>> So does these break ABI? Maybe yes for 2 howabout for 1 above?
+
+  In v2 I am fix the path part. By replacing latest_bdev to latest_dev
+  which means it shall hold the pointer to btrfs_device instead of
+  just to its bdev.
+
+> Mabybe a naive question but I have no time to dive into btrfs code
+> recently. If a device which has highest devid was replaced, will the
+> new device be the fs_devices->latest_bdev instead of the existing older
+> one?
+
+  It is handled by btrfs_assign_next_active_device().
+
+  If the replace source device is also the latest_dev then after replace
+  it shall point to the replace target device. So the new device path is
+  seen in /proc/self/mounts. Which is fine and normal to expect.
+
+  Similarly btrfs_assign_next_active_device() is called during remove
+  device as well.
+
+  There is a bug that we didn't update the latest_bdev when we sprout
+  I am fixing this as well in v2.
+
+Thanks.

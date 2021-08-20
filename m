@@ -2,157 +2,254 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74BC1C4338F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 08:00:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D3A1DC4320E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 08:08:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 59908610A3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 08:00:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BDBBA610CF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 08:08:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230518AbhHTIAt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Aug 2021 04:00:49 -0400
-Received: from eu-shark2.inbox.eu ([195.216.236.82]:34734 "EHLO
-        eu-shark2.inbox.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230490AbhHTIAt (ORCPT
+        id S230099AbhHTIJU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Aug 2021 04:09:20 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:43714 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229586AbhHTIJU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Aug 2021 04:00:49 -0400
-Received: from eu-shark2.inbox.eu (localhost [127.0.0.1])
-        by eu-shark2-out.inbox.eu (Postfix) with ESMTP id 012A01E00699;
-        Fri, 20 Aug 2021 11:00:10 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=inbox.eu; s=20140211;
-        t=1629446410; bh=1GFEBKrTlpAHNcmVSrGaIJSpsUIPQNSOYSyL2ifCvdQ=;
-        h=References:From:To:Cc:Subject:Date:In-reply-to;
-        b=SsDY56RN5DAnmNMzU6WPFj9a+Txzu5lm+6seQmT+ZULDfb7dZaiDvGhwV9AiJXp7l
-         gSAJ0gy+C8tUYQEzvdVIIMTQUGYMfAfrhdl2KNXk7B4HZuz2H/7kY12U7Lh0LEaS2y
-         yuyTT50RQITuYMpKE3Nkzhwmkg4Dlj+EX6RGT5+U=
-Received: from localhost (localhost [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id ED5AE1E00671;
-        Fri, 20 Aug 2021 11:00:09 +0300 (EEST)
-Received: from eu-shark2.inbox.eu ([127.0.0.1])
-        by localhost (eu-shark2.inbox.eu [127.0.0.1]) (spamfilter, port 35)
-        with ESMTP id zJrYy-8tT-Hs; Fri, 20 Aug 2021 11:00:09 +0300 (EEST)
-Received: from mail.inbox.eu (eu-pop1 [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id A92AE1E0066A;
-        Fri, 20 Aug 2021 11:00:09 +0300 (EEST)
-Received: from nas (unknown [49.65.73.48])
-        (Authenticated sender: l@damenly.su)
-        by mail.inbox.eu (Postfix) with ESMTPA id C75AF1BE013A;
-        Fri, 20 Aug 2021 11:00:07 +0300 (EEST)
-References: <cover.1629396187.git.anand.jain@oracle.com>
- <8b8e72c87d0ee97da1b2e243a24b68d84d0ac3b9.1629396187.git.anand.jain@oracle.com>
-User-agent: mu4e 1.5.8; emacs 27.2
-From:   Su Yue <l@damenly.su>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH RFC 2/3] btrfs: consolidate device_list_mutex in
- prepare_sprout to its parent
-Date:   Fri, 20 Aug 2021 15:51:03 +0800
-Message-ID: <y28weeg4.fsf@damenly.su>
-In-reply-to: <8b8e72c87d0ee97da1b2e243a24b68d84d0ac3b9.1629396187.git.anand.jain@oracle.com>
+        Fri, 20 Aug 2021 04:09:20 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id DFCA51FDE6;
+        Fri, 20 Aug 2021 08:08:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629446921; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=SHDYvA/hPtFKlWviNCnSNiLYqDyVlHoUMVAkXqq/K9Y=;
+        b=RWA6bFCyR91GSXQVDxBZCXJoDuMipQgx9DGkKrZBzoZGPf1sWC4gWUvwl2gpF6PbKZJI4U
+        GrOjUzqdhSr4rvq/RN/d38kb5fR5hATxWs544KDecPtt4YdKTMWMO7u3cDA8//864i2GNG
+        GShhhwuRdUvE3OYATZAt/zrzuvjto9M=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 7D4E81333E;
+        Fri, 20 Aug 2021 08:08:41 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id PKsLHAljH2EDRgAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Fri, 20 Aug 2021 08:08:41 +0000
+Subject: Re: [PATCH v10 03/14] btrfs: don't advance offset for compressed bios
+ in btrfs_csum_one_bio()
+To:     Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com, linux-fsdevel@vger.kernel.org,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-api@vger.kernel.org
+References: <cover.1629234193.git.osandov@fb.com>
+ <5cbd7b12d5147d7d619a5f521051e5c4ed5ce6d1.1629234193.git.osandov@fb.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <b3517f65-a22b-7c08-536c-1b5fc7d68fab@suse.com>
+Date:   Fri, 20 Aug 2021 11:08:41 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
-X-Virus-Scanned: OK
-X-ESPOL: 6N1ml5Y9aTPX9ELYI3baDBgxqjROX/Ph8/vJrhAZwzvmU1qJf04NURK/nm1yS2A=
+In-Reply-To: <5cbd7b12d5147d7d619a5f521051e5c4ed5ce6d1.1629234193.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-On Fri 20 Aug 2021 at 02:18, Anand Jain <anand.jain@oracle.com> 
-wrote:
 
-> btrfs_prepare_sprout() moves seed devices into its own struct 
-> fs_devices,
-> so that its parent function btrfs_init_new_device() can add the 
-> new sprout
-> device to fs_info->fs_devices.
->
-> Both btrfs_prepare_sprout() and btrfs_init_new_device() needs
-> device_list_mutex. But they are holding it sequentially, thus 
-> creates a
-> small window to an opportunity to race. Close this opportunity 
-> and hold
-> device_list_mutex common to both btrfs_init_new_device() and
-> btrfs_prepare_sprout().
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+On 18.08.21 г. 0:06, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> btrfs_csum_one_bio() loops over each filesystem block in the bio while
+> keeping a cursor of its current logical position in the file in order to
+> look up the ordered extent to add the checksums to. However, this
+> doesn't make much sense for compressed extents, as a sector on disk does
+> not correspond to a sector of decompressed file data. It happens to work
+> because 1) the compressed bio always covers one ordered extent and 2)
+> the size of the bio is always less than the size of the ordered extent.
+> However, the second point will not always be true for encoded writes.
+> 
+> Let's add a boolean parameter to btrfs_csum_one_bio() to indicate that
+> it can assume that the bio only covers one ordered extent. Since we're
+> already changing the signature, let's get rid of the contig parameter
+> and make it implied by the offset parameter, similar to the change we
+> recently made to btrfs_lookup_bio_sums(). Additionally, let's rename
+> nr_sectors to blockcount to make it clear that it's the number of
+> filesystem blocks, not the number of 512-byte sectors.
+> 
+> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
 > ---
-> RFC because I haven't identified the other thread which could 
-> race with
-> this, but still does this cleanup makes sense?
->
->  fs/btrfs/volumes.c | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 91b8422b3f67..f490d1897c56 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2366,6 +2366,8 @@ static int btrfs_prepare_sprout(struct 
-> btrfs_fs_info *fs_info)
->  	u64 super_flags;
->
->  	lockdep_assert_held(&uuid_mutex);
-> +	lockdep_assert_held(&fs_devices->device_list_mutex);
-> +
->
-Just a reminder: clone_fs_devices() still takes the mutex in 
-misc-next.
+>  fs/btrfs/compression.c |  5 +++--
+>  fs/btrfs/ctree.h       |  2 +-
+>  fs/btrfs/file-item.c   | 35 ++++++++++++++++-------------------
+>  fs/btrfs/inode.c       |  8 ++++----
+>  4 files changed, 24 insertions(+), 26 deletions(-)
+> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 7869ad12bc6e..e645b3c2f09a 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -480,7 +480,8 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+>  			BUG_ON(ret); /* -ENOMEM */
+>  
+>  			if (!skip_sum) {
+> -				ret = btrfs_csum_one_bio(inode, bio, start, 1);
+> +				ret = btrfs_csum_one_bio(inode, bio, start,
+> +							 true);
+>  				BUG_ON(ret); /* -ENOMEM */
+>  			}
+>  
+> @@ -516,7 +517,7 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+>  	BUG_ON(ret); /* -ENOMEM */
+>  
+>  	if (!skip_sum) {
+> -		ret = btrfs_csum_one_bio(inode, bio, start, 1);
+> +		ret = btrfs_csum_one_bio(inode, bio, start, true);
+>  		BUG_ON(ret); /* -ENOMEM */
+>  	}
+>  
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index f07c82fafa04..be245b4b8efe 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3111,7 +3111,7 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
+>  			   struct btrfs_root *root,
+>  			   struct btrfs_ordered_sum *sums);
+>  blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
+> -				u64 file_start, int contig);
+> +				u64 offset, bool one_ordered);
+>  int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+>  			     struct list_head *list, int search_commit);
+>  void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 2673c6ba7a4e..844fae923340 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -614,28 +614,28 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+>   * btrfs_csum_one_bio - Calculates checksums of the data contained inside a bio
+>   * @inode:	 Owner of the data inside the bio
+>   * @bio:	 Contains the data to be checksummed
+> - * @file_start:  offset in file this bio begins to describe
+> - * @contig:	 Boolean. If true/1 means all bio vecs in this bio are
+> - *		 contiguous and they begin at @file_start in the file. False/0
+> - *		 means this bio can contain potentially discontiguous bio vecs
+> - *		 so the logical offset of each should be calculated separately.
+> + * @offset:      If (u64)-1, @bio may contain discontiguous bio vecs, so the
+> + *               file offsets are determined from the page offsets in the bio.
+> + *               Otherwise, this is the starting file offset of the bio vecs in
+> + *               @bio, which must be contiguous.
+> + * @one_ordered: If true, @bio only refers to one ordered extent.
 
->  	if (!fs_devices->seeding)
->  		return -EINVAL;
->
-> @@ -2397,7 +2399,6 @@ static int btrfs_prepare_sprout(struct 
-> btrfs_fs_info *fs_info)
->  	INIT_LIST_HEAD(&seed_devices->alloc_list);
->  	mutex_init(&seed_devices->device_list_mutex);
->
-> -	mutex_lock(&fs_devices->device_list_mutex);
->  	list_splice_init_rcu(&fs_devices->devices, 
->  &seed_devices->devices,
->  			      synchronize_rcu);
->  	list_for_each_entry(device, &seed_devices->devices, dev_list)
-> @@ -2413,7 +2414,6 @@ static int btrfs_prepare_sprout(struct 
-> btrfs_fs_info *fs_info)
->  	generate_random_uuid(fs_devices->fsid);
->  	memcpy(fs_devices->metadata_uuid, fs_devices->fsid, 
->  BTRFS_FSID_SIZE);
->  	memcpy(disk_super->fsid, fs_devices->fsid, BTRFS_FSID_SIZE);
-> -	mutex_unlock(&fs_devices->device_list_mutex);
->
->  	super_flags = btrfs_super_flags(disk_super) &
->  		      ~BTRFS_SUPER_FLAG_SEEDING;
-> @@ -2588,6 +2588,7 @@ int btrfs_init_new_device(struct 
-> btrfs_fs_info *fs_info, const char *device_path
->  	device->dev_stats_valid = 1;
->  	set_blocksize(device->bdev, BTRFS_BDEV_BLOCKSIZE);
->
-> +	mutex_lock(&fs_devices->device_list_mutex);
->  	if (seeding_dev) {
->  		btrfs_clear_sb_rdonly(sb);
->  		ret = btrfs_prepare_sprout(fs_info);
->
-the erorr case:
-if (ret) {
-    mutex_unlock(&fs_devices->device_list_mutex);
-    ...
-}
+nit: I don't have strong preference but my gut feeling tells me
+"single_ordered" might be more explicit/informative. But unless someone
+else thinks the same one_ordered would also make do
 
-Thanks.
+>   */
+>  blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
+> -		       u64 file_start, int contig)
+> +				u64 offset, bool one_ordered)
+>  {
+>  	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+>  	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+>  	struct btrfs_ordered_sum *sums;
+>  	struct btrfs_ordered_extent *ordered = NULL;
+> +	const bool page_offsets = (offset == (u64)-1);
 
---
-Su
+nit: Again, instead of page_offsets perhaps use_page_offsets, somewhat
+more explicit/informative.
 
-> @@ -2599,7 +2600,6 @@ int btrfs_init_new_device(struct 
-> btrfs_fs_info *fs_info, const char *device_path
->
->  	device->fs_devices = fs_devices;
->
-> -	mutex_lock(&fs_devices->device_list_mutex);
->  	mutex_lock(&fs_info->chunk_mutex);
->  	list_add_rcu(&device->dev_list, &fs_devices->devices);
->  	list_add(&device->dev_alloc_list, &fs_devices->alloc_list);
+>  	char *data;
+>  	struct bvec_iter iter;
+>  	struct bio_vec bvec;
+>  	int index;
+> -	int nr_sectors;
+> +	int blockcount;
+>  	unsigned long total_bytes = 0;
+>  	unsigned long this_sum_bytes = 0;
+>  	int i;
+> -	u64 offset;
+>  	unsigned nofs_flag;
+>  
+>  	nofs_flag = memalloc_nofs_save();
+> @@ -649,18 +649,13 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
+>  	sums->len = bio->bi_iter.bi_size;
+>  	INIT_LIST_HEAD(&sums->list);
+>  
+> -	if (contig)
+> -		offset = file_start;
+> -	else
+> -		offset = 0; /* shut up gcc */
+> -
+>  	sums->bytenr = bio->bi_iter.bi_sector << 9;
+>  	index = 0;
+>  
+>  	shash->tfm = fs_info->csum_shash;
+>  
+>  	bio_for_each_segment(bvec, bio, iter) {
+> -		if (!contig)
+> +		if (page_offsets)
+>  			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+>  
+>  		if (!ordered) {
+> @@ -668,13 +663,14 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
+>  			BUG_ON(!ordered); /* Logic error */
+>  		}
+>  
+> -		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info,
+> +		blockcount = BTRFS_BYTES_TO_BLKS(fs_info,
+>  						 bvec.bv_len + fs_info->sectorsize
+>  						 - 1);
+>  
+> -		for (i = 0; i < nr_sectors; i++) {
+> -			if (offset >= ordered->file_offset + ordered->num_bytes ||
+> -			    offset < ordered->file_offset) {
+> +		for (i = 0; i < blockcount; i++) {
+> +			if (!one_ordered &&
+> +			    (offset >= ordered->file_offset + ordered->num_bytes ||
+> +			     offset < ordered->file_offset)) {
+
+Since you are changing this hunk, how about using the in_range macro:
+
+if (!one_ordered && !in_range(offset, ordered->file_offset,
+ordered->num_bytes) { foo
+
+Though I think the "change the ordered extent now that we are working on
+a different range" code should be factored out in a separate function
+because currently it's somewhat breaking the flow of reading.
+
+>  				unsigned long bytes_left;
+>  
+>  				sums->len = this_sum_bytes;
+> @@ -705,7 +701,8 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
+>  					    sums->sums + index);
+>  			kunmap_atomic(data);
+>  			index += fs_info->csum_size;
+> -			offset += fs_info->sectorsize;
+> +			if (!one_ordered)
+> +				offset += fs_info->sectorsize;
+
+Instead of adding one additional conditional op can't offset always be
+incremented but in the case of one_ordered then the !in_range check
+should always be false i.e we won't be using the offset to lookup a new OE?
+
+>  			this_sum_bytes += fs_info->sectorsize;
+>  			total_bytes += fs_info->sectorsize;
+>  		}
+
+
+<snip>

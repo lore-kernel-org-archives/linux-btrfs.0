@@ -2,138 +2,107 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF59AC4338F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 07:37:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A4B9C4338F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 07:59:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 97635608FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 07:37:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 71EB460FF2
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Aug 2021 07:59:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238756AbhHTHhx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Aug 2021 03:37:53 -0400
-Received: from eu-shark2.inbox.eu ([195.216.236.82]:51486 "EHLO
-        eu-shark2.inbox.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236223AbhHTHhw (ORCPT
+        id S230099AbhHTIAN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Aug 2021 04:00:13 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:60744 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229739AbhHTIAM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Aug 2021 03:37:52 -0400
-Received: from eu-shark2.inbox.eu (localhost [127.0.0.1])
-        by eu-shark2-out.inbox.eu (Postfix) with ESMTP id 4006B1E00619;
-        Fri, 20 Aug 2021 10:37:13 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=inbox.eu; s=20140211;
-        t=1629445033; bh=xybIllDJ2RsYTIft4gowZ+hIsT6e1P4qswILX7uNI2w=;
-        h=References:From:To:Cc:Subject:Date:In-reply-to;
-        b=nV0NLP/gU3KJDmJwlKEM8/wqa724UWkRgQ5Trl6gVQrw+D5jFgxMDWzZftcSRt7zk
-         BBYXvuHOwxo5+o+A7aneHEnoZY0ZUQ6Pik0vBbfj0v+u5KcDhcjlQCwXhne6kqFYgz
-         sa8X5jJ8W1p1s0GeuxC94I7OhW+0p+1X/+ET5b38=
-Received: from localhost (localhost [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id 35D271E00610;
-        Fri, 20 Aug 2021 10:37:13 +0300 (EEST)
-Received: from eu-shark2.inbox.eu ([127.0.0.1])
-        by localhost (eu-shark2.inbox.eu [127.0.0.1]) (spamfilter, port 35)
-        with ESMTP id TbWdhhM6l4rL; Fri, 20 Aug 2021 10:37:12 +0300 (EEST)
-Received: from mail.inbox.eu (eu-pop1 [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id C219A1E0060B;
-        Fri, 20 Aug 2021 10:37:12 +0300 (EEST)
-Received: from nas (unknown [49.65.73.48])
-        (Authenticated sender: l@damenly.su)
-        by mail.inbox.eu (Postfix) with ESMTPA id 3D1C71BE00AB;
-        Fri, 20 Aug 2021 10:37:10 +0300 (EEST)
-References: <cover.1629396187.git.anand.jain@oracle.com>
- <9a06b04b9003f86c3300e497b35b0ef0310c84c0.1629396187.git.anand.jain@oracle.com>
-User-agent: mu4e 1.5.8; emacs 27.2
-From:   Su Yue <l@damenly.su>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH RFC 3/3] btrfs: use latest_bdev in btrfs_show_devname
-Date:   Fri, 20 Aug 2021 15:31:11 +0800
-Message-ID: <1r6ofu54.fsf@damenly.su>
-In-reply-to: <9a06b04b9003f86c3300e497b35b0ef0310c84c0.1629396187.git.anand.jain@oracle.com>
+        Fri, 20 Aug 2021 04:00:12 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id D552122161;
+        Fri, 20 Aug 2021 07:59:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629446369; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=fX0iF/Va7fLkHv5IISyOTys0XVxkkhe6oRnstITZ1+U=;
+        b=XYBOdlx0IT7mnCdcVyoLsM6/7PMWjd3yauhTMxCuWw3nFslFYl7irzM1d9iFsIXtc/RZeB
+        H8agiIYIYpurRXcl7ksKOQJ5qzfsbNzrEWQJ6yWK6VK9Y3SDTMVg8XBSFt74yXcEP+NBGF
+        oq3214rXlGLHu2Yhy/k5YWd26C0iIpE=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 7AB791333E;
+        Fri, 20 Aug 2021 07:59:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id Xn1tG+FgH2HzQwAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Fri, 20 Aug 2021 07:59:29 +0000
+Subject: Re: [PATCH v10 02/14] fs: export variant of generic_write_checks
+ without iov_iter
+To:     Omar Sandoval <osandov@osandov.com>, linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com, linux-fsdevel@vger.kernel.org,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-api@vger.kernel.org
+References: <cover.1629234193.git.osandov@fb.com>
+ <237db7dc485834d3d359b5765f07ebf7c3514f3a.1629234193.git.osandov@fb.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <ae6f8c7e-3b9b-bd95-140d-b556ce04df8f@suse.com>
+Date:   Fri, 20 Aug 2021 10:59:28 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
-X-Virus-Scanned: OK
-X-ESPOL: 6NpmlYxOGzysiV+lRWetdgtE0TYrL+Dm55TE3V0G3GeDUSOAd1YLVQ6wnnJyRWA=
+In-Reply-To: <237db7dc485834d3d359b5765f07ebf7c3514f3a.1629234193.git.osandov@fb.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-On Fri 20 Aug 2021 at 02:18, Anand Jain <anand.jain@oracle.com> 
-wrote:
 
-> latest_bdev is updated according to the changes to the device 
-> list.
-> That means we could use the latest_bdev to show the device name 
-> in
-> /proc/self/mounts. So this patch makes that change.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+On 18.08.21 г. 0:06, Omar Sandoval wrote:
+> From: Omar Sandoval <osandov@fb.com>
+> 
+> Encoded I/O in Btrfs needs to check a write with a given logical size
+> without an iov_iter that matches that size (because the iov_iter we have
+> is for the compressed data). So, factor out the parts of
+> generic_write_check() that expect an iov_iter into a new
+> __generic_write_checks() function and export that.
+> 
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
 > ---
->
-> RFC because
-> 1. latest_bdev might not be the lowest devid but, we showed
-> the lowest devid in /proc/self/mount.
-> 2. The device's path is not shown now but, previously we did.
-> So does these break ABI? Maybe yes for 2 howabout for 1 above?
->
-Mabybe a naive question but I have no time to dive into btrfs code
-recently. If a device which has highest devid was replaced, will 
-the
-new device be the fs_devices->latest_bdev instead of the existing 
-older
-one?
-
-Thanks.
-
---
-Su
->  fs/btrfs/super.c | 25 +++----------------------
->  1 file changed, 3 insertions(+), 22 deletions(-)
->
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 1f9dd1a4faa3..4ad3fe174c41 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -2464,30 +2464,11 @@ static int btrfs_unfreeze(struct 
-> super_block *sb)
->  static int btrfs_show_devname(struct seq_file *m, struct dentry 
->  *root)
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
-> -	struct btrfs_device *dev, *first_dev = NULL;
-> +	char name[BDEVNAME_SIZE];
->
-> -	/*
-> -	 * Lightweight locking of the devices. We should not need
-> -	 * device_list_mutex here as we only read the device data and 
-> the list
-> -	 * is protected by RCU.  Even if a device is deleted during 
-> the list
-> -	 * traversals, we'll get valid data, the freeing callback will 
-> wait at
-> -	 * least until the rcu_read_unlock.
-> -	 */
-> -	rcu_read_lock();
-> -	list_for_each_entry_rcu(dev, &fs_info->fs_devices->devices, 
-> dev_list) {
-> -		if (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state))
-> -			continue;
-> -		if (!dev->name)
-> -			continue;
-> -		if (!first_dev || dev->devid < first_dev->devid)
-> -			first_dev = dev;
-> -	}
-> +	seq_escape(m, bdevname(fs_info->fs_devices->latest_bdev, 
-> name),
-> +		   " \t\n\\");
->
-> -	if (first_dev)
-> -		seq_escape(m, rcu_str_deref(first_dev->name), " \t\n\\");
-> -	else
-> -		WARN_ON(1);
-> -	rcu_read_unlock();
+>  fs/read_write.c    | 40 ++++++++++++++++++++++------------------
+>  include/linux/fs.h |  1 +
+>  2 files changed, 23 insertions(+), 18 deletions(-)
+> 
+> diff --git a/fs/read_write.c b/fs/read_write.c
+> index 0029ff2b0ca8..3bddd5ee7f64 100644
+> --- a/fs/read_write.c
+> +++ b/fs/read_write.c
+> @@ -1633,6 +1633,26 @@ int generic_write_check_limits(struct file *file, loff_t pos, loff_t *count)
 >  	return 0;
 >  }
+>  
+> +/* Like generic_write_checks(), but takes size of write instead of iter. */
+> +int __generic_write_checks(struct kiocb *iocb, loff_t *count)
+> +{
+> +	struct file *file = iocb->ki_filp;
+> +	struct inode *inode = file->f_mapping->host;
+> +
+> +	if (IS_SWAPFILE(inode))
+> +		return -ETXTBSY;
+
+ Missing 'if(!count) return 0' from original code ?
+
+<snip>

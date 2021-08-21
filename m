@@ -2,95 +2,73 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF88FC4338F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 21 Aug 2021 15:01:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70DA7C4338F
+	for <linux-btrfs@archiver.kernel.org>; Sat, 21 Aug 2021 23:25:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B91A861208
-	for <linux-btrfs@archiver.kernel.org>; Sat, 21 Aug 2021 15:01:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 48DF16124E
+	for <linux-btrfs@archiver.kernel.org>; Sat, 21 Aug 2021 23:25:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231864AbhHUPCH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 21 Aug 2021 11:02:07 -0400
-Received: from eu-shark1.inbox.eu ([195.216.236.81]:35138 "EHLO
-        eu-shark1.inbox.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231656AbhHUPCG (ORCPT
+        id S229563AbhHUX0b convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 21 Aug 2021 19:26:31 -0400
+Received: from pio-pvt-msa3.bahnhof.se ([79.136.2.42]:39366 "EHLO
+        pio-pvt-msa3.bahnhof.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229472AbhHUX0b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 21 Aug 2021 11:02:06 -0400
-Received: from eu-shark1.inbox.eu (localhost [127.0.0.1])
-        by eu-shark1-out.inbox.eu (Postfix) with ESMTP id 45BEF6C007C5;
-        Sat, 21 Aug 2021 18:01:26 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=inbox.eu; s=20140211;
-        t=1629558086; bh=Fqy8VaU1h8h3R7Cjm7WVRIbTLj78xD7EOp+64BU8lVo=;
-        h=References:From:To:Cc:Subject:Date:In-reply-to;
-        b=rKvZ9Zqu1HjweENT6JgQ5SOWjIBiJmcwt7llsfVrOZNw99dq/WE05h0s4vhgbO1Tk
-         18sHl/w3tEwSq+LBt/mvk+dqWbQ6Nd0pokbEBlCw4DQT3sIg5/yTuMAQn44YmXvsJb
-         JqL/ydw4VBG8cyUWBc3nmy8up4lalpfR9M16F+s8=
+        Sat, 21 Aug 2021 19:26:31 -0400
 Received: from localhost (localhost [127.0.0.1])
-        by eu-shark1-in.inbox.eu (Postfix) with ESMTP id 341256C007C1;
-        Sat, 21 Aug 2021 18:01:26 +0300 (EEST)
-Received: from eu-shark1.inbox.eu ([127.0.0.1])
-        by localhost (eu-shark1.inbox.eu [127.0.0.1]) (spamfilter, port 35)
-        with ESMTP id 93hsG86gFv-s; Sat, 21 Aug 2021 18:01:26 +0300 (EEST)
-Received: from mail.inbox.eu (eu-pop1 [127.0.0.1])
-        by eu-shark1-in.inbox.eu (Postfix) with ESMTP id EEBBE6C007BB;
-        Sat, 21 Aug 2021 18:01:25 +0300 (EEST)
-Received: from nas (unknown [49.65.73.48])
-        (Authenticated sender: l@damenly.su)
-        by mail.inbox.eu (Postfix) with ESMTPA id 830871BE009C;
-        Sat, 21 Aug 2021 18:01:24 +0300 (EEST)
-References: <cover.1629396187.git.anand.jain@oracle.com>
- <8b8e72c87d0ee97da1b2e243a24b68d84d0ac3b9.1629396187.git.anand.jain@oracle.com>
- <y28weeg4.fsf@damenly.su>
- <4b891418-b8d1-6e3f-ae71-b1dface98ae2@oracle.com>
- <sfz2etf4.fsf@damenly.su>
-User-agent: mu4e 1.5.8; emacs 27.2
-From:   Su Yue <l@damenly.su>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH RFC 2/3] btrfs: consolidate device_list_mutex in
- prepare_sprout to its parent
-Date:   Sat, 21 Aug 2021 23:00:20 +0800
-In-reply-to: <sfz2etf4.fsf@damenly.su>
-Message-ID: <pmu6eta9.fsf@damenly.su>
+        by pio-pvt-msa3.bahnhof.se (Postfix) with ESMTP id 10D763F5BC
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Aug 2021 01:25:50 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from pio-pvt-msa3.bahnhof.se ([127.0.0.1])
+        by localhost (pio-pvt-msa3.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id 9XqfbaudwykB for <linux-btrfs@vger.kernel.org>;
+        Sun, 22 Aug 2021 01:25:49 +0200 (CEST)
+Received: by pio-pvt-msa3.bahnhof.se (Postfix) with ESMTPA id 18C4C3F57C
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Aug 2021 01:25:48 +0200 (CEST)
+Received: from [192.168.0.126] (port=38974)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.94.2)
+        (envelope-from <forza@tnonline.net>)
+        id 1mHaN2-000MGZ-E0
+        for linux-btrfs@vger.kernel.org; Sun, 22 Aug 2021 01:25:48 +0200
+Date:   Sun, 22 Aug 2021 01:25:48 +0200 (GMT+02:00)
+From:   Forza <forza@tnonline.net>
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <afa2742.c084f5d6.17b6b08dffc@tnonline.net>
+Subject: Support for compressed inline extents
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
-X-Virus-Scanned: OK
-X-ESPOL: 6N1ml5Y9aTPX9ELDN3bfAwY2rSJKXenj55TE3V0G3GeDUSOAd1YLVQ6wnnJyRWA=
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 8BIT
+X-Mailer: R2Mail2
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+I'd like to see the option to allow compressed extents to be inlined. It could greatly reduce disk usage and speed up small files by avoiding extra seeks.
 
-On Sat 21 Aug 2021 at 22:57, Su Yue <l@damenly.su> wrote:
+I tried to understand why we don't allow it but could only find this reference  https://btrfs.wiki.kernel.org/index.php/On-disk_Format#EXTENT_DATA_.286c.29
 
-> On Fri 20 Aug 2021 at 16:53, Anand Jain <anand.jain@oracle.com>
-> wrote:
->
->>>> @@ -2366,6 +2366,8 @@ static int btrfs_prepare_sprout(struct
->>>> btrfs_fs_info *fs_info)
->>>>      u64 super_flags;
->>>>
->>>>      lockdep_assert_held(&uuid_mutex);
->>>> +    lockdep_assert_held(&fs_devices->device_list_mutex);
->>>> +
->>>>
->>> Just a reminder: clone_fs_devices() still takes the mutex in
->>> misc-next.
->>    As I am checking clone_fs_devices() does not take any lock.
->>   Could you pls recheck?
->>
->
-> Hmmmm... misc-next:
->
-> https://github.com/kdave/btrfs-devel/blob/e05983195f31374ad51a0f3712efec381397f3cb/fs/btrfs/volumes.c#L381
+"the extent is inline, the remaining item bytes are the data bytes (n bytes in case no compression/encryption/other encoding is used)." 
 
-Sorry, it should be
+Is the limitation in the disk format or perhaps in the compression heuristics?
 
-https://github.com/kdave/btrfs-devel/blob/misc-next/fs/btrfs/volumes.c#L995
+Not all use cases would benefit, and we'd have more metadata, which increase the risk of enospc. But i think it could be very valuable nonetheless. For example mail servers, source code/CI, webservers, and others that commonly deal with many small but highly compressible files. 
 
---
-Su
+
+I did a quick test by copying all files smaller than 8192 bytes from my home server. The filesystem has 90GiB used. 
+
+The result was 357129 files, 207605 inline. 792MiB disk usage, 1.0GiB data size, or 1.1% of fs usage. 
+
+Zstd compressed them, which gave 295419 files inline. Total data size 500MiB. The size of the inlined files is 208MiB. 
+
+Uncompressed the inlined files to see how much of the original data could have been compressed and inlined. 599MiB total data with 501MiB disk usage and 207576 inlined files. 
+
+All in all we would save 501-208=293MiB, which is very good. Ontop of this we'd have savings because we avoid padding up to 4kiB block size due to inlining. Also my test only included files less than 8kiB. It is possible that many files larger than this could be compressed to less than max_inline size. 
+
+
+Thanks

@@ -2,318 +2,167 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D64AC4338F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Aug 2021 15:02:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 308C7C432BE
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Aug 2021 19:29:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3E0F16124B
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Aug 2021 15:02:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1BBAA6125F
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 Aug 2021 19:29:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234060AbhHVPCn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 Aug 2021 11:02:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53810 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233549AbhHVPCm (ORCPT
+        id S232654AbhHVTac (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 Aug 2021 15:30:32 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:47960 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229549AbhHVTab (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 Aug 2021 11:02:42 -0400
-Received: from mail-pj1-x102f.google.com (mail-pj1-x102f.google.com [IPv6:2607:f8b0:4864:20::102f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B110C061575
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Aug 2021 08:02:01 -0700 (PDT)
-Received: by mail-pj1-x102f.google.com with SMTP id mq3so10292218pjb.5
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Aug 2021 08:02:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=GUqt/HOa7tYeaazdC6LR3UwsHpiwY4kdrFXz9A5yQYU=;
-        b=a1OLj1kXzsCOWKXY5EQ/WyJPRA5K8+ZmcnUJNW+hD6VabYLORMFxBbytdqPa1uPs9o
-         vTtfoLgxHDDX+qng6RPQodXRGIlkXyo2pNLyRfjyHHIH0PX1plDF5eUwRbansydt/+Kx
-         7yvO37hGMfflkuiyqg+J8KY2BRuMFGCnw4zxtNzPAjO1Sy7vzeb1m1QnuRSBlB5cpccy
-         d5a66MJiHf64Yrk7iJBty1F1i09xY/IDKZHe+J4swMnzwl9USSkrQmKsMP+q+s9dvp7U
-         px0/lkmTCCJ4iibUkQZWg32qejagDUcEpOnk+ORXdCyRbUU4qhToyKb9aqqOl1rrnZmI
-         J8NQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=GUqt/HOa7tYeaazdC6LR3UwsHpiwY4kdrFXz9A5yQYU=;
-        b=BMdKgvzIRf3IeHoT3LuWWJogWxC/aa1+TMNLo1UWygDwtYM2Pzosb08oYFcxcRn0HK
-         2/PorWzlSTZ6tvjMGNQ+zmqS2t/0xVivOEkeIoX7AwBn1IDlEw8LjyKIeAxL8wJWfWPN
-         bI6967vmghORDILuGWFO+bsfKXA/0WjT6G8owNB67f9/mZUMzCnJoIhOmpo1XwCMBicD
-         ZVDiMyoSY0A02jNmZqf0gm1MoWC5bWZ6HYHDKqJ5OqvjXqDKQoEEug2zGRWJSqr4+rtV
-         4TIkgp4qHbC80qCeeTLYIIQmqbQOm0VMdjTg0cMaRgXzU5drNqeoRen299K9HnB9CPo0
-         95Kw==
-X-Gm-Message-State: AOAM532IIRTE+rABwPgYGsKtaWtyuxW8KSyDm72Yx5ciUpHFybc+sKW/
-        jFaYjqZTP4kD1a64BrazPGjMkVBSLMMIhg==
-X-Google-Smtp-Source: ABdhPJx/zo/JmH9uaSKxHZM6RGLQjewMdclCGdlRGC2TLcHoWrtrLxGRv4INSwCowlWz0z2PUlVizg==
-X-Received: by 2002:a17:90a:2b89:: with SMTP id u9mr15247895pjd.116.1629644520762;
-        Sun, 22 Aug 2021 08:02:00 -0700 (PDT)
-Received: from localhost.localdomain ([59.12.165.26])
-        by smtp.gmail.com with ESMTPSA id n185sm13992266pfn.171.2021.08.22.08.01.59
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 22 Aug 2021 08:02:00 -0700 (PDT)
-From:   Sidong Yang <realwakka@gmail.com>
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.cz>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Sidong Yang <realwakka@gmail.com>
-Subject: [PATCH v5 2/2] btrfs-progs: cmds: Add subcommand that dumps file extents
-Date:   Sun, 22 Aug 2021 15:01:40 +0000
-Message-Id: <20210822150140.44152-3-realwakka@gmail.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210822150140.44152-1-realwakka@gmail.com>
-References: <20210822150140.44152-1-realwakka@gmail.com>
+        Sun, 22 Aug 2021 15:30:31 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 75782B425BA; Sun, 22 Aug 2021 15:29:23 -0400 (EDT)
+Date:   Sun, 22 Aug 2021 15:29:23 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     NeilBrown <neilb@suse.de>
+Cc:     Wang Yugui <wangyugui@e16-tech.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "J. Bruce Fields" <bfields@fieldses.org>,
+        Chuck Lever <chuck.lever@oracle.com>, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] VFS/BTRFS/NFSD: provide more unique inode number for
+ btrfs export
+Message-ID: <20210822192917.GF29026@hungrycats.org>
+References: <162742539595.32498.13687924366155737575.stgit@noble.brown>
+ <162881913686.1695.12479588032010502384@noble.neil.brown.name>
+ <20210818225454.9558.409509F4@e16-tech.com>
+ <162932318266.9892.13600254282844823374@noble.neil.brown.name>
+ <20210819021910.GB29026@hungrycats.org>
+ <162942805745.9892.7512463857897170009@noble.neil.brown.name>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <162942805745.9892.7512463857897170009@noble.neil.brown.name>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch adds an subcommand in inspect-internal. It dumps file extents of
-the file that user provided. It helps to show the internal information
-about file extents comprise the file. It supports json format by using
-formatted printing. An example is below.
+On Fri, Aug 20, 2021 at 12:54:17PM +1000, NeilBrown wrote:
+> On Thu, 19 Aug 2021, Zygo Blaxell wrote:
+> > 40 bit inodes would take about 20 years to collide with 24-bit subvols--if
+> > you are creating an average of 1742 inodes every second.  Also at the
+> > same time you have to be creating a subvol every 37 seconds to occupy
+> > the colliding 25th bit of the subvol ID.  Only the highest inode number
+> > in any subvol counts--if your inode creation is spread out over several
+> > different subvols, you'll need to make inodes even faster.
+> > 
+> > For reference, my high scores are 17 inodes per second and a subvol
+> > every 595 seconds (averaged over 1 year).  Burst numbers are much higher,
+> > but one has to spend some time _reading_ the files now and then.
+> > 
+> > I've encountered other btrfs users with two orders of magnitude higher
+> > inode creation rates than mine.  They are barely squeaking under the
+> > 20-year line--or they would be, if they were creating snapshots 50 times
+> > faster than they do today.
+> 
+> I do like seeing concrete numbers, thanks.  How many of these inodes and
+> subvols remain undeleted?  Supposing inode numbers were reused, how many
+> bits might you need?
 
-{
-  "__header": {
-    "version": "1"
-  },
-  "file-extents": [
-    {
-      "start": "0",
-      "disk_bytenr": "21651456",
-      "disk_num_bytes": "4096",
-      "offset": "0",
-      "len": "65536",
-      "compression": "zstd",
-      "type": "regular"
-    },
-    {
-      "start": "65536",
-      "len": "131072",
-      "compression": "none",
-      "type": "hole"
-    }
-  ]
-}
+Number of existing inodes is filesystem size divided by average inode
+size, about 30 million inodes per terabyte for build servers, give or
+take an order of magnitude per project.  That does put 1 << 32 inodes in
+the range of current disk sizes, which motivated the inode_cache feature.
 
-Signed-off-by: Sidong Yang <realwakka@gmail.com>
----
- Makefile                         |   2 +-
- cmds/commands.h                  |   2 +-
- cmds/inspect-dump-file-extents.c | 161 +++++++++++++++++++++++++++++++
- cmds/inspect.c                   |   1 +
- 4 files changed, 164 insertions(+), 2 deletions(-)
- create mode 100644 cmds/inspect-dump-file-extents.c
+Number of existing subvols stays below 1 << 14.  It's usually some
+near-constant multiple of the filesystem age (if it is not limited more
+by capacity) because it's not trivial to move a subvol structure from
+one filesystem to another.
 
-diff --git a/Makefile b/Makefile
-index a1cc457b..911e16de 100644
---- a/Makefile
-+++ b/Makefile
-@@ -156,7 +156,7 @@ cmds_objects = cmds/subvolume.o cmds/filesystem.o cmds/device.o cmds/scrub.o \
- 	       cmds/restore.o cmds/rescue.o cmds/rescue-chunk-recover.o \
- 	       cmds/rescue-super-recover.o \
- 	       cmds/property.o cmds/filesystem-usage.o cmds/inspect-dump-tree.o \
--	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/filesystem-du.o \
-+	       cmds/inspect-dump-super.o cmds/inspect-tree-stats.o cmds/inspect-dump-file-extents.o cmds/filesystem-du.o \
- 	       mkfs/common.o check/mode-common.o check/mode-lowmem.o
- libbtrfs_objects = common/send-stream.o common/send-utils.o kernel-lib/rbtree.o btrfs-list.o \
- 		   kernel-lib/radix-tree.o common/extent-cache.o kernel-shared/extent_io.o \
-diff --git a/cmds/commands.h b/cmds/commands.h
-index 8fa85d6c..55de248e 100644
---- a/cmds/commands.h
-+++ b/cmds/commands.h
-@@ -154,5 +154,5 @@ DECLARE_COMMAND(select_super);
- DECLARE_COMMAND(dump_super);
- DECLARE_COMMAND(debug_tree);
- DECLARE_COMMAND(rescue);
--
-+DECLARE_COMMAND(inspect_dump_file_extents);
- #endif
-diff --git a/cmds/inspect-dump-file-extents.c b/cmds/inspect-dump-file-extents.c
-new file mode 100644
-index 00000000..5f5469a3
---- /dev/null
-+++ b/cmds/inspect-dump-file-extents.c
-@@ -0,0 +1,161 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include <unistd.h>
-+#include <stdio.h>
-+#include <fcntl.h>
-+
-+#include <sys/ioctl.h>
-+
-+#include "common/utils.h"
-+#include "common/format-output.h"
-+#include "cmds/commands.h"
-+#include "kernel-shared/print-tree.h"
-+
-+static const char * const cmd_inspect_dump_file_extents_usage[] = {
-+	"btrfs inspect-internal dump-extent path",
-+	"Dump file extent in a textual form",
-+	NULL
-+};
-+
-+static const struct rowspec dump_file_extents_rowspec[] = {
-+	{ .key = "device", .fmt = "%s", .out_text = "device", .out_json = "device" },
-+	{ .key = "type", .fmt = "%s", .out_text = "type", .out_json = "type" },
-+	{ .key = "start", .fmt = "%u", .out_text = "start", .out_json = "start" },
-+	{ .key = "len", .fmt = "%u", .out_text = "len", .out_json = "len" },
-+	{ .key = "disk_bytenr", .fmt = "%u", .out_text = "disk_bytenr", .out_json = "disk_bytenr" },
-+	{ .key = "disk_num_bytes", .fmt = "%u", .out_text = "disk_num_bytes", .out_json = "disk_num_bytes" },
-+	{ .key = "offset", .fmt = "%u", .out_text = "offset", .out_json = "offset" },
-+	{ .key = "compression", .fmt = "%s", .out_text = "compression", .out_json = "compression" },
-+	ROWSPEC_END
-+};
-+
-+static int cmd_inspect_dump_file_extents(const struct cmd_struct *cmd,
-+										 int argc, char **argv)
-+{
-+	int fd;
-+	struct stat statbuf;
-+	struct btrfs_ioctl_ino_lookup_args lookup;
-+	struct btrfs_ioctl_search_args args;
-+	struct btrfs_ioctl_search_key *sk = &args.key;
-+	struct btrfs_file_extent_item *extent_item;
-+	struct btrfs_ioctl_search_header *header;
-+	u64 start, buf_off;
-+	int ret, i;
-+
-+	struct format_ctx fctx;
-+
-+	fd = open(argv[optind], O_RDONLY);
-+	if (fd < 0) {
-+		error("cannot open %s: %m", argv[optind]);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	if (fstat(fd, &statbuf) < 0) {
-+		error("failed to fstat %s: %m", argv[optind]);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	lookup.treeid = 0;
-+	lookup.objectid = BTRFS_FIRST_FREE_OBJECTID;
-+
-+	if (ioctl(fd, BTRFS_IOC_INO_LOOKUP, &lookup) < 0) {
-+		error("failed to lookup inode %s: %m", argv[optind]);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	sk->tree_id = lookup.treeid;
-+	sk->min_objectid = statbuf.st_ino;
-+	sk->max_objectid = statbuf.st_ino;
-+	sk->min_offset = 0;
-+	sk->max_offset = UINT64_MAX;
-+	sk->min_transid = 0;
-+	sk->max_transid = UINT64_MAX;
-+	sk->min_type = sk->max_type = BTRFS_EXTENT_DATA_KEY;
-+	sk->nr_items = UINT32_MAX;
-+
-+again:
-+	if (ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args)) {
-+		error("failed to search tree ioctl %s: %m", argv[optind]);
-+		ret = 1;
-+		goto out;
-+	}
-+
-+	buf_off = 0;
-+	fmt_start(&fctx, dump_file_extents_rowspec, 24, 0);
-+	fmt_print_start_group(&fctx, "file-extents", JSON_TYPE_ARRAY);
-+	for(i=0; i<sk->nr_items; ++i) {
-+		header = (struct btrfs_ioctl_search_header *)(args.buf + buf_off);
-+
-+		if (btrfs_search_header_type(header) == BTRFS_EXTENT_DATA_KEY) {
-+			u64 len, disk_bytenr, disk_num_bytes, offset;
-+			const char *type_str;
-+			char compress_str[BTRFS_COMPRESS_STR_LEN];
-+
-+			extent_item = (struct btrfs_file_extent_item *)(header + 1);
-+			fmt_print_start_group(&fctx, NULL, JSON_TYPE_MAP);
-+
-+			start = btrfs_search_header_offset(header);
-+			fmt_print(&fctx, "start", start);
-+			type_str = btrfs_file_extent_type_to_str(extent_item->type);
-+			btrfs_compress_type_to_str(extent_item->compression, compress_str);
-+
-+			switch (extent_item->type) {
-+			case BTRFS_FILE_EXTENT_INLINE:
-+				len = le64_to_cpu(extent_item->ram_bytes);
-+				break;
-+			case BTRFS_FILE_EXTENT_REG:
-+			case BTRFS_FILE_EXTENT_PREALLOC:
-+				len = le64_to_cpu(extent_item->num_bytes);
-+				disk_bytenr = le64_to_cpu(extent_item->disk_bytenr);
-+				if (disk_bytenr) {
-+					disk_num_bytes = le64_to_cpu(extent_item->disk_num_bytes);
-+					offset = le64_to_cpu(extent_item->offset);
-+					fmt_print(&fctx, "disk_bytenr", disk_bytenr);
-+					fmt_print(&fctx, "disk_num_bytes", disk_num_bytes);
-+					fmt_print(&fctx, "offset", offset);
-+
-+				} else {
-+					type_str = "hole";
-+				}
-+				break;
-+			}
-+
-+			fmt_print(&fctx, "len", len);
-+			fmt_print(&fctx, "compression", compress_str);
-+			fmt_print(&fctx, "type", type_str);
-+			fmt_print_end_group(&fctx, NULL);
-+		}
-+		buf_off += sizeof(*header) + btrfs_search_header_len(header);
-+	}
-+	fmt_print_end_group(&fctx, "file-extents");
-+	fmt_end(&fctx);
-+
-+	if (sk->nr_items > 512) {
-+		sk->nr_items = UINT32_MAX;
-+		sk->min_offset = start + 1;
-+		goto again;
-+	}
-+	ret = 0;
-+out:
-+	close(fd);
-+	return ret;
-+}
-+
-+DEFINE_COMMAND_WITH_FLAGS(inspect_dump_file_extents, "dump-file-extents", CMD_FORMAT_JSON);
-diff --git a/cmds/inspect.c b/cmds/inspect.c
-index 2ef5f4b6..dfb0e27b 100644
---- a/cmds/inspect.c
-+++ b/cmds/inspect.c
-@@ -696,6 +696,7 @@ static const struct cmd_group inspect_cmd_group = {
- 		&cmd_struct_inspect_dump_tree,
- 		&cmd_struct_inspect_dump_super,
- 		&cmd_struct_inspect_tree_stats,
-+		&cmd_struct_inspect_dump_file_extents,
- 		NULL
- 	}
- };
--- 
-2.25.1
+The main constraint on the product of both numbers is filesystem size.
+If that limit is reached, we often see that lower subvol numbers correlate
+with higher inode numbers and vice versa; otherwise both keep growing until
+they hit the size limit or some user-chosen limit (e.g. "we just don't
+need more than the last 300 builds online at any time").
 
+For build and backup use cases (which both heavily use snapshots) there is
+no incentive to delete snapshots other than to avoid eventually running
+out of space.  There is also no incentive to increase filesystem size
+to accommodate extra snapshots, as long as there is room for some minimal
+useful number of snapshots, the original subvols, and some free space.
+
+So we get snapshots in numbers that are rougly:
+
+	min(age_of_filesystem * snapshot_creation_rate, filesystem_capacity / average_subvol_unique_data_size)
+
+Subvol IDs are not reusable.  They are embedded in shared object ownership
+metadata, and persist for some time after subvols are deleted.
+
+> > > My preference would be for btrfs to start re-using old object-ids and
+> > > root-ids, and to enforce a limit (set at mkfs or tunefs) so that the
+> > > total number of bits does not exceed 64.  Unfortunately the maintainers
+> > > seem reluctant to even consider this.
+> > 
+> > It was considered, implemented in 2011, and removed in 2020.  Rationale
+> > is in commit b547a88ea5776a8092f7f122ddc20d6720528782 "btrfs: start
+> > deprecation of mount option inode_cache".  It made file creation slower,
+> > and consumed disk space, iops, and memory to run.  Nobody used it.
+> > Newer on-disk data structure versions (free space tree, 2015) didn't
+> > bother implementing inode_cache's storage requirement.
+> 
+> Yes, I saw that.  Providing reliable functional certainly can impact
+> performance and consume disk-space.  That isn't an excuse for not doing
+> it. 
+> I suspect that carefully tuned code could result in typical creation
+> times being unchanged, and mean creation times suffering only a tiny
+> cost.  Using "max+1" when the creation rate is particularly high might
+> be a reasonable part of managing costs.
+> Storage cost need not be worse than the cost of tracking free blocks
+> on the device.
+
+The cost of _tracking_ free object IDs is trivial compared to the cost
+of _reusing_ an object ID on btrfs.
+
+If btrfs doesn't reuse object numbers, btrfs can append new objects
+to the last partially filled leaf.  If there are shared metadata pages
+(i.e. snapshots), btrfs unshares a handful of pages once, and then future
+writes use densely packed new pages and delayed allocation without having
+to read anything.
+
+If btrfs reuses object numbers, the filesystem has to pack new objects
+into random previously filled metadata leaf nodes, so there are a lot
+of read-modify-writes scattered over old metadata pages, which spreads
+the working set around and reduces cache usage efficiency (i.e. uses
+more RAM).  If there are snapshots, each shared page that is modified
+for the first time after the snapshot comes with two-orders-of-magnitude
+worst-case write multipliers.
+
+The two-algorithm scheme (switching from "reuse freed inode" to "max+1"
+under load) would be forced into the "max+1" mode half the time by a
+daily workload of alternating git checkouts and builds.  It would save
+only one bit of inode namespace over the lifetime of the filesystem.
+
+> "Nobody used it" is odd.  It implies it would have to be explicitly
+> enabled, and all it would provide anyone is sane behaviour.  Who would
+> imagine that to be an optional extra.
+
+It always had to be explicitly enabled.  It was initially a workaround
+for 32-bit ino_t that was limiting a few users, but ino_t got better
+and the need for inode_cache went away.
+
+NFS (particularly NFSv2) might be the use case inode_cache has been
+waiting for.  btrfs has an i_version field for NFSv4, so it's not like
+there's no precedent for adding features in btrfs to support NFS.
+
+On the other hand, the cost of ino_cache gets worse with snapshots,
+and the benefit in practice takes years to decades to become relevant.
+Users who are exporting snapshots over NFS are likely to be especially
+averse to using inode_cache.
+
+> NeilBrown
+> 
+> 

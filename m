@@ -7,60 +7,61 @@ X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3B23C432BE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 19:23:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EDA8C43214
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 19:23:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BD3B661374
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 19:23:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 02F8861411
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 19:23:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232123AbhHWTYM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Aug 2021 15:24:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41978 "EHLO
+        id S232112AbhHWTYN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Aug 2021 15:24:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41984 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232088AbhHWTYL (ORCPT
+        with ESMTP id S232130AbhHWTYM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Aug 2021 15:24:11 -0400
-Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6CA35C061757
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Aug 2021 12:23:28 -0700 (PDT)
-Received: by mail-qk1-x735.google.com with SMTP id ay33so8929437qkb.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Aug 2021 12:23:28 -0700 (PDT)
+        Mon, 23 Aug 2021 15:24:12 -0400
+Received: from mail-qk1-x730.google.com (mail-qk1-x730.google.com [IPv6:2607:f8b0:4864:20::730])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95697C061575
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Aug 2021 12:23:29 -0700 (PDT)
+Received: by mail-qk1-x730.google.com with SMTP id 22so20451594qkg.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Aug 2021 12:23:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=W++HpZkxxxn1o4o7hCkKWt345ONJhv7pJt9f92Wai+E=;
-        b=nB+5dwwwqMYi7x5+jMP3kjVvIxoNn09qkz+iGkOfreGf+S/KaywE420E89W7NiDyBj
-         5Px/bYD2CEVOBw66IubJw5XQVPjmhTTns0ENxI2zLJXbMDQTAuHZrt8DZvdpDp0VGrMr
-         B0CHG6qxjJecO0E803N336tXrNXKyJMiPrg+qhOLnlW5zVms/gh1QswwnLm85covI/VH
-         umhk309yOQCDIU9udnbBMpl6aSCqKsTF0hvLvNZEx+4ZFDvINEOE4uEy7uhZ66RVfWGO
-         1mPlFMScOtuROPjhIYOva+De7UkP1ELhVLptswdb3r98P8VMl53cgnvD8vfyS8JkJL/p
-         Hyxw==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=WVcw1RhiRjOL+ZrEm/KStvvoMKp1dlG80CzeuEO6/+o=;
+        b=DlDfYjY8BxfJ2Pap8YcMf4AiBt7V29KQEaVzyt9iynxsJWO4AR3075hlKUv3h/z8eR
+         Mq7gLrMsUd4oSuQ6dTwj4FinDLAaiTLcDVB518JpabnftqY6oG38k7rKJSNdcziSb9k5
+         oLbTYTeSBqC6u5e776Qlp6dDG8S9VK22viqNar7cjwoRq2gwYTGnAL8/G0NGW1iHGwNJ
+         z4DH1GSHiFKD319YAcbizOzKPbFjBZmuiFCnmW0bo92wvmxVZkqlptaXFGTtgSfw2ct9
+         4UGiH8G1B5TjbvyJIEfS3bA7w9WN/RRFZc3TUlQeEMhR9Pbo2zAX9JuZxViAQPhqbzbX
+         bkcA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=W++HpZkxxxn1o4o7hCkKWt345ONJhv7pJt9f92Wai+E=;
-        b=K6qRvji82txSEDCD1DmyV40osN77ugX3JF2dyuIbnPnkraEKDGymfs7hBxh39kJkBJ
-         I7cdJgNnDpsoMhQM00xHCzriPw2AbzIyE7YCmMlhcfrewbAMnp1xuOoOdYE1NYecOukj
-         e+1AJKMaA9r9NVGQHmPvDFZ4IpEtG5Lv2/VXZFCobiwW9HuwWRj68Tm39nq68mLCEgrv
-         bUVm6BtYxHJkScDF45FDzMYD7FahwAJUZyDpiA1NzCTzXJsqQU9a2+o0VCfYBBOOfS/+
-         JvIrYFiEujIzeEMz3FMQ6DuBg5fot5ixs3XpY6Ta99gR/7yiu8/r/nDAE0ex55LYtpNd
-         qUNw==
-X-Gm-Message-State: AOAM532sb25cQ4NejhwvXErdrgmEgevd171bivMU9rUh4+eCXiEB4q2h
-        My0Pu3lSsoSi2wYhr5zuv5GwHa88LvTNtA==
-X-Google-Smtp-Source: ABdhPJzz9ZoEVFM7KHAlhaUUHVmgwuH5Hrc1hiDfvYLm5FAsqxIk3utvMVB+Q+YOl3+Bq1F1WJHCQg==
-X-Received: by 2002:a05:620a:1212:: with SMTP id u18mr20310102qkj.154.1629746602580;
-        Mon, 23 Aug 2021 12:23:22 -0700 (PDT)
+        bh=WVcw1RhiRjOL+ZrEm/KStvvoMKp1dlG80CzeuEO6/+o=;
+        b=X5ll/ipMSCBKW01CBfnaZ/tKS0TbjE7YPRcA7gy9xBg1KmwF1EWc1AyBcyvLlbwNJB
+         DwY7z1NZZ/I3i01sic16leC5oNGFEE7/OlNTUKkz905OY2WXPbiNzyhrhSYL3cexbouD
+         CDMDmAzJiJHkewcTHZiNPKNj+4pHBD2RfaKNXwaidBXUmrjNtkdmzCz6nWNPQnGDTjnq
+         ZD8ZcQWc+wEqHo4gWcaL4xxR6+OqxyPvQ4lTe7ul2dnAuxdYxAHh1ZRK9p0F8zROHJ+Y
+         yuIgmeILkSZA+LRbjHKrtXtDpqtOyyBTk1m+G78VWA5aMqn32D9V+dVOfAuaoS39jZ5w
+         RaeA==
+X-Gm-Message-State: AOAM530t5PPLs4fr6UGjqQzDfWVGn+fNhFwcY24T2r8tKdvpXHy5FlG+
+        TwpmsxyouS52LXbY5sj7IU6d4WJVTMHRYg==
+X-Google-Smtp-Source: ABdhPJxyZmRShzcHw0TdMjF+U/eEbqKqoIxqSPezRVyrJUQi0/+bFS/YgOMCg2HLJYOc8ZCr4cOvxg==
+X-Received: by 2002:a37:6c2:: with SMTP id 185mr18032257qkg.260.1629746608510;
+        Mon, 23 Aug 2021 12:23:28 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id q7sm9176839qkm.68.2021.08.23.12.23.22
+        by smtp.gmail.com with ESMTPSA id u6sm9063554qkp.49.2021.08.23.12.23.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 23 Aug 2021 12:23:22 -0700 (PDT)
+        Mon, 23 Aug 2021 12:23:28 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 5/9] btrfs-progs: do not double add unaligned extent records
-Date:   Mon, 23 Aug 2021 15:23:09 -0400
-Message-Id: <9369a488d508519a4bea2742dfd0bdadccf4dc99.1629746415.git.josef@toxicpanda.com>
+Cc:     Qu Wenruo <wqu@suse.com>
+Subject: [PATCH v3 7/9] btrfs-progs: check: detect issues with btrfs_super_used in lowmem check
+Date:   Mon, 23 Aug 2021 15:23:11 -0400
+Message-Id: <48b9b7334f233d9e3d1ad650085262c892420cae.1629746415.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1629746415.git.josef@toxicpanda.com>
 References: <cover.1629746415.git.josef@toxicpanda.com>
@@ -70,58 +71,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The repair cycle in the main check will drop all of our cache and loop
-through again to make sure everything is still good to go.
-Unfortunately we record our unaligned extent records on a per-root list
-so they can be retrieved when we're checking the fs roots.  This isn't
-straightforward to clean up, so instead simply check our current list of
-unaligned extent records when we are adding a new one to make sure we're
-not duplicating our efforts.  This makes us able to pass 001 with my
-super bytes_used fix applied.
+We can already fix this problem with the block accounting code, we just
+need to keep track of how much we should have used on the file system,
+and then check it against the bytes_super.  The repair just piggy backs
+on the block group used repair.
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/main.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ check/mode-lowmem.c | 13 ++++++++++++-
+ check/mode-lowmem.h |  1 +
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/check/main.c b/check/main.c
-index 81b6650f..6f77b5ff 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -7928,6 +7928,8 @@ static int record_unaligned_extent_rec(struct extent_record *rec)
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index cb8e3ab8..a1ad9606 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -28,6 +28,7 @@
+ #include "check/mode-lowmem.h"
  
- 	rbtree_postorder_for_each_entry_safe(back, tmp,
- 					     &rec->backref_tree, node) {
-+		bool skip = false;
-+
- 		if (back->full_backref || !back->is_data)
- 			continue;
+ static u64 last_allocated_chunk;
++static u64 total_used = 0;
  
-@@ -7943,6 +7945,24 @@ static int record_unaligned_extent_rec(struct extent_record *rec)
- 		if (IS_ERR_OR_NULL(dest_root))
- 			continue;
+ static int calc_extent_flag(struct btrfs_root *root, struct extent_buffer *eb,
+ 			    u64 *flags_ret)
+@@ -3645,6 +3646,8 @@ next:
+ out:
+ 	btrfs_release_path(&path);
  
-+		/*
-+		 * If we repaired something and restarted we could potentially
-+		 * try to add this unaligned record multiple times, so check
-+		 * before we add a new one.
-+		 */
-+		list_for_each_entry(urec, &dest_root->unaligned_extent_recs,
-+				    list) {
-+			if (urec->objectid == dest_root->objectid &&
-+			    urec->owner == dback->owner &&
-+			    urec->bytenr == rec->start) {
-+				skip = true;
-+				break;
-+			}
-+		}
++	total_used += used;
 +
-+		if (skip)
-+			continue;
+ 	if (total != used) {
+ 		error(
+ 		"block group[%llu %llu] used %llu but extent items used %llu",
+@@ -5547,6 +5550,14 @@ next:
+ 	}
+ out:
+ 
++	if (total_used != btrfs_super_bytes_used(gfs_info->super_copy)) {
++		fprintf(stderr,
++			"super bytes used %llu mismatches actual used %llu\n",
++			btrfs_super_bytes_used(gfs_info->super_copy),
++			total_used);
++		err |= SUPER_BYTES_USED_ERROR;
++	}
 +
- 		urec = malloc(sizeof(struct unaligned_extent_rec_t));
- 		if (!urec)
- 			return -ENOMEM;
+ 	if (repair) {
+ 		ret = end_avoid_extents_overwrite();
+ 		if (ret < 0)
+@@ -5559,7 +5570,7 @@ out:
+ 		if (ret)
+ 			err |= ret;
+ 		else
+-			err &= ~BG_ACCOUNTING_ERROR;
++			err &= ~(BG_ACCOUNTING_ERROR|SUPER_BYTES_USED_ERROR);
+ 	}
+ 
+ 	btrfs_release_path(&path);
+diff --git a/check/mode-lowmem.h b/check/mode-lowmem.h
+index da9f8600..0bcc338b 100644
+--- a/check/mode-lowmem.h
++++ b/check/mode-lowmem.h
+@@ -48,6 +48,7 @@
+ #define DIR_ITEM_HASH_MISMATCH	(1<<24) /* Dir item hash mismatch */
+ #define INODE_MODE_ERROR	(1<<25) /* Bad inode mode */
+ #define INVALID_GENERATION	(1<<26)	/* Generation is too new */
++#define SUPER_BYTES_USED_ERROR	(1<<27)	/* Super bytes_used is invalid */
+ 
+ /*
+  * Error bit for low memory mode check.
 -- 
 2.26.3
 

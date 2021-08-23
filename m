@@ -2,503 +2,213 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBB69C4338F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 11:30:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9178C4338F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 11:32:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C117D61374
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 11:30:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 86C6161361
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 Aug 2021 11:32:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235386AbhHWLbV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 23 Aug 2021 07:31:21 -0400
-Received: from mout.gmx.net ([212.227.17.20]:49807 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234997AbhHWLbU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 23 Aug 2021 07:31:20 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1629718237;
-        bh=1ADA/8qT78jwuwF2aTJBq4dGGLyhiNTtiBl9loUZvU0=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=O+QbmvhXMUZ3UUBu/S79u0p5BRBRRfVMWKTXUey0BGKHCGsjkSkhKcjSG59XbnG3h
-         1HaJnX0vsovBFYWxmZJAm1TbSGZBW/KWf97FRqjAgE6ML37JwzG2ew3OYbVVckS1V2
-         JQ8ruaUVCbj55B+5nxMMwJojin2+8pmKs17CEq7k=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MtfNf-1nBKsN0H6N-00v7tl; Mon, 23
- Aug 2021 13:30:36 +0200
-Subject: Re: Is there a way to repeair btrfs?
-To:     Eugen Konkov <kes-kes@yandex.ru>, linux-btrfs@vger.kernel.org
-References: <746581394.20210817202332@yandex.ru>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <93ba8277-7301-5704-4bf1-1202d13cbb37@gmx.com>
-Date:   Mon, 23 Aug 2021 19:30:33 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        id S236327AbhHWLcw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 23 Aug 2021 07:32:52 -0400
+Received: from mx0b-00069f02.pphosted.com ([205.220.177.32]:21548 "EHLO
+        mx0b-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S235011AbhHWLcv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 23 Aug 2021 07:32:51 -0400
+Received: from pps.filterd (m0246630.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.0.43) with SMTP id 17N8TMSn021819;
+        Mon, 23 Aug 2021 11:32:04 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references :
+ content-transfer-encoding : content-type : mime-version;
+ s=corp-2021-07-09; bh=r0g11iAd8pfJK2z/MPlYTks9JDxWh++Q1y0LwjNk23g=;
+ b=pjojZ1rUy1JqUiyS8onRjEJTAeh9owehk8230XWHnc1GrJxqEjbGZEN0PwKjEvVyP8+i
+ 7VyfTj/va9KEh/6XK/uvAUDCov+fFDhNLPrlbdIdW1sOFRYs4ibfSjTFotVnwxpgzBkz
+ xORXaT1mOP6lHkYJ8TmDVk+h8HjSjJ2b7+x4uPiN7Kcob/pnnIzwed1Tyq+SnryLClMP
+ eFgPxtQlAGqx2YyTZm+LGoKlcPvAVjSFw+4shQcStlWdec99OXl0ijxPoA/9jWNIlK9C
+ o22yuszS7lT4DCp2vF9Up8rEfTbgu35/qqIz0XcKqVS60pmB5scsS+jVBGAGVz5F1b6c Qg== 
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
+ subject : date : message-id : in-reply-to : references :
+ content-transfer-encoding : content-type : mime-version;
+ s=corp-2020-01-29; bh=r0g11iAd8pfJK2z/MPlYTks9JDxWh++Q1y0LwjNk23g=;
+ b=vmpgGzg8+5AEUAkFZ1mSChqohrt3ZvgN6brLdnUst+mmB4hR9ALEMczexYSmdGLxttM7
+ GiWaAjGDukCLAqIvRBUhwieNpKHAcjsn2BgYFBBIaV6yGAoLddyS0blhH95Tz6BO/xRC
+ J6xWwy/x9RdVK43eNLZBCq7knYoqNHlV8uTiIplCvCOuJB7uYZy1Cqr/gxFii3C6o45Q
+ D8FvVor2e/U3mDdSoWPOc3q9Cnufsol2n4Q2LdcF46sjOuIstQNjN87F9VTMDb+iR9yv
+ 5Fcks2u/mYbhpAAqvVmMh28boPq+vtqgWdgccAnR+v6U4RBsIxWIpf5Tk29hAMeYSQeF bQ== 
+Received: from userp3020.oracle.com (userp3020.oracle.com [156.151.31.79])
+        by mx0b-00069f02.pphosted.com with ESMTP id 3akwcf96aj-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 23 Aug 2021 11:32:04 +0000
+Received: from pps.filterd (userp3020.oracle.com [127.0.0.1])
+        by userp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 17NBVLxW021994;
+        Mon, 23 Aug 2021 11:32:03 GMT
+Received: from nam11-co1-obe.outbound.protection.outlook.com (mail-co1nam11lp2176.outbound.protection.outlook.com [104.47.56.176])
+        by userp3020.oracle.com with ESMTP id 3akb8sh71r-3
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 23 Aug 2021 11:32:02 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=G/wb72DjxR+uk+XngxB98o1kTn+9EFs9cHjZiursqkE2b7fuvcY/Nxk9x45Jdlb9rjntQM2mzyJ95AxCgp5XQdVz2+0TP3V86nmbMecVspR20GDIt3/OqMYFoaY4ZFIp89v/D+4SxpvgVLfcfdRoh1IAklWKELy/NojXV7Lh3U6vPJMM4ZWDm9lQVhBJ0NSKGfh6MtJs4UasBX8wiop+/hF8cPbHxrOoZfH2d1NRtH6YMGCDhD2XSU4YGeDIlYPqLa7evvVhPuBwDpOmm231EuiPEiBPXNkxSNj8Y5uwmzFefkwUqrJ4T8sjPMTVTWBFoOa1J6Eoq6t5Al5l7hw62Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=r0g11iAd8pfJK2z/MPlYTks9JDxWh++Q1y0LwjNk23g=;
+ b=Vne+1lAiAID6tT8EkUyaI094JfChFY0yOg/Uu5TwH0w0sYlVpQFPpYZERd1IlQLHgZG8Ri6MDS2rwa80Q4Id+ceAgP1EuN2iJkKXFAfF0u3C8BHlnhoJTP3CFcw9I2ZbUH2td+JBsy99OY/+Txke/NVguNFbKZEyFO8NIcMouPlYczukJib4LSIrwsceKPSETjAeFEVV9+gIwxHhylxNUgNyv1RM/UDpThn5hAOByXSg/xtH0ZgUsT6vBC0SxD1kwrnud30OWYsQAbHFr9aS8mmJHDeYvDb8D+7rw+vJ8CBzmM/p7e4hC6zAWj8dkl85xTu3LcNt0J1tf7Pq2gQZ6g==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=r0g11iAd8pfJK2z/MPlYTks9JDxWh++Q1y0LwjNk23g=;
+ b=jTWsCF5YUTRL/WU69eHVEDlO0tHY5vTYqEBjeKDeYl84TcUPYA5/+hkmiL1lf6QatRb7ZM974jTdfMdQ3Qhg9+v54AhWtPcEt7rwIQvIi+QyFhUeF1ZsREWewdWStl3EphkO+KBplTskilZCF9FfK0lSZDMuAQYRZ2W4cAbr+9k=
+Authentication-Results: vger.kernel.org; dkim=none (message not signed)
+ header.d=none;vger.kernel.org; dmarc=none action=none header.from=oracle.com;
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com (2603:10b6:208:1d2::24)
+ by MN2PR10MB4206.namprd10.prod.outlook.com (2603:10b6:208:1df::16) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4415.14; Mon, 23 Aug
+ 2021 11:32:01 +0000
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::b813:4805:31e:d36a]) by MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::b813:4805:31e:d36a%5]) with mapi id 15.20.4436.024; Mon, 23 Aug 2021
+ 11:32:01 +0000
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, l@damenly.su
+Subject: [PATCH RFC v4 3/4] btrfs: use latest_dev in btrfs_show_devname
+Date:   Mon, 23 Aug 2021 19:31:40 +0800
+Message-ID: <1ffa15f29c6913e51a60c48b1040d8306daa6e67.1629458519.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <cover.1629458519.git.anand.jain@oracle.com>
+References: <cover.1629458519.git.anand.jain@oracle.com>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: SG2PR01CA0142.apcprd01.prod.exchangelabs.com
+ (2603:1096:4:8f::22) To MN2PR10MB4128.namprd10.prod.outlook.com
+ (2603:10b6:208:1d2::24)
 MIME-Version: 1.0
-In-Reply-To: <746581394.20210817202332@yandex.ru>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:56x3S5l6JC1u1wU403S9qow3500/3K+bKbhcQ6HobC9k2ESy0hq
- b+L0oHZn7tmUe96D9J6bbnoImNoJLWDOQUODigRjnTcFy2KfhyPT2GWigIjVc1/d604KHaR
- LVmJTopx7+f1vAAXL30Orx7EEgEsSV/z3ZORrkNU49h4Q5V6akR/1W1feqL1NrcgfWUz44R
- Qqn1yKFUOEalOfYXw3Ckw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:7AhuSf4u/lQ=:J0eIRdhNP7kVO3frUjMp9N
- rhRaQ7Gwi37fT6mk/DNHiMk0ScV3AY79yZT90pXB507KrDL+hzTHxvyQJXK6QYWbQQp2oUBb6
- Eu5/nYZUjqBQB0JKjgn8vprfL+3nqueVfLFdScUXVKUZEPRbCxg8GzNRvGJf9WJ+QnBPfJhx/
- 6ahqjbwvE2mF9RHzPuD99Xltvc8vHWDYxyZKH8nCs6C4BmPVL16U2ZyQm4/NDdAI1JJHZ5Kzs
- h6EaRHwSQhs4XuM3dHeXsvkGQopG0M01SHmTkDuqQyEjp48ludBNdBzGf0gE8ClYS4ss6vGLh
- qacH2wBthJpJ6Td0YAQAB8cFm+HD2G+Sf/ozx+mYto0Yo1Iqq6/Q/ZL7tyPBzJwyZtJcJQJEg
- 58XnxXEEYKnkpJdK1XvS6uBCphraIzJJ2k+7H/7X5MQDfKnPTVnPLBGLVJyPpGBGQnuoEe2eN
- jSdkNed6WD9iqXxSS7cuPHfBOPdrfBnbtofGBUfONhup4srR2dedCAe2RPKk7yXC0ZEXDwXru
- 0i1ibmPXGHdyzoZXZzNrS2MVzcByytq26PPlSsLWHI9bzGRv1sRWfsQsZiO58pUIxmqq5pkfG
- K8NScA13TSI3DexF9HUfFDs0cO31Mm0o1flrNBYK5QHL5halp4KBerFYh11fKPSEhsyCNP3wL
- 3GSbWgTrg9fdqzop47v3Hjy7iUPKwqkJNwS1Ool8VIhmnzfS7bvKRMRgPCYJYKf9ooYebKcrg
- B7QR0IMP9uFXMQP+4jDqhghfZCJnbnx6Zgl/KWOhNx16f+6JyfEnGvqlStwawiHQDORhCAH+J
- 7zqMA36URN1oMoC3IaIWirIdVIm1fbVh31+aXf8UHpY5CsyDV1nCc3qaZDob3kDJxuDeGpfD6
- lkVaZfrV4RJAZzTwyx2eNUh9D+YoOEybuoKhao3wigiSxzaOPLm9Yk/efbZnppCypHApAMiiV
- rUlK9xqkaEHBmcssWnyDBES4TF8xernNBkBPSI+goZSFX0kRbdzbZx9HaKfvHDM9ytfSU4qWO
- YHK0U1Kl0wjPytNWtEuWwhSq3j3mD51WcxnWlsBQocPBEOLcLb1k+1IRYjtaes8zrKNUqd4FG
- Ux+HheJ15paBePzpeCecr2cxqdv85fYliNQKmC7Y9ehWScp0q1gjQeb1A==
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from localhost.localdomain (39.109.186.25) by SG2PR01CA0142.apcprd01.prod.exchangelabs.com (2603:1096:4:8f::22) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4436.19 via Frontend Transport; Mon, 23 Aug 2021 11:32:00 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: b3b88e47-280a-45ed-3826-08d966299ffd
+X-MS-TrafficTypeDiagnostic: MN2PR10MB4206:
+X-Microsoft-Antispam-PRVS: <MN2PR10MB4206F6A96F20B6A497D9A8AFE5C49@MN2PR10MB4206.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:8882;
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: 0yQW9PXZ4QC4KoZbagVRVVABKRjX6YC9VR4HfVHnxr9Z+47orMXrnmcwzDHjB2fihrVSvKU4hVV9IvsY4L/UCeIKXgxgW4zizjNdBqE/IRTHZx9iLs55D9C2Rd6C0UmqfxzZ13Ouz+i420l0ZLAMds3CNYvlBHjox+ga8+cnmduMRdD8aLv4YoqcDZTkStO9FL6Xet3lHOeCmEqDDN9Bgvizcs+Jxytl8xgjKxItP06l0y3vf3I3wRS4sIvkMzSR7lub3MXpn7kq7XEqWx+9nn/D4cokrptiG+jRfKSrZT9IQ8oD0v6Jzq7DzmcqZVpSLqKIJ2hEXhgSK/XEruwr9vf9z9x+74K/+OcCEWdCcB4MHsCu6DG2DjA8xYMRoY3z0Vt9Lm949pYG1GbZvM0WM+vKEV3Bbkc3/u5bj0881hYb4F0oTbBnkDwDx2d5wWmN+TsvIXFvaW0wLVKFEdBabyfPqfFFJA4xSAwa9ixAJnZ9eXY53GEN8Pbd/oSi0Ck/lAXxeaDsp2vH6sIJGAQPsS8JSg5sHQ3Woc4WaeAz6t4maowMfagsIIz0Gw5K/Tu5aql1JV4lwpsNrmBdManY948feC2lbCAWfZqF1eNVcMUJYNpSPfaTqDQ1+7XQM4BfM+mhk04Z1t74uxdznsYS6//tWjDT3fjHCG8EboPPL3wFKDzmsCopwPHaQEjFm5DWBW1Yd+etpC6lwD3ABTduDQ==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MN2PR10MB4128.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(136003)(346002)(39860400002)(366004)(376002)(396003)(6666004)(52116002)(66476007)(38350700002)(6512007)(26005)(478600001)(38100700002)(6486002)(6916009)(86362001)(316002)(83380400001)(2906002)(44832011)(66946007)(8676002)(4326008)(6506007)(8936002)(66556008)(956004)(5660300002)(36756003)(186003)(2616005);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?ZO+1AC2wodYDo+TJI/2LT7G4gDgloR8y4qAqz2ce8QTwjb83MITg5jfYsW38?=
+ =?us-ascii?Q?fsNFn/AtVbb94dzeZ9qQgVM+1h49VotjxTCTBxNDHGcdGoPfE6mR93mJbkRx?=
+ =?us-ascii?Q?PasOuTo6snRd4hAWN8/BbaMv34Li4PHSBiV8VCUkmEElu7ETIMIiNM6+IB3R?=
+ =?us-ascii?Q?cGe6PhVHRT/QsTo3Ubv/ZV87vn8OR66RoPqN9UWtdhIbo46uR0uPtZHA1Kma?=
+ =?us-ascii?Q?mdzFrl/MCkjcRK+v4pAovFPS32B069RZe3+JDODkNzALCy6i1zZe7paF+bNJ?=
+ =?us-ascii?Q?yDvq3RXs7gwL4oeEovrT4okMjmCM10C7xQNmG2R50l/bB48Op4FXdRjGKymg?=
+ =?us-ascii?Q?577o9RNDeod425wO8Z5eVG7O9Hpfq6BrVIY+REJRWGnFOslTX+iAC5fkmHA7?=
+ =?us-ascii?Q?QcoZCzZZzSz8K0bouuIIHcLLjC+Gf+24bta2nbWfq0Zd3xmjp54jBf0fu5oV?=
+ =?us-ascii?Q?k23alNR5jduZYTB+eV24TCnBVBg/op7v6fad8yX+VbV8CXIMp8XfaGxDXwdA?=
+ =?us-ascii?Q?GGk4zx8L4LVteTirF4rnV9xlxXU7qiJlpGJt2tD0B4Vc9aypT8WOcVRRpSIH?=
+ =?us-ascii?Q?Atn1E5HckfKKKWpzS0iiRjSqmrh3KzDtUPaoLhF+ovNjtL9Y4v1dL2sRzwAR?=
+ =?us-ascii?Q?KE/e4s35zbRuLUiPMLfBnsb5BH1gxLR2CQlVPMG5j3QFHriVEmzKbytbp5fE?=
+ =?us-ascii?Q?9YKPREXnzsxNWnrBRvfvMklTyYlxTb3iJVyz/qUVY7qb/iznZ2pJ77osUtxj?=
+ =?us-ascii?Q?s45PpY5/c8DyGaPXf9/CtmBYqKQdM3Pwvwe8zvEWbvKo+Uj/4bXOcs2I2nbs?=
+ =?us-ascii?Q?EPKD8Uk9jWRochltnml1IOmuhS5vcHLoSa5kZGlh2HfTOWelH+lZYyLtBAXY?=
+ =?us-ascii?Q?a9biN/WcQcZosAf8JO4osysKwHGzw8q1nIIxY14J4VjGE/pkxVrPBqR4vFxO?=
+ =?us-ascii?Q?VoTRjEgjFMDUG/hCUsz0uiFsvo43qEBtvUI7jZeKKsFqG91tkZIU8uKmQgk9?=
+ =?us-ascii?Q?ICs438dhVDV0pIpCTH35RflvC5oGMpUB8eu/tkkG8aQMRJBaMPxLpSnvrOyr?=
+ =?us-ascii?Q?/JgOfhq7qHMIFwXY9jIOxv/mKZAePKV/uIdMmFR8co4uvtOLdSdriAaH9BRH?=
+ =?us-ascii?Q?6GOuB70387rAtJF6By7AsSYRYAAtN59JsSfxYYO5joC95tjzp8TLMzp0lvb/?=
+ =?us-ascii?Q?16XbZNrSAnf0dm4dXv5Xsese6f24uCQrxKn17fOyC0cb3nsi4Pbn4WNsVgDt?=
+ =?us-ascii?Q?mPI4VC5QXS+KLSJxODuFno7ubxWApRXCC12ah3rm4RDVfvYVQUw8d5Wd1iMk?=
+ =?us-ascii?Q?dDl88s73GRoWQn6RfmQgr6Mg?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: b3b88e47-280a-45ed-3826-08d966299ffd
+X-MS-Exchange-CrossTenant-AuthSource: MN2PR10MB4128.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 23 Aug 2021 11:32:01.6477
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: PHjrZEHpsgr0oSh0/UdrXHY/MihgDEcJnK9neUkE63oGCITi32Zp5pzHVGYh7dIzx6cO9Zgzne0NAzX8xoOc8A==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR10MB4206
+X-Proofpoint-Virus-Version: vendor=nai engine=6300 definitions=10084 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 phishscore=0 spamscore=0
+ bulkscore=0 mlxlogscore=999 malwarescore=0 adultscore=0 mlxscore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2107140000
+ definitions=main-2108230077
+X-Proofpoint-GUID: 8CdiZtmO7A9IUpajMVaQrt0dJT6SZdX_
+X-Proofpoint-ORIG-GUID: 8CdiZtmO7A9IUpajMVaQrt0dJT6SZdX_
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
+Message-ID: <20210823113140.eEfFBnRXvMHfbVZf1oicrUjNF6ySBWIjnkJgGS2CcnM@z>
 
+latest_dev is updated according to the changes to the device list.
+That means we could use the latest_dev->name to show the device name in
+/proc/self/mounts. So this patch makes that change.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+RFC because,
+With this patch, /proc/self/mounts might not show the lowest devid
+device as we did before.  We show the device that has the greatest
+generation and, we used it to build the tree. Are we ok with this change
+and, it won't affect the ABI? IMO it should be ok.
+ 
+v2 use latest_dev so that device path is also shown
+v3 add missing rcu_lock in show_devname
+v4 -
 
-On 2021/8/18 =E4=B8=8A=E5=8D=881:23, Eugen Konkov wrote:
-> Hi. I have electrecity problem, for short period of time it was lost and=
- my computer rebooted.
->
-> After that on ST4000DM0004 disk every thing was good except partitions a=
-t raid:
+ fs/btrfs/super.c | 24 +++---------------------
+ 1 file changed, 3 insertions(+), 21 deletions(-)
 
-Not sure if the specific model is involved, but there are some known
-models not really following FLUSH/FUA spec to properly writeback data.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 64ecbdb50c1a..61682a143bf3 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2464,30 +2464,12 @@ static int btrfs_unfreeze(struct super_block *sb)
+ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
+-	struct btrfs_device *dev, *first_dev = NULL;
+ 
+-	/*
+-	 * Lightweight locking of the devices. We should not need
+-	 * device_list_mutex here as we only read the device data and the list
+-	 * is protected by RCU.  Even if a device is deleted during the list
+-	 * traversals, we'll get valid data, the freeing callback will wait at
+-	 * least until the rcu_read_unlock.
+-	 */
+ 	rcu_read_lock();
+-	list_for_each_entry_rcu(dev, &fs_info->fs_devices->devices, dev_list) {
+-		if (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state))
+-			continue;
+-		if (!dev->name)
+-			continue;
+-		if (!first_dev || dev->devid < first_dev->devid)
+-			first_dev = dev;
+-	}
+-
+-	if (first_dev)
+-		seq_escape(m, rcu_str_deref(first_dev->name), " \t\n\\");
+-	else
+-		WARN_ON(1);
++	seq_escape(m, rcu_str_deref(fs_info->fs_devices->latest_dev->name),
++		   " \t\n\\");
+ 	rcu_read_unlock();
++
+ 	return 0;
+ }
+ 
+-- 
+2.31.1
 
->
->   $ sudo btrfs filesystem show
-> warning, device 2 is missing
-> warning, device 2 is missing
-> Label: none  uuid: 28c9f20b-6745-4f0b-9502-858f09dce1e3
->          Total devices 1 FS bytes used 7.49GiB
->          devid    1 size 3.50TiB used 10.02GiB path /dev/sdc1
->
-> Label: none  uuid: 162e1cf7-d4f7-4421-80e4-1b88123ace02
->          Total devices 2 FS bytes used 588.05GiB
->          devid    1 size 1.24TiB used 590.01GiB path /dev/sdc3
->          *** Some devices missing
->
-> Label: none  uuid: 422200da-ad08-4e5f-9e4c-4d11b090026b
->          Total devices 1 FS bytes used 677.58GiB
->          devid    1 size 1.16TiB used 681.02GiB path /dev/sdc4
->
->
-> mounting this file system does not work:
-> https://unix.stackexchange.com/q/664950/129967
-
-Please add the most important piece of data:
-dmesg output.
-
-There aren't much info so far for your problem.
-
->
-> $ sudo mount -o degraded /dev/sdc3 /mnt/btrfs/
-> mount: /mnt/btrfs: wrong fs type, bad option, bad superblock on /dev/sdc=
-3, missing codepage or helper program, or other error.
->
-> but I can mount it in ro mode:
-
-Then the dmesg is the critical piece of information.
-
-It maybe a corrupted extent tree, but hard to say just from the inform her=
-e.
-
-
->
-> but can not reattach disk =3D(
->
-> $ sudo mount -o degraded,ro /dev/sdc3 /mnt/btrfs/
->
-> $ sudo btrfs replace start -f -B 2 /dev/sdd3 /mnt/btrfs
-> ERROR: ioctl(DEV_REPLACE_START) failed on "/mnt/btrfs": Read-only file s=
-ystem
->
-> $ sudo btrfs device delete /dev/sdd3 /mnt/btrfs
-> ERROR: error removing device '/dev/sdd3': Read-only file system
->
-> $ sudo btrfs device delete missing /mnt/btrfs/
-> ERROR: error removing device 'missing': Read-only file system
->
->
->
->
->
->
-> this is:
-> $ sudo smartctl -i /dev/sdc
-> smartctl 6.6 2016-05-31 r4324 [x86_64-linux-5.4.0-71-generic] (local bui=
-ld)
-> Copyright (C) 2002-16, Bruce Allen, Christian Franke, www.smartmontools.=
-org
->
-> =3D=3D=3D START OF INFORMATION SECTION =3D=3D=3D
-> Device Model:     ST4000DM004-2CV104
-> Serial Number:    ZFN29T12
-> LU WWN Device Id: 5 000c50 0b62eff52
-> Firmware Version: 0001
-> User Capacity:    4=E2=80=AF000=E2=80=AF787=E2=80=AF030=E2=80=AF016 byte=
-s [4,00 TB]
-> Sector Sizes:     512 bytes logical, 4096 bytes physical
-> Rotation Rate:    5425 rpm
-> Form Factor:      3.5 inches
-> Device is:        Not in smartctl database [for details use: -P showall]
-> ATA Version is:   ACS-3 T13/2161-D revision 5
-> SATA Version is:  SATA 3.1, 6.0 Gb/s (current: 3.0 Gb/s)
-> Local Time is:    Tue Aug 17 19:56:07 2021 EEST
-> SMART support is: Available - device has SMART capability.
-> SMART support is: Enabled
->
->
->
-> repair is not success:
->
->
->
->
->
-> $sudo btrfsck --repair /dev/sdc3
-
-Why you would try to repair?
-
-The latest btrfs-progs would warn you, so does the man page.
-
-You may have already screwed up the last chance of recovery.
-For now, I would recommend just to salvage as much data as possible.
-
-Thanks,
-Qu
-
-> [sudo] password for kes:
-> enabling repair mode
-> warning, device 2 is missing
-> warning, device 2 is missing
-> Checking filesystem on /dev/sdc3
-> UUID: 162e1cf7-d4f7-4421-80e4-1b88123ace02
-> Fixed 0 roots.
-> checking extents
-> parent transid verify failed on 130793472 wanted 670 found 662
-> parent transid verify failed on 130793472 wanted 670 found 662
-> Csum didn't match
-> parent transid verify failed on 130809856 wanted 670 found 664
-> parent transid verify failed on 130809856 wanted 670 found 664
-> Ignoring transid failure
-> leaf parent key incorrect 130809856
-> bad block 130809856
-> ERROR: errors found in extent allocation tree or chunk allocation
-> checking free space cache
-> failed to load free space cache for block group 30408704
-> failed to load free space cache for block group 189008969728
-> failed to load free space cache for block group 190082711552
-> failed to load free space cache for block group 191156453376
-> failed to load free space cache for block group 192230195200
-> failed to load free space cache for block group 195451420672
-> failed to load free space cache for block group 196525162496
-> failed to load free space cache for block group 200820129792
-> failed to load free space cache for block group 201893871616
-> failed to load free space cache for block group 208336322560
-> failed to load free space cache for block group 210483806208
-> failed to load free space cache for block group 212631289856
-> failed to load free space cache for block group 215852515328
-> failed to load free space cache for block group 216926257152
-> failed to load free space cache for block group 223368708096
-> failed to load free space cache for block group 225516191744
-> failed to load free space cache for block group 227663675392
-> failed to load free space cache for block group 229811159040
-> failed to load free space cache for block group 231958642688
-> failed to load free space cache for block group 235179868160
-> failed to load free space cache for block group 236253609984
-> failed to load free space cache for block group 237327351808
-> failed to load free space cache for block group 239474835456
-> failed to load free space cache for block group 249138511872
-> failed to load free space cache for block group 251285995520
-> failed to load free space cache for block group 254507220992
-> failed to load free space cache for block group 259875930112
-> failed to load free space cache for block group 260949671936
-> failed to load free space cache for block group 262023413760
-> failed to load free space cache for block group 263097155584
-> failed to load free space cache for block group 265244639232
-> failed to load free space cache for block group 267392122880
-> failed to load free space cache for block group 272760832000
-> failed to load free space cache for block group 273834573824
-> failed to load free space cache for block group 277055799296
-> failed to load free space cache for block group 278129541120
-> failed to load free space cache for block group 280277024768
-> failed to load free space cache for block group 281350766592
-> failed to load free space cache for block group 292088184832
-> failed to load free space cache for block group 293161926656
-> failed to load free space cache for block group 294235668480
-> failed to load free space cache for block group 295309410304
-> failed to load free space cache for block group 302825603072
-> failed to load free space cache for block group 306046828544
-> failed to load free space cache for block group 309268054016
-> failed to load free space cache for block group 310341795840
-> failed to load free space cache for block group 311415537664
-> failed to load free space cache for block group 312489279488
-> failed to load free space cache for block group 314636763136
-> failed to load free space cache for block group 315710504960
-> failed to load free space cache for block group 316784246784
-> failed to load free space cache for block group 317857988608
-> failed to load free space cache for block group 318931730432
-> failed to load free space cache for block group 320005472256
-> failed to load free space cache for block group 323226697728
-> failed to load free space cache for block group 326447923200
-> failed to load free space cache for block group 328595406848
-> failed to load free space cache for block group 329669148672
-> failed to load free space cache for block group 330742890496
-> failed to load free space cache for block group 331816632320
-> failed to load free space cache for block group 332890374144
-> failed to load free space cache for block group 333964115968
-> failed to load free space cache for block group 336111599616
-> failed to load free space cache for block group 339332825088
-> failed to load free space cache for block group 340406566912
-> failed to load free space cache for block group 341480308736
-> failed to load free space cache for block group 342554050560
-> failed to load free space cache for block group 343627792384
-> failed to load free space cache for block group 344701534208
-> failed to load free space cache for block group 348996501504
-> failed to load free space cache for block group 350070243328
-> failed to load free space cache for block group 351143985152
-> failed to load free space cache for block group 352217726976
-> failed to load free space cache for block group 354365210624
-> failed to load free space cache for block group 357586436096
-> failed to load free space cache for block group 359733919744
-> failed to load free space cache for block group 360807661568
-> failed to load free space cache for block group 366176370688
-> failed to load free space cache for block group 368323854336
-> failed to load free space cache for block group 371545079808
-> failed to load free space cache for block group 372618821632
-> failed to load free space cache for block group 373692563456
-> failed to load free space cache for block group 374766305280
-> failed to load free space cache for block group 375840047104
-> failed to load free space cache for block group 377987530752
-> failed to load free space cache for block group 380135014400
-> failed to load free space cache for block group 381208756224
-> failed to load free space cache for block group 382282498048
-> failed to load free space cache for block group 385503723520
-> failed to load free space cache for block group 386577465344
-> failed to load free space cache for block group 387651207168
-> failed to load free space cache for block group 388724948992
-> failed to load free space cache for block group 394093658112
-> failed to load free space cache for block group 401609850880
-> failed to load free space cache for block group 402683592704
-> failed to load free space cache for block group 405904818176
-> failed to load free space cache for block group 409126043648
-> failed to load free space cache for block group 411273527296
-> failed to load free space cache for block group 412347269120
-> failed to load free space cache for block group 413421010944
-> failed to load free space cache for block group 414494752768
-> failed to load free space cache for block group 415568494592
-> failed to load free space cache for block group 416642236416
-> failed to load free space cache for block group 418789720064
-> failed to load free space cache for block group 419863461888
-> failed to load free space cache for block group 420937203712
-> failed to load free space cache for block group 424158429184
-> failed to load free space cache for block group 427379654656
-> failed to load free space cache for block group 429527138304
-> failed to load free space cache for block group 430600880128
-> failed to load free space cache for block group 431674621952
-> failed to load free space cache for block group 433822105600
-> failed to load free space cache for block group 434895847424
-> failed to load free space cache for block group 443485782016
-> failed to load free space cache for block group 444559523840
-> failed to load free space cache for block group 446707007488
-> failed to load free space cache for block group 447780749312
-> failed to load free space cache for block group 448854491136
-> failed to load free space cache for block group 449928232960
-> failed to load free space cache for block group 452075716608
-> failed to load free space cache for block group 453149458432
-> failed to load free space cache for block group 454223200256
-> failed to load free space cache for block group 460665651200
-> failed to load free space cache for block group 461739393024
-> failed to load free space cache for block group 463886876672
-> failed to load free space cache for block group 466034360320
-> failed to load free space cache for block group 467108102144
-> failed to load free space cache for block group 468181843968
-> failed to load free space cache for block group 470329327616
-> failed to load free space cache for block group 471403069440
-> failed to load free space cache for block group 475698036736
-> failed to load free space cache for block group 481066745856
-> failed to load free space cache for block group 484287971328
-> failed to load free space cache for block group 485361713152
-> failed to load free space cache for block group 487509196800
-> failed to load free space cache for block group 488582938624
-> failed to load free space cache for block group 489656680448
-> failed to load free space cache for block group 492877905920
-> failed to load free space cache for block group 495025389568
-> failed to load free space cache for block group 496099131392
-> failed to load free space cache for block group 502541582336
-> failed to load free space cache for block group 503615324160
-> failed to load free space cache for block group 508984033280
-> failed to load free space cache for block group 510057775104
-> failed to load free space cache for block group 519721451520
-> failed to load free space cache for block group 527237644288
-> failed to load free space cache for block group 529385127936
-> failed to load free space cache for block group 532606353408
-> failed to load free space cache for block group 534753837056
-> failed to load free space cache for block group 535827578880
-> failed to load free space cache for block group 537975062528
-> failed to load free space cache for block group 539048804352
-> failed to load free space cache for block group 540122546176
-> failed to load free space cache for block group 541196288000
-> failed to load free space cache for block group 546564997120
-> failed to load free space cache for block group 547638738944
-> failed to load free space cache for block group 551933706240
-> failed to load free space cache for block group 553007448064
-> failed to load free space cache for block group 557302415360
-> failed to load free space cache for block group 558376157184
-> failed to load free space cache for block group 560523640832
-> failed to load free space cache for block group 564818608128
-> failed to load free space cache for block group 568039833600
-> failed to load free space cache for block group 571261059072
-> failed to load free space cache for block group 576629768192
-> failed to load free space cache for block group 577703510016
-> failed to load free space cache for block group 578777251840
-> failed to load free space cache for block group 580924735488
-> failed to load free space cache for block group 581998477312
-> failed to load free space cache for block group 583072219136
-> failed to load free space cache for block group 584145960960
-> failed to load free space cache for block group 586293444608
-> failed to load free space cache for block group 589514670080
-> failed to load free space cache for block group 591662153728
-> failed to load free space cache for block group 592735895552
-> failed to load free space cache for block group 593809637376
-> failed to load free space cache for block group 594883379200
-> failed to load free space cache for block group 595957121024
-> failed to load free space cache for block group 597030862848
-> failed to load free space cache for block group 598104604672
-> failed to load free space cache for block group 601325830144
-> failed to load free space cache for block group 602399571968
-> failed to load free space cache for block group 603473313792
-> failed to load free space cache for block group 604547055616
-> failed to load free space cache for block group 606728093696
-> failed to load free space cache for block group 608875577344
-> failed to load free space cache for block group 609949319168
-> failed to load free space cache for block group 611023060992
-> failed to load free space cache for block group 616391770112
-> failed to load free space cache for block group 617465511936
-> failed to load free space cache for block group 622834221056
-> failed to load free space cache for block group 623907962880
-> failed to load free space cache for block group 624981704704
-> failed to load free space cache for block group 626055446528
-> failed to load free space cache for block group 628202930176
-> failed to load free space cache for block group 632497897472
-> failed to load free space cache for block group 634645381120
-> failed to load free space cache for block group 635719122944
-> failed to load free space cache for block group 638940348416
-> failed to load free space cache for block group 642161573888
-> failed to load free space cache for block group 643235315712
-> failed to load free space cache for block group 644309057536
-> checking fs roots
-> parent transid verify failed on 377192448 wanted 651 found 648
-> parent transid verify failed on 377192448 wanted 651 found 648
-> Csum didn't match
-> parent transid verify failed on 377225216 wanted 651 found 648
-> parent transid verify failed on 377225216 wanted 651 found 648
-> Ignoring transid failure
-> parent transid verify failed on 377290752 wanted 651 found 648
-> parent transid verify failed on 377290752 wanted 651 found 648
-> Csum didn't match
-> parent transid verify failed on 379928576 wanted 651 found 646
-> parent transid verify failed on 379928576 wanted 651 found 646
-> Csum didn't match
-> parent transid verify failed on 381419520 wanted 651 found 648
-> parent transid verify failed on 381419520 wanted 651 found 648
-> Ignoring transid failure
-> leaf parent key incorrect 381419520
-> parent transid verify failed on 269647872 wanted 670 found 668
-> parent transid verify failed on 269647872 wanted 670 found 668
-> Ignoring transid failure
-> parent transid verify failed on 270155776 wanted 670 found 668
-> parent transid verify failed on 270155776 wanted 670 found 668
-> Ignoring transid failure
-> parent transid verify failed on 133382144 wanted 670 found 426
-> parent transid verify failed on 133382144 wanted 670 found 426
-> Csum didn't match
-> parent transid verify failed on 133136384 wanted 670 found 660
-> parent transid verify failed on 133136384 wanted 670 found 660
-> Csum didn't match
-> parent transid verify failed on 382828544 wanted 670 found 668
-> parent transid verify failed on 382828544 wanted 670 found 668
-> Csum didn't match
-> parent transid verify failed on 270434304 wanted 670 found 668
-> parent transid verify failed on 270434304 wanted 670 found 668
-> Ignoring transid failure
-> parent transid verify failed on 133152768 wanted 670 found 660
-> parent transid verify failed on 133152768 wanted 670 found 660
-> Csum didn't match
-> root 807 inode 330 errors 1000, some csum missing
-> checking csums
-> parent transid verify failed on 377192448 wanted 651 found 648
-> parent transid verify failed on 377192448 wanted 651 found 648
-> Csum didn't match
-> Error going to next leaf -5
-> checking root refs
-> Recowing metadata block 130809856
-> Unable to find block group for 0
-> Unable to find block group for 0
-> Unable to find block group for 0
-> extent-tree.c:2764: alloc_tree_block: BUG_ON `ret` triggered, value -28
-> btrfs check(+0x1f1e5)[0x55ea2f9171e5]
-> btrfs check(+0x1f255)[0x55ea2f917255]
-> btrfs check(+0x1f268)[0x55ea2f917268]
-> btrfs check(btrfs_alloc_free_block+0x83)[0x55ea2f91b604]
-> btrfs check(__btrfs_cow_block+0xfe)[0x55ea2f90fc3c]
-> btrfs check(btrfs_cow_block+0xc5)[0x55ea2f9101e1]
-> btrfs check(btrfs_search_slot+0xfa)[0x55ea2f912095]
-> btrfs check(cmd_check+0x247d)[0x55ea2f94ca64]
-> btrfs check(main+0x143)[0x55ea2f90ec87]
-> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xe7)[0x7f03ad9f8bf7]
-> btrfs check(_start+0x2a)[0x55ea2f90ecca]
-> Aborted
->
->
-> $ sudo btrfs check --repair --init-extent-tree /dev/sdc3
-> enabling repair mode
-> warning, device 2 is missing
-> warning, device 2 is missing
-> Checking filesystem on /dev/sdc3
-> UUID: 162e1cf7-d4f7-4421-80e4-1b88123ace02
-> Creating a new extent tree
-> Failed to find [30588928, 168, 16384]
-> btrfs unable to find ref byte nr 800522240 parent 0 root 1  owner 1 offs=
-et 0
-> Failed to find [30670848, 168, 16384]
-> btrfs unable to find ref byte nr 138117120 parent 0 root 1  owner 0 offs=
-et 1
-> parent transid verify failed on 30490624 wanted 4 found 1103
-> Ignoring transid failure
-> Failed to find [43761664, 168, 16384]
-> btrfs unable to find ref byte nr 802373632 parent 0 root 1  owner 0 offs=
-et 1
-> disk-io.c:438: write_and_map_eb: BUG_ON `ret` triggered, value -1
-> btrfs(+0x1c175)[0x560846990175]
-> btrfs(+0x1c197)[0x560846990197]
-> btrfs(write_and_map_eb+0x127)[0x5608469909ab]
-> btrfs(__commit_transaction+0xa7)[0x5608469b10f1]
-> btrfs(btrfs_commit_transaction+0xdf)[0x5608469b122c]
-> btrfs(cmd_check+0x121a)[0x5608469c7801]
-> btrfs(main+0x143)[0x56084698ac87]
-> /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xe7)[0x7f2e10da7bf7]
-> btrfs(_start+0x2a)[0x56084698acca]
-> Aborted
->
->
->
-> is there a way to restore data from this partition?
-> thank you.
->

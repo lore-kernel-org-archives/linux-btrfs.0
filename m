@@ -2,150 +2,150 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ACD1CC43216
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:13:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36099C4338F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:47:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9644B61076
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:13:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 15D2C6138B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:47:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239245AbhHXRN6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Aug 2021 13:13:58 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:54610 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231896AbhHXRLp (ORCPT
+        id S241108AbhHXRsi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Aug 2021 13:48:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39568 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S241106AbhHXRsc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Aug 2021 13:11:45 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 928D82008F;
-        Tue, 24 Aug 2021 17:11:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1629825060; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=h9QYK+LNyQ1V0iCtxp5yxOjvbViFVXFiwyZAcxAZa1M=;
-        b=Sgt2JBvUr3E3HSkquuYVt1bUMfe0Yt7/NFGFlVdJg2j0zk87yegaoj/TERQ6uhJpEDU/KW
-        HuKJitgu9mdKpP0D9ALlXj/04QIGQKle/ww8Cc/cno38SngCokWt4rGt1+2p/H/btFIg1m
-        B83ZUncdKpHD2uKjFtqf4ucvt1mHGyM=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2ECE413B45;
-        Tue, 24 Aug 2021 17:10:58 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id COXEOSIoJWGDNwAAMHmgww
-        (envelope-from <mpdesouza@suse.com>); Tue, 24 Aug 2021 17:10:58 +0000
-From:   Marcos Paulo de Souza <mpdesouza@suse.com>
+        Tue, 24 Aug 2021 13:48:32 -0400
+Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 63755C02519B
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 10:05:56 -0700 (PDT)
+Received: by mail-pj1-x1035.google.com with SMTP id f11-20020a17090aa78b00b0018e98a7cddaso2783304pjq.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 10:05:56 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:signed-off-by;
+        bh=dMaO1l8+EpNRB86nMLDc5nQcnZBOn+cLHhHRwBXY0Pw=;
+        b=JGD3wweInEAYEiy2jI4OEkAEB1epfQwBkfpyrD9TK/fi/hwaxMOqTXlHCWNWOj6pVZ
+         sJ2avkpUOlPJat1iv1R9NVUhuvr4darQNdbgU4JUq47s+fPQ+EGqrj8l0QMt/a1GqLQ/
+         UMUUURN4sx/eCLHYruYu5HNCDPvVxADbefzsbq6XnTguDvBnnt//93PtZ65gIiYEr3zQ
+         DJLazzOx9Ji8bDVc4Pvz/UXfAZMbfsnv38omqKlAMiD7cA91czxzbsfQY/x+aBsuEsyq
+         eh1chtXusTsjurjKOmN4iJceVePNXwhNgR4TCd/aVUEmMH9cjuWc2hhRmdgA8rHIfcFm
+         0TSA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:signed-off-by;
+        bh=dMaO1l8+EpNRB86nMLDc5nQcnZBOn+cLHhHRwBXY0Pw=;
+        b=I0EfIazk8oZShRwQa8Ijm/SFmALX1+rEzJxFT62gdkW1UZxlmUt+AXLBrRReiqSbXZ
+         UDFZpv2BBc2QihK5d3Xf4YfRfAFpQTkkEalf9K73rVkeshv1UZDYPyGdOvykhD5SSBa5
+         2720wmJsQfNIFVX7cKDOa70BGskuvi5WRQ8DfyorIZovBADj67Fc4BhcEuU91EhHVZHU
+         C0MoRQqU2YFbAvUh9Il0mC3WX6q1wJ4OEC235qG43u/YQLRKYjFtYs00tD7s0C4wg3WL
+         bfi8lipt3lb2rSqvDTE06Fd1LoQrTnO328RhUQc44lqEJfpI1qMmOIzAn/OsdA1+D3G9
+         YnFw==
+X-Gm-Message-State: AOAM531uRy/l1xFrUufSxod6vw0HpWp4XveMG1kjtEh10RfC2+sa0lQ4
+        Ymn52AkFzqhERL5sI6WFJGJScoyGYBn+T/hBEksL6w==
+X-Google-Smtp-Source: ABdhPJx54jglHqSk95r0SEakCsi6zKjTypAKG6w3hYxDbzTQdKcEKF9ou8GvZ548tx607gVyIgGI+Q==
+X-Received: by 2002:a17:90b:1b47:: with SMTP id nv7mr5409853pjb.182.1629824755572;
+        Tue, 24 Aug 2021 10:05:55 -0700 (PDT)
+Received: from localhost.localdomain.localdomain ([113.99.5.109])
+        by smtp.gmail.com with ESMTPSA id k22sm19224571pff.154.2021.08.24.10.05.52
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 24 Aug 2021 10:05:55 -0700 (PDT)
+From:   Li Zhang <zhanglikernel@gmail.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, nborisov@suse.com,
-        Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH 5/7] btrfs: inode: use btrfs_for_each_slot in btrfs_read_readdir
-Date:   Tue, 24 Aug 2021 14:06:56 -0300
-Message-Id: <20210824170658.12567-6-mpdesouza@suse.com>
-X-Mailer: git-send-email 2.31.1
-In-Reply-To: <20210824170658.12567-1-mpdesouza@suse.com>
-References: <20210824170658.12567-1-mpdesouza@suse.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Cc:     Li Zhang <zhanglikernel@gmail.com>
+Subject: [PATCH] btrfs-progs: Fix the issues btrfs-convert don't recognition ext4  i_{a,c,a}time_extra
+Date:   Wed, 25 Aug 2021 01:04:47 +0800
+Message-Id: <1629824687-21014-1-git-send-email-zhanglikernel@gmail.com>
+X-Mailer: git-send-email 1.8.3.1
+Signed-off-by: Li Zhang <zhanglikernel@gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function can be simplified by using the macro.
+Hi, I ran convert-tests.sh, and it reported that the
+019-ext4-copy-timestamps test failed. The log  is as
+follows
 
-No functional changes.
+...
+mount -o loop -t ext4 btrfs-progs/tests/test.img btrfs-progs/tests/mnt
+====== RUN CHECK touch btrfs-progs/tests/mnt/file
+====== RUN CHECK stat btrfs-progs/tests/mnt/file
+File: 'btrfs-progs/tests/mnt/file'
+Size: 0           Blocks: 0          IO Block: 4096   regular empty file
+Device: 700h/1792d  Inode: 13          Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Context: unconfined_u:object_r:unlabeled_t:s0
+Access: 2021-08-24 22:10:21.999209679 +0800
+Modify: 2021-08-24 22:10:21.999209679 +0800
+Change: 2021-08-24 22:10:21.999209679 +0800
+...
+btrfs-progs/btrfs-convert btrfs-progs/tests/test.img
+...
+====== RUN CHECK mount -t btrfs -o loop btrfs-progs/tests/test.img btrfs-progs/tests/mnt
+====== RUN CHECK stat btrfs-progs/tests/mnt/file
+File: 'btrfs-progs/tests/mnt/file'
+Size: 0           Blocks: 0          IO Block: 4096   regular empty file
+Device: 2ch/44d Inode: 267         Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Context: unconfined_u:object_r:unlabeled_t:s0
+Access: 2021-08-24 22:10:21.000000000 +0800
+Modify: 2021-08-24 22:10:21.000000000 +0800
+Change: 2021-08-24 22:10:21.000000000 +0800
+...
+atime on converted inode does not match
+test failed for case 019-ext4-copy-timestamps
 
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+Obviously, the log says that btrfs-convert does not
+support nanoseconds. I looked at the source code and
+found that only if ext2_fs.h defines EXT4_EPOCH_MASK
+btrfs-convert to support nanoseconds. But in e2fsprogs,
+EXT4_EPOCH_MASK was introduced in v1.43, but in some
+older versions, such as v1.40, e2fsprogs actually
+supports nanoseconds. It seems that if struct ext2_inode_large
+contains the i_atime_extra member, ext4 is supports
+nanoseconds, so I updated the logic to determine whether the
+current ext4 file system supports nanosecond precision.
+In addition, I imported some definitions to encode and
+decode tv_nsec (copied from e2fsprogs source code).
 ---
- fs/btrfs/inode.c | 46 +++++++++++++++++-----------------------------
- 1 file changed, 17 insertions(+), 29 deletions(-)
+ configure.ac | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2aa9646bce56..12bee0107015 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6109,8 +6109,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	struct list_head ins_list;
- 	struct list_head del_list;
- 	int ret;
--	struct extent_buffer *leaf;
--	int slot;
-+	int iter_ret;
- 	char *name_ptr;
- 	int name_len;
- 	int entries = 0;
-@@ -6137,35 +6136,19 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	key.offset = ctx->pos;
- 	key.objectid = btrfs_ino(BTRFS_I(inode));
- 
--	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--	if (ret < 0)
--		goto err;
--
--	while (1) {
-+	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
- 		struct dir_entry *entry;
-+		struct extent_buffer *leaf = path->nodes[0];
- 
--		leaf = path->nodes[0];
--		slot = path->slots[0];
--		if (slot >= btrfs_header_nritems(leaf)) {
--			ret = btrfs_next_leaf(root, path);
--			if (ret < 0)
--				goto err;
--			else if (ret > 0)
--				break;
--			continue;
--		}
-+		if (found_key.objectid != key.objectid ||
-+		    found_key.type != BTRFS_DIR_INDEX_KEY)
-+			break;
- 
--		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+		if (found_key.offset < ctx->pos ||
-+		    btrfs_should_delete_dir_index(&del_list, found_key.offset))
-+			continue;
- 
--		if (found_key.objectid != key.objectid)
--			break;
--		if (found_key.type != BTRFS_DIR_INDEX_KEY)
--			break;
--		if (found_key.offset < ctx->pos)
--			goto next;
--		if (btrfs_should_delete_dir_index(&del_list, found_key.offset))
--			goto next;
--		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
-+		di = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_dir_item);
- 		name_len = btrfs_dir_name_len(leaf, di);
- 		if ((total_len + sizeof(struct dir_entry) + name_len) >=
- 		    PAGE_SIZE) {
-@@ -6192,9 +6175,14 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 		entries++;
- 		addr += sizeof(struct dir_entry) + name_len;
- 		total_len += sizeof(struct dir_entry) + name_len;
--next:
--		path->slots[0]++;
- 	}
+diff --git a/configure.ac b/configure.ac
+index c4fa461..20297c5 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -253,7 +253,21 @@ AX_CHECK_DEFINE([linux/fiemap.h], [FIEMAP_EXTENT_SHARED], [],
+ AX_CHECK_DEFINE([ext2fs/ext2_fs.h], [EXT4_EPOCH_MASK],
+ 		[AC_DEFINE([HAVE_EXT4_EPOCH_MASK_DEFINE], [1],
+ 			   [Define to 1 if e2fsprogs defines EXT4_EPOCH_MASK])],
+-		[AC_MSG_WARN([no definition of EXT4_EPOCH_MASK found, probably old e2fsprogs, no 64bit time precision of converted images])])
++        [have_ext4_epoch_mask_define=no])
 +
-+	/* Error found while searching. */
-+	if (iter_ret < 0) {
-+		ret = iter_ret;
-+		goto err;
-+	}
-+
- 	btrfs_release_path(path);
++AS_IF([test "x$have_ext4_epoch_mask_define" = xno], [
++    AC_CHECK_MEMBERS([struct ext2_inode_large.i_atime_extra],
++        [
++            AC_DEFINE([HAVE_EXT4_EPOCH_MASK_DEFINE], [1], [Define to 1 if ext2_inode_large includes i_atime_extra]),
++            AC_DEFINE([EXT4_EPOCH_BITS], [2],[for encode and decode tv_nsec in ext2 inode]),
++            AC_DEFINE([EXT4_EPOCH_MASK], [((1 << EXT4_EPOCH_BITS) - 1)], [For encode and decode tv_nsec info in ext2 inode]),
++            AC_DEFINE([EXT4_NSEC_MASK],  [(~0UL << EXT4_EPOCH_BITS)], [For encode and decode tv_nsec info in ext2 inode]),
++            AC_DEFINE([inode_includes(size, field)],[m4_normalize[(size >= (sizeof(((struct ext2_inode_large *)0)->field) + offsetof(struct ext2_inode_large, field)))]],
++                [For encode and decode tv_nsec info in ext2 inode])
++        ],
++        [AC_MSG_WARN([It seems that ext2_inode_large don't includes tv_nsec related info, probably old e2fsprogs, no 64bit time precision of converted images])],
++        [[#include <ext2fs/ext2_fs.h>]])
++])
  
- 	ret = btrfs_filldir(private->filldir_buf, entries, ctx);
+ AC_CHECK_HEADER(linux/blkzoned.h, [blkzoned_found=yes], [blkzoned_found=no])
+ AC_CHECK_MEMBER([struct blk_zone.capacity], [blkzoned_capacity=yes], [blkzoned_capacity=no], [[#include <linux/blkzoned.h>]])
 -- 
-2.31.1
+1.8.3.1
 
+
+Best regards,
+Li

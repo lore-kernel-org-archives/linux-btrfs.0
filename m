@@ -2,151 +2,287 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 730D2C4338F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 06:54:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4D18C4338F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 07:42:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 57DAF61265
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 06:54:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8AAD60F91
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 07:42:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231401AbhHXGz0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Aug 2021 02:55:26 -0400
-Received: from mout.gmx.net ([212.227.17.22]:50673 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231300AbhHXGzZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Aug 2021 02:55:25 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1629788079;
-        bh=LHvaMwSaRP4kHb7szCfSuyUrRn7fojWkkPUckL5yaAk=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=KhWqsnm0NANSMMJ31SMFsw5ILAkBz+Jb4Y5Jfe9eTibjevglChMII9mg/hkifPwPg
-         5N9j1QE5lBlUxnU6odMUjXdkZRLuRNvkzkfKcS97VpasvL2xRRIea6CQrOISuScDkY
-         h/2nQd8XyfUM9pTqezDwy20o3dpHMKLuwT87rk5U=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MdebB-1mrl0x2329-00Zdbc; Tue, 24
- Aug 2021 08:54:39 +0200
-Subject: Re: [PATCH RFC 0/4] btrfs: qgroup: rescan enhancement related to
- INCONSISTENT flag
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210822070200.36953-1-wqu@suse.com>
- <20210823173025.GM5047@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <9d957532-5473-feba-6ad6-695d459a85bb@gmx.com>
-Date:   Tue, 24 Aug 2021 14:54:35 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        id S234956AbhHXHnO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Aug 2021 03:43:14 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:55624 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235459AbhHXHmD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Aug 2021 03:42:03 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id C695A20043
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 07:41:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629790874; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=H/wTJErevrgfWxMf/w02OpN73ncnwnyzl2SITHsxYtE=;
+        b=G9h4XhDMoOvhGn3rvZPY5Me/uItGvpCQOOsUJOspYKXne/LgsGKStwOe5+GtKcCxOcLOcl
+        rjF3ee+RrxiK/IGEYG+z7cZuUNFB7L+HFkXSDCPSgo8OnIZ2vEdnZzAaqzYOf+BgMFSXtJ
+        aN1/4NC4biIV+RfoD/4DJH81LfO+SMk=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id C353013942
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 07:41:13 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id YJ8gHJmiJGF8bwAAGKfGzw
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 07:41:13 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v7 1/4] btrfs-progs: image: introduce framework for more dump versions
+Date:   Tue, 24 Aug 2021 15:41:05 +0800
+Message-Id: <20210824074108.44759-2-wqu@suse.com>
+X-Mailer: git-send-email 2.32.0
+In-Reply-To: <20210824074108.44759-1-wqu@suse.com>
+References: <20210824074108.44759-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20210823173025.GM5047@twin.jikos.cz>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:h5jwQ6Wut4QWL1Q3vkIWEZnenNJp6Zj0WoQP6x5Plcalv9ddvCy
- 3OnkeTbiWmEGrq/I94AdL7Go7Af6YenpFBHv++zV8NB1c2j/2Sj9tnjPArdFmkdUAU2rjR8
- gNTy4T8FdWrcT3vNWLqeXR/m4Z7XSWTGyHy6MN5rfjvWMlVeQFwlKGL1k1jsuolnNp2fBM4
- b2F2tJZkc6McaS4nmK3NQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:KRd1RX3lRww=:keyZvawuBRp79rJaY9CVW7
- xoGcGKqysteexQYwiDnKn7pRCllC8HGfRk9+0C4N661nBhtSeJ8xblHGQmSOW0twIJi+vPjGG
- 33cuvVgcsYjc805yiohZrmwdsK1XOMOfFwMl0X/17ZzS2sxrV5cboI7RU7hxxw9RjtAkoPnFp
- GnKrS4vtzVNmh7Cs7VyEr3C+ZXPs8gpvdBSslRcIjxedl80s+OuvW7X9fAgecHPYL+dY0Icfu
- gu503eNDUFqsTFr9Kh5pGhlQwvDSnfs8aYzF45MfOvvetJZ8PTDmcCI6twDQ4rd83RBaGuuyE
- gTAiZesrFPH4rR9E30dSac6CjF/dEZAmYihPAp8qHCbhv1C747oawH/KxUjEHwwAfX637Q1UT
- +c7icKn+sQwHBLPLBYM7jiHoeLtar9/eQya91ivwATgfLaq3pC44lwu31xxlxWzNdPzN/LsLq
- F66Pkorh+vh8THOBNndI6IHqPKhnrCapHP/FoaZFV7mIqTeuJNeIfArh3XMi/vqmZwmvhS6lT
- 8f2jCaJV+2BQxy2qZ6Hmqk2Dg8Gu4z5OYqnyPlp7qIA0YaJKFcmpSvSXHrXb6D91Zd1GClUEv
- PgHTk5I90ssDcdFniM93iOpi3m32qI42ite5VhhQ/a8dOSNz8q2u5PkoYCaRpATz+kNQYMrdc
- HO2dNLiB3UBiceNDH1mxSn1wyOFkuhd/eODawNKFYTBW97hxv++jwTo4SRYDvgTH72eZwYb63
- /f06LrNBcihHpe+DkMbl+BG8ydZkZMTaT6kLAoyH7y6fBsh3zqK/7COkdsuIDFcr90SOzl2/S
- gNwu3UJqoPwNRXNp3fVMdP0Qfp8X9AKyVKoCVcyClk5J9d487Xqc1ESNN4KyXx/BplHB5+KZl
- Aufp35priwI/XoAAYeAYOp71K4GUgH/ajY8M+gKWoUkaNu2keEbGgDKYia1y/n5KfeVbwME3H
- pBdcS3XmE+FJNBwuk2hbsxQpg0cXXi6o8RMCdKt1J4DR4j5IEl93elMIdpOA6foN0ihM3hGRo
- 88TO3e7ossa7wpAar5nUaG1pbtzSIbJcv+cAswTgwRQRcxlypAYh95cmjhwB6kCbTkd0febbf
- TK5VLi2b7EIhLG/xaccPktfRMIlBli0w9FqTmmY1IGIn0DmEue9nVNK6A==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+The original dump format only contains a @magic member to verify the
+format, this means if we want to introduce new on-disk format or change
+certain size limit, we can only introduce new magic as version.
 
+This patch will introduce the framework to allow multiple magic numbers to
+co-exist for further functions.
 
-On 2021/8/24 =E4=B8=8A=E5=8D=881:30, David Sterba wrote:
-> On Sun, Aug 22, 2021 at 03:01:56PM +0800, Qu Wenruo wrote:
->> There is a long existing window that if we did some operations marking
->> qgroup INCONSISTENT during a qgroup rescan, the INCONSISTENT bit will b=
-e
->> cleared by rescan, leaving incorrect qgroup numbers unnoticed.
->>
->> Furthermore, when we mark qgroup INCONSISTENT, we can in theory skip al=
-l
->> qgroup accountings.
->> Since the numbers are already crazy, we don't really need to waste time
->> updating something that's already wrong.
->>
->> So here we introduce two runtime flags:
->>
->> - BTRFS_QGROUP_RUNTIME_FLAG_CANCEL_RESCAN
->>    To inform any running rescan to exit immediately and don't clear
->>    the INCONSISTENT bit on its exit.
->>
->> - BTRFS_QGROUP_RUNTIME_FLAG_NO_ACCOUNTING
->>    To inform qgroup code not to do any accounting for dirty extents.
->>
->>    But still allow operations on qgroup relationship to be continued.
->>
->> Both flags will be set when an operation marks the qgroup INCONSISTENT
->> and only get cleared when a new rescan is started.
->>
->>
->> With those flags, we can have the following enhancement:
->>
->> - Prevent qgroup rescan to clear inconsistent flag which should be kept
->>    If an operation marks qgroup inconsistent when a rescan is running,
->>    qgroup rescan will clear the inconsistent flag while the qgroup
->>    numbers are already wrong.
->>
->> - Skip qgroup accountings while qgroup numbers are already inconsistent
->>
->> - Skip huge subtree accounting when dropping subvolumes
->>    With the obvious cost of marking qgroup inconsistent
->>
->>
->> Reason for RFC:
->> - If the runtime qgroup flags are acceptable
->
-> As long as it's internal I think it's ok.
->
->> - If the behavior of marking qgroup inconsistent when dropping large
->>    subvolumes
->
-> That could be a bit problematic because user never knows if the rescan
-> has been started or not.
+This patch will introduce the following members for each dump version.
 
-I guess for the end users, the new behavior means they should know which
-operations could cancel rescan and cause qgroup to be inconsistent.
+- max_pending_size
+  The threshold size for an cluster. It's not a hard limit but a soft
+  one. One cluster can go larger than max_pending_size for one item, but
+  next item would go to next cluster.
 
-For now, only qgroup inherit (snapshot creation with -i option or qgroup
-assign) and large subvolume dropping can cause such situation.
+- magic_cpu
+  The magic number in CPU endian.
 
-If there is something like snapper running, we can teach snapper to
-check the qgroup status with an interval.
+- extra_sb_flags
+  If the super block of this restore needs extra super block flags like
+  BTRFS_SUPER_FLAG_METADUMP_V2.
+  For incoming data dump feature, we don't need any extra super block
+  flags.
 
-But for non-snapper qgroup users, it can indeed be problematic,
-especially considering how frequently snapshot dropping can be.
+This change also implies that all image dumps will use the same magic
+for all clusters. No mixing is allowed, as we will use the first cluster
+to determine the dump version.
 
-Any better idea on how to balance the performance and qgroup consistency?
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ image/main.c     | 72 ++++++++++++++++++++++++++++++++++++++++++------
+ image/metadump.h | 12 ++++++--
+ 2 files changed, 73 insertions(+), 11 deletions(-)
 
-Thanks,
-Qu
+diff --git a/image/main.c b/image/main.c
+index b29e68f80863..65a42ad7d85d 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -45,6 +45,19 @@
+ 
+ #define MAX_WORKER_THREADS	(32)
+ 
++const struct dump_version dump_versions[] = {
++	/*
++	 * The original format, which only supports tree blocks and
++	 * free space cache dump.
++	 */
++	{ .version = 0,
++	  .max_pending_size = SZ_256K,
++	  .magic_cpu = 0xbd5c25e27295668bULL,
++	  .extra_sb_flags = 1 }
++};
++
++const struct dump_version *current_version = &dump_versions[0];
++
+ struct async_work {
+ 	struct list_head list;
+ 	struct list_head ordered;
+@@ -406,7 +419,7 @@ static void meta_cluster_init(struct metadump_struct *md, u64 start)
+ 	md->num_items = 0;
+ 	md->num_ready = 0;
+ 	header = &md->cluster.header;
+-	header->magic = cpu_to_le64(HEADER_MAGIC);
++	header->magic = cpu_to_le64(current_version->magic_cpu);
+ 	header->bytenr = cpu_to_le64(start);
+ 	header->nritems = cpu_to_le32(0);
+ 	header->compress = md->compress_level > 0 ?
+@@ -718,7 +731,7 @@ static int add_extent(u64 start, u64 size, struct metadump_struct *md,
+ {
+ 	int ret;
+ 	if (md->data != data ||
+-	    md->pending_size + size > MAX_PENDING_SIZE ||
++	    md->pending_size + size > current_version->max_pending_size ||
+ 	    md->pending_start + md->pending_size != start) {
+ 		ret = flush_pending(md, 0);
+ 		if (ret)
+@@ -1047,7 +1060,8 @@ static void update_super_old(u8 *buffer)
+ 	u32 sectorsize = btrfs_super_sectorsize(super);
+ 	u64 flags = btrfs_super_flags(super);
+ 
+-	flags |= BTRFS_SUPER_FLAG_METADUMP;
++	if (current_version->extra_sb_flags)
++		flags |= BTRFS_SUPER_FLAG_METADUMP;
+ 	btrfs_set_super_flags(super, flags);
+ 
+ 	key = (struct btrfs_disk_key *)(super->sys_chunk_array);
+@@ -1147,7 +1161,8 @@ finish:
+ 	if (mdres->clear_space_cache)
+ 		btrfs_set_super_cache_generation(super, 0);
+ 
+-	flags |= BTRFS_SUPER_FLAG_METADUMP_V2;
++	if (current_version->extra_sb_flags)
++		flags |= BTRFS_SUPER_FLAG_METADUMP_V2;
+ 	btrfs_set_super_flags(super, flags);
+ 	btrfs_set_super_sys_array_size(super, new_array_size);
+ 	btrfs_set_super_num_devices(super, 1);
+@@ -1337,7 +1352,7 @@ static void *restore_worker(void *data)
+ 	u8 *outbuf;
+ 	int outfd;
+ 	int ret;
+-	int compress_size = MAX_PENDING_SIZE * 4;
++	int compress_size = current_version->max_pending_size * 4;
+ 
+ 	outfd = fileno(mdres->out);
+ 	buffer = malloc(compress_size);
+@@ -1490,6 +1505,42 @@ static void mdrestore_destroy(struct mdrestore_struct *mdres, int num_threads)
+ 	free(mdres->original_super);
+ }
+ 
++static int detect_version(FILE *in)
++{
++	struct meta_cluster *cluster;
++	u8 buf[BLOCK_SIZE];
++	bool found = false;
++	int i;
++	int ret;
++
++	if (fseek(in, 0, SEEK_SET) < 0) {
++		error("seek failed: %m");
++		return -errno;
++	}
++	ret = fread(buf, BLOCK_SIZE, 1, in);
++	if (!ret) {
++		error("failed to read header");
++		return -EIO;
++	}
++
++	fseek(in, 0, SEEK_SET);
++	cluster = (struct meta_cluster *)buf;
++	for (i = 0; i < ARRAY_SIZE(dump_versions); i++) {
++		if (le64_to_cpu(cluster->header.magic) ==
++		    dump_versions[i].magic_cpu) {
++			found = true;
++			current_version = &dump_versions[i];
++			break;
++		}
++	}
++
++	if (!found) {
++		error("unrecognized header format");
++		return -EINVAL;
++	}
++	return 0;
++}
++
+ static int mdrestore_init(struct mdrestore_struct *mdres,
+ 			  FILE *in, FILE *out, int old_restore,
+ 			  int num_threads, int fixup_offset,
+@@ -1497,6 +1548,9 @@ static int mdrestore_init(struct mdrestore_struct *mdres,
+ {
+ 	int i, ret = 0;
+ 
++	ret = detect_version(in);
++	if (ret < 0)
++		return ret;
+ 	memset(mdres, 0, sizeof(*mdres));
+ 	pthread_cond_init(&mdres->cond, NULL);
+ 	pthread_mutex_init(&mdres->mutex, NULL);
+@@ -1850,7 +1904,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres)
+ 	u64 current_cluster = 0, bytenr;
+ 	u64 item_bytenr;
+ 	u32 bufsize, nritems, i;
+-	u32 max_size = MAX_PENDING_SIZE * 2;
++	u32 max_size = current_version->max_pending_size * 2;
+ 	u8 *buffer, *tmp = NULL;
+ 	int ret = 0;
+ 
+@@ -1903,7 +1957,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres)
+ 		ret = 0;
+ 
+ 		header = &cluster->header;
+-		if (le64_to_cpu(header->magic) != HEADER_MAGIC ||
++		if (le64_to_cpu(header->magic) != current_version->magic_cpu ||
+ 		    le64_to_cpu(header->bytenr) != current_cluster) {
+ 			error("bad header in metadump image");
+ 			ret = -EIO;
+@@ -2102,7 +2156,7 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
+ 	ret = 0;
+ 
+ 	header = &cluster->header;
+-	if (le64_to_cpu(header->magic) != HEADER_MAGIC ||
++	if (le64_to_cpu(header->magic) != current_version->magic_cpu ||
+ 	    le64_to_cpu(header->bytenr) != 0) {
+ 		error("bad header in metadump image");
+ 		return -EIO;
+@@ -2675,7 +2729,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
+ 			break;
+ 
+ 		header = &cluster->header;
+-		if (le64_to_cpu(header->magic) != HEADER_MAGIC ||
++		if (le64_to_cpu(header->magic) != current_version->magic_cpu ||
+ 		    le64_to_cpu(header->bytenr) != bytenr) {
+ 			error("bad header in metadump image");
+ 			ret = -EIO;
+diff --git a/image/metadump.h b/image/metadump.h
+index 57bc3bf285b0..bcffbd4722b0 100644
+--- a/image/metadump.h
++++ b/image/metadump.h
+@@ -22,8 +22,6 @@
+ #include "kernel-lib/list.h"
+ #include "kernel-shared/ctree.h"
+ 
+-#define HEADER_MAGIC		0xbd5c25e27295668bULL
+-#define MAX_PENDING_SIZE	SZ_256K
+ #define BLOCK_SIZE		SZ_1K
+ #define BLOCK_MASK		(BLOCK_SIZE - 1)
+ 
+@@ -33,6 +31,16 @@
+ #define COMPRESS_NONE		0
+ #define COMPRESS_ZLIB		1
+ 
++struct dump_version {
++	u64 magic_cpu;
++	int version;
++	int max_pending_size;
++	unsigned int extra_sb_flags:1;
++};
++
++extern const struct dump_version dump_versions[];
++const extern struct dump_version *current_version;
++
+ struct meta_cluster_item {
+ 	__le64 bytenr;
+ 	__le32 size;
+-- 
+2.32.0
 
->
->> - If the lifespan of runtime qgroup flags are acceptable
->>    They have longer than needed lifespan (from inconsistent time point =
-to
->>    next rescan), not sure if it's OK.
->
-> On first read I haven't found anything obviously problematic.
->

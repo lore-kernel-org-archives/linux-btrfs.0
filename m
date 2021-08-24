@@ -2,152 +2,180 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7965FC4320A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 07:42:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1FDDC4338F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 07:49:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 62A5061026
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 07:42:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C008761246
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 07:49:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235535AbhHXHnX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Aug 2021 03:43:23 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:55618 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235433AbhHXHmD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Aug 2021 03:42:03 -0400
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 28FB120042
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 07:41:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1629790873; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=bnnxj4eq5QsHHidub5oQKGfXxeNLydmqIrPiz1ocbnA=;
-        b=Oix4DjM6H0NjG9SLQ8X5FS+DDYPRbbybqy0AbpEjUT1hZw9tZxVbz2xHBCUK4REoZNS/wg
-        2L2lx416GrJZTODTRfovxvaLiwE2UohmKXiBvhwOJhHqS/KU8kWZSGewAJNxOR9/3FKWtu
-        Mu0D4MjkdGqCfnpBHjUIXzpwgYpBEQ4=
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 1C34A13942
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 07:41:11 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap1.suse-dmz.suse.de with ESMTPSA
-        id kQtRLpeiJGF8bwAAGKfGzw
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Aug 2021 07:41:11 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v7 0/4] btrfs-progs: image: new data dump feature
-Date:   Tue, 24 Aug 2021 15:41:04 +0800
-Message-Id: <20210824074108.44759-1-wqu@suse.com>
-X-Mailer: git-send-email 2.32.0
+        id S234750AbhHXHue (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Aug 2021 03:50:34 -0400
+Received: from mout.gmx.net ([212.227.15.15]:56725 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S234616AbhHXHue (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 24 Aug 2021 03:50:34 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1629791387;
+        bh=vn/8bsVQlzs8Z8bCof+YXwW10aTNt+XPMmCaYmsTRP4=;
+        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
+        b=ST+IOvBxcc3m6ejwsL7zZ7ooUMBgHIPEGr6Dcq/qAO7jY+OTEVWZVtwVVSTdomcVD
+         yFdOcPa/hJSHuqMsqb/7RE0M14B+aSsN+qIYOnGhnqeXTQitrfcZSAMIYKADEfJWjD
+         V9gzqKWWir7h+0qBj4DobIFSGMoUv4Usnuq35wSM=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1M4axg-1mHsxY2iUY-001iLu; Tue, 24
+ Aug 2021 09:49:47 +0200
+Subject: Re: [PATCH RFC 0/4] btrfs: qgroup: rescan enhancement related to
+ INCONSISTENT flag
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210822070200.36953-1-wqu@suse.com>
+ <20210823173025.GM5047@twin.jikos.cz>
+ <9d957532-5473-feba-6ad6-695d459a85bb@gmx.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <30cf7d9a-c1da-ac96-ba92-c8456692f854@gmx.com>
+Date:   Tue, 24 Aug 2021 15:49:43 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <9d957532-5473-feba-6ad6-695d459a85bb@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:mCFAgxwMu5EsggG+KslfnfVxDc5wKpJp1ycCbtuffOpNXFVXs8h
+ cONFF/DyQeoYAgWP2aa7axddT7eH4xAwwdRg4wvGvwZgyfihDvdq8lctrv6uNVULY/Y5DEF
+ DcVatysOLPg5Aqq7jM+/0cGUc9mDNZk4Fg7tJtPlj56hefpDZkKaJx56U7aRxKtRyRaPTF9
+ v6yecmhn6v9eRuScO5xtA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:t/2QEfb4Pzo=:wor9+Jega3hS/vAVGEkG/Q
+ tD5RClalHvz3Nj4RUpiOXUoM+ybvkrJklZseyk1gt9ktaIIEBYZ0ApWKQxh2fY0jz6dLWO/y9
+ yexNL+3ac66FUlOWpXZE+Innu1twodJIyQ1wGwHjLdKlTJiMcak3Vzy3DtYnk5aNfUvQFpCtv
+ Bd11Wi0WO4zhhM0zboPlPDo6/7lAAHJdkgPDopOUwZSTDa/uU6mWF8B9yNj+YmnTr0ejnACuV
+ i9VahVDWg21ejwnoG2MIiS1Qkza1bCak3vJdgviYuABjeJh+czvZdFNEzZzGmtrTGJidEFaBG
+ T4Pn7ez2W4HFawTt4CHwrX1dl3e1I/O5mWP6/opYRHUHttgosnRCSvSU3W3zJpe6el0Fthpkc
+ o65Ga7QTDXQrdWJaXCi/yUqPNKOIDjNvBPYkq9mvaNPlDwyGnimF/eZrMqip6WL6JCTC9hXBt
+ 3uYT5ytd6acVVXX/ln35selYu5ENy5OZ+Re0+xN18G3NYtHZiknFbuF2iYAV1AF9oRi0swEDp
+ QLYRQF/CmaolCYLiQInH5F/GG21gQBq2eZVOGT0gua8GCehdierjUQV5/mHPxHQkXeLJFf7L4
+ AGiGDfnULRejzypVLvQHTZooKbz/XUOESzq2Nply3wKbM7cYoJ5Wbxch83gk8+9minQDILBt7
+ oYAL4KEdjpKKIQ9TI765Qw/XrMUCCD0hMOYodF9+PZexKFgedvGv76U+6nJp8dqwEI5UASEUO
+ pPJSOntWE55xbdsR2YgaqSHoPeTrpGmuPCGy+1KyI0deQxhwBFotMokElnFvyE3/V/NYM6AyQ
+ up/0JM8Xcdtxuq2OiRQ56w7IU/PJnAA1HnMFSbdpsP/QQWrKr42F2SGaGseBXvPw2CSiyhSZw
+ MUZl9r7u/ho9Op8OyBah4unvwRfRJJESK9YZfDKW5RY4bOhUtSJAJsfpKP7SpmLXQ3FJ1mBuT
+ RcK/yF3kfKliv1c7HqzVhNmWM/0EMUcGjeKbzd5hGdFsOX1fwpZTRVqMLJKR1aEmRtCHii4AO
+ GA35+7mk344N7AVUHnyzp8ARaVMWQUwp89HaVHfcrmZkjCNBUZvG97IfhtEjUrt3fCdnkI6kq
+ g5ZqMgzWDzvCeMT8/S+iS6u2kxDJw6asaPx94EUbckVEOsW8h8gb+Bfsw==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patchset includes the following features:
 
-- Introduce data dump feature to dump the whole fs.
-  This will introduce a new magic number to prevent old btrfs-image to
-  hit failure as the item size limit is enlarged.
-  Patch 1 and 2.
 
-- Reduce memory usage for compressed data dump restore
-  This is mostly due to the fact that we have much larger
-  max_pending_size introduced by data dump(256K -> 256M).
-  Using 4 * max_pending_size for each decompress thread as buffer is way
-  too expensive now.
-  Use proper inflate() to replace uncompress() calls.
-  Patch 3
+On 2021/8/24 =E4=B8=8B=E5=8D=882:54, Qu Wenruo wrote:
+>
+>
+> On 2021/8/24 =E4=B8=8A=E5=8D=881:30, David Sterba wrote:
+>> On Sun, Aug 22, 2021 at 03:01:56PM +0800, Qu Wenruo wrote:
+>>> There is a long existing window that if we did some operations marking
+>>> qgroup INCONSISTENT during a qgroup rescan, the INCONSISTENT bit will =
+be
+>>> cleared by rescan, leaving incorrect qgroup numbers unnoticed.
+>>>
+>>> Furthermore, when we mark qgroup INCONSISTENT, we can in theory skip a=
+ll
+>>> qgroup accountings.
+>>> Since the numbers are already crazy, we don't really need to waste tim=
+e
+>>> updating something that's already wrong.
+>>>
+>>> So here we introduce two runtime flags:
+>>>
+>>> - BTRFS_QGROUP_RUNTIME_FLAG_CANCEL_RESCAN
+>>> =C2=A0=C2=A0 To inform any running rescan to exit immediately and don'=
+t clear
+>>> =C2=A0=C2=A0 the INCONSISTENT bit on its exit.
+>>>
+>>> - BTRFS_QGROUP_RUNTIME_FLAG_NO_ACCOUNTING
+>>> =C2=A0=C2=A0 To inform qgroup code not to do any accounting for dirty =
+extents.
+>>>
+>>> =C2=A0=C2=A0 But still allow operations on qgroup relationship to be c=
+ontinued.
+>>>
+>>> Both flags will be set when an operation marks the qgroup INCONSISTENT
+>>> and only get cleared when a new rescan is started.
+>>>
+>>>
+>>> With those flags, we can have the following enhancement:
+>>>
+>>> - Prevent qgroup rescan to clear inconsistent flag which should be kep=
+t
+>>> =C2=A0=C2=A0 If an operation marks qgroup inconsistent when a rescan i=
+s running,
+>>> =C2=A0=C2=A0 qgroup rescan will clear the inconsistent flag while the =
+qgroup
+>>> =C2=A0=C2=A0 numbers are already wrong.
+>>>
+>>> - Skip qgroup accountings while qgroup numbers are already inconsisten=
+t
+>>>
+>>> - Skip huge subtree accounting when dropping subvolumes
+>>> =C2=A0=C2=A0 With the obvious cost of marking qgroup inconsistent
+>>>
+>>>
+>>> Reason for RFC:
+>>> - If the runtime qgroup flags are acceptable
+>>
+>> As long as it's internal I think it's ok.
+>>
+>>> - If the behavior of marking qgroup inconsistent when dropping large
+>>> =C2=A0=C2=A0 subvolumes
+>>
+>> That could be a bit problematic because user never knows if the rescan
+>> has been started or not.
+>
+> I guess for the end users, the new behavior means they should know which
+> operations could cancel rescan and cause qgroup to be inconsistent.
+>
+> For now, only qgroup inherit (snapshot creation with -i option or qgroup
+> assign) and large subvolume dropping can cause such situation.
+>
+> If there is something like snapper running, we can teach snapper to
+> check the qgroup status with an interval.
+>
+> But for non-snapper qgroup users, it can indeed be problematic,
+> especially considering how frequently snapshot dropping can be.
+>
+> Any better idea on how to balance the performance and qgroup consistency=
+?
 
-- A fix for small dev extent size mismatch with superblock
-  This no longer affects single device dump restore, thus it's only
-  for multi-device dump restore.
-  Patch 4
+Another idea is to allow the user to specify the threshold to skip
+certain subtree drop.
 
-Changelog:
-v2:
-- New small fixes:
-  * Fix a confusing error message due to unpopulated errno
-  * Output error message for chunk tree build error
-  
-- Fix a regression of previous version
-  Patch "btrfs-progs: image: Rework how we search chunk tree blocks"
-  deleted a "ret = 0" line which could cause false early exit.
+And by default, we set the threshold to MAX_LEVEL, so no subtree will be
+skipped (aka, super slow drop, but no sudden qgroup related slow down).
 
-- Reduce memory usage for data dump
+For the qgroup inherit case, it's no difference, any caller that would
+bring qgroup inconsistent should know what they are doing.
+Thus only the subvolume drop is the key.
 
-v2.1:
-- Rebased to devel branch
-  Removing 4 already merged patches from the patchset.
+Any idea for the interface? Per-fs sysfs? Or mount option?
 
-- Re-order the patchset
-  Put small and independent patches at the top of queue, and put the
-  data dump related feature at the end.
-
-- Fix -Wmaybe-uninitialized warnings
-  Strangely, D=1 won't trigger these warnings thus they sneak into v2
-  without being detected.
-
-- Fix FROM: line
-  Reverted to old smtp setup. The new setup will override FROM: line,
-  messing up the name of author.
-
-v3:
-- Fix a wrong option in error string
-- Fix a bug that we always dump data extents
-
-v4:
-- Rebased to latest devel branch
-- Add a new small fix to kill the tiny dev extent size mismatch.
-
-v5:
-- Rebased to latest devel branch
-- Checkpatch fixes
-
-v6:
-- Rebased to latest devel branch
-  No conflicts at all.
-
-v7:
-- Rebased to latest devel branch
-  No conflicts at all.
-
-- Hide the data dump feature behind the experimental features
-  Now to make "btrfs-image -d" work, one must enable experimental
-  features, or "btrfs-image -d" will only output an error message.
-
-  And if experimental features are not enabled, the new header format
-  will also be disabled, so that btrfs-image can't detect the new format
-  either.
-
-  Although the "-d" option is still enabled for the non-experimental
-  build.
-
-  This only affects the 2nd patch, the remaining patches are not
-  touched.
-
-Qu Wenruo (4):
-  btrfs-progs: image: introduce framework for more dump versions
-  btrfs-progs: image: introduce -d option to dump data
-  btrfs-progs: image: reduce memory requirement for decompression
-  btrfs-progs: image: fix restored image size misalignment
-
- image/main.c     | 358 ++++++++++++++++++++++++++++++++++-------------
- image/metadump.h |  12 +-
- 2 files changed, 273 insertions(+), 97 deletions(-)
-
--- 
-2.32.0
-
+Thanks,
+Qu
+>
+> Thanks,
+> Qu
+>
+>>
+>>> - If the lifespan of runtime qgroup flags are acceptable
+>>> =C2=A0=C2=A0 They have longer than needed lifespan (from inconsistent =
+time
+>>> point to
+>>> =C2=A0=C2=A0 next rescan), not sure if it's OK.
+>>
+>> On first read I haven't found anything obviously problematic.
+>>

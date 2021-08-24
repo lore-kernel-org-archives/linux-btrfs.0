@@ -2,73 +2,109 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CD58C4338F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:05:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DFE62C19F38
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:09:59 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 06D1D61B4A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:05:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CAC1F611AF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:09:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238754AbhHXRFx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Aug 2021 13:05:53 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:54100 "EHLO
+        id S239468AbhHXRKm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Aug 2021 13:10:42 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:54240 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238075AbhHXRDw (ORCPT
+        with ESMTP id S239814AbhHXRJb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Aug 2021 13:03:52 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 4193A2006F;
-        Tue, 24 Aug 2021 17:03:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1629824587;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=gZd7O33uCh698RLdjsO7VmX9aFpbnzBwA+vkamP9X2M=;
-        b=t1mdELS+YrqyrImwQaOaBsdLm+yZtTZnozqP5tlNI/1Iz4hdUcMb6AGItijWvJ1waJQzAr
-        Pyz9QenHDvySgckdKqz2M8nwDGHdw+JSmRQkldgSTkaLuXc72cY5XMit2IgyrbTeaEXwuc
-        UuXgEHCzSYcSQMMCBVaMyzeZ6KdL22k=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1629824587;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=gZd7O33uCh698RLdjsO7VmX9aFpbnzBwA+vkamP9X2M=;
-        b=awRIRs0nRzWZFM9tRfpKB0JwRDAZeuunaOfgzOJaMyG91S8tmPFkbZ6qlPTrtSUtvXlCYq
-        fpZuYAxQHh8Gy0Bg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 3A88AA3BBD;
-        Tue, 24 Aug 2021 17:03:07 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3B5B6DA85B; Tue, 24 Aug 2021 19:00:20 +0200 (CEST)
-Date:   Tue, 24 Aug 2021 19:00:20 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v3 8/9] btrfs-progs: test: add a test image with a
- corrupt block group item
-Message-ID: <20210824170020.GF3379@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <cover.1629746415.git.josef@toxicpanda.com>
- <f55af588317b5c3f1d70634b0202c6fa19bb19a8.1629746415.git.josef@toxicpanda.com>
+        Tue, 24 Aug 2021 13:09:31 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id DD3472006F;
+        Tue, 24 Aug 2021 17:08:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1629824925; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=fZ/wkva3I4GmpOse5lK8qkkjblQHqibBeNJyJNCRsyM=;
+        b=uQFhIXZPhVkVLUcA5qWUOJeh/8b/oxhsFnpo2nzI0ExYNN56QQ3mEK1Vw0QC+VKd1ZAkL9
+        lH/5PZYQzHEb4Kfk0l9P0YZvOmt7Bq/wBHmD5hbAT7dJJp7/JnYznVGs27sD4th6wYe6mK
+        AtwmxS5bIlZYciwtApmLexWu/FvnLeE=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 81EB513B45;
+        Tue, 24 Aug 2021 17:08:44 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id WolgEpwnJWGDNwAAMHmgww
+        (envelope-from <mpdesouza@suse.com>); Tue, 24 Aug 2021 17:08:44 +0000
+From:   Marcos Paulo de Souza <mpdesouza@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, nborisov@suse.com,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: [PATCH 0/7] btrfs: Create macro to iterate slots
+Date:   Tue, 24 Aug 2021 14:06:51 -0300
+Message-Id: <20210824170658.12567-1-mpdesouza@suse.com>
+X-Mailer: git-send-email 2.31.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <f55af588317b5c3f1d70634b0202c6fa19bb19a8.1629746415.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 23, 2021 at 03:23:12PM -0400, Josef Bacik wrote:
-> This image has a broken used field of a block group item to validate
-> fsck does the correct thing.
+There is a common pattern when search for a key in btrfs:
 
-Should there be a new image or are you just adding the
-.lowmem_repairable file to trigger lowmem repair?
+ * Call btrfs_search_slot
+ * Endless loop
+	 * If the found slot is bigger than the current items in the leaf, check the
+	   next one
+	 * If still not found in the next leaf, return 1
+	 * Do something with the code
+	 * Increment current slot, and continue
+
+This pattern can be improved by creating an iterator macro, similar to
+those for_each_X already existing in the linux kernel. using this
+approach means to reduce significantly boilerplate code, along making it
+easier to newcomers to understand how to code works.
+
+This patchset survived a complete fstest run.
+
+Changes from RFC:
+ * Add documentation to btrfs_for_each_slot macro and btrfs_valid_slot function
+   (David)
+ * Add documentation about the ret variable used as a macro argument (David)
+ * Match function argument from prototype and implementation (David)
+ * Changed ({ }) block to only () in btrfs_for_each_slot macro (David)
+ * Add more patches to show the code being reduced by using this approach
+   (Nikolay)
+
+Marcos Paulo de Souza (7):
+  fs: btrfs: Introduce btrfs_for_each_slot
+  btrfs: block-group: use btrfs_for_each_slot in find_first_block_group
+  btrfs: dev-replace: Use btrfs_for_each_slot in
+    mark_block_group_to_copy
+  btrfs: dir-item: use btrfs_for_each_slot in
+    btrfs_search_dir_index_item
+  btrfs: inode: use btrfs_for_each_slot in btrfs_read_readdir
+  btrfs: send: Use btrfs_for_each_slot macro
+  btrfs: volumes: use btrfs_for_each_slot in btrfs_read_chunk_tree
+
+ fs/btrfs/block-group.c |  33 +-----
+ fs/btrfs/ctree.c       |  28 ++++++
+ fs/btrfs/ctree.h       |  25 +++++
+ fs/btrfs/dev-replace.c |  51 ++--------
+ fs/btrfs/dir-item.c    |  27 +----
+ fs/btrfs/inode.c       |  46 ++++-----
+ fs/btrfs/send.c        | 222 +++++++++++------------------------------
+ fs/btrfs/volumes.c     |  23 ++---
+ fs/btrfs/xattr.c       |  40 +++-----
+ 9 files changed, 169 insertions(+), 326 deletions(-)
+
+-- 
+2.31.1
+

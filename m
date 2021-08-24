@@ -7,51 +7,51 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EFF5BC4338F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:13:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 814A6C432BE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:13:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D9D756115A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:13:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5F2DE613D5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Aug 2021 17:13:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239358AbhHXRNq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Aug 2021 13:13:46 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:48320 "EHLO
+        id S233998AbhHXRNu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Aug 2021 13:13:50 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:48334 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238662AbhHXRLm (ORCPT
+        with ESMTP id S238996AbhHXRLu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Aug 2021 13:11:42 -0400
+        Tue, 24 Aug 2021 13:11:50 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 02B0F220FB;
-        Tue, 24 Aug 2021 17:10:57 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 18F31220FC;
+        Tue, 24 Aug 2021 17:11:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1629825057; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1629825065; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=GftHQWxHc4ds/QciPzY+ZRPsVwPWIqYIbzR01JMbmYY=;
-        b=Y4gGW0sLIr8cf2hNQHWs3qCjWEjzVahop+qrbMUix8fzLOgUsh+6pIIuoN9XKPQgOhXs4o
-        QD6TEq6hVE7gpHaW/DWjSoSUWQcDYwoqcnPd8PlIFijh9v3EKDk5d+e/9SXYHspBJrdOt5
-        2pGhPwt/0g0mju/E4H8lFOGMXALn2m8=
+        bh=s7sfQD0oPGjiuW1/FkTs2WuclO+efJ7n5/7JRX7g3bI=;
+        b=E1yD2+r0eL+nASKxemH05j7JCmkO5xrWFRC2qFPRdU84KR76pY0DIxWayB0ljNsEdOV4Va
+        edNIFucwEt+UA4MwLc9OraO70C5kMbQEA1SQqRw3O9rJVYIB0rWt7lwW5pj5NSRD+PX/7d
+        YhESkywECTJc40VWoih57RFPYF1n7Bs=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9A02513B45;
-        Tue, 24 Aug 2021 17:10:55 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B6A7913B45;
+        Tue, 24 Aug 2021 17:11:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id SPcqGB8oJWGDNwAAMHmgww
-        (envelope-from <mpdesouza@suse.com>); Tue, 24 Aug 2021 17:10:55 +0000
+        id MF1EHycoJWGDNwAAMHmgww
+        (envelope-from <mpdesouza@suse.com>); Tue, 24 Aug 2021 17:11:03 +0000
 From:   Marcos Paulo de Souza <mpdesouza@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com, nborisov@suse.com,
         Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH 3/7] btrfs: dev-replace: Use btrfs_for_each_slot in mark_block_group_to_copy
-Date:   Tue, 24 Aug 2021 14:06:54 -0300
-Message-Id: <20210824170658.12567-4-mpdesouza@suse.com>
+Subject: [PATCH 7/7] btrfs: volumes: use btrfs_for_each_slot in btrfs_read_chunk_tree
+Date:   Tue, 24 Aug 2021 14:06:58 -0300
+Message-Id: <20210824170658.12567-8-mpdesouza@suse.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20210824170658.12567-1-mpdesouza@suse.com>
 References: <20210824170658.12567-1-mpdesouza@suse.com>
@@ -61,94 +61,68 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function can be simplified by using the macro.
+The function can be simplified by using the iterator like macro.
 
 No functional changes.
 
 Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 ---
- fs/btrfs/dev-replace.c | 51 +++++++++---------------------------------
- 1 file changed, 11 insertions(+), 40 deletions(-)
+ fs/btrfs/volumes.c | 23 +++++++++--------------
+ 1 file changed, 9 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index d029be40ea6f..6124f2e8e9f1 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -523,63 +523,34 @@ static int mark_block_group_to_copy(struct btrfs_fs_info *fs_info,
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 	key.offset = 0;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d72e4e3e02b1..998838ac106c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -7428,8 +7428,9 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
+-	int ret;
+ 	int slot;
++	int iter_ret;
++	int ret = 0;
+ 	u64 total_dev = 0;
+ 	u64 last_ra_node = 0;
  
+@@ -7460,22 +7461,12 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
+ 	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+ 	key.offset = 0;
+ 	key.type = 0;
 -	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
 -	if (ret < 0)
--		goto free_path;
--	if (ret > 0) {
--		if (path->slots[0] >=
--		    btrfs_header_nritems(path->nodes[0])) {
--			ret = btrfs_next_leaf(root, path);
--			if (ret < 0)
--				goto free_path;
--			if (ret > 0) {
--				ret = 0;
--				goto free_path;
--			}
--		} else {
--			ret = 0;
--		}
--	}
--
+-		goto error;
 -	while (1) {
-+	btrfs_for_each_slot(root, &key, &found_key, path, ret) {
- 		struct extent_buffer *leaf = path->nodes[0];
--		int slot = path->slots[0];
--
--		btrfs_item_key_to_cpu(leaf, &found_key, slot);
--
--		if (found_key.objectid != src_dev->devid)
--			break;
++	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
+ 		struct extent_buffer *node;
  
--		if (found_key.type != BTRFS_DEV_EXTENT_KEY)
-+		if (found_key.objectid != src_dev->devid ||
-+		    found_key.type != BTRFS_DEV_EXTENT_KEY ||
-+		    found_key.offset < key.offset)
- 			break;
- 
--		if (found_key.offset < key.offset)
--			break;
--
--		dev_extent = btrfs_item_ptr(leaf, slot, struct btrfs_dev_extent);
-+		dev_extent = btrfs_item_ptr(leaf, path->slots[0],
-+				struct btrfs_dev_extent);
- 
- 		chunk_offset = btrfs_dev_extent_chunk_offset(leaf, dev_extent);
- 
- 		cache = btrfs_lookup_block_group(fs_info, chunk_offset);
- 		if (!cache)
--			goto skip;
-+			continue;
- 
- 		spin_lock(&cache->lock);
- 		cache->to_copy = 1;
- 		spin_unlock(&cache->lock);
- 
- 		btrfs_put_block_group(cache);
--
--skip:
--		ret = btrfs_next_item(root, path);
--		if (ret != 0) {
--			if (ret > 0)
--				ret = 0;
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+-		if (slot >= btrfs_header_nritems(leaf)) {
+-			ret = btrfs_next_leaf(root, path);
+-			if (ret == 0)
+-				continue;
+-			if (ret < 0)
+-				goto error;
 -			break;
 -		}
++
+ 		/*
+ 		 * The nodes on level 1 are not locked but we don't need to do
+ 		 * that during mount time as nothing else can access the tree
+@@ -7513,7 +7504,11 @@ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info)
+ 			if (ret)
+ 				goto error;
+ 		}
+-		path->slots[0]++;
++	}
++
++	if (iter_ret < 0) {
++		ret = iter_ret;
++		goto error;
  	}
  
--free_path:
-+	/* Reset error if the key wasn't found. */
-+	if (ret > 0)
-+		ret = 0;
-+
- 	btrfs_free_path(path);
- unlock:
- 	mutex_unlock(&fs_info->chunk_mutex);
+ 	/*
 -- 
 2.31.1
 

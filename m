@@ -2,64 +2,36 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
 	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87D24C432BE
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Aug 2021 05:57:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75DDBC432BE
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Aug 2021 06:16:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5A8DE60EBD
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Aug 2021 05:57:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 44A3260E93
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 Aug 2021 06:16:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232650AbhH1F6q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 28 Aug 2021 01:58:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60330 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231277AbhH1F6p (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 Aug 2021 01:58:45 -0400
-Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B538C0613D9
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Aug 2021 22:57:56 -0700 (PDT)
-Received: by mail-pj1-x1035.google.com with SMTP id w19-20020a17090aaf9300b00191e6d10a19so6532395pjq.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Aug 2021 22:57:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=subject:from:to:cc:references:message-id:date:user-agent
-         :mime-version:in-reply-to:content-transfer-encoding:content-language;
-        bh=EZwCTN4y/ZRqJGRcM+O5EsefXbgeft4FedkwIbIRb/Y=;
-        b=b7Pvt4mZ2TVHlL+x3zeQsZOLe/LZLyz8Mpb4IjnoGriGdWotzqROfts9IBlEfVHwLv
-         Um8ZhzelKGJ0HznMNxs6q3Ir2Iq9NsBFwJUI+Vpiku28fpYwvx5jWgKSlJUGd8W0JXwF
-         Ri1/hzHdnZ2OrTXHtrgrAHfn6Zk8v7Eb4BoEFJ0OscqodkdZy46u270fHLst6qQ/U34c
-         9J9H6dMErKFctbSygCayQS8nPtogVcD9KzXtDEdMXOmjE5WWHgexFfoNbztwpxQRDRYQ
-         pkwQwsf0MQNVD4Q2DJhX4Solrt6xoaAURCP1rCViFv/8Wm9k4e2v3PRv77r3//YMHPeH
-         bwCA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:from:to:cc:references:message-id:date
-         :user-agent:mime-version:in-reply-to:content-transfer-encoding
-         :content-language;
-        bh=EZwCTN4y/ZRqJGRcM+O5EsefXbgeft4FedkwIbIRb/Y=;
-        b=FSI1E8XPB7s2Q9THnL7Iv7E1D4j/CCEGZYm8rdq9eyrOpmoNlEf730aRHwjrvQMPd6
-         2PgPDskLAE2JoU2xNkpZqUWu0iEOCb1VcpJG6inEcACDOUKzK+6+3VphXr60R4nAWhFt
-         dcw/XVR1ZQ5hoEQF7lGEHvjwK2PIs6zwQZKT16UbbgAhMFNH71g9752GQnWEStSyPbLG
-         5aNgXkktEIac0fDBq/2nP8A1fGlcVB5iiZS4UTfyVg+tLYIfRbMSLTjEtz3T0Zg/Q0w4
-         KhEzGrBhOHsAJiCcA2Uf2xd/Q7nCAycgOQI4D02t8qC4Dcb8SMY29Hqs7sveOtYgGgiE
-         kxkg==
-X-Gm-Message-State: AOAM531oMrt17dxB1L2QHbOnde4iAcaKZ9IJ9o0FQ2ib5uXi1m17gvAY
-        nOeUQWaJ8PWtbyfj0UlcswpfdcEKW+YUxg==
-X-Google-Smtp-Source: ABdhPJzPm1+ZND0VopYdPjQesF78+JB+5ExsvooO/kbIqNFTCB+I5w7WU2vG2u+GoaSqcaZ+sI+BPA==
-X-Received: by 2002:a17:902:bd98:b029:12c:9106:b54f with SMTP id q24-20020a170902bd98b029012c9106b54fmr12142681pls.40.1630130275249;
-        Fri, 27 Aug 2021 22:57:55 -0700 (PDT)
-Received: from [192.168.2.53] (108-201-186-146.lightspeed.sntcca.sbcglobal.net. [108.201.186.146])
-        by smtp.gmail.com with ESMTPSA id i11sm8833118pgo.25.2021.08.27.22.57.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 27 Aug 2021 22:57:53 -0700 (PDT)
+        id S232702AbhH1GRL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 28 Aug 2021 02:17:11 -0400
+Received: from mout.gmx.net ([212.227.15.15]:39583 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229555AbhH1GRK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 28 Aug 2021 02:17:10 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1630131379;
+        bh=pDxa2H7uWB1VwxRgm93qcKuE9e+ItwqkwFa6a+tr38k=;
+        h=X-UI-Sender-Class:Subject:To:Cc:References:From:Date:In-Reply-To;
+        b=KSfeNUNSaEI0vrQgnU1n8DzQyTkLMBdY6HKDDilHHDV1/UTJS1oOYO2Dqy92P0Q94
+         3JFgDSIJyqrXi0BzNkfy7bMph4WlyIdcBtG49ld398Byqgfw0zuL2Su3fbLGGHgB46
+         lgcRqjwUBMmxBuiB8LsUhTYCK8gueYOemq1pDu8M=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MSt8W-1mS5Ns0ieE-00UKrJ; Sat, 28
+ Aug 2021 08:16:19 +0200
 Subject: Re: Trying to recover data from SSD
-From:   Konstantin Svist <fry.kun@gmail.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+To:     Konstantin Svist <fry.kun@gmail.com>
 Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <67691486-9dd9-6837-d485-30279d3d3413@gmail.com>
  <46f3b990-ec2d-6508-249e-8954bf356e89@gmx.com>
@@ -78,74 +50,117 @@ References: <67691486-9dd9-6837-d485-30279d3d3413@gmail.com>
  <fab2dab5-41bb-43f2-5396-451d66df3917@gmail.com>
  <60a21bca-d133-26c0-4768-7d9a70f9d102@gmx.com>
  <7e8394c9-9eb3-c593-9473-5c40d80428a5@gmail.com>
-Message-ID: <1785017b-e23b-e93d-5b78-2aa40170fe62@gmail.com>
-Date:   Fri, 27 Aug 2021 22:57:52 -0700
+ <1785017b-e23b-e93d-5b78-2aa40170fe62@gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <14a9a98c-50fc-eb7b-804b-2fe36775b5fa@gmx.com>
+Date:   Sat, 28 Aug 2021 14:16:13 +0800
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+ Thunderbird/78.13.0
 MIME-Version: 1.0
-In-Reply-To: <7e8394c9-9eb3-c593-9473-5c40d80428a5@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <1785017b-e23b-e93d-5b78-2aa40170fe62@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Language: en-US
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:pJqj29H5+rBylnTia6hXBr8M4fZ7nd4rI3JlZvJmxpqqzSauTVS
+ nZ6mNA7zI3yU5GokggBVlkd0e1Gx4bqz/Gi+q/EB16e5MokRpbT9ClAqRHn5VbJSAMIwAWE
+ xiZY91umIYYRAEcSB5EhBc0Zl2yhLykHp3kzGWBZnHH9vc1ZLdYSfJWAmZAL5bbqX5jR4kb
+ B8cQy9zR0KPzG6XX0Er7Q==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:aXaJl7nh5Zg=:SuJpFek4w7ZkUQ6Cn70G3X
+ LyJUpzZcwZDXNyAACUDmRk/7Vk4uk6TvX2eZrwuXyFrFlmnuWTFSAesp1G3ih9KtngTePcaBp
+ kd81aqD3vmxFsB3dweFxmSkLrdE+gjlQstogfOKvm5hEBnLH0RxzIAXAv3/6H7lb+YK3+FtQ8
+ pyiSvNXIG9H9lNK0PtJ5aO26lmxwEH1cxcJD6+OIJQLxCxSkx63jSzoH8/Fd8qH8Sqa2E0MeT
+ DEK4FTuf2tNPUEWlbywAswcYdYmrMYS67JoaLswoKJQn4pjWMFSCFXH+U5madqMR+GukCDV1Y
+ 9Qt7hSsnk6TxIzJyVn5IUDLGsGEHQkthJh1q8Zm7BSVeE5zYP7RgCef1hRfuEYcJqyaBNyI39
+ Oa4bBWtqyofUDO5xuxg4Wv/3/JeyrNWqa5Ov5o9UDe7pvYgb/s8BSoicrvNZ6DiktRwUIO9kF
+ PUyhMXR5ickNzXe7m188QN5raSLbsRhjMe5LFMo8vW5N7bICHsVZn0GXooJPqnS7Pa6pHeh2b
+ yJc/5tUB6XVsrIo2zd4URxixEV4lSRYte46fwkTildG2IPns7A9wZbvJxc0AsQONwvwo5pmwG
+ KdT3aLUhM9OSkPL2WOlr1lXdnKST1e6/aqxSUkjB+skB6R1r7mFeC6Fkx4XKJV+F50Z0U09Tc
+ T+IAFf1CPAQnXJRZFkMom/R7aGtsE1j69dPazn/iLgkLuNEY1FWJW97i83qQsOC9vW9xkJZLi
+ c8FOXpMo5yLYHRdxeA+L4cpzttjVOn1uqkr90+J5I5z/cmcuZBbYkEs483wngo6sG2GE+o754
+ ZAkoBxYKjTFfN1u2N5RWl50Ovb3vII4DBlLrEDAVDjsro8GAAZPKNLgZRIUQQ3x4t/f4tui11
+ TxTja2HfiUWppb+DXcQjjKcMgVSKppmJVPRefJMdU/Pek6z9R64SHJRm6I4dlEudXEz6kYvuO
+ AWgPX0NcWrVn/NAOICU41Xs0l3j0cIj2xoPWDIyS7wkRj2IDKxSvtpYm3RM/BPp2k706Apksg
+ GKJv3vXCaLIuIfyFe5ZWwxFwV1G4+DCffBUoJJAO8UegUggrG4awondT6YHeP+iHiI9FGLmco
+ x8X9LUMJctwLPyDOhHbR92vo+PhOrnq5N5L+QR5B6+jmWqBBxqA9mBsfQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 8/20/21 19:56, Konstantin Svist wrote:
-> On 8/11/21 18:18, Qu Wenruo wrote:
->>
->> On 2021/8/12 上午6:34, Konstantin Svist wrote:
->>> Shouldn't there be an earlier generation of this subvolume's tree block
->>> somewhere on the disk? Would all of them have gotten overwritten
->>> already?
->> Then it will be more complex and I can't ensure any good result.
->
-> It was already pretty complex and results were never guaranteed :)
->
->
->> Firstly you need to find an older root tree:
->>
->> # btrfs ins dump-super -f /dev/sdb3 | grep backup_tree_root
->>                 backup_tree_root:       30687232        gen: 2317
->>  level: 0
->>                 backup_tree_root:       30834688        gen: 2318
->>  level: 0
->>                 backup_tree_root:       30408704        gen: 2319
->>  level: 0
->>                 backup_tree_root:       31031296        gen: 2316
->>  level: 0
->>
->> Then try the bytenr in their reverse generation order in btrfs ins
->> dump-tree:
->> (The latest one should be the current root, thus you can skip it)
->>
->> # btrfs ins dump-tree -b 30834688 /dev/sdb3 | grep "(257 ROOT_ITEM" -A 5
->>
->> Then grab the bytenr of the subvolume 257, then pass the bytenr to
->> btrfs-restore:
->>
->> # btrfs-restore -f <bytenr> /dev/sdb3 <restore_path>
->>
->> The chance is already pretty low, good luck.
->>
->> Thanks,
->> Qu 
->
->
-> When I run dump-tree, I get this:
->
-> # btrfs ins dump-tree -b 787070976 /dev/sdb3 | grep "(257 ROOT_ITEM" -A 5
-> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
-> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
-> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
-> Csum didn't match
-> WARNING: could not setup extent tree, skipping it
->
-> The same exact offset fails checksum for all 4 backup roots, any way
-> around this?
 
 
-*ping*
+On 2021/8/28 =E4=B8=8B=E5=8D=881:57, Konstantin Svist wrote:
+> On 8/20/21 19:56, Konstantin Svist wrote:
+>> On 8/11/21 18:18, Qu Wenruo wrote:
+>>>
+>>> On 2021/8/12 =E4=B8=8A=E5=8D=886:34, Konstantin Svist wrote:
+>>>> Shouldn't there be an earlier generation of this subvolume's tree blo=
+ck
+>>>> somewhere on the disk? Would all of them have gotten overwritten
+>>>> already?
+>>> Then it will be more complex and I can't ensure any good result.
+>>
+>> It was already pretty complex and results were never guaranteed :)
+>>
+>>
+>>> Firstly you need to find an older root tree:
+>>>
+>>> # btrfs ins dump-super -f /dev/sdb3 | grep backup_tree_root
+>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 30687232=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 gen: 2317
+>>>  =C2=A0level: 0
+>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 30834688=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 gen: 2318
+>>>  =C2=A0level: 0
+>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 30408704=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 gen: 2319
+>>>  =C2=A0level: 0
+>>>  =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 backup_tree_root:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 31031296=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 gen: 2316
+>>>  =C2=A0level: 0
+>>>
+>>> Then try the bytenr in their reverse generation order in btrfs ins
+>>> dump-tree:
+>>> (The latest one should be the current root, thus you can skip it)
+>>>
+>>> # btrfs ins dump-tree -b 30834688 /dev/sdb3 | grep "(257 ROOT_ITEM" -A=
+ 5
+>>>
+>>> Then grab the bytenr of the subvolume 257, then pass the bytenr to
+>>> btrfs-restore:
+>>>
+>>> # btrfs-restore -f <bytenr> /dev/sdb3 <restore_path>
+>>>
+>>> The chance is already pretty low, good luck.
+>>>
+>>> Thanks,
+>>> Qu
+>>
+>>
+>> When I run dump-tree, I get this:
+>>
+>> # btrfs ins dump-tree -b 787070976 /dev/sdb3 | grep "(257 ROOT_ITEM" -A=
+ 5
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> Csum didn't match
+>> WARNING: could not setup extent tree, skipping it
+>>
+>> The same exact offset fails checksum for all 4 backup roots, any way
+>> around this?
 
-Any hope left here?
+When without the grep, is there any output?
 
+Thanks,
+Qu
+
+>
+>
+> *ping*
+>
+> Any hope left here?
+>

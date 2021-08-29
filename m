@@ -2,137 +2,224 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNPARSEABLE_RELAY
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-4.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73A8BC4320A
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 14:10:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 671D5C432BE
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 20:02:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4FC4E60F25
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 14:10:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3AEEF60C41
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 20:02:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235447AbhH2OLD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 29 Aug 2021 10:11:03 -0400
-Received: from out20-87.mail.aliyun.com ([115.124.20.87]:55122 "EHLO
-        out20-87.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235398AbhH2OLC (ORCPT
+        id S235969AbhH2UDA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 29 Aug 2021 16:03:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53150 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235868AbhH2UDA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Aug 2021 10:11:02 -0400
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.07598105|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.621035-0.00304223-0.375923;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047192;MF=guan@eryu.me;NM=1;PH=DS;RN=4;RT=4;SR=0;TI=SMTPD_---.LCCfxqt_1630246208;
-Received: from localhost(mailfrom:guan@eryu.me fp:SMTPD_---.LCCfxqt_1630246208)
-          by smtp.aliyun-inc.com(10.147.41.158);
-          Sun, 29 Aug 2021 22:10:09 +0800
-Date:   Sun, 29 Aug 2021 22:10:08 +0800
-From:   Eryu Guan <guan@eryu.me>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     Eryu Guan <guaneryu@gmail.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] fstests: btrfs/246: add test case to make sure btrfs
- can create compressed inline extent
-Message-ID: <YSuVQBEX0WU4NQzv@desktop>
-References: <20210826053432.13146-1-wqu@suse.com>
- <YSuOr0XhCgVBcnc8@desktop>
- <e85d5800-8f4a-5bca-a5a6-e537f2fb998a@suse.com>
+        Sun, 29 Aug 2021 16:03:00 -0400
+Received: from mail-pg1-x529.google.com (mail-pg1-x529.google.com [IPv6:2607:f8b0:4864:20::529])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CDAF5C061575
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 13:02:07 -0700 (PDT)
+Received: by mail-pg1-x529.google.com with SMTP id q68so11348282pga.9
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 13:02:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-transfer-encoding:content-language;
+        bh=DSRMYpXUlWEn3ZK+ewumta/haEIY9FlrZ8jQsmiqJKk=;
+        b=IunugvwTAEd5OQNLY9nulNK9feReoBxJrB8CgEoWPHjzidVtxjBkuKu+/0GBy/UTJQ
+         cglO8yoL5hO9lBVL1iGHGop+QkVa/x1e4Zl1Z3skxTyXAPcK64+jjCzlQ6oGD8P9PZmd
+         vVvdfLxw2Hc5MrUtcl+YYhubbKGN9x11JcqiPo0supUracHGe5dQOD/QBDfRNYh3CKrP
+         bjyxDBth0ikB0gb27TCGHtQsYNzFfYBGejBKQdkr38/xwOtAeMlHo7HfafN3RlagOf5C
+         a4zaMKSf/zurxnsXxRXke1fKa7lqhSdU4nTbDxXthrAGu5gKZcJcAco7iBe81jhZozb/
+         557A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-transfer-encoding
+         :content-language;
+        bh=DSRMYpXUlWEn3ZK+ewumta/haEIY9FlrZ8jQsmiqJKk=;
+        b=iGEw6FhVQ0KFltzi+eEKiyfGF5sEf61poV9oRMcD0Tvpn+ahn+uER+ibq4XZZM0Vs5
+         gdKWbh3f4D6iBMlLLk0rIpGre3jPZ4PltO3CkhyYIrMb0CgpOePf1wuFs9kJVti9CxN+
+         m3C5P78VO5MRSe3Hf0WOWy0Q671n9cRBwmpmooWLom4YwCaVpyEJHCWVaqEz3otILNc+
+         IJumRhEJFpSyN6RdqcKqync9HoVR462vRTMjsGjmCK80PIpUlUia8v+nTUwMmhHTKqsR
+         aTWLomDVQdLhHsY7fssohNMx39GN+2roET2VntgX6DiIw4xS35huOrwEYyVmwUoKXqWZ
+         6KwQ==
+X-Gm-Message-State: AOAM53338St2gRWtC7C0ValXgJuiQ0xY2NzmN1kQalpiru6Q5eEaK4Um
+        YVMF6b11p+K1FYJqz8BSHfZC+cCr0d3mGg==
+X-Google-Smtp-Source: ABdhPJw0xSzGifSUablwogZz4gIR7fYMioLnwYyWlxoEdyiC8XYa/UHxnJlS3ubqtguKn6u7HI4qTw==
+X-Received: by 2002:a62:88d7:0:b0:3fd:b2db:79c5 with SMTP id l206-20020a6288d7000000b003fdb2db79c5mr4179932pfd.21.1630267326958;
+        Sun, 29 Aug 2021 13:02:06 -0700 (PDT)
+Received: from [192.168.2.53] (108-201-186-146.lightspeed.sntcca.sbcglobal.net. [108.201.186.146])
+        by smtp.gmail.com with ESMTPSA id l185sm12513159pfd.62.2021.08.29.13.02.04
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 29 Aug 2021 13:02:05 -0700 (PDT)
+Subject: Re: Trying to recover data from SSD
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <67691486-9dd9-6837-d485-30279d3d3413@gmail.com>
+ <7f42b532-07b4-5833-653f-bef148be5d9a@gmail.com>
+ <1c066a71-bc66-3b12-c566-bac46d740960@gmx.com>
+ <d60cca92-5fe2-6059-3591-8830ca9cf35c@gmail.com>
+ <c7fed97e-d034-3af1-2072-65a9bb0e49ef@gmx.com>
+ <544e3e73-5490-2cae-c889-88d80e583ac4@gmail.com>
+ <c03628f0-585c-cfa8-5d80-bd1f1e4fb9c1@gmx.com>
+ <d7c65e1d-6f4e-484b-a52f-60084160969f@gmail.com>
+ <2684f59f-679d-5ee7-2591-f0a4ea4e9fbe@gmx.com>
+ <238d1f6c-20a9-f002-e03a-722175c63bd6@gmail.com>
+ <4bd90f4a-7ced-3477-f113-eee72bc05cbb@gmx.com>
+ <fab2dab5-41bb-43f2-5396-451d66df3917@gmail.com>
+ <60a21bca-d133-26c0-4768-7d9a70f9d102@gmx.com>
+ <7e8394c9-9eb3-c593-9473-5c40d80428a5@gmail.com>
+ <1785017b-e23b-e93d-5b78-2aa40170fe62@gmail.com>
+ <14a9a98c-50fc-eb7b-804b-2fe36775b5fa@gmx.com>
+ <36652872-850c-fe92-9fcd-c9c95dc25d65@gmail.com>
+ <cebedd98-1fe4-731f-fc54-5366c8f18a2f@gmx.com>
+ <d0ebdff7-10f0-c8f3-e098-18f651a149d8@gmail.com>
+ <597bd681-c7ba-075c-4376-142695b91f93@gmx.com>
+From:   Konstantin Svist <fry.kun@gmail.com>
+Message-ID: <4a5d64fd-637c-bd8a-fe6f-db1bb20942c2@gmail.com>
+Date:   Sun, 29 Aug 2021 13:02:03 -0700
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
+In-Reply-To: <597bd681-c7ba-075c-4376-142695b91f93@gmx.com>
 Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <e85d5800-8f4a-5bca-a5a6-e537f2fb998a@suse.com>
+Content-Language: en-US
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Aug 29, 2021 at 09:49:05PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2021/8/29 下午9:42, Eryu Guan wrote:
-> > On Thu, Aug 26, 2021 at 01:34:32PM +0800, Qu Wenruo wrote:
-> > > Btrfs has the ability to inline small file extents into its metadata,
-> > > and such inlined extents can be further compressed if needed.
-> > > 
-> > > The new test case is for a regression caused by commit f2165627319f
-> > > ("btrfs: compression: don't try to compress if we don't have enough
-> > > pages").
-> > > 
-> > > That commit prevents btrfs from creating compressed inline extents, even
-> > > "-o compress,max_inline=2048" is specified, only uncompressed inline
-> > > extents can be created.
-> > > 
-> > > The test case will make sure that the content of the small file is
-> > > consistent between cycle mount, then use "btrfs inspect dump-tree" to
-> > > verify the created extent is both inlined and compressed.
-> > > 
-> > > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > 
-> > Is there a proposed fix available that could be referenced in the commit
-> > log?
-> 
-> The upstream commit is 4e9655763b82 ("Revert "btrfs: compression: don't try
-> to compress if we don't have enough pages""), which is merged after I
-> submitted the patch.
+On 8/29/21 00:19, Qu Wenruo wrote:
+>
+>
+> On 2021/8/29 下午2:34, Konstantin Svist wrote:
+>>
+>> # btrfs ins dump-tree -b 787070976 --follow /dev/sdb3 | grep "(257
+>> ROOT_ITEM" -A 5
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> Csum didn't match
+>> WARNING: could not setup extent tree, skipping it
+>>      item 13 key (257 ROOT_ITEM 0) itemoff 13147 itemsize 439
+>>          generation 166932 root_dirid 256 bytenr 786726912 level 2
+>> refs 1
+>>          lastsnap 56690 byte_limit 0 bytes_used 1013104640 flags
+>> 0x0(none)
+>>          uuid 1ac60d28-6f11-2842-aca2-b1574b108336
+>>          ctransid 166932 otransid 8 stransid 0 rtransid 0
+>>          ctime 1627959592.718936423 (2021-08-02 19:59:52)
+>>
+>>
+>> # btrfs restore -Divf 786726912 /dev/sdb3 .
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+>> Csum didn't match
+>> WARNING: could not setup extent tree, skipping it
+>> This is a dry-run, no files are going to be restored
+>> checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+>> checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+>> checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+>> bad tree block 920748032, bytenr mismatch, want=920748032, have=0
+>> ERROR: search for next directory entry failed: -5
+>
+> This all zero means the data on-disk are wiped.
+>
+> Either not reaching disk or discarded.
+>
+> Neither is a good thing.
+>
+>>
+>>
+>> 1st set of "checksum verify failed" has different addresses, but the
+>> last set always has 920748032
+>
+> Have you tried other bytenrs from find-root?
 
-Ok. It also could be helpful to just include the proposed patch title if
-it's not merged yet.
 
-> 
-> > 
-> > > ---
-> > > Changelog:
-> > > v2:
-> > > - Also output the sha256sum to make sure the content is consistent
-> > > ---
-> > >   tests/btrfs/246     | 53 +++++++++++++++++++++++++++++++++++++++++++++
-> > >   tests/btrfs/246.out |  5 +++++
-> > >   2 files changed, 58 insertions(+)
-> > >   create mode 100755 tests/btrfs/246
-> > >   create mode 100644 tests/btrfs/246.out
-> > > 
-> > > diff --git a/tests/btrfs/246 b/tests/btrfs/246
-> > > new file mode 100755
-> > > index 00000000..e0d8016f
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/246
-> > > @@ -0,0 +1,53 @@
-> > > +#! /bin/bash
-> > > +# SPDX-License-Identifier: GPL-2.0
-> > > +# Copyright (c) 2021 SUSE Linux Products GmbH.  All Rights Reserved.
-> > > +#
-> > > +# FS QA Test 246
-> > > +#
-> > > +# Make sure btrfs can create compressed inline extents
-> > > +#
-> > > +. ./common/preamble
-> > > +_begin_fstest auto quick compress
-> > > +
-> > > +# Override the default cleanup function.
-> > > +_cleanup()
-> > > +{
-> > > +	cd /
-> > > +	rm -r -f $tmp.*
-> > > +}
-> > > +
-> > > +# Import common functions.
-> > > +. ./common/filter
-> > > +# For __populate_find_inode()
-> > > +. ./common/populate
-> > 
-> > This function starts with double underscore, I take it as a 'private'
-> > function in common/populate. But all it does is returning the inode
-> > number of the given file, I think we could just open-code it in this
-> > test as
-> > 
-> > ino=$(stat -c %i $SCRATCH_MNT/foobar)
-> > 
-> > Otherwise test looks fine to me.
-> 
-> Mind me to send an update to include the fix in commit message and use the
-> local ino helper?
+Is it normal that they all fail on the same exact block? Sounds
+suspicious to me.
 
-You're responding quickly, I haven't finalized this week's update yet,
-so I can add the fix commit info and remove __populate_find_inode on
-commit :)
 
-Thanks,
-Eryu
+The other 3 attempts:
+
+
+# btrfs ins dump-super -f /dev/sdb3 | grep backup_tree_root
+        backup_tree_root:    787070976    gen: 166932    level: 1
+        backup_tree_root:    778108928    gen: 166929    level: 1
+        backup_tree_root:    781172736    gen: 166930    level: 1
+        backup_tree_root:    786399232    gen: 166931    level: 1
+
+# btrfs ins dump-tree -b 786399232 --follow /dev/sdb3 | grep "(257
+ROOT_ITEM" -A 5
+[...]
+    item 13 key (257 ROOT_ITEM 0) itemoff 13147 itemsize 439
+        generation 166931 root_dirid 256 bytenr 781467648 level 2 refs 1
+        lastsnap 56690 byte_limit 0 bytes_used 1013104640 flags 0x0(none)
+
+[...]
+
+# btrfs restore -Divf 781467648 /dev/sdb3 .
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+Csum didn't match
+WARNING: could not setup extent tree, skipping it
+This is a dry-run, no files are going to be restored
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+bad tree block 920748032, bytenr mismatch, want=920748032, have=0
+ERROR: search for next directory entry failed: -5
+
+# btrfs ins dump-tree -b 781172736 --follow /dev/sdb3 | grep "(257
+ROOT_ITEM" -A 5
+[...]
+    item 13 key (257 ROOT_ITEM 0) itemoff 13147 itemsize 439
+        generation 166930 root_dirid 256 bytenr 780828672 level 2 refs 1
+        lastsnap 56690 byte_limit 0 bytes_used 1013104640 flags 0x0(none)
+[...]
+
+
+# btrfs restore -Divf 780828672 /dev/sdb3 .
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+Csum didn't match
+WARNING: could not setup extent tree, skipping it
+This is a dry-run, no files are going to be restored
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+bad tree block 920748032, bytenr mismatch, want=920748032, have=0
+ERROR: search for next directory entry failed: -5
+
+# btrfs ins dump-tree -b 778108928 --follow /dev/sdb3 | grep "(257
+ROOT_ITEM" -A 5
+[...]
+
+   item 13 key (257 ROOT_ITEM 0) itemoff 13147 itemsize 439
+        generation 166929 root_dirid 256 bytenr 102760448 level 2 refs 1
+        lastsnap 56690 byte_limit 0 bytes_used 1013104640 flags 0x0(none)
+[...]
+
+
+# btrfs restore -Divf 102760448 /dev/sdb3 .
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+checksum verify failed on 786939904 wanted 0xcdcdcdcd found 0xc375d6b6
+Csum didn't match
+WARNING: could not setup extent tree, skipping it
+This is a dry-run, no files are going to be restored
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+checksum verify failed on 920748032 wanted 0x00000000 found 0xb6bde3e4
+bad tree block 920748032, bytenr mismatch, want=920748032, have=0
+ERROR: search for next directory entry failed: -5
+

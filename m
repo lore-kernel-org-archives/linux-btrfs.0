@@ -7,50 +7,50 @@ X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D0E52C4320E
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 05:25:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E6CFEC432BE
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 05:25:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BB6E160C3F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 05:25:23 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D05FA60F39
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Aug 2021 05:25:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234750AbhH2F0N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 29 Aug 2021 01:26:13 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:45794 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234713AbhH2F0L (ORCPT
+        id S234758AbhH2F0O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 29 Aug 2021 01:26:14 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:59378 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234705AbhH2F0M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Aug 2021 01:26:11 -0400
+        Sun, 29 Aug 2021 01:26:12 -0400
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id A53F420016
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 05:25:17 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 19FF721D95
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 05:25:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1630214717; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1630214720; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=BfFxXKAz9aK74zbGUEzTwsJmJmUTA8s9Cq4GdHR8NKs=;
-        b=XSmg2EI2zHZdayi2X6Rkkvd1Ch/2MGnVGfWnYiw2A2Ku5ETclk4xQ5JPqWenwKJaU1Z+xy
-        lseXf60OkfyXKdmXden7m2jPxC4E/GUvsrJvY4N6KYWLUKRtpn8ytxg6XRlR9qLHWPlgVG
-        dKNU3Y4ywrc8LyJdvXQK0zDedRWdUXk=
+        bh=ZNfufLuvQDN9HEJP+SucIeZF7OLkQv/9UuPVwPdSdp0=;
+        b=nAP81svrxifxvNkfnC3zXk4o/f5To2YhZ8B+Vq1E5ijese2rwhgfa53VAx8s/MkX5ZhukD
+        edFJc54ayVak70iXDp2TgWA+gtUJm6gUexvj0xQHi8z+HEoP2/L04dUFDKraaD8CHVjx2S
+        o64twTB8X5Yhrf6LLw9Y32xGykdHag0=
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id E330813964
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 05:25:16 +0000 (UTC)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 5774E13964
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 05:25:19 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap1.suse-dmz.suse.de with ESMTPSA
-        id 6AruKDwaK2HnPAAAGKfGzw
+        id GKLkBj8aK2HnPAAAGKfGzw
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 05:25:16 +0000
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Aug 2021 05:25:19 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 13/26] btrfs: make btrfs_submit_compressed_write() to determine stripe boundary at bio allocation time
-Date:   Sun, 29 Aug 2021 13:24:45 +0800
-Message-Id: <20210829052458.15454-14-wqu@suse.com>
+Subject: [PATCH v2 15/26] btrfs: refactor submit_compressed_extents()
+Date:   Sun, 29 Aug 2021 13:24:47 +0800
+Message-Id: <20210829052458.15454-16-wqu@suse.com>
 X-Mailer: git-send-email 2.32.0
 In-Reply-To: <20210829052458.15454-1-wqu@suse.com>
 References: <20210829052458.15454-1-wqu@suse.com>
@@ -60,269 +60,353 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs_submit_compressed_write() will check
-btrfs_bio_fits_in_stripe() each time a new page is going to be added.
+We have a big hunk of code inside a while() loop, with tons of strange
+jump for error handling.
 
-Even compressed extent is small, we don't really need to do that for
-every page.
+It's definitely not to the code standard of today.
 
-This patch will align the behavior to extent_io.c, by determining the
-stripe boundary when allocating a bio.
+Move the code into a new function, submit_one_async_extent().
 
-Unlike extent_io.c, in compressed.c we don't need to bother things like
-different bio flags, thus no need to re-use bio_ctrl.
+Since we're here, also do the following modifications:
 
-Here we just manually introduce new local variable, next_stripe_start,
-and use that value returned from alloc_compressed_bio() to calculate
-the stripe boundary.
+- Comment style change
+  To follow the current scheme
 
-Then each time we add some page range into the bio, we check if we
-reached the boundary.
-And if reached, submit it.
+- Don't fallback to non-compressed write then hitting ENOSPC
+  If we hit ENOSPC for compressed write, how could we reserve more space
+  for non-compressed write?
+  Thus we go error path directly.
+  This removes the retry: label.
 
-Also, since we have @cur_disk_bytenr to determine whether we're the last
-bio, we don't need a explicit last_bio: tag for error handling any more.
+- Add more comment for super long parameter list
+  Explain which parameter is for, so we don't need to check the
+  prototype.
 
-And since we use @cur_disk_bytenr to wait, there is no need for
-pending_bios, also remove it to save some memory of compressed_bio.
+- Move the error handling to submit_one_async_extent()
+  Thus no strange code like:
+
+  out_free:
+	...
+	goto again;
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c | 145 ++++++++++++++++++-----------------------
- fs/btrfs/compression.h |   3 -
- 2 files changed, 62 insertions(+), 86 deletions(-)
+ fs/btrfs/inode.c | 278 +++++++++++++++++++++++------------------------
+ 1 file changed, 137 insertions(+), 141 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ac50972e4920..6e389f1c6091 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -222,7 +222,6 @@ static bool dec_and_test_compressed_bio(struct compressed_bio *cb,
- 	ASSERT(bi_size && bi_size <= cb->compressed_len);
- 	last_io = refcount_sub_and_test(bi_size >> fs_info->sectorsize_bits,
- 					&cb->pending_sectors);
--	atomic_dec(&cb->pending_bios);
- 	/*
- 	 * Here we must wake up the possible error handler after all other
- 	 * operations on @cb finished, or we can race with
-@@ -429,7 +428,6 @@ static blk_status_t submit_compressed_bio(struct btrfs_fs_info *fs_info,
- 	blk_status_t ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e8de19c7ad45..2098cc2e6db2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -839,163 +839,129 @@ static void free_async_extent_pages(struct async_extent *async_extent)
+ 	async_extent->pages = NULL;
+ }
  
- 	ASSERT(bio->bi_iter.bi_size);
--	atomic_inc(&cb->pending_bios);
- 	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
- 	if (ret)
- 		return ret;
-@@ -499,10 +497,7 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct bio *bio = NULL;
- 	struct compressed_bio *cb;
--	unsigned long bytes_left;
--	int pg_index = 0;
--	struct page *page;
--	u64 first_byte = disk_start;
-+	u64 cur_disk_bytenr = disk_start;
- 	u64 next_stripe_start;
- 	blk_status_t ret;
- 	int skip_sum = inode->flags & BTRFS_INODE_NODATASUM;
-@@ -513,7 +508,6 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
- 	if (!cb)
- 		return BLK_STS_RESOURCE;
--	atomic_set(&cb->pending_bios, 0);
- 	refcount_set(&cb->pending_sectors,
- 		     compressed_len >> fs_info->sectorsize_bits);
- 	cb->errors = 0;
-@@ -526,45 +520,65 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 	cb->orig_bio = NULL;
- 	cb->nr_pages = nr_pages;
+-/*
+- * phase two of compressed writeback.  This is the ordered portion
+- * of the code, which only gets called in the order the work was
+- * queued.  We walk all the async extents created by compress_file_range
+- * and send them down to the disk.
+- */
+-static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
++static int submit_one_async_extent(struct btrfs_inode *inode,
++				   struct async_chunk *async_chunk,
++				   struct async_extent *async_extent,
++				   u64 *alloc_hint)
+ {
+-	struct btrfs_inode *inode = BTRFS_I(async_chunk->inode);
+-	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-	struct async_extent *async_extent;
+-	u64 alloc_hint = 0;
++	struct extent_io_tree *io_tree = &inode->io_tree;
++	struct btrfs_root *root = inode->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_key ins;
+ 	struct extent_map *em;
+-	struct btrfs_root *root = inode->root;
+-	struct extent_io_tree *io_tree = &inode->io_tree;
+ 	int ret = 0;
++	u64 start = async_extent->start;
++	u64 end = async_extent->start + async_extent->ram_size - 1;
  
--	bio = alloc_compressed_bio(cb, first_byte, bio_op | write_flags,
--				   end_compressed_bio_write,
--				   &next_stripe_start);
--	if (IS_ERR(bio)) {
--		kfree(cb);
--		return errno_to_blk_status(PTR_ERR(bio));
--	}
+-again:
+-	while (!list_empty(&async_chunk->extents)) {
+-		async_extent = list_entry(async_chunk->extents.next,
+-					  struct async_extent, list);
+-		list_del(&async_extent->list);
 -
--	if (blkcg_css) {
--		bio->bi_opf |= REQ_CGROUP_PUNT;
--		kthread_associate_blkcg(blkcg_css);
--	}
+-retry:
+-		lock_extent(io_tree, async_extent->start,
+-			    async_extent->start + async_extent->ram_size - 1);
+-		/* did the compression code fall back to uncompressed IO? */
+-		if (!async_extent->pages) {
+-			int page_started = 0;
+-			unsigned long nr_written = 0;
 -
--	/* create and submit bios for the compressed pages */
--	bytes_left = compressed_len;
--	for (pg_index = 0; pg_index < cb->nr_pages; pg_index++) {
--		int submit = 0;
--		int len = 0;
-+	while (cur_disk_bytenr < disk_start + compressed_len) {
-+		u64 offset = cur_disk_bytenr - disk_start;
-+		unsigned int index = offset >> PAGE_SHIFT;
-+		unsigned int real_size;
-+		unsigned int added;
-+		struct page *page = compressed_pages[index];
-+		bool submit = false;
- 
--		page = compressed_pages[pg_index];
--		page->mapping = inode->vfs_inode.i_mapping;
--		if (bio->bi_iter.bi_size)
--			submit = btrfs_bio_fits_in_stripe(page, PAGE_SIZE, bio,
--							  0);
-+		/* Allocate new bio if submitted or not yet allocated */
-+		if (!bio) {
-+			bio = alloc_compressed_bio(cb, cur_disk_bytenr,
-+				bio_op | write_flags, end_compressed_bio_write,
-+				&next_stripe_start);
-+			if (IS_ERR(bio)) {
-+				ret = errno_to_blk_status(PTR_ERR(bio));
-+				bio = NULL;
-+				goto finish_cb;
-+			}
-+		}
-+		/*
-+		 * We should never reach next_stripe_start start as we will
-+		 * submit comp_bio when reach the boundary immediately.
-+		 */
-+		ASSERT(cur_disk_bytenr != next_stripe_start);
- 
- 		/*
--		 * Page can only be added to bio if the current bio fits in
--		 * stripe.
-+		 * We have various limit on the real read size:
-+		 * - stripe boundary
-+		 * - page boundary
-+		 * - compressed length boundary
- 		 */
--		if (!submit) {
--			if (pg_index == 0 && use_append)
--				len = bio_add_zone_append_page(bio, page,
--							       PAGE_SIZE, 0);
--			else
--				len = bio_add_page(bio, page, PAGE_SIZE, 0);
--		}
-+		real_size = min_t(u64, U32_MAX,
-+				  next_stripe_start - cur_disk_bytenr);
-+		real_size = min_t(u64, real_size,
-+				  PAGE_SIZE - offset_in_page(offset));
-+		real_size = min_t(u64, real_size,
-+				  compressed_len - offset);
-+		ASSERT(IS_ALIGNED(real_size, fs_info->sectorsize));
- 
--		page->mapping = NULL;
--		if (submit || len < PAGE_SIZE) {
-+		if (use_append)
-+			added = bio_add_zone_append_page(bio, page, real_size,
-+					offset_in_page(offset));
-+		else
-+			added = bio_add_page(bio, page, real_size,
-+					offset_in_page(offset));
-+		/* Reached zoned boundary */
-+		if (added == 0)
-+			submit = true;
-+
-+		cur_disk_bytenr += added;
-+		/* Reached stripe boundary */
-+		if (cur_disk_bytenr == next_stripe_start)
-+			submit = true;
-+
-+		/* Finished the range */
-+		if (cur_disk_bytenr == disk_start + compressed_len)
-+			submit = true;
-+
-+		if (submit) {
- 			if (!skip_sum) {
- 				ret = btrfs_csum_one_bio(inode, bio, start, 1);
- 				if (ret)
-@@ -574,61 +588,27 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 			ret = submit_compressed_bio(fs_info, cb, bio, 0);
- 			if (ret)
- 				goto finish_cb;
+-			/* allocate blocks */
+-			ret = cow_file_range(inode, async_chunk->locked_page,
+-					     async_extent->start,
+-					     async_extent->start +
+-					     async_extent->ram_size - 1,
+-					     &page_started, &nr_written, 0);
 -
--			bio = alloc_compressed_bio(cb, first_byte,
--					bio_op | write_flags,
--					end_compressed_bio_write,
--					&next_stripe_start);
--			if (IS_ERR(bio)) {
--				ret = errno_to_blk_status(PTR_ERR(bio));
--				bio = NULL;
--				goto finish_cb;
--			}
--			if (blkcg_css)
--				bio->bi_opf |= REQ_CGROUP_PUNT;
+-			/* JDM XXX */
++	lock_extent(io_tree, start, end);
+ 
 -			/*
--			 * Use bio_add_page() to ensure the bio has at least one
--			 * page.
+-			 * if page_started, cow_file_range inserted an
+-			 * inline extent and took care of all the unlocking
+-			 * and IO for us.  Otherwise, we need to submit
+-			 * all those pages down to the drive.
 -			 */
--			bio_add_page(bio, page, PAGE_SIZE, 0);
+-			if (!page_started && !ret)
+-				extent_write_locked_range(&inode->vfs_inode,
+-						  async_extent->start,
+-						  async_extent->start +
+-						  async_extent->ram_size - 1,
+-						  WB_SYNC_ALL);
+-			else if (ret && async_chunk->locked_page)
+-				unlock_page(async_chunk->locked_page);
+-			kfree(async_extent);
+-			cond_resched();
+-			continue;
 -		}
--		if (bytes_left < PAGE_SIZE) {
--			btrfs_info(fs_info,
--					"bytes left %lu compress len %u nr %u",
--			       bytes_left, cb->compressed_len, cb->nr_pages);
-+			bio = NULL;
- 		}
--		bytes_left -= PAGE_SIZE;
--		first_byte += PAGE_SIZE;
- 		cond_resched();
- 	}
 -
--	if (!skip_sum) {
--		ret = btrfs_csum_one_bio(inode, bio, start, 1);
--		if (ret)
--			goto last_bio;
--	}
+-		ret = btrfs_reserve_extent(root, async_extent->ram_size,
+-					   async_extent->compressed_size,
+-					   async_extent->compressed_size,
+-					   0, alloc_hint, &ins, 1, 1);
+-		if (ret) {
+-			free_async_extent_pages(async_extent);
 -
--	ret = submit_compressed_bio(fs_info, cb, bio, 0);
--	if (ret)
--		goto last_bio;
+-			if (ret == -ENOSPC) {
+-				unlock_extent(io_tree, async_extent->start,
+-					      async_extent->start +
+-					      async_extent->ram_size - 1);
 -
- 	if (blkcg_css)
- 		kthread_associate_blkcg(NULL);
+-				/*
+-				 * we need to redirty the pages if we decide to
+-				 * fallback to uncompressed IO, otherwise we
+-				 * will not submit these pages down to lower
+-				 * layers.
+-				 */
+-				extent_range_redirty_for_io(&inode->vfs_inode,
+-						async_extent->start,
+-						async_extent->start +
+-						async_extent->ram_size - 1);
++	/* We have fall back to uncompressed write */
++	if (!async_extent->pages) {
++		int page_started = 0;
++		unsigned long nr_written = 0;
  
- 	return 0;
--last_bio:
--	bio->bi_status = ret;
--	/* One of the bios' endio function will free @cb. */
--	bio_endio(bio);
--	return ret;
- 
- finish_cb:
- 	if (bio) {
- 		bio->bi_status = ret;
- 		bio_endio(bio);
- 	}
-+	/* Last byte of @cb is submitted, endio will free @cb */
-+	if (cur_disk_bytenr == disk_start + compressed_len)
+-				goto retry;
+-			}
+-			goto out_free;
+-		}
+ 		/*
+-		 * here we're doing allocation and writeback of the
+-		 * compressed pages
++		 * Call cow_file_range() to run the delalloc range directly,
++		 * since we won't go to nocow or async path again.
+ 		 */
+-		em = create_io_em(inode, async_extent->start,
+-				  async_extent->ram_size, /* len */
+-				  async_extent->start, /* orig_start */
+-				  ins.objectid, /* block_start */
+-				  ins.offset, /* block_len */
+-				  ins.offset, /* orig_block_len */
+-				  async_extent->ram_size, /* ram_bytes */
+-				  async_extent->compress_type,
+-				  BTRFS_ORDERED_COMPRESSED);
+-		if (IS_ERR(em))
+-			/* ret value is not necessary due to void function */
+-			goto out_free_reserve;
+-		free_extent_map(em);
+-
+-		ret = btrfs_add_ordered_extent_compress(inode,
+-						async_extent->start,
+-						ins.objectid,
+-						async_extent->ram_size,
+-						ins.offset,
+-						async_extent->compress_type);
+-		if (ret) {
+-			btrfs_drop_extent_cache(inode, async_extent->start,
+-						async_extent->start +
+-						async_extent->ram_size - 1, 0);
+-			goto out_free_reserve;
+-		}
+-		btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+-
++		ret = cow_file_range(inode, async_chunk->locked_page,
++				     start, end, &page_started, &nr_written, 0);
+ 		/*
+-		 * clear dirty, set writeback and unlock the pages.
++		 * If @page_started, cow_file_range() inserted an
++		 * inline extent and took care of all the unlocking
++		 * and IO for us.  Otherwise, we need to submit
++		 * all those pages down to the drive.
+ 		 */
+-		extent_clear_unlock_delalloc(inode, async_extent->start,
+-				async_extent->start +
+-				async_extent->ram_size - 1,
+-				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
+-				PAGE_UNLOCK | PAGE_START_WRITEBACK);
+-		if (btrfs_submit_compressed_write(inode, async_extent->start,
+-				    async_extent->ram_size,
+-				    ins.objectid,
+-				    ins.offset, async_extent->pages,
+-				    async_extent->nr_pages,
+-				    async_chunk->write_flags,
+-				    async_chunk->blkcg_css)) {
+-			const u64 start = async_extent->start;
+-			const u64 end = start + async_extent->ram_size - 1;
+-
+-			btrfs_writepage_endio_finish_ordered(inode, NULL, start,
+-							     end, false);
+-
+-			extent_clear_unlock_delalloc(inode, start, end, NULL, 0,
+-						     PAGE_END_WRITEBACK |
+-						     PAGE_SET_ERROR);
+-			free_async_extent_pages(async_extent);
+-		}
+-		alloc_hint = ins.objectid + ins.offset;
++		if (!page_started && !ret)
++			extent_write_locked_range(&inode->vfs_inode, start,
++						  end, WB_SYNC_ALL);
++		else if (ret && async_chunk->locked_page)
++			unlock_page(async_chunk->locked_page);
+ 		kfree(async_extent);
+-		cond_resched();
 +		return ret;
++	}
++
++	ret = btrfs_reserve_extent(root, async_extent->ram_size,
++				   async_extent->compressed_size,
++				   async_extent->compressed_size,
++				   0, *alloc_hint, &ins, 1, 1);
++	if (ret) {
++		free_async_extent_pages(async_extent);
++		/*
++		 * Here we used to try again by going back to non-compressed
++		 * path for ENOSPC.
++		 * But we can't reserve space even for compressed size, how
++		 * could it work for uncompressed size which requires larger
++		 * size?
++		 * So here we directly go error path.
++		 */
++		goto out_free;
++	}
++
++	/*
++	 * Here we're doing allocation and writeback of the
++	 * compressed pages
++	 */
++	em = create_io_em(inode, start,
++			  async_extent->ram_size, /* len */
++			  start, /* orig_start */
++			  ins.objectid, /* block_start */
++			  ins.offset, /* block_len */
++			  ins.offset, /* orig_block_len */
++			  async_extent->ram_size, /* ram_bytes */
++			  async_extent->compress_type,
++			  BTRFS_ORDERED_COMPRESSED);
++	if (IS_ERR(em)) {
++		ret = PTR_ERR(em);
++		goto out_free_reserve;
++	}
++	free_extent_map(em);
++
++	ret = btrfs_add_ordered_extent_compress(inode, start, /* file_offset */
++					ins.objectid,	/* disk_bytenr */
++					async_extent->ram_size, /* num_bytes */
++					ins.offset, /* disk_num_bytes */
++					async_extent->compress_type);
++	if (ret) {
++		btrfs_drop_extent_cache(inode, start, end, 0);
++		goto out_free_reserve;
+ 	}
+-	return;
++	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
++
++	/*
++	 * clear dirty, set writeback and unlock the pages.
++	 */
++	extent_clear_unlock_delalloc(inode, start, end,
++			NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
++			PAGE_UNLOCK | PAGE_START_WRITEBACK);
++	if (btrfs_submit_compressed_write(inode, start, /* file_offset */
++			    async_extent->ram_size, /* num_bytes */
++			    ins.objectid, /* disk_bytenr */
++			    ins.offset, /* compressed_len */
++			    async_extent->pages, /* compressed_pages */
++			    async_extent->nr_pages,
++			    async_chunk->write_flags,
++			    async_chunk->blkcg_css)) {
++		const u64 start = async_extent->start;
++		const u64 end = start + async_extent->ram_size - 1;
++
++		btrfs_writepage_endio_finish_ordered(inode, NULL, start,
++						     end, 0);
++
++		extent_clear_unlock_delalloc(inode, start, end, NULL, 0,
++					     PAGE_END_WRITEBACK |
++					     PAGE_SET_ERROR);
++		free_async_extent_pages(async_extent);
++	}
++	*alloc_hint = ins.objectid + ins.offset;
++	kfree(async_extent);
++	return ret;
++
+ out_free_reserve:
+ 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
+ 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, 1);
+ out_free:
+-	extent_clear_unlock_delalloc(inode, async_extent->start,
+-				     async_extent->start +
+-				     async_extent->ram_size - 1,
++	extent_clear_unlock_delalloc(inode, start, end,
+ 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
+ 				     EXTENT_DELALLOC_NEW |
+ 				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
+@@ -1003,7 +969,37 @@ static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
+ 				     PAGE_END_WRITEBACK | PAGE_SET_ERROR);
+ 	free_async_extent_pages(async_extent);
+ 	kfree(async_extent);
+-	goto again;
++	return ret;
++}
++
++/*
++ * phase two of compressed writeback.  This is the ordered portion
++ * of the code, which only gets called in the order the work was
++ * queued.  We walk all the async extents created by compress_file_range
++ * and send them down to the disk.
++ */
++static noinline void submit_compressed_extents(struct async_chunk *async_chunk)
++{
++	struct btrfs_inode *inode = BTRFS_I(async_chunk->inode);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	struct async_extent *async_extent;
++	u64 alloc_hint = 0;
++	int ret = 0;
++
++	while (!list_empty(&async_chunk->extents)) {
++		async_extent = list_entry(async_chunk->extents.next,
++					  struct async_extent, list);
++		list_del(&async_extent->list);
++
++		ret = submit_one_async_extent(inode, async_chunk, async_extent,
++					      &alloc_hint);
++		/* Just for developer */
++		btrfs_debug(fs_info,
++"async extent submission failed root=%lld inode=%llu start=%llu len=%llu ret=%d",
++			    inode->root->root_key.objectid,
++			    btrfs_ino(inode), async_extent->start,
++			    async_extent->ram_size, ret);
++	}
+ }
  
--	wait_var_event(cb, atomic_read(&cb->pending_bios) == 0);
-+	wait_var_event(cb, refcount_read(&cb->pending_sectors) ==
-+			   (disk_start + compressed_len - cur_disk_bytenr) >>
-+			   fs_info->sectorsize_bits);
- 	/*
- 	 * Even with previous bio ended, we should still have io not yet
- 	 * submitted, thus need to finish manually.
-@@ -841,7 +821,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	if (!cb)
- 		goto out;
- 
--	atomic_set(&cb->pending_bios, 0);
- 	refcount_set(&cb->pending_sectors,
- 		     compressed_len >> fs_info->sectorsize_bits);
- 	cb->errors = 0;
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 61955581e34f..56eef0821e3e 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -28,9 +28,6 @@ struct btrfs_inode;
- #define	BTRFS_ZLIB_DEFAULT_LEVEL		3
- 
- struct compressed_bio {
--	/* number of bios pending for this compressed extent */
--	atomic_t pending_bios;
--
- 	/* Number of sectors with unfinished IO (unsubmitted or unfinished) */
- 	refcount_t pending_sectors;
- 
+ static u64 get_extent_allocation_hint(struct btrfs_inode *inode, u64 start,
 -- 
 2.32.0
 

@@ -2,143 +2,95 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D6B9C4320E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 11:11:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AFA7C4320A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 12:23:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6415561131
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 11:11:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6F6DE61131
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 12:23:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236447AbhH3LMf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Aug 2021 07:12:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58300 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236335AbhH3LMf (ORCPT
+        id S231550AbhH3MYD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Aug 2021 08:24:03 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:58754 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229828AbhH3MYC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Aug 2021 07:12:35 -0400
-Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B4AC1C061575;
-        Mon, 30 Aug 2021 04:11:41 -0700 (PDT)
-Received: by mail-qt1-x835.google.com with SMTP id b4so5553149qtx.0;
-        Mon, 30 Aug 2021 04:11:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=Jorg+zRTW/4Qd8VQ2xAuCFDLUayV7AucKvzcuBld7o4=;
-        b=KXJox4IZHUj0rrOIRQgsOD2QvEVAzWrYFAPSBhzwBISA34SnAuzxvfgTvG7rH8rM1/
-         glxb4PnTJFhvPgU41ggcwKxgriSqTdPyzAhVXsaqyiloSTj0T4PMQ1mCgeqANQwvDE4o
-         ju60ZFP2nTL9f0tBc+HmLAfsLshmo6KTMSrmRbZqW+EqHY2gD9jdONxO2/7+QuVgSeHG
-         wzjXQ0JiMi/f1QInPdVw549F3cl4CHbiiD5u2E4KQ+7qnVrhascZ8Hxyu6kePcmmaFIb
-         sByLI9gZQd8sGG5uRyG7YmTxKevBET3ss+UYP3t3PKxZAVq5RBKAX6ghK5LTJHsN6EdJ
-         FqWg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=Jorg+zRTW/4Qd8VQ2xAuCFDLUayV7AucKvzcuBld7o4=;
-        b=HH/LRGVQWHDrMpIe9b12J4YWykR/2X3sFY42f0jVly4eBr8YtwWm93QS2VTRe6ZDvi
-         2756yK9Qww78xbIk9EQEu+7Gbc9+Do133TORFrjL/u4xmWwuBf2X/VR88deMPbVLVpZ1
-         aGMRR/BL8C1RDf0IkfhLt1dY6EsyemddvqnJMDum7cBqXWRifehtPf59aLCUN+uubBJB
-         c7p1e7y0yTSrxKtAhXa9/nYBAJeGQ7ItDhpdUaa86ZInt5R05NDURN5H9LgrY0i/dy6U
-         rpBHe5UNzkb2tgWbTii7TgyTrhI9wSjUXKMC8e0xOeiXNMXPKYIJbTcxZRaA/OoPM2/z
-         9HVg==
-X-Gm-Message-State: AOAM531a3O+MmJ3V2XSJJIPYlKqYTSHgnfW/RYFdY34Lm36Ci9hplhA1
-        qXQ4ZchezM6/5CCPPweNSmUdY4hNIyHJyqyqcVnhVW5x
-X-Google-Smtp-Source: ABdhPJzJMP0DofRAMtBJhxXUicmGWlYTBz+zDyBX1dRMRz7ojBa79gaajnnAJDutdUKw0LDkz7GQyM2Oq5K71319pJ4=
-X-Received: by 2002:ac8:424c:: with SMTP id r12mr20257934qtm.183.1630321900982;
- Mon, 30 Aug 2021 04:11:40 -0700 (PDT)
+        Mon, 30 Aug 2021 08:24:02 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 45E322009B;
+        Mon, 30 Aug 2021 12:23:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1630326188; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=Bkj8H6STZ7TlRsKKK76y+kvd6CtJjmzSZPtHTvYc09E=;
+        b=SU+vtYZdrWmQ26UXWdVBLFr9roYa+A9ntTCbWsCyy589AfxoDufsHAudVZKiSx3pOncNAq
+        4QGI65hXoUhaQX4G5xruxci1GHmrux699ZeN3zW7hc69d8LPb/pFg/2Nwg3PEqR3Gb9d8F
+        BGyWrrV3OHsSMvsK0ZWCdnV67DYNW7Y=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 094A413738;
+        Mon, 30 Aug 2021 12:23:07 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id YoPzOqvNLGHOYwAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Mon, 30 Aug 2021 12:23:07 +0000
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH 1/2] common/renameat2: Make _rename_tests_source_dest take flags as 4th arguement
+Date:   Mon, 30 Aug 2021 15:23:05 +0300
+Message-Id: <20210830122306.882081-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-References: <20210819131456.304721-1-nborisov@suse.com> <CAL3q7H57NsQ2WhdsC3=gYftFp_JUKHVxNgCAQuXPwvFzux9CaA@mail.gmail.com>
- <b49f409f-e5cc-6d13-ef6a-2ab25f95d19e@suse.com> <CAL3q7H7WyC9LQXJYYe9DCTPPiL-Q1P_gyNGptEBMH=2br5dE-g@mail.gmail.com>
- <9f83250b-db93-bdf8-5288-0259afdf725b@suse.com>
-In-Reply-To: <9f83250b-db93-bdf8-5288-0259afdf725b@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Mon, 30 Aug 2021 12:11:30 +0100
-Message-ID: <CAL3q7H526ckNLV=+S-mv0tbBJNnL3q=m2cTP04feSVPGzfcSrw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: Add test for rename exchange behavior between subvolumes
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 30, 2021 at 12:08 PM Nikolay Borisov <nborisov@suse.com> wrote:
->
->
->
-> On 30.08.21 =D0=B3. 13:56, Filipe Manana wrote:
-> > On Mon, Aug 30, 2021 at 8:18 AM Nikolay Borisov <nborisov@suse.com> wro=
-te:
-> >>
-> >>
-> >>
-> >> <snip>
-> >>> Finally, this would also be a good opportunity to test regular rename=
-s
-> >>> with subvolumes too, as we had bugs and regressions in the past like
-> >>> in commit 4871c1588f92c6c13f4713a7009f25f217055807 ("Btrfs: use right
-> >>> root when checking for hash collision
-> >>> "), and never got any test cases for them.
-> >>
-> >> What specific tests do you have in mind? Ordinary renames of files
-> >> within a subvolume are already tested by merit of generic geneirc/02[3=
-45].
-> >
-> > So besides the case mentioned in that patch's changelog (renaming a
-> > subvolume), checking that we can't rename an inode across subvolumes.
-> > Something like checking that:
-> >
-> > rename /mnt/subvol1/file /mnt/subvol2/file
-> >
-> > fails with -EXDEV.
->
-> But this is already checked by merit of using this line:
->
-> _rename_tests_source_dest $SCRATCH_MNT/subvol1/src
-> $SCRATCH_MNT/subvol2/dst "cross-subvol" "-x"
->
->
-> it tests multiple combinations of regular/symbolic/directory/dev/null
-> pairs. I.e :
->
-> cross-subvol regu/regu -> Invalid cross-device link
->
->
->
-> So this is already covered I'd say. Or you mean to test those
-> combinations even without rename exchange, which would boil down to
-> calling _rename_tests_source_dest without the -x flag.
+Currently this function takes the flags parameter to be passed to the
+renameat program by assuming there exists a 'flags' variable. Instead,
+make the flags being passed as 4th argument to the function.
 
-Yes, without "-x" (that's what I meant by "regular renames").
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ common/renameat2 | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
->
-> >
-> > Thanks.
-> >
-> >
-> >>
-> >> The test in the patch you cited is basically renaming a subvolume with=
-in
-> >> the same subvolume, that's easy enough.
-> >>
-> >> <snip>
-> >
-> >
-> >
+diff --git a/common/renameat2 b/common/renameat2
+index 4b64eea7824b..4d25d7cebf94 100644
+--- a/common/renameat2
++++ b/common/renameat2
+@@ -61,6 +61,7 @@ _rename_tests_source_dest()
+ 	local source=$1
+ 	local dest=$2
+ 	local options=$3
++	local flags=$4
+ 
+ 	for stype in none regu symb dire tree; do
+ 		for dtype in none regu symb dire tree; do
+@@ -90,11 +91,11 @@ _rename_tests()
+ 	local flags=$2
+ 
+ 	#same directory renames
+-	_rename_tests_source_dest $testdir/src $testdir/dst     "samedir "
++	_rename_tests_source_dest $testdir/src $testdir/dst     "samedir " $flags
+ 
+ 	#cross directory renames
+ 	mkdir $testdir/x $testdir/y
+-	_rename_tests_source_dest $testdir/x/src $testdir/y/dst "crossdir"
++	_rename_tests_source_dest $testdir/x/src $testdir/y/dst "crossdir" $flags
+ 	rmdir $testdir/x $testdir/y
+ }
+ 
+-- 
+2.17.1
 
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

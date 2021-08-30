@@ -2,86 +2,210 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1B5BC4320A
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 15:36:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21988C4320E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 15:36:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8063960ED8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 15:36:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 05FB560F42
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 15:36:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237564AbhH3Phh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Aug 2021 11:37:37 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:58200 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237085AbhH3Phh (ORCPT
+        id S237571AbhH3Phi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Aug 2021 11:37:38 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:37494 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S237337AbhH3Phh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 30 Aug 2021 11:37:37 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id B2BB122093;
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 8159A200D5;
         Mon, 30 Aug 2021 15:36:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1630337802;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1630337802; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=t5owUn1CVmiCL9vf8pZ9FM+Yys3/QMS+AZd03ZO4Aa4=;
-        b=T2sdfBOqVJynzz6HWgg4QU5LzK+LIjO4JmFGNfTQiFpxTn8R7Vkxtr4jBT0VSPhgeLE4cc
-        ZjW7g/9hOl5BPLg3KV2tOXlQcw+2ZMCTXRu3lyfBUlvDoyiOF9mB+oTtevJsVKUHM8bXjy
-        NU3Wy3fiCho60Rnf0c6bOCBr0mziN9Y=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1630337802;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=t5owUn1CVmiCL9vf8pZ9FM+Yys3/QMS+AZd03ZO4Aa4=;
-        b=5f8Qz65RJOcjqRNpAtjYyGXEAWrJLZVWgJ5VQQ0csKNj6gDfOvKhHsIWt0yyfFXo2Zmn0r
-        BbReQ4oyFSmrinBQ==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id AA6C5A3B97;
+        bh=AN0f7m6ssa/pOf/g/W6KgPIkYYzGx5+b+JDbYkjTeoE=;
+        b=GO3OwdFf5Xu4g75LvRAG3xW1TmpGoKN1FpwEqxzjzjspdIipzjUQiJIWljPWRpqEfKEVa9
+        2hgWvcoG9YDnHyJldsVR1MYWDHfDmX4ojsNTZctW27hxgOUU4eBxEMSHm1zKjjDoPEdxOv
+        uJV8AxpDk2R212cHRjDsq6eawOjJrOk=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 4408F139A5;
         Mon, 30 Aug 2021 15:36:42 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 67EC6DA733; Mon, 30 Aug 2021 17:33:52 +0200 (CEST)
-Date:   Mon, 30 Aug 2021 17:33:52 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [RESEND PATCH] btrfs: Refactor error handling in btrfs_zero_range
-Message-ID: <20210830153351.GC3379@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210830142547.889802-1-nborisov@suse.com>
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id l2TuDQr7LGEcGAAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Mon, 30 Aug 2021 15:36:42 +0000
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: Add test for rename/exchange behavior between subvolumes
+Date:   Mon, 30 Aug 2021 18:36:41 +0300
+Message-Id: <20210830153641.893416-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210830122306.882081-2-nborisov@suse.com>
+References: <20210830122306.882081-2-nborisov@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210830142547.889802-1-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 30, 2021 at 05:25:47PM +0300, Nikolay Borisov wrote:
-> The major complexity when it comes to error handling in btrfs_zero_range
-> stems from the code executed under the 'reserve_space' label. Rather
-> than it having an effect on the whole of btrfs_zero_range refactor it
-> so that error handling specific to the functions called in this branch
-> is contained only within the branch itself. This obviates the need for
-> having the 'space_reserved' local flag since btrfs_free_reserved_data_space
-> is called from the 2 error branches it's needed. Furthermore, this
-> rids the code from the out label and enables converting most 'goto out'
-> statements to simiple 'return ret' making the function easier to read.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
-> 
-> I sent this patch some time ago but didn't get any replies so now I'm resending
-> it again.
+This tests ensures that renames/exchanges across subvolumes work only
+for other subvolumes and are otherwise forbidden and fail.
 
-I looked up previous postings, both marked as dropped but without mail
-replies so I think we discussed that off list. Looking at it again I
-don't like the course of the change, replacing gotos with returns, the
-pattern does not look like the one where it's ok.
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+This is the real v2.
+
+Changes in V2:
+ * Added cross-subvol rename tests
+ * Added cross-subvol subvolume rename test
+ * Added ordinary volume rename test
+ * Removed explicit sync
+
+
+ tests/btrfs/246     | 60 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/246.out | 54 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 114 insertions(+)
+ create mode 100755 tests/btrfs/246
+ create mode 100644 tests/btrfs/246.out
+
+diff --git a/tests/btrfs/246 b/tests/btrfs/246
+new file mode 100755
+index 000000000000..53039df38993
+--- /dev/null
++++ b/tests/btrfs/246
+@@ -0,0 +1,60 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2021 SUSE Linux Products GmbH.  All Rights Reserved.
++#
++# FS QA Test 246
++#
++# Tests rename/exchange behavior when subvolumes are involved. Rename/exchanges
++# across subvolumes are forbidden. This is also a regression test for
++# 3f79f6f6247c ("btrfs: prevent rename2 from exchanging a subvol with a
++# directory from different parents").
++#
++. ./common/preamble
++_begin_fstest auto quick rename subvol
++
++# Import common functions.
++ . ./common/renameat2
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_require_renameat2 exchange
++_require_scratch
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++
++# Create 2 subvols to use as parents for the rename ops
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol1 1>/dev/null
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol2 1>/dev/null
++
++# Ensure cross subvol ops are forbidden
++_rename_tests_source_dest $SCRATCH_MNT/subvol1/src $SCRATCH_MNT/subvol2/dst "cross-subvol" "-x"
++
++# Prepare a subvolume and a directory whose parents are different subvolumes
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol1/sub-subvol 1>/dev/null
++mkdir $SCRATCH_MNT/subvol2/dir
++
++# Ensure exchanging a subvol with a dir when both parents are different fails
++$here/src/renameat2 -x $SCRATCH_MNT/subvol1/sub-subvol $SCRATCH_MNT/subvol2/dir
++
++echo "ordinary rename"
++# Test also ordinary renames
++_rename_tests_source_dest $SCRATCH_MNT/subvol1/src $SCRATCH_MNT/subvol2/dst "cross-subvol"
++
++echo "subvolumes rename"
++# Rename subvol1/sub-subvol -> subvol2/sub-subvol
++$here/src/renameat2  $SCRATCH_MNT/subvol1/sub-subvol $SCRATCH_MNT/subvol2/sub-subvol
++# Now create another subvol under subvol1/
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol1/sub-subvol 1>/dev/null
++# and exchange the two
++$here/src/renameat2 -x $SCRATCH_MNT/subvol2/sub-subvol $SCRATCH_MNT/subvol1/sub-subvol
++
++# simple rename of a subvolume in the same directory, should catch
++# 4871c1588f92 ("Btrfs: use right root when checking for hash collision")
++mv $SCRATCH_MNT/subvol2/ $SCRATCH_MNT/subvol2.
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/246.out b/tests/btrfs/246.out
+new file mode 100644
+index 000000000000..5db90cf2bd9a
+--- /dev/null
++++ b/tests/btrfs/246.out
+@@ -0,0 +1,54 @@
++QA output created by 246
++cross-subvol none/none -> No such file or directory
++cross-subvol none/regu -> No such file or directory
++cross-subvol none/symb -> No such file or directory
++cross-subvol none/dire -> No such file or directory
++cross-subvol none/tree -> No such file or directory
++cross-subvol regu/none -> No such file or directory
++cross-subvol regu/regu -> Invalid cross-device link
++cross-subvol regu/symb -> Invalid cross-device link
++cross-subvol regu/dire -> Invalid cross-device link
++cross-subvol regu/tree -> Invalid cross-device link
++cross-subvol symb/none -> No such file or directory
++cross-subvol symb/regu -> Invalid cross-device link
++cross-subvol symb/symb -> Invalid cross-device link
++cross-subvol symb/dire -> Invalid cross-device link
++cross-subvol symb/tree -> Invalid cross-device link
++cross-subvol dire/none -> No such file or directory
++cross-subvol dire/regu -> Invalid cross-device link
++cross-subvol dire/symb -> Invalid cross-device link
++cross-subvol dire/dire -> Invalid cross-device link
++cross-subvol dire/tree -> Invalid cross-device link
++cross-subvol tree/none -> No such file or directory
++cross-subvol tree/regu -> Invalid cross-device link
++cross-subvol tree/symb -> Invalid cross-device link
++cross-subvol tree/dire -> Invalid cross-device link
++cross-subvol tree/tree -> Invalid cross-device link
++Invalid cross-device link
++ordinary rename
++cross-subvol none/none -> No such file or directory
++cross-subvol none/regu -> No such file or directory
++cross-subvol none/symb -> No such file or directory
++cross-subvol none/dire -> No such file or directory
++cross-subvol none/tree -> No such file or directory
++cross-subvol regu/none -> Invalid cross-device link
++cross-subvol regu/regu -> Invalid cross-device link
++cross-subvol regu/symb -> Invalid cross-device link
++cross-subvol regu/dire -> Is a directory
++cross-subvol regu/tree -> Is a directory
++cross-subvol symb/none -> Invalid cross-device link
++cross-subvol symb/regu -> Invalid cross-device link
++cross-subvol symb/symb -> Invalid cross-device link
++cross-subvol symb/dire -> Is a directory
++cross-subvol symb/tree -> Is a directory
++cross-subvol dire/none -> Invalid cross-device link
++cross-subvol dire/regu -> Not a directory
++cross-subvol dire/symb -> Not a directory
++cross-subvol dire/dire -> Invalid cross-device link
++cross-subvol dire/tree -> Invalid cross-device link
++cross-subvol tree/none -> Invalid cross-device link
++cross-subvol tree/regu -> Not a directory
++cross-subvol tree/symb -> Not a directory
++cross-subvol tree/dire -> Invalid cross-device link
++cross-subvol tree/tree -> Invalid cross-device link
++subvolumes rename
+--
+2.17.1
+

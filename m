@@ -2,347 +2,344 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-23.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	INCLUDES_PULL_REQUEST,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37E37C4320E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 13:21:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A89CAC432BE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 13:53:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0BABF60295
-	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 13:21:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9126D60C3F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 30 Aug 2021 13:53:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236686AbhH3NW0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 30 Aug 2021 09:22:26 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:42768 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229446AbhH3NWZ (ORCPT
+        id S236943AbhH3NyH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 30 Aug 2021 09:54:07 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:38930 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236907AbhH3NyH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 30 Aug 2021 09:22:25 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 1892F200AB;
-        Mon, 30 Aug 2021 13:21:31 +0000 (UTC)
+        Mon, 30 Aug 2021 09:54:07 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 4464C22161;
+        Mon, 30 Aug 2021 13:53:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1630329691; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=/mxb5bwbKvhJ2pxEIrBosdQjLxp69cwkKXuCcp+7EAc=;
-        b=OXRsTxXrNJp8FCs4sDGAW5nQUG/JqzcCp2xIyPvm9ayTTeAnakus70WQFkPHfeU7k0J2OQ
-        QX4ZnuHzU46o/GKuQ+GDPp/cwcxit1iCtyUVpTe7nXr6wQ2Kb+OU3i+c5RBHvuQ/DPW1wU
-        2JSgKN6Cu5PsW3vDGcL8qxvvA6CkvyE=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 0D5EFA3B8C;
-        Mon, 30 Aug 2021 13:21:31 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D0C48DA733; Mon, 30 Aug 2021 15:18:40 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs updates for 5.15
-Date:   Mon, 30 Aug 2021 15:18:39 +0200
-Message-Id: <cover.1630327914.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.32.0
+        t=1630331592; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=GeYPEL+rQudNW2iLkG8c4k3xUxDaYKoBl6MMiRB1XBQ=;
+        b=FZ1Xvar/AqNwky8at6eaEq/bI8OKlPN/w2bS2DW+Gkos16+1n1bEcrJA5xBRFKvJj/DHb9
+        ML36QRFUbv+isUbwzK4+tOV2uqr6FfCXGJIMRpPY+QmizM+qG5Gb8FF1tMxQ7Ex0bkZqG6
+        vRKcrJJtdSrUO5mTBVv0K6utDWwALXU=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 117C313982;
+        Mon, 30 Aug 2021 13:53:12 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id SEWkAcjiLGHSegAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Mon, 30 Aug 2021 13:53:12 +0000
+Subject: Re: [PATCH 6/8] btrfs: send: Use btrfs_for_each_slot macro
+To:     Marcos Paulo de Souza <mpdesouza@suse.com>,
+        linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com
+References: <20210826164054.14993-1-mpdesouza@suse.com>
+ <20210826164054.14993-7-mpdesouza@suse.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <7cdf951f-7ecc-8946-5c2a-0036457e70ac@suse.com>
+Date:   Mon, 30 Aug 2021 16:53:11 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
+In-Reply-To: <20210826164054.14993-7-mpdesouza@suse.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
 
-the highlights of this round are integrations with fs-verity and
-idmapped mounts, the rest is usual mix of minor improvements, speedups
-and cleanups.
 
-Please note there are some patches outside of btrfs, namely updating
-some VFS interfaces, all straightforward and acked.
+On 26.08.21 г. 19:40, Marcos Paulo de Souza wrote:
+> This makes the code much simpler and smaller.
+> 
+> No functional changes.
+> 
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+> ---
+>  fs/btrfs/send.c | 222 +++++++++++++-----------------------------------
+>  1 file changed, 59 insertions(+), 163 deletions(-)
+> 
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index afdcbe7844e0..3e32886e171e 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -2647,6 +2647,7 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
+>   */
+>  static int did_create_dir(struct send_ctx *sctx, u64 dir)
+>  {
+> +	int iter_ret;
+>  	int ret = 0;
+>  	struct btrfs_path *path = NULL;
+>  	struct btrfs_key key;
+> @@ -2654,43 +2655,23 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
+>  	struct btrfs_key di_key;
+>  	struct extent_buffer *eb;
+>  	struct btrfs_dir_item *di;
+> -	int slot;
+>  
+>  	path = alloc_path_for_send();
+> -	if (!path) {
+> -		ret = -ENOMEM;
+> -		goto out;
+> -	}
+> +	if (!path)
+> +		return -ENOMEM;
+>  
 
-Please pull, thanks.
+This is irrelevant changes, albeit it's good. But please refrain from
+mixing unrelated changes as it makes review a bit harder.
 
----
-Features:
+>  	key.objectid = dir;
+>  	key.type = BTRFS_DIR_INDEX_KEY;
+>  	key.offset = 0;
+> -	ret = btrfs_search_slot(NULL, sctx->send_root, &key, path, 0, 0);
+> -	if (ret < 0)
+> -		goto out;
+> -
+> -	while (1) {
+> -		eb = path->nodes[0];
+> -		slot = path->slots[0];
 
-- fs-verity support, using standard ioctls, backward compatible with
-  read-only limitation on inodes with previously enabled fs-verity
+In the original code we take the node/slot in 2 local variables for
+convenience.
+> -		if (slot >= btrfs_header_nritems(eb)) {
+> -			ret = btrfs_next_leaf(sctx->send_root, path);
+> -			if (ret < 0) {
+> -				goto out;
+> -			} else if (ret > 0) {
+> -				ret = 0;
+> -				break;
+> -			}
+> -			continue;
+> -		}
+> -
+> -		btrfs_item_key_to_cpu(eb, &found_key, slot);
+> +	btrfs_for_each_slot(sctx->send_root, &key, &found_key, path, iter_ret) {
+>  		if (found_key.objectid != key.objectid ||
+>  		    found_key.type != key.type) {
 
-- idmapped mount support
+nit: The way the checks for termination are performed are somwhat
+inconsistent. Here the original key is not touched hence its
+.object/.type can be used when checking whether the found key is
+appropriate, but in btrfs_unlink_all_paths you use 'key' as both an
+input and an output and for the terminating condition you refer to the
+original vales that the search key was set to. I don't have an opinion
+which is better but I'd rather have a single style in the file.
 
-- make mount with rescue=ibadroots more tolerant to partially damaged
-  trees
+>  			ret = 0;
+>  			goto out;
+>  		}
+>  
+> -		di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
+> +		eb = path->nodes[0];
+> +		di = btrfs_item_ptr(eb, path->slots[0], struct btrfs_dir_item);
 
-- allow raid0 on a single device and raid10 on two devices, degenerate
-  cases but might be useful as an intermediate step during conversion to
-  other profiles
+nit: In the refactored code you eliminated the 'slot' variable but
+retained the eb. This seems to be a rather arbitrary choice. While not
+wrong technically, it adds unnecessary diff hunks, which again make
+review more involved that it could have been. What's more, in this
+particular function actually retaining the 'eb' and 'slot definition and
+making them local to the btrfs_for_each_slot loop would have resulted in
+somewhat better code (albeit this might be subjective):
 
-- zoned mode block group auto reclaim can be disabled via sysfs knob
+https://pastebin.com/avye4wZe
 
-Performance improvements:
+No need to resend but just something to keep in mind for future patches.
 
-- continue readahead of node siblings even if target node is in memory,
-  could speed up full send (on sample test +11%)
 
-- batching of delayed items can speed up creating many files
+>  		btrfs_dir_item_key_to_cpu(eb, di, &di_key);
+>  
+>  		if (di_key.type != BTRFS_ROOT_ITEM_KEY &&
 
-- fsync/tree-log speedups
-  - avoid unnecessary work (gains +2% throughput, -2% run time on
-    sample load)
-  - reduced lock contention on renames (on dbench +4% throughput, up to
-    -30% latency)
+<snip>
 
-Fixes:
+> @@ -4864,39 +4816,18 @@ static int process_all_new_xattrs(struct send_ctx *sctx)
+>  	key.objectid = sctx->cmp_key->objectid;
+>  	key.type = BTRFS_XATTR_ITEM_KEY;
+>  	key.offset = 0;
+> -	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> -	if (ret < 0)
+> -		goto out;
+> -
+> -	while (1) {
+> -		eb = path->nodes[0];
+> -		slot = path->slots[0];
+> -		if (slot >= btrfs_header_nritems(eb)) {
+> -			ret = btrfs_next_leaf(root, path);
+> -			if (ret < 0) {
+> -				goto out;
+> -			} else if (ret > 0) {
+> -				ret = 0;
+> -				break;
+> -			}
+> -			continue;
+> -		}
+> -
+> -		btrfs_item_key_to_cpu(eb, &found_key, slot);
+> +	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
+>  		if (found_key.objectid != key.objectid ||
+> -		    found_key.type != key.type) {
+> -			ret = 0;
 
-- various zoned mode fixes
+nit: You've removed this 'ret = 0', however AFAICS this is ok, because
+iterate_dir_item returns either 0 or a negative error code so we can't
+return from btrfs_for_each_slot with ret set to anything other than an
+error code or 0.
 
-- preemptive flushing threshold tuning, avoid excessive work on almost
-  full filesystems
+> -			goto out;
+> -		}
+> +		    found_key.type != key.type)
+> +			break;
+>  
+>  		ret = iterate_dir_item(root, path, __process_new_xattr, sctx);
+>  		if (ret < 0)
+> -			goto out;
+> -
+> -		path->slots[0]++;
+> +			break;
+>  	}
+> +	if (iter_ret < 0)
+> +		ret = iter_ret;
+>  
+> -out:
+>  	btrfs_free_path(path);
+>  	return ret;
+>  }
 
-Core:
+<snip>
 
-- continued subpage support, preparation for implementing remaining
-  features like compression and defragmentation; with some limitations,
-  write is now enabled on 64K page systems with 4K sectors, still
-  considered experimental
-  - no readahead on compressed reads
-  - inline extents disabled
-  - disabled raid56 profile conversion and mount
+> @@ -5954,40 +5884,19 @@ static int process_all_extents(struct send_ctx *sctx)
+>  	key.objectid = sctx->cmp_key->objectid;
+>  	key.type = BTRFS_EXTENT_DATA_KEY;
+>  	key.offset = 0;
+> -	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+> -	if (ret < 0)
+> -		goto out;
+> -
+> -	while (1) {
+> -		eb = path->nodes[0];
+> -		slot = path->slots[0];
+> -
+> -		if (slot >= btrfs_header_nritems(eb)) {
+> -			ret = btrfs_next_leaf(root, path);
+> -			if (ret < 0) {
+> -				goto out;
+> -			} else if (ret > 0) {
+> -				ret = 0;
+> -				break;
+> -			}
+> -			continue;
+> -		}
+> -
+> -		btrfs_item_key_to_cpu(eb, &found_key, slot);
+> -
+> +	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
+>  		if (found_key.objectid != key.objectid ||
+> -		    found_key.type != key.type) {
+> -			ret = 0;
 
-- improved flushing logic, fixing early ENOSPC on some workloads
+However, here I think this is significant because process_extent can
+return 1 via
+process_extent
+ find_extent_clone
+   send_write_or_clone
+     clone_range
+      while (true) loop and the items are exhausted, we break with ret = 1
 
-- inode flags have been internally split to read-only and read-write
-  incompat bit parts, used by fs-verity
 
-- new tree items for fs-verity
-  - descriptor item
-  - Merkle tree item
+> +		    found_key.type != key.type)
+>  			goto out;
+> -		}
+>  
+>  		ret = process_extent(sctx, path, &found_key);
+>  		if (ret < 0)
+>  			goto out;
+> -
+> -		path->slots[0]++;
+>  	}
+>  
+> +	if (iter_ret < 0)
+> +		ret = iter_ret;
+> +
+>  out:
+>  	btrfs_free_path(path);
+>  	return ret;
+> @@ -6180,36 +6089,20 @@ static int btrfs_unlink_all_paths(struct send_ctx *sctx)
+>  	struct btrfs_path *path;
+>  	struct btrfs_key key;
+>  	struct parent_paths_ctx ctx;
+> -	int ret;
+> +	int iter_ret;
+> +	int ret = 0;
+>  
+>  	path = alloc_path_for_send();
+>  	if (!path)
+>  		return -ENOMEM;
+>  
+> -	key.objectid = sctx->cur_ino;
+> -	key.type = BTRFS_INODE_REF_KEY;
+> -	key.offset = 0;
+> -	ret = btrfs_search_slot(NULL, sctx->parent_root, &key, path, 0, 0);
+> -	if (ret < 0)
+> -		goto out;
+> -
+>  	ctx.refs = &deleted_refs;
+>  	ctx.sctx = sctx;
+>  
+> -	while (true) {
+> -		struct extent_buffer *eb = path->nodes[0];
+> -		int slot = path->slots[0];
+> -
+> -		if (slot >= btrfs_header_nritems(eb)) {
+> -			ret = btrfs_next_leaf(sctx->parent_root, path);
+> -			if (ret < 0)
+> -				goto out;
+> -			else if (ret > 0)
+> -				break;
+> -			continue;
+> -		}
+> -
+> -		btrfs_item_key_to_cpu(eb, &key, slot);
+> +	key.objectid = sctx->cur_ino;
+> +	key.type = BTRFS_INODE_REF_KEY;
+> +	key.offset = 0;
 
-- inode operations extended to be namespace-aware
+Those 3 lines are moved needlessly after the 2 ctx assignments which
+serve no purpose other than to increase the diff.
 
-- cleanups and refactoring
-
-Generic code changes:
-
-- fs: new export filemap_fdatawrite_wbc
-
-- fs: removed sync_inode
-
-- block: bio_trim argument type fixups
-
-- vfs: add namespace-aware lookup
-
-----------------------------------------------------------------
-The following changes since commit e22ce8eb631bdc47a4a4ea7ecf4e4ba499db4f93:
-
-  Linux 5.14-rc7 (2021-08-22 14:24:56 -0700)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.15-tag
-
-for you to fetch changes up to 0d977e0eba234e01a60bdde27314dc21374201b3:
-
-  btrfs: reset replace target device to allocation state on close (2021-08-23 13:57:18 +0200)
-
-----------------------------------------------------------------
-Anand Jain (4):
-      btrfs: check-integrity: drop unnecessary function prototypes
-      btrfs: cleanup fs_devices pointer usage in btrfs_trim_fs
-      btrfs: simplify return values in btrfs_check_raid_min_devices
-      btrfs: sysfs: document structures and their associated files
-
-Boris Burkov (3):
-      btrfs: add ro compat flags to inodes
-      btrfs: initial fsverity support
-      btrfs: verity metadata orphan items
-
-Chaitanya Kulkarni (2):
-      block: fix argument type of bio_trim()
-      btrfs: fix argument type of btrfs_bio_clone_partial()
-
-Christian Brauner (20):
-      namei: add mapping aware lookup helper
-      btrfs: handle idmaps in btrfs_new_inode()
-      btrfs: allow idmapped rename inode op
-      btrfs: allow idmapped getattr inode op
-      btrfs: allow idmapped mknod inode op
-      btrfs: allow idmapped create inode op
-      btrfs: allow idmapped mkdir inode op
-      btrfs: allow idmapped symlink inode op
-      btrfs: allow idmapped tmpfile inode op
-      btrfs: allow idmapped setattr inode op
-      btrfs: allow idmapped permission inode op
-      btrfs: check whether fsgid/fsuid are mapped during subvolume creation
-      btrfs: allow idmapped SNAP_CREATE/SUBVOL_CREATE ioctls
-      btrfs: allow idmapped SNAP_DESTROY ioctls
-      btrfs: relax restrictions for SNAP_DESTROY_V2 with subvolids
-      btrfs: allow idmapped SET_RECEIVED_SUBVOL ioctls
-      btrfs: allow idmapped SUBVOL_SETFLAGS ioctl
-      btrfs: allow idmapped INO_LOOKUP_USER ioctl
-      btrfs: handle ACLs on idmapped mounts
-      btrfs: allow idmapped mount
-
-David Sterba (18):
-      btrfs: add special case to setget helpers for 64k pages
-      btrfs: drop from __GFP_HIGHMEM all allocations
-      btrfs: compression: drop kmap/kunmap from lzo
-      btrfs: compression: drop kmap/kunmap from zlib
-      btrfs: compression: drop kmap/kunmap from zstd
-      btrfs: compression: drop kmap/kunmap from generic helpers
-      btrfs: check-integrity: drop kmap/kunmap for block pages
-      btrfs: switch uptodate to bool in btrfs_writepage_endio_finish_ordered
-      btrfs: remove uptodate parameter from btrfs_dec_test_first_ordered_pending
-      btrfs: make btrfs_next_leaf static inline
-      btrfs: tree-checker: use table values for stripe checks
-      btrfs: tree-checker: add missing stripe checks for raid1c3/4 profiles
-      btrfs: uninline btrfs_bg_flags_to_raid_index
-      btrfs: merge alloc_device helpers
-      btrfs: simplify data stripe calculation helpers
-      btrfs: constify and cleanup variables in comparators
-      btrfs: allow degenerate raid0/raid10
-      btrfs: print if fsverity support is built in when loading module
-
-Desmond Cheong Zhi Xi (1):
-      btrfs: reset replace target device to allocation state on close
-
-Filipe Manana (14):
-      btrfs: continue readahead of siblings even if target node is in memory
-      btrfs: improve the batch insertion of delayed items
-      btrfs: stop doing GFP_KERNEL memory allocations in the ref verify tool
-      btrfs: remove racy and unnecessary inode transaction update when using no-holes
-      btrfs: avoid unnecessary log mutex contention when syncing log
-      btrfs: remove unnecessary list head initialization when syncing log
-      btrfs: avoid unnecessary lock and leaf splits when updating inode in the log
-      btrfs: remove ignore_offset argument from btrfs_find_all_roots()
-      btrfs: eliminate some false positives when checking if inode was logged
-      btrfs: do not pin logs too early during renames
-      btrfs: remove unnecessary NULL check for the new inode during rename exchange
-      btrfs: remove no longer needed full sync flag check at inode_logged()
-      btrfs: update comment at log_conflicting_inodes()
-      btrfs: avoid unnecessarily logging directories that had no changes
-
-Goldwyn Rodrigues (4):
-      btrfs: allocate file_ra_state on stack in readahead_cache
-      btrfs: allocate btrfs_ioctl_quota_rescan_args on stack
-      btrfs: allocate btrfs_ioctl_defrag_range_args on stack
-      btrfs: allocate backref_ctx on stack in find_extent_clone
-
-Johannes Thumshirn (2):
-      btrfs: zoned: remove max_zone_append_size logic
-      btrfs: zoned: allow disabling of zone auto reclaim
-
-Josef Bacik (11):
-      btrfs: wake up async_delalloc_pages waiters after submit
-      btrfs: include delalloc related info in dump space info tracepoint
-      btrfs: enable a tracepoint when we fail tickets
-      btrfs: use delalloc_bytes to determine flush amount for shrink_delalloc
-      btrfs: wait on async extents when flushing delalloc
-      fs: add a filemap_fdatawrite_wbc helper
-      btrfs: use the filemap_fdatawrite_wbc helper for delalloc shrinking
-      9p: migrate from sync_inode to filemap_fdatawrite_wbc
-      fs: kill sync_inode
-      btrfs: reduce the preemptive flushing threshold to 90%
-      btrfs: do not do preemptive flushing if the majority is global rsv
-
-Marcos Paulo de Souza (7):
-      btrfs: remove max argument from generic_bin_search
-      btrfs: pass NULL as trans to btrfs_search_slot if we only want to search
-      btrfs: use btrfs_next_leaf instead of btrfs_next_item when slots > nritems
-      btrfs: remove unneeded return variable in btrfs_lookup_file_extent
-      btrfs: introduce btrfs_lookup_match_dir
-      btrfs: introduce btrfs_search_backwards function
-      btrfs: tree-log: check btrfs_lookup_data_extent return value
-
-Naohiro Aota (5):
-      btrfs: drop unnecessary ASSERT from btrfs_submit_direct()
-      btrfs: zoned: suppress reclaim error message on EAGAIN
-      btrfs: zoned: fix block group alloc_offset calculation
-      btrfs: zoned: add asserts on splitting extent_map
-      btrfs: zoned: fix ordered extent boundary calculation
-
-Nikolay Borisov (1):
-      btrfs: make btrfs_finish_chunk_alloc private to block-group.c
-
-Qu Wenruo (22):
-      btrfs: rescue: allow ibadroots to skip bad extent tree when reading block group items
-      btrfs: remove unused start and end parameters from btrfs_run_delalloc_range()
-      btrfs: reset this_bio_flag to avoid inheriting old flags
-      btrfs: subpage: check if there are compressed extents inside one page
-      btrfs: disable compressed readahead for subpage
-      btrfs: grab correct extent map for subpage compressed extent read
-      btrfs: rework btrfs_decompress_buf2page()
-      btrfs: rework lzo_decompress_bio() to make it subpage compatible
-      btrfs: reloc: factor out relocation page read and dirty part
-      btrfs: make relocate_one_page() handle subpage case
-      btrfs: subpage: fix writeback which does not have ordered extent
-      btrfs: subpage: disable inline extent creation
-      btrfs: subpage: allow submit_extent_page() to do bio split
-      btrfs: subpage: reject raid56 filesystem and profile conversion
-      btrfs: subpage: fix race between prepare_pages() and btrfs_releasepage()
-      btrfs: subpage: fix a potential use-after-free in writeback helper
-      btrfs: subpage: fix false alert when relocating partial preallocated data extents
-      btrfs: subpage: fix relocation potentially overwriting last page data
-      btrfs: allow read-write for 4K sectorsize on 64K page size systems
-      btrfs: unify regular and subpage error paths in __extent_writepage()
-      btrfs: remove the dead comment in writepage_delalloc()
-      btrfs: fix NULL pointer dereference when deleting device by invalid id
-
- block/bio.c                     |  12 +-
- fs/9p/vfs_file.c                |   7 +-
- fs/btrfs/Makefile               |   1 +
- fs/btrfs/acl.c                  |  11 +-
- fs/btrfs/backref.c              |   6 +-
- fs/btrfs/backref.h              |   2 +-
- fs/btrfs/block-group.c          | 114 +++++-
- fs/btrfs/btrfs_inode.h          |  27 +-
- fs/btrfs/check-integrity.c      |  60 +--
- fs/btrfs/compression.c          | 169 ++++-----
- fs/btrfs/compression.h          |   5 +-
- fs/btrfs/ctree.c                |  62 +--
- fs/btrfs/ctree.h                |  94 +++--
- fs/btrfs/delayed-inode.c        | 227 ++++-------
- fs/btrfs/dir-item.c             |  76 ++--
- fs/btrfs/disk-io.c              |  13 +-
- fs/btrfs/extent-tree.c          |  12 +-
- fs/btrfs/extent_io.c            | 318 +++++++++++-----
- fs/btrfs/extent_io.h            |   2 +-
- fs/btrfs/file-item.c            |   5 +-
- fs/btrfs/file.c                 |  23 +-
- fs/btrfs/free-space-cache.c     |  26 +-
- fs/btrfs/inode.c                | 295 +++++++++++----
- fs/btrfs/ioctl.c                | 188 +++++-----
- fs/btrfs/lzo.c                  | 236 +++++-------
- fs/btrfs/ordered-data.c         |   5 +-
- fs/btrfs/ordered-data.h         |   2 +-
- fs/btrfs/qgroup.c               |   8 +-
- fs/btrfs/raid56.c               |  18 +-
- fs/btrfs/ref-verify.c           |  10 +-
- fs/btrfs/relocation.c           | 306 +++++++++------
- fs/btrfs/send.c                 |  35 +-
- fs/btrfs/space-info.c           |  98 ++++-
- fs/btrfs/struct-funcs.c         |   8 +-
- fs/btrfs/subpage.c              |  24 +-
- fs/btrfs/subpage.h              |   3 +
- fs/btrfs/super.c                |  56 ++-
- fs/btrfs/sysfs.c                | 108 +++++-
- fs/btrfs/tests/qgroup-tests.c   |  30 +-
- fs/btrfs/tree-checker.c         |  38 +-
- fs/btrfs/tree-log.c             | 102 +++--
- fs/btrfs/verity.c               | 811 ++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c              | 234 ++++--------
- fs/btrfs/volumes.h              |  29 +-
- fs/btrfs/zlib.c                 |  54 +--
- fs/btrfs/zoned.c                |  22 +-
- fs/btrfs/zoned.h                |   1 -
- fs/btrfs/zstd.c                 |  39 +-
- fs/fs-writeback.c               |  19 +-
- fs/namei.c                      |  43 ++-
- include/linux/bio.h             |   2 +-
- include/linux/blk_types.h       |   1 +
- include/linux/fs.h              |   3 +-
- include/linux/namei.h           |   1 +
- include/trace/events/btrfs.h    |  21 +-
- include/uapi/linux/btrfs.h      |   1 +
- include/uapi/linux/btrfs_tree.h |  35 ++
- mm/filemap.c                    |  36 +-
- 58 files changed, 2769 insertions(+), 1425 deletions(-)
- create mode 100644 fs/btrfs/verity.c
+> +	btrfs_for_each_slot(sctx->parent_root, &key, &key, path, iter_ret) {
+>  		if (key.objectid != sctx->cur_ino)
+>  			break;
+>  		if (key.type != BTRFS_INODE_REF_KEY &&
+> @@ -6220,8 +6113,11 @@ static int btrfs_unlink_all_paths(struct send_ctx *sctx)
+>  					record_parent_ref, &ctx);
+>  		if (ret < 0)
+>  			goto out;
+> +	}
+>  
+> -		path->slots[0]++;
+> +	if (iter_ret < 0) {
+> +		ret = iter_ret;
+> +		goto out;
+>  	}
+>  
+>  	while (!list_empty(&deleted_refs)) {
+> 

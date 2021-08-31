@@ -2,105 +2,89 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-13.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15FC4C4320A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Aug 2021 12:39:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D585C41537
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Aug 2021 13:04:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F326A61041
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Aug 2021 12:39:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 16ADE610C8
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 Aug 2021 13:04:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230466AbhHaMj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 31 Aug 2021 08:39:57 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:51432 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229762AbhHaMj5 (ORCPT
+        id S233351AbhHaNEy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 31 Aug 2021 09:04:54 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:36674 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233245AbhHaNEx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 Aug 2021 08:39:57 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 860C122240;
-        Tue, 31 Aug 2021 12:39:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1630413541;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        Tue, 31 Aug 2021 09:04:53 -0400
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id E99021FE7F;
+        Tue, 31 Aug 2021 13:03:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1630415037; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=f2ohMeFmeZ8EQAw0r5nu+IId8wVa5fP57NfcDcInm+c=;
-        b=v27qbZtoqtJs1+rnLnTZCb4811HHlH4/ZEwextkrNZgPDcJImWQsnAT4TXrOgoMD6bUpJH
-        5fusClo2khAAxm0Neui4HXpKykW5MphIGy4VU4Iw4Xfz5JiyAep5oUpRLYrQHbZs/xKrmT
-        jYy1hwofBtFlSp+dR/ISAxB9+eYnlOg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1630413541;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=f2ohMeFmeZ8EQAw0r5nu+IId8wVa5fP57NfcDcInm+c=;
-        b=7RiQ+CfqqcWoodXSivBX8fkU51QMA02H9aRHlGQ/qjDxC9PWRu602swgh/XFKkwiLBT+26
-        td0lnJv9TIrcOrBQ==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 7FBDAA3B9C;
-        Tue, 31 Aug 2021 12:39:01 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BF3A2DA8C1; Tue, 31 Aug 2021 14:36:10 +0200 (CEST)
-Date:   Tue, 31 Aug 2021 14:36:10 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Chris Murphy <lists@colorremedies.com>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: 5.13.8, enospc with 6G unused
-Message-ID: <20210831123610.GJ3379@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtSXKHSToLeOOconR_nKeuk8RjGjT7_z2QvV9=2zHfYB6g@mail.gmail.com>
- <CAJCQCtSjuEg8LAedxaqpRCOEq5BgegB7=QVJP8Sq3iZUFWn1rw@mail.gmail.com>
- <CAJCQCtQPvw23CGvR307L-VyPSpZi3ovC3N+xp7OaMNrxSWir_w@mail.gmail.com>
- <CAJCQCtSC4mx6cNf3mGDOEeWhJaTXK8s+WNWRTRDMt99k8O3LPw@mail.gmail.com>
+        bh=40KWdIk9sKnNCDD6PqSzzQ4bAF8KW7ZqtVaeqCuGTO0=;
+        b=tHAeuevGn2WI2h6OHStWauHvG4i/FCUmdPPNAECI5X9H3kNAAg+kDP42JVSGEYS1GJIpW9
+        8P9IE0Xq+Tc1VsNvhje11k2w8XGjDdD5FaRe2T/n+L4BE6Xczh+AHnRQYkIkNPDTcRtgs4
+        KGZdpDk9mdK/7zavuWAlPcXOjBkp/do=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id A38D013A7B;
+        Tue, 31 Aug 2021 13:03:57 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id aUbTJL0oLmEmJQAAGKfGzw
+        (envelope-from <nborisov@suse.com>); Tue, 31 Aug 2021 13:03:57 +0000
+Subject: Re: [PATCH RFC V5 2/2] btrfs: consolidate device_list_mutex in
+ prepare_sprout to its parent
+To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+Cc:     l@damenly.su
+References: <cover.1630370459.git.anand.jain@oracle.com>
+ <f00bad4ba0e8fd7f0c46c21118537fd49fd3c359.1630370459.git.anand.jain@oracle.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <ca0f8867-74ff-9130-f69f-0f7972540be0@suse.com>
+Date:   Tue, 31 Aug 2021 16:03:57 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAJCQCtSC4mx6cNf3mGDOEeWhJaTXK8s+WNWRTRDMt99k8O3LPw@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <f00bad4ba0e8fd7f0c46c21118537fd49fd3c359.1630370459.git.anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 30, 2021 at 02:40:27PM -0600, Chris Murphy wrote:
-> Following the add device, filtered balance, remove device dance:
-> 
-> Overall:
->     Device size:                  27.52GiB
->     Device allocated:             21.52GiB
->     Device unallocated:            6.00GiB
->     Device missing:                  0.00B
->     Used:                         21.15GiB
->     Free (estimated):              6.30GiB      (min: 6.30GiB)
->     Free (statfs, df):             6.30GiB
->     Data ratio:                       1.00
->     Metadata ratio:                   1.00
->     Global reserve:               55.50MiB      (used: 0.00B)
->     Multiple profiles:                  no
-> 
-> Data,single: Size:21.01GiB, Used:20.70GiB (98.56%)
->    /dev/mapper/luks-4ac739d9-8d73-4913-89ac-656c79f89835          21.01GiB
-> 
-> Metadata,single: Size:520.00MiB, Used:456.52MiB (87.79%)
->    /dev/mapper/luks-4ac739d9-8d73-4913-89ac-656c79f89835         520.00MiB
-> 
-> System,single: Size:4.00MiB, Used:16.00KiB (0.39%)
->    /dev/mapper/luks-4ac739d9-8d73-4913-89ac-656c79f89835           4.00MiB
-> 
-> Unallocated:
->    /dev/mapper/luks-4ac739d9-8d73-4913-89ac-656c79f89835           6.00GiB
-> 
-> 
-> So it's back to functional again but does seem like some kind of bug
-> that it had not allocated another metadata block group sooner when it
-> could have. Once all the space was locked up as data bg's, it was
-> inevitably going to get stuck like this.
 
-That the metadata chunks don't get allocated timely in advance is sort
-of known and not fixed to my knowledge. Also, it's the reason why free
-space tree is not yet default.
+
+On 31.08.21 г. 4:21, Anand Jain wrote:
+> btrfs_prepare_sprout() moves seed devices into its own struct fs_devices,
+> so that its parent function btrfs_init_new_device() can add the new sprout
+> device to fs_info->fs_devices.
+> 
+> Both btrfs_prepare_sprout() and btrfs_init_new_device() needs
+> device_list_mutex. But they are holding it sequentially, thus creates a
+> small window to an opportunity to race. Close this opportunity and hold
+> device_list_mutex common to both btrfs_init_new_device() and
+> btrfs_prepare_sprout().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+
+That's a moot point, what's important is that btrfs_prepare_sprout
+leaves the fs_devices in a consistent state and btrfs_init_new_device
+also takes the lock when it's about to modify the devices list, so
+that's fine as well. While the patch itself won't do any harm I think
+it's irrelevant.
+
+<snip>

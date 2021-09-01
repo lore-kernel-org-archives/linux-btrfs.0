@@ -2,280 +2,156 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86D61C432BE
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 17:10:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7841DC432BE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 17:16:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6A3CF61058
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 17:10:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5702861059
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 17:16:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344425AbhIARLp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Sep 2021 13:11:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39194 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344424AbhIARLo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Sep 2021 13:11:44 -0400
-Received: from mail-qv1-xf33.google.com (mail-qv1-xf33.google.com [IPv6:2607:f8b0:4864:20::f33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E22D5C061575
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Sep 2021 10:10:47 -0700 (PDT)
-Received: by mail-qv1-xf33.google.com with SMTP id eh1so161065qvb.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Sep 2021 10:10:47 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20150623.gappssmtp.com; s=20150623;
-        h=message-id:date:mime-version:user-agent:subject:content-language:to
-         :references:from:in-reply-to:content-transfer-encoding;
-        bh=UE35OaxWLsArUu791yorL00RK7Zcf/QKoUdi+1YzLTk=;
-        b=UDQmifphhda1Ot/dDgk4K5RazuB1HteIB1KyH6+sGJGg2jOgTjYsGcgwhbQ93sK7xD
-         Aca7dvgcOT/lIROW+OQsMeo47tu6IBNTgdmvaozt2DBrK6qeZ7o0Zxqj4SpV1GOkaT9U
-         SxQuI3BoVoO+PG9BTvv+K48hkYMX3QQS/3Kb+zYG6lqyEJC9+ghdDl5gQ8NTPyuoOc2e
-         131uUDselyrjEZf9keAVFbwUblchB91kDUlrlkHwbLWMXwKrrCOZBsRXhYW3LmoooULy
-         jOl1NG8edg4/T9CPMbDROsAy3L8jqYDpOqk/4JNfufERQHbygkxjaDkCZr3QqgpcVMT1
-         fjRg==
+        id S1344697AbhIARRo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Sep 2021 13:17:44 -0400
+Received: from mail-lf1-f52.google.com ([209.85.167.52]:44904 "EHLO
+        mail-lf1-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235197AbhIARRn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Sep 2021 13:17:43 -0400
+Received: by mail-lf1-f52.google.com with SMTP id s10so404092lfr.11
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Sep 2021 10:16:46 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:references:from:in-reply-to
-         :content-transfer-encoding;
-        bh=UE35OaxWLsArUu791yorL00RK7Zcf/QKoUdi+1YzLTk=;
-        b=S1WDy0BUMsM2/UdcL/2rIDJd8uRQtVJBmZ1NOWRfML7nNVAI/sA9ML3uVdi4Xi5JEY
-         WnM5O3Lktn0WMnW7kZi/PSCgiYE4h1pTRSKQWI+RKU2BklTSK7QayChU/4t2Bd8YX63r
-         wJ4uCFL6m/vQDlHFLN3epvq+6+DOMQiavOP2AOAoxcHKazA6N6nzemMqvYWn2SO18DJ7
-         TO33TG7jqd8p3F4WvYhzB8Nl7hOBNX1ED7LMXsZa/VmEEQJnjYl303ZMRQjWpapbK9RQ
-         Z/+BZLJ1sDDR4c7lCvR3MSdOpPolzZVwXScOimwaQXhPjSTHKo7scivHYyQpLV7POyHp
-         264w==
-X-Gm-Message-State: AOAM5324GHaexoEj/59oI+KCDYtrGQg3IeULjUKNwTQ7cPMMti3eW0Lp
-        +JU5LNQlncTKBEV29+yM3jYqjQ==
-X-Google-Smtp-Source: ABdhPJwVKOLMcgXhdpBjB/DtxiZdNOybQdYiaT0zyicapiokYGMSZ/Q/NLsqHU3asoy3oJjZAXhccQ==
-X-Received: by 2002:ad4:55c8:: with SMTP id bt8mr715657qvb.28.1630516246808;
-        Wed, 01 Sep 2021 10:10:46 -0700 (PDT)
-Received: from [192.168.1.211] (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id l4sm46136qkd.77.2021.09.01.10.10.46
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 01 Sep 2021 10:10:46 -0700 (PDT)
-Message-ID: <4c913c5a-7cde-7339-69b7-64908c7e1e7a@toxicpanda.com>
-Date:   Wed, 1 Sep 2021 13:10:45 -0400
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=4hjwW8yGInC1JFxC3md8KZX2zmGTkwGSrlupbvYL/Kg=;
+        b=F2fyIxx6BNr0jpjc0jtyNPt5EA/mjNVskhEQ7M4oPOxWRV8yqNPyHxpxdNLTkGEH3D
+         Shau8WXQfSSufKJyR6A1ehHAzrUvNNGop7DjoTQBk5lN6l+ZyKRXt5JN6ioZZJ2VjAYj
+         KEtbLtF92XJ28YZPRgpFmf2P8b4UK8vGDHcmaoSQ4V3zbmFwnCK+wRRD8aza+1mqo4gb
+         kmYZ08d/ASVTO/y+mqOTosYs1BJfkssC7twDW26VkuOQjvWpzc01+jdt/wMoDCSZfR8n
+         UyW0qZacVCmzT2nh502FNVI5N/MT6PPPHljH5jC3PNtZ3MIAf2w2SKwYvj+D0WMwQPfV
+         oDMA==
+X-Gm-Message-State: AOAM533I2VPBiRwSlSlPzQWi1qYJ/S9iM6Y/NTqhSEIsg86fYHNRF2+z
+        UiHkyy+20oKxmZ6/kYUQH3v4VtJEx1Gsz/eFUY4RMTbOY4w=
+X-Google-Smtp-Source: ABdhPJzYYVdjovbyptBV2S+w/M0yV24SBwFhUp/FrmEAG1yiixGHXkDjK9MnH7nKGeXyfnHBpt8v8q7cQR/Pv3kdaJ8=
+X-Received: by 2002:a05:6512:3f90:: with SMTP id x16mr381932lfa.518.1630516605385;
+ Wed, 01 Sep 2021 10:16:45 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.0.3
-Subject: Re: [PATCH v2 2/7] btrfs: do not take the uuid_mutex in
- btrfs_rm_device
-Content-Language: en-US
-To:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <cover.1627419595.git.josef@toxicpanda.com>
- <4f7529acd33594df9b0b06f7011d8cd4d195fc29.1627419595.git.josef@toxicpanda.com>
- <495dbc7e-dd93-e43a-3af1-6597f35d38e8@oracle.com>
-From:   Josef Bacik <josef@toxicpanda.com>
-In-Reply-To: <495dbc7e-dd93-e43a-3af1-6597f35d38e8@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <CAOaVUnV3L6RpcqJ5gaqzNXWXK0VMkEVXCdihawH1PgS6TiMchQ@mail.gmail.com>
+ <CAL3q7H5P1+s5LOa6TutNhPKOyWUA7hifjD1XuhBP6_e3SQzR8Q@mail.gmail.com>
+ <CAOaVUnU6z8U0a2T7a0cLg1U=b1bfyq_xHa8hoXMnu6Qv1E-z+g@mail.gmail.com>
+ <CAL3q7H7kbgsiTfLWWYJikuWOFP9yXSdgav2EEonx98pPhSEQNA@mail.gmail.com>
+ <CAOaVUnV9FJSVBxmX-tAeZJCq+0rPoY2zga8nuw_toC=tdt8K0w@mail.gmail.com>
+ <CAL3q7H5xkGiLcfMYDb8qHw9Uo-yoaEHZ7ZabGHhcHfXXAKrWYA@mail.gmail.com>
+ <CAOaVUnUwoq69UZ_ajoxYYOHk8RRgGPNZrcm9YzcmXfDgy24Nfw@mail.gmail.com>
+ <CAL3q7H67Nc7vZrCpxAhoWxHObhFn=mgOra+tFt3MjqMSXVFXfQ@mail.gmail.com>
+ <CAL3q7H46BpkE+aa00Y71SfTizpOo+4ADhBHU2vme4t-aYO6Zuw@mail.gmail.com>
+ <CAOaVUnXXVmGvu-swEkNG-N474BcMAGO1rKvx26RADbQ=OREZUg@mail.gmail.com>
+ <CAL3q7H5UH012m=19sj=4ob-d_LbWqb63t7tYz9bmz1wXyFcctw@mail.gmail.com>
+ <CAOaVUnVL508_0xJovhLqxv_zWmROEt-DnmQVkNkTwp0GHPND=Q@mail.gmail.com>
+ <CAL3q7H7MxhvzLAe1pv+R8J=fNrEX2bDMw1xWUcoZsCCG-mL5Mg@mail.gmail.com>
+ <CAOaVUnXB4qoAyVcm3H03Bj2rukZ+nbSzOdB4TsKpJjH8sqOr7g@mail.gmail.com>
+ <CAL3q7H7vTFggDHDq=j+es_O3GWX2nvq3kqp3TsmX=8jd7JhM1A@mail.gmail.com>
+ <CAOaVUnW6nb-c-5c56rX4wON-f+JvZGzJmc5FMPx-fZGwUp6T1g@mail.gmail.com>
+ <CAL3q7H6h+_7P7BG11V1VXaLe+6M+Nt=mT3n51nZ2iqXSZFUmOA@mail.gmail.com>
+ <CAL3q7H5p9WBravwa6un5jsQUb24a+Xw1PvKpt=iBdHp4wirm8g@mail.gmail.com>
+ <CAOaVUnXDzd-+jvq95DGpYcV7mApomrViDhiyjm-BdPz5MvFqZg@mail.gmail.com> <CAL3q7H5y6z7rRu-ZsZe_WXeHteWx1edZi+L3-UL0aa0oYg+qQA@mail.gmail.com>
+In-Reply-To: <CAL3q7H5y6z7rRu-ZsZe_WXeHteWx1edZi+L3-UL0aa0oYg+qQA@mail.gmail.com>
+From:   Darrell Enns <darrell@darrellenns.com>
+Date:   Wed, 1 Sep 2021 10:16:34 -0700
+Message-ID: <CAOaVUnW6GzK6ANOUz4x+BBXz90sgaT_TJuQUm869CYa6qH2KSA@mail.gmail.com>
+Subject: Re: Backup failing with "failed to clone extents" error
+To:     fdmanana@gmail.com
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 9/1/21 8:01 AM, Anand Jain wrote:
-> On 28/07/2021 05:01, Josef Bacik wrote:
->> We got the following lockdep splat while running xfstests (specifically
->> btrfs/003 and btrfs/020 in a row) with the new rc.  This was uncovered
->> by 87579e9b7d8d ("loop: use worker per cgroup instead of kworker") which
->> converted loop to using workqueues, which comes with lockdep
->> annotations that don't exist with kworkers.  The lockdep splat is as
->> follows
->>
->> ======================================================
->> WARNING: possible circular locking dependency detected
->> 5.14.0-rc2-custom+ #34 Not tainted
->> ------------------------------------------------------
->> losetup/156417 is trying to acquire lock:
->> ffff9c7645b02d38 ((wq_completion)loop0){+.+.}-{0:0}, at: 
->> flush_workqueue+0x84/0x600
->>
->> but task is already holding lock:
->> ffff9c7647395468 (&lo->lo_mutex){+.+.}-{3:3}, at: 
->> __loop_clr_fd+0x41/0x650 [loop]
->>
->> which lock already depends on the new lock.
->>
->> the existing dependency chain (in reverse order) is:
->>
->> -> #5 (&lo->lo_mutex){+.+.}-{3:3}:
->>         __mutex_lock+0xba/0x7c0
->>         lo_open+0x28/0x60 [loop]
->>         blkdev_get_whole+0x28/0xf0
->>         blkdev_get_by_dev.part.0+0x168/0x3c0
->>         blkdev_open+0xd2/0xe0
->>         do_dentry_open+0x163/0x3a0
->>         path_openat+0x74d/0xa40
->>         do_filp_open+0x9c/0x140
->>         do_sys_openat2+0xb1/0x170
->>         __x64_sys_openat+0x54/0x90
->>         do_syscall_64+0x3b/0x90
->>         entry_SYSCALL_64_after_hwframe+0x44/0xae
->>
->> -> #4 (&disk->open_mutex){+.+.}-{3:3}:
->>         __mutex_lock+0xba/0x7c0
->>         blkdev_get_by_dev.part.0+0xd1/0x3c0
->>         blkdev_get_by_path+0xc0/0xd0
->>         btrfs_scan_one_device+0x52/0x1f0 [btrfs]
->>         btrfs_control_ioctl+0xac/0x170 [btrfs]
->>         __x64_sys_ioctl+0x83/0xb0
->>         do_syscall_64+0x3b/0x90
->>         entry_SYSCALL_64_after_hwframe+0x44/0xae
->>
->> -> #3 (uuid_mutex){+.+.}-{3:3}:
->>         __mutex_lock+0xba/0x7c0
->>         btrfs_rm_device+0x48/0x6a0 [btrfs]
->>         btrfs_ioctl+0x2d1c/0x3110 [btrfs]
->>         __x64_sys_ioctl+0x83/0xb0
->>         do_syscall_64+0x3b/0x90
->>         entry_SYSCALL_64_after_hwframe+0x44/0xae
->>
->> -> #2 (sb_writers#11){.+.+}-{0:0}:
->>         lo_write_bvec+0x112/0x290 [loop]
->>         loop_process_work+0x25f/0xcb0 [loop]
->>         process_one_work+0x28f/0x5d0
->>         worker_thread+0x55/0x3c0
->>         kthread+0x140/0x170
->>         ret_from_fork+0x22/0x30
->>
->> -> #1 ((work_completion)(&lo->rootcg_work)){+.+.}-{0:0}:
->>         process_one_work+0x266/0x5d0
->>         worker_thread+0x55/0x3c0
->>         kthread+0x140/0x170
->>         ret_from_fork+0x22/0x30
->>
->> -> #0 ((wq_completion)loop0){+.+.}-{0:0}:
->>         __lock_acquire+0x1130/0x1dc0
->>         lock_acquire+0xf5/0x320
->>         flush_workqueue+0xae/0x600
->>         drain_workqueue+0xa0/0x110
->>         destroy_workqueue+0x36/0x250
->>         __loop_clr_fd+0x9a/0x650 [loop]
->>         lo_ioctl+0x29d/0x780 [loop]
->>         block_ioctl+0x3f/0x50
->>         __x64_sys_ioctl+0x83/0xb0
->>         do_syscall_64+0x3b/0x90
->>         entry_SYSCALL_64_after_hwframe+0x44/0xae
->>
->> other info that might help us debug this:
->> Chain exists of:
->>    (wq_completion)loop0 --> &disk->open_mutex --> &lo->lo_mutex
->>   Possible unsafe locking scenario:
->>         CPU0                    CPU1
->>         ----                    ----
->>    lock(&lo->lo_mutex);
->>                                 lock(&disk->open_mutex);
->>                                 lock(&lo->lo_mutex);
->>    lock((wq_completion)loop0);
->>
->>   *** DEADLOCK ***
->> 1 lock held by losetup/156417:
->>   #0: ffff9c7647395468 (&lo->lo_mutex){+.+.}-{3:3}, at: 
->> __loop_clr_fd+0x41/0x650 [loop]
->>
->> stack backtrace:
->> CPU: 8 PID: 156417 Comm: losetup Not tainted 5.14.0-rc2-custom+ #34
->> Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 0.0.0 02/06/2015
->> Call Trace:
->>   dump_stack_lvl+0x57/0x72
->>   check_noncircular+0x10a/0x120
->>   __lock_acquire+0x1130/0x1dc0
->>   lock_acquire+0xf5/0x320
->>   ? flush_workqueue+0x84/0x600
->>   flush_workqueue+0xae/0x600
->>   ? flush_workqueue+0x84/0x600
->>   drain_workqueue+0xa0/0x110
->>   destroy_workqueue+0x36/0x250
->>   __loop_clr_fd+0x9a/0x650 [loop]
->>   lo_ioctl+0x29d/0x780 [loop]
->>   ? __lock_acquire+0x3a0/0x1dc0
->>   ? update_dl_rq_load_avg+0x152/0x360
->>   ? lock_is_held_type+0xa5/0x120
->>   ? find_held_lock.constprop.0+0x2b/0x80
->>   block_ioctl+0x3f/0x50
->>   __x64_sys_ioctl+0x83/0xb0
->>   do_syscall_64+0x3b/0x90
->>   entry_SYSCALL_64_after_hwframe+0x44/0xae
->> RIP: 0033:0x7f645884de6b
->>
->> Usually the uuid_mutex exists to protect the fs_devices that map
->> together all of the devices that match a specific uuid.  In rm_device
->> we're messing with the uuid of a device, so it makes sense to protect
->> that here.
->>
->> However in doing that it pulls in a whole host of lockdep dependencies,
->> as we call mnt_may_write() on the sb before we grab the uuid_mutex, thus
->> we end up with the dependency chain under the uuid_mutex being added
->> under the normal sb write dependency chain, which causes problems with
->> loop devices.
->>
->> We don't need the uuid mutex here however.  If we call
->> btrfs_scan_one_device() before we scratch the super block we will find
->> the fs_devices and not find the device itself and return EBUSY because
->> the fs_devices is open.  If we call it after the scratch happens it will
->> not appear to be a valid btrfs file system.
->>
->> We do not need to worry about other fs_devices modifying operations here
->> because we're protected by the exclusive operations locking.
->>
->> So drop the uuid_mutex here in order to fix the lockdep splat.
-> 
-> 
-> I think uuid_mutex should stay. Here is why.
-> 
->   While thread A takes %device at line 816 and deref at line 880.
->   Thread B can completely remove and free that %device.
->   As of now these threads are mutual exclusive using uuid_mutex.
-> 
-> Thread A
-> 
-> btrfs_control_ioctl()
->    mutex_lock(&uuid_mutex);
->      btrfs_scan_one_device()
->        device_list_add()
->        {
->   815                 mutex_lock(&fs_devices->device_list_mutex);
-> 
->   816                 device = btrfs_find_device(fs_devices, devid,
->   817                                 disk_super->dev_item.uuid, NULL);
-> 
->   880         } else if (!device->name || strcmp(device->name->str, 
-> path)) {
-> 
->   933                         if (device->bdev->bd_dev != path_dev) {
-> 
->   982         mutex_unlock(&fs_devices->device_list_mutex);
->         }
-> 
-> 
-> Thread B
-> 
-> btrfs_rm_device()
-> 
-> 2069         mutex_lock(&uuid_mutex);  <-- proposed to remove
-> 
-> 2150         mutex_lock(&fs_devices->device_list_mutex);
-> 
-> 2172         mutex_unlock(&fs_devices->device_list_mutex);
-> 
-> 2180                 btrfs_scratch_superblocks(fs_info, device->bdev,
-> 2181                                           device->name->str);
-> 
-> 2183         btrfs_close_bdev(device);
-> 2184         synchronize_rcu();
-> 2185         btrfs_free_device(device);
-> 
-> 2194         mutex_unlock(&uuid_mutex);  <-- proposed to remove
-> 
-> 
+I'm not sure how this would happen. These subvolumes were all created
+with snapper (snap-sync just calls snapper). They were not received
+from another filesystem, and I don't think they've ever been RW
+(unless snapper for some reason does that?).
 
-This is fine, we're protected by the fs_devices->device_list_mutex here. 
-  We'll remove our device from the list before dropping the 
-device_list_mutex, so we won't be able to find the old device if we're 
-removing it.  Thanks,
+Received_uuid is actually the same on *all* my snapshots, and it's the
+same as the original "@root" subvolume as well. Is each one supposed
+to have a unique received_uuid? Is this somehow because my "@root"
+subvolume was originally created by receiving from another btrfs?
 
-Josef
+$ for x in /.snapshots/*/snapshot; do btrfs subvolume show $x|grep
+Received\ UUID;done
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+
+$ btrfs subvolume show /
+@root
+    Name:             @root
+    UUID:             073ca458-1147-7b45-84ae-ecf19a852c1c
+    Parent UUID:         -
+    Received UUID:         e346e5a1-536c-8d42-ba33-c5452dec7888
+    Creation time:         2021-08-07 20:15:54 -0700
+    Subvolume ID:         256
+    Generation:         131171
+    Gen at creation:     6
+    Parent ID:         5
+    Top level ID:         5
+    Flags:             -
+    Snapshot(s):
+                @root/.snapshots/2/snapshot
+                @root/.snapshots/116/snapshot
+                @root/.snapshots/157/snapshot
+                @root/.snapshots/272/snapshot
+                @root/.snapshots/294/snapshot
+                @root/.snapshots/315/snapshot
+                @root/.snapshots/327/snapshot
+                @root/.snapshots/340/snapshot
+                @root/.snapshots/362/snapshot
+                @root/.snapshots/374/snapshot
+                @root/.snapshots/385/snapshot
+                @root/.snapshots/406/snapshot
+                @root/.snapshots/419/snapshot
+                @root/.snapshots/420/snapshot
+                @root/.snapshots/421/snapshot
+                @root/.snapshots/422/snapshot
+                @root/.snapshots/423/snapshot
+                @root/.snapshots/424/snapshot
+                @root/.snapshots/425/snapshot
+                @root/.snapshots/426/snapshot
+                @root/.snapshots/427/snapshot
+                @root/.snapshots/428/snapshot
+                @root/.snapshots/429/snapshot
+                @root/.snapshots/430/snapshot
+                @root/.snapshots/431/snapshot
+                @root/.snapshots/432/snapshot
+                @root/.snapshots/433/snapshot
+                @root/.snapshots/434/snapshot
+                @root/.snapshots/435/snapshot
+                @root/.snapshots/436/snapshot

@@ -2,91 +2,65 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-6.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 020FAC4320E
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 08:14:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DF0EC4320E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 08:18:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E353761053
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 08:14:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 80EA160698
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Sep 2021 08:18:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243053AbhIAIPr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Sep 2021 04:15:47 -0400
-Received: from out2-smtp.messagingengine.com ([66.111.4.26]:60477 "EHLO
-        out2-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S243041AbhIAIPp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 1 Sep 2021 04:15:45 -0400
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
-        by mailout.nyi.internal (Postfix) with ESMTP id 84A245C00F3;
-        Wed,  1 Sep 2021 04:14:48 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute2.internal (MEProxy); Wed, 01 Sep 2021 04:14:48 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kroah.com; h=
-        date:from:to:cc:subject:message-id:references:mime-version
-        :content-type:in-reply-to; s=fm1; bh=BuvuRLiclI2ZPDHjAVTSSUhPf+B
-        EZ0r+raCKQUzMmyY=; b=MBA0jEPWTM4N3BfTJlHCkBjK8gMHaHAaR0/ANSYbvCM
-        WehbVNhWQKyRQJxx/GAlhNk6kjlNsoq/c7v9fHqNYVf+CyG3Q/VqwfFU0kLJ7TgB
-        YBziO5bQtTEmEqAInz2c0NGCrirKo5xcDWCOVjP38quSADIsraeYD2lVJkX5mZ+/
-        hvSvgYQiKY38wcKzOzrGYxvuXXW5WT1DBBIjKFJD4EvCv+eey26sWihnbynklEyl
-        37exUUIegHInU+vZy8KwCnH0y03fTBR7o635gRAt+fQZrQaDIIsLFQH6JwPOWldu
-        5fP6cJuwjXFR7RuxlXKtum/cH9zlNHgaNd/2VPhysmA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:content-type:date:from:in-reply-to
-        :message-id:mime-version:references:subject:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; bh=BuvuRL
-        iclI2ZPDHjAVTSSUhPf+BEZ0r+raCKQUzMmyY=; b=LwL+UOuStjzHuA8KbAZDeT
-        Ye7zhlllqH3xXR5BRZoF1DNbvs/tBxn0RBP7h+sW/ziUj3m7h/iZGxsqNDymbvfo
-        8Np+BavaAzMmajv4u1mz/5HZ6AeyTznlMoYkoAGccW0TCMgNtUYU+IuapQ/K8FRM
-        pkdqYWY2ybVz5/m34pM4/42U7K7He9lOig3vlDrf0oUA2jPpi7CJHmjD9vrx5cNo
-        t7ntzCn5TzTAM0QzG+8UXLBhjdDQBhst4FQKtcTXCHYZhhxKIUNySCVlrjbclj0L
-        K3MLJoWsFf2GXYGuzBb0k220NynqSyeX1+DbVkTkoJWnJR+U1qKl6xMxDNnO23mA
-        ==
-X-ME-Sender: <xms:eDYvYRGIhggwWmsiJqUp7MbDzGoDthXtvykPdoFA1QLwj7fcrjxAAg>
-    <xme:eDYvYWVRKfVIqdNOJKsWdWWA4iQz8N7InnTvD1yiTEqbCvpEyM_xzxSjeMk10rPfv
-    77V-F7kuih9Lg>
-X-ME-Received: <xmr:eDYvYTK-NBiNOuMDw_TovX8BdcEosUAb_HHenPPOqnDSLsF6ws8O9Vys3V5yLb8Ek-pDcddjiXJGZdtL1M-5w6TmR7B-I0s0>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvtddruddvfedgtdduucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepfffhvffukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpefirhgvghcu
-    mffjuceoghhrvghgsehkrhhorghhrdgtohhmqeenucggtffrrghtthgvrhhnpeevueehje
-    fgfffgiedvudekvdektdelleelgefhleejieeugeegveeuuddukedvteenucevlhhushht
-    vghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpehgrhgvgheskhhrohgrhh
-    drtghomh
-X-ME-Proxy: <xmx:eDYvYXFTUahAG_q5weLx3iSH7S4QZ5kdf_wjd4x26eSoS9JPNWKRpQ>
-    <xmx:eDYvYXXRB-JnoT9K--Mv6tZsA1wvm3E7BAiJ5GPYpxoDP-QtaN9z6A>
-    <xmx:eDYvYSPpRVLD1s5JolYyv9GQzn7-NZKH5gc34a7WqFo9Hig4IHDwqA>
-    <xmx:eDYvYTqXN7Xeil6-9Ox33aOKcM1oOyTSw7wef1PrxwBZLPuODZmV7w>
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 1 Sep 2021 04:14:47 -0400 (EDT)
-Date:   Wed, 1 Sep 2021 10:14:45 +0200
-From:   Greg KH <greg@kroah.com>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH stable-5.9.y, stable-5.10.y] btrfs: fix race between
- marking inode needs to be logged and log syncing
-Message-ID: <YS82dS2FmcKYDXwv@kroah.com>
-References: <2f474ee209a89b42c2471aab71a0df038f7e8d4c.1629969541.git.anand.jain@oracle.com>
- <7701f6238b7a6905164fa85d343d6328554414ea.1630270929.git.anand.jain@oracle.com>
+        id S243051AbhIAITs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Sep 2021 04:19:48 -0400
+Received: from mail.kernel.org ([198.145.29.99]:58772 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229934AbhIAITo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 1 Sep 2021 04:19:44 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 3B2596103A;
+        Wed,  1 Sep 2021 08:18:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1630484327;
+        bh=cSYA4sYNLTHVUZnVODL1Pu9ZQg2ARtf7ANGW/ypmKPs=;
+        h=Date:From:To:Subject:References:In-Reply-To:From;
+        b=Gxp0cJF10zPWfg0PQG7JlT0fbRQquP6uhOf1Ptz30D9zhBg7coGPpIHZ+sMuve4ie
+         A6Qw2jbDP4+SVILStNgxYa7X80sb6LZuHe+vjwrXHQua/bGfDQInIkA7IKtokxaPh+
+         b3oMwxRdhb7cBn1NxUNnhXBNhCdIrNE2A2tWZTiA=
+Date:   Wed, 1 Sep 2021 10:18:45 +0200
+From:   Greg KH <gregkh@linuxfoundation.org>
+To:     dsterba@suse.cz, wqu@suse.com, ce3g8jdj@umail.furryterror.org,
+        dsterba@suse.com, stable@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: FAILED: patch "[PATCH] Revert "btrfs: compression: don't try to
+ compress if we don't" failed to apply to 5.4-stable tree
+Message-ID: <YS83Zf1OaAZUIQ06@kroah.com>
+References: <16302200512317@kroah.com>
+ <20210830130949.GB3379@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <7701f6238b7a6905164fa85d343d6328554414ea.1630270929.git.anand.jain@oracle.com>
+In-Reply-To: <20210830130949.GB3379@suse.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 30, 2021 at 05:42:17AM +0800, Anand Jain wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Mon, Aug 30, 2021 at 03:09:49PM +0200, David Sterba wrote:
+> On Sun, Aug 29, 2021 at 08:54:11AM +0200, gregkh@linuxfoundation.org wrote:
+> > 
+> > The patch below does not apply to the 5.4-stable tree.
+> > If someone wants it applied there, or to any other stable or longterm
+> > tree, then please email the backport, including the original git commit
+> > id to <stable@vger.kernel.org>.
 > 
-> commit bc0939fcfab0d7efb2ed12896b1af3d819954a14 upstream.
-> 
+> The code in versions from 5.4 to 4.4 is the same and the merge conflict
+> can be resolved from that (eg. from file
+> stable.git/releases/./5.4.136/btrfs-compression-don-t-try-to-compress-if-we-don-t-have-enough-pages.patch)
 
-Both now queued up, thanks.
+I'm sorry, but I do not understand what you are trying to say here.
+What exactly should I do?
+
+confused,
 
 greg k-h

@@ -2,91 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A842C432BE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Sep 2021 15:31:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABC56C676A8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Sep 2021 16:28:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DD60B610C8
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Sep 2021 15:31:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 945B26109E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Sep 2021 16:28:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345838AbhIBPck (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Sep 2021 11:32:40 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:41472 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345853AbhIBPci (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Sep 2021 11:32:38 -0400
+        id S1346288AbhIBQ3m (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Sep 2021 12:29:42 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:51950 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1346286AbhIBQ3m (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Sep 2021 12:29:42 -0400
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 942901FFB9;
-        Thu,  2 Sep 2021 15:31:29 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id 0761122628;
+        Thu,  2 Sep 2021 16:28:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1630596689;
+        t=1630600123;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=tF0Klwcq51RKixweTldK4xWB6QJRjB6Pgp3dOtxTuNs=;
-        b=FwwmYn4rGdL7oAk+glZ469FkzwiuMhouu9awEJccf/wuYZlMQTKr0g1kdvfxKUdlhPlekw
-        45kzOOEW3PhjQTWXk4yuEzGcB7SZSz/rhPhsLtbPMwWBrWfcpIAOvnS6tW3S85fzKdGKN+
-        pkzQKR5qysRdwmo8mTKQG7bhP/5lV6Q=
+        bh=zHTuHQ/BvNjCLTZiSzrN5p5UvUlNpb+q4uDufCy1OS0=;
+        b=i7huZaBohG4/linEzQSKCfDRLxyDhFznbwYBl189MwhrHxSlzBVl1/WCYN7Ik9mDyBLgxM
+        j2Y3n4VRzn43ZSQlpPX1jI2LL28xq4kIs5Wal5Fh/VPyRN/62XFtc0ZE0mdEAHgjZI8KGW
+        IjWR0wc6U/2wHQ0RE6JlnQcEdqWW8zM=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1630596689;
+        s=susede2_ed25519; t=1630600123;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=tF0Klwcq51RKixweTldK4xWB6QJRjB6Pgp3dOtxTuNs=;
-        b=Z5eZaY79x6FyZ0zmhOeO+sYH9mVfzbGvp+tWhQXxVCqM2z/LTKsIhSRH79spxpoxqCRKsG
-        Rem0nzRm4V7sWyCQ==
+        bh=zHTuHQ/BvNjCLTZiSzrN5p5UvUlNpb+q4uDufCy1OS0=;
+        b=u0kWqgk2o86HYSYGRf5zravGmmZabmo7AZwM2YXLicB7rGeidLPiTqkbPP0nMNoluHF1zX
+        pGrAYxGvH1sbizCQ==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 8C4C1A3BBC;
-        Thu,  2 Sep 2021 15:31:29 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 011ABA3BBA;
+        Thu,  2 Sep 2021 16:28:43 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 5C674DA72B; Thu,  2 Sep 2021 17:31:28 +0200 (CEST)
-Date:   Thu, 2 Sep 2021 17:31:28 +0200
+        id B7329DA72B; Thu,  2 Sep 2021 18:28:41 +0200 (CEST)
+Date:   Thu, 2 Sep 2021 18:28:41 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: use num_device to check for the last
- surviving seed device
-Message-ID: <20210902153128.GY3379@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5] btrfs: sysfs: introduce qgroup global attribute
+ groups
+Message-ID: <20210902162840.GA3379@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <cover.1630478246.git.anand.jain@oracle.com>
- <d9c89b1740a876b3851fcf358f22809aa7f1ad2a.1630478246.git.anand.jain@oracle.com>
- <ea5d6985-7c7d-3147-e0b6-fac17a2e298f@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210831094903.111432-1-wqu@suse.com>
+ <20210831094903.111432-2-wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <ea5d6985-7c7d-3147-e0b6-fac17a2e298f@suse.com>
+In-Reply-To: <20210831094903.111432-2-wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 01, 2021 at 12:22:30PM +0300, Nikolay Borisov wrote:
+On Tue, Aug 31, 2021 at 05:48:59PM +0800, Qu Wenruo wrote:
+> Although we already have info kobject for each qgroup, we don't have
+> global qgroup info attributes to show things like qgroup flags.
 > 
+> Add this qgroups attribute groups, and the first member is qgroup_flags,
+> which is a read-only attribute to show human readable qgroup flags.
 > 
-> On 1.09.21 г. 9:43, Anand Jain wrote:
-> > For both sprout and seed fsids,
-> >  btrfs_fs_devices::num_devices provides device count including missing
-> >  btrfs_fs_devices::open_devices provides device count excluding missing
-> > 
-> > We create a dummy struct btrfs_device for the missing device, so
-> > num_devices != open_devices when there is a missing device.
-> > 
-> > In btrfs_rm_devices() we wrongly check for %cur_devices->open_devices
-> > before freeing the seed fs_devices. Instead we should check for
-> > %cur_devices->num_devices.
-> > 
-> > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> The path is:
+>  /sys/fs/btrfs/<uuid>/qgroups/qgroup_flags
 > 
-> Is there a sequence of step that reproduce the problem?
+> The output would look like:
+>  ON | INCONSISTENT
 
-Yeah that would be great, I don't have much idea what actually happens
-here and what is the bug.
+So that's another format of sysfs file, we should try to keep them
+consistent or follow common practices. The recommended way for sysfs is
+to have one file per value, and here it follows the known states.
+
+So eg
+
+/sys/fs/.../qgroups/enabled		-> 0 or 1
+/sys/fs/.../qgroups/inconsistent	-> 0 or 1
+...
+
+The files can be also writable so rescan can be triggered from sysfs, or
+quotas disabled eventually. For the start exporting the state would be
+sufficient though.

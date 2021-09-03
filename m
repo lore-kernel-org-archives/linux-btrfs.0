@@ -5,113 +5,99 @@ X-Spam-Level:
 X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3647FC4332F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Sep 2021 10:50:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34223C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Sep 2021 12:45:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1EDED6109E
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Sep 2021 10:50:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 14A3C61057
+	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Sep 2021 12:45:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348035AbhICKvu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 3 Sep 2021 06:51:50 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:34144 "EHLO
+        id S1348802AbhICMqT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 3 Sep 2021 08:46:19 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:60098 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235081AbhICKvt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Sep 2021 06:51:49 -0400
+        with ESMTP id S234262AbhICMqT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Sep 2021 08:46:19 -0400
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 2CA1022465;
-        Fri,  3 Sep 2021 10:50:49 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 44D6F21CCE
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Sep 2021 12:45:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1630666249; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1630673118; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=HiaRjO1wdPqkUs+0qLuWgeYVhD9pLNGKrm22kbv/N6k=;
-        b=ARa94s/39Brk7LAPheSEk+T8mwCvrwLWh0eDaJEHLmVPMzEfDNdmcihJPog0uRq5K1PVMv
-        kjd/Zxa54PfkKBpOhfEZGpnfxi7uSwb6g7nY7hcJknsoyBupUVqKRix01M7vsgNIY03kJy
-        gsNbUdpbbf/11Aimrgv5gOLsh6vtsWc=
+        bh=O610mBvZURoqYHuxckgN9T0z5w+xVd78LoX1tKf3Z2E=;
+        b=TkZqqQPmR9PHITpJu0cssVnJn0c6MBGR7yjz6sQ6sATzCDVpdnSpQRZH3VKgXk6eLhOwpC
+        IvODtAA96BHQesMgcgTZ6Bt8OK3ewaWMs/Yty9X7Fm/T1gF9LBPUd6osA1WnwbsXU1/IGR
+        TmVgvAXT8HN6VyS+mSvPSQE6nYGqvb0=
 Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id E6AFB1376B;
-        Fri,  3 Sep 2021 10:50:48 +0000 (UTC)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 80F08137D0
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Sep 2021 12:45:17 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap1.suse-dmz.suse.de with ESMTPSA
-        id AXa6NQj+MWHMEwAAGKfGzw
-        (envelope-from <nborisov@suse.com>); Fri, 03 Sep 2021 10:50:48 +0000
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH] btrfs: add new filter for missing devices
-Date:   Fri,  3 Sep 2021 13:50:47 +0300
-Message-Id: <20210903105047.1118101-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
+        id JtxDEN0YMmGsMgAAGKfGzw
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Sep 2021 12:45:17 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: unexport repair_io_failure()
+Date:   Fri,  3 Sep 2021 20:45:14 +0800
+Message-Id: <20210903124514.71575-1-wqu@suse.com>
+X-Mailer: git-send-email 2.33.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are pending changes to btrfs progs which make the output of
-'btrfs fi show' more useful w.r.t to misisng devices. I.e instead of
-printing a single '*** Some devices missing'  at the end it now produces
-one line per missing device:
+Function repair_io_failure() is no longer used out of extent_io.c since
+commit 8b9b6f255485 ("btrfs: scrub: cleanup the remaining nodatasum
+fixup code"), which removes the last external caller.
 
-Total devices 2 FS bytes used 128.00KiB
-	devid    1 size 5.00GiB used 1.26GiB path /dev/loop0
-	devid    2 size 0 used 0 path /dev/loop1 ***MISSING***
+Just unexport it.
 
-This obviously will break all existing tests so in anticipation for this
-change landing the filter is being added.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- common/filter.btrfs | 22 +++++++++++++++++++---
- 1 file changed, 19 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 6 +++---
+ fs/btrfs/extent_io.h | 3 ---
+ 2 files changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/common/filter.btrfs b/common/filter.btrfs
-index d4169cc69112..37b92478c939 100644
---- a/common/filter.btrfs
-+++ b/common/filter.btrfs
-@@ -13,6 +13,22 @@ _filter_devid()
- 	sed -e "s/\(devid\)\s\+[0-9]\+/\1 <DEVID>/g"
- }
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5ad749e19ff3..9f42a0b2ee4f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2282,9 +2282,9 @@ int free_io_failure(struct extent_io_tree *failure_tree,
+  * currently, there can be no more than two copies of every data bit. thus,
+  * exactly one rewrite is required.
+  */
+-int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+-		      u64 length, u64 logical, struct page *page,
+-		      unsigned int pg_offset, int mirror_num)
++static int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
++			     u64 length, u64 logical, struct page *page,
++			     unsigned int pg_offset, int mirror_num)
+ {
+ 	struct bio *bio;
+ 	struct btrfs_device *dev;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 9f3e0a45a5e4..ba471f2063a7 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -283,9 +283,6 @@ struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs);
+ struct bio *btrfs_bio_clone(struct bio *bio);
+ struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 size);
  
-+
-+# Filter btrfs fi show output to match the old format, before the more verbose
-+# missing device lines were add
-+_filter_btrfs_missing_line()
-+{
-+	awk '
-+	BEGIN {should_print=0}
-+# skip empty lines as btrfs progs inserts such
-+	/^$/ {next}
-+	!/.*\*\*\*MISSING\*\*\*/ {print $0}
-+	/.*\*\*\*MISSING\*\*\*/ {should_print=1}
-+# The final \n adds an extra empty line to match with the original output
-+	END {if (should_print) {print "\t*** Some devices missing"} print "\n"}
-+	'
-+}
-+
- # If passed a number as first arg, filter that number of devices
- # If passed a UUID as second arg, filter that exact UUID
- _filter_btrfs_filesystem_show()
-@@ -31,9 +47,9 @@ _filter_btrfs_filesystem_show()
- 	fi
+-int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+-		      u64 length, u64 logical, struct page *page,
+-		      unsigned int pg_offset, int mirror_num);
+ void end_extent_writepage(struct page *page, int err, u64 start, u64 end);
+ int btrfs_repair_eb_io_failure(const struct extent_buffer *eb, int mirror_num);
  
- 	# the uniq collapses all device lines into 1
--	_filter_uuid $UUID | _filter_scratch | _filter_scratch_pool | \
--	_filter_size | _filter_btrfs_version | _filter_devid | \
--	_filter_zero_size | \
-+	_filter_btrfs_missing_line | _filter_uuid $UUID | _filter_scratch | \
-+	_filter_scratch_pool | _filter_size | _filter_btrfs_version | \
-+	_filter_devid | _filter_zero_size | \
- 	sed -e "s/\(Total devices\) $NUMDEVS/\1 $NUM_SUBST/g" | \
- 	uniq
- }
 -- 
-2.17.1
+2.33.0
 

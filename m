@@ -2,131 +2,81 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.6 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33726C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Sep 2021 09:56:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 044DAC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Sep 2021 11:19:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 13C336108E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Sep 2021 09:56:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D485061100
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Sep 2021 11:19:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242313AbhIGJ5x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Sep 2021 05:57:53 -0400
-Received: from mout.gmx.net ([212.227.17.21]:38653 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S242294AbhIGJ5x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Sep 2021 05:57:53 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1631008605;
-        bh=yfKGoFJZVGjhbp+e+HxZsC0AIGX8XtcVIe9RcJ4D0V4=;
-        h=X-UI-Sender-Class:Subject:To:References:From:Date:In-Reply-To;
-        b=AXYHUyLOgiMp+waoWiqmnQEzNXZGbatDqysTvpNye07aiqYmEXPFCChRSiLauuI7v
-         S0seggabsYIA5KoUfEcMsMc+QLDhAVUHT67aPIYDeD8Opt2BYgW4k/wMZDxddkWw7e
-         fKKIrzDbiSBQmUg6VC+5xll9omu+kGjkh6DdTPlg=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1M9Wyy-1mI1Wq0adI-005bsi; Tue, 07
- Sep 2021 11:56:44 +0200
-Subject: Re: [PATCH 2/3] btrfs: rename struct btrfs_io_bio to struct
- btrfs_logical_bio
-To:     Nikolay Borisov <nborisov@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20210907074242.103438-1-wqu@suse.com>
- <20210907074242.103438-3-wqu@suse.com>
- <95fd7c35-a100-6aca-64e2-c396420a8fda@suse.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <026af2b0-f162-7131-f583-23187b40c272@gmx.com>
-Date:   Tue, 7 Sep 2021 17:56:41 +0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        id S242421AbhIGLUL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Sep 2021 07:20:11 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:52360 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S239767AbhIGLTz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Sep 2021 07:19:55 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id EC0B21FF66;
+        Tue,  7 Sep 2021 11:18:48 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1631013528;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=MYgc/YN5fhPIegT1smXoRY8H9Dk3xCg9+25XuSoJXtM=;
+        b=w8QILQx8vvj5mpHQoYc+Xc0Vdg/LER14qwFOnnsqkaZ/Std/HjPRMDslvafAAVOsi/p9gE
+        LxoKLiuz02cgtWWOy50Egd1CvA3A2B3bXLWlvo7EPo7jvr+7qqkQOZxhnrnGl5NFFmwBnE
+        HmKA5jXavwaJs02LWhrvaW9yrf5oEyA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1631013528;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=MYgc/YN5fhPIegT1smXoRY8H9Dk3xCg9+25XuSoJXtM=;
+        b=g12vCyUxPgY0qgTU6+6uRGKtQZ2n/UQUntmqZPgY2aNybRA/hOECCYkwthMGRi6Fq+FT1T
+        5Edb2fIfBliZlaAA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id BE52AA3B96;
+        Tue,  7 Sep 2021 11:18:48 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id A2033DA7F3; Tue,  7 Sep 2021 13:18:44 +0200 (CEST)
+Date:   Tue, 7 Sep 2021 13:18:44 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH] btrfs: zoned: fix double counting of split ordered extent
+Message-ID: <20210907111843.GJ3379@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+References: <20210906150428.2399128-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-In-Reply-To: <95fd7c35-a100-6aca-64e2-c396420a8fda@suse.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:WU/CzJ4IoS7Ta9WgE+l/f0oKtxEjPz+Wdvg7SkMRviiy/Eno7fy
- +fadisbKaRvcHmf1CR/sKE3Z3vv02b/qPSd3kxyXjHKAfUW5R9T1ObpdhvwY80NYH0k1SEx
- MdVbsRQBPYSmAX6fgD9/XQ5ZPHyT7y+ZGF7khqnhO0lAyVt2Q45HmbgWgml8JexsXT06CRV
- k+B8DzncjK/fJb/EFdf4w==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:FRQJPo+aO8I=:aMNdT/5LNIwZQm61uWV4rg
- gDb+jVa3Dt2s+OadEU80WGVOG44l8eLSeRFANX5+C/5+x+2JSth0sNrGsqdbXMEwj4LFtShVA
- JILUWRjcFozY1UvfcJ1W1NeE1HJWiF2QXuraOY0SpH1PVEYbYqGihRO9PMFEroigjiCnyXhuQ
- OYCsNJaLthGKRgjLiU08adc+A2s9HsK23M5ayURCFlgvciOY5OAfTz9zXVpVbcQ2LN3/cxB3H
- 2NV8t9/90eSefmYY7nDzpW8v5HKl/rwd7ItSJ4756ldKLu1tI5XOZRi+dJCpgs+mUOgjrRF2U
- HwBa9TLUQl0+Q4YlYjqtTqipZ7BB9DIkd5f1JbvnxXNSQibr5eBRCVZ5PsGJ2R+UnkDCn1cfW
- aYEYV6/ELDnkRvs++9iOwppLqszLzmjFbiN3aen6q2b43TatvK+JKA/V1WbK8vdHYBjv83xR7
- X3X25+4jaayMmTmrM2E8alREo1zzDb3+18UPdW40IM4AyntO3DVmvtPHgGWXvoHqF+Bu0G21k
- CKt/C9o2Dd7I3az8u20ff+2uLLEeTMuIb9s1Vwz7ee2YuQ+dEPD/LcZen6LT3CMEQEkIsfbYD
- Q3zZQLWE/hD6jHWMYJbbHJ+QeU51lDxDnj72xhMu81XEBBvWBv43iXeWyRgGb/F4mvol7R+Ip
- U8wD9uxUhP7wm9dXhpc0/MFpqgzkK/di3Zy1vpyV5rOw/9JMmpaxc0cHjvWQL4TuRxioLhyKP
- y4+DyDLYjpXie2TmvQIg8JeYBytccFHu20f+tLDlxAh8zg+fjyUHSn4IzyhCmyuNjHA3zTexr
- Rz+/ZCwcQ5SN0CMLPQyUwywhPiC82eznK/yC1agZi/MqkkNiEMREjY59xlLIyDuxkwle38+MA
- qVdtZRtPuSXGOVgJv48XbDbra0RMgYFnvLG/lrZpK14WPbrnhZbF17j0+EACn6t0l6qxAlR35
- FLP4RGD/YyinkP5CN6kSpmR6kWRbaVfmpVU/jIgWCD+G0axcnXA8BsjVyZdyeQgcd8bK9nQuR
- RsHivDoZPS4Ffk2qZY4ae9oN+FDZF1+DzFiDab86RCCJWZp4lUnufTqmo8q6BN0ry+N4mU87Y
- kgRqLeX3gEWcPjLqzdLe0ItL8TPO8RxY548PfMXZzJCOoZTnXoQI7ZTIg==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210906150428.2399128-1-naohiro.aota@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Tue, Sep 07, 2021 at 12:04:28AM +0900, Naohiro Aota wrote:
+> btrfs_add_ordered_extent_*() add num_bytes to fs_info->ordered_bytes.
+> Then, splitting an ordered extent will call btrfs_add_ordered_extent_*()
+> again for split extents, leading to double counting of the region of
+> a split extent. These leaked bytes are finally reported at unmount time
+> as follow.
+> 
+> BTRFS info (device dm-1): at unmount dio bytes count 364544
+> 
+> This commit fixes the double counting by subtracting split extent's size
+> from fs_info->ordered_bytes.
+> 
+> Fixes: d22002fd37bd ("btrfs: zoned: split ordered extent when bio is sent")
+> Cc: stable@vger.kernel.org # 5.12+
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
-
-On 2021/9/7 =E4=B8=8B=E5=8D=885:47, Nikolay Borisov wrote:
->
->
-> On 7.09.21 =D0=B3. 10:42, Qu Wenruo wrote:
->> In btrfs there are at least 4 types of different bios currently:
->>
->> - btrfs_io_bio
->>    It's used to specify IO for logical bytenr
->
-> Perhaps this structure needs to be turned into a btrfs_bio.
-
-That makes sense, although I still want to keep the logical part to
-indicate what the bytenr is for.
->
->>
->> - btrfs_bio
->>    It's real physical bio
->
-> It's not even that, because btrfs_bio itself is not submitted at all,
-> it's really some sort of a semaphore, which is used to signal all stripe
-> bios i.e those bios which are submitted to the actual devices have
-> completed. In that regard it's not even a bio per-se, more like an
-> io_context.
-
-Yep, although there is still some use-case where it integrate the
-logical bio into it, thus it still has bio in it.
-
-Or maybe we should separate the mapping part completely from the bio?
-
-Thanks,
-Qu
-
->
->>
->> - compressed_bio
->>    Only used for compressed read write.
->
-> This should be compressed_io_ctx or some such.
->
->>
->> - btrfs_raid_bio
->>    Only used by RAID56
->>
->> The naming of btrfs_bio and btrfs_io_bio is just anti-human.
->>
->> Rename btrfs_io_bio to btrfs_logical_bio, and all involved helpers to
->> make clear at which layer the bio works.
->>
->> Since we're here, also add extra comments on critical members like
->> @mirror_num.
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->
-> <snip>
->
+Added to misc-next, thanks.

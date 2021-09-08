@@ -2,183 +2,220 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FORGED_MUA_MOZILLA,HEADER_FROM_DIFFERENT_DOMAINS,
-	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA558C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Sep 2021 16:34:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8851C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Sep 2021 17:03:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9AA3B61139
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Sep 2021 16:34:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AF2BC60FDA
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Sep 2021 17:03:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349214AbhIHQf6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Sep 2021 12:35:58 -0400
-Received: from a4-3.smtp-out.eu-west-1.amazonses.com ([54.240.4.3]:53825 "EHLO
-        a4-3.smtp-out.eu-west-1.amazonses.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S231666AbhIHQf5 (ORCPT
+        id S1352370AbhIHREw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Sep 2021 13:04:52 -0400
+Received: from out1-smtp.messagingengine.com ([66.111.4.25]:53113 "EHLO
+        out1-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S235666AbhIHREw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 8 Sep 2021 12:35:57 -0400
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=vbsgq4olmwpaxkmtpgfbbmccllr2wq3g; d=urbackup.org; t=1631118887;
-        h=Subject:To:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-        bh=XdeS5EJu8rOP8KXydojC42LY4AkspbbuHCqdYLnqNmM=;
-        b=EF86cySctTqrhQNSTDeuVpHp572t2e68dssJPAm8GpR/LjGgNmO0D0OBHvVYEM7T
-        JgU1MjV4W67/g3elHJw9vwYgff04+OcwQa+fB47qWLK9PYBN9aclf3arxxP1lXPrPgd
-        tM8CeNtRxPLC0YfGzyWjtP6qrerBAeraaQH+AGK8=
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple;
-        s=uku4taia5b5tsbglxyj6zym32efj7xqv; d=amazonses.com; t=1631118887;
-        h=Subject:To:References:From:Message-ID:Date:MIME-Version:In-Reply-To:Content-Type:Content-Transfer-Encoding:Feedback-ID;
-        bh=XdeS5EJu8rOP8KXydojC42LY4AkspbbuHCqdYLnqNmM=;
-        b=Q+oc73jRg2VVO3vu41gRmCA1ofVcgsrWLsxBa/ty7HAGFuF2+frJmlm3XCPBBdsE
-        +1/0Nwl4ievXHSR4gfeWniGC9BOlJlpMFb8P7OYJBss6oiny54mAzAAPXKiw4scfOmN
-        s6dFu1bWuzJetcqoeXJBk67WxKE9X+npMhC82OnI=
-Subject: Re: [PATCH v2] btrfs: Remove received information from snapshot on
- ro->rw switch
-To:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20210908135135.1474055-1-nborisov@suse.com>
-From:   Martin Raiber <martin@urbackup.org>
-Message-ID: <0102017bc64308e0-f75c4f13-349c-4c2c-a77d-f037340f07c1-000000@eu-west-1.amazonses.com>
-Date:   Wed, 8 Sep 2021 16:34:47 +0000
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        Wed, 8 Sep 2021 13:04:52 -0400
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.42])
+        by mailout.nyi.internal (Postfix) with ESMTP id 7A5C15C003E;
+        Wed,  8 Sep 2021 13:03:43 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute2.internal (MEProxy); Wed, 08 Sep 2021 13:03:43 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=date
+        :from:to:cc:subject:message-id:references:mime-version
+        :content-type:in-reply-to; s=fm1; bh=Ezc+vm2SI58fjd6m2t778+wXJ4S
+        HMPKxlm04xyho/kk=; b=scaRMpFgEtnEJ8iUIuFHwGqhrsGfBt6KtJ8DVqh8xeZ
+        wcUHxjTsIRpXJ5EgYfs0/RIcDKhJkKpjZLk7+Fio47Su4tW4PZy4oso3yjk1ztWM
+        4KBszf67r/vbqCZC3cd92opCVGi3QKhapesHCxWqD1CYiQlMUuRZRGLeF8iqfDLS
+        kNhGvzF2wRx+nLjkIgQ828n12guqFiI7WiXxtsOwlB6hrXJRornvdnBvDeUSERfs
+        N3u5lKkA09jcwcRkk4Jju5vtFKE9wavLU5Q25AAkPKtsJxqBcoeyb2RMR2I45oIx
+        TpoZvdO7uSA2EJVH8UALWYyYxHXKKHozx/lYK3+osDw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:from:in-reply-to
+        :message-id:mime-version:references:subject:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; bh=Ezc+vm
+        2SI58fjd6m2t778+wXJ4SHMPKxlm04xyho/kk=; b=cPSVa8+Y6B0MpxNaDeu97K
+        PdyxCj0GnVgdlNtmtzYr0gd0AA+zf4E0cPHRC2hdb4i5tqHPyo1OGpHEbpNiloMR
+        w/imLH2tc0jGO1sVeGNfqfxhQ+97ODLrdcGyy1w6b8O2oJ0VRzPY8Jd6R1cYpj0d
+        m40uuEC87hjlbORRi803lYiiBqA05yMS9DcnWX3TvCOynEst7eTdZs7a/07sE3bz
+        FIio+7oaDdohFpEBoWURb0Jc9gnaRC+S990P37ME9cy+HBjLB4ZoOAZ1t8/yeauu
+        gPUGdxJ0zHbFfcYma9Mpx9ve1bAqAL910SsY2M8Ra73uusqyylcMypbpMp5bz4BA
+        ==
+X-ME-Sender: <xms:7-w4YT0RMtip7GS4Mzpo0wzSyPqf14dEcqqJhv1wGw7jhL8dsrCj9Q>
+    <xme:7-w4YSFBABvtG8janZmBka7OXwwMjXCQClVRWvBfxU950bdU_yqoJhTRBGKCfNFC_
+    s1JygESmm3bwBLKxMY>
+X-ME-Received: <xmr:7-w4YT65a1kKB8LahoiEhPLOXWA9yiqsfF7UJ9xdzeC1cqmuCCC3lndBDPlWAutDjfpvv9EJIJ3uaGjtIzCZ3_sr-_Sw4w>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvtddrudefjedguddtjecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpeffhffvuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepuehorhhi
+    shcuuehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpe
+    ehudevleekieetleevieeuhfduhedtiefgheekfeefgeelvdeuveeggfduueevfeenucev
+    lhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegsohhrihhsse
+    gsuhhrrdhioh
+X-ME-Proxy: <xmx:7-w4YY3_VqlkEgucbU3qmrofcSnZlu_nydh4A-DFDO8RoI_MU_GBQg>
+    <xmx:7-w4YWFB41syfSA43P88yCiat41A8V9N9SSfnciIdtAJ-KvAnFX8UA>
+    <xmx:7-w4YZ-Y0jBxN4RgpkTc85B-RUBzRSmLL9Jjb_JMOqXJUmu_wnFOmQ>
+    <xmx:7-w4YROAM9-Rh4a3fhBi0cGajyXo9WWjUvLUX0KNgK0_8osoGOC2Sw>
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 8 Sep 2021 13:03:43 -0400 (EDT)
+Date:   Wed, 8 Sep 2021 10:03:41 -0700
+From:   Boris Burkov <boris@bur.io>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: don't call end_extent_writepage() in
+ __extent_writepage() when IO failed
+Message-ID: <YTjstM7duaGeAgwK@zen>
+References: <20210803055348.170042-1-wqu@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20210908135135.1474055-1-nborisov@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: 7bit
-Feedback-ID: 1.eu-west-1.zKMZH6MF2g3oUhhjaE2f3oQ8IBjABPbvixQzV8APwT0=:AmazonSES
-X-SES-Outgoing: 2021.09.08-54.240.4.3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210803055348.170042-1-wqu@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 08.09.2021 15:51 Nikolay Borisov wrote:
-> Currently when a read-only snapshot is received and subsequently its
-> ro property is set to false i.e. switched to rw-mode the
-> received_uuid/stime/rtime/stransid/rtransid of that subvol remains
-> intact. However, once the received volume is switched to RW mode we
-> cannot guaranteee that it contains the same data, so it makes sense
-> to remove those fields which indicate this volume was ever
-> send/received. Additionally, sending such volume can cause conflicts
-> due to the presence of received_uuid.
->
-> Preserving the received_uuid (and related fields) after transitioning the
-> snapshot from RO to RW and then changing the snapshot has a potential for
-> causing send to fail in many unexpected ways if we later turn it back to
-> RO and use it for an incremental send operation.
->
-> A recent example, in the thread to which the Link tag below points to, we
-> had a user with a filesystem that had multiple snapshots with the same
-> received_uuid but with different content due to a transition from RO to RW
-> and then back to RO. When an incremental send was attempted using two of
-> those snapshots, it resulted in send emitting a clone operation that was
-> intended to clone from the parent root to the send root - however because
-> both roots had the same received_uuid, the receiver ended up picking the
-> send root as the source root for the clone operation, which happened to
-> result in the clone operation to fail with -EINVAL, due to the source and
-> destination offsets being the same (and on the same root and file). In this
-> particular case there was no harm, but we could end up in a case where the
-> clone operation succeeds but clones wrong data due to picking up an
-> incorrect root - as in the case of multiple snapshots with the same
-> received_uuid, it has no way to know which one is the correct one if they
-> have different content.
-Not to overly discourage this change but I think this will cause some issues in user space.
+On Tue, Aug 03, 2021 at 01:53:48PM +0800, Qu Wenruo wrote:
+> [BUG]
+> When running generic/475 with 64K page size and 4K sectorsize (aka
+> subpage), it can trigger the following BUG_ON() inside
+> btrfs_csum_one_bio(), the possibility is around 1/20 ~ 1/5:
+> 
+> 	bio_for_each_segment(bvec, bio, iter) {
+> 		if (!contig)
+> 			offset = page_offset(bvec.bv_page) + bvec.bv_offset;
+> 
+> 		if (!ordered) {
+> 			ordered = btrfs_lookup_ordered_extent(inode, offset);
+> 			BUG_ON(!ordered); /* Logic error */ <<<<
+> 		}
+> 
+> 		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info,
+> 
+> [CAUSE]
+> Test case generic/475 uses dm-errors to emulate IO failure.
+> 
+> Here if we have a page cache which has the following delalloc range:
+> 
+> 	0		32K		64K
+> 	|/////|		|////|		|
+> 	\- [0, 4K)	\- [32K, 36K)
+> 
+> And then __extent_writepage() can go through the following race:
+> 
+> 	T1 (writeback)		|	T2 (endio)
+> --------------------------------+----------------------------------
+> __extent_writepage()		|
+> |- writepage_delalloc()		|
+> |  |- run_delalloc_range()	|
+> |  |  Add OE for [0, 4K)	|
+> |  |- run_delalloc_range()	|
+> |     Add OE for [32K, 36K)	|
+> |				|
+> |- __extent_writepage_io()	|
+> |  |- submit_extent_page()	|
+> |  |  |- Assemble the bio for	|
+> |  |     range [0, 4K)		|
+> |  |- submit_extent_page()	|
+> |  |  |- Submit the bio for	|
+> |  |  |  range [0, 4K)		|
+> |  |  |				| end_bio_extent_writepage()
+> |  |  |				| |- error = -EIO;
+> |  |  |				| |- end_extent_writepage( error=-EIO);
+> |  |  |				|    |- writepage_endio_finish_ordered()
+> |  |  |				|    |  Remove OE for range [0, 4K)
+> |  |  |				|    |- btrfs_page_set_error()
+> |  |- submit_extent_page()	|
+> |     |- Assemble the bio for	|
+> |        range [32K, 36K)	|
+> |- if (PageError(page))		|
+> |- end_extent_writepage()	|
+>    |- endio_finish_ordered()	|
+>       Remove OE [32K, 36K)	|
+> 				|
+> Submit bio for [32K, 36K)	|
+> |- btrfs_csum_one_bio()		|
+>    |- BUG_ON(!ordered_extent)	|
+>       OE [32K, 36K) is already  |
+>       removed.			|
+> 
+> This can only happen for subpage case, as for regular sectorsize, we
+> never submit current page, thus IO error will never mark the current
+> page Error.
+> 
+> [FIX]
+> Just remove the end_extent_writepage() call and the if (PageError())
+> check.
+> 
+> As mentioned, the end_extent_writepage() never really get executed for
+> regular sectorsize, and could cause above BUG_ON() for subpage.
 
-For example I had the problem of partial subvols after a sudden restart during receive. No problem, just receive to a directory that gets deleted on startup then move the subvol to the final location after completion. To move the subvol it needs to be temporarily set rw for some reason. I'm sure there is some better solution but patterns like this might be out there.
+I was a little surprised to see this assertion, because it begs the
+question: "why was this call added in the first place?"
 
->
-> Link: https://lore.kernel.org/linux-btrfs/CAOaVUnV3L6RpcqJ5gaqzNXWXK0VMkEVXCdihawH1PgS6TiMchQ@mail.gmail.com/
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> Suggested-by: David Sterba <dsterba@suse.cz>
+As best as I can tell, it was introduced by Filipe in
+"Btrfs: fix hang on error (such as ENOSPC) when writing extent pages"
+
+That looks like a reasonably niche case that might not be covered by
+xfstests, so I was wondering if you had already convinced yourself that
+it no longer applies.
+
+I'll try to see if I can reproduce his issue with this patch, or if the
+code has changed by enough that it no longer reproduces.
+
+> 
+> This also means, inside __extent_writepage() we should not bother any IO
+> failure, but only focus on the error hit during bio assembly and
+> submission.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/ioctl.c | 41 +++++++++++++++++++++++++++++++++++------
->  1 file changed, 35 insertions(+), 6 deletions(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 9eb0c1eb568e..67709d274489 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1927,9 +1927,11 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->  	struct inode *inode = file_inode(file);
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
-> +	struct btrfs_root_item *root_item = &root->root_item;
->  	struct btrfs_trans_handle *trans;
->  	u64 root_flags;
->  	u64 flags;
-> +	bool clear_received_state = false;
->  	int ret = 0;
->  
->  	if (!inode_owner_or_capable(file_mnt_user_ns(file), inode))
-> @@ -1960,9 +1962,9 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->  	if (!!(flags & BTRFS_SUBVOL_RDONLY) == btrfs_root_readonly(root))
->  		goto out_drop_sem;
->  
-> -	root_flags = btrfs_root_flags(&root->root_item);
-> +	root_flags = btrfs_root_flags(root_item);
->  	if (flags & BTRFS_SUBVOL_RDONLY) {
-> -		btrfs_set_root_flags(&root->root_item,
-> +		btrfs_set_root_flags(root_item,
->  				     root_flags | BTRFS_ROOT_SUBVOL_RDONLY);
->  	} else {
->  		/*
-> @@ -1971,9 +1973,10 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->  		 */
->  		spin_lock(&root->root_item_lock);
->  		if (root->send_in_progress == 0) {
-> -			btrfs_set_root_flags(&root->root_item,
-> +			btrfs_set_root_flags(root_item,
->  				     root_flags & ~BTRFS_ROOT_SUBVOL_RDONLY);
->  			spin_unlock(&root->root_item_lock);
-> +			clear_received_state = true;
->  		} else {
->  			spin_unlock(&root->root_item_lock);
->  			btrfs_warn(fs_info,
-> @@ -1984,14 +1987,40 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->  		}
->  	}
->  
-> -	trans = btrfs_start_transaction(root, 1);
-> +	/*
-> +	 * 1 item for updating the uuid root in the root tree
-> +	 * 1 item for actually removing the uuid record in the uuid tree
-> +	 */
-> +	trans = btrfs_start_transaction(root, 2);
->  	if (IS_ERR(trans)) {
->  		ret = PTR_ERR(trans);
->  		goto out_reset;
->  	}
->  
-> -	ret = btrfs_update_root(trans, fs_info->tree_root,
-> -				&root->root_key, &root->root_item);
-> +	if (clear_received_state &&
-> +	    !btrfs_is_empty_uuid(root_item->received_uuid)) {
+>  fs/btrfs/extent_io.c | 14 +++++++++-----
+>  1 file changed, 9 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index e665779c046d..a1a6ac787faf 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -4111,8 +4111,8 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+>  	 * Here we used to have a check for PageError() and then set @ret and
+>  	 * call end_extent_writepage().
+>  	 *
+> -	 * But in fact setting @ret here will cause different error paths
+> -	 * between subpage and regular sectorsize.
+> +	 * But in fact setting @ret and call end_extent_writepage() here will
+> +	 * cause different error paths between subpage and regular sectorsize.
+>  	 *
+>  	 * For regular page size, we never submit current page, but only add
+>  	 * current page to current bio.
+> @@ -4124,7 +4124,12 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+>  	 * thus can get PageError() set by submitted bio of the same page,
+>  	 * while our @ret is still 0.
+>  	 *
+> -	 * So here we unify the behavior and don't set @ret.
+> +	 * The same is also for end_extent_writepage(), which can finish
+> +	 * ordered extent before submitting the real bio, causing
+> +	 * BUG_ON() in btrfs_csum_one_bio().
+> +	 *
+> +	 * So here we unify the behavior and don't set @ret nor call
+> +	 * end_extent_writepage().
+>  	 * Error can still be properly passed to higher layer as page will
+>  	 * be set error, here we just don't handle the IO failure.
+>  	 *
+> @@ -4138,8 +4143,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+>  	 * Currently the full page based __extent_writepage_io() is not
+>  	 * capable of that.
+>  	 */
+> -	if (PageError(page))
+> -		end_extent_writepage(page, ret, start, page_end);
 > +
-> +		ret = btrfs_uuid_tree_remove(trans, root_item->received_uuid,
-> +					     BTRFS_UUID_KEY_RECEIVED_SUBVOL,
-> +					     root->root_key.objectid);
-> +
-> +		if (ret && ret != -ENOENT) {
-> +			btrfs_abort_transaction(trans, ret);
-> +			btrfs_end_transaction(trans);
-> +			goto out_reset;
-> +		}
-> +
-> +		memset(root_item->received_uuid, 0, BTRFS_UUID_SIZE);
-> +		btrfs_set_root_stransid(root_item, 0);
-> +		btrfs_set_root_rtransid(root_item, 0);
-> +		btrfs_set_stack_timespec_sec(&root_item->stime, 0);
-> +		btrfs_set_stack_timespec_nsec(&root_item->stime, 0);
-> +		btrfs_set_stack_timespec_sec(&root_item->rtime, 0);
-> +		btrfs_set_stack_timespec_nsec(&root_item->rtime, 0);
-> +	}
-> +
-> +	ret = btrfs_update_root(trans, fs_info->tree_root, &root->root_key,
-> +				root_item);
->  	if (ret < 0) {
->  		btrfs_end_transaction(trans);
->  		goto out_reset;
-
-
+>  	unlock_page(page);
+>  	ASSERT(ret <= 0);
+>  	return ret;
+> -- 
+> 2.32.0
+> 

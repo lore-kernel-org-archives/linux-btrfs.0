@@ -2,76 +2,94 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C32DC43217
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D068C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:00:11 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7920F632B0
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:55 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E9E6563299
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:00:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244052AbhIIMA7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 08:00:59 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:34170 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343788AbhIIL5N (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Sep 2021 07:57:13 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 460F821F7D;
-        Thu,  9 Sep 2021 11:56:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1631188562;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=agEQxAhBjd7Ak1Nos5YLzyAtVaplR2eFLhqvOnEJgzc=;
-        b=X77FswzSgHQgBbOsgjoEcUXW3ZKMA0NY+bnA4pjj9nE1Bp4l9rvD2NVlWKP9LJwfmTXP+U
-        dObrbGxYBbo06XKSLeROBPZWb1Peu4kxYACPCjnIOH9AUHxSHho+vY9xdZ9GBBh4tGrZrV
-        PPD4zaFcMZUIUhPX+Ydyaz5cRWyQM5Y=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1631188562;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=agEQxAhBjd7Ak1Nos5YLzyAtVaplR2eFLhqvOnEJgzc=;
-        b=VsFfM51VrYY5s9Y2VF+JrmUmJvmdFjmi++QPGSxkQXE2omw2lucuP2d6NR45b6Mo3l/3Ka
-        LXLE3goV3DmYK7CA==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 3F6F8A3EDD;
-        Thu,  9 Sep 2021 11:56:02 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4813FDA7A9; Thu,  9 Sep 2021 13:55:57 +0200 (CEST)
-Date:   Thu, 9 Sep 2021 13:55:57 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Sasha Levin <sashal@kernel.org>
-Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 5.14 196/252] btrfs: subpage: fix false alert
- when relocating partial preallocated data extents
-Message-ID: <20210909115557.GF15306@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Sasha Levin <sashal@kernel.org>,
-        linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
+        id S242401AbhIIMA5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 08:00:57 -0400
+Received: from mail.kernel.org ([198.145.29.99]:34520 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S245120AbhIIL4k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Sep 2021 07:56:40 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id E19EE611C6;
+        Thu,  9 Sep 2021 11:45:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1631187923;
+        bh=yIReAnM4BmjVOMDEMIAlM6cRmVcC9J3/OSMJ0cyLO08=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=DqckzEbJ9EVUrFWNc6IM8HBvqLxVbGZNF8BR8mhpeWFPOJH4xvJnBXQuM8Q3bpOer
+         GCj8KAeofq/vavcmYLeAwYyTIpbwJqzUIRc7Vz68fLIHk1WBuZqW5FFNHkNMZ+jvY6
+         we8SjaIU4xd9aM3dfGyI2+5Z2dm/g4/RwUlcpz3lEYeG/AD8V9P5fCSpc4UUqfxGTu
+         xDsLstiBDf3jGTpV6amRuN+hcm1EaLZKXlTx8h2rtH0iUoQWUKF8nNCwLnCXzqbyAm
+         QmtUGcfjI1M28JUkzR0oesJrBMiUeOBfI0zZv/YRUfWgpCxSikgzdmdaKromL2vEPJ
+         1Jrl2n4Wob9iw==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.14 197/252] btrfs: tree-log: check btrfs_lookup_data_extent return value
+Date:   Thu,  9 Sep 2021 07:40:11 -0400
+Message-Id: <20210909114106.141462-197-sashal@kernel.org>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20210909114106.141462-1-sashal@kernel.org>
 References: <20210909114106.141462-1-sashal@kernel.org>
- <20210909114106.141462-196-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210909114106.141462-196-sashal@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 09, 2021 at 07:40:10AM -0400, Sasha Levin wrote:
-> From: Qu Wenruo <wqu@suse.com>
-> 
-> [ Upstream commit e3c62324e470c0a89df966603156b34fccd01708 ]
+From: Marcos Paulo de Souza <mpdesouza@suse.com>
 
-Please drop this patch from stable queue, thanks.
+[ Upstream commit 3736127a3aa805602b7a2ad60ec9cfce68065fbb ]
+
+Function btrfs_lookup_data_extent calls btrfs_search_slot to verify if
+the EXTENT_ITEM exists in the extent tree. btrfs_search_slot can return
+values bellow zero if an error happened.
+
+Function replay_one_extent currently checks if the search found
+something (0 returned) and increments the reference, and if not, it
+seems to evaluate as 'not found'.
+
+Fix the condition by checking if the value was bellow zero and return
+early.
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/tree-log.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index e6430ac9bbe8..7037e5855d2a 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -753,7 +753,9 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
+ 			 */
+ 			ret = btrfs_lookup_data_extent(fs_info, ins.objectid,
+ 						ins.offset);
+-			if (ret == 0) {
++			if (ret < 0) {
++				goto out;
++			} else if (ret == 0) {
+ 				btrfs_init_generic_ref(&ref,
+ 						BTRFS_ADD_DELAYED_REF,
+ 						ins.objectid, ins.offset, 0);
+-- 
+2.30.2
+

@@ -2,122 +2,76 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 328E0C4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 382ECC43219
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1C38763237
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2316163226
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241470AbhIIL6M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 07:58:12 -0400
-Received: from mail.kernel.org ([198.145.29.99]:34238 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S243040AbhIIL4K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Sep 2021 07:56:10 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id EB27C613A2;
-        Thu,  9 Sep 2021 11:45:13 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631187914;
-        bh=jnOqQ6KW9/2844WvO0e8zDichRbeAVLyXq2HEwGI1qU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=iHI6E7b1I+YvxxEhq1FsUnxo8IHGEM7fO6b7k+YvJY644Q65H5l1mdJzKOkec93bN
-         6Tr2uNlDqejqbqFhZy8c6n6IHAiAsDFIbvRCSKG5fg6zbOd4kIHl0fxOENoDzHVHcI
-         0jpiLrLJhjFdrGkaNTut9C5vZl2O3xCw49hP5Ie+EOe9u+/RcRRdowSdX0NI2UPAao
-         u8hmhpbo2P1/httOHK2WgKpyLqJJAYGar9+pNJ8P5XefNiyGtsAXKKrzIqRHcRGswD
-         lLN9qkPyMK2i1Y4tkjH+XWGaAq4NPmcaKLNOc+ye5ft7HAHf0dNTx6qsPyx63JGdWX
-         NhpcWRoucRC0A==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.14 190/252] btrfs: remove racy and unnecessary inode transaction update when using no-holes
-Date:   Thu,  9 Sep 2021 07:40:04 -0400
-Message-Id: <20210909114106.141462-190-sashal@kernel.org>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210909114106.141462-1-sashal@kernel.org>
+        id S242877AbhIIL6Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 07:58:24 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:42486 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S243694AbhIIL4U (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Sep 2021 07:56:20 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id DD3721FDEB;
+        Thu,  9 Sep 2021 11:55:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1631188509;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=LF5iiXOxIOPlqm1WdseD0cCvYoH7p/7BkKS5zwgUj94=;
+        b=zspsoDHzNXOdUVEuqhaTewCHNNSB4NUlJJofAGADRktnHbvE3upCVYJD1tXL5X+yIYasaA
+        IBjHo2FppQl51kAjoUlwIdFiwocheSN08GO4uXj/zbtPmrHD2Gb6Ju3dCJHsGaE1ROE1Hd
+        QSA6sx/VyKc2Y5muf9TCAcHty2zaBRc=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1631188509;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=LF5iiXOxIOPlqm1WdseD0cCvYoH7p/7BkKS5zwgUj94=;
+        b=TgJcZ6CrJIDKZmSomk3JGCtY0eLh2IYfj2qZhyUmUPdrLZJ5jzz1HHYUFtwCHDcFQVoU0e
+        7U7s14Stsx1jB6Cw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id D0EA7A3D8C;
+        Thu,  9 Sep 2021 11:55:09 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C111FDA7A9; Thu,  9 Sep 2021 13:55:04 +0200 (CEST)
+Date:   Thu, 9 Sep 2021 13:55:04 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Sasha Levin <sashal@kernel.org>
+Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH AUTOSEL 5.14 191/252] btrfs: reset this_bio_flag to avoid
+ inheriting old flags
+Message-ID: <20210909115504.GA15306@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Sasha Levin <sashal@kernel.org>,
+        linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
 References: <20210909114106.141462-1-sashal@kernel.org>
+ <20210909114106.141462-191-sashal@kernel.org>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210909114106.141462-191-sashal@kernel.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Sep 09, 2021 at 07:40:05AM -0400, Sasha Levin wrote:
+> From: Qu Wenruo <wqu@suse.com>
+> 
+> [ Upstream commit 4c37a7938496756649096a7ec26320eb8b0d90fb ]
 
-[ Upstream commit cceaa89f02f15f232391ae4be214137b0a0285c0 ]
-
-When using the NO_HOLES feature and expanding the size of an inode, we
-update the inode's last_trans, last_sub_trans and last_log_commit fields
-at maybe_insert_hole() so that a fsync does know that the inode needs to
-be logged (by making sure that btrfs_inode_in_log() returns false). This
-happens for expanding truncate operations, buffered writes, direct IO
-writes and when cloning extents to an offset greater than the inode's
-i_size.
-
-However the way we do it is racy, because in between setting the inode's
-last_sub_trans and last_log_commit fields, the log transaction ID that was
-assigned to last_sub_trans might be committed before we read the root's
-last_log_commit and assign that value to last_log_commit. If that happens
-it would make a future call to btrfs_inode_in_log() return true. This is
-a race that should be extremely unlikely to be hit in practice, and it is
-the same that was described by commit bc0939fcfab0d7 ("btrfs: fix race
-between marking inode needs to be logged and log syncing").
-
-The fix would simply be to set last_log_commit to the value we assigned
-to last_sub_trans minus 1, like it was done in that commit. However
-updating these two fields plus the last_trans field is pointless here
-because all the callers of btrfs_cont_expand() (which is the only
-caller of maybe_insert_hole()) always call btrfs_set_inode_last_trans()
-or btrfs_update_inode() after calling btrfs_cont_expand(). Calling either
-btrfs_set_inode_last_trans() or btrfs_update_inode() guarantees that the
-next fsync will log the inode, as it makes btrfs_inode_in_log() return
-false.
-
-So just remove the code that explicitly sets the inode's last_trans,
-last_sub_trans and last_log_commit fields.
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/inode.c | 12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bd5689fa290e..ab04f9dd465e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5088,15 +5088,13 @@ static int maybe_insert_hole(struct btrfs_root *root, struct btrfs_inode *inode,
- 	int ret;
- 
- 	/*
--	 * Still need to make sure the inode looks like it's been updated so
--	 * that any holes get logged if we fsync.
-+	 * If NO_HOLES is enabled, we don't need to do anything.
-+	 * Later, up in the call chain, either btrfs_set_inode_last_sub_trans()
-+	 * or btrfs_update_inode() will be called, which guarantee that the next
-+	 * fsync will know this inode was changed and needs to be logged.
- 	 */
--	if (btrfs_fs_incompat(fs_info, NO_HOLES)) {
--		inode->last_trans = fs_info->generation;
--		inode->last_sub_trans = root->log_transid;
--		inode->last_log_commit = root->last_log_commit;
-+	if (btrfs_fs_incompat(fs_info, NO_HOLES))
- 		return 0;
--	}
- 
- 	/*
- 	 * 1 - for the one we're dropping
--- 
-2.30.2
-
+Please drop this patch from stable queue, thanks.

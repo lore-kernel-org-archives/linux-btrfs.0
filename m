@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 956EAC433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED759C433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:41:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 70ACF60FE3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D20AC6115B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:41:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240711AbhIIMXw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 08:23:52 -0400
-Received: from mail.kernel.org ([198.145.29.99]:56862 "EHLO mail.kernel.org"
+        id S1354227AbhIIMmJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 08:42:09 -0400
+Received: from mail.kernel.org ([198.145.29.99]:45944 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1352464AbhIIMTZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Sep 2021 08:19:25 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id C4C6261283;
-        Thu,  9 Sep 2021 11:50:20 +0000 (UTC)
+        id S1353874AbhIIMhP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Sep 2021 08:37:15 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 8C23461BA3;
+        Thu,  9 Sep 2021 11:54:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631188221;
-        bh=XW47Uo1xPV1hb30MATB/U2VwZ9EAXIQSmUmvn3oAYBI=;
+        s=k20201202; t=1631188458;
+        bh=SVa4XEC2NebmvA/BAcxP871E7JuDFoZp40JqYO/Ikkk=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=dHX2hODzism62tNH27GE0aMQPaebzQuMljyn2XEkNIZ08QDIEZikrJ8s+xzpiXVk7
-         h0dZ94G8F+VOepFWggsCwu7xgP8oI/n2TGpEjNJdYt8mYv0IQRhIj5SBLvD/qsw7/y
-         h4jPatzkGiouP/KgMaxwV42x+ta9X/2fPII22tgMdM5340Y5Q7qjTQqrLDbiNYSGcH
-         BAUtV7x2ep+tTzgm0MUYgjk1zAsbNH4dxdVSgAe9jdrVkbG8dK4wZE03w0Z5RKks78
-         g0FFgK4EWV2eZ5R1o/cm/ph2dNvP/D9gcFeeNoWbJqTIgqqHV6QjSDcDdXQxfQF0cO
-         JjLfhSxgFpMDg==
+        b=Esy5+DHHnPtgydH8Lu+CDEMIyBfwvLxjEf44oGNwnsnfXbor/CJNwyiwivYLyFPTz
+         52nih+lzA6XrNVHZl9if4hZCNbHyDF6kmzoQznoN+e4XhxKCoEBjxX4ASVDhYvjZgF
+         a2PRv77RKsbJqTBhCfk43iKJDpZJRIWtF6GPDsTHu7zakzh4DBT/w+3CbvbeSeuYuC
+         mdjGp2d+YDyc/LoZDLpc6Xpf2K2lS92Mv+ENGDC60m7a4yLFEsRzw14lG/X+G9/60K
+         psrYGy3fgf9hdABEWEGBUjm1zHsBJ16KZQkrwWNSlhCOHw8kWfuW8cuNClJpkO28j5
+         fUgJYBkgpdoXQ==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Marcos Paulo de Souza <mpdesouza@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, Ritesh Harjani <riteshh@linux.ibm.com>,
         Filipe Manana <fdmanana@suse.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.13 175/219] btrfs: tree-log: check btrfs_lookup_data_extent return value
-Date:   Thu,  9 Sep 2021 07:45:51 -0400
-Message-Id: <20210909114635.143983-175-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 139/176] btrfs: subpage: fix race between prepare_pages() and btrfs_releasepage()
+Date:   Thu,  9 Sep 2021 07:50:41 -0400
+Message-Id: <20210909115118.146181-139-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210909114635.143983-1-sashal@kernel.org>
-References: <20210909114635.143983-1-sashal@kernel.org>
+In-Reply-To: <20210909115118.146181-1-sashal@kernel.org>
+References: <20210909115118.146181-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -51,45 +51,88 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Marcos Paulo de Souza <mpdesouza@suse.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit 3736127a3aa805602b7a2ad60ec9cfce68065fbb ]
+[ Upstream commit e0467866198f7f536806f39e5d0d91ae8018de08 ]
 
-Function btrfs_lookup_data_extent calls btrfs_search_slot to verify if
-the EXTENT_ITEM exists in the extent tree. btrfs_search_slot can return
-values bellow zero if an error happened.
+[BUG]
+When running generic/095, there is a high chance to crash with subpage
+data RW support:
 
-Function replay_one_extent currently checks if the search found
-something (0 returned) and increments the reference, and if not, it
-seems to evaluate as 'not found'.
+ assertion failed: PagePrivate(page) && page->private
+ ------------[ cut here ]------------
+ kernel BUG at fs/btrfs/ctree.h:3403!
+ Internal error: Oops - BUG: 0 [#1] SMP
+ CPU: 1 PID: 3567 Comm: fio Tainted: 5.12.0-rc7-custom+ #17
+ Hardware name: Khadas VIM3 (DT)
+ Call trace:
+  assertfail.constprop.0+0x28/0x2c [btrfs]
+  btrfs_subpage_assert+0x80/0xa0 [btrfs]
+  btrfs_subpage_set_uptodate+0x34/0xec [btrfs]
+  btrfs_page_clamp_set_uptodate+0x74/0xa4 [btrfs]
+  btrfs_dirty_pages+0x160/0x270 [btrfs]
+  btrfs_buffered_write+0x444/0x630 [btrfs]
+  btrfs_direct_write+0x1cc/0x2d0 [btrfs]
+  btrfs_file_write_iter+0xc0/0x160 [btrfs]
+  new_sync_write+0xe8/0x180
+  vfs_write+0x1b4/0x210
+  ksys_pwrite64+0x7c/0xc0
+  __arm64_sys_pwrite64+0x24/0x30
+  el0_svc_common.constprop.0+0x70/0x140
+  do_el0_svc+0x28/0x90
+  el0_svc+0x2c/0x54
+  el0_sync_handler+0x1a8/0x1ac
+  el0_sync+0x170/0x180
+ Code: f0000160 913be042 913c4000 955444bc (d4210000)
+ ---[ end trace 3fdd39f4cccedd68 ]---
 
-Fix the condition by checking if the value was bellow zero and return
-early.
+[CAUSE]
+Although prepare_pages() calls find_or_create_page(), which returns the
+page locked, but in later prepare_uptodate_page() calls, we may call
+btrfs_readpage() which will unlock the page before it returns.
 
+This leaves a window where btrfs_releasepage() can sneak in and release
+the page, clearing page->private and causing above ASSERT().
+
+[FIX]
+In prepare_uptodate_page(), we should not only check page->mapping, but
+also PagePrivate() to ensure we are still holding the correct page which
+has proper fs context setup.
+
+Reported-by: Ritesh Harjani <riteshh@linux.ibm.com>
+Tested-by: Ritesh Harjani <riteshh@linux.ibm.com>
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/tree-log.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/file.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 24555cc1f42d..9e9ab41df7da 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -753,7 +753,9 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 			 */
- 			ret = btrfs_lookup_data_extent(fs_info, ins.objectid,
- 						ins.offset);
--			if (ret == 0) {
-+			if (ret < 0) {
-+				goto out;
-+			} else if (ret == 0) {
- 				btrfs_init_generic_ref(&ref,
- 						BTRFS_ADD_DELAYED_REF,
- 						ins.objectid, ins.offset, 0);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 6ab91661cd26..c196cd1329da 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1332,7 +1332,18 @@ static int prepare_uptodate_page(struct inode *inode,
+ 			unlock_page(page);
+ 			return -EIO;
+ 		}
+-		if (page->mapping != inode->i_mapping) {
++
++		/*
++		 * Since btrfs_readpage() will unlock the page before it
++		 * returns, there is a window where btrfs_releasepage() can
++		 * be called to release the page.
++		 * Here we check both inode mapping and PagePrivate() to
++		 * make sure the page was not released.
++		 *
++		 * The private flag check is essential for subpage as we need
++		 * to store extra bitmap using page->private.
++		 */
++		if (page->mapping != inode->i_mapping || !PagePrivate(page)) {
+ 			unlock_page(page);
+ 			return -EAGAIN;
+ 		}
 -- 
 2.30.2
 

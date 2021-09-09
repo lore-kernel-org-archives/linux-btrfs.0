@@ -7,39 +7,38 @@ X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C9E0C433F5
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 568BEC43219
 	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 19EA861179
+	by mail.kernel.org (Postfix) with ESMTP id 4357961179
 	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353601AbhIIMXt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 08:23:49 -0400
-Received: from mail.kernel.org ([198.145.29.99]:56768 "EHLO mail.kernel.org"
+        id S1344857AbhIIMXg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 08:23:36 -0400
+Received: from mail.kernel.org ([198.145.29.99]:56654 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1351882AbhIIMTQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Sep 2021 08:19:16 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 51FC061AA6;
-        Thu,  9 Sep 2021 11:50:18 +0000 (UTC)
+        id S1351492AbhIIMTL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Sep 2021 08:19:11 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id B588061AA7;
+        Thu,  9 Sep 2021 11:50:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631188219;
-        bh=mq5H61lLXVgbJa81kCbhJhvivttziZP8bAynt7UjYQ8=;
+        s=k20201202; t=1631188215;
+        bh=slgNWftRdDa13QryX7dd8Proj5uyJVdgsM4BOnov0EU=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=HOrTJ/kFy7AKfgZp5hcF+a5/Y53KjYK4ypcqMxGx6a7TMAOlUuzFD48u9IgsTuFEA
-         paf781KvPHjdaKzxcn/MqJxUrQWjxx3e2as3/J9ygR0Ux+g5ae3/0MXfbkY2TaJzbS
-         D2cNmdlfx6AZH4/8Lctk+0zH8ZT2nMnTblFnBgLH/eJ5z591cGa3klL8M5SWQ6qKVP
-         1z6hZ3tEDAV7uqAZ+GEbw+aqL9ZvN6YP7oRVCxrW0WK0Gqd4Sni/9C7nByib8vxZXq
-         4KraHsvDIblDOjiq228e+9SwCg6MhAxuBca1tNB82uUaqxzJwHQsqjslPM+SsffcPU
-         Kia/+BGwS2w3w==
+        b=PJTTsg1kTxZTOpKoyUv/sUubx8A2GOQdfT9TjKJdCPcjL4/TeTPXRShDawksvygCg
+         iVxo1SI/oLxL2JCxleL9/Bhy6ZphAHPyj7h1luNpmu0lQX7+RH+wGmD3/UeOriBDfa
+         bDptiKXI9GJtP73yhcPV2uJ9YIR9cl95i2qsQZ56gcC1z0q/3LBhq3UvhYQ1d7f8/f
+         xZ1L2ytdMwzXHNbuwgqAbllCoD7Dbfo0ZiPuq4d4lDVEVh0VQy2g9p4uBAMni/sB/q
+         ryRZME/hZ0OidXePlnoCs9TCIsHtrik+wvbYdlKuqtzRracQokpUrbA7KAzVWX82wM
+         8d4r0929u8agA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Ritesh Harjani <riteshh@linux.ibm.com>,
-        Filipe Manana <fdmanana@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.13 173/219] btrfs: subpage: fix race between prepare_pages() and btrfs_releasepage()
-Date:   Thu,  9 Sep 2021 07:45:49 -0400
-Message-Id: <20210909114635.143983-173-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.13 170/219] btrfs: reset this_bio_flag to avoid inheriting old flags
+Date:   Thu,  9 Sep 2021 07:45:46 -0400
+Message-Id: <20210909114635.143983-170-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210909114635.143983-1-sashal@kernel.org>
 References: <20210909114635.143983-1-sashal@kernel.org>
@@ -53,86 +52,53 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit e0467866198f7f536806f39e5d0d91ae8018de08 ]
+[ Upstream commit 4c37a7938496756649096a7ec26320eb8b0d90fb ]
 
-[BUG]
-When running generic/095, there is a high chance to crash with subpage
-data RW support:
+In btrfs_do_readpage(), we never reset @this_bio_flag after we hit a
+compressed extent.
 
- assertion failed: PagePrivate(page) && page->private
- ------------[ cut here ]------------
- kernel BUG at fs/btrfs/ctree.h:3403!
- Internal error: Oops - BUG: 0 [#1] SMP
- CPU: 1 PID: 3567 Comm: fio Tainted: 5.12.0-rc7-custom+ #17
- Hardware name: Khadas VIM3 (DT)
- Call trace:
-  assertfail.constprop.0+0x28/0x2c [btrfs]
-  btrfs_subpage_assert+0x80/0xa0 [btrfs]
-  btrfs_subpage_set_uptodate+0x34/0xec [btrfs]
-  btrfs_page_clamp_set_uptodate+0x74/0xa4 [btrfs]
-  btrfs_dirty_pages+0x160/0x270 [btrfs]
-  btrfs_buffered_write+0x444/0x630 [btrfs]
-  btrfs_direct_write+0x1cc/0x2d0 [btrfs]
-  btrfs_file_write_iter+0xc0/0x160 [btrfs]
-  new_sync_write+0xe8/0x180
-  vfs_write+0x1b4/0x210
-  ksys_pwrite64+0x7c/0xc0
-  __arm64_sys_pwrite64+0x24/0x30
-  el0_svc_common.constprop.0+0x70/0x140
-  do_el0_svc+0x28/0x90
-  el0_svc+0x2c/0x54
-  el0_sync_handler+0x1a8/0x1ac
-  el0_sync+0x170/0x180
- Code: f0000160 913be042 913c4000 955444bc (d4210000)
- ---[ end trace 3fdd39f4cccedd68 ]---
+This is fine, as for PAGE_SIZE == sectorsize case, we can only have one
+sector for one page, thus @this_bio_flag will only be set at most once.
 
-[CAUSE]
-Although prepare_pages() calls find_or_create_page(), which returns the
-page locked, but in later prepare_uptodate_page() calls, we may call
-btrfs_readpage() which will unlock the page before it returns.
+But for subpage case, after hitting a compressed extent, @this_bio_flag
+will always have EXTENT_BIO_COMPRESSED bit, even we're reading a regular
+extent.
 
-This leaves a window where btrfs_releasepage() can sneak in and release
-the page, clearing page->private and causing above ASSERT().
+This will lead to various read errors, and causing new ASSERT() in
+incoming subpage patches, which adds more strict check in
+btrfs_submit_compressed_read().
 
-[FIX]
-In prepare_uptodate_page(), we should not only check page->mapping, but
-also PagePrivate() to ensure we are still holding the correct page which
-has proper fs context setup.
+Fix it by declaring @this_bio_flag inside the main loop and reset its
+value for each iteration.
 
-Reported-by: Ritesh Harjani <riteshh@linux.ibm.com>
-Tested-by: Ritesh Harjani <riteshh@linux.ibm.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/file.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 55f68422061d..ac80ac3cdc41 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1338,7 +1338,18 @@ static int prepare_uptodate_page(struct inode *inode,
- 			unlock_page(page);
- 			return -EIO;
- 		}
--		if (page->mapping != inode->i_mapping) {
-+
-+		/*
-+		 * Since btrfs_readpage() will unlock the page before it
-+		 * returns, there is a window where btrfs_releasepage() can
-+		 * be called to release the page.
-+		 * Here we check both inode mapping and PagePrivate() to
-+		 * make sure the page was not released.
-+		 *
-+		 * The private flag check is essential for subpage as we need
-+		 * to store extra bitmap using page->private.
-+		 */
-+		if (page->mapping != inode->i_mapping || !PagePrivate(page)) {
- 			unlock_page(page);
- 			return -EAGAIN;
- 		}
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index dee2dafbc872..d760d328673b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3400,7 +3400,6 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 	size_t pg_offset = 0;
+ 	size_t iosize;
+ 	size_t blocksize = inode->i_sb->s_blocksize;
+-	unsigned long this_bio_flag = 0;
+ 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+ 
+ 	ret = set_page_extent_mapped(page);
+@@ -3431,6 +3430,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 	}
+ 	begin_page_read(fs_info, page);
+ 	while (cur <= end) {
++		unsigned long this_bio_flag = 0;
+ 		bool force_bio_submit = false;
+ 		u64 disk_bytenr;
+ 
 -- 
 2.30.2
 

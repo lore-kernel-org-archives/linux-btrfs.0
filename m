@@ -2,77 +2,173 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9B69C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:58:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A78CC43217
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:40 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A3061613D2
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:58:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0C3646328D
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243324AbhIIL7K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 07:59:10 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:34158 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238480AbhIIL5H (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Sep 2021 07:57:07 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 07B5522380;
-        Thu,  9 Sep 2021 11:55:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1631188556;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=q7ClmyTqSyGLWiYG/kJYGnJtKGItbnH3oUr7gYMJP4s=;
-        b=OfqyL95cUCgxy9iWGCIRwhbW3CPXM2WQAYhTSRWKAIvjYK1Y6dxxyzQbfJ6ey1jo5kqsN/
-        OQQMoGKUL0rRmZeceUHW6nDdXWWEUA8fW1dQ4I3Hart1LIuWWUHURqYr+RHylVpe5qviBf
-        yu+2ipeaSKazmEWo8R9QdHwNUdmpQHE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1631188556;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=q7ClmyTqSyGLWiYG/kJYGnJtKGItbnH3oUr7gYMJP4s=;
-        b=NuJfhPX2uqZE0ZJgn47U5YR0MUw++beV9x+GfjZ8BMHGq0FsuUUjfuT2W9a2z3OZ3tbXHm
-        KGhvAfDVIwprPBAg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id F34A1A3DB0;
-        Thu,  9 Sep 2021 11:55:55 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 040F7DA7A9; Thu,  9 Sep 2021 13:55:50 +0200 (CEST)
-Date:   Thu, 9 Sep 2021 13:55:50 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Sasha Levin <sashal@kernel.org>
-Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>,
-        Ritesh Harjani <riteshh@linux.ibm.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 5.14 195/252] btrfs: subpage: fix a potential
- use-after-free in writeback helper
-Message-ID: <20210909115550.GE15306@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Sasha Levin <sashal@kernel.org>,
-        linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>, Ritesh Harjani <riteshh@linux.ibm.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+        id S238247AbhIIMAr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 08:00:47 -0400
+Received: from mail.kernel.org ([198.145.29.99]:34406 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S239669AbhIIL4d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Sep 2021 07:56:33 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id B7013613C8;
+        Thu,  9 Sep 2021 11:45:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1631187918;
+        bh=Q7+PDq3PcKfGT0wocrGwCTzWvfRbCJ1Xva38avQb21A=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=K8cIkzSflDmK/l7N0q06BZBUakJvGZ403/4zn2t75dWGT+LhjyZmV1uuJXaPM+a1r
+         uLgcTr/kYkRMh7iIYCskpaqVWh5qiH8L8F6xza85rFUoK+PxeBy34br7nK2CQZGZVR
+         Kh3pKZBu2Kwwp9gCwJd4nugqiDnsLsJW30qdKuwNEvBBK06K9BM+B57ivi5CYV50XJ
+         BJ8VeBdZ2KZ/TBSLc+K3BW8Dy8j2OumKAFcYwGN/UeiLEJevaHOJ39GvrOcFOJF6Kg
+         2jwlcGB3vdFg49/PJrGcXDxr73QtJ4Ry97LHgvJYR+/1eKq2EtjuugZo9ymgGAM74o
+         AEF9tdArE3kFQ==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.14 193/252] btrfs: grab correct extent map for subpage compressed extent read
+Date:   Thu,  9 Sep 2021 07:40:07 -0400
+Message-Id: <20210909114106.141462-193-sashal@kernel.org>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20210909114106.141462-1-sashal@kernel.org>
 References: <20210909114106.141462-1-sashal@kernel.org>
- <20210909114106.141462-195-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210909114106.141462-195-sashal@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 09, 2021 at 07:40:09AM -0400, Sasha Levin wrote:
-> From: Qu Wenruo <wqu@suse.com>
-> 
-> [ Upstream commit 7c11d0ae439565b4560b0c0f36bf05171ed1a146 ]
+From: Qu Wenruo <wqu@suse.com>
 
-Please drop this patch from stable queue, thanks.
+[ Upstream commit 557023ea9f06baf2659b232b08b8e8711f7001a6 ]
+
+[BUG]
+When subpage compressed read write support is enabled, btrfs/038 always
+fails with EIO.
+
+A simplified script can easily trigger the problem:
+
+  mkfs.btrfs -f -s 4k $dev
+  mount $dev $mnt -o compress=lzo
+
+  xfs_io -f -c "truncate 118811" $mnt/foo
+  xfs_io -c "pwrite -S 0x0d -b 39987 92267 39987" $mnt/foo > /dev/null
+
+  sync
+  btrfs subvolume snapshot -r $mnt $mnt/mysnap1
+
+  xfs_io -c "pwrite -S 0x3e -b 80000 200000 80000" $mnt/foo > /dev/null
+  sync
+
+  xfs_io -c "pwrite -S 0xdc -b 10000 250000 10000" $mnt/foo > /dev/null
+  xfs_io -c "pwrite -S 0xff -b 10000 300000 10000" $mnt/foo > /dev/null
+
+  sync
+  btrfs subvolume snapshot -r $mnt $mnt/mysnap2
+
+  cat $mnt/mysnap2/foo
+  # Above cat will fail due to EIO
+
+[CAUSE]
+The problem is in btrfs_submit_compressed_read().
+
+When it tries to grab the extent map of the read range, it uses the
+following call:
+
+	em = lookup_extent_mapping(em_tree,
+  				   page_offset(bio_first_page_all(bio)),
+				   fs_info->sectorsize);
+
+The problem is in the page_offset(bio_first_page_all(bio)) part.
+
+The offending inode has the following file extent layout
+
+        item 10 key (257 EXTENT_DATA 131072) itemoff 15639 itemsize 53
+                generation 8 type 1 (regular)
+                extent data disk byte 13680640 nr 4096
+                extent data offset 0 nr 4096 ram 4096
+                extent compression 0 (none)
+        item 11 key (257 EXTENT_DATA 135168) itemoff 15586 itemsize 53
+                generation 8 type 1 (regular)
+                extent data disk byte 0 nr 0
+        item 12 key (257 EXTENT_DATA 196608) itemoff 15533 itemsize 53
+                generation 8 type 1 (regular)
+                extent data disk byte 13676544 nr 4096
+                extent data offset 0 nr 53248 ram 86016
+                extent compression 2 (lzo)
+
+And the bio passed in has the following parameters:
+
+page_offset(bio_first_page_all(bio))	= 131072
+bio_first_bvec_all(bio)->bv_offset	= 65536
+
+If we use page_offset(bio_first_page_all(bio) without adding bv_offset,
+we will get an extent map for file offset 131072, not 196608.
+
+This means we read uncompressed data from disk, and later decompression
+will definitely fail.
+
+[FIX]
+Take bv_offset into consideration when trying to grab an extent map.
+
+And add an ASSERT() to ensure we're really getting a compressed extent.
+
+Thankfully this won't affect anything but subpage, thus we only need to
+ensure this patch get merged before we enabled basic subpage support.
+
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/compression.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 30d82cdf128c..ad700cf287c9 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -673,6 +673,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	struct page *page;
+ 	struct bio *comp_bio;
+ 	u64 cur_disk_byte = bio->bi_iter.bi_sector << 9;
++	u64 file_offset;
+ 	u64 em_len;
+ 	u64 em_start;
+ 	struct extent_map *em;
+@@ -682,15 +683,17 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 
+ 	em_tree = &BTRFS_I(inode)->extent_tree;
+ 
++	file_offset = bio_first_bvec_all(bio)->bv_offset +
++		      page_offset(bio_first_page_all(bio));
++
+ 	/* we need the actual starting offset of this extent in the file */
+ 	read_lock(&em_tree->lock);
+-	em = lookup_extent_mapping(em_tree,
+-				   page_offset(bio_first_page_all(bio)),
+-				   fs_info->sectorsize);
++	em = lookup_extent_mapping(em_tree, file_offset, fs_info->sectorsize);
+ 	read_unlock(&em_tree->lock);
+ 	if (!em)
+ 		return BLK_STS_IOERR;
+ 
++	ASSERT(em->compress_type != BTRFS_COMPRESS_NONE);
+ 	compressed_len = em->block_len;
+ 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
+ 	if (!cb)
+-- 
+2.30.2
+

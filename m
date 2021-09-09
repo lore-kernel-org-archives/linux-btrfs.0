@@ -7,38 +7,37 @@ X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A78CC43217
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BED2EC4321E
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0C3646328D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AC3EE63291
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:59:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238247AbhIIMAr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 08:00:47 -0400
-Received: from mail.kernel.org ([198.145.29.99]:34406 "EHLO mail.kernel.org"
+        id S242458AbhIIMAu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 08:00:50 -0400
+Received: from mail.kernel.org ([198.145.29.99]:34484 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S239669AbhIIL4d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 9 Sep 2021 07:56:33 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id B7013613C8;
-        Thu,  9 Sep 2021 11:45:17 +0000 (UTC)
+        id S236055AbhIIL4i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Sep 2021 07:56:38 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id C1F7561186;
+        Thu,  9 Sep 2021 11:45:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631187918;
-        bh=Q7+PDq3PcKfGT0wocrGwCTzWvfRbCJ1Xva38avQb21A=;
+        s=k20201202; t=1631187922;
+        bh=hzLuCZAJoTTGdo08AE0fW3CxrBCNt9a9L755dGlQfhk=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=K8cIkzSflDmK/l7N0q06BZBUakJvGZ403/4zn2t75dWGT+LhjyZmV1uuJXaPM+a1r
-         uLgcTr/kYkRMh7iIYCskpaqVWh5qiH8L8F6xza85rFUoK+PxeBy34br7nK2CQZGZVR
-         Kh3pKZBu2Kwwp9gCwJd4nugqiDnsLsJW30qdKuwNEvBBK06K9BM+B57ivi5CYV50XJ
-         BJ8VeBdZ2KZ/TBSLc+K3BW8Dy8j2OumKAFcYwGN/UeiLEJevaHOJ39GvrOcFOJF6Kg
-         2jwlcGB3vdFg49/PJrGcXDxr73QtJ4Ry97LHgvJYR+/1eKq2EtjuugZo9ymgGAM74o
-         AEF9tdArE3kFQ==
+        b=D2NMl53h1qFIysp/rbTziKpB2NC1nG9t3xs0ZAMCVQ2jdjJ4PRzssQbMBuSC5PWVv
+         yL6nvQZ5Hgo7nFPx8S6YVfLzK/vVpkGijo/7cPoQGOsvqQz0o4/cxK+yksYPxf9RHr
+         iDmrbe+3sYpDJcFaJ+0sPB8NIfcDw0gtRsamU8XoUvcCIE3nRIFzBpwYa9jIE3CdZm
+         u4QLv8qnXBVD6P/oLw2leuJhJXjpAlWa4SXYONTlT+xY78kFhtfOoS9ESQ/1WUHihx
+         s4NpsY0gExMhWDo0gAjYY0+WDZgU01DHnLCV8rnRIDxLjtS2LAkJ2mqvmfTwv3gVA7
+         1EuGZJ4KP/R2Q==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.14 193/252] btrfs: grab correct extent map for subpage compressed extent read
-Date:   Thu,  9 Sep 2021 07:40:07 -0400
-Message-Id: <20210909114106.141462-193-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.14 196/252] btrfs: subpage: fix false alert when relocating partial preallocated data extents
+Date:   Thu,  9 Sep 2021 07:40:10 -0400
+Message-Id: <20210909114106.141462-196-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210909114106.141462-1-sashal@kernel.org>
 References: <20210909114106.141462-1-sashal@kernel.org>
@@ -52,123 +51,92 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit 557023ea9f06baf2659b232b08b8e8711f7001a6 ]
+[ Upstream commit e3c62324e470c0a89df966603156b34fccd01708 ]
 
 [BUG]
-When subpage compressed read write support is enabled, btrfs/038 always
-fails with EIO.
+When relocating partial preallocated data extents (part of the
+preallocated extent is written) for subpage, it can cause the following
+false alert and make the relocation to fail:
 
-A simplified script can easily trigger the problem:
+  BTRFS info (device dm-3): balance: start -d
+  BTRFS info (device dm-3): relocating block group 13631488 flags data
+  BTRFS warning (device dm-3): csum failed root -9 ino 257 off 4096 csum 0x98757625 expected csum 0x00000000 mirror 1
+  BTRFS error (device dm-3): bdev /dev/mapper/arm_nvme-test errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+  BTRFS warning (device dm-3): csum failed root -9 ino 257 off 4096 csum 0x98757625 expected csum 0x00000000 mirror 1
+  BTRFS error (device dm-3): bdev /dev/mapper/arm_nvme-test errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
+  BTRFS info (device dm-3): balance: ended with status: -5
+
+The minimal script to reproduce looks like this:
 
   mkfs.btrfs -f -s 4k $dev
-  mount $dev $mnt -o compress=lzo
-
-  xfs_io -f -c "truncate 118811" $mnt/foo
-  xfs_io -c "pwrite -S 0x0d -b 39987 92267 39987" $mnt/foo > /dev/null
-
-  sync
-  btrfs subvolume snapshot -r $mnt $mnt/mysnap1
-
-  xfs_io -c "pwrite -S 0x3e -b 80000 200000 80000" $mnt/foo > /dev/null
-  sync
-
-  xfs_io -c "pwrite -S 0xdc -b 10000 250000 10000" $mnt/foo > /dev/null
-  xfs_io -c "pwrite -S 0xff -b 10000 300000 10000" $mnt/foo > /dev/null
-
-  sync
-  btrfs subvolume snapshot -r $mnt $mnt/mysnap2
-
-  cat $mnt/mysnap2/foo
-  # Above cat will fail due to EIO
+  mount $dev -o nospace_cache $mnt
+  xfs_io -f -c "falloc 0 8k" $mnt/file
+  xfs_io -f -c "pwrite 0 4k" $mnt/file
+  btrfs balance start -d $mnt
 
 [CAUSE]
-The problem is in btrfs_submit_compressed_read().
+Function btrfs_verify_data_csum() checks if the full range has
+EXTENT_NODATASUM bit for data reloc inode, if *all* bytes of the range
+have EXTENT_NODATASUM bit, then it skip the range.
 
-When it tries to grab the extent map of the read range, it uses the
-following call:
+This works pretty well for regular sectorsize, as in that case
+btrfs_verify_data_csum() is called for each sector, thus no problem at
+all.
 
-	em = lookup_extent_mapping(em_tree,
-  				   page_offset(bio_first_page_all(bio)),
-				   fs_info->sectorsize);
+But for subpage case, btrfs_verify_data_csum() is called on each bvec,
+which can contain several sectors, and since it checks *all* bytes for
+EXTENT_NODATASUM bit, if we have some range with csum, then we will
+continue checking all the sectors.
 
-The problem is in the page_offset(bio_first_page_all(bio)) part.
-
-The offending inode has the following file extent layout
-
-        item 10 key (257 EXTENT_DATA 131072) itemoff 15639 itemsize 53
-                generation 8 type 1 (regular)
-                extent data disk byte 13680640 nr 4096
-                extent data offset 0 nr 4096 ram 4096
-                extent compression 0 (none)
-        item 11 key (257 EXTENT_DATA 135168) itemoff 15586 itemsize 53
-                generation 8 type 1 (regular)
-                extent data disk byte 0 nr 0
-        item 12 key (257 EXTENT_DATA 196608) itemoff 15533 itemsize 53
-                generation 8 type 1 (regular)
-                extent data disk byte 13676544 nr 4096
-                extent data offset 0 nr 53248 ram 86016
-                extent compression 2 (lzo)
-
-And the bio passed in has the following parameters:
-
-page_offset(bio_first_page_all(bio))	= 131072
-bio_first_bvec_all(bio)->bv_offset	= 65536
-
-If we use page_offset(bio_first_page_all(bio) without adding bv_offset,
-we will get an extent map for file offset 131072, not 196608.
-
-This means we read uncompressed data from disk, and later decompression
-will definitely fail.
+For the preallocated sectors, it doesn't have any csum, thus obviously
+the csum won't match and cause the false alert.
 
 [FIX]
-Take bv_offset into consideration when trying to grab an extent map.
+Move the EXTENT_NODATASUM check into the main loop, so that we can check
+each sector for EXTENT_NODATASUM bit for subpage case.
 
-And add an ASSERT() to ensure we're really getting a compressed extent.
-
-Thankfully this won't affect anything but subpage, thus we only need to
-ensure this patch get merged before we enabled basic subpage support.
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/compression.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 30d82cdf128c..ad700cf287c9 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -673,6 +673,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	struct page *page;
- 	struct bio *comp_bio;
- 	u64 cur_disk_byte = bio->bi_iter.bi_sector << 9;
-+	u64 file_offset;
- 	u64 em_len;
- 	u64 em_start;
- 	struct extent_map *em;
-@@ -682,15 +683,17 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 34dd4af72246..05f26275be4d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3277,19 +3277,24 @@ unsigned int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
+ 	if (!root->fs_info->csum_root)
+ 		return 0;
  
- 	em_tree = &BTRFS_I(inode)->extent_tree;
+-	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
+-	    test_range_bit(io_tree, start, end, EXTENT_NODATASUM, 1, NULL)) {
+-		clear_extent_bits(io_tree, start, end, EXTENT_NODATASUM);
+-		return 0;
+-	}
+-
+ 	ASSERT(page_offset(page) <= start &&
+ 	       end <= page_offset(page) + PAGE_SIZE - 1);
+ 	for (pg_off = offset_in_page(start);
+ 	     pg_off < offset_in_page(end);
+ 	     pg_off += sectorsize, bio_offset += sectorsize) {
++		u64 file_offset = pg_off + page_offset(page);
+ 		int ret;
  
-+	file_offset = bio_first_bvec_all(bio)->bv_offset +
-+		      page_offset(bio_first_page_all(bio));
-+
- 	/* we need the actual starting offset of this extent in the file */
- 	read_lock(&em_tree->lock);
--	em = lookup_extent_mapping(em_tree,
--				   page_offset(bio_first_page_all(bio)),
--				   fs_info->sectorsize);
-+	em = lookup_extent_mapping(em_tree, file_offset, fs_info->sectorsize);
- 	read_unlock(&em_tree->lock);
- 	if (!em)
- 		return BLK_STS_IOERR;
- 
-+	ASSERT(em->compress_type != BTRFS_COMPRESS_NONE);
- 	compressed_len = em->block_len;
- 	cb = kmalloc(compressed_bio_size(fs_info, compressed_len), GFP_NOFS);
- 	if (!cb)
++		if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
++		    test_range_bit(io_tree, file_offset,
++				   file_offset + sectorsize - 1,
++				   EXTENT_NODATASUM, 1, NULL)) {
++			/* Skip the range without csum for data reloc inode */
++			clear_extent_bits(io_tree, file_offset,
++					  file_offset + sectorsize - 1,
++					  EXTENT_NODATASUM);
++			continue;
++		}
+ 		ret = check_data_csum(inode, io_bio, bio_offset, page, pg_off,
+ 				      page_offset(page) + pg_off);
+ 		if (ret < 0) {
 -- 
 2.30.2
 

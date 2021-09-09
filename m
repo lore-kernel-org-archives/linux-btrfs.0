@@ -2,76 +2,103 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 382ECC43219
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 087EAC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2316163226
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E9709613C8
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 11:57:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242877AbhIIL6Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 07:58:24 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:42486 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243694AbhIIL4U (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Sep 2021 07:56:20 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id DD3721FDEB;
-        Thu,  9 Sep 2021 11:55:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1631188509;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LF5iiXOxIOPlqm1WdseD0cCvYoH7p/7BkKS5zwgUj94=;
-        b=zspsoDHzNXOdUVEuqhaTewCHNNSB4NUlJJofAGADRktnHbvE3upCVYJD1tXL5X+yIYasaA
-        IBjHo2FppQl51kAjoUlwIdFiwocheSN08GO4uXj/zbtPmrHD2Gb6Ju3dCJHsGaE1ROE1Hd
-        QSA6sx/VyKc2Y5muf9TCAcHty2zaBRc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1631188509;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LF5iiXOxIOPlqm1WdseD0cCvYoH7p/7BkKS5zwgUj94=;
-        b=TgJcZ6CrJIDKZmSomk3JGCtY0eLh2IYfj2qZhyUmUPdrLZJ5jzz1HHYUFtwCHDcFQVoU0e
-        7U7s14Stsx1jB6Cw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id D0EA7A3D8C;
-        Thu,  9 Sep 2021 11:55:09 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C111FDA7A9; Thu,  9 Sep 2021 13:55:04 +0200 (CEST)
-Date:   Thu, 9 Sep 2021 13:55:04 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Sasha Levin <sashal@kernel.org>
-Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 5.14 191/252] btrfs: reset this_bio_flag to avoid
- inheriting old flags
-Message-ID: <20210909115504.GA15306@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Sasha Levin <sashal@kernel.org>,
-        linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+        id S1343915AbhIIL6d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 07:58:33 -0400
+Received: from mail.kernel.org ([198.145.29.99]:34380 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S243567AbhIIL4b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Sep 2021 07:56:31 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 2BD61613BD;
+        Thu,  9 Sep 2021 11:45:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1631187915;
+        bh=oFbCu/3eod+iO96miKqTRD02KMMKf++LKX7oyMo4u3M=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=MXLDFRtoU7f3+Ab0uMcWf83zOY4fidKpNcdz4gSKYAVGFl6eIaGIUuKmf36c8l7Aj
+         /vshe7kWkOc0DcOEBJCFCE9/Ixx0HAX0UjsRE9hpSuLhkAdmNjVBcOFwnXU1iV+598
+         PA5IGuw56cPb10cszMwdF/PKTA7LzkwLDvOmPWluQEBM4rYk1hFMH+Yxt7zGQvB4ZM
+         U97++g5FDu+uOR48IsAosD3H2iDQ3TqBUKMFxOaC2vscpE63UPXGE+2GZQpO2pD0p+
+         nZ+LTvRrdKnzgrJB0Pg8CC3XT9BjdtAnfZHwAUOHZ3ZqvSdM8VBI3Z3WhFE9i3MKJE
+         x6F0OS0lhmBjA==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
+        David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.14 191/252] btrfs: reset this_bio_flag to avoid inheriting old flags
+Date:   Thu,  9 Sep 2021 07:40:05 -0400
+Message-Id: <20210909114106.141462-191-sashal@kernel.org>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20210909114106.141462-1-sashal@kernel.org>
 References: <20210909114106.141462-1-sashal@kernel.org>
- <20210909114106.141462-191-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210909114106.141462-191-sashal@kernel.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 09, 2021 at 07:40:05AM -0400, Sasha Levin wrote:
-> From: Qu Wenruo <wqu@suse.com>
-> 
-> [ Upstream commit 4c37a7938496756649096a7ec26320eb8b0d90fb ]
+From: Qu Wenruo <wqu@suse.com>
 
-Please drop this patch from stable queue, thanks.
+[ Upstream commit 4c37a7938496756649096a7ec26320eb8b0d90fb ]
+
+In btrfs_do_readpage(), we never reset @this_bio_flag after we hit a
+compressed extent.
+
+This is fine, as for PAGE_SIZE == sectorsize case, we can only have one
+sector for one page, thus @this_bio_flag will only be set at most once.
+
+But for subpage case, after hitting a compressed extent, @this_bio_flag
+will always have EXTENT_BIO_COMPRESSED bit, even we're reading a regular
+extent.
+
+This will lead to various read errors, and causing new ASSERT() in
+incoming subpage patches, which adds more strict check in
+btrfs_submit_compressed_read().
+
+Fix it by declaring @this_bio_flag inside the main loop and reset its
+value for each iteration.
+
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/extent_io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 9e81d25dea70..907cb88fb30b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3488,7 +3488,6 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 	size_t pg_offset = 0;
+ 	size_t iosize;
+ 	size_t blocksize = inode->i_sb->s_blocksize;
+-	unsigned long this_bio_flag = 0;
+ 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
+ 
+ 	ret = set_page_extent_mapped(page);
+@@ -3519,6 +3518,7 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
+ 	}
+ 	begin_page_read(fs_info, page);
+ 	while (cur <= end) {
++		unsigned long this_bio_flag = 0;
+ 		bool force_bio_submit = false;
+ 		u64 disk_bytenr;
+ 
+-- 
+2.30.2
+

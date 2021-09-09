@@ -7,39 +7,37 @@ X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6330CC4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD558C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 42EA7611AF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9A2126115B
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Sep 2021 12:22:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353582AbhIIMXd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Sep 2021 08:23:33 -0400
-Received: from mail.kernel.org ([198.145.29.99]:58740 "EHLO mail.kernel.org"
+        id S244696AbhIIMXe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Sep 2021 08:23:34 -0400
+Received: from mail.kernel.org ([198.145.29.99]:56652 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1351504AbhIIMTL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        id S1351483AbhIIMTL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 9 Sep 2021 08:19:11 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 7D83261A83;
-        Thu,  9 Sep 2021 11:50:13 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id EDC1F61AA8;
+        Thu,  9 Sep 2021 11:50:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631188214;
-        bh=dstg8Ouqmyfn6wHreXuDINkCXZFIAngAC/Slw/7LRFw=;
+        s=k20201202; t=1631188216;
+        bh=sqY3yE1ibG7wShJE1SMM2NOj9y4RUHMLRkTWkvTc/2U=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=m68HKzLVx9oP3YnU4K8Ry0df9WOPNN7RhTVx7GrArn6TaY8J+Rnu094qVANxPsDVE
-         J02nZM06Y79rjVmTneYl/gruLZIp6s9bqOa8+pEPDR846vyUNJeSHL2DJDar1MrroK
-         81J4g0UeX2CRP2o8Tz+cbhdpCiGyNKh+FKbYOSZXHyzR+n7BdIxP6yPKL5a+aftS+I
-         Ocbxm8jzmi3BmqsMyaHwlF2nA9BlmeNfhNfexljvdmQoURR1RcuAnpDa0U+k18swlR
-         LKZfphhxGvcf1VHH7YfH8lXTdlfzc4UJuGVPj3qFuz+kh+hZ06jUpipNTbWt4Jv3ao
-         +M/YYyLhg6QNw==
+        b=jj4LfG1oCMlsx5Fry30fso9mc/mXJ91rifDVaptWlmq0AxxyVrEBu8O3PyTiIFo90
+         /NupzBr95L+lhsF8fgdm1N8H+gnv4CN8ElX16LrcFXMSuxXBYm03w/BWwANhXB2q3N
+         9lNXXs7igXxEB+BaCLeAKNdCnR8DUllj5fhrw5PHXtEMRjUOAIL0H/LBbuCyUfBRKR
+         khKDs30yeh6CRGzYqHZzzQf4t0NnLrcM13nIi84mX+6BaU6Wy3269OrqFHBrAB01Ge
+         W1P1eS8hs2lxz1T61lksOlBRq01dQFQzo6XTNW4XIZlQnKquMYSWWmHFG1XAjXI2hA
+         UOI5bq76PX0iQ==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.13 169/219] btrfs: remove racy and unnecessary inode transaction update when using no-holes
-Date:   Thu,  9 Sep 2021 07:45:45 -0400
-Message-Id: <20210909114635.143983-169-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.13 171/219] btrfs: subpage: check if there are compressed extents inside one page
+Date:   Thu,  9 Sep 2021 07:45:47 -0400
+Message-Id: <20210909114635.143983-171-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20210909114635.143983-1-sashal@kernel.org>
 References: <20210909114635.143983-1-sashal@kernel.org>
@@ -51,73 +49,100 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit cceaa89f02f15f232391ae4be214137b0a0285c0 ]
+[ Upstream commit 3670e6451bc9c39ab3a46f1da19360219e4319f3 ]
 
-When using the NO_HOLES feature and expanding the size of an inode, we
-update the inode's last_trans, last_sub_trans and last_log_commit fields
-at maybe_insert_hole() so that a fsync does know that the inode needs to
-be logged (by making sure that btrfs_inode_in_log() returns false). This
-happens for expanding truncate operations, buffered writes, direct IO
-writes and when cloning extents to an offset greater than the inode's
-i_size.
+[BUG]
+When testing experimental subpage compressed write support, it hits a
+NULL pointer dereference inside read path:
 
-However the way we do it is racy, because in between setting the inode's
-last_sub_trans and last_log_commit fields, the log transaction ID that was
-assigned to last_sub_trans might be committed before we read the root's
-last_log_commit and assign that value to last_log_commit. If that happens
-it would make a future call to btrfs_inode_in_log() return true. This is
-a race that should be extremely unlikely to be hit in practice, and it is
-the same that was described by commit bc0939fcfab0d7 ("btrfs: fix race
-between marking inode needs to be logged and log syncing").
+ Unable to handle kernel NULL pointer dereference at virtual address 0000000000000018
+ pc : __pi_memcmp+0x28/0x1ec
+ lr : check_data_csum+0xd0/0x274 [btrfs]
+ Call trace:
+  __pi_memcmp+0x28/0x1ec
+  btrfs_verify_data_csum+0xf4/0x244 [btrfs]
+  end_bio_extent_readpage+0x1d0/0x6b0 [btrfs]
+  bio_endio+0x15c/0x1dc
+  end_workqueue_fn+0x44/0x64 [btrfs]
+  btrfs_work_helper+0x74/0x250 [btrfs]
+  process_one_work+0x1d4/0x47c
+  worker_thread+0x180/0x400
+  kthread+0x11c/0x120
+  ret_from_fork+0x10/0x30
+ Code: 54000261 d100044c d343fd8c f8408403 (f8408424)
+ ---[ end trace 9e2c59f33ea40866 ]---
 
-The fix would simply be to set last_log_commit to the value we assigned
-to last_sub_trans minus 1, like it was done in that commit. However
-updating these two fields plus the last_trans field is pointless here
-because all the callers of btrfs_cont_expand() (which is the only
-caller of maybe_insert_hole()) always call btrfs_set_inode_last_trans()
-or btrfs_update_inode() after calling btrfs_cont_expand(). Calling either
-btrfs_set_inode_last_trans() or btrfs_update_inode() guarantees that the
-next fsync will log the inode, as it makes btrfs_inode_in_log() return
-false.
+[CAUSE]
+When reading two compressed extents inside the same page, like the
+following layout, we trigger above crash:
 
-So just remove the code that explicitly sets the inode's last_trans,
-last_sub_trans and last_log_commit fields.
+	0	32K	64K
+	|-------|\\\\\\\|
+	     |	     \- Compressed extent (A)
+	     \--------- Compressed extent (B)
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+For compressed read, we don't need to populate its io_bio->csum, as we
+rely on compressed_bio->csum to verify the compressed data, and then
+copy the decompressed to inode pages.
+
+Normally btrfs_verify_data_csum() skip such page by checking and
+clearing its PageChecked flag
+
+But since that flag is still for the full page, when endio for inode
+page range [0, 32K) gets executed, it clears PageChecked flag for the
+full page.
+
+Then when endio for inode page range [32K, 64K) gets executed, since the
+page no longer has PageChecked flag, it just continues checking, even
+though io_bio->csum is NULL.
+
+[FIX]
+Thankfully there are only two users of PageChecked bit:
+
+- Cow fixup
+  Since subpage has its own way to trace page dirty (dirty_bitmap) and
+  ordered bit (ordered_bitmap), it should never trigger cow fixup.
+
+- Compressed read
+  We can distinguish such read by just checking io_bio->csum.
+
+So just check io_bio->csum before doing the verification to avoid such
+NULL pointer dereference.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/inode.c | 12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
+ fs/btrfs/inode.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6328deb27d12..e245034caba1 100644
+index e245034caba1..f1fd88137003 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -5064,15 +5064,13 @@ static int maybe_insert_hole(struct btrfs_root *root, struct btrfs_inode *inode,
- 	int ret;
- 
- 	/*
--	 * Still need to make sure the inode looks like it's been updated so
--	 * that any holes get logged if we fsync.
-+	 * If NO_HOLES is enabled, we don't need to do anything.
-+	 * Later, up in the call chain, either btrfs_set_inode_last_sub_trans()
-+	 * or btrfs_update_inode() will be called, which guarantee that the next
-+	 * fsync will know this inode was changed and needs to be logged.
- 	 */
--	if (btrfs_fs_incompat(fs_info, NO_HOLES)) {
--		inode->last_trans = fs_info->generation;
--		inode->last_sub_trans = root->log_transid;
--		inode->last_log_commit = root->last_log_commit;
-+	if (btrfs_fs_incompat(fs_info, NO_HOLES))
+@@ -3256,6 +3256,20 @@ int btrfs_verify_data_csum(struct btrfs_io_bio *io_bio, u32 bio_offset,
  		return 0;
--	}
+ 	}
  
- 	/*
- 	 * 1 - for the one we're dropping
++	/*
++	 * For subpage case, above PageChecked is not safe as it's not subpage
++	 * compatible.
++	 * But for now only cow fixup and compressed read utilize PageChecked
++	 * flag, while in this context we can easily use io_bio->csum to
++	 * determine if we really need to do csum verification.
++	 *
++	 * So for now, just exit if io_bio->csum is NULL, as it means it's
++	 * compressed read, and its compressed data csum has already been
++	 * verified.
++	 */
++	if (io_bio->csum == NULL)
++		return 0;
++
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
+ 		return 0;
+ 
 -- 
 2.30.2
 

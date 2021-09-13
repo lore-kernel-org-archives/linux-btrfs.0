@@ -7,50 +7,50 @@ X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
 	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 212DBC433FE
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B70E9C4332F
 	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F30FA6140B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9924D61409
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241887AbhIMNbL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Sep 2021 09:31:11 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:50736 "EHLO
+        id S241920AbhIMNbN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Sep 2021 09:31:13 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:50752 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238877AbhIMNSs (ORCPT
+        with ESMTP id S238976AbhIMNSs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 13 Sep 2021 09:18:48 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 79B431FFDA;
-        Mon, 13 Sep 2021 13:17:31 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 4D7271FFE0;
+        Mon, 13 Sep 2021 13:17:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1631539051; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1631539052; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=DTfYwhYy3preHzStIUWk1Rr5+JA231Ru2Tn/uw4BtMw=;
-        b=gK8/61fbHdp1hD2upojV6TH7rxbfncgmd8Y8V8x4OHcsW1xawW3Aovzk+WRIS8AH24WEgi
-        0KJUSUpedmSEcnYiNcdEDt2csarT0QN1hAhAZDfKY/Kzo9jYGN5FrbfJE3TpmeRkm8V9qD
-        1BKaty3y+e9vyh6m4nMRTrmh4BAQKhY=
+        bh=iBhQfNstU4BmU2perA7RNHxjovVx3JqoBj1xNXS7C60=;
+        b=WeAwZ3AyPsNAjp38iejMembPL7XybGWg5C6V3zTK0oQu/Xhh8/wif5cDoGh0Fwol9xVR0w
+        m4GHvvR1gOm1K5+4MQMoZOtWlcmD4hrZScPufErR9h/SscjAVcM6UoCJfUKB5dzEOuw28V
+        BfPJgYnPfdsExkoPSC5IlJKNqjc+Wm8=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 49F7C13AB4;
-        Mon, 13 Sep 2021 13:17:31 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 161DB13AB4;
+        Mon, 13 Sep 2021 13:17:32 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0LuCD2tPP2FNOwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Mon, 13 Sep 2021 13:17:31 +0000
+        id GETiAmxPP2FNOwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Mon, 13 Sep 2021 13:17:32 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/8] btrfs-progs: Remove root argument from btrfs_fixup_low_keys
-Date:   Mon, 13 Sep 2021 16:17:23 +0300
-Message-Id: <20210913131729.37897-3-nborisov@suse.com>
+Subject: [PATCH 5/8] btrfs-progs: Add btrfs_uuid_tree_remove
+Date:   Mon, 13 Sep 2021 16:17:26 +0300
+Message-Id: <20210913131729.37897-6-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210913131729.37897-1-nborisov@suse.com>
 References: <20210913131729.37897-1-nborisov@suse.com>
@@ -60,144 +60,119 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-It's not used, so just remove it.
+It will be used to clear received data on RW snapshots that were
+received.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- check/main.c          |  5 ++---
- kernel-shared/ctree.c | 24 +++++++++++-------------
- kernel-shared/ctree.h |  4 ++--
- 3 files changed, 15 insertions(+), 18 deletions(-)
+ kernel-shared/ctree.h     |  3 ++
+ kernel-shared/uuid-tree.c | 82 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 85 insertions(+)
 
-diff --git a/check/main.c b/check/main.c
-index a88518159830..6369bdd90656 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -4197,8 +4197,7 @@ static int swap_values(struct btrfs_root *root, struct btrfs_path *path,
- 			struct btrfs_disk_key key;
- 
- 			btrfs_node_key(buf, &key, 0);
--			btrfs_fixup_low_keys(root, path, &key,
--					     btrfs_header_level(buf) + 1);
-+			btrfs_fixup_low_keys(path, &key, btrfs_header_level(buf) + 1);
- 		}
- 	} else {
- 		struct btrfs_item *item1, *item2;
-@@ -4302,7 +4301,7 @@ static int delete_bogus_item(struct btrfs_root *root,
- 		struct btrfs_disk_key disk_key;
- 
- 		btrfs_item_key(buf, &disk_key, 0);
--		btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+		btrfs_fixup_low_keys(path, &disk_key, 1);
- 	}
- 	btrfs_mark_buffer_dirty(buf);
- 	return 0;
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index 518718de04dd..02eb975338e5 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -1437,8 +1437,8 @@ int btrfs_search_slot_for_read(struct btrfs_root *root,
-  * fixing up pointers when a given leaf/node is not in slot 0 of the
-  * higher levels
-  */
--void btrfs_fixup_low_keys(struct btrfs_root *root, struct btrfs_path *path,
--			  struct btrfs_disk_key *key, int level)
-+void btrfs_fixup_low_keys( struct btrfs_path *path, struct btrfs_disk_key *key,
-+		int level)
- {
- 	int i;
- 	struct extent_buffer *t;
-@@ -1485,7 +1485,7 @@ int btrfs_set_item_key_safe(struct btrfs_root *root, struct btrfs_path *path,
- 	btrfs_set_item_key(eb, &disk_key, slot);
- 	btrfs_mark_buffer_dirty(eb);
- 	if (slot == 0)
--		btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+		btrfs_fixup_low_keys(path, &disk_key, 1);
- 	return 0;
- }
- 
-@@ -1508,7 +1508,7 @@ void btrfs_set_item_key_unsafe(struct btrfs_root *root,
- 	btrfs_set_item_key(eb, &disk_key, slot);
- 	btrfs_mark_buffer_dirty(eb);
- 	if (slot == 0)
--		btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+		btrfs_fixup_low_keys(path, &disk_key, 1);
- }
- 
- /*
-@@ -2184,7 +2184,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
- 		btrfs_mark_buffer_dirty(right);
- 
- 	btrfs_item_key(right, &disk_key, 0);
--	btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+	btrfs_fixup_low_keys(path, &disk_key, 1);
- 
- 	/* then fixup the leaf pointer in the path */
- 	if (path->slots[0] < push_items) {
-@@ -2415,10 +2415,8 @@ static noinline int split_leaf(struct btrfs_trans_handle *trans,
- 			free_extent_buffer(path->nodes[0]);
- 			path->nodes[0] = right;
- 			path->slots[0] = 0;
--			if (path->slots[1] == 0) {
--				btrfs_fixup_low_keys(root, path,
--						     &disk_key, 1);
--			}
-+			if (path->slots[1] == 0)
-+				btrfs_fixup_low_keys(path, &disk_key, 1);
- 		}
- 		btrfs_mark_buffer_dirty(right);
- 		return ret;
-@@ -2632,7 +2630,7 @@ int btrfs_truncate_item(struct btrfs_root *root, struct btrfs_path *path,
- 		btrfs_set_disk_key_offset(&disk_key, offset + size_diff);
- 		btrfs_set_item_key(leaf, &disk_key, slot);
- 		if (slot == 0)
--			btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+			btrfs_fixup_low_keys(path, &disk_key, 1);
- 	}
- 
- 	item = btrfs_item_nr(slot);
-@@ -2809,7 +2807,7 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
- 	ret = 0;
- 	if (slot == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+		btrfs_fixup_low_keys(path, &disk_key, 1);
- 	}
- 
- 	if (btrfs_leaf_free_space(leaf) < 0) {
-@@ -2882,7 +2880,7 @@ int btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path,
- 		struct btrfs_disk_key disk_key;
- 
- 		btrfs_node_key(parent, &disk_key, 0);
--		btrfs_fixup_low_keys(root, path, &disk_key, level + 1);
-+		btrfs_fixup_low_keys(path, &disk_key, level + 1);
- 	}
- 	btrfs_mark_buffer_dirty(parent);
- 	return ret;
-@@ -2982,7 +2980,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 			struct btrfs_disk_key disk_key;
- 
- 			btrfs_item_key(leaf, &disk_key, 0);
--			btrfs_fixup_low_keys(root, path, &disk_key, 1);
-+			btrfs_fixup_low_keys(path, &disk_key, 1);
- 		}
- 
- 		/* delete the leaf if it is mostly empty */
 diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index f53436a7f38b..a17bf50e29b4 100644
+index 91a85796a678..158281a9fd67 100644
 --- a/kernel-shared/ctree.h
 +++ b/kernel-shared/ctree.h
-@@ -2747,8 +2747,8 @@ static inline int btrfs_next_item(struct btrfs_root *root,
+@@ -2860,6 +2860,9 @@ int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
+ 			u64 subvol_id_cpu);
  
- int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_leaf_free_space(struct extent_buffer *leaf);
--void btrfs_fixup_low_keys(struct btrfs_root *root, struct btrfs_path *path,
--			  struct btrfs_disk_key *key, int level);
-+void btrfs_fixup_low_keys(struct btrfs_path *path, struct btrfs_disk_key *key,
-+		int level);
- int btrfs_set_item_key_safe(struct btrfs_root *root, struct btrfs_path *path,
- 			    struct btrfs_key *new_key);
- void btrfs_set_item_key_unsafe(struct btrfs_root *root,
+ int btrfs_is_empty_uuid(u8 *uuid);
++int btrfs_uuid_tree_remove(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
++               u64 subid);
++
+ 
+ static inline int is_fstree(u64 rootid)
+ {
+diff --git a/kernel-shared/uuid-tree.c b/kernel-shared/uuid-tree.c
+index 51a7b5d9ff5d..0f0fbf667dda 100644
+--- a/kernel-shared/uuid-tree.c
++++ b/kernel-shared/uuid-tree.c
+@@ -120,3 +120,85 @@ int btrfs_is_empty_uuid(u8 *uuid)
+ 	}
+ 	return 1;
+ }
++
++int btrfs_uuid_tree_remove(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
++		u64 subid)
++{
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_root *uuid_root = fs_info->uuid_root;
++	int ret;
++	struct btrfs_path *path = NULL;
++	struct btrfs_key key;
++	struct extent_buffer *eb;
++	int slot;
++	unsigned long offset;
++	u32 item_size;
++	unsigned long move_dst;
++	unsigned long move_src;
++	unsigned long move_len;
++
++	if (!uuid_root) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	btrfs_uuid_to_key(uuid, &key);
++	key.type = type;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	ret = btrfs_search_slot(trans, uuid_root, &key, path, -1, 1);
++	if (ret < 0) {
++		warning("error %d while searching for uuid item!", ret);
++		goto out;
++	}
++	if (ret > 0) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++
++	eb = path->nodes[0];
++	slot = path->slots[0];
++	offset = btrfs_item_ptr_offset(eb, slot);
++	item_size = btrfs_item_size_nr(eb, slot);
++	if (!IS_ALIGNED(item_size, sizeof(u64))) {
++		warning("uuid item with illegal size %lu!",	(unsigned long)item_size);
++		ret = -ENOENT;
++		goto out;
++	}
++	while (item_size) {
++		__le64 read_subid;
++
++		read_extent_buffer(eb, &read_subid, offset, sizeof(read_subid));
++		if (le64_to_cpu(read_subid) == subid)
++			break;
++		offset += sizeof(read_subid);
++		item_size -= sizeof(read_subid);
++	}
++
++	if (!item_size) {
++		ret = -ENOENT;
++		goto out;
++	}
++
++	item_size = btrfs_item_size_nr(eb, slot);
++	if (item_size == sizeof(subid)) {
++		ret = btrfs_del_item(trans, uuid_root, path);
++		goto out;
++	}
++
++	move_dst = offset;
++	move_src = offset + sizeof(subid);
++	move_len = item_size - (move_src - btrfs_item_ptr_offset(eb, slot));
++	memmove_extent_buffer(eb, move_dst, move_src, move_len);
++	btrfs_truncate_item(path, item_size - sizeof(subid), 1);
++
++out:
++	btrfs_free_path(path);
++	return ret;
++}
 -- 
 2.17.1
 

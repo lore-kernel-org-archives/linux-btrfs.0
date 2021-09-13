@@ -2,115 +2,117 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-7.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47239C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 15:06:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BA5CC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 15:51:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2E4B160240
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 15:06:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0D79C60F51
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 15:51:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346907AbhIMPHZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Sep 2021 11:07:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53524 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1346473AbhIMPHW (ORCPT
+        id S241058AbhIMPwh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Sep 2021 11:52:37 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:49016 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S241709AbhIMPwc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Sep 2021 11:07:22 -0400
-Received: from mail-qv1-xf2f.google.com (mail-qv1-xf2f.google.com [IPv6:2607:f8b0:4864:20::f2f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19816C00F7A1;
-        Mon, 13 Sep 2021 06:41:22 -0700 (PDT)
-Received: by mail-qv1-xf2f.google.com with SMTP id cf2so5460088qvb.10;
-        Mon, 13 Sep 2021 06:41:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=TQ/ua6a6n6ROb5TUoje1TeI9WAWedeILqs0fpPcCf4g=;
-        b=q0OMdJTfkNDbi6R0nBQJNEaBecIQAcBgwpE7gjLKtGpM2kIp3eyG4R/iTi1bbx61UJ
-         yxsB4HVT6zwVX9gpGhZNS3SCA2ixA7EWYlsxSH9Ogpq8h4ThdC3V1aJ+pEchdhu/HXPa
-         p5Hrs+wuP/yfV4azGSdrgN84/j3jhaUZOFlExpfjTcox4xaWF2v1+64VNR9SojIe0jEp
-         Zo4yBnj1dJBvXbqss5TV858CRdYVcKtxcBqwnCC+PDg4eSepFfB/F3bdx0CqENXuh4Or
-         c6m1p//aPhNM3EydMfherhENvMBCce2OoBZb8fEh0f2qUCOvMGG33X3w6i7txcFgrKq7
-         tYfg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=TQ/ua6a6n6ROb5TUoje1TeI9WAWedeILqs0fpPcCf4g=;
-        b=QnTq6VrHcaERC2FOsw4OkCTFgEWozFDAhbXyhDW3b85G/ie3t9H35Ed+L+odwZ+sP4
-         W0heLGHIiJavNGWwCO8oXCenYGCrMJMNocb6BQAfUjftsORkOemcjydbpukwZbPl4AUh
-         /kCqEFU3ovIQkHroOMt+74QncLmcEvzoYX9/q/BihNnjrPn9dDOoEeysLDIztBHbet8c
-         jM5K+QrC3mE7PsEu8dkja1V4sYYfavVPg3qg7fkWEyIy0FlBuJuyveLmKcqsRhrWBxa4
-         BwaFIsIevVgWNLFlyNUObfAPDOEAOPiF08Fw89i4mlibAHNVo6WeglkjwhHDFm8eN9MJ
-         uHZQ==
-X-Gm-Message-State: AOAM530y8oOLYr3g7ZjeGSVCA3OZLTl8/CWwdqDHmoSdzEU8DocnY4Dv
-        FgN3Ar4LztMTMLV2YDTtmgVOjrJa7QmiKa/sy/1lY+2p8e4=
-X-Google-Smtp-Source: ABdhPJyZpv2+49V3GAAovpfO4wJ+RWL2au3jZvQG2ubwwY61O8yWW82RWx0SGI38N2N7MS1XXn63GEfO7x+FD03qq2Y=
-X-Received: by 2002:a0c:fb4f:: with SMTP id b15mr10606659qvq.20.1631540481309;
- Mon, 13 Sep 2021 06:41:21 -0700 (PDT)
+        Mon, 13 Sep 2021 11:52:32 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id CB3EF20001;
+        Mon, 13 Sep 2021 15:51:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1631548274;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=WQXIwdXFxbVJLELsOcjAqwY0kZMkp6QY0dyUJpWF8JE=;
+        b=uegSpDBY7jb2+aSN6cr/a32ha3bfzQy7xd+KdGRk6rxQeGMRnvaVNcC/wB98hK2V0Ominz
+        GDS9xv7n4cnyC/LYGrqFSrjUCvPGm0S+TCuSRlP4KVc99wlLOMP3N1zor0Y31qjh3pFbg1
+        sqCeW7aulSvz6UcFvcan2RBkvgjUfu0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1631548274;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=WQXIwdXFxbVJLELsOcjAqwY0kZMkp6QY0dyUJpWF8JE=;
+        b=10D+r6185y/QErPIP3DeHf66k7PsAJgb/2D0COI0XoMEqyWYG3vj9sqB+L1V6oieG3d/Wm
+        IvtMCJGukY6nNEDw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 9706DA3B8E;
+        Mon, 13 Sep 2021 15:51:14 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id B2A76DA781; Mon, 13 Sep 2021 17:51:06 +0200 (CEST)
+Date:   Mon, 13 Sep 2021 17:51:06 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Damien Le Moal <Damien.LeMoal@wdc.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH v2 0/8] btrfs: zoned: unify relocation on a zoned and
+ regular FS
+Message-ID: <20210913155105.GC15306@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Damien Le Moal <Damien.LeMoal@wdc.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>,
+        Filipe Manana <fdmanana@suse.com>
+References: <cover.1631117101.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
-References: <20210913133226.39007-1-nborisov@suse.com>
-In-Reply-To: <20210913133226.39007-1-nborisov@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Mon, 13 Sep 2021 14:40:45 +0100
-Message-ID: <CAL3q7H6rkvgboQKvcGiZgG-qzejg+vBiTK+xBejXkuQojpRVQw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: Make 233 be part of subvol group
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1631117101.git.johannes.thumshirn@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 13, 2021 at 2:35 PM Nikolay Borisov <nborisov@suse.com> wrote:
->
-> All but this test use 'subvol' to designate they relate to btrfs
-> subvolume functionality. For the sake of consistency make btrfs/233
-> also be part of 'subvol' rather than 'subvolume'. This brings no
-> functional changes.
+On Thu, Sep 09, 2021 at 01:19:24AM +0900, Johannes Thumshirn wrote:
+> A while ago David reported a bug in zoned btrfs' relocation code. The bug is
+> triggered because relocation on a zoned filesystem does not preallocate the
+> extents it copies and a writeback process running in parallel can cause a
+> split of the written extent. But splitting extents is currently not allowed on
+> relocation as it assumes a one to one copy of the relocated extents.
+> 
+> This causes transaction aborts and the filessytem switching to read-only in
+> order to prevent further damage.
+> 
+> The first patch in this series is just a preparation to avoid overly long
+> lines in follow up patches. Patch number two adds a dedicated block group for
+> relocation on a zoned filesystem. Number three excludes multiple processes
+> from adding pages to a relocation inode in a zoned filesystem. Patch four
+> switches relocation from REQ_OP_ZONE_APPEND to regular REQ_OP_WRITE, five
+> prepares an ASSERT()ion that we can enter the nocow path on a zoned filesystem
+> under very special circumstances and the sixth patch then switches the
+> relocation code for a zoned filesystem to using the same code path as we use
+> on a non zoned filesystem. As the changes before have made the prerequisites
+> to do so. The last two patches in this series are just a simple rename of a
+> function whose name we have twice in the btrfs codebase but with a different
+> purpose in different files and a cleanup of a complicated boolean comparison
+> into an if to make it stand out.
+> 
+> Changes to v1:
+> - Added patches 3 and 8
+> - Added comments to patches 4 and 5 (Naohiro)
+> - Move btrfs_clear_data_reloc_bg() out of line (David)
+> - Untangle the 'skip' assing into an if (David)
+> - Commented new fs_info members (David)
+> 
+> Johannes Thumshirn (8):
+>   btrfs: introduce btrfs_is_data_reloc_root
+>   btrfs: zoned: add a dedicated data relocation block group
+>   btrfs: zoned: only allow one process to add pages to a relocation
+>     inode
+>   btrfs: zoned: use regular writes for relocation
+>   btrfs: check for relocation inodes on zoned btrfs in should_nocow
+>   btrfs: zoned: allow preallocation for relocation inodes
+>   btrfs: rename setup_extent_mapping in relocation code
+>   btrfs: zoned: let the for_treelog test in the allocator stand out
 
-There's already a pending patch for this, which also fixes the same
-inconsistency for btrfs/245:
-
-https://patchwork.kernel.org/project/fstests/patch/163062676513.1579659.125=
-16104685003091290.stgit@magnolia/
-
+I did a few minor fixups, patches moved from topic branch to misc-next.
 Thanks.
-
->
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
-> ---
->  tests/btrfs/233 | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/tests/btrfs/233 b/tests/btrfs/233
-> index f3e3762c6951..6a4144433073 100755
-> --- a/tests/btrfs/233
-> +++ b/tests/btrfs/233
-> @@ -9,7 +9,7 @@
->  # performed.
->  #
->  . ./common/preamble
-> -_begin_fstest auto quick subvolume
-> +_begin_fstest auto quick subvol
->
->  # Override the default cleanup function.
->  _cleanup()
-> --
-> 2.17.1
->
-
-
---=20
-Filipe David Manana,
-
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D

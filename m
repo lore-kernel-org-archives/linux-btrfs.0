@@ -2,112 +2,150 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 328E4C4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:51:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81376C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 14:54:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1B6A261B9F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:51:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 57B5260698
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 14:54:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244349AbhIMNxF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Sep 2021 09:53:05 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:57008 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243781AbhIMNvB (ORCPT
+        id S241585AbhIMOzb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Sep 2021 10:55:31 -0400
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:40946 "EHLO
+        james.kirk.hungrycats.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1346632AbhIMOwM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Sep 2021 09:51:01 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 331041FD81;
-        Mon, 13 Sep 2021 13:49:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1631540983; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=g8T9uNCrZMw4SD+r1f2m3stotAsVUONMuaiPUsHCVaM=;
-        b=MwOHmMHtncFBmMik8Qwfj+B7ww2x4upyWlmNnUei/NwKKm+SpPi/XrJXT8LpTj2OKqYSDc
-        7f/llvTOSJmfsLGYDslpYSOMOJx0JMbMzzTzEcG4Vxi0U5/adxPa6BW4xSF/nefgAQPv5t
-        XOOuihTn310oStD3L08qIuCnSTuOgDw=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 048C713AB5;
-        Mon, 13 Sep 2021 13:49:42 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 8o9IOvZWP2HETgAAMHmgww
-        (envelope-from <nborisov@suse.com>); Mon, 13 Sep 2021 13:49:42 +0000
-Subject: Re: [PATCH] btrfs: Make 233 be part of subvol group
-To:     fdmanana@gmail.com
-Cc:     fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <20210913133226.39007-1-nborisov@suse.com>
- <CAL3q7H6rkvgboQKvcGiZgG-qzejg+vBiTK+xBejXkuQojpRVQw@mail.gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <6a0f544b-c82f-f446-a9e6-9c54b4c722a9@suse.com>
-Date:   Mon, 13 Sep 2021 16:49:42 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        Mon, 13 Sep 2021 10:52:12 -0400
+Received: by james.kirk.hungrycats.org (Postfix, from userid 1002)
+        id 3A7E2B75ED7; Mon, 13 Sep 2021 10:50:49 -0400 (EDT)
+Date:   Mon, 13 Sep 2021 10:50:49 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     =?iso-8859-1?Q?Niccol=F2?= Belli <darkbasic@linuxsystems.it>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Unmountable / uncheckable Fedora 34 btrfs: failed to read block
+ groups: -5 open_ctree failed
+Message-ID: <20210913145049.GM29026@hungrycats.org>
+References: <0303d1f618b815714fe62a6eb90f55ca@linuxsystems.it>
+ <22ac9237-68dd-5bc3-71e1-6a4a32427852@gmx.com>
+ <7163096f475d3c31d7513c22277ad00f@linuxsystems.it>
+ <e71b92f4-43ba-1544-07c7-2dcc1dbf546c@gmx.com>
+ <7294d85b7a0b3386be95fbe2d1ec6f9b@linuxsystems.it>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H6rkvgboQKvcGiZgG-qzejg+vBiTK+xBejXkuQojpRVQw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <7294d85b7a0b3386be95fbe2d1ec6f9b@linuxsystems.it>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Sun, Sep 12, 2021 at 05:51:25PM +0200, Niccolò Belli wrote:
+> Il 2021-09-12 15:35 Qu Wenruo ha scritto:
+> > My bad, the commit is 2b29726c473b ("btrfs: rescue: allow ibadroots to
+> > skip bad extent tree when reading block group items"), which is only
+> > merged into the incoming v5.15-rc1.
+> 
+> I've compiled linux-git master and tried again:
+> 
+> $ uname -a
+> Linux arch-laptop 5.14.0-1-git-11152-g78e709522d2c #1 SMP PREEMPT Sun, 12
+> Sep 2021 12:53:13 +0000 x86_64 GNU/Linux
+> 
+> $ sudo mount -o ro,rescue=ibadroots
+> /run/media/niko/3ea0705c-21c9-4ba9-80ee-5a511cb2a093/nvme0n1p6.img.copy
+> /mnt2/
+> mount: /mnt2: can't read superblock on /dev/loop0.
+> 
+> [  196.277414] loop: module loaded
+> [  196.278228] loop0: detected capacity change from 0 to 207618048
+> [  196.736456] BTRFS: device label fedora_localhost-live devid 1 transid
+> 1029644 /dev/loop0 scanned by mount (2730)
+> [  196.736819] BTRFS info (device loop0): flagging fs with big metadata
+> feature
+> [  196.736825] BTRFS info (device loop0): ignoring bad roots
+> [  196.736826] BTRFS info (device loop0): disk space caching is enabled
+> [  196.736827] BTRFS info (device loop0): has skinny extents
+> [  197.408704] BTRFS warning (device loop0): checksum verify failed on
+> 21348679680 wanted 0xd05bf9be found 0x2874489b level 1
+> [  197.408843] BTRFS info (device loop0): start tree-log replay
+> [  197.408847] BTRFS warning (device loop0): log replay required on RO media
+> [  197.409458] BTRFS error (device loop0): open_ctree failed
+> 
+> So I've added nologreplay and it did the trick:
+> 
+> $ sudo mount -o ro,rescue=nologreplay:ibadroots
+> /run/media/niko/3ea0705c-21c9-4ba9-80ee-5a511cb2a093/nvme0n1p6.img.copy
+> /mnt2/
+> 
+> [  416.913016] loop0: detected capacity change from 0 to 207618048
+> [  416.918895] BTRFS info (device loop0): flagging fs with big metadata
+> feature
+> [  416.918903] BTRFS info (device loop0): disabling log replay at mount time
+> [  416.918905] BTRFS info (device loop0): ignoring bad roots
+> [  416.918907] BTRFS info (device loop0): disk space caching is enabled
+> [  416.918908] BTRFS info (device loop0): has skinny extents
+> [  416.929887] BTRFS warning (device loop0): checksum verify failed on
+> 21348679680 wanted 0xd05bf9be found 0x2874489b level 1
+> 
+> $ sudo btrfs subvolume list /mnt2 | grep -v snapshot | grep -v docker
+> ID 256 gen 1029644 top level 5 path home
+> ID 265 gen 1029641 top level 256 path home/niko/.cache
+> ID 912 gen 1029406 top level 5 path images
+> ID 2428 gen 359129 top level 5 path var
+> ID 2429 gen 1026054 top level 2428 path var/tmp
+> ID 2430 gen 1029044 top level 2428 path var/cache
+> ID 2433 gen 1029641 top level 5 path root
+> ID 2653 gen 1029641 top level 5 path avd
+> 
+> $ ls -al /mnt2
+> totale 16
+> drwxr-xr-x 1 root root  58 16 giu 19.09 .
+> drwxr-xr-x 1 root root 198 12 set 17.50 ..
+> drwxr-xr-x 1 niko niko  72 26 ago 10.22 avd
+> drwxr-xr-x 1 root root  28 16 apr 10.25 home
+> drwxrwxrwx 1 niko niko  96 20 ago 17.23 images
+> dr-xr-xr-x 1 root root 196 24 ago 14.58 root
+> drwxr-xr-x 1 root root  28 16 apr 10.21 snapshots
+> drwxr-xr-x 1 root root  16 13 giu 00.10 var
+> 
+> Apart from backing my files up, what else should I be able to do at this
+> point?
 
+I have questions and a suggestion:
 
-On 13.09.21 Ð³. 16:40, Filipe Manana wrote:
-> On Mon, Sep 13, 2021 at 2:35 PM Nikolay Borisov <nborisov@suse.com> wrote:
->>
->> All but this test use 'subvol' to designate they relate to btrfs
->> subvolume functionality. For the sake of consistency make btrfs/233
->> also be part of 'subvol' rather than 'subvolume'. This brings no
->> functional changes.
-> 
-> There's already a pending patch for this, which also fixes the same
-> inconsistency for btrfs/245:
-> 
-> https://patchwork.kernel.org/project/fstests/patch/163062676513.1579659.12516104685003091290.stgit@magnolia/
+1.  What is the device model and firmware revision of the SSD?  e.g.
 
-Thanks, I have missed it. Since Darick's patch is fuller hopefully it
-will be merged. So this one can be ignored.
+	smartctl -i /dev/nvme0n1 | grep -v 'Serial Number'
 
+2.  What kernel was running at the time of the failure?  Was it 5.14,
+or an earlier kernel?
+
+Try dup metadata ('btrfs balance start -mconvert=dup,soft /' if you
+already created the fs).  If you have dup metadata and the filesystem
+starts self-repairing metadata csum errors, we'll know it's a failed
+drive.  If both copies of metadata are corrupted identically, the problem
+is probably in some layer above the drive (or the drive does deduplication
+internally, but that is why we want to know the model number).
+
+> I've tried scrubbing but it's a no go:
 > 
-> Thanks.
+> $ sudo btrfs scrub start /dev/loop0
+> scrub started on /dev/loop0, fsid d3d387d6-eb5e-4b4b-9a9c-581d74fb56b4
+> (pid=3255)
 > 
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> ---
->>  tests/btrfs/233 | 2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->>
->> diff --git a/tests/btrfs/233 b/tests/btrfs/233
->> index f3e3762c6951..6a4144433073 100755
->> --- a/tests/btrfs/233
->> +++ b/tests/btrfs/233
->> @@ -9,7 +9,7 @@
->>  # performed.
->>  #
->>  . ./common/preamble
->> -_begin_fstest auto quick subvolume
->> +_begin_fstest auto quick subvol
->>
->>  # Override the default cleanup function.
->>  _cleanup()
->> --
->> 2.17.1
->>
+> $ sudo btrfs scrub status /dev/loop0
+> UUID:             d3d387d6-eb5e-4b4b-9a9c-581d74fb56b4
+> Scrub started:    Sun Sep 12 18:00:30 2021
+> Status:           aborted
+> Duration:         0:00:00
+> Total to scrub:   97.27GiB
+> Rate:             0.00B/s
+> Error summary:    no errors found
 > 
+> Any chance to recover the partition?
 > 
+> Niccolò

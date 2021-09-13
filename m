@@ -2,55 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 724B4C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BBBDC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4D6F76135E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1CE626140F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 13:30:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242199AbhIMNbP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Sep 2021 09:31:15 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:50744 "EHLO
+        id S241630AbhIMNbT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Sep 2021 09:31:19 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:50760 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238899AbhIMNSs (ORCPT
+        with ESMTP id S239037AbhIMNSt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Sep 2021 09:18:48 -0400
+        Mon, 13 Sep 2021 09:18:49 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id BAEC31FFDF;
-        Mon, 13 Sep 2021 13:17:31 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 9B0191FFE2;
+        Mon, 13 Sep 2021 13:17:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1631539051; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1631539052; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=6Z8sdsSx61uc8UqwpiRZKcEMHPq2smxsJMsCiQfDkxI=;
-        b=kaPvwAhHCVAukKz85Cju3Fx+KH3Aw8mThVTfdOyNn1OT4WhTElHdoKtgDOw6jUePaIpD/Z
-        Gki+6NSBVeJj9nMr6bp7okgo2T/VihcivV7e4LU5v/WoP0cSfMuAmOh/4cTpbCvAyvywAJ
-        N92A6fK+n9pH3mFotQFfjEvSarXkhzk=
+        bh=PGAKlYKQBSIV2Be40Q0/BEpWk7UWZDqtpcX5VnZGoaM=;
+        b=qOxv1pMFVmlifBluKBYzMrEPu8zUizUUFGBwH5b/QwvMhqab4IMTO/9IKzgoQyuvyAr6n8
+        Y/7xgDaRQTBXRoOguWjEd+OulliAOfAC+AFMVGPgIkL6pJdrU1D8qIUK7EZCiDg7vUCeBb
+        nLh+XyUTxUrmJKINaGnsU5ptV6kMPqQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 89D4013AB4;
-        Mon, 13 Sep 2021 13:17:31 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5EE4913AB4;
+        Mon, 13 Sep 2021 13:17:32 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id gOs4H2tPP2FNOwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Mon, 13 Sep 2021 13:17:31 +0000
+        id 0P8vFGxPP2FNOwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Mon, 13 Sep 2021 13:17:32 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/8] btrfs-progs: Remove fs_info argument from leaf_data_end
-Date:   Mon, 13 Sep 2021 16:17:24 +0300
-Message-Id: <20210913131729.37897-4-nborisov@suse.com>
+Subject: [PATCH 6/8] btrfs-progs: check/original: Implement removing received data for RW subvols
+Date:   Mon, 13 Sep 2021 16:17:27 +0300
+Message-Id: <20210913131729.37897-7-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210913131729.37897-1-nborisov@suse.com>
 References: <20210913131729.37897-1-nborisov@suse.com>
@@ -60,140 +60,90 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function already takes an extent_buffer which has a reference to
-the owning filesystem's fs_info. This also brings the function in line
-with the kernel's signature.
+Making a received subvolume RO should preclude doing an incremental send
+of said subvolume since it can't be guaranteed that nothing changed in
+the structure and this in turn has correctness implications for send.
+
+There is a pending kernel change that implements this behavior and
+ensures that in the future RO volumes which are switched to RW can't be
+used for incremental send. However, old kernels won't have that patch
+backported. To ensure there is a supported way for users to put their
+subvolumes in sane state let's implement the same functionality in
+progs.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- kernel-shared/ctree.c | 35 +++++++++++++++--------------------
- 1 file changed, 15 insertions(+), 20 deletions(-)
+ check/main.c | 43 ++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 42 insertions(+), 1 deletion(-)
 
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index 02eb975338e5..77766c2a7931 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -557,12 +557,11 @@ static int btrfs_comp_keys(struct btrfs_disk_key *disk,
-  * this returns the address of the start of the last item,
-  * which is the stop of the leaf data stack
-  */
--static inline unsigned int leaf_data_end(const struct btrfs_fs_info *fs_info,
--					 const struct extent_buffer *leaf)
-+static inline unsigned int leaf_data_end(const struct extent_buffer *leaf)
- {
- 	u32 nr = btrfs_header_nritems(leaf);
- 	if (nr == 0)
--		return BTRFS_LEAF_DATA_SIZE(fs_info);
-+		return BTRFS_LEAF_DATA_SIZE(leaf->fs_info);
- 	return btrfs_item_offset_nr(leaf, nr - 1);
+diff --git a/check/main.c b/check/main.c
+index 6369bdd90656..7a2296d00234 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -3544,6 +3544,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 	int ret = 0;
+ 	int err = 0;
+ 	bool generation_err = false;
++	bool rw_received_err = false;
+ 	int wret;
+ 	int level;
+ 	u64 super_generation;
+@@ -3658,6 +3659,46 @@ static int check_fs_root(struct btrfs_root *root,
+ 					sizeof(found_key)));
+ 	}
+ 
++	if (!((btrfs_root_flags(root_item) & BTRFS_ROOT_SUBVOL_RDONLY) ||
++			btrfs_is_empty_uuid(root_item->received_uuid))) {
++		error("Subvolume id: %llu is RW and has a received uuid",
++				root->root_key.objectid);
++		rw_received_err = true;
++		if (repair) {
++			struct btrfs_trans_handle *trans = btrfs_start_transaction(root, 2);
++			if (IS_ERR(trans))
++				return PTR_ERR(trans);
++
++			ret = btrfs_uuid_tree_remove(trans, root_item->received_uuid,
++					BTRFS_UUID_KEY_RECEIVED_SUBVOL, root->root_key.objectid);
++
++			if (ret && ret != -ENOENT) {
++				btrfs_abort_transaction(trans, ret);
++				return ret;
++			}
++
++			memset(root_item->received_uuid, 0, BTRFS_UUID_SIZE);
++			btrfs_set_root_stransid(root_item, 0);
++			btrfs_set_root_rtransid(root_item, 0);
++			btrfs_set_stack_timespec_sec(&root_item->stime, 0);
++			btrfs_set_stack_timespec_nsec(&root_item->stime, 0);
++			btrfs_set_stack_timespec_sec(&root_item->rtime, 0);
++			btrfs_set_stack_timespec_nsec(&root_item->rtime, 0);
++
++			ret = btrfs_update_root(trans, gfs_info->tree_root, &root->root_key,
++					root_item);
++			if (ret < 0) {
++				btrfs_abort_transaction(trans, ret);
++				return ret;
++			}
++
++			btrfs_commit_transaction(trans, gfs_info->tree_root);
++			rw_received_err = false;
++			printf("Cleared received information for subvol: %llu\n",
++					root->root_key.objectid);
++		}
++	}
++
+ 	while (1) {
+ 		ctx.item_count++;
+ 		wret = walk_down_tree(root, &path, wc, &level, &nrefs);
+@@ -3722,7 +3763,7 @@ static int check_fs_root(struct btrfs_root *root,
+ 
+ 	free_corrupt_blocks_tree(&corrupt_blocks);
+ 	gfs_info->corrupt_blocks = NULL;
+-	if (!ret && generation_err)
++	if (!ret && (generation_err ||  rw_received_err))
+ 		ret = -1;
+ 	return ret;
  }
- 
-@@ -1980,10 +1979,10 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
- 	right_nritems = btrfs_header_nritems(right);
- 
- 	push_space = btrfs_item_end_nr(left, left_nritems - push_items);
--	push_space -= leaf_data_end(fs_info, left);
-+	push_space -= leaf_data_end(left);
- 
- 	/* make room in the right data area */
--	data_end = leaf_data_end(fs_info, right);
-+	data_end = leaf_data_end(right);
- 	memmove_extent_buffer(right,
- 			      btrfs_leaf_data(right) + data_end - push_space,
- 			      btrfs_leaf_data(right) + data_end,
-@@ -1992,8 +1991,7 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
- 	/* copy from the left data area */
- 	copy_extent_buffer(right, left, btrfs_leaf_data(right) +
- 		     BTRFS_LEAF_DATA_SIZE(root->fs_info) - push_space,
--		     btrfs_leaf_data(left) + leaf_data_end(fs_info, left),
--		     push_space);
-+		     btrfs_leaf_data(left) + leaf_data_end(left), push_space);
- 
- 	memmove_extent_buffer(right, btrfs_item_nr_offset(push_items),
- 			      btrfs_item_nr_offset(0),
-@@ -2130,7 +2128,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
- 		     btrfs_item_offset_nr(right, push_items -1);
- 
- 	copy_extent_buffer(left, right, btrfs_leaf_data(left) +
--		     leaf_data_end(fs_info, left) - push_space,
-+		     leaf_data_end(left) - push_space,
- 		     btrfs_leaf_data(right) +
- 		     btrfs_item_offset_nr(right, push_items - 1),
- 		     push_space);
-@@ -2157,13 +2155,12 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
- 
- 	if (push_items < right_nritems) {
- 		push_space = btrfs_item_offset_nr(right, push_items - 1) -
--						  leaf_data_end(fs_info, right);
-+						  leaf_data_end(right);
- 		memmove_extent_buffer(right, btrfs_leaf_data(right) +
- 				      BTRFS_LEAF_DATA_SIZE(root->fs_info) -
- 				      push_space,
- 				      btrfs_leaf_data(right) +
--				      leaf_data_end(fs_info, right),
--				      push_space);
-+				      leaf_data_end(right), push_space);
- 
- 		memmove_extent_buffer(right, btrfs_item_nr_offset(0),
- 			      btrfs_item_nr_offset(push_items),
-@@ -2222,8 +2219,7 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
- 
- 	nritems = nritems - mid;
- 	btrfs_set_header_nritems(right, nritems);
--	data_copy_size = btrfs_item_end_nr(l, mid) -
--		leaf_data_end(root->fs_info, l);
-+	data_copy_size = btrfs_item_end_nr(l, mid) - leaf_data_end(l);
- 
- 	copy_extent_buffer(right, l, btrfs_item_nr_offset(0),
- 			   btrfs_item_nr_offset(mid),
-@@ -2231,9 +2227,8 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
- 
- 	copy_extent_buffer(right, l,
- 		     btrfs_leaf_data(right) +
--		     BTRFS_LEAF_DATA_SIZE(root->fs_info) -
--		     data_copy_size, btrfs_leaf_data(l) +
--		     leaf_data_end(root->fs_info, l), data_copy_size);
-+		     BTRFS_LEAF_DATA_SIZE(root->fs_info) - data_copy_size,
-+			 btrfs_leaf_data(l) + leaf_data_end(l), data_copy_size);
- 
- 	rt_data_off = BTRFS_LEAF_DATA_SIZE(root->fs_info) -
- 		      btrfs_item_end_nr(l, mid);
-@@ -2572,7 +2567,7 @@ int btrfs_truncate_item(struct btrfs_root *root, struct btrfs_path *path,
- 		return 0;
- 
- 	nritems = btrfs_header_nritems(leaf);
--	data_end = leaf_data_end(root->fs_info, leaf);
-+	data_end = leaf_data_end(leaf);
- 
- 	old_data_start = btrfs_item_offset_nr(leaf, slot);
- 
-@@ -2661,7 +2656,7 @@ int btrfs_extend_item(struct btrfs_root *root, struct btrfs_path *path,
- 	leaf = path->nodes[0];
- 
- 	nritems = btrfs_header_nritems(leaf);
--	data_end = leaf_data_end(root->fs_info, leaf);
-+	data_end = leaf_data_end(leaf);
- 
- 	if (btrfs_leaf_free_space(leaf) < data_size) {
- 		btrfs_print_leaf(leaf, BTRFS_PRINT_TREE_DEFAULT);
-@@ -2747,7 +2742,7 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
- 	leaf = path->nodes[0];
- 
- 	nritems = btrfs_header_nritems(leaf);
--	data_end = leaf_data_end(root->fs_info, leaf);
-+	data_end = leaf_data_end(leaf);
- 
- 	if (btrfs_leaf_free_space(leaf) < total_size) {
- 		btrfs_print_leaf(leaf, BTRFS_PRINT_TREE_DEFAULT);
-@@ -2940,7 +2935,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	nritems = btrfs_header_nritems(leaf);
- 
- 	if (slot + nr != nritems) {
--		int data_end = leaf_data_end(root->fs_info, leaf);
-+		int data_end = leaf_data_end(leaf);
- 
- 		memmove_extent_buffer(leaf, btrfs_leaf_data(leaf) +
- 			      data_end + dsize,
 -- 
 2.17.1
 

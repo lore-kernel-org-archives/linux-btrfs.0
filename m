@@ -7,42 +7,42 @@ X-Spam-Status: No, score=-19.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69143C43217
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 22:34:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84B4EC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 22:35:17 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4C2C761264
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 22:34:49 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 66DBC6127C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Sep 2021 22:35:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348638AbhIMWgA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Sep 2021 18:36:00 -0400
-Received: from mail.kernel.org ([198.145.29.99]:50642 "EHLO mail.kernel.org"
+        id S1348788AbhIMWgZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Sep 2021 18:36:25 -0400
+Received: from mail.kernel.org ([198.145.29.99]:50606 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1348365AbhIMWfS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Sep 2021 18:35:18 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 19A7761154;
-        Mon, 13 Sep 2021 22:34:01 +0000 (UTC)
+        id S1348400AbhIMWfr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 13 Sep 2021 18:35:47 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id B937461214;
+        Mon, 13 Sep 2021 22:34:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631572441;
-        bh=RFb3pID/6eYzIPR8zAD4NsiyWOu8wGB2lkNJoBScQQQ=;
+        s=k20201202; t=1631572470;
+        bh=mnRX1d7Mm03vcqyNiGgdKuP9HG1VZKPJGIZdkDaUQzM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Y02vuGp6+U0nSpf7EdGf58Vjcp17HHdQU4q5Hg7Nd9cBywHUpbET4C7JD8zfoK3Kt
-         4EXbI0Gn/rT2NzvhB3v0lNYgbJ3eYQD+e1y7HY0GA5XhIn2Bi8dYqDmehgAnFBwhBt
-         TV1FEWLMwjcIyAes4qoFnpN7WhAv/BlcIRVJlI0JAStREtC7t3DrMjVOZq24howdLQ
-         sZLZuhZkfB2jsEjABBfSC19D6x9zXGGrPci1yeZJ4R470brgj/L+nJ1XSD1hyWJ0RJ
-         4M+A7zeeDNvt3kx0tmv2cQdmWwwmsRjkT0QuSvTDHcevhecbmGeszRiSv/KNTPHwiu
-         ZgbwFTdTwb2QA==
+        b=ihak6FCbj9YLpJ7sYt1aE7D0iGS1Hs+s5YmsJgQDrakt7pDkNAhuwtPuIxq9oyKBf
+         dJoEZJx4gGuKiFdkr6TITDF8Lunxegg7oqsSCWud97uiW1/R6wzK3NzCjxJNwEpah+
+         O6qQbaNfZlqM/fyLdZzWR3WZkS1w0Tz0bfM39LbzhVtQA5WtzEn8c7+jkeWZSmX46M
+         mCIjMEg9nQ8dDE9dQ6cS4QmGqasGTObeapx4g1TUTbyF8kvsap7H7HlL1pAz0l8Jdz
+         4mXTCf2hsywoj+H/gDCB50DrPPElsCJGSzqPJMI+WTSxyIuRAEBqtgRA6W1tVmYGGj
+         fyHRC/bcg+a+w==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         Anand Jain <anand.jain@oracle.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.14 16/25] btrfs: update the bdev time directly when closing
-Date:   Mon, 13 Sep 2021 18:33:30 -0400
-Message-Id: <20210913223339.435347-16-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.13 11/19] btrfs: update the bdev time directly when closing
+Date:   Mon, 13 Sep 2021 18:34:07 -0400
+Message-Id: <20210913223415.435654-11-sashal@kernel.org>
 X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20210913223339.435347-1-sashal@kernel.org>
-References: <20210913223339.435347-1-sashal@kernel.org>
+In-Reply-To: <20210913223415.435654-1-sashal@kernel.org>
+References: <20210913223415.435654-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -185,7 +185,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 10 insertions(+), 8 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 354ffd8f81af..8dc14985128f 100644
+index 7d5875824be7..22a8a5a0959b 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -1925,15 +1925,17 @@ static int btrfs_add_dev_item(struct btrfs_trans_handle *trans,

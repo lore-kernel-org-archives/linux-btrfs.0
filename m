@@ -2,132 +2,104 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1EC2C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 07:12:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F043C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 09:06:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B694A60F26
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 07:12:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 35D0D61108
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 09:06:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240583AbhINHOJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Sep 2021 03:14:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48984 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240530AbhINHOI (ORCPT
+        id S231361AbhINJHU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Sep 2021 05:07:20 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:60616 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229868AbhINJHS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Sep 2021 03:14:08 -0400
-Received: from mail-pl1-x62b.google.com (mail-pl1-x62b.google.com [IPv6:2607:f8b0:4864:20::62b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E8F2FC061574;
-        Tue, 14 Sep 2021 00:12:51 -0700 (PDT)
-Received: by mail-pl1-x62b.google.com with SMTP id o8so4483402pll.1;
-        Tue, 14 Sep 2021 00:12:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=fp3ZKT+uCoGAKQG34YsDErxyHOAuhJOpqsMt6fZ+c1o=;
-        b=W0opW9t3R5CRA9EreL0eLAI3ZzcrQX4CJEzO+XUjFR6E+Ztv23H9MnOBgZK9eiOkJb
-         XuHKZpE+l6CwaGZiGPHkkKahDXBZxm1E7Alb/TRVMLTYOYG5heKfXFkrvLbIHSyRjTdG
-         fmJom3A6Ofb9cKjJ3u6JYPzlFtwx14AHWOs7Gpq3ZsIiLhWf1lTOR10IWt217tJJnSJu
-         bWQ8bxC8WNCwEI7vAiW/95wcQjTLcfQxGYMn9NYOJpnuAeuxTMMwCyxXkJYyRZ7FmgDJ
-         fL5BqiCZiKJwLzqwbgHz+sSNjfCObhuugU70CmIg5PK43W3Vqv1CuvyTIJRN8OIsx/b9
-         ZGnw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=fp3ZKT+uCoGAKQG34YsDErxyHOAuhJOpqsMt6fZ+c1o=;
-        b=fT4t0SqYMeOKbaQIHTqIbdx2peiGqYVMl2x8GI49mh8CmX8a8tGa6sp85AiKmSpH0L
-         x1Cn2yfbeVW0CtFPH/TNTdv+C8bGwf+09774qyaDkWn9PSvNQ8eF8ZkHuunFUgxEn1P3
-         hz2WOELXPhjnmM8xie1h+bOp1/pxUO4LwfQR9CJuYyVtRRm1XJFCdUwcIxqDbzfmEB8C
-         cmMQN0r74Pdfty/b/jUYh68S9sCCXmNOlpZs7yV1Hv07btDmZgMgztrdgmG34+92y85t
-         AWtGEQDBHyTp+xn/TGIDQDKekFRumVbApp0KhFOCgfjOUQ51Wr5wXep8TJ7WHUX5D6FM
-         AEfg==
-X-Gm-Message-State: AOAM53341+RkaKRWWS9NnmrY46vy8JZ2MnTVWiNFN7OodsVDFNly4Day
-        kywW9UcVgBkJKhGUQZvZeYPdNgTCPUox6mGD9Q==
-X-Google-Smtp-Source: ABdhPJx2VPixMHOrR5WAM0J72kMcdRAN66pFEBtKozwfLbBQ76bpkd+40OK9ggZHZANR9K3eEikRuGsy2DHxZkH1GiY=
-X-Received: by 2002:a17:90b:4b52:: with SMTP id mi18mr458066pjb.112.1631603565759;
- Tue, 14 Sep 2021 00:12:45 -0700 (PDT)
+        Tue, 14 Sep 2021 05:07:18 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 6C80F220CA;
+        Tue, 14 Sep 2021 09:06:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1631610360; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=vv/gG8G89P6rFNPsnWEw6K7c21EAxPPukjRDdyBNNxA=;
+        b=g54heS2htiF4wRbsbnnHxYRlglVEuGBbJburwXTBB/+Nqc3pYESBb5vjUe9GulBJ58hEzo
+        o9vwJ+YcSNNx/yOoMC3eMqieqSUJxWS4o8YGW10fpal4JOtYf/VihR5PZMfZJzIfDt21Nc
+        PkoRIZp7cb1LlOfUmXiKW5n/nRrXPI4=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3C98F13D3F;
+        Tue, 14 Sep 2021 09:06:00 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id +IJQDPhlQGH5NwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 14 Sep 2021 09:06:00 +0000
+From:   Nikolay Borisov <nborisov@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2 1/8] btrfs-progs: Add btrfs_is_empty_uuid
+Date:   Tue, 14 Sep 2021 12:05:51 +0300
+Message-Id: <20210914090558.79411-2-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210914090558.79411-1-nborisov@suse.com>
+References: <20210914090558.79411-1-nborisov@suse.com>
 MIME-Version: 1.0
-References: <CACkBjsZuFQykH=vQmy0n_mE1ACpiy1t48dvbUT0wtfBuHC4RFw@mail.gmail.com>
- <1ffc5484-b68e-22db-349c-d1e0c31f9562@gmx.com> <CACkBjsbUnPQ1J5HpXW-be2jb_h2k8d4b2p-epp5pUek_Rf0reQ@mail.gmail.com>
- <52b5e79f-6b56-2d90-6927-86b2faa295b9@gmx.com>
-In-Reply-To: <52b5e79f-6b56-2d90-6927-86b2faa295b9@gmx.com>
-From:   Hao Sun <sunhao.th@gmail.com>
-Date:   Tue, 14 Sep 2021 15:12:34 +0800
-Message-ID: <CACkBjsYMr1NsWamDFMXm3tuGV60UbE=99G70Mzi9ffU7vs-HXw@mail.gmail.com>
-Subject: Re: INFO: task hung in btrfs_alloc_tree_block
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Qu Wenruo <quwenruo.btrfs@gmx.com> =E4=BA=8E2021=E5=B9=B49=E6=9C=8814=E6=97=
-=A5=E5=91=A8=E4=BA=8C =E4=B8=8B=E5=8D=8812:45=E5=86=99=E9=81=93=EF=BC=9A
->
->
->
-> On 2021/9/14 =E4=B8=8A=E5=8D=8811:22, Hao Sun wrote:
-> > Qu Wenruo <quwenruo.btrfs@gmx.com> =E4=BA=8E2021=E5=B9=B49=E6=9C=8814=
-=E6=97=A5=E5=91=A8=E4=BA=8C =E4=B8=8A=E5=8D=8811:13=E5=86=99=E9=81=93=EF=BC=
-=9A
-> >>
-> >>
-> >>
-> >> On 2021/9/14 =E4=B8=8A=E5=8D=8810:44, Hao Sun wrote:
-> >>> Hello,
-> >>>
-> >>> When using Healer to fuzz the latest Linux kernel, the following cras=
-h
-> >>> was triggered.
-> >>>
-> >>> HEAD commit: 6880fa6c5660 Linux 5.15-rc1
-> >>> git tree: upstream
-> >>> console output:
-> >>> https://drive.google.com/file/d/1U3ei_jCODG9N5UHOspSRmykrEDSey3Qn/vie=
-w?usp=3Dsharing
-> >>> kernel config: https://drive.google.com/file/d/1rUzyMbe5vcs6khA3tL9EH=
-TLJvsUdWcgB/view?usp=3Dsharing
-> >>
-> >> Any recorded info for the injected errors during the test?
-> >>
-> >> It's hanging on a tree lock, without knowing the error injected, it's
-> >> really hard to find out what's the cause.
-> >>
-> >
-> > The `task hang` happened without any fault injection.
-> > Based on the recorded logs
-> > (https://drive.google.com/file/d/1x7u4JfyeL8WhetacBsPDVXm48SvVJUo7/view=
-?usp=3Dsharing
-> > and https://drive.google.com/file/d/1U3ei_jCODG9N5UHOspSRmykrEDSey3Qn/v=
-iew?usp=3Dsharing),
-> > no fault-injection log was printed before the task hang.
->
-> OK, then it seems like a big problem.
->
-> Any workload log from the fuzzer so we can try to reproduce?
->
-> Or just using the tool?
->
+This utility function is needed by the RO->RW snapshot detection code.
 
-Execution history:
-https://drive.google.com/file/d/1yq_hKNHBbOh8NU_ZRNFYjP9NmnRv0RPL/view?usp=
-=3Dsharing
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ kernel-shared/ctree.h     |  2 ++
+ kernel-shared/uuid-tree.c | 11 +++++++++++
+ 2 files changed, 13 insertions(+)
 
-The above is the execution history with the latest 1024 progs saved
-before the task hang happened.
-However, it is always hard to get useful information from that and
-also hard for fuzzer to reproduce the `task hang`.
-I'll keep track of this bug and send you the reproducer program once
-Healer found it.
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 3cca60323e3d..f53436a7f38b 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -2860,6 +2860,8 @@ int btrfs_lookup_uuid_received_subvol_item(int fd, const u8 *uuid,
+ int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
+ 			u64 subvol_id_cpu);
+ 
++int btrfs_is_empty_uuid(u8 *uuid);
++
+ static inline int is_fstree(u64 rootid)
+ {
+ 	if (rootid == BTRFS_FS_TREE_OBJECTID ||
+diff --git a/kernel-shared/uuid-tree.c b/kernel-shared/uuid-tree.c
+index 21115a4d2d09..51a7b5d9ff5d 100644
+--- a/kernel-shared/uuid-tree.c
++++ b/kernel-shared/uuid-tree.c
+@@ -109,3 +109,14 @@ int btrfs_lookup_uuid_received_subvol_item(int fd, const u8 *uuid,
+ 					  BTRFS_UUID_KEY_RECEIVED_SUBVOL,
+ 					  subvol_id);
+ }
++
++int btrfs_is_empty_uuid(u8 *uuid)
++{
++	int i;
++
++	for (i = 0; i < BTRFS_UUID_SIZE; i++) {
++		if (uuid[i])
++			return 0;
++	}
++	return 1;
++}
+-- 
+2.17.1
 
-Regards
-Hao

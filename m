@@ -3,124 +3,209 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
 X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45BB4C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 01:25:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58325C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 01:25:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2C51C61159
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 01:25:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 347E961155
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Sep 2021 01:25:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236280AbhINB1F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Sep 2021 21:27:05 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:36296 "EHLO
+        id S237568AbhINB1I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Sep 2021 21:27:08 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:36308 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235916AbhINB1E (ORCPT
+        with ESMTP id S237014AbhINB1H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Sep 2021 21:27:04 -0400
+        Mon, 13 Sep 2021 21:27:07 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 37097200B9
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Sep 2021 01:25:47 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 3DBDB200B9
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Sep 2021 01:25:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1631582747; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=2kJr/I1iAZhXTWzAG1s+TQqUqDmwUlsmFxR+by4tZOc=;
-        b=sCGHdP8ETd8Z6d4TFtYaE57hcTuR+0FUWLqOOx539jGcx4n+tYvBFMf/18GQ4POweLldQT
-        ovhsPSLE/OIqBidT3K7FnGK2mBdrlEnsTp4LJ2W4/8gFyx+0ocWmCEcITnSVDGbNFy/RO7
-        9kNLXMLuzuelK/E3wXf6sWHjyPfVIak=
+        t=1631582750; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=c4blV6MdkypPTCXy+8OURQdb6vyisg4Lu9fm84Ahs9g=;
+        b=hb3yksU5SCm9MDky+ldNNRBmdrHeEaN095Vi7nH+yOgyCwvI1DJfp4oCwVvhUNXgPSGNuk
+        YwKghhWv4LpeVJxHLkEoK0mvLqW9fA7SuHkYho9Z5m8/7M0YGcXsUTl4hyIsI+LS5UCwlw
+        5L3siAXnnRmw4HKWBIJ5eQNcN4komZ4=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4BE3E139E0
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Sep 2021 01:25:46 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6D187139E0
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Sep 2021 01:25:49 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id yM2MAhr6P2HafQAAMHmgww
+        id wAAMCx36P2HafQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Sep 2021 01:25:46 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Sep 2021 01:25:49 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/3] btrfs: btrfs_bio and btrfs_io_bio rename
-Date:   Tue, 14 Sep 2021 09:25:40 +0800
-Message-Id: <20210914012543.12746-1-wqu@suse.com>
+Subject: [PATCH v2 2/3] btrfs: remove btrfs_bio_alloc() helper
+Date:   Tue, 14 Sep 2021 09:25:42 +0800
+Message-Id: <20210914012543.12746-3-wqu@suse.com>
 X-Mailer: git-send-email 2.33.0
+In-Reply-To: <20210914012543.12746-1-wqu@suse.com>
+References: <20210914012543.12746-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The branch can be fetched from github, and is the preferred way to grab
-the code, as this patchset changed quite a lot of code.
-https://github.com/adam900710/linux/tree/chunk_refactor
+The helper btrfs_bio_alloc() is almost the same as btrfs_io_bio_alloc(),
+except it's allocating using BIO_MAX_VECS as @nr_iovecs, and initialize
+bio->bi_iter.bi_sector.
 
-There are two structure, btrfs_io_bio and btrfs_bio, which have very
-similar names but completely different meanings.
+However the naming itself is not using "btrfs_io_bio" to indicate its
+parameter is "strcut btrfs_io_bio" and can be easily confused with
+"struct btrfs_bio".
 
-Btrfs_io_bio mostly works at logical bytenr layer (its
-bio->bi_iter.bi_sector points to btrfs logical bytenr), and just
-contains extra info like csum and mirror_num.
+Considering assigned bio->bi_iter.bi_sector is such a simple work and
+there are already tons of call sites doing that manually, there is no
+need to do that in a helper.
 
-And btrfs_io_bio is in fact the most utilized bio, as all data/metadata
-IO is using btrfs_io_bio.
+Remove btrfs_bio_alloc() helper, and enhance btrfs_io_bio_alloc()
+function to provide a fail-safe value for its @nr_iovecs.
 
-While btrfs_bio is completely a helper structure for stripe IO
-submission (RAID56 doesn't utilize it for IO submission).
+And then replace all btrfs_bio_alloc() callers with
+btrfs_io_bio_alloc().
 
-Such naming is completely anti-human.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/compression.c | 12 ++++++++----
+ fs/btrfs/extent_io.c   | 30 ++++++++++++------------------
+ fs/btrfs/extent_io.h   |  1 -
+ 3 files changed, 20 insertions(+), 23 deletions(-)
 
-So this patchset will do the following renaming:
-
-- btrfs_bio -> btrfs_io_context
-  Since it's not really used by all bios (only mirrored profiles utilize
-  it), and it contains extra info for RAID56, it's not proper to name it
-  with _bio suffix.
-
-  Later we can integrate btrfs_io_context pointer into the new
-  btrfs_bio.
-
-- btrfs_io_bio -> btrfs_bio
-  I originally plan to rename it to btrfs_logical_bio, but it's a little
-  too long for a lot of functions.
-
-Changelog:
-v2:
-- Rename btrfs_bio to btrfs_io_context (bioc)
-- Rename btrfs_io_bio to btrfs_bio
-  Both suggested by Nikolay
-
-
-Qu Wenruo (3):
-  btrfs: rename btrfs_bio to btrfs_io_context
-  btrfs: remove btrfs_bio_alloc() helper
-  btrfs: rename struct btrfs_io_bio to btrfs_bio
-
- fs/btrfs/check-integrity.c |   4 +-
- fs/btrfs/compression.c     |  20 +--
- fs/btrfs/ctree.h           |   3 +-
- fs/btrfs/disk-io.c         |   2 +-
- fs/btrfs/disk-io.h         |   2 +-
- fs/btrfs/extent-tree.c     |  18 +--
- fs/btrfs/extent_io.c       | 108 ++++++++-------
- fs/btrfs/extent_io.h       |   3 +-
- fs/btrfs/extent_map.c      |   4 +-
- fs/btrfs/file-item.c       |  12 +-
- fs/btrfs/inode.c           |  42 +++---
- fs/btrfs/raid56.c          | 130 +++++++++----------
- fs/btrfs/raid56.h          |   8 +-
- fs/btrfs/reada.c           |  26 ++--
- fs/btrfs/scrub.c           | 130 +++++++++----------
- fs/btrfs/volumes.c         | 260 ++++++++++++++++++-------------------
- fs/btrfs/volumes.h         |  48 +++----
- fs/btrfs/zoned.c           |  16 +--
- 18 files changed, 416 insertions(+), 420 deletions(-)
-
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 7869ad12bc6e..2475dc0b1c22 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -418,7 +418,8 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 	cb->orig_bio = NULL;
+ 	cb->nr_pages = nr_pages;
+ 
+-	bio = btrfs_bio_alloc(first_byte);
++	bio = btrfs_io_bio_alloc(0);
++	bio->bi_iter.bi_sector = first_byte >> SECTOR_SHIFT;
+ 	bio->bi_opf = bio_op | write_flags;
+ 	bio->bi_private = cb;
+ 	bio->bi_end_io = end_compressed_bio_write;
+@@ -490,7 +491,8 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 				bio_endio(bio);
+ 			}
+ 
+-			bio = btrfs_bio_alloc(first_byte);
++			bio = btrfs_io_bio_alloc(0);
++			bio->bi_iter.bi_sector = first_byte >> SECTOR_SHIFT;
+ 			bio->bi_opf = bio_op | write_flags;
+ 			bio->bi_private = cb;
+ 			bio->bi_end_io = end_compressed_bio_write;
+@@ -748,7 +750,8 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	/* include any pages we added in add_ra-bio_pages */
+ 	cb->len = bio->bi_iter.bi_size;
+ 
+-	comp_bio = btrfs_bio_alloc(cur_disk_byte);
++	comp_bio = btrfs_io_bio_alloc(0);
++	comp_bio->bi_iter.bi_sector = cur_disk_byte >> SECTOR_SHIFT;
+ 	comp_bio->bi_opf = REQ_OP_READ;
+ 	comp_bio->bi_private = cb;
+ 	comp_bio->bi_end_io = end_compressed_bio_read;
+@@ -806,7 +809,8 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 				bio_endio(comp_bio);
+ 			}
+ 
+-			comp_bio = btrfs_bio_alloc(cur_disk_byte);
++			comp_bio = btrfs_io_bio_alloc(0);
++			comp_bio->bi_iter.bi_sector = cur_disk_byte >> SECTOR_SHIFT;
+ 			comp_bio->bi_opf = REQ_OP_READ;
+ 			comp_bio->bi_private = cb;
+ 			comp_bio->bi_end_io = end_compressed_bio_read;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 1aed03ef5f49..5ef7c506aee6 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3121,16 +3121,19 @@ static inline void btrfs_io_bio_init(struct btrfs_io_bio *btrfs_bio)
+ }
+ 
+ /*
+- * The following helpers allocate a bio. As it's backed by a bioset, it'll
+- * never fail.  We're returning a bio right now but you can call btrfs_io_bio
+- * for the appropriate container_of magic
++ * Allocate a btrfs_io_bio, with @nr_iovecs as maxinum iovecs.
++ *
++ * If @nr_iovecs is 0, it will use BIO_MAX_VECS as @nr_iovces instead.
++ * This behavior is to provide a fail-safe default value.
+  */
+-struct bio *btrfs_bio_alloc(u64 first_byte)
++struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs)
+ {
+ 	struct bio *bio;
+ 
+-	bio = bio_alloc_bioset(GFP_NOFS, BIO_MAX_VECS, &btrfs_bioset);
+-	bio->bi_iter.bi_sector = first_byte >> 9;
++	ASSERT(nr_iovecs <= BIO_MAX_VECS);
++	if (nr_iovecs == 0)
++		nr_iovecs = BIO_MAX_VECS;
++	bio = bio_alloc_bioset(GFP_NOFS, nr_iovecs, &btrfs_bioset);
+ 	btrfs_io_bio_init(btrfs_io_bio(bio));
+ 	return bio;
+ }
+@@ -3148,16 +3151,6 @@ struct bio *btrfs_bio_clone(struct bio *bio)
+ 	return new;
+ }
+ 
+-struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs)
+-{
+-	struct bio *bio;
+-
+-	/* Bio allocation backed by a bioset does not fail */
+-	bio = bio_alloc_bioset(GFP_NOFS, nr_iovecs, &btrfs_bioset);
+-	btrfs_io_bio_init(btrfs_io_bio(bio));
+-	return bio;
+-}
+-
+ struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 size)
+ {
+ 	struct bio *bio;
+@@ -3307,14 +3300,15 @@ static int alloc_new_bio(struct btrfs_inode *inode,
+ 	struct bio *bio;
+ 	int ret;
+ 
++	bio = btrfs_io_bio_alloc(0);
+ 	/*
+ 	 * For compressed page range, its disk_bytenr is always @disk_bytenr
+ 	 * passed in, no matter if we have added any range into previous bio.
+ 	 */
+ 	if (bio_flags & EXTENT_BIO_COMPRESSED)
+-		bio = btrfs_bio_alloc(disk_bytenr);
++		bio->bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
+ 	else
+-		bio = btrfs_bio_alloc(disk_bytenr + offset);
++		bio->bi_iter.bi_sector = (disk_bytenr + offset) >> SECTOR_SHIFT;
+ 	bio_ctrl->bio = bio;
+ 	bio_ctrl->bio_flags = bio_flags;
+ 	bio->bi_end_io = end_io_func;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index ba471f2063a7..81fa68eaa699 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -278,7 +278,6 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_clear_unlock_delalloc(struct btrfs_inode *inode, u64 start, u64 end,
+ 				  struct page *locked_page,
+ 				  u32 bits_to_clear, unsigned long page_ops);
+-struct bio *btrfs_bio_alloc(u64 first_byte);
+ struct bio *btrfs_io_bio_alloc(unsigned int nr_iovecs);
+ struct bio *btrfs_bio_clone(struct bio *bio);
+ struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 size);
 -- 
 2.33.0
 

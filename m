@@ -2,143 +2,171 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80C40C4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Sep 2021 01:39:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7995C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Sep 2021 03:45:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5C19561185
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Sep 2021 01:39:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 981226112E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Sep 2021 03:45:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233637AbhIPBkh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Sep 2021 21:40:37 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48606 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229816AbhIPBkg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Sep 2021 21:40:36 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 171A761185;
-        Thu, 16 Sep 2021 01:39:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1631756357;
-        bh=qiapaZb67wwUv941O9e/iIpg4NcRC50TGqFQbf4qXHo=;
-        h=Date:From:To:Cc:Subject:From;
-        b=cadutgf1ZfCzX5z3WVOk4howI0AgD1RNcLPqmp8PxFR/4/y6UX1vZM1LG4j26sRe9
-         jjhZlqZxObUx+K762pxoDBQjY36GxIiRoF9J4iR4A/mKsWyAp3/fwsvhR8mCQOP/gA
-         XC47oOq2cOai7vdexXAJyGyEEy6EfG2tjIp17dHc5F0vqdr39dIaIAg8safm+CaDHn
-         slh80w93XUsVV8Lc8CPsncSDprErEfP9FD/UZ1qk9Rnamf0UqVDjq9Xco3KbEgTBea
-         jPSbOcTpQU7b8wd3oBaFMUpTgw4Ves8I0zqqNqIn6gBUYVpXQgxf2FoMbAAHiS1vxd
-         ZlFT0zm9FBsFA==
-Date:   Wed, 15 Sep 2021 18:39:16 -0700
-From:   "Darrick J. Wong" <djwong@kernel.org>
-To:     xfs <linux-xfs@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc:     linux-fsdevel <linux-fsdevel@vger.kernel.org>
-Subject: Shameless plug for the FS Track at LPC next week!
-Message-ID: <20210916013916.GD34899@magnolia>
+        id S234199AbhIPDqs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Sep 2021 23:46:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42520 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233856AbhIPDqr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Sep 2021 23:46:47 -0400
+Received: from mail-io1-xd30.google.com (mail-io1-xd30.google.com [IPv6:2607:f8b0:4864:20::d30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DBC82C061574;
+        Wed, 15 Sep 2021 20:45:27 -0700 (PDT)
+Received: by mail-io1-xd30.google.com with SMTP id a22so6207730iok.12;
+        Wed, 15 Sep 2021 20:45:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :content-transfer-encoding;
+        bh=PandIsADvqsUupHjnSGXxhHD/qBHusaqiIcrYmYtH/4=;
+        b=P1vsn6ifdxH7RpFXkSK6CUHK9RFHfhmfm8/RZLjtc+Cw+iI5Dff46aXEZHD+9GHIXA
+         ipNW+YJpUBOPigSQ+OaWKyAPkt3aPZOex41CPL0d7rxDT0WvniHD5Qg+O20p+lh3fJOf
+         o0pXeDQXY+cdJlaKrBltTP/A1vWgqaKjufmaxZxk0rLrNNwJErwETImQ+1m9ulWbU00Q
+         je2oWDAHAY327lq6MhnqyrJ+33jwwDLX/RFxMvBjppyzDKuV/i//5+ahXtSMJsVHgB03
+         4eFyfpwMADNu8lgK8lpm9yKnDUz60aaZY2qiPfXX9O2tM3qXq7KDkhibBJ35ht/eiath
+         QSBQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:content-transfer-encoding;
+        bh=PandIsADvqsUupHjnSGXxhHD/qBHusaqiIcrYmYtH/4=;
+        b=4Mrok4obJHWLpP7YCKdoUPgY7VWiwtBX43dBqGvioQTsOm8tK6VtjxceiPvnHehSrG
+         O2tJKM1bbEs8Xq4Rhl5u8N8IWBMnnaLgXMUhKk6sDxqFB7/SSWTv+XTWPzsPskNit2yD
+         EIqdlxr1ocGp0kbkgOY3PHqlraQbjJgDXr9ylMYln3cDKt9eFxsLD+sP5zVqwYjUblDi
+         TMxaAQoszzaHzSdPEMG6rx1V0G87P6s0NsLlWp8BAK/vYuEk0ceAt4XlYwTgAPWTncju
+         6wiADFsfPY85crjve3xdsA/FrOEKhKRgKHw+/daqBb/nRdM6/skNIAknfZ7f16T0o5D5
+         NqjQ==
+X-Gm-Message-State: AOAM532TanGwIuIiMBn3C/PtEjG9PcdNpgR5dW3YDNfiyccP3W+4slbu
+        niyN0ZHR2ZKuQD7E97lxPf/x74yEoCMggRWUcZI=
+X-Google-Smtp-Source: ABdhPJxAz0aGqVeUQgpt7k92eRjZYuoYezk42H4eflVKJFVEcmoA9ZlyR4NdfsWpPrEJAOruBNvy1QASlPCZuN53qEo=
+X-Received: by 2002:a5e:d70a:: with SMTP id v10mr2750143iom.10.1631763927102;
+ Wed, 15 Sep 2021 20:45:27 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+References: <20210906012559.8605-1-baptiste.lepers@gmail.com>
+ <20210906122747.GG3379@suse.cz> <CABdVr8Rfd3jXvaa_GYzSqpqUs3Fy7AVHou5z8vHXBhn-YenZfg@mail.gmail.com>
+ <CABdVr8SfdsxmfgBPBbt70Ci8C=a+8__2f5AeZ7KnpQ6-X6dg7w@mail.gmail.com>
+In-Reply-To: <CABdVr8SfdsxmfgBPBbt70Ci8C=a+8__2f5AeZ7KnpQ6-X6dg7w@mail.gmail.com>
+From:   Baptiste Lepers <baptiste.lepers@gmail.com>
+Date:   Thu, 16 Sep 2021 13:45:16 +1000
+Message-ID: <CABdVr8QLZ7vHh=Prt_W0LLOLMMJQJySyjZ3cw04HR7O4nfq1_Q@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: transaction: Fix misplaced barrier in btrfs_record_root_in_trans
+To:     dsterba@suse.cz, Baptiste Lepers <baptiste.lepers@gmail.com>,
+        "Paul E . McKenney" <paulmck@linux.ibm.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi folks!
+Just curious about the status of this patch. :) Let me know if you
+need further information.
 
-The Linux Plumbers conference is next week!  The filesystems mini
-conference is next Tuesday, 21 September, starting at 14:00 UTC:
+Thanks!
 
-https://linuxplumbersconf.org/event/11/sessions/111/#20210921
-
-(it's the light green column second from the right)
-
-As most of you are probably aware, LSFMM has been cancelled for a second
-year in a row, which leaves LPC as the only developer focused gathering
-this year.  This year's conference is virtual, like last year.  If you'd
-like to participate, it's not too late to register ($50 USD):
-
-https://linuxplumbersconf.org/event/11/page/112-attend
-
----
-
-The first session will be run by Matthew Wilcox, who will say something
-about the ongoing folio work, assuming Linus isn't going to pull it for
-5.15.  We'll see where things are in a week.
-
-Christian Brauner will run the second session, discussing what idmapped
-filesystem mounts are for and the current status of supporting more
-filesystems.
-
----
-
-Next up will be a session run by me about both of the atomic file write
-features that have been variously proposed and asked for by various
-enterprisey users.  The first proposal refers to direct atomic file
-writes to storage hardware.  I /think/ this mostly involves enabling the
-relevant plumbing in the block layer and then wiring up iomap/xfs to use
-it.  Possibly also a new pwritev2 flag or file mode or something.
-
-(Christoph did this in 2019: https://lwn.net/Articles/789600/ )
-
-The /other/ atomic file write feature, of course, is my longstanding RFC
-to add a VFS call that enables atomic swapping of file contents, which
-enables a program to reflink a file's contents to an O_TMPFILE file,
-write some changes to the tempfile, and then swap /all/ the changed
-blocks back to the original file.  This call would be durable even if
-the system goes down.  The feature is actually the brainchild of the
-online filesystem repair effort, but I figured it wasn't so hard to
-extend a tendril to userspace to make it more generally useful.
-
-https://lwn.net/Articles/818977/
-https://lore.kernel.org/linux-fsdevel/161723932606.3149451.12366114306150243052.stgit@magnolia/
-
----
-
-Allison will be running the fourth session about our current progress
-towards enabling sysadmins to shrink filesystems, and what pieces we're
-going to need to clear space from the end of the filesystem and then
-reduce the size.  FWIW Dave has been working on an inode relocation
-("reno") tool, and I've been working on a free space defragmenter that
-kind of barely works.  Originally this was a XFS-focused discussion, but
-it seems that Andreas still remembers the last time someone tried to add
-it to ext4.
-
----
-
-Session #4 discusses the proliferation of cloud storage technologies and
-the new failure modes that Ted and I have observed with these devices.
-I think Ted had a few things to say about cloud devices, and due to the
-repeated requests I think it would be worth polling the audience to find
-out if they'd like filesystems to be more resilient (when possible) in
-the face of not-totally-reliable storage.  Obviously everyone wants that
-as a broad goal, but what should we pitch?  Metadata IO retries?
-Restoring lost information from a mirror?  Online repair?
-
----
-
-The final session will be a presentation about the XFS roadmap for 2022.
-I'll start with a recap of the new features from last year's LTS that
-have been maturing this year, and which pieces have landed for this
-year's LTS kernel.
-
-I /hope/ that this will attract a conversation between (x)fs developers
-and real application developers about what features could be coming down
-the pipeline and what features would they most be interested in.
-
----
-
-To all the XFS developers: it has been a very long time since I've seen
-all your faces!  I would love to have a developer BOF of some kind to
-see you all again, and to introduce Catherine Hoang (our newest
-addition) to the group.
-
-If nobody else shows up to the roadmap we could do it there, but I'd
-like to have /some/ kind of venue for everyone who don't find the
-timeslots convenient (i.e. Dave and Chandan).  This doesn't have to take
-a long time -- even a 15 minute meet and greet to help everyone
-(re)associate names with faces would go a long way towards feeling
-normal(ish) again. ;)
-
---D
+On Tue, Sep 7, 2021 at 10:44 AM Baptiste Lepers
+<baptiste.lepers@gmail.com> wrote:
+>
+> No, they need to be between the reads to have an effect. See
+> https://www.kernel.org/doc/Documentation/memory-barriers.txt =C2=A7SMP
+> BARRIER PAIRING ("When dealing with CPU-CPU interactions..."). You
+> will see that the barriers are always between the ordered reads and
+> not before.
+>
+> I think that Paul, the barrier guru, can confirm that the barrier was
+> misplaced in the original code? :)
+>
+>
+> On Tue, Sep 7, 2021 at 10:43 AM Baptiste Lepers
+> <baptiste.lepers@gmail.com> wrote:
+> >
+> >
+> >
+> > On Mon, Sep 6, 2021 at 10:27 PM David Sterba <dsterba@suse.cz> wrote:
+> >>
+> >> On Mon, Sep 06, 2021 at 11:25:59AM +1000, Baptiste Lepers wrote:
+> >> > Per comment, record_root_in_trans orders the writes of the root->sta=
+te
+> >> > and root->last_trans:
+> >> >       set_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state);
+> >> >       smp_wmb();
+> >> >       root->last_trans =3D trans->transid;
+> >> >
+> >> > But the barrier that enforces the order on the read side is misplace=
+d:
+> >> >      smp_rmb(); <-- misplaced
+> >> >      if (root->last_trans =3D=3D trans->transid &&
+> >> >     <-- missing barrier here -->
+> >> >             !test_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state))
+> >> >
+> >> > This patches fixes the ordering and wraps the racy accesses with
+> >> > READ_ONCE and WRITE_ONCE calls to avoid load/store tearing.
+> >> >
+> >> > Fixes: 7585717f304f5 ("Btrfs: fix relocation races")
+> >> > Signed-off-by: Baptiste Lepers <baptiste.lepers@gmail.com>
+> >> > ---
+> >> >  fs/btrfs/transaction.c | 7 ++++---
+> >> >  1 file changed, 4 insertions(+), 3 deletions(-)
+> >> >
+> >> > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> >> > index 14b9fdc8aaa9..a609222e6704 100644
+> >> > --- a/fs/btrfs/transaction.c
+> >> > +++ b/fs/btrfs/transaction.c
+> >> > @@ -437,7 +437,7 @@ static int record_root_in_trans(struct btrfs_tra=
+ns_handle *trans,
+> >> >                                  (unsigned long)root->root_key.objec=
+tid,
+> >> >                                  BTRFS_ROOT_TRANS_TAG);
+> >> >               spin_unlock(&fs_info->fs_roots_radix_lock);
+> >> > -             root->last_trans =3D trans->transid;
+> >> > +             WRITE_ONCE(root->last_trans, trans->transid);
+> >> >
+> >> >               /* this is pretty tricky.  We don't want to
+> >> >                * take the relocation lock in btrfs_record_root_in_tr=
+ans
+> >> > @@ -489,7 +489,7 @@ int btrfs_record_root_in_trans(struct btrfs_tran=
+s_handle *trans,
+> >> >                              struct btrfs_root *root)
+> >> >  {
+> >> >       struct btrfs_fs_info *fs_info =3D root->fs_info;
+> >> > -     int ret;
+> >> > +     int ret, last_trans;
+> >> >
+> >> >       if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state))
+> >> >               return 0;
+> >> > @@ -498,8 +498,9 @@ int btrfs_record_root_in_trans(struct btrfs_tran=
+s_handle *trans,
+> >> >        * see record_root_in_trans for comments about IN_TRANS_SETUP =
+usage
+> >> >        * and barriers
+> >> >        */
+> >> > +     last_trans =3D READ_ONCE(root->last_trans);
+> >> >       smp_rmb();
+> >> > -     if (root->last_trans =3D=3D trans->transid &&
+> >> > +     if (last_trans =3D=3D trans->transid &&
+> >> >           !test_bit(BTRFS_ROOT_IN_TRANS_SETUP, &root->state))
+> >>
+> >> Aren't the smp_rmb barriers supposed to be used before the condition?
+> >
+> >
+> > No, they need to be between the reads to have an effect. See  https://w=
+ww.kernel.org/doc/Documentation/memory-barriers.txt =C2=A7SMP BARRIER PAIRI=
+NG ("When dealing with CPU-CPU interactions..."). You will see that the bar=
+riers are always between the ordered reads and not before.
+> >
+> > I think that Paul, the barrier guru, can confirm that the barrier was m=
+isplaced in the original code? :)

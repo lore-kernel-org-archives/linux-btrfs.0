@@ -2,123 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-4.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDD16C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Sep 2021 16:17:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B247BC43217
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Sep 2021 22:11:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CCD0661212
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Sep 2021 16:17:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9F8BD61152
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Sep 2021 22:11:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236848AbhIQQTD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Sep 2021 12:19:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33944 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232726AbhIQQS7 (ORCPT
+        id S1344034AbhIQWMu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Sep 2021 18:12:50 -0400
+Received: from mail109.syd.optusnet.com.au ([211.29.132.80]:41919 "EHLO
+        mail109.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S241373AbhIQWMu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Sep 2021 12:18:59 -0400
-Received: from mail-wr1-x433.google.com (mail-wr1-x433.google.com [IPv6:2a00:1450:4864:20::433])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DBD83C061574
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Sep 2021 09:17:36 -0700 (PDT)
-Received: by mail-wr1-x433.google.com with SMTP id d21so16018623wra.12
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Sep 2021 09:17:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=to:from:subject:message-id:date:user-agent:mime-version
-         :content-transfer-encoding:content-language;
-        bh=9Nfe4APPTX1QoUtj1tGRylB1tOcERZkK1WH6qYVp1vQ=;
-        b=c3sHFKJyhS+TRRzvoilOHMPgTQ04oVsW16v4nLaJfNNBRzKDJXA89BPXkeecE8yafc
-         clmcYkzXPW8ftIfA7/1EQfrHvTCWQEQV15j2oyTV+UnxXNIbihGprt8N63jzQ3gi49oI
-         PVbL6+mzIIn8wtWkRG7VhvJMhi9RQ0Kj0vJpY3ec7ask6b/1rhX3/c8Fl2aUm134uAJn
-         43LpDlYjrlRuXi/crZiP/Jz8LzMF+bCrhtDWpodOqxKMLEkNzlbvAvs21IulhVwkTVMB
-         Cvqg1m5Xpa2lWaT/1DWvhDMpLyy5FsuaR/e6Ic3qLBOr71X44m4AVdNQjQAC54ugRFvi
-         I82w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:to:from:subject:message-id:date:user-agent
-         :mime-version:content-transfer-encoding:content-language;
-        bh=9Nfe4APPTX1QoUtj1tGRylB1tOcERZkK1WH6qYVp1vQ=;
-        b=dLppYJUvEDka5V+OSJ3rRhm3KYbyI8ZH6ZTQt+wvtpWqFVSPCp/Ug4RwfnJtVdoC+8
-         kMqkT715bWOhyApMkOrVhpvD6Y6iqNHooZht3l6ibeuAt2iIxGnWrHF4sdtYmqQpRm3i
-         i6YaaWDz1whhVa0xlDRWTw2ZyTsa25U2GdEa2dekhOHQ+YB/O/Iuo+jViKdRIkckAur7
-         GpM0neygUaMI1Sv8iE6Uf1WXOUj9yExLwXosjM2qM/ddtvJuV1P6v/kBvx06hU+fUFQl
-         xEAbd3gty53cdIS5m6eVnoFK2GkxDmpN0KXSebQAkKu1DBEcccB4uThL+XtsNVg6TvjD
-         Ks4w==
-X-Gm-Message-State: AOAM5311t1jvxPmLgO97xX+nLXZ6GeLs8AijqeiX6HIdlAIZmPNZwstC
-        jHKk0GOM1dT+RyZMvO1xhf6bZsRkB40=
-X-Google-Smtp-Source: ABdhPJw/GBHSk2aRMz5vV3HjviHbEcUwSto0doghzjvbYAXdGG/J8yYOOUEWE2aeEfmM3HWrCzKQGQ==
-X-Received: by 2002:adf:e806:: with SMTP id o6mr12662500wrm.239.1631895455493;
-        Fri, 17 Sep 2021 09:17:35 -0700 (PDT)
-Received: from [10.13.40.210] ([195.228.146.246])
-        by smtp.googlemail.com with ESMTPSA id g143sm11253276wme.16.2021.09.17.09.17.34
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 17 Sep 2021 09:17:34 -0700 (PDT)
-To:     linux-btrfs@vger.kernel.org
-From:   mailcimbi <mailcimbi@gmail.com>
-Subject: Unable to mount btrfs subvol with a new kernel
-Message-ID: <9c56dfca-2551-22a8-e6eb-86f0614bc5a8@gmail.com>
-Date:   Fri, 17 Sep 2021 18:17:34 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        Fri, 17 Sep 2021 18:12:50 -0400
+Received: from dread.disaster.area (pa49-195-238-16.pa.nsw.optusnet.com.au [49.195.238.16])
+        by mail109.syd.optusnet.com.au (Postfix) with ESMTPS id 4596D89696;
+        Sat, 18 Sep 2021 08:11:25 +1000 (AEST)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+        (envelope-from <david@fromorbit.com>)
+        id 1mRM4q-00Dg51-FX; Sat, 18 Sep 2021 08:11:24 +1000
+Date:   Sat, 18 Sep 2021 08:11:24 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     Chandan Babu R <chandan.babu@oracle.com>
+Cc:     "Darrick J. Wong" <djwong@kernel.org>,
+        xfs <linux-xfs@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>
+Subject: Re: [External] : Shameless plug for the FS Track at LPC next week!
+Message-ID: <20210917221124.GS2361455@dread.disaster.area>
+References: <20210916013916.GD34899@magnolia>
+ <87ilz0afjt.fsf@debian-BULLSEYE-live-builder-AMD64>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
-Content-Language: en-US
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <87ilz0afjt.fsf@debian-BULLSEYE-live-builder-AMD64>
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.3 cv=Tu+Yewfh c=1 sm=1 tr=0
+        a=DzKKRZjfViQTE5W6EVc0VA==:117 a=DzKKRZjfViQTE5W6EVc0VA==:17
+        a=pD60vor7VWt0LR65:21 a=kj9zAlcOel0A:10 a=7QKq2e-ADPsA:10 a=7-415B0cAAAA:8
+        a=asuChGYKLb9zrcZLg3oA:9 a=CjuIK1q_8ugA:10 a=yMQw-kFVVvq5mqo7iYi9:22
+        a=biEYGPWJfzWAr4FL6Ov7:22
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dear List,
+On Thu, Sep 16, 2021 at 05:38:38PM +0530, Chandan Babu R wrote:
+> On 16 Sep 2021 at 07:09, Darrick J. Wong wrote:
+> > Hi folks!
+> >
+> > The Linux Plumbers conference is next week!  The filesystems mini
+> > conference is next Tuesday, 21 September, starting at 14:00 UTC:
+> >
+> 
+> <snip>
+> 
+> >
+> > To all the XFS developers: it has been a very long time since I've seen
+> > all your faces!  I would love to have a developer BOF of some kind to
+> > see you all again, and to introduce Catherine Hoang (our newest
+> > addition) to the group.
+> >
+> > If nobody else shows up to the roadmap we could do it there, but I'd
+> > like to have /some/ kind of venue for everyone who don't find the
+> > timeslots convenient (i.e. Dave and Chandan).  This doesn't have to take
+> > a long time -- even a 15 minute meet and greet to help everyone
+> > (re)associate names with faces would go a long way towards feeling
+> > normal(ish) again. ;)
+> 
+> 14:00 UTC maps to 19:30 for me. I am fine with this time slot.
 
-I have two btrfs subvol in my fileset. I can mount it with lubuntu 18.04 
-but unable to mount with a newer version. Also unable to mount it when I 
-upgrade to the latest 18.04. By the way upgrading to 20.04 (using the 
-older kernel after upgrading to the latest 18.04) and starting it with 
-an older kernel it is working.
+It maps to 12-4am for me. Not really practical :/
 
-I can reproduce it. Starting with lubuntu 21.04 live cd: unable to 
-mount. Starting with lubuntu 18.04.2 live cd: I can mount it.
+Cheers,
 
-Here are the results:
-lubuntu 18.04
-root@lubuntu:~# uname -a
-Linux lubuntu 4.18.0-15-generic #16~18.04.1-Ubuntu SMP Thu Feb 7 
-14:06:04 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
-mounted btrfs with live cd
-root@lubuntu:~# mount -t btrfs -o rw,subvol=@ /dev/sda3 /mnt
-/dev/sda3        28G   14G   12G  55% /mnt
-root@lubuntu:~# mount -t btrfs -o rw,subvol=@home /dev/sda3 /mnt/home
-/dev/sda3        28G   14G   12G  55% /mnt/home
-root@lubuntu:~# btrfs version
-btrfs-progs v4.15.1
-
-
-lubuntu 20.04
-root@lubuntu:~# uname -a
-Linux lubuntu 5.4.0-42-generic #46-Ubuntu SMP Fri Jul 10 00:24:02 UTC 
-2020 x86_64 x86_64 x86_64 GNU/Linux
-root@lubuntu:~# mount -t btrfs -o rw,subvol=@ /dev/sda3 /mnt
-mount: /mnt: wrong fs type, bad option, bad superblock on /dev/sda3, 
-missing codepage or helper program, or other error.
-root@lubuntu:~# btrfs version
-btrfs-progs v5.10.1
-
- From the log it seems there is/are corrupt leaf(s)
-[ 3231.406914] BTRFS critical (device sda3): corrupt leaf: 
-block=1045233664 slot=17 extent bytenr=20209664 len=8192 invalid 
-generation, have 895434752 expect (0, 3790778]
-[ 3231.406922] BTRFS error (device sda3): block=1045233664 read time 
-tree block corruption detected
-[ 3231.406971] BTRFS error (device sda3): failed to read block groups: -5
-[ 3231.409566] BTRFS error (device sda3): open_ctree failed
-
-
-Do you have an idea how to solve it. When I try to check the subvols 
-with btrfs check all seems to be fine in 18.04.
-
-Thank you in advance.
-Miklos
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

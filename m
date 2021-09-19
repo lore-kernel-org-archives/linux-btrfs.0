@@ -2,121 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
+X-Spam-Status: No, score=-13.5 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E580C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Sep 2021 12:31:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74BCEC433F5
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Sep 2021 22:40:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 556C061268
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Sep 2021 12:31:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 550A361051
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Sep 2021 22:40:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232057AbhISMdF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 19 Sep 2021 08:33:05 -0400
-Received: from eu-shark2.inbox.eu ([195.216.236.82]:43704 "EHLO
-        eu-shark2.inbox.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229542AbhISMdE (ORCPT
+        id S231594AbhISWmK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 19 Sep 2021 18:42:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38094 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230090AbhISWmK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Sep 2021 08:33:04 -0400
-Received: from eu-shark2.inbox.eu (localhost [127.0.0.1])
-        by eu-shark2-out.inbox.eu (Postfix) with ESMTP id 906491E00485;
-        Sun, 19 Sep 2021 15:31:38 +0300 (EEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=inbox.eu; s=20140211;
-        t=1632054698; bh=iF6Svq1BbarJs0op9PbQNv41Guu3rQRpvnC9LwbSsOc=;
-        h=References:From:To:Cc:Subject:Date:In-reply-to;
-        b=A28vdvChzRcyuiEju7Ttfj1998XCPi13bQlybPr8SzwFeHbvT54ERZ72Bqxxvs9RW
-         KjJYMWN5b/V4SN8wex1eLKSvmDvjr62Q9uv5XvkOfUCurl0NeQvLYqQ8zEuq5o3juG
-         YwpxulmRWM8VNyZV72hnJj+8oQ9UXtXy//iVBjMk=
-Received: from localhost (localhost [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id 8749B1E00482;
-        Sun, 19 Sep 2021 15:31:38 +0300 (EEST)
-Received: from eu-shark2.inbox.eu ([127.0.0.1])
-        by localhost (eu-shark2.inbox.eu [127.0.0.1]) (spamfilter, port 35)
-        with ESMTP id yOikGp_f59MJ; Sun, 19 Sep 2021 15:31:38 +0300 (EEST)
-Received: from mail.inbox.eu (eu-pop1 [127.0.0.1])
-        by eu-shark2-in.inbox.eu (Postfix) with ESMTP id 42DC41E00452;
-        Sun, 19 Sep 2021 15:31:38 +0300 (EEST)
-Received: from nas (unknown [117.89.173.253])
-        (Authenticated sender: l@damenly.su)
-        by mail.inbox.eu (Postfix) with ESMTPA id 2383A1BE012E;
-        Sun, 19 Sep 2021 15:31:36 +0300 (EEST)
-References: <9809e10.87861547.17bfad90f99@tnonline.net>
-User-agent: mu4e 1.7.0; emacs 27.2
-From:   Su Yue <l@damenly.su>
-To:     Forza <forza@tnonline.net>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Select DUP metadata by default on single devices.
-Date:   Sun, 19 Sep 2021 20:19:55 +0800
-In-reply-to: <9809e10.87861547.17bfad90f99@tnonline.net>
-Message-ID: <v92wzqzf.fsf@damenly.su>
+        Sun, 19 Sep 2021 18:42:10 -0400
+Received: from pandora.armlinux.org.uk (pandora.armlinux.org.uk [IPv6:2001:4d48:ad52:32c8:5054:ff:fe00:142])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C290C061760
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Sep 2021 15:40:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=armlinux.org.uk; s=pandora-2019; h=Date:Sender:Message-Id:Content-Type:
+        Content-Transfer-Encoding:MIME-Version:Subject:Cc:To:From:Reply-To:Content-ID
+        :Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:
+        Resent-Cc:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:
+        List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=3CRX9/FrZ4fMbEfmxE7zzi3Oj63MQwW2mmB5QSuf0eY=; b=UrIakf2IdHFyMHo0FzNJ9yG1Mb
+        LpRUkkIsy5UfPTrfNhyQaTro7JyooEs+z73d2tcUCrqYBUU1hMWTHn2vHQrytKgvMPCkGzbE8UZAY
+        Jm6lslvMeADImcma9P3FgI8dlblrllbESmD8s6Ql+wzFvY5aSZ8RICiKdq/Sq+qLKlLUHw4JsGBW5
+        7aKmkEUqDvQsRP8xdddV0XuHBWWA4Ql17kJzdrwkZfjFZboEi3azD7F6FtjVpENArkYNGrCzpLj9j
+        38UzKNCXQ1JZipAManQb3bLNylLW44LRnrVcKcZBfohwAP9rzPcZBBemc9dheQOMPOI5V3LrOaiZN
+        xjEYjNQw==;
+Received: from e0022681537dd.dyn.armlinux.org.uk ([fd8f:7570:feb6:1:222:68ff:fe15:37dd]:41452 helo=rmk-PC.armlinux.org.uk)
+        by pandora.armlinux.org.uk with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.94.2)
+        (envelope-from <rmk@armlinux.org.uk>)
+        id 1mS5UF-00018r-EE; Sun, 19 Sep 2021 23:40:39 +0100
+Received: from rmk by rmk-PC.armlinux.org.uk with local (Exim 4.94.2)
+        (envelope-from <rmk@armlinux.org.uk>)
+        id 1mS5UF-002wsg-0c; Sun, 19 Sep 2021 23:40:39 +0100
+From:   "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix initialiser warning in fs/btrfs/tree-checker.c
 MIME-Version: 1.0
-Content-Type: text/plain; format=flowed
-X-Virus-Scanned: OK
-X-ESPOL: +dBm1NUOBkfEh1+gRGXWDBg2qClXXujm55TJ3W4ngBmOPC+CfkkPWBO2mWpqLw+1vCM=
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Message-Id: <E1mS5UF-002wsg-0c@rmk-PC.armlinux.org.uk>
+Sender: Russell King <rmk@armlinux.org.uk>
+Date:   Sun, 19 Sep 2021 23:40:39 +0100
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Debian gcc 10.2.1 complains thusly:
 
-On Sat 18 Sep 2021 at 23:38, Forza <forza@tnonline.net> wrote:
+fs/btrfs/tree-checker.c:1071:9: warning: missing braces
+around initializer [-Wmissing-braces]
+  struct btrfs_root_item ri = { 0 };
+         ^
+fs/btrfs/tree-checker.c:1071:9: warning: (near initialization for 'ri.inode') [-Wmissing-braces]
 
-> Hello everyone,
->
-> I'd like to revisit the topic I opened on Github(*) a year ago, 
-> where I
-> suggested that DUP metadata profile ought to be the default 
-> choice when doing
-> mkfs.btrfs on single devices.
->
-> Today we have much better write endurance on flash based media 
-> so the added
-> writes should not matter in the grand scheme of things. Another 
-> factor is disk
-> encryption where mkfs.btrfs cannot differentiate a plain SSD 
-> from a
-> luks/dm-crypt device. Encryption effectively removes the 
-> possibility for the SSD
-> to dedupe the metadata blocks.
->
-> Ultimately, I think it is better to favour defaults that gives 
-> most users better
-> fault tolerance, rather than using SINGLE mode for everyone 
-> because of the
-> chance that some have deduplicating hardware (which would 
-> potentially negate the
-> benefit of DUP metadata).
->
-> One remark against DUP has been that both metadata copies would 
-> end up in the
-> same erase block. However, I think that full erase block 
-> failures are in
-> minority of the possible failure modes, at least from what I've 
-> seen on the
-> mailing list and at #btrfs. It is more common to have single 
-> block errors, and
-> for those we are protected with DUP metadata.
->
-> Zygo made a very good in-depth explanation about several 
-> different failure modes in the Github issue.
->
-> I would like voice my wish to change the defaults to DUP 
-> metadata on all single devices and I hope that the developers 
-> now can find consensus to make this change.
->
+Fix it by removing the unnecessary '0' initialiser, leaving the
+braces.
 
-I'd vote for the idea. It may change some users' scripts doing
-mkfs.btrfs but may save others' critical data.
+Fixes: 1465af12e254 ("btrfs: tree-checker: fix false alert caused by legacy btrfs root item")
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+---
+ fs/btrfs/tree-checker.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-And hope guys running filesystem benchmarks regularly notice the 
-change
-rather than saying 'Btrfs became slower' :)
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index a8b2e0d2c025..1737b62756a6 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -1068,7 +1068,7 @@ static int check_root_item(struct extent_buffer *leaf, struct btrfs_key *key,
+ 			   int slot)
+ {
+ 	struct btrfs_fs_info *fs_info = leaf->fs_info;
+-	struct btrfs_root_item ri = { 0 };
++	struct btrfs_root_item ri = { };
+ 	const u64 valid_root_flags = BTRFS_ROOT_SUBVOL_RDONLY |
+ 				     BTRFS_ROOT_SUBVOL_DEAD;
+ 	int ret;
+-- 
+2.30.2
 
---
-Su
-> * https://github.com/kdave/btrfs-progs/issues/319
->
-> Thanks.
->
-> ~ Forza

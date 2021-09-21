@@ -2,202 +2,175 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4366C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Sep 2021 02:25:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29283C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Sep 2021 04:33:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B0BA8611ED
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Sep 2021 02:25:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0125260F9E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Sep 2021 04:33:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239268AbhIUC1I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Sep 2021 22:27:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34160 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238174AbhIUB5K (ORCPT
+        id S229758AbhIUEfV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Sep 2021 00:35:21 -0400
+Received: from mx0b-00069f02.pphosted.com ([205.220.177.32]:19936 "EHLO
+        mx0b-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S229582AbhIUEfT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Sep 2021 21:57:10 -0400
-Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7F261C08E8BB
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Sep 2021 17:13:24 -0700 (PDT)
-Received: by mail-qk1-x734.google.com with SMTP id f130so9353948qke.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Sep 2021 17:13:24 -0700 (PDT)
+        Tue, 21 Sep 2021 00:35:19 -0400
+Received: from pps.filterd (m0246631.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 18L3TVGQ020314;
+        Tue, 21 Sep 2021 04:33:47 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : subject :
+ date : message-id : in-reply-to : references : content-transfer-encoding :
+ content-type : mime-version; s=corp-2021-07-09;
+ bh=gCBKuEI7gIAEN04DC1nuUkfU4k8ibAYUhMeMZAkK5Oo=;
+ b=iVoBpJPjy/uW5f9FmMaYQ8qNsOuaVsv4hbZER9z79bGoUELjtRtz1tEEkbas88M2rPzk
+ 8RrQ4UZqalsIqKoTE9GFySc/V8sjUdMcY9wPeHVhbyGe4mkBZTb7PTmD4v1EVPghQnpT
+ JCr1fKOdpexhM+LXiNeZg1DIJRwNq0XqhDsqbkZytLR7t2DjDY5JYUKBX/Epu8shI9jY
+ ujd3c6OvNTHc4MhLUJB3vUPhJnuGc3Orrmo8ok5qaN5pRwP3WM2rvNCCO5RiYNDWX3K0
+ t4kxYp2kC8+y1yaUOeq5fQE9O1gz5cL7ySDs/rMqV1BHT2+2bo97fiA0lk4j/Zx+rUHn EQ== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by mx0b-00069f02.pphosted.com with ESMTP id 3b66hnnnh1-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 21 Sep 2021 04:33:47 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 18L4UkS4043556;
+        Tue, 21 Sep 2021 04:33:46 GMT
+Received: from nam04-bn8-obe.outbound.protection.outlook.com (mail-bn8nam08lp2043.outbound.protection.outlook.com [104.47.74.43])
+        by aserp3020.oracle.com with ESMTP id 3b57x4xkjf-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 21 Sep 2021 04:33:46 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=YF2MyEedzoh3xUJXQemaPPOgNFX982Eko+gb4JtOpWtnsWbTA1R2JeLwD4BtbDJLvfFJTaSfmUq+NijMXCi0fnjF9pDh9tyjj9G9LmJXcivt5pwwzcvxAoUZANTUR84FcemNp3snweBTZnj2YzzVnNjciBk1m24Jk4wyQLyagQ2eHes8Uf/gTc1dIEGXOvkuakkpdeVP/13bN0uN7pFu5rUO42fx4M2hvCypo4CpnLI5ZaNrQ1/jy7FAaBCGnvduDKCN7mkbrLYbZ1x/u0KyfB129twavRaBC92IbIURzbm41caOIFoK94ZWBY3K1pBddew4B2s8OBLW2p0e6imqmg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901; h=From:Date:Subject:Message-ID:Content-Type:MIME-Version;
+ bh=gCBKuEI7gIAEN04DC1nuUkfU4k8ibAYUhMeMZAkK5Oo=;
+ b=BTEhtbtYBP4b83OVaVSHQFJRqyLiyzRFElMCd8vY+Dgl9ARwtHTi+DynE5q5Ce8F/YOEWZOgYfBoJoEhrlDYbqWh24Zebk2rVFQcRCoAwMdRRQq78fIyWiPvNpSLom4qIPYiJM9Tuwmf3Uk720wyf11x33XWl/S4aqCfz5VErqEdHPyJcVDJXMnVRvgDCHJ1pgrka8XqbCCcVpdSdlEVX5qCoRv1nMufgoifuKvVQq0TbLCmO+CKXpqVroyqyBHh3+caOJlN4hPQBuv+V8XvZ8gFg4AssHchwnrLy8ZcY0NTx3/zwVTTyezWySBnxssu5SQELqkvyLRoWaewiWzKEw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=Y9BDBmUscP0xAcEHWeIfF96BSoLTsTOTpqWRWbt2LY4=;
-        b=ci+nh2Uc2OR3QYQxBV3rwDQUP3bIgiK0MQAMn8hVwSqXIItJ/RjVu+CEgNVhiXLXfJ
-         xYn8Gj4BbZd+F2ls68hPma1zPAq9D3TGtDuFN5JyPDwU+8WTku1HwYzruUqPMPYVTIox
-         AwACv6KGJFS+7DjW9lTz5J4lce4orPQx3QJY9L2QxM104LYyaDgOTN+sfQXerdWKkOyv
-         HwPZ78GObb7p5o53k7GdPGrzWt0j5UJpOJxJZtbNaEBihfPDGEi87jOjtR8a9B9a/W1L
-         4kqO21yE5CljflRIEuJbp8IrqfUICt8IvtX+KpH8mv2VstiQlvqHVYMg0EjCRmK/Wy8d
-         o0jw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=Y9BDBmUscP0xAcEHWeIfF96BSoLTsTOTpqWRWbt2LY4=;
-        b=QDfj5EQ8/cU1qReLsTUq2PC6pENSzT5pvUOkqO+5QMAgFCRyXEzfePDYG/lu5Ogvbx
-         qzX5bp+fIKJh07zZN0Oww/gBWXC94DAc51zqnpgMhvnDItWvzaf1ivPiZJaHYffaSUJW
-         n24riyy3UaA1iHirlHRg4BHrR1yCiHarCJsWcXjNSqyVwvBMwrFMd80IBIJDWL5hnRFJ
-         ixqrV3Jtrw40l1BTGOa3WUTipYw8AlLd6t5cUItrflTR2VYhbRc9I96EBAHxuTBF0lFF
-         Y0NpT3SJFavvBAg+BVdB4ngVmtQbAgxk4Iz/oH9fnCOu35+q162jHKEPW8ljC7wLY/qL
-         AaaA==
-X-Gm-Message-State: AOAM533FfgJArqHE0LzO0Ftwkq9WiKjbhfGEPzAb94dzNn4xMXJVnJiA
-        jf7sODRn6dbI8kFB8spwHLsxnHyXFs2BRiiPabzS2ygdc73Xv8Z+
-X-Google-Smtp-Source: ABdhPJwjFrZlnHAtOFxgdt/Ky8P3uALHEifPVg/Z/q3uVFaQHcdM3PtyQgwKVN/5/V3Qx2o3FygrhK04gx42f8OGAHc=
-X-Received: by 2002:a25:c6c1:: with SMTP id k184mr35315249ybf.277.1632183203204;
- Mon, 20 Sep 2021 17:13:23 -0700 (PDT)
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=gCBKuEI7gIAEN04DC1nuUkfU4k8ibAYUhMeMZAkK5Oo=;
+ b=JRByWhD9TsuXmFyeqFzUoUNT3XPxZ3gnivSahen88n7sX+d4tPiYP1rCI/aBcSgcidbUWfVyaTTSrOHMKoAgICed15u2ewYUResE0eUnS0RzU18imN4WFBOYSDh1I/u7TOJqTsuf1Jv+PrbAAyb7hfNcctD9l7TBgLY1jxX0TKA=
+Authentication-Results: vger.kernel.org; dkim=none (message not signed)
+ header.d=none;vger.kernel.org; dmarc=none action=none header.from=oracle.com;
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com (2603:10b6:208:1d2::24)
+ by MN2PR10MB3984.namprd10.prod.outlook.com (2603:10b6:208:1bf::33) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4523.16; Tue, 21 Sep
+ 2021 04:33:44 +0000
+Received: from MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::49a5:5188:b83d:b6c9]) by MN2PR10MB4128.namprd10.prod.outlook.com
+ ([fe80::49a5:5188:b83d:b6c9%8]) with mapi id 15.20.4500.018; Tue, 21 Sep 2021
+ 04:33:44 +0000
+From:   Anand Jain <anand.jain@oracle.com>
+To:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Subject: [PATCH v6 1/3] btrfs: declare seeding_dev in init_new_device as bool
+Date:   Tue, 21 Sep 2021 12:33:23 +0800
+Message-Id: <d0e619aa1de4c142d5b12a41045cc60df0d1c8dc.1632179897.git.anand.jain@oracle.com>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <cover.1632179897.git.anand.jain@oracle.com>
+References: <cover.1632179897.git.anand.jain@oracle.com>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: SG2PR03CA0129.apcprd03.prod.outlook.com
+ (2603:1096:4:91::33) To MN2PR10MB4128.namprd10.prod.outlook.com
+ (2603:10b6:208:1d2::24)
 MIME-Version: 1.0
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 20 Sep 2021 18:13:07 -0600
-Message-ID: <CAJCQCtT+OuemovPO7GZk8Y8=qtOObr0XTDp8jh4OHD6y84AFxw@mail.gmail.com>
-Subject: 5.15.0-rc1 armv7hl Workqueue: btrfs-delalloc btrfs_work_helper PC is
- at mmiocpy LR is at ZSTD_compressStream
-To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Received: from localhost.localdomain (39.109.140.76) by SG2PR03CA0129.apcprd03.prod.outlook.com (2603:1096:4:91::33) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4544.7 via Frontend Transport; Tue, 21 Sep 2021 04:33:43 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 83cc7794-7c3a-4b24-ae3b-08d97cb8fefa
+X-MS-TrafficTypeDiagnostic: MN2PR10MB3984:
+X-Microsoft-Antispam-PRVS: <MN2PR10MB39844988C181AC31D992BE6EE5A19@MN2PR10MB3984.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:519;
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: p3I9g+OwOUHIrmqtWacP5Ys4EnogBWI689E8X83/1AJnMnoKZnzgBr7Z0yU7t4ykSVCNEfMYUl3KYEbXgw3R4xCaOmZ7Tc3BT1bKkcMjNqShhyXWCtyQJMcQTNhnmaHclHhTEWtpDCAxmWyy3VEGbroXwNKmlm5DTwho8OTqmCkfzKuS6JsG7sBc89PUuPRlvdE7L5Nh1NU/NYKBRfdNDAu2jwwrypcHI/JqCm9eg1/J6K/jpxtSJ4FSFUPAep8nbjXj7VRLFOwz8QKR61Upm0KQ4rUNlazfcORTptF55Z1aQOV9dawbx8w1Xr8cQ5dJfZ6+sK5z14bpcEBUTHmVzEioSr+6+v8rbg4dcD2OfG345Oa7QkVWmrpZ/6GaCi0YWXUPl57MUQJq/p7uPFENQb2Pfjj+N8KLGsGMetrelCzPZO3sTZ2E/O1WD4mbvE4/hPV5DDd88yQJNRnhlbbv9Cykn4B/Sul+UsSB/vdHpBOEM54Hg0JPs54vesPPB7hXUc9Q3rJxySGcZkfXno+ZVD0Ux50SJiJnKjRlplugCzZUpoK32ZKcKVUE3xA7zSM1HsDTiEcSW1ThZVIcWfa38XCfjgc8BX+GoLxGps9VwCLWvEfZ4q/CVRulxlFSOQzTrK6aB+CqL0tHAK+o1lPUe3Q6oK5INqK0b5RSiKkMcf/EXYMvM2BKkwM9z9imyAkKHnJms2z5XNyK8O7LUQPb0g==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MN2PR10MB4128.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(366004)(396003)(346002)(136003)(376002)(39860400002)(52116002)(2616005)(83380400001)(956004)(478600001)(66556008)(66946007)(8676002)(8936002)(6506007)(5660300002)(36756003)(6666004)(6512007)(38100700002)(2906002)(38350700002)(316002)(26005)(44832011)(186003)(4744005)(86362001)(6486002)(66476007);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?yubR7hftBOhbR6RLbLZDw+mNdaYLRULEkYS7FIqAje1Hb0DFElWzuWN8A6id?=
+ =?us-ascii?Q?J95Afq/qGgNuRMKrj/i/vLnF2jGK8k85g/wTObAiOKx0dKv3gTwFQBG55Acq?=
+ =?us-ascii?Q?I/9uJlx4fl1wj2qFvlWAnzKaTVn6RYpEzIp1vaBvHhVWjdHcSQu7gwxUpQTN?=
+ =?us-ascii?Q?8PqE20/nruPR+SDl3gD5ttaGuAlVaNkcYlAUqW7svCfjv5TQMStVuyWiYcyL?=
+ =?us-ascii?Q?Rb4PyQUXjri2Qw+xSsv/70RwmAmOj5PUaCcWdFfPEn7RMMGVDYzXbXS1qdyl?=
+ =?us-ascii?Q?eNxYHCuxKIhkvwj4Y9x3Ks1gtzWQ63tdSWyuJB3b4YbNofjhg26R0xLx2naR?=
+ =?us-ascii?Q?otqr6/MxCYucZ0dDjjovACN4XCjTZDwgJdLi7BFF0SYGF6sCUgLELo3ymAQ8?=
+ =?us-ascii?Q?s8mMOni1WdJo4SFJGXim7I1VNI1Hx71uTVltgX5HL7ZXLgG6e9ergrn0gJQo?=
+ =?us-ascii?Q?pCTtHHUXJy/nKhuDSULv6zz+SS/5H21MSo+JsGcDCZ3esXQEQvQ4J4VfOz3U?=
+ =?us-ascii?Q?tEw75i2f1wIkEaLQ4kK/Mg1KhhAiUig6NntrWR/VwZMk+juJ80doqPOr9Bae?=
+ =?us-ascii?Q?vVPbNVPz6Iz5qh3Rb6pv5udw8jaLp0PrIerDtRBVqYXTgvMPr4a50aM/zlaq?=
+ =?us-ascii?Q?81KhmsgGwI3eaT4ceaaQS4LVGuXn7qpGyko3bus/S50IvLfP1DlCBNL1PBbz?=
+ =?us-ascii?Q?94b2bWRTlh1dcr+7QdMRIxJC8aSj/VG/e2dpUbEfSdCWhGtUzhd1I8F6GMlT?=
+ =?us-ascii?Q?E9da1/ukq+nC/xGC2V+Xi5lgJtR6KgnGwYra+B4LwIcoGddL8Tb4wGJ9MfcY?=
+ =?us-ascii?Q?J3rutoAKaQ9uT/OvL7gfGnAF8iJkHJDIhCszfn3xtDwTYOnr3njUi+jovWq7?=
+ =?us-ascii?Q?UjOIK4n/NjEiBHC7lmxaabcaBQTkQ8yKpcJEGP9GaA2I00xSu+et9qvHjXlL?=
+ =?us-ascii?Q?DMuyPDhcptcBc7J0AXX5O8H2/UlKV0xjaFheu8B0LowYPssiEssqWJcFquyl?=
+ =?us-ascii?Q?Nq9lDOAFz6xjQ/RIt/+7pHyqKPW4uf87nsuIBSQiFd03yUH/GtsYAXocroRf?=
+ =?us-ascii?Q?AoVqLWPWosJj7XccVpwJHk5Jiw4YNVTdBwOT1dDXts0Wmhty6WPvWDIp5G8W?=
+ =?us-ascii?Q?g9XGi9q9SqeAupFPQZiXD2652XfRejDiZq6sVfRNuPC32ojgmNdLJF0xp6Qf?=
+ =?us-ascii?Q?40mmDHQrb2+2bl5vlzLd5KHtPZqml0m2UmfKTXMHHaRPbHOiOqVTWlhb86bc?=
+ =?us-ascii?Q?cjZkXuRpIoOBJ/oAfTbpi2j3Mn4FXvCb1bpSDBQnIF2PxX1AznUuAT53sfLA?=
+ =?us-ascii?Q?dsvFRFaMEwCtS9t+PXq6zvlF?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 83cc7794-7c3a-4b24-ae3b-08d97cb8fefa
+X-MS-Exchange-CrossTenant-AuthSource: MN2PR10MB4128.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 21 Sep 2021 04:33:44.7206
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 6bIN8axKbdsjViQ7r8aF8+S8mu+kiyTMLMXxtua7CREh4CBwWCP8/M6rqzvEdB0T94EmNJMfjBrSx0RMwkZIMg==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR10MB3984
+X-Proofpoint-Virus-Version: vendor=nai engine=6300 definitions=10113 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 mlxscore=0 adultscore=0
+ phishscore=0 spamscore=0 bulkscore=0 mlxlogscore=999 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2109030001
+ definitions=main-2109210026
+X-Proofpoint-GUID: xrMAvATdxA3YxCDfZyRCKfMgyifxMawz
+X-Proofpoint-ORIG-GUID: xrMAvATdxA3YxCDfZyRCKfMgyifxMawz
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-https://kojipkgs.fedoraproject.org//work/tasks/8820/75928820/oz-armhfp.log
+This patch declares int seeding_dev as a bool. Also, move its declaration
+a line below to adjust packing.
 
-The oops happens about 80% of the way down. This is a snippet.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v6: new
+ fs/btrfs/volumes.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-
-00:09:50,669 ALERT kernel:8<--- cut here ---
-00:09:50,669 ALERT kernel:Unable to handle kernel NULL pointer
-dereference at virtual address 00000000
-00:09:50,669 ALERT kernel:pgd = b0c5a5c4
-00:09:50,670 ALERT kernel:[00000000] *pgd=00000000
-00:09:50,670 EMERG kernel:Internal error: Oops: 5 [#1] SMP ARM
-00:09:50,670 WARNING kernel:Modules linked in: vfat fat libfc
-scsi_transport_fc uinput scsi_dh_rdac scsi_dh_emc scsi_dh_alua joydev
-fuse zram overlay loop virtio_gpu virtio_dma_buf drm_kms_helper
-syscopyarea sysfillrect sysimgblt fb_sys_fops cec gpio_keys drm
-virtio_mmio virtio_net virtio_blk virtio_console net_failover failover
-uhci_hcd rfkill sunrpc lrw dm_crypt trusted asn1_encoder tee
-dm_round_robin dm_multipath linear raid10 raid456 async_raid6_recov
-async_memcpy async_pq async_xor async_tx raid1 raid0 squashfs cramfs
-be2iscsi bnx2i cnic uio cxgb4i cxgb4 tls cxgb3i cxgb3 mdio libcxgbi
-libcxgb qla4xxx iscsi_boot_sysfs iscsi_tcp libiscsi_tcp libiscsi
-scsi_transport_iscsi
-00:09:50,670 WARNING kernel:CPU: 1 PID: 134 Comm: kworker/u8:2 Not
-tainted 5.15.0-0.rc1.20210917gitbdb575f87217.15.fc36.armv7hl #1
-00:09:50,671 WARNING kernel:Hardware name: QEMU KVM Virtual Machine,
-BIOS 0.0.0 02/06/2015
-00:09:50,671 WARNING kernel:Workqueue: btrfs-delalloc btrfs_work_helper
-00:09:50,671 WARNING kernel:PC is at mmiocpy+0x48/0x330
-00:09:50,671 WARNING kernel:LR is at ZSTD_compressStream+0x184/0x294
-00:09:50,671 WARNING kernel:pc : [<c08bd768>]    lr : [<c089c314>]
-psr: 200e0013
-00:09:50,672 WARNING kernel:sp : c2a67d14  ip : 00000000  fp : 00000000
-00:09:50,672 WARNING kernel:r10: 00000200  r9 : dcb27000  r8 : 00000400
-00:09:50,672 WARNING kernel:r7 : 00000200  r6 : c503eb28  r5 :
-c503eb34  r4 : df800008
-00:09:50,672 WARNING kernel:r3 : 00000200  r2 : 00000180  r1 :
-00000000  r0 : df8027c0
-00:09:50,672 WARNING kernel:Flags: nzCv  IRQs on  FIQs on  Mode SVC_32
- ISA ARM  Segment none
-00:09:50,672 WARNING kernel:Control: 10c5383d  Table: 4497406a  DAC: 00000051
-00:09:50,673 ALERT kernel:Register r0 information: non-slab/vmalloc memory
-00:09:50,673 ALERT kernel:Register r1 information: NULL pointer
-00:09:50,673 ALERT kernel:Register r2 information: non-paged memory
-00:09:50,673 ALERT kernel:Register r3 information: non-paged memory
-00:09:50,673 ALERT kernel:Register r4 information: non-slab/vmalloc memory
-00:09:50,673 ALERT kernel:Register r5 information: slab kmalloc-64
-start c503eb00 pointer offset 52 size 64
-00:09:50,674 ALERT kernel:Register r6 information: slab kmalloc-64
-start c503eb00 pointer offset 40 size 64
-00:09:50,674 ALERT kernel:Register r7 information: non-paged memory
-00:09:50,674 ALERT kernel:Register r8 information: non-paged memory
-00:09:50,674 ALERT kernel:Register r9 information: non-slab/vmalloc memory
-00:09:50,674 ALERT kernel:Register r10 information: non-paged memory
-00:09:50,674 ALERT kernel:Register r11 information: NULL pointer
-00:09:50,675 ALERT kernel:Register r12 information: NULL pointer
-00:09:50,675 EMERG kernel:Process kworker/u8:2 (pid: 134, stack limit
-= 0xcad4b4eb)
-00:09:50,675 EMERG kernel:Stack: (0xc2a67d14 to 0xc2a68000)
-00:09:50,675 EMERG kernel:7d00:
-      ???????? ???????? ????????
-00:09:50,675 EMERG kernel:7d20: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,675 EMERG kernel:7d40: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,676 EMERG kernel:7d60: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,676 EMERG kernel:7d80: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,676 EMERG kernel:7da0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,676 EMERG kernel:7dc0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,676 EMERG kernel:7de0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,677 EMERG kernel:7e00: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,677 EMERG kernel:7e20: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,677 EMERG kernel:7e40: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,677 EMERG kernel:7e60: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,677 EMERG kernel:7e80: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,677 EMERG kernel:7ea0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,678 EMERG kernel:7ec0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,678 EMERG kernel:7ee0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,678 EMERG kernel:7f00: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,678 EMERG kernel:7f20: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,678 EMERG kernel:7f40: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,678 EMERG kernel:7f60: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,679 EMERG kernel:7f80: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,679 EMERG kernel:7fa0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,679 EMERG kernel:7fc0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,679 EMERG kernel:7fe0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,679 EMERG kernel:[<c08bd768>] (mmiocpy) from [<c089c314>]
-(ZSTD_compressStream+0x184/0x294)
-00:09:50,679 EMERG kernel:[<c089c314>] (ZSTD_compressStream) from
-[<c0737980>] (zstd_compress_pages+0x174/0x390)
-00:09:50,680 EMERG kernel:[<c0737980>] (zstd_compress_pages) from
-[<c0739ba4>] (btrfs_compress_pages+0x104/0x10c)
-00:09:50,680 EMERG kernel:[<c0739ba4>] (btrfs_compress_pages) from
-[<c06f1df8>] (compress_file_range+0x25c/0x5dc)
-00:09:50,680 EMERG kernel:[<c06f1df8>] (compress_file_range) from
-[<c06f2190>] (async_cow_start+0x18/0x30)
-00:09:50,680 EMERG kernel:[<c06f2190>] (async_cow_start) from
-[<c071c704>] (btrfs_work_helper+0x1ac/0x39c)
-00:09:50,680 EMERG kernel:[<c071c704>] (btrfs_work_helper) from
-[<c036d7c4>] (process_one_work+0x2f8/0x4f4)
-00:09:50,680 EMERG kernel:[<c036d7c4>] (process_one_work) from
-[<c036e4f0>] (worker_thread+0x234/0x2f4)
-00:09:50,681 EMERG kernel:[<c036e4f0>] (worker_thread) from
-[<c037508c>] (kthread+0x134/0x140)
-00:09:50,681 EMERG kernel:[<c037508c>] (kthread) from [<c0300160>]
-(ret_from_fork+0x14/0x34)
-00:09:50,681 EMERG kernel:Exception stack(0xc2a67fb0 to 0xc2a67ff8)
-00:09:50,681 EMERG kernel:7fa0:
-???????? ???????? ???????? ????????
-00:09:50,681 EMERG kernel:7fc0: ???????? ???????? ???????? ????????
-???????? ???????? ???????? ????????
-00:09:50,681 EMERG kernel:7fe0: ???????? ???????? ???????? ????????
-???????? ????????
-00:09:50,682 EMERG kernel:Code: ba000002 f5d1f03c f5d1f05c f5d1f07c (e8b151f8)
-00:09:50,682 WARNING kernel:---[ end trace 9051d8c5bdb7aaf3 ]---
-
-
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 5117c5816922..c4bc49e58b69 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2532,8 +2532,8 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	u64 orig_super_total_bytes;
+ 	u64 orig_super_num_devices;
+-	int seeding_dev = 0;
+ 	int ret = 0;
++	bool seeding_dev = false;
+ 	bool locked = false;
+ 
+ 	if (sb_rdonly(sb) && !fs_devices->seeding)
+@@ -2550,7 +2550,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	}
+ 
+ 	if (fs_devices->seeding) {
+-		seeding_dev = 1;
++		seeding_dev = true;
+ 		down_write(&sb->s_umount);
+ 		mutex_lock(&uuid_mutex);
+ 		locked = true;
 -- 
-Chris Murphy
+2.31.1
+

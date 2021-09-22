@@ -2,157 +2,154 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78E87C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Sep 2021 07:53:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDE0EC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Sep 2021 08:27:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 575DB60FA0
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Sep 2021 07:53:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B67E360F23
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Sep 2021 08:27:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233383AbhIVHzU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Sep 2021 03:55:20 -0400
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:54798 "EHLO
-        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233283AbhIVHzU (ORCPT
+        id S233700AbhIVI3B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Sep 2021 04:29:01 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:40892 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233526AbhIVI24 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Sep 2021 03:55:20 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1632297230; x=1663833230;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=TiKJpGwl5tEO1GdcALlNNYNHHQigIGjUs8ahYMTJGP0=;
-  b=pVPl76AK0jxd5KTz43F4nuuyGQRE+l7FAKIqN3wbHjiM2vn9JvnsJtif
-   hXPgFYV0CpFd7CSyzOSLL58hfMqmcWmELEQWhZGUfkmzG+XEz/9jtKe89
-   0+Il7p5hc0j+pDktupb3sWPYQcLBHLrx/AQZ4d7b1Y1ugm4IIhb9EXFIg
-   ji96D9ntCIwKr7vMEArPojRGzPDyLCl17bAutsLSdpYPkrfGnR/xfC33x
-   z3C13DEFWfM/rxGizlILofzBa11fEewZMED21TG+j8YIBJaCuF/dEISRq
-   d41x4NQcOUSP1BXgjj17mkbc1UwZODj8sdz746+91o0/CcOU3qI9GxK8k
-   w==;
-X-IronPort-AV: E=Sophos;i="5.85,313,1624291200"; 
-   d="scan'208";a="284429250"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Sep 2021 15:53:50 +0800
-IronPort-SDR: 3c/hdGHMOdrQLs6gpHr1fMPFjTh2GrvysbZxb91LU/0ObQVn2oAuXYyjNE+p2jvBESKFOwtuRV
- nF2xvmp13YDsRyUuZUIbV0P66hfd44a1jEUef0BPFaLj2y5F0srgk8LoCOIGRLhSitMVDhV5sw
- CDgA6cjj+DQ/WAFKmd0UMMdv/rClNtRuzSz3kFAbwy6J5DlFqF4j5Ui8I4O8dYzRHpDoEhTofy
- xB0OZIxifj7Ya0qqzhAzV0KgywWZacopLk9RT8z32qUYAcHZnquvrqXQc7exmMIOZHdsymwstJ
- /1ReSYQ4TaS81ksW4KCGBSQi
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Sep 2021 00:30:03 -0700
-IronPort-SDR: x189Hsji2DcnU0ad0K1HySvwu3lRu0lfEXoezTlO+ad5wMc2s5DTpW6EwAWNgxEmLnykz6p4ET
- ZmV4/jHaDjNlJ++u3eFUdcE/cGuLF5GkQFIaiwW3zhcy8A7ebyz4zwBLW5M+iwbHDWDNaZENMh
- JkCHOVUxOiaLgZ3npOqlvY2XBHaCJ7fwZUioLRBQzTGAw372iV7bAACM7/PjrPy4ZdMKTgZk4G
- JbHEFbBMQNlpePhhE635/aXzlSc5tMGeiW/dlkh/mrHxaHJKHPPwG7ALluaMTmek1IQ4i2T79W
- tK8=
-WDCIronportException: Internal
-Received: from wdmnc1780.ad.shared (HELO naota-xeon.wdc.com) ([10.225.52.67])
-  by uls-op-cesaip02.wdc.com with ESMTP; 22 Sep 2021 00:53:50 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
+        Wed, 22 Sep 2021 04:28:56 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 0D8C722278
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Sep 2021 08:27:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1632299246; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=iOgzyRdhd8wjL84tlRyNnGfWYPttkAE9M81BzX8L60o=;
+        b=dvoSkwMP05oyodOOnPVVNuQGVIWveTW/ovvwq6nYKrz8Ol1LM9OwQc0utxNGx7Sm9YJGEs
+        4z4dLwOriVt90dAfVeB+iat6+GbhbQYxrIiqCOhC95C9s7aaaiRMSL51sXCEqR7SrZFnSc
+        VIGEl4DkAXB44Ivt01NYY76s4rcj/F4=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4CADD13D65
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Sep 2021 08:27:25 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id EM5kA+3oSmEPDwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Sep 2021 08:27:25 +0000
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 2/2] btrfs-progs: do not zone reset on emulated zoned mode
-Date:   Wed, 22 Sep 2021 16:53:43 +0900
-Message-Id: <20210922075343.1160788-3-naohiro.aota@wdc.com>
+Subject: [PATCH RFC 1/3] btrfs: add btrfs_bio::bioc pointer for further modification
+Date:   Wed, 22 Sep 2021 16:27:04 +0800
+Message-Id: <20210922082706.55650-2-wqu@suse.com>
 X-Mailer: git-send-email 2.33.0
-In-Reply-To: <20210922075343.1160788-1-naohiro.aota@wdc.com>
-References: <20210922075343.1160788-1-naohiro.aota@wdc.com>
+In-Reply-To: <20210922082706.55650-1-wqu@suse.com>
+References: <20210922082706.55650-1-wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We cannot zone reset a regular file with emulated zones. So, mkfs.btrfs on
-such a file cause a following error.
+Currently we use btrfs_io_context for dual purposes:
 
-ERROR: zoned: failed to reset device '/home/naota/tmp/btrfs.img' zones: Inappropriate ioctl for device
+- As bio->private for mirror based bio submission
+  For those profiles, we assign bio->private to btrfs_io_context and
+  save the old private/endio, and utilize bioc::stripes_pending.
 
-Intorduce btrfs_zoned_device_info->emulated to distinguish the zones are
-emulated or not. And, use it to decide it needs zone reset or not.
+- As pure stripe maps for RAID56
+  For RAID56, btrfs will assemble its own raid_bio for physical
+  submission. In that case, btrfs_io_context only provides stripe
+  mapping, thus no need to utilize things like
+  end_io/private/stripes_pending.
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+To make future members modifications, here we do a small change, by
+introducing btrfs_bio::bioc pointer.
+
+This modification will increase memory usage for btrfs_bio by 8 bytes,
+but reduces btrfs_io_context by 8 bytes.
+Overall it's still a net increase as btrfs_bio will be created for each
+stripe, while btrfs_io_context exists once for all those involved
+stripes.
+
+This memory usage will be reduced by later commits.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- common/device-utils.c | 27 +++++++++++++++------------
- kernel-shared/zoned.c |  2 ++
- kernel-shared/zoned.h |  1 +
- 3 files changed, 18 insertions(+), 12 deletions(-)
+ fs/btrfs/volumes.c | 7 +++----
+ fs/btrfs/volumes.h | 3 ++-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/common/device-utils.c b/common/device-utils.c
-index 1c853545c6ad..503705c43754 100644
---- a/common/device-utils.c
-+++ b/common/device-utils.c
-@@ -220,18 +220,21 @@ int btrfs_prepare_device(int fd, const char *file, u64 *block_count_ret,
- 			      file);
- 			return 1;
- 		}
--		if (opflags & PREP_DEVICE_VERBOSE)
--			printf("Resetting device zones %s (%u zones) ...\n",
--			       file, zinfo->nr_zones);
--		/*
--		 * We cannot ignore zone reset errors for a zoned block
--		 * device as this could result in the inability to write to
--		 * non-empty sequential zones of the device.
--		 */
--		if (btrfs_reset_all_zones(fd, zinfo)) {
--			error("zoned: failed to reset device '%s' zones: %m",
--			      file);
--			goto err;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d7cc24ed9620..86ff268369ec 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6557,16 +6557,16 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 
+ static inline void btrfs_end_bioc(struct btrfs_io_context *bioc, struct bio *bio)
+ {
+-	bio->bi_private = bioc->private;
+ 	bio->bi_end_io = bioc->end_io;
+ 	bio_endio(bio);
++	btrfs_bio(bio)->bioc = NULL;
+ 
+ 	btrfs_put_bioc(bioc);
+ }
+ 
+ static void btrfs_end_bio(struct bio *bio)
+ {
+-	struct btrfs_io_context *bioc = bio->bi_private;
++	struct btrfs_io_context *bioc = btrfs_bio(bio)->bioc;
+ 	int is_orig_bio = 0;
+ 
+ 	if (bio->bi_status) {
+@@ -6624,7 +6624,7 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
+ {
+ 	struct btrfs_fs_info *fs_info = bioc->fs_info;
+ 
+-	bio->bi_private = bioc;
++	btrfs_bio(bio)->bioc = bioc;
+ 	btrfs_bio(bio)->device = dev;
+ 	bio->bi_end_io = btrfs_end_bio;
+ 	bio->bi_iter.bi_sector = physical >> 9;
+@@ -6697,7 +6697,6 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 
+ 	total_devs = bioc->num_stripes;
+ 	bioc->orig_bio = first_bio;
+-	bioc->private = first_bio->bi_private;
+ 	bioc->end_io = first_bio->bi_end_io;
+ 	bioc->fs_info = fs_info;
+ 	atomic_set(&bioc->stripes_pending, bioc->num_stripes);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 83075d6855db..384c483d2cef 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -311,6 +311,8 @@ struct btrfs_fs_devices {
+ struct btrfs_bio {
+ 	unsigned int mirror_num;
+ 
++	struct btrfs_io_context *bioc;
 +
-+		if (!zinfo->emulated) {
-+			if (opflags & PREP_DEVICE_VERBOSE)
-+				printf("Resetting device zones %s (%u zones) ...\n",
-+				       file, zinfo->nr_zones);
-+			/*
-+			 * We cannot ignore zone reset errors for a zoned block
-+			 * device as this could result in the inability to write
-+			 * to non-empty sequential zones of the device.
-+			 */
-+			if (btrfs_reset_all_zones(fd, zinfo)) {
-+				error("zoned: failed to reset device '%s' zones: %m",
-+				      file);
-+				goto err;
-+			}
- 		}
- 	} else if (opflags & PREP_DEVICE_DISCARD) {
- 		/*
-diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index 891a2c0aeef2..6e46354b8b52 100644
---- a/kernel-shared/zoned.c
-+++ b/kernel-shared/zoned.c
-@@ -346,6 +346,7 @@ static int report_zones(int fd, const char *file,
- 				error("zoned: ioctl BLKREPORTZONE failed (%m)");
- 				exit(1);
- 			}
-+			zinfo->emulated = false;
- 		} else {
- 			ret = emulate_report_zones(file, fd,
- 						   sector << SECTOR_SHIFT,
-@@ -354,6 +355,7 @@ static int report_zones(int fd, const char *file,
- 				error("zoned: failed to emulate BLKREPORTZONE");
- 				exit(1);
- 			}
-+			zinfo->emulated = true;
- 		}
- 
- 		if (!rep->nr_zones)
-diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
-index 99f8e9a2faac..66cf081b84c3 100644
---- a/kernel-shared/zoned.h
-+++ b/kernel-shared/zoned.h
-@@ -54,6 +54,7 @@ struct btrfs_zoned_device_info {
- 	u64		        max_zone_append_size;
- 	u32			nr_zones;
- 	struct blk_zone		*zones;
-+	bool			emulated;
- };
- 
- enum btrfs_zoned_model zoned_model(const char *file);
+ 	/* @device is for stripe IO submission. */
+ 	struct btrfs_device *device;
+ 	u64 logical;
+@@ -367,7 +369,6 @@ struct btrfs_io_context {
+ 	u64 map_type; /* get from map_lookup->type */
+ 	bio_end_io_t *end_io;
+ 	struct bio *orig_bio;
+-	void *private;
+ 	atomic_t error;
+ 	int max_errors;
+ 	int num_stripes;
 -- 
 2.33.0
 

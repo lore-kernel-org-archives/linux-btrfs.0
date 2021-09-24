@@ -2,153 +2,228 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1103C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 15:16:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1AECC43219
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 17:18:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D26D061050
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 15:16:30 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CE88A6103B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 17:18:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347039AbhIXPSC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Sep 2021 11:18:02 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:56618 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1347036AbhIXPSB (ORCPT
+        id S1344383AbhIXRTp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Sep 2021 13:19:45 -0400
+Received: from us-smtp-delivery-124.mimecast.com ([170.10.133.124]:58955 "EHLO
+        us-smtp-delivery-124.mimecast.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1344639AbhIXRTn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Sep 2021 11:18:01 -0400
-Received: from relay1.suse.de (relay1.suse.de [149.44.160.133])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 9D117223D7;
-        Fri, 24 Sep 2021 15:16:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1632496587;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=hLfQh0P3AXcZ2z9Abd54q/4US5yio0Yktkl0bIt6F8s=;
-        b=iglzam/K1jwHtN1TwGxg3w8rgxC6bwQPqPkVLTT4YJNOPSpYP5AS1hFZLDLL9QAxc7Sv2f
-        9S7kvmncB9RvvfiD05kCmfMGrrCzND+KTjWKqVQRfPTwKmb/UJHx4LuNJiMqjoZOhXgqcT
-        YSu09F6KGRytRYYrO4lZrUg5kpSxybc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1632496587;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=hLfQh0P3AXcZ2z9Abd54q/4US5yio0Yktkl0bIt6F8s=;
-        b=LzmbFoSbiAZFEHdbQkgsmLHvhUipQgW9dox2KtbYbvh0swq+AdhSQqeGcuZdpbky+BH6jv
-        E0HLOWkv9nQuyrCw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay1.suse.de (Postfix) with ESMTP id 710B525D4D;
-        Fri, 24 Sep 2021 15:16:27 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 73803DA799; Fri, 24 Sep 2021 17:16:13 +0200 (CEST)
-Date:   Fri, 24 Sep 2021 17:16:13 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Hao Sun <sunhao.th@gmail.com>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, clm@fb.com, dsterba@suse.com,
+        Fri, 24 Sep 2021 13:19:43 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1632503889;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=eQGrOpfP233mFmIfFg/o+cJ+c+v9gOkxJH/IeGmKkL0=;
+        b=HEk5ozOJBbmSwdKPtFE9h7rlnwXj6vdONxfi038CQajJQX+2ewwpQoYjuiHcf20YDgSqD5
+        THijPNHOnfoqOcEbb2QPqYwCZPUAFTUcKjwU1tJmRp+HYmqdTCXD/sgGdSIBh9FxvZ+9cH
+        RNpjd3E1+Dn9vf88rWX1rhdFJTjWIrY=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-430-POZdDApVPBmG1-VdzFXypg-1; Fri, 24 Sep 2021 13:18:05 -0400
+X-MC-Unique: POZdDApVPBmG1-VdzFXypg-1
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id ED37B8015C7;
+        Fri, 24 Sep 2021 17:17:59 +0000 (UTC)
+Received: from warthog.procyon.org.uk (unknown [10.33.36.44])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id B39FD19D9B;
+        Fri, 24 Sep 2021 17:17:53 +0000 (UTC)
+Subject: [RFC][PATCH v3 0/9] mm: Use DIO for swap and fix NFS swapfiles
+From:   David Howells <dhowells@redhat.com>
+To:     willy@infradead.org, hch@lst.de, trond.myklebust@primarydata.com
+Cc:     Theodore Ts'o <tytso@mit.edu>, linux-block@vger.kernel.org,
+        ceph-devel@vger.kernel.org,
+        Trond Myklebust <trond.myklebust@hammerspace.com>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Jeff Layton <jlayton@kernel.org>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Anna Schumaker <anna.schumaker@netapp.com>, linux-mm@kvack.org,
+        Bob Liu <bob.liu@oracle.com>,
+        "Darrick J. Wong" <djwong@kernel.org>,
         Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: Re: kernel BUG in __clear_extent_bit
-Message-ID: <20210924151612.GC9286@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Hao Sun <sunhao.th@gmail.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, clm@fb.com, dsterba@suse.com,
-        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-References: <CACkBjsYjkubyQBvBy7aaQStk_i1UuCu7oPNYXhZhvhWvBCM3ag@mail.gmail.com>
- <145029f0-5bc5-73fd-14ee-75b5829a3334@gmx.com>
- <CACkBjsauCShYkOdNU2snmJyLNSmdMvK7C0HbtMfKhoEXuUOSJg@mail.gmail.com>
+        Seth Jennings <sjenning@linux.vnet.ibm.com>,
+        Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-cifs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Minchan Kim <minchan@kernel.org>,
+        Steve French <sfrench@samba.org>, NeilBrown <neilb@suse.de>,
+        Dan Magenheimer <dan.magenheimer@oracle.com>,
+        linux-nfs@vger.kernel.org, Ilya Dryomov <idryomov@gmail.com>,
+        linux-btrfs@vger.kernel.org, dhowells@redhat.com,
+        dhowells@redhat.com, darrick.wong@oracle.com,
+        viro@zeniv.linux.org.uk, jlayton@kernel.org,
+        torvalds@linux-foundation.org, linux-nfs@vger.kernel.org,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Date:   Fri, 24 Sep 2021 18:17:52 +0100
+Message-ID: <163250387273.2330363.13240781819520072222.stgit@warthog.procyon.org.uk>
+User-Agent: StGit/0.23
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CACkBjsauCShYkOdNU2snmJyLNSmdMvK7C0HbtMfKhoEXuUOSJg@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Scanned-By: MIMEDefang 2.84 on 10.5.11.23
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 23, 2021 at 10:24:51AM +0800, Hao Sun wrote:
-> Qu Wenruo <quwenruo.btrfs@gmx.com> 于2021年9月15日周三 下午1:33写道：
-> >
-> >
-> >
-> > On 2021/9/15 上午10:20, Hao Sun wrote:
-> > > Hello,
-> > >
-> > > When using Healer to fuzz the latest Linux kernel, the following crash
-> > > was triggered.
-> > >
-> > > HEAD commit: 6880fa6c5660 Linux 5.15-rc1
-> > > git tree: upstream
-> > > console output:
-> > > https://drive.google.com/file/d/1-9wwV6-OmBcJvHGCbMbP5_uCVvrUdTp3/view?usp=sharing
-> > > kernel config: https://drive.google.com/file/d/1rUzyMbe5vcs6khA3tL9EHTLJvsUdWcgB/view?usp=sharing
-> > > C reproducer: https://drive.google.com/file/d/1eXePTqMQ5ZA0TWtgpTX50Ez4q9ZKm_HE/view?usp=sharing
-> > > Syzlang reproducer:
-> > > https://drive.google.com/file/d/11s13louoKZ7Uz0mdywM2jmE9B1JEIt8U/view?usp=sharing
-> > >
-> > > If you fix this issue, please add the following tag to the commit:
-> > > Reported-by: Hao Sun <sunhao.th@gmail.com>
-> > >
-> > > loop1: detected capacity change from 0 to 32768
-> > > BTRFS info (device loop1): disk space caching is enabled
-> > > BTRFS info (device loop1): has skinny extents
-> > > BTRFS info (device loop1): enabling ssd optimizations
-> > > FAULT_INJECTION: forcing a failure.
-> > > name failslab, interval 1, probability 0, space 0, times 0
-> > > CPU: 1 PID: 25852 Comm: syz-executor Not tainted 5.15.0-rc1 #16
-> > > Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS
-> > > rel-1.12.0-59-gc9ba5276e321-prebuilt.qemu.org 04/01/2014
-> > > Call Trace:
-> > >   __dump_stack lib/dump_stack.c:88 [inline]
-> > >   dump_stack_lvl+0x8d/0xcf lib/dump_stack.c:106
-> > >   fail_dump lib/fault-inject.c:52 [inline]
-> > >   should_fail+0x13c/0x160 lib/fault-inject.c:146
-> > >   should_failslab+0x5/0x10 mm/slab_common.c:1328
-> > >   slab_pre_alloc_hook.constprop.99+0x4e/0xc0 mm/slab.h:494
-> > >   slab_alloc_node mm/slub.c:3120 [inline]
-> > >   slab_alloc mm/slub.c:3214 [inline]
-> > >   kmem_cache_alloc+0x44/0x280 mm/slub.c:3219
-> > >   alloc_extent_state+0x1e/0x1c0 fs/btrfs/extent_io.c:340
-> >
-> > This is the one of the core systems btrfs uses, and we really don't want
-> > that to fail.
-> >
-> > Thus in fact it does some preallocation to prevent failure.
-> >
-> > But for error injection case, we can still hit BUG_ON() which is used to
-> > catch ENOMEM.
-> >
-> 
-> Hello,
-> 
-> Fuzzer triggered following crashes repeatedly when the `fault
-> injection` was enabled.
-> 
-> HEAD commit: 92477dd1faa6 Merge tag 's390-5.15-ebpf-jit-fixes'
-> git tree: upstream
-> kernel config: https://drive.google.com/file/d/1KgvcM8i_3hQiOL3fUh3JFpYNQM4itvV4/view?usp=sharing
-> [1] kernel BUG in btrfs_free_tree_block (fs/btrfs/extent-tree.c:3297):
-> https://paste.ubuntu.com/p/ZtzVKWbcGm/
-> [2] kernel BUG in clear_state_bit (fs/btrfs/extent_io.c:658!):
-> https://paste.ubuntu.com/p/hps2wXPG2b/
-> [3] kernel BUG in set_extent_bit (fs/btrfs/extent_io.c:1021):
-> https://paste.ubuntu.com/p/dcptjYYxgd/
-> [4] kernel BUG in set_state_bits (fs/btrfs/extent_io.c:939):
-> https://paste.ubuntu.com/p/NV9qtKB4KZ/
-> 
-> All the above crashes were triggered directly by the `BUG_ON()` macro
-> in the corresponding location.
-> Most `BUG_ON()` was hit due to `ENOMEM` when fault injected.
-> Would it be better for btrfs to handle the `ENOMEM` error, e.g.,
-> gracefully return, rather than panic the kernel?
 
-If it would be so easy we would have done it already. Unfortunatelly in
-some deep call chains or under locks or from contexts where the whole
-operation is split accross subsystems or threads it's not always
-possible to roll back. Some tricks like preallocation can bail out early
-but we can't preallocate everything. The allocations are done under
-GFP_NOFS that still has the no-fail semantics. The error you report do
-not normally happen because allocator tries hard to return some memory.
+Hi Willy, Trond, Christoph,
+
+Here's v3 of a change to make reads and writes from the swapfile use async
+DIO, adding a new ->swap_rw() address_space method, rather than readpage()
+or direct_IO(), as requested by Willy.  This allows NFS to bypass the write
+checks that prevent swapfiles from working, plus a bunch of other checks
+that may or may not be necessary.
+
+Whilst trying to make this work, I found that NFS's support for swapfiles
+seems to have been non-functional since Aug 2019 (I think), so the first
+patch fixes that.  Question is: do we actually *want* to keep this
+functionality, given that it seems that no one's tested it with an upstream
+kernel in the last couple of years?
+
+There are additional patches to get rid of noop_direct_IO and replace it
+with a feature bitmask, to make btrfs, ext4, xfs and raw blockdevs use the
+new ->swap_rw method and thence remove the direct BIO submission paths from
+swap.
+
+I kept the IOCB_SWAP flag, using it to enable REQ_SWAP.  I'm not sure if
+that's necessary, but it seems accounting related.
+
+The synchronous DIO I/O code on NFS, raw blockdev, ext4 swapfile and xfs
+swapfile all seem to work fine.  Btrfs refuses to swapon because the file
+might be CoW'd.  I've tried doing "chattr +C", but that didn't help.
+
+The async DIO paths fail spectacularly (from I/O errors to ATA failure
+messages on the test disk using a normal swapspace); NFS just hangs.
+
+My patches can be found here also:
+
+	https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-fs.git/log/?h=swap-dio
+
+I tested this using the procedure and program outlined in the NFS patch.
+
+I also encountered occasional instances of the following warning with NFS, so
+I'm wondering if there's a scheduling problem somewhere:
+
+BUG: workqueue lockup - pool cpus=0-3 flags=0x5 nice=0 stuck for 34s!
+Showing busy workqueues and worker pools:
+workqueue events: flags=0x0
+  pwq 6: cpus=3 node=0 flags=0x0 nice=0 active=1/256 refcnt=2
+    in-flight: 1565:fill_page_cache_func
+workqueue events_highpri: flags=0x10
+  pwq 3: cpus=1 node=0 flags=0x1 nice=-20 active=1/256 refcnt=2
+    in-flight: 1547:fill_page_cache_func
+  pwq 1: cpus=0 node=0 flags=0x0 nice=-20 active=1/256 refcnt=2
+    in-flight: 1811:fill_page_cache_func
+workqueue events_unbound: flags=0x2
+  pwq 8: cpus=0-3 flags=0x5 nice=0 active=3/512 refcnt=5
+    pending: fsnotify_connector_destroy_workfn, fsnotify_mark_destroy_workfn, cleanup_offline_cgwbs_workfn
+workqueue events_power_efficient: flags=0x82
+  pwq 8: cpus=0-3 flags=0x5 nice=0 active=4/256 refcnt=6
+    pending: neigh_periodic_work, neigh_periodic_work, check_lifetime, do_cache_clean
+workqueue writeback: flags=0x4a
+  pwq 8: cpus=0-3 flags=0x5 nice=0 active=1/256 refcnt=4
+    in-flight: 433(RESCUER):wb_workfn
+workqueue rpciod: flags=0xa
+  pwq 8: cpus=0-3 flags=0x5 nice=0 active=38/256 refcnt=40
+    in-flight: 7:rpc_async_schedule, 1609:rpc_async_schedule, 1610:rpc_async_schedule, 912:rpc_async_schedule, 1613:rpc_async_schedule, 1631:rpc_async_schedule, 34:rpc_async_schedule, 44:rpc_async_schedule
+    pending: rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule, rpc_async_schedule
+workqueue ext4-rsv-conversion: flags=0x2000a
+pool 1: cpus=0 node=0 flags=0x0 nice=-20 hung=59s workers=2 idle: 6
+pool 3: cpus=1 node=0 flags=0x1 nice=-20 hung=43s workers=2 manager: 20
+pool 6: cpus=3 node=0 flags=0x0 nice=0 hung=0s workers=3 idle: 498 29
+pool 8: cpus=0-3 flags=0x5 nice=0 hung=34s workers=9 manager: 1623
+pool 9: cpus=0-3 flags=0x5 nice=-20 hung=0s workers=2 manager: 5224 idle: 859
+
+Note that this is due to DIO writes to NFS only, as far as I can tell, and
+that no reads had happened yet.
+
+Changes:
+========
+ver #3:
+   - Introduced a new ->swap_rw() method.
+   - Added feature support flags to the address_space_operations struct and
+     got rid of the checks for ->direct_() and noop_direct_IO() and
+     similar.
+   - Implemented swap_rw for nfs, adjusting the direct I/O code paths.
+   - Implemented swap_rw for blockdev, btrfs, ext4 and xfs.
+   - Got rid of the return value on swap_readpage() as it's never checked.
+
+ver #2:
+   - Remove the callback param to __swap_writepage() as it's invariant.
+   - Allocate the kiocb on the stack in sync mode.
+   - Do an async DIO write if WB_SYNC_ALL isn't set.
+   - Try to remove the BIO submission paths.
+
+David
+
+Link: https://lore.kernel.org/r/162876946134.3068428.15475611190876694695.stgit@warthog.procyon.org.uk/ # v1
+Link: https://lore.kernel.org/r/162879971699.3306668.8977537647318498651.stgit@warthog.procyon.org.uk/ # v2
+---
+David Howells (9):
+      mm: Remove the callback func argument from __swap_writepage()
+      mm: Add 'supports' field to the address_space_operations to list features
+      mm: Make swap_readpage() void
+      Introduce IOCB_SWAP kiocb flag to trigger REQ_SWAP
+      mm: Make swap_readpage() for SWP_FS_OPS use ->swap_rw() not ->readpage()
+      mm: Make __swap_writepage() do async DIO if asked for it
+      nfs: Fix write to swapfile failure due to generic_write_checks()
+      block, btrfs, ext4, xfs: Implement swap_rw
+      mm: Remove swap BIO paths and only use DIO paths
+
+
+ Documentation/filesystems/vfs.rst |   8 +
+ block/fops.c                      |   2 +
+ drivers/block/loop.c              |   6 +-
+ fs/9p/vfs_addr.c                  |   1 +
+ fs/affs/file.c                    |   1 +
+ fs/btrfs/inode.c                  |  14 +-
+ fs/ceph/addr.c                    |  13 +-
+ fs/cifs/file.c                    |  21 +-
+ fs/direct-io.c                    |   2 +
+ fs/erofs/data.c                   |   2 +-
+ fs/exfat/inode.c                  |   1 +
+ fs/ext2/inode.c                   |   4 +-
+ fs/ext4/inode.c                   |  17 +-
+ fs/f2fs/data.c                    |   1 +
+ fs/fat/inode.c                    |   1 +
+ fs/fcntl.c                        |   2 +-
+ fs/fuse/dax.c                     |   2 +-
+ fs/fuse/file.c                    |   1 +
+ fs/gfs2/aops.c                    |   2 +-
+ fs/hfs/inode.c                    |   1 +
+ fs/hfsplus/inode.c                |   1 +
+ fs/jfs/inode.c                    |   1 +
+ fs/libfs.c                        |  12 -
+ fs/nfs/direct.c                   |  28 +--
+ fs/nfs/file.c                     |  15 +-
+ fs/nilfs2/inode.c                 |   1 +
+ fs/ntfs3/inode.c                  |   1 +
+ fs/ocfs2/aops.c                   |   1 +
+ fs/open.c                         |   3 +-
+ fs/orangefs/inode.c               |   1 +
+ fs/overlayfs/file.c               |   2 +-
+ fs/overlayfs/inode.c              |   3 +-
+ fs/reiserfs/inode.c               |   1 +
+ fs/udf/file.c                     |   1 +
+ fs/udf/inode.c                    |   1 +
+ fs/xfs/xfs_aops.c                 |  13 +-
+ fs/zonefs/super.c                 |   2 +-
+ include/linux/bio.h               |   2 +
+ include/linux/fs.h                |   7 +-
+ include/linux/nfs_fs.h            |   2 +-
+ include/linux/swap.h              |   2 +-
+ mm/page_io.c                      | 356 +++++++++++++++---------------
+ mm/swapfile.c                     |   4 +-
+ 43 files changed, 275 insertions(+), 287 deletions(-)
+
+

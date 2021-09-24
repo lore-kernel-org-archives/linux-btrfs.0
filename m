@@ -2,41 +2,43 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-20.5 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CCBF6C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 11:28:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13867C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 11:28:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id AA16A60F11
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 11:28:28 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E2D9E60F11
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 11:28:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245735AbhIXL36 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Sep 2021 07:29:58 -0400
-Received: from mail.kernel.org ([198.145.29.99]:40514 "EHLO mail.kernel.org"
+        id S245756AbhIXLaB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Sep 2021 07:30:01 -0400
+Received: from mail.kernel.org ([198.145.29.99]:40528 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S244406AbhIXL3v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Sep 2021 07:29:51 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 2FBB060F11
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Sep 2021 11:28:18 +0000 (UTC)
+        id S244845AbhIXL3x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 24 Sep 2021 07:29:53 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id C106F60F11
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Sep 2021 11:28:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1632482898;
-        bh=hY4UB4sDYaDIBttM4bMYOMqImM7TsHRHs+Osh1pD3Sw=;
-        h=From:To:Subject:Date:From;
-        b=BRmjD83l9HdfJ62miyd/3cFBhy3KQim9k1mPbsqb8XFlEkSMxduq3TUicJvvhhGG2
-         uk/WGHh4147Y1DDkwFCee3SKtd4WEsiOb13eiPhSF7ONZ91RuQgKBW4cS5ZDJ+UGHv
-         eJBrh7jyjaH/vuGSAKL3AlMBm/h3xKlBWWFDU3zhZnxNXaVVBAvwupDg5fHKK7onRl
-         rHXx9qbu6ywt43/f2Oo43eAhX+uXlsYoCCEacDycR9jgPRRg56YNOMWsSn7A9b1/Zu
-         krcqeW6q2l7kbrGTK5YAYaiIyvu6jV4R5HOjbociiW7/g0074evuSAcXCCHxJ+PwtX
-         q8Pub6bagGlyg==
+        s=k20201202; t=1632482900;
+        bh=I/nDhP4IfjQp+GOxgKmkg5FWdgh4+pGvKXDoaBWgJx8=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=EUFMXFvV9/pKfpFN/YX58xLnpcTzIkyuuFiF3n9lR2Pvsi9fdTm9HIDo+s7aVeUTK
+         qCB9iDxP8oxKunkJNX8tk4hQcusyHaHAvrs6gRhUWwsUCrdt5uA/Lmr4Swmu3yidtw
+         bgPIcfK3pjVta1XluxaJTBTQJZSknzYUwwIm1LW57fbDxB1x8uQV66zBjab2zJA56L
+         g0cdy0/JpaHqJtmr7LUkLIk97as1nWtZro8Ou+d8B5BSFeTM6SbkXgcfxl2QzNMjL2
+         JB05gqXRU2gC/6oouRxH0NwSAvQLq4FI7xcp2TNGfKA4ex04fu4J8C5Ff3oTHPXoDI
+         yeo4ab90fYj6A==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: speedup bulk item insertions
-Date:   Fri, 24 Sep 2021 12:28:12 +0100
-Message-Id: <cover.1632482680.git.fdmanana@suse.com>
+Subject: [PATCH 2/3] btrfs: unexport setup_items_for_insert()
+Date:   Fri, 24 Sep 2021 12:28:14 +0100
+Message-Id: <eb4ca29eb4a0086340469663ba4c627d69a24cf7.1632482680.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1632482680.git.fdmanana@suse.com>
+References: <cover.1632482680.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -45,27 +47,251 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This patchset does some minor improvements to speedup bulk insertion of
-items into a btree, which is used when logging directories, when running
-delayed items for directories (fsync and transaction commits) and when
-running the slow path (full sync) of an fsync. The last patch in the
-series contains test results in its changelog.
+Since setup_items_for_insert() is not used anymore outside of ctree.c,
+make it static and remove its prototype from ctree.h. This also requires
+to move the definition of setup_item_for_insert() from ctree.h to ctree.c
+and move down btrfs_duplicate_item() so that it's defined after
+setup_items_for_insert().
 
-Filipe Manana (3):
+Further, since setup_item_for_insert() is used outside ctree.c, rename it
+to btrfs_setup_item_for_insert().
+
+This patch is part of a small patchset that is comprised of the following
+patches:
+
   btrfs: loop only once over data sizes array when inserting an item batch
   btrfs: unexport setup_items_for_insert()
   btrfs: use single bulk copy operations when logging directories
 
- fs/btrfs/ctree.c                     | 148 +++++++++++++++------------
- fs/btrfs/ctree.h                     |  45 ++++++--
- fs/btrfs/delayed-inode.c             |  41 ++++----
- fs/btrfs/file.c                      |   3 +-
- fs/btrfs/inode.c                     |   8 +-
- fs/btrfs/tests/extent-buffer-tests.c |   2 +-
- fs/btrfs/tests/inode-tests.c         |   4 +-
- fs/btrfs/tree-log.c                  |  52 +++++++---
- 8 files changed, 188 insertions(+), 115 deletions(-)
+This is patch 2/3 and performance results, and the specific tests, are
+included in the changelog of patch 3/3.
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.c                     | 95 +++++++++++++++++-----------
+ fs/btrfs/ctree.h                     | 24 ++-----
+ fs/btrfs/file.c                      |  2 +-
+ fs/btrfs/tests/extent-buffer-tests.c |  2 +-
+ fs/btrfs/tests/inode-tests.c         |  4 +-
+ 5 files changed, 68 insertions(+), 59 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 49e2bbda2d7e..74c8e18f3720 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -3580,40 +3580,6 @@ int btrfs_split_item(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-/*
+- * This function duplicate a item, giving 'new_key' to the new item.
+- * It guarantees both items live in the same tree leaf and the new item
+- * is contiguous with the original item.
+- *
+- * This allows us to split file extent in place, keeping a lock on the
+- * leaf the entire time.
+- */
+-int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
+-			 struct btrfs_root *root,
+-			 struct btrfs_path *path,
+-			 const struct btrfs_key *new_key)
+-{
+-	struct extent_buffer *leaf;
+-	int ret;
+-	u32 item_size;
+-
+-	leaf = path->nodes[0];
+-	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
+-	ret = setup_leaf_for_split(trans, root, path,
+-				   item_size + sizeof(struct btrfs_item));
+-	if (ret)
+-		return ret;
+-
+-	path->slots[0]++;
+-	setup_item_for_insert(root, path, new_key, item_size);
+-	leaf = path->nodes[0];
+-	memcpy_extent_buffer(leaf,
+-			     btrfs_item_ptr_offset(leaf, path->slots[0]),
+-			     btrfs_item_ptr_offset(leaf, path->slots[0] - 1),
+-			     item_size);
+-	return 0;
+-}
+-
+ /*
+  * make the item pointed to by the path smaller.  new_size indicates
+  * how small to make it, and from_end tells us if we just chop bytes
+@@ -3787,8 +3753,8 @@ void btrfs_extend_item(struct btrfs_path *path, u32 data_size)
+  * @path:	points to the leaf/slot where we are going to insert new items
+  * @batch:      information about the batch of items to insert
+  */
+-void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
+-			    const struct btrfs_item_batch *batch)
++static void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
++				   const struct btrfs_item_batch *batch)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_item *item;
+@@ -3881,6 +3847,29 @@ void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
+ 	}
+ }
+ 
++/*
++ * Insert a new item into a leaf.
++ *
++ * @root:      The root of the btree.
++ * @path:      A path pointing to the target leaf and slot.
++ * @key:       The key of the new item.
++ * @data_size: The size of the data associated with the new key.
++ */
++void btrfs_setup_item_for_insert(struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 const struct btrfs_key *key,
++				 u32 data_size)
++{
++	struct btrfs_item_batch batch;
++
++	batch.keys = key;
++	batch.data_sizes = &data_size;
++	batch.total_data_size = data_size;
++	batch.nr = 1;
++
++	setup_items_for_insert(root, path, &batch);
++}
++
+ /*
+  * Given a key and some data, insert items into the tree.
+  * This does all the path init required, making room in the tree if needed.
+@@ -3935,6 +3924,40 @@ int btrfs_insert_item(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	return ret;
+ }
+ 
++/*
++ * This function duplicates an item, giving 'new_key' to the new item.
++ * It guarantees both items live in the same tree leaf and the new item is
++ * contiguous with the original item.
++ *
++ * This allows us to split a file extent in place, keeping a lock on the leaf
++ * the entire time.
++ */
++int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
++			 struct btrfs_root *root,
++			 struct btrfs_path *path,
++			 const struct btrfs_key *new_key)
++{
++	struct extent_buffer *leaf;
++	int ret;
++	u32 item_size;
++
++	leaf = path->nodes[0];
++	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
++	ret = setup_leaf_for_split(trans, root, path,
++				   item_size + sizeof(struct btrfs_item));
++	if (ret)
++		return ret;
++
++	path->slots[0]++;
++	btrfs_setup_item_for_insert(root, path, new_key, item_size);
++	leaf = path->nodes[0];
++	memcpy_extent_buffer(leaf,
++			     btrfs_item_ptr_offset(leaf, path->slots[0]),
++			     btrfs_item_ptr_offset(leaf, path->slots[0] - 1),
++			     item_size);
++	return 0;
++}
++
+ /*
+  * delete the pointer from a given node.
+  *
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 59f7fda3f5d1..400ce90efbb0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2899,7 +2899,7 @@ static inline int btrfs_del_item(struct btrfs_trans_handle *trans,
+ 
+ /*
+  * Describes a batch of items to insert in a btree. This is used by
+- * btrfs_insert_empty_items() and setup_items_for_insert().
++ * btrfs_insert_empty_items().
+  */
+ struct btrfs_item_batch {
+ 	/*
+@@ -2923,24 +2923,10 @@ struct btrfs_item_batch {
+ 	int nr;
+ };
+ 
+-void setup_items_for_insert(struct btrfs_root *root, struct btrfs_path *path,
+-			    const struct btrfs_item_batch *batch);
+-
+-static inline void setup_item_for_insert(struct btrfs_root *root,
+-					 struct btrfs_path *path,
+-					 const struct btrfs_key *key,
+-					 u32 data_size)
+-{
+-	struct btrfs_item_batch batch;
+-
+-	batch.keys = key;
+-	batch.data_sizes = &data_size;
+-	batch.total_data_size = data_size;
+-	batch.nr = 1;
+-
+-	setup_items_for_insert(root, path, &batch);
+-}
+-
++void btrfs_setup_item_for_insert(struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 const struct btrfs_key *key,
++				 u32 data_size);
+ int btrfs_insert_item(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		      const struct btrfs_key *key, void *data, u32 data_size);
+ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 85de69529160..04e29b40a38e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1021,7 +1021,7 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 			if (btrfs_comp_cpu_keys(&key, &slot_key) > 0)
+ 				path->slots[0]++;
+ 		}
+-		setup_item_for_insert(root, path, &key, args->extent_item_size);
++		btrfs_setup_item_for_insert(root, path, &key, args->extent_item_size);
+ 		args->extent_inserted = true;
+ 	}
+ 
+diff --git a/fs/btrfs/tests/extent-buffer-tests.c b/fs/btrfs/tests/extent-buffer-tests.c
+index c9ab65e3d8e8..2a95f7224e18 100644
+--- a/fs/btrfs/tests/extent-buffer-tests.c
++++ b/fs/btrfs/tests/extent-buffer-tests.c
+@@ -60,7 +60,7 @@ static int test_btrfs_split_item(u32 sectorsize, u32 nodesize)
+ 	key.type = BTRFS_EXTENT_CSUM_KEY;
+ 	key.offset = 0;
+ 
+-	setup_item_for_insert(root, path, &key, value_len);
++	btrfs_setup_item_for_insert(root, path, &key, value_len);
+ 	item = btrfs_item_nr(0);
+ 	write_extent_buffer(eb, value, btrfs_item_ptr_offset(eb, 0),
+ 			    value_len);
+diff --git a/fs/btrfs/tests/inode-tests.c b/fs/btrfs/tests/inode-tests.c
+index af62d05435b9..cac89c388131 100644
+--- a/fs/btrfs/tests/inode-tests.c
++++ b/fs/btrfs/tests/inode-tests.c
+@@ -33,7 +33,7 @@ static void insert_extent(struct btrfs_root *root, u64 start, u64 len,
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+ 	key.offset = start;
+ 
+-	setup_item_for_insert(root, &path, &key, value_len);
++	btrfs_setup_item_for_insert(root, &path, &key, value_len);
+ 	fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
+ 	btrfs_set_file_extent_generation(leaf, fi, 1);
+ 	btrfs_set_file_extent_type(leaf, fi, type);
+@@ -63,7 +63,7 @@ static void insert_inode_item_key(struct btrfs_root *root)
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
+ 
+-	setup_item_for_insert(root, &path, &key, value_len);
++	btrfs_setup_item_for_insert(root, &path, &key, value_len);
+ }
+ 
+ /*
 -- 
 2.33.0
 

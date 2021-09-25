@@ -2,149 +2,134 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B442C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 18:26:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5968C433F5
+	for <linux-btrfs@archiver.kernel.org>; Sat, 25 Sep 2021 23:43:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EA39460F24
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Sep 2021 18:26:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 81FD66108E
+	for <linux-btrfs@archiver.kernel.org>; Sat, 25 Sep 2021 23:43:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348117AbhIXS1q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Sep 2021 14:27:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37068 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1346239AbhIXS1p (ORCPT
+        id S230191AbhIYXoc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 25 Sep 2021 19:44:32 -0400
+Received: from mail109.syd.optusnet.com.au ([211.29.132.80]:34355 "EHLO
+        mail109.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S230078AbhIYXob (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Sep 2021 14:27:45 -0400
-Received: from mail-lf1-x133.google.com (mail-lf1-x133.google.com [IPv6:2a00:1450:4864:20::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE321C061613
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Sep 2021 11:26:11 -0700 (PDT)
-Received: by mail-lf1-x133.google.com with SMTP id y28so43417529lfb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Sep 2021 11:26:11 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:from:date:message-id:subject:to;
-        bh=1s34Yqgb4ItEzSJ7Owz/ybF6gtvrc1C9hGd3WAquWp0=;
-        b=BGwHbdU/eqPQjpdOrhpUm9O0kcR+8xJygPrDbfTww30htHLZKuDWkb0JouMzyI7+gd
-         XBL+JIfe6Sa+gM1x8uy6Fu0ANIuTsewyJes93fbcmEdotSO+YJngnyEr2uwYM/73RzAm
-         cdavK21D+q345og/fFkhQRTDqkuyBrlBQHbOe5jXDwLi5Eh0ual4+yQEAAUCC+bk8XiJ
-         bzkd6GFto4ZpL4fsgn1BSk7ry6kDIlUMucDEbJfwnmE47Ilg5fJxIeS4fVshxeHtEFlm
-         8cpI1nWjLhF/xjdL5mIEyRZg1YFx6+adWV6WhxJS1cNuQ1ZK9DzF/xmMRTjQTM62Cg12
-         7CPQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
-        bh=1s34Yqgb4ItEzSJ7Owz/ybF6gtvrc1C9hGd3WAquWp0=;
-        b=l9CgLb3fKBjl3Be87d+EkLZ6yZYV+nUo3pWFjs3NwlCJP2IXHStKPtO89uyVyeCICy
-         i7cVFSBpP+CD6KoRFz2Vi5i3337w3yB/6qAYrW+4B18WI5Ba+rsheaHF92JUisE9odoL
-         7FrJBkw3Jf6qqcHkMlcYcP6Y4VH4GnFOonaHNHrtI6T5vaUWm4gc8pIU6S7rN8EpbHz/
-         OSBRop/P2WY1wEUxEisLNs0cyJot8BaKfMpHMSXXfPYp/chIUi/ZKhvM7d8Jw3vFYjAV
-         x90oEpwSNS1Mzzu0yS3bcDi0AKXq/jZ9c/g/rtPKB4N3xJIzEdjst+LQ3K0VgTZfRgfd
-         S5Dg==
-X-Gm-Message-State: AOAM533IBwtQ6DJfLw4Zin5X8i3SHRtEN2NpUlIKfAu1YDCbLkyL4rR8
-        MTDkA5HnHIUnlH/IFoDB4SQLeAtJLTwcHkV6AzraMMZ7fZU=
-X-Google-Smtp-Source: ABdhPJzw5I8/XDqLBM77CdKSAJX1RWwswvYHcvVjsqhtPowK0TE422uVFs7nfa7K9hSAAV7f2RscnMMud5fBisOWau4=
-X-Received: by 2002:ac2:4ecc:: with SMTP id p12mr10747479lfr.375.1632507969907;
- Fri, 24 Sep 2021 11:26:09 -0700 (PDT)
+        Sat, 25 Sep 2021 19:44:31 -0400
+Received: from dread.disaster.area (pa49-195-238-16.pa.nsw.optusnet.com.au [49.195.238.16])
+        by mail109.syd.optusnet.com.au (Postfix) with ESMTPS id 08B668A154;
+        Sun, 26 Sep 2021 09:42:44 +1000 (AEST)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+        (envelope-from <david@fromorbit.com>)
+        id 1mUHJb-00GjRM-K9; Sun, 26 Sep 2021 09:42:43 +1000
+Date:   Sun, 26 Sep 2021 09:42:43 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     David Howells <dhowells@redhat.com>
+Cc:     willy@infradead.org, hch@lst.de, trond.myklebust@primarydata.com,
+        Theodore Ts'o <tytso@mit.edu>, linux-block@vger.kernel.org,
+        ceph-devel@vger.kernel.org,
+        Trond Myklebust <trond.myklebust@hammerspace.com>,
+        "Darrick J. Wong" <darrick.wong@oracle.com>,
+        Jeff Layton <jlayton@kernel.org>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Anna Schumaker <anna.schumaker@netapp.com>, linux-mm@kvack.org,
+        Bob Liu <bob.liu@oracle.com>,
+        "Darrick J. Wong" <djwong@kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Seth Jennings <sjenning@linux.vnet.ibm.com>,
+        Jens Axboe <axboe@kernel.dk>, linux-fsdevel@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-cifs@vger.kernel.org, Chris Mason <clm@fb.com>,
+        David Sterba <dsterba@suse.com>,
+        Minchan Kim <minchan@kernel.org>,
+        Steve French <sfrench@samba.org>, NeilBrown <neilb@suse.de>,
+        Dan Magenheimer <dan.magenheimer@oracle.com>,
+        linux-nfs@vger.kernel.org, Ilya Dryomov <idryomov@gmail.com>,
+        linux-btrfs@vger.kernel.org, viro@zeniv.linux.org.uk,
+        torvalds@linux-foundation.org, linux-kernel@vger.kernel.org
+Subject: Re: [RFC][PATCH v3 0/9] mm: Use DIO for swap and fix NFS swapfiles
+Message-ID: <20210925234243.GA1756565@dread.disaster.area>
+References: <163250387273.2330363.13240781819520072222.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
-From:   Sven Oehme <oehmes@gmail.com>
-Date:   Fri, 24 Sep 2021 12:25:59 -0600
-Message-ID: <CALssuR00NvTHJJuoOFhw=4+fHARtBN2PLqTr4W06PT5VMagh_A@mail.gmail.com>
-Subject: Host managed SMR drive issue
-To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <163250387273.2330363.13240781819520072222.stgit@warthog.procyon.org.uk>
+X-Optus-CM-Score: 0
+X-Optus-CM-Analysis: v=2.3 cv=YKPhNiOx c=1 sm=1 tr=0
+        a=DzKKRZjfViQTE5W6EVc0VA==:117 a=DzKKRZjfViQTE5W6EVc0VA==:17
+        a=kj9zAlcOel0A:10 a=7QKq2e-ADPsA:10 a=7-415B0cAAAA:8
+        a=MUEH3GQPxMcp5Lh2lNUA:9 a=CjuIK1q_8ugA:10 a=biEYGPWJfzWAr4FL6Ov7:22
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Fri, Sep 24, 2021 at 06:17:52PM +0100, David Howells wrote:
+> 
+> Hi Willy, Trond, Christoph,
+> 
+> Here's v3 of a change to make reads and writes from the swapfile use async
+> DIO, adding a new ->swap_rw() address_space method, rather than readpage()
+> or direct_IO(), as requested by Willy.  This allows NFS to bypass the write
+> checks that prevent swapfiles from working, plus a bunch of other checks
+> that may or may not be necessary.
+> 
+> Whilst trying to make this work, I found that NFS's support for swapfiles
+> seems to have been non-functional since Aug 2019 (I think), so the first
+> patch fixes that.  Question is: do we actually *want* to keep this
+> functionality, given that it seems that no one's tested it with an upstream
+> kernel in the last couple of years?
+> 
+> There are additional patches to get rid of noop_direct_IO and replace it
+> with a feature bitmask, to make btrfs, ext4, xfs and raw blockdevs use the
+> new ->swap_rw method and thence remove the direct BIO submission paths from
+> swap.
+> 
+> I kept the IOCB_SWAP flag, using it to enable REQ_SWAP.  I'm not sure if
+> that's necessary, but it seems accounting related.
+> 
+> The synchronous DIO I/O code on NFS, raw blockdev, ext4 swapfile and xfs
+> swapfile all seem to work fine.  Btrfs refuses to swapon because the file
+> might be CoW'd.  I've tried doing "chattr +C", but that didn't help.
 
-i am running into issues with Host Managed SMR drive testing. when i
-try to copy or move a file to the btrfs filesystem it just hangs. i
-tried multiple 5.12,5.13 as well as 5.14 all the way to 5.14.6 but the
-issue still persists.
+Ok, so if the filesystem is doing block mapping in the IO path now,
+why does the swap file still need to map the file into a private
+block mapping now?  i.e all the work that iomap_swapfile_activate()
+does for filesystems like XFS and ext4 - it's this completely
+redundant now that we are doing block mapping during swap file IO
+via iomap_dio_rw()?
 
-here is the setup :
+Actually, that path does all the "can we use this file as a swap
+file" checking. So the extent iteration can't go away, just the swap
+file mapping part (iomap_swapfile_add_extent()). This is necessary
+to ensure there aren't any holes in the file, and we still need that
+because the DIO write path will allocate into holes, which leads
+me to my main concern here.
 
-I am using btrfs-progs-v5.14.1
-device is a  Host Managed WDC  20TB SMR drive with firmware level C421
-its connected via a HBA 9400-8i Tri-Mode Storage Adapter , latest 20.0 FW
-I am using the /dev/sd device direct  , no lvm or device mapper or
-anything else in between
+Using the DIO path opens up the possibility that the filesystem
+could want to run transactions are part of the DIO. Right now we
+support unwritten extents for swap files (so they don't have to be
+written to allocate the backing store before activation) and that
+means we'll be doing DIO to unwritten extents. IO completion of a
+DIO write to an unwritten extent will run a transaction to convert
+that extent to written. A similar problem with sparse files exists,
+because allocation of blocks can be done from the DIO path, and that
+requires transactions. File extension is another potential
+transaction path we open up by using DIO writes dor swap.
 
-after a few seconds, sometimes minutes data rate to the drive drops to
-0 and 1 or 2 cores on my system show 100% IO wait time, but no longer
-make any progress
+The problem is that a transaction run in swap IO context will will
+deadlock the filesystem. Either through the unbound memory demand of
+metadata modification, or from needing log space that can't be freed
+up because the metadata IO that will free the log space is waiting
+on memory allocation that is waiting on swap IO...
 
-the process in question has the following stack :
+I think some more thought needs to be put into controlling the
+behaviour/semantics of the DIO path so that it can be safely used
+by swap IO, because it's not a direct 1:1 behavioural mapping with
+existing DIO and there are potential deadlock vectors we need to
+avoid.
 
-[ 2168.589160] task:mv              state:D stack:    0 pid: 3814
-ppid:  3679 flags:0x00004000
-[ 2168.589162] Call Trace:
-[ 2168.589163]  __schedule+0x2fa/0x910
-[ 2168.589166]  schedule+0x4f/0xc0
-[ 2168.589168]  schedule_timeout+0x8a/0x140
-[ 2168.589171]  ? __bpf_trace_tick_stop+0x10/0x10
-[ 2168.589173]  io_schedule_timeout+0x51/0x80
-[ 2168.589176]  balance_dirty_pages+0x2fa/0xe30
-[ 2168.589179]  ? __mod_lruvec_state+0x3a/0x50
-[ 2168.589182]  balance_dirty_pages_ratelimited+0x2f9/0x3c0
-[ 2168.589185]  btrfs_buffered_write+0x58e/0x7e0 [btrfs]
-[ 2168.589226]  btrfs_file_write_iter+0x138/0x3e0 [btrfs]
-[ 2168.589260]  ? ext4_file_read_iter+0x5b/0x180
-[ 2168.589262]  new_sync_write+0x114/0x1a0
-[ 2168.589265]  vfs_write+0x1c5/0x260
-[ 2168.589267]  ksys_write+0x67/0xe0
-[ 2168.589270]  __x64_sys_write+0x1a/0x20
-[ 2168.589272]  do_syscall_64+0x40/0xb0
-[ 2168.589275]  entry_SYSCALL_64_after_hwframe+0x44/0xae
-[ 2168.589277] RIP: 0033:0x7ffff7e91c27
-[ 2168.589278] RSP: 002b:00007fffffffdc48 EFLAGS: 00000246 ORIG_RAX:
-0000000000000001
-[ 2168.589280] RAX: ffffffffffffffda RBX: 0000000000020000 RCX: 00007ffff7e91c27
-[ 2168.589281] RDX: 0000000000020000 RSI: 00007ffff79bd000 RDI: 0000000000000004
-[ 2168.589282] RBP: 00007ffff79bd000 R08: 0000000000000000 R09: 0000000000000000
-[ 2168.589283] R10: 0000000000000022 R11: 0000000000000246 R12: 0000000000000004
-[ 2168.589284] R13: 0000000000000004 R14: 00007ffff79bd000 R15: 0000000000020000
+Cheers,
 
-and shows up under runnable tasks :
-
-[ 2168.593562] runnable tasks:
-[ 2168.593562]  S            task   PID         tree-key  switches
-prio     wait-time             sum-exec        sum-sleep
-[ 2168.593563] -------------------------------------------------------------------------------------------------------------
-[ 2168.593565]  S        cpuhp/13    92     88923.802487        19
-120         0.000000         0.292061         0.000000 2 0 /
-[ 2168.593571]  S  idle_inject/13    93       -11.997255         3
-49         0.000000         0.005480         0.000000 2 0 /
-[ 2168.593577]  S    migration/13    94       814.287531       551
-0         0.000000      1015.550514         0.000000 2 0 /
-[ 2168.593582]  S    ksoftirqd/13    95     88762.317130        44
-120         0.000000         1.940252         0.000000 2 0 /
-[ 2168.593588]  I    kworker/13:0    96        -9.031157         5
-120         0.000000         0.017423         0.000000 2 0 /
-[ 2168.593593]  I   kworker/13:0H    97      3570.961886         5
-100         0.000000         0.034345         0.000000 2 0 /
-[ 2168.593603]  I    kworker/13:1   400    101650.731913       578
-120         0.000000        10.110898         0.000000 2 0 /
-[ 2168.593611]  I   kworker/13:1H  1015    101649.600698        65
-100         0.000000         1.443300         0.000000 2 0 /
-[ 2168.593618]  S           loop3  1994     99133.655903        70
-100         0.000000         1.137468         0.000000 2 0 /
-[ 2168.593625]  S           snapd  3161        15.296181       166
-120         0.000000        90.296991         0.000000 2 0
-/system.slice/snapd.service
-[ 2168.593631]  S           snapd  3198        10.047573        49
-120         0.000000         5.646247         0.000000 2 0
-/system.slice/snapd.service
-[ 2168.593639]  S            java  2446       970.743682       301
-120         0.000000       101.648659         0.000000 2 0
-/system.slice/stor_tomcat.service
-[ 2168.593645]  S C1 CompilerThre  2573      1033.157689      3636
-120         0.000000       615.256247         0.000000 2 0
-/system.slice/stor_tomcat.service
-[ 2168.593654]  D              mv  3814      2263.816953    186734
-120         0.000000     30087.917319         0.000000 2 0 /user.slice
-
-any idea what is going on and how to fix this ?
-
-thx.
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

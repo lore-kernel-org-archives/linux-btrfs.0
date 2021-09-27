@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5FFEC4332F
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7DB5C433F5
 	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Sep 2021 04:17:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BA05C610A2
+	by mail.kernel.org (Postfix) with ESMTP id 839B06113A
 	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Sep 2021 04:17:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232544AbhI0ERt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Sep 2021 00:17:49 -0400
+        id S232067AbhI0ERp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Sep 2021 00:17:45 -0400
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:56793 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232539AbhI0ERs (ORCPT
+        with ESMTP id S229674AbhI0ERp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Sep 2021 00:17:48 -0400
+        Mon, 27 Sep 2021 00:17:45 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1632716171; x=1664252171;
+  t=1632716167; x=1664252167;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=2hv1JnP2LJNSkf2cXFkljyPQQ6LFpJDxTkeG2sNr+Z4=;
-  b=ZsznW6szCREB5PNUnnzT5M4mwHX9EpCExqSmy04iqOa2JLTqcoj/Hi4G
-   moyyfNzCWr1OhXeJAu6uv/ljYMkCNb8LaoyBCfYcVmgEYU3x6N+Tm9K8y
-   9NTfJPl8QhZI5w8hduC37E1Nbh2k8LqlsvHWpSKd2YAF9iWXL5ItIOt0T
-   cwhsD0ffc9JOICERs4HENBMl0ocmCTk+Lx3/4ROnaHVgyUsaLHQutEZaJ
-   CT3SWp8Pb7ICuTEc2JIjGxKaT5+M5t3UPnjIZgSmFLY+sTWA2ntOJ4sJ8
-   IIkMQOJHH5xaW+a78eCV/KA95KUqnl1f2s6ylZAp1M109u20cc+vC0zxN
-   Q==;
+  bh=1mT84zWYTQOJVs8RO+eD/0Y9ALT8W91lxu0YhkGD1SY=;
+  b=WelWK9Io7e1FB4PcFxEyEkXZQSaWPyKkLdZgADsMgK9WmK8s57Zq6PS0
+   9lnE9jU6+snPj5w04qXBDRozv8r02hVAfNo0ZruyYSfVudWCvAEoaWBae
+   +skzfgWoL81rDelbTrSgPTwslSAJSHRX5G4NlQcWiyM/U2qVCBVGMH5Es
+   XAca0nqT0r7tebMDUD4wM/Jfppnug5Yw1rdQQpd+mMC41p0XGj0XAeeGr
+   LnZvqfqFb6D+x6uc3CaUVVtntRh6LKcTqA8JcYYkoNXoFFu72kUXPfczv
+   OK5B6rF4famQUEzwZxha79F4eBdYH1Gs2bqCtwZ4ydKpbue7X4tVKwdkj
+   g==;
 X-IronPort-AV: E=Sophos;i="5.85,325,1624291200"; 
-   d="scan'208";a="180095518"
+   d="scan'208";a="180095513"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 27 Sep 2021 12:16:11 +0800
-IronPort-SDR: a/kq3dxlyo69gO+3puga2Y77gwm3u02cwls1tqnP0j3vYFxUP6M8WPp74Dnw7IsbR24bxMhyL4
- IH3dKLD/DGzJ3emwDnOyWzRvSkhRjH8i6uyl1khIQn5eLyAGv6YBjzpzzuBsgq+8cBSNrej2d2
- Uewn0fjQwEsXkDLb1wD4aXnv3gqaSxuSiBWQfYE1522WwYeIhOQ1pSfF1c9uJck/Q6iElyeqE9
- Hfmal7u9bnrKb9X0XnCrb8ETmSnG3lijhQqanST4OKR//FfjNQ2r9wyA3cwMTIBgc3LxY0hX9k
- 2IyNptbsP3Kj8KsWY3U3/AqH
+  by ob1.hgst.iphmx.com with ESMTP; 27 Sep 2021 12:16:07 +0800
+IronPort-SDR: Btpih6xdWyYUoJsbw3xwBdVJ9ZGY3GkySQwaciui64VEiaQZ/A2t1LUd+5V068ylLp89kzTsbC
+ vYFZHQooupYdetKj7SZy0lOerI2ZGMrpDXfaa7mu2s8qG3RSpb9bJaX2Acyd3KqLYHah2ofPH7
+ pJTxArZthJnZOe7dQx+EimsKZ6IgC6PL9aDk1SSMt0bLbEKoiiAh7PUKch28zwYs+YahpiB89G
+ xDzO6JdZhche5Dy2lhfEjw2Y0dvTktDjCKCMQ3ZI+PgT3Fu1eHaneff+Y0zO/IIBCgvjVUU6Ay
+ rqQrCHOb/Vqj9Np/sbNTtb91
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Sep 2021 20:50:45 -0700
-IronPort-SDR: 8bcp2gf3Qs6aDTc32Gi+IlKF8ld6OIvq2t7Ylp9QPDeC28kuIlfp6giLga24PzzNNtWbELwZko
- pDtq9nyo5FW9iAYhgv0r4N0rHthKvqrAXoHSwUicmErDrKbifKaFYaYQNu7Bp1XiiICuXAqFyu
- KL5eEqikC+W6l1UMV1yISwFt2+Z7btaXui49PNOca05VrURX0KalLBupGtqCxXjbX3aUN+Aug6
- o7AQCLRUT52e8VE1kf1pARrpO4QLgJyLEhKJ/f8BfOQVmFaVTiSF0XQLbDOXA0hxzLpXOWz253
- bCI=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Sep 2021 20:50:41 -0700
+IronPort-SDR: aOncc9ORqT98Kjktl5Kds0xrDNG9R+C4q8AjV8/7qTTs909ZMiigORAxGLeCYk+W2VsuB/0g/m
+ m/TimdD3ajw1eIKJNXfgmcWEQX5J4r9OgykE4jGrtp2rOxjMgvB+x6I+OR/bseSWbkLqL+MopT
+ C4dSsbRQzQRBDKE8JbNQ6MpZQWNgto0anrR5QU1DJqDIpfrhJQCCQFwd+dHdCpf7jrZ/QDEeLY
+ E7MVETt5+kGL/hr6yHzSjrLNMixPiW/58xnfV6kQbJC30e+BK6gW8JN1NpxyxAQxtNlVzOIuT+
+ POw=
 WDCIronportException: Internal
 Received: from 1r3v0f3.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.32])
-  by uls-op-cesaip02.wdc.com with ESMTP; 26 Sep 2021 21:16:11 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 26 Sep 2021 21:16:08 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>,
         Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 5/5] btrfs-progs: use direct-IO for zoned device
-Date:   Mon, 27 Sep 2021 13:15:54 +0900
-Message-Id: <20210927041554.325884-6-naohiro.aota@wdc.com>
+Subject: [PATCH 3/5] btrfs-progs: introduce btrfs_pread wrapper for pread
+Date:   Mon, 27 Sep 2021 13:15:52 +0900
+Message-Id: <20210927041554.325884-4-naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.33.0
 In-Reply-To: <20210927041554.325884-1-naohiro.aota@wdc.com>
 References: <20210927041554.325884-1-naohiro.aota@wdc.com>
@@ -63,76 +63,100 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We need to use direct-IO for zoned devices to preserve the write ordering.
-Instead of detecting if the device is zoned or not, we simply use direct-IO
-for any kind of device (even if emulated zoned mode on a regular device).
+Wrap pread with btrfs_pread as well.
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- kernel-shared/disk-io.c | 3 +++
- kernel-shared/volumes.c | 4 ++++
- mkfs/main.c             | 7 ++++++-
- 3 files changed, 13 insertions(+), 1 deletion(-)
+ common/device-utils.h     | 10 ++++++++++
+ kernel-shared/disk-io.c   |  4 +++-
+ kernel-shared/extent_io.c |  7 ++++---
+ kernel-shared/zoned.c     |  2 +-
+ 4 files changed, 18 insertions(+), 5 deletions(-)
 
+diff --git a/common/device-utils.h b/common/device-utils.h
+index 767dab4370e1..f79e746840fc 100644
+--- a/common/device-utils.h
++++ b/common/device-utils.h
+@@ -60,9 +60,19 @@ static inline ssize_t btrfs_pwrite(int fd, void *buf, size_t count,
+ 
+ 	return btrfs_direct_pio(WRITE, fd, buf, count, offset);
+ }
++static inline ssize_t btrfs_pread(int fd, void *buf, size_t count, off_t offset,
++				  bool direct)
++{
++	if (!direct)
++		return pread(fd, buf, count, offset);
++
++	return btrfs_direct_pio(READ, fd, buf, count, offset);
++}
+ #else
+ #define btrfs_pwrite(fd, buf, count, offset, direct) \
+ 	({ (void)(direct); pwrite(fd, buf, count, offset); })
++#define btrfs_pread(fd, buf, count, offset, direct) \
++	({ (void)(direct); pread(fd, buf, count, offset); })
+ #endif
+ 
+ #endif
 diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index dd48599a5f1f..aabeba7821ed 100644
+index 1cda6f3a98af..740500f9fdc9 100644
 --- a/kernel-shared/disk-io.c
 +++ b/kernel-shared/disk-io.c
-@@ -1382,6 +1382,9 @@ struct btrfs_fs_info *open_ctree_fs_info(struct open_ctree_flags *ocf)
- 	if (!(ocf->flags & OPEN_CTREE_WRITES))
- 		oflags = O_RDONLY;
+@@ -35,6 +35,7 @@
+ #include "kernel-shared/print-tree.h"
+ #include "common/rbtree-utils.h"
+ #include "common/device-scan.h"
++#include "common/device-utils.h"
+ #include "crypto/hash.h"
  
-+	if ((oflags & O_RDWR) && zoned_model(ocf->filename) == ZONED_HOST_MANAGED)
-+		oflags |= O_DIRECT;
-+
- 	fp = open(ocf->filename, oflags);
- 	if (fp < 0) {
- 		error("cannot open '%s': %m", ocf->filename);
-diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
-index b2a6b04f8e3d..ff4bd0723dbb 100644
---- a/kernel-shared/volumes.c
-+++ b/kernel-shared/volumes.c
-@@ -455,6 +455,10 @@ int btrfs_open_devices(struct btrfs_fs_info *fs_info,
- 			continue;
+ /* specified errno for check_tree_block */
+@@ -476,7 +477,8 @@ int read_extent_data(struct btrfs_fs_info *fs_info, char *data, u64 logical,
+ 		goto err;
+ 	}
+ 
+-	ret = pread64(device->fd, data, *len, multi->stripes[0].physical);
++	ret = btrfs_pread(device->fd, data, *len, multi->stripes[0].physical,
++			  fs_info->zoned);
+ 	if (ret != *len)
+ 		ret = -EIO;
+ 	else
+diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
+index b5984949f431..af09ade4025f 100644
+--- a/kernel-shared/extent_io.c
++++ b/kernel-shared/extent_io.c
+@@ -793,7 +793,8 @@ int read_extent_from_disk(struct extent_buffer *eb,
+ 			  unsigned long offset, unsigned long len)
+ {
+ 	int ret;
+-	ret = pread(eb->fd, eb->data + offset, len, eb->dev_bytenr);
++	ret = btrfs_pread(eb->fd, eb->data + offset, len, eb->dev_bytenr,
++			  eb->fs_info->zoned);
+ 	if (ret < 0) {
+ 		ret = -errno;
+ 		goto out;
+@@ -850,8 +851,8 @@ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+ 			return -EIO;
  		}
  
-+		if ((flags & O_RDWR) &&
-+		    zoned_model(device->name) == ZONED_HOST_MANAGED)
-+			flags |= O_DIRECT;
-+
- 		fd = open(device->name, flags);
- 		if (fd < 0) {
- 			ret = -errno;
-diff --git a/mkfs/main.c b/mkfs/main.c
-index b925c572b2b3..01187763a90c 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -894,6 +894,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	int ssd = 0;
- 	int zoned = 0;
- 	int force_overwrite = 0;
-+	int oflags;
- 	char *source_dir = NULL;
- 	bool source_dir_set = false;
- 	bool shrink_rootdir = false;
-@@ -1310,12 +1311,16 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+-		ret = pread(device->fd, buf + total_read, read_len,
+-			    multi->stripes[0].physical);
++		ret = btrfs_pread(device->fd, buf + total_read, read_len,
++				  multi->stripes[0].physical, info->zoned);
+ 		kfree(multi);
+ 		if (ret < 0) {
+ 			fprintf(stderr, "Error reading %llu, %d\n", offset,
+diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
+index c2cce3b5f366..f5d2299fc744 100644
+--- a/kernel-shared/zoned.c
++++ b/kernel-shared/zoned.c
+@@ -593,7 +593,7 @@ size_t btrfs_sb_io(int fd, void *buf, off_t offset, int rw)
+ 		return ret;
  
- 	dev_cnt--;
+ 	if (rw == READ)
+-		ret_sz = pread64(fd, buf, count, mapped);
++		ret_sz = btrfs_pread(fd, buf, count, mapped, true);
+ 	else
+ 		ret_sz = btrfs_pwrite(fd, buf, count, mapped, true);
  
-+	oflags = O_RDWR;
-+	if (zoned && zoned_model(file) == ZONED_HOST_MANAGED)
-+		oflags |= O_DIRECT;
-+
- 	/*
- 	 * Open without O_EXCL so that the problem should not occur by the
- 	 * following operation in kernel:
- 	 * (btrfs_register_one_device() fails if O_EXCL is on)
- 	 */
--	fd = open(file, O_RDWR);
-+	fd = open(file, oflags);
- 	if (fd < 0) {
- 		error("unable to open %s: %m", file);
- 		goto error;
 -- 
 2.33.0
 

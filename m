@@ -2,145 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D958C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Sep 2021 00:07:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B99ADC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Sep 2021 04:16:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2FE6F610CA
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Sep 2021 00:07:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 958026113D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Sep 2021 04:16:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232181AbhI0AJJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 26 Sep 2021 20:09:09 -0400
-Received: from esa2.hgst.iphmx.com ([68.232.143.124]:8910 "EHLO
-        esa2.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230401AbhI0AJI (ORCPT
+        id S231254AbhI0ERn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Sep 2021 00:17:43 -0400
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:56793 "EHLO
+        esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229674AbhI0ERn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 26 Sep 2021 20:09:08 -0400
+        Mon, 27 Sep 2021 00:17:43 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1632701251; x=1664237251;
-  h=message-id:date:mime-version:subject:to:cc:references:
-   from:in-reply-to:content-transfer-encoding;
-  bh=LcCnIp41FYpUPbutH10Qgz5gB9rJfLeCeigCM6UuucU=;
-  b=KtBnLHNCerc7oJ6ecueIPa7jsbjQjnU5xuBXgKSI4P59DWyuGeJMs3mS
-   2q/0p6T0hUn4C8iBX0fm2RcMfT9Xfj/Vi2i+VWZ4fRjRFMWiLuPEuuFUo
-   WaB1Xl9Qkv9gnlxs45QXvRf6zk+P9y7oev2C/0YlapChSZy7nrlW6F8Rj
-   HMk2bfVPNmgOI0RTaJX+a3mGopy652GCfWQDRkdmPWzsPmT/a7OqjE9xj
-   QtuKiv1VzozSYV/FvRKAHFdKqhgf4849PzuIp/u/y/POhLg9xyt2Phe/8
-   Fj3i8+KI3ij90XCMbX1X1dca1hG8hQDbV1zRC12onwt3GOM5q0zbzkmrt
-   w==;
+  t=1632716165; x=1664252165;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=/l4cq9TGo0kQv2G0Ba0Hgy0tDfVjlT9cii1DaH4ioOs=;
+  b=UkuYMWBWNVM8DKF+xkqW03N+N5933MyTD/9iUiRG9Bolr198/uqOuWe9
+   XSA7MO2ZLc9iYmdt7eOohrpFEmfArL9CjnE1/j0aIBPoFPON8qOp6Nb9a
+   HNvj1g5mtm2/9B4Z+KklnsG0jK4iBamwZCqrihVqbSs+xOBvrkZqTppcB
+   0WXgg97aUidtyTUjQMNjgTHG2+zIRu4ElfseqDIeXD0DJD7yPNU1WEqVw
+   9djoBLrQAHdeF4NSLI08JggE49uzvr6zajQQsq2zELMQa3ey7XHzk7pTZ
+   QVoFBg7u9WdSgWVpCXUqZki6LcDz/ZJO7yCExeQJQ/juIGdpi557ZdIyP
+   A==;
 X-IronPort-AV: E=Sophos;i="5.85,325,1624291200"; 
-   d="scan'208";a="284810885"
+   d="scan'208";a="180095510"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 27 Sep 2021 08:07:31 +0800
-IronPort-SDR: Q5f1kvDqmLvZTsUuG1jyZPiz+BjkJCUaJez0kFf5OI3CSWwk8R5EyFzeS21AaIvyLt53bA3O6R
- T0lewnbcdGW2r5ZmbRqNGc1NWnmm6w4M97WDALeNu2rI4j8+JuXEz5TZAx7w/pzZZj/ox6u6V1
- sVIrza0KqVRrWFlgJV7WQVGMTNMxmzoIfPptYEJP+SVWx+BJEhUfm2/isK7WozTcFVDnvkNJn4
- eUsIifVWuf0A/BBcLKgnbvXpQy9W6kV1P//wNJjRRmv0BCAfrHqGRG1/Lb34D1ZGQNkWkVANF9
- W89EcJqzlYNSvV7jmYc17Ltn
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Sep 2021 16:42:05 -0700
-IronPort-SDR: BbVbiS4SlMcXSXE3rrCWCGIkbXox8uLis0yWZPBO1+wIJmWitpYgqUksGTvfcJLqlGZINUjTJd
- LFwlOFk+eSugpK77dgrAB00ciXGZoUHY5YOjYQNDr/ZWXSUX56dChGth7gQ/jk4h5JuD9CyQu9
- 6dxoqnMxr7+S3iBUlKS6w4OC535LdFU7jevJTWjeqcAQsvDNn+K2gKByCZcMCbM+CQNAsBAcI5
- 5fIyMATLdLFIRsXtAsk7jUCXVa6SCW59Glg/NZbpBDm/2azzlcux9Ok4yoXeon4yjjD668azR1
- +j8=
+  by ob1.hgst.iphmx.com with ESMTP; 27 Sep 2021 12:16:05 +0800
+IronPort-SDR: jPghYG4XRX1eqDvm8UcfOxUZ58/6UlQWXGxLaPyUbfQ/8wJMsuOlBkYTVWscdeLHCjxMkysMXZ
+ rqctKyxTDWlqknINAvvfQ+2iYdM/rMu76MuWHdn3l0wcFcLv4VpxO747c17pjQv2uHco6tjmmS
+ 7gUmqzaF/GwAoeBXrNrWFdnp9JhUGrT0NXs18bY61f78BRbY9R6+hLwMKnW9OjFife1rpyoVI1
+ 2TxYvQbUCLLE3pbavCToK6jgziRvo8jBd1vTN3gCDQS7+YDSKpdYTsyaBLh0OuF/6KA2dTt3+w
+ N530bQdGAGTsn1GVG8eqkDsH
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Sep 2021 20:50:39 -0700
+IronPort-SDR: UR6L+3f6OhoRjEgrqvAjl/5iiHH0J4D8LybwQ3G2pVMb03ugFmzf5I4V3+VX64FsyVXR1DQ28y
+ W6FidthbIBoYZcYGPDg8G00I40GosxmtSlQQJwJxzrqzrTh8Fqx49ZNSv+EWtLHq3rj1uEKP0D
+ 5Yj00ZGOVYM2T4kybooLamO+mzMWlfS5MimZAlb4UhEktabf1ekv4ocEhor+mb0q/wOaYIQ4gS
+ u3r3AWVlKxTM2OU4anKOpswmXMGe9HPexmBasiWo+LLd19uXJ7AUrv60jewko1VLpAZ6+3qkEt
+ 9RA=
 WDCIronportException: Internal
-Received: from usg-ed-osssrv.wdc.com ([10.3.10.180])
-  by uls-op-cesaip01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Sep 2021 17:07:31 -0700
-Received: from usg-ed-osssrv.wdc.com (usg-ed-osssrv.wdc.com [127.0.0.1])
-        by usg-ed-osssrv.wdc.com (Postfix) with ESMTP id 4HHjcz2Fd5z1Rvlf
-        for <linux-btrfs@vger.kernel.org>; Sun, 26 Sep 2021 17:07:31 -0700 (PDT)
-Authentication-Results: usg-ed-osssrv.wdc.com (amavisd-new); dkim=pass
-        reason="pass (just generated, assumed good)"
-        header.d=opensource.wdc.com
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=
-        opensource.wdc.com; h=content-transfer-encoding:content-type
-        :in-reply-to:organization:from:references:to:content-language
-        :subject:user-agent:mime-version:date:message-id; s=dkim; t=
-        1632701250; x=1635293251; bh=LcCnIp41FYpUPbutH10Qgz5gB9rJfLeCeig
-        CM6UuucU=; b=Cqyqtr9A1M3e25QupM0VDtlkdMrMvkBIb8mVrWuq6sjLms9wuIg
-        kwYSp9mnDy/PIMOTqVX9rRxAyqvSu8ketk8uAl3YkGk3k7/TnoA3nD3JOaypbZq0
-        QEz80ZASraLlph5G9tiLUYA2tRR5Jn/5XdR8a/apfDSbVZutwjU9m8FZVU6p6la4
-        z4v3glaJ6r3ZLhu5ATN7y343c3oQSm2ehQH+c6nc0TgmYRN98/5pte60AD5zHhqi
-        Lkf6lEt86c3rdJg+iSrCecdxtstDGpTPWXNBlDlRTy0Jl1fZVCmoqHmTEhZOC2at
-        a7Ci/L+Z9M4YJlhgc9m4vrT/P00OJPKjYAg==
-X-Virus-Scanned: amavisd-new at usg-ed-osssrv.wdc.com
-Received: from usg-ed-osssrv.wdc.com ([127.0.0.1])
-        by usg-ed-osssrv.wdc.com (usg-ed-osssrv.wdc.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id vg2VuBErGcHW for <linux-btrfs@vger.kernel.org>;
-        Sun, 26 Sep 2021 17:07:30 -0700 (PDT)
-Received: from [10.89.85.1] (c02drav6md6t.dhcp.fujisawa.hgst.com [10.89.85.1])
-        by usg-ed-osssrv.wdc.com (Postfix) with ESMTPSA id 4HHjcy22Rlz1RvTg;
-        Sun, 26 Sep 2021 17:07:30 -0700 (PDT)
-Message-ID: <54911068-8a81-4201-bf1f-e8dcd196bb08@opensource.wdc.com>
-Date:   Mon, 27 Sep 2021 09:07:26 +0900
+Received: from 1r3v0f3.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.32])
+  by uls-op-cesaip02.wdc.com with ESMTP; 26 Sep 2021 21:16:06 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH 1/5] btrfs-progs: mkfs: do not set zone size on non-zoned mode
+Date:   Mon, 27 Sep 2021 13:15:50 +0900
+Message-Id: <20210927041554.325884-2-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.33.0
+In-Reply-To: <20210927041554.325884-1-naohiro.aota@wdc.com>
+References: <20210927041554.325884-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:91.0)
- Gecko/20100101 Thunderbird/91.1.1
-Subject: Re: seagate hm-smr issue
-Content-Language: en-US
-To:     Jingyun He <jingyun.ho@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <Naohiro.Aota@wdc.com>,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-References: <CAHQ7scUiLtcTqZOMMY5kbWUBOhGRwKo6J6wYPT5WY+C=cD49nQ@mail.gmail.com>
- <b57cace4-fc85-2a5f-e88b-d056b12a2a0b@opensource.wdc.com>
- <CAHQ7scWo2hF1r0k5_NG2kfAuy0yMxjrym866cGpxRf2Oc2cbMA@mail.gmail.com>
-From:   Damien Le Moal <damien.lemoal@opensource.wdc.com>
-Organization: Western Digital
-In-Reply-To: <CAHQ7scWo2hF1r0k5_NG2kfAuy0yMxjrym866cGpxRf2Oc2cbMA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2021/09/27 8:42, Jingyun He wrote:
-> Hi,
-> You are correct, for a WD/HGST HM-SMR disk, it takes about 15 mins to
-> mount a full disk.
-> 
-> But It takes about 2-3 hours for mounting a Seagate HM-SMR disk.
-> 
-> Have no idea why Seagate takes so loooooong time.
+Since zone_size() returns an emulated zone size even for non-zoned device,
+we cannot use cfg.zone_size to determine the device is zoned or not. Set
+zone_size = 0 on non-zoned mode.
 
-This is most likely due to a difference in the execution time of report zones
-commands.
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ mkfs/main.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-In any case, this will be resolved soon as we can cache a full disk zone report
-during the mount operation to avoid this slow per-zone report operation.
-
-> 
-> On Mon, Sep 27, 2021 at 7:13 AM Damien Le Moal
-> <damien.lemoal@opensource.wdc.com> wrote:
->>
->> On 2021/09/26 22:57, Jingyun He wrote:
->>> Hello,
->>> Btrfs works very well on WD/HGST disks, we got some Seagate HM-SMR
->>> disks recently,  model number is ST14000NM0428,
->>> mkfs.btrfs works fine, and I can mount it, and push data into disk.
->>> once we used up the capacity, and umount it. then we are unable to
->>> re-mount it again.
->>> The mount process will never end, the process just hangs there.
->>>
->>> Anybody can help me with this?
->>
->> +Naohiro and Johannes
->>
->> This is not a hang. Mount will just take a looooong time due to an inefficiency
->> in how block groups are checked: a single zone report zone command is issued per
->> block group, so with a disk almost full, that takes a long time (75000+zones
->> checked one by one). Naohiro is working on a fix for this.
->>
->>>
->>> Thanks.
->>>
->>
->>
->> --
->> Damien Le Moal
->> Western Digital Research
-
-
+diff --git a/mkfs/main.c b/mkfs/main.c
+index 6f3d6ce42c5d..b925c572b2b3 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1355,7 +1355,10 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	mkfs_cfg.features = features;
+ 	mkfs_cfg.runtime_features = runtime_features;
+ 	mkfs_cfg.csum_type = csum_type;
+-	mkfs_cfg.zone_size = zone_size(file);
++	if (zoned)
++		mkfs_cfg.zone_size = zone_size(file);
++	else
++		mkfs_cfg.zone_size = 0;
+ 
+ 	ret = make_btrfs(fd, &mkfs_cfg);
+ 	if (ret) {
 -- 
-Damien Le Moal
-Western Digital Research
+2.33.0
+

@@ -2,93 +2,66 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91AA4C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 05:58:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E9DE1C433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 06:22:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7D1016108F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 05:58:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC94F61157
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 06:22:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239472AbhI1F7k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Sep 2021 01:59:40 -0400
-Received: from mail.kernel.org ([198.145.29.99]:49678 "EHLO mail.kernel.org"
+        id S238934AbhI1GXt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Sep 2021 02:23:49 -0400
+Received: from mail.kernel.org ([198.145.29.99]:58870 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S239261AbhI1F6n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Sep 2021 01:58:43 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 1EC0161288;
-        Tue, 28 Sep 2021 05:56:47 +0000 (UTC)
+        id S234207AbhI1GXt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Sep 2021 02:23:49 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id C24336113E;
+        Tue, 28 Sep 2021 06:22:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1632808607;
-        bh=H8gT73qWs9QvZDEwxm1QJLZLlOdawtOYwPH/pJwvbgg=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=KMpmrzUIr/zqVxrujj2ekmDk1E2yRdjQCsXLdovYvyvhfyWn4Fnf70xICpfvPlk7p
-         h5vi1Em3C/exHsoHRVlC3bQhpjwOugkgpPn9gGdUsiJsekkd1hE+DNGl5vEBW5dqdA
-         ukIpsTuf38Lj8bN1jYcQ8J0yRl5Xd9Wtsj3r5oiQxcPkYjPd8zGhN/n8cjfFfC9vJa
-         E9it6BWRK2J4dVO/ASfvrk+/Wq+fPh5y805+qj1A/P71yCfTIxGDPo2XEh9X6uxBWy
-         yx9uHWfJUjwCUSYDHoWZFaXWETrvybI3DlTCjtGJxa4k/OdLa7wXNMNSQ+ORbFaU6z
-         ihfVBEPDY2vdA==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.10 05/23] btrfs: replace BUG_ON() in btrfs_csum_one_bio() with proper error handling
-Date:   Tue, 28 Sep 2021 01:56:26 -0400
-Message-Id: <20210928055645.172544-5-sashal@kernel.org>
-X-Mailer: git-send-email 2.33.0
-In-Reply-To: <20210928055645.172544-1-sashal@kernel.org>
-References: <20210928055645.172544-1-sashal@kernel.org>
+        s=k20201202; t=1632810128;
+        bh=AMLm/4tUn9CETUOijozi+fIMLnd5VIlwNyrW/zmpnZU=;
+        h=Date:From:To:Cc:Subject:From;
+        b=sJ5D8lYOcyR8XkQ3XWE75T2CMzxcrtyyKrFxVSHB9GDgchWMKvVoagXfCKMR77t4T
+         tNZaP15z3PZPZmZFq+3GJ5B666w32wSS4amzH8FmWHk9wed/YMpW84aGIjKqihHAQm
+         qen+u0Elu7nMuyyb7132HMqy8nDL9Llziia5MIrLyfJWPYSi6jjYL4KRfHpJksfZhd
+         oqLiZoy0uqOf+JKoCIm8XANT2vigPSv9BBi0fhHUKHHNm1wbys35ca6XTdVwPl3IkR
+         4DzOtMZC6MyAUJ5GF3iueMgyBeVvaD/p7MF4X9Y2//IxGZnaroaeE/J0FiPIb6A1TI
+         GXBH8lOUK2bCA==
+Date:   Mon, 27 Sep 2021 23:22:07 -0700
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Boris Burkov <boris@bur.io>
+Subject: [GIT PULL] fsverity fix for 5.15-rc4
+Message-ID: <YVK0jzJ/lt97xowQ@sol.localdomain>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+The following changes since commit e4e737bb5c170df6135a127739a9e6148ee3da82:
 
-[ Upstream commit bbc9a6eb5eec03dcafee266b19f56295e3b2aa8f ]
+  Linux 5.15-rc2 (2021-09-19 17:28:22 -0700)
 
-There is a BUG_ON() in btrfs_csum_one_bio() to catch code logic error.
-It has indeed caught several bugs during subpage development.
-But the BUG_ON() itself will bring down the whole system which is
-an overkill.
+are available in the Git repository at:
 
-Replace it with a WARN() and exit gracefully, so that it won't crash the
-whole system while we can still catch the code logic error.
+  https://git.kernel.org/pub/scm/fs/fscrypt/fscrypt.git tags/fsverity-for-linus
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/file-item.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+for you to fetch changes up to 80f6e3080bfcf865062a926817b3ca6c4a137a57:
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 48a2ea6d7092..2de1d8247494 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -568,7 +568,18 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
- 
- 		if (!ordered) {
- 			ordered = btrfs_lookup_ordered_extent(inode, offset);
--			BUG_ON(!ordered); /* Logic error */
-+			/*
-+			 * The bio range is not covered by any ordered extent,
-+			 * must be a code logic error.
-+			 */
-+			if (unlikely(!ordered)) {
-+				WARN(1, KERN_WARNING
-+			"no ordered extent for root %llu ino %llu offset %llu\n",
-+				     inode->root->root_key.objectid,
-+				     btrfs_ino(inode), offset);
-+				kvfree(sums);
-+				return BLK_STS_IOERR;
-+			}
- 		}
- 
- 		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info,
--- 
-2.33.0
+  fs-verity: fix signed integer overflow with i_size near S64_MAX (2021-09-22 10:56:34 -0700)
 
+----------------------------------------------------------------
+
+Fix an integer overflow when computing the Merkle tree layout of
+extremely large files, exposed by btrfs adding support for fs-verity.
+
+----------------------------------------------------------------
+Eric Biggers (1):
+      fs-verity: fix signed integer overflow with i_size near S64_MAX
+
+ fs/verity/enable.c | 2 +-
+ fs/verity/open.c   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)

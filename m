@@ -2,218 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97A0EC433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 12:37:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68439C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 14:59:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 714C7611CA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 12:37:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 501C76101A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 14:59:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240565AbhI1MjQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Sep 2021 08:39:16 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:54904 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240526AbhI1MjP (ORCPT
+        id S241434AbhI1PBf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Sep 2021 11:01:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59604 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S241265AbhI1PBf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Sep 2021 08:39:15 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 2B2292020D;
-        Tue, 28 Sep 2021 12:37:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1632832652; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=and9OUsHOkZzh9uebY2xZ3KhJqUc0TtsR1SA265fTh0=;
-        b=krogiX13cuq5uaaj3o92rFwEH+ga1CwsQhnOJL+CEKbDEsy7RRDb4xUxxMi5E3wnDAmSMU
-        V6noQsY+zbhzdKdkn4ZiGBY1fT7w0SGIUD6fqunV4jLFhTEoYK3ouH3788bDOqSMwJRhlD
-        F6+Q2IrQNNzAud4PoEqiSpjpKwSrTkg=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id F044C13A82;
-        Tue, 28 Sep 2021 12:37:31 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 9KUSOIsMU2GLCwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Tue, 28 Sep 2021 12:37:31 +0000
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 1/2] btrfs-progs: Ignore path device during device scan
-Date:   Tue, 28 Sep 2021 15:37:29 +0300
-Message-Id: <20210928123730.393551-1-nborisov@suse.com>
-X-Mailer: git-send-email 2.25.1
+        Tue, 28 Sep 2021 11:01:35 -0400
+Received: from mail-lf1-x130.google.com (mail-lf1-x130.google.com [IPv6:2a00:1450:4864:20::130])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F479C06161C
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 07:59:55 -0700 (PDT)
+Received: by mail-lf1-x130.google.com with SMTP id y28so93230246lfb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 07:59:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=9fInY95no8O0JEStBsdbpcymzt287B66Fcqaxhkug+c=;
+        b=FfNByYfUegGHsII+I3f5TVFbSZkKQ34sMp4OH9feQ01FDoaO1JVJtg1jZ8hbAyyE3h
+         +o/QtI4Gycrr4pn0Wb6Q9HuBgnVKu37zPHCYNw6PKfpAmVP4trKhCICqVexk61OjymcM
+         ajE+rrWyYiEaYRePBmCieqMzw5ekh1Vxny2gQ=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=9fInY95no8O0JEStBsdbpcymzt287B66Fcqaxhkug+c=;
+        b=xzgdLLD/FbkhNr43oC0x7Q9wBlIOSAUsG7wKOYO4VVJQxedOWIPOPHJhEl2gsjro50
+         Pupj632PCIeFoKQU4V63h1s1XQ4Q3X47jHEIVi0q3gawBBh8kAsPY5CoxDtO6+fPj6fK
+         4qpluGEoDSOwVzNuzFDiHflw4MvtYxfnICB58V7H+juaX7TwH/7IXN7er7INfbIshMyj
+         RwMaQmaF3gelWRo+KJIZEd25CUh21gwPb2ZQrxZ7JBIdzX4nR7WA8Rnxb+uWjoUe98Mg
+         pjvT128Zb+z7FieetfWPiyaarlztsEsvYGiweTkvlIsFfYdavv312HrQOy9Vw4i7uGBP
+         l/ig==
+X-Gm-Message-State: AOAM533XLC6j1a404vikCFxZoGK2hI7On+kZOGo0kx99I7jd2gcJMJqW
+        PTsR3Mb7s3jGYK/r4snPM1zvJO7ncF0dK3px
+X-Google-Smtp-Source: ABdhPJzhdOCeTJScf1uPrtcu+xAp88+ae82nfDTQUhES0EsyxkqtbCnp54aNNZYpGRHc/xzB+aQuQg==
+X-Received: by 2002:a2e:8011:: with SMTP id j17mr397854ljg.145.1632841189241;
+        Tue, 28 Sep 2021 07:59:49 -0700 (PDT)
+Received: from mail-lf1-f48.google.com (mail-lf1-f48.google.com. [209.85.167.48])
+        by smtp.gmail.com with ESMTPSA id v28sm1945338lfi.22.2021.09.28.07.59.48
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 28 Sep 2021 07:59:48 -0700 (PDT)
+Received: by mail-lf1-f48.google.com with SMTP id x27so94123383lfu.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 07:59:48 -0700 (PDT)
+X-Received: by 2002:a2e:3309:: with SMTP id d9mr387530ljc.249.1632841188299;
+ Tue, 28 Sep 2021 07:59:48 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <YVK0jzJ/lt97xowQ@sol.localdomain>
+In-Reply-To: <YVK0jzJ/lt97xowQ@sol.localdomain>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Tue, 28 Sep 2021 07:59:32 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wibMN-Bixbu8zttUoV1ixoVRNk+jyAPEmsVdBe1GFoB5Q@mail.gmail.com>
+Message-ID: <CAHk-=wibMN-Bixbu8zttUoV1ixoVRNk+jyAPEmsVdBe1GFoB5Q@mail.gmail.com>
+Subject: Re: [GIT PULL] fsverity fix for 5.15-rc4
+To:     Eric Biggers <ebiggers@kernel.org>
+Cc:     linux-fscrypt@vger.kernel.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Boris Burkov <boris@bur.io>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs-progs will happily enumerate any device which has a
-btrfs filesystem on it. For the majority of use cases that's fine and
-there haven't been any problems with that. However, there was a recent
-report that in multipath scenario when running "btrfs fi show" after a
-path flap instead of the multipath device being show the path device is
-shown. So a multipath filesystem might look like:
+On Mon, Sep 27, 2021 at 11:22 PM Eric Biggers <ebiggers@kernel.org> wrote:
+>
+> Fix an integer overflow when computing the Merkle tree layout of
+> extremely large files, exposed by btrfs adding support for fs-verity.
 
-Label: none  uuid: d3c1261f-18be-4015-9fef-6b35759dfdba
-	Total devices 1 FS bytes used 192.00KiB
-	devid    1 size 10.00GiB used 536.00MiB path /dev/mapper/3600140501cc1f49e5364f0093869c763
+I wonder if 'i_size' should be u64. I'm not convinced people think
+about 'loff_t' being signed - but while that's required for negative
+lseek() offsets, I'm not sure it makes tons of sense for an inode
+size.
 
-/dev/mapper/xxx can actually be backed by an arbitrary number of path,
-which in turn are presented to the system as ordinary scsi devices i.e
-/dev/sdd. If a path flaps and a user re-runs 'btrfs fi show' the output
-would look like:
+Same goes for f_pos, for that matter.
 
-Label: none  uuid: d3c1261f-18be-4015-9fef-6b35759dfdba
-	Total devices 1 FS bytes used 192.00KiB
-	devid    1 size 10.00GiB used 536.00MiB path /dev/sdd
+But who knows what games people have played with magic numbers (ie
+"-1") internally, or where they _want_ signed compares. So it's
+certainly not some obvious trivial fix.
 
-Turns out the output of this command is consumed by libraries and the
-presence of a path device rather than the actual multipath one can cause
-issues.
+Pulled.
 
-Fix this by relying on the fact that path devices are tagged with the
-DM_MULTIPATH_DEVICE_PATH attribute by the respective udev scripts. In
-order to access it an optional dependency on libudev is added, if the
-library can't be found then device enumeration will continue working
-as it was before the commit. Since libudev doesn't have static library
-for now support for this behavior in case of static builds is going to
-be disabled. Fallback code for static builds will come in a future
-commit.
-
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- Makefile             |  2 +-
- Makefile.inc.in      |  2 +-
- common/device-scan.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
- configure.ac         |  9 +++++++++
- 4 files changed, 55 insertions(+), 2 deletions(-)
-
-diff --git a/Makefile b/Makefile
-index 93fe4c2b3e08..e96f66a36b46 100644
---- a/Makefile
-+++ b/Makefile
-@@ -129,7 +129,7 @@ LIBS = $(LIBS_BASE) $(LIBS_CRYPTO)
- LIBBTRFS_LIBS = $(LIBS_BASE) $(LIBS_CRYPTO)
- 
- # Static compilation flags
--STATIC_CFLAGS = $(CFLAGS) -ffunction-sections -fdata-sections
-+STATIC_CFLAGS = $(CFLAGS) -ffunction-sections -fdata-sections -DSTATIC_BUILD
- STATIC_LDFLAGS = -static -Wl,--gc-sections
- STATIC_LIBS = $(STATIC_LIBS_BASE)
- 
-diff --git a/Makefile.inc.in b/Makefile.inc.in
-index 9f49337147b8..c995aef97219 100644
---- a/Makefile.inc.in
-+++ b/Makefile.inc.in
-@@ -27,7 +27,7 @@ CRYPTO_CFLAGS = @GCRYPT_CFLAGS@ @SODIUM_CFLAGS@ @KCAPI_CFLAGS@
- SUBST_CFLAGS = @CFLAGS@
- SUBST_LDFLAGS = @LDFLAGS@
- 
--LIBS_BASE = @UUID_LIBS@ @BLKID_LIBS@ -L. -pthread
-+LIBS_BASE = @UUID_LIBS@ @BLKID_LIBS@ @LIBUDEV_LIBS@ -L. -pthread
- LIBS_COMP = @ZLIB_LIBS@ @LZO2_LIBS@ @ZSTD_LIBS@
- LIBS_PYTHON = @PYTHON_LIBS@
- LIBS_CRYPTO = @GCRYPT_LIBS@ @SODIUM_LIBS@ @KCAPI_LIBS@
-diff --git a/common/device-scan.c b/common/device-scan.c
-index b5bfe844104b..2ed0e34d3664 100644
---- a/common/device-scan.c
-+++ b/common/device-scan.c
-@@ -14,6 +14,10 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
-+#ifdef STATIC_BUILD
-+#undef HAVE_LIBUDEV
-+#endif
-+
- #include "kerncompat.h"
- #include <sys/ioctl.h>
- #include <stdlib.h>
-@@ -25,6 +29,10 @@
- #include <dirent.h>
- #include <blkid/blkid.h>
- #include <uuid/uuid.h>
-+#ifdef HAVE_LIBUDEV
-+#include <sys/stat.h>
-+#include <libudev.h>
-+#endif
- #include "kernel-lib/overflow.h"
- #include "common/path-utils.h"
- #include "common/device-scan.h"
-@@ -364,6 +372,37 @@ void free_seen_fsid(struct seen_fsid *seen_fsid_hash[])
- 	}
- }
- 
-+#ifdef HAVE_LIBUDEV
-+static bool is_path_device(char *device_path)
-+{
-+	struct udev *udev = NULL;
-+	struct udev_device *dev = NULL;
-+	struct stat dev_stat;
-+	const char *val;
-+	bool ret = false;
-+
-+	if (stat(device_path, &dev_stat) < 0)
-+		return false;
-+
-+	udev = udev_new();
-+	if (!udev)
-+		goto out;
-+
-+	dev = udev_device_new_from_devnum(udev, 'b', dev_stat.st_rdev);
-+	if (!dev)
-+		goto out;
-+
-+	val = udev_device_get_property_value(dev, "DM_MULTIPATH_DEVICE_PATH");
-+	if (val && atoi(val) > 0)
-+		ret = true;
-+out:
-+	udev_device_unref(dev);
-+	udev_unref(udev);
-+
-+	return ret;
-+}
-+#endif
-+
- int btrfs_scan_devices(int verbose)
- {
- 	int fd = -1;
-@@ -394,6 +433,11 @@ int btrfs_scan_devices(int verbose)
- 		/* if we are here its definitely a btrfs disk*/
- 		strncpy_null(path, blkid_dev_devname(dev));
- 
-+#ifdef HAVE_LIBUDEV
-+		if (is_path_device(path))
-+			continue;
-+#endif
-+
- 		fd = open(path, O_RDONLY);
- 		if (fd < 0) {
- 			error("cannot open %s: %m", path);
-diff --git a/configure.ac b/configure.ac
-index 038c2688421c..d0ceb0d70d16 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -304,6 +304,15 @@ PKG_STATIC(UUID_LIBS_STATIC, [uuid])
- PKG_CHECK_MODULES(ZLIB, [zlib])
- PKG_STATIC(ZLIB_LIBS_STATIC, [zlib])
- 
-+PKG_CHECK_EXISTS([libudev], [pkg_config_libudev=yes], [pkg_config_libudev=no])
-+if test "x$pkg_config_libudev" = xyes; then
-+	PKG_CHECK_MODULES([LIBUDEV], [libudev])
-+	AC_DEFINE([HAVE_LIBUDEV], [1], [Define to 1 if libudev is available])
-+else
-+	AC_MSG_CHECKING([for LIBUDEV])
-+	AC_MSG_RESULT([no])
-+fi
-+
- AC_ARG_ENABLE([zstd],
- 	AS_HELP_STRING([--disable-zstd], [build without zstd support]),
- 	[], [enable_zstd=yes]
--- 
-2.17.1
-
+            Linus

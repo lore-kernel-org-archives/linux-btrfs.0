@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04112C07E95
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 05:55:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E5C3C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 05:58:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D2E7861246
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 05:55:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2681B611F0
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Sep 2021 05:58:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238938AbhI1F5K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Sep 2021 01:57:10 -0400
-Received: from mail.kernel.org ([198.145.29.99]:47502 "EHLO mail.kernel.org"
+        id S239269AbhI1F7j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Sep 2021 01:59:39 -0400
+Received: from mail.kernel.org ([198.145.29.99]:49038 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S238897AbhI1F5H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Sep 2021 01:57:07 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3967E611CA;
-        Tue, 28 Sep 2021 05:55:28 +0000 (UTC)
+        id S239265AbhI1F6n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 28 Sep 2021 01:58:43 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id D0D4D6135A;
+        Tue, 28 Sep 2021 05:56:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1632808528;
-        bh=ocHDUoH0RhXf7AGDrf7+ILi7srsnNByBjdiGUOU3nu0=;
+        s=k20201202; t=1632808607;
+        bh=t8N8NGuLBdh0yHwm9J2hKJ4Bn3Xes7NfZRyFZ4a/DW0=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=WU0RqoXbtXVm1kLSjvz42aR8TYI2fIs8qFIgHudn4lu6Y3yODEPLLkybYybN/6729
-         T29gH3976BYduxusMYldzIwaeRdATYRfP43xMvn39hgy6jyHHWEq6QeqWNZyeb5NOi
-         tx8FX79x6fU4M2MMqeTIbE7JkdHPPGhXA84BsDGNIVWj/vWAaC095i6DaYTV5JzUEf
-         xuuwHLApuyiG57oC3Sg46qXkzZoxKCWcYlTxS6UThJJNmcbllRzrDtaJmHucoC7R+b
-         k3n3LHzSXJ9VPT21egUkkq/F2spn+tdVd5pQyEv6+zpzXwRcVsp8lmYalhwH9YquSy
-         rqRiO3TofvHcA==
+        b=AitPtZB8T51GgMyWnwDsOKMlYnYiOMFnmMmaqfHx+sDhjAnDxV2pQTW4hPzit+PLC
+         ciZmaS1EItLY9y8XJjqv1FEN5X22JQjdjMfUebuSRKG7rvDbw0ob0S/X013msNV3uR
+         Zt8D2vQ8zHHQ7bx+C2MSiSnb+6+RUli0cSkZ7zU6UZbgsXMh1NTapM0Za+kyfyt7mL
+         zSJGQhpTcEW8IPvlW8G1p42bAl5uF7bO5vTGEbWJaC8idlztaM8jN0ulhsmiVcVymy
+         6UUbLgU8Lgt2J2J497MTdNXwKZAVmB8EtcHANV8Au85LOL5GUg4BdvU9tKh8gWGyLu
+         wXRSfAvLrve2g==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.14 07/40] btrfs: fix mount failure due to past and transient device flush error
-Date:   Tue, 28 Sep 2021 01:54:51 -0400
-Message-Id: <20210928055524.172051-7-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 06/23] btrfs: fix mount failure due to past and transient device flush error
+Date:   Tue, 28 Sep 2021 01:56:27 -0400
+Message-Id: <20210928055645.172544-6-sashal@kernel.org>
 X-Mailer: git-send-email 2.33.0
-In-Reply-To: <20210928055524.172051-1-sashal@kernel.org>
-References: <20210928055524.172051-1-sashal@kernel.org>
+In-Reply-To: <20210928055645.172544-1-sashal@kernel.org>
+References: <20210928055645.172544-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -95,10 +95,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 13 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 682416d4edef..19c780242e12 100644
+index 509811aabb3f..bd4f0581c7c3 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -1149,6 +1149,19 @@ static void btrfs_close_one_device(struct btrfs_device *device)
+@@ -1147,6 +1147,19 @@ static void btrfs_close_one_device(struct btrfs_device *device)
  	atomic_set(&device->dev_stats_ccnt, 0);
  	extent_io_tree_release(&device->alloc_state);
  

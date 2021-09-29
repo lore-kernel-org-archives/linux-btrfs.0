@@ -2,141 +2,140 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5018DC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Sep 2021 02:28:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D3A3C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Sep 2021 05:41:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 369C360EFF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Sep 2021 02:28:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3A8E061361
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Sep 2021 05:41:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243718AbhI2C3z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Sep 2021 22:29:55 -0400
-Received: from relay.wolfram.com ([140.177.205.37]:52620 "EHLO
-        relay-ext.wolfram.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243793AbhI2C3x (ORCPT
+        id S244264AbhI2FnC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 29 Sep 2021 01:43:02 -0400
+Received: from de-smtp-delivery-102.mimecast.com ([194.104.109.102]:34435 "EHLO
+        de-smtp-delivery-102.mimecast.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S244246AbhI2FnC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Sep 2021 22:29:53 -0400
-X-Greylist: delayed 308 seconds by postgrey-1.27 at vger.kernel.org; Tue, 28 Sep 2021 22:29:53 EDT
-Received: from relay-10-128.wolfram.com (relay.wolfram.com [10.128.2.101])
-        by relay-ext.wolfram.com (Postfix) with ESMTPS id 33FDE15D8
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 21:23:02 -0500 (CDT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 relay-ext.wolfram.com 33FDE15D8
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=wolfram.com; s=relay;
-        t=1632882182; bh=wMe3AUjmRcDANqBjDP9mhW0Y0NmCBOusH8ATA0MPtt8=;
-        h=Date:From:Reply-To:To:From;
-        b=irvrwIFxM7Ip5e7ElIcwIBDGIN462Z3UqYID0PXniKvJteRU0rGujAX9+9uH7Z3tH
-         31xJ7J0y3PTxwTIXZh+J8vAQSfe3rxSwgX+FYK2OdqnnMjw41ayCx6cXordWvO/Wv2
-         1Gi/+/rSkeqXKQNJMq1LMi7xy6cOGXXiJkwg2/kY=
-Received: from wrimail05.wolfram.com (wrimail05.wolfram.com [10.128.1.216])
-        by relay-10-128.wolfram.com (Postfix) with ESMTPS id 26AB2300053
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 21:23:02 -0500 (CDT)
-Received: from wrimail05.wolfram.com (localhost [127.0.0.1])
-        by wrimail05.wolfram.com (Postfix) with ESMTPS id 16F661A0AB6
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 21:23:02 -0500 (CDT)
-Received: from localhost (localhost [127.0.0.1])
-        by wrimail05.wolfram.com (Postfix) with ESMTP id E75161A0B0F
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 21:23:01 -0500 (CDT)
-DKIM-Filter: OpenDKIM Filter v2.10.3 wrimail05.wolfram.com E75161A0B0F
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=wolfram.com;
-        s=E3ED0494-3FFA-11EB-8895-C5FFDA13CE33; t=1632882181;
-        bh=zq/eh1t3HNZb6Le5X9oaHTfu+b7Qh3X2OZ+nAXX5Ag0=;
-        h=Date:From:To:Message-ID:MIME-Version;
-        b=nJrcTUOnyyC3ZKrS4luUQEfD+kTpxCP7eoMlYs8NNPv+uE1fYOEFbhyuMLdlZcNjt
-         n6qCu+wmS99W//MZnqbYfLjwP+YCuoSwxczCq+N/BzfI9e9sVPhXnnvN3XW5Mhy/F6
-         Cw5bOP8TQp6jTFJxtJnz0/Fll6bOghVELIUmp0eBW9/TI1QsJIcKEBm7ZidHa+r+ZX
-         XFAjZuNlrgknTw8w9Cdm49nDC0RTXwTcx4e4Q4SEuA457gUY/inoH6w4m71d9dMx71
-         CVWl5oC3kV51AfLVrMjLWMbB3FrdvY6pUjY9EFsHdP1QhgcGrkah4SLjYiNTo2/VTc
-         E3GmlXSFZDclQ==
-Received: from wrimail05.wolfram.com ([127.0.0.1])
-        by localhost (wrimail05.wolfram.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id psgdqwzF-u3W for <linux-btrfs@vger.kernel.org>;
-        Tue, 28 Sep 2021 21:23:01 -0500 (CDT)
-Received: from wrimail05.wolfram.com (wrimail05.wolfram.com [10.128.1.216])
-        by wrimail05.wolfram.com (Postfix) with ESMTP id D3B331A0AB6
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Sep 2021 21:23:01 -0500 (CDT)
-Date:   Tue, 28 Sep 2021 21:23:01 -0500 (CDT)
-From:   Brandon Heisner <brandonh@wolfram.com>
-Reply-To: brandonh@wolfram.com
-To:     linux-btrfs@vger.kernel.org
-Message-ID: <70668781.1658599.1632882181840.JavaMail.zimbra@wolfram.com>
-Subject: btrfs metadata has reserved 1T of extra space and balances don't
- reclaim it
+        Wed, 29 Sep 2021 01:43:02 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=mimecast20200619;
+        t=1632894080;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=Z5prIbsHlk8hir4Fu5TmYsEobtAF36P0IaekN3Bjyns=;
+        b=fS9lVKNrsbeObYA+ZPK1msVetu83oiQ6WcQ0ZNPulXmSAP+4FDQ4shv9pF2X5L7nCzTiNY
+        B6M6+KhWeZy5Gn4EmY8aozlfdXOuEAoRA7TZ0r3O0VTBOTpBjsxjqRhp0sP1QtauyJFkth
+        N0pA5UwbPG4EatQnakuPiBTquGjSMoc=
+Received: from EUR05-AM6-obe.outbound.protection.outlook.com
+ (mail-am6eur05lp2106.outbound.protection.outlook.com [104.47.18.106])
+ (Using TLS) by relay.mimecast.com with ESMTP id
+ de-mta-35-ClqbkptcOl6kIIuanmdUFQ-1; Wed, 29 Sep 2021 07:41:19 +0200
+X-MC-Unique: ClqbkptcOl6kIIuanmdUFQ-1
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=FZdVnhyaIclFHPThXiHgpmHewizRyu2St2ZXMmVog+LaapX9YXPEW3C/4vkzEmT6A8IdDwcAiD2Af9TSouR6eb9FaQ17tkbZ/xesWQJw89kXHCJSNKaZva3ssNV3WSuoPGI/DqdvZmJEH7Ckrca4ZMJey4W3Es5jrZLlHeOnwuX3RrbX8xHCEXUpEQPPrAB0/k9pITBQ3sLXn21qdmPgRWK7jvxQ7b7a+Ba1YBMEwRSpU67nJqJTYlmQFiHspR+Hzqta13aWeTBxx/uzSAh75/ir7Ojtk9/8kMrUUyrHznLxtheRgJe2QSDsFH1LH0jS3LRtNJnjCF8o4kLlTIpHsQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901; h=From:Date:Subject:Message-ID:Content-Type:MIME-Version;
+ bh=Z5prIbsHlk8hir4Fu5TmYsEobtAF36P0IaekN3Bjyns=;
+ b=n2OGecy4GulmMN3Jgr5QK2vxovaX1x7fx6CVqfsuT9A7jyM+ohewDJ5HPpmhEA0WMunVSfmr9/mC1cHVRyJOfcCFRvr+JhqhtIYUM1mAhQlrT59LihRuDKKj7Ux+xgEzHmBBAVCJbga+p+UW2lRZ5AmonSrVuGhJGNIgXXDc8BzeTgjInLylAZ6AoveF4vP+RzVTLXiOHtJhkqeVk654MjVbhH5g4FIQbesiHUbLMV9QX2Wr05rAIeyhzmBIIdf2K3hCbTvss8cfN12raTdQnm+MMd4cwUPs4Qv+LuLjkkC4jbOUBEABPa3wEk5LQ9tPnNLUhZUTacD0VP1DDlnpnw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=suse.com; dmarc=pass action=none header.from=suse.com;
+ dkim=pass header.d=suse.com; arc=none
+Authentication-Results: gnu.org; dkim=none (message not signed)
+ header.d=none;gnu.org; dmarc=none action=none header.from=suse.com;
+Received: from AM7PR04MB6821.eurprd04.prod.outlook.com (2603:10a6:20b:105::22)
+ by AM6PR04MB5703.eurprd04.prod.outlook.com (2603:10a6:20b:a3::22) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4544.15; Wed, 29 Sep
+ 2021 05:41:18 +0000
+Received: from AM7PR04MB6821.eurprd04.prod.outlook.com
+ ([fe80::78e1:ab2a:f283:d097]) by AM7PR04MB6821.eurprd04.prod.outlook.com
+ ([fe80::78e1:ab2a:f283:d097%4]) with mapi id 15.20.4566.015; Wed, 29 Sep 2021
+ 05:41:18 +0000
+Message-ID: <d7af6d9d-7178-f950-1934-3179e001e291@suse.com>
+Date:   Wed, 29 Sep 2021 13:41:09 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.1.1
+To:     Grub-devel@gnu.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Language: en-US
+From:   Qu Wenruo <wqu@suse.com>
+Subject: About the code style requirement
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: SJ0PR03CA0131.namprd03.prod.outlook.com
+ (2603:10b6:a03:33c::16) To AM7PR04MB6821.eurprd04.prod.outlook.com
+ (2603:10a6:20b:105::22)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-X-Originating-IP: [10.99.100.5]
-X-Mailer: Zimbra 8.8.15_GA_4125 (ZimbraWebClient - GC94 (Win)/8.8.15_GA_4059)
-Thread-Index: 8d6NZnAtCHL+Yph8ICQG0AJ1YSa8/g==
-Thread-Topic: btrfs metadata has reserved 1T of extra space and balances don't reclaim it
+Received: from [0.0.0.0] (149.28.201.231) by SJ0PR03CA0131.namprd03.prod.outlook.com (2603:10b6:a03:33c::16) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4566.14 via Frontend Transport; Wed, 29 Sep 2021 05:41:16 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: ebe577dc-ee88-4885-ba7d-08d9830bc24a
+X-MS-TrafficTypeDiagnostic: AM6PR04MB5703:
+X-Microsoft-Antispam-PRVS: <AM6PR04MB5703648758877D211E51F74FD6A99@AM6PR04MB5703.eurprd04.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:8882;
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: hlVZ9P602YMCHZ+plqsDXiRvXTcKEPKtAi4oCrxCKtVj9uGqea32lvE97KRc9EfKIAP8HcvrZ3/ufcVjO3m/9yw5dO+oJal6hbOpLPv1ScbfUw5qHEJHonSKVRs0kxOav7pBGYBgukJp37zoPn0dB+YmBAQ9siJVODpdOmJhDZkPY+a+plpFRbc/BqBHNUCEP526PN2/rkkLUFRZBRK9D3UG/eJM8egdJTygjdgOZsSUNL4u7UmisHqr4+42w8VzNdBz9is+y22kH8KHG4dsTSCF12R2sJbf22DaQa1BU9cLrTCMwV4m2WvsZ1I9z6nEjoj/g9JO2dmtGB/2G9PJZrUY4w/DutRnoxpSMyWjY4vK1UdANIXYbHyBQOexGNcM3oV6+jQbeuCLTSQPGQHjfJ2kC7Euk6CV6BzjGUET+VSAg4TmecLIxC3GOKm99fwNTdERWJU1O35HLErIgWTSPRQezEJhL/m6ER1sgz2FtiLK1iOLE8s5JyRnH8YGuJpvSTzV11YnfJTqNf9sr2XbPfaVCktAPQ08FzOCQhkYGmMJ6rGYGyI9f25tAm5X1RSwOYGOw3vpdHv8jDVX+kR2Xdhg9PIqaOv3GzLgtW6xXLOCWAvIG7fwJzyLLOUhMRHRuNxnnSejf8/Ks7GufMZhPp0w1f1/+FUTenuXhidwzYYbqct7GZCVnWULLSaAvy7Fl5zzfD9TP/0b0mPaAUSC6lNTGhKjQ6nuDoP/Uqq/Z27n1YSwGvUzBN45U8PG3xfA
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:AM7PR04MB6821.eurprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(366004)(4744005)(6666004)(5660300002)(31696002)(8936002)(36756003)(8676002)(26005)(2906002)(83380400001)(186003)(2616005)(31686004)(508600001)(6486002)(66556008)(16576012)(66476007)(6706004)(6916009)(38100700002)(316002)(956004)(86362001)(66946007)(78286007)(43740500002)(45980500001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?U1JmcWpQYXFFRXRBMmYwL2xoR1lkcTlVMEpMYjRYUVl0WVcxTVNTa2JMNGhr?=
+ =?utf-8?B?aGJyR2dLQUlRUkVLWnRhYmFZdHRYNUdXZko5WGxxYURWMEx1c1AzZXdhTjN4?=
+ =?utf-8?B?Nnc1WEJFbVpkaE1TQWtzQ0dRRHhOWGdYN1NsZUxCZnVPZ0ozVkxuL2NDbFBn?=
+ =?utf-8?B?NjZCYS83U2MyeTNYMWhTYXR0WUZyK1ZhNEV3N0krSzV4M3VkQ3EzTTVKUW9O?=
+ =?utf-8?B?N2JSbHRzZTJtK3VYS3UvajdOZXI3SkJoSFhNS2MvUnJXQWlMNU5SWGhjUnVi?=
+ =?utf-8?B?NHpHclhCeEZrRG13b1hIMWp0bnBOa2t6SXlra05ZRXVNSEVSNjVibjE1Zktl?=
+ =?utf-8?B?NmxZNDM4Qm02MGFoWTVXeTQ5TC9TS0dFTmhzdXZQUUx2RDFiaWlwOE9HbFph?=
+ =?utf-8?B?ait6OU9VUnBKZWtjWTF3cGtqR2Y2KzhndmJnLzE2aHZ6b2FVVzgvVU9wS3oy?=
+ =?utf-8?B?T3lwWEk1V3RON2UxSzFTK2JqZURyZGhta2JCTHcrMW5jd01hNVNhS3RYZFlV?=
+ =?utf-8?B?TW1TU1JWWnVkNC96MXluQjg1bnp6QlZqSFdqRnZaZkdGZUZTMnFseVB0TDI0?=
+ =?utf-8?B?Z1R4MlV5VnU1K1Z5ZGx1d0JXdWFzSFJ5cHhHRTF5SEhEMnlUT0pwUGduV1Yw?=
+ =?utf-8?B?UDNLR3Q1ODhUQnMzdlYrRXVoSzgwSm00cCtHVWl6SDRSb29Zd3VhS3puYXhk?=
+ =?utf-8?B?aE9SMkVGdkFYRy90TUQycVpNZ0NId0ltOXROYW53d2hZRDJ0OHRWK1NEYTdS?=
+ =?utf-8?B?UVA5S3BBT0NlbGk5WUtPRTE5NExLZTBTZ2dKS21RVGlpdDhtZHVvSkQ2a3l0?=
+ =?utf-8?B?K2lHVlhnb3F2STYzekJOMnFmVVNKNWdtWms1MVNQeE5zN01wNnJTS29jQ0pI?=
+ =?utf-8?B?MVlZMTlmZFJsL1F4aGN1WGliMDF5ejZEY2l3bjFBQnhoVWttdExBQUJxQ3Vh?=
+ =?utf-8?B?dWZSWUdnYWdwTUxyc29NTWdKZ3IrVTh6UE5UeHplWTFLc0VoMmU4am1zb1Ux?=
+ =?utf-8?B?ZS9Ca09VaTlXUUZNMEk1Q0FobDQwdGMvdmtaV2FxU1F1bE5CMlppU21oTVJi?=
+ =?utf-8?B?T0hqUUR6dSsrVm5rMWc1RUhUY1hMaHA5T0svaS94cFA5dUMvR2t4T3dvamc2?=
+ =?utf-8?B?Wmxrcmw3LzlEMlRWTTNYdTVmeUlIMDVTR29WWXlDMnRySHZzaXNnc2JwUllO?=
+ =?utf-8?B?RDNQWktaRzJlSWpqODhnNnZwYitwWU5mYyt0YU91bG9IZENUZncrM2YvVFk1?=
+ =?utf-8?B?dXVxZytNa0FMOCs5YVpMSXhIV3k2U1NOVXphZ0FKamRjTlVjRWZsNysrbms4?=
+ =?utf-8?B?eEk3WWVxRmJzUEFCNTBjYmRlYTdlQlEzeitQRVJBVG1mNWVwTVpJYit0RzNI?=
+ =?utf-8?B?ZDFvQ2ljMjdDUEc2bEdzN1VIVk9pdVM0TGFZYzNZNUM0Q1BybXNXckNYbmwr?=
+ =?utf-8?B?UHZuUm1McjdRMWkxVi9lQm9GYUpHamlOVU0xYSttM2k0WGozWVpueWp0WFJl?=
+ =?utf-8?B?RnlydFVjclFtTjhQRHh5K2k0d2hBU1Nwd0Y2TzhLUklCZGR6ZDFFeGp6bytk?=
+ =?utf-8?B?Wk8zdjd0dnh3T2xxdXFmK2x2Wm40aVpBR1RMNlZ0YVBud2xjZWErOVVhZmgw?=
+ =?utf-8?B?T0xVWDhZTEhVblFFV05EOUVZaVNrUmpoTnlVRFhPVEN1RmFjb2tweDZpMUly?=
+ =?utf-8?B?QncyWHIxT3pNRHk1MnAyZ1pzOG9udGtkTWREa3dCRExvQWxISVNQK25WbUJ0?=
+ =?utf-8?Q?TNz4thIhqRzWEVveYmbLfP6fcIhGwY+KzYrJgvn?=
+X-OriginatorOrg: suse.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: ebe577dc-ee88-4885-ba7d-08d9830bc24a
+X-MS-Exchange-CrossTenant-AuthSource: AM7PR04MB6821.eurprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 29 Sep 2021 05:41:17.9561
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: f7a17af6-1c5c-4a36-aa8b-f5be247aa4ba
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: NI6zWo0gb9DdKExLAiDilnHQ80ZtOmAZjIr8GuJmoCVYxrjf6r3hSWHwt6Q0bJ/6
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: AM6PR04MB5703
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I have a server running CentOS 7 on 4.9.5-1.el7.elrepo.x86_64 #1 SMP Fri Ja=
-n 20 11:34:13 EST 2017 x86_64 x86_64 x86_64 GNU/Linux.  It is version locke=
-d to that kernel.  The metadata has reserved a full 1T of disk space, while=
- only using ~38G.  I've tried to balance the metadata to reclaim that so it=
- can be used for data, but it doesn't work and gives no errors.  It just sa=
-ys it balanced the chunks but the size doesn't change.  The metadata total =
-is still growing as well, as it used to be 1.04 and now it is 1.08 with onl=
-y about 10G more of metadata used.  I've tried doing balances up to 70 or 8=
-0 musage I think, and the total metadata does not decrease.  I've done so m=
-any attempts at balancing, I've probably tried to move 300 chunks or more. =
- None have resulted in any change to the metadata total like they do on oth=
-er servers running btrfs.  I first started with very low musage, like 10 an=
-d then increased it by 10 to try to see if that would balance any chunks ou=
-t, but with no success.
+Hi,
 
-# /sbin/btrfs balance start -musage=3D60 -mlimit=3D30 /opt/zimbra
-Done, had to relocate 30 out of 2127 chunks
+I'm recently considering to cross-port btrfs-progs/U-boot btrfs code to 
+GRUB, so that we can have more unified code base, with more features 
+(and of-course bug fixes)
 
-I can do that command over and over again, or increase the mlimit, and it d=
-oesn't change the metadata total ever.
+But the first blockage I'm hitting is the code style.
 
+It looks like GRUB is using its own code style which is not found in 
+kernel/btrfs-progs/U-boot.
 
-# btrfs fi show /opt/zimbra/
-Label: 'Data'  uuid: ece150db-5817-4704-9e84-80f7d8a3b1da
-        Total devices 4 FS bytes used 1.48TiB
-        devid    1 size 1.46TiB used 1.38TiB path /dev/sde
-        devid    2 size 1.46TiB used 1.38TiB path /dev/sdf
-        devid    3 size 1.46TiB used 1.38TiB path /dev/sdg
-        devid    4 size 1.46TiB used 1.38TiB path /dev/sdh
+But I didn't find where the code style doc is, so is it a hard 
+requirement to follow the existing style even we're cross-porting most 
+code unmodified from other projects?
 
-# btrfs fi df /opt/zimbra/
-Data, RAID10: total=3D1.69TiB, used=3D1.45TiB
-System, RAID10: total=3D64.00MiB, used=3D640.00KiB
-Metadata, RAID10: total=3D1.08TiB, used=3D37.69GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+Thanks,
+Qu
 
-
-# btrfs fi us /opt/zimbra/ -T
-Overall:
-    Device size:                   5.82TiB
-    Device allocated:              5.54TiB
-    Device unallocated:          291.54GiB
-    Device missing:                  0.00B
-    Used:                          2.96TiB
-    Free (estimated):            396.36GiB      (min: 396.36GiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-
-            Data      Metadata  System
-Id Path     RAID10    RAID10    RAID10    Unallocated
--- -------- --------- --------- --------- -----------
- 1 /dev/sde 432.75GiB 276.00GiB  16.00MiB   781.65GiB
- 2 /dev/sdf 432.75GiB 276.00GiB  16.00MiB   781.65GiB
- 3 /dev/sdg 432.75GiB 276.00GiB  16.00MiB   781.65GiB
- 4 /dev/sdh 432.75GiB 276.00GiB  16.00MiB   781.65GiB
--- -------- --------- --------- --------- -----------
-   Total      1.69TiB   1.08TiB  64.00MiB     3.05TiB
-   Used       1.45TiB  37.69GiB 640.00KiB
-
-
-
-
-
-
---=20
-Brandon Heisner
-System Administrator
-Wolfram Research

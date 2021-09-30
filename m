@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A890EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Sep 2021 12:06:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0C2EC433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Sep 2021 12:06:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8D43A61267
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Sep 2021 12:06:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C472161267
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Sep 2021 12:06:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350693AbhI3MIW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Sep 2021 08:08:22 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:58176 "EHLO
+        id S1350704AbhI3MIY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 Sep 2021 08:08:24 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:58184 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1350668AbhI3MIV (ORCPT
+        with ESMTP id S1350687AbhI3MIW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Sep 2021 08:08:21 -0400
+        Thu, 30 Sep 2021 08:08:22 -0400
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id AD10520025;
-        Thu, 30 Sep 2021 12:06:38 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 320F020028;
+        Thu, 30 Sep 2021 12:06:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1633003598; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1633003599; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=C6Hss5OwdLUVMpak32pytdyu292G2L/1BdOVwywNfmM=;
-        b=vWrmM+mMDAzvLTmEr/7r2HCIh7IDKQ7Xd7Ep3oNAzPaFSuH5KdiaPY7Y+IR4InLf5fPsqI
-        36ooay49SRhbeulXEfofDByiAsQB6sH2+OqiKmV+tae8K7PvxWVmz0gaTv56ng0Bk0BUuq
-        bFeiqXnq4dFCwUWD9pPONmtZ7oKpZ5A=
+        bh=TyUEU64sOaFKW+NCtgoltJ608SSindgEXrkV+f+Bma0=;
+        b=igCbgSlcxqvUACHUfK2WBNfjtENrxX9VVYcOpYyiHen0E50KhzRt0bQaNUUXoR6sBDKi6f
+        PqeaSXjwEoG1kixBAphEF7y0FBQjiz6oOHdjcFRIjcp7E4Tt5IbRPWRV9GHVhCqoCbkft7
+        2xClpz5FWEqNShcwfXA28G3bUvHT4Cw=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7BFDF13B05;
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 04BA813B05;
         Thu, 30 Sep 2021 12:06:38 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id kEzuG06oVWHDLwAAMHmgww
+        id QPlKOk6oVWHDLwAAMHmgww
         (envelope-from <nborisov@suse.com>); Thu, 30 Sep 2021 12:06:38 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v2 1/3] btrfs-progs: Add optional dependency on libudev
-Date:   Thu, 30 Sep 2021 15:06:32 +0300
-Message-Id: <20210930120634.632946-2-nborisov@suse.com>
+Subject: [PATCH v2 3/3] btrfs-progs: Add fallback code for path device ignore for static build
+Date:   Thu, 30 Sep 2021 15:06:34 +0300
+Message-Id: <20210930120634.632946-4-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210930120634.632946-1-nborisov@suse.com>
 References: <20210930120634.632946-1-nborisov@suse.com>
@@ -55,66 +55,124 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is needed for future code which will make btrfs-progs' device
-scanning logic a little smarter by filtering out path device in
-multipath setups. libudev is added as an optional dependency since the
-library doesn't have a static version so making it a hard dependency
-means forfeiting static build support. To alleviate this a fallback code
-will be added for the static build case which doesn't rely on libudev.
+Since libudev doesn't provide a static version of the library for static
+build btrfs-progs will have to provide manual fallback. This change does
+this by parsing the udev database files hosted at /run/udev/data/.
+Under that directory every block device should have a file with the
+following name: bMAJ:MIN. So implement the bare minimum code necessary
+to parse this file and search for the presence of DM_MULTIPATH_DEVICE_PATH
+udev attribute. This could likely be racy since access to the udev
+database is done outside of libudev but that's the best that can be
+done when implementing this manually.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- Makefile        | 2 +-
- Makefile.inc.in | 2 +-
- configure.ac    | 9 +++++++++
- 3 files changed, 11 insertions(+), 2 deletions(-)
+ common/device-scan.c | 55 ++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 46 insertions(+), 9 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index 93fe4c2b3e08..e96f66a36b46 100644
---- a/Makefile
-+++ b/Makefile
-@@ -129,7 +129,7 @@ LIBS = $(LIBS_BASE) $(LIBS_CRYPTO)
- LIBBTRFS_LIBS = $(LIBS_BASE) $(LIBS_CRYPTO)
+diff --git a/common/device-scan.c b/common/device-scan.c
+index a1fd9f38b9df..bcfd36fade2c 100644
+--- a/common/device-scan.c
++++ b/common/device-scan.c
+@@ -29,6 +29,7 @@
+ #include <dirent.h>
+ #include <blkid/blkid.h>
+ #include <uuid/uuid.h>
++#include <sys/sysmacros.h>
+ #ifdef HAVE_LIBUDEV
+ #include <sys/stat.h>
+ #include <libudev.h>
+@@ -372,23 +373,54 @@ void free_seen_fsid(struct seen_fsid *seen_fsid_hash[])
+ 	}
+ }
  
- # Static compilation flags
--STATIC_CFLAGS = $(CFLAGS) -ffunction-sections -fdata-sections
-+STATIC_CFLAGS = $(CFLAGS) -ffunction-sections -fdata-sections -DSTATIC_BUILD
- STATIC_LDFLAGS = -static -Wl,--gc-sections
- STATIC_LIBS = $(STATIC_LIBS_BASE)
- 
-diff --git a/Makefile.inc.in b/Makefile.inc.in
-index 9f49337147b8..c995aef97219 100644
---- a/Makefile.inc.in
-+++ b/Makefile.inc.in
-@@ -27,7 +27,7 @@ CRYPTO_CFLAGS = @GCRYPT_CFLAGS@ @SODIUM_CFLAGS@ @KCAPI_CFLAGS@
- SUBST_CFLAGS = @CFLAGS@
- SUBST_LDFLAGS = @LDFLAGS@
- 
--LIBS_BASE = @UUID_LIBS@ @BLKID_LIBS@ -L. -pthread
-+LIBS_BASE = @UUID_LIBS@ @BLKID_LIBS@ @LIBUDEV_LIBS@ -L. -pthread
- LIBS_COMP = @ZLIB_LIBS@ @LZO2_LIBS@ @ZSTD_LIBS@
- LIBS_PYTHON = @PYTHON_LIBS@
- LIBS_CRYPTO = @GCRYPT_LIBS@ @SODIUM_LIBS@ @KCAPI_LIBS@
-diff --git a/configure.ac b/configure.ac
-index 038c2688421c..d0ceb0d70d16 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -304,6 +304,15 @@ PKG_STATIC(UUID_LIBS_STATIC, [uuid])
- PKG_CHECK_MODULES(ZLIB, [zlib])
- PKG_STATIC(ZLIB_LIBS_STATIC, [zlib])
- 
-+PKG_CHECK_EXISTS([libudev], [pkg_config_libudev=yes], [pkg_config_libudev=no])
-+if test "x$pkg_config_libudev" = xyes; then
-+	PKG_CHECK_MODULES([LIBUDEV], [libudev])
-+	AC_DEFINE([HAVE_LIBUDEV], [1], [Define to 1 if libudev is available])
-+else
-+	AC_MSG_CHECKING([for LIBUDEV])
-+	AC_MSG_RESULT([no])
-+fi
+-#ifdef HAVE_LIBUDEV
+-static bool is_path_device(char *device_path)
++#ifdef STATIC_BUILD
++static bool is_path_device(dev_t device)
++{
++	FILE *file;
++	char *line = NULL;
++	size_t len = 0;
++	ssize_t nread;
++	bool ret = false;
++	int ret2;
++	char path[PATH_MAX];
 +
- AC_ARG_ENABLE([zstd],
- 	AS_HELP_STRING([--disable-zstd], [build without zstd support]),
- 	[], [enable_zstd=yes]
++	ret2 = snprintf(path, 100, "/run/udev/data/b%u:%u", major(device),
++			minor(device));
++
++	if (ret2 < 0)
++		return false;
++
++	file = fopen(path, "r");
++	if (file == NULL)
++		return false;
++
++	while ((nread = getline(&line, &len, file)) != -1) {
++		if (strstr(line, "DM_MULTIPATH_DEVICE_PATH=1")) {
++			ret = true;
++			break;
++		}
++	}
++
++	if (line)
++		free(line);
++
++	fclose(file);
++
++	return ret;
++}
++#elif defined(HAVE_LIBUDEV)
++static bool is_path_device(dev_t device)
+ {
+ 	struct udev *udev = NULL;
+ 	struct udev_device *dev = NULL;
+-	struct stat dev_stat;
+ 	const char *val;
+ 	bool ret = false;
+ 
+-	if (stat(device_path, &dev_stat) < 0)
+-		return false;
+-
+ 	udev = udev_new();
+ 	if (!udev)
+ 		goto out;
+ 
+-	dev = udev_device_new_from_devnum(udev, 'b', dev_stat.st_rdev);
++	dev = udev_device_new_from_devnum(udev, 'b', device);
+ 	if (!dev)
+ 		goto out;
+ 
+@@ -402,7 +434,7 @@ static bool is_path_device(char *device_path)
+ 	return ret;
+ }
+ #else
+-static bool is_path_device(char *device_path)
++static bool is_path_device(dev_t device)
+ {
+ 	return false;
+ }
+@@ -432,13 +464,18 @@ int btrfs_scan_devices(int verbose)
+ 	iter = blkid_dev_iterate_begin(cache);
+ 	blkid_dev_set_search(iter, "TYPE", "btrfs");
+ 	while (blkid_dev_next(iter, &dev) == 0) {
++		struct stat dev_stat;
++
+ 		dev = blkid_verify(cache, dev);
+ 		if (!dev)
+ 			continue;
+ 		/* if we are here its definitely a btrfs disk*/
+ 		strncpy_null(path, blkid_dev_devname(dev));
+ 
+-		if (is_path_device(path))
++		if (stat(path, &dev_stat) < 0)
++			continue;
++
++		if (is_path_device(dev_stat.st_rdev))
+ 			continue;
+ 
+ 		fd = open(path, O_RDONLY);
 -- 
 2.17.1
 

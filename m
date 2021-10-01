@@ -2,36 +2,38 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7BADC433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Oct 2021 12:52:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C339C43217
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Oct 2021 12:52:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8B7AD61A8E
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Oct 2021 12:52:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2C7B161A58
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Oct 2021 12:52:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231423AbhJAMyU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Oct 2021 08:54:20 -0400
-Received: from mail.kernel.org ([198.145.29.99]:59956 "EHLO mail.kernel.org"
+        id S231452AbhJAMyW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Oct 2021 08:54:22 -0400
+Received: from mail.kernel.org ([198.145.29.99]:59966 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230160AbhJAMyT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 1 Oct 2021 08:54:19 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 4723E61A58
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Oct 2021 12:52:35 +0000 (UTC)
+        id S231442AbhJAMyV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 1 Oct 2021 08:54:21 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id DD86461A8B
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Oct 2021 12:52:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1633092755;
-        bh=Z0LpNqPRoTNyuOTLFoaN9ykOsI7rFnGQGZ8Jr35lnLc=;
-        h=From:To:Subject:Date:From;
-        b=UlEMjIvnlMTLcdTfs47jfIJaxvLylUbfhZn9cq0RssZnNuTbqWbhjdliEFdxayw9/
-         Vq0nq4x992fRWrbwTAm5/XEu64WNCNw7njMtztEZVXXI1XybxjQOcGVjWoJr9yrrFV
-         PdM+VQ+zzgkA2qnQjAwRU9ngK374KBEaP2FaPj+0R9FRZlowr6lqCVi8ZRZ9cA0ln7
-         OtojZxfj1lVbPbhKnez4o/Af+9Pidb0EHouOfJQuEKv77ZkeXr3ybDHZZgO9L8o/zn
-         SEjdJsNuxt0B/owuL+Po0u9+SvwRsJ0S0666mfgV/NV5uCIE4yE3AV7kwBWQAU8aux
-         eJtZui/dtopRw==
+        s=k20201202; t=1633092757;
+        bh=p855rFOr65qw7hGfuBpjjKVrL1nf6fT/fnIha5BAViM=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=a3iaDdQDqNLZrjuopEMI/ed2s4GDo3y/WGGKoYuYrrtbD3AD60RmCvoknOASfRQrF
+         N1oq3CRg0z30R9o+igaHbFEpJyGJacrrmGbfS90atjQgVF/ug99qGzfqiRt07P/z6E
+         6lXUv2IL2cUhlkgLJkVk1kllnLpGfNd/K9iZNd1fDMYTKjcUd+51dQs0zoY6rFVMYd
+         1grGbHW2BJz29gZFdVv4KzNeQ2UENrumV48qflTvzly2UQVkhPh//UD7Lu68sbzL3E
+         ONy3RETpIlZzaHXeY0Awz0lnTzqqFfLK2xz+14rGHH1+r7kavf2sSIemOLrAcxRdT2
+         kBYqzTyw8F19w==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] btrfs: fix missing error handling when replaying directory entries
-Date:   Fri,  1 Oct 2021 13:52:29 +0100
-Message-Id: <cover.1633082623.git.fdmanana@suse.com>
+Subject: [PATCH 2/4] btrfs: deal with errors when replaying dir entry during log replay
+Date:   Fri,  1 Oct 2021 13:52:31 +0100
+Message-Id: <a227a1f2393ad8cc1a342045c0a438a4492d389b.1633082623.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1633082623.git.fdmanana@suse.com>
+References: <cover.1633082623.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -40,21 +42,39 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Some places during log replay are ignoring errors when looking up directory
-entries in a subvolume/fs tree. This fixes all those places and makes sure
-we get consistent error hanlding when looking dir items and dir index items.
+At replay_one_one(), we are treating any error returned from
+btrfs_lookup_dir_item() or from btrfs_lookup_dir_index_item() as meaning
+that there is no existing directory entry in the fs/subvolume tree.
+This is not correct since we can get errors such as, for example, -EIO
+when reading extent buffers while searching the fs/subvolume's btree.
 
-Filipe Manana (4):
-  btrfs: deal with errors when checking if a dir entry exists during log replay
-  btrfs: deal with errors when replaying dir entry during log replay
-  btrfs: deal with errors when adding inode reference during log replay
-  btrfs: unify lookup return value when dir entry is missing
+So fix that and return the error to the caller when it is not -ENOENT.
 
- fs/btrfs/ctree.h    |  2 +-
- fs/btrfs/dir-item.c | 48 +++++++++++++++++++++++++--------
- fs/btrfs/tree-log.c | 65 ++++++++++++++++++++++++++++-----------------
- 3 files changed, 79 insertions(+), 36 deletions(-)
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 79d7cca704fb..61bcd09feedc 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2016,7 +2016,14 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-	if (IS_ERR_OR_NULL(dst_di)) {
++
++	if (dst_di == ERR_PTR(-ENOENT))
++		dst_di = NULL;
++
++	if (IS_ERR(dst_di)) {
++		ret = PTR_ERR(dst_di);
++		goto out;
++	} else if (!dst_di) {
+ 		/* we need a sequence number to insert, so we only
+ 		 * do inserts for the BTRFS_DIR_INDEX_KEY types
+ 		 */
 -- 
 2.33.0
 

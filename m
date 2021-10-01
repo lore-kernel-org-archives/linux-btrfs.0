@@ -2,117 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6ED13C4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Sep 2021 15:54:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57971C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Oct 2021 06:12:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 55C0561440
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Sep 2021 15:54:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2FEBE6136A
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Oct 2021 06:12:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346901AbhI3P43 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Sep 2021 11:56:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56282 "EHLO
+        id S1351833AbhJAGLw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Oct 2021 02:11:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51204 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1346577AbhI3P42 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Sep 2021 11:56:28 -0400
-Received: from mail-lf1-x12d.google.com (mail-lf1-x12d.google.com [IPv6:2a00:1450:4864:20::12d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0C0AC06176A;
-        Thu, 30 Sep 2021 08:54:45 -0700 (PDT)
-Received: by mail-lf1-x12d.google.com with SMTP id i4so27713049lfv.4;
-        Thu, 30 Sep 2021 08:54:45 -0700 (PDT)
+        with ESMTP id S230397AbhJAGLw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Oct 2021 02:11:52 -0400
+Received: from mail-wr1-x433.google.com (mail-wr1-x433.google.com [IPv6:2a00:1450:4864:20::433])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 74396C06176A;
+        Thu, 30 Sep 2021 23:10:08 -0700 (PDT)
+Received: by mail-wr1-x433.google.com with SMTP id h15so12045859wrc.3;
+        Thu, 30 Sep 2021 23:10:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=8LuCj9+8GFiHaMYgM8A65UudQg+qoOQQ2QUvcQ4XJ6s=;
-        b=PXKNBxqcRYxhwIV2v2X64yZJayzFfGuPEaFJcRpO4WCNqMpCZwI1df/zPBhLNhmRG9
-         7YWtoaofqurtGMdx0tYBEI6UfndHKtDaw4PBX49q9qi3J9QTKWYVNSDazJnLhCwGhWpW
-         sQyH53wtu7PQHWXKpw0IKJFLkzoLewsXUWMxyWUFA0GoZc/geWBr365BCc9DFKmEuqTx
-         QD1UXjg8vOB88FTGI55O4xvrqxi80eDmibsD2swnwubvtT8jN+7r24raClw1eWxICIMn
-         Xqc+xF7xzZT7TnBUA1RA5nmOrLjD64wC+WGfBcYeYx3rm7565L5ZdR6xyKgYS9WfGChU
-         NdlA==
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=xOrU/OWpurogbsHaQKdurQl7O915KhTCNqdRsbs978c=;
+        b=I5aGc2PX9U7U+Pyi40zTTpTJb0sVcgmJNJusK8umeGR33XVEZUlZ89zgps65gXEfIy
+         tysAsv+Kp1ZFCE517JCd/AjbpUCb4T4/VeWpw7PW0/St+EW1rLqKPrUCXoU0tVf8SeKb
+         c9wx+ovZa2Ht3SUFRojR+vELT+7fap/f5V3Xo1yBWBO1dqYKbUhuAuU2Vv2/+bCkn1YC
+         6CfodvbM5qwm+gjPsh+OhzlfA6guHOHbcDpapdAq4lSETarzbs5d4CCWX5SEYpneVZUz
+         XX2yeJ0w1p90nIBc2gMN3uDR+50zwWWypaTiNJPr6s6IHpMdq9ui+0O+HRz3ZditljJu
+         RhGQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=8LuCj9+8GFiHaMYgM8A65UudQg+qoOQQ2QUvcQ4XJ6s=;
-        b=XbBmZKylOYkv9SoXviPKr9BWXkZnTMEhN/fJ51HYr7LvZ50SCBNVHrOfV5SWpjYM2r
-         Y2qiC9CZ/lZsMRA6GQqL2/yNfuvwmt01k+raQ/914z/0iuApGZgUMbKUALfvCbUniGRI
-         gSalxO6Z+kngZPgLhCAU9cS1ehUiZTvEswwuJASnjNdOIUR0Z+riW4QpL82Pr+TXguTS
-         2fDK3wKyn6cI/dVyVPlz5oC6323Y0CaVOJqjzh8gwILnBViU/sGrMjSLtCdVqkbFx6bt
-         8hDoqhoj9aXS9t5aF9sa3JGdoOav5Q8f/6EcjMIWu/mSG6lZ8XF7xAHIVtuMFICV5S9y
-         uQUg==
-X-Gm-Message-State: AOAM530xbUXEPedn3z2RSBSh4SRFgiu7yX3y79mfdsl/iauHJLStOASh
-        TzYK5mmp8+9+DBjHeQ/cTbqVveEdVpYvTtbgkUjRp9WQ
-X-Google-Smtp-Source: ABdhPJyOHnVmMylaeGdsSDUQCs/a7NstziQ8gAm3Iq6Rldf9w/4qe7wGWECjl3a+7RS3TZsUTx6/zgFOVy33MH5VI2M=
-X-Received: by 2002:a05:6512:32c5:: with SMTP id f5mr7091563lfg.234.1633017283958;
- Thu, 30 Sep 2021 08:54:43 -0700 (PDT)
-MIME-Version: 1.0
-References: <163250387273.2330363.13240781819520072222.stgit@warthog.procyon.org.uk>
- <163279868982.18792.10448745714922373194@noble.neil.brown.name>
-In-Reply-To: <163279868982.18792.10448745714922373194@noble.neil.brown.name>
-From:   Steve French <smfrench@gmail.com>
-Date:   Thu, 30 Sep 2021 10:54:32 -0500
-Message-ID: <CAH2r5msHO9HTQGeO6MoR2_U76B9kLeoFS=FRbMuiNsh=YeFdWg@mail.gmail.com>
-Subject: Re: [RFC][PATCH v3 0/9] mm: Use DIO for swap and fix NFS swapfiles
-To:     NeilBrown <neilb@suse.de>
-Cc:     David Howells <dhowells@redhat.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Christoph Hellwig <hch@lst.de>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        "Theodore Ts'o" <tytso@mit.edu>, linux-block@vger.kernel.org,
-        ceph-devel <ceph-devel@vger.kernel.org>,
-        Trond Myklebust <trond.myklebust@hammerspace.com>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Jeff Layton <jlayton@kernel.org>,
-        Andreas Dilger <adilger.kernel@dilger.ca>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        linux-mm <linux-mm@kvack.org>, Bob Liu <bob.liu@oracle.com>,
-        "Darrick J. Wong" <djwong@kernel.org>,
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=xOrU/OWpurogbsHaQKdurQl7O915KhTCNqdRsbs978c=;
+        b=HZcGlhZ203JzGGMisATEAzPb3LZwye8K37bTQ00gDvMxI9uDEsXRgPvSkYs87pmK1X
+         NkVS27dJvFBfGKhJt3ctYsMCZMWlF6/WQSc++Rl+GlSH5mYYjf3/V6Oxl9ypKwI6aKFG
+         OA3iyzxOP/K6vxCu/5HnAx3jS/UQ62qwJosUzO2gdUxt+Ahz8HJnJ9+CI2teBKun8ieV
+         34haBvTckx+zOSjfveir92k+yu7a9Y9+aRhdiur7pmgw8+Q+b5djCMd9OsMbkKsELD6E
+         URUCAPKPjoggBqAt/uMPtDjOuCNajFCXYETK2Os0bRiwSH/wXFbqSmdkeLuBngpXiZe5
+         3dbw==
+X-Gm-Message-State: AOAM533fXt7/ZK3O1aBg90hD1RDvK5d3lT4X+VNYwfMS7VnRUoTd89he
+        Kr4v9CbdrQKjIPW5E3HcHaE=
+X-Google-Smtp-Source: ABdhPJwMTxoMCzuoYeA8QMUmiRa4oMoBhwnU4Dxsdagc4MdB5ZtK4/5sLlv/nrP2ZNkOJt9CgGw1Bw==
+X-Received: by 2002:a5d:6d8e:: with SMTP id l14mr10068610wrs.26.1633068607066;
+        Thu, 30 Sep 2021 23:10:07 -0700 (PDT)
+Received: from localhost.localdomain ([197.49.49.194])
+        by smtp.googlemail.com with ESMTPSA id v20sm4864253wra.73.2021.09.30.23.10.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 30 Sep 2021 23:10:06 -0700 (PDT)
+From:   Sohaib Mohamed <sohaib.amhmd@gmail.com>
+Cc:     Sohaib Mohamed <sohaib.amhmd@gmail.com>, Chris Mason <clm@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        Seth Jennings <sjenning@linux.vnet.ibm.com>,
-        Jens Axboe <axboe@kernel.dk>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-xfs <linux-xfs@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        CIFS <linux-cifs@vger.kernel.org>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>,
-        Minchan Kim <minchan@kernel.org>,
-        Steve French <sfrench@samba.org>,
-        Dan Magenheimer <dan.magenheimer@oracle.com>,
-        linux-nfs <linux-nfs@vger.kernel.org>,
-        Ilya Dryomov <idryomov@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: missing space before the open parenthesis '('
+Date:   Fri,  1 Oct 2021 08:10:02 +0200
+Message-Id: <20211001061002.94807-1-sohaib.amhmd@gmail.com>
+X-Mailer: git-send-email 2.25.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+To:     unlisted-recipients:; (no To-header on input)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 27, 2021 at 10:12 PM NeilBrown <neilb@suse.de> wrote:
->
-> On Sat, 25 Sep 2021, David Howells wrote:
-> > Whilst trying to make this work, I found that NFS's support for swapfiles
-> > seems to have been non-functional since Aug 2019 (I think), so the first
-> > patch fixes that.  Question is: do we actually *want* to keep this
-> > functionality, given that it seems that no one's tested it with an upstream
-> > kernel in the last couple of years?
->
-> SUSE definitely want to keep this functionality.  We have customers
-> using it.
-> I agree it would be good if it was being tested somewhere....
->
+Error found by checkpatch.pl
 
-I am trying to work through the testing of swap over SMB3 mounts
-since there are use cases where you need to expand the swap
-space to remote storage and so this requirement comes up.  The main difficulty
-I run into is forgetting to mount with the mount options (to store mode bits)
-(so swap file has the right permissions) and debugging some of the
-xfstests relating to swap can be a little confusing.
+Signed-off-by: Sohaib Mohamed <sohaib.amhmd@gmail.com>
+---
+ fs/btrfs/ref-verify.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
+index d2062d5f71dd..51e88c5c2310 100644
+--- a/fs/btrfs/ref-verify.c
++++ b/fs/btrfs/ref-verify.c
+@@ -242,7 +242,7 @@ static void free_block_entry(struct block_entry *be)
+ 		kfree(re);
+ 	}
+ 
+-	while((n = rb_first(&be->refs))) {
++	while ((n = rb_first(&be->refs))) {
+ 		ref = rb_entry(n, struct ref_entry, node);
+ 		rb_erase(&ref->node, &be->refs);
+ 		kfree(ref);
 -- 
-Thanks,
+2.25.1
 
-Steve

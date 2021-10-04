@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69CA4C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Oct 2021 17:19:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABE3FC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Oct 2021 17:19:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4BECC6139F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Oct 2021 17:19:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 951636138B
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Oct 2021 17:19:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234091AbhJDRVX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Oct 2021 13:21:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34068 "EHLO
+        id S234201AbhJDRVY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Oct 2021 13:21:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34088 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234345AbhJDRVU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Oct 2021 13:21:20 -0400
-Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5FCEC061745
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Oct 2021 10:19:31 -0700 (PDT)
-Received: by mail-qt1-x82e.google.com with SMTP id x9so6397841qtv.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Oct 2021 10:19:31 -0700 (PDT)
+        with ESMTP id S234111AbhJDRVX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Oct 2021 13:21:23 -0400
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D4478C061745
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Oct 2021 10:19:34 -0700 (PDT)
+Received: by mail-qk1-x731.google.com with SMTP id x12so6768753qkf.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Oct 2021 10:19:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=1d9aGHwglmErGqL5mxjgyRRDmF1Ka7ZDBTOZTS3pEDU=;
-        b=tOUbrNcQlBWswQGOZTotJ/c9uaDuj9WZeS6Ebsoyb5eX2bVW/yre69scmuqNIHk+6a
-         /JN8cIh2VO1tqgEmh16j1Ewo0ycPC9s3bAjkWPtYXU5t/EyoOv9UkNc49sO22rSNXOCF
-         mk3Hj6E3qSOVoeszj8orf9A53SJ0HkTTZIh/YHr3q2G3J4gdCjt/OR5xaufTAHJCORQv
-         d65EDeEYZXrFxxs6Fhh/k8Z0TgW1ishOtGoU2CJEfSanQOhVNVF7dyfz5GOyk1790RLd
-         w+RJVRqrWeZXyT8q4BsPABEqRweyt6Cj5mGBpyhAwZAMpmfuIPm1tg9UuPM1BPvIQPoE
-         uGYg==
+        bh=XlDBdkU55njB/+JEAN1hWlQQ6hXcYqWLIbOSG2qbXI8=;
+        b=huVHHgCTb5k160czEGPtwxFP9FkD6hcKImKA3i/fyC4kMWxncyY0HYP5J5W+pC55NW
+         5cr/PMyat3VruV09QToA+NGvvO7zT7jR+yna+pvp59jmxb2wIhvRXtNUiH1sCt+dhG0J
+         M2QQTqgzINtTuJ0DmTtpoGr07es9dABVS6Ol5nJGU04ny5cDjQ3KGcG/JvdpBt+/ziNT
+         FwM2UV5i6O5BgUz+5wJZiXPd4KdczHJowjuOa5bxdXOfhQ/WvwMbI4bth0/M/+D0+Ucq
+         4GZMz89eg0GR6MD8Eg3CqU+aL8cNAV3s5dEbabEakkj1PdzwubnV/ZAS55hDhA2fBp+Z
+         UWMg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=1d9aGHwglmErGqL5mxjgyRRDmF1Ka7ZDBTOZTS3pEDU=;
-        b=hm3wvsZ7vaXf0BkNsVIoww93QhG9TrAu1WEjwAp98+TSNskMUITT6eYZi+ksTaQig0
-         /RSgbpHcUx8bn+ssrEhP6o81SnoivhPKXl4424Cyy4rr4hBJL1gQHUxo0j8LAg3viE/E
-         2z4J0Yo3/sioKe2G+n6nEngbFe9M3js+iYEkHq4MlwmglA/NeyfBxeHfdYSffx6k56ad
-         Hxvif1eMmbScuZYl0Y25lvepEZTOzROEZSFoV+l/7lu5+g9VHOntwIm2DuE6FHc51ex8
-         5u3vaQU94RC6dv+v9Qg1d0pa2sL+TTqMXe9F0FAQVa1IaJVhprO+lVIpe6cpz+bTDhGl
-         ZQhg==
-X-Gm-Message-State: AOAM532V1dY0O+31zH1meQU2dq3I17ijj+//JxIZJyIa87GbwPV8ecwo
-        /6BvOELQDQHgfyJqoWjLHzyTb3FiRK7Lgw==
-X-Google-Smtp-Source: ABdhPJx7kmvHBHmeMScu6wNOk9T3Sat/upYhguvZXKcdNu7a/UKhY6rV90rUs2Fx5OIOWlNrWBhuaQ==
-X-Received: by 2002:ac8:4618:: with SMTP id p24mr14514411qtn.24.1633367970566;
-        Mon, 04 Oct 2021 10:19:30 -0700 (PDT)
+        bh=XlDBdkU55njB/+JEAN1hWlQQ6hXcYqWLIbOSG2qbXI8=;
+        b=xU9fkYw+1BxNSeKphOeGNFGvI3mlPXqqLjqpfmRFEI5WaDavAPP+ZXzOKcJDHgxUcQ
+         z2g9UtOEdNqsmTsZD2G9yQMHBXoVli0flnkF437pBqh1FpuML7rmgEJC2YW943iPx0BC
+         Um4QkCXyn1XLJRHZWjVaeUb3WGmkTzImDhUYUXR5fmIiTeggfUGNuFN9K42+DCg3deeU
+         YLb7t1vkKxr5qezceYl8GMxarQVNd4oTNWsn7I8IYZUOtvff0hp1gbCZ3yfDw/foiEn7
+         NEMmbrQy6pjotjc1/AA9sB6WYoiO6QR+/d0u4iBS/lDkoyLWo1Eozkz4RA/CfrpXqudu
+         X9+g==
+X-Gm-Message-State: AOAM531FoyAKJCJTHYFMuQL0FRnp7vHmDcmUj/gd5cYl0R1kLUmVRbyK
+        fA0hfhB46krjGNQpmK8UBjrCctUNrRcPAw==
+X-Google-Smtp-Source: ABdhPJwxAw6HPuAs4KSD3jOZyDKlCSu5pY+btnn04hESDSdjQ/IVhTz4U+BF8kkToi1V8SoYxgdxeQ==
+X-Received: by 2002:a37:2f02:: with SMTP id v2mr10684651qkh.232.1633367973667;
+        Mon, 04 Oct 2021 10:19:33 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id k16sm9403158qta.27.2021.10.04.10.19.29
+        by smtp.gmail.com with ESMTPSA id l7sm9251787qtr.87.2021.10.04.10.19.33
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 04 Oct 2021 10:19:29 -0700 (PDT)
+        Mon, 04 Oct 2021 10:19:33 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 3/6] btrfs: do not call close_fs_devices in btrfs_rm_device
-Date:   Mon,  4 Oct 2021 13:19:19 -0400
-Message-Id: <326bb4ecde587f0f3f4884b65d17951661a0ca77.1633367810.git.josef@toxicpanda.com>
+Subject: [PATCH v3 5/6] btrfs: add a btrfs_get_dev_args_from_path helper
+Date:   Mon,  4 Oct 2021 13:19:21 -0400
+Message-Id: <5070938448ea0730e642d4dcaad3c1ca95d95394.1633367810.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1633367810.git.josef@toxicpanda.com>
 References: <cover.1633367810.git.josef@toxicpanda.com>
@@ -64,46 +64,185 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There's a subtle case where if we're removing the seed device from a
-file system we need to free its private copy of the fs_devices.  However
-we do not need to call close_fs_devices(), because at this point there
-are no devices left to close as we've closed the last one.  The only
-thing that close_fs_devices() does is decrement ->opened, which should
-be 1.  We want to avoid calling close_fs_devices() here because it has a
-lockdep_assert_held(&uuid_mutex), and we are going to stop holding the
-uuid_mutex in this path.
-
-So simply decrement the  ->opened counter like we should, and then clean
-up like normal.  Also add a comment explaining what we're doing here as
-I initially removed this code erroneously.
+We are going to want to populate our device lookup args outside of any
+locks and then do the actual device lookup later, so add a helper to do
+this work and make btrfs_find_device_by_devspec() use this helper for
+now.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 99 ++++++++++++++++++++++++++++++----------------
+ fs/btrfs/volumes.h |  4 ++
+ 2 files changed, 69 insertions(+), 34 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0941f61d8071..5f19d0863094 100644
+index 191360e44a20..e490414e8987 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2211,9 +2211,16 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info, const char *device_path,
- 	synchronize_rcu();
- 	btrfs_free_device(device);
+@@ -2324,45 +2324,80 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_device *tgtdev)
+ 	btrfs_free_device(tgtdev);
+ }
  
-+	/*
-+	 * This can happen if cur_devices is the private seed devices list.  We
-+	 * cannot call close_fs_devices() here because it expects the uuid_mutex
-+	 * to be held, but in fact we don't need that for the private
-+	 * seed_devices, we can simply decrement cur_devices->opened and then
-+	 * remove it from our list and free the fs_devices.
-+	 */
- 	if (cur_devices->num_devices == 0) {
- 		list_del_init(&cur_devices->seed_list);
--		close_fs_devices(cur_devices);
-+		cur_devices->opened--;
- 		free_fs_devices(cur_devices);
+-static struct btrfs_device *btrfs_find_device_by_path(
+-		struct btrfs_fs_info *fs_info, const char *device_path)
++/**
++ * btrfs_get_dev_args_from_path - populate args from device at path
++ *
++ * @fs_info: the filesystem
++ * @args: the args to populate
++ * @path: the path to the device
++ * Return: 0 for success, -errno for failure
++ *
++ * This will read the super block of the device at @path and populate @args with
++ * the devid, fsid, and uuid.  This is meant to be used for ioctl's that need to
++ * lookup a device to operate on, but need to do it before we take any locks.
++ * This properly handles the special case of "missing" that a user may pass in,
++ * and does some basic sanity checks.  The caller must make sure that @path is
++ * properly NULL terminated before calling in, and must call
++ * btrfs_put_dev_args_from_path() in order to free up the temporary fsid and
++ * uuid buffers.
++ */
++int btrfs_get_dev_args_from_path(struct btrfs_fs_info *fs_info,
++				 struct btrfs_dev_lookup_args *args,
++				 const char *path)
+ {
+-	BTRFS_DEV_LOOKUP_ARGS(args);
+-	int ret = 0;
+ 	struct btrfs_super_block *disk_super;
+ 	struct block_device *bdev;
+-	struct btrfs_device *device;
++	int ret;
+ 
+-	ret = btrfs_get_bdev_and_sb(device_path, FMODE_READ,
+-				    fs_info->bdev_holder, 0, &bdev, &disk_super);
+-	if (ret)
+-		return ERR_PTR(ret);
++	if (!path || !path[0])
++		return -EINVAL;
++	if (!strcmp(path, "missing")) {
++		args->missing = true;
++		return 0;
++	}
++
++	args->uuid = kzalloc(BTRFS_UUID_SIZE, GFP_KERNEL);
++	args->fsid = kzalloc(BTRFS_FSID_SIZE, GFP_KERNEL);
++	if (!args->uuid || !args->fsid) {
++		btrfs_put_dev_args_from_path(args);
++		return -ENOMEM;
++	}
+ 
+-	args.devid = btrfs_stack_device_id(&disk_super->dev_item);
+-	args.uuid = disk_super->dev_item.uuid;
++	ret = btrfs_get_bdev_and_sb(path, FMODE_READ, fs_info->bdev_holder, 0,
++				    &bdev, &disk_super);
++	if (ret)
++		return ret;
++	args->devid = btrfs_stack_device_id(&disk_super->dev_item);
++	memcpy(args->uuid, disk_super->dev_item.uuid, BTRFS_UUID_SIZE);
+ 	if (btrfs_fs_incompat(fs_info, METADATA_UUID))
+-		args.fsid = disk_super->metadata_uuid;
++		memcpy(args->fsid, disk_super->metadata_uuid, BTRFS_FSID_SIZE);
+ 	else
+-		args.fsid = disk_super->fsid;
+-
+-	device = btrfs_find_device(fs_info->fs_devices, &args);
+-
++		memcpy(args->fsid, disk_super->fsid, BTRFS_FSID_SIZE);
+ 	btrfs_release_disk_super(disk_super);
+-	if (!device)
+-		device = ERR_PTR(-ENOENT);
+ 	blkdev_put(bdev, FMODE_READ);
+-	return device;
++	return 0;
+ }
+ 
+ /*
+- * Lookup a device given by device id, or the path if the id is 0.
++ * Only use this jointly with btrfs_get_dev_args_from_path() because we will
++ * allocate our ->uuid and ->fsid pointers, everybody else uses local variables
++ * that don't need to be freed.
+  */
++void btrfs_put_dev_args_from_path(struct btrfs_dev_lookup_args *args)
++{
++	kfree(args->uuid);
++	kfree(args->fsid);
++	args->uuid = NULL;
++	args->fsid = NULL;
++}
++
+ struct btrfs_device *btrfs_find_device_by_devspec(
+ 		struct btrfs_fs_info *fs_info, u64 devid,
+ 		const char *device_path)
+ {
+ 	BTRFS_DEV_LOOKUP_ARGS(args);
+ 	struct btrfs_device *device;
++	int ret;
+ 
+ 	if (devid) {
+ 		args.devid = devid;
+@@ -2372,18 +2407,14 @@ struct btrfs_device *btrfs_find_device_by_devspec(
+ 		return device;
  	}
  
+-	if (!device_path || !device_path[0])
+-		return ERR_PTR(-EINVAL);
+-
+-	if (strcmp(device_path, "missing") == 0) {
+-		args.missing = true;
+-		device = btrfs_find_device(fs_info->fs_devices, &args);
+-		if (!device)
+-			return ERR_PTR(-ENOENT);
+-		return device;
+-	}
+-
+-	return btrfs_find_device_by_path(fs_info, device_path);
++	ret = btrfs_get_dev_args_from_path(fs_info, &args, device_path);
++	if (ret)
++		return ERR_PTR(ret);
++	device = btrfs_find_device(fs_info->fs_devices, &args);
++	btrfs_put_dev_args_from_path(&args);
++	if (!device)
++		return ERR_PTR(-ENOENT);
++	return device;
+ }
+ 
+ /*
+@@ -7049,7 +7080,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
+ 	for (i = 0; i < num_stripes; i++) {
+ 		map->stripes[i].physical =
+ 			btrfs_stripe_offset_nr(leaf, chunk, i);
+-		args.devid = btrfs_stripe_devid_nr(leaf, chunk, i);
++		devid = args.devid = btrfs_stripe_devid_nr(leaf, chunk, i);
+ 		read_extent_buffer(leaf, uuid, (unsigned long)
+ 				   btrfs_stripe_dev_uuid_nr(chunk, i),
+ 				   BTRFS_UUID_SIZE);
+@@ -7181,7 +7212,7 @@ static int read_one_dev(struct extent_buffer *leaf,
+ 	u8 fs_uuid[BTRFS_FSID_SIZE];
+ 	u8 dev_uuid[BTRFS_UUID_SIZE];
+ 
+-	args.devid = btrfs_device_id(leaf, dev_item);
++	devid = args.devid = btrfs_device_id(leaf, dev_item);
+ 	read_extent_buffer(leaf, dev_uuid, btrfs_device_uuid(dev_item),
+ 			   BTRFS_UUID_SIZE);
+ 	read_extent_buffer(leaf, fs_uuid, btrfs_device_fsid(dev_item),
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index fa9a56c37d45..3fe5ac683f98 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -518,9 +518,13 @@ void btrfs_assign_next_active_device(struct btrfs_device *device,
+ struct btrfs_device *btrfs_find_device_by_devspec(struct btrfs_fs_info *fs_info,
+ 						  u64 devid,
+ 						  const char *devpath);
++int btrfs_get_dev_args_from_path(struct btrfs_fs_info *fs_info,
++				 struct btrfs_dev_lookup_args *args,
++				 const char *path);
+ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
+ 					const u64 *devid,
+ 					const u8 *uuid);
++void btrfs_put_dev_args_from_path(struct btrfs_dev_lookup_args *args);
+ void btrfs_free_device(struct btrfs_device *device);
+ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+ 		    const char *device_path, u64 devid,
 -- 
 2.26.3
 

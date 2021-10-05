@@ -2,163 +2,136 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE28BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Oct 2021 06:23:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E854C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Oct 2021 06:25:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D5F1061181
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Oct 2021 06:23:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5A64B6121F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Oct 2021 06:25:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232305AbhJEGZ0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Oct 2021 02:25:26 -0400
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:61155 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232307AbhJEGZW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Oct 2021 02:25:22 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1633415012; x=1664951012;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=8a0p9tHuZEgvLVcGi902v3FJhMIjJqUyXJToqh9LM5I=;
-  b=MX1aTuV9ct/0R4KG0zHHPfru+XamslQHtytKJHgShBnel/uwfVsh0KCo
-   cvMIPmb714OUwukMkJkyxnzjvekVSu+xyk2gDJY2F7FC2lKAQefErElST
-   qrnOlBRIUM0oh6Pw+87/ogcpsO33FqoUJ7JvfHAqs0c8pITfvBRPnCcfV
-   ZQaV/r39FqKaANpMwpHlrGxvF7rE6YQJLTC/tEzrC1HXNhkys2+e9jo6G
-   8gk6DlLG9O45/oOcoxgblBiTpr9eRAI7GIoZ/uFpeDy3aBvvhyJm/Jl+C
-   8l7a5RluAqJS09t7tI0Q1RbHZWzed/TcE+dNLsZ8x5ZnIOgwP1QVEas1k
-   g==;
-X-IronPort-AV: E=Sophos;i="5.85,347,1624291200"; 
-   d="scan'208";a="186648916"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 05 Oct 2021 14:23:32 +0800
-IronPort-SDR: /dfe4MjhQrTlY44vqpVkYtOShHIFxjkGki0uhl0804aYTkTbe/5ySDo56/HGTmjtdO79GTwN8X
- lqiCOojxl30ZX2LXgLLKTKIsCzyhhd23QACRMpCOURXg2gvshKKejWx6QyYnT59p39LPb04nuH
- BFVf6d7Wcqoi5eb6qb2Iw8PuTzk23Qje3lTuk4T8Ww2lCJUgnBSYEs9049akxv5At2ht6QruOB
- Q9Q8XN0f2lawK37FSBKVKSr10TWP2zkwMYweDQxwv5s7rETNrZWDqq90/0B0rSThram98XhC6x
- U/MIsbqPwzxiR1RJ9cn0o6Kl
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 04 Oct 2021 22:57:56 -0700
-IronPort-SDR: 9w98P12zR0AGdu5LwEivnV2QmThAkWDusjy8qJ+NeXVvkuZtSGiVZjelNffmMDzJhuru+Qs0Ub
- LcKiqZ/Wt/ylNWpQ/7wUKQgmtkULP/sgI/KO3a4FahZVrzM5lCdqcM4Tav4VwbPG3qZfn2aQw/
- A1j3lviV9iedUI7sLPzi+hu0c7+stOjTAbQBKBqzrTbb1ZfnVnbwy6jDHe/VATwL3eKbYXjSXR
- HphJQm/i/qrYarw3KCdyrOhgBmKoKIlIBaKAzDaxyMpkA6erfl8NfIqQ501Lfo9VIdPo+LMuOH
- 4hE=
-WDCIronportException: Internal
-Received: from g8961f3.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.178])
-  by uls-op-cesaip01.wdc.com with ESMTP; 04 Oct 2021 23:23:32 -0700
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2 5/7] btrfs-progs: introduce btrfs_pread wrapper for pread
-Date:   Tue,  5 Oct 2021 15:23:03 +0900
-Message-Id: <20211005062305.549871-6-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.33.0
-In-Reply-To: <20211005062305.549871-1-naohiro.aota@wdc.com>
-References: <20211005062305.549871-1-naohiro.aota@wdc.com>
+        id S231967AbhJEG0u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Oct 2021 02:26:50 -0400
+Received: from mout.gmx.net ([212.227.17.21]:37287 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S231597AbhJEG0t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 5 Oct 2021 02:26:49 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1633415097;
+        bh=ynhLphjoi8sPoFnY5ipySJYNqYdw4DaEREzXi2dE3Oo=;
+        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+        b=FV0ya7DruYbXkJw1gx6sukLrZPygL0XPfOlLs33EyAliGCRBedG56bwYcoGHzj9SA
+         Cjj5p9SDLKJxqXluw1PcNoS/NoDOAyjKeEDyZZgAPveggxTlPBhOhyDroVp2tY1W8G
+         J0mMPjig1p5/g10f0r2JTQSxKr+7kV5jaufBEb2I=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M4s0t-1mXuT12iMJ-00235i; Tue, 05
+ Oct 2021 08:24:57 +0200
+Message-ID: <93270dd7-df09-793c-9ee5-9a756ad30196@gmx.com>
+Date:   Tue, 5 Oct 2021 14:24:53 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.1.1
+Subject: Re: [PATCH v3 12/26] btrfs: make btrfs_submit_compressed_read() to
+ determine stripe boundary at bio allocation time
+Content-Language: en-US
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20210927072208.21634-1-wqu@suse.com>
+ <20210927072208.21634-13-wqu@suse.com> <20211004201054.GD9286@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20211004201054.GD9286@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:i4DSFAwPWw9p5anHuZY5dx26GhylMX/jEN75JWEXxuElpLMBBNH
+ cADF/me8VJy8S6awRvy/T8d6wsyWf+jVg0kVr0Yd2W9GgGEZZHclsYWKy7oeFIBPlZx7Uas
+ ITSOnrBic6XmoVitlnrjIcldjsqMyGU9i7cLhVI7SASOGxz91oYLLgbdOXowkJ+0Rsmp7Pa
+ xg6HFH15OEP6SCQx8CS1Q==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:bbl5ARqe7WI=:ZwWgdIbuImgt/kHB8hgevO
+ hq7eUKzRV1BqcgbJLm4+Yy5/ic7SZeYObzvj3eH2qxFtpl+0N1j2huXXEib2XeaqoR29wPO9i
+ WmPbDUBIKGE38l4splQMp73f+GrPEAvSaw3bsp3b4r/B/GWkGCr4jqYCyYTC+AGrxGgtYzNn8
+ 0+0jxIaIh6Q6xnRGDq6ScHt7VWKhs68XekRvOlhSvnCTtixDXUx7yFc7lZOHjFeKunL6MOOz9
+ VHG4/kbPOqP07CKRTlXjRUs8qBbWfOCGwgWxXqAKB/RRlbCvZ+5x4ppTUulgijViyujSFClsA
+ i2NFOKYYYnQ4Z/GBbSDoBMP6AyRbjvWlzRkk8tQR7Vdr06uc0K7xmXeGfSDqfWwq0rOWyU0c/
+ u9sn/DrBnmWEy8R2CTu5otBlngGvTmCslLhEveVFD2jvzUZMR2hwrKW4m/R9lV2b9UW36Kdh2
+ naop+YcjFbJC94N5sHNxWZ9rSNMNqYrXNnT5CYda8dMez0Sqpqu2c3Q4V9E6PyST8GYCqBIv1
+ bst8WhJQvPH47ttQUFri6eZk97t41F7w+qZo6H/IASFqHDozQb+9joL3LeeCQPFE87BH6lDYm
+ zyHGhgBOUpZLDKw8C26Zo8+SbaF+cNFvLFBA7oMY4pctl8J3fvNpleSB8BKcJ71koG46Avote
+ nilHzeeVYTr6FAUNgHRgKH48hJgVk6dRtL4QixkeHWIP5tTWpzKIQzThYOuC4ZetGhYrUCcIK
+ TxYXjwIZ36ObUi1IXsx9Gjt97JrQrqZp15rV56aK5gzgU9uFUuw8/b2V3GeR4DQIt7LFx4KdG
+ eHTH7avtbYjZtmLxaq9xyVGWQcPL+GPcESIRv8MQldq48dmWlnx154UucLnXcGFt1xL9G5hQC
+ UeDR2/WdYILH1aHp0NW0SVJozJeT09QguZcQJXYBsXLk73YdDZoGZ1M4iRRPmwz5R/FPRUanA
+ 1+Np1WgdEGramOff9MTmGb1WzVyUx/9XGmrvMFpXoM+CBz45Mcq1SOLiBmZ3qw7pZjfV7is2T
+ iwuPsJUhznK+ScYiU4vmzjqaOYOaarB9u5xGUS8RQnw2AG5qO7qmvecfPwCmCzcqPuIf4lSt6
+ VbvypMBrrzcue8=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Wrap pread with btrfs_pread as well.
 
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- common/device-utils.h     | 10 ++++++++++
- kernel-shared/disk-io.c   |  4 +++-
- kernel-shared/extent_io.c |  7 ++++---
- kernel-shared/zoned.c     |  2 +-
- 4 files changed, 18 insertions(+), 5 deletions(-)
 
-diff --git a/common/device-utils.h b/common/device-utils.h
-index 767dab4370e1..f79e746840fc 100644
---- a/common/device-utils.h
-+++ b/common/device-utils.h
-@@ -60,9 +60,19 @@ static inline ssize_t btrfs_pwrite(int fd, void *buf, size_t count,
- 
- 	return btrfs_direct_pio(WRITE, fd, buf, count, offset);
- }
-+static inline ssize_t btrfs_pread(int fd, void *buf, size_t count, off_t offset,
-+				  bool direct)
-+{
-+	if (!direct)
-+		return pread(fd, buf, count, offset);
-+
-+	return btrfs_direct_pio(READ, fd, buf, count, offset);
-+}
- #else
- #define btrfs_pwrite(fd, buf, count, offset, direct) \
- 	({ (void)(direct); pwrite(fd, buf, count, offset); })
-+#define btrfs_pread(fd, buf, count, offset, direct) \
-+	({ (void)(direct); pread(fd, buf, count, offset); })
- #endif
- 
- #endif
-diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 1cda6f3a98af..740500f9fdc9 100644
---- a/kernel-shared/disk-io.c
-+++ b/kernel-shared/disk-io.c
-@@ -35,6 +35,7 @@
- #include "kernel-shared/print-tree.h"
- #include "common/rbtree-utils.h"
- #include "common/device-scan.h"
-+#include "common/device-utils.h"
- #include "crypto/hash.h"
- 
- /* specified errno for check_tree_block */
-@@ -476,7 +477,8 @@ int read_extent_data(struct btrfs_fs_info *fs_info, char *data, u64 logical,
- 		goto err;
- 	}
- 
--	ret = pread64(device->fd, data, *len, multi->stripes[0].physical);
-+	ret = btrfs_pread(device->fd, data, *len, multi->stripes[0].physical,
-+			  fs_info->zoned);
- 	if (ret != *len)
- 		ret = -EIO;
- 	else
-diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
-index b5984949f431..af09ade4025f 100644
---- a/kernel-shared/extent_io.c
-+++ b/kernel-shared/extent_io.c
-@@ -793,7 +793,8 @@ int read_extent_from_disk(struct extent_buffer *eb,
- 			  unsigned long offset, unsigned long len)
- {
- 	int ret;
--	ret = pread(eb->fd, eb->data + offset, len, eb->dev_bytenr);
-+	ret = btrfs_pread(eb->fd, eb->data + offset, len, eb->dev_bytenr,
-+			  eb->fs_info->zoned);
- 	if (ret < 0) {
- 		ret = -errno;
- 		goto out;
-@@ -850,8 +851,8 @@ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
- 			return -EIO;
- 		}
- 
--		ret = pread(device->fd, buf + total_read, read_len,
--			    multi->stripes[0].physical);
-+		ret = btrfs_pread(device->fd, buf + total_read, read_len,
-+				  multi->stripes[0].physical, info->zoned);
- 		kfree(multi);
- 		if (ret < 0) {
- 			fprintf(stderr, "Error reading %llu, %d\n", offset,
-diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index c2cce3b5f366..f5d2299fc744 100644
---- a/kernel-shared/zoned.c
-+++ b/kernel-shared/zoned.c
-@@ -593,7 +593,7 @@ size_t btrfs_sb_io(int fd, void *buf, off_t offset, int rw)
- 		return ret;
- 
- 	if (rw == READ)
--		ret_sz = pread64(fd, buf, count, mapped);
-+		ret_sz = btrfs_pread(fd, buf, count, mapped, true);
- 	else
- 		ret_sz = btrfs_pwrite(fd, buf, count, mapped, true);
- 
--- 
-2.33.0
+On 2021/10/5 04:10, David Sterba wrote:
+> On Mon, Sep 27, 2021 at 03:21:54PM +0800, Qu Wenruo wrote:
+>> Currently btrfs_submit_compressed_read() will check
+>> btrfs_bio_fits_in_stripe() each time a new page is going to be added.
+>>
+>> Even compressed extent is small, we don't really need to do that for
+>> every page.
+>>
+>> This patch will align the behavior to extent_io.c, by determining the
+>> stripe boundary when allocating a bio.
+>>
+>> Unlike extent_io.c, in compressed.c we don't need to bother things like
+>> different bio flags, thus no need to re-use bio_ctrl.
+>>
+>> Here we just manually introduce new local variable, next_stripe_start,
+>> and teach alloc_compressed_bio() to calculate the stripe boundary.
+>>
+>> Then each time we add some page range into the bio, we check if we
+>> reached the boundary.
+>> And if reached, submit it.
+>>
+>> Also, since we have @cur_disk_byte to determine whether we're the last
+>> bio, we don't need a explicit last_bio: tag for error handling any more=
+.
+>>
+>> And we can use @cur_disk_byte to track which range has been added to
+>> bio, we can also use @cur_disk_byte to calculate the wait condition, no
+>> need for @pending_bios.
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/compression.c | 164 +++++++++++++++++++++++-----------------=
+-
+>>   1 file changed, 93 insertions(+), 71 deletions(-)
+>>
+>> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+>> index 1b62677cd0f3..319d39fd1afa 100644
+>> --- a/fs/btrfs/compression.c
+>> +++ b/fs/btrfs/compression.c
+>> @@ -439,11 +439,18 @@ static blk_status_t submit_compressed_bio(struct =
+btrfs_fs_info *fs_info,
+>>
+>>   /*
+>>    * To allocate a compressed_bio, which will be used to read/write on-=
+disk data.
+>> + *
+>> + * @next_stripe_start:	Disk bytenr of next stripe start
+>
+> Please send an incremental followup to also document all the remaining
+> parameters. We're not strict about the kdoc warnings but if the code
+> gets touched it's better to complete it.
 
+Sent, can be found here:
+
+https://lore.kernel.org/linux-btrfs/20211005062144.68489-1-wqu@suse.com/ra=
+w
+
+Thanks,
+Qu
+
+>
+>>    */
+>>   static struct bio *alloc_compressed_bio(struct compressed_bio *cb, u6=
+4 disk_bytenr,
+>> -					unsigned int opf, bio_end_io_t endio_func)
+>> +					unsigned int opf, bio_end_io_t endio_func,
+>> +					u64 *next_stripe_start)

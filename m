@@ -2,290 +2,66 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F21ABC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Oct 2021 15:02:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2F0BC43217
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Oct 2021 15:52:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CB7CC60C41
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Oct 2021 15:02:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DE012610EA
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Oct 2021 15:52:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234081AbhJMPEX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Oct 2021 11:04:23 -0400
-Received: from 13.mo584.mail-out.ovh.net ([178.33.251.8]:47241 "EHLO
-        13.mo584.mail-out.ovh.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230015AbhJMPET (ORCPT
+        id S235623AbhJMPyO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Oct 2021 11:54:14 -0400
+Received: from outgoing-auth-1.mit.edu ([18.9.28.11]:37692 "EHLO
+        outgoing.mit.edu" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S229514AbhJMPyN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Oct 2021 11:04:19 -0400
-X-Greylist: delayed 4200 seconds by postgrey-1.27 at vger.kernel.org; Wed, 13 Oct 2021 11:04:19 EDT
-Received: from player750.ha.ovh.net (unknown [10.110.171.131])
-        by mo584.mail-out.ovh.net (Postfix) with ESMTP id A71D42331E
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Oct 2021 12:35:39 +0000 (UTC)
-Received: from RCM-web8.webmail.mail.ovh.net (89-64-40-92.dynamic.chello.pl [89.64.40.92])
-        (Authenticated sender: mailing@dmilz.net)
-        by player750.ha.ovh.net (Postfix) with ESMTPSA id 7BB7323193298
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Oct 2021 12:35:39 +0000 (UTC)
+        Wed, 13 Oct 2021 11:54:13 -0400
+Received: from cwcc.thunk.org (pool-72-74-133-215.bstnma.fios.verizon.net [72.74.133.215])
+        (authenticated bits=0)
+        (User authenticated as tytso@ATHENA.MIT.EDU)
+        by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 19DFp2vF009493
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Wed, 13 Oct 2021 11:51:03 -0400
+Received: by cwcc.thunk.org (Postfix, from userid 15806)
+        id 9296B15C00CA; Wed, 13 Oct 2021 11:51:02 -0400 (EDT)
+Date:   Wed, 13 Oct 2021 11:51:02 -0400
+From:   "Theodore Ts'o" <tytso@mit.edu>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Jens Axboe <axboe@kernel.dk>, Coly Li <colyli@suse.de>,
+        Mike Snitzer <snitzer@redhat.com>, Song Liu <song@kernel.org>,
+        David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+        Dave Kleikamp <shaggy@kernel.org>,
+        Ryusuke Konishi <konishi.ryusuke@gmail.com>,
+        Anton Altaparmakov <anton@tuxera.com>,
+        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
+        Kees Cook <keescook@chromium.org>,
+        Phillip Lougher <phillip@squashfs.org.uk>,
+        Jan Kara <jack@suse.com>, linux-block@vger.kernel.org,
+        dm-devel@redhat.com, drbd-dev@lists.linbit.com,
+        linux-bcache@vger.kernel.org, linux-raid@vger.kernel.org,
+        linux-mtd@lists.infradead.org, linux-nvme@lists.infradead.org,
+        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net,
+        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+        linux-ntfs-dev@lists.sourceforge.net, ntfs3@lists.linux.dev,
+        reiserfs-devel@vger.kernel.org
+Subject: Re: [PATCH 25/29] ext4: use sb_bdev_nr_blocks
+Message-ID: <YWcAZq8eGQiZyxZS@mit.edu>
+References: <20211013051042.1065752-1-hch@lst.de>
+ <20211013051042.1065752-26-hch@lst.de>
 MIME-Version: 1.0
-Date:   Wed, 13 Oct 2021 14:35:39 +0200
-From:   mailing@dmilz.net
-To:     linux-btrfs@vger.kernel.org
-Subject: Filesystem Read Only due to errno=-28 during metadata allocation
-User-Agent: Roundcube Webmail/1.4.11
-Message-ID: <f2ed8b05b03db6a4fec4cba7ed17222a@dmilz.net>
-X-Sender: mailing@dmilz.net
-X-Originating-IP: 89.64.40.92
-X-Webmail-UserID: mailing@dmilz.net
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
-X-Ovh-Tracer-Id: 15175723371644713589
-X-VR-SPAMSTATE: OK
-X-VR-SPAMSCORE: 0
-X-VR-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgedvtddrvddutddgheefucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuqfggjfdpvefjgfevmfevgfenuceurghilhhouhhtmecuhedttdenucenucfjughrpeggfffhvffufgfkgihitgfgsehtjehjtddtredvnecuhfhrohhmpehmrghilhhinhhgsegumhhilhiirdhnvghtnecuggftrfgrthhtvghrnhepvdetlefhkeelueekudffvdfhgfeiffegvdefjeetieffhedtfffhgfeivedugeeknecukfhppedtrddtrddtrddtpdekledrieegrdegtddrledvnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmohguvgepshhmthhpqdhouhhtpdhhvghlohepphhlrgihvghrjeehtddrhhgrrdhovhhhrdhnvghtpdhinhgvtheptddrtddrtddrtddpmhgrihhlfhhrohhmpehmrghilhhinhhgsegumhhilhiirdhnvghtpdhrtghpthhtoheplhhinhhugidqsghtrhhfshesvhhgvghrrdhkvghrnhgvlhdrohhrgh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20211013051042.1065752-26-hch@lst.de>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+On Wed, Oct 13, 2021 at 07:10:38AM +0200, Christoph Hellwig wrote:
+> Use the sb_bdev_nr_blocks helper instead of open coding it.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-I faced issue with btrfs FS /var forced to RO due to errno=-28 (no space 
-left).
-
-The server was restarted to bring back FS in RW.
-
-Before reboot:
-$ btrfs fi usage /var -m
-Overall:
-     Device size:         2560.00MiB
-     Device allocated:         2559.00MiB
-     Device unallocated:            1.00MiB
-     Device missing:            0.00MiB
-     Used:         1116.00MiB
-     Free (estimated):          451.25MiB (min: 451.25MiB)
-     Data ratio:               1.00
-     Metadata ratio:               2.00
-     Global reserve:           13.00MiB (used: 0.00MiB)
-
-Data,single: Size:1559.25MiB, Used:1108.00MiB
-    /dev/mapper/rootvg-varvol 1559.25MiB
-
-Metadata,DUP: Size:467.88MiB, Used:3.94MiB
-    /dev/mapper/rootvg-varvol  935.75MiB
-
-System,DUP: Size:32.00MiB, Used:0.06MiB
-    /dev/mapper/rootvg-varvol   64.00MiB
-
-Unallocated:
-    /dev/mapper/rootvg-varvol    1.00MiB
-
-The FS went RO on Sunday, with this trace:
-2021-10-10T00:13:12.790042+02:00 SERVERNAME kernel: BTRFS: Transaction 
-aborted (error -28)
-2021-10-10T00:13:12.790053+02:00 SERVERNAME kernel: ------------[ cut 
-here ]------------
-2021-10-10T00:13:12.790055+02:00 SERVERNAME kernel: WARNING: CPU: 8 PID: 
-8532 at ../fs/btrfs/extent-tree.c:2353 
-btrfs_run_delayed_refs+0x2b4/0x2c0 [btrfs]
-2021-10-10T00:13:12.790057+02:00 SERVERNAME kernel: Modules linked in: 
-lin_tape(OEX) pfo(OEX) nfsv3 nfs_acl nfs lockd grace sunrpc fscache 
-rpadlpar_io(X) rpaphp(X) tcp_diag udp_diag raw_diag inet_diag unix_diag 
-af_packet_diag netlink_diag binfmt_misc af_packet xfs libcrc32c st ch 
-ibmveth(X) vmx_crypto gf128mul crct10dif_vpmsum uio_pdrv_genirq uio 
-rtc_generic btrfs xor zstd_decompress zstd_compress xxhash raid6_pq 
-dm_service_time sd_mod ibmvfc(X) scsi_transport_fc crc32c_vpmsum 
-dm_mirror dm_region_hash dm_log sg dm_multipath dm_mod scsi_dh_rdac 
-scsi_dh_emc scsi_dh_alua scsi_mod autofs4
-2021-10-10T00:13:12.790059+02:00 SERVERNAME kernel: Supported: Yes, 
-External
-2021-10-10T00:13:12.790053+02:00 SERVERNAME kernel: ------------[ cut 
-here ]------------
-2021-10-10T00:13:12.790055+02:00 SERVERNAME kernel: WARNING: CPU: 8 PID: 
-8532 at ../fs/btrfs/extent-tree.c:2353 
-btrfs_run_delayed_refs+0x2b4/0x2c0 [btrfs]
-2021-10-10T00:13:12.790057+02:00 SERVERNAME kernel: Modules linked in: 
-lin_tape(OEX) pfo(OEX) nfsv3 nfs_acl nfs lockd grace sunrpc fscache 
-rpadlpar_io(X) rpaphp(X) tcp_diag udp_diag raw_diag inet_diag unix_diag 
-af_packet_diag netlink_diag binfmt_misc af_packet xfs libcrc32c st ch 
-ibmveth(X) vmx_crypto gf128mul crct10dif_vpmsum uio_pdrv_genirq uio 
-rtc_generic btrfs xor zstd_decompress zstd_compress xxhash raid6_pq 
-dm_service_time sd_mod ibmvfc(X) scsi_transport_fc crc32c_vpmsum 
-dm_mirror dm_region_hash dm_log sg dm_multipath dm_mod scsi_dh_rdac 
-scsi_dh_emc scsi_dh_alua scsi_mod autofs4
-2021-10-10T00:13:12.790059+02:00 SERVERNAME kernel: Supported: Yes, 
-External
-2021-10-10T00:13:12.790060+02:00 SERVERNAME kernel: CPU: 8 PID: 8532 
-Comm: vpdupdate Tainted: G W OE 4.12.14-122.83-default #1 SLE12-SP5
-2021-10-10T00:13:12.790076+02:00 SERVERNAME kernel: task: 
-c0000068d70c1600 task.stack: c000002aba1a0000
-2021-10-10T00:13:12.790078+02:00 SERVERNAME kernel: NIP: 
-d000000035876474 LR: d000000035876470 CTR: 0000000000000000
-2021-10-10T00:13:12.790080+02:00 SERVERNAME kernel: REGS: 
-c000002aba1a3870 TRAP: 0700 Tainted: G W OE (4.12.14-122.83-default)
-2021-10-10T00:13:12.790081+02:00 SERVERNAME kernel: MSR: 
-800000010282b033 <SF,VEC,VSX,EE,FP,ME,IR,DR,RI,LE,TM[E]>
-2021-10-10T00:13:12.790083+02:00 SERVERNAME kernel: CR: 24444422 XER: 
-20040000
-2021-10-10T00:13:12.790085+02:00 SERVERNAME kernel: CFAR: 
-c0000000009c817c SOFTE: 1
-2021-10-10T00:13:12.790086+02:00 SERVERNAME kernel: GPR00: 
-d000000035876470 c000002aba1a3af0 d000000035993288 0000000000000026
-2021-10-10T00:13:12.790088+02:00 SERVERNAME kernel: GPR04: 
-c00000e6bf30ade8 c00000e6bf322a00 0000000000000007 c0000000013ed474
-2021-10-10T00:13:12.790090+02:00 SERVERNAME kernel: GPR08: 
-0000000000000000 c000000000dc16fc 000000e6be550000 000000000000134f
-2021-10-10T00:13:12.790091+02:00 SERVERNAME kernel: GPR12: 
-0000000000004000 c00000000f6c9400 00000000007fffff 0000000000000014
-2021-10-10T00:13:12.790093+02:00 SERVERNAME kernel: GPR16: 
-00000100231aa080 0000010022868988 aaaaaaaaaaaaaaab c000000024ebf778
-2021-10-10T00:13:12.790095+02:00 SERVERNAME kernel: GPR20: 
-0000000000000000 0000000000000000 0000000000000000 c00000e5a1f6eb30
-2021-10-10T00:13:12.790097+02:00 SERVERNAME kernel: GPR24: 
-c00000e5a1f6eb20 00000000000016ba c00000e5a1f6e9c0 c00000e6828cc000
-2021-10-10T00:13:12.790098+02:00 SERVERNAME kernel: GPR28: 
-c0000014b1bc02d0 0000000000000000 c00000e6828cc000 ffffffffffffffe4
-2021-10-10T00:13:12.790100+02:00 SERVERNAME kernel: NIP 
-[d000000035876474] btrfs_run_delayed_refs+0x2b4/0x2c0 [btrfs]
-2021-10-10T00:13:12.790101+02:00 SERVERNAME kernel: LR 
-[d000000035876470] btrfs_run_delayed_refs+0x2b0/0x2c0 [btrfs]
-2021-10-10T00:13:12.790103+02:00 SERVERNAME kernel: Call Trace:
-2021-10-10T00:13:12.790104+02:00 SERVERNAME kernel: [c000002aba1a3af0] 
-[d000000035876470] btrfs_run_delayed_refs+0x2b0/0x2c0 [btrfs] 
-(unreliable)
-2021-10-10T00:13:12.790106+02:00 SERVERNAME kernel: [c000002aba1a3bb0] 
-[d000000035891554] btrfs_commit_transaction+0x74/0xc10 [btrfs]
-2021-10-10T00:13:12.790108+02:00 SERVERNAME kernel: [c000002aba1a3c80] 
-[d0000000358b3328] btrfs_sync_file+0x3a8/0x510 [btrfs]
-2021-10-10T00:13:12.790110+02:00 SERVERNAME kernel: [c000002aba1a3d80] 
-[c000000000408720] vfs_fsync_range+0x70/0x120
-2021-10-10T00:13:12.790111+02:00 SERVERNAME kernel: [c000002aba1a3dd0] 
-[c00000000040886c] do_fsync+0x5c/0xb0
-2021-10-10T00:13:12.790113+02:00 SERVERNAME kernel: [c000002aba1a3e10] 
-[c000000000408cfc] SyS_fdatasync+0x2c/0x40
-2021-10-10T00:13:12.790115+02:00 SERVERNAME kernel: [c000002aba1a3e30] 
-[c00000000000b308] system_call+0x3c/0x130
-2021-10-10T00:13:12.790116+02:00 SERVERNAME kernel: Instruction dump:
-2021-10-10T00:13:12.790118+02:00 SERVERNAME kernel: e87c0060 3c820000 
-e8848b48 38a0fffb 4bfe6905 60000000 4bffffb4 3c620000
-2021-10-10T00:13:12.790120+02:00 SERVERNAME kernel: e8638b38 7fe4fb78 
-480e3f55 e8410018 <0fe00000> 4bffff98 60000000 3c4c0012
-2021-10-10T00:13:12.790122+02:00 SERVERNAME kernel: ---[ end trace 
-c9aa23777165dfdc ]---
-2021-10-10T00:13:12.790124+02:00 SERVERNAME kernel: BTRFS: error (device 
-dm-22) in btrfs_run_delayed_refs:2353: errno=-28 No space left
-2021-10-10T00:13:12.790125+02:00 SERVERNAME kernel: btrfs_printk: 12 
-callbacks suppressed
-2021-10-10T00:13:12.790127+02:00 SERVERNAME kernel: BTRFS info (device 
-dm-22): forced readonly
-2021-10-10T00:13:12.790060+02:00 SERVERNAME kernel: CPU: 8 PID: 8532 
-Comm: vpdupdate Tainted: G W OE 4.12.14-122.83-default #1 SLE12-SP5
-2021-10-10T00:13:12.790076+02:00 SERVERNAME kernel: task: 
-c0000068d70c1600 task.stack: c000002aba1a0000
-2021-10-10T00:13:12.790078+02:00 SERVERNAME kernel: NIP: 
-d000000035876474 LR: d000000035876470 CTR: 0000000000000000
-2021-10-10T00:13:12.790080+02:00 SERVERNAME kernel: REGS: 
-c000002aba1a3870 TRAP: 0700 Tainted: G W OE (4.12.14-122.83-default)
-2021-10-10T00:13:12.790081+02:00 SERVERNAME kernel: MSR: 
-800000010282b033 <SF,VEC,VSX,EE,FP,ME,IR,DR,RI,LE,TM[E]>
-2021-10-10T00:13:12.790083+02:00 SERVERNAME kernel: CR: 24444422 XER: 
-20040000
-2021-10-10T00:13:12.790085+02:00 SERVERNAME kernel: CFAR: 
-c0000000009c817c SOFTE: 1
-2021-10-10T00:13:12.790086+02:00 SERVERNAME kernel: GPR00: 
-d000000035876470 c000002aba1a3af0 d000000035993288 0000000000000026
-2021-10-10T00:13:12.790088+02:00 SERVERNAME kernel: GPR04: 
-c00000e6bf30ade8 c00000e6bf322a00 0000000000000007 c0000000013ed474
-2021-10-10T00:13:12.790090+02:00 SERVERNAME kernel: GPR08: 
-0000000000000000 c000000000dc16fc 000000e6be550000 000000000000134f
-2021-10-10T00:13:12.790091+02:00 SERVERNAME kernel: GPR12: 
-0000000000004000 c00000000f6c9400 00000000007fffff 0000000000000014
-2021-10-10T00:13:12.790093+02:00 SERVERNAME kernel: GPR16: 
-00000100231aa080 0000010022868988 aaaaaaaaaaaaaaab c000000024ebf778
-2021-10-10T00:13:12.790095+02:00 SERVERNAME kernel: GPR20: 
-0000000000000000 0000000000000000 0000000000000000 c00000e5a1f6eb30
-2021-10-10T00:13:12.790097+02:00 SERVERNAME kernel: GPR24: 
-c00000e5a1f6eb20 00000000000016ba c00000e5a1f6e9c0 c00000e6828cc000
-2021-10-10T00:13:12.790098+02:00 SERVERNAME kernel: GPR28: 
-c0000014b1bc02d0 0000000000000000 c00000e6828cc000 ffffffffffffffe4
-2021-10-10T00:13:12.790100+02:00 SERVERNAME kernel: NIP 
-[d000000035876474] btrfs_run_delayed_refs+0x2b4/0x2c0 [btrfs]
-2021-10-10T00:13:12.790101+02:00 SERVERNAME kernel: LR 
-[d000000035876470] btrfs_run_delayed_refs+0x2b0/0x2c0 [btrfs]
-2021-10-10T00:13:12.790103+02:00 SERVERNAME kernel: Call Trace:
-2021-10-10T00:13:12.790104+02:00 SERVERNAME kernel: [c000002aba1a3af0] 
-[d000000035876470] btrfs_run_delayed_refs+0x2b0/0x2c0 [btrfs] 
-(unreliable)
-2021-10-10T00:13:12.790106+02:00 SERVERNAME kernel: [c000002aba1a3bb0] 
-[d000000035891554] btrfs_commit_transaction+0x74/0xc10 [btrfs]
-2021-10-10T00:13:12.790108+02:00 SERVERNAME kernel: [c000002aba1a3c80] 
-[d0000000358b3328] btrfs_sync_file+0x3a8/0x510 [btrfs]
-2021-10-10T00:13:12.790110+02:00 SERVERNAME kernel: [c000002aba1a3d80] 
-[c000000000408720] vfs_fsync_range+0x70/0x120
-2021-10-10T00:13:12.790111+02:00 SERVERNAME kernel: [c000002aba1a3dd0] 
-[c00000000040886c] do_fsync+0x5c/0xb0
-2021-10-10T00:13:12.790113+02:00 SERVERNAME kernel: [c000002aba1a3e10] 
-[c000000000408cfc] SyS_fdatasync+0x2c/0x40
-2021-10-10T00:13:12.790115+02:00 SERVERNAME kernel: [c000002aba1a3e30] 
-[c00000000000b308] system_call+0x3c/0x130
-2021-10-10T00:13:12.790116+02:00 SERVERNAME kernel: Instruction dump:
-2021-10-10T00:13:12.790118+02:00 SERVERNAME kernel: e87c0060 3c820000 
-e8848b48 38a0fffb 4bfe6905 60000000 4bffffb4 3c620000
-2021-10-10T00:13:12.790120+02:00 SERVERNAME kernel: e8638b38 7fe4fb78 
-480e3f55 e8410018 <0fe00000> 4bffff98 60000000 3c4c0012
-2021-10-10T00:13:12.790122+02:00 SERVERNAME kernel: ---[ end trace 
-c9aa23777165dfdc ]---
-2021-10-10T00:13:12.790124+02:00 SERVERNAME kernel: BTRFS: error (device 
-dm-22) in btrfs_run_delayed_refs:2353: errno=-28 No space left
-2021-10-10T00:13:12.790125+02:00 SERVERNAME kernel: btrfs_printk: 12 
-callbacks suppressed
-2021-10-10T00:13:12.790127+02:00 SERVERNAME kernel: BTRFS info (device 
-dm-22): forced readonly
-
-$ btrfs --version
-btrfs-progs v4.5.3+20160729
-
-$ btrfs fi show /var
-Label: none  uuid: f96f4980-4682-4d2d-8d7a-3c0e2c1c6680
-         Total devices 1 FS bytes used 1.06GiB
-         devid    1 size 2.50GiB used 2.50GiB path 
-/dev/mapper/rootvg-varvol
-
-uname -a
-Linux SERVERNAME 4.12.14-122.83-default #1 SMP Tue Aug 3 08:37:22 UTC 
-2021 (c86c48c) ppc64le ppc64le ppc64le GNU/Linux
-
-On the previous Friday after weekly balance:
-btrfs fi usage /var
-Overall:
-     Device size:                   2.50GiB
-     Device allocated:              1.73GiB
-     Device unallocated:          792.75MiB
-     Device missing:                  0.00B
-     Used:                          1.09GiB
-     Free (estimated):              1.11GiB      (min: 739.62MiB)
-     Data ratio:                       1.00
-     Metadata ratio:                   2.00
-     Global reserve:               13.00MiB      (used: 0.00B)
-
-Data,single: Size:1.41GiB, Used:1.08GiB
-    /dev/mapper/rootvg-varvol       1.41GiB
-
-Metadata,DUP: Size:128.00MiB, Used:3.94MiB
-    /dev/mapper/rootvg-varvol     256.00MiB
-
-System,DUP: Size:32.00MiB, Used:64.00KiB
-    /dev/mapper/rootvg-varvol      64.00MiB
-
-Unallocated:
-    /dev/mapper/rootvg-varvol     792.75MiB
-
-
-I don't have extract of btrfs fi usage /var command during the weekend, 
-but a script is extracting the Space allocated ("Size") and Used in Data 
-and Metadata. I observed twice during the weekend space allocated to 
-metadata is suddenly growing while the metadata used remains the same. 
-The first time I had enough "Device unallocated" and no problem was 
-observed, the second (on Sunday after midnight), it leads to FS RO (no 
-space left).
-
-Is there any situation that can lead to metadata allocation but without 
-actual usage of metadata?
-
-
+Acked-by: Theodore Ts'o <tytso@mit.edu>

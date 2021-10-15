@@ -2,93 +2,112 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 936E1C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Oct 2021 13:54:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6295BC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Oct 2021 14:18:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 781E160F44
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Oct 2021 13:54:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 438066115C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Oct 2021 14:18:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240153AbhJON4x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Oct 2021 09:56:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47120 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234745AbhJON4w (ORCPT
+        id S237163AbhJOOUU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Oct 2021 10:20:20 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:49310 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229848AbhJOOUR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Oct 2021 09:56:52 -0400
-Received: from mail-lf1-x132.google.com (mail-lf1-x132.google.com [IPv6:2a00:1450:4864:20::132])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F5EFC061570;
-        Fri, 15 Oct 2021 06:54:46 -0700 (PDT)
-Received: by mail-lf1-x132.google.com with SMTP id x192so7077028lff.12;
-        Fri, 15 Oct 2021 06:54:46 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=ffV9EXIvpsxi/zzat9M/mXqT6D2BowDOkY1JbwoxMOs=;
-        b=dywwSbIGuXR+dXQSROUIhljg5+mHDSiHww9Tc5QE/0KVc6D96c2ocK9S4czPbKsPtz
-         ySNRWdT9ve7V2FStFVRj6GJtI3GsO5QLdZltms855+mPxWEcF0y64BVbP3jeqDvlTRSC
-         Q0SLO0cmgDLKr6f+MZ/VrWRqoygoePpVOM+o8yB+jCv00rDqDRMVdNenYkm3jQj9uL4k
-         E4/MHhOextdkY9W69AUB008H67vZy/HWT7fbCa67+7KfpngwPIaSC4I9QxVoGvAnEL8B
-         uHW/dfm/FieH/pIjg0HJFLHL4EoFbkdCY9X4ZyWcCPHq1gpKkT+6jn/WXPUZSeEosezu
-         YVGg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=ffV9EXIvpsxi/zzat9M/mXqT6D2BowDOkY1JbwoxMOs=;
-        b=cH13lef4KqU9SDKZFEgeZi63z4fNMgbh5vStQwK4sZYwt0zGaNyd+xgIjvffLYa86i
-         0Z/k0kv7omqk/BZ5i5GsZQiZOw79OZNhkA8ltj4yiN3aq3RrcveSx1ivkoWhCoZgkV4m
-         Pi7FtDAyzGTEBme4PgcxdR0R2Mz0hL3pc073bRbhoPyUNgHgXbCpSUkcIqWcbERnkqD8
-         bItN3JaA14OBbtBkaOYdmk6TQywIobJqsMgBhqpbPs66ymRLAgvwgIXpVjaSD/XzacYh
-         5QW1ZaUrTjXLLYMpbjkf2kkeQ0vdWw9YZZo5BvbXAy0U+JnwsIIECmYCRRjionPTRKFT
-         CzAg==
-X-Gm-Message-State: AOAM533ogEPwZoV8A2ysBtXBGXpegByQ9sSK/rZ8VQR9JBlVxuXqpLAg
-        KPD0eb2Fp6/qamKsbE8v+GdYPvRjmVMlLPkcI80=
-X-Google-Smtp-Source: ABdhPJzz49VguPSiC+Fo0EQ3C2KxuaRWGiHMMcfCON0rRU6wG0keaxKFCd23chpDIT1aQ64ecAbOb/mh29DzHZBz3N0=
-X-Received: by 2002:a2e:a170:: with SMTP id u16mr12947954ljl.108.1634306084449;
- Fri, 15 Oct 2021 06:54:44 -0700 (PDT)
+        Fri, 15 Oct 2021 10:20:17 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 206702196F;
+        Fri, 15 Oct 2021 14:18:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1634307490; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=tI8Bp6Gb/OCOSV+2k3ZUrOO25GsM3zsjJbs5q5J/2fc=;
+        b=bfFP4QsV1R5A5dOBcF1Yz9ojZTyodj+PUOUbtpxBuF59tUdLrmxm0et+IoKhD3DYuA7i+I
+        ydtHQPCzB8FB4ihk9tuK5AUv0mR9YJwrm17RqB2SEjQqKgBl2tuUiBrfZwUb22MyFhWdsi
+        3owlv0HTLnaQbGNuQkemA8eUFLzaYgE=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A622013C29;
+        Fri, 15 Oct 2021 14:18:09 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 5dkOJqGNaWHMRwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Fri, 15 Oct 2021 14:18:09 +0000
+Subject: Re: [PATCH] btrfs: Simplify conditional in assert
+To:     dsterba@suse.cz, Wan Jiabing <wanjiabing@vivo.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kael_w@yeah.net,
+        johannes.thumshirn@wdc.com
+References: <20211015103639.21838-1-wanjiabing@vivo.com>
+ <20211015105154.GC30611@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <62b235b7-a99d-4244-89cf-e6649fbd3dd4@suse.com>
+Date:   Fri, 15 Oct 2021 17:18:09 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
 MIME-Version: 1.0
-References: <20211015132643.1621913-1-hch@lst.de> <20211015132643.1621913-20-hch@lst.de>
-In-Reply-To: <20211015132643.1621913-20-hch@lst.de>
-From:   Ryusuke Konishi <konishi.ryusuke@gmail.com>
-Date:   Fri, 15 Oct 2021 22:54:32 +0900
-Message-ID: <CAKFNMokH0ZU-zxMe3Wm87hZwVgXPv3nRYBx2gXU98GekaeDFRw@mail.gmail.com>
-Subject: Re: [PATCH 19/30] nilfs2: use bdev_nr_bytes instead of open coding it
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, Coly Li <colyli@suse.de>,
-        Mike Snitzer <snitzer@redhat.com>, Song Liu <song@kernel.org>,
-        David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        "Theodore Ts'o" <tytso@mit.edu>,
-        OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
-        Dave Kleikamp <shaggy@kernel.org>,
-        Anton Altaparmakov <anton@tuxera.com>,
-        Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
-        Kees Cook <keescook@chromium.org>,
-        Phillip Lougher <phillip@squashfs.org.uk>,
-        Jan Kara <jack@suse.com>, linux-block@vger.kernel.org,
-        device-mapper development <dm-devel@redhat.com>,
-        drbd-dev@lists.linbit.com, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, linux-nvme@lists.infradead.org,
-        linux-scsi@vger.kernel.org, target-devel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net,
-        linux-nfs@vger.kernel.org,
-        linux-nilfs <linux-nilfs@vger.kernel.org>,
-        linux-ntfs-dev@lists.sourceforge.net, ntfs3@lists.linux.dev,
-        reiserfs-devel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <20211015105154.GC30611@twin.jikos.cz>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 15, 2021 at 10:27 PM Christoph Hellwig <hch@lst.de> wrote:
->
-> Use the proper helper to read the block device size.
->
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Acked-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
 
-Thanks,
-Ryusuke Konishi
+On 15.10.21 г. 13:51, David Sterba wrote:
+> Adding Johannes to CC,
+> 
+> On Fri, Oct 15, 2021 at 06:36:39AM -0400, Wan Jiabing wrote:
+>> Fix following coccicheck warning:
+>> ./fs/btrfs/inode.c:2015:16-18: WARNING !A || A && B is equivalent to !A || B
+>>
+>> Signed-off-by: Wan Jiabing <wanjiabing@vivo.com>
+>> ---
+>>  fs/btrfs/inode.c | 3 +--
+>>  1 file changed, 1 insertion(+), 2 deletions(-)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index e9154b436c47..da4aeef73b0d 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -2011,8 +2011,7 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
+>>  		 * to use run_delalloc_nocow() here, like for  regular
+>>  		 * preallocated inodes.
+>>  		 */
+>> -		ASSERT(!zoned ||
+>> -		       (zoned && btrfs_is_data_reloc_root(inode->root)));
+>> +		ASSERT(!zoned || btrfs_is_data_reloc_root(inode->root));
+> 
+> The short form is equivalent, but I'm not sure it's also on the same
+> level of readability. Repeating the 'zoned' condition check makes it
+> obvious on first sight, which is what I'd prefer.
+> 
+> Johannes if you'd like the new version I'll change it but otherwise I'm
+> fine with what we have now.
+
+Just my 2 cents:
+
+The less code we have the better, i.e !zoned is obvious when it's true
+i.e when zoned is false. So the way I read teh assert with the short
+form is "we are not zoned OR we are (this is implicit) and this is the
+data reloc root". Obviously this is personal preference as you deem it's
+better  better to have the !zoned || zoned.
+
+
+> 
+>>  		ret = run_delalloc_nocow(inode, locked_page, start, end,
+>>  					 page_started, nr_written);
+>>  	} else if (!inode_can_compress(inode) ||
+>> -- 
+>> 2.20.1
+> 

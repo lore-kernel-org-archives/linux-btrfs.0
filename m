@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB383C4321E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Oct 2021 10:13:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8C9EC4167E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Oct 2021 10:14:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 98DAF60E54
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Oct 2021 10:13:48 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AAA0B60E54
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Oct 2021 10:14:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232161AbhJRKPw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Oct 2021 06:15:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44854 "EHLO
+        id S231908AbhJRKQ3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Oct 2021 06:16:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44886 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231873AbhJRKO5 (ORCPT
+        with ESMTP id S231523AbhJRKPD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Oct 2021 06:14:57 -0400
+        Mon, 18 Oct 2021 06:15:03 -0400
 Received: from bombadil.infradead.org (unknown [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EF3AC061769;
-        Mon, 18 Oct 2021 03:12:46 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ACD6DC06176F;
+        Mon, 18 Oct 2021 03:12:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=2zn8NhPz2uMutIfYtKOd61bO1SYl+3hcc5qagxR0u/o=; b=sjCcMkvC9ZBTWutSeKn5Z4UcH4
-        pzoDtcmnfasKTiRVzEE0vbA15h97PrbOHUCWFYLglsQ+RW2thdZ9zshsX8iC94I44TWl6UuWwabtb
-        9U1dBCucz0CTuSUiB5z7nDPimiqZ02Nz1UJHTLHBnZZZmyaC4cLHdCbedSYKLzrPdoloT5unPv0dX
-        bfShQrXqM5h5HV/hE8k1WNjX0A4Gp+hot8NXpaul/dja1JrTdh2ayYOCWI0HhjToVJFH+wJC5CJjY
-        NZliBIkl2f8iIbx1t+YbvXQTGnD7hkDk7CABBMolFph4HQaN5fCqnrbVgBu/MM67IFIzdLPXXxv+H
-        g3JWwIfQ==;
+        bh=8OnUiqFNA3rHNzLjA1n31wEQQeZqPf+auxUoglxcYro=; b=UHRswqexFwV0oo2rSODzspiz3i
+        UVE7wBcsI5sgz3Ao8yhe3ZoPdIGxp3nRU3jEZIG0KWvPlJhtO9QQr9r0X2sH94zyZowQnIj+qPGz3
+        Ya5gaKWX5L/NDy/oTtejm/u7ipvwELGvfMxfGYF3Cy9j3QuOWX7Y+4hzKh14yW0hz5sKn/tyl1fXz
+        2YNr1fi527GYkPPYC+lK+3Iu6rdY4D5psAiTkmSo1xxvckIMgYzjFLNYSKQ5+mB3Nm/A60TI2HwUT
+        tMIVIbc42oEgel1czPS5tVkdUELWfuuCoRmn7qWzUjsKne0Gpd8hHexhvPbdEgRZWIK6NVJgaZ5U8
+        E884db0Q==;
 Received: from [2001:4bb8:199:73c5:c70:4a89:bc61:2] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1mcPdC-00EumL-JP; Mon, 18 Oct 2021 10:12:35 +0000
+        id 1mcPdI-00Eusw-8N; Mon, 18 Oct 2021 10:12:40 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
@@ -52,10 +52,11 @@ Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         jfs-discussion@lists.sourceforge.net, linux-nfs@vger.kernel.org,
         linux-nilfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        ntfs3@lists.linux.dev, reiserfs-devel@vger.kernel.org
-Subject: [PATCH 23/30] squashfs: use bdev_nr_bytes instead of open coding it
-Date:   Mon, 18 Oct 2021 12:11:23 +0200
-Message-Id: <20211018101130.1838532-24-hch@lst.de>
+        ntfs3@lists.linux.dev, reiserfs-devel@vger.kernel.org,
+        Chaitanya Kulkarni <kch@nvidia.com>
+Subject: [PATCH 25/30] block: add a sb_bdev_nr_blocks helper
+Date:   Mon, 18 Oct 2021 12:11:25 +0200
+Message-Id: <20211018101130.1838532-26-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20211018101130.1838532-1-hch@lst.de>
 References: <20211018101130.1838532-1-hch@lst.de>
@@ -66,38 +67,33 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use the proper helper to read the block device size.
+Add a helper to return the size of sb->s_bdev in sb->s_blocksize_bits
+based unites.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Kees Cook <keescook@chromium.org>
-Acked-by: Phillip Lougher <phillip@squashfs.org.uk>
+Reviewed-by: Chaitanya Kulkarni <kch@nvidia.com>
 ---
- fs/squashfs/super.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ include/linux/genhd.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/squashfs/super.c b/fs/squashfs/super.c
-index 60d6951915f44..bb44ff4c5cc67 100644
---- a/fs/squashfs/super.c
-+++ b/fs/squashfs/super.c
-@@ -16,6 +16,7 @@
+diff --git a/include/linux/genhd.h b/include/linux/genhd.h
+index b560aee1d69f0..7a48d3ac725f3 100644
+--- a/include/linux/genhd.h
++++ b/include/linux/genhd.h
+@@ -250,6 +250,12 @@ static inline sector_t get_capacity(struct gendisk *disk)
+ 	return bdev_nr_sectors(disk->part0);
+ }
  
- #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++static inline u64 sb_bdev_nr_blocks(struct super_block *sb)
++{
++	return bdev_nr_sectors(sb->s_bdev) >>
++		(sb->s_blocksize_bits - SECTOR_SHIFT);
++}
++
+ int bdev_disk_changed(struct gendisk *disk, bool invalidate);
+ void blk_drop_partitions(struct gendisk *disk);
  
-+#include <linux/blkdev.h>
- #include <linux/fs.h>
- #include <linux/fs_context.h>
- #include <linux/fs_parser.h>
-@@ -179,8 +180,8 @@ static int squashfs_fill_super(struct super_block *sb, struct fs_context *fc)
- 	/* Check the filesystem does not extend beyond the end of the
- 	   block device */
- 	msblk->bytes_used = le64_to_cpu(sblk->bytes_used);
--	if (msblk->bytes_used < 0 || msblk->bytes_used >
--			i_size_read(sb->s_bdev->bd_inode))
-+	if (msblk->bytes_used < 0 ||
-+	    msblk->bytes_used > bdev_nr_bytes(sb->s_bdev))
- 		goto failed_mount;
- 
- 	/* Check block size for sanity */
 -- 
 2.30.2
 

@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DC687C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Oct 2021 06:26:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CC81C4321E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Oct 2021 06:26:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C9F39610A1
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Oct 2021 06:26:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 613DE611BF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Oct 2021 06:26:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234248AbhJSG2R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S234255AbhJSG2R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 19 Oct 2021 02:28:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37798 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229649AbhJSG2K (ORCPT
+        with ESMTP id S234217AbhJSG2P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Oct 2021 02:28:10 -0400
+        Tue, 19 Oct 2021 02:28:15 -0400
 Received: from bombadil.infradead.org (unknown [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 557D2C06161C;
-        Mon, 18 Oct 2021 23:25:53 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B59AFC06176A;
+        Mon, 18 Oct 2021 23:26:01 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=2oPjr/CmcgLY9x84ULlH3Ff6Xbo0qFK9LD8/6togFZA=; b=NmleJeKN1g8pEYKNinAzcH1jFW
-        YVzZPzhzgKyPmp7TB1Ltmv00TeeI/hto2YW37T69//rbf+Nm4+mj9nydcHUW9DrmtRpdHx8Fi/Fzo
-        1NKGKe7HuNLCG/KCOJfbOkFEsBcUQW7is1N0PUDRsGRU4DXtFlkDsK/l979/BPtac6T+tGfM9xbD3
-        lpv4i1Yp/wTNXV/aC+5TgkvwywJ9iElv2wuSnP/vGd3+TpVcWT4Tscb7sXljwDFbVg3Y0SAJMMs+6
-        BzKCsHP8M2Yf6xLFlnmib88C7gbfz+Y0BlNlE5lfDEjfMICHGNJNMYzubZ7YdN9HwDct/4CCIEPFd
-        ma7YqgQg==;
+        bh=DDi853FEag9qzxEvbV2OqURCgYlh/7S1dK8LyuS7zbQ=; b=omDhi7pjmT2o70QnIOulNXChKy
+        4vvsfBwPdds39Wa0alTtHRCJEagmexQT86Y/350PSM/qo+0Wi7CiU5NJrLAw0XEZe6oz3SZWf0UpT
+        E2gJwoqVG9RAYdb8CtGvg24knqSyGDKGe1lOkpHVUvEcA4vZIKwJJSVfpwl3AU/ZleBs6ynP9aW4N
+        H3iuwKADkUKdZfqLuwPA/HFPWY/VjYvkTzOKA+b6VbKrCDup2CQ1vuFuZ2+YGM+R8ZDeqSa49os8/
+        y0gb8ezk2N4vPZImbbUBLufOBzmo4VSYE86ZmJmHn5I/ja6v02SrFfrJNgIPZMj321LJdyljHmgQ/
+        ehi1DZyw==;
 Received: from 089144192247.atnat0001.highway.a1.net ([89.144.192.247] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1mciZI-000HaB-1X; Tue, 19 Oct 2021 06:25:48 +0000
+        id 1mciZO-000HcH-TJ; Tue, 19 Oct 2021 06:25:55 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     =?UTF-8?q?Roger=20Pau=20Monn=C3=A9?= <roger.pau@citrix.com>,
@@ -41,9 +41,9 @@ Cc:     =?UTF-8?q?Roger=20Pau=20Monn=C3=A9?= <roger.pau@citrix.com>,
         linux-block@vger.kernel.org, xen-devel@lists.xenproject.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         ntfs3@lists.linux.dev
-Subject: [PATCH 4/7] btrfs: use sync_blockdev
-Date:   Tue, 19 Oct 2021 08:25:27 +0200
-Message-Id: <20211019062530.2174626-5-hch@lst.de>
+Subject: [PATCH 6/7] ntfs3: use sync_blockdev_nowait
+Date:   Tue, 19 Oct 2021 08:25:29 +0200
+Message-Id: <20211019062530.2174626-7-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20211019062530.2174626-1-hch@lst.de>
 References: <20211019062530.2174626-1-hch@lst.de>
@@ -54,26 +54,26 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use sync_blockdev instead of opencoding it.
+Use sync_blockdev_nowait instead of opencoding it.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/volumes.c | 2 +-
+ fs/ntfs3/inode.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2ec3b8ac8fa35..b51e4b464103e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -508,7 +508,7 @@ btrfs_get_bdev_and_sb(const char *device_path, fmode_t flags, void *holder,
- 	}
+diff --git a/fs/ntfs3/inode.c b/fs/ntfs3/inode.c
+index 859951d785cb2..a87ab3ad3cd38 100644
+--- a/fs/ntfs3/inode.c
++++ b/fs/ntfs3/inode.c
+@@ -1046,7 +1046,7 @@ int ntfs_flush_inodes(struct super_block *sb, struct inode *i1,
+ 	if (!ret && i2)
+ 		ret = writeback_inode(i2);
+ 	if (!ret)
+-		ret = filemap_flush(sb->s_bdev->bd_inode->i_mapping);
++		ret = sync_blockdev_nowait(sb->s_bdev);
+ 	return ret;
+ }
  
- 	if (flush)
--		filemap_write_and_wait((*bdev)->bd_inode->i_mapping);
-+		sync_blockdev(*bdev);
- 	ret = set_blocksize(*bdev, BTRFS_BDEV_BLOCKSIZE);
- 	if (ret) {
- 		blkdev_put(*bdev, flags);
 -- 
 2.30.2
 

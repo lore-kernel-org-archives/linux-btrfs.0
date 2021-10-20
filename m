@@ -2,162 +2,111 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33737C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Oct 2021 17:44:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2122CC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Oct 2021 18:45:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 191106128E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Oct 2021 17:44:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EFD0161074
+	for <linux-btrfs@archiver.kernel.org>; Wed, 20 Oct 2021 18:45:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229941AbhJTRqZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 20 Oct 2021 13:46:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40356 "EHLO
+        id S231163AbhJTSrO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 20 Oct 2021 14:47:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54572 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230049AbhJTRqY (ORCPT
+        with ESMTP id S230439AbhJTSrO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 20 Oct 2021 13:46:24 -0400
-Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44EE6C06174E
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 10:44:10 -0700 (PDT)
-Received: by mail-pj1-x102a.google.com with SMTP id n8-20020a17090a2bc800b00196286963b9so1068665pje.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 10:44:10 -0700 (PDT)
+        Wed, 20 Oct 2021 14:47:14 -0400
+Received: from mail-qv1-xf31.google.com (mail-qv1-xf31.google.com [IPv6:2607:f8b0:4864:20::f31])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 651CEC06161C
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 11:44:59 -0700 (PDT)
+Received: by mail-qv1-xf31.google.com with SMTP id o13so2648236qvm.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 11:44:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:content-transfer-encoding:in-reply-to;
-        bh=rZMYnNDu/0rM3owyDyTM/MW8BYIa1O070l4Xazp++so=;
-        b=U5SaYaUo2eX0uNis4u8mZfHAkZVzWf42GMVRAVaziDfgSXIuePi9CpoOiTEZJJbhyX
-         pUjstIcxDcX2LKgtDuzAOop0obSqqu9usBn0VGqGAakm41Ov2VCjvwFDTrjm8oM9OzL3
-         BRiP+fqx68PisOpxrc3UOOfXj6eOYxx4qrIX/22UBl1SwuWg727tCJJXUVB2O2kVaZ1E
-         BygetQ3Pz1vC20sGynPgS+8Dqp2q9C9pn3yISoyAfek3UPzMTPeQeM7OieyXZ5WRVCN6
-         qOusgfopWPRd+slExoufzwdh0j8llrMcyZcMpjTh+VbYTs6/poN/mCSRRC0kaqDizrgw
-         0MlQ==
+         :content-disposition:in-reply-to;
+        bh=35dETBS1IO4atbioS6COMpQpDs/m6EOJc7UqB2za8dY=;
+        b=K/39J/fNIUgcG+YOYG5xmxNrC6cEsq6ES8EKIVbEZDCBev0OSlj8GTuF9k7C2i+Q/X
+         vy1At1sprsRaGkYB7NW9sLGv0gJK78AhY70CDVD1fZQ4CaPQgQ3K/lfjre4Gt+Lt46O2
+         5YKWXOVqj2rjY/69/h0NOKerjsIe8ntaKT76XeGfd0aTpIZ7Duw6CFFs7KOh78/vCN2H
+         /91nBFlAAQtbqJwnNXCNnqFs4DRGR99+pJzHpG+HTMh9DObX1F4zLhwa7+hUvpviUD7I
+         ZJsZ7u2aKVVynj4+C2awd789727KYvHtKccUsZFhu9dBn80xpTc9n2ssKVLwXyg0jzMO
+         feoQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:content-transfer-encoding
-         :in-reply-to;
-        bh=rZMYnNDu/0rM3owyDyTM/MW8BYIa1O070l4Xazp++so=;
-        b=2v6WpE1IjPCv3FM7Qyq2qTwX3DBR2LdwDiID0GP9KgWhWXwfvgdPL7JImAZAtXuL1F
-         1jf6KENeXXYDDdlOVgKIzM6q4ZyXHJsh2ObVioCREYRLVC34ZXS522VpFQWUNKAZPKe2
-         pTeedIPEV5zEAmnsRMFgjFvdOslQpIvYDEPRMVuVcFXIuMl/P8Pw94zpwAPUJXU8fS1X
-         7oyh3S4ZgH1PLU1a+J2bdvFnsY/bQv1BtfoLNm2XNNgzLUVg3OXwpyiEEFwNNVlynBsA
-         A2dSNIcbyQ9C2Zb3W1saxXvc039geHt0e2jRvhHm+yUXdCScny926jsk9g/JfGzGN3hu
-         b+xg==
-X-Gm-Message-State: AOAM533ScxFaZ9ifmJ501h/93VG6jLvCjx1/Spoqn6z74X1ArdKt67bF
-        mQIsE5+9Me5YaUsDT7hUyhNe0qTIxuAuoQ==
-X-Google-Smtp-Source: ABdhPJzQ+Ej8QpV04tDuNMK7gYYN4Af2SN3LnIiHhIYgGgqoTlXtXZ9ueAXGlJreogqlKOxEq53t+Q==
-X-Received: by 2002:a17:902:dac2:b0:13e:f73b:6b5d with SMTP id q2-20020a170902dac200b0013ef73b6b5dmr467152plx.49.1634751849573;
-        Wed, 20 Oct 2021 10:44:09 -0700 (PDT)
-Received: from relinquished.localdomain ([2620:10d:c090:400::5:be9d])
-        by smtp.gmail.com with ESMTPSA id c9sm2735057pgq.58.2021.10.20.10.44.08
+         :mime-version:content-disposition:in-reply-to;
+        bh=35dETBS1IO4atbioS6COMpQpDs/m6EOJc7UqB2za8dY=;
+        b=aUbOFoCSTc6T6D82YezMqIVuDoRWpqVVsEIOLhbP/2uNcKpSjDPatwgxYaq20ojAIU
+         22Wg8g6i5pd2r6WEQiIGTqWbzPAoUYEkCS0IERSG4fF9qa+bTPo5uMELjiKUbWd44wbT
+         zcIeO0AVsl1XHzBaF3ssl3f5kycbBnBtEVZeXKu4rplMxAmjEodFSgf/1+8zX/kMWluQ
+         PffWrsp7yesdGCV9BPGGRGhuc62TnQb9YwKdALnhL1ap6iwZh67I2Lo8utaTgI3MCNLx
+         m69ChbXbKb3FzlWbvvgJIaZresv0z/b2rR+afRtSivTV3B+U+2VlSfKzlOT7LtakLHtx
+         woIA==
+X-Gm-Message-State: AOAM530+jBaseqVaYVBRf5NdQl+EddbbiHPTT/tfvj86PGL9V0C1WKjy
+        Q1o43D6GBtJq3wtkmn5wivTa2w==
+X-Google-Smtp-Source: ABdhPJzNcr9QyQqmMpizi9uz/6ZnFjT6XhpO5D9Z5akYEkyPdcDvyCHUGTvg/YSbL4J3dGrYJtI51g==
+X-Received: by 2002:a0c:f211:: with SMTP id h17mr910218qvk.34.1634755498488;
+        Wed, 20 Oct 2021 11:44:58 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id j20sm1409697qtj.72.2021.10.20.11.44.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 20 Oct 2021 10:44:09 -0700 (PDT)
-Date:   Wed, 20 Oct 2021 10:44:08 -0700
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org
-Subject: Re: [PATCH v11 02/10] btrfs-progs: receive: dynamically allocate
- sctx->read_buf
-Message-ID: <YXBVaLzCGdj3wfkL@relinquished.localdomain>
-References: <cover.1630514529.git.osandov@fb.com>
- <01efd9dd3a70c1a765549b16d6aa5c4cec8a67e4.1630515568.git.osandov@fb.com>
- <c30108b4-3001-2f6f-dd01-d3fb31f5d4da@suse.com>
- <dbecc5c2-c451-03f4-1a6f-cff09b934780@suse.com>
+        Wed, 20 Oct 2021 11:44:57 -0700 (PDT)
+Date:   Wed, 20 Oct 2021 14:44:56 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] btrfs/249: test btrfs filesystem usage command on
+ missing seed device
+Message-ID: <YXBjqOuaSwH4iIut@localhost.localdomain>
+References: <cover.1634713680.git.anand.jain@oracle.com>
+ <599618f8698efc64ef8e25e0cf1d97541927d8ac.1634713680.git.anand.jain@oracle.com>
+ <YXAfRcmJ9oYj/kpe@localhost.localdomain>
+ <990d5851-5168-c51e-eb5d-f72eac2f327f@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <dbecc5c2-c451-03f4-1a6f-cff09b934780@suse.com>
+In-Reply-To: <990d5851-5168-c51e-eb5d-f72eac2f327f@oracle.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 20, 2021 at 05:35:42PM +0300, Nikolay Borisov wrote:
+On Wed, Oct 20, 2021 at 10:58:56PM +0800, Anand Jain wrote:
 > 
 > 
-> On 20.10.21 г. 17:09, Nikolay Borisov wrote:
+> On 20/10/2021 21:53, Josef Bacik wrote:
+> > On Wed, Oct 20, 2021 at 03:16:44PM +0800, Anand Jain wrote:
+> > > If there is a missing seed device in a sprout, the btrfs filesystem usage
+> > > command fails, which is fixed by the following patches:
+> > > 
+> > >    btrfs: sysfs add devinfo/fsid to retrieve fsid from the device
+> > >    btrfs-progs: read fsid from the sysfs in device_is_seed
+> > > 
+> > > Test if it works now after these patches in the kernel and in the
+> > > btrfs-progs respectively.
+> > > 
+> > > Suggested-by: Josef Bacik <josef@toxicpanda.com>
+> > > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> > 
+> > Shouldn't this use
 > > 
 > > 
-> > On 1.09.21 г. 20:01, Omar Sandoval wrote:
-> >> From: Boris Burkov <boris@bur.io>
-> >>
-> >> In send stream v2, write commands can now be an arbitrary size. For that
+> > as well?  I wish there was a way to detect that btrfs-progs had support for
+> > reading it but I suppose this is a good enough gate.  Maybe add a
 > 
-> nit: Actually can't commands really be up-to BTRFS_MAX_COMPRESSED + 16K
-> really  or are we going to leave this as an implementation detail? I'm
-> fine either way but looking at the changelog of patch 12 in the kernel
-> series doesn't really mention of arbitrary size, instead it explicitly
-> is talking about sending the max compressed extent size (128K) + some
-> space for metadata (the 16K above).
+>  _require_btrfs_sysfs_fsid ?
+> 
+> The problem is about the nonexistence of the sysfs interface to read fsid.
+> Adding it will fail to reproduce the problem.
+> 
+> So if there is no sysfs interface, then btrfs-progs will fail back to the
+> read-sb method, which shall expose it to fail.
+> 
 
-Patch 10 mentions it in the changelog: "It also documents two changes to the
-send stream format in v2: the receiver shouldn't assume a maximum command size,
-and the DATA attribute is encoded differently to allow for writes larger than
-64k".
+Sigh sorry, I typed this out and then decided I wanted to comment below, and
+forgot to delete this bit.
 
-And in send.h:
+Yeah sorry I'm thinking about it in terms of the CI testing for us, we'll start
+failing this test once its merged without the fix merged, but I guess that's
+kinda what we want.  Let's just leave this as it is.  Thanks,
 
--#define BTRFS_SEND_BUF_SIZE SZ_64K
-+/*
-+ * In send stream v1, no command is larger than 64k. In send stream v2, no limit
-+ * should be assumed.
-+ */
-+#define BTRFS_SEND_BUF_SIZE_V1 SZ_64K
-
-You're correct that right now the limit is BTRFS_MAX_COMPRESSED + 16k,
-but I think it's better if userspace doesn't make any assumptions about
-that in case we want to send larger commands in the future.
-
-> >> reason, we can no longer allocate a fixed array in sctx for read_cmd.
-> >> Instead, read_cmd dynamically allocates sctx->read_buf. To avoid
-> >> needless reallocations, we reuse read_buf between read_cmd calls by also
-> >> keeping track of the size of the allocated buffer in sctx->read_buf_sz.
-> >>
-> >> We do the first allocation of the old default size at the start of
-> >> processing the stream, and we only reallocate if we encounter a command
-> >> that needs a larger buffer.
-> >>
-> >> Signed-off-by: Boris Burkov <boris@bur.io>
-> >> ---
-> >>  common/send-stream.c | 55 ++++++++++++++++++++++++++++----------------
-> >>  send.h               |  2 +-
-> >>  2 files changed, 36 insertions(+), 21 deletions(-)
-> >>
-> > 
-> > <snip>
-> > 
-> >> @@ -124,18 +125,22 @@ static int read_cmd(struct btrfs_send_stream *sctx)
-> >>  		goto out;
-> >>  	}
-> >>  
-> >> -	sctx->cmd_hdr = (struct btrfs_cmd_header *)sctx->read_buf;
-> >> -	cmd = le16_to_cpu(sctx->cmd_hdr->cmd);
-> >> -	cmd_len = le32_to_cpu(sctx->cmd_hdr->len);
-> >> -
-> >> -	if (cmd_len + sizeof(*sctx->cmd_hdr) >= sizeof(sctx->read_buf)) {
-> >> -		ret = -EINVAL;
-> >> -		error("command length %u too big for buffer %zu",
-> >> -				cmd_len, sizeof(sctx->read_buf));
-> >> -		goto out;
-> >> +	cmd_hdr = (struct btrfs_cmd_header *)sctx->read_buf;
-> >> +	cmd_len = le32_to_cpu(cmd_hdr->len);
-> >> +	cmd = le16_to_cpu(cmd_hdr->cmd);
-> >> +	buf_len = sizeof(*cmd_hdr) + cmd_len;
-> >> +	if (sctx->read_buf_sz < buf_len) {
-> >> +		sctx->read_buf = realloc(sctx->read_buf, buf_len);
-> >> +		if (!sctx->read_buf) {
-> > 
-> > nit: This is prone to a memory leak, because according to
-> > https://en.cppreference.com/w/c/memory/realloc
-> > 
-> > If there is not enough memory, the old memory block is not freed and
-> > null pointer is returned.
-> > 
-> > 
-> > This means if realloc fails it will overwrite sctx->read_buf with NULL,
-> > yet the old memory won't be freed which will cause a memory leak. It can
-> > be argued that's not critical since we'll very quickly terminate the
-> > program afterwards but still.
-
-Good catch, I'll fix that.
+Josef

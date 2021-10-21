@@ -2,146 +2,122 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9500BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 05:56:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99E4BC433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 06:20:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6746A611CC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 05:56:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 808DF6121E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 06:20:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229968AbhJUF7I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Oct 2021 01:59:08 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:36690 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229499AbhJUF7H (ORCPT
+        id S231290AbhJUGWS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Oct 2021 02:22:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39268 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231282AbhJUGWR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Oct 2021 01:59:07 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 2DF97219C1;
-        Thu, 21 Oct 2021 05:56:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1634795811; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=4uqL//Hko6LdVQ6HQVISd4o8mx58UZdFeFQjWJxgucY=;
-        b=e9rdBirj8HJo+JYiSiaGcfcsCe6/IK+Zmu4hZJn1MfdLNseHbnQqqXx7jqgKpjGnEWpHWQ
-        6u4cXb/5APu5uMY6oxwxi3Bkz69U8hwdu5gPNyBS1LxW3FLkCS3pki63eQJ+zGIZkKkqyl
-        y8/5GYdrdd3XOksO1bp6ltFa9ZuGQK0=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D9BE113C59;
-        Thu, 21 Oct 2021 05:56:50 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id rVaLMiIBcWEwawAAMHmgww
-        (envelope-from <nborisov@suse.com>); Thu, 21 Oct 2021 05:56:50 +0000
-Subject: Re: 5.14.9 aarch64 OOPS Workqueue: btrfs-delalloc btrfs_work_helper
-To:     Chris Murphy <lists@colorremedies.com>, Su Yue <l@damenly.su>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtTqR8TJGZKKfwWB4sbu2-A+ZMPUBSQWzb0mYnXruuykAw@mail.gmail.com>
- <e18c983f-b197-4fc5-8030-cc4273eda881@suse.com>
- <CAJCQCtSAWqeX_3kapDLr8AzNiGxyrNE7cO_tr3dM-syOKDsDgw@mail.gmail.com>
- <b1fccb42-da8a-c676-5f0b-1d80319e38ca@suse.com>
- <CAJCQCtSRxFuU4bTTa5_q6fAPuwf3pwrnUXM1CKgc+r69WSE9tQ@mail.gmail.com>
- <eae44940-48cb-5199-c46f-7db4ec953edf@suse.com>
- <CAJCQCtR+YQ2Xypz3KyHgD=TvQ8KcUsCf08YnhvLrVtgb-h9aMw@mail.gmail.com>
- <CAJCQCtQHugvMaeRc1A0EJnG4LDaLM5V=JzTO5FSU9eKQA8wxfA@mail.gmail.com>
- <CAJCQCtT12qUxYqJAf8q3t9cvbovoJdSG9kaBpvULQnwLw=rnMg@mail.gmail.com>
- <bl3mimya.fsf@damenly.su> <e75cf666-0b3a-9819-c6ac-a34835734bfb@gmx.com>
- <CAJCQCtT1+ocw-kQAKkX3wKjd4A1S1JV=wJre+UK5KY-weS33rQ@mail.gmail.com>
- <CAJCQCtTqqHFVH5YMOnRSesNs9spMb4QEPDa5wEH=gMDJ_u+yUA@mail.gmail.com>
- <7de9iylb.fsf@damenly.su>
- <CAJCQCtSUDSvMvbk1RmfTzBQ=UiZHrDeG6PE+LQK5pi_ZMCSp6A@mail.gmail.com>
- <35owijrm.fsf@damenly.su>
- <CAJCQCtR3upV0tEgdNOThMdQRE+fGH60vcbTeKagzXsw1wx9wMQ@mail.gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8063a24b-e4ed-e619-da38-3a94570eb09d@suse.com>
-Date:   Thu, 21 Oct 2021 08:56:50 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        Thu, 21 Oct 2021 02:22:17 -0400
+Received: from mail-lf1-x12c.google.com (mail-lf1-x12c.google.com [IPv6:2a00:1450:4864:20::12c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6DE78C061749
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 23:20:01 -0700 (PDT)
+Received: by mail-lf1-x12c.google.com with SMTP id j21so2648506lfe.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 23:20:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=ySym1S+xM/vLmh5qD50mQk6IKKZnZMjSymPhRc8AKZU=;
+        b=RmpuE9YS+Yq15CaE68H5r+Sd49/j2Y+lxFABfuvmGEPn3ZGXwaksFMZ6o9eFdJsChj
+         2v/LHZpNjfudJ17zylPn7o2Z2Ux2I7bti/PND6qtRtfb26+3JS7yO0q+vWSx2CFJkuCa
+         shobHsKKJNX/KQtyV6tpC+BY6SKms+67JaxlU=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=ySym1S+xM/vLmh5qD50mQk6IKKZnZMjSymPhRc8AKZU=;
+        b=31kQnTZsPFkSEOM1g5yev0lr+lUhWywIMYTdtx7uKESmoa48EyTJJ0NEA57tEr3kei
+         tdF/TL/SgAF+DcdRgcjxcEvqP8i6BR01tfzmQ6uWFbkwXdvrV6dgHc4h7I9lfkaDjDrK
+         SMlyKsbxzTvOirsGYr8HiiyNAx9qIEZEg+x1nnHPsHaqr9alRbfY+05TYlcwDm2k3qTt
+         kGrG+Mub4WL3Jvz3zFGz8N7QVdXafN+B16g82smsm6HepbQqgzk9XYhEKiaWEdYAqjXp
+         C0eljX66a96AdfkN/XHwhHDT/sNUIe0LTta7M49e2NHVs5/K6LsySZlxFXoJrH6lSBfS
+         YnNQ==
+X-Gm-Message-State: AOAM533oOebFL+zh3CxsKh9Vbaj/L3Tiyx5Ou0okVo7oMZCBwf98yohj
+        KgWgIognTUM5Sf2VXRne9hh14Xuvw6RWVzrEZ9k=
+X-Google-Smtp-Source: ABdhPJwEl7UJ+bv8++94OMob4bpmikm+5EetcvLNxpmx85LpdymY2YMljC9CMa9NtNJUQTjORhvQ8w==
+X-Received: by 2002:ac2:58f7:: with SMTP id v23mr3572016lfo.642.1634797199295;
+        Wed, 20 Oct 2021 23:19:59 -0700 (PDT)
+Received: from mail-lf1-f49.google.com (mail-lf1-f49.google.com. [209.85.167.49])
+        by smtp.gmail.com with ESMTPSA id h7sm370790lfv.205.2021.10.20.23.19.56
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 20 Oct 2021 23:19:57 -0700 (PDT)
+Received: by mail-lf1-f49.google.com with SMTP id z11so1725846lfj.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 20 Oct 2021 23:19:56 -0700 (PDT)
+X-Received: by 2002:a19:ad0c:: with SMTP id t12mr3576075lfc.173.1634797196615;
+ Wed, 20 Oct 2021 23:19:56 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR3upV0tEgdNOThMdQRE+fGH60vcbTeKagzXsw1wx9wMQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20211019134204.3382645-1-agruenba@redhat.com> <CAHk-=wh0_3y5s7-G74U0Pcjm7Y_yHB608NYrQSvgogVNBxsWSQ@mail.gmail.com>
+ <YXBFqD9WVuU8awIv@arm.com> <CAHk-=wgv=KPZBJGnx_O5-7hhST8CL9BN4wJwtVuycjhv_1MmvQ@mail.gmail.com>
+ <YXCbv5gdfEEtAYo8@arm.com>
+In-Reply-To: <YXCbv5gdfEEtAYo8@arm.com>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Wed, 20 Oct 2021 20:19:40 -1000
+X-Gmail-Original-Message-ID: <CAHk-=wgP058PNY8eoWW=5uRMox-PuesDMrLsrCWPS+xXhzbQxQ@mail.gmail.com>
+Message-ID: <CAHk-=wgP058PNY8eoWW=5uRMox-PuesDMrLsrCWPS+xXhzbQxQ@mail.gmail.com>
+Subject: Re: [PATCH v8 00/17] gfs2: Fix mmap + page fault deadlocks
+To:     Catalin Marinas <catalin.marinas@arm.com>
+Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
+        Paul Mackerras <paulus@ozlabs.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <djwong@kernel.org>, Jan Kara <jack@suse.cz>,
+        Matthew Wilcox <willy@infradead.org>,
+        cluster-devel <cluster-devel@redhat.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com, kvm-ppc@vger.kernel.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Oct 20, 2021 at 12:44 PM Catalin Marinas
+<catalin.marinas@arm.com> wrote:
+>
+> However, with MTE doing both get_user() every 16 bytes and
+> gup can get pretty expensive.
+
+So I really think that anything that is performance-critical had
+better only do the "fault_in_write()" code path in the cold error path
+where you took a page fault.
+
+IOW, the loop structure should be
 
 
-On 21.10.21 г. 2:55, Chris Murphy wrote:
-> On Tue, Oct 19, 2021 at 9:10 PM Su Yue <l@damenly.su> wrote:
->>
->> Dump file and vmlinu[zx] kernel file are needed.
-> 
-> So we get a splat but kdump doesn't create a vmcore. Do we need to
-> issue sysrq+c at the time of the hang and splat to create it?
+     repeat:
+                take_locks();
+                pagefault_disable();
+                ret = do_things_with_locks();
+                pagefault_enable();
+                release_locks();
 
-Alternatively you can set the following sysctl to 1;
+                // Failure path?
+                if (unlikely(ret == -EFAULT)) {
+                        if (fault_in_writable(..))
+                                goto repeat;
+                        return -EFAULT;
+                }
 
-kernel.panic_on_warn = 1
+rather than have it be some kind of "first do fault_in_writable(),
+then do the work" model.
 
+So I wouldn't worry too much about the performance concerns. It simply
+shouldn't be a common or hot path.
 
-> 
-> Fedora Linux 35 (Cloud Edition)
-> Kernel 5.14.10-300.fc35.aarch64 on an aarch64 (ttyAMA0)
-> 
-> eth0: 199.204.45.141 2604:e100:1:0:f816:3eff:fe72:c876
-> dusty-35 login: [  286.982605] Unable to handle kernel paging request
-> at virtual address fffffffffffffdd0
-> [  286.988338] Mem abort info:
-> [  286.990307]   ESR = 0x96000004
-> [  286.992596]   EC = 0x25: DABT (current EL), IL = 32 bits
-> [  286.996316]   SET = 0, FnV = 0
-> [  286.998454]   EA = 0, S1PTW = 0
-> [  287.000791]   FSC = 0x04: level 0 translation fault
-> [  287.004472] Data abort info:
-> [  287.006540]   ISV = 0, ISS = 0x00000004
-> [  287.009239]   CM = 0, WnR = 0
-> [  287.011344] swapper pgtable: 4k pages, 48-bit VAs, pgdp=0000000054181000
-> [  287.018245] [fffffffffffffdd0] pgd=0000000000000000, p4d=0000000000000000
-> [  287.024209] Internal error: Oops: 96000004 [#1] SMP
-> [  287.027615] Modules linked in: virtio_gpu virtio_dma_buf
-> drm_kms_helper cec joydev fb_sys_fops syscopyarea virtio_net
-> sysfillrect sysimgblt net_failover virtio_balloon failover vfat fat
-> drm fuse zram ip_tables crct10dif_ce ghash_ce virtio_blk qemu_fw_cfg
-> virtio_mmio aes_neon_bs
-> [  287.047659] CPU: 0 PID: 3558 Comm: kworker/u8:7 Kdump: loaded Not
-> tainted 5.14.10-300.fc35.aarch64 #1
-> [  287.055269] Hardware name: QEMU KVM Virtual Machine, BIOS 0.0.0 02/06/2015
-> [  287.060932] Workqueue: btrfs-delalloc btrfs_work_helper
-> [  287.065353] pstate: 80400005 (Nzcv daif +PAN -UAO -TCO BTYPE=--)
-> [  287.070568] pc : submit_compressed_extents+0x38/0x3d0
-> [  287.074825] lr : async_cow_submit+0x50/0xd0
-> [  287.078217] sp : ffff800015d4bc20
-> [  287.081008] x29: ffff800015d4bc30 x28: 0000000000000000 x27: ffffb8a2fa941000
-> [  287.087022] x26: fffffffffffffdd0 x25: dead000000000100 x24: ffff000115873608
-> [  287.092822] x23: 0000000000000000 x22: 0000000000000001 x21: ffff0000c6f25800
-> [  287.098591] x20: ffff0000c0596000 x19: 0000000000000001 x18: ffff0000c2100bd4
-> [  287.104387] x17: ffff000115875ff8 x16: 0000000000000006 x15: 50006a3d10a961cd
-> [  287.110159] x14: f0668b836620caa1 x13: 0000000000000020 x12: ffff0001fefa68c0
-> [  287.116170] x11: ffffb8a2fa95b500 x10: 0000000000000000 x9 : ffffb8a2f9131c40
-> [  287.122120] x8 : ffff475f045bb000 x7 : ffff800015d4bbe0 x6 : ffffb8a2fae8ad40
-> [  287.128086] x5 : 0000000000000000 x4 : 0000000000000000 x3 : ffff0000c6f25820
-> [  287.133953] x2 : 0000000000000000 x1 : ffff000115873630 x0 : ffff000115873630
-> [  287.139760] Call trace:
-> [  287.141784]  submit_compressed_extents+0x38/0x3d0
-> [  287.145620]  async_cow_submit+0x50/0xd0
-> [  287.148801]  run_ordered_work+0xc8/0x280
-> [  287.152005]  btrfs_work_helper+0x98/0x250
-> [  287.155450]  process_one_work+0x1f0/0x4ac
-> [  287.161577]  worker_thread+0x188/0x504
-> [  287.167461]  kthread+0x110/0x114
-> [  287.172872]  ret_from_fork+0x10/0x18
-> [  287.178558] Code: a9056bf9 f8428437 f9401400 d108c2fa (f9400356)
-> [  287.186268] ---[ end trace 41ec405ced3786b6 ]---
-> 
-> 
-> 
+And yes, I've seen code that does that "fault_in_xyz()" before the
+critical operation that cannot take page faults, and does it
+unconditionally.
+
+But then it isn't the "fault_in_xyz()" that should be blamed if it is
+slow, but the caller that does things the wrong way around.
+
+            Linus

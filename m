@@ -2,92 +2,100 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D93CFC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 12:09:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB3E0C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 12:41:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BC1A46112D
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 12:09:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BAA1960E97
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Oct 2021 12:41:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230505AbhJUMLR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Oct 2021 08:11:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34354 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229765AbhJUMLQ (ORCPT
+        id S230283AbhJUMn2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Oct 2021 08:43:28 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:44226 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230190AbhJUMn1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Oct 2021 08:11:16 -0400
-Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E7FFC06161C
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Oct 2021 05:09:01 -0700 (PDT)
-Received: by mail-qt1-x836.google.com with SMTP id i1so219476qtr.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Oct 2021 05:09:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=iYV5+S8GCypJCRo6lOTdOe6JJJCQaxonClrCPF8H2/Q=;
-        b=UhgncykvM1hpVN4KIroq4VOEyVdk0wfsckEFX6ENNP9vyn1rp3H9mPoWu4rLi6jDXz
-         ki29jckkchK3UPfH8udfLwni2sMghcEni6owPrAVsdHmTVabBoqxYZ7if6v1K1RIQ+vU
-         +ND6pLL7FltoEWbqmw3HiRR2xfotg9fhhX2STvUI+onRPphIn6OqSgyJpKCSGREkNOQr
-         4NEakbR3MGFxOfWXn1Xx+NhjEcUuI9nCyu7wCo7kWcFd/voYjS1fDrl6a29UTAtBPhVJ
-         fHqcKdaz18r/Iq+QL6Xho+uM2VYFcXS3A7wNnokC0FIGZOJsP14oAnuNcMZFF4qr+44q
-         IfBw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=iYV5+S8GCypJCRo6lOTdOe6JJJCQaxonClrCPF8H2/Q=;
-        b=t7ooI6oyV90m796UAnCcaPfcuQTw0uG6GZfIwD01DpflFlpHrv+NdX3sUo0EfHKAQS
-         ph8oqO98m0egwyYgDTQhLHrElqXCL9y0WW8+EmpwCQ5397uIbp8QdQ9V9BaJWRvtEuwV
-         4sRWAinnhtVrn+JsOQtzo0g41mA2YQIxthRsfX2ZcG+OBrkOEE5dZruCU7VBsNDjAgWA
-         RdrKarI7UT94u68xms9gI58YoA03pL/o6rXv79906DYTwTxvr+TDUknL1FVEVnGhJVAH
-         cD78gajOHZpmP9EW5y9NNg+lC/gUSfwC9euJvKbxRRqWG/Q5pDt8mBH66sorhRZ28uZK
-         7RVQ==
-X-Gm-Message-State: AOAM530HoUZKVeyAyXRirAPSogjYiUKKv3WtSG/2s1JuPfNn30BodO3k
-        acJssdxqv5coq2k0N4yp604y3w==
-X-Google-Smtp-Source: ABdhPJyahtqPBjOHKt389eM3l/vZ9IemcnDiHBav9dpA4UNTyMsl6DGAfomTHPGVOuj84MPSolcmIg==
-X-Received: by 2002:ac8:5f4f:: with SMTP id y15mr5291976qta.326.1634818140161;
-        Thu, 21 Oct 2021 05:09:00 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id g12sm2546977qtb.3.2021.10.21.05.08.59
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 21 Oct 2021 05:08:59 -0700 (PDT)
-Date:   Thu, 21 Oct 2021 08:08:58 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
+        Thu, 21 Oct 2021 08:43:27 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id 62CCD1FD4F;
+        Thu, 21 Oct 2021 12:41:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1634820071;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=PVYeZ+c2gdjrJiIz0NtvGA6E9TqTtAFc9eY3N9J/G80=;
+        b=vUddQbWL2pUv2pv42qHgu62cRqESSKnEZPhQrUz6ZPJ4yvy7Gz9+hmTzIqkY/diT6mS/yo
+        bAQjwD+Ttq71aKC23riWPbUNYooJorFtbkJlPKyAcrVCmcJuu/LElVofN0HRY/3QM55LqN
+        Jv1RzjgjuM77bgnjIYcCtLM3uJZT/Ng=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1634820071;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=PVYeZ+c2gdjrJiIz0NtvGA6E9TqTtAFc9eY3N9J/G80=;
+        b=2ZY7OI+BLBUx8V+/9/Ymn7yr6o7/fhApnz34K3f1zpSJdZfsFZho52Slm5QbQLsMbiclFV
+        JT+6bXAJRFxBMCCA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 5C5B4A3B83;
+        Thu, 21 Oct 2021 12:41:11 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id C15ACDA7A3; Thu, 21 Oct 2021 14:40:42 +0200 (CEST)
+Date:   Thu, 21 Oct 2021 14:40:42 +0200
+From:   David Sterba <dsterba@suse.cz>
 To:     Qu Wenruo <wqu@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: make sizeof(struct btrfs_super_block) to match
- BTRFS_SUPER_INFO_SIZE
-Message-ID: <YXFYWmMghbR0gMrC@localhost.localdomain>
-References: <20211020234447.5578-1-wqu@suse.com>
+Subject: Re: [PATCH 1/3] btrfs-progs: unify sizeof(struct btrfs_super_block)
+ and BTRFS_SUPER_INFO_SIZE
+Message-ID: <20211021124042.GA6400@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20211021014020.482242-1-wqu@suse.com>
+ <20211021014020.482242-2-wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20211020234447.5578-1-wqu@suse.com>
+In-Reply-To: <20211021014020.482242-2-wqu@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 21, 2021 at 07:44:47AM +0800, Qu Wenruo wrote:
-> It's a common practice to avoid use sizeof(struct btrfs_super_block)
-> (3531), but to use BTRFS_SUPER_INFO_SIZE (4096).
-> 
-> The problem is that, sizeof(struct btrfs_super_block) doesn't match
-> BTRFS_SUPER_INFO_SIZE from the very beginning.
-> 
-> Furthermore, for all call sites except selftest, we always allocate
-> BTRFS_SUPER_INFO_SIZE space for btrfs super block, there isn't any real
-> reason to use the smaller value, and it doesn't really save any space.
-> 
-> So let's get rid of such confusing behavior, and unify those two values.
-> 
-> This modification also adds a new static_assert() to verify the size,
-> and moves the BTRFS_SUPER_INFO_* macros to the definition of
-> btrfs_super_block for the static_assert().
+On Thu, Oct 21, 2021 at 09:40:18AM +0800, Qu Wenruo wrote:
+> Just like kernel change, pad struct btrfs_super_block to 4096 bytes.
 > 
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  kernel-shared/ctree.h   | 7 +++++++
+>  kernel-shared/disk-io.h | 3 ---
+>  2 files changed, 7 insertions(+), 3 deletions(-)
+> 
+> diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+> index 563ea50b3587..6451690ce4fa 100644
+> --- a/kernel-shared/ctree.h
+> +++ b/kernel-shared/ctree.h
+> @@ -406,6 +406,9 @@ struct btrfs_root_backup {
+>  	u8 unused_8[10];
+>  } __attribute__ ((__packed__));
+>  
+> +#define BTRFS_SUPER_INFO_OFFSET SZ_64K
+> +#define BTRFS_SUPER_INFO_SIZE 4096
+> +
+>  /*
+>   * the super block basically lists the main trees of the FS
+>   * it currently lacks any block count etc etc
+> @@ -456,8 +459,12 @@ struct btrfs_super_block {
+>  	__le64 reserved[28];
+>  	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
+>  	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
+> +	/* Padded to 4096 bytes */
+> +	u8 padding[565];
+>  } __attribute__ ((__packed__));
+>  
+> +static_assert(sizeof(struct btrfs_super_block) == BTRFS_SUPER_INFO_SIZE);
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Using static_assert breaks build on musl (you can verify that by running
+ci/ci-build-musl if you have docker installed and set up).
 
-Thanks,
-
-Josef
+There already is macro BUILD_ASSERT used in ioctl.h, eventually we can
+copy the static_assert from kernel or use _Static_assert directly.

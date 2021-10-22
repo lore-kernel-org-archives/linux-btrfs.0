@@ -2,153 +2,157 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F177C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Oct 2021 11:43:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C6DE7C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Oct 2021 12:12:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5FE96610D0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Oct 2021 11:43:04 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ABD3860249
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Oct 2021 12:12:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232736AbhJVLpU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 22 Oct 2021 07:45:20 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:49438 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232670AbhJVLpT (ORCPT
+        id S231771AbhJVMOq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Oct 2021 08:14:46 -0400
+Received: from out20-74.mail.aliyun.com ([115.124.20.74]:53594 "EHLO
+        out20-74.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231319AbhJVMOp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 22 Oct 2021 07:45:19 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id AF34A212C5;
-        Fri, 22 Oct 2021 11:43:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1634902981; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=4j5OcygTfBnKyX46Ay1SwvvgzDUrs0FUL0XE+aWFEzU=;
-        b=gIgmDb2NmEcJAQxE4GfuK7hkBqNDqAtMl9OVnCnIU3qY4ZtWgkV7aMQrpZwLcYpO0+vbB8
-        ClldHAI4qrlyqvq6njuvEvoMPOUJEzjfw+hrhhgtbsSPD8nFeCQdFgwE8UAzi5lJ05lX8y
-        y16wU7t2pEVuhevuBccSSUYiuh6yFMo=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 69A3B13CD4;
-        Fri, 22 Oct 2021 11:43:01 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0x1CF8WjcmFOKgAAMHmgww
-        (envelope-from <nborisov@suse.com>); Fri, 22 Oct 2021 11:43:01 +0000
-Subject: Re: 5.14.9 aarch64 OOPS Workqueue: btrfs-delalloc btrfs_work_helper
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     Chris Murphy <lists@colorremedies.com>, Su Yue <l@damenly.su>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtTqR8TJGZKKfwWB4sbu2-A+ZMPUBSQWzb0mYnXruuykAw@mail.gmail.com>
- <CAJCQCtSAWqeX_3kapDLr8AzNiGxyrNE7cO_tr3dM-syOKDsDgw@mail.gmail.com>
- <b1fccb42-da8a-c676-5f0b-1d80319e38ca@suse.com>
- <CAJCQCtSRxFuU4bTTa5_q6fAPuwf3pwrnUXM1CKgc+r69WSE9tQ@mail.gmail.com>
- <eae44940-48cb-5199-c46f-7db4ec953edf@suse.com>
- <CAJCQCtR+YQ2Xypz3KyHgD=TvQ8KcUsCf08YnhvLrVtgb-h9aMw@mail.gmail.com>
- <CAJCQCtQHugvMaeRc1A0EJnG4LDaLM5V=JzTO5FSU9eKQA8wxfA@mail.gmail.com>
- <CAJCQCtT12qUxYqJAf8q3t9cvbovoJdSG9kaBpvULQnwLw=rnMg@mail.gmail.com>
- <bl3mimya.fsf@damenly.su> <e75cf666-0b3a-9819-c6ac-a34835734bfb@gmx.com>
- <CAJCQCtT1+ocw-kQAKkX3wKjd4A1S1JV=wJre+UK5KY-weS33rQ@mail.gmail.com>
- <CAJCQCtTqqHFVH5YMOnRSesNs9spMb4QEPDa5wEH=gMDJ_u+yUA@mail.gmail.com>
- <7de9iylb.fsf@damenly.su>
- <CAJCQCtSUDSvMvbk1RmfTzBQ=UiZHrDeG6PE+LQK5pi_ZMCSp6A@mail.gmail.com>
- <35owijrm.fsf@damenly.su>
- <CAJCQCtS-QhnZm2X_k77BZPDP_gybn-Ao_qPOJhXLabgPHUvKng@mail.gmail.com>
- <ff911f0c-9ea5-43b1-4b8d-e8c392f0718e@suse.com>
-Message-ID: <9e746c1c-85e5-c766-26fa-a4d83f1bfd34@suse.com>
-Date:   Fri, 22 Oct 2021 14:43:00 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        Fri, 22 Oct 2021 08:14:45 -0400
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04437006|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_enroll_verification|0.0193777-0.000144617-0.980478;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047199;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.Lg7jlZw_1634904746;
+Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.Lg7jlZw_1634904746)
+          by smtp.aliyun-inc.com(10.147.41.199);
+          Fri, 22 Oct 2021 20:12:26 +0800
+Date:   Fri, 22 Oct 2021 20:12:33 +0800
+From:   Wang Yugui <wangyugui@e16-tech.com>
+To:     Filipe Manana <fdmanana@kernel.org>
+Subject: Re: [PATCH] btrfs: fix deadlock due to page faults during direct IO reads and writes
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAL3q7H4co70ByFqnDVArCQE9B1D7p6jf=jA+PRgJV2ijoS9vWg@mail.gmail.com>
+References: <20211022135923.E369.409509F4@e16-tech.com> <CAL3q7H4co70ByFqnDVArCQE9B1D7p6jf=jA+PRgJV2ijoS9vWg@mail.gmail.com>
+Message-Id: <20211022201232.7830.409509F4@e16-tech.com>
 MIME-Version: 1.0
-In-Reply-To: <ff911f0c-9ea5-43b1-4b8d-e8c392f0718e@suse.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+X-Mailer: Becky! ver. 2.75.04 [en]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi,
+
+> On Fri, Oct 22, 2021 at 6:59 AM Wang Yugui <wangyugui@e16-tech.com> wrote:
+> >
+> > Hi,
+> >
+> > I noticed a infinite loop of fstests/generic/475 when I apply this patch
+> > and "[PATCH v9 00/17] gfs2: Fix mmap + page fault deadlocks"
+> 
+> You mean v8? I can't find v9 anywhere.
+
+Yes. It is v8.
 
 
-On 22.10.21 г. 13:44, Nikolay Borisov wrote:
+> >
+> > reproduce frequency: about 50%.
 > 
+> with v8, on top of current misc-next, I couldn't trigger any issues
+> after running g/475 for 50+ times.
 > 
-> On 22.10.21 г. 5:36, Chris Murphy wrote:
->> OK I have a vmcore file:
->> https://dustymabe.fedorapeople.org/bz2011928-vmcore/
->>
->> lib/modules/5.14.10-300.fc35.aarch64/vmlinuz
->> https://drive.google.com/file/d/1xXM8XGRi_Wzyupbm4MSNteF0rwUzO4GE/view?usp=sharing
->>
+> >
+> > Call Trace 1:
+> > Oct 22 06:13:06 T7610 kernel: task:fsstress        state:R  running task     stack:    0 pid:2652125 ppid:     1 flags:0x00004006
+> > Oct 22 06:13:06 T7610 kernel: Call Trace:
+> > Oct 22 06:13:06 T7610 kernel: ? iomap_dio_rw+0xa/0x30
+> > Oct 22 06:13:06 T7610 kernel: ? btrfs_file_read_iter+0x157/0x1c0 [btrfs]
+> > Oct 22 06:13:06 T7610 kernel: ? new_sync_read+0x118/0x1a0
+> > Oct 22 06:13:06 T7610 kernel: ? vfs_read+0xf1/0x190
+> > Oct 22 06:13:06 T7610 kernel: ? ksys_read+0x59/0xd0
+> > Oct 22 06:13:06 T7610 kernel: ? do_syscall_64+0x37/0x80
+> > Oct 22 06:13:06 T7610 kernel: ? entry_SYSCALL_64_after_hwframe+0x44/0xae
+> >
+> >
+> > Call Trace 2:
+> > Oct 22 07:45:37 T7610 kernel: task:fsstress        state:R  running task     stack:    0 pid: 9584 ppid:     1 flags:0x00004006
+> > Oct 22 07:45:37 T7610 kernel: Call Trace:
+> > Oct 22 07:45:37 T7610 kernel: ? iomap_dio_complete+0x9e/0x140
+> > Oct 22 07:45:37 T7610 kernel: ? btrfs_file_read_iter+0x124/0x1c0 [btrfs]
+> > Oct 22 07:45:37 T7610 kernel: ? new_sync_read+0x118/0x1a0
+> > Oct 22 07:45:37 T7610 kernel: ? vfs_read+0xf1/0x190
+> > Oct 22 07:45:37 T7610 kernel: ? ksys_read+0x59/0xd0
+> > Oct 22 07:45:37 T7610 kernel: ? do_syscall_64+0x37/0x80
+> > Oct 22 07:45:37 T7610 kernel: ? entry_SYSCALL_64_after_hwframe+0x44/0xae
+> >
 > 
-> So the problem is we have a null inode:
-> 
-> 
-> crash> struct async_chunk ffff00012a78eb08
-> struct async_chunk {
->   inode = 0x0,
->   locked_page = 0xfffffc000508c240,
->   start = 0,
->   end = 4095,
->   write_flags = 0,
->   extents = {
->     next = 0xffff00012a78eb30,
->     prev = 0xffff00012a78eb30
->   },
->   blkcg_css = 0x0,
->   work = {
->     func = 0xffffd7c4c03c05c0 <async_cow_start>,
->     ordered_func = 0xffffd7c4c03c1bf0 <async_cow_submit>,
->     ordered_free = 0xffffd7c4c03be2e0 <async_cow_free>,
->     normal_work = {
->       data = {
->         counter = 256
->       },
->       entry = {
->         next = 0xffff00012a78eb68,
->         prev = 0xffff00012a78eb68
->       },
->       func = 0xffffd7c4c03f9e84 <btrfs_work_helper>
->     },
->     ordered_list = {
->       next = 0xffff00012a78ee80,
->       prev = 0xffff0000c6d83510
->     },
->     wq = 0xffff0000c6d83500,
->     flags = 3
->   },
->   pending = 0xffff00012a78eb00
-> }
-> 
-> 
-> But this makes no sense since before submit_compressed_extents is called
-> we have an explicit check for async_hunk->inode presence but AFAICS this
-> is not done in a concurrent context. So this either leaves some hw issue
-> or some race which manifests due to ARM's weak mm.
+> Are those the complete traces?
+> It looks like too little, and inexact (the prefix ?).
 
-I also looked at the assembly generated in async_cow_submit to see if
-anything funny happens while the async_chunk->inode check is performed -
-everything looks fine. Also given that the extents list is empty and the
-inode is NULL I'd assume that the "write" side is also correct i.e the
-code in async_cow_start. This pretty much excludes a codegen problem.
+Yes. these are complete traces.  I do not know the reason of 'the prefix ?'
 
-Chris can you add the following line in submit_compressed_extents right
-before the BTRFS_I() function is called:
+I run fstests/generic/475 2 times again.
+- failed to reproduce on SSD/SAS
+- sucessed to reproduce on SSD/NVMe
 
- WARN_ON(!async_chunk->inode);
+Then I gathered 'sysrq -t' for 3 times.
 
-And re-run the workload again?
+[  909.099550] task:fsstress        state:R  running task     stack:    0 pid: 9269 ppid:     1 flags:0x00004006
+[  909.100594] Call Trace:
+[  909.101633]  ? __clear_user+0x40/0x70
+[  909.102675]  ? lock_release+0x1c6/0x270
+[  909.103717]  ? alloc_extent_state+0xc1/0x190 [btrfs]
+[  909.104822]  ? fixup_exception+0x41/0x60
+[  909.105881]  ? rcu_read_lock_held_common+0xe/0x40
+[  909.106924]  ? rcu_read_lock_sched_held+0x23/0x80
+[  909.107947]  ? rcu_read_lock_sched_held+0x23/0x80
+[  909.108966]  ? slab_post_alloc_hook+0x50/0x340
+[  909.109993]  ? trace_hardirqs_on+0x1a/0xd0
+[  909.111039]  ? lock_extent_bits+0x64/0x90 [btrfs]
+[  909.112202]  ? __clear_extent_bit+0x37a/0x530 [btrfs]
+[  909.113366]  ? filemap_write_and_wait_range+0x87/0xd0
+[  909.114455]  ? clear_extent_bit+0x15/0x20 [btrfs]
+[  909.115628]  ? __iomap_dio_rw+0x284/0x830
+[  909.116741]  ? find_vma+0x32/0xb0
+[  909.117868]  ? __get_user_pages+0xba/0x740
+[  909.118971]  ? iomap_dio_rw+0xa/0x30
+[  909.120069]  ? btrfs_file_read_iter+0x157/0x1c0 [btrfs]
+[  909.121219]  ? new_sync_read+0x11b/0x1b0
+[  909.122301]  ? vfs_read+0xf7/0x190
+[  909.123373]  ? ksys_read+0x5f/0xe0
+[  909.124451]  ? do_syscall_64+0x37/0x80
+[  909.125556]  ? entry_SYSCALL_64_after_hwframe+0x44/0xae
+
+[ 1066.293028] task:fsstress        state:R  running task     stack:    0 pid: 9269 ppid:     1 flags:0x00004006
+[ 1066.294069] Call Trace:
+[ 1066.295111]  ? btrfs_file_read_iter+0x157/0x1c0 [btrfs]
+[ 1066.296213]  ? new_sync_read+0x11b/0x1b0
+[ 1066.297268]  ? vfs_read+0xf7/0x190
+[ 1066.298314]  ? ksys_read+0x5f/0xe0
+[ 1066.299359]  ? do_syscall_64+0x37/0x80
+[ 1066.300394]  ? entry_SYSCALL_64_after_hwframe+0x44/0xae
 
 
+[ 1201.027178] task:fsstress        state:R  running task     stack:    0 pid: 9269 ppid:     1 flags:0x00004006
+[ 1201.028233] Call Trace:
+[ 1201.029298]  ? iomap_dio_rw+0xa/0x30
+[ 1201.030352]  ? btrfs_file_read_iter+0x157/0x1c0 [btrfs]
+[ 1201.031465]  ? new_sync_read+0x11b/0x1b0
+[ 1201.032534]  ? vfs_read+0xf7/0x190
+[ 1201.033592]  ? ksys_read+0x5f/0xe0
+[ 1201.034633]  ? do_syscall_64+0x37/0x80
+[ 1201.035661]  ? entry_SYSCALL_64_after_hwframe+0x44/0xae
+
+By the way, I enable ' -O no-holes -R free-space-tree' for mkfs.btrfs by
+default.
+
+
+> >
+> > We noticed some  error in dmesg before this infinite loop.
+> > [15590.720909] BTRFS: error (device dm-0) in __btrfs_free_extent:3069: errno=-5 IO failure
+> > [15590.723014] BTRFS info (device dm-0): forced readonly
+> > [15590.725115] BTRFS: error (device dm-0) in btrfs_run_delayed_refs:2150: errno=-5 IO failure
 > 
->>
->> --
->> Chris Murphy
->>
-> 
+> Yes, that's expected, the test intentionally triggers simulated IO
+> failures, which can happen anywhere, not just when running delayed
+> references.
+
+Best Regards
+Wang Yugui (wangyugui@e16-tech.com)
+2021/10/22
+
+

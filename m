@@ -2,109 +2,332 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2B4AC4332F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Oct 2021 13:34:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB2B9C433EF
+	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Oct 2021 15:36:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D976260724
-	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Oct 2021 13:34:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B80FC60F21
+	for <linux-btrfs@archiver.kernel.org>; Sun, 24 Oct 2021 15:36:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231618AbhJXNgj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 24 Oct 2021 09:36:39 -0400
-Received: from out20-194.mail.aliyun.com ([115.124.20.194]:38867 "EHLO
-        out20-194.mail.aliyun.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230301AbhJXNgi (ORCPT
+        id S230301AbhJXPii (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 24 Oct 2021 11:38:38 -0400
+Received: from michael.mail.tiscali.it ([213.205.33.246]:56240 "EHLO
+        smtp.tiscali.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+        with ESMTP id S229788AbhJXPih (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 24 Oct 2021 09:36:38 -0400
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.07483197|-1;BR=01201311R111S28rulernew998_84748_2000303;CH=blue;DM=|CONTINUE|false|;DS=CONTINUE|ham_alarm|0.02026-0.000258078-0.979482;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047202;MF=guan@eryu.me;NM=1;PH=DS;RN=5;RT=5;SR=0;TI=SMTPD_---.Lh.bWLy_1635082455;
-Received: from localhost(mailfrom:guan@eryu.me fp:SMTPD_---.Lh.bWLy_1635082455)
-          by smtp.aliyun-inc.com(10.147.41.138);
-          Sun, 24 Oct 2021 21:34:16 +0800
-Date:   Sun, 24 Oct 2021 21:34:15 +0800
-From:   Eryu Guan <guan@eryu.me>
-To:     Ma Xinjian <xinjianx.ma@intel.com>
-Cc:     fstests@vger.kernel.org, Philip Li <philip.li@intel.com>,
-        kernel test robot <lkp@intel.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs/091: remove noinode_cache option
-Message-ID: <YXVg1xoLIvwxcjbD@desktop>
-References: <20210927072019.46609-1-xinjianx.ma@intel.com>
- <20210927072019.46609-2-xinjianx.ma@intel.com>
+        Sun, 24 Oct 2021 11:38:37 -0400
+X-Greylist: delayed 300 seconds by postgrey-1.27 at vger.kernel.org; Sun, 24 Oct 2021 11:38:37 EDT
+Received: from venice.bhome ([78.14.151.87])
+        by michael.mail.tiscali.it with 
+        id 9rXM2600l1tPKGW01rXNhc; Sun, 24 Oct 2021 15:31:22 +0000
+x-auth-user: kreijack@tiscali.it
+From:   Goffredo Baroncelli <kreijack@tiscali.it>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.cz>,
+        Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/2] btrfs-progs: new "allocation_hint" property.
+Date:   Sun, 24 Oct 2021 17:31:19 +0200
+Message-Id: <16656d3addbd859f6d8d4e9e549aeb30c4155e34.1635089206.git.kreijack@inwind.it>
+X-Mailer: git-send-email 2.33.0
+In-Reply-To: <cover.1635089206.git.kreijack@inwind.it>
+References: <cover.1635089206.git.kreijack@inwind.it>
+Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210927072019.46609-2-xinjianx.ma@intel.com>
+Content-Transfer-Encoding: 8bit
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
+        t=1635089482; bh=y27QtCHTGaf1sY4EMar4nQ4MJniuVpURqU6Njfcs9Pg=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
+        b=FM4fBFT9ZMAfm68slihXvzomAgc5MwfC1hKAPw0QHzhqK5FmaQvIxBzpALTAuFZJx
+         kIbJoUzrvxDSuPMII3rqLkZewfEt63vlwkENtSiKssbfFH1KzNX7iH0txxfuqyD+v0
+         pxsrPTRbhDCptoLr/kwtyqFJJxmeIxrw6OT2XOF4=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Sep 27, 2021 at 03:20:19PM +0800, Ma Xinjian wrote:
-> inode cache feature has been removed
-> 
-> Link: https://www.spinics.net/lists/linux-btrfs/msg107910.html
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-From above link, the inode cache feathre has been removed since v5.11
-kernel, which is relatively a recent kernel,  but old kernels may still
-need this noinode_cache mount option.  So we'd better to keep this
-check.
+Handle the property allocation_hint of a btrfs device. Below
+an example of use:
 
-We could add check for inode_cache option as well, and only check for
-noinode_cache when inode cache is supported.
+$ # set a new value
+$ sudo btrfs property set /dev/vde allocation_hint DATA_ONLY
 
-> Reported-by: kernel test robot <lkp@intel.com>
-> Signed-off-by: Ma Xinjian <xinjianx.ma@intel.com>
-> ---
->  tests/btrfs/091 | 21 +--------------------
->  1 file changed, 1 insertion(+), 20 deletions(-)
-> 
-> diff --git a/tests/btrfs/091 b/tests/btrfs/091
-> index 307289b1..f2cd00b2 100755
-> --- a/tests/btrfs/091
-> +++ b/tests/btrfs/091
-> @@ -23,21 +23,12 @@ _require_cp_reflink
->  # use largest node/leaf size (64K) to allow the test to be run on arch with
->  # page size > 4k.
->  NODESIZE=65536
-> -SUPPORT_NOINODE_CACHE="yes"
->  
->  run_check _scratch_mkfs "--nodesize $NODESIZE"
->  
-> -# inode cache will also take space in fs tree, disable them to get consistent
-> -# result.
->  # discard error output since we will check return value manually.
->  # also disable all compression, or output will mismatch with golden output
-> -_try_scratch_mount "-o noinode_cache,compress=no,compress-force=no" 2> /dev/null
-> -
-> -# Check for old kernel which doesn't support 'noinode_cache' mount option
-> -if [ $? -ne 0 ]; then
-> -	support_noinode_cache="no"
+$ # get the current value
+$ sudo btrfs property get /dev/vde allocation_hint
+devid=4, path=/dev/vde: allocation_hint=DATA_ONLY
 
-This seems like a type in the original code, it should be in upper case.
+The following values are availables:
+- DATA_ONLY
+- PREFERRED_DATA (default)
+- PREFERRED_METADATA
+- METADATA_ONLY
 
-Thanks,
-Eryu
+Root privileges are required.
 
-> -	_scratch_mount
-> -fi
-> +_try_scratch_mount "-o compress=no,compress-force=no" 2> /dev/null
->  
->  _run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv1
->  _run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv2
-> @@ -46,16 +37,6 @@ _run_btrfs_util_prog subvolume create $SCRATCH_MNT/subv3
->  _run_btrfs_util_prog quota enable $SCRATCH_MNT
->  _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
->  
-> -# if we don't support noinode_cache mount option, then we should double check
-> -# whether inode cache is enabled before executing the real test payload.
-> -if [ $SUPPORT_NOINODE_CACHE == "no" ]; then
-> -	EMPTY_SIZE=`$BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | \
-> -		$SED_PROG -n '/[0-9]/p' | $AWK_PROG '{print $2}' | head -n1`
-> -	if [ $EMPTY_SIZE != $NODESIZE ]; then
-> -		_notrun "Kernel doesn't support to disable inode cache"
-> -	fi
-> -fi
-> -
->  $XFS_IO_PROG -f -c "pwrite 0 256K" $SCRATCH_MNT/subv1/file1 | _filter_xfs_io
->  cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv2/file1
->  cp --reflink $SCRATCH_MNT/subv1/file1 $SCRATCH_MNT/subv3/file1
-> -- 
-> 2.20.1
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ cmds/property.c       | 199 ++++++++++++++++++++++++++++++++++++++++++
+ kernel-shared/ctree.h |  14 +++
+ 2 files changed, 213 insertions(+)
+
+diff --git a/cmds/property.c b/cmds/property.c
+index 59ef997c..5abd8f03 100644
+--- a/cmds/property.c
++++ b/cmds/property.c
+@@ -22,6 +22,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/stat.h>
+ #include <sys/xattr.h>
++#include <sys/sysmacros.h>
+ #include <uuid/uuid.h>
+ #include <btrfsutil.h>
+ #include "cmds/commands.h"
+@@ -30,6 +31,7 @@
+ #include "common/open-utils.h"
+ #include "common/utils.h"
+ #include "common/help.h"
++#include "common/path-utils.h"
+ 
+ #define XATTR_BTRFS_PREFIX     "btrfs."
+ #define XATTR_BTRFS_PREFIX_LEN (sizeof(XATTR_BTRFS_PREFIX) - 1)
+@@ -232,6 +234,197 @@ out:
+ 	return ret;
+ }
+ 
++static int btrfs_find_devid_and_mnt(const char *devpath, int *devid,
++				    char *path, int maxpath)
++{
++	int ret, i, fd;
++	DIR *dir;
++	struct stat stdevpath;
++	struct btrfs_ioctl_fs_info_args fi_args;
++	struct btrfs_ioctl_dev_info_args dev_info;
++
++	ret = get_btrfs_mount(devpath, path, maxpath);
++	if (ret)
++		return ret;
++
++	fd = btrfs_open_dir(path, &dir, 1);
++	if (fd < 0)
++		return fd;
++
++	ret = stat(devpath, &stdevpath);
++	if (ret) {
++		error("cannot stat '%s'", devpath);
++		goto out;
++	}
++
++	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &fi_args);
++	if (ret < 0) {
++		if (errno == EPERM)
++			return -errno;
++		error("cannot get filesystem info: %m");
++		ret = -10;
++		goto out;
++	}
++
++	for (i = 0 ; i <= fi_args.max_id ; i++) {
++		struct stat st;
++
++		memset(&dev_info, 0, sizeof(dev_info));
++		ret = get_device_info(fd, i, &dev_info);
++		if (ret == -ENODEV)
++			continue;
++		if (ret) {
++			error("cannot get info about device devid=%d", i);
++			goto out;
++		}
++
++		if (!dev_info.path)
++			/* missing devices */
++			continue;
++
++		ret = stat((char *)dev_info.path, &st);
++		if (ret) {
++			error("cannot stat '%s'", devpath);
++			goto out;
++		}
++
++		if (major(st.st_rdev) == major(stdevpath.st_rdev) &&
++		    minor(st.st_rdev) == minor(stdevpath.st_rdev)) {
++			*devid = dev_info.devid;
++			ret = 0;
++			goto out;
++		}
++	}
++
++	ret = -12;
++
++out:
++	close_file_or_dir(fd, dir);
++	return ret;
++}
++
++static struct ull_charp_pair_t {
++	u64		value;
++	const char	*descr;
++} allocation_hint_description[] = {
++	{BTRFS_DEV_ALLOCATION_PREFERRED_METADATA, "PREFERRED_METADATA"},
++	{BTRFS_DEV_ALLOCATION_METADATA_ONLY, "METADATA_ONLY"},
++	{BTRFS_DEV_ALLOCATION_PREFERRED_DATA, "PREFERRED_DATA"},
++	{BTRFS_DEV_ALLOCATION_DATA_ONLY, "DATA_ONLY"},
++	{0, NULL}
++};
++
++static int prop_allocation_hint(enum prop_object_type type,
++				const char *object,
++				const char *name,
++				const char *value,
++				bool force)
++{
++	int ret, devid, fd, fd2;
++	char path[PATH_MAX];
++	DIR *dir;
++	u8 fsid[BTRFS_UUID_SIZE];
++	char fsid_str[BTRFS_UUID_UNPARSED_SIZE];
++	char sysfs_file[PATH_MAX];
++	char filename[PATH_MAX];
++	int i;
++	u64 v, devtype;
++	char buf[1024];
++
++	ret = btrfs_find_devid_and_mnt(object, &devid, path, sizeof(path));
++	if (ret)
++		return -5;
++
++	fd = btrfs_open_dir(path, &dir, 1);
++	if (fd < 0)
++		return fd;
++
++	ret = get_fsid_fd(fd, fsid);
++	if (ret < 0)
++		goto out;
++
++	uuid_unparse(fsid, fsid_str);
++	sprintf(filename, "devinfo/%d/type", devid);
++
++	/* build /sys/fs/btrfs/<UUID>/devinfo/<DEVID>/type */
++	ret = path_cat3_out(sysfs_file, "/sys/fs/btrfs", fsid_str, filename);
++	if (ret < 0)
++		goto out;
++
++	fd2 = open(sysfs_file, O_RDONLY);
++	if (fd2 < 0) {
++		ret = -errno;
++		goto out;
++	}
++
++	ret = read(fd2, buf, sizeof(buf) - 1);
++	close(fd2);
++	if (ret < 0) {
++		ret = -errno;
++		goto out;
++	}
++
++	buf[sizeof(buf) - 1] = 0;
++	devtype = strtoull(buf, NULL, 0);
++
++	if (!value) {
++		/* READ */
++		for (i = 0 ; allocation_hint_description[i].descr ; i++)
++			if (devtype == allocation_hint_description[i].value)
++				break;
++		if (allocation_hint_description[i].descr)
++			printf("devid=%d, path=%s: allocation_hint=%s\n",
++				devid, object,
++				allocation_hint_description[i].descr);
++		else
++			printf("devid=%d, path=%s: allocation_hint=unknown:%llu\n",
++				devid, object,
++				devtype);
++		ret = 0;
++	} else {
++		/* WRITE */
++		for (i = 0 ; allocation_hint_description[i].descr ; i++)
++			if (!strcmp(value, allocation_hint_description[i].descr))
++				break;
++
++		if (allocation_hint_description[i].descr) {
++			v = allocation_hint_description[i].value;
++		} else if (sscanf(value, "%llu", &v) != 1) {
++			error("Invalid value '%s'\n", value);
++			ret = -3;
++			goto out;
++		} else if (v & ~BTRFS_DEV_ALLOCATION_MASK) {
++			error("Invalid value '%s'\n", value);
++			ret = -3;
++			goto out;
++		}
++
++		devtype &= ~BTRFS_DEV_ALLOCATION_MASK;
++		devtype |= (v & BTRFS_DEV_ALLOCATION_MASK);
++
++		fd2 = open(sysfs_file, O_RDWR);
++		if (fd2 < 0) {
++			ret = -errno;
++			goto out;
++		}
++
++		sprintf(buf, "%llu", devtype);
++
++		ret = write(fd2, buf, strlen(buf));
++		close(fd2);
++		if (ret < 0) {
++			ret = -errno;
++			goto out;
++		}
++
++	}
++
++	ret = 0;
++out:
++	close_file_or_dir(fd, dir);
++	return ret;
++}
++
+ const struct prop_handler prop_handlers[] = {
+ 	{
+ 		.name ="ro",
+@@ -254,6 +447,12 @@ const struct prop_handler prop_handlers[] = {
+ 		.types = prop_object_inode,
+ 		.handler = prop_compression
+ 	},
++	{
++		.name = "allocation_hint",
++		.desc = "hint to store the data/metadata chunks",
++		.types = prop_object_dev,
++		.handler = prop_allocation_hint
++	},
+ 	{NULL, NULL, 0, 0, NULL}
+ };
+ 
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 5f616585..d4635d13 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -219,6 +219,20 @@ struct btrfs_mapping_tree {
+ 	struct cache_tree cache_tree;
+ };
+ 
++/* btrfs chunk allocation hints */
++#define BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT    3
++#define BTRFS_DEV_ALLOCATION_MASK ((1ULL << \
++	       BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT) - 1)
++/* preferred metadata chunk, but data chunk allowed */
++#define BTRFS_DEV_ALLOCATION_PREFERRED_METADATA        (1ULL)
++/* only metadata chunk are allowed */
++#define BTRFS_DEV_ALLOCATION_METADATA_ONLY     (2ULL)
++/* only data chunk allowed */
++#define BTRFS_DEV_ALLOCATION_DATA_ONLY         (3ULL)
++/* preferred data chunk, but metadata chunk allowed */
++#define BTRFS_DEV_ALLOCATION_PREFERRED_DATA    (0ULL)
++/* 5..7 are unused values */
++
+ #define BTRFS_UUID_SIZE 16
+ struct btrfs_dev_item {
+ 	/* the internal btrfs device id */
+-- 
+2.33.0
+

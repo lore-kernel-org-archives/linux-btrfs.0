@@ -2,112 +2,101 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90A16C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 18:59:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59A39C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 19:01:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 74C2860FE8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 18:59:19 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3ABC760230
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 19:01:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233686AbhJYTBk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Oct 2021 15:01:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46498 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233665AbhJYTBk (ORCPT
+        id S233728AbhJYTDV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Oct 2021 15:03:21 -0400
+Received: from us-smtp-delivery-124.mimecast.com ([216.205.24.124]:43049 "EHLO
+        us-smtp-delivery-124.mimecast.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S232144AbhJYTDU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Oct 2021 15:01:40 -0400
-Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7D06C061745
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Oct 2021 11:59:17 -0700 (PDT)
-Received: by mail-qk1-x732.google.com with SMTP id x123so12774755qke.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Oct 2021 11:59:17 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=6Hu3uujpr3W5lLT7No0aWZYTFDYd6IAZq3BJq27n4A8=;
-        b=FsOZY5PHpMnPhIJyVYGo0OzR3KOEehcpcDtxIi2y/9wDdxLMEfrn0/LffgtnEcenKY
-         rAxAe+D9szlV5rd3/WZdc8zo2zg0FGtMcFE0WRE4Ao78mMsp1GhRcsThstI+yk4cX7CK
-         cxmFCYNXYNBaXCg0fhtaHxt59yzoMqcGuplSfXGGWQ8m520icNdpm6+W0PkK+/sQiPSX
-         ZXbil9O08pinAYscJlOHKdWi1Ed8m8xpSqMx0kPHSgWIoM2t4DXb/pCivCsxL0gcE0wC
-         KSwjTvX8ckUiVd/WV3WOB32XKF4yybyrTjFX1lwvVGuX6LoJLXuhN0jJKYeKuvvPMD3t
-         uf6w==
+        Mon, 25 Oct 2021 15:03:20 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1635188457;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=QkyoC/NexH1Nu0O2R4wJhF/62iz6WrFzKuF9woFeRsA=;
+        b=UwnglEV32+L32U71gCflIg1S6qxdoFNON/cvvx79/vcGs+dC2ZTq2A6QuBx1fYB8mrzCX/
+        XveypilyjA86fAeNLqSoL04Gjmxxir39BkiJg57AwfJWWLhVCJL+TOJ7R5gN/kaOsc3/ra
+        aSrxxHA/ztZCB1EH+gXTKjg4Vstxeas=
+Received: from mail-wr1-f71.google.com (mail-wr1-f71.google.com
+ [209.85.221.71]) (Using TLS) by relay.mimecast.com with ESMTP id
+ us-mta-265-SWxD0ydVPFeL9q8JjmdNKg-1; Mon, 25 Oct 2021 15:00:56 -0400
+X-MC-Unique: SWxD0ydVPFeL9q8JjmdNKg-1
+Received: by mail-wr1-f71.google.com with SMTP id x1-20020adfffc1000000b001679fc9c018so3430120wrs.18
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Oct 2021 12:00:56 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=6Hu3uujpr3W5lLT7No0aWZYTFDYd6IAZq3BJq27n4A8=;
-        b=fKa3uxRMrh+POzyVfiFjDkgnj2ciZWY6K8uKFjNZ6wE/lSf1dOq3ugUqlY1+TkDEKE
-         i0krnVmUBQFIj845pbOPGF3DPD/AO54iKDM5xompbyNelFbC+EU7L8VpYvwoBG/KjHZ7
-         pBBKx73d0/nf3tFM6Z6JOnm/fz7O/ppwHHT2SleBELIjo7p3eLeKgagUB/tIvFjgTPtU
-         SFYeWuzvrrJJmmTwtAbr6XLA0Uu2IzL46Cm/EgkMV2ymS5qCNuu7orjlW3t5ZqdpkvlH
-         xY64D/BFfNphB5JMKCE4QWH+N3zfPH7D2gdY3Y6mxqfWSca168hFqnFRC/n1HJxLI3cq
-         cX7g==
-X-Gm-Message-State: AOAM5300LK2DOZMdR80JzrTtlH/Fne/q3ERzkKrjw+F1baBTkPFaRRX1
-        mVGWIr94QrLjnH7CIc7IFeCHgQ==
-X-Google-Smtp-Source: ABdhPJxSQTNhHeP3QBNgdwujJcM1lICTq4k87gDFQ4eNJndR5Hk6vrscYrfIlws+rMj7FgD05xk2Qg==
-X-Received: by 2002:a05:620a:269a:: with SMTP id c26mr15614311qkp.388.1635188356978;
-        Mon, 25 Oct 2021 11:59:16 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id x22sm10542853qkp.103.2021.10.25.11.59.16
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 25 Oct 2021 11:59:16 -0700 (PDT)
-Date:   Mon, 25 Oct 2021 14:59:15 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v2 0/6] btrfs: speedup directory logging/fsync by copying
- index keys only
-Message-ID: <YXb+g31uylK782xS@localhost.localdomain>
-References: <cover.1635155473.git.fdmanana@suse.com>
- <cover.1635178668.git.fdmanana@suse.com>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=QkyoC/NexH1Nu0O2R4wJhF/62iz6WrFzKuF9woFeRsA=;
+        b=mqudI//u2/GWedbwGydWSFLCDntDICW7ET5QaM2z0ZiUV+TtNagACPz45ZEAPjDShu
+         c+GRSO5nK0y6JOo1sdiDWIYrj0SAsizCtxYEtz1DAoWH++cmzedI69p0kE7BDEDHEpcb
+         L8jZ4xAp5NOY2KCY9WV01szGYXeMiyiz7/tEpXT8tCiC/KpWEwbRw9QTzWeMspYHd4nC
+         b+AiCrEj95i3ECVUkM+bqq1TsAQX2uNp34uF4uE5a0AAZaymF7UpJNuRdhgGoQiqX18e
+         S+duzGTSkFBJ7bZerhw0xNVW8U6eKssFgBaHCe0SLGUQsfGGIBz9RGlrRcWV0ETkumgw
+         /aMw==
+X-Gm-Message-State: AOAM530zBKCkq/qGfHXUs+R6BskvHwHz/WnL0QsD76h6NW+QalsGEVaa
+        TXQw5PmsoQ767cfwUH/aSGAEYN4+w5Us8INoCaVMfBkru85fZ7ea6tS+9diiAG5EMzU3VGnD/hC
+        poZ+PV8i5lzdvwNLoy7noVjQW/qJPEYP7mcH7zjs=
+X-Received: by 2002:a7b:c74f:: with SMTP id w15mr21890329wmk.186.1635188455463;
+        Mon, 25 Oct 2021 12:00:55 -0700 (PDT)
+X-Google-Smtp-Source: ABdhPJxzXLWqbHTas2L+Ep0jJ8Ym3FrcHaKtpcTPgh7nV35XP5aJDxyjNlJ4UaNmG9hWfJd1eun8dCJKnnE+XiZ6mmk=
+X-Received: by 2002:a7b:c74f:: with SMTP id w15mr21890297wmk.186.1635188455236;
+ Mon, 25 Oct 2021 12:00:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1635178668.git.fdmanana@suse.com>
+References: <20211019134204.3382645-1-agruenba@redhat.com> <CAHk-=wh0_3y5s7-G74U0Pcjm7Y_yHB608NYrQSvgogVNBxsWSQ@mail.gmail.com>
+ <YXBFqD9WVuU8awIv@arm.com> <CAHk-=wgv=KPZBJGnx_O5-7hhST8CL9BN4wJwtVuycjhv_1MmvQ@mail.gmail.com>
+ <YXCbv5gdfEEtAYo8@arm.com> <CAHk-=wgP058PNY8eoWW=5uRMox-PuesDMrLsrCWPS+xXhzbQxQ@mail.gmail.com>
+ <YXL9tRher7QVmq6N@arm.com> <CAHk-=wg4t2t1AaBDyMfOVhCCOiLLjCB5TFVgZcV4Pr8X2qptJw@mail.gmail.com>
+In-Reply-To: <CAHk-=wg4t2t1AaBDyMfOVhCCOiLLjCB5TFVgZcV4Pr8X2qptJw@mail.gmail.com>
+From:   Andreas Gruenbacher <agruenba@redhat.com>
+Date:   Mon, 25 Oct 2021 21:00:43 +0200
+Message-ID: <CAHc6FU7BEfBJCpm8wC3P+8GTBcXxzDWcp6wAcgzQtuaJLHrqZA@mail.gmail.com>
+Subject: Re: [PATCH v8 00/17] gfs2: Fix mmap + page fault deadlocks
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Catalin Marinas <catalin.marinas@arm.com>,
+        Paul Mackerras <paulus@ozlabs.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <djwong@kernel.org>, Jan Kara <jack@suse.cz>,
+        Matthew Wilcox <willy@infradead.org>,
+        cluster-devel <cluster-devel@redhat.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com, kvm-ppc@vger.kernel.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Oct 25, 2021 at 05:31:48PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> This patchset reworks directory logging to make it copy only the dir index
-> keys, instead of copying both dir index keys and dir item keys, as both have
-> the same type of information. This reduces the amount of logged metadata by
-> about half, and therefore we do about half of the cpu bound work, half of
-> the IO and use less log tree space (except for very small directories).
-> 
-> This will allow other optimizations to build on top, some of which are only
-> possible after this change, while others become easier and less cumbersome
-> to implement after this change. Performance tests are in the changelog of
-> patch 5/6. Patch 6/6 only removes code that deals with dir item keys when
-> replaying directory deletions and it could have been squashed into patch
-> 5/6, but since that one is already large and works without 6/6, I opted
-> to make it separate to make it easier to review.
-> 
-> Also, after this change we are still able to correctly replay a log tree
-> generated by an old kernel, and an old kernel is also able to correctly
-> replay a log tree generated by a kernel that has this patchset applied.
-> 
-> I'm sending this close to the 5.16 merge window, but my intention is to
-> have it only for the next merge window (5.17).
-> 
-> V2: Updated changelog of patch 5/6 to make it more clear why backward
->     and forward compatibility are guaranteed.
-> 
-> Filipe Manana (6):
->   btrfs: remove root argument from drop_one_dir_item()
->   btrfs: remove root argument from btrfs_unlink_inode()
->   btrfs: remove root argument from add_link()
->   btrfs: remove root argument from check_item_in_log()
->   btrfs: only copy dir index keys when logging a directory
->   btrfs: remove no longer needed logic for replaying directory deletes
-> 
+On Fri, Oct 22, 2021 at 9:23 PM Linus Torvalds
+<torvalds@linux-foundation.org> wrote:
+> On Fri, Oct 22, 2021 at 8:06 AM Catalin Marinas <catalin.marinas@arm.com> wrote:
+> > Probing only the first byte(s) in fault_in() would be ideal, no need to
+> > go through all filesystems and try to change the uaccess/probing order.
+>
+> Let's try that. Or rather: probing just the first page - since there
+> are users like that btrfs ioctl, and the direct-io path.
 
-You can add
+For direct I/O, we actually only want to trigger page fault-in so that
+we can grab page references with bio_iov_iter_get_pages. Probing for
+sub-page error domains will only slow things down. If we hit -EFAULT
+during the actual copy-in or copy-out, we know that the error can't be
+page fault related. Similarly, in the buffered I/O case, we only
+really care about the next byte, so any probing beyond that is
+unnecessary.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+So maybe we should split the sub-page error domain probing off from
+the fault-in functions. Or at least add an argument to the fault-in
+functions that specifies the amount of memory to probe.
 
-to the series, thanks,
+Thanks,
+Andreas
 
-Josef

@@ -2,35 +2,35 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E74FBC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 09:56:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6031FC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 09:56:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CDB1D60FDC
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 09:56:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 35EE361002
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Oct 2021 09:56:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232645AbhJYJ7B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Oct 2021 05:59:01 -0400
-Received: from mail.kernel.org ([198.145.29.99]:37338 "EHLO mail.kernel.org"
+        id S232679AbhJYJ7C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Oct 2021 05:59:02 -0400
+Received: from mail.kernel.org ([198.145.29.99]:37346 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230297AbhJYJ6v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Oct 2021 05:58:51 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 9DD2761029
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Oct 2021 09:56:29 +0000 (UTC)
+        id S232638AbhJYJ6x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 25 Oct 2021 05:58:53 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 37F5F61029
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Oct 2021 09:56:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1635155790;
-        bh=Bni20bC5kEhAfZp83ccnaWJexvMC+YHymeJTB+WQcYw=;
+        s=k20201202; t=1635155791;
+        bh=Cy9HLxJ6sDxyaRtLJpn9QhbXae0IZPvyg8U2sebMz2c=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=gqZzGLWU9nlCJccce6wZnrLnSxLZvwHNwUW7p+AR0xYCDiBFHrogKQatON3Txj/jw
-         FEBg5xFOlcKywG+w6VbDNpyd64L5olGxipBWYwX+f4hUnoIKWHKeiRiR9Yaj17PZSb
-         10F0gMQ5UbxZJlva1V/MZxFKGd2OS4lVA7TmNjPyywtJ5rhwthOvBMgKA/c14z16a/
-         UAkN45ox4E9LaywPCueDZq5NFlUE8J0P/h6b7/2FDBjQZ297Zn3qQko79efhMEWpXb
-         b9CS5nYvl9OiH5vI/OkS46EDNGw0DgzQT70ZTg4FI+l8mLz68zdPnz5A/FO8s3tAtb
-         21jvxj8ydgOYQ==
+        b=u3F7xQ3axwjbHDm5q9Apf/sNYde2/Nwwrtg9o5gG+wZPbnP5hIo/C3ghU+pbZimvX
+         OEgFPciWwuI+nk1MQQO39ZWospfdGTO4kyE5khsEu7sa98YPRGbxYsVsYJLfr6hE3D
+         MEMTn0vmyiPNQOjCzEPNTWDGvemy8tAC2BHXTY1AuF9FEefCI9VIOO/K4DHHxWbh7i
+         Bp+Sriql268AdhBZ6204170bkpIGmcSWuVuRMaAKy0De4LHJOME8ergFrMCvwPWu98
+         VE1eFYsx29sva2KmugWV7I27xx/KMVYdMCSFIsuf0swDp0HXvctowCsDabbcTdygXX
+         Ritz0yhBgIZow==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] btrfs: remove root argument from drop_one_dir_item()
-Date:   Mon, 25 Oct 2021 10:56:21 +0100
-Message-Id: <63f3aa795649c8ff556354e1472aee6db6795e51.1635155473.git.fdmanana@suse.com>
+Subject: [PATCH 3/6] btrfs: remove root argument from add_link()
+Date:   Mon, 25 Oct 2021 10:56:23 +0100
+Message-Id: <0de517089fcedd5bf8999cff85c223ce66c1dd95.1635155473.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1635155473.git.fdmanana@suse.com>
 References: <cover.1635155473.git.fdmanana@suse.com>
@@ -42,59 +42,40 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The root argument for drop_one_dir_item() always matches the root of the
-given directory inode, since each log tree is associated to one and only
-one subvolume/root, so remove the argument.
+The root argument for tree-log.c:add_link() always matches the root of the
+given directory and the given inode, so it can eliminated.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/tree-log.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 7c900eb27cf8..23f1a35ea04f 100644
+index 568509371b68..b753b3c87e14 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -921,11 +921,11 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
-  * item
-  */
- static noinline int drop_one_dir_item(struct btrfs_trans_handle *trans,
--				      struct btrfs_root *root,
- 				      struct btrfs_path *path,
- 				      struct btrfs_inode *dir,
- 				      struct btrfs_dir_item *di)
+@@ -1413,10 +1413,11 @@ static int btrfs_inode_ref_exists(struct inode *inode, struct inode *dir,
+ 	return ret;
+ }
+ 
+-static int add_link(struct btrfs_trans_handle *trans, struct btrfs_root *root,
++static int add_link(struct btrfs_trans_handle *trans,
+ 		    struct inode *dir, struct inode *inode, const char *name,
+ 		    int namelen, u64 ref_index)
  {
-+	struct btrfs_root *root = dir->root;
- 	struct inode *inode;
- 	char *name;
- 	int name_len;
-@@ -1220,7 +1220,7 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- 	if (IS_ERR(di)) {
- 		return PTR_ERR(di);
- 	} else if (di) {
--		ret = drop_one_dir_item(trans, root, path, dir, di);
-+		ret = drop_one_dir_item(trans, path, dir, di);
- 		if (ret)
- 			return ret;
- 	}
-@@ -1232,7 +1232,7 @@ static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
- 	if (IS_ERR(di)) {
- 		return PTR_ERR(di);
- 	} else if (di) {
--		ret = drop_one_dir_item(trans, root, path, dir, di);
-+		ret = drop_one_dir_item(trans, path, dir, di);
- 		if (ret)
- 			return ret;
- 	}
-@@ -2049,7 +2049,7 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
- 	if (!exists)
- 		goto out;
++	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_dir_item *dir_item;
+ 	struct btrfs_key key;
+ 	struct btrfs_path *path;
+@@ -1612,7 +1613,7 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
+ 				goto out;
  
--	ret = drop_one_dir_item(trans, root, path, BTRFS_I(dir), dst_di);
-+	ret = drop_one_dir_item(trans, path, BTRFS_I(dir), dst_di);
- 	if (ret)
- 		goto out;
- 
+ 			/* insert our name */
+-			ret = add_link(trans, root, dir, inode, name, namelen,
++			ret = add_link(trans, dir, inode, name, namelen,
+ 				       ref_index);
+ 			if (ret)
+ 				goto out;
 -- 
 2.33.0
 

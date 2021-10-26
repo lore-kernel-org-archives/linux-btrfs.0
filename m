@@ -2,286 +2,167 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F01AC433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Oct 2021 07:24:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9690C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Oct 2021 07:53:29 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 146A760FC2
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Oct 2021 07:24:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9970460D43
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Oct 2021 07:53:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230467AbhJZH1H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Oct 2021 03:27:07 -0400
-Received: from mout.gmx.net ([212.227.15.15]:33491 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229487AbhJZH1D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Oct 2021 03:27:03 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1635233076;
-        bh=s1YalCFOq73e5XjW2skO/yVq3XSMrkx0kntYuLx+DNA=;
-        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-        b=guKEShUfedSie2pSso03kuTLIfBKeX/ZnwdHkKCF+vz7hkokOFCsFOjd96OYOJSS9
-         AptlaoOvkQb5zxQfRxhf1r/ZfULTVQJr/CoRH1+PS88p8/+wgA7GcVHjzyaKGSMS52
-         HldNFaj6lhSvJiVsp6PFkAQkU/y/Y6/ezR0ho3NI=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MgNh7-1nADBk3LxP-00hvYm; Tue, 26
- Oct 2021 09:24:36 +0200
-Message-ID: <654051a3-e069-a8bc-08a5-0fb5561144df@gmx.com>
-Date:   Tue, 26 Oct 2021 15:24:32 +0800
+        id S232626AbhJZHzv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Oct 2021 03:55:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49738 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229982AbhJZHzu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 26 Oct 2021 03:55:50 -0400
+Received: from mail-pg1-x52b.google.com (mail-pg1-x52b.google.com [IPv6:2607:f8b0:4864:20::52b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C601C061745
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Oct 2021 00:53:27 -0700 (PDT)
+Received: by mail-pg1-x52b.google.com with SMTP id e65so13339575pgc.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Oct 2021 00:53:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=gite0SGGIQ7qm710ogoNzYimbvpwi6b1/lYzpJUFn9I=;
+        b=QXPYIzIbGweO/lzaH2mxDmvHVA2AlwwEe9LZAl6Sfxx/kP96zNrFOkMK7O38JrNl90
+         +rf92ia6TtF1UxTVKmBw+ax7S947WxCopjqCu+WHqhca9gGFDEDUi4G85+7bbTHf2mqX
+         FG2BKVI1cFMCb0zaSMkxLWPFVgOej4DpqSy6B9PVds0+4xsjrjVyKn5XacxhB+8Lv3Mg
+         h9NZl24NIFqU3GrUGQjKaMXGkct2o9gva34vBQtOtI5d47ZmkedfpeE3tToUHjhiaAJj
+         vvOtzYzow4TAiihfv7Q1qNxp8VvE9c61ojgNoIMMZPbnKAUiTqRz+b45v8J9gEXQpHI7
+         KOZw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=gite0SGGIQ7qm710ogoNzYimbvpwi6b1/lYzpJUFn9I=;
+        b=gN5xfq7Jq/txhW+juYCZ/D4MWd+LyQz8oXPEda9G0SsGCaRcrPOXRpjSV2JGA3JNyY
+         ViL896rDgj1DF/w+SJrkTnQcyItqFSRg+l++SEdPwoyrpmj9Y5npVwJu79M0kvvWC4IP
+         z5w/XpkQiPL9VzviUAjOxc6p93by9kkwSRoL37LGYi6XeCXiP9qcB/mlhQQHzyonKZ2Y
+         mGD0B2t/70e4O8GugXrnppR70VUti88pB8hHqmNHZjYHJxXtMDvkZO82doe8E9qU3dgI
+         b8fEUreIKkwkh36YrC8U7XyFHTnp9SF/drJ85VrJC7uUwlWDKLMCgauZWGo5DJck3qdO
+         oMuQ==
+X-Gm-Message-State: AOAM531eWuoLbT5mLVDKjPrCMEr5pTxD2tScISePyMr/BNLBuxYbm3S3
+        Qno1CWMS8f2aKh2S5nsWsnowUA==
+X-Google-Smtp-Source: ABdhPJw8oJUD9xbwHkBYPTCC0f8p6bBgMQGIv0ZU9Kog7XsFemIRVNppFzkSisRC6Rm0ZLUIYEbyTA==
+X-Received: by 2002:a05:6a00:ac1:b0:44c:4dc6:b897 with SMTP id c1-20020a056a000ac100b0044c4dc6b897mr24615248pfl.25.1635234806524;
+        Tue, 26 Oct 2021 00:53:26 -0700 (PDT)
+Received: from relinquished.localdomain ([2601:602:8b80:8e0::381])
+        by smtp.gmail.com with ESMTPSA id v14sm10201203pff.199.2021.10.26.00.53.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 26 Oct 2021 00:53:26 -0700 (PDT)
+Date:   Tue, 26 Oct 2021 00:53:25 -0700
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Eric Biggers <ebiggers@kernel.org>
+Cc:     linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
+        "Theodore Y. Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>, kernel-team@fb.com
+Subject: Re: Btrfs Fscrypt Design Document
+Message-ID: <YXez9Yq9ygfjKhoz@relinquished.localdomain>
+References: <YXGyq+buM79A1S0L@relinquished.localdomain>
+ <YXcKX3iNmqlGsdzv@gmail.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.2.0
-Subject: Re: filesystem corrupt - error -117
-Content-Language: en-US
-To:     Mia <9speysdx24@kr33.de>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <em969af203-04e6-4eff-a115-1129ae853867@frystation>
- <em33e101b0-d634-48b5-8a32-45e295f48f16@rx2.rx-server.de>
- <c2941415-e32f-b31d-0bc2-911ede3717b7@gmx.com>
- <69109d24-efa7-b9d1-e1df-c79b3989e7bf@rx2.rx-server.de>
- <em0473d04b-06b0-43aa-91d6-1b0298103701@rx2.rx-server.de>
- <146cff2c-3081-7d03-04c8-4cc2b4ef6ff1@suse.com>
- <884d76d1-5836-9a91-a39b-41c37441e020@rx2.rx-server.de>
- <em6e5eb690-6dcd-482d-b4f2-1b940b6cb770@rx2.rx-server.de>
- <3ce1dd17-b574-abe3-d6cc-eb16f00117cc@rx2.rx-server.de>
- <em2512c4e9-1e5e-4aa0-b9fc-fb68891e615d@rx2.rx-server.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <em2512c4e9-1e5e-4aa0-b9fc-fb68891e615d@rx2.rx-server.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:wCbZzyDAzOf/ru6d0pT9aYH/fn+DMyuCBrB0jYQdJ51i2gq2kVi
- nPHQunF0eOCkLL9+2Q4APlATBwKUzpKSYLyK9AAflSJHpOcDCGPf04wJsyOsWZRSb5frA+r
- 9HQB/dNVCFp00bWanDT3l/G44E4ArmGleHUPCDSQs3Kd2rlHGiWGjbOYppXJSNqCPwzfxEF
- 4ETO8OLGsrU94RelDVjKw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:bTz+SZJtrSA=:dGQmJzUzbB635B2hH6w/uX
- 3cYtcZAxeTPPpJf7IVoapQZ6Wkpfq9qza+i0ZoFkXCRSCgr4CBA+tYKlf3VB/4udas+gPvJHa
- OJmMI3qHey3Jjags72MfnFJ23fTn91Z95t6Qr33HQeG+FD/8hGCzs98WCFbkUS5j8CRzU5Rfx
- lpzHvBW/+XsI+xiPWJ4d/QXONbgdejEMLm1sCODXiShnIE+/uThXnDQtrKVGGtVFTyyJq2/fJ
- AOBCQ+BxYsLtN0NEzOU+tTyqmBl77fmBFlc/lgjVufYyVxxecuqhg45RMWLy5yowAr2UMP8Br
- A/86Mj6v44l8+0a+e01mReOUeEwCh8n0UkKrAhovi+7ilNnxdtmx/E5jrQZkrnnmyqfMx/2jR
- QoWn/VK8PfuZUHYlhgbVJLgjTH1tbaqswIi+xuyb83DUMiGjcbLd/yneohHE6UUXE7Y41UUcf
- mvULORsCxxHHeujnQaEUoh8k+74tzm7ujYuyVjDVjGTslyFrI1Jayy4C+eKWWaIyKShVubjXr
- CC/z2AYKnOPVKwpX94Ia3lb0mSchsUysoKipoLuCmWxrunTuugPmJ61GqqzhLLLvRFo+eAFSK
- Gz2kig4JVZcR22Iu7mHYn0lmMR5c0TvfvmfOHgtu8U6kT7apMP2Qqy9E9o4VqTrMT7GIqqyvC
- elombM8wUvMfvVhImSAKcpJXJhsLM8jcFHryLWnnDpggkFUJpsHCZDRtB4ha8jYxstYC44pYH
- YREf6Jq51U3Z7c/wduMuFNx9qdC4hn5c00WbBn+1FsCO8bM36OrHgOSxjcE8sy7LqXgmtvI87
- C0wRMo1OT53yodmo5YlL/HrdaKq5jc8s4mUcfLYZVjvBRtvtNaF5a9NWOPt1HYg2T5gQ87+xV
- igEJ2sjTUc+IIP5BUWP15PNs9+30CoESAYSUyDeD1Ty6Z0+DrE4+BWAaqIg5ycVtHssXARGX4
- 6S5RLtKyaYx5swFL3MQ2Q9GpA7QSENyMHh8947/qWwEf3NMg9i7as3XfY7tyX8/EB1qNvVnAO
- gStVDMeErLillgCMC+N/LkHPULxlXMr5KtTJLJe20WJK9LT93tqrTIwM5SCqArkO0Brfm8njH
- d44JI8tBuUbwqw=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <YXcKX3iNmqlGsdzv@gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Mon, Oct 25, 2021 at 12:49:51PM -0700, Eric Biggers wrote:
+> On Thu, Oct 21, 2021 at 11:34:19AM -0700, Omar Sandoval wrote:
+> > Hello,
+> > 
+> > I've been working on adding fscrypt support to Btrfs. Btrfs has some
+> > features (namely, reflinks and snapshots) that don't work well with the
+> > existing fscrypt encryption policies. I've been discussing and
+> > prototyping how to support these Btrfs features with fscrypt, so I
+> > figured it was high time I write it down and loop in the fscrypt
+> > developers as well.
+> > 
+> > Here is the Google Doc:
+> > https://docs.google.com/document/d/1iNnrqyZqJ2I5nfWKt7cd1T9xwU0iHhjhk9ALQW3XuII/edit?usp=sharing
+> > 
+> > Please feel free to comment there or via email.
+> > 
+> 
+> Just some preliminary comments:
+> 
+> Given that you need reflinking to remain supported, for file contents encryption
+> I think it's the right choice to store the IVs explicitly rather than have them
+> determined by the offset within the file.
+> 
+> How many derived encryption keys to use is somewhat orthogonal to that.  As I
+> mentioned in my other mail, you could still have one key per extent rather than
+> one per encryption policy as you're proposing.  I'm *guessing* it wouldn't be
+> practical, and I don't consider it to be required (just preferable), but the
+> document doesn't discuss this possibility at all.
 
+I overlooked this option because my gut instinct was that the memory
+usage would be prohibitive. It looks like one AES-256-XTS prepared key
+is about 1k in memory (960 bytes for the encryption and decryption key
+schedules for each key, plus a bit more for the crypto API structures).
+I thought it'd be too expensive to store this naively for each cached
+extent.
 
-On 2021/10/26 14:03, Mia wrote:
-> Hi Qu,
->
-> thanks for clarification.
-> So I should just ignore these errors for now?
+However, across various machines I checked, the number of cached inodes
+and the number of cached extents is in the same order magnitude (and in
+fact, almost equal in many cases). So per-extent keys aren't out of the
+question. We can store a 16-byte nonce in the extent, use that to derive
+the per-extent key from the master key, and use the offset in the extent
+as the IV. I'll think about it some more and make sure I'm not missing
+anything.
 
-Yes, none of them is going to cause any direct problems.
+> Storing just the "starting IV" for each extent also makes sense, assuming that
+> you only want to support an unauthenticated mode such as AES-XTS.  However,
+> given that btrfs is a copy-on-write filesystem and thus can support per-block
+> metadata, a natural question is why not support an authenticated mode such as
+> AES-GCM, with a nonce and authentication tag stored per block?  Have you thought
+> about this?
+> 
+> Now, I personally think that authenticating file contents only wouldn't give
+> much benefit, and whole-filesystem authentication would be needed to get a real
+> benefit.  But "why aren't you using an authenticated mode" is a *very* common
+> question, so you need an answer to that -- or ideally, just support it if it
+> isn't much work.
 
-> What about these ones, you haven't mentioned:
-> bad metadata [342605463552, 342605479936) crossing stripe boundary
+We already store a checksum per block; I don't see any reason that it
+couldn't be a MAC. Johannes Thumshirn had a proof of concept for storing
+an HMAC for all blocks:
+https://lore.kernel.org/linux-btrfs/20191015121405.19066-1-jthumshirn@suse.de/#b
+Plumbing it through for authenticated encryption would be a little
+harder, but probably not by much.
 
-This is the same, it just means it crosses 64K boundary, which is not
-supported for the incoming subpage support (using 4K page size on 64K
-page size systems).
+> What is your proposal for how filenames encryption would work when the
+> EXPLICIT_IV flag is used?  That doesn't appear to be mentioned.
 
->
-> Problem with updating is that this is currently still Debian 10 and a
-> production environment and I don't know when it is possible to upgrade
-> because of dependencies.
+Since there's no such thing as "reflinking" filenames, I think filename
+encryption can be unchanged, i.e., per-directory encryption keys. (This
+would probably be the case with per-extent keys for data, as well.)
 
-OK, understood the situation now.
+> Finally, the proposal to allow encrypting the changed data of snapshots is a
+> larger departure from the fscrypt model.  I'm still trying to wrap my head
+> around how that could work.  Could you provide any more details about that?
+> E.g. what metadata would actually be stored on-disk, and how would it be used?
+> When would things be done in terms of filesystem operations?  E.g. let's say I
+> open a file for writing -- would the encryption key be set up right away, or
+> would it not happen until I actually write data?
 
-Then I can't provide much helper as I'm not familiar with Debian...
+On disk, we still only need to store the usual fscrypt context. It will
+always be present for the top-level of the snapshot. It may or may not
+be present for any files or directories under that.
 
-If not reproducible so far, I can only recommend for a memtest to rule
-out memory bitflip, which could also cause the bug.
+In memory, we'd store whether the subvolume is encrypted. This would be
+set when enabling encryption and when caching the subvolume. Since every
+inode has a reference to the subvolume it is in, and inodes can't move
+between subvolumes, all we need is a check like:
 
-Thanks,
-Qu
->
-> Regards
-> Mia
->
-> ------ Originalnachricht ------
-> Von: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
-> An: "Mia" <9speysdx24@kr33.de>; "Qu Wenruo" <wqu@suse.com>;
-> linux-btrfs@vger.kernel.org
-> Gesendet: 26.10.2021 00:45:18
-> Betreff: Re: filesystem corrupt - error -117
->
->>
->>
->> On 2021/10/26 01:09, Mia wrote:
->>> Hi Qu,
->>>
->>> sorry for the late reply. I tried the btrfs check again with arch
->>> live cd:
->>>
->>> root@archiso ~ # uname -a
->>> Linux archiso 5.11.16-arch1-1 #1 SMP PREEMPT Wed, 21 Apr 2021 17:22:13
->>> +0000 x86_64 GNU/Linux
->>> root@archiso ~ # btrfs --version
->>> btrfs-progs v5.14.2
->>>
->>> https://gist.github.com/lynara/12dcfff870260b6bc35b9d1137921fc4
->>
->> OK, so the metadata problem is really there, but it shouldn't affect
->> your fs right now, unless you want to mount it with 64K page size.
->>
->> And for the new error (inline file extent too large), it may cause
->> problems, but under most cases, kernel can handle it without problem.
->>>
->>> I'm still getting many errors.
->>> Sorry I currently don't know what caused this. I suspect it might be
->>> Seafile since I'm now having a currupted library there.
->>>
->>> Should I use --repair?
->>
->> No, --repair won't help in this case.
->>
->> In fact, your fs is fine, no on-disk metadata problem yet.
->>
->> For your case, I can only recommend to use newer kernel to have better
->> sanity check.
->> Meanwhile I would also recommend to run a memtest to ensure it's not
->> some memory problem causing the bug.
->>
->> Thanks,
->> Qu
->>
->>>
->>> Regards
->>> Mia
->>>
->>> ------ Originalnachricht ------
->>> Von: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
->>> An: "Qu Wenruo" <wqu@suse.com>; "Mia" <9speysdx24@kr33.de>;
->>> linux-btrfs@vger.kernel.org
->>> Gesendet: 25.10.2021 13:18:54
->>> Betreff: Re: filesystem corrupt - error -117
->>>
->>>>
->>>>
->>>> On 2021/10/25 19:14, Qu Wenruo wrote:
->>>>>
->>>>>
->>>>> On 2021/10/25 19:13, Mia wrote:
->>>>>> Hi Qu,
->>>>>>
->>>>>> thanks for your response.
->>>>>> Here the output of btrfs check:
->>>>>> https://gist.github.com/lynara/1c613f7ec9448600f643a59d22c1efb2
->>>>>
->>>>> Unfortunately it's not full, and it's using an old btrfs-progs
->>>>> which can
->>>>> cause false alert.
->>>>
->>>> My bad, gist is folding the output.
->>>>
->>>> It shows no corruption for the extent tree, thus I guess the
->>>> transaction
->>>> abort has prevented COW from being broken.
->>>>
->>>>>
->>>>> Please use latest btrfs-progs v5.14.2 to re-check.
->>>>
->>>> In that case, a newer btrfs-progs is only going to remove the false
->>>> alerts.
->>>>
->>>> Any clue on the workload causing the abort?
->>>>
->>>> For now, I can only recommend to use newer kernel (v5.10+ I guess?) t=
-o
->>>> see if you can reproduce the problem.
->>>>
->>>> Thanks,
->>>> Qu
->>>>
->>>>>
->>>>> Thanks,
->>>>> Qu
->>>>>>
->>>>>> Thanks,
->>>>>> Mia
->>>>>>
->>>>>> ------ Originalnachricht ------
->>>>>> Von: "Qu Wenruo" <quwenruo.btrfs@gmx.com>
->>>>>> An: "Mia" <9speysdx24@kr33.de>; linux-btrfs@vger.kernel.org
->>>>>> Gesendet: 25.10.2021 12:55:46
->>>>>> Betreff: Re: filesystem corrupt - error -117
->>>>>>
->>>>>>>
->>>>>>>
->>>>>>> On 2021/10/25 18:53, Qu Wenruo wrote:
->>>>>>>>
->>>>>>>>
->>>>>>>> On 2021/10/25 16:46, Mia wrote:
->>>>>>>>> Hello,
->>>>>>>>> I need support since my root filesystem just went readonly :(
->>>>>>>>>
->>>>>>>>> [641955.981560] BTRFS error (device sda3): tree block 3426850078=
-72
->>>>>>>>> owner
->>>>>>>>> 7 already locked by pid=3D8099, extent tree corruption detected
->>>>>>>>
->>>>>>>> This line explains itself.
->>>>>>>>
->>>>>>>> Your extent tree is no corrupted, thus it allocated a new tree
->>>>>>>> block
->>>>>>>
->>>>>>> I missed the "w" for the word "now"...
->>>>>>>
->>>>>>>> which is in fact already hold by other tree.
->>>>>>>>
->>>>>>>> This means your metadata is no longer protected properly by COW.
->>>>>>>>
->>>>>>>> "btrfs check" is highly recommended to expose the root cause.
->>>>>>>>
->>>>>>>>>
->>>>>>>>> root@rx1 ~ # btrfs fi show
->>>>>>>>> Label: none=C2=A0 uuid: 21306973-6bf3-4877-9543-633d472dcb46
->>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0 Total devices 1 FS bytes used 189.12GiB
->>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 1 size 319.00Gi=
-B used 199.08GiB path /dev/sda3
->>>>>>>>>
->>>>>>>>> root@rx1 ~ # btrfs fi df /
->>>>>>>>> Data, single: total=3D194.89GiB, used=3D187.46GiB
->>>>>>>>> System, single: total=3D32.00MiB, used=3D48.00KiB
->>>>>>>>> Metadata, single: total=3D4.16GiB, used=3D1.65GiB
->>>>>>>>> GlobalReserve, single: total=3D380.45MiB, used=3D0.00B
->>>>>>>>>
->>>>>>>>> root@rx1 ~ # btrfs --version
->>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0 :(
->>>>>>>>> btrfs-progs v4.20.1
->>>>>>>>>
->>>>>>>>>
->>>>>>>>> root@rx1 ~ # uname -a
->>>>>>>>> Linux rx1 4.19.0-17-amd64 #1 SMP Debian 4.19.194-3 (2021-07-18)
->>>>>>>>> x86_64
->>>>>>>>> GNU/Linux
->>>>>>>>
->>>>>>>> This is a little old for btrfs, but I don't think that's the caus=
-e.
->>>>>>>>
->>>>>>>> Thanks,
->>>>>>>> Qu
->>>>>>>>
->>>>>>>>>
->>>>>>>>> Hope someone can help.
->>>>>>>>> Regrads
->>>>>>>>> Mia
->>>>>>>>>
->>>>>>
->>>>>
->>>
->
+if (IS_ENCRYPTED(inode->subvolume) && !IS_ENCRYPTED(inode))
+	set_up_encryption(inode);
+
+I'm leaning towards doing that either at the time that userspace writes
+the data, or at the time that we're flushing the data to disk, whichever
+ends up being more convenient for Btrfs. I'd rather not do it at open
+time.
+
+Thanks for the very helpful reply!

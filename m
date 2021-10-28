@@ -2,174 +2,128 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 215EEC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Oct 2021 09:45:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B890EC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Oct 2021 13:43:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EB98260F9B
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Oct 2021 09:45:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 953B061038
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Oct 2021 13:43:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230101AbhJ1Jrn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Oct 2021 05:47:43 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:44682 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229850AbhJ1Jrn (ORCPT
+        id S230264AbhJ1NqV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Oct 2021 09:46:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48980 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229887AbhJ1NqU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Oct 2021 05:47:43 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 92A831FD4B;
-        Thu, 28 Oct 2021 09:45:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1635414315; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=n/W+mAlYoix2Tcf2NsJvF3qDUw67xJQJ9y4WIncSZP4=;
-        b=cPVUTdAP35JcbAfubsDE5r2qQ6+WdRSlu1B94gA9kLAnzrH5b+sIsq90iGQnuyhDqkqCSe
-        9sKEus/RyfvJkEvLvHLhS8bmBfqfQzEHKOnPFPsZvXKfgvIccnOONqHmau8kzuYgxngBE7
-        w9QWdQQFEf7VvrBuu/X3n2y87YyHJy0=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BE7F613D1E;
-        Thu, 28 Oct 2021 09:45:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id SJeKIipxemEBawAAMHmgww
-        (envelope-from <wqu@suse.com>); Thu, 28 Oct 2021 09:45:14 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     grub-devel@gnu.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] fs/btrfs: Make extent item iteration to handle gaps
-Date:   Thu, 28 Oct 2021 17:44:57 +0800
-Message-Id: <20211028094457.161711-1-wqu@suse.com>
-X-Mailer: git-send-email 2.33.1
+        Thu, 28 Oct 2021 09:46:20 -0400
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7AEB2C061570
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Oct 2021 06:43:53 -0700 (PDT)
+Received: by mail-qk1-x731.google.com with SMTP id bj31so5803860qkb.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 28 Oct 2021 06:43:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=JHrMrl2VQ76bFXeXmWT8b/Vk5mWVoY6LgxhCCp3MS5I=;
+        b=YTyy+3+utmStJoQ5PFL+pV+Ib8ff/61nD/BFgc7ug47w4kVb8yHogYDTqZ55uuM87m
+         8VxT2V0WF8f0cEU6AkxdqClSLh8dQZw61YpCjPGKddyA+yc8ndyD6dDPqLr4iSP4QlV4
+         JesLnn04tdkuI/SQ1WcXFlE4/8yHNDXA8PBHXIrblqKRbfbMlod1Fcon8CI1GAIkLZ6c
+         +4OZMjxHX5sKRusmaPcLRa1Vld+JUGZoaVpZYrzwtOf4XWFv0yxgsF6ge1cPLxIxVl5K
+         U0ghuSnx4TJEDlFsbvxgmmz9Kf7SbnGCrxJXXEul68FGU28DtYFtuvjX1sClGRlsfNHl
+         n10w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=JHrMrl2VQ76bFXeXmWT8b/Vk5mWVoY6LgxhCCp3MS5I=;
+        b=xI/HK9utR0fWlElFfiyRrYPBIIovbZS1fJoNiinqXnbMMbV99x5UcVA5zPbbhDm7Yl
+         VXFisNe0dtYisjGdbBHNcqj2GwlO/GW14GK+70mpB3mHU9AFqnpyNnpt5oRPO/s0T/8c
+         Ji8oG+uus5dcvsfI4BNtoJULRM/NCrSIS4cj52Xig+OOqsQPwWTPr0WU9/kry3vc8cIa
+         EiU8a8y0nRiCD2zmQgSRz1lbDp7nhw5Ruze0aJ7p7AM3oqZ28XsbSEdNaMB0NabvXni8
+         VY6i1uUgtf+jcqSI2taS0gb5Wj8y7Hx1eQr1L3RFZLFjk5t7Ke+C3mOFk2YD3bLzyZ4A
+         6PyQ==
+X-Gm-Message-State: AOAM5327kAY2XIf4pn9Y1hWkcRPQReoBVBef97LNeygc+zic7Gq/hv/c
+        aeMmj8NEQfS2tGRPcXsLJ8tXZA==
+X-Google-Smtp-Source: ABdhPJyojvuWiBC6obrmSLZ02Y9PXUi4vaK5a/892fE8CcFZlA/VtB+Iv5IMCcAs1j7VQ0Ca//abow==
+X-Received: by 2002:a37:2d87:: with SMTP id t129mr3616461qkh.88.1635428632240;
+        Thu, 28 Oct 2021 06:43:52 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id l3sm2006265qkj.18.2021.10.28.06.43.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 28 Oct 2021 06:43:51 -0700 (PDT)
+Date:   Thu, 28 Oct 2021 09:43:51 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Stefan Roesch <shr@fb.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 0/4] btrfs: sysfs: set / query btrfs stripe size
+Message-ID: <YXqpFxiAVrC92io6@localhost.localdomain>
+References: <20211027201441.3813178-1-shr@fb.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20211027201441.3813178-1-shr@fb.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Grub btrfs implementation can't handle two very basic btrfs file
-layouts:
+On Wed, Oct 27, 2021 at 01:14:37PM -0700, Stefan Roesch wrote:
+> Motivation:
+> The btrfs allocator is currently not ideal for all workloads. It tends
+> to suffer from overallocating data block groups and underallocating
+> metadata block groups. This results in filesystems becoming read-only
+> even though there is plenty of "free" space.
+> 
+> This is naturally confusing and distressing to users.
+> 
+> Patches:
+> 1) Store the stripe and chunk size in the btrfs_space_info structure
+> 2) Add a sysfs entry to expose the above information
+> 3) Add a sysfs entry to force a space allocation
+> 4) Increase the default size of the metadata chunk allocation to 5GB
+>    for volumes greater than 50GB.
+> 
+> Testing:
+>   A new test is being added to the xfstest suite. For reference the
+>   corresponding patch has the title:
+>     [PATCH] btrfs: Test chunk allocation with different sizes
+> 
+>   In addition also manual testing has been performed.
+>     - Run xfstests with the changes and the new test. It does not
+>       show new diffs.
+>     - Test with storage devices 10G, 20G, 30G, 50G, 60G
+>       - Default allocation
+>       - Increase of chunk size
+>       - If the stripe size is > the free space, it allocates
+>         free space - 1MB. The 1MB is left as free space.
+>       - If the device has a storage size > 50G, it uses a 5GB
+>         chunk size for new allocations.
+> 
+> Stefan Roesch (4):
+>   btrfs: store stripe size and chunk size in space-info struct.
+>   btrfs: expose stripe and chunk size in sysfs.
+>   btrfs: add force_chunk_alloc sysfs entry to force allocation
+>   btrfs: increase metadata alloc size to 5GB for volumes > 50GB
+>
 
-1. Mixed inline/regualr extents
-   # mkfs.btrfs -f test.img
-   # mount test.img /mnt/btrfs
-   # xfs_io -f -c "pwrite 0 1k" -c "sync" -c "falloc 0 4k" \
-	       -c "pwrite 4k 4k" /mnt/btrfs/file
-   # umount /mnt/btrfs
-   # ./grub-fstest ./grub-fstest --debug=btrfs ~/test.img hex "/file"
+Sorry, I had this thought previously but it got lost when I started doing the
+actual code review.
 
-   Such mixed inline/regular extents case is not recommended layout,
-   but all existing tools and kernel can handle it without problem
+We have conflated stripe size and chunk size here, and unfortunately "stripe
+size" means different things to different people.  What you are actually trying
+to do here is to allow us to allocate a larger logical chunk size.
 
-2. NO_HOLES feature
-   # mkfs.btrfs -f test.img -O no_holes
-   # mount test.img /mnt/btrfs
-   # xfs_io -f -c "pwrite 0 4k" -c "pwrite 8k 4k" /mnt/btrfs/file
-   # umount /mnt/btrfs
-   # ./grub-fstest ./grub-fstest --debug=btrfs ~/test.img hex "/file"
+In terms of how this works out in the code you are changing the correct thing,
+generally the stripe_size is what dictates the actual block group chunk size we
+end up with at the end.
 
-   NO_HOLES feature is going to be the default mkfs feature in the incoming
-   v5.15 release, and kernel has support for it since v4.0.
+But this is sort of confusing when it comes to the interface, because people are
+going to think it means something different.
 
-[CAUSE]
-The way GRUB btrfs code iterates through file extents relies on no gap
-between extents.
+Instead we should name the sysfs file chunk_size, and then keep the code you
+have the way it is, just with the new name.  That way it's clear to the user
+that they're changing how large of a chunk we're allocating at any given time.
 
-If any gap is hit, then grub btrfs will error out, without any proper
-reason to help debug the bug.
+Make that change, and I have a few other code comments, and then that should be
+good.  Thanks,
 
-This is a bad assumption, since a long long time ago btrfs has a new
-feature called NO_HOLES to allow btrfs to skip the padding hole extent
-to reduce metadata usage.
-
-The NO_HOLES feature is already stable since kernel v4.0 and is going to
-be the default mkfs feature in the incoming v5.15 btrfs-progs release.
-
-[FIX]
-When there is a extent gap, instead of error out, just try next item.
-
-This is still not ideal, as kernel/progs/U-boot all do the iteration
-item by item, not relying on the file offset continuity.
-
-But it will be way more time consuming to correct the whole behavior
-than starting from scratch to build a proper designed btrfs module for GRUB.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Fix a possible underflow when the read range ends inside the gap
----
- grub-core/fs/btrfs.c | 35 ++++++++++++++++++++++++++++++++---
- 1 file changed, 32 insertions(+), 3 deletions(-)
-
-diff --git a/grub-core/fs/btrfs.c b/grub-core/fs/btrfs.c
-index 63203034dfc6..8c47bd1e1832 100644
---- a/grub-core/fs/btrfs.c
-+++ b/grub-core/fs/btrfs.c
-@@ -1443,6 +1443,7 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
-       grub_size_t csize;
-       grub_err_t err;
-       grub_off_t extoff;
-+      struct grub_btrfs_leaf_descriptor desc;
-       if (!data->extent || data->extstart > pos || data->extino != ino
- 	  || data->exttree != tree || data->extend <= pos)
- 	{
-@@ -1455,7 +1456,7 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 	  key_in.type = GRUB_BTRFS_ITEM_TYPE_EXTENT_ITEM;
- 	  key_in.offset = grub_cpu_to_le64 (pos);
- 	  err = lower_bound (data, &key_in, &key_out, tree,
--			     &elemaddr, &elemsize, NULL, 0);
-+			     &elemaddr, &elemsize, &desc, 0);
- 	  if (err)
- 	    return -1;
- 	  if (key_out.object_id != ino
-@@ -1494,10 +1495,38 @@ grub_btrfs_extent_read (struct grub_btrfs_data *data,
- 			PRIxGRUB_UINT64_T "\n",
- 			grub_le_to_cpu64 (key_out.offset),
- 			grub_le_to_cpu64 (data->extent->size));
-+	  /*
-+	   * The way of extent item iteration is pretty bad, it completely
-+	   * requires all extents are contiguous, which is not ensured.
-+	   *
-+	   * Features like NO_HOLE and mixed inline/regular extents can cause
-+	   * gaps between file extent items.
-+	   *
-+	   * The correct way is to follow kernel/U-boot to iterate item by
-+	   * item, without any assumption on the file offset continuity.
-+	   *
-+	   * Here we just manually skip to next item and re-do the verification.
-+	   *
-+	   * TODO: Rework the whole extent item iteration code, if not the
-+	   * whole btrfs implementation.
-+	   */
- 	  if (data->extend <= pos)
- 	    {
--	      grub_error (GRUB_ERR_BAD_FS, "extent not found");
--	      return -1;
-+	      err = next(data, &desc, &elemaddr, &elemsize, &key_out);
-+	      if (err < 0)
-+		return -1;
-+	      /* No next item for the inode, we hit the end */
-+	      if (err == 0 || key_out.object_id != ino ||
-+		  key_out.type != GRUB_BTRFS_ITEM_TYPE_EXTENT_ITEM)
-+		      return pos - pos0;
-+
-+	      csize = grub_le_to_cpu64(key_out.offset) - pos;
-+	      if (csize > len)
-+		      csize = len;
-+	      buf += csize;
-+	      pos += csize;
-+	      len -= csize;
-+	      continue;
- 	    }
- 	}
-       csize = data->extend - pos;
--- 
-2.33.1
-
+Josef 

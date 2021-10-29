@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00209C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4156C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:35 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D14BF610A0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B884861037
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230163AbhJ2Saw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Oct 2021 14:30:52 -0400
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:14004 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S230160AbhJ2Sav (ORCPT
+        id S230168AbhJ2SbD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Oct 2021 14:31:03 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:32114 "EHLO
+        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+        by vger.kernel.org with ESMTP id S230022AbhJ2SbA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Oct 2021 14:30:51 -0400
-Received: from pps.filterd (m0044010.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 19THwMuD003711
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:23 -0700
+        Fri, 29 Oct 2021 14:31:00 -0400
+Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
+        by m0001303.ppops.net (8.16.1.2/8.16.1.2) with SMTP id 19THwT0d003926
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:31 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding : content-type; s=facebook;
- bh=vV/Ktz0HM3rsdk70/ELOJrCnVvBtZHRSFWorGgMYcL0=;
- b=kRoP2I9F9ywodLji+OVtWq0sq3LTuTQTMrQZ1IAYWyFJ3Z39g20VSQMbLy+N2u8c9UOH
- QSm4F6VBQ7PrW2qwg49yviTiB0qHrUQPOLhbHZnHnTdJK5SURDEoeUjbiqDhuyELD5S4
- fGN8YFiTHi7xDIrEipaaq11ouHXIX61WdU4= 
+ bh=rsL5NlHP8KxKUy5s4fmzSbQhrgL5xu9r+MiCXbOhROQ=;
+ b=oz3if4gtfC2+bgyv93uG8NWG8lxJpUJvTBNAwNeJiI4HJ3poOi8xFE03F0R+DNMS27wv
+ mIGhuQPAsNy+DVvj3m0XK0UR+c76k6seeVvlzZ1b6TeY90AYw0TjSH22Uo2cE5xFGxJf
+ 2+Ko9vDSnszac7WEPw8xJ2S7/SPwoyHmi4s= 
 Received: from maileast.thefacebook.com ([163.114.130.16])
-        by mx0a-00082601.pphosted.com with ESMTP id 3c0ee1m5xh-3
+        by m0001303.ppops.net with ESMTP id 3c0b94np5b-5
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:20 -0700
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:31 -0700
 Received: from intmgw001.05.ash7.facebook.com (2620:10d:c0a8:1b::d) by
- mail.thefacebook.com (2620:10d:c0a8:82::e) with Microsoft SMTP Server
+ mail.thefacebook.com (2620:10d:c0a8:83::5) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
  15.1.2308.14; Fri, 29 Oct 2021 11:28:18 -0700
 Received: by devvm225.atn0.facebook.com (Postfix, from userid 425415)
-        id D9F175BCB638; Fri, 29 Oct 2021 11:28:15 -0700 (PDT)
+        id EC7D45BCB640; Fri, 29 Oct 2021 11:28:15 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
 CC:     <shr@fb.com>
-Subject: [PATCH v3 1/4] btrfs: store chunk size in space-info struct.
-Date:   Fri, 29 Oct 2021 11:28:07 -0700
-Message-ID: <20211029182812.3560677-2-shr@fb.com>
+Subject: [PATCH v3 3/4] btrfs: add force_chunk_alloc sysfs entry to force allocation
+Date:   Fri, 29 Oct 2021 11:28:11 -0700
+Message-ID: <20211029182812.3560677-6-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20211029182812.3560677-1-shr@fb.com>
 References: <20211029182812.3560677-1-shr@fb.com>
@@ -49,174 +49,123 @@ Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
 X-FB-Source: Intern
-X-Proofpoint-GUID: pL_NjtY3W-tg_dmDFPdTFTYQfotKnatW
-X-Proofpoint-ORIG-GUID: pL_NjtY3W-tg_dmDFPdTFTYQfotKnatW
+X-Proofpoint-GUID: xfyEsRF4t5uOSsxUIPR0hd5KfsfFsVQT
+X-Proofpoint-ORIG-GUID: xfyEsRF4t5uOSsxUIPR0hd5KfsfFsVQT
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
  definitions=2021-10-29_04,2021-10-29_01,2020-04-07_01
-X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 mlxlogscore=999
- lowpriorityscore=0 clxscore=1015 malwarescore=0 priorityscore=1501
- spamscore=0 suspectscore=0 adultscore=0 phishscore=0 impostorscore=0
- bulkscore=0 mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2110290100
+X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 mlxscore=0 suspectscore=0
+ priorityscore=1501 mlxlogscore=999 phishscore=0 bulkscore=0 clxscore=1015
+ spamscore=0 impostorscore=0 lowpriorityscore=0 adultscore=0 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2110150000
+ definitions=main-2110290100
 X-FB-Internal: deliver
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The chunk size is stored in the btrfs_space_info structure.
-It is initialized at the start and is then used.
+This adds the force_chunk_alloc sysfs entry to be able to force a
+storage allocation. This is a debugging and test feature and is
+enabled with the CONFIG_BTRFS_DEBUG configuration option.
 
-Two api's are added to get the current value and one to update
-the value.
-
-These api's will be used to be able to expose the chunk_size
-as a sysfs setting.
-
-Signed-off-by: Stefan Roesch <shr@fb.com>
+It is stored at
+/sys/fs/btrfs/<uuid>/allocation/<block_type>/force_chunk_alloc.
 ---
- fs/btrfs/space-info.c | 51 +++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/space-info.h |  3 +++
- fs/btrfs/volumes.c    | 28 ++++++++----------------
- 3 files changed, 63 insertions(+), 19 deletions(-)
+ fs/btrfs/sysfs.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 65 insertions(+)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 48d77f360a24..7370c152ce8a 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -181,6 +181,56 @@ void btrfs_clear_space_info_full(struct btrfs_fs_inf=
-o *info)
- 		found->full =3D 0;
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 3b0bcbc2ed2e..983c53b76aa6 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -771,6 +771,64 @@ static ssize_t btrfs_chunk_size_store(struct kobject=
+ *kobj,
+ 	return val;
  }
 =20
++#ifdef CONFIG_BTRFS_DEBUG
 +/*
-+ * Compute chunk size depending on block type for regular volumes.
++ * Return if space info force allocation chunk flag is set.
 + */
-+static u64 compute_chunk_size_regular(struct btrfs_fs_info *info, u64 fl=
-ags)
++static ssize_t btrfs_force_chunk_alloc_show(struct kobject *kobj,
++					    struct kobj_attribute *a,
++					    char *buf)
 +{
-+	ASSERT(flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
-+
-+	if (flags & BTRFS_BLOCK_GROUP_DATA)
-+		return SZ_1G;
-+	else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
-+		return SZ_32M;
-+
-+	/* Handle BTRFS_BLOCK_GROUP_METADATA */
-+	if (info->fs_devices->total_rw_bytes > 50ULL * SZ_1G)
-+		return SZ_1G;
-+
-+	return SZ_256M;
++	return snprintf(buf, PAGE_SIZE, "0\n");
 +}
 +
 +/*
-+ * Compute chunk size for zoned volumes.
++ * Request chunk allocation with current chunk size.
 + */
-+static u64 compute_chunk_size_zoned(struct btrfs_fs_info *info)
++static ssize_t btrfs_force_chunk_alloc_store(struct kobject *kobj,
++					     struct kobj_attribute *a,
++					     const char *buf, size_t len)
 +{
-+	return info->zone_size;
++	struct btrfs_space_info *space_info =3D to_space_info(kobj);
++	struct btrfs_fs_info *fs_info =3D to_fs_info(get_btrfs_kobj(kobj));
++	struct btrfs_trans_handle *trans;
++	unsigned long val;
++	int ret;
++
++	if (!fs_info) {
++		pr_err("couldn't get fs_info\n");
++		return -EPERM;
++	}
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (sb_rdonly(fs_info->sb))
++		return -EROFS;
++
++	ret =3D kstrtoul(buf, 10, &val);
++	if (ret)
++		return ret;
++
++	if (val =3D=3D 0)
++		return -EINVAL;
++
++	/*
++	 * Allocate new chunk.
++	 */
++	trans =3D btrfs_start_transaction(fs_info->extent_root, 0);
++	if (!trans)
++		return PTR_ERR(trans);
++	ret =3D btrfs_force_chunk_alloc(trans, space_info->flags);
++	btrfs_end_transaction(trans);
++
++	if (ret =3D=3D 1)
++		return len;
++
++	return -ENOSPC;
 +}
++#endif
 +
-+/*
-+ * Compute chunk size depending on volume type.
-+ */
-+static u64 compute_chunk_size(struct btrfs_fs_info *info, u64 flags)
-+{
-+	if (btrfs_is_zoned(info))
-+		return compute_chunk_size_zoned(info);
-+
-+	return compute_chunk_size_regular(info, flags);
-+}
-+
-+/*
-+ * Update default chunk size.
-+ *
-+ */
-+void btrfs_update_space_info_chunk_size(struct btrfs_space_info *space_i=
-nfo,
-+					u64 flags, u64 chunk_size)
-+{
-+	spin_lock(&space_info->lock);
-+	space_info->default_chunk_size =3D chunk_size;
-+	spin_unlock(&space_info->lock);
-+}
-+
- static int create_space_info(struct btrfs_fs_info *info, u64 flags)
- {
+ SPACE_INFO_ATTR(flags);
+ SPACE_INFO_ATTR(total_bytes);
+ SPACE_INFO_ATTR(bytes_used);
+@@ -783,6 +841,10 @@ SPACE_INFO_ATTR(disk_used);
+ SPACE_INFO_ATTR(disk_total);
+ BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
+ 	      btrfs_chunk_size_store);
++#ifdef CONFIG_BTRFS_DEBUG
++BTRFS_ATTR_RW(space_info, force_chunk_alloc, btrfs_force_chunk_alloc_sho=
+w,
++	      btrfs_force_chunk_alloc_store);
++#endif
 =20
-@@ -202,6 +252,7 @@ static int create_space_info(struct btrfs_fs_info *in=
-fo, u64 flags)
- 	INIT_LIST_HEAD(&space_info->tickets);
- 	INIT_LIST_HEAD(&space_info->priority_tickets);
- 	space_info->clamp =3D 1;
-+	space_info->default_chunk_size =3D compute_chunk_size(info, flags);
-=20
- 	ret =3D btrfs_sysfs_add_space_info_type(info, space_info);
- 	if (ret)
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index cb5056472e79..aa8fc0f72ea6 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -23,6 +23,7 @@ struct btrfs_space_info {
- 	u64 max_extent_size;	/* This will hold the maximum extent size of
- 				   the space info if we had an ENOSPC in the
- 				   allocator. */
-+	u64 default_chunk_size; /* default chunk size in bytes */
-=20
- 	int clamp;		/* Used to scale our threshold for preemptive
- 				   flushing. The value is >> clamp, so turns
-@@ -115,6 +116,8 @@ void btrfs_update_space_info(struct btrfs_fs_info *in=
-fo, u64 flags,
- 			     u64 total_bytes, u64 bytes_used,
- 			     u64 bytes_readonly, u64 bytes_zone_unusable,
- 			     struct btrfs_space_info **space_info);
-+void btrfs_update_space_info_chunk_size(struct btrfs_space_info *space_i=
-nfo,
-+			     u64 flags, u64 chunk_size);
- struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *inf=
-o,
- 					       u64 flags);
- u64 __pure btrfs_space_info_used(struct btrfs_space_info *s_info,
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 546bf1146b2d..563e5b30060d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5063,26 +5063,16 @@ static void init_alloc_chunk_ctl_policy_regular(
- 				struct btrfs_fs_devices *fs_devices,
- 				struct alloc_chunk_ctl *ctl)
- {
--	u64 type =3D ctl->type;
-+	struct btrfs_space_info *space_info;
-=20
--	if (type & BTRFS_BLOCK_GROUP_DATA) {
--		ctl->max_stripe_size =3D SZ_1G;
--		ctl->max_chunk_size =3D BTRFS_MAX_DATA_CHUNK_SIZE;
--	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
--		/* For larger filesystems, use larger metadata chunks */
--		if (fs_devices->total_rw_bytes > 50ULL * SZ_1G)
--			ctl->max_stripe_size =3D SZ_1G;
--		else
--			ctl->max_stripe_size =3D SZ_256M;
--		ctl->max_chunk_size =3D ctl->max_stripe_size;
--	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
--		ctl->max_stripe_size =3D SZ_32M;
--		ctl->max_chunk_size =3D 2 * ctl->max_stripe_size;
--		ctl->devs_max =3D min_t(int, ctl->devs_max,
--				      BTRFS_MAX_DEVS_SYS_CHUNK);
--	} else {
--		BUG();
--	}
-+	space_info =3D btrfs_find_space_info(fs_devices->fs_info, ctl->type);
-+	ASSERT(space_info);
-+
-+	ctl->max_chunk_size =3D space_info->default_chunk_size;
-+	ctl->max_stripe_size =3D space_info->default_chunk_size;
-+
-+	if (ctl->type & BTRFS_BLOCK_GROUP_SYSTEM)
-+		ctl->devs_max =3D min_t(int, ctl->devs_max, BTRFS_MAX_DEVS_SYS_CHUNK);
-=20
- 	/* We don't want a chunk larger than 10% of writable space */
- 	ctl->max_chunk_size =3D min(div_factor(fs_devices->total_rw_bytes, 1),
+ /*
+  * Allocation information about block group types.
+@@ -801,6 +863,9 @@ static struct attribute *space_info_attrs[] =3D {
+ 	BTRFS_ATTR_PTR(space_info, disk_used),
+ 	BTRFS_ATTR_PTR(space_info, disk_total),
+ 	BTRFS_ATTR_PTR(space_info, chunk_size),
++#ifdef CONFIG_BTRFS_DEBUG
++	BTRFS_ATTR_PTR(space_info, force_chunk_alloc),
++#endif
+ 	NULL,
+ };
+ ATTRIBUTE_GROUPS(space_info);
 --=20
 2.30.2
 

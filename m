@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4156C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 130E8C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B884861037
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DF4EE61037
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230168AbhJ2SbD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Oct 2021 14:31:03 -0400
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:32114 "EHLO
+        id S229897AbhJ2SbJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Oct 2021 14:31:09 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:4974 "EHLO
         mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S230022AbhJ2SbA (ORCPT
+        by vger.kernel.org with ESMTP id S229755AbhJ2SbI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Oct 2021 14:31:00 -0400
+        Fri, 29 Oct 2021 14:31:08 -0400
 Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
-        by m0001303.ppops.net (8.16.1.2/8.16.1.2) with SMTP id 19THwT0d003926
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:31 -0700
+        by m0001303.ppops.net (8.16.1.2/8.16.1.2) with SMTP id 19THwR4e003760
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:39 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding : content-type; s=facebook;
- bh=rsL5NlHP8KxKUy5s4fmzSbQhrgL5xu9r+MiCXbOhROQ=;
- b=oz3if4gtfC2+bgyv93uG8NWG8lxJpUJvTBNAwNeJiI4HJ3poOi8xFE03F0R+DNMS27wv
- mIGhuQPAsNy+DVvj3m0XK0UR+c76k6seeVvlzZ1b6TeY90AYw0TjSH22Uo2cE5xFGxJf
- 2+Ko9vDSnszac7WEPw8xJ2S7/SPwoyHmi4s= 
-Received: from maileast.thefacebook.com ([163.114.130.16])
-        by m0001303.ppops.net with ESMTP id 3c0b94np5b-5
+ bh=PhMjLyz00qPRmsaUiWAWs8e9QKYTov5mmdXFEWW0Wj0=;
+ b=hwK2sj+VX/DNf4FQVc3Dpwwt2EPqEYYHdRY0voAmRRNTNdLprxHdArsOn4lb3oyqyh4l
+ 7TWXFTc43rRyHwF5b2QQG0TRvgF2iajZSIbvSU6zhfVrgPt6zaeZ5ePN/RP0LNd/O4L7
+ VnuD4lHnWuNiGBqOw4eA4o29QfAdU/UNWjw= 
+Received: from mail.thefacebook.com ([163.114.132.120])
+        by m0001303.ppops.net with ESMTP id 3c0b94npa0-2
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:31 -0700
-Received: from intmgw001.05.ash7.facebook.com (2620:10d:c0a8:1b::d) by
- mail.thefacebook.com (2620:10d:c0a8:83::5) with Microsoft SMTP Server
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:29 -0700
+Received: from intmgw001.38.frc1.facebook.com (2620:10d:c085:208::f) by
+ mail.thefacebook.com (2620:10d:c085:11d::7) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
  15.1.2308.14; Fri, 29 Oct 2021 11:28:18 -0700
 Received: by devvm225.atn0.facebook.com (Postfix, from userid 425415)
-        id EC7D45BCB640; Fri, 29 Oct 2021 11:28:15 -0700 (PDT)
+        id E1F1F5BCB63C; Fri, 29 Oct 2021 11:28:15 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
 CC:     <shr@fb.com>
-Subject: [PATCH v3 3/4] btrfs: add force_chunk_alloc sysfs entry to force allocation
-Date:   Fri, 29 Oct 2021 11:28:11 -0700
-Message-ID: <20211029182812.3560677-6-shr@fb.com>
+Subject: [PATCH v3 2/4] btrfs: expose chunk size in sysfs.
+Date:   Fri, 29 Oct 2021 11:28:09 -0700
+Message-ID: <20211029182812.3560677-4-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20211029182812.3560677-1-shr@fb.com>
 References: <20211029182812.3560677-1-shr@fb.com>
@@ -49,8 +49,8 @@ Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
 X-FB-Source: Intern
-X-Proofpoint-GUID: xfyEsRF4t5uOSsxUIPR0hd5KfsfFsVQT
-X-Proofpoint-ORIG-GUID: xfyEsRF4t5uOSsxUIPR0hd5KfsfFsVQT
+X-Proofpoint-GUID: dVj15poRKwGgk-M8_sy9BGU58KADpAB3
+X-Proofpoint-ORIG-GUID: dVj15poRKwGgk-M8_sy9BGU58KADpAB3
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
  definitions=2021-10-29_04,2021-10-29_01,2020-04-07_01
@@ -64,108 +64,147 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This adds the force_chunk_alloc sysfs entry to be able to force a
-storage allocation. This is a debugging and test feature and is
-enabled with the CONFIG_BTRFS_DEBUG configuration option.
+This adds a new sysfs entry in /sys/fs/btrfs/<uuid>/allocation/<block
+type>/chunk_size. This allows to query the chunk size and also set the
+chunk size.
 
-It is stored at
-/sys/fs/btrfs/<uuid>/allocation/<block_type>/force_chunk_alloc.
+Signed-off-by: Stefan Roesch <shr@fb.com>
 ---
- fs/btrfs/sysfs.c | 65 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 65 insertions(+)
+ fs/btrfs/sysfs.c | 80 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 3b0bcbc2ed2e..983c53b76aa6 100644
+index f9eff3b0f77c..3b0bcbc2ed2e 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -771,6 +771,64 @@ static ssize_t btrfs_chunk_size_store(struct kobject=
- *kobj,
- 	return val;
- }
+@@ -21,6 +21,7 @@
+ #include "space-info.h"
+ #include "block-group.h"
+ #include "qgroup.h"
++#include "misc.h"
 =20
-+#ifdef CONFIG_BTRFS_DEBUG
+ /*
+  * Structure name                       Path
+@@ -92,6 +93,7 @@ static struct btrfs_feature_attr btrfs_attr_features_##=
+_name =3D {	     \
+=20
+ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
+ static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
++static inline struct kobject *get_btrfs_kobj(struct kobject *kobj);
+=20
+ static struct btrfs_feature_attr *to_btrfs_feature_attr(struct kobj_attr=
+ibute *a)
+ {
+@@ -708,6 +710,67 @@ static ssize_t btrfs_space_info_show_##field(struct =
+kobject *kobj,	\
+ }									\
+ BTRFS_ATTR(space_info, field, btrfs_space_info_show_##field)
+=20
 +/*
-+ * Return if space info force allocation chunk flag is set.
++ * Return space info chunk size.
 + */
-+static ssize_t btrfs_force_chunk_alloc_show(struct kobject *kobj,
-+					    struct kobj_attribute *a,
-+					    char *buf)
++static ssize_t btrfs_chunk_size_show(struct kobject *kobj,
++				     struct kobj_attribute *a, char *buf)
 +{
-+	return snprintf(buf, PAGE_SIZE, "0\n");
++	struct btrfs_space_info *sinfo =3D to_space_info(kobj);
++
++	return btrfs_show_u64(&sinfo->default_chunk_size, &sinfo->lock, buf);
 +}
 +
 +/*
-+ * Request chunk allocation with current chunk size.
++ * Store new user supplied chunk size in space info.
++ *
++ * Note: If the new chunk size value is larger than 10% of free space it=
+ is
++ *       reduced to match that limit.
 + */
-+static ssize_t btrfs_force_chunk_alloc_store(struct kobject *kobj,
-+					     struct kobj_attribute *a,
-+					     const char *buf, size_t len)
++static ssize_t btrfs_chunk_size_store(struct kobject *kobj,
++				      struct kobj_attribute *a,
++				      const char *buf, size_t len)
 +{
 +	struct btrfs_space_info *space_info =3D to_space_info(kobj);
 +	struct btrfs_fs_info *fs_info =3D to_fs_info(get_btrfs_kobj(kobj));
-+	struct btrfs_trans_handle *trans;
-+	unsigned long val;
++	u64 val;
 +	int ret;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
 +
 +	if (!fs_info) {
 +		pr_err("couldn't get fs_info\n");
 +		return -EPERM;
 +	}
 +
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
 +	if (sb_rdonly(fs_info->sb))
 +		return -EROFS;
 +
-+	ret =3D kstrtoul(buf, 10, &val);
++	if (!fs_info->fs_devices)
++		return -EINVAL;
++
++	if (btrfs_is_zoned(fs_info))
++		return -EINVAL;
++
++	if (!space_info) {
++		btrfs_err(fs_info, "couldn't get space_info\n");
++		return -EPERM;
++	}
++
++	ret =3D kstrtoull(buf, 10, &val);
 +	if (ret)
 +		return ret;
 +
-+	if (val =3D=3D 0)
-+		return -EINVAL;
-+
 +	/*
-+	 * Allocate new chunk.
++	 * Limit stripe size to 10% of available space.
 +	 */
-+	trans =3D btrfs_start_transaction(fs_info->extent_root, 0);
-+	if (!trans)
-+		return PTR_ERR(trans);
-+	ret =3D btrfs_force_chunk_alloc(trans, space_info->flags);
-+	btrfs_end_transaction(trans);
++	val =3D min(div_factor(fs_info->fs_devices->total_rw_bytes, 1), val);
++	btrfs_update_space_info_chunk_size(space_info, space_info->flags, val);
 +
-+	if (ret =3D=3D 1)
-+		return len;
-+
-+	return -ENOSPC;
++	return val;
 +}
-+#endif
 +
  SPACE_INFO_ATTR(flags);
  SPACE_INFO_ATTR(total_bytes);
  SPACE_INFO_ATTR(bytes_used);
-@@ -783,6 +841,10 @@ SPACE_INFO_ATTR(disk_used);
+@@ -718,6 +781,8 @@ SPACE_INFO_ATTR(bytes_readonly);
+ SPACE_INFO_ATTR(bytes_zone_unusable);
+ SPACE_INFO_ATTR(disk_used);
  SPACE_INFO_ATTR(disk_total);
- BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
- 	      btrfs_chunk_size_store);
-+#ifdef CONFIG_BTRFS_DEBUG
-+BTRFS_ATTR_RW(space_info, force_chunk_alloc, btrfs_force_chunk_alloc_sho=
-w,
-+	      btrfs_force_chunk_alloc_store);
-+#endif
++BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
++	      btrfs_chunk_size_store);
 =20
  /*
   * Allocation information about block group types.
-@@ -801,6 +863,9 @@ static struct attribute *space_info_attrs[] =3D {
+@@ -735,6 +800,7 @@ static struct attribute *space_info_attrs[] =3D {
+ 	BTRFS_ATTR_PTR(space_info, bytes_zone_unusable),
  	BTRFS_ATTR_PTR(space_info, disk_used),
  	BTRFS_ATTR_PTR(space_info, disk_total),
- 	BTRFS_ATTR_PTR(space_info, chunk_size),
-+#ifdef CONFIG_BTRFS_DEBUG
-+	BTRFS_ATTR_PTR(space_info, force_chunk_alloc),
-+#endif
++	BTRFS_ATTR_PTR(space_info, chunk_size),
  	NULL,
  };
  ATTRIBUTE_GROUPS(space_info);
+@@ -1099,6 +1165,20 @@ static inline struct btrfs_fs_info *to_fs_info(str=
+uct kobject *kobj)
+ 	return to_fs_devs(kobj)->fs_info;
+ }
+=20
++/*
++ * Get btrfs sysfs kobject.
++ */
++static inline struct kobject *get_btrfs_kobj(struct kobject *kobj)
++{
++	while (kobj) {
++		if (kobj->ktype =3D=3D &btrfs_ktype)
++			return kobj;
++		kobj =3D kobj->parent;
++	}
++
++	return NULL;
++}
++
+ #define NUM_FEATURE_BITS 64
+ #define BTRFS_FEATURE_NAME_MAX 13
+ static char btrfs_unknown_feature_names[FEAT_MAX][NUM_FEATURE_BITS][BTRF=
+S_FEATURE_NAME_MAX];
 --=20
 2.30.2
 

@@ -2,209 +2,157 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BAC3C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:42:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D33DC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:47:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 24A6D60ED5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:42:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1FB8961040
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:47:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230084AbhJ2SpF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Oct 2021 14:45:05 -0400
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:44376 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S229755AbhJ2SpF (ORCPT
+        id S229489AbhJ2SuY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Oct 2021 14:50:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47944 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229968AbhJ2SuX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Oct 2021 14:45:05 -0400
-Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 19THwOtU023523
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:42:36 -0700
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding : content-type; s=facebook;
- bh=PhMjLyz00qPRmsaUiWAWs8e9QKYTov5mmdXFEWW0Wj0=;
- b=MmSfpWXG0ZEtgXUSgzdcaxaRaDOM6GqEqVEoSbroavGL4G5gJ41hnydkZEAu6RWc7EGG
- GQQpGfW1xQWCTeNHCVRk9o8zxIsCNbwufGARu1NV28CWEr4ygmquQTCxBScEKYnPUdYa
- MN5IjnkZFkWwojmdbVdj3hJ6WWqoeuIVIqs= 
-Received: from mail.thefacebook.com ([163.114.132.120])
-        by mx0a-00082601.pphosted.com with ESMTP id 3c0mdnhaqn-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:42:35 -0700
-Received: from intmgw001.05.ash9.facebook.com (2620:10d:c085:108::4) by
- mail.thefacebook.com (2620:10d:c085:11d::5) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2308.14; Fri, 29 Oct 2021 11:39:55 -0700
-Received: by devvm225.atn0.facebook.com (Postfix, from userid 425415)
-        id E68925BCD6F3; Fri, 29 Oct 2021 11:39:51 -0700 (PDT)
-From:   Stefan Roesch <shr@fb.com>
-To:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-CC:     <shr@fb.com>
-Subject: [PATCH v4 2/4] btrfs: expose chunk size in sysfs.
-Date:   Fri, 29 Oct 2021 11:39:48 -0700
-Message-ID: <20211029183950.3613491-3-shr@fb.com>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20211029183950.3613491-1-shr@fb.com>
-References: <20211029183950.3613491-1-shr@fb.com>
+        Fri, 29 Oct 2021 14:50:23 -0400
+Received: from mail-lf1-x12d.google.com (mail-lf1-x12d.google.com [IPv6:2a00:1450:4864:20::12d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 07E31C061570
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:47:54 -0700 (PDT)
+Received: by mail-lf1-x12d.google.com with SMTP id l13so22818239lfg.6
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:47:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=uGPiPKSphOUEs2fEDAQ1oyHUSr8W7H4wPzT5A6mID2k=;
+        b=PwcTyiA+l0irgoS20hv3ruCOgqQ9pk+pMaL//cWuIfytOjzpNyUjD0wheL47Rw4p5e
+         XrhsN1D22td0eNyy9FTurkcJuSyIf4PSSbRhWBWg03sYd3a5zne0nY8hIhl5wl5Iiq0/
+         rwXzrUhn5/fXzh2aHHrpyapZm5QCvdomJAv4A=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=uGPiPKSphOUEs2fEDAQ1oyHUSr8W7H4wPzT5A6mID2k=;
+        b=RFvOjy8cegsCUPLIQv60OI9e6EocSASZskgMc13ols8P+scVXg+XOHlkmC5F+FJYWH
+         LPB7SdAHS/eve4dxLP/m5qEkkwePqjIBurNEziCGrDNnSVLVdXhg6RE9okuO4gZKbLZu
+         JZshTs7oB5zYFAcJ+WvExh9x/uXIabkAiVH7Rn9SKYApJUpocvmq5eX01wi/+odHiZ52
+         Qo0bRUZ5Gr7QLlNNrP01GsmzrbTzEcdU+nzxmq7/qlZzTaYDTXgvANppJbsfS0P+2rbS
+         Xsd5YRqd7FLSnW6Lu8d7VOd8WTnwVQsuHHPwz5UCbMqG5QJL6lAIRoYk9EvIrpMRwAnB
+         Culg==
+X-Gm-Message-State: AOAM533gw0ifGz8MWp7El16iKWkkk1RrYEikHpVtjfMSAWf3lKOK3CXF
+        oK4MQR0HrOhTb4tUafJ/iUMcrTRafDz1YzxJg+4=
+X-Google-Smtp-Source: ABdhPJxFLnHpsq5K+ag+oF44ByOxBBGSPjcV/fvo6FuS8lBse4j2Ralw5j8cRmgnYR9iGuBg3wg/bQ==
+X-Received: by 2002:ac2:4e89:: with SMTP id o9mr12238930lfr.459.1635533271680;
+        Fri, 29 Oct 2021 11:47:51 -0700 (PDT)
+Received: from mail-lj1-f179.google.com (mail-lj1-f179.google.com. [209.85.208.179])
+        by smtp.gmail.com with ESMTPSA id a30sm682889ljd.134.2021.10.29.11.47.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 29 Oct 2021 11:47:49 -0700 (PDT)
+Received: by mail-lj1-f179.google.com with SMTP id 17so15162255ljq.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:47:49 -0700 (PDT)
+X-Received: by 2002:a05:651c:17a6:: with SMTP id bn38mr13088470ljb.56.1635533269069;
+ Fri, 29 Oct 2021 11:47:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-X-FB-Internal: Safe
-Content-Type: text/plain
-X-FB-Source: Intern
-X-Proofpoint-GUID: B4bjtlUMxlFHksLAI4pr6O6WAwoNd9Ft
-X-Proofpoint-ORIG-GUID: B4bjtlUMxlFHksLAI4pr6O6WAwoNd9Ft
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
- definitions=2021-10-29_04,2021-10-29_01,2020-04-07_01
-X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 mlxscore=0 clxscore=1015
- mlxlogscore=999 lowpriorityscore=0 spamscore=0 suspectscore=0
- malwarescore=0 impostorscore=0 priorityscore=1501 phishscore=0
- adultscore=0 bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2110290101
-X-FB-Internal: deliver
+References: <CAHk-=wgP058PNY8eoWW=5uRMox-PuesDMrLsrCWPS+xXhzbQxQ@mail.gmail.com>
+ <YXL9tRher7QVmq6N@arm.com> <CAHk-=wg4t2t1AaBDyMfOVhCCOiLLjCB5TFVgZcV4Pr8X2qptJw@mail.gmail.com>
+ <CAHc6FU7BEfBJCpm8wC3P+8GTBcXxzDWcp6wAcgzQtuaJLHrqZA@mail.gmail.com>
+ <YXhH0sBSyTyz5Eh2@arm.com> <CAHk-=wjWDsB-dDj+x4yr8h8f_VSkyB7MbgGqBzDRMNz125sZxw@mail.gmail.com>
+ <YXmkvfL9B+4mQAIo@arm.com> <CAHk-=wjQqi9cw1Guz6a8oBB0xiQNF_jtFzs3gW0k7+fKN-mB1g@mail.gmail.com>
+ <YXsUNMWFpmT1eQcX@arm.com> <CAHk-=wgzEKEYKRoR_abQRDO=R8xJX_FK+XC3gNhKfu=KLdxt3g@mail.gmail.com>
+ <YXw0a9n+/PLAcObB@arm.com>
+In-Reply-To: <YXw0a9n+/PLAcObB@arm.com>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Fri, 29 Oct 2021 11:47:33 -0700
+X-Gmail-Original-Message-ID: <CAHk-=wgNV5Ka0yTssic0JbZEcO3wvoTC65budK88k4D-34v0xA@mail.gmail.com>
+Message-ID: <CAHk-=wgNV5Ka0yTssic0JbZEcO3wvoTC65budK88k4D-34v0xA@mail.gmail.com>
+Subject: Re: [PATCH v8 00/17] gfs2: Fix mmap + page fault deadlocks
+To:     Catalin Marinas <catalin.marinas@arm.com>
+Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
+        Paul Mackerras <paulus@ozlabs.org>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>,
+        "Darrick J. Wong" <djwong@kernel.org>, Jan Kara <jack@suse.cz>,
+        Matthew Wilcox <willy@infradead.org>,
+        cluster-devel <cluster-devel@redhat.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        ocfs2-devel@oss.oracle.com, kvm-ppc@vger.kernel.org,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Tony Luck <tony.luck@intel.com>,
+        Andy Lutomirski <luto@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This adds a new sysfs entry in /sys/fs/btrfs/<uuid>/allocation/<block
-type>/chunk_size. This allows to query the chunk size and also set the
-chunk size.
+On Fri, Oct 29, 2021 at 10:50 AM Catalin Marinas
+<catalin.marinas@arm.com> wrote:
+>
+> First of all, a uaccess in interrupt should not force such signal as it
+> had nothing to do with the interrupted context. I guess we can do an
+> in_task() check in the fault handler.
 
-Signed-off-by: Stefan Roesch <shr@fb.com>
----
- fs/btrfs/sysfs.c | 80 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 80 insertions(+)
+Yeah. It ends up being similar to the thread flag in that you still
+end up having to protect against NMI and other users of asynchronous
+page faults.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f9eff3b0f77c..3b0bcbc2ed2e 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -21,6 +21,7 @@
- #include "space-info.h"
- #include "block-group.h"
- #include "qgroup.h"
-+#include "misc.h"
-=20
- /*
-  * Structure name                       Path
-@@ -92,6 +93,7 @@ static struct btrfs_feature_attr btrfs_attr_features_##=
-_name =3D {	     \
-=20
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
- static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
-+static inline struct kobject *get_btrfs_kobj(struct kobject *kobj);
-=20
- static struct btrfs_feature_attr *to_btrfs_feature_attr(struct kobj_attr=
-ibute *a)
- {
-@@ -708,6 +710,67 @@ static ssize_t btrfs_space_info_show_##field(struct =
-kobject *kobj,	\
- }									\
- BTRFS_ATTR(space_info, field, btrfs_space_info_show_##field)
-=20
-+/*
-+ * Return space info chunk size.
-+ */
-+static ssize_t btrfs_chunk_size_show(struct kobject *kobj,
-+				     struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_space_info *sinfo =3D to_space_info(kobj);
-+
-+	return btrfs_show_u64(&sinfo->default_chunk_size, &sinfo->lock, buf);
-+}
-+
-+/*
-+ * Store new user supplied chunk size in space info.
-+ *
-+ * Note: If the new chunk size value is larger than 10% of free space it=
- is
-+ *       reduced to match that limit.
-+ */
-+static ssize_t btrfs_chunk_size_store(struct kobject *kobj,
-+				      struct kobj_attribute *a,
-+				      const char *buf, size_t len)
-+{
-+	struct btrfs_space_info *space_info =3D to_space_info(kobj);
-+	struct btrfs_fs_info *fs_info =3D to_fs_info(get_btrfs_kobj(kobj));
-+	u64 val;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (!fs_info) {
-+		pr_err("couldn't get fs_info\n");
-+		return -EPERM;
-+	}
-+
-+	if (sb_rdonly(fs_info->sb))
-+		return -EROFS;
-+
-+	if (!fs_info->fs_devices)
-+		return -EINVAL;
-+
-+	if (btrfs_is_zoned(fs_info))
-+		return -EINVAL;
-+
-+	if (!space_info) {
-+		btrfs_err(fs_info, "couldn't get space_info\n");
-+		return -EPERM;
-+	}
-+
-+	ret =3D kstrtoull(buf, 10, &val);
-+	if (ret)
-+		return ret;
-+
-+	/*
-+	 * Limit stripe size to 10% of available space.
-+	 */
-+	val =3D min(div_factor(fs_info->fs_devices->total_rw_bytes, 1), val);
-+	btrfs_update_space_info_chunk_size(space_info, space_info->flags, val);
-+
-+	return val;
-+}
-+
- SPACE_INFO_ATTR(flags);
- SPACE_INFO_ATTR(total_bytes);
- SPACE_INFO_ATTR(bytes_used);
-@@ -718,6 +781,8 @@ SPACE_INFO_ATTR(bytes_readonly);
- SPACE_INFO_ATTR(bytes_zone_unusable);
- SPACE_INFO_ATTR(disk_used);
- SPACE_INFO_ATTR(disk_total);
-+BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
-+	      btrfs_chunk_size_store);
-=20
- /*
-  * Allocation information about block group types.
-@@ -735,6 +800,7 @@ static struct attribute *space_info_attrs[] =3D {
- 	BTRFS_ATTR_PTR(space_info, bytes_zone_unusable),
- 	BTRFS_ATTR_PTR(space_info, disk_used),
- 	BTRFS_ATTR_PTR(space_info, disk_total),
-+	BTRFS_ATTR_PTR(space_info, chunk_size),
- 	NULL,
- };
- ATTRIBUTE_GROUPS(space_info);
-@@ -1099,6 +1165,20 @@ static inline struct btrfs_fs_info *to_fs_info(str=
-uct kobject *kobj)
- 	return to_fs_devs(kobj)->fs_info;
- }
-=20
-+/*
-+ * Get btrfs sysfs kobject.
-+ */
-+static inline struct kobject *get_btrfs_kobj(struct kobject *kobj)
-+{
-+	while (kobj) {
-+		if (kobj->ktype =3D=3D &btrfs_ktype)
-+			return kobj;
-+		kobj =3D kobj->parent;
-+	}
-+
-+	return NULL;
-+}
-+
- #define NUM_FEATURE_BITS 64
- #define BTRFS_FEATURE_NAME_MAX 13
- static char btrfs_unknown_feature_names[FEAT_MAX][NUM_FEATURE_BITS][BTRF=
-S_FEATURE_NAME_MAX];
---=20
-2.30.2
+So the suggestion was more of a "mindset" difference and modified
+version of the task flag rather than anything fundamentally different.
 
+> Second, is there a chance that we enter the fault-in loop with a SIGSEGV
+> already pending? Maybe it's not a problem, we just bail out of the loop
+> early and deliver the signal, though unrelated to the actual uaccess in
+> the loop.
+
+If we ever run in user space with a pending per-thread SIGSEGV, that
+would already be a fairly bad bug. The intent of "force_sig()" is not
+only to make sure you can't block the signal, but also that it targets
+the particular thread that caused the problem: unlike other random
+"send signal to process", a SIGSEGV caused by a bad memory access is
+really local to that _thread_, not the signal thread group.
+
+So somebody else sending a SIGSEGV asynchronsly is actually very
+different - it goes to the thread group (although you can specify
+individual threads too - but once you do that you're already outside
+of POSIX).
+
+That said, the more I look at it, the more I think I was wrong. I
+think the "we have a SIGSEGV pending" could act as the per-thread
+flag, but the complexity of the signal handling is probably an
+argument against it.
+
+Not because a SIGSEGV could already be pending, but because so many
+other situations could be pending.
+
+In particular, the signal code won't send new signals to a thread if
+that thread group is already exiting. So another thread may have
+already started the exit and core dump sequence, and is in the process
+of killing the shared signal threads, and if one of those threads is
+now in the kernel and goes through the copy_from_user() dance, that
+whole "thread group is exiting" will mean that the signal code won't
+add a new SIGSEGV to the queue.
+
+So the signal could conceptually be used as the flag to stop looping,
+but it ends up being such a complicated flag that I think it's
+probably not worth it after all. Even if it semantically would be
+fairly nice to use pre-existing machinery.
+
+Could it be worked around? Sure. That kernel loop probably has to
+check for fatal_signal_pending() anyway, so it would all work even in
+the presense of the above kinds of issues. But just the fact that I
+went and looked at just how exciting the signal code is made me think
+"ok, conceptually nice, but we take a lot of locks and we do a lot of
+special things even in the 'simple' force_sig() case".
+
+> Third is the sigcontext.pc presented to the signal handler. Normally for
+> SIGSEGV it points to the address of a load/store instruction and a
+> handler could disable MTE and restart from that point. With a syscall we
+> don't want it to point to the syscall place as it shouldn't be restarted
+> in case it copied something.
+
+I think this is actually independent of the whole "how to return
+errors". We'll still need to return an error from the system call,
+even if we also have a signal pending.
+
+                  Linus

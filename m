@@ -2,131 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03AD8C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 17:50:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C14AC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DE0D7610A0
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 17:50:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 13FC16101B
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Oct 2021 18:28:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230044AbhJ2RxK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Oct 2021 13:53:10 -0400
-Received: from mail.kernel.org ([198.145.29.99]:58554 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229489AbhJ2RxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Oct 2021 13:53:10 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id C7CA9610C7;
-        Fri, 29 Oct 2021 17:50:38 +0000 (UTC)
-Date:   Fri, 29 Oct 2021 18:50:35 +0100
-From:   Catalin Marinas <catalin.marinas@arm.com>
-To:     Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
-        Paul Mackerras <paulus@ozlabs.org>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>,
-        "Darrick J. Wong" <djwong@kernel.org>, Jan Kara <jack@suse.cz>,
-        Matthew Wilcox <willy@infradead.org>,
-        cluster-devel <cluster-devel@redhat.com>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        ocfs2-devel@oss.oracle.com, kvm-ppc@vger.kernel.org,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Tony Luck <tony.luck@intel.com>,
-        Andy Lutomirski <luto@kernel.org>
-Subject: Re: [PATCH v8 00/17] gfs2: Fix mmap + page fault deadlocks
-Message-ID: <YXw0a9n+/PLAcObB@arm.com>
-References: <CAHk-=wgP058PNY8eoWW=5uRMox-PuesDMrLsrCWPS+xXhzbQxQ@mail.gmail.com>
- <YXL9tRher7QVmq6N@arm.com>
- <CAHk-=wg4t2t1AaBDyMfOVhCCOiLLjCB5TFVgZcV4Pr8X2qptJw@mail.gmail.com>
- <CAHc6FU7BEfBJCpm8wC3P+8GTBcXxzDWcp6wAcgzQtuaJLHrqZA@mail.gmail.com>
- <YXhH0sBSyTyz5Eh2@arm.com>
- <CAHk-=wjWDsB-dDj+x4yr8h8f_VSkyB7MbgGqBzDRMNz125sZxw@mail.gmail.com>
- <YXmkvfL9B+4mQAIo@arm.com>
- <CAHk-=wjQqi9cw1Guz6a8oBB0xiQNF_jtFzs3gW0k7+fKN-mB1g@mail.gmail.com>
- <YXsUNMWFpmT1eQcX@arm.com>
- <CAHk-=wgzEKEYKRoR_abQRDO=R8xJX_FK+XC3gNhKfu=KLdxt3g@mail.gmail.com>
+        id S230139AbhJ2Sav (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Oct 2021 14:30:51 -0400
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:21530 "EHLO
+        mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S229498AbhJ2Sav (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 29 Oct 2021 14:30:51 -0400
+Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 19THwSRh017394
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:21 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding : content-type; s=facebook;
+ bh=CGRfiNpDw41zqqW6lbhY/Lq0BxX376+J4osQ1+soSGc=;
+ b=K0ckmFkuEWj4jF0Ki2fiCvTWGsnK8BNDLF7/wO3hmI8qNISIFSU5MXMeISex+gH/FYNz
+ YEKXQYXyqIGM32pIjh3RjpAr1S85vvtN0z3u4xr109WvNa+ZvhFP3blmzi0TOGwVOg+v
+ K0YlcSThCFH0ag6UuCA2FB8FalSNlzXJBwY= 
+Received: from maileast.thefacebook.com ([163.114.130.16])
+        by mx0a-00082601.pphosted.com with ESMTP id 3c09avxf2x-12
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Oct 2021 11:28:21 -0700
+Received: from intmgw001.37.frc1.facebook.com (2620:10d:c0a8:1b::d) by
+ mail.thefacebook.com (2620:10d:c0a8:83::5) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2308.14; Fri, 29 Oct 2021 11:28:18 -0700
+Received: by devvm225.atn0.facebook.com (Postfix, from userid 425415)
+        id F10145BCB642; Fri, 29 Oct 2021 11:28:15 -0700 (PDT)
+From:   Stefan Roesch <shr@fb.com>
+To:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+CC:     <shr@fb.com>
+Subject: [PATCH v3 4/4] btrfs: increase metadata alloc size to 5GB for volumes > 50GB
+Date:   Fri, 29 Oct 2021 11:28:12 -0700
+Message-ID: <20211029182812.3560677-7-shr@fb.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20211029182812.3560677-1-shr@fb.com>
+References: <20211029182812.3560677-1-shr@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wgzEKEYKRoR_abQRDO=R8xJX_FK+XC3gNhKfu=KLdxt3g@mail.gmail.com>
+Content-Transfer-Encoding: quoted-printable
+X-FB-Internal: Safe
+Content-Type: text/plain
+X-FB-Source: Intern
+X-Proofpoint-GUID: QpbydH4j8R32nZ-Xip7jvlZ5cucHnbUA
+X-Proofpoint-ORIG-GUID: QpbydH4j8R32nZ-Xip7jvlZ5cucHnbUA
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.0.607.475
+ definitions=2021-10-29_04,2021-10-29_01,2020-04-07_01
+X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 spamscore=0 bulkscore=0
+ lowpriorityscore=0 clxscore=1015 impostorscore=0 adultscore=0 phishscore=0
+ mlxscore=0 malwarescore=0 priorityscore=1501 suspectscore=0
+ mlxlogscore=981 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2110150000 definitions=main-2110290100
+X-FB-Internal: deliver
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 28, 2021 at 03:32:23PM -0700, Linus Torvalds wrote:
-> The pointer color fault (or whatever some other architecture may do to
-> generate sub-page faults) is not only not recoverable in the sense
-> that we can't fix it up, it also ends up being a forced SIGSEGV (ie it
-> can't be blocked - it has to either be caught or cause the process to
-> be killed).
-> 
-> And the thing is, I think we could just make the rule be that kernel
-> code that has this kind of retry loop with fault_in_pages() would
-> force an EFAULT on a pending SIGSEGV.
-> 
-> IOW, the pending SIGSEGV could effectively be exactly that "thread flag".
-> 
-> And that means that fault_in_xyz() wouldn't need to worry about this
-> situation at all: the regular copy_from_user() (or whatever flavor it
-> is - to/from/iter/whatever) would take the fault. And if it's a
-> regular page fault,. it would act exactly like it does now, so no
-> changes.
-> 
-> If it's a sub-page fault, we'd just make the rule be that we send a
-> SIGSEGV even if the instruction in question has a user exception
-> fixup.
-> 
-> Then we just need to add the logic somewhere that does "if active
-> pending SIGSEGV, return -EFAULT".
-> 
-> Of course, that logic might be in fault_in_xyz(), but it migth also be
-> a separate function entirely.
-> 
-> So this does effectively end up being a thread flag, but it's also
-> slightly more than that - it's that a sub-page fault from kernel mode
-> has semantics that a regular page fault does not.
-> 
-> The whole "kernel access doesn't cause SIGSEGV, but returns -EFAULT
-> instead" has always been an odd and somewhat wrong-headed thing. Of
-> course it should cause a SIGSEGV, but that's not how Unix traditionall
-> worked. We would just say "color faults always raise a signal, even if
-> the color fault was triggered in a system call".
+This increases the metadata default allocation size from 1GB to 5GB for
+volumes with a size greater than 50GB.
 
-It's doable and, at least for MTE, people have asked for a signal even
-when the fault was caused by a kernel uaccess. But there are some
-potentially confusing aspects to sort out:
+Signed-off-by: Stefan Roesch <shr@fb.com>
+---
+ fs/btrfs/space-info.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-First of all, a uaccess in interrupt should not force such signal as it
-had nothing to do with the interrupted context. I guess we can do an
-in_task() check in the fault handler.
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 7370c152ce8a..44507262c515 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -195,7 +195,7 @@ static u64 compute_chunk_size_regular(struct btrfs_fs=
+_info *info, u64 flags)
+=20
+ 	/* Handle BTRFS_BLOCK_GROUP_METADATA */
+ 	if (info->fs_devices->total_rw_bytes > 50ULL * SZ_1G)
+-		return SZ_1G;
++		return 5ULL * SZ_1G;
+=20
+ 	return SZ_256M;
+ }
+--=20
+2.30.2
 
-Second, is there a chance that we enter the fault-in loop with a SIGSEGV
-already pending? Maybe it's not a problem, we just bail out of the loop
-early and deliver the signal, though unrelated to the actual uaccess in
-the loop.
-
-Third is the sigcontext.pc presented to the signal handler. Normally for
-SIGSEGV it points to the address of a load/store instruction and a
-handler could disable MTE and restart from that point. With a syscall we
-don't want it to point to the syscall place as it shouldn't be restarted
-in case it copied something. Pointing it to the next instruction after
-syscall is backwards-compatible but it may confuse the handler (if it
-does some reporting). I think we need add a new si_code that describes a
-fault in kernel mode to differentiate from the genuine user access.
-
-There was a discussion back in August on infinite loops with hwpoison
-and Tony said that Andy convinced him that the kernel should not send a
-SIGBUS for uaccess:
-
-https://lore.kernel.org/linux-edac/20210823152437.GA1637466@agluck-desk2.amr.corp.intel.com/
-
-I personally like the approach of a SIG{SEGV,BUS} on uaccess and I don't
-think the ABI change is significant but ideally we should have a unified
-approach that's not just for MTE.
-
-Adding Andy and Tony (the background is potentially infinite loops with
-faults at sub-page granularity: arm64 MTE, hwpoison, sparc ADI).
-
-Thanks.
-
--- 
-Catalin

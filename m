@@ -2,118 +2,141 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 140DEC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 14:50:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E029EC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 15:25:44 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EDEE5610E5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 14:50:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C9DA860EB4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 15:25:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233413AbhKBOxc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Nov 2021 10:53:32 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:48476 "EHLO
+        id S234560AbhKBP2S (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Nov 2021 11:28:18 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:50524 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232985AbhKBOxa (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Nov 2021 10:53:30 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 67A481FD4C;
-        Tue,  2 Nov 2021 14:50:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1635864654;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        with ESMTP id S233007AbhKBP2J (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Nov 2021 11:28:09 -0400
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id D8B701FD4C;
+        Tue,  2 Nov 2021 15:25:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1635866732; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=hUR1+HJbWQQ47r9x8xPETncMuUN4UXEP73XAuC0V2SE=;
-        b=Q1buZLmwVNFTcORhqbeBaA5ReztWd8isw4byGjZVw0NjdL0YObpeLVoIITtGIIsyDXfxxa
-        RS/EvdlsIiuMHGIsiXgEFw3l6oDZpaBNrpUpTu524LiyUikMuwFNRZe+nXcacXhM+148ny
-        nru2XvSo9B3bNc22G5oT6x9hETLTEDU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1635864654;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=hUR1+HJbWQQ47r9x8xPETncMuUN4UXEP73XAuC0V2SE=;
-        b=P37eNTEvq9XTW4hMU/dAT/benTNmc0IeqMmaHavyX99QFglCHrUGSN4ekuMqbAUWtEG/C+
-        YckmuzwLhtLFyeDw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 5E6FDA3B81;
-        Tue,  2 Nov 2021 14:50:54 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 2214ADA7A9; Tue,  2 Nov 2021 15:50:19 +0100 (CET)
-Date:   Tue, 2 Nov 2021 15:50:18 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: Re: [GIT PULL] Btrfs updates for 5.16
-Message-ID: <20211102145018.GK20319@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-References: <cover.1635773880.git.dsterba@suse.com>
- <CAHk-=wjowO+mmVBoiWkCk6LeqVTYVBp0ruSUPN2z0_ObKisPYw@mail.gmail.com>
+        bh=6GiLMiJAnzbcLthSAl63S33g7iKONODGvH3XGxM/R0o=;
+        b=K7gLoMiRyUeZh7HLcZBFrqwMvxbmkkbhXcP91l+wofrlw3wOIWqbqYp06s1OFkz/gOELiT
+        ZX/0NWCxoVh6I//D6I7cIGnkeW5DJFyCzI7fbnugZ94LWWLN7lmNmIeCdZQSdLy6X1dNkU
+        Z6J1vXAhPA9B6P0w6IN+XrrZZeAJPVw=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A5B6613D66;
+        Tue,  2 Nov 2021 15:25:32 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 2cPlJWxYgWExSgAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 02 Nov 2021 15:25:32 +0000
+Subject: Re: [PATCH 0/3] Balance vs device add fixes
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>
+References: <20211101115324.374076-1-nborisov@suse.com>
+ <YYFLlL4NTF4L+PmE@localhost.localdomain>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <516c7eaf-3fb2-fe61-08f8-ac4201752121@suse.com>
+Date:   Tue, 2 Nov 2021 17:25:32 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHk-=wjowO+mmVBoiWkCk6LeqVTYVBp0ruSUPN2z0_ObKisPYw@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <YYFLlL4NTF4L+PmE@localhost.localdomain>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 01, 2021 at 01:03:25PM -0700, Linus Torvalds wrote:
-> On Mon, Nov 1, 2021 at 9:46 AM David Sterba <dsterba@suse.com> wrote:
-> >
-> > There's a merge conflict due to the last minute 5.15 changes (kmap
-> > reverts) and the conflict is not trivial.
-> 
-> You don't say.
-> 
-> I ended up just re-doing that resolution entirely, and as I did so, I
-> think I found a bug in the original revert that caused the conflict in
-> the first place.
-> 
-> And since that revert made it into 5.15, I felt like I had to fix that
-> bug first - and separately - so that the fix can be backported to
-> stable.
-> 
-> I then re-did my merge on top of that hopefully fixed state, and maybe
-> it's correct.
-> 
-> Or maybe I messed up entirely.
-> 
-> I did end up comparing it to your other branch too, but that was
-> equally as messy, apart from the "ok, I can mindlessly just take your
-> side".
-> 
-> And it was fairly different from what I had done in my merge
-> resolution, so who knows.
 
-Looks good to me, thanks for catching the bug.
 
-> ANYWAY. What I'm trying to say is that you should look very very
-> carefully at commits
+On 2.11.21 г. 16:30, Josef Bacik wrote:
+> On Mon, Nov 01, 2021 at 01:53:21PM +0200, Nikolay Borisov wrote:
+>> This series enables adding of a device when balance is paused (i.e an fs is mounted
+>> with skip_balance options). This is needed to give users a chance to gracefully
+>> handle an ENOSPC situation in the face of running balance. To achieve this introduce
+>> a new exclop - BALANCE_PAUSED which is made compatible with device add. More
+>> details in each patche.
+>>
+>> I've tested this with an fstests which I will be posting in a bit.
+>>
+>> Nikolay Borisov (3):
+>>   btrfs: introduce BTRFS_EXCLOP_BALANCE_PAUSED exclusive state
+>>   btrfs: make device add compatible with paused balance in
+>>     btrfs_exclop_start_try_lock
+>>   btrfs: allow device add if balance is paused
+>>
+>>  fs/btrfs/ctree.h   |  1 +
+>>  fs/btrfs/ioctl.c   | 49 +++++++++++++++++++++++++++++++++++++++-------
+>>  fs/btrfs/volumes.c | 23 ++++++++++++++++++----
+>>  fs/btrfs/volumes.h |  2 +-
+>>  4 files changed, 63 insertions(+), 12 deletions(-)
+>>
 > 
->   2cf3f8133bda ("btrfs: fix lzo_decompress_bio() kmap leakage")
->   037c50bfbeb3 ("Merge tag 'for-5.16-tag' of git://git.../linux")
+> A few things
 > 
-> because I marked that first one for stable, and the second is
-> obviously my entirely untested merge.
+> 1) Can we integrate the flipping into helpers?  Something like
 > 
-> It makes sense to me, but apart from "it builds", I've not actually
-> tested any of it. This is all purely from looking at the code and
-> trying to figure out what the RightThing(tm) is.
+> 	btrfs_exclop_change_state(PAUSED);
 > 
-> Obviously the kmap thing tends to only be noticeable on 32-bit
-> platforms, and that lzo_decompress_bio() bug also needs just the
-> proper filesystem settings to trigger in the first place.
-> 
-> Again - please take a careful look. Both at my merge and at that
-> alleged kmap fix.
+>    So the locking and stuff is all with the code that messes with the exclop?
 
-I checked the commits individually and in the source files, all the
-kmaps seem to be correctly paired with kunmaps. We'll do more tests too.
-I'm sorry that it turned out to be such mess.
+Right, I left the code flipping balance->paused opencoded because that's
+really a special case. By all means I can add a specific helper so that
+the ASSERT is not lost as well. The reason I didn't do it in the first
+place is because PAUSED is really "special" in the sense it can be
+entered only from BALANCE and it's not really generic. If you take a
+look how btrfs_exclop_start does it for example, it simply checks we
+don't have a running op and simply sets it to whatever is passed
+
+> 
+> 2) The existing helpers do WRITE_ONCE(), is that needed here?  I assume not>    because we're not actually exiting our exclop state, but still
+seems wonky.
+
+That got me thinking in the first place and actually initially I had a
+patch which removed it. However, I *think* it might be required since
+exclusive_operation is accessed without a lock ini the sysfs code i.e.
+btrfs_exclusive_operation_show so I guess that's why we need it.
+
+Goldwyn, what's your take on this?
+
+> 
+> 3) Maybe have an __btrfs_exclop_finish(type), so instead of 
+> 
+> 	if (paused) {
+> 		do thing;
+> 	} else {
+> 		btrfs_exclop_finish();
+> 	}
+> 
+>   you can instead do
+> 
+> 	type = BTRFS_EXCLOP_NONE;
+> 	if (pause stuff) {
+> 		do things;
+> 		type = BTRFS_EXCLOP_BALANCE_PAUSED;
+> 	}
+> 
+> 	/* other stuff. */
+> 	__btrfs_exclop_finish(type);
+> 
+> then btrfs_exclop_finish just does __btrfs_exclop_finish(NONE);
+
+I'm having a hard time seeing how this would increase readability. What
+should go into the __btrfs_exclop_finish function?
+
+
+> Thanks,
+> 
+> Josef
+> 

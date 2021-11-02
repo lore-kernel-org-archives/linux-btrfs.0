@@ -2,132 +2,112 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8706C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:38:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30EC8C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:39:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A641560EE9
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:38:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1297861105
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:39:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234831AbhKBQlZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Nov 2021 12:41:25 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:55114 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234694AbhKBQks (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Nov 2021 12:40:48 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id AC1DD1FD29;
-        Tue,  2 Nov 2021 16:31:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1635870662;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=/nqphC0GHU/mwtGP3QoAAZ3iOfU28/AoWyJ8DhTMMSw=;
-        b=Tkyz7kodim5UFoW2fdLH7ow6pPJDm7cgSVrHNcqOkPiISwi/f4dI2SeYIzsflzzktBuAlG
-        fHoBlJLQnEkMRLXksQM/m12YDnPy+bNOlJmzDBgS0GLK3G0QehHM2kMB50QWtH3WpU5sqX
-        HB+gVxQGsg7XbpYHG+4UocMcsMlvFUg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1635870662;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=/nqphC0GHU/mwtGP3QoAAZ3iOfU28/AoWyJ8DhTMMSw=;
-        b=TYDDnAlhN6CX3+dBvxl4d7xgslM5gDNriHWCPT4k06NqmMuYGjPaBE6KOxRbHeGfxF27+z
-        p0QyFaAx+am2qyBg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 9EF7A2C144;
-        Tue,  2 Nov 2021 16:31:02 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 604ABDA7A9; Tue,  2 Nov 2021 17:30:27 +0100 (CET)
-Date:   Tue, 2 Nov 2021 17:30:27 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Forza <forza@tnonline.net>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs progs pre-release 5.15-rc1
-Message-ID: <20211102163027.GN20319@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Forza <forza@tnonline.net>,
-        linux-btrfs@vger.kernel.org
-References: <20211029155346.19985-1-dsterba@suse.com>
- <38e1b33.df69821a.17cd0454b6b@tnonline.net>
+        id S234703AbhKBQmS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Nov 2021 12:42:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42554 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231702AbhKBQmO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Nov 2021 12:42:14 -0400
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 787A2C079781
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Nov 2021 09:15:43 -0700 (PDT)
+Received: by mail-qv1-xf2c.google.com with SMTP id d6so13630198qvb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Nov 2021 09:15:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=NkEWS5pYGhHqSCEdMuaKKkALB6ssriZ0zhr6usSATmw=;
+        b=I9WxXFsCBFhDwOTelaNgFDHEKLdUjPkPhQaQWrVYv9qhfQHcHQx0tVouE7dyrudm9r
+         WbN5NF1w0gq3vIbuIUtLPE/0EOD4cvUa9uvxj4LVDwD4Qxe+n7vabkXFQ2BBuJNuL7qd
+         LpT/Y03QWu5uhpISPl4suNKOGSlwt6D96X4/A1iGES+oevF3JTzoXd6h6rR8LPT1SD1l
+         UAzUcDGW3h0ahRRJaAUpjWTgDa46IOXQj4WOuPH+kDNh9cenUuUYf/DqGpuOKw7kdDsD
+         OR7UbGMFPNljeVCVzmv1BJZzhFRnDYlt5/SD0t6Yh6CFdwVuLu6pHszzqTgMlzWnaGi7
+         8jTQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=NkEWS5pYGhHqSCEdMuaKKkALB6ssriZ0zhr6usSATmw=;
+        b=vSTsOd3EKfKgaOxnklLnWAC40JzyJ1feuhBykahfegEo6h2llMwR02TCU1TnR6z/Co
+         w6jrvZGntDlvj+tML2yu12lHFuDYZuyqwnHt5a5h70TFilsfTbueHoXOuXMzOkuAukVL
+         GIlEz4TBwP91ntgcuQ5uq+L4RZugc85xVWFjUyooOzqKfVyRKs8xT8TLwSysUukEhsZJ
+         7Z7ZGktTO6LAbGf0RAmxcPhN+eK/SqummO5tFobxm8SIdgzGe/eQxn0TcnH1wgAyJ6fu
+         lczniucO6dJ3Ih72eZ71SsHh20KwbBcq40aO3JrDXkGCti1ulrsUUSC5XcF1E3Xv9VW4
+         FxVQ==
+X-Gm-Message-State: AOAM530v/EK0zauXNuWaNM0nJrcYTdZZAu5KCcUKOWhNnLjy3ASnJtSk
+        DR5U1dEaW0I968gzN2Kkm6CGhw==
+X-Google-Smtp-Source: ABdhPJwZMjWe2azIuHoxBETIn11HKljGMJlKDjn7uusy6hjW8Dxnk53NMM8h5CHlkGg3BxXmfqMUhA==
+X-Received: by 2002:a05:6214:21a5:: with SMTP id t5mr9680519qvc.46.1635869742563;
+        Tue, 02 Nov 2021 09:15:42 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id b21sm11372431qtk.69.2021.11.02.09.15.41
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 02 Nov 2021 09:15:42 -0700 (PDT)
+Date:   Tue, 2 Nov 2021 12:15:40 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Stefan Roesch <shr@fb.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v4 0/4] btrfs: sysfs: set / query btrfs chunk size
+Message-ID: <YYFkLP/cOgje+Vi7@localhost.localdomain>
+References: <20211029183950.3613491-1-shr@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <38e1b33.df69821a.17cd0454b6b@tnonline.net>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20211029183950.3613491-1-shr@fb.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Oct 30, 2021 at 10:16:14AM +0200, Forza wrote:
+On Fri, Oct 29, 2021 at 11:39:46AM -0700, Stefan Roesch wrote:
+> Motivation:
+> The btrfs allocator is currently not ideal for all workloads. It tends
+> to suffer from overallocating data block groups and underallocating
+> metadata block groups. This results in filesystems becoming read-only
+> even though there is plenty of "free" space.
 > 
+> This is naturally confusing and distressing to users.
 > 
-> ---- From: David Sterba <dsterba@suse.com> -- Sent: 2021-10-29 - 17:53 ----
+> Patches:
+> 1) Store the stripe and chunk size in the btrfs_space_info structure
+> 2) Add a sysfs entry to expose the above information
+> 3) Add a sysfs entry to force a space allocation
+> 4) Increase the default size of the metadata chunk allocation to 5GB
+>    for volumes greater than 50GB.
 > 
-> > Hi,
-> > 
-> > this is a pre-release of btrfs-progs, 5.15-rc1 (version tag is v5.14.91).
-> > 
-> > The proper release is scheduled to next Friday, +7 days (2021-10-05).
-> > 
-> > The noticeable changes are in the mkfs defaults:
-> > 
-> >   * no-holes
-> >   * free-space-tree
-> >   * DUP for metadata unconditionally
-> > 
-> > This is based on numerous user requests and discussions, and after long period
-> > where the respective features have been in released kernels.
-> > 
-> > Other changes:
-> > 
-> > * libbtrfs - minimize its impact on the other code, refactor and separate
-> >   implementation where needed, cleanup afterwards, reduced header exports
-> > 
-> > * documentation - introduce sphinx build and RST versions of manual pages, will
-> >   become the new format and replace asciidoc
-> >   (Preview at https://deleteme12545.readthedocs.io/en/latest/index.html)
-> > 
-> > Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-> > Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
-> > 
+> Testing:
+>   A new test is being added to the xfstest suite. For reference the
+>   corresponding patch has the title:
+>     [PATCH] btrfs: Test chunk allocation with different sizes
 > 
-> Thank you for the release. It compiles and runs fine on my Gentoo 5.14.14 amd64 system. 
+>   In addition also manual testing has been performed.
+>     - Run xfstests with the changes and the new test. It does not
+>       show new diffs.
+>     - Test with storage devices 10G, 20G, 30G, 50G, 60G
+>       - Default allocation
+>       - Increase of chunk size
+>       - If the stripe size is > the free space, it allocates
+>         free space - 1MB. The 1MB is left as free space.
+>       - If the device has a storage size > 50G, it uses a 5GB
+>         chunk size for new allocations.
 > 
-> Here is the output and the corresponding dmesg bits. One note is the mention of "cleaning free space cache v1“ during mount. Is this intended? 
+> Stefan Roesch (4):
+>   btrfs: store chunk size in space-info struct.
+>   btrfs: expose chunk size in sysfs.
+>   btrfs: add force_chunk_alloc sysfs entry to force allocation
+>   btrfs: increase metadata alloc size to 5GB for volumes > 50GB
+> 
 
-I'm not sure why it's there but it should not I think. At least it does
-not make sense when the v2 is enabled right away.
+You can add
 
-> # mkfs.btrfs /dev/loop0p1 -fv --csum xxhash btrfs-progs v5.14.91
-> See http://btrfs.wiki.kernel.org for more information.
-> Performing full device TRIM /dev/loop0p1 (100.00GiB) ...
-> NOTE: several default settings have changed in version 5.15, please make sure this does not affect your deployments: - DUP for metadata (-m dup) - enabled no-holes (-O no-holes) - enabled free-space-tree (-R free-space-tree)
-> Label: (null) UUID: ee548f53-5639-4d90-8c23-810b4b1f0a69
-> Node size: 16384
-> Sector size: 4096
-> Filesystem size: 100.00GiB
-> Block group profiles: Data: single 8.00MiB Metadata: dup 1.00GiB System: dup 8.00MiB
-> SSD detected: yes
-> Zoned device: no
-> Incompat features: extref, skinny-metadata, no-holes
-> Runtime features: free-space-tree
-> Checksum: xxhash64 Number of devices: 1
-> Devices: ID SIZE PATH 1 100.00GiB /dev/loop0p1
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-> # dmesg ...
-> [224380.260049] BTRFS: device fsid ee548f53-5639-4d90-8c23-810b4b1f0a69 devid 1 transid 6 /dev/loop0p1 scanned by mkfs.btrfs (6730)
-> [224534.460239] BTRFS info (device loop0p1): flagging fs with big metadata feature
-> [224534.460246] BTRFS info (device loop0p1): using free space tree
-> [224534.460249] BTRFS info (device loop0p1): has skinny extents
-> [224534.462430] BTRFS info (device loop0p1): enabling ssd optimizations
-> [224534.462540] BTRFS info (device loop0p1): cleaning free space cache v1
-> [224534.591074] BTRFS info (device loop0p1): checking UUID tree
+to the series, thanks,
 
-The timestamp delta is about 0.13 so there could be something happening,
-even if it's just checking some structures. It seems otherwise harmless
-but I'd like to get this resolved before proper release. Now tracked as
-https://github.com/kdave/btrfs-progs/issues/420 , thanks for the report.
+Josef

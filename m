@@ -2,112 +2,178 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30EC8C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:39:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 749D2C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:49:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1297861105
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:39:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4B7A960EB8
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Nov 2021 16:49:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234703AbhKBQmS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Nov 2021 12:42:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42554 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231702AbhKBQmO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Nov 2021 12:42:14 -0400
-Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 787A2C079781
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Nov 2021 09:15:43 -0700 (PDT)
-Received: by mail-qv1-xf2c.google.com with SMTP id d6so13630198qvb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Nov 2021 09:15:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=NkEWS5pYGhHqSCEdMuaKKkALB6ssriZ0zhr6usSATmw=;
-        b=I9WxXFsCBFhDwOTelaNgFDHEKLdUjPkPhQaQWrVYv9qhfQHcHQx0tVouE7dyrudm9r
-         WbN5NF1w0gq3vIbuIUtLPE/0EOD4cvUa9uvxj4LVDwD4Qxe+n7vabkXFQ2BBuJNuL7qd
-         LpT/Y03QWu5uhpISPl4suNKOGSlwt6D96X4/A1iGES+oevF3JTzoXd6h6rR8LPT1SD1l
-         UAzUcDGW3h0ahRRJaAUpjWTgDa46IOXQj4WOuPH+kDNh9cenUuUYf/DqGpuOKw7kdDsD
-         OR7UbGMFPNljeVCVzmv1BJZzhFRnDYlt5/SD0t6Yh6CFdwVuLu6pHszzqTgMlzWnaGi7
-         8jTQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=NkEWS5pYGhHqSCEdMuaKKkALB6ssriZ0zhr6usSATmw=;
-        b=vSTsOd3EKfKgaOxnklLnWAC40JzyJ1feuhBykahfegEo6h2llMwR02TCU1TnR6z/Co
-         w6jrvZGntDlvj+tML2yu12lHFuDYZuyqwnHt5a5h70TFilsfTbueHoXOuXMzOkuAukVL
-         GIlEz4TBwP91ntgcuQ5uq+L4RZugc85xVWFjUyooOzqKfVyRKs8xT8TLwSysUukEhsZJ
-         7Z7ZGktTO6LAbGf0RAmxcPhN+eK/SqummO5tFobxm8SIdgzGe/eQxn0TcnH1wgAyJ6fu
-         lczniucO6dJ3Ih72eZ71SsHh20KwbBcq40aO3JrDXkGCti1ulrsUUSC5XcF1E3Xv9VW4
-         FxVQ==
-X-Gm-Message-State: AOAM530v/EK0zauXNuWaNM0nJrcYTdZZAu5KCcUKOWhNnLjy3ASnJtSk
-        DR5U1dEaW0I968gzN2Kkm6CGhw==
-X-Google-Smtp-Source: ABdhPJwZMjWe2azIuHoxBETIn11HKljGMJlKDjn7uusy6hjW8Dxnk53NMM8h5CHlkGg3BxXmfqMUhA==
-X-Received: by 2002:a05:6214:21a5:: with SMTP id t5mr9680519qvc.46.1635869742563;
-        Tue, 02 Nov 2021 09:15:42 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id b21sm11372431qtk.69.2021.11.02.09.15.41
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 02 Nov 2021 09:15:42 -0700 (PDT)
-Date:   Tue, 2 Nov 2021 12:15:40 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Stefan Roesch <shr@fb.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v4 0/4] btrfs: sysfs: set / query btrfs chunk size
-Message-ID: <YYFkLP/cOgje+Vi7@localhost.localdomain>
-References: <20211029183950.3613491-1-shr@fb.com>
+        id S235045AbhKBQv7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Nov 2021 12:51:59 -0400
+Received: from smtp-out2.suse.de ([195.135.220.29]:55932 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234767AbhKBQvl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Nov 2021 12:51:41 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id D7D881FD29;
+        Tue,  2 Nov 2021 16:49:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1635871745;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=1PVxaBFAfRe69sytMCRql2hBuYPwuyINsz1jRD/97d4=;
+        b=R2QFv17GJmfLglowLHlM2o1VGA4qJ+59J2xfwA4K9ne12nFVawHl2kEJ5lkjGvv0RT+xik
+        t97eQDRkFJLdXVO3IhJJy61lmhStLW21b5ELGcE1GDOhmc1ihRBX+UrOkY42KGzONXp494
+        XcKzhowDpPfCIJJrRc+0RNdwFUrDERM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1635871745;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=1PVxaBFAfRe69sytMCRql2hBuYPwuyINsz1jRD/97d4=;
+        b=Nm7Y1Esyhwk+brWCyPaLm7Y0oMiidozGbzZkvj1B5M+LPPOGgYToG0uHM5gRdZG/MvwNtr
+        LsvNztjSBcWfRvAw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id CFB00A3B8A;
+        Tue,  2 Nov 2021 16:49:05 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 5CED2DA7A9; Tue,  2 Nov 2021 17:48:30 +0100 (CET)
+Date:   Tue, 2 Nov 2021 17:48:30 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Wang Yugui <wangyugui@e16-tech.com>
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@gmail.com>
+Subject: Re: [PATCH v3] btrfs: fix a check-integrity warning on write caching
+ disabled disk
+Message-ID: <20211102164830.GO20319@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Wang Yugui <wangyugui@e16-tech.com>,
+        linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@gmail.com>
+References: <20211027223254.8095-1-wangyugui@e16-tech.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20211029183950.3613491-1-shr@fb.com>
+In-Reply-To: <20211027223254.8095-1-wangyugui@e16-tech.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 29, 2021 at 11:39:46AM -0700, Stefan Roesch wrote:
-> Motivation:
-> The btrfs allocator is currently not ideal for all workloads. It tends
-> to suffer from overallocating data block groups and underallocating
-> metadata block groups. This results in filesystems becoming read-only
-> even though there is plenty of "free" space.
+On Thu, Oct 28, 2021 at 06:32:54AM +0800, Wang Yugui wrote:
+> When a disk has write caching disabled, we skip submission of a bio
+> with flush and sync requests before writing the superblock, since
+> it's not needed. However when the integrity checker is enabled,
+> this results in reports that there are metadata blocks referred
+> by a superblock that were not properly flushed. So don't skip the
+> bio submission only when the integrity checker is enabled
+> for the sake of simplicity, since this is a debug tool and
+> not meant for use in non-debug builds.
 > 
-> This is naturally confusing and distressing to users.
-> 
-> Patches:
-> 1) Store the stripe and chunk size in the btrfs_space_info structure
-> 2) Add a sysfs entry to expose the above information
-> 3) Add a sysfs entry to force a space allocation
-> 4) Increase the default size of the metadata chunk allocation to 5GB
->    for volumes greater than 50GB.
-> 
-> Testing:
->   A new test is being added to the xfstest suite. For reference the
->   corresponding patch has the title:
->     [PATCH] btrfs: Test chunk allocation with different sizes
-> 
->   In addition also manual testing has been performed.
->     - Run xfstests with the changes and the new test. It does not
->       show new diffs.
->     - Test with storage devices 10G, 20G, 30G, 50G, 60G
->       - Default allocation
->       - Increase of chunk size
->       - If the stripe size is > the free space, it allocates
->         free space - 1MB. The 1MB is left as free space.
->       - If the device has a storage size > 50G, it uses a 5GB
->         chunk size for new allocations.
-> 
-> Stefan Roesch (4):
->   btrfs: store chunk size in space-info struct.
->   btrfs: expose chunk size in sysfs.
->   btrfs: add force_chunk_alloc sysfs entry to force allocation
->   btrfs: increase metadata alloc size to 5GB for volumes > 50GB
-> 
+> xfstest/btrfs/220 trigger a check-integrity warning like the following
+> when CONFIG_BTRFS_FS_CHECK_INTEGRITY=y and the disk with WCE=0.
 
-You can add
+Does this need the integrity checker to be also enabled by mount
+options? I don't think compile time (ie the #ifdef) is enough, the
+message is printed only when it's enabled based on check in
+__btrfsic_submit_bio "if (!btrfsic_is_initialized) return", where the
+rest of the function does all the verification.
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-
-to the series, thanks,
-
-Josef
+>  btrfs: attempt to write superblock which references block M @5242880 (sdb2/5242880/0) which is not flushed out of disk's write cache (block flush_gen=1, dev->flush_gen=0)!
+>  ------------[ cut here ]------------
+>  WARNING: CPU: 28 PID: 843680 at fs/btrfs/check-integrity.c:2196 btrfsic_process_written_superblock+0x22a/0x2a0 [btrfs]
+>  CPU: 28 PID: 843680 Comm: umount Not tainted 5.15.0-0.rc5.39.el8.x86_64 #1
+>  Hardware name: Dell Inc. Precision T7610/0NK70N, BIOS A18 09/11/2019
+>  RIP: 0010:btrfsic_process_written_superblock+0x22a/0x2a0 [btrfs]
+>  Code: 44 24 1c 83 f8 03 0f 85 7e fe ff ff 4c 8b 74 24 08 31 d2 48 89 ef 4c 89 f6 e8 82 f1 ff ff 89 c2 31 c0 83 fa ff 75 a1 89 04 24 <0f> 0b 48 89 ef e8 36 3f 01 00 8b 04 24 eb 8f 48 8b 40 60 48 89 04
+>  RSP: 0018:ffffb642afb47940 EFLAGS: 00010246
+>  RAX: 0000000000000000 RBX: 0000000000000002 RCX: 0000000000000000
+>  RDX: 00000000ffffffff RSI: ffff8b722fc97d00 RDI: ffff8b722fc97d00
+>  RBP: ffff8b5601c00000 R08: 0000000000000000 R09: c0000000ffff7fff
+>  R10: 0000000000000001 R11: ffffb642afb476f8 R12: ffffffffffffffff
+>  R13: ffffb642afb47974 R14: ffff8b5499254c00 R15: 0000000000000003
+>  FS:  00007f00a06d4080(0000) GS:ffff8b722fc80000(0000) knlGS:0000000000000000
+>  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>  CR2: 00007fff5cff5ff0 CR3: 00000001c0c2a006 CR4: 00000000001706e0
+>  Call Trace:
+>   btrfsic_process_written_block+0x2f7/0x850 [btrfs]
+>   __btrfsic_submit_bio.part.19+0x310/0x330 [btrfs]
+>   ? bio_associate_blkg_from_css+0xa4/0x2c0
+>   btrfsic_submit_bio+0x18/0x30 [btrfs]
+>   write_dev_supers+0x81/0x2a0 [btrfs]
+>   ? find_get_pages_range_tag+0x219/0x280
+>   ? pagevec_lookup_range_tag+0x24/0x30
+>   ? __filemap_fdatawait_range+0x6d/0xf0
+>   ? __raw_callee_save___native_queued_spin_unlock+0x11/0x1e
+>   ? find_first_extent_bit+0x9b/0x160 [btrfs]
+>   ? __raw_callee_save___native_queued_spin_unlock+0x11/0x1e
+>   write_all_supers+0x1b3/0xa70 [btrfs]
+>   ? __raw_callee_save___native_queued_spin_unlock+0x11/0x1e
+>   btrfs_commit_transaction+0x59d/0xac0 [btrfs]
+>   close_ctree+0x11d/0x339 [btrfs]
+>   generic_shutdown_super+0x71/0x110
+>   kill_anon_super+0x14/0x30
+>   btrfs_kill_super+0x12/0x20 [btrfs]
+>   deactivate_locked_super+0x31/0x70
+>   cleanup_mnt+0xb8/0x140
+>   task_work_run+0x6d/0xb0
+>   exit_to_user_mode_prepare+0x1f0/0x200
+>   syscall_exit_to_user_mode+0x12/0x30
+>   do_syscall_64+0x46/0x80
+>   entry_SYSCALL_64_after_hwframe+0x44/0xae
+>  RIP: 0033:0x7f009f711dfb
+>  Code: 20 2c 00 f7 d8 64 89 01 48 83 c8 ff c3 66 90 f3 0f 1e fa 31 f6 e9 05 00 00 00 0f 1f 44 00 00 f3 0f 1e fa b8 a6 00 00 00 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d 5d 20 2c 00 f7 d8 64 89 01 48
+>  RSP: 002b:00007fff5cff7928 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+>  RAX: 0000000000000000 RBX: 000055b68c6c9970 RCX: 00007f009f711dfb
+>  RDX: 0000000000000001 RSI: 0000000000000000 RDI: 000055b68c6c9b50
+>  RBP: 0000000000000000 R08: 000055b68c6ca900 R09: 00007f009f795580
+>  R10: 0000000000000000 R11: 0000000000000246 R12: 000055b68c6c9b50
+>  R13: 00007f00a04bf184 R14: 0000000000000000 R15: 00000000ffffffff
+>  ---[ end trace 2c4b82abcef9eec4 ]---
+>  S-65536(sdb2/65536/1)
+>   --> 
+>  M-1064960(sdb2/1064960/1)
+> 
+> Reviewed-by: Filipe Manana <fdmanana@gmail.com>
+> Signed-off-by: Wang Yugui <wangyugui@e16-tech.com>
+> ---
+> Changes since v2:
+> - add the whole Call Trace:
+> Changes since v1:
+> - update the changelog/code comment. (Filipe Manana)
+> - var(struct request_queue *q) is only needed when
+>    !CONFIG_BTRFS_FS_CHECK_INTEGRITY
+> ---
+>  fs/btrfs/disk-io.c | 14 +++++++++++++-
+>  1 file changed, 13 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 355ea88d5c5f..4ef06d0555b0 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3968,11 +3968,23 @@ static void btrfs_end_empty_barrier(struct bio *bio)
+>   */
+>  static void write_dev_flush(struct btrfs_device *device)
+>  {
+> -	struct request_queue *q = bdev_get_queue(device->bdev);
+>  	struct bio *bio = device->flush_bio;
+>  
+> +	#ifndef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+> +	/*
+> +	* When a disk has write caching disabled, we skip submission of a bio
+> +	* with flush and sync requests before writing the superblock, since
+> +	* it's not needed. However when the integrity checker is enabled,
+> +	* this results in reports that there are metadata blocks referred
+> +	* by a superblock that were not properly flushed. So don't skip the
+> +	* bio submission only when the integrity checker is enabled
+> +	* for the sake of simplicity, since this is a debug tool and
+> +	* not meant for use in non-debug builds.
+> +	*/
+> +	struct request_queue *q = bdev_get_queue(device->bdev);
+>  	if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+>  		return;
+> +	#endif
+>  
+>  	bio_reset(bio);
+>  	bio->bi_end_io = btrfs_end_empty_barrier;
+> -- 
+> 2.32.0

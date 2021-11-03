@@ -2,93 +2,111 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDF73C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Nov 2021 15:25:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1E6EC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Nov 2021 23:53:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C81D160FC2
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Nov 2021 15:25:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C7B3E6113B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Nov 2021 23:53:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231701AbhKCP2R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Nov 2021 11:28:17 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:56700 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231651AbhKCP2Q (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Nov 2021 11:28:16 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 77A2A1F782;
-        Wed,  3 Nov 2021 15:25:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1635953139; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=DG9ns99QS5Bp4/BgyTxGgOhjvHNQXMO8//VRXqqxpAk=;
-        b=D14ZmikFcew/3u50gBl0jj81lfqlEQe7ec+W9HLZzUnfddUjGnpJ/dKtnye7fVl40efFHd
-        r5KgaECTDDBhMTf5uIr5++HWivcMqVw7oZqexzG0xyMCfJd7RcDVQXkpJDA1pV29SnVtht
-        jKnZZ5oShAj4PmXlOWySs+USwiR+j6c=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5086A13C91;
-        Wed,  3 Nov 2021 15:25:39 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 8Q4VEfOpgmHfNgAAMHmgww
-        (envelope-from <nborisov@suse.com>); Wed, 03 Nov 2021 15:25:39 +0000
+        id S229603AbhKCXzq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Nov 2021 19:55:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45266 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229541AbhKCXzq (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Nov 2021 19:55:46 -0400
+Received: from mail-pl1-x62d.google.com (mail-pl1-x62d.google.com [IPv6:2607:f8b0:4864:20::62d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0870DC061714
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 Nov 2021 16:53:09 -0700 (PDT)
+Received: by mail-pl1-x62d.google.com with SMTP id n8so4252121plf.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Nov 2021 16:53:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:content-transfer-encoding:in-reply-to;
+        bh=y524zfaTNpao9uOc6VFD8PUDOQ9BCZXzmeBSXRUHnWI=;
+        b=HK/Gh1v9hTSaOJYAZuSga9RuLSTVZg1RuQoB5S+tfyA/C5eDoLMrEzHGibLWQNnjAF
+         qWLlaat5T4BtTsXietTYTL7bpEnAAlCvlN9fT1xgy/bqIS40A2WcmWCVVmPz3dydC6uo
+         5/OMrwOvmoPF01RsMKkIS61Rg8GM8beOQ+wWFFa+wfefZBpXwcA3bg73x7nfm97sixHK
+         9awdsl+0upl4+H3LEb6yKdGVZ2mR6BCcuWAbq2+wLhP4jl3pvoiroWokwJa4m1yMj9dy
+         g4Y3evUgKrJWItnHUdUlzniyBst5ujI6zzsWeUxG6S9TlUKAvhd4RC41qI3HpIBkRE0U
+         /8Bw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:content-transfer-encoding
+         :in-reply-to;
+        bh=y524zfaTNpao9uOc6VFD8PUDOQ9BCZXzmeBSXRUHnWI=;
+        b=ucJPLoqgyY5UXTYqhbEZhYQOEQp0pZJzGF2FyKSfSNBrZDgpCiW86xWVnH6rwiio4h
+         pzt24HznTJX7ii37Cu+j/AiBI1H4nq5M0P2dVW+oWY9w6aOfxihOgJqvmD0hElEO6d0B
+         zFpmMnH3F+TQLgbn7IVvwT089RT+ItBQu/qiRvSJrfR39ZzlVcRFjAMHMI+gC9WiHO9F
+         ePEzwkYMloxOlJzxyG7+VAMCVltcSCoomuFbN14/H14KHCQs3uwRxA602ym7kqQPxuV6
+         It2XNKDcjeNDoUm19MUN/R5JEMOheHNmK2uO14OV80KsXkj7qsdSC1ep6vARtrPxyjeg
+         s+2g==
+X-Gm-Message-State: AOAM530BMSRbI346sbZSykKi/Xv1FI9k4rZFiBawpISVn8OiFiMZ8Z8H
+        /eUWKvvd4ynhVfg+VvFsXHESAneqMHgdjQ==
+X-Google-Smtp-Source: ABdhPJzJYb74fIKrIGRTThMpvS50ZrN1stBqfEgxA08XsXAjNEBBZWReBEEO5BWjLqnXb4F5lWyDAg==
+X-Received: by 2002:a17:902:c947:b0:142:13f9:3444 with SMTP id i7-20020a170902c94700b0014213f93444mr10988851pla.82.1635983588504;
+        Wed, 03 Nov 2021 16:53:08 -0700 (PDT)
+Received: from realwakka ([59.12.165.26])
+        by smtp.gmail.com with ESMTPSA id k5sm3652989pfc.111.2021.11.03.16.53.07
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 03 Nov 2021 16:53:08 -0700 (PDT)
+Date:   Wed, 3 Nov 2021 23:52:59 +0000
+From:   Sidong Yang <realwakka@gmail.com>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] btrfs-progs: check: change commit condition in
  fixup_extent_refs()
-To:     Sidong Yang <realwakka@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <20211103235259.GA47276@realwakka>
 References: <20211103151554.46991-1-realwakka@gmail.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <665f8532-e176-3dc6-ccf0-395672cb3383@suse.com>
-Date:   Wed, 3 Nov 2021 17:25:38 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+ <665f8532-e176-3dc6-ccf0-395672cb3383@suse.com>
 MIME-Version: 1.0
-In-Reply-To: <20211103151554.46991-1-realwakka@gmail.com>
 Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <665f8532-e176-3dc6-ccf0-395672cb3383@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 3.11.21 г. 17:15, Sidong Yang wrote:
-> This patch fixes potential bugs in fixup_extent_refs(). If
-> btrfs_start_transaction() fails in some way and returns error ptr, It
-> goes to out logic. But old code checkes whether it is null and it calls
-> commit. This patch solves the problem with change the condition to
-> checks if it is error by IS_ERR().
+On Wed, Nov 03, 2021 at 05:25:38PM +0200, Nikolay Borisov wrote:
 > 
-> Issue: #409
 > 
-> Signed-off-by: Sidong Yang <realwakka@gmail.com>
-> ---
->  check/main.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> On 3.11.21 г. 17:15, Sidong Yang wrote:
+> > This patch fixes potential bugs in fixup_extent_refs(). If
+> > btrfs_start_transaction() fails in some way and returns error ptr, It
+> > goes to out logic. But old code checkes whether it is null and it calls
+> > commit. This patch solves the problem with change the condition to
+> > checks if it is error by IS_ERR().
+> > 
+> > Issue: #409
+> > 
+> > Signed-off-by: Sidong Yang <realwakka@gmail.com>
+> > ---
+> >  check/main.c | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/check/main.c b/check/main.c
+> > index 235a9bab..ca858e07 100644
+> > --- a/check/main.c
+> > +++ b/check/main.c
+> > @@ -7735,7 +7735,7 @@ static int fixup_extent_refs(struct cache_tree *extent_cache,
+> >  			goto out;
+> >  	}
+> >  out:
+> > -	if (trans) {
+> > +	if (!IS_ERR(trans)) {
 > 
-> diff --git a/check/main.c b/check/main.c
-> index 235a9bab..ca858e07 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -7735,7 +7735,7 @@ static int fixup_extent_refs(struct cache_tree *extent_cache,
->  			goto out;
->  	}
->  out:
-> -	if (trans) {
-> +	if (!IS_ERR(trans)) {
+> Actually I think we want to commit the transaction only if ret is not
+> error, otherwise we run the risk of committing partial changes to the fs.
 
-Actually I think we want to commit the transaction only if ret is not
-error, otherwise we run the risk of committing partial changes to the fs.
+I agree. If ret is error, committing should not be happen. But I 
+think it needs to check trans. 
 
->  		int err = btrfs_commit_transaction(trans, gfs_info->extent_root);
->  
->  		if (!ret)
+I wonder that if ret is error but trans is okay, trans needs to be
+aborted by calling btrfs_abort_transaction()?
 > 
+> >  		int err = btrfs_commit_transaction(trans, gfs_info->extent_root);
+> >  
+> >  		if (!ret)
+> > 

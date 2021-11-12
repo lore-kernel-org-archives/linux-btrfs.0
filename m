@@ -2,213 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEFC7C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Nov 2021 05:35:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8673BC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Nov 2021 06:55:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9058960F6E
-	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Nov 2021 05:35:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 67E3561026
+	for <linux-btrfs@archiver.kernel.org>; Fri, 12 Nov 2021 06:55:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230182AbhKLFgZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 12 Nov 2021 00:36:25 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:49602 "EHLO
+        id S233016AbhKLG6o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 12 Nov 2021 01:58:44 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:52168 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229890AbhKLFgY (ORCPT
+        with ESMTP id S230259AbhKLG6n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 12 Nov 2021 00:36:24 -0500
+        Fri, 12 Nov 2021 01:58:43 -0500
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 1976421B1F
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Nov 2021 05:33:33 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id C6BFF218B0;
+        Fri, 12 Nov 2021 06:55:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1636695213; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=sWUko77XU88dL5OkkjPbu/65596NVZfR12LlAoKWGEo=;
-        b=BrVXAT9s0PZgCEqkz1+jx0xMc+vaj9gNJ6gSVv86imFTSkVbYbjJtRVdEzJ3V79yeZIbn4
-        /X5KBG56edA8CiKbOAKhE1IEOB6CmPnCxVCmEqckdtKZnRgwCIDwQo7LhTU88sSr+TuAH8
-        kS72X6oRRgDEVuhX2N5ta2Dc4sDTO9A=
+        t=1636700152; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=wo+fI7wEspLa1LyIo5kPuxhvr+gf8ZdHKt6FyGkdJbY=;
+        b=nYppNL3++yQ3Cidsgp7fTd2NDFMPmkS9J1puM9Tx7cuEB1BTEVSmCPAJWAUp/elrkaI/ju
+        ZQcsdMdzNIzvsJdskW5suAyVsWNEPIKU5plCV5QXti9/ElIv4FM6Xkgq9+gfutjErt9fDi
+        dgzaLXj1D6v+I1dwO1Mz83mEemIVrog=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5F0D413E3B
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Nov 2021 05:33:32 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 916BE13E3D;
+        Fri, 12 Nov 2021 06:55:52 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id vq9oCaz8jWEWTAAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Nov 2021 05:33:32 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: remove unnecessary @nr_written parameters
-Date:   Fri, 12 Nov 2021 13:33:14 +0800
-Message-Id: <20211112053314.30009-1-wqu@suse.com>
-X-Mailer: git-send-email 2.33.1
+        id PPrsIPgPjmGFYwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Fri, 12 Nov 2021 06:55:52 +0000
+Subject: Re: 5.15+, blocked tasks, folio_wait_bit_common
+To:     Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Linux FS Devel <linux-fsdevel@vger.kernel.org>
+References: <CAJCQCtSh2WT3fijK4sYEdfYpp09ehA+SA75rLyiJ6guUtyWjyw@mail.gmail.com>
+ <CAJCQCtQ=JsO6bH=vJE2aZDS_7FDq+y-yHFVm4NTaf7QLArWGAw@mail.gmail.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <9f7d7997-b1a1-9c4f-8e2f-56e28a54c8c6@suse.com>
+Date:   Fri, 12 Nov 2021 08:55:52 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
 MIME-Version: 1.0
+In-Reply-To: <CAJCQCtQ=JsO6bH=vJE2aZDS_7FDq+y-yHFVm4NTaf7QLArWGAw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We use @nr_written to record how many pages have been started by
-btrfs_run_delalloc_range().
 
-Currently there are only two cases that would populate @nr_written:
 
-- Inline extent creation
-- Compressed write
+On 11.11.21 г. 22:57, Chris Murphy wrote:
+> On Thu, Nov 11, 2021 at 3:24 PM Chris Murphy <lists@colorremedies.com> wrote:
+>>
+>> Soon after logging in and launching some apps, I get a hang. Although
+>> there's lots of btrfs stuff in the call traces, I think we're stuck in
+>> writeback so everything else just piles up and it all hangs
+>> indefinitely.
+>>
+>> Happening since at least
+>> 5.16.0-0.rc0.20211109gitd2f38a3c6507.9.fc36.x86_64 and is still happening with
+>> 5.16.0-0.rc0.20211111gitdebe436e77c7.11.fc36.x86_64
+>>
+>> Full dmesg including sysrq+w when the journal becomes unresponsive and
+>> then a bunch of block tasks  > 120s roll in on their own.
+>>
+>> https://bugzilla-attachments.redhat.com/attachment.cgi?id=1841283
+> 
 
-But both cases will also set @page_started to one.
 
-In fact, in writepage_delalloc() we have the following code, showing
-that @nr_written is really only utilized for above two cases:
-
-	/* did the fill delalloc function already unlock and start
-	 * the IO?
-	 */
-	if (page_started) {
-		/*
-		 * we've unlocked the page, so we can't update
-		 * the mapping's writeback index, just update
-		 * nr_to_write.
-		 */
-		wbc->nr_to_write -= nr_written;
-		return 1;
-	}
-
-But for such cases, writepage_delalloc() will return 1, and exit
-__extent_writepage() without going through __extent_writepage_io().
-
-Thus this means, inside __extent_writepage_io(), we always get
-@nr_written as 0.
-
-So this patch is going to remove the unnecessary parameter from the
-following functions:
-
-- writepage_delalloc()
-
-  As @nr_written passed in is always the initial value 0.
-
-  Although inside that function, we still need a local @nr_written
-  to update wbc->nr_to_write.
-
-- __extent_writepage_io()
-
-  As explained above, @nr_written passed in can only be 0.
-
-  This also means we can remove one update_nr_written() call.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Rebased to lastest misc-next
-- Small comment update for old comments
----
- fs/btrfs/extent_io.c | 24 ++++++++++--------------
- 1 file changed, 10 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4e03a6d3aa32..47bbc2f79273 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3785,12 +3785,13 @@ static void update_nr_written(struct writeback_control *wbc,
-  * This returns < 0 if there were errors (page still locked)
-  */
- static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
--		struct page *page, struct writeback_control *wbc,
--		unsigned long *nr_written)
-+		struct page *page, struct writeback_control *wbc)
- {
- 	const u64 page_end = page_offset(page) + PAGE_SIZE - 1;
- 	u64 delalloc_start = page_offset(page);
- 	u64 delalloc_to_write = 0;
-+	/* How many pages are started by btrfs_run_delalloc_range() */
-+	unsigned long nr_written = 0;
- 	int ret;
- 	int page_started = 0;
- 
-@@ -3806,7 +3807,7 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 			continue;
- 		}
- 		ret = btrfs_run_delalloc_range(inode, page, delalloc_start,
--				delalloc_end, &page_started, nr_written, wbc);
-+				delalloc_end, &page_started, &nr_written, wbc);
- 		if (ret) {
- 			btrfs_page_set_error(inode->root->fs_info, page,
- 					     page_offset(page), PAGE_SIZE);
-@@ -3829,16 +3830,14 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
- 					 thresh);
- 	}
- 
--	/* did the fill delalloc function already unlock and start
--	 * the IO?
--	 */
-+	/* Did btrfs_run_dealloc_range() already unlock and start the IO? */
- 	if (page_started) {
- 		/*
--		 * we've unlocked the page, so we can't update
-+		 * We've unlocked the page, so we can't update
- 		 * the mapping's writeback index, just update
- 		 * nr_to_write.
- 		 */
--		wbc->nr_to_write -= *nr_written;
-+		wbc->nr_to_write -= nr_written;
- 		return 1;
- 	}
- 
-@@ -3910,7 +3909,6 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 				 struct writeback_control *wbc,
- 				 struct extent_page_data *epd,
- 				 loff_t i_size,
--				 unsigned long nr_written,
- 				 int *nr_ret)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-@@ -3929,7 +3927,6 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 	if (ret) {
- 		/* Fixup worker will requeue */
- 		redirty_page_for_writepage(wbc, page);
--		update_nr_written(wbc, nr_written);
- 		unlock_page(page);
- 		return 1;
- 	}
-@@ -3938,7 +3935,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 	 * we don't want to touch the inode after unlocking the page,
- 	 * so we update the mapping writeback index now
- 	 */
--	update_nr_written(wbc, nr_written + 1);
-+	update_nr_written(wbc, 1);
- 
- 	while (cur <= end) {
- 		u64 disk_bytenr;
-@@ -4076,7 +4073,6 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	size_t pg_offset;
- 	loff_t i_size = i_size_read(inode);
- 	unsigned long end_index = i_size >> PAGE_SHIFT;
--	unsigned long nr_written = 0;
- 
- 	trace___extent_writepage(page, inode, wbc);
- 
-@@ -4105,7 +4101,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	}
- 
- 	if (!epd->extent_locked) {
--		ret = writepage_delalloc(BTRFS_I(inode), page, wbc, &nr_written);
-+		ret = writepage_delalloc(BTRFS_I(inode), page, wbc);
- 		if (ret == 1)
- 			return 0;
- 		if (ret)
-@@ -4113,7 +4109,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	}
- 
- 	ret = __extent_writepage_io(BTRFS_I(inode), page, wbc, epd, i_size,
--				    nr_written, &nr);
-+				    &nr);
- 	if (ret == 1)
- 		return 0;
- 
--- 
-2.33.1
-
+The btrfs traces in this one doesn't look interesting, what's
+interesting is you have a bunch of tasks, including btrfs transaction
+commit which are stuck waiting to get a tag from the underlying block
+device - blk_mq_get_tag function. This indicates something's going on
+with the underlying block device.

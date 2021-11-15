@@ -2,98 +2,97 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56C20C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 20:37:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 753CAC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 21:28:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3FC0263238
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 20:37:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5E8B261BE3
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 21:28:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347235AbhKOUkI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Nov 2021 15:40:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40932 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1347662AbhKOTlE (ORCPT
+        id S232090AbhKOVbi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Nov 2021 16:31:38 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:49026 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1352503AbhKOUyI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Nov 2021 14:41:04 -0500
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C4B03C061200
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Nov 2021 11:24:21 -0800 (PST)
-Received: by mail-qt1-x832.google.com with SMTP id q14so16624153qtx.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Nov 2021 11:24:21 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=QbetVAUo5OZxsQxnRG709OfZCVKW0qtMqw1TKeW/LHA=;
-        b=delKKYP1+D4hUsTSll3T5LvEMa8maz5tKRNduqMZie+6Ga4b3hiTJuZPKJGdsKsEnk
-         rTixg8tjhq+3YmhfS4hCIsqIzZNp5VxT5RjJzFj2Kgy19u8ddKDK8VCnXUFjPSMA0SVm
-         riDZ4LxrcMcSgvqZIwYNSa+yPqssqz1rLBmBxuWeb/oF5Q2/HIP1FYeQbK+leVXXkJHs
-         44ivJRV53aiBVzoHomTnoZp8NidhRpwRB9mf7zRb18JwdkqqGOlD/+dCcwhORR1U/7xh
-         JZFXzIEf12VygTQqgTJJUARBg+p8whEs7txXaA/20M7H3BVmjzSX/MaQ8wufYp08ur+1
-         ZtQw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=QbetVAUo5OZxsQxnRG709OfZCVKW0qtMqw1TKeW/LHA=;
-        b=fG/OpQ8Y28aFdzgnjAQT8om2s7r54peLSiYkRYaT1MnMQreUb7is+B/CD7PZDYm0Ut
-         KylTSD8utajUBwm/unvWJrhRpGH6XR2hrF5g14O5+FJ8FEPllrm7zxdGAfbO34ljP02F
-         uOYplHJkiL3hquF+NN8rA7eGNNBIK0BuOl4aK9JhTFhbNp9dqbnZuvp5LWSmFAoltG0i
-         VkQ/oFMfggENfAr2Qiw7mA6b9ydz19pa+63EMbrnlPWwikib0ctCX7h5ek6HhLphL3Bd
-         Hq0pYcKUkCxb0mzsuIeo3tFb1k1jIYX9HdIZQfS/3uYXs0b+Oxx9CUp3ZTmp7sPz9H28
-         ztNg==
-X-Gm-Message-State: AOAM531c4HAowdd2xtNVaRblNooUFyobJfP1BBlBrKp2hnZHTVSsBDuc
-        ry7GemFq9HnvPn8M5k2N/NAEhA==
-X-Google-Smtp-Source: ABdhPJzM9Fdn/HwpmHLZry3+gjCaloKCU7yjQIAbddFuil1BgOe+dgwh80XxMw5kv6hhC5l7qaBRRQ==
-X-Received: by 2002:ac8:7d47:: with SMTP id h7mr1507871qtb.188.1637004260740;
-        Mon, 15 Nov 2021 11:24:20 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id i11sm1046560qko.116.2021.11.15.11.24.20
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 15 Nov 2021 11:24:20 -0800 (PST)
-Date:   Mon, 15 Nov 2021 14:24:19 -0500
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4] fstests: btrfs: make nospace_cache related test cases
- to work with latest v2 cache
-Message-ID: <YZKz4wQWo85vCROd@localhost.localdomain>
-References: <20211114125101.19751-1-wqu@suse.com>
+        Mon, 15 Nov 2021 15:54:08 -0500
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 8E97E218CE;
+        Mon, 15 Nov 2021 20:51:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1637009470;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=kosQS69Rm/kyehiO2SS1mdVfeJCIvsVtxfiujEL6YvQ=;
+        b=UXysCV7cmV5uBYvj+0AMEyRuuXfiypWWpIK+QEoAfnRtODtGIRGpQS0z+0AUZxrbaRtgnz
+        +Zdji2DPyDWL6dMb5ymmVRzrJYRB0oj3AID+H84VL9uvvxxcju1PcAhQ8JtGFoyDSqvwJn
+        K8pJskuqaWb2ulcBcEE3RgS3X4yo+BQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1637009470;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=kosQS69Rm/kyehiO2SS1mdVfeJCIvsVtxfiujEL6YvQ=;
+        b=UzvaArz/f+ROIgho6fzThuHuQHVviQlu/xMoD2u2DBtF1GfpNZ3c5Yh+O8nVwV7OOApLVO
+        FqO3eH9H6MaIR6Cw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 87D75A3B87;
+        Mon, 15 Nov 2021 20:51:10 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 9C1A0DA781; Mon, 15 Nov 2021 21:51:07 +0100 (CET)
+Date:   Mon, 15 Nov 2021 21:51:07 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 29/30] btrfs-progs: mkfs: create the global root's
+Message-ID: <20211115205107.GO28560@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <cover.1636575146.git.josef@toxicpanda.com>
+ <dc65e92db91bcdf238b17e53d3efdb8ec21a493e.1636575147.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20211114125101.19751-1-wqu@suse.com>
+In-Reply-To: <dc65e92db91bcdf238b17e53d3efdb8ec21a493e.1636575147.git.josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Nov 14, 2021 at 08:51:01PM +0800, Qu Wenruo wrote:
-> In the coming btrfs-progs v5.15 release, mkfs.btrfs will change to use
-> v2 cache by default.
-> 
-> However nospace_cache mount option will not work with v2 cache, as it
-> would make v2 cache out of sync with on-disk used space.
-> 
-> So mounting a btrfs with v2 cache using "nospace_cache" will make btrfs
-> to reject the mount.
-> 
-> There are quite some test cases relying on nospace_cache to prevent v1
-> cache to take up data space.
-> 
-> For those test cases, we no longer need the "nospace_cache" mount option
-> if the filesystem is already using v2 cache.
-> Since v2 cache is using metadata space, it will no longer take up data
-> space, thus no extra mount options for those test cases.
-> 
-> By this, we can keep those existing tests to run without problem for
-> both v1 and v2 cache.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+On Wed, Nov 10, 2021 at 03:14:41PM -0500, Josef Bacik wrote:
+> @@ -966,13 +1010,18 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+>  	struct btrfs_mkfs_config mkfs_cfg;
+>  	enum btrfs_csum_type csum_type = BTRFS_CSUM_TYPE_CRC32;
+>  	u64 system_group_size;
+> +	int nr_global_roots = sysconf(_SC_NPROCESSORS_ONLN);
+>  
+>  	crc32c_optimization_init();
+>  	btrfs_config_init();
+>  
+>  	while(1) {
+>  		int c;
+> -		enum { GETOPT_VAL_SHRINK = 257, GETOPT_VAL_CHECKSUM };
+> +		enum {
+> +			GETOPT_VAL_SHRINK = 257,
+> +			GETOPT_VAL_CHECKSUM,
+> +			GETOPT_VAL_GLOBAL_ROOTS,
+> +		};
+>  		static const struct option long_options[] = {
+>  			{ "byte-count", required_argument, NULL, 'b' },
+>  			{ "csum", required_argument, NULL,
+> @@ -996,6 +1045,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+>  			{ "quiet", 0, NULL, 'q' },
+>  			{ "verbose", 0, NULL, 'v' },
+>  			{ "shrink", no_argument, NULL, GETOPT_VAL_SHRINK },
+> +			{ "num-global-roots", required_argument, NULL, GETOPT_VAL_GLOBAL_ROOTS },
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+This will be good under the #ifdef EXPERIMENTAL too, so we don't
+accidentaly expose it, the rest of the option handling code can stay as
+it would be unreachable.
 
-Thanks, this explains a weird failure state that I've been seeing with btrfs/199
-writing into /tmp and filling everything, which causes the rest of the tests to
-fail.
+No need to resend, a separate patch is ok for that.
 
-Josef
+>  			{ "help", no_argument, NULL, GETOPT_VAL_HELP },
+>  			{ NULL, 0, NULL, 0}
+>  		};

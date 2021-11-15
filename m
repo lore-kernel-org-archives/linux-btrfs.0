@@ -2,119 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DE87C4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 20:36:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DEFEC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 20:37:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3C36D63241
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 20:36:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 07BEF6323A
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Nov 2021 20:37:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351121AbhKOUjc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Nov 2021 15:39:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36114 "EHLO
+        id S1347170AbhKOUj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Nov 2021 15:39:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40300 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344181AbhKOTYC (ORCPT
+        with ESMTP id S1347480AbhKOTj7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Nov 2021 14:24:02 -0500
-Received: from mail-ua1-x932.google.com (mail-ua1-x932.google.com [IPv6:2607:f8b0:4864:20::932])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6057EC08889D
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Nov 2021 10:29:38 -0800 (PST)
-Received: by mail-ua1-x932.google.com with SMTP id y5so18939456ual.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Nov 2021 10:29:38 -0800 (PST)
+        Mon, 15 Nov 2021 14:39:59 -0500
+Received: from mail-qk1-x72b.google.com (mail-qk1-x72b.google.com [IPv6:2607:f8b0:4864:20::72b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D14FFC06120B
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Nov 2021 11:33:15 -0800 (PST)
+Received: by mail-qk1-x72b.google.com with SMTP id g28so13619200qkk.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Nov 2021 11:33:15 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc:content-transfer-encoding;
-        bh=PnDdrevb9nSGUmL3gzNwkVQJn/IV+cjKA0jm/JvfUoI=;
-        b=QfpImCTHcEedabi7Twm+iNpK61zb8q6hr4z1JK5deq3zx8cbhQv5HbX6KLuAzg7CAr
-         c+6n+Fsf+VSxXxHzAfubwrsj9zYLyZ9tlwykpzeVGke8tDb6bvJYdNgQwD3lc11F1sMY
-         VewmOpW9He7n2MP8KPpLPmneHTBtIKv3Hj2x8Aw263ucMMOaOWtLL/4Ngj12zBXRBVVn
-         DN1IZ3NcbiW2fmicJy+6dtwlFKpgICe+Jikd7adXo3sOymF7y22IVG3lVNLERB3sc5m6
-         RejSPNE0+6dbySBzmfYStcNUA8giWRs+igPuY1p25i2B9NpD70qHX1zBXR8QC6Bn1umT
-         DHDA==
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=GMcmCPPNkqZXuEK/w8V9ah5eSf6E1mq8BDWrVP/doXU=;
+        b=vQHvYM/HwFOME5YzsvaBFRKnZNLrr0JWRzo1y1VGk+o6rvRw+2uB6bVK94ns1hq2Rb
+         846cdeO3oDrUUCRDhW6R3cucon0l4REmuEgyr6R9IR5Rw7NtwdMnhSh43kuDcqCza6YK
+         QZTBtmdZaCJqv2ClhDqAX43QL3dBLGrdXNLeUnknVEW3IOymkghIQE6Nw3ly+YJ0GLzI
+         EjvYFQ8BJkWUlH0N0v0Zy09ZuMqTEoiOT1pl4ATbl0Gkh3EKPoO0Oc7nwc00GRrNbA0x
+         vR9lFYG3Ur1vU9uMXKw2pS/a970+SslJ8t7/aT3bURy6/ppLYsp49cQllnxFj/zPHmo4
+         RaUQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=PnDdrevb9nSGUmL3gzNwkVQJn/IV+cjKA0jm/JvfUoI=;
-        b=bB2m+7EQwfIr7Db3gCXWwSoO/0CgeaKqLOv4jvx4EZ/xTk1PQ1BPqOPAEINaaUL+YD
-         8qODQLq9iMhJD9BkezLWFSrZ28l8iNrsZ6+xhD3nESpchhjMYrOWwGjxKZHs5uWKsIGy
-         qxoOiONBi++jqFUSKIUmH3daVK4LePC3Sp0JP598lN66tmUQqFUV6XUBp+nk+OIk+WpZ
-         kT+8zx0lExnvNLL2rfp1LTK7hg1s8oKBtDl+fgTZHDIl/JKMi9aVovYfAK7bAQ3MT7C8
-         43nzOnzEHJVEU5/bbqBY8z79eWa7pisdQ64K6CI5ZRS8DVU/K7zajoNsgZRTgX6KnOrl
-         5n4Q==
-X-Gm-Message-State: AOAM530Q0vf7usp5/cWwfB0RCstmKRMwosOtFxeDA6CTPbXkO/vOUFY3
-        6At8pfiTl4DA13qjGL0AMYQwLGBOZVASsNqhPLzBvJ+wVSQ=
-X-Google-Smtp-Source: ABdhPJyYe4AQDX86qjCT+GGIxqCXOyhySSJDS/+XhvYf28XSMLwj4I6YW127HfcPgO1ITWab/NGLfLR2jwHSMaZ6dbg=
-X-Received: by 2002:a05:6130:305:: with SMTP id ay5mr1291128uab.73.1637000977360;
- Mon, 15 Nov 2021 10:29:37 -0800 (PST)
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=GMcmCPPNkqZXuEK/w8V9ah5eSf6E1mq8BDWrVP/doXU=;
+        b=A67g/NtWRhOWHoivnmGazbyApDVEmjH8jJu8ndlcktN1gmwejCns7m5TLNxw/YJwOA
+         dUhmxXfIUTcdecq06suq/DX7UWpU3ysRhqNLqeAtN8AZbT1kKqZbFZhCrS4qKqR7rFys
+         ce46RPY1LSqs70JA6qVKjErVWH5w01DgxzZF5Llqo2Glv4omYDTV0unseru0KJ6eG6lv
+         a0dWfT0rhhrglZ3pBtIxQNAkIebaFwLPbm4HK6TautfTgfwTlCbSQhm/jg6mV99IbuJ4
+         XddXTbYcm1r18xD85ozODVOCE9C2jgCku2IbyXVwyQIZl6VGZTWRqZYyCEjDHv3XckCh
+         EjAw==
+X-Gm-Message-State: AOAM53334W3f+qGz4/e5W/7SRmeQXoEG+o4o3ppY86ZrAwKOndO1y+z2
+        6HUd1+eDsJPGRghGtB2HUx4A8Q==
+X-Google-Smtp-Source: ABdhPJzyDUv1Dd4go1GgdAkSGeaMiOEHT0h/DtxXE5N/yA6e3BN4juWzgkDp9kWIliViAxunK+ti/A==
+X-Received: by 2002:a05:620a:1350:: with SMTP id c16mr1273828qkl.229.1637004795016;
+        Mon, 15 Nov 2021 11:33:15 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id f10sm7616607qkp.135.2021.11.15.11.33.14
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 15 Nov 2021 11:33:14 -0800 (PST)
+Date:   Mon, 15 Nov 2021 14:33:08 -0500
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Stefan Roesch <shr@fb.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH v4] btrfs: Add new test for setting the chunk size.
+Message-ID: <YZK19Gz87ymUw9mr@localhost.localdomain>
+References: <20211102212329.3708782-1-shr@fb.com>
 MIME-Version: 1.0
-References: <CAJCQCtSh2WT3fijK4sYEdfYpp09ehA+SA75rLyiJ6guUtyWjyw@mail.gmail.com>
- <CAJCQCtQ=JsO6bH=vJE2aZDS_7FDq+y-yHFVm4NTaf7QLArWGAw@mail.gmail.com>
- <9f7d7997-b1a1-9c4f-8e2f-56e28a54c8c6@suse.com> <CAJCQCtQ4JwAD8Nw-mHWxoXtJT7m0d-d+gi23_JgU=C8dvTtEOA@mail.gmail.com>
- <41cabdcf-894f-353b-0c9d-98635b26fe30@suse.com>
-In-Reply-To: <41cabdcf-894f-353b-0c9d-98635b26fe30@suse.com>
-From:   Omar Sandoval <osandov@osandov.com>
-Date:   Mon, 15 Nov 2021 10:29:26 -0800
-Message-ID: <CAB+W2CxYcbZFWepm-9145bUGwFq8daxu64u6rdWdsrSG0U03yA@mail.gmail.com>
-Subject: Re: 5.15+, blocked tasks, folio_wait_bit_common
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20211102212329.3708782-1-shr@fb.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 12, 2021 at 08:46:43PM +0200, Nikolay Borisov wrote:
-> [CC'ing Omar as Kyber is mentioned]
->
-> On 12.11.21 =D0=B3. 20:06, Chris Murphy wrote:
-> > On Fri, Nov 12, 2021 at 1:55 AM Nikolay Borisov <nborisov@suse.com> wro=
-te:
-> >>
-> >>
-> >>
-> >> On 11.11.21 =D0=B3. 22:57, Chris Murphy wrote:
-> >>> On Thu, Nov 11, 2021 at 3:24 PM Chris Murphy <lists@colorremedies.com=
-> wrote:
-> >>>>
-> >>>> Soon after logging in and launching some apps, I get a hang. Althoug=
-h
-> >>>> there's lots of btrfs stuff in the call traces, I think we're stuck =
-in
-> >>>> writeback so everything else just piles up and it all hangs
-> >>>> indefinitely.
-> >>>>
-> >>>> Happening since at least
-> >>>> 5.16.0-0.rc0.20211109gitd2f38a3c6507.9.fc36.x86_64 and is still happ=
-ening with
-> >>>> 5.16.0-0.rc0.20211111gitdebe436e77c7.11.fc36.x86_64
-> >>>>
-> >>>> Full dmesg including sysrq+w when the journal becomes unresponsive a=
-nd
-> >>>> then a bunch of block tasks  > 120s roll in on their own.
-> >>>>
-> >>>> https://bugzilla-attachments.redhat.com/attachment.cgi?id=3D1841283
-> >>>
-> >>
-> >>
-> >> The btrfs traces in this one doesn't look interesting, what's
-> >> interesting is you have a bunch of tasks, including btrfs transaction
-> >> commit which are stuck waiting to get a tag from the underlying block
-> >> device - blk_mq_get_tag function. This indicates something's going on
-> >> with the underlying block device.
-> >
-> > Well the hang doesn't ever happen with 5.14.x or 5.15.x kernels, only
-> > the misc-next (Fedora rc0) kernels. And also I just discovered that
-> > it's not happening (or not as quickly) with IO scheduler none. I've
-> > been using kyber and when I switch back to it, the hang happens almost
-> > immediately.
->
-> Well I see a bunch of WARN_ONs being triggered, so is it possible that
-> this is some issue which is going to be fixed in some future RC ? Omar
-> what steps should be taken to try and debug this from the Kyber side of
-> things?
+On Tue, Nov 02, 2021 at 02:23:29PM -0700, Stefan Roesch wrote:
+> Summary:
+> 
+> Add new testcase for testing the new btrfs sysfs knob to change the
+> chunk size. The new knob uses /sys/fs/btrfs/<UUID>/allocation/<block
+> type>/chunk_size.
+> 
+> The test case implements three different cases:
+> - Test allocation with the default chunk size
+> - Test allocation after increasing the chunk size
+> - Test allocation when the free space is smaller than the chunk size.
+> 
+> Note: this test needs to force the allocation of space. It uses the
+> /sys/fs/btrfs/<UUID>/allocation/<block type>/force_chunk_alloc knob.
+> 
+> Testing:
+> The test has been run with volumes of different sizes.
+> 
+> Signed-off-by: Stefan Roesch <shr@fb.com>
 
-Chris, does this happen on upstream 5.16-rc1? I couldn't reproduce it.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
+Thanks,
+
+Josef

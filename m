@@ -2,46 +2,79 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90FBBC433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Nov 2021 16:44:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48AE2C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Nov 2021 17:16:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7A617613B5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Nov 2021 16:44:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2BF1861B31
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Nov 2021 17:16:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234059AbhKPQrm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Nov 2021 11:47:42 -0500
-Received: from dcaf.acw2.website ([138.68.173.212]:44216 "EHLO
-        dcaf.acw2.website" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233055AbhKPQrl (ORCPT
+        id S238371AbhKPRTY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Nov 2021 12:19:24 -0500
+Received: from smtp-out2.suse.de ([195.135.220.29]:53762 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229509AbhKPRTW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Nov 2021 11:47:41 -0500
-X-Greylist: delayed 392 seconds by postgrey-1.27 at vger.kernel.org; Tue, 16 Nov 2021 11:47:41 EST
-Received: by dcaf.acw2.website (Postfix, from userid 10002)
-        id D5735D8065; Tue, 16 Nov 2021 16:38:10 +0000 (UTC)
-To:     linux-btrfs@vger.kernel.org
-Subject: [Website feedback]
+        Tue, 16 Nov 2021 12:19:22 -0500
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id EC6071FD26;
+        Tue, 16 Nov 2021 17:16:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1637082984;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=WBVpDTFwNq/27G70E5kvYi8sXTameSLYVuVfAK4x8Ag=;
+        b=GCsIxJSIt/RL00/21wBH3gWYMj7s0uBifr+hUMeljAe/FqbtQ4u++g8qQSFd1g2/RiNv5s
+        S9Q+cwWS2MSHu38n8OAphxFC3xkG35V7//ZDYzPIV0WMCj4ysvy82QB0UV+LLOrTZ5scg/
+        nVPMmV5cNCXH6F7WYyeDOwkHYkK6fqo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1637082984;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=WBVpDTFwNq/27G70E5kvYi8sXTameSLYVuVfAK4x8Ag=;
+        b=gyFHuJ/7Zy1+AFqo1x+41zPc/u0IEtjkC2cqSrBFIEC+QB+riRihMkg6mu7aliAidny1Wc
+        EtdJfFdi6HYeXEBA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id E579FA3B88;
+        Tue, 16 Nov 2021 17:16:24 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 8990EDA799; Tue, 16 Nov 2021 18:16:21 +0100 (CET)
+Date:   Tue, 16 Nov 2021 18:16:21 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
+Subject: Re: [PATCH v2 2/2] btrfs: sysfs add devinfo/fsid to retrieve fsid
+ from the device
+Message-ID: <20211116171621.GU28560@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
+References: <cover.1634829757.git.anand.jain@oracle.com>
+ <33e179f8b9341c88754df639b77dafaa1ffec0d1.1634829757.git.anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed; delsp=yes
-Content-Transfer-Encoding: 8Bit
-X-Mailer: Drupal
-Sender: info@dcaf.ch
-From:   =?UTF-8?B?RENBRiDigJMgR2VuZXZhIENlbnRyZSBmb3IgU2VjdXJpdHkgU2VjdG9yIEdvdmU=?= 
-        <info@dcaf.ch>
-Reply-to: linux-btrfs@vger.kernel.org
-Message-Id: <20211116163810.D5735D8065@dcaf.acw2.website>
-Date:   Tue, 16 Nov 2021 16:38:10 +0000 (UTC)
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <33e179f8b9341c88754df639b77dafaa1ffec0d1.1634829757.git.anand.jain@oracle.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hot videos are open for you! Click Here: http://bit.do/hotvpro?x9iun ❤️
-(not verified) (linux-btrfs@vger.kernel.org) sent a message using the contact
-form at https://www.dcaf.ch/contact.
+On Thu, Oct 21, 2021 at 11:31:17PM +0800, Anand Jain wrote:
+> In the case of the seed device, the fsid can be different from the mounted
+> sprout fsid.  The userland has to read the device superblock to know the
+> fsid but, that idea fails if the device is missing. So add a sysfs
+> interface devinfo/<devid>/fsid to show the fsid of the device.
+> 
+> For example:
+>  $ cd /sys/fs/btrfs/b10b02a5-f9de-4276-b9e8-2bfd09a578a8
+> 
+>  $ cat devinfo/1/fsid
+>  c44d771f-639d-4df3-99ec-5bc7ad2af93b
+>  $ cat  devinfo/3/fsid
+>  b10b02a5-f9de-4276-b9e8-2bfd09a578a8
 
-Sub-Saharan Africa
-	
-
-
-
-		  iii23e
-
+From user perspective, it's another fsid, one is in the path, so I'm
+wondering if it should be named like read_fsid or sprout_fsid or if the
+seed/sprout information should be put into another directory completely.

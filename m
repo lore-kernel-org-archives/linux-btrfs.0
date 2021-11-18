@@ -2,103 +2,113 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5997FC433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 08:58:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A672EC433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 08:58:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3F75E61B3E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 08:58:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9315C61B3E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 08:58:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244922AbhKRJBh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Nov 2021 04:01:37 -0500
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:58233 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244895AbhKRJB3 (ORCPT
+        id S244899AbhKRJBk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Nov 2021 04:01:40 -0500
+Received: from esa5.hgst.iphmx.com ([216.71.153.144]:44972 "EHLO
+        esa5.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S244876AbhKRJBb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Nov 2021 04:01:29 -0500
+        Thu, 18 Nov 2021 04:01:31 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1637225909; x=1668761909;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=Z4FaRnAXxCpviW3a1WBY3pRpCfXcdlVDqxdukww39Ww=;
-  b=iSFJ8w5CnmmKlFGj0Ilua5PlNWZnB8IdwOgHGSS+kqpumGSAuUFQ+T7l
-   kuOPEka3esuJOeHZY9XkDgoHEu7VQve8HaJmf6gygq7HvbSxRFR9I1vth
-   t4EF3B+Bl7IiePCIMO6z6kzWnBU2U7xaRtRtENxbYhGlBmTHcXQsm1a30
-   sWiQ0acTMhDgJxsEW+dM6oO6BXFUcFQpMzYmu904ObJWqJSgnsC6bynu3
-   DUNBL7SlCQTCWLQXGlMR35FWU53l4FmrDt3UUXKkvXu0gSnYfs+2Sdz8e
-   CSkbMnoxyGThI3n+xKsoKFMoCa9bGT0XQgJuOTnA8W7AYChcUQv/LtlUN
-   g==;
+  t=1637225911; x=1668761911;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=WHh1r8k5Jz7DDZe8TDskDHhXcZyN863quRTci8bgnPY=;
+  b=V7JeI4pxdW3/wAqjFSeW5GxwrTA+vXAabRUjBRG7euK+kNFZSSL1wkAD
+   j3QABwaDAluMJLSjqbrkEFlTzdZdA05/O+hD+lcv/0puvNEmkL7Mj7suX
+   5N2gqbYb991NLGnQMvueinRns+OoO8iVxPlUHpMQKuXuUmgPTW/afXL0n
+   PhxOottQN2J7IiP7McDAnun+lpoJqMFKohJq5iFMVdt/EL5FvcrC/EYso
+   5xcJrnIzC2PvTjbNBshEOuAXNWIHsLQV6mIQ4msxYtFKgn0uB94D7bYGx
+   DVQkNLjcEGcB+cFGonxNFDU7Sx+zN9bm/IoJiT+iOR2q8ctxTaJ22fjeE
+   Q==;
 X-IronPort-AV: E=Sophos;i="5.87,244,1631548800"; 
-   d="scan'208";a="297759012"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 18 Nov 2021 16:58:26 +0800
-IronPort-SDR: jktKiPDRWzeBU3OJkxA5WzeBBwLgGiTiboIBgVYUEt8nEygTmXTmhgi0KG303nsyNfzkKbtVuV
- JgueYL7ypfNsVRo9FzqRzck86YzAwgs1qodc2cqhBIGA1SdtMlZVwE+PGmYJwxpKbrh8IeBmqK
- FcuDGLPk7mmqupiIVJJsJdlpHdt76NgC+epZ3xo312777sqZOEiO7XbnSRDennqqcWKTQqXpMG
- 5tgY1o5Ghxop8r8DbioNnVRqN6sq/3tMhmBgtyid6R7LicxLR7qM5PUYfLNu+PaQzPb+3JYFFA
- At0wyRqb3vNua0xgHRhRVZvs
+   d="scan'208";a="185939017"
+Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 18 Nov 2021 16:58:29 +0800
+IronPort-SDR: MccmnFJvMRUkMhrrQsQqUJP0ojxeQnfkSa65lhFBTuRJt2E5Ti0sPdU8wSSvdKsk2m4SuFgwxC
+ QHXknO+GEHKbaY4Xol8zandLJ4HY53SpWYlrt4bqLiywrWVlsxC0csxGPmR7/T7oiZYrAfJ6xf
+ qA9ykXsXtsNNy+qBMMWqmAGYkLO7wuaTD/pEHzSfOOiMlSryUH6p0FYXpm5801pDYHhNwOzowq
+ 7aDl+y7xPJy3oKRao0Lef4joj6eio4FdTPIvhKqL/veX3l+/HRgkDrJzi2HDTG+zcu+pt4eq9+
+ pjtHZ1SKIOYCZs7qISYhqve6
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Nov 2021 00:33:26 -0800
-IronPort-SDR: 3RJ7hrLylJT2FWe/gVPgfVo32mD4DFHwPRcW2wzk9tiCjpypXSPiT0n4rEPKPZpId0qzvRh5lz
- kEAaO6UCCeg3D6ew7Zc4GEKzjk03GwAuoLD6P5QUuk1JbYVH+I+2mtXf5YLuWmb0xo4p+NGeRq
- pD96bGl0mMZGgrgZUoW3JMLiwfcw+hs7esN3NifUJP8ZK0VWEyt4pEmGhY2dWGijC/YTAK9hI6
- nfTYc758sswqMseauvOWhqkar4L3TAPP3akSpgsQQl3BYlf2mP12AAHlNXzOQyDT45lmWOoVoM
- bBg=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Nov 2021 00:33:30 -0800
+IronPort-SDR: hAfTts7uAoFAjp0Nk/5qiO/I/0O41ZAol3r4IarHc1XwMFeuC3nezYPI7CRXqo8dL637/Ax2++
+ QjmjX/xcbXHz8z/mNSbnX2TuPBFw+LvKryLGUYRWUKRFltMuMdBqEpWFuCPJ/p/F6g4LUKDHNA
+ xx1EZSMA1IE/y3lwPy8V3R0HDjQp00r7J9pSjwysaS8jjyltobwYoK3sEh3JQDudUV/1wPcwZE
+ FdmrzA5QeXZIGR7mDaW7BKBXOZK4F0WGHgSzc0kORA69QkRoN4rWpftEajNOauMcadDzNZmdVG
+ hxs=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun60.ssa.fujisawa.hgst.com) ([10.149.66.36])
-  by uls-op-cesaip01.wdc.com with ESMTP; 18 Nov 2021 00:58:24 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 18 Nov 2021 00:58:28 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Cc:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org,
         Naohiro Aota <naohiro.aota@wdc.com>,
         David Sterba <dsterba@suse.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH for-5.15.x 0/6] btrfs: zoned: backport of 5.16 relocation fixes
-Date:   Thu, 18 Nov 2021 17:58:12 +0900
-Message-Id: <cover.1637225333.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH for-5.15.x 3/6] btrfs: zoned: only allow one process to add pages to a relocation inode
+Date:   Thu, 18 Nov 2021 17:58:15 +0900
+Message-Id: <c2c15d9992727dc6473d3dedb3d863874a3d3222.1637225333.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.32.0
+In-Reply-To: <cover.1637225333.git.johannes.thumshirn@wdc.com>
+References: <cover.1637225333.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Greg and stable team,
+commit 35156d852762b58855f513b4f8bb7f32d69dc9c5 upstream
 
-Here's a backport of relocation fixes that went into 5.16 aimed at the 5.15.x
-series of stable kernels. It's a problem people are currently running into
-when using btrfs on a zoned block device.
+Don't allow more than one process to add pages to a relocation inode on
+a zoned filesystem, otherwise we cannot guarantee the sequential write
+rule once we're filling preallocated extents on a zoned filesystem.
 
-The following patches have been backported:
-960a3166aed0 ("btrfs: zoned: allow preallocation for relocation inodes")
-2adada886b26 ("btrfs: check for relocation inodes on zoned btrfs in should_nocow")
-e6d261e3b1f7 ("btrfs: zoned: use regular writes for relocation")
-35156d852762 ("btrfs: zoned: only allow one process to add pages to a relocation inode")
-c2707a255623 ("btrfs: zoned: add a dedicated data relocation block group")
-37f00a6d2e9c ("btrfs: introduce btrfs_is_data_reloc_root")
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/extent_io.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-The backport has seen the usual regression testing with xfstests.
-
-Johannes Thumshirn (6):
-  btrfs: introduce btrfs_is_data_reloc_root
-  btrfs: zoned: add a dedicated data relocation block group
-  btrfs: zoned: only allow one process to add pages to a relocation
-    inode
-  btrfs: zoned: use regular writes for relocation
-  btrfs: check for relocation inodes on zoned btrfs in should_nocow
-  btrfs: zoned: allow preallocation for relocation inodes
-
- fs/btrfs/block-group.c |  1 +
- fs/btrfs/ctree.h       | 12 +++++++++
- fs/btrfs/disk-io.c     |  3 ++-
- fs/btrfs/extent-tree.c | 56 +++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/extent_io.c   | 11 +++++++++
- fs/btrfs/inode.c       | 29 +++++++++++++---------
- fs/btrfs/relocation.c  | 38 +++-------------------------
- fs/btrfs/zoned.c       | 21 ++++++++++++++++
- fs/btrfs/zoned.h       |  3 +++
- 9 files changed, 123 insertions(+), 51 deletions(-)
-
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index aaddd7225348..a40fb9c74dda 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5120,6 +5120,9 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end,
+ int extent_writepages(struct address_space *mapping,
+ 		      struct writeback_control *wbc)
+ {
++	struct inode *inode = mapping->host;
++	const bool data_reloc = btrfs_is_data_reloc_root(BTRFS_I(inode)->root);
++	const bool zoned = btrfs_is_zoned(BTRFS_I(inode)->root->fs_info);
+ 	int ret = 0;
+ 	struct extent_page_data epd = {
+ 		.bio_ctrl = { 0 },
+@@ -5127,7 +5130,15 @@ int extent_writepages(struct address_space *mapping,
+ 		.sync_io = wbc->sync_mode == WB_SYNC_ALL,
+ 	};
+ 
++	/*
++	 * Allow only a single thread to do the reloc work in zoned mode to
++	 * protect the write pointer updates.
++	 */
++	if (data_reloc && zoned)
++		btrfs_inode_lock(inode, 0);
+ 	ret = extent_write_cache_pages(mapping, wbc, &epd);
++	if (data_reloc && zoned)
++		btrfs_inode_unlock(inode, 0);
+ 	ASSERT(ret <= 0);
+ 	if (ret < 0) {
+ 		end_write_bio(&epd, ret);
 -- 
 2.32.0
 

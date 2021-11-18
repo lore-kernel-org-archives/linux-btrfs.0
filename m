@@ -2,115 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 623ECC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 09:12:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31034C433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 09:48:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4342A61101
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 09:12:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 156516137B
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Nov 2021 09:48:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243210AbhKRJPu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Nov 2021 04:15:50 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:56550 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245010AbhKRJPj (ORCPT
+        id S245249AbhKRJvC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Nov 2021 04:51:02 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:53948 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S245246AbhKRJu6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Nov 2021 04:15:39 -0500
+        Thu, 18 Nov 2021 04:50:58 -0500
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 0E5B51FD29;
-        Thu, 18 Nov 2021 09:12:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1637226758;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=kw6ZxJNkxKjdGq1ChNnyoww3nrYBTnlHXQuQRVD7rXw=;
-        b=JgBPMIiD7x+8hpIn/A+DixORmwkYzr8HNj99UcPfUMHiQ/FH7+pINfFB+eJ6mtXSQU9DfT
-        rp1YKiSAm+7Z7mlHU9ZWVU6DSLKyd8kFPTOfInw+G8M+Q2Z99qQFbqT8XKu2Wzd7HA1VXe
-        +Rfhpc0POY0ZlEkNhIZYzNvs7L893Go=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1637226758;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=kw6ZxJNkxKjdGq1ChNnyoww3nrYBTnlHXQuQRVD7rXw=;
-        b=AH/dnhZRfOv7DoCEbkWfwQY5D47d7bQYMSDFxUBC7bgpyf2330uaMVqT989zc5uNzxGQRn
-        WSMvrpPNcJs9VfDA==
+        by smtp-out1.suse.de (Postfix) with ESMTP id 1949E212C1
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Nov 2021 09:47:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1637228878; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=+ntObkqKlkZd+1iwgP2GUlkY/SCaGegRUos2orfznJs=;
+        b=H0vNLizjfzTBonmAXieWI7uUqBz4goWbkb9iEnXryBTVmwo3vEwdYoxIoAG6mfGa02NoMZ
+        eU2i+Dg4jAfT4Dcfzn/Sv2w80PxcfY1B5EcNmiEVHPDK/J/XrZMfrBhev0bLq3Q8jpDxA+
+        DoIR8OK9jx4GdUV++Uo6GQTb1RCPZi4=
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 073C0A3B85;
-        Thu, 18 Nov 2021 09:12:38 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 13973A3B84
+        for <linux-btrfs@vger.kernel.org>; Thu, 18 Nov 2021 09:47:58 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id B25CBDA799; Thu, 18 Nov 2021 10:12:33 +0100 (CET)
-Date:   Thu, 18 Nov 2021 10:12:33 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Fix calculation of chunk size for RAID1/DUP profiles
-Message-ID: <20211118091233.GW28560@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20211116140206.291252-1-nborisov@suse.com>
+        id C201DDA781; Thu, 18 Nov 2021 10:47:53 +0100 (CET)
+From:   David Sterba <dsterba@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: Btrfs progs pre-release 5.15.1-rc1
+Date:   Thu, 18 Nov 2021 10:47:53 +0100
+Message-Id: <20211118094753.18900-1-dsterba@suse.com>
+X-Mailer: git-send-email 2.33.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20211116140206.291252-1-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 16, 2021 at 04:02:06PM +0200, Nikolay Borisov wrote:
-> Current formula calculates the stripe size, however that's not what we want
-> in the case of RAID1/DUP profiles. In those cases since chunkc are mirrored
-> across devices we want the full size of the chunk. Without this patch the
-> 'btrfs fi usage' output from an fs which is using RAID1 is:
-> 
-> 	<snip>
-> 
-> 	Data,RAID1: Size:2.00GiB, Used:1.00GiB (50.03%)
-> 	   /dev/vdc	   1.00GiB
-> 	   /dev/vdf	   1.00GiB
-> 
-> 	Metadata,RAID1: Size:256.00MiB, Used:1.34MiB (0.52%)
-> 	   /dev/vdc	 128.00MiB
-> 	   /dev/vdf	 128.00MiB
-> 
-> 	System,RAID1: Size:8.00MiB, Used:16.00KiB (0.20%)
-> 	   /dev/vdc	   4.00MiB
-> 	   /dev/vdf	   4.00MiB
-> 
-> 	Unallocated:
-> 	   /dev/vdc	   8.87GiB
-> 	   /dev/vdf	   8.87GiB
-> 
-> 
-> So a 2 gigabyte RAID1 chunk actually will take up 4 gigabytes on the actual disks
-> 2 each. In this case this is being miscalculated as taking up 1gb on each device.
-> 
-> This also leads to erroneously calculated unallocated space. The correct output
-> in this case is:
-> 
-> 	<snip>
-> 
-> 	Data,RAID1: Size:2.00GiB, Used:1.00GiB (50.03%)
-> 	   /dev/vdc	   2.00GiB
-> 	   /dev/vdf	   2.00GiB
-> 
-> 	Metadata,RAID1: Size:256.00MiB, Used:1.34MiB (0.52%)
-> 	   /dev/vdc	 256.00MiB
-> 	   /dev/vdf	 256.00MiB
-> 
-> 	System,RAID1: Size:8.00MiB, Used:16.00KiB (0.20%)
-> 	   /dev/vdc	   8.00MiB
-> 	   /dev/vdf	   8.00MiB
-> 
-> 	Unallocated:
-> 	   /dev/vdc	   7.74GiB
-> 	   /dev/vdf	   7.74GiB
-> 
-> 
-> Fix it by only utilising the chunk formula for profiles which are not RAID1/DUP.
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+Hi,
 
-Added to devel, thanks.
+this is a pre-release announcement of btrfs-progs, 5.15.1-rc1. There are fixes
+and documentation updates.
+
+The proper release is scheduled to this Friday, +1 day (2021-11-19).
+
+There is no -rc1 tag and no tarball, the changes are in git branch v5.15.x in
+the devel repositories.
+
+Changelog:
+
+* fixes:
+  * fi usage: fix wrongly reported space of used or unallocated space
+  * fix detection of block device discard capability
+* check: add more sanity checks for checksum items
+* build: make sphinx optional backend for documentation
+
+Shortlog:
+
+David Sterba (7):
+      btrfs-progs: docs: add Glossary from wiki
+      btrfs-progs: docs: RST formatting fixups
+      btrfs-progs: docs: fix RST mkfs.btrfs table formatting
+      btrfs-progs: docs: disable RST smartquotes for em-dash
+      btrfs-progs: docs: integrate sphinx build
+      btrfs-progs: docs: mention ntfs2btrfs conversion tool
+      btrfs-progs: update CHANGES for 5.15.1
+
+Mark Harmstone (1):
+      btrfs-progs: check: add check for too many csum entries
+
+Nikolay Borisov (2):
+      btrfs-progs: fi usage: don't reset ratio to 1 if we don't have RAID56 profile
+      btrfs-progs: fi usage: fix calculation of chunk size for RAID1/DUP profiles
+
+Qu Wenruo (1):
+      btrfs-progs: raid56: fix the wrong recovery condition for data and P case
+
+Wang Yugui (1):
+      btrfs-progs: fix discard support check
+

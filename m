@@ -2,72 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D88FFC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Nov 2021 06:50:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3388FC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Nov 2021 07:23:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233050AbhKWGx0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Nov 2021 01:53:26 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:37634 "EHLO
+        id S233988AbhKWH0w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Nov 2021 02:26:52 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:38876 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232922AbhKWGxZ (ORCPT
+        with ESMTP id S233965AbhKWH0w (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Nov 2021 01:53:25 -0500
+        Tue, 23 Nov 2021 02:26:52 -0500
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 3D7B4212C6;
-        Tue, 23 Nov 2021 06:50:17 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 2615C218EF;
+        Tue, 23 Nov 2021 07:23:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1637650217; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=wfl3ybnINwFlPM/9PIHcl4bwE/0EBFg/kRyWNyiTUPU=;
-        b=QgBFTj6SDdxy80T9OWk/SgaLYFBsVOwqi8qmNH4qnWaE/r5G8M1xkYByk4UIiNIIpfilW2
-        tV4v5oIfkMUCzr+b5FZ8l1LunVw6hBQ9zks9HvC43VKPPYGd+u9Xe3QZP0bLQEWrNXXBzD
-        Vh8Omno5lyXNEdlyiw1BFZOVdAatDSE=
+        t=1637652224; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc;
+        bh=Iz8wisvqHFH+ynR2imkEWeX6LI7585XdBjumCDEPp50=;
+        b=B530F5vZCoHcVyBbIWRG+WMywLPELscRxUijv/IYwoC1aUi+kccpPAA9c3f8/9+ug+qNil
+        fXhoI49HVpHrKafNJmrQiEJxH6cBMg35OjfopF3wTvoiQ8qkE/WuYWzPoECvd8PXwfwCB1
+        WPmmfl7lrdtYc2ElpunCYyXUsdS1jzo=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 11D5F13CEF;
-        Tue, 23 Nov 2021 06:50:17 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id ECFFD13B58;
+        Tue, 23 Nov 2021 07:23:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id JxGgASmPnGErUwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Tue, 23 Nov 2021 06:50:17 +0000
-Subject: Re: [PATCH] btrfs: eliminate if in main loop in tree_search_offset
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20211122151713.14316-1-nborisov@suse.com>
- <YZvKVVVvkfGRD+PI@localhost.localdomain>
+        id eexiN/+WnGEgXwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 23 Nov 2021 07:23:43 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <3905db45-157c-264f-b030-4f7f964ca2a1@suse.com>
-Date:   Tue, 23 Nov 2021 08:50:16 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
-MIME-Version: 1.0
-In-Reply-To: <YZvKVVVvkfGRD+PI@localhost.localdomain>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH v2] btrfs: eliminate if in main loop in tree_search_offset
+Date:   Tue, 23 Nov 2021 09:23:42 +0200
+Message-Id: <20211123072342.21371-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.17.1
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Reshuffle the code inside the first loop of tree_search_offset so that
+one if() is eliminated and the becomes more linear.
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+V2: 
+ * Set entry to NULL by default so that semantics is unchanged. 
 
-On 22.11.21 г. 18:50, Josef Bacik wrote:
-> On Mon, Nov 22, 2021 at 05:17:13PM +0200, Nikolay Borisov wrote:
->> Reshuffle the code inside the first loop of tree_search_offset so that
->> one if() is eliminated and the becomes more linear.
-> 
-> Need a SOB and you need to set entry = NULL initially if you're going to make
-> this change.  Thanks,
-Doh, I had it set before nuking the work via git checkout and on the 2nd
-try I forgot....
+ fs/btrfs/free-space-cache.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
 
-> 
-> Josef
-> 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 145a07b19359..c5ee980e7a5e 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1592,15 +1592,10 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
+ 		   u64 offset, int bitmap_only, int fuzzy)
+ {
+ 	struct rb_node *n = ctl->free_space_offset.rb_node;
+-	struct btrfs_free_space *entry, *prev = NULL;
++	struct btrfs_free_space *entry = NULL, *prev = NULL;
+ 
+ 	/* find entry that is closest to the 'offset' */
+-	while (1) {
+-		if (!n) {
+-			entry = NULL;
+-			break;
+-		}
+-
++	while (n) {
+ 		entry = rb_entry(n, struct btrfs_free_space, offset_index);
+ 		prev = entry;
+ 
+@@ -1610,6 +1605,8 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
+ 			n = n->rb_right;
+ 		else
+ 			break;
++
++		entry = NULL;
+ 	}
+ 
+ 	if (bitmap_only) {
+-- 
+2.17.1
+

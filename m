@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40FF5C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Nov 2021 12:44:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DFBBC433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 Nov 2021 12:44:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232746AbhKWMre (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 Nov 2021 07:47:34 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:40702 "EHLO
+        id S236754AbhKWMrg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 Nov 2021 07:47:36 -0500
+Received: from smtp-out2.suse.de ([195.135.220.29]:40718 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236620AbhKWMrd (ORCPT
+        with ESMTP id S236683AbhKWMre (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 Nov 2021 07:47:33 -0500
+        Tue, 23 Nov 2021 07:47:34 -0500
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id E93AA1FD64;
-        Tue, 23 Nov 2021 12:44:24 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 6EE251FD66;
+        Tue, 23 Nov 2021 12:44:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1637671464; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1637671465; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          in-reply-to:in-reply-to:references:references;
-        bh=vdDGSVqYCtWdYdyKng+UVS1KuW6cWKE2pou+DaQMgOQ=;
-        b=LDdj1oNpjUZCn0Za5UYfnjuQbY/Hxf5GSr8cGXGaUJPsfwJOKk6p0hz4smtS1od2HrZMqp
-        ZC1BH0bTd84EPhJ237yK1ANe7k1U2jGEVC9so+VnADFmBncwLgQeRxCGVmnwmgiiCYtZMP
-        wcmcXgAPgupGkHT87hDL/ITusVu+8ss=
+        bh=5v4q3MxhLchbL8f3k5G6XKZTfsKLJAgdFW7+gAGcYz4=;
+        b=ImCx1EVkyMT8d8lfxnlcei3U+wcHeyFZ6Qmoau5dsaCClGG70IKbC4stg8CBsywXJ8kHYr
+        E9/MGgR+QvnZIU7iQOQ1idEQe5w1iuurKjTNlScsqtYVxVPg0tSkanDnjN1kAwcSVXneXZ
+        odp4cMhGxatCqNeQ72eUsheQmGzeMZ0=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BCC0E13DF4;
-        Tue, 23 Nov 2021 12:44:24 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3E2D313DF4;
+        Tue, 23 Nov 2021 12:44:25 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0Ad1KyjinGEfdgAAMHmgww
-        (envelope-from <nborisov@suse.com>); Tue, 23 Nov 2021 12:44:24 +0000
+        id 2BT8DCninGEfdgAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 23 Nov 2021 12:44:25 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 2/4] btrfs: consolidate unlink_free_space/__unlink_free_space functions
-Date:   Tue, 23 Nov 2021 14:44:20 +0200
-Message-Id: <20211123124422.5830-3-nborisov@suse.com>
+Subject: [PATCH 4/4] btrfs: change name and type of private member of btrfs_free_space_ctl
+Date:   Tue, 23 Nov 2021 14:44:22 +0200
+Message-Id: <20211123124422.5830-5-nborisov@suse.com>
 X-Mailer: git-send-email 2.17.1
 In-Reply-To: <20211123124422.5830-1-nborisov@suse.com>
 References: <20211123124422.5830-1-nborisov@suse.com>
@@ -48,146 +48,81 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The only difference between the two is whether btrfs_free_space::bytes
-is adjusted. Instead of having 2 separate functions control this
-behavior via an additional parameter and make them one function instead.
-No functional changes.
+btrfs_free_space_ctl::private is either unset or it always points to
+struct btrfs_block_group when it is set. So there's no point in keeping
+the unhelpful 'private' name and keeping it an untyped pointer. Change
+both the type and name to be self-describing. No functional changes.
 
 Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 ---
- fs/btrfs/free-space-cache.c | 41 +++++++++++++++----------------------
- 1 file changed, 16 insertions(+), 25 deletions(-)
+ fs/btrfs/free-space-cache.c | 12 ++++++------
+ fs/btrfs/free-space-cache.h |  2 +-
+ 2 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 8388fa71ce1e..6bc35080afa6 100644
+index 1e1299bfe380..51c688c9d12c 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -37,7 +37,7 @@ struct btrfs_trim_range {
- static int link_free_space(struct btrfs_free_space_ctl *ctl,
- 			   struct btrfs_free_space *info);
- static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
--			      struct btrfs_free_space *info);
-+			      struct btrfs_free_space *info, bool update_stat);
- static int search_bitmap(struct btrfs_free_space_ctl *ctl,
- 			 struct btrfs_free_space *bitmap_info, u64 *offset,
- 			 u64 *bytes, bool for_alloc);
-@@ -872,7 +872,7 @@ static int copy_free_space_cache(struct btrfs_block_group *block_group,
- 	while (!ret && (n = rb_first(&ctl->free_space_offset)) != NULL) {
- 		info = rb_entry(n, struct btrfs_free_space, offset_index);
- 		if (!info->bitmap) {
--			unlink_free_space(ctl, info);
-+			unlink_free_space(ctl, info, true);
- 			ret = btrfs_add_free_space(block_group, info->offset,
- 						   info->bytes);
- 			kmem_cache_free(btrfs_free_space_cachep, info);
-@@ -1699,9 +1699,9 @@ tree_search_offset(struct btrfs_free_space_ctl *ctl,
- 	return entry;
- }
+@@ -666,7 +666,7 @@ static int io_ctl_read_bitmap(struct btrfs_io_ctl *io_ctl,
  
--static inline void
--__unlink_free_space(struct btrfs_free_space_ctl *ctl,
--		    struct btrfs_free_space *info)
-+static inline void unlink_free_space(struct btrfs_free_space_ctl *ctl,
-+				     struct btrfs_free_space *info,
-+				     bool update_stat)
+ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
  {
- 	rb_erase(&info->offset_index, &ctl->free_space_offset);
- 	ctl->free_extents--;
-@@ -1710,13 +1710,10 @@ __unlink_free_space(struct btrfs_free_space_ctl *ctl,
- 		ctl->discardable_extents[BTRFS_STAT_CURR]--;
- 		ctl->discardable_bytes[BTRFS_STAT_CURR] -= info->bytes;
- 	}
--}
+-	struct btrfs_block_group *block_group = ctl->private;
++	struct btrfs_block_group *block_group = ctl->block_group;
+ 	u64 max_bytes;
+ 	u64 bitmap_bytes;
+ 	u64 extent_bytes;
+@@ -2084,7 +2084,7 @@ static u64 add_bytes_to_bitmap(struct btrfs_free_space_ctl *ctl,
+ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
+ 		      struct btrfs_free_space *info)
+ {
+-	struct btrfs_block_group *block_group = ctl->private;
++	struct btrfs_block_group *block_group = ctl->block_group;
+ 	struct btrfs_fs_info *fs_info = block_group->fs_info;
+ 	bool forced = false;
  
--static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
--			      struct btrfs_free_space *info)
--{
--	__unlink_free_space(ctl, info);
--	ctl->free_space -= info->bytes;
-+	if (update_stat)
-+		ctl->free_space -= info->bytes;
-+
+@@ -2153,7 +2153,7 @@ static int insert_into_bitmap(struct btrfs_free_space_ctl *ctl,
+ 		return 0;
+ 
+ 	if (ctl->op == &free_space_op)
+-		block_group = ctl->private;
++		block_group = ctl->block_group;
+ again:
+ 	/*
+ 	 * Since we link bitmaps right into the cluster we need to see if we
+@@ -2769,7 +2769,7 @@ void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group,
+ 	spin_lock_init(&ctl->tree_lock);
+ 	ctl->unit = fs_info->sectorsize;
+ 	ctl->start = block_group->start;
+-	ctl->private = block_group;
++	ctl->block_group = block_group;
+ 	ctl->op = &free_space_op;
+ 	INIT_LIST_HEAD(&ctl->trimming_ranges);
+ 	mutex_init(&ctl->cache_writeout_mutex);
+@@ -2865,8 +2865,8 @@ void __btrfs_remove_free_space_cache(struct btrfs_free_space_ctl *ctl)
+ {
+ 	spin_lock(&ctl->tree_lock);
+ 	__btrfs_remove_free_space_cache_locked(ctl);
+-	if (ctl->private)
+-		btrfs_discard_update_discardable(ctl->private);
++	if (ctl->block_group)
++		btrfs_discard_update_discardable(ctl->block_group);
+ 	spin_unlock(&ctl->tree_lock);
  }
  
- static int link_free_space(struct btrfs_free_space_ctl *ctl,
-@@ -1964,7 +1961,7 @@ static void free_bitmap(struct btrfs_free_space_ctl *ctl,
- 		ctl->discardable_bytes[BTRFS_STAT_CURR] -= bitmap_info->bytes;
- 
- 	}
--	unlink_free_space(ctl, bitmap_info);
-+	unlink_free_space(ctl, bitmap_info, true);
- 	kmem_cache_free(btrfs_free_space_bitmap_cachep, bitmap_info->bitmap);
- 	kmem_cache_free(btrfs_free_space_cachep, bitmap_info);
- 	ctl->total_bitmaps--;
-@@ -2301,10 +2298,7 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
- 	/* See try_merge_free_space() comment. */
- 	if (right_info && !right_info->bitmap &&
- 	    (!is_trimmed || btrfs_free_space_trimmed(right_info))) {
--		if (update_stat)
--			unlink_free_space(ctl, right_info);
--		else
--			__unlink_free_space(ctl, right_info);
-+		unlink_free_space(ctl, right_info, update_stat);
- 		info->bytes += right_info->bytes;
- 		kmem_cache_free(btrfs_free_space_cachep, right_info);
- 		merged = true;
-@@ -2314,10 +2308,7 @@ static bool try_merge_free_space(struct btrfs_free_space_ctl *ctl,
- 	if (left_info && !left_info->bitmap &&
- 	    left_info->offset + left_info->bytes == offset &&
- 	    (!is_trimmed || btrfs_free_space_trimmed(left_info))) {
--		if (update_stat)
--			unlink_free_space(ctl, left_info);
--		else
--			__unlink_free_space(ctl, left_info);
-+		unlink_free_space(ctl, left_info, update_stat);
- 		info->offset = left_info->offset;
- 		info->bytes += left_info->bytes;
- 		kmem_cache_free(btrfs_free_space_cachep, left_info);
-@@ -2681,7 +2672,7 @@ int btrfs_remove_free_space(struct btrfs_block_group *block_group,
- 
- 	re_search = false;
- 	if (!info->bitmap) {
--		unlink_free_space(ctl, info);
-+		unlink_free_space(ctl, info, true);
- 		if (offset == info->offset) {
- 			u64 to_free = min(bytes, info->bytes);
- 
-@@ -2864,7 +2855,7 @@ static void __btrfs_remove_free_space_cache_locked(
- 	while ((node = rb_last(&ctl->free_space_offset)) != NULL) {
- 		info = rb_entry(node, struct btrfs_free_space, offset_index);
- 		if (!info->bitmap) {
--			unlink_free_space(ctl, info);
-+			unlink_free_space(ctl, info, true);
- 			kmem_cache_free(btrfs_free_space_cachep, info);
- 		} else {
- 			free_bitmap(ctl, info);
-@@ -2969,7 +2960,7 @@ u64 btrfs_find_space_for_alloc(struct btrfs_block_group *block_group,
- 		if (!entry->bytes)
- 			free_bitmap(ctl, entry);
- 	} else {
--		unlink_free_space(ctl, entry);
-+		unlink_free_space(ctl, entry, true);
- 		align_gap_len = offset - entry->offset;
- 		align_gap = entry->offset;
- 		align_gap_trim_state = entry->trim_state;
-@@ -3600,7 +3591,7 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 				mutex_unlock(&ctl->cache_writeout_mutex);
- 				goto next;
- 			}
--			unlink_free_space(ctl, entry);
-+			unlink_free_space(ctl, entry, true);
- 			/*
- 			 * Let bytes = BTRFS_MAX_DISCARD_SIZE + X.
- 			 * If X < BTRFS_ASYNC_DISCARD_MIN_FILTER, we won't trim
-@@ -3626,7 +3617,7 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 				goto next;
- 			}
- 
--			unlink_free_space(ctl, entry);
-+			unlink_free_space(ctl, entry, true);
- 			kmem_cache_free(btrfs_free_space_cachep, entry);
- 		}
- 
+diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
+index b35137e1f21a..0d245c0fc45e 100644
+--- a/fs/btrfs/free-space-cache.h
++++ b/fs/btrfs/free-space-cache.h
+@@ -54,7 +54,7 @@ struct btrfs_free_space_ctl {
+ 	s32 discardable_extents[BTRFS_STAT_NR_ENTRIES];
+ 	s64 discardable_bytes[BTRFS_STAT_NR_ENTRIES];
+ 	const struct btrfs_free_space_op *op;
+-	void *private;
++	struct btrfs_block_group *block_group;
+ 	struct mutex cache_writeout_mutex;
+ 	struct list_head trimming_ranges;
+ };
 -- 
 2.17.1
 

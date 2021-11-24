@@ -2,56 +2,56 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E123DC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Nov 2021 09:31:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB70EC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Nov 2021 09:31:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236935AbhKXJeg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Nov 2021 04:34:36 -0500
-Received: from esa4.hgst.iphmx.com ([216.71.154.42]:32207 "EHLO
+        id S236510AbhKXJei (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Nov 2021 04:34:38 -0500
+Received: from esa4.hgst.iphmx.com ([216.71.154.42]:32204 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236499AbhKXJe2 (ORCPT
+        with ESMTP id S236382AbhKXJeb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Nov 2021 04:34:28 -0500
+        Wed, 24 Nov 2021 04:34:31 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1637746279; x=1669282279;
+  t=1637746281; x=1669282281;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=tiJDXTNh43giXrUH3Bs6opM0CpoRIaFrym75lBC+1Ms=;
-  b=MxmTakAO+fUy1xICgTWivWDQMNkeA4xHrqrwRdrkAsvNjHr1iXOspMpV
-   ZWvt0+x5ENTdgUZbImzo8xd9QyxP+QjAf0Dvr+K2XziJJ3fXYdqgaLVwY
-   xclNufJbXyGr4HGrMblXUI/p/yCOMnK7LVgfPSD+r9JvPXgxxedq6N2/P
-   BKhKLHeR7wPByEIcnweB/qIizVxh2PnNX/mQTwsipWvwBTlfpGo6QOAFo
-   hD5mufIQLGz4XBkHoUTO3lfcunceiMAyDcBhv1ENL8ZX3eYTd3LCoKkdL
-   zEeT2TgUd+YgLSRCIE+/L2zsCiCyIdTEEZFF5kfmVopdO3GVsIVWNyd4e
-   w==;
+  bh=TSwy7QTI0fRTsdbXkhy9nV3Gi8Poo7wRKEZTydiY0aw=;
+  b=I12yIKuYe9RBd6oXD2cRDvsAfsGnb5ygtAyiwUe1CjKf4UPh+ffyncjT
+   MhVtuhGjY9PHEX+AzFfh8ROrPDvCKuDAlkXBRFIlj6vv+aZpMr5ZrrWha
+   quaIsDzW7fOHz9L6E2fcZNv/IzJ5LXPZCAEJ+YHUs8z2zYRTsNMEn3WSk
+   YAbLUsfkBbtNzCtG36nlMDoVJc8IGgZxrZlMIrnAKn4miDh6WOTTSn8QH
+   6E5nM3gR80+yQEwKYKCve5EbvsJKXSU+ExZj+1rVf3aBx8+oxR1SiBd2C
+   MXohhPRG44NhZZ8FLFbhJU7OFU3tGuRuv4DBF+8/eVCBd5ABO8ZMHpNKE
+   Q==;
 X-IronPort-AV: E=Sophos;i="5.87,260,1631548800"; 
-   d="scan'208";a="185499405"
+   d="scan'208";a="185499412"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 24 Nov 2021 17:31:17 +0800
-IronPort-SDR: daaK36ItSa1oqcCtr+MfKdqGqb2vJNznnBN9J6Rx14w4MfczUOJxmrPvSCoKAW3nWd1GUZRJ7E
- AOPgld57e0ScorGxnjBstTNjMcmSvnEeanp0XePpPKFzYQZgWm0Mn0eJYdZ3+g8M3lw7tCC/sS
- +7cUiBqfS2nHuf8WhgCERqNEmc+ahsOolZ/lud1n+KdRwIiIeGXr+lHqZR9nF7BPOsxZN8q5d3
- K61n52ekeOfiYlcvX7EMZS/NwYOEM991wAvANWsIDMBT06xiSY57Ew8drNrOZtStv+hpgzjia4
- 36b55OlxWecqRvFyagZLLnww
+  by ob1.hgst.iphmx.com with ESMTP; 24 Nov 2021 17:31:21 +0800
+IronPort-SDR: Zg8Pt9IqVZRQUe7OQBgd7TvSfKdEQt8UmGW1ZUKbW44lBinMUcOqrHdufIdtcH5rxfgFqt7/IC
+ KD+mWH7Va/l9sjp1Rrujg+R6L6BFX7IauQeOySy80UxZ72xAhCWvVpWFQbf8jFFhm78zV9e8+r
+ PoTgEszDxyxZTOJ6mUAJOY2h2rkbg3ioOtY5SfXtbkYVlUIuPqNltApcUBNeFIXlOZrt/51D9Y
+ ZZfPzqUtF+eiw9U+XsXG4us2o0tDS5BVBmgqfAtKmKjAUXSfQJajBrAmTX9VKVoRWliicQU9OB
+ W0WdTsfDldX62psbO78lf66i
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Nov 2021 01:06:10 -0800
-IronPort-SDR: K3tqY3BIQAq7r/o+f77BdBitSSTgKsiPOZUf3uqU2/GR2uHUUIKchmGZLzBCSFSmcOzJTy7ftW
- Q5e04ma+yUiBNFv+MNbfu/whmCihReY0aLNVwL4532xLpLmSW28oafBrk4/fGZDVTquXug1MR+
- LCLGYfa/tchS1i5iq1BA/7lsPkqJ/yAUNhjn7FTfW2BdRwZnY8HQivJop/9deWx5klu8z9FNax
- VvYyOyDkf9KH2A+a8XxzLysvbGXmqhTHqk/mzcEFLt7Y5TWuHv2PTHq7SQmdEjA0fHIMV074+V
- NV8=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Nov 2021 01:06:14 -0800
+IronPort-SDR: BUFpWSD6VPG8FADESup6FdXy29nQ4Q5dZQ2T/M6cxG8c4wbBpB1/YYUsgEJoVfYXpQaf2zKQ7P
+ 9nZh03Ygs5v6Ne24ckG27GuJ5W82RrxvUr+jk42qt5MAVwe873K1Tojnwv1MJI7oyHNIyFB9MQ
+ yY4c2nezMCWhfGrTY9I1R6C5aU7WsVDXSI9t20jPT3LM5VL3dDn/X1ZX8FRuifPaNINXd7jXSi
+ qplfiphT/P/XjLp4DynbWJQQQ/wNmqk8prEQifOeHn8Mk7BhzyvcwNKCXN85QswqNrfkvZHp7K
+ zZ4=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 24 Nov 2021 01:31:17 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 24 Nov 2021 01:31:21 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         linux-btrfs@vger.kernel.org, Nikolay Borisov <nborisov@suse.com>,
         Naohiro Aota <Naohiro.Aota@wdc.com>
-Subject: [PATCH 18/21] btrfs: move btrfs_scrub_continue() definition to scrub.h
-Date:   Wed, 24 Nov 2021 01:30:44 -0800
-Message-Id: <a8840b30ecef1c01f6e5faaf7ac09d8e4b61373c.1637745470.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH 21/21] btrfs: move btrfs_scrub_progress() definition to scrub.h
+Date:   Wed, 24 Nov 2021 01:30:47 -0800
+Message-Id: <6cbadf7d286d9074dab45b4f4916e7b781b61d97.1637745470.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1637745470.git.johannes.thumshirn@wdc.com>
 References: <cover.1637745470.git.johannes.thumshirn@wdc.com>
@@ -61,35 +61,38 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we have a scrub.h move btrfs_scrub_continue()'s definition there.
+Now that we have a scrub.h move btrfs_scrub_progress()'s definition there.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/ctree.h | 1 -
- fs/btrfs/scrub.h | 1 +
- 2 files changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/ctree.h | 3 ---
+ fs/btrfs/scrub.h | 2 ++
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5ab09bb0279fe..064281a700ff1 100644
+index aef03199e367a..5cfb2ebf3a020 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3801,7 +3801,6 @@ struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info,
+@@ -3800,9 +3800,6 @@ struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info,
+ 				   u64 bytenr);
  int btrfs_should_ignore_reloc_root(struct btrfs_root *root);
  
- /* scrub.c */
--void btrfs_scrub_continue(struct btrfs_fs_info *fs_info);
- int btrfs_scrub_cancel(struct btrfs_fs_info *info);
- int btrfs_scrub_cancel_dev(struct btrfs_device *dev);
- int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
+-/* scrub.c */
+-int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
+-			 struct btrfs_scrub_progress *progress);
+ static inline void btrfs_init_full_stripe_locks_tree(
+ 			struct btrfs_full_stripe_locks_tree *locks_root)
+ {
 diff --git a/fs/btrfs/scrub.h b/fs/btrfs/scrub.h
-index f06e4a10a08b9..69da2e49732df 100644
+index e6eaf22b04e14..9fe4b7dee61f5 100644
 --- a/fs/btrfs/scrub.h
 +++ b/fs/btrfs/scrub.h
-@@ -54,4 +54,5 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
- 		    u64 end, struct btrfs_scrub_progress *progress,
- 		    int readonly, int is_dev_replace);
- void btrfs_scrub_pause(struct btrfs_fs_info *fs_info);
-+void btrfs_scrub_continue(struct btrfs_fs_info *fs_info);
+@@ -57,4 +57,6 @@ void btrfs_scrub_pause(struct btrfs_fs_info *fs_info);
+ void btrfs_scrub_continue(struct btrfs_fs_info *fs_info);
+ int btrfs_scrub_cancel(struct btrfs_fs_info *info);
+ int btrfs_scrub_cancel_dev(struct btrfs_device *dev);
++int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
++			 struct btrfs_scrub_progress *progress);
  #endif /* BTRFS_SCRUB_H */
 -- 
 2.31.1

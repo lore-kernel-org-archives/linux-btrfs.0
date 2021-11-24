@@ -2,103 +2,162 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C3D31C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Nov 2021 19:16:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 809DAC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Nov 2021 19:20:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242428AbhKXTTN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Nov 2021 14:19:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57812 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244966AbhKXTSd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Nov 2021 14:18:33 -0500
-Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96646C061756
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Nov 2021 11:14:33 -0800 (PST)
-Received: by mail-qt1-x82e.google.com with SMTP id f20so3753495qtb.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Nov 2021 11:14:33 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=XrmlgMYx9RqElUbssPucIFCPw3hERWs53HV8oJ9nzOw=;
-        b=M9ReCxMSs5cMkPtKKkE0hX478zYEMCxc25+FwKWu8f8EB/LX1xlEz9jgWh1b4YApAP
-         40YyYiHolF9HEFJ6TQ6XyCK9FVlZ8aaa+TpRNinQyKlF7FHA9fI9eG3AOQ25O/tJj9w5
-         P3eI3xmYOTtQXoOarYVhweUS5RSYGcLTy41WecZtVKz3kOLdiPFmi1j+l0RIel+h3Y+q
-         n5dYDDK8v8/uw1c6NabZnLBq2pIOTaMELpoyBFiTk1HUfuLJ0r1f9oMzosTlVR57mFbG
-         7O+Yi+YdEDeN8im49nxBRHkXRegngHbQZ0L2dWeDq5dYJwBSR1zvjvR9RFWuWq9wnkfh
-         HqVg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=XrmlgMYx9RqElUbssPucIFCPw3hERWs53HV8oJ9nzOw=;
-        b=Yrbagw5l5HWJZArNS9ZVb/C3FsyPPZfX7B7H+t5ON/+wtjgYSNyAuITvaGjZm6UNsB
-         kkhxR9siNB2c1zKfyrhIrrv9GJYdpwwMjaM2ZN/U1ZB2EG+7EYrC0abuXF15DC2fbJa/
-         jMxeQajoOkV5IcRTbbe6iNlQISaGXoDQFBpRjCGZegRYc8fgPA6hYJTEyKaVVEn5gqvt
-         g+Dc8Gu/ySIVvDxLEGr9Gcd5pU//KEiCfI08ZbX+U8CUSP7jd7AZpMxPWoUn7jiVDGJ6
-         vDQ9A/nHbncUIT2XFmMZJSZDdPaJubeGbQwYfPRP5cNC+qMx1sKggXVUkyb6zxHpXAOr
-         tb8Q==
-X-Gm-Message-State: AOAM532edEwCloKOq6ur6Vokfs0scRRn7zI5nCS0HgFbSDLoiqn7KJ+5
-        wG2jH9RUimi7GdMZXrhWmeUSN5/jW5gawg==
-X-Google-Smtp-Source: ABdhPJyRY6dqEKp17v14Y8EcvaF8Y4y2W99C9wPVEgo9gzu27IFQZ/zxoXctGrkszllo+O6dq4o3jg==
-X-Received: by 2002:a05:622a:2ce:: with SMTP id a14mr1429846qtx.445.1637781271163;
-        Wed, 24 Nov 2021 11:14:31 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id y18sm299614qkp.120.2021.11.24.11.14.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 24 Nov 2021 11:14:30 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 3/3] btrfs: call mapping_set_error() on btree inode with a write error
-Date:   Wed, 24 Nov 2021 14:14:25 -0500
-Message-Id: <f6f2469932a07a706149353618a1f77e88706fc2.1637781110.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1637781110.git.josef@toxicpanda.com>
-References: <cover.1637781110.git.josef@toxicpanda.com>
+        id S243795AbhKXTXn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Nov 2021 14:23:43 -0500
+Received: from mail.kernel.org ([198.145.29.99]:56634 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S243722AbhKXTXm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Nov 2021 14:23:42 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 62DD960F45;
+        Wed, 24 Nov 2021 19:20:29 +0000 (UTC)
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Will Deacon <will@kernel.org>, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] mm: Introduce fault_in_exact_writeable() to probe for sub-page faults
+Date:   Wed, 24 Nov 2021 19:20:22 +0000
+Message-Id: <20211124192024.2408218-2-catalin.marinas@arm.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20211124192024.2408218-1-catalin.marinas@arm.com>
+References: <20211124192024.2408218-1-catalin.marinas@arm.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-generic/484 fails sometimes with compression on because the write ends
-up small enough that it goes into the btree.  This means that we never
-call mapping_set_error() on the inode itself, because the page gets
-marked as fine when we inline it into the metadata.  When the metadata
-writeback happens we see it and abort the transaction properly and mark
-the fs as readonly, however we don't do the mapping_set_error() on
-anything.  In syncfs() we will simply return 0 if the sb is marked
-read-only, so we can't check for this in our syncfs callback.  The only
-way the error gets returned if we called mapping_set_error() on
-something.  Fix this by calling mapping_set_error() on the btree inode
-mapping.  This allows us to properly return an error on syncfs and pass
-generic/484 with compression on.
+On hardware with features like arm64 MTE or SPARC ADI, an access fault
+can be triggered at sub-page granularity. Depending on how the
+fault_in_*() functions are used, the caller can get into a live-lock by
+continuously retrying the fault-in on an address different from the one
+where the uaccess failed.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+In the majority of cases progress is ensured by the following
+conditions:
+
+1. copy_{to,from}_user() guarantees at least one byte access if the user
+   address is not faulting;
+
+2. The fault_in_*() is attempted on the next address that could not be
+   accessed by copy_*_user().
+
+In the places where the above conditions are not met or the
+fault-in/uaccess loop does not have a mechanism to bail out, the
+fault_in_exact_writeable() ensures that the arch code will probe the
+range in question at a sub-page fault granularity (e.g. 16 bytes for
+arm64 MTE). For large ranges, this is significantly more expensive than
+the non-exact versions which probe a single byte in each page or use
+GUP.
+
+The architecture code has to select ARCH_HAS_SUBPAGE_FAULTS and
+implement probe_user_writeable().
+
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
 ---
- fs/btrfs/extent_io.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/Kconfig            |  7 +++++++
+ include/linux/pagemap.h |  1 +
+ include/linux/uaccess.h | 21 +++++++++++++++++++++
+ mm/gup.c                | 19 +++++++++++++++++++
+ 4 files changed, 48 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3454cac28389..1a67f4b3986b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4314,6 +4314,14 @@ static void set_btree_ioerr(struct page *page, struct extent_buffer *eb)
- 	 */
- 	clear_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 26b8ed11639d..02502b3362aa 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -27,6 +27,13 @@ config HAVE_IMA_KEXEC
+ config SET_FS
+ 	bool
  
-+	/*
-+	 * We need to set the mapping with the io error as well because a write
-+	 * error will flip the file system readonly, and then syncfs() will
-+	 * return a 0 because we are readonly if we don't modify the err seq for
-+	 * the superblock.
-+	 */
-+	mapping_set_error(page->mapping, -EIO);
++config ARCH_HAS_SUBPAGE_FAULTS
++	bool
++	help
++	  Select if the architecture can check permissions at sub-page
++	  granularity (e.g. arm64 MTE). The probe_user_*() functions
++	  must be implemented.
 +
- 	/*
- 	 * If we error out, we should add back the dirty_metadata_bytes
- 	 * to make it consistent.
--- 
-2.26.3
-
+ config HOTPLUG_SMT
+ 	bool
+ 
+diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
+index 1a0c646eb6ff..4bae32d6b2e3 100644
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -910,6 +910,7 @@ void folio_add_wait_queue(struct folio *folio, wait_queue_entry_t *waiter);
+  * Fault in userspace address range.
+  */
+ size_t fault_in_writeable(char __user *uaddr, size_t size);
++size_t fault_in_exact_writeable(char __user *uaddr, size_t size);
+ size_t fault_in_safe_writeable(const char __user *uaddr, size_t size);
+ size_t fault_in_readable(const char __user *uaddr, size_t size);
+ 
+diff --git a/include/linux/uaccess.h b/include/linux/uaccess.h
+index ac0394087f7d..08169fb38905 100644
+--- a/include/linux/uaccess.h
++++ b/include/linux/uaccess.h
+@@ -271,6 +271,27 @@ static inline bool pagefault_disabled(void)
+  */
+ #define faulthandler_disabled() (pagefault_disabled() || in_atomic())
+ 
++#ifndef CONFIG_ARCH_HAS_SUBPAGE_FAULTS
++/**
++ * probe_user_writable: probe for sub-page faults in the user range
++ * @uaddr: start of address range
++ * @size: size of address range
++ *
++ * Returns the number of bytes not accessible (like copy_to_user() and
++ * copy_from_user()).
++ *
++ * Architectures that can generate sub-page faults (e.g. arm64 MTE) should
++ * implement this function. It is expected that the caller checked for the
++ * write permission of each page in the range either by put_user() or GUP.
++ * The architecture port can implement a more efficient get_user() probing of
++ * the range if sub-page faults are triggered by either a load or store.
++ */
++static inline size_t probe_user_writable(void __user *uaddr, size_t size)
++{
++	return 0;
++}
++#endif
++
+ #ifndef ARCH_HAS_NOCACHE_UACCESS
+ 
+ static inline __must_check unsigned long
+diff --git a/mm/gup.c b/mm/gup.c
+index 2c51e9748a6a..1c360d9fdc8e 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -1693,6 +1693,25 @@ size_t fault_in_writeable(char __user *uaddr, size_t size)
+ }
+ EXPORT_SYMBOL(fault_in_writeable);
+ 
++/**
++ * fault_in_exact_writeable - fault in userspace address range for writing,
++ *			      potentially checking for sub-page faults
++ * @uaddr: start of address range
++ * @size: size of address range
++ *
++ * Returns the number of bytes not faulted in (like copy_to_user() and
++ * copy_from_user()).
++ */
++size_t fault_in_exact_writeable(char __user *uaddr, size_t size)
++{
++	size_t accessible = size - fault_in_writeable(uaddr, size);
++
++	if (accessible)
++		accessible -= probe_user_writable(uaddr, accessible);
++	return size - accessible;
++}
++EXPORT_SYMBOL(fault_in_exact_writeable);
++
+ /*
+  * fault_in_safe_writeable - fault in an address range for writing
+  * @uaddr: start of address range

@@ -2,17 +2,17 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 297C0C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Nov 2021 19:20:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EB62C43217
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 Nov 2021 19:20:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244142AbhKXTXo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 Nov 2021 14:23:44 -0500
-Received: from mail.kernel.org ([198.145.29.99]:56608 "EHLO mail.kernel.org"
+        id S244325AbhKXTXq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 Nov 2021 14:23:46 -0500
+Received: from mail.kernel.org ([198.145.29.99]:56660 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S243268AbhKXTXm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 Nov 2021 14:23:42 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id E8AB0604DA;
-        Wed, 24 Nov 2021 19:20:26 +0000 (UTC)
+        id S243912AbhKXTXn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 24 Nov 2021 14:23:43 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id CAA2460E05;
+        Wed, 24 Nov 2021 19:20:31 +0000 (UTC)
 From:   Catalin Marinas <catalin.marinas@arm.com>
 To:     Linus Torvalds <torvalds@linux-foundation.org>,
         Josef Bacik <josef@toxicpanda.com>,
@@ -23,76 +23,79 @@ Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
         Will Deacon <will@kernel.org>, linux-fsdevel@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] Avoid live-lock in fault-in+uaccess loops with sub-page faults
-Date:   Wed, 24 Nov 2021 19:20:21 +0000
-Message-Id: <20211124192024.2408218-1-catalin.marinas@arm.com>
+Subject: [PATCH 2/3] arm64: Add support for sub-page faults user probing
+Date:   Wed, 24 Nov 2021 19:20:23 +0000
+Message-Id: <20211124192024.2408218-3-catalin.marinas@arm.com>
 X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20211124192024.2408218-1-catalin.marinas@arm.com>
+References: <20211124192024.2408218-1-catalin.marinas@arm.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+With MTE, even if the pte allows an access, a mismatched tag somewhere
+within a page can still cause a fault. Select ARCH_HAS_SUBPAGE_FAULTS if
+MTE is enabled and implement probe_user_writeable().
 
-There are a few places in the filesystem layer where a uaccess is
-performed in a loop with page faults disabled, together with a
-fault_in_*() call to pre-fault the pages. On architectures like arm64
-with MTE (memory tagging extensions) or SPARC ADI, even if the
-fault_in_*() succeeded, the uaccess can still fault indefinitely.
-
-In general this is not an issue since such code restarts the
-fault_in_*() from where the uaccess failed, therefore guaranteeing
-forward progress. The btrfs search_ioctl(), however, rewinds the
-fault_in_*() position and it can live-lock. This was reported by Al
-here:
-
-https://lore.kernel.org/r/YSqOUb7yZ7kBoKRY@zeniv-ca.linux.org.uk
-
-There's also an analysis by Al of other fault-in places:
-
-https://lore.kernel.org/r/YSldx9uhMYhT/G8X@zeniv-ca.linux.org.uk
-
-and another sub-thread on the same topic:
-
-https://lore.kernel.org/r/YXBFqD9WVuU8awIv@arm.com
-
-So far only btrfs search_ioctl() seems to be affected and that's what
-this series addresses. The existing loops like generic_perform_write()
-already guarantee forward progress.
-
-Andreas raised a concern about O_DIRECT accesses since on fault the user
-address is rewound to a block size boundary. I tried ext4, btrfs and
-gfs2 and I could not get any of them to live-lock. Depending on the
-alignment of the user buffer (page or not), I found two behaviours:
-
-- the copy to or from the user buffer succeeds entirely if it goes
-  through the kernel mapping (GUP, kmap'ed page; user MTE tags are not
-  checked) or
-
-- the copy partially succeeds after a few attempts at uaccess on the
-  faulting same address (the highest number of attempts in my tests was
-  11 with btrfs).
-
-Given the high cost of such sub-page probing (which is done prior to the
-uaccess) my proposal is to only change the btrfs search_ioctl() (as per
-the last patch). We can extend the API and call places in the future if
-needed but I hope filesystems already deal with this in other ways.
-
-Thanks.
-
-Catalin Marinas (3):
-  mm: Introduce fault_in_exact_writeable() to probe for sub-page faults
-  arm64: Add support for sub-page faults user probing
-  btrfs: Avoid live-lock in search_ioctl() on hardware with sub-page
-    faults
-
- arch/Kconfig                     |  7 +++++++
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+---
  arch/arm64/Kconfig               |  1 +
  arch/arm64/include/asm/uaccess.h | 33 ++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.c                 |  3 ++-
- include/linux/pagemap.h          |  1 +
- include/linux/uaccess.h          | 21 ++++++++++++++++++++
- mm/gup.c                         | 19 ++++++++++++++++++
- 7 files changed, 84 insertions(+), 1 deletion(-)
+ 2 files changed, 34 insertions(+)
 
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index c4207cf9bb17..dff89fd0d817 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -1777,6 +1777,7 @@ config ARM64_MTE
+ 	depends on AS_HAS_LSE_ATOMICS
+ 	# Required for tag checking in the uaccess routines
+ 	depends on ARM64_PAN
++	select ARCH_HAS_SUBPAGE_FAULTS
+ 	select ARCH_USES_HIGH_VMA_FLAGS
+ 	help
+ 	  Memory Tagging (part of the ARMv8.5 Extensions) provides
+diff --git a/arch/arm64/include/asm/uaccess.h b/arch/arm64/include/asm/uaccess.h
+index 6e2e0b7031ab..4bf947e9f9bf 100644
+--- a/arch/arm64/include/asm/uaccess.h
++++ b/arch/arm64/include/asm/uaccess.h
+@@ -445,4 +445,37 @@ static inline int __copy_from_user_flushcache(void *dst, const void __user *src,
+ }
+ #endif
+ 
++#ifdef CONFIG_ARCH_HAS_SUBPAGE_FAULTS
++static inline size_t __mte_probe_user_range(const char __user *uaddr,
++					    size_t size)
++{
++	const char __user *end = uaddr + size;
++	int err = 0;
++	char val;
++
++	uaddr = PTR_ALIGN_DOWN(uaddr, MTE_GRANULE_SIZE);
++	while (uaddr < end) {
++		/*
++		 * A read is sufficient for MTE, the caller should have probed
++		 * for the pte write permission.
++		 */
++		__raw_get_user(val, uaddr, err);
++		if (err)
++			return end - uaddr;
++		uaddr += MTE_GRANULE_SIZE;
++	}
++	(void)val;
++
++	return 0;
++}
++
++static inline size_t probe_user_writable(const void __user *uaddr,
++					 size_t size)
++{
++	if (!system_supports_mte())
++		return 0;
++	return __mte_probe_user_range(uaddr, size);
++}
++#endif /* CONFIG_ARCH_HAS_SUBPAGE_FAULTS */
++
+ #endif /* __ASM_UACCESS_H */

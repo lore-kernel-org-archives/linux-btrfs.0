@@ -2,70 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76D46C433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Nov 2021 09:16:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4230BC4332F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Nov 2021 09:16:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351380AbhKYJTv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Nov 2021 04:19:51 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:42460 "EHLO
+        id S1345335AbhKYJTw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Nov 2021 04:19:52 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:42476 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345335AbhKYJR6 (ORCPT
+        with ESMTP id S1347563AbhKYJR6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 25 Nov 2021 04:17:58 -0500
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id C02792113D;
-        Thu, 25 Nov 2021 09:14:46 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 4E1C221B38;
+        Thu, 25 Nov 2021 09:14:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1637831686; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=IAaWzIihF8NDSE5aAWUGDJWKK89IWJhNrEyseuZUXvk=;
-        b=W5D7fCMS4xld/R4Gcl1Gjf1CeZElaUwcuXdsgQrLqGzoYJjbjFqjLAHp5ilkygu/+zkiPR
-        l5Ie3yXFFMzbKmMd+CVSrNbfq2/JcWoRH1S3+wSuD9AGQXfzRWVSL/zbovmFhUKwnqeqj9
-        TLSv2Z3wyqtOmS/bxVfuhWPO1Dd3S/Q=
+        t=1637831687; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=smjA6uES24/MmPGSfL7ngqCZHNcgOquxNzhWi67V9Gk=;
+        b=I4R2hefFpx6IMDrr12wcPmJwYhM2iDdatt67C8tJO+b5dBo1fGkqUgmWEgRLngFjLzDElP
+        Ww/ptd2yoefRwYmzS53JpqYNeimbC+hQIUSbDtowIcxCfLtbixhHrFxSc0Wr6IzseTC7Qv
+        H8WCJV+s1/T+4kgilfKGlWcEgzM4dIQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 86A0713F62;
-        Thu, 25 Nov 2021 09:14:46 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1E99113F62;
+        Thu, 25 Nov 2021 09:14:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id MblGHgZUn2EOHAAAMHmgww
-        (envelope-from <nborisov@suse.com>); Thu, 25 Nov 2021 09:14:46 +0000
+        id aLj4BAdUn2EOHAAAMHmgww
+        (envelope-from <nborisov@suse.com>); Thu, 25 Nov 2021 09:14:47 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH v3 0/3] Support adding a device during paused balance
-Date:   Thu, 25 Nov 2021 11:14:40 +0200
-Message-Id: <20211125091443.762092-1-nborisov@suse.com>
+Subject: [PATCH v3 2/3] btrfs: make device add compatible with paused balance in btrfs_exclop_start_try_lock
+Date:   Thu, 25 Nov 2021 11:14:42 +0200
+Message-Id: <20211125091443.762092-3-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20211125091443.762092-1-nborisov@suse.com>
+References: <20211125091443.762092-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+This is needed to enable device add to work in cases when a file system
+has been mounted with 'skip_balance' mount option.
 
-So here's v3 which takes care of the feedback received in the last round, namely:
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/ioctl.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
- - Introduced btrfs_exclop_balance which is used to switch the balance state,
- alongside ASSERTS
- - Removed unused variable in balance_kthread
-
-Nikolay Borisov (3):
-  btrfs: introduce BTRFS_EXCLOP_BALANCE_PAUSED exclusive state
-  btrfs: make device add compatible with paused balance in
-    btrfs_exclop_start_try_lock
-  btrfs: allow device add if balance is paused
-
- fs/btrfs/ctree.h   |  4 ++++
- fs/btrfs/ioctl.c   | 49 ++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/volumes.c | 10 ++++++++--
- 3 files changed, 57 insertions(+), 6 deletions(-)
-
---
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ffe33e853bfa..ab05319854f8 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -387,6 +387,7 @@ bool btrfs_exclop_start(struct btrfs_fs_info *fs_info,
+  *
+  * Compatibility:
+  * - the same type is already running
++ * - when trying to add a device and balance has been paused
+  * - not BTRFS_EXCLOP_NONE - this is intentionally incompatible and the caller
+  *   must check the condition first that would allow none -> @type
+  */
+@@ -394,7 +395,9 @@ bool btrfs_exclop_start_try_lock(struct btrfs_fs_info *fs_info,
+ 				 enum btrfs_exclusive_operation type)
+ {
+ 	spin_lock(&fs_info->super_lock);
+-	if (fs_info->exclusive_operation == type)
++	if (fs_info->exclusive_operation == type ||
++	    (fs_info->exclusive_operation == BTRFS_EXCLOP_BALANCE_PAUSED &&
++	     type == BTRFS_EXCLOP_DEV_ADD))
+ 		return true;
+ 
+ 	spin_unlock(&fs_info->super_lock);
+-- 
 2.25.1
 

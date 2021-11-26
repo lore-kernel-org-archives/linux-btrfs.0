@@ -2,203 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77B0EC433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Nov 2021 16:50:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8EB24C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Nov 2021 20:50:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240251AbhKZQx2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Nov 2021 11:53:28 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:49186 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1353431AbhKZQv1 (ORCPT
+        id S232892AbhKZUyI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Nov 2021 15:54:08 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34066 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S237767AbhKZUwF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Nov 2021 11:51:27 -0500
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 3C6CC2191E;
-        Fri, 26 Nov 2021 16:48:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1637945294;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=VTcMpDPSRmQyACR930Xaph00x8q1CdePBk4ZN6RyVv8=;
-        b=Sv9PnovJpW6QRIgpszRxPa103KxV6zX5p7Yn5w2rOaI2NsD28QoLuf4XLufPa8u/mQMj/b
-        QPJ3ebIQOHp+Xns/45aSyLPLCS5BpRcqkyKT85qmz28cnSXnVOqWSeuMCYoeaxyCzOrJjR
-        7wTKyMMprDG/dnrORzEMzw/JJBLQIBM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1637945294;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=VTcMpDPSRmQyACR930Xaph00x8q1CdePBk4ZN6RyVv8=;
-        b=LlC7BXE3OmmUvdSwE2k6Zupg7hEFoUgpiKyjLyx9E/pPjX3jyK8gaNywoI3k7k06u6Jysq
-        81VzjmatU37ip5CQ==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 031B9A3B9A;
-        Fri, 26 Nov 2021 16:48:14 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 3C76ADA735; Fri, 26 Nov 2021 17:48:05 +0100 (CET)
-Date:   Fri, 26 Nov 2021 17:48:05 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>
-Subject: Re: [PATCH 10/21] btrfs: move struct scrub_ctx to scrub.h
-Message-ID: <20211126164804.GC28560@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>
-References: <cover.1637745470.git.johannes.thumshirn@wdc.com>
- <c120d508b232845c70d4c5378c12b0152d7d700e.1637745470.git.johannes.thumshirn@wdc.com>
+        Fri, 26 Nov 2021 15:52:05 -0500
+Received: from mail-ed1-x531.google.com (mail-ed1-x531.google.com [IPv6:2a00:1450:4864:20::531])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AEFF6C06175C
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Nov 2021 12:48:34 -0800 (PST)
+Received: by mail-ed1-x531.google.com with SMTP id l25so43219122eda.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Nov 2021 12:48:34 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=pG4xlGmNMDFGr825O/R6uCl26bzbZQEprxIK7faKN9s=;
+        b=Prc8NPT9XbWakzgu+3afC265bExR0XcARtyU6sNY1ExCWqDKxnkj4VBHatykhOILZ7
+         FK0Lv7/uEKg68llA2ON8NtFhjO5dgu8tLVds31JaI+Qv9hevgPGr+e7b90nqb5ovvt9k
+         fNuqoElXqScEDrzJRHNWXfiA96HAlu+RdUPfI=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=pG4xlGmNMDFGr825O/R6uCl26bzbZQEprxIK7faKN9s=;
+        b=00SDe2NcCErE8Bca43yLnVOeGFW/K7nZGP4Ivgxgl8eODAFWFbG8HxduBl8PIlXr/j
+         kQIf+2BB6eGTvRApP4RQPzs5l6/yGbjWfxgkv6apxuXhe/6lGSgVv3gCpWB/3CgogyV/
+         P74qGceNcICiWI4Cgsh1agJSoFvvIYW6TX58c9bekFJ3ltvxLtrEx8cB+IPsqH4TR7Yo
+         d1adARMtnQkfPT4DmynP8A6bP3jHl0u0nXoWfuR6ayXOBiK+K/gm9JXgkg0hIKV2UNxj
+         0z4HQvYAPz4kUVz+44SCohkLGYHUTXRSbU834J3WUnzFNlvMKwqULm2OOoUWJbt0m9aF
+         3a7w==
+X-Gm-Message-State: AOAM531+Q6HMV6el//EOog1nk/ck/lQv6LBfK0tLNlyHKQswH9Aoiylf
+        Noj9d9wcOKUkGp3t/xlR3SMiFvkYk7xIjjIz
+X-Google-Smtp-Source: ABdhPJz76AujesVrHD0nDhxu1PS/ncLzLFvDfzOGzXGPHNIy3ZqSDP+yBDyFS22CT04ADoH1EV6VNw==
+X-Received: by 2002:a05:6402:4382:: with SMTP id o2mr50524193edc.143.1637959712722;
+        Fri, 26 Nov 2021 12:48:32 -0800 (PST)
+Received: from mail-wr1-f46.google.com (mail-wr1-f46.google.com. [209.85.221.46])
+        by smtp.gmail.com with ESMTPSA id t20sm4326968edv.81.2021.11.26.12.48.31
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 26 Nov 2021 12:48:31 -0800 (PST)
+Received: by mail-wr1-f46.google.com with SMTP id o13so21010410wrs.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Nov 2021 12:48:31 -0800 (PST)
+X-Received: by 2002:adf:9d88:: with SMTP id p8mr17098118wre.140.1637959711645;
+ Fri, 26 Nov 2021 12:48:31 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c120d508b232845c70d4c5378c12b0152d7d700e.1637745470.git.johannes.thumshirn@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <cover.1637940049.git.dsterba@suse.com>
+In-Reply-To: <cover.1637940049.git.dsterba@suse.com>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Fri, 26 Nov 2021 12:48:15 -0800
+X-Gmail-Original-Message-ID: <CAHk-=wia6jNRQDm51wNf2X2cNGeN+5Uz3DWQ2bgnGyVRK4LRJA@mail.gmail.com>
+Message-ID: <CAHk-=wia6jNRQDm51wNf2X2cNGeN+5Uz3DWQ2bgnGyVRK4LRJA@mail.gmail.com>
+Subject: Re: [GIT PULL] Btrfs fixes for 5.16-rc3
+To:     David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Nov 24, 2021 at 01:30:36AM -0800, Johannes Thumshirn wrote:
-> Move 'struct scrub_ctx' to the newly created scrub.h file.
-> 
-> This is a preparation step for moving zoned only code from scrub.c to
-> zoned.c.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
->  fs/btrfs/scrub.c | 44 +----------------------------------------
->  fs/btrfs/scrub.h | 51 ++++++++++++++++++++++++++++++++++++++++++++++++
->  2 files changed, 52 insertions(+), 43 deletions(-)
->  create mode 100644 fs/btrfs/scrub.h
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 70cf1f487748c..a2c42ff544701 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -21,6 +21,7 @@
->  #include "raid56.h"
->  #include "block-group.h"
->  #include "zoned.h"
-> +#include "scrub.h"
->  
->  /*
->   * This is only the first step towards a full-features scrub. It reads all
-> @@ -46,7 +47,6 @@ struct scrub_ctx;
->   */
->  #define SCRUB_PAGES_PER_RD_BIO	32	/* 128k per bio */
->  #define SCRUB_PAGES_PER_WR_BIO	32	/* 128k per bio */
-> -#define SCRUB_BIOS_PER_SCTX	64	/* 8MB per device in flight */
->  
->  /*
->   * the following value times PAGE_SIZE needs to be large enough to match the
-> @@ -151,48 +151,6 @@ struct scrub_parity {
->  	unsigned long		bitmap[];
->  };
->  
-> -struct scrub_ctx {
-> -	struct scrub_bio	*bios[SCRUB_BIOS_PER_SCTX];
-> -	struct btrfs_fs_info	*fs_info;
-> -	int			first_free;
-> -	int			curr;
-> -	atomic_t		bios_in_flight;
-> -	atomic_t		workers_pending;
-> -	spinlock_t		list_lock;
-> -	wait_queue_head_t	list_wait;
-> -	struct list_head	csum_list;
-> -	atomic_t		cancel_req;
-> -	int			readonly;
-> -	int			pages_per_rd_bio;
-> -
-> -	/* State of IO submission throttling affecting the associated device */
-> -	ktime_t			throttle_deadline;
-> -	u64			throttle_sent;
-> -
-> -	int			is_dev_replace;
-> -	u64			write_pointer;
-> -
-> -	struct scrub_bio        *wr_curr_bio;
-> -	struct mutex            wr_lock;
-> -	int                     pages_per_wr_bio; /* <= SCRUB_PAGES_PER_WR_BIO */
-> -	struct btrfs_device     *wr_tgtdev;
-> -	bool                    flush_all_writes;
-> -
-> -	/*
-> -	 * statistics
-> -	 */
-> -	struct btrfs_scrub_progress stat;
-> -	spinlock_t		stat_lock;
-> -
-> -	/*
-> -	 * Use a ref counter to avoid use-after-free issues. Scrub workers
-> -	 * decrement bios_in_flight and workers_pending and then do a wakeup
-> -	 * on the list_wait wait queue. We must ensure the main scrub task
-> -	 * doesn't free the scrub context before or while the workers are
-> -	 * doing the wakeup() call.
-> -	 */
-> -	refcount_t              refs;
-> -};
->  
->  struct scrub_warning {
->  	struct btrfs_path	*path;
-> diff --git a/fs/btrfs/scrub.h b/fs/btrfs/scrub.h
-> new file mode 100644
-> index 0000000000000..3eb8c8905c902
-> --- /dev/null
-> +++ b/fs/btrfs/scrub.h
-> @@ -0,0 +1,51 @@
-> +/* SPDX-License-Identifier: GPL-2.0 */
-> +
-> +#ifndef BTRFS_SCRUB_H
-> +#define BTRFS_SCRUB_H
-> +
-> +#define SCRUB_BIOS_PER_SCTX	64	/* 8MB per device in flight */
+On Fri, Nov 26, 2021 at 7:42 AM David Sterba <dsterba@suse.com> wrote:
+>
+> one more fix to the lzo code, a missing put_page causing memory leaks
+> when some error branches are taken.
+>
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.16-rc2-tag
 
-> +struct scrub_ctx {
-> +	struct scrub_bio	*bios[SCRUB_BIOS_PER_SCTX];
-> +	struct btrfs_fs_info	*fs_info;
-> +	int			first_free;
-> +	int			curr;
-> +	atomic_t		bios_in_flight;
-> +	atomic_t		workers_pending;
-> +	spinlock_t		list_lock;
-> +	wait_queue_head_t	list_wait;
-> +	struct list_head	csum_list;
-> +	atomic_t		cancel_req;
-> +	int			readonly;
-> +	int			pages_per_rd_bio;
-> +
-> +	/* State of IO submission throttling affecting the associated device */
-> +	ktime_t			throttle_deadline;
-> +	u64			throttle_sent;
-> +
-> +	int			is_dev_replace;
-> +	u64			write_pointer;
-> +
-> +	struct scrub_bio        *wr_curr_bio;
-> +	struct mutex            wr_lock;
-> +	int                     pages_per_wr_bio; /* <= SCRUB_PAGES_PER_WR_BIO */
-> +	struct btrfs_device     *wr_tgtdev;
-> +	bool                    flush_all_writes;
-> +
-> +	/*
-> +	 * statistics
-> +	 */
-> +	struct btrfs_scrub_progress stat;
-> +	spinlock_t		stat_lock;
-> +
-> +	/*
-> +	 * Use a ref counter to avoid use-after-free issues. Scrub workers
-> +	 * decrement bios_in_flight and workers_pending and then do a wakeup
-> +	 * on the list_wait wait queue. We must ensure the main scrub task
-> +	 * doesn't free the scrub context before or while the workers are
-> +	 * doing the wakeup() call.
-> +	 */
-> +	refcount_t              refs;
-> +};
+Hmm.
 
-Headers should be self contained and pull all includes or do forward
-definitions, the structure contains many types that need defining.
+pr-tracker-bot didn't react to this one, and it wasn't obvious why.
+
+Until I started looking closer. You claim:
+
+> for you to fetch changes up to 504d851ab360dc00e2163acef2e200ea69ac800a:
+>
+>   btrfs: fix the memory leak caused in lzo_compress_pages() (2021-11-26 14:32:40 +0100)
+
+but in fact it's commit daf87e953527, not as the pull request claims
+504d851ab360..
+
+And no, it's not the tag either, that was d0a295f521e2.
+
+The diffstat and the shortlog matched, so I had pulled it without
+noticing. But something went wrong in there in the pull request.
+
+               Linus

@@ -2,211 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 370DBC43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Nov 2021 11:20:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4FBDC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Nov 2021 12:35:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240164AbhKZLXW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Nov 2021 06:23:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50832 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230449AbhKZLVV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Nov 2021 06:21:21 -0500
-Received: from mail-qt1-x830.google.com (mail-qt1-x830.google.com [IPv6:2607:f8b0:4864:20::830])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C330C061A1C;
-        Fri, 26 Nov 2021 02:36:18 -0800 (PST)
-Received: by mail-qt1-x830.google.com with SMTP id n15so8629218qta.0;
-        Fri, 26 Nov 2021 02:36:18 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:reply-to:from:date:message-id
-         :subject:to:cc:content-transfer-encoding;
-        bh=qOmBd5sAFMW/ESv4nE3mMjgeYcilCBjK9OEfFwHt8kk=;
-        b=iqtSyHv9u+gm80IK3bhNTq/4s4Qd0XGnagZdv0QZk1VSvogSRQyTDKTEpRG2UlbTgb
-         0dG4NHZbaGfquUnyogOpw3NL7zbeKyIEiwWvvk8hph7bP2CWBsshG8Rw41VsMBEleZWC
-         lw5TeTn42BL9o++2syBuTklojO3litLvGxdEi/fdYpxlXtJ5OgdyTtj2Z2+IBXdWPO26
-         VmofZeJnFpsgw9Hl7YoG+1FjSOB3FbvWLYKprRgBHTZsy+r2o+YaToyEhsxj0bZprQIb
-         znRbqMUnaQ6NgJWQvE/Ov4YNcuWAq9uem1tCTtlCrw8tEQFGgosvwNRelWj0fIqTbFOJ
-         WC6Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:reply-to
-         :from:date:message-id:subject:to:cc:content-transfer-encoding;
-        bh=qOmBd5sAFMW/ESv4nE3mMjgeYcilCBjK9OEfFwHt8kk=;
-        b=OgOlY0tjKUheRNSF10xYvgbBS+x58Ya7oqhzPF6jYOheJOGlpkmfC7W3Q6T7mxLfqE
-         FiC3wrLgZSlVyop7XSQGisogTLCF9ZDBWhqOZJpTJCvetn+0hEQXoaI1MaXJdAIWVRlo
-         E1zkid2EbkcyUDxBphU7AZGGmponxaSWYPwDhHKSGdzWzFea1bkzJxIHleQnops/We1x
-         p+o4gsd5BizeTUxJkrXGcUQEP1EMEphLIZ+85MaDC3bQ4U8qdci2RtdsopLYwTnhPgLk
-         3b23l2I5rVuKeIzONfKnojIUM+Glbxbo1Vp/880hVch6EkPmmhQMETvhXkY1+R6z7fBs
-         Za0Q==
-X-Gm-Message-State: AOAM533hKfF1MJamCXZiejW9mmWThlO8fyYhuuY1yiYkX8/ILfvuI5Gx
-        j8Oqd4TmmCdO3+ACZ94+ReUmUPi02QFdkYAHkKA=
-X-Google-Smtp-Source: ABdhPJziCEHyqVwtF3ynWyhFAPnVMk5fHnZuKALJWa8d+LnpQpFO/aqBceS/q2rDTZ70hDYySj3TsAJFBnbXdjfk22g=
-X-Received: by 2002:ac8:5796:: with SMTP id v22mr22031235qta.304.1637922977475;
- Fri, 26 Nov 2021 02:36:17 -0800 (PST)
+        id S1377508AbhKZMie (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Nov 2021 07:38:34 -0500
+Received: from mout.gmx.net ([212.227.17.21]:35299 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S234618AbhKZMgb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Fri, 26 Nov 2021 07:36:31 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1637929988;
+        bh=D0W9oat8aTWLnbs0dnCYqXVNE5mKmOnXTYbD8CsfL24=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=C7/ioq5a9mu305GYBanD4gd0XBeNJZo1ELTlUbRe0cbQbtfW2QFd6bQ8nSguMuwGi
+         RjW4B0sNEyXSiln4ILPS8fuzLVn2/t68yD/rKyShB8Jd5wIFrjP5ggpIMXfvbGG/Yi
+         M77KSrHOEiS+qc/sAD3sx8NSMtOZynRNUb4MFMaE=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mplbx-1mGRva14FJ-00qBEQ; Fri, 26
+ Nov 2021 13:33:08 +0100
+Message-ID: <c44de3dc-b7a6-5872-2fe5-05488e93db05@gmx.com>
+Date:   Fri, 26 Nov 2021 20:33:02 +0800
 MIME-Version: 1.0
-References: <20211125060529.53289-1-wqu@suse.com>
-In-Reply-To: <20211125060529.53289-1-wqu@suse.com>
-Reply-To: fdmanana@gmail.com
-From:   Filipe Manana <fdmanana@gmail.com>
-Date:   Fri, 26 Nov 2021 10:35:41 +0000
-Message-ID: <CAL3q7H6__G3D9x0_5VPpoypAst-O=v_ZO_3yrB_T5UsNBCTegA@mail.gmail.com>
-Subject: Re: [PATCH v3] fstests: btrfs/049: add regression test for
- compress-force mount options
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     fstests <fstests@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.3.1
+Subject: Re: Any bio_clone_slow() implementation which doesn't share
+ bi_io_vec?
+Content-Language: en-US
+To:     Christoph Hellwig <hch@infradead.org>
+Cc:     Linux FS Devel <linux-fsdevel@vger.kernel.org>,
+        dm-devel@redhat.com,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <5d8351f1-1b09-bff0-02f2-a417c1669607@gmx.com>
+ <YZybvlheyLGAadFF@infradead.org>
+ <79d38fc2-cd2f-2980-2c4e-408078ce6079@gmx.com>
+ <YZyiuFxAeKE/WMrR@infradead.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <YZyiuFxAeKE/WMrR@infradead.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:091WRRDrxH/2yMPKg6Uo+uTz4mJSDtRMoLxqluII1/bR8fmw6ug
+ ey6sTGGxndUgaxgmXx45ESq1eN7eMHvyWiPdr4O215tz7ZJjyhOM2tixFoPk90t9tT4/GYD
+ MuNyyDqaroLrSjDE2efwqgvc7Ye9N6e/D5h4C9fZ8lVzQ1pX8GoK3FLRg/ODCUML9kgHtOU
+ uzDMRwtCdaDVb4dzAOFvg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:ytDR6jOTwN8=:hcjBD9ySYG7BNMMLIZgzQ7
+ V9aBPZKqgJ9mvYMUce8XKUZjGcU2+Scc2nVPqVw0efAhDgi6y/7tDDnp/aWp4zitcECBKaHyg
+ 5wGZSq8hD3Ap7pYxFRiJbMHRToWGUP0xwGdQKkkSmm19ZzE2pZV9F/59CEjM4HU70XcyshRlh
+ v5ksP9ZRz7kG93x6c1DVqE7TfWULqk6r6moCXbhzW34TYA8GfvjpOWmfGxS07SQc6FAp6mE2I
+ q9YS8q0h/M2z/J4GLqU3VR/SD9TtX8BemsqfHNr0ldRsuClHL7pJnrA+tYQu6mdYmISWnb3qM
+ hELKRlMj8GEWcP56ku4/055AHvMIpIctogou84v08qE+xaXxhl7SpbjTQV56EzMC8J/o9H0Hv
+ XKo+111ElgmINQo3aEdDE7b/w4mP/CmWQK3gDpT7u7/oHH/h1TZcrVh9DC4zzYf2XbzqZPDgd
+ k5XDKR+tHSht88KHBBqNrh+jJrkAy4q6Ry9Cz5QzteKms8G901nfQI4S2vewJCLOCNbtxFSqV
+ MK+BNZlojbmFVsype/dibNmVL71ND8ErkNY2hcR5EMpv+af+IeNu3at5H7UBgw6XeBwn40lkM
+ vZt+cw8f4tpr08GFBqWHlzbsmR/uh6/OQ7/LVXO148ba9dCZw+FN+wHirl9CKOH9KDXPLIfFR
+ fSP27aU9JnhtzA956rz1ZtKIZ1hueSSfc/drYU3KVZSvMOhBNP17P4LXJFkT18zpodXY0Y7M9
+ Mtvk0re8y7j4xxs71Dzeo/+5OjbocLSjoJmvsyzOB+stffftD/n9Ze+Nos5OmehgxSRhspmjy
+ LN9Ig+wL4xeIZPOveu1Op4UZcyk2pfR1R+iQJPYiyhE2l+3NgfTXCjO5tGpDuzOucDAkTb4gU
+ tBi95qm4VLy71x0vsV1EvT7Av48ITBtgWAoAExGnVPFoOhX1hBn0YRBnqpEOYl10WumttLbjU
+ aVf5Wblms5vXd27mr8QQdHQ4QLkpF3Zt3RpxZ8trD5mr6amHWNQNg7wPtrR0U4+OQVOR833/m
+ chem1+6prG0AfbCs6qgZ9bgZYHWXHkZq8F0U/61xlad3oxsrCKC7ySz2cVeLgIwYNRgUvwNxB
+ iizgrvKDlYnoWo=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Nov 26, 2021 at 10:26 AM Qu Wenruo <wqu@suse.com> wrote:
+
+
+On 2021/11/23 16:13, Christoph Hellwig wrote:
+> On Tue, Nov 23, 2021 at 04:10:35PM +0800, Qu Wenruo wrote:
+>> Without bio_chain() sounds pretty good, as we can still utilize
+>> bi_end_io and bi_private.
+>>
+>> But this also means, we're now responsible not to release the source bi=
+o
+>> since it has the real bi_io_vec.
 >
-> Since kernel commit d4088803f511 ("btrfs: subpage: make lzo_compress_page=
-s()
-> compatible"), lzo compression no longer respects the max compressed page
-> limit, and can cause kernel crash.
->
-> The upstream fix is 6f019c0e0193 ("btrfs: fix a out-of-bound access in
-> copy_compressed_data_to_page()").
->
-> This patch will add such regression test for all possible compress-force
-> mount options, including lzo, zstd and zlib.
->
-> And since we're here, also make sure the content of the file matches
-> after a mount cycle.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> v2:
-> - Also test zlib and zstd
-> - Add file content verification check
-> v3:
-> - Use $tmp.good as a known good file source
-> - Also make sure we didn't get short read for the good copy
-> ---
->  tests/btrfs/049     | 67 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/049.out |  6 ++++
->  2 files changed, 73 insertions(+)
->  create mode 100755 tests/btrfs/049
->
-> diff --git a/tests/btrfs/049 b/tests/btrfs/049
-> new file mode 100755
-> index 00000000..c1f35dc9
-> --- /dev/null
-> +++ b/tests/btrfs/049
-> @@ -0,0 +1,67 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2021 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test 049
-> +#
-> +# Test if btrfs will crash when using compress-force mount option agains=
-t
-> +# incompressible data
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick compress dangerous
-> +
-> +# Override the default cleanup function.
-> +_cleanup()
-> +{
-> +       cd /
-> +       rm -r -f $tmp.*
-> +}
-> +
-> +# Import common functions.
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +
-> +# Modify as appropriate.
-> +_supported_fs btrfs
-> +_require_scratch
-> +
-> +pagesize=3D$(get_page_size)
-> +
-> +# Read the content from urandom to a known safe location
-> +$XFS_IO_PROG -f -c "pwrite -i /dev/urandom 0 $pagesize" "$tmp.good" > /d=
-ev/null
-> +
-> +# Make sure we didn't get short read
-
-s/read/write/
-
-> +if [ $(_get_filesize "$tmp.good") !=3D "$pagesize" ]; then
-> +       _fail "Got a short read from /dev/urandom"
-> +fi
-> +
-> +workload()
-> +{
-> +       local compression=3D$1
-> +
-> +       echo "=3D=3D=3D Testing compress-force=3D$compression =3D=3D=3D"
-> +       _scratch_mkfs -s "$pagesize">> $seqres.full
-> +       _scratch_mount -o compress-force=3D"$compression"
-> +       cp "$tmp.good" "$SCRATCH_MNT/$compression"
-> +
-> +       # When unpatched, compress-force=3Dlzo would crash at data writeb=
-ack
-> +       _scratch_cycle_mount
-> +
-> +       # Make sure the content matches
-> +       if [ "$(_md5_checksum $tmp.good)" !=3D \
-> +            "$(_md5_checksum $SCRATCH_MNT/$compression)" ]; then
-> +               _fail "Content of '$SCRATCH_MNT/file' mismatch with known=
- good copy"
-
-We could just 'echo' instead of '_fail' and let the test continue with
-the remaining compression algorithms.
-That's usually the approach preferred for fstests, _fail is for cases
-where the test can't proceed and must stop immediately.
-
-Anyway, those are two minor things that maybe Eryu can fixup when he
-picks the patch.
-So I won't ask you to send yet another version.
-
-Thanks!
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-
-> +       else
-> +               echo "OK"
-> +       fi
-> +       _scratch_unmount
-> +}
-> +
-> +workload lzo
-> +workload zstd
-> +workload zlib
-> +
-> +# success, all done
-> +status=3D0
-> +exit
-> diff --git a/tests/btrfs/049.out b/tests/btrfs/049.out
-> index cb0061b3..41bffeaa 100644
-> --- a/tests/btrfs/049.out
-> +++ b/tests/btrfs/049.out
-> @@ -1 +1,7 @@
->  QA output created by 049
-> +=3D=3D=3D Testing compress-force=3Dlzo =3D=3D=3D
-> +OK
-> +=3D=3D=3D Testing compress-force=3Dzstd =3D=3D=3D
-> +OK
-> +=3D=3D=3D Testing compress-force=3Dzlib =3D=3D=3D
-> +OK
-> --
-> 2.34.0
+> Just call bio_inc_remaining before submitting the cloned bio, and then
+> call bio_endio on the root bio every time a clone completes.
 >
 
+Does this also mean, we need to save a bi_iter before bio submission, so
+that at endio time, we can iterate only the split part of the bio?
 
---=20
-Filipe David Manana,
+Or we have to go back to bio_chain() method, and rely on the parent bio
+to iterate all bvecs...
 
-=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
- right.=E2=80=9D
+Thanks,
+Qu

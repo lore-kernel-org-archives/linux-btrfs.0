@@ -2,140 +2,153 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B65DC433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Nov 2021 22:44:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E7AAC43217
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Nov 2021 02:35:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239771AbhKYWrT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Nov 2021 17:47:19 -0500
-Received: from mail.kernel.org ([198.145.29.99]:54086 "EHLO mail.kernel.org"
+        id S1357855AbhKZCiR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Nov 2021 21:38:17 -0500
+Received: from mail.kernel.org ([198.145.29.99]:47490 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S240668AbhKYWpS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Nov 2021 17:45:18 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 796B761131;
-        Thu, 25 Nov 2021 22:42:04 +0000 (UTC)
-Date:   Thu, 25 Nov 2021 22:42:01 +0000
-From:   Catalin Marinas <catalin.marinas@arm.com>
-To:     Andreas Gruenbacher <agruenba@redhat.com>
-Cc:     Matthew Wilcox <willy@infradead.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Josef Bacik <josef@toxicpanda.com>,
+        id S1357813AbhKZCgK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 25 Nov 2021 21:36:10 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id D4F2D611C8;
+        Fri, 26 Nov 2021 02:32:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1637893958;
+        bh=lCCgE0QpNQ7GTTjH/y/6faayc3y0nAqZMO6auAqwJPg=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=tS97Juu8QXC8E43Rs9CiY+o6ak2s8+E99JLLTrGg3rKPIavkPRoder91aJUxPVbcF
+         3X3P+sDQjq7NjHrqo4//PwlUMyKEv2IkKOK5UsBertB8rebTQBoAGlbCNIiPK4HvNa
+         oTInabg2qbJcsw1U9w2eQIrgxo+2dhXMJKGH/W5RWCzU0QMidFU6n7jiH5Sfhltsgr
+         9hwCkV+60b2NOGLDp7L2hiqABTPOznI9qYhw7T5fWYvu+gr+CpN39afp6tZ3fYsE+3
+         YeKpsdB3TMvHC/I3SiawKJsK5O9obhFtwjtKl1byS2qmH69ffZvO8wOtPLF06m8Usr
+         EJ4uUQjUcla8Q==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Wang Yugui <wangyugui@e16-tech.com>,
+        Filipe Manana <fdmanana@gmail.com>,
         David Sterba <dsterba@suse.com>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Will Deacon <will@kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/3] btrfs: Avoid live-lock in search_ioctl() on hardware
- with sub-page faults
-Message-ID: <YaAROdPCqNzSKCjh@arm.com>
-References: <20211124192024.2408218-1-catalin.marinas@arm.com>
- <20211124192024.2408218-4-catalin.marinas@arm.com>
- <YZ6arlsi2L3LVbFO@casper.infradead.org>
- <YZ6idVy3zqQC4atv@arm.com>
- <CAHc6FU4-P9sVexcNt5CDQxROtMAo=kH8hEu==AAhZ_+Zv53=Ag@mail.gmail.com>
+        Sasha Levin <sashal@kernel.org>, clm@fb.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.15 20/39] btrfs: check-integrity: fix a warning on write caching disabled disk
+Date:   Thu, 25 Nov 2021 21:31:37 -0500
+Message-Id: <20211126023156.441292-20-sashal@kernel.org>
+X-Mailer: git-send-email 2.33.0
+In-Reply-To: <20211126023156.441292-1-sashal@kernel.org>
+References: <20211126023156.441292-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHc6FU4-P9sVexcNt5CDQxROtMAo=kH8hEu==AAhZ_+Zv53=Ag@mail.gmail.com>
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Nov 25, 2021 at 11:25:54PM +0100, Andreas Gruenbacher wrote:
-> On Wed, Nov 24, 2021 at 9:37 PM Catalin Marinas <catalin.marinas@arm.com> wrote:
-> > On Wed, Nov 24, 2021 at 08:03:58PM +0000, Matthew Wilcox wrote:
-> > > On Wed, Nov 24, 2021 at 07:20:24PM +0000, Catalin Marinas wrote:
-> > > > +++ b/fs/btrfs/ioctl.c
-> > > > @@ -2223,7 +2223,8 @@ static noinline int search_ioctl(struct inode *inode,
-> > > >
-> > > >     while (1) {
-> > > >             ret = -EFAULT;
-> > > > -           if (fault_in_writeable(ubuf + sk_offset, *buf_size - sk_offset))
-> > > > +           if (fault_in_exact_writeable(ubuf + sk_offset,
-> > > > +                                        *buf_size - sk_offset))
-> > > >                     break;
-> > > >
-> > > >             ret = btrfs_search_forward(root, &key, path, sk->min_transid);
-> > >
-> > > Couldn't we avoid all of this nastiness by doing ...
-> >
-> > I had a similar attempt initially but I concluded that it doesn't work:
-> >
-> > https://lore.kernel.org/r/YS40qqmXL7CMFLGq@arm.com
-> >
-> > > @@ -2121,10 +2121,9 @@ static noinline int copy_to_sk(struct btrfs_path *path,
-> > >                  * problem. Otherwise we'll fault and then copy the buffer in
-> > >                  * properly this next time through
-> > >                  */
-> > > -               if (copy_to_user_nofault(ubuf + *sk_offset, &sh, sizeof(sh))) {
-> > > -                       ret = 0;
-> > > +               ret = __copy_to_user_nofault(ubuf + *sk_offset, &sh, sizeof(sh));
-> > > +               if (ret)
-> >
-> > There is no requirement for the arch implementation to be exact and copy
-> > the maximum number of bytes possible. It can fail early while there are
-> > still some bytes left that would not fault. The only requirement is that
-> > if it is restarted from where it faulted, it makes some progress (on
-> > arm64 there is one extra byte).
-> >
-> > >                         goto out;
-> > > -               }
-> > >
-> > >                 *sk_offset += sizeof(sh);
-> > > @@ -2196,6 +2195,7 @@ static noinline int search_ioctl(struct inode *inode,
-> > >         int ret;
-> > >         int num_found = 0;
-> > >         unsigned long sk_offset = 0;
-> > > +       unsigned long next_offset = 0;
-> > >
-> > >         if (*buf_size < sizeof(struct btrfs_ioctl_search_header)) {
-> > >                 *buf_size = sizeof(struct btrfs_ioctl_search_header);
-> > > @@ -2223,7 +2223,8 @@ static noinline int search_ioctl(struct inode *inode,
-> > >
-> > >         while (1) {
-> > >                 ret = -EFAULT;
-> > > -               if (fault_in_writeable(ubuf + sk_offset, *buf_size - sk_offset))
-> > > +               if (fault_in_writeable(ubuf + sk_offset + next_offset,
-> > > +                                       *buf_size - sk_offset - next_offset))
-> > >                         break;
-> > >
-> > >                 ret = btrfs_search_forward(root, &key, path, sk->min_transid);
-> > > @@ -2235,11 +2236,12 @@ static noinline int search_ioctl(struct inode *inode,
-> > >                 ret = copy_to_sk(path, &key, sk, buf_size, ubuf,
-> > >                                  &sk_offset, &num_found);
-> > >                 btrfs_release_path(path);
-> > > -               if (ret)
-> > > +               if (ret > 0)
-> > > +                       next_offset = ret;
-> >
-> > So after this point, ubuf+sk_offset+next_offset is writeable by
-> > fault_in_writable(). If copy_to_user() was attempted on
-> > ubuf+sk_offset+next_offset, all would be fine, but copy_to_sk() restarts
-> > the copy from ubuf+sk_offset, so it returns exacting the same ret as in
-> > the previous iteration.
-> 
-> So this means that after a short copy_to_user_nofault(), copy_to_sk()
-> needs to figure out the actual point of failure. We'll have the same
-> problem elsewhere, so this should probably be a generic helper. The
-> alignment hacks are arch specific, so maybe we can have a generic
-> version that assumes no alignment restrictions, with arch-specific
-> overrides.
-> 
-> Once we know the exact point of failure, a
-> fault_in_writeable(point_of_failure, 1) in search_ioctl() will tell if
-> the failure is pertinent. Once we know that the failure isn't
-> pertinent, we're safe to retry the original fault_in_writeable().
+From: Wang Yugui <wangyugui@e16-tech.com>
 
-The "exact point of failure" is problematic since copy_to_user() may
-fail a few bytes before the actual fault point (e.g. by doing an
-unaligned store). As per Linus' reply, we can work around this by doing
-a sub-page fault_in_writable(point_of_failure, align) where 'align'
-should cover the copy_to_user() impreciseness.
+[ Upstream commit a91cf0ffbc244792e0b3ecf7d0fddb2f344b461f ]
 
-(of course, fault_in_writable() takes the full size argument but behind
-the scene it probes the 'align' prefix at sub-page fault granularity)
+When a disk has write caching disabled, we skip submission of a bio with
+flush and sync requests before writing the superblock, since it's not
+needed. However when the integrity checker is enabled, this results in
+reports that there are metadata blocks referred by a superblock that
+were not properly flushed. So don't skip the bio submission only when
+the integrity checker is enabled for the sake of simplicity, since this
+is a debug tool and not meant for use in non-debug builds.
 
+fstests/btrfs/220 trigger a check-integrity warning like the following
+when CONFIG_BTRFS_FS_CHECK_INTEGRITY=y and the disk with WCE=0.
+
+  btrfs: attempt to write superblock which references block M @5242880 (sdb2/5242880/0) which is not flushed out of disk's write cache (block flush_gen=1, dev->flush_gen=0)!
+  ------------[ cut here ]------------
+  WARNING: CPU: 28 PID: 843680 at fs/btrfs/check-integrity.c:2196 btrfsic_process_written_superblock+0x22a/0x2a0 [btrfs]
+  CPU: 28 PID: 843680 Comm: umount Not tainted 5.15.0-0.rc5.39.el8.x86_64 #1
+  Hardware name: Dell Inc. Precision T7610/0NK70N, BIOS A18 09/11/2019
+  RIP: 0010:btrfsic_process_written_superblock+0x22a/0x2a0 [btrfs]
+  RSP: 0018:ffffb642afb47940 EFLAGS: 00010246
+  RAX: 0000000000000000 RBX: 0000000000000002 RCX: 0000000000000000
+  RDX: 00000000ffffffff RSI: ffff8b722fc97d00 RDI: ffff8b722fc97d00
+  RBP: ffff8b5601c00000 R08: 0000000000000000 R09: c0000000ffff7fff
+  R10: 0000000000000001 R11: ffffb642afb476f8 R12: ffffffffffffffff
+  R13: ffffb642afb47974 R14: ffff8b5499254c00 R15: 0000000000000003
+  FS:  00007f00a06d4080(0000) GS:ffff8b722fc80000(0000) knlGS:0000000000000000
+  CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  CR2: 00007fff5cff5ff0 CR3: 00000001c0c2a006 CR4: 00000000001706e0
+  Call Trace:
+   btrfsic_process_written_block+0x2f7/0x850 [btrfs]
+   __btrfsic_submit_bio.part.19+0x310/0x330 [btrfs]
+   ? bio_associate_blkg_from_css+0xa4/0x2c0
+   btrfsic_submit_bio+0x18/0x30 [btrfs]
+   write_dev_supers+0x81/0x2a0 [btrfs]
+   ? find_get_pages_range_tag+0x219/0x280
+   ? pagevec_lookup_range_tag+0x24/0x30
+   ? __filemap_fdatawait_range+0x6d/0xf0
+   ? __raw_callee_save___native_queued_spin_unlock+0x11/0x1e
+   ? find_first_extent_bit+0x9b/0x160 [btrfs]
+   ? __raw_callee_save___native_queued_spin_unlock+0x11/0x1e
+   write_all_supers+0x1b3/0xa70 [btrfs]
+   ? __raw_callee_save___native_queued_spin_unlock+0x11/0x1e
+   btrfs_commit_transaction+0x59d/0xac0 [btrfs]
+   close_ctree+0x11d/0x339 [btrfs]
+   generic_shutdown_super+0x71/0x110
+   kill_anon_super+0x14/0x30
+   btrfs_kill_super+0x12/0x20 [btrfs]
+   deactivate_locked_super+0x31/0x70
+   cleanup_mnt+0xb8/0x140
+   task_work_run+0x6d/0xb0
+   exit_to_user_mode_prepare+0x1f0/0x200
+   syscall_exit_to_user_mode+0x12/0x30
+   do_syscall_64+0x46/0x80
+   entry_SYSCALL_64_after_hwframe+0x44/0xae
+  RIP: 0033:0x7f009f711dfb
+  RSP: 002b:00007fff5cff7928 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
+  RAX: 0000000000000000 RBX: 000055b68c6c9970 RCX: 00007f009f711dfb
+  RDX: 0000000000000001 RSI: 0000000000000000 RDI: 000055b68c6c9b50
+  RBP: 0000000000000000 R08: 000055b68c6ca900 R09: 00007f009f795580
+  R10: 0000000000000000 R11: 0000000000000246 R12: 000055b68c6c9b50
+  R13: 00007f00a04bf184 R14: 0000000000000000 R15: 00000000ffffffff
+  ---[ end trace 2c4b82abcef9eec4 ]---
+  S-65536(sdb2/65536/1)
+   -->
+  M-1064960(sdb2/1064960/1)
+
+Reviewed-by: Filipe Manana <fdmanana@gmail.com>
+Signed-off-by: Wang Yugui <wangyugui@e16-tech.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/disk-io.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e00c4c1f622f3..c37239c8ac0c6 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3970,11 +3970,23 @@ static void btrfs_end_empty_barrier(struct bio *bio)
+  */
+ static void write_dev_flush(struct btrfs_device *device)
+ {
+-	struct request_queue *q = bdev_get_queue(device->bdev);
+ 	struct bio *bio = device->flush_bio;
+ 
++#ifndef CONFIG_BTRFS_FS_CHECK_INTEGRITY
++	/*
++	 * When a disk has write caching disabled, we skip submission of a bio
++	 * with flush and sync requests before writing the superblock, since
++	 * it's not needed. However when the integrity checker is enabled, this
++	 * results in reports that there are metadata blocks referred by a
++	 * superblock that were not properly flushed. So don't skip the bio
++	 * submission only when the integrity checker is enabled for the sake
++	 * of simplicity, since this is a debug tool and not meant for use in
++	 * non-debug builds.
++	 */
++	struct request_queue *q = bdev_get_queue(device->bdev);
+ 	if (!test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+ 		return;
++#endif
+ 
+ 	bio_reset(bio);
+ 	bio->bi_end_io = btrfs_end_empty_barrier;
 -- 
-Catalin
+2.33.0
+

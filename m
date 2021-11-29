@@ -2,80 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FC71C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 19:35:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0913C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 19:50:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350545AbhK2Ti2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Nov 2021 14:38:28 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:50152 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235801AbhK2Tg0 (ORCPT
+        id S1379957AbhK2Txm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Nov 2021 14:53:42 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52592 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1352011AbhK2Tvl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Nov 2021 14:36:26 -0500
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 41902212FE;
-        Mon, 29 Nov 2021 19:33:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1638214387;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=pqJqB4aG/B4QaE0V/N2msVAs/z57H6qb6kEwXl2hejQ=;
-        b=baDTsaA2LE5KePEuPMotCVMCZkrDxZhnVDEjbd5VmNdC9FC9ZQgZeqbLM7htlnbIClHoM/
-        eFGeNRg8nPwR6Cqs11tN2JjfeH7atk0E4/rJvvaHdiFgurCialzOg7Iy3yUPcnTSIrlWPA
-        jSptjGMkOz9WT2r+WpIxx87fhe2g9eA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1638214387;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=pqJqB4aG/B4QaE0V/N2msVAs/z57H6qb6kEwXl2hejQ=;
-        b=P3uUNNxq65aIbYKfGEOu4K820rFBDrSDvXsHpRGHBB76QYC7ATSeMdeoNv15GjHmwEAbSO
-        Y+W98lIJ7JBm2iBw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 383C4A3B81;
-        Mon, 29 Nov 2021 19:33:07 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id C3D69DA735; Mon, 29 Nov 2021 20:32:56 +0100 (CET)
-Date:   Mon, 29 Nov 2021 20:32:56 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Eryu Guan <guan@eryu.me>
-Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] fstests: generic/260: don't fail for certain fstrim ops
- on btrfs
-Message-ID: <20211129193256.GH28560@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Eryu Guan <guan@eryu.me>,
-        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, kernel-team@fb.com
-References: <175b1ef92bbd2a48e2efb80d0064ca91aab1402e.1637618880.git.josef@toxicpanda.com>
- <YaOeFrS/wX43Qw5c@desktop>
+        Mon, 29 Nov 2021 14:51:41 -0500
+Received: from zaphod.cobb.me.uk (zaphod.cobb.me.uk [IPv6:2001:41c8:51:983::131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4A32DC08EA76
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 08:13:07 -0800 (PST)
+Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
+        id DA8CD9B8C5; Mon, 29 Nov 2021 16:13:02 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1638202382;
+        bh=dcQ2R7drXZzKoOCmocqrx+yHr5lMWJCYDcJdYAW87eM=;
+        h=From:To:Cc:References:Subject:Date:In-Reply-To:From;
+        b=ffap8ljnJSd/RI2TMNiRoA7D02GKBz8WD3kiJovHrfYgLvEIwHNFGATdLdfyGa3HA
+         I4z3QRRPgbcixs4BBDLUXXI7m5GU42K2UJT+pc2X7CSJCsbG5p2+GEAcoPT+YlqgB7
+         NTuPg1zfCcLU2CeMEmPSBp/fgtde84Nq1fc17hmp8LjRWfNZwMSNbi546kVlqzIe83
+         0+NZi+QaG+muBa94qnG2PwvB/q133o+1V61QxTGD9qD947ay5K2SYEdKOBwBno0k2r
+         /EMDsoMFtU1faZhEyG3EF1uzWDDWkp9InWh9mZZp3lmS0rNhZQDZNJFWIUI4GH5wUI
+         u+VEjSEQ0dTmg==
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 245A79B871;
+        Mon, 29 Nov 2021 16:12:04 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1638202324;
+        bh=dcQ2R7drXZzKoOCmocqrx+yHr5lMWJCYDcJdYAW87eM=;
+        h=From:To:Cc:References:Subject:Date:In-Reply-To:From;
+        b=FJ2BAhV8IF25syfqJvpEERc8KNXKT78Ee8AIPr6fX80QTy81iv3DiI+lvngu8k2B5
+         vq3pTW2DNmEA3mCDLNU2DRQzXsm+1gzF5mk4mfqObf2rZXAd15mKm8uRZhGifpw4Vw
+         cbIuD53EK3853ucqo3cc7nDwTH9ufbRWKnGda8da+ESwy/a0VZy3eZ6CeHBUnA2QiT
+         t4b4Vo1DSBnquRJucxV+b9SjUKWFlOqm71rqUeiFS+U4xlqOEPoTLugMs45VgZY5yz
+         kwxDOrMFIwMy+49bkyIiTlFhfjaB+Ad9IKlFoEddzGP3rxoDJqL7ktXZqLxHuivh+F
+         XNofbocrIHPzg==
+Received: from [192.168.0.202] (ryzen.home.cobb.me.uk [192.168.0.202])
+        by black.home.cobb.me.uk (Postfix) with ESMTP id DF3562C928B;
+        Mon, 29 Nov 2021 16:12:03 +0000 (GMT)
+From:   Graham Cobb <g.btrfs@cobb.uk.net>
+To:     Borden <borden_c@tutanota.com>, Phillip Susi <phill@thesusis.net>
+Cc:     linux-btrfs@vger.kernel.org
+References: <MpesPIt--3-2@tutanota.com> <87r1azashl.fsf@vps.thesusis.net>
+ <MpgNwtq--3-2@tutanota.com>
+Subject: Re: Connection lost during BTRFS move + resize
+Message-ID: <75c33ef6-af1a-43cc-6732-ce4b298a7337@cobb.uk.net>
+Date:   Mon, 29 Nov 2021 16:12:03 +0000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <YaOeFrS/wX43Qw5c@desktop>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <MpgNwtq--3-2@tutanota.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sun, Nov 28, 2021 at 11:19:50PM +0800, Eryu Guan wrote:
-> On Mon, Nov 22, 2021 at 05:08:10PM -0500, Josef Bacik wrote:
-> > We have always failed generic/260, because it tests to see if the file
-> > system will reject a trim range that is above the reported fs size.
-> > However for btrfs we will happily remap logical byte offsets within the
-> > file system, so you can end up with bye offsets past the end of the
-> > reported end of the file system.  Thus we do not fail these weird
-> > ranges.  We also don't have the concept of allocation groups, so the
-> > other test that tries to catch overflow doesn't apply to us either.  Fix
-> > this by simply using an offset that will fail (once a related kernel
-> > path is applied) for btrfs.  This will allow us to test the different
-> > overflow cases that do apply to btrfs, and not muddy up test results by
-> > giving us a false negative for the cases that do not apply to btrfs.
-> > 
-> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+On 29/11/2021 15:50, Borden wrote:
+> 29 Nov 2021, 10:26 by phill@thesusis.net:
+>> The only tool I know of that can do this is gparted, so I assume you are
+>> using that.  In this case, it has to umount the filesystem and manually
+>> copy data from the old start of the partition to the new start.  Being
+>> interrupted in the middle leaves part of the filesystem in the wrong
+>> place ( and which parts is unknowable ), and so it is toast.  This is
+>> one area where LVM has a significant advantage as its moves are
+>> interruption safe and automatically resumed on the next activation of
+>> the volume.
+>>
+> This is the answer that I anticipated, and it's good to know now so I don't destroy data that I _cannot_ afford to lose later. So thank you.
 > 
-> I'd like an ACK from btrfs folks as well.
+> For my own education/curiosity/intellectual banter: ddrescue, badblocks, rsync and other utilities have log files that track progress and allow it to resume if it's interrupted. Since resize operations work in the linear process you described, how hard would it be, theoretically, to implement a "needle position" in a move operation to allow a move to pick up where it left off?
+> 
+> Obviously, it wouldn't be 100% perfect, but if a recovery utility could look at the disk and say "partition starts here, skip a bit somewhere in the middle, continue here, stop there," surely that would be more efficient than trying to recover files with a low-level utility?
+> 
 
-Ack.
+I can't comment on that, and I don't know how the utility you were using
+works, but if it was copying blocks from higher disk addresses to lower
+ones, starting at the bottom, it is *possible* that it hadn't got beyond
+the first 1TB before it failed and the original filesystem is still
+untouched.
+
+Did you try just resetting the original partition parameters manually
+(forcing them using something like GNU parted's mkpart - not a resize
+operation) to see whether the original filesystem could be mounted? It's
+just a long shot, of course.
+
+Graham

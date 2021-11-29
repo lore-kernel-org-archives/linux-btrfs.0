@@ -2,83 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE1A6C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 15:46:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C123C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 15:52:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238205AbhK2PtW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Nov 2021 10:49:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55250 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245276AbhK2PrV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Nov 2021 10:47:21 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0D99C061A13;
-        Mon, 29 Nov 2021 05:52:19 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 27A676152F;
-        Mon, 29 Nov 2021 13:52:19 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 71BD1C004E1;
-        Mon, 29 Nov 2021 13:52:16 +0000 (UTC)
-Date:   Mon, 29 Nov 2021 13:52:12 +0000
-From:   Catalin Marinas <catalin.marinas@arm.com>
-To:     Andreas Gruenbacher <agruenba@redhat.com>
-Cc:     Matthew Wilcox <willy@infradead.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Will Deacon <will@kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/3] btrfs: Avoid live-lock in search_ioctl() on hardware
- with sub-page faults
-Message-ID: <YaTbDJS5MtvIm9aS@arm.com>
-References: <CAHc6FU53gdXR4VjSQJUtUigVkgDY6yfRkNBYuBj4sv3eT=MBSQ@mail.gmail.com>
- <YaAROdPCqNzSKCjh@arm.com>
- <20211124192024.2408218-1-catalin.marinas@arm.com>
- <20211124192024.2408218-4-catalin.marinas@arm.com>
- <YZ6arlsi2L3LVbFO@casper.infradead.org>
- <YZ6idVy3zqQC4atv@arm.com>
- <CAHc6FU4-P9sVexcNt5CDQxROtMAo=kH8hEu==AAhZ_+Zv53=Ag@mail.gmail.com>
- <20211127123958.588350-1-agruenba@redhat.com>
- <YaJM4n31gDeVzUGA@arm.com>
- <CAHc6FU7BSL58GVkOh=nsNQczRKG3P+Ty044zs7PjKPik4vzz=Q@mail.gmail.com>
+        id S231266AbhK2Pzl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Nov 2021 10:55:41 -0500
+Received: from w1.tutanota.de ([81.3.6.162]:50444 "EHLO w1.tutanota.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232047AbhK2Pxk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Nov 2021 10:53:40 -0500
+Received: from w3.tutanota.de (unknown [192.168.1.164])
+        by w1.tutanota.de (Postfix) with ESMTP id D9C5DFBF883;
+        Mon, 29 Nov 2021 15:50:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; t=1638201020;
+        s=s1; d=tutanota.com;
+        h=From:From:To:To:Subject:Subject:Content-Description:Content-ID:Content-Type:Content-Type:Content-Transfer-Encoding:Content-Transfer-Encoding:Cc:Cc:Date:Date:In-Reply-To:In-Reply-To:MIME-Version:MIME-Version:Message-ID:Message-ID:Reply-To:References:References:Sender;
+        bh=90UgJKs8MANi/hqnG6V971kSyvmKZ2rw7WNKHUUdWaQ=;
+        b=WWs3oa+FgmGwAxCHHajOHARLEYdkU0DTpTr8hisagwaHgEeuPBd3XAIa+eMTwIe+
+        NiRMnUVFjhxqFsnMz82O4DF1VswLFf/39r1CTuOphQpBYOvlMnT7aFcXAvDKQGs0Y9p
+        7tTafvCJn3qw+lFmBrEi1mlovpVkCd80SJPkpuTW2dRe/h8HmxhgIiUY8t059Qn0F78
+        zXDOlq/nWku0aBSZ4IqjNrPgVOyMQm8nScBBlFCcD933K7333iF57wBsjLMJjnG5Tyl
+        g31o3ut+Sl7N4ryXDrOqWHjUxANuTc/IGGAjmgazFsy0pKdsTWtti0HXmqUBjNFHgED
+        Dzzd5jYwvQ==
+Date:   Mon, 29 Nov 2021 16:50:20 +0100 (CET)
+From:   Borden <borden_c@tutanota.com>
+To:     Phillip Susi <phill@thesusis.net>
+Cc:     linux-btrfs@vger.kernel.org
+Message-ID: <MpgNwtq--3-2@tutanota.com>
+In-Reply-To: <87r1azashl.fsf@vps.thesusis.net>
+References: <MpesPIt--3-2@tutanota.com> <87r1azashl.fsf@vps.thesusis.net>
+Subject: Re: Connection lost during BTRFS move + resize
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHc6FU7BSL58GVkOh=nsNQczRKG3P+Ty044zs7PjKPik4vzz=Q@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Nov 27, 2021 at 07:05:39PM +0100, Andreas Gruenbacher wrote:
-> Maybe you want to add this though:
-> 
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2202,3 +2202,3 @@ static noinline int search_ioctl(struct inode *inode,
->         unsigned long sk_offset = 0;
-> -       char __user *fault_in_addr;
-> +       char __user *fault_in_addr, *end;
-> 
-> @@ -2230,6 +2230,6 @@ static noinline int search_ioctl(struct inode *inode,
->         fault_in_addr = ubuf;
-> +       end = ubuf + *buf_size;
->         while (1) {
->                 ret = -EFAULT;
-> -               if (fault_in_writeable(fault_in_addr,
-> -                                      *buf_size - (fault_in_addr - ubuf)))
-> +               if (fault_in_writeable(fault_in_addr, end - fault_in_addr))
->                         break;
+29 Nov 2021, 10:26 by phill@thesusis.net:
+> The only tool I know of that can do this is gparted, so I assume you are
+> using that.  In this case, it has to umount the filesystem and manually
+> copy data from the old start of the partition to the new start.  Being
+> interrupted in the middle leaves part of the filesystem in the wrong
+> place ( and which parts is unknowable ), and so it is toast.  This is
+> one area where LVM has a significant advantage as its moves are
+> interruption safe and automatically resumed on the next activation of
+> the volume.
+>
+This is the answer that I anticipated, and it's good to know now so I don't destroy data that I _cannot_ afford to lose later. So thank you.
 
-It looks like *buf_size is updated inside copy_to_sk(), so I'll move the
-end update inside the loop.
+For my own education/curiosity/intellectual banter: ddrescue, badblocks, rsync and other utilities have log files that track progress and allow it to resume if it's interrupted. Since resize operations work in the linear process you described, how hard would it be, theoretically, to implement a "needle position" in a move operation to allow a move to pick up where it left off?
 
--- 
-Catalin
+Obviously, it wouldn't be 100% perfect, but if a recovery utility could look at the disk and say "partition starts here, skip a bit somewhere in the middle, continue here, stop there," surely that would be more efficient than trying to recover files with a low-level utility?

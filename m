@@ -2,170 +2,124 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAFF9C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 22:49:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BA6E1C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 23:00:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236028AbhK2Wwc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Nov 2021 17:52:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36092 "EHLO
+        id S236831AbhK2XDl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Nov 2021 18:03:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236262AbhK2Wue (ORCPT
+        with ESMTP id S237101AbhK2XBo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Nov 2021 17:50:34 -0500
-Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 308FEC03AA15
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 10:15:16 -0800 (PST)
-Received: by mail-qt1-x835.google.com with SMTP id t34so17490913qtc.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 10:15:16 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=5b5qh/kvUmuAxuX6IrP7q82N4vspMTIsdmghaUk1cYw=;
-        b=Bdhtd9WSzPvU7/V8HNa2hTMVtdIsLC0wN52/ZfiCz7euJW4oaVxMP2/kNhJp80Am7h
-         DYp4u0lASiuZiG1Z5TEUOUQRFVxAy2/JnInSxRJYDTNIVMxsaTqu8JZihaXMErA1TPfl
-         EZohXunqEZdSqaHV7IRRV3rUTed8qdM/yfUrMlISenbnKNMs1e96aHwtMGZe1qovHERa
-         1l6eTXckhtZuH7qVWAFPrq575D/BPWcZMWhqQBnPxSL7MtTRFo9E0qb7/Axi+VPN0V8o
-         G7ek3jPWPfNj3GXvkO7wDWWRNOE8tJEIc7HPQ0FaP3A5xXJgqK2kHm2D58Xky2ISQ0oT
-         m2KA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=5b5qh/kvUmuAxuX6IrP7q82N4vspMTIsdmghaUk1cYw=;
-        b=NFOYNber5FLnE0yG1R9PXA+5h+xGLBOEgCz/7Hm90uQuS174Gk0VzUe12M5Tq1PNRV
-         joloJKYWssBdrqCC1AK2ClLyKYYKHi02051hECizv90YIyEcc2FKTF8+ogx/7YPSdnqI
-         ONJd/bxWWWsb1aawiElf+2cQ0QRQOdYHJj+K7hYNgqAVS+7GL5BvJUkIXH5Vr9MmLzPq
-         +0/CSo9kqM6BiTY5ML/0V9MiCzipYjClnoDc/jHBkKKH3S+bKk7w/PxnoWxvw38pToXP
-         CbSeV2A4/TwLBDtcjcbqpE+EsIDW92IKoT/2QeOClHjrxHuZUSYBMVp+Iy7BDzCfnwuf
-         b5tQ==
-X-Gm-Message-State: AOAM530vhUX0vI7MkfvcoQmXe4CcRS+N5TwghsPsKOrAcFS9x87OBbza
-        Q58yDux/ZdkGPv2rDcqWxx1BKw==
-X-Google-Smtp-Source: ABdhPJwCS7omvq0J3BR4cWJfCQsBbn2Q8/rhwVshyCiOdQYdsmN5CvbQQClg1wniqFXuFXfTTajxxw==
-X-Received: by 2002:a05:622a:288:: with SMTP id z8mr36944934qtw.526.1638209715216;
-        Mon, 29 Nov 2021 10:15:15 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id bl16sm8435585qkb.44.2021.11.29.10.15.14
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 29 Nov 2021 10:15:14 -0800 (PST)
-Date:   Mon, 29 Nov 2021 13:15:13 -0500
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Valentin Schneider <valentin.schneider@arm.com>
-Cc:     peterz@infradead.org, vincent.guittot@linaro.org,
-        torvalds@linux-foundation.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [REGRESSION] 5-10% increase in IO latencies with nohz balance
- patch
-Message-ID: <YaUYsUHSKI5P2ulk@localhost.localdomain>
-References: <YaUH5GFFoLiS4/3/@localhost.localdomain>
- <87ee6yc00j.mognet@arm.com>
+        Mon, 29 Nov 2021 18:01:44 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54E9EC0F4B30;
+        Mon, 29 Nov 2021 12:56:16 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 2298BB81643;
+        Mon, 29 Nov 2021 20:56:15 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B26FAC53FAD;
+        Mon, 29 Nov 2021 20:56:11 +0000 (UTC)
+Date:   Mon, 29 Nov 2021 20:56:08 +0000
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Al Viro <viro@zeniv.linux.org.uk>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Will Deacon <will@kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 3/3] btrfs: Avoid live-lock in search_ioctl() on hardware
+ with sub-page faults
+Message-ID: <YaU+aDG5pCAba57r@arm.com>
+References: <YZ6arlsi2L3LVbFO@casper.infradead.org>
+ <YZ6idVy3zqQC4atv@arm.com>
+ <CAHc6FU4-P9sVexcNt5CDQxROtMAo=kH8hEu==AAhZ_+Zv53=Ag@mail.gmail.com>
+ <20211127123958.588350-1-agruenba@redhat.com>
+ <YaJM4n31gDeVzUGA@arm.com>
+ <CAHc6FU7BSL58GVkOh=nsNQczRKG3P+Ty044zs7PjKPik4vzz=Q@mail.gmail.com>
+ <YaTEkAahkCwuQdPN@arm.com>
+ <CAHc6FU6zVi9A2D3V3T5zE71YAdkBiJTs0ao1Q6ysSuEp=bz8fQ@mail.gmail.com>
+ <YaTziROgnFwB6Ddj@arm.com>
+ <CAHk-=wiZgAgcynfLsop+D1xBUAZ-Z+NUBxe9mb-AedecFRNm+w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <87ee6yc00j.mognet@arm.com>
+In-Reply-To: <CAHk-=wiZgAgcynfLsop+D1xBUAZ-Z+NUBxe9mb-AedecFRNm+w@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 29, 2021 at 06:03:24PM +0000, Valentin Schneider wrote:
+On Mon, Nov 29, 2021 at 10:40:38AM -0800, Linus Torvalds wrote:
+> On Mon, Nov 29, 2021 at 7:36 AM Catalin Marinas <catalin.marinas@arm.com> wrote:
+> > That's what this series does when it probes the whole range in
+> > fault_in_writeable(). The main reason was that it's more efficient to do
+> > a read than a write on a large range (the latter dirtying the cache
+> > lines).
 > 
-> Hi Josef,
+> The more this thread goes on, the more I'm starting to think that we
+> should just make "fault_in_writable()" (and readable, of course) only
+> really work on the beginning of the area.
 > 
-> On 29/11/21 12:03, Josef Bacik wrote:
-> > Hello,
-> >
-> > Our nightly performance testing found a performance regression when we rebased
-> > our devel tree onto v5.16-rc.  This took me a few days to bisect down, but this
-> > patch
-> >
-> > 7fd7a9e0caba ("sched/fair: Trigger nohz.next_balance updates when a CPU goes NOHZ-idle")
-> >
-> > is the one that introduces the regression.  My performance testing box is a 2
-> > socket, with a model name "Intel(R) Xeon(R) Bronze 3204 CPU @ 1.90GHz", for a
-> > total of 12 cpu's reported in cpuinfo.  It has 128gib of RAM, and these perf
-> > tests are being run against a SSD and spinning rust device, but the regression
-> > is consistent across both configurations.  You can see the historical graph of
-> > the completion latencies for this specific run
-> >
-> > http://toxicpanda.com/performance/emptyfiles500k_write_clat_ns_p99.png
-> >
-> > Or for something a little more braindead (untar firefox) you can see a increase
-> > in the runtime
-> >
-> > http://toxicpanda.com/performance/untarfirefox_elapsed.png
-> >
-> > These two tests are single threaded, the regression doesn't appear to affect
-> > multi-threaded tests.  For a simple reproducer you can simply download a tarball
-> > of the firefox sources and untar it onto a clean btrfs file system.  The time
-> > before and after this commit goes up ~1-2 seconds on my machine.  For a less
-> > simple test you can create a clean btrfs file system and run
-> >
-> > fio --name emptyfiles500k --create_on_open=1 --nrfiles=31250 --readwrite=write \
-> >       --readwrite=write --ioengine=filecreate --fallocate=none --filesize=4k \
-> >       --openfiles=1 --alloc-size 98304 --allrandrepeat=1 --randseed=12345 \
-> >       --directory <mount point>
-> >
-> > And you are looking for the "Write clat ns p99" metric.  You'll see a 5-10%
-> > increase in the latency time.  If you want to run our tests directly it's
-> > relatively easy to setup, you can clone the fsperf repo
-> >
-> > https://github.com/josefbacik/fsperf
-> >
-> > Then in the fsperf directory edit the local.cfg and add
-> >
-> > [main]
-> > directory=/mnt/test
-> >
-> > [btrfs]
-> > device=/dev/sdc
-> > iosched=none
-> > mkfs=mkfs.btrfs -f
-> > mount=mount -o noatime
-> >
-> > And then run the following on the baseline kernel
-> >
-> > ./fsperf -p regression -c btrfs -n 10 emptyfiles500k
-> >
-> > This will run the test 10 times and save the results to the database.  Then you
-> > can boot into your changed kernel and runn
-> >
-> > ./fsperf -p regrssion -c btrfs -n 10 -t emptyfiles500k
-> >
-> > This will run the test 10 times and take the average and compare it to the
-> > baseline and print out the values, you'll see the increase latency values there.
-> >
-> > I can reproduce this at will, if you want to just throw patches at me I'm happy
-> > to run it and let you know what happens.  I'm attaching my .config as well in
-> > case that is needed, but the HZ and PREEMPT settings are
-> >
-> > CONFIG_NO_HZ_COMMON=y
-> > CONFIG_NO_HZ_FULL=y
-> > CONFIG_NO_HZ=y
-> > CONFIG_HZ_1000=y
-> > CONFIG_PREEMPT=y
-> > CONFIG_PREEMPT_COUNT=y
-> > CONFIG_PREEMPTION=y
-> > CONFIG_PREEMPT_DYNAMIC=y
-> > CONFIG_PREEMPT_RCU=y
-> > CONFIG_HAVE_PREEMPT_DYNAMIC=y
-> > CONFIG_PREEMPT_NOTIFIERS=y
-> > CONFIG_DEBUG_PREEMPT=y
-> 
-> Thanks for the report!
-> 
-> That patch you bisected does add more NOHZ kicks that aren't time-gated
-> like nohz.next_blocked / nohz.next_balance, so I'm thinking that a
-> pathological scenario would be a low-period bursty task which keeps
-> flicking a CPU idle/!idle. SCHED_SOFTIRQ running the NOHZ work on the
-> task's previous CPU would then repeatedly delay / force the task to be
-> placed on another CPU.
-> 
-> Would you happen to have execution traces by any chance? If not I should be
-> able to get one out of that fsperf thingie.
-> 
+> Not just for the finer-granularity pointer color probing, but for the
+> page probing too.
 
-I don't, if you want to tell me how I can do it right now.  I've disabled
-everything on this box for now so it's literally just sitting there waiting to
-have things done to it.  Thanks,
+I have patches for the finer-granularity checking of the beginning of
+the buffer. They need a bit of testing, so probably posting them
+tomorrow.
 
-Josef
+> I'm looking at our current fault_in_writeable(), and I'm going
+> 
+>  (a) it uses __put_user() without range checks, which is really not great
+
+For arm64 at least __put_user() does the access_ok() check. I thought
+only unsafe_put_user() should skip the checks. If __put_user() can write
+arbitrary memory, we may have a bigger problem.
+
+>  (b) it looks like a disaster from another standpoint: essentially
+> user-controlled loop size with no limit checking, no preemption, and
+> no check for fatal signals.
+
+Indeed, the fault_in_*() loop can get pretty long, bounded by how much
+memory can be faulted in the user process. My patches for now only
+address the outer loop doing the copy_to_user() as that can be
+unbounded.
+
+> Now, (a) should be fixed with a access_ok() or similar.
+> 
+> And (b) can easily be fixed multiple ways, with one option simply just
+> being adding a can_resched() call and checking for fatal signals.
+> 
+> But faulting in the whole region is actually fundamentally wrong in
+> low-memory situations - the beginning of the region might be swapped
+> out by the time we get to the end. That's unlikely to be a problem in
+> real life, but it's an example of how it's simply not conceptually
+> sensible.
+> 
+> So I do wonder why we don't just say "fault_in_writable will fault in
+> _at_most_ X bytes", and simply limit the actual fault-in size to
+> something reasonable.
+> 
+> That solves _all_ the problems. It solves the lack of preemption and
+> fatal signals (by virtue of just limiting the amount of work we do).
+> It solves the low memory situation. And it solves the "excessive dirty
+> cachelines" case too.
+
+I think that would be useful, though it doesn't solve the potential
+livelock with sub-page faults. We still need the outer loop to
+handle the copy_to_user() for the whole user buffer and the sub-page
+probing of the beginning of such buffer (or whenever copy_to_user()
+failed). IOW, you still fault in the whole buffer eventually.
+
+Anyway, I think the sub-page probing and limiting the fault-in are
+complementary improvements.
+
+-- 
+Catalin

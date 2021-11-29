@@ -2,110 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97BE2C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 22:13:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AA3F7C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 22:40:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231861AbhK2WQv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Nov 2021 17:16:51 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56672 "EHLO
+        id S231676AbhK2WoA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Nov 2021 17:44:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34880 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232362AbhK2WQk (ORCPT
+        with ESMTP id S234793AbhK2WnT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Nov 2021 17:16:40 -0500
-Received: from mail-ed1-x533.google.com (mail-ed1-x533.google.com [IPv6:2a00:1450:4864:20::533])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 47D19C0FE6D3
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 13:53:23 -0800 (PST)
-Received: by mail-ed1-x533.google.com with SMTP id x6so77650341edr.5
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 13:53:23 -0800 (PST)
+        Mon, 29 Nov 2021 17:43:19 -0500
+Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0CD56C05816A
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 11:49:31 -0800 (PST)
+Received: by mail-qt1-x82e.google.com with SMTP id f20so17785930qtb.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 11:49:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=slW4IJtLPUe+dCTHZwT8J5Hyfi+JKfCkiz5Jx8MZKyY=;
-        b=OIIkDWpAmMxBagMHTq19qfJ/pA9QYr/FKz8j6+SnJ2OrelhnpGAnnKmCIO3mUxo8Q6
-         3kiR81AGz32H1FqBqW5zns775gFrUt+SLbtgMVdaHVpW1sxT7KmTN6wWstYt3DlOV4Dj
-         +J3pR3O4PkRhYpRorn4h4+cgIw+4SIqeCwE5g=
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=77pIMPY0DRqIRNulPGyN+kaDHJuIP/tsohLoFAabMaA=;
+        b=Ty40tdgepASovZT6ntq5Yakq5xpCnQoI0Bg6ZF10cH7cKK2i4s+NeZzyylqKmqiIEJ
+         Lj5RQ87gbJZLzeMyUhgJ9Iqlc85/aOoLgNmkt+7theJhVmC29r7/lbA9UCp3TtBfhMK9
+         lDMcXjvDJM9Is7tpq4zdD4T68AHCVOTgwSQgpEuyE/56Gbl7AbZjS8EONZhK/QCrh+S8
+         YqA8tAR+bQcxK5eLdZlUFwD0UXggpzG2VaHFJzmSnDdK/0rBhQvyDqfEbU7/5W6WjvKj
+         4c50oZaPHTc6lh6huPAhoKWhWfAlgXsgmofI0HoiTgredobbidIrTGHxab/yZOO4NBw8
+         WjIA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=slW4IJtLPUe+dCTHZwT8J5Hyfi+JKfCkiz5Jx8MZKyY=;
-        b=ttkkB2D0yREmFmX8aALaExH9U3sqEOAcdEkBcOHZhw5LD8puZSHazNUKjO8Pq6+V17
-         2xGYEZhyGhigEMnWnjkH/SDl3UUX/FpMgIt9DyiZc1MJazKY0JEYRzc5RncpbZ4fre1h
-         dvJztJpuLf/xSLuSc3a7b/GE31KUS3vVj5nyHfJSQP1kaszfjbglQvuIDvodQcbT+go9
-         BX8DJVLf/vo1I3d2rygkXgHtttZq+lCLc0yLufeb3g+0h7MdljxTIhqrfoeUbS6peCDG
-         aCewqZY5Hyxcu508tCswMaAa46LxvrnTnmlUYIo25VHhmNREABPCPvVYbfVUfn31jBhH
-         +3SQ==
-X-Gm-Message-State: AOAM5324kdbTgVueFqg52DzwwIwhsdEwJJK8vRriEkvDPKsobpp18mtf
-        JzCEEZNBXdAQnc8CkPz6s28Wu5s//SEDOh+Fpck=
-X-Google-Smtp-Source: ABdhPJwmloabAAK61KzIBjuctJ8G4Pij0F6c9nXgflOIw5EV+7wy1TLzac8MfAY5sdeCN+yNpADhnQ==
-X-Received: by 2002:a17:906:79c8:: with SMTP id m8mr59487409ejo.511.1638222801629;
-        Mon, 29 Nov 2021 13:53:21 -0800 (PST)
-Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com. [209.85.221.42])
-        by smtp.gmail.com with ESMTPSA id b14sm10024138edw.6.2021.11.29.13.53.18
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 29 Nov 2021 13:53:19 -0800 (PST)
-Received: by mail-wr1-f42.google.com with SMTP id d9so19003080wrw.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Nov 2021 13:53:18 -0800 (PST)
-X-Received: by 2002:adf:e5c7:: with SMTP id a7mr37419983wrn.318.1638222798596;
- Mon, 29 Nov 2021 13:53:18 -0800 (PST)
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=77pIMPY0DRqIRNulPGyN+kaDHJuIP/tsohLoFAabMaA=;
+        b=ZMeLKRwLGoOLpKhu7djJprUQEVQHQ5T1Fducr39D5pjEEmhWs3XMUla6aL2a1dMCIF
+         uMENYBxfyEwYLbS2Sc3gbj2Vu3jA1S6AR0SHCycvXA6Ol4L2yXjeb47ConBrLPlaiuEJ
+         /gR4PXbuBh0ekrInRTAWaSBU7b+kSXKn0UYA0sZXG3k9kcBLJ5F6ecW6+2EALXrmHt+G
+         mL7dIYqKwIwVNSjDDFklp1hu7gWHI4RjjxLbitPRLHFDj7y6q3X3MNIiAGyXZHxrqzRJ
+         N4ue9EvW8QzQ5owSM+XU0TnXlWKIOjHRe5pZO6Wgo3Z0X7lWgTHj9t2BiNsX/2RjyrmM
+         HyEw==
+X-Gm-Message-State: AOAM533svj0FqsXmbjbUGoOElE7SabBA1VxkDmPDVvbE52XDXAP7GuFi
+        4gZqY4rKjZGEAdroJPNRWSHykg==
+X-Google-Smtp-Source: ABdhPJziQ539dzvCnkchJn9u/+4tbDzPDQH7IuKrDLjAQqJYz6yxO9OEWlzBrT4ymrzA649FVkCaEg==
+X-Received: by 2002:a05:622a:1005:: with SMTP id d5mr37693725qte.533.1638215369925;
+        Mon, 29 Nov 2021 11:49:29 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id h12sm8760663qkp.52.2021.11.29.11.49.29
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 29 Nov 2021 11:49:29 -0800 (PST)
+Date:   Mon, 29 Nov 2021 14:49:28 -0500
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Valentin Schneider <valentin.schneider@arm.com>
+Cc:     peterz@infradead.org, vincent.guittot@linaro.org,
+        torvalds@linux-foundation.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [REGRESSION] 5-10% increase in IO latencies with nohz balance
+ patch
+Message-ID: <YaUuyN3h07xlEx8j@localhost.localdomain>
+References: <YaUH5GFFoLiS4/3/@localhost.localdomain>
+ <87ee6yc00j.mognet@arm.com>
+ <YaUYsUHSKI5P2ulk@localhost.localdomain>
+ <87bl22byq2.mognet@arm.com>
 MIME-Version: 1.0
-References: <YZ6arlsi2L3LVbFO@casper.infradead.org> <YZ6idVy3zqQC4atv@arm.com>
- <CAHc6FU4-P9sVexcNt5CDQxROtMAo=kH8hEu==AAhZ_+Zv53=Ag@mail.gmail.com>
- <20211127123958.588350-1-agruenba@redhat.com> <YaJM4n31gDeVzUGA@arm.com>
- <CAHc6FU7BSL58GVkOh=nsNQczRKG3P+Ty044zs7PjKPik4vzz=Q@mail.gmail.com>
- <YaTEkAahkCwuQdPN@arm.com> <CAHc6FU6zVi9A2D3V3T5zE71YAdkBiJTs0ao1Q6ysSuEp=bz8fQ@mail.gmail.com>
- <YaTziROgnFwB6Ddj@arm.com> <CAHk-=wiZgAgcynfLsop+D1xBUAZ-Z+NUBxe9mb-AedecFRNm+w@mail.gmail.com>
- <YaU+aDG5pCAba57r@arm.com>
-In-Reply-To: <YaU+aDG5pCAba57r@arm.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Mon, 29 Nov 2021 13:53:01 -0800
-X-Gmail-Original-Message-ID: <CAHk-=wjZ6zME2SzohM1P_-B0BNi2JJgvz22ypF-EuAQiVKipRg@mail.gmail.com>
-Message-ID: <CAHk-=wjZ6zME2SzohM1P_-B0BNi2JJgvz22ypF-EuAQiVKipRg@mail.gmail.com>
-Subject: Re: [PATCH 3/3] btrfs: Avoid live-lock in search_ioctl() on hardware
- with sub-page faults
-To:     Catalin Marinas <catalin.marinas@arm.com>
-Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Will Deacon <will@kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <87bl22byq2.mognet@arm.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 29, 2021 at 12:56 PM Catalin Marinas
-<catalin.marinas@arm.com> wrote:
->
-> For arm64 at least __put_user() does the access_ok() check. I thought
-> only unsafe_put_user() should skip the checks. If __put_user() can write
-> arbitrary memory, we may have a bigger problem.
+On Mon, Nov 29, 2021 at 06:31:17PM +0000, Valentin Schneider wrote:
+> On 29/11/21 13:15, Josef Bacik wrote:
+> > On Mon, Nov 29, 2021 at 06:03:24PM +0000, Valentin Schneider wrote:
+> >> Would you happen to have execution traces by any chance? If not I should be
+> >> able to get one out of that fsperf thingie.
+> >>
+> >
+> > I don't, if you want to tell me how I can do it right now.  I've disabled
+> > everything on this box for now so it's literally just sitting there waiting to
+> > have things done to it.  Thanks,
+> >
+> 
+> I see you have Ftrace enabled in your config, so that ought to do it:
+> 
+>   trace-cmd record -e 'sched:*' -e 'cpu_idle' $your_test_cmd
+> 
 
-That's literally be the historical difference between __put_user() and
-put_user() - the access check.
+http://toxicpanda.com/performance/trace.dat
 
-> I think that would be useful, though it doesn't solve the potential
-> livelock with sub-page faults.
+it's like 16mib.  Enjoy,
 
-I was assuming we'd just do the sub-page faults.
-
-In fact, I was assuming we'd basically just replace all the PAGE_ALIGN
-and PAGE_SIZE with SUBPAGE_{ALIGN,SIZE}, together with something like
-
-        if (size > PAGE_SIZE)
-                size = PAGE_SIZE;
-
-to limit that size thing (or possibly make that "min size" be a
-parameter, so that people who have things like that "I need at least
-this initial structure to be copied" issue can document their minimum
-size needs).
-
-            Linus
+Josef

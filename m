@@ -2,136 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8343C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 14:39:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DE8FC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 Nov 2021 15:33:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1378869AbhK2Omk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 Nov 2021 09:42:40 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:35616 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1347867AbhK2Oki (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 Nov 2021 09:40:38 -0500
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5C6E421709;
-        Mon, 29 Nov 2021 14:37:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1638196635; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=xAq1M0EfufsYxEj0cGJTIegFHRqYev6kiU/B6mvpyqU=;
-        b=oOqk/0e4y6iUgH/83aRt3QYO59jLC5fxx3b/xikcMylkgzk1HSYj1cgYOBoOT0+DT9YSt3
-        llV7CRDu7oi1poQ+4t9gdtJ+/hkEmfssB0kEv1apSBY1qbhUVr7726aFaJkqUk4cDGGzy5
-        pIOlvYyZRkdHXscPkmDTnF94bBaNMEg=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 050BA13B15;
-        Mon, 29 Nov 2021 14:37:14 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Q4ruOZrlpGEGBwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Mon, 29 Nov 2021 14:37:14 +0000
-Subject: Re: [BUG] fs: btrfs: several possible ABBA deadlocks
-To:     Josef Bacik <josef@toxicpanda.com>,
-        Jia-Ju Bai <baijiaju1990@gmail.com>
-Cc:     clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel <linux-kernel@vger.kernel.org>
-References: <44b385ca-f00d-0b47-e370-bd7d97cb1be3@gmail.com>
- <YaQgFhuaQHsND/jr@localhost.localdomain>
-From:   Nikolay Borisov <nborisov@suse.com>
-Message-ID: <8c1f9493-ef50-635e-4426-61120c4b1a86@suse.com>
-Date:   Mon, 29 Nov 2021 16:37:14 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.14.0
+        id S231549AbhK2PhM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 Nov 2021 10:37:12 -0500
+Received: from vps.thesusis.net ([34.202.238.73]:46754 "EHLO vps.thesusis.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S236774AbhK2PfG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 Nov 2021 10:35:06 -0500
+Received: by vps.thesusis.net (Postfix, from userid 1000)
+        id 9DF3A68BBB; Mon, 29 Nov 2021 10:31:18 -0500 (EST)
+References: <MpesPIt--3-2@tutanota.com>
+User-agent: mu4e 1.7.0; emacs 27.1
+From:   Phillip Susi <phill@thesusis.net>
+To:     Borden <borden_c@tutanota.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: Connection lost during BTRFS move + resize
+Date:   Mon, 29 Nov 2021 10:26:49 -0500
+In-reply-to: <MpesPIt--3-2@tutanota.com>
+Message-ID: <87r1azashl.fsf@vps.thesusis.net>
 MIME-Version: 1.0
-In-Reply-To: <YaQgFhuaQHsND/jr@localhost.localdomain>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
+Borden <borden_c@tutanota.com> writes:
 
-On 29.11.21 г. 2:34, Josef Bacik wrote:
-> On Sat, Nov 27, 2021 at 04:23:37PM +0800, Jia-Ju Bai wrote:
->> Hello,
->>
->> My static analysis tool reports several possible ABBA deadlocks in the btrfs
->> module in Linux 5.10:
->>
->> # DEADLOCK 1:
->> __clear_extent_bit()
->>   spin_lock(&tree->lock); --> Line 733 (Lock A)
->>   split_state()
->>     btrfs_split_delalloc_extent()
->>       spin_lock(&BTRFS_I(inode)->lock); --> Line 1870 (Lock B)
->>
->> btrfs_inode_safe_disk_i_size_write()
->>   spin_lock(&BTRFS_I(inode)->lock); --> Line 53 (Lock B)
->>   find_contiguous_extent_bit()
->>     spin_lock(&tree->lock); --> Line 1620 (Lock A)
->>
->> When __clear_extent_bit() and btrfs_inode_safe_disk_i_size_write() are
->> concurrently executed, the deadlock can occur.
->>
->> # DEADLOCK 2:
->> __set_extent_bit()
->>   spin_lock(&tree->lock); --> Line 995 (Lock A)
->>   set_state_bits()
->>     btrfs_set_delalloc_extent()
->>       spin_lock(&BTRFS_I(inode)->lock); --> Line 2007 or 2017 or 2029 (Lock
->> B)
->>
->> btrfs_inode_safe_disk_i_size_write()
->>   spin_lock(&BTRFS_I(inode)->lock); --> Line 53 (Lock B)
->>   find_contiguous_extent_bit()
->>     spin_lock(&tree->lock); --> Line 1620 (Lock A)
->>
->> When __set_extent_bit() and btrfs_inode_safe_disk_i_size_write() are
->> concurrently executed, the deadlock can occur.
->>
->> # DEADLOCK 3:
->> convert_extent_bit()
->>   spin_lock(&tree->lock); --> Line 1241 (Lock A)
->>   set_state_bits()
->>     btrfs_set_delalloc_extent()
->>       spin_lock(&BTRFS_I(inode)->lock); --> Line 2007 or 2017 or 2029 (Lock
->> B)
->>
->> btrfs_inode_safe_disk_i_size_write()
->>   spin_lock(&BTRFS_I(inode)->lock); --> Line 53 (Lock B)
->>   find_contiguous_extent_bit()
->>     spin_lock(&tree->lock); --> Line 1620 (Lock A)
->>
->> When convert_extent_bit() and btrfs_inode_safe_disk_i_size_write() are
->> concurrently executed, the deadlock can occur.
->>
->> I am not quite sure whether these possible deadlocks are real and how to fix
->> them if they are real.
->> Any feedback would be appreciated, thanks :)
->>
-> 
-> Hey Jia-Ju,
-> 
-> This is pretty good work, unfortunately it's wrong but it's in a subtle way that
-> a tool wouldn't be able to catch.  The btrfs_inode_safe_disk_i_size_write()
-> helper only messes with BTRFS_I(inode)->file_extent_tree, which is separate from
-> the BTRFS_I(inode)->io_tree.  io_tree gets the btrfs_set_delalloc_extent() stuff
-> called on it, but the file_extent_tree does not.  The file_extent_tree has
-> inode->lock -> tree->lock as the locking order, whereas the file_extent_tree has
-> inode->lock -> tree->lock as the locking order.  Thanks,
+> Good morning,
+>
+> I couldn't find any definitive guidance on the list archives or Internet, so I want to double-check before giving up.
+>
+> I tried to left-move and resize a btrfs partition on a USB-attached
+> hard drive. My intention was to expand the partition from 2 TB to 3 TB
+> on a 4TB drive. During the move, the USB cable came loose and the
+> process failed.
 
-nit: did you mean to reverse tree->lock ->inode->lock for the
-file_extent_tree?
+The only tool I know of that can do this is gparted, so I assume you are
+using that.  In this case, it has to umount the filesystem and manually
+copy data from the old start of the partition to the new start.  Being
+interrupted in the middle leaves part of the filesystem in the wrong
+place ( and which parts is unknowable ), and so it is toast.  This is
+one area where LVM has a significant advantage as its moves are
+interruption safe and automatically resumed on the next activation of
+the volume.
 
-> 
-> Josef
-> 

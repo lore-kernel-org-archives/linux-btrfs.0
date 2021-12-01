@@ -2,75 +2,89 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF501C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Dec 2021 11:56:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B48CC433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Dec 2021 16:45:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348461AbhLAL76 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Dec 2021 06:59:58 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:59218 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242829AbhLAL74 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Dec 2021 06:59:56 -0500
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 386861FD5B
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Dec 2021 11:56:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1638359795; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=pNAQNZgciUY/KcL7aj4FPPX/MnRaUVtUCbyrydDdUMo=;
-        b=S5I88pb+BkcGY6Csi12vXTxPDSF+ggxW3tUu5iOM4Jwfubo3Z4zLLu7asWDNMrkJ2oKez+
-        IsXd51aw0ANwF4Gs+2e+3TEiBlkAlz8u1Nmp7O0ZC8PmCD5A/2s7/YMtE6svE8ydMKWExe
-        RVlAoPUHxCBk8JgIR4E3RddKQDj9x6c=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8251D1348A
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Dec 2021 11:56:34 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id kLVFEvJip2H7EwAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Dec 2021 11:56:34 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: replace the BUG_ON() in btrfs_del_root_ref() with proper error handling
-Date:   Wed,  1 Dec 2021 19:56:17 +0800
-Message-Id: <20211201115617.144434-1-wqu@suse.com>
-X-Mailer: git-send-email 2.34.1
+        id S1351583AbhLAQss (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Dec 2021 11:48:48 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49242 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1351663AbhLAQse (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Dec 2021 11:48:34 -0500
+Received: from mail-qv1-xf2a.google.com (mail-qv1-xf2a.google.com [IPv6:2607:f8b0:4864:20::f2a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCC59C06175D
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Dec 2021 08:45:11 -0800 (PST)
+Received: by mail-qv1-xf2a.google.com with SMTP id j9so22217229qvm.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Dec 2021 08:45:11 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=awOk+s2CSznU+iXvWStAXFkMyWLMIfcvoAONwAoiQR8=;
+        b=cjoXfq1lrXoe8unrzUqY/y+35OOuhuDgDGfY3pt+S5RgQfTvwNxU/QkT4vnYk4Nft6
+         fb5Jl0OZZ9ek1/WdQEsCsbkt2PacM5ko3lVb6OxqNO48Ypn45CzmvX+I4gdvP1ZK5DkL
+         tMcSvN0s+LgMJVr2m4Wcjea6F5gFxh/Ix2/hJfwoXgDLVyjM6NRaMQZH+RgbyKw3Dv8M
+         8wNiTT3uqFpozdXY8W4WmkF3hj2IGUE/D7Bsp/WtQEBCllolvaiDaxZ9jeC3NxAQyhbq
+         8f683OpoxpFqSORB5+N0RNBHfNzXY7Hj0YqiIiiJECiJIjBwNn/bSVRchF6GbAQXcPIp
+         f2Xw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=awOk+s2CSznU+iXvWStAXFkMyWLMIfcvoAONwAoiQR8=;
+        b=tr7/mlwyxFOlcKVe1y6KcGNUgaGbUSiJxxwWFt52AdNh+XKIEfhXoQsOdpxeuyYAyo
+         3pTj/eKf40yqZStP7MHrim1bzS6tTJgF0emQcx+B8bUuUyAFOh09bkBCtXdBwFtBl9Hq
+         /pD94zBu3+ITcfBr8qkYLdVf6o4j3Evni5h0DYYz7K302MhBaaLMExzmzbCFRemyugE8
+         /qQE1HtEl6Vdys5afGq++rT7B1crIrBZHL/MF4bJFWpX0qRXlQPZAvkTksOd1qruPFkQ
+         YX4u2Hkz2Sn5JgtOLekiuyy8WL0Czxy4IPeJ8M6gIL69eN3GAKu1LpSGFQHnRrJ4YlPU
+         Yoaw==
+X-Gm-Message-State: AOAM531Jfu/fKsrRZ8OWspmYZWjKYnvGpB+UNXDGdZc8987uRW7AjbTo
+        TrP57kd/TaCs2tNz43QD6b32ybO+o9tqpw==
+X-Google-Smtp-Source: ABdhPJwuHiZZk6YV1VYphb9FzHO8xdEPyhLmUQS8yUaqVVWuqgq9BQ9psAsaBIvBHc9ywtCLpH+fkg==
+X-Received: by 2002:a05:6214:cc7:: with SMTP id 7mr7339518qvx.55.1638377110779;
+        Wed, 01 Dec 2021 08:45:10 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id d9sm141131qkn.131.2021.12.01.08.45.10
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 01 Dec 2021 08:45:10 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 0/2] Free space tree space reservation fixes
+Date:   Wed,  1 Dec 2021 11:45:07 -0500
+Message-Id: <cover.1638376835.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I hit the BUG_ON() with generic/475 test case, and to my surprise, all
-callers of btrfs_del_root_ref() are already aborting transaction, thus
-there is not need for such BUG_ON(), just go to @out label and caller
-will properly handle the error.
+Hello,
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/root-tree.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Filipe reported a problem where he was getting an ENOSPC abort when running
+delayed refs for generic/619.  This is because of two reasons, first generic/619
+creates a very small file system, and our global block rsv calculation doesn't
+take into account the size of the free space tree.  Thus we could get into a
+situation where the global block rsv was not enough to handle the overflow.
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index aa2809796c0e..3d68d2dcd83e 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -334,7 +334,8 @@ int btrfs_del_root_ref(struct btrfs_trans_handle *trans, u64 root_id,
- 	key.offset = ref_id;
- again:
- 	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
--	BUG_ON(ret < 0);
-+	if (ret < 0)
-+		goto out;
- 	if (ret == 0) {
- 		leaf = path->nodes[0];
- 		ref = btrfs_item_ptr(leaf, path->slots[0],
+The second is because we simply do not reserve space for the free space tree
+modifications.  Fix this by making sure any free space tree root has their block
+rsv set to the delayed refs rsv, and then make sure if we have the free space
+tree enabled we're reserving extra space for those operations.
+
+With these patches the problem Filipe was hitting went away.  Thanks,
+
+Josef
+
+Josef Bacik (2):
+  btrfs: include the free space tree in the global rsv minimum
+    calculation
+  btrfs: reserve extra space for the free space tree
+
+ fs/btrfs/block-rsv.c   | 31 ++++++++++++++++++-------------
+ fs/btrfs/delayed-ref.c | 22 ++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 13 deletions(-)
+
 -- 
-2.34.1
+2.26.3
 

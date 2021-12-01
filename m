@@ -2,56 +2,56 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF49FC4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Dec 2021 18:17:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2DBAC43217
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Dec 2021 18:17:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242537AbhLASVG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Dec 2021 13:21:06 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42546 "EHLO
+        id S1352249AbhLASVH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Dec 2021 13:21:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42526 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1352249AbhLASU4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Dec 2021 13:20:56 -0500
-Received: from mail-qv1-xf2e.google.com (mail-qv1-xf2e.google.com [IPv6:2607:f8b0:4864:20::f2e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6ED21C061756
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Dec 2021 10:17:34 -0800 (PST)
-Received: by mail-qv1-xf2e.google.com with SMTP id i13so22537837qvm.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Dec 2021 10:17:34 -0800 (PST)
+        with ESMTP id S1352240AbhLASUv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Dec 2021 13:20:51 -0500
+Received: from mail-qt1-x82f.google.com (mail-qt1-x82f.google.com [IPv6:2607:f8b0:4864:20::82f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F3C3C061574
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Dec 2021 10:17:30 -0800 (PST)
+Received: by mail-qt1-x82f.google.com with SMTP id l8so24991201qtk.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Dec 2021 10:17:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=MsHd+omzg3fLiFS+pOt2YWV8wr0jRWzNLntxMRqjGoU=;
-        b=YZkaszH9jigDJOick8L0pON+svsTUOhYu/Dwzo0+LwkUlLTXj2rEwKBBzV6hVCCxRn
-         9mZbxdI44kf7Box9gMa/+nU4tHow1UtO1gPiKKM0S1oJk5yygoCWM+BaSHfwPvuw0ggE
-         nyK9nUr1b+NFa3/j7x10uGD1VBZq4ZqERrtZD086TqYxYKoKNZyJ9zxvrfr497x4mDMS
-         f+FwFC1l00A+1wlHtBktaERPaBLUCBsxBLq02s4SGXzG0gBdI1bP4v6Htc3cJLzYw0M3
-         ReoR/TlmJPk2rYMRQm2pS1+V3Fdz4ECfNImHdVZpHlVaf/jQig7N2X8bVodAgfM+fM5s
-         iJeg==
+        bh=zzGoFbPaHjYxOdEvMNYA2KUeGYoOWZmWRW9btUenLJA=;
+        b=rWD1nK7qpDbeO90wudJouXkeaxvIPY45tTCHg4q5aCsHRRaPOFHlTPVR4mMSuHZ4dN
+         L1iD3pmzX/gn34cRA9O8beq2TDXUDvsf/1eIcT31/Mng53H0DUBVYX+Ce1Td5r6VD7p+
+         BVX6pFBLM0/TvbRbmi4DQ161oI1MEgsgdQIp9BL/Tny56dnz4El/DJt/WKSge6fbPLJI
+         cpYTRxaqrliMO2oOgLizKXiDsJkIqQ/lUNr6cBaLKQphgvYYHHV2C5BVY/TR2vsNy9RZ
+         WA24nlhJj2NgdoDFSx3JcHhuNkOx6h9/5vidaEf1bwdzgaXXmodCpS3QOWsUS6SyqSSh
+         IFpg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=MsHd+omzg3fLiFS+pOt2YWV8wr0jRWzNLntxMRqjGoU=;
-        b=fTO1lKU2iSZqygz5aFoZvNbXCozzqE1NGKNsBrflzc1IKZz4h1CGL2hRHsJSVNDteC
-         oQ6LbSaYuOp0QoP7p+aquCaP30Bbro2bUKQjp8KvQGwaDQaws/IYlba5UCy4Fn/1d9+Q
-         AXelLSFpTTgbzR1jp5HE36rcA5KwUlMJHhlyjmr+bvCcrwWtMrcmO38hELZASUHtSaIe
-         ohjtpkt0PraaQ0JhgGXEwEKxH4/iaf07hNgS2hUCKrafehp3XuqBWR6Gq9MhkQdv9Hl3
-         G8WssIbxr+mfF3r7koUcb1neM5OPIwSLB9Do5g71zeoNkZRO0QtulVjiLebS0jn8gMw6
-         dw+g==
-X-Gm-Message-State: AOAM530y2S/zxZJAhV8TfnpKo7rchv/uVDBfNhCk/XkwHR89cEqq3+6A
-        xq6CaKnQos+qQuL/rIo/l48xw029Ml+bQA==
-X-Google-Smtp-Source: ABdhPJzvphMMDKLwh6V7uuK0tkb/TtP5b6ddZodDm62ELPfZvVL6k0ak0NYk8BhNVF+lt/JEoiNYEw==
-X-Received: by 2002:a0c:d841:: with SMTP id i1mr7796705qvj.126.1638382653251;
-        Wed, 01 Dec 2021 10:17:33 -0800 (PST)
+        bh=zzGoFbPaHjYxOdEvMNYA2KUeGYoOWZmWRW9btUenLJA=;
+        b=ufJ/BMk2Rcsfn9vQduL/D44UWdL9F0MqZ59zEyLQAMb9SbhzhMDk66IXZMwEGaFoCL
+         9MfZ4q+BAduARLlIt7d4HO0uUtJ9WyZJf+sQW8Ynoyh5uw6ymIdVtZj2xFcq+IxhpyLN
+         8ZxVuZQECn6/nzMtAFCTEWzKOc2qi/ieHD63tWGubFalVlxf5/R58GER/2UbWhgf/PEN
+         Du6b336KZQB45zs+sdOHVkkvrtd6Vdtm1hIXvR87P19zIiQpWWFoNurZvJGkXJAlVwsq
+         t7yZQLzOvfEBGtSrjoCcVUR4qhMJDEcdn65qNNIACnk1hFVCs25Dcwor4Ib8EYYHh0rf
+         lf/A==
+X-Gm-Message-State: AOAM531u6pVYE7YOTgpu5KhniYzqpBVk+qrMBcFJQrn1HW1SUxYdX0Ei
+        tgy1MOwxGxYwYvifKJgO+RceGxEBO3zfuw==
+X-Google-Smtp-Source: ABdhPJwt+l4ag2J9vwmTUfL+n9k3gkkUlO+b2CN25uFFAlIB0EqdSVnaQVn1fYe0GLK9Oo9F+izeHA==
+X-Received: by 2002:a05:622a:1312:: with SMTP id v18mr8527479qtk.177.1638382649073;
+        Wed, 01 Dec 2021 10:17:29 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id q20sm260058qkl.53.2021.12.01.10.17.32
+        by smtp.gmail.com with ESMTPSA id m9sm247079qkn.59.2021.12.01.10.17.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 01 Dec 2021 10:17:32 -0800 (PST)
+        Wed, 01 Dec 2021 10:17:28 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 11/22] btrfs-progs: qgroup-verify: scan extents based on block groups
-Date:   Wed,  1 Dec 2021 13:17:05 -0500
-Message-Id: <cbdfe7c345af59922480ffabbcf045d75aac9202.1638382588.git.josef@toxicpanda.com>
+Subject: [PATCH v2 08/22] btrfs-progs: handle no bg item in extent tree for free space tree
+Date:   Wed,  1 Dec 2021 13:17:02 -0500
+Message-Id: <efb95c539b70183e1afa363fefa919c0d3f63b4d.1638382588.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1638382588.git.josef@toxicpanda.com>
 References: <cover.1638382588.git.josef@toxicpanda.com>
@@ -61,79 +61,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When we switch to per-block group extent roots we'll need to scan each
-individual extent root.  To make this easier in the future go ahead and
-use the range of the block groups to scan the extents.
+We have an ASSERT(ret == 0) when populating the free space tree as we
+should at least find the block group item with extent tree v1.  However
+with v2 we no longer have the block group item in the extent tree, so
+fix the population logic to handle an empty block group (which occurs
+during mkfs) and only assert if ret != 0 and we don't have extent tree
+v2 turned on.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/qgroup-verify.c | 32 ++++++++++++++++++++++++--------
- 1 file changed, 24 insertions(+), 8 deletions(-)
+ kernel-shared/free-space-tree.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/check/qgroup-verify.c b/check/qgroup-verify.c
-index 0813b841..45007d8c 100644
---- a/check/qgroup-verify.c
-+++ b/check/qgroup-verify.c
-@@ -1400,6 +1400,7 @@ static bool is_bad_qgroup(struct qgroup_count *count)
-  */
- int qgroup_verify_all(struct btrfs_fs_info *info)
- {
-+	struct rb_node *n;
- 	int ret;
- 	bool found_err = false;
- 	bool skip_err = false;
-@@ -1430,10 +1431,17 @@ int qgroup_verify_all(struct btrfs_fs_info *info)
- 	/*
- 	 * Put all extent refs into our rbtree
- 	 */
--	ret = scan_extents(info, 0, ~0ULL);
--	if (ret) {
--		fprintf(stderr, "ERROR: while scanning extent tree: %d\n", ret);
--		goto out;
-+	for (n = rb_first(&info->block_group_cache_tree); n; n = rb_next(n)) {
-+		struct btrfs_block_group *bg;
+diff --git a/kernel-shared/free-space-tree.c b/kernel-shared/free-space-tree.c
+index 0fdf5004..896bd3a2 100644
+--- a/kernel-shared/free-space-tree.c
++++ b/kernel-shared/free-space-tree.c
+@@ -1057,6 +1057,9 @@ int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto out;
+ 
++	start = block_group->start;
++	end = block_group->start + block_group->length;
 +
-+		bg = rb_entry(n, struct btrfs_block_group, cache_node);
-+		ret = scan_extents(info, bg->start,
-+				   bg->start + bg->length - 1);
-+		if (ret) {
-+			fprintf(stderr, "ERROR: while scanning extent tree: %d\n",
-+				ret);
-+			goto out;
-+		}
- 	}
- 
- 	ret = map_implied_refs(info);
-@@ -1507,6 +1515,7 @@ static void print_subvol_info(u64 subvolid, u64 bytenr, u64 num_bytes,
- 
- int print_extent_state(struct btrfs_fs_info *info, u64 subvol)
- {
-+	struct rb_node *n;
- 	int ret;
- 
- 	tree_blocks = ulist_alloc(0);
-@@ -1519,10 +1528,17 @@ int print_extent_state(struct btrfs_fs_info *info, u64 subvol)
  	/*
- 	 * Put all extent refs into our rbtree
- 	 */
--	ret = scan_extents(info, 0, ~0ULL);
--	if (ret) {
--		fprintf(stderr, "ERROR: while scanning extent tree: %d\n", ret);
--		goto out;
-+	for (n = rb_first(&info->block_group_cache_tree); n; n = rb_next(n)) {
-+		struct btrfs_block_group *bg;
-+
-+		bg = rb_entry(n, struct btrfs_block_group, cache_node);
-+		ret = scan_extents(info, bg->start,
-+				   bg->start + bg->length - 1);
-+		if (ret) {
-+			fprintf(stderr, "ERROR: while scanning extent tree: %d\n",
-+				ret);
-+			goto out;
-+		}
- 	}
+ 	 * Iterate through all of the extent and metadata items in this block
+ 	 * group, adding the free space between them and the free space at the
+@@ -1071,10 +1074,11 @@ int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot_for_read(extent_root, &key, path, 1, 0);
+ 	if (ret < 0)
+ 		goto out;
+-	ASSERT(ret == 0);
++	if (ret > 0) {
++		ASSERT(btrfs_fs_incompat(trans->fs_info, EXTENT_TREE_V2));
++		goto done;
++	}
  
- 	ret = map_implied_refs(info);
+-	start = block_group->start;
+-	end = block_group->start + block_group->length;
+ 	while (1) {
+ 		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+ 
+@@ -1106,6 +1110,7 @@ int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			break;
+ 	}
++done:
+ 	if (start < end) {
+ 		ret = __add_to_free_space_tree(trans, block_group, path2,
+ 				start, end - start);
 -- 
 2.26.3
 

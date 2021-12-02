@@ -2,40 +2,37 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D2A8C433F5
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E00D5C433FE
 	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Dec 2021 10:30:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356989AbhLBKeM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1356991AbhLBKeM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 2 Dec 2021 05:34:12 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37836 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1356980AbhLBKeK (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Dec 2021 05:34:10 -0500
-Received: from sin.source.kernel.org (sin.source.kernel.org [IPv6:2604:1380:40e1:4800::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5D26CC06174A
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Dec 2021 02:30:48 -0800 (PST)
+Received: from sin.source.kernel.org ([145.40.73.55]:50514 "EHLO
+        sin.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1356975AbhLBKeL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Dec 2021 05:34:11 -0500
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by sin.source.kernel.org (Postfix) with ESMTPS id F07B4CE21E3
+        by sin.source.kernel.org (Postfix) with ESMTPS id D9D33CE2207
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Dec 2021 10:30:47 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C449C53FCB
         for <linux-btrfs@vger.kernel.org>; Thu,  2 Dec 2021 10:30:45 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A188EC53FD0
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Dec 2021 10:30:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1638441044;
-        bh=jgw/cETeeOb/H13VPaef1031Zu3sMrNlDvhHn3BCOoE=;
+        s=k20201202; t=1638441046;
+        bh=59xhs2+h70b9yFRcwtESXYasR/N9z/s/vqBCBRwZtVI=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=SYvNjUw2s9PL/3n0q3sR2r5ACldlGi7vUiR8x2fz9RKBpocq19gkdizpnMz7g/xal
-         EO/GKRsiS7Pm9xNEZN5EW9pOuCSk86MnmZWhzaKjVNScp7yDOWV3lS6u2qehXIs/a1
-         hSO6GrBWR9uo3RbvmwINIZ2uEhgm61k8ydOfRGk1u5yE9biFehXtuUeQvsJkzkwWUT
-         CBXLmsjMKxupOPjquDzul80fmhCAc6oq4g2wcO7S9Rm4+apLp92jYHzYxhfmF2OG3W
-         MQSZf+bLeaBzsn3axh3dC6ibtHV5o8+RUqPRSQiLoouFkrkq7xSHFTXRTCAw//zjeA
-         8IkUeqkY32s1g==
+        b=Dxo+XrORERohez+0j6tdkCVtwTbq+doVnCEoNUIpNrrJ2RXhNrLt6mUvh48YV/EQK
+         6YLhHmGdjv8kEZJe1nzBnPdTJAKbxfcg3zc0H3t1suKYD5ZD9EKLE/GUuf8MFrGFVs
+         iMm+HN5/mG41tVLj5lszuE6K5HHALa88qL+2qba8xINrGvBpneTn0zTeJQOxCLjDy3
+         SfuAsxQxxp0K9JFn6enNWxHyfhiLCgcpgyO2aHYAoqvrGE0T5ImkpNwI1n4yPhz8+6
+         sBxBNXUkBkXuEdgS6WKTmtHELwS0QrSoIe8JM9dagNwDRP8xgldZtKYWIUty7/hrW5
+         /KNP5q7vZZQCQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] btrfs: allow generic_bin_search() to take low boundary as an argument
-Date:   Thu,  2 Dec 2021 10:30:35 +0000
-Message-Id: <a173e456fbf2af89f56a4ed0c5aec7fbb8a66de5.1638440535.git.fdmanana@suse.com>
+Subject: [PATCH 3/6] btrfs: remove useless condition check before splitting leaf
+Date:   Thu,  2 Dec 2021 10:30:37 +0000
+Message-Id: <0f1bed5dede2ac134033ca79e899ddd5dec833b1.1638440535.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1638440535.git.fdmanana@suse.com>
 References: <cover.1638440535.git.fdmanana@suse.com>
@@ -47,95 +44,42 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Right now generic_bin_search() always uses a low boundary slot of 0, but
-in the next patch we'll want to often skip slot 0 when searching for a
-key. So make generic_bin_search() have the low boundary slot specified
-as an argument, and move the check for the extent buffer level from
-btrfs_bin_search() to generic_bin_search() to avoid adding another
-wrapper around generic_bin_search().
+When inserting a key, we check if the write_lock_level is less than 1,
+and if so we set it to 1, release the path and retry the tree traversal.
+
+However that is unnecessary, because when ins_len is greater than 0, we
+know that write_lock_level can never be less than 1.
+
+The logic to retry is also buggy, because in case ins_len was decremented,
+due to an exact key match and the search is not meant for item extension
+(path->search_for_extension is 0), we retry without incrementing ins_len,
+which would make the next retry decrement it again by the same amount.
+
+So remove the check for write_lock_level being less than 1 and add an
+assertion to assert it's always >= 1.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c | 43 +++++++++++++++++++++++--------------------
- 1 file changed, 23 insertions(+), 20 deletions(-)
+ fs/btrfs/ctree.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d2297e449072..9329c8a3c855 100644
+index 62066c034363..9439c8606835 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -726,21 +726,23 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- }
+@@ -1968,11 +1968,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 				ins_len -= sizeof(struct btrfs_item);
+ 			}
+ 			if (ins_len > 0 && leaf_free_space < ins_len) {
+-				if (write_lock_level < 1) {
+-					write_lock_level = 1;
+-					btrfs_release_path(p);
+-					goto again;
+-				}
++				ASSERT(write_lock_level >= 1);
  
- /*
-- * search for key in the extent_buffer.  The items start at offset p,
-- * and they are item_size apart.
-+ * Search for a key in the given extent_buffer.
-  *
-- * the slot in the array is returned via slot, and it points to
-- * the place where you would insert key if it is not found in
-- * the array.
-+ * The lower boundary for the search is specified by the slot number @low. Use a
-+ * value of 0 to search over the whole extent buffer.
-  *
-- * Slot may point to total number of items if the key is bigger than
-- * all of the keys
-+ * The slot in the extent buffer is returned via @slot. If the key exists in the
-+ * extent buffer, then @slot will point to the slot where the key is, otherwise
-+ * it points to the slot where you would insert the key.
-+ *
-+ * Slot may point to the total number of items (i.e. one position beyond the last
-+ * key) if the key is bigger than the last key in the extent buffer.
-  */
--static noinline int generic_bin_search(struct extent_buffer *eb,
--				       unsigned long p, int item_size,
-+static noinline int generic_bin_search(struct extent_buffer *eb, int low,
- 				       const struct btrfs_key *key, int *slot)
- {
--	int low = 0;
-+	unsigned long p;
-+	int item_size;
- 	int high = btrfs_header_nritems(eb);
- 	int ret;
- 	const int key_size = sizeof(struct btrfs_disk_key);
-@@ -753,6 +755,14 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- 		return -EINVAL;
- 	}
- 
-+	if (btrfs_header_level(eb) == 0) {
-+		p = offsetof(struct btrfs_leaf, items);
-+		item_size = sizeof(struct btrfs_item);
-+	} else {
-+		p = offsetof(struct btrfs_node, ptrs);
-+		item_size = sizeof(struct btrfs_key_ptr);
-+	}
-+
- 	while (low < high) {
- 		unsigned long oip;
- 		unsigned long offset;
-@@ -791,20 +801,13 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- }
- 
- /*
-- * simple bin_search frontend that does the right thing for
-- * leaves vs nodes
-+ * Simple binary search on an extent buffer. Works for both leaves and nodes, and
-+ * always searches over the whole range of keys (slot 0 to slot 'nritems - 1').
-  */
- int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
- 		     int *slot)
- {
--	if (btrfs_header_level(eb) == 0)
--		return generic_bin_search(eb,
--					  offsetof(struct btrfs_leaf, items),
--					  sizeof(struct btrfs_item), key, slot);
--	else
--		return generic_bin_search(eb,
--					  offsetof(struct btrfs_node, ptrs),
--					  sizeof(struct btrfs_key_ptr), key, slot);
-+	return generic_bin_search(eb, 0, key, slot);
- }
- 
- static void root_add_used(struct btrfs_root *root, u32 size)
+ 				err = split_leaf(trans, root, key,
+ 						 p, ins_len, ret == 0);
 -- 
 2.33.0
 

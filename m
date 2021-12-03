@@ -2,220 +2,123 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C59A1C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Dec 2021 22:04:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CB15C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Dec 2021 22:18:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1383320AbhLCWIT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 3 Dec 2021 17:08:19 -0500
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57032 "EHLO
-        mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1383318AbhLCWIR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 3 Dec 2021 17:08:17 -0500
-Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 1B3L6Loh021533
-        for <linux-btrfs@vger.kernel.org>; Fri, 3 Dec 2021 14:04:52 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : in-reply-to : references : mime-version :
- content-transfer-encoding : content-type; s=facebook;
- bh=XaCykFwXMCDAcNbB2ExNRUs+wHOEbi/f6LfQ6DxQcGs=;
- b=Y6G/t8q7GXoaE4hSfUxJo7oSWShYu/QswGgOjAI+HVeffO/kPBcyzRCw0kf04r77NX/l
- HinerzK7M7suCnBcNJPyJlHWa35oZRkTWqH0zmg505kibADeV/REIXBkvhI2CK02upO7
- gwLAQJHtKXN0dpMyfGpnKz+nuoYM1eY6YmA= 
-Received: from maileast.thefacebook.com ([163.114.130.16])
-        by mx0a-00082601.pphosted.com with ESMTP id 3cqeku5qxq-5
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Dec 2021 14:04:52 -0800
-Received: from intmgw001.38.frc1.facebook.com (2620:10d:c0a8:1b::d) by
- mail.thefacebook.com (2620:10d:c0a8:83::4) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2308.20; Fri, 3 Dec 2021 14:04:51 -0800
-Received: by devvm225.atn0.facebook.com (Postfix, from userid 425415)
-        id 31D1B76B31D5; Fri,  3 Dec 2021 14:04:47 -0800 (PST)
-From:   Stefan Roesch <shr@fb.com>
-To:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-CC:     <shr@fb.com>
-Subject: [PATCH v6 2/4] btrfs: expose chunk size in sysfs.
-Date:   Fri, 3 Dec 2021 14:04:43 -0800
-Message-ID: <20211203220445.2312182-3-shr@fb.com>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20211203220445.2312182-1-shr@fb.com>
-References: <20211203220445.2312182-1-shr@fb.com>
+        id S1383374AbhLCWVr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 3 Dec 2021 17:21:47 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47782 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S240628AbhLCWVr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Dec 2021 17:21:47 -0500
+Received: from mail-qv1-xf36.google.com (mail-qv1-xf36.google.com [IPv6:2607:f8b0:4864:20::f36])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8344CC061751
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Dec 2021 14:18:22 -0800 (PST)
+Received: by mail-qv1-xf36.google.com with SMTP id jo22so4113830qvb.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Dec 2021 14:18:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=/+blJBDvdQyfP3EbZA1tDiOV9awEnh/D1bliY1nP2JE=;
+        b=xP4tQ0Ys43ycZIcb+UABgxLKfHPhh0FRJvRCjfOTlTTf+jjIsF/Qj3wHCzM5xYGtA9
+         UgMxUnR2OAG8S/vIXwCZxdiKeOCK40AlcDZAL0kkHhdCcqilr4cDm+574Br9TE1+XjHe
+         LOAjqIj2adB+/HN5zBXu3nK7xXVCM/PkMvaDBSgb1PWajOIxdSAwYC/e2vUK69Ut+Mhl
+         AKY9CCfKfGvy+pPpP83fpkXulp2ZnwDW0VWhfb54NEl0XMGltLfu73XC3rGOS28/bA+s
+         6Ir6sjAgrXPhGIHHJh+BSXnfU92e5rdYu9ZezSqwZNoOqSqTeSGpjVcXZjXKFRWzxOdD
+         Hc3Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=/+blJBDvdQyfP3EbZA1tDiOV9awEnh/D1bliY1nP2JE=;
+        b=jzZzdCAdnuSl6a/arzSB09Bi2TN+uX6SN0LUAeceUolkyN+o9V/1P7++hR97FUElY7
+         UX4KQ4tzkpdND0irBeskRrCgZhL45XbegnzU4MeGypVmqArjHXKXm0zxOjyM0EhgUFho
+         Bf61lziIJROdghiU5+9i1PFOzwehZrmwslhDmRkBZm1ruLTkViTcHyR3em4lEujGHrth
+         2IFq1wnpnPopw+eiygCL2cOr85vzuOD5cQHoIu1B+LHSpfDKP16dEfjhAn9o5g+s9r+Y
+         rbC6ZeBR1NX144WsyvvCHFlcYEE6hbP1GChI66K9HAq1qNn5JwglEHiNu9Nk63SIn3jY
+         X88Q==
+X-Gm-Message-State: AOAM531PF3+03r0HVXSvz55DLh6dpaiig0ZbCdrILddbkx3M46DDybGH
+        vMMeUeqgq5/STz0jNM8HKpx91z1iL0e83Q==
+X-Google-Smtp-Source: ABdhPJyZlRrgG/3DncLzS3ju6DumIN6gSFfw+VYkpDWIegQ5CW60tzSLs/KG1NKreARKhKZsllSIXg==
+X-Received: by 2002:ad4:4d05:: with SMTP id l5mr22649162qvl.54.1638569901225;
+        Fri, 03 Dec 2021 14:18:21 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id s20sm3378961qtc.75.2021.12.03.14.18.20
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 03 Dec 2021 14:18:20 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 00/18] Truncate cleanups and preparation work
+Date:   Fri,  3 Dec 2021 17:18:02 -0500
+Message-Id: <cover.1638569556.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-X-FB-Internal: Safe
-Content-Type: text/plain
-X-FB-Source: Intern
-X-Proofpoint-ORIG-GUID: 5x-QKfIRn5SKpgGsWBncQt9XtIAEha3J
-X-Proofpoint-GUID: 5x-QKfIRn5SKpgGsWBncQt9XtIAEha3J
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.790,Hydra:6.0.425,FMLib:17.11.62.513
- definitions=2021-12-03_11,2021-12-02_01,2021-12-02_01
-X-Proofpoint-Spam-Details: rule=fb_default_notspam policy=fb_default score=0 impostorscore=0
- clxscore=1015 priorityscore=1501 lowpriorityscore=0 suspectscore=0
- malwarescore=0 spamscore=0 adultscore=0 bulkscore=0 phishscore=0
- mlxlogscore=999 mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2110150000 definitions=main-2112030142
-X-FB-Internal: deliver
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This adds a new sysfs entry in /sys/fs/btrfs/<uuid>/allocation/<block
-type>/chunk_size. This allows to query the chunk size and also set the
-chunk size.
+Hello,
 
-Signed-off-by: Stefan Roesch <shr@fb.com>
----
- fs/btrfs/sysfs.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 94 insertions(+)
+The first thing I'm implementing with the garbage collection tree is
+btrfs_truncate_inode_items() on evicted inodes.  However
+btrfs_truncate_inode_items() has a lot of oddities that it's grown over the
+years, and requires having a valid btrfs_inode to use.  We don't really want to
+have to look up the old inode to do the truncate, we just want to do the tree
+operaitons to delete all of the objects and extents.
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index f9eff3b0f77c..39890ea21997 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -21,6 +21,7 @@
- #include "space-info.h"
- #include "block-group.h"
- #include "qgroup.h"
-+#include "misc.h"
-=20
- /*
-  * Structure name                       Path
-@@ -92,6 +93,7 @@ static struct btrfs_feature_attr btrfs_attr_features_##=
-_name =3D {	     \
-=20
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
- static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
-+static inline struct kobject *get_btrfs_kobj(struct kobject *kobj);
-=20
- static struct btrfs_feature_attr *to_btrfs_feature_attr(struct kobj_attr=
-ibute *a)
- {
-@@ -708,6 +710,81 @@ static ssize_t btrfs_space_info_show_##field(struct =
-kobject *kobj,	\
- }									\
- BTRFS_ATTR(space_info, field, btrfs_space_info_show_##field)
-=20
-+/*
-+ * Return space info chunk size.
-+ */
-+static ssize_t btrfs_chunk_size_show(struct kobject *kobj,
-+				     struct kobj_attribute *a, char *buf)
-+{
-+	struct btrfs_space_info *sinfo =3D to_space_info(kobj);
-+
-+	return sysfs_emit(buf, "%llu\n", atomic64_read(&sinfo->chunk_size));
-+}
-+
-+/*
-+ * Store new user supplied chunk size in space info.
-+ *
-+ * Note: If the new chunk size value is larger than 10% of free space it=
- is
-+ *       reduced to match that limit.
-+ */
-+static ssize_t btrfs_chunk_size_store(struct kobject *kobj,
-+				      struct kobj_attribute *a,
-+				      const char *buf, size_t len)
-+{
-+	struct btrfs_space_info *space_info =3D to_space_info(kobj);
-+	struct btrfs_fs_info *fs_info =3D to_fs_info(get_btrfs_kobj(kobj));
-+	u64 val;
-+	int ret;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (!fs_info) {
-+		pr_err("couldn't get fs_info\n");
-+		return -EPERM;
-+	}
-+
-+	if (sb_rdonly(fs_info->sb))
-+		return -EROFS;
-+
-+	if (!fs_info->fs_devices)
-+		return -EINVAL;
-+
-+	if (btrfs_is_zoned(fs_info))
-+		return -EINVAL;
-+
-+	if (!space_info) {
-+		btrfs_err(fs_info, "couldn't get space_info\n");
-+		return -EPERM;
-+	}
-+
-+	/* System block type must not be changed. */
-+	if (space_info->flags & BTRFS_BLOCK_GROUP_SYSTEM)
-+		return -EINVAL;
-+
-+	ret =3D kstrtoull(buf, 10, &val);
-+	if (ret)
-+		return ret;
-+
-+	val =3D min(val, BTRFS_MAX_DATA_CHUNK_SIZE);
-+
-+	/*
-+	 * Limit stripe size to 10% of available space.
-+	 */
-+	val =3D min(div_factor(fs_info->fs_devices->total_rw_bytes, 1), val);
-+
-+	/* Must be multiple of 256M. */
-+	val &=3D ~(SZ_256M - 1);
-+
-+	/* Must be at least 256M. */
-+	if (val < SZ_256M)
-+		return -EINVAL;
-+
-+	btrfs_update_space_info_chunk_size(space_info, val);
-+
-+	return val;
-+}
-+
- SPACE_INFO_ATTR(flags);
- SPACE_INFO_ATTR(total_bytes);
- SPACE_INFO_ATTR(bytes_used);
-@@ -718,6 +795,8 @@ SPACE_INFO_ATTR(bytes_readonly);
- SPACE_INFO_ATTR(bytes_zone_unusable);
- SPACE_INFO_ATTR(disk_used);
- SPACE_INFO_ATTR(disk_total);
-+BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
-+	      btrfs_chunk_size_store);
-=20
- /*
-  * Allocation information about block group types.
-@@ -735,6 +814,7 @@ static struct attribute *space_info_attrs[] =3D {
- 	BTRFS_ATTR_PTR(space_info, bytes_zone_unusable),
- 	BTRFS_ATTR_PTR(space_info, disk_used),
- 	BTRFS_ATTR_PTR(space_info, disk_total),
-+	BTRFS_ATTR_PTR(space_info, chunk_size),
- 	NULL,
- };
- ATTRIBUTE_GROUPS(space_info);
-@@ -1099,6 +1179,20 @@ static inline struct btrfs_fs_info *to_fs_info(str=
-uct kobject *kobj)
- 	return to_fs_devs(kobj)->fs_info;
- }
-=20
-+/*
-+ * Get btrfs sysfs kobject.
-+ */
-+static inline struct kobject *get_btrfs_kobj(struct kobject *kobj)
-+{
-+	while (kobj) {
-+		if (kobj->ktype =3D=3D &btrfs_ktype)
-+			return kobj;
-+		kobj =3D kobj->parent;
-+	}
-+
-+	return NULL;
-+}
-+
- #define NUM_FEATURE_BITS 64
- #define BTRFS_FEATURE_NAME_MAX 13
- static char btrfs_unknown_feature_names[FEAT_MAX][NUM_FEATURE_BITS][BTRF=
-S_FEATURE_NAME_MAX];
---=20
-2.30.2
+Enter this patch series, I've cleaned up btrfs_truncate_inode_items(), moved as
+much of the inode operations out to the respective callers, and cleaned up the
+argument passing and such to make it a little cleaner.
+
+We still have to pass in the inode for the ^NO_HOLES case for the normal
+truncate path, but other than that I've stripped it down so that we can pass in
+a NULL inode and get all the work done.
+
+This has the nice side-effect of cleaning up a lot of our
+
+if (root == LOG_ROOT)
+	// do something else
+
+checks in this helper, and hopefully makes it more straightforward to
+understand.  Thanks,
+
+Josef
+
+Josef Bacik (18):
+  btrfs: add an inode-item.h
+  btrfs: move btrfs_truncate_inode_items to inode-item.c
+  btrfs: move extent locking outside of btrfs_truncate_inode_items
+  btrfs: remove free space cache inode check in
+    btrfs_truncate_inode_items
+  btrfs: move btrfs_kill_delayed_inode_items into evict
+  btrfs: remove found_extent from btrfs_truncate_inode_items
+  btrfs: add btrfs_truncate_control struct
+  btrfs: only update i_size in truncate paths that care
+  btrfs: only call inode_sub_bytes in truncate paths that care
+  btrfs: control extent reference updates with a control flag for
+    truncate
+  btrfs: use a flag to control when to clear the file extent range
+  btrfs: pass the ino via btrfs_truncate_control
+  btrfs: add inode to btrfs_truncate_control
+  btrfs: convert BUG_ON() in btrfs_truncate_inode_items to ASSERT
+  btrfs: convert BUG() for pending_del_nr into an ASSERT
+  btrfs: combine extra if statements in btrfs_truncate_inode_items
+  btrfs: make should_throttle loop local in btrfs_truncate_inode_items
+  btrfs: do not check -EAGAIN when truncating inodes in the log root
+
+ fs/btrfs/ctree.h            |  34 ---
+ fs/btrfs/delayed-inode.c    |   1 +
+ fs/btrfs/free-space-cache.c |  31 ++-
+ fs/btrfs/inode-item.c       | 334 ++++++++++++++++++++++++++
+ fs/btrfs/inode-item.h       |  86 +++++++
+ fs/btrfs/inode.c            | 452 +++++-------------------------------
+ fs/btrfs/relocation.c       |   1 +
+ fs/btrfs/tree-log.c         |  15 +-
+ 8 files changed, 511 insertions(+), 443 deletions(-)
+ create mode 100644 fs/btrfs/inode-item.h
+
+-- 
+2.26.3
 

@@ -2,120 +2,114 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42758C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Dec 2021 14:43:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 258BEC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Dec 2021 17:05:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344595AbhLFOrZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Dec 2021 09:47:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48364 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344612AbhLFOq7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Dec 2021 09:46:59 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8EA8FC0613F8
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Dec 2021 06:43:30 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 2CD3C612E7
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Dec 2021 14:43:30 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 120AAC341C1;
-        Mon,  6 Dec 2021 14:43:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1638801809;
-        bh=GbkIPdP3MBiGLGHJJ12f1EfvhBTL2Kj5Ukl4f8QSNJI=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=vNkQyMaGmA8+PepMvaJgphpab0J9bHSyBSg9YUanQXCTfSr8rvCgg409lhmkgAnDE
-         m5JJ8/WK7jvLryDW68PwR/1KqpTy0Jz6EYCNqR2fjOWxgM/j+tReIZSFMeepBfiqqX
-         ZGhjTCciZmFX4jjgGESZJZ0dnlcJiLKq51ydU+DdyS6h9EPK5SR0N4u2BS6wfPpKz2
-         xTRhL4noDSYXEzR/jx7iWBhqRPQq96OUQ41iH+kVRw17ZGYPTkv0J6dBqfVteKBo5T
-         nkXW2fA1aLCyy3Fv8I/vY0mYyhRImzok66/wLPKK3M1+G1lTkzNo4u2+1c6nbio79k
-         wj6bgtcbpSgkA==
-Date:   Mon, 6 Dec 2021 14:43:25 +0000
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 00/18] Truncate cleanups and preparation work
-Message-ID: <Ya4hjVNLjDK4ZDOu@debian9.Home>
-References: <cover.1638569556.git.josef@toxicpanda.com>
+        id S238472AbhLFRJB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Dec 2021 12:09:01 -0500
+Received: from smtp-out2.suse.de ([195.135.220.29]:52406 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1349584AbhLFREc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Dec 2021 12:04:32 -0500
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id 952FC1FD2F;
+        Mon,  6 Dec 2021 17:01:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1638810062;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=yp7hghotZaqoiAeKYPhtC9/tKnk9po7MJvhqAFZYzgI=;
+        b=mZQyTDpHuUmtGHoipo06XIQvZ+VOz1PTRdZJbc1uT8f57xxTf300h34jJg1uc3PQZ1gSCM
+        GRWaOimLRDSzs79uHw1O1nc2HMt1egCH+5qA+By6faMQHzFCi3xNdMD2OqHYvBKXBXBlgL
+        n7YYRi2VrtAVJ2dSqAhPp/yWcLVHeNo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1638810062;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=yp7hghotZaqoiAeKYPhtC9/tKnk9po7MJvhqAFZYzgI=;
+        b=vV2/FDU3aZLXWsZ0ABCwKMxSlM7yLiPDyb1rjplRhygj0xTbljke3Y54sKlU3IM96DkyXN
+        Ti6m7kLu9YX226Aw==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 585C7A3B85;
+        Mon,  6 Dec 2021 17:01:02 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 2ED5BDA799; Mon,  6 Dec 2021 18:00:48 +0100 (CET)
+Date:   Mon, 6 Dec 2021 18:00:47 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: Re: [PATCH] btrfs: zoned: free zone_cache when freeing zone_info
+Message-ID: <20211206170047.GN28560@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Naohiro Aota <naohiro.aota@wdc.com>
+References: <2dbe65bc10716401b0c663b1a14131becff484dd.1638529933.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1638569556.git.josef@toxicpanda.com>
+In-Reply-To: <2dbe65bc10716401b0c663b1a14131becff484dd.1638529933.git.johannes.thumshirn@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Dec 03, 2021 at 05:18:02PM -0500, Josef Bacik wrote:
-> Hello,
+On Fri, Dec 03, 2021 at 03:12:27AM -0800, Johannes Thumshirn wrote:
+> Kmemleak was reporting the following memory leak on fstests btrfs/224 on my
+> zoned test setup:
 > 
-> The first thing I'm implementing with the garbage collection tree is
-> btrfs_truncate_inode_items() on evicted inodes.  However
-> btrfs_truncate_inode_items() has a lot of oddities that it's grown over the
-> years, and requires having a valid btrfs_inode to use.  We don't really want to
-> have to look up the old inode to do the truncate, we just want to do the tree
-> operaitons to delete all of the objects and extents.
+>  unreferenced object 0xffffc900001a9000 (size 4096):
+>    comm "mount", pid 1781, jiffies 4295339102 (age 5.740s)
+>    hex dump (first 32 bytes):
+>      00 00 00 00 00 00 00 00 00 00 08 00 00 00 00 00  ................
+>      00 00 08 00 00 00 00 00 01 00 00 00 00 00 00 00  ................
+>    backtrace:
+>      [<00000000b0ef6261>] __vmalloc_node_range+0x240/0x3d0
+>      [<00000000aa06ac88>] vzalloc+0x3c/0x50
+>      [<000000001824c35c>] btrfs_get_dev_zone_info+0x426/0x7e0 [btrfs]
+>      [<0000000004ba8d9d>] btrfs_get_dev_zone_info_all_devices+0x52/0x80 [btrfs]
+>      [<0000000054bc27eb>] open_ctree+0x1022/0x1709 [btrfs]
+>      [<0000000074fe7dc0>] btrfs_mount_root.cold+0x13/0xe5 [btrfs]
+>      [<00000000a54ca18b>] legacy_get_tree+0x22/0x40
+>      [<00000000ce480896>] vfs_get_tree+0x1b/0x80
+>      [<000000006423c6bd>] vfs_kern_mount.part.0+0x6c/0xa0
+>      [<000000003cf6fc28>] btrfs_mount+0x10d/0x380 [btrfs]
+>      [<00000000a54ca18b>] legacy_get_tree+0x22/0x40
+>      [<00000000ce480896>] vfs_get_tree+0x1b/0x80
+>      [<00000000995da674>] path_mount+0x6b6/0xa10
+>      [<00000000a5b4b6ec>] __x64_sys_mount+0xde/0x110
+>      [<00000000fe985c23>] do_syscall_64+0x43/0x90
+>      [<00000000c6071ff4>] entry_SYSCALL_64_after_hwframe+0x44/0xae
 > 
-> Enter this patch series, I've cleaned up btrfs_truncate_inode_items(), moved as
-> much of the inode operations out to the respective callers, and cleaned up the
-> argument passing and such to make it a little cleaner.
+> The allocated object in question is the zone_cache.
 > 
-> We still have to pass in the inode for the ^NO_HOLES case for the normal
-> truncate path, but other than that I've stripped it down so that we can pass in
-> a NULL inode and get all the work done.
+> Free it when freeing a btrfs_device's zone_info.
 > 
-> This has the nice side-effect of cleaning up a lot of our
+> Cc: Naohiro Aota <naohiro.aota@wdc.com>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/zoned.c | 1 +
+>  1 file changed, 1 insertion(+)
 > 
-> if (root == LOG_ROOT)
-> 	// do something else
-> 
-> checks in this helper, and hopefully makes it more straightforward to
-> understand.  Thanks,
-> 
-> Josef
-> 
-> Josef Bacik (18):
->   btrfs: add an inode-item.h
->   btrfs: move btrfs_truncate_inode_items to inode-item.c
->   btrfs: move extent locking outside of btrfs_truncate_inode_items
->   btrfs: remove free space cache inode check in
->     btrfs_truncate_inode_items
->   btrfs: move btrfs_kill_delayed_inode_items into evict
->   btrfs: remove found_extent from btrfs_truncate_inode_items
->   btrfs: add btrfs_truncate_control struct
->   btrfs: only update i_size in truncate paths that care
->   btrfs: only call inode_sub_bytes in truncate paths that care
->   btrfs: control extent reference updates with a control flag for
->     truncate
->   btrfs: use a flag to control when to clear the file extent range
->   btrfs: pass the ino via btrfs_truncate_control
->   btrfs: add inode to btrfs_truncate_control
->   btrfs: convert BUG_ON() in btrfs_truncate_inode_items to ASSERT
->   btrfs: convert BUG() for pending_del_nr into an ASSERT
->   btrfs: combine extra if statements in btrfs_truncate_inode_items
->   btrfs: make should_throttle loop local in btrfs_truncate_inode_items
->   btrfs: do not check -EAGAIN when truncating inodes in the log root
-> 
->  fs/btrfs/ctree.h            |  34 ---
->  fs/btrfs/delayed-inode.c    |   1 +
->  fs/btrfs/free-space-cache.c |  31 ++-
->  fs/btrfs/inode-item.c       | 334 ++++++++++++++++++++++++++
->  fs/btrfs/inode-item.h       |  86 +++++++
->  fs/btrfs/inode.c            | 452 +++++-------------------------------
->  fs/btrfs/relocation.c       |   1 +
->  fs/btrfs/tree-log.c         |  15 +-
->  8 files changed, 511 insertions(+), 443 deletions(-)
->  create mode 100644 fs/btrfs/inode-item.h
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index c917867a4261..fc9c6ae7bc00 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -612,6 +612,7 @@ void btrfs_destroy_dev_zone_info(struct btrfs_device *device)
+>  	bitmap_free(zone_info->active_zones);
+>  	bitmap_free(zone_info->seq_zones);
+>  	bitmap_free(zone_info->empty_zones);
+> +	vfree(zone_info->zone_cache);
+>  	kfree(zone_info);
+>  	device->zone_info = NULL;
 
-Looks good, and it passed one iteration of fstests here.
+This is the exact sequence that's at the end of btrfs_get_dev_zone_info
+(that had the vfree call), please clean it up so there's only the helper
+called from btrfs_get_dev_zone_info.
 
-For the whole series:
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Thanks.
-
-> 
-> -- 
-> 2.26.3
-> 
+The zone_cache is also pending for some stable backport so please add
+the Fixes: tag. Thanks.

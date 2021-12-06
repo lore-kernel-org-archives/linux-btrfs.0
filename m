@@ -2,79 +2,211 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 94668C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun,  5 Dec 2021 15:14:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C871C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Dec 2021 02:30:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235399AbhLEPR1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 5 Dec 2021 10:17:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45196 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235368AbhLEPR1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Dec 2021 10:17:27 -0500
-Received: from mail-pg1-x534.google.com (mail-pg1-x534.google.com [IPv6:2607:f8b0:4864:20::534])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E7F06C061714
-        for <linux-btrfs@vger.kernel.org>; Sun,  5 Dec 2021 07:13:59 -0800 (PST)
-Received: by mail-pg1-x534.google.com with SMTP id 137so8060299pgg.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 05 Dec 2021 07:13:59 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=date:from:to:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=boDKMdAeCyxxZM99fKq0bQHNAp1h846DLeDZStX6Wps=;
-        b=hq5ys/tHTa8h4To/VSDFiBTfUJluau8aGb7QpgWodX9VFasPtMBUEUB/Lk6WKxMzdi
-         Ylm+yCUZnUNzzSmpOhcWxiPDrzbCuEZUEfyzucrN+LKVKIW2aKSfNN/mb/ivwKbLtXs4
-         4SZBFFklzgfdy6mQmE2yCxsFVw/y1+CMasImyZR9q+8U01JD+nXlCX+e3yNgaLk0YdD3
-         i8vara1ugT+OS9llN+0QjPHPCXuC9LmxYAUA2gcNsU4YWMrWm/Rb79BJAC3+dezYOh0C
-         SVAjRVdaj978rvPNCf0mlh8VOwH15D4KQ8KbY0wLlgy5ZdV+7d7tqKHylgcvktX7hqaT
-         pzxQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=boDKMdAeCyxxZM99fKq0bQHNAp1h846DLeDZStX6Wps=;
-        b=XoV/DDmfXmrHIyy5zC0RcrkWQjnELcy6VvIWOnNUykD+ogQbD6Daph537obyE/PWMU
-         4B9gOrqZPuW3a+DJgUGjjbKzd+mFyZhh6QTuk/QoTY8GKUeHcWGYYX1LcJqIiWMYE6dr
-         Pag8iWTXzcemuDIrvfpsr2SGxlj5L1eq+bSqLNjx6hwWMuGhYE3PlTHffW/wEcEQC4yo
-         /3857vCflQ/NKwQ5FDksTZyHoNdG0Jqo9UUPinIKQEGjVNAsvkeoK3NvdJR5f3kUwSWC
-         PCVtLa/N+D7P3oUONZaxNHZTlr6eZmiQf2i8JOAnZJ4Qtj+M4HuCoY5/Qrk17gF4MZG1
-         kkGA==
-X-Gm-Message-State: AOAM533/U/bMc16ic6omEKWhvQLDc0WwioE24PZOUNf9+06WetI/AITS
-        TdIcETdGrAJAfy3H5mdW3uCFtRGJJ16xbw==
-X-Google-Smtp-Source: ABdhPJy+iUZ/cVBtp2B1vq/CX7daN+fnrQHG0Uorcgf1z65RTx7blxcnnN6wx5ahX6lpkpiZuZ4brg==
-X-Received: by 2002:a63:f252:: with SMTP id d18mr13440940pgk.191.1638717239540;
-        Sun, 05 Dec 2021 07:13:59 -0800 (PST)
-Received: from realwakka ([59.12.165.26])
-        by smtp.gmail.com with ESMTPSA id g18sm9387493pfb.103.2021.12.05.07.13.57
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 05 Dec 2021 07:13:59 -0800 (PST)
-Date:   Sun, 5 Dec 2021 15:13:51 +0000
-From:   Sidong Yang <realwakka@gmail.com>
-To:     dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Graham Cobb <g.btrfs@cobb.uk.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-Subject: Re: [PATCH v3] btrfs-progs: filesystem: du: skip file that
- permission denied
-Message-ID: <20211205151351.GA1160@realwakka>
-References: <20211122155411.10626-1-realwakka@gmail.com>
- <20211130174340.GJ28560@twin.jikos.cz>
+        id S234244AbhLFCd1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 5 Dec 2021 21:33:27 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:54746 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233372AbhLFCd1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Dec 2021 21:33:27 -0500
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 45B352113A
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Dec 2021 02:29:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1638757798; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=Cae/LTZYnU2x6nhlgjLSURv5cXtOizH/ideTxulYBTE=;
+        b=lCAdjGLwGFIqKWTQeE/UIaF3znQTvBp7pt5ZMMstmygPcUxEXRvVXt9IzKk/9sr1q2gkE2
+        1PIuR349GhI8dv3Ff08a/A/VtWqPj68w2hBXZWdMYtboieRcVbD6zowUshhvHnW2jeYBL3
+        UzC1PpVIHHrscqJUeR8D5aPk2/rsUAw=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8D68D13451
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Dec 2021 02:29:56 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id /GeYNKR1rWFEMgAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Dec 2021 02:29:56 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 00/17] btrfs: split bio at btrfs_map_bio() time
+Date:   Mon,  6 Dec 2021 10:29:20 +0800
+Message-Id: <20211206022937.26465-1-wqu@suse.com>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20211130174340.GJ28560@twin.jikos.cz>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 30, 2021 at 06:43:40PM +0100, David Sterba wrote:
-> On Mon, Nov 22, 2021 at 03:54:11PM +0000, Sidong Yang wrote:
-> > This patch handles issue #421.
-> 
-> The issue is about descending to mount points, while you add handling of
-> permissions. Is it referring to the right issue?
+This patchset be fetched from this branch:
 
-I understood it as a permission issue. Because the issue describe that
-it can not descend into a folder because of permission. So, I patched
-about permission. It could be solved with skipping all decending mount
-points. But I think it's little awkward because "/bin/du" doesn't work
-like it.
+https://github.com/adam900710/linux/tree/refactor_chunk_map
+
+[BACKGROUND]
+
+Currently btrfs never uses bio_split() to split its bio against RAID
+stripe boundaries.
+
+Instead inside btrfs we check our stripe boundary everytime we allocate
+a new bio, and ensure the new bio never cross stripe boundaries.
+
+[PROBLEMS]
+
+Although this behavior works fine, it's against the common practice used in
+stacked drivers, and is making the effort to convert to iomap harder.
+
+There is also an hidden burden, every time we allocate a new bio, we uses
+BIO_MAX_BVECS, but since we know the boundaries, for RAID0/RAID10 we can
+only fit at most 16 pages (fixed 64K stripe size, and 4K page size),
+wasting the 256 slots we allocated.
+
+[CHALLENGES]
+
+To change the situation, this patchset attempts to improve the situation
+by moving the bio split into btrfs_map_bio() time, so upper layer should
+no longer bother the bio split against RAID stripes or even chunk
+boundaries.
+
+But there are several challenges:
+
+- Conflicts in various endio functions
+  We want the existing granularity, instead of chained endio, thus we
+  must make the involved endio functions to handle split bios.
+
+  Although most endio functions are already doing their works
+  independent of the bio size, they are not yet fully handling split
+  bio.
+
+  This patch will convert them to use saved bi_iter and only iterate
+  the split range instead of the whole bio.
+  This change involved 3 types of IOs:
+
+  * Buffered IO
+    Including both data and metadata
+  * Direct IO
+  * Compressed IO
+
+  Their endio functions needs different level of updates to handle split
+  bios.
+
+  Furthermore, there is another endio, end_workqueue_bio(), it can't
+  handle split bios at all, thus we change the timing so that
+  btrfs_bio_wq_end_io() is only called after the bio being split.
+
+- Checksum verification
+  Currently we rely on btrfs_bio::csum to contain the checksum for the
+  whole bio.
+  If one bio get split, csum will no longer points to the correct
+  location for the split bio.
+
+  This can be solved by introducing btrfs_bio::offset_to_original, and
+  use that new member to calculate where we should read csum from.
+
+  For the parent bio, it still has btrfs_bio::csum for the whole bio,
+  thus it can still free it correctly.
+
+- Independent endio for each split bio
+  Unlike stack drivers, for RAID10 btrfs needs to try its best effort to
+  read every sectors, to handle the following case: (X means bad, either
+  unable to read or failed to pass checksum verification, V means good)
+
+  Dev 1	(missing) | D1 (X) |
+  Dev 2 (OK)	  | D1 (V) |
+  Dev 3 (OK)	  | D2 (V) |
+  Dev 4 (OK)	  | D2 (X) |
+
+  In the above RAID10 case, dev1 is missing, and although dev4 is fine,
+  its D2 sector is corrupted (by bit rot or whatever).
+
+  If we use bio_chain(), read bio for both D1 and D2 will be split, and
+  since D1 is missing, the whole D1 and D2 read will be marked as error,
+  thus we will try to read from dev2 and dev4.
+
+  But D2 in dev4 has csum mismatch, we can only rebuild D1 and D2
+  correctly from dev2:D1 and dev3:D2.
+
+  This patchset resolve this by saving bi_iter into btrfs_bio::iter, and
+  uses that at endio to iterate only the split part of an bio.
+  Other than this, existing read/write page endio functions can handle
+  them properly without problem.
+
+- Bad RAID56 naming/functionality
+  There are quite some RAID56 call sites relies on specific behavior on
+  __btrfs_map_block(), like returning @map_length as stripe_len other
+  than real mapped length.
+
+  This is handled by some small cleanups specific for RAID56.
+
+[CHANGELOG]
+RFC->v1:
+- Better patch split
+  Now patch 01~06 are refactors/cleanups/preparations.
+  While 07~13 are the patches that doing the conversion while can handle
+  both old and new bio split timings.
+  Finally patch 14~16 convert the bio split call sites one by one to
+  newer facility.
+  The final patch is just a small clean up.
+
+- Various bug fixes
+  During the full fstests run, various stupid bugs are exposed and
+  fixed.
+
+v2:
+- Fix the error paths for allocated but never submitted bios
+  There are tons of error path that we allocate a bio but it goes
+  bio_endio() directly without going through btrfs_map_bio().
+  New ASSERTS() in endio functions require a populated btrfs_bio::iter,
+  thus for such bios we still need to call btrfs_bio_save_iter() to
+  populate btrfs_bio::iter to prevent such ASSERT()s get triggered.
+
+- Fix scrub_stripe_index_and_offset() which abuses stripe_len and
+  mapped_length
+
+Qu Wenruo (17):
+  btrfs: update an stale comment on btrfs_submit_bio_hook()
+  btrfs: save bio::bi_iter into btrfs_bio::iter before any endio
+  btrfs: use correct bio size for error message in btrfs_end_dio_bio()
+  btrfs: refactor btrfs_map_bio()
+  btrfs: move btrfs_bio_wq_end_io() calls into submit_stripe_bio()
+  btrfs: replace btrfs_dio_private::refs with
+    btrfs_dio_private::pending_bytes
+  btrfs: introduce btrfs_bio_split() helper
+  btrfs: make data buffered read path to handle split bio properly
+  btrfs: make data buffered write endio function to be split bio
+    compatible
+  btrfs: make metadata write endio functions to be split bio compatible
+  btrfs: make dec_and_test_compressed_bio() to be split bio compatible
+  btrfs: return proper mapped length for RAID56 profiles in
+    __btrfs_map_block()
+  btrfs: allow btrfs_map_bio() to split bio according to chunk stripe
+    boundaries
+  btrfs: remove buffered IO stripe boundary calculation
+  btrfs: remove stripe boundary calculation for compressed IO
+  btrfs: remove the stripe boundary calculation for direct IO
+  btrfs: unexport btrfs_get_io_geometry()
+
+ fs/btrfs/btrfs_inode.h |  10 +-
+ fs/btrfs/compression.c |  70 +++-----------
+ fs/btrfs/disk-io.c     |  11 +--
+ fs/btrfs/extent_io.c   | 196 ++++++++++++++++++++++++++------------
+ fs/btrfs/extent_io.h   |   2 +
+ fs/btrfs/inode.c       | 210 ++++++++++++++++-------------------------
+ fs/btrfs/raid56.c      |  14 ++-
+ fs/btrfs/raid56.h      |   2 +-
+ fs/btrfs/scrub.c       |  14 +--
+ fs/btrfs/volumes.c     | 144 ++++++++++++++++++++--------
+ fs/btrfs/volumes.h     |  74 +++++++++++++--
+ 11 files changed, 436 insertions(+), 311 deletions(-)
+
+-- 
+2.34.1
+

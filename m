@@ -2,74 +2,75 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76B1AC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Dec 2021 18:29:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B8F2C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Dec 2021 18:35:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232465AbhLFSdI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Dec 2021 13:33:08 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:37700 "EHLO
+        id S243125AbhLFSjZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Dec 2021 13:39:25 -0500
+Received: from smtp-out2.suse.de ([195.135.220.29]:38212 "EHLO
         smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230448AbhLFSdI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Dec 2021 13:33:08 -0500
+        with ESMTP id S239809AbhLFSjY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Dec 2021 13:39:24 -0500
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 646B71FD2F;
-        Mon,  6 Dec 2021 18:29:38 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id 9D4C81FE04;
+        Mon,  6 Dec 2021 18:35:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1638815378;
+        t=1638815754;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=ObTkltGFhrZfgwXXVrNSl/LVdwdutxCDSzVnf0vKNhg=;
-        b=EQdKo7kiEwAdwzhxmHxmNW5I5lZejf+W1tAQ6JkFCn9pIGeNidpgvoZRcEgRy+s9c1H+9a
-        hyxyODaNd/5SyIvIePZlvzvp4MTXH5cSSHNYQXWoOL+WTlc2rIvytA7V4b75SZV4tPHGEn
-        puUCfn+AWql5CNijplA+w4xepILcCns=
+        bh=7PDgCa6+Z/jvFnO90E1fzygbH1I3RwSxNg2L8RwmNLg=;
+        b=PxXcI8dKmrPW8f7zmo04KjJ2RDV/2EQ8FN/IF04qW5hBY9VyGjsYWZ6PiuH6lqN0L1gmSs
+        uUMqIQynMZ9Hkmq5H069238g+4RgX8RAoo4Fj5W6NDsam+bHznJqVddW8CDcMAGJlcl4VH
+        nnVADVRsBkFoqzIuy8HBJlSvXZ1daZc=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1638815378;
+        s=susede2_ed25519; t=1638815754;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=ObTkltGFhrZfgwXXVrNSl/LVdwdutxCDSzVnf0vKNhg=;
-        b=nFgOfkbJ1InyBd2BtOMcra21MCNHa9EwwGlKJlLVvA+Rt0z9MIZeF2RJtplWVP+1UU3gds
-        JXYkuXlbs01kuIBw==
+        bh=7PDgCa6+Z/jvFnO90E1fzygbH1I3RwSxNg2L8RwmNLg=;
+        b=FvXYNkL0d0e64QJw1ODXOh/zpgSpjVvwM4FbdG5Fp4hN35GXMgRCuOpEF6ZsH4Z9+eoekG
+        +GgZjQ5DQ0CZTnCw==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 5C8CDA3B85;
-        Mon,  6 Dec 2021 18:29:38 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 8BC47A3B8B;
+        Mon,  6 Dec 2021 18:35:54 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 4218BDA799; Mon,  6 Dec 2021 19:29:24 +0100 (CET)
-Date:   Mon, 6 Dec 2021 19:29:24 +0100
+        id 67FECDA799; Mon,  6 Dec 2021 19:35:40 +0100 (CET)
+Date:   Mon, 6 Dec 2021 19:35:40 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] btrfs: optimize btree insertions and some cleanups
-Message-ID: <20211206182924.GR28560@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        kernel-team@fb.com
+Subject: Re: [PATCH] fstests: btrfs/011 increase the runtime for replace
+ cancel
+Message-ID: <20211206183540.GS28560@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <cover.1638440535.git.fdmanana@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        kernel-team@fb.com
+References: <01796d6bcec40ae80b5af3269e60a66cd4b89262.1638382763.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1638440535.git.fdmanana@suse.com>
+In-Reply-To: <01796d6bcec40ae80b5af3269e60a66cd4b89262.1638382763.git.josef@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 02, 2021 at 10:30:34AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> This patchset optimizes btree insertions to allow better parallelism, by
-> having insertions unlocking upper level nodes sooner and avoid blocking
-> other tasks, or reduce the time they are blocked, that want to use the
-> same nodes. The optimization is in patch 2/6, patch 1/6 is preparation
-> for it, and the rest are just cleanups or removing stale code and comments.
-> 
-> Filipe Manana (6):
->   btrfs: allow generic_bin_search() to take low boundary as an argument
->   btrfs: try to unlock parent nodes earlier when inserting a key
->   btrfs: remove useless condition check before splitting leaf
->   btrfs: move leaf search logic out of btrfs_search_slot()
->   btrfs: remove BUG_ON() after splitting leaf
->   btrfs: remove stale comment about locking at btrfs_search_slot()
+On Wed, Dec 01, 2021 at 01:19:35PM -0500, Josef Bacik wrote:
+> This test exercises the btrfs replace cancel path, but in order to do
+> this we have to have enough work to do in order to successfully cancel
+> the balance, otherwise the test fails because the operation has
+> completed before we're able to cancel.  This test has a very low pass
+> rate because we do not generate a large enough file system for replace
+> to have enough work, passing around 5% of the time.  Increase the time
+> spent to 10x the time we wait for the replace to start its work before
+> we cancel, this allows us to consistently pass this test.
 
-Added to misc-next, thanks.
+I've seen the test to pass most of the time but that it still fails
+depending on the load is annoying and requires checking the results. So
+even if it's probably a workaround (not sure we can make it 100%
+reliable without peeking into the internals) it's making things better.
+
+Acked-by: David Sterba <dsterba@suse.com>

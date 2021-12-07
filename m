@@ -2,115 +2,126 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45C27C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Dec 2021 15:22:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF08AC43217
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Dec 2021 15:36:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238570AbhLGP0F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Dec 2021 10:26:05 -0500
-Received: from bee.birch.relay.mailchannels.net ([23.83.209.14]:26604 "EHLO
-        bee.birch.relay.mailchannels.net" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S238401AbhLGP0F (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 7 Dec 2021 10:26:05 -0500
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-        by relay.mailchannels.net (Postfix) with ESMTP id 0ED8A6C1C30;
-        Tue,  7 Dec 2021 15:22:32 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-        (Authenticated sender: instrampxe0y3a)
-        by relay.mailchannels.net (Postfix) with ESMTPA id B0F486C18F5;
-        Tue,  7 Dec 2021 15:22:28 +0000 (UTC)
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-        by 100.97.65.145 (trex/6.4.3);
-        Tue, 07 Dec 2021 15:22:31 +0000
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Tank-Lonely: 5348d10b5dd437e0_1638890550019_3265735716
-X-MC-Loop-Signature: 1638890550019:1711411698
-X-MC-Ingress-Time: 1638890550019
-Received: from p57b045ec.dip0.t-ipconnect.de ([87.176.69.236]:57126 helo=heisenberg.scientia.net)
-        by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94.2)
-        (envelope-from <calestyo@scientia.org>)
-        id 1mucIS-0000Oe-FF; Tue, 07 Dec 2021 15:22:26 +0000
-Message-ID: <0bfa0a87bafcdc2256b3e917113edc8b5c26a623.camel@scientia.org>
-Subject: Re: ENOSPC while df shows 826.93GiB free
-From:   Christoph Anton Mitterer <calestyo@scientia.org>
-To:     Jorge Bastos <jorge.mrbastos@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date:   Tue, 07 Dec 2021 16:22:20 +0100
-In-Reply-To: <CAHzMYBRf63mcgVHiO-8o2UFffjB7Y+7FiOdnWRRb7RzfOBhi5Q@mail.gmail.com>
-References: <f001f3e81d413ea290722c38b14d95f3f1f52249.camel@scientia.org>
-         <25d305e5-c75f-3d71-fc5a-c2019e49bed9@gmx.com>
-         <c64be50bdc99b993b910a7ab019af8d552eeb0d4.camel@scientia.org>
-         <b7b6a6a7-700e-f83d-dae6-581ed6befbef@gmx.com>
-         <3239b2307fae4c7f9e8be9f194d5f3ef470ddb8c.camel@scientia.org>
-         <20211207072128.GL17148@hungrycats.org>
-         <CAHzMYBRf63mcgVHiO-8o2UFffjB7Y+7FiOdnWRRb7RzfOBhi5Q@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-User-Agent: Evolution 3.42.2-1 
+        id S238908AbhLGPjt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Dec 2021 10:39:49 -0500
+Received: from esa3.hgst.iphmx.com ([216.71.153.141]:35689 "EHLO
+        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S238913AbhLGPjs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2021 10:39:48 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1638891377; x=1670427377;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=JavpZOJSy917ZTOKrvFANscGut3+lDHjqpXWNZGNlNU=;
+  b=Z5iwq3RO9p92vJdIgm2sV7fLN/P8SqggQmb8bTd0IUK43njjQt2xJAGX
+   kajZvCmxGDCRCkSDwWNnQ5ALjNF36IaathPVCekkA1ospp8Bo1gEQRdPl
+   GrwXGyu7R0TaRvmHejIhGqXSqvc5iL83B6OM2ioAIt78i+w0e5fbVAJJs
+   TRWfTJlp4xmgvVJPIqCB8S80qsII376/TkM9j03fR4VOjJs2Q28z1B26J
+   pY7FTLAmbSmVtB1tPw5JYsXf09jUhUnFWM0SEPJQs3G2Xv4+iDcKY9g82
+   7F6dBs4KqwazhbjmUIHkDsonoIFPL9nbGEvf+mj2ixKsxTNWVqgM0Z5Kw
+   Q==;
+X-IronPort-AV: E=Sophos;i="5.87,293,1631548800"; 
+   d="scan'208";a="192442649"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2021 23:36:17 +0800
+IronPort-SDR: I5Psf62Mi2JXTh+u2CcWIYkxGN9g93RMoV/MlJFr6+QTUmCsLvIpNilmADQNwFl/JEyJvDX5cJ
+ SBZlrA+kZFZBnAIt/CQHp5qRdS8LeCP4qVWHHQEsKQ61h71SkZYQ/srukEyCCeDEUItCe7inrR
+ eqMXT4MY7DlldgvtZTxbP0k06+MLU9CX1qcfRt4Il+foYGFSMH4WVfcLCAdKLp4621YG2kwM6f
+ 6BfH29558iP2AbBCtLkSA5xXkW+o7IwJsTMNP5/zIf6Hw5SjtXcmbTbSIdmo6vSNrxv3zg4eDf
+ Wn/aBOvhMYxGEwQpl8wKK2PD
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Dec 2021 07:09:23 -0800
+IronPort-SDR: NKrXtCNuWho0MAt7UuWkNmX0xefmAeowf0WjYlEvZYZ4UjHoZf8YR5Kgg6o9Upn/b2kl1XhqWp
+ 02myEN9NzWjNc+UWbn2RWPNhnPNYLJNH3KxWUFD9Noq+TYXtXbsFmccUAlZeqqBLTHl6VtlfbF
+ /wTW8TsaA7rNaNeV9ucWkYPwvECBZa0DwGbpXfbmZdRTT4Ol/Gl/2r8b4KhuGy8dLHAbZB3mB6
+ SKilMK6ibw7LYl7PXEzrY5CX5hSWNBrkp1KfJrSpmlOJAcNpN+0ahX5j0x0/p/8r+K9X6FzDqA
+ 0to=
+WDCIronportException: Internal
+Received: from hx4cl13.ad.shared (HELO naota-xeon.wdc.com) ([10.225.50.41])
+  by uls-op-cesaip02.wdc.com with ESMTP; 07 Dec 2021 07:36:18 -0800
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH 1/3] btrfs: zoned: unset dedicated block group on allocation failure
+Date:   Wed,  8 Dec 2021 00:35:47 +0900
+Message-Id: <20211207153549.2946602-2-naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20211207153549.2946602-1-naohiro.aota@wdc.com>
+References: <20211207153549.2946602-1-naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-OutGoing-Spam-Status: No, score=-1.0
-X-AuthUser: calestyo@scientia.org
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hey Jorge.
+Allocating an extent from a block group can fail for various
+reasons. When an allocation from a dedicated block group (for tree-log
+or relocation data) fails, we need to unregister it as a dedicated one
+so that we can allocate a new block group for the dedicated one.
 
-I've looked at your old mail thread... and the first case you've
-showed:
-btrfs fi usage /mnt/disk4
-Overall:
-    Device size:                   7.28TiB
-    Device allocated:              7.28TiB
-    Device unallocated:            1.04MiB
-    Device missing:                  0.00B
-    Used:                          7.24TiB
-    Free (estimated):             34.55GiB      (min: 34.55GiB)
-    Free (statfs, df):            34.55GiB
-    Data ratio:                       1.00
-    Metadata ratio:                   2.00
-    Global reserve:              512.00MiB      (used: 0.00B)
-    Multiple profiles:                  no
+However, we are returning early when the block group in case it is
+read-only, fully used, or not be able to activate the zone. As a
+result, we keep the non-usable block group as a dedicated one, leading
+to further allocation failure. With many block groups, the allocator
+will iterate hopeless loop to find a free extent, results in
+a hung task.
 
-Data,single: Size:7.26TiB, Used:7.22TiB (99.54%)
-   /dev/md4        7.26TiB
+Fix the issue by delaying the return and doing the proper cleanups.
 
-Metadata,DUP: Size:9.50GiB, Used:8.45GiB (88.93%)
-   /dev/md4       19.00GiB
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/extent-tree.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
 
-System,DUP: Size:32.00MiB, Used:800.00KiB (2.44%)
-   /dev/md4       64.00MiB
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3fd736a02c1e..34200c1a7da0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3790,23 +3790,35 @@ static int do_allocation_zoned(struct btrfs_block_group *block_group,
+ 	spin_unlock(&fs_info->relocation_bg_lock);
+ 	if (skip)
+ 		return 1;
++
+ 	/* Check RO and no space case before trying to activate it */
+ 	spin_lock(&block_group->lock);
+ 	if (block_group->ro ||
+ 	    block_group->alloc_offset == block_group->zone_capacity) {
+-		spin_unlock(&block_group->lock);
+-		return 1;
++		ret = 1;
++		/*
++		 * May need to clear fs_info->{treelog,data_reloc}_bg.
++		 * Return the error after taking the locks.
++		 */
+ 	}
+ 	spin_unlock(&block_group->lock);
+ 
+-	if (!btrfs_zone_activate(block_group))
+-		return 1;
++	if (!ret && !btrfs_zone_activate(block_group)) {
++		ret = 1;
++		/*
++		 * May need to clear fs_info->{treelog,data_reloc}_bg.
++		 * Return the error after taking the locks.
++		 */
++	}
+ 
+ 	spin_lock(&space_info->lock);
+ 	spin_lock(&block_group->lock);
+ 	spin_lock(&fs_info->treelog_bg_lock);
+ 	spin_lock(&fs_info->relocation_bg_lock);
+ 
++	if (ret)
++		goto out;
++
+ 	ASSERT(!ffe_ctl->for_treelog ||
+ 	       block_group->start == fs_info->treelog_bg ||
+ 	       fs_info->treelog_bg == 0);
+-- 
+2.34.1
 
-Unallocated:
-   /dev/md4        1.04MiB
-
-
-Seems similar to my problem... but far less extrem.... so that I
-personally would say I could live with that.
-
-Of data you "loose" 0.04 TB ... so 40 GiB... of metadata you "loose"
-1.45 GiB
-
-
-It's a bit strange IMO that you then get ENOSPC, when your metadata has
-still 1GB free (thought it would reserve less?)
-
-But still, out of 7.28 TiB, that's ~0,556%... not sooo much.
-
-
-I in contrast have:
-829,44 + 0,5 = 829,94 GiB "lost"
-Which is out of 16.00TiB some ~5,066% lost... which seems pretty much.
-
-
-Cheers,
-Chris.

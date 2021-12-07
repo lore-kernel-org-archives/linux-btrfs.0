@@ -2,199 +2,126 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B629C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Dec 2021 15:36:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDDBBC433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Dec 2021 15:41:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238921AbhLGPju (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Dec 2021 10:39:50 -0500
-Received: from esa3.hgst.iphmx.com ([216.71.153.141]:35689 "EHLO
-        esa3.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238916AbhLGPju (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2021 10:39:50 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1638891379; x=1670427379;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=DCxYfL3uIZjRnzZip4bZzYhjB6rfPyfShRoAZauzxwM=;
-  b=BNdtbhh6DmsihMnXhP5xTaRTCp05MP64l8zXbxu0I5xjUC27yykeQIUQ
-   /485NTM1XfGqeSv+Kf5TgsjFA9mf0JMOdTZrHYkNUTRhMnQ5lJNjCVawX
-   vxrpwnCpmDc45iM+j7lr3tHDwqqRdp4vBwfog1g8lzIArIv73lkXTcL8N
-   1Ksm6q3ESTz4QkYvB8hQ1TiQg5TqZIDcXATPXmiHDOt/OYTKEbhrWd5Dj
-   x84TrUjqHaXkzmGId6aa2Ee5ggzW8NOBUIgg/Z2iDVdgkScyydzRUKO7b
-   wad5e0yA88c4YV8tAmT77+HaEez/jH8g2HNBwr4je/mq+Kql6RtXlkNRR
-   Q==;
-X-IronPort-AV: E=Sophos;i="5.87,293,1631548800"; 
-   d="scan'208";a="192442653"
-Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2021 23:36:19 +0800
-IronPort-SDR: OGh0fw4IZ2As+rii/1/Rw2HbqyKlDL72iiwoeSkq1Cx5hc4gVqNyuBEuhAYFcbD12WIMXHkxdB
- D00V5se6M7zbg3T8qh5oDX7Bq5fhmn5p8ltHGRMRJRNZfphpXSJedUFu1XdNz+Q5EC4y4TOeNh
- CPHLEjVvtWb5djd92byrMQZUttrd7HpgXt5PQW7h59oGLJDFKeTgHMpISVO4cTlxVMxsTd/Rhd
- 2BDLCIyo52Dn4yeAyfoVYhmuwjXdyxTR43yrpuyqJm/bKcUgYG7+2ja/swuTRpK7HqoNRoXnYf
- Kvo1F+7lvKoycaFUjFohqyS8
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Dec 2021 07:09:24 -0800
-IronPort-SDR: pIm3QcFvqUKK0Db7nVkjE1ORQ6K/uY/wPIwfRNyCsJxNSbh2NdPIYvw6kJiOeHcQmjdr06FNH5
- HviX7woHdeH00Arw6uMeBlOoEU2c+YqbY1ys+BLgDoL6PSdKAH7VUgJb6PLkHESReIotDZ9Pyi
- gn7qu6RU8HWtOj4o7fZrazAem9wYwqWK1eUOQm8G6SUv2eAwHfONjln00ir/jVSVm9Si6grXdS
- qvY4iiBY+xoCX+A2qg8E71BO7z4nt4fml5neBuRnlmidjDzdT1EknLbH2Krq3ASr2cXRaO4VmZ
- ARY=
-WDCIronportException: Internal
-Received: from hx4cl13.ad.shared (HELO naota-xeon.wdc.com) ([10.225.50.41])
-  by uls-op-cesaip02.wdc.com with ESMTP; 07 Dec 2021 07:36:20 -0800
-From:   Naohiro Aota <naohiro.aota@wdc.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 3/3] btrfs: zoned: fix chunk allocation condition for zoned allocator
-Date:   Wed,  8 Dec 2021 00:35:49 +0900
-Message-Id: <20211207153549.2946602-4-naohiro.aota@wdc.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20211207153549.2946602-1-naohiro.aota@wdc.com>
-References: <20211207153549.2946602-1-naohiro.aota@wdc.com>
+        id S234142AbhLGPof (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Dec 2021 10:44:35 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:51234 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233215AbhLGPof (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Dec 2021 10:44:35 -0500
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id F180721B3A;
+        Tue,  7 Dec 2021 15:41:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1638891663;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=V7ZvPt7TaVUFBL/hDiYU0Gq4o3sVqbCzTssYApICMEg=;
+        b=BYdEDe2oZrq/YoXHCIluMuD3em5/rJ+mqb+yG/6DjsQ0hjpn+eZIrvqxk8HEioBNLLyxRS
+        JZjbm83VonziRW4syDPU4VHPam6++872jriSrb1ZjXDmkLjmRYCEgnGFNT5YQ1gJwZ4rAB
+        tsEfamyrOqPAbCPR2k3Y9BDFxp8DAUw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1638891663;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=V7ZvPt7TaVUFBL/hDiYU0Gq4o3sVqbCzTssYApICMEg=;
+        b=NylRgH7FgsfJ8MkvDHnBgB5qEGBy3/IkVR9+OwAbx2iC+DseCPSoW33O0MBzX2Qw6gSFsa
+        lqvrl/WJWREe3eAg==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id E669DA3B83;
+        Tue,  7 Dec 2021 15:41:03 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 49C21DA799; Tue,  7 Dec 2021 16:40:49 +0100 (CET)
+Date:   Tue, 7 Dec 2021 16:40:48 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC 0/2] btrfs: remove the metadata readahead mechanism
+Message-ID: <20211207154048.GX28560@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        Filipe Manana <fdmanana@kernel.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <20211207074400.63352-1-wqu@suse.com>
+ <Ya8/NpvxmCCouKqg@debian9.Home>
+ <e019c8d6-4d59-4559-b56a-73dd2276903c@gmx.com>
+ <Ya9L2qSe+XKgtesq@debian9.Home>
+ <a91e60a4-7f5a-43eb-3c10-af2416aade9f@suse.com>
+ <20211207145329.GW28560@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20211207145329.GW28560@twin.jikos.cz>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The ZNS specification defines a limit on the number of "active"
-zones. That limit impose us to limit the number of block groups which
-can be used for an allocation at the same time. Not to exceed the
-limit, we reuse the existing active block groups as much as possible
-when we can't activate any other zones without sacrificing an already
-activated block group in commit a85f05e59bc1 ("btrfs: zoned: avoid
-chunk allocation if active block group has enough space").
+On Tue, Dec 07, 2021 at 03:53:29PM +0100, David Sterba wrote:
+> On Tue, Dec 07, 2021 at 08:01:04PM +0800, Qu Wenruo wrote:
+> > On 2021/12/7 19:56, Filipe Manana wrote:
+> > > On Tue, Dec 07, 2021 at 07:43:49PM +0800, Qu Wenruo wrote:
+> > >> On 2021/12/7 19:02, Filipe Manana wrote:
+> > >>> On Tue, Dec 07, 2021 at 03:43:58PM +0800, Qu Wenruo wrote:
+> > >>>> This is originally just my preparation for scrub refactors, but when the
+> > >>>> readahead is involved, it won't just be a small cleanup.
+> > >>>>
+> > >>>> The metadata readahead code is introduced in 2011 (surprisingly, the
+> > >>>> commit message even contains changelog), but now only one user for it,
+> > >>>> and even for the only one user, the readahead mechanism can't provide
+> > >>>> much help in fact.
+> > >>>>
+> > >>>> Scrub needs readahead for commit root, but the existing one can only do
+> > >>>> current root readahead.
+> > >>>
+> > >>> If support for the commit root is added, is there a noticeable speedup?
+> > >>> Have you tested that?
+> > >>
+> > >> Will craft a benchmark for that.
+> > >>
+> > >> Although I don't have any HDD available for benchmark, thus would only
+> > >> have result from SATA SSD.
+> 
+> I'm doing some tests, in a VM on a dedicated HDD.
 
-However, the check is wrong in two ways. First, it checks the
-condition for every raid index (ffe_ctl->index). Even if it reaches
-the condition and "ffe_ctl->max_extent_size >=
-ffe_ctl->min_alloc_size" is met, there can be other block groups
-having enough space to hold ffe_ctl->num_bytes. (Actually, this won't
-happen in the current zoned code as it only supports SINGLE
-profile. But, it can happen once it enables other RAID types.)
+There's some measurable difference:
 
-Second, it checks the active zone availability depending on the
-raid index. The raid index is just an index for
-space_info->block_groups, so it has nothing to do with chunk allocation.
+With readahead:
 
-These mistakes are causing a faulty allocation in a certain
-situation. Consider we are running zoned btrfs on a device whose
-max_active_zone == 0 (no limit). And, suppose no block group have a
-room to fit ffe_ctl->num_bytes but some room to meet
-ffe_ctl->min_alloc_size (i.e. max_extent_size > num_bytes >=
-min_alloc_size).
+Duration:         0:00:20
+Total to scrub:   7.02GiB
+Rate:             236.92MiB/s
 
-In this situation, the following occur:
+Duration:         0:00:48
+Total to scrub:   12.02GiB
+Rate:             198.02MiB/s
 
-- With SINGLE raid_index, it reaches the chunk allocation checking
-  code
-- The check returns true because we can activate a new zone (no limit)
-- But, before allocating the chunk, it iterates to the next raid index
-  (RAID5)
-- Since there are no RAID5 block groups on zoned mode, it again
-  reaches the check code
-- The check returns false because of btrfs_can_activate_zone()'s "if
-  (raid_index != BTRFS_RAID_SINGLE)" part
-- That results in returning -ENOSPC without allocating a new chunk
+Without readahead:
 
-As a result, we end up hitting -ENOSPC too early.
+Duration:         0:00:22
+Total to scrub:   7.02GiB
+Rate:             215.10MiB/s
 
-Move the check to the right place in the can_allocate_chunk() hook,
-and do the active zone check depending on the allocation flag, not on
-the raid index.
----
- fs/btrfs/extent-tree.c | 21 +++++++++------------
- fs/btrfs/zoned.c       |  5 ++---
- fs/btrfs/zoned.h       |  5 ++---
- 3 files changed, 13 insertions(+), 18 deletions(-)
+Duration:         0:00:50
+Total to scrub:   12.02GiB
+Rate:             190.66MiB/s
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5ec512673dc5..802add9857ed 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3966,6 +3966,15 @@ static bool can_allocate_chunk(struct btrfs_fs_info *fs_info,
- 	case BTRFS_EXTENT_ALLOC_CLUSTERED:
- 		return true;
- 	case BTRFS_EXTENT_ALLOC_ZONED:
-+		/*
-+		 * If we have enough free space left in an already
-+		 * active block group and we can't activate any other
-+		 * zone now, do not allow allocating a new chunk and
-+		 * let find_free_extent() retry with a smaller size.
-+		 */
-+		if (ffe_ctl->max_extent_size >= ffe_ctl->min_alloc_size &&
-+		    !btrfs_can_activate_zone(fs_info->fs_devices, ffe_ctl->flags))
-+			return false;
- 		return true;
- 	default:
- 		BUG();
-@@ -4012,18 +4021,6 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
- 		return 0;
- 	}
- 
--	if (ffe_ctl->max_extent_size >= ffe_ctl->min_alloc_size &&
--	    !btrfs_can_activate_zone(fs_info->fs_devices, ffe_ctl->index)) {
--		/*
--		 * If we have enough free space left in an already active block
--		 * group and we can't activate any other zone now, retry the
--		 * active ones with a smaller allocation size.  Returning early
--		 * from here will tell btrfs_reserve_extent() to haven the
--		 * size.
--		 */
--		return -ENOSPC;
--	}
--
- 	if (ffe_ctl->loop >= LOOP_CACHING_WAIT && ffe_ctl->have_caching_bg)
- 		return 1;
- 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 67d932d70798..06681fae450a 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -1883,7 +1883,7 @@ int btrfs_zone_finish(struct btrfs_block_group *block_group)
- 	return ret;
- }
- 
--bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, int raid_index)
-+bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
- {
- 	struct btrfs_device *device;
- 	bool ret = false;
-@@ -1892,8 +1892,7 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, int raid_index
- 		return true;
- 
- 	/* Non-single profiles are not supported yet */
--	if (raid_index != BTRFS_RAID_SINGLE)
--		return false;
-+	ASSERT((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0);
- 
- 	/* Check if there is a device with active zones left */
- 	mutex_lock(&fs_devices->device_list_mutex);
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index e53ab7b96437..002ff86c8608 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -71,8 +71,7 @@ struct btrfs_device *btrfs_zoned_get_device(struct btrfs_fs_info *fs_info,
- 					    u64 logical, u64 length);
- bool btrfs_zone_activate(struct btrfs_block_group *block_group);
- int btrfs_zone_finish(struct btrfs_block_group *block_group);
--bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices,
--			     int raid_index);
-+bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags);
- void btrfs_zone_finish_endio(struct btrfs_fs_info *fs_info, u64 logical,
- 			     u64 length);
- void btrfs_clear_data_reloc_bg(struct btrfs_block_group *bg);
-@@ -222,7 +221,7 @@ static inline int btrfs_zone_finish(struct btrfs_block_group *block_group)
- }
- 
- static inline bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices,
--					   int raid_index)
-+					   u64 flags)
- {
- 	return true;
- }
--- 
-2.34.1
+The setup is: data/single, metadata/dup, no-holes, free-space-tree,
+there are 8 backing devices but all reside on one HDD.
 
+Data generated by fio like
+
+fio --rw=randrw --randrepeat=1 --size=3000m \
+	 --bsrange=512b-64k --bs_unaligned \
+	 --ioengine=libaio --fsync=1024 \
+	 --name=job0 --name=job1 \
+
+and scrub starts right away this. VM has 4G or memory and 4 CPUs.
+
+The difference is 2 seconds, roughly 4% but the sample is not large
+enough to be conclusive.

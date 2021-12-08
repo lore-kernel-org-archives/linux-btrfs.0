@@ -2,77 +2,107 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7269EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Dec 2021 12:05:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64D96C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Dec 2021 12:55:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232753AbhLHMIu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Dec 2021 07:08:50 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:40994 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229675AbhLHMIt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Dec 2021 07:08:49 -0500
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 36B8C218D5;
-        Wed,  8 Dec 2021 12:05:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1638965117;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=BgLUbpI+TTkB6XfP1d3lBFtHHBWV0Usm8/pxqIM0c7Q=;
-        b=zBOafAa7iwbyYQ3N1ZYzNIuFjvm+Z40VeRy263d0hqlX/7wscg72YAdGg3cdrVJwrSBbxW
-        SH+vJ4r8L2pfCePWjlP4nsn+ntEbMXybZNFyUWXCTGE16Sz2aQlOwv0qyKjOiVPmizxP83
-        /k6kEV2Epg02+v+4R34si6OAR3Ibg1w=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1638965117;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=BgLUbpI+TTkB6XfP1d3lBFtHHBWV0Usm8/pxqIM0c7Q=;
-        b=9ulJ/05vZpdeLWCn6avXjxTzzW2Wd+GTt65bxNttM4LVkWSV0zSmL1X16E2W3gXgTCYe9d
-        fWztPZE+lc/AzBCw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 00070A3B92;
-        Wed,  8 Dec 2021 12:05:16 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 00825DA799; Wed,  8 Dec 2021 13:05:01 +0100 (CET)
-Date:   Wed, 8 Dec 2021 13:05:01 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     "dsterba@suse.cz" <dsterba@suse.cz>,
-        David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>
-Subject: Re: [PATCH v2 1/4] btrfs: zoned: encapsulate inode locking for zoned
- relocation
-Message-ID: <20211208120501.GI28560@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        David Sterba <dsterba@suse.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>
-References: <cover.1638886948.git.johannes.thumshirn@wdc.com>
- <b1d1bab106ddc4456224c0bf1c1bfcfaea4844b7.1638886948.git.johannes.thumshirn@wdc.com>
- <20211207190812.GC28560@twin.jikos.cz>
- <PH0PR04MB7416360B934D51D55BB4818E9B6F9@PH0PR04MB7416.namprd04.prod.outlook.com>
+        id S232201AbhLHM6y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Dec 2021 07:58:54 -0500
+Received: from campbell-lange.net ([178.79.140.51]:48208 "EHLO
+        campbell-lange.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229743AbhLHM6y (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Dec 2021 07:58:54 -0500
+X-Greylist: delayed 907 seconds by postgrey-1.27 at vger.kernel.org; Wed, 08 Dec 2021 07:58:54 EST
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=campbell-lange.net; s=it; h=Content-Type:MIME-Version:Message-ID:Subject:To
+        :From:Date:Sender:Reply-To:Cc:Content-Transfer-Encoding:Content-ID:
+        Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+        :Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+        List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=qK5LPo3SLXToHhlSTLNOnsRZrtU3JxpjtD42dgtFIlo=; b=JQOyYv3b9XEJonzyGxjRV9U4ij
+        R1URW3TbI7WbHf5dhQmIlmzV63meCnXLFOLJtUBl34c/QukbwQrktXBkhfwmkrVNKYk2eaR884Ibm
+        d5T/fJItWmAeAZ40PcrPYgGL1Na5UyleG8kC0l/ZKmYHApGs9zbuYv/TVNbdrBEFG/F0=;
+Received: from [217.138.52.158] (helo=rory-t470s)
+        by campbell-lange.net with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.94.2)
+        (envelope-from <rory@campbell-lange.net>)
+        id 1muwF4-0002Ag-Gx
+        for linux-btrfs@vger.kernel.org; Wed, 08 Dec 2021 12:40:14 +0000
+Received: from rory by rory-t470s with local (Exim 4.94.2)
+        (envelope-from <rory@rory-t470s>)
+        id 1muwF4-000Ipn-3n
+        for linux-btrfs@vger.kernel.org; Wed, 08 Dec 2021 12:40:14 +0000
+Date:   Wed, 8 Dec 2021 12:40:14 +0000
+From:   Rory Campbell-Lange <rory@campbell-lange.net>
+To:     linux-btrfs@vger.kernel.org
+Subject: trouble replacing second disk from pair
+Message-ID: <YbCnrqxHJxYPATj9@campbell-lange.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <PH0PR04MB7416360B934D51D55BB4818E9B6F9@PH0PR04MB7416.namprd04.prod.outlook.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Dec 08, 2021 at 09:06:14AM +0000, Johannes Thumshirn wrote:
-> On 07/12/2021 20:08, David Sterba wrote:
-> > All internal API should use struct btrfs_inode, applied with the
-> > following diff:
-> 
-> Ah ok, good to know. I wanted  to have a bit less pointer casing 
-> with using 'struct inode'. Anyways I don't mind.
+We're trying to upgrade the disks in a btrfs pair, and I have successfully replaced one of them using btrfs replace. I presently have 
 
-Now it's a mix of both and needs more works to unify but at least new
-code should be done the right way. The pointer chasing will go
-eventually and I don't think it has a measurable impact.
+Label: 'btrfs-bkp'  uuid: da90602a-b98e-4f0b-959a-ce431ac0cdfa
+	Total devices 2 FS bytes used 700.29GiB
+	devid    2 size 2.73TiB used 1.73TiB path /dev/mapper/cdisk4
+	devid    3 size 2.73TiB used 1.75TiB path /dev/mapper/cdisk2
+
+I'd like to get rid of cdisk2 and replace it with a new disk.
+
+However I'm unable to mount cdisk4 (the new disk) in degraded mode to allow me to similarly replace cdisk2 as I previously did for cdisk3. Is this because some of the data in only on cdisk2? If so I'd be grateful to 
+know how to ensure the two disks have the same data and to allow cdisk2 to be replaced.
+
+Regards
+Rory
+
+# btrfs filesystem usage /bkp
+
+Overall:
+    Device size:		   5.46TiB
+    Device allocated:		   3.49TiB
+    Device unallocated:		   1.97TiB
+    Device missing:		     0.00B
+    Used:			   1.37TiB
+    Free (estimated):		   2.04TiB	(min: 2.04TiB)
+    Data ratio:			      2.00
+    Metadata ratio:		      1.91
+    Global reserve:		 512.00MiB	(used: 0.00B)
+
+Data,single: Size:1.00GiB, Used:1.00MiB
+   /dev/mapper/cdisk2	   1.00GiB
+
+Data,RAID1: Size:1.73TiB, Used:691.24GiB
+   /dev/mapper/cdisk2	   1.73TiB
+   /dev/mapper/cdisk4	   1.73TiB
+
+Data,DUP: Size:8.00GiB, Used:7.30GiB
+   /dev/mapper/cdisk2	  16.00GiB
+
+Metadata,single: Size:1.00GiB, Used:0.00B
+   /dev/mapper/cdisk2	   1.00GiB
+
+Metadata,RAID1: Size:9.00GiB, Used:1.75GiB
+   /dev/mapper/cdisk2	   9.00GiB
+   /dev/mapper/cdisk4	   9.00GiB
+
+Metadata,DUP: Size:1.00GiB, Used:10.03MiB
+   /dev/mapper/cdisk2	   2.00GiB
+
+System,single: Size:32.00MiB, Used:224.00KiB
+   /dev/mapper/cdisk2	  32.00MiB
+
+System,RAID1: Size:32.00MiB, Used:192.00KiB
+   /dev/mapper/cdisk2	  32.00MiB
+   /dev/mapper/cdisk4	  32.00MiB
+
+System,DUP: Size:32.00MiB, Used:0.00B
+   /dev/mapper/cdisk2	  64.00MiB
+
+Unallocated:
+   /dev/mapper/cdisk2	 998.39GiB
+   /dev/mapper/cdisk4	1018.49GiB
+
+

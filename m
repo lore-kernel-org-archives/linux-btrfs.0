@@ -2,111 +2,106 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B0FEC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Dec 2021 14:57:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FED2C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Dec 2021 17:22:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239014AbhLIPBM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Dec 2021 10:01:12 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:35298 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239004AbhLIPBL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Dec 2021 10:01:11 -0500
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 9529F1F37E;
-        Thu,  9 Dec 2021 14:57:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1639061857;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LzIyK+gI/e6qy64cioNsB/eyWTg6lDPo2zLef13Qb4k=;
-        b=Qo5sPc/P1oqZt0kfsY2w9dkF4Jm+6ERRLHS87A719/Ex1Zc61R0GsKZpKg8tnwZQxqPrGI
-        ySfuR88cyrVS/cvTgVBBq8Nn7cjippO69D0oKYxMLh5t5mxK2njJvrFojXqc8ao1W27YIx
-        BxL26MVDl4raecYeibt+c5L8thHSzik=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1639061857;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LzIyK+gI/e6qy64cioNsB/eyWTg6lDPo2zLef13Qb4k=;
-        b=uW0xqn7RdCT45OG86B/Ho7qyuawOQXG4iBlCbJtajyWcYhNzYQMZNE2KZNZ3WcZCyuEaGS
-        p8zS/o3rISAOOnBA==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 80111A3B93;
-        Thu,  9 Dec 2021 14:57:37 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DBA4FDA799; Thu,  9 Dec 2021 15:57:21 +0100 (CET)
-Date:   Thu, 9 Dec 2021 15:57:21 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Jianglei Nie <niejianglei2021@163.com>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix memory leak in __add_inode_ref()
-Message-ID: <20211209145721.GN28560@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Jianglei Nie <niejianglei2021@163.com>,
-        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20211209065631.124586-1-niejianglei2021@163.com>
+        id S242745AbhLIRZs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Dec 2021 12:25:48 -0500
+Received: from foss.arm.com ([217.140.110.172]:59974 "EHLO foss.arm.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230216AbhLIRZs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 9 Dec 2021 12:25:48 -0500
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 430F5ED1;
+        Thu,  9 Dec 2021 09:22:14 -0800 (PST)
+Received: from e113632-lin (e113632-lin.cambridge.arm.com [10.1.196.57])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 5BB803F5A1;
+        Thu,  9 Dec 2021 09:22:13 -0800 (PST)
+From:   Valentin Schneider <valentin.schneider@arm.com>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     peterz@infradead.org, vincent.guittot@linaro.org,
+        torvalds@linux-foundation.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [REGRESSION] 5-10% increase in IO latencies with nohz balance patch
+In-Reply-To: <87lf0y9i8x.mognet@arm.com>
+References: <YaUH5GFFoLiS4/3/@localhost.localdomain> <87ee6yc00j.mognet@arm.com> <YaUYsUHSKI5P2ulk@localhost.localdomain> <87bl22byq2.mognet@arm.com> <YaUuyN3h07xlEx8j@localhost.localdomain> <878rx6bia5.mognet@arm.com> <87wnklaoa8.mognet@arm.com> <YappSLDS2EvRJmr9@localhost.localdomain> <87lf0y9i8x.mognet@arm.com>
+Date:   Thu, 09 Dec 2021 17:22:05 +0000
+Message-ID: <87v8zx8zia.mognet@arm.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20211209065631.124586-1-niejianglei2021@163.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Dec 09, 2021 at 02:56:31PM +0800, Jianglei Nie wrote:
-> Line 1169 (#3) allocates a memory chunk for victim_name by kmalloc(),
-> but  when the function returns in line 1184 (#4) victim_name allcoated
-> by line 1169 (#3) is not freed, which will lead to a memory leak.
-> There is a similar snippet of code in this function as allocating a memory
-> chunk for victim_name in line 1104 (#1) as well as releasing the memory
-> in line 1116 (#2).
-> 
-> We should kfree() victim_name when the return value of backref_in_log()
-> is less than zero and before the function returns in line 1184 (#4).
-> 
-> 1057 static inline int __add_inode_ref(struct btrfs_trans_handle *trans,
-> 1058 				  struct btrfs_root *root,
-> 1059 				  struct btrfs_path *path,
-> 1060 				  struct btrfs_root *log_root,
-> 1061 				  struct btrfs_inode *dir,
-> 1062 				  struct btrfs_inode *inode,
-> 1063 				  u64 inode_objectid, u64 parent_objectid,
-> 1064 				  u64 ref_index, char *name, int namelen,
-> 1065 				  int *search_done)
-> 1066 {
-> 
-> 1104 	victim_name = kmalloc(victim_name_len, GFP_NOFS);
-> 	// #1: kmalloc (victim_name-1)
-> 1105 	if (!victim_name)
-> 1106 		return -ENOMEM;
-> 
-> 1112	ret = backref_in_log(log_root, &search_key,
-> 1113			parent_objectid, victim_name,
-> 1114			victim_name_len);
-> 1115	if (ret < 0) {
-> 1116		kfree(victim_name); // #2: kfree (victim_name-1)
-> 1117		return ret;
-> 1118	} else if (!ret) {
-> 
-> 1169 	victim_name = kmalloc(victim_name_len, GFP_NOFS);
-> 	// #3: kmalloc (victim_name-2)
-> 1170 	if (!victim_name)
-> 1171 		return -ENOMEM;
-> 
-> 1180 	ret = backref_in_log(log_root, &search_key,
-> 1181 			parent_objectid, victim_name,
-> 1182 			victim_name_len);
-> 1183 	if (ret < 0) {
-> 1184 		return ret; // #4: missing kfree (victim_name-2)
-> 1185 	} else if (!ret) {
-> 
-> 1241 	return 0;
-> 1242 }
-> 
-> Signed-off-by: Jianglei Nie <niejianglei2021@163.com>
+On 06/12/21 09:48, Valentin Schneider wrote:
+> On 03/12/21 14:00, Josef Bacik wrote:
+>> On Fri, Dec 03, 2021 at 12:03:27PM +0000, Valentin Schneider wrote:
+>>> Could you give the 4 top patches, i.e. those above
+>>> 8c92606ab810 ("sched/cpuacct: Make user/system times in cpuacct.stat more precise")
+>>> a try?
+>>>
+>>> https://git.gitlab.arm.com/linux-arm/linux-vs.git -b mainline/sched/nohz-next-update-regression
+>>>
+>>> I gave that a quick test on the platform that caused me to write the patch
+>>> you bisected and looks like it didn't break the original fix. If the above
+>>> counter-measures aren't sufficient, I'll have to go poke at your
+>>> reproducers...
+>>>
+>>
+>> It's better but still around 6% regression.  If I compare these patches to the
+>> average of the last few days worth of runs you're 5% better than before, so
+>> progress but not completely erased.
+>>
+>
+> Hmph, time for me to reproduce this locally then. Thanks!
 
-Added to misc-next, thanks.
+I carved out a partition out of an Ampere eMAG's HDD to play with BTRFS
+via fsperf; this is what I get for the bisected commit (baseline is
+bisected patchset's immediate parent, aka v5.15-rc4) via a handful of
+./fsperf -p before-regression -c btrfs -n 100 -t emptyfiles500k
+
+  write_clat_ns_p99     195395.92     198790.46      4797.01    1.74%
+  write_iops             17305.79      17471.57       250.66    0.96%
+
+  write_clat_ns_p99     195395.92     197694.06      4797.01    1.18%
+  write_iops             17305.79      17533.62       250.66    1.32%
+
+  write_clat_ns_p99     195395.92     197903.67      4797.01    1.28%
+  write_iops             17305.79      17519.71       250.66    1.24%
+
+If I compare against tip/sched/core however:
+
+  write_clat_ns_p99     195395.92     202936.32      4797.01    3.86%
+  write_iops             17305.79      17065.46       250.66   -1.39%
+
+  write_clat_ns_p99     195395.92     204349.44      4797.01    4.58%
+  write_iops             17305.79      17097.79       250.66   -1.20%
+
+  write_clat_ns_p99     195395.92     204169.05      4797.01    4.49%
+  write_iops             17305.79      17112.29       250.66   -1.12%
+
+tip/sched/core + my patches:
+
+  write_clat_ns_p99     195395.92     205721.60      4797.01    5.28%
+  write_iops             17305.79      16947.59       250.66   -2.07%
+
+  write_clat_ns_p99     195395.92     203358.04      4797.01    4.07%
+  write_iops             17305.79      16953.24       250.66   -2.04%
+
+  write_clat_ns_p99     195395.92     201830.40      4797.01    3.29%
+  write_iops             17305.79      17041.18       250.66   -1.53%
+
+So tip/sched/core seems to have a much worse regression, and my patches
+are making things worse on that system...
+
+I've started a bisection to see where the above leads me, unfortunately
+this machine needs more babysitting than I thought so it's gonna take a
+while.
+
+@Josef any chance you could see if the above also applies to you? tip lives
+at https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git, though from
+where my bisection is taking me it looks like you should see that against
+Linus' tree as well.
+
+Thanks,
+Valentin

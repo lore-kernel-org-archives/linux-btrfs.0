@@ -2,39 +2,44 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B297AC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 12:20:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C42AC4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 12:20:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242322AbhLOMUI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Dec 2021 07:20:08 -0500
-Received: from ams.source.kernel.org ([145.40.68.75]:59396 "EHLO
-        ams.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237191AbhLOMUI (ORCPT
+        id S242345AbhLOMUJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Dec 2021 07:20:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48742 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S237191AbhLOMUJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Dec 2021 07:20:08 -0500
+        Wed, 15 Dec 2021 07:20:09 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9659AC061574
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 04:20:08 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id E3865B81EC1
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 3906C618A0
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:08 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 25BDDC34605
         for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:06 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3F666C34603
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1639570805;
-        bh=Ju+5uKobxvvaJ3xlb0bnRiNQEulGq2NFsmlbgMx9mMo=;
-        h=From:To:Subject:Date:From;
-        b=N+GpJfrGUwumWAb8hrPCzlX2Y0IZZc4dHBcF8isRRVYSD2rJRAKRsGQ/K92+tTy9B
-         rr/mhWhbXTf6F8DO2+Ac5NcNu5gRMqXvfdk5dXSg47rHmUMFf+Uz2VXvCjKCExiZDX
-         hMkrlzCKqLxzA+NNkKvudFmKMv1g4rWC3LF+1mIqSt229HSWxQi75LYODGVYoC2KLq
-         42EZh5vErHJHnl7cXHHs5FdOz3oTodINcQW+l5ZIj3wsYSSO6ETGF5xQfYc6vRKy43
-         4KsLmY++rRTN5Xe5H4Nei5g2o0g0CbRx6yimDBNf6Rm0X8tmUbfa/GpDPSE+6Gw7o1
-         NBL1fPgqvwsKg==
+        s=k20201202; t=1639570807;
+        bh=HQ8V/vhFsGUV5sv7xSnZEStTbHY4OdSmS+XLfPkrn+4=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=RAu47+WClgGtf7fBCOiA0TgId1d/BJI5uTdRvfaLJoNFb1Er+Bt+mk2xt0kMKbYHJ
+         16plYNESSBYYlf0AHgXUMAg3MpBcBmnzCVrT9K5btzC/D7ALo6RHRWe8OginKRbKhT
+         QcS1BzCZKhFh8KAtTzKscZHFpyTUIg9feoieBIDxzjiusKT/kJ0gEEC7Vj36bnnIbV
+         o5Q0ywmlPs9euZzfKIh0OnJn0dxz8b2uovhOC9nTXrFRHlVkRe75A2UZO7tFCL3QqW
+         +RQeA4T7XknVWwuXoF78a4fDkXH+stRyPZTfvNr90WTGZsMJfBDFwJfCNAganIMJk0
+         nD4rrF+K5G5sg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/4] btrfs: some more speedups for directory logging/fsync
-Date:   Wed, 15 Dec 2021 12:19:57 +0000
-Message-Id: <cover.1639568905.git.fdmanana@suse.com>
+Subject: [PATCH 2/4] btrfs: put initial index value of a directory in a constant
+Date:   Wed, 15 Dec 2021 12:19:59 +0000
+Message-Id: <80c71845e132bb5677dd280aa33fcdce08bc5542.1639568905.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1639568905.git.fdmanana@suse.com>
+References: <cover.1639568905.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -43,47 +48,78 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This patchset brings some more performance improvements for directory
-logging/fsync, by doing some changes to the logging algorithm to avoid
-logging dentries created in past transactions, which helps reducing a
-lot the amount of logged metadata, and therefore less IO as well for
-large directories.
+At btrfs_set_inode_index_count() we refer twice to the number 2 as the
+initial index value for a directory (when it's empty), with a proper
+comment explaining the reason for that value. In the next patch I'll
+have to use that magic value in the directory logging code, so put
+the value in a #define at btrfs_inode.h, to avoid hardcoding the
+magic value again at tree-log.c.
 
-It specially benefits the case when some dentries were removed, either
-due to file deletes or renames, where it can reduce the total time spent
-in an fsync by an order of magnitude even if the number of dentries removed
-is a small percentage of the total dentries in the directory (for e.g. as
-little as 1%, like in the test results of the changelog of patch 3/4).
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/btrfs_inode.h | 12 ++++++++++--
+ fs/btrfs/inode.c       | 10 ++--------
+ 2 files changed, 12 insertions(+), 10 deletions(-)
 
-This builds on top of my previous patchset to make directory logging copy
-only dir index keys and skip dir item keys, which has been on misc-next
-since the previous merge window closed.
-
-Patches 1/4 and 3/4 are the changes that accomplish this, while patch 2/4
-is just preparation for patch 3/4, and patch 4/4 is more of a cleanup of
-old, unnecessary and unreliable logic. Test case generic/335 was recently
-updated in fstests, so that after applying patch 4/4 it passes.
-
-Patch 3/4 contains in its changelog the test and results.
-
-We are close to the 5.17 merge window, holiday season is approaching and
-there's already a significant change for directory logging coming to 5.17
-(log only dir index keys and skip dir item keys), so I think this patchset
-is better suited for the 5.18 merge window.
-
-Thanks.
-
-Filipe Manana (4):
-  btrfs: don't log unnecessary boundary keys when logging directory
-  btrfs: put initial index value of a directory in a constant
-  btrfs: stop copying old dir items when logging a directory
-  btrfs: stop trying to log subdirectories created in past transactions
-
- fs/btrfs/btrfs_inode.h |  12 +++-
- fs/btrfs/inode.c       |  10 +---
- fs/btrfs/tree-log.c    | 123 +++++++++++++++++++++++++----------------
- 3 files changed, 86 insertions(+), 59 deletions(-)
-
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index b3e46aabc3d8..6d4f42b0fdce 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -13,6 +13,13 @@
+ #include "ordered-data.h"
+ #include "delayed-inode.h"
+ 
++/*
++ * Since we search a directory based on f_pos (struct dir_context::pos) we have
++ * to start at 2 since '.' and '..' have f_pos of 0 and 1 respectively, so
++ * everybody else has to start at 2 (see btrfs_real_readdir() and dir_emit_dots()).
++ */
++#define BTRFS_DIR_START_INDEX 2
++
+ /*
+  * ordered_data_close is set by truncate when a file that used
+  * to have good data has been truncated to zero.  When it is set
+@@ -173,8 +180,9 @@ struct btrfs_inode {
+ 	u64 disk_i_size;
+ 
+ 	/*
+-	 * if this is a directory then index_cnt is the counter for the index
+-	 * number for new files that are created
++	 * If this is a directory then index_cnt is the counter for the index
++	 * number for new files that are created. For an empty directory, this
++	 * must be initialized to BTRFS_DIR_START_INDEX.
+ 	 */
+ 	u64 index_cnt;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a88130c7782e..97fd33d599eb 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5971,14 +5971,8 @@ static int btrfs_set_inode_index_count(struct btrfs_inode *inode)
+ 		goto out;
+ 	ret = 0;
+ 
+-	/*
+-	 * MAGIC NUMBER EXPLANATION:
+-	 * since we search a directory based on f_pos we have to start at 2
+-	 * since '.' and '..' have f_pos of 0 and 1 respectively, so everybody
+-	 * else has to start at 2
+-	 */
+ 	if (path->slots[0] == 0) {
+-		inode->index_cnt = 2;
++		inode->index_cnt = BTRFS_DIR_START_INDEX;
+ 		goto out;
+ 	}
+ 
+@@ -5989,7 +5983,7 @@ static int btrfs_set_inode_index_count(struct btrfs_inode *inode)
+ 
+ 	if (found_key.objectid != btrfs_ino(inode) ||
+ 	    found_key.type != BTRFS_DIR_INDEX_KEY) {
+-		inode->index_cnt = 2;
++		inode->index_cnt = BTRFS_DIR_START_INDEX;
+ 		goto out;
+ 	}
+ 
 -- 
 2.33.0
 

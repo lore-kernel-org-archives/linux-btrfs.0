@@ -2,95 +2,145 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97952C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 10:38:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF100C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 12:20:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241710AbhLOKip (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Dec 2021 05:38:45 -0500
-Received: from esa1.hgst.iphmx.com ([68.232.141.245]:27127 "EHLO
-        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236580AbhLOKip (ORCPT
+        id S240817AbhLOMUI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Dec 2021 07:20:08 -0500
+Received: from dfw.source.kernel.org ([139.178.84.217]:55404 "EHLO
+        dfw.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S237182AbhLOMUH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Dec 2021 05:38:45 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1639564725; x=1671100725;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=XCWCp0brAnq7261kZWgNKU7eMMrUZrtjAZwCegz/GaU=;
-  b=HVxxBBq+ieSXqbi/zLjkDXI8A2Muij2slDSzh37NTIhltrTQ6GpaL4IP
-   NOVB0f5egFtHeI0dohUNSRzyikQWABOtVPdB1WTJhjQEZS1LKa2FW7qoR
-   H5mcThU2RFN8hz6ZPXhiLBsRn4UCePtd40jWXU7FTExpqjuogW7aoGaNX
-   LRAaUWCfiRUNbjQ0z61lBCFBqFbFnB0dDcgJ5SmkQxT/c4F6IGOpJHpZk
-   i7LoaIGkPa5PIU1N77jryKz1aHLvobsH53Y0GCc8qyNdEAGtogs0Ksgqq
-   pdERjKjPcaFBzWs+B4Tl5RAU7MRwrtA27d1FF7gpSR+BIqn6L4TTOzyh0
-   w==;
-X-IronPort-AV: E=Sophos;i="5.88,207,1635177600"; 
-   d="scan'208";a="300152403"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 15 Dec 2021 18:38:44 +0800
-IronPort-SDR: 3WJYQ8BHjE7o+3YLrB+XQSLBBsiai3o4SimTfX4w5thvZAID7SUlv+okEeE1XP+ZF44Vq2u7cl
- itw47XjwSykdYSgrF5hDWoYJEeN93D9XiXjab8Fg1G/RZ8Lwig8fYhSselbkd9z5nGaWpKd16R
- qqayoPYKiuUcYDiY4+HwWrFqmziJk0PN/SkbMHSIN/7jUaTWB3/B7DwXBL5iqIQkLXG83GPd+S
- R/7nwFKBwZu3UrlFjvWgUgb1uLc0OEDPaALCzdtbIULfB64s9PwQvXtJe0aBLWdEWdpOqk5y4N
- KxC+93+FDpSKLmvt2zeTfD7c
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 15 Dec 2021 02:13:09 -0800
-IronPort-SDR: S4b+0LBlBEP7GTufQGttlZSFd0xpiOswxkKzLd3Ubaiammi/GkkFyX4qmFRxAzwubPbinM/Lhm
- kRaCA5GxI6gWgHJXyqIO7+rbEmZT/MP7VThNLEGf66xwJwgmPNrnFjyCsPuoPoo15Pd4y4w2P0
- wJLFIte3nG7Nflsm//KWpDQ3JGkS/qdq9QqF+qX+9zdfGQ5HTXQTOLBT1Wo3Duoy9G71bfJZuT
- kMDzOUAwV5QNE4DwEmclMAbCqNq7ZhL5PpLcF3c0PH7OpeFvFTCy5a7EFaxWNX2FPZ9eaXOZlZ
- 6HE=
-WDCIronportException: Internal
-Received: from shindev.dhcp.fujisawa.hgst.com (HELO shindev.fujisawa.hgst.com) ([10.149.52.173])
-  by uls-op-cesaip02.wdc.com with ESMTP; 15 Dec 2021 02:38:44 -0800
-From:   Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Cc:     Naohiro Aota <Naohiro.Aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Damien Le Moal <damien.lemoal@opensource.wdc.com>,
-        Shinichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-Subject: [PATCH] btrfs: Fix missing blkdev_put() call in btrfs_scan_one_device()
-Date:   Wed, 15 Dec 2021 19:38:43 +0900
-Message-Id: <20211215103843.331630-1-shinichiro.kawasaki@wdc.com>
-X-Mailer: git-send-email 2.33.1
+        Wed, 15 Dec 2021 07:20:07 -0500
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 4E9A4618A0
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:07 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 331BCC34606
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1639570806;
+        bh=ZDMT6CCNG4ys31udZJmk8N/Ool2wMuebz82Nnx3MQqY=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=R2xrte6+8/vQMuzP4J4iK5TQTckiSKlLxLtnCOmhX8sOPL5sesBkHH/GMgTHf1fkg
+         Zlah8u9qg/Ub8VqIkgX4skJ7DE+z6AN6c6fNXmPksfO9iZaNJZbIm4lVCuF3LpnuiZ
+         UXwbFw9bUPMebFAukPZmJci1EmbPRDQjJF5xua9aC5VYiR+BdFoy4xTEnRqOtkPlU3
+         JoqG6YdNQYoIDveYVjD6e4wEu3ZKZG2vD7vDiegc7vMJRh4yqGVoaWcpDZANqQwTTd
+         eiRDoHx6ZoB8WHGncmcvPuc5OMYj3QEybax0GO5bzFAqoxpjnSaTblbBxnq60kWECQ
+         wYmzxzD6Xtd2Q==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/4] btrfs: don't log unnecessary boundary keys when logging directory
+Date:   Wed, 15 Dec 2021 12:19:58 +0000
+Message-Id: <ca245c0459ed742acbf0fa48b7f4f298fe1fb0b5.1639568905.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1639568905.git.fdmanana@suse.com>
+References: <cover.1639568905.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function btrfs_scan_one_device() calls blkdev_get_by_path() and
-blkdev_put() to get and release its target block device. However, when
-btrfs_sb_log_location_bdev() fails, blkdev_put() is not called and the
-block device is left without clean up. This triggered failure of fstests
-generic/085. Fix the failure path of btrfs_sb_log_location_bdev() to
-call blkdev_put().
+From: Filipe Manana <fdmanana@suse.com>
 
-Fixes: 12659251ca5df ("btrfs: implement log-structured superblock for ZONED mode")
-Signed-off-by: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
-Cc: stable@vger.kernel.org # 5.15+
+Before we start to log dir index keys from a leaf, we check if there is a
+previous index key, which normally is at the end of a leaf that was not
+changed in the current transaction. Then we log that key and set the start
+of logged range (item of type BTRFS_DIR_LOG_INDEX_KEY) to the offset of
+that key. This is to ensure that if there were deleted index keys between
+that key and the first key we are going to log, those deletions are
+replayed in case we need to replay to the log after a power failure.
+However we really don't need to log that previous key, we can just set the
+start of the logged range to that key's offset plus 1. This achieves the
+same and avoids logging one dir index key.
+
+The same logic is performed when we finish logging the index keys of a
+leaf and we find that the next leaf has index keys and was not changed in
+the current transaction. We are logging the first key of that next leaf
+and use its offset as the end of range we log. This is just to ensure that
+if there were deleted index keys between the last index key we logged and
+the first key of that next leaf, those index keys are deleted if we end
+up replaying the log. However that is not necessary, we can avoid logging
+that first index key of the next leaf and instead set the end of the
+logged range to match the offset of that index key minus 1.
+
+So avoid logging those index keys at the boundaries and adjust the start
+and end offsets of the logged ranges as described above.
+
+This patch is part of a patchset comprised of the following patches:
+
+  1/4 btrfs: don't log unnecessary boundary keys when logging directory
+  2/4 btrfs: put initial index value of a directory in a constant
+  3/4 btrfs: stop copying old dir items when logging a directory
+  4/4 btrfs: stop trying to log subdirectories created in past transactions
+
+Performance test results are listed in the changelog of patch 3/4.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/volumes.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ fs/btrfs/tree-log.c | 39 +++++++++++++++++++++------------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 0997e3cd74e9..fd0ced829edb 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1370,8 +1370,10 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index c1ddbe800897..a80f14df5b81 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3883,17 +3883,18 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_previous_item(root, path, ino, BTRFS_DIR_INDEX_KEY);
+ 	if (ret == 0) {
+ 		struct btrfs_key tmp;
++
+ 		btrfs_item_key_to_cpu(path->nodes[0], &tmp, path->slots[0]);
+-		if (tmp.type == BTRFS_DIR_INDEX_KEY) {
+-			first_offset = tmp.offset;
+-			ret = overwrite_item(trans, log, dst_path,
+-					     path->nodes[0], path->slots[0],
+-					     &tmp);
+-			if (ret) {
+-				err = ret;
+-				goto done;
+-			}
+-		}
++		/*
++		 * The dir index key before the first one we found that needs to
++		 * be logged might be in a previous leaf, and there might be a
++		 * gap between these keys, meaning that we had deletions that
++		 * happened. So the key range item we log (key type
++		 * BTRFS_DIR_LOG_INDEX_KEY) must cover a range that starts at the
++		 * previous key's offset plus 1, so that those deletes are replayed.
++		 */
++		if (tmp.type == BTRFS_DIR_INDEX_KEY)
++			first_offset = tmp.offset + 1;
+ 	}
+ 	btrfs_release_path(path);
  
- 	bytenr_orig = btrfs_sb_offset(0);
- 	ret = btrfs_sb_log_location_bdev(bdev, 0, READ, &bytenr);
--	if (ret)
--		return ERR_PTR(ret);
-+	if (ret) {
-+		device = ERR_PTR(ret);
-+		goto error_bdev_put;
-+	}
- 
- 	disk_super = btrfs_read_disk_super(bdev, bytenr, bytenr_orig);
- 	if (IS_ERR(disk_super)) {
+@@ -3941,14 +3942,16 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 			goto done;
+ 		}
+ 		if (btrfs_header_generation(path->nodes[0]) != trans->transid) {
+-			ctx->last_dir_item_offset = min_key.offset;
+-			ret = overwrite_item(trans, log, dst_path,
+-					     path->nodes[0], path->slots[0],
+-					     &min_key);
+-			if (ret)
+-				err = ret;
+-			else
+-				last_offset = min_key.offset;
++			/*
++			 * The next leaf was not changed in the current transaction
++			 * and has at least one dir index key.
++			 * We check for the next key because there might have been
++			 * one or more deletions between the last key we logged and
++			 * that next key. So the key range item we log (key type
++			 * BTRFS_DIR_LOG_INDEX_KEY) must end at the next key's
++			 * offset minus 1, so that those deletes are replayed.
++			 */
++			last_offset = min_key.offset - 1;
+ 			goto done;
+ 		}
+ 		if (need_resched()) {
 -- 
-2.33.1
+2.33.0
 

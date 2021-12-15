@@ -2,96 +2,76 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9040C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 12:20:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92FD1C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 13:20:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242361AbhLOMUM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Dec 2021 07:20:12 -0500
-Received: from ams.source.kernel.org ([145.40.68.75]:59410 "EHLO
-        ams.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242338AbhLOMUL (ORCPT
+        id S242804AbhLONU3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Dec 2021 08:20:29 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:35488 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234617AbhLONU2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Dec 2021 07:20:11 -0500
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        Wed, 15 Dec 2021 08:20:28 -0500
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id C9080B81EC5
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:10 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0BC57C34606
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 12:20:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1639570809;
-        bh=5kZ74goLr2y6lCCYGCbR01lCGh/6ko0LE82g6cTye0U=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=uUnMy52g5hzQdo1tAmdicoJ1JkAFzizDTfuPC2Jszs6W8UK+JJNHkfiIccuIJfMZV
-         06qTx19ALwW+ajQtsluT5gSYEJjKeEp+qR+yb2ecUJiVKydHYDmgnKscn4Hh6U76mp
-         TC1XgwiIJu7peHmdsEN6/Uz9QbvRvhVAg2GrfLtg9BLQsPSzhhV9lyHJA9zox0cCgU
-         lMWwDsQGseOMvltrIJ1qgRIN3NVNWraT6JwErwnSro/kjTPCEwc+T/1t7o+TQfa0Zp
-         uDsM4tOh2dpzQXtOBDcvefhgqT+lsIL4hFm1yXlNYIcIdsEI0Tzk5voRnTyAOX74qi
-         4ndi/F0kWfQLw==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs: stop trying to log subdirectories created in past transactions
-Date:   Wed, 15 Dec 2021 12:20:01 +0000
-Message-Id: <fa34b304b223a9b514d0141a9c7e42082f6dc952.1639568906.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1639568905.git.fdmanana@suse.com>
-References: <cover.1639568905.git.fdmanana@suse.com>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 491B0212C5;
+        Wed, 15 Dec 2021 13:20:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1639574427; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=WDguJLBjyj4RSRToVmB/8s+bOJVPWr4eYb7ga1+ycPQ=;
+        b=qIdCmhxgwbiWN1pOTlVJPJH0LSLmoQ/0nDnW5Kfp0kOV8hTvvkghPDeFghabtuybwXWkG4
+        0BkxFQ43qRiBKfcLNAaoy02/uMAAXi0nV80Oz+CXIoeEydz9DZw+NuRKs0IPjP2Zx2YiZk
+        C9X7L6eV/AK+PjFdVmY+y+J2h41HFoI=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E62711330B;
+        Wed, 15 Dec 2021 13:20:26 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id aNyzNZrruWGQSAAAMHmgww
+        (envelope-from <nborisov@suse.com>); Wed, 15 Dec 2021 13:20:26 +0000
+Subject: Re: [PATCH] btrfs: Fix missing blkdev_put() call in
+ btrfs_scan_one_device()
+To:     Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>,
+        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc:     Naohiro Aota <Naohiro.Aota@wdc.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>
+References: <20211215103843.331630-1-shinichiro.kawasaki@wdc.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+Message-ID: <49813991-b87d-a7e0-f697-3b677f6b96e5@suse.com>
+Date:   Wed, 15 Dec 2021 15:20:26 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
 MIME-Version: 1.0
+In-Reply-To: <20211215103843.331630-1-shinichiro.kawasaki@wdc.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
 
-When logging a directory we are trying to log subdirectories that were
-changed in the current transaction and created in a past transaction.
-This type of behaviour was introduced by commit 2f2ff0ee5e4303 ("Btrfs:
-fix metadata inconsistencies after directory fsync"), to fix some metadata
-inconsistencies that in the meanwhile no longer need this behaviour due to
-numerous other changes that happened throughout the years.
 
-This behaviour, besides not needed anymore, it's also undesirable because:
+On 15.12.21 г. 12:38, Shin'ichiro Kawasaki wrote:
+> The function btrfs_scan_one_device() calls blkdev_get_by_path() and
+> blkdev_put() to get and release its target block device. However, when
+> btrfs_sb_log_location_bdev() fails, blkdev_put() is not called and the
+> block device is left without clean up. This triggered failure of fstests
+> generic/085. Fix the failure path of btrfs_sb_log_location_bdev() to
+> call blkdev_put().
+> 
+> Fixes: 12659251ca5df ("btrfs: implement log-structured superblock for ZONED mode")
+> Signed-off-by: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
+> Cc: stable@vger.kernel.org # 5.15+
+> ---
 
-1) It's not reliable because it's only triggered for the directories
-   of dentries (dir items) that happen to be present on a leaf that
-   was changed in the current transaction. If a dentry that points to
-   a directory resides on a leaf that was not changed in the current
-   transaction, then it's not logged, as at log_dir_items() and
-   log_new_dir_dentries() we use btrfs_search_forward();
-
-2) It's not required by posix or any standard, it's undefined territory.
-   The only way to guarantee a subdirectory is logged, it to explicitly
-   fsync it;
-
-Making the behaviour guaranteed would require scanning all directory
-items, check which point to a directory, and then fsync each subdirectory
-which was modified in the current transaction. This could be very
-expensive for large directories with many subdirectories and/or large
-subdirectories.
-
-So remove that obsolete logic.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 7c239fedf192..4b89ac769347 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -5970,8 +5970,7 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
- 
- 			di = btrfs_item_ptr(leaf, i, struct btrfs_dir_item);
- 			type = btrfs_dir_type(leaf, di);
--			if (btrfs_dir_transid(leaf, di) < trans->transid &&
--			    type != BTRFS_FT_DIR)
-+			if (btrfs_dir_transid(leaf, di) < trans->transid)
- 				continue;
- 			btrfs_dir_item_key_to_cpu(leaf, di, &di_key);
- 			if (di_key.type == BTRFS_ROOT_ITEM_KEY)
--- 
-2.33.0
-
+Reviewed-by: Nikolay Borisov <nborisov@suse.com>

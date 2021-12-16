@@ -2,113 +2,142 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E6F9C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Dec 2021 23:58:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AC8FC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Dec 2021 00:56:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232184AbhLOX6q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Dec 2021 18:58:46 -0500
-Received: from mout.gmx.net ([212.227.15.19]:35973 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231388AbhLOX6q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Dec 2021 18:58:46 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1639612723;
-        bh=nqiNSlnh8u2JLOxjMAm8dgK5E+w9WSTut4sS6lur1jI=;
-        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
-        b=h+5zkWBaeATqVgGZTJAGDK5aBmhgBgvlFoaHbm5C5knJh9r/y7X8I7UU/Cw1qTWAZ
-         h/MHYyLI1TeBmfU8MP2zTIcx5VzILbfFxNQyQUldAz+fgLsPCDiRH6mu5gB0JbDyOq
-         nDVq4B/SewYS47qEfNAN3sreARtbrX9hwcDXfKpo=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mel3n-1mPgrX2L13-00alaW; Thu, 16
- Dec 2021 00:58:43 +0100
-Message-ID: <1010d177-a983-d95f-1927-690114805b8f@gmx.com>
-Date:   Thu, 16 Dec 2021 07:58:39 +0800
+        id S229565AbhLPA4h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Dec 2021 19:56:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55434 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229441AbhLPA4g (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Wed, 15 Dec 2021 19:56:36 -0500
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65289C061574
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 16:56:36 -0800 (PST)
+Received: by mail-qk1-x731.google.com with SMTP id l25so12562077qkl.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Dec 2021 16:56:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=WlbzKA0Dh0y167HEVyQ3OV93bMyva7n73RzMDGybT/8=;
+        b=hqdGAcVyOXR0fU9c1BICtMmlzcIAEgEhc+imIPNBL3fB1Kh/Zw367vXNgrFNh8cFYP
+         Ra9iScbvMnvQGzsQwsLuhJ1bNMWYj7rN7VLgmuz1GDIhhyZcAbfHcjrcrvauqeEVkxQb
+         nJ1rT79v1V0ChYwhYbBgMGXaWuVO0GTbM2GnMpQuRsc3I7ErlF94h/vcX0tG3SEWGkGr
+         IstU30UY1iT5jKWBCFZNUjlX7PIY2g65T0s4hmj4oOr6jgckBcsOFWVK1b/wyCG4lovY
+         hP8HC5NKWC9aVtEqLA8J4/iCkqGXmBIP8qUh0eWqbuWST8brhfjvdk9g+W1Pg4QYNUMc
+         7Zkw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=WlbzKA0Dh0y167HEVyQ3OV93bMyva7n73RzMDGybT/8=;
+        b=U47qYr0iuhKsAW3jdYlD27OH0PwYPiSNRVsL4KYJokJgMzN//qpY8R45KsuaFlL91b
+         qLIqluhcq1PM1WqpU+SgaKq+hhXsNMk7ExJIIl06hTag4jNafwJ+VFIcwr+OgnlY9O9W
+         erO+FLy3ataLsoV0ETjNPT/6pz+HgpIQ1P7C5JlaZJfr4izqvbqRnepwoQK6OOdy2ESJ
+         HeFzYFabg5QIumbzPRT1c6FWsIAL8Gx2WwOM9afxMcK/DHNoRZl/K/nQaj+n7IoJEJ8j
+         V2Jmn7ZOgmpf8w1vyF6a1NGqJE2oPVKQheSEXLnrqKyyQOlT3DkuNiGf8uJWm4XQN6Nm
+         KYqg==
+X-Gm-Message-State: AOAM533SVqrd64qaQ+lOHfrXuNqwpiuvhLSwJ65XGlXGSSIFXEmKH35J
+        pAGYsrxNiST8zLy1QBc19BrurA==
+X-Google-Smtp-Source: ABdhPJyvWsSmAE7sJr56JGz5ZAD0++Uth0FNsIXGWeqrEeolcADOFxX9mWoWnlta4SfWX5AUajU6OA==
+X-Received: by 2002:a05:620a:c47:: with SMTP id u7mr10956227qki.568.1639616195355;
+        Wed, 15 Dec 2021 16:56:35 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id s126sm1950991qkf.7.2021.12.15.16.56.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 15 Dec 2021 16:56:34 -0800 (PST)
+Date:   Wed, 15 Dec 2021 19:56:32 -0500
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     kreijack@inwind.it
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        David Sterba <dsterba@suse.cz>,
+        Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
+        Paul Jones <paul@pauljones.id.au>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC][V8][PATCH 0/5] btrfs: allocation_hint mode
+Message-ID: <YbqOwN7SW7NWm5/S@localhost.localdomain>
+References: <SYXPR01MB1918689AF49BE6E6E031C8B69E749@SYXPR01MB1918.ausprd01.prod.outlook.com>
+ <1d725df7-b435-4acf-4d17-26c2bd171c1a@libero.it>
+ <Ybe34gfrxl8O89PZ@localhost.localdomain>
+ <YbfN8gXHsZ6KZuil@hungrycats.org>
+ <71e523dc-2854-ca9b-9eee-e36b0bd5c2cb@libero.it>
+ <Ybj40IuxdaAy75Ue@hungrycats.org>
+ <Ybj/0ITsCQTBLkQF@localhost.localdomain>
+ <be4e6028-7d1d-6ba9-d16f-f5f38a79866f@libero.it>
+ <Ybn0aq548kQsQu+z@localhost.localdomain>
+ <633ccf8f-3118-1dda-69d2-0398ef3ffdb7@libero.it>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.4.0
-Content-Language: en-US
-To:     dsterba@suse.cz, Jingyun He <jingyun.ho@gmail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAHQ7scWFUthGXGs72M9VYPHc2eiZ2hSSs6LJd6XVL2oQO2fgLw@mail.gmail.com>
- <20211215155059.GB28560@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: unable to use all spaces
-In-Reply-To: <20211215155059.GB28560@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:nHrwyL6R+OuxQ0jIwA7TuONTy3DK+T57cPpGeLOedwZdfY1A8EF
- nvtpcxxpJAllc5iHB72UjmedMScwuKbW7+KHT3M0laJhNFiFpOibrmlzidjs/u2xnyx/NrN
- HcvtsW5yGqaskaaT7lgUu5lNGPpFgDi4ydpm7/irK/YTcyyMQb8D38f5Bylu+QEFSrpGM/r
- iroBakJy2EtgLq9vzFqEA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:0gQZ7W+AOB4=:mlD9LTZ7T4BUcTQBhvPi69
- eCis/bpt0mxGkKWTMwWb/QyYFVU2o7OE6UJ2pumJy4yMjxgDejP2kO66+kJplIpGpKbLkAvlM
- pLxtkOv6u/EtdeC1apxb9vE8FMr2BBasOFutvQnBLP1s/CFS1lcakgKqyjSqMbzZEw6Uuju99
- FHINLMplflCxgbMBHUughkspSi0wbcpdKftcmpoiz7UEz5lcQhBzvOy3NTbs2UBFQ6smN8UKx
- jRihrv/vFAuAHquUzbqStaOEXZrwAIzgZ1vB/h5ClBTYRZ6aUK+YhVLpJ/w9yicUEMc12VTOz
- b+jRb+TVXFLqsT6Ckx8S00soc1UXhcb9bO+sHJx1g4u8thfe6zHFFn1ECZ762c0TvQBIMHfd7
- jonSObr78Htn59O+HCAgMX/54WfvPAM2BEpwvpyv1tVdi8LZGK9unXRycBnx+f1FFZ/Ibl/Ju
- Ry5cxrcQLg+NxCJN0jmfjewPyKn4OWsDh69+RcMhrBEtPdYYyzgvluGqMJ+Pf7N/u+J8fb0WJ
- 5m7j5luZarR/UcfLq5e8LAYY8Zqb+wAtPFN56eAO8vQKRjxM3d632sXBPsb7CEFN9BMI1kIQN
- ibVDVRKW8c6YNfZ00vMP7VIXzKYAWFcRff0+y/22J2wCYuM7pPcVQMET5+edHGBa0swbICjPf
- 0mNtqm9JYRdmK6GO5ZXJucemvylYBtHIx6fMmzAg744qHDHVdO+SrSzqmts0O+CMe/YXjW8hR
- mcKYHmsKvZVZl9qq7/7wa3T2+YzeCHukf+oggK+lDu7tWaE5GbCCvcDw87VGa6KP8brGDYIhn
- 9zZSgkomEN0FR7zkx9rzOgiCiUwcC18aNetnPmjVYMY4jigx3N3qAmMeD2gzc07qzjcTQ1Bwr
- tyjMK18yhhJM4q4aDdVLnFpGEZd+AEVPCY4ANXnNCQmsJUeICNOAkGXz3A+tTtrPw82VBIFiz
- kHUG8dwaJ/J4lXMk+mVAy4vk/+hdAttJSIpSsydVR4w67e880vKwwxVe44XTAJ77k8IRt8HDM
- UJf8+wdxhyrfOHVIX+r/QGU9bddoRxT/dh8uLy4Y3/9TBYEIg9/FMbv3rKnxYrSZJTuaIhQIr
- abE0xyNz0H7oSk=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <633ccf8f-3118-1dda-69d2-0398ef3ffdb7@libero.it>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Dec 15, 2021 at 07:53:40PM +0100, Goffredo Baroncelli wrote:
+> On 12/15/21 14:58, Josef Bacik wrote:
+> > On Tue, Dec 14, 2021 at 09:41:21PM +0100, Goffredo Baroncelli wrote:
+> > > On 12/14/21 21:34, Josef Bacik wrote:
+> > > > On Tue, Dec 14, 2021 at 03:04:32PM -0500, Zygo Blaxell wrote:
+> > > > > On Tue, Dec 14, 2021 at 08:03:45PM +0100, Goffredo Baroncelli wrote:
+> > > 
+> > > > > 
+> > > > > I don't have a strong preference for either sysfs or ioctl, nor am I
+> > > > > opposed to simply implementing both.  I'll let someone who does have
+> > > > > such a preference make their case.
+> > > > 
+> > > > I think echo'ing a name into sysfs is better than bits for sure.  However I want
+> > > > the ability to set the device properties via a btrfs-progs command offline so I
+> > > > can setup the storage and then mount the file system.  I want
+> > > > 
+> > > > 1) The sysfs interface so you can change things on the fly.  This stays
+> > > >      persistent of course, so the way it works is perfect.
+> > > > 
+> > > > 2) The btrfs-progs command sets it on offline devices.  If you point it at a
+> > > >      live mounted fs it can simply use the sysfs thing to do it live.
+> > > 
+> > > #2 is currently not implemented. However I think that we should do.
+> > > 
+> > > The problem is that we need to update both:
+> > > 
+> > > - the superblock		(simple)
+> > > - the dev_item item		(not so simple...)
+> > > 
+> > > What about using only bits from the superblock to store this property ?
+> > 
+> > I'm looking at the patches and you only are updating the dev_item, am I missing
+> > something for the super block?
+> 
+> When btrfs write the superblocks (see write_all_supers() in disk-io.c), it copies
+> the dev_item fields (contained in fs_info->fs_devices->devices lists) in each
+> superblock before updating it.
+> 
 
+Oh right.  Still, I hope we're doing this correctly in btrfs-progs, if not
+that's a problem.
 
-On 2021/12/15 23:50, David Sterba wrote:
-> On Wed, Dec 15, 2021 at 10:31:13PM +0800, Jingyun He wrote:
->> Hello,
->> I have a 14TB WDC HM-SMR disk formatted with BTRFS,
->> It looks like I'm unable to fill the disk full.
->> E.g. btrfs fi usage /disk1/
->> Free (estimated): 128.95GiB (min: 128.95GiB)
->>
->> It still has 100+GB available
->> But I'm unable to put more files.
->
-> We'd need more information to diagnose that, eg. output of 'btrfs fi df'
-> to see if eg. the metadata space is not exhausted or if the remaining
-> 128G account for the unusable space in the zones (this is also in the
-> 'fi df' output).
+> > 
+> > For offline all you would need to do is do the normal open_ctree,
+> > btrfs_search_slot to the item and update the device item type, that's
+> > straightforward.
+> > 
+> > For online if you use btrfs prop you can see if the fs is mounted and just find
+> > the sysfs file to modify and do it that way.
+> > 
+> > But this also brings up another point, we're going to want a compat bit for
+> > this.  It doesn't make the fs unusable for old kernels, so just a normal
+> > BTRFS_FS_COMPAT_<whatever> flag is fine.  If the setting gets set you set the
+> > compat flag.
+> 
+> Why we need a "compact" bit ? The new kernels know how treat the dev_item_type field.
+> The old kernels ignore it. The worst thing is that a filesystem may require a balance
+> before reaching a good shape (i.e. the metadata on ssd and the data on a spinning disk)
+> 
 
-A little off-topic, but IMHO we should really make our 'fi usage' and
-vanilla 'df' to take metadata and unallocated space into consideration.
+So you can do the validation below, tho I'm thinking I care about it less, if we
+just make sure that type is correct regardless of the compat bit then that's
+fine.  Thanks,
 
-The vanilla 'df' command reporting more space than what we can really
-use is already causing new btrfs users problems.
-
-We can keep teaching users, but there are still tools relying completely
-on vanilla 'df' output to reserve their space usage.
-
-Thus it's not really something can be purely solved by education.
-
-My purpose is to make vanilla 'df' output to take metadata/unallocated
-space into consideration.
-
-Unfortunately I don't have solid plan yet.
-But maybe we can start by returning 0 available space when no more
-unallocated space.
-
-Maybe later we can have more comprehensive available space calculation.
-
-(Other fses like ext4/xfs already does similar behavior by
-under-reporting available space)
-
-Thanks,
-Qu
->
->> Do you know if there are any mkfs/mount options that I can use to
->> reach maximum capacity? like mkfs.ext4 -m 0 -O ^has_journal -T
->> largefile4
->
-> There are no such options and the space should be used at the full range
-> with respect to the chunk allocations.
+Josef

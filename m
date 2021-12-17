@@ -2,20 +2,19 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61FBCC43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 18:52:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D138C433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 18:52:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240496AbhLQSwY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Dec 2021 13:52:24 -0500
-Received: from santino.mail.tiscali.it ([213.205.33.245]:53000 "EHLO
+        id S240528AbhLQSwa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Dec 2021 13:52:30 -0500
+Received: from santino.mail.tiscali.it ([213.205.33.245]:52998 "EHLO
         smtp.tiscali.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S240414AbhLQSwV (ORCPT
+        with ESMTP id S240520AbhLQSw0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Dec 2021 13:52:21 -0500
-X-Greylist: delayed 304 seconds by postgrey-1.27 at vger.kernel.org; Fri, 17 Dec 2021 13:52:21 EST
+        Fri, 17 Dec 2021 13:52:26 -0500
 Received: from venice.bhome ([78.12.25.242])
         by santino.mail.tiscali.it with 
-        id XWnP2601f5DQHji01WnQoN; Fri, 17 Dec 2021 18:47:25 +0000
+        id XWnP2601f5DQHji01WnSrN; Fri, 17 Dec 2021 18:47:26 +0000
 x-auth-user: kreijack@tiscali.it
 From:   Goffredo Baroncelli <kreijack@tiscali.it>
 To:     linux-btrfs@vger.kernel.org
@@ -25,225 +24,228 @@ Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
         Paul Jones <paul@pauljones.id.au>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [RFC][V9][PATCH 0/6] btrfs: allocation_hint mode
-Date:   Fri, 17 Dec 2021 19:47:16 +0100
-Message-Id: <cover.1639766364.git.kreijack@inwind.it>
+Subject: [PATCH 4/6] btrfs: add allocation_hint mode
+Date:   Fri, 17 Dec 2021 19:47:20 +0100
+Message-Id: <c9f492a7ff1a0e4f0addc6cd451848404f0438db.1639766364.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.34.1
+In-Reply-To: <cover.1639766364.git.kreijack@inwind.it>
+References: <cover.1639766364.git.kreijack@inwind.it>
 Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1639766845; bh=8zkgOCMOPbRQ4J6MHgFbTn7uAyTUrlSRc1Z/DCVHRMQ=;
-        h=From:To:Cc:Subject:Date:Reply-To;
-        b=kTj7yKYgwbgZxRBwNSdU9C6SIckreKKMBNRG8ubyDTjvWi61dP1mAGyhARf0CnPVi
-         DCoFYt5yxBw20lb3c905eG9uR++ZKuxhEmIApZB6VHiLfmZa4DbR3zDkTzUqfM4KFY
-         yN81uwlZsvbg7UD9cSllgfM6ICefrkloQuUAKInU=
+        t=1639766846; bh=l3HdplbtJ4rePCwDyojsbaAWdVGb8yutr0rSfbenvEA=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
+        b=6TXDuJmn6e9higF451pA4moBc6ZXWn0PvNi8oJrEpCzicDwu64k2YD391dBKRmpo3
+         WNQm9ZGyyQ0q93CPAwQL1rzPaoY5wgU0tmCU8n2+SXffFmN/FqQtF/qBIxbDiTlXFg
+         /SqX5q2zBstpwbmaiasqUbdW8SkMyUQUfsS7l7DY=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Hi all,
+The chunk allocation policy is modified as follow.
 
-This patches set was born after some discussion between me, Zygo and Josef.
-Some details can be found in https://github.com/btrfs/btrfs-todo/issues/19.
-
-Some further information about a real use case can be found in
-https://lore.kernel.org/linux-btrfs/20210116002533.GE31381@hungrycats.org/
-
-Reently Shafeeq told me that he is interested too, due to the performance gain.
-
-In V8 revision I switched away from an ioctl API in favor of a sysfs API (
-see patch #2 and #3).
-
-In V9 I renamed the sysfs interface from devinfo/type to devinfo/allocation_hint.
-Moreover I renamed dev_info->type to dev_info->flags.
-
-The idea behind this patches set, is to dedicate some disks (the fastest one)
-to the metadata chunk. My initial idea was a "soft" hint. However Zygo
-asked an option for a "strong" hint (== mandatory). The result is that
-each disk can be "tagged" by one of the following flags:
-- BTRFS_DEV_ALLOCATION_METADATA_ONLY
+Each disk may have one of the following tags:
 - BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
-- BTRFS_DEV_ALLOCATION_PREFERRED_DATA
+- BTRFS_DEV_ALLOCATION_METADATA_ONLY
 - BTRFS_DEV_ALLOCATION_DATA_ONLY
+- BTRFS_DEV_ALLOCATION_PREFERRED_DATA (default)
 
-When the chunk allocator search a disks to allocate a chunk, scans the disks
-in an order decided by these tags. For metadata, the order is:
-*_METADATA_ONLY
-*_PREFERRED_METADATA
-*_PREFERRED_DATA
+During a *mixed data/metadata* chunk allocation, BTRFS works as
+usual.
 
-The *_DATA_ONLY are not eligible from metadata chunk allocation.
+During a *data* chunk allocation, the space are searched first in
+BTRFS_DEV_ALLOCATION_DATA_ONLY and BTRFS_DEV_ALLOCATION_PREFERRED_DATA
+tagged disks. If no space is found or the space found is not enough (eg.
+in raid5, only two disks are available), then also the disks tagged
+BTRFS_DEV_ALLOCATION_PREFERRED_METADATA are evaluated. If even in this
+case this the space is not sufficient, -ENOSPC is raised.
+A disk tagged with BTRFS_DEV_ALLOCATION_METADATA_ONLY is never considered
+for a data BG allocation.
 
-For the data chunk, the order is reversed, and the *_METADATA_ONLY are
-excluded.
+During a *metadata* chunk allocation, the space are searched first in
+BTRFS_DEV_ALLOCATION_METADATA_ONLY and BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+tagged disks. If no space is found or the space found is not enough (eg.
+in raid5, only two disks are available), then also the disks tagged
+BTRFS_DEV_ALLOCATION_PREFERRED_DATA are considered. If even in this
+case this the space is not sufficient, -ENOSPC is raised.
+A disk tagged with BTRFS_DEV_ALLOCATION_DATA_ONLY is never considered
+for a metadata BG allocation.
 
-The exact sort logic is to sort first for the "tag", and then for the space
-available. If there is no space available, the next "tag" disks set are
-selected.
+By default the disks are tagged as BTRFS_DEV_ALLOCATION_PREFERRED_DATA,
+so the default behavior happens. If the user prefer to store the
+metadata in the faster disks (e.g. the SSD), he can tag these with
+BTRFS_DEV_ALLOCATION_PREFERRED_DATA: in this case the data BG go in the
+BTRFS_DEV_ALLOCATION_PREFERRED_DATA disks and the metadata BG in the
+others, until there is enough space. Only if one disks set is filled,
+the other is occupied.
 
-To set these tags, a new property called "allocation_hint" was created.
-There is a dedicated btrfs-prog patches set [[PATCH V9] btrfs-progs:
-allocation_hint disk property].
+WARNING: if the user tags a disk with BTRFS_DEV_ALLOCATION_DATA_ONLY,
+this means that this disk will never be used for allocating metadata
+increasing the likelihood of exhausting the metadata space.
 
-$ sudo mount /dev/loop0 /mnt/test-btrfs/
-$ for i in /dev/loop[0-9]; do sudo ./btrfs prop get $i allocation_hint; done
-devid=1, path=/dev/loop0: allocation_hint=PREFERRED_METADATA
-devid=2, path=/dev/loop1: allocation_hint=PREFERRED_METADATA
-devid=3, path=/dev/loop2: allocation_hint=PREFERRED_DATA
-devid=4, path=/dev/loop3: allocation_hint=PREFERRED_DATA
-devid=5, path=/dev/loop4: allocation_hint=PREFERRED_DATA
-devid=6, path=/dev/loop5: allocation_hint=DATA_ONLY
-devid=7, path=/dev/loop6: allocation_hint=METADATA_ONLY
-devid=8, path=/dev/loop7: allocation_hint=METADATA_ONLY
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ fs/btrfs/volumes.c | 94 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.h |  1 +
+ 2 files changed, 94 insertions(+), 1 deletion(-)
 
-$ sudo ./btrfs fi us /mnt/test-btrfs/
-Overall:
-    Device size:           2.75GiB
-    Device allocated:           1.34GiB
-    Device unallocated:           1.41GiB
-    Device missing:             0.00B
-    Used:             400.89MiB
-    Free (estimated):           1.04GiB    (min: 1.04GiB)
-    Data ratio:                  2.00
-    Metadata ratio:              1.00
-    Global reserve:           3.25MiB    (used: 0.00B)
-    Multiple profiles:                no
-
-Data,RAID1: Size:542.00MiB, Used:200.25MiB (36.95%)
-   /dev/loop0     288.00MiB
-   /dev/loop1     288.00MiB
-   /dev/loop2     127.00MiB
-   /dev/loop3     127.00MiB
-   /dev/loop4     127.00MiB
-   /dev/loop5     127.00MiB
-
-Metadata,single: Size:256.00MiB, Used:384.00KiB (0.15%)
-   /dev/loop1     256.00MiB
-
-System,single: Size:32.00MiB, Used:16.00KiB (0.05%)
-   /dev/loop0      32.00MiB
-
-Unallocated:
-   /dev/loop0     704.00MiB
-   /dev/loop1     480.00MiB
-   /dev/loop2       1.00MiB
-   /dev/loop3       1.00MiB
-   /dev/loop4       1.00MiB
-   /dev/loop5       1.00MiB
-   /dev/loop6     128.00MiB
-   /dev/loop7     128.00MiB
-
-# change the tag of some disks
-
-$ sudo ./btrfs prop set /dev/loop0 allocation_hint DATA_ONLY
-$ sudo ./btrfs prop set /dev/loop1 allocation_hint DATA_ONLY
-$ sudo ./btrfs prop set /dev/loop5 allocation_hint METADATA_ONLY
-
-$ for i in /dev/loop[0-9]; do sudo ./btrfs prop get $i allocation_hint; done
-devid=1, path=/dev/loop0: allocation_hint=DATA_ONLY
-devid=2, path=/dev/loop1: allocation_hint=DATA_ONLY
-devid=3, path=/dev/loop2: allocation_hint=PREFERRED_DATA
-devid=4, path=/dev/loop3: allocation_hint=PREFERRED_DATA
-devid=5, path=/dev/loop4: allocation_hint=PREFERRED_DATA
-devid=6, path=/dev/loop5: allocation_hint=METADATA_ONLY
-devid=7, path=/dev/loop6: allocation_hint=METADATA_ONLY
-devid=8, path=/dev/loop7: allocation_hint=METADATA_ONLY
-
-$ sudo btrfs bal start --full-balance /mnt/test-btrfs/
-$ sudo ./btrfs fi us /mnt/test-btrfs/
-Overall:
-    Device size:           2.75GiB
-    Device allocated:         735.00MiB
-    Device unallocated:           2.03GiB
-    Device missing:             0.00B
-    Used:             400.72MiB
-    Free (estimated):           1.10GiB    (min: 1.10GiB)
-    Data ratio:                  2.00
-    Metadata ratio:              1.00
-    Global reserve:           3.25MiB    (used: 0.00B)
-    Multiple profiles:                no
-
-Data,RAID1: Size:288.00MiB, Used:200.19MiB (69.51%)
-   /dev/loop0     288.00MiB
-   /dev/loop1     288.00MiB
-
-Metadata,single: Size:127.00MiB, Used:336.00KiB (0.26%)
-   /dev/loop5     127.00MiB
-
-System,single: Size:32.00MiB, Used:16.00KiB (0.05%)
-   /dev/loop7      32.00MiB
-
-Unallocated:
-   /dev/loop0     736.00MiB
-   /dev/loop1     736.00MiB
-   /dev/loop2     128.00MiB
-   /dev/loop3     128.00MiB
-   /dev/loop4     128.00MiB
-   /dev/loop5       1.00MiB
-   /dev/loop6     128.00MiB
-   /dev/loop7      96.00MiB
-
-
-#As you can see all the metadata were placed on the disk loop5/loop7 even if
-#the most empty one are loop0 and loop1.
-
-
-
-TODO:
-- more tests
-- the tool which show the space available should consider the tagging (eg
-  the disks tagged by _METADATA_ONLY should be excluded from the data
-  availability)
-- allow btrfs-prog to change the allocation_hint even when the filesystem
-  is not mounted.
-
-
-Comments are welcome
-BR
-G.Baroncelli
-
-Revision:
-V9:
-- rename dev_item->type to dev_item->flags
-- rename /sys/fs/btrfs/$UUID/devinfo/type -> allocation_hint
-
-V8:
-- drop the ioctl API, instead use a sysfs one
-
-V7:
-- make more room in the struct btrfs_ioctl_dev_properties up to 1K
-- leave in btrfs_tree.h only the costants
-- removed the mount option (sic)
-- correct an 'use before check' in the while loop (signaled
-  by Zygo)
-- add a 2nd sort to be sure that the device_info array is in the
-  expected order
-
-V6:
-- add further values to the hints: add the possibility to
-  exclude a disk for a chunk type 
-
-
-Goffredo Baroncelli (6):
-  btrfs: add flags to give an hint to the chunk allocator
-  btrfs: export the device allocation_hint property in sysfs
-  btrfs: change the device allocation_hint property via sysfs
-  btrfs: add allocation_hint mode
-  btrfs: rename dev_item->type to dev_item->flags
-  btrfs: add allocation_hint option.
-
- fs/btrfs/ctree.h                |  18 +++++-
- fs/btrfs/disk-io.c              |   4 +-
- fs/btrfs/super.c                |  17 ++++++
- fs/btrfs/sysfs.c                |  73 ++++++++++++++++++++++
- fs/btrfs/volumes.c              | 105 ++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.h              |   7 ++-
- include/uapi/linux/btrfs_tree.h |  20 +++++-
- 7 files changed, 232 insertions(+), 12 deletions(-)
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 806b599c6a46..beee7d1ae79d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -184,6 +184,16 @@ enum btrfs_raid_types __attribute_const__ btrfs_bg_flags_to_raid_index(u64 flags
+ 	return BTRFS_RAID_SINGLE; /* BTRFS_BLOCK_GROUP_SINGLE */
+ }
+ 
++#define BTRFS_DEV_ALLOCATION_HINT_COUNT (1ULL << \
++		BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT)
++
++static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_HINT_COUNT] = {
++	[BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY] = -1,
++	[BTRFS_DEV_ALLOCATION_HINT_PREFERRED_DATA] = 0,
++	[BTRFS_DEV_ALLOCATION_HINT_PREFERRED_METADATA] = 1,
++	[BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY] = 2,
++};
++
+ const char *btrfs_bg_type_to_raid_name(u64 flags)
+ {
+ 	const int index = btrfs_bg_flags_to_raid_index(flags);
+@@ -5037,13 +5047,18 @@ static int btrfs_add_system_chunk(struct btrfs_fs_info *fs_info,
+ }
+ 
+ /*
+- * sort the devices in descending order by max_avail, total_avail
++ * sort the devices in descending order by alloc_hint,
++ * max_avail, total_avail
+  */
+ static int btrfs_cmp_device_info(const void *a, const void *b)
+ {
+ 	const struct btrfs_device_info *di_a = a;
+ 	const struct btrfs_device_info *di_b = b;
+ 
++	if (di_a->alloc_hint > di_b->alloc_hint)
++		return -1;
++	if (di_a->alloc_hint < di_b->alloc_hint)
++		return 1;
+ 	if (di_a->max_avail > di_b->max_avail)
+ 		return -1;
+ 	if (di_a->max_avail < di_b->max_avail)
+@@ -5206,6 +5221,8 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 	int ndevs = 0;
+ 	u64 max_avail;
+ 	u64 dev_offset;
++	int hint;
++	int i;
+ 
+ 	/*
+ 	 * in the first pass through the devices list, we gather information
+@@ -5258,16 +5275,91 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+ 		devices_info[ndevs].max_avail = max_avail;
+ 		devices_info[ndevs].total_avail = total_avail;
+ 		devices_info[ndevs].dev = device;
++
++		if ((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
++		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) {
++			/*
++			 * if mixed bg set all the alloc_hint
++			 * fields to the same value, so the sorting
++			 * is not affected
++			 */
++			devices_info[ndevs].alloc_hint = 0;
++		} else if (ctl->type & BTRFS_BLOCK_GROUP_DATA) {
++			hint = device->type & BTRFS_DEV_ALLOCATION_HINT_MASK;
++
++			/*
++			 * skip BTRFS_DEV_METADATA_ONLY disks
++			 */
++			if (hint == BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY)
++				continue;
++			/*
++			 * if a data chunk must be allocated,
++			 * sort also by hint (data disk
++			 * higher priority)
++			 */
++			devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
++		} else { /* BTRFS_BLOCK_GROUP_METADATA */
++			hint = device->type & BTRFS_DEV_ALLOCATION_HINT_MASK;
++
++			/*
++			 * skip BTRFS_DEV_DATA_ONLY disks
++			 */
++			if (hint == BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY)
++				continue;
++			/*
++			 * if a data chunk must be allocated,
++			 * sort also by hint (metadata hint
++			 * higher priority)
++			 */
++			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
++		}
++
+ 		++ndevs;
+ 	}
+ 	ctl->ndevs = ndevs;
+ 
++	/*
++	 * no devices available
++	 */
++	if (!ndevs)
++		return 0;
++
+ 	/*
+ 	 * now sort the devices by hole size / available space
+ 	 */
+ 	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+ 	     btrfs_cmp_device_info, NULL);
+ 
++	/*
++	 * select the minimum set of disks grouped by hint that
++	 * can host the chunk
++	 */
++	ndevs = 0;
++	while (ndevs < ctl->ndevs) {
++		hint = devices_info[ndevs++].alloc_hint;
++		while (ndevs < ctl->ndevs &&
++		       devices_info[ndevs].alloc_hint == hint)
++				ndevs++;
++		if (ndevs >= ctl->devs_min)
++			break;
++	}
++
++	BUG_ON(ndevs > ctl->ndevs);
++	ctl->ndevs = ndevs;
++
++	/*
++	 * the next layers require the devices_info ordered by
++	 * max_avail. If we are returing two (or more) different
++	 * group of alloc_hint, this is not always true. So sort
++	 * these gain.
++	 */
++
++	for (i = 0 ; i < ndevs ; i++)
++		devices_info[i].alloc_hint = 0;
++
++	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
++	     btrfs_cmp_device_info, NULL);
++
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 5097c0c12a8e..61c0cba045e9 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -406,6 +406,7 @@ struct btrfs_device_info {
+ 	u64 dev_offset;
+ 	u64 max_avail;
+ 	u64 total_avail;
++	int alloc_hint;
+ };
+ 
+ struct btrfs_raid_attr {
 -- 
 2.34.1
 

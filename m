@@ -2,19 +2,19 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C29BDC433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 18:52:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C94AC433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 18:52:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239838AbhLQSwb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Dec 2021 13:52:31 -0500
-Received: from santino.mail.tiscali.it ([213.205.33.245]:53124 "EHLO
+        id S234138AbhLQSwd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Dec 2021 13:52:33 -0500
+Received: from santino.mail.tiscali.it ([213.205.33.245]:53002 "EHLO
         smtp.tiscali.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S240526AbhLQSw2 (ORCPT
+        with ESMTP id S240507AbhLQSwY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Dec 2021 13:52:28 -0500
+        Fri, 17 Dec 2021 13:52:24 -0500
 Received: from venice.bhome ([78.12.25.242])
         by santino.mail.tiscali.it with 
-        id XWnP2601f5DQHji01WnTsN; Fri, 17 Dec 2021 18:47:27 +0000
+        id XWnP2601f5DQHji01WnRqt; Fri, 17 Dec 2021 18:47:26 +0000
 x-auth-user: kreijack@tiscali.it
 From:   Goffredo Baroncelli <kreijack@tiscali.it>
 To:     linux-btrfs@vger.kernel.org
@@ -24,9 +24,9 @@ Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
         Paul Jones <paul@pauljones.id.au>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 6/6] btrfs: add allocation_hint option.
-Date:   Fri, 17 Dec 2021 19:47:22 +0100
-Message-Id: <3dddd204abe208d8744913c801f32138f4924f4f.1639766364.git.kreijack@inwind.it>
+Subject: [PATCH 3/6] btrfs: change the device allocation_hint property via sysfs
+Date:   Fri, 17 Dec 2021 19:47:19 +0100
+Message-Id: <1425d4ea491c4f4b2019bc5e9d2f405a7573b5ed.1639766364.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1639766364.git.kreijack@inwind.it>
 References: <cover.1639766364.git.kreijack@inwind.it>
@@ -34,145 +34,122 @@ Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1639766847; bh=Ko04ipVyYH9AXE8DoqsF3+Af5SCYy88vvP2e/sp3RrE=;
+        t=1639766846; bh=e5asLBdo8yeqlljTT9u9/0jdcaXV7Wk0RqKoM3r2reM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-        b=pS0mW5+PMCS0/1mpO/WNgji/RUpsvvdDZnQwg/CLOrTHoEQvRcGxWJuxaRElzwf2S
-         +HcgyQ9LDq5c5nhmuQbrG9ZWDKGlZ1CO2acJq+e56KM15OtATsd6JhXYWbR5meN87V
-         ba1cuVEGj/bLRBZcwmI1ZcUWAkYbUNmnB9Qhzt10=
+        b=nIoNTaz1FAbi7pgTfz/mp8IvZM1QIm/jmISV/iFG4LJw3Rgix6Nx3MzYOKB6uqyKH
+         HBw1/+ttGHSlauvTid0o3KeoLQywYoZAL+dkvYZQGmOoOUq9TIL/lkAjcyhbiKEG9i
+         BsA3LN1OTFJTU7TzB+4YTby/qMS/zMJEmhgaqzWM=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Add allocation_hint mount option. This option accepts the following values:
-
-- 0 (default):  the chunks allocator ignores the disk hints
-- 1:            the chunks allocator considers the disk hints
-
-Signed-off-by: Goffredo Baroncelli <kreijack@winwind.it>
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- fs/btrfs/ctree.h   | 14 ++++++++++++++
- fs/btrfs/disk-io.c |  2 ++
- fs/btrfs/super.c   | 17 +++++++++++++++++
- fs/btrfs/volumes.c |  9 ++++++---
- 4 files changed, 39 insertions(+), 3 deletions(-)
+ fs/btrfs/sysfs.c   | 62 +++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c |  2 +-
+ fs/btrfs/volumes.h |  2 ++
+ 3 files changed, 64 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 778c7c807289..bb31cdcaf959 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -620,6 +620,15 @@ enum btrfs_exclusive_operation {
- 	BTRFS_EXCLOP_SWAP_ACTIVATE,
- };
- 
-+/*
-+ * allocation_hint mode
-+ */
-+
-+enum btrfs_allocation_hint_modes {
-+	BTRFS_ALLOCATION_HINT_DISABLED,
-+	BTRFS_ALLOCATION_HINT_ENABLED
-+};
-+
- struct btrfs_fs_info {
- 	u8 chunk_tree_uuid[BTRFS_UUID_SIZE];
- 	unsigned long flags;
-@@ -1021,6 +1030,11 @@ struct btrfs_fs_info {
- 		u64 zoned;
- 	};
- 
-+	/* allocation_hint mode */
-+	int allocation_hint_mode;
-+
-+	/* Max size to emit ZONE_APPEND write command */
-+	u64 max_zone_append_size;
- 	struct mutex zoned_meta_io_lock;
- 	spinlock_t treelog_bg_lock;
- 	u64 treelog_bg;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 02ffb8bc7d6b..09d365a689c9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3160,6 +3160,8 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	spin_lock_init(&fs_info->swapfile_pins_lock);
- 	fs_info->swapfile_pins = RB_ROOT;
- 
-+	fs_info->allocation_hint_mode = BTRFS_ALLOCATION_HINT_DISABLED;
-+
- 	fs_info->bg_reclaim_threshold = BTRFS_DEFAULT_RECLAIM_THRESH;
- 	INIT_WORK(&fs_info->reclaim_bgs_work, btrfs_reclaim_bgs_work);
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index a8d918700d2b..53acc66065dd 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -1584,7 +1584,67 @@ static ssize_t btrfs_devinfo_allocation_hint_show(struct kobject *kobj,
+ 	return scnprintf(buf, PAGE_SIZE, "0x%08llx\n",
+ 		device->type & BTRFS_DEV_ALLOCATION_HINT_MASK );
  }
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index a1c54a2c787c..68911152420a 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -373,6 +373,7 @@ enum {
- 	Opt_thread_pool,
- 	Opt_treelog, Opt_notreelog,
- 	Opt_user_subvol_rm_allowed,
-+	Opt_allocation_hint,
+-BTRFS_ATTR(devid, allocation_hint, btrfs_devinfo_allocation_hint_show);
++
++static ssize_t btrfs_devinfo_allocation_hint_store(struct kobject *kobj,
++				 struct kobj_attribute *a,
++				 const char *buf, size_t len)
++{
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_root *root;
++	struct btrfs_device *device;
++	int ret;
++	struct btrfs_trans_handle *trans;
++
++	u64 type, prev_type;
++
++	device = container_of(kobj, struct btrfs_device, devid_kobj);
++	fs_info = device->fs_info;
++	if (!fs_info)
++		return -EPERM;
++
++	root = fs_info->chunk_root;
++	if (sb_rdonly(fs_info->sb))
++		return -EROFS;
++
++	ret = kstrtou64(buf, 0, &type);
++	if (ret < 0)
++		return -EINVAL;
++
++	/* for now, allow to touch only the 'allocation hint' bits */
++	if (type & ~BTRFS_DEV_ALLOCATION_HINT_MASK)
++		return -EINVAL;
++
++	/* check if a change is really needed */
++	if ((device->type & BTRFS_DEV_ALLOCATION_HINT_MASK) == type)
++		return len;
++
++	trans = btrfs_start_transaction(root, 1);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++	prev_type = device->type;
++	device->type = (device->type & ~BTRFS_DEV_ALLOCATION_HINT_MASK) | type;
++
++	ret = btrfs_update_device(trans, device);
++
++	if (ret < 0) {
++		btrfs_abort_transaction(trans, ret);
++		btrfs_end_transaction(trans);
++		goto abort;
++	}
++
++	ret = btrfs_commit_transaction(trans);
++	if (ret < 0)
++		goto abort;
++
++	return len;
++abort:
++	device->type = prev_type;
++	return  ret;
++}
++BTRFS_ATTR_RW(devid, allocation_hint, btrfs_devinfo_allocation_hint_show,
++				      btrfs_devinfo_allocation_hint_store);
++
  
- 	/* Rescue options */
- 	Opt_rescue,
-@@ -446,6 +447,7 @@ static const match_table_t tokens = {
- 	{Opt_treelog, "treelog"},
- 	{Opt_notreelog, "notreelog"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
-+	{Opt_allocation_hint, "allocation_hint=%d"},
- 
- 	/* Rescue options */
- 	{Opt_rescue, "rescue=%s"},
-@@ -903,6 +905,19 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 		case Opt_user_subvol_rm_allowed:
- 			btrfs_set_opt(info->mount_opt, USER_SUBVOL_RM_ALLOWED);
- 			break;
-+		case Opt_allocation_hint:
-+			ret = match_int(&args[0], &intarg);
-+			if (ret || (intarg != 1 && intarg != 0)) {
-+				btrfs_err(info, "invalid allocation_hint= parameter\n");
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+			if (intarg)
-+				btrfs_info(info, "allocation_hint enabled");
-+			else
-+				btrfs_info(info, "allocation_hint disabled");
-+			info->allocation_hint_mode = intarg;
-+			break;
- 		case Opt_enospc_debug:
- 			btrfs_set_opt(info->mount_opt, ENOSPC_DEBUG);
- 			break;
-@@ -1497,6 +1512,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",clear_cache");
- 	if (btrfs_test_opt(info, USER_SUBVOL_RM_ALLOWED))
- 		seq_puts(seq, ",user_subvol_rm_allowed");
-+	if (info->allocation_hint_mode)
-+		seq_puts(seq, ",allocation_hint=1");
- 	if (btrfs_test_opt(info, ENOSPC_DEBUG))
- 		seq_puts(seq, ",enospc_debug");
- 	if (btrfs_test_opt(info, AUTO_DEFRAG))
+ /*
+  * Information about one device.
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9184570c51b0..15302c068008 100644
+index a7071f34fe64..806b599c6a46 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5276,10 +5276,13 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
- 		devices_info[ndevs].total_avail = total_avail;
- 		devices_info[ndevs].dev = device;
+@@ -2859,7 +2859,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 	return ret;
+ }
  
--		if ((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
--		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) {
-+		if (((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
-+		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) ||
-+		    info->allocation_hint_mode ==
-+		     BTRFS_ALLOCATION_HINT_DISABLED) {
- 			/*
--			 * if mixed bg set all the alloc_hint
-+			 * if mixed bg or the allocator hint is
-+			 * disabled, set all the alloc_hint
- 			 * fields to the same value, so the sorting
- 			 * is not affected
- 			 */
+-static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
++noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
+ 					struct btrfs_device *device)
+ {
+ 	int ret;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 9cf1d93a3d66..5097c0c12a8e 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -638,5 +638,7 @@ int btrfs_bg_type_to_factor(u64 flags);
+ const char *btrfs_bg_type_to_raid_name(u64 flags);
+ int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
+ bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
++int btrfs_update_device(struct btrfs_trans_handle *trans,
++                                       struct btrfs_device *device);
+ 
+ #endif
 -- 
 2.34.1
 

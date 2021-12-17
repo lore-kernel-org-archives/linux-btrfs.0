@@ -2,332 +2,359 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26676C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 18:55:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F319DC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 19:41:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236736AbhLQSzf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Dec 2021 13:55:35 -0500
-Received: from santino.mail.tiscali.it ([213.205.33.245]:54238 "EHLO
-        smtp.tiscali.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S234200AbhLQSze (ORCPT
+        id S240685AbhLQTl5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Dec 2021 14:41:57 -0500
+Received: from drax.kayaks.hungrycats.org ([174.142.148.226]:43234 "EHLO
+        drax.kayaks.hungrycats.org" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S235528AbhLQTl5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Dec 2021 13:55:34 -0500
-Received: from venice.bhome ([78.12.25.242])
-        by santino.mail.tiscali.it with 
-        id XWnC2600L5DQHji01WnDcv; Fri, 17 Dec 2021 18:47:14 +0000
-x-auth-user: kreijack@tiscali.it
-From:   Goffredo Baroncelli <kreijack@tiscali.it>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Josef Bacik <josef@toxicpanda.com>,
+        Fri, 17 Dec 2021 14:41:57 -0500
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+        id A7D75FC8B0; Fri, 17 Dec 2021 14:41:55 -0500 (EST)
+Date:   Fri, 17 Dec 2021 14:41:55 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     kreijack@inwind.it
+Cc:     Hans van Kranenburg <hans@knorrie.org>,
+        linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.cz>,
-        Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 1/2] btrfs-progs: new "allocation_hint" property.
-Date:   Fri, 17 Dec 2021 19:47:04 +0100
-Message-Id: <21fcdf5d4186555b743190e62ad3011c08aaad9b.1639766708.git.kreijack@inwind.it>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <cover.1639766708.git.kreijack@inwind.it>
-References: <cover.1639766708.git.kreijack@inwind.it>
-Reply-To: Goffredo Baroncelli <kreijack@libero.it>
+        Sinnamohideen Shafeeq <shafeeqs@panasas.com>
+Subject: Re: [PATCH 4/4] btrfs: add allocator_hint mode
+Message-ID: <YbzoA6n8D7jT7y/F@hungrycats.org>
+References: <cover.1635089352.git.kreijack@inwind.it>
+ <bf30502eb53ea2c1c05c2ae96c3788d3e327d59e.1635089352.git.kreijack@inwind.it>
+ <0fbfde93-3a00-7f20-8891-dd0fa798676e@knorrie.org>
+ <5767702c-665f-d1a1-ea65-12eb1db96c51@libero.it>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1639766834; bh=EBQGw5ocCmllZyzg9Tx8p3jcFBIHoHjEuVDSBrSBC+4=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-        b=6NEoDNu62QLBTQmY9Vo1qB4A5W0QoagaIOFQFpabF9mXUESfZ8kn2ZE4sZ4trYNGV
-         7iR8dfm543wBZfMJl2q1gkRjzFDkDNjeTiR6bsWIQsPf1UIQB1dplGO24QLGUKmDuN
-         1zAdFeU7jH0vDAzkAOCke2BTibuyIl7x5jI25/WU=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <5767702c-665f-d1a1-ea65-12eb1db96c51@libero.it>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+On Fri, Dec 17, 2021 at 07:28:28PM +0100, Goffredo Baroncelli wrote:
+> On 12/17/21 16:58, Hans van Kranenburg wrote:
+> > Hi,
+> > 
+> > On 10/24/21 5:31 PM, Goffredo Baroncelli wrote:
+> > > From: Goffredo Baroncelli <kreijack@inwind.it>
+> > > 
+> > > When this mode is enabled, the chunk allocation policy is modified as
+> > > follow.
+> > > 
+> > > Each disk may have a different tag:
+> > > - BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+> > > - BTRFS_DEV_ALLOCATION_METADATA_ONLY
+> > > - BTRFS_DEV_ALLOCATION_DATA_ONLY
+> > > - BTRFS_DEV_ALLOCATION_PREFERRED_DATA (default)
+> > > 
+> > > Where:
+> > > - ALLOCATION_PREFERRED_X means that it is preferred to use this disk for
+> > > the X chunk type (the other type may be allowed when the space is low)
+> > > - ALLOCATION_X_ONLY means that it is used *only* for the X chunk type.
+> > > This means also that it is a preferred choice.
+> > > 
+> > > Each time the allocator allocates a chunk of type X , first it takes the
+> > > disks tagged as ALLOCATION_X_ONLY or ALLOCATION_PREFERRED_X; if the space
+> > > is not enough, it uses also the disks tagged as ALLOCATION_METADATA_ONLY;
+> > > if the space is not enough, it uses also the other disks, with the
+> > > exception of the one marked as ALLOCATION_PREFERRED_Y, where Y the other
+> > > type of chunk (i.e. not X).
+> > 
+> > I read this last paragraph for 5 times now, I think, but I still have no
+> > idea what's going on here. Can you rephrase it? It's more complex than
+> > the actual code below.
+> > 
+> > What the above text tells me is that if I start filling up my disks, it
+> > will happily write DATA to METADATA_ONLY disks when the DATA ones are
+> > full? And if the METADATA_ONLY disks are full with DATA also, it will
+> > not write DATA into PREFERRED_METADATA disks.
+> > 
+> > I don't think that's what the code actually does. At least, I hope not.
+> > 
+> Thanks for reviewing it: my English is very bad :-(
+> 
+> Yes, I wrote ALLOCATION_METADATA_ONLY when I would write ALLOCATION_PREFERRED_Y.
+> 
+> Let to me to rewrite it as following:
+> 
+> -----------------------------
+> The chunk allocation policy is modified as follow.
+> 
+> Each disk may have one of the following tags:
+> - BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+> - BTRFS_DEV_ALLOCATION_METADATA_ONLY
+> - BTRFS_DEV_ALLOCATION_DATA_ONLY
+> - BTRFS_DEV_ALLOCATION_PREFERRED_DATA (default)
 
-Handle the property allocation_hint of a btrfs device. Below
-an example of use:
+Is it too late to rename these?  The order of the words is inconsistent
+and the English usage is a bit odd.
 
-$ # set a new value
-$ sudo btrfs property set /dev/vde allocation_hint DATA_ONLY
+I'd much rather have:
 
-$ # get the current value
-$ sudo btrfs property get /dev/vde allocation_hint
-devid=4, path=/dev/vde: allocation_hint=DATA_ONLY
+> - BTRFS_DEV_ALLOCATION_PREFER_METADATA
+> - BTRFS_DEV_ALLOCATION_ONLY_METADATA
+> - BTRFS_DEV_ALLOCATION_ONLY_DATA
+> - BTRFS_DEV_ALLOCATION_PREFER_DATA (default)
 
-The following values are availables:
-- DATA_ONLY
-- PREFERRED_DATA (default)
-- PREFERRED_METADATA
-- METADATA_ONLY
+English speakers would say "[I/we/you] prefer X" or "X [is] preferred".
 
-Root privileges are required.
+or
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- cmds/property.c       | 204 ++++++++++++++++++++++++++++++++++++++++++
- kernel-shared/ctree.h |  13 +++
- 2 files changed, 217 insertions(+)
+> - BTRFS_DEV_ALLOCATION_METADATA_PREFERRED
+> - BTRFS_DEV_ALLOCATION_METADATA_ONLY
+> - BTRFS_DEV_ALLOCATION_DATA_ONLY
+> - BTRFS_DEV_ALLOCATION_DATA_PREFERRED (default)
 
-diff --git a/cmds/property.c b/cmds/property.c
-index 59ef997c..e6a38ee1 100644
---- a/cmds/property.c
-+++ b/cmds/property.c
-@@ -22,6 +22,7 @@
- #include <sys/ioctl.h>
- #include <sys/stat.h>
- #include <sys/xattr.h>
-+#include <sys/sysmacros.h>
- #include <uuid/uuid.h>
- #include <btrfsutil.h>
- #include "cmds/commands.h"
-@@ -30,6 +31,7 @@
- #include "common/open-utils.h"
- #include "common/utils.h"
- #include "common/help.h"
-+#include "common/path-utils.h"
- 
- #define XATTR_BTRFS_PREFIX     "btrfs."
- #define XATTR_BTRFS_PREFIX_LEN (sizeof(XATTR_BTRFS_PREFIX) - 1)
-@@ -232,6 +234,202 @@ out:
- 	return ret;
- }
- 
-+static int btrfs_find_devid_and_mnt(const char *devpath, int *devid,
-+				    char *path, int maxpath)
-+{
-+	int ret, i, fd;
-+	DIR *dir;
-+	struct stat stdevpath;
-+	struct btrfs_ioctl_fs_info_args fi_args;
-+	struct btrfs_ioctl_dev_info_args dev_info;
-+
-+	ret = get_btrfs_mount(devpath, path, maxpath);
-+	if (ret)
-+		return ret;
-+
-+	fd = btrfs_open_dir(path, &dir, 1);
-+	if (fd < 0)
-+		return fd;
-+
-+	ret = stat(devpath, &stdevpath);
-+	if (ret) {
-+		error("cannot stat '%s'", devpath);
-+		goto out;
-+	}
-+
-+	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &fi_args);
-+	if (ret < 0) {
-+		if (errno == EPERM)
-+			return -errno;
-+		error("cannot get filesystem info: %m");
-+		ret = -10;
-+		goto out;
-+	}
-+
-+	for (i = 0 ; i <= fi_args.max_id ; i++) {
-+		struct stat st;
-+
-+		memset(&dev_info, 0, sizeof(dev_info));
-+		ret = get_device_info(fd, i, &dev_info);
-+		if (ret == -ENODEV)
-+			continue;
-+		if (ret) {
-+			error("cannot get info about device devid=%d", i);
-+			goto out;
-+		}
-+
-+		if (!dev_info.path)
-+			/* missing devices */
-+			continue;
-+
-+		ret = stat((char *)dev_info.path, &st);
-+		if (ret) {
-+			error("cannot stat '%s'", devpath);
-+			goto out;
-+		}
-+
-+		if (major(st.st_rdev) == major(stdevpath.st_rdev) &&
-+		    minor(st.st_rdev) == minor(stdevpath.st_rdev)) {
-+			*devid = dev_info.devid;
-+			ret = 0;
-+			goto out;
-+		}
-+	}
-+
-+	ret = -12;
-+
-+out:
-+	close_file_or_dir(fd, dir);
-+	return ret;
-+}
-+
-+static struct ull_charp_pair_t {
-+	u64		value;
-+	const char	*descr;
-+} allocation_hint_description[] = {
-+	{BTRFS_DEV_ALLOCATION_HINT_PREFERRED_METADATA, "PREFERRED_METADATA"},
-+	{BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY, "METADATA_ONLY"},
-+	{BTRFS_DEV_ALLOCATION_HINT_PREFERRED_DATA, "PREFERRED_DATA"},
-+	{BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY, "DATA_ONLY"},
-+	{0, NULL}
-+};
-+
-+static int prop_allocation_hint(enum prop_object_type type,
-+				const char *object,
-+				const char *name,
-+				const char *value,
-+				bool force)
-+{
-+	int ret, devid, fd, fd2;
-+	char path[PATH_MAX];
-+	DIR *dir;
-+	u8 fsid[BTRFS_UUID_SIZE];
-+	char fsid_str[BTRFS_UUID_UNPARSED_SIZE];
-+	char sysfs_file[PATH_MAX];
-+	char filename[PATH_MAX];
-+	int i;
-+	u64 v, devtype;
-+	char buf[1024];
-+
-+	ret = btrfs_find_devid_and_mnt(object, &devid, path, sizeof(path));
-+	if (ret)
-+		return -5;
-+
-+	fd = btrfs_open_dir(path, &dir, 1);
-+	if (fd < 0)
-+		return fd;
-+
-+	ret = get_fsid_fd(fd, fsid);
-+	if (ret < 0)
-+		goto out;
-+
-+	uuid_unparse(fsid, fsid_str);
-+	sprintf(filename, "devinfo/%d/allocation_hint", devid);
-+
-+	/* build /sys/fs/btrfs/<UUID>/devinfo/<DEVID>/type */
-+	ret = path_cat3_out(sysfs_file, "/sys/fs/btrfs", fsid_str, filename);
-+	if (ret < 0)
-+		goto out;
-+
-+	fd2 = open(sysfs_file, O_RDONLY);
-+	if (fd2 < 0) {
-+		error("'allocation_hint' property not available or accessible.");
-+		ret = -errno;
-+		goto out;
-+	}
-+
-+	ret = read(fd2, buf, sizeof(buf) - 1);
-+	close(fd2);
-+	if (ret < 0) {
-+		error("Unable to read the 'allocation_hint' property.");
-+		ret = -errno;
-+		goto out;
-+	}
-+
-+	buf[sizeof(buf) - 1] = 0;
-+	devtype = strtoull(buf, NULL, 0);
-+
-+	if (!value) {
-+		/* READ */
-+		for (i = 0 ; allocation_hint_description[i].descr ; i++)
-+			if (devtype == allocation_hint_description[i].value)
-+				break;
-+		if (allocation_hint_description[i].descr)
-+			printf("devid=%d, path=%s: allocation_hint=%s\n",
-+				devid, object,
-+				allocation_hint_description[i].descr);
-+		else
-+			printf("devid=%d, path=%s: allocation_hint=unknown:%llu\n",
-+				devid, object,
-+				devtype);
-+		ret = 0;
-+	} else {
-+		/* WRITE */
-+		for (i = 0 ; allocation_hint_description[i].descr ; i++)
-+			if (!strcmp(value, allocation_hint_description[i].descr))
-+				break;
-+
-+		if (allocation_hint_description[i].descr) {
-+			v = allocation_hint_description[i].value;
-+		} else if (sscanf(value, "%llu", &v) != 1) {
-+			error("Invalid value '%s'\n", value);
-+			ret = -3;
-+			goto out;
-+		} 
-+		if (v & ~BTRFS_DEV_ALLOCATION_HINT_MASK) {
-+			error("Invalid value '%s'\n", value);
-+			ret = -3;
-+			goto out;
-+		}
-+
-+		devtype &= ~BTRFS_DEV_ALLOCATION_HINT_MASK;
-+		devtype |= (v & BTRFS_DEV_ALLOCATION_HINT_MASK);
-+
-+		fd2 = open(sysfs_file, O_RDWR);
-+		if (fd2 < 0) {
-+			error("'allocation_hint' property not available or accessible for updating.");
-+			ret = -errno;
-+			goto out;
-+		}
-+
-+		sprintf(buf, "%llu", devtype);
-+
-+		ret = write(fd2, buf, strlen(buf));
-+		close(fd2);
-+		if (ret < 0) {
-+			error("Unable to update 'allocation_hint' property.");
-+			ret = -errno;
-+			goto out;
-+		}
-+
-+	}
-+
-+	ret = 0;
-+out:
-+	close_file_or_dir(fd, dir);
-+	return ret;
-+}
-+
- const struct prop_handler prop_handlers[] = {
- 	{
- 		.name ="ro",
-@@ -254,6 +452,12 @@ const struct prop_handler prop_handlers[] = {
- 		.types = prop_object_inode,
- 		.handler = prop_compression
- 	},
-+	{
-+		.name = "allocation_hint",
-+		.desc = "hint to store the data/metadata chunks",
-+		.types = prop_object_dev,
-+		.handler = prop_allocation_hint
-+	},
- 	{NULL, NULL, 0, 0, NULL}
- };
- 
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 966490d3..adc869fe 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -213,6 +213,19 @@ struct btrfs_mapping_tree {
- 	struct cache_tree cache_tree;
- };
- 
-+/* btrfs chunk allocation hints */
-+#define BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT    2
-+#define BTRFS_DEV_ALLOCATION_HINT_MASK ((1ULL << \
-+	       BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT) - 1)
-+/* preferred metadata chunk, but data chunk allowed */
-+#define BTRFS_DEV_ALLOCATION_HINT_PREFERRED_METADATA        (1ULL)
-+/* only metadata chunk are allowed */
-+#define BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY     (2ULL)
-+/* only data chunk allowed */
-+#define BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY         (3ULL)
-+/* preferred data chunk, but metadata chunk allowed */
-+#define BTRFS_DEV_ALLOCATION_HINT_PREFERRED_DATA    (0ULL)
-+
- #define BTRFS_UUID_SIZE 16
- struct btrfs_dev_item {
- 	/* the internal btrfs device id */
--- 
-2.34.1
+I keep typing "data_preferred" and "only_data" when it's really
+"preferred_data" and "data_only" because they're not consistent.
 
+> During a *mixed data/metadata* chunk allocation, BTRFS works as
+> usual.
+> 
+> During a *data* chunk allocation, the space are searched first in
+> BTRFS_DEV_ALLOCATION_DATA_ONLY and BTRFS_DEV_ALLOCATION_PREFERRED_DATA
+> tagged disks. If no space is found or the space found is not enough (eg.
+> in raid5, only two disks are available), then also the disks tagged
+> BTRFS_DEV_ALLOCATION_PREFERRED_METADATA are evaluated. If even in this
+> case this the space is not sufficient, -ENOSPC is raised.
+> A disk tagged with BTRFS_DEV_ALLOCATION_METADATA_ONLY is never considered
+> for a data BG allocation.
+> 
+> During a *metadata* chunk allocation, the space are searched first in
+> BTRFS_DEV_ALLOCATION_METADATA_ONLY and BTRFS_DEV_ALLOCATION_PREFERRED_METADATA
+> tagged disks. If no space is found or the space found is not enough (eg.
+> in raid5, only two disks are available), then also the disks tagged
+> BTRFS_DEV_ALLOCATION_PREFERRED_DATA are considered. If even in this
+> case this the space is not sufficient, -ENOSPC is raised.
+> A disk tagged with BTRFS_DEV_ALLOCATION_DATA_ONLY is never considered
+> for a metadata BG allocation.
+> 
+> By default the disks are tagged as BTRFS_DEV_ALLOCATION_PREFERRED_DATA,
+> so the default behavior happens. If the user prefer to store the
+> metadata in the faster disks (e.g. the SSD), he can tag these with
+> BTRFS_DEV_ALLOCATION_PREFERRED_DATA: in this case the data BG go in the
+> BTRFS_DEV_ALLOCATION_PREFERRED_DATA disks and the metadata BG in the
+> others, until there is enough space. Only if one disks set is filled,
+> the other is occupied.
+> 
+> WARNING: if the user tags a disk with BTRFS_DEV_ALLOCATION_DATA_ONLY,
+> this means that this disk will never be used for allocating metadata
+> increasing the likelihood of exhausting the metadata space.
+
+This WARNING is not correct.  We use a combination of METADATA_ONLY and
+DATA_ONLY preferences to exclude data allocations from metadata devices,
+reducing the likelihood of exhausting the metadata space all the way
+to zero.  We do have to provide correctly-sized metadata devices, but
+SSDs come in powers-of-2 sizes, so we just bump up to the next power of
+two or add another SSD to the filesystem every time a metadata device
+goes over 50%.
+
+Metadata-only devices completely eliminate our need to do other
+workarounds like data balances to reclaim unallocated space for metadata.
+
+_PREFERRED devices are the problematic case.  Since no space is
+exclusively reserved for metadata, it means you have to do maintenance
+data balances as the filesystem fills up because you will be constantly
+getting data clogging up your metadata devices.
+
+There is a use case for a mix of _PREFERRED and _ONLY devices:  a system
+with NVMe, SSD, and HDD might want to have the SSD use DATA_PREFERRED or
+METADATA_PREFERRED while the NVMe and HDD use METADATA_ONLY and DATA_ONLY
+respectively.  But this use case is not a very good match for what the
+implementation does--we'd want to separate device selection ("can I use
+this device for metadata, ever?") from ordering ("which devices should
+I use for metadata first?").
+
+To keep things simple I'd say that use case is out of scope, and recommend
+not mixing _PREFERRED and _ONLY in the same filesystem.  Either explicitly
+allocate everything with _ONLY, or mark every device _PREFERRED one way
+or the other, but don't use both _ONLY and _PREFERRED at the same time
+unless you really know what you're doing.
+
+> ---------------------------------
+> 
+> 
+> 
+> > > Where:
+> > > - ALLOCATION_PREFERRED_X means that it is preferred to use this disk for
+> > > the X chunk type (the other type may be allowed when the space is low)
+> > > - ALLOCATION_X_ONLY means that it is used *only* for the X chunk type.
+> > > This means also that it is a preferred choice.
+> > > 
+> > > Each time the allocator allocates a chunk of type X , first it takes the
+> > > disks tagged as ALLOCATION_X_ONLY or ALLOCATION_PREFERRED_X; if the space
+> > > is not enough, it uses also the disks tagged as ALLOCATION_METADATA_ONLY;
+> > > if the space is not enough, it uses also the other disks, with the
+> > > exception of the one marked as ALLOCATION_PREFERRED_Y, where Y the other
+> > > type of chunk (i.e. not X).
+> 
+> > Hans
+> > 
+> > > Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+> > > ---
+> > >   fs/btrfs/volumes.c | 98 +++++++++++++++++++++++++++++++++++++++++++++-
+> > >   fs/btrfs/volumes.h |  1 +
+> > >   2 files changed, 98 insertions(+), 1 deletion(-)
+> > > 
+> > > diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> > > index 8ac99771f43c..7ee9c6e7bd44 100644
+> > > --- a/fs/btrfs/volumes.c
+> > > +++ b/fs/btrfs/volumes.c
+> > > @@ -153,6 +153,20 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+> > >   	},
+> > >   };
+> > > +#define BTRFS_DEV_ALLOCATION_MASK ((1ULL << \
+> > > +		BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT) - 1)
+> > > +#define BTRFS_DEV_ALLOCATION_MASK_COUNT (1ULL << \
+> > > +		BTRFS_DEV_ALLOCATION_MASK_BIT_COUNT)
+> > > +
+> > > +static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_MASK_COUNT] = {
+> > > +	[BTRFS_DEV_ALLOCATION_DATA_ONLY] = -1,
+> > > +	[BTRFS_DEV_ALLOCATION_PREFERRED_DATA] = 0,
+> > > +	[BTRFS_DEV_ALLOCATION_PREFERRED_METADATA] = 1,
+> > > +	[BTRFS_DEV_ALLOCATION_METADATA_ONLY] = 2,
+> > > +	/* the other values are set to 0 */
+> > > +};
+> > > +
+> > > +
+> > >   const char *btrfs_bg_type_to_raid_name(u64 flags)
+> > >   {
+> > >   	const int index = btrfs_bg_flags_to_raid_index(flags);
+> > > @@ -4997,13 +5011,18 @@ static int btrfs_add_system_chunk(struct btrfs_fs_info *fs_info,
+> > >   }
+> > >   /*
+> > > - * sort the devices in descending order by max_avail, total_avail
+> > > + * sort the devices in descending order by alloc_hint,
+> > > + * max_avail, total_avail
+> > >    */
+> > >   static int btrfs_cmp_device_info(const void *a, const void *b)
+> > >   {
+> > >   	const struct btrfs_device_info *di_a = a;
+> > >   	const struct btrfs_device_info *di_b = b;
+> > > +	if (di_a->alloc_hint > di_b->alloc_hint)
+> > > +		return -1;
+> > > +	if (di_a->alloc_hint < di_b->alloc_hint)
+> > > +		return 1;
+> > >   	if (di_a->max_avail > di_b->max_avail)
+> > >   		return -1;
+> > >   	if (di_a->max_avail < di_b->max_avail)
+> > > @@ -5166,6 +5185,8 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+> > >   	int ndevs = 0;
+> > >   	u64 max_avail;
+> > >   	u64 dev_offset;
+> > > +	int hint;
+> > > +	int i;
+> > >   	/*
+> > >   	 * in the first pass through the devices list, we gather information
+> > > @@ -5218,16 +5239,91 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
+> > >   		devices_info[ndevs].max_avail = max_avail;
+> > >   		devices_info[ndevs].total_avail = total_avail;
+> > >   		devices_info[ndevs].dev = device;
+> > > +
+> > > +		if ((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
+> > > +		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) {
+> > > +			/*
+> > > +			 * if mixed bg set all the alloc_hint
+> > > +			 * fields to the same value, so the sorting
+> > > +			 * is not affected
+> > > +			 */
+> > > +			devices_info[ndevs].alloc_hint = 0;
+> > > +		} else if (ctl->type & BTRFS_BLOCK_GROUP_DATA) {
+> > > +			hint = device->type & BTRFS_DEV_ALLOCATION_MASK;
+> > > +
+> > > +			/*
+> > > +			 * skip BTRFS_DEV_METADATA_ONLY disks
+> > > +			 */
+> > > +			if (hint == BTRFS_DEV_ALLOCATION_METADATA_ONLY)
+> > > +				continue;
+> > > +			/*
+> > > +			 * if a data chunk must be allocated,
+> > > +			 * sort also by hint (data disk
+> > > +			 * higher priority)
+> > > +			 */
+> > > +			devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
+> > > +		} else { /* BTRFS_BLOCK_GROUP_METADATA */
+> > > +			hint = device->type & BTRFS_DEV_ALLOCATION_MASK;
+> > > +
+> > > +			/*
+> > > +			 * skip BTRFS_DEV_DATA_ONLY disks
+> > > +			 */
+> > > +			if (hint == BTRFS_DEV_ALLOCATION_DATA_ONLY)
+> > > +				continue;
+> > > +			/*
+> > > +			 * if a data chunk must be allocated,
+> > > +			 * sort also by hint (metadata hint
+> > > +			 * higher priority)
+> > > +			 */
+> > > +			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
+> > > +		}
+> > > +
+> > >   		++ndevs;
+> > >   	}
+> > >   	ctl->ndevs = ndevs;
+> > > +	/*
+> > > +	 * no devices available
+> > > +	 */
+> > > +	if (!ndevs)
+> > > +		return 0;
+> > > +
+> > >   	/*
+> > >   	 * now sort the devices by hole size / available space
+> > >   	 */
+> > >   	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+> > >   	     btrfs_cmp_device_info, NULL);
+> > > +	/*
+> > > +	 * select the minimum set of disks grouped by hint that
+> > > +	 * can host the chunk
+> > > +	 */
+> > > +	ndevs = 0;
+> > > +	while (ndevs < ctl->ndevs) {
+> > > +		hint = devices_info[ndevs++].alloc_hint;
+> > > +		while (ndevs < ctl->ndevs &&
+> > > +		       devices_info[ndevs].alloc_hint == hint)
+> > > +				ndevs++;
+> > > +		if (ndevs >= ctl->devs_min)
+> > > +			break;
+> > > +	}
+> > > +
+> > > +	BUG_ON(ndevs > ctl->ndevs);
+> > > +	ctl->ndevs = ndevs;
+> > > +
+> > > +	/*
+> > > +	 * the next layers require the devices_info ordered by
+> > > +	 * max_avail. If we are returing two (or more) different
+> > > +	 * group of alloc_hint, this is not always true. So sort
+> > > +	 * these gain.
+> > > +	 */
+> > > +
+> > > +	for (i = 0 ; i < ndevs ; i++)
+> > > +		devices_info[i].alloc_hint = 0;
+> > > +
+> > > +	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+> > > +	     btrfs_cmp_device_info, NULL);
+> > > +
+> > >   	return 0;
+> > >   }
+> > > diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> > > index b8250f29df6e..37eb37b533c5 100644
+> > > --- a/fs/btrfs/volumes.h
+> > > +++ b/fs/btrfs/volumes.h
+> > > @@ -369,6 +369,7 @@ struct btrfs_device_info {
+> > >   	u64 dev_offset;
+> > >   	u64 max_avail;
+> > >   	u64 total_avail;
+> > > +	int alloc_hint;
+> > >   };
+> > >   struct btrfs_raid_attr {
+> > > 
+> > 
+> 
+> 
+> -- 
+> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+> 

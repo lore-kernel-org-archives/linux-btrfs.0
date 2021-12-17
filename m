@@ -2,39 +2,44 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F1B2C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 12:20:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBB4EC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Dec 2021 12:35:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236205AbhLQMUN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Dec 2021 07:20:13 -0500
-Received: from dfw.source.kernel.org ([139.178.84.217]:34954 "EHLO
-        dfw.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236177AbhLQMUN (ORCPT
+        id S236346AbhLQMfO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Dec 2021 07:35:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44404 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232582AbhLQMfN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Dec 2021 07:20:13 -0500
+        Fri, 17 Dec 2021 07:35:13 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20129C061574
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Dec 2021 04:35:13 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 24E0462136
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Dec 2021 12:20:13 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0A00CC36AE1
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Dec 2021 12:20:11 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id D0B71B8273A
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Dec 2021 12:35:11 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 16BFFC36AE1
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Dec 2021 12:35:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1639743612;
-        bh=h99je5BYVoprvmORmxlvyUNSW0qElmy5RNwUOgEf2y0=;
-        h=From:To:Subject:Date:From;
-        b=fYewLAX4UIlOSGApNz5TIIhfmpt4Zz0PLjJOlNp9dMpjCPibqPTCBkqET/TmZvzZ2
-         ciCsy9Y7MXkUN2RPqqy23zh45MIeuX6CC5HEqZ5NlbCrSIS1HQh2vk4Vf2ibpuyyaU
-         o+4oa+RfINSpiqkqOM1J5cpIQksbXaMGEAyDN9T/URhRCb8x+n6VrDTef04YLNkum6
-         Gey9P872W08gsO1FuQGr7c54JZnGVP0O2dcmgmFILrDy9Zivsgoeew/aq9c2/su6Yn
-         qRlTaxxk80a0z78vozhSDomXkDBaEKoQBSnXxuAoyUQCgps9X443eVuoEFIeNK4R8D
-         YOxQRvY+oF4EA==
+        s=k20201202; t=1639744510;
+        bh=gX0uL062eauJyqd0a5BIH1w4UHGkqJ8LW52ttD3A0B8=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=nwxWeznhMAKU6hcqbwCQFAjGVlUpTgnQ6ZWj7yOykXE0/QJcQE8QwOIdxKYbNpqrE
+         RWUCMqb6Xr0Z6n/FLCUgHKvPNAH1yDxyP+lBa1XkkNdopXwwfhg/7VQ4VBW5r5C8Jr
+         uTJsTvFCzvSQuCL+xj2IA275DRu7eGMg4LZl2n9/fcPUxyKL4DVfFK05yjnoFXsa/P
+         7vr+XahdK756SoxlklBqxOPbsW1Jz9nje66s4oxVjtc4byu7ku11sJu7dwBQM5Xcov
+         m+9IOvL4IYRQwVhdlpDx4uuC/Uk8RmymiSwFwJkv8cKyzEMeobY3HioKaLM+riAJkH
+         MqsYIgob+kBoQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix reserved space leak on log tree nodes after transaction abort
-Date:   Fri, 17 Dec 2021 12:20:09 +0000
-Message-Id: <f0bed6300fc1dcad405c894640f7140b4a8e04f4.1639743512.git.fdmanana@suse.com>
+Subject: [PATCH v2] btrfs: fix reserved space leak on log tree nodes after transaction abort
+Date:   Fri, 17 Dec 2021 12:35:07 +0000
+Message-Id: <049306dd5efc8cbe11501e7efebf56f615ef7360.1639744398.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <f0bed6300fc1dcad405c894640f7140b4a8e04f4.1639743512.git.fdmanana@suse.com>
+References: <f0bed6300fc1dcad405c894640f7140b4a8e04f4.1639743512.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -67,10 +72,7 @@ we get the following traces when unmmounting the filesystem:
 [174957.286497] BTRFS: error (device dm-0) in free_log_tree:3420: errno=-5 IO failure
 [174957.399379] ------------[ cut here ]------------
 [174957.402497] WARNING: CPU: 2 PID: 3206883 at fs/btrfs/block-group.c:127 btrfs_put_block_group+0x77/0xb0 [btrfs]
-[174957.407523] Modules linked in: btrfs overlay dm_zero dm_snapshot dm_dust loop dm_thin_pool dm_persistent_data dm_bio_prison dm_bufio dm_log_writes dm_flakey dm_mod blake2b_generic xor raid6_pq libcrc32c ppde
-v intel_rapl_msr intel_rapl_common parport_pc bochs crct10dif_pclmul drm_vram_helper ghash_clmulni_intel aesni_intel drm_ttm_helper crypto_simd parport ttm cryptd input_leds sg joydev led_class drm_kms_helper se
-rio_raw qemu_fw_cfg pcspkr evdev button drm ip_tables x_tables autofs4 ext4 crc32c_generic crc16 mbcache jbd2 sd_mod t10_pi virtio_scsi virtio_net net_failover failover ata_generic ata_piix libata crc32_pclmul v
-irtio_pci virtio_pci_legacy_dev crc32c_intel virtio_pci_modern_dev virtio_ring scsi_mod psmouse virtio scsi_common i2c_piix4 [last unloaded: scsi_debug]
+[174957.407523] Modules linked in: btrfs overlay dm_zero (...)
 [174957.424917] CPU: 2 PID: 3206883 Comm: umount Tainted: G        W         5.16.0-rc5-btrfs-next-109 #1
 [174957.426689] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.14.0-0-g155821a1990b-prebuilt.qemu.org 04/01/2014
 [174957.428716] RIP: 0010:btrfs_put_block_group+0x77/0xb0 [btrfs]
@@ -118,7 +120,7 @@ irtio_pci virtio_pci_legacy_dev crc32c_intel virtio_pci_modern_dev virtio_ring s
 [174957.466323] ---[ end trace bc7ee0c490bce3af ]---
 [174957.467282] ------------[ cut here ]------------
 [174957.468184] WARNING: CPU: 2 PID: 3206883 at fs/btrfs/block-group.c:3976 btrfs_free_block_groups+0x330/0x3c0 [btrfs]
-[174957.470066] Modules linked in: btrfs overlay dm_zero dm_snapshot dm_dust loop dm_thin_pool dm_persistent_data dm_bio_prison dm_bufio dm_log_writes dm_flakey dm_mod blake2b_generic xor raid6_pq libcrc32c ppdev intel_rapl_msr intel_rapl_common parport_pc bochs crct10dif_pclmul drm_vram_helper ghash_clmulni_intel aesni_intel drm_ttm_helper crypto_simd parport ttm cryptd input_leds sg joydev led_class drm_kms_helper serio_raw qemu_fw_cfg pcspkr evdev button drm ip_tables x_tables autofs4 ext4 crc32c_generic crc16 mbcache jbd2 sd_mod t10_pi virtio_scsi virtio_net net_failover failover ata_generic ata_piix libata crc32_pclmul virtio_pci virtio_pci_legacy_dev crc32c_intel virtio_pci_modern_dev virtio_ring scsi_mod psmouse virtio scsi_common i2c_piix4 [last unloaded: scsi_debug]
+[174957.470066] Modules linked in: btrfs overlay dm_zero (...)
 [174957.483137] CPU: 2 PID: 3206883 Comm: umount Tainted: G        W         5.16.0-rc5-btrfs-next-109 #1
 [174957.484691] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.14.0-0-g155821a1990b-prebuilt.qemu.org 04/01/2014
 [174957.486853] RIP: 0010:btrfs_free_block_groups+0x330/0x3c0 [btrfs]
@@ -181,11 +183,14 @@ path if we failed to walk over the entire log tree.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+
+V2: Added missing bit EXTENT_NEED_WAIT.
+
  fs/btrfs/tree-log.c | 32 ++++++++++++++++++++++++++++++--
  1 file changed, 30 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4b89ac769347..4aae8be21af3 100644
+index 4b89ac769347..9062073407fd 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
 @@ -3402,6 +3402,32 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
@@ -205,7 +210,7 @@ index 4b89ac769347..4aae8be21af3 100644
 +	u64 end;
 +
 +	while (!find_first_extent_bit(&log->dirty_log_pages, start, &start, &end,
-+				      EXTENT_DIRTY | EXTENT_NEW, NULL)) {
++		      EXTENT_DIRTY | EXTENT_NEW | EXTENT_NEED_WAIT, NULL)) {
 +		u64 bytenr;
 +
 +		for (bytenr = start; bytenr < end; bytenr += fs_info->nodesize) {

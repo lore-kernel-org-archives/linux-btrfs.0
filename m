@@ -2,135 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29437C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Dec 2021 06:12:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5385C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Dec 2021 10:27:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235269AbhL0GMa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Dec 2021 01:12:30 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:60046 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235267AbhL0GMa (ORCPT
+        id S236032AbhL0K1A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Dec 2021 05:27:00 -0500
+Received: from eu-shark1.inbox.eu ([195.216.236.81]:43676 "EHLO
+        eu-shark1.inbox.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236030AbhL0K1A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Dec 2021 01:12:30 -0500
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 01E2521116;
-        Mon, 27 Dec 2021 06:12:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1640585549; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=I4DEIv18K1oCYX/XnmR6nLSwjz8erldQglFwlCLTnP8=;
-        b=NNB2vv2gu5H9+NAkoeJao+GXvTupFhogSvF8ynHbSna8Rrc76YculQE1sJbGXNwZ/lWeJy
-        cpPmTSSyTmjfntuALimka4BBD2d2xuH4tQAJBFmvo+fAD8CMOBSLcA9/FUnK15rO0QsmPx
-        h0lrHfn9oBKevOm/aTqSK1XfVKr/IEA=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0B2AE13491;
-        Mon, 27 Dec 2021 06:12:27 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id KPNeMEtZyWGfHgAAMHmgww
-        (envelope-from <wqu@suse.com>); Mon, 27 Dec 2021 06:12:27 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     u-boot@lists.denx.de
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] fs/btrfs: add dependency on BLAKE2 hash
-Date:   Mon, 27 Dec 2021 14:12:08 +0800
-Message-Id: <20211227061208.54497-2-wqu@suse.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20211227061208.54497-1-wqu@suse.com>
-References: <20211227061208.54497-1-wqu@suse.com>
+        Mon, 27 Dec 2021 05:27:00 -0500
+X-Greylist: delayed 488 seconds by postgrey-1.27 at vger.kernel.org; Mon, 27 Dec 2021 05:26:59 EST
+Received: from eu-shark1.inbox.eu (localhost [127.0.0.1])
+        by eu-shark1-out.inbox.eu (Postfix) with ESMTP id 3F3696C00733;
+        Mon, 27 Dec 2021 12:18:50 +0200 (EET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=inbox.eu; s=20140211;
+        t=1640600330; bh=bs1E7OoqIx81sSocBr936l+8bwV3sY89H+jSoVxBp6M=;
+        h=From:To:Cc:Subject:Date;
+        b=r3s/cftjMtso/Y49b4awjaDykKbrghex2OmbDgODLpAZUxjPTZABsP5Qme1ZrIehG
+         n0NqULX/Vr3SwhZ/88dPCTjCAbDOstnr36YwUKch0Pj0HM0OxJxaLY07ZydTQ1oewD
+         myi4MF+pZ6VHiMupbVWz9J81o/Kw1eFRT8MPBq7A=
+Received: from localhost (localhost [127.0.0.1])
+        by eu-shark1-in.inbox.eu (Postfix) with ESMTP id 31EBB6C0072E;
+        Mon, 27 Dec 2021 12:18:50 +0200 (EET)
+Received: from eu-shark1.inbox.eu ([127.0.0.1])
+        by localhost (eu-shark1.inbox.eu [127.0.0.1]) (spamfilter, port 35)
+        with ESMTP id RUvop0kWHgmA; Mon, 27 Dec 2021 12:18:50 +0200 (EET)
+Received: from mail.inbox.eu (eu-pop1 [127.0.0.1])
+        by eu-shark1-in.inbox.eu (Postfix) with ESMTP id DC8BC6C0072B;
+        Mon, 27 Dec 2021 12:18:49 +0200 (EET)
+From:   Su Yue <l@damenly.su>
+To:     linux-btrfs@vger.kernel.org
+Cc:     l@damenly.su
+Subject: [PATCH] btrfs: remove unnecessary parameter type from compression_decompress_bio
+Date:   Mon, 27 Dec 2021 18:18:39 +0800
+Message-Id: <20211227101839.77682-1-l@damenly.su>
+X-Mailer: git-send-email 2.30.1 (Apple Git-130)
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Virus-Scanned: OK
+X-ESPOL: 885mlYpNBD+giECgR3rABwY+s1k3Ua26u/vYoxBbgAiJPFTkYip5XRGxnW10RX+5ujkX
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now btrfs can utilize the newly intorudced BLAKE2 hash.
+btrfs_decompress_bio, the only caller of compression_decompress_bio gets
+type from @cb and passes it to compression_decompress_bio.
+However, compression_decompress_bio can get compression type directly
+from @cb.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+So remove the parameter and access it through @cb.
+No functional change.
+
+Signed-off-by: Su Yue <l@damenly.su>
 ---
- fs/btrfs/Kconfig       |  1 +
- fs/btrfs/crypto/hash.c | 14 ++++++++++++++
- fs/btrfs/crypto/hash.h |  1 +
- fs/btrfs/disk-io.c     |  2 ++
- 4 files changed, 18 insertions(+)
+ fs/btrfs/compression.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index a0b48c23b31a..e31afe595f31 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -6,6 +6,7 @@ config FS_BTRFS
- 	select ZSTD
- 	select RBTREE
- 	select SHA256
-+	select BLAKE2
- 	help
- 	  This provides a single-device read-only BTRFS support. BTRFS is a
- 	  next-generation Linux file system based on the copy-on-write
-diff --git a/fs/btrfs/crypto/hash.c b/fs/btrfs/crypto/hash.c
-index fb51f6386cb1..891a2974be05 100644
---- a/fs/btrfs/crypto/hash.c
-+++ b/fs/btrfs/crypto/hash.c
-@@ -4,6 +4,7 @@
- #include <linux/unaligned/access_ok.h>
- #include <linux/types.h>
- #include <u-boot/sha256.h>
-+#include <u-boot/blake2.h>
- #include <u-boot/crc.h>
- 
- static u32 btrfs_crc32c_table[256];
-@@ -39,6 +40,19 @@ int hash_xxhash(const u8 *buf, size_t length, u8 *out)
- 	return 0;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 32da97c3c19d..f941b7ed23f5 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -96,10 +96,10 @@ static int compression_compress_pages(int type, struct list_head *ws,
+ 	}
  }
  
-+/* We use the full CSUM_SIZE(32) for BLAKE2B */
-+#define BTRFS_BLAKE2_HASH_SIZE	32
-+int hash_blake2(const u8 *buf, size_t length, u8 *out)
-+{
-+	blake2b_state S;
-+
-+	blake2b_init(&S, BTRFS_BLAKE2_HASH_SIZE);
-+	blake2b_update(&S, buf, length);
-+	blake2b_final(&S, out, BTRFS_BLAKE2_HASH_SIZE);
-+
-+	return 0;
-+}
-+
- int hash_crc32c(const u8 *buf, size_t length, u8 *out)
+-static int compression_decompress_bio(int type, struct list_head *ws,
+-		struct compressed_bio *cb)
++static int compression_decompress_bio(struct list_head *ws,
++				      struct compressed_bio *cb)
  {
- 	u32 crc;
-diff --git a/fs/btrfs/crypto/hash.h b/fs/btrfs/crypto/hash.h
-index d1ba1fa374e3..f9846038bfa3 100644
---- a/fs/btrfs/crypto/hash.h
-+++ b/fs/btrfs/crypto/hash.h
-@@ -9,6 +9,7 @@ void btrfs_hash_init(void);
- int hash_crc32c(const u8 *buf, size_t length, u8 *out);
- int hash_xxhash(const u8 *buf, size_t length, u8 *out);
- int hash_sha256(const u8 *buf, size_t length, u8 *out);
-+int hash_blake2(const u8 *buf, size_t length, u8 *out);
+-	switch (type) {
++	switch (cb->compress_type) {
+ 	case BTRFS_COMPRESS_ZLIB: return zlib_decompress_bio(ws, cb);
+ 	case BTRFS_COMPRESS_LZO:  return lzo_decompress_bio(ws, cb);
+ 	case BTRFS_COMPRESS_ZSTD: return zstd_decompress_bio(ws, cb);
+@@ -1359,7 +1359,7 @@ static int btrfs_decompress_bio(struct compressed_bio *cb)
+ 	int type = cb->compress_type;
  
- u32 crc32c(u32 seed, const void * data, size_t len);
+ 	workspace = get_workspace(type, 0);
+-	ret = compression_decompress_bio(type, workspace, cb);
++	ret = compression_decompress_bio(workspace, cb);
+ 	put_workspace(type, workspace);
  
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index eb7736d53e11..8043abc1bd60 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -126,6 +126,8 @@ int btrfs_csum_data(u16 csum_type, const u8 *data, u8 *out, size_t len)
- 		return hash_xxhash(data, len, out);
- 	case BTRFS_CSUM_TYPE_SHA256:
- 		return hash_sha256(data, len, out);
-+	case BTRFS_CSUM_TYPE_BLAKE2:
-+		return hash_blake2(data, len, out);
- 	default:
- 		printf("Unknown csum type %d\n", csum_type);
- 		return -EINVAL;
+ 	return ret;
 -- 
-2.34.1
+2.30.1
 

@@ -2,266 +2,619 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63AA8C4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Jan 2022 17:49:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6657EC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Jan 2022 17:52:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242424AbiAFRtr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Jan 2022 12:49:47 -0500
-Received: from santino.mail.tiscali.it ([213.205.33.245]:56242 "EHLO
-        smtp.tiscali.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S242418AbiAFRte (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jan 2022 12:49:34 -0500
-Received: from venice.bhome ([84.220.25.125])
-        by santino.mail.tiscali.it with 
-        id fVpV2600Z2hwt0401VpZVc; Thu, 06 Jan 2022 17:49:34 +0000
-x-auth-user: kreijack@tiscali.it
-From:   Goffredo Baroncelli <kreijack@tiscali.it>
-To:     linux-btrfs@vger.kernel.org
+        id S242438AbiAFRwH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Jan 2022 12:52:07 -0500
+Received: from smtp-33.italiaonline.it ([213.209.10.33]:60784 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S241987AbiAFRwG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Thu, 6 Jan 2022 12:52:06 -0500
+Received: from [192.168.1.27] ([84.220.25.125])
+        by smtp-33.iol.local with ESMTPA
+        id 5WvhnzM1906Tn5WvhnOhUl; Thu, 06 Jan 2022 18:52:04 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
+        t=1641491524; bh=KOynYN3T2LZtIIfIzt1Rl91DWitNG5/sWvNqfVxtTpQ=;
+        h=From;
+        b=XH4E25k5wGzKdAZVefhI7xJdt/efvjDMUwXsnr9o5dhhOMHYJkCrjVOEBXhU3I3Y7
+         LNQigXf3Kk1nlhjI3ROoRmYj2mTNrPGuAysrKcBS7ZPajOhN9aHXrjKun/gBj0yX0a
+         jJR2y55yTqJ2LKF08gquCNLMTe9zsSCJ/O5hhw4YPJ4gZtAzIENIhs6YhtcuJvJ5ux
+         iqNCNk5qmb4panwD6WEyPJIvKtp5Pcud0INQN8CUpJyI+v9M2p5DGyyv4/7UQdcM1J
+         6BjO67bK0lkjXkUHd4rhxYWDc1u6E36IpCBfDGQrvRDCOPjxZb5p5rbDrPjVKTUsSD
+         mQOkItJv/G+dA==
+X-CNFS-Analysis: v=2.4 cv=YqbK+6UX c=1 sm=1 tr=0 ts=61d72c44 cx=a_exe
+ a=hx1hjU+azB0cnDRRU3Lo+Q==:117 a=hx1hjU+azB0cnDRRU3Lo+Q==:17
+ a=IkcTkHD0fZMA:10 a=5yVJNmfTEiUqZEVpMVkA:9 a=QEXdDO2ut3YA:10
+Message-ID: <e4a31f0b-1866-cea7-2c99-580a2056b83a@inwind.it>
+Date:   Thu, 6 Jan 2022 18:52:01 +0100
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.4.1
+Reply-To: kreijack@inwind.it
+Subject: Re: [PATCH 0/2][V10] btrfs-progs: allocation_hint disk property
+Content-Language: en-US
+To:     Goffredo Baroncelli <kreijack@libero.it>,
+        linux-btrfs@vger.kernel.org
 Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.cz>,
         Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
-        Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 4/6] btrfs: add allocation_hint mode
-Date:   Thu,  6 Jan 2022 18:49:21 +0100
-Message-Id: <c48654019d5943ee181a813d5504b978a6d66c2a.1641486794.git.kreijack@inwind.it>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <cover.1641486794.git.kreijack@inwind.it>
-References: <cover.1641486794.git.kreijack@inwind.it>
-Reply-To: Goffredo Baroncelli <kreijack@libero.it>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1641491374; bh=c/1Wz0vc9xGcbbCqDXkke2j2W52xkncr/4fCbWlMW3I=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-        b=FER2FBpBAeyMXLdU97hk/78FK0X36o+4VHI9xdNXUY3MlQM9RfQqRo+PBB3/BzpO7
-         OTcUQ2yK3hH2qoWdFYFFDB5Ihj20757hmTMiUp49cKxzkWIFPXTF+2eWiw+ilypdqk
-         elLjv3SFeQ/8q/IA7XYGICYx5w9yVBQyVGmA3yNc=
+        Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>
+References: <cover.1641491043.git.kreijack@inwind.it>
+From:   Goffredo Baroncelli <kreijack@inwind.it>
+In-Reply-To: <cover.1641491043.git.kreijack@inwind.it>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4xfCZc2Irvksb8Dlnf78mPI6qRfOFTZZ2MaLNSPLBd0qWw7R7gNNGwJFHXtoxluhBtK2AAWs6W4NyViiJoICD7L/5koekpBd4lKoGAd/Z50FZm8Ges571h
+ vYZGZrL3Erub73syhQd2QtXvFyhiEMEYNMg4HubSl/K1siAGb8nhv2vbADlkU7muUfsJtm4f/EoYUkPlSg+gbBKOEpiuA4JMzggPCtrcc+DRdnonK1GV4eOx
+ K4vKtwDjZGWmqkvw++u3AqPTtq8kZQQzt2Mkl2JzItkQFkO/T/ymQrr0Lx9s+HphkD747NGG1NWIloqEFYKF4usd7srRiurgtPIbxVxUNkyrMQUvMYIY4oh2
+ 3ffbljOx0YTllWyiImnh/IAbziddWqzSolhcJYUoBjkIav680zBGY3AYLtFWGyoZ9nvdc6op
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+Below the script that I use to test this patch
 
-The chunk allocation policy is modified as follow.
+----
+#!/bin/bash
 
-Each disk may have one of the following tags:
-- BTRFS_DEV_ALLOCATION_METADATA_PREFERRED
-- BTRFS_DEV_ALLOCATION_METADATA_ONLY
-- BTRFS_DEV_ALLOCATION_DATA_ONLY
-- BTRFS_DEV_ALLOCATION_DATA_PREFERRED (default)
+#size of disk, smaller -> faster
+MAXSIZE=$((1*1024*1024*1024))
+MNT=mnt
+BTRFS=./btrfs-hint
+UUID=292afefb-6e8c-4fb3-9d12-8c4ecb1f237c
 
-During a *mixed data/metadata* chunk allocation, BTRFS works as
-usual.
+cleanup_all() {
+	while losetup | egrep loop; do
+		umount $MNT
+		losetup -D
+		sleep 1s
+	done
+}
 
-During a *data* chunk allocation, the space are searched first in
-BTRFS_DEV_ALLOCATION_DATA_ONLY. If the space found is not enough (eg.
-in raid5, only two disks are available), then the disks tagged
-BTRFS_DEV_ALLOCATION_DATA_PREFERRED are considered. If the space is not
-enough again, the disks tagged BTRFS_DEV_ALLOCATION_METADATA_PREFERRED
-are also considered. If even in this case the space is not
-sufficient, -ENOSPC is raised.
-A disk tagged with BTRFS_DEV_ALLOCATION_METADATA_ONLY is never considered
-for a data BG allocation.
+raise() {
+	echo 1>&2 "$@"
+	exit 100
+}
 
-During a *metadata* chunk allocation, the same algorithm applies swapping
-_DATA_ and _METADATA_.
+xmount() {
+	mount -o allocation_hint=1 "$1" "$2"
+	#mount  "$1" "$2"
+}
 
-By default the disks are tagged as BTRFS_DEV_ALLOCATION_DATA_PREFERRED,
-so BTRFS behaves as usual.
+create_loops() {
+	[ -n "$1" ] || {
+		raise "Create_loops, missing an argument"
+	}
 
-If the user prefers to store the metadata in the faster disks (e.g. SSD),
-he can tag these with BTRFS_DEV_ALLOCATION_METADATA_PREFERRED: in this
-case the metadata BG go in the BTRFS_DEV_ALLOCATION_METADATA_PREFERRED
-disks and the data BG in the others ones. When a disks set is filled, the
-other is considered.
+	cleanup_all
+	
+	size=$MAXSIZE
+	[ -n "$2" ] && size=$2
+	ret=""
+	for i in $(seq "$1"); do
+		disk=disk-$i.img
+		rm -rf $disk
+		truncate -s $size $disk
+		losetup /dev/loop$i $disk
+		ret="$ret /dev/loop$i"
+	done
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- fs/btrfs/volumes.c | 113 +++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.h |   1 +
- 2 files changed, 111 insertions(+), 3 deletions(-)
+	echo "$ret"
+}
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 643ba7cac22c..a3b5c9653101 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -184,6 +184,27 @@ enum btrfs_raid_types __attribute_const__ btrfs_bg_flags_to_raid_index(u64 flags
- 	return BTRFS_RAID_SINGLE; /* BTRFS_BLOCK_GROUP_SINGLE */
- }
- 
-+#define BTRFS_DEV_ALLOCATION_HINT_COUNT (1ULL << \
-+		BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT)
-+
-+/*
-+ *	The order of BTRFS_DEV_ALLOCATION_HINT_* values are not
-+ *	good, because BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED is 0
-+ *	(for backward compatibility reason), and the other
-+ *	values are greater (because the field is unsigned). So we
-+ *	need a map that rearranges the order giving to _DATA_PREFERRED
-+ *	an intermediate priority.
-+ *	These values give to METADATA_ONLY the highest priority, and are
-+ *	valid for metadata BG allocation. When a data
-+ *	BG is allocated we negate these values to reverse the priority.
-+ */
-+static const char alloc_hint_map[BTRFS_DEV_ALLOCATION_HINT_COUNT] = {
-+	[BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY] = -1,
-+	[BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED] = 0,
-+	[BTRFS_DEV_ALLOCATION_HINT_METADATA_PREFERRED] = 1,
-+	[BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY] = 2,
-+};
-+
- const char *btrfs_bg_type_to_raid_name(u64 flags)
- {
- 	const int index = btrfs_bg_flags_to_raid_index(flags);
-@@ -5035,13 +5056,18 @@ static int btrfs_add_system_chunk(struct btrfs_fs_info *fs_info,
- }
- 
- /*
-- * sort the devices in descending order by max_avail, total_avail
-+ * sort the devices in descending order by alloc_hint,
-+ * max_avail, total_avail
-  */
- static int btrfs_cmp_device_info(const void *a, const void *b)
- {
- 	const struct btrfs_device_info *di_a = a;
- 	const struct btrfs_device_info *di_b = b;
- 
-+	if (di_a->alloc_hint > di_b->alloc_hint)
-+		return -1;
-+	if (di_a->alloc_hint < di_b->alloc_hint)
-+		return 1;
- 	if (di_a->max_avail > di_b->max_avail)
- 		return -1;
- 	if (di_a->max_avail < di_b->max_avail)
-@@ -5204,6 +5230,7 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
- 	int ndevs = 0;
- 	u64 max_avail;
- 	u64 dev_offset;
-+	int hint;
- 
- 	/*
- 	 * in the first pass through the devices list, we gather information
-@@ -5256,17 +5283,95 @@ static int gather_device_info(struct btrfs_fs_devices *fs_devices,
- 		devices_info[ndevs].max_avail = max_avail;
- 		devices_info[ndevs].total_avail = total_avail;
- 		devices_info[ndevs].dev = device;
-+
-+		if ((ctl->type & BTRFS_BLOCK_GROUP_DATA) &&
-+		     (ctl->type & BTRFS_BLOCK_GROUP_METADATA)) {
-+			/*
-+			 * if mixed bg set all the alloc_hint
-+			 * fields to the same value, so the sorting
-+			 * is not affected
-+			 */
-+			devices_info[ndevs].alloc_hint = 0;
-+		} else if (ctl->type & BTRFS_BLOCK_GROUP_DATA) {
-+			hint = device->type & BTRFS_DEV_ALLOCATION_HINT_MASK;
-+
-+			/*
-+			 * skip BTRFS_DEV_METADATA_ONLY disks
-+			 */
-+			if (hint == BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY)
-+				continue;
-+			/*
-+			 * if a data chunk must be allocated,
-+			 * sort also by hint (data disk
-+			 * higher priority)
-+			 */
-+			devices_info[ndevs].alloc_hint = -alloc_hint_map[hint];
-+		} else { /* BTRFS_BLOCK_GROUP_METADATA */
-+			hint = device->type & BTRFS_DEV_ALLOCATION_HINT_MASK;
-+
-+			/*
-+			 * skip BTRFS_DEV_DATA_ONLY disks
-+			 */
-+			if (hint == BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY)
-+				continue;
-+			/*
-+			 * if a metadata chunk must be allocated,
-+			 * sort also by hint (metadata hint
-+			 * higher priority)
-+			 */
-+			devices_info[ndevs].alloc_hint = alloc_hint_map[hint];
-+		}
-+
- 		++ndevs;
- 	}
- 	ctl->ndevs = ndevs;
- 
-+	return 0;
-+}
-+
-+static void sort_and_reduce_device_info(struct alloc_chunk_ctl *ctl,
-+					struct btrfs_device_info *devices_info)
-+{
-+	int ndevs, hint, i;
-+
-+	ndevs = ctl->ndevs;
- 	/*
--	 * now sort the devices by hole size / available space
-+	 * now sort the devices by hint / hole size / available space
- 	 */
- 	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
- 	     btrfs_cmp_device_info, NULL);
- 
--	return 0;
-+	/*
-+	 * select the minimum set of disks grouped by hint that
-+	 * can host the chunk
-+	 */
-+	ndevs = 0;
-+	while (ndevs < ctl->ndevs) {
-+		hint = devices_info[ndevs++].alloc_hint;
-+		while (ndevs < ctl->ndevs) {
-+			if (devices_info[ndevs].alloc_hint != hint)
-+				break;
-+			ndevs++;
-+		}
-+		if (ndevs >= ctl->devs_min)
-+			break;
-+	}
-+
-+	ctl->ndevs = ndevs;
-+
-+	/*
-+	 * the next layers require the devices_info ordered by
-+	 * max_avail. If we are returning two (or more) different
-+	 * group of alloc_hint, this is not always true. So sort
-+	 * these again.
-+	 */
-+
-+	for (i = 0 ; i < ndevs ; i++)
-+		devices_info[i].alloc_hint = 0;
-+
-+	sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
-+	     btrfs_cmp_device_info, NULL);
-+
- }
- 
- static int decide_stripe_size_regular(struct alloc_chunk_ctl *ctl,
-@@ -5518,6 +5623,8 @@ struct btrfs_block_group *btrfs_create_chunk(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
-+	sort_and_reduce_device_info(&ctl, devices_info);
-+
- 	ret = decide_stripe_size(fs_devices, &ctl, devices_info);
- 	if (ret < 0) {
- 		block_group = ERR_PTR(ret);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 4ac3114f5eae..b1f92a2d13cf 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -399,6 +399,7 @@ struct btrfs_device_info {
- 	u64 dev_offset;
- 	u64 max_avail;
- 	u64 total_avail;
-+	int alloc_hint;
- };
- 
- struct btrfs_raid_attr {
+
+fill_1_file() {
+	fn=$MNT/giant-file-$1
+	if [ -n "$2" ]; then
+		size=count=$(($2 / 16 / 1024 / 1024 ))
+	else
+		size=
+	fi
+	dd if=/dev/zero of=$fn bs=16M oflag=direct $size
+	ls -l $fn | awk '{ print $5 }'
+}
+
+dump_bg_data() {
+	$BTRFS fi us -b $MNT | awk '
+		/^$/    { flag=0 }
+		        { if(flag) print $0 }
+		/^Data/ { flag=1 }
+	'
+}
+
+dump_bg_metadata() {
+	$BTRFS fi us -b $MNT | awk '
+		/^$/        { flag=0 }
+		            { if(flag) print $0 }
+		/^Metadata/ { flag=1 }
+	'
+}
+
+# check if a disk conrain data and/or metadata
+check_data_bg() {
+	res=$(dump_bg_data)
+	while [ -n "$1" ]; do
+		if ! echo $res | egrep -q $1 ; then
+			btrfs fil us $MNT
+			raise "Data BG should contains $1"
+		fi
+		shift
+	done
+}
+
+check_data_not_bg() {
+	res=$(dump_bg_data)
+	while [ -n "$1" ]; do
+		if echo $res | egrep -q $1 ; then
+			btrfs fil us $MNT
+			raise "Data BG should not contains $1"
+		fi
+		shift
+	done
+}
+
+check_metadata_bg() {
+	res=$(dump_bg_metadata)
+	while [ -n "$1" ]; do
+		if ! echo $res | egrep -q $1 ; then
+			btrfs fil us $MNT
+			raise "Metadata BG should contains $1"
+		fi
+		shift
+	done
+}
+
+check_metadata_not_bg() {
+	res=$(dump_bg_metadata)
+	while [ -n "$1" ]; do
+		if echo $res | egrep -q $1 ; then
+			btrfs fil us $MNT
+			raise "Metadata BG should not contains $1"
+		fi
+		shift
+	done
+}
+
+
+test_default_raid1() {
+	loops=$(create_loops 4)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	loop2=$(echo $loops | awk '{ print $3 }')
+	loop3=$(echo $loops | awk '{ print $4 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -draid1 -mraid1 $loops
+	xmount $loop0 $MNT
+	
+	size=$(fill_1_file x $(($MAXSIZE / 2)) )
+
+	check_data_bg $loop0 $loop1 $loop2 $loop3
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 || raise "Data BG should contains $loop0"
+	#echo $res | egrep $loop1 || raise "Data BG should contains $loop1"
+	#echo $res | egrep $loop2 || raise "Data BG should contains $loop2"
+	#echo $res | egrep $loop3 || raise "Data BG should contains $loop3"
+
+	size1=$(fill_1_file y )
+
+	size=$(($size + $size1))
+
+	[ $size -gt $(($MAXSIZE * 2 * 2 / 3 )) ] || raise "File too small: check mnt/"
+	[ $size -lt $(($MAXSIZE * 2 * 3 / 2 )) ] || raise "File too big: check mnt/"
+
+	cleanup_all
+}
+
+test_default_single() {
+	loops=$(create_loops 2)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dsingle -msingle $loops
+	xmount $loop0 $MNT
+	
+	size=$(fill_1_file x $(($MAXSIZE / 2)) )
+
+	check_data_bg $loop0 $loop1
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 || raise "Data BG should contains $loop0"
+	#echo $res | egrep $loop1 || raise "Data BG should contains $loop1"
+
+	size1=$(fill_1_file y )
+
+	size=$(($size + $size1))
+
+	[ $size -gt $(($MAXSIZE * 2 * 2 / 3 )) ] || raise "File too small: check mnt/"
+	[ $size -lt $(($MAXSIZE * 2 * 3 / 2 )) ] || raise "File too big: check mnt/"
+
+	cleanup_all
+}
+
+test_single_preferred_data() {
+	loops=$(create_loops 2)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dsingle -msingle $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop1 allocation_hint DATA_PREFERRED
+	
+	$BTRFS balance start --full-balance $MNT
+
+	size=$(fill_1_file x $(($MAXSIZE / 2)) )
+
+	check_data_bg $loop1
+	check_data_not_bg $loop0
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 &>/dev/null && raise "Data BG should not contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null || raise "Data BG should contains $loop3"
+
+	cleanup_all
+}
+
+test_single_preferred_metadata_slow() {
+	loops=$(create_loops 2)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dsingle -msingle $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop1 allocation_hint DATA_PREFERRED
+	
+	$BTRFS balance start --full-balance $MNT
+
+	fnsize=2048
+	for i in $(seq $(( $MAXSIZE / $fnsize * 700 / 1000))); do
+		dd if=/dev/zero of=$MNT/fn-$i bs=$fnsize count=1
+	done
+
+	#BTRFS fi us $MNT
+
+	check_metadata_bg  $loop0
+	check_metadata_not_bg  $loop1
+	#res=$(dump_bg_metadata)
+	#echo $res | egrep $loop0 &>/dev/null || raise "Metadata BG should contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null && raise "Metadata BG should not contains $loop3"
+
+	cleanup_all
+}
+
+
+
+test_raid1_preferred_data() {
+	loops=$(create_loops 4)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	loop2=$(echo $loops | awk '{ print $3 }')
+	loop3=$(echo $loops | awk '{ print $4 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -draid1 -mraid1 $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop1 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop2 allocation_hint DATA_PREFERRED
+	$BTRFS prop set $loop3 allocation_hint DATA_PREFERRED
+	
+	$BTRFS balance start --full-balance $MNT
+
+	size=$(fill_1_file x $(($MAXSIZE / 2)) )
+
+	check_data_bg  $loop2 $loop3
+	check_data_not_bg $loop0 $loop1
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 &>/dev/null && raise "Data BG should not contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null && raise "Data BG should not contains $loop1"
+	#echo $res | egrep $loop2 &>/dev/null || raise "Data BG should contains $loop2"
+	#echo $res | egrep $loop3 &>/dev/null || raise "Data BG should contains $loop3"
+
+	cleanup_all
+}
+
+test_raid1_preferred_metadata_slow() {
+	loops=$(create_loops 4)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	loop2=$(echo $loops | awk '{ print $3 }')
+	loop3=$(echo $loops | awk '{ print $4 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -draid1 -mraid1 $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop1 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop2 allocation_hint DATA_PREFERRED
+	$BTRFS prop set $loop3 allocation_hint DATA_PREFERRED
+	
+	$BTRFS balance start --full-balance $MNT
+
+	fnsize=2048
+	for i in $(seq $(( $MAXSIZE / $fnsize * 700 / 1000))); do
+		dd if=/dev/zero of=$MNT/fn-$i bs=$fnsize count=1
+	done
+
+	#BTRFS fi us $MNT
+
+	check_metadata_bg $loop0 $loop1
+	check_metadata_not_bg $loop2 $loop3
+	#res=$(dump_bg_metadata)
+	#echo $res | egrep $loop0 &>/dev/null || raise "Metadata BG should contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null || raise "Metadata BG should contains $loop1"
+	#echo $res | egrep $loop2 &>/dev/null && raise "Metadata BG should not contains $loop2"
+	#echo $res | egrep $loop3 &>/dev/null && raise "Metadata BG should not contains $loop3"
+
+	cleanup_all
+}
+
+test_raid1_data_only() {
+	loops=$(create_loops 4)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	loop2=$(echo $loops | awk '{ print $3 }')
+	loop3=$(echo $loops | awk '{ print $4 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -draid1 -mraid1 $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop1 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop2 allocation_hint DATA_ONLY
+	$BTRFS prop set $loop3 allocation_hint DATA_ONLY
+	
+	$BTRFS balance start --full-balance $MNT
+
+	size=$(fill_1_file x  )
+
+	[ $size -gt $(($MAXSIZE * 2 * 2 / 3 )) ] && raise "File too big: check mnt/"
+	[ $size -lt $(($MAXSIZE * 2 / 3 )) ] && raise "File too small: check mnt/"
+
+	check_data_bg $loop2 $loop3
+	check_data_not_bg $loop0 $loop1
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 &>/dev/null && raise "Data BG should not contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null && raise "Data BG should not contains $loop1"
+	#echo $res | egrep $loop2 &>/dev/null || raise "Data BG should contains $loop2"
+	#echo $res | egrep $loop3 &>/dev/null || raise "Data BG should contains $loop3"
+
+	cleanup_all
+}
+
+test_single_data_only() {
+	loops=$(create_loops 2)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dsingle -msingle $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop1 allocation_hint DATA_ONLY
+	
+	$BTRFS balance start --full-balance $MNT
+
+	size=$(fill_1_file x  )
+
+	[ $size -gt $(($MAXSIZE * 2 * 2 / 3 )) ] && raise "File too big: check mnt/"
+	[ $size -lt $(($MAXSIZE * 2 / 3 )) ] && raise "File too small: check mnt/"
+
+	check_data_bg $loop1
+	check_data_not_bg $loop0
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 &>/dev/null && raise "Data BG should not contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null || raise "Data BG should contains $loop3"
+
+	cleanup_all
+}
+
+
+test_single_data_bouncing() {
+	loops=$(create_loops 2)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dsingle -msingle $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop1 allocation_hint DATA_ONLY
+	
+	$BTRFS balance start --full-balance $MNT
+
+	size=$(fill_1_file x  $(($MAXSIZE * 2 / 4 )))
+
+	[ $size -gt $(($MAXSIZE * 2 / 3 )) ] && raise "File too big: check mnt/"
+	[ $size -lt $(($MAXSIZE * 1 / 3 )) ] && raise "File too small: check mnt/"
+
+	check_data_bg $loop1
+	check_data_not_bg $loop0
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 &>/dev/null && raise "Data BG should not contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null || raise "Data BG should contains $loop1"
+
+	$BTRFS balance start --full-balance $MNT
+
+	check_data_bg $loop1
+	check_data_not_bg $loop0
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop0 &>/dev/null && raise "Data BG should not contains $loop0"
+	#echo $res | egrep $loop1 &>/dev/null || raise "Data BG should contains $loop1"
+
+
+	$BTRFS prop set $loop1 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop0 allocation_hint DATA_ONLY
+
+	$BTRFS balance start --full-balance $MNT
+
+	check_data_bg $loop0
+	check_data_not_bg $loop1
+	#res=$(dump_bg_data)
+	#echo $res | egrep $loop1 &>/dev/null && raise "Data BG should not contains $loop1"
+	#echo $res | egrep $loop0 &>/dev/null || raise "Data BG should contains $loop0"
+	cleanup_all
+}
+
+test_single_progressive_fill_data() {
+
+	xsize=$MAXSIZE
+
+	loops=$(create_loops 4 $xsize)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	loop2=$(echo $loops | awk '{ print $3 }')
+	loop3=$(echo $loops | awk '{ print $4 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dsingle -msingle $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop1 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop2 allocation_hint DATA_PREFERRED
+	$BTRFS prop set $loop3 allocation_hint DATA_ONLY
+	$BTRFS balance start --full-balance $MNT	
+	
+	# fill $loop3
+	
+	size=$(fill_1_file x  $(( $xsize / 3 )))
+
+	for i in 1 2 3; do
+		check_data_bg $loop3
+		check_data_not_bg $loop1 $loop2 $loop0
+		$BTRFS balance start --full-balance $MNT
+	done
+		
+	# fill $loop3 then $loop2
+
+     	size=$(fill_1_file y  $(( $xsize )))
+
+	for i in 1 2 3; do
+		check_data_bg $loop3 $loop2
+		check_data_not_bg $loop1 $loop0
+		$BTRFS balance start --full-balance $MNT
+	done
+		
+	# fill $loop3 then $loop2, then $loop1
+
+     	size=$(fill_1_file z  $(( $xsize )))
+
+	for i in 1 2 3; do
+		check_data_bg $loop3 $loop2 $loop1
+		check_data_not_bg $loop0
+		$BTRFS balance start --full-balance $MNT
+	done
+
+	# fill the disk
+
+     	size=$(fill_1_file w  )
+
+	# when the disk is filled not balance is possible
+	check_data_bg $loop3 $loop2 $loop1
+	check_data_not_bg $loop0
+
+	cleanup_all
+}
+
+test_raid1_progressive_fill_data() {
+
+	xsize=$MAXSIZE
+
+	loops=$(create_loops 5 $xsize)
+	loop0=$(echo $loops | awk '{ print $1 }')
+	loop1=$(echo $loops | awk '{ print $2 }')
+	loop2=$(echo $loops | awk '{ print $3 }')
+	loop3=$(echo $loops | awk '{ print $4 }')
+	loop4=$(echo $loops | awk '{ print $5 }')
+	$BTRFS dev scan -u
+	mkfs.btrfs -U $UUID -dRAID1 -msingle $loops
+	xmount $loop0 $MNT
+
+	$BTRFS prop set $loop0 allocation_hint METADATA_ONLY
+	$BTRFS prop set $loop1 allocation_hint METADATA_PREFERRED
+	$BTRFS prop set $loop2 allocation_hint DATA_PREFERRED
+	$BTRFS prop set $loop3 allocation_hint DATA_ONLY
+	$BTRFS prop set $loop4 allocation_hint DATA_ONLY
+	$BTRFS balance start --full-balance $MNT	
+	
+	# fill $loop3 $loop4
+	
+	size=$(fill_1_file x  $(( $xsize / 6 )))
+
+	for i in 1 2 3; do
+		check_data_bg $loop3 $loop4
+		check_data_not_bg $loop1 $loop0 $loop2
+		$BTRFS balance start --full-balance $MNT
+	done
+		
+	# fill $loop3, $loop4 then $loop2, $loop1
+
+     	size=$(fill_1_file y  $(( $xsize )))
+
+	for i in 1 2 3; do
+		check_data_bg $loop3 $loop2 $loop1 $loop4
+		check_data_not_bg  $loop0
+		$BTRFS balance start --full-balance $MNT
+	done
+		
+	cleanup_all
+}
+
+
+
+SETV=""
+SETX=""
+
+while true; do
+	if [ "$1" = "-x" ]; then
+		SETX="set -x"
+		shift
+	elif [ "$1" = "-v" ]; then
+		SETV="-v"
+		shift
+	elif [ "$1" = "--list" ]; then
+		declare -F | awk '{ print $3 }' | egrep ^test_ | sort
+		exit
+     elif [ "$1" = "cleanup" ]; then
+	    cleanup_all
+
+	    exit
+     elif [ "$1" = "makeraid1" ]; then
+	    loops=$(create_loops 4)
+	    loop0=$(echo $loops | awk '{ print $1 }')
+	    mkfs.btrfs -U $UUID -draid1 -mraid1 $loops
+	    xmount $loop0 $MNT
+
+	    exit
+	else
+		break
+	fi
+done
+
+cleanup_all &>/dev/null
+cleanup_all &>/dev/null
+
+ARG="$1"
+
+$SETX
+
+[ -z "$ARG" ] && ARG="."
+declare -F | awk '{ print $3 }' | egrep ^test_ | sort |
+	egrep $SETV "$ARG" | while read func; do
+
+	echo -n "TEST '$func' "
+	(
+		$SETX
+		$func >.out.log 2>.err.log
+	)|| raise "Error !!!; read .out.log, .err.log"
+	echo "OK"
+done
+
+----
 -- 
-2.34.1
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

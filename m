@@ -2,18 +2,18 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62436C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Jan 2022 17:49:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7EC2C43217
+	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Jan 2022 17:49:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242465AbiAFRtp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Jan 2022 12:49:45 -0500
+        id S242428AbiAFRtq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Jan 2022 12:49:46 -0500
 Received: from santino.mail.tiscali.it ([213.205.33.245]:56256 "EHLO
         smtp.tiscali.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-        with ESMTP id S242413AbiAFRte (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jan 2022 12:49:34 -0500
+        with ESMTP id S242424AbiAFRtf (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Jan 2022 12:49:35 -0500
 Received: from venice.bhome ([84.220.25.125])
         by santino.mail.tiscali.it with 
-        id fVpV2600Z2hwt0401VpZV9; Thu, 06 Jan 2022 17:49:33 +0000
+        id fVpV2600Z2hwt0401VpaWQ; Thu, 06 Jan 2022 17:49:34 +0000
 x-auth-user: kreijack@tiscali.it
 From:   Goffredo Baroncelli <kreijack@tiscali.it>
 To:     linux-btrfs@vger.kernel.org
@@ -23,9 +23,9 @@ Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
         Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 3/6] btrfs: change the device allocation_hint property via sysfs
-Date:   Thu,  6 Jan 2022 18:49:20 +0100
-Message-Id: <d66746986ed424bc8f9af1c21cfbefbb01a3e5f6.1641486794.git.kreijack@inwind.it>
+Subject: [PATCH 6/6] btrfs: add major and minor to sysfs
+Date:   Thu,  6 Jan 2022 18:49:23 +0100
+Message-Id: <cfa9f1dff99cedc19524c66c0e2b83efb9a5e381.1641486794.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1641486794.git.kreijack@inwind.it>
 References: <cover.1641486794.git.kreijack@inwind.it>
@@ -33,130 +33,64 @@ Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1641491373; bh=Nuep3DTCEyx94voMz97HYZ0r/jYkfcJtrKSYF0LaLLM=;
+        t=1641491374; bh=UXy9HFCKUTueYPHP7sdmquri+adSS+j82PaE/CGO1+Q=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-        b=TlUmE+bvc29UWyjmrVtoK6qFHgTHsrnFFDbfyrUi8aFofEOO4DUr6+jnsiOrZeM/j
-         Uj0z300Rt8aCjfNlttDaxylGEU1dfrUNsDa1wJFTH4m59ivkKqGh4dceBcoyNZHiLL
-         RuwvHo0iHxcHIwH7ecT4OYbksIlXG4ojz7vmX924=
+        b=ssC/Ml08fuv8gBRhgjObvLCXqCO29aRtsJWjrxrIjD6fR6doj2z/X+32zl1yB0Alr
+         auo882ELLTDleyyq2OZxhTvbJ0XkAnHDPHqIYTCyt2NY9AgK/9b3637XThBNCGKGuW
+         OdnyEk9EJXhykSFbtdFttVgp27DDVugt2ub4hs0I=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-This patch allow to change the allocation_hint property writing
-a numerical value in the file.
+Add the following property to btrfs sysfs
 
-/sysfs/fs/btrfs/<UUID>/devinfo/<devid>/allocation_hint
+/sysfs/fs/btrfs/<UUID>/devinfo/<devid>/major_minor
 
-To update this field it is added the property "allocation_hint" in
-btrfs-prog too.
+This would help to figure out which block device is involved in
+which filesystem.
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- fs/btrfs/sysfs.c   | 62 +++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.c |  2 +-
- fs/btrfs/volumes.h |  2 ++
- 3 files changed, 64 insertions(+), 2 deletions(-)
+ fs/btrfs/sysfs.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index c1c903187e19..9070d0370343 100644
+index 42921432c9dc..dee23669a00f 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -1584,7 +1584,67 @@ static ssize_t btrfs_devinfo_allocation_hint_show(struct kobject *kobj,
- 	return scnprintf(buf, PAGE_SIZE, "0x%08llx\n",
- 		device->type & BTRFS_DEV_ALLOCATION_HINT_MASK);
- }
--BTRFS_ATTR(devid, allocation_hint, btrfs_devinfo_allocation_hint_show);
-+
-+static ssize_t btrfs_devinfo_allocation_hint_store(struct kobject *kobj,
-+				 struct kobj_attribute *a,
-+				 const char *buf, size_t len)
-+{
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_root *root;
-+	struct btrfs_device *device;
-+	int ret;
-+	struct btrfs_trans_handle *trans;
-+
-+	u64 type, prev_type;
-+
-+	device = container_of(kobj, struct btrfs_device, devid_kobj);
-+	fs_info = device->fs_info;
-+	if (!fs_info)
-+		return -EPERM;
-+
-+	root = fs_info->chunk_root;
-+	if (sb_rdonly(fs_info->sb))
-+		return -EROFS;
-+
-+	ret = kstrtou64(buf, 0, &type);
-+	if (ret < 0)
-+		return -EINVAL;
-+
-+	/* for now, allow to touch only the 'allocation hint' bits */
-+	if (type & ~BTRFS_DEV_ALLOCATION_HINT_MASK)
-+		return -EINVAL;
-+
-+	/* check if a change is really needed */
-+	if ((device->type & BTRFS_DEV_ALLOCATION_HINT_MASK) == type)
-+		return len;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	prev_type = device->type;
-+	device->type = (device->type & ~BTRFS_DEV_ALLOCATION_HINT_MASK) | type;
-+
-+	ret = btrfs_update_device(trans, device);
-+
-+	if (ret < 0) {
-+		btrfs_abort_transaction(trans, ret);
-+		btrfs_end_transaction(trans);
-+		goto abort;
-+	}
-+
-+	ret = btrfs_commit_transaction(trans);
-+	if (ret < 0)
-+		goto abort;
-+
-+	return len;
-+abort:
-+	device->type = prev_type;
-+	return  ret;
-+}
-+BTRFS_ATTR_RW(devid, allocation_hint, btrfs_devinfo_allocation_hint_show,
-+				      btrfs_devinfo_allocation_hint_store);
-+
+@@ -1647,6 +1647,22 @@ BTRFS_ATTR_RW(devid, allocation_hint, btrfs_devinfo_allocation_hint_show,
+ 				      btrfs_devinfo_allocation_hint_store);
  
+ 
++static ssize_t btrfs_devinfo_major_minor_show(struct kobject *kobj,
++					struct kobj_attribute *a, char *buf)
++{
++	struct btrfs_device *device = container_of(kobj, struct btrfs_device,
++						   devid_kobj);
++
++	if (device->bdev)
++		return scnprintf(buf, PAGE_SIZE, "%d:%d\n",
++			MAJOR(device->bdev->bd_dev),
++			MINOR(device->bdev->bd_dev));
++	else
++		return scnprintf(buf, PAGE_SIZE, "N/A\n");
++}
++
++BTRFS_ATTR(devid, major_minor, btrfs_devinfo_major_minor_show);
++
  /*
   * Information about one device.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b07d382d53a8..643ba7cac22c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2857,7 +2857,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	return ret;
- }
- 
--static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
-+noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
- 					struct btrfs_device *device)
- {
- 	int ret;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 005c9e2a491a..4ac3114f5eae 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -631,5 +631,7 @@ int btrfs_bg_type_to_factor(u64 flags);
- const char *btrfs_bg_type_to_raid_name(u64 flags);
- int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
- bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
-+int btrfs_update_device(struct btrfs_trans_handle *trans,
-+			struct btrfs_device *device);
- 
- #endif
+  *
+@@ -1661,6 +1677,7 @@ static struct attribute *devid_attrs[] = {
+ 	BTRFS_ATTR_PTR(devid, scrub_speed_max),
+ 	BTRFS_ATTR_PTR(devid, writeable),
+ 	BTRFS_ATTR_PTR(devid, allocation_hint),
++	BTRFS_ATTR_PTR(devid, major_minor),
+ 	NULL
+ };
+ ATTRIBUTE_GROUPS(devid);
 -- 
 2.34.1
 

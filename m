@@ -2,97 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C425AC433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun,  9 Jan 2022 10:25:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D38FEC433F5
+	for <linux-btrfs@archiver.kernel.org>; Sun,  9 Jan 2022 16:38:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235278AbiAIKUU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 9 Jan 2022 05:20:20 -0500
-Received: from mx01.maccuish.org.uk ([116.203.49.71]:56592 "EHLO
-        mx01.maccuish.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233614AbiAIKUT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Jan 2022 05:20:19 -0500
-X-Greylist: delayed 515 seconds by postgrey-1.27 at vger.kernel.org; Sun, 09 Jan 2022 05:20:18 EST
-Received: from [172.16.30.16] (unknown [172.16.30.16])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-384) server-signature RSA-PSS (2048 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mx01.maccuish.org.uk (Postfix) with ESMTPSA id A3F783FE71
-        for <linux-btrfs@vger.kernel.org>; Sun,  9 Jan 2022 10:11:41 +0000 (GMT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=maccuish.de; s=mail;
-        t=1641723101;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding;
-        bh=iSxlShm1cdExHF0Nph6FOXKGMfzmh00/GRhkniZtn+o=;
-        b=KYs3P7p1zzzfaGKfDNO6s7suih8Xri59MrgoE1rbb4+xmR8L3l2tbQ3tl8+LzryTj6HZ+I
-        yWL8YlALQ6yNw1vyfC069d8mt5x7hvjd2mptTi9LTsll8fQdfuYgRcoropGbF9d1loBY/D
-        wC1VhOfltLKvCuCTH33f6t2s0t7yvl8sdnTCKY5w0mQT/VSXBE7GA99gxU1JcdIeDaiY3z
-        oLsrpXRMSdxaeVF1/udnba4xAauYXtiB9h9MQHATOW7kg0bSGf0yBXSikMl0p8Gs1rPFiY
-        BhpA4X88CGh2gakfaHV2PaHACVvvDCNJgjJaBK6oADje4GH2dXyyaTYHbPNP6Q==
-Message-ID: <61b5cb09-8bd4-8b25-fbda-73b866a36fd5@maccuish.de>
-Date:   Sun, 9 Jan 2022 11:11:40 +0100
+        id S234237AbiAIQiJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 9 Jan 2022 11:38:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51488 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230389AbiAIQiJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Jan 2022 11:38:09 -0500
+Received: from mail-yb1-xb29.google.com (mail-yb1-xb29.google.com [IPv6:2607:f8b0:4864:20::b29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1303BC06173F
+        for <linux-btrfs@vger.kernel.org>; Sun,  9 Jan 2022 08:38:09 -0800 (PST)
+Received: by mail-yb1-xb29.google.com with SMTP id i3so31852724ybh.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Jan 2022 08:38:09 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=VFR5kZGPcI8EHNmofKcBohcDRBqDojWotp0YP27NPHI=;
+        b=1y4sET0Je4mH6fzKKNveAHSsKZnBVRE+JcoRB9aOwyQGkRANY+iRQ6JxBRhEQPIL1w
+         Z71/j+J3lJgqt+ovA9RTIdjPvIOHNWBpr9kpCZbn9Q9hdB/5eEFcTU4jQfj4LmIxeTU8
+         BUYyl0z+Hfu4z2KUWwSTqTpYvrfn056kusPqX8KoDbq6hCu73/9U+IIQ944G9hY+Dngc
+         0z97uhgT6wIe3I0c9eunnUeqjUB1mKkWEJzRmTKSFIkJIemEnBGL4FSkQGCweuWvw8bY
+         1uIGAs3lzv7te9kpsNzAMXCgktrBILseO6uERJ+2cBoQNGbUynMY7f6wbQJTEARqDp8c
+         eZng==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=VFR5kZGPcI8EHNmofKcBohcDRBqDojWotp0YP27NPHI=;
+        b=ZR1P9QiIidvBi9SSBF504pRsNkJgOIf2X9CiIBoz2RUl5LgAF/0bopEHTIcPc4r/Ux
+         fTiemagwgKfnwdc7js9cIIzSPR91Cuz/DPmwBYYGXGMgG0EtB56ao50nCQu/hpXVt3IY
+         ZqwpVgRp+p0mbVjtyXBBb26oERmdLws8rVFxuhoxfTeBa6py7XLpN5nJGgFNTTxmR2yr
+         J45/ZVDVqfD7Mq43WW+TILNzKl8L/slcUOW/yEk1NZX3g1FlIbPNWtY8aSVDylf75t23
+         N57FIq79SPWOeBQLLMW/9gS0w94ShrHDo5sKAvcKTeKOMhPe4h2gRH+i2ALWeo63Te0j
+         ta7Q==
+X-Gm-Message-State: AOAM531ZFuwAzTXLx6H65Ah4XgQ8F8Va/MUBSL3ZT5vkU1Kr1/Sh2wy2
+        kZhgf7jUuu9DCpyIXBjT3Yr0y3kKRI7bALgXBFIV/AzL/aBj1O2f
+X-Google-Smtp-Source: ABdhPJzB4a5O6kIVnMOAKT310Ou1R/YMKFOvYVuC1Blfi7kgVgJVaoeJwG9S7v+ByHEshYxSn3aMByiE61B5l7jmRDQ=
+X-Received: by 2002:a05:6902:110:: with SMTP id o16mr11675395ybh.385.1641746288215;
+ Sun, 09 Jan 2022 08:38:08 -0800 (PST)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.4.1
-Content-Language: en-US
-To:     linux-btrfs@vger.kernel.org
-From:   Alex MacCuish <alex@maccuish.de>
-Subject: Adding a UUID to the top level subvol on an existing filesystem
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <42e747ca-faf1-ed7c-9823-4ab333c07104@georgianit.com>
+In-Reply-To: <42e747ca-faf1-ed7c-9823-4ab333c07104@georgianit.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Sun, 9 Jan 2022 09:37:52 -0700
+Message-ID: <CAJCQCtR6_65_38PFp49_0HuH5-zd5Sf7C-B8tyYQ4oGNKNg0-A@mail.gmail.com>
+Subject: Re: Case for "datacow-forced" option
+To:     Remi Gauvin <remi@georgianit.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For use of send/receive, I need my subvolume id 5 to have a UUID. I see 
-here (https://www.spinics.net/lists/linux-btrfs/msg76016.html) that it 
-was discussed to add this feature to say btrfstune, but I can't find any 
-option to do it. What's the best way to do this and ensure current 
-subvolumes have the correct parent ID?
+On Fri, Jan 7, 2022 at 6:30 PM Remi Gauvin <remi@georgianit.com> wrote:
+>
+> I notice some software is silently creating files with +C attribute
+> without user input.  (Systemd journals, libvert qcow files, etc.)... I
+> can appreciate the goal of a performance boost, but I can only see this
+> as disaster for users of btrfs RAID, which will lead to inconsistent
+> mirrors on unclean shutdown, (and no way to fix, other than full balance.)
+>
+> I think a datacow-forced option would be a good idea to prevent
+> accidental creation of critical files with nocow attribute.
 
----
+libvirt sets file attribute C on the directory specified at the time
+of pool creation. You can unset it and it won't be reset.
 
-Linux xxx.xxx.xxx 5.15.11-051511-generic #202112220937 SMP Wed Dec 22 
-10:04:02 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux
+systemd defaults to nodatacow on Btrfs, but you can `touch
+/etc/tmpfiles.d/journal-nocow.conf` and then also recursively remote
+file attribute C from /var/log/journal
 
-btrfs-progs v5.4.1
+I know that zoned disallows nodatacow, but I have no idea what happens
+to files being copied over with file attribute C. Does the entire copy
+fail or just an error when trying to set chattr +C on the file while
+it's still zero length.
 
-btrfs fi show
 
-Label: 'storage'  uuid: 61538bc8-fc27-4818-9cc9-133938e252da
-         Total devices 4 FS bytes used 2.35TiB
-         devid    1 size 1.82TiB used 1.63TiB path /dev/sdd
-         devid    2 size 1.82TiB used 1.63TiB path /dev/sdc
-         devid    3 size 1.82TiB used 744.03GiB path /dev/sdb
-         devid    4 size 931.51GiB used 738.03GiB path /dev/sde
 
-btrfs fi df /mnt/storage
-Data, RAID1: total=2.35TiB, used=2.34TiB
-System, RAID1: total=32.00MiB, used=368.00KiB
-Metadata, RAID1: total=5.00GiB, used=4.32GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-btrfs subvolume show /mnt/storage/
-/
-         Name:                   <FS_TREE>
-         UUID:                   -
-         Parent UUID:            -
-         Received UUID:          -
-         Creation time:          -
-         Subvolume ID:           5
-         Generation:             4620363
-         Gen at creation:        0
-         Parent ID:              0
-         Top level ID:           0
-         Snapshot(s):
-                                 CN_IMGS
-                                 CN_PKGS
-                                 CN_PKGS/.snapshots
-                                 CN_SHARE
-                                 CN_SHARE/.snapshots
-                                 CN_MEDIA
-                                 CN_MEDIA/.snapshots
-                                 CN_HOMES
-                                 CN_HOMES/.snapshots
-                                 CN_BACKUPS
-
+-- 
+Chris Murphy

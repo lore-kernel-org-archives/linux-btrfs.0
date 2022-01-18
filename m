@@ -2,45 +2,48 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C13F1C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jan 2022 03:06:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 261C7C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jan 2022 03:17:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349608AbiARDGx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Jan 2022 22:06:53 -0500
-Received: from dfw.source.kernel.org ([139.178.84.217]:39242 "EHLO
-        dfw.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348902AbiARCqo (ORCPT
+        id S1350882AbiARDRf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Jan 2022 22:17:35 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39010 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1352437AbiARDIk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Jan 2022 21:46:44 -0500
+        Mon, 17 Jan 2022 22:08:40 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DB80C061747;
+        Mon, 17 Jan 2022 18:51:02 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id D38506130F;
-        Tue, 18 Jan 2022 02:46:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8FED5C36AE3;
-        Tue, 18 Jan 2022 02:46:40 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id D92B56133E;
+        Tue, 18 Jan 2022 02:51:01 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 986DAC36AEB;
+        Tue, 18 Jan 2022 02:51:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1642474001;
-        bh=AA9YYFjl/q1mqv9RbvGD8amx10J1e3sqEDSaIOLxGfI=;
+        s=k20201202; t=1642474261;
+        bh=gAdR1OM5DyzXldaoTGerOPYk5Q5HS47XdNIAaB8QhhY=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=obVOE5n8yTrsF5d79qnFYenRH9A0z2plQAo6FTnROhZdIej1n6jsfveOho/up4jyF
-         h+7KXrhkOXpOKP56/FpI8v41VfsDPjQtSa9h+vXGhF8Jx9KJE0aDD5lviIUdXXGt/z
-         raw3TVRcdEnjZKia5ANr9IImIo14bP1CoOTMBNfooFGulZyZ6X9kWGJ8P3cNwBWeBJ
-         nF2g4OXYlSK/UJDQH1ShSai8jzc8GSpZ32dMUxluEmUWPN77hMfFMvcM+Ic8oQZU3l
-         OS0wq+edPpKmlYeJILbYys04f0Ci+TBRs5EJZCuH4v5GlnvWWeS2wLdSYgVHTr2HR+
-         e6t9lNWfpOkWA==
+        b=aN7hgv5eD3xtN9pR0wddgdteEuI1gMBl6y20f9sVP8mgvciYM06BhmXThh2vpleb+
+         9wiJd3xzibGUqucGB0we2/oWICgysWqRjlqD13x00QQFIEt5ISqF6FZqWmC9dxvO5z
+         WhsuZmBU0U/84bPVxBhQEIQCkWe0MVet21/N74bvab5zFWEYoKa9IX/yFUfWzXQxnD
+         W8k0isA9Tg4rUCXsPRUf84UT9Ew0Uum+dwIPgWoH/j/hQ3XXy9yqQOl4eK+f+G3xWp
+         3KQfwPktGMJ0fHvCK1CuZ8fStDhRp3oKDMAKzd51vsWHGR8+fblYOZfsszrrDn//VY
+         B0e/Iv4BRh+Kw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 61/73] btrfs: remove BUG_ON() in find_parent_nodes()
-Date:   Mon, 17 Jan 2022 21:44:20 -0500
-Message-Id: <20220118024432.1952028-61-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 4.14 47/56] btrfs: remove BUG_ON() in find_parent_nodes()
+Date:   Mon, 17 Jan 2022 21:48:59 -0500
+Message-Id: <20220118024908.1953673-47-sashal@kernel.org>
 X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20220118024432.1952028-1-sashal@kernel.org>
-References: <20220118024432.1952028-1-sashal@kernel.org>
+In-Reply-To: <20220118024908.1953673-1-sashal@kernel.org>
+References: <20220118024908.1953673-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -66,10 +69,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 7f644a58db511..9044e7282d0b2 100644
+index 1cf75d1032e17..f2c2ac3343bac 100644
 --- a/fs/btrfs/backref.c
 +++ b/fs/btrfs/backref.c
-@@ -1208,7 +1208,12 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+@@ -1163,7 +1163,12 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
  	ret = btrfs_search_slot(trans, fs_info->extent_root, &key, path, 0, 0);
  	if (ret < 0)
  		goto out;

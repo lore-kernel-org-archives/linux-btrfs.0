@@ -2,128 +2,615 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 515B4C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jan 2022 02:16:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9835CC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Jan 2022 02:24:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244286AbiARCQE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Jan 2022 21:16:04 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:35602 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231517AbiARCQD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Jan 2022 21:16:03 -0500
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id BD00F21136
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jan 2022 02:16:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1642472162; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=mG7UgkvvCjCG2lUhmPOaBWbXMBHGuHWF+rHsQMmud2w=;
-        b=LLf3Ccm0skQtmRzeUlGwJwC3KMZ+bfxHVfIev/0FHtQDpuA6v1fT73/3ZR7xQ+kpnn+4sw
-        GB+4ur/e6aQ0P4Qol6RCC6FP682iJdQ7zRD8pYFNBm7F30rNhjlTLxzhBjRYPsIMG3y287
-        q4UxsFdw4Dk+mKVk+hfsoD03KCZ1ngQ=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1CE6A13342
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jan 2022 02:16:01 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id pdQLNuEi5mHEVQAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Jan 2022 02:16:01 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: defrag: fix the wrong defragged number of sectors
-Date:   Tue, 18 Jan 2022 10:15:44 +0800
-Message-Id: <20220118021544.18543-1-wqu@suse.com>
-X-Mailer: git-send-email 2.34.1
+        id S245512AbiARCYW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Jan 2022 21:24:22 -0500
+Received: from mout.gmx.net ([212.227.17.20]:49915 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S244436AbiARCXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 17 Jan 2022 21:23:08 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1642472582;
+        bh=jTweBf4vEUVl2Fo1emSOHL1icAXRDekPs+0m7kcv/ks=;
+        h=X-UI-Sender-Class:Date:To:Cc:References:From:Subject:In-Reply-To;
+        b=laiGWTxnIHOlYeYMWeGTkY4YXkH0jzBlxi1PQnuLc9ywo+Or0ih4gtiPx7FEW2gn6
+         d049686Z9prERbZMedwNFQ9x5/4qOWoLY16gf0NyyyfjlmqEBhLDDAy1PuvMGnPJVG
+         O6F24leQtBC5UyhF+QWSZ18lkf3qHkIKzppBoLac=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MoO24-1mYNT92oCO-00omx8; Tue, 18
+ Jan 2022 03:23:02 +0100
+Message-ID: <2d4ed9ca-52a7-3a39-1a4f-995c6ed0d070@gmx.com>
+Date:   Tue, 18 Jan 2022 10:22:55 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Content-Language: en-US
+To:     Anthony Ruhier <aruhier@mailbox.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@kernel.org>
+References: <0a269612-e43f-da22-c5bc-b34b1b56ebe8@mailbox.org>
+ <YeVc0r7lLtns0Bch@debian9.Home>
+ <fa7b6afd-9646-898c-7a0e-1536fc2f94b9@mailbox.org>
+ <YeWetp7/1q/4bU1O@debian9.Home>
+ <254c8e30-6692-3f3c-59ea-e3456ca9a266@mailbox.org>
+ <6c1b26b8-3af0-83e9-6260-33394ee8d883@mailbox.org>
+ <CAL3q7H5UhQCnsGd25Jd=x5rfhgPkzdDPpO_4iLdj73qSeFUzKg@mail.gmail.com>
+ <231bb827-de3e-570d-f5f5-e0698877d3f1@mailbox.org>
+ <3162e2e4-dd68-b0aa-a0d0-7ff6ce7cd5a0@gmx.com>
+ <e811a5b7-1ffe-b062-5c53-b3da4c26d04d@gmx.com>
+ <8ecb84e1-b8da-20f2-8730-8c1403ac7d00@mailbox.org>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: btrfs fi defrag hangs on small files, 100% CPU thread
+In-Reply-To: <8ecb84e1-b8da-20f2-8730-8c1403ac7d00@mailbox.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:v0848GU0FRq92WGSrkVgnNqVe0xMiG6u0ZAZ4TNj25DZYKyetvz
+ mHWx38STM8LH5IuVtSMElVWUtB4WmJE8rf1PP/v1jzSM3ukkv4uS3SbhP8skv0uJAlpksan
+ hn8py78Itnn5XE2YoRwSUoPlYAAYqYjuZkmJuEMKJ5EM2+U1wLwAqnssNpgTdivAz5KOiaO
+ vD+W4Xfq3WHSBIepXIYoA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:YFvDNAFt4WE=:LUJtW48G9HPB3nCbitSbFT
+ fF9DQi0yF5aF6YQX/P+ItTzIAkD+5r6ZhTEKGCyTnc1nG/AvHyUyJ3a+H/U+gEJeVkthM/chd
+ f92QlLGbE9HUaj10qn0VFNNg6Axf2s8H9dsPa7CMK6eWDTmwsgYYznK0zaoagixbJyL0LZ75s
+ svTf8YjYCdQVYjBT/Dw9NTko/83pyMMQFPdBTQY+2i99uoQyLZQqQ5IjQG0Jn5BoNc/LnuJ+x
+ jf1dHETwSPPnuNOtu3ZWdXh4t+U7JhCvPfCTSClz+JJAj8Ispq7ZCwllYodZyLoBV6P0EciXI
+ wb+spi7G6A2REFjLLfem0fCOc8soqXika3PpGjNjlBOhDZXB3UCtea9qQ4Wx52+r7Dw/08C1w
+ S1vCnWr3Kmw8+tG7tUPTDPcFMA+pY/WS5OxzyYh/+kh1W3VAb0Vkh1vgRXw8doB9DkOSavm4Z
+ xbnFHA8WcLRNka8mfaJcRG01zuxVdRasZeiKIbiL63eHLyhwydoNZnsDfbbF3faClJeLtS3Gi
+ BTL4BLAcjFv7XHwBPj2moCFEwkbKi8yNs0nzdFNEQpqXBZcebeIvs4CgR+1TDlLBIxQ+ncHCi
+ W08T2yd0ouSSsIJCRxw09anR2xnRMw1uXtXLRu9QQNvwnMIpfdimKVUGwWvbkS5mUI2sHvnlm
+ BiiYFrrwdJQxNZDankKxqJFjdjNm3rzXz7BGs0qVGs3n5GXie9XjK4pOzn3qc1IKT4XDKKkYj
+ XygzkBxG6jS6PQ1sqheHNEWs0ZOIB1AvV7DHnJfhT3WFZ+PQ1YEWWbehE2C1nVXQwHEG1ysuC
+ trWOpRuJtMlcS2/1TUvg9U9W2+Ua8dP7SXI2hiodPgTlGPHB5eu9fSfvqsMaPWWaLXdWxM6nV
+ QxFIsMvOq4UOM8h6H3DM86zFQyURqszoEW/bG7r5pd6TZVrgD1CDE5b3dmTwIpq/NH/5igcMi
+ jtJXwBmb8R5sS17jv1zbBepm4OQAJKcdjcCtGN1fFIBpwa4QjVBP7SNfzRbFGVZjAr/W4/BhZ
+ mEclN3Y1StRjmjCRVbFP2YWN/R1qiYCDteFqebR2bQdB1gAyTgxtJOOqxQdo8QjhEFZLSu3Ca
+ DiKu/Ud8TO6NJc=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Since the recent rework on btrfs defrag to support subpage, the number
-of defragged sectors is no longer reported in sector size, but in byte.
 
-Normally this is fine and defrag ioctl won't return the number of
-defragged sectors anyway.
 
-But it will change the behavior of auto-defrag, which has re-defrag
-behavior based on the defragged sectors.
+On 2022/1/18 09:58, Anthony Ruhier wrote:
+> Hi Qu,
+>
+> No problem, thanks a lot for your patch! After a quick look on a 10min
+> period, it looks like your patch fixed the issue. I've applied the 2
+> patches from Filipe and yours.
+> I'll let my NAS run over the night and watch the writes average on a
+> longer period. I'll send an update in ~10 hours.
 
-Furthermore, the refactor changed how we report the number of defragged
-sectors.
-The refactor no longer reports the real defragged sectors, but just the
-initial scan, which can report more bytes than the defragged sectors.
+I'm really sorry for all the problems.
 
-[FIX]
-Fix the problems by:
+Currently I believe the root cause is I changed the return value of
+btrfs_defrag_file(), which should return the number of sectors defragged.
 
-- Pass @sectors_defragged to defrag_one_range() and update it in the
-  real loop where we defrag the file
+Even I renamed the variable to "sectors_defragged", I still return it in
+bytes instead.
 
-- Properly calculate the @sectors_defragged using number of sectors, not
-  number of bytes.
+(Furthermore it tends to report more bytes than really defragged).
 
-Fixes: 7b508037d4ca ("btrfs: defrag: use defrag_one_cluster() to implement btrfs_defrag_file()")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/ioctl.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+The diff I mentioned is not really to solve the problem, but to help us
+to pin down the problem.
+(The diff itself will make autodefrag to do a little less work, thus it
+may not defrag as hard as previously)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 6ad2bc2e5af3..d1f036aba36a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1343,7 +1343,8 @@ static int defrag_one_locked_target(struct btrfs_inode *inode,
- }
- 
- static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
--			    u32 extent_thresh, u64 newer_than, bool do_compress)
-+			    u32 extent_thresh, u64 newer_than, bool do_compress,
-+			    unsigned long *sectors_defragged)
- {
- 	struct extent_state *cached_state = NULL;
- 	struct defrag_target_range *entry;
-@@ -1398,6 +1399,8 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
- 					       &cached_state);
- 		if (ret < 0)
- 			break;
-+		*sectors_defragged += entry->len >>
-+				      (inode->root->fs_info->sectorsize_bits);
- 	}
- 
- 	list_for_each_entry_safe(entry, tmp, &target_list, list) {
-@@ -1462,10 +1465,10 @@ static int defrag_one_cluster(struct btrfs_inode *inode,
- 		 * accounting.
- 		 */
- 		ret = defrag_one_range(inode, entry->start, range_len,
--				       extent_thresh, newer_than, do_compress);
-+				       extent_thresh, newer_than, do_compress,
-+				       sectors_defragged);
- 		if (ret < 0)
- 			break;
--		*sectors_defragged += range_len;
- 	}
- out:
- 	list_for_each_entry_safe(entry, tmp, &target_list, list) {
-@@ -1484,6 +1487,9 @@ static int defrag_one_cluster(struct btrfs_inode *inode,
-  * @newer_than:	   minimum transid to defrag
-  * @max_to_defrag: max number of sectors to be defragged, if 0, the whole inode
-  *		   will be defragged.
-+ *
-+ * Return <0 for error.
-+ * Return >=0 for the number of sectors defragged.
-  */
- int btrfs_defrag_file(struct inode *inode, struct file_ra_state *ra,
- 		      struct btrfs_ioctl_defrag_range_args *range,
--- 
-2.34.1
+Thank you very much helping fixing the mess I caused.
 
+
+BTW, if you have spare machines, mind to test the following two patches?
+(if everything works as expected, they should be the final fixes, thus
+please test without other patches)
+
+https://patchwork.kernel.org/project/linux-btrfs/patch/20220118021544.1854=
+3-1-wqu@suse.com/
+https://patchwork.kernel.org/project/linux-btrfs/patch/bcbfce0ff7e21bbfed2=
+484b1457e560edf78020d.1642436805.git.fdmanana@suse.com/
+
+Thanks,
+Qu
+
+
+>
+> Thanks a lot for your help,
+> Anthony
+>
+> Le 18/01/2022 =C3=A0 00:32, Qu Wenruo a =C3=A9crit=C2=A0:
+>>
+>>
+>> On 2022/1/18 07:15, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2022/1/18 03:39, Anthony Ruhier wrote:
+>>>> I have some good news and bad news: the bad news is that it didn't fi=
+x
+>>>> the autodefrag problem (I applied the 2 patches).
+>>>>
+>>>> The good news is that when I enable autodefrag, I can quickly see if
+>>>> the
+>>>> problem is still there or not.
+>>>> It's not super obvious compared to the amount of writes that happened
+>>>> constantly just after my upgrade to linux 5.16, because since then th=
+e
+>>>> problem mitigated itself a bit, but it's still noticeable.
+>>>>
+>>>> If I compare the write average (in total, I don't have it per process=
+)
+>>>> when taking idle periods on the same machine:
+>>>> =C2=A0=C2=A0=C2=A0=C2=A0 Linux 5.16:
+>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 without autodefrag: =
+~ 10KiB/s
+>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 with autodefrag: bet=
+ween 1 and 2MiB/s.
+>>>>
+>>>> =C2=A0=C2=A0=C2=A0=C2=A0 Linux 5.15:
+>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 with autodefrag:~ 10=
+KiB/s (around the same as without
+>>>> autodefrag on 5.16)
+>>>>
+>>>> Feel free to ask me anything to help your debugging, just try to be
+>>>> quite explicit about what I should do, I'm not experimented in
+>>>> filesystems debugging.
+>>>
+>>> Mind to test the following diff (along with previous two patches from
+>>> Filipe)?
+>>>
+>>> I screwed up, the refactor changed how the defraged bytes accounting,
+>>> which I didn't notice that autodefrag relies on that to requeue the
+>>> inode.
+>>>
+>>> The refactor is originally to add support for subpage defrag, but it
+>>> looks like I pushed the boundary too hard to change some behaviors.
+>>
+>> Sorry, previous diff has a memory leakage bug.
+>>
+>> The autodefrag code is more complex than I thought, it has extra logic
+>> to handle defrag.
+>>
+>> Please try this one instead.
+>>
+>> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+>> index 11204dbbe053..096feecf2602 100644
+>> --- a/fs/btrfs/file.c
+>> +++ b/fs/btrfs/file.c
+>> @@ -305,26 +305,7 @@ static int __btrfs_run_defrag_inode(struct
+>> btrfs_fs_info *fs_info,
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 num_defrag =3D btrfs_defrag_=
+file(inode, NULL, &range,
+>> defrag->transid,
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 BTRFS_DEFRAG_BATCH);
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 sb_end_write(fs_info->sb);
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * if we filled the whole de=
+frag batch, there
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * must be more work to do.=
+=C2=A0 Queue this defrag
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * again
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (num_defrag =3D=3D BTRFS_DEFRA=
+G_BATCH) {
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 defrag->last_offset =3D range.start;
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 btrfs_requeue_inode_defrag(BTRFS_I(inode), defrag);
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 } else if (defrag->last_offset &&=
+ !defrag->cycled) {
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 /*
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 * we didn't fill our defrag batch, but
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 * we didn't start at zero.=C2=A0 Make sure we loop
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 * around to the start of the file.
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 */
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 defrag->last_offset =3D 0;
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 defrag->cycled =3D 1;
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 btrfs_requeue_inode_defrag(BTRFS_I(inode), defrag);
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 } else {
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 kmem_cache_free(btrfs_inode_defrag_cachep, defrag);
+>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
+>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 kmem_cache_free(btrfs_inode_defra=
+g_cachep, defrag);
+>>
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 iput(inode);
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return 0;
+>>
+>>>
+>>>
+>>> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+>>> index 11204dbbe053..c720260f9656 100644
+>>> --- a/fs/btrfs/file.c
+>>> +++ b/fs/btrfs/file.c
+>>> @@ -312,7 +312,9 @@ static int __btrfs_run_defrag_inode(struct
+>>> btrfs_fs_info *fs_info,
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (num_defrag =3D=3D=
+ BTRFS_DEFRAG_BATCH) {
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 defrag->last_offset =3D range.start;
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 /*
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_requeue_inode_defrag(BTRFS_I(inode), def=
+rag);
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 */
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 } else if (defrag->la=
+st_offset && !defrag->cycled) {
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * we didn't fill our defrag batch, but
+>>> @@ -321,7 +323,9 @@ static int __btrfs_run_defrag_inode(struct
+>>> btrfs_fs_info *fs_info,
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 defrag->last_offset =3D 0;
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 defrag->cycled =3D 1;
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 /*
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 btrfs_requeue_inode_defrag(BTRFS_I(inode), def=
+rag);
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 */
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 } else {
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0 kmem_cache_free(btrfs_inode_defrag_cachep, def=
+rag);
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 }
+>>>
+>>>
+>>>
+>>>> Thanks
+>>>>
+>>>> Le 17/01/2022 =C3=A0 18:56, Filipe Manana a =C3=A9crit=C2=A0:
+>>>>> On Mon, Jan 17, 2022 at 5:50 PM Anthony Ruhier <aruhier@mailbox.org>
+>>>>> wrote:
+>>>>>> Filipe,
+>>>>>>
+>>>>>> Just a quick update after my previous email, your patch fixed the
+>>>>>> issue
+>>>>>> for `btrfs fi defrag`.
+>>>>>> Thanks a lot! I closed my bug on bugzilla.
+>>>>>>
+>>>>>> I'll keep you in touch about the autodefrag.
+>>>>> Please do.
+>>>>> The 1 byte file case was very specific, so it's probably a different
+>>>>> issue.
+>>>>>
+>>>>> Thanks for testing!
+>>>>>
+>>>>>> Le 17/01/2022 =C3=A0 18:04, Anthony Ruhier a =C3=A9crit :
+>>>>>>> I'm going to apply your patch for the 1B file, and quickly
+>>>>>>> confirm if
+>>>>>>> it works.
+>>>>>>> Thanks a lot for your patch!
+>>>>>>>
+>>>>>>> About the autodefrag issue, it's going to be trickier to check tha=
+t
+>>>>>>> your patch fixes it, because for whatever reason the problem
+>>>>>>> seems to
+>>>>>>> have resolved itself (or at least, btrfs-cleaner does way less
+>>>>>>> writes)
+>>>>>>> after a partial btrfs balance.
+>>>>>>> I'll try and look the amount of writes after several hours. Maybe
+>>>>>>> for
+>>>>>>> this one, see with the author of the other bug. If they can easily
+>>>>>>> reproduce the issue then it's going to be easier to check.
+>>>>>>>
+>>>>>>> Thanks,
+>>>>>>> Anthony
+>>>>>>>
+>>>>>>> Le 17/01/2022 =C3=A0 17:52, Filipe Manana a =C3=A9crit :
+>>>>>>>> On Mon, Jan 17, 2022 at 03:24:00PM +0100, Anthony Ruhier wrote:
+>>>>>>>>> Thanks for the answer.
+>>>>>>>>>
+>>>>>>>>> I had the exact same issue as in the thread you've linked, and
+>>>>>>>>> have
+>>>>>>>>> some
+>>>>>>>>> monitoring and graphs that showed that btrfs-cleaner did constan=
+t
+>>>>>>>>> writes
+>>>>>>>>> during 12 hours just after I upgraded to linux 5.16. Weirdly
+>>>>>>>>> enough,
+>>>>>>>>> the
+>>>>>>>>> issue almost disappeared after I did a btrfs balance by
+>>>>>>>>> filtering on
+>>>>>>>>> 10%
+>>>>>>>>> usage of data.
+>>>>>>>>> But that's why I initially disabled autodefrag, what has lead to
+>>>>>>>>> discovering
+>>>>>>>>> this bug as I switched to manual defragmentation (which, in the
+>>>>>>>>> end,
+>>>>>>>>> makes
+>>>>>>>>> more sense anyway with my setup).
+>>>>>>>>>
+>>>>>>>>> I tried this patch, but sadly it doesn't help for the initial
+>>>>>>>>> issue. I
+>>>>>>>>> cannot say for the bug in the other thread, as the problem with
+>>>>>>>>> btrfs-cleaner disappeared (I can still see some writes from it,
+>>>>>>>>> but
+>>>>>>>>> it so
+>>>>>>>>> rare that I cannot say if it's normal or not).
+>>>>>>>> Ok, reading better your first mail, I see there's the case of the=
+ 1
+>>>>>>>> byte
+>>>>>>>> file, which is possibly not the cause from the autodefrag
+>>>>>>>> causing the
+>>>>>>>> excessive IO problem.
+>>>>>>>>
+>>>>>>>> For the 1 byte file problem, I've just sent a fix:
+>>>>>>>>
+>>>>>>>> https://patchwork.kernel.org/project/linux-btrfs/patch/bcbfce0ff7=
+e21bbfed2484b1457e560edf78020d.1642436805.git.fdmanana@suse.com/
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> It's actually trivial to trigger.
+>>>>>>>>
+>>>>>>>> Can you check if it also fixes your problem with autodefrag?
+>>>>>>>>
+>>>>>>>> If not, then try the following (after applying the 1 file fix):
+>>>>>>>>
+>>>>>>>> https://pastebin.com/raw/EbEfk1tF
+>>>>>>>>
+>>>>>>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>>>>>>> index a5bd6926f7ff..db795e226cca 100644
+>>>>>>>> --- a/fs/btrfs/ioctl.c
+>>>>>>>> +++ b/fs/btrfs/ioctl.c
+>>>>>>>> @@ -1191,6 +1191,7 @@ static int defrag_collect_targets(struct
+>>>>>>>> btrfs_inode *inode,
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 u64 newer_than, =
+bool do_compress,
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bool locked, str=
+uct list_head *target_list)
+>>>>>>>> =C2=A0=C2=A0 {
+>>>>>>>> +=C2=A0=C2=A0=C2=A0 const u32 min_thresh =3D extent_thresh / 2;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 u64 cur =3D start;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 int ret =3D 0;
+>>>>>>>> =C2=A0=C2=A0 @@ -1198,6 +1199,7 @@ static int defrag_collect_targ=
+ets(struct
+>>>>>>>> btrfs_inode *inode,
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 stru=
+ct extent_map *em;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 stru=
+ct defrag_target_range *new;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 bool=
+ next_mergeable =3D true;
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 u64 range_start;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 u64 =
+range_len;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0 em =3D defrag_lookup_extent(&inode->vfs_inode, cur,
+>>>>>>>> locked);
+>>>>>>>> @@ -1213,6 +1215,24 @@ static int defrag_collect_targets(struct
+>>>>>>>> btrfs_inode *inode,
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (=
+em->generation < newer_than)
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 goto next;
+>>>>>>>> =C2=A0=C2=A0 +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * Our start off=
+set might be in the middle of an existing
+>>>>>>>> extent
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * map, so take =
+that into account.
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 range_len =3D em->len=
+ - (cur - em->start);
+>>>>>>>> +
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * If there's al=
+ready a good range for delalloc within the
+>>>>>>>> range
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * covered by th=
+e extent map, skip it, otherwise we can
+>>>>>>>> end up
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * doing on the =
+same IO range for a long time when using
+>>>>>>>> auto
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 * defrag.
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 */
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 range_start =3D cur;
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (count_range_bits(=
+&inode->io_tree, &range_start,
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 range_start + ra=
+nge_len - 1, min_thresh,
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 EXTENT_DELALLOC,=
+ 1) >=3D min_thresh)
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 goto next;
+>>>>>>>> +
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /*
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 * For do_compress case, we want to compress all valid
+>>>>>>>> file
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0 * extents, thus no @extent_thresh or mergeable check.
+>>>>>>>> @@ -1220,8 +1240,8 @@ static int defrag_collect_targets(struct
+>>>>>>>> btrfs_inode *inode,
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (=
+do_compress)
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 goto add;
+>>>>>>>> =C2=A0=C2=A0 -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /* Skip =
+too large extent */
+>>>>>>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (em->len >=3D exte=
+nt_thresh)
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 /* Skip large enough =
+ranges. */
+>>>>>>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 if (range_len >=3D ex=
+tent_thresh)
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 goto next;
+>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0 next_mergeable =3D
+>>>>>>>> defrag_check_next_extent(&inode->vfs_inode, em,
+>>>>>>>>
+>>>>>>>>
+>>>>>>>> Thanks.
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>> Thanks,
+>>>>>>>>> Anthony
+>>>>>>>>>
+>>>>>>>>> Le 17/01/2022 =C3=A0 13:10, Filipe Manana a =C3=A9crit :
+>>>>>>>>>> On Sun, Jan 16, 2022 at 08:15:37PM +0100, Anthony Ruhier wrote:
+>>>>>>>>>>> Hi,
+>>>>>>>>>>> Since I upgraded from linux 5.15 to 5.16, `btrfs filesystem
+>>>>>>>>>>> defrag
+>>>>>>>>>>> -t128K`
+>>>>>>>>>>> hangs on small files (~1 byte) and triggers what it seems to
+>>>>>>>>>>> be a
+>>>>>>>>>>> loop in
+>>>>>>>>>>> the kernel. It results in one CPU thread running being used at
+>>>>>>>>>>> 100%. I
+>>>>>>>>>>> cannot kill the process, and rebooting is blocked by btrfs.
+>>>>>>>>>>> It is a copy of the
+>>>>>>>>>>> bughttps://bugzilla.kernel.org/show_bug.cgi?id=3D215498
+>>>>>>>>>>>
+>>>>>>>>>>> Rebooting to linux 5.15 shows no issue. I have no issue to run=
+ a
+>>>>>>>>>>> defrag on
+>>>>>>>>>>> bigger files (I filter out files smaller than 3.9KB).
+>>>>>>>>>>>
+>>>>>>>>>>> I had a conversation on #btrfs on IRC, so here's what we
+>>>>>>>>>>> debugged:
+>>>>>>>>>>>
+>>>>>>>>>>> I can replicate the issue by copying a file impacted by this
+>>>>>>>>>>> bug,
+>>>>>>>>>>> by using
+>>>>>>>>>>> `cp --reflink=3Dnever`. I attached one of the impacted files t=
+o
+>>>>>>>>>>> this
+>>>>>>>>>>> bug,
+>>>>>>>>>>> named README.md.
+>>>>>>>>>>>
+>>>>>>>>>>> Someone told me that it could be a bug due to the inline exten=
+t.
+>>>>>>>>>>> So we tried
+>>>>>>>>>>> to check that.
+>>>>>>>>>>>
+>>>>>>>>>>> filefrag shows that the file Readme.md is 1 inline extent. I
+>>>>>>>>>>> tried
+>>>>>>>>>>> to create
+>>>>>>>>>>> a new file with random text, of 18 bytes (slightly bigger
+>>>>>>>>>>> than the
+>>>>>>>>>>> other
+>>>>>>>>>>> file), that is also 1 inline extent. This file doesn't
+>>>>>>>>>>> trigger the
+>>>>>>>>>>> bug and
+>>>>>>>>>>> has no issue to be defragmented.
+>>>>>>>>>>>
+>>>>>>>>>>> I tried to mount my system with `max_inline=3D0`, created a
+>>>>>>>>>>> copy of
+>>>>>>>>>>> README.md.
+>>>>>>>>>>> `filefrag` shows me that the new file is now 1 extent, not
+>>>>>>>>>>> inline.
+>>>>>>>>>>> This new
+>>>>>>>>>>> file also triggers the bug, so it doesn't seem to be due to th=
+e
+>>>>>>>>>>> inline
+>>>>>>>>>>> extent.
+>>>>>>>>>>>
+>>>>>>>>>>> Someone asked me to provide the output of a perf top when the
+>>>>>>>>>>> defrag is
+>>>>>>>>>>> stuck:
+>>>>>>>>>>>
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 28.70%=C2=A0 [kernel]=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] generic_bin_search
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 14.90%=C2=A0 [kernel]=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] free_extent_buffer
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 13.17%=C2=A0 [kernel]=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] btrfs_search_slot
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 12.63%=C2=A0 [kernel]=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] btrfs_root_node
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 8.33%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] btrfs_get_64
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 3.88%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] __down_read_co=
+mmon.llvm
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 3.00%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] up_read
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 2.63%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] read_block_for=
+_search
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 2.40%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] read_extent_bu=
+ffer
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 1.38%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] memset_erms
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 1.11%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] find_extent_bu=
+ffer
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0.69%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] kmem_cache_fre=
+e
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0.69%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] memcpy_erms
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0.57%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] kmem_cache_all=
+oc
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0.45%=C2=A0 [kernel=
+]=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 [k] radix_tree_loo=
+kup
+>>>>>>>>>>>
+>>>>>>>>>>> I can reproduce the bug on 2 different machines, running 2
+>>>>>>>>>>> different linux
+>>>>>>>>>>> distributions (Arch and Gentoo) with 2 different kernel config=
+s.
+>>>>>>>>>>> This kernel is compiled with clang, the other with GCC.
+>>>>>>>>>>>
+>>>>>>>>>>> Kernel version: 5.16.0
+>>>>>>>>>>> Mount options:
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Machine 1:
+>>>>>>>>>>> rw,noatime,compress-force=3Dzstd:2,ssd,discard=3Dasync,space_c=
+ache=3Dv2,autodefrag
+>>>>>>>>>>>
+>>>>>>>>>>>
+>>>>>>>>>>>
+>>>>>>>>>>>
+>>>>>>>>>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Machine 2:
+>>>>>>>>>>> rw,noatime,compress-force=3Dzstd:3,nossd,space_cache=3Dv2
+>>>>>>>>>>>
+>>>>>>>>>>> When the error happens, no message is shown in dmesg.
+>>>>>>>>>> This is very likely the same issue as reported at this thread:
+>>>>>>>>>>
+>>>>>>>>>> https://lore.kernel.org/linux-btrfs/YeVawBBE3r6hVhgs@debian9.Ho=
+me/T/#ma1c8a9848c9b7e4edb471f7be184599d38e288bb
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>>
+>>>>>>>>>> Are you able to test the patch posted there?
+>>>>>>>>>>
+>>>>>>>>>> Thanks.
+>>>>>>>>>>
+>>>>>>>>>>> Thanks,
+>>>>>>>>>>> Anthony Ruhier
+>>>>>>>>>>>
+>>>>>>>>
+>>>>>>>>
+>>>>>>>>

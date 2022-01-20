@@ -2,186 +2,162 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1116BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jan 2022 03:39:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC7FDC433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jan 2022 11:00:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235953AbiATDjI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Jan 2022 22:39:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54220 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230412AbiATDjH (ORCPT
+        id S230046AbiATLAR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Jan 2022 06:00:17 -0500
+Received: from dfw.source.kernel.org ([139.178.84.217]:38758 "EHLO
+        dfw.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230014AbiATLAQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Jan 2022 22:39:07 -0500
-Received: from mail-lf1-x136.google.com (mail-lf1-x136.google.com [IPv6:2a00:1450:4864:20::136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7ED0EC061574
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jan 2022 19:39:07 -0800 (PST)
-Received: by mail-lf1-x136.google.com with SMTP id o12so16423247lfu.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Jan 2022 19:39:07 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :content-transfer-encoding;
-        bh=r/Y4IG7wEz/A36rPphhoE4OH8f7LzdcrrSvmj78iC1o=;
-        b=C+PI45HPfomG81Ej+dR2ykHEhLSzneAVOVlGxpUqET92fMicrg/BUq/4JLwh+GXDJn
-         t3rsS1++/oMadMZA9T/lJ1px1ybEdYQpocGf5tRXoSBlSDQk+TJLe0M1D/zhCU7r7la5
-         6taTGL6W7Mf/UGggQciV8BX6jg/dHtGvRp7Zr/PVlZFfT2/rq3gMCMNjonU10Vvd+Iyn
-         CpsQ7vY3OTVlB/r6t6SwtQTPhiLPagcUda1gFN1sDcGerRjvy7Yfp0PBY5sROhuaOdSH
-         Y32BnP1UYES696Zgjq0B7dTga6EE1E8Fon5jWicJh1UrYmycFNa8EsaHP11dXZVnrKq5
-         DdGw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:content-transfer-encoding;
-        bh=r/Y4IG7wEz/A36rPphhoE4OH8f7LzdcrrSvmj78iC1o=;
-        b=WVDTkjncOofAi0pIcPcauVxWlZYFt2Jpc6/rbXXX8AwJx0wr1rg40kyoVZNMoVusux
-         y4Jz8K/kv8oQTRjlKlOq8YKtiBav0Y04zstyZ0YRqbUDagu3cVfm06OqnsQUvPMXeRac
-         eP+h45RXo6K390i62i+1xyxgXzmsq0f1vWjgHixZA7uisnZN+qlOYES1AlthAlF0xP2B
-         NFMHLSWu7FNl4gsJqLk2MfA4nH2AQhCBxQrzRmcYY7uRbsj7x0OU5Q1DHqjUvdG8CXEf
-         SVrpT3NJjtkoONNBapLU9jE00WWl2I7QCKL2OgNwtzyTnAJCGSEzx+VjEmQZkiPl7QX7
-         yzQQ==
-X-Gm-Message-State: AOAM5333sXvrY5H3MkdL2xbH7J6NEC0uzeIDtEK40/srJoISnJfpd17w
-        cs6YVDw+3iO6XfqMvxo4TYDlrwIFOljn5xNfYqn0JmH2fvyXbQ==
-X-Google-Smtp-Source: ABdhPJyRmDTEBGi+Lk4DNTYVGvuWMNvQtrJaIdpUAAKbVoTZp+lhZ3dBRS3Wfc6BEMDi35ffO/AxclQAhPioaeiH1Mc=
-X-Received: by 2002:a2e:9d8a:: with SMTP id c10mr19958822ljj.141.1642649945420;
- Wed, 19 Jan 2022 19:39:05 -0800 (PST)
-MIME-Version: 1.0
-References: <1642323083-2088-1-git-send-email-zhanglikernel@gmail.com>
-In-Reply-To: <1642323083-2088-1-git-send-email-zhanglikernel@gmail.com>
-From:   li zhang <zhanglikernel@gmail.com>
-Date:   Thu, 20 Jan 2022 11:38:53 +0800
-Message-ID: <CAAa-AGm3mfehYuE5YUGaq4-inROWsgT4SJh8jxXmG6BH3j3uHA@mail.gmail.com>
-Subject: Re: [PATCH 5/5] btrfs: Compresses files using a combination of
- compression type and compression level.
+        Thu, 20 Jan 2022 06:00:16 -0500
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 393E461524
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jan 2022 11:00:16 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2776FC340E5
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jan 2022 11:00:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1642676415;
+        bh=09MUbw+tFr9CDe9G50kWP7BT7J9XtvAMfMJCOKqTrVE=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=FuzrsdGNM/PUUwdvW5BjIZzhNlzzSv2xgVP0GiaX7yiFtLopZ5heViiQvoUbD8SCd
+         1PS3fqgCc4Ok31OAxsEWo99j3vRTjUb6Zoe3rWdm3wJHWUTMPo6qB1hRhyDoH3xdiC
+         WjZB30M2dAilSqbhKLp440EbPJzwtuB7Rt/4pMs/YWR1+rJGnIhMSv3f+txKDai5XB
+         F6/b5GznqUtj93B7V82OY67BvpYn7HX+0IwNcdBQGGk+IBN+36kkaIMa+4cTB8ZCKk
+         1jR+pwhvSi7Zl3+DohiHtqW1qFSyn6rDktPJWKIa5BaeHBQaB4IMGjPlfusKEid3fE
+         PgvOfU3TmmVLA==
+From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Subject: [PATCH 1/6] btrfs: add helper to delete a dir entry from a log tree
+Date:   Thu, 20 Jan 2022 11:00:06 +0000
+Message-Id: <1f5a887dfbf3399087d15f079cd9f7e6ab70d7a7.1642676248.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1642676248.git.fdmanana@suse.com>
+References: <cover.1642676248.git.fdmanana@suse.com>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Allow user set compression type and level by btrfs properties.
+From: Filipe Manana <fdmanana@suse.com>
 
-Old behavior:
-# mount filesystem with compression level 3
-$ sudo mount -o compress=3Dzstd:3 /dev/loop1 /mnt/1
-# set file would be compressed by zstd and level 11
-$ btrfs property set /mnt/1/1 compression zstd:11
-# compress would compressed by zstd and level 3(still use filesystem
-compression level)
-$ cat ~/202109091507_210601004_A_PE150_COVID19_iGeneTech_0909_i_D8_F_L01_R1=
-.fq
-> /mnt/1/1
+Move the code that finds and deletes a logged dir entry out of
+btrfs_del_dir_entries_in_log() into a helper function. This new helper
+function will be used by another patch in the same series, and serves
+to avoid having duplicated logic.
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 68 ++++++++++++++++++++++++---------------------
+ 1 file changed, 37 insertions(+), 31 deletions(-)
 
-New behavior:
-# mount filesystem with compression level 3
-$ sudo mount -o compress=3Dzstd:3 /dev/loop1 /mnt/1
-# set file would be compressed by zstd and level 11
-$ btrfs property set /mnt/1/1 compression zstd:11
-# compress would compressed by zstd and level 11
-$ cat ~/202109091507_210601004_A_PE150_COVID19_iGeneTech_0909_i_D8_F_L01_R1=
-.fq
-> /mnt/1/1
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 97ce445fd434..fc0da7ee4e23 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3490,6 +3490,39 @@ static bool inode_logged(struct btrfs_trans_handle *trans,
+ 	return false;
+ }
+ 
++/*
++ * Delete a directory entry from the log if it exists.
++ * Returns < 0 on error, 1 if the entry does not exists and 0 if the entry
++ * existed and was successfully deleted.
++ */
++static int del_logged_dentry(struct btrfs_trans_handle *trans,
++			     struct btrfs_root *log,
++			     struct btrfs_path *path,
++			     u64 dir_ino,
++			     const char *name, int name_len,
++			     u64 index)
++{
++	struct btrfs_dir_item *di;
++
++	/*
++	 * We only log dir index items of a directory, so we don't need to look
++	 * for dir item keys.
++	 */
++	di = btrfs_lookup_dir_index_item(trans, log, path, dir_ino,
++					 index, name, name_len, -1);
++	if (IS_ERR(di))
++		return PTR_ERR(di);
++	else if (!di)
++		return 1;
++
++	/*
++	 * We do not need to update the size field of the directory's
++	 * inode item because on log replay we update the field to reflect
++	 * all existing entries in the directory (see overwrite_item()).
++	 */
++	return btrfs_delete_one_dir_name(trans, log, path, di);
++}
++
+ /*
+  * If both a file and directory are logged, and unlinks or renames are
+  * mixed in, we have a few interesting corners:
+@@ -3516,12 +3549,8 @@ void btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
+ 				  const char *name, int name_len,
+ 				  struct btrfs_inode *dir, u64 index)
+ {
+-	struct btrfs_root *log;
+-	struct btrfs_dir_item *di;
+ 	struct btrfs_path *path;
+ 	int ret;
+-	int err = 0;
+-	u64 dir_ino = btrfs_ino(dir);
+ 
+ 	if (!inode_logged(trans, dir))
+ 		return;
+@@ -3532,41 +3561,18 @@ void btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
+ 
+ 	mutex_lock(&dir->log_mutex);
+ 
+-	log = root->log_root;
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+-		err = -ENOMEM;
++		ret = -ENOMEM;
+ 		goto out_unlock;
+ 	}
+ 
+-	/*
+-	 * We only log dir index items of a directory, so we don't need to look
+-	 * for dir item keys.
+-	 */
+-	di = btrfs_lookup_dir_index_item(trans, log, path, dir_ino,
+-					 index, name, name_len, -1);
+-	if (IS_ERR(di)) {
+-		err = PTR_ERR(di);
+-		goto fail;
+-	}
+-	if (di) {
+-		ret = btrfs_delete_one_dir_name(trans, log, path, di);
+-		if (ret) {
+-			err = ret;
+-			goto fail;
+-		}
+-	}
+-
+-	/*
+-	 * We do not need to update the size field of the directory's inode item
+-	 * because on log replay we update the field to reflect all existing
+-	 * entries in the directory (see overwrite_item()).
+-	 */
+-fail:
++	ret = del_logged_dentry(trans, root->log_root, path, btrfs_ino(dir),
++				name, name_len, index);
+ 	btrfs_free_path(path);
+ out_unlock:
+ 	mutex_unlock(&dir->log_mutex);
+-	if (err < 0)
++	if (ret < 0)
+ 		btrfs_set_log_full_commit(trans);
+ 	btrfs_end_log_trans(root);
+ }
+-- 
+2.33.0
 
-
-
-Here is my test method after patch adding:
-First I test all compression types and compression levels, I write the file
-to the btrfs system (print the compression type and level with
-btrfs_info to make sure both values are valid),
-then use diff <btrfs_file> <original file>, it tells me both file is
-the same. Also,
-I compress the file with the btrfs filesystem version before adding the pat=
-ch,
-and then read it through the patched version, the file can be read
-without errors and data corruption.
-
-Li Zhang <zhanglikernel@gmail.com> =E4=BA=8E2022=E5=B9=B41=E6=9C=8816=E6=97=
-=A5=E5=91=A8=E6=97=A5 16:51=E5=86=99=E9=81=93=EF=BC=9A
->
-> 1. If the file is being defragmented, combine defrag_compress
-> and fs_info compression_level (defrag_compress will be
-> extended in the future).
->
-> 2. Extract the compression type btrfs_inode using and write to extent,
-> because decompression does not need to know the compression level.
->
-> Signed-off-by: Li Zhang <zhanglikernel@gmail.com>
-> ---
->  fs/btrfs/inode.c | 14 +++++++++-----
->  1 file changed, 9 insertions(+), 5 deletions(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 3fe485b..fb44899 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -602,7 +602,8 @@ static noinline int compress_file_range(struct async_=
-chunk *async_chunk)
->         unsigned long total_in =3D 0;
->         int i;
->         int will_compress;
-> -       int compress_type =3D fs_info->compress_type;
-> +       int compress_type =3D btrfs_compress_combine_type_level(
-> +        fs_info->compress_type, fs_info -> compress_level);
->         int compressed_extents =3D 0;
->         int redirty =3D 0;
->
-> @@ -683,7 +684,8 @@ static noinline int compress_file_range(struct async_=
-chunk *async_chunk)
->                 }
->
->                 if (BTRFS_I(inode)->defrag_compress)
-> -                       compress_type =3D BTRFS_I(inode)->defrag_compress=
-;
-> +            compress_type =3D btrfs_compress_combine_type_level(
-> +                BTRFS_I(inode)->defrag_compress, fs_info->compress_level=
-);
->                 else if (BTRFS_I(inode)->prop_compress)
->                         compress_type =3D BTRFS_I(inode)->prop_compress;
->
-> @@ -706,7 +708,7 @@ static noinline int compress_file_range(struct async_=
-chunk *async_chunk)
->
->                 /* Compression level is applied here and only here */
->                 ret =3D btrfs_compress_pages(
-> -                       compress_type | (fs_info->compress_level << 4),
-> +                       compress_type,
->                                            inode->i_mapping, start,
->                                            pages,
->                                            &nr_pages,
-> @@ -743,7 +745,7 @@ static noinline int compress_file_range(struct async_=
-chunk *async_chunk)
->                         /* try making a compressed inline extent */
->                         ret =3D cow_file_range_inline(BTRFS_I(inode), sta=
-rt, end,
->                                                     total_compressed,
-> -                                                   compress_type, pages)=
-;
-> +                                                   btrfs_compress_type(c=
-ompress_type), pages);
->                 }
->                 if (ret <=3D 0) {
->                         unsigned long clear_flags =3D EXTENT_DELALLOC |
-> @@ -808,10 +810,12 @@ static noinline int compress_file_range(struct asyn=
-c_chunk *async_chunk)
->                          * The async work queues will take care of doing =
-actual
->                          * allocation on disk for these compressed pages,=
- and
->                          * will submit them to the elevator.
-> +             * It only need to record compression type, because decompre=
-ss don't need
-> +             * to know compression level
->                          */
->                         add_async_extent(async_chunk, start, total_in,
->                                         total_compressed, pages, nr_pages=
-,
-> -                                       compress_type);
-> +                                       btrfs_compress_type(compress_type=
-));
->
->                         if (start + total_in < end) {
->                                 start +=3D total_in;
-> --
-> 1.8.3.1
->

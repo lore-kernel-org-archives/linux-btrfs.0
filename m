@@ -2,678 +2,366 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93DBAC433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jan 2022 11:00:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A5C1C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Jan 2022 11:09:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230127AbiATLA1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Jan 2022 06:00:27 -0500
-Received: from ams.source.kernel.org ([145.40.68.75]:46864 "EHLO
-        ams.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230071AbiATLAW (ORCPT
+        id S229957AbiATLJS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Jan 2022 06:09:18 -0500
+Received: from esa1.hgst.iphmx.com ([68.232.141.245]:62498 "EHLO
+        esa1.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229576AbiATLJS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Jan 2022 06:00:22 -0500
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id EE633B81D3D
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jan 2022 11:00:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07ACCC340E2
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Jan 2022 11:00:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1642676419;
-        bh=IkcIzOvY2O5on9Ztf/hCVrB9d2+bnscyLIVGXC6wRos=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=udM4uwjlHxp4wZk8hwXODQlYX7nWQgfue8olDcUk++hg2SdKarC0pmvbFyWpfIfuH
-         BOKsV89hQx2bQWGUKJ6hcOuC/6a4sYzeM1s341CDfAtkiNdvHWAbJ66G2d9Vutu2WT
-         R+oBgHKyB8845JPHkSmcbFH8rAZmJzzhdZGn/sWYpKepRwnnCSH+F6d0RoKCZdwqsF
-         UaXSejTd81UUtNrxd/Ktlz7XgsyQ/nBORfG1TuYj5XH9EYDuzge9+0mzV/IwQC2RFE
-         52O762F2LMb9Ub8XYHk/UKmOl2tPfeiKUKgAsPTSgeBVgYVKYLwOA+JE78U89+HECm
-         jKNlTk5iPIZmg==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/6] btrfs: avoid inode logging during rename and link when possible
-Date:   Thu, 20 Jan 2022 11:00:10 +0000
-Message-Id: <e4f702b102c093d3b67a36194fbe6c51a9e5a94c.1642676248.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1642676248.git.fdmanana@suse.com>
-References: <cover.1642676248.git.fdmanana@suse.com>
+        Thu, 20 Jan 2022 06:09:18 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1642676958; x=1674212958;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=bBpgC/RK4BEyzCIX7qN0JaUvn2bwvqyNWuoiScHjlBo=;
+  b=NXBTgOYbNXbFKXGJKviQX11hlBpkjWxFpq5oAPQYdfL2SKDd1F8WTRdc
+   ss0otYtwICKX+CYq+LMVjb0EkXS5SR8vOrKNftYpQp8ZhuO57G7PppLrQ
+   4/DJvtmiTysHQ54gV4lf3yM8jYYkUjjopzUdTpLN8TMgJvu/lSYrV+WJ5
+   qT1Mj6xH6xok0A4YF+4attDfAa2fxlYJx/VeOoY8Kq/v+Ark57maPsu73
+   ruhx1zbqpUx8AhZsY09Ozysa++Wop2ybj6Fp2SWaJMi0ODxt+9jiiGC0u
+   tRIhLUJ3kFwU4gnHep2q8iKiH0S6PWpH1AdgXAqoFys164jymvVzFw53T
+   Q==;
+X-IronPort-AV: E=Sophos;i="5.88,302,1635177600"; 
+   d="scan'208";a="302802716"
+Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
+  by ob1.hgst.iphmx.com with ESMTP; 20 Jan 2022 19:09:17 +0800
+IronPort-SDR: dUAgmxSZ39tqplfiZ2XWsQ0eXTHUTw/DhrExePqV0wjeuILenRB/CY1XnvX1qs4rwGq8FQ+wXN
+ 1dbaaqQyQIzCIADTpcAWRyW3ZXUQYvR+67aDMwBZMxuxvktRlPLJbFjRPWJfSa/1Ol5BFuFQop
+ fgFKpeejA+Sw6lS0nipQ1nDDcbFE7AmSZPv2PqCGMVKsYmMDe3b06hgZVdS925SyA4bnBVhqMk
+ sTNqepCsx6w70HpHHHX6qhkUEE19HmWcpmMP2USEuF1WdlzlP0eBgD41/hhpzvX/+yM4iAiqMK
+ Z8+QUtu6oOguQ8cjH0nWTrt6
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 Jan 2022 02:42:46 -0800
+IronPort-SDR: WJGGXyoFxnCP1GwWQwFewxBU4CoM+eByfqSQ7qxoIwjoxcYAnWS8obRRQ+Sh6VdrQnCaWTPjuo
+ esNF4OevrHBKtLtI0s1kufru86OJzZmgaMX8QA+j/V2wuOCquwfLqjqZ+4DG6d+j5BELtmTWeU
+ BKUclduIbSA6uAgQTuYiDZFGonsKzSqnBT3eUV0MorEC4SgSzkuVs5MvCWQLGlRGU7YLpvE9PH
+ 1EscYX69KutRBgFbdPXDcUW8z9iDChOVD9k5E6Xgeib5ZomFrcqgboos5/e6aAZar9M+hRLPqU
+ e2U=
+WDCIronportException: Internal
+Received: from shindev.dhcp.fujisawa.hgst.com (HELO shindev.fujisawa.hgst.com) ([10.149.52.173])
+  by uls-op-cesaip02.wdc.com with ESMTP; 20 Jan 2022 03:09:16 -0800
+From:   Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
+To:     linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Cc:     Naohiro Aota <Naohiro.Aota@wdc.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>,
+        Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
+Subject: [PATCH v3] btrfs: fix deadlock between quota disable and qgroup rescan worker
+Date:   Thu, 20 Jan 2022 20:09:16 +0900
+Message-Id: <20220120110916.72810-1-shinichiro.kawasaki@wdc.com>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+Quota disable ioctl starts a transaction before waiting for the qgroup
+rescan worker completes. However, this wait can be infinite and results
+in deadlock because of circular dependency among the quota disable
+ioctl, the qgroup rescan worker and the other task with transaction such
+as block group relocation task.
 
-During a rename or link operation, we need to determine if an inode was
-previously logged or not, and if it was, do some update to the logged
-inode. We used to rely exclusively on the logged_trans field of struct
-btrfs_inode to determine that, but that was not reliable because the
-value of that field is not persisted in the inode item, so it's lost
-when an inode is evicted and loaded back again. That led to several
-issues in the past, such as not persisting deletions (such as the case
-fixed by commit 803f0f64d17769 ("Btrfs: fix fsync not persisting dentry
-deletions due to inode evictions")), or resulting in losing a file
-after an inode eviction followed by a rename (commit ecc64fab7d49c6
-("btrfs: fix lost inode on log replay after mix of fsync, rename and
-inode eviction")), besides other issues.
+The deadlock happens with the steps following:
 
-So the inode_logged() helper was introduced and used to determine if an
-inode was possibly logged before in the current transaction, with the
-caveat that it could return false positives, in the sense that even if an
-inode was not logged before in the current transaction, it could still
-return true, but never to return false in case the inode was logged.
-From a functional point of view that is fine, but from a performance
-perspective it can introduce significant latencies to rename and link
-operations, as they will end up doing inode logging even when it is not
-necessary.
+1) Task A calls ioctl to disable quota. It starts a transaction and
+   waits for qgroup rescan worker completes.
+2) Task B such as block group relocation task starts a transaction and
+   joins to the transaction that task A started. Then task B commits to
+   the transaction. In this commit, task B waits for a commit by task A.
+3) Task C as the qgroup rescan worker starts its job and starts a
+   transaction. In this transaction start, task C waits for completion
+   of the transaction that task A started and task B committed.
 
-Recently on a 5.15 kernel, an openSUSE Tumbleweed user reported package
-installations and upgrades, with the zypper tool, were often taking a
-long time to complete. With strace it could be observed that zypper was
-spending about 99% of its time on rename operations, and then with
-further analysis we checked that directory logging was happening too
-frequently. Taking into account that installation/upgrade of some of the
-packages needed a few thousand file renames, the slowdown was very
-noticeable for the user.
+This deadlock was found with fstests test case btrfs/115 and a zoned
+null_blk device. The test case enables and disables quota, and the
+block group reclaim was triggered during the quota disable by chance.
+The deadlock was also observed by running quota enable and disable in
+parallel with 'btrfs balance' command on regular null_blk devices.
 
-The issue was caused indirectly due to an excessive number of inode
-evictions on a 5.15 kernel, about 100x more compared to a 5.13, 5.14 or
-a 5.16-rc8 kernel. While triggering the inode evictions if something
-outside btrfs' control, btrfs could still behave better by eliminating
-the false positives from the inode_logged() helper.
+An example report of the deadlock:
 
-So change inode_logged() to actually eliminate such false positives caused
-by inode eviction and when an inode was never logged since the filesystem
-was mounted, as both cases relate to when the logges_trans field of struct
-btrfs_inode has a value of zero. When it can not determine if the inode
-was logged based only on the logged_trans value, lookup for the existence
-of the inode item in the log tree - if it's there then we known the inode
-was logged, if it's not there then it can not have been logged in the
-current transaction. Once we determine if the inode was logged, update
-the logged_trans value to avoid future calls to have to search in the log
-tree again.
+[  372.469894] INFO: task kworker/u16:6:103 blocked for more than 122 seconds.
+[  372.479944]       Not tainted 5.16.0-rc8 #7
+[  372.485067] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  372.493898] task:kworker/u16:6   state:D stack:    0 pid:  103 ppid:     2 flags:0x00004000
+[  372.503285] Workqueue: btrfs-qgroup-rescan btrfs_work_helper [btrfs]
+[  372.510782] Call Trace:
+[  372.514092]  <TASK>
+[  372.521684]  __schedule+0xb56/0x4850
+[  372.530104]  ? io_schedule_timeout+0x190/0x190
+[  372.538842]  ? lockdep_hardirqs_on+0x7e/0x100
+[  372.547092]  ? _raw_spin_unlock_irqrestore+0x3e/0x60
+[  372.555591]  schedule+0xe0/0x270
+[  372.561894]  btrfs_commit_transaction+0x18bb/0x2610 [btrfs]
+[  372.570506]  ? btrfs_apply_pending_changes+0x50/0x50 [btrfs]
+[  372.578875]  ? free_unref_page+0x3f2/0x650
+[  372.585484]  ? finish_wait+0x270/0x270
+[  372.591594]  ? release_extent_buffer+0x224/0x420 [btrfs]
+[  372.599264]  btrfs_qgroup_rescan_worker+0xc13/0x10c0 [btrfs]
+[  372.607157]  ? lock_release+0x3a9/0x6d0
+[  372.613054]  ? btrfs_qgroup_account_extent+0xda0/0xda0 [btrfs]
+[  372.620960]  ? do_raw_spin_lock+0x11e/0x250
+[  372.627137]  ? rwlock_bug.part.0+0x90/0x90
+[  372.633215]  ? lock_is_held_type+0xe4/0x140
+[  372.639404]  btrfs_work_helper+0x1ae/0xa90 [btrfs]
+[  372.646268]  process_one_work+0x7e9/0x1320
+[  372.652321]  ? lock_release+0x6d0/0x6d0
+[  372.658081]  ? pwq_dec_nr_in_flight+0x230/0x230
+[  372.664513]  ? rwlock_bug.part.0+0x90/0x90
+[  372.670529]  worker_thread+0x59e/0xf90
+[  372.676172]  ? process_one_work+0x1320/0x1320
+[  372.682440]  kthread+0x3b9/0x490
+[  372.687550]  ? _raw_spin_unlock_irq+0x24/0x50
+[  372.693811]  ? set_kthread_struct+0x100/0x100
+[  372.700052]  ret_from_fork+0x22/0x30
+[  372.705517]  </TASK>
+[  372.709747] INFO: task btrfs-transacti:2347 blocked for more than 123 seconds.
+[  372.729827]       Not tainted 5.16.0-rc8 #7
+[  372.745907] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  372.767106] task:btrfs-transacti state:D stack:    0 pid: 2347 ppid:     2 flags:0x00004000
+[  372.787776] Call Trace:
+[  372.801652]  <TASK>
+[  372.812961]  __schedule+0xb56/0x4850
+[  372.830011]  ? io_schedule_timeout+0x190/0x190
+[  372.852547]  ? lockdep_hardirqs_on+0x7e/0x100
+[  372.871761]  ? _raw_spin_unlock_irqrestore+0x3e/0x60
+[  372.886792]  schedule+0xe0/0x270
+[  372.901685]  wait_current_trans+0x22c/0x310 [btrfs]
+[  372.919743]  ? btrfs_put_transaction+0x3d0/0x3d0 [btrfs]
+[  372.938923]  ? finish_wait+0x270/0x270
+[  372.959085]  ? join_transaction+0xc75/0xe30 [btrfs]
+[  372.977706]  start_transaction+0x938/0x10a0 [btrfs]
+[  372.997168]  transaction_kthread+0x19d/0x3c0 [btrfs]
+[  373.013021]  ? btrfs_cleanup_transaction.isra.0+0xfc0/0xfc0 [btrfs]
+[  373.031678]  kthread+0x3b9/0x490
+[  373.047420]  ? _raw_spin_unlock_irq+0x24/0x50
+[  373.064645]  ? set_kthread_struct+0x100/0x100
+[  373.078571]  ret_from_fork+0x22/0x30
+[  373.091197]  </TASK>
+[  373.105611] INFO: task btrfs:3145 blocked for more than 123 seconds.
+[  373.114147]       Not tainted 5.16.0-rc8 #7
+[  373.120401] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  373.130393] task:btrfs           state:D stack:    0 pid: 3145 ppid:  3141 flags:0x00004000
+[  373.140998] Call Trace:
+[  373.145501]  <TASK>
+[  373.149654]  __schedule+0xb56/0x4850
+[  373.155306]  ? io_schedule_timeout+0x190/0x190
+[  373.161965]  ? lockdep_hardirqs_on+0x7e/0x100
+[  373.168469]  ? _raw_spin_unlock_irqrestore+0x3e/0x60
+[  373.175468]  schedule+0xe0/0x270
+[  373.180814]  wait_for_commit+0x104/0x150 [btrfs]
+[  373.187643]  ? test_and_set_bit+0x20/0x20 [btrfs]
+[  373.194772]  ? kmem_cache_free+0x124/0x550
+[  373.201191]  ? btrfs_put_transaction+0x69/0x3d0 [btrfs]
+[  373.208738]  ? finish_wait+0x270/0x270
+[  373.214704]  ? __btrfs_end_transaction+0x347/0x7b0 [btrfs]
+[  373.222342]  btrfs_commit_transaction+0x44d/0x2610 [btrfs]
+[  373.230233]  ? join_transaction+0x255/0xe30 [btrfs]
+[  373.237334]  ? btrfs_record_root_in_trans+0x4d/0x170 [btrfs]
+[  373.245251]  ? btrfs_apply_pending_changes+0x50/0x50 [btrfs]
+[  373.253296]  relocate_block_group+0x105/0xc20 [btrfs]
+[  373.260533]  ? mutex_lock_io_nested+0x1270/0x1270
+[  373.267516]  ? btrfs_wait_nocow_writers+0x85/0x180 [btrfs]
+[  373.275155]  ? merge_reloc_roots+0x710/0x710 [btrfs]
+[  373.283602]  ? btrfs_wait_ordered_extents+0xd30/0xd30 [btrfs]
+[  373.291934]  ? kmem_cache_free+0x124/0x550
+[  373.298180]  btrfs_relocate_block_group+0x35c/0x930 [btrfs]
+[  373.306047]  btrfs_relocate_chunk+0x85/0x210 [btrfs]
+[  373.313229]  btrfs_balance+0x12f4/0x2d20 [btrfs]
+[  373.320227]  ? lock_release+0x3a9/0x6d0
+[  373.326206]  ? btrfs_relocate_chunk+0x210/0x210 [btrfs]
+[  373.333591]  ? lock_is_held_type+0xe4/0x140
+[  373.340031]  ? rcu_read_lock_sched_held+0x3f/0x70
+[  373.346910]  btrfs_ioctl_balance+0x548/0x700 [btrfs]
+[  373.354207]  btrfs_ioctl+0x7f2/0x71b0 [btrfs]
+[  373.360774]  ? lockdep_hardirqs_on_prepare+0x410/0x410
+[  373.367957]  ? lockdep_hardirqs_on_prepare+0x410/0x410
+[  373.375327]  ? btrfs_ioctl_get_supported_features+0x20/0x20 [btrfs]
+[  373.383841]  ? find_held_lock+0x2c/0x110
+[  373.389993]  ? lock_release+0x3a9/0x6d0
+[  373.395828]  ? mntput_no_expire+0xf7/0xad0
+[  373.402083]  ? lock_is_held_type+0xe4/0x140
+[  373.408249]  ? vfs_fileattr_set+0x9f0/0x9f0
+[  373.414486]  ? selinux_file_ioctl+0x349/0x4e0
+[  373.420938]  ? trace_raw_output_lock+0xb4/0xe0
+[  373.427442]  ? selinux_inode_getsecctx+0x80/0x80
+[  373.434224]  ? lockdep_hardirqs_on+0x7e/0x100
+[  373.440660]  ? force_qs_rnp+0x2a0/0x6b0
+[  373.446534]  ? lock_is_held_type+0x9b/0x140
+[  373.452763]  ? __blkcg_punt_bio_submit+0x1b0/0x1b0
+[  373.459732]  ? security_file_ioctl+0x50/0x90
+[  373.466089]  __x64_sys_ioctl+0x127/0x190
+[  373.472022]  do_syscall_64+0x3b/0x90
+[  373.477513]  entry_SYSCALL_64_after_hwframe+0x44/0xae
+[  373.484823] RIP: 0033:0x7f8f4af7e2bb
+[  373.490493] RSP: 002b:00007ffcbf936178 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+[  373.500197] RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007f8f4af7e2bb
+[  373.509451] RDX: 00007ffcbf936220 RSI: 00000000c4009420 RDI: 0000000000000003
+[  373.518659] RBP: 00007ffcbf93774a R08: 0000000000000013 R09: 00007f8f4b02d4e0
+[  373.527872] R10: 00007f8f4ae87740 R11: 0000000000000246 R12: 0000000000000001
+[  373.537222] R13: 00007ffcbf936220 R14: 0000000000000000 R15: 0000000000000002
+[  373.546506]  </TASK>
+[  373.550878] INFO: task btrfs:3146 blocked for more than 123 seconds.
+[  373.559383]       Not tainted 5.16.0-rc8 #7
+[  373.565748] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  373.575748] task:btrfs           state:D stack:    0 pid: 3146 ppid:  2168 flags:0x00000000
+[  373.586314] Call Trace:
+[  373.590846]  <TASK>
+[  373.595121]  __schedule+0xb56/0x4850
+[  373.600901]  ? __lock_acquire+0x23db/0x5030
+[  373.607176]  ? io_schedule_timeout+0x190/0x190
+[  373.613954]  schedule+0xe0/0x270
+[  373.619157]  schedule_timeout+0x168/0x220
+[  373.625170]  ? usleep_range_state+0x150/0x150
+[  373.631653]  ? mark_held_locks+0x9e/0xe0
+[  373.637767]  ? do_raw_spin_lock+0x11e/0x250
+[  373.643993]  ? lockdep_hardirqs_on_prepare+0x17b/0x410
+[  373.651267]  ? _raw_spin_unlock_irq+0x24/0x50
+[  373.657677]  ? lockdep_hardirqs_on+0x7e/0x100
+[  373.664103]  wait_for_completion+0x163/0x250
+[  373.670437]  ? bit_wait_timeout+0x160/0x160
+[  373.676585]  btrfs_quota_disable+0x176/0x9a0 [btrfs]
+[  373.683979]  ? btrfs_quota_enable+0x12f0/0x12f0 [btrfs]
+[  373.691340]  ? down_write+0xd0/0x130
+[  373.696880]  ? down_write_killable+0x150/0x150
+[  373.703352]  btrfs_ioctl+0x3945/0x71b0 [btrfs]
+[  373.710061]  ? find_held_lock+0x2c/0x110
+[  373.716192]  ? lock_release+0x3a9/0x6d0
+[  373.722047]  ? __handle_mm_fault+0x23cd/0x3050
+[  373.728486]  ? btrfs_ioctl_get_supported_features+0x20/0x20 [btrfs]
+[  373.737032]  ? set_pte+0x6a/0x90
+[  373.742271]  ? do_raw_spin_unlock+0x55/0x1f0
+[  373.748506]  ? lock_is_held_type+0xe4/0x140
+[  373.754792]  ? vfs_fileattr_set+0x9f0/0x9f0
+[  373.761083]  ? selinux_file_ioctl+0x349/0x4e0
+[  373.767521]  ? selinux_inode_getsecctx+0x80/0x80
+[  373.774247]  ? __up_read+0x182/0x6e0
+[  373.780026]  ? count_memcg_events.constprop.0+0x46/0x60
+[  373.787281]  ? up_write+0x460/0x460
+[  373.792932]  ? security_file_ioctl+0x50/0x90
+[  373.799232]  __x64_sys_ioctl+0x127/0x190
+[  373.805237]  do_syscall_64+0x3b/0x90
+[  373.810947]  entry_SYSCALL_64_after_hwframe+0x44/0xae
+[  373.818102] RIP: 0033:0x7f1383ea02bb
+[  373.823847] RSP: 002b:00007fffeb4d71f8 EFLAGS: 00000202 ORIG_RAX: 0000000000000010
+[  373.833641] RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f1383ea02bb
+[  373.842961] RDX: 00007fffeb4d7210 RSI: 00000000c0109428 RDI: 0000000000000003
+[  373.852179] RBP: 0000000000000003 R08: 0000000000000003 R09: 0000000000000078
+[  373.861408] R10: 00007f1383daec78 R11: 0000000000000202 R12: 00007fffeb4d874a
+[  373.870647] R13: 0000000000493099 R14: 0000000000000001 R15: 0000000000000000
+[  373.879838]  </TASK>
+[  373.884018]
+               Showing all locks held in the system:
+[  373.894250] 3 locks held by kworker/4:1/58:
+[  373.900356] 1 lock held by khungtaskd/63:
+[  373.906333]  #0: ffffffff8945ff60 (rcu_read_lock){....}-{1:2}, at: debug_show_all_locks+0x53/0x260
+[  373.917307] 3 locks held by kworker/u16:6/103:
+[  373.923938]  #0: ffff888127b4f138 ((wq_completion)btrfs-qgroup-rescan){+.+.}-{0:0}, at: process_one_work+0x712/0x1320
+[  373.936555]  #1: ffff88810b817dd8 ((work_completion)(&work->normal_work)){+.+.}-{0:0}, at: process_one_work+0x73f/0x1320
+[  373.951109]  #2: ffff888102dd4650 (sb_internal#2){.+.+}-{0:0}, at: btrfs_qgroup_rescan_worker+0x1f6/0x10c0 [btrfs]
+[  373.964027] 2 locks held by less/1803:
+[  373.969982]  #0: ffff88813ed56098 (&tty->ldisc_sem){++++}-{0:0}, at: tty_ldisc_ref_wait+0x24/0x80
+[  373.981295]  #1: ffffc90000b3b2e8 (&ldata->atomic_read_lock){+.+.}-{3:3}, at: n_tty_read+0x9e2/0x1060
+[  373.992969] 1 lock held by btrfs-transacti/2347:
+[  373.999893]  #0: ffff88813d4887a8 (&fs_info->transaction_kthread_mutex){+.+.}-{3:3}, at: transaction_kthread+0xe3/0x3c0 [btrfs]
+[  374.015872] 3 locks held by btrfs/3145:
+[  374.022298]  #0: ffff888102dd4460 (sb_writers#18){.+.+}-{0:0}, at: btrfs_ioctl_balance+0xc3/0x700 [btrfs]
+[  374.034456]  #1: ffff88813d48a0a0 (&fs_info->reclaim_bgs_lock){+.+.}-{3:3}, at: btrfs_balance+0xfe5/0x2d20 [btrfs]
+[  374.047646]  #2: ffff88813d488838 (&fs_info->cleaner_mutex){+.+.}-{3:3}, at: btrfs_relocate_block_group+0x354/0x930 [btrfs]
+[  374.063295] 4 locks held by btrfs/3146:
+[  374.069647]  #0: ffff888102dd4460 (sb_writers#18){.+.+}-{0:0}, at: btrfs_ioctl+0x38b1/0x71b0 [btrfs]
+[  374.081601]  #1: ffff88813d488bb8 (&fs_info->subvol_sem){+.+.}-{3:3}, at: btrfs_ioctl+0x38fd/0x71b0 [btrfs]
+[  374.094283]  #2: ffff888102dd4650 (sb_internal#2){.+.+}-{0:0}, at: btrfs_quota_disable+0xc8/0x9a0 [btrfs]
+[  374.106885]  #3: ffff88813d489800 (&fs_info->qgroup_ioctl_lock){+.+.}-{3:3}, at: btrfs_quota_disable+0xd5/0x9a0 [btrfs]
 
-Alternatively, we could start storing logged_trans in the on disk inode
-item structure (struct btrfs_inode_item) in the unused space it still has,
-but that would be a bit odd because:
+[  374.126780] =============================================
 
-1) We only care about logged_trans since the filesystem was mounted, we
-   don't care about its value from a previous mount. Having it persisted
-   in the inode item structure would not make the best use of the precious
-   unused space;
+To avoid the deadlock, wait for the qgroup rescan worker to complete
+before starting the transaction for the quota disable ioctl. Clear
+BTRFS_FS_QUOTA_ENABLE flag before the wait and the transaction to
+request the worker to complete. On transaction start failure, set the
+BTRFS_FS_QUOTA_ENABLE flag again. These BTRFS_FS_QUOTA_ENABLE flag
+changes can be done safely since the function btrfs_quota_disable is not
+called concurrently because of fs_info->subvol_sem.
 
-2) In order to get logged_trans persisted before inode eviction, we would
-   have to update the delayed inode when we finish logging the inode and
-   update its logged_trans in struct btrfs_inode, which makes it a bit
-   cumbersome since we need to check if the delayed inode exists, if not
-   create it and populate it and deal with any errors (-ENOMEM mostly).
+Also check the BTRFS_FS_QUOTA_ENABLE flag in qgroup_rescan_init to avoid
+another qgroup rescan worker to start after the previous qgroup worker
+completed.
 
-This change is part of a patchset comprised of the following patches:
-
-  1/5 btrfs: add helper to delete a dir entry from a log tree
-  2/5 btrfs: pass the dentry to btrfs_log_new_name() instead of the inode
-  3/5 btrfs: avoid logging all directory changes during renames
-  4/5 btrfs: stop doing unnecessary log updates during a rename
-  5/5 btrfs: avoid inode logging during rename and link when possible
-
-The following test script mimics part of what the zypper tool does during
-package installations/upgrades. It does not triggers inode evictions, but
-it's similar because it triggers false positives from the inode_logged()
-helper, because the inodes have a logged_trans of 0, there's a log tree
-due to a fsync of an unrelated file and the directory inode has its
-last_trans field set to the current transaction:
-
-  $ cat test.sh
-
-  #!/bin/bash
-
-  DEV=/dev/nvme0n1
-  MNT=/mnt/nvme0n1
-
-  NUM_FILES=10000
-
-  mkfs.btrfs -f $DEV
-  mount $DEV $MNT
-
-  mkdir $MNT/testdir
-
-  for ((i = 1; i <= $NUM_FILES; i++)); do
-      echo -n > $MNT/testdir/file_$i
-  done
-
-  sync
-
-  # Now do some change to an unrelated file and fsync it.
-  # This is just to create a log tree to make sure that inode_logged()
-  # does not return false when called against "testdir".
-  xfs_io -f -c "pwrite 0 4K" -c "fsync" $MNT/foo
-
-  # Do some change to testdir. This is to make sure inode_logged()
-  # will return true when called against "testdir", because its
-  # logged_trans is 0, it was changed in the current transaction
-  # and there's a log tree.
-  echo -n > $MNT/testdir/file_$((NUM_FILES + 1))
-
-  echo "Renaming $NUM_FILES files..."
-  start=$(date +%s%N)
-  for ((i = 1; i <= $NUM_FILES; i++)); do
-      mv $MNT/testdir/file_$i $MNT/testdir/file_$i-RPMDELETE
-  done
-  end=$(date +%s%N)
-
-  dur=$(( (end - start) / 1000000 ))
-  echo "Renames took $dur milliseconds"
-
-  umount $MNT
-
-Testing this change on a box using a non-debug kernel (Debian's default
-kernel config) gave the following results:
-
-NUM_FILES=10000, before patchset:                   27837 ms
-NUM_FILES=10000, after patches 1/5 to 4/5 applied:   9236 ms (-66.8%)
-NUM_FILES=10000, after whole patchset applied:       8902 ms (-68.0%)
-
-NUM_FILES=5000, before patchset:                     9127 ms
-NUM_FILES=5000, after patches 1/5 to 4/5 applied:    4640 ms (-49.2%)
-NUM_FILES=5000, after whole patchset applied:        4441 ms (-51.3%)
-
-NUM_FILES=2000, before patchset:                     2528 ms
-NUM_FILES=2000, after patches 1/5 to 4/5 applied:    1983 ms (-21.6%)
-NUM_FILES=2000, after whole patchset applied:        1747 ms (-30.9%)
-
-NUM_FILES=1000, before patchset:                     1085 ms
-NUM_FILES=1000, after patches 1/5 to 4/5 applied:     893 ms (-17.7%)
-NUM_FILES=1000, after whole patchset applied:         867 ms (-20.1%)
-
-Running dbench on the same physical machine with the following script:
-
-  $ cat run-dbench.sh
-  #!/bin/bash
-
-  NUM_JOBS=$(nproc --all)
-
-  DEV=/dev/nvme0n1
-  MNT=/mnt/nvme0n1
-  MOUNT_OPTIONS="-o ssd"
-  MKFS_OPTIONS="-O no-holes -R free-space-tree"
-
-  echo "performance" | \
-      tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-
-  mkfs.btrfs -f $MKFS_OPTIONS $DEV
-  mount $MOUNT_OPTIONS $DEV $MNT
-
-  dbench -D $MNT -t 120 $NUM_JOBS
-
-  umount $MNT
-
-Before patchset:
-
- Operation      Count    AvgLat    MaxLat
- ----------------------------------------
- NTCreateX    3761352     0.032   143.843
- Close        2762770     0.002     2.273
- Rename        159304     0.291    67.037
- Unlink        759784     0.207   143.998
- Deltree           72     4.028    15.977
- Mkdir             36     0.003     0.006
- Qpathinfo    3409780     0.013     9.678
- Qfileinfo     596772     0.001     0.878
- Qfsinfo       625189     0.003     1.245
- Sfileinfo     306443     0.006     1.840
- Find         1318106     0.063    19.798
- WriteX       1871137     0.021     8.532
- ReadX        5897325     0.003     3.567
- LockX          12252     0.003     0.258
- UnlockX        12252     0.002     0.100
- Flush         263666     3.327   155.632
-
-Throughput 980.047 MB/sec  12 clients  12 procs  max_latency=155.636 ms
-
-After whole patchset applied:
-
- Operation      Count    AvgLat    MaxLat
- ----------------------------------------
- NTCreateX    4195584     0.033   107.742
- Close        3081932     0.002     1.935
- Rename        177641     0.218    14.905
- Unlink        847333     0.166   107.822
- Deltree          118     5.315    15.247
- Mkdir             59     0.004     0.048
- Qpathinfo    3802612     0.014    10.302
- Qfileinfo     666748     0.001     1.034
- Qfsinfo       697329     0.003     0.944
- Sfileinfo     341712     0.006     2.099
- Find         1470365     0.065     9.359
- WriteX       2093921     0.021     8.087
- ReadX        6576234     0.003     3.407
- LockX          13660     0.003     0.308
- UnlockX        13660     0.002     0.114
- Flush         294090     2.906   115.539
-
-Throughput 1093.11 MB/sec  12 clients  12 procs  max_latency=115.544 ms
-
-+11.5% throughput    -25.8% max latency   rename max latency -77.8%
-
-Link: https://bugzilla.opensuse.org/show_bug.cgi?id=1193549
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Suggested-by: Nikolay Borisov <nborisov@suse.com>
+Signed-off-by: Shin'ichiro Kawasaki <shinichiro.kawasaki@wdc.com>
 ---
- fs/btrfs/tree-log.c | 245 ++++++++++++++++++++++++++++++++------------
- fs/btrfs/tree-log.h |   3 +
- 2 files changed, 183 insertions(+), 65 deletions(-)
+Changes from v2:
+* Added lockdep assert for fs_info->subvol_sem
+* Removed bit test of BTRFS_FS_QUOTA_ENABLED
+* Reflected other comments on the list
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index bf529c6cb3ff..6f9829188948 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3459,35 +3459,121 @@ int btrfs_free_log_root_tree(struct btrfs_trans_handle *trans,
- }
+Changes from v1:
+* Used BTRFS_FS_QUOTA_ENABLE flag instead of the new flag
+
+ fs/btrfs/qgroup.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 8928275823a1..3ff0f8735b10 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1185,9 +1185,24 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
+ 	struct btrfs_trans_handle *trans = NULL;
+ 	int ret = 0;
  
- /*
-- * Check if an inode was logged in the current transaction. This may often
-- * return some false positives, because logged_trans is an in memory only field,
-- * not persisted anywhere. This is meant to be used in contexts where a false
-- * positive has no functional consequences.
-+ * Check if an inode was logged in the current transaction. This correctly deals
-+ * with the case where the inode was logged but has a logged_trans of 0, which
-+ * happens if the inode is evicted and loaded again, as logged_trans is an in
-+ * memory only field (not persisted).
-+ *
-+ * Returns 1 if the inode was logged before in the transaction, 0 if it was not,
-+ * and < 0 on error.
-  */
--static bool inode_logged(struct btrfs_trans_handle *trans,
--			 struct btrfs_inode *inode)
-+static int inode_logged(struct btrfs_trans_handle *trans,
-+			struct btrfs_inode *inode,
-+			struct btrfs_path *path_in)
- {
-+	struct btrfs_path *path = path_in;
-+	struct btrfs_key key;
-+	int ret;
-+
- 	if (inode->logged_trans == trans->transid)
--		return true;
-+		return 1;
- 
--	if (!test_bit(BTRFS_ROOT_HAS_LOG_TREE, &inode->root->state))
--		return false;
 +	/*
-+	 * If logged_trans is not 0, then we know the inode logged was not logged
-+	 * in this transaction, so we can return false right away.
++	 * We need to have subvol_sem write locked, to prevent races between
++	 * concurrent tasks trying to disable quotas, because we will unlock
++	 * and relock qgroup_ioctl_lock across BTRFS_FS_QUOTA_ENABLED changes.
 +	 */
-+	if (inode->logged_trans > 0)
-+		return 0;
++	lockdep_assert_held_write(&fs_info->subvol_sem);
++
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root)
+ 		goto out;
 +
 +	/*
-+	 * If no log tree was created for this root in this transaction, then
-+	 * the inode can not have been logged in this transaction. In that case
-+	 * set logged_trans to anything greater than 0 and less than the current
-+	 * transaction's ID, to avoid the search below in a future call in case
-+	 * a log tree gets created after this.
++	 * Request qgroup rescan worker to complete and wait for it. This wait
++	 * must be done before transaction start for quota disable since it may
++	 * deadlock with transaction by the qgroup rescan worker.
 +	 */
-+	if (!test_bit(BTRFS_ROOT_HAS_LOG_TREE, &inode->root->state)) {
-+		inode->logged_trans = trans->transid - 1;
-+		return 0;
-+	}
-+
-+	/*
-+	 * We have a log tree and the inode's logged_trans is 0. We can't tell
-+	 * for sure if the inode was logged before in this transaction by looking
-+	 * only at logged_trans. We could be pessimistic and assume it was, but
-+	 * that can lead to unnecessarily logging an inode during rename and link
-+	 * operations, and then further updating the log in followup rename and
-+	 * link operations, specially if it's a directory, which adds latency
-+	 * visible to applications doing a series of rename or link operations.
-+	 *
-+	 * A logged_trans of 0 here can mean several things:
-+	 *
-+	 * 1) The inode was never logged since the filesystem was mounted, and may
-+	 *    or may have not been evicted and loaded again;
-+	 *
-+	 * 2) The inode was logged in a previous transaction, then evicted and
-+	 *    then loaded again;
-+	 *
-+	 * 3) The inode was logged in the current transaction, then evicted and
-+	 *    then loaded again.
-+	 *
-+	 * For cases 1) and 2) we don't want to return true, but we need to detect
-+	 * case 3) and return true. So we do a search in the log root for the inode
-+	 * item.
-+	 */
-+	key.objectid = btrfs_ino(inode);
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	if (!path) {
-+		path = btrfs_alloc_path();
-+		if (!path)
-+			return -ENOMEM;
-+	}
-+
-+	ret = btrfs_search_slot(NULL, inode->root->log_root, &key, path, 0, 0);
-+
-+	if (path_in)
-+		btrfs_release_path(path);
-+	else
-+		btrfs_free_path(path);
++	clear_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
++	btrfs_qgroup_wait_for_completion(fs_info, false);
+ 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
  
  	/*
--	 * The inode's logged_trans is always 0 when we load it (because it is
--	 * not persisted in the inode item or elsewhere). So if it is 0, the
--	 * inode was last modified in the current transaction then the inode may
--	 * have been logged before in the current transaction, then evicted and
--	 * loaded again in the current transaction - or may have never been logged
--	 * in the current transaction, but since we can not be sure, we have to
--	 * assume it was, otherwise our callers can leave an inconsistent log.
-+	 * Logging an inode always results in logging its inode item. So if we
-+	 * did not find the item we know the inode was not logged for sure.
- 	 */
--	if (inode->logged_trans == 0 &&
--	    inode->last_trans == trans->transid &&
--	    !test_bit(BTRFS_FS_LOG_RECOVERING, &trans->fs_info->flags))
--		return true;
-+	if (ret < 0) {
-+		return ret;
-+	} else if (ret > 0) {
-+		/*
-+		 * Set logged_trans to a value greater than 0 and less then the
-+		 * current transaction to avoid doing the search in future calls.
-+		 */
-+		inode->logged_trans = trans->transid - 1;
-+		return 0;
-+	}
-+
-+	/*
-+	 * The inode was previously logged and then evicted, set logged_trans to
-+	 * the current transacion's ID, to avoid future tree searches as long as
-+	 * the inode is not evicted again.
-+	 */
-+	inode->logged_trans = trans->transid;
-+
-+	/*
-+	 * If it's a directory, then we must set last_dir_index_offset to the
-+	 * maximum possible value, so that the next attempt to log the inode does
-+	 * not skip checking if dir index keys found in modified subvolume tree
-+	 * leaves have been logged before, otherwise it would result in attempts
-+	 * to insert duplicate dir index keys in the log tree. This must be done
-+	 * because last_dir_index_offset is an in-memory only field, not persisted
-+	 * in the inode item or any other on-disk structure, so its value is lost
-+	 * once the inode is evicted.
-+	 */
-+	if (S_ISDIR(inode->vfs_inode.i_mode))
-+		inode->last_dir_index_offset = (u64)-1;
- 
--	return false;
-+	return 1;
- }
- 
- /*
-@@ -3552,8 +3638,13 @@ void btrfs_del_dir_entries_in_log(struct btrfs_trans_handle *trans,
- 	struct btrfs_path *path;
- 	int ret;
- 
--	if (!inode_logged(trans, dir))
-+	ret = inode_logged(trans, dir, NULL);
-+	if (ret == 0)
-+		return;
-+	else if (ret < 0) {
-+		btrfs_set_log_full_commit(trans);
- 		return;
-+	}
- 
- 	ret = join_running_log_trans(root);
- 	if (ret)
-@@ -3587,8 +3678,13 @@ void btrfs_del_inode_ref_in_log(struct btrfs_trans_handle *trans,
- 	u64 index;
- 	int ret;
- 
--	if (!inode_logged(trans, inode))
-+	ret = inode_logged(trans, inode, NULL);
-+	if (ret == 0)
- 		return;
-+	else if (ret < 0) {
-+		btrfs_set_log_full_commit(trans);
-+		return;
-+	}
- 
- 	ret = join_running_log_trans(root);
- 	if (ret)
-@@ -3720,7 +3816,6 @@ static int process_dir_items_leaf(struct btrfs_trans_handle *trans,
- 	struct extent_buffer *src = path->nodes[0];
- 	const int nritems = btrfs_header_nritems(src);
- 	const u64 ino = btrfs_ino(inode);
--	const bool inode_logged_before = inode_logged(trans, inode);
- 	bool last_found = false;
- 	int batch_start = 0;
- 	int batch_size = 0;
-@@ -3796,14 +3891,16 @@ static int process_dir_items_leaf(struct btrfs_trans_handle *trans,
- 				ctx->log_new_dentries = true;
- 		}
- 
--		if (!inode_logged_before)
-+		if (!ctx->logged_before)
- 			goto add_to_batch;
- 
- 		/*
- 		 * If we were logged before and have logged dir items, we can skip
- 		 * checking if any item with a key offset larger than the last one
- 		 * we logged is in the log tree, saving time and avoiding adding
--		 * contention on the log tree.
-+		 * contention on the log tree. We can only rely on the value of
-+		 * last_dir_index_offset when we know for sure that the inode was
-+		 * previously logged in the current transaction.
- 		 */
- 		if (key.offset > inode->last_dir_index_offset)
- 			goto add_to_batch;
-@@ -4046,21 +4143,6 @@ static noinline int log_directory_changes(struct btrfs_trans_handle *trans,
- 	u64 max_key;
- 	int ret;
- 
--	/*
--	 * If this is the first time we are being logged in the current
--	 * transaction, or we were logged before but the inode was evicted and
--	 * reloaded later, in which case its logged_trans is 0, reset the value
--	 * of the last logged key offset. Note that we don't use the helper
--	 * function inode_logged() here - that is because the function returns
--	 * true after an inode eviction, assuming the worst case as it can not
--	 * know for sure if the inode was logged before. So we can not skip key
--	 * searches in the case the inode was evicted, because it may not have
--	 * been logged in this transaction and may have been logged in a past
--	 * transaction, so we need to reset the last dir index offset to (u64)-1.
--	 */
--	if (inode->logged_trans != trans->transid)
--		inode->last_dir_index_offset = (u64)-1;
--
- 	min_key = BTRFS_DIR_START_INDEX;
- 	max_key = 0;
- 	ctx->last_dir_item_offset = inode->last_dir_index_offset;
-@@ -4097,9 +4179,6 @@ static int drop_inode_items(struct btrfs_trans_handle *trans,
- 	struct btrfs_key found_key;
- 	int start_slot;
- 
--	if (!inode_logged(trans, inode))
--		return 0;
--
- 	key.objectid = btrfs_ino(inode);
- 	key.type = max_key_type;
- 	key.offset = (u64)-1;
-@@ -4597,7 +4676,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 	 * are small, with a root at level 2 or 3 at most, due to their short
- 	 * life span.
- 	 */
--	if (inode_logged(trans, inode)) {
-+	if (ctx->logged_before) {
- 		drop_args.path = path;
- 		drop_args.start = em->start;
- 		drop_args.end = em->start + em->len;
-@@ -5594,6 +5673,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	bool xattrs_logged = false;
- 	bool recursive_logging = false;
- 	bool inode_item_dropped = true;
-+	const bool orig_logged_before = ctx->logged_before;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -5643,6 +5723,18 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		mutex_lock(&inode->log_mutex);
+@@ -1205,14 +1220,13 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		trans = NULL;
++		set_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+ 		goto out;
  	}
  
-+	/*
-+	 * Before logging the inode item, cache the value returned by
-+	 * inode_logged(), because after that we have the need to figure out if
-+	 * the inode was previously logged in this transaction.
-+	 */
-+	ret = inode_logged(trans, inode, path);
-+	if (ret < 0) {
-+		err = ret;
-+		goto out;
-+	}
-+	ctx->logged_before = (ret == 1);
-+
- 	/*
- 	 * This is for cases where logging a directory could result in losing a
- 	 * a file after replaying the log. For example, if we move a file from a
-@@ -5668,9 +5760,11 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 		clear_bit(BTRFS_INODE_COPY_EVERYTHING, &inode->runtime_flags);
- 		if (inode_only == LOG_INODE_EXISTS)
- 			max_key_type = BTRFS_XATTR_ITEM_KEY;
--		ret = drop_inode_items(trans, log, path, inode, max_key_type);
-+		if (ctx->logged_before)
-+			ret = drop_inode_items(trans, log, path, inode,
-+					       max_key_type);
- 	} else {
--		if (inode_only == LOG_INODE_EXISTS && inode_logged(trans, inode)) {
-+		if (inode_only == LOG_INODE_EXISTS && ctx->logged_before) {
- 			/*
- 			 * Make sure the new inode item we write to the log has
- 			 * the same isize as the current one (if it exists).
-@@ -5692,14 +5786,15 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 			     &inode->runtime_flags)) {
- 			if (inode_only == LOG_INODE_EXISTS) {
- 				max_key.type = BTRFS_XATTR_ITEM_KEY;
--				ret = drop_inode_items(trans, log, path, inode,
--						       max_key.type);
-+				if (ctx->logged_before)
-+					ret = drop_inode_items(trans, log, path,
-+							       inode, max_key.type);
- 			} else {
- 				clear_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
- 					  &inode->runtime_flags);
- 				clear_bit(BTRFS_INODE_COPY_EVERYTHING,
- 					  &inode->runtime_flags);
--				if (inode_logged(trans, inode))
-+				if (ctx->logged_before)
- 					ret = truncate_inode_items(trans, log,
- 								   inode, 0, 0);
- 			}
-@@ -5709,8 +5804,9 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 			if (inode_only == LOG_INODE_ALL)
- 				fast_search = true;
- 			max_key.type = BTRFS_XATTR_ITEM_KEY;
--			ret = drop_inode_items(trans, log, path, inode,
--					       max_key.type);
-+			if (ctx->logged_before)
-+				ret = drop_inode_items(trans, log, path, inode,
-+						       max_key.type);
- 		} else {
- 			if (inode_only == LOG_INODE_ALL)
- 				fast_search = true;
-@@ -5830,6 +5926,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- out:
- 	btrfs_free_path(path);
- 	btrfs_free_path(dst_path);
-+
-+	if (recursive_logging)
-+		ctx->logged_before = orig_logged_before;
-+
- 	return err;
- }
+ 	if (!fs_info->quota_root)
+ 		goto out;
  
-@@ -6774,7 +6874,7 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_log_ctx ctx;
- 	bool log_pinned = false;
--	int ret = 0;
-+	int ret;
+-	clear_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags);
+-	btrfs_qgroup_wait_for_completion(fs_info, false);
+ 	spin_lock(&fs_info->qgroup_lock);
+ 	quota_root = fs_info->quota_root;
+ 	fs_info->quota_root = NULL;
+@@ -3383,6 +3397,9 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
+ 			btrfs_warn(fs_info,
+ 			"qgroup rescan init failed, qgroup is not enabled");
+ 			ret = -EINVAL;
++		} else if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags)) {
++			/* quota disable is in progress */
++			ret = -EBUSY;
+ 		}
  
- 	/*
- 	 * this will force the logging code to walk the dentry chain
-@@ -6787,9 +6887,24 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 	 * if this inode hasn't been logged and directory we're renaming it
- 	 * from hasn't been logged, we don't need to log it
- 	 */
--	if (!inode_logged(trans, inode) &&
--	    (!old_dir || !inode_logged(trans, old_dir)))
--		return;
-+	ret = inode_logged(trans, inode, NULL);
-+	if (ret < 0) {
-+		goto out;
-+	} else if (ret == 0) {
-+		if (!old_dir)
-+			return;
-+		/*
-+		 * If the inode was not logged and we are doing a rename (old_dir is not
-+		 * NULL), check if old_dir was logged - if it was not we can return and
-+		 * do nothing.
-+		 */
-+		ret = inode_logged(trans, old_dir, NULL);
-+		if (ret < 0)
-+			goto out;
-+		else if (ret == 0)
-+			return;
-+	}
-+	ret = 0;
- 
- 	/*
- 	 * If we are doing a rename (old_dir is not NULL) from a directory that
-@@ -6849,15 +6964,15 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 	 */
- 	btrfs_log_inode_parent(trans, inode, parent, LOG_INODE_EXISTS, &ctx);
- out:
--	if (log_pinned) {
--		/*
--		 * If an error happened mark the log for a full commit because
--		 * it's not consistent and up to date. Do it before unpinning the
--		 * log, to avoid any races with someone else trying to commit it.
--		 */
--		if (ret < 0)
--			btrfs_set_log_full_commit(trans);
-+	/*
-+	 * If an error happened mark the log for a full commit because it's not
-+	 * consistent and up to date or we couldn't find out if one of the
-+	 * inodes was logged before in this transaction. Do it before unpinning
-+	 * the log, to avoid any races with someone else trying to commit it.
-+	 */
-+	if (ret < 0)
-+		btrfs_set_log_full_commit(trans);
-+	if (log_pinned)
- 		btrfs_end_log_trans(root);
--	}
- }
- 
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index f1acb7fa944c..1620f8170629 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -17,6 +17,8 @@ struct btrfs_log_ctx {
- 	int log_transid;
- 	bool log_new_dentries;
- 	bool logging_new_name;
-+	/* Indicate if the inode being logged was logged before. */
-+	bool logged_before;
- 	/* Tracks the last logged dir item/index key offset. */
- 	u64 last_dir_item_offset;
- 	struct inode *inode;
-@@ -32,6 +34,7 @@ static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx,
- 	ctx->log_transid = 0;
- 	ctx->log_new_dentries = false;
- 	ctx->logging_new_name = false;
-+	ctx->logged_before = false;
- 	ctx->inode = inode;
- 	INIT_LIST_HEAD(&ctx->list);
- 	INIT_LIST_HEAD(&ctx->ordered_extents);
+ 		if (ret) {
 -- 
-2.33.0
+2.33.1
 

@@ -2,166 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8A37C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jan 2022 15:44:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6E95C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 21 Jan 2022 19:39:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351423AbiAUPop (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 21 Jan 2022 10:44:45 -0500
-Received: from ams.source.kernel.org ([145.40.68.75]:56516 "EHLO
-        ams.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240481AbiAUPop (ORCPT
+        id S229661AbiAUTjl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 21 Jan 2022 14:39:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59070 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229537AbiAUTjk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 21 Jan 2022 10:44:45 -0500
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 14180B82057
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jan 2022 15:44:44 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 41BA6C340E1
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jan 2022 15:44:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1642779882;
-        bh=rzivCurT4oRUGlMWYT8vX+I65+tks7707MqVuUAmF1E=;
-        h=From:To:Subject:Date:From;
-        b=D3oCz+vsUetzCmuWMHStFVrAUi8o5eFy5TKJjRG71CHN64yrAlcpBoJ305rMCYlyd
-         d8FodyZMFdujUevpWL2sY7hRHzAI0ciBzvyPRCM0Z104SIjbHDau5b0jL+5c6dVJyI
-         OUg2lfowRN8v0xKlzPOwOi0D45eOwNz26VxQahBLy/jx1tbqSLp7mY9/n2k0VeQ0MT
-         KD7vokCdspm3hta99v2LDNkdHnM3qT1WMlT8MnDEC8haBjIKvbvuHC9/puriq4EDIR
-         W8K5X/RiZIHYmUXSKKwnEcEjtYhiPz5SslpCC1CMyTbeU+CoZxm90r7F3R/+uqdR/I
-         EzGQ3o3PD8xWg==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix use-after-free after failure to create a snapshot
-Date:   Fri, 21 Jan 2022 15:44:39 +0000
-Message-Id: <3ebda64ca2a8b55f924fbf2b9e850ff99e65938b.1642779802.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
+        Fri, 21 Jan 2022 14:39:40 -0500
+Received: from mail-pg1-x535.google.com (mail-pg1-x535.google.com [IPv6:2607:f8b0:4864:20::535])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7AE6EC06173B
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jan 2022 11:39:40 -0800 (PST)
+Received: by mail-pg1-x535.google.com with SMTP id 133so8998374pgb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Jan 2022 11:39:40 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc:content-transfer-encoding;
+        bh=/bu/3iyNydp+mveaftk6LGCY1tRUzSNVH6ZCi92XjbY=;
+        b=mjl2/nihZmXQ83VuPvH6p2tG1v1YTgLavE/NHWmVevP2y2tPQpakn5aCDNDC2TYCVk
+         RIgUcs6jsyccBDtdbEByS/VuiYGo0fVY8BLccL91WL411y42/trsG1cySK/FbwIKr4jH
+         GHkqkH5lN0K8KruRqY/Yb3sD4LDz9vPNXctaaVI/B1zDLLyoal+3Dwiz1/2pKiprmxYJ
+         iUx7BjCKFT108Kw0WnAzPU+LtX34wbai0ErKZayBhG6Hv47RE4OLWlaSY+iwSjp60rhA
+         Q/N7xPMAKH4LU3biTBaJshQJoKS9oNf+35Jb9PpCZmIR4Yj5EeVUath7Rwtd9SSNLtD7
+         aKRA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=/bu/3iyNydp+mveaftk6LGCY1tRUzSNVH6ZCi92XjbY=;
+        b=F1BNjhsHdNUN/5OwzVu3efzI6F1Zt+mF3rANt124deRoD6W2BCVFEDSw64nqEl5Wcg
+         ia6kphQn/20SLvc6zcNIqre6KhuLutu6DTjx3rO0E97JwojFosn0+RwZDjoCAwPi93fq
+         0dYm3yndT6AnF8lCXALQyI5+Qla1Q9Cz/1Mf19GtEuLmAWJpnIYckIlPh/IR69YsM4sa
+         UIPlM/NhYwhdNZxnDc6Py17R7mxqJlmC6FQomVTjbKn8NSHVRxO4xg3aDhCNQXiVsmER
+         SsIXAflNuKZ9JHpXJI3KPUzgjftG1ZzFUZ+nZsYiYSPEh1xz+QvRtYAYIj42nZ/0D3Cr
+         sU9w==
+X-Gm-Message-State: AOAM533vQOYB5Gofs4iBOd9Rzw7LMYO5GYd0ymbajt71qFzFxKOEbt0+
+        9z5raN8NhFL7hKPMvg0iRzP66/elXJMoTZz7L//P9Lm6y7A=
+X-Google-Smtp-Source: ABdhPJwrRW+/W/LUd1+IKaUG8uiRt+Ki2aUpvy2se+QEp57xaMsvIGOFLo421sUNKoJWfnTMXuwMlo++t44TFK1sEmw=
+X-Received: by 2002:a63:9712:: with SMTP id n18mr3966538pge.594.1642793979853;
+ Fri, 21 Jan 2022 11:39:39 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <CAEwRaO4y3PPPUdwYjNDoB9m9CLzfd3DFFk2iK1X6OyyEWG5-mg@mail.gmail.com>
+ <YeVawBBE3r6hVhgs@debian9.Home> <YeWgdQ2ZvceLTIej@debian9.Home>
+ <CAEwRaO5JcuHkuKs_hx9SJQ6jDr79TSorEPVEkt7BPRLfK2Rp-g@mail.gmail.com>
+ <CAEwRaO7LpG+KBYRgB4MGx9td5PO6JvFWpKbyKsHDB=7LKMmAJg@mail.gmail.com>
+ <CAL3q7H7UvBzw998MW1wxxBo+EPCePVikNdG-rT1Zs0Guo71beQ@mail.gmail.com>
+ <CAEwRaO4PVvGOi86jvY7aBXMMgwMfP0tD3u8-8fxkgRD0wBjVQg@mail.gmail.com>
+ <CAL3q7H5SGAYSFU43ceUAAowuR8RxQ6ZN_3ZyL+R-Gn07xs7w_Q@mail.gmail.com>
+ <CAEwRaO6CAjfH-qtt9D9NiH2hh4KFTSL-xCvdVZr+UXKe6k=jOA@mail.gmail.com>
+ <CAL3q7H7xfcUk_DXEfdsnGX8dWLDsSAPeAugoeSw3tah476xCBQ@mail.gmail.com>
+ <CAEwRaO4Doi4Vk4+SU2GxE7JVV5YuqXXU_cw7DY9wQrMnr9umdA@mail.gmail.com> <CAL3q7H4ji1B7zn4=mP4=891XfokkVyOaaqW3dCmUH6uVGjgkjg@mail.gmail.com>
+In-Reply-To: <CAL3q7H4ji1B7zn4=mP4=891XfokkVyOaaqW3dCmUH6uVGjgkjg@mail.gmail.com>
+From:   =?UTF-8?Q?Fran=C3=A7ois=2DXavier_Thomas?= <fx.thomas@gmail.com>
+Date:   Fri, 21 Jan 2022 20:39:27 +0100
+Message-ID: <CAEwRaO7cA3bbYMSCoYQ2gqaeJBSes5EBok5Oon-YOm7EQ8JOhw@mail.gmail.com>
+Subject: Re: Massive I/O usage from btrfs-cleaner after upgrading to 5.16
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, Qu Wenruo <wqu@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+Thanks, will add that to the list and test. FYI the 6 patches didn't
+seem to have much additional effect today compared to my previous
+stack of 4.
 
-At ioctl.c:create_snapshot(), we allocate a pending snapshot structure and
-then attach it to the transaction's list of pending snapshots. After that
-we call btrfs_commit_transaction(), and if that returns an error we jump
-to 'fail' label, where we kfree() the pending snapshot structure. This can
-result in a later use-after-free of the pending snapshot:
-
-1) We allocated the pending snapshot and added it to the transaction's
-   list of pending snapshots;
-
-2) We call btrfs_commit_transaction(), and it fails either at the first
-   call to btrfs_run_delayed_refs() or btrfs_start_dirty_block_groups().
-   In both cases, we don't abort the transaction and we release our
-   transaction handle. We jump to the 'fail' label and free the pending
-   snapshot structure. We return with the pending snapshot still in the
-   transaction's list;
-
-3) Another task commits the transaction. This time there's no error at
-   all, and then during the transaction commit it accesses a pointer
-   to the pending snapshot structure that the snapshot creation task
-   has already freed, resulting in a user-after-free.
-
-This issue could actually be detected by smatch, which produced the
-following warning:
-
-  fs/btrfs/ioctl.c:843 create_snapshot() warn: '&pending_snapshot->list' not removed from list
-
-So fix this by not having the snapshot creation ioctl directly add the
-pending snapshot to the transaction's list. Instead add the pending
-snapshot to the transaction handle, and then at btrfs_commit_transaction()
-we add the snapshot to the list only when we can guarantee that any error
-returned after that point will result in a transaction abort, in which
-case the ioctl code can safely free the pending snapshot and no one can
-access it anymore.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ioctl.c       |  5 +----
- fs/btrfs/transaction.c | 24 ++++++++++++++++++++++++
- fs/btrfs/transaction.h |  2 ++
- 3 files changed, 27 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 95d0e210f063..9a33d7fd91a0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -803,10 +803,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 		goto fail;
- 	}
- 
--	spin_lock(&fs_info->trans_lock);
--	list_add(&pending_snapshot->list,
--		 &trans->transaction->pending_snapshots);
--	spin_unlock(&fs_info->trans_lock);
-+	trans->pending_snapshot = pending_snapshot;
- 
- 	ret = btrfs_commit_transaction(trans);
- 	if (ret)
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 03de89b45f27..c43bbc7f623e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2000,6 +2000,27 @@ static inline void btrfs_wait_delalloc_flush(struct btrfs_fs_info *fs_info)
- 		btrfs_wait_ordered_roots(fs_info, U64_MAX, 0, (u64)-1);
- }
- 
-+/*
-+ * Add a pending snapshot associated with the given transaction handle to the
-+ * respective handle. This must be called after the transaction commit started
-+ * and while holding fs_info->trans_lock.
-+ * This serves to guarantee a caller of btrfs_commit_transaction() that it can
-+ * safely free the pending snapshot pointer in case btrfs_commit_transaction()
-+ * returns an error.
-+ */
-+static void add_pending_snapshot(struct btrfs_trans_handle *trans)
-+{
-+	struct btrfs_transaction *cur_trans = trans->transaction;
-+
-+	if (!trans->pending_snapshot)
-+		return;
-+
-+	lockdep_assert_held(&trans->fs_info->trans_lock);
-+	ASSERT(cur_trans->state >= TRANS_STATE_COMMIT_START);
-+
-+	list_add(&trans->pending_snapshot->list, &cur_trans->pending_snapshots);
-+}
-+
- int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
-@@ -2073,6 +2094,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (cur_trans->state >= TRANS_STATE_COMMIT_START) {
- 		enum btrfs_trans_state want_state = TRANS_STATE_COMPLETED;
- 
-+		add_pending_snapshot(trans);
-+
- 		spin_unlock(&fs_info->trans_lock);
- 		refcount_inc(&cur_trans->use_count);
- 
-@@ -2163,6 +2186,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	 * COMMIT_DOING so make sure to wait for num_writers to == 1 again.
- 	 */
- 	spin_lock(&fs_info->trans_lock);
-+	add_pending_snapshot(trans);
- 	cur_trans->state = TRANS_STATE_COMMIT_DOING;
- 	spin_unlock(&fs_info->trans_lock);
- 	wait_event(cur_trans->writer_wait,
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 1852ed9de7fd..9402d8d94484 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -123,6 +123,8 @@ struct btrfs_trans_handle {
- 	struct btrfs_transaction *transaction;
- 	struct btrfs_block_rsv *block_rsv;
- 	struct btrfs_block_rsv *orig_rsv;
-+	/* Set by a task that wants to create a snapshot. */
-+	struct btrfs_pending_snapshot *pending_snapshot;
- 	refcount_t use_count;
- 	unsigned int type;
- 	/*
--- 
-2.33.0
-
+On Fri, Jan 21, 2022 at 11:49 AM Filipe Manana <fdmanana@kernel.org> wrote:
+>
+> On Thu, Jan 20, 2022 at 6:21 PM Fran=C3=A7ois-Xavier Thomas
+> <fx.thomas@gmail.com> wrote:
+> >
+> > > Ok, so new patches to try
+> >
+> > Nice, thanks, I'll let you know how that goes tomorrow!
+>
+> You can also get more one on top of those 6:
+>
+> https://pastebin.com/raw/p87HX6AF
+>
+> Thanks.

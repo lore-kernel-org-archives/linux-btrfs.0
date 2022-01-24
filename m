@@ -2,76 +2,69 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91C55C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jan 2022 19:52:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72692C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Jan 2022 20:01:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351591AbiAXTwJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Jan 2022 14:52:09 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:58300 "EHLO
+        id S1350418AbiAXUBC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Jan 2022 15:01:02 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:58604 "EHLO
         smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1356915AbiAXTrj (ORCPT
+        with ESMTP id S1359136AbiAXT40 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Jan 2022 14:47:39 -0500
+        Mon, 24 Jan 2022 14:56:26 -0500
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 6F7FE21999;
-        Mon, 24 Jan 2022 19:42:30 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id 87C4D218E2;
+        Mon, 24 Jan 2022 19:56:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1643053350;
+        t=1643054185;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Uk4yJXt5bU5Zj9U01tGsXKXIzarJNnJJ/xFI3TIiBoM=;
-        b=xkY7eOJES7BjCHlJTRH4JbxrgF0LCTKv9dKbQ5tYUEV7xi9y5DhEe7zPQB9rTUt/NIPSO9
-        PVQafygGeXO7H00IegrAnUcU+suZJNHlIrOxinCx0Lm+rzGk63VNtyA2ak9g0vVkJTaOna
-        81ymFH75eNw3z05/SzbEfGjtmlwG/Js=
+        bh=0ZNefG1/mRTouCOvvEp9qwcrO52bTYFuA5rGc58D7Q4=;
+        b=W5c/cMmedhiG+HE2qr+1SwOpYTcGikSlFhwEZkYvIEuO1HwYpm4kG8E8Yw40uB9VaqhTiQ
+        tuC7YOrTnaDR+dtiRLZyMv4TKtOZ66dswEIiHuFkNlaEESIJtZbQJxM/hzHCF1VnxdiX9m
+        pRdxbotQvxJRY18gwgQYu2pOLgoJReI=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1643053350;
+        s=susede2_ed25519; t=1643054185;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Uk4yJXt5bU5Zj9U01tGsXKXIzarJNnJJ/xFI3TIiBoM=;
-        b=eJRB+hsY11bzgiBAkX8cKR7FV7wgFKY7T/JEljfNT1Ec4pmQ7cSuLnZ7IK2M912KE84sy/
-        DxF9d/DTurpNl9Ag==
+        bh=0ZNefG1/mRTouCOvvEp9qwcrO52bTYFuA5rGc58D7Q4=;
+        b=kIhMKime3S3YOfaJcNsD3IX7FmWGn/15iCb7RCcpz5088/WfJ+UnFnwc7DovzRMFNd6ogV
+        JuAaN45ehfUxnzCg==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 57883A3BF6;
-        Mon, 24 Jan 2022 19:42:30 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 7AA96A3B81;
+        Mon, 24 Jan 2022 19:56:25 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 44F7EDA7A3; Mon, 24 Jan 2022 20:41:50 +0100 (CET)
-Date:   Mon, 24 Jan 2022 20:41:49 +0100
+        id 9245DDA7A3; Mon, 24 Jan 2022 20:55:45 +0100 (CET)
+Date:   Mon, 24 Jan 2022 20:55:45 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Abaci Robot <abaci@linux.alibaba.com>
-Subject: Re: [PATCH v2] btrfs: zoned: Remove redundant initialization of
- to_add
-Message-ID: <20220124194149.GD14046@twin.jikos.cz>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: move QUOTA_ENABLED check to rescan_should_stop
+ from btrfs_qgroup_rescan_worker
+Message-ID: <20220124195545.GG14046@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Jiapeng Chong <jiapeng.chong@linux.alibaba.com>, clm@fb.com,
-        josef@toxicpanda.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Abaci Robot <abaci@linux.alibaba.com>
-References: <20220121114351.93220-1-jiapeng.chong@linux.alibaba.com>
+Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20220113151618.2149736-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220121114351.93220-1-jiapeng.chong@linux.alibaba.com>
+In-Reply-To: <20220113151618.2149736-1-nborisov@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 21, 2022 at 07:43:51PM +0800, Jiapeng Chong wrote:
-> to_add is being initialized to len but this is never read as
-> to_add is overwritten later on. Remove the redundant
-> initialization.
+On Thu, Jan 13, 2022 at 05:16:18PM +0200, Nikolay Borisov wrote:
+> Instead of having 2 places that short circuit the qgroup leaf scan have
+> everything in the qgroup_rescan_leaf function. In addition to that, also
+> ensure that the inconsistent qgroup flag is set when rescan_should_stop
+> returns true. This both retains the old behavior when -EINTR was set
+> in the body of the loop and at the same time also extends this behavior when
+> scanning is interrupted due to remount or unmount operations.
 > 
-> Cleans up the following clang-analyzer warning:
-> 
-> fs/btrfs/extent-tree.c:2769:8: warning: Value stored to 'to_add' during
-> its initialization is never read [clang-analyzer-deadcode.DeadStores].
-> 
-> Reported-by: Abaci Robot <abaci@linux.alibaba.com>
-> Signed-off-by: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
 
 Added to misc-next, thanks.

@@ -2,74 +2,65 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3F75C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Jan 2022 16:33:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F4F4C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Jan 2022 16:35:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1451082AbiAYQdg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Jan 2022 11:33:36 -0500
-Received: from smtp-out1.suse.de ([195.135.220.28]:44314 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236648AbiAYQcP (ORCPT
+        id S1583707AbiAYQfu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Jan 2022 11:35:50 -0500
+Received: from smtp-out2.suse.de ([195.135.220.29]:37298 "EHLO
+        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1379839AbiAYQds (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Jan 2022 11:32:15 -0500
+        Tue, 25 Jan 2022 11:33:48 -0500
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 7DA49210F5;
-        Tue, 25 Jan 2022 16:32:09 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id 847761F380;
+        Tue, 25 Jan 2022 16:33:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1643128329;
+        t=1643128426;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=r6GPmOmf6OOpHlN2SfzDETN1iRcP4uzqL/9hxWZpxFg=;
-        b=kqzvB9hhucHyB0mNgSRvEtpXnO2q3c1Ws6K5UYNQQLFkINkNxSn7mbMCCx5U80yT8jd0eU
-        VXbfr8RVgOrWkG0bPfn7mO8rER+MIn5nsZCUAcxe5B2Z4tl6ta0BX+SaRSX4GWy/Fi/ifu
-        13YcZp79pHPltQScLX/prlzW0nsYGwU=
+        bh=bJmJL5UxFlc6fZCNy3BAQXc45Snx52JPjZuTalRhuWo=;
+        b=2VZOaZKaN5XfPhGcqNE87GlHAk3/V2YGa6soamTD0E0BpMm0LEj8pN3GTy8HhyILKY0Fzr
+        bRCow7+/AlEQDudCyWAL7zOZRcO+tTC11ZwzjRadO+JvogZnhI4OLfDLFIZvXDjcFPPiYH
+        Z0sFiqpT/em8hz2T3DX1nZVhw/awUXY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1643128329;
+        s=susede2_ed25519; t=1643128426;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=r6GPmOmf6OOpHlN2SfzDETN1iRcP4uzqL/9hxWZpxFg=;
-        b=onWhW748c9PLDRIkz3CTTooLrTn0PwQD4LgFkdOfQ8/a3J4uxBxawkZ5v7ztg+8xlM90d8
-        FXNpt2mTovq2tCAw==
+        bh=bJmJL5UxFlc6fZCNy3BAQXc45Snx52JPjZuTalRhuWo=;
+        b=lgFndCyk/c/l8ClZ8hXpiApyJhSr2GlBFJFWWnrJqasPogQX85W5eqX0nHVA47tsg7ArVP
+        uGR+WMkbV2mLzMBA==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 7424FA41D4;
-        Tue, 25 Jan 2022 16:32:09 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 7C641A42AE;
+        Tue, 25 Jan 2022 16:33:46 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id AE5D9DA7A9; Tue, 25 Jan 2022 17:31:28 +0100 (CET)
-Date:   Tue, 25 Jan 2022 17:31:28 +0100
+        id 3167DDA7A9; Tue, 25 Jan 2022 17:33:06 +0100 (CET)
+Date:   Tue, 25 Jan 2022 17:33:06 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Wang Yugui <wangyugui@e16-tech.com>
-Subject: Re: some fix for the comment in btrfs patch please
-Message-ID: <20220125163128.GR14046@twin.jikos.cz>
+To:     Su Yue <l@damenly.su>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: make generic_err print physical address of
+ extent buffer
+Message-ID: <20220125163305.GS14046@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Wang Yugui <wangyugui@e16-tech.com>
-References: <20220125201301.CBA6.409509F4@e16-tech.com>
- <229e952f-f04a-e062-7915-7918b5df0c3f@oracle.com>
+Mail-Followup-To: dsterba@suse.cz, Su Yue <l@damenly.su>,
+        linux-btrfs@vger.kernel.org
+References: <20220121093429.1840437-1-l@damenly.su>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <229e952f-f04a-e062-7915-7918b5df0c3f@oracle.com>
+In-Reply-To: <20220121093429.1840437-1-l@damenly.su>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jan 25, 2022 at 11:23:30PM +0800, Anand Jain wrote:
+On Fri, Jan 21, 2022 at 05:34:29PM +0800, Su Yue wrote:
+> Unlike kernel, we have cached physical address of extent_buffer in
+> dev_bytenr. Print it for better debug experience.
 > 
-> Thanks, Wang, for the report.
-> 
-> David,
-> 
->   Could you please help fix the typo in the comments for the function
->   btrfs_free_stale_devices(). The bellow diff can be rolled into the
->    commit a67b5c57cda9 (btrfs: match stale devices by dev_t)
->   in misc-next.
+> Signed-off-by: Su Yue <l@damenly.su>
 
-Patch updated, thanks.
+Added to devel, thanks.

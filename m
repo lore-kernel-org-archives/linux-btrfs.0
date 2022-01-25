@@ -2,77 +2,65 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D0ACC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Jan 2022 15:40:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31544C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Jan 2022 16:33:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1582081AbiAYPkK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Jan 2022 10:40:10 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:46108 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1445727AbiAYPhp (ORCPT
+        id S1583671AbiAYQdU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Jan 2022 11:33:20 -0500
+Received: from dfw.source.kernel.org ([139.178.84.217]:46708 "EHLO
+        dfw.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1577104AbiAYQbd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Jan 2022 10:37:45 -0500
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 2E4D61F380;
-        Tue, 25 Jan 2022 15:37:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1643125061; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=HJQ29oRt223Ea++rW0n+gWnf5Ie/PrsbXAgUL9gxVF0=;
-        b=JoQVzhpvcz0LeZUrm+SbsH32H3rGAxtFWBZI6pl2V+PkQLKuMNlPZrBJGRoRECmVGUyLUC
-        fuXtFz8SjX2BToNKQ9kDzNusRqHGPL6+y9eEvMAJy3sYSXRX7PEa5Yp66XX/SnQyZjnHiM
-        WHXeyxO9QjuDnacp1omyNVIJMmbXfrY=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 26C15A3B83;
-        Tue, 25 Jan 2022 15:37:41 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D8943DA7A9; Tue, 25 Jan 2022 16:37:00 +0100 (CET)
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 5.17-rc2
-Date:   Tue, 25 Jan 2022 16:36:59 +0100
-Message-Id: <cover.1643122662.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.33.0
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        Tue, 25 Jan 2022 11:31:33 -0500
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 87F3F6172E;
+        Tue, 25 Jan 2022 16:31:33 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id EBBF3C340E0;
+        Tue, 25 Jan 2022 16:31:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1643128293;
+        bh=VQsRuu/jA4nWNWLTdhkAabbKcRrNx4KcfGNroobbkeo=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=AasKlkpnJowQrmZCXnRHYEagzgQFkTa4WOqNiF3hUTWE0uoNVaUVutSsQzFD8H7p/
+         ZBRsiW4dEtyNjuB0yuDwfE+zqgPTuiTNyjwUr7AvosT3g4oUE1XLaQU7stn3y3pZ5+
+         yXifjfnsY7vuw3tGHV0CuOggP6YGlRnD9vAt+aKslxOQxBfEzuvbxHSHfH7nnh8CSq
+         1oRW9nE4iJLG6csMl7dC4jg1vey9T5x+G7U+zti0UmCNLBKI7ot2Ep+ySEsMmVTIhR
+         NzFddqMSCHboxBBXA+/5/Uqe8VUh+6HWAaSPVAwnsTe+g2C93jF752uunLjS9e5AkZ
+         zy7Fnye+tSpaw==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id D6081E5D084;
+        Tue, 25 Jan 2022 16:31:32 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs fixes for 5.17-rc2
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1643122662.git.dsterba@suse.com>
+References: <cover.1643122662.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1643122662.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.17-rc1-tag
+X-PR-Tracked-Commit-Id: 27cdfde181bcacd226c230b2fd831f6f5b8c215f
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 49d766f3a0e49624c4cf83909d56c68164e7c545
+Message-Id: <164312829286.8622.16491063957310057694.pr-tracker-bot@kernel.org>
+Date:   Tue, 25 Jan 2022 16:31:32 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+The pull request you sent on Tue, 25 Jan 2022 16:36:59 +0100:
 
-several fixes for defragmentation that got broken in 5.16 after
-refactoring and added subpage support. The observed bugs are excessive
-IO or uninterruptible ioctl.
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.17-rc1-tag
 
-All stable material. Please pull, thanks.
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/49d766f3a0e49624c4cf83909d56c68164e7c545
 
-----------------------------------------------------------------
-The following changes since commit 36c86a9e1be3b29f9f075a946df55dfe1d818019:
+Thank you!
 
-  btrfs: output more debug messages for uncommitted transaction (2022-01-07 14:18:27 +0100)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.17-rc1-tag
-
-for you to fetch changes up to 27cdfde181bcacd226c230b2fd831f6f5b8c215f:
-
-  btrfs: update writeback index when starting defrag (2022-01-24 18:16:28 +0100)
-
-----------------------------------------------------------------
-Filipe Manana (5):
-      btrfs: fix too long loop when defragging a 1 byte file
-      btrfs: allow defrag to be interruptible
-      btrfs: fix deadlock when reserving space during defrag
-      btrfs: add back missing dirty page rate limiting to defrag
-      btrfs: update writeback index when starting defrag
-
-Qu Wenruo (2):
-      btrfs: defrag: fix wrong number of defragged sectors
-      btrfs: defrag: properly update range->start for autodefrag
-
- fs/btrfs/ioctl.c | 84 ++++++++++++++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 75 insertions(+), 9 deletions(-)
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

@@ -2,55 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A61DC3526D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 13:46:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A344C63684
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 13:46:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240698AbiAZNq2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Jan 2022 08:46:28 -0500
+        id S241302AbiAZNq3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Jan 2022 08:46:29 -0500
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:46304 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235411AbiAZNq2 (ORCPT
+        with ESMTP id S235411AbiAZNq3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jan 2022 08:46:28 -0500
+        Wed, 26 Jan 2022 08:46:29 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1643204787; x=1674740787;
+  t=1643204788; x=1674740788;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=2PJr/wWWWuGCLH6OKkXYdEB9XN18Htc0qqBmHDe/CRI=;
-  b=hhrTWjV7GejSL8eOSNfvrXFIhdE2migoaTmasUH+cB14+R00BlFT1t9k
-   FNHi7QD1tuD5EHW6FaHKbZRmZ+V2yaNtyXfsKRMfzhcImSUtK4wXsTKay
-   JaiFxGJytvEBV5ndyabd7pw5EGctZE9sXahbedtGuEfkczDbDnZg9zJE+
-   YMVg1gAYWNQDk5WG8kTQ1906I2O79/TbAtAfqJiuJLgu2mvj79rJSL1B+
-   +Hsk3PIWa2JEbYzm2tHPDG019fzKkKMpg7AaWQAC/G6AIHxx1Vliphrk3
-   56eq5sB/BM2hiXu8Jo8GvsPSd/NaPPxKdaWnjPv0v99BD9jmI9CjDZafP
-   A==;
+  bh=RuRvHdePduPq0jBMBOuMJJORQvw0ilIInwK8TI6ctRs=;
+  b=ADlqCVs22VXtb7IUynUu6lDt+onxcx4cAU6vIp49iokwMBkgzcB2Cykj
+   cmbP3XS8W897sLcIiRu5XnLfPQJLiL2Bsr1q3YDEJiOvDuD3WXtdbsMhh
+   EvGQnXKa6tgpcFZYytru3F4YPXY/KoA/9FwIvUU/OGPQv1/lJ5fZHMP4L
+   OOYGa5MOVQxbgKP6KCEeBX7adABaevyeadooZglbpkiFi9CsEWhn6Q4Yw
+   GDqwnlzfBAz5ZUp8Gw7S8jRiLpubMpa7F4PwYpyJM/MAPTTOBYFo+koUM
+   KVJ0vy0/xkv/iy+uPX4vvjPuMGb1JLAMnfD6lkZUTcDR3YjVvrUFSyzkc
+   w==;
 X-IronPort-AV: E=Sophos;i="5.88,318,1635177600"; 
-   d="scan'208";a="190373105"
+   d="scan'208";a="190373108"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2022 21:46:27 +0800
-IronPort-SDR: GdKhRzrA38e8OQdvqPulKzEa3DsrOyZsZAaE/WSmQYIDKgtFNu3fTk0bq1oGr02vxz1R4ogpMy
- fQK8VShiqFZGPYF1RjO0vtb633IjU0ST12CCw2CRoMrDNUdMMli6ByPo1Yd1IsUt8a6AhvTHUq
- OjWe13Eh/RwwxcgeFUTjPlOy3Q4dsJWd5kSZmRlsP+39boZiT9FVJUxAaKsRGxxdir6ufTwXWE
- kuYvVemPo1h/uLXVtnqYfzfjSJgbX1v8fSYcJXXj9YSegjJYS8XUP8Pfte6v/NeY7zDuvAYdS2
- 9AH2xoslaEzeZZeQZ+WbiRAc
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2022 21:46:28 +0800
+IronPort-SDR: Yf8a5E0Le/FZ+LdHZ18odBgVUKBLAM+XCa+4oc3qLjZFUMg28KFBD01O+Hbaf8ouRdIczD4E+u
+ 6vVGvZP7og2vMVPEvobFEnqUKlqOeBXM3Lm7EbiYlmd1C4dp0pNSI4I5SLViFhVAZi2Gj+XdjP
+ k5rlnRuMFXwc0s/gucRlNCnCqWO3rexiqaM4NmNb695VLbm2Ua2Gsf3Y07Q9Y2m5uWIWui2AvT
+ sgJsr3wLCpp25RPUOjg7faESA8yQLVbZrD97E90jX0ZVCJpSJQtKc9FTMKzSFHXKXuBhEYyVzI
+ bGBLGr6FTXVIQ4XtNuQQdWGx
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Jan 2022 05:19:47 -0800
-IronPort-SDR: KRuj34ITY+cfLbPDVd77BaGZuDoLIYsIF11j1gDFbYNjEmqPr4spyjJP/9d2vq8iub4yqeZ1E9
- cf48Ly+E+rIxLEm140bFMvz6hH1FiJimFnRpY3UNSmOTh43c67hqV0QJ1Cl3rP1/baeOD+yo9O
- 6pe+sdgdzteafZ3RHiTQeGJcSD+xTCI6hFjwycU1fE0JocWLyYOZrFyY0L3+WjqfmqdIlZT/sH
- VKzATtcqqgDab7eXpx1CmZ5cqHhJ1yyvbupXSxY74dFzk3VQWEPwLWiK5Saj79SSaUQlZ6H75w
- sJA=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Jan 2022 05:19:48 -0800
+IronPort-SDR: g7reG1auSEuuqLm5/ZP/B8VpjHMe4fnh5rUP3KYsYNkaYWUZ+cLy15vkTOJlEh1gEmR8pUrXfz
+ uB0Q3C/E20xypjM1ycED/JsS8LFE8IPTnSw7uNtUfvXClRjwjQ7q1judR0xodNIuCCLxrYOJQp
+ 4eIGFyivO3PjPN7mUm5Ix4hKEp1mFHqbcfOf2k1Kexqgq40Sx8x7XDTbhj8+rvHsfyUWggPEva
+ kEn4RpTP/VmjraCr6cwQCpppvupQmog4Bifd723t3+vUh+aXfRSqiNEQlnDFROcBpYpaM1vjZ+
+ fFI=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip02.wdc.com with ESMTP; 26 Jan 2022 05:46:27 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 26 Jan 2022 05:46:28 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/4] btrfs: zoned: make zone activation multi stripe capable
-Date:   Wed, 26 Jan 2022 05:46:20 -0800
-Message-Id: <10aeef328429cc5ecc2b8ac75464c07d6449a5ea.1643204608.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 3/4] btrfs: zoned: prepare for allowing DUP on zoned
+Date:   Wed, 26 Jan 2022 05:46:22 -0800
+Message-Id: <eeffdc168bf28bd88e68fa70012a9df91aa8be24.1643204608.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1643204608.git.johannes.thumshirn@wdc.com>
 References: <cover.1643204608.git.johannes.thumshirn@wdc.com>
@@ -60,106 +60,116 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently activation of a zone only works if the block group isn't
-spanning more than one zone.
+Allow for a block-group to be placed on more than one physical zone.
 
-This limitation is purely artificial and can be easily expanded to block
-groups being places across multiple zones.
-
-This is a preparation for allowing DUP and later more complex block-group
-profiles on zoned btrfs.
+This is a preparation for allowing DUP profiles for meta-data on a zoned
+file-system.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/zoned.c | 57 ++++++++++++++++++++++++++----------------------
- 1 file changed, 31 insertions(+), 26 deletions(-)
+ fs/btrfs/zoned.c | 25 ++++++++++++++++---------
+ 1 file changed, 16 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index f559d517c7c4..e3d198405d39 100644
+index 987d2456d398..4f6f7afaa5a2 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -1781,50 +1781,55 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+@@ -1215,12 +1215,12 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
  	struct btrfs_device *device;
- 	u64 physical;
- 	bool ret;
-+	int i;
- 
- 	if (!btrfs_is_zoned(block_group->fs_info))
- 		return true;
- 
- 	map = block_group->physical_map;
--	/* Currently support SINGLE profile only */
--	ASSERT(map->num_stripes == 1);
--	device = map->stripes[0].dev;
--	physical = map->stripes[0].physical;
--
--	if (device->zone_info->max_active_zones == 0)
--		return true;
- 
- 	spin_lock(&block_group->lock);
--
- 	if (block_group->zone_is_active) {
- 		ret = true;
- 		goto out_unlock;
+ 	u64 logical = cache->start;
+ 	u64 length = cache->length;
+-	u64 physical = 0;
+ 	int ret;
+ 	int i;
+ 	unsigned int nofs_flag;
+ 	u64 *alloc_offsets = NULL;
+ 	u64 *caps = NULL;
++	u64 *physical = NULL;
+ 	unsigned long *active = NULL;
+ 	u64 last_alloc = 0;
+ 	u32 num_sequential = 0, num_conventional = 0;
+@@ -1264,6 +1264,12 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		goto out;
  	}
  
--	/* No space left */
--	if (block_group->alloc_offset == block_group->zone_capacity) {
--		ret = false;
--		goto out_unlock;
--	}
-+	for (i = 0; i < map->num_stripes; i++) {
-+		device = map->stripes[i].dev;
-+		physical = map->stripes[i].physical;
- 
--	if (!btrfs_dev_set_active_zone(device, physical)) {
--		/* Cannot activate the zone */
--		ret = false;
--		goto out_unlock;
--	}
-+		if (device->zone_info->max_active_zones == 0)
-+			continue;
-+
-+		/* No space left */
-+		if (block_group->alloc_offset == block_group->zone_capacity) {
-+			ret = false;
-+			goto out_unlock;
-+		}
-+
-+		if (!btrfs_dev_set_active_zone(device, physical)) {
-+			/* Cannot activate the zone */
-+			ret = false;
-+			goto out_unlock;
-+		}
-+
-+		/* Successfully activated all the zones */
-+		if (i == map->num_stripes - 1)
-+			block_group->zone_is_active = 1;
- 
--	/* Successfully activated all the zones */
--	block_group->zone_is_active = 1;
- 
++	physical = kcalloc(map->num_stripes, sizeof(*physical), GFP_NOFS);
++	if (!physical) {
++		ret = -ENOMEM;
++		goto out;
 +	}
- 	spin_unlock(&block_group->lock);
++
+ 	active = bitmap_zalloc(map->num_stripes, GFP_NOFS);
+ 	if (!active) {
+ 		ret = -ENOMEM;
+@@ -1277,14 +1283,14 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		int dev_replace_is_ongoing = 0;
  
--	/* For the active block group list */
--	btrfs_get_block_group(block_group);
-+	if (block_group->zone_is_active) {
-+		/* For the active block group list */
-+		btrfs_get_block_group(block_group);
+ 		device = map->stripes[i].dev;
+-		physical = map->stripes[i].physical;
++		physical[i] = map->stripes[i].physical;
  
--	spin_lock(&fs_info->zone_active_bgs_lock);
--	ASSERT(list_empty(&block_group->active_bg_list));
--	list_add_tail(&block_group->active_bg_list, &fs_info->zone_active_bgs);
--	spin_unlock(&fs_info->zone_active_bgs_lock);
-+		spin_lock(&fs_info->zone_active_bgs_lock);
-+		list_add_tail(&block_group->active_bg_list,
-+			      &fs_info->zone_active_bgs);
-+		spin_unlock(&fs_info->zone_active_bgs_lock);
-+	}
+ 		if (device->bdev == NULL) {
+ 			alloc_offsets[i] = WP_MISSING_DEV;
+ 			continue;
+ 		}
  
- 	return true;
+-		is_sequential = btrfs_dev_is_sequential(device, physical);
++		is_sequential = btrfs_dev_is_sequential(device, physical[i]);
+ 		if (is_sequential)
+ 			num_sequential++;
+ 		else
+@@ -1299,21 +1305,21 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		 * This zone will be used for allocation, so mark this zone
+ 		 * non-empty.
+ 		 */
+-		btrfs_dev_clear_zone_empty(device, physical);
++		btrfs_dev_clear_zone_empty(device, physical[i]);
  
+ 		down_read(&dev_replace->rwsem);
+ 		dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(dev_replace);
+ 		if (dev_replace_is_ongoing && dev_replace->tgtdev != NULL)
+-			btrfs_dev_clear_zone_empty(dev_replace->tgtdev, physical);
++			btrfs_dev_clear_zone_empty(dev_replace->tgtdev, physical[i]);
+ 		up_read(&dev_replace->rwsem);
+ 
+ 		/*
+ 		 * The group is mapped to a sequential zone. Get the zone write
+ 		 * pointer to determine the allocation offset within the zone.
+ 		 */
+-		WARN_ON(!IS_ALIGNED(physical, fs_info->zone_size));
++		WARN_ON(!IS_ALIGNED(physical[i], fs_info->zone_size));
+ 		nofs_flag = memalloc_nofs_save();
+-		ret = btrfs_get_dev_zone(device, physical, &zone);
++		ret = btrfs_get_dev_zone(device, physical[i], &zone);
+ 		memalloc_nofs_restore(nofs_flag);
+ 		if (ret == -EIO || ret == -EOPNOTSUPP) {
+ 			ret = 0;
+@@ -1339,7 +1345,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		case BLK_ZONE_COND_READONLY:
+ 			btrfs_err(fs_info,
+ 		"zoned: offline/readonly zone %llu on device %s (devid %llu)",
+-				  physical >> device->zone_info->zone_size_shift,
++				  physical[i] >> device->zone_info->zone_size_shift,
+ 				  rcu_str_deref(device->name), device->devid);
+ 			alloc_offsets[i] = WP_MISSING_DEV;
+ 			break;
+@@ -1404,7 +1410,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		if (alloc_offsets[0] == WP_MISSING_DEV) {
+ 			btrfs_err(fs_info,
+ 			"zoned: cannot recover write pointer for zone %llu",
+-				physical);
++				physical[0]);
+ 			ret = -EIO;
+ 			goto out;
+ 		}
+@@ -1465,6 +1471,7 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		cache->physical_map = NULL;
+ 	}
+ 	bitmap_free(active);
++	kfree(physical);
+ 	kfree(caps);
+ 	kfree(alloc_offsets);
+ 	free_extent_map(em);
 -- 
 2.31.1
 

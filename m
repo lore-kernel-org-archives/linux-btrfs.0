@@ -2,113 +2,179 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55B00C5AC75
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Jan 2022 23:29:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7B4BC3525A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 00:59:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234784AbiAYX3h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Jan 2022 18:29:37 -0500
-Received: from mout.gmx.net ([212.227.17.20]:53167 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S234780AbiAYX3g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Jan 2022 18:29:36 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1643153369;
-        bh=AUq1IcR0HBrC2X36s1GtCc+auNv60VQqrXMTMnbTORY=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=jznmwCYrClSgpfUf5plvyGfICAWfTke5iMfmYS08MGoBQELKMZfnDKt3h1iEAcWfy
-         Ap8JrrE/fDo3rx9ADpfLhJ/j50QyajUlet2XLA/L2Zvxk8R0DPPFNEdmCNx3hl7c1y
-         fnpA9wUTDaRArhfu/aTcSIm3c2TjHpI7OmHuqp7k=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MbRfl-1mfeL32t7B-00bpSG; Wed, 26
- Jan 2022 00:29:29 +0100
-Message-ID: <9e8e325e-2a3b-0a6d-7df0-56ff0f526325@gmx.com>
-Date:   Wed, 26 Jan 2022 07:29:25 +0800
+        id S235469AbiAZA7L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 25 Jan 2022 19:59:11 -0500
+Received: from smtp-out1.suse.de ([195.135.220.28]:51892 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234910AbiAZA7K (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 25 Jan 2022 19:59:10 -0500
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 0C2F621122
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jan 2022 00:59:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1643158749; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=vxuxrwFizSCtowF8HPPpCs6xQ5QeSd0VtpH6bXDH/eg=;
+        b=AXtRESNcamJosTIhlYFKPZLz1VDUcvsaD1S7YvQH36TkarE3PnMDFTiawWDqkGGBCutHrY
+        4S3Jeg8124Y6sQoL1VzAGDH+gbf4AKQa5yudpLuQ4bYjT0Dn+Qodf+EFfDDlXv4ovk8dmL
+        yWrp5iftmICAAqb9MHSZTxvrTScD+0E=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5E338133F5
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jan 2022 00:59:08 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id doEgCtyc8GH7BwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jan 2022 00:59:08 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 1/3] btrfs: defrag: don't try to merge regular extents with preallocated extents
+Date:   Wed, 26 Jan 2022 08:58:48 +0800
+Message-Id: <20220126005850.14729-1-wqu@suse.com>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
-Subject: Re: Massive I/O usage from btrfs-cleaner after upgrading to 5.16
-Content-Language: en-US
-To:     =?UTF-8?Q?Fran=c3=a7ois-Xavier_Thomas?= <fx.thomas@gmail.com>
-Cc:     Filipe Manana <fdmanana@kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <wqu@suse.com>
-References: <CAEwRaO4y3PPPUdwYjNDoB9m9CLzfd3DFFk2iK1X6OyyEWG5-mg@mail.gmail.com>
- <CAEwRaO7LpG+KBYRgB4MGx9td5PO6JvFWpKbyKsHDB=7LKMmAJg@mail.gmail.com>
- <CAL3q7H7UvBzw998MW1wxxBo+EPCePVikNdG-rT1Zs0Guo71beQ@mail.gmail.com>
- <CAEwRaO4PVvGOi86jvY7aBXMMgwMfP0tD3u8-8fxkgRD0wBjVQg@mail.gmail.com>
- <CAL3q7H5SGAYSFU43ceUAAowuR8RxQ6ZN_3ZyL+R-Gn07xs7w_Q@mail.gmail.com>
- <CAEwRaO6CAjfH-qtt9D9NiH2hh4KFTSL-xCvdVZr+UXKe6k=jOA@mail.gmail.com>
- <CAL3q7H7xfcUk_DXEfdsnGX8dWLDsSAPeAugoeSw3tah476xCBQ@mail.gmail.com>
- <CAEwRaO4Doi4Vk4+SU2GxE7JVV5YuqXXU_cw7DY9wQrMnr9umdA@mail.gmail.com>
- <CAL3q7H4ji1B7zn4=mP4=891XfokkVyOaaqW3dCmUH6uVGjgkjg@mail.gmail.com>
- <CAEwRaO7cA3bbYMSCoYQ2gqaeJBSes5EBok5Oon-YOm7EQ8JOhw@mail.gmail.com>
- <7802ff58-d08b-76d4-fcc7-c5d15d798b3b@gmx.com>
- <CAEwRaO58oCzY4GjU3gCSru3Gq02GvGSdkg5hPwCKMwYcZ+cM2Q@mail.gmail.com>
- <c88c1438-ebcf-a652-1940-4daa4ee53be9@gmx.com>
- <CAEwRaO6ogPZKU3pcKac2kMqpvwDRX4eCUnFj0_OxTndPF2Be_w@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <CAEwRaO6ogPZKU3pcKac2kMqpvwDRX4eCUnFj0_OxTndPF2Be_w@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:9Z9IA5sjFvYkCri5LGDKGY0A7PZEaEVPjQGzdNAe4dkxrFtw9hs
- 557K239hxXDTlhKXvFY81+nXWLmnhcIormtTrfJb/h8RXfzyuC5CoqEQhgG95WPaz5H8g5r
- QpjMyLa+fsbXHPdk2c5yK9Nr0KHM+ccBvFKI16sOSfUrGdbibdggmvPWy0gstr6kMXN/N1t
- BHcNhr0RtmyD99UUSOrxA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:JHqqhMeAPMU=:c2njtjLZk1LzC4yGLclDlO
- 60YPxWUdu8uV6S5++Vm9GJ8Tb8bvdHV37NjuRPpSzdqJkhRc8k+5CY5+J7sIhY+xfJh0H/5wv
- TwciT7Ont+xmMmX/KfoSB09vQwmJnLUITXf7mgYqwaklyDG9SlpGLzV3SPlJ6SzSveyoiOOT+
- nkSNYl9o+nLIt+XDIdRi9Jx/K7UpTxuzN/hTDRz2wtsDBANULGBLcsX8Tjj782ZRFvo4VKkMD
- fSr6YYuQdHgr7sr3bH4YIK7KcDG9hNZtqxBrcHEQfRC6zlmuJnctAzFx07POs5W1RQxJHdz/u
- o/IabOb6z60fKyh8FWqBViUFLN6jhdKrwX05kwIv4n6KM6SNLYQgBxviwCZXmSwsV2dN5LrjF
- SbqBOFhZNHaoPzjUeoJpbEWaI/IsBpeqn1g3/HdlXzslk+e9efHsw6/9HyIRo0vJermUUVRUs
- jLqqYBnge+q15QqEDQj4F2ZjgxHyCHj1FiyguD89FBnwqe/NEVBmYOCdqEXen5M0XwOt+e6OI
- CsW0CH8Xq895Yq443C9R0xYgri1U8Sxyi6Iq+l29f1H90T4N6ivFQA/uRCBlHWpgo1ErngW10
- 99y2+oVB7nr1gM8b6vDxvDkg4uOpoL2li1C740Q/4xJoroJqtj2y9SJ1vvFjrptVqJRojmVgV
- rdgbT79z63RZDExDkTzBdo1ENzqu1SmJug7mGrB9wEEnqNrNDqlLHvTjqwU8XJLTG8iGqymDO
- IqjkZ+DClwnJyfMnUz5aDSXakQP55iAmhGS6NzNEJMG7Aw4GuM6CVl7u7ZETfMPv9z0+PGWeE
- stH8YxN1yxeeFqec09BYvO2hvfx8+QXADZWxOylkY5UMfJfqu5bnJM+ZSgbxGsX2XdZ1/VpOW
- BQLqfF/ByefvsjNO9LlC/5cG7BwSOuBY6eFaa0aJmyZrN4DOOilzBwToy5XDps1i+isYgQ5aU
- icw8n1QbDbD0wR7yagd6heyz4o+o/CLzSNul5XMG510AHBzOnin43fTXWIhfDfYmsJX6jcpFW
- l3cUy9jpauPtuzvFvMZdjdtYnIE5gso37aKLK74pr9MpR8ToW8CMP6KIKFqQynd6pjgPoOX5z
- PmlD4pJhr7kyFk=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+[BUG]
+With older kernels (before v5.16), btrfs will defrag preallocated extents.
+While with newer kernels (v5.16 and newer) btrfs will not defrag
+preallocated extents, but it will defrag the extent just before the
+preallocated extent, even it's just a single sector.
 
+This can be exposed by the following small script:
 
-On 2022/1/26 04:00, Fran=C3=A7ois-Xavier Thomas wrote:
-> Hi,
->
->>> Mind to test the latest two patches, which still needs the first 6 pat=
-ches:
->>
->> Gotcha, I'll test the following stack tomorrow, omitting patch 7 from
->> Filipe (hopefully the filenames are descriptive enough):
->>
->> 1-btrfs-fix-too-long-loop-when-defragging-a-1-byte-file.patch
->> 2-v2-btrfs-defrag-fix-the-wrong-number-of-defragged-sectors.patch
->> 3-btrfs-defrag-properly-update-range--start-for-autodefrag.patch
->> 4-btrfs-fix-deadlock-when-reserving-space-during-defrag.patch
->> 5-btrfs-add-back-missing-dirty-page-rate-limiting-to-defrag.patch
->> 6-btrfs-update-writeback-index-when-starting-defrag.patch
->> 7-btrfs-defrag-don-t-try-to-merge-regular-extents-with-preallocated-ext=
-ents.patch
->> 8-RFC-btrfs-defrag-abort-the-whole-cluster-if-there-is-any-hole-in-the-=
-range.patch
->
-> After testing this one immediately reduces I/O to the 5.15 baseline of
-> a few 10s of ops/s,
-> so your hypothesis does seem correct.
+	mkfs.btrfs -f $dev > /dev/null
 
-Awesome! This indeed proves the major IO is from more extensively defrag
-behavior.
+	mount $dev $mnt
+	xfs_io -f -c "pwrite 0 4k" -c sync -c "falloc 4k 16K" $mnt/file
+	xfs_io -c "fiemap -v" $mnt/file
+	btrfs fi defrag $mnt/file
+	sync
+	xfs_io -c "fiemap -v" $mnt/file
 
-Looking forward for the v5.15 POC to get the final nail.
+The output looks like this on older kernels:
 
-THanks,
-Qu
+/mnt/btrfs/file:
+ EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+   0: [0..7]:          26624..26631         8   0x0
+   1: [8..39]:         26632..26663        32 0x801
+/mnt/btrfs/file:
+ EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+   0: [0..39]:         26664..26703        40   0x1
 
->
-> Fran=C3=A7ois-Xavier
+Which defrags the single sector along with the preallocated extent, and
+replace them with an regular extent into a new location (caused by data
+COW).
+This wastes most of the data IO just for the preallocated range.
+
+On the other hand, v5.16 is slightly better:
+
+/mnt/btrfs/file:
+ EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+   0: [0..7]:          26624..26631         8   0x0
+   1: [8..39]:         26632..26663        32 0x801
+/mnt/btrfs/file:
+ EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
+   0: [0..7]:          26664..26671         8   0x0
+   1: [8..39]:         26632..26663        32 0x801
+
+The preallocated range is not defragged, but the sector before it still
+gets defragged, which has no need for it.
+
+[CAUSE]
+One of the function reused by the old and new behavior is
+defrag_check_next_extent(), it will determine if we should defrag
+current extent by checking the next one.
+
+It only checks if the next extent is a hole or inlined, but it doesn't
+check if it's preallocated.
+
+On the other hand, out of the function, both old and new kernel will
+reject preallocated extents.
+
+Such inconsistent behavior causes above behavior.
+
+[FIX]
+- Also check if next extent is preallocated
+  If so, don't defrag current extent.
+
+- Add comments for each branch why we reject the extent
+
+This will reduce the IO caused by defrag ioctl and autodefrag.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v2:
+- Use @extent_thresh from caller to replace the harded coded threshold
+  Now caller has full control over the extent threshold value.
+
+- Remove the old ambiguous check based on physical address
+  The original check is too specific, only reject extents which are
+  physically adjacent, AND too large.
+  Since we have correct size check now, and the physically adjacent check
+  is not always a win.
+  So remove the old check completely.
+
+v3:
+- Split the @extent_thresh and physicall adjacent check into other
+  patches
+
+- Simplify the comment
+---
+ fs/btrfs/ioctl.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 91ba2efe9792..0d8bfc716e6b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1053,19 +1053,25 @@ static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em,
+ 				     bool locked)
+ {
+ 	struct extent_map *next;
+-	bool ret = true;
++	bool ret = false;
+ 
+ 	/* this is the last extent */
+ 	if (em->start + em->len >= i_size_read(inode))
+-		return false;
++		return ret;
+ 
+ 	next = defrag_lookup_extent(inode, em->start + em->len, locked);
++	/* No more em or hole */
+ 	if (!next || next->block_start >= EXTENT_MAP_LAST_BYTE)
+-		ret = false;
+-	else if ((em->block_start + em->block_len == next->block_start) &&
+-		 (em->block_len > SZ_128K && next->block_len > SZ_128K))
+-		ret = false;
+-
++		goto out;
++	/* Preallocated */
++	if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++		goto out;
++	/* Physically adjacent and large enough */
++	if ((em->block_start + em->block_len == next->block_start) &&
++	    (em->block_len > SZ_128K && next->block_len > SZ_128K))
++		goto out;
++	ret = true;
++out:
+ 	free_extent_map(next);
+ 	return ret;
+ }
+-- 
+2.34.1
+

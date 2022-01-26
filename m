@@ -2,95 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CD65C5DF62
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 00:59:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 945A0C2BA4C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 08:59:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235470AbiAZA7N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 25 Jan 2022 19:59:13 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:45420 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235468AbiAZA7M (ORCPT
+        id S238647AbiAZI7o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Jan 2022 03:59:44 -0500
+Received: from esa6.hgst.iphmx.com ([216.71.154.45]:42046 "EHLO
+        esa6.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230348AbiAZI7n (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 25 Jan 2022 19:59:12 -0500
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 3005D1F396
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jan 2022 00:59:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1643158751; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=p3HbIc1QZlwcEPP/zpbKdgUv8acVnfzPD3G/e3dSIvY=;
-        b=F/4sIoyrhvYdUfpVIXKjGAvvkYsHwFnQMqSMA0HU6P3BcbCxd1XJvtA8bBKVFKjopQMLIy
-        MT/nGFxVDpj/jijy+BRmFQX2yCd+4e/NFO0QgbxjaG6KRyU/D29JJG8IBCJU27cOcDNzlw
-        oqp719jY7FHDkr0hmsuiwfIwr2MZcWg=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8264E133F5
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jan 2022 00:59:10 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id +LgdE96c8GH7BwAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Jan 2022 00:59:10 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs: defrag: remove the physical adjacent extents rejection in defrag_check_next_extent()
-Date:   Wed, 26 Jan 2022 08:58:50 +0800
-Message-Id: <20220126005850.14729-3-wqu@suse.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20220126005850.14729-1-wqu@suse.com>
-References: <20220126005850.14729-1-wqu@suse.com>
+        Wed, 26 Jan 2022 03:59:43 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1643187584; x=1674723584;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=CLtNpb5t3XOROz7kwxmxqfsnZe+aHLTKijLXzbNQCns=;
+  b=XiqdeWnO3QchfMf7nl68B9zTeJFyN6qAPX5kregjh8y64U1qgPE+zWi+
+   5QoMulLfmzV3Wz6veRVcNRmJlCXtX4QY+pd8LtkefGqtqN674YjWOQNRV
+   G9QTgkGNU7GoPwCTDbmPc82CJ6XbtJYa7QzBIn6Hgb3oV6TpQ1siGTg7m
+   YbQ7T66GusHhyl8ccxV8DK+3KykppDY879RflQU52t5jONuRDftxyU56O
+   uJa2zyrwDOow0mc5Q4I1bTqccaGLgcHO55m3xWrLHqKqy6iKVx9zTS9dR
+   tRWE2zG8cK50jXesBguq6mRP242fWejNwvjtnNmUmYhaAQXUQtVebJvEL
+   g==;
+X-IronPort-AV: E=Sophos;i="5.88,317,1635177600"; 
+   d="scan'208";a="192406580"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2022 16:59:44 +0800
+IronPort-SDR: 4fgnGLj1xgsRsGyqI3Yy9Aeo19v3YI5kZXMbiNWjpMcrekNiNxafwDAvQhwZBc8CBY3lAbwVUU
+ 6cBliOt9Vpvt+d5aA595mVTHmNl/IoBmEPs+joLg4xdQ4hkCR0uEQ9QjWmWC29JOHBAsIkECMu
+ 2G9su3pVyvEmsksoUiHFCsWBV9Xua6Grjb+q8fwZf+DvjBgiyLQiMjP2XicNLqgUj7YcShRSZC
+ VypGtsjEocp1gtXaoMcuF0thvRLOR6DU6ULl4nNwKpHjn8fo0rpa2o6gtfeTFhR3yOX4uxwNj8
+ 2ILo+zmXxmpHpNgamZknDFcw
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Jan 2022 00:31:48 -0800
+IronPort-SDR: 1nyqVzBK4hxkJ+End4+oOn/K/UiBLiJg9HtnFnQX/jK71zNul46I3mzChEWo4pKUngHpZIqNdj
+ 3JoQHTyEPQLay6NM7MUOrCzLdP489kmsxteciP6g7cDHYdrHJvC3IvyQIGqYhMP4N+X3nBbg8V
+ HunIvSbXace5G5MWoD91YTjOE3GDZAWu1U7/bezO1wemKZK/OQOfg5bErian6j5iieEGKP8ixj
+ YIU/Ir3LPWJY26SENBUIFPBIoQeUzQrkc5L5582O416O4U/HL8ba/pkfiRq2nnVEBq7WWpCDAF
+ EQc=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
+  by uls-op-cesaip02.wdc.com with ESMTP; 26 Jan 2022 00:59:43 -0800
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     David Sterba <dsterba@suse.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/4] btrfs: implement metadata DUP for zoned mode
+Date:   Wed, 26 Jan 2022 00:59:29 -0800
+Message-Id: <cover.1643185812.git.johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.31.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is a rejection for physically adjacent extents in
-defrag_check_next_extent() from the very beginning.
+Btrfs' default block-group profile for metadata on rotating devices has been
+DUP for a long time. Recently the default also changed for non-rotating
+devices.
 
-The check will reject physically adjacent extents which are also large
-enough.
+Technically, there is no reason why btrfs on zoned devices can't use DUP for
+metadata as well. All I/O to metadata block-groups is serialized via the
+zoned_meta_io_lock and written with regular REQ_OP_WRITE operations. Therefore
+reordering due to REQ_OP_ZONE_APPEND cannot happen on metadata (as opposed to
+data).
 
-The extent size threshold check is now a generic check, and the
-benefit of rejecting physically adjacent extents is unsure.
+The first three patches lay the groundwork by making sure zoned btrfs can work
+with more than one stripe and the last patch then implements DUP on metadata
+block groups in zoned btrfs.
 
-Sure physically adjacent extents means no extra seek time, thus
-defragging them may not bring much help.
+Johannes Thumshirn (4):
+  btrfs: zoned: make zone activation multi stripe capable
+  btrfs: zoned: make zone finishing multi stripe capable
+  btrfs: zoned: prepare for allowing DUP on zoned
+  btrfs: zoned: allow DUP on meta-data block groups
 
-On the other hand, btrfs also benefits from reduced number of extents
-(which can reduce the size of extent tree, thus reduce the mount time).
+ fs/btrfs/zoned.c | 162 ++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 105 insertions(+), 57 deletions(-)
 
-So such rejection is not a full win.
-
-Remove such check, and policy on which extents should be defragged is
-mostly on @extent_thresh and @newer_than parameters.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/ioctl.c | 3 ---
- 1 file changed, 3 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2911df12fc48..0929d08bb378 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1069,9 +1069,6 @@ static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em,
- 	/* Extent is already large enough */
- 	if (next->len >= extent_thresh)
- 		goto out;
--	/* Physically adjacent */
--	if ((em->block_start + em->block_len == next->block_start))
--		goto out;
- 	ret = true;
- out:
- 	free_extent_map(next);
 -- 
-2.34.1
+2.31.1
 

@@ -2,55 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35F78C28CF5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 13:46:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DCAAC28CF5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Jan 2022 13:46:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241281AbiAZNq3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Jan 2022 08:46:29 -0500
+        id S235411AbiAZNqa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Jan 2022 08:46:30 -0500
 Received: from esa4.hgst.iphmx.com ([216.71.154.42]:46304 "EHLO
         esa4.hgst.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240643AbiAZNq2 (ORCPT
+        with ESMTP id S241290AbiAZNq3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Jan 2022 08:46:28 -0500
+        Wed, 26 Jan 2022 08:46:29 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1643204788; x=1674740788;
+  t=1643204789; x=1674740789;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=3sC7Vc10YDRV+Tyq4v+r5wxd/11qhsQd0P2aO8FBxEM=;
-  b=kTLTA382aJqghxmWhr+qX4qL7hWXi84QQwhtb9PMnCjVHlrYac+tzMDV
-   sgpBYnllNwNDGiiaCKikpqGlSYfYnKqbeexBCv4ZINupBpu+gefD1u+FX
-   pHaNDvkWHyFaJIYBRrNwNcYvOTyL/iw8nhDI+kdGWP7HfZnmXe5alfBDx
-   vgtyqGKfYDs04OVdUtX7uISqBASpeTNGOAMzHOSsSEPr032kc+lhFkI1Q
-   YzQyjiMKx7rtapr2AdHczyq+01GoKozmsfH/Vl7UImw/sNRLhpbCep9E+
-   1Jzqo5Jxn6mdtKmQuTSwajtzzJJ0hPz3hyPtbTiHKQrcadByurFkRoNih
-   Q==;
+  bh=8UPbNbk6XbOAxMUR6I7dXmX0UY6SHbv19zSTb0V2fBQ=;
+  b=PQdudgH44RO33P+OzyVN+AEkGrqMVTGxukxp0iHvvPvtTasx3hBdQ4bN
+   UwJZtUxqDWy8opuBOuzrkXgrSOIJst+/m35IXmwH/4U5h1xwa3CCvhMxs
+   +41tKmrnOfsg5ymDdGfYfBd7uuPOlH6kPJ3ItCdua2S7KuSHoygMGERYk
+   gR4KMQTJiUekxIc/TRWzLHT1lqaRnjvqsKpVWTa5++fWxmcJmBX+v8qGf
+   UZL1U6jj+aoGnwtlnrDybv6jDftUxF9nFPq39e6z0FgETvQlP1UKQxLxC
+   aDlGqMFKqNFFya/Nozu2yG81VOOzIPJD/4jmGuVHoYEQk2Z214ewW3G6b
+   g==;
 X-IronPort-AV: E=Sophos;i="5.88,318,1635177600"; 
-   d="scan'208";a="190373106"
+   d="scan'208";a="190373110"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2022 21:46:27 +0800
-IronPort-SDR: WNmPnvjmzOo0AcgLnlZWyJ0VhYq9IlpHveTjZHgbKXlELfYrmri1qvPhlE4DWFURFTO/VkVK9l
- RI0BatH7fANWpeTHfdAp956/p0o9NZ7+wzKZOfihg7NHfqUvQXDJdos3iwZbk5sVWZK951YWzU
- txmuc9r+Xl/joUt1xzPyuzMvQ7CtOYljRsnyyfUKYn1XQkchPNNHUbxJPAw3QvY6DN/KVhdGWV
- 1sJPyRmpmOPp0c8kdFvKwlpzq8aYD7aWMCfIydNBPQEeUTJH/88JXGcfaVwj+k80LEM1NasUGf
- AmXtdz7L8BnBJ9Gl/W3p/Euu
+  by ob1.hgst.iphmx.com with ESMTP; 26 Jan 2022 21:46:29 +0800
+IronPort-SDR: XXMcqI1OTnnRX/0r1PnsFhdobQJwvhFvzuJ6KAo91pVtyQ6a/Zkv2cJZK00uaO59svxF7tHfoB
+ iC5Z/yQLvyF+Vn5ZuquBHf/Sx83iSXP/e4Fazuu13fAB9tJLW89CymnxaceojkTDHc54U+JHzS
+ g/sgVW+uNOisv8/lP9pAsTphiwXd/OvsdtVYaZ6TD2knDqkhKuPOgj2bxd+QldZ/eEbJFWANoF
+ iij4dcWNWLGPbMQRL2FyuF7w3HgFvbxTg1tsq6GvxmCLNtEtsTughIAIOPUStuV1Mf1+35H6ys
+ u/AquL2pMARNblJr+RR774FI
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Jan 2022 05:19:47 -0800
-IronPort-SDR: 1orOCN/uYm0czh86IOghAxGT6qDV0v3MrSDw/2fq2iXlDguhLH9nzNKYiGYqY7CHuvCWvJ/BM9
- ZQ/1uu5LQrKV2KGbysf45sqTQ3o/Ef9vZ9iBPV1l8CkbVDSZpCaW0A/UOqsL5oj5SyaQ1GyUpi
- 8N8l9a3iEXnFfKKcms/RZB7un07WEhknVAKAQiEjFv/INI99nR9JBIngZvewy3xR5gp50VqW0G
- tkPh9JjTH5Iz33OI3opAzXQnp9wyPiOJI58IIKxh3E+Scz4yFj3mjbJdXteb91S1AbrGCwTh2V
- Kws=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Jan 2022 05:19:49 -0800
+IronPort-SDR: ufe1au6SYi7Bd/dco99rnDEAG7rRNMzc1DNpyN2xoKV+RHYkNZ1TBoOWek6yn0CqNzO8cELVq0
+ hn2MzpGr+zGOqCd6Gi4BLmc/cpo90SvUglAK8hZWpEJLYUyDL9lzt23/ygRnLnKSCYEN1eE1MF
+ wmvrTsYraNzHo/R7cWIP1EX2qKAzetyhEm+wn6iavEBndZwbpKwVWEgswAyVmtC+cjEcXA1VHj
+ EgPn5rE0i4G/haJ33RQ+aP1SrgAZoS92ksgEkKVaFHuRk05y+PQsWUCi1n9b8OTS2Y//FFw5Ug
+ co0=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip02.wdc.com with ESMTP; 26 Jan 2022 05:46:28 -0800
+  by uls-op-cesaip02.wdc.com with ESMTP; 26 Jan 2022 05:46:29 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/4] btrfs: zoned: make zone finishing multi stripe capable
-Date:   Wed, 26 Jan 2022 05:46:21 -0800
-Message-Id: <33664c5883e87e2c989e1a87ae600ea44a8f37a1.1643204608.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH v2 4/4] btrfs: zoned: allow DUP on meta-data block groups
+Date:   Wed, 26 Jan 2022 05:46:23 -0800
+Message-Id: <971408f1ca16bdfd0af937b2fe7d8fcac6e61372.1643204608.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <cover.1643204608.git.johannes.thumshirn@wdc.com>
 References: <cover.1643204608.git.johannes.thumshirn@wdc.com>
@@ -60,94 +60,70 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently finishing of a zone only works if the block group isn't
-spanning more than one zone.
+Allow creating or reading block-groups on a zoned device with DUP as a
+meta-data profile.
 
-This limitation is purely artificial and can be easily expanded to block
-groups being places across multiple zones.
+This works because we're using the zoned_meta_io_lock and REQ_OP_WRITE
+operations for meta-data on zoned btrfs, so all writes to meta-data zones
+are aligned to the zone's write-pointer.
 
-This is a preparation for allowing DUP and later more complex block-group
-profiles on zoned btrfs.
+Upon loading of the block-group, it is ensured both zones do have the same
+zone capacity and write-pointer offsets, so no extra machinery is needed
+to keep the write-pointers in sync for the meta-data zones. If this
+prerequisite is not met, loading of the block-group is refused.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/zoned.c | 46 ++++++++++++++++++++++++----------------------
- 1 file changed, 24 insertions(+), 22 deletions(-)
+ fs/btrfs/zoned.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index e3d198405d39..987d2456d398 100644
+index 4f6f7afaa5a2..3aad1970ee43 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -1845,19 +1845,12 @@ int btrfs_zone_finish(struct btrfs_block_group *block_group)
- 	struct btrfs_device *device;
- 	u64 physical;
- 	int ret = 0;
-+	int i;
- 
- 	if (!btrfs_is_zoned(fs_info))
- 		return 0;
- 
- 	map = block_group->physical_map;
--	/* Currently support SINGLE profile only */
--	ASSERT(map->num_stripes == 1);
--
--	device = map->stripes[0].dev;
--	physical = map->stripes[0].physical;
--
--	if (device->zone_info->max_active_zones == 0)
--		return 0;
- 
- 	spin_lock(&block_group->lock);
- 	if (!block_group->zone_is_active) {
-@@ -1909,25 +1902,34 @@ int btrfs_zone_finish(struct btrfs_block_group *block_group)
- 	btrfs_clear_data_reloc_bg(block_group);
- 	spin_unlock(&block_group->lock);
- 
--	ret = blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
--			       physical >> SECTOR_SHIFT,
--			       device->zone_info->zone_size >> SECTOR_SHIFT,
--			       GFP_NOFS);
--	btrfs_dec_block_group_ro(block_group);
-+	for (i = 0; i < map->num_stripes; i++) {
-+		device = map->stripes[i].dev;
-+		physical = map->stripes[i].physical;
- 
--	if (!ret) {
--		btrfs_dev_clear_active_zone(device, physical);
-+		if (device->zone_info->max_active_zones == 0)
-+			continue;
- 
--		spin_lock(&fs_info->zone_active_bgs_lock);
--		ASSERT(!list_empty(&block_group->active_bg_list));
--		list_del_init(&block_group->active_bg_list);
--		spin_unlock(&fs_info->zone_active_bgs_lock);
-+		ret = blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
-+				       physical >> SECTOR_SHIFT,
-+				       device->zone_info->zone_size >> SECTOR_SHIFT,
-+				       GFP_NOFS);
-+
-+		if (ret)
-+			return ret;
- 
--		/* For active_bg_list */
--		btrfs_put_block_group(block_group);
-+		btrfs_dev_clear_active_zone(device, physical);
- 	}
-+	btrfs_dec_block_group_ro(block_group);
- 
--	return ret;
-+	spin_lock(&fs_info->zone_active_bgs_lock);
-+	ASSERT(!list_empty(&block_group->active_bg_list));
-+	list_del_init(&block_group->active_bg_list);
-+	spin_unlock(&fs_info->zone_active_bgs_lock);
-+
-+	/* For active_bg_list */
-+	btrfs_put_block_group(block_group);
-+
-+	return 0;
- }
- 
- bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
+@@ -1419,6 +1419,42 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+ 		cache->zone_is_active = test_bit(0, active);
+ 		break;
+ 	case BTRFS_BLOCK_GROUP_DUP:
++		if (map->type & BTRFS_BLOCK_GROUP_DATA) {
++			btrfs_err(fs_info, "zoned: profile DUP not yet supported on data bg");
++			ret = -EINVAL;
++			goto out;
++		}
++		if (alloc_offsets[0] == WP_MISSING_DEV) {
++			btrfs_err(fs_info,
++			"zoned: cannot recover write pointer for zone %llu",
++				physical[0]);
++			ret = -EIO;
++			goto out;
++		}
++		if (alloc_offsets[1] == WP_MISSING_DEV) {
++			btrfs_err(fs_info,
++			"zoned: cannot recover write pointer for zone %llu",
++				physical[1]);
++			ret = -EIO;
++			goto out;
++		}
++		if (alloc_offsets[0] != alloc_offsets[1]) {
++			btrfs_err(fs_info,
++			"zoned: write pointer offset mismatch of zones in DUP profile");
++			ret = -EIO;
++			goto out;
++		}
++		if (test_bit(0, active) != test_bit(1, active)) {
++			if (!btrfs_zone_activate(cache)) {
++				ret = -EIO;
++				goto out;
++			}
++		} else {
++			cache->zone_is_active = test_bit(0, active);
++		}
++		cache->alloc_offset = alloc_offsets[0];
++		cache->zone_capacity = min(caps[0], caps[1]);
++		break;
+ 	case BTRFS_BLOCK_GROUP_RAID1:
+ 	case BTRFS_BLOCK_GROUP_RAID0:
+ 	case BTRFS_BLOCK_GROUP_RAID10:
 -- 
 2.31.1
 

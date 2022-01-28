@@ -2,87 +2,133 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CD7CC433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Jan 2022 11:51:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72C6EC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Jan 2022 11:56:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348235AbiA1LvH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Jan 2022 06:51:07 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33712 "EHLO
+        id S234568AbiA1L4G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Jan 2022 06:56:06 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34924 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348220AbiA1LvE (ORCPT
+        with ESMTP id S230193AbiA1L4F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Jan 2022 06:51:04 -0500
-Received: from bhuna.collabora.co.uk (bhuna.collabora.co.uk [IPv6:2a00:1098:0:82:1000:25:2eeb:e3e3])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5AF05C061714;
-        Fri, 28 Jan 2022 03:51:04 -0800 (PST)
-Received: from [127.0.0.1] (localhost [127.0.0.1])
-        (Authenticated sender: usama.anjum)
-        with ESMTPSA id B03051F45E96
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=collabora.com;
-        s=mail; t=1643370663;
-        bh=ZTfpdFB0k8V5iAKA53Pw1fPeSktMJTlkZU1aFUU3f80=;
-        h=From:To:Cc:Subject:Date:From;
-        b=SppjWrBIUF/AKYyZo9o87cbHJg1MANVp/ahJm1EdatzQNvY5VyKdACl5m41rc5n79
-         io3lGoxcNx1Kq5OoHpuwWjfNPT6HSXbPgxnqilOzRRXq4VSFaRLqDJUPcIHtky242H
-         LyTbtm6vg3xT53vMY2gNASQtckMOHJR6GJIKawlb8g8l1DQB4F/gYy3Mih2IVRmrI6
-         cgJu2Ks1HBq/+nfsjjesm0JWzpDBtxEa0cRKkJ/FKYH3hGaar6+obgPWkat2/9nVoR
-         HhA0ceky/AA4G1/sFS3C5H2vQxOvv0+wTbr5TiBuMYfNQh8M1Po+ZVkq08/FW2JhdU
-         HEiWcTfsUV+Sg==
-From:   Muhammad Usama Anjum <usama.anjum@collabora.com>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
-Cc:     Muhammad Usama Anjum <usama.anjum@collabora.com>,
-        kernel@collabora.com, kernel-janitors@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: Remove dead code
-Date:   Fri, 28 Jan 2022 16:50:27 +0500
-Message-Id: <20220128115027.1170373-1-usama.anjum@collabora.com>
-X-Mailer: git-send-email 2.30.2
+        Fri, 28 Jan 2022 06:56:05 -0500
+Received: from mail-io1-xd2b.google.com (mail-io1-xd2b.google.com [IPv6:2607:f8b0:4864:20::d2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D6DD1C061714
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jan 2022 03:56:05 -0800 (PST)
+Received: by mail-io1-xd2b.google.com with SMTP id y84so7460513iof.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 28 Jan 2022 03:56:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=RKfvz4jNJ8mwGIIXXsmQmNZMkxdJWl9QaUiyu0zD53o=;
+        b=nIkIG0EZNE63XKKMKNQzc5duHXjw2n5WWG6PoPI902+MSPRfJih4QfnAizaF1pynfI
+         4Da02Ik1kzAjOYHktWHY6VtWhI0k/GoVmv28p8Sm79Y07ZH+H9Yr48ZaVzIP4zlOyaOy
+         DLFepcNDgDoUXIPXxKTcIgwuO5f3TP+7o+6P6kakOEekLoDZe+PnFZ8e+xNxDiZq3AU6
+         bpqiaOUFquPYtA55Tk1YdWE+5cV2cLWs1RpFdvwexsZQPG6fU0JCDls38RH3fq0tFd43
+         HkT2m/DXQD48UXBP/WA7nXL5NVmQbLabFT5I8rl1nPHGv5Wm8yF5MqdKtVQa5L+tmYxB
+         Rasw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=RKfvz4jNJ8mwGIIXXsmQmNZMkxdJWl9QaUiyu0zD53o=;
+        b=a0cw4bX+wK1d+LwU99UYlFnLFR3pYthDBB9wNzqiLJ1MlqV/yAjB7adbkxY05I6OTQ
+         /aHUF2/iwphuktMIz13NtolhmxL373keZJDRIFw0ee0TXL/sdxFCjan0OV4kjKlgaPmj
+         OWbytSirwS49FyywmWo0NJ+gn9zu/d1VwPbuwrHufzpJP7kXpd9VKlKRiq84PGqeF87v
+         FUFocFnQx/AzXfDM/2uRWXplb3J+XZbm3cZawrxyMS88XP7Le7PRNKcTM6XJZ1EFEYgg
+         DK2ztEYpL/D5KrYcXzj0S3+DfeLS/yWHty1lcvLOVeRdWrfZu0WH3T49TZBUb0732/3Y
+         Zijw==
+X-Gm-Message-State: AOAM5324ulvGa63L6IX7qoxDX5mnHyydklddmp84LgIx5dWCMCX8nJFw
+        FVfWPXjdKjEJglav5+ODw0EQBW4wlwVPZiJZB8AK6Iek
+X-Google-Smtp-Source: ABdhPJxFfDMH8UfgKNDRUFuYJNMNp8bs59fZUHP5UpPrc8v6lnHoKlyTep4OyomCHBT6yxfqzJoPqvKmUnyJgWsjLO0=
+X-Received: by 2002:a02:7754:: with SMTP id g81mr4210140jac.153.1643370965096;
+ Fri, 28 Jan 2022 03:56:05 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <10e51417-2203-f0a4-2021-86c8511cc367@gmx.com>
+In-Reply-To: <10e51417-2203-f0a4-2021-86c8511cc367@gmx.com>
+From:   Kai Krakow <hurikhan77+btrfs@gmail.com>
+Date:   Fri, 28 Jan 2022 12:55:39 +0100
+Message-ID: <CAMthOuOg8SVYrehoS4VS=Gj4paYyobmqX85bKzGxYcG-2oJBDA@mail.gmail.com>
+Subject: Re: fstab autodegrag with 5.10 & 5.15 kernels, Debian?
+To:     piorunz <piorunz@gmx.com>
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Local variable stop_loop is assigned only once, to a constant value 0,
-making it effectively constant through out its scope. This constant
-variable is guarding deadcode. The two if conditions can never be true.
-Remove the variable and make the logic simple.
+Hi!
 
-Fixes: 585f784357d8 ("btrfs: use scrub_simple_mirror() to handle RAID56 data stripe scrub")
-Signed-off-by: Muhammad Usama Anjum <usama.anjum@collabora.com>
----
- fs/btrfs/scrub.c | 9 +--------
- 1 file changed, 1 insertion(+), 8 deletions(-)
+Am Fr., 28. Jan. 2022 um 08:51 Uhr schrieb piorunz <piorunz@gmx.com>:
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 4baa8e43d585b..26bbe93c3aa3c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3533,7 +3533,6 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	u64 offset;	/* Offset inside the chunk */
- 	u64 stripe_logical;
- 	u64 stripe_end;
--	int stop_loop = 0;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -3652,14 +3651,8 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 		logical += increment;
- 		physical += map->stripe_len;
- 		spin_lock(&sctx->stat_lock);
--		if (stop_loop)
--			sctx->stat.last_physical = map->stripes[stripe_index].physical +
--						   dev_extent_len;
--		else
--			sctx->stat.last_physical = physical;
-+		sctx->stat.last_physical = physical;
- 		spin_unlock(&sctx->stat_lock);
--		if (stop_loop)
--			break;
- 	}
- out:
- 	/* push queued extents */
--- 
-2.30.2
+> Is it safe & recommended to run autodefrag mount option in fstab?
 
+I've tried autodefrag a few times, and usually it caused btrfs to
+explode under some loads (usually databases and VMs), ending in
+invalid tree states, and after reboot the FS was unmountable. This may
+have changed meanwhile (last time I tried was in the 5.10 series).
+YMMV. Run and test your backups.
+
+
+> I am considering two machines here, normal desktop which has Btrfs as
+> /home, and server with VM and other databases also btrfs /home. Both
+> Btrfs RAID10 types. Both are heavily fragmented. I never defragmented
+> them, in fact. I run Debian 11 on server (kernel 5.10) and Debian
+> Testing (kernel 5.15) on desktop.
+
+Database and VM workloads are not well suited for btrfs-cow. I'd
+consider using `chattr +C` on the directories storing such data, then
+backup the contents, purge the directory empty, and restore the
+contents, thus properly recreating the files in nocow mode. This
+allows the databases and VMs to write data in-place. You're losing
+transactional guarantees and checksums but at least for databases,
+this is probably better left to the database itself anyways. For VMs
+it depends, usually the embedded VM filesystem running in the images
+should detect errors properly. That said, qemu qcow2 works very well
+for me even with cow but I disabled compression (`chattr +m`) for the
+images directory ("+m" is supported by recent chattr versions).
+
+
+> Running manual defrag on server machine, like:
+> sudo btrfs filesystem defrag -v -t4G -r /home
+> takes ages and can cause 120 second timeout kernel error in dmesg due to
+> service timeouts. I prefer to autodefrag gradually, overtime, mount
+> option seems to be good for that.
+
+This is probably the worst scenario you can create: forcing
+compression forces extents to be no bigger than 128k, which in turn
+increases IO overhead, and encourages fragmentation a lot. Since you
+are forcing compression, setting a target size of 4G probably does
+nothing, your extents will end up with 128k size.
+
+I also found that depending on your workload, RAID10 may not be
+beneficial at all because IO will always engage all spindles. In a
+multi-process environment, a non-striping mode may be better (e.g.
+RAID1). The high fragmentation would emphasize this bottleneck a lot.
+
+
+> My current fstab mounting:
+>
+> noatime,space_cache=v2,compress-force=zstd:3 0 2
+>
+> Will autodefrag break COW files? Like I copy paste a file and I save
+> space, but defrag with destroy this space saving?
+
+Yes, it will. You could run the bees daemon instead to recombine
+duplicate extents. It usually gives better space savings than forcing
+compression. Using forced compression is probably only useful for
+archive storage, or when every single byte counts.
+
+
+> Also, will autodefrag compress files automatically, as mount option
+> enforces (compress-force=zstd:3)?
+
+It should, but I never tried. Compression is usually only skipped for
+very small extents (when it wouldn't save a block), or for inline
+extents. If you run without forced compression, a heuristic is used
+for whether compressing an extent.
+
+
+Regards,
+Kai

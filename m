@@ -2,153 +2,153 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD5C2C433F5
-	for <linux-btrfs@archiver.kernel.org>; Sat, 29 Jan 2022 16:24:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4ED13C433F5
+	for <linux-btrfs@archiver.kernel.org>; Sat, 29 Jan 2022 16:46:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1352455AbiA2QYu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 29 Jan 2022 11:24:50 -0500
-Received: from mx0b-00069f02.pphosted.com ([205.220.177.32]:32574 "EHLO
+        id S1352772AbiA2Qqd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 29 Jan 2022 11:46:33 -0500
+Received: from mx0b-00069f02.pphosted.com ([205.220.177.32]:60436 "EHLO
         mx0b-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1352436AbiA2QYr (ORCPT
+        by vger.kernel.org with ESMTP id S233791AbiA2Qqc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Jan 2022 11:24:47 -0500
-Received: from pps.filterd (m0246631.ppops.net [127.0.0.1])
-        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20TBGHCn026853;
-        Sat, 29 Jan 2022 16:24:45 GMT
+        Sat, 29 Jan 2022 11:46:32 -0500
+Received: from pps.filterd (m0246632.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20TCJ7J7003801;
+        Sat, 29 Jan 2022 16:46:30 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=message-id : date :
- from : subject : to : references : in-reply-to : content-type :
+ subject : to : references : from : in-reply-to : content-type :
  content-transfer-encoding : mime-version; s=corp-2021-07-09;
- bh=7MZuSmqjW4jD3dfE3cSX/dLdiTaVcaO+zLN/+wYhzuM=;
- b=mrb5x+8FSPc7JjVsBulXvFqnRoc6fIKarJtcNslxGWbh4lcT+1k4telwrmwfFNcgU2S1
- axel5fpC6mQpuLDfA2rEc0VGYzRosGDwrEgED7vWMAjsABMIPb2GXiNVIgqdCAuGViU5
- kz/bSnUfqXNjA64CCYrnBbsRRI7WZ6Ru0KJmdac62SGfV3yyOZu+fWe3+A7ToJ/7a1IS
- UWhY7e1Bv1y6OwPp7d8hgldG/J944lFeOPW0bxeoQD74tYKzwIalOt3VN2ihH+HqQnPU
- Li+295qb8Ypmc4dA6ec66A/IJPtD2aOGTzoJ49NS/3MCJ1dY54ykTiBvNXN84tjtEq0M /w== 
+ bh=MM2JyWEi3IHPkmOAThBenhVxW9TZsPw/9Y5x176887k=;
+ b=DpUWKqk5cGq5e8F+vVEVInmV6JJzdxzNzJQgRHAH+cRRs8mKyLuDIw+uiNQklNkhcXpy
+ QqcJGv6Vw+iN7AKIWlfJ+hpalOaGFULDnKt39U+1kM8JaBaGoS9ZOZrIlvorxr4x5a0d
+ fm7Hzk9ZArE9J3g2syeSavaJ7+u45GMzRNLNjqEoidJmM5C1RjjxVrHREwb4Jm1GlQzF
+ +k0rxdyJ0BsPxo0/S4ZhdUCzL6HPnyD8FBZDCzroTJNdnlY3d/tQlCTUzPlfmIHGg8Ml
+ ieSYq2gIVaVswSZl+AYcvWEC8iXczICH/IZ1oYX6DfElFbbCU0Kid9KJNiuCCiqHh9k8 Ig== 
 Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
-        by mx0b-00069f02.pphosted.com with ESMTP id 3dvvc2rwb8-1
+        by mx0b-00069f02.pphosted.com with ESMTP id 3dvw6ugue6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 29 Jan 2022 16:24:45 +0000
+        Sat, 29 Jan 2022 16:46:29 +0000
 Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
-        by userp3030.oracle.com (8.16.1.2/8.16.1.2) with SMTP id 20TGBEFm055348;
-        Sat, 29 Jan 2022 16:24:44 GMT
-Received: from nam10-dm6-obe.outbound.protection.outlook.com (mail-dm6nam10lp2107.outbound.protection.outlook.com [104.47.58.107])
-        by userp3030.oracle.com with ESMTP id 3dvtptqdys-1
+        by userp3030.oracle.com (8.16.1.2/8.16.1.2) with SMTP id 20TGjDvh120857;
+        Sat, 29 Jan 2022 16:46:28 GMT
+Received: from nam11-co1-obe.outbound.protection.outlook.com (mail-co1nam11lp2175.outbound.protection.outlook.com [104.47.56.175])
+        by userp3030.oracle.com with ESMTP id 3dvtptrbs2-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Sat, 29 Jan 2022 16:24:44 +0000
+        Sat, 29 Jan 2022 16:46:28 +0000
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=ctEYjSK56Cm9YQi3/rf/tx8cypM+63XEcfqUU82fHW3uz+TyxKLAohIxGSAid1DN0GYLWBd/viWsFtrD/rWiFMCaROsapNC8BMd4rES70pTuwJyRNkZY9UcagiWqmLduc/1O9SywPdoy+Q7WshwS9PNJUYSFlXKYPi1Okiq4L214rZf9Q2ddi+UsliADvmIoPyom0mpRKGzMSts5npeDh3ijTVdyScOC00CthSLIyd8Xdus4So/JJSoTW7+BZ67rg2XJjjfd1BWSz7g32Yzo5tNya5yp5yMiaXVYP0MiQI043etc03vS42gyrJJTH6Z7hNWtC6g7c7dtcTycv47jYQ==
+ b=IrgPV+A2OCagZUWaYEvmR4YBJeHFyXQNXxfudI20JitsvN4E+SdwYD6JX6c0TPMMJISbi/dW6wye0UNA9O4XccJGWhVwRB54iQRYLU8Brk36wM2wL6dPJBCNG8uURuVysOSD1Xd9cxnt0DOR/8T96+j3OidpZ8SvdPIA69uCPf1P21LkJnEb93KLqsuL2/VCnq9K2KO57zbRXWfnq3RqZX5csygPkF7ph7tyiXkaJSvoyB/ZqZgNuHcb4v3jJYsD++SS+/6b4fVP8AXcD/Zm2iGV1sotBMfXrOx+4DTFh02K+81FPvvU9o1EO9UsjfmT8dpxUt29Ka/FtH6lv56+hg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=7MZuSmqjW4jD3dfE3cSX/dLdiTaVcaO+zLN/+wYhzuM=;
- b=Yn24pK16tANg05Y28WiVoeCv8POb9pAzAZKiCru384QROj37f8XaeYHe87iFUYUVT0gcvmaXkfvT6D4CHmAC9x+NNTnLEPrTenY0e9reBJbpuZ0uYxnaa0E/VmTLShND1wKg8mKk+wR+WGE8aOaYVBbYwFuWcV0JRN+8Di0jtVbd8vM6295z8xf1sAiOfydxDquAYqlhZdM4dxxtKv4plDJPgWrU8qgqtvDHbUHhkjBGlHR0YO7fTWOnSfXUXi+MsOa6VO9F4EaXBlPY/rhqZqYzXQFpBDoUhayHmYU10OmKZa3JXgycXary+XVjFFVBdPZb13O3+lf9vJ9+V+x2Pg==
+ bh=MM2JyWEi3IHPkmOAThBenhVxW9TZsPw/9Y5x176887k=;
+ b=kWXhg9/IBI4WPZKJAjNwbTxGF35JFZT1K9f2fljZs3XtXEpDKcL/24al10DvkbvFJWFyscGa00xf53XkXXheedWu6c2CbdB6m5FQZ3avSUwPR3xgr73AY/UejaUqRrBVpefU7eXjKJlPihG4FQ/WsZFXlCvsN9vO756ECd0y/RujGNxo/PmdrMz5zAAPzRpT5DfRcjhYV7IOGnwBgypK6BundEr5kVY1R13oOHNFo1pYWu6nEE7VE5e7M5DOGLWlBaZmbOP1CVu54GrKUx9XDBdaEQEGMa1PMFXQ3RWWqmbV736SggiNcElcbN0DobY73IhHb732G2pfGHpA5d9Z0g==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=none; dmarc=none;
  dkim=none; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=7MZuSmqjW4jD3dfE3cSX/dLdiTaVcaO+zLN/+wYhzuM=;
- b=Piwd/6s3GPacnYIbyS8iqU880/CxGgKS4w5zyFinwly69a5+MwuXPLtQASRWkcZ7yq/MwF6YY+IMSNgSfx3ClF5u8aKyqdJGdBVQjAOAscUUeuce0ekZo0960jFj2f4LGb8Gq4KFPSxfD0idt5VLnpRnx2S+dU2w6/d5b8f+14Y=
+ bh=MM2JyWEi3IHPkmOAThBenhVxW9TZsPw/9Y5x176887k=;
+ b=mAO3YiMiDaSIo0CXCdoLQt6dZ+ALZR9yYuxTB9O1c5Y46bu9v7rO8x5LdVu8eqLAtnrXTgR0IQxPkRxbZ5YHkNYMznD/hs050wt6PQFcIlzWU7WEcHDz4PXC4agoihcVf0SGE6kd0XFibVKVC47j8+xDR6aVtECImYAlI2KXX8w=
 Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
- by MWHPR10MB2031.namprd10.prod.outlook.com (2603:10b6:300:10a::12) with
+ by DS7PR10MB5150.namprd10.prod.outlook.com (2603:10b6:5:3a1::21) with
  Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4930.15; Sat, 29 Jan
- 2022 16:24:42 +0000
+ 2022 16:46:25 +0000
 Received: from PH0PR10MB5706.namprd10.prod.outlook.com
  ([fe80::fd17:db7:2d3b:6ec6]) by PH0PR10MB5706.namprd10.prod.outlook.com
  ([fe80::fd17:db7:2d3b:6ec6%7]) with mapi id 15.20.4930.018; Sat, 29 Jan 2022
- 16:24:42 +0000
-Message-ID: <87d61359-ad1a-089d-b78c-63c038e5e26d@oracle.com>
-Date:   Sun, 30 Jan 2022 00:24:33 +0800
+ 16:46:25 +0000
+Message-ID: <08748658-b139-5b41-9008-cbadea76ce5e@oracle.com>
+Date:   Sun, 30 Jan 2022 00:46:16 +0800
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
  Thunderbird/91.5.0
-From:   Anand Jain <anand.jain@oracle.com>
 Subject: Re: [PATCH 2/2] btrfs: create chunk device type aware
+Content-Language: en-US
 To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org
 References: <cover.1642518245.git.anand.jain@oracle.com>
  <4ac12d6661470b18e1145f98c355bc1a93ebf214.1642518245.git.anand.jain@oracle.com>
- <20220126170136.GD14046@twin.jikos.cz>
-Content-Language: en-US
-In-Reply-To: <20220126170136.GD14046@twin.jikos.cz>
+ <20220126173838.GE14046@twin.jikos.cz>
+From:   Anand Jain <anand.jain@oracle.com>
+In-Reply-To: <20220126173838.GE14046@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: SG2PR02CA0113.apcprd02.prod.outlook.com
- (2603:1096:4:92::29) To PH0PR10MB5706.namprd10.prod.outlook.com
+X-ClientProxiedBy: SG2PR01CA0178.apcprd01.prod.exchangelabs.com
+ (2603:1096:4:28::34) To PH0PR10MB5706.namprd10.prod.outlook.com
  (2603:10b6:510:148::10)
 MIME-Version: 1.0
 X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: 70aa2412-eae0-4636-ea52-08d9e343da77
-X-MS-TrafficTypeDiagnostic: MWHPR10MB2031:EE_
-X-Microsoft-Antispam-PRVS: <MWHPR10MB20310E48F8676714EE4E2172E5239@MWHPR10MB2031.namprd10.prod.outlook.com>
-X-MS-Oob-TLC-OOBClassifiers: OLM:9508;
+X-MS-Office365-Filtering-Correlation-Id: 9f69d692-30e8-4d26-2590-08d9e346e368
+X-MS-TrafficTypeDiagnostic: DS7PR10MB5150:EE_
+X-Microsoft-Antispam-PRVS: <DS7PR10MB515015DC5217248D29161FA9E5239@DS7PR10MB5150.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:10000;
 X-MS-Exchange-SenderADCheck: 1
 X-MS-Exchange-AntiSpam-Relay: 0
 X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: cseIe31SyKsbMadQgIvHSANP73BX/KZfRnK8Q8CnGEmq6siY3E94XLpwAUS3HhCTwxw9XVqUjig69NikMjOWFyGdsHcRsU6Pk96uFxbJLiUi2dMDvYOTmiRfi2rK9xu1vvKffszrFarN7Dp5MIkXEw8I1OvqgKtF3l+A2Nh1yCASbIC97nQ5uhcul/VJWMYHpkX1DZ1BsLyuyr79U2EzJsj8+HRSwrLS/Sgip4B1zTcEAPUBZa/nFap+kIIsb/nU+WF0d6bmba65uG0VQzJa19m5x1I8B0M46chcjP8j5PaP41rwWxCTqapjwYkOOw182e8ZKsJDTXchzQue12cUWXfiRV+ZllY6LPksN2CrVWcVTQfgYgMBjvckhe+Uab8dWZboPhmrUqdKmhtvhRJS84MuoW/u9f8WlsPcLvKRhFE2+yasIXL4ilEulRHV3U6jaGpInhNzLPQuPgySJqIiLKumuKbnpUoxXzDD/qm4jKaNyZQXFaecaWzdAzR+MMvCZv+wH9pZz7FtLYfaB5Fb+Kcrm+22WNyCDGuNu41VQNXozyZ/PJe0C8hgmz2SbZ4Jk54KBmJIjjpPJPSOT+bn46OCwTyL5+kL4tp9Yrq9LOuG8w27mO03XaT4NeCawzdl78xYZljNIpOU3j+8NZAm8BU4r8SfkQPfTqb6Uvoc01y9gqXPqEl3mUezCNJaASMlnE+NQg5GCOWaC4+jk6vKUiWhg1eqy3WD+f1s8LRGw1o=
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230001)(366004)(66556008)(66946007)(5660300002)(66476007)(31696002)(8676002)(44832011)(2906002)(8936002)(316002)(38100700002)(36756003)(26005)(6512007)(186003)(86362001)(508600001)(2616005)(31686004)(53546011)(6666004)(83380400001)(6506007)(6486002)(43740500002)(45980500001)(20210929001);DIR:OUT;SFP:1101;
+X-Microsoft-Antispam-Message-Info: d+TuBtjpJanZfqJzXMbGd252vjUPR7kY0dgypQp4v6WfEdcd6kCNJXcYirCO8Y2O8ncqf05dA6iiYTkC7vx7cVh1vbECfu2Cx2CXdnT+tQvN3LwuNbJMB6f/W/zb1DNYaalFVDJ0Va+cV6Gl9IpmLgUwlLneE6ZWdqGZiSGKMhTpiMBNL7diLEFaM+sGtdUvsbRfmLIhexiq870potzke+hSVluwb8m0/Z9BRjsz/1RZYea645EbTyUGxXi+qfIjGTYkN5YA/nC06GsI++zMG3nOTw0Gn0a+UI7jO7pWMWjFeVrlLxvImJbb37cK70Unx20JbhnD3wVXR8EIIN5hF93Sy7mdGrc3vbVnOmmjX2WiKlqS8T52NUuR2SsLBP120dyKsDIJBDi4WOwk6kILzFxYs4EiCNEMCpXkr+58hI6wWiT9AEqLEz8ccSJE7powuI3eN2K0hLUVpK0VRkGBCy+7Zm0VUfffBXWHNj2yASFsTY6792L/+TkI1SKZQH47ZjLhzbmFA/a1Pg3bPuM8EIwLGoOa+vpuo8d/Z8PdaUN/K/bXXl6KJ6eUzdu6DbEZv7UlJQZdSbACRPirf6LyoKRwtR4ufWltaagbbmCo0I1bsFq5AZC9vN5oQofz4xDULQp7xarnVz6jk9xJMIL91KfL2CV/CJqN/gvRwwnt9MVDLeUnrmhee7KlSJogMEgYlMlkmXzhM4iMj+erCvQK97qLKKHHkXgP0r4chk9vU8o=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230001)(366004)(31686004)(53546011)(6666004)(6512007)(6506007)(2906002)(83380400001)(8936002)(508600001)(66946007)(66556008)(66476007)(36756003)(86362001)(5660300002)(2616005)(44832011)(6486002)(31696002)(316002)(186003)(26005)(38100700002)(8676002)(43740500002)(45980500001)(20210929001);DIR:OUT;SFP:1101;
 X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?Y3ZIcXRBcVB3dHRaRUkrQjk5dFNWdjc2WUZ6WkNoNFBQZnhhc0pmSWoxYlRz?=
- =?utf-8?B?ZW1hZDZqcDhMNGoybTV3emo4MnRlRGlkUlpwY2dmaStwN2lCNVdGN0RrcFRB?=
- =?utf-8?B?RXZGWWY5cHUxamZZc29GYVRrVkJtYTdGV2wwS1B1R2tEZjErOU1VNUcrWGc5?=
- =?utf-8?B?U2FLUVRiQTBocGxVRGJmSWh6anEvZlhqTTAxbEd0NmZ4cmlVdGd2STkzaDFt?=
- =?utf-8?B?OTV5RnZJcGx1TkxsWDlDT2ZJbHArVG5GVzNtRTZBd0gvNFhTYkd1VDM1Zi91?=
- =?utf-8?B?Mjhrb2t6OGNYWWM1WFBiSXNvZDQvK08rS3Z0TGI1R2JiMkZpNW1SWnlqakJt?=
- =?utf-8?B?ckl4NGZ4SVB0eWJadHBxQ0dQZzBGa1FpWk9ZRTM3b2tybmlBNmNxNUsyaEd2?=
- =?utf-8?B?eHlJOU5xNTlMMWsyK0xrMFUvc0xWdlpXeFkxSTZvamJDV0ozWnJpWkFuWTJE?=
- =?utf-8?B?VlFuVnFSNTJWQUhjRFlydVFSUjcxVWNNSCtkNVdCa2pwQkRvdzY2VnY2dTcy?=
- =?utf-8?B?U0RiY0dHZFZjYWhsRUlsQ0dyaGRSaHc2THdEUU51Zm1aVlhkU254bVN2cGFN?=
- =?utf-8?B?VlhJTmE3M2dJQ2o4cFRuQlZLZDVFNUJmaUJMMmFNdFZ5N1o1ZmtDdnlLY3Jr?=
- =?utf-8?B?VUlSWjU3RWsxc2o1WEw4NmVQa1dtNkVja3owamE3QnVvMjU3WTM2YmNGbjRI?=
- =?utf-8?B?R1VkNjlwQlZIdjJmQ3NjMEwxRHFpcmtJUllKVXJ6eExUSUNLWXVTaXhuMzNo?=
- =?utf-8?B?enRmS2txeWc2bDl2a3Y2Rk92RG5VN0tFZHdTODB1Q0thQ2pYRmZ2NUozdFZE?=
- =?utf-8?B?ZWpkSDJucXRJR1dtVGNWUW43bXkrRDE4SG1nYW96OGhOejBNNGE1eEo1cHBu?=
- =?utf-8?B?aGQ1cDc5bklJTmI1dGlaNERPMEtaUGdWODhzbkdZVzBNemdMQ1d1OVlCNnVs?=
- =?utf-8?B?dUlLSHJFaDgxM0tlYlRSUjdJMDFVYndlSXBkKy82UWNtOCthZjdkWHRSb3dq?=
- =?utf-8?B?a2tzZjdDRjV4eUZwUHR0aWx4em5IdnBkVnhGVzVPNXpJRnlja09OZmtzeFUy?=
- =?utf-8?B?dnh5UG8waWhvNUcrUlhydWQ2MGdrZnpuOGJaZlZJcitoU09aM1VZTFZIUEU0?=
- =?utf-8?B?UVJFSTZGbUVadWErNkhPczRlcEcweStIcWEvZHoybWRCT1dUSmhuSUlPOHRX?=
- =?utf-8?B?N3Z5bEpQbFhGSEUxbGFuemNJQ0hFOTZ1ZHVkajgrK3JUWXBpSmdBZjFhbEYw?=
- =?utf-8?B?U0lqTjFDOEtCODBrTW8rT3lYRkZXTVpmc0NpYlV4NWd0WW5lalZpTTk5Wldy?=
- =?utf-8?B?NWVoSmJOeExkWmFUdmthMjg4Q25vc2Jqd0tpMllnVEpiWW14RFQ4K29CQVAx?=
- =?utf-8?B?ZjJaTmVpK0x3ZVJLUURwR1dSbjBGa2xWNWsweDVQekRtYmtTWlNYNzBTNVBv?=
- =?utf-8?B?UnBiVUdXME55MTVWWk1ybXRyTWJoS05aNkZPRWt2cW4vOUtVNnFUU0FSeDRa?=
- =?utf-8?B?K2h1dDVCY2JKUGFYT3dTNkx5YnFGWHFDUTlkT05LcnB1ZWMxNCtuL2JqdnpP?=
- =?utf-8?B?bE01bCsvcVIwcFhLeDRiN09KM3NtZlNMNkFLKzdiS3psOE1BMFpHR2k1SlZX?=
- =?utf-8?B?b21ETHR6a1RwMDhiZ2x0NXl3Uk83VUFaYWp6S0NpQTBUY3poVFFZcEdvM1VY?=
- =?utf-8?B?dWFsSk9IRDFnSDdWVVhtd2hZb1dlM2MvT21VUGEzQ3J2U3hBZVVtK1p5OWMx?=
- =?utf-8?B?WHgxL0R0d2lGU0ExbHFraENwS28yaEdEVEtHT1NiSXdaSUpNR0JHQll6UU5J?=
- =?utf-8?B?Z3RqZlZWZForZ1d5b1UzRXNndGoxbXVMMWVtNVhXYzVkL0ZCOWRGRjAzcldq?=
- =?utf-8?B?cTRMYWh0QXFncUVSTlRMZ0JyMW9PTlBvL2RFT3liVUtrblQrNGY4ZkRCcStv?=
- =?utf-8?B?bVV5OXlxekszSFJjdkM4VTNobGVxU2JUZlFFeFA2cmN6cU4zM0duV0FXVUhz?=
- =?utf-8?B?dzV2RXhONHJORUNGZ3dFL3FDOTBibnJGYTNXMzNLak5pZ2NIMWZXMFJaZXZm?=
- =?utf-8?B?Q0pCUTEyeG92c0VzbnNVRmRaZytBYy9oTjFpejZ4WCsyQ0hLOXhHZVZ0andG?=
- =?utf-8?B?YVdXM25QNVhEQU9IY0tjbk9YcDlXNnltZUV1bWprNmo3VmtJV2NCd3lHM0Qz?=
- =?utf-8?Q?i/RXZM1rSSir9AxJwDNg97A=3D?=
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?WmpQOHdyUmlyWkQvaXhzZUdWSkpDM0trOFdNMHlheUhKbjcva2dLaGdjc2ZB?=
+ =?utf-8?B?dEdLTzF2eEtyN3BBUVR1M29pRm42dG8wYmhoMXcxOEhjbm5ocmxkd2thbnhl?=
+ =?utf-8?B?NFh3bWZCOXhQRWE5Ukk0WDVCYW9Gb3U4YzJYQTlJL3F6bHByMlZQYTUzc0dH?=
+ =?utf-8?B?TC9kUkhkMkhVYUthODk5VEFLd0dqbkdkRG9mc0NhZlJQVXJrUm9WWUVBSDMy?=
+ =?utf-8?B?bzdrYkdpR3AzOUpmQXgraDBKUG5ueVJNTW84RHZFTEphbFBwNjZnRWlsYzl2?=
+ =?utf-8?B?aGdyZTVRNEluSisxak5BZkxUZmdtaDRpMXFwNjdodmpvejJSRjFNeWV6dUl6?=
+ =?utf-8?B?cytNdHQxRTEwanh6dnNTY3ZkN2ExTFR0cWNrRG5vUTdDU0N5UXBvbGJqZU9V?=
+ =?utf-8?B?SkQxcTZCZnhKZ3NOWGgyVWJvWUNrZkt0T3hteVQySDBBcGpDRERSL3YrbnJz?=
+ =?utf-8?B?L3N4WVk3Q1Bsb1ZIOVV4YURNYS9XS2c4ZUVhSTdMelJjeUpveUFaQ1djNkl3?=
+ =?utf-8?B?QVhVMHJhNm1OM3BWVWRoNkh2V0RvakFQemI3Ri9LNWw1clIyNGJacVFQWW9u?=
+ =?utf-8?B?SWhia3lTWmdLdjhMUGorcVk3b0pNbS9nK24rbEtERjBtR1NxUUtrWjJmcTJM?=
+ =?utf-8?B?TGNIUTBQQ053TzVpSXBEaU0rQ3hBc2pybUJyam9aUnZwa1BUY3NTVmtVMmJX?=
+ =?utf-8?B?ekNkZTB1MTFzZ093SWJ5bWE1bm1JWnVGcnJYKzA0RnJNYUpWU0VkRWZTdkc5?=
+ =?utf-8?B?MW1wSTFkQk1OeE9ZMlBMSzRnbXQ3UU9PdlNNNHpnZ1hZUWd3eTkvc05KOW00?=
+ =?utf-8?B?b2FSQ291M2tCdWFvOXBVcktVZGZZcTdwbVNMMG9aeXpSQXhDR0NmYzV4NFlO?=
+ =?utf-8?B?c2d1NmtNZnFtU0prUis3RDFVUjlJbFA4UUxPclNaeDVsZ1RCMnZQTGpmbFRM?=
+ =?utf-8?B?K3BpOXhzZ1dnaE1zTEdEczVXMEJZc05GUDR3aDY5a2xkdEIxVGs1d01pVVNM?=
+ =?utf-8?B?OGZPb0lYUEFGdkViclFpbkVwVnRHVmdxUEtGVWEzSzJ0UXM0dG9LYlZHdU9O?=
+ =?utf-8?B?L2I1Q093UGdTZW44VDdaK2hSaGo4MEpsNzhENE4wUjYwS08vOUJpN1lFWTlP?=
+ =?utf-8?B?Y2tJbjk5Mm9oRFpGdGNBQWJGOVRpbWhwTlF5RHNudXIxUmNsVDNtL0tpREtz?=
+ =?utf-8?B?eDZob3pTaGRPYzZrcDBjaGxLa01uMGh3Mk1kSE1TRGw4cFRZdU9BZDRXNENp?=
+ =?utf-8?B?THFrTkc2QzVtVllVN1dqcFlOTkF1dmorZ0lIeEk3SGRhRks4UzUwUGkyb3hl?=
+ =?utf-8?B?cC9hYnhkOFoyUldES01QcU9FQS9tUTlHNW5KWVlRUS9EVlVvR1RMS0NDVXpB?=
+ =?utf-8?B?cys4aXloazZDZjlsK0l5bjcyS2tvR1JVZ3NRUHEzS3VNdTdOS2xjY2ZPMEhU?=
+ =?utf-8?B?c1hvMzFkdGk5UUsxRC8wUDRsNncwZW8vZjB0VlVXbjVuTmRBaWdPaVR6WU8z?=
+ =?utf-8?B?OG96Rkh2SFp3NlF0MG5kNVJybEFlREJObzZ6UnVYQ2NjeWZsS3FCdGQyMEZN?=
+ =?utf-8?B?WjVJTCtBL29EcUtFb3ZNMFpOZXpFTmwxcHk4RkROMnhJbk84blB3QVVKWWRY?=
+ =?utf-8?B?QnVrNzJpTEJBTzM4bnVJYUdvN2drRmNDY2cwaVBvM1lXMEc5b3Z2cFZISi9j?=
+ =?utf-8?B?aTNMc25abkVnMFhyYVdUUE15UnY0M2U1L0g1bHVMY1BKQkk4VHlVcXVIUDFu?=
+ =?utf-8?B?VjBMU29yMU5FL1NqOC82bEFBcjZmYnBKREJBMXJaazMrelh5S2tySjFkaUNE?=
+ =?utf-8?B?TmxQN3VuY2JuRUZYUkZHTVhmUTE0cG96R0Z2VnAzTEw4VzdXMktXdHJoZldM?=
+ =?utf-8?B?b2I3aHl6OGZDYlVLWVJaRGJ5VUFLMm5BVVQ3bFlKZmV6UnFlMnBIZHNJcGt5?=
+ =?utf-8?B?TytlYlZjMU9pU2RQbHpYajhKQVk4YVBUTWMyaHhiUzBvVGRNakxTT1FHYzVq?=
+ =?utf-8?B?Vk9mQUdnTWFWWHRCNE5KT0I2bzdzME9DaHpIR05CcUFyK2dHL1NIMStEalBw?=
+ =?utf-8?B?NGVBaXBIQ2JHWW9BdVBnR1hZTm5NYmI0Z2V4RzNBUGVXT0ZkeUFqbERlVW9h?=
+ =?utf-8?B?eWh6MUJ3UGdFTDlZWmtvd3VaS0FKNWtIb3EvZWE1QmNaMkRLQ3NiTEZETEdQ?=
+ =?utf-8?Q?0rZbMO/zjo9MEDBQRqqihAg=3D?=
 X-OriginatorOrg: oracle.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 70aa2412-eae0-4636-ea52-08d9e343da77
+X-MS-Exchange-CrossTenant-Network-Message-Id: 9f69d692-30e8-4d26-2590-08d9e346e368
 X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 29 Jan 2022 16:24:42.0209
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 29 Jan 2022 16:46:25.4604
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: IbjRCmxF6UJs+t5/N0E2liS6VWCUQXpkxkB6fZC2urIo/VzTCQJWk4PjUgWF63r7p7KjUm+FxF86JqW5DD4+vA==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MWHPR10MB2031
+X-MS-Exchange-CrossTenant-UserPrincipalName: rUJtkI6ZXQmCZl0fHRqHu6PjE8JIYdB8brGqmoceyN/cv0SZ04t1UfdiMzPHOSy7Syp+D2dE0Xv7W6ohfjXejg==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS7PR10MB5150
 X-Proofpoint-Virus-Version: vendor=nai engine=6300 definitions=10242 signatures=673430
 X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 mlxlogscore=999
  adultscore=0 malwarescore=0 bulkscore=0 suspectscore=0 mlxscore=0
  phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2201110000 definitions=main-2201290105
-X-Proofpoint-GUID: xViF-yBmCcsJ5Eu-93ixhHBi7_gnrmGX
-X-Proofpoint-ORIG-GUID: xViF-yBmCcsJ5Eu-93ixhHBi7_gnrmGX
+ engine=8.12.0-2201110000 definitions=main-2201290108
+X-Proofpoint-ORIG-GUID: 4R0OrkSGaDp4yLsANX_CFu1gqD907aC6
+X-Proofpoint-GUID: 4R0OrkSGaDp4yLsANX_CFu1gqD907aC6
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 27/01/2022 01:01, David Sterba wrote:
+On 27/01/2022 01:38, David Sterba wrote:
 > On Tue, Jan 18, 2022 at 11:18:02PM +0800, Anand Jain wrote:
 >> Mixed device types configuration exist. Most commonly, HDD mixed with
 >> SSD/NVME device types. This use case prefers that the data chunk
@@ -157,16 +157,82 @@ On 27/01/2022 01:01, David Sterba wrote:
 >> As of now, in the function gather_device_info() called from
 >> btrfs_create_chunk(), we sort the devices based on unallocated space
 >> only.
->>
+> 
+
+> Yes, and this guarantees maximizing the used space for the raid
+> profiles.
+
+  Oops. Thanks for reminding me of that. More below.
+
 >> After this patch, this function will check for mixed device types. And
 >> will sort the devices based on enum btrfs_device_types. That is, sort if
 >> the allocation type is metadata and reverse-sort if the allocation type
 >> is data.
->>
+> 
+> And this changes the above, because a small fast device can be depleted
+> first.
+
+
+Both sort by size or latency do _not_ help if
+  given_raid.devs_max == 0 (raid0, raid5, raid6) OR given_raid.devs_max 
+== num_devices.
+
+It helps only when given_raid.devs_max != 0 and given_raid.devs_max < 
+num_devices.
+
+Sort by size does not help Single and Dup profiles.
+
+So, if (given_raid.devs_max != 0 && given_raid.devs_max < num_devices) {
+
+Mixed devs types with different sizes if sorted by free size:
+  is pro for  raid1, raid1c3, raid1c4, raid10
+  doesn't matter for single, dup
+
+Mixed devs types with different sizes if sorted by latency:
+  is pro for single and dup
+  is con for raid1, raid1c3, raid1c4, raid10 (depends)
+}
+
+
+So,
+
+If given_raid.devs_max == num_devices we don't need any type of sorting.
+
+If given_raid.devs_max = 0 (raid0, raid5, raid6) we don't need any type 
+of sorting.
+
+And sort devs by latency for Single and Dup profiles only.
+
+For rest of profiles sort devs by size only if given_raid.devs_max < 
+num_devices.
+
+
 >> The advantage of this method is that data/metadata allocation distribution
 >> based on the device type happens automatically without any manual
 >> configuration.
->>
+> 
+> Yeah, but the default behaviour may not be suitable for all users so
+> some policy will have to be done anyway.
+
+  Right. If nothing is configured even when provided then also it should
+  fallback to the default behaviour.
+
+> I vaguely remember some comments regarding mixed setups, along lines
+> that "if there's a fast flash device I'd rather see ENOSPC and either
+> delete files or add more devices than to let everything work but with
+> the risk of storing metadata on the slow devices."
+
+  It entirely depends on the use-case. An option like following will
+  solve it better:
+    mount -o metadata_nospc_on_faster_devs=<use-slower-devs>|<error>
+
+  If metadata_nospc_on_faster_devs=error is preferred then it also
+  implies that data_nospc_on_slower_devs=error.
+
+  Also, the use cases which prefer to use the error option should
+  remember it is difficult to estimate the data/metadata ratio
+  beforehand.
+
 >> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 >> ---
 >>   fs/btrfs/volumes.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
@@ -191,13 +257,6 @@ On 27/01/2022 01:01, David Sterba wrote:
 >> +	struct btrfs_device *dev_b = di_b->dev;
 >> +
 >> +	if (dev_a->dev_type > dev_b->dev_type)
-> 
-> It's strange to see dev_type being compared while the function compares
-> the latency. As pointed in the first patch, this could simply refer to a
-> array of device types sorted by latency.
-> 
-  Agreed. This will change.
-
 >> +		return 1;
 >> +	if (dev_a->dev_type < dev_b->dev_type)
 >> +		return -1;
@@ -205,13 +264,6 @@ On 27/01/2022 01:01, David Sterba wrote:
 >> +}
 >> +
 >> +static int btrfs_cmp_device_rev_latency(const void *a, const void *b)
-> 
-> Regarding the naming, I think we've been using _desc (descending) as
-> suffix for the reverse sort functions, while ascending is the default.
-> 
-
-  Ok. Noted.
-
 >> +{
 >> +	const struct btrfs_device_info *di_a = a;
 >> +	const struct btrfs_device_info *di_b = b;
@@ -223,16 +275,6 @@ On 27/01/2022 01:01, David Sterba wrote:
 >> +	if (dev_a->dev_type < dev_b->dev_type)
 >> +		return 1;
 >> +	return 0;
-> 
-> To avoid code duplication this could be
-> 
-> 	return -btrfs_cmp_device_latency(a, b);
-
-  Oh right. I will do that.
-
-Thanks, Anand
-
-
 >> +}
 >> +
 >>   /*
@@ -254,10 +296,36 @@ Thanks, Anand
 >> +		else
 >> +			sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
 >> +			     btrfs_cmp_device_latency, NULL);
->> +	}
->> +
->>   	return 0;
->>   }
->>   
->> -- 
->> 2.33.1
+> 
+> In case there are mixed devices the sort happens twice and because as
+> implemented in kernel sort() is not stable so even if device have same
+> amount of data they can get reorderd wildly. The remaingin space is
+> still a factor we need to take into account to avoid ENOSPC on the chunk
+> level.
+
+
+I didn't get this part. How about if it is this way:
+
+    if (mixed && metadata && (single || dup)) {
+      ndevs=0
+      pick all non-rotational ndevs++ with free space >= required space
+      if (ndevs == 0) {
+        if (user_option->metadata_nospc_on_faster_devs == error)
+             return -ENOSPC;
+        pick all rotational
+      }
+      sort-by-size-select-top
+    }
+
+    if (mixed && data && (single || dup)) {
+      ndevs=0
+      pick all rotational ndevs++ with free space >= required space
+      if (ndevs == 0) {
+        if (user_option->data_nospc_on_faster_devs == error)
+             return -ENOSPC;
+        pick all non-rotational
+      }
+      sort-by-size-select-top
+    }
+
+Thanks, Anand

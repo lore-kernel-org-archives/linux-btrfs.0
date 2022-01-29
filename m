@@ -2,90 +2,112 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2E9EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 29 Jan 2022 01:38:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF2F8C433F5
+	for <linux-btrfs@archiver.kernel.org>; Sat, 29 Jan 2022 09:53:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1352054AbiA2BiC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Jan 2022 20:38:02 -0500
-Received: from mout.gmx.net ([212.227.17.20]:43193 "EHLO mout.gmx.net"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1352031AbiA2BiB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Jan 2022 20:38:01 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1643420279;
-        bh=u/rqgeDEFx8uiXwQwydneZ5r77Wmdo+/UiufagVrinY=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=VlEz9qQg/EvLhXUVcr5rXkPN+nwGYbQxwkpyW7qdgBOellmZj1x+LgfW+3YZEGThJ
-         XG2pzSnR2BQRNT0sS2CG42aWJXlYqeD6MPCzdT0gzl0tM6CdwPhoyE4MZl9Y32LofQ
-         nPtJ7Cidcv8yW3k43yFidy6QAGTQ2wLybPTFAMuo=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [192.168.1.232] ([86.8.113.40]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MZktj-1mideq2KoR-00Wqjf; Sat, 29
- Jan 2022 02:37:59 +0100
-Message-ID: <14dc3da9-bd0b-48bf-ba1a-6aecd07dc76c@gmx.com>
-Date:   Sat, 29 Jan 2022 01:37:59 +0000
+        id S238478AbiA2JxG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 29 Jan 2022 04:53:06 -0500
+Received: from smtp-34.italiaonline.it ([213.209.10.34]:45813 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S241982AbiA2JxE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sat, 29 Jan 2022 04:53:04 -0500
+Received: from [192.168.1.27] ([78.14.151.50])
+        by smtp-34.iol.local with ESMTPA
+        id DkPlnH6G04gIpDkPlnYlVZ; Sat, 29 Jan 2022 10:53:02 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
+        t=1643449982; bh=NqLVAFJXbIy9aHjBUcIbMppaoMTxNcbVmYiQX0owtxw=;
+        h=From;
+        b=iUFp6nQcG3cslc1yWOez7+tiVsP55fkeAPTNVgX3fF2mrQcr1ES5O1/P+rjiDyFQQ
+         uFUsaLs/B7Y//Q8hvGfmmqNe7NWNkBbIOVNjo++UFGqh8I2ILKxq6Rp3wGsPmMWOYv
+         uM5++od3Xki9er4ho1SuVoNVePSeJuf0udbU0wRXEKrJaiYQ0MqOiXJ5r9Ue/4nf7v
+         p0c5VQBH97bV9kQuG9bjCg/OkNKvGJPfzBQ4Enb+/QlXuifsFeLRbHUhh63tLG1Oho
+         PEn361D/XFGzVR/Rf9zDyWPwpqlLIfT/rydCrqXnnIbSURGbTKBBrM8LJWdWmEzRXc
+         YkMtC51AA63yg==
+X-CNFS-Analysis: v=2.4 cv=d4QwdTvE c=1 sm=1 tr=0 ts=61f50e7e cx=a_exe
+ a=d4nNsk+SGr75ik5id+62uA==:117 a=d4nNsk+SGr75ik5id+62uA==:17
+ a=IkcTkHD0fZMA:10 a=NEAV23lmAAAA:8 a=LK9_5ug4E2jYap8r4NoA:9 a=QEXdDO2ut3YA:10
+Message-ID: <042e75ab-ded2-009a-d9fc-95887c26d4d2@libero.it>
+Date:   Sat, 29 Jan 2022 10:53:00 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
-Subject: Re: fstab autodegrag with 5.10 & 5.15 kernels, Debian?
-Content-Language: en-GB
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Kai Krakow <hurikhan77+btrfs@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <10e51417-2203-f0a4-2021-86c8511cc367@gmx.com>
- <CAMthOuOg8SVYrehoS4VS=Gj4paYyobmqX85bKzGxYcG-2oJBDA@mail.gmail.com>
- <cf0cd0df-7391-adf5-abbc-42dfd1f07129@gmx.com>
- <e2dee101-bcff-a269-e062-710438bded3d@gmx.com>
-From:   piorunz <piorunz@gmx.com>
-In-Reply-To: <e2dee101-bcff-a269-e062-710438bded3d@gmx.com>
+ Thunderbird/91.5.1
+Reply-To: kreijack@inwind.it
+Subject: Re: No space left errors on shutdown with systemd-homed /home dir
+Content-Language: en-US
+To:     Chris Murphy <lists@colorremedies.com>, Boris Burkov <boris@bur.io>
+Cc:     "Apostolos B." <barz621@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        systemd Mailing List <systemd-devel@lists.freedesktop.org>
+References: <9bdd0eb6-4a4f-e168-0fb0-77f4d753ec19@gmail.com>
+ <YfHCLhpkS+t8a8CG@zen> <4263e65e-f585-e7f6-b1aa-04885c0ed662@gmail.com>
+ <YfHXFfHMeqx4MowJ@zen>
+ <CAJCQCtR5ngU8oF6apChzBgFgX1W-9CVcF9kjvgStbkcAq_TsHQ@mail.gmail.com>
+From:   Goffredo Baroncelli <kreijack@libero.it>
+In-Reply-To: <CAJCQCtR5ngU8oF6apChzBgFgX1W-9CVcF9kjvgStbkcAq_TsHQ@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:Tq7z93sd9Zk8sqV37SSEWanzSJ/jxl3dgPvSzWRfh21NY9THSAa
- /iaDPhhC1He4N1/6L15etxXBBeCALqz8JD/B4QALObQUvX7cbLkxnkxGTO/UqkIIVp4UUSz
- WWAIPQ2k/SH1mee3TNLpu5ikzSD0YqhP7n8VkuHVjTmfCzJGtLtMXpnWE0wXVb/76MusXOM
- wqrQOVCbbOA0KolBFMFDA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:8OON4y4zxxQ=:NH45zgC8uiU0/QE24ajlny
- HhOcvvxeyewKFNds8bG76RynseMEPeFkQzQggbQn38cDtkxl1uRve1SD1VwFP6QM+BPkSBDe+
- 2L3AdWgRWREjwMD184I1m3aHaArrkhJtxQXAnBTnuzYko1j629WbiEtAvWnQmYTASPSYuXF4d
- Rb9WoKRiWc+1e6IsEUyogK7Lbhf9GRB7JHVC1ddldfVzIVChjia/Jrn0i8Lf1RMnuG29QLqwX
- kwRi2LCVKdGdeXWZQifRUzsm97x8Nrd5+wX2t+8rzJ9jMmQBtOiyu17dII/x5ls+vBb6/U0fo
- nqpnMwFOZW8gs2WXFN+SM/t6mK7Ip75SoCIrgZeY0L0YtTg0ewqEm9E7/WSrvtSnByHAmrrUi
- 7+DFh4w2hdHQA6vOxyQwdYU7zrgKD4tse52lj/xAR57jbpk1ZfEFnb56CbeV5V6vYLJsky6fs
- Q/oGD8QxICnW6n1/NL3GHs4fA3C51EwHIf9MYQGW+deIHm53RjU2PkvPlApGxxkUHaokhjCpd
- rZJiThYu+kxF9H77UvnRl1hKvRxeDyfwpU/YSaFq0/go23vbi8ViH+WsYp52yVyn67+i/DJEc
- DsgcbLzqZWrssGDSvQrsoqVcg093kCuNm1mVA/hk5wzUJHs/I2fFXRv8i1WPfIInlZZS87BJX
- OyvZ1W8U8gIp6SDtBtFrfwaTqWNke8fBEKyX04HPgIp3IUP4hEAm+vFGmW9gID9q0lszQeUJ2
- 8t/V/KG1WUmuKYAvQDVPftdPsfDjt0Z6NGkr2ryzxTTHUiMfpcyvEn7E+7JGUwDy4oQGfnY1S
- u7cRwDrumH2RDy/ZNxT5ru3Jk605+WSglBC5VWN6G750kuvAqVk8bmxhGDDmi+u5lJJHpKgOx
- eByBhDVoK0skBHNTBDOijBpXznb2CJNKcGHi2h+DcoAAfqg4vSpN0Nqd4NPdqrqVnyXUvmdXo
- 4sY8+qSEjR+2c8+rXCiZfHJ1x+1GHqMigqn3SEL3mL6NQWC5ZYQuNF5e99MqpvPK6mGoh+dQp
- emFpHOcfAIHC5DCkSwylz1g+K4bs0SpS+YBpn84U+9Cp59BsOq+fHwOvIP++ICcnMUCdAtLEQ
- GSerQ9y+Qqncto=
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4xfJoLdzOd8A6MHPkYMVqPYmaHbBc8HM7+lYzQzCxfx11z8IVGLwBB7nNosrLraIHVHr+nxy5jbp3u8ZQwo7hUxNXjtl+aVDj5ziX6ICXKaNN2SJkZVSiX
+ yqIJDBNExOWDf2BfWmqjbZ6BdZS3C3jqviRm4nChlKhZg7kD1MvbebbMhCcGaLEbYB0v5tNWtCcJzF3UVz0r3bAU+PtaKyiNcUdKTJ67SDwUvE8trrLNlaAs
+ AddI9lRXDb2fsYNRO9p5fuKX5v6L11OhhrMOCvNy3EhRXf56Uewp1DQFPcmOS+rUZOnzZc+TY8LsqgZPR2Aqz+O15a8XoPrY5TgVzjihcTE=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 28/01/2022 12:42, Qu Wenruo wrote:
->
-> With -t 128k you may hit the 120s timeout problem less frequently.
+On 27/01/2022 21.48, Chris Murphy wrote:
+> On Wed, Jan 26, 2022 at 4:19 PM Boris Burkov <boris@bur.io> wrote:
+[...]
+> 
+> systemd-homed by default uses btrfs on LUKS on loop mount, with a
+> backing file. On login, it grows the user home file system with some
+> percentage (I think 80%) of the free space of the underlying file
+> system. And on logout, it does both fstrim and shrinks the fs. I don't
+> know why it does both, it seems adequate to do only fstrim on logout
+> to return unused blocks to the underlying file system; and to do an fs
+> resize on login to either grow or shrink the user home file system.
+> 
+> But also, we don't really have a great estimator of the minimum size a
+> file system can be. `btrfs inspect-internal min-dev-size` is pretty
+> broken right now.
+> https://github.com/kdave/btrfs-progs/issues/271
 
-Will do. Thank you.
->
-> Although sometimes you may want to further reduce the value to something
-> like 64K, to reduce the workload.
->
-> I may craft a fix to add cond_resche() inside btrfs_defrag_file() so
-> that can be backported to v5.15, to let the problem to be gone for good.
+I tried the test case, but was unable to get a wrong value. However
+I think that this is due to the fact that btrfs improved the bg reclaiming.
 
-That would be awesome. Please do. Kernel 5.15 is LTS so many people will
-stick with it for a long time to come.
+However tweaking the test case, I was able to trigger the problem (I
+reduced the filesize from 1GB to 256MB, so when some files are
+removed a BG is empty filled)
 
-=2D-
-With kindest regards, Piotr.
 
-=E2=A2=80=E2=A3=B4=E2=A0=BE=E2=A0=BB=E2=A2=B6=E2=A3=A6=E2=A0=80
-=E2=A3=BE=E2=A0=81=E2=A2=A0=E2=A0=92=E2=A0=80=E2=A3=BF=E2=A1=81 Debian - T=
-he universal operating system
-=E2=A2=BF=E2=A1=84=E2=A0=98=E2=A0=B7=E2=A0=9A=E2=A0=8B=E2=A0=80 https://ww=
-w.debian.org/
-=E2=A0=88=E2=A0=B3=E2=A3=84=E2=A0=80=E2=A0=80=E2=A0=80=E2=A0=80
+
+> 
+> I'm not sure if systemd folks would use libbtrfsutil facility to
+> determine the minimum device shrink size? But also even the kernel
+> doesn't have a very good idea of how small a file system can be
+> shrunk. Right now it basically has to just start trying, and does it
+> one block group at a time.
+
+I think that for the systemd uses cases (singled device FS), a simpler
+approach would be:
+
+     fstatfs(fd, &sfs)
+     needed = sfs.f_blocks - sfs.f_bavail;
+     needed *= sfs.f_bsize
+
+     needed = roundup_64(needed, 3*(1024*1024*1024))
+
+Comparing the original systemd-homed code, I made the following changes
+- 1) f_bfree is replaced by f_bavail (which seem to be more consistent to the disk usage; to me it seems to consider also the metadata chunk allocation)
+- 2) the needing value is rounded up of 3GB in order to consider a further 1 data chunk and 2 metadata chunk (DUP))
+
+Comments ?
+
+> 
+> Adding systemd-devel@
+> 
+> 
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

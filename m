@@ -2,105 +2,102 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81B05C433F5
-	for <linux-btrfs@archiver.kernel.org>; Sun, 30 Jan 2022 01:10:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5956C433EF
+	for <linux-btrfs@archiver.kernel.org>; Sun, 30 Jan 2022 09:27:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353631AbiA3BJ7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 29 Jan 2022 20:09:59 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51370 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230206AbiA3BJ6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Jan 2022 20:09:58 -0500
-Received: from mail-pj1-x102f.google.com (mail-pj1-x102f.google.com [IPv6:2607:f8b0:4864:20::102f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82970C061714
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jan 2022 17:09:58 -0800 (PST)
-Received: by mail-pj1-x102f.google.com with SMTP id s61-20020a17090a69c300b001b4d0427ea2so14572952pjj.4
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Jan 2022 17:09:58 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=AwpTIDSEYkFYWmNT8FPsKsZY1G/J5A8A+NXudUgq050=;
-        b=ANxDZUgz6j+kiLyb8y7FU9tcP218tQ2CxjGYETXmMUjuEFinzinZAC+GB/erHP5Iwd
-         iqwpBuwY51aWw/NSX3g7zdKDdMr6L4cuIiTZAKKMla2pFtYHdcsM9QDHVUho1mj/2xqQ
-         HaJbdXIXjWFo3lpdGwtHdEnHOS77wXy+UYEixpgxMiugI/BA0fHo6qEfnWRxNwwmsjtu
-         u4VWkhZsWR4vEPtDGsZewnJKyMqsN2mjoWyOBcbiwAWxbM1aQ7z9ZY5QEPM+yd1Nxtf9
-         QjHhT+5rOMtkpwbQCfd4tbtqNN9Kv9xk09jfMQ0s3vAZ2EKkeLGRzc4dEefD28Xe6H7n
-         CmIg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=AwpTIDSEYkFYWmNT8FPsKsZY1G/J5A8A+NXudUgq050=;
-        b=Ie4a0umLdctg02GSvizCxJ/RTbvXpWKBcyGnOA3W7jlXnzdjuQhA731wjQS7EWO2Rl
-         Rb2vcYXip2mRqDP6BTG2dteYBkal5WDHyxUwWIQJqlHP4gYnJNcl328ASguNTTGYkt0f
-         7C1vkXKEdxbr3RM3byfybd2nu0MiyKZHPCQhiZzFY038Z/BK1C8nNKER7LQcTZdHXiId
-         sXai7hbipAtPhCMdUo9Hig3PV4R71uT7lb1D47u9amuO47YGy8E7GyATE+ha3astRIiV
-         Ftj7HsA8DyeElDdVjB8K9DHfsKs+BPx5L8IG16cP8F8SbWNgMbDReQF1cLL8GnrWi+gM
-         dcwQ==
-X-Gm-Message-State: AOAM533f+n+gbO3UN5bAQ2fByJwSSccqB7Gub9jm/yY4yIYmy6q914ze
-        Oyt7g5KXffuY8Ojq/+qvTwz6KUFad3k=
-X-Google-Smtp-Source: ABdhPJxWMHJc5gg/1Lmskat0/8zO8o28HLGNIfgzd+hSuUZZr48qdY4VtJcmT4hX0nlxijLCaZGswg==
-X-Received: by 2002:a17:90b:3b52:: with SMTP id ot18mr15371038pjb.34.1643504997757;
-        Sat, 29 Jan 2022 17:09:57 -0800 (PST)
-Received: from ryzen.lan ([2601:648:8600:e74::8c6])
-        by smtp.gmail.com with ESMTPSA id 202sm25830943pga.72.2022.01.29.17.09.57
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 29 Jan 2022 17:09:57 -0800 (PST)
-From:   Rosen Penev <rosenp@gmail.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: fix 64-bit mips and powerpc types
-Date:   Sat, 29 Jan 2022 17:09:56 -0800
-Message-Id: <20220130010956.1459147-1-rosenp@gmail.com>
-X-Mailer: git-send-email 2.34.1
+        id S1354450AbiA3J1d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 30 Jan 2022 04:27:33 -0500
+Received: from smtp-32.italiaonline.it ([213.209.10.32]:35693 "EHLO libero.it"
+        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+        id S234034AbiA3J1d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Sun, 30 Jan 2022 04:27:33 -0500
+Received: from [192.168.1.27] ([78.14.151.50])
+        by smtp-32.iol.local with ESMTPA
+        id E6UcnzoHj7xUJE6UcnF9Q5; Sun, 30 Jan 2022 10:27:31 +0100
+x-libjamoibt: 1601
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=inwind.it; s=s2014;
+        t=1643534851; bh=l2qr0Ot+iQOtUxPoHprVFDCZMYw6DpkXjXEuPhpKVGA=;
+        h=From;
+        b=u0ITDkgv5sLTgi2sq3w3nXjjVpr3cRB9M/aJb6vWMuY05mvCcfasj+wULRj1n+pIh
+         jRAiJjMKhCKKRb68RWEYoGEtQ0goQaKIyiU5iNK2Tvvdoc61gMVUqrIisQDr+rsM1G
+         BYFWd59HWzZTZuZWPu8WoYNgS6JE4kshDq99LgCmSTXyG6KNwceAVfr7BZ2G1iRCNr
+         8aqki2miKbdA8rdFul77MCywjnjiZramrcErKLK4hs9ORtqeuxZmlT6uGMieokCxNb
+         psYbUTJSHc7W2YTRb0QqSon4uPMUnthYCPwpscZPI15ZtGQsI6GlEE0JXMaxEW0/6d
+         o/nFkqPSPO0cg==
+X-CNFS-Analysis: v=2.4 cv=cLAlDnSN c=1 sm=1 tr=0 ts=61f65a03 cx=a_exe
+ a=d4nNsk+SGr75ik5id+62uA==:117 a=d4nNsk+SGr75ik5id+62uA==:17
+ a=IkcTkHD0fZMA:10 a=QILv0SivDTG5BuEJCEUA:9 a=QEXdDO2ut3YA:10
+Message-ID: <295c62ca-1864-270f-c1b1-3e5cb8fc58dd@inwind.it>
+Date:   Sun, 30 Jan 2022 10:27:30 +0100
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.1
+Reply-To: kreijack@inwind.it
+Subject: Re: No space left errors on shutdown with systemd-homed /home dir
+Content-Language: en-US
+To:     Chris Murphy <lists@colorremedies.com>
+Cc:     Boris Burkov <boris@bur.io>, "Apostolos B." <barz621@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        systemd Mailing List <systemd-devel@lists.freedesktop.org>
+References: <9bdd0eb6-4a4f-e168-0fb0-77f4d753ec19@gmail.com>
+ <YfHCLhpkS+t8a8CG@zen> <4263e65e-f585-e7f6-b1aa-04885c0ed662@gmail.com>
+ <YfHXFfHMeqx4MowJ@zen>
+ <CAJCQCtR5ngU8oF6apChzBgFgX1W-9CVcF9kjvgStbkcAq_TsHQ@mail.gmail.com>
+ <042e75ab-ded2-009a-d9fc-95887c26d4d2@libero.it>
+ <CAJCQCtQv327wHwsT+j+mq3Fvt2fJwyC7SqFcj_+Ph80OuLKTAw@mail.gmail.com>
+From:   Goffredo Baroncelli <kreijack@inwind.it>
+In-Reply-To: <CAJCQCtQv327wHwsT+j+mq3Fvt2fJwyC7SqFcj_+Ph80OuLKTAw@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-CMAE-Envelope: MS4xfPWN7QxykSe3RNk5zpVs+ZnF5i27KvN9SjXaHRNFDJpi4ioQjmdnjb0Y81wqcCywGc9ya3QVgJS8/gRpwEneG08pfu7/1WDJMq8F7br7I8dsJJoUfCi0
+ SZGcR4oYlUuN2A0hOlVDVzdoJJWEj7P4NFNgb8XpZlm/BomiGGuu5idc5WOMQAMgpYZiSiUaBmH/mnq0oH74kh0VqUzwucYU11Xa8SeoXnmySL+pYSuMkXsN
+ 3UbDd8nbgrBIHJY1TL6kAlMQVi4nE8xAkkhz4Sg3AO0HwiBmBRF3W3GTfgTsswIuCeBYoegKvWMfEGgqfCuutW0S4bfijf3+S39+rXViEoY=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The kernel uses unsigned long specifically for ppc64 and mips64. This
-fixes that.
+On 29/01/2022 19.01, Chris Murphy wrote:
+> On Sat, Jan 29, 2022 at 2:53 AM Goffredo Baroncelli <kreijack@libero.it> wrote:
+>>
+>> I think that for the systemd uses cases (singled device FS), a simpler
+>> approach would be:
+>>
+>>       fstatfs(fd, &sfs)
+>>       needed = sfs.f_blocks - sfs.f_bavail;
+>>       needed *= sfs.f_bsize
+>>
+>>       needed = roundup_64(needed, 3*(1024*1024*1024))
+>>
+>> Comparing the original systemd-homed code, I made the following changes
+>> - 1) f_bfree is replaced by f_bavail (which seem to be more consistent to the disk usage; to me it seems to consider also the metadata chunk allocation)
+>> - 2) the needing value is rounded up of 3GB in order to consider a further 1 data chunk and 2 metadata chunk (DUP))
+>>
+>> Comments ?
+> 
+> I'm still wondering if such a significant shrink is even indicated, in
+> lieu of trim. Isn't it sufficient to just trim on logout, thus
+> returning unused blocks to the underlying filesystem? 
 
-Removed asm/types.h include as it will get included properly later.
+I agree with you. In Fedora 35, and the default is ext4+luks+trim
+which provides the same results. However I remember that in the past the default
+was btrfs+luks+shrunk. I think that something is changed i.
 
-Fixes -Wformat warnings.
+However, I want to provide do the systemd folks a suggestion ho change the code.
+Even a warning like: "it doesn't work that because this, please drop it"
+would be sufficient.
 
-Signed-off-by: Rosen Penev <rosenp@gmail.com>
----
- cmds/receive-dump.c | 1 -
- kerncompat.h        | 4 ++++
- 2 files changed, 4 insertions(+), 1 deletion(-)
+> And then do an
+> fs resize (shrink or grow) as needed on login, so that the user home
+> shows ~80% of the free space in the underlying file system?
+> 
+> homework-luks.c:3407:                                /* Before we
+> shrink, let's trim the file system, so that we need less space on disk
+> during the shrinking */
+> 
+> 
+> 
 
-diff --git a/cmds/receive-dump.c b/cmds/receive-dump.c
-index 47a0a30e..00ad4fd1 100644
---- a/cmds/receive-dump.c
-+++ b/cmds/receive-dump.c
-@@ -31,7 +31,6 @@
- #include <stdlib.h>
- #include <time.h>
- #include <ctype.h>
--#include <asm/types.h>
- #include <uuid/uuid.h>
- #include "common/utils.h"
- #include "cmds/commands.h"
-diff --git a/kerncompat.h b/kerncompat.h
-index 6ca1526e..4b36b45a 100644
---- a/kerncompat.h
-+++ b/kerncompat.h
-@@ -19,6 +19,10 @@
- #ifndef __KERNCOMPAT_H__
- #define __KERNCOMPAT_H__
- 
-+#ifndef __SANE_USERSPACE_TYPES__
-+#define __SANE_USERSPACE_TYPES__	/* For PPC64, to get LL64 types */
-+#endif
-+
- #include <stdio.h>
- #include <stdlib.h>
- #include <errno.h>
+
 -- 
-2.34.1
-
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

@@ -2,133 +2,175 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D643C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Jan 2022 09:41:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2274C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Jan 2022 12:40:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241012AbiAaJlT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Jan 2022 04:41:19 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53086 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238819AbiAaJlS (ORCPT
+        id S1348818AbiAaMkD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Jan 2022 07:40:03 -0500
+Received: from mx0a-00069f02.pphosted.com ([205.220.165.32]:47682 "EHLO
+        mx0a-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S234545AbiAaMkC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jan 2022 04:41:18 -0500
-Received: from mail-wm1-x330.google.com (mail-wm1-x330.google.com [IPv6:2a00:1450:4864:20::330])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DCFA9C061714
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jan 2022 01:41:13 -0800 (PST)
-Received: by mail-wm1-x330.google.com with SMTP id c192so9733032wma.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jan 2022 01:41:13 -0800 (PST)
+        Mon, 31 Jan 2022 07:40:02 -0500
+Received: from pps.filterd (m0246617.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 20VATkEB007212;
+        Mon, 31 Jan 2022 12:39:55 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=date : from : to : cc
+ : subject : message-id : references : content-type : in-reply-to :
+ mime-version; s=corp-2021-07-09;
+ bh=HXcpcfLUwiczsuRwhi0U0spx++F+Zc6oPfEaUgGVuh4=;
+ b=ASDkcKkhNQso8AziRyiYyCo24zK7LFFyfaZ0lqVopwuJQ2M1a244rfbeqVein/F82zL1
+ Clww3yDf8AZpZmr62fKabeDzhsjR8Gxt1kFLWnRICWLK3HT+TiAI1fCY3RazwVT6bBc0
+ yA4tvi3Qla/fc/+TceC5X3Zk8RAyx/ZHBXxjKwznc2gwRF+9jQHTYXcq+6K0KxQrhlj3
+ jRM0aCnw+xfjh4w7BMxwuUXwt0pY4VMO1ZZMS7ij/1TyEQjQoMX8a5wXdzq6LRZFiHKE
+ jcKcdtvsfV6GeTnVFv/aBEyn26CaGmeBgludD9oY2tiW3UF6wtpR+pbLGy3tHbwHJJQG Iw== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by mx0b-00069f02.pphosted.com with ESMTP id 3dvx4uuwm6-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 31 Jan 2022 12:39:55 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.1.2/8.16.1.2) with SMTP id 20VCZJx0164474;
+        Mon, 31 Jan 2022 12:39:53 GMT
+Received: from nam10-dm6-obe.outbound.protection.outlook.com (mail-dm6nam10lp2100.outbound.protection.outlook.com [104.47.58.100])
+        by userp3030.oracle.com with ESMTP id 3dvtpwv324-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 31 Jan 2022 12:39:53 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=FSTaotvWlk4sPQr/MO1lL538/yQWcigAm28sm8DBOWuOHNvLeOrsz+ppC70BUmVi5JFUhrw66EwwqOnOLDMaDUHPkZxChPvxxIUaJk8Nwz/WzxYQvLTsVcDTljzExmcw0Yz//rD3HgKWiYjo+MNQMNS4ij8dEu3NyqHx5qGIF/RehFfrgysCEFQjnGIEl/sQStDUWychMPfTuwovJh/MRQH74eFZP0rVwkw4PpL6JxzJ4kE/zxZ/OPl8u38eI3m48+3q3iJwXJztpv+VE3bZewQ+0Cj7mXLUoOV8hoRn80zjdzQVx9Xf7KBI/VySco4WArdY0ju2JNpwTM4xGFfKdg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=HXcpcfLUwiczsuRwhi0U0spx++F+Zc6oPfEaUgGVuh4=;
+ b=UvKa66RvCSe1E+DOH/UjGqKQ09jOl1jNnXRq1GXh/KEc+kZZXzy3RjNbglsqvYvW/rrNpvL0a0Lyv/1x1JKngb+l1zO//orsJDyjXePisd5Zmqt2rCwLXoBlaXzH7B4w15CyWP5RSc1MynZjGxpaonZ/cFMlKYEYnRyld9cnwDwgG6n8wzYwIJ8MuScu7wIHS5Yoyd2PG7c/l7zvo25Kl4zONr8+nRVFArJ7fUFCh9nVoOdCyZF04smPTKNwjVdTI1qW+/OSQlhRuT5Fy8UNLKp7gqker6bK6UFInPUsAifHvv4XQw781VoJzDe0BlpkJBuZGfvOgcwlKcZNKkPRtA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=none; dmarc=none;
+ dkim=none; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=booksterhq.com; s=gm;
-        h=from:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:in-reply-to
-         :content-transfer-encoding;
-        bh=cFpG1RI2O0G/+DQ4LqsIADlzxk6Q5WcOOBi5Rr8kqj4=;
-        b=NawqTfOd4AYCmGvGq6AtDkob0Ax3FBewwsTXndASHAEg2rp0+DnIp3HxhUU1cwne9T
-         j4Teczp3PVn4packWuDo9sETqUJA075mL5L2wdNatYpguQEIxmDse4No7aX0xKbWIAfj
-         mrwlJ62HDMQ+h0j+qjOcGhwx3Wg+aG20aK16kqwgM5/PAKTv2Tduc9NzY53Puup1WEYc
-         8y+pYAHLK/C98ceYew3Kt+E8JMMs2GgnZzWc8AQGBPtz5S4PmTqm0zqR1NV+vz5yhJua
-         K4IUlH7YiyWYsRbzpviypHbu+p7+iAkY8VVFbfw+8t9CWTvzDREKoRUUmwKy+div4yed
-         trbw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:message-id:date:mime-version:user-agent
-         :subject:content-language:to:cc:references:in-reply-to
-         :content-transfer-encoding;
-        bh=cFpG1RI2O0G/+DQ4LqsIADlzxk6Q5WcOOBi5Rr8kqj4=;
-        b=5RfH4XbcE86A9b6c4FaLgZCRsmABL1a2wDLZ3yFYM3XOOzJRMbaYNfh8Ky5g55SszS
-         +71lsMYGMgHH96vFq+tawzg5xsxFAKgwxz94j/6pfwFg4JKyWQdPICl6yOv0Inbm9bBv
-         ZLkTAFbeGtYiSSG41DH7uKKJpUBJ1qi2h/7Zbv9GMKmFxucUwC1MYwHebnkAdlvaTBHw
-         5DPn7eTDrtSsrfZX//502DB/hfw9zvtaQnFtuebeJewqung3mVEYDwnnI2GBevNKW7Xk
-         EsBfmZ08BJQq/4M0doo4T9poc4mkDj3PB/f6BDNcXQUmowqtywYgpvHkkE2HLWmm6HnJ
-         uIxQ==
-X-Gm-Message-State: AOAM533cTWLj97wKRh5bxNxzHBSXk6iJ6DL9My4949IobO1c4Nx2hDkZ
-        3DDzhX/6u7eIUTEuhtU/JYdrM/pDS26crGG1
-X-Google-Smtp-Source: ABdhPJx3+zkHtuudAxZEdHLWIuuXZz2BAebEFm1+JHKZU6HlrC60Jf3HAFVU+kIdLp9cXkwV8tAbyA==
-X-Received: by 2002:a05:600c:4ed0:: with SMTP id g16mr17857848wmq.19.1643622072530;
-        Mon, 31 Jan 2022 01:41:12 -0800 (PST)
-Received: from [192.168.86.250] (cpc105096-sgyl40-2-0-cust48.18-2.cable.virginm.net. [92.239.42.49])
-        by smtp.gmail.com with ESMTPSA id 44sm11391543wrm.103.2022.01.31.01.41.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 31 Jan 2022 01:41:12 -0800 (PST)
-From:   Colin Guthrie <colin@booksterhq.com>
-X-Google-Original-From: Colin Guthrie <gmane@colin.guthr.ie>
-Message-ID: <367f0891-f286-198b-617c-279dc61a2c3b@colin.guthr.ie>
-Date:   Mon, 31 Jan 2022 09:41:11 +0000
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=HXcpcfLUwiczsuRwhi0U0spx++F+Zc6oPfEaUgGVuh4=;
+ b=GOcIF1IsMX/V4qwacHdKgtzknEdF056uHCb/Namk7TAMYs2Br3QZD88s+zBcCftuseYMkj6vwCqSXKF2oV4HG/q99PFR24LlQi/uOX4/2/8kNItqK8ZBsVGagJNGOZYZ4gPZdYIdVx7XXPBHSyd5nNJSLGCWjltKAm2iSSnCmB0=
+Received: from MWHPR1001MB2365.namprd10.prod.outlook.com
+ (2603:10b6:301:2d::28) by DM6PR10MB3178.namprd10.prod.outlook.com
+ (2603:10b6:5:1a7::30) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4930.19; Mon, 31 Jan
+ 2022 12:39:51 +0000
+Received: from MWHPR1001MB2365.namprd10.prod.outlook.com
+ ([fe80::e5a5:8f49:7ec4:b7b8]) by MWHPR1001MB2365.namprd10.prod.outlook.com
+ ([fe80::e5a5:8f49:7ec4:b7b8%5]) with mapi id 15.20.4930.021; Mon, 31 Jan 2022
+ 12:39:51 +0000
+Date:   Mon, 31 Jan 2022 15:39:30 +0300
+From:   Dan Carpenter <dan.carpenter@oracle.com>
+To:     Muhammad Usama Anjum <usama.anjum@collabora.com>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        kernel@collabora.com, kernel-janitors@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: initialize offset early
+Message-ID: <20220131123930.GJ1951@kadam>
+References: <20220128123558.1223205-1-usama.anjum@collabora.com>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220128123558.1223205-1-usama.anjum@collabora.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
+X-ClientProxiedBy: JNAP275CA0024.ZAFP275.PROD.OUTLOOK.COM (2603:1086:0:4d::15)
+ To MWHPR1001MB2365.namprd10.prod.outlook.com (2603:10b6:301:2d::28)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.4.1
-Subject: Re: No space left errors on shutdown with systemd-homed /home dir
-Content-Language: en-GB
-To:     kreijack@inwind.it, Chris Murphy <lists@colorremedies.com>
-Cc:     Boris Burkov <boris@bur.io>, "Apostolos B." <barz621@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        systemd Mailing List <systemd-devel@lists.freedesktop.org>
-References: <9bdd0eb6-4a4f-e168-0fb0-77f4d753ec19@gmail.com>
- <YfHCLhpkS+t8a8CG@zen> <4263e65e-f585-e7f6-b1aa-04885c0ed662@gmail.com>
- <YfHXFfHMeqx4MowJ@zen>
- <CAJCQCtR5ngU8oF6apChzBgFgX1W-9CVcF9kjvgStbkcAq_TsHQ@mail.gmail.com>
- <042e75ab-ded2-009a-d9fc-95887c26d4d2@libero.it>
- <CAJCQCtQv327wHwsT+j+mq3Fvt2fJwyC7SqFcj_+Ph80OuLKTAw@mail.gmail.com>
- <295c62ca-1864-270f-c1b1-3e5cb8fc58dd@inwind.it>
-In-Reply-To: <295c62ca-1864-270f-c1b1-3e5cb8fc58dd@inwind.it>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: c55eff63-6e37-4bea-415b-08d9e4b6c651
+X-MS-TrafficTypeDiagnostic: DM6PR10MB3178:EE_
+X-Microsoft-Antispam-PRVS: <DM6PR10MB3178A48BCCF8EF3C512424DD8E259@DM6PR10MB3178.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:8273;
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: zHkaxYQvtmeNW8+7GTv3gDAZMuxzNzkOBAngnyMIeS8zxtGTBDG6OgtCyiV7SVfg+86BwC0Pqud7V0bQjMr5x1bLNWK8KEylkZhERgsfREn+f3JJqtmjgWHE/1Z2jfp2KUD6O1jBauJGfSF9S76fi+j6nFEbQyx3zs+iTVx2TRvxMIfwLW2QasYClVjqWzXeumCH4WTBLuDYiO9DZYP7fXOr1mCYzEjVk9UPk9EjsrhimILPBdw0Kl9tzmuSvxVW/Qhk4xz6i3jqjaP9wNWj6GIS8lgvJuw+sKaaSeQtAP2G3OER5rP0TF5bTV7jMIedZ5kPdT4+4AH6jEYq3mw0SDkTPXKwmeMPOhwaaoYDq59toGsp3yzjGbSSEBWv4vLQUVvFbLIU5ZYoYpddUoJ4+V8bJ2ZE3/4oA7dKAUzK8wTyvIBr0dbbKhFkk37fQ7+vIqMXDYrQmjKmZCK99FF0ZPDyTyp0PZv6kIHBwKizVvEPRtfwkNQ7C8MfgS7aZuuusLAvAmo89VFFYnJqhwm8sNd7jTgVF41gfLHux7QYSBWdZYP47cY1dQB2Whg9v3dkPv57vns3WIdxsS7ejN1OqXr6EEqcuMpCUnew1I3ITw98UwBxQZZtgfU+BOnwr0DPg7OlhYjOBmSkPQRsVGjoUJRDfV/dG5l5Y9Mst4I6g06FSm219ePTF3BOt5R0Fsyj/QzVKFsD7kzLtYZU9T/LAw==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:MWHPR1001MB2365.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230001)(7916004)(366004)(4326008)(66946007)(66556008)(66476007)(8676002)(44832011)(6666004)(8936002)(5660300002)(83380400001)(2906002)(316002)(54906003)(6916009)(38100700002)(38350700002)(1076003)(186003)(26005)(9686003)(6512007)(33656002)(508600001)(52116002)(6506007)(33716001)(6486002)(86362001)(20210929001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?3PgMdDFfzTQf4v3taDch7mQCWX5DxtDJ8vjdHAr5vrr6VBliwbvvkwoqkmwm?=
+ =?us-ascii?Q?gh6vauuwI68cw77eTnPPajObvqPxOvFYH2ZfaWvZUmROlvDv4Bm6pT7rFaWu?=
+ =?us-ascii?Q?YBha7P62m27BKjglltcMjgoEdidWGUfuFwl5UfbDzT7VZdfpkdvLjt/HRV1Q?=
+ =?us-ascii?Q?KXbspfuY/Hle47PFrBQOtxek9OlVNXgOzHuDthr1DQupfTaIHPLjQiBpKQjJ?=
+ =?us-ascii?Q?HV/0Kmh6do1/hlbDBjAWfsRp+jIaSf31AKynz2dcHY+BSJnaqY8tz2G9lTG1?=
+ =?us-ascii?Q?g/RoPJZMezf6lbqrQk8QspBiLxAZNETAMVlF6LG6WWDYrQKnz66Kr2MAKVuO?=
+ =?us-ascii?Q?KS0VK2dNeqsLRpL+qK+aehE92zE7Kgh/rgHEEQQ5T274IuFP986AG9wzJRZP?=
+ =?us-ascii?Q?t1/xQ65HdrA3qC15Tulh8FolrPkPmxwro3FcPpqWSzc8x3olX59Rsbzz7++k?=
+ =?us-ascii?Q?EvfRCiAj85P8fDvByLGKjG02HejIx6kTPqdONn4B+vfN4gt1rxGYQ2Elko4R?=
+ =?us-ascii?Q?/ZMTPaaDTr2eF8uBfXQLPYaaQm6kYR46eBlYFi3CGV79RPBpLwXoV3Q1BfKl?=
+ =?us-ascii?Q?NoImc0xxDx6a7650ZxdZCMCYqLJlRGvpbM4CGFGxrirBIgTRt3ylMN+Wj62s?=
+ =?us-ascii?Q?cczEgSyMSRhnUWQbEugal32FRg2ysMvyGXYfVI8lU9i7UGQ91H17ZZf75fhC?=
+ =?us-ascii?Q?mdoZULdOLeoZTl/N8ULhACCvPT3jhidlwQIho+S0TMxq8GY/byxuJWhJYQfU?=
+ =?us-ascii?Q?vkkpTNDMqPILU0yWa1my97GFJjh58BzhSQirJHpBHFrybTHTUvHkA8T+fC21?=
+ =?us-ascii?Q?Y4Iu+6Q59x5XPe2upXyUcRhlBKd6Pv225ksozF2Yuqs+UU0kaCOgjhN3L9RD?=
+ =?us-ascii?Q?dzOcCj1Kb5AkwWy/htaUMEuteaCm/DcK/2u8pDMOY61lE5fpFJ+oestILT7B?=
+ =?us-ascii?Q?410zH6tydcdqPNx+VpvlQJdk12qORJk3cKogMcnXKCcS8emrV+FP16oiqn9K?=
+ =?us-ascii?Q?og8bxwZVgue+hRZNAqtcSP6P0YxOi0XZkMF8RUpEROqoD+oNFEwKwCzHz+Et?=
+ =?us-ascii?Q?ORuM5G47lst/EpXUJTP8YGOMo5XgF7rn21EtNabo+55kmge9X8mF3a/BSzbT?=
+ =?us-ascii?Q?3dfRAvuM5d3rgPceACFpnERqkLBxi7U2pYjqXLTacOHA55ae/ffsUJsEolIa?=
+ =?us-ascii?Q?VAd3Yl6XtdMm0Zoh22GdFwHINwEoDeKpGVOY3V0BLD/co1nFPdyTDfP7Mq00?=
+ =?us-ascii?Q?yQbgreP15AJKGQcMZdn+uHTl6PiaMySJ6ADHsl1omNHC99jL2rYMCdmc8X/Y?=
+ =?us-ascii?Q?ASc1x+w6+bL/xsgPW76S+KEtlOGha+vXnR3q8ZuZrl3PDUDLT9t1x1bxni8L?=
+ =?us-ascii?Q?KUWKeA++ELGaVbp7g1DG48LEapUjSChK0sHH7khe3bXtdSk60Rx2oLiCr6ie?=
+ =?us-ascii?Q?gMlYKeuAHraERL1J1AAcqoPfoomqpYiidwmgbLDP2cqFBUndWeuHXGGsf/Mh?=
+ =?us-ascii?Q?jLCt3CxJ4iXj+JCiiPKWIk6SpVvqNPVlMZciw8cWbM//NYvOSjxDAIVZ6evA?=
+ =?us-ascii?Q?GVQK6/ajjTJQXEQ/OFxfGWkpor9McGrtKNu3mzwOgoiN/Dh/78dxrXQOhfcf?=
+ =?us-ascii?Q?PnoGdKldLUwtbhEBBLq/oiuHIIo7t1pFtJAivl90rwdguhCraSJqBZwZ2NoU?=
+ =?us-ascii?Q?A7AVfg=3D=3D?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: c55eff63-6e37-4bea-415b-08d9e4b6c651
+X-MS-Exchange-CrossTenant-AuthSource: MWHPR1001MB2365.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 31 Jan 2022 12:39:51.4842
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: iQ6LX5iwSfOZ66ScvO5NGQGHLQ93X6WidOaZ6kpbZ1PB4jOnaI7dri4WD8psb5RyL3VmEfQ7FKy3XQdNoWPVYn7kCx/VsVQ2a4dF87/0suw=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR10MB3178
+X-Proofpoint-Virus-Version: vendor=nai engine=6300 definitions=10243 signatures=673430
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 mlxlogscore=999
+ adultscore=0 malwarescore=0 bulkscore=0 suspectscore=0 mlxscore=0
+ phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2201110000 definitions=main-2201310084
+X-Proofpoint-ORIG-GUID: ZGucQzhxtR87jMr6iep1rs-uYxd8YkC_
+X-Proofpoint-GUID: ZGucQzhxtR87jMr6iep1rs-uYxd8YkC_
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Goffredo Baroncelli wrote on 30/01/2022 09:27:
-> On 29/01/2022 19.01, Chris Murphy wrote:
->> On Sat, Jan 29, 2022 at 2:53 AM Goffredo Baroncelli 
->> <kreijack@libero.it> wrote:
->>>
->>> I think that for the systemd uses cases (singled device FS), a simpler
->>> approach would be:
->>>
->>>       fstatfs(fd, &sfs)
->>>       needed = sfs.f_blocks - sfs.f_bavail;
->>>       needed *= sfs.f_bsize
->>>
->>>       needed = roundup_64(needed, 3*(1024*1024*1024))
->>>
->>> Comparing the original systemd-homed code, I made the following changes
->>> - 1) f_bfree is replaced by f_bavail (which seem to be more 
->>> consistent to the disk usage; to me it seems to consider also the 
->>> metadata chunk allocation)
->>> - 2) the needing value is rounded up of 3GB in order to consider a 
->>> further 1 data chunk and 2 metadata chunk (DUP))
->>>
->>> Comments ?
->>
->> I'm still wondering if such a significant shrink is even indicated, in
->> lieu of trim. Isn't it sufficient to just trim on logout, thus
->> returning unused blocks to the underlying filesystem? 
+On Fri, Jan 28, 2022 at 05:35:58PM +0500, Muhammad Usama Anjum wrote:
+> Jump to out label can happen before offset is initialized. offset is
+> being used in code after out label. initialize offset early to cater
+> this case.
 > 
-> I agree with you. In Fedora 35, and the default is ext4+luks+trim
-> which provides the same results. However I remember that in the past the 
-> default
-> was btrfs+luks+shrunk. I think that something is changed i.
+> Fixes: 585f784357d8 ("btrfs: use scrub_simple_mirror() to handle RAID56 data stripe scrub")
+> Signed-off-by: Muhammad Usama Anjum <usama.anjum@collabora.com>
+> ---
+>  fs/btrfs/scrub.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 > 
-> However, I want to provide do the systemd folks a suggestion ho change 
-> the code.
-> Even a warning like: "it doesn't work that because this, please drop it"
-> would be sufficient.
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 26bbe93c3aa3c..3ace9766527ba 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -3530,7 +3530,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+>  	u64 logic_end;
+>  	u64 physical_end;
+            ^^^^^^^^^^^^
 
+>  	u64 increment;	/* The logical increment after finishing one stripe */
+> -	u64 offset;	/* Offset inside the chunk */
+> +	u64 offset = 0;	/* Offset inside the chunk */
+>  	u64 stripe_logical;
+>  	u64 stripe_end;
+>  
 
-Out of curiosity (see other thread on the systemd list about this), what 
-it the current recommendation (by systemd/btrfs folks rather then Fedora 
-defaults) for homed machine partitioning?
+The same checker which complained about offset also complained about
+physical_end.  Please don't post random half patches which aren't going
+to fix the crash.
 
-I have a new system to setup and the base filesystem is currently btrfs 
-but I'm wondering if I should be putting a large luks file on that (can 
-set nocow, but even still) or whether I should redo the base FS as ext4?
+If you don't know how to fix it, then just report it to the original
+author.  This one was already reported.  (I think.  Anyway, consider it
+reported now.)
 
-Open to some degree of experimentation, especially if the next six 
-months promises new features that will be useful etc.
-
-Col
-
--- 
-
-Colin Guthrie
-
+regards,
+dan carpenter

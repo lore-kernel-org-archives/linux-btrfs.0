@@ -2,110 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12FA5C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Jan 2022 20:46:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A8479C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Feb 2022 00:21:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343557AbiAaUq2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Jan 2022 15:46:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39238 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379217AbiAaUpu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Jan 2022 15:45:50 -0500
-Received: from mail-pg1-x52b.google.com (mail-pg1-x52b.google.com [IPv6:2607:f8b0:4864:20::52b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E005DC06173D
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jan 2022 12:45:49 -0800 (PST)
-Received: by mail-pg1-x52b.google.com with SMTP id e16so13345825pgn.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 31 Jan 2022 12:45:49 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to;
-        bh=FPJk7BRqdyL6QHj99PG5jL8BT2suMUJo0UNrZFqlvvA=;
-        b=nEqZlLoKz4tfFq+lW4lkQArm/wkU7NYF4cRrBrwHA4Aipe/yLcTeA4ZHlAstAdq0Ax
-         tVJiio3crIET/g26y9dpJR46yzQCZIhWRyvq1ayt/nVH7nHFLas7dzH3zLEqWBCsYj7H
-         WC0++8SAI4xDxzCuVo3UiVCU1wsPgGxc9L9JCIVEG3THTlFnqCYUwXnmxyyAmygl3diA
-         bEpxyoIo0PB4SV/hgvjrAlyXdzLTvuBV5FKOVfGCJj/1k1a2SBZDpDSO6jN69avpx7oq
-         hMP4GXptLSs1XM/I9RxacD0h8hw4mrG2GyoMAB43q2cKiHhUrhBVUjGmZ8MRnDHAIaa1
-         RPDA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to;
-        bh=FPJk7BRqdyL6QHj99PG5jL8BT2suMUJo0UNrZFqlvvA=;
-        b=fsmyoQ6JVuZnRWRi4+ua6pYOKyvDZIzN230mip3vy31ziPr48+v8wUjryYNZDeAlvQ
-         YS9FLoEuHiqfSVHty1i66oak4IRPVOEM3bME+RCmZRguAt2E2TfDyC06Ug0RzhupIvWI
-         l8A1vLjZquTw1v8qToKai1k1IVf/TqXzQlhyI9jRhOGW8RG2Mkv7pfy4JKT5F42d3D5l
-         5icL3AZTcg1sRckgZ+bCipT9Kb7DEkfF4ZaEf+G1htGV1nPiyrd/jveuSOdsy/iEz5Wm
-         y9FukyLi0bEuHsxuVGePoBR0yJ4wQuOmwWWIM03/0g5zjpfls0wftupwREATMch/1E0i
-         Mzrg==
-X-Gm-Message-State: AOAM5301/BMw2vs5bemj6oRn7IZM5dFVKgKdUDIRLPMJjoBajbw7s6UB
-        k2CkCzzwCSf1lcv5hoLQL+wjqCpTv4xuinZW5gU=
-X-Google-Smtp-Source: ABdhPJwT163ZYYbEnBbL+2XCiZ6okunVzg/6yGtUVq0Vy/mj0Q7WgM73Tx/fnVPkyZDn/nLJ400y5K4S5OMTYPDaI0Y=
-X-Received: by 2002:a63:26c1:: with SMTP id m184mr18425080pgm.296.1643661949314;
- Mon, 31 Jan 2022 12:45:49 -0800 (PST)
+        id S230348AbiBAAV1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Jan 2022 19:21:27 -0500
+Received: from mout.gmx.net ([212.227.17.22]:50205 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230344AbiBAAV1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 31 Jan 2022 19:21:27 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1643674885;
+        bh=wRJ0S2jagV3I42IGkJ6B0b9yqXiL99rh2uD7YpfugBI=;
+        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
+        b=R5nf7G4FPUdCEXO37brOix2YkmG15RRTTkrl7C2z2HM30UJj6t7PhaNthwRUkkEVM
+         IxdYBrfgir/VV+Zg/KCrg+OX0bqJASGCzfKMUc+cOOcMq3XlzfE9CRmGnndMr+/i+U
+         wPRb5NILWJC3p73vJK/sYvI8Q9PqVQG1Gb/nJZgk=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N63RQ-1m8VOG2xbc-016SLj; Tue, 01
+ Feb 2022 01:21:25 +0100
+Message-ID: <f5d1c08b-b843-6d5d-341d-c19890872e04@gmx.com>
+Date:   Tue, 1 Feb 2022 08:21:22 +0800
 MIME-Version: 1.0
-References: <20220130010956.1459147-1-rosenp@gmail.com> <20220131143930.GL14046@twin.jikos.cz>
-In-Reply-To: <20220131143930.GL14046@twin.jikos.cz>
-From:   Rosen Penev <rosenp@gmail.com>
-Date:   Mon, 31 Jan 2022 12:46:54 -0800
-Message-ID: <CAKxU2N8jeMT_4kJrwLFng0WLYBo=kfYmrz0Hu1NpdWR-fOzVnA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: fix 64-bit mips and powerpc types
-To:     dsterba@suse.cz, Rosen Penev <rosenp@gmail.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.1
+Content-Language: en-US
+To:     Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20220131154040.GA25010@realwakka>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: A question for kernel code in btrfs_run_qgroups()
+In-Reply-To: <20220131154040.GA25010@realwakka>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:40JUDdhfuUxnx8NQwQRRzn0FJiDVlmd9gYElhPcWue1cvkSIcyZ
+ EyzyKcEOsEkhm1LeuvvHCBt/bjPmIMW3G47Bc+27C8NJj4bRPvFgYKUGhKQTR9ayhPYMUY5
+ kIA3s/TDIC855iMPBPETvyJjlDdJdj5TNhtCHEGNOtzTnXTbHlg7lWpphPNEo/GxhhzhAOR
+ Bvbq2C4e4ThC35G0eBD4g==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:X6TWTdfu/SM=:VpFCAE8e1gtfCi6i8qbWMC
+ BuCVZakzSA6whWMxppj4//i0cHSyKCSpLVHMyyfvHwqeoNsIYrF37vJQFyg+SxUAfmDPDyDeQ
+ Lq34gS2DM0kKw0PNSgZJNJHjdhSyy3vzuV4VA4Qd3jz3xAaMSGqlR1qyBBoqSJCMjlTRMLH67
+ vD2eQTJnNJ6Jjy9VM6oSxLDJFJpaFKVzOGRbYX5S1o9RxFxRh+FBiwaWu58joRvZIZCX8IrgS
+ 5MPruxodeG3fJvyGMh6EG/pKLWYJ6UqKfEsi1AazrppQnHjdELi5QruFwxISFzG7FTtMwiD/K
+ usOtpHl3eY0VjKGsr9HlUFzL53Uc2vE2mmPxQGvaWsw9AhIE9SlTzstHjLUB8furP4gkp9GjE
+ jMcgVfrjvJNk83K4KglVQfUzbJczSQ4iv3+vFD459SybitwQxt3PdophmJFIRJFGxzk5w0/3x
+ pA6wazhzqUPHbVfB3oE8J7YJG451477dkC7828z2lJZSVGZZ3Nd3yptuyueNhdpJWlcTOUl8F
+ P2/ywtxCm0wdLrAuau7QpG1uY2l7hdy6He1ljfCw3eOZOG72IXjetv8cN0ogc4eSaUM7uujvb
+ WAwFD4JvcChNdJ57hb1ybBlLv8nfG94Nyt1dDMgmgvmA0BCHJi3LoQ+94BZlPnXR2v+s5wB7M
+ kdicCP/cVmFhI4zYJvN2FlYdeNwiytEewqnCTPYfG+Z3cXtsGZcKf/dXXEMmLKlvbOXkXstQ8
+ 1YoQBgtOH54kVFfIMQHdWByIRAH4fGp/rIpTchu+0jnNBlvhYDCE3kkp9uspQRqBnz7U3DnNL
+ M7qID6gnIKE8M6UHpAXN4EfiiPeFLsTvUfm0hGMtCddthzr9+BPuM4S/ItVQNyKnTHZXkMBbR
+ +6Z4jAtVZk7SjHpp0y3b0llxHvE2q74cRauuUDN4FALU8jb7FonW+o4nsiviHEp6L8NDJav5v
+ S0FoHC8goAcnfyQFKnlEO+BjC+O1WtyIyKkKmicrpgKpaSokEBBopaKMgEnOxKEPi/MFVwpgQ
+ EKk6BHrJcefCfSRjkbCyez2ZqUiDsHae1YuJkRALXK3r29b/y0G7wHieTyTgXk+xLKzJo/6eI
+ 3YushiPkF5Fhsk=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jan 31, 2022 at 6:40 AM David Sterba <dsterba@suse.cz> wrote:
+
+
+On 2022/1/31 23:40, Sidong Yang wrote:
+> Hi, I'm reading btrfs code for contributing.
+> I have a question about code in btrfs_run_qgroups().
 >
-> On Sat, Jan 29, 2022 at 05:09:56PM -0800, Rosen Penev wrote:
-> > The kernel uses unsigned long specifically for ppc64 and mips64. This
-> > fixes that.
+> It seems that it updates dirty qgroups modified in transaction.
+
+Yep.
+
+> And it iterates dirty qgroups with locking and unlocking qgroup_lock for
+> protecting dirty_qgroups list. According to code, It locks before enter
+> the loop and pick a entry and unlock. At the end of loop, It locks again
+> for next loop. And after loop, it set some flags and unlock.
 >
-> What do you mean? Uses unsigned long for what?
-kernel's u64 is normally unsigned long long, but not for ppc64 and mips64.
->
-> > Removed asm/types.h include as it will get included properly later.
-> >
-> > Fixes -Wformat warnings.
-> >
-> > Signed-off-by: Rosen Penev <rosenp@gmail.com>
-> > ---
-> >  cmds/receive-dump.c | 1 -
-> >  kerncompat.h        | 4 ++++
-> >  2 files changed, 4 insertions(+), 1 deletion(-)
-> >
-> > diff --git a/cmds/receive-dump.c b/cmds/receive-dump.c
-> > index 47a0a30e..00ad4fd1 100644
-> > --- a/cmds/receive-dump.c
-> > +++ b/cmds/receive-dump.c
-> > @@ -31,7 +31,6 @@
-> >  #include <stdlib.h>
-> >  #include <time.h>
-> >  #include <ctype.h>
-> > -#include <asm/types.h>
-> >  #include <uuid/uuid.h>
-> >  #include "common/utils.h"
-> >  #include "cmds/commands.h"
-> > diff --git a/kerncompat.h b/kerncompat.h
-> > index 6ca1526e..4b36b45a 100644
-> > --- a/kerncompat.h
-> > +++ b/kerncompat.h
-> > @@ -19,6 +19,10 @@
-> >  #ifndef __KERNCOMPAT_H__
-> >  #define __KERNCOMPAT_H__
-> >
-> > +#ifndef __SANE_USERSPACE_TYPES__
-> > +#define __SANE_USERSPACE_TYPES__     /* For PPC64, to get LL64 types */
-> > +#endif
->
-> Is there a cleaner way instead of defining magic macros?
-no. https://github.com/torvalds/linux/blob/master/arch/powerpc/include/uapi/asm/types.h#L18
->
-> > +
-> >  #include <stdio.h>
-> >  #include <stdlib.h>
-> >  #include <errno.h>
-> > --
-> > 2.34.1
+> I wonder that it should be locked with setting STATUS_FLAG_ON? if not,
+> is there unnecessary locking in last loop?
+
+ From a quick look, it indeed looks like we don't need to hole
+qgroup_lock to modify qgroup_flags.
+In fact, just lines below, we update qgroup_flags without any lock for
+INCONSISTENT bit.
+
+
+Unfortunately we indeed have inconsistent locking for qgroups_flags.
+
+So it's completely possible that we may not need to do modify the
+qgroup_flags under qgroup_lock.
+
+In fact there are tons of call sites that we don't hold locks for
+qgroups_flags update.
+
+So if you're interested in contributing to btrfs, starting from sorting
+the qgroup_lock usage would be a excellent start.
+
+Thanks,
+Qu

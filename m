@@ -2,167 +2,197 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 908FCC433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Feb 2022 09:24:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 783DEC433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Feb 2022 11:35:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235927AbiBAJYW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Feb 2022 04:24:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40048 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235902AbiBAJYU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Feb 2022 04:24:20 -0500
-Received: from mail-pj1-x1031.google.com (mail-pj1-x1031.google.com [IPv6:2607:f8b0:4864:20::1031])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 17CC5C061714
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Feb 2022 01:24:20 -0800 (PST)
-Received: by mail-pj1-x1031.google.com with SMTP id z10-20020a17090acb0a00b001b520826011so2099468pjt.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Feb 2022 01:24:20 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=xrOLwH6yHjFwSqIAnwu6p1khKfsuwaetmH0WZytQ+AM=;
-        b=cocFpsXJO9ivhKcB4C2I9mfc3X9Z6zBZKA8IeYv6JhZVxfjFBIpcZgX3mpri24FKOD
-         SwNiCBxzdX63AOB95/43fegSG+EKc9VzXuC4QFWW0i+1oLnU5UJZLdCBZ+mINUN8mOUX
-         6wUsWuVZ7cb2THPa8IVHSGZHZjnVPur1JwagConDiD3db4F61309Ekt49cq4rtJrH1IH
-         Mi3LKRPpwXKfPOL3XL6vjK/M5CintPAJ81d+J8+VSi7RjoP/Mt0hKzWDdr4KnW+AS19y
-         wvN2PZ48/EXYZm9GTQamU0MpHTWYo6McsluXER0c3osBfWCaqTySqSOkPaiSRudfqhGO
-         jVWQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=xrOLwH6yHjFwSqIAnwu6p1khKfsuwaetmH0WZytQ+AM=;
-        b=OQrT5izI1gs8kSbzxdpDnqGL13ft42QDvy0563G66dEIedyeHtIq6IEgGnveUfVX2I
-         mOjW5Y9JfEQQ5A185Jq8r0U6kCBzlfr2IpuPt3DdM8ZmHxlhY1KL3F2R2qi2Wb6GU2g8
-         AKzdlnWFLIKW/+vAnEuJxBTqe/ulHDqw8qSXmDEjNDTVKRD1VN1Md8fJ299ot6SkSiYO
-         LRoC9eTqLxj+aw1OponXQ3ZiegWJp1GbKtCJNaAuadSwMiuKC7PpsLQDbb+Sx1C3RpvM
-         iVGt1se7+xwJf9uXNWTAeS/UucGK+k55yIrMZdTufcACapFBIFnGz5HekHV0Sm9aWt2O
-         0QUQ==
-X-Gm-Message-State: AOAM532ExfVA450RXCQLO7OV+Ul7LhrV77YaIAxmKKfW7MzukbHOdTqc
-        xTCLBNnqzth+58KjnhRddThBFtMElpvfZg==
-X-Google-Smtp-Source: ABdhPJx93krc7ui/ZRId94805TlPZyeXtrHx8Zna5x1pj3DMUHTQz3R+HoCmENJelhWifzwVkxqIXA==
-X-Received: by 2002:a17:90b:4c52:: with SMTP id np18mr1250383pjb.49.1643707459551;
-        Tue, 01 Feb 2022 01:24:19 -0800 (PST)
-Received: from realwakka ([59.12.165.26])
-        by smtp.gmail.com with ESMTPSA id j6sm6236413pfu.18.2022.02.01.01.24.18
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 01 Feb 2022 01:24:19 -0800 (PST)
-Date:   Tue, 1 Feb 2022 09:24:14 +0000
-From:   Sidong Yang <realwakka@gmail.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     linux-btrfs@vger.kernel.org
+        id S237311AbiBALfG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Feb 2022 06:35:06 -0500
+Received: from mout.gmx.net ([212.227.15.19]:37387 "EHLO mout.gmx.net"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S233560AbiBALfG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 1 Feb 2022 06:35:06 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1643715304;
+        bh=k6Y941F0SWZziV2+3qoJ83uFMUqA+wBVT2RGGsr6kks=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=crBv6x/drsng2JboaEuyaRfhKjdmjYfr4EdTym78JMvClpRu3ZjY7TC6q9cxK0mj3
+         u0t5n1JFfLSX9LG8Q72ihaMoPyRTGP651ileC/BhvPG+X/B6h091ikW9XkctUfQf9A
+         aAHHIQZhnOjPQtggJMMpPRW6wiQfI84wSBn4impY=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MYNNo-1mkhEL1Qry-00VRf8; Tue, 01
+ Feb 2022 12:35:03 +0100
+Message-ID: <d09f5826-cc87-4983-84a5-914aeac66630@gmx.com>
+Date:   Tue, 1 Feb 2022 19:35:00 +0800
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.1
 Subject: Re: A question for kernel code in btrfs_run_qgroups()
-Message-ID: <20220201092414.GB25465@realwakka>
+Content-Language: en-US
+To:     Sidong Yang <realwakka@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
 References: <20220131154040.GA25010@realwakka>
  <f5d1c08b-b843-6d5d-341d-c19890872e04@gmx.com>
  <20220201040558.GA25465@realwakka>
  <b7bc0568-d29f-0347-22f8-6aa93b6ad1fc@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <b7bc0568-d29f-0347-22f8-6aa93b6ad1fc@gmx.com>
+ <20220201092414.GB25465@realwakka>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220201092414.GB25465@realwakka>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:lQfKQg7DpqcHaYGCfO2eF1f2l8oTkDxEipT/cODvPZ0k88q865K
+ CRDszjSDB6rjrzSAJAe9P/8Jm8NFi6pFoE6S3BMMDmYs59GjWZPwYiVO2RsXief1gkt+zuX
+ w7yUN3mw0wG46sjv9aS3tYe7GgB+h2mwlWZw8ut+CNWal3UJcvs40QeipmfsLdqyYU8R1Nw
+ TySGL9batLJW5C+mlqcFQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:3byW+WknIYU=:e5PzYDPfkIyRZ4tQgqAJR9
+ GpVLMyYRlQqzVmqfZi205a4YBki4mDFzkCjFTP536cQgJo4+pk8A+ZNJwg4wHmNZfSbSdtqMp
+ jNOND2/IFsa/EFw/nym9btrdEXBQ5BU9KujFncLt/W4d7wSW5Ob6b/otWHbWQnplx/TfSmT5I
+ UMWMmSkNuqlXfciDNfxhim174GD6Z2OEu0VnfWRICsbm5JDr7pw39RoxRwJVIJPLLUxHMX1cP
+ GwB3qzOqUlbHiVze+E6/30wL7mt8w+v3QDdYFUZmuymXz2uBu73PjLD5ve+6JgEfIE+edzG+i
+ gUsmf65OL2plmzUxLwN0gPcndBJMOr/mGC3lnvUDM6dFac1JW/JPZatj+nIKv0Fy0DkuWWTcr
+ EXt71zBim/sxgE9gxR0YG11BtrTV7sXtYw6870u6Q7GTgC79KL/uyohbTcTr7nrKkHglTlBc3
+ +0ivjFcELPRiIwp/QG4xtYfUUMyVS5Y5/IqgMadPK1YfkYJJ1bxos30yDP10Uyn6CWdEAn8IV
+ /qdm1tY7KuCvnjNys2KXXjcAm/gadlMpxPpW1DlQltuwZU2jllQXLcsPtgkyfZ5kMugl7I9vA
+ BjYTqHFibrivkEI5FLporPP1CiL78gQ+z1d9djtRBpwRtT3zf3DKJNQex0XFXjba3PvGDAk5P
+ +NASFn6KnJ8cFFfyUvZqA0rYYe+9YmW24XsqA0Hlr6+nWOtSh4v+OTnmbzHuj3cBY3rhj6r0x
+ APT9sQhdcp4nEXwtn+CCVZL7F+fwj+ZyhE1xkgzXyzr+TxaIHSrubNvnxhqZFXSzIZTJGK2r9
+ rSLolp92D2EKvFd3RfM8NYxxtQuix+pX0v1fQIWpu+bzQK5s+ivGu3Wc2cUnBPqQDDyl3cjq+
+ v9nDHXYlLr3Qq6vfdmkUjziZA5wDpPUnT8DNHfwAJKACpumlx+qZ13+7i9MzAm6aDoRkBlT/Z
+ dG0xMeBURj/toxuwltxUuW7a4laEzlrPBUwy4jQv1uP+e2mpPM546z7AuO75wPR5ppW24/QRY
+ zu5yYv5UXPVk7HLI30MSAfJ3Z+pDujb1iKgad56bN4UlOE7OnAAU0V7trrnrIOkYoUWy0nZOo
+ R8NVyTT/yFc164=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 01, 2022 at 03:31:03PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2022/2/1 12:05, Sidong Yang wrote:
-> > On Tue, Feb 01, 2022 at 08:21:22AM +0800, Qu Wenruo wrote:
-> > 
-> > Hi Qu,
-> > 
-> > Thanks for answering
-> > 
-> > > 
-> > > 
-> > > On 2022/1/31 23:40, Sidong Yang wrote:
-> > > > Hi, I'm reading btrfs code for contributing.
-> > > > I have a question about code in btrfs_run_qgroups().
-> > > > 
-> > > > It seems that it updates dirty qgroups modified in transaction.
-> > > 
-> > > Yep.
-> > > 
-> > > > And it iterates dirty qgroups with locking and unlocking qgroup_lock for
-> > > > protecting dirty_qgroups list. According to code, It locks before enter
-> > > > the loop and pick a entry and unlock. At the end of loop, It locks again
-> > > > for next loop. And after loop, it set some flags and unlock.
-> > > > 
-> > > > I wonder that it should be locked with setting STATUS_FLAG_ON? if not,
-> > > > is there unnecessary locking in last loop?
-> > > 
-> > >  From a quick look, it indeed looks like we don't need to hole
-> > > qgroup_lock to modify qgroup_flags.
-> > > In fact, just lines below, we update qgroup_flags without any lock for
-> > > INCONSISTENT bit.
-> > 
-> > Apparently it is, but I don't know surely that it really don't need to
-> > hold lock while modifying qgroup_flags.
-> > It has FLAG_ON that it indicates that quota turned on. I think it should
-> > be modified carefully. Or it can be protected by other locks like
-> > qgroup_lock or ioctl_lock?
-> 
-> In fact, for qgroup_flags, FLAG_ON is rarely changed.
-> Only qgroup enable/disable would change that.
-> 
-> And qgroup enable/disable have to acquire qgroup_ioctl_lock, thus AFAIK
-> FLAG_ON is less a concern.
-> 
-> To me, the concern is around INCONSISTENT flag.
-> 
-> As it can happen at almost any time.
-> 
-> As btrfs_qgroup_trace_extent()/trace_extent_post() can fail and cause
-> qgroup to be inconsistent.
-> Another location is in the future to make snapshot creation/snapshot
-> drop to mark qgroup INCONSISTENT to avoid super expensive subtree rescan.
 
-I agree. INCONSISTENT flag could be set anywhere. And it could make more
-bigger problem.
-> 
-> > 
-> > > 
-> > > 
-> > > Unfortunately we indeed have inconsistent locking for qgroups_flags.
-> > 
-> > I agree. there is a lot of codes that modify qgroup_flags without lock
-> > or with lock.
-> 
-> So far we use it just as bit operations, thus it may be convert to
-> set/clear/test_bit() to be atomic, and then get rid of the chaos of locks.
-> 
-> > 
-> > > 
-> > > So it's completely possible that we may not need to do modify the
-> > > qgroup_flags under qgroup_lock.
-> > > 
-> > > In fact there are tons of call sites that we don't hold locks for
-> > > qgroups_flags update.
-> > > 
-> > > So if you're interested in contributing to btrfs, starting from sorting
-> > > the qgroup_lock usage would be a excellent start.
-> > 
-> > Yeah, I really interested in this. but I don't know good way to handle
-> > this problem. is it really good way to remove the code holding lock
-> > while modifying flags?
-> 
-> Maybe you can start by converting it to bit ops and move all the flags
-> operation out of critical sections?
 
-Thanks. I would write a patch that converts the code to bitops first.
+On 2022/2/1 17:24, Sidong Yang wrote:
+> On Tue, Feb 01, 2022 at 03:31:03PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> On 2022/2/1 12:05, Sidong Yang wrote:
+>>> On Tue, Feb 01, 2022 at 08:21:22AM +0800, Qu Wenruo wrote:
+>>>
+>>> Hi Qu,
+>>>
+>>> Thanks for answering
+>>>
+>>>>
+>>>>
+>>>> On 2022/1/31 23:40, Sidong Yang wrote:
+>>>>> Hi, I'm reading btrfs code for contributing.
+>>>>> I have a question about code in btrfs_run_qgroups().
+>>>>>
+>>>>> It seems that it updates dirty qgroups modified in transaction.
+>>>>
+>>>> Yep.
+>>>>
+>>>>> And it iterates dirty qgroups with locking and unlocking qgroup_lock=
+ for
+>>>>> protecting dirty_qgroups list. According to code, It locks before en=
+ter
+>>>>> the loop and pick a entry and unlock. At the end of loop, It locks a=
+gain
+>>>>> for next loop. And after loop, it set some flags and unlock.
+>>>>>
+>>>>> I wonder that it should be locked with setting STATUS_FLAG_ON? if no=
+t,
+>>>>> is there unnecessary locking in last loop?
+>>>>
+>>>>   From a quick look, it indeed looks like we don't need to hole
+>>>> qgroup_lock to modify qgroup_flags.
+>>>> In fact, just lines below, we update qgroup_flags without any lock fo=
+r
+>>>> INCONSISTENT bit.
+>>>
+>>> Apparently it is, but I don't know surely that it really don't need to
+>>> hold lock while modifying qgroup_flags.
+>>> It has FLAG_ON that it indicates that quota turned on. I think it shou=
+ld
+>>> be modified carefully. Or it can be protected by other locks like
+>>> qgroup_lock or ioctl_lock?
+>>
+>> In fact, for qgroup_flags, FLAG_ON is rarely changed.
+>> Only qgroup enable/disable would change that.
+>>
+>> And qgroup enable/disable have to acquire qgroup_ioctl_lock, thus AFAIK
+>> FLAG_ON is less a concern.
+>>
+>> To me, the concern is around INCONSISTENT flag.
+>>
+>> As it can happen at almost any time.
+>>
+>> As btrfs_qgroup_trace_extent()/trace_extent_post() can fail and cause
+>> qgroup to be inconsistent.
+>> Another location is in the future to make snapshot creation/snapshot
+>> drop to mark qgroup INCONSISTENT to avoid super expensive subtree resca=
+n.
+>
+> I agree. INCONSISTENT flag could be set anywhere. And it could make more
+> bigger problem.
+>>
+>>>
+>>>>
+>>>>
+>>>> Unfortunately we indeed have inconsistent locking for qgroups_flags.
+>>>
+>>> I agree. there is a lot of codes that modify qgroup_flags without lock
+>>> or with lock.
+>>
+>> So far we use it just as bit operations, thus it may be convert to
+>> set/clear/test_bit() to be atomic, and then get rid of the chaos of loc=
+ks.
+>>
+>>>
+>>>>
+>>>> So it's completely possible that we may not need to do modify the
+>>>> qgroup_flags under qgroup_lock.
+>>>>
+>>>> In fact there are tons of call sites that we don't hold locks for
+>>>> qgroups_flags update.
+>>>>
+>>>> So if you're interested in contributing to btrfs, starting from sorti=
+ng
+>>>> the qgroup_lock usage would be a excellent start.
+>>>
+>>> Yeah, I really interested in this. but I don't know good way to handle
+>>> this problem. is it really good way to remove the code holding lock
+>>> while modifying flags?
+>>
+>> Maybe you can start by converting it to bit ops and move all the flags
+>> operation out of critical sections?
+>
+> Thanks. I would write a patch that converts the code to bitops first.
+
+One thing to mention is, if you're converting the flags operations to
+bit ops, then please considering protecting it under qgroup_lock.
+
+For now, it's fine as under most cases we just set/clear/test one bit once=
+.
+
+But for future patches, like this one:
+https://patchwork.kernel.org/project/linux-btrfs/patch/20211207011655.2157=
+9-4-wqu@suse.com/
+
+Which will introduce a new flag beyond the existing three flags.
+
+And we need to set that flag along with the existing INCONSITENT flag,
+thus it's no longer atomic, and may need to use spin lock to protect them.
 
 Thanks,
-Sidong
-> 
+Qu
+>
 > Thanks,
-> Qu
-> 
-> > 
-> > Thanks,
-> > Sidong
-> > 
-> > > 
-> > > Thanks,
-> > > Qu
+> Sidong
+>>
+>> Thanks,
+>> Qu
+>>
+>>>
+>>> Thanks,
+>>> Sidong
+>>>
+>>>>
+>>>> Thanks,
+>>>> Qu

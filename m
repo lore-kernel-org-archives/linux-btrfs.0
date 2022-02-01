@@ -2,127 +2,180 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 625B0C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Feb 2022 19:56:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28BFEC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Feb 2022 21:18:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234004AbiBAT43 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Feb 2022 14:56:29 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45264 "EHLO
+        id S231808AbiBAVSS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Feb 2022 16:18:18 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36478 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233836AbiBAT42 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Feb 2022 14:56:28 -0500
-Received: from mail-yb1-xb2f.google.com (mail-yb1-xb2f.google.com [IPv6:2607:f8b0:4864:20::b2f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 84390C061714
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Feb 2022 11:56:28 -0800 (PST)
-Received: by mail-yb1-xb2f.google.com with SMTP id r65so54181910ybc.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Feb 2022 11:56:28 -0800 (PST)
+        with ESMTP id S229625AbiBAVSR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Feb 2022 16:18:17 -0500
+Received: from mail-pf1-x429.google.com (mail-pf1-x429.google.com [IPv6:2607:f8b0:4864:20::429])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 733D7C061714
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Feb 2022 13:18:17 -0800 (PST)
+Received: by mail-pf1-x429.google.com with SMTP id u130so17016527pfc.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Feb 2022 13:18:17 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc:content-transfer-encoding;
-        bh=aWiZo1WF3YLkn60/W/E5kAzeaW7gH8TmBkIpFCsfs7A=;
-        b=SnqbkjuzXcDGXcHRffS1tb/1ZMnux6usaE+TTNoBvXEHEpj+CqyXbXEq1nRYSewsVQ
-         XU/1BNxvMHDXPgl6L7bQy/rsga5upjPT4eyPTZ21eG5p49G6lLxhR5ZnG/9ApVtv4vqv
-         wwItf2+mqLwYiMOm9Y8TEk14HOLeUfAu/0XLYK10Z2FHdr7ku72D1Hn1kzYkZaQoh6Ov
-         FEsHXwbJUF9L0/uIl2ILgkOYAJDc4yRXWARy3q7/Mmkn6Arjd4KvSSouzJbYYtfvmdr4
-         8SvdkiyKtXIN7LYqc/DocZW98evnORWfZvtg52jltmj7EqCmfGyyhx9pj4SeD+coUPrT
-         roHA==
+        bh=BXFWt0OO+pKW1VkO+hKNaIxgycAsUYwV5fx1Mi9+DPY=;
+        b=dJT++MY3KsPmvlnjbTC3XJxAoCaLOEaxBK9a9YAIV1mcoTs65k5KVcisKE0XdFB0i+
+         dG7ZgzOClfGwL5B8jF4746jXoDYGb3sOwBKn0kbvVFBys0BaemnWGc6PVMlWyqZjAoMk
+         ASiGzevzXX5GBRKWr2spI7tNsp7HyMTsi4FmlbaV5UlmTHlWR853UknFPyj5H9Ot12HC
+         iuwQGqFlVxmGwM4qz0GIpqVNve+senXuUm7JzaQiwHhbw62f0ZmqkvfRyNP4bQkKFODc
+         latzheaHahjeFCzcYOqtca9EidqHpi8JMZGTB078DQmUN2YxH3suu8TTCrnQbsg9WwkM
+         t6sw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc:content-transfer-encoding;
-        bh=aWiZo1WF3YLkn60/W/E5kAzeaW7gH8TmBkIpFCsfs7A=;
-        b=3EB3nRmGa5crrvgYdNzSUFpfAz5O/aqofu3cuqoU93YmExV7/KRbkB/JmYbO+lwJAn
-         31MkS8VbpxxJ6ijjCMpxqEZ+wuS6E2oIWR0NwapYoaSpMW1TMQ1FFSTCwxByja9Ikd/v
-         9SxhSaLXsn9vWYUl0BUSZDgYRQz10CbelXPK1VW/kIkuwu3aRujUX0xrNLrvpW8KVycI
-         9jv57pGJ+N2N0vdYNZWEgbYTfZczWBE9A8xsTSYQnsyFxRfTrLa1tCdJr++V9Ih2fSE/
-         PvSAgrPmc+GIwZc0bEdXmRJiYoRXEnwCU0kW8AvyRAoxRnGyeztpn1kqsjFRTVBFss5/
-         QmUQ==
-X-Gm-Message-State: AOAM532YN4kMQ1zGPnBovaJXbwMQf+5FWqgxEU6i6LO37l8QQx/f3T7L
-        vj4Y6LrNMreVIg5czx/NclQoQC415tTsJvjPV60=
-X-Google-Smtp-Source: ABdhPJyxbr+1ttBswEOAG+a58nW81HOl+dfnW84XvAlG5s+uVu+FNlEzXQg37wAaATkydsdmkkC3oL5Ttynhk+jJdAg=
-X-Received: by 2002:a25:2388:: with SMTP id j130mr37698449ybj.513.1643745387676;
- Tue, 01 Feb 2022 11:56:27 -0800 (PST)
+        bh=BXFWt0OO+pKW1VkO+hKNaIxgycAsUYwV5fx1Mi9+DPY=;
+        b=37EuChF1u+pBOHeFgGmL7aDVkQt8MoHo8J/7dcaoYLfndxB+CQDxb14SV6BtyKS04I
+         RcxX4GPM7avLFfgitWFB5y9Ekm0jtVvMjQWfmzo33oSm00cNKy32S75CbuIDhnyvOUP6
+         Yh2DkpfhBc0oExib5q5vtTLgLVqhs+vf9sOJKG2eJxJ817mexQYvIN1rxppCEnrICm40
+         mCOf12YhhChlkzj2qEDeO3R1pByP1tSDQaJ6ewAQ1D4g5c7qZE6R7J2V5dEbMe5jjWWY
+         5lU1aqwCRPpf5lPQecSQYROYuyubo6SuGUdbpPfzWVkMLdYMFtb+fXmxyUIrGZXEcwNX
+         2Ypw==
+X-Gm-Message-State: AOAM530ivkQ9gCVrCtzjiZJJm76Pw7gtVRqblgLryfsVcxKgxzYhLQwY
+        NLA3/+9PSGWCBGCRLLiWuWpiXhenVMIsRKnNKxDt20mgrfnOcQ==
+X-Google-Smtp-Source: ABdhPJxr+rnUdNYey8lFmOw2XhKSlaiEy9sGOaMrN6qxh3tX0gLTid51bMRjU3Qcj9ETdy4YDMKeEl4YeCBPdwx3nm0=
+X-Received: by 2002:a05:6a00:10c6:: with SMTP id d6mr27069964pfu.42.1643750296921;
+ Tue, 01 Feb 2022 13:18:16 -0800 (PST)
 MIME-Version: 1.0
-References: <9bdd0eb6-4a4f-e168-0fb0-77f4d753ec19@gmail.com>
- <YfHCLhpkS+t8a8CG@zen> <4263e65e-f585-e7f6-b1aa-04885c0ed662@gmail.com>
- <YfHXFfHMeqx4MowJ@zen> <CAJCQCtR5ngU8oF6apChzBgFgX1W-9CVcF9kjvgStbkcAq_TsHQ@mail.gmail.com>
- <042e75ab-ded2-009a-d9fc-95887c26d4d2@libero.it> <CAJCQCtQv327wHwsT+j+mq3Fvt2fJwyC7SqFcj_+Ph80OuLKTAw@mail.gmail.com>
- <295c62ca-1864-270f-c1b1-3e5cb8fc58dd@inwind.it> <367f0891-f286-198b-617c-279dc61a2c3b@colin.guthr.ie>
-In-Reply-To: <367f0891-f286-198b-617c-279dc61a2c3b@colin.guthr.ie>
-From:   Neal Gompa <ngompa13@gmail.com>
-Date:   Tue, 1 Feb 2022 14:55:51 -0500
-Message-ID: <CAEg-Je9rr4Y7JQbD3iO1UqMy48j7feAXFFeaqpJc6eP7FSduEw@mail.gmail.com>
-Subject: Re: No space left errors on shutdown with systemd-homed /home dir
-To:     Colin Guthrie <colin@booksterhq.com>
-Cc:     kreijack@inwind.it, Chris Murphy <lists@colorremedies.com>,
-        Boris Burkov <boris@bur.io>,
-        "Apostolos B." <barz621@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        systemd Mailing List <systemd-devel@lists.freedesktop.org>
+References: <20220125065057.35863-1-wqu@suse.com> <Ye/S15/clpSOG3y6@debian9.Home>
+ <791ca198-d4d0-91b3-ed9b-63cc19c78437@gmx.com> <92236445-440d-b1c0-bd76-b8001facd334@gmx.com>
+ <CAEwRaO6xT_utSgyHuRhEK+C6Y8uvLABJw5FS=TitsMVxODo1OQ@mail.gmail.com>
+In-Reply-To: <CAEwRaO6xT_utSgyHuRhEK+C6Y8uvLABJw5FS=TitsMVxODo1OQ@mail.gmail.com>
+From:   =?UTF-8?Q?Fran=C3=A7ois=2DXavier_Thomas?= <fx.thomas@gmail.com>
+Date:   Tue, 1 Feb 2022 22:18:05 +0100
+Message-ID: <CAEwRaO6qcxr7ArAhkL-s=yRyNxmupFSVZL_w5ffHXagPQbiAgg@mail.gmail.com>
+Subject: Re: [POC for v5.15 0/2] btrfs: defrag: what if v5.15 is doing proper defrag
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 1, 2022 at 2:02 PM Colin Guthrie <colin@booksterhq.com> wrote:
+> Sure, I'll take the last 5.15 I used (5.15.13) as a base + the 2
+> patches from this thread, is that good?
+>    1-btrfs-dont-defrag-preallocated-extents.patch
+>    2-defrag-limit-cluster-size-to-first-hole.patch
 >
-> Goffredo Baroncelli wrote on 30/01/2022 09:27:
-> > On 29/01/2022 19.01, Chris Murphy wrote:
-> >> On Sat, Jan 29, 2022 at 2:53 AM Goffredo Baroncelli
-> >> <kreijack@libero.it> wrote:
-> >>>
-> >>> I think that for the systemd uses cases (singled device FS), a simple=
-r
-> >>> approach would be:
-> >>>
-> >>>       fstatfs(fd, &sfs)
-> >>>       needed =3D sfs.f_blocks - sfs.f_bavail;
-> >>>       needed *=3D sfs.f_bsize
-> >>>
-> >>>       needed =3D roundup_64(needed, 3*(1024*1024*1024))
-> >>>
-> >>> Comparing the original systemd-homed code, I made the following chang=
-es
-> >>> - 1) f_bfree is replaced by f_bavail (which seem to be more
-> >>> consistent to the disk usage; to me it seems to consider also the
-> >>> metadata chunk allocation)
-> >>> - 2) the needing value is rounded up of 3GB in order to consider a
-> >>> further 1 data chunk and 2 metadata chunk (DUP))
-> >>>
-> >>> Comments ?
-> >>
-> >> I'm still wondering if such a significant shrink is even indicated, in
-> >> lieu of trim. Isn't it sufficient to just trim on logout, thus
-> >> returning unused blocks to the underlying filesystem?
-> >
-> > I agree with you. In Fedora 35, and the default is ext4+luks+trim
-> > which provides the same results. However I remember that in the past th=
-e
-> > default
-> > was btrfs+luks+shrunk. I think that something is changed i.
-> >
-> > However, I want to provide do the systemd folks a suggestion ho change
-> > the code.
-> > Even a warning like: "it doesn't work that because this, please drop it=
-"
-> > would be sufficient.
->
->
-> Out of curiosity (see other thread on the systemd list about this), what
-> it the current recommendation (by systemd/btrfs folks rather then Fedora
-> defaults) for homed machine partitioning?
->
+> Will post results tomorrow when it finishes compiling.
 
-I'd probably recommend Btrfs with the /home subvolume set with
-nodatacow if you're going to use loops of LUKS backed Btrfs homedir
-images. The individual Btrfs loops will have their own COW anyway.
+Tomorrow ended up taking a week, as it happens, sorry for that. No
+significant difference compared to before:
+https://i.imgur.com/BNoxixL.png
 
-Otherwise, the Fedora defaults for Btrfs should be sufficient.
+I'm not sure what we can infer from this, if I understood correctly
+this should have shown similar amounts of I/O to 5.16 with all the
+previous fixes, right?
 
+I pasted the full diff I used at the end of this mail, since
+`defrag_lookup_extent` changed signature between 5.15 and 5.16 I had
+to do a couple of minor changes to get it to compile on 5.15.13.
+Hopefully that was what you initially intended on testing.
 
+Thanks,
+Fran=C3=A7ois-Xavier
 
---
-=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
-=BC=81/ Always, there's only one truth!
+----
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index cc61813213d8..07eb7417b6e7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1119,19 +1119,23 @@ static struct extent_map
+*defrag_lookup_extent(struct inode *inode, u64 start)
+ static bool defrag_check_next_extent(struct inode *inode, struct
+extent_map *em)
+ {
+     struct extent_map *next;
+-    bool ret =3D true;
++    bool ret =3D false;
+
+     /* this is the last extent */
+     if (em->start + em->len >=3D i_size_read(inode))
+-        return false;
++        return ret;
+
+     next =3D defrag_lookup_extent(inode, em->start + em->len);
+     if (!next || next->block_start >=3D EXTENT_MAP_LAST_BYTE)
+-        ret =3D false;
+-    else if ((em->block_start + em->block_len =3D=3D next->block_start) &&
+-         (em->block_len > SZ_128K && next->block_len > SZ_128K))
+-        ret =3D false;
++        goto out;
++    if (test_bit(EXTENT_FLAG_COMPRESSED, &next->flags))
++        goto out;
++    if ((em->block_start + em->block_len =3D=3D next->block_start) &&
++     (em->block_len > SZ_128K && next->block_len > SZ_128K))
++        goto out;
+
++    ret =3D true;
++out:
+     free_extent_map(next);
+     return ret;
+ }
+@@ -1403,6 +1407,30 @@ static int cluster_pages_for_defrag(struct inode *in=
+ode,
+
+ }
+
++static u64 get_cluster_size(struct inode *inode, u64 start, u64 len)
++{
++    u64 cur =3D start;
++    u64 cluster_len =3D 0;
++    while (cur < start + len) {
++        struct extent_map *em;
++
++        em =3D defrag_lookup_extent(inode, cur);
++        if (!em)
++            break;
++        /*
++         * Here we don't do comprehensive checks, we just
++         * find the first hole/preallocated.
++         */
++        if (em->block_start >=3D EXTENT_MAP_LAST_BYTE ||
++            test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++            break;
++        cluster_len +=3D min(em->start + em->len - cur, start + len - cur)=
+;
++        cur =3D min(em->start + em->len, start + len);
++    }
++    return cluster_len;
++}
++
++
+ int btrfs_defrag_file(struct inode *inode, struct file *file,
+               struct btrfs_ioctl_defrag_range_args *range,
+               u64 newer_than, unsigned long max_to_defrag)
+@@ -1531,6 +1559,13 @@ int btrfs_defrag_file(struct inode *inode,
+struct file *file,
+         } else {
+             cluster =3D max_cluster;
+         }
++        cluster =3D min_t(unsigned long,
++                get_cluster_size(inode, i << PAGE_SHIFT,
++                         cluster << PAGE_SHIFT)
++                    >> PAGE_SHIFT,
++                    cluster);
++        if (cluster =3D=3D 0)
++            goto next;
+
+         if (i + cluster > ra_index) {
+             ra_index =3D max(i, ra_index);
+@@ -1557,6 +1592,7 @@ int btrfs_defrag_file(struct inode *inode,
+struct file *file,
+         balance_dirty_pages_ratelimited(inode->i_mapping);
+         btrfs_inode_unlock(inode, 0);
+
++next:
+         if (newer_than) {
+             if (newer_off =3D=3D (u64)-1)
+                 break;

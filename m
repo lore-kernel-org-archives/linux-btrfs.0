@@ -2,67 +2,202 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1C0CC433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Feb 2022 20:34:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94A50C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  4 Feb 2022 23:23:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240178AbiBDUeu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 4 Feb 2022 15:34:50 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49466 "EHLO
+        id S1358955AbiBDXXi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 4 Feb 2022 18:23:38 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42094 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239889AbiBDUen (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Feb 2022 15:34:43 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7716DC06173D;
-        Fri,  4 Feb 2022 12:34:42 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 38854B838EF;
-        Fri,  4 Feb 2022 20:34:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id DF5B8C36AEA;
-        Fri,  4 Feb 2022 20:34:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1644006879;
-        bh=0Ao1o6X0x09WbH9vZNytGw4gbF+XOE0SXQfzFkBt1GA=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=uJV6ThZ81szlxE8ALUKvz/ZPDu+2WJ2vAXouguscU4ZCzrhgtjvvNUqg7JBotDdOY
-         /3yfC4QxmR0SiXdvKmdOxPuRwkAGNfsTTke+g7XMsmtp5ExXEwGROIKnFyOgLL++G7
-         abKpCfOzB5wm0uhbUgf5s8iSPU9yCs1OfqEnqAJYD/Z3t+XunYhl9dpJd/xgQIyS22
-         CyxkYAPGQ72Sp1emksXul5WggWtJcRDl8JS+6TssTWM/oOFsqHkfV728PNxOPaihQJ
-         vUROyomjdOdaQEWsXy/SBUl2jI5rbFphoSm1hJnRy7r7Eg0NpAYpLKE0K/WCRa34zV
-         BwMIez1Za6Dyg==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id CF682E6BBD2;
-        Fri,  4 Feb 2022 20:34:39 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs fixes for 5.17-rc3
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1644001677.git.dsterba@suse.com>
-References: <cover.1644001677.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1644001677.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.17-rc2-tag
-X-PR-Tracked-Commit-Id: 40cdc509877bacb438213b83c7541c5e24a1d9ec
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 86286e486cbdd68f01d330409307f6a6efcd4298
-Message-Id: <164400687984.31755.13439340173384849614.pr-tracker-bot@kernel.org>
-Date:   Fri, 04 Feb 2022 20:34:39 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        with ESMTP id S1343646AbiBDXXh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Feb 2022 18:23:37 -0500
+Received: from mail-pg1-x536.google.com (mail-pg1-x536.google.com [IPv6:2607:f8b0:4864:20::536])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9910DFC07E6
+        for <linux-btrfs@vger.kernel.org>; Fri,  4 Feb 2022 15:23:35 -0800 (PST)
+Received: by mail-pg1-x536.google.com with SMTP id s16so6214357pgs.13
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Feb 2022 15:23:35 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=HVA3d7uHlEVn4xfPSytSgBdjEdpLWpdPXhmh6J1SAZ4=;
+        b=JeL6PI0Nb7/W713KaVKdZdVJC+V1nKgFL28LdtQHvWt1h7mJY4l0t6d5unrsGyDf25
+         uG69o+4LHsLTBxRoUvy9gFKY32SjGFbKLxQNGC0JX6398aOupyyWknYAuG1jtWt/ZINC
+         ++d64nR1Ae/o78rVSzCxQVXc+UDDc4HPROC8coxUBjBBBljjrrHTo67TzKeVhBHwd+vb
+         4gBDFOgzwHUGZ0pqqgx7ETppXxkOeAgOeqOU0OK1tkIyG28vSCPmjveHwvsTwJPQsVgq
+         5xuMeDczV6GbGoO52V/6rG02AFFh1ITRGiBRDy5gY7zoZs7m4VxNWTdP7E0bIFm1aDg4
+         ySag==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=HVA3d7uHlEVn4xfPSytSgBdjEdpLWpdPXhmh6J1SAZ4=;
+        b=AD10QgNHtyfypwyhOsBlqdWqK0m3b6cgY/pqGTkv/vJonqG3hmSWJrjtGbdatU9Zgj
+         WJM03OzVcCDRxD+50TxjyvEs1AtKXT5TxPGd++H/NM4+7KI5DAV3YSY7/7sqQepKaSkL
+         j21xfZqm86K1Cdcc9KbkFgqV1oCwJCg3iNjHukUj8wNLEn3wVvL8v0uasiFd544OLtER
+         zXFFgiis7bfAl3mCsCPvCSVRNmlbOxBGjTG95hjk0+AQ9kgGdz60xwkP6aLQd+T+/ann
+         +Rqcf0m4t8awjPOVzACjpgmKxqBDXsWLFPL6wAjxPXkpfXecozTKqAsB9ksyv8S4s8jy
+         sWIw==
+X-Gm-Message-State: AOAM533FZjvuPom77gS9rpHSb77R1dLCZED6gDN3na5pmLJKuWd92jYt
+        YwYckujOxF36al7YnAijbQGuWQ==
+X-Google-Smtp-Source: ABdhPJwM3kUujnIjQGvHoIpStnopJanocpGnfjTY8QoZ5OYP8pDdbBLsjLxebKaTC1GUnofltz0sOg==
+X-Received: by 2002:a05:6a00:23ce:: with SMTP id g14mr5335241pfc.78.1644017015179;
+        Fri, 04 Feb 2022 15:23:35 -0800 (PST)
+Received: from relinquished.localdomain ([2601:602:8b80:8e0::7d1e])
+        by smtp.gmail.com with ESMTPSA id f22sm3798882pfj.206.2022.02.04.15.23.34
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 04 Feb 2022 15:23:34 -0800 (PST)
+Date:   Fri, 4 Feb 2022 15:23:34 -0800
+From:   Omar Sandoval <osandov@osandov.com>
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: get rid of warning on transaction commit when
+ using flushoncommit
+Message-ID: <Yf21dlU3a7DHryuK@relinquished.localdomain>
+References: <f47e0cbbad232ab8962161622f71d8093bcc5108.1643814527.git.fdmanana@suse.com>
+ <YfxxgCEHLsHr+Cgi@relinquished.localdomain>
+ <Yf0KGz7jhgD+KfwJ@debian9.Home>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <Yf0KGz7jhgD+KfwJ@debian9.Home>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Fri,  4 Feb 2022 20:25:22 +0100:
+On Fri, Feb 04, 2022 at 11:12:27AM +0000, Filipe Manana wrote:
+> On Thu, Feb 03, 2022 at 04:21:20PM -0800, Omar Sandoval wrote:
+> > On Wed, Feb 02, 2022 at 03:26:09PM +0000, fdmanana@kernel.org wrote:
+> > > From: Filipe Manana <fdmanana@suse.com>
+> > > 
+> > > When using the flushoncommit mount option, during almost every transaction
+> > > commit we trigger a warning from __writeback_inodes_sb_nr():
+> > > 
+> > >   $ cat fs/fs-writeback.c:
+> > >   (...)
+> > >   static void __writeback_inodes_sb_nr(struct super_block *sb, ...
+> > >   {
+> > >         (...)
+> > >         WARN_ON(!rwsem_is_locked(&sb->s_umount));
+> > >         (...)
+> > >   }
+> > >   (...)
+> > > 
+> > > The trace produced in dmesg looks like the following:
+> > > 
+> > > [  947.470439] ------------[ cut here ]------------
+> > > [  947.473890] WARNING: CPU: 5 PID: 930 at fs/fs-writeback.c:2610 __writeback_inodes_sb_nr+0x7e/0xb3
+> > > [  947.481623] Modules linked in: nfsd nls_cp437 cifs asn1_decoder cifs_arc4 fscache cifs_md4 ipmi_ssif
+> > > [  947.489571] CPU: 5 PID: 930 Comm: btrfs-transacti Not tainted 95.16.3-srb-asrock-00001-g36437ad63879 #186
+> > > [  947.497969] RIP: 0010:__writeback_inodes_sb_nr+0x7e/0xb3
+> > > [  947.502097] Code: 24 10 4c 89 44 24 18 c6 (...)
+> > > [  947.519760] RSP: 0018:ffffc90000777e10 EFLAGS: 00010246
+> > > [  947.523818] RAX: 0000000000000000 RBX: 0000000000963300 RCX: 0000000000000000
+> > > [  947.529765] RDX: 0000000000000000 RSI: 000000000000fa51 RDI: ffffc90000777e50
+> > > [  947.535740] RBP: ffff888101628a90 R08: ffff888100955800 R09: ffff888100956000
+> > > [  947.541701] R10: 0000000000000002 R11: 0000000000000001 R12: ffff888100963488
+> > > [  947.547645] R13: ffff888100963000 R14: ffff888112fb7200 R15: ffff888100963460
+> > > [  947.553621] FS:  0000000000000000(0000) GS:ffff88841fd40000(0000) knlGS:0000000000000000
+> > > [  947.560537] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> > > [  947.565122] CR2: 0000000008be50c4 CR3: 000000000220c000 CR4: 00000000001006e0
+> > > [  947.571072] Call Trace:
+> > > [  947.572354]  <TASK>
+> > > [  947.573266]  btrfs_commit_transaction+0x1f1/0x998
+> > > [  947.576785]  ? start_transaction+0x3ab/0x44e
+> > > [  947.579867]  ? schedule_timeout+0x8a/0xdd
+> > > [  947.582716]  transaction_kthread+0xe9/0x156
+> > > [  947.585721]  ? btrfs_cleanup_transaction.isra.0+0x407/0x407
+> > > [  947.590104]  kthread+0x131/0x139
+> > > [  947.592168]  ? set_kthread_struct+0x32/0x32
+> > > [  947.595174]  ret_from_fork+0x22/0x30
+> > > [  947.597561]  </TASK>
+> > > [  947.598553] ---[ end trace 644721052755541c ]---
+> > > 
+> > > This is because we started using writeback_inodes_sb() to flush delalloc
+> > > when comitting a transaction (when using -o flushoncommit), in order to
+> > > avoid deadlocks with filesystem freeze operations. This change was made
+> > > by commit ce8ea7cc6eb313 ("btrfs: don't call btrfs_start_delalloc_roots
+> > > in flushoncommit"). After that change we started producing that warning,
+> > > and every now and then a user reports this since the warning happens too
+> > > often, it spams dmesg/syslog, and a user is unsure if this reflects any
+> > > problem that might compromise the filesystem's reliability.
+> > > 
+> > > We can not just lock the sb->s_umount semaphore before calling
+> > > writeback_inodes_sb(), because that would at least deadlock with
+> > > filesystem freezing, since at fs/super.c:freeze_super() sync_filesystem()
+> > > is called while we are holding that semaphore in write mode, and that can
+> > > trigger a transaction commit, resulting in a deadlock. It would also
+> > > trigger the same type of deadlock in the unmount path. Possibly, it could
+> > > also introduce some other locking dependencies that lockdep would report.
+> > > 
+> > > To fix this call try_to_writeback_inodes_sb() instead of
+> > > writeback_inodes_sb(), because that will try to read lock sb->s_umount
+> > > and then will only call writeback_inodes_sb() if it was able to lock it.
+> > > This is fine because the cases where it can't read lock sb->s_umount
+> > > are during a filesystem unmount or during a filesystem freeze - in those
+> > > cases sb->s_umount is write locked and sync_filesystem() is called, which
+> > > calls writeback_inodes_sb(). In other words, in all cases where we can't
+> > > take a read lock on sb->s_umount, writeback is already being triggered
+> > > elsewhere.
+> > 
+> > I looked for other places that down_write(&sb->s_umount), and I found
+> > sget() -> grab_super(). grab_super() (briefly) write locks s_umount and
+> > doesn't appear to flush anything. So in theory, if I were to mount an
+> > already mounted filesystem at the exact time we tried to writeback the
+> > inodes, we could skip the writeback?
+> 
+> Right, I noticed that. It's a very tiny time window for those cases, plus
+> it needs to happen precisely when we are starting a transaction commit.
+> 
+> I wouldn't worry about it, because flushoncommit never really gave absolute
+> guarantees that everything is flushed, it was always a best effort approach.
+> 
+> With ce8ea7cc6eb3139f4c730d647325e69354159b0f we started using
+> writeback_inodes_sb() which does not guarantee if writeback is started.
+> Looking at its kernel doc, it explicitly warns about it:
+> 
+> /**
+>  * writeback_inodes_sb	-	writeback dirty inodes from given super_block
+>  * @sb: the superblock
+>  * @reason: reason why some writeback work was initiated
+>  *
+>  * Start writeback on some inodes on this super_block. No guarantees are made
+>  * on how many (if any) will be written, and this function does not wait
+>  * for IO completion of submitted IO.
+>  */
+> 
+> Even before that commit, when we used btrfs_start_delalloc_roots(), we still
+> had no guarantees that writeback would be started, as filemap_flush() also
+> gives no guarantees. From its kernel doc:
+> 
+> /**
+>  * filemap_flush - mostly a non-blocking flush
+>  * @mapping:	target address_space
+>  *
+>  * This is a mostly non-blocking flush.  Not suitable for data-integrity
+>  * purposes - I/O may not be started against all dirty pages.
+>  *
+>  * Return: %0 on success, negative error code otherwise.
+>  */
+> 
+> So I don't think we will be any worse than before.
+> 
+> > 
+> > Maybe I'm missing something. Even if not, this seems super unlikely and
+> > probably better than the warning anyways...
+> 
+> Yes. Right now flushoncommit can be considered somewhat unusable due to
+> spamming dmesg/syslog with the warning and stackstrace. IIRC even Zygo
+> had to patch his kernel to remove the warning at __writeback_inodes_sb().
+> 
+> The change to writeback_inodes_sb() is a clear example of a patch that
+> was not tested at all. The warning at __writeback_inodes_sb() exists
+> since 2010, and ce8ea7cc6eb3139f4c730d647325e69354159b0f is from 2017.
+> Running any test from fstests would trigger the warning several times
+> at least.
+> 
+> Thanks.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.17-rc2-tag
+That all makes sense, thanks. You can add
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/86286e486cbdd68f01d330409307f6a6efcd4298
-
-Thank you!
-
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Reviewed-by: Omar Sandoval <osandov@fb.com>

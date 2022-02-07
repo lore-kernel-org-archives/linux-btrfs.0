@@ -2,169 +2,302 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D501CC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Feb 2022 01:53:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F2A8C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Feb 2022 05:50:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348017AbiBGBxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Feb 2022 20:53:07 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35820 "EHLO
+        id S230133AbiBGFtT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Feb 2022 00:49:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55770 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343925AbiBGBxG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Feb 2022 20:53:06 -0500
-X-Greylist: delayed 462 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sun, 06 Feb 2022 17:53:04 PST
-Received: from smtp-pro1.mana.pf (smtp-pro1.mana.pf [202.3.225.198])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 5AEE2C043180
-        for <linux-btrfs@vger.kernel.org>; Sun,  6 Feb 2022 17:53:04 -0800 (PST)
-Received: from tiare.sysnux.pf (unknown [43.249.178.110])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        (Authenticated sender: courrier@sysnux.pf)
-        by smtp-pro1.mana.pf (Postfix) with ESMTPSA id 046DF541FC;
-        Sun,  6 Feb 2022 15:45:19 -1000 (-10)
-Received: from [192.168.0.200] (tiare.sysnux.pf [192.168.0.200])
-        by tiare.sysnux.pf (Postfix) with ESMTP id 616A43015C64;
-        Sun,  6 Feb 2022 15:45:18 -1000 (-10)
-DKIM-Filter: OpenDKIM Filter v2.11.0 tiare.sysnux.pf 616A43015C64
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sysnux.pf; s=202012;
-        t=1644198318; bh=wJLpimtSImhNprclmDPtn8DzNm6DD0pOzEAwXqmBw3g=;
-        h=Date:Subject:To:References:From:In-Reply-To:From;
-        b=OtxTDpfXaYxiyZrUC73Xnz7z2sZlf5YY/a6ohxbYAj1mGLcKpXzKShSCLbIL49W8s
-         hm6fjJkBb4O7BNIT55mM9ic/FWsJYHGyTE6Nn7hu92ks1Xq1gfR9UiQgKcAAiHxNi1
-         B4WEs1gjajDRMl5eS3rjv51Aj1NSgtJ1UQWr8Q2g=
-Message-ID: <b2bc8d87-d8e1-8417-17ce-08764c5aef55@sysnux.pf>
-Date:   Sun, 6 Feb 2022 15:45:18 -1000
+        with ESMTP id S241068AbiBGDGF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Feb 2022 22:06:05 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B1789C061A73
+        for <linux-btrfs@vger.kernel.org>; Sun,  6 Feb 2022 19:06:01 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1644203156;
+        bh=2lqrMNih89hI7zv6G8SWUE2j848em6Ra2VBTvlUC74w=;
+        h=X-UI-Sender-Class:Date:Subject:From:To:References:In-Reply-To;
+        b=FLatRCAvJPw6l+t9kznDmUxzHWa013ga+ooSANTkNxPFmuKjMx1/Nrnkm0/5juaGb
+         HlLdZLP//9pUhXCVdWbzTFf0N0cCs+HG5U5fPGVLCKwBxgo32izYf92njSYZI0xcyf
+         X60TpXeiT04rHMz0DaYxpS1Zkek3BYkrnSg7voS0=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1M6Db0-1nNW3P0tc8-006eZd; Mon, 07
+ Feb 2022 04:05:55 +0100
+Content-Type: multipart/mixed; boundary="------------OvPkSX4xZCRh0t88DXskpEr4"
+Message-ID: <edb0fb57-7505-e552-cffc-b03a825c77e7@gmx.com>
+Date:   Mon, 7 Feb 2022 11:05:52 +0800
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
+ Thunderbird/91.5.1
 Subject: Re: Still seeing high autodefrag IO with kernel 5.16.5
 Content-Language: en-US
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+To:     Rylee Randall <ibrokemypie@outlook.com>,
+        Benjamin Xiao <ben.r.xiao@gmail.com>,
+        linux-btrfs@vger.kernel.org
 References: <KTVQ6R.R75CGDI04ULO2@gmail.com>
  <9409dc0c-e99d-cc61-757e-727bd54c6ffd@gmx.com>
  <88b6fe3e-8317-8070-cb27-0aee4dc72cfb@gmx.com>
  <SL2P216MB11112B447FB0400149D320C1AC2B9@SL2P216MB1111.KORP216.PROD.OUTLOOK.COM>
- <61ad0e42-b38a-6b5f-2944-8c78e1508f4a@gmx.com> <stp1bs$l94$1@ciao.gmane.io>
- <43e00a03-c853-56cf-9cf6-dfb4f1d4694c@gmx.com>
-From:   Jean-Denis Girard <jd.girard@sysnux.pf>
-In-Reply-To: <43e00a03-c853-56cf-9cf6-dfb4f1d4694c@gmx.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms060406060609030403030708"
+ <61ad0e42-b38a-6b5f-2944-8c78e1508f4a@gmx.com>
+In-Reply-To: <61ad0e42-b38a-6b5f-2944-8c78e1508f4a@gmx.com>
+X-Provags-ID: V03:K1:fskA8rBMsJN1JxleKl8XTRuU0D19tIYWQrC7k4FmeWyMJQhtklf
+ scqbumNVJM2cqZNADGQmgYoh2RbwpaUnkh91FpD3N+IquVpHNt2E3rsMAZaE9FJaOkFox+4
+ ngRrvDDBu0+OmHFJOS/GEKUT2rm6UZNGq9eRnfXtRKIC7Hw4p1Xcm78N83wK8iyARdILtHd
+ RD/A/Si+EBeNFr6DQ4GFQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:zmn4XNBwic4=:oxxuGZB2OMypdma54Najjb
+ zuLWKDn29iPH+kSl8YvAMDZiPBzAIBMeBuKQPWRV+m5BU2akX0/lsMKPdc2/lleTRAJoqzKdq
+ Ck6GSZWplMGFjKuIGrK9nxZIfNwyPLXRhhsopFT3BcCQM3yI9kvDPZ8XdSyQEIQXmu/30xX6w
+ iCLw9Sb5WXGyziWQYur6sE18KHLo9I/s1aE4Sokfa4QtcO2AZ/2ISt7jk1hMJ22IZ0k42r3VB
+ zkpi4tniuSrMdVWjCVpoY+NSu7I8E8EtPGw6K7zrKvo59I/Wsgtx6ZxlPr6MdVkcHAGM1E83r
+ btNF8RfsakEr8e0flJwl9+BWLBKWKbGdmO7UzNuUoPD349T1iNZf5vzRHwdS4Kqpb1Q5z1I9K
+ ozDDkCH5a7kUsqNJWsrXU2CuyxVg2OBjM+svePGBkimpO7TPtIyJuYFiTvlk2fI4ZSc0w92eF
+ MA5wPmhvDfPSO0Da1L0U9WHLlVWTygupP1htVOzrm9N1PitD9a0U5GVaxObfKS85PO7b0ME3+
+ 7GH0xYV2P9Oro8n1gAdVq51l7PfrEbuUTlnATLjlSfTAqREQO7plRdWKCOvz3Ig8CgU54ot0N
+ 1NheIJXTwUiHsFMmLIvT/kZr9JnHGCWTxAVxcSsEjRl4Wa1pIJ6utjQFpwSchDwk6swK4g6eC
+ LV1zwJsHauHdirmXbMdDEoPmFc+QEIxsjdRGpIa/N/XjIIh4bmQoFBRg/vZ7PayBVbac/mLST
+ xqxcqZ5C1HlprwCvn+4PRlyLG3zWRPZA5XkQxE9N/fpG2DAfQS+dr3hWNKC63IBZer35V62IT
+ /udwfWyi2z1+7DXSaKLPVImRyQ5CBOh26JIDcgva2TdcuE+Yl6yopGim+r5jIdr8mI31hORlX
+ rTYhUxzPnlprAtPVgfxylWMuucqoW+QJv+fC0IrbkmDgk+tZHNs6fNjuJpToHNsCOpovXfk3E
+ GZkWxvtIQ3wVustAs5d5xVUa3yjkqQe9f0ZnqY0rkc06niwL0Ahk8990AfZmlu/xhxp7q0Sa3
+ 0aErpIkrT6VbjiJYy1gaBQtfZ4sm1IndThDhRW0a5nGuHvdBcf8zVZqu75xQN6WLOQh0G+czi
+ sUlOsRbnjHvbZY=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a cryptographically signed message in MIME format.
-
---------------ms060406060609030403030708
+This is a multi-part message in MIME format.
+--------------OvPkSX4xZCRh0t88DXskpEr4
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
 
-Le 06/02/2022 à 15:16, Qu Wenruo a écrit :
-> And what are the mount options?
 
-Here are the mount options:
 
-/dev/nvme0n1p2 on / type btrfs 
-(rw,noatime,nodiratime,seclabel,compress-force=zstd:3,ssd,discard=async,space_cache,autodefrag,skip_balance,subvolid=5,subvol=/)
-/dev/sdb on /home/Partage type btrfs 
-(rw,noatime,nodiratime,seclabel,compress-force=zstd:3,space_cache=v2,autodefrag,skip_balance,subvolid=1061,subvol=/Partage)
-/dev/sdb on /home/Photos type btrfs 
-(rw,noatime,nodiratime,seclabel,compress-force=zstd:3,space_cache=v2,autodefrag,skip_balance,subvolid=1062,subvol=/Photos)
-  ...
+On 2022/2/6 17:26, Qu Wenruo wrote:
+>
+>
+> On 2022/2/6 15:51, Rylee Randall wrote:
+>> I am experiencing the same issue on 5.16.7, near the end of a large
+>> steam game download btrfs-cleaner sits at the top of iotop, and shut
+>> downs take about ten minutes because of various btrfs hangs.
+>>
+>> I compiled 5.15.21 with the mentioned patch and tried to recreate the
+>> issue and so far have been unable to. I seem to get far faster an dmore
+>> consistent write speeds from steam, and rather than btrfs-cleaner being
+>> the main source of io usage it is steam. btrfs-cleaner is far down the
+>> list along with various other btrfs- tasks.
+>
+> Thanks for the report, this indeed looks like the bug in v5.15 that it
+> doesn't defrag a lot of extents is not the root cause.
+>
+> Mind to re-check with the following branch?
+>
+> https://github.com/adam900710/linux/tree/autodefrag_fixes
+>
+> It has one extra patch to emulate the older behavior of not using
+> btrfs_get_em(), which can cause quite some problem for autodefrag.
 
-I have 13 subvolumes on /dev/sdb.
 
-> Mind to apply attached `debug.diff`?
+And if anyone is still experiencing the problem even with that branch,
+there is a diff to do the ultimate debug (thus can slow down the system).
 
-I can't try that immediately, but will do.
+After applying this diff upon that branch, every auto defrag try will
+have several lines added to `/sys/kernel/debug/tracing/trace`.
+(Which can be pretty large).
 
+And that trace file would greatly help us to locate which extent is
+defragged again and again.
 
 Thanks,
--- 
-Jean-Denis Girard
+Qu
+>
+> Thanks,
+> Qu
+>
+>>
+>> On 4/2/22 12:54, Qu Wenruo wrote:
+>>>
+>>>
+>>> On 2022/2/4 09:17, Qu Wenruo wrote:
+>>>>
+>>>>
+>>>> On 2022/2/4 04:05, Benjamin Xiao wrote:
+>>>>> Hello all,
+>>>>>
+>>>>> Even after the defrag patches that landed in 5.16.5, I am still seei=
+ng
+>>>>> lots of cpu usage and disk writes to my SSD when autodefrag is
+>>>>> enabled.
+>>>>> I kinda expected slightly more IO during writes compared to 5.15, bu=
+t
+>>>>> what I am actually seeing is massive amounts of btrfs-cleaner i/o ev=
+en
+>>>>> when no programs are actively writing to the disk.
+>>>>>
+>>>>> I can reproduce it quite reliably on my 2TB Btrfs Steam library
+>>>>> partition. In my case, I was downloading Strange Brigade, which is a
+>>>>> roughly 25GB download and 33.65GB on disk. Somewhere during the
+>>>>> download, iostat will start reporting disk writes around 300 MB/s,
+>>>>> even
+>>>>> though Steam itself reports disk usage of 40-45MB/s. After the
+>>>>> download
+>>>>> finishes and nothing else is being written to disk, I still see arou=
+nd
+>>>>> 90-150MB/s worth of disk writes. Checking in iotop, I can see btrfs
+>>>>> cleaner and other btrfs processes writing a lot of data.
+>>>>>
+>>>>> I left it running for a while to see if it was just some maintenance
+>>>>> tasks that Btrfs needed to do, but it just kept going. I tried to
+>>>>> reboot, but it actually prevented me from properly rebooting. After
+>>>>> systemd timed out, my system finally shutdown.
+>>>>>
+>>>>> Here are my mount options:
+>>>>> rw,relatime,compress-force=3Dzstd:2,ssd,autodefrag,space_cache=3Dv2,=
+subvolid=3D5,subvol=3D/
+>>>>>
+>>>>>
+>>>>>
+>>>>
+>>>> Compression, I guess that's the reason.
+>>>>
+>>>> =C2=A0From the very beginning, btrfs defrag doesn't handle compressed=
+ extent
+>>>> well.
+>>>>
+>>>> Even if a compressed extent is already at its maximum capacity, btrfs
+>>>> will still try to defrag it.
+>>>>
+>>>> I believe the behavior is masked by other problems in older kernels
+>>>> thus
+>>>> not that obvious.
+>>>>
+>>>> But after rework of defrag in v5.16, this behavior is more exposed.
+>>>
+>>> And if possible, please try this diff on v5.15.x, and see if v5.15 is
+>>> really doing less IO than v5.16.x.
+>>>
+>>> The diff will solve a problem in the old code, where autodefrag is
+>>> almost not working.
+>>>
+>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>> index cc61813213d8..f6f2468d4883 100644
+>>> --- a/fs/btrfs/ioctl.c
+>>> +++ b/fs/btrfs/ioctl.c
+>>> @@ -1524,13 +1524,8 @@ int btrfs_defrag_file(struct inode *inode, stru=
+ct
+>>> file *file,
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cont=
+inue;
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 }
+>>>
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 if (!newer_than) {
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cluster =
+=3D (PAGE_ALIGN(defrag_end) >>
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 PAGE_SHIFT) - i;
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cluster =
+=3D min(cluster, max_cluster);
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 } else {
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 cluster =
+=3D max_cluster;
+>>> -=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 }
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 cluster =3D (PAGE_ALIGN(defrag_end) >> PAGE_SHIFT) - i;
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0 cluster =3D min(cluster, max_cluster);
+>>>
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0 if (i + cluster > ra_index) {
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 ra_i=
+ndex =3D max(i, ra_index);
+>>>
+>>>>
+>>>> There are patches to address the compression related problem, but not
+>>>> yet merged:
+>>>>
+>>>> https://patchwork.kernel.org/project/linux-btrfs/list/?series=3D60938=
+7
+>>>>
+>>>> Mind to test them to see if that's the case?
+>>>>
+>>>> Thanks,
+>>>> Qu
+>>>>>
+>>>>>
+>>>>> I've disabled autodefrag again for now to save my SSD, but just want=
+ed
+>>>>> to say that there is still an issue. Have the defrag issues been ful=
+ly
+>>>>> fixed or are there more patches incoming despite what Reddit and
+>>>>> Phoronix say? XD
+>>>>>
+>>>>> Thanks!
+>>>>> Ben
+>>>>>
+>>>>>
 
-SysNux                   Systèmes   Linux   en   Polynésie  française
-https://www.sysnux.pf/   Tél: +689 40.50.10.40 / GSM: +689 87.797.527
-
---------------ms060406060609030403030708
-Content-Type: application/pkcs7-signature; name="smime.p7s"
+--------------OvPkSX4xZCRh0t88DXskpEr4
+Content-Type: text/x-patch; charset=UTF-8; name="debug.diff"
+Content-Disposition: attachment; filename="debug.diff"
 Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: Signature cryptographique S/MIME
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
-CywwggUUMIID/KADAgECAhEA7Jgu4N5QMMu4fC2n2nowUTANBgkqhkiG9w0BAQsFADCBljEL
-MAkGA1UEBhMCR0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UEBxMHU2Fs
-Zm9yZDEYMBYGA1UEChMPU2VjdGlnbyBMaW1pdGVkMT4wPAYDVQQDEzVTZWN0aWdvIFJTQSBD
-bGllbnQgQXV0aGVudGljYXRpb24gYW5kIFNlY3VyZSBFbWFpbCBDQTAeFw0xOTA1MDEwMDAw
-MDBaFw0yMjA0MzAyMzU5NTlaMCQxIjAgBgkqhkiG9w0BCQEWE2pkLmdpcmFyZEBzeXNudXgu
-cGYwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDN/fQ8TAGvTBOFn6qxE7ZN8b0b
-aKR3haVfP9gGFNK6XIkS88UkgMnRJI+boWd2SEdEBMpCrdMlvFHGkP1Xu7Rl/e1rw/63IIDq
-ehhFP0eRetG7WQASH7LoZ4VwkU0NAgLbCpUxvAgGWvVQTKQXkk0+lvYOOtWyaXUOyHtK1/Wv
-04FRR4PRpvh/Lzm32EVw/U0TtVgmlrIbVp+I3woF0H2UaXCMnwQCVjmJQtjwNQjz1/D57Iw5
-/hbVDylDvF7mzXzYbO9isp7Yq3egJV+bhRnytsianodDKw2pT0yB/0I/0bNnpEQ2ti/TNnfD
-dmgVKT7j9RR6ma24XoGqd6+6MoHvAgMBAAGjggHMMIIByDAfBgNVHSMEGDAWgBQJwPL8C9qU
-21/+K9+omULPyeCtADAdBgNVHQ4EFgQUnBqbHNhJ5TcKYH213C0fXKiqlHUwDgYDVR0PAQH/
-BAQDAgWgMAwGA1UdEwEB/wQCMAAwHQYDVR0lBBYwFAYIKwYBBQUHAwQGCCsGAQUFBwMCMEAG
-A1UdIAQ5MDcwNQYMKwYBBAGyMQECAQEBMCUwIwYIKwYBBQUHAgEWF2h0dHBzOi8vc2VjdGln
-by5jb20vQ1BTMFoGA1UdHwRTMFEwT6BNoEuGSWh0dHA6Ly9jcmwuc2VjdGlnby5jb20vU2Vj
-dGlnb1JTQUNsaWVudEF1dGhlbnRpY2F0aW9uYW5kU2VjdXJlRW1haWxDQS5jcmwwgYoGCCsG
-AQUFBwEBBH4wfDBVBggrBgEFBQcwAoZJaHR0cDovL2NydC5zZWN0aWdvLmNvbS9TZWN0aWdv
-UlNBQ2xpZW50QXV0aGVudGljYXRpb25hbmRTZWN1cmVFbWFpbENBLmNydDAjBggrBgEFBQcw
-AYYXaHR0cDovL29jc3Auc2VjdGlnby5jb20wHgYDVR0RBBcwFYETamQuZ2lyYXJkQHN5c251
-eC5wZjANBgkqhkiG9w0BAQsFAAOCAQEAqlsrTWwz05LtzG75zWpJ65W2vWfuS0hWeydRbBG3
-CcYAvJoxppGqUqoN4tgjon0Q+FPyzpnkrusjycUb5cGBg13I8kPwGk4OYzKjwSSLIy+fq6dm
-GWbU19fJMXhinTlGtnvzrVFKTLhluMIQTsPbQMPw/8s0Hf3hhdZIjtuDomQzEAXhZMVpM4Oe
-k+7IerCjywL1VYB3nHQgHU/dwwhA/2CC3mb5S8vLN+gkhv/xfn0Wzp3b6fQfXrXQIFJyzN/w
-WaUQhGzI+vQtwb/lZTrha6EusKpWLP/7IrGbtJr7gtlWLBuIarShIBRP3T0RBCjBIvOEWOWX
-FNZY5kgWT/+IvTCCBhAwggP4oAMCAQICEE2ULBDUO+CUCcWBLTorBk8wDQYJKoZIhvcNAQEM
-BQAwgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpOZXcgSmVyc2V5MRQwEgYDVQQHEwtKZXJz
-ZXkgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMS4wLAYDVQQDEyVVU0VS
-VHJ1c3QgUlNBIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTE4MTEwMjAwMDAwMFoXDTMw
-MTIzMTIzNTk1OVowgZYxCzAJBgNVBAYTAkdCMRswGQYDVQQIExJHcmVhdGVyIE1hbmNoZXN0
-ZXIxEDAOBgNVBAcTB1NhbGZvcmQxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDE+MDwGA1UE
-AxM1U2VjdGlnbyBSU0EgQ2xpZW50IEF1dGhlbnRpY2F0aW9uIGFuZCBTZWN1cmUgRW1haWwg
-Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDKPO2UCkH/3vlGuejWO+bakr8r
-EE6qGryCvb4mHCkqKtLNnFCBP22ULvOXqGfV9eNKjkypdR8i0yW2sxpepwRIm4rx20rno0JK
-uriIMpoqr03E5cWapdfbM3wccaNDZvZe/S/Uvk2TUxA8oDX3F5ZBykYQYVRR3SQ36gejH4v1
-pXWuN82IKPdsmTqQlo49ps+LbnTeef8hNfl7xZ8+cbDhW5nv0qGPVgGt/biTkR7WwtMewu2m
-Ir06MbiJBEF2rpn9OVXH+EYB7PmHfpsEkzGp0cul3AhSROpPyx7d53Q97ANyH/yQc+jl9mXm
-7UHR5ymr+wM3/mwIbnYOz5BTk7kTAgMBAAGjggFkMIIBYDAfBgNVHSMEGDAWgBRTeb9aqitK
-z1SA4dibwJ3ysgNmyzAdBgNVHQ4EFgQUCcDy/AvalNtf/ivfqJlCz8ngrQAwDgYDVR0PAQH/
-BAQDAgGGMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUF
-BwMEMBEGA1UdIAQKMAgwBgYEVR0gADBQBgNVHR8ESTBHMEWgQ6BBhj9odHRwOi8vY3JsLnVz
-ZXJ0cnVzdC5jb20vVVNFUlRydXN0UlNBQ2VydGlmaWNhdGlvbkF1dGhvcml0eS5jcmwwdgYI
-KwYBBQUHAQEEajBoMD8GCCsGAQUFBzAChjNodHRwOi8vY3J0LnVzZXJ0cnVzdC5jb20vVVNF
-UlRydXN0UlNBQWRkVHJ1c3RDQS5jcnQwJQYIKwYBBQUHMAGGGWh0dHA6Ly9vY3NwLnVzZXJ0
-cnVzdC5jb20wDQYJKoZIhvcNAQEMBQADggIBAEFEdQCrOcIV9d6OlW0ycWiMAN0X13ocEDiQ
-yOOxvRcxkfO244K0oX7GzCGHYaqRbklCszzNWVT4DZU/vYrLaeVEDUbCYg+Ci7vhNn9dNqsc
-bzN0xKBoOuRVjPPWDechU70geT3pXCxpwi8EXwl+oiz7xpYfY99JSs3E/piztTSxljHitcPr
-5yoWr9lbkFR8KU3+uGTZ11BfKfuSSaRrZFBv133SeY0d2AqvB9Dj2ZDaFZA0OQkkhfAqNgDp
-VRH99lQV4JSKx0N7/QAEtMj6OF5dRXV6hhXuU3A0Eql4d0247oBpxvnfcmV95QfG8HP059hZ
-SJe7T2wwC+IzXVDQO4xnnvrQJ07ZWemxc/grFpgiG+o+pQxapF1bKftysi02Rl6uhdp5wbTe
-LeYzt2SI9oKSChwGDQQFixtkNnxuwbdrTwvASwvViDPdIGzIQJrTBqriE5/9nzkXbDZmld8/
-7DyriJ/A73RIZllX4dH8mHqsRpU8NEX8IQZWpHWGK5A5nVgvl7MxNfRlIvCvKZQTSnCL8oNq
-JgHXm6zCB4gBwDonM8V/2kuQAUVazVA3I376eIWGwzjuqh3H88v7mNHzubLHm5h0ERCSQNz6
-UoHVZy3q5xeqbYSaxpDQz3lCNObL6sNaOQNh3DcyzqZJYTcGfuLlmC3AIteAAh7lbybJszYn
-MYIENTCCBDECAQEwgawwgZYxCzAJBgNVBAYTAkdCMRswGQYDVQQIExJHcmVhdGVyIE1hbmNo
-ZXN0ZXIxEDAOBgNVBAcTB1NhbGZvcmQxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDE+MDwG
-A1UEAxM1U2VjdGlnbyBSU0EgQ2xpZW50IEF1dGhlbnRpY2F0aW9uIGFuZCBTZWN1cmUgRW1h
-aWwgQ0ECEQDsmC7g3lAwy7h8LafaejBRMA0GCWCGSAFlAwQCAQUAoIICWTAYBgkqhkiG9w0B
-CQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0yMjAyMDcwMTQ1MThaMC8GCSqGSIb3
-DQEJBDEiBCBqhZBdvveCXcqjtQt9CzwwPrVMm1QyMKfN+AYnuY0kfjBsBgkqhkiG9w0BCQ8x
-XzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwIC
-AgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIG9BgkrBgEEAYI3
-EAQxga8wgawwgZYxCzAJBgNVBAYTAkdCMRswGQYDVQQIExJHcmVhdGVyIE1hbmNoZXN0ZXIx
-EDAOBgNVBAcTB1NhbGZvcmQxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDE+MDwGA1UEAxM1
-U2VjdGlnbyBSU0EgQ2xpZW50IEF1dGhlbnRpY2F0aW9uIGFuZCBTZWN1cmUgRW1haWwgQ0EC
-EQDsmC7g3lAwy7h8LafaejBRMIG/BgsqhkiG9w0BCRACCzGBr6CBrDCBljELMAkGA1UEBhMC
-R0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UEBxMHU2FsZm9yZDEYMBYG
-A1UEChMPU2VjdGlnbyBMaW1pdGVkMT4wPAYDVQQDEzVTZWN0aWdvIFJTQSBDbGllbnQgQXV0
-aGVudGljYXRpb24gYW5kIFNlY3VyZSBFbWFpbCBDQQIRAOyYLuDeUDDLuHwtp9p6MFEwDQYJ
-KoZIhvcNAQEBBQAEggEARHFOBdl70AOuZgUVW9rmr6KJOgTWqQ3zcPYsJE4YhirbirX28DmG
-1+aahNTIBv2Ivv57jw+IvJXHOehFwI1JpK4xdj5Ei7cA85sxji9iuWOZd7tn18vOMHmtRJuL
-xm2IgTjuNiG5IAycN6XSRBUhvytWK9U3GoO3OS0TnC61223xteOTY08uGyZtbIiBm463+XVb
-whTFtoIfMBpHkViOzoU/B/ZpCxFdTu3jEN0mJ4PcZ9HwS+Bnb6UhhkZndeSxm7TfzOc7C4OL
-YETMHNoJaGT28/zuZIcWf4+4JVowIqMZvaaDPdfG01tTrY8+zIQvuQNRDqXDmoHMhCsBah/n
-TQAAAAAAAA==
---------------ms060406060609030403030708--
+ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2ZpbGUuYyBiL2ZzL2J0cmZzL2ZpbGUuYwppbmRleCBm
+NWRlOGFiOTc4N2UuLmJlMmUyMGQxNjNlZiAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvZmlsZS5j
+CisrKyBiL2ZzL2J0cmZzL2ZpbGUuYwpAQCAtMzA0LDYgKzMwNCwxMSBAQCBzdGF0aWMgaW50
+IF9fYnRyZnNfcnVuX2RlZnJhZ19pbm9kZShzdHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5m
+bywKIAlzYl9zdGFydF93cml0ZShmc19pbmZvLT5zYik7CiAJcmV0ID0gYnRyZnNfZGVmcmFn
+X2ZpbGUoaW5vZGUsIE5VTEwsICZjdHJsKTsKIAlzYl9lbmRfd3JpdGUoZnNfaW5mby0+c2Ip
+OworCXRyYWNlX3ByaW50aygiZGVmcmFnIGZpbmlzaCByL2k9JWxsZC8lbGx1IHJldD0lZCBk
+ZWZyYWdnZWQ9JWxsdSBsYXN0X3NjYW5uZWQ9JWxsdSBsYXN0X29mZj0lbGx1IGN5Y2xlZD0l
+ZFxuIiwKKwkJICAgICBCVFJGU19JKGlub2RlKS0+cm9vdC0+cm9vdF9rZXkub2JqZWN0aWQs
+CisJCSAgICAgYnRyZnNfaW5vKEJUUkZTX0koaW5vZGUpKSwgcmV0LCBjdHJsLnNlY3RvcnNf
+ZGVmcmFnZ2VkLAorCQkgICAgIGN0cmwubGFzdF9zY2FubmVkLAorCQkgICAgIGRlZnJhZy0+
+bGFzdF9vZmZzZXQsIGRlZnJhZy0+Y3ljbGVkKTsKIAkvKgogCSAqIGlmIHdlIGZpbGxlZCB0
+aGUgd2hvbGUgZGVmcmFnIGJhdGNoLCB0aGVyZQogCSAqIG11c3QgYmUgbW9yZSB3b3JrIHRv
+IGRvLiAgUXVldWUgdGhpcyBkZWZyYWcKZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmMg
+Yi9mcy9idHJmcy9pb2N0bC5jCmluZGV4IDEzM2UzZTJlMmU3OS4uYTA1MDFjODg5MjJiIDEw
+MDY0NAotLS0gYS9mcy9idHJmcy9pb2N0bC5jCisrKyBiL2ZzL2J0cmZzL2lvY3RsLmMKQEAg
+LTE0MjAsNiArMTQyMCwxMSBAQCBzdGF0aWMgaW50IGRlZnJhZ19jb2xsZWN0X3RhcmdldHMo
+c3RydWN0IGJ0cmZzX2lub2RlICppbm9kZSwKIGFkZDoKIAkJbGFzdF9pc190YXJnZXQgPSB0
+cnVlOwogCQlyYW5nZV9sZW4gPSBtaW4oZXh0ZW50X21hcF9lbmQoZW0pLCBzdGFydCArIGxl
+bikgLSBjdXI7CisKKwkJdHJhY2VfcHJpbnRrKCJhZGQgdGFyZ2V0IHIvaT0lbGxkLyVsbHUg
+c3RhcnQ9JWxsdSBsZW49JWxsdSBlbT0lbGx1IGxlbj0lbGx1IGdlbj0lbGxkIG5ld2VyPSVs
+bHVcbiIsCisJCQlpbm9kZS0+cm9vdC0+cm9vdF9rZXkub2JqZWN0aWQsCisJCQlidHJmc19p
+bm8oaW5vZGUpLCBjdXIsIHJhbmdlX2xlbiwgZW0tPnN0YXJ0LCBlbS0+bGVuLAorCQkJZW0t
+PmdlbmVyYXRpb24sIGN0cmwtPm5ld2VyX3RoYW4pOwogCQkvKgogCQkgKiBUaGlzIG9uZSBp
+cyBhIGdvb2QgdGFyZ2V0LCBjaGVjayBpZiBpdCBjYW4gYmUgbWVyZ2VkIGludG8KIAkJICog
+bGFzdCByYW5nZSBvZiB0aGUgdGFyZ2V0IGxpc3QuCkBAIC0xNTIwLDYgKzE1MjUsOSBAQCBz
+dGF0aWMgaW50IGRlZnJhZ19vbmVfbG9ja2VkX3RhcmdldChzdHJ1Y3QgYnRyZnNfaW5vZGUg
+Kmlub2RlLAogCQkJIEVYVEVOVF9ERUZSQUcsIDAsIDAsIGNhY2hlZF9zdGF0ZSk7CiAJc2V0
+X2V4dGVudF9kZWZyYWcoJmlub2RlLT5pb190cmVlLCBzdGFydCwgc3RhcnQgKyBsZW4gLSAx
+LCBjYWNoZWRfc3RhdGUpOwogCisJdHJhY2VfcHJpbnRrKCJkZWZyYWcgdGFyZ2V0IHIvaT0l
+bGxkLyVsbHUgc3RhcnQ9JWxsdSBsZW49JWxsdVxuIiwKKwkJCWlub2RlLT5yb290LT5yb290
+X2tleS5vYmplY3RpZCwKKwkJCWJ0cmZzX2lubyhpbm9kZSksIHN0YXJ0LCBsZW4pOwogCS8q
+IFVwZGF0ZSB0aGUgcGFnZSBzdGF0dXMgKi8KIAlmb3IgKGkgPSBzdGFydF9pbmRleCAtIGZp
+cnN0X2luZGV4OyBpIDw9IGxhc3RfaW5kZXggLSBmaXJzdF9pbmRleDsgaSsrKSB7CiAJCUNs
+ZWFyUGFnZUNoZWNrZWQocGFnZXNbaV0pOwpAQCAtMTc4Niw2ICsxNzk0LDEyIEBAIGludCBi
+dHJmc19kZWZyYWdfZmlsZShzdHJ1Y3QgaW5vZGUgKmlub2RlLCBzdHJ1Y3QgZmlsZV9yYV9z
+dGF0ZSAqcmEsCiAJaWYgKHN0YXJ0X2luZGV4IDwgaW5vZGUtPmlfbWFwcGluZy0+d3JpdGVi
+YWNrX2luZGV4KQogCQlpbm9kZS0+aV9tYXBwaW5nLT53cml0ZWJhY2tfaW5kZXggPSBzdGFy
+dF9pbmRleDsKIAorCXRyYWNlX3ByaW50aygiZW50cnkgci9pPSVsbGQvJWxsdSBzdGFydD0l
+bGx1IGxlbj0lbGx1IG5ld2VyPSVsbHUgdGhyZXM9JXVcbiIsCisJCUJUUkZTX0koaW5vZGUp
+LT5yb290LT5yb290X2tleS5vYmplY3RpZCwKKwkJYnRyZnNfaW5vKEJUUkZTX0koaW5vZGUp
+KSwKKwkJY3RybC0+bGFzdF9zY2FubmVkLCBsYXN0X2J5dGUgKyAxIC0gY3RybC0+bGFzdF9z
+Y2FubmVkLAorCQljdHJsLT5uZXdlcl90aGFuLCBjdHJsLT5leHRlbnRfdGhyZXNoKTsKKwog
+CXdoaWxlIChjdHJsLT5sYXN0X3NjYW5uZWQgPCBsYXN0X2J5dGUpIHsKIAkJY29uc3QgdW5z
+aWduZWQgbG9uZyBwcmV2X3NlY3RvcnNfZGVmcmFnZ2VkID0gY3RybC0+c2VjdG9yc19kZWZy
+YWdnZWQ7CiAJCXU2NCBjbHVzdGVyX2VuZDsK
+
+--------------OvPkSX4xZCRh0t88DXskpEr4--

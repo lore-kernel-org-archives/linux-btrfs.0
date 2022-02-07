@@ -2,148 +2,81 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 411F6C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Feb 2022 13:00:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 538A0C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Feb 2022 15:04:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1383357AbiBGM6N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Feb 2022 07:58:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58468 "EHLO
+        id S231455AbiBGPDO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Feb 2022 10:03:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47238 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1447087AbiBGMxQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Feb 2022 07:53:16 -0500
+        with ESMTP id S1344120AbiBGOjH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Feb 2022 09:39:07 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36BDDC043189
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 04:53:07 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE1FEC0401C1
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 06:39:06 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 0339BB8102E
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 12:53:06 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 13DE1C004E1;
-        Mon,  7 Feb 2022 12:53:03 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 779C5B8125D
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 14:39:05 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9E8D1C340F0
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 14:39:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1644238384;
-        bh=wklwhWvN5Q9wlBdsABsZprjhy5Ponkaczj4dEa2UwJU=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=Mcdxdu4XXzdRHu4Tg0+ZQYTDvF/SKq5H7aqB0R4mOzedjSP7SNm6eatXcriS6INng
-         ciNAudpVrs51PWqsHwp//zTeJlbv0Innns4T9xFqWNVQUpXFR2JLvmcS4ezucYHYiI
-         JOcOSQ0iVGEb1GnUapRWaAenF93AHPqshNlqXEgAZh1fnP3/jBQAQbcaw0QzizTsbH
-         MIp0WPMLHoY+oMne4Vmt6AvngzB/YYbl6aLdBnVPw7d1/07SBqad1BIonU9erbgPXu
-         tSCJLCdshDEPTMYjRe3x7E4SWSyJHWmaH4uysBJQNNk7opIXkmQwknz3d4mVp9DnqJ
-         yyoUbhK38A0UQ==
-Date:   Mon, 7 Feb 2022 12:53:01 +0000
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: defrag: don't try to defrag extent which is going
- to be written back
-Message-ID: <YgEWLXu0x3j4OA9L@debian9.Home>
-References: <9df1dce96466f4314190cc4120f19d5b7d0fe5ed.1644210926.git.wqu@suse.com>
- <YgD17pDNz8b165yN@debian9.Home>
- <05e40ca7-dcd6-b605-b109-e47b79baeca3@gmx.com>
+        s=k20201202; t=1644244744;
+        bh=bPnSGZ8/6cI+sQMctwfZG9DX3CO1c6Y2Zr46yYFpVO8=;
+        h=From:To:Subject:Date:From;
+        b=NTQBjh6Gx1bT0A5oJdJp1FoPfeHDooTBmU8m4LE3iZkCNJ+BJOUI4XrAsVnDFeX3k
+         TpRYII/DppZV3+X9L9Cc/qhrVcRM6WnqinepPRVh3dEf//43yG7FLrSHWkh+pBJFPG
+         KOzBgJZZhI80Lqx3FBTRHbIkeW6nHthjssagKiavRRRrlvxhTeMIIciudf5A6gtHNV
+         25ZANG02NOtV23Ol5sykSdIyGlUL2os4LWcW10x2E75ej8DQUje4+iXbCzUwOWgAfY
+         NqUASVfWSeTuAXiajKVmtTLdCH5ljzgRBHLidS0d9AOBSzdsSfQO8sK+fV5AtmzNIM
+         FbWp9Q8vBo0Ew==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix missing log mutex unlock after failure to log inode
+Date:   Mon,  7 Feb 2022 14:39:00 +0000
+Message-Id: <b98e09dd2c88d71e92ebcfd083dc5687d53b9006.1644244472.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <05e40ca7-dcd6-b605-b109-e47b79baeca3@gmx.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 07, 2022 at 07:06:27PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2022/2/7 18:35, Filipe Manana wrote:
-> > On Mon, Feb 07, 2022 at 01:17:15PM +0800, Qu Wenruo wrote:
-> > > In defrag_collect_targets() if we hit an extent map which is created by
-> > > create_io_em(), it will be considered as target as its generation is
-> > > (u64)-1, thus will pass the generation check.
-> > > 
-> > > Furthermore since all delalloc functions will clear EXTENT_DELALLOC,
-> > 
-> > What are delalloc functions?
-> > This should say that once we start writeback (we run delalloc), we allocate
-> > an extent, create an extent map point to that extent, with a generation of
-> > (u64)-1, created the ordered extent and then clear the DELALLOC bit from the
-> > range in the inode's io tree.
-> 
-> I mean the functions called inside btrfs_run_dealloc_ranges(), like
-> cow_file_range() etc.
-> 
-> > 
-> > > such extent map will also pass the EXTENT_DELALLOC check.
-> > > 
-> > > Defragging such extent will make no sense, in fact this will cause extra
-> > > IO as we will just re-dirty the range and submit it for writeback again,
-> > > causing wasted IO.
-> > 
-> > defrag_prepare_one_page() will wait for the ordered extent to complete,
-> > and after the wait, the extent map's generation is updated from (u64)-1 to
-> > something else.
-> > 
-> > So the second pass of defrag_collect_targets() will see a generation that
-> > is not (u64)-1.
-> 
-> Yes, for the 2nd loop we will no longer see the (u64)-1 generations.
-> 
-> > 
-> > > 
-> > > Unfortunately this behavior seems to exist in older kernels too (v5.15
-> > > and older), but I don't have a solid test case to prove it nor test the
-> > > patched behavior.
-> > 
-> > This is exactly the first patch I sent François when the first report
-> > of unusable autodefrag popped up:
-> > 
-> > https://lore.kernel.org/linux-btrfs/YeVawBBE3r6hVhgs@debian9.Home/T/#ma1c8a9848c9b7e4edb471f7be184599d38e288bb
-> 
-> Oh, mind to send out the proper patch as you're the original author with
-> this idea?
+From: Filipe Manana <fdmanana@suse.com>
 
-I don't mind if you send your version. That's fine, my comment there about
-the infinite loop is not correct, as that was before having a better understanding
-of all that changed in the refactoring and before finding out the 1 byte file
-case triggering the almost infinite loop.
+Before starting to log an inode, we check if the inode was logged before
+by calling inode_logged(). If we get an error from that call, we jump
+to the 'out' label, which results in returning from btrfs_log_inode()
+without unlocking the inode's log mutex. Fix that by jumping to the
+'out_unlock' label instead.
 
-Just the correction to the change log, comment, and also the subject ("which is going
-to be written back" should be "which is under writeback").
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-Thanks.
+This is meant to be applied on top of:
+"btrfs: avoid inode logging during rename and link when possible", which
+is only on misc-next, not on Linus' tree yet.
 
+David, can you fold it into that patch? Or I can send a new version
+of the series. Thanks.
 
-> 
-> Thanks,
-> Qu
-> > 
-> > > 
-> > > Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > > ---
-> > >   fs/btrfs/ioctl.c | 4 ++++
-> > >   1 file changed, 4 insertions(+)
-> > > 
-> > > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > > index 133e3e2e2e79..0ba98e1d9329 100644
-> > > --- a/fs/btrfs/ioctl.c
-> > > +++ b/fs/btrfs/ioctl.c
-> > > @@ -1353,6 +1353,10 @@ static int defrag_collect_targets(struct btrfs_inode *inode,
-> > >   		if (em->generation < ctrl->newer_than)
-> > >   			goto next;
-> > > 
-> > > +		/* This em is goging to be written back, no need to defrag */
-> > 
-> > goging -> going
-> > 
-> > Saying that it is under writeback is more correct.
-> > By saying is "going to be", it gives the idea that writeback may have not started yet,
-> > but an extent map with a generation of (u64)-1 is created when writeback starts.
-> > 
-> > 
-> > > +		if (em->generation == (u64)-1)
-> > > +			goto next;
-> > > +
-> > >   		/*
-> > >   		 * Our start offset might be in the middle of an existing extent
-> > >   		 * map, so take that into account.
-> > > --
-> > > 2.35.0
-> > > 
+ fs/btrfs/tree-log.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index e9b6eba7c42d..a483337e8f41 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5720,7 +5720,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	 */
+ 	ret = inode_logged(trans, inode, path);
+ 	if (ret < 0)
+-		goto out;
++		goto out_unlock;
+ 	ctx->logged_before = (ret == 1);
+ 	ret = 0;
+ 
+-- 
+2.33.0
+

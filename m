@@ -2,199 +2,148 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55D48C4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Feb 2022 13:00:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 411F6C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Feb 2022 13:00:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1379546AbiBGM6M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Feb 2022 07:58:12 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49894 "EHLO
+        id S1383357AbiBGM6N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Feb 2022 07:58:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58468 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1387298AbiBGLlH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Feb 2022 06:41:07 -0500
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D738C0401C3
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 03:39:16 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1644233950;
-        bh=+FJihQJ9ShjpIfNzjGVD+QFrsO6CkXZ3EsJ7hTfTlls=;
-        h=X-UI-Sender-Class:Date:To:Cc:References:From:Subject:In-Reply-To;
-        b=PGYFL6WQ1AHzflJ8Iv1WEno2Nx8h/V0Dy5+BpIaDT0HEr0Z6QYmfIq1fxgK6+OryO
-         IOiO1CB/KJMo5Zd4p8f7dNQSa7NkSKNpvIr66t5eCzSfajMBeJxmqo6mMrrRfQoeZ9
-         ilRHaFuyPMYIiPQR6n52khZZhmht/P1aQChXv8k8=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MYvcA-1nlxHh2aOW-00UtZp; Mon, 07
- Feb 2022 12:39:10 +0100
-Message-ID: <e15a84e9-6e22-7a64-0ee2-67b9c4b51e1c@gmx.com>
-Date:   Mon, 7 Feb 2022 19:39:06 +0800
+        with ESMTP id S1447087AbiBGMxQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Feb 2022 07:53:16 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36BDDC043189
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 04:53:07 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 0339BB8102E
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Feb 2022 12:53:06 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 13DE1C004E1;
+        Mon,  7 Feb 2022 12:53:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1644238384;
+        bh=wklwhWvN5Q9wlBdsABsZprjhy5Ponkaczj4dEa2UwJU=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=Mcdxdu4XXzdRHu4Tg0+ZQYTDvF/SKq5H7aqB0R4mOzedjSP7SNm6eatXcriS6INng
+         ciNAudpVrs51PWqsHwp//zTeJlbv0Innns4T9xFqWNVQUpXFR2JLvmcS4ezucYHYiI
+         JOcOSQ0iVGEb1GnUapRWaAenF93AHPqshNlqXEgAZh1fnP3/jBQAQbcaw0QzizTsbH
+         MIp0WPMLHoY+oMne4Vmt6AvngzB/YYbl6aLdBnVPw7d1/07SBqad1BIonU9erbgPXu
+         tSCJLCdshDEPTMYjRe3x7E4SWSyJHWmaH4uysBJQNNk7opIXkmQwknz3d4mVp9DnqJ
+         yyoUbhK38A0UQ==
+Date:   Mon, 7 Feb 2022 12:53:01 +0000
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: defrag: don't try to defrag extent which is going
+ to be written back
+Message-ID: <YgEWLXu0x3j4OA9L@debian9.Home>
+References: <9df1dce96466f4314190cc4120f19d5b7d0fe5ed.1644210926.git.wqu@suse.com>
+ <YgD17pDNz8b165yN@debian9.Home>
+ <05e40ca7-dcd6-b605-b109-e47b79baeca3@gmx.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.1
-Content-Language: en-US
-To:     Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <817e735ee9c225268f17bee906c871b1fd965c4f.1644051267.git.wqu@suse.com>
- <YgD58netqCmMLlPG@debian9.Home>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: [PATCH] btrfs: populate extent_map::generation when reading from
- disk
-In-Reply-To: <YgD58netqCmMLlPG@debian9.Home>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:GwOhKUNbKKM7LxWMmBQ6iF40fIOd/vTHvINzBjAzO4blbw/GPt3
- mPv+6Ulcl4iRMjeD50Z2A+b6QDDPLnhMcNhjSoOV7rlwLKgjfq5Y+RylduuBrdYnbWfPm6E
- 3HcmriBpceb75muRn4wzy1oAqkSF0D7nZvrgPxa3yyDLWwUbXTKrBqFQNZhbM6no1q5W73Y
- Uwyv3fKmdHXYNZ0eexpCQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:729dcusNI6c=:hSkKuz7hkrimwCRv1EU7zS
- QnMddUnE2bfe2jocUoKSL8jJCqo7NsHdAwqHb/xN0QFW4wU5z43gXXugY3S78AmkZljJJWSLB
- rlr1w6gqyB4nhdFSwLEEMV//PYJ+p22q1lIKpbculSPkjQlfionRo47URoRAul6qK3hU5KErB
- 2tEpN4UP1F/Vh7Qgbyykg+qxHKnT33Ik3BcimGbKXf9a/HqfzPW9K09tXi2SXfAmNzo5HLfTb
- 5YbOPCmzFxtjL+vJuUB+pCWju7Xw0fxPzrVoh5AxAR4AOJmICvMm+6gnuRBnYdDCS/xc1VS7X
- Vpviy7h14fujz7R3VDm0VAAFenKsko4hzwTUhxYY1ao9ynrHG8FdidkupuaKHdIdYsCgjNPc4
- RuDjna2qVDx2WxZ6sdhelbjasnnW796pMsLdvWvSZJJiW7ayEjrMi4sd28SxotWsSvjmI5Zhz
- eqBurj8ZJ/Q3X6ONVRohfnr28rNd74oXNa6l+nnZEPVWHTcbgyL9OTiCUMe2a3C0/RT/yXkZJ
- OWrMzveEbgyMKcz/7CGfZjoqBRqXPEMtZ5HZ8DSOPnQ7OKnpGO/oFmQ+ClCQwa+1rcuXr4DXg
- Fo2hyjUs0FGZdwi73qwu5GwXKULl3Jp+U1iOs1a6p1NnTWmCCXX3CqtlmfkWQP2KYNFLl2z+h
- udBrXdPeKYwetKwBHoBKkiO4kpACvt7UIXWKk8iUQ+dX5kN/mZtROcZ4AxVmOYg/w3cepsbZE
- HQBNmGgUuAkao8Yalh+5uJRDefC05wBDxhokPNoVaHGHLceqs/oIZmlmG9ieAXzQiygFnaPsJ
- rKe6sMwqW7A1iEe9QMnvgc31MbxbGG1rm/vNqzOBNpDfaAF7Eea8A7ZJgfLoHcwi/R1nsfjyO
- 65JyD/hvpXXkz13sOIOQcqwEv7J8fovO9PDzAT7LWLkE4wl60XIk8QR7eymJQY2pxdhQ8+QpH
- +9+JjyLCg1xOVCefUc0iZkKQAOuoWiqDrj37Nu0hVZ1rmaKwg/i6DVTkh9riSZIqSIe2GB68s
- sCK+kqAupLJeRvDBTgGRYy5LaiN7tlo7NFk2+GCSP+LAtvjIcaYOtFCVYQKoLRjJIF8g7VCee
- NsKaN3UUNHgr6Y=
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <05e40ca7-dcd6-b605-b109-e47b79baeca3@gmx.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Mon, Feb 07, 2022 at 07:06:27PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2022/2/7 18:35, Filipe Manana wrote:
+> > On Mon, Feb 07, 2022 at 01:17:15PM +0800, Qu Wenruo wrote:
+> > > In defrag_collect_targets() if we hit an extent map which is created by
+> > > create_io_em(), it will be considered as target as its generation is
+> > > (u64)-1, thus will pass the generation check.
+> > > 
+> > > Furthermore since all delalloc functions will clear EXTENT_DELALLOC,
+> > 
+> > What are delalloc functions?
+> > This should say that once we start writeback (we run delalloc), we allocate
+> > an extent, create an extent map point to that extent, with a generation of
+> > (u64)-1, created the ordered extent and then clear the DELALLOC bit from the
+> > range in the inode's io tree.
+> 
+> I mean the functions called inside btrfs_run_dealloc_ranges(), like
+> cow_file_range() etc.
+> 
+> > 
+> > > such extent map will also pass the EXTENT_DELALLOC check.
+> > > 
+> > > Defragging such extent will make no sense, in fact this will cause extra
+> > > IO as we will just re-dirty the range and submit it for writeback again,
+> > > causing wasted IO.
+> > 
+> > defrag_prepare_one_page() will wait for the ordered extent to complete,
+> > and after the wait, the extent map's generation is updated from (u64)-1 to
+> > something else.
+> > 
+> > So the second pass of defrag_collect_targets() will see a generation that
+> > is not (u64)-1.
+> 
+> Yes, for the 2nd loop we will no longer see the (u64)-1 generations.
+> 
+> > 
+> > > 
+> > > Unfortunately this behavior seems to exist in older kernels too (v5.15
+> > > and older), but I don't have a solid test case to prove it nor test the
+> > > patched behavior.
+> > 
+> > This is exactly the first patch I sent François when the first report
+> > of unusable autodefrag popped up:
+> > 
+> > https://lore.kernel.org/linux-btrfs/YeVawBBE3r6hVhgs@debian9.Home/T/#ma1c8a9848c9b7e4edb471f7be184599d38e288bb
+> 
+> Oh, mind to send out the proper patch as you're the original author with
+> this idea?
+
+I don't mind if you send your version. That's fine, my comment there about
+the infinite loop is not correct, as that was before having a better understanding
+of all that changed in the refactoring and before finding out the 1 byte file
+case triggering the almost infinite loop.
+
+Just the correction to the change log, comment, and also the subject ("which is going
+to be written back" should be "which is under writeback").
+
+Thanks.
 
 
-On 2022/2/7 18:52, Filipe Manana wrote:
-> On Sat, Feb 05, 2022 at 04:55:47PM +0800, Qu Wenruo wrote:
->> [WEIRD BEHAVIOR]
->>
->> When btrfs_get_extent() tries to get some file extent from disk, it
->> never populates extent_map::generation , leaving the value to be 0.
->>
->> On the other hand, for extent map generated by IO, it will get its
->> generation properly set at finish_ordered_io()
->>
->>   finish_ordered_io()
->>   |- unpin_extent_cache(gen =3D trans->transid)
->>      |- em->generation =3D gen;
->>
->> [REGRESSION?]
->> I have no idea when such behavior is introduced, but at least in v5.15
->> this incorrect behavior is already there.
->
-> The extent map generation is basically only used by the fsync code, but
-> as it deals only with modified extents, it always sees non-zero generati=
-on.
->
->>
->> [AFFECT]
->> Not really sure if there is any behavior really get affected.
->
-> affect -> effect
->
-> No, I don't think it affects anything.
->
->>
->> Sure there are locations like extent map merging, but there is no value
->> smaller than 0 for u64, thus it won't really cause a difference.
->>
->> For autodefrag, although it's checking em->generation to determine if w=
-e
->> need to defrag a range, but that @new_than value is always from IO, thu=
-s
->
-> This is confusing.
-> You mean the minimum generation threshold for autodefrag. Referring to
-> a function parameter (and it's named "newer_than") out of context, is
-> hard to follow.
->
->
->> all those extent maps with 0 generation will just be skipped, and that'=
-s
->> the expected behavior anyway.
->>
->> For manual defrag, @newer_than is 0, and our check is to skip generatio=
-n
->> smaller than @newer_than, thus it still makes no difference.
->
-> Same here, saying the minimum generation threshold for defrag is more
-> informative than referring to the name of a function parameter. A functi=
-on
-> that is not even touched by the patch makes it hard to understand.
->
->>
->> [FIX]
->> To make things less weird, let us populate extent_map::generation in
->> btrfs_extent_item_to_extent_map().
->
-> Looks good.
-> Though I don't think this fixes anything.
-
-I'm considering the following extreme corner case, which this patch may
-make a difference (although to cause extra IO)
-
-E.g.
-Root 5, last_trans =3D 500.
-
-In transaction 510, we write back some data for inode A of root 5, the
-extent is at file offset 0 len 32K, triggering autodefrag to create an
-inode_defrag structure with transid 500 (from root 5 last_trans).
-
-Then we do some fragmented writeback following inode A file offset 32K,
-they all happen before cleaner get triggered.
-
-Before cleaner get triggered, fd for inode A is closed, and all cache is
-dropped, including the extent map cache.
-
-Then autodefrag get triggered, it tries to get the extent map for offset
-0, and got an em, with generation 0.
-
-Since 0 (unpopulated em::generation) < 500 (inode_defrag::transid), the
-extent doesn't need to be defragged.
-
-But in fact, these new extents at file offset 0 and onward all have
-generation newer than 510, and can be defragged.
-
-
-Although this is opposite what we're chasing, it will cause more IO,
-instead of less...
-
-Thanks,
-Qu
-
-
-
-> As I pointed out in the other
-> thread, the extent map generation is basically only I used by fsync, whi=
-ch
-> doesn't use extent maps that are not the in the list of modified extents
-> (and those always have a generation > 0).
->
-> Thnaks.
->
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>   fs/btrfs/file-item.c | 1 +
->>   1 file changed, 1 insertion(+)
->>
->> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
->> index 90c5c38836ab..9a3de652ada8 100644
->> --- a/fs/btrfs/file-item.c
->> +++ b/fs/btrfs/file-item.c
->> @@ -1211,6 +1211,7 @@ void btrfs_extent_item_to_extent_map(struct btrfs=
-_inode *inode,
->>   	extent_start =3D key.offset;
->>   	extent_end =3D btrfs_file_extent_end(path);
->>   	em->ram_bytes =3D btrfs_file_extent_ram_bytes(leaf, fi);
->> +	em->generation =3D btrfs_file_extent_generation(leaf, fi);
->>   	if (type =3D=3D BTRFS_FILE_EXTENT_REG ||
->>   	    type =3D=3D BTRFS_FILE_EXTENT_PREALLOC) {
->>   		em->start =3D extent_start;
->> --
->> 2.35.0
->>
+> 
+> Thanks,
+> Qu
+> > 
+> > > 
+> > > Signed-off-by: Qu Wenruo <wqu@suse.com>
+> > > ---
+> > >   fs/btrfs/ioctl.c | 4 ++++
+> > >   1 file changed, 4 insertions(+)
+> > > 
+> > > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > > index 133e3e2e2e79..0ba98e1d9329 100644
+> > > --- a/fs/btrfs/ioctl.c
+> > > +++ b/fs/btrfs/ioctl.c
+> > > @@ -1353,6 +1353,10 @@ static int defrag_collect_targets(struct btrfs_inode *inode,
+> > >   		if (em->generation < ctrl->newer_than)
+> > >   			goto next;
+> > > 
+> > > +		/* This em is goging to be written back, no need to defrag */
+> > 
+> > goging -> going
+> > 
+> > Saying that it is under writeback is more correct.
+> > By saying is "going to be", it gives the idea that writeback may have not started yet,
+> > but an extent map with a generation of (u64)-1 is created when writeback starts.
+> > 
+> > 
+> > > +		if (em->generation == (u64)-1)
+> > > +			goto next;
+> > > +
+> > >   		/*
+> > >   		 * Our start offset might be in the middle of an existing extent
+> > >   		 * map, so take that into account.
+> > > --
+> > > 2.35.0
+> > > 

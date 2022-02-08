@@ -2,108 +2,132 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B495EC4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Feb 2022 22:21:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFFC2C4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Feb 2022 22:21:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1387155AbiBHWVt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Feb 2022 17:21:49 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43300 "EHLO
+        id S1387224AbiBHWVx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Feb 2022 17:21:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53380 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1386205AbiBHTnt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Feb 2022 14:43:49 -0500
-Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com [IPv6:2607:f8b0:4864:20::1029])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7AD6C0613CB;
-        Tue,  8 Feb 2022 11:43:48 -0800 (PST)
-Received: by mail-pj1-x1029.google.com with SMTP id y15-20020a17090a474f00b001b88562650aso2203146pjg.0;
-        Tue, 08 Feb 2022 11:43:48 -0800 (PST)
+        with ESMTP id S1386405AbiBHU1C (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Feb 2022 15:27:02 -0500
+Received: from mail-qk1-x72c.google.com (mail-qk1-x72c.google.com [IPv6:2607:f8b0:4864:20::72c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 74B99C0613CB
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Feb 2022 12:27:01 -0800 (PST)
+Received: by mail-qk1-x72c.google.com with SMTP id b35so14735180qkp.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Feb 2022 12:27:01 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=sender:from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=47Zt1ciDlAfZ4CsVaghTCf8CTxEeHu+p/hM6Ax63pg8=;
-        b=SMmHEK9AqUbqZLIwucjvRyGysfK96AdDbYtNYRCgagZmSxwc1w2HIUufH1A8ItRgep
-         Jz5mDipLmvR9OY5cEMy1DwAGNkeDaQQn8Reuo1OukFlRbZB+oN+A1Q9D7cLj9Mbid/G7
-         R3DxXDARvZCk6cSJL4vMoQduuaAowtBA/tRJtoqA5ha8uM2TW4qXxT/GVLp9w73Dv/n7
-         3d5yBVIg8yaLMeshP38X1FNuWWahuIsRvFClqT+LI52wWuuToWlLAF9RzkdHnWbT8zdF
-         BcA/Me+ULcQlKO1W4biSCA9doeTMeXKKfNQ+72B2MxdxTiF6pYTzdxDNRYV028gfR1nq
-         Sq7A==
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=WfD6fEYNCWAcGnrl7G6RugpHXHB+ojSvh2FjWGokIdA=;
+        b=bNg9DVdeCKvWHDsDvHJ0OM6NVlbcHOuNlxpSEfgnDfA5kfg097HofGFNNicT38JLeO
+         FDcZ/i2Qzn3EFfYVEYiduVcrUNhDZBYeMKojamw0SuYznfZEqZi4opij2Yx9rW5irDe3
+         v8n8WijB6MTwjnWN8Q0KEW1f4sW+rQXLfgcYC1kAuGd8Hzozn/v3Tpfdd5BzPJdovm2n
+         UbUEr84TkBqW08fZKkETTsWwev0oM9zXSHxqU2WVxMtrc3RGwawiz9KH6B9pmUsceZaE
+         FmLCXhDJ/6quoPK/pr8h8IbnL9BUmKFsckahFwgwtZyvGg0HsTHp9tJfPfHBWDv1xzs9
+         HPgw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:sender:from:to:cc:subject:date:message-id
-         :in-reply-to:references:mime-version:content-transfer-encoding;
-        bh=47Zt1ciDlAfZ4CsVaghTCf8CTxEeHu+p/hM6Ax63pg8=;
-        b=Vskd9rXTdoWmq77k7M2RTdDJTGZbF4qUWwI4TPST5GLM5xg23Kp/p0+WhsyT/Nc1QL
-         jSw7rjP8pdGO79iBoTnYZ9XQuBP2USw354lehNg02C4HhLRlV5mu5zjsnY7CnO4AJ7SZ
-         YyApipqbMWOo41cPoKal5Vo72hHtO3POjpZW37zxnEmPlQAT5CpHph1gxg/edBCsHOSz
-         iH/nf07Xj5zKNirzTD/U3iw5FdR7mN0JAZTqjf1huhvjzg3qKk+F9Rpk5FFGu5W9VIid
-         T+hu6I4GgYfVpZy83tGqRjNUz0XWfv6EU95UKEYlVJjErzHdahVu7IgofWvIwO70w+J/
-         kGHw==
-X-Gm-Message-State: AOAM532I5eoe59PwKwPwavNRtQkEIfSuxf4iTqk4R/RWbeQKwpwpdQds
-        Ir84hqDjbDhr//cNv4XTQpI=
-X-Google-Smtp-Source: ABdhPJzd2Xi0GuGR4M7cbShojHTa5914O2E9YTB2ynvlq39JbRXCTw81IBVhXHOA5wx+3FrqqomSiQ==
-X-Received: by 2002:a17:902:9343:: with SMTP id g3mr5950056plp.11.1644349428375;
-        Tue, 08 Feb 2022 11:43:48 -0800 (PST)
-Received: from balhae.hsd1.ca.comcast.net ([2601:647:4800:c6f0:347f:e607:176:4358])
-        by smtp.gmail.com with ESMTPSA id w11sm16876839pfu.50.2022.02.08.11.43.46
+        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=WfD6fEYNCWAcGnrl7G6RugpHXHB+ojSvh2FjWGokIdA=;
+        b=c6rmPurgrE6RnGhIlxRKaB5k+sIDfTDXkiWpCsZ+jvbNt9NiLpcajKApWpddQKik4v
+         EqaLckQ89XNnBSmi0VMYa0QdVgSrrn7tmqEBSt/T38tAmGbnk0MYPgpU/5a0suEF9FK4
+         GK2ricK/PxLk1+iUyQZFmMC9T5e3k3rK4GaqWF88v9F7Iwq7Jn6NJX/FFnvzwdq4zBmG
+         bAII2Dj5juE4I+Z4fsoDuRfbE1xNjzrD4anECY4HcNt4CfEIh6P5WfZ/KQtuxK7IS8GT
+         dXVQuMKeBw96Wx7eDtWZePKsSMKB7FZWsO16AoG+J/xbZsS9x7Wgg8vsaaFdaHuYbSf+
+         YQlg==
+X-Gm-Message-State: AOAM530Osk025yymdRd7IQroYXXoWDxjBPbsv7UqXrolNLsZd0j4+lkg
+        mDoPv4eN941na/C+bp+wZDE82likVZOV9aRz
+X-Google-Smtp-Source: ABdhPJzQlfZeNgliTi5eOWWlAdQyE0Gl+5fH7ZPZT0Klyx7fdiu2PDNUBu5SZwseWRZSQ/kMVpsLig==
+X-Received: by 2002:a37:e117:: with SMTP id c23mr3751015qkm.138.1644352020157;
+        Tue, 08 Feb 2022 12:27:00 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id j15sm6308353qkp.88.2022.02.08.12.26.59
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 08 Feb 2022 11:43:47 -0800 (PST)
-Sender: Namhyung Kim <namhyung@gmail.com>
-From:   Namhyung Kim <namhyung@kernel.org>
-To:     Peter Zijlstra <peterz@infradead.org>,
-        Ingo Molnar <mingo@kernel.org>, Will Deacon <will@kernel.org>,
-        Waiman Long <longman@redhat.com>,
-        Boqun Feng <boqun.feng@gmail.com>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Byungchul Park <byungchul.park@lge.com>,
-        "Paul E. McKenney" <paulmck@kernel.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        Radoslaw Burny <rburny@google.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: [PATCH 06/12] btrfs: change lockdep class size check using ks->names
-Date:   Tue,  8 Feb 2022 11:43:18 -0800
-Message-Id: <20220208194324.85333-7-namhyung@kernel.org>
-X-Mailer: git-send-email 2.35.0.263.gb82422642f-goog
-In-Reply-To: <20220208194324.85333-1-namhyung@kernel.org>
-References: <20220208194324.85333-1-namhyung@kernel.org>
+        Tue, 08 Feb 2022 12:26:59 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH] btrfs-progs: check: fix check_global_roots_uptodate
+Date:   Tue,  8 Feb 2022 15:26:58 -0500
+Message-Id: <b7bc0aeae661b1aa87f6e8eb331334c756ecb33e.1644351986.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With upcoming lock tracepoints config, it'd allow some lockdep
-annotation code without enabling CONFIG_LOCKDEP actually.  In that
-config, size of the struct lock_class_key would be 0.
+While running make test on other patches I noticed we are now
+segfaulting on the fuzz tests.  This is because when I converted us to a
+rb tree for the global roots we lost the ability to catch that there's
+no extent root at all.  Before we'd populate a dummy
+fs_info->extent_root with a not uptodate node, but now you simply don't
+get an extent root in the rb_tree.  Fix the check_global_roots_uptodate
+helper to count how many roots we find and make sure it matches the
+number we expect.  If it doesn't then we can return -EIO.
 
-But it'd cause divide-by-zero in btrfs_set_buffer_lockdep_class() due
-to ARRAY_SIZE macro.  Let's change it to use ks->names[] instead.  It
-should have the same size as with ks->keys[].
-
-Cc: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <josef@toxicpanda.com>
-Cc: linux-btrfs@vger.kernel.org
-Acked-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Namhyung Kim <namhyung@kernel.org>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/disk-io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Dave, sorry this should be applied as well to fix the other fuzz related tests
+that will segfault.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 87a5addbedf6..be41e35bee92 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -190,7 +190,7 @@ void btrfs_set_buffer_lockdep_class(u64 objectid, struct extent_buffer *eb,
+ check/main.c | 32 +++++++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/check/main.c b/check/main.c
+index 8ccba447..fa8218c5 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -10207,6 +10207,8 @@ static int check_global_roots_uptodate(void)
  {
- 	struct btrfs_lockdep_keyset *ks;
+ 	struct btrfs_root *root;
+ 	struct rb_node *n;
++	int found_csum = 0, found_extent = 0, found_fst = 0;
++	int ret = 0;
  
--	BUG_ON(level >= ARRAY_SIZE(ks->keys));
-+	BUG_ON(level >= ARRAY_SIZE(ks->names));
+ 	for (n = rb_first(&gfs_info->global_roots_tree); n; n = rb_next(n)) {
+ 		root = rb_entry(n, struct btrfs_root, rb_node);
+@@ -10215,9 +10217,37 @@ static int check_global_roots_uptodate(void)
+ 			      root->root_key.objectid, root->root_key.offset);
+ 			return -EIO;
+ 		}
++		switch(root->root_key.objectid) {
++		case BTRFS_EXTENT_TREE_OBJECTID:
++			found_extent++;
++			break;
++		case BTRFS_CSUM_TREE_OBJECTID:
++			found_csum++;
++			break;
++		case BTRFS_FREE_SPACE_TREE_OBJECTID:
++			found_fst++;
++			break;
++		default:
++			break;
++		}
+ 	}
  
- 	/* find the matching keyset, id 0 is the default entry */
- 	for (ks = btrfs_lockdep_keysets; ks->id; ks++)
+-	return 0;
++	if (found_extent != gfs_info->num_global_roots) {
++		error("found %d extent roots, expected %llu\n", found_extent,
++		      gfs_info->num_global_roots);
++		ret = -EIO;
++	}
++	if (found_csum != gfs_info->num_global_roots) {
++		error("found %d csum roots, expected %llu\n", found_csum,
++		      gfs_info->num_global_roots);
++		ret = -EIO;
++	}
++	if (found_fst != gfs_info->num_global_roots) {
++		error("found %d free space roots, expected %llu\n", found_fst,
++		      gfs_info->num_global_roots);
++		ret = -EIO;
++	}
++	return ret;
+ }
+ 
+ static const char * const cmd_check_usage[] = {
 -- 
-2.35.0.263.gb82422642f-goog
+2.26.3
 

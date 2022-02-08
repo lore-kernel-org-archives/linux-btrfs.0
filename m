@@ -2,113 +2,109 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFC4EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Feb 2022 16:43:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 305EFC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Feb 2022 17:04:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1383468AbiBHQnY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Feb 2022 11:43:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60922 "EHLO
+        id S1383684AbiBHRE2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Feb 2022 12:04:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42620 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232725AbiBHQnX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Feb 2022 11:43:23 -0500
-Received: from sin.source.kernel.org (sin.source.kernel.org [IPv6:2604:1380:40e1:4800::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C7DABC061576
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Feb 2022 08:43:22 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by sin.source.kernel.org (Postfix) with ESMTPS id EE1DFCE1AFC
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Feb 2022 16:43:18 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AA2C9C340EC;
-        Tue,  8 Feb 2022 16:43:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1644338597;
-        bh=rZ+O7kiHy5Gmb0/U9yv2K72fgvwdAPt/Q16Ee66fhTQ=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=AHUvgGAv64pYXHUTrJV7JHBqwtUNs33nkdABpe0ny0jT38QaM/3fAB4yvSUTks3IG
-         1HvRznEzT9/11XkAQNnOA7j210qRfEMiWjnSinUhNhhriKHbSt9dIT2iXDLEYkVWId
-         Yr+EUWBK1b9oVug6CzaJ5joHV9mcsqgtTlvpW8EQ7Mii9SL74CQmPb4mw/B8VasLy4
-         5L2D/bIt+j88zHlk5+Os1i1yiRNz95IVEgvDk4BmzgxdIP7F+lGTjdDzQrwZgplRbS
-         geZDv0MYqrV11kzZQNXuz1sVxxAW4krdB2s05Egtq1ULaF7t6KrDrMLtESqdcYIuWQ
-         StFRBpMrcPGhw==
-Date:   Tue, 8 Feb 2022 16:43:14 +0000
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: defrag: don't try to defrag extents which are
- under writeback
-Message-ID: <YgKdokMLGVHrsmmk@debian9.Home>
-References: <72af431773a417658d8737f3acb39c1652f7e821.1644303096.git.wqu@suse.com>
+        with ESMTP id S244599AbiBHRE1 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Feb 2022 12:04:27 -0500
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F36FCC061578
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Feb 2022 09:04:25 -0800 (PST)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id AF33F210F0;
+        Tue,  8 Feb 2022 17:04:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1644339864;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Aeb3/KYcoY6pFY2+sbCNf0TbDfLbAxtKSfjNG49Xz88=;
+        b=CVgdKsNmzgc9ckhh8KQvz+1JUPshIqri5Abk4lALsbhA6NVXXq7QOze5/csbD1pG74XU/V
+        LgRvqnvtmV8tkDvJvWZ5sH5LChhfKcKhJckMMhQl3Zh95n5wy2Xp1YWT+2lnIzU8JMGAr2
+        WUZBej5d+V7Nw/ZXD4K1UcgZsERX6MI=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1644339864;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Aeb3/KYcoY6pFY2+sbCNf0TbDfLbAxtKSfjNG49Xz88=;
+        b=aBlTlwMyF7HG733OscaVRW4I4hNrWAY3s5e5eZqTpqSokdzHyDgLmoso4XWr16+ziiSQuY
+        xFQLolR/BJ+ELfCA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id A2CD5A3B89;
+        Tue,  8 Feb 2022 17:04:24 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 530CADAB3F; Tue,  8 Feb 2022 18:00:44 +0100 (CET)
+Date:   Tue, 8 Feb 2022 18:00:44 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/4] btrfs: defrag: use btrfs_defrag_ctrl to replace
+ btrfs_ioctl_defrag_range_args for btrfs_defrag_file()
+Message-ID: <20220208170044.GD12643@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1643357469.git.wqu@suse.com>
+ <34c2aa1e7c5e196420d68de1f67b8973d49e284b.1643357469.git.wqu@suse.com>
+ <YfwOJ0UT5t64BhVG@debian9.Home>
+ <64316118-4f91-a277-d28a-24f74f2e6056@gmx.com>
+ <20220204175742.GG14046@twin.jikos.cz>
+ <20220204180031.GH14046@twin.jikos.cz>
+ <20220204181707.GI14046@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <72af431773a417658d8737f3acb39c1652f7e821.1644303096.git.wqu@suse.com>
+In-Reply-To: <20220204181707.GI14046@twin.jikos.cz>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 08, 2022 at 02:54:05PM +0800, Qu Wenruo wrote:
-> Once we start writeback (have called btrfs_run_delalloc_range()), we
-> allocate an extent, create an extent map point to that extent, with a
-> generation of (u64)-1, created the ordered extent and then clear the
-> DELALLOC bit from the range in the inode's io tree.
+On Fri, Feb 04, 2022 at 07:17:07PM +0100, David Sterba wrote:
+> > > > >> --- a/fs/btrfs/file.c
+> > > > >> +++ b/fs/btrfs/file.c
+> > > > >> @@ -277,8 +277,7 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
+> > > > >>   {
+> > > > >>   	struct btrfs_root *inode_root;
+> > > > >>   	struct inode *inode;
+> > > > >> -	struct btrfs_ioctl_defrag_range_args range;
+> > > > >> -	int num_defrag;
+> > > > >> +	struct btrfs_defrag_ctrl ctrl = {};
+> > > > >
+> > > > > Most of the code base uses { 0 } for this type of initialization.
+> > > > > IIRC some compiler versions complained about {} and preferred the
+> > > > > version with 0.
+> > > > 
+> > > > Exactly what I preferred, but David mentioned that kernel is moving
+> > > > torwards {} thus I that's what I go.
+> > > > 
+> > > > > I think we should try to be consistent. Personally I find the 0 version
+> > > > > more clear. Though this might be bike shedding territory.
+> > > 
+> > > The preferred style is {} because { 0 } does not consistently initialize
+> > > the structures on all compilers. I can't find the mail/commit and
+> > > reasoning, if there's a pointer as the first member, then it gets
+> > > initialized (the 0 matches) but the rest of the structure is not
+> > > initialized.
+> > 
+> > I thought we've had all the { 0 } converted to {} but no so I get the
+> > consistency agrument.
 > 
-> Such extent map can pass the first call of defrag_collect_targets(), as
-> its generation is (u64)-1, meets any possible minimal geneartion check.
+> https://lore.kernel.org/all/20210910225207.3272766-1-keescook@chromium.org/
+> 
+> A tree-wide change but it did not get pulled in the end. The problematic
+> compiler was gcc 4.9 but the current minimum requirement is 5.1 so I
+> wonder how much relevant it is.
 
-Same as in the other patch, geneartion -> generation.
+I've asked Kees, seems that the conversion is not necessary. Thus, I'd
+stay with { 0 } that we have now as it's the most used initializer.
 
-> And the range will not have DELALLOC bit, also passing the DELALLOC bit
-> check.
-> 
-> It will only be re-checked in the second call of
-> defrag_collect_targets(), which will wait for writeback.
-> 
-> But at that stage we have already spent our time waiting for some IO we
-> may or may not want to defrag.
-> 
-> Let's reject such extents early so we won't waste our time.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog:
-> - Update the subject, commit message and comment.
->   To replace the confusing phrase "be going to be written back" with
->   "under writeback".
-> 
-> - Update the commit message to indicate it's not always going to be marked
->   for defrag 
->   The second defrag_collect_targets() call will determine its destiny.
-> 
-> - Update the commit message to show why we want to skip it early
->   To save some time waiting for IO.
-> ---
->  fs/btrfs/ioctl.c | 4 ++++
->  1 file changed, 4 insertions(+)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 3a5ada561298..f08005b41deb 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1383,6 +1383,10 @@ static int defrag_collect_targets(struct btrfs_inode *inode,
->  		if (em->generation < ctrl->newer_than)
->  			goto next;
->  
-> +		/* This em is goging to be written back, no need to defrag */
-
-Still as in v1, should be "This em is under writeback...".
-
-With that fixed:
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-
-> +		if (em->generation == (u64)-1)
-> +			goto next;
-> +
->  		/*
->  		 * Our start offset might be in the middle of an existing extent
->  		 * map, so take that into account.
-> -- 
-> 2.35.0
-> 
+No need to resend patches just if there's {}, I'll fix it up anywhere I
+see it.

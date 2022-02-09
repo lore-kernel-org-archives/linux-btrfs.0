@@ -2,104 +2,95 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF57FC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Feb 2022 18:20:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B343AC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Feb 2022 18:44:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239338AbiBISUR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Feb 2022 13:20:17 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38364 "EHLO
+        id S240541AbiBISod (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Feb 2022 13:44:33 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34898 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239408AbiBIST4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Feb 2022 13:19:56 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 2AF79C03C1A8
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Feb 2022 10:19:20 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1644430759;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=Qax2p4QYoRES22yBVTV0pqT1gnZb7y7VCXsID9Egc7E=;
-        b=HxJEaVkm1+6kPS7grqpovtsOHCaQxxc+wGPrASmnMP6uZEM2YJTV58f0iqRwVqeqfqi987
-        GU9vsUD5YB6oCFZEqjYG5UBgoc9pffdQVg45qSCwR7M1Do3Ei2KpoLwx8SJ4Cxethw99JE
-        JnS10x/+R76ulgyHd0ZRozRAyOaXpEA=
-Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
- [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-620-zHSc6UrVO8a503hE2f2VtA-1; Wed, 09 Feb 2022 13:19:15 -0500
-X-MC-Unique: zHSc6UrVO8a503hE2f2VtA-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        with ESMTP id S240543AbiBISnx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Feb 2022 13:43:53 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C3B03C094C95;
+        Wed,  9 Feb 2022 10:42:29 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 68A4881433D;
-        Wed,  9 Feb 2022 18:19:11 +0000 (UTC)
-Received: from [10.22.9.207] (unknown [10.22.9.207])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 887577DE57;
-        Wed,  9 Feb 2022 18:19:08 +0000 (UTC)
-Message-ID: <24fe6a08-5931-8e8d-8d77-459388c4654e@redhat.com>
-Date:   Wed, 9 Feb 2022 13:19:07 -0500
+        by ams.source.kernel.org (Postfix) with ESMTPS id 30B1AB82385;
+        Wed,  9 Feb 2022 18:42:28 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 17FB4C340E7;
+        Wed,  9 Feb 2022 18:42:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1644432146;
+        bh=Vtv6KT5exuM3xReEC3QRHzlvCVnagmx6SAxc1y/h220=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=JqLEIPqQRR04KqDz20fxNp8mSVLtWD8g0Wir1O1kNTxkSsOqdbHR42Nabq7YlDlPv
+         0daq+oOm70s8N7WlaPw9wEc4qVYQwGYigxsevGgeOQpYSLQm6eZUrwJxT6bQOUZWqs
+         0uqVNFYVLgUw3dqGbp3pVq2KqbtYvvW1CucEO32GplP4Nb8jd5Z0apMhtODRgCsZa+
+         O0ehgQvbwiE8VD/b/tZUUYSX/THNTNdwf7G60yL7rcsfd6gNBcXz6e5mwfIax3JwYc
+         5R65VTMpKxc9L/Jl+QhcP1XTFz4Dg4zBopfULEYOeU5wF9321UfhgNjXicRqL2D7TS
+         U0afJaCZhcjWg==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Su Yue <l@damenly.su>, David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, clm@fb.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.10 16/27] btrfs: tree-checker: check item_size for dev_item
+Date:   Wed,  9 Feb 2022 13:40:52 -0500
+Message-Id: <20220209184103.47635-16-sashal@kernel.org>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20220209184103.47635-1-sashal@kernel.org>
+References: <20220209184103.47635-1-sashal@kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.4.0
-Subject: Re: [RFC 00/12] locking: Separate lock tracepoints from
- lockdep/lock_stat (v1)
-Content-Language: en-US
-To:     Peter Zijlstra <peterz@infradead.org>,
-        Namhyung Kim <namhyung@kernel.org>
-Cc:     Ingo Molnar <mingo@kernel.org>, Will Deacon <will@kernel.org>,
-        Boqun Feng <boqun.feng@gmail.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Byungchul Park <byungchul.park@lge.com>,
-        "Paul E. McKenney" <paul.mckenney@linaro.org>,
-        Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-        Radoslaw Burny <rburny@google.com>, Tejun Heo <tj@kernel.org>,
-        rcu@vger.kernel.org, cgroups@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, intel-gfx@lists.freedesktop.org
-References: <20220208184208.79303-1-namhyung@kernel.org>
- <20220209090908.GK23216@worktop.programming.kicks-ass.net>
-From:   Waiman Long <longman@redhat.com>
-In-Reply-To: <20220209090908.GK23216@worktop.programming.kicks-ass.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2/9/22 04:09, Peter Zijlstra wrote:
-> On Tue, Feb 08, 2022 at 10:41:56AM -0800, Namhyung Kim wrote:
->
->> Eventually I'm mostly interested in the contended locks only and I
->> want to reduce the overhead in the fast path.  By moving that, it'd be
->> easy to track contended locks with timing by using two tracepoints.
-> So why not put in two new tracepoints and call it a day?
->
-> Why muck about with all that lockdep stuff just to preserve the name
-> (and in the process continue to blow up data structures etc..). This
-> leaves distros in a bind, will they enable this config and provide
-> tracepoints while bloating the data structures and destroying things
-> like lockref (which relies on sizeof(spinlock_t)), or not provide this
-> at all.
->
-> Yes, the name is convenient, but it's just not worth it IMO. It makes
-> the whole proposition too much of a trade-off.
->
-> Would it not be possible to reconstruct enough useful information from
-> the lock callsite?
->
-I second that as I don't want to see the size of a spinlock exceeds 4 
-bytes in a production system.
+From: Su Yue <l@damenly.su>
 
-Instead of storing additional information (e.g. lock name) directly into 
-the lock itself. Maybe we can store it elsewhere and use the lock 
-address as the key to locate it in a hash table. We can certainly extend 
-the various lock init functions to do that. It will be trickier for 
-statically initialized locks, but we can probably find a way to do that too.
+[ Upstream commit ea1d1ca4025ac6c075709f549f9aa036b5b6597d ]
 
-Cheers,
-Longman
+Check item size before accessing the device item to avoid out of bound
+access, similar to inode_item check.
 
+Signed-off-by: Su Yue <l@damenly.su>
+Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/tree-checker.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+index d4a3a56726aa8..4a5ee516845f7 100644
+--- a/fs/btrfs/tree-checker.c
++++ b/fs/btrfs/tree-checker.c
+@@ -947,6 +947,7 @@ static int check_dev_item(struct extent_buffer *leaf,
+ 			  struct btrfs_key *key, int slot)
+ {
+ 	struct btrfs_dev_item *ditem;
++	const u32 item_size = btrfs_item_size(leaf, slot);
+ 
+ 	if (key->objectid != BTRFS_DEV_ITEMS_OBJECTID) {
+ 		dev_item_err(leaf, slot,
+@@ -954,6 +955,13 @@ static int check_dev_item(struct extent_buffer *leaf,
+ 			     key->objectid, BTRFS_DEV_ITEMS_OBJECTID);
+ 		return -EUCLEAN;
+ 	}
++
++	if (unlikely(item_size != sizeof(*ditem))) {
++		dev_item_err(leaf, slot, "invalid item size: has %u expect %zu",
++			     item_size, sizeof(*ditem));
++		return -EUCLEAN;
++	}
++
+ 	ditem = btrfs_item_ptr(leaf, slot, struct btrfs_dev_item);
+ 	if (btrfs_device_id(leaf, ditem) != key->offset) {
+ 		dev_item_err(leaf, slot,
+-- 
+2.34.1
 

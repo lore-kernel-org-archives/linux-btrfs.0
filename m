@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BC89BC43217
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Feb 2022 22:44:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB9D2C4332F
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Feb 2022 22:44:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343987AbiBJWoh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Feb 2022 17:44:37 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33854 "EHLO
+        id S244839AbiBJWog (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Feb 2022 17:44:36 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33876 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345197AbiBJWof (ORCPT
+        with ESMTP id S1344194AbiBJWoe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Feb 2022 17:44:35 -0500
-Received: from mail-qv1-xf30.google.com (mail-qv1-xf30.google.com [IPv6:2607:f8b0:4864:20::f30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 341AD5F7C
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:33 -0800 (PST)
-Received: by mail-qv1-xf30.google.com with SMTP id fh9so6669447qvb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:33 -0800 (PST)
+        Thu, 10 Feb 2022 17:44:34 -0500
+Received: from mail-qt1-x830.google.com (mail-qt1-x830.google.com [IPv6:2607:f8b0:4864:20::830])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6523E5F73
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:30 -0800 (PST)
+Received: by mail-qt1-x830.google.com with SMTP id j12so7131866qtr.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=Cl8wfPpxQ/ysohn0n9bzVL1r2SjPino5fnfjtpI+8jM=;
-        b=kh4uOEpfK0uF+fpghWRsihsxorwIpVLNqiOTHBvSDmvA2sWwZZR/ix5RNIMS9ANUq5
-         c8j8NGyHhrWAKGhLkCuBGjyZl1bSTZOKS5LLDevCqsBGKkFi2E02Yvbux1ziXgVCoorn
-         SvfF9zwVzitRXBfQV9bzN8WW8QfFZDG5JSlPbK4WkrC4WKjt+LPHxm895qO9O6GsPgWN
-         ri0BlpmJMTrwFPebbh6WaV+iP+6R4a+mwCqpWIr/Zgad9711RKb7AVF1+ybaDaRVlup3
-         EraGkhIjdWUdvXZNZgbL44QPpHp7JTTv34DKL4RPunQwqk27lBYqEtFr74vzPCTBRN4a
-         4hOw==
+        bh=Ygv23XEVMUsAFHEd/+7sR/Mq+HBoeNldTq/7u+bwTyo=;
+        b=fWB4qSqa3zo+3wuYpsj4d1MKRkZ2LckFaO/TMEnKUuNBaF3Tpq2ssPeull9ogA9DYm
+         FLW7FFl7EJt2WSBOCdGjsm/iSjYwjGFm98e2jyd6BSGcKDzwVhrzrPcjb4hHcm6GoUDw
+         gKwfB6pzQk5IopZqXW6BevOof0CjcjUC9nbuK+BW80I6MXmx7eMubun2YNnC09aG9Fje
+         hySuVpktSXd2MudQiG+hPye5WDjo0NolipB5uzBgVAyUqzNaMm1vizh4rvZ2cihSDLa6
+         frT3BsVpdmPTX+Y+cLfO0CkQgethUfUCeyjXT1MN5y7cFVr6+Rft/j7qXEuH8ihS9F2f
+         Ebuw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=Cl8wfPpxQ/ysohn0n9bzVL1r2SjPino5fnfjtpI+8jM=;
-        b=fy3bX8+9jIc3OPJlHy7+W2kSS02Z/JB6WgVRF1NymYR8b8chvkKcOBzKPbmA9/80nS
-         Vb83gXqbtJRCkjTpH+IqO0ZayjihLYVahXP/qy7oBnfjKBA+KVnKOGz6LkNiNZ/YvJ7j
-         2eSLem+pIcY6AhY+XTsrJErfOGfmS1pzv6+sfnhmxsZV0NmWAXnoHhSloSOViTj56Nuw
-         aANdP1/fdpGAfpXjBVJc1TwoZ5KI+swAK4gXbk/YEuIusZk3MrmSW8Wb3GnNm6Yr0eig
-         l7qKhmWO9gS0TAvQXu/qra4NjuNuINUSBeT1To6ME7q1bftLCoLT/3rVN+L8qGH5Bw7Y
-         36iw==
-X-Gm-Message-State: AOAM533dFvnMhzDsorS6QAdRSeTrX9F/gWdZPK3tMz+++zxbznZ0WGnZ
-        5a7GeHnQ22ayy9ncrCNvZQUrv2hgWnCrKF25
-X-Google-Smtp-Source: ABdhPJyE7k/0XbsNZvblRz3M4FVT8PPeCdGypwsnEa5NxMoGLLJnQjktzVgOg896nzm33T+bqMtd+w==
-X-Received: by 2002:a05:6214:2a8a:: with SMTP id jr10mr6735197qvb.112.1644533072142;
-        Thu, 10 Feb 2022 14:44:32 -0800 (PST)
+        bh=Ygv23XEVMUsAFHEd/+7sR/Mq+HBoeNldTq/7u+bwTyo=;
+        b=whRBe9uwM3FXn5u1idjrOqAyLxXZhwzMz901axsyTEdElT+/e/iwcwFVnGxUk2Heh5
+         BP7EXMmYHwFs8UdCU9uJ/ZKMfIuzIxsBIf8Gl1kJ889yJSPiypcSAqvmoSho4HH6Y16T
+         +cd0/EmhlszA7gDQW+8Bn0FEqywrx1SUD0ANiA0uV2OmqkdHik378LTeIgB77FxOBe0r
+         9gPVgmg2A2grf6B9nGNxmTE+9n9O1wA89Ps373VMZcddbZkKsc+t22dP38vtFWnZDcqq
+         /oPlslRgYt2Zu4AQA9Xe1U7LfSaYEul7RRPSY+BzbZr/rf9EXVggIlCaRwMKZGvnFaVc
+         K46A==
+X-Gm-Message-State: AOAM533o4DTNDOmgItfh/Wy5EVCPksb7r3HSqVk6RWQSWmL025dfoB8u
+        cFJzg60yyYWxQxRPfSRd2VET/bhmyUzuV0WD
+X-Google-Smtp-Source: ABdhPJzeOS7q5mVPd8XTEVRnhaCctLPL1BaxDeRwE/0uabg/xt/oU38UznBHVQr7tagXSPSnfS8UyA==
+X-Received: by 2002:a05:622a:494:: with SMTP id p20mr6615991qtx.652.1644533069238;
+        Thu, 10 Feb 2022 14:44:29 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id w19sm7809449qkp.6.2022.02.10.14.44.31
+        by smtp.gmail.com with ESMTPSA id j15sm11824317qta.83.2022.02.10.14.44.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 10 Feb 2022 14:44:31 -0800 (PST)
+        Thu, 10 Feb 2022 14:44:28 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 3/8] btrfs: check correct bio in finish_compressed_bio_read
-Date:   Thu, 10 Feb 2022 17:44:21 -0500
-Message-Id: <04d361b2ca1bdf0470e9fdbba00eecd801d18268.1644532798.git.josef@toxicpanda.com>
+Subject: [PATCH 1/8] btrfs: make search_csum_tree return 0 if we get -EFBIG
+Date:   Thu, 10 Feb 2022 17:44:19 -0500
+Message-Id: <772083c44ddbae8edb2d52ce2292f8a2dfc08ccb.1644532798.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1644532798.git.josef@toxicpanda.com>
 References: <cover.1644532798.git.josef@toxicpanda.com>
@@ -62,31 +62,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Commit c09abff87f90 ("btrfs: cloned bios must not be iterated by
-bio_for_each_segment_all") added ASSERT()'s to make sure we weren't
-calling bio_for_each_segment_all() on a RAID5/6 bio.  However it was
-checking the bio that the compression code passed in, not the
-cb->orig_bio that we actually iterate over, so adjust this ASSERT() to
-check the correct bio.
+We can either fail to find a csum entry at all and return -ENOENT, or we
+can find a range that is close, but return -EFBIG.  In essence these
+both mean the same thing when we are doing a lookup for a csum in an
+existing range, we didn't find a csum.  We want to treat both of these
+errors the same way, complain loudly that there wasn't a csum.  This
+currently happens anyway because we do
+
+	count = search_csum_tree();
+	if (count <= 0) {
+		// reloc and error handling
+	}
+
+however it forces us to incorrectly treat EIO or ENOMEM errors as on
+disk corruption.  Fix this by returning 0 if we get either -ENOENT or
+-EFBIG from btrfs_lookup_csum() so we can do proper error handling.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/compression.c | 2 +-
+ fs/btrfs/file-item.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 71e5b2e9a1ba..a9d458305a08 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -259,7 +259,7 @@ static void finish_compressed_bio_read(struct compressed_bio *cb, struct bio *bi
- 		 * We have verified the checksum already, set page checked so
- 		 * the end_io handlers know about it
- 		 */
--		ASSERT(!bio_flagged(bio, BIO_CLONED));
-+		ASSERT(!bio_flagged(cb->orig_bio, BIO_CLONED));
- 		bio_for_each_segment_all(bvec, cb->orig_bio, iter_all) {
- 			u64 bvec_start = page_offset(bvec->bv_page) +
- 					 bvec->bv_offset;
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 9a3de652ada8..efb24cc0b083 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -305,7 +305,7 @@ static int search_csum_tree(struct btrfs_fs_info *fs_info,
+ 	read_extent_buffer(path->nodes[0], dst, (unsigned long)item,
+ 			ret * csum_size);
+ out:
+-	if (ret == -ENOENT)
++	if (ret == -ENOENT || ret == -EFBIG)
+ 		ret = 0;
+ 	return ret;
+ }
 -- 
 2.26.3
 

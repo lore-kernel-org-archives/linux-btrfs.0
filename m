@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D92DEC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Feb 2022 19:10:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03188C433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Feb 2022 19:10:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343728AbiBJTKf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Feb 2022 14:10:35 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:48176 "EHLO
+        id S1343732AbiBJTKg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Feb 2022 14:10:36 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:48190 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343722AbiBJTKe (ORCPT
+        with ESMTP id S1343720AbiBJTKf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 10 Feb 2022 14:10:34 -0500
-Received: from mail-pf1-x434.google.com (mail-pf1-x434.google.com [IPv6:2607:f8b0:4864:20::434])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94EEE110C
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 11:10:34 -0800 (PST)
-Received: by mail-pf1-x434.google.com with SMTP id a39so11107029pfx.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 11:10:34 -0800 (PST)
+        Thu, 10 Feb 2022 14:10:35 -0500
+Received: from mail-pf1-x42b.google.com (mail-pf1-x42b.google.com [IPv6:2607:f8b0:4864:20::42b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7EB9010BA
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 11:10:36 -0800 (PST)
+Received: by mail-pf1-x42b.google.com with SMTP id l19so6140869pfu.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 11:10:36 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=q8YOMMz5NNSiy3+dYMc4caCrdF6tu4FlTUaiG0w5KUk=;
-        b=RmBGSB1b4GGHLQhsV4U1VaLTWrmpVFNDF0Rs5wc/609YJx1Tbx13oIs1UwFr6br3HT
-         ASZ+xDD+8dTvbCuuiPC1mrwERzHG8u6KRQeDMlhKQFM2DJsfBfhzLbcRkSZGYDjXYYGi
-         tSs8tHfUhx1uiq7uMSS1xrWD2BOrdKqR8hmZlqFXXV0dVlpQ+7MdDoTkayRZONet9iOr
-         Qz3dr0J5sMO0rMczkBRJdODIoUhZgNs6B1SaqZepVzntciJkzm6m18U6gywdeJ5oMOY5
-         c4buqBOtART1HTdY6A0KmZh2tm/z/OF2UYWyi+vb9ADI2Lj5ROQgjyzIfMUN1n0pytxq
-         GnAQ==
+        bh=Xt3rAE30yMLKYSibbekxlucGm1OKnp1pcr2vGpv56tM=;
+        b=YpCELcdqNEFNgMhOBif/zmSz3hhpMXH3Oon7VznmQziTxhOIT8ctd8Ykwfll0Ofl7n
+         jwysEk8zzw8t5jrVYibsxBKw4gHhxeb4ZAzpX6rDNyJgg1lTFSPBSfemm6PHZPwdl3dd
+         Qj3byuUa4tCH+2RclXUEjou07i6QPr8ThQYV866IQHOJUdw1fO5Fteu5AE0rS8pY3EH6
+         hzS/MnNNpyXG1HaQdCflj8UYmc3m2UxpBXgb4KDoVGfZ4hdhKasVnuitJKdbUyKleaxB
+         iXpDTnrmbR5YvEE20yEhlY8xhskEuhQrPWH6H3NzZK3sm/U6oDGPWi+OK6waZ5k83dI5
+         fI4w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=q8YOMMz5NNSiy3+dYMc4caCrdF6tu4FlTUaiG0w5KUk=;
-        b=nChPuGKmCZgR6i0pzQLnaDzrhZcRWomh0cD/cS1PxhHRo2tKfRAuPath8P8SgXZh0t
-         qZ5c4F2Neb28aPAG8EfMAyVFW77stQFesq5E+ptKUNiivoF5JCCClRTmrhyc4qpnOOI7
-         25b+Lwj0fNgtBHa1gjHVCJLl+RtKyELdF/5eLbClx168Kc5bfHlyTzOtLWdIJpKe49Rn
-         FajExTtYkvutyFjp9ZfO4EKGfaLxLZLdqBcDn0rSYudz7ta0IT+E1R421EKM/cdFuuGw
-         eADexxpsIzh32+L5zieoExaM2yFZ+hSRuLuvk2XCNZh+xwNTUouxfGL4GmDLhGnDtPds
-         Mjwg==
-X-Gm-Message-State: AOAM5303YonxYuFjeEY1jYPXvz7LycNMJA+gViAn1kVbGsu5c3bO4rln
-        1MyLoyX1WzK42PZChutXgDgsW9UyV1LnRA==
-X-Google-Smtp-Source: ABdhPJxucEf5MDuJn8BTLZTK1EtEDbfu29IOEoHXi9KRBfPU/EpyWAZzlVCtF59KQd6SO0sUsxvlDQ==
-X-Received: by 2002:a05:6a00:21cb:: with SMTP id t11mr8907523pfj.16.1644520233683;
-        Thu, 10 Feb 2022 11:10:33 -0800 (PST)
+        bh=Xt3rAE30yMLKYSibbekxlucGm1OKnp1pcr2vGpv56tM=;
+        b=7Og35QR8gBalCtXgOh7wxYWa6mk8j6qnPQTf8YouJk91pUN8o08L+bi3lNIKfJQiE+
+         CZAsX38iIdhpMStdUjHC0rKaGFn6LAON7B+ucX06VgFjfK89uTByCu6YankTSftjLoIE
+         hNu9LF0+Be7pmRI7Mej5YXnPPEeTtRM1S/CfI2WbtB/95I87GtDpZaNItF+iBadKU6rN
+         6J3UIwXP+XTgdD3BAGYK8jdhJWkLP8IrlM6sxMWJJw8vj96UgruKcdX0KR1+mg7RD5HD
+         LO4fOLEE30w2rkcJMj9PGA1FANK+v6Gj8lKGZchqmPjlFvX4jJaO7ghZgwJyEOdWZsIO
+         2Xqw==
+X-Gm-Message-State: AOAM530NZL+KaFar8s6f/cJdqXvkdGrAUg2ydrztHP/C2JLuGivMRcki
+        sAsApQ5jbLk/dRRhtPiX3UT/6RbEpsMrJg==
+X-Google-Smtp-Source: ABdhPJydyURTB5Kg/l/XLdih9bUMIVBiiViU58DpYkAxIDvvJwpyEwzeKOHEJwcbIwnZgXW1osJauA==
+X-Received: by 2002:aa7:88c6:: with SMTP id k6mr8815676pff.68.1644520235694;
+        Thu, 10 Feb 2022 11:10:35 -0800 (PST)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:1975])
-        by smtp.gmail.com with ESMTPSA id n5sm8315898pgt.22.2022.02.10.11.10.32
+        by smtp.gmail.com with ESMTPSA id n5sm8315898pgt.22.2022.02.10.11.10.34
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 10 Feb 2022 11:10:33 -0800 (PST)
+        Thu, 10 Feb 2022 11:10:35 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com
-Subject: [PATCH v13 04/17] btrfs: add ram_bytes and offset to btrfs_ordered_extent
-Date:   Thu, 10 Feb 2022 11:09:54 -0800
-Message-Id: <0b3f7ed73c87963a3ab5513494e9a3d4d248c59c.1644519257.git.osandov@fb.com>
+Subject: [PATCH v13 06/17] btrfs: clean up cow_file_range_inline()
+Date:   Thu, 10 Feb 2022 11:09:56 -0800
+Message-Id: <f879a06a2619d606b19c389088c0b1c5bbf70d65.1644519257.git.osandov@fb.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1644519257.git.osandov@fb.com>
 References: <cover.1644519257.git.osandov@fb.com>
@@ -65,377 +65,216 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Currently, we only create ordered extents when ram_bytes == num_bytes
-and offset == 0. However, BTRFS_IOC_ENCODED_WRITE writes may create
-extents which only refer to a subset of the full unencoded extent, so we
-need to plumb these fields through the ordered extent infrastructure and
-pass them down to insert_reserved_file_extent().
+The start parameter to cow_file_range_inline() (and
+insert_inline_extent()) is always 0, so get rid of it and simplify the
+logic in those two functions. Pass btrfs_inode to insert_inline_extent()
+and remove the redundant root parameter. Also document the requirements
+for creating an inline extent. No functional change.
 
-Since we're changing the btrfs_add_ordered_extent* signature, let's get
-rid of the trivial wrappers and add a kernel-doc.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/inode.c        |  58 ++++++++++++--------
- fs/btrfs/ordered-data.c | 119 ++++++++++++----------------------------
- fs/btrfs/ordered-data.h |  22 +++++---
- 3 files changed, 82 insertions(+), 117 deletions(-)
+ fs/btrfs/inode.c | 88 +++++++++++++++++++++---------------------------
+ 1 file changed, 38 insertions(+), 50 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1fadbdc25168..55fa13221f5c 100644
+index 5acdbde17574..bd6588c7f8eb 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -985,11 +985,14 @@ static int submit_one_async_extent(struct btrfs_inode *inode,
- 	}
- 	free_extent_map(em);
- 
--	ret = btrfs_add_ordered_extent_compress(inode, start,	/* file_offset */
--					ins.objectid,		/* disk_bytenr */
--					async_extent->ram_size, /* num_bytes */
--					ins.offset,		/* disk_num_bytes */
--					async_extent->compress_type);
-+	ret = btrfs_add_ordered_extent(inode, start,		/* file_offset */
-+				       async_extent->ram_size,	/* num_bytes */
-+				       async_extent->ram_size,	/* ram_bytes */
-+				       ins.objectid,		/* disk_bytenr */
-+				       ins.offset,		/* disk_num_bytes */
-+				       0,			/* offset */
-+				       1 << BTRFS_ORDERED_COMPRESSED,
-+				       async_extent->compress_type);
- 	if (ret) {
- 		btrfs_drop_extent_cache(inode, start, end, 0);
- 		goto out_free_reserve;
-@@ -1238,9 +1241,10 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 		}
- 		free_extent_map(em);
- 
--		ret = btrfs_add_ordered_extent(inode, start, ins.objectid,
--					       ram_size, cur_alloc_size,
--					       BTRFS_ORDERED_REGULAR);
-+		ret = btrfs_add_ordered_extent(inode, start, ram_size, ram_size,
-+					       ins.objectid, cur_alloc_size, 0,
-+					       1 << BTRFS_ORDERED_REGULAR,
-+					       BTRFS_COMPRESS_NONE);
- 		if (ret)
- 			goto out_drop_extent_cache;
- 
-@@ -1899,10 +1903,11 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- 				goto error;
- 			}
- 			free_extent_map(em);
--			ret = btrfs_add_ordered_extent(inode, cur_offset,
--						       disk_bytenr, num_bytes,
--						       num_bytes,
--						       BTRFS_ORDERED_PREALLOC);
-+			ret = btrfs_add_ordered_extent(inode,
-+					cur_offset, num_bytes, num_bytes,
-+					disk_bytenr, num_bytes, 0,
-+					1 << BTRFS_ORDERED_PREALLOC,
-+					BTRFS_COMPRESS_NONE);
- 			if (ret) {
- 				btrfs_drop_extent_cache(inode, cur_offset,
- 							cur_offset + num_bytes - 1,
-@@ -1911,9 +1916,11 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
- 			}
- 		} else {
- 			ret = btrfs_add_ordered_extent(inode, cur_offset,
-+						       num_bytes, num_bytes,
- 						       disk_bytenr, num_bytes,
--						       num_bytes,
--						       BTRFS_ORDERED_NOCOW);
-+						       0,
-+						       1 << BTRFS_ORDERED_NOCOW,
-+						       BTRFS_COMPRESS_NONE);
- 			if (ret)
- 				goto error;
- 		}
-@@ -2874,6 +2881,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_key ins;
- 	u64 disk_num_bytes = btrfs_stack_file_extent_disk_num_bytes(stack_fi);
- 	u64 disk_bytenr = btrfs_stack_file_extent_disk_bytenr(stack_fi);
-+	u64 offset = btrfs_stack_file_extent_offset(stack_fi);
- 	u64 num_bytes = btrfs_stack_file_extent_num_bytes(stack_fi);
- 	u64 ram_bytes = btrfs_stack_file_extent_ram_bytes(stack_fi);
- 	struct btrfs_drop_extents_args drop_args = { 0 };
-@@ -2948,7 +2956,8 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 		goto out;
- 
- 	ret = btrfs_alloc_reserved_file_extent(trans, root, btrfs_ino(inode),
--					       file_pos, qgroup_reserved, &ins);
-+					       file_pos - offset,
-+					       qgroup_reserved, &ins);
- out:
- 	btrfs_free_path(path);
- 
-@@ -2974,20 +2983,20 @@ static int insert_ordered_extent_file_extent(struct btrfs_trans_handle *trans,
- 					     struct btrfs_ordered_extent *oe)
+@@ -239,12 +239,13 @@ static int btrfs_init_inode_security(struct btrfs_trans_handle *trans,
+  * no overlapping inline items exist in the btree
+  */
+ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+-				struct btrfs_path *path, bool extent_inserted,
+-				struct btrfs_root *root, struct inode *inode,
+-				u64 start, size_t size, size_t compressed_size,
++				struct btrfs_path *path,
++				struct btrfs_inode *inode, bool extent_inserted,
++				size_t size, size_t compressed_size,
+ 				int compress_type,
+ 				struct page **compressed_pages)
  {
- 	struct btrfs_file_extent_item stack_fi;
--	u64 logical_len;
- 	bool update_inode_bytes;
-+	u64 num_bytes = oe->num_bytes;
-+	u64 ram_bytes = oe->ram_bytes;
++	struct btrfs_root *root = inode->root;
+ 	struct extent_buffer *leaf;
+ 	struct page *page = NULL;
+ 	char *kaddr;
+@@ -252,7 +253,6 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_file_extent_item *ei;
+ 	int ret;
+ 	size_t cur_size = size;
+-	unsigned long offset;
  
- 	memset(&stack_fi, 0, sizeof(stack_fi));
- 	btrfs_set_stack_file_extent_type(&stack_fi, BTRFS_FILE_EXTENT_REG);
- 	btrfs_set_stack_file_extent_disk_bytenr(&stack_fi, oe->disk_bytenr);
- 	btrfs_set_stack_file_extent_disk_num_bytes(&stack_fi,
- 						   oe->disk_num_bytes);
-+	btrfs_set_stack_file_extent_offset(&stack_fi, oe->offset);
- 	if (test_bit(BTRFS_ORDERED_TRUNCATED, &oe->flags))
--		logical_len = oe->truncated_len;
--	else
--		logical_len = oe->num_bytes;
--	btrfs_set_stack_file_extent_num_bytes(&stack_fi, logical_len);
--	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, logical_len);
-+		num_bytes = ram_bytes = oe->truncated_len;
-+	btrfs_set_stack_file_extent_num_bytes(&stack_fi, num_bytes);
-+	btrfs_set_stack_file_extent_ram_bytes(&stack_fi, ram_bytes);
- 	btrfs_set_stack_file_extent_compression(&stack_fi, oe->compress_type);
- 	/* Encryption and other encoding is reserved and all 0 */
+ 	ASSERT((compressed_size > 0 && compressed_pages) ||
+ 	       (compressed_size == 0 && !compressed_pages));
+@@ -264,8 +264,8 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 		struct btrfs_key key;
+ 		size_t datasize;
  
-@@ -7054,8 +7063,11 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
- 		if (IS_ERR(em))
- 			goto out;
+-		key.objectid = btrfs_ino(BTRFS_I(inode));
+-		key.offset = start;
++		key.objectid = btrfs_ino(inode);
++		key.offset = 0;
+ 		key.type = BTRFS_EXTENT_DATA_KEY;
+ 
+ 		datasize = btrfs_file_extent_calc_inline_size(cur_size);
+@@ -303,12 +303,10 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 		btrfs_set_file_extent_compression(leaf, ei,
+ 						  compress_type);
+ 	} else {
+-		page = find_get_page(inode->i_mapping,
+-				     start >> PAGE_SHIFT);
++		page = find_get_page(inode->vfs_inode.i_mapping, 0);
+ 		btrfs_set_file_extent_compression(leaf, ei, 0);
+ 		kaddr = kmap_atomic(page);
+-		offset = offset_in_page(start);
+-		write_extent_buffer(leaf, kaddr + offset, ptr, size);
++		write_extent_buffer(leaf, kaddr, ptr, size);
+ 		kunmap_atomic(kaddr);
+ 		put_page(page);
  	}
--	ret = btrfs_add_ordered_extent_dio(inode, start, block_start, len,
--					   block_len, type);
-+	ret = btrfs_add_ordered_extent(inode, start, len, len, block_start,
-+				       block_len, 0,
-+				       (1 << type) |
-+				       (1 << BTRFS_ORDERED_DIRECT),
-+				       BTRFS_COMPRESS_NONE);
- 	if (ret) {
- 		if (em) {
- 			free_extent_map(em);
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 6b51fd2ec5ac..5e4c59b00b01 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -143,16 +143,27 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+@@ -319,8 +317,8 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 	 * We align size to sectorsize for inline extents just for simplicity
+ 	 * sake.
+ 	 */
+-	size = ALIGN(size, root->fs_info->sectorsize);
+-	ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode), start, size);
++	ret = btrfs_inode_set_file_extent_range(inode, 0,
++					ALIGN(size, root->fs_info->sectorsize));
+ 	if (ret)
+ 		goto fail;
+ 
+@@ -333,7 +331,8 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+ 	 * before we unlock the pages.  Otherwise we
+ 	 * could end up racing with unlink.
+ 	 */
+-	BTRFS_I(inode)->disk_i_size = inode->i_size;
++	inode->disk_i_size = i_size_read(&inode->vfs_inode);
++
+ fail:
  	return ret;
  }
- 
--/*
-- * Allocate and add a new ordered_extent into the per-inode tree.
-+/**
-+ * btrfs_add_ordered_extent - Add an ordered extent to the per-inode tree.
-+ * @inode: inode that this extent is for.
-+ * @file_offset: Logical offset in file where the extent starts.
-+ * @num_bytes: Logical length of extent in file.
-+ * @ram_bytes: Full length of unencoded data.
-+ * @disk_bytenr: Offset of extent on disk.
-+ * @disk_num_bytes: Size of extent on disk.
-+ * @offset: Offset into unencoded data where file data starts.
-+ * @flags: Flags specifying type of extent (1 << BTRFS_ORDERED_*).
-+ * @compress_type: Compression algorithm used for data.
-  *
-- * The tree is given a single reference on the ordered extent that was
-- * inserted.
-+ * Most of these parameters correspond to &struct btrfs_file_extent_item. The
-+ * tree is given a single reference on the ordered extent that was inserted.
-+ *
-+ * Return: 0 or -ENOMEM.
+@@ -344,8 +343,8 @@ static int insert_inline_extent(struct btrfs_trans_handle *trans,
+  * does the checks required to make sure the data is small enough
+  * to fit as an inline extent.
   */
--static int __btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
--				      u64 disk_bytenr, u64 num_bytes,
--				      u64 disk_num_bytes, int type, int dio,
--				      int compress_type)
-+int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
-+			     u64 num_bytes, u64 ram_bytes, u64 disk_bytenr,
-+			     u64 disk_num_bytes, u64 offset, int flags,
-+			     int compress_type)
+-static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 start,
+-					  u64 end, size_t compressed_size,
++static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 size,
++					  size_t compressed_size,
+ 					  int compress_type,
+ 					  struct page **compressed_pages)
  {
+@@ -353,26 +352,21 @@ static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 start,
  	struct btrfs_root *root = inode->root;
  	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -161,7 +172,8 @@ static int __btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset
- 	struct btrfs_ordered_extent *entry;
+ 	struct btrfs_trans_handle *trans;
+-	u64 isize = i_size_read(&inode->vfs_inode);
+-	u64 actual_end = min(end + 1, isize);
+-	u64 inline_len = actual_end - start;
+-	u64 aligned_end = ALIGN(end, fs_info->sectorsize);
+-	u64 data_len = inline_len;
++	u64 data_len = compressed_size ? compressed_size : size;
  	int ret;
+ 	struct btrfs_path *path;
  
--	if (type == BTRFS_ORDERED_NOCOW || type == BTRFS_ORDERED_PREALLOC) {
-+	if (flags &
-+	    ((1 << BTRFS_ORDERED_NOCOW) | (1 << BTRFS_ORDERED_PREALLOC))) {
- 		/* For nocow write, we can release the qgroup rsv right now */
- 		ret = btrfs_qgroup_free_data(inode, NULL, file_offset, num_bytes);
- 		if (ret < 0)
-@@ -181,9 +193,11 @@ static int __btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset
- 		return -ENOMEM;
- 
- 	entry->file_offset = file_offset;
--	entry->disk_bytenr = disk_bytenr;
- 	entry->num_bytes = num_bytes;
-+	entry->ram_bytes = ram_bytes;
-+	entry->disk_bytenr = disk_bytenr;
- 	entry->disk_num_bytes = disk_num_bytes;
-+	entry->offset = offset;
- 	entry->bytes_left = num_bytes;
- 	entry->inode = igrab(&inode->vfs_inode);
- 	entry->compress_type = compress_type;
-@@ -191,18 +205,12 @@ static int __btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset
- 	entry->qgroup_rsv = ret;
- 	entry->physical = (u64)-1;
- 
--	ASSERT(type == BTRFS_ORDERED_REGULAR ||
--	       type == BTRFS_ORDERED_NOCOW ||
--	       type == BTRFS_ORDERED_PREALLOC ||
--	       type == BTRFS_ORDERED_COMPRESSED);
--	set_bit(type, &entry->flags);
-+	ASSERT((flags & ~BTRFS_ORDERED_TYPE_FLAGS) == 0);
-+	entry->flags = flags;
- 
- 	percpu_counter_add_batch(&fs_info->ordered_bytes, num_bytes,
- 				 fs_info->delalloc_batch);
- 
--	if (dio)
--		set_bit(BTRFS_ORDERED_DIRECT, &entry->flags);
+-	if (compressed_size)
+-		data_len = compressed_size;
 -
- 	/* one ref for the tree */
- 	refcount_set(&entry->refs, 1);
- 	init_waitqueue_head(&entry->wait);
-@@ -247,41 +255,6 @@ static int __btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset
- 	return 0;
- }
- 
--int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
--			     u64 disk_bytenr, u64 num_bytes, u64 disk_num_bytes,
--			     int type)
--{
--	ASSERT(type == BTRFS_ORDERED_REGULAR ||
--	       type == BTRFS_ORDERED_NOCOW ||
--	       type == BTRFS_ORDERED_PREALLOC);
--	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
--					  num_bytes, disk_num_bytes, type, 0,
--					  BTRFS_COMPRESS_NONE);
--}
--
--int btrfs_add_ordered_extent_dio(struct btrfs_inode *inode, u64 file_offset,
--				 u64 disk_bytenr, u64 num_bytes,
--				 u64 disk_num_bytes, int type)
--{
--	ASSERT(type == BTRFS_ORDERED_REGULAR ||
--	       type == BTRFS_ORDERED_NOCOW ||
--	       type == BTRFS_ORDERED_PREALLOC);
--	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
--					  num_bytes, disk_num_bytes, type, 1,
--					  BTRFS_COMPRESS_NONE);
--}
--
--int btrfs_add_ordered_extent_compress(struct btrfs_inode *inode, u64 file_offset,
--				      u64 disk_bytenr, u64 num_bytes,
--				      u64 disk_num_bytes, int compress_type)
--{
--	ASSERT(compress_type != BTRFS_COMPRESS_NONE);
--	return __btrfs_add_ordered_extent(inode, file_offset, disk_bytenr,
--					  num_bytes, disk_num_bytes,
--					  BTRFS_ORDERED_COMPRESSED, 0,
--					  compress_type);
--}
--
- /*
-  * Add a struct btrfs_ordered_sum into the list of checksums to be inserted
-  * when an ordered extent is finished.  If the list covers more than one
-@@ -1052,42 +1025,18 @@ static int clone_ordered_extent(struct btrfs_ordered_extent *ordered, u64 pos,
- 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
- 	u64 file_offset = ordered->file_offset + pos;
- 	u64 disk_bytenr = ordered->disk_bytenr + pos;
--	u64 num_bytes = len;
--	u64 disk_num_bytes = len;
--	int type;
--	unsigned long flags_masked = ordered->flags & ~(1 << BTRFS_ORDERED_DIRECT);
--	int compress_type = ordered->compress_type;
--	unsigned long weight;
--	int ret;
--
--	weight = hweight_long(flags_masked);
--	WARN_ON_ONCE(weight > 1);
--	if (!weight)
--		type = 0;
--	else
--		type = __ffs(flags_masked);
-+	unsigned long flags = ordered->flags & BTRFS_ORDERED_TYPE_FLAGS;
- 
- 	/*
--	 * The splitting extent is already counted and will be added again
--	 * in btrfs_add_ordered_extent_*(). Subtract num_bytes to avoid
--	 * double counting.
-+	 * The splitting extent is already counted and will be added again in
-+	 * btrfs_add_ordered_extent_*(). Subtract len to avoid double counting.
- 	 */
--	percpu_counter_add_batch(&fs_info->ordered_bytes, -num_bytes,
-+	percpu_counter_add_batch(&fs_info->ordered_bytes, -len,
- 				 fs_info->delalloc_batch);
--	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered->flags)) {
--		WARN_ON_ONCE(1);
--		ret = btrfs_add_ordered_extent_compress(BTRFS_I(inode),
--				file_offset, disk_bytenr, num_bytes,
--				disk_num_bytes, compress_type);
--	} else if (test_bit(BTRFS_ORDERED_DIRECT, &ordered->flags)) {
--		ret = btrfs_add_ordered_extent_dio(BTRFS_I(inode), file_offset,
--				disk_bytenr, num_bytes, disk_num_bytes, type);
--	} else {
--		ret = btrfs_add_ordered_extent(BTRFS_I(inode), file_offset,
--				disk_bytenr, num_bytes, disk_num_bytes, type);
+-	if (start > 0 ||
+-	    actual_end > fs_info->sectorsize ||
++	/*
++	 * We can create an inline extent if it ends at or beyond the current
++	 * i_size, is no larger than a sector (decompressed), and the (possibly
++	 * compressed) data fits in a leaf and the configured maximum inline
++	 * size.
++	 */
++	if (size < i_size_read(&inode->vfs_inode) ||
++	    size > fs_info->sectorsize ||
+ 	    data_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info) ||
+-	    (!compressed_size &&
+-	    (actual_end & (fs_info->sectorsize - 1)) == 0) ||
+-	    end + 1 < isize ||
+-	    data_len > fs_info->max_inline) {
++	    data_len > fs_info->max_inline)
+ 		return 1;
 -	}
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -386,30 +380,21 @@ static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 start,
+ 	trans->block_rsv = &inode->block_rsv;
+ 
+ 	drop_args.path = path;
+-	drop_args.start = start;
+-	drop_args.end = aligned_end;
++	drop_args.start = 0;
++	drop_args.end = fs_info->sectorsize;
+ 	drop_args.drop_cache = true;
+ 	drop_args.replace_extent = true;
 -
--	return ret;
-+	WARN_ON_ONCE(flags & (1 << BTRFS_ORDERED_COMPRESSED));
-+	return btrfs_add_ordered_extent(BTRFS_I(inode), file_offset, len, len,
-+					disk_bytenr, len, 0, flags,
-+					ordered->compress_type);
- }
+-	if (compressed_size && compressed_pages)
+-		drop_args.extent_item_size = btrfs_file_extent_calc_inline_size(
+-		   compressed_size);
+-	else
+-		drop_args.extent_item_size = btrfs_file_extent_calc_inline_size(
+-		    inline_len);
+-
++	drop_args.extent_item_size = btrfs_file_extent_calc_inline_size(data_len);
+ 	ret = btrfs_drop_extents(trans, root, inode, &drop_args);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
  
- int btrfs_split_ordered_extent(struct btrfs_ordered_extent *ordered, u64 pre,
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 4194e960ff61..0feb0c29839e 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -76,6 +76,13 @@ enum {
- 	BTRFS_ORDERED_PENDING,
- };
+-	if (isize > actual_end)
+-		inline_len = min_t(u64, isize, actual_end);
+-	ret = insert_inline_extent(trans, path, drop_args.extent_inserted,
+-				   root, &inode->vfs_inode, start,
+-				   inline_len, compressed_size,
+-				   compress_type, compressed_pages);
++	ret = insert_inline_extent(trans, path, inode,
++				   drop_args.extent_inserted, size,
++				   compressed_size, compress_type,
++				   compressed_pages);
+ 	if (ret && ret != -ENOSPC) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+@@ -418,7 +403,7 @@ static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 start,
+ 		goto out;
+ 	}
  
-+/* BTRFS_ORDERED_* flags that specify the type of the extent. */
-+#define BTRFS_ORDERED_TYPE_FLAGS ((1UL << BTRFS_ORDERED_REGULAR) |	\
-+				  (1UL << BTRFS_ORDERED_NOCOW) |	\
-+				  (1UL << BTRFS_ORDERED_PREALLOC) |	\
-+				  (1UL << BTRFS_ORDERED_COMPRESSED) |	\
-+				  (1UL << BTRFS_ORDERED_DIRECT))
-+
- struct btrfs_ordered_extent {
- 	/* logical offset in the file */
- 	u64 file_offset;
-@@ -84,9 +91,11 @@ struct btrfs_ordered_extent {
- 	 * These fields directly correspond to the same fields in
- 	 * btrfs_file_extent_item.
+-	btrfs_update_inode_bytes(inode, inline_len, drop_args.bytes_found);
++	btrfs_update_inode_bytes(inode, size, drop_args.bytes_found);
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	if (ret && ret != -ENOSPC) {
+ 		btrfs_abort_transaction(trans, ret);
+@@ -739,12 +724,12 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+ 			/* we didn't compress the entire range, try
+ 			 * to make an uncompressed inline extent.
+ 			 */
+-			ret = cow_file_range_inline(BTRFS_I(inode), start, end,
++			ret = cow_file_range_inline(BTRFS_I(inode), actual_end,
+ 						    0, BTRFS_COMPRESS_NONE,
+ 						    NULL);
+ 		} else {
+ 			/* try making a compressed inline extent */
+-			ret = cow_file_range_inline(BTRFS_I(inode), start, end,
++			ret = cow_file_range_inline(BTRFS_I(inode), actual_end,
+ 						    total_compressed,
+ 						    compress_type, pages);
+ 		}
+@@ -1159,8 +1144,11 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+ 	 * So here we skip inline extent creation completely.
  	 */
--	u64 disk_bytenr;
- 	u64 num_bytes;
-+	u64 ram_bytes;
-+	u64 disk_bytenr;
- 	u64 disk_num_bytes;
-+	u64 offset;
- 
- 	/* number of bytes that still need writing */
- 	u64 bytes_left;
-@@ -179,14 +188,9 @@ bool btrfs_dec_test_ordered_pending(struct btrfs_inode *inode,
- 				    struct btrfs_ordered_extent **cached,
- 				    u64 file_offset, u64 io_size);
- int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
--			     u64 disk_bytenr, u64 num_bytes, u64 disk_num_bytes,
--			     int type);
--int btrfs_add_ordered_extent_dio(struct btrfs_inode *inode, u64 file_offset,
--				 u64 disk_bytenr, u64 num_bytes,
--				 u64 disk_num_bytes, int type);
--int btrfs_add_ordered_extent_compress(struct btrfs_inode *inode, u64 file_offset,
--				      u64 disk_bytenr, u64 num_bytes,
--				      u64 disk_num_bytes, int compress_type);
-+			     u64 num_bytes, u64 ram_bytes, u64 disk_bytenr,
-+			     u64 disk_num_bytes, u64 offset, int flags,
-+			     int compress_type);
- void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
- 			   struct btrfs_ordered_sum *sum);
- struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *inode,
+ 	if (start == 0 && fs_info->sectorsize == PAGE_SIZE) {
++		u64 actual_end = min_t(u64, i_size_read(&inode->vfs_inode),
++				       end + 1);
++
+ 		/* lets try to make an inline extent */
+-		ret = cow_file_range_inline(inode, start, end, 0,
++		ret = cow_file_range_inline(inode, actual_end, 0,
+ 					    BTRFS_COMPRESS_NONE, NULL);
+ 		if (ret == 0) {
+ 			/*
 -- 
 2.35.1
 

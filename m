@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 160FEC433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Feb 2022 22:44:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87D5BC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Feb 2022 22:44:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345040AbiBJWoh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 10 Feb 2022 17:44:37 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33890 "EHLO
+        id S1345162AbiBJWoi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 10 Feb 2022 17:44:38 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33804 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345191AbiBJWof (ORCPT
+        with ESMTP id S1345198AbiBJWof (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 10 Feb 2022 17:44:35 -0500
-Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9DC05F78
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:31 -0800 (PST)
-Received: by mail-qk1-x736.google.com with SMTP id j24so6483457qkk.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:31 -0800 (PST)
+Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7011A2737
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:34 -0800 (PST)
+Received: by mail-qt1-x82a.google.com with SMTP id j12so7132084qtr.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 14:44:34 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=WfGtmUcSTVRYIz9KWMLPvX51lEAkGUBahW7DzB+DJ7Y=;
-        b=pUT5lJIl2LnmxtdkrThEntatT+Xqm0itcHQP8cKVqKTzeDSikGzTTMN0JR1haCpP+h
-         Rvf41dGo3HeUJw1WNyeagNfXUzEhHZ8kZ6eHIhmKa7mfIR9llZpOm04LR6ZN5xvQ/AZN
-         MDd8kBPDRoJhp48P2c7pekC+CIm+Jesr7osUIRW1XugCr2Uj3aQuzWSxPdmiHKw0iNpO
-         KQmGQzqx+5cdF/sWeHvNM4oh8s4AsV4RS+0rdkxFviq5eXdYn9mL0aGL1QhwKBvi9OWj
-         9rH44YLWthzJWGbf8b8wZRHRTL6MTcJbpgymV/bFQFRluGIBIYak61jwFNqRU3lCbVBY
-         betg==
+        bh=EA5mfNUjdjK0chFu34L2p4uPFMElL7aC30PGVfOy65c=;
+        b=kmb43fWZ23Rs9sLYYCqi6JBTmRDL46thHllg7LNULIpVct/fX/PWQPqgDd8esAQFmG
+         o58IBy10Zt9mfaid/EsLRWaaF317CDAEQUpjQ6m+k0nRmHD5jlvcBHPbnxwjix+HIB34
+         MvNY2ahWzTS8PlvDRKcqFHtrhXLOINOY6NkdwI2qGSt/l88Sov0CrzRWF+Pas/rc+w9H
+         +6wE2IOjFPWLlK3Mnn+ZCpmwR4W1mQA52rl0N9wn8rWf3BT1+jiEX5mxZMFyxg6TsSBn
+         FMj8VYspSYfabzZOZkXZEzjtEhGZwvzn3htKaVh+p2AbDPyfLWmLqZo6NJV2B7OEiLn9
+         /9Ww==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=WfGtmUcSTVRYIz9KWMLPvX51lEAkGUBahW7DzB+DJ7Y=;
-        b=PRlvvAJW/sliuvNd/oASv+blqv3whZscbCdIA7YKxWYsvrlVj0gCEmzvimvEJqdLp3
-         IBJjzkKhpM2NmzPCabCxV63coOe7rWUsjZmrFybhyDUCgEdBnAcAOvuASEJpDNgsIIxP
-         Ua6tnIKpPX6+pK2XOFGG03F+HCtJFqrc3ei6vDx/un7j8DxALykKw2UeZWpDmtvKkFPg
-         ZRiFPI6d3FE6poeM6zec6fvNHbkcRFp52ijUxXC4mGwDQS6UiEXtaUj3L46R7cA30mDK
-         Zuv7B21acJL6WaIrFzShvKh7+Hp+7VJK6q/Kp1TSDGDVhyvK/p75LTBflZD6HXJjp+tB
-         L+MA==
-X-Gm-Message-State: AOAM531Uzo+mR+NOMeny2ZkId4YQL0dJpRVFuLqwy8Abty15+4Sfp/Zq
-        JqspIwxSIq/lWXSthXXa4P6azAipW8yLpo69
-X-Google-Smtp-Source: ABdhPJyKWnimLhsCV5O3m1TRQbUBbALTtJ1bG5Z2IzqzmdNyjfVp94mf6bhaBu98ex+kRRQDl/WFeA==
-X-Received: by 2002:a05:620a:4694:: with SMTP id bq20mr4982787qkb.116.1644533070728;
-        Thu, 10 Feb 2022 14:44:30 -0800 (PST)
+        bh=EA5mfNUjdjK0chFu34L2p4uPFMElL7aC30PGVfOy65c=;
+        b=T5HwQxzEkm1njJui+mLrOcfF25A6fKzbqw6pWpwbaQrD2Q1BEgS2EIrXsH9/KJEf40
+         l/gTs0KFMa9ajwzYxtA0Z/ZlKOwYh7sDW6rCdi1B0GoQ2qJqs1RVTHxh/f+ihsqSkJ0o
+         OEAsIE0F0kUmudJvWspp9nQYZhJhtoj5vGlr0mZxNapYbhkoKoZvQc72nrIht89kPFpt
+         xNeTHflozIOxbpQRk85vr2umJjRQRCkaOGztqi2hoBoAG3Ts82CFALD1dv+Vaz5FWkGc
+         emGIq1BV1hyYFsDh6pMtygdd8PK7olOkwa2etKuURG67yOduK9B5mo/2Qxx1yuwHY7Kr
+         u5Hw==
+X-Gm-Message-State: AOAM533Ql00LQRGyU3aU2W8Z7K/PJt/SqiH42l/5BlzwLtdCXD0DlsZA
+        PRB2nYQBdOyjT55jxClw5y3+pb8KMiY9AMah
+X-Google-Smtp-Source: ABdhPJwBKBDKIENFSJcquA0uFh/gC0BjrAMlpoEFUJ5NdYK4HhoKy/Li3YECPoOZDFVjZfr5YVrQUg==
+X-Received: by 2002:a05:622a:354:: with SMTP id r20mr6450736qtw.0.1644533073373;
+        Thu, 10 Feb 2022 14:44:33 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id c20sm11826831qtb.58.2022.02.10.14.44.30
+        by smtp.gmail.com with ESMTPSA id o19sm11622844qta.19.2022.02.10.14.44.32
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 10 Feb 2022 14:44:30 -0800 (PST)
+        Thu, 10 Feb 2022 14:44:33 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/8] btrfs: handle csum lookup errors properly on reads
-Date:   Thu, 10 Feb 2022 17:44:20 -0500
-Message-Id: <9aa5cdf08820eeb53feb0457bc6994231a7ff9fd.1644532798.git.josef@toxicpanda.com>
+Subject: [PATCH 4/8] btrfs: remove the bio argument from finish_compressed_bio_read
+Date:   Thu, 10 Feb 2022 17:44:22 -0500
+Message-Id: <a0c1fa4b70e7cfc5d22afbc8695ce72e336a8f0a.1644532798.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1644532798.git.josef@toxicpanda.com>
 References: <cover.1644532798.git.josef@toxicpanda.com>
@@ -62,75 +62,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently any error we get while trying to lookup csums during reads
-shows up as a missing csum, and then on the read completion side we spit
-out an error saying there was a csum mismatch and we increase the device
-corruption count.
-
-However we could have gotten an EIO from the lookup.  We could also be
-inside of a memory constrained container and gotten a ENOMEM while
-trying to do the read.  In either case we don't want to make this look
-like a file system corruption problem, we want to make it look like the
-actual error it is.  Capture any negative value, convert it to the
-appropriate blk_sts_t, free the csum array if we have one and bail.
+This bio is usually one of the compressed bio's, and we don't actually
+need it in this function, so remove the argument and stop passing it
+around.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/file-item.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
+ fs/btrfs/compression.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index efb24cc0b083..e68be492109d 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -368,6 +368,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-+	struct btrfs_bio *bbio = NULL;
- 	struct btrfs_path *path;
- 	const u32 sectorsize = fs_info->sectorsize;
- 	const u32 csum_size = fs_info->csum_size;
-@@ -377,6 +378,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 	u8 *csum;
- 	const unsigned int nblocks = orig_len >> fs_info->sectorsize_bits;
- 	int count = 0;
-+	blk_status_t ret = BLK_STS_OK;
- 
- 	if ((BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM) ||
- 	    test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state))
-@@ -400,7 +402,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 		return BLK_STS_RESOURCE;
- 
- 	if (!dst) {
--		struct btrfs_bio *bbio = btrfs_bio(bio);
-+		bbio = btrfs_bio(bio);
- 
- 		if (nblocks * csum_size > BTRFS_BIO_INLINE_CSUM_SIZE) {
- 			bbio->csum = kmalloc_array(nblocks, csum_size, GFP_NOFS);
-@@ -456,6 +458,13 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 
- 		count = search_csum_tree(fs_info, path, cur_disk_bytenr,
- 					 search_len, csum_dst);
-+		if (count < 0) {
-+			ret = errno_to_blk_status(count);
-+			if (bbio)
-+				btrfs_bio_free_csum(bbio);
-+			break;
-+		}
-+
- 		if (count <= 0) {
- 			/*
- 			 * Either we hit a critical error or we didn't find
-@@ -491,7 +500,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 	}
- 
- 	btrfs_free_path(path);
--	return BLK_STS_OK;
-+	return ret;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index a9d458305a08..0112fba345d4 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -234,7 +234,7 @@ static bool dec_and_test_compressed_bio(struct compressed_bio *cb, struct bio *b
+ 	return last_io;
  }
  
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+-static void finish_compressed_bio_read(struct compressed_bio *cb, struct bio *bio)
++static void finish_compressed_bio_read(struct compressed_bio *cb)
+ {
+ 	unsigned int index;
+ 	struct page *page;
+@@ -253,8 +253,6 @@ static void finish_compressed_bio_read(struct compressed_bio *cb, struct bio *bi
+ 		struct bio_vec *bvec;
+ 		struct bvec_iter_all iter_all;
+ 
+-		ASSERT(bio);
+-		ASSERT(!bio->bi_status);
+ 		/*
+ 		 * We have verified the checksum already, set page checked so
+ 		 * the end_io handlers know about it
+@@ -325,7 +323,7 @@ static void end_compressed_bio_read(struct bio *bio)
+ csum_failed:
+ 	if (ret)
+ 		cb->errors = 1;
+-	finish_compressed_bio_read(cb, bio);
++	finish_compressed_bio_read(cb);
+ out:
+ 	bio_put(bio);
+ }
+@@ -970,7 +968,7 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	 */
+ 	ASSERT(refcount_read(&cb->pending_sectors));
+ 	/* Now we are the only one referring @cb, can finish it safely. */
+-	finish_compressed_bio_read(cb, NULL);
++	finish_compressed_bio_read(cb);
+ 	return ret;
+ }
+ 
 -- 
 2.26.3
 

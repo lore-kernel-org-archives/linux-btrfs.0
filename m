@@ -2,130 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A3B4C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Feb 2022 06:42:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D5A3C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Feb 2022 06:42:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239331AbiBKGmF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Feb 2022 01:42:05 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:38934 "EHLO
+        id S1343924AbiBKGmH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Feb 2022 01:42:07 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:38956 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231462AbiBKGmE (ORCPT
+        with ESMTP id S243111AbiBKGmG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Feb 2022 01:42:04 -0500
+        Fri, 11 Feb 2022 01:42:06 -0500
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 46800E7B
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 22:42:03 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DCF9EE7B
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Feb 2022 22:42:05 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id DD4D121138
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Feb 2022 06:42:01 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 9611A21138;
+        Fri, 11 Feb 2022 06:42:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1644561721; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=tEI+QwfVicfafmH5xETaT1iwBKQNCt7hm+lE8sYcyDw=;
-        b=Mdzdn0Rizqm0juCu7XXx4pGcrLRunJaClUHvZ11hVYICE48CDEa/knaQSMcpm5OmKkNFea
-        q3HBRUc14zbpeLdwRzrh3rokUaP5qoe1b4ccnanTIwSn0VWz2mJ3ctVe8DtYAR6Wlmi3Dj
-        AqHnVq3s8hNN0mlRoqj6dkolwSEamo0=
+        t=1644561724; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=Fc2T2IANwyTgtqLu1BqKdMejqjOMMqxaoKE16O5jtT0=;
+        b=briR5KYPTJW5QYl1S1+nX5qC6knmg94wJRuofK9VN8SslSzReTMeLZbi5xY2+JAte+i6KW
+        7l/ALlRsXJWotcsslkO6wA2rtrXgNRhCNBI8FsK+lxcfGXaYl+5YZ2RMiHb/fEHuWFTxi0
+        iPiJ6UzeLHCNWNP1s5wMMKlb2+C8Xbo=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 40B4E13345
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Feb 2022 06:42:01 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BA2BB13345;
+        Fri, 11 Feb 2022 06:42:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id leeFAzkFBmLmUAAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Feb 2022 06:42:01 +0000
+        id oEsqITsFBmLmUAAAMHmgww
+        (envelope-from <wqu@suse.com>); Fri, 11 Feb 2022 06:42:03 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v4 0/5] btrfs: defrag: don't waste CPU time on non-target extent
-Date:   Fri, 11 Feb 2022 14:41:38 +0800
-Message-Id: <cover.1644561438.git.wqu@suse.com>
+Cc:     Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v4 2/5] btrfs: uapi: introduce BTRFS_DEFRAG_RANGE_MASK for later sanity check
+Date:   Fri, 11 Feb 2022 14:41:40 +0800
+Message-Id: <bd05284d7c1d2c2d3ff0b4f65e9dd80ff5e4cf94.1644561438.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.0
+In-Reply-To: <cover.1644561438.git.wqu@suse.com>
+References: <cover.1644561438.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Changelog:
-v2:
-- Rebased to lastest misc-next
-  Just one small conflict with static_assert() update.
-  And this time only those patches are rebased to misc-next, thus it may
-  cause conflicts with fixes for defrag_check_next_extent() in the
-  future.
+And since we're here, replace the hardcoded bit flags (1, 2) with
+(1UL << 0) and (1UL << 1), respectively.
 
-- Several grammar fixes
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+---
+ include/uapi/linux/btrfs.h | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-- Report accurate btrfs_defrag_ctrl::sectors_defragged
-  This is inspired by a comment from Filipe that the skip check
-  should be done in the defrag_collect_targets() call inside
-  defrag_one_range().
-
-  This results a new patch in v2.
-
-- Change the timing of btrfs_defrag_ctrl::last_scanned update
-  Now it's updated inside defrag_one_range(), which will give
-  us an accurate view, unlike the previous call site in
-  defrag_one_cluster().
-
-- Don't change the timing of extent threshold.
-
-- Rename @last_target to @last_is_target in defrag_collect_targets()
-
-v3:
-- Add Reviewed-by tags
-
-- Fix a wrong value in commit message of the 1st patch
-
-- Make @orig_start const for the 3rd patch
-
-- Fix a missing word "skip" in the 5th patch
-
-- Remove one unnecessary assignment in the 5th patch
-  As we don't return the defragged sectors to user space.
-
-v4:
-- Move the skip behavior before the btrfs_defrag_ctrl refactor
-  So it can be backported to v5.16
-
-- Slightly change how we use btrfs_defrag_ctrl::last_scanned
-  Previously we use that value almost as range start, but that's not correct,
-  as defrag_collect_targets() can update it before we do any defrag.
-
-  Now we pass explicit range start/len to defrag_one_cluster(), without
-  re-using ctrl::last_scanned.
-
-- Remove one incorrect range skip in defrag_one_cluster()
-  There used to be a check against last_scanned to skip certain ranges.
-  But that is not correct, as the last_scanned can already be larger
-  than the first target after the 1st defrag_collect_targets() call.
-
-  Now last_scanned is only really utilized after one cluster is
-  defragged.
-
-  This also removes the reviewed-by tag for the refactor patch 
-
-Qu Wenruo (5):
-  btrfs: defrag: allow defrag_one_cluster() to skip large extent which
-    is not a target
-  btrfs: uapi: introduce BTRFS_DEFRAG_RANGE_MASK for later sanity check
-  btrfs: defrag: introduce btrfs_defrag_ctrl structure for later usage
-  btrfs: defrag: use btrfs_defrag_ctrl to replace
-    btrfs_ioctl_defrag_range_args for btrfs_defrag_file()
-  btrfs: defrag: make btrfs_defrag_file() to report accurate number of
-    defragged sectors
-
- fs/btrfs/ctree.h           |  22 +++-
- fs/btrfs/file.c            |  21 ++--
- fs/btrfs/ioctl.c           | 200 ++++++++++++++++++++++---------------
- include/uapi/linux/btrfs.h |   6 +-
- 4 files changed, 155 insertions(+), 94 deletions(-)
-
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index 1cb1a3860f1d..57332a529c4e 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -576,8 +576,10 @@ struct btrfs_ioctl_clone_range_args {
+  * Used by:
+  * struct btrfs_ioctl_defrag_range_args.flags
+  */
+-#define BTRFS_DEFRAG_RANGE_COMPRESS 1
+-#define BTRFS_DEFRAG_RANGE_START_IO 2
++#define BTRFS_DEFRAG_RANGE_COMPRESS	(1UL << 0)
++#define BTRFS_DEFRAG_RANGE_START_IO	(1UL << 1)
++#define BTRFS_DEFRAG_RANGE_FLAGS_MASK	(BTRFS_DEFRAG_RANGE_COMPRESS |\
++					 BTRFS_DEFRAG_RANGE_START_IO)
+ struct btrfs_ioctl_defrag_range_args {
+ 	/* start of the defrag operation */
+ 	__u64 start;
 -- 
 2.35.0
 

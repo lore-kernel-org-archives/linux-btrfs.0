@@ -2,69 +2,69 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7F44C4167B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Feb 2022 00:10:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94E85C43219
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Feb 2022 00:10:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232450AbiBOAKT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Feb 2022 19:10:19 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:49882 "EHLO
+        id S232386AbiBOAKQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Feb 2022 19:10:16 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:49576 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232206AbiBOAKS (ORCPT
+        with ESMTP id S229946AbiBOAKO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Feb 2022 19:10:18 -0500
+        Mon, 14 Feb 2022 19:10:14 -0500
 Received: from out5-smtp.messagingengine.com (out5-smtp.messagingengine.com [66.111.4.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 857FDA66DF;
-        Mon, 14 Feb 2022 16:10:09 -0800 (PST)
-Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
-        by mailout.nyi.internal (Postfix) with ESMTP id 8C7EB5C02D8;
-        Mon, 14 Feb 2022 19:10:08 -0500 (EST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75BDFA66DF;
+        Mon, 14 Feb 2022 16:10:04 -0800 (PST)
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
+        by mailout.nyi.internal (Postfix) with ESMTP id D798B5C02DF;
+        Mon, 14 Feb 2022 19:10:02 -0500 (EST)
 Received: from mailfrontend2 ([10.202.2.163])
-  by compute1.internal (MEProxy); Mon, 14 Feb 2022 19:10:08 -0500
+  by compute2.internal (MEProxy); Mon, 14 Feb 2022 19:10:02 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:date:date:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm3; bh=GxZggmqNYCmwaqWV7dJDhj4lMSEA48
-        3iaBW1BCfwmx8=; b=zSXk47CGyPWzgoFG0qRX0k90izsv4A3J1DbxMZiuMq3YmL
-        UZ9V8gtjnt/h4p/Wd1XPsNvdm9ypzeXcK7r3RYtsPVZ6h8Y1tgDBvvi5ttU1MuPd
-        qLG8DQ+n5EttuKsoVpZMX+yGxUmcJCykZRFZJfzs9JPyZLVtPe3E4j6/66Et9OKQ
-        C1d/7tvzM+c09wmX4XWx/rFsn4caTBC3Ns/5duwgtVJemM2p8ywBX3adKKUlgZTp
-        i38+GpxTLVnBmDs/qD8LA553HSp4PODlY9Zk64MhKEoemqe1ntI3K692d0ctyJ2r
-        BQmzB0uUibNwGx6FlHIFPrrdB7JwMwZHsRDl8FJg==
+        :subject:subject:to:to; s=fm3; bh=mtzBVuwkZ5pbeJVVBQ3oB1V/yIywmA
+        4xvSw0LlnEDZ4=; b=e/S5SCnT25jWhPBSlD4jfm9KcqQxxPODdp5ZCVb+kpD3Yk
+        RsXsQ+N6WlOPCahorny04VI/aRGwT1mKd2SynnZz6ZrdqqynMJHW2+gX7iQpDtch
+        H+U+OoVJduXnkOaWxOsMpjyDTca4YOjYXvnrEaMX20DCqfCJQOFFmoeD0WjN2FQx
+        RfkshWojwM4Vxi7DB6JRRxlUyxGSaJoAte3Gj8LSz9eLRzyHjQ7P1+CBVHOhAMQb
+        Al1fRklzYqWMEeZFqcAQ0akrdoex1ogsAxim93gamy9Pn7fp5YWVdFKyBSZZC3Yb
+        K7Djw938CbWBDUQFtSk4hiln03GT8tfxtAvi38Cg==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:date:date
         :from:from:in-reply-to:in-reply-to:message-id:mime-version
         :references:reply-to:sender:subject:subject:to:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=GxZggm
-        qNYCmwaqWV7dJDhj4lMSEA483iaBW1BCfwmx8=; b=O0Ef9Xo9B9YXBf4RTOfEep
-        KUeoArh283QAFBt9mHklNf3VAnAbYgM8/wilbB3gA1TY0a7+iIHAsDedsFs/A+S0
-        V+3TLP6p5iOoe32ONp7WZ+eMIeIOWWs4mws55Kjw6c0i8N3HRL4EN3eT+3WnfoDm
-        bDT9aHZv+e8bINnWvhjc+GaYqVgeGTc3B0kNqefKGQ1+YP9AcBe2DGpU3A0mYF3u
-        r46MD1bFGabcv8GCjF1CpKmTuY3/JdYXHmevY7wQ2QwJG+kQtjDDCl+56ROJHyoJ
-        NJB087s4oaTyn3u/no/fNSSb2CN8daI6mdxK6s12mK19jJXLBZ39/dd9018Io+qg
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=mtzBVu
+        wkZ5pbeJVVBQ3oB1V/yIywmA4xvSw0LlnEDZ4=; b=bVYXklS1RQcXL/aCpW/7GI
+        vJyW6Qlou7+LEnk0AdasGD1JwLpogBz3A86fSvSffG/nOMs3r3pLu/JozNFcve2o
+        fzFKURYD+LFmQMNGwi1q1aHLp48PRplXcIaYt+Btq02lPv7vth8oWXlDCdaoxfqP
+        Txs9zL4Itl3RlReqhnYD2ssY2kslkMhS9tMsnLgpc1IzrZB3FoP0QdExjSukUaw+
+        coNYuz9VnQFYDBHUMmfzofWJx686RPCyz2+g9JqB23Hx1jSYKU3AJay8p+JSuCLn
+        cJ2FDuCQODS//lK/linGJNw4SwKl0SWcCkXtXl+ZKJAtqA2Vc5EVhcwaJ25h2dUw
         ==
-X-ME-Sender: <xms:YO8KYneujVAxSAf5iDWjeX9LG0hRTVrjfrWt2U9zoxwQh878-nShvA>
-    <xme:YO8KYtNOvOZI39Heje3fDkSOCMz99cq30HIAx7sMSyDQHSkVc-KXmHwgCR60_7m-L
-    ETvRqbTvomziaf2PvY>
-X-ME-Received: <xmr:YO8KYgh64whREvy6BgU79UccYa92rklRZwIgoCyFhf6KeSUXSlQYR6KzMxy_ty_LdvrvEusUQT_RDrx8SoEPmhK__KQDsw>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvvddrjeefgddulecutefuodetggdotefrodftvf
+X-ME-Sender: <xms:Wu8KYlp3HfahAfTS-W_Fla2Rd-yka_oCdHHWnSzo67sdzqA-5gyBNA>
+    <xme:Wu8KYnrJtJ6mYZOj_2IHwrBK67jG8nXM8R4dH7iSnxWqOSNhXkM_vT-xCcPaqBPUl
+    _YPCgTPjR0_G6nUABM>
+X-ME-Received: <xmr:Wu8KYiO91X--XWCiskw6DP2sN3dGADnOvMNVxlOdXXqIzP3aLIdWcHlmwzLkeugkgVnh5LUtNFt8nJ7Qkef1Eo3RaqeYRQ>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvvddrjeefgddukecutefuodetggdotefrodftvf
     curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
     uegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtkeertd
     ertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhi
     oheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejffevvd
-    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgepvdenucfrrghrrghmpehm
+    ehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehm
     rghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:YO8KYo-RwdyPHi5YA-frXVggYK8prsCgHNV_fwWMuDYGsypmTLCs0w>
-    <xmx:YO8KYjs4SVWCrCgnjrlQUU8xs6lgtJ2EuaXidN32i_fONWGFLpyZAA>
-    <xmx:YO8KYnGP_JnxNxO4mFjIM_nEAuwTO6K0KDufxRVFC1TZUk8IZKKpBQ>
-    <xmx:YO8KYs7xrvrY36ooEYhnMJVHvCtDNKUJEfEIgDhrqUUDNYV9cy96zg>
+X-ME-Proxy: <xmx:Wu8KYg5mFnGZQYXLHcXCXb9Co97S_D-GQv6FZCHCdJSYW2oK_r03RQ>
+    <xmx:Wu8KYk7MZbvxFnt04tWM9SKM_vQY4qzTRPL-wC6nQRoh5ZMxaNZLkA>
+    <xmx:Wu8KYoittLzSZvTP7DogIVmrAX_UlunfMrZde4JPpHfS4OtlsLL4BQ>
+    <xmx:Wu8KYkHVFBhtdOQ1Ur3cBoShaxzrBS-mtU7CVjVK3EanWG6Vjdd3YQ>
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 14 Feb 2022 19:10:07 -0500 (EST)
+ 14 Feb 2022 19:10:02 -0500 (EST)
 From:   Boris Burkov <boris@bur.io>
 To:     fstests@vger.kernel.org, linux-fscrypt@vger.kernel.org,
         linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v6 4/4] generic: test fs-verity EFBIG scenarios
-Date:   Mon, 14 Feb 2022 16:09:58 -0800
-Message-Id: <f8189930d20888a7ac95b7fc2fbb0d522e8851fc.1644883592.git.boris@bur.io>
+Subject: [PATCH v6 1/4] btrfs: test btrfs specific fsverity corruption
+Date:   Mon, 14 Feb 2022 16:09:55 -0800
+Message-Id: <de58122e6cb1712fa5304f0759b40b36351dfc36.1644883592.git.boris@bur.io>
 X-Mailer: git-send-email 2.34.0
 In-Reply-To: <cover.1644883592.git.boris@bur.io>
 References: <cover.1644883592.git.boris@bur.io>
@@ -74,131 +74,295 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs, ext4, and f2fs cache the Merkle tree past EOF, which restricts
-the maximum file size beneath the normal maximum. Test the logic in
-those filesystems against files with sizes near the maximum.
+There are some btrfs specific fsverity scenarios that don't map
+neatly onto the tests in generic/574 like holes, inline extents,
+and preallocated extents. Cover those in a btrfs specific test.
 
-To work properly, this does require some understanding of the practical
-but not standardized layout of the Merkle tree. This is a bit unpleasant
-and could make the test incorrect in the future, if the implementation
-changes. On the other hand, it feels quite useful to test this tricky
-edge case. It could perhaps be made more generic by adding some ioctls
-to let the file system communicate the maximum file size for a verity
-file or some information about the storage of the Merkle tree.
+This test relies on the btrfs implementation of fsverity in the patch:
+btrfs: initial fsverity support
+
+and on btrfs-corrupt-block for corruption in the patches titled:
+btrfs-progs: corrupt generic item data with btrfs-corrupt-block
+btrfs-progs: expand corrupt_file_extent in btrfs-corrupt-block
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- common/verity         | 11 ++++++++
- tests/generic/690     | 66 +++++++++++++++++++++++++++++++++++++++++++
- tests/generic/690.out |  7 +++++
- 3 files changed, 84 insertions(+)
- create mode 100755 tests/generic/690
- create mode 100644 tests/generic/690.out
+ common/btrfs        |   5 ++
+ common/config       |   1 +
+ common/verity       |  14 ++++
+ tests/btrfs/290     | 166 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/290.out |  25 +++++++
+ 5 files changed, 211 insertions(+)
+ create mode 100755 tests/btrfs/290
+ create mode 100644 tests/btrfs/290.out
 
-diff --git a/common/verity b/common/verity
-index 07d9d3fe..8be86ef7 100644
---- a/common/verity
-+++ b/common/verity
-@@ -345,3 +345,14 @@ _fsv_scratch_corrupt_merkle_tree()
- 		;;
- 	esac
+diff --git a/common/btrfs b/common/btrfs
+index 5de926dd..6eb574be 100644
+--- a/common/btrfs
++++ b/common/btrfs
+@@ -496,3 +496,8 @@ _require_btrfs_support_sectorsize()
+ 	grep -wq $sectorsize /sys/fs/btrfs/features/supported_sectorsizes || \
+ 		_notrun "sectorsize $sectorsize is not supported"
  }
 +
-+_require_fsverity_max_file_size_limit()
++_require_btrfs_corrupt_block()
 +{
-+	case $FSTYP in
-+	btrfs|ext4|f2fs)
-+		;;
-+	*)
-+		_notrun "$FSTYP does not store verity data past EOF; no special file size limit"
-+		;;
-+	esac
++	_require_command "$BTRFS_CORRUPT_BLOCK_PROG" btrfs-corrupt-block
 +}
-diff --git a/tests/generic/690 b/tests/generic/690
+diff --git a/common/config b/common/config
+index 0566ab4a..8cda36be 100644
+--- a/common/config
++++ b/common/config
+@@ -295,6 +295,7 @@ export BTRFS_UTIL_PROG=$(type -P btrfs)
+ export BTRFS_SHOW_SUPER_PROG=$(type -P btrfs-show-super)
+ export BTRFS_CONVERT_PROG=$(type -P btrfs-convert)
+ export BTRFS_TUNE_PROG=$(type -P btrfstune)
++export BTRFS_CORRUPT_BLOCK_PROG=$(type -P btrfs-corrupt-block)
+ export XFS_FSR_PROG=$(type -P xfs_fsr)
+ export MKFS_NFS_PROG="false"
+ export MKFS_CIFS_PROG="false"
+diff --git a/common/verity b/common/verity
+index 38eea157..eec8ae72 100644
+--- a/common/verity
++++ b/common/verity
+@@ -3,6 +3,8 @@
+ #
+ # Functions for setting up and testing fs-verity
+ 
++. common/btrfs
++
+ _require_scratch_verity()
+ {
+ 	_require_scratch
+@@ -48,6 +50,15 @@ _require_scratch_verity()
+ 	FSV_BLOCK_SIZE=$(get_page_size)
+ }
+ 
++# Check for userspace tools needed to corrupt verity data or metadata.
++_require_fsverity_corruption()
++{
++	_require_xfs_io_command "fiemap"
++	if [ $FSTYP == "btrfs" ]; then
++		_require_btrfs_corrupt_block
++	fi
++}
++
+ # Check for CONFIG_FS_VERITY_BUILTIN_SIGNATURES=y, as well as the userspace
+ # commands needed to generate certificates and add them to the kernel.
+ _require_fsverity_builtin_signatures()
+@@ -147,6 +158,9 @@ _scratch_mkfs_verity()
+ 	ext4|f2fs)
+ 		_scratch_mkfs -O verity
+ 		;;
++	btrfs)
++		_scratch_mkfs
++		;;
+ 	*)
+ 		_notrun "No verity support for $FSTYP"
+ 		;;
+diff --git a/tests/btrfs/290 b/tests/btrfs/290
 new file mode 100755
-index 00000000..77906dd8
+index 00000000..0276527d
 --- /dev/null
-+++ b/tests/generic/690
-@@ -0,0 +1,66 @@
++++ b/tests/btrfs/290
+@@ -0,0 +1,166 @@
 +#! /bin/bash
 +# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2021 Facebook, Inc.  All Rights Reserved.
++# Copyright (C) 2021 Facebook, Inc. All Rights Reserved.
 +#
-+# FS QA Test 690
++# FS QA Test 290
 +#
-+# fs-verity requires the filesystem to decide how it stores the Merkle tree,
-+# which can be quite large.
-+# It is convenient to treat the Merkle tree as past EOF, and ext4, f2fs, and
-+# btrfs do so in at least some fashion. This leads to an edge case where a
-+# large file can be under the file system file size limit, but trigger EFBIG
-+# on enabling fs-verity. Test enabling verity on some large files to exercise
-+# EFBIG logic for filesystems with fs-verity specific limits.
++# Test btrfs support for fsverity.
++# This test extends the generic fsverity testing by corrupting inline extents,
++# preallocated extents, holes, and the Merkle descriptor in a btrfs-aware way.
 +#
 +. ./common/preamble
 +_begin_fstest auto quick verity
-+
 +
 +# Import common functions.
 +. ./common/filter
 +. ./common/verity
 +
 +# real QA test starts here
-+_supported_fs generic
-+_require_test
-+_require_math
++_supported_fs btrfs
 +_require_scratch_verity
-+_require_fsverity_max_file_size_limit
 +_require_scratch_nocheck
++_require_odirect
++_require_xfs_io_command "falloc"
++_require_fsverity_corruption
 +
-+_scratch_mkfs_verity &>> $seqres.full
++get_ino() {
++	local file=$1
++	stat -c "%i" $file
++}
++
++validate() {
++	local f=$1
++	local sz=$(_get_filesize $f)
++	# buffered io
++	echo $(basename $f)
++	$XFS_IO_PROG -rc "pread -q 0 $sz" $f 2>&1 | _filter_scratch
++	# direct io
++	$XFS_IO_PROG -rdc "pread -q 0 $sz" $f 2>&1 | _filter_scratch
++}
++
++# corrupt the data portion of an inline extent
++corrupt_inline() {
++	local f=$SCRATCH_MNT/inl
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 42" $f
++	local ino=$(get_ino $f)
++	_fsv_enable $f
++	_scratch_unmount
++	# inline data starts at disk_bytenr
++	# overwrite the first u64 with random bogus junk
++	$BTRFS_CORRUPT_BLOCK_PROG -i $ino -x 0 -f disk_bytenr $SCRATCH_DEV > /dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# preallocate a file, then corrupt it by changing it to a regular file
++corrupt_prealloc_to_reg() {
++	local f=$SCRATCH_MNT/prealloc
++	$XFS_IO_PROG -fc "falloc 0 12k" $f
++	local ino=$(get_ino $f)
++	_fsv_enable $f
++	_scratch_unmount
++	# set extent type from prealloc (2) to reg (1)
++	$BTRFS_CORRUPT_BLOCK_PROG -i $ino -x 0 -f type -v 1 $SCRATCH_DEV >/dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# corrupt a regular file by changing the type to preallocated
++corrupt_reg_to_prealloc() {
++	local f=$SCRATCH_MNT/reg
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $f
++	local ino=$(get_ino $f)
++	_fsv_enable $f
++	_scratch_unmount
++	# set type from reg (1) to prealloc (2)
++	$BTRFS_CORRUPT_BLOCK_PROG -i $ino -x 0 -f type -v 2 $SCRATCH_DEV >/dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# corrupt a file by punching a hole
++corrupt_punch_hole() {
++	local f=$SCRATCH_MNT/punch
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $f
++	local ino=$(get_ino $f)
++	# make a new extent in the middle, sync so the writes don't coalesce
++	$XFS_IO_PROG -c sync $SCRATCH_MNT
++	$XFS_IO_PROG -fc "pwrite -q -S 0x59 4096 4096" $f
++	_fsv_enable $f
++	_scratch_unmount
++	# change disk_bytenr to 0, representing a hole
++	$BTRFS_CORRUPT_BLOCK_PROG -i $ino -x 4096 -f disk_bytenr -v 0 $SCRATCH_DEV > /dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# plug hole
++corrupt_plug_hole() {
++	local f=$SCRATCH_MNT/plug
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $f
++	local ino=$(get_ino $f)
++	$XFS_IO_PROG -fc "falloc 4k 4k" $f
++	_fsv_enable $f
++	_scratch_unmount
++	# change disk_bytenr to some value, plugging the hole
++	$BTRFS_CORRUPT_BLOCK_PROG -i $ino -x 4096 -f disk_bytenr -v 13639680 $SCRATCH_DEV > /dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# corrupt the fsverity descriptor item indiscriminately (causes EINVAL)
++corrupt_verity_descriptor() {
++	local f=$SCRATCH_MNT/desc
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $f
++	local ino=$(get_ino $f)
++	_fsv_enable $f
++	_scratch_unmount
++	# key for the descriptor item is <inode, BTRFS_VERITY_DESC_ITEM_KEY, 1>,
++	# 88 is X. So we write 5 Xs to the start of the descriptor
++	$BTRFS_CORRUPT_BLOCK_PROG -r 5 -I $ino,36,1 -v 88 -o 0 -b 5 $SCRATCH_DEV > /dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# specifically target the root hash in the descriptor (causes EIO)
++corrupt_root_hash() {
++	local f=$SCRATCH_MNT/roothash
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $f
++	local ino=$(get_ino $f)
++	_fsv_enable $f
++	_scratch_unmount
++	$BTRFS_CORRUPT_BLOCK_PROG -r 5 -I $ino,36,1 -v 88 -o 16 -b 1 $SCRATCH_DEV > /dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# corrupt the Merkle tree data itself
++corrupt_merkle_tree() {
++	local f=$SCRATCH_MNT/merkle
++	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $f
++	local ino=$(get_ino $f)
++	_fsv_enable $f
++	_scratch_unmount
++	# key for the descriptor item is <inode, BTRFS_VERITY_MERKLE_ITEM_KEY, 0>,
++	# 88 is X. So we write 5 Xs to somewhere in the middle of the first
++	# merkle item
++	$BTRFS_CORRUPT_BLOCK_PROG -r 5 -I $ino,37,0 -v 88 -o 100 -b 5 $SCRATCH_DEV > /dev/null 2>&1
++	_scratch_mount
++	validate $f
++}
++
++# real QA test starts here
++_scratch_mkfs >/dev/null
 +_scratch_mount
 +
-+fsv_file=$SCRATCH_MNT/file.fsv
++corrupt_inline
++corrupt_prealloc_to_reg
++corrupt_reg_to_prealloc
++corrupt_punch_hole
++corrupt_plug_hole
++corrupt_verity_descriptor
++corrupt_root_hash
++corrupt_merkle_tree
 +
-+max_sz=$(_get_max_file_size)
-+_fsv_scratch_begin_subtest "way too big: fail on first merkle block"
-+# have to go back by 4096 from max to not hit the fsverity MAX_LEVELS check.
-+truncate -s $max_sz $fsv_file
-+_fsv_enable $fsv_file |& _filter_scratch
-+
-+# The goal of this second test is to make a big enough file that we trip the
-+# EFBIG codepath, but not so big that we hit it immediately when writing the
-+# first Merkle leaf.
-+#
-+# The Merkle tree is stored with the leaf node level (L0) last, but it is
-+# written first.  To get an interesting overflow, we need the maximum file size
-+# (MAX) to be in the middle of L0 -- ideally near the beginning of L0 so that we
-+# don't have to write many blocks before getting an error.
-+#
-+# With SHA-256 and 4K blocks, there are 128 hashes per block.  Thus, ignoring
-+# padding, L0 is 1/128 of the file size while the other levels in total are
-+# 1/128**2 + 1/128**3 + 1/128**4 + ... = 1/16256 of the file size.  So still
-+# ignoring padding, for L0 start exactly at MAX, the file size must be s such
-+# that s + s/16256 = MAX, i.e. s = MAX * (16256/16257).  Then to get a file size
-+# where MAX occurs *near* the start of L0 rather than *at* the start, we can
-+# just subtract an overestimate of the padding: 64K after the file contents,
-+# then 4K per level, where the consideration of 8 levels is sufficient.
-+sz=$(echo "scale=20; $max_sz * (16256/16257) - 65536 - 4096*8" | $BC -q | cut -d. -f1)
-+_fsv_scratch_begin_subtest "still too big: fail on first invalid merkle block"
-+truncate -s $sz $fsv_file
-+_fsv_enable $fsv_file |& _filter_scratch
-+
-+# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/690.out b/tests/generic/690.out
+diff --git a/tests/btrfs/290.out b/tests/btrfs/290.out
 new file mode 100644
-index 00000000..a3e2b9b9
+index 00000000..056b114b
 --- /dev/null
-+++ b/tests/generic/690.out
-@@ -0,0 +1,7 @@
-+QA output created by 690
-+
-+# way too big: fail on first merkle block
-+ERROR: FS_IOC_ENABLE_VERITY failed on 'SCRATCH_MNT/file.fsv': File too large
-+
-+# still too big: fail on first invalid merkle block
-+ERROR: FS_IOC_ENABLE_VERITY failed on 'SCRATCH_MNT/file.fsv': File too large
++++ b/tests/btrfs/290.out
+@@ -0,0 +1,25 @@
++QA output created by 290
++inl
++pread: Input/output error
++pread: Input/output error
++prealloc
++pread: Input/output error
++pread: Input/output error
++reg
++pread: Input/output error
++pread: Input/output error
++punch
++pread: Input/output error
++pread: Input/output error
++plug
++pread: Input/output error
++pread: Input/output error
++desc
++SCRATCH_MNT/desc: Invalid argument
++SCRATCH_MNT/desc: Invalid argument
++roothash
++pread: Input/output error
++pread: Input/output error
++merkle
++pread: Input/output error
++pread: Input/output error
 -- 
 2.34.0
 

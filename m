@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42581C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Feb 2022 10:51:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 10671C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Feb 2022 10:51:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239365AbiBQKwE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Feb 2022 05:52:04 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:45082 "EHLO
+        id S239358AbiBQKwH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Feb 2022 05:52:07 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:45362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239356AbiBQKwD (ORCPT
+        with ESMTP id S239370AbiBQKwG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Feb 2022 05:52:03 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29B372944C8
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 02:51:49 -0800 (PST)
+        Thu, 17 Feb 2022 05:52:06 -0500
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBAC229413B
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 02:51:51 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id DFF2D21119
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 10:51:47 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 5F8DB1F37D
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 10:51:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1645095107; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1645095110; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=Gmj7JMihIAniP1XDk9ckC3hEAdaiHJ+3TD5DhNMrnOw=;
-        b=UwWPPpTGaOiaWvITSqegvGaJXUrv7qYw5jJwP8g1QmKbbbGWletiWn2KUZuTfmtetIRLz2
-        FIkQhY8hx4ExeNaK/DfHXgyhcfvw+GdSNleA3H/V6AHVJ3JSrZyCkhUKEX+xGOuepIK+fx
-        po5iSz5uty4yDyM06U++p8N+c2vzSms=
+        bh=AiuhBu/CmCs6lvMJoG5OfSduv4412IMoUxXtID1Eank=;
+        b=g/Xg2Z8YDQcI4XiqafCbmqORgvpEsAaIMFt8fYg1tBRycCVRV7dBYVcYQM4t7oHbzsz7gL
+        yzcpRd2CaaLMtkWNiHGVs6MjRxIHnyMQzv2VX0LzV06xzXtBLQKeMAiEWLogJnkR4kwLBO
+        VPlE35yn599mWoYNectg1aDLBWXqZwU=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2A16113DD8
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 10:51:46 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9E31A13DD8
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 10:51:49 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id iEV4N8IoDmKESwAAMHmgww
+        id cNZfGMUoDmKESwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 10:51:46 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 10:51:49 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/7] btrfs: use scrub_simple_mirror() to handle RAID56 data stripe scrub
-Date:   Thu, 17 Feb 2022 18:51:21 +0800
-Message-Id: <f322a03344b825e12f0864679b44498729a63ef6.1645094762.git.wqu@suse.com>
+Subject: [PATCH 6/7] btrfs: use find_first_extent_item() to replace the open-coded extent item search
+Date:   Thu, 17 Feb 2022 18:51:23 +0800
+Message-Id: <2baf3f41126c4bfbaf6a0722c2f3ed8bab62f600.1645094762.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1645094762.git.wqu@suse.com>
 References: <cover.1645094762.git.wqu@suse.com>
@@ -55,437 +55,169 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Although RAID56 has complex repair mechanism, which involves reading the
-whole full stripe, but for current data stripe scrub, it's in fact no
-different than SINGLE/RAID1.
+Since we have find_first_extent_item() to iterate the extent items of a
+certain range, there is no need to use the open-coded version.
 
-The point here is, for data stripe we just check the csum for each
-extent we hit.
-Only for csum mismatch case, our repair path divides.
-
-So we can still reuse scrub_simple_mirror() for RAID56 data stripes.
+Replace the final scrub call site with find_first_extent_item().
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 339 ++++++++---------------------------------------
- 1 file changed, 53 insertions(+), 286 deletions(-)
+ fs/btrfs/scrub.c | 100 ++++++++++++-----------------------------------
+ 1 file changed, 26 insertions(+), 74 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 3ca176c46fb2..640cba1a43bc 100644
+index a830ae723a0c..e5e704ea1f2f 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -3520,66 +3520,26 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+@@ -3029,106 +3029,58 @@ static int scrub_raid56_data_stripe_for_parity(struct scrub_ctx *sctx,
  	struct btrfs_fs_info *fs_info = sctx->fs_info;
- 	struct btrfs_root *root;
- 	struct btrfs_root *csum_root;
--	struct btrfs_extent_item *extent;
- 	struct blk_plug plug;
- 	const u64 profile = map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK;
- 	const u64 chunk_logical = bg->start;
--	u64 flags;
- 	int ret;
--	int slot;
--	u64 nstripes;
--	struct extent_buffer *l;
--	u64 physical;
-+	u64 physical = map->stripes[stripe_index].physical;
-+	u64 physical_end = physical + dev_extent_len;
- 	u64 logical;
- 	u64 logic_end;
--	u64 physical_end;
--	u64 generation;
--	int mirror_num;
+ 	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, logical);
+ 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, logical);
 -	struct btrfs_key key;
--	u64 increment;
--	u64 offset;
--	u64 extent_logical;
--	u64 extent_physical;
--	/*
--	 * Unlike chunk length, extent length should never go beyond
--	 * BTRFS_MAX_EXTENT_SIZE, thus u32 is enough here.
--	 */
--	u32 extent_len;
-+	u64 increment;	/* The logical increment after finishing one stripe */
-+	u64 offset;	/* Offset inside the chunk */
- 	u64 stripe_logical;
- 	u64 stripe_end;
--	struct btrfs_device *extent_dev;
--	int extent_mirror_num;
- 	int stop_loop = 0;
+ 	u64 extent_start;
+ 	u64 extent_size;
++	u64 cur_logical = logical;
+ 	int ret;
  
--	physical = map->stripes[stripe_index].physical;
--	offset = 0;
--	nstripes = div64_u64(dev_extent_len, map->stripe_len);
--	mirror_num = 1;
--	increment = map->stripe_len;
--	if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
--		offset = map->stripe_len * stripe_index;
--		increment = map->stripe_len * map->num_stripes;
--	} else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
--		int factor = map->num_stripes / map->sub_stripes;
--		offset = map->stripe_len * (stripe_index / map->sub_stripes);
--		increment = map->stripe_len * factor;
--		mirror_num = stripe_index % map->sub_stripes + 1;
--	} else if (map->type & BTRFS_BLOCK_GROUP_RAID1_MASK) {
--		mirror_num = stripe_index % map->num_stripes + 1;
--	} else if (map->type & BTRFS_BLOCK_GROUP_DUP) {
--		mirror_num = stripe_index % map->num_stripes + 1;
--	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		get_raid56_logic_offset(physical, stripe_index, map, &offset,
--					NULL);
--		increment = map->stripe_len * nr_data_stripes(map);
--	}
--
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
- 
- 	/*
--	 * work on commit root. The related disk blocks are static as
-+	 * Work on commit root. The related disk blocks are static as
- 	 * long as COW is applied. This means, it is save to rewrite
- 	 * them to repair disk errors without any race conditions
- 	 */
-@@ -3587,32 +3547,24 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	path->skip_locking = 1;
- 	path->reada = READA_FORWARD;
- 
--	logical = chunk_logical + offset;
--	physical_end = physical + nstripes * map->stripe_len;
--	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		get_raid56_logic_offset(physical_end, stripe_index,
--					map, &logic_end, NULL);
--		logic_end += chunk_logical;
--	} else {
--		logic_end = logical + increment * nstripes;
--	}
- 	wait_event(sctx->list_wait,
- 		   atomic_read(&sctx->bios_in_flight) == 0);
- 	scrub_blocked_if_needed(fs_info);
- 
--	root = btrfs_extent_root(fs_info, logical);
--	csum_root = btrfs_csum_root(fs_info, logical);
-+	root = btrfs_extent_root(fs_info, bg->start);
-+	csum_root = btrfs_csum_root(fs_info, bg->start);
- 
- 	/*
--	 * collect all data csums for the stripe to avoid seeking during
-+	 * Collect all data csums for the stripe to avoid seeking during
- 	 * the scrub. This might currently (crc32) end up to be about 1MB
- 	 */
- 	blk_start_plug(&plug);
- 
- 	if (sctx->is_dev_replace &&
--	    btrfs_dev_is_sequential(sctx->wr_tgtdev, physical)) {
-+	    btrfs_dev_is_sequential(sctx->wr_tgtdev,
-+				    map->stripes[stripe_index].physical)) {
- 		mutex_lock(&sctx->wr_lock);
--		sctx->write_pointer = physical;
-+		sctx->write_pointer = map->stripes[stripe_index].physical;
- 		mutex_unlock(&sctx->wr_lock);
- 		sctx->flush_all_writes = true;
- 	}
-@@ -3626,6 +3578,8 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	 */
- 	if (!(profile & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10 |
- 			 BTRFS_BLOCK_GROUP_RAID56_MASK))) {
-+		offset = 0;
-+
- 		/*
- 		 * Above check rules out all complex profile, the remaining
- 		 * profiles are SINGLE|DUP|RAID1|RAID1C*, which is simple
-@@ -3636,11 +3590,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 		 */
- 		ret = scrub_simple_mirror(sctx, root, csum_root, bg, map,
- 				bg->start, bg->length, scrub_dev,
--				map->stripes[stripe_index].physical,
--				stripe_index + 1);
-+				physical, stripe_index + 1);
- 		goto out;
- 	}
- 	if (profile & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10)) {
-+		offset = map->stripe_len * (stripe_index / map->sub_stripes);
-+
- 		ret = scrub_simple_stripe(sctx, root, csum_root, bg, map,
- 					  scrub_dev, stripe_index);
- 		goto out;
-@@ -3648,239 +3603,51 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 
- 	/* Only RAID56 goes through the old code */
  	ASSERT(map->type & BTRFS_BLOCK_GROUP_RAID56_MASK);
-+
-+	offset = 0;
-+	get_raid56_logic_offset(physical, stripe_index, map, &offset, NULL);
-+	increment = map->stripe_len * nr_data_stripes(map);
-+
-+	logical = chunk_logical + offset;
-+	get_raid56_logic_offset(physical_end, stripe_index, map, &logic_end,
-+				NULL);
-+	logic_end += chunk_logical;
-+
- 	ret = 0;
-+	/*
-+	 * Due to the rotation, for RAID56 it's better to iterate each stripe
-+	 * using their physical offset.
-+	 */
- 	while (physical < physical_end) {
--		/*
--		 * canceled?
--		 */
--		if (atomic_read(&fs_info->scrub_cancel_req) ||
--		    atomic_read(&sctx->cancel_req)) {
--			ret = -ECANCELED;
--			goto out;
-+		ret = get_raid56_logic_offset(physical, stripe_index, map,
-+					      &logical, &stripe_logical);
-+		logical += chunk_logical;
-+		if (ret) {
-+			/* It is parity strip */
-+			stripe_logical += chunk_logical;
-+			stripe_end = stripe_logical + increment;
-+			ret = scrub_raid56_parity(sctx, map, scrub_dev,
-+						  stripe_logical,
-+						  stripe_end);
-+			if (ret)
-+				goto out;
-+			goto next;
- 		}
-+
- 		/*
--		 * check to see if we have to pause
-+		 * Now we're at data stripes, scrub each extents in the range.
-+		 *
-+		 * At this stage, if we ignore the repair part, each data stripe
-+		 * is no different than SINGLE profile.
-+		 * We can reuse scrub_simple_mirror() here, as the repair part
-+		 * is still based on @mirror_num.
- 		 */
--		if (atomic_read(&fs_info->scrub_pause_req)) {
--			/* push queued extents */
--			sctx->flush_all_writes = true;
--			scrub_submit(sctx);
--			mutex_lock(&sctx->wr_lock);
--			scrub_wr_submit(sctx);
--			mutex_unlock(&sctx->wr_lock);
--			wait_event(sctx->list_wait,
--				   atomic_read(&sctx->bios_in_flight) == 0);
--			sctx->flush_all_writes = false;
--			scrub_blocked_if_needed(fs_info);
--		}
 -
--		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--			ret = get_raid56_logic_offset(physical, stripe_index,
--						      map, &logical,
--						      &stripe_logical);
--			logical += chunk_logical;
--			if (ret) {
--				/* it is parity strip */
--				stripe_logical += chunk_logical;
--				stripe_end = stripe_logical + increment;
--				ret = scrub_raid56_parity(sctx, map, scrub_dev,
--							  stripe_logical,
--							  stripe_end);
--				if (ret)
--					goto out;
--				goto skip;
--			}
--		}
+ 	/* Path should not be populated */
+ 	ASSERT(!path->nodes[0]);
+ 
+-	if (btrfs_fs_incompat(fs_info, SKINNY_METADATA))
+-		key.type = BTRFS_METADATA_ITEM_KEY;
+-	else
+-		key.type = BTRFS_EXTENT_ITEM_KEY;
+-	key.objectid = logical;
+-	key.offset = (u64)-1;
 -
--		if (btrfs_fs_incompat(fs_info, SKINNY_METADATA))
--			key.type = BTRFS_METADATA_ITEM_KEY;
--		else
--			key.type = BTRFS_EXTENT_ITEM_KEY;
--		key.objectid = logical;
--		key.offset = (u64)-1;
+-	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
+-	if (ret < 0)
+-		return ret;
 -
--		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		ret = scrub_simple_mirror(sctx, root, csum_root, bg, map,
-+					  logical, map->stripe_len,
-+					  scrub_dev, physical, 1);
- 		if (ret < 0)
- 			goto out;
--
+-	if (ret > 0) {
+-		ret = btrfs_previous_extent_item(extent_root, path, 0);
+-		if (ret < 0)
+-			return ret;
 -		if (ret > 0) {
--			ret = btrfs_previous_extent_item(root, path, 0);
+-			btrfs_release_path(path);
+-			ret = btrfs_search_slot(NULL, extent_root, &key, path,
+-						0, 0);
 -			if (ret < 0)
--				goto out;
--			if (ret > 0) {
--				/* there's no smaller item, so stick with the
--				 * larger one */
--				btrfs_release_path(path);
--				ret = btrfs_search_slot(NULL, root, &key,
--							path, 0, 0);
--				if (ret < 0)
--					goto out;
--			}
+-				return ret;
 -		}
+-	}
 -
--		stop_loop = 0;
--		while (1) {
--			u64 bytes;
+-	while (1) {
++	while (cur_logical < logical + map->stripe_len) {
+ 		struct btrfs_io_context *bioc = NULL;
+ 		struct btrfs_device *extent_dev;
+-		struct btrfs_extent_item *ei;
+-		struct extent_buffer *l;
+-		int slot;
+ 		u64 mapped_length;
+ 		u64 extent_flags;
+ 		u64 extent_gen;
+ 		u64 extent_physical;
+ 		u64 extent_mirror_num;
+ 
+-		l = path->nodes[0];
+-		slot = path->slots[0];
+-		if (slot >= btrfs_header_nritems(l)) {
+-			ret = btrfs_next_leaf(extent_root, path);
+-			if (ret == 0)
+-				continue;
 -
--			l = path->nodes[0];
--			slot = path->slots[0];
--			if (slot >= btrfs_header_nritems(l)) {
--				ret = btrfs_next_leaf(root, path);
--				if (ret == 0)
--					continue;
--				if (ret < 0)
--					goto out;
+-			/* No more extent items or error, exit */
++		ret = find_first_extent_item(extent_root, path, cur_logical,
++					logical + map->stripe_len - cur_logical);
++		/* No more extent item in this data stripe */
++		if (ret > 0) {
++			ret = 0;
+ 			break;
+ 		}
+-		btrfs_item_key_to_cpu(l, &key, slot);
 -
--				stop_loop = 1;
--				break;
--			}
--			btrfs_item_key_to_cpu(l, &key, slot);
+-		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
+-		    key.type != BTRFS_METADATA_ITEM_KEY)
+-			goto next;
 -
--			if (key.type != BTRFS_EXTENT_ITEM_KEY &&
--			    key.type != BTRFS_METADATA_ITEM_KEY)
--				goto next;
+-		if (key.type == BTRFS_METADATA_ITEM_KEY)
+-			extent_size = fs_info->nodesize;
+-		else
+-			extent_size = key.offset;
 -
--			if (key.type == BTRFS_METADATA_ITEM_KEY)
--				bytes = fs_info->nodesize;
--			else
--				bytes = key.offset;
+-		if (key.objectid + extent_size <= logical)
+-			goto next;
 -
--			if (key.objectid + bytes <= logical)
--				goto next;
+-		/* Beyond this data stripe */
+-		if (key.objectid >= logical + map->stripe_len)
++		if (ret < 0)
+ 			break;
++		get_extent_info(path, &extent_start, &extent_size,
++				&extent_flags, &extent_gen);
+ 
+-		ei = btrfs_item_ptr(l, slot, struct btrfs_extent_item);
+-		extent_flags = btrfs_extent_flags(l, ei);
+-		extent_gen = btrfs_extent_generation(l, ei);
 -
--			if (key.objectid >= logical + map->stripe_len) {
--				/* out of this device extent */
--				if (key.objectid >= logic_end)
--					stop_loop = 1;
--				break;
--			}
--
--			/*
--			 * If our block group was removed in the meanwhile, just
--			 * stop scrubbing since there is no point in continuing.
--			 * Continuing would prevent reusing its device extents
--			 * for new block groups for a long time.
--			 */
--			spin_lock(&bg->lock);
--			if (bg->removed) {
--				spin_unlock(&bg->lock);
--				ret = 0;
--				goto out;
--			}
--			spin_unlock(&bg->lock);
--
--			extent = btrfs_item_ptr(l, slot,
--						struct btrfs_extent_item);
--			flags = btrfs_extent_flags(l, extent);
--			generation = btrfs_extent_generation(l, extent);
--
--			if ((flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
--			    (key.objectid < logical ||
--			     key.objectid + bytes >
--			     logical + map->stripe_len)) {
--				btrfs_err(fs_info,
--					   "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
--				       key.objectid, logical);
--				spin_lock(&sctx->stat_lock);
--				sctx->stat.uncorrectable_errors++;
--				spin_unlock(&sctx->stat_lock);
--				goto next;
--			}
--
--again:
--			extent_logical = key.objectid;
--			ASSERT(bytes <= U32_MAX);
--			extent_len = bytes;
--
--			/*
--			 * trim extent to this stripe
--			 */
--			if (extent_logical < logical) {
--				extent_len -= logical - extent_logical;
--				extent_logical = logical;
--			}
--			if (extent_logical + extent_len >
--			    logical + map->stripe_len) {
--				extent_len = logical + map->stripe_len -
--					     extent_logical;
--			}
--
--			extent_physical = extent_logical - logical + physical;
--			extent_dev = scrub_dev;
--			extent_mirror_num = mirror_num;
--			if (sctx->is_dev_replace)
--				scrub_remap_extent(fs_info, extent_logical,
--						   extent_len, &extent_physical,
--						   &extent_dev,
--						   &extent_mirror_num);
--
--			if (flags & BTRFS_EXTENT_FLAG_DATA) {
--				ret = btrfs_lookup_csums_range(csum_root,
--						extent_logical,
--						extent_logical + extent_len - 1,
--						&sctx->csum_list, 1);
--				if (ret)
--					goto out;
--			}
--
--			ret = scrub_extent(sctx, map, extent_logical, extent_len,
--					   extent_physical, extent_dev, flags,
--					   generation, extent_mirror_num,
--					   extent_logical - logical + physical);
--
--			scrub_free_csums(sctx);
--
--			if (ret)
--				goto out;
--
--			if (sctx->is_dev_replace)
--				sync_replace_for_zoned(sctx);
--
--			if (extent_logical + extent_len <
--			    key.objectid + bytes) {
--				if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--					/*
--					 * loop until we find next data stripe
--					 * or we have finished all stripes.
--					 */
--loop:
--					physical += map->stripe_len;
--					ret = get_raid56_logic_offset(physical,
--							stripe_index, map,
--							&logical, &stripe_logical);
--					logical += chunk_logical;
--
--					if (ret && physical < physical_end) {
--						stripe_logical += chunk_logical;
--						stripe_end = stripe_logical +
--								increment;
--						ret = scrub_raid56_parity(sctx,
--							map, scrub_dev,
--							stripe_logical,
--							stripe_end);
--						if (ret)
--							goto out;
--						goto loop;
--					}
--				} else {
--					physical += map->stripe_len;
--					logical += increment;
--				}
--				if (logical < key.objectid + bytes) {
--					cond_resched();
--					goto again;
--				}
--
--				if (physical >= physical_end) {
--					stop_loop = 1;
--					break;
--				}
--			}
- next:
--			path->slots[0]++;
++		/* Metadata should not cross stripe boundaries */
+ 		if ((extent_flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
+-		    (key.objectid < logical || key.objectid + extent_size >
+-		     logical + map->stripe_len)) {
++		    does_range_cross_boundary(extent_start, extent_size,
++					      logical, map->stripe_len)) {
+ 			btrfs_err(fs_info,
+-				  "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
+-				  key.objectid, logical);
++	"scrub: tree block %llu spanning stripes, ignored. logical=%llu",
++				  extent_start, logical);
+ 			spin_lock(&sctx->stat_lock);
+ 			sctx->stat.uncorrectable_errors++;
+ 			spin_unlock(&sctx->stat_lock);
+-			goto next;
++			cur_logical += extent_size;
++			continue;
+ 		}
+ 
+-		extent_start = key.objectid;
+-		ASSERT(extent_size <= U32_MAX);
++		/* Skip hole range which doesn't have any extent */
++		cur_logical = max(extent_start, cur_logical);
+ 
+-		/* Truncate the range inside the data stripe */
+-		if (extent_start < logical) {
+-			extent_size -= logical - extent_start;
+-			extent_start = logical;
 -		}
--		btrfs_release_path(path);
--skip:
- 		logical += increment;
- 		physical += map->stripe_len;
- 		spin_lock(&sctx->stat_lock);
+-		if (extent_start + extent_size > logical + map->stripe_len)
+-			extent_size = logical + map->stripe_len - extent_start;
++		/* Truncate the range inside this data stripe */
++		extent_size = min(extent_start + extent_size,
++				  logical + map->stripe_len) - cur_logical;
++		extent_start = cur_logical;
++		ASSERT(extent_size <= U32_MAX);
+ 
+ 		scrub_parity_mark_sectors_data(sparity, extent_start, extent_size);
+ 
+@@ -3164,8 +3116,7 @@ static int scrub_raid56_data_stripe_for_parity(struct scrub_ctx *sctx,
+ 			break;
+ 
+ 		cond_resched();
+-next:
+-		path->slots[0]++;
++		cur_logical += extent_size;
+ 	}
+ 	if (ret < 0)
+ 		scrub_parity_mark_sectors_error(sparity, extent_start,
+@@ -3364,6 +3315,7 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
+ 			break;
+ 		get_extent_info(&path, &extent_start, &extent_len,
+ 				&extent_flags, &extent_gen);
++
+ 		/* Skip hole range which doesn't have any extent */
+ 		cur_logical = max(extent_start, cur_logical);
+ 
 -- 
 2.35.1
 

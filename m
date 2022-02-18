@@ -2,84 +2,69 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6456C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 13:23:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2C9DC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 14:20:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235757AbiBRNXR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Feb 2022 08:23:17 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:57744 "EHLO
+        id S235983AbiBROVH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Feb 2022 09:21:07 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:36358 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229719AbiBRNXP (ORCPT
+        with ESMTP id S232114AbiBROVG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Feb 2022 08:23:15 -0500
+        Fri, 18 Feb 2022 09:21:06 -0500
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDE4325B2E9;
-        Fri, 18 Feb 2022 05:22:57 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 45BF5D1D6A
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 06:20:49 -0800 (PST)
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 8F694219A7;
-        Fri, 18 Feb 2022 13:22:56 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id 03EEE219A8;
+        Fri, 18 Feb 2022 14:20:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1645190576;
+        t=1645194048;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=RgkZJ7ZhSERSWBQqI33cC4w2rylgQi9fENbXBv/d1xM=;
-        b=lmt1xfm27odWD5fnWFGSKNegSnlKJKxHbTbPYa1lsEyeZELtbVLmB/v80BkgAHJdF9EjbS
-        IR8GEvOdwwwSYySEyBcS0k8qtQrYDjvEoDczHJcstikrU/Qbphq69vhZy4s8a4EAzfwIgy
-        kBCovEOwp/A0SIRLKsLMqrHLjfsU4G0=
+        bh=S5UXMYM+qW3iOnvMHCpI93j4VqBsvURVbux0JHKZUz0=;
+        b=hq8b51zSANOCi3RQmBwWB/7uEioKthMWTtPTghay9csqSrLbhmrJuUOVbYR/Qiuh6+X0Un
+        Eqsb6PELxihNHfmwzo6iAVEIXGXsYEdcmMC1x7U1qWDUWZK5ulTNJ4vZ4QOTOibjLfhzXd
+        HtYjD4+Ny++cnY+LJ3YWm6VTmZNZXOE=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1645190576;
+        s=susede2_ed25519; t=1645194048;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=RgkZJ7ZhSERSWBQqI33cC4w2rylgQi9fENbXBv/d1xM=;
-        b=cakBRZ92N4MYl546FxHVDIwO4uapqv57wa1Xh5jygvRCxm34OeqVjAn/WZHL9vzLe5yVz/
-        6oImeYSscOlBn1CQ==
+        bh=S5UXMYM+qW3iOnvMHCpI93j4VqBsvURVbux0JHKZUz0=;
+        b=FZHytzWXP4L7R17qT88UkO6pVLrGQIAFQJ5TfGhjbEU6K+HJBuQf5+bIebXqd7jGquLWyX
+        K/m+lsddpcZ+3NDg==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 820E1A3B93;
-        Fri, 18 Feb 2022 13:22:56 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id F23ECA3B8F;
+        Fri, 18 Feb 2022 14:20:47 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E0E37DA829; Fri, 18 Feb 2022 14:19:10 +0100 (CET)
-Date:   Fri, 18 Feb 2022 14:19:10 +0100
+        id 5F4E6DA829; Fri, 18 Feb 2022 15:17:02 +0100 (CET)
+Date:   Fri, 18 Feb 2022 15:17:02 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] fs: allow cross-vfsmount reflink/dedupe
-Message-ID: <20220218131910.GT12643@twin.jikos.cz>
+To:     Anthony Iliopoulos <ailiop@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: add zoned_profile_supported function stub
+Message-ID: <20220218141702.GU12643@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <67ae4c62a4749ae6870c452d1b458cc5f48b8263.1645042835.git.josef@toxicpanda.com>
+Mail-Followup-To: dsterba@suse.cz, Anthony Iliopoulos <ailiop@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <20220215171213.5173-1-ailiop@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <67ae4c62a4749ae6870c452d1b458cc5f48b8263.1645042835.git.josef@toxicpanda.com>
+In-Reply-To: <20220215171213.5173-1-ailiop@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 16, 2022 at 03:21:23PM -0500, Josef Bacik wrote:
-> Currently we disallow reflink and dedupe if the two files aren't on the
-> same vfsmount.  However we really only need to disallow it if they're
-> not on the same super block.  It is very common for btrfs to have a main
-> subvolume that is mounted and then different subvolumes mounted at
-> different locations.  It's allowed to reflink between these volumes, but
-> the vfsmount check disallows this.  Instead fix dedupe to check for the
-> same superblock, and simply remove the vfsmount check for reflink as it
-> already does the superblock check.
+On Tue, Feb 15, 2022 at 06:12:12PM +0100, Anthony Iliopoulos wrote:
+> The zoned_profile_supported function is only defined if BTRFS_ZONED is
+> defined, and thus compilation breaks when progs are configured without
+> zoned block device support. Add the stub function so that progs can be
+> compiled without zoned support.
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> Signed-off-by: Anthony Iliopoulos <ailiop@suse.com>
 
-This has some history, people have been asking for this for a long time
-(the workaround is to mount the toplevel subvolume elsewhere and do it
-from there). I did a review back then what could possibly break on the
-VFS level, eg. lack of references of the affected files, or potential
-deadlocks. On the filesystem level there's no difference, the extents
-are processed in the same way, it does not matter if the VFS entry point
-is the same mount or cross-mount. The same-mount limitation seems rather
-artificial and has been inherited from the original implementation.
-
-Reviewed-by: David Sterba <dsterba@suse.com>
+Thanks, this has been fixed in 5.16.2.

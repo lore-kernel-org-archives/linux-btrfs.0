@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EDFA2C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 05:49:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 792BFC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 05:49:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229719AbiBRFti (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Feb 2022 00:49:38 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:42940 "EHLO
+        id S230451AbiBRFtl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Feb 2022 00:49:41 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:43226 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230090AbiBRFtb (ORCPT
+        with ESMTP id S230396AbiBRFtg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Feb 2022 00:49:31 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 211863DA55
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 21:49:14 -0800 (PST)
+        Fri, 18 Feb 2022 00:49:36 -0500
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E81963DA55
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Feb 2022 21:49:19 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 73D0C1F383
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:49:13 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 9ADDC2199B
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:49:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1645163353; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1645163358; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=usdySMGTzl2uPW4GBFqO0QYle+JwXos4OP+H2+o0I9c=;
-        b=BjtbjO8Pseu+WxZ4+IRrB2PYCWGtyZFIDR/6kG+qLoIqG1VbwK25BWnlbZ9Rb7c2C4jRpV
-        FrHaWkSSMj7v1D1EVks5R0eEHEF4gXBpm8tltnM6QXjl2Z6Y6ALB17+UWPyX/soTCPF4Xr
-        z3pBPCrmQnwCbpSiCfopzp9NgWxbJk8=
+        bh=6hm1hJro6ZXabRgEKk5OHf3DBNVlVm/4WEEavCrHKGY=;
+        b=oHvHV42+oLelVkQQSeRkcnCN8BhHGDUKq9H6q8PV17qwBJP5ZMY/RGtFq+MIieoq93OIn/
+        U4j2jU1agExPGq6QGwCmXAUWOt4RLWVJPjhz+lpO8uHdX3eHIsmfNmxdrHADEUddI1CZVb
+        9tXskEmly1URBkg/Mb1nAL7MSJSKi1A=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9579E13BF3
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:49:12 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id F2F2313BF3
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:49:17 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id WMYPGFgzD2JaFQAAMHmgww
+        id AIL0Ll0zD2JaFQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:49:12 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:49:17 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/9] btrfs: introduce a helper to locate an extent item
-Date:   Fri, 18 Feb 2022 13:48:45 +0800
-Message-Id: <8d4c32ae0135f53ba6bc80999878cd68fc0f1402.1645101173.git.wqu@suse.com>
+Subject: [PATCH v3 7/9] btrfs: refactor scrub_raid56_parity()
+Date:   Fri, 18 Feb 2022 13:48:50 +0800
+Message-Id: <d3138894677cdea8c14816f643e94cf5cd3a0694.1645101173.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1645101173.git.wqu@suse.com>
 References: <cover.1645101173.git.wqu@suse.com>
@@ -55,136 +55,413 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The new helper, find_first_extent_item(), will locate an extent item
-(either EXTENT_ITEM or METADATA_ITEM) which covers *ANY* byte of the
-search range.
+Currently scrub_raid56_parity() has a large double loop, handling the
+following things at the same time:
 
-This helper will later be used to refactor scrub code.
+- Iterate each data stripe
+- Iterate each extent item in one data stripe
+
+Refactor this mess by:
+
+- Introduce a new helper to handle data stripe iteration
+  The new helper is scrub_raid56_data_stripe_for_parity(), which
+  only has one while() loop handling the extent items inside the
+  data stripe.
+
+  The code is still mostly the same as the old code.
+
+- Call cond_resched() for each extent
+  Previously we only call cond_resched() under a complex if () check.
+  I see no special reason to do that, and for other scrub functions,
+  like scrub_simple_mirror() we're already doing the same cond_resched()
+  after scrubbing one extent.
+
+- Add extra comments
+  To improve the readability
+
+Please note that, this patch is only to address the double loop, there
+are incoming patches to do extra cleanup.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 108 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 108 insertions(+)
+ fs/btrfs/scrub.c | 342 ++++++++++++++++++++++-------------------------
+ 1 file changed, 161 insertions(+), 181 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 5ac5434c6227..52d75575b3b4 100644
+index 13acf07bccae..97044957ed85 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -2882,6 +2882,114 @@ static void scrub_parity_put(struct scrub_parity *sparity)
- 	scrub_parity_check_and_repair(sparity);
+@@ -3019,6 +3019,161 @@ static bool does_range_cross_boundary(u64 extent_start, u64 extent_len,
+ 		extent_start + extent_len > boundary_start + boudary_len);
  }
  
-+/*
-+ * Return 0 if the extent item range covers any byte of the range.
-+ * Return <0 if the extent item is before @search_start.
-+ * Return >0 if the extent item is after @start_start + @search_len.
-+ */
-+static int compare_extent_item_range(struct btrfs_path *path,
-+				     u64 search_start, u64 search_len)
++static int scrub_raid56_data_stripe_for_parity(struct scrub_ctx *sctx,
++					       struct scrub_parity *sparity,
++					       struct map_lookup *map,
++					       struct btrfs_device *sdev,
++					       struct btrfs_path *path,
++					       u64 logical)
 +{
-+	struct btrfs_fs_info *fs_info = path->nodes[0]->fs_info;
-+	u64 len;
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, logical);
++	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, logical);
 +	struct btrfs_key key;
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	ASSERT(key.type == BTRFS_EXTENT_ITEM_KEY ||
-+	       key.type == BTRFS_METADATA_ITEM_KEY);
-+	if (key.type == BTRFS_METADATA_ITEM_KEY)
-+		len = fs_info->nodesize;
-+	else
-+		len = key.offset;
-+
-+	if (key.objectid + len <= search_start)
-+		return -1;
-+	if (key.objectid >= search_start + search_len)
-+		return 1;
-+	return 0;
-+}
-+
-+/*
-+ * Helper to locate one extent item which covers any byte in range
-+ * [@search_start, @search_start + @search_length)
-+ *
-+ * If the path is not initialized, we will initialize the search by doing
-+ * a btrfs_search_slot().
-+ * If the path is already initialized, we will use the path as the initial
-+ * slot, to avoid duplicated btrfs_search_slot() calls.
-+ *
-+ * NOTE: If an extent item starts before @search_start, we will still
-+ * return the extent item. This is for data extent crossing stripe boundary.
-+ *
-+ * Return 0 if we found such extent item, and @path will point to the
-+ * extent item.
-+ * Return >0 if no such extent item can be found, and @path will be released.
-+ * Return <0 if hit fatal error, and @path will be released.
-+ */
-+static int find_first_extent_item(struct btrfs_root *extent_root,
-+				  struct btrfs_path *path,
-+				  u64 search_start, u64 search_len)
-+{
-+	struct btrfs_fs_info *fs_info = extent_root->fs_info;
-+	struct btrfs_key key;
++	u64 extent_start;
++	u64 extent_size;
 +	int ret;
 +
-+	/* Continue using the existing path */
-+	if (path->nodes[0])
-+		goto search_forward;
++	ASSERT(map->type & BTRFS_BLOCK_GROUP_RAID56_MASK);
++
++	/* Path should not be populated */
++	ASSERT(!path->nodes[0]);
 +
 +	if (btrfs_fs_incompat(fs_info, SKINNY_METADATA))
 +		key.type = BTRFS_METADATA_ITEM_KEY;
 +	else
 +		key.type = BTRFS_EXTENT_ITEM_KEY;
-+	key.objectid = search_start;
++	key.objectid = logical;
 +	key.offset = (u64)-1;
 +
 +	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
 +	if (ret < 0)
 +		return ret;
 +
-+	ASSERT(ret > 0);
-+	/*
-+	 * Here we intentionally pass 0 as @min_objectid, as there could be
-+	 * an extent item starting before @search_start.
-+	 */
-+	ret = btrfs_previous_extent_item(extent_root, path, 0);
-+	if (ret < 0)
-+		return ret;
-+	/*
-+	 * No matter whether we have found an extent item, the next loop will
-+	 * properly do every check on the key.
-+	 */
-+search_forward:
-+	while (true) {
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		if (key.objectid >= search_start + search_len)
-+			break;
-+		if (key.type != BTRFS_METADATA_ITEM_KEY &&
-+		    key.type != BTRFS_EXTENT_ITEM_KEY)
-+			goto next;
-+
-+		ret = compare_extent_item_range(path, search_start, search_len);
-+		if (ret == 0)
++	if (ret > 0) {
++		ret = btrfs_previous_extent_item(extent_root, path, 0);
++		if (ret < 0)
 +			return ret;
-+		if (ret > 0)
-+			break;
-+next:
-+		path->slots[0]++;
-+		if (path->slots[0] >= btrfs_header_nritems(path->nodes[0])) {
-+			ret = btrfs_next_leaf(extent_root, path);
-+			if (ret) {
-+				/* Either no more item or fatal error */
-+				btrfs_release_path(path);
++		if (ret > 0) {
++			btrfs_release_path(path);
++			ret = btrfs_search_slot(NULL, extent_root, &key, path,
++						0, 0);
++			if (ret < 0)
 +				return ret;
-+			}
 +		}
 +	}
++
++	while (1) {
++		struct btrfs_io_context *bioc = NULL;
++		struct btrfs_device *extent_dev;
++		struct btrfs_extent_item *ei;
++		struct extent_buffer *l;
++		int slot;
++		u64 mapped_length;
++		u64 extent_flags;
++		u64 extent_gen;
++		u64 extent_physical;
++		u64 extent_mirror_num;
++
++		l = path->nodes[0];
++		slot = path->slots[0];
++		if (slot >= btrfs_header_nritems(l)) {
++			ret = btrfs_next_leaf(extent_root, path);
++			if (ret == 0)
++				continue;
++
++			/* No more extent items or error, exit */
++			break;
++		}
++		btrfs_item_key_to_cpu(l, &key, slot);
++
++		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
++		    key.type != BTRFS_METADATA_ITEM_KEY)
++			goto next;
++
++		if (key.type == BTRFS_METADATA_ITEM_KEY)
++			extent_size = fs_info->nodesize;
++		else
++			extent_size = key.offset;
++
++		if (key.objectid + extent_size <= logical)
++			goto next;
++
++		/* Beyond this data stripe */
++		if (key.objectid >= logical + map->stripe_len)
++			break;
++
++		ei = btrfs_item_ptr(l, slot, struct btrfs_extent_item);
++		extent_flags = btrfs_extent_flags(l, ei);
++		extent_gen = btrfs_extent_generation(l, ei);
++
++		if ((extent_flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
++		    (key.objectid < logical || key.objectid + extent_size >
++		     logical + map->stripe_len)) {
++			btrfs_err(fs_info,
++				  "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
++				  key.objectid, logical);
++			spin_lock(&sctx->stat_lock);
++			sctx->stat.uncorrectable_errors++;
++			spin_unlock(&sctx->stat_lock);
++			goto next;
++		}
++
++		extent_start = key.objectid;
++		ASSERT(extent_size <= U32_MAX);
++
++		/* Truncate the range inside the data stripe */
++		if (extent_start < logical) {
++			extent_size -= logical - extent_start;
++			extent_start = logical;
++		}
++		if (extent_start + extent_size > logical + map->stripe_len)
++			extent_size = logical + map->stripe_len - extent_start;
++
++		scrub_parity_mark_sectors_data(sparity, extent_start, extent_size);
++
++		mapped_length = extent_size;
++		ret = btrfs_map_block(fs_info, BTRFS_MAP_READ, extent_start,
++				      &mapped_length, &bioc, 0);
++		if (!ret && (!bioc || mapped_length < extent_size))
++			ret = -EIO;
++		if (ret) {
++			btrfs_put_bioc(bioc);
++			scrub_parity_mark_sectors_error(sparity, extent_start,
++							extent_size);
++			break;
++		}
++		extent_physical = bioc->stripes[0].physical;
++		extent_mirror_num = bioc->mirror_num;
++		extent_dev = bioc->stripes[0].dev;
++		btrfs_put_bioc(bioc);
++
++		ret = btrfs_lookup_csums_range(csum_root, extent_start,
++					       extent_start + extent_size - 1,
++					       &sctx->csum_list, 1);
++		if (ret)
++			break;
++
++		ret = scrub_extent_for_parity(sparity, extent_start,
++					      extent_size, extent_physical,
++					      extent_dev, extent_flags,
++					      extent_gen, extent_mirror_num);
++		scrub_free_csums(sctx);
++
++		if (ret)
++			break;
++
++		cond_resched();
++next:
++		path->slots[0]++;
++	}
++	if (ret < 0)
++		scrub_parity_mark_sectors_error(sparity, extent_start,
++						extent_size);
 +	btrfs_release_path(path);
-+	return 1;
++	return ret;
 +}
 +
  static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
  						  struct map_lookup *map,
  						  struct btrfs_device *sdev,
+@@ -3026,28 +3181,12 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+ 						  u64 logic_end)
+ {
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+-	struct btrfs_root *root = btrfs_extent_root(fs_info, logic_start);
+-	struct btrfs_root *csum_root;
+-	struct btrfs_extent_item *extent;
+-	struct btrfs_io_context *bioc = NULL;
+ 	struct btrfs_path *path;
+-	u64 flags;
++	u64 cur_logical;
+ 	int ret;
+-	int slot;
+-	struct extent_buffer *l;
+-	struct btrfs_key key;
+-	u64 generation;
+-	u64 extent_logical;
+-	u64 extent_physical;
+-	/* Check the comment in scrub_stripe() for why u32 is enough here */
+-	u32 extent_len;
+-	u64 mapped_length;
+-	struct btrfs_device *extent_dev;
+ 	struct scrub_parity *sparity;
+ 	int nsectors;
+ 	int bitmap_len;
+-	int extent_mirror_num;
+-	int stop_loop = 0;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -3085,173 +3224,14 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+ 	sparity->ebitmap = (void *)sparity->bitmap + bitmap_len;
+ 
+ 	ret = 0;
+-	while (logic_start < logic_end) {
+-		if (btrfs_fs_incompat(fs_info, SKINNY_METADATA))
+-			key.type = BTRFS_METADATA_ITEM_KEY;
+-		else
+-			key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.objectid = logic_start;
+-		key.offset = (u64)-1;
+-
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	for (cur_logical = logic_start; cur_logical < logic_end;
++	     cur_logical += map->stripe_len) {
++		ret = scrub_raid56_data_stripe_for_parity(sctx, sparity, map,
++							  sdev, path, cur_logical);
+ 		if (ret < 0)
+-			goto out;
+-
+-		if (ret > 0) {
+-			ret = btrfs_previous_extent_item(root, path, 0);
+-			if (ret < 0)
+-				goto out;
+-			if (ret > 0) {
+-				btrfs_release_path(path);
+-				ret = btrfs_search_slot(NULL, root, &key,
+-							path, 0, 0);
+-				if (ret < 0)
+-					goto out;
+-			}
+-		}
+-
+-		stop_loop = 0;
+-		while (1) {
+-			u64 bytes;
+-
+-			l = path->nodes[0];
+-			slot = path->slots[0];
+-			if (slot >= btrfs_header_nritems(l)) {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret == 0)
+-					continue;
+-				if (ret < 0)
+-					goto out;
+-
+-				stop_loop = 1;
+-				break;
+-			}
+-			btrfs_item_key_to_cpu(l, &key, slot);
+-
+-			if (key.type != BTRFS_EXTENT_ITEM_KEY &&
+-			    key.type != BTRFS_METADATA_ITEM_KEY)
+-				goto next;
+-
+-			if (key.type == BTRFS_METADATA_ITEM_KEY)
+-				bytes = fs_info->nodesize;
+-			else
+-				bytes = key.offset;
+-
+-			if (key.objectid + bytes <= logic_start)
+-				goto next;
+-
+-			if (key.objectid >= logic_end) {
+-				stop_loop = 1;
+-				break;
+-			}
+-
+-			while (key.objectid >= logic_start + map->stripe_len)
+-				logic_start += map->stripe_len;
+-
+-			extent = btrfs_item_ptr(l, slot,
+-						struct btrfs_extent_item);
+-			flags = btrfs_extent_flags(l, extent);
+-			generation = btrfs_extent_generation(l, extent);
+-
+-			if ((flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
+-			    (key.objectid < logic_start ||
+-			     key.objectid + bytes >
+-			     logic_start + map->stripe_len)) {
+-				btrfs_err(fs_info,
+-					  "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
+-					  key.objectid, logic_start);
+-				spin_lock(&sctx->stat_lock);
+-				sctx->stat.uncorrectable_errors++;
+-				spin_unlock(&sctx->stat_lock);
+-				goto next;
+-			}
+-again:
+-			extent_logical = key.objectid;
+-			ASSERT(bytes <= U32_MAX);
+-			extent_len = bytes;
+-
+-			if (extent_logical < logic_start) {
+-				extent_len -= logic_start - extent_logical;
+-				extent_logical = logic_start;
+-			}
+-
+-			if (extent_logical + extent_len >
+-			    logic_start + map->stripe_len)
+-				extent_len = logic_start + map->stripe_len -
+-					     extent_logical;
+-
+-			scrub_parity_mark_sectors_data(sparity, extent_logical,
+-						       extent_len);
+-
+-			mapped_length = extent_len;
+-			bioc = NULL;
+-			ret = btrfs_map_block(fs_info, BTRFS_MAP_READ,
+-					extent_logical, &mapped_length, &bioc,
+-					0);
+-			if (!ret) {
+-				if (!bioc || mapped_length < extent_len)
+-					ret = -EIO;
+-			}
+-			if (ret) {
+-				btrfs_put_bioc(bioc);
+-				goto out;
+-			}
+-			extent_physical = bioc->stripes[0].physical;
+-			extent_mirror_num = bioc->mirror_num;
+-			extent_dev = bioc->stripes[0].dev;
+-			btrfs_put_bioc(bioc);
+-
+-			csum_root = btrfs_csum_root(fs_info, extent_logical);
+-			ret = btrfs_lookup_csums_range(csum_root,
+-						extent_logical,
+-						extent_logical + extent_len - 1,
+-						&sctx->csum_list, 1);
+-			if (ret)
+-				goto out;
+-
+-			ret = scrub_extent_for_parity(sparity, extent_logical,
+-						      extent_len,
+-						      extent_physical,
+-						      extent_dev, flags,
+-						      generation,
+-						      extent_mirror_num);
+-
+-			scrub_free_csums(sctx);
+-
+-			if (ret)
+-				goto out;
+-
+-			if (extent_logical + extent_len <
+-			    key.objectid + bytes) {
+-				logic_start += map->stripe_len;
+-
+-				if (logic_start >= logic_end) {
+-					stop_loop = 1;
+-					break;
+-				}
+-
+-				if (logic_start < key.objectid + bytes) {
+-					cond_resched();
+-					goto again;
+-				}
+-			}
+-next:
+-			path->slots[0]++;
+-		}
+-
+-		btrfs_release_path(path);
+-
+-		if (stop_loop)
+ 			break;
+-
+-		logic_start += map->stripe_len;
+-	}
+-out:
+-	if (ret < 0) {
+-		ASSERT(logic_end - logic_start <= U32_MAX);
+-		scrub_parity_mark_sectors_error(sparity, logic_start,
+-						logic_end - logic_start);
+ 	}
++
+ 	scrub_parity_put(sparity);
+ 	scrub_submit(sctx);
+ 	mutex_lock(&sctx->wr_lock);
 -- 
 2.35.1
 

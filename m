@@ -2,100 +2,84 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B66CC433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 13:22:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A6456C433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 13:23:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235752AbiBRNXL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Feb 2022 08:23:11 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:57370 "EHLO
+        id S235757AbiBRNXR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Feb 2022 08:23:17 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:57744 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229719AbiBRNXK (ORCPT
+        with ESMTP id S229719AbiBRNXP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Feb 2022 08:23:10 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C68325B2ED
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 05:22:54 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 3DD8F1F37E;
-        Fri, 18 Feb 2022 13:22:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1645190573; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
+        Fri, 18 Feb 2022 08:23:15 -0500
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDE4325B2E9;
+        Fri, 18 Feb 2022 05:22:57 -0800 (PST)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 8F694219A7;
+        Fri, 18 Feb 2022 13:22:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1645190576;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=WFt9B0oFy9YnYR8530gP98Ly+TVDbfXzgkie4c79dvc=;
-        b=P7d23VmxMfBk46eEPsvju3P152yDCNVbM+9wo8BAsbKQW7KFpJe9z1t4uW2/y9jyUagkrw
-        sL3VSINbEQM2UvnTY3fJK/sfa1/161zN6YnkjfzWy5gL4yYxprju55nVk2pPgTY8+5K+1x
-        U/hyj6bOrAQ3OS1TllTYaVwk2uSRmtE=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0675213C8A;
-        Fri, 18 Feb 2022 13:22:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id MJHZOaydD2KuYwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Fri, 18 Feb 2022 13:22:52 +0000
-Message-ID: <532a5d22-0601-8a98-e4d4-fb1d433394e9@suse.com>
-Date:   Fri, 18 Feb 2022 15:22:52 +0200
+        bh=RgkZJ7ZhSERSWBQqI33cC4w2rylgQi9fENbXBv/d1xM=;
+        b=lmt1xfm27odWD5fnWFGSKNegSnlKJKxHbTbPYa1lsEyeZELtbVLmB/v80BkgAHJdF9EjbS
+        IR8GEvOdwwwSYySEyBcS0k8qtQrYDjvEoDczHJcstikrU/Qbphq69vhZy4s8a4EAzfwIgy
+        kBCovEOwp/A0SIRLKsLMqrHLjfsU4G0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1645190576;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=RgkZJ7ZhSERSWBQqI33cC4w2rylgQi9fENbXBv/d1xM=;
+        b=cakBRZ92N4MYl546FxHVDIwO4uapqv57wa1Xh5jygvRCxm34OeqVjAn/WZHL9vzLe5yVz/
+        6oImeYSscOlBn1CQ==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 820E1A3B93;
+        Fri, 18 Feb 2022 13:22:56 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id E0E37DA829; Fri, 18 Feb 2022 14:19:10 +0100 (CET)
+Date:   Fri, 18 Feb 2022 14:19:10 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] fs: allow cross-vfsmount reflink/dedupe
+Message-ID: <20220218131910.GT12643@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        viro@ZenIV.linux.org.uk, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <67ae4c62a4749ae6870c452d1b458cc5f48b8263.1645042835.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
-Subject: Re: [PATCH] btrfs: remove the cross file system checks from remap
-Content-Language: en-US
-From:   Nikolay Borisov <nborisov@suse.com>
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-References: <ef6f142a8be5bb8a3d2ac2643cc01870038f11b9.1645041975.git.josef@toxicpanda.com>
- <1ebfca5a-4aeb-ce63-f9c7-5a4444a2773d@suse.com>
-In-Reply-To: <1ebfca5a-4aeb-ce63-f9c7-5a4444a2773d@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <67ae4c62a4749ae6870c452d1b458cc5f48b8263.1645042835.git.josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-
-
-On 18.02.22 г. 15:15 ч., Nikolay Borisov wrote:
+On Wed, Feb 16, 2022 at 03:21:23PM -0500, Josef Bacik wrote:
+> Currently we disallow reflink and dedupe if the two files aren't on the
+> same vfsmount.  However we really only need to disallow it if they're
+> not on the same super block.  It is very common for btrfs to have a main
+> subvolume that is mounted and then different subvolumes mounted at
+> different locations.  It's allowed to reflink between these volumes, but
+> the vfsmount check disallows this.  Instead fix dedupe to check for the
+> same superblock, and simply remove the vfsmount check for reflink as it
+> already does the superblock check.
 > 
-> 
-> On 16.02.22 г. 22:06 ч., Josef Bacik wrote:
->> This is handled in the generic VFS helper, we do not need to duplicate
->> this inside of btrfs.
->>
->> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
->> ---
->>   fs/btrfs/reflink.c | 4 ----
->>   1 file changed, 4 deletions(-)
->>
->> diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
->> index a3930da4eb3f..4425030e09cb 100644
->> --- a/fs/btrfs/reflink.c
->> +++ b/fs/btrfs/reflink.c
->> @@ -771,10 +771,6 @@ static int btrfs_remap_file_range_prep(struct 
->> file *file_in, loff_t pos_in,
->>           if (btrfs_root_readonly(root_out))
->>               return -EROFS;
->> -
->> -        if (file_in->f_path.mnt != file_out->f_path.mnt ||
->> -            inode_in->i_sb != inode_out->i_sb)
->> -            return -EXDEV;
-> 
-> Where exactly is this check performed in the vfs because I can't see 
-> anything in generic_remap_file_range_prep.
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
+This has some history, people have been asking for this for a long time
+(the workaround is to mount the toplevel subvolume elsewhere and do it
+from there). I did a review back then what could possibly break on the
+VFS level, eg. lack of references of the affected files, or potential
+deadlocks. On the filesystem level there's no difference, the extents
+are processed in the same way, it does not matter if the VFS entry point
+is the same mount or cross-mount. The same-mount limitation seems rather
+artificial and has been inherited from the original implementation.
 
-Ah it depends on another patch in the ML which is not part of the same 
-series. Fair enough, though I agree with David's suggestion to have an 
-assert just in case.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> 
->>       }
->>       /* Don't make the dst file partly checksummed */
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -2,139 +2,130 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F311EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Feb 2022 19:56:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66D3AC433EF
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Feb 2022 00:34:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238406AbiBRT4g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Feb 2022 14:56:36 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:38106 "EHLO
+        id S240407AbiBSAem (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Feb 2022 19:34:42 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:57470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230247AbiBRT4e (ORCPT
+        with ESMTP id S236378AbiBSAel (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Feb 2022 14:56:34 -0500
-Received: from mail-qv1-xf32.google.com (mail-qv1-xf32.google.com [IPv6:2607:f8b0:4864:20::f32])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B9C0D7E
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 11:56:17 -0800 (PST)
-Received: by mail-qv1-xf32.google.com with SMTP id n6so16793888qvk.13
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 11:56:17 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
-         :content-transfer-encoding;
-        bh=JwxEovG76+orZGYK8Ub6ovQQfu1w91EyzAMBIlIaM1g=;
-        b=fYvUE6RHmhU2ze58UhKh0GhzJmJFszTnGPYIHilyl2XFrBPPGoNf5QT0gLMu/VR4Qg
-         V9LEZM5mYewxAiALcxruaBVBTkaEQ1WiExpIi6BtUOK5Af6/5QRuT1nA98Wy3RX6ujDb
-         LYHWIhNXsNig3YVgxN7cHpO4NRLf/cNZEC7NL9zAvV2SracZ4p809Hu0oCiJc7Ga9C6h
-         7T2YJBx00Z5F+k7S7z07jHW756s89ft5GqYVi0Q8ldhmqugoeUJKrNSWJKom+datjTTM
-         yPy+M+uVpWHTqLRrxWeh8n/NDldpMx737/mJ6ot9SUFGbmVpzyQR3LhAYB0cdzZ9AAJT
-         Ok4g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=JwxEovG76+orZGYK8Ub6ovQQfu1w91EyzAMBIlIaM1g=;
-        b=dwLV26DQq1GEOzPjPvTPxcEhyK38gpApsTgVHOLB4L4hSWRUMuuEdESi9RcnV2rChk
-         3LSjP+bFJJ7GDDz3HSFsp7R9WbCZc4jDlXvFpjpTdqy3TvWVJGJK/GwAD0qFlxkqP9TE
-         cFMYoiTbUeL6V19eUxNWKqmDnrZFLZ9u6+ihYKmLH/+gPYqtULhhCvnWTDul/7x3Iqyl
-         c7Ox7fY7Y3CClqDELfN3dfrNsMfip1Y3SXbOpJnpbZA4DySZw3+zdHDB4eHNpuebDThR
-         xj4Ch8vMBBX2RAJhUzXU8yOEGCjCET3eSrZW2ZZNyJobZvgsjMPHfB3yWE0bF3hzFP96
-         zWqw==
-X-Gm-Message-State: AOAM530DJxQJY3J6xpWwGZ+nyoRtzL5mwSjlAITSQvUnZXi5nJNOPFs1
-        MhnfMfDRpYKMxqPxdPdVBftpNpaMUs17NIJr
-X-Google-Smtp-Source: ABdhPJy+mnuOPbI7LkTic3PexLtbRM0miDxOTzREUhu6a+SnnMlLkc0AmDDAecfS+fjV0zvVf6dEEQ==
-X-Received: by 2002:a05:622a:310:b0:2d4:a70a:a885 with SMTP id q16-20020a05622a031000b002d4a70aa885mr8299688qtw.608.1645214176345;
-        Fri, 18 Feb 2022 11:56:16 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id g21sm862072qtk.60.2022.02.18.11.56.15
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 18 Feb 2022 11:56:16 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 2/3] btrfs: use btrfs_fs_info for deleting snapshots and cleaner
-Date:   Fri, 18 Feb 2022 14:56:11 -0500
-Message-Id: <62d358e74de3ac1393c1e3e8d35d048b3d9861f2.1645214059.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1645214059.git.josef@toxicpanda.com>
-References: <cover.1645214059.git.josef@toxicpanda.com>
+        Fri, 18 Feb 2022 19:34:41 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5050D177E76
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Feb 2022 16:34:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1645230859;
+        bh=AgKtw8bQlj5GMsj3iFnZljrW1Ck/vY3u175DAvxl3xc=;
+        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+        b=ijUnT9OvO9RwCX2e/IlaRPg5rl+8yTLdvrms1i0MFYdy8LX+76o6AY/WUicUa2FbZ
+         a5dSJyI60bF0UwSl1iqA7ncrj4dkHwj/RX3yUmZ/WcBcymBNCckda1gLg/n7AURjlM
+         5Db4X6ev9hNhzDtKvT2c7SabJwydxsonRUveyB1Q=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MwQXH-1oDbNH1dHJ-00sLds; Sat, 19
+ Feb 2022 01:34:19 +0100
+Message-ID: <8616b8f4-1c62-eb3c-d497-aa826b6c1f78@gmx.com>
+Date:   Sat, 19 Feb 2022 08:34:07 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.0
+Subject: Re: [PATCH] btrfs: subpage: fix a wrong check on subpage->writers
+Content-Language: en-US
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <486801f8e45849c882c2531fe72b6a120429be07.1645150277.git.wqu@suse.com>
+ <20220218165721.GD12643@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220218165721.GD12643@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:J21JJ/qLse60YsvjDdMyaJnd3zOIxkHmUwhRM7elkHVx2aVkhsk
+ q7SpAszIqh4yO30XLQURCR7amhK8WqzBUFF9BSD2JQHQsrbum5qYSZ/33PW5LGwHrs0188U
+ 2eHer3LSWKNS8i44Ta0UZhclNPDu9Pnm09gTKld4Oey+n3S5ZmB/QkOlGxwiQ1SqATz0ZYa
+ Iorzy8UlfX4uBaneGx0SA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:/puK2CPhKHA=:BsMW+tl06ogkeLZhG+B9KB
+ 4ev7DZQ7QJv7u6GNnacLCV3MauGI00c4eTRb0vEVeETyrAbNFQxApTj4KoVSyVTG4dRIWgZns
+ 9WJ7sjEGdbizEsXYnb3G7Vr6pd36ZYBx1X5xFHfFRWB5X4Pts75skqXQQZHqR3Jc9Dcf+GbBQ
+ mr78Ezu/4AeYQEPpBhdaHs5FKdmolmyRGfxAAOqipCQWnYIxc/NJN2L+EHOmYNFwLAWSrL97E
+ QHjo1oUdf20LT1m0HQQydoDQs2CVOD1XdXPLuw1Y8jeHs/3szPy84rho/RHDkfsHsFPw2wW+d
+ SvMCQL61Kbv6H9oN+Cm75BszQjg5Zl1xdjkv+X4HoF8ZGIT07e4oGjATZP0ULX/zos6Ls1w2I
+ X9FZiHmtUHBhB3u1Tsmy/PdbYRMLEYF+DyTWdZiH+WV6kZ7A9aCY3dZcH+kOXFxCiagPunipQ
+ R6fcD7/sazMvhA5PQM7qt8L2W5k1cShpskUJpLYRcR43I96yxBpZyyoNMDY2e3GQcj64IsmLP
+ CIqMxPKntJk83I7vWQ0gnByAcAdbTlTde2vG052uxwoRqOHRJLipXala64iLmOBR3gXMkQZPI
+ v/R8g5kT9MOI2Q5jJ8Tq5UndPA3CVmMiXgUNAqS3SMiLQMz55xhKbAm5Q+irjsWofYUaUF0uw
+ Co8GXPvYWQgaJe+/O6nVPVYI61EOygge/xyuYHi1DNgmw40VNUB+hP2r3GTAINGJUqpaWplHX
+ cOE2pw2xnqbgtVpPUMivLnA5871pRAFaTTap5Wjrp4nrTuKJnuFT8fstX85Etwfmpfblps2RP
+ k8rahsHWRe1bLv6Bd5HB8Zpwym7BDVVPjQkcfMtZr4apf0LMLBK17xQAW4+npuIH9+UVsrLbj
+ XqRZbas1h6Mh4ZBAmAmYEOTqs4n9UcUdn7yPenFyvaQkUHYRTMA4AqD/uDwS4Ata8iaWyrteP
+ sDqAkzWrFWTOlRElCQEIPibbycvjmvJCx/I3adRxYiFcb9ikc1HjYFBk10nGiY8ap+TFcuGBl
+ v4v2lEqoCWHVXFPEyGQnkDhO0pwv2GNz/0WShJOH2iuJQfuIUSB5KSJnPMZcBRLnvVRSHwYWc
+ nnBgE0e6WB7w+Y=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're passing a root around here, but we only really need the fs_info,
-so fix up btrfs_clean_one_deleted_snapshot() to take an fs_info instead,
-and then fix up all the callers appropriately.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/disk-io.c     | 7 +++----
- fs/btrfs/transaction.c | 4 ++--
- fs/btrfs/transaction.h | 2 +-
- 3 files changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ed62e81c0b66..183baeffd9c9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1947,8 +1947,7 @@ static void end_workqueue_fn(struct btrfs_work *work)
- 
- static int cleaner_kthread(void *arg)
- {
--	struct btrfs_root *root = arg;
--	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_fs_info *fs_info = (struct btrfs_fs_info *)arg;
- 	int again;
- 
- 	while (1) {
-@@ -1981,7 +1980,7 @@ static int cleaner_kthread(void *arg)
- 
- 		btrfs_run_delayed_iputs(fs_info);
- 
--		again = btrfs_clean_one_deleted_snapshot(root);
-+		again = btrfs_clean_one_deleted_snapshot(fs_info);
- 		mutex_unlock(&fs_info->cleaner_mutex);
- 
- 		/*
-@@ -3806,7 +3805,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 		goto fail_sysfs;
- 	}
- 
--	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
-+	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, fs_info,
- 					       "btrfs-cleaner");
- 	if (IS_ERR(fs_info->cleaner_kthread))
- 		goto fail_sysfs;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index dfceee28a149..385c909f0db8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2475,10 +2475,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
-  * because btrfs_commit_super will poke cleaner thread and it will process it a
-  * few seconds later.
-  */
--int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root)
-+int btrfs_clean_one_deleted_snapshot(struct btrfs_fs_info *fs_info)
- {
-+	struct btrfs_root *root;
- 	int ret;
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 
- 	spin_lock(&fs_info->trans_lock);
- 	if (list_empty(&fs_info->dead_roots)) {
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index ba8a9826eb37..970ff316069d 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -217,7 +217,7 @@ int btrfs_wait_for_commit(struct btrfs_fs_info *fs_info, u64 transid);
- void btrfs_add_dead_root(struct btrfs_root *root);
- int btrfs_defrag_root(struct btrfs_root *root);
- void btrfs_maybe_wake_unfinished_drop(struct btrfs_fs_info *fs_info);
--int btrfs_clean_one_deleted_snapshot(struct btrfs_root *root);
-+int btrfs_clean_one_deleted_snapshot(struct btrfs_fs_info *fs_info);
- int btrfs_commit_transaction(struct btrfs_trans_handle *trans);
- void btrfs_commit_transaction_async(struct btrfs_trans_handle *trans);
- int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans);
--- 
-2.26.3
+On 2022/2/19 00:57, David Sterba wrote:
+> On Fri, Feb 18, 2022 at 10:13:00AM +0800, Qu Wenruo wrote:
+>> [BUG]
+>> When looping btrfs/074 with 64K page size and 4K sectorsize, there is a=
+ low
+>> chance (1/50~1/100) to crash with the following ASSERT() triggered in
+>> btrfs_subpage_start_writer():
+>>
+>> 	ret =3D atomic_add_return(nbits, &subpage->writers);
+>> 	ASSERT(ret =3D=3D nbits); <<< This one <<<
+>>
+>> [CAUSE]
+>> With more debugging output on the parameters of
+>> btrfs_subpage_start_writer(), it shows a very concerning error:
+>>
+>>    ret=3D29 nbits=3D13 start=3D393216 len=3D53248
+>>
+>> For @nbits it's correct, but @ret which is the returned value from
+>> atomic_add_return(), it's not only larger than nbits, but also larger
+>> than max sectors per page value (for 64K page size and 4K sector size,
+>> it's 16).
+>>
+>> This indicates that some call sites are not properly decreasing the val=
+ue.
+>>
+>> And that's exactly the case, in btrfs_page_unlock_writer(), due to the
+>> fact that we can have page locked either by lock_page() or
+>> process_one_page(), we have to check if the subpage has any writer.
+>>
+>> If no writers, it's locked by lock_page() and we only need to unlock it=
+.
+>>
+>> But unfortunately the check for the writers are completely opposite:
+>>
+>> 	if (atomic_read(&subpage->writers))
+>> 		/* No writers, locked by plain lock_page() */
+>> 		return unlock_page(page);
+>>
+>> We directly unlock the page if it has writers, which is the completely
+>> opposite what we want.
+>>
+>> Thankfully the affected call site is only limited to
+>> extent_write_locked_range(), so it's mostly affecting compressed write.
+>>
+>> [FIX]
+>> Just fix the wrong check condition to fix the bug.
+>>
+>> Fixes: e55a0de18572 ("btrfs: rework page locking in __extent_writepage(=
+)")
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>
+> Added to msic-next. Do we want this for stable? I think not as the
+> subpage support is not complete.
 
+We want. The subpage support is already working except RAID56.
+
+And this fix is needed for cases where compressed write falls back to
+regular cow write.
+
+Thanks,
+Qu

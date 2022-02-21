@@ -2,120 +2,97 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72F2DC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Feb 2022 12:41:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0261FC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Feb 2022 14:27:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1358151AbiBUMle (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Feb 2022 07:41:34 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33670 "EHLO
+        id S1377789AbiBUO2L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Feb 2022 09:28:11 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:38216 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1358148AbiBUMld (ORCPT
+        with ESMTP id S1377781AbiBUO2K (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Feb 2022 07:41:33 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 49A0B1929D
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Feb 2022 04:41:10 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 088FFB80D3E
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Feb 2022 12:41:09 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0D18DC340E9;
-        Mon, 21 Feb 2022 12:41:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1645447267;
-        bh=pX1ff/cN6LIbZdm174lh4gUopIJSBqx8liP0wC6cZxE=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=TbUz2qkvVHNU2xeoJgDJtFs2GGgR5ucP2zi4V/S0Y0Hx/3nXcbQpPU1p7wtZUTUUE
-         jonTU+USX4wn6Tt4veXMlx05V+ssjlSYECkqdEx7Kok0gOTyVt2hfA9R38EE4dFYzV
-         zOBee0gSpuxV90EaBQkXt94eYFo4AnTy38CJJFeTZrSB1o3T1XMG4gXb+FMfZXBaff
-         G3SISlCEO1SkXCQhYAbjgpfgEb8PHhCkkVgm8UvaQdfiU1lpa5Q24lGrHSfuSQnXLW
-         ULOuTrsNZs/LWFXgQ3j3eFWWCjOf4u3eduSq7nlLq0VkyM31cEAJY1CPhuc52wwptG
-         f3PtdtlEYiBaQ==
-Date:   Mon, 21 Feb 2022 12:41:04 +0000
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 3/3] btrfs: pass btrfs_fs_info to
- btrfs_recover_relocation
-Message-ID: <YhOIYIwTVKbTPfrN@debian9.Home>
-References: <cover.1645214059.git.josef@toxicpanda.com>
- <3aaba7fc1861004693fdc02ca5df300cd6773273.1645214059.git.josef@toxicpanda.com>
+        Mon, 21 Feb 2022 09:28:10 -0500
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 946372196;
+        Mon, 21 Feb 2022 06:27:47 -0800 (PST)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id 49F9D1F391;
+        Mon, 21 Feb 2022 14:27:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1645453666;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=NjZBMF4KSfSjtXSNJFRt7R0dNqUjE2BB19wTYJv5KjU=;
+        b=sGUkyHg+Ij3/UmqJYo8eqn9ulHZ7Pdn+Ld4XrC7DJdPgCs1xN9E/oDyx8Sj+gj++5QHiVj
+        vJKH9iS3xKYhlkyaB/2rdhXPEMv73PBVUqEdy2yrWj+zNl6NNhpgQAnCi5hwnThkU1Dfkg
+        YwfEd5sEW1Jnfv1+VF/SQQxZ7Si8mJw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1645453666;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=NjZBMF4KSfSjtXSNJFRt7R0dNqUjE2BB19wTYJv5KjU=;
+        b=f6kn75rSbv3F33bIJFHz0JfOB9u7knYyqqNgW0j1mrecOrQIg/atsgq14CM8pKIdurHWiv
+        R+PC9tbTpUdKQzBQ==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 0CF18A3B81;
+        Mon, 21 Feb 2022 14:27:46 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 947CCDA823; Mon, 21 Feb 2022 15:23:58 +0100 (CET)
+Date:   Mon, 21 Feb 2022 15:23:58 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     syzbot <syzbot+087b7effddeec0697c66@syzkaller.appspotmail.com>
+Cc:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+Subject: Re: [syzbot] WARNING in kthread_bind_mask
+Message-ID: <20220221142358.GE12643@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        syzbot <syzbot+087b7effddeec0697c66@syzkaller.appspotmail.com>,
+        clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+References: <0000000000005ca92705d877448c@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <3aaba7fc1861004693fdc02ca5df300cd6773273.1645214059.git.josef@toxicpanda.com>
+In-Reply-To: <0000000000005ca92705d877448c@google.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 18, 2022 at 02:56:12PM -0500, Josef Bacik wrote:
-> We don't need a root here, we just need the btrfs_fs_info, we can just
-> get the specific roots we need from fs_info.
+On Sun, Feb 20, 2022 at 10:27:23AM -0800, syzbot wrote:
+> Hello,
 > 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-
-Looks good, thanks.
-
-
-> ---
->  fs/btrfs/ctree.h      | 2 +-
->  fs/btrfs/disk-io.c    | 2 +-
->  fs/btrfs/relocation.c | 5 ++---
->  3 files changed, 4 insertions(+), 5 deletions(-)
+> syzbot found the following issue on:
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 1e238748dc73..ca411a42bccf 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3845,7 +3845,7 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
->  			  struct btrfs_root *root);
->  int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
->  			    struct btrfs_root *root);
-> -int btrfs_recover_relocation(struct btrfs_root *root);
-> +int btrfs_recover_relocation(struct btrfs_fs_info *fs_info);
->  int btrfs_reloc_clone_csums(struct btrfs_inode *inode, u64 file_pos, u64 len);
->  int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
->  			  struct btrfs_root *root, struct extent_buffer *buf,
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 183baeffd9c9..6a0b4dbd70e9 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3379,7 +3379,7 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
->  	up_read(&fs_info->cleanup_work_sem);
->  
->  	mutex_lock(&fs_info->cleaner_mutex);
-> -	ret = btrfs_recover_relocation(fs_info->tree_root);
-> +	ret = btrfs_recover_relocation(fs_info);
->  	mutex_unlock(&fs_info->cleaner_mutex);
->  	if (ret < 0) {
->  		btrfs_warn(fs_info, "failed to recover relocation: %d", ret);
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index f528c5283f25..7dc6f29a6094 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4124,9 +4124,8 @@ static noinline_for_stack int mark_garbage_root(struct btrfs_root *root)
->   * this function resumes merging reloc trees with corresponding fs trees.
->   * this is important for keeping the sharing of tree blocks
->   */
-> -int btrfs_recover_relocation(struct btrfs_root *root)
-> +int btrfs_recover_relocation(struct btrfs_fs_info *fs_info)
->  {
-> -	struct btrfs_fs_info *fs_info = root->fs_info;
->  	LIST_HEAD(reloc_roots);
->  	struct btrfs_key key;
->  	struct btrfs_root *fs_root;
-> @@ -4167,7 +4166,7 @@ int btrfs_recover_relocation(struct btrfs_root *root)
->  		    key.type != BTRFS_ROOT_ITEM_KEY)
->  			break;
->  
-> -		reloc_root = btrfs_read_tree_root(root, &key);
-> +		reloc_root = btrfs_read_tree_root(fs_info->tree_root, &key);
->  		if (IS_ERR(reloc_root)) {
->  			err = PTR_ERR(reloc_root);
->  			goto out;
-> -- 
-> 2.26.3
+> HEAD commit:    c5d9ae265b10 Merge tag 'for-linus' of git://git.kernel.org..
+> git tree:       upstream
+> console output: https://syzkaller.appspot.com/x/log.txt?x=11daf74a700000
+> kernel config:  https://syzkaller.appspot.com/x/.config?x=da674567f7b6043d
+> dashboard link: https://syzkaller.appspot.com/bug?extid=087b7effddeec0697c66
+> compiler:       gcc (Debian 10.2.1-6) 10.2.1 20210110, GNU ld (GNU Binutils for Debian) 2.35.2
 > 
+> Unfortunately, I don't have any reproducer for this issue yet.
+> 
+> IMPORTANT: if you fix the issue, please add the following tag to the commit:
+> Reported-by: syzbot+087b7effddeec0697c66@syzkaller.appspotmail.com
+> 
+> BTRFS info (device loop3): disk space caching is enabled
+> BTRFS info (device loop3): has skinny extents
+> ------------[ cut here ]------------
+> WARNING: CPU: 0 PID: 10327 at kernel/kthread.c:525 __kthread_bind_mask kernel/kthread.c:525 [inline]
+
+ 520 static void __kthread_bind_mask(struct task_struct *p, const struct cpumask *mask, unsigned int state)
+ 521 {
+ 522         unsigned long flags;
+ 523
+ 524         if (!wait_task_inactive(p, state)) {
+ 525                 WARN_ON(1);
+ 526                 return;
+ 527         }
+
+That seems to be some internal task state inconsistency.

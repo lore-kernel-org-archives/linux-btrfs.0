@@ -2,105 +2,77 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6A83C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Feb 2022 15:41:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C36A2C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Feb 2022 16:12:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236455AbiBXPll (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Feb 2022 10:41:41 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44258 "EHLO
+        id S230286AbiBXQNO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Feb 2022 11:13:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38504 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236454AbiBXPlk (ORCPT
+        with ESMTP id S229521AbiBXQNN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Feb 2022 10:41:40 -0500
-Received: from mail-qv1-xf34.google.com (mail-qv1-xf34.google.com [IPv6:2607:f8b0:4864:20::f34])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A695723585F
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 07:41:09 -0800 (PST)
-Received: by mail-qv1-xf34.google.com with SMTP id bu6so4167536qvb.10
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 07:41:09 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=G7r4K0rZS4+PN/0Pmp82yZKqaha1AK0HPlEsr3ge8Aw=;
-        b=Mzut1DVz+btJakKGWPWa80hvlk4bXj5zcTumY8Iz6v/uz9CeBCd8BmoVkYUbrPxqfe
-         cIiEHnfsxkYcVEIbFUH/1Vaq/1MYEjqarf87KHewzelQdKIi4FFqS9ZdynjtZxCC3jE4
-         D4V2jTFTH9dc1A6gNDASgVniQ7iYcINuqvI8O5hCR/aJjCK5Xu8sfMgOXeGV8vNI4EYr
-         HalbghGXbjwMKUgdJEGlt6zmREETHf7WBSdvdqmsRy1/TPHwGOgy0gLAWoD06zPfHbUZ
-         uqYc0C6g++bM3svB1WtbH/HF4+ST/YBF6HW3SJKRYCZNUWAkYMe68Ild5BFdrQ6Hvo0n
-         p5VA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=G7r4K0rZS4+PN/0Pmp82yZKqaha1AK0HPlEsr3ge8Aw=;
-        b=XDVqbhoQKz/ikP5tKuSAvU/k8Hlr9tGC9zfBzLm6xPN1Ia1XixOEvHfulzhyb66MQ1
-         wd+3jq2ZDTSnioJRwilvyovAUI+WscWgiAmDmjWtZzbKF65gUHSoQqENpBu4I5M7ZDL+
-         Je6p21ZDEopsVgSgPGTQbIPR8vEVZmCfq5jLLTe112V2ZYSKAjINBH5TNoSA+/gVwqzV
-         PSJUaxjq4uEEhXCeffg58RAScBVklBVTwn65BfSFZ9dFdS0fSco8PhZFxwigALc93dPj
-         tlKSaQvVD/10SfrVIwBZbZr0bk5pB5DmqDGHeWDriIVEJ77z45M2zaUttxJShC90a4LW
-         Xtsw==
-X-Gm-Message-State: AOAM531M3iEZvn+38l0IPGLWhN0GYnFQvrSZ6xjKJY0ZEv+1dNWesuVR
-        fyjCiQCNDAGJGFwLYXPnIFsQR7P0WRb8iR3I
-X-Google-Smtp-Source: ABdhPJyCXSBTenbHlbrBouWyis11G6PnTKKopi1lF/8xxpsiKRwcNLX6L832hRfasNN7++1qE7e9zQ==
-X-Received: by 2002:a05:6214:a8a:b0:430:8fbc:6be2 with SMTP id ev10-20020a0562140a8a00b004308fbc6be2mr2402992qvb.7.1645717268440;
-        Thu, 24 Feb 2022 07:41:08 -0800 (PST)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 69sm1419269qkd.91.2022.02.24.07.41.07
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 24 Feb 2022 07:41:07 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH] btrfs: fix UAF in btrfs_drop_snapshot
-Date:   Thu, 24 Feb 2022 10:41:06 -0500
-Message-Id: <ae224a6030d984c20e09093e6f93a0f33e757cd3.1645717258.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
+        Thu, 24 Feb 2022 11:13:13 -0500
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87EA41B0BF3;
+        Thu, 24 Feb 2022 08:12:35 -0800 (PST)
+Received: from authenticated-user (box.fidei.email [71.19.144.250])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits))
+        (No client certificate requested)
+        by box.fidei.email (Postfix) with ESMTPSA id 010FA803AB;
+        Thu, 24 Feb 2022 11:10:59 -0500 (EST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
+        t=1645719060; bh=LBptnaz84kXUF48osWhg+vMhXBOFqAysTHDgWQz+/5M=;
+        h=Date:Subject:To:References:From:In-Reply-To:From;
+        b=KD0LqR8xTO6qwqQOxUaq8jxBCou8o56pHwuGsTPfCf1PMeqVJdJrfuw6dK+hbob6V
+         krVa0xHr3PjYe8BslgHJPkXRhpbHuX+5/hStPhPZAieU9oORQYEoBQ1OcxqRjZvwJm
+         UZ5xGi4Jp3DGoORsCAEh68xbEga1mHIsFqyHWSPwizZkvhe3dYQQXN62NQaLDAprWC
+         ZmM3/XMKTqvlbyMAj1i9feTnZn6lV4zn7lBYRIiWM2VpapR0SSFVooHJZN4tXb+l0S
+         YnxmD6QSbNIvYkqO0zyBeMtURlRYKF9C9zpxsjm29HMklOJNbC4aLIX3Goj9oFTBXL
+         7geTeoejQh9rg==
+Message-ID: <284ccc08-8de7-9188-19d8-20f4eda56cb4@dorminy.me>
+Date:   Thu, 24 Feb 2022 11:10:59 -0500
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Subject: Re: [PATCH v4] btrfs: add fs state details to error messages.
+Content-Language: en-US
+To:     dsterba@suse.cz, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, kernel-team@fb.com
+References: <a059920460fe13f773fd9a2e870ceb9a8e3a105a.1645644489.git.sweettea-kernel@dorminy.me>
+ <20220224132210.GS12643@twin.jikos.cz>
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+In-Reply-To: <20220224132210.GS12643@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is for the KASAN report for my in progress snapshot drop fix, this
-should apply cleanly to the existing patch.  At this point root could
-have been free'd, so we need to check if we're an unfinished drop before
-we start the drop and use that variable to see if we need to wake
-anybody up.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/extent-tree.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+> Added to misc-next with some minor updates, thanks.
+>
+Awesome, thank you. I realized this morning that it might be technically 
+slightly racy actually and would propose something like the following
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e94b8f168a85..b7b49b4eb68d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5621,6 +5621,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
- 	int ret;
- 	int level;
- 	bool root_dropped = false;
-+	bool unfinished_drop = false;
- 
- 	btrfs_debug(fs_info, "Drop subvolume %llu", root->root_key.objectid);
- 
-@@ -5663,6 +5664,8 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
- 	 * already dropped.
- 	 */
- 	set_bit(BTRFS_ROOT_DELETING, &root->state);
-+	unfinished_drop = test_bit(BTRFS_ROOT_UNFINISHED_DROP, &root->state);
-+
- 	if (btrfs_disk_key_objectid(&root_item->drop_progress) == 0) {
- 		level = btrfs_header_level(root->node);
- 		path->nodes[level] = btrfs_lock_root_node(root);
-@@ -5841,7 +5844,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root, int update_ref, int for_reloc)
- 	 * We were an unfinished drop root, check to see if there are any
- 	 * pending, and if not clear and wake up any waiters.
- 	 */
--	if (!err && test_bit(BTRFS_ROOT_UNFINISHED_DROP, &root->state))
-+	if (!err && unfinished_drop)
- 		btrfs_maybe_wake_unfinished_drop(fs_info);
- 
- 	/*
--- 
-2.26.3
+static void btrfs_state_to_string(const struct btrfs_fs_info *info, char *buf)
+{
+	unsigned int bit;
++	unsigned long fs_state = READ_ONCE(info->fs_state);
+	unsigned int states_printed = 0;
+	char *curr = buf;
+
+	memcpy(curr, STATE_STRING_PREFACE, sizeof(STATE_STRING_PREFACE));
+	curr += sizeof(STATE_STRING_PREFACE) - 1;
+
+-	for_each_set_bit(bit, &info->fs_state, sizeof(info->fs_state)) {
++	for_each_set_bit(bit, fs_state, sizeof(fs_state)) {
+
+
+All the other interactions with info->fs_state are test/set/clear_bit, which treat the argument as volatile and are therefore safe to do from multiple threads. Without the READ_ONCE (reading it as a volatile), the compiler or cpu could turn the reads of info->fs_state in for_each_set_bit() into writes of random stuff into info->fs_state, potentially clearing the state bits or filling them with garbage.
+
+Even if this is right, it'd be rare, but it would be exceeding weird for a message to be logged listing an error and then future messages be logged without any such state, or with a random collection of garbage states.
+
+I can send another patch if this explanation seems reasonable and you'd like it separate; or maybe this is too unlikely to worry about. Thanks again for the review!
+
+Sweet Tea
 

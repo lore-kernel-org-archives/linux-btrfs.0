@@ -2,126 +2,204 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B4BFC433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Feb 2022 12:29:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEDFFC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Feb 2022 13:00:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234387AbiBXM3c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Feb 2022 07:29:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41912 "EHLO
+        id S234608AbiBXNBA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Feb 2022 08:01:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50104 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233175AbiBXM3Y (ORCPT
+        with ESMTP id S234604AbiBXNAz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Feb 2022 07:29:24 -0500
+        Thu, 24 Feb 2022 08:00:55 -0500
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA08B26836C
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 04:28:47 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13C4E70CEA;
+        Thu, 24 Feb 2022 05:00:26 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A4F27212B9
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 12:28:46 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id C265A212B8;
+        Thu, 24 Feb 2022 13:00:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1645705726; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=HeOppck5l0IV5Ij+JFDRe5f+tReMihAq4XoFcZqbXv8=;
-        b=pHx295sx2VV5xWty8QTkXmsW0oro896gdKpDTS+lv+QiKQeHT42/oDqrlP+Wtq2engO3TZ
-        rXrkMPvH//A84ErFiolVOcBfNSp49p7SORuGe+PyentNEdTiVy5fKzHBhXXT0x6VdGr/+L
-        azaUnYRqhSvaTU9UOqVh6tiguANglB8=
+        t=1645707624; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=lBA++mc5SF8Y4WETgFfwwoyPxRe4iWtGpGa+kNNMrdI=;
+        b=KqCwjp9wg1zgebekpi276u5JP7m/DTVYTK4jUP5oJV5OjZ6kjoDcWMV7V1ftLJDudxfcPm
+        +ZNKBdPIm4AdWE5itGMBdtXMMCrdtQJtZKQoe/XaxfowI7O2ahoXD8zaCd6ZcjIw16sjev
+        9HKPY82c/1xh1DplJYcgBEIKA0ByMaM=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EAABC13AD9
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 12:28:45 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C812313AD9;
+        Thu, 24 Feb 2022 13:00:23 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2PtaK/15F2LhAgAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 12:28:45 +0000
+        id 8j9yImeBF2ITFgAAMHmgww
+        (envelope-from <wqu@suse.com>); Thu, 24 Feb 2022 13:00:23 +0000
 From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/7] btrfs: remove unused parameter for btrfs_add_inode_defrag()
-Date:   Thu, 24 Feb 2022 20:28:35 +0800
-Message-Id: <61861f9dbd64f31796a22a1de617600a869fdf09.1645705266.git.wqu@suse.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: add test case to make sure autodefrag obeys small write extent threshold
+Date:   Thu, 24 Feb 2022 21:00:20 +0800
+Message-Id: <20220224130020.64199-1-wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1645705266.git.wqu@suse.com>
-References: <cover.1645705266.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since commit 543eabd5e192 ("Btrfs: don't auto defrag a file when doing
-directIO"), there is no more caller passing a transaction handler to
-btrfs_add_inode_defrag().
+Btrfs autodefrag used to only use default defrag extent size threshold,
+which is not the same as the threshold to trigger autodefrag.
+(The autodefrag triggering threshold is 64K for uncompressed write and
+16K for compressed write, while the default defrag extent threshold is
+256K).
 
-So the @trans parameter of btrfs_add_inode_defrag() is unnecessary and
-we can just remove it.
+This can lead to unexpected high IO.
+
+This behavior is fixed by the upcoming patch, titled "btrfs: reduce
+extent threshold for autodefrag".
+
+This patch will add test case to verify the behavior by:
+
+- Creating a file with mixed extent size.
+  File offset 0 ~ 64K will be filled with two 32K extents, which should
+  be defragged.
+  While file offset 64K ~ 196K will be filled with two 64K extent,
+  which should not be defragged.
+
+- Trigger autodefrag
+
+- Check if extent at offset 0 and offset 64K get defragged.
+
+- Verify the checksum
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h | 3 +--
- fs/btrfs/file.c  | 8 ++------
- fs/btrfs/inode.c | 2 +-
- 3 files changed, 4 insertions(+), 9 deletions(-)
+ tests/btrfs/262     | 102 ++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/262.out |   2 +
+ 2 files changed, 104 insertions(+)
+ create mode 100755 tests/btrfs/262
+ create mode 100644 tests/btrfs/262.out
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5e02bf13fd1b..c72790c3bd41 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3345,8 +3345,7 @@ void btrfs_exclop_balance(struct btrfs_fs_info *fs_info,
- /* file.c */
- int __init btrfs_auto_defrag_init(void);
- void __cold btrfs_auto_defrag_exit(void);
--int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
--			   struct btrfs_inode *inode, u32 extent_thresh);
-+int btrfs_add_inode_defrag(struct btrfs_inode *inode, u32 extent_thresh);
- int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
- void btrfs_cleanup_defrag_inodes(struct btrfs_fs_info *fs_info);
- int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 9f455c96c974..7d096c3f9127 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -136,8 +136,7 @@ static inline int __need_auto_defrag(struct btrfs_fs_info *fs_info)
-  * insert a defrag record for this inode if auto defrag is
-  * enabled
-  */
--int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
--			   struct btrfs_inode *inode, u32 extent_thresh)
-+int btrfs_add_inode_defrag(struct btrfs_inode *inode, u32 extent_thresh)
- {
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -151,10 +150,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- 	if (test_bit(BTRFS_INODE_IN_DEFRAG, &inode->runtime_flags))
- 		return 0;
- 
--	if (trans)
--		transid = trans->transid;
--	else
--		transid = inode->root->last_trans;
-+	transid = inode->root->last_trans;
- 
- 	defrag = kmem_cache_zalloc(btrfs_inode_defrag_cachep, GFP_NOFS);
- 	if (!defrag)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b2b26d786fde..24125d5860be 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -560,7 +560,7 @@ static inline void inode_should_defrag(struct btrfs_inode *inode,
- 	/* If this is a small write inside eof, kick off a defrag */
- 	if (num_bytes < small_write &&
- 	    (start > 0 || end + 1 < inode->disk_i_size))
--		btrfs_add_inode_defrag(NULL, inode, small_write);
-+		btrfs_add_inode_defrag(inode, small_write);
- }
- 
- /*
+diff --git a/tests/btrfs/262 b/tests/btrfs/262
+new file mode 100755
+index 00000000..5317576c
+--- /dev/null
++++ b/tests/btrfs/262
+@@ -0,0 +1,102 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2022 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test 262
++#
++# Make sure btrfs autodefrag only defrag writes smaller than 64KiB
++# (which is considered as small writes)
++# This behavior will be introduced to v5.17 and backported to v5.16
++#
++# While older kernels (v5.15 and older) will not obey the threshold
++# but always use default threshold (256K) instead.
++#
++. ./common/preamble
++_begin_fstest defrag quick
++
++# Override the default cleanup function.
++# _cleanup()
++# {
++# 	cd /
++# 	rm -r -f $tmp.*
++# }
++
++# Import common functions.
++. ./common/filter
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_require_scratch
++_require_xfs_io_command "fiemap" "ranged"
++
++# Needs 4K sectorsize, for larger sectorsize like 64K, no write will be
++# considered as small writes then.
++_require_btrfs_support_sectorsize 4096
++
++_scratch_mkfs -s 4k >> $seqres.full 2>&1
++
++# Need datacow to make the defragged extents to have different bytenr
++_scratch_mount -o datacow,autodefrag
++
++# Create the following file layout
++# 0       32K     64K     96K     128K     160K      192K
++# | Ext 1 | Ext 2 |     Ext 3     |       Ext 4      |
++#
++# Ext 1 and Ext 2 will be defragged as they are smaller than the 64K threshold
++# But Ext 3 and Ext 4 should not be defragged.
++$XFS_IO_PROG -f -s -c "pwrite -b 32K 0 64k" -c "pwrite -b 64K 64K 128K" \
++	"$SCRATCH_MNT/foobar" >> $seqres.full
++
++# Get the logical bytenr of Ext 1 and Ext 3
++old_ext1=$(_get_file_extent_sector "$SCRATCH_MNT/foobar" 0)
++old_ext3=$(_get_file_extent_sector "$SCRATCH_MNT/foobar" 65536)
++
++old_csum=$(_md5_checksum $SCRATCH_MNT/foobar)
++echo "=== File extent layout before autodefrag ===" >> $seqres.full
++$XFS_IO_PROG -c "fiemap -v" "$SCRATCH_MNT/foobar" >> $seqres.full
++echo "old md5=$old_csum" >> $seqres.full
++
++# Now trigger autodefrag, autodefrag is triggered in the cleaner thread,
++# which will be woken up by commit thread
++_scratch_remount commit=1
++sleep 3
++
++# At remount time we may already trigger autodefrag, but if it didn't get
++# triggered, that sleep 3 will trigger autodefrag, and only mark the
++# target range dirty. We need to write back those ranges to reflect the
++# extent logical bytenr change.
++sync
++
++
++new_csum=$(_md5_checksum $SCRATCH_MNT/foobar)
++new_ext1=$(_get_file_extent_sector "$SCRATCH_MNT/foobar" 0)
++new_ext3=$(_get_file_extent_sector "$SCRATCH_MNT/foobar" 65536)
++
++echo "=== File extent layout after autodefrag ===" >> $seqres.full
++$XFS_IO_PROG -c "fiemap -v" "$SCRATCH_MNT/foobar" >> $seqres.full
++echo "new md5=$new_csum" >> $seqres.full
++
++# Ext 1 should be defragged on all kernels
++if [ "$new_ext1" == "$old_ext1" ]; then
++	echo "The extent at offset 0 didn't get defragged"
++fi
++
++# Ext 3 should not be defragged on v5.17 and backported v5.16.
++# But older kernels (v5.15 and older) will not respect the small write
++# extent size threshold, and defrag them.
++if [ "$new_ext3" != "$old_ext3" ]; then
++	echo "The extent at offset 64K get defragged"
++fi
++
++# Defrag should not change file content
++if [ "$new_csum" != "$old_csum" ]; then
++	echo "file content changed"
++fi
++
++echo "Silence is golden"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/262.out b/tests/btrfs/262.out
+new file mode 100644
+index 00000000..404badc3
+--- /dev/null
++++ b/tests/btrfs/262.out
+@@ -0,0 +1,2 @@
++QA output created by 262
++Silence is golden
 -- 
-2.35.1
+2.34.1
 

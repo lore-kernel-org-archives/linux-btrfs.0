@@ -2,101 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99471C433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Feb 2022 12:28:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 50370C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 24 Feb 2022 12:28:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234383AbiBXM3Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 24 Feb 2022 07:29:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41782 "EHLO
+        id S234376AbiBXM31 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 24 Feb 2022 07:29:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41928 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231365AbiBXM3R (ORCPT
+        with ESMTP id S234368AbiBXM3Z (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 24 Feb 2022 07:29:17 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD63C2649B4
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 04:28:46 -0800 (PST)
+        Thu, 24 Feb 2022 07:29:25 -0500
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 74B53264983
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 04:28:50 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8993121155
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 12:28:45 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 317631F44A;
+        Thu, 24 Feb 2022 12:28:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1645705725; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=+P4kLt65X6It7BfOq/ravk42T5PgE0eFbnygonNOPF4=;
-        b=OuexwvGAL1fRi0rBf7Ocgyh03ILUnnECU7MgWqw79LXjhgSF0mxwPCxTg22AX5ojjkrJE2
-        CSBsIWig3adTwQTDt3PYHJlVHFEejg5FUfKFz/iEoKE6c8dfqyEQSl9dzRMFxscReZfQ7w
-        TFQmarB8JoQybEB1h/9IpMYyy8M1jlk=
+        t=1645705729; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=3nKggag2hJWv7dfhOOlLqh9aOcxM8bmHXMy6+G0dgRk=;
+        b=VDuTOKT+/wgGkvixj92FZ4VNf+rpZTvQn1acJeW1QVeNx20m1QFvDfB2H2ntueioGeMWoM
+        tArLzYf6C4+sbMwoyTjQ9H6XqUBihBnK4ifCSLicVFacwwNjxeEL5MjIrET4oAvaHnA8Xo
+        ZzeCsJaJ5n4gpnEMPIlyAxqsYmPw6Wg=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C479113AD9
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 12:28:44 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4032313AD9;
+        Thu, 24 Feb 2022 12:28:48 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id RXZcIvx5F2LhAgAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Feb 2022 12:28:44 +0000
+        id kGvzAQB6F2LhAgAAMHmgww
+        (envelope-from <wqu@suse.com>); Thu, 24 Feb 2022 12:28:48 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/7] Btrfs: defrag: the remaining unmerged part
-Date:   Thu, 24 Feb 2022 20:28:34 +0800
-Message-Id: <cover.1645705266.git.wqu@suse.com>
+Cc:     Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 3/7] btrfs: uapi: introduce BTRFS_DEFRAG_RANGE_MASK for later sanity check
+Date:   Thu, 24 Feb 2022 20:28:37 +0800
+Message-Id: <b542a3d6a77751653b593967f20d4c9420bf7fd4.1645705266.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1645705266.git.wqu@suse.com>
+References: <cover.1645705266.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-David has already rebased all bug fixes into his fix/autodefrag-io
-branch.
-(Although the last patch still lacks one line to make it work).
+And since we're here, replace the hardcoded bit flags (1, 2) with
+(1UL << 0) and (1UL << 1), respectively.
 
-This patchset is the remaining related cleanups.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+---
+ include/uapi/linux/btrfs.h | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-If the 2nd patch doesn't apply, it means the patch "trfs:
-reduce extent threshold for autodefrag" is not correct, and doesn't
-apply extent_thresh properly.
-
-The first patch removes one unused parameter.
-The second patch makes __btrfs_run_defrag_inode() to meet our current
-standard.
-
-Patch 3~6 re-introduce the btrfs_defrag_ctrl to cleanup the argument
-lists, and make btrfs_defrag_file() reports accurate sectors_defragged.
-
-The last patch introduces the needed trace events.
-With the trace events, it's much easier to verify the defrag behavior,
-and provide a user-friendly way to debug defrag bugs.
-
-Originally I used those trace events to verfy the reduced extent_thresh
-for autodefrag, but I found out a better way to verify the behavior
-without using trace events.
-
-So I'll send a new test case to check the changed autodefrag behavior.
-
-Qu Wenruo (7):
-  btrfs: remove unused parameter for btrfs_add_inode_defrag()
-  btrfs: refactor __btrfs_run_defrag_inode()
-  btrfs: uapi: introduce BTRFS_DEFRAG_RANGE_MASK for later sanity check
-  btrfs: defrag: introduce btrfs_defrag_ctrl structure for later usage
-  btrfs: defrag: use btrfs_defrag_ctrl to replace
-    btrfs_ioctl_defrag_range_args for btrfs_defrag_file()
-  btrfs: defrag: make btrfs_defrag_file() to report accurate number of
-    defragged sectors
-  btrfs: add trace events for defrag
-
- fs/btrfs/ctree.h             |  25 +++-
- fs/btrfs/file.c              |  92 +++++++--------
- fs/btrfs/inode.c             |   2 +-
- fs/btrfs/ioctl.c             | 213 ++++++++++++++++++-----------------
- include/trace/events/btrfs.h | 127 +++++++++++++++++++++
- include/uapi/linux/btrfs.h   |   6 +-
- 6 files changed, 310 insertions(+), 155 deletions(-)
-
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index d956b2993970..3d4bfdacf935 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -576,8 +576,10 @@ struct btrfs_ioctl_clone_range_args {
+  * Used by:
+  * struct btrfs_ioctl_defrag_range_args.flags
+  */
+-#define BTRFS_DEFRAG_RANGE_COMPRESS 1
+-#define BTRFS_DEFRAG_RANGE_START_IO 2
++#define BTRFS_DEFRAG_RANGE_COMPRESS	(1UL << 0)
++#define BTRFS_DEFRAG_RANGE_START_IO	(1UL << 1)
++#define BTRFS_DEFRAG_RANGE_FLAGS_MASK	(BTRFS_DEFRAG_RANGE_COMPRESS |\
++					 BTRFS_DEFRAG_RANGE_START_IO)
+ struct btrfs_ioctl_defrag_range_args {
+ 	/* start of the defrag operation */
+ 	__u64 start;
 -- 
 2.35.1
 

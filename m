@@ -2,157 +2,164 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE961C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Feb 2022 19:18:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 125D2C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 25 Feb 2022 20:18:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234492AbiBYTTA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 25 Feb 2022 14:19:00 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48144 "EHLO
+        id S236245AbiBYUTH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 25 Feb 2022 15:19:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34200 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233961AbiBYTS7 (ORCPT
+        with ESMTP id S235472AbiBYUTG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 25 Feb 2022 14:18:59 -0500
-Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE7A016BCD9
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Feb 2022 11:18:25 -0800 (PST)
-Received: by mail-pj1-x1035.google.com with SMTP id h17-20020a17090acf1100b001bc68ecce4aso9250512pju.4
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Feb 2022 11:18:25 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=KSy+A52r6TCG/x6ppDUu4sYkZBpMADhMt8FGFOTz0VI=;
-        b=rTanreT9WZ4mKPzqsDCOZkcAxgd36wRbZ2CffV1lWsn+jFKT2DQsTo3Tk8m8uN9Guu
-         Z9g0ThVqN+mNLVytxATs3XHGk1lLBbsaLLAcu6qQeqvK94UeTu/IHatokSDUm1i+dEUQ
-         6Ycng30QC52nPQRi8CEkLeEkRk3AFbjh09GoeQ/Pjia4RcN/NtBh6LM87vStMoDOPFaS
-         muvftwE8PCv+sLDMJ7tdN+z90P0tcMLioow+ZJME6L862sQJQXIwCUpyy+6VnTiwtVyE
-         JiUet29P3+eyje7hjQZo1gW6GmiQpIIZE+3gW4ReZ7Xw0H2Dh+elesYPN0y8Y/1bgHYX
-         O22A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=KSy+A52r6TCG/x6ppDUu4sYkZBpMADhMt8FGFOTz0VI=;
-        b=7BMhugb/FBemFc28fWLqBK+5ktPSn6kV+644cYhTC1gi3Lyarqd2H0twa4fl5YiNTJ
-         0qLzlRIHQGEpp+xaeI7WTdc4R/MhmYK/QMRsOyjPb2+2VXTOOKTQ/NVfbKyH/UPCPGbE
-         xfhPFLF6UHywqrXTm1v2Ut4E9wCOqPTHMxdi3y5nR2OdD0rw5f0QxeBk4IZymCMK0Ayg
-         FGdz7Lb7MJI1FC/NT+P4qcTnJZJ+BTTYhRkzT4fsaJI2rxyXLevVBXYhfwVb+wHXDNng
-         oEUraXHaXwepLdlyp0y7I/ECuNkjv+mrdQyBguXRrTb27LdfazfKxUtT8EohO7wM3AWk
-         VVrQ==
-X-Gm-Message-State: AOAM532HaS3a3PD2+wyGSSUaC9tri1N7prQcdV2AydyRT8/VnzQ2ssiT
-        qz9OAaUwlADJIxq371F7MiEmfn1ztedkmQ==
-X-Google-Smtp-Source: ABdhPJxHjRdmY5ulWp7yw0uzy4JJCq+aXn4zdjdsiZEAwm/flmZzFTcHFuqS0JuIQkcD9cxDwjayjA==
-X-Received: by 2002:a17:90a:5b06:b0:1b8:b705:470b with SMTP id o6-20020a17090a5b0600b001b8b705470bmr4545046pji.168.1645816705174;
-        Fri, 25 Feb 2022 11:18:25 -0800 (PST)
-Received: from relinquished.localdomain ([2620:10d:c090:400::5:750d])
-        by smtp.gmail.com with ESMTPSA id q22-20020a056a00085600b004f397d1f3b5sm4324816pfk.171.2022.02.25.11.18.24
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 25 Feb 2022 11:18:24 -0800 (PST)
-Date:   Fri, 25 Feb 2022 11:18:23 -0800
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        Fri, 25 Feb 2022 15:19:06 -0500
+Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7DD3D793A0
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Feb 2022 12:18:31 -0800 (PST)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.nyi.internal (Postfix) with ESMTP id B408F5C0245;
+        Fri, 25 Feb 2022 15:18:30 -0500 (EST)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Fri, 25 Feb 2022 15:18:30 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+        :content-type:date:date:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to; s=fm3; bh=/x7zzoR6sF6YsptuZHxC2Wholko6d3k1iROmvW
+        2SReI=; b=jOg0cf4jnYM1vBfCROvQdSM1M7Opb997eFRzhEdgBPemfjBvv0RQAM
+        i/W7TyIZFDZ4kz/KYsNMd5h9fGBGzEduPxTc2eAP7BbywCZpZ9JtX62AUxLuGNUF
+        AJCcUlj+Ho7Sns1hmliWZQa49BOSayVoBE8H2yi1Q6EYj/PEXTwiZxHn7Thzizoi
+        VYrDDscdSWSk6bbfyVMDOVQL2Vd54juBVAb7rfMm4yCWdNSBUUt70VEQQuMM0cwQ
+        Mhn+GEOYcZIKQpCt7M55nclE2SGflUd0jqQzCHIN0azGS9RkAeztldWO7I2zj7TB
+        2VmC+25dG1DgpcEdUauzlpZGaI27+M+w==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:date:date:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to:x-me-proxy:x-me-proxy
+        :x-me-sender:x-me-sender:x-sasl-enc; s=fm2; bh=/x7zzoR6sF6YsptuZ
+        HxC2Wholko6d3k1iROmvW2SReI=; b=iKZIpzUoqq1nscFygsVfjjA55HW52F5iS
+        nsLePLkAmCJm8RiM1p/NXBuLqY5mKgq1Q+grNcU6/uTd2baXDymvq/SlYvzBH7x9
+        8WJDV9lDAp64hzkfkdI98PUjroExwCqaazckVrooaOY0BIEfVSNZvcnLuo1v3Oud
+        QhjFl90rBozNZTesIYnh81R7YTt7aJ8OUrCHws+35Pgo5BTBV3JRJhpS1wQun+2J
+        DzsM5e2IEZsat++CAom4LJPdSdkZCrj9xT8ACqFNCZr5ff7F43rZZI/hH07bUNwW
+        fpcKXXeeV9kGms5oBysq/9NEqM4Wd5NpxDHEIFFNbEIulzpRdVNPA==
+X-ME-Sender: <xms:lTkZYqFIkcZdJ8aPdQtxIxkMABZbK-uIVixZDRvBrAY6pSENCEDkuQ>
+    <xme:lTkZYrWufu2U6sSmRS3BfhhJQScZ-KJoIk2ZE5FtCa0Moj8988Xtt0Oa5WD6QFQLO
+    KLZ-4yQUWJcz8r06ZE>
+X-ME-Received: <xmr:lTkZYkJZI-werED02RfnH8f8TAX2pbJRW0_fQqIjGHhofWYoKns6AUQOFiCA_Q_HlUxwcMovc_D0vh5zbe10lRbr9OLtCw>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvvddrleeggddufeehucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvffukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhrihhs
+    uceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnhephe
+    duveelkeeiteelveeiuefhudehtdeigfehkeeffeegledvueevgefgudeuveefnecuvehl
+    uhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessg
+    hurhdrihho
+X-ME-Proxy: <xmx:lTkZYkG5-Rangm-X6HiSnPbkJh2CBYfR_e_sYz0TVvhLMaFYDLMb7g>
+    <xmx:lTkZYgUL9IZadj6bU_RZLMj3pVKl0AcdBbIDazRo-RkRjAyQcqRPbA>
+    <xmx:lTkZYnPLUbeWRsQgqerC-CcrOtH4lEe2kwXx04XJNcSiq5P_4nSyGQ>
+    <xmx:ljkZYiIY1oE_yUkG7nmDIIlojlj9dSmjhidIr-81ZO6k3muMdResyQ>
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 25 Feb 2022 15:18:28 -0500 (EST)
+Date:   Fri, 25 Feb 2022 12:18:27 -0800
+From:   Boris Burkov <boris@bur.io>
+To:     Paul Jones <paul@pauljones.id.au>
+Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        "kreijack@inwind.it" <kreijack@inwind.it>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.cz>,
+        Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Seed device is broken, again.
-Message-ID: <YhkrfyzmCgOGG+5n@relinquished.localdomain>
-References: <88176dfc-2500-1e9c-bac0-5e293b2c0b5c@suse.com>
- <20220225114729.GE12643@twin.jikos.cz>
- <56a6fe34-7556-c6c3-68da-f3ada22bd5ba@gmx.com>
+Subject: Re: [PATCH 0/7][V11] btrfs: allocation_hint
+Message-ID: <Yhk5kyZL1J8hoQvX@zen>
+References: <cover.1643228177.git.kreijack@inwind.it>
+ <7e5e75ed-86b4-a629-09c9-29202f93b4b6@inwind.it>
+ <c43c5945-3c3a-0dee-a998-9e76c3eb0289@gmx.com>
+ <YgxvUC86zumH3OF1@hungrycats.org>
+ <SYXPR01MB191845786070C7B5E9A67F8D9E359@SYXPR01MB1918.ausprd01.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <56a6fe34-7556-c6c3-68da-f3ada22bd5ba@gmx.com>
+In-Reply-To: <SYXPR01MB191845786070C7B5E9A67F8D9E359@SYXPR01MB1918.ausprd01.prod.outlook.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 25, 2022 at 09:36:32PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2022/2/25 19:47, David Sterba wrote:
-> > On Fri, Feb 25, 2022 at 06:08:20PM +0800, Qu Wenruo wrote:
-> > > Hi,
-> > > 
-> > > The very basic seed device usage is broken again:
-> > > 
-> > > 	mkfs.btrfs -f $dev1 > /dev/null
-> > > 	btrfstune -S 1 $dev1
-> > > 	mount $dev1 $mnt
-> > > 	btrfs dev add $dev2 $mnt
-> > > 	umount $mnt
-> > > 
-> > > 
-> > > I'm not sure how many guys are really using seed device.
-> > > 
-> > > But I see a lot of weird operations, like calling a definite write
-> > > operation (device add) on a RO mounted fs.
+On Wed, Feb 16, 2022 at 04:43:43AM +0000, Paul Jones wrote:
+> > -----Original Message-----
+> > From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> > Sent: Wednesday, 16 February 2022 2:28 PM
+> > To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+> > Cc: kreijack@inwind.it; Josef Bacik <josef@toxicpanda.com>; David Sterba
+> > <dsterba@suse.cz>; Sinnamohideen Shafeeq <shafeeqs@panasas.com>;
+> > Paul Jones <paul@pauljones.id.au>; Boris Burkov <boris@bur.io>; linux-
+> > btrfs@vger.kernel.org
+> > Subject: Re: [PATCH 0/7][V11] btrfs: allocation_hint
 > > 
-> > That's how the seeding device works, in what way would you want to do
-> > the ro->rw change?
-> 
-> In progs-only, so that in kernel we can make dev add ioctl as a real RW
-> operation, not adding an exception for dev add.
-> 
+> > On Wed, Feb 16, 2022 at 08:22:55AM +0800, Qu Wenruo wrote:
+> > >
+> > >
+> > > On 2022/2/16 02:49, Goffredo Baroncelli wrote:
+> > > > Hi Josef,
+> > > >
+> > > > gentle ping...
+> > > >
+> > > > few months ago you showed some interest in this patches set. Few of
+> > > > the cc-ed person use this patch set.
+> > > >
+> > > > I know that David showed some interest in the Anand approach (i.e.
+> > > > no knobs, but an automatic behavior looking at the speed of the devices).
+> > > >
+> > > > At the time when I tried this approach in the first attempts, I got
+> > > > the complain that the kernel may not know the performance
+> > > > differences of the disk (HDD vs SSD vs NVME vs ZONED disk...).
+> > >
+> > > Sorry I didn't check the patches in details.
+> > >
+> > > But I'm a little concerned about how to accurately determine the
+> > > performance of a device.
+> > >
+> > > If doing it automatically, there must be some (commonly very short)
+> > > time spent to do the test.
+> > >
+> > > In the very short time, I doubt we can even accurately got a full
+> > > picture of a device (from sequential read/write speed to IOPS values)
+> > >
+> > > For spinning disks, the sequential read/write speed even change based
+> > > on their LBA address (as their physical location inside the plate can
+> > > change their linear velocity, since the angular velocity is fixed).
+> > >
+> > > And even for SSD, IOPS can var dramatically due to cache/controller
+> > > difference.
+> > >
+> > >
+> > > For a proper performance aware setup, I guess the only correct way to
+> > > fetch performance characteristics is from the (advanced) user.
+> > >
+> > > Or we may need to spent at least tens of minutes to do proper tests to
+> > > get the result.
+> > >
+> > > For regular end users, the difference between SSD and HDD is huge
+> > > enough and simply preferring SSD for metadata is good enough.
+> > >
+> > > But for more complex setup, like btrfs over LUKS over LVM (even
+> > > crosses several physical devices), I doubt if it's even possible to
+> > > fetch the correct performance characteristics automatically.
 > > 
-> > > Can we make at least the seed sprouting part into btrfs-progs instead?
+> > I agree with all of the above.
 > > 
-> > How? What do you mean? This is an in kernel operation that is done on a
-> > mounted filesystem, progs can't do that.
+> > An automatic performance detection/configuration daemon can easily set
+> > the metadata/data preference bits during mkfs, or monitor the system's
+> > iostats and change preferences over time if this is really useful and desired.
+> > It doesn't have to run in the kernel.
 > 
-> Why not?
+> At the moment it's all manual anyway so a bit of a moot point until something is merged.
+> I've been using this patchset since the beginning and imho it's killer feature is being able to split data and metadata onto different speed devices. It massively speeds up large filesystems that are metadata heavy.
 > 
-> Progs has the same ability to read-write the fs, I see no reason why we
-> shouldn't do it in user space.
-> 
-> We're just adding a device, update related trees (which will only be
-> written to the new device). I see no special reason why it can't be done
-> in user space.
-> 
-> Furthermore, the ability to add device in user space can be a good
-> safenet for some ENOSPC space.
-> 
-> > 
-> > > And can seed device even support the upcoming extent-tree-v2?
-> > 
-> > I should, it operates on the device level.
-> > 
-> > > Personally speaking I prefer to mark seed device deprecated completely.
-> > 
-> > If we did that with every feature some developer does not like we'd have
-> > nothing left you know. Seeding is a documented usecase, as long as it
-> > works it's fine to have it available.
-> 
-> A documented usecase doesn't mean it can't be deprecated.
-> 
-> Furthermore, a documented use case doesn't validate the use case itself.
-> 
-> So, please tell me when did you use seed device last time?
-> Or anyone in the mail list, please tell me some real world usecase for
-> seed devices.
-> 
-> I did remember some planned use case like a way to use seed device as a
-> VM/container template, but no, it doesn't get much attention.
-> 
-> 
-> I'm not asking for deprecate the feature just because I don't like it.
-> 
-> This feature is asking for too many exceptions, from the extra
-> fs_devices hack (we have in fact two fs_devices, one for rw devices, one
-> for seed only), to the dev add ioctl.
-> 
-> But the little benefit is not really worthy for the cost.
+> Paul.
 
-We use seed devices in production. The use case is for servers where we
-don't want to persist any sensitive data. The seed device contains a
-basic boot environment, then we sprout it with a dm-crypt device and
-throw away the encryption key. This ensures that nothing sensitive can
-ever be recovered. We previously did this with overlayfs, but seed
-devices ended up working better for reasons I don't remember.
+I've also been using it for about a month and it has been great for
+manually splitting metadata and data to separate devices for testing
+some of the work I've been doing. Works as advertised on the tin, as far
+as I'm concerned, and feels like a good addition.
 
-Davide Cavalca also told me that "Fedora is also interested in
-leveraging seed devices down the road. e.g. doing seed/sprout for cloud
-provisioning, and using seed devices for OEM factory recovery on
-laptops."
-
-There are definitely hacks we need to fix for seed devices, but there
-are valid use cases and we can't just deprecate it.
+Boris

@@ -2,295 +2,338 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3E86C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Feb 2022 13:29:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11C61C4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Feb 2022 14:32:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235932AbiB1N37 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Feb 2022 08:29:59 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55268 "EHLO
+        id S233537AbiB1OdB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Feb 2022 09:33:01 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46538 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235283AbiB1N37 (ORCPT
+        with ESMTP id S237202AbiB1Oc6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Feb 2022 08:29:59 -0500
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64F996D863
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Feb 2022 05:29:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1646054951;
-        bh=8In1hnOErtowiO2FaHHnk7K+ovXYxwh9J5GUHGjn/14=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=NFJH5tTK5x7W1+fY/1ailnv6Sf5fGCIpLKgBj9pVH9n3+GsjJuv2PhdScHbXy7mdx
-         DXEOPpxIF5rYqlV1TfOzfTbC4UgqSzuU7MuppMejXIDY5/lop1JHNn0oYeJAanp9Rw
-         t3JHWDBlZu5BtU1AzqwolTRJD897AxP+5GuR+KUk=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1Msq6C-1oD3ok3ZUG-00tDv9; Mon, 28
- Feb 2022 14:29:11 +0100
-Message-ID: <c04bcbb8-58e1-82e3-7d2d-6d6cebefab5c@gmx.com>
-Date:   Mon, 28 Feb 2022 21:29:07 +0800
+        Mon, 28 Feb 2022 09:32:58 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF4FE7EB3A;
+        Mon, 28 Feb 2022 06:32:19 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 4328D609E9;
+        Mon, 28 Feb 2022 14:32:19 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A281FC340E7;
+        Mon, 28 Feb 2022 14:32:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1646058738;
+        bh=uxwjuc0iqnBJQwJbt9pqUbwsGAijryZDB2ezT0C3nTQ=;
+        h=From:To:Cc:Subject:Date:From;
+        b=Z8U3Ac7/+hLw1L2V7ag+Bg7hC59cH06hMUCKCHxX8Ajz+uWnDKa02iXpoFZiuBWL8
+         tHI/HB6EaDI8lPT948tvKYnLv3XXiqas+mnOrjIwo/mtSkd3/0WQ4Ci2Luu6jJP7Hh
+         3sl5VH9oO74mqmeZXUBB9a7RoG60b0nXV6fpvWnvrtyshEPHa2Wd3YVBvnuTYPMLu5
+         YGdKVVgWK6yUBPAr1vf3YxTu57pOp5c63U4m3YJfB6Sp7svWT8iEasFSicd2aM9/F6
+         XQQxuLVQipBNM6EEEAPdDEVw5Ggb/4nGdmwxofVbgA75xwx0UVMIIOpwr0/kS4+zCK
+         OE6lkolGer1dQ==
+From:   fdmanana@kernel.org
+To:     linux-fsdevel@vger.kernel.org
+Cc:     linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        djwong@kernel.org, hch@infradead.org, cluster-devel@redhat.com,
+        agruenba@redhat.com, josef@toxicpanda.com,
+        Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] iomap: fix incomplete async dio reads when using IOMAP_DIO_PARTIAL
+Date:   Mon, 28 Feb 2022 14:32:03 +0000
+Message-Id: <1f34c8435fed21e9583492661ceb20d642a75699.1646058596.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.33.0
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.6.1
-Subject: Re: [PATCH v2] btrfs: repair super block num_devices automatically
-Content-Language: en-US
-To:     =?UTF-8?Q?Luca_B=c3=a9la_Palkovics?= 
-        <luca.bela.palkovics@gmail.com>
-Cc:     Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <732d0a86c3624bc96df3cca05512edac40efc75d.1646031785.git.wqu@suse.com>
- <ebdb0e67-0e9e-4ca6-1d2e-4dd2a7a7c103@oracle.com>
- <a6923955-00f9-d739-c70a-3beace0b85e1@gmx.com>
- <82df81f6-74a1-b77d-c4e9-48d20ab1bd68@oracle.com>
- <f8c0610e-466b-256b-347f-d10c517023ae@gmx.com>
- <c8009e2d-7569-4dec-3745-e9c3718ec57c@oracle.com>
- <07588d0a-293b-643e-f2c5-ebeb74023c4b@gmx.com>
- <CA+8xDSqppu9yDqKbKZNPrwE2zJy9MPB6NM-WCuoZTDQ4-=r6EA@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <CA+8xDSqppu9yDqKbKZNPrwE2zJy9MPB6NM-WCuoZTDQ4-=r6EA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:3dxcIFJlPGRi1+cfrUxmNkjX4mXF/PQdMRm4rWY//fmbtPKtbq3
- gWI/iTj5k9XI87Af5ENZUM+6OEgB4qvNU3WGiG1eNecjv8W7XIusowAoAR6MaQpRUhKDDtt
- U7/Lbx5Uzt2q6ppJ6QphJ4wn521dWR2rqsWwT+tzrqZzNiZTFlHfdNcOci8jLeJkS4nzQYF
- r9iWj7xyl+f7K24u/4BXw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:/4S7tpItTOE=:onq8MZ5wV1Md0kfUvrkJa0
- ke2gkE1tJZ95y2x2Jy9e1LzKkjWIn3W0nk+MtSeMdX227h6RvSn8q2LpaEhr5Vcp35kDCdktO
- he+C6hJCfqO5UR/ihLVSL/Hqg41kZ4CgBoYlVnob4K/6HVDljaVh5+UVyYe6n7dKh68Ss9Zep
- 7pOlhdB//tgXK0cDnuxLp8h6n+rEmoi8KoZAx7oyZCQGHxN2IirazLyJAFxc6Ug95AWJntVle
- 5a/FZoCYR7olDc0Ha61cIWpK9Tx9Vb9IbYW/u/eDC/9LMxJ6/2xErthrxBe1a5ZblCyeXpehS
- /qKhk+FtRyS+w2bPkJXgmZLLZQm/hbfeH4yZGqpviI4m8Bk2p+SNd4TXGJKfQ9qGh14mdGVG0
- ScJaoUaXP8Ofe0vg9kASaX3NDpmiSoAShv7YIgK6fmlj18jtBBgld/8pn5kGSNlNJZYlvy3bp
- 5rq+yUYIR6hm5s69FpNHs9Lup7Ia89gHdC3FdFx48rtwCTLZmkmUs2ujBA7DJ95Qq3uFP8Q0t
- N9B7KAlQohqxgLs75xhCMa8qtJcBtUgkoo+/qB21O11H5yg4OqeuPveeUcjzlx9HliRzFyEzu
- bZf1Ei5h2c6noPffB0PGGG4nxpQhgth+61UHtxDoZJy8ym6cei44OGRB3rUlTuJSoo0tY6eiz
- S6tE3zk17Z0HtPgoncEHBFkkdRkFzJK3Q8OLKIBtEcnwQrlXMsZOw01A0aCd4EhZvlemaLIBU
- 7bScsPcBjF9FTtr3csCJ2j5ct1n4h8qsJdupDbQrB0IR+MiceD3swSetcLAbLUgSsirX333qs
- PQa3vSiwReegK3pVmWWt3M+yLgX3xgbztYC5H5AcxDJBt8z2LT/1JLoHjkp08DfH+Rv6OuMGP
- ifqtoXqEgtscao1yk0Kr++PVx6HNabbrhn448xBmX8o3Ozr6K49NL/egBR1ULLYnWbExGe00/
- g5wP6iJDqndsbZX3yFxS3vv54DvUFz2S6d/n+og2DXJn4Fpta9HFhyB0TcuHv48qbWtsVku/i
- ejsP9mQmzmlOK/+rUL95RsUfHqY14KptLQJDoSkuhjhlgFgJLbNs/bBBpeD9bbYBKIIs6TIHA
- qBPAd7eW8Bw4Fk=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Filipe Manana <fdmanana@suse.com>
 
+Some users recently reported that MariaDB was getting a read corruption
+when using io_uring on top of btrfs. This started to happen in 5.16,
+after commit 51bd9563b6783d ("btrfs: fix deadlock due to page faults
+during direct IO reads and writes"). That changed btrfs to use the new
+iomap flag IOMAP_DIO_PARTIAL and to disable page faults before calling
+iomap_dio_rw(). This was necessary to fix deadlocks when the iovector
+corresponds to a memory mapped file region. That type of scenario is
+exercised by test case generic/647 from fstests, and it also affected
+gfs2, which, besides btrfs, is the only user of IOMAP_DIO_PARTIAL.
 
-On 2022/2/28 21:13, Luca B=C3=A9la Palkovics wrote:
-> Am Mo., 28. Feb. 2022 um 14:03 Uhr schrieb Qu Wenruo <quwenruo.btrfs@gmx=
-.com>:
->>
->>
->>
->> On 2022/2/28 20:51, Anand Jain wrote:
->>> On 28/02/2022 17:21, Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2022/2/28 17:01, Anand Jain wrote:
->>>>> On 28/02/2022 16:54, Qu Wenruo wrote:
->>>>>>
->>>>>>
->>>>>> On 2022/2/28 16:00, Anand Jain wrote:
->>>>>>> On 28/02/2022 15:05, Qu Wenruo wrote:
->>>>>>>> [BUG]
->>>>>>>> There is a report that a btrfs has a bad super block num devices.
->>>>>>>>
->>>>>>>> This makes btrfs to reject the fs completely.
->>>>>>>>
->>>>>>>>     BTRFS error (device sdd3): super_num_devices 3 mismatch with
->>>>>>>> num_devices 2 found here
->>>>>>>>     BTRFS error (device sdd3): failed to read chunk tree: -22
->>>>>>>>     BTRFS error (device sdd3): open_ctree failed
->>>>>>>>
->>>>>>>> [CAUSE]
->>>>>>>> During btrfs device removal, chunk tree and super block num devs =
-are
->>>>>>>> updated in two different transactions:
->>>>>>>>
->>>>>>>>     btrfs_rm_device()
->>>>>>>>     |- btrfs_rm_dev_item(device)
->>>>>>>>     |  |- trans =3D btrfs_start_transaction()
->>>>>>>>     |  |  Now we got transaction X
->>>>>>>>     |  |
->>>>>>>>     |  |- btrfs_del_item()
->>>>>>>>     |  |  Now device item is removed from chunk tree
->>>>>>>>     |  |
->>>>>>>>     |  |- btrfs_commit_transaction()
->>>>>>>>     |     Transaction X got committed, super num devs untouched,
->>>>>>>>     |     but device item removed from chunk tree.
->>>>>>>>     |     (AKA, super num devs is already incorrect)
->>>>>>>>     |
->>>>>>>>     |- cur_devices->num_devices--;
->>>>>>>>     |- cur_devices->total_devices--;
->>>>>>>>     |- btrfs_set_super_num_devices()
->>>>>>>>        All those operations are not in transaction X, thus it wil=
-l
->>>>>>>>        only be written back to disk in next transaction.
->>>>>>>>
->>>>>>>> So after the transaction X in btrfs_rm_dev_item() committed, but
->>>>>>>> before
->>>>>>>> transaction X+1 (which can be minutes away), a power loss happen,
->>>>>>>> then
->>>>>>>> we got the super num mismatch.
->>>>>>>>
->>>>>>>
->>>>>
->>>>>
->>>>>>> The cause part is much better now. So why not also update the supe=
-r
->>>>>>> num_devices in the same transaction?
->>>>>>
->>>>>> A lot of other things like total_rw_bytes.
->>>>>>
->>>>>> Not to mention, even we got a fix, it will be another patch.
->>>>>>
->>>>>> Since the handling of such mismatch is needed to handle older kerne=
-ls
->>>>>> anyway.
->>>>>
->>>>>    Ok.
->>>>>
->>>>>
->>>>>>>> [FIX]
->>>>>>>> Make the super_num_devices check less strict, converting it from =
-a
->>>>>>>> hard
->>>>>>>> error to a warning, and reset the value to a correct one for the
->>>>>>>> current
->>>>>>>> or next transaction commitment.
->>>>>>>
->>>>>>> So that we can leave the part where we identify and report num_dev=
-ices
->>>>>>> miss-match as it is.
->>>>>>
->>>>>> I didn't get your point.
->>>>>> What do you want to get from this patch?
->>>>>>
->>>>>> Isn't this already the behavior of this patch?
->>>>>
->>>>>    Let me clarify - we don't need this patch if we fix the actual bu=
-g as
->>>>> above. IMO.
->>>>
->>>> Big NO NO.
->>>>
->>>> The damage is already done, we must be responsible for whatever damag=
-e
->>>> we caused, especially the damage has already reached disk.
->>>>
->>>> Just fixing the cause and call it a day is definitely not a
->>>> responsible way.
->>>>
->>>> Especially when the damage is done, you have no way to mount it, just
->>>> like the reporter.
->>>>
->>>> You dare to say the same thing to the end user?
->>>
->>> You have a btrfs-progs patch to recover from that situation. Right?
->>> Plus, I suppose you are sending a kernel patch for the actual bug
->>> which is causing this corruption. No?
->>
->> Not yet. It can be more complex.
->> Feel free to try to fix it properly.
->>
->>>
->>> This patch is the reporter side fix. I don't encourage fixing the
->>> reporter because a similar corruption might happen for reasons unknown
->>> yet. For example, raid1 split-brain? Which is not yet completely
->>> analyzed and test-cased yet.
->>
->> No matter whatever the reason, you still can't deny the fact that, if
->> just super num dev mismatches, there is no need to reject the full fs.
->
-> As a user .. I expected to be able to mount it with "-o degraded" ..
-> or/and "-o recovery,ro"
+For this MariaDB scenario, we attempt to read 16K from file offset X
+using IOCB_NOWAIT and io_uring. In that range we have 4 extents, each
+with a size of 4K, and what happens is the following:
 
-With this patch, you won't need any special mount option.
-Since btrfs knows it's just a number mismatch, nothing to worry.
+1) btrfs_direct_read() disables page faults and calls iomap_dio_rw();
 
->
-> But at the same time .. I don't understand what this "num_devices"
-> does and/or why it's required...
-> Or what effects it has on the data-integrity..
->
-> It was just very confusing to me because "btrfs check" said everything i=
-s fine..
+2) iomap creates a struct iomap_dio object, its reference count is
+   initialized to 1 and its ->size field is initialized to 0;
 
-That's why there is also another patchset for btrfs-progs, to detect and
-repair the problem.
-(Although now with this patch, you won't even notice a problem, kernel
-will automatically fix the problem, other than rejecting it)
+3) iomap calls btrfs_iomap_begin() with file offset X, which finds the
+   first 4K extent, and setups an iomap for this extent consisting of
+   a single page;
 
-Thanks,
-Qu
+4) At iomap_dio_bio_iter(), we are able to access the first page of the
+   buffer (struct iov_iter) with bio_iov_iter_get_pages() without
+   triggering a page fault;
 
->
->> We have tree-checker for each chunk leave, and rw bytes check already.
->> Even the possible bit flip check for num devs.
->>
->> The super num devs check doesn't make much sense except causing more
->> hassles to the end uesr.
->>
->> The report is just giving us a chance to review if the behavior is
->> really helpful.
->> To me, NO.
->>
->>>
->>> In my POV.
->>>
->>> Thanks, Anand
->>>
->>>
->>>
->>>>>>> Thanks, Anand
->>>>>>>
->>>>>>>
->>>>>>>> Reported-by: Luca B=C3=A9la Palkovics <luca.bela.palkovics@gmail.=
-com>
->>>>>>>> Link:
->>>>>>>> https://lore.kernel.org/linux-btrfs/CA+8xDSpvdm_U0QLBAnrH=3DzqDq_=
-cWCOH5TiV46CKmp3igr44okQ@mail.gmail.com/
->>>>>>>>
->>>>>>>>
->>>>>>>>
->>>>>>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
->>>>>>>> ---
->>>>>>>> Changelog:
->>>>>>>> v2:
->>>>>>>> - Add a proper reason on why this mismatch can happen
->>>>>>>>     No code change.
->>>>>>>> ---
->>>>>>>>    fs/btrfs/volumes.c | 8 ++++----
->>>>>>>>    1 file changed, 4 insertions(+), 4 deletions(-)
->>>>>>>>
->>>>>>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>>>>>>> index 74c8024d8f96..d0ba3ff21920 100644
->>>>>>>> --- a/fs/btrfs/volumes.c
->>>>>>>> +++ b/fs/btrfs/volumes.c
->>>>>>>> @@ -7682,12 +7682,12 @@ int btrfs_read_chunk_tree(struct
->>>>>>>> btrfs_fs_info
->>>>>>>> *fs_info)
->>>>>>>>         * do another round of validation checks.
->>>>>>>>         */
->>>>>>>>        if (total_dev !=3D fs_info->fs_devices->total_devices) {
->>>>>>>> -        btrfs_err(fs_info,
->>>>>>>> -       "super_num_devices %llu mismatch with num_devices %llu fo=
-und
->>>>>>>> here",
->>>>>>>> +        btrfs_warn(fs_info,
->>>>>>>> +       "super_num_devices %llu mismatch with num_devices %llu fo=
-und
->>>>>>>> here, will be repaired on next transaction commitment",
->>>>>>>>                  btrfs_super_num_devices(fs_info->super_copy),
->>>>>>>>                  total_dev);
->>>>>>>> -        ret =3D -EINVAL;
->>>>>>>> -        goto error;
->>>>>>>> +        fs_info->fs_devices->total_devices =3D total_dev;
->>>>>>>> +        btrfs_set_super_num_devices(fs_info->super_copy, total_d=
-ev);
->>>>>>>>        }
->>>>>>>>        if (btrfs_super_total_bytes(fs_info->super_copy) <
->>>>>>>>            fs_info->fs_devices->total_rw_bytes) {
->>>>>>>
->>>>>
->>>
+5) iomap submits a bio for this 4K extent
+   (iomap_dio_submit_bio() -> btrfs_submit_direct()) and increments
+   the refcount on the struct iomap_dio object to 2; The ->size field
+   of the struct iomap_dio object is incremented to 4K;
+
+6) iomap calls btrfs_iomap_begin() again, this time with a file
+   offset of X + 4K. There we setup an iomap for the next extent
+   that also has a size of 4K;
+
+7) Then at iomap_dio_bio_iter() we call bio_iov_iter_get_pages(),
+   which tries to access the next page (2nd page) of the buffer.
+   This triggers a page fault and returns -EFAULT;
+
+8) At __iomap_dio_rw() we see the -EFAULT, but we reset the error
+   to 0 because we passed the flag IOMAP_DIO_PARTIAL to iomap and
+   the struct iomap_dio object has a ->size value of 4K (we submitted
+   a bio for an extent already). The 'wait_for_completion' variable
+   is not set to true, because our iocb has IOCB_NOWAIT set;
+
+9) At the bottom of __iomap_dio_rw(), we decrement the reference count
+   of the struct iomap_dio object from 2 to 1. Because we were not
+   the only ones holding a reference on it and 'wait_for_completion' is
+   set to false, -EIOCBQUEUED is returned to btrfs_direct_read(), which
+   just returns it up the callchain, up to io_uring;
+
+10) The bio submitted for the first extent (step 5) completes and its
+    bio endio function, iomap_dio_bio_end_io(), decrements the last
+    reference on the struct iomap_dio object, resulting in calling
+    iomap_dio_complete_work() -> iomap_dio_complete().
+
+11) At iomap_dio_complete() we adjust the iocb->ki_pos from X to X + 4K
+    and return 4K (the amount of io done) to iomap_dio_complete_work();
+
+12) iomap_dio_complete_work() calls the iocb completion callback,
+    iocb->ki_complete() with a second argument value of 4K (total io
+    done) and the iocb with the adjust ki_pos of X + 4K. This results
+    in completing the read request for io_uring, leaving it with a
+    result of 4K bytes read, and only the first page of the buffer
+    filled in, while the remaining 3 pages, corresponding to the other
+    3 extents, were not filled;
+
+13) For the application, the result is unexpected because if we ask
+    to read N bytes, it expects to get N bytes read as long as those
+    N bytes don't cross the EOF (i_size).
+
+So fix this by making __iomap_dio_rw() assign true to the boolean variable
+'wait_for_completion' when we have IOMAP_DIO_PARTIAL set, we did some
+progress for a read and we have not crossed the EOF boundary. Do this even
+if the read has IOCB_NOWAIT set, as it's the only way to avoid providing
+an unexpected result to an application. This results in returning a
+positive value to the iomap caller, which tells it to fault in the
+remaining pages associated to the buffer (struct iov_iter), followed by
+another call to iomap_dio_rw() with IOMAP_DIO_PARTIAL set, in order to
+continue the rest of the read operation.
+
+The problem can also be triggered with the following simple program:
+
+  /* Get O_DIRECT */
+  #ifndef _GNU_SOURCE
+  #define _GNU_SOURCE
+  #endif
+
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <unistd.h>
+  #include <fcntl.h>
+  #include <errno.h>
+  #include <string.h>
+  #include <liburing.h>
+
+  int main(int argc, char *argv[])
+  {
+      char *foo_path;
+      struct io_uring ring;
+      struct io_uring_sqe *sqe;
+      struct io_uring_cqe *cqe;
+      struct iovec iovec;
+      int fd;
+      long pagesize;
+      void *write_buf;
+      void *read_buf;
+      ssize_t ret;
+      int i;
+
+      if (argc != 2) {
+          fprintf(stderr, "Use: %s <directory>\n", argv[0]);
+          return 1;
+      }
+
+      foo_path = malloc(strlen(argv[1]) + 5);
+      if (!foo_path) {
+          fprintf(stderr, "Failed to allocate memory for file path\n");
+          return 1;
+      }
+      strcpy(foo_path, argv[1]);
+      strcat(foo_path, "/foo");
+
+      /*
+       * Create file foo with 2 extents, each with a size matching
+       * the page size. Then allocate a buffer to read both extents
+       * with io_uring, using O_DIRECT and IOCB_NOWAIT. Before doing
+       * the read with io_uring, access the first page of the buffer
+       * to fault it in, so that during the read we only trigger a
+       * page fault when accessing the second page of the buffer.
+       */
+       fd = open(foo_path, O_CREAT | O_TRUNC | O_WRONLY |
+                O_DIRECT, 0666);
+       if (fd == -1) {
+           fprintf(stderr,
+                   "Failed to create file 'foo': %s (errno %d)",
+                   strerror(errno), errno);
+           return 1;
+       }
+
+       pagesize = sysconf(_SC_PAGE_SIZE);
+       ret = posix_memalign(&write_buf, pagesize, 2 * pagesize);
+       if (ret) {
+           fprintf(stderr, "Failed to allocate write buffer\n");
+           return 1;
+       }
+
+       memset(write_buf, 0xab, pagesize);
+       memset(write_buf + pagesize, 0xcd, pagesize);
+
+       /* Create 2 extents, each with a size matching page size. */
+       for (i = 0; i < 2; i++) {
+           ret = pwrite(fd, write_buf + i * pagesize, pagesize,
+	                i * pagesize);
+           if (ret != pagesize) {
+               fprintf(stderr,
+                     "Failed to write to file, ret = %ld errno %d (%s)\n",
+                      ret, errno, strerror(errno));
+               return 1;
+           }
+           ret = fsync(fd);
+           if (ret != 0) {
+               fprintf(stderr, "Failed to fsync file\n");
+               return 1;
+           }
+       }
+
+       close(fd);
+       fd = open(foo_path, O_RDONLY | O_DIRECT);
+       if (fd == -1) {
+           fprintf(stderr,
+                   "Failed to open file 'foo': %s (errno %d)",
+                   strerror(errno), errno);
+           return 1;
+       }
+
+       ret = posix_memalign(&read_buf, pagesize, 2 * pagesize);
+       if (ret) {
+           fprintf(stderr, "Failed to allocate read buffer\n");
+           return 1;
+       }
+
+       /*
+        * Fault in only the first page of the read buffer.
+        * We want to trigger a page fault for the 2nd page of the
+        * read buffer during the read operation with io_uring
+        * (O_DIRECT and IOCB_NOWAIT).
+        */
+       memset(read_buf, 0, 1);
+
+       ret = io_uring_queue_init(1, &ring, 0);
+       if (ret != 0) {
+           fprintf(stderr, "Failed to create io_uring queue\n");
+           return 1;
+       }
+
+       sqe = io_uring_get_sqe(&ring);
+       if (!sqe) {
+           fprintf(stderr, "Failed to get io_uring sqe\n");
+           return 1;
+       }
+
+       iovec.iov_base = read_buf;
+       iovec.iov_len = 2 * pagesize;
+       io_uring_prep_readv(sqe, fd, &iovec, 1, 0);
+
+       ret = io_uring_submit_and_wait(&ring, 1);
+       if (ret != 1) {
+           fprintf(stderr,
+                   "Failed at io_uring_submit_and_wait()\n");
+           return 1;
+       }
+
+       ret = io_uring_wait_cqe(&ring, &cqe);
+       if (ret < 0) {
+           fprintf(stderr, "Failed at io_uring_wait_cqe()\n");
+           return 1;
+       }
+
+       printf("io_uring read result for file foo:\n\n");
+       printf("  cqe->res = %d (expected %d)\n", cqe->res, 2 * pagesize);
+       printf("  memcmp(read_buf, write_buf) == %d (expected 0)\n",
+              memcmp(read_buf, write_buf, 2 * pagesize));
+
+       io_uring_cqe_seen(&ring, cqe);
+       io_uring_queue_exit(&ring);
+
+       return 0;
+  }
+
+When running it on an unpatched kernel:
+
+  $ gcc io_uring_test.c -luring
+  $ mkfs.btrfs -f /dev/sda
+  $ mount /dev/sda /mnt/sda
+  $ ./a.out /mnt/sda
+  io_uring read result for file foo:
+
+    cqe->res = 4096 (expected 8192)
+    memcmp(read_buf, write_buf) == -205 (expected 0)
+
+After this patch, the read always returns 8192 bytes, with the buffer
+filled with the correct data. Although that reproducer always triggers
+the bug in my test vms, it's possible that it will not be so reliable
+on other environments, as that can happen if the bio for the first
+extent completes and decrements the reference on the struct iomap_dio
+object before we do the atomic_dec_and_test() on the reference at
+__iomap_dio_rw().
+
+A test case for fstests will followup later.
+
+Link: https://lore.kernel.org/linux-btrfs/CABVffEM0eEWho+206m470rtM0d9J8ue85TtR-A_oVTuGLWFicA@mail.gmail.com/
+Link: https://lore.kernel.org/linux-btrfs/CAHF2GV6U32gmqSjLe=XKgfcZAmLCiH26cJ2OnHGp5x=VAH4OHQ@mail.gmail.com/
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/iomap/direct-io.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index 03ea367df19a..9a6fdefa34f3 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -606,7 +606,19 @@ __iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 		iov_iter_revert(iter, iomi.pos - dio->i_size);
+ 
+ 	if (ret == -EFAULT && dio->size && (dio_flags & IOMAP_DIO_PARTIAL)) {
+-		if (!(iocb->ki_flags & IOCB_NOWAIT))
++		/*
++		 * If we are a NOWAIT request we don't want to wait for the
++		 * completion of any previously submitted bios. However there
++		 * is one exception: if we are doing a read and we have not
++		 * submitted bios for everything we are supposed to read, then
++		 * we have to wait for completion - otherwise we may end up
++		 * returning -EIOCBQUEUED without having read everything we
++		 * can read, making our caller think we have reached EOF.
++		 */
++		if (!(iocb->ki_flags & IOCB_NOWAIT) ||
++		    (iov_iter_rw(iter) == READ &&
++		     iomi.len > 0 &&
++		     iomi.pos < dio->i_size))
+ 			wait_for_completion = true;
+ 		ret = 0;
+ 	}
+-- 
+2.33.0
+

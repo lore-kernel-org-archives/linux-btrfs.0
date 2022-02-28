@@ -2,152 +2,117 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FCD6C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Feb 2022 16:56:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B818EC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Feb 2022 17:04:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238057AbiB1Q5C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Feb 2022 11:57:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42940 "EHLO
+        id S238092AbiB1RFM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Feb 2022 12:05:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37322 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233487AbiB1Q5B (ORCPT
+        with ESMTP id S238089AbiB1RFL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Feb 2022 11:57:01 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DDF2D79C75;
-        Mon, 28 Feb 2022 08:56:21 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 71B42612CB;
-        Mon, 28 Feb 2022 16:56:21 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A46A1C340E7;
-        Mon, 28 Feb 2022 16:56:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1646067380;
-        bh=523gBdVPJChXozDXmy5Cb2pK2i/xRfAcGRZVUQAHjNc=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=LgVJuH4da0tpuW1nX+TSzWKpqT1/5OI3uq9Url+IKydIaNvJrwxxCJ02pDsUamp0J
-         BXgyENWeP0ucoramTVXNaT23Z6w+IPOpRsVnisqnZwdBL4ARuBusSY6JLdz3305OfE
-         YtZvql2BfkwdTq2LxRIJRizjGmx3hngX5RBUDcSxgf2mLkssqkaZFIqarTisHboNdy
-         Xy986yF0zeYZbw6HX61O+ecCg/MIlsoP4bKonolKYJ+91DSdYuEy6Ckl7v583fSXhJ
-         fxInQ5iK44jGAKr2Pvl9ywk4psfT+Vv0H/AbdegLc3kV5x8iLrYBvahTmACsIjfZ5u
-         Ol9BFIfpBb+FA==
-Date:   Mon, 28 Feb 2022 09:56:13 -0700
-From:   Nathan Chancellor <nathan@kernel.org>
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     Marco Elver <elver@google.com>,
-        Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Masahiro Yamada <masahiroy@kernel.org>, llvm@lists.linux.dev,
-        Jonathan Corbet <corbet@lwn.net>,
-        Federico Vaga <federico.vaga@vaga.pv.it>,
-        Alex Shi <alexs@kernel.org>, Hu Haowen <src.res@email.cn>,
-        Michal Marek <michal.lkml@markovi.net>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        "open list:DOCUMENTATION" <linux-doc@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-doc-tw-discuss@lists.sourceforge.net,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Intel Graphics <intel-gfx@lists.freedesktop.org>,
-        dri-devel <dri-devel@lists.freedesktop.org>,
-        greybus-dev@lists.linaro.org, linux-staging@lists.linux.dev,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>
-Subject: Re: [PATCH] [v2] Kbuild: move to -std=gnu11
-Message-ID: <Yhz+rfcdp9jxgr+P@archlinux-ax161>
-References: <20220228103142.3301082-1-arnd@kernel.org>
- <CANpmjNP6VE9G8Yng4W7Mayk-0QsqUtAXkrMUSvL5pAP5DpXSmA@mail.gmail.com>
- <CAK8P3a3cRa1piP2BSmN2dTW4QErhSP7AMO9xqAm=_FFYprAkOA@mail.gmail.com>
+        Mon, 28 Feb 2022 12:05:11 -0500
+Received: from mail-qv1-xf2d.google.com (mail-qv1-xf2d.google.com [IPv6:2607:f8b0:4864:20::f2d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E02457B0D
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Feb 2022 09:04:31 -0800 (PST)
+Received: by mail-qv1-xf2d.google.com with SMTP id 8so13593103qvf.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Feb 2022 09:04:31 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=JTr9v381/JugnJhGb2YDO+osfIPKA6ncZ51TUx4pU4w=;
+        b=f+pujlqoSNfV6sfkwX1uBml4xOdbcoPHi+RzeV3XjqFKSWUkLkOoclr0D0encXh/cB
+         Jdnppzy1fFUHalAu+9e6cU77iJgMymIzm6NFsEh9W90DQWv8GvDDMRilgkbuwmx53Kxr
+         Peqk8G8r5l5TbzbwimxB6iB9urABGaVW3euH+ptEH9J9y0nBTvAfy35latBlpGVa/05z
+         hTyN231s0kOnC/b7cZ8unOSg24/OHA1NTQ4F0AdIdzO1j4jsU+abKN7Buch7BH6qPP8S
+         2fNA4Kzbmx+WIcqreufC2OBqXi4AEtWnjzvWM9DXdCFezHlJsopSIlH0jc1WxbVbg2ds
+         uNGg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=JTr9v381/JugnJhGb2YDO+osfIPKA6ncZ51TUx4pU4w=;
+        b=7L55RWBYOtL5QtYU0daXq5x0sUxko7wOWcsTOH5xv9OLoWuYltR+K7iXyloWxkZ3Zg
+         MAUNVUSEMqHT6XF5dREoJ5hEJOagHNomcabix+/LUdy0/xN/as+csRpliobh6HDjhA+r
+         AqEO+ReTcOnzR6dbtiqbWxAwo3MbtDY6H8Uzcooy2+qaeWuOIYk0quQfaLd1cfgAbFn+
+         icyIvrY1cWVAdccKGn5Bl4NaAPPIEBu+bTSnGiq6UgSSA8Zb8mwRMQOiEFi6n/SO+zFr
+         Gv989y+xR/Hr9FkZ85dWzyGIsc2EkBbhNPVTDG21jTWUxZBurCANPge1X4gp6hGG1u/7
+         lncw==
+X-Gm-Message-State: AOAM531ovRHliWM4GpqaUNvCY0ubSgOplAIk3LyTue29ejJAuhErJtzX
+        E2R+PzXfP7W3b9BGAQKKXfSbanAY9XAZBzeE
+X-Google-Smtp-Source: ABdhPJzyqGNtxI6QPBiNEm4KiThB+LvaJawtXSZ4s7/V8V/WOVn7zgOEdV5P8bhAR+PcIA/xuulRIQ==
+X-Received: by 2002:ac8:4e4d:0:b0:2de:7a32:a02a with SMTP id e13-20020ac84e4d000000b002de7a32a02amr17134961qtw.509.1646067869960;
+        Mon, 28 Feb 2022 09:04:29 -0800 (PST)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id n13-20020ac85b4d000000b002de6fe91d2fsm7312805qtw.68.2022.02.28.09.04.29
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 28 Feb 2022 09:04:29 -0800 (PST)
+Date:   Mon, 28 Feb 2022 12:04:28 -0500
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Goffredo Baroncelli <kreijack@libero.it>
+Cc:     linux-btrfs@vger.kernel.org,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        David Sterba <dsterba@suse.cz>,
+        Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
+        Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH 0/7][V11] btrfs: allocation_hint
+Message-ID: <Yh0AnKF1jFKVfa/I@localhost.localdomain>
+References: <cover.1643228177.git.kreijack@inwind.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAK8P3a3cRa1piP2BSmN2dTW4QErhSP7AMO9xqAm=_FFYprAkOA@mail.gmail.com>
+In-Reply-To: <cover.1643228177.git.kreijack@inwind.it>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 28, 2022 at 12:57:55PM +0100, Arnd Bergmann wrote:
-> On Mon, Feb 28, 2022 at 12:47 PM Marco Elver <elver@google.com> wrote:
-> > On Mon, 28 Feb 2022 at 11:32, Arnd Bergmann <arnd@kernel.org> wrote:
-> >
-> > > Nathan Chancellor reported an additional -Wdeclaration-after-statement
-> > > warning that appears in a system header on arm, this still needs a
-> > > workaround.
-> >
-> > On the topic of Wdeclaration-after-statement, Clang only respects this
-> > warning with C99 and later starting with Clang 14:
-> > https://github.com/llvm/llvm-project/commit/c65186c89f35#diff-ec770381d76c859f5f572db789175fe44410a72608f58ad5dbb14335ba56eb97R61
-> >
-> > Until Clang 14, -Wdeclaration-after-statement is ignored by Clang in
-> > newer standards. If this is a big problem, we can probably convince
-> > the Clang stable folks to backport the fixes. However, the build won't
-> > fail, folks might just miss the warning if they don't also test with
-> > GCC.
-
-Unfortunately, none of the branches prior to release/14.x are going to
-see any more updates (at least as far as I am aware, as the LLVM
-community only supports one release branch at a time) but as Arnd
-mentioned below, I do not really see that as a problem, as newer
-versions of clang and GCC will catch these warnings.
-
-> I don't expect this is to be a big issue, as long as the latest clang behaves
-> as expected. There are many warnings that are only produced by one of the
-> two compilers, so this is something we already deal with.
+On Wed, Jan 26, 2022 at 09:32:07PM +0100, Goffredo Baroncelli wrote:
+> From: Goffredo Baroncelli <kreijack@inwind.it>
 > 
-> I think it's more important to address the extra warning that Nathan
-> reported, where clang now complains about the intermingled declaration
-> in a system header when previously neither gcc nor clang noticed this.
+> Hi all,
+> 
+> This patches set was born after some discussion between me, Zygo and Josef.
+> Some details can be found in https://github.com/btrfs/btrfs-todo/issues/19.
+> 
+> Some further information about a real use case can be found in
+> https://lore.kernel.org/linux-btrfs/20210116002533.GE31381@hungrycats.org/
+> 
+> Recently Shafeeq told me that he is interested too, due to the performance gain.
+> 
+> In V8, revision I switched away from an ioctl API in favor of a sysfs API (
+> see patch #2 and #3).
+> 
+> In V9, I renamed the sysfs interface from devinfo/type to devinfo/allocation_hint.
+> Moreover I renamed dev_info->type to dev_info->flags.
+> 
+> In V10, I renamed the tag 'PREFERRED' from PREFERRED_X to X_PREFERRED; I added
+> another devinfo property, called major_minor. For now it is unused;
+> the plan is to use this in btrfs-progs to go from the block device to the filesystem.
+> First client will be "btrfs prop get/set allocation_hint", but I see others possible
+> clients.
+> Finally I made some cleanup, and remove the mount option 'allocation_hint'
+> 
+> In V11 I added a new 'feature' file /sys/fs/btrfs/features/allocation_hint
+> to help the detection of the allocation_hint feature.
+> 
 
-Right. Based on the upstream LLVM bug, I think we should just fix
-arm_neon.h to avoid triggering -Wdeclaration-after-statement to have
-something that is (hopefully) relatively low risk for a clang-14
-backport, rather than addressing the root cause of clang warning in
-system macros, as it sounds like fixing that has some risks that are not
-fully understood at this point. The kernel only uses very specific
-system headers after commit 04e85bbf71c9 ("isystem: delete global
--isystem compile option"), so I don't think that my suggested approach
-will have many downsides.
+Sorry Goffredo I dropped the ball on this, lets try and get this shit nailed
+down and done so we can get it merged.  The code overall looks good, I just have
+two things I want changed
 
-I think I see how to potentially fix arm_neon.h in
-clang/utils/TableGen/NeonEmitter.cpp, I just have to think about it a
-little more.
+1. The sysfs file should use a string, not a magic number.  Think how
+   /sys/block/<dev>/queue/scheduler works.  You echo "metadata_only" >
+   allocation_hint, you cat allocation_hint and it says "none" or
+   "metadata_only".  If you want to be fancy you can do exactly like
+   queue/scheduler and show the list of options with [] around the selected
+   option.
 
-Realistically, I don't think special casing this in lib/raid6 is the end
-of the world:
+2. I hate the major_minor thing, can you do similar to what we do for devices/
+   and symlink the correct device sysfs directory under devid?
 
-diff --git a/lib/raid6/Makefile b/lib/raid6/Makefile
-index 45e17619422b..a41ff71b90af 100644
---- a/lib/raid6/Makefile
-+++ b/lib/raid6/Makefile
-@@ -38,6 +38,10 @@ ifeq ($(CONFIG_KERNEL_MODE_NEON),y)
- NEON_FLAGS := -ffreestanding
- # Enable <arm_neon.h>
- NEON_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
-+# https://github.com/ClangBuiltLinux/linux/issues/1603
-+ifeq ($(CONFIG_CC_IS_CLANG)$(CONFIG_CPU_BIG_ENDIAN),yy)
-+NEON_FLAGS += -Wno-declaration-after-statement
-+endif
- ifeq ($(ARCH),arm)
- NEON_FLAGS += -march=armv7-a -mfloat-abi=softfp -mfpu=neon
- endif
+Other than that the code is perfect.  I think these two changes make it solid
+enough to merge.  Thanks,
 
-> > > The differences between gnu99, gnu11, gnu1x and gnu17 are fairly
-> > > minimal and mainly impact warnings at the -Wpedantic level that the
-> > > kernel never enables. Between these, gnu11 is the newest version
-> > > that is supported by all supported compiler versions, though it is
-> > > only the default on gcc-5, while all other supported versions of
-> > > gcc or clang default to gnu1x/gnu17.
-> > >
-> > > Link: https://lore.kernel.org/lkml/CAHk-=wiyCH7xeHcmiFJ-YgXUy2Jaj7pnkdKpcovt8fYbVFW3TA@mail.gmail.com/
-> > > Link: https://github.com/ClangBuiltLinux/linux/issues/1603
-> > > Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
-> > > Cc: Masahiro Yamada <masahiroy@kernel.org>
-> > > Cc: linux-kbuild@vger.kernel.org
-> > > Cc: llvm@lists.linux.dev
-> > > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> >
-> > Acked-by: Marco Elver <elver@google.com>
-
-Cheers,
-Nathan
+Josef

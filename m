@@ -2,54 +2,54 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81F2BC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Feb 2022 17:11:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9CA6C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Feb 2022 18:38:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232084AbiB1RLm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Feb 2022 12:11:42 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58158 "EHLO
+        id S240031AbiB1SjE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Feb 2022 13:39:04 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230161AbiB1RLl (ORCPT
+        with ESMTP id S240711AbiB1Si1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Feb 2022 12:11:41 -0500
-X-Greylist: delayed 226 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 28 Feb 2022 09:11:02 PST
-Received: from condef-09.nifty.com (condef-09.nifty.com [202.248.20.74])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E03C86E0C;
-        Mon, 28 Feb 2022 09:11:01 -0800 (PST)
-Received: from conssluserg-03.nifty.com ([10.126.8.82])by condef-09.nifty.com with ESMTP id 21SH49Do003109;
-        Tue, 1 Mar 2022 02:04:09 +0900
-Received: from mail-pf1-f175.google.com (mail-pf1-f175.google.com [209.85.210.175]) (authenticated)
-        by conssluserg-03.nifty.com with ESMTP id 21SH3bcT021027;
-        Tue, 1 Mar 2022 02:03:38 +0900
-DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-03.nifty.com 21SH3bcT021027
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
-        s=dec2015msa; t=1646067818;
-        bh=sryAZLDXD/t7zVmI+J82zVk8l2yloq/oD0nvYGiN984=;
+        Mon, 28 Feb 2022 13:38:27 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87ECB403D2;
+        Mon, 28 Feb 2022 10:25:13 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 238B0614DE;
+        Mon, 28 Feb 2022 18:25:13 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 81FD1C34103;
+        Mon, 28 Feb 2022 18:25:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1646072712;
+        bh=W7p79vSB6J1+jxnozFyNib9GmWcAolUohfmSDG//bFo=;
         h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=DFAl9D3d5SV7l8OlblFtkdudyppXM87TTXLJkKaFiDrnHYA5wFLCqpf/bi6XW+/lL
-         Wxcxf4DRuPeQzgRVRD0ZLZqGJVyV92OkIiBQSKCRD0fkbmGaM77V1X8/io54DfJJE1
-         WHjVeTmICFjHCNQFMP84l0KM6p9KeusZdxBvunEoZ/3O0KaCmfcm9xJcBOxDBliQLy
-         v2hLNwthpmWXp3NyaQ3wZjDjgPQxfdr5sC/vbH+pTH2mOrDULVuZBpmLb5vfOGA989
-         Xl28AGykKx2Snuz0kqy9XcABSVfqA/+0wAkzfvVhA8SShTSlLQBtapcr4hUau+8ujK
-         GQtrmak7eUByg==
-X-Nifty-SrcIP: [209.85.210.175]
-Received: by mail-pf1-f175.google.com with SMTP id d17so11571637pfl.0;
-        Mon, 28 Feb 2022 09:03:37 -0800 (PST)
-X-Gm-Message-State: AOAM533Kduz81j7AsM7VC+DQ+9nUnmn6KGNAdT7DNcrqjsqOTNl+XNCZ
-        gEKSzMo1exb75ZkpaPM186/945eCf/hAUmmpbiA=
-X-Google-Smtp-Source: ABdhPJxISxDkNdxsVTKDDV2g7ZIxBL9oz/LlNlGrxEOGwup5cilO+xLo89K+cDWbGEDhDHUjyYzEiShtkCuCLkVGAaU=
-X-Received: by 2002:a05:6a02:182:b0:374:5a57:cbf9 with SMTP id
- bj2-20020a056a02018200b003745a57cbf9mr18072494pgb.616.1646067817034; Mon, 28
- Feb 2022 09:03:37 -0800 (PST)
+        b=bW1ZFMo50q0kPFmsangI6ntG68WPn+8ztd5psh0iHHbmPXGd2Do9g5exX/orPNmoF
+         TbileAdECwDuGZ3+humcDGlnOjlNYxeI3qAjbFLAsFhTc2LHic+YIf2ERa75osRNhn
+         Kqq71bFPRaIovWhnQvFqOiR1ebj4qUhN855gks3wvS+rvdXKdGJUNfOOen3tcmT4S7
+         zpLTE7SvQlwyFubmoSBvPJGw1f5VxlcwUT5kGQbM5VRWy3yFRzf9kbennsbklNWQnr
+         VImWf5/+PDhsYj8Ik1QLewhHGzp4RLahjjkzTll08wtY5vt0rMq16dXAFWp3Qw6QCA
+         7XcyjSwBnCISg==
+Received: by mail-wr1-f52.google.com with SMTP id x15so16815769wrg.8;
+        Mon, 28 Feb 2022 10:25:12 -0800 (PST)
+X-Gm-Message-State: AOAM533q1QV2TFZAYL7lfjx745a6mZg9ITyWxPfglJbLui3J7j+DJS6v
+        TgRBG6SrT7r7vfUmSEs2ngUI9+Q7XvTeE/2quzk=
+X-Google-Smtp-Source: ABdhPJz4fZLcu78yhCIhmUlg8wcyJThC/WAQ6UaeDqjOpOcx7YS8Qt8gbRJs54Y1simdrFMDrQr0lGIp9e5ElXVyTL0=
+X-Received: by 2002:adf:edc3:0:b0:1ec:5f11:5415 with SMTP id
+ v3-20020adfedc3000000b001ec5f115415mr14857770wro.317.1646072710661; Mon, 28
+ Feb 2022 10:25:10 -0800 (PST)
 MIME-Version: 1.0
-References: <20220228103142.3301082-1-arnd@kernel.org>
-In-Reply-To: <20220228103142.3301082-1-arnd@kernel.org>
-From:   Masahiro Yamada <masahiroy@kernel.org>
-Date:   Tue, 1 Mar 2022 02:02:53 +0900
-X-Gmail-Original-Message-ID: <CAK7LNATVs-yRX4PnURkLv3fz3gAnuzG2GxZ2gdvmJX2g+0P-_w@mail.gmail.com>
-Message-ID: <CAK7LNATVs-yRX4PnURkLv3fz3gAnuzG2GxZ2gdvmJX2g+0P-_w@mail.gmail.com>
+References: <20220228103142.3301082-1-arnd@kernel.org> <CAK7LNATVs-yRX4PnURkLv3fz3gAnuzG2GxZ2gdvmJX2g+0P-_w@mail.gmail.com>
+In-Reply-To: <CAK7LNATVs-yRX4PnURkLv3fz3gAnuzG2GxZ2gdvmJX2g+0P-_w@mail.gmail.com>
+From:   Arnd Bergmann <arnd@kernel.org>
+Date:   Mon, 28 Feb 2022 19:24:54 +0100
+X-Gmail-Original-Message-ID: <CAK8P3a2To9St5=v6EHtJ-LBEp4-NOThPmO+qYeAfnxQPm2_Keg@mail.gmail.com>
+Message-ID: <CAK8P3a2To9St5=v6EHtJ-LBEp4-NOThPmO+qYeAfnxQPm2_Keg@mail.gmail.com>
 Subject: Re: [PATCH] [v2] Kbuild: move to -std=gnu11
-To:     Arnd Bergmann <arnd@kernel.org>
+To:     Masahiro Yamada <masahiroy@kernel.org>,
+        Jani Nikula <jani.nikula@linux.intel.com>
 Cc:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
         Arnd Bergmann <arnd@arndb.de>,
         Linus Torvalds <torvalds@linux-foundation.org>,
@@ -65,71 +65,52 @@ Cc:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
         intel-gfx <intel-gfx@lists.freedesktop.org>,
         dri-devel <dri-devel@lists.freedesktop.org>,
         greybus-dev@lists.linaro.org, linux-staging@lists.linux.dev,
-        linux-btrfs@vger.kernel.org
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 28, 2022 at 7:32 PM Arnd Bergmann <arnd@kernel.org> wrote:
+On Mon, Feb 28, 2022 at 6:02 PM Masahiro Yamada <masahiroy@kernel.org> wrote:
 >
-> From: Arnd Bergmann <arnd@arndb.de>
+> On Mon, Feb 28, 2022 at 7:32 PM Arnd Bergmann <arnd@kernel.org> wrote:
+> >
+> > From: Arnd Bergmann <arnd@arndb.de>
+> >
+> > During a patch discussion, Linus brought up the option of changing
+> > the C standard version from gnu89 to gnu99, which allows using variable
+> > declaration inside of a for() loop. While the C99, C11 and later standards
+> > introduce many other features, most of these are already available in
+> > gnu89 as GNU extensions as well.
+> >
+> > An earlier attempt to do this when gcc-5 started defaulting to
+> > -std=gnu11 failed because at the time that caused warnings about
+> > designated initializers with older compilers. Now that gcc-5.1 is the
+> > minimum compiler version used for building kernels, that is no longer a
+> > concern. Similarly, the behavior of 'inline' functions changes between
+> > gnu89 and gnu11, but this was taken care of by defining 'inline' to
+> > include __attribute__((gnu_inline)) in order to allow building with
+> > clang a while ago.
+> >
+> > One minor issue that remains is an added gcc warning for shifts of
+> > negative integers when building with -Werror, which happens with the
 >
-> During a patch discussion, Linus brought up the option of changing
-> the C standard version from gnu89 to gnu99, which allows using variable
-> declaration inside of a for() loop. While the C99, C11 and later standards
-> introduce many other features, most of these are already available in
-> gnu89 as GNU extensions as well.
+> Is this a typo?
 >
-> An earlier attempt to do this when gcc-5 started defaulting to
-> -std=gnu11 failed because at the time that caused warnings about
-> designated initializers with older compilers. Now that gcc-5.1 is the
-> minimum compiler version used for building kernels, that is no longer a
-> concern. Similarly, the behavior of 'inline' functions changes between
-> gnu89 and gnu11, but this was taken care of by defining 'inline' to
-> include __attribute__((gnu_inline)) in order to allow building with
-> clang a while ago.
+>    building with -Werror, ...
+> ->
+>    building with -Wextra, ...
 >
-> One minor issue that remains is an added gcc warning for shifts of
-> negative integers when building with -Werror, which happens with the
 
-Is this a typo?
+I'm being slow today, Jani actually pointed out the same thing and I
+misunderstood him. Fixed it now, thanks!
 
-   building with -Werror, ...
-->
-   building with -Wextra, ...
+> Acked-by: Masahiro Yamada <masahiroy@kernel.org>
+>
+>
+> Please let me know if you want me to pick up this.
 
+Yes, that would be great. I'll send a v3 with the updated changelog,
+but will drop most of the Cc list as there are no functional changes.
 
-
-
-> 'make W=1' option, as well as for three drivers in the kernel that always
-> enable -Werror, but it was only observed with the i915 driver so far.
-
-Same here.
-
-   enable -Werror, but ...
-->
-  enable -Wextra, but ...
-
-
-
-
-Otherwise,
-
-Acked-by: Masahiro Yamada <masahiroy@kernel.org>
-
-
-Please let me know if you want me to pick up this.
-
-
-
-
-
-
-
-
-
---
-Best Regards
-
-Masahiro Yamada
+        Arnd

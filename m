@@ -2,241 +2,141 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 627C4C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Mar 2022 15:12:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4892C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Mar 2022 15:22:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243388AbiCBPNE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Mar 2022 10:13:04 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57420 "EHLO
+        id S236543AbiCBPXU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Mar 2022 10:23:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50498 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234428AbiCBPNE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2022 10:13:04 -0500
+        with ESMTP id S233513AbiCBPXT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Mar 2022 10:23:19 -0500
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86DEF76E33;
-        Wed,  2 Mar 2022 07:12:20 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EC18A35870;
+        Wed,  2 Mar 2022 07:22:35 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 25FC761699;
-        Wed,  2 Mar 2022 15:12:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E0C3C004E1;
-        Wed,  2 Mar 2022 15:12:18 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 8A7EB616C2;
+        Wed,  2 Mar 2022 15:22:35 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9250EC004E1;
+        Wed,  2 Mar 2022 15:22:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1646233939;
-        bh=hJQVQaF2PYtaWA92MIvPoaA71+55IiP/jxj2EBcbeYs=;
+        s=k20201202; t=1646234555;
+        bh=Xeuxs/BZ7NFTvHkkRwveR/uLBeGpkKIzubHFc6Xu+zI=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=ido3f5mO+PClCyt/eB7jdyd+QcWX8c2K2oXz6sYBPun9DPL/WDdUOIwTjmCKkssEq
-         uEpfCxsc5mD12JiN9QsI/TbMWt16GCGCnKizichCYj6dpB3MwKMQpkEJJxJfyTY0RU
-         Bg4yn7l2wHde1PjTCrxpwVjKfOeq97tH4huM9IU/DBR8bfJLRwqZ2p2Gus+zFkOnpT
-         H1hwlMMBS3/vqYTtwYy4oxjD71NGx/G3dMk55mMPggvZVurKPMpgSZtcjlAfNIc3cX
-         KAKC/KovYGSTBZHJ9cIlgbeyeDeiHR4+8t3McjqbNQvy9ZyA/PrJ5JdwdJgFy1RCVL
-         df2PM2OZnH1DQ==
-Date:   Wed, 2 Mar 2022 15:12:15 +0000
+        b=XPju/6YeNSSlOgnLOySxu53946jVcuOMsabBCKloO0RvpYIH5nN3QypujTHO/MITU
+         LuH/ADO31Mfe3NUPZr/d71QB82H+BEDSSC8iQeDC7xFmXRwKV0Ad9pxBJsZrqngvXy
+         q5fEYPTwjpRIkXcnt4Cm14j92eYQ4FR9IQYWZ9SoHO8yM0bKjU3sJOy5kdqzvd75qw
+         OYKS34cYdO6pnLzEeUxjqGYh1xt8o7HuHkHbxj5cFSqwnUNU9dn8YrJU8UFyPKMvhW
+         XMWvHNWlrhyHpKVqTMC0bGpxtuazgsfzD8IiMnqMMLT78qyHF969C/ccsb9vX0TYeC
+         Twy1OzuSeM/Og==
+Date:   Wed, 2 Mar 2022 15:22:31 +0000
 From:   Filipe Manana <fdmanana@kernel.org>
 To:     Sidong Yang <realwakka@gmail.com>
 Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
         Shinichiro Kawasaki <shinichiro.kawasaki@wdc.com>,
         "dsterba@suse.cz" <dsterba@suse.cz>
-Subject: Re: [PATCH] btrfs: add test for enable/disable quota and
+Subject: Re: [PATCH v2] btrfs: add test for enable/disable quota and
  create/destroy qgroup repeatedly
-Message-ID: <Yh+JT+jGeDJEL5Gd@debian9.Home>
-References: <20220301151930.1315-1-realwakka@gmail.com>
- <Yh9eoC1FwfNK5kXn@debian9.Home>
- <20220302134316.GA2682@realwakka>
+Message-ID: <Yh+Lt4HfHBO18Ifh@debian9.Home>
+References: <20220302140548.1150-1-realwakka@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220302134316.GA2682@realwakka>
+In-Reply-To: <20220302140548.1150-1-realwakka@gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 02, 2022 at 01:43:16PM +0000, Sidong Yang wrote:
-> On Wed, Mar 02, 2022 at 12:10:08PM +0000, Filipe Manana wrote:
+On Wed, Mar 02, 2022 at 02:05:48PM +0000, Sidong Yang wrote:
+> Test enable/disable quota and create/destroy qgroup repeatedly in
+> parallel and confirm it does not cause kernel hang. It only happens
+> in kernel staring with kernel 5.17-rc3. This is a regression test
+> for the problem reported to linux-btrfs list [1].
 > 
-> Hi, Filipe!
-> Thanks for review.
-> > On Tue, Mar 01, 2022 at 03:19:30PM +0000, Sidong Yang wrote:
-> > > Test enabling/disable quota and creating/destroying qgroup repeatedly
-> > > in asynchronous and confirm it does not cause kernel hang. This is a
-> > 
-> > in asynchronous -> in parallel
+> The hang was recreated using the test case and fixed by kernel patch
+> titled
 > 
-> Sure, Thanks!
-> > 
-> > > regression test for the problem reported to linux-btrfs list [1].
-> > 
-> > It's worth mentioning the deadlock only happens starting with kernel 5.17-rc3.
+>   btrfs: qgroup: fix deadlock between rescan worker and remove qgroup
 > 
-> It only happens in 5.17-rc3 version? I didn't know about it. I'll add
-> mention about this.
+> [1] https://lore.kernel.org/linux-btrfs/20220228014340.21309-1-realwakka@gmail.com/
+> 
+> Signed-off-by: Sidong Yang <realwakka@gmail.com>
+> ---
+> v2 : fix changelog, comments, no wait pids argument
+> ---
+>  tests/btrfs/262     | 40 ++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/262.out |  2 ++
+>  2 files changed, 42 insertions(+)
+>  create mode 100755 tests/btrfs/262
+>  create mode 100644 tests/btrfs/262.out
+> 
+> diff --git a/tests/btrfs/262 b/tests/btrfs/262
+> new file mode 100755
+> index 00000000..8953a28e
+> --- /dev/null
+> +++ b/tests/btrfs/262
+> @@ -0,0 +1,40 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2022 Sidong Yang.  All Rights Reserved.
+> +#
+> +# FS QA Test 262
+> +#
+> +# Test that running qgroup enable, create, destroy, and disable commands in
+> +# parallel doesn't result in a deadlock, a crash or any filesystem
+> +# inconsistency.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick qgroup
+> +
+> +# Import common functions.
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +
+> +_supported_fs btrfs
+> +
+> +_require_scratch
+> +
+> +_scratch_mkfs > /dev/null 2>&1
+> +_scratch_mount
+> +
+> +for ((i = 0; i < 200; i++)); do
+> +	$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT 2>> $seqres.full &
+> +	$BTRFS_UTIL_PROG qgroup create 1/0 $SCRATCH_MNT 2>> $seqres.full &
+> +	$BTRFS_UTIL_PROG qgroup destroy 1/0 $SCRATCH_MNT 2>> $seqres.full &
+> +	$BTRFS_UTIL_PROG quota disable $SCRATCH_MNT 2>> $seqres.full &
+> +done
+> +
+> +wait
+> +
+> +_scratch_unmount
 
-Well, in the kernel patch we have:
+The fstests framework will also do the unmount, so this can be removed.
+You don't need to send a new patch version just to remove that, Eryu
+can probably amend the patch when he picks it up.
 
-  Fixes: e804861bd4e6 ("btrfs: fix deadlock between quota disable and qgroup rescan worker")
+Anyway, it looks good and it works as expected.
 
-And that commit was introduced in 5.17-rc3. Maybe it deadlocked in a different
-way before that commit, perhaps in the way that e804861bd4e6 describes. However
-I haven't checked how it behaves on a kernel without that commit. But at least we
-know that currently it deadlocks at 5.17-rc3+.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-> > 
-> > > 
-> > > The hang was recreated using the test case and fixed by kernel patch
-> > > titled
-> > > 
-> > >   btrfs: qgroup: fix deadlock between rescan worker and remove qgroup
-> > > 
-> > > [1] https://lore.kernel.org/linux-btrfs/20220228014340.21309-1-realwakka@gmail.com/
-> > > 
-> > > Signed-off-by: Sidong Yang <realwakka@gmail.com>
-> > 
-> > In addition to Shinichiro's comments...
-> > 
-> > > ---
-> > >  tests/btrfs/262     | 54 +++++++++++++++++++++++++++++++++++++++++++++
-> > >  tests/btrfs/262.out |  2 ++
-> > >  2 files changed, 56 insertions(+)
-> > >  create mode 100755 tests/btrfs/262
-> > >  create mode 100644 tests/btrfs/262.out
-> > > 
-> > > diff --git a/tests/btrfs/262 b/tests/btrfs/262
-> > > new file mode 100755
-> > > index 00000000..9be380f9
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/262
-> > > @@ -0,0 +1,54 @@
-> > > +#! /bin/bash
-> > > +# SPDX-License-Identifier: GPL-2.0
-> > > +# Copyright (c) 2022 YOUR NAME HERE.  All Rights Reserved.
-> > > +#
-> > > +# FS QA Test 262
-> > > +#
-> > > +# Test the deadlock between qgroup and quota commands
-> > 
-> > The test description should be a lot more clear.
-> > 
-> > "the deadlock" is vague a gives the wrong idea we only ever had a single
-> > deadlock related to qgroups. "qgroup and quota commands" is confusing,
-> > and "qgroup" and "quota" are pretty much synonyms, and it should mention
-> > which commands.
-> > 
-> > Plus what we want to test is that we can run some qgroup operations in
-> > parallel without triggering a deadlock, crash, etc.
-> > 
-> > Perhaps something like:
-> > 
-> > """
-> > Test that running qgroup enable, create, destroy and disable commands in
-> > parallel does not result in a deadlock, a crash or any filesystem
-> > inconsistency.
-> > """
-> > 
-> Yeah, It was not clear. I found that this test is not only for checking
-> deadlock. But it checks that test runs without any problem.
+Thanks for making the test case.
+
+> +
+> +# success, all done
+> +echo "Silence is golden"
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/262.out b/tests/btrfs/262.out
+> new file mode 100644
+> index 00000000..404badc3
+> --- /dev/null
+> +++ b/tests/btrfs/262.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 262
+> +Silence is golden
+> -- 
+> 2.25.1
 > 
-> > 
-> > > +#
-> > > +. ./common/preamble
-> > > +_begin_fstest auto qgroup
-> > 
-> > Can also be added to the "quick" group. It takes 1 second in my slowest vm.
-> 
-> Okay, Thanks!
-> > 
-> > > +
-> > > +# Import common functions.
-> > > +. ./common/filter
-> > > +
-> > > +# real QA test starts here
-> > > +
-> > > +# Modify as appropriate.
-> > > +_supported_fs btrfs
-> > > +
-> > > +_require_scratch
-> > > +
-> > > +# Run command that enable/disable quota and create/destroy qgroup asynchronously
-> > 
-> > With the more clear test description above, this can go away.
-> 
-> Sure!
-> > 
-> > > +qgroup_deadlock_test()
-> > > +{
-> > > +	_scratch_mkfs > /dev/null 2>&1
-> > > +	_scratch_mount
-> > > +	echo "=== qgroup deadlock test ===" >> $seqres.full
-> > 
-> > There's no point in echoing this message to the .full file, it provides no
-> > value at all, as testing that is all that this testcase does.
-> 
-> I agree. This is pointless because it's simple test.
-> > 
-> > > +
-> > > +	pids=()
-> > > +	for ((i = 0; i < 200; i++)); do
-> > > +		$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT 2>> $seqres.full &
-> > > +		pids+=($!)
-> > > +		$BTRFS_UTIL_PROG qgroup create 1/0 $SCRATCH_MNT 2>> $seqres.full &
-> > > +		pids+=($!)
-> > > +		$BTRFS_UTIL_PROG qgroup destroy 1/0 $SCRATCH_MNT 2>> $seqres.full &
-> > > +		pids+=($!)
-> > > +		$BTRFS_UTIL_PROG quota disable $SCRATCH_MNT 2>> $seqres.full &
-> > > +		pids+=($!)		
-> > > +	done
-> > > +
-> > > +	for pid in "${pids[@]}"; do
-> > > +		wait $pid
-> > > +	done
-> > 
-> > As pointed before by Shinichiro, a simple 'wait' here is enough, no need to
-> > keep track of the PIDs.
-> 
-> Yeah, I don't have to go hard way.
-> > 
-> > > +
-> > > +	_scratch_unmount
-> > > +	_check_scratch_fs
-> > 
-> > Not needed, the fstests framework automatically runs 'btrfs check' when a test
-> > finishes. Doing this explicitly is only necessary when we need to do several
-> > mount/unmount operations and want to check the fs is fine after each unmount
-> > and before the next mount.
-> > 
-> 
-> I didn't know about that. I don't need to check manually.
-> > > +}
-> > > +
-> > > +qgroup_deadlock_test
-> > 
-> > There's no point in putting all the test code in a function, as the function
-> > is only called once.
-> 
-> Of course!
-> > 
-> > Otherwise it looks good, and the test works as advertised, it triggers a
-> > deadlock on 5.17-rc3+ kernel and passes on a patched kernel.
-> > 
-> > Thanks for converting the reproducer into a test case.
-> > 
-> 
-> Thanks for detailed review. I'll back soon with v2.
-> 
-> Thanks,
-> Sidong
-> > > +
-> > > +# success, all done
-> > > +echo "Silence is golden"
-> > > +status=0
-> > > +exit
-> > > diff --git a/tests/btrfs/262.out b/tests/btrfs/262.out
-> > > new file mode 100644
-> > > index 00000000..404badc3
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/262.out
-> > > @@ -0,0 +1,2 @@
-> > > +QA output created by 262
-> > > +Silence is golden
-> > > -- 
-> > > 2.25.1
-> > > 

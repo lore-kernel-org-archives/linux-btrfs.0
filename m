@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA563C43217
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Mar 2022 23:19:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDBDCC433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Mar 2022 23:19:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236922AbiCCXUS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Mar 2022 18:20:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56642 "EHLO
+        id S236581AbiCCXUQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Mar 2022 18:20:16 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235932AbiCCXUO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2022 18:20:14 -0500
-Received: from mail-pl1-x635.google.com (mail-pl1-x635.google.com [IPv6:2607:f8b0:4864:20::635])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E1611637DD
-        for <linux-btrfs@vger.kernel.org>; Thu,  3 Mar 2022 15:19:28 -0800 (PST)
-Received: by mail-pl1-x635.google.com with SMTP id z11so6149985pla.7
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2022 15:19:28 -0800 (PST)
+        with ESMTP id S236284AbiCCXUL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Mar 2022 18:20:11 -0500
+Received: from mail-pl1-x632.google.com (mail-pl1-x632.google.com [IPv6:2607:f8b0:4864:20::632])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 441BA14FFDA
+        for <linux-btrfs@vger.kernel.org>; Thu,  3 Mar 2022 15:19:25 -0800 (PST)
+Received: by mail-pl1-x632.google.com with SMTP id t19so2596875plr.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Mar 2022 15:19:25 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=HSocfw/j6YhN1pnIQTfafZfw9HaRlXIpVkHJDXiZ97g=;
-        b=A13m55KRV88w+eJQjqorDcUO27NEReHmBOpptlUYmxZOis1hVc2HqkGYBO0Jze+uDq
-         BM5YjQPStw5ThPx19z8lmWD1+jXoQK8+os/gdgsU7vxRfu7f64Mw5M3Nso42ANcbGXob
-         AulhB1hqC7sBDMh+BgjbGYgHIBBisLaTNDUBY0L9K14M7FEmRaqu6stQ66o8l/xx4mWF
-         L4pA3g6v981iHzy747HEsPY7yIeQmcscPa/vRSArjEYKFDGR0wCuibilbVStPgjCn3eT
-         zfeSG7dtPzoYnR2lvUrCLgbypFWwrfpOqiagdqyUPd5yrUQJX8ApKfcG4P+g1zn2GHau
-         yIQA==
+        bh=nuKFYZLg4Yh4s47S+CVL48QhHrHOvOA9fdRSW1WoeqQ=;
+        b=NPxC2aOTa3QfLU1t1LbjCsLf68388cScscn/uPuZNgvrB+KU0Adk+H7vQ43MVmEoQb
+         oNAcCvqDejftWh1res5tE7efuQDvMjtU82e9NK3Hk/+Y9hxs8cO56JOITd7NjR2mKzGH
+         9EIA1VR9oPtrXIkk21RO+V/tFLr7LYPzdmGg89J1FcreiZOw1Ayrah0oYnB/ey2I+zvT
+         5mg8Tn106hqF0pO7z30ECjvKRJ7YzgNNzyGavKFMTGRjQgnQ+tk48FAVm/Pjo+P1ACTz
+         BQvgBQU0FEB0EjiLy9VM8xIWeyldfc9rbUOQbK2tyxEMOg9v+Jnq4c2ZgJYtoo6zCMas
+         Irlg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=HSocfw/j6YhN1pnIQTfafZfw9HaRlXIpVkHJDXiZ97g=;
-        b=k1M8xLN7uDp0WvSkgn2KYAlcyMZxUrq7aZ6UgaaTKEl6MH6Ssn2iHX/OPJiF1SLYYC
-         hwBdN8oB+GrHclJpEY9W9aX3Qrc11Ov4wTir4bKhhVgZybk0jHQTXEWvsbkr2WiAKFX7
-         nVAukTxySX/nD9fh7ZJyvhEus8RgAVd01wgxCrkg7US6L45nS04Pm+sZHUrGCbbAwk7p
-         UaIEIdcGSPjhuZj+IE9vkKVKHb6KMJMXAwJCTLLi4DnKitgZwbxIs/71bM83PFPdAs5s
-         DJwH3s8EaNEbM32m6ZtGe6pjfRyVMYoLOYLUke0plMlj84PXMTQoYb7nSbJq13sKRM9M
-         pUfg==
-X-Gm-Message-State: AOAM5305BaO6c9wEDsGGQ6ocOSxYtm2+cXrU2kRf7gku2tya6RJc+1SH
-        MphcUtxNMwCuPU+nuMXaWaoCZ/u2Xe2+HA==
-X-Google-Smtp-Source: ABdhPJwC7q49CkV5T0wK2EKPRTEQ/8BZgF8/EPmQDuT7U+ze2pXAJ7IJ+yL+b09hZIQTqW5iVQZBPg==
-X-Received: by 2002:a17:902:758f:b0:14f:b5ee:cc5a with SMTP id j15-20020a170902758f00b0014fb5eecc5amr38676013pll.43.1646349567567;
-        Thu, 03 Mar 2022 15:19:27 -0800 (PST)
+        bh=nuKFYZLg4Yh4s47S+CVL48QhHrHOvOA9fdRSW1WoeqQ=;
+        b=QXnkh3HI4Kva7xUWlhQ01OZ7tIYOdUlfR1Re9EDigFTRiUWINz51j22xXFAbzD/QbF
+         X9qw8RDNVUBwFpgyIgEWGt2M0XsDCtAr4LduqubUeRdtmEyLD4nBq+jkfZfhMAtDX26W
+         CF94+akl3OryWAiZdQsBncjoVyOGeIdkx0Ck9x1hmO3hvXKrHjK/CAgIw3D/kJk7mfKG
+         pS7/18nQJTiRcX2rDFkM2Y2yc42uS636qRZ7688AaHj8VzYkfUNOzgy4N2++scmQAu6B
+         9KnlNTchbdUGk8IkbvynK+KH+F1qLwQbljziNkmWxhXnwxnyFnmuA8UaQgTwZgLv1avF
+         6B4A==
+X-Gm-Message-State: AOAM531uSF8NLaS67vOpBTggkdSB91M9kbJahOSc19605ZrpckMNG5Xl
+        63sxIZ+Ut9fGcefs/nhnLEtFxsSi/mCH3w==
+X-Google-Smtp-Source: ABdhPJy/WgLF8CgwAjyDZ2z4dGOeDal3j5vOw81OQ5BnChO7UPFM64n9WfBNzfc1LejMrj68z8+Cyw==
+X-Received: by 2002:a17:90a:fa95:b0:1bc:509f:c668 with SMTP id cu21-20020a17090afa9500b001bc509fc668mr7806084pjb.189.1646349564474;
+        Thu, 03 Mar 2022 15:19:24 -0800 (PST)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:76ce])
-        by smtp.gmail.com with ESMTPSA id x7-20020a17090a1f8700b001bf1db72189sm1103507pja.23.2022.03.03.15.19.26
+        by smtp.gmail.com with ESMTPSA id x7-20020a17090a1f8700b001bf1db72189sm1103507pja.23.2022.03.03.15.19.23
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 03 Mar 2022 15:19:27 -0800 (PST)
+        Thu, 03 Mar 2022 15:19:24 -0800 (PST)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com
-Subject: [PATCH 07/12] btrfs: remove unused mnt_userns parameter from __btrfs_set_acl
-Date:   Thu,  3 Mar 2022 15:18:57 -0800
-Message-Id: <7317dc7ab52abf02fe0e6dcddab2a8ffc7ed372d.1646348486.git.osandov@fb.com>
+Subject: [PATCH 04/12] btrfs: remove unnecessary btrfs_i_size_write(0) calls
+Date:   Thu,  3 Mar 2022 15:18:54 -0800
+Message-Id: <d5cf406f80d674848ef6a175fe3dd78cc7b26ce8.1646348486.git.osandov@fb.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1646348486.git.osandov@fb.com>
 References: <cover.1646348486.git.osandov@fb.com>
@@ -64,54 +64,36 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-Commit 4a8b34afa9c9 ("btrfs: handle ACLs on idmapped mounts") added this
-parameter but didn't use it. __btrfs_set_acl() is the low-level helper
-that writes an ACL to disk. The higher-level btrfs_set_acl() is the one
-that translates the ACL based on the user namespace.
+btrfs_new_inode() always returns an inode with i_size and disk_i_size
+set to 0 (via inode_init_always() and btrfs_alloc_inode(),
+respectively). Remove the unnecessary calls to btrfs_i_size_write() in
+btrfs_mkdir() and btrfs_create_subvol_root().
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/acl.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 0a0d0eccee4e..a6909ec9bc38 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -56,7 +56,6 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type, bool rcu)
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9c838bdd51cc..244e8d6ed5e4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6606,7 +6606,6 @@ static int btrfs_mkdir(struct user_namespace *mnt_userns, struct inode *dir,
+ 	if (err)
+ 		goto out_fail;
  
- static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
--			   struct user_namespace *mnt_userns,
- 			   struct inode *inode, struct posix_acl *acl, int type)
- {
- 	int ret, size = 0;
-@@ -123,7 +122,7 @@ int btrfs_set_acl(struct user_namespace *mnt_userns, struct inode *inode,
- 		if (ret)
- 			return ret;
- 	}
--	ret = __btrfs_set_acl(NULL, mnt_userns, inode, acl, type);
-+	ret = __btrfs_set_acl(NULL, inode, acl, type);
- 	if (ret)
- 		inode->i_mode = old_mode;
- 	return ret;
-@@ -144,14 +143,14 @@ int btrfs_init_acl(struct btrfs_trans_handle *trans,
- 		return ret;
+-	btrfs_i_size_write(BTRFS_I(inode), 0);
+ 	err = btrfs_update_inode(trans, root, BTRFS_I(inode));
+ 	if (err)
+ 		goto out_fail;
+@@ -8787,7 +8786,6 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 	inode->i_fop = &btrfs_dir_file_operations;
  
- 	if (default_acl) {
--		ret = __btrfs_set_acl(trans, &init_user_ns, inode, default_acl,
-+		ret = __btrfs_set_acl(trans, inode, default_acl,
- 				      ACL_TYPE_DEFAULT);
- 		posix_acl_release(default_acl);
- 	}
+ 	set_nlink(inode, 1);
+-	btrfs_i_size_write(BTRFS_I(inode), 0);
+ 	unlock_new_inode(inode);
  
- 	if (acl) {
- 		if (!ret)
--			ret = __btrfs_set_acl(trans, &init_user_ns, inode, acl,
-+			ret = __btrfs_set_acl(trans, inode, acl,
- 					      ACL_TYPE_ACCESS);
- 		posix_acl_release(acl);
- 	}
+ 	err = btrfs_subvol_inherit_props(trans, new_root, parent_root);
 -- 
 2.35.1
 

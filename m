@@ -2,197 +2,152 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 11A19C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 04:44:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCE5BC433F5
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 09:41:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232427AbiCFEpI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 5 Mar 2022 23:45:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43864 "EHLO
+        id S229925AbiCFJmn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 6 Mar 2022 04:42:43 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52354 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229481AbiCFEpH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2022 23:45:07 -0500
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id A3A473FDBA
-        for <linux-btrfs@vger.kernel.org>; Sat,  5 Mar 2022 20:44:15 -0800 (PST)
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-        id 2C58F23657B; Sat,  5 Mar 2022 23:44:14 -0500 (EST)
-Date:   Sat, 5 Mar 2022 23:44:14 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     ov2k <ov2k.github@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: FIDEDUPERANGE and compression
-Message-ID: <YiQ8HgWVNAnBFjVj@hungrycats.org>
-References: <CADwZqEvZQmwnY7e5LcUmgQ7EMmMx1XV-znnQMJG3D_fKtpDcdw@mail.gmail.com>
- <YhMzKeX3FvJPvtmR@hungrycats.org>
- <CADwZqEts39gdoLKCN2t18UByo_WnLmoRPCbja61wVwSt3wvuhQ@mail.gmail.com>
+        with ESMTP id S229447AbiCFJml (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Mar 2022 04:42:41 -0500
+Received: from mail02.aqueos.net (mail02.aqueos.net [94.125.164.151])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 46139443F1
+        for <linux-btrfs@vger.kernel.org>; Sun,  6 Mar 2022 01:41:49 -0800 (PST)
+Received: from localhost (localhost [127.0.0.1])
+        by mail02.aqueos.net (Postfix) with ESMTP id 3F78A682D5A;
+        Sun,  6 Mar 2022 10:41:47 +0100 (CET)
+X-Virus-Scanned: Debian amavisd-new at mail02.aqueos.net
+Received: from mail02.aqueos.net ([127.0.0.1])
+        by localhost (mail02.aqueos.net [127.0.0.1]) (amavisd-new, port 10024)
+        with LMTP id oB6TBbTzD6YC; Sun,  6 Mar 2022 10:41:46 +0100 (CET)
+Received: from [10.10.10.10] (adsl1.aqueos.com [51.68.231.211])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail02.aqueos.net (Postfix) with ESMTPSA id 8B5AA682D4E;
+        Sun,  6 Mar 2022 10:41:46 +0100 (CET)
+Message-ID: <58d38b6f-db67-e167-31c6-c74ea5f12e91@aqueos.com>
+Date:   Sun, 6 Mar 2022 10:41:45 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CADwZqEts39gdoLKCN2t18UByo_WnLmoRPCbja61wVwSt3wvuhQ@mail.gmail.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Subject: Re: how to not loose all production when one disk fail in a raid1
+ btrfs pool
+Content-Language: fr
+To:     Forza <forza@tnonline.net>, linux-btrfs@vger.kernel.org
+References: <c58f6d6d-fb95-5a6b-7028-4640ab5d1fee@aqueos.com>
+ <02cf4d4c-fcba-12dc-6636-da0d42bdb42d@tnonline.net>
+From:   Ghislain Adnet <gadnet@aqueos.com>
+Organization: AQUEOS
+In-Reply-To: <02cf4d4c-fcba-12dc-6636-da0d42bdb42d@tnonline.net>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Feb 21, 2022 at 05:31:13PM -0500, ov2k wrote:
-> It looks like btrfs coalesces adjacent uncompressed extents.  I'm not
-> sure whether this is done by FIDEDUPERANGE or FS_IOC_FIEMAP.  I think
-> the problem is that adjacent decompressed ranges (defined by #3 and
-> #4) within the same compressed block are not coalesced in a similar
-> manner.  Is there a particular reason why this isn't done, or is this
-> simply a case of nobody having done it?
+hi !
 
-It hasn't been done because FIEMAP can't produce results for compressed
-extents that aren't nonsense.  The interface can't cope with compressed
-data.
+> 
+> I do not believe that this is how it should work. Btrfs RAID1 should survive a complete device failure as well as data corruption on one device.
+> 
+> Can you explain a little more about what happened when the SSD failed?
 
-Adjacent compressed extents occur when all of the following are true:
 
-	first extent #3 (decompressed start offset) + #4 (decompressed
-	logical length) == #6 (end of decompressed extent)
+the /dev/sdb ssd disk failed in the nigth and disapeared instantly. Next morning the computer was crashed. I have lots of
 
-	second extent #3 (decompressed start offset) = 0 (beginning
-	of decompressed extent)
 
-	first extent #2 (physical start offset) + #5 (physical compressed
-	length) == second extent #2 (physical start offset)
+BTRFS error (device sda4): bdev /dev/sdb4 errs: wr 25186451, rd 5822, flush 3878537, corrupt 0, gen 0
+BTRFS error (device sda4): error writing primary super block to device 2
+BTRFS warning (device sda4): lost page write due to IO error on /dev/sdb4 (-5)
 
-FIEMAP doesn't have access to #5, so it can't evaluate that condition
-(and neither can anything that uses FIEMAP).
+but it seems i got the order wrong , the disk failed near 23h and the server crashed later in the early morning. So the raid was working for a part of the night then.
 
-Suppose you have two adjacent extents, 128K and 96K that are compressed
-to 64K and 48K respectively.  They start at physical block 10000 at
-offset 0 in the file.  Then:
 
-	Extent 1 starts at physical 10000 and ends at 10063.
-	Extent 1 starts at logical offset 0 and ends at 127.
 
-	Extent 2 starts at physical 10064 and ends at 10111.
-	Extent 2 starts at logical offset 128 and ends at 223.
+> One possible explanation for a failure is that you had mixed block groups. This means that you had some SINGLE block groups in addition to RAID1 block groups. If those are on the failed SSD, the filesystem would turn RO on a device failure.
+> 
+> Mixed block groups can happen for many reasons. You need to check your current setup with `btrfs filesystem usage /mnt/`
 
-FIEMAP reports:
+the situation after the disk replacement is below, unfortunatly i dont have the one before the sdb breakdown
 
-	extent 1 physical 10000 offset 0 length 128
-	extent 2 physical 10064 offset 128 length 48
+Overall:
+     Device size:		 796.16GiB
+     Device allocated:		  22.06GiB
+     Device unallocated:		 774.10GiB
+     Device missing:		     0.00B
+     Used:			  19.38GiB
+     Free (estimated):		 387.40GiB	(min: 387.40GiB)
+     Data ratio:			      2.00
+     Metadata ratio:		      2.00
+     Global reserve:		  25.00MiB	(used: 0.00B)
 
-How would you be able to determine from this information that these
-extents are physically adjacent and contiguous?
+Data,RAID1: Size:10.00GiB, Used:9.65GiB (96.48%)
+    /dev/sda4	  10.00GiB
+    /dev/sdb4	  10.00GiB
 
-Lets add extent 3 and 4:
+Metadata,RAID1: Size:1.00GiB, Used:43.48MiB (4.25%)
+    /dev/sda4	   1.00GiB
+    /dev/sdb4	   1.00GiB
 
-	Extent 3 starts at physical 10112 and ends at 10127.
-	Extent 3 starts at logical offset 224 and ends at 239.
+System,RAID1: Size:32.00MiB, Used:16.00KiB (0.05%)
+    /dev/sda4	  32.00MiB
+    /dev/sdb4	  32.00MiB
 
-	Extent 4 starts at physical 10128 and ends at 10127.
-	Extent 4 starts at logical offset 240 and ends at 255.
+Unallocated:
+    /dev/sda4	 387.05GiB
+    /dev/sdb4	 387.05GiB
 
-FIEMAP reports:
+----------------------
+Overall:
+     Device size:		 796.16GiB
+     Device allocated:		  22.06GiB
+     Device unallocated:		 774.10GiB
+     Device missing:		     0.00B
+     Used:			  19.38GiB
+     Free (estimated):		 387.40GiB	(min: 387.40GiB)
+     Data ratio:			      2.00
+     Metadata ratio:		      2.00
+     Global reserve:		  25.00MiB	(used: 0.00B)
 
-	extent 1 physical 10000 offset 0 length 128
-	extent 2 physical 10064 offset 128 length 48
-	extent 3 physical 10112 offset 224 length 16
-	extent 4 physical 10128 offset 240 length 16
+              Data     Metadata System
+Id Path      RAID1    RAID1    RAID1    Unallocated
+-- --------- -------- -------- -------- -----------
+  1 /dev/sda4 10.00GiB  1.00GiB 32.00MiB   402.98GiB
+  2 /dev/sdb4 10.00GiB  1.00GiB 32.00MiB   402.98GiB
+-- --------- -------- -------- -------- -----------
+    Total     10.00GiB  1.00GiB 32.00MiB   805.97GiB
+    Used       9.65GiB 43.48MiB 16.00KiB
 
-How would you be able to determine extents 1 and 4 are _not_ physically
-adjacent?
 
-> On Mon, Feb 21, 2022 at 1:37 AM Zygo Blaxell
-> <ce3g8jdj@umail.furryterror.org> wrote:
-> >
-> > On Fri, Feb 18, 2022 at 10:14:20PM -0500, ov 2k wrote:
-> > > FIDEDUPERANGE does not seem to behave as expected with compressible
-> > > data on a btrfs volume with compression enabled, at least with small
-> > > adjacent FIDEDUPERANGE requests.  I've attached a basic test case.  It
-> > > writes two short identical files and calls FIDEDUPERANGE three times,
-> > > on the thirds of the file, in order.  filefrag -v reports that the
-> > > destination file has three extents that each reference the first third
-> > > of the source file.
-> > >
-> > > To be clear, the data in the destination file remains correct.
-> > > However, the second and third FIDEDUPERANGE calls do not seem to cause
-> > > the destination file to reference the expected source extents.  I'm
-> > > not actually certain whether this is a bug in FIDEDUPERANGE or
-> > > FS_IOC_FIEMAP or something deeper within btrfs itself.
-> >
-> > FIEMAP's output cannot correctly represent btrfs compressed data.
-> > In some cases you may be able to identify logical blocks as belonging
-> > to the same underlying compressed extent, but not with enough precision
-> > to infer data content of the blocks.
-> >
-> > The physical location of a compressed byte is a two-dimensional
-> > quantity--one to identify the physical compressed extent, one to identify
-> > the byte's offset within the decompressed data.  The length is similarly
-> > two-dimensional, one for the physical size and one for the logical size.
-> > Since compressed bytes are a different size unit than uncompressed bytes,
-> > we can't add a compressed offset or length to a physical position and
-> > get a number that isn't garbage, so we can't fill in distinct values
-> > for physical location of compressed data blocks that make numerical sense.
-> >
-> > Try 'btrfs-search-metadata file' (from the python-btrfs package) for
-> > an accurate description of what's going on with the extent references.
-> > It uses TREE_SEARCH_V2 and the underlying btrfs file extent reference
-> > structure, which has the fields that FIEMAP is missing.
-> >
-> > Underneath, the compressed extent is an immutable contiguous region of
-> > storage, identified by the bytenr (virtual address) of the first byte
-> > of the storage.  Each reference to the extent in the file refers to a
-> > contiguous range of the extent's logical blocks (after decompression).
-> > The fields are, in no particular order:
-> >
-> >         1. the logical offset within the file (seek offset) where
-> >         the referenced data appears in the file
-> >
-> >         2. the extent bytenr (extent identifier for reference counting
-> >         and backref search, first physical byte of the extent)
-> >
-> >         3. the logical length of the referenced data (the portion
-> >         of the compressed data referenced at this offset in the file)
-> >
-> >         4. the logical offset within the extent where the referenced
-> >         data begins (after decompressing the extent, where to start
-> >         reading the data in memory)
-> >
-> >         5. the physical (compressed) length of the complete extent data
-> >         (how many bytes are used in physical storage)
-> >
-> >         6. the logical (decompressed) length of the complete extent data
-> >         (how much RAM is required to decompress the extent)
-> >
-> > Only the first three of these fields are available via FIEMAP.  FIEMAP
-> > provides only one length field, so it can't handle compressed extents
-> > which have two distinct lengths.  FIEMAP provides only one integer for
-> > physical position, so it can't handle references to blocks that are
-> > not the first block in a compressed extent.
-> >
-> > TREE_SEARCH_V2 provides all six fields, so you can get accurate logical or
-> > physical extent boundary information as needed.
-> >
-> > In simple write() cases, the offset fields are zero, so FIEMAP appears to
-> > work at first:
-> >
-> >         1. seek offset is some number, FIEMAP returns that number
-> >
-> >         2. extent bytenr is the FIEMAP physical start of extent
-> >
-> >         3. logical length of the referenced data (#3) is the same as
-> >         the logical decompressed length (#6).  FIEMAP gives #3.
-> >         This value will change if the extent is partially overwritten
-> >         in the file.
-> >
-> >         4. logical offset within the extent is 0, since the extent
-> >         was created for exactly this file data reference
-> >
-> >         5. physical length of the compressed extent isn't reported in
-> >         FIEMAP.  Tools like 'filefrag -v' which try to compute extent
-> >         boundary adjacency won't work--they will use the length in #3
-> >         when they should use field #2 + #5 to compute physical extent
-> >         end boundaries.
-> >
-> >         6. logical length of the compressed extent is the same as #3.
-> >         This value never changes until the extent is destroyed.
-> >
-> > In the test case, FIEMAP reports the same number at #2 for all extents
-> > since the same physical extent is referenced, but the referenced data
-> > location is actually a function of fields #2 and #4.  The second and
-> > third extents have non-zero offsets for #4, and the length at #3 becomes
-> > different from the length at #6, making any computed values based on
-> > these fields nonsense.
+you think that before the disk was with some part on single disk and when this part was hit the system crashed ?
+
+
+> 
+> Running in degraded mode is not recommended. It can also lead to mixed block groups as I mentioned above.
+
+ok that's what i saw on various post on the net. thanks !
+> 
+>>
+>>    Is there a way to make Btrfs function like all other raid system or is it a special case   ?
+>>
+> 
+> Can you elaborate a little on what you mean here?
+> 
+>>
+>> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
+>>
+> 
+> The Btrfs wiki does not mention that you should check the chunk allocation for SINGLE block groups after replacing a disk. This is important or you may not actually have full redundancy even after replacing a disk. I wrote about that over at https://wiki.tnonline.net/w/Btrfs/Replacing_a_disk#Restoring_redundancy_after_a_replaced_disk
+
+after that incident i did some googling and there was some articles that included information about raid would not work again until you mount system in degraded mode and with my experience in this incident  it seemed to me that the behavior was to fail and wait for replacement.
+also all the 'tutorial' i found speak about restarting things and mounting in degraded mode also.
+well seems there was somethign else in play here.
+
+Thanks for your help it made me realise i reverted some event in the logs in the urge to get back on foot.
+
+-- 
+cordialement,
+Ghislain
+

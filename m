@@ -2,21 +2,21 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40512C433FE
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52A42C433F5
 	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 18:15:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232029AbiCFSQr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Mar 2022 13:16:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47944 "EHLO
+        id S232319AbiCFSQs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 6 Mar 2022 13:16:48 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47950 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229818AbiCFSQq (ORCPT
+        with ESMTP id S231402AbiCFSQq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Mar 2022 13:16:46 -0500
 Received: from smtp.tiscali.it (michael.mail.tiscali.it [213.205.33.246])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 5B94065D0C
-        for <linux-btrfs@vger.kernel.org>; Sun,  6 Mar 2022 10:15:53 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 6A5B865D19
+        for <linux-btrfs@vger.kernel.org>; Sun,  6 Mar 2022 10:15:54 -0800 (PST)
 Received: from venice.bhome ([78.12.27.75])
         by michael.mail.tiscali.it with 
-        id 36El2700C1dDdji016EoHv; Sun, 06 Mar 2022 18:14:48 +0000
+        id 36El2700C1dDdji016EnH3; Sun, 06 Mar 2022 18:14:47 +0000
 x-auth-user: kreijack@tiscali.it
 From:   Goffredo Baroncelli <kreijack@tiscali.it>
 To:     linux-btrfs@vger.kernel.org
@@ -26,9 +26,9 @@ Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
         Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 3/5] btrfs: change the device allocation_hint property via sysfs
-Date:   Sun,  6 Mar 2022 19:14:41 +0100
-Message-Id: <7c56077a080b9ab77d1a722cb3bdde50e83895c4.1646589622.git.kreijack@inwind.it>
+Subject: [PATCH 1/5] btrfs: add flags to give an hint to the chunk allocator
+Date:   Sun,  6 Mar 2022 19:14:39 +0100
+Message-Id: <b15072e61eac46aa9f61317c59219713a01ff897.1646589622.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1646589622.git.kreijack@inwind.it>
 References: <cover.1646589622.git.kreijack@inwind.it>
@@ -36,144 +36,61 @@ Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1646590488; bh=QEcrKhcmRlCqQhsUfRiL4nKoOngJPihtP7ZVa+dX7+o=;
+        t=1646590488; bh=k4fStNXRZTOhSgYE1Jym6cSH926IWoozudV13F4pQj0=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:Reply-To;
-        b=VT4CkhblbbmupjVtL7Xhukl3E2p35rhUk1IFTCEiLEKoNPMUqdp1V347uZt1JOPyz
-         coYNoZ1e8ujTF70bvFFZ3KSvLaDasAOJu4tdP9PEG6LS7EoSUJHvQ4XBxKtZPfy18D
-         I/oshhaH4PecV0cJ71wGVN8SY4SiqKnVZg1beeU4=
+        b=tl27NA84w7V+AUpaRa44HkFCUUSo444kkJg8T8bmK13wOUBaKpc1W/BEp55TJ+L/3
+         YY+0qRPwfnjxUBzVnOiGwx2zJ3jZsinmBOCzjPW3mrWQszzKTtvetdtnpS5hJWBS0v
+         eWXC1nu80gKQ+5XbYy/HL046TvvePLOlo9EUyRGg=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-This patch allow to change the allocation_hint property writing
-a numerical value in the file.
+Add the following flags to give an hint about which chunk should be
+allocated in which disk:
 
-/sysfs/fs/btrfs/<UUID>/devinfo/<devid>/allocation_hint
-
-To update this field it is added the property "allocation_hint" in
-btrfs-prog too.
+- BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED
+  preferred for data chunk, but metadata chunk allowed
+- BTRFS_DEV_ALLOCATION_HINT_METADATA_PREFERRED
+  preferred for metadata chunk, but data chunk allowed
+- BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY
+  only metadata chunk allowed
+- BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY
+  only data chunk allowed
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- fs/btrfs/sysfs.c   | 76 +++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.c |  2 +-
- fs/btrfs/volumes.h |  2 ++
- 3 files changed, 78 insertions(+), 2 deletions(-)
+ include/uapi/linux/btrfs_tree.h | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 59d92a385a96..c6723456c0e1 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1606,7 +1606,81 @@ static ssize_t btrfs_devinfo_allocation_hint_show(struct kobject *kobj,
- 	}
- 	return scnprintf(buf, PAGE_SIZE, "<UNKNOWN>\n");
- }
--BTRFS_ATTR(devid, allocation_hint, btrfs_devinfo_allocation_hint_show);
-+
-+static ssize_t btrfs_devinfo_allocation_hint_store(struct kobject *kobj,
-+				 struct kobj_attribute *a,
-+				 const char *buf, size_t len)
-+{
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_root *root;
-+	struct btrfs_device *device;
-+	int ret;
-+	struct btrfs_trans_handle *trans;
-+	int i, l;
-+	u64 type, prev_type;
-+
-+	if (len < 1)
-+		return -EINVAL;
-+
-+	/* remove trailing newline */
-+	l = len;
-+	if (buf[len-1] == '\n')
-+		l--;
-+
-+	for (i = 0 ; i < ARRAY_SIZE(allocation_hint_name) ; i++) {
-+		if (l != strlen(allocation_hint_name[i].name))
-+			continue;
-+
-+		if (strncasecmp(allocation_hint_name[i].name, buf, l))
-+			continue;
-+
-+		type = allocation_hint_name[i].value;
-+		break;
-+	}
-+
-+	if (i >= ARRAY_SIZE(allocation_hint_name))
-+		return -EINVAL;
-+
-+	device = container_of(kobj, struct btrfs_device, devid_kobj);
-+	fs_info = device->fs_info;
-+	if (!fs_info)
-+		return -EPERM;
-+
-+	root = fs_info->chunk_root;
-+	if (sb_rdonly(fs_info->sb))
-+		return -EROFS;
-+
-+	/* check if a change is really needed */
-+	if ((device->type & BTRFS_DEV_ALLOCATION_HINT_MASK) == type)
-+		return len;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans))
-+		return PTR_ERR(trans);
-+
-+	prev_type = device->type;
-+	device->type = (device->type & ~BTRFS_DEV_ALLOCATION_HINT_MASK) | type;
-+
-+	ret = btrfs_update_device(trans, device);
-+
-+	if (ret < 0) {
-+		btrfs_abort_transaction(trans, ret);
-+		btrfs_end_transaction(trans);
-+		goto abort;
-+	}
-+
-+	ret = btrfs_commit_transaction(trans);
-+	if (ret < 0)
-+		goto abort;
-+
-+	return len;
-+abort:
-+	device->type = prev_type;
-+	return  ret;
-+}
-+BTRFS_ATTR_RW(devid, allocation_hint, btrfs_devinfo_allocation_hint_show,
-+				      btrfs_devinfo_allocation_hint_store);
-+
+diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+index b069752a8ecf..e0d842c2e616 100644
+--- a/include/uapi/linux/btrfs_tree.h
++++ b/include/uapi/linux/btrfs_tree.h
+@@ -389,6 +389,22 @@ struct btrfs_key {
+ 	__u64 offset;
+ } __attribute__ ((__packed__));
  
- /*
-  * Information about one device.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5e3e13d4940b..d4ac90f5c949 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2846,7 +2846,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	return ret;
- }
- 
--static noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
-+noinline int btrfs_update_device(struct btrfs_trans_handle *trans,
- 					struct btrfs_device *device)
- {
- 	int ret;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index bd297f23d19e..93ac27d8097c 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -636,5 +636,7 @@ int btrfs_bg_type_to_factor(u64 flags);
- const char *btrfs_bg_type_to_raid_name(u64 flags);
- int btrfs_verify_dev_extents(struct btrfs_fs_info *fs_info);
- bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical);
-+int btrfs_update_device(struct btrfs_trans_handle *trans,
-+			struct btrfs_device *device);
- 
- #endif
++/* dev_item.type */
++
++/* btrfs chunk allocation hint */
++#define BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT	2
++/* btrfs chunk allocation hint mask */
++#define BTRFS_DEV_ALLOCATION_HINT_MASK	\
++	((1 << BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT) - 1)
++/* preferred data chunk, but metadata chunk allowed */
++#define BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED	(0ULL)
++/* preferred metadata chunk, but data chunk allowed */
++#define BTRFS_DEV_ALLOCATION_HINT_METADATA_PREFERRED	(1ULL)
++/* only metadata chunk are allowed */
++#define BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY		(2ULL)
++/* only data chunk allowed */
++#define BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY		(3ULL)
++
+ struct btrfs_dev_item {
+ 	/* the internal btrfs device id */
+ 	__le64 devid;
 -- 
 2.35.1
 

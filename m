@@ -2,99 +2,96 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 08032C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 01:47:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 139C1C433EF
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 03:12:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232202AbiCFBsY convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 5 Mar 2022 20:48:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55672 "EHLO
+        id S230329AbiCFDN2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 5 Mar 2022 22:13:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44458 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229745AbiCFBsX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2022 20:48:23 -0500
-Received: from beige.elm.relay.mailchannels.net (beige.elm.relay.mailchannels.net [23.83.212.16])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1B29D7F
-        for <linux-btrfs@vger.kernel.org>; Sat,  5 Mar 2022 17:47:31 -0800 (PST)
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-        by relay.mailchannels.net (Postfix) with ESMTP id 634C9120D6A;
-        Sun,  6 Mar 2022 01:38:57 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-        (Authenticated sender: instrampxe0y3a)
-        by relay.mailchannels.net (Postfix) with ESMTPA id 4260C120C7D;
-        Sun,  6 Mar 2022 01:38:56 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1646530736; a=rsa-sha256;
-        cv=none;
-        b=h5ImEbs11DEIsDPr2/9PKvxknktp47Lk12rx03ThVfCPCCWtFk66x8fjbgyA5QJUZbkIcV
-        fxA5ki54n9rcXZNNlHhCEofD3puHF7fqpnB+VjQ7rjEQrTWk6qwASW03nuXf6N1YcowcE+
-        fys4ZqFsqdKVcq/0SRshIlPMGenWeVtUDUfCUzVnbWlISf0gsSoxFtiDx+uJleRTmR0YCP
-        edNOH+pa83KaoNx72/CAQANHcPM81L7O1pM8t9Tbzc+I3Fk11iKy4knoDqCu8Dx1R0fKl1
-        /HwMLhVGyqiIucCxdnkCnndD03zF3Js+Rw6aseTsDBSSEIv612bg4rddL388qg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-        s=arc-2022; t=1646530736;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=nwfkOGzYjJcjZm7HUhB99Rm/t7rw47dYlRSgaVl4s8o=;
-        b=meE/wCfQK4MSP+N5O6AuMqTG6vSLWuhUvjXFPWRAk69DUqPjpuGJRfTkC+Z9Zpec5jVmKZ
-        x+kLI3KsBh+p3tT+hZ62+G/MIVXYdPM9WFStVpQK7EbRHENKdx7Mk2LvrZkvIZz7t0+hz8
-        QnmM80DRPhTf7P6dPX265GXtekfKkyKBm7y3JW7cAa0/cFyNMnT4+7Pgkt+D0f9PZFvnRa
-        Zpcpb7kHF8J0IpEr6YGTIn65icG2dgTZfNtUhUvWyHP3QQa6bn006eJIsmJsYUN051hIKy
-        8if8hOQTsGsvc2y6i3cKyrotCkVxgMaNDdguyTShlnpuWCu0itzWlJm0hYRdsQ==
-ARC-Authentication-Results: i=1;
-        rspamd-56df6fd94d-rx8xk;
-        auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-        by 100.124.238.84 (trex/6.5.3);
-        Sun, 06 Mar 2022 01:38:57 +0000
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Spot-Shelf: 72acedec5d837842_1646530736908_423060553
-X-MC-Loop-Signature: 1646530736908:915787044
-X-MC-Ingress-Time: 1646530736908
-Received: from p3e9c2960.dip0.t-ipconnect.de ([62.156.41.96]:59388 helo=heisenberg.scientia.net)
-        by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94.2)
-        (envelope-from <calestyo@scientia.org>)
-        id 1nQfrI-00069y-UO; Sun, 06 Mar 2022 01:38:54 +0000
-Message-ID: <3d8e6c6a2bd08164835b6aa3bf6d4d1d9ed9e5df.camel@scientia.org>
-Subject: Re: status page status - dedupe
-From:   Christoph Anton Mitterer <calestyo@scientia.org>
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+        with ESMTP id S232752AbiCFDN0 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Mar 2022 22:13:26 -0500
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 857C96395
+        for <linux-btrfs@vger.kernel.org>; Sat,  5 Mar 2022 19:12:34 -0800 (PST)
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+        id 856B8236292; Sat,  5 Mar 2022 22:12:33 -0500 (EST)
+Date:   Sat, 5 Mar 2022 22:12:33 -0500
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Andy Smith <andy@strugglers.net>
 Cc:     linux-btrfs@vger.kernel.org
-Date:   Sun, 06 Mar 2022 02:38:48 +0100
-In-Reply-To: <YiP5l4Rq9AOuiIKt@hungrycats.org>
+Subject: Re: status page status - dedupe
+Message-ID: <YiQmoUnd4jSSdCNt@hungrycats.org>
 References: <c16169c5b971fe5dee1e50e07e2c7bb8d2bface4.camel@scientia.org>
-         <YiP5l4Rq9AOuiIKt@hungrycats.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.43.2-2 
+ <YiP5l4Rq9AOuiIKt@hungrycats.org>
+ <20220306010011.m66pgmvpvetnthok@bitfolk.com>
 MIME-Version: 1.0
-X-OutGoing-Spam-Status: No, score=-1.0
-X-AuthUser: calestyo@scientia.org
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220306010011.m66pgmvpvetnthok@bitfolk.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Thanks for that elaborate description (and thanks to Qu, too).
+On Sun, Mar 06, 2022 at 01:00:11AM +0000, Andy Smith wrote:
+> Hello,
+> 
+> On Sat, Mar 05, 2022 at 07:00:23PM -0500, Zygo Blaxell wrote:
+> > bees, duperemove, btrfs-dedupe, and solstice use the safe dedupe ioctl,
+> > and provide no option to do otherwise.
+> 
+> Is there some issue with combining offline dedupe and compression in
+> that it undoes all the benefits of the compression? I'm sorry, I
+> don't know the details and may have got the wrong impression but I
+> thought I had read here recently that there was negative interaction
+> here still.
 
-I think that might be be a good addition to
-https://btrfs.wiki.kernel.org/index.php/Deduplication
+It's more like the other way around:  compression makes some deduplication
+tools ineffective.  To perform well, a deduper must have specific
+support for btrfs and compression in order to issue dedupe requests
+that will remove complete extents and recover free disk space, and it
+must not use optimizations that are incompatible with compression.
+Without this support, the deduper may fail to detect duplicates and
+not have very much impact on total space usage for compressed extents.
 
+All current btrfs dedupe tools choose to keep one duplicate data copy
+arbitrarily, without considering the size of the encoding.  So if you have
+a compressed file, and make an uncompressed copy, about half of the time
+the dedupe tool will replace the compressed copy with the uncompressed
+one, when ideally it would measure the size of both and always keep the
+smallest version of the data.
 
-Also:
+bees has limited support for compressed data.  It will avoid shortening
+compressed data blocks when this would result in a larger overall
+encoding, and it will compress new data extents created by splitting
+uncompressed extents.  bees can match compressed and uncompressed copies
+of duplicate data.  It uses a variable block size with a small lower bound
+for a better hit rate on shorter compressed extents.  bees outperforms
+everything else on final data size with compression.
 
-On Sat, 2022-03-05 at 19:00 -0500, Zygo Blaxell wrote:
-> jdupes can use the safe dedupe ioctl (-B) or very unsafe hardlinks (-
-> H).
+duperemove blindly issues dedupe requests without regard for extent
+boundaries or compression.  Compressed data has shorter extents, so it
+tends to help duperemove achieve space savings in more cases, but it's
+difficult to predict the more or less random effect on the total data
+size.  Compression sometimes improves duperemove hit rate, but sometimes
+reduces it.  duperemove can match compressed data with uncompressed data.
 
-I guess you mean -L ?!
+jdupes gives the same dedupe hit rate for compressed and uncompressed
+data since jdupes only handles whole-file duplicates (this also applies
+to duperemove in fdupes-compatibility mode).  A whole-file deduplicator
+will completely replace all extents in the duplicate files, which avoids
+many compression-related issues.  jdupes can match compressed data with
+uncompressed data (or any mixture of these in each file).
 
-Thanks,
-Chris.
+dduper and solstice use btrfs data csums exclusively to find duplicate
+blocks.  Compressed data csums in btrfs are computed on the on-disk
+encoding of the data, meaning that they are the csums of the data
+_after_ compression for compressed blocks.  The csums cannot be used to
+deduplicate data blocks that are uncompressed, that are compressed with
+a different algorithm or level, or appear at a different position within
+an extent.  These tools cannot match compressed and uncompressed copies
+of the same data, and will get very low (often near zero) hit rates on
+compressed data.
+
+> Thanks,
+> Andy

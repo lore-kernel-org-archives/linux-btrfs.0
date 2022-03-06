@@ -2,21 +2,21 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 978A8C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 18:18:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98B92C433F5
+	for <linux-btrfs@archiver.kernel.org>; Sun,  6 Mar 2022 18:23:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232838AbiCFSTR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 6 Mar 2022 13:19:17 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51762 "EHLO
+        id S232846AbiCFSXy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 6 Mar 2022 13:23:54 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34890 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232629AbiCFSTQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Mar 2022 13:19:16 -0500
+        with ESMTP id S230078AbiCFSXx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Mar 2022 13:23:53 -0500
 Received: from smtp.tiscali.it (michael.mail.tiscali.it [213.205.33.246])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 90938338BA
-        for <linux-btrfs@vger.kernel.org>; Sun,  6 Mar 2022 10:18:21 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 67380E0A9
+        for <linux-btrfs@vger.kernel.org>; Sun,  6 Mar 2022 10:22:56 -0800 (PST)
 Received: from venice.bhome ([78.12.27.75])
         by michael.mail.tiscali.it with 
-        id 36JL2700F1dDdji016JLcG; Sun, 06 Mar 2022 18:18:20 +0000
+        id 36Nv2700b1dDdji016Nv61; Sun, 06 Mar 2022 18:22:56 +0000
 x-auth-user: kreijack@tiscali.it
 From:   Goffredo Baroncelli <kreijack@tiscali.it>
 To:     linux-btrfs@vger.kernel.org
@@ -26,24 +26,63 @@ Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
         Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH] Add tests for allocation_hint
-Date:   Sun,  6 Mar 2022 19:18:18 +0100
-Message-Id: <2ba77fb2dad1732e20d03ce5009f37af557dc4c8.1646590673.git.kreijack@inwind.it>
+Subject: [PATCH][REPOST][V12] xfstest: add tests for allocation_hint
+Date:   Sun,  6 Mar 2022 19:22:53 +0100
+Message-Id: <2ba77fb2dad1732e20d03ce5009f37af557dc4c8.1646590740.git.kreijack@inwind.it>
 X-Mailer: git-send-email 2.35.1
 Reply-To: Goffredo Baroncelli <kreijack@libero.it>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tiscali.it; s=smtp;
-        t=1646590700; bh=U28iFRZFBVoVv5Dk03UiiZ+Ws5lu7AjVd61OrXcoTVo=;
+        t=1646590976; bh=OfOqmQysFliGDfW8aAdkJloG32+UsnLEN7ROW2hP4Nc=;
         h=From:To:Cc:Subject:Date:Reply-To;
-        b=esrcoQJaB55+vT4EeMWvR00gN8j99CfBALzl9FGHJTWRlUgLoKceZ7AxUQ/nvOSbk
-         c5qYOb3QNNrWxFYFYMCo2a4sRXACSN5Bi+wKNs3gCdwrbtYitSInyeMuNCv4D8TCpJ
-         LyrmiOZODho1ghlj3HLVjHxjfujZPdLJGSp+QWvs=
+        b=maH6vsU7fJvIVPSWofEk8No9WgPTH/RjGB2pkyE0GN62bAGO9exzGmKvozmuN74Of
+         wV6yuwHvdm4Chsbo22+OI92wy8GXOE8AnPdrsXs1473Cr80HgJTvtF/9NTRmcKolnB
+         lYfzyPthcMjymGO742kghBBQFrBWDHBIaGH6ZcDI=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
+
+[I repost this patch because in the previous attempt I forgot
+the comment]
+
+Hi All,
+
+the enclosed patch adds tests to the xfstest suite to check the
+btrfs allocation_hint property.
+
+Each test creates file and fills the different disks, up to
+trigger a new BG data (or metadata) allocation. Then the
+test checks if the allocation if the new BG is perfomed
+in the new disk.
+
+Because we need to fill an entire disk, the tests are performed
+on some device-mapper slices of $SCRATCH_DEV. The slices have
+a length of 1GB (512MB for test 269/270)
+
+This is my first xfstest patches, so I expected to do a lot
+of error :-); a deeply review is appreciated.
+
+Test 269 and 270 are quite long (about 5-8 minutes on my virtual
+machine with sync disabled). This because I need to fill a 512MB
+disk of metadata. The only way to do that is to fill the disk with
+a lot of 2k size files. This is very slow. If someone has a better
+way to do that, it is very appreciated.
+
+I added a V12 tag because the allocation_hint patch set is in
+the 12th revision.
+
+Changelog:
+- V12:
+Rebase to the latest version of xfstest suite (renamed the tests from
+255...264 to 262..271)
+- V10:
+First issue
+
+BR
+G.Baroncelli
 
 ---
  common/btrfs        |  87 ++++++++++++++++++++++++

@@ -2,56 +2,56 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FC4BC433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Mar 2022 22:11:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9896C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Mar 2022 22:11:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242265AbiCGWMH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Mar 2022 17:12:07 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45798 "EHLO
+        id S242939AbiCGWMJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Mar 2022 17:12:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45838 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242123AbiCGWMG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2022 17:12:06 -0500
-Received: from mail-qt1-x82b.google.com (mail-qt1-x82b.google.com [IPv6:2607:f8b0:4864:20::82b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C8D47A9B9
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2022 14:11:11 -0800 (PST)
-Received: by mail-qt1-x82b.google.com with SMTP id w1so14594095qtj.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2022 14:11:11 -0800 (PST)
+        with ESMTP id S242390AbiCGWMJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2022 17:12:09 -0500
+Received: from mail-qv1-xf29.google.com (mail-qv1-xf29.google.com [IPv6:2607:f8b0:4864:20::f29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D55F75C29
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2022 14:11:14 -0800 (PST)
+Received: by mail-qv1-xf29.google.com with SMTP id eq14so7267239qvb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2022 14:11:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=mzqMH+jtMMCgbFgWVMl0xNao/EKzSBpfVXRq6fKQlBQ=;
-        b=h5Of31d9hyYRvYtcCIKauWHNq49RbKHruKoG7r30o1BPfAV3XKM6sdnfyxvbSYcmj+
-         s06cTiKbvU0EgrVzmjYkh48qfKVij2toxKPXoBJ2G1XrxYhyEplQ3GrJeqkADpNES8lT
-         2p0CGjL26e1/y69KF89WIUju1Nt0gi/mqXFuYLAhBC0y9epg2F51dl7YlaJuJb7m0eop
-         ITs3mhDKxqV0sXWkRZZy4nhHEGTsVZVZecBtGHPwm6UmI9KCEpJQUhPUNBXJWKQVX6xO
-         RSU91FP0aqicE0/mgxnnU9n8EBxtDfj/CR4P+YfRWAot+bzyBxTaNQoDgX7K2PGek8xN
-         cjdQ==
+        bh=zzGoFbPaHjYxOdEvMNYA2KUeGYoOWZmWRW9btUenLJA=;
+        b=zly32dmB6/sExS4Kh0tV/7t/BAcbKTTdvnoZQF3Pto8yd6ydF/QE5qIiGRW/jdbbSr
+         q4VHqdIZDjEMzD/v0pQcs5OpUugZnwkh9ZLQBE4Dm5LPt57Kz1JnCEq5M3+b7TVznxhZ
+         40ZUwnIvMp/pTjTsLyprDWUn1+g5cQKTr9I2kAs2F5HO95o8MycLc12umC8an8onAY5t
+         u2WvkBCYFf/792BfmtyRRFt0C3qMYssZTfwjPEBAtUrCxt6PJwhpw38eyOIiuAIH3uVR
+         3ub0wrpu6XEZy8Vt0Zi3ImiVrDxignVFZ6c/Xnhm3k2QWND6o5I3vzW91amfSaRBu56w
+         l77w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=mzqMH+jtMMCgbFgWVMl0xNao/EKzSBpfVXRq6fKQlBQ=;
-        b=SVuhQMti/hF3bc0l6E+tXpinGq1MnKdmUMu3hGkUK7otdtdWHkMaNuKYr23e4aub8v
-         L5J7uhj3Gp1Ge82syHLJ9cUmtY6ow1DnGENcaqm+ThW3+P4S/m9+NDnZieb3rh8JJ6Jx
-         XAuGRD52wvs9b0Z1TrMiRn4MM5v7jv457k9tVXdGVss9oc8fQuqt232RgJx71dUkAsO5
-         ukM6syDrgHJo1KvAE9dZaIg9vrWOjuaoXmklF3PYAB895Q24RmzcqLVRzx3LvdBVmS2K
-         zGjpEOfHXLvCs1k0q3LXXASB7WEH9BUeEhpOS53TFiCGUeKXMOhEOR2+TJAulXWVbK+t
-         Rd4Q==
-X-Gm-Message-State: AOAM533c+916XdyD2JQ4Jfd0DJurBmUbe8JdtovanCUd+vn4pDoj0MU7
-        knRRh8Sl7lEkQwO0UKxnZm2m2FV/5nwXuTFD
-X-Google-Smtp-Source: ABdhPJx6M6vz0WxaAv4g8HoTovQQRlcSKaZAc53hZb4pc2N/NChRW5c7stErwuirFCYno0QT02fayw==
-X-Received: by 2002:ac8:4e46:0:b0:2cf:942e:518c with SMTP id e6-20020ac84e46000000b002cf942e518cmr11067603qtw.68.1646691070093;
-        Mon, 07 Mar 2022 14:11:10 -0800 (PST)
+        bh=zzGoFbPaHjYxOdEvMNYA2KUeGYoOWZmWRW9btUenLJA=;
+        b=ZVDTqCNewEE/9UMhKirAj2hy/fwjYzzxAHHezhYgJSDeuRj40PiAPUeKIh7u/QhSdp
+         +UYEVhFYiiDxGni5aWEaP17QgqzF3cTHvG+gK36eXWLmsNJd/DRbvPlO+OUFCyiAskqz
+         M3cPvU8dc6VkTVdtfHbxK5KMIGwmxd1hlZOpEWfYnw0Kg3MLxDNhqK6bY8V/kc+Qm8hr
+         qmot/7o3zqAYyCy/0kn4HF9zhVzuH9tnC84uEID0YZNV11dLQqsEL9yZQ0k/kyiyD0Ot
+         kAnYQZfDVmR9lPxFpioUYgRCyltvykfyJCuMjRByTRefZqCV8fus0jbI+WTPp0Y8RIrx
+         UO6g==
+X-Gm-Message-State: AOAM5317THGKsAM1KwtPBesrCgWBcdrQoe4Oo35A3JUOlqc/Scxp4aoy
+        vxPJoh5pFtmkyw9QflCfGcPQquWijNWSkFKd
+X-Google-Smtp-Source: ABdhPJwdybtaE1RNAZd6cp1XcAiMeXUNCDlTlz/56coSyGXGC4psNVpY0ILhYuKoL7pxfjGrH8q3sQ==
+X-Received: by 2002:ad4:596b:0:b0:434:ea08:d2ee with SMTP id eq11-20020ad4596b000000b00434ea08d2eemr10148038qvb.24.1646691073110;
+        Mon, 07 Mar 2022 14:11:13 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id e9-20020a05620a014900b005084ce66b44sm6698565qkn.88.2022.03.07.14.11.09
+        by smtp.gmail.com with ESMTPSA id u13-20020a05622a14cd00b002d5e213eb93sm9122178qtx.14.2022.03.07.14.11.12
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Mar 2022 14:11:09 -0800 (PST)
+        Mon, 07 Mar 2022 14:11:12 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v5 03/19] btrfs-progs: mkfs: use the btrfs_block_group_root helper
-Date:   Mon,  7 Mar 2022 17:10:48 -0500
-Message-Id: <a15778e772e1f68d9be9d232c6a79b383ab38735.1646690972.git.josef@toxicpanda.com>
+Subject: [PATCH v5 05/19] btrfs-progs: handle no bg item in extent tree for free space tree
+Date:   Mon,  7 Mar 2022 17:10:50 -0500
+Message-Id: <29f7e7eee16caf0cd4295436ec8a96bed29fb264.1646690972.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1646690972.git.josef@toxicpanda.com>
 References: <cover.1646690972.git.josef@toxicpanda.com>
@@ -61,58 +61,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Instead of accessing the extent root directory for modifying block
-groups, use the helper which will do the correct thing based on the
-flags of the file system.
+We have an ASSERT(ret == 0) when populating the free space tree as we
+should at least find the block group item with extent tree v1.  However
+with v2 we no longer have the block group item in the extent tree, so
+fix the population logic to handle an empty block group (which occurs
+during mkfs) and only assert if ret != 0 and we don't have extent tree
+v2 turned on.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/main.c | 4 ++--
- mkfs/main.c  | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ kernel-shared/free-space-tree.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 39cb1ce5..6ddfd18a 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -9426,6 +9426,7 @@ static int reinit_global_roots(struct btrfs_trans_handle *trans, u64 objectid)
+diff --git a/kernel-shared/free-space-tree.c b/kernel-shared/free-space-tree.c
+index 0fdf5004..896bd3a2 100644
+--- a/kernel-shared/free-space-tree.c
++++ b/kernel-shared/free-space-tree.c
+@@ -1057,6 +1057,9 @@ int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 	if (ret)
+ 		goto out;
  
- static int reinit_extent_tree(struct btrfs_trans_handle *trans, bool pin)
- {
-+	struct btrfs_root *bg_root = btrfs_block_group_root(trans->fs_info);
- 	u64 start = 0;
- 	int ret;
++	start = block_group->start;
++	end = block_group->start + block_group->length;
++
+ 	/*
+ 	 * Iterate through all of the extent and metadata items in this block
+ 	 * group, adding the free space between them and the free space at the
+@@ -1071,10 +1074,11 @@ int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot_for_read(extent_root, &key, path, 1, 0);
+ 	if (ret < 0)
+ 		goto out;
+-	ASSERT(ret == 0);
++	if (ret > 0) {
++		ASSERT(btrfs_fs_incompat(trans->fs_info, EXTENT_TREE_V2));
++		goto done;
++	}
  
-@@ -9499,7 +9500,6 @@ again:
+-	start = block_group->start;
+-	end = block_group->start + block_group->length;
  	while (1) {
- 		struct btrfs_block_group_item bgi;
- 		struct btrfs_block_group *cache;
--		struct btrfs_root *extent_root = btrfs_extent_root(gfs_info, 0);
- 		struct btrfs_key key;
+ 		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
  
- 		cache = btrfs_lookup_first_block_group(gfs_info, start);
-@@ -9513,7 +9513,7 @@ again:
- 		key.objectid = cache->start;
- 		key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
- 		key.offset = cache->length;
--		ret = btrfs_insert_item(trans, extent_root, &key, &bgi,
-+		ret = btrfs_insert_item(trans, bg_root, &key, &bgi,
- 					sizeof(bgi));
- 		if (ret) {
- 			fprintf(stderr, "Error adding block group\n");
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 3dd06979..20dc0436 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -596,7 +596,7 @@ static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
- {
- 	struct btrfs_trans_handle *trans = NULL;
- 	struct btrfs_block_group_item *bgi;
--	struct btrfs_root *root = btrfs_extent_root(fs_info, 0);
-+	struct btrfs_root *root = btrfs_block_group_root(fs_info);
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 	struct btrfs_path path;
+@@ -1106,6 +1110,7 @@ int populate_free_space_tree(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			break;
+ 	}
++done:
+ 	if (start < end) {
+ 		ret = __add_to_free_space_tree(trans, block_group, path2,
+ 				start, end - start);
 -- 
 2.26.3
 

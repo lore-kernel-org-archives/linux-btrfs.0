@@ -2,155 +2,213 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C12A6C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Mar 2022 22:11:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C6B9C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Mar 2022 22:11:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239057AbiCGWMC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Mar 2022 17:12:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45740 "EHLO
+        id S241663AbiCGWMF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Mar 2022 17:12:05 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45792 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231339AbiCGWMB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2022 17:12:01 -0500
-Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF1A07563F
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2022 14:11:06 -0800 (PST)
-Received: by mail-qk1-x735.google.com with SMTP id s16so5019144qks.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2022 14:11:06 -0800 (PST)
+        with ESMTP id S241184AbiCGWMF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2022 17:12:05 -0500
+Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C32D375C29
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2022 14:11:09 -0800 (PST)
+Received: by mail-qt1-x832.google.com with SMTP id s6so11248203qtc.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2022 14:11:09 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=from:to:subject:date:message-id:mime-version
+        h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=OGL1vLMTl/sGYozB8JXuMfdSb2CC5G9nhKyEazoK+nk=;
-        b=MgF3jOi6vU3oIK/YokbC2R9Mc4yL2VCs7uBPUPEvP0u/CSQYsrvSzysuaG8LSXL8/0
-         UDft6qTp/+lQBcgmTUlPApNt7MP7b58yi8gDa0D7j7UmS8wlEh62U2QXtp7DVtzyuNGW
-         ityVDBKN/zwZ3cDcJ+w3lQ0mNWaqZJi9rryXKAVCpxnHTssSTaL3qmomQjCMPFCjjAnD
-         AoHFB+9QTW2GbsrH2xJLtSF8yV0+cMEQojjS07jWm2cBimWvaCsWWl6AsfOeP/4CTtOy
-         KBteHkDXpDppRwYT8Uq/2t2xAxq+oFbX7Gt8Q4XG6ZLnImM+MzDPGblhG1z/zkVJ2uop
-         kSVg==
+        bh=HWOuXYKtwnKf31SthKV+3hv5Q8fQdbW2geDYEaIw2cI=;
+        b=MOtmn/2EWRX+LMwZKuXv2T85hqW+F/rXAENAFPhv4scXgrEciTDpTTB/nUSCoqeHaK
+         mqu1NrKxzf/KqvVJXmXm3gMgOS1rfx0QMKdrPRmFR58MyGvnDYaVWMcKFOJhEOKP0GYi
+         I1NgFedvplqmjsNE5eTcIs6UyU1eJ86lN7THGrwbF6spkAyAGr+XbBdashVW+mj3Ay7/
+         ep4s9GPHdgEniMx+NLU1ZvRpxAx+9z1cbczKaaL8z29siqcCkTSUERMlQmWqQpYkL0aj
+         CG5iBF+Ce9Ik4zDHdn1dQTE4HI6LCpEWzOj6QhmbAnRFxccf2XrPQzMNKj0y2QHAuO/W
+         XW/w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=OGL1vLMTl/sGYozB8JXuMfdSb2CC5G9nhKyEazoK+nk=;
-        b=EQ+m9fTYvh0CUMrxGz8mkBUcHQQzrxnajbx4fa9lR+VE6OUzUlZ2wVdHrsI3o0U5pT
-         AtMT7CNeBk7vPsNLZ+oTEhNWRMOAY5aooiJzRFrzmjzS2djEaOqSGqSgJkLoMq/ajRf1
-         Tm3AGJh8k/gbC3WQeqDicfDCgzHf7exvYraUQrVoiTO2GYVyPP2jog/CDgQ7ob+dTQaM
-         b0Lq51gmQCjRnlI73yEAXI0qeN1Vlpi+aPR62gvysTEkPzev7rJPFobPIEN4AXJD+1SP
-         0e8ALhhSRMfgSjBo/qtArZ7sJ7i3ZJey8T2uTQhzcDLA5GbFGLxnix2DiaRmQVHeyJNm
-         abcQ==
-X-Gm-Message-State: AOAM530JeDDbb8ZE3c3XboUSp9JPHRK43GQXLywGl/aEoJqC770Kf6oR
-        t0IzImAPz60dotpKUdtKqpa5qvHnqtoFRSV7
-X-Google-Smtp-Source: ABdhPJzCczpIspGPde9+Z97jTkv6f3cYdmBoQrlRloy7WQAZI16MDZ5oiZE6V+MzGn5QlR6Iy9s5WA==
-X-Received: by 2002:a05:620a:15e4:b0:613:5610:c311 with SMTP id p4-20020a05620a15e400b006135610c311mr8431976qkm.332.1646691065558;
-        Mon, 07 Mar 2022 14:11:05 -0800 (PST)
+        h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=HWOuXYKtwnKf31SthKV+3hv5Q8fQdbW2geDYEaIw2cI=;
+        b=w2bSa9d2/plP/UlEDm3nOf+6Wup/h5kPepgoqHcIwoBnCPbIbTLc4yVB8JXT5Vf/PD
+         rV7QZQtS1UlAkylmuq9raLv2EuSoftQzMjQ5Kwddxui1qpa0rnuzGWNAKkR60Hm66g2s
+         CCaVvan/b4LQ0IffW4Dubosy9kb6kiLra0FR1B2LtGe1sUXFYJOCr0OF9AQ0alu/+vc9
+         xtHbf6lIZKaD2KSCLWyRFl+2b/ffedEiVAktlqjxNucfxllsMnRkI3dCeEcs3ucuhFoV
+         ZeQCTnWZnhHfKVterE+1g+3hnt0oZBm+xXtokk7csQBTmgL77GjmyC4855U87KJi5nhq
+         Crjw==
+X-Gm-Message-State: AOAM532Pp9bNNUplrJczbkniYC5ay26kGCLfJiflO80fIYK3Ry4LDW/B
+        MotcYEC8GzbN/4q8oT+lRzjQy0VQV3HBjtFa
+X-Google-Smtp-Source: ABdhPJxkqgTLl+dkm0bnmVJ8XOjos33SngAjmQ/WMRfues0XJW7Mk9m+xy2Ch8XBfwZj9GsprP9TOA==
+X-Received: by 2002:ac8:5c46:0:b0:2e0:a4:8d14 with SMTP id j6-20020ac85c46000000b002e000a48d14mr11316626qtj.397.1646691068680;
+        Mon, 07 Mar 2022 14:11:08 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id k4-20020a05620a142400b0067b03a73e70sm3307831qkj.85.2022.03.07.14.11.05
+        by smtp.gmail.com with ESMTPSA id ay35-20020a05620a17a300b00648cc8356e2sm6815145qkb.9.2022.03.07.14.11.07
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Mar 2022 14:11:05 -0800 (PST)
+        Mon, 07 Mar 2022 14:11:08 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v5 00/19] btrfs-progs: extent tree v2 support, global roots
-Date:   Mon,  7 Mar 2022 17:10:45 -0500
-Message-Id: <cover.1646690972.git.josef@toxicpanda.com>
+Subject: [PATCH v5 02/19] btrfs-progs: add print support for the block group tree
+Date:   Mon,  7 Mar 2022 17:10:47 -0500
+Message-Id: <afcf7e8ab0226e45bae1abef1bdc96b08b588766.1646690972.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1646690972.git.josef@toxicpanda.com>
+References: <cover.1646690972.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v4->v3:
-- Rebase onto devel, depends on "btrfs-progs: cleanup btrfs_item* accessors".
-- Dropped the various patches that have already been merged into -progs.
+Add the appropriate support to the print tree and dump tree code to spit
+out the block group tree.
 
-v3->v4:
-- Rebase onto devel, depends on the v3 prep patches that were sent on December
-  1st which has the rest of the "don't access ->*_root" patches.
-- I think I screwed up the versioning of this, but I lost the other submission,
-  so call this v3.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ cmds/inspect-dump-tree.c   | 30 +++++++++++++++++++++++++++++-
+ kernel-shared/print-tree.c | 23 +++++++++++++++++++----
+ 2 files changed, 48 insertions(+), 5 deletions(-)
 
-v1->v2:
-- These depend on the v3 of the prep patches (it's marked as v2 because I'm
-  stupid, but the second v2 posting I sent.)
-- I've moved the global root rb tree patches into this series to differentiate
-  them from the actual fixes in the prep series.
-
---- Original email ---
-Hello,
-
-These patches are the first chunk of the extent tree v2 format changes.  This
-includes the separate block group root which will hold all of the block group
-items.  This also includes the global root support, which is the work to allow
-us to have multiple extent, csum, and free space trees in the same file system.
-
-The goal of these two changes are straightforward.  For the block group root, on
-very large file systems the block group items are very widely separated, which
-means it takes a very long time to mount the file system on large, slow disks.
-Putting the block group items in their own root will allow us to densely
-populate the tree and dramatically increase mount times in these cases.
-
-The global roots change is motivated by lock contention on the root nodes of
-these global roots.  I've had to make many changes to how we run delayed refs to
-speed up things like the transaction commit because of all the delayed refs
-going into one tree and contending on the root node of the extent tree.  In the
-same token you can have heavy lock contention on the csum roots when writing to
-many files.  Allowing for multiple roots will let us spread the lock contention
-load around.
-
-I have disabled a few key features, namely balance and qgroups.  There will be
-more to come as I make more and more invasive changes, and then they will slowly
-be re-enabled as the work is added.  These are disabled to avoid a bunch of work
-that would be thrown away by future changes.
-
-These patches have passed xfstests without panicing, but clearly failing a lot
-of tests because of the disabled features.  I've also run it through fsperf to
-validate that there are no major performance regressions.
-
-WARNING: there are many more format changes planned, this is just the first
-batch.  If you want to test then please feel free, but know that the format is
-still in flux.  Thanks,
-
-Josef
-
-Josef Bacik (19):
-  btrfs-progs: add support for loading the block group root
-  btrfs-progs: add print support for the block group tree
-  btrfs-progs: mkfs: use the btrfs_block_group_root helper
-  btrfs-progs: check-lowmem: use the btrfs_block_group_root helper
-  btrfs-progs: handle no bg item in extent tree for free space tree
-  btrfs-progs: mkfs: add support for the block group tree
-  btrfs-progs: check: add block group tree support
-  btrfs-progs: qgroup-verify: scan extents based on block groups
-  btrfs-progs: check: make free space tree validation extent tree v2
-    aware
-  btrfs-progs: check: add helper to reinit the root based on a key
-  btrfs-progs: check: handle the block group tree properly
-  btrfs-progs: set the number of global roots in the super block
-  btrfs-progs: handle the per-block group global root id
-  btrfs-progs: add a btrfs_delete_and_free_root helper
-  btrfs-progs: make btrfs_clear_free_space_tree extent tree v2 aware
-  btrfs-progs: make btrfs_create_tree take a key for the root key
-  btrfs-progs: mkfs: set chunk_item_objectid properly for extent tree v2
-  btrfs-progs: mkfs: create the global root's
-  btrfs-progs: check: don't do the root item check for extent tree v2
-
- check/main.c                    | 233 +++++++++++++++++--------------
- check/mode-lowmem.c             |  12 +-
- check/qgroup-verify.c           |  32 +++--
- cmds/inspect-dump-tree.c        |  30 +++-
- common/repair.c                 |   3 +
- kernel-shared/ctree.h           |   9 +-
- kernel-shared/disk-io.c         | 235 ++++++++++++++++++++++++--------
- kernel-shared/disk-io.h         |  15 +-
- kernel-shared/extent-tree.c     |  32 ++++-
- kernel-shared/free-space-tree.c |  72 +++++-----
- kernel-shared/print-tree.c      |  23 +++-
- kernel-shared/transaction.c     |   2 +
- mkfs/common.c                   |  94 ++++++++++---
- mkfs/common.h                   |  12 ++
- mkfs/main.c                     |  93 ++++++++++++-
- 15 files changed, 658 insertions(+), 239 deletions(-)
-
+diff --git a/cmds/inspect-dump-tree.c b/cmds/inspect-dump-tree.c
+index 6332b46d..daa7f925 100644
+--- a/cmds/inspect-dump-tree.c
++++ b/cmds/inspect-dump-tree.c
+@@ -83,8 +83,14 @@ out:
+ 
+ static void print_old_roots(struct btrfs_super_block *super)
+ {
++	const char *extent_tree_str = "extent root";
+ 	struct btrfs_root_backup *backup;
+ 	int i;
++	bool extent_tree_v2 = (btrfs_super_incompat_flags(super) &
++		BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2);
++
++	if (extent_tree_v2)
++		extent_tree_str = "block group root";
+ 
+ 	for (i = 0; i < BTRFS_NUM_BACKUP_ROOTS; i++) {
+ 		backup = super->super_roots + i;
+@@ -93,7 +99,7 @@ static void print_old_roots(struct btrfs_super_block *super)
+ 		       (unsigned long long)btrfs_backup_tree_root_gen(backup),
+ 		       (unsigned long long)btrfs_backup_tree_root(backup));
+ 
+-		printf("\t\textent root gen %llu block %llu\n",
++		printf("\t\t%s gen %llu block %llu\n", extent_tree_str,
+ 		       (unsigned long long)btrfs_backup_extent_root_gen(backup),
+ 		       (unsigned long long)btrfs_backup_extent_root(backup));
+ 
+@@ -510,6 +516,11 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
+ 				       info->log_root_tree->node->start,
+ 					btrfs_header_level(
+ 						info->log_root_tree->node));
++			if (info->block_group_root)
++				printf("block group tree: %llu level %d\n",
++				       info->block_group_root->node->start,
++					btrfs_header_level(
++						info->block_group_root->node));
+ 		} else {
+ 			if (info->tree_root->node) {
+ 				printf("root tree\n");
+@@ -528,6 +539,12 @@ static int cmd_inspect_dump_tree(const struct cmd_struct *cmd,
+ 				btrfs_print_tree(info->log_root_tree->node,
+ 					BTRFS_PRINT_TREE_FOLLOW | print_mode);
+ 			}
++
++			if (info->block_group_root) {
++				printf("block group tree\n");
++				btrfs_print_tree(info->block_group_root->node,
++					BTRFS_PRINT_TREE_FOLLOW | print_mode);
++			}
+ 		}
+ 	}
+ 	tree_root_scan = info->tree_root;
+@@ -573,6 +590,17 @@ again:
+ 		goto close_root;
+ 	}
+ 
++	if (tree_id && tree_id == BTRFS_BLOCK_GROUP_TREE_OBJECTID) {
++		if (!info->block_group_root) {
++			error("cannot print block group tree, invalid pointer");
++			goto close_root;
++		}
++		printf("block group tree\n");
++		btrfs_print_tree(info->block_group_root->node,
++					BTRFS_PRINT_TREE_FOLLOW | print_mode);
++		goto close_root;
++	}
++
+ 	key.offset = 0;
+ 	key.objectid = 0;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 717be5d5..978d92bc 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -1872,8 +1872,14 @@ static int empty_backup(struct btrfs_root_backup *backup)
+ 	return 0;
+ }
+ 
+-static void print_root_backup(struct btrfs_root_backup *backup)
++static void print_root_backup(struct btrfs_root_backup *backup,
++			      bool extent_tree_v2)
+ {
++	const char *extent_tree_str = "backup_extent_root";
++
++	if (extent_tree_v2)
++		extent_tree_str = "backup_block_group_root";
++
+ 	printf("\t\tbackup_tree_root:\t%llu\tgen: %llu\tlevel: %d\n",
+ 			btrfs_backup_tree_root(backup),
+ 			btrfs_backup_tree_root_gen(backup),
+@@ -1882,7 +1888,8 @@ static void print_root_backup(struct btrfs_root_backup *backup)
+ 			btrfs_backup_chunk_root(backup),
+ 			btrfs_backup_chunk_root_gen(backup),
+ 			btrfs_backup_chunk_root_level(backup));
+-	printf("\t\tbackup_extent_root:\t%llu\tgen: %llu\tlevel: %d\n",
++	printf("\t\t%s:\t%llu\tgen: %llu\tlevel: %d\n",
++			extent_tree_str,
+ 			btrfs_backup_extent_root(backup),
+ 			btrfs_backup_extent_root_gen(backup),
+ 			btrfs_backup_extent_root_level(backup));
+@@ -1894,7 +1901,7 @@ static void print_root_backup(struct btrfs_root_backup *backup)
+ 			btrfs_backup_dev_root(backup),
+ 			btrfs_backup_dev_root_gen(backup),
+ 			btrfs_backup_dev_root_level(backup));
+-	printf("\t\tbackup_csum_root:\t%llu\tgen: %llu\tlevel: %d\n",
++	printf("\t\tcsum_root:\t%llu\tgen: %llu\tlevel: %d\n",
+ 			btrfs_backup_csum_root(backup),
+ 			btrfs_backup_csum_root_gen(backup),
+ 			btrfs_backup_csum_root_level(backup));
+@@ -1912,12 +1919,14 @@ static void print_backup_roots(struct btrfs_super_block *sb)
+ {
+ 	struct btrfs_root_backup *backup;
+ 	int i;
++	bool extent_tree_v2 = (btrfs_super_incompat_flags(sb) &
++		BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2);
+ 
+ 	for (i = 0; i < BTRFS_NUM_BACKUP_ROOTS; i++) {
+ 		backup = sb->super_roots + i;
+ 		if (!empty_backup(backup)) {
+ 			printf("\tbackup %d:\n", i);
+-			print_root_backup(backup);
++			print_root_backup(backup, extent_tree_v2);
+ 		}
+ 	}
+ }
+@@ -2034,6 +2043,12 @@ void btrfs_print_superblock(struct btrfs_super_block *sb, int full)
+ 	       (unsigned long long)btrfs_super_cache_generation(sb));
+ 	printf("uuid_tree_generation\t%llu\n",
+ 	       (unsigned long long)btrfs_super_uuid_tree_generation(sb));
++	printf("block_group_root\t%llu\n",
++	       (unsigned long long)btrfs_super_block_group_root(sb));
++	printf("block_group_root_generation\t%llu\n",
++	       (unsigned long long)btrfs_super_block_group_root_generation(sb));
++	printf("block_group_root_level\t%llu\n",
++	       (unsigned long long)btrfs_super_block_group_root_level(sb));
+ 
+ 	uuid_unparse(sb->dev_item.uuid, buf);
+ 	printf("dev_item.uuid\t\t%s\n", buf);
 -- 
 2.26.3
 

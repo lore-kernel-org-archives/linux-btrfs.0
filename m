@@ -2,107 +2,159 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23809C4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Mar 2022 22:18:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F60DC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Mar 2022 22:33:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343730AbiCGWTJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Mar 2022 17:19:09 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34370 "EHLO
+        id S243156AbiCGWed (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Mar 2022 17:34:33 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44604 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343731AbiCGWTI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2022 17:19:08 -0500
-Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF623427C0
-        for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2022 14:18:12 -0800 (PST)
-Received: by mail-qk1-x72d.google.com with SMTP id b13so13255765qkj.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2022 14:18:12 -0800 (PST)
+        with ESMTP id S238384AbiCGWeb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Mar 2022 17:34:31 -0500
+Received: from mail-qv1-xf33.google.com (mail-qv1-xf33.google.com [IPv6:2607:f8b0:4864:20::f33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCA5A473BD
+        for <linux-btrfs@vger.kernel.org>; Mon,  7 Mar 2022 14:33:36 -0800 (PST)
+Received: by mail-qv1-xf33.google.com with SMTP id jo29so969338qvb.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Mar 2022 14:33:36 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=+KvqM0CkPE2mwCbjTrqIfGEAHHgCIFCwOAnw16f85go=;
-        b=FG24tD2PzqhBFaNm2x0olP2DGVg3jS2RYsl9wBvmpEg+KSlLNlwzGQ46uThFJmaVOi
-         7+j5y3kSwJrO1mRUL5upHrTLnwlMB6UcH8T9Wg0SE4Qz9g1X1w4QZCs0G02cRhs16zUQ
-         ltbvgj3jA0rjmtNWO7yfUt4Sc/+jcrKgL6fmplhB0QLjaKT6hFICKoPtn6FvnQCLzbQW
-         Vt4sS2nZlJ+ibOByU6GqQ75+rtehqgxyJzjo/8VRvxEecqp5IE9hfVJMvXkE6eTadhHg
-         0W/d6CZxCBWU4VX4lmGaGiTEfQK98tMGw9E6nbaNp7F+Z1M9O8KG9qdtkrhq5oAWPD80
-         /i9g==
+        bh=0DC51lpZxbZ7yw5Y+vIfK+FJGMZibwL+D3EiCfFFkKM=;
+        b=2TwnX2lR4UjZBqinj5JsOdMbyGzP9s36iok9fPgoqM8Q3aFE0fCEHbG45xxlTnGgVs
+         Acd+mkGVqLnrn7VkTdKnIcyDaAooRh25otA/l9nO8hOILwHXKwZq6xB7VutTtuvG6y9M
+         Wm8IW8MbVGm269xqCusRYwYKnF8Kb80iO5A3vtwrawxYWjhiGiIxxKLlgeVG44fXfrIK
+         BuPnci6ODdgm9URy/xs9zlnykqe5ucJsrjyNMrpT65B9keYR0v7X9aj0Z9zq9LGb5jCk
+         91U9qEgK62IHbxV/kH8c5frjtRdrvPxc4fEyBDVCQVA/IylD+Ldro9uxElLC1NdImxHB
+         uWjQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=+KvqM0CkPE2mwCbjTrqIfGEAHHgCIFCwOAnw16f85go=;
-        b=49DOdjGXizqbNu9ZsZk519VaU3QmNqHkxpwO9zHxVJXfzgrktNbSPXSaTScwgDw6sn
-         8WVG7+KOj6tTny56F3TAwYr0UqIZlrCs3W1x8dQ0QBiO0miLLpAx3ADEYrOq6bOgmKVr
-         yrYdKLWDHTkZIGBsHlEm3oirKs89A5xc5epoO/SFMZGr+OmN3x7ljxv3zTqBc8AbmZ6w
-         Yxk59MA/doqtcjjKGkX8QonweKj3iBxMZRefofQRFTMRGFQ4ncmY6OrfYIbI4W8YkLCh
-         p4YJsXP8aAj1meKdoHajtlNwLT/2NXqbGHKHd12vTd6IPoWLJcps4XBux1G7dm/mkSol
-         2HpA==
-X-Gm-Message-State: AOAM533SGR8y3I2OFmYTw/bfhqFf/2l0+qw8isa/jguifWk2PbVAttPL
-        hZaHOd960q2sqTz3rffxgf5EecCj4qDPGMpt
-X-Google-Smtp-Source: ABdhPJwAE2odo0MLHq+Rv99OqCst6JsszNVC1hEjeWkQcfa10zKPz0qdpvGP3bm/maPpH6B0kvxGYg==
-X-Received: by 2002:a05:620a:284d:b0:5ff:320d:c0a5 with SMTP id h13-20020a05620a284d00b005ff320dc0a5mr8423571qkp.681.1646691491645;
-        Mon, 07 Mar 2022 14:18:11 -0800 (PST)
+        bh=0DC51lpZxbZ7yw5Y+vIfK+FJGMZibwL+D3EiCfFFkKM=;
+        b=A+ujsjVOC8oi11ZbKXBY6njfBODTQBCJidkpjRl4IZxwdDU2Cw2SG4qaE7MDSvbAHY
+         ClKWYT3l86g6Y1g4h1RtamD+9kRERnq+PhpQ5YODHdY5izAIT6a/v1TVt6KlOC+6PNxU
+         8b8/WcL6EN7eYKfAZgzuiRzti5pgTVDdrQNbIb3GjMp7wyu8iuMHPrWv1R+erkz9pGui
+         Fp1liq9IJNxgE6RmfJo0Mzw+vFI92gq4Hz5RYQmo328YmZJjiNQTfMel8RgV9mw3TPXM
+         YjIqawPpa5VX5He6D/bROkZnmuifTdwH9jKptLCkljZ6w3JM5koN/nXMZ5q6gE1M0tb+
+         +g6A==
+X-Gm-Message-State: AOAM533fLDi+vI5M1ub0mdeTYz+DvqK9laJuxG7zSESqbmxw1QBZNAPn
+        a7ymnqBtKCmCS2tZ+go3fM5n8PKRciQRCc1X
+X-Google-Smtp-Source: ABdhPJxTtOzeY9BGyvbUOqMMWi+yZboJ63HaoHYTFpRExLEFHeR3VzBB3GNxuyJYDUhYUg6YHCNOJw==
+X-Received: by 2002:ad4:5bc6:0:b0:435:a8fa:2694 with SMTP id t6-20020ad45bc6000000b00435a8fa2694mr1142127qvt.13.1646692415748;
+        Mon, 07 Mar 2022 14:33:35 -0800 (PST)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id n143-20020a37a495000000b0067b12bc1d7bsm2826887qke.13.2022.03.07.14.18.11
+        by smtp.gmail.com with ESMTPSA id e18-20020a05620a12d200b0066393782c89sm6596991qkl.64.2022.03.07.14.33.35
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Mar 2022 14:18:11 -0800 (PST)
+        Mon, 07 Mar 2022 14:33:35 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 15/15] btrfs-progs: add new COW rules for extent tree v2
-Date:   Mon,  7 Mar 2022 17:17:49 -0500
-Message-Id: <94b5b2608259c333dc4d98a8df74d5f9487c5a5a.1646691255.git.josef@toxicpanda.com>
+Subject: [PATCH 02/12] btrfs: add a btrfs_node_key_ptr helper, convert the users
+Date:   Mon,  7 Mar 2022 17:33:21 -0500
+Message-Id: <7c1a75affdac4955ed9430845e9dd7ae30aaff28.1646692306.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1646691255.git.josef@toxicpanda.com>
-References: <cover.1646691255.git.josef@toxicpanda.com>
+In-Reply-To: <cover.1646692306.git.josef@toxicpanda.com>
+References: <cover.1646692306.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All of the previous COW rules will apply, but with extent tree v2 we add
-a new COW rule where we must COW if the snapshot id of the buffer is
-less than the current snapshot id of the root.  If the root's snapshot
-id has been increased we know that the block is now shared by a new root
-and we must cow this block.
+All of the node helpers are getting the pointer offset and then casting
+to btrfs_key_ptr.  Instead do this with a helper similar to how we do it
+with items and change all the helpers to use the new helper.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- kernel-shared/ctree.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ fs/btrfs/ctree.h | 48 +++++++++++++++++++-----------------------------
+ 1 file changed, 19 insertions(+), 29 deletions(-)
 
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index c6ce82b0..215c33ce 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -390,6 +390,16 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	return 0;
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 819bd8631c4c..d5d52b907143 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1958,61 +1958,51 @@ BTRFS_SETGET_STACK_FUNCS(stack_key_blockptr, struct btrfs_key_ptr,
+ BTRFS_SETGET_STACK_FUNCS(stack_key_generation, struct btrfs_key_ptr,
+ 			 generation, 64);
  
-+static inline bool should_cow_block_v2(struct btrfs_root *root,
-+				       struct extent_buffer *buf)
-+{
-+	if (btrfs_header_flag(buf, BTRFS_HEADER_FLAG_V2) &&
-+	    (btrfs_root_snapshot_id(&root->root_item) >
-+	     btrfs_header_snapshot_id(buf)))
-+		return true;
-+	return false;
+-static inline u64 btrfs_node_blockptr(const struct extent_buffer *eb, int nr)
++static inline unsigned long btrfs_node_key_ptr_offset(int nr)
+ {
+-	unsigned long ptr;
+-	ptr = offsetof(struct btrfs_node, ptrs) +
++	return offsetof(struct btrfs_node, ptrs) +
+ 		sizeof(struct btrfs_key_ptr) * nr;
+-	return btrfs_key_blockptr(eb, (struct btrfs_key_ptr *)ptr);
 +}
 +
- static inline int should_cow_block(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct extent_buffer *buf)
-@@ -397,7 +407,8 @@ static inline int should_cow_block(struct btrfs_trans_handle *trans,
- 	if (btrfs_header_generation(buf) == trans->transid &&
- 	    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN) &&
- 	    !(root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID &&
--	      btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)))
-+	      btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)) &&
-+	    !should_cow_block_v2(root, buf))
- 		return 0;
- 	return 1;
++static inline struct btrfs_key_ptr *btrfs_node_key_ptr(int nr)
++{
++	return (struct btrfs_key_ptr *)btrfs_node_key_ptr_offset(nr);
++}
++
++static inline u64 btrfs_node_blockptr(const struct extent_buffer *eb, int nr)
++{
++	return btrfs_key_blockptr(eb, btrfs_node_key_ptr(nr));
  }
+ 
+ static inline void btrfs_set_node_blockptr(const struct extent_buffer *eb,
+ 					   int nr, u64 val)
+ {
+-	unsigned long ptr;
+-	ptr = offsetof(struct btrfs_node, ptrs) +
+-		sizeof(struct btrfs_key_ptr) * nr;
+-	btrfs_set_key_blockptr(eb, (struct btrfs_key_ptr *)ptr, val);
++	btrfs_set_key_blockptr(eb, btrfs_node_key_ptr(nr), val);
+ }
+ 
+ static inline u64 btrfs_node_ptr_generation(const struct extent_buffer *eb, int nr)
+ {
+-	unsigned long ptr;
+-	ptr = offsetof(struct btrfs_node, ptrs) +
+-		sizeof(struct btrfs_key_ptr) * nr;
+-	return btrfs_key_generation(eb, (struct btrfs_key_ptr *)ptr);
++	return btrfs_key_generation(eb, btrfs_node_key_ptr(nr));
+ }
+ 
+ static inline void btrfs_set_node_ptr_generation(const struct extent_buffer *eb,
+ 						 int nr, u64 val)
+ {
+-	unsigned long ptr;
+-	ptr = offsetof(struct btrfs_node, ptrs) +
+-		sizeof(struct btrfs_key_ptr) * nr;
+-	btrfs_set_key_generation(eb, (struct btrfs_key_ptr *)ptr, val);
+-}
+-
+-static inline unsigned long btrfs_node_key_ptr_offset(int nr)
+-{
+-	return offsetof(struct btrfs_node, ptrs) +
+-		sizeof(struct btrfs_key_ptr) * nr;
++	btrfs_set_key_generation(eb, btrfs_node_key_ptr(nr), val);
+ }
+ 
+ static inline void btrfs_node_key(const struct extent_buffer *eb,
+ 				  struct btrfs_disk_key *disk_key, int nr)
+ {
+-	unsigned long ptr = btrfs_node_key_ptr_offset(nr);
+-	read_eb_member(eb, (struct btrfs_key_ptr *)ptr, struct btrfs_key_ptr,
+-		       key, disk_key);
++	read_eb_member(eb, btrfs_node_key_ptr(nr), struct btrfs_key_ptr, key,
++		       disk_key);
+ }
+ 
+ static inline void btrfs_set_node_key(const struct extent_buffer *eb,
+ 				      struct btrfs_disk_key *disk_key, int nr)
+ {
+-	unsigned long ptr;
+-	ptr = btrfs_node_key_ptr_offset(nr);
+-	write_eb_member(eb, (struct btrfs_key_ptr *)ptr,
+-		       struct btrfs_key_ptr, key, disk_key);
++	write_eb_member(eb, btrfs_node_key_ptr(nr), struct btrfs_key_ptr, key,
++			disk_key);
+ }
+ 
+ /* struct btrfs_item */
 -- 
 2.26.3
 

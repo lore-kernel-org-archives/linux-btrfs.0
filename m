@@ -2,63 +2,67 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 93A33C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 14:31:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 826CFC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 14:35:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344546AbiCHOcZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 09:32:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36764 "EHLO
+        id S1344020AbiCHOgU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 09:36:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43804 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235428AbiCHOcY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 09:32:24 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 697094C401
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 06:31:28 -0800 (PST)
+        with ESMTP id S234344AbiCHOgT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 09:36:19 -0500
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8DDF54BB99
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 06:35:22 -0800 (PST)
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 25F441F396;
-        Tue,  8 Mar 2022 14:31:27 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id 3EAB7210EF;
+        Tue,  8 Mar 2022 14:35:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1646749887;
+        t=1646750121;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=SN8tQW4fhsAZOzWJNbGXrRps3YNRF3hpOPG9if1p+oA=;
-        b=K0Rbtfhmqkvne9fV+qrPynu0WabjDuUmxzhUm9TivEvI1xbXaAjYLtsvLGyYZmDhdlHaBy
-        t3A/foD4RimOjvloRECgq3ItpIrFY0NTH06phj9bfTjHbuat/kJrL6GdbzL6d9bjH5JlKo
-        RtwE5BNCbLhG3/Sq8ityQh0UuyyZ7+c=
+        bh=rM0sU9QLUWYsWg9WE7UFGxX4tQZaPJ2aOPYyKrTgOx4=;
+        b=HYNdFZYMQQPLx1bypQ56L6Y0yHf8hj43lnB7AtOXuyqaDT6ToJKx+u10GSRg+Y2jtdwy2c
+        NWA2yowu6NooaREXEO1zV+0ld3LaGMPWUFFEKaZyDhYUNuzhM0U4i5oP+yxbWpeEF+a4bt
+        IBClI2l8GCdx1Jd5M3BHrTKrqPO8lvw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1646749887;
+        s=susede2_ed25519; t=1646750121;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=SN8tQW4fhsAZOzWJNbGXrRps3YNRF3hpOPG9if1p+oA=;
-        b=hSTtxyrdaE07WIs9MKwrrtc1zRsyiDzoPU1o7VyNZFU9jKFlt7f3pLfxZ9Ao0vCjAnptad
-        YKuXfKTA1B5o/JCg==
+        bh=rM0sU9QLUWYsWg9WE7UFGxX4tQZaPJ2aOPYyKrTgOx4=;
+        b=jPGEkMHEVHjxyq3DmzjqpBKj4YeSIvS2MSltosC0bft+z7+QAHVjLmvKppcLKVE2+O/T9U
+        T7n6Tdj+VAbkLdCA==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 1E425A3B87;
-        Tue,  8 Mar 2022 14:31:27 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id 36784A3B88;
+        Tue,  8 Mar 2022 14:35:21 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id EAC33DA823; Tue,  8 Mar 2022 15:27:31 +0100 (CET)
-Date:   Tue, 8 Mar 2022 15:27:31 +0100
+        id 2D519DA823; Tue,  8 Mar 2022 15:31:26 +0100 (CET)
+Date:   Tue, 8 Mar 2022 15:31:26 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Gabriel Niebler <gniebler@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH v3 0/14] btrfs: Introduce macro to iterate over slots
-Message-ID: <20220308142731.GK12643@twin.jikos.cz>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
+Subject: Re: [PATCH v3 01/14] btrfs: Introduce btrfs_for_each_slot iterator
+ macro
+Message-ID: <20220308143126.GL12643@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Gabriel Niebler <gniebler@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com
+        linux-btrfs@vger.kernel.org, dsterba@suse.com,
+        Marcos Paulo de Souza <mpdesouza@suse.com>
 References: <20220302164829.17524-1-gniebler@suse.com>
+ <20220302164829.17524-2-gniebler@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220302164829.17524-1-gniebler@suse.com>
+In-Reply-To: <20220302164829.17524-2-gniebler@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 02, 2022 at 05:48:15PM +0100, Gabriel Niebler wrote:
+On Wed, Mar 02, 2022 at 05:48:16PM +0100, Gabriel Niebler wrote:
 > There is a common pattern when searching for a key in btrfs:
 > 
 > * Call btrfs_search_slot to find the slot for the key
@@ -74,23 +78,106 @@ On Wed, Mar 02, 2022 at 05:48:15PM +0100, Gabriel Niebler wrote:
 > This also makes the code easier to understand for newcomers by putting a name
 > to the encapsulated functionality.
 > 
-> This patchset survived a complete fstest run.
+> Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
+> Signed-off-by: Gabriel Niebler <gniebler@suse.com>
+> ---
+>  fs/btrfs/ctree.c | 33 +++++++++++++++++++++++++++++++++
+>  fs/btrfs/ctree.h | 24 ++++++++++++++++++++++++
+>  2 files changed, 57 insertions(+)
 > 
-> Changes from v2:
->  * Rename btrfs_valid_slot to btrfs_get_next_valid_item (Nikolay)
->  * Fix comment formatting (David)
->  * Remove redundant parentheses and indentation in loop condition (David)
->  * Remove redundant iter_ret var and reuse ret instead (Nikolay)
->  * Make termination condition more consistent in btrfs_unlink_all_paths
->    (Nikolay)
->  * Improved patch organisation by splitting into one patch per function (David)
->  * Improve doc comment for btrfs_get_next_valid_item (Gabriel)
->  * Remove `out` label and assoc. gotos from id_create_dir (Gabriel)
->  * Initialise `ret` in process_all_refs and process_all_new_xattrs (Gabriel)
->  * Remove unneeded btrfs_item_key_to_cpu call from loop body in
->    btrfs_read_chunk_tree (Gabriel)
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index a7db3f6f1b7b..d735bd472616 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -2277,6 +2277,39 @@ int btrfs_search_backwards(struct btrfs_root *root, struct btrfs_key *key,
+>  	return ret;
+>  }
+>  
+> +/* Search for a valid slot for the given path.
 
-I still see some of the style issues not addressed in your version, I'll
-point them out in the first example I find but it needs to be fixed in
-all of them. Otherwise it looks good. As we're near the code freeze for
-5.17 I'm not sure I could put it there so it's 5.18 at the latest.
+Multi-line comments should start with
+/*
+ * Text ...
+ * ...
+ */
+
+> + *
+> + * @root: The root node of the tree.
+> + * @key: Will contain a valid item if found.
+> + * @path: The starting point to validate the slot.
+
+Please align the descriptions, an example is here
+https://btrfs.wiki.kernel.org/index.php/Development_notes#Comments
+
+> + *
+> + * Return 0 if the item is valid, 1 if not found and < 0 if error.
+> + */
+> +int btrfs_get_next_valid_item(struct btrfs_root *root, struct btrfs_key *key,
+> +			      struct btrfs_path *path)
+> +{
+> +	while (1) {
+> +		int ret;
+> +		const int slot = path->slots[0];
+> +		const struct extent_buffer *leaf = path->nodes[0];
+
+Newline between declarations and statements.
+
+> +		/* this is where we start walking through the path */
+
+The comments should read like a sentence, so the first letter should be
+uppercase unless it's an identifier.
+
+> +		if (slot >= btrfs_header_nritems(leaf)) {
+> +			/*
+> +			 * if we've reached the last slot in this leaf we need
+> +			 * to go to the next leaf and reset the path
+> +			 */
+> +			ret = btrfs_next_leaf(root, path);
+> +			if (ret)
+> +				return ret;
+> +			continue;
+> +		}
+> +		/* store the found, valid item in key */
+> +		btrfs_item_key_to_cpu(leaf, key, slot);
+> +		break;
+> +	}
+> +	return 0;
+> +}
+> +
+>  /*
+>   * adjust the pointers going up the tree, starting at level
+>   * making sure the right key of each node is points to 'key'.
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 947f04789389..98091334b749 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -2976,6 +2976,30 @@ int btrfs_next_old_leaf(struct btrfs_root *root, struct btrfs_path *path,
+>  int btrfs_search_backwards(struct btrfs_root *root, struct btrfs_key *key,
+>  			   struct btrfs_path *path);
+>  
+> +int btrfs_get_next_valid_item(struct btrfs_root *root, struct btrfs_key *key,
+> +			      struct btrfs_path *path);
+> +
+> +/* Search in @root for a given @key, and store the slot found in @found_key.
+> + *
+> + * @root: The root node of the tree.
+> + * @key: The key we are looking for.
+> + * @found_key: Will hold the found item.
+> + * @path: Holds the current slot/leaf.
+> + * @iter_ret: Contains the value returned from btrfs_search_slot or
+> + *            btrfs_get_next_valid_item, whichever was executed last.
+> + *
+> + * The iter_ret is an output variable that will contain the return value of
+> + * btrfs_search_slot, if it encountered an error, or the value returned from
+> + * btrfs_get_next_valid_item, otherwise. That return value can be 0, if a valid
+> + * slot was found, 1 if there were no more leaves, and <0 if there was an error.
+> + */
+> +#define btrfs_for_each_slot(root, key, found_key, path, iter_ret)		\
+> +	for (iter_ret = btrfs_search_slot(NULL, root, key, path, 0, 0);		\
+> +		iter_ret >= 0 &&						\
+> +		(iter_ret = btrfs_get_next_valid_item(root, found_key, path)) == 0; \
+> +		path->slots[0]++						  \
+
+As the arguments can be more than just an identifier it's safer to put
+them in ( ) in the definition, ie root/key/found_key/path/iter_ret
+shouls be all (root) etc

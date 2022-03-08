@@ -2,87 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5CA8C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:07:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 455A8C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:07:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230229AbiCIBIb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 20:08:31 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57448 "EHLO
+        id S230271AbiCIBIf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 20:08:35 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46066 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230028AbiCIBIQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:08:16 -0500
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 552691451FD
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 16:49:40 -0800 (PST)
+        with ESMTP id S230114AbiCIBIW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:08:22 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEA199E9E3
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 16:49:46 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1646786978;
-        bh=p1omnjlbuLxaKdzsyQR7Rhnpj60VUzrNeVRuSLZQeeI=;
-        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-        b=lbxBEm5ZEyl3/3iT/VsHB1z2IDnLnpCjLo/hWpzZZlxaJNQoTC0gRVTZL4IG5v9WW
-         TDAedRpYRNKA3NCf2UStSmrzmxpKJ+f8/iTbcgHrDWRGWo8sqhCAdj7uP1xCjd2Iyg
-         nWhYLfroMwNK/ftTZYWNSUqbFVSgBSmt3s8bZB0Q=
+        s=badeba3b8450; t=1646786985;
+        bh=Ru3lG1znP5sqT839t0I+J9lBsJBR19ghgx9Ot7hJXYk=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=F7B6wNDntv+wRmbPp1MWhbhu0WxnvPFzTS9thZPF3JV5GvPKJLTfoEZfwJi9XROBY
+         IAv6J77kDTJv13+YqD6aFbexPhVES58mwOO6PRAMcpAmpMw9Fa3tqe1JQCTzAShnic
+         OLK9mEb+ceXiO6H9UskmffC+3AXLfA3O7EjzXA7Y=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MuUnA-1oHmCy0z3K-00rats; Wed, 09
- Mar 2022 01:06:55 +0100
-Message-ID: <fc451396-db2c-b7d5-0f10-15d77f1b38b1@gmx.com>
-Date:   Wed, 9 Mar 2022 08:06:51 +0800
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MXp5a-1nfwMt2Lwi-00Y6kQ; Wed, 09
+ Mar 2022 00:40:24 +0100
+Message-ID: <3f286144-d4c4-13f6-67d9-5928a94611af@gmx.com>
+Date:   Wed, 9 Mar 2022 07:40:20 +0800
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.6.1
-Subject: Re: A question for btrfs-progs code
+Subject: Re: Btrfs autodefrag wrote 5TB in one day to a 0.5TB SSD without a
+ measurable benefit
 Content-Language: en-US
-To:     Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20220308145539.GA19735@realwakka>
+To:     Jan Ziak <0xe2.0x9a.0x9b@gmail.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <CAODFU0rZEy064KkSK1juHA6=r2zC4=Go8Me2V2DqHWb-AirL-Q@mail.gmail.com>
+ <455d2012-aeaf-42c5-fadb-a5dc67beff35@gmx.com>
+ <CAODFU0q56n3UxNyZJYsw2zK0CQ543Fm7fxD6_4ZSfgqPynFU7g@mail.gmail.com>
+ <e5bb2e23-2101-dcc3-695e-f3a0f5a4aba7@gmx.com>
+ <CAODFU0pEd+QTJqio6ff5nsA_c--iCLGm52t0z6YBgzJcWPxy9g@mail.gmail.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220308145539.GA19735@realwakka>
+In-Reply-To: <CAODFU0pEd+QTJqio6ff5nsA_c--iCLGm52t0z6YBgzJcWPxy9g@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:g3khfFOZutTFBCHNOWD8JVfTiMnr8ySfcXrlz7VVBZegqgw3slu
- D8+f4SYZy22OWA56UONhY7qpZNENYQkdDvunGlMSj7ijq5QJyo1pmKDZalDfd9aISXRA11+
- jOhBt6Oj9y9XP8n9Lo1WreMDZ5AXN+xd/5+IbO4RdjC0ygLxuMnEdHYcinNwt6VSNpNOdGo
- Y6cvKRR5Ztt4ZIgh3nspA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:3Ci9sJHGt+8=:YUSfTtMAEyfa9ibnoJ4HnA
- z1WLAxLUa28PKFCLcaQbuuFxBs7yaacyCip6Q5VDQuHImee0Zijwq6R1b2NMBAmdIcwXQ1NIN
- vSzd2mpN6BCPggBdu/KaEslqKJLMC4qM9YVSPmZn5y6XiLwmUBBpccQUgpykKRG2VLsJp8qWz
- nh/q2WfSHeEgQjcXjU8Jyvp9u8TU/D/Yx1HVp3cK1rLYYorFNfiJkXXb/2+lzVGpTVZQAbE8x
- ggr6UStnYNrGzjSJM0ga0726w8kpUmF4whf3C6V/Q9IDRzxYbVtkdDTA56kIwv6gVMdUVcRCS
- /Tnyda9zMN4nQYjdhyI8Okrm9KGt1Wra57b0UM3qYqI9RPDAXsIvOgvUtXFActT/N1Jl1oUMG
- zHV4UPYNk5ozSz5IIsSFCMwxCMPqor7B1tjPjhgkjxGSe4Zfa1fGVOSTboYuyQ7dvRi+99X83
- UkxcIoBImJ4+VnMVryzjkhAkdPVjkagtAPtdfY/9+Uf/3EA6s62x/UE2UASxjX7w2hQXj2gky
- EXrt2aWKkHy9YfyhpRNdK+jtCh09mZCXbFpqW2Kz+Nm66+tltmsLF66wTy3U38MV3mqLFGyz1
- ZjYimCj2rJJW9mmCgkaYpu5YKbO9kI7NY6xfaPAq+BsDchKbO9mOZLt2NLiuALWiilJtmOBIa
- JFdlyYbw0mZ9HehtF5UjuJrtFAy8oHcbDnFr6x+QR2M3Kc4aj2kxa43WWDlJ7dPz5fF5olm1e
- /qFRPWlpOoF1OAwtMmZGnM5o5tRwC5Ablc0di1gADHQCOI9yOzVcF9ru/uRkzHLHG743HCYvF
- kqkwBIg94IckCyIjGgoCuqy27lB6LR+8UOcesCkJ/hp3zgEtv8tprYi2cMqyuPdBV2oAHsb12
- BrzCUpGTB8tTIjWq3A9672geS7Zm1vPuEQ/fzxT81/Ovpx0GVtkZFayWS999Bbs471GujgRJC
- eVGCd5k5aZy4+XD+ERQWZnjInzf5R3KGyeKl+CMjWGtaa4fGKsSZOugEIv2hKbFyl5texy73k
- UGcmawvCxShWBi32wsNJea4rg3+rpPm2xWgx4mpnDu6naLd9qtbl5xYWf3+FRcX7VZVl9y+ya
- smDUQrAN2dWziU=
+X-Provags-ID: V03:K1:nrW0VRGB+nqO/3iuOqsGkZEcK3kVFEKYCAU3t9oNtgy8GGc5cWN
+ T9eHTCDw6nV4da3tGFQGLcp141ofwO8+cvPR+Wt9zk0wDcuMujKxUFRkF/rZtKqywYoy/DX
+ +9pvDCbaG0PAOkQq/DvMt2JL8NmUpLJFUGTiwkqMYOdGeyvTP+AWrXSi29xmnhde7jsYDGr
+ f8eW7uXtirhLcStix/Dwg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:i9VpwUqKjEU=:lTa7XexmPpJHpx8AYwwRhu
+ gedg8Cpcrro4mgjC4AuW1Z/J0EXUXntiEg+Y6q0b5KGE0IwgZCEhReeBryHNZt/FezD/qCkSz
+ AdiYclZminQgw7Rt9fVGjPUG1NCDe9obdejOFkLcr3haUG5tXmQKdB194RyzicpmWCggv6DPG
+ O72H9EehJ4H4wr5fFf0Qex4apR3C7+DUOEdsBvDcIClstAfgn3eG7hnm+fdatt852MlNb2XLC
+ 3tLeijqwVzYDxEOt0bT7k45vm7krpd19I2T1dGnPiqbUWFBQTwJwA480UvG2L7IT4PwKyt8BL
+ luVdDz5t+2qAakmmq/AtvRjCy6AsnARrRGoMigQSsJVdBYn96LwX4Z27qv2LnKkTzy+z/jUmE
+ XvrEWHDDtKgeLqomojRqz4n5FTPjbf1dW5Rh8Jzs/geWtm43L/qJjj1FXCKfZkDKCi0gwQLFJ
+ UFGr/mZ1z+8GTb9xfN/UtO4OSHDXSDXRhY/X6QV5l5kffFOZxolTgsOZpIlbXbCj4yw1HxZ/6
+ ut2q3o3kBt2k8/AfWoc4lObPaOPMQzRKXBoN0ZliGAmDab3r6YlCIxjclbI0P2hkS9hlL9n5Y
+ KdR/Udny84UEeW6rp3ryzubsHNIMJ06svJQtKzeMEvmutiiX7Nm7ni6IR1enJZkXjaR1rkMzY
+ n84dADBAUpWsNjddMvjg5ebcu8PmHquFmYjMgy3UN9Nro9sY78eILVe7ZldqM6m+gHqi2ZRsw
+ 1wr94oMdKsQmnlVuT9cpj55MucMRQat3U8KVS0Nff3b16HdutdgiePARkujpGe/i+u+kWtvRo
+ e6Op4kTDreXpBb/IknSBapg1pX+yv4HfCNkOqx1n0KSortj4lDxUkNvfD/Uzf/PBufXxloTC4
+ VmhQ9/DHUhc/ikuyG8DQTxDXA2ENrynyB91Ogi0I250HN5qHyykSs5aAyqebThFbwN85BUeYR
+ hNNHZUvDnNzlY64BXPYF0O7ZHiMBM15FIf5FuQ/VPX4KgG+IlLyYMlIFB7Kmr+g+irJTzLQww
+ GOYh0oZggcN9ArN/1rHMzk8kxkjqUqgAL7BeSepKhIfpLhhXIVZe/hocDzJAPq20oOOEnvCu7
+ U4WIiUSxR6w9yw=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2022/3/8 22:55, Sidong Yang wrote:
-> Hi I have a simple question for btrfs-progs.
-> In cmd/subvolume.c, It seems that create subvolume command has -c
-> option. According to code, it gets two qgroup ids and adds to
-> qgroup_inherit. But the command is not in manual. Same as creating
-> snapshot.
+On 2022/3/9 05:57, Jan Ziak wrote:
+> On Mon, Mar 7, 2022 at 3:39 AM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>> On 2022/3/7 10:23, Jan Ziak wrote:
+>>> BTW: "compsize file-with-million-extents" finishes in 0.2 seconds
+>>> (uses BTRFS_IOC_TREE_SEARCH_V2 ioctl), but "filefrag
+>>> file-with-million-extents" doesn't finish even after several minutes
+>>> of time (uses FS_IOC_FIEMAP ioctl - manages to perform only about 5
+>>> ioctl syscalls per second - and appears to be slowing down as the
+>>> value of the "fm_start" ioctl argument grows; e2fsprogs version
+>>> 1.46.5). It would be nice if filefrag was faster than just a few
+>>> ioctls per second.
+>>
+>> This is mostly a race with autodefrag.
+>>
+>> Both are using file extent map, thus if autodefrag is still trying to
+>> redirty the file again and again, it would definitely cause problems fo=
+r
+>> anything also using file extent map.
 >
-> Is it deprecated option or internally used?
+> It isn't caused by a race with autodefrag, but by something else.
+> Autodefrag was turned off when I was running "filefrag
+> file-with-million-extents".
+>
+> $ /usr/bin/time filefrag file-with-million-extents.sqlite
+> Ctrl+C Command terminated by signal 2
+> 0.000000 user, 4.327145 system, 0:04.331167 elapsed, 99% CPU
 
-That -c can easily screw up the qgroup numbers.
+Too many file extents will slow down the full fiemap call.
 
-So we don't want users to use them.
+If you use ranged fiemap, like:
 
-I'm not sure if we should even provide that interface.
+  xfs_io -c "fiemap -v 0 4k" <file>
 
-> If it should be deleted, It would be glad to do it.
+It should finish very quick.
 
-Feel free to do that, as I'm completely fine to remove it.
+BTW, I have send out a new autodefrag patch and CCed you.
+Mind to test that patch? (Better with trace events enabled)
 
 Thanks,
 Qu
+
+>
+> Sincerely
+> Jan

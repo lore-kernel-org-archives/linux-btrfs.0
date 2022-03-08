@@ -2,166 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E911C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:13:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84BCEC433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:13:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230274AbiCIBOI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 20:14:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44692 "EHLO
+        id S230311AbiCIBOK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 20:14:10 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40048 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231402AbiCIBNU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:13:20 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5A038B9A
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 16:56:32 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 488B7210F9;
-        Tue,  8 Mar 2022 23:38:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1646782722; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=ILM6Ao8q5/eS6VIlMyHIoCmk8xg7ez51+9IGdQueAnk=;
-        b=oAtRHpUoJJoZmsPmYZdIfHKrBlbB0vKPLe+GwRC29b/lNMkef/6yRrZ6hVS2ZQdvDdJq5a
-        mpAMD0bTvwdFtp8gGV7M5ZpGUlggojU07a3QhY7QZcvJctVQQWVAgYNLammJTFr96FQOTO
-        qU+sfptLcllTFMtwndAf53FnaE+8Vg8=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6755613CFC;
-        Tue,  8 Mar 2022 23:38:41 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id odAGDAHpJ2KQXQAAMHmgww
-        (envelope-from <wqu@suse.com>); Tue, 08 Mar 2022 23:38:41 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Jan Ziak <0xe2.0x9a.0x9b@gmail.com>
-Subject: [PATCH] btrfs: don't let new writes to trigger autodefrag on the same inode
-Date:   Wed,  9 Mar 2022 07:38:23 +0800
-Message-Id: <318a1bcdabdd1218d631ddb1a6fe1b9ca3b6b529.1646782687.git.wqu@suse.com>
-X-Mailer: git-send-email 2.35.1
+        with ESMTP id S231514AbiCIBNZ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:13:25 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A20E12253D
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 16:57:02 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1646787421;
+        bh=wKhne6KKZJPtM/9UzbDG0DsPhxB3BKH850tAo2onK6g=;
+        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
+        b=ORIE6ftQyBhyW7fLvaJPAw+D5bSOY8mgfh8i0C3zfxancKjFNJQ6PJZ76qjsM/L4e
+         tXRw2HqMaLm32j1t9VH4JA5dMgP5tU3Eum8toDp3GQL1sSzTMqd+vt7giyjAA+Dq3i
+         S00LiQlwMmC4tzpGT8HaVD1UqkYq/rkiqehnReHc=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1N33Il-1oAJJD3BWP-013KwV; Wed, 09
+ Mar 2022 00:48:31 +0100
+Message-ID: <7a4962a0-b007-59a4-282e-8912b2425c5e@gmx.com>
+Date:   Wed, 9 Mar 2022 07:48:28 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.1
+Content-Language: en-US
+To:     bill gates <framingnoone@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CALPV6DsfOQHyQ2=+3pKF3ZfavL21fgthQS+=HStEfMQbhZU50g@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: Updated to new kernel, and btrfs suddenly refuses to mount home
+ directory fs.
+In-Reply-To: <CALPV6DsfOQHyQ2=+3pKF3ZfavL21fgthQS+=HStEfMQbhZU50g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:J2YqXKMZcc76E3BuVop9WaIPCnwKQOylh5+4c49I7xoL84KxnnN
+ V3NC03znqzTkkxA5ARcnlVqVlfveCgyFXfeG5/gpFnAiMpCRVi/31Ft6ee8fFtvxibf2+Fm
+ gPChKslzs7c9Dh9bbr6biwL4jX+ZkptgyFNKBouVRq6bQRnt8slDMnG0PfuIQ4adfk9aldT
+ efIaGVu+XISe6BZO6Pz1A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:Qz7vlbbB7xw=:iSjHLJ88NCkvMUjIPk75Kk
+ /SNkDMhKHKlaS4q+ZfbmoruTcefoIqXylIStdW3YivBe55JCsnBNTBtIrmdHLSjXSIzxSqbst
+ 0xTv2+4qivPxmqwKM8Uicukj9rnvB+2BsgaCCl36HlrNYt509dHMUKZAwOpSY/LwY/ycJ/Yc3
+ MwGSHyXTRMYhpqGbO612VcKHty6niq7AtKPClDIRCAvfWvAEZ8f+e5DRsrAuGcS8DbS9GZvvX
+ DE1sn+Ce0fntRrrFcVp4ntlRKmmQa5ogVO9s8qCISmajF8uFv8uTDATbEZwi8thUkVKYdIsu5
+ x+2jXgqbxpMgTQ17Gkywab1NS3M9JF1fkH2agDrYv5QhCQijaYjCuftRTK7CSVJ8uJLzSKOQ2
+ mNYOyKM+me9SKZdrgH+mcNgkln1gJpLyaKcHi+QXK9W+G/hT7dMmuOA5RKyWnY3QBNfqXMvVu
+ V7CdbgaJ9qeQpHNf2DjiY3J/856bPQtpRHE/8EpvUpjyaMeypohZ1cvfj1+cnzljrDqTvQBi+
+ Tw6u+bCM6SpA1HXNTce750h/6VY1vvBWmj8CaFlwqAVtXFMaghEjrm/0qJ3X8hX+8oNIHp8Qv
+ JCWrhuVhWDIm52hrmPdY58wk8RkNOjIMj8sXJodCJlWhRInrvU2Lk8Si+FCxOA8YYISHy2YqZ
+ ZwKWKdmDKXN8MYRMkrV/WOsDjVUIiJClXk/Rs9R9xe3aGdX6TbkmoAO/DHHCwuI6/NFTDrpOo
+ /k0GH1y2vCX9y1j8iFqyDDOdwKPBRrmSrMRgbZjEJM2C3ljUmAPOTxGm0k3k5Odlog2r6ChnI
+ k6/FDCHaF7UljUTtYN1B3jZnNdOIqFPBI+/VBjIhSXYxNnhyXig7TXQe3+RLAjSMviPLhWo6X
+ ZVm8VCax+Bjjs5xyi5m0mKQdm1Kjmiq9/KgnfmHt65odw+FBko26Dl1cW83oM1HADzGXN1oOe
+ uLsW4TFJBTdketBr0sS3JbKTPcC1+pnnmsTqNoLIA2AOG5epJp9n4L+SFptoZB7j1wlktXV2G
+ IlFnWV83KcEb5t8gl9X+uP67L+gTh823ZUOiDmZsuSXtfrrAuaOBJZt4uKBkbjR31J+EzgY8S
+ 9N489Nwb+UjHdE=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Even with v5.16.12, there are still users reporting excessive IO caused
-by autodefrag.
 
-With extra trace events, it shows autodefrag is triggered for the same
-inode again and again, not respecting the default commit interval:
-(process name, CPU info, UUID are removed)
 
- 5093.162849: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421337 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5096.558521: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421338 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5098.222259: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421338 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5098.544354: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421339 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5099.551326: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421339 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5101.066516: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421340 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5101.410834: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421340 flags=0x0 compress=0 max_sectors_to_defrag=1024
- 5102.177464: defrag_file_start: root=259 ino=410492 start=0 len=599138304 extent_thresh=65536 newer_than=421340 flags=0x0 compress=0 max_sectors_to_defrag=1024
+On 2022/3/9 03:05, bill gates wrote:
+> So, I recently attempted to upgrade from Linux kernel 4.19.82 to
+> 5.15.23, and I'm getting a critical error in dmesg about a corrupt
+> leaf (and no mounting of /home allowed with the options I'm aware of)
+>
+> [ 396.218964] BTRFS critical (device sda2): corrupt leaf: root=3D1
+> block=3D10442806968320 sl
+> ot=3D8 ino=3D6, invalid location key objectid: has 1 expect 6 or [256,
+> 18446744073709551360]
+> or 18446744073709551604
 
-[CAUSE]
-The offending file is a baloo database used by KDE, which is under
-consistent writeback since it monitor all the file updates.
+Please provide the following output:
 
-And since it's a database, a lot of small writes are triggered very
-frequently.
+# btrfs ins dump-tree -b 10442806968320 /dev/sda2
 
-This means, we got a lot btrfs_add_inode_defrag() called, maybe even
-before the current autodefrag has finished.
 
-And consider btrfs_run_defrag_inodes() will exhaust all inode_defrag,
-this means after inode 410492 being defragged, it immediately get
-re-queued again.
+The error message means, we got a DIR_ITEM in root tree.
 
-This caused autodefrag to scan the inode again and again, wasting tons
-of IO.
+Normally that is used to indicate what default subvolume is.
+Thus it's normally 6 or 5, or any valid subvolume id.
 
-[FIX]
-Instead of exhausting fs_info->defrag_inodes in
-btrfs_run_defrag_inodes(), which can get new inode_defrag during current
-run, we just swap fs_info->defrag_inodes with a local rb_root.
+But in your case, it's 1, thus tree-checker is rejecting your root tree.
 
-So btrfs_run_defrag_inodes() will only exhaust all inode_defrag, without
-being interrupted by new writes.
+I didn't thought we could have 1 as default subvolume (as 1 is the root
+tree, which is not a subvolume).
 
-Reported-by: Jan Ziak <0xe2.0x9a.0x9b@gmail.com>
-Issue: 423
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/file.c | 20 ++++++++++++++------
- 1 file changed, 14 insertions(+), 6 deletions(-)
+But it looks like we should update btrfs check to fix this case.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 9f455c96c974..6f52b452e8b8 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -187,7 +187,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
-  * the next one.
-  */
- static struct inode_defrag *
--btrfs_pick_defrag_inode(struct btrfs_fs_info *fs_info, u64 root, u64 ino)
-+btrfs_pick_defrag_inode(struct rb_root *defrag_inodes, u64 root, u64 ino)
- {
- 	struct inode_defrag *entry = NULL;
- 	struct inode_defrag tmp;
-@@ -198,8 +198,7 @@ btrfs_pick_defrag_inode(struct btrfs_fs_info *fs_info, u64 root, u64 ino)
- 	tmp.ino = ino;
- 	tmp.root = root;
- 
--	spin_lock(&fs_info->defrag_inodes_lock);
--	p = fs_info->defrag_inodes.rb_node;
-+	p = defrag_inodes->rb_node;
- 	while (p) {
- 		parent = p;
- 		entry = rb_entry(parent, struct inode_defrag, rb_node);
-@@ -222,8 +221,7 @@ btrfs_pick_defrag_inode(struct btrfs_fs_info *fs_info, u64 root, u64 ino)
- 	}
- out:
- 	if (entry)
--		rb_erase(parent, &fs_info->defrag_inodes);
--	spin_unlock(&fs_info->defrag_inodes_lock);
-+		rb_erase(parent, defrag_inodes);
- 	return entry;
- }
- 
-@@ -313,10 +311,20 @@ static int __btrfs_run_defrag_inode(struct btrfs_fs_info *fs_info,
- int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
- {
- 	struct inode_defrag *defrag;
-+	struct rb_root defrag_inodes;
- 	u64 first_ino = 0;
- 	u64 root_objectid = 0;
- 
- 	atomic_inc(&fs_info->defrag_running);
-+	spin_lock(&fs_info->defrag_inodes_lock);
-+	/*
-+	 * Swap the rb tree, so during autodefrag we won't run autodefrag
-+	 * on the same inode due to the new writes.
-+	 */
-+	defrag_inodes.rb_node = fs_info->defrag_inodes.rb_node;
-+	fs_info->defrag_inodes.rb_node = NULL;
-+	spin_unlock(&fs_info->defrag_inodes_lock);
-+
- 	while (1) {
- 		/* Pause the auto defragger. */
- 		if (test_bit(BTRFS_FS_STATE_REMOUNTING,
-@@ -327,7 +335,7 @@ int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
- 			break;
- 
- 		/* find an inode to defrag */
--		defrag = btrfs_pick_defrag_inode(fs_info, root_objectid,
-+		defrag = btrfs_pick_defrag_inode(&defrag_inodes, root_objectid,
- 						 first_ino);
- 		if (!defrag) {
- 			if (root_objectid || first_ino) {
--- 
-2.35.1
+Is the fs created using older btrfs-progs? I guess that may be the cause..=
+.
 
+Thanks,
+Qu
+
+
+> [ 396.218967] BTRFS error (device sda2): block=3D10442806968320 read
+> time tree block corru
+> ption detected
+>
+>
+> Interestingly. that 18446... number is a power of 2, looks like maybe
+> a bit flip? dmesg, uname, etc included in pastebin below. "btrfs
+> check" found no problems with fs on either kernel version. Would like
+> to figure out how to fix this, if possible.
+>
+> https://pastebin.com/0ESPU9Z6
+>
+> Thank you for any assistance,
+> -- Laurence Michaels.

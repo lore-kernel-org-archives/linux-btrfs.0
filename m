@@ -2,113 +2,102 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C590C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 17:23:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39FD1C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 17:27:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348671AbiCHRYh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 12:24:37 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55120 "EHLO
+        id S1347289AbiCHR2Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 12:28:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349297AbiCHRW6 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 12:22:58 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 146E25549B
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 09:21:08 -0800 (PST)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 18543210F3;
-        Tue,  8 Mar 2022 17:20:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1646760055;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Cy3HNMPxrZXM1/1kvxHRjqQz9AiwUugVErPrDV7urpI=;
-        b=eZhYXHIYuPRj6AU8bwKPajQth7CEiHU+VYDhYZ6195zO24W2F4ak/7JVN80V5cKAyhfZu1
-        2fc8ysrA6KVBI3Jc9Gctpxc1OSrltROWHsSdGKLtrM/9V4h2U+1puml4NnvAtw+cRdmFmU
-        zijKuUwUIwdi+Z9asmrYm9qNEscqcYA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1646760055;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Cy3HNMPxrZXM1/1kvxHRjqQz9AiwUugVErPrDV7urpI=;
-        b=LE966oJbH+dAkY09hmJBXCUu1CBuz+XqrmHMO41ARUUMcliwqD9k2MvnnEPhWbTxeui3JU
-        vEiQ6pMhH5/EeuBA==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 0E4A1A3B90;
-        Tue,  8 Mar 2022 17:20:55 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id ED920DA7B4; Tue,  8 Mar 2022 18:16:59 +0100 (CET)
-Date:   Tue, 8 Mar 2022 18:16:59 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 1/7] btrfs-progs: check: fix check_global_roots_uptodate
-Message-ID: <20220308171659.GP12643@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <cover.1645567860.git.josef@toxicpanda.com>
- <d62401f4e8b5294e589cd8be1ecac0082ccac56b.1645567860.git.josef@toxicpanda.com>
+        with ESMTP id S1349301AbiCHR2M (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 12:28:12 -0500
+Received: from mail-lj1-x229.google.com (mail-lj1-x229.google.com [IPv6:2a00:1450:4864:20::229])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 73FEF55763
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 09:27:15 -0800 (PST)
+Received: by mail-lj1-x229.google.com with SMTP id bn33so26008766ljb.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 09:27:15 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=pBQK4ptu5eu2CzXY/y3b95Ceol5gDBseg1AS4dXHJSU=;
+        b=QU6dkM5L6DYfyvH3o0dpNFOmDFylySug8m5L3qgKK6V5c8lg8QrTruPxg85qI+5sPk
+         LkI5S5XEiNwiuN1kP91fSxyfy5flySXCqOk3vBfhsp6fjOxF8K8sHKh8L3to/d668dCH
+         7E+gqw0RScaNfcrTSTDNHD/elU9jbJacJnGLk=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=pBQK4ptu5eu2CzXY/y3b95Ceol5gDBseg1AS4dXHJSU=;
+        b=B7q57f3LjOLLdnT9riGnrGDME8jpaf69d1AZc9K5qpMWIixWjI1tGcSIngPkTCTQpH
+         TSwskLZH0OWc8hZIrfPp50q8gphiqRA2wOGLJcc40+UhWezU4aF+QcZ56B8Bt9JOY+ut
+         7HYeaQ//IyYI/ksGZRfZbrJTKyQX2FXY5U9KztE0tFToeVq1xOku12nOG3eD6xF50juA
+         yV+B57yK3a7iJod0rSUKrUxHq0ao5n134XcwB9jlbQ7Quc2xWDSFRBRWS8q0JZIKnTgl
+         jNtuQn4+U9esyL62eQt5xGmLAmKMBufEQ4+rMJ7u4s4AwBfc6XinB/O79o4kRon1ubLe
+         /uVQ==
+X-Gm-Message-State: AOAM532wCOvG3tDlPQJIxa0ayP6bo+RZValAmRnLO4wjEmtKnqO5jhu4
+        yHURPDbr3PTRY/p2/+Pe5FhElRUxoFgKOG52sSA=
+X-Google-Smtp-Source: ABdhPJwrTwkNFlnSXh3ClAEFUU9lgBRq5MHbXqV0qB516Z+lXfl7lQue0Ykuk5hLAWui/7M1+RwTCQ==
+X-Received: by 2002:a05:651c:1782:b0:244:cb09:c317 with SMTP id bn2-20020a05651c178200b00244cb09c317mr11614582ljb.488.1646760431121;
+        Tue, 08 Mar 2022 09:27:11 -0800 (PST)
+Received: from mail-lf1-f44.google.com (mail-lf1-f44.google.com. [209.85.167.44])
+        by smtp.gmail.com with ESMTPSA id b2-20020a196442000000b00443c5b81ce0sm3572946lfj.180.2022.03.08.09.27.09
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 08 Mar 2022 09:27:09 -0800 (PST)
+Received: by mail-lf1-f44.google.com with SMTP id h14so8503480lfk.11
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 09:27:09 -0800 (PST)
+X-Received: by 2002:a05:6512:e8a:b0:443:7b8c:579a with SMTP id
+ bi10-20020a0565120e8a00b004437b8c579amr11552290lfb.687.1646760428865; Tue, 08
+ Mar 2022 09:27:08 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <d62401f4e8b5294e589cd8be1ecac0082ccac56b.1645567860.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com>
+ <CAHk-=wgmCuuJdf96WiT6WXzQQTEeSK=cgBy24J4U9V2AvK4KdQ@mail.gmail.com> <bcafacea-7e67-405c-a969-e5a58a3c727e@redhat.com>
+In-Reply-To: <bcafacea-7e67-405c-a969-e5a58a3c727e@redhat.com>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Tue, 8 Mar 2022 09:26:52 -0800
+X-Gmail-Original-Message-ID: <CAHk-=wh1WJ-s9Gj15yFciq6TOd9OOsE7H=R7rRskdRP6npDktQ@mail.gmail.com>
+Message-ID: <CAHk-=wh1WJ-s9Gj15yFciq6TOd9OOsE7H=R7rRskdRP6npDktQ@mail.gmail.com>
+Subject: Re: Buffered I/O broken on s390x with page faults disabled (gfs2)
+To:     David Hildenbrand <david@redhat.com>
+Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-s390 <linux-s390@vger.kernel.org>,
+        Linux-MM <linux-mm@kvack.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 22, 2022 at 05:22:36PM -0500, Josef Bacik wrote:
-> While running make test on other patches I noticed we are now
-> segfaulting on the fuzz tests.  This is because when I converted us to a
-> rb tree for the global roots we lost the ability to catch that there's
-> no extent root at all.  Before we'd populate a dummy
-> fs_info->extent_root with a not uptodate node, but now you simply don't
-> get an extent root in the rb_tree.  Fix the check_global_roots_uptodate
-> helper to count how many roots we find and make sure it matches the
-> number we expect.  If it doesn't then we can return -EIO.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  check/main.c | 34 +++++++++++++++++++++++++++++++++-
->  1 file changed, 33 insertions(+), 1 deletion(-)
-> 
-> diff --git a/check/main.c b/check/main.c
-> index 8ccba447..abe208df 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -10207,6 +10207,8 @@ static int check_global_roots_uptodate(void)
->  {
->  	struct btrfs_root *root;
->  	struct rb_node *n;
-> +	int found_csum = 0, found_extent = 0, found_fst = 0;
-> +	int ret = 0;
->  
->  	for (n = rb_first(&gfs_info->global_roots_tree); n; n = rb_next(n)) {
->  		root = rb_entry(n, struct btrfs_root, rb_node);
-> @@ -10215,9 +10217,39 @@ static int check_global_roots_uptodate(void)
->  			      root->root_key.objectid, root->root_key.offset);
->  			return -EIO;
->  		}
-> +		switch(root->root_key.objectid) {
-> +		case BTRFS_EXTENT_TREE_OBJECTID:
-> +			found_extent++;
-> +			break;
-> +		case BTRFS_CSUM_TREE_OBJECTID:
-> +			found_csum++;
-> +			break;
-> +		case BTRFS_FREE_SPACE_TREE_OBJECTID:
-> +			found_fst++;
-> +			break;
-> +		default:
-> +			break;
-> +		}
->  	}
->  
-> -	return 0;
-> +	if (found_extent != gfs_info->nr_global_roots) {
-> +		error("found %d extent roots, expected %llu\n", found_extent,
+On Tue, Mar 8, 2022 at 12:21 AM David Hildenbrand <david@redhat.com> wrote:
+>
+> As raised offline already, I suspect
+>
+> shrink_active_list()
+> ->page_referenced()
+>  ->page_referenced_one()
+>   ->ptep_clear_flush_young_notify()
+>    ->ptep_clear_flush_young()
+>
+> which results on s390x in:
+>
+> static inline pte_t pte_mkold(pte_t pte)
+> {
+>         pte_val(pte) &= ~_PAGE_YOUNG;
+>         pte_val(pte) |= _PAGE_INVALID;
+>         return pte;
+> }
 
-Reminder for the future, the strings for error() a warning() helpers do
-not need the trailing \n.
+Yeah, that looks likely.
+
+It looks to me like GUP just doesn't care about _PAGE_INVALID on s390,
+and happily looks up that page despite it not being "present" as far
+as hardware is concerned.
+
+Your actual patch looks pretty nasty, though. We avoid marking it
+accessed on purpose (to avoid atomicity issues wrt hw-dirty bits etc),
+but still, that patch makes me go "there has to be a better way".
+
+                              Linus

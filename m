@@ -2,81 +2,133 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA0E6C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 17:43:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84D9AC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 17:48:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348303AbiCHRn5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 12:43:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59736 "EHLO
+        id S1348689AbiCHRtA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 12:49:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40036 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345430AbiCHRn5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 12:43:57 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8FE8031518
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 09:43:00 -0800 (PST)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 4C6C6210F3;
-        Tue,  8 Mar 2022 17:42:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1646761379;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        with ESMTP id S1349247AbiCHRs6 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 12:48:58 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 4381848382
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 09:48:01 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1646761680;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=jaa1xb8oFnF9ef8N4uIr1AWGNYPO4ZMoTllLPHgJ/MM=;
-        b=AarsRMoj6lpxlH7aBQiK6mocaT8Upfs6hxC1cy3FBTHwTM+q0lh2PxYQ+KY8oLTo7A0bd0
-        1I+/h/ItIUpcKulsfE0HtmdCGLnchiOVvHjxRIFLchmr2afdMPa4HVAxu4VTrapm4T43Lu
-        bvmZh8nDqvXhUqzmRkWAkgOnGEbZWKI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1646761379;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=jaa1xb8oFnF9ef8N4uIr1AWGNYPO4ZMoTllLPHgJ/MM=;
-        b=yFEKSH3nN/s0dwb55zXdlpRBkU+4U1ST38kouCtiVzUIIUpQqE66eN0837M1Lzsg/14JEN
-        0cXHtiTLoGPaDQDQ==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 4617EA3B89;
-        Tue,  8 Mar 2022 17:42:59 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 30A87DA7DE; Tue,  8 Mar 2022 18:39:04 +0100 (CET)
-Date:   Tue, 8 Mar 2022 18:39:04 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 0/7] btrfs-progs: various regression fixes
-Message-ID: <20220308173903.GR12643@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <cover.1645567860.git.josef@toxicpanda.com>
+        bh=FakVQP6MiE/Zi0gwIeYZLkyYTc78bBZSuWUh+KCXbNw=;
+        b=bkI/8vsdbf5tHIN9D31azGMqzZ6vgbXJjyaMDy2KzrEbwwihMdev6daB9f+2H82Hx5ntqG
+        3byqYnlK+ZKHufoTdCMrZsrDF7A7gyYiWNvop06FF/sS36pll7hjhK2m1SezGU8NRhkFQQ
+        7yjoFi8Ylar7Pzt13DmV80R0LUuQbqw=
+Received: from mail-wm1-f69.google.com (mail-wm1-f69.google.com
+ [209.85.128.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-439-FSzEpa2RO8ermw9QALBbEA-1; Tue, 08 Mar 2022 12:47:59 -0500
+X-MC-Unique: FSzEpa2RO8ermw9QALBbEA-1
+Received: by mail-wm1-f69.google.com with SMTP id h131-20020a1c2189000000b003898de01de4so571033wmh.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 09:47:59 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent
+         :content-language:to:cc:references:from:organization:subject
+         :in-reply-to:content-transfer-encoding;
+        bh=FakVQP6MiE/Zi0gwIeYZLkyYTc78bBZSuWUh+KCXbNw=;
+        b=mMejoHsRT9jd6+T1z+jbw6I4mUtITE4CPqpmff+SQMu1OXGjMNp1TXaP43g7F407Ah
+         FLKutXH2ZSXnSsQdmRDmfjBHx9X9B8ReKogKgi5cGz83I+0jNfPHZJVmCOv62T8MlZd/
+         H5vbdbRblEoptGabuGgBUIZNJBjlUKvaGDHtcqzFJ0RpjrgRcir0x7JFEqp+uIMV4wI0
+         ISlXhyJI9eP3QFzceABZFn6mkAcm/tqmFTQLYeQdsbCUeLbNjbTECk/lFZ2XLqhva/3W
+         mpb7NdlNzbsSWpNJUOz8yuCmWOx97ogZA5UMGfKbEJc7tGZCInopw9dEDBKij61PtMx3
+         CVxg==
+X-Gm-Message-State: AOAM533qJTP+8NF/elclw+Qc0++hetHx7u+v1d36G/hC5iWX82raOKba
+        DkADalpbaiWvkr/NU+5zRTTCKjDjdkIXELO4bIBB+GFNrXI4pXP8PWw4ZDARBOcOPEV7HU4cyh1
+        NZflhXKDTFwC5A6YBzWQ/Nj8=
+X-Received: by 2002:a5d:4487:0:b0:1f1:232b:794f with SMTP id j7-20020a5d4487000000b001f1232b794fmr13637144wrq.715.1646761677979;
+        Tue, 08 Mar 2022 09:47:57 -0800 (PST)
+X-Google-Smtp-Source: ABdhPJxSc5uWGLBJT5WFw8W0WWnMeFJYAnXme99qyz4GnTqJ1cWsvoBhhkzFi7FmWm0wZEHWPxW2pQ==
+X-Received: by 2002:a5d:4487:0:b0:1f1:232b:794f with SMTP id j7-20020a5d4487000000b001f1232b794fmr13637130wrq.715.1646761677718;
+        Tue, 08 Mar 2022 09:47:57 -0800 (PST)
+Received: from ?IPV6:2003:cb:c708:b000:acda:b420:16aa:6b67? (p200300cbc708b000acdab42016aa6b67.dip0.t-ipconnect.de. [2003:cb:c708:b000:acda:b420:16aa:6b67])
+        by smtp.gmail.com with ESMTPSA id z2-20020a056000110200b001e7140ddb44sm14380253wrw.49.2022.03.08.09.47.56
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 08 Mar 2022 09:47:57 -0800 (PST)
+Message-ID: <6614d129-7635-5908-bab4-bb1f121e1742@redhat.com>
+Date:   Tue, 8 Mar 2022 18:47:56 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1645567860.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Content-Language: en-US
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Andreas Gruenbacher <agruenba@redhat.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-s390 <linux-s390@vger.kernel.org>,
+        Linux-MM <linux-mm@kvack.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com>
+ <CAHk-=wgmCuuJdf96WiT6WXzQQTEeSK=cgBy24J4U9V2AvK4KdQ@mail.gmail.com>
+ <bcafacea-7e67-405c-a969-e5a58a3c727e@redhat.com>
+ <CAHk-=wh1WJ-s9Gj15yFciq6TOd9OOsE7H=R7rRskdRP6npDktQ@mail.gmail.com>
+From:   David Hildenbrand <david@redhat.com>
+Organization: Red Hat
+Subject: Re: Buffered I/O broken on s390x with page faults disabled (gfs2)
+In-Reply-To: <CAHk-=wh1WJ-s9Gj15yFciq6TOd9OOsE7H=R7rRskdRP6npDktQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 22, 2022 at 05:22:35PM -0500, Josef Bacik wrote:
-> Hello,
+On 08.03.22 18:26, Linus Torvalds wrote:
+> On Tue, Mar 8, 2022 at 12:21 AM David Hildenbrand <david@redhat.com> wrote:
+>>
+>> As raised offline already, I suspect
+>>
+>> shrink_active_list()
+>> ->page_referenced()
+>>  ->page_referenced_one()
+>>   ->ptep_clear_flush_young_notify()
+>>    ->ptep_clear_flush_young()
+>>
+>> which results on s390x in:
+>>
+>> static inline pte_t pte_mkold(pte_t pte)
+>> {
+>>         pte_val(pte) &= ~_PAGE_YOUNG;
+>>         pte_val(pte) |= _PAGE_INVALID;
+>>         return pte;
+>> }
 > 
-> In trying to test my new extent tree v2 patches I noticed I had regressed a few
-> of these tests with my previous prep patches.  I'm not entirely sure how I
-> missed this before as I generally run the tests, but there are some clear things
-> that need fixing.  I've based these patches on the devel branch, with them in
-> place everything passes as it should.  Thanks,
+> Yeah, that looks likely.
 > 
-> Josef
+> It looks to me like GUP just doesn't care about _PAGE_INVALID on s390,
+> and happily looks up that page despite it not being "present" as far
+> as hardware is concerned.
 > 
-> Josef Bacik (7):
->   btrfs-progs: check: fix check_global_roots_uptodate
->   btrfs-progs: fuzz-tests: use --force for --init-csum-tree
->   btrfs-progs: repair: bail if we find an unaligned extent
->   btrfs-progs: properly populate missing trees
->   btrfs-progs: don't check skip_csum_check if there's no fs_info
->   btrfs-progs: do not try to load the free space tree if it's not
->     enabled
->   btrfs-progs: inspect-tree-stats: initialize the key properly
+> Your actual patch looks pretty nasty, though. We avoid marking it
+> accessed on purpose (to avoid atomicity issues wrt hw-dirty bits etc),
+> but still, that patch makes me go "there has to be a better way".
 
-Added to devel, thanks.
+It certainly only works if we don't have hw dirty bits that might get
+set concurrently -- for example, on s390x there is no such requirement.
+
+As raised by Gerald, arch_faults_for_dirty_pte (and existing
+arch_faults_on_old_pte) might be one option to get rid of the s390x
+special-casing, and detect any arch that might update the dirty bit
+concurrently.
+
+Interestingly, mm/huge_memory.c:touch_pmd() doesn't seem to care about
+concurrent dirty-bit updates by the hardware. Hmm.
+
+But, of course, I'm open for alternatives, maybe we could adjust
+fault_in_safe_writeable() to not use GUP as raised by you in the other
+reply.
+
+-- 
+Thanks,
+
+David / dhildenb
+

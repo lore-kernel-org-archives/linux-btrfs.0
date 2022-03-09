@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 478A4C433FE
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D140FC4332F
 	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 13:51:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233335AbiCINwR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S233329AbiCINwR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 9 Mar 2022 08:52:17 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35722 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35718 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233320AbiCINwQ (ORCPT
+        with ESMTP id S233319AbiCINwQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2022 08:52:16 -0500
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D237617BC72
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6248C17BC6B
         for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2022 05:51:16 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8FF5221115;
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 20E9A21111;
         Wed,  9 Mar 2022 13:51:15 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
         t=1646833875; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=lBDcdKwWIthPYGpmx3pCpfTyLoZWsjlkIJYoGt5d83Q=;
-        b=oEbjHQ0a620gp5WcwBhKH2UseOt3tlgXiCMu8jx1QZemTfMkoHzLP58hsvR/+VmcpHTWqJ
-        i55OjJ9ODzXfemgWwzdTYUxwcFe5E9ZEm12G6AJgvc+CvxO4Lio2A7HYo/7jqkuBxwZyYO
-        ZeFk44HSxqYR6ilVa8ZfGxVthGNPl8Y=
+        bh=QA5uS8r87f+ypWeslpg6F2oc+RM7v4anBBkFIbAqLbY=;
+        b=lXcbbjFqu+nuiEvFDfZAGiDzmY1exyPhmMhH+K232IbbqmGYShh+f+glYwFMtqd+ba9JEj
+        WaDv1ULZWNSEp+2rLiwHrAdqlnlzfSQJaplYdDO6Ay4tWM5wTg5k2T2+3mAaq2R42FKvbJ
+        er7yH+0cZYbq77P7FVtnkihTjWAkK4Q=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 61C3F13D7A;
-        Wed,  9 Mar 2022 13:51:15 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E89DD13D7A;
+        Wed,  9 Mar 2022 13:51:14 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id yNVGFtOwKGL1LQAAMHmgww
-        (envelope-from <gniebler@suse.com>); Wed, 09 Mar 2022 13:51:15 +0000
+        id gP/4NtKwKGL1LQAAMHmgww
+        (envelope-from <gniebler@suse.com>); Wed, 09 Mar 2022 13:51:14 +0000
 From:   Gabriel Niebler <gniebler@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     dsterba@suse.com, Gabriel Niebler <gniebler@suse.com>,
         Marcos Paulo de Souza <mpdesouza@suse.com>
-Subject: [PATCH v4 06/14] btrfs: Use btrfs_for_each_slot in did_create_dir
-Date:   Wed,  9 Mar 2022 14:50:43 +0100
-Message-Id: <20220309135051.5738-7-gniebler@suse.com>
+Subject: [PATCH v4 04/14] btrfs: Use btrfs_for_each_slot in btrfs_search_dir_index_item
+Date:   Wed,  9 Mar 2022 14:50:41 +0100
+Message-Id: <20220309135051.5738-5-gniebler@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20220309135051.5738-1-gniebler@suse.com>
 References: <20220309135051.5738-1-gniebler@suse.com>
@@ -62,86 +62,67 @@ No functional changes.
 Signed-off-by: Marcos Paulo de Souza <mpdesouza@suse.com>
 Signed-off-by: Gabriel Niebler <gniebler@suse.com>
 ---
- fs/btrfs/send.c | 40 +++++++++++-----------------------------
- 1 file changed, 11 insertions(+), 29 deletions(-)
+ fs/btrfs/dir-item.c | 31 ++++++-------------------------
+ 1 file changed, 6 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 201eb2628aea..417aed3ab592 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2680,61 +2680,43 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
- static int did_create_dir(struct send_ctx *sctx, u64 dir)
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 3b532bab0755..7f1e6c48910f 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -325,36 +325,15 @@ btrfs_search_dir_index_item(struct btrfs_root *root,
+ 			    struct btrfs_path *path, u64 dirid,
+ 			    const char *name, int name_len)
  {
- 	int ret = 0;
-+	int iter_ret = 0;
- 	struct btrfs_path *path = NULL;
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 	struct btrfs_key di_key;
--	struct extent_buffer *eb;
+-	struct extent_buffer *leaf;
  	struct btrfs_dir_item *di;
--	int slot;
+ 	struct btrfs_key key;
+-	u32 nritems;
+ 	int ret;
  
- 	path = alloc_path_for_send();
--	if (!path) {
--		ret = -ENOMEM;
--		goto out;
--	}
-+	if (!path)
-+		return -ENOMEM;
- 
- 	key.objectid = dir;
+ 	key.objectid = dirid;
  	key.type = BTRFS_DIR_INDEX_KEY;
  	key.offset = 0;
--	ret = btrfs_search_slot(NULL, sctx->send_root, &key, path, 0, 0);
--	if (ret < 0)
--		goto out;
  
+-	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-	if (ret < 0)
+-		return ERR_PTR(ret);
+-
+-	leaf = path->nodes[0];
+-	nritems = btrfs_header_nritems(leaf);
+-
 -	while (1) {
--		eb = path->nodes[0];
--		slot = path->slots[0];
--		if (slot >= btrfs_header_nritems(eb)) {
--			ret = btrfs_next_leaf(sctx->send_root, path);
--			if (ret < 0) {
--				goto out;
--			} else if (ret > 0) {
--				ret = 0;
+-		if (path->slots[0] >= nritems) {
+-			ret = btrfs_next_leaf(root, path);
+-			if (ret < 0)
+-				return ERR_PTR(ret);
+-			if (ret > 0)
 -				break;
--			}
+-			leaf = path->nodes[0];
+-			nritems = btrfs_header_nritems(leaf);
 -			continue;
 -		}
-+	btrfs_for_each_slot(sctx->send_root, &key, &found_key, path, iter_ret) {
-+		struct extent_buffer *eb = path->nodes[0];
+-
+-		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++	btrfs_for_each_slot(root, &key, &key, path, ret) {
+ 		if (key.objectid != dirid || key.type != BTRFS_DIR_INDEX_KEY)
+ 			break;
  
--		btrfs_item_key_to_cpu(eb, &found_key, slot);
- 		if (found_key.objectid != key.objectid ||
- 		    found_key.type != key.type) {
- 			ret = 0;
--			goto out;
-+			break;
- 		}
- 
--		di = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
-+		di = btrfs_item_ptr(eb, path->slots[0], struct btrfs_dir_item);
- 		btrfs_dir_item_key_to_cpu(eb, di, &di_key);
- 
- 		if (di_key.type != BTRFS_ROOT_ITEM_KEY &&
- 		    di_key.objectid < sctx->send_progress) {
- 			ret = 1;
--			goto out;
-+			break;
- 		}
+@@ -362,10 +341,12 @@ btrfs_search_dir_index_item(struct btrfs_root *root,
+ 					       name, name_len);
+ 		if (di)
+ 			return di;
 -
 -		path->slots[0]++;
  	}
-+	/* Catch error found on iteration */
-+	if (iter_ret < 0)
-+		ret = iter_ret;
- 
--out:
- 	btrfs_free_path(path);
- 	return ret;
+-	return NULL;
++	/* Fix return code if key was not found in next leaf. */
++	if (ret > 0)
++		ret = 0;
++
++	return ERR_PTR(ret);
  }
+ 
+ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
 -- 
 2.35.1
 

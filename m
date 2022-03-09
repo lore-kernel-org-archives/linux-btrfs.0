@@ -2,100 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DCA0C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  8 Mar 2022 23:05:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D5CA8C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:07:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231345AbiCHXGM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 18:06:12 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50758 "EHLO
+        id S230229AbiCIBIb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 20:08:31 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57448 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231643AbiCHXGL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 18:06:11 -0500
-Received: from mail-lf1-x129.google.com (mail-lf1-x129.google.com [IPv6:2a00:1450:4864:20::129])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A382360A95
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 15:05:11 -0800 (PST)
-Received: by mail-lf1-x129.google.com with SMTP id bu29so760017lfb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 15:05:11 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=wdVWBzgsedM9AV333S/rYqtk3kmr1dq/oz1yQG7Vgh4=;
-        b=CapfjqS/d37B0jplVWACoxvj13lBDboFn1ZvDEGEk67iQmQLD/NIYP2+q4GKmdeWRR
-         I2P3A7MiIikvkhsbHdjl2XKHz3d35YDe4TnwwshiRh+ejIaaD3WXCmj3ROr2bX4xm/5x
-         hYqJq/YoX0ZwLXTP4JyEeVPoEBwPAvKUl2I+P7puP3TsTv+jcaz0pUZXvI6Zb6rtq9ns
-         ruvfFjR070DsOSwW43lqB6HWHLjNxioduFT6+tOu8R4HIh3Y//E6FfhLFV3saNNZn/af
-         NI/K3tXkzDSUGqZLturuLnFYRD1lQIAGgWyd+ngpNfM/rhwk8XJshlLj+rvPnimv/cuv
-         DTGg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=wdVWBzgsedM9AV333S/rYqtk3kmr1dq/oz1yQG7Vgh4=;
-        b=LyudVZfUd+VxJHVSLvQ7HPryb7M7PJxe+iipI85GlZrQJfV3GL2SNBd+yzQUFqvdAN
-         on4AWAC1xi08ehVR5I3eL0rzC8/D6HHllMZd2+EZe1AxvB3/epnu81zRJsh5aXaok6Xw
-         iUsyFWVIyD7cDr7d9QQRU227DT4ms7t1/O5uqesqrhDjZoH8jM2qtGYQ7pNmT8ltjTgz
-         SywCgudvChYFpm/YnzJImyTtG6jIyU9Xo14VnnYksBhvyR7kc/pRidM/N7l98x17ko4r
-         5Sh0BtmfTdiGa0P6jDFlb6g2++oDLtJ38+8tiS8RDqhMJxLl5RUoXfrdVILTwUUtv+sD
-         bdWw==
-X-Gm-Message-State: AOAM531//rr6qzZ5kQNtYwsoLerkgPdcdCj6CE0SOdo9cW9uDfxd5pQg
-        rIcVG6E+kD7QUlpXk7ymxJD3JHF3TLHn2t5OkipGR/75SoUiVpnc
-X-Google-Smtp-Source: ABdhPJxv8GMcmCAe0HLy2hz8zVc5RQ/vy3eg3otGMcrO3wpkl5grlcKAPasVMs+LFJYzumAptOka3lfvwOgI51f56Ls=
-X-Received: by 2002:ac2:4315:0:b0:448:2bb9:f11d with SMTP id
- l21-20020ac24315000000b004482bb9f11dmr8993534lfh.212.1646780709696; Tue, 08
- Mar 2022 15:05:09 -0800 (PST)
+        with ESMTP id S230028AbiCIBIQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:08:16 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 552691451FD
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 16:49:40 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1646786978;
+        bh=p1omnjlbuLxaKdzsyQR7Rhnpj60VUzrNeVRuSLZQeeI=;
+        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+        b=lbxBEm5ZEyl3/3iT/VsHB1z2IDnLnpCjLo/hWpzZZlxaJNQoTC0gRVTZL4IG5v9WW
+         TDAedRpYRNKA3NCf2UStSmrzmxpKJ+f8/iTbcgHrDWRGWo8sqhCAdj7uP1xCjd2Iyg
+         nWhYLfroMwNK/ftTZYWNSUqbFVSgBSmt3s8bZB0Q=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MuUnA-1oHmCy0z3K-00rats; Wed, 09
+ Mar 2022 01:06:55 +0100
+Message-ID: <fc451396-db2c-b7d5-0f10-15d77f1b38b1@gmx.com>
+Date:   Wed, 9 Mar 2022 08:06:51 +0800
 MIME-Version: 1.0
-References: <1cb1e7d9-51d0-4c2e-8cd1-6b02d045bcad@gmail.com>
- <CAJCQCtTgVyWGXG6psu2d_4BuH+y0SBm3Zxqr44qzJB9Huh__0Q@mail.gmail.com> <3a34f457-ed4e-4050-a24e-313af946d84d@gmail.com>
-In-Reply-To: <3a34f457-ed4e-4050-a24e-313af946d84d@gmail.com>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Tue, 8 Mar 2022 16:04:52 -0700
-Message-ID: <CAJCQCtS4Q7_jocLEgsxRh-yXruzOW11rra7Tsv3_TGhv6h0sVg@mail.gmail.com>
-Subject: Re: Recover btrfs partition after accidental reformat
-To:     Emil <broetchenrackete@gmail.com>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.1
+Subject: Re: A question for btrfs-progs code
+Content-Language: en-US
+To:     Sidong Yang <realwakka@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20220308145539.GA19735@realwakka>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220308145539.GA19735@realwakka>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:g3khfFOZutTFBCHNOWD8JVfTiMnr8ySfcXrlz7VVBZegqgw3slu
+ D8+f4SYZy22OWA56UONhY7qpZNENYQkdDvunGlMSj7ijq5QJyo1pmKDZalDfd9aISXRA11+
+ jOhBt6Oj9y9XP8n9Lo1WreMDZ5AXN+xd/5+IbO4RdjC0ygLxuMnEdHYcinNwt6VSNpNOdGo
+ Y6cvKRR5Ztt4ZIgh3nspA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:3Ci9sJHGt+8=:YUSfTtMAEyfa9ibnoJ4HnA
+ z1WLAxLUa28PKFCLcaQbuuFxBs7yaacyCip6Q5VDQuHImee0Zijwq6R1b2NMBAmdIcwXQ1NIN
+ vSzd2mpN6BCPggBdu/KaEslqKJLMC4qM9YVSPmZn5y6XiLwmUBBpccQUgpykKRG2VLsJp8qWz
+ nh/q2WfSHeEgQjcXjU8Jyvp9u8TU/D/Yx1HVp3cK1rLYYorFNfiJkXXb/2+lzVGpTVZQAbE8x
+ ggr6UStnYNrGzjSJM0ga0726w8kpUmF4whf3C6V/Q9IDRzxYbVtkdDTA56kIwv6gVMdUVcRCS
+ /Tnyda9zMN4nQYjdhyI8Okrm9KGt1Wra57b0UM3qYqI9RPDAXsIvOgvUtXFActT/N1Jl1oUMG
+ zHV4UPYNk5ozSz5IIsSFCMwxCMPqor7B1tjPjhgkjxGSe4Zfa1fGVOSTboYuyQ7dvRi+99X83
+ UkxcIoBImJ4+VnMVryzjkhAkdPVjkagtAPtdfY/9+Uf/3EA6s62x/UE2UASxjX7w2hQXj2gky
+ EXrt2aWKkHy9YfyhpRNdK+jtCh09mZCXbFpqW2Kz+Nm66+tltmsLF66wTy3U38MV3mqLFGyz1
+ ZjYimCj2rJJW9mmCgkaYpu5YKbO9kI7NY6xfaPAq+BsDchKbO9mOZLt2NLiuALWiilJtmOBIa
+ JFdlyYbw0mZ9HehtF5UjuJrtFAy8oHcbDnFr6x+QR2M3Kc4aj2kxa43WWDlJ7dPz5fF5olm1e
+ /qFRPWlpOoF1OAwtMmZGnM5o5tRwC5Ablc0di1gADHQCOI9yOzVcF9ru/uRkzHLHG743HCYvF
+ kqkwBIg94IckCyIjGgoCuqy27lB6LR+8UOcesCkJ/hp3zgEtv8tprYi2cMqyuPdBV2oAHsb12
+ BrzCUpGTB8tTIjWq3A9672geS7Zm1vPuEQ/fzxT81/Ovpx0GVtkZFayWS999Bbs471GujgRJC
+ eVGCd5k5aZy4+XD+ERQWZnjInzf5R3KGyeKl+CMjWGtaa4fGKsSZOugEIv2hKbFyl5texy73k
+ UGcmawvCxShWBi32wsNJea4rg3+rpPm2xWgx4mpnDu6naLd9qtbl5xYWf3+FRcX7VZVl9y+ya
+ smDUQrAN2dWziU=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 8, 2022 at 3:20 PM Emil <broetchenrackete@gmail.com> wrote:
->
-> Thanks for the tip with the overlay. Unfortunately recovering superblocks isn't working:
->
->
-> [bluemond@BlueQ btrfsoverlay]$ sudo btrfs rescue super -v /dev/mapper/sdh1
-> All Devices:
->         Device: id = 1, name = /dev/mapper/sdh1
->
-> Before Recovering:
->         [All good supers]:
->                 device name = /dev/mapper/sdh1
->                 superblock bytenr = 274877906944
->
->         [All bad supers]:
->                 device name = /dev/mapper/sdh1
->                 superblock bytenr = 65536
->
->                 device name = /dev/mapper/sdh1
->                 superblock bytenr = 67108864
->
->
-> Make sure this is a btrfs disk otherwise the tool will destroy other fs, Are you sure? [y/N]: y
-> checksum verify failed on 22020096 wanted 0x00000000 found 0xb6bde3e4
-> checksum verify failed on 22020096 wanted 0x00000000 found 0xb6bde3e4
-> ERROR: cannot read chunk root
-> Failed to recover bad superblocks
 
-If both copies of the chunk root are damaged, then the file system is
-toast. It's a critical tree, if it can't be read then none of the
-addresses for file locations can be figured out. Most mkfs write a lot
-of zeros on purpose to wipe away portions of previous file systems
-that could tend to confuse the new one and so it would seem NTFS's
-mkfs has zero'd too much.
 
-I don't really have any good suggestions.
+On 2022/3/8 22:55, Sidong Yang wrote:
+> Hi I have a simple question for btrfs-progs.
+> In cmd/subvolume.c, It seems that create subvolume command has -c
+> option. According to code, it gets two qgroup ids and adds to
+> qgroup_inherit. But the command is not in manual. Same as creating
+> snapshot.
+>
+> Is it deprecated option or internally used?
 
--- 
-Chris Murphy
+That -c can easily screw up the qgroup numbers.
+
+So we don't want users to use them.
+
+I'm not sure if we should even provide that interface.
+
+> If it should be deleted, It would be glad to do it.
+
+Feel free to do that, as I'm completely fine to remove it.
+
+Thanks,
+Qu

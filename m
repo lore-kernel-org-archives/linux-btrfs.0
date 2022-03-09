@@ -2,241 +2,357 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72D2AC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:38:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 233B7C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 02:13:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230502AbiCIBjH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 20:39:07 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46792 "EHLO
+        id S231336AbiCICN5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 21:13:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230450AbiCIBjF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:39:05 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 89DFFC248E
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 17:38:02 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1646789881;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=A8fgJdSd4jTcxLbOrTQCZhthR47fpf/x6S9nK5SfbMc=;
-        b=hF1giwJkv2t1b57WNnlLpu5Ad9dLTWuPebnKCIlzPqL9OcT/Tq8K4QItV7utg5UirZutGX
-        vSWnXjZdkNrsGHmfGIJgqK16Iy+V6Em2rq1CFgh3CKQ06pjfoLqOVOxVuEjk4T4TU+rmar
-        K58IVN3owsKF1lmK1jO+xjfFxaD6Zfk=
-Received: from mail-wr1-f71.google.com (mail-wr1-f71.google.com
- [209.85.221.71]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-502-9DdwWSYFNS2fl8h8vNQYEg-1; Tue, 08 Mar 2022 18:24:59 -0500
-X-MC-Unique: 9DdwWSYFNS2fl8h8vNQYEg-1
-Received: by mail-wr1-f71.google.com with SMTP id k20-20020adfc714000000b001e305cd1597so82620wrg.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 15:24:59 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=A8fgJdSd4jTcxLbOrTQCZhthR47fpf/x6S9nK5SfbMc=;
-        b=VwSWS0Z8/jg82J2D3mx8cEU0Eqxbkh8atcWJM/60y/WR5zxnlMtA7Lod4nMmQyzq61
-         jjLCQM5OmF4NaFIgGsawb5d6EUd90zG9Vr+pSCWQvFwOe7rQ7IvCl5iClIuhdFzsAcgy
-         iCmRIkhZzUcqyjOU+qjR0md5FdjQ6BP208SvQtq2n/qJRlQOKz2YmM69rim3+LxT6Blf
-         0zaSMG9NPFVzLujboVFI/9PyJ/tvy8JL6rDEFXhzhdzfw0VaBwCoc/VC0PknWS4uAARD
-         7Ai1zgvvOskRc72qRJsnXXzIOY9G+Pw8VMlR6nG2zUQmjnwuX7v5OT+myXeEeaJsXKsA
-         4FSA==
-X-Gm-Message-State: AOAM531K0FgB09q1ARVcnq/GMbrkgUX+gS9cQl6/47+kqzLdyW8bXHOa
-        4q15/F3Sx92NNzTPbO9vG4nmVUmXwbMUOm6UQ3nWNKt/nXRJ18bQadtpN5eMcLnxSg04jv2PmLy
-        Am8n62jcjqjbn1be7Xlyj1GB/28entKp8ObfKdAU=
-X-Received: by 2002:a5d:5849:0:b0:1e3:1df9:1b1e with SMTP id i9-20020a5d5849000000b001e31df91b1emr14404410wrf.640.1646781896877;
-        Tue, 08 Mar 2022 15:24:56 -0800 (PST)
-X-Google-Smtp-Source: ABdhPJyNeW+VQoJ+JZHe58Un79Oa7EZWv0j4un3m858XpDFc2zPRghBXfevTp5t7ru/YSoSrtywRG5Q7JsT2HycIa/A=
-X-Received: by 2002:a5d:5849:0:b0:1e3:1df9:1b1e with SMTP id
- i9-20020a5d5849000000b001e31df91b1emr14404393wrf.640.1646781896454; Tue, 08
- Mar 2022 15:24:56 -0800 (PST)
+        with ESMTP id S231279AbiCICN4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 21:13:56 -0500
+Received: from mx0b-00069f02.pphosted.com (mx0b-00069f02.pphosted.com [205.220.177.32])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F1B2B2D
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 18:12:59 -0800 (PST)
+Received: from pps.filterd (m0246632.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 228M8nCa021322;
+        Wed, 9 Mar 2022 02:12:55 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=message-id : date :
+ subject : to : cc : references : from : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=corp-2021-07-09;
+ bh=YqpSa3krbWudrEVspLpqYdhiJJSC3PWo8KOvItGdHpo=;
+ b=hPL/PeIeWjgntH/jehRG1vDoJgtXRIJ5Nz20ifLmjxiYEG4AGE/8OI4S2AFmKYZ1WPjl
+ MgpbggXr7uqyLduVVCEOkwXWTRl4m738uZ9nG0kbPusT2FAek5o2yp9dTkOWVzOSoS2c
+ WEVOeCF10UEM1S9OyGc2xCxJttSx+y4vxFXaU611smCblYM0K7MNpmOwY0RtLWk44jKo
+ xzb9Ie6lIZsGe7tuzx3oISLPBg9JKzQ10pNa3R9fDwP/pOHYPWiykE5E10nGS3rSgVnn
+ 0imM3Y/QZaJaQXUn3xsFiSzrzEhMBAi2YgLKWG1MnS7YJwcXj3peqzdZNipaDgKyBKtS WA== 
+Received: from userp3030.oracle.com (userp3030.oracle.com [156.151.31.80])
+        by mx0b-00069f02.pphosted.com with ESMTP id 3ekyfsgp6f-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 09 Mar 2022 02:12:55 +0000
+Received: from pps.filterd (userp3030.oracle.com [127.0.0.1])
+        by userp3030.oracle.com (8.16.1.2/8.16.1.2) with SMTP id 2292AUWD136457;
+        Wed, 9 Mar 2022 02:12:54 GMT
+Received: from nam12-mw2-obe.outbound.protection.outlook.com (mail-mw2nam12lp2042.outbound.protection.outlook.com [104.47.66.42])
+        by userp3030.oracle.com with ESMTP id 3ekvyvemmp-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Wed, 09 Mar 2022 02:12:54 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=BpMW2LpXX7DHh1cX9skgYLWsCnFAX/lP3Pm13OTmwomyAOELrUi2uioLcTCdNrwWThYay8i+TLf2AYhMeejjnpj1xFJvErkRD5MI/LI61paSWPzIdAKjGqBJJ2RhNbA1BeNoF+BTXBj19nc613kfO8HiID0eyXqaRXyNd/w5NnbwnaXmIg1w9VwNk+cCfsu/h1SE+zxCnkDPyJ6Ddfq3KCjnUo3asBjdUT3aa3SaBh96AyT3L9JZ/a6h0Lo3lj6np0+toNob/6EWHIrvoQ7CtW1ngWHnMDwRbaAdGRESzRFyMQp1EUmy0YOAaR8WFqxUPXChAeX4JGWxm6r2in7DkA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=YqpSa3krbWudrEVspLpqYdhiJJSC3PWo8KOvItGdHpo=;
+ b=oDSZjGzp+hn85/PUO3R1XEMC+HfsJo0xhkVMQEnfW/y6sCSs25ibqmjm8wKcElAQAvJYPaz0PbvuWKur0iUB3n6LG5hrrpMA/ujkKJXBYTGtvqqkcDIp8blb6pfbALhvgzXHKuXg2tNvl9y56b29+g3LTE+SucN9MaOnARIkYHxpqQTZtp1CvLfsLRoGEKGviG/rqVO0ZGp1O/SulRcg/xI1LdBzOR9y8rPFmKA74RlHIw6RA9QDJnIk8RtyzXN6UkJOJWssfSKsXuj8kqh9Jg2J+LJ3sV69zWHmw9cX7GTFJJrmtjGwPBRe0jC+GX7OOJnFTg6f5K8pJlz5eRhr3w==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=YqpSa3krbWudrEVspLpqYdhiJJSC3PWo8KOvItGdHpo=;
+ b=KUqiBGfrluF4IrK1FAVJjJo/farya+M20aeM8eTSIVd0xM07K3ke3R4Lsy1WcNSD5wrJjwei6CjEUZoPQaRMHIQvZa51dUnr8lEEB7iRLtjCrQRVzapKgU7UfvEX8D/SPtEywTGqos76AqkxMWMJodgr/55ZltLGfjnStu83LBY=
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+ by DM6PR10MB3786.namprd10.prod.outlook.com (2603:10b6:5:1fe::22) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.5038.14; Wed, 9 Mar
+ 2022 02:12:51 +0000
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::d469:7ab:8ae2:1e6f]) by PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::d469:7ab:8ae2:1e6f%6]) with mapi id 15.20.5038.027; Wed, 9 Mar 2022
+ 02:12:51 +0000
+Message-ID: <760da013-f15b-805f-ceaa-c8be838eb9ff@oracle.com>
+Date:   Wed, 9 Mar 2022 10:12:43 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.2
+Subject: Re: [PATCH] btrfs: make device item removal and super block num
+ devices update happen in the same transaction
+Content-Language: en-US
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     =?UTF-8?Q?Luca_B=c3=a9la_Palkovics?= 
+        <luca.bela.palkovics@gmail.com>
+References: <b86647c31a09ccc44447367865ecac8d5b358b7c.1646717720.git.wqu@suse.com>
+From:   Anand Jain <anand.jain@oracle.com>
+In-Reply-To: <b86647c31a09ccc44447367865ecac8d5b358b7c.1646717720.git.wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: SG3P274CA0022.SGPP274.PROD.OUTLOOK.COM (2603:1096:4:be::34)
+ To PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
 MIME-Version: 1.0
-References: <CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com>
- <CAHk-=wgmCuuJdf96WiT6WXzQQTEeSK=cgBy24J4U9V2AvK4KdQ@mail.gmail.com>
- <bcafacea-7e67-405c-a969-e5a58a3c727e@redhat.com> <CAHk-=wh1WJ-s9Gj15yFciq6TOd9OOsE7H=R7rRskdRP6npDktQ@mail.gmail.com>
- <CAHk-=wjHsQywXgNe9D+MQCiMhpyB2Gs5M78CGCpTr9BSeP71bw@mail.gmail.com>
- <CAHk-=wjs2Jf3LzqCPmfkXd=ULPyCrrGEF7rR6TYzz1RPF+qh3Q@mail.gmail.com> <CAHk-=wi1jrn=sds1doASepf55-wiBEiQ_z6OatOojXj6Gtntyg@mail.gmail.com>
-In-Reply-To: <CAHk-=wi1jrn=sds1doASepf55-wiBEiQ_z6OatOojXj6Gtntyg@mail.gmail.com>
-From:   Andreas Gruenbacher <agruenba@redhat.com>
-Date:   Wed, 9 Mar 2022 00:24:44 +0100
-Message-ID: <CAHc6FU6L8c9UCJF_qcqY=USK_CqyKnpDSJvrAGput=62h0djDw@mail.gmail.com>
-Subject: Re: Buffered I/O broken on s390x with page faults disabled (gfs2)
-To:     Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     David Hildenbrand <david@redhat.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        Linux-MM <linux-mm@kvack.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 36ceb743-95ac-47ba-d751-08da01724ff4
+X-MS-TrafficTypeDiagnostic: DM6PR10MB3786:EE_
+X-Microsoft-Antispam-PRVS: <DM6PR10MB37865879FC7B44F6A13D58ACE50A9@DM6PR10MB3786.namprd10.prod.outlook.com>
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: Y2UT9IRtbLQQOy3zO0xAm6LgsExVSoik28DCD5zetCy9d5hD4B+1koBlPCaQZe1zAacGwFrJPJGgL1wj8kM0PRYGgdowPjK/TL/P40XjgJxyhykzHdn30uzfkobZl+sE9EQUje14z2+ZukFTx+K1LzHYFi9KKIQyswujTVct0EePU7OE4owt4syU50vn5OZ4/o1x1e1/7cYbE+7nZRE8RHyOTEh42X0W4hD22l+jGi4GzRZDiSYHcjUqy7N0qml79EvcVbGri+f+szZF1MPoRhtegpLj6sCY50hLifLuyMjP32LOU+Bqse7lIED3hKmUVw48Nd0n1n7hjLs7X2bYknsED3hN8fzOuwAw6tT2Hl+9EIz8BISKVMfE58v9nGJa++wAY/jq2zl9gOQnWq6QtsWobn8XJfQDOddmCkO8NIwmjX0G3FMR9ZL9IGLfOn6YN9VkUW5IztaHrF9UfGZZIhbd3nfmgOuts6sZzjX7HxsjyLlv9u2opI2OC3yZ9OxaB3YgXHu0x+ajceUqilMBwQdXKv6JOpema+5y9Whgqwbjh+v4fS2f0PfOrSnPG29hNfhhYLfBv9pQF+eBH0OFaFdk6vHtFgE0joOAwEntQ61/FhhsGQDh4WF8r5JgteLx6bbERtmZMQAl1l5Vbohvy8J8E5axTGS6E2SO/qLnnmoIf54qbxBn0nF0dw4UsV5tmNAsfN2RaDE5I1o2ZPh+zXc/PnRaWU9XHdrlCn0TNm+QiYTGYDztCqXOe19j0y2dj5WqQwy3RnNt8jzkP6pfV2g/P2eIRwR0MEZ8DejYQDtfzzLWBQvr//X8zfID9XY1
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230001)(366004)(508600001)(6486002)(316002)(6506007)(44832011)(15650500001)(86362001)(31696002)(966005)(6666004)(2616005)(36756003)(186003)(26005)(83380400001)(31686004)(66574015)(6512007)(53546011)(66556008)(4326008)(66946007)(66476007)(38100700002)(8676002)(2906002)(8936002)(5660300002)(43740500002)(45980500001);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?S0dta081ZzJGMG1ya1ExZi9ndzZUeWwvRGhsRUtSaWNmRUhkTnczbEJsTHg0?=
+ =?utf-8?B?b0g1ays1b2pWUUFuSGZYM3prSDdWa0hrYnFhNXI3aUF2OWV6VitUVGhGMm5I?=
+ =?utf-8?B?SGxXWC9yd3BwQVQ4VnNLOG50TnJlTmxsRE1kSmRwRUxvU251cWREbGtLVlZM?=
+ =?utf-8?B?SDFxb1BqaWxqcUk5Ny81MlpPZkdTS1NXdEowVzBDVGxybVJPVFl1WTdoYjEw?=
+ =?utf-8?B?enI4WGRhb0lOQXk2QlovMFdtZzI0K0orL3dGZ0RWaWpsaDN4RzNrU0ZBT25P?=
+ =?utf-8?B?Z0xMQ1dQZ1p1RUtBM1FOeWJBc1JhVGVGaHQ1UTUwamR6UGQ3NFRnbnpxd1dF?=
+ =?utf-8?B?NmJYTXd2VW5ZekNhbFMycnkvejVDRXJ6Snp4V3lDcExJRnN5ZXpRY2FsRVVU?=
+ =?utf-8?B?T2dIVVBXNEZxcmc5ZWxCRFAyUnpRc056WE5NRlU4R013WFowdnNLaHFmcnZP?=
+ =?utf-8?B?OUZUVGVlQzd6NHVuZjVBWVBzYlAvdXJTcCs3Y09qYklFVWltLzFFemVlSTNt?=
+ =?utf-8?B?dTdZZkRhUGZtZ3dSOXNIY05IQ1hJcDh3SHRjbHFxbWFDckxCOVVoZ1YzTkFQ?=
+ =?utf-8?B?OUhMM1hNQjRiNXQvQnQxanJEd1piY3MvZENXR2VmbnFtcVZiREllTWNKOUpi?=
+ =?utf-8?B?a3ZpT2daVVppeGRtWS8rUi9qRkg1aURPbnliRlVCL0FTWms2WVBUMExCTWhG?=
+ =?utf-8?B?eUNqSVdSbHFIVXBHeWIwOThKcDVrcnJQaE5KdThHZHJNVE1pZWNFSUlwY1h2?=
+ =?utf-8?B?YlpYUGtHWkZrbU9xS3dFY29lT3ZHS1VTTEFnUGlQcmF6bXU5VElBYnhLU284?=
+ =?utf-8?B?T3c3dVVNWTZsWTlpYlludXJxZ2ZvYVFtRmxuS29SWFhPNm5nc2QzZ0JIZFhD?=
+ =?utf-8?B?c0NzNUY3S3JMU21XTmFMREZhTGhNYll1SkgyRHg1aXVCb0lqOVRQS2Q3Mndh?=
+ =?utf-8?B?TXlJR0dxV1dkUFRaT0dwN3c3MGcyVE5OZytqM01HRnZJYkdaOUF0b2wrQ3pw?=
+ =?utf-8?B?dlE0WE43YmdhL3gvcGd6ajNqeCtTajZ4bmNoT05BNE9NQlVRbzJSaWgxREgz?=
+ =?utf-8?B?dkluQlVqOCtONy9KVlEzVzBjM0JSN0JKUDZ6ZWU2YjcwTTNTMlhrdlpJdlFi?=
+ =?utf-8?B?cUtpY2d3ajN3MFpybHRQalZRY1FCOWljbm9Ud0hidFFid3hFUitOL3BSeXoy?=
+ =?utf-8?B?bVVYbkRQMitZZkU2ZnR4cEs4a1RJSHVZYjRKUXUvd29IbVVkZDltYUZqRy9u?=
+ =?utf-8?B?K0NHalFoY0w2Z1NLb0dmOEx4T3lEZnZNSmo5QWhaSllLY0dVeFBLbkF1aEs4?=
+ =?utf-8?B?SXN2MCtGZCsyNWJoOTB1Rit1cTNsa0JpeGpzYkRldzBsYjIybkJMTTZKTHZL?=
+ =?utf-8?B?Wm9GK2tUeWN6bHFuYnloenZRcFZBTXcwYkdQUkRxR0JrZFZXMnVLTXlCTnpM?=
+ =?utf-8?B?ODNHSVM1WGdmTjNBQm0vcTIwdms4eTEySkZlSzMxWG1uSXhiamVTVjZuYW44?=
+ =?utf-8?B?KzdHOWIzV2lPL0s0QTlHWEtWT0pkVEJoY1JpWjVzdFI4ZEtQTjF5aFp1ZWJi?=
+ =?utf-8?B?NGdlQzN6clJ5NE1HWTQ1eEZxMlJQNE54VHBEenZlOW5XQ2hac25oSFUyUkVQ?=
+ =?utf-8?B?c2pYdWg5YmN6eEVkYmVmSkxNdVdiN0U0a0Y3SE5mZUJkSDBEcnc1Mk5LKzAx?=
+ =?utf-8?B?b09FRXVXd1hHVEE0SnlYTHA4VE5TNHArUmpCN3daTEVROHprbVZrV3loN3pD?=
+ =?utf-8?B?MVc0SUpJVnhMak90TGhkVTEzeWlDQ3dmcVhUek9lQytTak41bFVWejFPak8w?=
+ =?utf-8?B?czNzZ2gzd2hqMzA1T2w1Z3NjS3BJeG4rLzhsbThOYjRzQnY3NjRnSHY3R2xL?=
+ =?utf-8?B?MDJEMUV0cHVrSGhtR2tFVDZkMlBpazlrbVlWb0tDbnRqellYa0hnamUxTloy?=
+ =?utf-8?B?aUJKUktsaW9BbFhXRGZTTERxZFFWZnVsWHBLSUtFVUtVUlJuejVRdGw2Ungr?=
+ =?utf-8?B?QnpWY3owQ3pFN1oxaExsZzkzSDNoK3hxTldFaElnaW9SY3RKLyt0Q0x0ZGpE?=
+ =?utf-8?B?bDV5L1ZzVm9tNUZMVHVvWWtqSFVMZlNtV0p3ZEhWM1c4bnVGQTg4K2tDSy80?=
+ =?utf-8?B?NWE1Rnd5N1ZGbCszd0J4eUhXakVmUUxNRi9OUWNkUkk0TDlUTHRnYSsvaGhF?=
+ =?utf-8?Q?YWVpYa+p9cJQj/bndMLNWJ8=3D?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 36ceb743-95ac-47ba-d751-08da01724ff4
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 09 Mar 2022 02:12:51.1158
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: suHVKoD1H3WfVh9jVFgiWdlceHEDRyG2Vwv/Gj4ECe9ehwc/k/CC1CxZGs6mYSvVyfC7DsxyDVoy73aTxcalbQ==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR10MB3786
+X-Proofpoint-Virus-Version: vendor=nai engine=6300 definitions=10280 signatures=690848
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 malwarescore=0 mlxscore=0
+ suspectscore=0 bulkscore=0 mlxlogscore=999 adultscore=0 spamscore=0
+ phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2202240000 definitions=main-2203090010
+X-Proofpoint-GUID: xumgzPV2IPpN2ikyAfGVqJh04zVBwP7q
+X-Proofpoint-ORIG-GUID: xumgzPV2IPpN2ikyAfGVqJh04zVBwP7q
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 8, 2022 at 9:04 PM Linus Torvalds
-<torvalds@linux-foundation.org> wrote:
-> On Tue, Mar 8, 2022 at 11:27 AM Linus Torvalds <torvalds@linux-foundation.org> wrote:
-> >
-> > So I think the fix for this all might be something like the attached
-> > (TOTALLY UNTESTED)!
->
-> Still entirely untested, but I wrote a commit message for it in the
-> hopes that this actually works and Andreas can verify that it fixes
-> the issue.
->
-> Same exact patch, it's just now in my local experimental tree as a commit.
+On 08/03/2022 13:36, Qu Wenruo wrote:
+> [BUG]
+> There is a report that a btrfs has a bad super block num devices.
+> 
+> This makes btrfs to reject the fs completely.
+> 
+>    BTRFS error (device sdd3): super_num_devices 3 mismatch with num_devices 2 found here
+>    BTRFS error (device sdd3): failed to read chunk tree: -22
+>    BTRFS error (device sdd3): open_ctree failed
+> 
+> [CAUSE]
+> During btrfs device removal, chunk tree and super block num devs are
+> updated in two different transactions:
+> 
+>    btrfs_rm_device()
+>    |- btrfs_rm_dev_item(device)
+>    |  |- trans = btrfs_start_transaction()
+>    |  |  Now we got transaction X
+>    |  |
+>    |  |- btrfs_del_item()
+>    |  |  Now device item is removed from chunk tree
+>    |  |
+>    |  |- btrfs_commit_transaction()
+>    |     Transaction X got committed, super num devs untouched,
+>    |     but device item removed from chunk tree.
+>    |     (AKA, super num devs is already incorrect)
+>    |
+>    |- cur_devices->num_devices--;
+>    |- cur_devices->total_devices--;
+>    |- btrfs_set_super_num_devices()
+>       All those operations are not in transaction X, thus it will
+>       only be written back to disk in next transaction.
+> 
+> So after the transaction X in btrfs_rm_dev_item() committed, but before
+> transaction X+1 (which can be minutes away), a power loss happen, then
+> we got the super num mismatch.
+> 
+> [FIX]
+> Instead of starting and committing a transaction inside
+> btrfs_rm_dev_item(), start a transaction in side btrfs_rm_device() and
+> pass it to btrfs_rm_dev_item().
+> 
+> And only commit the transaction after everything is done.
+>  > Reported-by: Luca Béla Palkovics <luca.bela.palkovics@gmail.com>
+> Link: https://lore.kernel.org/linux-btrfs/CA+8xDSpvdm_U0QLBAnrH=zqDq_cWCOH5TiV46CKmp3igr44okQ@mail.gmail.com/
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/btrfs/volumes.c | 65 ++++++++++++++++++++--------------------------
+>   1 file changed, 28 insertions(+), 37 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 57a754b33f10..6115c302f4ae 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1896,23 +1896,18 @@ static void update_dev_time(const char *device_path)
+>   	path_put(&path);
+>   }
+>   
+> -static int btrfs_rm_dev_item(struct btrfs_device *device)
+> +static int btrfs_rm_dev_item(struct btrfs_trans_handle *trans,
+> +			     struct btrfs_device *device)
+>   {
+>   	struct btrfs_root *root = device->fs_info->chunk_root;
+>   	int ret;
+>   	struct btrfs_path *path;
+>   	struct btrfs_key key;
+> -	struct btrfs_trans_handle *trans;
+>   
+>   	path = btrfs_alloc_path();
+>   	if (!path)
+>   		return -ENOMEM;
+>   
+> -	trans = btrfs_start_transaction(root, 0);
+> -	if (IS_ERR(trans)) {
+> -		btrfs_free_path(path);
+> -		return PTR_ERR(trans);
+> -	}
+>   	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+>   	key.type = BTRFS_DEV_ITEM_KEY;
+>   	key.offset = device->devid;
+> @@ -1923,21 +1918,12 @@ static int btrfs_rm_dev_item(struct btrfs_device *device)
+>   	if (ret) {
+>   		if (ret > 0)
+>   			ret = -ENOENT;
+> -		btrfs_abort_transaction(trans, ret);
+> -		btrfs_end_transaction(trans);
+>   		goto out;
+>   	}
+>   
+>   	ret = btrfs_del_item(trans, root, path);
+> -	if (ret) {
+> -		btrfs_abort_transaction(trans, ret);
+> -		btrfs_end_transaction(trans);
+> -	}
+> -
+>   out:
+>   	btrfs_free_path(path);
+> -	if (!ret)
+> -		ret = btrfs_commit_transaction(trans);
+>   	return ret;
+>   }
+>   
+> @@ -2078,6 +2064,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   		    struct btrfs_dev_lookup_args *args,
+>   		    struct block_device **bdev, fmode_t *mode)
+>   {
+> +	struct btrfs_trans_handle *trans;
+>   	struct btrfs_device *device;
+>   	struct btrfs_fs_devices *cur_devices;
+>   	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+> @@ -2098,7 +2085,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   
+>   	ret = btrfs_check_raid_min_devices(fs_info, num_devices - 1);
+>   	if (ret)
+> -		goto out;
+> +		return ret;
+>   
+>   	device = btrfs_find_device(fs_info->fs_devices, args);
+>   	if (!device) {
+> @@ -2106,27 +2093,22 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   			ret = BTRFS_ERROR_DEV_MISSING_NOT_FOUND;
+>   		else
+>   			ret = -ENOENT;
+> -		goto out;
+> +		return ret;
+>   	}
+>   
+>   	if (btrfs_pinned_by_swapfile(fs_info, device)) {
+>   		btrfs_warn_in_rcu(fs_info,
+>   		  "cannot remove device %s (devid %llu) due to active swapfile",
+>   				  rcu_str_deref(device->name), device->devid);
+> -		ret = -ETXTBSY;
+> -		goto out;
+> +		return -ETXTBSY;
+>   	}
+>   
+> -	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state)) {
+> -		ret = BTRFS_ERROR_DEV_TGT_REPLACE;
+> -		goto out;
+> -	}
+> +	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
+> +		return BTRFS_ERROR_DEV_TGT_REPLACE;
+>   
+>   	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) &&
+> -	    fs_info->fs_devices->rw_devices == 1) {
+> -		ret = BTRFS_ERROR_DEV_ONLY_WRITABLE;
+> -		goto out;
+> -	}
+> +	    fs_info->fs_devices->rw_devices == 1)
+> +		return BTRFS_ERROR_DEV_ONLY_WRITABLE;
+>   
+>   	if (test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state)) {
+>   		mutex_lock(&fs_info->chunk_mutex);
+> @@ -2139,14 +2121,22 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   	if (ret)
+>   		goto error_undo;
+>   
+> -	/*
+> -	 * TODO: the superblock still includes this device in its num_devices
+> -	 * counter although write_all_supers() is not locked out. This
+> -	 * could give a filesystem state which requires a degraded mount.
+> -	 */
+> -	ret = btrfs_rm_dev_item(device);
+> -	if (ret)
+> +	trans = btrfs_start_transaction(fs_info->chunk_root, 0);
+> +	if (IS_ERR(trans)) {
+> +		ret = PTR_ERR(trans);
+>   		goto error_undo;
+> +	}
+> +
+> +	ret = btrfs_rm_dev_item(trans, device);
+> +	if (ret) {
+> +		/* Any error in dev item removal is critical */
+> +		btrfs_crit(fs_info,
+> +			   "failed to remove device item for devid %llu: %d",
+> +			   device->devid, ret);
+> +		btrfs_abort_transaction(trans, ret);
+> +		btrfs_end_transaction(trans);
+> +		return ret;
 
-Seems to be working on s390x for this test case at least; the kind of
-trace I'm getting is:
+  Missed error_undo part of the undo here.
 
-swpd free buff cache read_fault read_fault_race read_lock_stolen min_flt maj_flt
-0 2249156 6352 783924 0 0 0 1142 157566
-0 2076308 5896 961680 0 0 0 1 52702
-0 1938824 5896 1186184 0 0 0 506 56708
-0 1719640 5896 1404268 0 0 0 0 54604
-0 1454772 5896 1590780 0 0 0 741 45044
-0 1213924 5896 1828048 0 0 0 0 60716
-0 995300 5896 2046172 0 0 0 0 54408
-0 843140 5896 2264756 0 0 0 622 54412
-0 630328 5896 2478980 0 0 0 0 53578
-0 446096 5896 2675508 0 0 0 569 48286
-0 315156 5896 2806336 0 0 0 0 33396
-0 169068 5896 2954052 0 0 0 0 36151
-0 33980 5064 3095736 0 0 0 681 49776
-0 136596 1068 3012612 0 0 0 0 48800
-0 51128 1068 2887180 0 0 0 48605 49288
-0 42276 1068 2895960 0 0 0 1 49776
-0 45496 944 2890752 0 0 0 35 49288
-0 38592 944 2896364 3 0 0 124 44817
-0 37100 944 2976368 46 0 0 25412 27301
-0 37204 928 2981564 0 0 0 0 62316
-0 52384 928 2965820 0 0 0 0 30020
-0 32296 928 2830228 0 0 0 61824 49281
-0 36208 928 2831920 0 0 0 0 49599
-0 37424 928 2830176 0 0 0 0 48800
-0 35676 928 2830256 0 0 0 104 46282
-0 140932 928 2987628 0 0 0 628 47871
-0 32128 928 3095628 0 0 0 0 49086
-0 40900 920 2752240 0 0 0 79824 131220
-0 67380 920 2723188 0 0 0 39 61666
-0 42560 884 2747124 0 0 0 4 27266
-0 43296 880 3036340 16 0 0 6557 79270
-0 160616 832 3043056 0 0 0 379 44515
-0 36892 688 2864892 0 0 0 49524 59299
-0 38004 688 2866088 0 0 0 0 57308
-0 39732 568 2860468 0 0 0 49 51105
-0 37364 568 2861224 0 0 0 0 0
-0 35432 568 2863220 0 0 0 0 0
-0 38996 568 2859308 0 0 0 0 0
-0 40808 568 2857044 0 0 0 0 0
-0 35360 568 2865076 1 0 0 4 0
-0 31592 564 2861216 123 0 0 50577 29984
-0 32816 564 2857012 0 0 0 0 130047
-0 39588 564 2785968 0 0 0 66022 50499
-0 37752 564 2788028 0 0 0 0 53397
-0 35576 460 2789696 0 0 0 0 52803
-0 35944 460 2790020 0 0 0 13 37240
-0 38280 460 2787336 0 0 0 0 0
-0 38588 460 2786444 0 0 0 0 0
-0 36940 460 2785644 0 0 0 0 0
-0 39560 460 2784648 0 0 0 0 0
-0 115032 452 2777568 4 0 0 16 0
-0 44772 452 2808116 0 0 0 71280 139232
-0 35828 452 2812368 0 0 0 0 57886
-0 33420 452 2815904 0 0 0 0 56762
-0 222932 452 2901480 0 0 0 1761 51125
-0 34988 452 3085360 0 0 0 0 55638
-0 32716 336 3049448 0 0 0 6398 54202
-0 38572 336 3050040 0 0 0 0 54172
-0 250724 336 3052404 0 0 0 422 37779
-0 39204 264 2754388 0 0 0 78287 55056
-0 39564 264 2752932 0 0 0 0 52712
-0 38108 232 2752660 0 0 0 38 53350
-0 32448 196 2753920 0 0 0 2 29024
-0 36536 196 2754172 0 0 0 0 0
-0 36116 196 2749096 0 0 0 0 0
-0 35968 196 2754416 0 0 0 0 0
-0 33744 196 2756908 24 0 0 96 0
-0 33428 196 2870904 16 0 0 48271 123984
-0 124932 196 2916896 0 0 0 14925 47427
-0 44764 196 2993408 0 0 0 0 57057
-0 46396 196 2990544 0 0 0 0 49864
-0 39224 196 2996332 0 0 0 0 3124
-0 34524 196 2844232 0 0 0 49321 6308
-0 34088 92 2794136 0 0 0 14846 62955
-0 38680 92 2792752 0 0 0 0 48056
-0 36756 92 2793916 0 0 0 36 48994
-0 37336 92 2791996 0 0 0 4 18127
-0 38844 92 2760304 26 0 0 61323 48345
-0 42584 92 2755980 0 0 0 0 53772
-0 39436 92 2758252 0 0 0 804 51220
-0 33408 88 2764016 0 0 0 339 32307
-0 38228 88 2759052 0 0 0 0 0
-0 36816 88 2760776 0 0 0 0 0
-0 38624 88 2759628 0 0 0 0 0
-0 38912 88 2752788 234 0 0 936 0
-0 35640 88 3070384 394 0 0 2193 108219
-0 38816 88 2716016 0 0 0 83715 55072
-0 37084 88 2716076 0 0 0 0 50703
-0 49256 88 2703460 0 0 0 0 51268
-0 38256 72 2714892 0 0 0 0 38361
-0 43468 72 2709640 0 0 0 0 0
-0 38448 72 2715140 0 0 0 0 0
-0 40536 72 2713412 0 0 0 0 0
-0 36060 72 2711732 4 0 0 16 0
-0 35804 72 2697600 65 0 0 88429 76050
-0 42100 72 2687776 0 0 0 0 78018
-0 44532 72 2682776 0 0 0 37 47051
-0 57652 72 2911680 0 0 0 27636 60021
-0 38196 72 2930916 0 0 0 0 39256
-0 304060 72 2926132 0 0 0 6 41287
-0 42524 72 3067232 0 0 0 446 58607
-0 36244 72 3071536 0 0 0 0 45878
-0 41052 72 2815772 0 0 0 59290 53910
-0 38264 72 2816620 0 0 0 0 20666
-0 39772 72 2815696 0 0 0 0 23975
-0 37016 72 2817520 0 0 0 0 46818
-0 39172 72 2889840 0 0 0 41578 47448
-0 36440 72 2890160 0 0 0 1 48756
-0 35028 72 2888492 0 0 0 0 49428
-0 54364 72 2975816 0 0 0 14981 48084
-0 36580 72 2992292 0 0 0 0 37284
-0 35852 72 2992000 0 0 0 0 48168
-0 36280 72 2833252 9 0 0 53762 48677
-0 38916 72 2827892 0 0 0 0 48467
-0 36996 72 2829432 0 0 0 0 48347
-0 42524 68 2822216 0 0 0 0 32250
-0 37060 68 2827612 0 0 0 0 0
-0 38080 68 2827556 0 0 0 0 0
-0 41660 68 2822936 0 0 0 0 0
-0 32384 68 2824372 0 0 0 0 0
-0 37468 68 2754364 58 0 0 70218 117793
-0 36568 68 2756192 0 0 0 56 53470
-0 125052 68 2906412 0 0 0 8070 49300
-0 38468 68 2990660 0 0 0 0 49776
-0 41180 68 3012140 0 0 0 684 49776
-0 38044 68 3012908 0 0 0 1 50752
-0 38924 68 2774392 0 0 0 56420 44877
-0 36824 68 2777720 0 0 0 0 800
-0 39172 68 2775236 0 0 0 0 1568
-0 39748 68 2774740 0 0 0 0 960
-0 35768 68 2778264 0 0 0 0 1920
-0 40568 68 2773900 0 0 0 0 1696
-0 41616 68 2773096 0 0 0 0 3712
-0 42688 68 2772320 0 0 0 0 5408
-0 39736 68 2774648 0 0 0 0 5152
+Thanks, Anand
 
-This shows bursts of successful fault-ins in gfs2_file_read_iter
-(read_fault). The pauses in between might be caused by the storage;
-I'm not sure.
-
-I'd still let the caller of fault_in_safe_writeable() decide how much
-memory to fault in; the tight cap in fault_in_safe_writeable() doesn't
-seem useful.
-
-Also, you want to put in an extra L here:
-> Signed-off-by: linus Torvalds <torvalds@linux-foundation.org>
-
-Thanks,
-Andreas
+> +	}
+>   
+>   	clear_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state);
+>   	btrfs_scrub_cancel_dev(device);
+> @@ -2229,7 +2219,8 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   		free_fs_devices(cur_devices);
+>   	}
+>   
+> -out:
+> +	ret = btrfs_commit_transaction(trans);
+> +
+>   	return ret;
+>   
+>   error_undo:
+> @@ -2240,7 +2231,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   		device->fs_devices->rw_devices++;
+>   		mutex_unlock(&fs_info->chunk_mutex);
+>   	}
+> -	goto out;
+> +	return ret;
+>   }
+>   
+>   void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_device *srcdev)
 

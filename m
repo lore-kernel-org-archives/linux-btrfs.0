@@ -2,54 +2,54 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3683C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 20:37:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E3314C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 20:48:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235688AbiCIUiC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Mar 2022 15:38:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43326 "EHLO
+        id S234841AbiCIUt0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Mar 2022 15:49:26 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51408 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234935AbiCIUiB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2022 15:38:01 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id DBB9613DDC
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2022 12:37:01 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1646858220;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=tfvPp8T6sBDgCD/bU6cj7d0QWkoleA0xgC26OnRlcVg=;
-        b=KFfzsgCbNlLH0ViE0M+FW3IU+TSp7nXLrTKNW1SfzoZUPC9hLj4Yudo3FZLzqb2pPmpmYA
-        bnw8IVghWI73LXc9Lq292wr7xIEJWayBhoulgPfJg9yZpcxuDPjNSSMgmBdLCzN1ObBAgI
-        krKSFUjNtXY8d2x8Fwr3nuEfyUY6VvM=
-Received: from mail-wm1-f70.google.com (mail-wm1-f70.google.com
- [209.85.128.70]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-623-NY-iOC1tNCewNlBw-gRf1g-1; Wed, 09 Mar 2022 15:36:59 -0500
-X-MC-Unique: NY-iOC1tNCewNlBw-gRf1g-1
-Received: by mail-wm1-f70.google.com with SMTP id 7-20020a1c1907000000b003471d9bbe8dso2124016wmz.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2022 12:36:57 -0800 (PST)
+        with ESMTP id S236059AbiCIUtY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2022 15:49:24 -0500
+Received: from mail-lf1-x134.google.com (mail-lf1-x134.google.com [IPv6:2a00:1450:4864:20::134])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F124F3123C
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2022 12:48:24 -0800 (PST)
+Received: by mail-lf1-x134.google.com with SMTP id s25so5875401lfs.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2022 12:48:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=zGqeo2LtdIlvNqnd6R2s5eetiuT+hRt9mmDkO0Tckbg=;
+        b=PWCsZlVycSx5+VU2FvKPokNaZvFARLZhdR+NloChOOsE5FG1pZlOARqcts3qtbEfiV
+         Jac1mG8KWnbOw9MoSqlVRYlGu7wFIW/+vbmcBNGZj0T73vPlbfb4IVtymATFS/oyXcfM
+         wPhJl5v4zoMSVNsy37CGUm/kJgR6HBdYc0ick=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=tfvPp8T6sBDgCD/bU6cj7d0QWkoleA0xgC26OnRlcVg=;
-        b=FApOiFYABhN92HIrV/HIX3ooyaI3AXCHdaio0W4H8wJK8/SqToGPrqQhpZsiy/16+8
-         mk8w/UwlY3p6fntJFe60HRCIZKa4KUf46SK+ORbbGqhyFsMzWuHt/1pqBxO45wXqIGod
-         8czB/FeUQFaPpGA/y6OKYuP4QcjlBffogr4j6aCeXu6lOH4F0xtKHBVbLulqoRV18+Oz
-         pj/rBwWSA/MYfHp9PHqmSUuU1M0MWf4s6pg6sAvU9t1AuoISlKazJVUbrXYM/hDHwczm
-         3OTgpG4ZdBSqvybmx9WjHBQ6e8NTNvzWkXaHBg16Kfh/kIizk0cdq8ixSG6nOsDTwYGH
-         u2Ug==
-X-Gm-Message-State: AOAM531YSPSrATo5PS7eGYIFiaROSyw/GX/jgx06tMt49ZBO8UtpYSyj
-        FnaDaroLP7/980xivxmCKUW4xAfHGhBQtGr3/i1cBCyDC+1MaZQteLOL4rZdhKUYYRgdZMJn92J
-        /unopSy87ZQPF7N4k2pbZROWfj6XOUGpz3XEJAFk=
-X-Received: by 2002:a1c:e90a:0:b0:381:504e:b57d with SMTP id q10-20020a1ce90a000000b00381504eb57dmr8983119wmc.177.1646858215115;
-        Wed, 09 Mar 2022 12:36:55 -0800 (PST)
-X-Google-Smtp-Source: ABdhPJxslNgqul7CsdHPFzrY6nugLgNmi6JeFFMtWCGzEmkIP6sbUIPjlerK4tjyTPW31RtVNkdst4BOmhD7u76G54o=
-X-Received: by 2002:a1c:e90a:0:b0:381:504e:b57d with SMTP id
- q10-20020a1ce90a000000b00381504eb57dmr8983106wmc.177.1646858214930; Wed, 09
- Mar 2022 12:36:54 -0800 (PST)
+        bh=zGqeo2LtdIlvNqnd6R2s5eetiuT+hRt9mmDkO0Tckbg=;
+        b=BMiE4+BHObRunar1d7bqsc5AosCFnPpburLzWUE9wrU9POEo8o5AIsQxkYD2wRTtZd
+         kACIkdBo0fw7wkVt+Pq1bebQfgkJM9X/FJAENRIOgM/kVZrHdFWTzj1Q30MYDw1WARZO
+         hKsOCJUM6kxS2tWGd62pCGYgHmXVYBz+Li/lpbS48hb6IEIjEwQyaQdk2jmru1wl5Q8A
+         pZZ+GEbMMO+9eLI4iOS3utXiKegr/QM7Yl9ab2T6dYPTFwrKdj9mrwx7+F7HDVAqdZGx
+         Qg+u4qQAN1Rrzx22yT52QVhpUauGI2rVKPaY9kraHiBd/e6qsEhybVBytHYGrwFoBrgq
+         r9fA==
+X-Gm-Message-State: AOAM5303JeiSmkiVlmJ6oHUtyWeiiPATS5ZCyJsiX3DIkONUuk3PpayI
+        EWWFdyGZ3YojwQobBowT2bbFHxPpVFulUavZC7w=
+X-Google-Smtp-Source: ABdhPJyK+Wn+UG7QRWkbKqgMUQ/pQax19aRQVOjY7vRsWK4vCkpehDjNGRhPSy4CHh510alYkhwggA==
+X-Received: by 2002:a19:ad0a:0:b0:443:dc0d:b3ca with SMTP id t10-20020a19ad0a000000b00443dc0db3camr971177lfc.239.1646858902768;
+        Wed, 09 Mar 2022 12:48:22 -0800 (PST)
+Received: from mail-lf1-f53.google.com (mail-lf1-f53.google.com. [209.85.167.53])
+        by smtp.gmail.com with ESMTPSA id d16-20020a2eb050000000b002461d8f365bsm632817ljl.38.2022.03.09.12.48.19
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 09 Mar 2022 12:48:19 -0800 (PST)
+Received: by mail-lf1-f53.google.com with SMTP id w7so5916837lfd.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2022 12:48:19 -0800 (PST)
+X-Received: by 2002:ac2:41cf:0:b0:448:1eaa:296c with SMTP id
+ d15-20020ac241cf000000b004481eaa296cmr917150lfi.52.1646858899041; Wed, 09 Mar
+ 2022 12:48:19 -0800 (PST)
 MIME-Version: 1.0
 References: <CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com>
  <CAHk-=wgmCuuJdf96WiT6WXzQQTEeSK=cgBy24J4U9V2AvK4KdQ@mail.gmail.com>
@@ -60,13 +60,15 @@ References: <CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com>
  <CAHc6FU6L8c9UCJF_qcqY=USK_CqyKnpDSJvrAGput=62h0djDw@mail.gmail.com>
  <CAHk-=whaoxuCPg4foD_4VBVr+LVgmW7qScjYFRppvHqnni0EMA@mail.gmail.com>
  <20220309184238.1583093-1-agruenba@redhat.com> <CAHk-=wixOLK1Xp-LKhqEWEh3SxGak_ziwR0_fi8uMzY5ZYBzbg@mail.gmail.com>
- <CAHc6FU6aqqYO4d5x3=73bxr+9yfL6CLJeGGzFwCZCy9wzApgwQ@mail.gmail.com> <CAHk-=wj4Av2gecvTfExCq-d2cXx0m7fdO0sG6JC1DxdCCDT7ig@mail.gmail.com>
-In-Reply-To: <CAHk-=wj4Av2gecvTfExCq-d2cXx0m7fdO0sG6JC1DxdCCDT7ig@mail.gmail.com>
-From:   Andreas Gruenbacher <agruenba@redhat.com>
-Date:   Wed, 9 Mar 2022 21:36:43 +0100
-Message-ID: <CAHc6FU4uzG+HR1doK5p+6kVW9GS0JGbCrbZnAvBhWuLZe8DGUw@mail.gmail.com>
+ <CAHc6FU6aqqYO4d5x3=73bxr+9yfL6CLJeGGzFwCZCy9wzApgwQ@mail.gmail.com>
+ <CAHk-=wj4Av2gecvTfExCq-d2cXx0m7fdO0sG6JC1DxdCCDT7ig@mail.gmail.com> <CAHc6FU4uzG+HR1doK5p+6kVW9GS0JGbCrbZnAvBhWuLZe8DGUw@mail.gmail.com>
+In-Reply-To: <CAHc6FU4uzG+HR1doK5p+6kVW9GS0JGbCrbZnAvBhWuLZe8DGUw@mail.gmail.com>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Wed, 9 Mar 2022 12:48:02 -0800
+X-Gmail-Original-Message-ID: <CAHk-=whycC7kUa=_CiDr9pPpPp8g+9u7kKe1ssSsgGGkhBTvVg@mail.gmail.com>
+Message-ID: <CAHk-=whycC7kUa=_CiDr9pPpPp8g+9u7kKe1ssSsgGGkhBTvVg@mail.gmail.com>
 Subject: Re: Buffered I/O broken on s390x with page faults disabled (gfs2)
-To:     Linus Torvalds <torvalds@linux-foundation.org>
+To:     Andreas Gruenbacher <agruenba@redhat.com>
 Cc:     Catalin Marinas <catalin.marinas@arm.com>,
         David Hildenbrand <david@redhat.com>,
         Alexander Viro <viro@zeniv.linux.org.uk>,
@@ -79,44 +81,32 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 9, 2022 at 9:19 PM Linus Torvalds
-<torvalds@linux-foundation.org> wrote:
-> On Wed, Mar 9, 2022 at 11:35 AM Andreas Gruenbacher <agruenba@redhat.com> wrote:
-> >
-> > That's better, thanks.
+On Wed, Mar 9, 2022 at 12:37 PM Andreas Gruenbacher <agruenba@redhat.com> wrote:
 >
-> Ok, can you give this one more test?
->
-> It has that simplified loop, but it also replaced the
-> FAULT_FLAG_KILLABLE with just passing in 'unlocked'.
->
-> I thought I didn't need to do that, but the "retry" loop inside
-> fixup_user_fault() will actually set that 'unlocked' thing even if the
-> caller doesn't care whether the mmap_sem was unlocked during the call,
-> so we have to pass in that pointer just to get that to work.
->
-> And we don't care if mmap_sem was dropped, because this loop doesn't
-> cache any vma information or anything like that, but we don't want to
-> get a NULL pointer oops just because fixup_user_fault() tries to
-> inform us about something we don't care about ;)
+> It's a moot point now, but I don't think handle_mm_fault would have
+> returned VM_FAULT_RETRY without FAULT_FLAG_ALLOW_RETRY, so there
+> wouldn't have been any NULL pointer accesses.
 
-It's a moot point now, but I don't think handle_mm_fault would have
-returned VM_FAULT_RETRY without FAULT_FLAG_ALLOW_RETRY, so there
-wouldn't have been any NULL pointer accesses.
+No, it really does - FAULT_FLAG_KILLABLE will trigger the code in
+page_lock_or_retry() (->__folio_lock_or_retry) even without
+FAULT_FLAG_ALLOW_RETRY.
 
-> That incidentally gets us FAULT_FLAG_ALLOW_RETRY too, which is
-> probably a good thing anyway - it means that the mmap_sem will be
-> dropped if we wait for IO. Not likely a huge deal, but it's the
-> RightThing(tm) to do.
+So lock_page_or_retry() will drop the mmap_sem and return false, and
+then you have
 
-Looking good.
+        locked = lock_page_or_retry(page, vma->vm_mm, vmf->flags);
 
-> So this has some other changes there too, but on the whole the
-> function is now really quite simple. But it would be good to have one
-> final round of testing considering how many small details changed..
+        if (!locked) {
+                ret |= VM_FAULT_RETRY;
+                goto out_release;
+        }
 
-Sure, we'll put it through all our tests.
+for the swapin case.
 
-Thanks,
-Andreas
+And mm/filemap.c has essentially the same logic in
+lock_folio_maybe_drop_mmap(), although the syntax is quite different.
 
+Basically FAULT_FLAG_KILLABLE implies a kind of "half-way ALLOW_RETRY"
+- allow aborting, but only for the fatal signal case.
+
+                  Linus

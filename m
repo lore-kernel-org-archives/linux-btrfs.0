@@ -2,125 +2,232 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77A33C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:13:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9638CC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  9 Mar 2022 01:19:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230322AbiCIBOt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 8 Mar 2022 20:14:49 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34210 "EHLO
+        id S230468AbiCIBUC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 8 Mar 2022 20:20:02 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40454 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230450AbiCIBM5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:12:57 -0500
-Received: from mail-wr1-x42f.google.com (mail-wr1-x42f.google.com [IPv6:2a00:1450:4864:20::42f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D81A403ED
-        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 16:55:42 -0800 (PST)
-Received: by mail-wr1-x42f.google.com with SMTP id e24so637641wrc.10
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 16:55:42 -0800 (PST)
+        with ESMTP id S230488AbiCIBTu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Mar 2022 20:19:50 -0500
+Received: from mail-ej1-x631.google.com (mail-ej1-x631.google.com [IPv6:2a00:1450:4864:20::631])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE4CD12E14D
+        for <linux-btrfs@vger.kernel.org>; Tue,  8 Mar 2022 17:11:26 -0800 (PST)
+Received: by mail-ej1-x631.google.com with SMTP id hw13so1593616ejc.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 17:11:26 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
+        d=gmail.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=yOkhTNcLWPufcykwdZmZBF2oqQGok/K5B2vr+Tqh36g=;
-        b=Vj4rshnTpWz5DU66OERET/pAsAiEtJHCvq1p7tYsuGWD7WJCMh23fM0fO4nZdPLYHC
-         90pf8J0GgnEP+YZrzPyFs7Bg/J9pen3fzwCfz2wTn/gw4B+2lcPdZNWYCNfMWKpUwV9E
-         ohAJR1uT0oUJ+kwVfBbrRuha/QYIMA/OMi3B4=
+        bh=yNfaP+SZOFCyuLgMZObGGd6aYI2/274IHvMC89c9wLY=;
+        b=Es/5FPPRisN/c7/O4qmYuEnnSslJvpkPPyl5VvGJ+PABysasoXYvysgr+7Qe2Buuzn
+         Kcx7iHvEjU/Zm4+x+2bT2iWIZ6zzaHJujK5Td3sQLfQ0fTZHpMKctJTcWAldC+F9BQs2
+         bmFI9C7hUSrHCAXcZuLqoTVfkv0NfBXurmQcVKWklMP9nlhJvUiyUUl/0ELBK/4a8MLM
+         e2Ivu+nBWufMr4MOMSTdh4M78wYzGe0wKFFqXDhikaQuYaeO5dh8F4e3q803bJDxElx/
+         4h//hZ1qOQpYhToDpwCuhe4PATX2wDG3X2pvhqeQ2yArLqz6kcYG5AHl6NDKUVeToxZ9
+         ig/w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=yOkhTNcLWPufcykwdZmZBF2oqQGok/K5B2vr+Tqh36g=;
-        b=3nqICJ6+7WwvAxfN4Pbiqa9gKk1nklhwsPr0ZCkFjOPeXL82x2JRFapLjMgNE9WAu7
-         DtyBTz8Wk+pbplWlq4tdVTN0tiuuffS3iIu/7ZelG4QxYEZqtZk2QDxruAQsAA8jrBG8
-         kNDjEQaP30j0KSkaYJ11rdHw0mDhKzI71fVXfCjgfZm7eYd793L5fhlV3v7y7H1apqJi
-         6rM+SuskfGz4RHcy2vVYRVfUGseNJ1tMB9JShlC/RJLNm9jBDZDOpZOuwv7BMBgaByev
-         IFT5LgZBFWbuHIIbTrnj8RxJvdHVWCWpqCfHH+kTIdoCDJLQfcXxbtrZHJCP9eNo+tPf
-         kGeA==
-X-Gm-Message-State: AOAM532zQBvulJL3Ux/ScDaObUT9v705/Kx0dESQwUeS8vlG1+Q6e/VS
-        S+htnEwXtCgi5Z9pj+nVEjtiOZrjBLl4rn+loAM=
-X-Google-Smtp-Source: ABdhPJzezQFrihKvcPh5DyFzslzBwzQ/3NUVoyliQocaSYhheNfnclCA2pkSwEQa9XKZnZwVt/yORA==
-X-Received: by 2002:a2e:b954:0:b0:239:2768:cf0b with SMTP id 20-20020a2eb954000000b002392768cf0bmr12176124ljs.245.1646785373035;
-        Tue, 08 Mar 2022 16:22:53 -0800 (PST)
-Received: from mail-lj1-f170.google.com (mail-lj1-f170.google.com. [209.85.208.170])
-        by smtp.gmail.com with ESMTPSA id j17-20020a2e8511000000b00247ee6592cesm57353lji.104.2022.03.08.16.22.51
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 08 Mar 2022 16:22:51 -0800 (PST)
-Received: by mail-lj1-f170.google.com with SMTP id u3so954826ljd.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Mar 2022 16:22:51 -0800 (PST)
-X-Received: by 2002:a2e:6f17:0:b0:248:124:9c08 with SMTP id
- k23-20020a2e6f17000000b0024801249c08mr696937ljc.506.1646785371366; Tue, 08
- Mar 2022 16:22:51 -0800 (PST)
+        bh=yNfaP+SZOFCyuLgMZObGGd6aYI2/274IHvMC89c9wLY=;
+        b=Ffk5O5dVajQZx8MCoWkNSlavkpioW9S8Vh1LIjZm2yKXO0z4dpg66Z8KX4WZdWLmlT
+         sd/ixxYgCXR5ctzthOGV9DadpmcFlbpU0agqu0tLC8psQrxIxM3gQ5nz8ieaAlUP7G9y
+         lMantKbAS9AlIMg5XAqoYz1v3DnCG8M9rQZ6/UEu6V/Zjf8mu1Z2XSJbHnEeyJM8pxhJ
+         0t1GQRwV7nMMzDchjmgdEPR44ZTKNyJxP+/8CLpvyDPU0Cxv9+lEjbtxfksuevrEiBMx
+         hc+VxahJVd74ZX7jyogOyulXCylQVD5F9yFsLXDNPOyBsNX4rbFUJTHryW6NgRow4TJB
+         9DNw==
+X-Gm-Message-State: AOAM532Ig2QUG+TbkieK8vE3xEfDkuA/feSigyl1akqDVEa8gT+weUkn
+        ravUrtFJaL6KgB21/KoEcToButrJeOCWBbKmSmnSmmqAfQg=
+X-Google-Smtp-Source: ABdhPJzfO7eqJjtXQVtlModPeqoaU2tw26gPX0DvPz3f1eVfJIK020MD4pYFLFEzXbpALUa3iUaz+W1r9DiNUND2qCQ=
+X-Received: by 2002:a17:906:2ed1:b0:6b6:bb09:178c with SMTP id
+ s17-20020a1709062ed100b006b6bb09178cmr15636953eji.382.1646788192041; Tue, 08
+ Mar 2022 17:09:52 -0800 (PST)
 MIME-Version: 1.0
-References: <CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com>
- <CAHk-=wgmCuuJdf96WiT6WXzQQTEeSK=cgBy24J4U9V2AvK4KdQ@mail.gmail.com>
- <bcafacea-7e67-405c-a969-e5a58a3c727e@redhat.com> <CAHk-=wh1WJ-s9Gj15yFciq6TOd9OOsE7H=R7rRskdRP6npDktQ@mail.gmail.com>
- <CAHk-=wjHsQywXgNe9D+MQCiMhpyB2Gs5M78CGCpTr9BSeP71bw@mail.gmail.com>
- <CAHk-=wjs2Jf3LzqCPmfkXd=ULPyCrrGEF7rR6TYzz1RPF+qh3Q@mail.gmail.com>
- <CAHk-=wi1jrn=sds1doASepf55-wiBEiQ_z6OatOojXj6Gtntyg@mail.gmail.com> <CAHc6FU6L8c9UCJF_qcqY=USK_CqyKnpDSJvrAGput=62h0djDw@mail.gmail.com>
-In-Reply-To: <CAHc6FU6L8c9UCJF_qcqY=USK_CqyKnpDSJvrAGput=62h0djDw@mail.gmail.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Tue, 8 Mar 2022 16:22:35 -0800
-X-Gmail-Original-Message-ID: <CAHk-=whaoxuCPg4foD_4VBVr+LVgmW7qScjYFRppvHqnni0EMA@mail.gmail.com>
-Message-ID: <CAHk-=whaoxuCPg4foD_4VBVr+LVgmW7qScjYFRppvHqnni0EMA@mail.gmail.com>
-Subject: Re: Buffered I/O broken on s390x with page faults disabled (gfs2)
-To:     Andreas Gruenbacher <agruenba@redhat.com>
-Cc:     David Hildenbrand <david@redhat.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        Linux-MM <linux-mm@kvack.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CALPV6DsfOQHyQ2=+3pKF3ZfavL21fgthQS+=HStEfMQbhZU50g@mail.gmail.com>
+ <7a4962a0-b007-59a4-282e-8912b2425c5e@gmx.com>
+In-Reply-To: <7a4962a0-b007-59a4-282e-8912b2425c5e@gmx.com>
+From:   bill gates <framingnoone@gmail.com>
+Date:   Tue, 8 Mar 2022 19:09:40 -0600
+Message-ID: <CALPV6DtuY6KxFKF6WR2HDPzzVm8TbcGEXwTMiDAy6MdL+jC7jA@mail.gmail.com>
+Subject: Re: Updated to new kernel, and btrfs suddenly refuses to mount home
+ directory fs.
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 8, 2022 at 3:25 PM Andreas Gruenbacher <agruenba@redhat.com> wrote:
+This filesystem was most likely created in 2014 using the tools of
+that time, at least that's the oldest file in my home directory. It
+_might_ have been made in 2019, that's the date on the mount point.
+
+There are 2 subvolumes on /dev/sda2, /home and /var.
+
+My btrfs-progs version is 5.15.1.
+
+Per your request:
+# btrfs ins dump-tree -b 10442806968320 /dev/sda2
+btrfs-progs v5.15.1
+leaf 10442806968320 items 34 free space 6225 generation 6834902 owner CSUM_TREE
+leaf 10442806968320 flags 0x1(WRITTEN) backref revision 1
+fs uuid 83c6c9ca-b8fe-4d4c-aaa8-1729f90b0824
+chunk uuid 9b77400b-f370-4f49-be82-9cb38c7f78a0
+       item 0 key (EXTENT_CSUM EXTENT_CSUM 9848629587968) itemoff
+16075 itemsize 208
+               range start 9848629587968 end 9848629800960 length 212992
+       item 1 key (EXTENT_CSUM EXTENT_CSUM 9848630026240) itemoff
+15823 itemsize 252
+               range start 9848630026240 end 9848630284288 length 258048
+       item 2 key (EXTENT_CSUM EXTENT_CSUM 9848630714368) itemoff
+15815 itemsize 8
+               range start 9848630714368 end 9848630722560 length 8192
+       item 3 key (EXTENT_CSUM EXTENT_CSUM 9848630984704) itemoff
+14723 itemsize 1092
+               range start 9848630984704 end 9848632102912 length 1118208
+       item 4 key (EXTENT_CSUM EXTENT_CSUM 9848632160256) itemoff
+14703 itemsize 20
+               range start 9848632160256 end 9848632180736 length 20480
+       item 5 key (EXTENT_CSUM EXTENT_CSUM 9848632180736) itemoff
+14279 itemsize 424
+               range start 9848632180736 end 9848632614912 length 434176
+       item 6 key (EXTENT_CSUM EXTENT_CSUM 9848632942592) itemoff
+14067 itemsize 212
+               range start 9848632942592 end 9848633159680 length 217088
+       item 7 key (EXTENT_CSUM EXTENT_CSUM 9848633286656) itemoff
+13815 itemsize 252
+               range start 9848633286656 end 9848633544704 length 258048
+       item 8 key (EXTENT_CSUM EXTENT_CSUM 9848633548800) itemoff
+13579 itemsize 236
+               range start 9848633548800 end 9848633790464 length 241664
+       item 9 key (EXTENT_CSUM EXTENT_CSUM 9848633810944) itemoff
+13527 itemsize 52
+               range start 9848633810944 end 9848633864192 length 53248
+       item 10 key (EXTENT_CSUM EXTENT_CSUM 9848633950208) itemoff
+12671 itemsize 856
+               range start 9848633950208 end 9848634826752 length 876544
+       item 11 key (EXTENT_CSUM EXTENT_CSUM 9848634826752) itemoff
+12659 itemsize 12
+               range start 9848634826752 end 9848634839040 length 12288
+       item 12 key (EXTENT_CSUM EXTENT_CSUM 9848634970112) itemoff
+12643 itemsize 16
+               range start 9848634970112 end 9848634986496 length 16384
+       item 13 key (EXTENT_CSUM EXTENT_CSUM 9848635056128) itemoff
+12583 itemsize 60
+               range start 9848635056128 end 9848635117568 length 61440
+       item 14 key (EXTENT_CSUM EXTENT_CSUM 9848635117568) itemoff
+12151 itemsize 432
+               range start 9848635117568 end 9848635559936 length 442368
+       item 15 key (EXTENT_CSUM EXTENT_CSUM 9848635592704) itemoff
+12135 itemsize 16
+               range start 9848635592704 end 9848635609088 length 16384
+       item 16 key (EXTENT_CSUM EXTENT_CSUM 9848635703296) itemoff
+11791 itemsize 344
+               range start 9848635703296 end 9848636055552 length 352256
+       item 17 key (EXTENT_CSUM EXTENT_CSUM 9848636108800) itemoff
+11719 itemsize 72
+               range start 9848636108800 end 9848636182528 length 73728
+       item 18 key (EXTENT_CSUM EXTENT_CSUM 9848636669952) itemoff
+11691 itemsize 28
+               range start 9848636669952 end 9848636698624 length 28672
+       item 19 key (EXTENT_CSUM EXTENT_CSUM 9848636698624) itemoff
+11371 itemsize 320
+               range start 9848636698624 end 9848637026304 length 327680
+       item 20 key (EXTENT_CSUM EXTENT_CSUM 9848637026304) itemoff
+10979 itemsize 392
+               range start 9848637026304 end 9848637427712 length 401408
+       item 21 key (EXTENT_CSUM EXTENT_CSUM 9848637468672) itemoff
+10131 itemsize 848
+               range start 9848637468672 end 9848638337024 length 868352
+       item 22 key (EXTENT_CSUM EXTENT_CSUM 9848638631936) itemoff
+10079 itemsize 52
+               range start 9848638631936 end 9848638685184 length 53248
+       item 23 key (EXTENT_CSUM EXTENT_CSUM 9848638685184) itemoff
+9791 itemsize 288
+               range start 9848638685184 end 9848638980096 length 294912
+       item 24 key (EXTENT_CSUM EXTENT_CSUM 9848638980096) itemoff
+9787 itemsize 4
+               range start 9848638980096 end 9848638984192 length 4096
+       item 25 key (EXTENT_CSUM EXTENT_CSUM 9848638984192) itemoff
+9735 itemsize 52
+               range start 9848638984192 end 9848639037440 length 53248
+       item 26 key (EXTENT_CSUM EXTENT_CSUM 9848639045632) itemoff
+9111 itemsize 624
+               range start 9848639045632 end 9848639684608 length 638976
+       item 27 key (EXTENT_CSUM EXTENT_CSUM 9848639684608) itemoff
+9091 itemsize 20
+               range start 9848639684608 end 9848639705088 length 20480
+       item 28 key (EXTENT_CSUM EXTENT_CSUM 9848639967232) itemoff
+8003 itemsize 1088
+               range start 9848639967232 end 9848641081344 length 1114112
+       item 29 key (EXTENT_CSUM EXTENT_CSUM 9848641150976) itemoff
+7947 itemsize 56
+               range start 9848641150976 end 9848641208320 length 57344
+       item 30 key (EXTENT_CSUM EXTENT_CSUM 9848641409024) itemoff
+7887 itemsize 60
+               range start 9848641409024 end 9848641470464 length 61440
+       item 31 key (EXTENT_CSUM EXTENT_CSUM 9848641695744) itemoff
+7643 itemsize 244
+               range start 9848641695744 end 9848641945600 length 249856
+       item 32 key (EXTENT_CSUM EXTENT_CSUM 9848642043904) itemoff
+7615 itemsize 28
+               range start 9848642043904 end 9848642072576 length 28672
+       item 33 key (EXTENT_CSUM EXTENT_CSUM 9848642162688) itemoff
+7075 itemsize 540
+               range start 9848642162688 end 9848642715648 length 552960
+
+
+On Tue, Mar 8, 2022 at 5:48 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
 >
-> Seems to be working on s390x for this test case at least; the kind of
-> trace I'm getting is:
-
-Good.
-
-> This shows bursts of successful fault-ins in gfs2_file_read_iter
-> (read_fault). The pauses in between might be caused by the storage;
-> I'm not sure.
-
-Don't know about the pauses, but the burst size might be impacted by that
-
-+       const size_t max_size = 4 * PAGE_SIZE;
-
-thing that limits how many calls to fixup_user_fault() we do per
-fault_in_safe_writeable().
-
-So it might be worth checking if that value seems to make any difference.
-
-> I'd still let the caller of fault_in_safe_writeable() decide how much
-> memory to fault in; the tight cap in fault_in_safe_writeable() doesn't
-> seem useful.
-
-Well, there are real latency concerns there - fixup_user_fault() is
-not necessarily all that low-cost.
-
-And it's actually going to be worse when we have the sub-page coloring
-issues happening, and will need to probe at a 128-byte granularity
-(not on s390, but on arm64).
-
-At that point, we almost certainly will need to have a "probe user
-space non-destructibly for writability" instruction (possibly
-extending on our current arch_futex_atomic_op_inuser()
-infrastructure).
-
-So honestly, if you do IO on areas that will get page faults on them,
-to some degree it's a "you are doing something stupid, you get what
-you deserve". This code should _work_, it should not have to worry
-about users having bad patterns (where "read data into huge cold
-mappings under enough memory pressure that it causes access bit faults
-in the middle of the read" very much counts as such a bad pattern).
-
-> Also, you want to put in an extra L here:
-> > Signed-off-by: linus Torvalds <torvalds@linux-foundation.org>
-
-Heh. Fixed locally.
-
-                 Linus
+>
+>
+> On 2022/3/9 03:05, bill gates wrote:
+> > So, I recently attempted to upgrade from Linux kernel 4.19.82 to
+> > 5.15.23, and I'm getting a critical error in dmesg about a corrupt
+> > leaf (and no mounting of /home allowed with the options I'm aware of)
+> >
+> > [ 396.218964] BTRFS critical (device sda2): corrupt leaf: root=1
+> > block=10442806968320 sl
+> > ot=8 ino=6, invalid location key objectid: has 1 expect 6 or [256,
+> > 18446744073709551360]
+> > or 18446744073709551604
+>
+> Please provide the following output:
+>
+> # btrfs ins dump-tree -b 10442806968320 /dev/sda2
+>
+>
+> The error message means, we got a DIR_ITEM in root tree.
+>
+> Normally that is used to indicate what default subvolume is.
+> Thus it's normally 6 or 5, or any valid subvolume id.
+>
+> But in your case, it's 1, thus tree-checker is rejecting your root tree.
+>
+> I didn't thought we could have 1 as default subvolume (as 1 is the root
+> tree, which is not a subvolume).
+>
+> But it looks like we should update btrfs check to fix this case.
+>
+> Is the fs created using older btrfs-progs? I guess that may be the cause...
+>
+> Thanks,
+> Qu
+>
+>
+> > [ 396.218967] BTRFS error (device sda2): block=10442806968320 read
+> > time tree block corru
+> > ption detected
+> >
+> >
+> > Interestingly. that 18446... number is a power of 2, looks like maybe
+> > a bit flip? dmesg, uname, etc included in pastebin below. "btrfs
+> > check" found no problems with fs on either kernel version. Would like
+> > to figure out how to fix this, if possible.
+> >
+> > https://pastebin.com/0ESPU9Z6
+> >
+> > Thank you for any assistance,
+> > -- Laurence Michaels.

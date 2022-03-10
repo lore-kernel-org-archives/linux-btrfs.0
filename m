@@ -2,81 +2,78 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DD50C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Mar 2022 00:20:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCB03C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 10 Mar 2022 01:11:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235041AbiCJAVX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 9 Mar 2022 19:21:23 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58186 "EHLO
+        id S239089AbiCJBMf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 9 Mar 2022 20:12:35 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41348 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231779AbiCJAVW (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2022 19:21:22 -0500
-Received: from mail-pf1-x436.google.com (mail-pf1-x436.google.com [IPv6:2607:f8b0:4864:20::436])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6A6F9123BD4
-        for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2022 16:20:23 -0800 (PST)
-Received: by mail-pf1-x436.google.com with SMTP id t2so982145pfj.10
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2022 16:20:23 -0800 (PST)
+        with ESMTP id S229907AbiCJBMe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Mar 2022 20:12:34 -0500
+Received: from mail-oi1-x22a.google.com (mail-oi1-x22a.google.com [IPv6:2607:f8b0:4864:20::22a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EB20D1216A7
+        for <linux-btrfs@vger.kernel.org>; Wed,  9 Mar 2022 17:11:34 -0800 (PST)
+Received: by mail-oi1-x22a.google.com with SMTP id w127so4443765oig.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Mar 2022 17:11:34 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=DxoylUu2jtdoMtY2Rsg9cLmkzcY9HkMxrJPMrlcsmZc=;
-        b=Vo37YtoY0yotMFQU3ZxDGQWhJEO9jNLC3U+DO8QWYpq9RsS34u/kZjWjyc/M32OM1C
-         ddpBvyNd2ZBPMuhyJM01SjT6H1K7ML8YCKHlpA5n4tlQ3IF2lwKBNJAPmWP9AC66W2NN
-         EVzNUmVuCfs+yNEuVWl5a7w7dcKL6vo1fQwaOYrIl0b4Z4h7+8yLNDu8mMKpT8NRdJyX
-         pY0KxIzMihPKJCQ62DG/OjL2eqrmsaRbJC4eEXYwgnjQkLyp59s6RWus5KcYCJTsnoqK
-         OSP7Prf+zl3q3vzdrbV2p9WS8yg4/mHC44W0JWLBZrczrH5e4eVM5JVYLaWatZc1Zr6O
-         t0KQ==
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=KREBG59omfMbxXzfo37uU2qOsjLw8zEgZF9qPbqUQXo=;
+        b=QulTXX57pID/aTRfGd0xSVcaew4SaMqHmy2F7m/Pc1yuuMFfeSpwNg/KXTRTV3m+n0
+         qNSBXDKUgx4VtkS1fIlmKv0ZQkVnfJ6tv4YQHd5CsaApbjiTdEw/EURsVgrcMmCtOemz
+         vJLsd4nZ0u/pNVKeFzO0qltI7sEeYC5jJBulObG/7+K67wb5kS0mygWp+9uYDjcn/DPN
+         HGu/BpI6E43Xa+ZD4f0iq0znE2GJsETGQ3A6idhAUt1uFqBBZQEJTDiEl40LAdzj15HB
+         z7YRZ9fivRkeNJfpb3T9D+B7Y3CTYiew2Oyrq5IOY1RscJGSJ0CuhLDi42IAJ1tfJ4y/
+         udAA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=DxoylUu2jtdoMtY2Rsg9cLmkzcY9HkMxrJPMrlcsmZc=;
-        b=lJS3Ybn7k197jE45WMj9zzDyOB2ZA4C/4phe9mSLlXdpdmwGXcPFTz0taNufLliTAv
-         k7mzXDpK/BEJhe3GkXCGWyc25sILP93T8xHueTJvApZ3Y7QpwbOBW3HaPh09apZ5UOmB
-         p8UzcAIqQS0REZCaSPCHujVJEcs2CpY2y6XGcEC67fr7WLqBfkfvXyPAB2OAYsFIod4J
-         j5JbkwLHYbYZ6neTSO2ac+GxdJhoDdOu5k919EhBi+p0hj8WCdPwSPxBX8yFYh2g2rhl
-         Zzkd5z3ax+xZoPvQr36/azfLZxR5TvbuACIXJrYp6IdVYDYrJ74i5M2RkWmusk5/eMoY
-         bc5Q==
-X-Gm-Message-State: AOAM531W3/9ZnG53crezF3QJGk3qpz4jH4GB30j8RMWxBp+ijwg/e+a1
-        6Vu9HNbJvbRlkbYXySapLu84f6zVJmgXtg==
-X-Google-Smtp-Source: ABdhPJwmbGHAZQlOh8i7VSs5cmMov5PgkrE9FXSjHLtXmL8BdT8jwkcCI3oaknhhtWvaFoiIQC768w==
-X-Received: by 2002:a05:6a00:16d3:b0:4cb:51e2:1923 with SMTP id l19-20020a056a0016d300b004cb51e21923mr2077824pfc.7.1646871622809;
-        Wed, 09 Mar 2022 16:20:22 -0800 (PST)
-Received: from relinquished.localdomain ([2620:10d:c090:400::5:8b4])
-        by smtp.gmail.com with ESMTPSA id d16-20020a056a00245000b004f7728a4346sm384072pfj.79.2022.03.09.16.20.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 09 Mar 2022 16:20:22 -0800 (PST)
-Date:   Wed, 9 Mar 2022 16:20:21 -0800
-From:   Omar Sandoval <osandov@osandov.com>
-To:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 12/12] btrfs: rework inode creation to fix several issues
-Message-ID: <YilERfTblg+9XgbA@relinquished.localdomain>
-References: <cover.1646348486.git.osandov@fb.com>
- <c7edee49c1935f66c07c5c2c1aa98a599e4a11ad.1646348486.git.osandov@fb.com>
- <20f632c6-f263-40d9-3c56-9ebfa59b51c7@dorminy.me>
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=KREBG59omfMbxXzfo37uU2qOsjLw8zEgZF9qPbqUQXo=;
+        b=qDHiUE0lPSVmehks0VKc9PDHOeiV2Aoj3lLnRD2LHTZVIpzuGsUZ02ywAelPxs0TmV
+         GKavN293/tiJZdbQasHfb1IC4aG+Yu9CbLYBRZS4YAZ6v3MCpbrHOojW0ot7XMbUFSRg
+         Y1aSPuIk6NnSimnIRGezRyLV2wSk234yb4ZSwCM1gNQ6VieqlbOFVUhM8FlFb2gyQRAk
+         0L88oEt8ZGbmImFRz9kWaax1VbwO7N4xxYTpD1gjyNdiS7kEEkAFtXG3bKdJ3/yciflL
+         KobGknUd8k5RpASa59Bex2XhRK6WTYwmtyYAUWtZMOVEtKEW+RBatq/iO0g3m9HIPyNq
+         kSow==
+X-Gm-Message-State: AOAM531HMPSsHECVq4SuLlSxnhRg92eGbZ1A0Inw9awP+EQt3xmPrNlY
+        8LH37BT4C/t0jyQc4qvGLvBQUQ06g9PXQWE+JaJH5UmjYJw=
+X-Google-Smtp-Source: ABdhPJxTfFumOJZMydXpKOQBZGI64zUYxGmr9ss724VXCRihlXu1s/EfSAmTz63k+OTnu2Qdrg5yKr03SF31MIWHpoo=
+X-Received: by 2002:a05:6808:14cf:b0:2d9:dcc6:8792 with SMTP id
+ f15-20020a05680814cf00b002d9dcc68792mr8031797oiw.219.1646874694236; Wed, 09
+ Mar 2022 17:11:34 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20f632c6-f263-40d9-3c56-9ebfa59b51c7@dorminy.me>
+References: <CAODFU0rZEy064KkSK1juHA6=r2zC4=Go8Me2V2DqHWb-AirL-Q@mail.gmail.com>
+ <455d2012-aeaf-42c5-fadb-a5dc67beff35@gmx.com> <CAODFU0q56n3UxNyZJYsw2zK0CQ543Fm7fxD6_4ZSfgqPynFU7g@mail.gmail.com>
+ <e5bb2e23-2101-dcc3-695e-f3a0f5a4aba7@gmx.com> <3c668ffe-edb0-bbbb-cfe0-e307bad79b1a@gmx.com>
+In-Reply-To: <3c668ffe-edb0-bbbb-cfe0-e307bad79b1a@gmx.com>
+From:   Jan Ziak <0xe2.0x9a.0x9b@gmail.com>
+Date:   Thu, 10 Mar 2022 02:10:58 +0100
+Message-ID: <CAODFU0pcT73bXwkXOpjQMvG0tYO73mLdeG2i4foxr6kHorh1jQ@mail.gmail.com>
+Subject: Re: Btrfs autodefrag wrote 5TB in one day to a 0.5TB SSD without a
+ measurable benefit
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 07, 2022 at 08:25:01AM -0500, Sweet Tea Dorminy wrote:
-> I like the changes overall. However, I was hoping:
-> 
-> a) would it be possible to just refactor to use btrfs_new_inode_prepare()
-> first and then fixup the non-refactoring parts?
+> Or use the attached diff which I manually backported for v5.16.12.
 
-Yup, I managed to split that part out.
+I applied the patch to 5.16.12. It takes about 35 minutes after "mount
+/ -o remount,autodefrag" for btrfs autodefrag to start writing about
+200 MB/s to the NVMe drive.
 
-> b) the naming is a bit confusing to me: I don't usually think of ..free() as
-> the inverse action of ...prepare(). Also, ...free() feels weird to be taking
-> a stack pointer. Perhaps _{init,uninit}() or _{prepare,destroy}() might be a
-> clearer set of names?
+$ trace-cmd record -e btrfs:defrag_*
 
-I like the _{prepare,destroy}() naming, I'll go with that.
+The size of the resulting trace.dat file is 4 GB.
 
-Thanks!
+Please send me some instructions describing how to extract data
+relevant to the btrfs-autodefrag issue from the trace.dat file. I
+suppose you don't want the whole trace.dat file. Compressed
+trace.dat.zstd has size 324 MB.
+
+-Jan

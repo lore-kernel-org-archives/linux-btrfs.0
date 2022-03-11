@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7AF65C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Mar 2022 11:35:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33719C4332F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Mar 2022 11:35:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348298AbiCKLgr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Mar 2022 06:36:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36168 "EHLO
+        id S1348300AbiCKLgs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Mar 2022 06:36:48 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36166 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348296AbiCKLgq (ORCPT
+        with ESMTP id S1348289AbiCKLgq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 11 Mar 2022 06:36:46 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 363691BFDDB
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A7421BFDE9
         for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2022 03:35:43 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id C0D14B82881
+        by dfw.source.kernel.org (Postfix) with ESMTPS id D572461C2C
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2022 11:35:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C0BFBC340F4
         for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2022 11:35:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D8CE8C340EC
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Mar 2022 11:35:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1646998540;
-        bh=BFBeVh+lWx3n7AjVCy6Ny2Q/fOz8Og70sVplC5ynLwM=;
+        s=k20201202; t=1646998542;
+        bh=/2/hXwzKtCycLRPOeoeGu+EQfIByq2oQG8lL7N+fZgk=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=R+YugpRE2Dg1KWSlrtESDFhS3s2+vWVkC/ZQzBnMBawMUg0NI/M8NTlWvdDzojLJv
-         ZQ69wS0vXs3vHtDs4hgBql8C2231xitC2FESXo8vatDNEe9GklON4guI0VJHSQry5W
-         xC1IhOfH5KP38QMToXoDuYmaBqVge/2NZOQU9KdyXA4XEgj6WvgkyjBLvuo0e0ath6
-         gG0RCKkzYDh68XRpencaJdvKvqXWDQlc7EvEXXedkfVD2wc3jMqrs2bHbJ4wNlZMnS
-         HVmAklH+EJf3pKau5ZXDIKChtAj7trPSs1r1cRvQAorMvzVsuk1Cj1UibUI+fflM1D
-         cqHcm9tX2eIsw==
+        b=AthWO6vHbm+B70AxHjbVigwe/So2qcV0DiBWl4rhGYDwnlxgNAmdQpgrN5p3/hob6
+         INJackNiQ3mSgg/TsoYdSSZECvxAHUUkOfHUqZyWzzNp8OHz4o83whyxj+uqvbiAUT
+         dcJMFCCJ3Nies89rg0+8pgjKZW5eyI3RCDAFnEj+OFMKHUKsl9tlN4awECd1UNBZtp
+         Bn7dI9JafskIbK65gipl9w/mUe1O9dkofTaq72iWqtaJEabH9mzJNhoaM81KvllPyH
+         yabnKhuV7AyMsYmOuKbXuxcCu2gfsf7zQ1pwHCvC5b3Ja6i6o70bx2HeiQGvWMrECC
+         nGIUPSDfDa+Iw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/4] btrfs: release upper nodes when reading stale btree node from disk
-Date:   Fri, 11 Mar 2022 11:35:32 +0000
-Message-Id: <ee93177c2376cc42ad55de7ffd2c666b39035ac0.1646998177.git.fdmanana@suse.com>
+Subject: [PATCH 4/4] btrfs: remove trivial wrapper btrfs_read_buffer()
+Date:   Fri, 11 Mar 2022 11:35:34 +0000
+Message-Id: <160fad9b4d845f6fb404f88df2fbc458ba5260fe.1646998177.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1646998177.git.fdmanana@suse.com>
 References: <cover.1646998177.git.fdmanana@suse.com>
@@ -48,100 +48,146 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When reading a btree node (or leaf), at read_block_for_search(), if we
-can't find its extent buffer in the cache (the fs_info->buffer_radix
-radix tree), then we unlock all upper level nodes before reading the
-btree node/leaf from disk, to prevent blocking other tasks for too long.
+The function btrfs_read_buffer() is useless, it just calls
+btree_read_extent_buffer_pages() with exactly the same arguments.
 
-However if we find that the extent buffer is in the cache but it is not
-up to date, we don't unlock upper level nodes before reading it from disk,
-potentially blocking other tasks on upper level nodes for too long.
-
-Fix this inconsistent behaviour by unlocking upper level nodes if we need
-to read a node/leaf from disk because its in-memory extent buffer is not
-up to date. If we unlocked upper level nodes then we must return -EAGAIN
-to the caller, just like the case where the extent buffer is not cached in
-memory. And like that case, we determine if upper level nodes are locked
-by checking only if the parent node is locked - if it isn't, then no other
-upper level nodes are locked.
-
-This is actually a rare case, as if we have an extent buffer in memory,
-it typically has the uptodate flag set and passes all the checks done by
-btrfs_buffer_uptodate().
+So remove it and rename btree_read_extent_buffer_pages() to
+btrfs_read_extent_buffer(), which is a shorter name, has the "btrfs_"
+prefix (since it's used outside disk-io.c) and the name is clear enough
+about what it does.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.c | 28 +++++++++++++++++++---------
- 1 file changed, 19 insertions(+), 9 deletions(-)
+ fs/btrfs/ctree.c    |  2 +-
+ fs/btrfs/disk-io.c  | 16 ++++------------
+ fs/btrfs/disk-io.h  |  4 ++--
+ fs/btrfs/qgroup.c   |  2 +-
+ fs/btrfs/tree-log.c |  9 +++++----
+ 5 files changed, 13 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 8396079709c4..e1e942e1918f 100644
+index 13d4833afcd3..a795e89de3f1 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1409,12 +1409,21 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
- 	struct btrfs_key first_key;
- 	int ret;
- 	int parent_level;
-+	bool unlock_up;
+@@ -1450,7 +1450,7 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
+ 			btrfs_unlock_up_safe(p, level + 1);
  
-+	unlock_up = ((level + 1 < BTRFS_MAX_LEVEL) && p->locks[level + 1]);
- 	blocknr = btrfs_node_blockptr(*eb_ret, slot);
- 	gen = btrfs_node_ptr_generation(*eb_ret, slot);
- 	parent_level = btrfs_header_level(*eb_ret);
- 	btrfs_node_key_to_cpu(*eb_ret, &first_key, slot);
- 
-+	/*
-+	 * If we need to read an extent buffer from disk and we are holding locks
-+	 * on upper level nodes, we unlock all the upper nodes before reading the
-+	 * extent buffer, and then return -EAGAIN to the caller as it needs to
-+	 * restart the search. We don't release the lock on the current level
-+	 * because we need to walk this node to figure out which blocks to read.
-+	 */
- 	tmp = find_extent_buffer(fs_info, blocknr);
- 	if (tmp) {
- 		if (p->reada == READA_FORWARD_ALWAYS)
-@@ -1436,6 +1445,9 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
- 			return 0;
- 		}
- 
-+		if (unlock_up)
-+			btrfs_unlock_up_safe(p, level + 1);
-+
  		/* now we're allowed to do a blocking uptodate check */
- 		ret = btrfs_read_buffer(tmp, gen, parent_level - 1, &first_key);
+-		ret = btrfs_read_buffer(tmp, gen, parent_level - 1, &first_key);
++		ret = btrfs_read_extent_buffer(tmp, gen, parent_level - 1, &first_key);
  		if (ret) {
-@@ -1443,17 +1455,14 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
+ 			free_extent_buffer(tmp);
  			btrfs_release_path(p);
- 			return -EIO;
- 		}
--		*eb_ret = tmp;
--		return 0;
-+
-+		if (unlock_up)
-+			ret = -EAGAIN;
-+
-+		goto out;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 09693ab4fde0..d429a53704d0 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -374,9 +374,9 @@ int btrfs_verify_level_key(struct extent_buffer *eb, int level,
+  * @level:		expected level, mandatory check
+  * @first_key:		expected key of first slot, skip check if NULL
+  */
+-static int btree_read_extent_buffer_pages(struct extent_buffer *eb,
+-					  u64 parent_transid, int level,
+-					  struct btrfs_key *first_key)
++int btrfs_read_extent_buffer(struct extent_buffer *eb,
++			     u64 parent_transid, int level,
++			     struct btrfs_key *first_key)
+ {
+ 	struct btrfs_fs_info *fs_info = eb->fs_info;
+ 	struct extent_io_tree *io_tree;
+@@ -1117,8 +1117,7 @@ struct extent_buffer *read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
+ 	if (IS_ERR(buf))
+ 		return buf;
+ 
+-	ret = btree_read_extent_buffer_pages(buf, parent_transid,
+-					     level, first_key);
++	ret = btrfs_read_extent_buffer(buf, parent_transid, level, first_key);
+ 	if (ret) {
+ 		free_extent_buffer_stale(buf);
+ 		return ERR_PTR(ret);
+@@ -4850,13 +4849,6 @@ void btrfs_btree_balance_dirty_nodelay(struct btrfs_fs_info *fs_info)
+ 	__btrfs_btree_balance_dirty(fs_info, 0);
+ }
+ 
+-int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid, int level,
+-		      struct btrfs_key *first_key)
+-{
+-	return btree_read_extent_buffer_pages(buf, parent_transid,
+-					      level, first_key);
+-}
+-
+ static void btrfs_error_commit_super(struct btrfs_fs_info *fs_info)
+ {
+ 	/* cleanup FS via transaction */
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 2e10514ecda8..2a401592124d 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -120,8 +120,8 @@ void btrfs_put_root(struct btrfs_root *root);
+ void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+ 			  int atomic);
+-int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid, int level,
+-		      struct btrfs_key *first_key);
++int btrfs_read_extent_buffer(struct extent_buffer *buf, u64 parent_transid,
++			     int level, struct btrfs_key *first_key);
+ blk_status_t btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
+ 			enum btrfs_wq_endio_type metadata);
+ blk_status_t btrfs_wq_submit_bio(struct inode *inode, struct bio *bio,
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 75e835cd4d91..db723c0026bd 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2290,7 +2290,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 
+ 	if (!extent_buffer_uptodate(root_eb)) {
+-		ret = btrfs_read_buffer(root_eb, root_gen, root_level, NULL);
++		ret = btrfs_read_extent_buffer(root_eb, root_gen, root_level, NULL);
+ 		if (ret)
+ 			goto out;
  	}
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 571dae8ad65e..338646a2cc4e 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -333,7 +333,7 @@ static int process_one_buffer(struct btrfs_root *log,
+ 	 * pin down any logged extents, so we have to read the block.
+ 	 */
+ 	if (btrfs_fs_incompat(fs_info, MIXED_GROUPS)) {
+-		ret = btrfs_read_buffer(eb, gen, level, NULL);
++		ret = btrfs_read_extent_buffer(eb, gen, level, NULL);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -2575,7 +2575,7 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
+ 	int i;
+ 	int ret;
  
--	if ((level + 1 < BTRFS_MAX_LEVEL) && p->locks[level + 1]) {
--		/*
--		 * Reduce lock contention at high levels of the btree by
--		 * dropping locks before we read.  Don't release the lock
--		 * on the current level because we need to walk this node
--		 * to figure out which blocks to read.
--		 */
-+	if (unlock_up) {
- 		btrfs_unlock_up_safe(p, level + 1);
- 		ret = -EAGAIN;
- 	} else {
-@@ -1478,6 +1487,7 @@ read_block_for_search(struct btrfs_root *root, struct btrfs_path *p,
- 	if (!extent_buffer_uptodate(tmp))
- 		ret = -EIO;
+-	ret = btrfs_read_buffer(eb, gen, level, NULL);
++	ret = btrfs_read_extent_buffer(eb, gen, level, NULL);
+ 	if (ret)
+ 		return ret;
  
-+out:
- 	if (ret == 0) {
- 		*eb_ret = tmp;
- 	} else {
+@@ -2786,7 +2786,7 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
+ 
+ 			path->slots[*level]++;
+ 			if (wc->free) {
+-				ret = btrfs_read_buffer(next, ptr_gen,
++				ret = btrfs_read_extent_buffer(next, ptr_gen,
+ 							*level - 1, &first_key);
+ 				if (ret) {
+ 					free_extent_buffer(next);
+@@ -2815,7 +2815,8 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
+ 			free_extent_buffer(next);
+ 			continue;
+ 		}
+-		ret = btrfs_read_buffer(next, ptr_gen, *level - 1, &first_key);
++		ret = btrfs_read_extent_buffer(next, ptr_gen, *level - 1,
++					       &first_key);
+ 		if (ret) {
+ 			free_extent_buffer(next);
+ 			return ret;
 -- 
 2.33.0
 

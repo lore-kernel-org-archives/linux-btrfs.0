@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5843C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 09:08:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CEBBC433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 09:08:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237817AbiCNJJ1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Mar 2022 05:09:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58186 "EHLO
+        id S237775AbiCNJJ3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Mar 2022 05:09:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58206 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237770AbiCNJJQ (ORCPT
+        with ESMTP id S237809AbiCNJJR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Mar 2022 05:09:16 -0400
+        Mon, 14 Mar 2022 05:09:17 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B177D25E98
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 02:08:05 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6A3B12654E
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 02:08:07 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 08FB21F388
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:08:04 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 2B2271F391
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:08:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1647248884; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1647248886; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=nV1d+WHOaZgcVn6AfOwx80ZdfUozii8+xS70ATb+x0o=;
-        b=ThcHDV5cJil5hmxqPce66Ja0DxyOYnAqQo6mYIcZOFPZ4QpYaIxgU+pa8G0OkE+/hdarF2
-        p3GlFETpIjlkV4Dlh8Uo/LUxId3K01j1mX5B/AdcHwvHXc/55tDDnAYUrUJ0nqtcWb8+mu
-        Ue6ODHNeKOqgDhuVD64EOzACVST96pg=
+        bh=cNaLYfPOCB6iQSMjN474bxT78RqrHDD+i3lmchDTOV4=;
+        b=cZGMcHNQxa+2V968sXafkpR7e9fTBIMLVFYW8b+s+1rvRLKOWAB6X3wkTt/3Y6sFz3O2ZN
+        hMPPaNfKzy8jWlH5X1/MmENFMSRSWfS8B60ie/0hzxmi2Ci50CFFEFzZlxhkgLahbVfJfU
+        ZQ+E2TJAViaU9BJ6lhRMUn43q7fIiCI=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5CDD713ADA
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:08:03 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7D4DD13ADA
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:08:05 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0F/fCfMFL2IaYgAAMHmgww
+        id KNwHEvUFL2IaYgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:08:03 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:08:05 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 13/18] btrfs: allow btrfs_map_bio() to split bio according to chunk stripe boundaries
-Date:   Mon, 14 Mar 2022 17:07:26 +0800
-Message-Id: <3549fd87d487589323b80e369234a97ec928cdc9.1647248613.git.wqu@suse.com>
+Subject: [PATCH v3 15/18] btrfs: remove stripe boundary calculation for compressed IO
+Date:   Mon, 14 Mar 2022 17:07:28 +0800
+Message-Id: <b795c6746e3f9c953178fc30b2ee9e80025fa152.1647248613.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1647248613.git.wqu@suse.com>
 References: <cover.1647248613.git.wqu@suse.com>
@@ -55,84 +55,157 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-With the new btrfs_bio_split() helper, we are able to split bio
-according to chunk stripe boundaries at btrfs_map_bio() time.
+For compressed IO, we calculate the next stripe start inside
+alloc_compressed_bio().
 
-Although currently bios are split at buffered/compressed/encoded/direct
-IO time, this ability is not yet utilized.
+Since now btrfs_map_bio() can handle bio split, we no longer need to
+calculate the boundary any more.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/volumes.c | 50 +++++++++++++++++++++++++++++-----------------
- 1 file changed, 32 insertions(+), 18 deletions(-)
+ fs/btrfs/compression.c | 49 +++++-------------------------------------
+ 1 file changed, 5 insertions(+), 44 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e4e688b31c90..403aa371c11f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6871,30 +6871,44 @@ static int submit_one_mapped_range(struct btrfs_fs_info *fs_info, struct bio *bi
- blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 			   int mirror_num)
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index e9b0887c03a9..0bf694038c61 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -443,21 +443,15 @@ static blk_status_t submit_compressed_bio(struct btrfs_fs_info *fs_info,
+  *                      from or written to.
+  * @endio_func:         The endio function to call after the IO for compressed data
+  *                      is finished.
+- * @next_stripe_start:  Return value of logical bytenr of where next stripe starts.
+- *                      Let the caller know to only fill the bio up to the stripe
+- *                      boundary.
+  */
+ 
+ 
+ static struct bio *alloc_compressed_bio(struct compressed_bio *cb, u64 disk_bytenr,
+-					unsigned int opf, bio_end_io_t endio_func,
+-					u64 *next_stripe_start)
++					unsigned int opf, bio_end_io_t endio_func)
  {
--	u64 logical = bio->bi_iter.bi_sector << 9;
--	u64 length = 0;
--	u64 map_length;
-+	const u64 orig_logical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
-+	const unsigned int orig_length = bio->bi_iter.bi_size;
-+	const enum btrfs_map_op op = btrfs_op(bio);
-+	u64 cur_logical = orig_logical;
- 	int ret;
--	struct btrfs_io_context *bioc = NULL;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(cb->inode->i_sb);
+-	struct btrfs_io_geometry geom;
+ 	struct extent_map *em;
+ 	struct bio *bio;
+-	int ret;
  
--	length = bio->bi_iter.bi_size;
--	map_length = length;
-+	while (cur_logical < orig_logical + orig_length) {
-+		u64 map_length = orig_logical + orig_length - cur_logical;
-+		struct btrfs_io_context *bioc = NULL;
-+		struct bio *cur_bio;
+ 	bio = btrfs_bio_alloc(BIO_MAX_VECS);
  
--	btrfs_bio_counter_inc_blocked(fs_info);
--	btrfs_bio_save_iter(btrfs_bio(bio));
--	ret = __btrfs_map_block(fs_info, btrfs_op(bio), logical,
--				&map_length, &bioc, mirror_num, 1);
--	if (ret) {
--		btrfs_bio_counter_dec(fs_info);
--		return errno_to_blk_status(ret);
--	}
-+		btrfs_bio_save_iter(btrfs_bio(bio));
-+		ret = __btrfs_map_block(fs_info, op, cur_logical, &map_length,
-+					&bioc, mirror_num, 1);
-+		if (ret)
-+			return errno_to_blk_status(ret);
+@@ -474,14 +468,7 @@ static struct bio *alloc_compressed_bio(struct compressed_bio *cb, u64 disk_byte
  
--	ret = submit_one_mapped_range(fs_info, bio, bioc, map_length, mirror_num);
+ 	if (bio_op(bio) == REQ_OP_ZONE_APPEND)
+ 		bio_set_dev(bio, em->map_lookup->stripes[0].dev->bdev);
+-
+-	ret = btrfs_get_io_geometry(fs_info, em, btrfs_op(bio), disk_bytenr, &geom);
+ 	free_extent_map(em);
 -	if (ret < 0) {
-+		if (cur_logical + map_length < orig_logical + orig_length) {
-+			/*
-+			 * For now zoned write should never cross stripe
-+			 * boundary
-+			 */
-+			ASSERT(bio_op(bio) != REQ_OP_ZONE_APPEND);
-+
-+			/* Split the bio */
-+			cur_bio = btrfs_bio_split(fs_info, bio, map_length);
-+		} else {
-+			/* Use the existing bio directly */
-+			cur_bio = bio;
-+		}
-+		btrfs_bio_counter_inc_blocked(fs_info);
-+		ret = submit_one_mapped_range(fs_info, cur_bio, bioc,
-+					      map_length, mirror_num);
- 		btrfs_bio_counter_dec(fs_info);
--		return errno_to_blk_status(ret);
-+		if (ret < 0)
-+			return errno_to_blk_status(ret);
-+		cur_logical += map_length;
- 	}
--	btrfs_bio_counter_dec(fs_info);
- 	return BLK_STS_OK;
- }
+-		bio_put(bio);
+-		return ERR_PTR(ret);
+-	}
+-	*next_stripe_start = disk_bytenr + geom.len;
  
+ 	return bio;
+ }
+@@ -508,7 +495,6 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 	struct bio *bio = NULL;
+ 	struct compressed_bio *cb;
+ 	u64 cur_disk_bytenr = disk_start;
+-	u64 next_stripe_start;
+ 	blk_status_t ret;
+ 	int skip_sum = inode->flags & BTRFS_INODE_NODATASUM;
+ 	const bool use_append = btrfs_use_zone_append(inode, disk_start);
+@@ -542,28 +528,19 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 		/* Allocate new bio if submitted or not yet allocated */
+ 		if (!bio) {
+ 			bio = alloc_compressed_bio(cb, cur_disk_bytenr,
+-				bio_op | write_flags, end_compressed_bio_write,
+-				&next_stripe_start);
++				bio_op | write_flags, end_compressed_bio_write);
+ 			if (IS_ERR(bio)) {
+ 				ret = errno_to_blk_status(PTR_ERR(bio));
+ 				bio = NULL;
+ 				goto finish_cb;
+ 			}
+ 		}
+-		/*
+-		 * We should never reach next_stripe_start start as we will
+-		 * submit comp_bio when reach the boundary immediately.
+-		 */
+-		ASSERT(cur_disk_bytenr != next_stripe_start);
+-
+ 		/*
+ 		 * We have various limits on the real read size:
+-		 * - stripe boundary
+ 		 * - page boundary
+ 		 * - compressed length boundary
+ 		 */
+-		real_size = min_t(u64, U32_MAX, next_stripe_start - cur_disk_bytenr);
+-		real_size = min_t(u64, real_size, PAGE_SIZE - offset_in_page(offset));
++		real_size = min_t(u64, U32_MAX, PAGE_SIZE - offset_in_page(offset));
+ 		real_size = min_t(u64, real_size, compressed_len - offset);
+ 		ASSERT(IS_ALIGNED(real_size, fs_info->sectorsize));
+ 
+@@ -578,9 +555,6 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
+ 			submit = true;
+ 
+ 		cur_disk_bytenr += added;
+-		/* Reached stripe boundary */
+-		if (cur_disk_bytenr == next_stripe_start)
+-			submit = true;
+ 
+ 		/* Finished the range */
+ 		if (cur_disk_bytenr == disk_start + compressed_len)
+@@ -800,7 +774,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	struct bio *comp_bio = NULL;
+ 	const u64 disk_bytenr = bio->bi_iter.bi_sector << SECTOR_SHIFT;
+ 	u64 cur_disk_byte = disk_bytenr;
+-	u64 next_stripe_start;
+ 	u64 file_offset;
+ 	u64 em_len;
+ 	u64 em_start;
+@@ -887,27 +860,19 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 		/* Allocate new bio if submitted or not yet allocated */
+ 		if (!comp_bio) {
+ 			comp_bio = alloc_compressed_bio(cb, cur_disk_byte,
+-					REQ_OP_READ, end_compressed_bio_read,
+-					&next_stripe_start);
++					REQ_OP_READ, end_compressed_bio_read);
+ 			if (IS_ERR(comp_bio)) {
+ 				ret = errno_to_blk_status(PTR_ERR(comp_bio));
+ 				comp_bio = NULL;
+ 				goto finish_cb;
+ 			}
+ 		}
+-		/*
+-		 * We should never reach next_stripe_start start as we will
+-		 * submit comp_bio when reach the boundary immediately.
+-		 */
+-		ASSERT(cur_disk_byte != next_stripe_start);
+ 		/*
+ 		 * We have various limit on the real read size:
+-		 * - stripe boundary
+ 		 * - page boundary
+ 		 * - compressed length boundary
+ 		 */
+-		real_size = min_t(u64, U32_MAX, next_stripe_start - cur_disk_byte);
+-		real_size = min_t(u64, real_size, PAGE_SIZE - offset_in_page(offset));
++		real_size = min_t(u64, U32_MAX, PAGE_SIZE - offset_in_page(offset));
+ 		real_size = min_t(u64, real_size, compressed_len - offset);
+ 		ASSERT(IS_ALIGNED(real_size, fs_info->sectorsize));
+ 
+@@ -919,10 +884,6 @@ blk_status_t btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 		ASSERT(added == real_size);
+ 		cur_disk_byte += added;
+ 
+-		/* Reached stripe boundary, need to submit */
+-		if (cur_disk_byte == next_stripe_start)
+-			submit = true;
+-
+ 		/* Has finished the range, need to submit */
+ 		if (cur_disk_byte == disk_bytenr + compressed_len)
+ 			submit = true;
 -- 
 2.35.1
 

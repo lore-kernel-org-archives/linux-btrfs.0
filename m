@@ -2,73 +2,64 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FB87C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 20:07:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F15AC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 20:10:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244956AbiCNUIw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Mar 2022 16:08:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45386 "EHLO
+        id S243995AbiCNUL7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Mar 2022 16:11:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53864 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241865AbiCNUIv (ORCPT
+        with ESMTP id S233445AbiCNUL6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Mar 2022 16:08:51 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 409C140A13
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 13:07:41 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id E4A331F380;
-        Mon, 14 Mar 2022 20:07:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1647288459;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=JXagOP+ipw3CLQp8RwmGslMKd2Vm1gE2+I3+l2I51Kw=;
-        b=18aquqxLGr1LK9D13U4t5dJOHRmJUeXVm7ECjrYs2KAUz0Gme/cWGzP5AdGZl1bxk70wxM
-        iYbAa4wLPkI0g4/lpoJdl6t3h0yG5762cG7ECN42D72Ix///90tO4nVlDA7Y0vwGqsmgbh
-        aV4N1gme+P+MHpMROJ1Gk6GAZ/6HxyY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1647288459;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=JXagOP+ipw3CLQp8RwmGslMKd2Vm1gE2+I3+l2I51Kw=;
-        b=4AaRctdGqOYFqDnHuEkl4nykrcCUbgFWniu2X4XO2pfRJB+2r4DNJD3K91i9ZeWspagQqf
-        Am/KRUEGGx27n8CA==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id DBB0FA3B88;
-        Mon, 14 Mar 2022 20:07:39 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 6FC0EDA7E1; Mon, 14 Mar 2022 21:03:41 +0100 (CET)
-Date:   Mon, 14 Mar 2022 21:03:41 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        Luca =?iso-8859-1?Q?B=E9la?= Palkovics 
-        <luca.bela.palkovics@gmail.com>
-Subject: Re: [PATCH] btrfs: make device item removal and super block num
- devices update happen in the same transaction
-Message-ID: <20220314200341.GT12643@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        Luca =?iso-8859-1?Q?B=E9la?= Palkovics <luca.bela.palkovics@gmail.com>
-References: <b86647c31a09ccc44447367865ecac8d5b358b7c.1646717720.git.wqu@suse.com>
+        Mon, 14 Mar 2022 16:11:58 -0400
+Received: from vps.thesusis.net (vps.thesusis.net [34.202.238.73])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EAF9B13D05
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 13:10:48 -0700 (PDT)
+Received: by vps.thesusis.net (Postfix, from userid 1000)
+        id EB232835FB; Mon, 14 Mar 2022 16:10:47 -0400 (EDT)
+References: <CAODFU0rZEy064KkSK1juHA6=r2zC4=Go8Me2V2DqHWb-AirL-Q@mail.gmail.com>
+ <455d2012-aeaf-42c5-fadb-a5dc67beff35@gmx.com>
+ <CAODFU0q56n3UxNyZJYsw2zK0CQ543Fm7fxD6_4ZSfgqPynFU7g@mail.gmail.com>
+ <e5bb2e23-2101-dcc3-695e-f3a0f5a4aba7@gmx.com>
+ <3c668ffe-edb0-bbbb-cfe0-e307bad79b1a@gmx.com>
+ <CAODFU0pcT73bXwkXOpjQMvG0tYO73mLdeG2i4foxr6kHorh1jQ@mail.gmail.com>
+ <70bc749c-4b85-f7e6-b5fd-23eb573aab70@gmx.com>
+ <CAODFU0q7TxxHP6yndndnVtE+62asnbOQmfD_1KjRrG0uJqiqgg@mail.gmail.com>
+ <a3d8c748-0ac7-4437-57b7-99735f1ffd2b@gmx.com>
+ <CAODFU0rK7886qv4JBFuCYqaNh9yh_H-8Y+=_gPRbLSCLUfbE1Q@mail.gmail.com>
+ <7fc9f5b4-ddb6-bd3b-bb02-2bd4af703e3b@gmx.com>
+ <CAODFU0oj3y3MiGH0t-QbDKBk5+LfrVoHDkomYjWLWv509uA8Hg@mail.gmail.com>
+ <078f9f05-3f8f-eef1-8b0b-7d2a26bf1f97@gmx.com>
+User-agent: mu4e 1.7.0; emacs 27.1
+From:   Phillip Susi <phill@thesusis.net>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Jan Ziak <0xe2.0x9a.0x9b@gmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs autodefrag wrote 5TB in one day to a 0.5TB SSD without a
+ measurable benefit
+Date:   Mon, 14 Mar 2022 16:09:08 -0400
+In-reply-to: <078f9f05-3f8f-eef1-8b0b-7d2a26bf1f97@gmx.com>
+Message-ID: <87a6dscn20.fsf@vps.thesusis.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <b86647c31a09ccc44447367865ecac8d5b358b7c.1646717720.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 08, 2022 at 01:36:38PM +0800, Qu Wenruo wrote:
-> [BUG]
-> There is a report that a btrfs has a bad super block num devices.
 
-People have reported this on IRC in the past too. In some cases it was a
-report with two devices expected but one found and "I have never added
-nor removed a device on this filesystem", so it was a bit mysterious.
-The split update over the transaction is otherwise a clear cause.
-Added to misc-next, thanks.
+Qu Wenruo <quwenruo.btrfs@gmx.com> writes:
+
+> That's more or less expected.
+>
+> Autodefrag has two limitations:
+>
+> 1. Only defrag newer writes
+>    It doesn't defrag older fragments.
+>    This is the existing behavior from the beginning of autodefrag.
+>    Thus it's not that effective against small random writes.
+
+I don't understand this bit.  The whole point of defrag is to reduce the
+fragmentation of previous writes.  New writes should always attempt to
+follow the previous one if possible.  If auto defrag only changes the
+behavior of new writes, then how does it change it and why is that not
+the way new writes are always done?
+

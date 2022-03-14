@@ -2,103 +2,143 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 076D9C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 21:41:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 549C7C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 21:54:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244409AbiCNVmL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Mar 2022 17:42:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60724 "EHLO
+        id S238660AbiCNVzg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Mar 2022 17:55:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60000 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243834AbiCNVmL (ORCPT
+        with ESMTP id S235932AbiCNVzf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Mar 2022 17:42:11 -0400
-Received: from mga07.intel.com (mga07.intel.com [134.134.136.100])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 729D31DA54
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 14:41:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1647294060; x=1678830060;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=duz+74g0FHVD9ZCC3FyZ5cJrURG4rWVLDfZjXqxt3QM=;
-  b=YgO7YW7pkj/iTSh3QuMPFOFGvmHz6uR4k1JPnZ/+452Cp3FgnNKZvUcP
-   21ThVk2FFOZ1hpUG/L4h5IciMWWsHxk5k0HcU50LejzNeIfYGmTQfWvFi
-   hrB7MvoVnAH9DCp4F59iJ4X3lBwNtAFpLtaqkl3kOfWoWnSeOUEWgQIDE
-   GjArwdw6lhLViJHu0gR3QItI7nzKAmPjzRNnTtwTy5A+WyHY0z89Oej/Q
-   AzBX2bX778YMgSHeF43BUrO7oXy4/JdC4WcJS49+4XKat+WAE+WWjj9jk
-   w4nDynZ1MZONlbEiypttSvTrtB0RUXUVXdG2sqtHea4UEIHudNu5bbHWI
-   Q==;
-X-IronPort-AV: E=McAfee;i="6200,9189,10286"; a="319373464"
-X-IronPort-AV: E=Sophos;i="5.90,181,1643702400"; 
-   d="scan'208";a="319373464"
-Received: from orsmga007.jf.intel.com ([10.7.209.58])
-  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 14 Mar 2022 14:41:00 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.90,181,1643702400"; 
-   d="scan'208";a="540158450"
-Received: from lkp-server02.sh.intel.com (HELO 89b41b6ae01c) ([10.239.97.151])
-  by orsmga007.jf.intel.com with ESMTP; 14 Mar 2022 14:40:58 -0700
-Received: from kbuild by 89b41b6ae01c with local (Exim 4.92)
-        (envelope-from <lkp@intel.com>)
-        id 1nTsQz-000AFt-P0; Mon, 14 Mar 2022 21:40:57 +0000
-Date:   Tue, 15 Mar 2022 05:40:16 +0800
-From:   kernel test robot <lkp@intel.com>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     llvm@lists.linux.dev, kbuild-all@lists.01.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: zoned: make auto-reclaim less aggressive
-Message-ID: <202203150504.VbCtEy3b-lkp@intel.com>
-References: <d4e31fe56800bdc3bd8ed9230c6a5629ee555cd5.1647268601.git.johannes.thumshirn@wdc.com>
+        Mon, 14 Mar 2022 17:55:35 -0400
+Received: from mail-oi1-x22a.google.com (mail-oi1-x22a.google.com [IPv6:2607:f8b0:4864:20::22a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 336F13A5ED
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 14:54:25 -0700 (PDT)
+Received: by mail-oi1-x22a.google.com with SMTP id w2so10864303oie.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 14:54:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:cc;
+        bh=8J2KqqzaNNqQjhFwCeLS/exVEq+mmxX5Pknvq9APbUM=;
+        b=fFKyYIRYIDUN3+JR/ozZfwJKOUuDLKI8mVu4XAEzYATdbRhEmcudyybQ2cEVPKZHzN
+         A17ES99Wdpjm3x6oLMs8WV0hmiiA5UK7Jrwmj1ZudGUml6MWpJBer5YJGuHQWY2VTb5x
+         Evd6kr3ox0ZIzdhIO3QA02uM2G6Hw5kiwYCeYzlvjYak1m/+ljGMj9rEzVJXUcYGYqhG
+         TwoGxWcqGaK8+OLzJo9lRs7TVr6LWxYsbc3jnz5X2AcfYTI7gR9RcL/F5A/4COOpKL4x
+         NkRXB4fo02yHs7ItwApd4/tDE87d6QjKq+Lu70xurtOYpGDyRcwS/jD2cTNCrMTPCZlr
+         0rlg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:cc;
+        bh=8J2KqqzaNNqQjhFwCeLS/exVEq+mmxX5Pknvq9APbUM=;
+        b=rKUWpCP+EjYjI2fg+7nICu1IQ5eBfli4ZUb0koaVSaOn8jX8Y1UhCWkoPq4mwpCpVc
+         NTjIpV8DEwIFheiu9CxhhIL+L8ptpLnAa6eSsfV1ub2bvomaFjn6JbRH2Ogwm+/RAm2s
+         aoQ/v4OK+GlkW/S0ElwN0rxjhqIS0IIDBqn770hihsD2X8NkDd7n+il6pMiC9tI0TDRW
+         xewEFax6QRRw0QytAtZGfNbhSw8Yp8yWhwVo4h5jeX2u8+7GsBXdFinT692w7ATo7M/n
+         bhgF29I88YOYG3dIWvZvhRuXm55PHKR/1DJcyoflHiep+ct/azfVTY+yK36L5WoAzzsS
+         v8QQ==
+X-Gm-Message-State: AOAM5312U48WA/xvfPoRpv3KIs+Ne+ZieMirmKSoCCU7seQ6xuOro6aN
+        YlETEmp/xp4thKmKOeA9HhS5B80S+UxrOU03vVSW120wFak=
+X-Google-Smtp-Source: ABdhPJz7GlSx8o4rzYT5QncdrSGOVKYvuZyrgmgniXGlKeyWaWiSPeXD3LWxxBExz3iQTFh46RvjustF7B5ovYsZHC4=
+X-Received: by 2002:a05:6808:2117:b0:2da:5906:22c3 with SMTP id
+ r23-20020a056808211700b002da590622c3mr585245oiw.80.1647294864223; Mon, 14 Mar
+ 2022 14:54:24 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <d4e31fe56800bdc3bd8ed9230c6a5629ee555cd5.1647268601.git.johannes.thumshirn@wdc.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+References: <CAODFU0rZEy064KkSK1juHA6=r2zC4=Go8Me2V2DqHWb-AirL-Q@mail.gmail.com>
+ <87tuc9q1fc.fsf@vps.thesusis.net> <CAODFU0py06T4Eet+i0ZAY5Zrp5174eQJOCGh_03oZdDXO55TKw@mail.gmail.com>
+ <87tuc7gdzp.fsf@vps.thesusis.net> <CAODFU0oM02WDpOPXp1of177aEJ9=ux2QFrHZF=khhzAg+3N1dA@mail.gmail.com>
+ <87ee34cnaq.fsf@vps.thesusis.net>
+In-Reply-To: <87ee34cnaq.fsf@vps.thesusis.net>
+From:   Jan Ziak <0xe2.0x9a.0x9b@gmail.com>
+Date:   Mon, 14 Mar 2022 22:53:48 +0100
+Message-ID: <CAODFU0rXnDhQjGPyuBQ8kxUGBXzQFMkXrNXiSxmcvgaaixspvg@mail.gmail.com>
+Subject: Re: Btrfs autodefrag wrote 5TB in one day to a 0.5TB SSD without a
+ measurable benefit
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary="000000000000390b0905da34b9f7"
+To:     unlisted-recipients:; (no To-header on input)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Johannes,
+--000000000000390b0905da34b9f7
+Content-Type: text/plain; charset="UTF-8"
 
-I love your patch! Yet something to improve:
+On Mon, Mar 14, 2022 at 9:05 PM Phillip Susi <phill@thesusis.net> wrote:
+> Jan Ziak <0xe2.0x9a.0x9b@gmail.com> writes:
+>
+> > The actual disk usage of a file in a copy-on-write filesystem can be
+> > much larger than sb.st_size obtained via fstat(fd, &sb) if, for
+> > example, a program performs many (millions) single-byte file changes
+> > using write(fd, buf, 1) to distinct/random offsets in the file.
+>
+> How?  I mean if you write to part of the file a new block is written
+> somewhere else but the original one is then freed, so the overall size
+> should not change.  Just because all of the blocks of the file are not
+> contiguous does not mean that the file has more of them, and making them
+> contiguous does not reduce the number of them.
+>
 
-[auto build test ERROR on kdave/for-next]
-[also build test ERROR on next-20220310]
-[cannot apply to v5.17-rc8]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch]
+It is true that it is possible to design a copy-on-write filesystem,
+albeit it may have additional costs, that will never waste a single
+extent even in the case of high-fragmentation files. But, btrfs isn't
+such a filesystem.
 
-url:    https://github.com/0day-ci/linux/commits/Johannes-Thumshirn/btrfs-zoned-make-auto-reclaim-less-aggressive/20220314-231037
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
-config: hexagon-randconfig-r041-20220313 (https://download.01.org/0day-ci/archive/20220315/202203150504.VbCtEy3b-lkp@intel.com/config)
-compiler: clang version 15.0.0 (https://github.com/llvm/llvm-project 3e4950d7fa78ac83f33bbf1658e2f49a73719236)
-reproduce (this is a W=1 build):
-        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
-        chmod +x ~/bin/make.cross
-        # https://github.com/0day-ci/linux/commit/e742bf2051b5066cae517342b8bbe81eb44809a4
-        git remote add linux-review https://github.com/0day-ci/linux
-        git fetch --no-tags linux-review Johannes-Thumshirn/btrfs-zoned-make-auto-reclaim-less-aggressive/20220314-231037
-        git checkout e742bf2051b5066cae517342b8bbe81eb44809a4
-        # save the config file to linux build tree
-        mkdir build_dir
-        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=clang make.cross W=1 O=build_dir ARCH=hexagon SHELL=/bin/bash
+The manpage of /usr/bin/compsize contains the following diagram (use a
+fixed font when viewing):
 
-If you fix the issue, kindly add following tag as appropriate
-Reported-by: kernel test robot <lkp@intel.com>
+                +-------+-------+---------------+
+       extent A | used  | waste | used          |
+                +-------+-------+---------------+
+       extent B         | used  |
+                        +-------+
 
-All errors (new ones prefixed by >>):
+However, what the manpage doesn't mention is that, in the case of
+btrfs, the above diagram applies not only to compressed extents but to
+other types of extents as well.
 
->> ld.lld: error: undefined symbol: __hexagon_udivdi3
-   >>> referenced by zoned.c
-   >>>               btrfs/zoned.o:(btrfs_zoned_should_reclaim) in archive fs/built-in.a
-   >>> referenced by zoned.c
-   >>>               btrfs/zoned.o:(btrfs_zoned_should_reclaim) in archive fs/built-in.a
-   >>> did you mean: __hexagon_udivsi3
-   >>> defined in: arch/hexagon/built-in.a(lib/udivsi3.o)
+You can examine this yourself if you compile compsize-1.5 using "make
+debug" on your machine and use the Bash script that is attached to
+this email.
 
----
-0-DAY CI Kernel Test Service
-https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
+The Bash script creates one 10 MiB file. This file has 1 extent of
+size 10 MiB (assuming the btrfs filesystem has enough non-fragmented
+free space to create a continuous extent of size 10 MiB). Then the
+script writes random 4K blocks at random 4K offsets in the file.
+Examination of compsize's debug output shows that the whole 10 MiB
+extent is still stored on the storage device, despite the fact that
+many of the 4K pages comprising the 10 MiB extent have been
+overwritten and the file has been synced to the storage device:
+
+....
+regular: ram_bytes=10485760 compression=0 disk_num_bytes=10485760
+....
+
+In this test case, "Disk Usage" is 60% higher than the file's size:
+
+$ compsize data
+Processed 1 file, 612 regular extents (1221 refs), 0 inline.
+Type       Perc     Disk Usage   Uncompressed Referenced
+TOTAL      100%       16M          16M          10M
+
+-Jan
+
+--000000000000390b0905da34b9f7
+Content-Type: application/x-shellscript; name="btrfs-waste.sh"
+Content-Disposition: attachment; filename="btrfs-waste.sh"
+Content-Transfer-Encoding: base64
+Content-ID: <f_l0r8si300>
+X-Attachment-Id: f_l0r8si300
+
+IyEvYmluL2Jhc2gKc2V0IC1lClsgLWUgZGF0YSBdICYmIHsgZWNobyAiZXJyb3I6IGZpbGUgZXhp
+c3RzOiBkYXRhIjsgZXhpdCAxOyB9CgpkZCBpZj0vZGV2L3VyYW5kb20gb2Y9ZGF0YSBicz0xTSBj
+b3VudD0xMCBzdGF0dXM9bm9uZQpzeW5jIC0tZmlsZS1zeXN0ZW0gLgp4ZnNfaW8gLWMgImZpZW1h
+cCAtdiAwZyAxMDBnIiBkYXRhIHwmIHRlZSBleHRlbnRzMQpzdWRvIGNvbXBzaXplIGRhdGEKCmZv
+cigoaT0wO2k8MjU2MDtpKyspKTsgZG8KCWRkIGlmPS9kZXYvdXJhbmRvbSBvZj1kYXRhIGJzPTRL
+IGNvdW50PTEgc2Vlaz0kW1JBTkRPTSUyNTYwXSBjb252PW5vdHJ1bmMgc3RhdHVzPW5vbmUKZG9u
+ZQpzeW5jIC0tZmlsZS1zeXN0ZW0gLgp4ZnNfaW8gLWMgImZpZW1hcCAtdiAwZyAxMDBnIiBkYXRh
+IHwmIHRlZSBleHRlbnRzMi1maWVtYXAKc3VkbyBjb21wc2l6ZS0xLjUvY29tcHNpemUgZGF0YSAy
+PiBleHRlbnRzMi1jb21wc2l6ZQoKYnRyZnMgZmlsZXN5c3RlbSBkZWZyYWdtZW50IGRhdGEKc3lu
+YyAtLWZpbGUtc3lzdGVtIC4KY29tcHNpemUgZGF0YQoKcm0gLWYgZGF0YQo=
+--000000000000390b0905da34b9f7--

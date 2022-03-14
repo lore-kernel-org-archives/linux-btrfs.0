@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A13BC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 09:08:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86842C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Mar 2022 09:08:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237816AbiCNJJS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 14 Mar 2022 05:09:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57880 "EHLO
+        id S237437AbiCNJJT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 14 Mar 2022 05:09:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57954 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237199AbiCNJJJ (ORCPT
+        with ESMTP id S237253AbiCNJJK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 14 Mar 2022 05:09:09 -0400
+        Mon, 14 Mar 2022 05:09:10 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE99F21E13
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 02:07:56 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F27FC22BEA
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 02:07:59 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7B1A42110B
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:07:55 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id ABDA2218FE
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:07:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1647248875; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1647248878; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=WFljvnh34nuGnHpuxjCd9YDbH40susVpar6oiMUhdaM=;
-        b=Poz6zHzfQBlYZlEevqUIXkPFUNTxh43ka6IpOIU8nxX2+Wic1nM2O3cYraEyv4lKvt0k0q
-        X9Z5fK1Tknx/ea6dxF2Q4IdkMnoei7kkqoVL4dhGzCoweFL3j1dWuo/auy/+6Ijx0mor6x
-        5ntQVwlJ4ryBQqL+Xgbyqbqp5VRQiNI=
+        bh=EWbgmzCsT4BzyV8INxZxof6kjZz+ij80q7CW7tUUB9s=;
+        b=BSnavLNXnh9+JVVtZG+XXUnT+0IgXIUBKXnZktQot0Ap0C5myCD4iAUis4orVKhoNOHwBk
+        B6K8INj/SzQELUCV4QHXVZbmkyBNI4b/cILmztkBi253oY+YwW/UebJVqkDi6yFBN95I8h
+        8Snk8CSrhW8OPr7p6huy5RlKxoA5yfY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id CE12513ADA
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:07:54 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0B76E13ADA
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:07:57 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2DS0JeoFL2IaYgAAMHmgww
+        id UIjDMe0FL2IaYgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:07:54 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Mar 2022 09:07:57 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 05/18] btrfs: move btrfs_bio_wq_end_io() calls into submit_stripe_bio()
-Date:   Mon, 14 Mar 2022 17:07:18 +0800
-Message-Id: <5f56c353bd1b90ec791b974d4cc3ab67aa9c9c21.1647248613.git.wqu@suse.com>
+Subject: [PATCH v3 08/18] btrfs: make data buffered read path to handle split bio properly
+Date:   Mon, 14 Mar 2022 17:07:21 +0800
+Message-Id: <be6d7f20e2c3e993f4c75502357045b2148071f3.1647248613.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1647248613.git.wqu@suse.com>
 References: <cover.1647248613.git.wqu@suse.com>
@@ -55,229 +55,169 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a preparation patch for the incoming chunk mapping layer bio
-split.
+This involves the following modifications:
 
-Function btrfs_bio_wq_end_io() is going to remap bio::bi_private and
-bio::bi_end_io so that the real endio function will be executed in a
-workqueue.
+- Use bio_for_each_segment() instead of bio_for_each_segment_all()
+  bio_for_each_segment_all() will iterate all bvecs, even if they are
+  not referred by current bi_iter.
 
-The problem is, remapped bio::bi_private will be a newly allocated
-memory, and after the original endio executed, the memory will be freed.
+  Change it to __bio_for_each_segment() call so we won't have endio called
+  on the same range by both split and parent bios, and it can handle
+  both split and unsplit bios.
 
-This will not work well with split bio.
+- Make check_data_csum() to take bbio->offset_to_original into
+  consideration
+  Since btrfs bio can be split now, split/original bio can all start
+  with some offset to the original logical bytenr.
 
-So this patch will move all btrfs_bio_wq_end_io() call into one helper
-function, btrfs_bio_final_endio_remap(), and call that helper in
-submit_stripe_bio().
+  Take btrfs_bio::offset_to_original into consideration to get correct
+  checksum offset.
 
-This refactor also unified all data bio behaviors.
-
-Before this patch, compressed bio no matter if read or write, will
-always be delayed using workqueue.
-
-However all data write operations are already delayed using ordered
-extent, and all metadata write doesn't need any delayed execution.
-
-Thus this patch will make compressed bios follow the same data
-read/write behavior.
+- Remove the BIO_CLONED ASSERT() in submit_read_repair()
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/compression.c |  4 +---
- fs/btrfs/disk-io.c     |  9 +--------
- fs/btrfs/inode.c       | 20 +++++---------------
- fs/btrfs/volumes.c     | 41 +++++++++++++++++++++++++++++++++++++----
- fs/btrfs/volumes.h     |  9 ++++++++-
- 5 files changed, 52 insertions(+), 31 deletions(-)
+ fs/btrfs/extent_io.c | 34 ++++++++++++++++++----------------
+ fs/btrfs/inode.c     | 23 +++++++++++++++++++++--
+ fs/btrfs/volumes.h   |  3 ++-
+ 3 files changed, 41 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 1515c3c507a6..5c9b28f2f034 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -430,10 +430,8 @@ static blk_status_t submit_compressed_bio(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index e3ae20058cea..240bdeec2346 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2739,11 +2739,8 @@ static blk_status_t submit_read_repair(struct inode *inode,
+ 	/* We're here because we had some read errors or csum mismatch */
+ 	ASSERT(error_bitmap);
+ 
+-	/*
+-	 * We only get called on buffered IO, thus page must be mapped and bio
+-	 * must not be cloned.
+-	 */
+-	ASSERT(page->mapping && !bio_flagged(failed_bio, BIO_CLONED));
++	/* We only get called on buffered IO, thus page must be mapped */
++	ASSERT(page->mapping);
+ 
+ 	/* Iterate through all the sectors in the range */
+ 	for (i = 0; i < nr_bits; i++) {
+@@ -2997,7 +2994,8 @@ static struct extent_buffer *find_extent_buffer_readpage(
+  */
+ static void end_bio_extent_readpage(struct bio *bio)
  {
- 	blk_status_t ret;
+-	struct bio_vec *bvec;
++	struct bio_vec bvec;
++	struct bvec_iter iter;
+ 	struct btrfs_bio *bbio = btrfs_bio(bio);
+ 	struct extent_io_tree *tree, *failure_tree;
+ 	struct processed_extent processed = { 0 };
+@@ -3008,11 +3006,15 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 	u32 bio_offset = 0;
+ 	int mirror;
+ 	int ret;
+-	struct bvec_iter_all iter_all;
  
-+	btrfs_bio(bio)->endio_type = BTRFS_WQ_ENDIO_DATA;
- 	ASSERT(bio->bi_iter.bi_size);
--	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
--	if (ret)
--		return ret;
- 	ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	return ret;
- }
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 258ff67631e3..d18871876318 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -928,14 +928,7 @@ blk_status_t btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio,
- 	blk_status_t ret;
+-	bio_for_each_segment_all(bvec, bio, iter_all) {
++	/*
++	 * We should have saved the original bi_iter, and then start iterating
++	 * using that saved iter, as at endio time bi_iter is not reliable.
++	 */
++	ASSERT(bbio->iter.bi_size);
++	__bio_for_each_segment(bvec, bio, iter, bbio->iter) {
+ 		bool uptodate = !bio->bi_status;
+-		struct page *page = bvec->bv_page;
++		struct page *page = bvec.bv_page;
+ 		struct inode *inode = page->mapping->host;
+ 		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 		const u32 sectorsize = fs_info->sectorsize;
+@@ -3035,19 +3037,19 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 		 * for unaligned offsets, and an error if they don't add up to
+ 		 * a full sector.
+ 		 */
+-		if (!IS_ALIGNED(bvec->bv_offset, sectorsize))
++		if (!IS_ALIGNED(bvec.bv_offset, sectorsize))
+ 			btrfs_err(fs_info,
+ 		"partial page read in btrfs with offset %u and length %u",
+-				  bvec->bv_offset, bvec->bv_len);
+-		else if (!IS_ALIGNED(bvec->bv_offset + bvec->bv_len,
++				  bvec.bv_offset, bvec.bv_len);
++		else if (!IS_ALIGNED(bvec.bv_offset + bvec.bv_len,
+ 				     sectorsize))
+ 			btrfs_info(fs_info,
+ 		"incomplete page read with offset %u and length %u",
+-				   bvec->bv_offset, bvec->bv_len);
++				   bvec.bv_offset, bvec.bv_len);
  
- 	if (btrfs_op(bio) != BTRFS_MAP_WRITE) {
--		/*
--		 * called for a read, do the setup so that checksum validation
--		 * can happen in the async kernel threads
--		 */
--		ret = btrfs_bio_wq_end_io(fs_info, bio,
--					  BTRFS_WQ_ENDIO_METADATA);
--		if (ret)
--			goto out_w_error;
-+		btrfs_bio(bio)->endio_type = BTRFS_WQ_ENDIO_METADATA;
- 		ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	} else if (!should_async_write(fs_info, BTRFS_I(inode))) {
- 		ret = btree_csum_one_bio(bio);
+-		start = page_offset(page) + bvec->bv_offset;
+-		end = start + bvec->bv_len - 1;
+-		len = bvec->bv_len;
++		start = page_offset(page) + bvec.bv_offset;
++		end = start + bvec.bv_len - 1;
++		len = bvec.bv_len;
+ 
+ 		mirror = bbio->mirror_num;
+ 		if (likely(uptodate)) {
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index dbcb4ae9e06d..08b1c1b05d1f 100644
+index bcbb47ca473e..d5f4c102bab3 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2517,7 +2517,7 @@ blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	enum btrfs_wq_endio_type metadata = BTRFS_WQ_ENDIO_DATA;
-+	enum btrfs_wq_endio_type endio_type = BTRFS_WQ_ENDIO_DATA;
- 	blk_status_t ret = 0;
- 	int skip_sum;
- 	int async = !atomic_read(&BTRFS_I(inode)->sync_writers);
-@@ -2526,7 +2526,7 @@ blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- 		test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state);
- 
- 	if (btrfs_is_free_space_inode(BTRFS_I(inode)))
--		metadata = BTRFS_WQ_ENDIO_FREE_SPACE;
-+		endio_type = BTRFS_WQ_ENDIO_FREE_SPACE;
- 
- 	if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
- 		struct page *page = bio_first_bvec_all(bio)->bv_page;
-@@ -2538,10 +2538,7 @@ blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- 	}
- 
- 	if (btrfs_op(bio) != BTRFS_MAP_WRITE) {
--		ret = btrfs_bio_wq_end_io(fs_info, bio, metadata);
--		if (ret)
--			goto out;
--
-+		btrfs_bio(bio)->endio_type = endio_type;
- 		if (bio_flags & EXTENT_BIO_COMPRESSED) {
- 			/*
- 			 * btrfs_submit_compressed_read will handle completing
-@@ -7781,10 +7778,6 @@ static blk_status_t submit_dio_repair_bio(struct inode *inode, struct bio *bio,
- 
- 	BUG_ON(bio_op(bio) == REQ_OP_WRITE);
- 
--	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
--	if (ret)
--		return ret;
--
- 	refcount_inc(&dip->refs);
- 	ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	if (ret)
-@@ -7910,11 +7903,8 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 	if (async_submit)
- 		async_submit = !atomic_read(&BTRFS_I(inode)->sync_writers);
- 
--	if (!write) {
--		ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
--		if (ret)
--			goto err;
--	}
-+	if (!write)
-+		btrfs_bio(bio)->endio_type = BTRFS_WQ_ENDIO_DATA;
- 
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
- 		goto map;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 10a5db07836b..d2b9cba1e5fd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6717,10 +6717,31 @@ static void btrfs_end_bio(struct bio *bio)
- 	}
+@@ -3241,6 +3241,24 @@ void btrfs_writepage_endio_finish_ordered(struct btrfs_inode *inode,
+ 				       finish_ordered_fn, uptodate);
  }
  
--static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
--			      u64 physical, struct btrfs_device *dev)
-+/*
-+ * Endio remaps which can't handle cloned bio needs to go here.
-+ *
-+ * Currently it's only btrfs_bio_wq_end_io().
-+ */
-+static int btrfs_bio_final_endio_remap(struct btrfs_fs_info *fs_info,
-+				       struct bio *bio)
++static u8 *bbio_get_real_csum(struct btrfs_fs_info *fs_info,
++			      struct btrfs_bio *bbio)
 +{
-+	blk_status_t sts;
++	u8 *ret;
 +
-+	/* For write bio, we don't to put their endio into wq */
-+	if (btrfs_op(bio) == BTRFS_MAP_WRITE)
-+		return 0;
++	/* Split bbio needs to grab csum from its parent */
++	if (bbio->is_split_bio)
++		ret = btrfs_bio(bbio->parent)->csum;
++	else
++		ret = bbio->csum;
 +
-+	sts = btrfs_bio_wq_end_io(fs_info, bio, btrfs_bio(bio)->endio_type);
-+	if (sts != BLK_STS_OK)
-+		return blk_status_to_errno(sts);
-+	return 0;
++	if (ret == NULL)
++		return ret;
++
++	return ret + (bbio->offset_to_original >> fs_info->sectorsize_bits) *
++		     fs_info->csum_size;
 +}
 +
-+static int submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
-+			     u64 physical, struct btrfs_device *dev)
- {
- 	struct btrfs_fs_info *fs_info = bioc->fs_info;
-+	int ret;
+ /*
+  * check_data_csum - verify checksum of one sector of uncompressed data
+  * @inode:	inode
+@@ -3268,7 +3286,8 @@ static int check_data_csum(struct inode *inode, struct btrfs_bio *bbio,
+ 	ASSERT(pgoff + len <= PAGE_SIZE);
  
- 	bio->bi_private = bioc;
- 	btrfs_bio(bio)->device = dev;
-@@ -6747,9 +6768,14 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
- 		dev->devid, bio->bi_iter.bi_size);
- 	bio_set_dev(bio, dev->bdev);
+ 	offset_sectors = bio_offset >> fs_info->sectorsize_bits;
+-	csum_expected = ((u8 *)bbio->csum) + offset_sectors * csum_size;
++	csum_expected = bbio_get_real_csum(fs_info, bbio) +
++			offset_sectors * csum_size;
  
--	btrfs_bio_counter_inc_noblocked(fs_info);
-+	/* Do the final endio remap if needed */
-+	ret = btrfs_bio_final_endio_remap(fs_info, bio);
-+	if (ret < 0)
-+		return ret;
+ 	kaddr = kmap_atomic(page);
+ 	shash->tfm = fs_info->csum_shash;
+@@ -3326,7 +3345,7 @@ unsigned int btrfs_verify_data_csum(struct btrfs_bio *bbio,
+ 	 * Normally this should be covered by above check for compressed read
+ 	 * or the next check for NODATASUM.  Just do a quicker exit here.
+ 	 */
+-	if (bbio->csum == NULL)
++	if (bbio_get_real_csum(fs_info, bbio) == NULL)
+ 		return 0;
  
-+	btrfs_bio_counter_inc_noblocked(fs_info);
- 	btrfsic_submit_bio(bio);
-+	return ret;
- }
- 
- static void bioc_error(struct btrfs_io_context *bioc, struct bio *bio, u64 logical)
-@@ -6823,9 +6849,16 @@ static int submit_one_mapped_range(struct btrfs_fs_info *fs_info, struct bio *bi
- 		else
- 			bio = first_bio;
- 
--		submit_stripe_bio(bioc, bio, bioc->stripes[dev_nr].physical, dev);
-+		ret = submit_stripe_bio(bioc, bio,
-+					bioc->stripes[dev_nr].physical, dev);
-+		if (ret < 0)
-+			goto error;
- 	}
- 	return 0;
-+error:
-+	for (; dev_nr < total_devs; dev_nr++)
-+		bioc_error(bioc, first_bio, logical);
-+	return ret;
- }
- 
- blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d600419fe6a5..6f5519241971 100644
+index c73d2fbf80a7..5496b8750e28 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -326,7 +326,14 @@ struct btrfs_fs_devices {
-  * Mostly for btrfs specific features like csum and mirror_num.
-  */
- struct btrfs_bio {
--	unsigned int mirror_num;
-+	u16 mirror_num;
-+
-+	/*
-+	 * To tell which workqueue the bio's endio should be exeucted in.
-+	 *
-+	 * Only for read bios.
-+	 */
-+	u16 endio_type;
+@@ -398,7 +398,8 @@ static inline struct btrfs_bio *btrfs_bio(struct bio *bio)
  
- 	/* @device is for stripe IO submission. */
- 	struct btrfs_device *device;
+ static inline void btrfs_bio_free_csum(struct btrfs_bio *bbio)
+ {
+-	if (bbio->csum != bbio->csum_inline) {
++	/* Only free the csum if we're not a split bio */
++	if (!bbio->is_split_bio && bbio->csum != bbio->csum_inline) {
+ 		kfree(bbio->csum);
+ 		bbio->csum = NULL;
+ 	}
 -- 
 2.35.1
 

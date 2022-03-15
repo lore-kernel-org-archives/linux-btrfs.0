@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD990C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Mar 2022 12:19:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B1E9C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Mar 2022 12:19:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348184AbiCOMUO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Mar 2022 08:20:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37226 "EHLO
+        id S1348190AbiCOMUP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Mar 2022 08:20:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37324 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242292AbiCOMUN (ORCPT
+        with ESMTP id S1348178AbiCOMUO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Mar 2022 08:20:13 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7AE0E522CF
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 05:19:00 -0700 (PDT)
+        Tue, 15 Mar 2022 08:20:14 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FE70522DC
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 05:19:02 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 4F3036151A
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 3B28D614FA
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 12:19:02 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2518DC340E8
         for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 12:19:00 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3290DC340E8
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 12:18:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1647346739;
-        bh=prLo2g90VxRuGXkHVFyxoTFtd9+a4i/uZs830m2R60w=;
+        s=k20201202; t=1647346741;
+        bh=JVjLPaMEBu3wtaHIGsh2emlb4EtWF0FLHuBp4Cpju6U=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=I+kzbnWKPIDQu7WHgODpsQPnmEQQINMZNu+xe4jQBFRg2hk4Kh50TidDJ7YSE4BbZ
-         ElDZkyaUTA+r0zKky3FG1Mg7FVfqM2JBaFIIQ2sxnqkKsymfOzf/NGuxyTxrXh7tdb
-         Yi52PKoz5839WymOqeavQbblFo5L9ys2RqciFjHkixyqMvcUObfHzz08lloimxBpBd
-         Elu3LA8LctkbgXhKcn7A69cCQCojOQkpZNvUM2iCp/YGJjw636aiQg+Bhnwd+x4pon
-         m2GJKYoSEafjDFkfHJ/tXWXXMuucHTgRXPfPCElVA0dgt5E0NGegNxQjR9sLhVoPDC
-         Bmqb+WmHTN3wA==
+        b=tV/1g7LHlGm2qCM9N2lz84l8jYUUFWNwBVYt+0CvaSUYy3xaEfAAZQhdJTcOENW9n
+         rhXm36r9INOe0+l/TtOZOK0zQRwkpvlOnmnFBcpKVYFN/1Gdb+gY4HqoLIGiTwOYpS
+         t9hRhkl+kddnKKC9JBuNqr99hlz78oIOL9aIaZDqN0zNtnzrwIyCvAqg2PbmNrwyS6
+         c0+9ZqOwvs8BIWcFC1NrXMYib2hGhFI8CdXHvNQ5OWsDoT8hrAcW2ywj6mLdnk2Jmw
+         sbMKokj7Ehgtfw01onWL4ycYfDTpaYPUJ8gzVtanbAZVNAebYQNZbvWGJUFkgwbu8m
+         rzmzrqZemSrfA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/7] btrfs: remove useless dio wait call when doing fallocate zero range
-Date:   Tue, 15 Mar 2022 12:18:49 +0000
-Message-Id: <678ac3f09a739ed7797248043d1f1baf1b6f10fe.1647346287.git.fdmanana@suse.com>
+Subject: [PATCH v2 4/7] btrfs: remove ordered extent check and wait during fallocate
+Date:   Tue, 15 Mar 2022 12:18:51 +0000
+Message-Id: <cb7153055d8808fca7cfa7711a37a78770064e34.1647346287.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1647346287.git.fdmanana@suse.com>
 References: <cover.1647346287.git.fdmanana@suse.com>
@@ -48,42 +48,95 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When starting a fallocate zero range operation, before getting the first
-extent map for the range, we make a call to inode_dio_wait().
+For fallocate() we have this loop that checks if we have ordered extents
+after locking the file range, and if so unlock the range, wait for ordered
+extents, and retry until we don't find more ordered extents.
 
-This logic was needed in the past because direct IO writes within the
-i_size boundary did not take the inode's VFS lock. This was because that
-lock used to be a mutex, then some years ago it was switched to a rw
-semaphore (by commit 9902af79c01a8e ("parallel lookups: actual switch to
-rwsem")), and then btrfs was changed to take the VFS inode's lock in
-shared mode for writes that don't cross the i_size boundary (done in
-commit e9adabb9712ef9 ("btrfs: use shared lock for direct writes within
-EOF")). The lockless direct IO writes could result in a race with the
-zero range operation, resulting in the later getting a stale extent
-map for the range.
+This logic was needed in the past because:
 
-So remove this no longer needed call to inode_dio_wait(), as fallocate
-takes the inode's VFS lock in exclusive mode and direct IO writes within
-i_size take that same lock in shared mode.
+1) Direct IO writes within the i_size boundary did not take the inode's
+   VFS lock. This was because that lock used to be a mutex, then some
+   years ago it was switched to a rw semaphore (commit 9902af79c01a8e
+   ("parallel lookups: actual switch to rwsem")), and then btrfs was
+   changed to take the VFS inode's lock in shared mode for writes that
+   don't cross the i_size boundary (commit e9adabb9712ef9 ("btrfs: use
+   shared lock for direct writes within EOF"));
+
+2) We could race with memory mapped writes, because memory mapped writes
+   don't acquire the inode's VFS lock. We don't have that race anymore,
+   as we have a rw semaphore to synchronize memory mapped writes with
+   fallocate (and reflinking too). That change happened with commit
+   8d9b4a162a37ce ("btrfs: exclude mmap from happening during all
+   fallocate operations").
+
+So stop looking for ordered extents after locking the file range when
+doing a plain fallocate.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 2 --
- 1 file changed, 2 deletions(-)
+ fs/btrfs/file.c | 42 ++++++++----------------------------------
+ 1 file changed, 8 insertions(+), 34 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b7c0db1000cd..2f57f7d9d9cb 100644
+index 2f57f7d9d9cb..a7fd05c1d52f 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -3237,8 +3237,6 @@ static int btrfs_zero_range(struct inode *inode,
- 	u64 bytes_to_reserve = 0;
- 	bool space_reserved = false;
+@@ -3474,8 +3474,12 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	}
  
--	inode_dio_wait(inode);
+ 	/*
+-	 * wait for ordered IO before we have any locks.  We'll loop again
+-	 * below with the locks held.
++	 * We have locked the inode at the VFS level (in exclusive mode) and we
++	 * have locked the i_mmap_lock lock (in exclusive mode). Now before
++	 * locking the file range, flush all dealloc in the range and wait for
++	 * all ordered extents in the range to complete. After this we can lock
++	 * the file range and, due to the previous locking we did, we know there
++	 * can't be more delalloc or ordered extents in the range.
+ 	 */
+ 	ret = btrfs_wait_ordered_range(inode, alloc_start,
+ 				       alloc_end - alloc_start);
+@@ -3489,38 +3493,8 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	}
+ 
+ 	locked_end = alloc_end - 1;
+-	while (1) {
+-		struct btrfs_ordered_extent *ordered;
 -
- 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, alloc_start,
- 			      alloc_end - alloc_start);
- 	if (IS_ERR(em)) {
+-		/* the extent lock is ordered inside the running
+-		 * transaction
+-		 */
+-		lock_extent_bits(&BTRFS_I(inode)->io_tree, alloc_start,
+-				 locked_end, &cached_state);
+-		ordered = btrfs_lookup_first_ordered_extent(BTRFS_I(inode),
+-							    locked_end);
+-
+-		if (ordered &&
+-		    ordered->file_offset + ordered->num_bytes > alloc_start &&
+-		    ordered->file_offset < alloc_end) {
+-			btrfs_put_ordered_extent(ordered);
+-			unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+-					     alloc_start, locked_end,
+-					     &cached_state);
+-			/*
+-			 * we can't wait on the range with the transaction
+-			 * running or with the extent lock held
+-			 */
+-			ret = btrfs_wait_ordered_range(inode, alloc_start,
+-						       alloc_end - alloc_start);
+-			if (ret)
+-				goto out;
+-		} else {
+-			if (ordered)
+-				btrfs_put_ordered_extent(ordered);
+-			break;
+-		}
+-	}
++	lock_extent_bits(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
++			 &cached_state);
+ 
+ 	/* First, check if we exceed the qgroup limit */
+ 	INIT_LIST_HEAD(&reserve_list);
 -- 
 2.33.0
 

@@ -2,100 +2,125 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 67072C43219
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Mar 2022 10:49:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB94DC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Mar 2022 10:52:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347470AbiCOKuS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Mar 2022 06:50:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33800 "EHLO
+        id S1345262AbiCOKxu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Mar 2022 06:53:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47042 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348606AbiCOKtj (ORCPT
+        with ESMTP id S1347603AbiCOKwp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Mar 2022 06:49:39 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 781BD52B30
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 03:47:32 -0700 (PDT)
+        Tue, 15 Mar 2022 06:52:45 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CEDC853703
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 03:50:10 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 60DFEB81247
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 10:47:19 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A57D3C340ED
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 10:47:17 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 0D1F16124A
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Mar 2022 10:50:10 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E7A2AC340ED;
+        Tue, 15 Mar 2022 10:50:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1647341238;
-        bh=N1uGgZ7jpmB97xU/FjNjDPP7MCBs2/e+l7l5TUpFegg=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Bur1ie0P7g0gJ03OLh1SC+HFls/pdJ1Ck1Pzd2jRzcI3NgLBWNwHMNUlXz3EAB+0x
-         PW/uqG6Iq+LhsAn9yCCu8tWUsdibSTSNG/jCv3ZhOx134z+wwvFvRd+O10NyHshdjx
-         2b0R/sRe/QGndrQsmN6/+0tnjId+hSTikWPg2QLQCfAUCU3madPZoVvujAYvVvMlGO
-         ghHooNmuAHMFaxxpaCisf4ktuucEOQVUEn4xW3SVQ61KILC4urqDpdi+FGxhqoVClw
-         Ax3d4IeFn5UlhH4zMRvoeYhItKuJDbHwzVB72tpYVAnWnq2v8WSAmvesQBsY1sTNo/
-         JW5+wgCoz5wMw==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] btrfs: remove inode_dio_wait() calls when starting reflink operations
-Date:   Tue, 15 Mar 2022 10:47:08 +0000
-Message-Id: <3b7dffc8eb98efb5c8e9de362fff2ef1d35211b9.1647340917.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1647340917.git.fdmanana@suse.com>
-References: <cover.1647340917.git.fdmanana@suse.com>
+        s=k20201202; t=1647341409;
+        bh=wOf5voORa/0j20v5xF+VXL8qGTh2iFqBFoNs1tMdpJk=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=bcrknZQU3rjyoDLFNtaoTOXi6vh4h4YS00elc0Jh3X3IQhaCKwcJaHxXYUFwIz9YY
+         XUNgZ4woI9XlAR38QlpYcjwe/4KdsnRXGf2CAPOqs77vHWgRl39UtccSezDd7LMbNQ
+         pz6vngrnJZRpvl/0FH+3JSCrrLfhwFrKEjBOK+OcFNLhW7xOqjLofe3AE5qzLcsq2R
+         BP8Ih1rHQAieitmM2huBVHK7aTEYMdNgMTMqoklTN25JIXewWvw5xW/3NFFfD176py
+         N6sp/MxeQ23BG5BZCihxYfao6e3/aADYR7ZrlsjLMJQM8FBV06LoniwxgJ3Skzqek6
+         lxWHstO0c90FQ==
+Date:   Tue, 15 Mar 2022 10:50:05 +0000
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     "Darrick J. Wong" <djwong@kernel.org>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: fix fallocate to use file_modified to update
+ permissions consistently
+Message-ID: <YjBvXWVmy8ooT9FP@debian9.Home>
+References: <20220314175532.GB8165@magnolia>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220314175532.GB8165@magnolia>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Mon, Mar 14, 2022 at 10:55:32AM -0700, Darrick J. Wong wrote:
+> From: Darrick J. Wong <djwong@kernel.org>
+> 
+> Since the initial introduction of (posix) fallocate back at the turn of
+> the century, it has been possible to use this syscall to change the
+> user-visible contents of files.  This can happen by extending the file
+> size during a preallocation, or through any of the newer modes (punch,
+> zero range).  Because the call can be used to change file contents, we
+> should treat it like we do any other modification to a file -- update
+> the mtime, and drop set[ug]id privileges/capabilities.
+> 
+> The VFS function file_modified() does all this for us if pass it a
+> locked inode, so let's make fallocate drop permissions correctly.
+> 
+> Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+> ---
+> v2: move up file_modified to catch a case where we could modify file
+> contents but fail on something else before we end up calling
+> file_modified
 
-When starting a reflink operation we have these calls to inode_dio_wait()
-which used to be needed because direct IO writes that don't cross the
-i_size boundary did not take the inode's VFS lock, so we could race with
-them and end up with ordered extents in target range after calling
-btrfs_wait_ordered_range().
 
-However that is not the case anymore, because the inode's VFS lock was
-changed from a mutex to a rw semaphore, by commit 9902af79c01a8e
-("parallel lookups: actual switch to rwsem"), and several years later we
-started to lock the inode's VFS lock in shared mode for direct IO writes
-that don't cross the i_size boundary (commit e9adabb9712ef9 ("btrfs: use
-shared lock for direct writes within EOF")).
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-So remove those inode_dio_wait() calls.
+Thanks, it looks good Darrick.
+It also survived a few full fstests runs.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/reflink.c | 10 ----------
- 1 file changed, 10 deletions(-)
-
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 04a88bfe4fcf..bbd5da25c475 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -771,7 +771,6 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	struct inode *inode_in = file_inode(file_in);
- 	struct inode *inode_out = file_inode(file_out);
- 	u64 bs = BTRFS_I(inode_out)->root->fs_info->sb->s_blocksize;
--	bool same_inode = inode_out == inode_in;
- 	u64 wb_len;
- 	int ret;
- 
-@@ -809,15 +808,6 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 	else
- 		wb_len = ALIGN(*len, bs);
- 
--	/*
--	 * Since we don't lock ranges, wait for ongoing lockless dio writes (as
--	 * any in progress could create its ordered extents after we wait for
--	 * existing ordered extents below).
--	 */
--	inode_dio_wait(inode_in);
--	if (!same_inode)
--		inode_dio_wait(inode_out);
--
- 	/*
- 	 * Workaround to make sure NOCOW buffered write reach disk as NOCOW.
- 	 *
--- 
-2.33.0
-
+> ---
+>  fs/btrfs/file.c |   13 +++++++++++--
+>  1 file changed, 11 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index a0179cc62913..28ddd9cf2069 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -2918,8 +2918,9 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
+>  	return ret;
+>  }
+>  
+> -static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+> +static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
+>  {
+> +	struct inode *inode = file_inode(file);
+>  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  	struct extent_state *cached_state = NULL;
+> @@ -2951,6 +2952,10 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+>  		goto out_only_mutex;
+>  	}
+>  
+> +	ret = file_modified(file);
+> +	if (ret)
+> +		goto out_only_mutex;
+> +
+>  	lockstart = round_up(offset, btrfs_inode_sectorsize(BTRFS_I(inode)));
+>  	lockend = round_down(offset + len,
+>  			     btrfs_inode_sectorsize(BTRFS_I(inode))) - 1;
+> @@ -3391,7 +3396,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+>  		return -EOPNOTSUPP;
+>  
+>  	if (mode & FALLOC_FL_PUNCH_HOLE)
+> -		return btrfs_punch_hole(inode, offset, len);
+> +		return btrfs_punch_hole(file, offset, len);
+>  
+>  	/*
+>  	 * Only trigger disk allocation, don't trigger qgroup reserve
+> @@ -3413,6 +3418,10 @@ static long btrfs_fallocate(struct file *file, int mode,
+>  			goto out;
+>  	}
+>  
+> +	ret = file_modified(file);
+> +	if (ret)
+> +		goto out;
+> +
+>  	/*
+>  	 * TODO: Move these two operations after we have checked
+>  	 * accurate reserved space, or fallocate can still fail but

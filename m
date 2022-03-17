@@ -2,81 +2,60 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61629C4321E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Mar 2022 18:17:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43577C433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Mar 2022 18:19:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237344AbiCQSSl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Mar 2022 14:18:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51000 "EHLO
+        id S237327AbiCQSUn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Mar 2022 14:20:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60820 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237495AbiCQSSE (ORCPT
+        with ESMTP id S237321AbiCQSUh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Mar 2022 14:18:04 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 731C9221B99;
-        Thu, 17 Mar 2022 11:16:47 -0700 (PDT)
+        Thu, 17 Mar 2022 14:20:37 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D980E1480D4;
+        Thu, 17 Mar 2022 11:19:20 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 0AC07616EA;
-        Thu, 17 Mar 2022 18:16:47 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5FA66C340E9;
-        Thu, 17 Mar 2022 18:16:46 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 92DF2B81C19;
+        Thu, 17 Mar 2022 18:19:19 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 46279C340E9;
+        Thu, 17 Mar 2022 18:19:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1647541006;
-        bh=dR63KUR/H3INyD1WHSPSWmrdk6XmAj8AqIgLzzEcbw4=;
+        s=k20201202; t=1647541158;
+        bh=XirwfFpew8Oi6TTPQ9zLnqLao19saJ+MVbYhFhIY66M=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=pxDxugqZcwANxpmNV9ovBFUV1c9eE01gsrtER73W4gCmgUl1uYbdU3U5tz/5PDuVI
-         yCXqaDubknM4G/gPstaEy8BO55SH1OZpW8nFOa0Wcu8kxQHYg/Gv369+vEz8FSg9jM
-         vyurWipa5BoPFhDP6A+7dFjMpLKUh3WbvaD0oEaQxf9JX4z+ezMrL1/+NxA8Zob9f6
-         I/Xnl5AXlHU4EOnTY28IgBwhiO5nu+bPIADcWMg+NoyDu6Kuy4rFjpdNNhtk3EJqPO
-         8z/QDokfPPw63YkmWnpL1nZm1DUHFQP5Cb1ZokFy0eJMUR4uVYNxzZFIayFV4I45ye
-         FerPrPM+tyA9w==
-Date:   Thu, 17 Mar 2022 18:16:45 +0000
+        b=UUUoADrBMFQtkvZjKUyDcc3tYAXYnhjkHHtYrfhY6iS+U3KmyvSRoQ39j0ZO996gH
+         +ThqiyvyRzLFnNGpLFR92WbvKCc1g9ztnis7346bdWwCJPxOkjGRACU4jqUpmwhPlv
+         rw3sXoOdCj0jWYVrUJXz1UTXlgQ59Nc6XJCR+05TbsHUHjLWsZyAgfCfQnKhKANRg5
+         xuFxaA6qQrE+2+SzXGJb8B3h/ETP3tWFeLLXFTXla/ErF6l+s8RRSNJTDSaI5g45gY
+         AFoNgZOXZxe9Vs2qfwTg5zch08KxgX5/DEFg5g1o+Z+p5JFRhrTFiIDIc8jGIP3RdB
+         2Gj5o4UxDLjvw==
+Date:   Thu, 17 Mar 2022 18:19:16 +0000
 From:   Eric Biggers <ebiggers@kernel.org>
 To:     Boris Burkov <boris@bur.io>
 Cc:     fstests@vger.kernel.org, linux-fscrypt@vger.kernel.org,
         linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v8 2/5] common/verity: support btrfs in generic fsverity
- tests
-Message-ID: <YjN7Dc9aTD2FHTTO@gmail.com>
+Subject: Re: [PATCH v8 0/5] tests for btrfs fsverity
+Message-ID: <YjN7pDPhPmL95K3O@gmail.com>
 References: <cover.1647461985.git.boris@bur.io>
- <9c64fbf9ad37dc84a31caf91762edd64b33d59db.1647461985.git.boris@bur.io>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <9c64fbf9ad37dc84a31caf91762edd64b33d59db.1647461985.git.boris@bur.io>
+In-Reply-To: <cover.1647461985.git.boris@bur.io>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 16, 2022 at 01:25:12PM -0700, Boris Burkov wrote:
-> generic/572-579 have tests for fsverity. Now that btrfs supports
-> fsverity, make these tests function as well. For a majority of the tests
-> that pass, simply adding the case to mkfs a btrfs filesystem with no
-> extra options is sufficient.
+On Wed, Mar 16, 2022 at 01:25:10PM -0700, Boris Burkov wrote:
+> This patchset provides tests for fsverity support in btrfs.
 > 
-> However, generic/574 has tests for corrupting the merkle tree itself.
-> Since btrfs uses a different scheme from ext4 and f2fs for storing this
-> data, the existing logic for corrupting it doesn't work out of the box.
-> Adapt it to properly corrupt btrfs merkle items.
+> It includes modifications for generic tests to pass with btrfs as well
+> as new tests.
 > 
-> 576 does not run because btrfs does not support transparent encryption.
-> 
-> This test relies on the btrfs implementation of fsverity in the patch:
-> btrfs: initial fsverity support
-> 
-> and on btrfs-corrupt-block for corruption in the patches titled:
-> btrfs-progs: corrupt generic item data with btrfs-corrupt-block
-> btrfs-progs: expand corrupt_file_extent in btrfs-corrupt-block
-> 
-> Signed-off-by: Boris Burkov <boris@bur.io>
-> ---
->  common/btrfs  |  5 +++++
->  common/config |  1 +
->  common/verity | 23 +++++++++++++++++++++++
->  3 files changed, 29 insertions(+)
 
-Reviewed-by: Eric Biggers <ebiggers@google.com>
+This looks good to me now.  I don't have time to fully review the btrfs-specific
+tests (patches 3 and 4), but their premise looks good.
 
 - Eric

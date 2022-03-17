@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D2C28C433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Mar 2022 17:26:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DA48C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu, 17 Mar 2022 17:26:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236851AbiCQR1a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 17 Mar 2022 13:27:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54538 "EHLO
+        id S236811AbiCQR1c (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 17 Mar 2022 13:27:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54588 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236846AbiCQR11 (ORCPT
+        with ESMTP id S236853AbiCQR1a (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 17 Mar 2022 13:27:27 -0400
-Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E2A0E114FC8
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2022 10:26:10 -0700 (PDT)
-Received: by mail-pj1-x1035.google.com with SMTP id l4-20020a17090a49c400b001c6840df4a3so2283321pjm.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2022 10:26:10 -0700 (PDT)
+        Thu, 17 Mar 2022 13:27:30 -0400
+Received: from mail-pj1-x1032.google.com (mail-pj1-x1032.google.com [IPv6:2607:f8b0:4864:20::1032])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC87D114FCA
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2022 10:26:13 -0700 (PDT)
+Received: by mail-pj1-x1032.google.com with SMTP id mp6-20020a17090b190600b001c6841b8a52so2275084pjb.5
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Mar 2022 10:26:13 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=osandov-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=khOJrdrDEWIV7HJtp0T3it85P1f2rHhG80yKCamxkTk=;
-        b=ROBCBpTXXlO0lM4lyfnymfBEhTVCuXuKihXSb3ry5oV22pMzFGT26ikvhmRlwmvMhy
-         trNAcsKkNF4wGyrVsQT0Vonn/MTSWIkrEpRDmaYrWcemT43ucLJ+PA9w7y/MI9iRzU5f
-         iK+6LLWE/OWzdB25xfl+PaPWvug1SZKCKvn/7xw1GDH18UtKOCxX3qX8oVwbKrJpZxtm
-         30ao6mCgdLKaLPh43KHbJIfZDaxyu/bn9z2PdNY4vubPTH+/4TY4iMJVKPFItMpWI8tK
-         Jm8mhiP3Z72Gjsik7ESS++gVlkLoiGOu8xhbHlNYlWasv1CyjLyRlDCJtr4OBxUh+WdJ
-         58Yg==
+        bh=Z2OFoefPGJQ+WHOMM+btFk0/kfeAvOV06RDV8glzYuA=;
+        b=1gJ6IDIcG1NZ+YC5e2JtsLNGdmPKgpSyO9BZ7UIrVHH8HI4gUwoZUdoGCgx8k2a4lV
+         liLVcGR/EH/B91xxwShAByPSK/RdjMX2/Qqu6IcPeQ9mDnDO0UjqT7vvNyIMLTx4YVB+
+         BEPmSO1RQ9mI++mY3iW7RrOq5NQ+R+RjWsRoGyvbC4lW584EpHBnkxe7lF3tFQ7Zkg95
+         LheHgOFvnE2bOgJf6INoEAlLZMVmzZDk8T/Ku+v58GqskhuKNPhbYdmt9n0/rimk/MVc
+         PQryPsF8r5nv4lBxtdVmTQpI1cwifRbUG4K9fmsETu0iZH/FDBQjQNEiR0LfeogTWw4V
+         TJlw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=khOJrdrDEWIV7HJtp0T3it85P1f2rHhG80yKCamxkTk=;
-        b=A1f7gVswDWNhf/1tUfdB+G1sIrn6IcJJGg4DjknFMlx0Hhw4ChFLj/b0lJ+xn0/W/j
-         khAY7pzMGZWm3DAJ5LAX/VKkgZghCH3eXDNst4HfNSVCiaU7yoaoyE+8RekJq3xIEm61
-         tue37ImNsKqxY4XuSZJ6ifErftT5MyavoAfJ2YLLdjYWiRn/cKQM3ep7y1XrloXJubGs
-         krs5+RTyZdB0J2dHd+T8nZ3Czb2+Pe386KMS4h587JdigZqy8y8hE+3UnUmfCwf0ux0j
-         askhszZbMECAGfb2VEOU72bwpRh+8j96E7igPuYYF7lvD54nfbiLPE9lKllJYK5I2/N/
-         VUgw==
-X-Gm-Message-State: AOAM530zp71cwgOsEkYlzX2hcVfFno3Zp0ckAN/9QK+xk6sf+HQefL4m
-        udRDgcBVSwn92KRJ8LW27q9vHzFbl3/oUA==
-X-Google-Smtp-Source: ABdhPJyknfhUTrVMbQkNAz0MNRtZ3y/Vpfz1KZMRb+xVNr3Q5sVco3R9GPeyhfFeXkSOS52gML3Wzg==
-X-Received: by 2002:a17:902:d501:b0:153:4a6a:52de with SMTP id b1-20020a170902d50100b001534a6a52demr5939456plg.100.1647537970051;
-        Thu, 17 Mar 2022 10:26:10 -0700 (PDT)
+        bh=Z2OFoefPGJQ+WHOMM+btFk0/kfeAvOV06RDV8glzYuA=;
+        b=gko8ttpdFOPMzwIyU3gb3fwYkzs6UdTfg8IBsade3Tl4dDL0VViLSnUpbOTWOkpwi/
+         cLRuiOmaXMPImIn6TZh10awRnCCJN+ihcGmoV0PLw9QBYiOh4ZaEd74DlPiA4mv9Qplx
+         /fcvY/VgJJF00hliDlC+VV0RWB0BXqv8JSM7wyc9Nxoqd2L4b3F2JV0NMViaa/NZXd1l
+         9gd3mKZL2upIu8/uZ4h2Rmy5dGxq4u553HwoPhwrs/il08ye3Tk5jQnEM3vvXLlC//QX
+         M9Eqt3T+q/i8rnSPdoypxnlLTbQxfgzh+71nMCAhCtxzfD9rEqrUJB4EM6mMVh36afIU
+         L/hw==
+X-Gm-Message-State: AOAM531/l3RQBDSFIx0LPoysedQZRRAQ1pdc2CBIDguHWsPQcNzV2/zB
+        P+MnHVaSL/nO5NJwgpszXNKuIlQRE6nWuQ==
+X-Google-Smtp-Source: ABdhPJwZrlS0/YmC/faPOEbDTW23MNGqcv59XtblFmAmyQOimLLnMK9JaZ/sTYeIVboa9knARMsDdQ==
+X-Received: by 2002:a17:902:ecc2:b0:151:dd64:c77a with SMTP id a2-20020a170902ecc200b00151dd64c77amr5963564plh.154.1647537972913;
+        Thu, 17 Mar 2022 10:26:12 -0700 (PDT)
 Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:624e])
-        by smtp.gmail.com with ESMTPSA id q10-20020a056a00088a00b004f7ceff389esm7815424pfj.152.2022.03.17.10.26.09
+        by smtp.gmail.com with ESMTPSA id q10-20020a056a00088a00b004f7ceff389esm7815424pfj.152.2022.03.17.10.26.12
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 17 Mar 2022 10:26:09 -0700 (PDT)
+        Thu, 17 Mar 2022 10:26:12 -0700 (PDT)
 From:   Omar Sandoval <osandov@osandov.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     kernel-team@fb.com
-Subject: [PATCH v14 4/7] btrfs: send: write larger chunks when using stream v2
-Date:   Thu, 17 Mar 2022 10:25:40 -0700
-Message-Id: <2ac307b0d20f84a09302d9d4f7c4fa1207edccc7.1647537027.git.osandov@fb.com>
+Subject: [PATCH v14 7/7] btrfs: send: enable support for stream v2 and compressed writes
+Date:   Thu, 17 Mar 2022 10:25:43 -0700
+Message-Id: <9473f6be9faadaea779f76bd9ef29dc638a58f46.1647537027.git.osandov@fb.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1647537027.git.osandov@fb.com>
 References: <cover.1647537027.git.osandov@fb.com>
@@ -65,113 +65,68 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@fb.com>
 
-The length field of the send stream TLV header is 16 bits. This means
-that the maximum amount of data that can be sent for one write is 64k
-minus one. However, encoded writes must be able to send the maximum
-compressed extent (128k) in one command. To support this, send stream
-version 2 encodes the DATA attribute differently: it has no length
-field, and the length is implicitly up to the end of containing command
-(which has a 32-bit length field). Although this is necessary for
-encoded writes, normal writes can benefit from it, too.
+Now that the new support is implemented, allow the ioctl to accept v2
+and the compressed flag, and update the version in sysfs.
 
-Also add a check to enforce that the DATA attribute is last. It is only
-strictly necessary for v2, but we might as well make v1 consistent with
-it.
-
-For v2, let's bump up the send buffer to the maximum compressed extent
-size plus 16k for the other metadata (144k total). Since this will most
-likely be vmalloc'd (and always will be after the next commit), we round
-it up to the next page since we might as well use the rest of the page
-on systems with >16k pages.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/send.c | 42 ++++++++++++++++++++++++++++++++++--------
- 1 file changed, 34 insertions(+), 8 deletions(-)
+ fs/btrfs/send.c            | 7 +++++--
+ fs/btrfs/send.h            | 2 +-
+ include/uapi/linux/btrfs.h | 3 ++-
+ 3 files changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1f141de3a7d6..02053fff80ca 100644
+index b0560be3053b..4567271ce642 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -82,6 +82,7 @@ struct send_ctx {
- 	char *send_buf;
- 	u32 send_size;
- 	u32 send_max_size;
-+	bool put_data;
- 	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
- 	/* Protocol version compatibility requested */
- 	u32 proto;
-@@ -589,6 +590,9 @@ static int tlv_put(struct send_ctx *sctx, u16 attr, const void *data, int len)
- 	int total_len = sizeof(*hdr) + len;
- 	int left = sctx->send_max_size - sctx->send_size;
+@@ -690,8 +690,7 @@ static int send_header(struct send_ctx *sctx)
+ 	struct btrfs_stream_header hdr;
  
-+	if (WARN_ON_ONCE(sctx->put_data))
-+		return -EINVAL;
-+
- 	if (unlikely(left < total_len))
- 		return -EOVERFLOW;
- 
-@@ -726,6 +730,7 @@ static int send_cmd(struct send_ctx *sctx)
+ 	strcpy(hdr.magic, BTRFS_SEND_STREAM_MAGIC);
+-	hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION);
+-
++	hdr.version = cpu_to_le32(sctx->proto);
+ 	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
  					&sctx->send_off);
- 
- 	sctx->send_size = 0;
-+	sctx->put_data = false;
- 
- 	return ret;
  }
-@@ -4853,14 +4858,30 @@ static inline u64 max_send_read_size(const struct send_ctx *sctx)
- 
- static int put_data_header(struct send_ctx *sctx, u32 len)
- {
--	struct btrfs_tlv_header *hdr;
-+	if (WARN_ON_ONCE(sctx->put_data))
-+		return -EINVAL;
-+	sctx->put_data = true;
-+	if (sctx->proto >= 2) {
-+		/*
-+		 * In v2, the data attribute header doesn't include a length; it
-+		 * is implicitly to the end of the command.
-+		 */
-+		if (sctx->send_max_size - sctx->send_size < 2 + len)
-+			return -EOVERFLOW;
-+		put_unaligned_le16(BTRFS_SEND_A_DATA,
-+				   sctx->send_buf + sctx->send_size);
-+		sctx->send_size += 2;
-+	} else {
-+		struct btrfs_tlv_header *hdr;
- 
--	if (sctx->send_max_size - sctx->send_size < sizeof(*hdr) + len)
--		return -EOVERFLOW;
--	hdr = (struct btrfs_tlv_header *)(sctx->send_buf + sctx->send_size);
--	put_unaligned_le16(BTRFS_SEND_A_DATA, &hdr->tlv_type);
--	put_unaligned_le16(len, &hdr->tlv_len);
--	sctx->send_size += sizeof(*hdr);
-+		if (sctx->send_max_size - sctx->send_size < sizeof(*hdr) + len)
-+			return -EOVERFLOW;
-+		hdr = (struct btrfs_tlv_header *)(sctx->send_buf +
-+						  sctx->send_size);
-+		put_unaligned_le16(BTRFS_SEND_A_DATA, &hdr->tlv_type);
-+		put_unaligned_le16(len, &hdr->tlv_len);
-+		sctx->send_size += sizeof(*hdr);
+@@ -7663,6 +7662,10 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 	} else {
+ 		sctx->proto = 1;
+ 	}
++	if ((arg->flags & BTRFS_SEND_FLAG_COMPRESSED) && sctx->proto < 2) {
++		ret = -EINVAL;
++		goto out;
 +	}
- 	return 0;
- }
  
-@@ -7459,7 +7480,12 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 	sctx->send_filp = fget(arg->send_fd);
+ 	if (!sctx->send_filp) {
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 805d8095209a..50a2aceae929 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -10,7 +10,7 @@
+ #include "ctree.h"
  
- 	sctx->clone_roots_cnt = arg->clone_sources_count;
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+-#define BTRFS_SEND_STREAM_VERSION 1
++#define BTRFS_SEND_STREAM_VERSION 2
  
--	sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
-+	if (sctx->proto >= 2) {
-+		sctx->send_max_size = ALIGN(SZ_16K + BTRFS_MAX_COMPRESSED,
-+					    PAGE_SIZE);
-+	} else {
-+		sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
-+	}
- 	sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
- 	if (!sctx->send_buf) {
- 		ret = -ENOMEM;
+ /*
+  * In send stream v1, no command is larger than 64k. In send stream v2, no limit
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b6f26a434b10..f54dc91e4025 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -788,7 +788,8 @@ struct btrfs_ioctl_received_subvol_args {
+ 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
+ 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
+ 	 BTRFS_SEND_FLAG_OMIT_END_CMD | \
+-	 BTRFS_SEND_FLAG_VERSION)
++	 BTRFS_SEND_FLAG_VERSION | \
++	 BTRFS_SEND_FLAG_COMPRESSED)
+ 
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
 -- 
 2.35.1
 

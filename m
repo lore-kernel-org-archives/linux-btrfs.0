@@ -2,92 +2,113 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B751BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Mar 2022 18:51:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC2EDC433EF
+	for <linux-btrfs@archiver.kernel.org>; Sat, 19 Mar 2022 01:20:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240210AbiCRSwd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Mar 2022 14:52:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59670 "EHLO
+        id S240379AbiCSBWK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Mar 2022 21:22:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60486 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231321AbiCRSwc (ORCPT
+        with ESMTP id S232002AbiCSBWJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Mar 2022 14:52:32 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3CCFE304AEB
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Mar 2022 11:51:11 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id D5BFE210FD;
-        Fri, 18 Mar 2022 18:51:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1647629469;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Vdbas/R1Q8KHMZ/3t9o1gglU36CevcdnZEu0FuxtszM=;
-        b=TcNOObn25qr2GntX3CY6AusXLEGeyx2fPEd1ud8TYvWvQOEypgqVlvG1vdp3gj/PtJGP0w
-        t2KBQdlCNWWEjF4VGXe9rUnQ5GMr6A+pj/4bZrXWaj9fLnZtnf1cCLfZFXFC+kSgiGplZX
-        R8A6t05uB+HXIDU5Yu6jGvJ1eky6yX8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1647629469;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Vdbas/R1Q8KHMZ/3t9o1gglU36CevcdnZEu0FuxtszM=;
-        b=zuCYjWONezE4Zihaqeiq+JNHuRurO50IkjCGkSDTC/uqa2q6VRpZqDjiNjfb3NEqVZZTKW
-        eLTSQJsskALBO6Cg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id CC06DA3B83;
-        Fri, 18 Mar 2022 18:51:09 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 64513DA7E1; Fri, 18 Mar 2022 19:47:09 +0100 (CET)
-Date:   Fri, 18 Mar 2022 19:47:09 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, Andrei Borzenkov <arvidjaar@gmail.com>
-Subject: Re: [PATCH] btrfs: check/qgroup: fix two error messages used in
- qgroup verification
-Message-ID: <20220318184709.GG12643@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org, Andrei Borzenkov <arvidjaar@gmail.com>
-References: <59b4af870c15cbd7e05d05d41312e5eb54632632.1647497564.git.wqu@suse.com>
+        Fri, 18 Mar 2022 21:22:09 -0400
+Received: from mail-pl1-x632.google.com (mail-pl1-x632.google.com [IPv6:2607:f8b0:4864:20::632])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3421E1081A5;
+        Fri, 18 Mar 2022 18:20:49 -0700 (PDT)
+Received: by mail-pl1-x632.google.com with SMTP id p17so8401740plo.9;
+        Fri, 18 Mar 2022 18:20:49 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=tVxiWu7GNyhnLn9AtcfYyZRc2VNjBYlYu44IiOTszec=;
+        b=DaXCRIX6d6aCRxjipuNP0d9OC2oBuHC4ht8pR0HOgOLvY+PmSmwJWmTlH0HrlcB12F
+         izZnGzljMGcRWp0t4u0IM8LZujbGuMCKGe/QMpgKxCAMEQD5abZwzIR/pCOXzG72UAbZ
+         cMyfYumazIXjV8XxYVuDUrJFDcNdRISYoNrosSivABbxo3wtrgMIB8dgnNqPTUlbeHCu
+         eFmA459ktUEwVIFF0W4StAFQdUW0Eei99oj6Qds8mncTFmjDS6Bpj/zSLvBHlIjrERMu
+         44GO/p85is2vk+4RONmiN+BfQoZu6BQ8hNSu6s7hhXLGd3hbYXu8kIskE/TKZSOIBNil
+         hv/A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=tVxiWu7GNyhnLn9AtcfYyZRc2VNjBYlYu44IiOTszec=;
+        b=nnNcX03Gryx+YKBwDOG0u27YA9yGA41Aov+z++X1VXxxJs0jrQJ/AdXau5557EWKko
+         3F60kS+6zeIp/f+CdnyNGbeL36K8Jths7LSar+oQS4XxgOzRytVuJvOh+QCfpNosJHi9
+         Om/+RhJY/xi4SAOHb6ECGeVYXy1+wlG/UrhVaaSbLwzsnoz66Hhde3nRQrUuqzz41pms
+         ZDnqWeBieT/4MTkzRzXITqCytIafCf8v2J12h/3ZwN9StZODuFfQ5sdgmJwwqeOxCfbU
+         rEwyf9RsQ/8zdjt8QSqfasZxOr8AuCQqSm84FW0S1gwuvGSXy6O8cgQbnuqpxpZ5BP4W
+         mz/g==
+X-Gm-Message-State: AOAM533vT71mBciWoYL0I9TPxMang3kd6WCrZyFluCw4fAHE7/CC7E5J
+        pnAG1eY+PuR/4I4KvS1/OqHjkHhJBLyJOQ==
+X-Google-Smtp-Source: ABdhPJy/ZCWTYv3oI4AO33xLBRg5mUZPR2AtEhvCUH2xa/H8PUZS0IQnoAFGeLXsWEqaah/i6Dp8uA==
+X-Received: by 2002:a17:902:d4c2:b0:151:d590:a13d with SMTP id o2-20020a170902d4c200b00151d590a13dmr2252605plg.85.1647652848448;
+        Fri, 18 Mar 2022 18:20:48 -0700 (PDT)
+Received: from yusufkhan-MS-7B17.lan ([24.17.200.29])
+        by smtp.gmail.com with ESMTPSA id ep2-20020a17090ae64200b001c6a7c22aedsm2962162pjb.37.2022.03.18.18.20.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 18 Mar 2022 18:20:48 -0700 (PDT)
+From:   Yusuf Khan <yusisamerican@gmail.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     linux-kernel@vger.kernel.org, dsterba@suse.com,
+        josef@toxicpanda.com, clm@fb.com,
+        Yusuf Khan <yusisamerican@gmail.com>
+Subject: [PATCH] btrfs: raid56: do blk_check_plugged check twice while writing
+Date:   Fri, 18 Mar 2022 18:18:40 -0700
+Message-Id: <20220319011840.16213-1-yusisamerican@gmail.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <59b4af870c15cbd7e05d05d41312e5eb54632632.1647497564.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 17, 2022 at 02:12:50PM +0800, Qu Wenruo wrote:
-> [BUG]
-> There is a weird error message when running btrfs check on a specific
-> immage:
-> 
->  [7/7] checking quota groups
->  ERROR: out of memory
->  ERROR: Loading qgroups from disk: -2
->  ERROR: failed to check quota groups
-> 
-> [CAUSE]
-> The "Out of memory" one is in load_quota_info(), which is output in two
-> cases:
-> 
-> - No memory can be allocated for btrfs_qgroup_list
->   AKA, real -ENOMEM.
-> 
-> - No qgroup can be found for either the child or the parent qgroup
->   This returnes -ENOENT.
-> 
-> Obvious the image has hit -ENOENT case, but the error message is fixed
-> to ENOMEM case.
-> 
-> [FIX]
-> Fix it by using %m to output the real reason of failure.
-> 
-> Reported-by: Andrei Borzenkov <arvidjaar@gmail.com>
-> Link: https://forums.opensuse.org/showthread.php/567851-btrfs-fails-to-load-qgroups-from-disk-with-error-2-(out-of-memory)
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+Do the check to see if the drive was connected twice in case that
+the first was a fluke.
 
-Added to devel, thanks.
+Signed-off-by: Yusuf Khan <yusisamerican@gmail.com>
+---
+ fs/btrfs/raid56.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 0e239a4c3b26..f652900d7569 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1750,18 +1750,23 @@ int raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc,
+ 
+ 	cb = blk_check_plugged(btrfs_raid_unplug, fs_info, sizeof(*plug));
+ 	if (cb) {
+-		plug = container_of(cb, struct btrfs_plug_cb, cb);
+-		if (!plug->info) {
+-			plug->info = fs_info;
+-			INIT_LIST_HEAD(&plug->rbio_list);
++		cpu_relax();
++		cb = blk_check_plugged(btrfs_raid_unplug, fs_info, sizeof(*plug));
++		if (cb) {
++			plug = container_of(cb, struct btrfs_plug_cb, cb);
++			if (!plug->info) {
++				plug->info = fs_info;
++				INIT_LIST_HEAD(&plug->rbio_list);
++			}
++			list_add_tail(&rbio->plug_list, &plug->rbio_list);
++			return 0;
+ 		}
+-		list_add_tail(&rbio->plug_list, &plug->rbio_list);
+-		ret = 0;
+-	} else {
+-		ret = __raid56_parity_write(rbio);
+-		if (ret)
+-			btrfs_bio_counter_dec(fs_info);
++		btrfs_warn(fs_info,
++"during a write operation, the first check to see if the drive was plugged in failed, seccond check succeeded, write continued");
+ 	}
++	ret = __raid56_parity_write(rbio);
++	if (ret)
++		btrfs_bio_counter_dec(fs_info);
+ 	return ret;
+ }
+ 
+-- 
+2.25.1
+

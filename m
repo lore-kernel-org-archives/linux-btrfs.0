@@ -2,132 +2,133 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7FF3C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Mar 2022 16:14:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADF8AC4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Mar 2022 16:14:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348152AbiCUQQI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Mar 2022 12:16:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52652 "EHLO
+        id S1348295AbiCUQQJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Mar 2022 12:16:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54016 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1350972AbiCUQQC (ORCPT
+        with ESMTP id S1351078AbiCUQQC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 21 Mar 2022 12:16:02 -0400
 Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 853ED2125B
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2022 09:14:27 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 85F1726C4
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2022 09:14:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1647879268; x=1679415268;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=EF0oN8nIwAo4PrGLqkebbUebX/gL4WF+IspfD6+L/hg=;
-  b=Gq6EfkZJ0+bSzHv4qy1b0XVH71pQlc0vom6MhWbPlSc9sHUpXTXwX/5r
-   04IZRQCCegzqjLUMgs9gZBhRhgN2uMnT7xj+1E8uODL7OfzkDdGnPyDhw
-   NOP0PpUQyvmP2p+SixPgo7OAkx5h3IXfizLhDRLlxDe7jgw3H2Dag+E2P
-   onmWFbGCFRBm7wqiqkbLqDJGW2Hnj15Y8ir73RFGudjwEI6NgI/7/v4WB
-   TYUDTpL9la+5h698qwvssqJcSGGWjeqXr+KIwfr0rZvEqi+GIZsyTtr52
-   QIqHMyfhRZ+S67jxTHA8kq7tsCrWY9Qb3qeIuDhVWvucTaoTLvmJtVy1H
-   Q==;
+  t=1647879271; x=1679415271;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=za+nd/YjyhWLL0KnFAqXQ5fGPSN6suf/J77GM2MXiTU=;
+  b=DgHgjzEIo7bjPBjeX9SpqFPpKLjrRadiCtJnL2hvp4Q7I8yL00APoMVJ
+   YSNT71F90S7Kd67KXqUOsDdY4OQ23BiPhlLG+a02CE96ekSGGH7HRH7Vz
+   iFlTADXXW0ikLbQeDq8AybhAnx34H1tGL/GTgYiBT4I2ykiNlZmHeqtEO
+   TlepONXA1VOCPsmmmnPlVlVSuxVeRkcRjtyjv02G/4inLKH+DC4I+ybnk
+   RwxnMw++HnkqF/MbSOCpbn+hUaxXU/TGUSNB6fPF9nQu5dNszY4CtGuU7
+   pq94X0z/HfA5NWZbeNXdtCa3iGpH7sDTLqDyIFDfLo0HyXFr0jbSI7CvD
+   g==;
 X-IronPort-AV: E=Sophos;i="5.90,199,1643644800"; 
-   d="scan'208";a="307836344"
+   d="scan'208";a="307836354"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Mar 2022 00:14:27 +0800
-IronPort-SDR: GHw/TDvpZAEoow5VuHB7eFh8XHaT2Z5EZiBO46v1IRYRByzY/5417CHqBCRF2HkoY28Y7MDTCV
- fNTxhaO5TR5PTILGUVge+OaWqJvcjz9xADpRxfWZ0pIT9ejC5Y8QRteTgKCQT8KTrE7TNc7OK0
- Onfb/rUA43lYRc+D1jXc7FgXFAZnOp0AGEXXXRLCfnzOb9nL+bkFPtR08rGzvG0jSsPKW+E+Yu
- 1jDO7a7E2WecsltZVNfhQpVl8nv78+YMP8YHeHEWhsu7od5FupnlSZRtvalfeu58yBYUKZWoDd
- o+YiRN/p6VR1BxU8sOJQL0mr
+  by ob1.hgst.iphmx.com with ESMTP; 22 Mar 2022 00:14:31 +0800
+IronPort-SDR: 857iaN4GPJqV+66PSZd/FXuCdeqvKqUuD1dEVI5FaBu244RGnnFAwi2CaceY/XS72lKnGQsdsw
+ noJbCNS290k8U91KGXxfXF2eDlc8rILevvhweYknseWl/Bt0Wg9QDVBhc5OJXnvfcMvWAMVxUC
+ QnaQ/sBxp+gd6D00s5oJDSZyYBbbty5sMmHAgOY/02A+NX7M5XhVtgvtqRjmWVVbQAfVqxB5vF
+ F6KmG8ljK3bZQPEx3NtIyv609M9dVQkS9Fez7+vH08RgnGekBVl49/wyKgvXMYqwiqWOmvTakP
+ FyI5nSiV7OMnVNv2mPslMe6A
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Mar 2022 08:45:27 -0700
-IronPort-SDR: gHIAgiRQqOv6GmUKUB4I8CZzfuUxLnMtmQEiJI+zHh2WGBAqOYQtNtPM0Uatop/OW8877UStok
- rkHyngRjjIGwQuMxhnFboPbBxo45Q+oAD05EWSg52ghrtk9ph7ngqzlTXgW4ULetvsUKrfGyRI
- lcjA+nvcOGdSVLYYNF6LNLulGVbPo+GVQltetmYh6qmlzyC7LUi0D8PYmYXNFaZpV7A/6a6PU1
- 38IdVRHG/DgnUDcjTsLkAkzUS19XrOTJUSgddXTfpHNioN/tpxKNA8KKeQ7usyNVsdc/EZ7YjP
- rFI=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Mar 2022 08:45:31 -0700
+IronPort-SDR: tW2/Ma4zrOtiZuaMuEcLevm0DVC7WiO/xMTBOT4jqb2cp4t7wAC2djZDmcCscewTVvYy/EYRq1
+ qWIoysmrXpoI971JRUtrEtPoVuVOV+bNtGjtOxGVRkfM6qbvyIT7513naMAUo1L30WzzgrKiNA
+ QlNh0wQGicU24qXhS/BuXl/6Mid0krikIWL32OcmuGapa3UMV4O4guRHFhlUjh3kQHoVrMk29P
+ gfl8vtGF5MVyXue7fVUK1+GoQAP1KzmoVA3vf7+HteBewWOZuSvRIcJYwR4UTnr1+bTKn2cC/Q
+ Mmc=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 21 Mar 2022 09:14:26 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 21 Mar 2022 09:14:30 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.com>
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>,
         linux-btrfs@vger.kernel.org, Pankaj Raghav <p.raghav@samsung.com>
-Subject: [PATCH 0/5] btrfs: rework background block group relocation
-Date:   Mon, 21 Mar 2022 09:14:09 -0700
-Message-Id: <cover.1647878642.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH 4/5] btrfs: make calc_available_free_space available outside of space-info
+Date:   Mon, 21 Mar 2022 09:14:13 -0700
+Message-Id: <c77bf5c2e069891e6885197dbb080f8847bf7b7b.1647878642.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1647878642.git.johannes.thumshirn@wdc.com>
+References: <cover.1647878642.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a combination of Josef's series titled "btrfs: rework background
-block group relocation" and my patch titled "btrfs: zoned: make auto-reclaim
-less aggressive" plus another preparation patch to address Josef's comments.
+Make calc_available_free_space available outside of space-info.c and
+rename to btrfs_calc_available_free_space.
 
-I've opted for rebasinig my path onto Josef's series to avoid and fix
-conflicts, as we're both touching the same code.
+This is a preparation for the next commit and does not impose any
+functional changes.
 
-Here's the original cover letter from Josef:
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/space-info.c | 8 ++++----
+ fs/btrfs/space-info.h | 4 ++++
+ 2 files changed, 8 insertions(+), 4 deletions(-)
 
-Currently the background block group relocation code only works for zoned
-devices, as it prevents the file system from becoming unusable because of block
-group fragmentation.
-
-However inside Facebook our common workload is to download tens of gigabytes
-worth of send files or package files, and it does this by fallocate()'ing the
-entire package, writing into it, and then free'ing it up afterwards.
-Unfortunately this leads to a similar problem as zoned, we get fragmented data
-block groups, and this trends towards filling the entire disk up with partly
-used data block groups, which then leads to ENOSPC because of the lack of
-metadata space.
-
-Because of this we have been running balance internally forever, but this was
-triggered based on different size usage hueristics and stil gave us a high
-enough failure rate that it was annoying (figure 10-20 machines needing to be
-reprovisioned per week).
-
-So I modified the existing bg_reclaim_threshold code to also apply in the !zoned
-case, and I also made it only apply to DATA block groups.  This has completely
-eliminated these random failure cases, and we're no longer reprovisioning
-machines that get stuck with 0 metadata space.
-
-However my internal patch is kind of janky as it hard codes the DATA check.
-What I've done here is made the bg_reclaim_threshold per-space_info, this way
-a user can target all block group types or just the ones they care about.  This
-won't break any current users because this only applied in the zoned case
-before.
-
-Additionally I've added the code to allow this to work in the !zoned case, and
-loosened the restriction on the threshold from 50-100 to 0-100.
-
-I tested this on my vm by writing 500m files and then removing half of them and
-validating that the block groups were automatically reclaimed.
-
-https://lore.kernel.org/linux-btrfs/cover.1646934721.git.josef@toxicpanda.com/
-
-Latest patch from me:
-https://lore.kernel.org/linux-btrfs/74cbd8cdefe76136b3f9fb9b96bddfcbcd5b5861.1647342146.git.johannes.thumshirn@wdc.com/
-
-Johannes Thumshirn (2):
-  btrfs: make calc_available_free_space available outside of space-info
-  btrfs: zoned: make auto-reclaim less aggressive
-
-Josef Bacik (3):
-  btrfs: make the bg_reclaim_threshold per-space info
-  btrfs: allow block group background reclaim for !zoned fs'es
-  btrfs: change the bg_reclaim_threshold valid region from 0 to 100
-
- fs/btrfs/block-group.c      | 41 +++++++++++++++++++++++++++++++++++++
- fs/btrfs/free-space-cache.c |  7 +++++--
- fs/btrfs/space-info.c       | 17 +++++++++++----
- fs/btrfs/space-info.h       | 10 +++++++++
- fs/btrfs/sysfs.c            | 37 +++++++++++++++++++++++++++++++++
- fs/btrfs/zoned.c            | 23 +++++++++++++++++++++
- fs/btrfs/zoned.h            | 12 ++++++-----
- 7 files changed, 136 insertions(+), 11 deletions(-)
-
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 60d0a58c4644..e1fd1b1681fd 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -301,7 +301,7 @@ struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
+ 	return NULL;
+ }
+ 
+-static u64 calc_available_free_space(struct btrfs_fs_info *fs_info,
++u64 btrfs_calc_available_free_space(struct btrfs_fs_info *fs_info,
+ 			  struct btrfs_space_info *space_info,
+ 			  enum btrfs_reserve_flush_enum flush)
+ {
+@@ -349,7 +349,7 @@ int btrfs_can_overcommit(struct btrfs_fs_info *fs_info,
+ 		return 0;
+ 
+ 	used = btrfs_space_info_used(space_info, true);
+-	avail = calc_available_free_space(fs_info, space_info, flush);
++	avail = btrfs_calc_available_free_space(fs_info, space_info, flush);
+ 
+ 	if (used + bytes < space_info->total_bytes + avail)
+ 		return 1;
+@@ -722,7 +722,7 @@ btrfs_calc_reclaim_metadata_size(struct btrfs_fs_info *fs_info,
+ 
+ 	lockdep_assert_held(&space_info->lock);
+ 
+-	avail = calc_available_free_space(fs_info, space_info,
++	avail = btrfs_calc_available_free_space(fs_info, space_info,
+ 					  BTRFS_RESERVE_FLUSH_ALL);
+ 	used = btrfs_space_info_used(space_info, true);
+ 
+@@ -803,7 +803,7 @@ static bool need_preemptive_reclaim(struct btrfs_fs_info *fs_info,
+ 	 * much delalloc we need for the background flusher to kick in.
+ 	 */
+ 
+-	thresh = calc_available_free_space(fs_info, space_info,
++	thresh = btrfs_calc_available_free_space(fs_info, space_info,
+ 					   BTRFS_RESERVE_FLUSH_ALL);
+ 	used = space_info->bytes_used + space_info->bytes_reserved +
+ 	       space_info->bytes_readonly + global_rsv_size;
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index 0c45f539e3cf..a957d84d8ff0 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -151,4 +151,8 @@ static inline void btrfs_space_info_free_bytes_may_use(
+ }
+ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
+ 			     enum btrfs_reserve_flush_enum flush);
++
++u64 btrfs_calc_available_free_space(struct btrfs_fs_info *fs_info,
++				    struct btrfs_space_info *space_info,
++				    enum btrfs_reserve_flush_enum flush);
+ #endif /* BTRFS_SPACE_INFO_H */
 -- 
 2.35.1
 

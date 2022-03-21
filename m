@@ -2,59 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C68EC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Mar 2022 16:14:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57260C43217
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Mar 2022 16:14:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350830AbiCUQQJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Mar 2022 12:16:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53484 "EHLO
+        id S1350882AbiCUQQK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Mar 2022 12:16:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52676 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351080AbiCUQQC (ORCPT
+        with ESMTP id S1351076AbiCUQQC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 21 Mar 2022 12:16:02 -0400
 Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9A1DDB7C7
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2022 09:14:32 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 97DB32FFF4
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2022 09:14:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1647879272; x=1679415272;
+  t=1647879269; x=1679415269;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=NI+8tL9wkfU4pm1qOj1P3D/xCQVsf5kJ/T73v6NG014=;
-  b=TCgzzFme/9eU2JHHkDt72ZsmOZVZowEnbWx3mTFY6BNagaJibHoWl8Gj
-   v9lyoCSc2pB+RshBTz0gUMz+tm4TvcXwwVppVmGF6h2RjN91aH1Zmfg4N
-   poGh9fIgdgeRZ8b3Px66UdQAQY3gy9z8HZOLdg2p8XSwflX87MufhlkQF
-   cnNnzTyTgXHcoTeQXDdc8eXtx2vNckBdE2qzX3v6A7SWylq3+QabwLUYR
-   x6hHw9Gim5Ld9eIDP9mk6MOZdDdqZaY0IveOWUDadESGtP06BtC0ZLpNc
-   wgVBH230yw14jw+5avIZ+9DzsyP+aNocJ8psmpljqSilclrI4xrfcjoB7
-   w==;
+  bh=6oTq/znIoFntHNJj2cxflSZT1FpYRw4I6HbXx7qB18s=;
+  b=f0B3Fjo8FPe2HwewLemVsrfrgLulMPmVYhBShYmgKY25LSaFL9AsUQpb
+   jCocCR4DnukVe/2CZK/OBlLHcTiv1lA29RvHSfc1e4j7H2MANzI4ouvbi
+   8voZa+ABYrIXeSopV3ENj7zAoQYw8/FTbJu7ollugVXw0D0QyUdOBEQxp
+   cQF5Q/NBuT0xPh2RaTSl9cgLkba/TyERZbtzFVOUAW0e+nsXudMStq5hR
+   OmbCTKYWPjoyXl7qwESM8J2Cin4L+Nlrtgvhawy1Ftjee7rrKcjWbsfxG
+   UcrGABCftrkMwD1jAqLp01CW4iz76+XXVJ7AjQiBeJPzD+z7zd2X19aGQ
+   Q==;
 X-IronPort-AV: E=Sophos;i="5.90,199,1643644800"; 
-   d="scan'208";a="307836358"
+   d="scan'208";a="307836351"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Mar 2022 00:14:32 +0800
-IronPort-SDR: ug1lvgC+tuCuMjpomI8QOfMSFZdEQxJ82DkZRy87hb2hLWamdjLWfUQ2rGRLMu016OJs0UWiYE
- N3ma4lgSFCwL67bm4ZFH89GwnTal5gVUapSJZTuZl1boM2O4LyJ0RiwUaqDQ1ZpXDlQgqF52tG
- suueJe5MUUKjBaX1Nf8V7pdPmEbUEfHLbqNRwMKq1GoILXR6TOCqEVFbIkhYZUirgyw6uG7/cL
- kPleZNyXWstEw30vv0oKNfW29tYGEvNYBjAFPMoT4evuRNC+YZMUD9DPJlm9GWuM3CFBNjcXww
- iuXIv6FzD+NiP4mi2RALFWWE
+  by ob1.hgst.iphmx.com with ESMTP; 22 Mar 2022 00:14:29 +0800
+IronPort-SDR: PFPg7fm42T9pctonJgOiLaG4BN2VcOe52//1XHAgUup24p7fOkgDX7p4rAQdls2svj8lvlfE/Z
+ HOY2SrX+7DMLYy5bzFGDI1HPd38FN3Bap0nDl8pQGOCdeYT2QcqAMJV8hn28DKRCB3dM4HJSRJ
+ y7/YxswDUoy2/c5pceIvoVSB+f1ZfZ+L0VU6E7PX93JwtBymQOfWS/5WAXE2+tFSf5qAE3fc0j
+ xVmf/PQfwqbhU9uLeK0UUWDvR7WecW2X0AJMsTLLw8jrI/QmjgAEsYfwK6Xn2hAVlEO/NVrz2i
+ szguVzrHy1mpeK/3QbcDaVYP
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Mar 2022 08:45:32 -0700
-IronPort-SDR: fMXBXthTNN+FrC+x+uAJb2BhEHnnojt/gPpKt5WEWp7hs5cHIUhHV9SQizPJbS7DL3/3ikBTHi
- zP33kfJkeSKGd1vrekJOyNipD7sUhUo1p/WQL1q63dzUM88TRuVCv7ibYa7NFuMtLIlCZZqIaA
- CSn98zp7JDUniZzL9DnvSS6UblAO9iri18XpOAN7JhDm1x+xWrGF6c2xeF6twzj7wBFkzRGjPk
- i74K4Agr6P0BP3iqypPYCpFRfjB1LV1Pii8ISHU5vS+CYHZxOCx2r79gjRvOmu784CA/IgKBT8
- uIU=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Mar 2022 08:45:29 -0700
+IronPort-SDR: mr0tPSzLThJwAgGsjGX9pi8WYNfAtxcT5FTICRNSnPgVh8I0Zdc1wVd+R9nor9lkpiYimdfpEx
+ kYHlqimll7+/sRWzUtr2VsvHAIjICuGRmxFrGY2yp7yUEgosNapjNPzYvlA0UvfO0HE1+8Zzct
+ WUMs8ebkw0G+N7v5nwkAPk+I+iPCfiwHQkEz4VkG+Zt5xobACljt5H/ze0pwysRr47LgdrWgzR
+ ni0gz9cUMFlnVt+YBZILkwB1l5hHXbma8+AlhCLso4I4RvwW7x76cbDKZI3DEvrTfXso5Lc6qv
+ Hpk=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 21 Mar 2022 09:14:31 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 21 Mar 2022 09:14:28 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     David Sterba <dsterba@suse.com>
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, Pankaj Raghav <p.raghav@samsung.com>
-Subject: [PATCH 5/5] btrfs: zoned: make auto-reclaim less aggressive
-Date:   Mon, 21 Mar 2022 09:14:14 -0700
-Message-Id: <89824f8b4ba1ac8f05f74c047333c970049e2815.1647878642.git.johannes.thumshirn@wdc.com>
+Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
+        Pankaj Raghav <p.raghav@samsung.com>
+Subject: [PATCH 2/5] btrfs: allow block group background reclaim for !zoned fs'es
+Date:   Mon, 21 Mar 2022 09:14:11 -0700
+Message-Id: <ef7463193e228bbb348bf8a8d587aa8b95bebf22.1647878642.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1647878642.git.johannes.thumshirn@wdc.com>
 References: <cover.1647878642.git.johannes.thumshirn@wdc.com>
@@ -64,118 +63,82 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The current auto-reclaim algorithm starts reclaiming all block-group's
-with a zone_unusable value above a configured threshold. This is causing a
-lot of reclaim IO even if there would be enough free zones on the device.
+From: Josef Bacik <josef@toxicpanda.com>
 
-Instead of only accounting a block-group's zone_unusable value, also take
-the number of empty zones into account.
+We have found this feature invaluable at Facebook due to how our
+workload interacts with the allocator.  We have been using this in
+production for months with only a single problem that has already been
+fixed.  This will allow us to set a threshold for block groups to be
+automatically relocated even if we don't have zoned devices.
 
-Cc: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
-Changes since v3:
-* remove unusedd include (Filipe)
-* Only call btrfs_zoned_should_reclaim() for zoned FSes (Josef)
-* Use btrfs_calc_available_free_space() (Josef)
-
-Changes since v2:
-* Use div_u64()
-
-Changes since RFC:
-* Fix logic error
-* Skip unavailable devices
-* Use different metric working for non-zoned devices as well
----
- fs/btrfs/block-group.c | 10 ++++++++++
- fs/btrfs/zoned.c       | 23 +++++++++++++++++++++++
- fs/btrfs/zoned.h       |  6 ++++++
- 3 files changed, 39 insertions(+)
+ fs/btrfs/block-group.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 628741ecb97b..12454304bb85 100644
+index 59f18a10fd5f..628741ecb97b 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -1512,6 +1512,13 @@ static int reclaim_bgs_cmp(void *unused, const struct list_head *a,
- 	return bg1->used > bg2->used;
+@@ -3208,6 +3208,31 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
+ 	return ret;
  }
  
-+static inline bool btrfs_should_reclaim(struct btrfs_fs_info *fs_info)
++static inline bool should_reclaim_block_group(struct btrfs_block_group *block_group,
++					      u64 bytes_freed)
 +{
-+	if (btrfs_is_zoned(fs_info))
-+		return btrfs_zoned_should_reclaim(fs_info);
++	const struct btrfs_space_info *space_info = block_group->space_info;
++	const int reclaim_thresh = READ_ONCE(space_info->bg_reclaim_threshold);
++	const u64 new_val = block_group->used;
++	const u64 old_val = new_val + bytes_freed;
++	u64 thresh;
++
++	if (reclaim_thresh == 0)
++		return false;
++
++	thresh = div_factor_fine(block_group->length, reclaim_thresh);
++
++	/*
++	 * If we were below the threshold before don't reclaim, we are likely a
++	 * brand new block group and we don't want to relocate new block groups.
++	 */
++	if (old_val < thresh)
++		return false;
++	if (new_val >= thresh)
++		return false;
 +	return true;
 +}
 +
- void btrfs_reclaim_bgs_work(struct work_struct *work)
+ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+ 			     u64 bytenr, u64 num_bytes, bool alloc)
  {
- 	struct btrfs_fs_info *fs_info =
-@@ -1522,6 +1529,9 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
- 	if (!test_bit(BTRFS_FS_OPEN, &fs_info->flags))
- 		return;
+@@ -3230,6 +3255,8 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+ 	spin_unlock(&info->delalloc_root_lock);
  
-+	if (!btrfs_should_reclaim(fs_info))
-+		return;
+ 	while (total) {
++		bool reclaim;
 +
- 	sb_start_write(fs_info->sb);
+ 		cache = btrfs_lookup_block_group(info, bytenr);
+ 		if (!cache) {
+ 			ret = -ENOENT;
+@@ -3275,6 +3302,8 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+ 					cache->space_info, num_bytes);
+ 			cache->space_info->bytes_used -= num_bytes;
+ 			cache->space_info->disk_used -= num_bytes * factor;
++
++			reclaim = should_reclaim_block_group(cache, num_bytes);
+ 			spin_unlock(&cache->lock);
+ 			spin_unlock(&cache->space_info->lock);
  
- 	if (!btrfs_exclop_start(fs_info, BTRFS_EXCLOP_BALANCE)) {
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 1b1b310c3c51..f2a412427921 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -2079,3 +2079,26 @@ void btrfs_free_zone_cache(struct btrfs_fs_info *fs_info)
- 	}
- 	mutex_unlock(&fs_devices->device_list_mutex);
- }
-+
-+bool btrfs_zoned_should_reclaim(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_space_info *sinfo;
-+	u64 used = 0;
-+	u64 total = 0;
-+	u64 factor;
-+
-+	if (!btrfs_is_zoned(fs_info))
-+		return false;
-+
-+	if (!fs_info->bg_reclaim_threshold)
-+		return false;
-+
-+	list_for_each_entry(sinfo, &fs_info->space_info, list) {
-+		total += sinfo->total_bytes;
-+		used += btrfs_calc_available_free_space(fs_info, sinfo,
-+							BTRFS_RESERVE_NO_FLUSH);
-+	}
-+
-+	factor = div_u64(used * 100, total);
-+	return factor >= fs_info->bg_reclaim_threshold;
-+}
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index c489c08d7fd5..f2d16395087f 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -74,6 +74,7 @@ void btrfs_zone_finish_endio(struct btrfs_fs_info *fs_info, u64 logical,
- 			     u64 length);
- void btrfs_clear_data_reloc_bg(struct btrfs_block_group *bg);
- void btrfs_free_zone_cache(struct btrfs_fs_info *fs_info);
-+bool btrfs_zoned_should_reclaim(struct btrfs_fs_info *fs_info);
- #else /* CONFIG_BLK_DEV_ZONED */
- static inline int btrfs_get_dev_zone(struct btrfs_device *device, u64 pos,
- 				     struct blk_zone *zone)
-@@ -232,6 +233,11 @@ static inline void btrfs_zone_finish_endio(struct btrfs_fs_info *fs_info,
- static inline void btrfs_clear_data_reloc_bg(struct btrfs_block_group *bg) { }
+@@ -3301,6 +3330,8 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
+ 		if (!alloc && old_val == 0) {
+ 			if (!btrfs_test_opt(info, DISCARD_ASYNC))
+ 				btrfs_mark_bg_unused(cache);
++		} else if (!alloc && reclaim) {
++			btrfs_mark_bg_to_reclaim(cache);
+ 		}
  
- static inline void btrfs_free_zone_cache(struct btrfs_fs_info *fs_info) { }
-+
-+static inline bool btrfs_zoned_should_reclaim(struct btrfs_fs_info *fs_info)
-+{
-+	return false;
-+}
- #endif
- 
- static inline bool btrfs_dev_is_sequential(struct btrfs_device *device, u64 pos)
+ 		btrfs_put_block_group(cache);
 -- 
 2.35.1
 

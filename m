@@ -2,143 +2,206 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 57260C43217
-	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Mar 2022 16:14:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CFB1C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 21 Mar 2022 20:26:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350882AbiCUQQK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 21 Mar 2022 12:16:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52676 "EHLO
+        id S1346176AbiCUU1r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 21 Mar 2022 16:27:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55312 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351076AbiCUQQC (ORCPT
+        with ESMTP id S235913AbiCUU1q (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 21 Mar 2022 12:16:02 -0400
-Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 97DB32FFF4
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2022 09:14:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1647879269; x=1679415269;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=6oTq/znIoFntHNJj2cxflSZT1FpYRw4I6HbXx7qB18s=;
-  b=f0B3Fjo8FPe2HwewLemVsrfrgLulMPmVYhBShYmgKY25LSaFL9AsUQpb
-   jCocCR4DnukVe/2CZK/OBlLHcTiv1lA29RvHSfc1e4j7H2MANzI4ouvbi
-   8voZa+ABYrIXeSopV3ENj7zAoQYw8/FTbJu7ollugVXw0D0QyUdOBEQxp
-   cQF5Q/NBuT0xPh2RaTSl9cgLkba/TyERZbtzFVOUAW0e+nsXudMStq5hR
-   OmbCTKYWPjoyXl7qwESM8J2Cin4L+Nlrtgvhawy1Ftjee7rrKcjWbsfxG
-   UcrGABCftrkMwD1jAqLp01CW4iz76+XXVJ7AjQiBeJPzD+z7zd2X19aGQ
-   Q==;
-X-IronPort-AV: E=Sophos;i="5.90,199,1643644800"; 
-   d="scan'208";a="307836351"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 22 Mar 2022 00:14:29 +0800
-IronPort-SDR: PFPg7fm42T9pctonJgOiLaG4BN2VcOe52//1XHAgUup24p7fOkgDX7p4rAQdls2svj8lvlfE/Z
- HOY2SrX+7DMLYy5bzFGDI1HPd38FN3Bap0nDl8pQGOCdeYT2QcqAMJV8hn28DKRCB3dM4HJSRJ
- y7/YxswDUoy2/c5pceIvoVSB+f1ZfZ+L0VU6E7PX93JwtBymQOfWS/5WAXE2+tFSf5qAE3fc0j
- xVmf/PQfwqbhU9uLeK0UUWDvR7WecW2X0AJMsTLLw8jrI/QmjgAEsYfwK6Xn2hAVlEO/NVrz2i
- szguVzrHy1mpeK/3QbcDaVYP
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Mar 2022 08:45:29 -0700
-IronPort-SDR: mr0tPSzLThJwAgGsjGX9pi8WYNfAtxcT5FTICRNSnPgVh8I0Zdc1wVd+R9nor9lkpiYimdfpEx
- kYHlqimll7+/sRWzUtr2VsvHAIjICuGRmxFrGY2yp7yUEgosNapjNPzYvlA0UvfO0HE1+8Zzct
- WUMs8ebkw0G+N7v5nwkAPk+I+iPCfiwHQkEz4VkG+Zt5xobACljt5H/ze0pwysRr47LgdrWgzR
- ni0gz9cUMFlnVt+YBZILkwB1l5hHXbma8+AlhCLso4I4RvwW7x76cbDKZI3DEvrTfXso5Lc6qv
- Hpk=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 21 Mar 2022 09:14:28 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     David Sterba <dsterba@suse.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        Pankaj Raghav <p.raghav@samsung.com>
-Subject: [PATCH 2/5] btrfs: allow block group background reclaim for !zoned fs'es
-Date:   Mon, 21 Mar 2022 09:14:11 -0700
-Message-Id: <ef7463193e228bbb348bf8a8d587aa8b95bebf22.1647878642.git.johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1647878642.git.johannes.thumshirn@wdc.com>
-References: <cover.1647878642.git.johannes.thumshirn@wdc.com>
+        Mon, 21 Mar 2022 16:27:46 -0400
+Received: from mail-0201.mail-europe.com (mail-0201.mail-europe.com [51.77.79.158])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EC07165A86
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Mar 2022 13:26:20 -0700 (PDT)
+Date:   Mon, 21 Mar 2022 20:26:13 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=protonmail.com;
+        s=protonmail3; t=1647894376;
+        bh=Q+xYQSP9Fe16mDsHGuRFU4MkrdidY0C/Z4hsCxkeDmk=;
+        h=Date:To:From:Reply-To:Subject:Message-ID:From:To:Cc:Date:Subject:
+         Reply-To:Feedback-ID:Message-ID;
+        b=gBxdPlrvd9JHs8R/uxmzupo4tBcf0UujXQ57//czbdMIk9OrJVDOtfBOmTp/Sk5Y9
+         IVGRx5dZ9nTHGjzG91XCeU8YjFSlQoWJNN6LOb4nmMLZt4RIDTmO5m7BXrv4Xuv6no
+         1mw400ouSx7VPnFk0oZATgXqRRo7y1KEYkuzskV+P5gcF6hMyu1KA8oFqsLxwmhIFC
+         FtIW4Bg7KRaV10unhrsapXwDzMxBYyeB6jo1FYZ8DlmOvv/zvaySi0RD2ZLyhcH3m/
+         x0asp1LAPHRcIexgm8ECculu2UI4cGqdd8ypFtY2PFcXx6hMi4pf9c7ZPjlDQlj+0i
+         XJgqm0RoGf6mQ==
+To:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From:   felipecastrotc@protonmail.com
+Reply-To: felipecastrotc@protonmail.com
+Subject: Bad tree block after hibernation and reboot
+Message-ID: <dWRELj6T5paHnz-hagwgT6ciYcUwi9XIYx-QS5YsUJiMMYPtUTJnkmwTb8L1apmxYGBTmMYHtPDWdINlSysqgOrL1w3Jk9N5FlQsrHGKRhU=@protonmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+Hello everyone.
 
-We have found this feature invaluable at Facebook due to how our
-workload interacts with the allocator.  We have been using this in
-production for months with only a single problem that has already been
-fixed.  This will allow us to set a threshold for block groups to be
-automatically relocated even if we don't have zoned devices.
+After starting up from a hibernate state and a reboot, my btrfs partition s=
+eems to be corrupted. I spent the last few days reading the documentation a=
+nd trying different repair methods, first on an image of the partition and =
+then directly on the partition. In both cases, I was unsuccessful, and the =
+output messages were all the same. The repair method does not seem to advan=
+ce and halts with similar messages, except the `btrfs rescue super-recover`=
+  and `btrfs rescue super`, which return that the supers are ok.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/block-group.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+I am sending this message hoping that you can at least explain what the iss=
+ue is.
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 59f18a10fd5f..628741ecb97b 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -3208,6 +3208,31 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
- 	return ret;
- }
- 
-+static inline bool should_reclaim_block_group(struct btrfs_block_group *block_group,
-+					      u64 bytes_freed)
-+{
-+	const struct btrfs_space_info *space_info = block_group->space_info;
-+	const int reclaim_thresh = READ_ONCE(space_info->bg_reclaim_threshold);
-+	const u64 new_val = block_group->used;
-+	const u64 old_val = new_val + bytes_freed;
-+	u64 thresh;
-+
-+	if (reclaim_thresh == 0)
-+		return false;
-+
-+	thresh = div_factor_fine(block_group->length, reclaim_thresh);
-+
-+	/*
-+	 * If we were below the threshold before don't reclaim, we are likely a
-+	 * brand new block group and we don't want to relocate new block groups.
-+	 */
-+	if (old_val < thresh)
-+		return false;
-+	if (new_val >= thresh)
-+		return false;
-+	return true;
-+}
-+
- int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 			     u64 bytenr, u64 num_bytes, bool alloc)
- {
-@@ -3230,6 +3255,8 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 	spin_unlock(&info->delalloc_root_lock);
- 
- 	while (total) {
-+		bool reclaim;
-+
- 		cache = btrfs_lookup_block_group(info, bytenr);
- 		if (!cache) {
- 			ret = -ENOENT;
-@@ -3275,6 +3302,8 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 					cache->space_info, num_bytes);
- 			cache->space_info->bytes_used -= num_bytes;
- 			cache->space_info->disk_used -= num_bytes * factor;
-+
-+			reclaim = should_reclaim_block_group(cache, num_bytes);
- 			spin_unlock(&cache->lock);
- 			spin_unlock(&cache->space_info->lock);
- 
-@@ -3301,6 +3330,8 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 		if (!alloc && old_val == 0) {
- 			if (!btrfs_test_opt(info, DISCARD_ASYNC))
- 				btrfs_mark_bg_unused(cache);
-+		} else if (!alloc && reclaim) {
-+			btrfs_mark_bg_to_reclaim(cache);
- 		}
- 
- 		btrfs_put_block_group(cache);
--- 
-2.35.1
+The disk was running with Linux 5.16.14 at the moment of the crash. When I =
+booted sytem from the hibernate state, the filesystem was mounted as read-o=
+nly access. Then, when I restarted it again, I was unable to boot. I have b=
+een using a recovery environment with a Linux 5.16.11 with btrfs-progs v5.1=
+6.2. Also, some possible relevant information:
+
+  ~ # btrfs fi show
+
+    Label: 'ROOT'  uuid: 77307dfc-2951-4453-b789-49cc2924077a
+    Total devices 1 FS bytes used 301.63GiB
+    devid    1 size 700.00GiB used 369.02GiB path /dev/nvme0n1p2
+
+Here are some steps that I tried and their output:
+
+* Simply mounting the partition
+
+  ~ # mount /dev/block/nvme0n1p2 /mnt
+
+    mount: /mnt: wrong fs type, bad option, bad superblock on /dev/nvme0n1p=
+2, missing codepage or helper program, or other error.
+
+* Then, I looked at the dmesg output
+
+    [   51.002678] BTRFS error (device nvme0n1p2): bad tree block start, wa=
+nt 164689903616 have 0
+    [   51.002708] BTRFS error (device nvme0n1p2): failed to read block gro=
+ups: -5
+    [   51.003142] BTRFS error (device nvme0n1p2): open_ctree failed
+
+* I tried to mount with the option `usebackuproot`
+
+  ~ # mount -t btrfs -o ro,rescue=3Dusebackuproot /dev/nvme0n1p2 /mnt
+
+    mount: /mnt: wrong fs type, bad option, bad superblock on /dev/nvme0n1p=
+2, missing codepage or helper program, or other error.
+
+* And the dmesg output were
+
+    [ 7338.494567] BTRFS info (device nvme0n1p2): flagging fs with big meta=
+data feature
+    [ 7338.494576] BTRFS info (device nvme0n1p2): trying to use backup root=
+ at mount time
+    [ 7338.494578] BTRFS info (device nvme0n1p2): disk space caching is ena=
+bled
+    [ 7338.494579] BTRFS info (device nvme0n1p2): has skinny extents
+    [ 7338.499017] BTRFS error (device nvme0n1p2): bad tree block start, wa=
+nt 164689903616 have 0
+    [ 7338.499047] BTRFS error (device nvme0n1p2): failed to read block gro=
+ups: -5
+    [ 7338.499403] BTRFS error (device nvme0n1p2): open_ctree failed
+
+* I tried to check the partition
+
+  ~ # btrfs check /dev/nvme0n1p2
+
+    Opening filesystem to check...
+    checksum verify failed on 164689903616 wanted 0x00000000 found 0xb6bde3=
+e4
+    checksum verify failed on 164689903616 wanted 0x00000000 found 0xb6bde3=
+e4
+    bad tree block 164689903616, bytenr mismatch, want=3D164689903616, have=
+=3D0
+    ERROR: failed to read block groups: Input/output error
+    ERROR: cannot open file system
+
+* The superblocks seems to be ok
+
+  ~ # btrfs rescue super-recover /dev/nvme0n1p2
+
+    All supers are valid, no need to recover
+
+  ~ # btrfs rescue super -v /dev/nvme0n1p2
+
+    All Devices:
+    Device: id =3D 1, name =3D /dev/nvme0n1p2
+
+    Before Recovering:
+    [All good supers]:
+    device name =3D /dev/nvme0n1p2
+    superblock bytenr =3D 65536
+
+    device name =3D /dev/nvme0n1p2
+    superblock bytenr =3D 67108864
+
+    device name =3D /dev/nvme0n1p2
+    superblock bytenr =3D 274877906944
+
+    [All bad supers]:
+
+    All supers are valid, no need to recover
+
+* While the following repair methods, return similar outputs
+
+  ~ # btrfs rescue zero-log /dev/nvme0n1p2
+
+    checksum verify failed on 381634265088 wanted 0x00000000 found 0xb6bde3=
+e4
+    ERROR: could not open ctree
+
+  ~ # btrfs check --init-csum-tree /dev/nvme0n1p2
+
+    Creating a new CRC tree
+    WARNING:
+
+    Do not use --repair unless you are advised to do so by a developer
+    or an experienced user, and then only after having accepted that no
+    fsck can successfully repair all types of filesystem corruption. Eg.
+    some software or hardware bugs can fatally damage a volume.
+    The operation will start in 10 seconds.
+    Use Ctrl-C to stop it.
+    10 9 8 7 6 5 4 3 2 1
+    Starting repair.
+    Opening filesystem to check...
+    checksum verify failed on 164689903616 wanted 0x00000000 found 0xb6bde3=
+e4
+    checksum verify failed on 164689903616 wanted 0x00000000 found 0xb6bde3=
+e4
+    bad tree block 164689903616, bytenr mismatch, want=3D164689903616, have=
+=3D0
+    ERROR: failed to read block groups: Input/output error
+    ERROR: cannot open file system
+
+  ~ # btrfs check --init-extent-tree /dev/nvme0n1p2
+
+    WARNING:
+
+    Do not use --repair unless you are advised to do so by a developer
+    or an experienced user, and then only after having accepted that no
+    fsck can successfully repair all types of filesystem corruption. Eg.
+    some software or hardware bugs can fatally damage a volume.
+    The operation will start in 10 seconds.
+    Use Ctrl-C to stop it.
+    10 9 8 7 6 5 4 3 2 1
+    Starting repair.
+    Opening filesystem to check...
+    checksum verify failed on 381634265088 wanted 0x00000000 found 0xb6bde3=
+e4
+    checksum verify failed on 381634265088 wanted 0x00000000 found 0xb6bde3=
+e4
+    bad tree block 381634265088, bytenr mismatch, want=3D381634265088, have=
+=3D0
+    ERROR: cannot open file system
+
+ I tried other commands, including:
+
+* btrfs rescue chunk-recover
+* btrfs restore with the tree root found by btrfs-find-root
+
+I am not sure what is the real culprit, and I know that I probably ran some=
+ nonsense commands. However, the `bad tree block #### ...` error appears co=
+nsistently on them, including on the `btrfs restore` with different root tr=
+ees.
 

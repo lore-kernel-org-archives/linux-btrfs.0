@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CE6D8C43217
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:57:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3B1FC433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:57:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238812AbiCVP61 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 11:58:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38886 "EHLO
+        id S238804AbiCVP63 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 11:58:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38614 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238784AbiCVP6U (ORCPT
+        with ESMTP id S238850AbiCVP6P (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 11:58:20 -0400
+        Tue, 22 Mar 2022 11:58:15 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3FA8B6D87B;
-        Tue, 22 Mar 2022 08:56:52 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8FFD96D4E2;
+        Tue, 22 Mar 2022 08:56:47 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=3d6WnvoTZ+PsVqRzozji9/pP+F953nsqfC/6WxafsSE=; b=KaSF1MmRb/OqhhwQULh48SqrnL
-        lrivl6MLZaNBzu9Xg5IJq+1Pv4L2ozqCZuCt+QZLV8jtqKzhGOWRWMvwwFH62xL81M6sQ2YYB1ZUW
-        G5wFDIUW9DWYpfF8mI+rlZ0tlp1k9KkjsSWfxrlc7RfSpQSiIuKutK3wdegWAiW5hu1KGXFs5OsdF
-        rTUhG6XYnZmiYsqLSzLM3ra+lRfNqLrHI2zT9JIgncEn4Ig8PXmZIqDYlWiNS+/mSklso9lvLtlAn
-        XkhKJHZcB42Itr+hjwVAwhGY7UFLvHHe1X1e/NKpcTrIvGe84x9QfQMVr/Ljg3N3IJgPEpRjFZ57+
-        SbC1xTyg==;
+        bh=K7vQbYjaLE2gw5AtiIoBkjHYqv/oMNH2hku/X9M/OjI=; b=QyPrS2uUQJQRYb4uTgG50iHSNM
+        ht3Gz8P4dXleamSzNkgnywy2KuFRr/C0CMrfbNXdZe2wmraR3RRXpboChSXVCfVZhw01oFKUYq/QG
+        bEIMFgUAc39ONopsBQ9qqW0UyRU7x8PZqrpCPi5qL8qvu2OBE9+Nl86rwOGtMKJQI+7hdoiOhEuXw
+        Tp5A2ZcztobWAA7nUqaMO5xH8qoNiXwgmsdL7+Ddt6J70F2MnSeMs3lbS/RGgtd/WhO3qWp2sn5sR
+        OEdJiiQjr7TM3kEUo1O9yKZCxwlsXcitrqAG7M4ZZoN/asxx5e0mtTVObloffI4URuL+TO2DEDQGj
+        TdiWADoA==;
 Received: from [2001:4bb8:19a:b822:6444:5366:9486:4da] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nWgsM-00BamL-4e; Tue, 22 Mar 2022 15:56:50 +0000
+        id 1nWgsG-00Bajm-Uo; Tue, 22 Mar 2022 15:56:45 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 16/40] btrfs: stop using the btrfs_bio saved iter in index_rbio_pages
-Date:   Tue, 22 Mar 2022 16:55:42 +0100
-Message-Id: <20220322155606.1267165-17-hch@lst.de>
+Subject: [PATCH 14/40] btrfs: don't allocate a btrfs_bio for raid56 per-stripe bios
+Date:   Tue, 22 Mar 2022 16:55:40 +0100
+Message-Id: <20220322155606.1267165-15-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220322155606.1267165-1-hch@lst.de>
 References: <20220322155606.1267165-1-hch@lst.de>
@@ -46,29 +46,33 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The bios added to ->bio_list are the original bios fed into
-btrfs_map_bio, which are never advanced.  Just use the iter in the
-bio itself.
+Except for the spurious initialization of ->device just after allocation
+nothing uses the btrfs_bio, so just allocate a normal bio without extra
+data.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/raid56.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/raid56.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index a0d65f4b2b258..0c96e91e9ee03 100644
+index 2f1f7ca27acd5..a0d65f4b2b258 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -1155,9 +1155,6 @@ static void index_rbio_pages(struct btrfs_raid_bio *rbio)
- 		stripe_offset = start - rbio->bioc->raid_map[0];
- 		page_index = stripe_offset >> PAGE_SHIFT;
+@@ -1103,11 +1103,8 @@ static int rbio_add_io_page(struct btrfs_raid_bio *rbio,
+ 	}
  
--		if (bio_flagged(bio, BIO_CLONED))
--			bio->bi_iter = btrfs_bio(bio)->iter;
--
- 		bio_for_each_segment(bvec, bio, iter) {
- 			rbio->bio_pages[page_index + i] = bvec.bv_page;
- 			i++;
+ 	/* put a new bio on the list */
+-	bio = btrfs_bio_alloc(bio_max_len >> PAGE_SHIFT ?: 1);
+-	btrfs_bio(bio)->device = stripe->dev;
+-	bio->bi_iter.bi_size = 0;
+-	bio_set_dev(bio, stripe->dev->bdev);
+-	bio->bi_opf = opf;
++	bio = bio_alloc(stripe->dev->bdev, max(bio_max_len >> PAGE_SHIFT, 1UL),
++			opf, GFP_NOFS);
+ 	bio->bi_iter.bi_sector = disk_start >> 9;
+ 	bio->bi_private = rbio;
+ 
 -- 
 2.30.2
 

@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F469C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:56:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BCEC9C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:56:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238824AbiCVP6K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 11:58:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37092 "EHLO
+        id S238819AbiCVP6L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 11:58:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37308 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238773AbiCVP5z (ORCPT
+        with ESMTP id S238793AbiCVP56 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 11:57:55 -0400
+        Tue, 22 Mar 2022 11:57:58 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F5C46B089;
-        Tue, 22 Mar 2022 08:56:26 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C85B6BDE5;
+        Tue, 22 Mar 2022 08:56:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=14qv+oG7OdpbtaSjwz7xo6sYF3is1Uz5/Izd3meoZRM=; b=M/DmlfkFZ/GJQYBXHxhy1QwgAF
-        Z4WApsYToRY4O3TLfI3k6BYhkdxc8Db4YfeGGjoE3fZh4hlAAzIwQkQoTmI5uPHjJEkWJkMi5Sg5D
-        y+j6q2SZt4QNiHpvJQeDDSIaxPOQs2VizS94FATcxdn0Zs3MQoRyifeEviglLJb9loAxLn2lvCw93
-        IzLEdw/uXhnNPTmdaPMpyQ7dqT0LfRRHPGoi0/dxUzIqcLZC9G58GbSnyrvGLytD1MiPz2H8soxn6
-        5+IA3fHXrCHDx6MacRrywdcGVeno/7N1RjNX9STk+WGPC/SXufMc62KkiiyUWPh7uNLAMQX0OJbFb
-        DSamh+IA==;
+        bh=g+ZMzme6kz75KUekAyhRpwVmQW7rPPcw33xPjfVCTbI=; b=oVlgk387M/AVH5OaAgUIIgOkdP
+        sQOucN2YSs5/VFVJuTvBJh6e87DeZsONU5AGR9nH/Sxk8NMkqzV+0fUgyiS9bEA6anRIj3lDE3g5G
+        CT4mRMWWmG9PsisHNnepdLPVSIU4q28tTRpuN9qwK30jUiECJ4CL/HSawyGZD/sLhJ9z9c7E06hdj
+        V1+xgt9fDCasJ14cUChKDr6dYtRY5MZLBE3eUcZGXT5hfqbWWDZwckJ9jEMzy0v8GaMC6GEd6ztxW
+        lzJffphUdxjuAEVRSgNsVPXLh3NdF1inf/hrDjD8/1x7BUcOSLfxDGXI+ltpDH/TLx+xFPvisK9ic
+        JunAUSVA==;
 Received: from [2001:4bb8:19a:b822:6444:5366:9486:4da] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nWgrt-00Bae2-PH; Tue, 22 Mar 2022 15:56:22 +0000
+        id 1nWgry-00Bafv-Um; Tue, 22 Mar 2022 15:56:27 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 05/40] btrfs: refactor __btrfsic_submit_bio
-Date:   Tue, 22 Mar 2022 16:55:31 +0100
-Message-Id: <20220322155606.1267165-6-hch@lst.de>
+Subject: [PATCH 07/40] btrfs: simplify btrfsic_read_block
+Date:   Tue, 22 Mar 2022 16:55:33 +0100
+Message-Id: <20220322155606.1267165-8-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220322155606.1267165-1-hch@lst.de>
 References: <20220322155606.1267165-1-hch@lst.de>
@@ -46,183 +46,31 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Split out two helpers to mak __btrfsic_submit_bio more readable.
+btrfsic_read_block does not need the btrfs_bio structure, so switch to
+plain bio_alloc.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/check-integrity.c | 150 +++++++++++++++++++------------------
- 1 file changed, 78 insertions(+), 72 deletions(-)
+ fs/btrfs/check-integrity.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index abac86a758401..9efc1feb6cb08 100644
+index 49f9954f1438f..0fd3ca10ec569 100644
 --- a/fs/btrfs/check-integrity.c
 +++ b/fs/btrfs/check-integrity.c
-@@ -2635,6 +2635,74 @@ static struct btrfsic_dev_state *btrfsic_dev_state_lookup(dev_t dev)
- 						  &btrfsic_dev_state_hashtable);
- }
+@@ -1563,10 +1563,9 @@ static int btrfsic_read_block(struct btrfsic_state *state,
+ 		struct bio *bio;
+ 		unsigned int j;
  
-+static void btrfsic_check_write_bio(struct bio *bio,
-+		struct btrfsic_dev_state *dev_state)
-+{
-+	unsigned int segs = bio_segments(bio);
-+	u64 dev_bytenr = 512 * bio->bi_iter.bi_sector;
-+	u64 cur_bytenr = dev_bytenr;
-+	struct bvec_iter iter;
-+	struct bio_vec bvec;
-+	char **mapped_datav;
-+	int bio_is_patched = 0;
-+	int i = 0;
-+
-+	if (dev_state->state->print_mask & BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
-+		pr_info("submit_bio(rw=%d,0x%x, bi_vcnt=%u, bi_sector=%llu (bytenr %llu), bi_bdev=%p)\n",
-+		       bio_op(bio), bio->bi_opf, segs,
-+		       bio->bi_iter.bi_sector, dev_bytenr, bio->bi_bdev);
-+
-+	mapped_datav = kmalloc_array(segs, sizeof(*mapped_datav), GFP_NOFS);
-+	if (!mapped_datav)
-+		return;
-+
-+	bio_for_each_segment(bvec, bio, iter) {
-+		BUG_ON(bvec.bv_len != PAGE_SIZE);
-+		mapped_datav[i] = page_address(bvec.bv_page);
-+		i++;
-+
-+		if (dev_state->state->print_mask &
-+		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH_VERBOSE)
-+			pr_info("#%u: bytenr=%llu, len=%u, offset=%u\n",
-+			       i, cur_bytenr, bvec.bv_len, bvec.bv_offset);
-+		cur_bytenr += bvec.bv_len;
-+	}
-+
-+	btrfsic_process_written_block(dev_state, dev_bytenr, mapped_datav, segs,
-+				      bio, &bio_is_patched, bio->bi_opf);
-+	kfree(mapped_datav);
-+}
-+
-+static void btrfsic_check_flush_bio(struct bio *bio,
-+		struct btrfsic_dev_state *dev_state)
-+{
-+	if (dev_state->state->print_mask & BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
-+		pr_info("submit_bio(rw=%d,0x%x FLUSH, bdev=%p)\n",
-+		       bio_op(bio), bio->bi_opf, bio->bi_bdev);
-+
-+	if (dev_state->dummy_block_for_bio_bh_flush.is_iodone) {
-+		struct btrfsic_block *const block =
-+			&dev_state->dummy_block_for_bio_bh_flush;
-+
-+		block->is_iodone = 0;
-+		block->never_written = 0;
-+		block->iodone_w_error = 0;
-+		block->flush_gen = dev_state->last_flush_gen + 1;
-+		block->submit_bio_bh_rw = bio->bi_opf;
-+		block->orig_bio_private = bio->bi_private;
-+		block->orig_bio_end_io = bio->bi_end_io;
-+		block->next_in_same_bio = NULL;
-+		bio->bi_private = block;
-+		bio->bi_end_io = btrfsic_bio_end_io;
-+	} else if ((dev_state->state->print_mask &
-+		   (BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH |
-+		    BTRFSIC_PRINT_MASK_VERBOSE))) {
-+		pr_info(
-+"btrfsic_submit_bio(%pg) with FLUSH but dummy block already in use (ignored)!\n",
-+		       dev_state->bdev);
-+	}
-+}
-+
- static void __btrfsic_submit_bio(struct bio *bio)
- {
- 	struct btrfsic_dev_state *dev_state;
-@@ -2642,80 +2710,18 @@ static void __btrfsic_submit_bio(struct bio *bio)
- 	if (!btrfsic_is_initialized)
- 		return;
+-		bio = btrfs_bio_alloc(num_pages - i);
+-		bio_set_dev(bio, block_ctx->dev->bdev);
++		bio = bio_alloc(block_ctx->dev->bdev, num_pages - i,
++				REQ_OP_READ, GFP_NOFS);
+ 		bio->bi_iter.bi_sector = dev_bytenr >> 9;
+-		bio->bi_opf = REQ_OP_READ;
  
--	mutex_lock(&btrfsic_mutex);
--	/* since btrfsic_submit_bio() is also called before
--	 * btrfsic_mount(), this might return NULL */
-+	/*
-+	 * We can be called before btrfsic_mount, so there might not be a
-+	 * dev_state.
-+	 */
- 	dev_state = btrfsic_dev_state_lookup(bio->bi_bdev->bd_dev);
--	if (NULL != dev_state &&
--	    (bio_op(bio) == REQ_OP_WRITE) && bio_has_data(bio)) {
--		int i = 0;
--		u64 dev_bytenr;
--		u64 cur_bytenr;
--		struct bio_vec bvec;
--		struct bvec_iter iter;
--		int bio_is_patched;
--		char **mapped_datav;
--		unsigned int segs = bio_segments(bio);
--
--		dev_bytenr = 512 * bio->bi_iter.bi_sector;
--		bio_is_patched = 0;
--		if (dev_state->state->print_mask &
--		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
--			pr_info("submit_bio(rw=%d,0x%x, bi_vcnt=%u, bi_sector=%llu (bytenr %llu), bi_bdev=%p)\n",
--			       bio_op(bio), bio->bi_opf, segs,
--			       bio->bi_iter.bi_sector, dev_bytenr, bio->bi_bdev);
--
--		mapped_datav = kmalloc_array(segs,
--					     sizeof(*mapped_datav), GFP_NOFS);
--		if (!mapped_datav)
--			goto leave;
--		cur_bytenr = dev_bytenr;
--
--		bio_for_each_segment(bvec, bio, iter) {
--			BUG_ON(bvec.bv_len != PAGE_SIZE);
--			mapped_datav[i] = page_address(bvec.bv_page);
--			i++;
--
--			if (dev_state->state->print_mask &
--			    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH_VERBOSE)
--				pr_info("#%u: bytenr=%llu, len=%u, offset=%u\n",
--				       i, cur_bytenr, bvec.bv_len, bvec.bv_offset);
--			cur_bytenr += bvec.bv_len;
--		}
--		btrfsic_process_written_block(dev_state, dev_bytenr,
--					      mapped_datav, segs,
--					      bio, &bio_is_patched,
--					      bio->bi_opf);
--		kfree(mapped_datav);
--	} else if (NULL != dev_state && (bio->bi_opf & REQ_PREFLUSH)) {
--		if (dev_state->state->print_mask &
--		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
--			pr_info("submit_bio(rw=%d,0x%x FLUSH, bdev=%p)\n",
--			       bio_op(bio), bio->bi_opf, bio->bi_bdev);
--		if (!dev_state->dummy_block_for_bio_bh_flush.is_iodone) {
--			if ((dev_state->state->print_mask &
--			     (BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH |
--			      BTRFSIC_PRINT_MASK_VERBOSE)))
--				pr_info(
--"btrfsic_submit_bio(%pg) with FLUSH but dummy block already in use (ignored)!\n",
--				       dev_state->bdev);
--		} else {
--			struct btrfsic_block *const block =
--				&dev_state->dummy_block_for_bio_bh_flush;
--
--			block->is_iodone = 0;
--			block->never_written = 0;
--			block->iodone_w_error = 0;
--			block->flush_gen = dev_state->last_flush_gen + 1;
--			block->submit_bio_bh_rw = bio->bi_opf;
--			block->orig_bio_private = bio->bi_private;
--			block->orig_bio_end_io = bio->bi_end_io;
--			block->next_in_same_bio = NULL;
--			bio->bi_private = block;
--			bio->bi_end_io = btrfsic_bio_end_io;
--		}
-+	mutex_lock(&btrfsic_mutex);
-+	if (dev_state) {
-+		if (bio_op(bio) == REQ_OP_WRITE && bio_has_data(bio))
-+			btrfsic_check_write_bio(bio, dev_state);
-+		else if (bio->bi_opf & REQ_PREFLUSH)
-+			btrfsic_check_flush_bio(bio, dev_state);
- 	}
--leave:
- 	mutex_unlock(&btrfsic_mutex);
- }
- 
+ 		for (j = i; j < num_pages; j++) {
+ 			ret = bio_add_page(bio, block_ctx->pagev[j],
 -- 
 2.30.2
 

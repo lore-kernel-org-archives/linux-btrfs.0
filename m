@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F121C43217
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20C5FC433FE
 	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:57:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234700AbiCVP6i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 11:58:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39112 "EHLO
+        id S238821AbiCVP6g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 11:58:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39548 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238788AbiCVP6e (ORCPT
+        with ESMTP id S238809AbiCVP6b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 11:58:34 -0400
+        Tue, 22 Mar 2022 11:58:31 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 623BF6E344;
-        Tue, 22 Mar 2022 08:57:02 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CA4586D959;
+        Tue, 22 Mar 2022 08:56:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=sDuwS2b0eG9VMafKXk8DWKaeYMjvlsxzjdESvyTuKt4=; b=pVr2HzWuV0fD9l4cWzKVcF91Fq
-        ei9MQJxXL1KF/EPu+dsCL2xV833Vz6MS0nZNVLZ3H8sgVdjdgG2FFxA3VrDQPdYXHFh0o65d969Ck
-        i7v7NsYCxfsBeXQ9bw0b/vPUxyf1qCsNXyCP97N0ODegc1jnve9D4BT7QHcb6WVNAnnqz47zwvE3V
-        rccBQRviJmULkpnxeX2dkIDeJypMIDO0V5P/W/ll5JVGpU1KY5LsKwhm9F4IpafqVOMSFs+qrE2Qi
-        1vQvKCsCU904z5LjQXewoQUG4sdBlwK1XFC36aV9kaglRyr5uwCHjEXlLYqrTS53MoQ/nQmY/wIiQ
-        OW/9JDjQ==;
+        bh=XVAvg8evTgTkKo7Ej0Zd/pBWi/mPnzn9V42LhYa6D7Q=; b=B8eOY6PWUk734xaox4ZICfKPZV
+        IxzZ4jAg9Jkki5xaf1hhfqU8icWJRQXFhAoCDP0yz+Z9qKckQU+I0JN2csA0QqcJCzYmO82e7i9He
+        R+OOtO8sGpF+62RkFhG+C8SI9Of5dg6vD5qeKOPvn5ttq1kZvcgKbTpGzPIwIsh7Af2PGkcJrzJA7
+        nskvRapWOtkXovaOjqi3hS0uLkwJ8DoBhpL/7avSDY1VS8f+bSpuua24KLMhImnCv9dd3g9xeKlUo
+        DtvTcinHHsZIzuBC0DS0IOuK2B7YRhYCRkJiw/Prb7zKhs3pdbf+CevP4cBanMU5LUqPYxPWN366X
+        VPoXnVFQ==;
 Received: from [2001:4bb8:19a:b822:6444:5366:9486:4da] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nWgsW-00Bapj-Ey; Tue, 22 Mar 2022 15:57:00 +0000
+        id 1nWgsR-00BaoX-9T; Tue, 22 Mar 2022 15:56:55 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 20/40] btrfs: cleanup btrfs_submit_metadata_bio
-Date:   Tue, 22 Mar 2022 16:55:46 +0100
-Message-Id: <20220322155606.1267165-21-hch@lst.de>
+Subject: [PATCH 18/40] btrfs: move more work into btrfs_end_bioc
+Date:   Tue, 22 Mar 2022 16:55:44 +0100
+Message-Id: <20220322155606.1267165-19-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220322155606.1267165-1-hch@lst.de>
 References: <20220322155606.1267165-1-hch@lst.de>
@@ -46,111 +46,129 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Remove the unused bio_flags argument and clean up the code flow to be
-straight forward.
+Assign ->mirror_num and ->bi_status in btrfs_end_bioc instead of
+duplicating the logic in the callers.  Also remove the bio argument as
+it always must be bioc->orig_bio and the now pointless bioc_error that
+did nothing but assign bi_sector to the same value just sampled in the
+caller.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/disk-io.c   | 42 ++++++++++++++++--------------------------
- fs/btrfs/disk-io.h   |  2 +-
- fs/btrfs/extent_io.c |  2 +-
- 3 files changed, 18 insertions(+), 28 deletions(-)
+ fs/btrfs/volumes.c | 68 ++++++++++++++--------------------------------
+ 1 file changed, 20 insertions(+), 48 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index dc497e17dcd06..f43c9ab86e617 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -890,6 +890,10 @@ static blk_status_t btree_submit_bio_start(struct inode *inode, struct bio *bio,
- 	return btree_csum_one_bio(bio);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4dd54b80dac81..9d1f8c27eff33 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6659,19 +6659,29 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	return __btrfs_map_block(fs_info, op, logical, length, bioc_ret, 0, 1);
  }
  
-+/*
-+ * Check if metadata writes should be submitted by async threads so that
-+ * checksumming can happen in parallel across all CPUs.
-+ */
- static bool should_async_write(struct btrfs_fs_info *fs_info,
- 			     struct btrfs_inode *bi)
+-static inline void btrfs_end_bioc(struct btrfs_io_context *bioc, struct bio *bio)
++static inline void btrfs_end_bioc(struct btrfs_io_context *bioc)
  {
-@@ -903,41 +907,27 @@ static bool should_async_write(struct btrfs_fs_info *fs_info,
++	struct bio *bio = bioc->orig_bio;
++
++	btrfs_bio(bio)->mirror_num = bioc->mirror_num;
+ 	bio->bi_private = bioc->private;
+ 	bio->bi_end_io = bioc->end_io;
+-	bio_endio(bio);
+ 
++	/*
++	 * Only send an error to the higher layers if it is beyond the tolerance
++	 * threshold.
++	 */
++	if (atomic_read(&bioc->error) > bioc->max_errors)
++		bio->bi_status = BLK_STS_IOERR;
++	else
++		bio->bi_status = BLK_STS_OK;
++	bio_endio(bio);
+ 	btrfs_put_bioc(bioc);
  }
  
- blk_status_t btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio,
--				       int mirror_num, unsigned long bio_flags)
-+				       int mirror_num)
+ static void btrfs_end_bio(struct bio *bio)
  {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	blk_status_t ret;
+ 	struct btrfs_io_context *bioc = bio->bi_private;
+-	int is_orig_bio = 0;
  
--	if (btrfs_op(bio) != BTRFS_MAP_WRITE) {
--		/*
--		 * called for a read, do the setup so that checksum validation
--		 * can happen in the async kernel threads
--		 */
--		ret = btrfs_bio_wq_end_io(fs_info, bio,
--					  BTRFS_WQ_ENDIO_METADATA);
--		if (ret)
--			goto out_w_error;
--		ret = btrfs_map_bio(fs_info, bio, mirror_num);
--	} else if (!should_async_write(fs_info, BTRFS_I(inode))) {
-+	if (btrfs_op(bio) == BTRFS_MAP_WRITE) {
-+		if (should_async_write(fs_info, BTRFS_I(inode)))
-+			return btrfs_wq_submit_bio(inode, bio, mirror_num, 0, 0,
-+						   btree_submit_bio_start);
- 		ret = btree_csum_one_bio(bio);
- 		if (ret)
--			goto out_w_error;
--		ret = btrfs_map_bio(fs_info, bio, mirror_num);
-+			return ret;
- 	} else {
--		/*
--		 * kthread helpers are used to submit writes so that
--		 * checksumming can happen in parallel across all CPUs
--		 */
--		ret = btrfs_wq_submit_bio(inode, bio, mirror_num, 0,
--					  0, btree_submit_bio_start);
-+		/* checksum validation should happen in async threads: */
-+		ret = btrfs_bio_wq_end_io(fs_info, bio,
-+					  BTRFS_WQ_ENDIO_METADATA);
-+		if (ret)
-+			return ret;
+ 	if (bio->bi_status) {
+ 		atomic_inc(&bioc->error);
+@@ -6692,35 +6702,12 @@ static void btrfs_end_bio(struct bio *bio)
+ 		}
  	}
  
--	if (ret)
--		goto out_w_error;
--	return 0;
+-	if (bio == bioc->orig_bio)
+-		is_orig_bio = 1;
++	if (bio != bioc->orig_bio)
++		bio_put(bio);
+ 
+ 	btrfs_bio_counter_dec(bioc->fs_info);
 -
--out_w_error:
--	return ret;
-+	return btrfs_map_bio(fs_info, bio, mirror_num);
+-	if (atomic_dec_and_test(&bioc->stripes_pending)) {
+-		if (!is_orig_bio) {
+-			bio_put(bio);
+-			bio = bioc->orig_bio;
+-		}
+-
+-		btrfs_bio(bio)->mirror_num = bioc->mirror_num;
+-		/* only send an error to the higher layers if it is
+-		 * beyond the tolerance of the btrfs bio
+-		 */
+-		if (atomic_read(&bioc->error) > bioc->max_errors) {
+-			bio->bi_status = BLK_STS_IOERR;
+-		} else {
+-			/*
+-			 * this bio is actually up to date, we didn't
+-			 * go over the max number of errors
+-			 */
+-			bio->bi_status = BLK_STS_OK;
+-		}
+-
+-		btrfs_end_bioc(bioc, bio);
+-	} else if (!is_orig_bio) {
+-		bio_put(bio);
+-	}
++	if (atomic_dec_and_test(&bioc->stripes_pending))
++		btrfs_end_bioc(bioc);
  }
  
- #ifdef CONFIG_MIGRATION
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 2364a30cd9e32..afe3bb96616c9 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -87,7 +87,7 @@ int btrfs_validate_metadata_buffer(struct btrfs_bio *bbio,
- 				   struct page *page, u64 start, u64 end,
- 				   int mirror);
- blk_status_t btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio,
--				       int mirror_num, unsigned long bio_flags);
-+				       int mirror_num);
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- struct btrfs_root *btrfs_alloc_dummy_root(struct btrfs_fs_info *fs_info);
- #endif
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 238252f86d5ad..58ef0f4fca361 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -179,7 +179,7 @@ int __must_check submit_one_bio(struct bio *bio, int mirror_num,
- 					    bio_flags);
- 	else
- 		ret = btrfs_submit_metadata_bio(tree->private_data, bio,
--						mirror_num, bio_flags);
-+						mirror_num);
+ static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
+@@ -6758,23 +6745,6 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
+ 	submit_bio(bio);
+ }
  
- 	if (ret) {
- 		bio->bi_status = ret;
+-static void bioc_error(struct btrfs_io_context *bioc, struct bio *bio, u64 logical)
+-{
+-	atomic_inc(&bioc->error);
+-	if (atomic_dec_and_test(&bioc->stripes_pending)) {
+-		/* Should be the original bio. */
+-		WARN_ON(bio != bioc->orig_bio);
+-
+-		btrfs_bio(bio)->mirror_num = bioc->mirror_num;
+-		bio->bi_iter.bi_sector = logical >> 9;
+-		if (atomic_read(&bioc->error) > bioc->max_errors)
+-			bio->bi_status = BLK_STS_IOERR;
+-		else
+-			bio->bi_status = BLK_STS_OK;
+-		btrfs_end_bioc(bioc, bio);
+-	}
+-}
+-
+ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 			   int mirror_num)
+ {
+@@ -6833,7 +6803,9 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 						   &dev->dev_state) ||
+ 		    (btrfs_op(first_bio) == BTRFS_MAP_WRITE &&
+ 		    !test_bit(BTRFS_DEV_STATE_WRITEABLE, &dev->dev_state))) {
+-			bioc_error(bioc, first_bio, logical);
++			atomic_inc(&bioc->error);
++			if (atomic_dec_and_test(&bioc->stripes_pending))
++				btrfs_end_bioc(bioc);
+ 			continue;
+ 		}
+ 
 -- 
 2.30.2
 

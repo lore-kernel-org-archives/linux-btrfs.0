@@ -2,158 +2,133 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03AA8C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 10:48:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F408C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 12:58:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232719AbiCVKtt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 06:49:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59260 "EHLO
+        id S234139AbiCVM7j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 08:59:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57408 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232251AbiCVKtq (ORCPT
+        with ESMTP id S232851AbiCVM7j (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 06:49:46 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F0C617E21
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 03:48:17 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1647946084;
-        bh=8WY0dJUDUWWyvMDOpm6MpRV+RrrJ7jZnD9Au2JJ2hFw=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=k1g5f64HNPYqPKKik67Gi+luLImL5jJBCObqUa5UGaA4D0cdNDSPqw1SSi6AzkxZO
-         Srqeca1ACcl34rOyhGh1E1AbSmZ4s9ZrXGJrCCOVBjbMqBA4vpaA4f97Gh1+CwDWyy
-         y3tl7BcuCs8TDsMTFimsshpPz9sHJ2W1vuZpfXiQ=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1N8GQs-1oA7md1t0S-014Dsu; Tue, 22
- Mar 2022 11:48:04 +0100
-Message-ID: <b1c66869-2920-9055-faa1-a84b05958289@gmx.com>
-Date:   Tue, 22 Mar 2022 18:47:59 +0800
+        Tue, 22 Mar 2022 08:59:39 -0400
+X-Greylist: delayed 302 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 22 Mar 2022 05:58:10 PDT
+Received: from mout.gmx.com (mout.gmx.com [74.208.4.200])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9BC753A6D
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 05:58:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=mail.com;
+        s=dbd5af2cbaf7; t=1647953890;
+        bh=Q4BbwUT9T6nnfkEeyqTbwV43Cmfitcc1d4aXsuxC2Cs=;
+        h=X-UI-Sender-Class:From:To:Subject:Date;
+        b=j6k9xIu1mWoyCax6WPSxcfi0+u691vmydKxmBqVUgPC2AqhreO58J58jN+D1SpOOY
+         nwXWmM+nIdeXjvywpn83A4e15i+qwQCR4Id84XImGDngtb9ZAtmqhihAntwq+T2T1R
+         4kzFleOhsglE5v749KtXdKV9wdH43TUTL7Qz9Cwg=
+X-UI-Sender-Class: 214d933f-fd2f-45c7-a636-f5d79ae31a79
+Received: from [88.156.136.188] ([88.156.136.188]) by web-mail.mail.com
+ (3c-app-mailcom-lxa08.server.lan [10.76.45.9]) (via HTTP); Tue, 22 Mar 2022
+ 13:53:08 +0100
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.7.0
-Subject: Re: [PATCH] btrfs: prevent subvol with swapfile from being deleted
-Content-Language: en-US
-To:     Kaiwen Hu <kevinhu@synology.com>, linux-btrfs@vger.kernel.org
-Cc:     robbieko@synology.com, cccheng@synology.com, seanding@synology.com
-References: <20220322102705.1252830-1-kevinhu@synology.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220322102705.1252830-1-kevinhu@synology.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:l5jnkKdfX21mADYq0i2lkrm/OzPJAvrtB/HDKuxJOzzIhBEgceP
- q+M270maJB1DgRpTzKYMMJVqFV/IhFY5GuhUDfZBRrskhQZ5TloQo1dYjH5Ivbb7GIKM2yd
- EVrn0Whj6zSgOMSFBe7Ke0DQu2320+NQFkiLPnVhjuY3oswZhsFOo9OD/BSH6G3+ocwUwcb
- N7lt5QXScDhq1TYMVGaUg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:cyTR99Ttlfk=:TmkTUg/NsGEF7TZWWjjdDj
- YNpajAVrXFLZqJQOilu44fcHQNCCWZfHM2J5UnwQQYUm7FOlo1nn0qniUXodKGhJGtUDldb+R
- Lu6jIZSKIy6rg8iKGJ937oRfIgaGBybcxQTLMmdFwl4BhFQJUoJPm9Kydjh12VRgHfst2g5DO
- fkAsTgCmhlHYF3l8Gi5cCgMk5iOniu3xQY34tZ7XSE4NkNBzwTnQoESiLZOYd3S12M85/WY/9
- AF4JLuvtzLh47uSxbwuV9Up5YOWAzmGZSKvs/rf7zEYAF70Ja3rEwkHmf2TLMqeq6XbK3XoqM
- BEkya+nhhxINpyJYxdebF0xJ7bLhhkXbSq5aQk5tIUvQOUo8FZYTJeQN2HWLs5zBfP0ahAUIs
- CC9uCu2LBvFzt9JBpdriEMoFr035J+Dkf5a6Zm5FzDK9Aw6WmAYj5FYmGPvN+vIhBper/KFmF
- INGjVmB3TrgpufAU3qQgaahyzSsXfXmliNN9AxTccF4N7j/s/NRWxGN0agrnM1PZX3J/5G/N9
- JeYU8a0eckLnZqX4A+JpLrEYZDBrwEd65B1P3Aw8b9OoeYgwz79IbY4TyvcXHWnhJ0my4Zsqc
- Kv6egeMq3aV9uSM3H/Mnn5pTv+VALmlSdglTG/QI5GDEtBXAOxNjFbFFphi8E1oozqd8pwx5D
- TPWCX6QIwNQyrjXilZ1/BWm7MXIUJTWpe51z1NSFhCAJLOlFuRFvwoyDLi+2zLLP6vk4HW/d5
- DkgD8u7RL7RGTSYpbEXZwjcg18LmIuzdkog/N/ROILDtEH0at6APD/X9gk5/pYBtnLR2U8iND
- 5xLl2IW57pMgKPsFPOPhBo8SZclSMSTNioerUF68Wh86g8w2Ff8e93GON2rug8gnx5ZGYaDhm
- JVzbDwpVGUW1DRVRAZU6L5wwlaL88V9k5MU0lenKgVAWzM6ysLEpa+Uvv9yyNVT46GhK74ro0
- 5+WyzYaTHtl5gsLZMYU0Y6qh9D891iLkYtzOHZnmIJ56uNLnJukxXQeC3e89L1IJf/N14QpNZ
- LDJPdIqkpowt2NiT884/HEB9F1YTdHm4Nbx0mq8goty1qNWqQQhbSwyDxB+n6M0aIvoEmH4ta
- twLSY2tKTUVDGw=
+Message-ID: <trinity-58cb51fa-9b3e-4fd0-9ff7-29da0dd13e14-1647953588232@3c-app-mailcom-lxa08>
+From:   Joseph Spagnol <joseph.spagnol@programmer.net>
+To:     linux-btrfs@vger.kernel.org
+Subject: failed to read block groups: Input/output error; bad tree block -
+ bytenr mismatch;
+Content-Type: text/plain; charset=UTF-8
+Date:   Tue, 22 Mar 2022 13:53:08 +0100
+Importance: normal
+Sensitivity: Normal
+X-Priority: 3
+X-Provags-ID: V03:K1:/frdk3GLU5hpYEvNbEUXJKHF0Y6w1xj20aKgtJUFd/hkWLDGSQwwyufrQAX1ZUdtOM+rd
+ Oyd2emrr/xwh+6kYnXRE3P1SGWzt2LCbbun7++ylBnw4WWpezmLGYsMuO6QINkWefNu+NdTYdCm+
+ TLnARlfULB7+CHl2BgJIV+CCMP9/STn5oDJVAyq/iuPYC+JMqOfyu5Lkp5Z/ovFqj2s1hXsyY6Ao
+ RAL7QrnTcJbFOsLKEoZL7HRFmMSVl23vcCT13ZHnt6Dmm5I12+uJlEwo5rv+24NywMQv5Uvgo/pi
+ SQ=
+X-UI-Out-Filterresults: notjunk:1;V03:K0:ospIt2eIAlk=:b8SjS5Hr1z97P/8Z1A8L6q
+ RKaOxNvwlTxWypMZQ6Fw2SIH3cQ6yJuItrJ3CztU1tfO+aCqIwY5XPnb90bYwbJizg9Lp2v1Z
+ kknfh4Eh3f1M1V0AUxZgewtor5jZxT4TR/nIyk60fQvfvuLlIMH2mm1FNtGKQqYiDiY8lKL71
+ hj9EIkNqxr44dco2equ4Ibb1ogptPJpZmQAAxH+yNXZh80TINF7StP2Sqv+oLiLnTw7/nL/GG
+ Lr+VpdCN+USMTFkSUi7VJtQ0KatSZ3qV3LhTTND7fi8pU/Iy3OLlQVMvvObGRdOiHbMjK9GRu
+ obL6kIjF71pAYdMwDR6RIKxno56XvvDf5bzL4cdh3XgXS4xn9bkyDN79wuOUVr5ARyIO6H/GT
+ aBvDLGIGIoazunr7kx4KgeXRpc20sxINIOjN6toKhdSnjjATh8DVvKepoyMRxaMMea+gLHrSy
+ /6eKsrGOm++7j2tOydmX/9BYFFEZtGue+h3He/vh9nJo4/PDwT3JEf/zi5NEV3XXvhfl1Q8c2
+ o7azXtwjgKNMlw0C2oBNFUDYKWbjVcRgeK7v5nAz5hwjU1Wi7CmJVqSNiE1rkele5O9A33NMw
+ dk22rCp6KuGRDlCHbUo4zudwFerRHVKFYcvvEQnsY8akyKJrJKeHnP09Y9SuFJASFF8acCO28
+ a/3/ViPseoPGge7LELpeivQHPlhgj8RK7ZBRG8xYHEZLUpALgJu4NdoQJ5H4THYhN5vlcnsEp
+ kG7ozltCnSZvqGG48qxhdoFUuSYh184j3m0SoFIOQi2w40BPJQhKDckZ+uDsLp/eSegHGqP6C
+ UW58TWLoTmzZtoRfRpt1CiU8kwH3w==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hello, recently one of my btrfs partitions has become unavailable and am not able to mount it.
+
+# mount -t btrfs /dev/sda4 /mnt/
+mount: /mnt: wrong fs type, bad option, bad superblock on /dev/sda4, missing codepage or helper program, or other error.
+
+# btrfs-find-root /dev/sda4
+Couldn't read tree root
+Superblock thinks the generation is 432440
+Superblock thinks the level is 1
+Well block 23235313664(gen: 432440 level: 0) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23231447040(gen: 432439 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23229202432(gen: 432438 level: 0) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23192911872(gen: 432431 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23177084928(gen: 432430 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23149035520(gen: 432429 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23124443136(gen: 432427 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23113547776(gen: 432426 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23080730624(gen: 432425 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23048241152(gen: 432424 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+Well block 23013031936(gen: 432422 level: 1) seems good, but generation/level doesn't match, want gen: 432440 level: 1
+.......
+
+# btrfsck -b -p /dev/sda4
+Opening filesystem to check...
+checksum verify failed on 23234035712 wanted 0x00000000 found 0x0810faf8
+checksum verify failed on 23234035712 wanted 0x00000000 found 0x0810faf8
+bad tree block 23234035712, bytenr mismatch, want=23234035712, have=0
+ERROR: failed to read block groups: Input/output error
+ERROR: cannot open file system
+
+Here are some more details;
+# uname -a
+Linux msi-b17-manjaro 5.4.184-1-MANJARO #1 SMP PREEMPT Fri Mar 11 13:59:07 UTC 2022 x86_64 GNU/Linux
+# btrfs --version
+btrfs-progs v5.16.2
+# btrfs fi show
+Label: 'OLDDATA'  uuid: 9bc104b4-c889-477f-aae1-4d865cdc0372
+        Total devices 1 FS bytes used 34.20GiB
+        devid    1 size 50.00GiB used 37.52GiB path /dev/sda3
+Label: 'OPENSUSE'  uuid: c3632d30-a117-43ef-8993-88f1933f6676
+        Total devices 1 FS bytes used 24.60GiB
+        devid    1 size 150.00GiB used 31.05GiB path /dev/nvme0n1p4
+Label: 'DATA'  uuid: 4ce61b29-8c8d-4c04-b715-96f0dda809a4
+        Total devices 1 FS bytes used 118.67GiB
+        devid    1 size 200.00GiB used 122.02GiB path /dev/sda4
+# btrfs fi df /dev/sda4
+ERROR: not a directory: /dev/sda4
+# btrfs fi df /data/
+ERROR: not a btrfs filesystem: /data/
+## dmesg.log ##
+[65500.890756] BTRFS info (device sda4): flagging fs with big metadata feature
+[65500.890766] BTRFS warning (device sda4): 'recovery' is deprecated, use 'usebackuproot' instead
+[65500.890768] BTRFS info (device sda4): trying to use backup root at mount time
+[65500.890771] BTRFS info (device sda4): disabling disk space caching
+[65500.890773] BTRFS info (device sda4): force clearing of disk cache
+[65500.890775] BTRFS info (device sda4): has skinny extents
+[65500.893556] BTRFS error (device sda4): bad tree block start, want 23235280896 have 0
+[65500.893593] BTRFS warning (device sda4): failed to read tree root
+[65500.893852] BTRFS error (device sda4): bad tree block start, want 23235280896 have 0
+[65500.893856] BTRFS warning (device sda4): failed to read tree root
+[65500.908097] BTRFS error (device sda4): bad tree block start, want 23234035712 have 0
+[65500.908111] BTRFS error (device sda4): failed to read block groups: -5
+[65500.963167] BTRFS error (device sda4): open_ctree failed
+
+P.S. I must say that I get the same results when I try to mount the partition from another linux system OpenSuse tumbleweed
+
+Is there any way I could rebuild the tree?
+
+Thanks in advance
+Joseph
 
 
-On 2022/3/22 18:27, Kaiwen Hu wrote:
-> This patch prevent subvol being deleted when the subvol contains
-> any active swapfile.
->
-> Since the subvolume is deleted, we cannot swapoff the swapfile in
-> this deleted subvolume.  However, the swapfile is still active,
-> we unable to unmount this volume.  Let it into some deadlock
-> situation.
->
-> The test looks like this:
-> 	mkfs.btrfs -f $dev > /dev/null
-> 	mount $dev $mnt
->
-> 	btrfs sub create $mnt/subvol
-> 	touch $mnt/subvol/swapfile
-> 	chmod 600 $mnt/subvol/swapfile
-> 	chattr +C $mnt/subvol/swapfile
-> 	dd if=3D/dev/zero of=3D$mnt/subvol/swapfile bs=3D1K count=3D4096
-> 	mkswap $mnt/subvol/swapfile
-> 	swapon $mnt/subvol/swapfile
->
-> 	btrfs sub delete $mnt/subvol
-> 	swapoff $mnt/subvol/swapfile  // failed: No such file or directory
-> 	swapoff --all
->
-> 	unmount $mnt  // target is busy.
->
-> To prevent above issue, we simply check that whether the subvolume
-> contains any active swapfile, and stop the deleting process.  This
-> behavior is like snapshot ioctl dealing with a swapfile.
->
-> Signed-off-by: Kaiwen Hu <kevinhu@synology.com>
-> ---
->   fs/btrfs/inode.c | 16 ++++++++++++++++
->   1 file changed, 16 insertions(+)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 5bbea5ec31fc..e388b9043710 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4460,6 +4460,12 @@ int btrfs_delete_subvolume(struct inode *dir, str=
-uct dentry *dentry)
->   			   dest->root_key.objectid);
->   		return -EPERM;
->   	}
-> +	if (atomic_read(&dest->nr_swapfiles)) {
-> +		spin_unlock(&dest->root_item_lock);
-> +		btrfs_warn(fs_info,
-> +			   "attempt to delete subvolume with active swapfile");
-> +		return -ETXTBSY;
-> +	}
-
-This part looks fine to me.
-
->   	root_flags =3D btrfs_root_flags(&dest->root_item);
->   	btrfs_set_root_flags(&dest->root_item,
->   			     root_flags | BTRFS_ROOT_SUBVOL_DEAD);
-> @@ -10419,7 +10425,17 @@ static int btrfs_swap_activate(struct swap_info=
-_struct *sis, struct file *file,
->   	 * before walking the extents because we don't want a concurrent
->   	 * snapshot to run after we've already checked the extents.
->   	 */
-> +	spin_lock(&root->root_item_lock);
-> +	if (btrfs_root_dead(root)) {
-
-This looks a little weird to me.
-
-If the root is already dead, it means we should not be able to access
-any file inside the subvolume.
-
-How could we go into btrfs_swap_activate() while the root is already dead?
-
-Or is there some special race I missed?
-
-Thanks,
-Qu
-
-> +		spin_unlock(&root->root_item_lock);
-> +		btrfs_exclop_finish(fs_info);
-> +		btrfs_warn(fs_info,
-> +	   "cannot activate swapfile because subvolume is marked for deletion"=
-);
-> +		return -EINVAL;
-> +	}
->   	atomic_inc(&root->nr_swapfiles);
-> +	spin_unlock(&root->root_item_lock);
-> +
->
->   	isize =3D ALIGN_DOWN(inode->i_size, fs_info->sectorsize);
->

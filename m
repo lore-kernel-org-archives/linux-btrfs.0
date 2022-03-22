@@ -2,75 +2,143 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8FCCC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 17:49:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D392C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 17:51:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237840AbiCVRuk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 13:50:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48156 "EHLO
+        id S239891AbiCVRxB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 13:53:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239865AbiCVRuj (ORCPT
+        with ESMTP id S239889AbiCVRxA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 13:50:39 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2EB5326132
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 10:49:11 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id AEA851F387;
-        Tue, 22 Mar 2022 17:49:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1647971349;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=7yHo16l93jgECwkiIpDQMsEsceOdsUz+Mwe0rqx5pMs=;
-        b=MJ9KBHLyyyecvLtpPVdzE0mRh0P5CSixkH2Zu5JqBsAxQ01Kk6ByyksAf8tMvCx5x5hMC0
-        PN8MhXlWn56soBSBuDaxn1CPnk6ZeeyJv+gOeh4m2WAk2QOgYNUIjU6uT0OiEQ0dyFHJst
-        FQYhiVwJLFrdkL/qGw+uwcYFU24pKCE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1647971349;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=7yHo16l93jgECwkiIpDQMsEsceOdsUz+Mwe0rqx5pMs=;
-        b=Bgu6heQu2P+EpiNG7vNHZiFQssozJOofCYHfOT3bxVfAAwxRzLUl843pJEUNt84KwBF3vp
-        Gv/aqsbOpB/wKpAQ==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id A1AC5A3B81;
-        Tue, 22 Mar 2022 17:49:09 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 14680DA818; Tue, 22 Mar 2022 18:45:07 +0100 (CET)
-Date:   Tue, 22 Mar 2022 18:45:06 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Jonathan Lassoff <jof@thejof.com>
-Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v1 1/2] Add Btrfs messages to printk index
-Message-ID: <20220322174506.GH12643@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Jonathan Lassoff <jof@thejof.com>,
-        linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>
-References: <957b1f70097b44c3fba4419bc96c262f720da500.1647539056.git.jof@thejof.com>
+        Tue, 22 Mar 2022 13:53:00 -0400
+Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C36BA6D3BC
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 10:51:31 -0700 (PDT)
+Received: by mail-qt1-x82e.google.com with SMTP id t7so15053703qta.10
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 10:51:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=FMzhok0yBCuifhf76Tvr+EzYkTDhpzoAb4DJhUSHV0E=;
+        b=5uIN4kTQtQ3cuTfUCD4+NK+GT7cA1PVn0dQC6rXwnGsFl5xcCvlchx4IvjfwnuKO8d
+         WpoAt3ZulrwBs9c7l0oopSXmrb/K0RKRXi9zO0/URsG0vemxcmaCCVS6DKwTaSEG7Tlm
+         MfH4wzBtx9kyuXv2pxrHBWvpYf2v+6wSaqam6+gkI6uON1eh+V5mzoXoyayPouKsJKbw
+         DstZG9WbiKb2HF6pgHJX7Tg0MVlKMrp0oerEflyegtdal2MF+xYGZUL86oBodf7MVRnX
+         bLZ1gdcGSW17AIYqJYk8HfcHlGKAeIsKS/OUwxia86AbBJUjeqB8YRIhNDusJnNR1OXx
+         RCIw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=FMzhok0yBCuifhf76Tvr+EzYkTDhpzoAb4DJhUSHV0E=;
+        b=IKWViIpkwTGR08lj1nIxq5tqVfDMBP5eKNk6ixr1cmPiL0ZMFuUsEZxidJ3+tseXPJ
+         BLol9hoocTXANEZmA7odMMrBYg0boVaeRQqtIs1i82aCubvPXM5Rahc0A4uNK+Fp6bi0
+         sQl0l2cEDIZTsecKe0DRFjfkCzZMjMVFPDfQtyG0NM4ZWtJDbT5wjMtBcyQPp3xvQmyY
+         M+s+Oow8yKAT4HZgAuO/D8GjjieoTiiOc34QV6R+OVGoBHNIaI18Smar366LI0lUjBop
+         6sEplhOxMe7u0F4NE+HcTYWLQzk4R90dyD3laAml5TrVHjIGS+bDSVsEd7jGY06bsLRm
+         L8dw==
+X-Gm-Message-State: AOAM531ge74147U/cVCc2z8PPZScWCdGcKrjPupDP5qriotmQW/bigO/
+        u6vAP3/ZA9MAa1DHYvpD4C41Yg==
+X-Google-Smtp-Source: ABdhPJwXumS3gWcgbpNcMLhAIPTdaXat9Yeu6kXYQWViS4PCquuhrvRHT9tCk+kYaYlXdAOWB4GVCg==
+X-Received: by 2002:a05:622a:15cf:b0:2e1:e5cb:aed3 with SMTP id d15-20020a05622a15cf00b002e1e5cbaed3mr21375950qty.524.1647971490790;
+        Tue, 22 Mar 2022 10:51:30 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id n70-20020a372749000000b0067d4067ba89sm9299652qkn.100.2022.03.22.10.51.30
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 22 Mar 2022 10:51:30 -0700 (PDT)
+Date:   Tue, 22 Mar 2022 13:51:29 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Goffredo Baroncelli <kreijack@libero.it>
+Cc:     linux-btrfs@vger.kernel.org,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        David Sterba <dsterba@suse.cz>,
+        Sinnamohideen Shafeeq <shafeeqs@panasas.com>,
+        Paul Jones <paul@pauljones.id.au>, Boris Burkov <boris@bur.io>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH 1/5] btrfs: add flags to give an hint to the chunk
+ allocator
+Message-ID: <YjoMoSLf5YE2sXYS@localhost.localdomain>
+References: <cover.1646589622.git.kreijack@inwind.it>
+ <b15072e61eac46aa9f61317c59219713a01ff897.1646589622.git.kreijack@inwind.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <957b1f70097b44c3fba4419bc96c262f720da500.1647539056.git.jof@thejof.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <b15072e61eac46aa9f61317c59219713a01ff897.1646589622.git.kreijack@inwind.it>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 17, 2022 at 10:45:08AM -0700, Jonathan Lassoff wrote:
-> In order for end users to quickly react to new issues that come up in
-> production, it is proving useful to leverage this printk indexing system. This
-> printk index enables kernel developers to use calls to printk() with changable
-> ad-hoc format strings, while still enabling end users to detect changes and
-> develop a semi-stable interface for detecting and parsing these messages.
+On Sun, Mar 06, 2022 at 07:14:39PM +0100, Goffredo Baroncelli wrote:
+> From: Goffredo Baroncelli <kreijack@inwind.it>
 > 
-> So that detailed Btrfs messages are captured by this printk index, this patch
-> wraps btrfs_printk and btrfs_handle_fs_error with macros.
+> Add the following flags to give an hint about which chunk should be
+> allocated in which disk:
+> 
+> - BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED
+>   preferred for data chunk, but metadata chunk allowed
+> - BTRFS_DEV_ALLOCATION_HINT_METADATA_PREFERRED
+>   preferred for metadata chunk, but data chunk allowed
+> - BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY
+>   only metadata chunk allowed
+> - BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY
+>   only data chunk allowed
+> 
+> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+> ---
+>  include/uapi/linux/btrfs_tree.h | 16 ++++++++++++++++
+>  1 file changed, 16 insertions(+)
+> 
+> diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
+> index b069752a8ecf..e0d842c2e616 100644
+> --- a/include/uapi/linux/btrfs_tree.h
+> +++ b/include/uapi/linux/btrfs_tree.h
+> @@ -389,6 +389,22 @@ struct btrfs_key {
+>  	__u64 offset;
+>  } __attribute__ ((__packed__));
+>  
+> +/* dev_item.type */
+> +
+> +/* btrfs chunk allocation hint */
+> +#define BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT	2
+> +/* btrfs chunk allocation hint mask */
+> +#define BTRFS_DEV_ALLOCATION_HINT_MASK	\
+> +	((1 << BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT) - 1)
+> +/* preferred data chunk, but metadata chunk allowed */
+> +#define BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED	(0ULL)
+> +/* preferred metadata chunk, but data chunk allowed */
+> +#define BTRFS_DEV_ALLOCATION_HINT_METADATA_PREFERRED	(1ULL)
+> +/* only metadata chunk are allowed */
+> +#define BTRFS_DEV_ALLOCATION_HINT_METADATA_ONLY		(2ULL)
+> +/* only data chunk allowed */
+> +#define BTRFS_DEV_ALLOCATION_HINT_DATA_ONLY		(3ULL)
+> +
 
-So this is just a change in how the printk API is used, right? With this
-patch we don't need to do anything else in btrfs and there are some
-tools that can generate the list that's in patch 2 and post-process it.
+Just a style thing here, format it to match everything else, and have the bit
+stuff later, as well as newlines between everything since we're commenting.
+Also we don't need the () around the values, generally it's best to follow the
+style of the surrounding code when in doubt.
+
+I know Dave probably has stronger opinions on this than I do, but I think
+something like this would be better.
+
+/*
+ * btrfs_dev_item.type values.
+ *
+ * The _PREFERRED options indicate we prefer to allocate the respective type on
+ * this device, but will fall back to allocating any chunk type if we run out of
+ * space.  The _ONLY options indicate we will only allocate the given type from
+ * this device and no other types.
+ */
+#define BTRFS_DEV_ALLOCATION_HINT_DATA_PREFERRED	0ULL
+#define BTRFS_DEV_ALLOCATION_HINT_METADATA_PREFERRED	1ULL
+....
+
+#define BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT	2
+#define BTRFS_DEV_ALLOCATION_HINT_MASK		\
+	((1 << BTRFS_DEV_ALLOCATION_HINT_BIT_COUNT) - 1)
+
+This will make it a bit clearer and easier to read.  Thanks,
+
+Josef

@@ -2,57 +2,107 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12593C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:44:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BE92C433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:56:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234425AbiCVPqQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 11:46:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58842 "EHLO
+        id S238645AbiCVP5l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 11:57:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36264 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232819AbiCVPqQ (ORCPT
+        with ESMTP id S236209AbiCVP5l (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 11:46:16 -0400
+        Tue, 22 Mar 2022 11:57:41 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 370DEE76
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 08:44:48 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2214F4AE31;
+        Tue, 22 Mar 2022 08:56:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=LfnJPJXX6Hj7YyNbB0EikDREhdLcxrOoIy4HE+L22lY=; b=j9lrKd7O5mjuN9NoiPMmt+lEtg
-        EGm9LkGz3J/aHereyCTUt6eX/AB2OsbSa930d5AqVMPLWcy33hYiXo6Gcq7fKg5ZezdnDMKSfQiIJ
-        OZeJcqjh9aYghUqkxaqDkf2jdcmaMxcSaa3jTEYdl29ehrVCDKEm3DDa6XzAyUM/HQIgdLLByrwIU
-        NN1o4M/f+oNhMcOqGyXrD1PqM7bp2VmG9HEkI6c5dpndqp6iD0P9TFBS8G0CQkr6qc4qp0LiadrMU
-        ehMzS/3GXDT9h2WNdFoxYQKTKhuk0RKROmbJFlk/Y4i3qwLj+0ajxmzaGmZQK22YFpMRCIzSkJDZ7
-        H064UfJA==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nWggh-00BZGA-Jv; Tue, 22 Mar 2022 15:44:47 +0000
-Date:   Tue, 22 Mar 2022 08:44:47 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 00/18] btrfs: split bio at btrfs_map_bio() time
-Message-ID: <Yjnu7yWxAforTGQF@infradead.org>
-References: <cover.1647248613.git.wqu@suse.com>
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=DfMLpgbWXSZ2b4vFUaEdRoG+5JU7Mp6YxCyLTgziDHA=; b=e8tsqELicCbxSPhND0pe2+XR8j
+        ZCtYXtUcFsReHQGLFBOhLKYVEgbuxsQX7eNw+GhbMTM/x4k/dSkB/vc3AE2vb92yQSch4QbbFY71L
+        qGbHP0KocW1aK6gWZM4v/2oWH4nYB/QxXCW45Bhao0miGMv8mIA1LIVH3KTYATS0uBGEbcnzwhLye
+        uUPhhfTDGLhYLmUvNdxZb+1yWM349fi0dE3eBA/CPXp4E5CpPqUFw5l+iQc4D9NZtwiWYf3ICoxZL
+        /JORJkghikLWHgOgPCw+Nz1ZnKKV+xi/m8owgZDatbTsfwW4riwH2j6ewdsic0b4sB+1RYN2c0IwH
+        fU3b4YBA==;
+Received: from [2001:4bb8:19a:b822:6444:5366:9486:4da] (helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1nWgrj-00BabU-JU; Tue, 22 Mar 2022 15:56:12 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
+Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+Subject: [PATCH 01/40] btrfs: fix submission hook error handling in btrfs_repair_one_sector
+Date:   Tue, 22 Mar 2022 16:55:27 +0100
+Message-Id: <20220322155606.1267165-2-hch@lst.de>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220322155606.1267165-1-hch@lst.de>
+References: <20220322155606.1267165-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1647248613.git.wqu@suse.com>
+Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I spent some time looking over this series and I think while it has
-some nice cleanups, it also goes fundamentally in the wrong direction.
+btrfs_repair_one_sector just wants to free the bio if submit_bio_hook
+fails, but btrfs_submit_data_bio will call bio_endio which will call
+into the submitter of the original bio and free the bio there as well.
 
-The way bios are used is that the file systems always builds bios
-to it's own limits like extents, lower drivers split them up if needed.
-By building the bigger bios in btrfs a lot of the completion handling
-gets much more complicated.
+Move the bio_endio calls from btrfs_submit_data_bio and
+btrfs_submit_metadata_bio into submit_one_bio to fix this double free.
 
-I had actually started a series a bit ago to clean up the btrfs bio
-usage bottom up, taking advantage of the newer bios interfaces.  I've
-spent some of my vacation time last week to finish this off and also
-add a few iomap improvements so that btrfs doesn't need to clone the
-iomap dio bios above btrfs_map_bio either.  I'll send it out in a bit.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/disk-io.c   | 2 --
+ fs/btrfs/extent_io.c | 4 ++++
+ fs/btrfs/inode.c     | 4 ----
+ 3 files changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b3e9cf3fd1dd1..c245e1b131964 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -941,8 +941,6 @@ blk_status_t btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio,
+ 	return 0;
+ 
+ out_w_error:
+-	bio->bi_status = ret;
+-	bio_endio(bio);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 3b386bbb85a7f..e9fa0f6d605ee 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -181,6 +181,10 @@ int __must_check submit_one_bio(struct bio *bio, int mirror_num,
+ 		ret = btrfs_submit_metadata_bio(tree->private_data, bio,
+ 						mirror_num, bio_flags);
+ 
++	if (ret) {
++		bio->bi_status = ret;
++		bio_endio(bio);
++	}
+ 	return blk_status_to_errno(ret);
+ }
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5bbea5ec31fc5..3ef8b63bb1b5c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2571,10 +2571,6 @@ blk_status_t btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
+ 	ret = btrfs_map_bio(fs_info, bio, mirror_num);
+ 
+ out:
+-	if (ret) {
+-		bio->bi_status = ret;
+-		bio_endio(bio);
+-	}
+ 	return ret;
+ }
+ 
+-- 
+2.30.2
+

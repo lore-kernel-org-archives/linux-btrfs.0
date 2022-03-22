@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F201C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:56:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F198FC433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 15:56:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238753AbiCVP5t (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 11:57:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36624 "EHLO
+        id S238757AbiCVP6I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 11:58:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37080 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236152AbiCVP5q (ORCPT
+        with ESMTP id S238776AbiCVP54 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 11:57:46 -0400
+        Tue, 22 Mar 2022 11:57:56 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5546606E9;
-        Tue, 22 Mar 2022 08:56:18 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9C486B09B;
+        Tue, 22 Mar 2022 08:56:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=+jigdb2uz9jAenLPsaQGux6F8nfDCZstHWKKAm6vIkE=; b=xd5v9XL4E8W47NRLqPxF6rFpeP
-        KTOjqzdGGqe2BDGOOs1qjja46b/L6Yx6JEaUPZz4Adzf/2b+BYszb5J5WwnIEonTSYucTIBfK8dxP
-        niFvR7HvnXW0o9KLdduPtHyFMRWXjO1uyVH7ENNEKdvYvQAekjVSl0GxNGhd1g+oWjkDsEw7NZkwt
-        bbmr4f/E6+2lfXCWkwwfcDB4Pg/4sXAqK9gVn/rkEtewATz57FqUTKKy4fMZy0t+JLNmim/6Ty6Xc
-        qwlFOSKjuyRMYPlZf4ZAtnV4amFxTB128ng54JHWfSAPohWPgW7ZErL3brBUb3+7N6tHWJHDPQ6XP
-        kIuP9txg==;
+        bh=hmJiIpgx9ug4eHFHYk/uhHE6RySqyaiXtdnX7XhiB5k=; b=oqk2ubGDsFvOus+TzcljYsTRwC
+        bCd+VkGVQTGdbf7alldKi0QcVsKpOwjfCkDzwPyK+2IM8LSHMCX5rRA/xO0jJhaV5x8zzZa+D0NK1
+        1RTdK2k6CDjQY+fggin4QTxapH9ES0xv4ji+LTkP/HNZoUfduo/+gfe47k5Qu5wTYPwGj7kh8dCdm
+        dwSnt4/dlTFMI+pwGyduE87freSphoMjW3NkVNo4x0RhutzzVWuPP4G7BwcW/3hbkicTTJxrEvExe
+        dgHi/aIJ5U72pu3gwYD7TH9clfjaFvYFmjya783CuTI0UCDwSOa/4PSBWFc/P4uqgUbQgXdR3KM38
+        +SiOzukQ==;
 Received: from [2001:4bb8:19a:b822:6444:5366:9486:4da] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nWgrm-00Babm-4x; Tue, 22 Mar 2022 15:56:14 +0000
+        id 1nWgrw-00Baf3-C4; Tue, 22 Mar 2022 15:56:24 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 02/40] btrfs: fix direct I/O read repair for split bios
-Date:   Tue, 22 Mar 2022 16:55:28 +0100
-Message-Id: <20220322155606.1267165-3-hch@lst.de>
+Subject: [PATCH 06/40] btrfs: split submit_bio from btrfsic checking
+Date:   Tue, 22 Mar 2022 16:55:32 +0100
+Message-Id: <20220322155606.1267165-7-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220322155606.1267165-1-hch@lst.de>
 References: <20220322155606.1267165-1-hch@lst.de>
@@ -46,98 +46,167 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When a bio is split in btrfs_submit_direct, dip->file_offset contains
-the file offset for the first bio.  But this means the start value used
-in btrfs_check_read_dio_bio is incorrect for subsequent bios.  Add
-a file_offset field to struct btrfs_bio to pass along the correct offset.
-
-Given that check_data_csum only uses start of an error message this
-means problems with this miscalculation will only show up when I/O
-fails or checksums mismatch.
+Require a separate call to the integrity checking helpers from the
+actual bio submission.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/extent_io.c |  1 +
- fs/btrfs/inode.c     | 13 +++++--------
- fs/btrfs/volumes.h   |  3 +++
- 3 files changed, 9 insertions(+), 8 deletions(-)
+ fs/btrfs/check-integrity.c | 14 +-------------
+ fs/btrfs/check-integrity.h |  8 ++++----
+ fs/btrfs/disk-io.c         |  6 ++++--
+ fs/btrfs/extent_io.c       |  3 ++-
+ fs/btrfs/scrub.c           | 12 ++++++++----
+ fs/btrfs/volumes.c         |  3 ++-
+ 6 files changed, 21 insertions(+), 25 deletions(-)
 
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 9efc1feb6cb08..49f9954f1438f 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2703,7 +2703,7 @@ static void btrfsic_check_flush_bio(struct bio *bio,
+ 	}
+ }
+ 
+-static void __btrfsic_submit_bio(struct bio *bio)
++void btrfsic_check_bio(struct bio *bio)
+ {
+ 	struct btrfsic_dev_state *dev_state;
+ 
+@@ -2725,18 +2725,6 @@ static void __btrfsic_submit_bio(struct bio *bio)
+ 	mutex_unlock(&btrfsic_mutex);
+ }
+ 
+-void btrfsic_submit_bio(struct bio *bio)
+-{
+-	__btrfsic_submit_bio(bio);
+-	submit_bio(bio);
+-}
+-
+-int btrfsic_submit_bio_wait(struct bio *bio)
+-{
+-	__btrfsic_submit_bio(bio);
+-	return submit_bio_wait(bio);
+-}
+-
+ int btrfsic_mount(struct btrfs_fs_info *fs_info,
+ 		  struct btrfs_fs_devices *fs_devices,
+ 		  int including_extent_data, u32 print_mask)
+diff --git a/fs/btrfs/check-integrity.h b/fs/btrfs/check-integrity.h
+index bcc730a06cb58..ed115e0f2ebbd 100644
+--- a/fs/btrfs/check-integrity.h
++++ b/fs/btrfs/check-integrity.h
+@@ -7,11 +7,11 @@
+ #define BTRFS_CHECK_INTEGRITY_H
+ 
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+-void btrfsic_submit_bio(struct bio *bio);
+-int btrfsic_submit_bio_wait(struct bio *bio);
++void btrfsic_check_bio(struct bio *bio);
+ #else
+-#define btrfsic_submit_bio submit_bio
+-#define btrfsic_submit_bio_wait submit_bio_wait
++static inline void btrfsic_check_bio(struct bio *bio)
++{
++}
+ #endif
+ 
+ int btrfsic_mount(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c245e1b131964..9b8ee74144910 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4048,7 +4048,8 @@ static int write_dev_supers(struct btrfs_device *device,
+ 		if (i == 0 && !btrfs_test_opt(device->fs_info, NOBARRIER))
+ 			bio->bi_opf |= REQ_FUA;
+ 
+-		btrfsic_submit_bio(bio);
++		btrfsic_check_bio(bio);
++		submit_bio(bio);
+ 
+ 		if (btrfs_advance_sb_log(device, i))
+ 			errors++;
+@@ -4161,7 +4162,8 @@ static void write_dev_flush(struct btrfs_device *device)
+ 	init_completion(&device->flush_wait);
+ 	bio->bi_private = &device->flush_wait;
+ 
+-	btrfsic_submit_bio(bio);
++	btrfsic_check_bio(bio);
++	submit_bio(bio);
+ 	set_bit(BTRFS_DEV_STATE_FLUSH_SENT, &device->dev_state);
+ }
+ 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e9fa0f6d605ee..7ca4e9b80f023 100644
+index e789676373ab0..1a39b9ffdd180 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2662,6 +2662,7 @@ int btrfs_repair_one_sector(struct inode *inode,
+@@ -2370,7 +2370,8 @@ static int repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+ 	bio->bi_opf = REQ_OP_WRITE | REQ_SYNC;
+ 	bio_add_page(bio, page, length, pg_offset);
  
- 	repair_bio = btrfs_bio_alloc(1);
- 	repair_bbio = btrfs_bio(repair_bio);
-+	repair_bbio->file_offset = start;
- 	repair_bio->bi_opf = REQ_OP_READ;
- 	repair_bio->bi_end_io = failed_bio->bi_end_io;
- 	repair_bio->bi_iter.bi_sector = failrec->logical >> 9;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3ef8b63bb1b5c..93f00e9150ed0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7773,8 +7773,6 @@ static blk_status_t btrfs_check_read_dio_bio(struct btrfs_dio_private *dip,
- 	const bool csum = !(BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM);
- 	struct bio_vec bvec;
- 	struct bvec_iter iter;
--	const u64 orig_file_offset = dip->file_offset;
--	u64 start = orig_file_offset;
- 	u32 bio_offset = 0;
- 	blk_status_t err = BLK_STS_OK;
+-	if (btrfsic_submit_bio_wait(bio)) {
++	btrfsic_check_bio(bio);
++	if (submit_bio_wait(bio)) {
+ 		/* try to remap that extent elsewhere? */
+ 		btrfs_bio_counter_dec(fs_info);
+ 		bio_put(bio);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 2e9a322773f28..605ecc675ba7c 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1479,7 +1479,8 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 		bio->bi_iter.bi_sector = spage->physical >> 9;
+ 		bio->bi_opf = REQ_OP_READ;
  
-@@ -7784,6 +7782,8 @@ static blk_status_t btrfs_check_read_dio_bio(struct btrfs_dio_private *dip,
- 		nr_sectors = BTRFS_BYTES_TO_BLKS(fs_info, bvec.bv_len);
- 		pgoff = bvec.bv_offset;
- 		for (i = 0; i < nr_sectors; i++) {
-+			u64 start = bbio->file_offset + bio_offset;
-+
- 			ASSERT(pgoff < PAGE_SIZE);
- 			if (uptodate &&
- 			    (!csum || !check_data_csum(inode, bbio,
-@@ -7796,17 +7796,13 @@ static blk_status_t btrfs_check_read_dio_bio(struct btrfs_dio_private *dip,
- 			} else {
- 				int ret;
+-		if (btrfsic_submit_bio_wait(bio)) {
++		btrfsic_check_bio(bio);
++		if (submit_bio_wait(bio)) {
+ 			spage->io_error = 1;
+ 			sblock->no_io_error_seen = 0;
+ 		}
+@@ -1565,7 +1566,8 @@ static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
+ 			return -EIO;
+ 		}
  
--				ASSERT((start - orig_file_offset) < UINT_MAX);
--				ret = btrfs_repair_one_sector(inode,
--						&bbio->bio,
--						start - orig_file_offset,
--						bvec.bv_page, pgoff,
-+				ret = btrfs_repair_one_sector(inode, &bbio->bio,
-+						bio_offset, bvec.bv_page, pgoff,
- 						start, bbio->mirror_num,
- 						submit_dio_repair_bio);
- 				if (ret)
- 					err = errno_to_blk_status(ret);
- 			}
--			start += sectorsize;
- 			ASSERT(bio_offset + sectorsize > bio_offset);
- 			bio_offset += sectorsize;
- 			pgoff += sectorsize;
-@@ -8009,6 +8005,7 @@ static void btrfs_submit_direct(const struct iomap_iter *iter,
- 		bio = btrfs_bio_clone_partial(dio_bio, clone_offset, clone_len);
- 		bio->bi_private = dip;
- 		bio->bi_end_io = btrfs_end_dio_bio;
-+		btrfs_bio(bio)->file_offset = file_offset;
+-		if (btrfsic_submit_bio_wait(bio)) {
++		btrfsic_check_bio(bio);
++		if (submit_bio_wait(bio)) {
+ 			btrfs_dev_stat_inc_and_print(spage_bad->dev,
+ 				BTRFS_DEV_STAT_WRITE_ERRS);
+ 			atomic64_inc(&fs_info->dev_replace.num_write_errors);
+@@ -1723,7 +1725,8 @@ static void scrub_wr_submit(struct scrub_ctx *sctx)
+ 	 * orders the requests before sending them to the driver which
+ 	 * doubled the write performance on spinning disks when measured
+ 	 * with Linux 3.5 */
+-	btrfsic_submit_bio(sbio->bio);
++	btrfsic_check_bio(sbio->bio);
++	submit_bio(sbio->bio);
  
- 		if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
- 			status = extract_ordered_extent(BTRFS_I(inode), bio,
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 005c9e2a491a1..c22148bebc2f5 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -323,6 +323,9 @@ struct btrfs_fs_devices {
- struct btrfs_bio {
- 	unsigned int mirror_num;
+ 	if (btrfs_is_zoned(sctx->fs_info))
+ 		sctx->write_pointer = sbio->physical + sbio->page_count *
+@@ -2057,7 +2060,8 @@ static void scrub_submit(struct scrub_ctx *sctx)
+ 	sbio = sctx->bios[sctx->curr];
+ 	sctx->curr = -1;
+ 	scrub_pending_bio_inc(sctx);
+-	btrfsic_submit_bio(sbio->bio);
++	btrfsic_check_bio(sbio->bio);
++	submit_bio(sbio->bio);
+ }
  
-+	/* for direct I/O */
-+	u64 file_offset;
-+
- 	/* @device is for stripe IO submission. */
- 	struct btrfs_device *device;
- 	u8 *csum;
+ static int scrub_add_page_to_rd_bio(struct scrub_ctx *sctx,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index b07d382d53a86..bfa8e825e5047 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6755,7 +6755,8 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
+ 
+ 	btrfs_bio_counter_inc_noblocked(fs_info);
+ 
+-	btrfsic_submit_bio(bio);
++	btrfsic_check_bio(bio);
++	submit_bio(bio);
+ }
+ 
+ static void bioc_error(struct btrfs_io_context *bioc, struct bio *bio, u64 logical)
 -- 
 2.30.2
 

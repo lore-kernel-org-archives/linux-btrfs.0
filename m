@@ -2,136 +2,136 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C3F4C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 20:28:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 75E7AC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 22 Mar 2022 20:55:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233398AbiCVU36 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 22 Mar 2022 16:29:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50562 "EHLO
+        id S234569AbiCVU4w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 22 Mar 2022 16:56:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49172 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232903AbiCVU35 (ORCPT
+        with ESMTP id S234472AbiCVU4s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 22 Mar 2022 16:29:57 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C307913D01
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 13:28:28 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 67DF1210F0;
-        Tue, 22 Mar 2022 20:28:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1647980907;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dhfJZC2iGllad/joV2lNjp5VEWBOoiChNxCuYNSlbUk=;
-        b=fCwBMIpTnr6PU+CZVpiSr2jhu0FUaEuESC2l/Edf+5FgePooeTWJklAX9t0IPMc+hh7LCn
-        CAtAnI0KodZBWHMR2scrYZgnAz5OB0ZUK+CkNE8BTLxSTTe1ek86sPoXWPWoFh4tKyLkmF
-        kK6uJgGTWxHVRoWgGfm5+XZSqWjXCg0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1647980907;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dhfJZC2iGllad/joV2lNjp5VEWBOoiChNxCuYNSlbUk=;
-        b=xzUWp2d9GeFKImehFvnsNh4c21++BXD0T3Kp0y3fNv4BbXNhYCj4r/TvOCPzhoNW+tYlcu
-        /Iy0Chu8RWbgGFAg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 5ACA1A3B83;
-        Tue, 22 Mar 2022 20:28:27 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DBF39DA818; Tue, 22 Mar 2022 21:24:24 +0100 (CET)
-Date:   Tue, 22 Mar 2022 21:24:24 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Jonathan Lassoff <jof@thejof.com>
-Cc:     linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>
-Subject: Re: [PATCH v1 1/2] Add Btrfs messages to printk index
-Message-ID: <20220322202424.GJ12643@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Jonathan Lassoff <jof@thejof.com>,
-        linux-btrfs@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>,
-        Chris Mason <clm@fb.com>, Nikolay Borisov <nborisov@suse.com>
-References: <957b1f70097b44c3fba4419bc96c262f720da500.1647539056.git.jof@thejof.com>
+        Tue, 22 Mar 2022 16:56:48 -0400
+Received: from mail-qt1-x82d.google.com (mail-qt1-x82d.google.com [IPv6:2607:f8b0:4864:20::82d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6F708BC2A
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 13:55:20 -0700 (PDT)
+Received: by mail-qt1-x82d.google.com with SMTP id t19so4582764qtc.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Mar 2022 13:55:20 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=T82JUlUBz+LKhdK6HbRtYv6lWE295vUan/Ko+8fhObw=;
+        b=BZXao2MWno+Ei2xOla/xyC3vm46Pp/AhezAHsGhZutgTCBbYphhnH6xY6+vTIs655P
+         nQ1fN9vLdKyET/h+kA+vy+p8D5wbjaUllegrR0ds+c0w+S70EBp2QY+7TrHEZ/ksQFUu
+         wjvcTOzxd8TupkOaeVhGADf0BMIl8k9r8b54Oc4Irs0pNSKeD1b4fYC0QKOLoXAjnrJ1
+         fhyUFkdqui3c1e9FaR73Ltby3k/NvA9I3WUi7vuVp/PlmEZFa/7+abK48wrfWbZH1Da0
+         2v4L7hNrbWP90jFOsAD5aWY1GZ1lpFQ/YaF0fdvvmfOUjDRIL4//EfUy/slqFM9Zpez4
+         tfYA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=T82JUlUBz+LKhdK6HbRtYv6lWE295vUan/Ko+8fhObw=;
+        b=P0JdWkfBVlYZydl77ZeNpbN2XAqliBhAR88Uhgp40YP+c8UM/4ZFuKGbd3VxpD3Yzm
+         QY+SrE8N02R2iCUDVtwclEKqgcn6zjBh7c6xhZcCMNfEJdfX0xGAXq/Pd011hcQVyxg3
+         dci9nj9CMN/aDObA9b/Nn+w9GaiNmPopKViPBhTeYeiyFqiFhi0e2iBasB/K00FopSf+
+         xVWU9NXkF942xWEDXQ6HVJmG+RpHDBYTsfOx/PyWWIG6GmaYEUbRWKW+x+0etbamrclI
+         U1q5EfOCMDjChTCt5zxRZ/Px/1wwXqQqiGWjZ+iGVjI/xuyr9Uxx0xmdVhfSnqo0uTnR
+         Y17A==
+X-Gm-Message-State: AOAM5339wvl2CeOn4P2VHoWY8NakP3CdzkfmQjAc9s019ylsnWzpGYQM
+        IN0qccOrfiCT25GRERFDGXymjozaWycSQw==
+X-Google-Smtp-Source: ABdhPJzQo6jrn4S1QRw9ZlF5uP7uRywNQyZpvzUEQnZ7zGL4CnlQlP5OMX9f0NmsnraFZu9q6SKcZw==
+X-Received: by 2002:ac8:7e8c:0:b0:2e1:d230:e27f with SMTP id w12-20020ac87e8c000000b002e1d230e27fmr21783837qtj.378.1647982519446;
+        Tue, 22 Mar 2022 13:55:19 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id w3-20020a05622a190300b002e1f084d84bsm12834060qtc.50.2022.03.22.13.55.18
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 22 Mar 2022 13:55:18 -0700 (PDT)
+Date:   Tue, 22 Mar 2022 16:55:17 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     David Sterba <dsterba@suse.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        lkml <linux-kernel@vger.kernel.org>
+Subject: Re: [GIT PULL] Btrfs updates for 5.18
+Message-ID: <Yjo3tQO+fNNlZ4/i@localhost.localdomain>
+References: <cover.1647894991.git.dsterba@suse.com>
+ <CAADWXX-uX74SETx8QNnGDyBGMJHY-6wr8jC9Sjpv4ARqUca0Xw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <957b1f70097b44c3fba4419bc96c262f720da500.1647539056.git.jof@thejof.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <CAADWXX-uX74SETx8QNnGDyBGMJHY-6wr8jC9Sjpv4ARqUca0Xw@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 17, 2022 at 10:45:08AM -0700, Jonathan Lassoff wrote:
-> In order for end users to quickly react to new issues that come up in
-> production, it is proving useful to leverage this printk indexing system. This
-> printk index enables kernel developers to use calls to printk() with changable
-> ad-hoc format strings, while still enabling end users to detect changes and
-> develop a semi-stable interface for detecting and parsing these messages.
+On Tue, Mar 22, 2022 at 11:23:21AM -0700, Linus Torvalds wrote:
+> On Mon, Mar 21, 2022 at 2:37 PM David Sterba <dsterba@suse.com> wrote:
+> >
+> > - allow reflinks/deduplication from two different mounts of the same
+> >   filesystem
 > 
-> So that detailed Btrfs messages are captured by this printk index, this patch
-> wraps btrfs_printk and btrfs_handle_fs_error with macros.
+> So I've pulled this, and it looks ok, but I'm not getting the warm and fuzzies.
 > 
-> PATCH v1
->   - Fix conditional: CONFIG_PRINTK should be CONFIG_PRINTK_INDEX
->   - Fix whitespace
+> In particular, I'm not seeing any commentary about different
+> filesystems for this.
 > 
-> Signed-off-by: Jonathan Lassoff <jof@thejof.com>
-> ---
->  fs/btrfs/ctree.h | 34 +++++++++++++++++++++++++++++-----
->  fs/btrfs/super.c |  6 +++---
->  2 files changed, 32 insertions(+), 8 deletions(-)
+> There are several filesystems that use that ->remap_file_range()
+> operation, so these relaxed rules don't just affect btrfs.
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index ebb2d109e8bb..afb860d0bf89 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3343,10 +3343,23 @@ void btrfs_no_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
->  {
->  }
->  
-> -#ifdef CONFIG_PRINTK
-> +#ifdef CONFIG_PRINTK_INDEX
-> +#define btrfs_printk(fs_info, fmt, args...)				\
-> +do {									\
-> +	printk_index_subsys_emit("%sBTRFS %s (device %s): ", NULL, fmt);\
-> +	_btrfs_printk(fs_info, fmt, ##args);				\
-> +} while (0)
-> +__printf(2, 3)
-> +__cold
-> +void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
-> +#elif defined(CONFIG_PRINTK)
-> +#define btrfs_printk(fs_info, fmt, args...)	\
-> +do {						\
-> +	_btrfs_printk(fs_info, fmt, ##args);	\
+> Yes, yes, checking for i_sb matching does seem sensible, but I'd
+> *really* have liked some sign that people checked with other
+> filesystem maintainers and this is ok for all of them, and they didn't
+> make assumptions about "always same mount" rather than "always same
+> filesystem".
+> 
 
-This is just a single statement, does it need the do { } while(0)
-protection?
+> This affects at least cifs, nfs, overlayfs and ocfs2.
 
-> +} while (0)
->  __printf(2, 3)
->  __cold
-> -void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
-> +void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
->  #else
->  #define btrfs_printk(fs_info, fmt, args...) \
->  	btrfs_no_printk(fs_info, fmt, ##args)
-> @@ -3598,11 +3611,22 @@ do {								\
->  				  __LINE__, (errno));		\
->  } while (0)
->  
-> +#ifdef CONFIG_PRINTK_INDEX
->  #define btrfs_handle_fs_error(fs_info, errno, fmt, args...)		\
-> -do {								\
-> -	__btrfs_handle_fs_error((fs_info), __func__, __LINE__,	\
-> -			  (errno), fmt, ##args);		\
-> +do {									\
-> +	printk_index_subsys_emit(					\
-> +		"BTRFS: error (device %s) in %s:%d: errno=%d %s",	\
-> +		KERN_CRIT, fmt, ##args);				\
+I had a talk with Darrick Wong about this on IRC, and his Reviewed-by is on the
+patch.  This did surprise nfsd when xfstests started failing, but talking with
+Bruce he didn't complain once he understood what was going on.  Believe me I
+have 0 interest in getting the other maintainers upset with me by sneaking
+something by them, I made sure to run it by people first, tho I probably should
+have checked with people directly other than Darrick.
 
-I've looked at printk_index_subsys_emit and it does not need the
-arguments (##args), only the prefix, level and format, though the
-arguments are consumed by the macro.
+> 
+> Adding fsdevel, and pointing to that
+> 
+> -       if (src_file->f_path.mnt != dst_file->f_path.mnt)
+> +       if (file_inode(src_file)->i_sb != file_inode(dst_file)->i_sb)
+> 
+> change in commit 9f5710bbfd30 ("fs: allow cross-vfsmount reflink/dedupe")
+> 
+> And yes, there was already a comment about "Practically, they only
+> need to be on the same file system" from before that matches the new
+> behavior, but hey, comments have been known to be wrong in the past
+> too.
+> 
+> And yes, I'm also aware that do_clone_file_range() already had that
+> exact same i_sb check and it's not new, but since ioctl_file_clone()
+> cheched for the mount path, I don't think you could actually reach it
+> without being on the same mount.
+> 
+> And while discussing these sanity checks: wouldn't it make sense to
+> check that *both* the source file and the destination file support
+> that remap_file_range() op, and it's the same op?
+> 
+> Yes, yes, it probably always is in practice, but I could imagine some
+> type confusion thing. So wouldn't it be nice to also have something
+> like
+> 
+>     if (dst_file->f_op != src_file->f_op)
+>           goto out_drop_write;
+> 
+> in there? I'm thinking "how about dedupe from a directory to a regular
+> file" kind of craziness...
+>
 
-I'd rather keep it simple and drop ##args in this case, unless there are
-plans to make use of that in the future.
+This more fine-grained checking is handled by generic_remap_file_range_prep() to
+make sure we don't try to dedup a directory or pipe or some other nonsense.
+Thanks,
+
+Josef 

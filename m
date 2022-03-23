@@ -2,81 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D087AC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Mar 2022 07:01:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61DE9C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Mar 2022 07:10:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242043AbiCWHDW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Mar 2022 03:03:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43134 "EHLO
+        id S242072AbiCWHMY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Mar 2022 03:12:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37266 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234794AbiCWHDW (ORCPT
+        with ESMTP id S235974AbiCWHMX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Mar 2022 03:03:22 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E057B71EF2
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2022 00:01:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1648018906;
-        bh=McBK0fu6lgmNZfaNMuZBmhc92nkgP+De7YoXuLlQq9s=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=eXNwAA9ZHaPwySXhbbWyRHT0/N4FEBZNKdzIOMcSNXkDgsp34u9HZz29k6vxTAknI
-         xVm6zvYriNbwcKtBpIpS4ZsWEkCmzdhven2/LbW4FXXlNHZG6IFco/gxOWbjmLzO9G
-         /6W1MJ36i3cT96ZltdS/SQbWk2swYZ+xe8N9btQ8=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1M8hZD-1nSoGG0Qdt-004lAN; Wed, 23
- Mar 2022 08:01:45 +0100
-Message-ID: <3d5aaf86-ff17-0cde-7ef0-f805f8b25b25@gmx.com>
-Date:   Wed, 23 Mar 2022 15:01:41 +0800
+        Wed, 23 Mar 2022 03:12:23 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86D406C958;
+        Wed, 23 Mar 2022 00:10:54 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 0077868B05; Wed, 23 Mar 2022 08:10:50 +0100 (CET)
+Date:   Wed, 23 Mar 2022 08:10:50 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Christoph Hellwig <hch@lst.de>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 28/40] btrfs: do not allocate a btrfs_io_context in
+ btrfs_map_bio
+Message-ID: <20220323071050.GA25442@lst.de>
+References: <20220322155606.1267165-1-hch@lst.de> <20220322155606.1267165-29-hch@lst.de> <d9062a7d-c83c-06d7-50ac-272ffc0788f1@gmx.com> <20220323061339.GJ24302@lst.de> <ebb61597-dc43-2e81-2106-e448145f212c@gmx.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.7.0
-Subject: Re: [PATCH v4 2/9] btrfs: introduce a helper to locate an extent item
-Content-Language: en-US
-To:     Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <cover.1646984153.git.wqu@suse.com>
- <140f3318f93d004713e12c10dc44f7640f04856e.1646984153.git.wqu@suse.com>
- <Yjq935OOywPFefuo@infradead.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <Yjq935OOywPFefuo@infradead.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:WQgaQNseQEUFNbL4jeXtMowdy6MrX0Iz8EqUCQVSbSfxtfaKg+7
- 1yAT6q010RzBxFVtgsvefBLy/qtahPZ6ZE/7pw8SOR8rO1aqDoZGiEdKYGwn0g9apTfE0ri
- 7rKHO73UZBiGmEiv683OCvONZA4oJ6azrb4NfgHl0s+uirH20T5veZrjY3/jO21J1ZlBgUT
- JtcHst6oibqSeLJw645Dg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:VRQbdYGaB3E=:NUAhUcr9vvE9Gx4B8bj++S
- fiCFZ80HzReNQ9vtcmL8jH84PdcNiRIUyt//UYOiqbOVKxkvaRJ9GxJ3F8h7LwgoUrNX3pLZy
- qdJL7Ak9qALYtBUxNPljYP2qrmUCkMkLKXZAaYbr/iICkMKZXxQ/1uzXmKcUi/5iqWL2aTBY1
- SlzDqEaqLCtvgNxJ8+NNUsyI0aC3a+vgQ/mtp2IBXakUu9Q+myOBJ8dECo7RF100MfCDGeOZd
- OhLrLmI0eXO2ReR/V4NoZ45GKwayUajPKuW43DzWa+fBOmOMpN1VOyL+XUBSVmcOB0Em//8Sn
- ZARr7j9ZGkgrFBFmqoCTn3OvJp9uesfpYIuriz57IJPoEF6L8VAFVzdeH65DTKBp3M4BPV1Ah
- XTSFQyUWqO12fpGK6UVNoL87evQ8kaM7+QVsdwD//X4CfeFJWtL9S90txRN3g9PdV8xQpWCkc
- +lrOkK+0nXNqi0u7zHeOczqBLWoMcC1vxAY16ArKDAYaL21vCAHgjAmiEGqzUTLXNtNylLgOh
- d0f5ucls1iJP/4AhdRZpMwFBjTRyLGbH/KMZhCyTnQmSLrO6uew6cE2F4PN0vHJIMCu0ad+3p
- wLQdkj21k/DLoIukq8bdWZ1jvkOxuSuIRTRGVbaXXcqSnocToI3TImfo6xiTGr/iMzjjdaauL
- YZnKE6L45aDf6aHgEyneGthfHc08JnO+zZ+O/x+yRWsqIuN3pltbPBFs+PhSiPm5THxk+2Qe5
- WG8rEnfQYJaUvYF8Mzn86q95xoVp0E/Ni9jbDnOCz1awtG9g74eaSS0n57lmyluTi8wEObwT+
- 1Twxdcn4H542Ej1VYwnoDaANE0cRQ04c/epRETIldaMvBH+yRIo7bCSDr9CMwQ9E8UpLp/5Io
- XRMSZALvSCtEbvFGz7JvIxhurUrCCVOMTSeo6Q/3Evqhx4GFhvRzA2Q/nxOP5pc7Kqu5Y1H02
- 81aXsZz6xY63BUhxv9yaqOZpLclyBM+Ek6IF9nwiYQ2cVnmy10CWaA6lzNTPxyXKq0I4w6lhw
- gL6W1GhLsJLi2ZSCqrp1knuQN09tEkhUM4/Kpw8JZlfbeQ1bvNqmrBmbKTdEq/sqeWIyQUDnq
- Ojig72ixXmQ0Wo=
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ebb61597-dc43-2e81-2106-e448145f212c@gmx.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Mar 23, 2022 at 02:59:10PM +0800, Qu Wenruo wrote:
+>> How do we waste memory?  We stop allocating the btrfs_io_context now
+>> which can be quite big.
+>
+> Doesn't we waste the embedded __stripe if we choose to use the pointer one?
+> And vice versus.
+>
+> And for SINGLE profile, we don't really need btrfs_bio_stripe at all, we
+> can fast-path just setting bdev and bi_sector, and submit without even
+> overriding its endio/private.
 
-
-On 2022/3/23 14:27, Christoph Hellwig wrote:
-> Adding a static function without a user will generate a compiler
-> warning.
-Yep I know.
-
-But considering the size of the helper, and the size of the next patch,
-I'd say the split is acceptable, or there would be a near 400 lines
-single patch for it.
-
-Thanks,
-Qu
+Yes, the 16 byes of the embedded stripe is wasted for I/O that doesn't
+use it.  But all reads use it, which is typically the majority of all
+I/O and the most performance critical one.  If the "waste" is a concern
+we can split out a separate btrfs_read_bio.  Chance are that it will
+just use slack by the time this all settles with a bunch of other
+members that can be removed or unioned.

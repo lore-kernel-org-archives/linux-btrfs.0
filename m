@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72117C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Mar 2022 16:19:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16ED0C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Mar 2022 16:19:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245446AbiCWQVP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Mar 2022 12:21:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49414 "EHLO
+        id S245448AbiCWQVR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Mar 2022 12:21:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49412 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245439AbiCWQVO (ORCPT
+        with ESMTP id S245441AbiCWQVO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 23 Mar 2022 12:21:14 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E851975E6A
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2022 09:19:43 -0700 (PDT)
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 34DEE78FCA
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2022 09:19:44 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 94D3DB81F12
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C44FC61865
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2022 16:19:43 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AF0E2C340F3
         for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2022 16:19:42 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C4DC4C340F2
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Mar 2022 16:19:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1648052381;
-        bh=4r+f7/Qe3nOGJiq/PHmXFjCVGpvExaDQ5ZApT7mwDVQ=;
+        s=k20201202; t=1648052383;
+        bh=VDfNHrN6fgL0zR2XROhkx6lGMuTcPcuAzQtmOWm+qfo=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=iHhXNI9mtadlDcxJ5Kz5zWi8JTZTNEcDpHiNS5nEhlYv/QXH21/qqr04zjM0/U0ec
-         VIYvLu1iYV/iKANvAF9YoFfNdbLSKQ7UbFararxWZWY3nUoWVLq7rJ78pBMBX0PVZW
-         tOyPxLlhoh6+BE+SxrrYYAhOhxib00bjwQYjU/F80MAdXGrFXQSJCGSWSaP3fM6sHs
-         5iJyxpdQpZpkG+EfGPblTGPCvZOGi7FSglboVfy+9wrm+CUOr5rt6R8odEIy2Qr8gY
-         mBQwSWoy3N/VCCc2suEy/5VAAuQHzDZ9zIajAilIrN0en2rHu6riahzI13WXXHwK12
-         WPFsQjiqGoJMg==
+        b=UOULBVRQswoKEgtwyeixwpoYuZfQAlOqe58VnOQ7b2ih2oJJK5pQ0NW9TTBpK0e3K
+         OcY00V6qW2yIYncUoTFNgCY/fW5jRoaGLP0b66BjxGKm7adQm5HyI4MJBU2FA24uc6
+         M7N5QNhDgLrqC2e0DqLDhDkEI2mmjxWcAgOP7f1P8/q8VK9PftRE5CZvqM3U6wvWoB
+         TKZNEiP5pXZk47lwAB4Lm8S2MGb12edAuCtpSd5UXr2Dy8+I7D4qE0hIFBjdZ8rFMb
+         +cdJnFHDCB40kY4/aY5gQ7him3d11wv7h22vR5VoJotS880C6acHie3Ej/Rw5qNnU/
+         nHXEJ/RdxI+Gg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/8] btrfs: avoid blocking nowait dio when locking file range
-Date:   Wed, 23 Mar 2022 16:19:24 +0000
-Message-Id: <8241451e5f9b9b713f58b50711d21caee292b727.1648051582.git.fdmanana@suse.com>
+Subject: [PATCH 4/8] btrfs: stop allocating a path when checking if cross reference exists
+Date:   Wed, 23 Mar 2022 16:19:26 +0000
+Message-Id: <8f0daae1877cb41db1a46d3a8200eaea3857615d.1648051582.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1648051582.git.fdmanana@suse.com>
 References: <cover.1648051582.git.fdmanana@suse.com>
@@ -48,120 +48,87 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we are doing a NOWAIT direct IO read/write, we can block when locking
-the file range at btrfs_dio_iomap_begin(), as it's possible the range (or
-a part of it) is already locked by another task (mmap writes, another
-direct IO read/write racing with us, fiemap, etc). We are also waiting for
-completion of any ordered extent we find in the range, which also can
-block us for a significant amount of time.
-
-There's also the incorrect fallback to buffered IO (returning -ENOTBLK)
-when we are dealing with a NOWAIT request and we can't proceed. In this
-case we should be returning -EAGAIN, as falling back to buffered IO can
-result in blocking for many different reasons, so that the caller can
-delegate a retry to a context where blocking is more acceptable.
-
-Fix these cases by:
-
-1) Doing a try lock on the file range and failing with -EAGAIN if we
-   can not lock right away;
-
-2) Fail with -EAGAIN if we find an ordered extent;
-
-3) Return -EAGAIN instead of -ENOTBLK when we need to fallback to
-   buffered IO and we have a NOWAIT request.
-
-This will also allow us to avoid a duplicated check that verifies if we
-are able to do a NOCOW write for NOWAIT direct IO writes, done in the
-next patch.
+At btrfs_cross_ref_exist() we always allocate a path, but we really don't
+need to because all its callers (only 2) already have an allocated path
+that is not being used when they call btrfs_cross_ref_exist(). So change
+btrfs_cross_ref_exist() to take a path as an argument and update both
+its callers to pass in the unused path they have when they call
+btrfs_cross_ref_exist().
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 34 +++++++++++++++++++++++-----------
- 1 file changed, 23 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h       | 3 ++-
+ fs/btrfs/extent-tree.c | 9 ++-------
+ fs/btrfs/inode.c       | 5 +++--
+ 3 files changed, 7 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3a10b729fd51..2412116a279d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7255,14 +7255,22 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 09b7b0b2d016..85216b9492d5 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2783,7 +2783,8 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
+ 				    u64 bytenr, u64 num_bytes);
+ int btrfs_exclude_logged_extents(struct extent_buffer *eb);
+ int btrfs_cross_ref_exist(struct btrfs_root *root,
+-			  u64 objectid, u64 offset, u64 bytenr, bool strict);
++			  u64 objectid, u64 offset, u64 bytenr, bool strict,
++			  struct btrfs_path *path);
+ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 					     struct btrfs_root *root,
+ 					     u64 parent, u64 root_objectid,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f477035a2ac2..b451550fbb09 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2357,15 +2357,10 @@ static noinline int check_committed_ref(struct btrfs_root *root,
  }
  
- static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
--			      struct extent_state **cached_state, bool writing)
-+			      struct extent_state **cached_state,
-+			      unsigned int iomap_flags)
+ int btrfs_cross_ref_exist(struct btrfs_root *root, u64 objectid, u64 offset,
+-			  u64 bytenr, bool strict)
++			  u64 bytenr, bool strict, struct btrfs_path *path)
  {
-+	const bool writing = (iomap_flags & IOMAP_WRITE);
-+	const bool nowait = (iomap_flags & IOMAP_NOWAIT);
-+	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
- 	struct btrfs_ordered_extent *ordered;
- 	int ret = 0;
+-	struct btrfs_path *path;
+ 	int ret;
  
- 	while (1) {
--		lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend,
--				 cached_state);
-+		if (nowait) {
-+			if (!try_lock_extent(io_tree, lockstart, lockend))
-+				return -EAGAIN;
-+		} else {
-+			lock_extent_bits(io_tree, lockstart, lockend, cached_state);
-+		}
- 		/*
- 		 * We're concerned with the entire range that we're going to be
- 		 * doing DIO to, so we need to make sure there's no ordered
-@@ -7283,10 +7291,14 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 							 lockstart, lockend)))
- 			break;
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-
+ 	do {
+ 		ret = check_committed_ref(root, path, objectid,
+ 					  offset, bytenr, strict);
+@@ -2376,7 +2371,7 @@ int btrfs_cross_ref_exist(struct btrfs_root *root, u64 objectid, u64 offset,
+ 	} while (ret == -EAGAIN);
  
--		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
--				     cached_state);
-+		unlock_extent_cached(io_tree, lockstart, lockend, cached_state);
+ out:
+-	btrfs_free_path(path);
++	btrfs_release_path(path);
+ 	if (btrfs_is_data_reloc_root(root))
+ 		WARN_ON(ret > 0);
+ 	return ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c4b77017bf5c..f185d8f8b7fe 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1800,7 +1800,8 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
  
- 		if (ordered) {
-+			if (nowait) {
-+				btrfs_put_ordered_extent(ordered);
-+				ret = -EAGAIN;
-+				break;
-+			}
- 			/*
- 			 * If we are doing a DIO read and the ordered extent we
- 			 * found is for a buffered write, we can not wait for it
-@@ -7306,7 +7318,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			    test_bit(BTRFS_ORDERED_DIRECT, &ordered->flags))
- 				btrfs_start_ordered_extent(ordered, 1);
- 			else
--				ret = -ENOTBLK;
-+				ret = nowait ? -EAGAIN : -ENOTBLK;
- 			btrfs_put_ordered_extent(ordered);
- 		} else {
- 			/*
-@@ -7322,7 +7334,7 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 			 * ordered extent to complete while holding a lock on
- 			 * that page.
- 			 */
--			ret = -ENOTBLK;
-+			ret = nowait ? -EAGAIN : -ENOTBLK;
- 		}
+ 			ret = btrfs_cross_ref_exist(root, ino,
+ 						    found_key.offset -
+-						    extent_offset, disk_bytenr, false);
++						    extent_offset, disk_bytenr,
++						    false, path);
+ 			if (ret) {
+ 				/*
+ 				 * ret could be -EIO if the above fails to read
+@@ -7227,7 +7228,7 @@ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
  
- 		if (ret)
-@@ -7577,12 +7589,12 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
- 
- 	/*
- 	 * If this errors out it's because we couldn't invalidate pagecache for
--	 * this range and we need to fallback to buffered.
-+	 * this range and we need to fallback to buffered IO, or we are doing a
-+	 * NOWAIT read/write and we need to block.
- 	 */
--	if (lock_extent_direct(inode, lockstart, lockend, &cached_state, write)) {
--		ret = -ENOTBLK;
-+	ret = lock_extent_direct(inode, lockstart, lockend, &cached_state, flags);
-+	if (ret < 0)
- 		goto err;
--	}
- 
- 	em = btrfs_get_extent(BTRFS_I(inode), NULL, 0, start, len);
- 	if (IS_ERR(em)) {
+ 	ret = btrfs_cross_ref_exist(root, btrfs_ino(BTRFS_I(inode)),
+ 				    key.offset - backref_offset, disk_bytenr,
+-				    strict);
++				    strict, path);
+ 	if (ret) {
+ 		ret = 0;
+ 		goto out;
 -- 
 2.33.0
 

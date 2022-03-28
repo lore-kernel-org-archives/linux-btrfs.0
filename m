@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED500C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Mar 2022 19:44:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51926C4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Mar 2022 19:44:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343816AbiC1Tqf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Mar 2022 15:46:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50382 "EHLO
+        id S1343695AbiC1Tqi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Mar 2022 15:46:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50816 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343700AbiC1Tpt (ORCPT
+        with ESMTP id S1343753AbiC1Tpt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 28 Mar 2022 15:45:49 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4038E673CF;
-        Mon, 28 Mar 2022 12:42:54 -0700 (PDT)
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C06D26833E;
+        Mon, 28 Mar 2022 12:42:55 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id E00E8B81213;
-        Mon, 28 Mar 2022 19:42:50 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 99ABCC340F0;
-        Mon, 28 Mar 2022 19:42:48 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 255CE612C4;
+        Mon, 28 Mar 2022 19:42:53 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 68C2EC36AE5;
+        Mon, 28 Mar 2022 19:42:51 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1648496569;
-        bh=xrPEMS4WZWvZcvanSIXYeLyfdynAP61YiH5f+vYLTWU=;
+        s=k20201202; t=1648496572;
+        bh=amzJB50dVxraXg7zTXq9Qb/7GQINKbmuz1Zvr+omPIY=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=cYu7CJqKfoXATdR4POPAkE/FIaIM19jMOg0kODIvDgdW/IU4K/MztyRjGbkFja8KB
-         38DtWPEbQWw4xiF3H7mRXn8wyv/RIPsoP6HeTk27olAHSA2ai34W3/GfkVc7H28qJJ
-         2xcrEM3636duHKyVx03tVR8WGyivBoUFUKnFsndleIJsy4qyLUi2Ff3TX9AyroeqVv
-         24ovFmxhUp2ikLL6ERY2xPy5iIqVC56A8869eDwLp4NzV5DzHKL3P9dSbIfdVn8BMZ
-         XevkKRxOMUtMyYUqEIQ6n5MsZfy7fcKffB3MY3lauZJ6Xsl0qHbrZqFCb/k7lNQLeS
-         AMXJ1xhrQ1oig==
+        b=Lx4eFnQMCm/C81xcExCNRDz60DuVWnXJiZIY5efotFGRekmNL9d2HgFcCwUzLzf+E
+         ahT9yIJwWPMOqCd7bKaEEt1zV4fBXzOw+1FRDP6jOYYrzsCpaXjG3qorFiWOLGrNHR
+         h3mCpq+W7ZQ08MwwGPDN8wl+bV2XHbiz2hIfZy0vefWkkDvCZp//gs5R5FlpJaZthv
+         SOjDJ9+cSf7s74CwkidzbvfS/4nNbniV6Lz0bt+AIKRQ5xti+Ech+2QsiyrQ49Zihr
+         Qo/HQKk62csiYgRkBoyXFD57BszzBhH4M4AnC0PYRBqSxpWMOe237wnQWB6qJusgEX
+         5kDMSlBXf3hAg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>, Boris Burkov <boris@bur.io>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com, jbacik@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.16 14/20] btrfs: handle csum lookup errors properly on reads
-Date:   Mon, 28 Mar 2022 15:42:20 -0400
-Message-Id: <20220328194226.1585920-14-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.16 16/20] btrfs: do not clean up repair bio if submit fails
+Date:   Mon, 28 Mar 2022 15:42:22 -0400
+Message-Id: <20220328194226.1585920-16-sashal@kernel.org>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <20220328194226.1585920-1-sashal@kernel.org>
 References: <20220328194226.1585920-1-sashal@kernel.org>
@@ -54,110 +54,57 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit 1784b7d502a94b561eae58249adde5f72c26eb3c ]
+[ Upstream commit 8cbc3001a3264d998d6b6db3e23f935c158abd4d ]
 
-Currently any error we get while trying to lookup csums during reads
-shows up as a missing csum, and then on the read completion side we
-print an error saying there was a csum mismatch and we increase the
-device corruption count.
+The submit helper will always run bio_endio() on the bio if it fails to
+submit, so cleaning up the bio just leads to a variety of use-after-free
+and NULL pointer dereference bugs because we race with the endio
+function that is cleaning up the bio.  Instead just return BLK_STS_OK as
+the repair function has to continue to process the rest of the pages,
+and the endio for the repair bio will do the appropriate cleanup for the
+page that it was given.
 
-However we could have gotten an EIO from the lookup.  We could also be
-inside of a memory constrained container and gotten a ENOMEM while
-trying to do the read.  In either case we don't want to make this look
-like a file system corruption problem, we want to make it look like the
-actual error it is.  Capture any negative value, convert it to the
-appropriate blk_status_t, free the csum array if we have one and bail.
-
-Note: a possible improvement would be to make the relocation code look
-up the owning inode and see if it's marked as NODATASUM and set
-EXTENT_NODATASUM there, that way if there's corruption and there isn't a
-checksum when we want it we can fail here rather than later.
-
+Reviewed-by: Boris Burkov <boris@bur.io>
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/file-item.c | 36 ++++++++++++++++++++++--------------
- 1 file changed, 22 insertions(+), 14 deletions(-)
+ fs/btrfs/extent_io.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index bddb9c87030b..cb9e0e901877 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -366,6 +366,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
-+	struct btrfs_bio *bbio = NULL;
- 	struct btrfs_path *path;
- 	const u32 sectorsize = fs_info->sectorsize;
- 	const u32 csum_size = fs_info->csum_size;
-@@ -375,6 +376,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 	u8 *csum;
- 	const unsigned int nblocks = orig_len >> fs_info->sectorsize_bits;
- 	int count = 0;
-+	blk_status_t ret = BLK_STS_OK;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 5512d7028091..a57838311c7d 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2640,7 +2640,6 @@ int btrfs_repair_one_sector(struct inode *inode,
+ 	const int icsum = bio_offset >> fs_info->sectorsize_bits;
+ 	struct bio *repair_bio;
+ 	struct btrfs_bio *repair_bbio;
+-	blk_status_t status;
  
- 	if (!fs_info->csum_root || (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
- 		return BLK_STS_OK;
-@@ -397,7 +399,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 		return BLK_STS_RESOURCE;
+ 	btrfs_debug(fs_info,
+ 		   "repair read error: read error at %llu", start);
+@@ -2679,13 +2678,13 @@ int btrfs_repair_one_sector(struct inode *inode,
+ 		    "repair read error: submitting new read to mirror %d",
+ 		    failrec->this_mirror);
  
- 	if (!dst) {
--		struct btrfs_bio *bbio = btrfs_bio(bio);
-+		bbio = btrfs_bio(bio);
- 
- 		if (nblocks * csum_size > BTRFS_BIO_INLINE_CSUM_SIZE) {
- 			bbio->csum = kmalloc_array(nblocks, csum_size, GFP_NOFS);
-@@ -453,21 +455,27 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 
- 		count = search_csum_tree(fs_info, path, cur_disk_bytenr,
- 					 search_len, csum_dst);
--		if (count <= 0) {
--			/*
--			 * Either we hit a critical error or we didn't find
--			 * the csum.
--			 * Either way, we put zero into the csums dst, and skip
--			 * to the next sector.
--			 */
-+		if (count < 0) {
-+			ret = errno_to_blk_status(count);
-+			if (bbio)
-+				btrfs_bio_free_csum(bbio);
-+			break;
-+		}
-+
-+		/*
-+		 * We didn't find a csum for this range.  We need to make sure
-+		 * we complain loudly about this, because we are not NODATASUM.
-+		 *
-+		 * However for the DATA_RELOC inode we could potentially be
-+		 * relocating data extents for a NODATASUM inode, so the inode
-+		 * itself won't be marked with NODATASUM, but the extent we're
-+		 * copying is in fact NODATASUM.  If we don't find a csum we
-+		 * assume this is the case.
-+		 */
-+		if (count == 0) {
- 			memset(csum_dst, 0, csum_size);
- 			count = 1;
- 
--			/*
--			 * For data reloc inode, we need to mark the range
--			 * NODATASUM so that balance won't report false csum
--			 * error.
--			 */
- 			if (BTRFS_I(inode)->root->root_key.objectid ==
- 			    BTRFS_DATA_RELOC_TREE_OBJECTID) {
- 				u64 file_offset;
-@@ -488,7 +496,7 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inode, struct bio *bio, u8 *dst
- 	}
- 
- 	btrfs_free_path(path);
--	return BLK_STS_OK;
-+	return ret;
+-	status = submit_bio_hook(inode, repair_bio, failrec->this_mirror,
+-				 failrec->bio_flags);
+-	if (status) {
+-		free_io_failure(failure_tree, tree, failrec);
+-		bio_put(repair_bio);
+-	}
+-	return blk_status_to_errno(status);
++	/*
++	 * At this point we have a bio, so any errors from submit_bio_hook()
++	 * will be handled by the endio on the repair_bio, so we can't return an
++	 * error here.
++	 */
++	submit_bio_hook(inode, repair_bio, failrec->this_mirror, failrec->bio_flags);
++	return BLK_STS_OK;
  }
  
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ static void end_page_read(struct page *page, bool uptodate, u64 start, u32 len)
 -- 
 2.34.1
 

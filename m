@@ -2,107 +2,108 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D20DEC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Mar 2022 18:19:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 498EFC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 30 Mar 2022 18:48:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350010AbiC3SVi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 30 Mar 2022 14:21:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41380 "EHLO
+        id S238087AbiC3Suf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 30 Mar 2022 14:50:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39212 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1350078AbiC3SV2 (ORCPT
+        with ESMTP id S1350145AbiC3Sua (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 30 Mar 2022 14:21:28 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C08763BA4F
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2022 11:19:17 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 0C11B2112B;
-        Wed, 30 Mar 2022 18:19:16 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1648664356;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=ANUMl50/AMkmspKmA3fWSIo3K2OWAs33T2jEsYB1vsI=;
-        b=BRksMWDzxdlpo+uVcFuHiCDNsEVJsRvQK33Fy/7Oe/Tduv9+zzY0ELdAfKjmh8+ehVEyVJ
-        DdproZu1UW3s7Ata7dtZQr53GlsFIjMgiTrBgMSHhw0LmPOCFGxcovgZ0nABl90y3yV62M
-        rQYV2iGKJ7kAigrz5Gc1t4mD29RVwaQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1648664356;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=ANUMl50/AMkmspKmA3fWSIo3K2OWAs33T2jEsYB1vsI=;
-        b=rJtXqkUuKDkzv2Ly79tY+xMncqpG3qbYks2o69F16nsw63hsqowKJ7ro/LFYncWVNOZLg6
-        N/p4jg96YptL6+Cw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 02441A3B88;
-        Wed, 30 Mar 2022 18:19:16 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id E8BFFDA7F3; Wed, 30 Mar 2022 20:15:17 +0200 (CEST)
-Date:   Wed, 30 Mar 2022 20:15:17 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 2/3] btrfs: make nodesize >= PAGE_SIZE case to reuse
- the non-subpage routine
-Message-ID: <20220330181517.GI2237@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <20220113052210.23614-1-wqu@suse.com>
- <20220113052210.23614-3-wqu@suse.com>
- <20220310191348.GC12643@twin.jikos.cz>
- <4aa2fb3a-b200-cc6a-5aef-d263fef9f2ba@gmx.com>
+        Wed, 30 Mar 2022 14:50:30 -0400
+Received: from box.fidei.email (box.fidei.email [71.19.144.250])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F33225E0
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Mar 2022 11:48:43 -0700 (PDT)
+Received: from authenticated-user (box.fidei.email [71.19.144.250])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits))
+        (No client certificate requested)
+        by box.fidei.email (Postfix) with ESMTPSA id 85E47804A9;
+        Wed, 30 Mar 2022 14:48:43 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
+        t=1648666123; bh=RW4JCHQILBIK5BmQaMpnhoBX/l26wBjso8ODkDI9SuQ=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=oRb0Eh0p6Gc9XnDoj7qFaXKrLDWoa/kW4vqd0QfGEd2fEwXtj2kGAeR+daEhBJAwh
+         cIlvNObk19bL2WHLgKADZxTpyKxdir7jLTE7ZaJRcYCtKgvZaC16aU/gYN5HNvRpDr
+         qc98Of68/EpZXPQOLS1hkaPlrdNSAIE0w45O1IbbEfYfxfRI0d8tz3/s4YnygSwLbN
+         1nzoxrHVmxmkysnWNGn9nf5TfU9t1kIb7zNDfuivG9E5Xn7Rj7qzFefw2LmKO7/LFh
+         HyxNOGJVaLhuq/hSVc44MEgPXqB8qYiakZXG3ud94jjXsQ7OdExKv1z1wYJ+pCj1Ic
+         hu5QGU8+RDOMw==
+Message-ID: <9b168d90-e0e7-459b-36e1-ea5cbe23c8ea@dorminy.me>
+Date:   Wed, 30 Mar 2022 14:48:42 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4aa2fb3a-b200-cc6a-5aef-d263fef9f2ba@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Subject: Re: [PATCH v14 5/7] btrfs: send: allocate send buffer with
+ alloc_page() and vmap() for v2
+Content-Language: en-US
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <cover.1647537027.git.osandov@fb.com>
+ <4353fe7122eb0aae24e3c9ff2399f2b58b74f79e.1647537027.git.osandov@fb.com>
+ <fb73fe9a-21a4-0744-2a61-bfd3602a0f20@dorminy.me>
+ <YkR/QuBrKPYTwIFt@relinquished.localdomain>
+ <598151ee-7a14-0c54-34d6-4591bc19fb73@dorminy.me>
+ <YkSPsV0l0JV1Lx1f@relinquished.localdomain>
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+In-Reply-To: <YkSPsV0l0JV1Lx1f@relinquished.localdomain>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Mar 11, 2022 at 02:28:37PM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2022/3/11 03:13, David Sterba wrote:
-> > On Thu, Jan 13, 2022 at 01:22:09PM +0800, Qu Wenruo wrote:
-> >> --- a/fs/btrfs/subpage.h
-> >> +++ b/fs/btrfs/subpage.h
-> >> @@ -4,6 +4,7 @@
-> >>   #define BTRFS_SUBPAGE_H
-> >>
-> >>   #include <linux/spinlock.h>
-> >> +#include "btrfs_inode.h"
-> >>
-> >>   /*
-> >>    * Extra info for subpapge bitmap.
-> >> @@ -74,6 +75,30 @@ enum btrfs_subpage_type {
-> >>   	BTRFS_SUBPAGE_DATA,
-> >>   };
-> >>
-> >> +static inline bool btrfs_is_subpage(const struct btrfs_fs_info *fs_info,
-> >> +				    struct page *page)
-> >
-> > This is static inline and increases the size of the module by 3K, it
-> > does not need to be inline as it's not in any perf critical code.
-> 
-> I thought the compiler is able to un-inline such functions if it doesn't
-> believe the inline is useful.
 
-Inlining of regular is a compiler decision but if you declare a function
-'static inline' then it's meant to be defined in a header and it must be
-inlined. Once the code is "inserted" it can be optimized further so
-there may be different results of the same C code in the assembly code
-but that's it. That's what we care about from the programmer's view,
-there are many possibilities for compiler to reorganize the code,
-parition hot/cold paths and partially/completely inline and whatnot, but
-that's basically magic we can't rely on.
 
-Anyway, as the inline was the only thing I've made it a regular
-function. On release build the function is inlined anyway in all calls
-in subpage.c as the function body is available. I'm tempted to make it
-'noinline' but this is going against the compiler decisions described
-above. Patches added to misc-next.
+On 3/30/22 13:13, Omar Sandoval wrote:
+> On Wed, Mar 30, 2022 at 12:33:48PM -0400, Sweet Tea Dorminy wrote:
+>>
+>>
+>> On 3/30/22 12:03, Omar Sandoval wrote:
+>>> On Thu, Mar 24, 2022 at 01:53:20PM -0400, Sweet Tea Dorminy wrote:
+>>>>
+>>>>
+>>>> On 3/17/22 13:25, Omar Sandoval wrote:
+>>>>> From: Omar Sandoval <osandov@fb.com>
+>>>>>
+>>>>> For encoded writes, we need the raw pages for reading compressed data
+>>>>> directly via a bio.
+>>>> Perhaps:
+>>>> "For encoded writes, the existing btrfs_encoded_read*() functions expect a
+>>>> list of raw pages."
+>>>>
+>>>> I think it would be a better to continue just vmalloc'ing a large continuous
+>>>> buffer and translating each page in the buffer into its raw page with
+>>>> something like is_vmalloc_addr(data) ? vmalloc_to_page(data) :
+>>>> virt_to_page(data). Vmalloc can request a higher-order allocation, which
+>>>> probably doesn't matter but might slightly improve memory locality. And in
+>>>> terms of readability, I somewhat like the elegance of having a single
+>>>> identical kvmalloc call to allocate and send_buf in both cases, even if we
+>>>> do need to initialize the page list for some v2 commands.
+>>>
+>>> I like this, but are we guaranteed that kvmalloc() will return a
+>>> page-aligned buffer? It seems reasonable to me that it would for
+>>> allocations of at least one page, but I can't find that written down
+>>> anywhere.
+>>
+>> Since vmalloc allocates whole pages, and kmalloc guarantees alignment to the
+>> allocation size for powers of 2 sizes (and PAGE_SIZE is required to be a
+>> power of 2), I think that adds up to a guarantee of page alignment both
+>> ways?
+>>
+>> https://elixir.bootlin.com/linux/v5.17.1/source/include/linux/slab.h#L522 :
+>> kmalloc: "For @size of power of two bytes, the alignment is also guaranteed
+>> to be at least to the size."
+> 
+> Our allocation size is ALIGN(SZ_16K + BTRFS_MAX_COMPRESSED, PAGE_SIZE),
+> which is 144K for PAGE_SIZE = 4k. If I interpret the kmalloc() comment
+> very literally, since this isn't a power of two, it's not guaranteed to
+> be aligned, right?
+
+Ah, an excellent point.
+
+Now that I think about it, the kmalloc path picks a slab to allocate 
+from based on the log_2 of the size: 
+https://elixir.bootlin.com/linux/v5.17.1/source/mm/slab_common.c#L733 so 
+we'd end up wasting 128k-16k space using kmalloc, whether it's aligned 
+or not, I think?
+
+So maybe it should just always use vmalloc and get the page alignment?

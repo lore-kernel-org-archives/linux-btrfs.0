@@ -2,87 +2,105 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F6A0C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Mar 2022 16:49:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1677C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 31 Mar 2022 16:58:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239098AbiCaQup (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 31 Mar 2022 12:50:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42024 "EHLO
+        id S240358AbiCaRAW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 31 Mar 2022 13:00:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44242 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240254AbiCaQun (ORCPT
+        with ESMTP id S238759AbiCaRAU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 31 Mar 2022 12:50:43 -0400
-Received: from mail-io1-xd29.google.com (mail-io1-xd29.google.com [IPv6:2607:f8b0:4864:20::d29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D44655882A
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2022 09:48:53 -0700 (PDT)
-Received: by mail-io1-xd29.google.com with SMTP id z7so195278iom.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Mar 2022 09:48:53 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=kernel-dk.20210112.gappssmtp.com; s=20210112;
-        h=message-id:date:mime-version:user-agent:subject:content-language:to
-         :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=GVS+7ByfaDfRQ3cP7Su5v65xswUHpTm7s1D0XKCLUIc=;
-        b=5UHAlnNn6pmh13gHK2pkVOqqU+NLxHAIm10n7hxY69fkf4etI7xGcoRjiBvGoyxJNr
-         kabCkIf1xxwY5lv3Fz+S1YPx7xckQPP2QGAxBmU/6XuRjvC3V9So7gmo5sdkO4isG+7U
-         NYY0uWHbGE6Q/h3sInup3pNJi9R9t2lf1mAnVfMWjXyxKmAnrTRpm6i8FD+xdnRD9+kO
-         TZ43pQfEjcjGk7vvTk+toj73TV/PjBpXagt13go4gLwi84xpTxTtB2xWYo91klXaZtPT
-         YIuOfPzysEz9Z8i6engCc1D604prelmrGVhbWJ968cwBOEX4MnOYuo44vJBZyXv5Y/b+
-         Wf/g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:from:in-reply-to
-         :content-transfer-encoding;
-        bh=GVS+7ByfaDfRQ3cP7Su5v65xswUHpTm7s1D0XKCLUIc=;
-        b=VfRB0vGmNrkmWRvgFPFRf5nxZDLagkDPKNBnQsBPnL/pYHmHR1SI8ZkBQWvIY3hFRY
-         y/rwkkGKkCPW8rmelsHM6fQBoCxGBvYbPB/viEwgbNdJ1i4s+aK5uC1On0nRH3rjujyP
-         APrajpfSJn5ZYR8N7SnmeExoJ/IszgcU76JSfwF87uYxmd37yKnNxgxMxRWONmj2HBqW
-         YxJUFF1hQugc1jYhw66caRm8EdPY5u+PqalqL7aSGP/AvutB5sozLbqEtbH3kZ284fhJ
-         dbMbPgQBDkuAPpS9Fldx+DvbozsxUZWzHJuPT+OeDe4BV8CJNBT16HYZz73gbbYoU3le
-         RYvQ==
-X-Gm-Message-State: AOAM532CrsYD1TMbGkaqFv0zYQx5BIpv6/X64qUW7OsxPpQtFABHbNo+
-        JwGTOxtO04Drea2q5C3xJAp+KEy8l2m24uAB
-X-Google-Smtp-Source: ABdhPJxO6cxAuydd+MYxjFrmEZWnATNnBLDhK+n22mh4Hzt3rKwlZEwEzWA3wPZWmZM8hKaYOdK5ag==
-X-Received: by 2002:a02:c017:0:b0:323:6b24:5bde with SMTP id y23-20020a02c017000000b003236b245bdemr3323956jai.185.1648745331810;
-        Thu, 31 Mar 2022 09:48:51 -0700 (PDT)
-Received: from [192.168.1.172] ([207.135.234.126])
-        by smtp.gmail.com with ESMTPSA id j4-20020a056e02218400b002c82f195e80sm12730706ila.83.2022.03.31.09.48.50
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 31 Mar 2022 09:48:51 -0700 (PDT)
-Message-ID: <572bf891-8b2b-b32e-af64-d80fb7f5963f@kernel.dk>
-Date:   Thu, 31 Mar 2022 10:48:50 -0600
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux aarch64; rv:91.0) Gecko/20100101
- Thunderbird/91.7.0
-Subject: Re: cleanup bio_kmalloc v2
-Content-Language: en-US
-To:     Christoph Hellwig <hch@lst.de>, Qian Cai <quic_qiancai@quicinc.com>
-Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
-        Song Liu <song@kernel.org>,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Thu, 31 Mar 2022 13:00:20 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BAF510FDA;
+        Thu, 31 Mar 2022 09:58:32 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 974E1B8218B;
+        Thu, 31 Mar 2022 16:58:30 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1F925C340ED;
+        Thu, 31 Mar 2022 16:58:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1648745909;
+        bh=BKvjdCsLv3Ic0I4T8UQJKKMnRKPo6SUNKqirrFu3/C4=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=JtVeH3izMStBmLto12CoHY4knU6SF4TbKy6AqDSbaWECEbBUP1DE4hLgj/+p4sY42
+         pw0/AbXsy4aANqylze5HV/8gqhD1JhCrK7OCAejPCmdyFqNGNqMthkz3aAuynVkv18
+         FNvkKCmTUdVu/sXQmJzSV5iOGiRZU148YVqIfrX8kPM9/nQB47GD77M2+J2hi+8LBc
+         2gMGB3y3LuFvTHmVm1Y9yxoUiJYnG/3QcCuLl9H6ez5Bur1IBVPC3AHM4O2IPMjvmw
+         6ULEk5b4jTP6VEIapaGh9Y8M9CCaxNLeObTMgLp3ZblDhgSiPkUBPaC2UTzi+APBst
+         33VrTfgRN1gQA==
+Date:   Thu, 31 Mar 2022 12:58:28 -0400
+From:   Sasha Levin <sashal@kernel.org>
+To:     Omar Sandoval <osandov@osandov.com>
+Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
+        Omar Sandoval <osandov@fb.com>,
         Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Phillip Lougher <phillip@squashfs.org.uk>,
-        linux-block@vger.kernel.org, dm-devel@redhat.com,
-        linux-kernel@vger.kernel.org, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, target-devel@vger.kernel.org,
+        Nikolay Borisov <nborisov@suse.com>,
+        David Sterba <dsterba@suse.com>, clm@fb.com, jbacik@fb.com,
         linux-btrfs@vger.kernel.org
-References: <20220308061551.737853-1-hch@lst.de> <YkXYMGGbk/ZTbGaA@qian>
- <20220331164024.GA30404@lst.de>
-From:   Jens Axboe <axboe@kernel.dk>
-In-Reply-To: <20220331164024.GA30404@lst.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Subject: Re: [PATCH AUTOSEL 5.17 12/21] btrfs: don't advance offset for
+ compressed bios in btrfs_csum_one_bio()
+Message-ID: <YkXdtBfNbH2/oP5z@sashalap>
+References: <20220328194157.1585642-1-sashal@kernel.org>
+ <20220328194157.1585642-12-sashal@kernel.org>
+ <YkNko1BcsyDt2QUS@relinquished.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <YkNko1BcsyDt2QUS@relinquished.localdomain>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 3/31/22 10:40 AM, Christoph Hellwig wrote:
-> This should fix it:
+On Tue, Mar 29, 2022 at 12:57:23PM -0700, Omar Sandoval wrote:
+>On Mon, Mar 28, 2022 at 03:41:47PM -0400, Sasha Levin wrote:
+>> From: Omar Sandoval <osandov@fb.com>
+>>
+>> [ Upstream commit e331f6b19f8adde2307588bb325ae5de78617c20 ]
+>>
+>> btrfs_csum_one_bio() loops over each filesystem block in the bio while
+>> keeping a cursor of its current logical position in the file in order to
+>> look up the ordered extent to add the checksums to. However, this
+>> doesn't make much sense for compressed extents, as a sector on disk does
+>> not correspond to a sector of decompressed file data. It happens to work
+>> because:
+>>
+>> 1) the compressed bio always covers one ordered extent
+>> 2) the size of the bio is always less than the size of the ordered
+>>    extent
+>>
+>> However, the second point will not always be true for encoded writes.
+>>
+>> Let's add a boolean parameter to btrfs_csum_one_bio() to indicate that
+>> it can assume that the bio only covers one ordered extent. Since we're
+>> already changing the signature, let's get rid of the contig parameter
+>> and make it implied by the offset parameter, similar to the change we
+>> recently made to btrfs_lookup_bio_sums(). Additionally, let's rename
+>> nr_sectors to blockcount to make it clear that it's the number of
+>> filesystem blocks, not the number of 512-byte sectors.
+>>
+>> Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+>> Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+>> Signed-off-by: Omar Sandoval <osandov@fb.com>
+>> Signed-off-by: David Sterba <dsterba@suse.com>
+>> Signed-off-by: Sasha Levin <sashal@kernel.org>
+>> ---
+>>  fs/btrfs/compression.c |  2 +-
+>>  fs/btrfs/ctree.h       |  2 +-
+>>  fs/btrfs/file-item.c   | 37 +++++++++++++++++--------------------
+>>  fs/btrfs/inode.c       |  8 ++++----
+>>  4 files changed, 23 insertions(+), 26 deletions(-)
+>
+>Hi, Sasha,
+>
+>This patch doesn't fix a real bug, so it should be dropped from both
+>5.16 and 5.17.
 
-Let's drop this one for 5.18, it's also causing a few conflicts and
-would probably be more suited for 5.19 at this point.
+I'll drop it, thanks.
 
 -- 
-Jens Axboe
-
+Thanks,
+Sasha

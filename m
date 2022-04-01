@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E255C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:24:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21294C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:24:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345509AbiDAL0A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S1345516AbiDAL0A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 1 Apr 2022 07:26:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56722 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56876 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345504AbiDALZy (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:54 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 40FCD196137
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:24:04 -0700 (PDT)
+        with ESMTP id S1345496AbiDALZ4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:56 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 45D1D196139
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:24:06 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 0237F1FD00
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:03 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 0879E21612
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1648812243; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1648812245; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=xbMISMu6cZDN7dPoM4O9ripxtUZMgAhURkuM8fffVVc=;
-        b=PS/tP8khG8f/J/ItT6+OwNHssTg1XUWe7Hh6n2cjHuEZ2PtROSIRKgt/uFbDTMise8L4xV
-        tprJpE7UmGPnKna1MAV+DD0rW0LN+GY6ndXVd2tkqGvdSWDp+qbHYuS7g8uV95nIyfpK0t
-        BdEGtqEHcLilrxXk9fEomGkB4apNL4Y=
+        bh=DetKO2fpfHlrtsFb6AeF0ceMG/o5s5bZUsmhqaY/Lrg=;
+        b=vYrKauN4Q6pg/pgDrmzlAfeEj1FW9OMgM6gIrnl5P621ujzCSPXucSipyPc+UxRzT9u1It
+        I1vPOmzXL0/qdxEiSJhNJGOhwS+9/rEhvy7Gcev0uwXczcKe9+AkwL2xmJnA/SiclBT/do
+        20YTSg9ueTVrWAAsV1Z7Z0bK/fRDfHU=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5FF45132C1
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:02 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 66CC9132C1
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:04 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id ELIPC9LgRmJeFwAAMHmgww
+        id aCS3DNTgRmJeFwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:24:02 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:24:04 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/16] btrfs: make set_bio_pages_uptodate() subpage compatible
-Date:   Fri,  1 Apr 2022 19:23:28 +0800
-Message-Id: <4fe4a608f6f753e694cd1ac068d97ad414e64895.1648807440.git.wqu@suse.com>
+Subject: [PATCH 15/16] btrfs: make alloc_rbio_essential_pages() subpage compatible
+Date:   Fri,  1 Apr 2022 19:23:30 +0800
+Message-Id: <a65971704205419d5f7d28e968ee098dd7eb93cd.1648807440.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1648807440.git.wqu@suse.com>
 References: <cover.1648807440.git.wqu@suse.com>
@@ -54,106 +54,48 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Unlike previous code, we can not directly set PageUptodate for stripe
-pages now.
+The non-compatible part is only the bitmap iteration part, now the
+bitmap size is extended to rbio::stripe_nsectors, not the old
+rbio::stripe_npages.
 
-Instead we have to iterate through all the sectors and set
-SECTOR_UPTODATE flag there.
+Since we're here, also slightly improve the function by:
 
-Thus this patch introduced a new helper, find_stripe_sector(), to do the
-work.
+- Rename @i to @stripe
+- Rename @bit to @sectornr
+- Move @page and @index into the inner loop
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 45 +++++++++++++++++++++++++++++++++++++++------
- 1 file changed, 39 insertions(+), 6 deletions(-)
+ fs/btrfs/raid56.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index b45f63b40131..b57be9387740 100644
+index 01fe5414e013..7bfe8e8d8325 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -1522,19 +1522,52 @@ static int fail_bio_stripe(struct btrfs_raid_bio *rbio,
- 	return fail_rbio_index(rbio, failed);
- }
- 
-+/*
-+ * For subpage case, we can no longer set page Uptodate directly for
-+ * stripe_pages[], thus we need to locate the sector.
-+ */
-+static struct sector_ptr *find_stripe_sector(struct btrfs_raid_bio *rbio,
-+					     struct page *page,
-+					     unsigned int pgoff)
-+{
-+	int i;
-+
-+	for (i = 0; i < rbio->nr_sectors; i++) {
-+		struct sector_ptr *sector = &rbio->stripe_sectors[i];
-+
-+		if (sector->page == page && sector->pgoff == pgoff)
-+			return sector;
-+	}
-+	return NULL;
-+}
-+
- /*
-  * this sets each page in the bio uptodate.  It should only be used on private
-  * rbio pages, nothing that comes in from the higher layers
+@@ -2456,14 +2456,16 @@ void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
   */
--static void set_bio_pages_uptodate(struct bio *bio)
-+static void set_bio_pages_uptodate(struct btrfs_raid_bio *rbio,
-+				   struct bio *bio)
+ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
  {
+-	int i;
+-	int bit;
+-	int index;
+-	struct page *page;
 +	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
- 	struct bio_vec *bvec;
- 	struct bvec_iter_all iter_all;
- 
- 	ASSERT(!bio_flagged(bio, BIO_CLONED));
- 
--	bio_for_each_segment_all(bvec, bio, iter_all)
--		SetPageUptodate(bvec->bv_page);
-+	bio_for_each_segment_all(bvec, bio, iter_all) {
-+		struct sector_ptr *sector;
-+		int pgoff;
++	int stripe;
++	int sectornr;
 +
-+		for (pgoff = bvec->bv_offset;
-+		     pgoff - bvec->bv_offset < bvec->bv_len;
-+		     pgoff += sectorsize) {
-+			sector = find_stripe_sector(rbio, bvec->bv_page, pgoff);
-+			ASSERT(sector);
-+			if (sector)
-+				sector->uptodate = 1;
-+		}
-+
-+	}
- }
++	for_each_set_bit(sectornr, rbio->dbitmap, rbio->stripe_nsectors) {
++		for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
++			struct page *page;
++			int index = (stripe * rbio->stripe_nsectors + sectornr) *
++				    sectorsize >> PAGE_SHIFT;
  
- /*
-@@ -1552,7 +1585,7 @@ static void raid_rmw_end_io(struct bio *bio)
- 	if (bio->bi_status)
- 		fail_bio_stripe(rbio, bio);
- 	else
--		set_bio_pages_uptodate(bio);
-+		set_bio_pages_uptodate(rbio, bio);
- 
- 	bio_put(bio);
- 
-@@ -2112,7 +2145,7 @@ static void raid_recover_end_io(struct bio *bio)
- 	if (bio->bi_status)
- 		fail_bio_stripe(rbio, bio);
- 	else
--		set_bio_pages_uptodate(bio);
-+		set_bio_pages_uptodate(rbio, bio);
- 	bio_put(bio);
- 
- 	if (!atomic_dec_and_test(&rbio->stripes_pending))
-@@ -2672,7 +2705,7 @@ static void raid56_parity_scrub_end_io(struct bio *bio)
- 	if (bio->bi_status)
- 		fail_bio_stripe(rbio, bio);
- 	else
--		set_bio_pages_uptodate(bio);
-+		set_bio_pages_uptodate(rbio, bio);
- 
- 	bio_put(bio);
+-	for_each_set_bit(bit, rbio->dbitmap, rbio->stripe_npages) {
+-		for (i = 0; i < rbio->real_stripes; i++) {
+-			index = i * rbio->stripe_npages + bit;
+ 			if (rbio->stripe_pages[index])
+ 				continue;
  
 -- 
 2.35.1

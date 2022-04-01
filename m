@@ -2,43 +2,33 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 317A9C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 13:46:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3810BC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 14:11:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346459AbiDANsj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Apr 2022 09:48:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45084 "EHLO
+        id S1346718AbiDAONn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Apr 2022 10:13:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46824 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231720AbiDANsi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 09:48:38 -0400
-X-Greylist: delayed 1766 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 01 Apr 2022 06:46:46 PDT
-Received: from savella.carfax.org.uk (2001-ba8-1f1-f0e6-0-0-0-2.autov6rev.bitfolk.space [IPv6:2001:ba8:1f1:f0e6::2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F16F827F4FA
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 06:46:46 -0700 (PDT)
-Received: from hrm by savella.carfax.org.uk with local (Exim 4.92)
-        (envelope-from <hrm@savella.carfax.org.uk>)
-        id 1naH9P-0000nS-Qc; Fri, 01 Apr 2022 14:17:15 +0100
-Date:   Fri, 1 Apr 2022 14:17:15 +0100
-From:   Hugo Mills <hugo@carfax.org.uk>
+        with ESMTP id S1346725AbiDAONk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 10:13:40 -0400
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 360B6220FC9
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 07:11:50 -0700 (PDT)
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+        id 4A3B429EAD3; Fri,  1 Apr 2022 10:11:44 -0400 (EDT)
+Date:   Fri, 1 Apr 2022 10:11:44 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
 To:     Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
+Cc:     linux-btrfs@vger.kernel.org
 Subject: Re: Adding a 4TB disk to a 2x4TB btrfs (data:single) filesystem and
  balancing takes extremely long (over a month). Filesystem has been deduped
  with bees
-Message-ID: <20220401131715.GL18319@savella.carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Konstantinos Skarlatos <k.skarlatos@gmail.com>,
-        linux-btrfs@vger.kernel.org, ce3g8jdj@umail.furryterror.org
+Message-ID: <YkcIIFuxqj5l17Nu@hungrycats.org>
 References: <8a536fe1-68bd-4136-8cfb-bd410afc5fa1@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 In-Reply-To: <8a536fe1-68bd-4136-8cfb-bd410afc5fa1@gmail.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -51,35 +41,37 @@ On Fri, Apr 01, 2022 at 02:13:58PM +0300, Konstantinos Skarlatos wrote:
 > My problem is that this balance takes extremely long, it is running for 4
 > days and it still has 91% left.
 > Is this normal, and can i do anything to fix this?
-
-   It's not normal for it to take that long, no. Do you have lots of
-snapshots (like, thousands), and lots of small or heavily fragmented
-files?
-
-   Is the balance actually progressing, or has it got stuck? Are there
-regular messages in dmesg about it balancing block groups? If not,
-when was the last one?
-
-   If your data is single, it's not really necessary to do the balance
-anyway, so you may want to cancel it. The balance in this situation is
-more about ensuring that all the space on the new disk is usable by
-the higher RAID levels. For example, adding a single disk to a
-nearly-full RAID-1 without balancing would leave you in a state where
-you couldn't add more data chunks because there's only space on one
-disk to do so, and RAID-1 needs two disks with space to allocate a
-data chunk in. With single data, that's not a problem.
-
+> 
 > kernel is linux-5.17.1, i have also tried with 5.16 kernels.
 > mount options are: rw,relatime,compress-force=zstd:11,space_cache=v2
 > I have been using bees for dedup, but it is disabled for the balance.
+
+Deduplication increases the reflink count and increases relocation time.
+Snapshots increase the time as well, but not as directly:  creating the
+snapshot doesn't increase balance time, but the snapshot will convert
+into reflinks over time as the snapshot diverges from its origin subvol,
+and those reflinks do increase relocation time.
+
+2x4TB with single profile works out to about 8000 block groups.
+Each block group will take between 1 and 60 minutes on 7200 rpm spinning
+drives, mostly dependent on the number of reflinks in the block group
+(relocating the data takes only 5-10 seconds, the reflink updates are
+the vast majority of the relocation time).
+
+The expected range of balance times will be between 8000 minutes (5.5
+days) and 8000 hours (333 days or 48 weeks).
+
+As Hugo pointed out, it's not necessary to balance more than a few
+block groups in this situation.  You have to ensure that the amount
+of unallocated space on all the disks is large enough to contain one
+mirror copy of the metadata.  For most users that means at most 0.5%
+unallocated on each disk.  If you've already balanced 9% of the disk
+then you've already done 18x more balancing than needed and you can
+stop now.
+
 > I am not doing any IO on the disks, they have no smart errors, and none of
 > them are SMR (2x WD40EFRX and 1x ST4000DM000)
 > Autodefrag is disabled, and i also have checked that the disks are in stable
 > drive cages in order to be sure i have no problems with vibration.
 > Benchmarking them gives normal speeds. Quotas have never been enabled.
-
--- 
-Hugo Mills             | "Damn and blast British Telecom!" said Dirk,
-hugo@... carfax.org.uk | the words coming easily from force of habit.
-http://carfax.org.uk/  |                                        Douglas Adams,
-PGP: E2AB1DE4          |               Dirk Gently's Holistic Detective Agency
+> 

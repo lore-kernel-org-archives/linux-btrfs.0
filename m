@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F26B5C4332F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:24:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28994C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:24:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345513AbiDALZy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Apr 2022 07:25:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56648 "EHLO
+        id S1345501AbiDALZ5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Apr 2022 07:25:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56746 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345496AbiDALZv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:51 -0400
+        with ESMTP id S1345502AbiDALZx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:53 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C68061959C7
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:23:58 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6DE97195DB5
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:24:02 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 3E4C521612
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:57 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id F226721A97
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1648812237; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1648812240; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=49awc+lRl4v9J/vZKhVCSgoJHwi/zDzavqfe1VlpH5M=;
-        b=BuNcIiIknNbMTCH1FFy6UH28Rqq15JyP9q080jNGxfdFAebPkOw9RyxGkbny5PsZo6jwUQ
-        ElXXFPuBWFSmbUn6nZgDj4YgPOVh+raYPKLIpGAuDEVSH1hp8d97JgC4DMrXTILSJDHVyi
-        RzGRydSvy2EblAxU1HY1kjsgxxAOa68=
+        bh=cGgKS8+zdxu4TqWjD5EXxsPP3PRCkZrK6D2fatichGI=;
+        b=K8sizbz980BVF+HSr9rPzxNl/2f5AfZHWe9JvOD2Xlz9BNHr0aAWs0MzvmqwIaHalLrcdu
+        PLZw2pdbs5reqApnA9R/hxWHQj1Rhv0uXF28wK9xHjCqxZrl29P/HH1/l5Wql6Mn9Ct/sV
+        4NnFBxf+AciC8zp9vmegVVQoSjX7taE=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9A7C6132C1
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:56 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5C304132C1
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id AGtnGczgRmJeFwAAMHmgww
+        id SNcwCtDgRmJeFwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:23:56 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:24:00 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/16] btrfs: make __raid_recover_endio_io() subpage compatibable
-Date:   Fri,  1 Apr 2022 19:23:23 +0800
-Message-Id: <c9b9956372cb15890ddb172826c9a3e25aeffda3.1648807440.git.wqu@suse.com>
+Subject: [PATCH 11/16] btrfs: make raid56_add_scrub_pages() subpage compatible
+Date:   Fri,  1 Apr 2022 19:23:26 +0800
+Message-Id: <c5e3e0a462a0b0af79ffd5c017425249e7c36c79.1648807440.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1648807440.git.wqu@suse.com>
 References: <cover.1648807440.git.wqu@suse.com>
@@ -54,167 +54,79 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-One trick involved is, since our pointers[] array has to have
-sector::pgoff added, we can no longer use the address to unmap the page.
+This requires one extra parameter @pgoff for the function.
 
-Thankfully we have another array for kunmap_local, so those two arrays
-are no longer containing the same values, even before the rotation.
+In the current code base, scrub is still one page per sector, thus the
+new parameter will always be 0.
+
+It needs the extra subpage scrub optimization code to fully take
+advantage.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 57 ++++++++++++++++++++++++++---------------------
- 1 file changed, 32 insertions(+), 25 deletions(-)
+ fs/btrfs/raid56.c | 10 ++++++----
+ fs/btrfs/raid56.h |  2 +-
+ fs/btrfs/scrub.c  |  6 +++++-
+ 3 files changed, 12 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index bd01e64ea4fc..1fbeaf2909b4 100644
+index 998c30867554..74e246f4758e 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -1947,20 +1947,24 @@ int raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc,
+@@ -2418,17 +2418,19 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
+ 
+ /* Used for both parity scrub and missing. */
+ void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
+-			    u64 logical)
++			    unsigned int pgoff, u64 logical)
+ {
++	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
+ 	int stripe_offset;
+ 	int index;
+ 
+ 	ASSERT(logical >= rbio->bioc->raid_map[0]);
+-	ASSERT(logical + PAGE_SIZE <= rbio->bioc->raid_map[0] +
++	ASSERT(logical + sectorsize <= rbio->bioc->raid_map[0] +
+ 				rbio->stripe_len * rbio->nr_data);
+ 	stripe_offset = (int)(logical - rbio->bioc->raid_map[0]);
+-	index = stripe_offset >> PAGE_SHIFT;
+-	rbio->bio_pages[index] = page;
++	index = stripe_offset / sectorsize;
++	rbio->bio_sectors[index].page = page;
++	rbio->bio_sectors[index].pgoff = pgoff;
  }
  
  /*
-- * all parity reconstruction happens here.  We've read in everything
-+ * All parity reconstruction happens here.  We've read in everything
-  * we can find from the drives and this does the heavy lifting of
-  * sorting the good from the bad.
-  */
- static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- {
--	int pagenr, stripe;
-+	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
-+	int sectornr, stripe;
- 	void **pointers;
- 	void **unmap_array;
- 	int faila = -1, failb = -1;
--	struct page *page;
- 	blk_status_t err;
- 	int i;
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index 72c00fc284b5..c52cf690bd9e 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -36,7 +36,7 @@ int raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc,
+ 			u64 stripe_len);
  
-+	/*
-+	 * This array stores the pointer for each sector, thus it has the extra
-+	 * pgoff value added from each sector
-+	 */
- 	pointers = kcalloc(rbio->real_stripes, sizeof(void *), GFP_NOFS);
- 	if (!pointers) {
- 		err = BLK_STS_RESOURCE;
-@@ -1970,6 +1974,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 	/*
- 	 * Store copy of pointers that does not get reordered during
- 	 * reconstruction so that kunmap_local works.
-+	 * This array doesn't have pgoff added so we can safely call kunmap_local
-+	 * on it.
- 	 */
- 	unmap_array = kcalloc(rbio->real_stripes, sizeof(void *), GFP_NOFS);
- 	if (!unmap_array) {
-@@ -1989,43 +1995,43 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
+-			    u64 logical);
++			    unsigned int pgoff, u64 logical);
  
- 	index_rbio_pages(rbio);
+ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
+ 				struct btrfs_io_context *bioc, u64 stripe_len,
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3f073d80755a..66ca71a4e570 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2222,7 +2222,11 @@ static void scrub_missing_raid56_pages(struct scrub_block *sblock)
+ 	for (i = 0; i < sblock->sector_count; i++) {
+ 		struct scrub_sector *sector = sblock->sectors[i];
  
--	for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
-+	for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
-+		struct sector_ptr *sector;
-+
- 		/*
- 		 * Now we just use bitmap to mark the horizontal stripes in
- 		 * which we have data when doing parity scrub.
- 		 */
- 		if (rbio->operation == BTRFS_RBIO_PARITY_SCRUB &&
--		    !test_bit(pagenr, rbio->dbitmap))
-+		    !test_bit(sectornr, rbio->dbitmap))
- 			continue;
+-		raid56_add_scrub_pages(rbio, sector->page, sector->logical);
++		/*
++		 * For now, our scrub is still one page per-sector, so pgoff
++		 * is always 0.
++		 */
++		raid56_add_scrub_pages(rbio, sector->page, 0, sector->logical);
+ 	}
  
- 		/*
--		 * Setup our array of pointers with pages from each stripe
-+		 * Setup our array of pointers with sectors from each stripe
- 		 *
- 		 * NOTE: store a duplicate array of pointers to preserve the
- 		 * pointer order
- 		 */
- 		for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
- 			/*
--			 * if we're rebuilding a read, we have to use
-+			 * If we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
- 			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
- 			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
- 			    (stripe == faila || stripe == failb)) {
--				page = page_in_rbio(rbio, stripe, pagenr, 0);
-+				sector = sector_in_rbio(rbio, stripe, sectornr, 0);
- 			} else {
--				page = rbio_stripe_page(rbio, stripe, pagenr);
-+				sector = rbio_stripe_sector(rbio, stripe, sectornr);
- 			}
--			pointers[stripe] = kmap_local_page(page);
--			unmap_array[stripe] = pointers[stripe];
-+			ASSERT(sector->page);
-+			unmap_array[stripe] = kmap_local_page(sector->page);
-+			pointers[stripe] = unmap_array[stripe] + sector->pgoff;
- 		}
- 
--		/* all raid6 handling here */
-+		/* All raid6 handling here */
- 		if (rbio->bioc->map_type & BTRFS_BLOCK_GROUP_RAID6) {
--			/*
--			 * single failure, rebuild from parity raid5
--			 * style
--			 */
-+			/* Single failure, rebuild from parity raid5 style */
- 			if (failb < 0) {
- 				if (faila == rbio->nr_data) {
- 					/*
-@@ -2068,10 +2074,10 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 
- 			if (rbio->bioc->raid_map[failb] == RAID5_P_STRIPE) {
- 				raid6_datap_recov(rbio->real_stripes,
--						  PAGE_SIZE, faila, pointers);
-+						  sectorsize, faila, pointers);
- 			} else {
- 				raid6_2data_recov(rbio->real_stripes,
--						  PAGE_SIZE, faila, failb,
-+						  sectorsize, faila, failb,
- 						  pointers);
- 			}
- 		} else {
-@@ -2081,7 +2087,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 			BUG_ON(failb != -1);
- pstripe:
- 			/* Copy parity block into failed block to start with */
--			copy_page(pointers[faila], pointers[rbio->nr_data]);
-+			memcpy(pointers[faila], pointers[rbio->nr_data],
-+			       sectorsize);
- 
- 			/* rearrange the pointer array */
- 			p = pointers[faila];
-@@ -2090,7 +2097,7 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 			pointers[rbio->nr_data - 1] = p;
- 
- 			/* xor in the rest */
--			run_xor(pointers, rbio->nr_data - 1, PAGE_SIZE);
-+			run_xor(pointers, rbio->nr_data - 1, sectorsize);
- 		}
- 		/* if we're doing this rebuild as part of an rmw, go through
- 		 * and set all of our private rbio pages in the
-@@ -2099,14 +2106,14 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 		 * other endio functions will fiddle the uptodate bits
- 		 */
- 		if (rbio->operation == BTRFS_RBIO_WRITE) {
--			for (i = 0;  i < rbio->stripe_npages; i++) {
-+			for (i = 0;  i < rbio->stripe_nsectors; i++) {
- 				if (faila != -1) {
--					page = rbio_stripe_page(rbio, faila, i);
--					SetPageUptodate(page);
-+					sector = rbio_stripe_sector(rbio, faila, i);
-+					sector->uptodate = 1;
- 				}
- 				if (failb != -1) {
--					page = rbio_stripe_page(rbio, failb, i);
--					SetPageUptodate(page);
-+					sector = rbio_stripe_sector(rbio, failb, i);
-+					sector->uptodate = 1;
- 				}
- 			}
- 		}
+ 	btrfs_init_work(&sblock->work, scrub_missing_raid56_worker, NULL, NULL);
 -- 
 2.35.1
 

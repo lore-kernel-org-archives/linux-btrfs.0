@@ -2,82 +2,155 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6CC1C433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:14:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 54525C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:23:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242352AbiDALPy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Apr 2022 07:15:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51924 "EHLO
+        id S1345429AbiDALZn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Apr 2022 07:25:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56162 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237488AbiDALPx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:15:53 -0400
-Received: from mail-ej1-x62e.google.com (mail-ej1-x62e.google.com [IPv6:2a00:1450:4864:20::62e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B5CA4EA760
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:14:03 -0700 (PDT)
-Received: by mail-ej1-x62e.google.com with SMTP id bq8so5077145ejb.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 04:14:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:subject:to:cc:message-id:date:user-agent:mime-version
-         :content-transfer-encoding:content-language;
-        bh=LCePTVvVP6NNXN0nV1wIves547GSNi8TXNroUTBpaRk=;
-        b=ajQ0nFxQZt0uuGIZZLgt4Lds8zLc2ItjrBlbUGWS8oiZwtWKcLwWQg011k6FtAFKkB
-         wpjC/pSkZHzY19DFtOvk2P0YqFOBnzlfYLirlPwgLmGR74/5x2pT4m1anKgEySiiX2ge
-         99ZcBT0aN9x6ZJeiuJoK3L0S9nsC3077aGuac2kbZ2Dj5hGHqHtcvduvMMUyFP9hwFM7
-         W7jumqjfVvCElV4yobdWfbQ6vd3zUD5rfle6Tj7j/X90q2Wf1M4ibzS5ENf0OYthd+D/
-         0miM1rMecFRTUrnFlKZSEn2crhr80eVmn90DXs67REuh3/v4fPKR8r947ImG+Ac4Xfuc
-         QF3A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:subject:to:cc:message-id:date:user-agent
-         :mime-version:content-transfer-encoding:content-language;
-        bh=LCePTVvVP6NNXN0nV1wIves547GSNi8TXNroUTBpaRk=;
-        b=GHndJkgs98/N6bG8cHvDnklX8iWPFPPRr1Ejfp9VQolGYpcam0wPHyhuy2XUXFdBb1
-         LaLMV9Hv/UhLUdiDfD/S1C3Rde2F3AnaFHuOAY3li6M6ly/LmoRKFE7y+uhjSXEyQX8U
-         d/w6dvNxmEfdfmw0TqOP8U450rLsyehjFln1I40LBIYD1zezBvlv24kNQqLBd23hcjvV
-         OC87qWr5XKLyaYklj4W+uPM4GodpYqAwrkVabAbaiz2BDde2pC6JOLiYpHT7TV1J5Jqz
-         cbAM2ipMGRAjmYFndsb9wKE12Mww6IZWvJ/nE15T/eQRCmEH6gz45EWLlrvLZXielvnK
-         DS7A==
-X-Gm-Message-State: AOAM533VHbxBGVy0q01LqJ2MJFRH/sYqrPrQM5sExK2QUcNB51/DMAfu
-        rxANebadZnX50xW3t+obuub2gxCUxbM=
-X-Google-Smtp-Source: ABdhPJxIkgemsnPxJLcJU0UpYYqFF8TmkOziBuKJC7eXAj0nqaOkZTWjFvO+W4HdlletTQ/QiBcyQQ==
-X-Received: by 2002:a17:906:2646:b0:6d5:d889:c92b with SMTP id i6-20020a170906264600b006d5d889c92bmr9211405ejc.696.1648811642290;
-        Fri, 01 Apr 2022 04:14:02 -0700 (PDT)
-Received: from ?IPv6:2a02:587:af09:1bb8:e04b:d138:63fd:e7c0? ([2a02:587:af09:1bb8:e04b:d138:63fd:e7c0])
-        by smtp.googlemail.com with ESMTPSA id v20-20020a056402349400b00419651e513asm1111562edc.45.2022.04.01.04.14.01
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 01 Apr 2022 04:14:01 -0700 (PDT)
-From:   Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: Adding a 4TB disk to a 2x4TB btrfs (data:single) filesystem and
- balancing takes extremely long (over a month). Filesystem has been deduped
- with bees
+        with ESMTP id S1344699AbiDALZm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:42 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7281A16D8C9
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:23:52 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 230B31FD01
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1648812231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=+nzNGzueB/2GMAQXopi1FCSlvx95ckIn8OTHS/i9KCA=;
+        b=Lj6fr8MFTNlkeGYl70dUNDmmz3jmlyrjmtVfgH5Z2eYqJU/XBdS2yvjQeIqdhP70xDHkYP
+        GPdVtR6yzmvfuGqJl+fn76FhH0yz+9fIdGVKogYkd32pkqvRE1R/LOD12QDj+QT5nupAxY
+        aXtrvaZnHzt99101vQVz9OCtXcbCaNc=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7BDE1132C1
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:50 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id cPDYEcbgRmJeFwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:23:50 +0000
+From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     ce3g8jdj@umail.furryterror.org
-Message-ID: <8a536fe1-68bd-4136-8cfb-bd410afc5fa1@gmail.com>
-Date:   Fri, 1 Apr 2022 14:13:58 +0300
-User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Gecko/20100101
- Thunderbird/52.9.1
+Subject: [PATCH 02/16] btrfs: make btrfs_raid_bio more compact
+Date:   Fri,  1 Apr 2022 19:23:17 +0800
+Message-Id: <9f54219b03f7218e20f8df1a7bd52755897730da.1648807440.git.wqu@suse.com>
+X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1648807440.git.wqu@suse.com>
+References: <cover.1648807440.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
-I am running btrfs on 2x 4TB HDDs (data: single, metadata: raid1) and i 
-added another 4TB disk.
-According to btrfs wiki i should run balance after adding the new device.
-My problem is that this balance takes extremely long, it is running for 
-4 days and it still has 91% left.
-Is this normal, and can i do anything to fix this?
+There are a lot of members using much larger type in btrfs_raid_bio.
 
-kernel is linux-5.17.1, i have also tried with 5.16 kernels.
-mount options are: rw,relatime,compress-force=zstd:11,space_cache=v2
-I have been using bees for dedup, but it is disabled for the balance.
-I am not doing any IO on the disks, they have no smart errors, and none 
-of them are SMR (2x WD40EFRX and 1x ST4000DM000)
-Autodefrag is disabled, and i also have checked that the disks are in 
-stable drive cages in order to be sure i have no problems with vibration.
-Benchmarking them gives normal speeds. Quotas have never been enabled.
+Like nr_pages which represents the total number of a full stripe.
+
+Instead of int (which is at least 32bits), u16 is already enough
+(max stripe length will be 256MiB, already beyond current raid56 device
+number limit).
+
+So this patch will reduce the width of the following members:
+
+- stripe_len to u32
+- nr_pages to u16
+- nr_data to u8
+- real_stripes to u8
+- scrubp to u8
+- faila/b to s8
+  As -1 is used to indicate no corruption
+
+This will slightly reduce the size of btrfs_raid_bio from 272 bytes to
+256 bytes, reducing 16 bytes usage.
+
+But please note that, when using btrfs_raid_bio, we allocate extra space
+for it to cover various pointer array, so the reduce memory is not
+really a big saving overall.
+
+As we're here modifying the comments already, update existing comments
+to current code standard.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 42 ++++++++++++++++++++++--------------------
+ 1 file changed, 22 insertions(+), 20 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index ae585ed6a023..2553e1bb8bbf 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -101,15 +101,6 @@ struct btrfs_raid_bio {
+ 	 */
+ 	unsigned long flags;
+ 
+-	/* size of each individual stripe on disk */
+-	int stripe_len;
+-
+-	/* number of data stripes (no p/q) */
+-	int nr_data;
+-
+-	int real_stripes;
+-
+-	int stripe_npages;
+ 	/*
+ 	 * set if we're doing a parity rebuild
+ 	 * for a read from higher up, which is handled
+@@ -118,21 +109,32 @@ struct btrfs_raid_bio {
+ 	 */
+ 	enum btrfs_rbio_ops operation;
+ 
+-	/* first bad stripe */
+-	int faila;
++	/* Size of each individual stripe on disk */
++	u32 stripe_len;
+ 
+-	/* second bad stripe (for raid6 use) */
+-	int failb;
++	/* How many pages there are for the full stripe including P/Q */
++	u16 nr_pages;
+ 
+-	int scrubp;
+-	/*
+-	 * number of pages needed to represent the full
+-	 * stripe
+-	 */
+-	int nr_pages;
++	/* Number of data stripes (no p/q) */
++	u8 nr_data;
++
++	/* Numer of all stripes (including P/Q) */
++	u8 real_stripes;
++
++	/* How many pages there are for each stripe */
++	u8 stripe_npages;
++
++	/* First bad stripe, -1 means no corruption */
++	s8 faila;
++
++	/* Second bad stripe (for raid6 use) */
++	s8 failb;
++
++	/* Stripe number that we're scrubbing  */
++	u8 scrubp;
+ 
+ 	/*
+-	 * size of all the bios in the bio_list.  This
++	 * Size of all the bios in the bio_list.  This
+ 	 * helps us decide if the rbio maps to a full
+ 	 * stripe or not
+ 	 */
+-- 
+2.35.1
+

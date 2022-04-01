@@ -2,129 +2,95 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7922C4332F
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:24:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BC0CAC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 13:30:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345519AbiDAL0C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Apr 2022 07:26:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56878 "EHLO
+        id S1346346AbiDANbw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Apr 2022 09:31:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44946 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345500AbiDALZ4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:56 -0400
+        with ESMTP id S232890AbiDANbu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 09:31:50 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 48126196D51
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:24:07 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 09C0521A91
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1648812246; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 34C73276FBE;
+        Fri,  1 Apr 2022 06:30:00 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 7C173210EC;
+        Fri,  1 Apr 2022 13:29:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1648819799;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=XUn9SGZJaLzz/uD4hh6nJo42Ye27bXG29O/GHUWNjf0=;
-        b=D1AI1EJmsRC7T2jxtWVat6GSvV3DvXVvCTLiWd75Hn6cnO2ngH1QYO+DFcl2xthhbYt+SV
-        oM1t4oiE7LXxsA0WTt2WE6gb12I1cCHeWsXAYME/WdiF7yyAkBfHJFkk/e2DoFBngO6rvV
-        SQ/KnmRMvwpYR5y68aza8ZIuoDdEWS8=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 66F2B132C1
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:24:05 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id oJSBDdXgRmJeFwAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:24:05 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 16/16] btrfs: enable subpage support for RAID56
-Date:   Fri,  1 Apr 2022 19:23:31 +0800
-Message-Id: <8266be491bc2c3cbee94118e17229de359027881.1648807440.git.wqu@suse.com>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1648807440.git.wqu@suse.com>
-References: <cover.1648807440.git.wqu@suse.com>
+        bh=pbRJr7IPn8qeEu81RK3Y+vqOSQRcbz2LMBzi+HgbIr8=;
+        b=TPMSwncJZtNw918WLa+hnrGEKvZieut+mublksy1AsW1fKAp3kqDx6QhzYCm0gjr3DjKGN
+        YIDrpzZHz16i7J5g8VXY6aFuHmhgqgL8UI1CrMfMNrvT18N2Fzp1rLZ811jHeJ9xjbbRKS
+        sBU+HNsM4/tzebwGmFzotiQvkWHA6QQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1648819799;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=pbRJr7IPn8qeEu81RK3Y+vqOSQRcbz2LMBzi+HgbIr8=;
+        b=PnsAKlVlpalyVK/QMAf1uoZqLPQbGAE63ACdZs5Q8Waq0BcpDskylPQby35lqHnyrLZvYw
+        itMrDdGmwU/ZZODg==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 6F8B4A3B93;
+        Fri,  1 Apr 2022 13:29:59 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 64C3DDA7F3; Fri,  1 Apr 2022 15:26:00 +0200 (CEST)
+Date:   Fri, 1 Apr 2022 15:26:00 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Cc:     dsterba@suse.cz, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Nick Terrell <terrelln@fb.com>, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Nikolay Borisov <nborisov@suse.com>
+Subject: Re: [PATCH v3 2/2] btrfs: allocate page arrays using bulk page
+ allocator
+Message-ID: <20220401132600.GI15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Sweet Tea Dorminy <sweettea-kernel@dorminy.me>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Nick Terrell <terrelln@fb.com>,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com, Nikolay Borisov <nborisov@suse.com>
+References: <cover.1648669832.git.sweettea-kernel@dorminy.me>
+ <ede1d39f7878ee2ed12c1526cc2ec358a2d862cf.1648669832.git.sweettea-kernel@dorminy.me>
+ <20220331173525.GF15609@twin.jikos.cz>
+ <f9493291-9981-d684-bf49-a551aaf08061@dorminy.me>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <f9493291-9981-d684-bf49-a551aaf08061@dorminy.me>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now the btrfs RAID56 infrastructure has migrated to use sector_ptr
-interface, it should be safe to enable subpage support for btrfs RAID56.
+On Thu, Mar 31, 2022 at 02:19:07PM -0400, Sweet Tea Dorminy wrote:
+> > Also in the xfs code there's memalloc_retry_wait() which is supposed to be
+> > called when repeated memory allocation is retried. What was the reason
+> > you removed it?
+> 
+> Trying to keep the behavior as close as possible to the existing behavior.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c | 8 --------
- fs/btrfs/raid56.c  | 6 ------
- fs/btrfs/volumes.c | 7 -------
- 3 files changed, 21 deletions(-)
+I see, makes sense.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index d456f426924c..2c66ea3485e8 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3678,14 +3678,6 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 		btrfs_warn(fs_info,
- 		"read-write for sector size %u with page size %lu is experimental",
- 			   sectorsize, PAGE_SIZE);
--		if (btrfs_super_incompat_flags(fs_info->super_copy) &
--			BTRFS_FEATURE_INCOMPAT_RAID56) {
--			btrfs_err(fs_info,
--		"RAID56 is not yet supported for sector size %u with page size %lu",
--				sectorsize, PAGE_SIZE);
--			err = -EINVAL;
--			goto fail_alloc;
--		}
- 		subpage_info = kzalloc(sizeof(*subpage_info), GFP_KERNEL);
- 		if (!subpage_info)
- 			goto fail_alloc;
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 7bfe8e8d8325..3dff0e009404 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1172,9 +1172,6 @@ static int rbio_add_io_sector(struct btrfs_raid_bio *rbio,
- 	ASSERT(sector_nr >= 0 && sector_nr < rbio->stripe_nsectors);
- 	ASSERT(sector->page);
- 
--	/* TODO: We don't yet support subpage, thus pgoff should always be 0 */
--	ASSERT(sector->pgoff == 0);
--
- 	stripe = &rbio->bioc->stripes[stripe_nr];
- 	disk_start = stripe->physical + sector_nr * sectorsize;
- 
-@@ -2419,9 +2416,6 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 	}
- 	ASSERT(i < rbio->real_stripes);
- 
--	/* Now we just support the sectorsize equals to page size */
--	ASSERT(fs_info->sectorsize == PAGE_SIZE);
--	ASSERT(rbio->stripe_npages == stripe_nsectors);
- 	bitmap_copy(rbio->dbitmap, dbitmap, stripe_nsectors);
- 
- 	/*
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3fd17e87815a..82c7e4e59c29 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4063,13 +4063,6 @@ static inline int validate_convert_profile(struct btrfs_fs_info *fs_info,
- 	if (!(bargs->flags & BTRFS_BALANCE_ARGS_CONVERT))
- 		return true;
- 
--	if (fs_info->sectorsize < PAGE_SIZE &&
--		bargs->target & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		btrfs_err(fs_info,
--		"RAID56 is not yet supported for sectorsize %u with page size %lu",
--			  fs_info->sectorsize, PAGE_SIZE);
--		return false;
--	}
- 	/* Profile is valid and does not have bits outside of the allowed set */
- 	if (alloc_profile_is_valid(bargs->target, 1) &&
- 	    (bargs->target & ~allowed) == 0)
--- 
-2.35.1
+> The current behavior of each alloc_page loop is to fail if alloc_page() 
+> fails; in the worst case, alloc_pages_bulk_array() calls alloc_page() 
+> after trying to get a batch, so I figured the worst case is still 
+> basically a loop calling alloc_page() and failing if it ever fails.
+> 
+> Reading up on it, though, arguably the memalloc_retry_wait() should 
+> already be in all the callsites, so maybe I should insert a patch in the 
+> middle that just adds the memalloc_retry_wait() into 
+> btrfs_alloc_page_array()? Since it's an orthogonal fixup to either the 
+> refactoring or the conversion to alloc_pages_bulk_array()?
 
+Yeah a separate patch with the reasonig about the potential effects is
+better. The v3 is now in misc-next with the suggested loop refactoring,
+so please send the memalloc_retry_wait() update on top of that. Thanks.

@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01EA2C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:23:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 155CAC43217
+	for <linux-btrfs@archiver.kernel.org>; Fri,  1 Apr 2022 11:23:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344699AbiDALZo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 1 Apr 2022 07:25:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56160 "EHLO
+        id S1344444AbiDALZp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 1 Apr 2022 07:25:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56202 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344444AbiDALZm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:42 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7266416CE76
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:23:51 -0700 (PDT)
+        with ESMTP id S1345335AbiDALZn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Apr 2022 07:25:43 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6EE76182AF4
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 04:23:53 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 1BFFD21A91
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:50 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 2989A1FD00
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1648812230; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1648812232; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=u8VSkuHpeXe7S6mCAeDG8UgYMxRtoauJzVEggGldLiE=;
-        b=KmEX+WD3rlSNW84LGiWfaG5SGt5PoGwAlzIGUNcYR30FWDZ7C+yJpJHsxx/6SW6Quc24Ut
-        2ggG96tgRzOMp2GRZ1LZn6UZsxE3/xr1VKvvghx9qopv3s0qNHpeAfsNUh1zPyOvNyxGrd
-        ivnRzzp3AbC2cF2GmJZ1tCgzbhwYiFg=
+        bh=1Q7DKGqJ0EyX7PFK1AWEWlYguMnkjkF0dNPwIIaYvKo=;
+        b=JYo1631OBE4Vls79L2l4l93UUHu0XJO8ahAWn9/sdBzJYLaKnjJ1agjZLT7lVF/e5uuEmY
+        uFlZZH6RX1vKqEgPPUnw7Mr75KtWfmvuXhn0XX1cp7/9x0SsHJaIfo1rRPGVtNJGxdV1z1
+        uh40oLamiAn91wY6hGdioP7AODqMO5Q=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 73B03132C1
-        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:49 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8368A132C1
+        for <linux-btrfs@vger.kernel.org>; Fri,  1 Apr 2022 11:23:51 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id AM3mD8XgRmJeFwAAMHmgww
+        id cBWyE8fgRmJeFwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:23:49 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Apr 2022 11:23:51 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 01/16] btrfs: open-code rbio_nr_pages()
-Date:   Fri,  1 Apr 2022 19:23:16 +0800
-Message-Id: <7a98d1699b1e4db5c607a509a5e2e71bc7811178.1648807440.git.wqu@suse.com>
+Subject: [PATCH 03/16] btrfs: introduce new cached members for btrfs_raid_bio
+Date:   Fri,  1 Apr 2022 19:23:18 +0800
+Message-Id: <a2f049f315b3c218d909c854ab117779d8842abe.1648807440.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1648807440.git.wqu@suse.com>
 References: <cover.1648807440.git.wqu@suse.com>
@@ -54,56 +54,103 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function rbio_nr_pages() is only called once inside alloc_rbio(),
-there is no reason to make it dedicated helper.
+The new members are all related to number of sectors, but the existing
+number of pages members are kept as is:
 
-Furthermore, the return type doesn't match, the function return "unsigned
-long" which may not be necessary, while the only caller only uses "int".
+- nr_sectors
+  Total sectors of the full stripe including P/Q.
 
-Since we're doing cleaning up here, also fix the type to "const unsigned
-int" for all involved local variables.
+- stripe_nsectors
+  The sectors of a single stripe.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 16 ++++------------
- 1 file changed, 4 insertions(+), 12 deletions(-)
+ fs/btrfs/raid56.c | 25 ++++++++++++++++++++-----
+ 1 file changed, 20 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 0e239a4c3b26..ae585ed6a023 100644
+index 2553e1bb8bbf..1bad7d3a0331 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -945,15 +945,6 @@ static struct page *page_in_rbio(struct btrfs_raid_bio *rbio,
- 	return rbio->stripe_pages[chunk_page];
- }
+@@ -115,6 +115,9 @@ struct btrfs_raid_bio {
+ 	/* How many pages there are for the full stripe including P/Q */
+ 	u16 nr_pages;
  
--/*
-- * number of pages we need for the entire stripe across all the
-- * drives
-- */
--static unsigned long rbio_nr_pages(unsigned long stripe_len, int nr_stripes)
--{
--	return DIV_ROUND_UP(stripe_len, PAGE_SIZE) * nr_stripes;
--}
--
- /*
-  * allocation and initial setup for the btrfs_raid_bio.  Not
-  * this does not allocate any pages for rbio->pages.
-@@ -962,11 +953,12 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
- 					 struct btrfs_io_context *bioc,
- 					 u64 stripe_len)
- {
-+	const unsigned int real_stripes = bioc->num_stripes - bioc->num_tgtdevs;
-+	const unsigned int num_pages = DIV_ROUND_UP(stripe_len, PAGE_SIZE) *
-+				       real_stripes;
-+	const unsigned int stripe_npages = DIV_ROUND_UP(stripe_len, PAGE_SIZE);
++	/* How many sectors there are for the full stripe including P/Q */
++	u16 nr_sectors;
++
+ 	/* Number of data stripes (no p/q) */
+ 	u8 nr_data;
+ 
+@@ -124,6 +127,9 @@ struct btrfs_raid_bio {
+ 	/* How many pages there are for each stripe */
+ 	u8 stripe_npages;
+ 
++	/* How many sectors there are for each stripe */
++	u8 stripe_nsectors;
++
+ 	/* First bad stripe, -1 means no corruption */
+ 	s8 faila;
+ 
+@@ -172,7 +178,7 @@ struct btrfs_raid_bio {
+ 	/* allocated with real_stripes-many pointers for finish_*() calls */
+ 	void **finish_pointers;
+ 
+-	/* allocated with stripe_npages-many bits for finish_*() calls */
++	/* allocated with stripe_nsectors-many bits for finish_*() calls */
+ 	unsigned long *finish_pbitmap;
+ };
+ 
+@@ -958,18 +964,25 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
+ 	const unsigned int real_stripes = bioc->num_stripes - bioc->num_tgtdevs;
+ 	const unsigned int num_pages = DIV_ROUND_UP(stripe_len, PAGE_SIZE) *
+ 				       real_stripes;
++	const unsigned int num_sectors = DIV_ROUND_UP(stripe_len * real_stripes,
++						      fs_info->sectorsize);
+ 	const unsigned int stripe_npages = DIV_ROUND_UP(stripe_len, PAGE_SIZE);
++	const unsigned int stripe_nsectors = DIV_ROUND_UP(stripe_len,
++							  fs_info->sectorsize);
  	struct btrfs_raid_bio *rbio;
  	int nr_data = 0;
--	int real_stripes = bioc->num_stripes - bioc->num_tgtdevs;
--	int num_pages = rbio_nr_pages(stripe_len, real_stripes);
--	int stripe_npages = DIV_ROUND_UP(stripe_len, PAGE_SIZE);
  	void *p;
  
++	/* PAGE_SIZE must tbe aligned to sectorsize for subpage support */
++	ASSERT(IS_ALIGNED(PAGE_SIZE, fs_info->sectorsize));
++
  	rbio = kzalloc(sizeof(*rbio) +
+ 		       sizeof(*rbio->stripe_pages) * num_pages +
+ 		       sizeof(*rbio->bio_pages) * num_pages +
+ 		       sizeof(*rbio->finish_pointers) * real_stripes +
+-		       sizeof(*rbio->dbitmap) * BITS_TO_LONGS(stripe_npages) +
++		       sizeof(*rbio->dbitmap) * BITS_TO_LONGS(stripe_nsectors) +
+ 		       sizeof(*rbio->finish_pbitmap) *
+-				BITS_TO_LONGS(stripe_npages),
++				BITS_TO_LONGS(stripe_nsectors),
+ 		       GFP_NOFS);
+ 	if (!rbio)
+ 		return ERR_PTR(-ENOMEM);
+@@ -982,8 +995,10 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
+ 	rbio->bioc = bioc;
+ 	rbio->stripe_len = stripe_len;
+ 	rbio->nr_pages = num_pages;
++	rbio->nr_sectors = num_sectors;
+ 	rbio->real_stripes = real_stripes;
+ 	rbio->stripe_npages = stripe_npages;
++	rbio->stripe_nsectors = stripe_nsectors;
+ 	rbio->faila = -1;
+ 	rbio->failb = -1;
+ 	refcount_set(&rbio->refs, 1);
+@@ -1002,8 +1017,8 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
+ 	CONSUME_ALLOC(rbio->stripe_pages, num_pages);
+ 	CONSUME_ALLOC(rbio->bio_pages, num_pages);
+ 	CONSUME_ALLOC(rbio->finish_pointers, real_stripes);
+-	CONSUME_ALLOC(rbio->dbitmap, BITS_TO_LONGS(stripe_npages));
+-	CONSUME_ALLOC(rbio->finish_pbitmap, BITS_TO_LONGS(stripe_npages));
++	CONSUME_ALLOC(rbio->dbitmap, BITS_TO_LONGS(stripe_nsectors));
++	CONSUME_ALLOC(rbio->finish_pbitmap, BITS_TO_LONGS(stripe_nsectors));
+ #undef  CONSUME_ALLOC
+ 
+ 	if (bioc->map_type & BTRFS_BLOCK_GROUP_RAID5)
 -- 
 2.35.1
 

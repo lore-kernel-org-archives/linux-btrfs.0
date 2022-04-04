@@ -2,106 +2,163 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A098C4321E
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED390C3A5A7
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1381197AbiDDV03 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:26:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57202 "EHLO
+        id S1381453AbiDDV0a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43692 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1380162AbiDDTGD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 15:06:03 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 611982126A
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 12:04:05 -0700 (PDT)
-Received: from c-24-5-124-255.hsd1.ca.comcast.net ([24.5.124.255]:48702 helo=sauron.svh.merlins.org)
-        by mail1.merlins.org with esmtpsa 
-        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
-        id 1nbRzf-0000Wc-AJ by authid <merlins.org> with srv_auth_plain; Mon, 04 Apr 2022 12:04:03 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
-        (envelope-from <marc@merlins.org>)
-        id 1nbRzf-00C3BP-44; Mon, 04 Apr 2022 12:04:03 -0700
-Date:   Mon, 4 Apr 2022 12:04:03 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220404190403.GY1314726@merlins.org>
-References: <20220330143944.GE14158@merlins.org>
- <20220331171927.GL1314726@merlins.org>
- <Ykoux6Oczf6+hmGg@localhost.localdomain>
- <20220404010101.GQ1314726@merlins.org>
- <20220404150858.GS1314726@merlins.org>
- <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
- <20220404174357.GT1314726@merlins.org>
- <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
- <20220404181055.GW1314726@merlins.org>
- <CAEzrpqfA94nYjV=o_4+XRitopVT-3j7iQMaXAr3FE3Rfm32gkA@mail.gmail.com>
+        with ESMTP id S1379409AbiDDRIU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:08:20 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C4B7640A22
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:06:23 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 8268B210DC;
+        Mon,  4 Apr 2022 17:06:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649091982;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=1CJ89gIRo48g6SWtvWGMjSm5IME6e0tMC6msLQPQwSs=;
+        b=m+WwDHTkxPalCnDqHT8K59L48zEJzcUrO4u4hj0imjIkgz5fFCJXWkHvmbDWejfgtDVcMo
+        ys3YOUNEcpp4PJw+32lbUup3owAzVw8CzuKigSsbhMb9PUErU8TgTYq0lX7CihVKb+5fwi
+        urrkUFQhoxOvi0+MXrazrI9s31Uqy1E=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649091982;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=1CJ89gIRo48g6SWtvWGMjSm5IME6e0tMC6msLQPQwSs=;
+        b=da0B0U1CaxAqZ/+cUjwddLpirvar044qahqbwfozskawQw5xOHbqu3la0IIqv6iXud5ZXw
+        s2NI28KpwRDmcYBg==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 73E0DA3B82;
+        Mon,  4 Apr 2022 17:06:22 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 8D27CDA80E; Mon,  4 Apr 2022 19:02:21 +0200 (CEST)
+Date:   Mon, 4 Apr 2022 19:02:21 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Stefan Roesch <shr@fb.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v1 3/3] btrfs: add force_chunk_alloc sysfs entry to force
+ allocation
+Message-ID: <20220404170221.GU15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Stefan Roesch <shr@fb.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20220208193122.492533-1-shr@fb.com>
+ <20220208193122.492533-4-shr@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqfA94nYjV=o_4+XRitopVT-3j7iQMaXAr3FE3Rfm32gkA@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-X-SA-Exim-Connect-IP: 24.5.124.255
-X-SA-Exim-Mail-From: marc@merlins.org
+In-Reply-To: <20220208193122.492533-4-shr@fb.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 04, 2022 at 02:46:57PM -0400, Josef Bacik wrote:
-> Ok now that I've learned how to read, the real problem is the extent
-> tree is fucked.  The chunk tree isn't happy, but it appears to be sane
-> enough to proceed, which is good because that could be unfun to
-> restore.
+On Tue, Feb 08, 2022 at 11:31:22AM -0800, Stefan Roesch wrote:
+> This adds the force_chunk_alloc sysfs entry to be able to force a
+> storage allocation. This is a debugging and test feature and is
+> enabled with the CONFIG_BTRFS_DEBUG configuration option.
 > 
-> Good news is the extent tree is easily re-buildable, lets use
+> It is stored at
+> /sys/fs/btrfs/<uuid>/allocation/<block_type>/force_chunk_alloc.
 > 
-> btrfs check --init-extent-tree /dev/whatever
+> Signed-off-by: Stefan Roesch <shr@fb.com>
+> ---
+>  fs/btrfs/sysfs.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 58 insertions(+)
 > 
-> and let that baby do its thing.  Hopefully that rebuilds everything
-> and you'll be good to go.  Thanks,
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index ca337117f15b..4f4f038bc261 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -62,6 +62,10 @@ struct raid_kobject {
+>  	.store	= _store,						\
+>  }
+>  
+> +#define BTRFS_ATTR_W(_prefix, _name, _store)			        \
+> +	static struct kobj_attribute btrfs_attr_##_prefix##_##_name =	\
+> +			__INIT_KOBJ_ATTR(_name, 0200, NULL, _store)
+> +
+>  #define BTRFS_ATTR_RW(_prefix, _name, _show, _store)			\
+>  	static struct kobj_attribute btrfs_attr_##_prefix##_##_name =	\
+>  			__INIT_KOBJ_ATTR(_name, 0644, _show, _store)
+> @@ -785,6 +789,54 @@ static ssize_t btrfs_chunk_size_store(struct kobject *kobj,
+>  	return val;
+>  }
+>  
+> +#ifdef CONFIG_BTRFS_DEBUG
+> +/*
+> + * Request chunk allocation with current chunk size.
+> + */
+> +static ssize_t btrfs_force_chunk_alloc_store(struct kobject *kobj,
+> +					     struct kobj_attribute *a,
+> +					     const char *buf, size_t len)
+> +{
+> +	struct btrfs_space_info *space_info = to_space_info(kobj);
+> +	struct btrfs_fs_info *fs_info = to_fs_info(get_btrfs_kobj(kobj));
+> +	struct btrfs_trans_handle *trans;
+> +	unsigned long val;
+> +	int ret;
+> +
+> +	if (!fs_info) {
+> +		pr_err("couldn't get fs_info\n");
+> +		return -EPERM;
+> +	}
 
-Thanks for the suggestion, sadly it's not that simple:
+Same comments as in patch 1
 
-gargamel:~# btrfs check --init-extent-tree  /dev/mapper/dshelf1a
-WARNING:
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	if (sb_rdonly(fs_info->sb))
+> +		return -EROFS;
+> +
+> +	ret = kstrtoul(buf, 10, &val);
+> +	if (ret)
+> +		return ret;
+> +
+> +	if (val == 0)
+> +		return -EINVAL;
+> +
+> +	/*
+> +	 * Allocate new chunk.
+> +	 */
+> +	trans = btrfs_start_transaction(fs_info->tree_root, 0);
 
-	Do not use --repair unless you are advised to do so by a developer
-	or an experienced user, and then only after having accepted that no
-	fsck can successfully repair all types of filesystem corruption. Eg.
-	some software or hardware bugs can fatally damage a volume.
-	The operation will start in 10 seconds.
-	Use Ctrl-C to stop it.
-10 9 8 7 6 5 4 3 2 1
-Starting repair.
-Opening filesystem to check...
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-Ignoring transid failure
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Ignoring transid failure
-leaf parent key incorrect 13577821667328
-WARNING: could not setup extent tree, skipping it
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Ignoring transid failure
-leaf parent key incorrect 13577821667328
-Couldn't setup device tree
-ERROR: cannot open file system
+Starting transaction from sysfs callbacks is not considered safe due to
+potentially heavy operations going on, taking locks etc. and should be
+done in the follwing way:
 
-gargamel:~# btrfs --version
-btrfs-progs v5.10.1 
+	btrfs_set_pending(fs_info, COMMIT);
+	wake_up_process(fs_info->transaction_kthread);
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+> +	if (!trans)
+> +		return PTR_ERR(trans);
+> +	ret = btrfs_force_chunk_alloc(trans, space_info->flags);
+
+Similar here, check the function, it does a lot of things, this is not
+safe from sysfs context.
+
+This will need to be done somewhere early in the transaction commit
+after setting a new pending bit here in sysfs, like the
+btrfs_set_pending(..., COMMIT) does.
+
+> +	btrfs_end_transaction(trans);
+> +
+> +	if (ret == 1)
+> +		return len;
+> +
+> +	return -ENOSPC;
+> +}
+> +#endif
+> +
+>  SPACE_INFO_ATTR(flags);
+>  SPACE_INFO_ATTR(total_bytes);
+>  SPACE_INFO_ATTR(bytes_used);

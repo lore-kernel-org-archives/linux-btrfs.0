@@ -2,238 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88049C35276
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E5B0C4727C
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1382259AbiDDV0i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:26:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54456 "EHLO
+        id S1382283AbiDDV0j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42642 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379308AbiDDQ6B (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 12:58:01 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 772963B3EC
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 09:56:04 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 330F9210DC;
-        Mon,  4 Apr 2022 16:56:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649091363;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=KloOBxSbQT0TxqPGI8Q3ipgs0Fa/b5Jpx69E18og7cU=;
-        b=Yr3scrTg4S2e5SOjsN2kucQPF5B6aBE/+L73IXdw+W738GpEnsSb6nO483ZySxyAhKQAdl
-        SEljpJlZG8ilLpeCQDh2d8E5nxdLecygusPbz3zXKdciLQQIZUp8zLTbU7ISliWaErDjAU
-        lqE/kLl3C5apcI0+fOq06qB3NLFEZ0c=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649091363;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=KloOBxSbQT0TxqPGI8Q3ipgs0Fa/b5Jpx69E18og7cU=;
-        b=By3+ofTRuL/7BFcSMkf1999p6CrwOeznIO4uB1MA1jM8eGkCKLTgix0fqHZHUUWdCGaFwL
-        dVC5qXQZqT/PRaCg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 295B2A3B83;
-        Mon,  4 Apr 2022 16:56:03 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 607B4DA80E; Mon,  4 Apr 2022 18:52:02 +0200 (CEST)
-Date:   Mon, 4 Apr 2022 18:52:01 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Stefan Roesch <shr@fb.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v1 2/3] btrfs: expose chunk size in sysfs.
-Message-ID: <20220404165201.GT15609@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Stefan Roesch <shr@fb.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20220208193122.492533-1-shr@fb.com>
- <20220208193122.492533-3-shr@fb.com>
+        with ESMTP id S1380580AbiDDUfc (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 16:35:32 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE52F10D9
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 13:33:35 -0700 (PDT)
+Received: from c-24-5-124-255.hsd1.ca.comcast.net ([24.5.124.255]:48712 helo=sauron.svh.merlins.org)
+        by mail1.merlins.org with esmtpsa 
+        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
+        id 1nbTOH-0006mB-Fb by authid <merlins.org> with srv_auth_plain; Mon, 04 Apr 2022 13:33:33 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
+        (envelope-from <marc@merlins.org>)
+        id 1nbTOH-00CBUt-A4; Mon, 04 Apr 2022 13:33:33 -0700
+Date:   Mon, 4 Apr 2022 13:33:33 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220404203333.GZ1314726@merlins.org>
+References: <Ykoux6Oczf6+hmGg@localhost.localdomain>
+ <20220404010101.GQ1314726@merlins.org>
+ <20220404150858.GS1314726@merlins.org>
+ <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
+ <20220404174357.GT1314726@merlins.org>
+ <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
+ <20220404181055.GW1314726@merlins.org>
+ <CAEzrpqfA94nYjV=o_4+XRitopVT-3j7iQMaXAr3FE3Rfm32gkA@mail.gmail.com>
+ <20220404190403.GY1314726@merlins.org>
+ <CAEzrpqeMPQvtoov=7Lv5Kx8-cgOmRFFYLbuh0QxZ6psQN3RDeA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220208193122.492533-3-shr@fb.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <CAEzrpqeMPQvtoov=7Lv5Kx8-cgOmRFFYLbuh0QxZ6psQN3RDeA@mail.gmail.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 24.5.124.255
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 08, 2022 at 11:31:21AM -0800, Stefan Roesch wrote:
-> This adds a new sysfs entry in /sys/fs/btrfs/<uuid>/allocation/<block
-> type>/chunk_size. This allows to query the chunk size and also set the
-> chunk size.
-> 
-> Signed-off-by: Stefan Roesch <shr@fb.com>
-> ---
->  fs/btrfs/sysfs.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 94 insertions(+)
-> 
-> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-> index beb7f72d50b8..ca337117f15b 100644
-> --- a/fs/btrfs/sysfs.c
-> +++ b/fs/btrfs/sysfs.c
-> @@ -21,6 +21,7 @@
->  #include "space-info.h"
->  #include "block-group.h"
->  #include "qgroup.h"
-> +#include "misc.h"
->  
->  /*
->   * Structure name                       Path
-> @@ -92,6 +93,7 @@ static struct btrfs_feature_attr btrfs_attr_features_##_name = {	     \
->  
->  static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
->  static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
-> +static inline struct kobject *get_btrfs_kobj(struct kobject *kobj);
->  
->  static struct btrfs_feature_attr *to_btrfs_feature_attr(struct kobj_attribute *a)
->  {
-> @@ -708,6 +710,81 @@ static ssize_t btrfs_space_info_show_##field(struct kobject *kobj,	\
->  }									\
->  BTRFS_ATTR(space_info, field, btrfs_space_info_show_##field)
->  
-> +/*
-> + * Return space info chunk size.
-> + */
+On Mon, Apr 04, 2022 at 03:52:15PM -0400, Josef Bacik wrote:
+> Can you build a recent btrfs-progs from git?  We chucked that error
+> apparently and I can't figure out where it's complaining.  Thanks,
 
-Comment not necessary.
+Sure, here's git master
 
-> +static ssize_t btrfs_chunk_size_show(struct kobject *kobj,
-> +				     struct kobj_attribute *a, char *buf)
-> +{
-> +	struct btrfs_space_info *sinfo = to_space_info(kobj);
-> +
-> +	return sysfs_emit(buf, "%llu\n", atomic64_read(&sinfo->chunk_size));
-> +}
-> +
-> +/*
-> + * Store new user supplied chunk size in space info.
-> + *
-> + * Note: If the new chunk size value is larger than 10% of free space it is
-> + *       reduced to match that limit.
-> + */
-> +static ssize_t btrfs_chunk_size_store(struct kobject *kobj,
-> +				      struct kobj_attribute *a,
-> +				      const char *buf, size_t len)
-> +{
-> +	struct btrfs_space_info *space_info = to_space_info(kobj);
-> +	struct btrfs_fs_info *fs_info = to_fs_info(get_btrfs_kobj(kobj));
-> +	u64 val;
-> +	int ret;
-> +
-> +	if (!capable(CAP_SYS_ADMIN))
-> +		return -EPERM;
-> +
-> +	if (!fs_info) {
-> +		pr_err("couldn't get fs_info\n");
+gargamel:/var/local/src/btrfs-progs# ./btrfs --version
+btrfs-progs v5.16.2
+gargamel:/var/local/src/btrfs-progs# ./btrfs check --init-extent-tree  /dev/mapper/dshelf1a
+WARNING:
 
-What's the reason for such error message? I would end up in the system
-log without any context so it does not bring any value to user nor does
-it tell what wen wrong.
+	Do not use --repair unless you are advised to do so by a developer
+	or an experienced user, and then only after having accepted that no
+	fsck can successfully repair all types of filesystem corruption. Eg.
+	some software or hardware bugs can fatally damage a volume.
+	The operation will start in 10 seconds.
+	Use Ctrl-C to stop it.
+10 9 8 7 6 5 4 3 2 1
+Starting repair.
+Opening filesystem to check...
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+Ignoring transid failure
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Ignoring transid failure
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Ignoring transid failure
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Ignoring transid failure
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Ignoring transid failure
+Couldn't setup device tree
+ERROR: cannot open file system
 
-Checking other functions, there's no such check in most of them and I
-don't think it's needed, the filesystem can't be unmounted with open
-file references to sysfs.
 
-> +		return -EPERM;
-> +	}
-> +
-> +	if (sb_rdonly(fs_info->sb))
-> +		return -EROFS;
-> +
-> +	if (!fs_info->fs_devices)
-> +		return -EINVAL;
-> +
-> +	if (btrfs_is_zoned(fs_info))
-> +		return -EINVAL;
-> +
-> +	if (!space_info) {
-> +		btrfs_err(fs_info, "couldn't get space_info\n");
-
-Same as the error message above.
-
-Also I'm not sure there could be a NULL space_info, it's one of the core
-data structures used all the time.
-
-> +		return -EPERM;
-> +	}
-> +
-> +	/* System block type must not be changed. */
-> +	if (space_info->flags & BTRFS_BLOCK_GROUP_SYSTEM)
-> +		return -EINVAL;
-
-This would probably be EPERM, EINVAL is for invalid values (like out of
-range).
-
-> +
-> +	ret = kstrtoull(buf, 10, &val);
-
-As this is supposed to be used by humans, it's better to use memparse
-that also translates the K/M/G suffix so it's easy to write '256M' etc.
-
-> +	if (ret)
-> +		return ret;
-> +
-> +	val = min(val, BTRFS_MAX_DATA_CHUNK_SIZE);
-> +
-> +	/*
-> +	 * Limit stripe size to 10% of available space.
-> +	 */
-> +	val = min(div_factor(fs_info->fs_devices->total_rw_bytes, 1), val);
-> +
-> +	/* Must be multiple of 256M. */
-> +	val &= ~(SZ_256M - 1);
-
-Where does this requirement come from?
-
-> +
-> +	/* Must be at least 256M. */
-> +	if (val < SZ_256M)
-> +		return -EINVAL;
-> +
-> +	btrfs_update_space_info_chunk_size(space_info, val);
-> +
-> +	return val;
-> +}
-> +
->  SPACE_INFO_ATTR(flags);
->  SPACE_INFO_ATTR(total_bytes);
->  SPACE_INFO_ATTR(bytes_used);
-> @@ -718,6 +795,8 @@ SPACE_INFO_ATTR(bytes_readonly);
->  SPACE_INFO_ATTR(bytes_zone_unusable);
->  SPACE_INFO_ATTR(disk_used);
->  SPACE_INFO_ATTR(disk_total);
-> +BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
-> +	      btrfs_chunk_size_store);
->  
->  /*
->   * Allocation information about block group types.
-> @@ -735,6 +814,7 @@ static struct attribute *space_info_attrs[] = {
->  	BTRFS_ATTR_PTR(space_info, bytes_zone_unusable),
->  	BTRFS_ATTR_PTR(space_info, disk_used),
->  	BTRFS_ATTR_PTR(space_info, disk_total),
-> +	BTRFS_ATTR_PTR(space_info, chunk_size),
->  	NULL,
->  };
->  ATTRIBUTE_GROUPS(space_info);
-> @@ -1099,6 +1179,20 @@ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
->  	return to_fs_devs(kobj)->fs_info;
->  }
->  
-> +/*
-> + * Get btrfs sysfs kobject.
-> + */
-> +static inline struct kobject *get_btrfs_kobj(struct kobject *kobj)
-> +{
-> +	while (kobj) {
-> +		if (kobj->ktype == &btrfs_ktype)
-> +			return kobj;
-> +		kobj = kobj->parent;
-> +	}
-> +
-> +	return NULL;
-> +}
-
-There's the to_fs_info helper to get fs_info from any kobj, why is
-get_btrfs_kobj needed to traverse back?
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

@@ -2,98 +2,131 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E5B0C4727C
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7E89C4743C
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1382283AbiDDV0j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:26:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42642 "EHLO
+        id S1382304AbiDDV0l (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53764 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1380580AbiDDUfc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 16:35:32 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE52F10D9
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 13:33:35 -0700 (PDT)
-Received: from c-24-5-124-255.hsd1.ca.comcast.net ([24.5.124.255]:48712 helo=sauron.svh.merlins.org)
-        by mail1.merlins.org with esmtpsa 
-        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
-        id 1nbTOH-0006mB-Fb by authid <merlins.org> with srv_auth_plain; Mon, 04 Apr 2022 13:33:33 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
-        (envelope-from <marc@merlins.org>)
-        id 1nbTOH-00CBUt-A4; Mon, 04 Apr 2022 13:33:33 -0700
-Date:   Mon, 4 Apr 2022 13:33:33 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220404203333.GZ1314726@merlins.org>
-References: <Ykoux6Oczf6+hmGg@localhost.localdomain>
- <20220404010101.GQ1314726@merlins.org>
- <20220404150858.GS1314726@merlins.org>
- <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
- <20220404174357.GT1314726@merlins.org>
- <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
- <20220404181055.GW1314726@merlins.org>
- <CAEzrpqfA94nYjV=o_4+XRitopVT-3j7iQMaXAr3FE3Rfm32gkA@mail.gmail.com>
- <20220404190403.GY1314726@merlins.org>
- <CAEzrpqeMPQvtoov=7Lv5Kx8-cgOmRFFYLbuh0QxZ6psQN3RDeA@mail.gmail.com>
+        with ESMTP id S1379565AbiDDRb2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:31:28 -0400
+Received: from mail-pj1-x1034.google.com (mail-pj1-x1034.google.com [IPv6:2607:f8b0:4864:20::1034])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F20726248
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:29:31 -0700 (PDT)
+Received: by mail-pj1-x1034.google.com with SMTP id bx5so9366603pjb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:29:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=osandov-com.20210112.gappssmtp.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=+bcVRbvd3UtT7tmbXMYnvHtj/DyDr9gEuWNPzuVz+28=;
+        b=huVYwsT5Mqq2oJJYwM4eeFv78o5fsk96H8aelxt4GL2fHBa2bV7MTEa6VZ2bggRsfh
+         9xZIWFZ09EtRmP9SzwxO+ZRgjfm668kWASXNkg22fH4e7Pvpn0FYhivlZFCG64yQFhyZ
+         CCE90FXLcxr3UdToMwiNo5Nzg660KSqxAoIshroiDUuimw91CSDVYzbZe/Ys/zVNjKuN
+         3JH1rQeJMIiMwzpe26IZdUuC+7w7IpklGZLJEodGd8YKjlZcvgSaRujVmJkvpD8egAm7
+         fxLO9HOdFmFZG8KtgnbUMyJ+lMn6Ba+vDqvsxWzaioALHd09mvrWWgzyZreZOl2TKwop
+         r0Rg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=+bcVRbvd3UtT7tmbXMYnvHtj/DyDr9gEuWNPzuVz+28=;
+        b=BLWY/5j67PCzWeBQHXpvz+ztqZRlMEUs+EL9zuyiGrwHTUVnd9Bj9pv27rBQfLVRM7
+         Med+JQ6h4mf0XTDwHg1BUg6EGit38wf8lK6/hwMloEajP3/KSjVaMmV3Z65ePYQkIAHd
+         l43/ztKBFxxkNtNTuFTpT6S6dDmAY7Cq7Ee3ooVB7w5sXqS1/eSnhN1oN1T4/XhCnJYA
+         MGDj6QkrDpM2bFPFMAEpiWlx6kisbzIF6/+rlgsGRyFifJ+e2X+oBCtZi2mb64OBv/Br
+         Je2A8NpeLu9Z2KvH0kdVa9k0uvbOeat+Uza69dgLrorIUgXyr7dEe1oWtpgKoe4X7k3s
+         CwGw==
+X-Gm-Message-State: AOAM532lfBJ2hbDXEPxnQQ8jUGa9AiIxQFj/SBO0Z5dq4D/Ani7TwtfB
+        s9g7FuXNErADhGSaQH1AbxWip697hHuV0w==
+X-Google-Smtp-Source: ABdhPJzLY5vHDtF8UBEuPbcL7Tjqy0yt0K4QDHBIKBOVhtX+J/bVIn0dZybN9OkEuaLiLOw51ugeQA==
+X-Received: by 2002:a17:903:124a:b0:154:c7a4:9374 with SMTP id u10-20020a170903124a00b00154c7a49374mr740976plh.68.1649093371058;
+        Mon, 04 Apr 2022 10:29:31 -0700 (PDT)
+Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:eb9])
+        by smtp.gmail.com with ESMTPSA id g6-20020a056a001a0600b004f7bd56cc08sm12880787pfv.123.2022.04.04.10.29.29
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 04 Apr 2022 10:29:30 -0700 (PDT)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com
+Subject: [PATCH v15 7/7] btrfs: send: enable support for stream v2 and compressed writes
+Date:   Mon,  4 Apr 2022 10:29:09 -0700
+Message-Id: <0ee5b87f9ee41b8061a07bc5b2a433123ddf2c0c.1649092662.git.osandov@fb.com>
+X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1649092662.git.osandov@fb.com>
+References: <cover.1649092662.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAEzrpqeMPQvtoov=7Lv5Kx8-cgOmRFFYLbuh0QxZ6psQN3RDeA@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-X-SA-Exim-Connect-IP: 24.5.124.255
-X-SA-Exim-Mail-From: marc@merlins.org
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 04, 2022 at 03:52:15PM -0400, Josef Bacik wrote:
-> Can you build a recent btrfs-progs from git?  We chucked that error
-> apparently and I can't figure out where it's complaining.  Thanks,
+From: Omar Sandoval <osandov@fb.com>
 
-Sure, here's git master
+Now that the new support is implemented, allow the ioctl to accept v2
+and the compressed flag, and update the version in sysfs.
 
-gargamel:/var/local/src/btrfs-progs# ./btrfs --version
-btrfs-progs v5.16.2
-gargamel:/var/local/src/btrfs-progs# ./btrfs check --init-extent-tree  /dev/mapper/dshelf1a
-WARNING:
+Reviewed-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/send.c            | 7 +++++--
+ fs/btrfs/send.h            | 2 +-
+ include/uapi/linux/btrfs.h | 3 ++-
+ 3 files changed, 8 insertions(+), 4 deletions(-)
 
-	Do not use --repair unless you are advised to do so by a developer
-	or an experienced user, and then only after having accepted that no
-	fsck can successfully repair all types of filesystem corruption. Eg.
-	some software or hardware bugs can fatally damage a volume.
-	The operation will start in 10 seconds.
-	Use Ctrl-C to stop it.
-10 9 8 7 6 5 4 3 2 1
-Starting repair.
-Opening filesystem to check...
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-Ignoring transid failure
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Ignoring transid failure
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Ignoring transid failure
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Ignoring transid failure
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Ignoring transid failure
-Couldn't setup device tree
-ERROR: cannot open file system
-
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 675f46d96539..1447b01c0bda 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -694,8 +694,7 @@ static int send_header(struct send_ctx *sctx)
+ 	struct btrfs_stream_header hdr;
  
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+ 	strcpy(hdr.magic, BTRFS_SEND_STREAM_MAGIC);
+-	hdr.version = cpu_to_le32(BTRFS_SEND_STREAM_VERSION);
+-
++	hdr.version = cpu_to_le32(sctx->proto);
+ 	return write_buf(sctx->send_filp, &hdr, sizeof(hdr),
+ 					&sctx->send_off);
+ }
+@@ -7667,6 +7666,10 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 	} else {
+ 		sctx->proto = 1;
+ 	}
++	if ((arg->flags & BTRFS_SEND_FLAG_COMPRESSED) && sctx->proto < 2) {
++		ret = -EINVAL;
++		goto out;
++	}
+ 
+ 	sctx->send_filp = fget(arg->send_fd);
+ 	if (!sctx->send_filp) {
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 805d8095209a..50a2aceae929 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -10,7 +10,7 @@
+ #include "ctree.h"
+ 
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+-#define BTRFS_SEND_STREAM_VERSION 1
++#define BTRFS_SEND_STREAM_VERSION 2
+ 
+ /*
+  * In send stream v1, no command is larger than 64k. In send stream v2, no limit
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b6f26a434b10..f54dc91e4025 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -788,7 +788,8 @@ struct btrfs_ioctl_received_subvol_args {
+ 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
+ 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
+ 	 BTRFS_SEND_FLAG_OMIT_END_CMD | \
+-	 BTRFS_SEND_FLAG_VERSION)
++	 BTRFS_SEND_FLAG_VERSION | \
++	 BTRFS_SEND_FLAG_COMPRESSED)
+ 
+ struct btrfs_ioctl_send_args {
+ 	__s64 send_fd;			/* in */
+-- 
+2.35.1
+

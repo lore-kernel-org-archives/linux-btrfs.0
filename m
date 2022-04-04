@@ -2,129 +2,196 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A380EC352AA
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 93FACC388F3
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1376883AbiDDVZ7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:25:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46592 "EHLO
+        id S1380014AbiDDV0I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53314 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379713AbiDDR4F (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:56:05 -0400
-Received: from mail-io1-xd33.google.com (mail-io1-xd33.google.com [IPv6:2607:f8b0:4864:20::d33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1161F245BD
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:54:08 -0700 (PDT)
-Received: by mail-io1-xd33.google.com with SMTP id g21so12197606iom.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:54:08 -0700 (PDT)
+        with ESMTP id S1379561AbiDDRbV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:31:21 -0400
+Received: from mail-pj1-x102c.google.com (mail-pj1-x102c.google.com [IPv6:2607:f8b0:4864:20::102c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8A2E4615E
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:29:24 -0700 (PDT)
+Received: by mail-pj1-x102c.google.com with SMTP id m12-20020a17090b068c00b001cabe30a98dso1127561pjz.4
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:29:24 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=5aXFOjsVwliGYhlBx1+QCDa1pQHtfy2+N5XXzrQtxMg=;
-        b=cgXljmTb2YzfUu91m3Gr8Jbua/5PvNKZVVMOhdX7EaF2A8TRgLkobVuSiVuDL6rj9d
-         ci/aH+Ivc4Zkzy3noXN/do9oIwgFVwDBUVhPvqDyp4DATpYnI7uoks26ju96mI6VS7bS
-         TV6rzhnjo4kuovsQBiRUn5oOW4A0++bZYsaCVNcxBhNIC0KgKDdL4Rd7YTfyJDue50qY
-         KCBLPW132ckjV2v/HRuBBoem1cZ3jFeBo0i1eGMG9gWEak/zcGV5RdRwWgm2vC8dxAun
-         oLWXR78KgjMzuEyA89mX63FsoAXxVoi3hx44VqErfLAdsqZ3RuQ4tNkY3TpNyY5t4KJa
-         kOMA==
+        d=osandov-com.20210112.gappssmtp.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=bzZEDaow4fN3duTpC6j5SyKuUvXWE+0jtZX6nwVzW3U=;
+        b=bUhMAN86nreGtjqK1YJJHIDzXAaMhykABUy718t4HJh74OPDR342hb0a7l1UHykV1C
+         CYHr6RKODGgf8rlvUVTYy337zoDKicT4juaE5XBirGLjgH2F0wv7l/I61DpemnRHRsCp
+         UvOaUpXza+Vm7JxS5FeAorXOy6CCbsXGrJ6ZaMj59xE0RUX+3v6Fl4V+a8gPw4DfjR6z
+         BsyTJ5Y3+tlk6WuRmV54MDzmoJ/8GP/JULt87MkJULrAiP5rxqI59EEkHlqS0RqyoSMZ
+         jkItAGiKwn1cWobJjyXV/Bg9tMSebIr2aKnK+W7QDFF1XGbfo3BzLmslG964mc3T4NbC
+         X98Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=5aXFOjsVwliGYhlBx1+QCDa1pQHtfy2+N5XXzrQtxMg=;
-        b=xkTKl/gwY/4zMjPMkO5bNk9ZWKn42ixK29leQcu1CNhulbDt96jVIFCU4bcl0uhtiF
-         F1nDXrDBPQi+AHzwoc7R1dwo/FoPXSQR89xU+pf1TcOYpdg6HNQijpeWD0lhptqea/EF
-         Kl4p2pcEqgrSxZVi6slgdGrN+gD/0Segl3rU/c1AlbKG/v9UIAspu261nV6cS0oaxvzD
-         IgaVWPk6jGt4iLMcR9eRpal7LCPTlZKIClZUgCRis+PN+fSQqPLaIDV7W98Bxqv0LdrI
-         Cc7KSNspr+chMGTDY6E623PmPy080UaZxd1xSKmeSpgybgCFcNVBhMqpt7jhXJpsw4rk
-         3LCQ==
-X-Gm-Message-State: AOAM531Kci2W8FyNKUPriXBUNbvT+7GP1Qjcrm0QvJSma6EY5bNWRBAp
-        sBuM253n6lyn8kAraHMLqG+Y0TUuKmHIo80Zq06IpT2uvTHv0A==
-X-Google-Smtp-Source: ABdhPJz36HiK2Osvz2blIJ/DBa7pVg5dEWWa0d3aUN99s7eEpq04YlJM7vAjRVqK6GYCWfrS24Bnk+7gkidgv28PrBw=
-X-Received: by 2002:a05:6602:2bc4:b0:645:eb96:6495 with SMTP id
- s4-20020a0566022bc400b00645eb966495mr666594iov.166.1649094847368; Mon, 04 Apr
- 2022 10:54:07 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=bzZEDaow4fN3duTpC6j5SyKuUvXWE+0jtZX6nwVzW3U=;
+        b=EruG2VcAwqQPvc0Wt41Nzn2TTNjOsTDJ8hoZMrtpFl5uE8dYRfkqhvBJ8I8bVYg/R8
+         wyoquINN9OKNKvL+ETRx135w1ydoB+RdTN49lfRIwWpJBkbA3pLX1eK8TH1ulLhFr2ob
+         wEAsXCODf9afN3fg3fkIMP7MMEp4GQR4rMiRw+M8t1wuoRih3VxM8K+l78xT8PPOfCyp
+         tjbIZafkzZkLzVqkMd12AKBQwQNePb7lPoaBpD5zaXOV1tIdWYOjRoBjTM5G9Vq8cdkI
+         jvAIqHg6VrAGPwtZyTGTAq+tov6NxKuqC3gFsAZwWjUcB3nImwoxO+03d6sMEhXygy2p
+         xaMg==
+X-Gm-Message-State: AOAM530m0REsYQFkr6K0sgOk1tFxKGXHZmLWgvPHd6v9Cn3MwAWInBkI
+        D/+aMbqhgEgRdsvhBOfNC9+RSayx7E8cyQ==
+X-Google-Smtp-Source: ABdhPJzlcnY+7ITgbOD3Z2ADy2ELyaUfgt1vUDXbltjX3nvsMOhpLBZEkIKMfeh/81bqu0lFAZSvZg==
+X-Received: by 2002:a17:903:1cb:b0:154:4bee:c034 with SMTP id e11-20020a17090301cb00b001544beec034mr1024895plh.155.1649093363574;
+        Mon, 04 Apr 2022 10:29:23 -0700 (PDT)
+Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:eb9])
+        by smtp.gmail.com with ESMTPSA id g6-20020a056a001a0600b004f7bd56cc08sm12880787pfv.123.2022.04.04.10.29.22
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 04 Apr 2022 10:29:22 -0700 (PDT)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com
+Subject: [PATCH v15 3/7] btrfs: add send stream v2 definitions
+Date:   Mon,  4 Apr 2022 10:29:05 -0700
+Message-Id: <abea9f460c7341361e58cbba8af355654eb94b5b.1649092662.git.osandov@fb.com>
+X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1649092662.git.osandov@fb.com>
+References: <cover.1649092662.git.osandov@fb.com>
 MIME-Version: 1.0
-References: <20220329171818.GD1314726@merlins.org> <dffec23f-bef1-30e2-83fc-b3fb9bb5f21e@gmail.com>
- <20220330143944.GE14158@merlins.org> <20220331171927.GL1314726@merlins.org>
- <Ykoux6Oczf6+hmGg@localhost.localdomain> <20220404010101.GQ1314726@merlins.org>
- <20220404150858.GS1314726@merlins.org> <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
- <20220404174357.GT1314726@merlins.org>
-In-Reply-To: <20220404174357.GT1314726@merlins.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Mon, 4 Apr 2022 13:53:56 -0400
-Message-ID: <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
- verify failed + open_ctree failed)
-To:     Marc MERLIN <marc@merlins.org>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 4, 2022 at 1:44 PM Marc MERLIN <marc@merlins.org> wrote:
->
-> On Mon, Apr 04, 2022 at 01:18:48PM -0400, Josef Bacik wrote:
-> > On Mon, Apr 4, 2022 at 11:09 AM Marc MERLIN <marc@merlins.org> wrote:
-> > >
-> > > On Sun, Apr 03, 2022 at 06:01:01PM -0700, Marc MERLIN wrote:
-> > > > gargamel:~# btrfs rescue chunk-recover /dev/mapper/dshelf1a
-> > > > Scanning: 1509736448 in dev0
-> > > >
-> > > > I'll let this run, looks like it might take a while.
-> > >
-> > > 14h later, still going on. I'll update when it's done, it may take a few
-> > > days.
-> > > gargamel:~# btrfs rescue chunk-recover /dev/mapper/dshelf1a
-> > > Scanning: 7049296592896 in dev0
-> > >
-> > > Please let me know about the backup chunk roots that all seemed to be
-> > > the same and were apparently all pointing to the same corrupted version?
-> >
-> > Ok cool apparently we have code that does this already, can you do
-> >
-> > btrfs-find-root -o 3 /dev/whatever
-> > and then use the bytenr's it finds like you did with the backup roots
->
-> gargamel:~# btrfs-find-root -o 3 /dev/mapper/dshelf1a
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> Ignoring transid failure
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> Ignoring transid failure
-> leaf parent key incorrect 13577821667328
-> WARNING: could not setup extent tree, skipping it
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> Ignoring transid failure
-> leaf parent key incorrect 13577821667328
-> Couldn't setup device tree
-> Superblock thinks the generation is 1600938
-> Superblock thinks the level is 1
-> Found tree root at 21069824 gen 1600938 level 1
-> Well block 21053440(gen: 1822 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
-> Well block 21004288(gen: 1692 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
-> Well block 20987904(gen: 1443 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
-> Well block 20971520(gen: 1293 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
-> Well block 21037056(gen: 1170 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
-> Well block 21020672(gen: 773 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
->
-> Not a good sign I assume?
->
+From: Omar Sandoval <osandov@fb.com>
 
-Can you do
+This adds the definitions of the new commands for send stream version 2
+and their respective attributes: fallocate, FS_IOC_SETFLAGS (a.k.a.
+chattr), and encoded writes. It also documents two changes to the send
+stream format in v2: the receiver shouldn't assume a maximum command
+size, and the DATA attribute is encoded differently to allow for writes
+larger than 64k. These will be implemented in subsequent changes, and
+then the ioctl will accept the new version and flag.
 
-btrfs check --chunk-bytenr 21053440 /dev/whatever
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/send.c            |  2 +-
+ fs/btrfs/send.h            | 40 ++++++++++++++++++++++++++++++++++----
+ include/uapi/linux/btrfs.h |  7 +++++++
+ 3 files changed, 44 insertions(+), 5 deletions(-)
 
-also I can't seem to find output from a normal btrfs check run, can I
-see that as well?  I'm curious if we could just tell the super block
-the right transid for this and everything would be ok.  Thanks,
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 9363f625fa17..1f141de3a7d6 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -7459,7 +7459,7 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 
+ 	sctx->clone_roots_cnt = arg->clone_sources_count;
+ 
+-	sctx->send_max_size = BTRFS_SEND_BUF_SIZE;
++	sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
+ 	sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
+ 	if (!sctx->send_buf) {
+ 		ret = -ENOMEM;
+diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
+index 67721e0281ba..805d8095209a 100644
+--- a/fs/btrfs/send.h
++++ b/fs/btrfs/send.h
+@@ -12,7 +12,11 @@
+ #define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
+ #define BTRFS_SEND_STREAM_VERSION 1
+ 
+-#define BTRFS_SEND_BUF_SIZE SZ_64K
++/*
++ * In send stream v1, no command is larger than 64k. In send stream v2, no limit
++ * should be assumed.
++ */
++#define BTRFS_SEND_BUF_SIZE_V1 SZ_64K
+ 
+ enum btrfs_tlv_type {
+ 	BTRFS_TLV_U8,
+@@ -80,16 +84,20 @@ enum btrfs_send_cmd {
+ 	BTRFS_SEND_C_MAX_V1 = 22,
+ 
+ 	/* Version 2 */
+-	BTRFS_SEND_C_MAX_V2 = 22,
++	BTRFS_SEND_C_FALLOCATE = 23,
++	BTRFS_SEND_C_SETFLAGS = 24,
++	BTRFS_SEND_C_ENCODED_WRITE = 25,
++	BTRFS_SEND_C_MAX_V2 = 25,
+ 
+ 	/* End */
+-	BTRFS_SEND_C_MAX = 22,
++	BTRFS_SEND_C_MAX = 25,
+ };
+ 
+ /* attributes in send stream */
+ enum {
+ 	BTRFS_SEND_A_UNSPEC = 0,
+ 
++	/* Version 1 */
+ 	BTRFS_SEND_A_UUID = 1,
+ 	BTRFS_SEND_A_CTRANSID = 2,
+ 
+@@ -112,6 +120,11 @@ enum {
+ 	BTRFS_SEND_A_PATH_LINK = 17,
+ 
+ 	BTRFS_SEND_A_FILE_OFFSET = 18,
++	/*
++	 * As of send stream v2, this attribute is special: it must be the last
++	 * attribute in a command, its header contains only the type, and its
++	 * length is implicitly the remaining length of the command.
++	 */
+ 	BTRFS_SEND_A_DATA = 19,
+ 
+ 	BTRFS_SEND_A_CLONE_UUID = 20,
+@@ -120,7 +133,26 @@ enum {
+ 	BTRFS_SEND_A_CLONE_OFFSET = 23,
+ 	BTRFS_SEND_A_CLONE_LEN = 24,
+ 
+-	BTRFS_SEND_A_MAX = 24,
++	BTRFS_SEND_A_MAX_V1 = 24,
++
++	/* Version 2 */
++	BTRFS_SEND_A_FALLOCATE_MODE = 25,
++
++	BTRFS_SEND_A_SETFLAGS_FLAGS = 26,
++
++	BTRFS_SEND_A_UNENCODED_FILE_LEN = 27,
++	BTRFS_SEND_A_UNENCODED_LEN = 28,
++	BTRFS_SEND_A_UNENCODED_OFFSET = 29,
++	/*
++	 * COMPRESSION and ENCRYPTION default to NONE (0) if omitted from
++	 * BTRFS_SEND_C_ENCODED_WRITE.
++	 */
++	BTRFS_SEND_A_COMPRESSION = 30,
++	BTRFS_SEND_A_ENCRYPTION = 31,
++	BTRFS_SEND_A_MAX_V2 = 31,
++
++	/* End */
++	BTRFS_SEND_A_MAX = 31,
+ };
+ 
+ #ifdef __KERNEL__
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index d956b2993970..b6f26a434b10 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -777,6 +777,13 @@ struct btrfs_ioctl_received_subvol_args {
+  */
+ #define BTRFS_SEND_FLAG_VERSION			0x8
+ 
++/*
++ * Send compressed data using the ENCODED_WRITE command instead of decompressing
++ * the data and sending it with the WRITE command. This requires protocol
++ * version >= 2.
++ */
++#define BTRFS_SEND_FLAG_COMPRESSED		0x10
++
+ #define BTRFS_SEND_FLAG_MASK \
+ 	(BTRFS_SEND_FLAG_NO_FILE_DATA | \
+ 	 BTRFS_SEND_FLAG_OMIT_STREAM_HEADER | \
+-- 
+2.35.1
 
-Josef

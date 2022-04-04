@@ -2,110 +2,99 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1411FC4743F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F973C4321E
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:27:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1382318AbiDDV0o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:26:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51906 "EHLO
+        id S1382192AbiDDV0b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53104 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1380052AbiDDStG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 14:49:06 -0400
-Received: from mail-io1-xd35.google.com (mail-io1-xd35.google.com [IPv6:2607:f8b0:4864:20::d35])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA93030F7A
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 11:47:08 -0700 (PDT)
-Received: by mail-io1-xd35.google.com with SMTP id p21so12461027ioj.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 11:47:08 -0700 (PDT)
+        with ESMTP id S1379559AbiDDRbR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:31:17 -0400
+Received: from mail-pl1-x62c.google.com (mail-pl1-x62c.google.com [IPv6:2607:f8b0:4864:20::62c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 152CD615E
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:29:21 -0700 (PDT)
+Received: by mail-pl1-x62c.google.com with SMTP id n18so8719855plg.5
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:29:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=iLJgIFzUSlXF1BpSlqxVdZ2UTA3C4qraalMybLlFYiY=;
-        b=KBQuZAbdplJE5+C/fWi4SAetRe8ETxYDm8i7L29gcXt8UzysJLCGze1MwQcppGPkom
-         8mO+d3lv0+L4JXDaRKf9CzCQNCfN6d3pfQuArI12UgFd/Put0J7YJBxzYqtR3HSo72xK
-         ou9KythiTpul8cSTZbfyNRbHy0fxhcxU16p6PbH08ZnY78o4MKIM+NFXkMaVQJrIvH+T
-         ibdu45fyGdO5swG5AQunTn3BG8xUI+FkB8wiU4thjzDv6TCDdvBkawe3oTYUG3RFd7q3
-         TdbUGjjvf0E78q2HjFnC5THDK8ydNoq9wJNaKPzDqMEkaQa9ZTfvkUbI+JWu1mrKET0r
-         ODcw==
+        d=osandov-com.20210112.gappssmtp.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=imA3D9aZ3TlOp5Y7NLFzluU60FOr+h5IquO3F0hH3G4=;
+        b=zTYoVEMnGbZXr1/aHXuNlic0EYknVj46xXaEvdChMrFC1JzYFafv10EqPEtMqwjgWS
+         2e7Qvovb+yhlogwvzN6CnEGKyDZfr+2khyzQ59ad86EGaZwZ5qJaFMobAJ0VmJjRKqDa
+         tLSNUor3RKstAsGTnLNlilvW3CDTqZPLlEsEYu2774dxqqsCLQkZ+E4fyZb0+fSK3aO7
+         dyJMgdepq+Bez8zk2hXjd8ocozXyBYJcYyW6Vv1L++LYbmE+wtNcOEIf40Y+L6Ch1kWN
+         ZijPMmNyNstVYsyZj4b/HhFjpv6JZdNCHM3MHhx7r9hTfPMQcgL7nmiPu/Fy8yijYr3g
+         01LA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=iLJgIFzUSlXF1BpSlqxVdZ2UTA3C4qraalMybLlFYiY=;
-        b=GqysbdG6YM6fD1/Wpr05LfAemnCNfCW0B5URgYCzrJdsB9XmF9Dt3sWRfve06uBsNU
-         nJZ/PuGt3r+RwD5YW4X6CJjGcONwi2uc+br0oxxs+ntkbg8AGqBumuFYdFTfAKh1+IGN
-         HkgWkMNWfD4oZ6ID6TsXg8a8YoIWpQx9bjZsNBYNesWJei6hlJjLlB8Gt8qs8U3As+G6
-         akqYdVk9+0DjZkeS0bAgGPwYwRUxyZTlAHBljo5EWg01D9eIP7ISu/vNTWvweQyfdJdb
-         Rgpk5ZQbZ1VAwVFYxf7EtDXWYM3QaZFhxT5TE8tTD6e2GnzpjP01xxhfidEQnTDid6Wl
-         /9Pw==
-X-Gm-Message-State: AOAM5327AwxL/tQV2wr5loo4nrdv49ETPy9uE+kveVPnTOv9w739zRIj
-        3NeiVIxKH3LCcw0yGFuTiRAr88OsqvY0atrE3vW3fg==
-X-Google-Smtp-Source: ABdhPJwaRVQ32zZgn2WbJ5TG81gmc54Kk7sfnKEcLZ2Eg4z1BP23kVC0jSeTtMNgkZlj62WYmOqDwuhJpxu7zuQOCCs=
-X-Received: by 2002:a02:6010:0:b0:31a:6d4f:d9ca with SMTP id
- i16-20020a026010000000b0031a6d4fd9camr555442jac.46.1649098028206; Mon, 04 Apr
- 2022 11:47:08 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=imA3D9aZ3TlOp5Y7NLFzluU60FOr+h5IquO3F0hH3G4=;
+        b=pW/yYMtb0H2cUALUROJeaDUF+p2vn2I92gyBlrLLVo8Pd0NJPKk8zyu/NpLmx/JJvr
+         NUEmETK6fvLtMigJP0Lg5dIvbdCb4CMcO0fORGxJjdn1ytjE/O2Dpn0Ssd3tBeuZIiMo
+         szG6QLpiAs6DXce5ReaYmpdw+pCfsQSfx7oUEaXMlcpomCrUxTbiRMn07EIm9SMamZn/
+         qSr5JeuDUJN21V8IIb2B8Gyuspd3gjz+XB1JSFnzHoKbILicw11D+Jgg+Zjcei0h0AGV
+         u1VyorSDJEd/GtYlJXTgeAkjZ0ym0A+trKHIH75mrORxgd0HseSUbdSOF9nSj/3Ijim/
+         hIXg==
+X-Gm-Message-State: AOAM530KY17g3DBrvkBqBx6Ir45I80uqGoTHBq1I+IT19S2yZzvUACh2
+        XiKCETnJeRSSVxj7qjzSrDrbCDP+qjzkrQ==
+X-Google-Smtp-Source: ABdhPJwk1hE3bBHm10WPsBBoD8UixjtYq6+QSa2hGpePowtxNRcYf8On4MUXVpgjeguk+y4dlNPTTQ==
+X-Received: by 2002:a17:90b:3b89:b0:1c6:56a2:1397 with SMTP id pc9-20020a17090b3b8900b001c656a21397mr220430pjb.239.1649093360183;
+        Mon, 04 Apr 2022 10:29:20 -0700 (PDT)
+Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:eb9])
+        by smtp.gmail.com with ESMTPSA id g6-20020a056a001a0600b004f7bd56cc08sm12880787pfv.123.2022.04.04.10.29.18
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 04 Apr 2022 10:29:19 -0700 (PDT)
+From:   Omar Sandoval <osandov@osandov.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com
+Subject: [PATCH v15 1/7] btrfs: send: remove unused send_ctx::{total,cmd}_send_size
+Date:   Mon,  4 Apr 2022 10:29:03 -0700
+Message-Id: <caf380eeecdf41dfd5dde3eeb5df61cd3be5ad24.1649092662.git.osandov@fb.com>
+X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1649092662.git.osandov@fb.com>
+References: <cover.1649092662.git.osandov@fb.com>
 MIME-Version: 1.0
-References: <20220329171818.GD1314726@merlins.org> <dffec23f-bef1-30e2-83fc-b3fb9bb5f21e@gmail.com>
- <20220330143944.GE14158@merlins.org> <20220331171927.GL1314726@merlins.org>
- <Ykoux6Oczf6+hmGg@localhost.localdomain> <20220404010101.GQ1314726@merlins.org>
- <20220404150858.GS1314726@merlins.org> <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
- <20220404174357.GT1314726@merlins.org> <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
- <20220404181055.GW1314726@merlins.org>
-In-Reply-To: <20220404181055.GW1314726@merlins.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Mon, 4 Apr 2022 14:46:57 -0400
-Message-ID: <CAEzrpqfA94nYjV=o_4+XRitopVT-3j7iQMaXAr3FE3Rfm32gkA@mail.gmail.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
- verify failed + open_ctree failed)
-To:     Marc MERLIN <marc@merlins.org>
-Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 4, 2022 at 2:10 PM Marc MERLIN <marc@merlins.org> wrote:
->
-> On Mon, Apr 04, 2022 at 01:53:56PM -0400, Josef Bacik wrote:
-> > Can you do
-> >
-> > btrfs check --chunk-bytenr 21053440 /dev/whatever
->
-> I assume you meant chunk-root
->
+From: Omar Sandoval <osandov@fb.com>
 
-I did, my bad.
+We collect these statistics but have never exposed them in any way. I
+also didn't find any patches that ever attempted to make use of them.
 
->
-> gargamel:~# btrfs check /dev/mapper/dshelf1a
-> Opening filesystem to check...
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> Ignoring transid failure
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> Ignoring transid failure
-> leaf parent key incorrect 13577821667328
-> ERROR: could not setup extent tree
-> ERROR: cannot open file system
->
+Reviewed-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/send.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-Ok now that I've learned how to read, the real problem is the extent
-tree is fucked.  The chunk tree isn't happy, but it appears to be sane
-enough to proceed, which is good because that could be unfun to
-restore.
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index cf86f1eafcb7..6d36dee1505f 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -82,8 +82,6 @@ struct send_ctx {
+ 	char *send_buf;
+ 	u32 send_size;
+ 	u32 send_max_size;
+-	u64 total_send_size;
+-	u64 cmd_send_size[BTRFS_SEND_C_MAX + 1];
+ 	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
+ 	/* Protocol version compatibility requested */
+ 	u32 proto;
+@@ -727,8 +725,6 @@ static int send_cmd(struct send_ctx *sctx)
+ 	ret = write_buf(sctx->send_filp, sctx->send_buf, sctx->send_size,
+ 					&sctx->send_off);
+ 
+-	sctx->total_send_size += sctx->send_size;
+-	sctx->cmd_send_size[get_unaligned_le16(&hdr->cmd)] += sctx->send_size;
+ 	sctx->send_size = 0;
+ 
+ 	return ret;
+-- 
+2.35.1
 
-Good news is the extent tree is easily re-buildable, lets use
-
-btrfs check --init-extent-tree /dev/whatever
-
-and let that baby do its thing.  Hopefully that rebuilds everything
-and you'll be good to go.  Thanks,
-
-Josef

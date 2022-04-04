@@ -2,142 +2,238 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C58AC47096
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88049C35276
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1382231AbiDDV0f (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:26:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53608 "EHLO
+        id S1382259AbiDDV0i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54456 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379563AbiDDRbZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:31:25 -0400
-Received: from mail-pg1-x535.google.com (mail-pg1-x535.google.com [IPv6:2607:f8b0:4864:20::535])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79EF9615E
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:29:28 -0700 (PDT)
-Received: by mail-pg1-x535.google.com with SMTP id s21so1247407pgs.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:29:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=S8N1govmC2Ka0cc66neVJ/2PkwoM7hPYWi3v1T/e+KI=;
-        b=uc0pyi82HUMrPgDBdANcsjl3ErR1CQrq4U/BBVncw5wcL5wROg4918/ojahuJyj2f1
-         DzPEMwKytMEQoTN8It+qiR+2W7rV0rNh7GMhSqF6N/0YzpnHZH2NzQj/s7oTKG8uQjEV
-         yYFY3NSvLC+D3cbtkw/03Q+fyFEaZ0npKjmZeg/stU4hXLm/8CD7lr8GN5FWOHupDY3D
-         dFcHpmA/hBUdWjcAiIzsdd3SmupXKFe+sNIsbtdM+2geL0encdPi8JwMQlmcJf4fg2fX
-         /bF4y5KxI271SSmJXf7UI4LKdfH+Xp2AMpDzHHcv6QYTK1Pdgm7XIN+pUJgV4syLUtYa
-         LAvw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=S8N1govmC2Ka0cc66neVJ/2PkwoM7hPYWi3v1T/e+KI=;
-        b=Qso/0yqZtt5qbP1MzmBt0TM1+9OwvIGu9QjFfmHrH2kMwdfN6fmTHss36hP2Z3AKYE
-         uK9f//7KI5nYfAHfzOzeniP8DtXck+oq0ttqDea8NtscyDisyw+LnvS6LKSPryLAOQYb
-         tfCsfMW4YLc4XA2W0yJgEZbFFCs2H/8tJJhJpJziFr2N3LmkSPbWicue91zj+tZ7sr/7
-         erOVieZqKRtWAU+L6cOKwqeZB2d97g3UmQWMoM2O9CfSchYEhpyS/khdIdIU5ljWQgFR
-         Ral93Yq4uX9QpuzK3I1vzBwRT5hzUnnz+KiBBYBdhskvS8HTr8NFy6I6fVhND2PQdnqX
-         7kyw==
-X-Gm-Message-State: AOAM532usU0FOkD1RqpcL0y56l52DdjJlsAJdCMoXtYTjGRFg5L637pq
-        JMWUuUI5LLrA66mXQtm287KEp1ZUtUhIXQ==
-X-Google-Smtp-Source: ABdhPJwLe++4ZlMvNciG9F2gWXhbM71bwp/IRd3HOgcgxP1VgD04aNvtZBoyqYFM0LOVgEG/TCFXdg==
-X-Received: by 2002:a65:6951:0:b0:381:f10:ccaa with SMTP id w17-20020a656951000000b003810f10ccaamr742394pgq.587.1649093367565;
-        Mon, 04 Apr 2022 10:29:27 -0700 (PDT)
-Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:eb9])
-        by smtp.gmail.com with ESMTPSA id g6-20020a056a001a0600b004f7bd56cc08sm12880787pfv.123.2022.04.04.10.29.25
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 04 Apr 2022 10:29:26 -0700 (PDT)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com
-Subject: [PATCH v15 5/7] btrfs: send: get send buffer pages for protocol v2
-Date:   Mon,  4 Apr 2022 10:29:07 -0700
-Message-Id: <a3707ef4e055fb319ad7d60a5247c420f7173d07.1649092662.git.osandov@fb.com>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1649092662.git.osandov@fb.com>
-References: <cover.1649092662.git.osandov@fb.com>
+        with ESMTP id S1379308AbiDDQ6B (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 12:58:01 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 772963B3EC
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 09:56:04 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 330F9210DC;
+        Mon,  4 Apr 2022 16:56:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649091363;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=KloOBxSbQT0TxqPGI8Q3ipgs0Fa/b5Jpx69E18og7cU=;
+        b=Yr3scrTg4S2e5SOjsN2kucQPF5B6aBE/+L73IXdw+W738GpEnsSb6nO483ZySxyAhKQAdl
+        SEljpJlZG8ilLpeCQDh2d8E5nxdLecygusPbz3zXKdciLQQIZUp8zLTbU7ISliWaErDjAU
+        lqE/kLl3C5apcI0+fOq06qB3NLFEZ0c=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649091363;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=KloOBxSbQT0TxqPGI8Q3ipgs0Fa/b5Jpx69E18og7cU=;
+        b=By3+ofTRuL/7BFcSMkf1999p6CrwOeznIO4uB1MA1jM8eGkCKLTgix0fqHZHUUWdCGaFwL
+        dVC5qXQZqT/PRaCg==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 295B2A3B83;
+        Mon,  4 Apr 2022 16:56:03 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 607B4DA80E; Mon,  4 Apr 2022 18:52:02 +0200 (CEST)
+Date:   Mon, 4 Apr 2022 18:52:01 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Stefan Roesch <shr@fb.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v1 2/3] btrfs: expose chunk size in sysfs.
+Message-ID: <20220404165201.GT15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Stefan Roesch <shr@fb.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20220208193122.492533-1-shr@fb.com>
+ <20220208193122.492533-3-shr@fb.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220208193122.492533-3-shr@fb.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Tue, Feb 08, 2022 at 11:31:21AM -0800, Stefan Roesch wrote:
+> This adds a new sysfs entry in /sys/fs/btrfs/<uuid>/allocation/<block
+> type>/chunk_size. This allows to query the chunk size and also set the
+> chunk size.
+> 
+> Signed-off-by: Stefan Roesch <shr@fb.com>
+> ---
+>  fs/btrfs/sysfs.c | 94 ++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 94 insertions(+)
+> 
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index beb7f72d50b8..ca337117f15b 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -21,6 +21,7 @@
+>  #include "space-info.h"
+>  #include "block-group.h"
+>  #include "qgroup.h"
+> +#include "misc.h"
+>  
+>  /*
+>   * Structure name                       Path
+> @@ -92,6 +93,7 @@ static struct btrfs_feature_attr btrfs_attr_features_##_name = {	     \
+>  
+>  static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj);
+>  static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj);
+> +static inline struct kobject *get_btrfs_kobj(struct kobject *kobj);
+>  
+>  static struct btrfs_feature_attr *to_btrfs_feature_attr(struct kobj_attribute *a)
+>  {
+> @@ -708,6 +710,81 @@ static ssize_t btrfs_space_info_show_##field(struct kobject *kobj,	\
+>  }									\
+>  BTRFS_ATTR(space_info, field, btrfs_space_info_show_##field)
+>  
+> +/*
+> + * Return space info chunk size.
+> + */
 
-For encoded writes in send v2, we will get the encoded data with
-btrfs_encoded_read_regular_fill_pages(), which expects a list of raw
-pages. To avoid extra buffers and copies, we should read directly into
-the send buffer. Therefore, we need the raw pages for the send buffer.
+Comment not necessary.
 
-We currently allocate the send buffer with kvmalloc(), which may return
-a kmalloc'd buffer or a vmalloc'd buffer. For vmalloc, we can get the
-pages with vmalloc_to_page(). For kmalloc, we could use virt_to_page().
-However, the buffer size we use (144k) is not a power of two, which in
-theory is not guaranteed to return a page-aligned buffer, and in
-practice would waste a lot of memory due to rounding up to the next
-power of two. 144k is large enough that it usually gets allocated with
-vmalloc(), anyways. So, for send v2, replace kvmalloc() with vmalloc()
-and save the pages in an array.
+> +static ssize_t btrfs_chunk_size_show(struct kobject *kobj,
+> +				     struct kobj_attribute *a, char *buf)
+> +{
+> +	struct btrfs_space_info *sinfo = to_space_info(kobj);
+> +
+> +	return sysfs_emit(buf, "%llu\n", atomic64_read(&sinfo->chunk_size));
+> +}
+> +
+> +/*
+> + * Store new user supplied chunk size in space info.
+> + *
+> + * Note: If the new chunk size value is larger than 10% of free space it is
+> + *       reduced to match that limit.
+> + */
+> +static ssize_t btrfs_chunk_size_store(struct kobject *kobj,
+> +				      struct kobj_attribute *a,
+> +				      const char *buf, size_t len)
+> +{
+> +	struct btrfs_space_info *space_info = to_space_info(kobj);
+> +	struct btrfs_fs_info *fs_info = to_fs_info(get_btrfs_kobj(kobj));
+> +	u64 val;
+> +	int ret;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	if (!fs_info) {
+> +		pr_err("couldn't get fs_info\n");
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/send.c | 24 +++++++++++++++++++++++-
- 1 file changed, 23 insertions(+), 1 deletion(-)
+What's the reason for such error message? I would end up in the system
+log without any context so it does not bring any value to user nor does
+it tell what wen wrong.
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index c0ca45dae6d6..e574d4f4a167 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -87,6 +87,7 @@ struct send_ctx {
- 	 * command (since protocol v2, data must be the last attribute).
- 	 */
- 	bool put_data;
-+	struct page **send_buf_pages;
- 	u64 flags;	/* 'flags' member of btrfs_ioctl_send_args is u64 */
- 	/* Protocol version compatibility requested */
- 	u32 proto;
-@@ -7486,12 +7487,32 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 	sctx->clone_roots_cnt = arg->clone_sources_count;
- 
- 	if (sctx->proto >= 2) {
-+		u32 send_buf_num_pages;
-+
- 		sctx->send_max_size = ALIGN(SZ_16K + BTRFS_MAX_COMPRESSED,
- 					    PAGE_SIZE);
-+		sctx->send_buf = vmalloc(sctx->send_max_size);
-+		if (!sctx->send_buf) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		send_buf_num_pages = sctx->send_max_size >> PAGE_SHIFT;
-+		sctx->send_buf_pages = kcalloc(send_buf_num_pages,
-+					       sizeof(*sctx->send_buf_pages),
-+					       GFP_KERNEL);
-+		if (!sctx->send_buf_pages) {
-+			ret = -ENOMEM;
-+			goto out;
-+		}
-+		for (i = 0; i < send_buf_num_pages; i++) {
-+			sctx->send_buf_pages[i] =
-+				vmalloc_to_page(sctx->send_buf +
-+						(i << PAGE_SHIFT));
-+		}
- 	} else {
- 		sctx->send_max_size = BTRFS_SEND_BUF_SIZE_V1;
-+		sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
- 	}
--	sctx->send_buf = kvmalloc(sctx->send_max_size, GFP_KERNEL);
- 	if (!sctx->send_buf) {
- 		ret = -ENOMEM;
- 		goto out;
-@@ -7684,6 +7705,7 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 			fput(sctx->send_filp);
- 
- 		kvfree(sctx->clone_roots);
-+		kfree(sctx->send_buf_pages);
- 		kvfree(sctx->send_buf);
- 
- 		name_cache_free(sctx);
--- 
-2.35.1
+Checking other functions, there's no such check in most of them and I
+don't think it's needed, the filesystem can't be unmounted with open
+file references to sysfs.
 
+> +		return -EPERM;
+> +	}
+> +
+> +	if (sb_rdonly(fs_info->sb))
+> +		return -EROFS;
+> +
+> +	if (!fs_info->fs_devices)
+> +		return -EINVAL;
+> +
+> +	if (btrfs_is_zoned(fs_info))
+> +		return -EINVAL;
+> +
+> +	if (!space_info) {
+> +		btrfs_err(fs_info, "couldn't get space_info\n");
+
+Same as the error message above.
+
+Also I'm not sure there could be a NULL space_info, it's one of the core
+data structures used all the time.
+
+> +		return -EPERM;
+> +	}
+> +
+> +	/* System block type must not be changed. */
+> +	if (space_info->flags & BTRFS_BLOCK_GROUP_SYSTEM)
+> +		return -EINVAL;
+
+This would probably be EPERM, EINVAL is for invalid values (like out of
+range).
+
+> +
+> +	ret = kstrtoull(buf, 10, &val);
+
+As this is supposed to be used by humans, it's better to use memparse
+that also translates the K/M/G suffix so it's easy to write '256M' etc.
+
+> +	if (ret)
+> +		return ret;
+> +
+> +	val = min(val, BTRFS_MAX_DATA_CHUNK_SIZE);
+> +
+> +	/*
+> +	 * Limit stripe size to 10% of available space.
+> +	 */
+> +	val = min(div_factor(fs_info->fs_devices->total_rw_bytes, 1), val);
+> +
+> +	/* Must be multiple of 256M. */
+> +	val &= ~(SZ_256M - 1);
+
+Where does this requirement come from?
+
+> +
+> +	/* Must be at least 256M. */
+> +	if (val < SZ_256M)
+> +		return -EINVAL;
+> +
+> +	btrfs_update_space_info_chunk_size(space_info, val);
+> +
+> +	return val;
+> +}
+> +
+>  SPACE_INFO_ATTR(flags);
+>  SPACE_INFO_ATTR(total_bytes);
+>  SPACE_INFO_ATTR(bytes_used);
+> @@ -718,6 +795,8 @@ SPACE_INFO_ATTR(bytes_readonly);
+>  SPACE_INFO_ATTR(bytes_zone_unusable);
+>  SPACE_INFO_ATTR(disk_used);
+>  SPACE_INFO_ATTR(disk_total);
+> +BTRFS_ATTR_RW(space_info, chunk_size, btrfs_chunk_size_show,
+> +	      btrfs_chunk_size_store);
+>  
+>  /*
+>   * Allocation information about block group types.
+> @@ -735,6 +814,7 @@ static struct attribute *space_info_attrs[] = {
+>  	BTRFS_ATTR_PTR(space_info, bytes_zone_unusable),
+>  	BTRFS_ATTR_PTR(space_info, disk_used),
+>  	BTRFS_ATTR_PTR(space_info, disk_total),
+> +	BTRFS_ATTR_PTR(space_info, chunk_size),
+>  	NULL,
+>  };
+>  ATTRIBUTE_GROUPS(space_info);
+> @@ -1099,6 +1179,20 @@ static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
+>  	return to_fs_devs(kobj)->fs_info;
+>  }
+>  
+> +/*
+> + * Get btrfs sysfs kobject.
+> + */
+> +static inline struct kobject *get_btrfs_kobj(struct kobject *kobj)
+> +{
+> +	while (kobj) {
+> +		if (kobj->ktype == &btrfs_ktype)
+> +			return kobj;
+> +		kobj = kobj->parent;
+> +	}
+> +
+> +	return NULL;
+> +}
+
+There's the to_fs_info helper to get fs_info from any kobj, why is
+get_btrfs_kobj needed to traverse back?

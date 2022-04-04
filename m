@@ -2,107 +2,109 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42B40C4708B
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 63095C4167E
 	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1380854AbiDDV0W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:26:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53048 "EHLO
+        id S1381081AbiDDV01 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:26:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47860 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379558AbiDDRbP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:31:15 -0400
-Received: from mail-pj1-x102d.google.com (mail-pj1-x102d.google.com [IPv6:2607:f8b0:4864:20::102d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 30C8B615E
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:29:19 -0700 (PDT)
-Received: by mail-pj1-x102d.google.com with SMTP id ch16-20020a17090af41000b001ca867ef52bso417283pjb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:29:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=3Y/xPGZPRltwnNLJkEW7Y4NAxYs+n4k2Vm++2BZkKAE=;
-        b=XdBP9nOyNj2izVDrfPDMvFI3ICNCGrUWpmuhWOldW9G0CnSOkJIw6S05gqcts9abw5
-         wgKR4ngRtwBMTtPfs9r35lOG2w48VrLNBE7uU/p2agjORqtkcsYReoUHmmmWbbGHNpYH
-         TLsGpt0zauvSyZsvqQCHkDXW+HefcJ176c4vZJa5Ipgck3DuZDyhuZhJdqFgL5blPjs+
-         TBPlLc9XONOhx8OBd10HD3Imu1muue1MrCi7EOCEi/rXyjnVgdX1PVhJ8m9d+6xCoO7w
-         LNtqcKVPWX8f+D0G0Sad1tncSKnj/nFOGNWDPvR5hIfiwAUZA+tf8YexUkWF+J7HMWO+
-         Zr7A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=3Y/xPGZPRltwnNLJkEW7Y4NAxYs+n4k2Vm++2BZkKAE=;
-        b=KDJjKOT6wofRF55M3CT+irnYGGxWCqGKH1UmqKy5kVuzRINuVyeRnmjpup7usE0Ed5
-         e4cgm+Q6f1BdQUhBQQRIwAAx6vWYznIyGsGagdNY/n1XhazGhMjEXewNIPuCiZAtFdxW
-         GMJjgS1gcPtkioYB4ImHscTih97Vpho9NOxKSQtmJfefpf1dZXNoe4kdsfkTSJmP+ajb
-         FLd9NT3x+KbHrKmCbhOuMsyxR/Ux0pCiTqqtIm50bTsC32Q84mf7HwKc2XzRgQjuouYq
-         uBOkKtjUqY+dR3K8Rp6gBk73AyOugH+5fGA3SWdzINgXSfM6kMoTQVsBiamGgWxlwXUE
-         2uXw==
-X-Gm-Message-State: AOAM532pOAYqOZY0XSQ98YmGuVGW23A+e4br245rJ9YXfAT5pYafak2e
-        3RHesjRvLY1kYHm2MAk2aYQSRenmWCifMw==
-X-Google-Smtp-Source: ABdhPJymdThgFYqRdewg+CRmfdznmdwOCcayfm10Q8KAuflr4YRR0tWIFr2aisbubqI2oTUg2lONJg==
-X-Received: by 2002:a17:90a:9f0b:b0:1ca:4647:a447 with SMTP id n11-20020a17090a9f0b00b001ca4647a447mr255473pjp.11.1649093358119;
-        Mon, 04 Apr 2022 10:29:18 -0700 (PDT)
-Received: from relinquished.tfbnw.net ([2620:10d:c090:400::5:eb9])
-        by smtp.gmail.com with ESMTPSA id g6-20020a056a001a0600b004f7bd56cc08sm12880787pfv.123.2022.04.04.10.29.16
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 04 Apr 2022 10:29:17 -0700 (PDT)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com
-Subject: [PATCH v15 0/7] btrfs: add send/receive support for reading/writing compressed data
-Date:   Mon,  4 Apr 2022 10:29:02 -0700
-Message-Id: <cover.1649092662.git.osandov@fb.com>
-X-Mailer: git-send-email 2.35.1
+        with ESMTP id S1379831AbiDDSMy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 14:12:54 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1C013EA8F
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 11:10:57 -0700 (PDT)
+Received: from c-24-5-124-255.hsd1.ca.comcast.net ([24.5.124.255]:48698 helo=sauron.svh.merlins.org)
+        by mail1.merlins.org with esmtpsa 
+        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
+        id 1nbRAF-0005XP-7z by authid <merlins.org> with srv_auth_plain; Mon, 04 Apr 2022 11:10:55 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
+        (envelope-from <marc@merlins.org>)
+        id 1nbRAF-00C00g-23; Mon, 04 Apr 2022 11:10:55 -0700
+Date:   Mon, 4 Apr 2022 11:10:55 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220404181055.GW1314726@merlins.org>
+References: <20220329171818.GD1314726@merlins.org>
+ <dffec23f-bef1-30e2-83fc-b3fb9bb5f21e@gmail.com>
+ <20220330143944.GE14158@merlins.org>
+ <20220331171927.GL1314726@merlins.org>
+ <Ykoux6Oczf6+hmGg@localhost.localdomain>
+ <20220404010101.GQ1314726@merlins.org>
+ <20220404150858.GS1314726@merlins.org>
+ <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
+ <20220404174357.GT1314726@merlins.org>
+ <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 24.5.124.255
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Mon, Apr 04, 2022 at 01:53:56PM -0400, Josef Bacik wrote:
+> Can you do
+> 
+> btrfs check --chunk-bytenr 21053440 /dev/whatever
+ 
+I assume you meant chunk-root
 
-This series adds support for sending compressed data via Btrfs send and
-btrfs-progs support for sending/receiving compressed data and writing it
-with BTRFS_IOC_ENCODED_WRITE, which was previously merged into
-misc-next. See the previous posting for more details and benchmarks [1].
+gargamel:~# btrfs check --chunk-root 21053440 /dev/mapper/dshelf1a
+Opening filesystem to check...
+No mapping for 13577814573056-13577814589440
+Couldn't map the block 13577814573056
+Couldn't map the block 13577814573056
+bad tree block 13577814573056, bytenr mismatch, want=13577814573056, have=0
+Couldn't read tree root
+ERROR: cannot open file system
 
-Patches 1 and 2 are cleanups for Btrfs send. Patches 3-5 prepare some
-protocol changes for send stream v2. Patch 6 implements compressed send.
-Patch 7 enables send stream v2 and compressed send in the send ioctl
-when requested.
 
-Changes since v14 [2]:
+gargamel:~# btrfs check --chunk-root 21069824 /dev/mapper/dshelf1a
+Opening filesystem to check...
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+Ignoring transid failure
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Ignoring transid failure
+leaf parent key incorrect 13577821667328
+ERROR: could not setup extent tree
+ERROR: cannot open file system
 
-- Added a comment about "put_data" to patch 4.
-- Replaced hard-coded 2s with sizeof(__le16) in patch 4.
-- Replaced patch 5 with new approach using vmalloc() + vmalloc_to_page()
-  (instead of alloc_page() + vmap()) as suggested by Sweet Tea.
-- Added Sweet Tea's reviewed-bys.
-- Rebased on latest misc-next branch.
+> also I can't seem to find output from a normal btrfs check run, can I
+> see that as well?  I'm curious if we could just tell the super block
+> the right transid for this and everything would be ok.  Thanks,
 
-The btrfs-progs patches are unchanged since v14, so I'm not resending
-them this time.
+gargamel:~# btrfs check /dev/mapper/dshelf1a
+Opening filesystem to check...
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+Ignoring transid failure
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Ignoring transid failure
+leaf parent key incorrect 13577821667328
+ERROR: could not setup extent tree
+ERROR: cannot open file system
 
-1: https://lore.kernel.org/linux-btrfs/cover.1615922753.git.osandov@fb.com/
-2: https://lore.kernel.org/linux-btrfs/cover.1647537027.git.osandov@fb.com/
-
-Omar Sandoval (7):
-  btrfs: send: remove unused send_ctx::{total,cmd}_send_size
-  btrfs: send: explicitly number commands and attributes
-  btrfs: add send stream v2 definitions
-  btrfs: send: write larger chunks when using stream v2
-  btrfs: send: get send buffer pages for protocol v2
-  btrfs: send: send compressed extents with encoded writes
-  btrfs: send: enable support for stream v2 and compressed writes
-
- fs/btrfs/ctree.h           |   6 +
- fs/btrfs/inode.c           |  13 +-
- fs/btrfs/send.c            | 320 +++++++++++++++++++++++++++++++++----
- fs/btrfs/send.h            | 142 +++++++++-------
- include/uapi/linux/btrfs.h |  10 +-
- 5 files changed, 392 insertions(+), 99 deletions(-)
-
+Marc
 -- 
-2.35.1
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

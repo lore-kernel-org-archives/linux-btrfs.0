@@ -2,126 +2,170 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 07596C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 15:54:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF3C9C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1378434AbiDDP4p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 11:56:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52776 "EHLO
+        id S1378965AbiDDVZN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:25:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55902 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1347294AbiDDP4o (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 11:56:44 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EE666140B3
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 08:54:47 -0700 (PDT)
+        with ESMTP id S1379178AbiDDQmW (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 12:42:22 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A5FE2FFF5
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 09:40:26 -0700 (PDT)
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id A8D0D1F385;
-        Mon,  4 Apr 2022 15:54:46 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id EACCA210E5;
+        Mon,  4 Apr 2022 16:40:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649087686;
+        t=1649090424;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=m8i59qpPGIxI7lUrvc36GGrQY6E2Pq1OzMurNWvG33U=;
-        b=nXtGzNL8RzpeGre+2uEq1gWPVymoI20XfRsk2ZNpia7Y7k0v51H9NvJp96omdTpsDfzWzn
-        0q4rKrK+Z2Mc5D2D7ulRRFYhX0mNXD7H99oV6D0201Ffa2EOyb25RVgt5J2tJ771aOL6Rl
-        IUJ8bPxnDmkqCNy4wc8/7a/ydwcIw/A=
+        bh=xd/1VjueFto4dgVuMPhlkYm9ikrQ454XSTDG6GhWTtw=;
+        b=Z84U51gAa6tFvAZogGxh4rf//o5EatY41QJ6KF+tE0gn2sEcixDA8knX7lx9S9zqkpA0e/
+        nsAWpUbTcSQSMEt1DXxuenxc7iJbYP1JTIrBMJQ9abJcc9XbRZvmh7t//9sqhD/Rqd69ra
+        S9RLpjTR0Y+aqvZ4+mPo6gMTbnq+bHU=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649087686;
+        s=susede2_ed25519; t=1649090424;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=m8i59qpPGIxI7lUrvc36GGrQY6E2Pq1OzMurNWvG33U=;
-        b=4gvDYrCvK/bqL4wFFjJe8bz1x8enE+TritFBMJQmrd0lzFsTEcNBt2qPqgM3MtFS8rE52S
-        OONL/Yqk+0Nv01AA==
+        bh=xd/1VjueFto4dgVuMPhlkYm9ikrQ454XSTDG6GhWTtw=;
+        b=mcJ2SNscnIiyhscpGVLoMFts8Yor7HcydPnwZpS7oM3XSxMDkIzb/VncmN3O5Y3PwrPmPA
+        U2GExXP1c2guUECA==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 9C937A3B83;
-        Mon,  4 Apr 2022 15:54:46 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id E097CA3B87;
+        Mon,  4 Apr 2022 16:40:24 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 010A1DA80E; Mon,  4 Apr 2022 17:50:45 +0200 (CEST)
-Date:   Mon, 4 Apr 2022 17:50:45 +0200
+        id 2BE2DDA80E; Mon,  4 Apr 2022 18:36:23 +0200 (CEST)
+Date:   Mon, 4 Apr 2022 18:36:23 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.cz>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Pankaj Raghav <p.raghav@samsung.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v2 0/4] btrfs: rework background block group relocation
-Message-ID: <20220404155045.GQ15609@twin.jikos.cz>
+To:     Stefan Roesch <shr@fb.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v1 1/3] btrfs: store chunk size in space-info struct.
+Message-ID: <20220404163623.GS15609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Pankaj Raghav <p.raghav@samsung.com>,
-        "linux-btrfs @ vger . kernel . org" <linux-btrfs@vger.kernel.org>
-References: <cover.1648543951.git.johannes.thumshirn@wdc.com>
+Mail-Followup-To: dsterba@suse.cz, Stefan Roesch <shr@fb.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20220208193122.492533-1-shr@fb.com>
+ <20220208193122.492533-2-shr@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1648543951.git.johannes.thumshirn@wdc.com>
+In-Reply-To: <20220208193122.492533-2-shr@fb.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 29, 2022 at 01:56:05AM -0700, Johannes Thumshirn wrote:
-> This is a combination of Josef's series titled "btrfs: rework background
-> block group relocation" and my patch titled "btrfs: zoned: make auto-reclaim
-> less aggressive" plus another preparation patch to address Josef's comments.
+On Tue, Feb 08, 2022 at 11:31:20AM -0800, Stefan Roesch wrote:
+> The chunk size is stored in the btrfs_space_info structure.
+> It is initialized at the start and is then used.
 > 
-> I've opted for rebasinig my path onto Josef's series to avoid and fix
-> conflicts, as we're both touching the same code.
+> A new api is added to update the current chunk size.
 > 
-> Here's the original cover letter from Josef:
+> This api is used to be able to expose the chunk_size
+> as a sysfs setting.
 > 
-> Currently the background block group relocation code only works for zoned
-> devices, as it prevents the file system from becoming unusable because of block
-> group fragmentation.
+> Signed-off-by: Stefan Roesch <shr@fb.com>
+> ---
+>  fs/btrfs/space-info.c | 41 +++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/space-info.h |  3 +++
+>  fs/btrfs/volumes.c    | 28 +++++++++-------------------
+>  3 files changed, 53 insertions(+), 19 deletions(-)
 > 
-> However inside Facebook our common workload is to download tens of gigabytes
-> worth of send files or package files, and it does this by fallocate()'ing the
-> entire package, writing into it, and then free'ing it up afterwards.
-> Unfortunately this leads to a similar problem as zoned, we get fragmented data
-> block groups, and this trends towards filling the entire disk up with partly
-> used data block groups, which then leads to ENOSPC because of the lack of
-> metadata space.
-> 
-> Because of this we have been running balance internally forever, but this was
-> triggered based on different size usage hueristics and stil gave us a high
-> enough failure rate that it was annoying (figure 10-20 machines needing to be
-> reprovisioned per week).
-> 
-> So I modified the existing bg_reclaim_threshold code to also apply in the !zoned
-> case, and I also made it only apply to DATA block groups.  This has completely
-> eliminated these random failure cases, and we're no longer reprovisioning
-> machines that get stuck with 0 metadata space.
-> 
-> However my internal patch is kind of janky as it hard codes the DATA check.
-> What I've done here is made the bg_reclaim_threshold per-space_info, this way
-> a user can target all block group types or just the ones they care about.  This
-> won't break any current users because this only applied in the zoned case
-> before.
-> 
-> Additionally I've added the code to allow this to work in the !zoned case, and
-> loosened the restriction on the threshold from 50-100 to 0-100.
-> 
-> I tested this on my vm by writing 500m files and then removing half of them and
-> validating that the block groups were automatically reclaimed.
-> 
-> https://lore.kernel.org/linux-btrfs/cover.1646934721.git.josef@toxicpanda.com/
-> 
-> Changes to v1:
-> * Fix zoned threshold calculation (Pankaj)
-> * Drop unneeded patch
-> 
-> Johannes Thumshirn (1):
->   btrfs: zoned: make auto-reclaim less aggressive
-> 
-> Josef Bacik (3):
->   btrfs: make the bg_reclaim_threshold per-space info
->   btrfs: allow block group background reclaim for !zoned fs'es
->   btrfs: change the bg_reclaim_threshold valid region from 0 to 100
+> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+> index 294242c194d8..302522a250d8 100644
+> --- a/fs/btrfs/space-info.c
+> +++ b/fs/btrfs/space-info.c
+> @@ -181,6 +181,46 @@ void btrfs_clear_space_info_full(struct btrfs_fs_info *info)
+>  		found->full = 0;
+>  }
+>  
+> +/*
+> + * Compute chunk size depending on block type for regular volumes.
+> + */
+> +static u64 compute_chunk_size_regular(struct btrfs_fs_info *info, u64 flags)
 
-Added to misc-next, thanks.
+compute_chunk_size_regular
+
+We've been using 'calculate' or 'calc' for such helper elsewhere, please
+rename it for consistency.
+
+Also the common name for struct btrfs_fs_info is 'fs_info' and it can be
+made const.
+
+> +{
+> +	ASSERT(flags & BTRFS_BLOCK_GROUP_TYPE_MASK);
+> +
+> +	if (flags & BTRFS_BLOCK_GROUP_DATA)
+> +		return SZ_1G;
+> +	else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
+> +		return SZ_32M;
+> +
+> +	/* Handle BTRFS_BLOCK_GROUP_METADATA */
+> +	if (info->fs_devices->total_rw_bytes > 50ULL * SZ_1G)
+> +		return SZ_1G;
+> +
+> +	return SZ_256M;
+> +}
+> +
+> +/*
+> + * Compute chunk size depending on volume type.
+> + */
+> +static u64 compute_chunk_size(struct btrfs_fs_info *info, u64 flags)
+
+Same.
+
+> +{
+> +	if (btrfs_is_zoned(info))
+> +		return info->zone_size;
+> +
+> +	return compute_chunk_size_regular(info, flags);
+> +}
+> +
+> +/*
+> + * Update default chunk size.
+
+That's not very helpful comment but the function is sort and clear
+enough so I don't think it needs it anyway.
+
+> + *
+> + */
+> +void btrfs_update_space_info_chunk_size(struct btrfs_space_info *space_info,
+> +					u64 chunk_size)
+> +{
+> +	atomic64_set(&space_info->chunk_size, chunk_size);
+> +}
+> +
+>  static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+>  {
+>  
+> @@ -202,6 +242,7 @@ static int create_space_info(struct btrfs_fs_info *info, u64 flags)
+>  	INIT_LIST_HEAD(&space_info->tickets);
+>  	INIT_LIST_HEAD(&space_info->priority_tickets);
+>  	space_info->clamp = 1;
+> +	btrfs_update_space_info_chunk_size(space_info, compute_chunk_size(info, flags));
+>  
+>  	ret = btrfs_sysfs_add_space_info_type(info, space_info);
+>  	if (ret)
+> diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+> index d841fed73492..c1a64bbfb6d1 100644
+> --- a/fs/btrfs/space-info.h
+> +++ b/fs/btrfs/space-info.h
+> @@ -23,6 +23,7 @@ struct btrfs_space_info {
+>  	u64 max_extent_size;	/* This will hold the maximum extent size of
+>  				   the space info if we had an ENOSPC in the
+>  				   allocator. */
+> +	atomic64_t chunk_size;  /* chunk size in bytes */
+
+Why is this an atomic? I don't see the atomic semantics used anywhere,
+ie. not losing increments/decrements. For plain atomic_set/atomic_read
+it's exactly the same as an int or long. The right annotation here is
+READ_ONCE and WRITE_ONCE, which is used for other values updated from
+sysfs.
+
+>  
+>  	int clamp;		/* Used to scale our threshold for preemptive
+>  				   flushing. The value is >> clamp, so turns

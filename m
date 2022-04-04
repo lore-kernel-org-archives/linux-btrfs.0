@@ -2,81 +2,129 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3EBCC352A1
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A380EC352AA
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Apr 2022 21:25:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1379591AbiDDVZ4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:25:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42926 "EHLO
+        id S1376883AbiDDVZ7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:25:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46592 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379132AbiDDQhB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 12:37:01 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4068D192B5
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 09:35:05 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 022F41F390;
-        Mon,  4 Apr 2022 16:35:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649090104;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=vQfSG+ldkJIiZy66jwWqPoGQOognbVzMxZG8R3wRpM0=;
-        b=hD6wRBqSqeX8JhIdndexzCyM5vhq4XlnYwFl+7Z7e95L5zwuTgExEBSnYtnLOzGvbJcQkH
-        MWwkYJ3T60GaZXPluTdcj34a7A7mhTAtrpwQkG4FqcmS6ROgs6/xQ8PmFQCdQGbM/Wzuq+
-        LgJ/N8H5KpuIYKeab4PbSsgTJf4h3qU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649090104;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=vQfSG+ldkJIiZy66jwWqPoGQOognbVzMxZG8R3wRpM0=;
-        b=VI+kzyZX1AHHLS4xuFM400/jBpeawuGKplbjC9qh1ko72trHtn88fO39MJZkqe54zASwDp
-        2hdNH7U9EyU/VvBg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id EBF88A3B88;
-        Mon,  4 Apr 2022 16:35:03 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 05295DA80E; Mon,  4 Apr 2022 18:31:02 +0200 (CEST)
-Date:   Mon, 4 Apr 2022 18:31:02 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Stefan Roesch <shr@fb.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v1 0/3] btrfs: add sysfs switch to get/set metadata size
-Message-ID: <20220404163102.GR15609@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Stefan Roesch <shr@fb.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20220208193122.492533-1-shr@fb.com>
+        with ESMTP id S1379713AbiDDR4F (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 13:56:05 -0400
+Received: from mail-io1-xd33.google.com (mail-io1-xd33.google.com [IPv6:2607:f8b0:4864:20::d33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1161F245BD
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 10:54:08 -0700 (PDT)
+Received: by mail-io1-xd33.google.com with SMTP id g21so12197606iom.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 10:54:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=5aXFOjsVwliGYhlBx1+QCDa1pQHtfy2+N5XXzrQtxMg=;
+        b=cgXljmTb2YzfUu91m3Gr8Jbua/5PvNKZVVMOhdX7EaF2A8TRgLkobVuSiVuDL6rj9d
+         ci/aH+Ivc4Zkzy3noXN/do9oIwgFVwDBUVhPvqDyp4DATpYnI7uoks26ju96mI6VS7bS
+         TV6rzhnjo4kuovsQBiRUn5oOW4A0++bZYsaCVNcxBhNIC0KgKDdL4Rd7YTfyJDue50qY
+         KCBLPW132ckjV2v/HRuBBoem1cZ3jFeBo0i1eGMG9gWEak/zcGV5RdRwWgm2vC8dxAun
+         oLWXR78KgjMzuEyA89mX63FsoAXxVoi3hx44VqErfLAdsqZ3RuQ4tNkY3TpNyY5t4KJa
+         kOMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=5aXFOjsVwliGYhlBx1+QCDa1pQHtfy2+N5XXzrQtxMg=;
+        b=xkTKl/gwY/4zMjPMkO5bNk9ZWKn42ixK29leQcu1CNhulbDt96jVIFCU4bcl0uhtiF
+         F1nDXrDBPQi+AHzwoc7R1dwo/FoPXSQR89xU+pf1TcOYpdg6HNQijpeWD0lhptqea/EF
+         Kl4p2pcEqgrSxZVi6slgdGrN+gD/0Segl3rU/c1AlbKG/v9UIAspu261nV6cS0oaxvzD
+         IgaVWPk6jGt4iLMcR9eRpal7LCPTlZKIClZUgCRis+PN+fSQqPLaIDV7W98Bxqv0LdrI
+         Cc7KSNspr+chMGTDY6E623PmPy080UaZxd1xSKmeSpgybgCFcNVBhMqpt7jhXJpsw4rk
+         3LCQ==
+X-Gm-Message-State: AOAM531Kci2W8FyNKUPriXBUNbvT+7GP1Qjcrm0QvJSma6EY5bNWRBAp
+        sBuM253n6lyn8kAraHMLqG+Y0TUuKmHIo80Zq06IpT2uvTHv0A==
+X-Google-Smtp-Source: ABdhPJz36HiK2Osvz2blIJ/DBa7pVg5dEWWa0d3aUN99s7eEpq04YlJM7vAjRVqK6GYCWfrS24Bnk+7gkidgv28PrBw=
+X-Received: by 2002:a05:6602:2bc4:b0:645:eb96:6495 with SMTP id
+ s4-20020a0566022bc400b00645eb966495mr666594iov.166.1649094847368; Mon, 04 Apr
+ 2022 10:54:07 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220208193122.492533-1-shr@fb.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <20220329171818.GD1314726@merlins.org> <dffec23f-bef1-30e2-83fc-b3fb9bb5f21e@gmail.com>
+ <20220330143944.GE14158@merlins.org> <20220331171927.GL1314726@merlins.org>
+ <Ykoux6Oczf6+hmGg@localhost.localdomain> <20220404010101.GQ1314726@merlins.org>
+ <20220404150858.GS1314726@merlins.org> <CAEzrpqc1yvK+v5MSiCxPRxX2c27xPsO5POMPJ8OuQaN4u1y2wA@mail.gmail.com>
+ <20220404174357.GT1314726@merlins.org>
+In-Reply-To: <20220404174357.GT1314726@merlins.org>
+From:   Josef Bacik <josef@toxicpanda.com>
+Date:   Mon, 4 Apr 2022 13:53:56 -0400
+Message-ID: <CAEzrpqc7P7pxkdSw8eS-nCkn1h5ztQC7C=MewJdmT6Mr5OJX-A@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Chris Murphy <lists@colorremedies.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 08, 2022 at 11:31:19AM -0800, Stefan Roesch wrote:
-> The btrfs allocator is currently not ideal for all workloads. It tends
-> to suffer from overallocating data block groups and underallocating
-> metadata block groups. This results in filesystems becoming read-only
-> even though there is plenty of "free" space.
-> 
-> This patch adds the ability to query and set the metadata allocation
-> size.
-> 
->   Patch 1: btrfs: store chunk size in space-info struct.
->     Store the stripe and chunk size in the btrfs_space_info structure
->     to be able to expose and set the metadata allocation size.
->     
->   Patch 2: btrfs: expose chunk size in sysfs.
->     Add a sysfs entry to read and write the above information.
->     
->   btrfs: add force_chunk_alloc sysfs entry to force allocation
->     For testing purposes and under a debug flag add a sysfs entry to
->     force a space allocation.
+On Mon, Apr 4, 2022 at 1:44 PM Marc MERLIN <marc@merlins.org> wrote:
+>
+> On Mon, Apr 04, 2022 at 01:18:48PM -0400, Josef Bacik wrote:
+> > On Mon, Apr 4, 2022 at 11:09 AM Marc MERLIN <marc@merlins.org> wrote:
+> > >
+> > > On Sun, Apr 03, 2022 at 06:01:01PM -0700, Marc MERLIN wrote:
+> > > > gargamel:~# btrfs rescue chunk-recover /dev/mapper/dshelf1a
+> > > > Scanning: 1509736448 in dev0
+> > > >
+> > > > I'll let this run, looks like it might take a while.
+> > >
+> > > 14h later, still going on. I'll update when it's done, it may take a few
+> > > days.
+> > > gargamel:~# btrfs rescue chunk-recover /dev/mapper/dshelf1a
+> > > Scanning: 7049296592896 in dev0
+> > >
+> > > Please let me know about the backup chunk roots that all seemed to be
+> > > the same and were apparently all pointing to the same corrupted version?
+> >
+> > Ok cool apparently we have code that does this already, can you do
+> >
+> > btrfs-find-root -o 3 /dev/whatever
+> > and then use the bytenr's it finds like you did with the backup roots
+>
+> gargamel:~# btrfs-find-root -o 3 /dev/mapper/dshelf1a
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> leaf parent key incorrect 13577821667328
+> WARNING: could not setup extent tree, skipping it
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> leaf parent key incorrect 13577821667328
+> Couldn't setup device tree
+> Superblock thinks the generation is 1600938
+> Superblock thinks the level is 1
+> Found tree root at 21069824 gen 1600938 level 1
+> Well block 21053440(gen: 1822 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
+> Well block 21004288(gen: 1692 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
+> Well block 20987904(gen: 1443 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
+> Well block 20971520(gen: 1293 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
+> Well block 21037056(gen: 1170 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
+> Well block 21020672(gen: 773 level: 0) seems good, but generation/level doesn't match, want gen: 1600938 level: 1
+>
+> Not a good sign I assume?
+>
 
-Sorry for late response, I'm now reviewing the patches, there are still
-some things to fix, commends under the patches.
+Can you do
+
+btrfs check --chunk-bytenr 21053440 /dev/whatever
+
+also I can't seem to find output from a normal btrfs check run, can I
+see that as well?  I'm curious if we could just tell the super block
+the right transid for this and everything would be ok.  Thanks,
+
+Josef

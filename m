@@ -2,90 +2,67 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CBEAC433EF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1ADCC433FE
 	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243254AbiDEVMo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 17:12:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51838 "EHLO
+        id S243956AbiDEVM4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 17:12:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51050 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1358506AbiDEUuF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 16:50:05 -0400
-Received: from mail-il1-x129.google.com (mail-il1-x129.google.com [IPv6:2607:f8b0:4864:20::129])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9627862A2D
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 13:24:27 -0700 (PDT)
-Received: by mail-il1-x129.google.com with SMTP id t4so400922ilo.12
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 13:24:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=a7zU46dIIYLz+0rZD5Swv0n04z5EVkv57j+hpFLVKd8=;
-        b=iwSmE1xsAYvP1N+EzvwtWAi5qXT7hhLbY8eKqqno93qNeFh7EHrRK7BFcGi3U+46q/
-         sRg9yY1+oGYDwMQ4MUKtV1yhnL53uvO/gb7XeAwyIN4byG8URGIo6pK2IctTiXZswXHp
-         Xw02HtVVf/B2OZcia2YpvtcYIr2ISRYQxtEXeGOnPWq1wNt5hLZa34PFI5mEByusfjXa
-         bD8p+exALBX02yCgCPhPS8s90Am0IqBJC2HjuFW3Qx5yEwN3nIfIVwGADq5Ju09AXYAO
-         dAReHvwS/0VRH2W8NZDkEZ5IM6woUPh+b/sQZVNhwyGu6i6LGoT2g/8hi48SOuwRtqID
-         kqNQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=a7zU46dIIYLz+0rZD5Swv0n04z5EVkv57j+hpFLVKd8=;
-        b=4f5MJOZI7ZxuT4a9Le1oPixMLiLaGBRYQ0+fX+ofz4fnu75PFQxONVP2mENV+8J0jR
-         8cWO9xH/tAShHO4Y6xED/VUA38Qn1SZfMZFkAhiSx/QSuVOTSM+9vYAroen28jM6kZBW
-         SehSlGqx2MmolKrpGCD7ysvYUiBYITfnfRmbZME6EIkB+33VeJI4xxMLpRJmaeSP/Gu9
-         rpFskze+ficMqJsGTnaabFgFO6eD3XELrPM4yHSR8jgcQIutHpyKKdrlSdmEjHwa3ZEt
-         1MWMoVFjdfKQpIlkKsB94b3hE390xUYk/+HZzGPG18PpPPmbxHPOAYwo60PVd3qH4bLJ
-         uF0w==
-X-Gm-Message-State: AOAM532QUf6OIqx2/2mxvUmVRkk/O8VEHBgkVZ6jGzOb1eSc7M6NkiTp
-        28CKu1eZi8uAyA8sGKdfWv32sAudycdxMIF4lS1F1ovFcCJR2A==
-X-Google-Smtp-Source: ABdhPJzN6wHpojhUaKSWdY6VJpv7QfytLN/ZBVwL9kAU1hfMDlZlO6F1A7BmzxtxvlLc/PBIa4uw01Sz8ZsFlpRk7l4=
-X-Received: by 2002:a05:6e02:b4d:b0:2c8:45ac:66b1 with SMTP id
- f13-20020a056e020b4d00b002c845ac66b1mr2776120ilu.153.1649190266903; Tue, 05
- Apr 2022 13:24:26 -0700 (PDT)
-MIME-Version: 1.0
-References: <CAEzrpqd6kePW6eiMB-R4DvMRvU=AK-jKpkBNUvSjttsSEsCwpA@mail.gmail.com>
- <20220405155311.GJ5566@merlins.org> <CAEzrpqehq1tt5O_6jarggYK4dvyWCJ8O=_ps_qXuQbVJ9_bC6g@mail.gmail.com>
- <CAEzrpqdjTRc2VQBGGRB3Dcsk=BzN2ru-fA2=fMz__QnFubR7VQ@mail.gmail.com>
- <20220405181108.GA28707@merlins.org> <CAEzrpqc=h2A42nnHzeo_DwHik8Lu0xfkuNm2mhd=Ygams6aj=w@mail.gmail.com>
- <20220405195157.GA3307770@merlins.org> <CAEzrpqeQ=Q8u+Kgy6r+axYdbrZKs9=9cvMwEfKr=O2urgZTXHw@mail.gmail.com>
- <20220405195901.GC28707@merlins.org> <CAEzrpqe-tBN9iuDJPwf7cj7J8=d6gtr27LnTat9nZiA7iVERNQ@mail.gmail.com>
- <20220405200805.GD28707@merlins.org>
-In-Reply-To: <20220405200805.GD28707@merlins.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Tue, 5 Apr 2022 16:24:16 -0400
-Message-ID: <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
- verify failed + open_ctree failed)
-To:     Marc MERLIN <marc@merlins.org>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        with ESMTP id S1457874AbiDEQyG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 12:54:06 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 892E5326E9;
+        Tue,  5 Apr 2022 09:52:08 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 2276B6187A;
+        Tue,  5 Apr 2022 16:52:08 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id 7EA34C385A1;
+        Tue,  5 Apr 2022 16:52:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1649177527;
+        bh=Y7Mst8KQiuSlm/hirze6AqU381D0n5oCqAcv5T0uzsQ=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=Rik8keXLhHjTTb9+WfjTpHN7fhIp0W77s2Ye55P9Feqy3C0Z/vHSTWGYV5LHndpRP
+         5lI8TxrKifRHSBKPdqGMBqcuHAAZTm67bo9AJ2mlvfoBUNW7VerfVSOmBDisKF1Xpz
+         YfToC0IICv4VG2OlrAGOfwbyGXqXvvmD4xEUTDRY4xoe+aPb4CO1OsyOnmaN3aPRe5
+         Kl53yE5dpvT2yM8hP+fMCCqY3ndLp8K6RNpahiWIcsqihtEc861vVT2FcUensY1zfL
+         QVJZvpzEnq7LQ1iP5yAKDcS1pdWghaS3rYKOXON/afehyEsMA0xhn9fFVoyQPoas0d
+         5+QGbGf1SetcA==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 67F56E6D402;
+        Tue,  5 Apr 2022 16:52:07 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc2
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1649109877.git.dsterba@suse.com>
+References: <cover.1649109877.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1649109877.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc1-tag
+X-PR-Tracked-Commit-Id: 60021bd754c6ca0addc6817994f20290a321d8d6
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: ce4c854ee8681bc66c1c369518b6594e93b11ee5
+Message-Id: <164917752741.856.4378700460752736894.pr-tracker-bot@kernel.org>
+Date:   Tue, 05 Apr 2022 16:52:07 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 5, 2022 at 4:08 PM Marc MERLIN <marc@merlins.org> wrote:
->
-> On Tue, Apr 05, 2022 at 04:05:05PM -0400, Josef Bacik wrote:
-> > Well it's still the same, and this thing is 20mib into your fs so IDK
-> > how it would be screwing up now.  Can you do
-> >
-> > ./btrfs inspect-internal dump-tree -b 21069824
-> >
-> > and see what that spits out?  IDK why it would suddenly start
-> > complaining about your chunk root.  Thanks,
->
-> Thanks for your patience and sticking with me
-> gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs inspect-internal dump-tree -b 21069824 /dev/mapper/dshelf1a >/dev/null
+The pull request you sent on Tue, 5 Apr 2022 13:28:27 +0200:
 
-Ok well that worked, which means it found the chunk tree fine, I'm
-going to chalk this up to it just fucking with me and ignore it for
-now.  I pushed some changes for the find root thing, can you re-run
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc1-tag
 
-./btrfs-find-root -o 1 /dev/whatever
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/ce4c854ee8681bc66c1c369518b6594e93b11ee5
 
-it should be less noisy and spit out one line at the end, "Found tree
-root at blah blah".  Thanks,
+Thank you!
 
-Josef
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90638C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 02:47:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C049C43217
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 02:50:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230082AbiDECtc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Apr 2022 22:49:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48126 "EHLO
+        id S230215AbiDECwT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Apr 2022 22:52:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48108 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230189AbiDECtZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 22:49:25 -0400
-Received: from mail-io1-xd35.google.com (mail-io1-xd35.google.com [IPv6:2607:f8b0:4864:20::d35])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2DF261786AC
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 18:55:53 -0700 (PDT)
-Received: by mail-io1-xd35.google.com with SMTP id 125so13526859iov.10
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 18:55:53 -0700 (PDT)
+        with ESMTP id S231715AbiDECv4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Apr 2022 22:51:56 -0400
+Received: from mail-io1-xd30.google.com (mail-io1-xd30.google.com [IPv6:2607:f8b0:4864:20::d30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3983145032D
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Apr 2022 19:25:00 -0700 (PDT)
+Received: by mail-io1-xd30.google.com with SMTP id b16so13627556ioz.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Apr 2022 19:25:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=sQlicjGQSFFgDDW/uBKuvesUM3ZK7JxGJ22yLUymqos=;
-        b=BIGPEaoPMLCReFe3iRgtRWU22zq3/+TF02iiPA0Kk8MCmbPB15kXHz5UUX09D1rdwh
-         DDfdQrRVO0tOuLYzmkhTKboznLOPWEqK4lF7KFKlTAqWfsv3KNCKryELXUk3k307T/vc
-         sX1vgiC36IvuLM15E838FmDowF8+kb1wE7/lJW5PHVvIn1jZtCPcXm3ldfrWb7aerrtH
-         3JKL+UPyyw8za+fOb2xKE/5NR9QBfCqZ4o3wCaatG3KDKREOl/5uBP/Jxy9NGwFl8ZYZ
-         IbemsP+z33NMTg3//q7zuPOt3DETuIkgiAJdvV+JRA0ch++dI24mm4EzDiwf7Cd9pBXG
-         O1uQ==
+        bh=kblWu+1ASXv98eTNg+b/MmeImkaCnmvXELePffMwswo=;
+        b=a9f5jFHsAGI6l1wqMM/QrXouor8f0tRUy1basDS6nYtLaBGyenm/WUZBrKQ/e8uXy5
+         sGWpnTeNy4gUlruPlL6HpTn79YqjQxqv/jr4hfW6E+msuDFHYlvKTy2ubG81RiQEC8e9
+         l/+w9nh6pkhtpW7oMgGXECP2zlISI539i8VKLC2lsk6t+zjD6Mss7N2iiL4HnpkEkgHS
+         d3UVcxStryuSeZqbJr3s6CBLS73QfDmGfBnAqf2+BVxhrtvCJfsKKiWekZ55qzYPPW2w
+         eXzHs7Nweb2bGXIH26rJOr9M45stsgFVKQ4+gTIRCS30PHWcpSKwGQdMKC6qBssfkfrS
+         S2yQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=sQlicjGQSFFgDDW/uBKuvesUM3ZK7JxGJ22yLUymqos=;
-        b=gh78wF0gy0altwKxav9twYjBOqYQbmxoMxMynT18ncLjDPjdozQisoqNA0ga3x8lFK
-         dQW0CTTJ3FSqOaJfWctZN2kFD9JTSIW3G8ae4eVgCG+niGiveKr/2/75NvAh0NIi5Exo
-         NFjm5vuLoaJzDiarusT/ym+0RkkAnx0vVlr4s3bqQdU2jdWD/c3wK278kLcolJodS6zk
-         qyYCAYfAob17MyQN8rZGLrh2Vn7c9oJh+4uEuB/BBgCnNDUWo+NFCNAjSaiTRFTlCdpg
-         Z4EpKsDKqbCAZ6OCazCsIoKcXc8+DIagopgrEWHBLmR0/NFIEvMWOZyZQjq81KTrD6GL
-         q+9Q==
-X-Gm-Message-State: AOAM533FhmFauYMNMIdxIoPA+Cx670VLrrAWneomZ0AcDmuvA93WEPRq
-        +Do/n7awz6vfqDTT8uJ33W7GzkYjgCQJEnUaJLIGAtAb49U=
-X-Google-Smtp-Source: ABdhPJxIwQ7QWUPqTc81k4cNBdPzXJ/QXNngReVyZQDYkNaB4ISM0qc0Vvb1UbVowveH7YMI8o1bLh89ETGoHjWJJO4=
-X-Received: by 2002:a6b:ea07:0:b0:649:f07e:9c73 with SMTP id
- m7-20020a6bea07000000b00649f07e9c73mr632125ioc.10.1649123752411; Mon, 04 Apr
- 2022 18:55:52 -0700 (PDT)
+        bh=kblWu+1ASXv98eTNg+b/MmeImkaCnmvXELePffMwswo=;
+        b=Y8/42LNibgHVvxS4/pdHTsIzB4ltIDLo0mHTshQYMBFGYm42DSghjpDissBLKO9A6r
+         bEYCHJVuCP6j1i4olv8i6Te02Xvs0JD3Y/fIpvM2W9rruygVS6sap7eTqvDh5OG6iuYZ
+         Xc3Wl1gGindnc/JYG2HQSFuSYZy6NXXJTA6HJuJv18E3RYC8wxy8G07+v5UodymJTQCi
+         5LNFhD39+LBtml6qnKV5JhGPvcVhHpRlkUEXWh53hpXt3+y+9u2BOckS1TqGWu029aNC
+         gKKDFv6akN8TXjJKA11QDm0fLfBJSFeY/H469GnoBkJJhn64j0moM+C3i7vHkLT9YR9X
+         RB8g==
+X-Gm-Message-State: AOAM533I4wa0oDHHWrwjLDxglQJGH7wSjWco/WPfM+SxkwdxXFOghzV9
+        3I1ijZEPGrdTBPCujXRHYeaSSVTa4ntle6NQeSoU3fsqbn4=
+X-Google-Smtp-Source: ABdhPJzIaXuqj1z7R2RItoOX/EvTDC2TnaOkI3NW5y2yaO1stfEIEgX9G8mmNtvwPCok8jAk8bFHYO5KotlJzXmSxz0=
+X-Received: by 2002:a05:6602:2bc4:b0:645:eb96:6495 with SMTP id
+ s4-20020a0566022bc400b00645eb966495mr436179iov.166.1649117344544; Mon, 04 Apr
+ 2022 17:09:04 -0700 (PDT)
 MIME-Version: 1.0
-References: <20220405001325.GB5566@merlins.org> <CAEzrpqcb2jHehpnrjxtNJ4KWW3M5pvJThUNGFZw78=MBNdTG5g@mail.gmail.com>
- <20220405001808.GC5566@merlins.org> <CAEzrpqfKaXjk7J_oAY0pSL4YPy_vw5Z0tKmjMPQgQSd_OhYwXA@mail.gmail.com>
- <20220405002826.GD5566@merlins.org> <CAEzrpqeHa7tG+S_9Owu5XYa0hwBKJPVN2ttr_E_1Q4UV8u0Nmg@mail.gmail.com>
- <20220405005809.GE5566@merlins.org> <CAEzrpqfjTUoK9fi43tLZaJ9mkBewAqcUH77di7QipH9Vj6AB0g@mail.gmail.com>
- <20220405011559.GF5566@merlins.org> <CAEzrpqfGF3O6gZTqGVN+iju92=8Zemz09_AJN2nvy2yHUmYyGg@mail.gmail.com>
- <20220405014259.GG5566@merlins.org>
-In-Reply-To: <20220405014259.GG5566@merlins.org>
+References: <20220404203333.GZ1314726@merlins.org> <CAEzrpqdmKwdZxzu7EBhp-PgZW+vqNaUm51SRrKAe64N3pN2rnw@mail.gmail.com>
+ <20220404212951.GG14158@merlins.org> <CAEzrpqemPHLN4gp5TdLQDGkUZSOkRFHHFiHEraZDNSTDjCh4=Q@mail.gmail.com>
+ <20220404220935.GH14158@merlins.org> <CAEzrpqefSVVYOf7oj4gqdvBou7vo58x7u4+G=vwCrnky9t3BZQ@mail.gmail.com>
+ <20220404224503.GA11442@merlins.org> <CAEzrpqfJ7-GQHZicxpn2x3D=aOY=tnKkt9XiPJ8O+_VZAgK7wg@mail.gmail.com>
+ <20220404231838.GA1314726@merlins.org> <CAEzrpqd2kVY=mpttaP3+YJJ_1t1Z3crfXAdF-69pMU10aVe5OA@mail.gmail.com>
+ <20220404234213.GA5566@merlins.org>
+In-Reply-To: <20220404234213.GA5566@merlins.org>
 From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Mon, 4 Apr 2022 21:55:41 -0400
-Message-ID: <CAEzrpqdjLn51R++iX0_7-MRbxoNo7HL5GZFs4399KV6=RO3cyQ@mail.gmail.com>
+Date:   Mon, 4 Apr 2022 20:08:53 -0400
+Message-ID: <CAEzrpqft7WzRB+6+=_tTXYU4geBB_38navF1opr6cd9PXiWUGg@mail.gmail.com>
 Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
  verify failed + open_ctree failed)
 To:     Marc MERLIN <marc@merlins.org>
@@ -64,27 +64,34 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 4, 2022 at 9:43 PM Marc MERLIN <marc@merlins.org> wrote:
+On Mon, Apr 4, 2022 at 7:42 PM Marc MERLIN <marc@merlins.org> wrote:
 >
-> On Mon, Apr 04, 2022 at 09:22:26PM -0400, Josef Bacik wrote:
-> > Ok lets try again with -b 13577821667328, and if the owner doesn't say
-> > ROOT_TREE try 13577775284224 and then 13577814573056.  Thanks,
+> On Mon, Apr 04, 2022 at 07:24:10PM -0400, Josef Bacik wrote:
+> > Re-pull and try again please.  Thanks,
 >
-> EXTENT_TREE, FS_TREE, and FS_TREE
+> Looks the same?
 >
-> And shit, I got distracted and sent the text output to
-> /dev/mapper/dshelf1a, so I clobbered about 30K of the device.
-> I'm assuming there was probably something there?
+> gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs inspect-internal dump-tree -t ROOT /dev/mapper/dshelf1a
+> btrfs-progs v5.16.2
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> Couldn't find the last root for 4
+> Couldn't setup device tree
+> ERROR: unable to open /dev/mapper/dshelf1a
+>
 
-Yes the chunk tree, but your FS is DUP so we'll find the other copy,
-it'll be fine.
-
-Do you have any subvolumes that aren't snapshots?  I think I can
-re-create everything without knowing what other roots there are, but
-if you have snapshots/subvolumes I need to be more careful.
-
-In any case I'm going to go to bed, it's been a long week.  I'll start
-working on a tool to re-create your root tree in the morning, and then
-hopefully we can go from there.  Thanks,
+Fuck it, I'll just comment it out.  Try it again please.  Thanks,
 
 Josef

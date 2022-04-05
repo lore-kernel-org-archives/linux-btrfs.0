@@ -2,67 +2,78 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1ADCC433FE
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CAFBFC43217
 	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243956AbiDEVM4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 17:12:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51050 "EHLO
+        id S244632AbiDEVNE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 17:13:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48642 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1457874AbiDEQyG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 12:54:06 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 892E5326E9;
-        Tue,  5 Apr 2022 09:52:08 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 2276B6187A;
-        Tue,  5 Apr 2022 16:52:08 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 7EA34C385A1;
-        Tue,  5 Apr 2022 16:52:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1649177527;
-        bh=Y7Mst8KQiuSlm/hirze6AqU381D0n5oCqAcv5T0uzsQ=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=Rik8keXLhHjTTb9+WfjTpHN7fhIp0W77s2Ye55P9Feqy3C0Z/vHSTWGYV5LHndpRP
-         5lI8TxrKifRHSBKPdqGMBqcuHAAZTm67bo9AJ2mlvfoBUNW7VerfVSOmBDisKF1Xpz
-         YfToC0IICv4VG2OlrAGOfwbyGXqXvvmD4xEUTDRY4xoe+aPb4CO1OsyOnmaN3aPRe5
-         Kl53yE5dpvT2yM8hP+fMCCqY3ndLp8K6RNpahiWIcsqihtEc861vVT2FcUensY1zfL
-         QVJZvpzEnq7LQ1iP5yAKDcS1pdWghaS3rYKOXON/afehyEsMA0xhn9fFVoyQPoas0d
-         5+QGbGf1SetcA==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 67F56E6D402;
-        Tue,  5 Apr 2022 16:52:07 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc2
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1649109877.git.dsterba@suse.com>
-References: <cover.1649109877.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1649109877.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc1-tag
-X-PR-Tracked-Commit-Id: 60021bd754c6ca0addc6817994f20290a321d8d6
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: ce4c854ee8681bc66c1c369518b6594e93b11ee5
-Message-Id: <164917752741.856.4378700460752736894.pr-tracker-bot@kernel.org>
-Date:   Tue, 05 Apr 2022 16:52:07 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+        with ESMTP id S1444156AbiDEPk4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 11:40:56 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A19D41877F1
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 07:03:27 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 5E2B2210FD;
+        Tue,  5 Apr 2022 14:03:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649167406;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=f0eJ49yoNBnUnyjDek8J3Yq/icoEjeUa+hIZvd5oZAM=;
+        b=XA3QySrLkyeQEr9U/+16cgxQLhpGxuXzlg08pEhqIpwBPf2FaWklCSScuvKjPGkrgMuU7I
+        9tpDWoM/PXxxB4JQj9Gyw8SkAGIrRSjB7m7f6+LURNTB6kMx34UhfufDeUdWkAYap0eVqB
+        usdLvA1kE44UOCC4L2sAFEww6L3uMN8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649167406;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=f0eJ49yoNBnUnyjDek8J3Yq/icoEjeUa+hIZvd5oZAM=;
+        b=XLII9P5FRC2wYMRHzZYEM9royvY5A03Q3SQJJFz6XoKK/pfH1fjcg4FB9P2u0gh1hENANC
+        /34/iUFNKokzKHDg==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 545FBA3B9B;
+        Tue,  5 Apr 2022 14:03:26 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 31EEDDA80E; Tue,  5 Apr 2022 15:59:25 +0200 (CEST)
+Date:   Tue, 5 Apr 2022 15:59:24 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Christoph Hellwig <hch@infradead.org>
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: replace a wrong memset() with memzero_page()
+Message-ID: <20220405135924.GW15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@infradead.org>,
+        Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <8d6f911a0282eba76f9e05d6f1e7c6f091d4870b.1648199349.git.wqu@suse.com>
+ <Yj3v+MnFOXeeAU9d@infradead.org>
+ <YkvMcoK5m7tZ3GUM@infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <YkvMcoK5m7tZ3GUM@infradead.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Tue, 5 Apr 2022 13:28:27 +0200:
+On Mon, Apr 04, 2022 at 09:58:26PM -0700, Christoph Hellwig wrote:
+> On Fri, Mar 25, 2022 at 09:38:16AM -0700, Christoph Hellwig wrote:
+> > > -	memset(kaddr + pgoff, 1, len);
+> > > +	memzero_page(page, pgoff, len);
+> > >  	flush_dcache_page(page);
+> > 
+> > memzero_page already takes care of the flush_dcache_page.
+> 
+> David, you've picked this up with the stay flush_dcache_page left in
+> place.  Plase try to fix it up instead of spreading the weird cargo cult
+> flush_dcache_page calls.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc1-tag
-
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/ce4c854ee8681bc66c1c369518b6594e93b11ee5
-
-Thank you!
-
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Good point, flush_dcache_page is in memzero_page so it should have been
+removed within the patch. I've grepped and there are still 14 calls,
+some of them next to memzero_page so that'll go away too.

@@ -2,95 +2,110 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E10C9C4321E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E32EEC43219
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245103AbiDEVNL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 17:13:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59004 "EHLO
+        id S1343651AbiDEVNS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 17:13:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37260 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1572998AbiDERoz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 13:44:55 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 954D0B91A9;
-        Tue,  5 Apr 2022 10:42:56 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 5355C1F37D;
-        Tue,  5 Apr 2022 17:42:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649180575;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=A9/opB1dmrwwRT1K8TkAgykRgtJiuStwy16fQBFlZuk=;
-        b=Ve0Ai/3r2vOGSGF38312vXaPCgD+Jep/JZ7TUsUGdK6wkFrx0GHHCk1L9kYIP/kWdojjX0
-        02y1/fRVihYsLxf17SY2R1bJ+FpW+JPZ1RRA/SJ0b1nuRepSXnbin/q0XzqYZJodjKZCte
-        E8xtKq1xcAf5KWbClw5Ifp1ufOK4GCI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649180575;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=A9/opB1dmrwwRT1K8TkAgykRgtJiuStwy16fQBFlZuk=;
-        b=U1hmDdR/n3fC5qSuwAkR424KokOpvccEIAIKnPx2BWtQIUEXFffg4TpBssNxHNpBRqya6v
-        wWtKC9d3pXX3R0Cg==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 44EFCA3B83;
-        Tue,  5 Apr 2022 17:42:55 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id DEE7CDA80E; Tue,  5 Apr 2022 19:38:53 +0200 (CEST)
-Date:   Tue, 5 Apr 2022 19:38:53 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        lkml <linux-kernel@vger.kernel.org>
-Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc2
-Message-ID: <20220405173853.GZ15609@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        David Sterba <dsterba@suse.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        lkml <linux-kernel@vger.kernel.org>
-References: <cover.1649109877.git.dsterba@suse.com>
- <CAADWXX-XPrfiD0TLGwMuzmGfs9pZ+HiTo1v9cs-mxb6x0OXpZw@mail.gmail.com>
+        with ESMTP id S1457509AbiDEQDT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 12:03:19 -0400
+Received: from mail-io1-xd36.google.com (mail-io1-xd36.google.com [IPv6:2607:f8b0:4864:20::d36])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C98E63EB
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 08:55:53 -0700 (PDT)
+Received: by mail-io1-xd36.google.com with SMTP id x4so15661573iop.7
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 08:55:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=zxCNF3RZsontLw/qJfhlzD5NAQI3uWP4qeqINIhiFWQ=;
+        b=mPk/sdloH9/MeUWJvnALivqd/fxHeJOUCaX97M8orNPym3I3XQH2Wj8x56Jm3jd1Qj
+         kLCbUgGqQbitU6TcXqVSpvO1FDIWwvY7aUh2+uPnMn2u0v3jo49lcJgePA+/K+97V/ZV
+         d1LzCZMUnqIVdoY/vMzDslZe7kn8IacBw3xVLvAQvrUhHEKV2/G7nnN2xY5CNrn0Wh1w
+         wamOZ3HlvI7hInCX81fLU4bnrXj9u4yck4/ZRMDqe7XzhGNPhIbWcSDMBd74i7YxQcOg
+         BTjcA1NHpk+dXHsOPoBdeu+aPE8QZ3GS2oGDyxEZ3+K66wo2d5MpyIz0/hrOpZduL3CF
+         O5iw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=zxCNF3RZsontLw/qJfhlzD5NAQI3uWP4qeqINIhiFWQ=;
+        b=rwVGcuLvdw6j7uW5D6a6KMTYYz4EvJaKJljyRDlvcqXTQMZtXlJGckR9CwiQJnVhel
+         fUj6Pj4uiE0FZOCpYWYnwLw9rI6wWw2y+iUIfsCaeM/2jmw06SfvaKgVPa33VWmHr8eV
+         n60YbETCO5xB6onWwZThbLbqbP5kLhmGrW72Sl/RaaoMBDRwPa67rjAAzRrSTKyuAPbL
+         Zq4Whrh//vkBnl1hpt0grrLCMEvIHXhfy6oSTmdYXg1K/fieHq0i41k6TKhrg7NqyIGv
+         tCBU6aB2G4ILrOjUYpX5fMjD8t9tVohGUst7k0nXI1g2bcm4Hhc8ZBbfon6jVoiFUjmQ
+         ZLZQ==
+X-Gm-Message-State: AOAM533ZIR0Lux0mzJfTmEmDi5DCQCszK0dzsAU2jWLN/OOeEm6Lz4FY
+        W+t9eGDZPsAN/jajbYPSxY1PkB2OGS0Gd12AAh+vH+5m/9U=
+X-Google-Smtp-Source: ABdhPJxU+aVnuo3pVP622r1uLxY7ENKIADjkTaa/rXvy29zcGIWVpuKbA3OUV5ccx+kXAfwljFeDbkW/Rg9M3cq0Ljc=
+X-Received: by 2002:a05:6602:14c7:b0:646:3bfb:7555 with SMTP id
+ b7-20020a05660214c700b006463bfb7555mr2011625iow.83.1649174152573; Tue, 05 Apr
+ 2022 08:55:52 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAADWXX-XPrfiD0TLGwMuzmGfs9pZ+HiTo1v9cs-mxb6x0OXpZw@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <20220405002826.GD5566@merlins.org> <CAEzrpqeHa7tG+S_9Owu5XYa0hwBKJPVN2ttr_E_1Q4UV8u0Nmg@mail.gmail.com>
+ <20220405005809.GE5566@merlins.org> <CAEzrpqfjTUoK9fi43tLZaJ9mkBewAqcUH77di7QipH9Vj6AB0g@mail.gmail.com>
+ <20220405011559.GF5566@merlins.org> <CAEzrpqfGF3O6gZTqGVN+iju92=8Zemz09_AJN2nvy2yHUmYyGg@mail.gmail.com>
+ <20220405014259.GG5566@merlins.org> <CAEzrpqdjLn51R++iX0_7-MRbxoNo7HL5GZFs4399KV6=RO3cyQ@mail.gmail.com>
+ <20220405020729.GH5566@merlins.org> <CAEzrpqd6kePW6eiMB-R4DvMRvU=AK-jKpkBNUvSjttsSEsCwpA@mail.gmail.com>
+ <20220405155311.GJ5566@merlins.org>
+In-Reply-To: <20220405155311.GJ5566@merlins.org>
+From:   Josef Bacik <josef@toxicpanda.com>
+Date:   Tue, 5 Apr 2022 11:55:41 -0400
+Message-ID: <CAEzrpqehq1tt5O_6jarggYK4dvyWCJ8O=_ps_qXuQbVJ9_bC6g@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 05, 2022 at 08:58:35AM -0700, Linus Torvalds wrote:
-> On Tue, Apr 5, 2022 at 6:28 AM David Sterba <dsterba@suse.com> wrote:
+On Tue, Apr 5, 2022 at 11:53 AM Marc MERLIN <marc@merlins.org> wrote:
+>
+> On Tue, Apr 05, 2022 at 10:11:25AM -0400, Josef Bacik wrote:
+> > Ok the fs volumes are going to be trickier to put back together, so
+> > first lets make sure the fs tree pointer is correct and relatively
+> > intact.  Can you do
 > >
-> > please pull the following fixes for btrfs, thanks.
-> 
-> Hmm. I got two copies of this...
-> 
-> ...and both were in my spam folder.
-> 
-> I don't see anything wrong with the message (spf and dkim both
-> fine).so I assume it's something about suse.sz or suse.de that gmail
-> doesn't like. Presumably some spammer sitting on a nearby network on
-> the same ISP.
+> > ./btrfs inspect-internal dump-tree -b 13577799401472 /dev/whatever
+> >
+> > I don't need the full dump since it's all the metadata for your fs
+> > tree.  What I'm looking for is if this looks sane, you'll see the
+> > normal errors you see from the fs being generally fucked, but I want
+> > this to spew and seem like it worked, and all have owner of FS_ROOT.
+>
+> Thanks. It's not too big, attached
+>
+>
+> gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs inspect-internal dump-tree -b 13577799401472 /dev/mapper/dshelf1a &>/tmp/d
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> parent transid verify failed on 22216704 wanted 1600938 found 1602177
+> Ignoring transid failure
+> FS_INFO IS 0x55741d8f7470
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+> Ignoring transid failure
+> Couldn't find the last root for 4
+> Couldn't setup device tree
+> FS_INFO AFTER IS 0x55741d8f7470
+> btrfs-progs v5.16.2
+> leaf 13577799401472 items 234 free space 2612 generation 1602242 owner EXTENT_TREE
 
-I don't know what could be wrong. Regular mails I send from mutt and the
-pull request with 'git send-email'. Today I sent the first pull request
-mail from mutt to see if there's a change from last time when you found
-the mail in spam. The mail delivery took longer than expected, I think
-more than half an hour which could be the gray listing period that I saw
-on vger in the past. So I sent it again with git send-mail, just to be
-sure. But if both end up in spam then it's probably something in the
-mail body, other mails seem to be delivered.
+Ok this is what I was afraid of, but I anticipated this wrinkle and
+I'm writing up something special to try and put everything back
+together.  I'll have something wonky to try in a couple of hours.
+Thanks,
 
-> Anyway, not much you can do about it except perhaps ask whatever MIS
-> people to see if they got put on some blacklist or whatever.
-> 
-> I've obviously noticed the pull request despite it being in my spam folder.
-
-Good to know, thanks, I'll check if there's anything to do in my mail
-setup.
+Josef

@@ -2,41 +2,42 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D59DC4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B30ADC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1442983AbiDFEq7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 00:46:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50730 "EHLO
+        id S1443719AbiDFErG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 00:47:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36192 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1452872AbiDEWca (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 18:32:30 -0400
+        with ESMTP id S1356222AbiDEVex (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 17:34:53 -0400
 Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F6921BE82
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 14:26:55 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6A3E6BA306
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 13:37:38 -0700 (PDT)
 Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nbqhT-0005dq-Fy by authid <merlin>; Tue, 05 Apr 2022 14:26:55 -0700
-Date:   Tue, 5 Apr 2022 14:26:55 -0700
+        id 1nbpvl-0000pT-Ll by authid <merlin>; Tue, 05 Apr 2022 13:37:37 -0700
+Date:   Tue, 5 Apr 2022 13:37:37 -0700
 From:   Marc MERLIN <marc@merlins.org>
 To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
  transid verify failed + open_ctree failed)
-Message-ID: <20220405212655.GH28707@merlins.org>
-References: <20220405195157.GA3307770@merlins.org>
+Message-ID: <20220405203737.GE28707@merlins.org>
+References: <CAEzrpqehq1tt5O_6jarggYK4dvyWCJ8O=_ps_qXuQbVJ9_bC6g@mail.gmail.com>
+ <CAEzrpqdjTRc2VQBGGRB3Dcsk=BzN2ru-fA2=fMz__QnFubR7VQ@mail.gmail.com>
+ <20220405181108.GA28707@merlins.org>
+ <CAEzrpqc=h2A42nnHzeo_DwHik8Lu0xfkuNm2mhd=Ygams6aj=w@mail.gmail.com>
+ <20220405195157.GA3307770@merlins.org>
  <CAEzrpqeQ=Q8u+Kgy6r+axYdbrZKs9=9cvMwEfKr=O2urgZTXHw@mail.gmail.com>
  <20220405195901.GC28707@merlins.org>
  <CAEzrpqe-tBN9iuDJPwf7cj7J8=d6gtr27LnTat9nZiA7iVERNQ@mail.gmail.com>
  <20220405200805.GD28707@merlins.org>
  <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
- <20220405203737.GE28707@merlins.org>
- <CAEzrpqemQ2Uzi+ZJHtQtbF62=hZMTmuPT3HxwkYedUvAsXhdvQ@mail.gmail.com>
- <20220405211412.GF28707@merlins.org>
- <CAEzrpqeZoUF3+Pgyaup1DGFENs6zDKtRqHiJQ6sx_CoXE2HOOA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqeZoUF3+Pgyaup1DGFENs6zDKtRqHiJQ6sx_CoXE2HOOA@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
 X-Sysadmin: BOFH
 X-URL:  http://marc.merlins.org/
 User-Agent: Mutt/1.10.1 (2018-07-13)
@@ -46,17 +47,45 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 05, 2022 at 05:19:57PM -0400, Josef Bacik wrote:
-> Otra vez por favor,
+On Tue, Apr 05, 2022 at 04:24:16PM -0400, Josef Bacik wrote:
+> On Tue, Apr 5, 2022 at 4:08 PM Marc MERLIN <marc@merlins.org> wrote:
+> >
+> > On Tue, Apr 05, 2022 at 04:05:05PM -0400, Josef Bacik wrote:
+> > > Well it's still the same, and this thing is 20mib into your fs so IDK
+> > > how it would be screwing up now.  Can you do
+> > >
+> > > ./btrfs inspect-internal dump-tree -b 21069824
+> > >
+> > > and see what that spits out?  IDK why it would suddenly start
+> > > complaining about your chunk root.  Thanks,
+> >
+> > Thanks for your patience and sticking with me
+> > gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs inspect-internal dump-tree -b 21069824 /dev/mapper/dshelf1a >/dev/null
+> 
+> Ok well that worked, which means it found the chunk tree fine, I'm
+> going to chalk this up to it just fucking with me and ignore it for
+> now.  I pushed some changes for the find root thing, can you re-run
 
-(gdb) run -o 1 /dev/mapper/dshelf1a
-Starting program: /var/local/src/btrfs-progs-josefbacik/btrfs-find-root -o 1 /dev/mapper/dshelf1a
-[Thread debugging using libthread_db enabled]
-Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Typo I fixed:
+kernel-shared/disk-io.c: In function ‘verify_parent_transid’:
+kernel-shared/disk-io.c:278:35: error: ‘struct btrfs_fs_info’ has no member named ‘suppress_check_block_errrs’; did you mean ‘suppress_check_block_errors’?
+  278 |   if (eb->fs_info && eb->fs_info->suppress_check_block_errrs)
+      |                                   ^~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                   suppress_check_block_errors
+
+> ./btrfs-find-root -o 1 /dev/whatever
+> 
+> it should be less noisy and spit out one line at the end, "Found tree
+> root at blah blah".  Thanks,
+
+gargamel:/var/local/src/btrfs-progs-josefbacik# l btrfs-find-root
+-rwxr-xr-x 1 root staff 3375608 Apr  5 13:29 btrfs-find-root*
+gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs-find-root -o 1 /dev/mapper/dshelf1a 2>&1 |tee /tmp/out
 parent transid verify failed on 22216704 wanted 1600938 found 1602177
 parent transid verify failed on 22216704 wanted 1600938 found 1602177
 parent transid verify failed on 22216704 wanted 1600938 found 1602177
-FS_INFO IS 0x5555555cf2a0
+FS_INFO IS 0x56289ce172a0
 parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
 parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
 parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
@@ -65,31 +94,18 @@ parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
 parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
 Couldn't find the last root for 4
 Couldn't setup device tree
-FS_INFO AFTER IS 0x5555555cf2a0
+FS_INFO AFTER IS 0x56289ce172a0
+Ignoring transid failure
+Ignoring transid failure
+Ignoring transid failure
+Ignoring transid failure
+(many deleted)
+Ignoring transid failure
 Superblock thinks the generation is 1602089
 Superblock thinks the level is 1
+Found tree root at 13577814573056 gen 1602089 level 1
 
-Program received signal SIGSEGV, Segmentation fault.
-lookup_cache_extent (tree=tree@entry=0x5555555cf308, start=start@entry=505282560, size=size@entry=16384) at common/extent-cache.c:142
-142		range.start = start;
-(gdb) bt
-#0  lookup_cache_extent (tree=tree@entry=0x5555555cf308, start=start@entry=505282560, size=size@entry=16384)
-    at common/extent-cache.c:142
-#1  0x0000555555579d1e in alloc_extent_buffer (fs_info=0x5555555cf2a0, bytenr=505282560, blocksize=16384)
-    at kernel-shared/extent_io.c:737
-#2  0x000055555556e44c in btrfs_find_create_tree_block (fs_info=<optimized out>, bytenr=<optimized out>)
-    at kernel-shared/disk-io.c:230
-#3  0x0000555555570208 in read_tree_block (fs_info=0x5555555cf2a0, bytenr=<optimized out>, parent_transid=1601370)
-    at kernel-shared/disk-io.c:374
-#4  0x00005555555a06df in try_read_block (slot=0, eb=0x5555721ef1a0) at btrfs-find-root.c:109
-#5  count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:162
-#6  0x00005555555a0724 in count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:164
-#7  0x00005555555a0724 in count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:164
-#8  0x00005555555a0724 in count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:164
-#9  0x00005555555a0724 in count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:164
-#10 0x00005555555a0724 in count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:164
-#11 0x00005555555a0724 in count_bad_items (eb=0x5555721ef1a0) at btrfs-find-root.c:164
-
+Good news :)
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
  

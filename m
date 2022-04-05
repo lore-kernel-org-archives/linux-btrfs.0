@@ -2,71 +2,123 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42C79C4321E
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E69D2C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1441948AbiDFEqs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 00:46:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49408 "EHLO
+        id S1391283AbiDFEqk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 00:46:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48500 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2361381AbiDFE3z (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 00:29:55 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54BEB109A65
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 17:35:22 -0700 (PDT)
-Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nbtdp-0006ki-Tv by authid <merlin>; Tue, 05 Apr 2022 17:35:21 -0700
-Date:   Tue, 5 Apr 2022 17:35:21 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220406003521.GM28707@merlins.org>
-References: <20220405203737.GE28707@merlins.org>
- <CAEzrpqemQ2Uzi+ZJHtQtbF62=hZMTmuPT3HxwkYedUvAsXhdvQ@mail.gmail.com>
- <20220405211412.GF28707@merlins.org>
- <CAEzrpqeZoUF3+Pgyaup1DGFENs6zDKtRqHiJQ6sx_CoXE2HOOA@mail.gmail.com>
- <20220405212655.GH28707@merlins.org>
- <CAEzrpqc0Ss+J6oTqNPfTgWOwyhPAF2uHnRELmc6AO6je6Ht88w@mail.gmail.com>
- <20220405214309.GI28707@merlins.org>
- <CAEzrpqeDZxjbis5kPWH3khiOALyFqUoTuh5eojFtWHPcwj-Ygw@mail.gmail.com>
- <20220405225808.GJ28707@merlins.org>
- <CAEzrpqdtvY7vu50-xSFpdJoySutMWF3JYsqORjMBHNzmTZ52UQ@mail.gmail.com>
+        with ESMTP id S1587877AbiDFAKn (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 20:10:43 -0400
+Received: from nautica.notk.org (ipv6.notk.org [IPv6:2001:41d0:1:7a93::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 52D12DA0BE
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 15:36:01 -0700 (PDT)
+Received: by nautica.notk.org (Postfix, from userid 108)
+        id ED1FFC01D; Wed,  6 Apr 2022 00:35:57 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=codewreck.org; s=2;
+        t=1649198157; bh=c4O6il5kWGpFyEaqDcisvmQ+DmfAGO+9GMA9Ik3IrUI=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=DtJoEWmqMWVAc4LPYte//euyvyEM+G8UDkoxqi454ebX9p8DnfUdADA1TwB05Vec0
+         FU6gJGGr5btOBF4SPRxqFU5KUR1duAXGeVIh/9vb1lCxdd3o8pvDKWpT8Zd/MJOjfy
+         qGVNodViZ/CBKdPENTFeSBhrHyAGVllDux4jkc3GMhg1l5kvS3emOlOER77pp6QGyZ
+         L+HZQfCuDoZMd7LROfdN7xWvivPBh7I5sQFJTl/rg6DXo5oWRCDnYFaV3lGktJud+b
+         DsHGVclNrjZBlQAZ+IhP2INh6gOqx2VBFwutHJdtR1OdiMvnnd1r2IT8TWRF3HKVO7
+         GyyK5ghkR+Z1g==
+Received: from odin.codewreck.org (localhost [127.0.0.1])
+        by nautica.notk.org (Postfix) with ESMTPS id 066F6C009;
+        Wed,  6 Apr 2022 00:35:55 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=codewreck.org; s=2;
+        t=1649198157; bh=c4O6il5kWGpFyEaqDcisvmQ+DmfAGO+9GMA9Ik3IrUI=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=DtJoEWmqMWVAc4LPYte//euyvyEM+G8UDkoxqi454ebX9p8DnfUdADA1TwB05Vec0
+         FU6gJGGr5btOBF4SPRxqFU5KUR1duAXGeVIh/9vb1lCxdd3o8pvDKWpT8Zd/MJOjfy
+         qGVNodViZ/CBKdPENTFeSBhrHyAGVllDux4jkc3GMhg1l5kvS3emOlOER77pp6QGyZ
+         L+HZQfCuDoZMd7LROfdN7xWvivPBh7I5sQFJTl/rg6DXo5oWRCDnYFaV3lGktJud+b
+         DsHGVclNrjZBlQAZ+IhP2INh6gOqx2VBFwutHJdtR1OdiMvnnd1r2IT8TWRF3HKVO7
+         GyyK5ghkR+Z1g==
+Received: from localhost (odin.codewreck.org [local])
+        by odin.codewreck.org (OpenSMTPD) with ESMTPA id 90d0f19a;
+        Tue, 5 Apr 2022 22:35:53 +0000 (UTC)
+Date:   Wed, 6 Apr 2022 07:35:38 +0900
+From:   Dominique Martinet <asmadeus@codewreck.org>
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Dominique Martinet <dominique.martinet@atmark-techno.com>
+Subject: Re: [RFC PATCH] btrfs-progs: prop: add datacow inode property
+Message-ID: <YkzEOswx7te3B6uC@codewreck.org>
+References: <20220324042235.1483914-1-asmadeus@codewreck.org>
+ <YkPuYyoV6LRWJdbS@codewreck.org>
+ <85af4827-0a21-80d4-5d60-43e0e398a4e2@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqdtvY7vu50-xSFpdJoySutMWF3JYsqORjMBHNzmTZ52UQ@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: marc@merlins.org
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <85af4827-0a21-80d4-5d60-43e0e398a4e2@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 05, 2022 at 08:23:42PM -0400, Josef Bacik wrote:
-> Alright it's time for the crazy.  Go ahead and pull and start running.
-> This is going to take a while to run, we're basically going to walk
-> and check all the node pointers in the tree root, if it doesn't look
-> right we're going to search the metadata for the best copy to use, and
-> then update the block to point at the new block.  It has to do the
-> full search every time, because we don't have time for me to properly
-> implement a cache, so don't be worried if it takes a while.
+Thanks for the reply!!
+
+Nikolay Borisov wrote on Tue, Apr 05, 2022 at 05:21:06PM +0300:
+> On 30.03.22 г. 8:45 ч., Dominique Martinet wrote:
+> > If you just say 'no' I'll bite the bullet and install e2fsprogs just for
+> > btrfs and document the command, but as things stand my users (embedded
+> > device developpers) have no way of disabling cow for e.g. database
+> > workloads and that's not really good long-term.
 > 
-> It may print out stuff, if it looks like it's looping stop it and let
-> me know, but I don't think I fucked it up.  You're going to see a lot
-> "fixed root <id>", "fixed slot <whatever>", if you see it repeating
-> the same slot or root then we know we have a problem.
- 
-I assume this is not good?
-ERROR: failed to write bytenr 13577814573056 length 16384 devid 1 dev_bytenr 13439981355008: Operation not permitted
+> Just my 2 cents: I think we should strive to rely as much as possible on the
+> generic infrastructure where we can. The nocow options is one such case. The
+> way I see it btrfs property is used to manage features which are indeed
+> specific to btrfs and have no generic alternative.
 
-I am running as root of course.
+That's not what the man page says:
 
-Marc
+       btrfs property provides an unified and user-friendly method
+       to tune different btrfs properties instead of using the
+       traditional method like chattr(1) or lsattr(1).
+
+I appreciate not wanting to duplicate code however, but documentation
+should be adjusted if that is what we want to do.
+
+
+> What's more I don't see how 'chattr +C /some/path' can be considered
+> 'complex' to teach someone, plus chattr is a standard linux utility.
+
+Well, '+C' is harder to remember than 'datacow', so in that sense yes it
+is more complex to teach someone from that regard.
+
+My users are mostly windows users who barely ever used linux, and I'm
+throwing a listing of command they should use in which conditions in our
+product manual, so it's much more coherent to have a group of 'btrfs
+property set' commands where I explain ro/compression/datacow together
+than resort to 'chattr' on one.
+
+Yes, there are other generic chattr commands that work on btrfs (append
+only, immutable come to mind immediately), but compression and datacow
+are historically handled differently for btrfs... Admittedly not a very
+good reason, the above and manual page paragraph I quoted are more
+important to me.
+(Speaking of which if the mountpoint has compress=smth, lsattr doesn't
+list +c and `btrfs property set x compression none` doesn't seem to
+cancel it, so I see no way of disabling compression on a single file in
+that case on 5.17.1 -- didn't that use to work?)
+
+
+
+Another reason for me would be that, on alpine linux, chattr is packaged
+as part of e2fsprogs-extra, which grows my root filesystem by a whole
+2MB.
+
+This might not seem much, but when I have to make everything fit in
+<200MB every bit counts. Adding a new flag here doesn't increase the
+size of the system much.
+(busybox has a chattr implementation, but for some reason it's not
+enabled on alpine linux -- I'll request to consider enabling it after
+checking how big it is if this isn't wanted here)
+
+
+Thanks,
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/  
+Dominique

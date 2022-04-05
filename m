@@ -2,92 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62AD5C433F5
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73298C4167E
 	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242054AbiDEVM2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 17:12:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54246 "EHLO
+        id S242542AbiDEVMg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 17:12:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58482 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1449699AbiDEUK1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 16:10:27 -0400
-Received: from mail-il1-x12d.google.com (mail-il1-x12d.google.com [IPv6:2607:f8b0:4864:20::12d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DA921F2103
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 12:56:42 -0700 (PDT)
-Received: by mail-il1-x12d.google.com with SMTP id 14so345938ily.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 12:56:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=psWrC6/QABgP2AGlmqWCQysqkI2aJ4VvHtRaiAOq5Bk=;
-        b=tcriGclU3pMiBocFXpu9zz5jIMPSxmdeVzgKUygWTX35rh2V5S43CShJK5Xx9WQYTh
-         TLp36Bte+ifdLuy4S4wp+dfpIa1DWQgr42FLx3MgwM3vlc44+nIyxLJ5GpkaZQRQEyiC
-         czv2DDDMMoEWpaT1g2aPkQxC2bG27xXht0bAoVsfbPhWR19zkzykgqGqUCXJpXVqkufj
-         kSGLeO/k4ECr+EeuJFjldAMauFu/Nppe3jdl//RZsKexp50sLbRB4KdC5OVMcNmTuu1O
-         5PylC8FA61dZ1Q7VcP47wo4u/yrv8ASJyKIYChNW6jxhIU0+PYy716ger76dFz8rCoIT
-         xU8g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=psWrC6/QABgP2AGlmqWCQysqkI2aJ4VvHtRaiAOq5Bk=;
-        b=fkhzqTaji+w08Byr6sexT+LLokHQ/QWo1czC1H7cMZOVcjxVP+Q60p7V0/vHGtxssC
-         byAu7I7COLmyCaMkxi+t8pepOgOkiaM0Y9YxTjcukdBHJcITFLeOnzWbs1SONZU58Hrg
-         M8RIhHDJws+zbqT/tnvZm0wfc4aJ208ZjVbNEAcr7Bpn3Ew0ekVBU76GwBma0u6ziWFw
-         06q8cUzEATQ4bco4SdzwKQI8dPu+W6DEmL0LD87KKVUfXYEUbb0cIZSo+LSrxGMy3xTx
-         CXiv+TiREmRDPdJX2ZL9SV2iqNAbo9SoNFBiBabPnfncpJjIuwBfOoc1AjKMPJYJDzNt
-         xP0A==
-X-Gm-Message-State: AOAM5317COVNdb1eHOmq94Hk2boiasiF4FD52frb0PAzwiNx0FJ/mu20
-        43YiCdAn3nqW4hzMtb92PvRCIYiw9ZNc0FbUMrvOln8bUDI=
-X-Google-Smtp-Source: ABdhPJzDly47HQK7xnpyacpRMvVnqhYkxvlkvoyN+IMZVe4FkCflLGxzasovNA+w4cGLVHx4UTVrJZzomXnIS2p2dXs=
-X-Received: by 2002:a05:6e02:170a:b0:2c9:f038:7f2e with SMTP id
- u10-20020a056e02170a00b002c9f0387f2emr2587500ill.127.1649188602205; Tue, 05
- Apr 2022 12:56:42 -0700 (PDT)
+        with ESMTP id S1445308AbiDEPms (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 11:42:48 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FDA51925AF
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 07:08:26 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id 6F229210EA;
+        Tue,  5 Apr 2022 14:08:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649167705;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Ut7C1JA9XhnnDGNCGdt7Qud6lr0KhM8xbdax0haJK+M=;
+        b=GO7xXu5+oPmciQmmFMbdeKHEx9MuVZTHKM2FK5UWwYlmueF6Q3E5h+ToZPqyG3JgrIuGOJ
+        rU9/jGZx7LjKmEGx2UkEdq51t9ZXApvfP51HxorgoTYTb2gjs0xnezoZB53XzPCkAj1AU/
+        vYk+C/43aTpfriSJZcDpQr6/cnyDE/0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649167705;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Ut7C1JA9XhnnDGNCGdt7Qud6lr0KhM8xbdax0haJK+M=;
+        b=x7tnDJvR94Bdfpl2+E8huURikqC9gSRdaTd53iFyrK8nSbE/v3+yzvTMP/3hWFf0a9Dx1j
+        9bbp44qsntT9CBBA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 65456A3B96;
+        Tue,  5 Apr 2022 14:08:25 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 24436DA80E; Tue,  5 Apr 2022 16:04:23 +0200 (CEST)
+Date:   Tue, 5 Apr 2022 16:04:23 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Christoph Hellwig <hch@infradead.org>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: replace a wrong memset() with memzero_page()
+Message-ID: <20220405140423.GX15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <8d6f911a0282eba76f9e05d6f1e7c6f091d4870b.1648199349.git.wqu@suse.com>
+ <Yj3v+MnFOXeeAU9d@infradead.org>
+ <YkvMcoK5m7tZ3GUM@infradead.org>
+ <aee87ae7-bcf0-726e-b943-3499d4b142e8@gmx.com>
 MIME-Version: 1.0
-References: <CAEzrpqfGF3O6gZTqGVN+iju92=8Zemz09_AJN2nvy2yHUmYyGg@mail.gmail.com>
- <20220405014259.GG5566@merlins.org> <CAEzrpqdjLn51R++iX0_7-MRbxoNo7HL5GZFs4399KV6=RO3cyQ@mail.gmail.com>
- <20220405020729.GH5566@merlins.org> <CAEzrpqd6kePW6eiMB-R4DvMRvU=AK-jKpkBNUvSjttsSEsCwpA@mail.gmail.com>
- <20220405155311.GJ5566@merlins.org> <CAEzrpqehq1tt5O_6jarggYK4dvyWCJ8O=_ps_qXuQbVJ9_bC6g@mail.gmail.com>
- <CAEzrpqdjTRc2VQBGGRB3Dcsk=BzN2ru-fA2=fMz__QnFubR7VQ@mail.gmail.com>
- <20220405181108.GA28707@merlins.org> <CAEzrpqc=h2A42nnHzeo_DwHik8Lu0xfkuNm2mhd=Ygams6aj=w@mail.gmail.com>
- <20220405195157.GA3307770@merlins.org>
-In-Reply-To: <20220405195157.GA3307770@merlins.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Tue, 5 Apr 2022 15:56:31 -0400
-Message-ID: <CAEzrpqeQ=Q8u+Kgy6r+axYdbrZKs9=9cvMwEfKr=O2urgZTXHw@mail.gmail.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
- verify failed + open_ctree failed)
-To:     Marc MERLIN <marc@merlins.org>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <aee87ae7-bcf0-726e-b943-3499d4b142e8@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 5, 2022 at 3:51 PM Marc MERLIN <marc@merlins.org> wrote:
->
-> On Tue, Apr 05, 2022 at 02:36:29PM -0400, Josef Bacik wrote:
-> > > Couldn't read chunk tree
-> > > WTF???
-> > > ERROR: open ctree failed
+On Tue, Apr 05, 2022 at 01:08:41PM +0800, Qu Wenruo wrote:
+> 
+> 
+> On 2022/4/5 12:58, Christoph Hellwig wrote:
+> > On Fri, Mar 25, 2022 at 09:38:16AM -0700, Christoph Hellwig wrote:
+> >>> -	memset(kaddr + pgoff, 1, len);
+> >>> +	memzero_page(page, pgoff, len);
+> >>>   	flush_dcache_page(page);
+> >>
+> >> memzero_page already takes care of the flush_dcache_page.
 > >
-> > That's new, the chunk tree wasn't failing before right?  Anyway I
-> > pushed a change, it should work now, thanks,
->
-> It failed for one commands we did before:
->  ./btrfs inspect-internal dump-tree -t ROOT /dev/mapper/dshelf1a
-> btrfs-progs v5.16.2
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> Couldn't read chunk tree
->
+> > David, you've picked this up with the stay flush_dcache_page left in
+> > place.  Plase try to fix it up instead of spreading the weird cargo cult
+> > flush_dcache_page calls.
+> 
+> Please drop this patch, as discussed with Filipe, the memset() value
+> 0x01 could be a poison value to distinguish from plain 0x00.
 
-Ok I think this is from you redirecting into your device, can you do
+> Furthermore, we are not sure if we even want to zeroing out/poison the
+> content.
 
-btrfs inspect-internal dump-super -s 0
-btrfs inspect-internal dump-super -s 1
-
-and see if they're different?  We may have to put your old super back.  Thanks,
-
-Josef
+I've read the discussion and have been thinking what should we do here,
+I'd be for doing memset to 0 because 0x1 is quite arbitrary and does not
+follow any established pattern for poison values, if there's anything
+like that when returning data from kernel to userspace. I find zeros
+OK here. Arguably "It's been 0x1 forever so we should not change it" for
+backward compatibility reasons could apply, but this is not an interface
+that applications use, the error code is the interface.

@@ -2,133 +2,143 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4D53C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 12:43:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68666C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 12:44:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240306AbiDEMpe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 08:45:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36326 "EHLO
+        id S238227AbiDEMps (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 08:45:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1383728AbiDEM0W (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 08:26:22 -0400
-Received: from mx0b-00069f02.pphosted.com (mx0b-00069f02.pphosted.com [205.220.177.32])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2B1A292D22;
-        Tue,  5 Apr 2022 04:33:44 -0700 (PDT)
-Received: from pps.filterd (m0246630.ppops.net [127.0.0.1])
-        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 235AcFTd012570;
-        Tue, 5 Apr 2022 11:33:41 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=from : to : cc :
- subject : date : message-id : in-reply-to : references :
- content-transfer-encoding : content-type : mime-version;
- s=corp-2021-07-09; bh=3zfILGXASlYPIa/w4OJAu7wqk9O+xKx2AATdByT/LZg=;
- b=UHc3bwLelWXJW8fqzj6bnN/4QyFO17dUXsS78hUZnIlzvfh6LPx3hORByAXUbCEQjlyw
- 5uKwExuRk5hBV2+rpJiAvOHugP+YZuQB60sHoOZQuU63c+ydoF27Zy8DrbibpTCy6oxQ
- Nbn0YITQAIAsGM72rThshg480yoSH21xQ9Hkg0caLCL+EryZsa9Gk2LKacf8DC+hDUOB
- +bCMjMCgyqwKJrv8jw70NMvhTGMsKRlgfQ4hUDYBOU0nR5klOySpFZvlVHOucvNplp9E
- 8HXIZ2sE9uhvCu41qh9nbYgo63kkSMHgDYzBk7ebKjYG+KHtEEtcn3IJ2Z/9zEfabaav 3g== 
+        with ESMTP id S1383189AbiDEMZG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 08:25:06 -0400
+Received: from mx0a-00069f02.pphosted.com (mx0a-00069f02.pphosted.com [205.220.165.32])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AEB529FDD;
+        Tue,  5 Apr 2022 04:32:33 -0700 (PDT)
+Received: from pps.filterd (m0246629.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 235AYApH014716;
+        Tue, 5 Apr 2022 11:32:23 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=message-id : date :
+ subject : to : cc : references : from : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=corp-2021-07-09;
+ bh=uHdHZmr5Er3WleOHmNjZNB2NT//wfIu64AwMcz+SGiI=;
+ b=QCbvyA1vACO4JGcOrY/Es2ExgB2InCxhQg7ag8rhi8hJFYLXh7duR5iKJM/B8965hbq3
+ 2DFBTpIQXWsVviW3MDm8NpAOM1F1GFeB00hcBtygEKNOuRf5OmR/tFN6Hlx4YgavZepE
+ Y9FJ+abhPPED7CdwrPYsXTkqGEGtdvcAmnCKa0/2d8qScn+cdV+FqJeZwSR2Rlmp76cn
+ JPSvkONZikzMbHqj7vnLNQiPDhThqEwjXZiSLoxYDoctEze8ZU69Rax+0BoHIEhz5+Z3
+ kSyvcizhfWq5gkGwwRfFOpiqRIfE1Cwlqj0+rFGQZ4XvvrI4ZvhUEuz0iRKJegJntLup mw== 
 Received: from phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com (phxpaimrmta02.appoci.oracle.com [147.154.114.232])
-        by mx0b-00069f02.pphosted.com with ESMTP id 3f6cwcdpkm-1
+        by mx0b-00069f02.pphosted.com with ESMTP id 3f6ec9nnmu-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 05 Apr 2022 11:33:41 +0000
+        Tue, 05 Apr 2022 11:32:23 +0000
 Received: from pps.filterd (phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com [127.0.0.1])
-        by phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com (8.16.1.2/8.16.1.2) with SMTP id 235BVbv2039284;
-        Tue, 5 Apr 2022 11:33:40 GMT
-Received: from nam11-bn8-obe.outbound.protection.outlook.com (mail-bn8nam11lp2169.outbound.protection.outlook.com [104.47.58.169])
-        by phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com with ESMTP id 3f6cx3mm5s-1
+        by phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com (8.16.1.2/8.16.1.2) with SMTP id 235BVbua039246;
+        Tue, 5 Apr 2022 11:32:22 GMT
+Received: from nam11-bn8-obe.outbound.protection.outlook.com (mail-bn8nam11lp2176.outbound.protection.outlook.com [104.47.58.176])
+        by phxpaimrmta02.imrmtpd1.prodappphxaev1.oraclevcn.com with ESMTP id 3f6cx3mkd6-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 05 Apr 2022 11:33:40 +0000
+        Tue, 05 Apr 2022 11:32:22 +0000
 ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=a3hY/LEzxc8GNnaT46IwU7KbPVhdtUsULwCx5d9HJ1e/Kxk5T5N6shL2c2TxaBI1JkzsXRoZvfeMsvyKVJcf4SDcFalf3wBnQ1g0V7Ej/9twghyPwCzwxqi5vJB86FdmWdPADZeTQaBZ00JdzezNLRj+UNTiBIA3z92BhgdysrVbVvwa6r2qGR/pTa4Z9yIpF85DMJNji84YJo3Pad160GCpgP6Z/zDABpeWiMMoJBowv/FkwDlHqfVVLywchQmkSHkBigtWXTwwlcASNZ4BUYIK07nMK1GRc9XVU7Ih+PN0wxv9KPIXPpQ/lf/TFb1cG82XTauxK0YfR70hAZzR0A==
+ b=gY/u5zkMTvLcDkiu0WBCETvkkErNTJuZEWxADds6vHBtliDNpteV+TFmoDRzjqFeA8kIj5YfXp59fCcAlcwHw+rBhHkw9zh0SldlRxiAy8MdTvv745VSozTNVFS2Dl9yA0Iz7N0XHWJiXIhmgoyGct+BNiCMgW1GH+5R5IlmyuTstEHospQz2yelbubHQAybwXNBElA39pYNBajYiBxaK4FDkA3YDN21sIjVrsYYQqVAead28iaJrRaTw9myW/r37k5TO3WMxwhgMUFRZrAUL5AmkW6krfc5roOq+5uQTLMeqjPdA7Ja2/ivwc917Z6YbzEoI4SnlUiu+QxwHacoBQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
  s=arcselector9901;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=3zfILGXASlYPIa/w4OJAu7wqk9O+xKx2AATdByT/LZg=;
- b=gL+G11/8IWLT4KzzmkA/2E1IKEHLYAW39Pf1xmdNZBion7JX1Vbo8aRHlAtNWT3er5b67Y01BQTPkyKdXSjTAxaZ9+AjFGmWA8XIw6tqfJez0lSKQNi6qTVzZHEQoIYJudesxnKfAkK8Rju1bJHfUg8gOwRfuROohye/iUaSviTmjWl6ESEwZkd82AuhHMbpe14FS3q+E9NTgegjRjh5+yasg8wOlQNbr10dQCrR4KT/AniFNn46UoIdP/fLov50xGVVN6L4Nh4eHIsg77f+Rz4HQomZm+Jd6DL9hk2WH0iw6SeecsKVmPSDhwsEAGwxOBQ4kQVsnHzGg0DYDgIg/g==
+ bh=uHdHZmr5Er3WleOHmNjZNB2NT//wfIu64AwMcz+SGiI=;
+ b=JDwdAeMakvWS83l9mieSFXd2w5Oda3dqt56EyUY1jtyy4do7pUJ1VU2fruMDw5B01V6i1CGd4CNg09AdoZ6Lut2qBNi8GTZnO8riWrsBFULuqWhZaSxdPn6YwqBXWqnkw1iuVLhfOBvCPjjsaRrC7YcuYOoVpowV/iZ+M0XPHnlXSSY7tN7+MVax0JYE7BcoHtGl7kYi2vL21AtQcwXkc7fWvIoG2YvEwyC1SFr6uoqR6u6gAgmCB3aBe8hn+GokFpXt+iAPgGuoNb72s3RZ5Q5wk4AJfIuzpss11uDGskbu14hQ/+o9AV9v04fl029JIoMGfO2bPobAUmlWlfJjpg==
 ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
  smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
  dkim=pass header.d=oracle.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
  d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
  h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=3zfILGXASlYPIa/w4OJAu7wqk9O+xKx2AATdByT/LZg=;
- b=dC2NjuZooBzIJ8k68cbT/VDN4zNoIuhkfS15mMXNxpFyryZ5VH1WJm7N5KQjqi9Yd0VtFlBxNQGcAURIqfWo+me8mT7g8K6B6huRbX18mkPNcwE9mvg4hGq4mbD63dgF6jbydFKqWFYuekKvyHnomfk2NGffBndGImEoUc4xEPg=
+ bh=uHdHZmr5Er3WleOHmNjZNB2NT//wfIu64AwMcz+SGiI=;
+ b=nKXrZktUMF5sGfeaG0CGkoDugaujSYE9S5fnGrcsvmcsAHmdhkXdQwG/FTn37EGuXw+egCkcyl/b8uPBTRsXQMPCN657XVb7j70HnDigLc2R4AI7Wb6yms88HBsh8alP9P/iiSy2dxUTrGBSz2Zfnw7KWJgs2KcJOwShfRYZl68=
 Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
  by MN2PR10MB3952.namprd10.prod.outlook.com (2603:10b6:208:1b5::12) with
  Microsoft SMTP Server (version=TLS1_2,
  cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.5123.31; Tue, 5 Apr
- 2022 11:33:38 +0000
+ 2022 11:32:20 +0000
 Received: from PH0PR10MB5706.namprd10.prod.outlook.com
  ([fe80::54da:72:aa08:9a8e]) by PH0PR10MB5706.namprd10.prod.outlook.com
  ([fe80::54da:72:aa08:9a8e%9]) with mapi id 15.20.5123.031; Tue, 5 Apr 2022
- 11:33:38 +0000
+ 11:32:20 +0000
+Message-ID: <e9805474-f672-3c29-a294-0fce060037b5@oracle.com>
+Date:   Tue, 5 Apr 2022 19:32:11 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.7.0
+Subject: Re: [PATCH 00/17 stable-5.15.y] Fix mmap + page fault deadlocks
+Content-Language: en-US
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     stable@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        agruenba@redhat.com
+References: <cover.1648636044.git.anand.jain@oracle.com>
+ <Ykq9UXXZLTZOJ6N+@debian9.Home>
 From:   Anand Jain <anand.jain@oracle.com>
-To:     stable@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        David Hildenbrand <david@redhat.com>,
-        Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 2/2 stable-5.15.y] mm: gup: make fault_in_safe_writeable() use fixup_user_fault()
-Date:   Tue,  5 Apr 2022 19:33:12 +0800
-Message-Id: <d3516c342876dece090e52b9d6858938bcfaa1f1.1649154880.git.anand.jain@oracle.com>
-X-Mailer: git-send-email 2.33.1
-In-Reply-To: <cover.1649154880.git.anand.jain@oracle.com>
-References: <cover.1649154880.git.anand.jain@oracle.com>
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: SG3P274CA0010.SGPP274.PROD.OUTLOOK.COM (2603:1096:4:be::22)
- To PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+In-Reply-To: <Ykq9UXXZLTZOJ6N+@debian9.Home>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: SG2PR01CA0159.apcprd01.prod.exchangelabs.com
+ (2603:1096:4:28::15) To PH0PR10MB5706.namprd10.prod.outlook.com
+ (2603:10b6:510:148::10)
 MIME-Version: 1.0
 X-MS-PublicTrafficType: Email
-X-MS-Office365-Filtering-Correlation-Id: 25b75646-c829-4237-8da7-08da16f82069
+X-MS-Office365-Filtering-Correlation-Id: 6b91f2f5-f59b-459b-f931-08da16f7f20a
 X-MS-TrafficTypeDiagnostic: MN2PR10MB3952:EE_
-X-Microsoft-Antispam-PRVS: <MN2PR10MB39524EF6F77D651C1B60C48FE5E49@MN2PR10MB3952.namprd10.prod.outlook.com>
+X-Microsoft-Antispam-PRVS: <MN2PR10MB3952412AD715C383B8F53EA1E5E49@MN2PR10MB3952.namprd10.prod.outlook.com>
 X-MS-Exchange-SenderADCheck: 1
 X-MS-Exchange-AntiSpam-Relay: 0
 X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: KWrn0CA06crLfa+hUqPlIsl/m6LzNL9hlA/YLHhXlAG/HqGiCXpnjcYkg3ovZ7PCosFGgYh+nNRqEmoT47QcVuZqAYzxKm95lDI6JTeTmkSU54jG8EBdi3cSUBqVBcu/MmipOLN7lqAOvPEmOXkaN0g6aM8mpXEhnOSg2S/o6LuoaLN10sz2OGPIrkTLZGsJIyT2AEFwVOEmfdSRfSpwR0PUeeHCKQVGnmfIoM0mt9lVAj3PASfgsLuZeIXY8POJhWLdJeEs/RDAgWZ09US+guAYq2sjJuIozRQedjKVSxxFy5RTLC7wIqBkC7ET/HpVvWz2B5ZWIXH8fbUvhHCydMAhRrctpTQ+2PU4NkUABGPoYX7IK1zG5FS84uu+uFB6fUnhJ6Is1qlRoXhQAqdGMBNPiwuHleYYkRIov+hPuXh4SDVx79BKYpmon58WCAG3m+gTIKVkWvpz3YSl8xOwdEb+FJbbbL8fWhds3bGytcXub6FGu9EDsTWw9mGEAhtBTlNWdujOQWbAFwUZKypp3P6iP6qFHsQqPXZISsFabeh3JP67ts6VgSAsDbuk4oRc07RqxCk9WeozN6OMiy3XuxJp8IE+UlASazThYlpTF9fSfGHTQ57e5CDDDSNSbEAUbYiMvRddujr+ljm5s9FG7HYbOUuyRiGRMPhlMOZ6vCBMVWV8/PBhQDU5c8MW16l01SGG6VT+OImItFX6/ildWMn0C9gQzKEJnH+vW1CdR1Q=
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230001)(366004)(54906003)(83380400001)(66476007)(508600001)(4326008)(316002)(6486002)(6506007)(86362001)(66946007)(66556008)(6512007)(6666004)(8676002)(966005)(6916009)(2616005)(107886003)(186003)(44832011)(36756003)(26005)(2906002)(8936002)(5660300002)(38100700002);DIR:OUT;SFP:1101;
+X-Microsoft-Antispam-Message-Info: Dn4z32uhSIlUSg7FI46wXvhJAAeUF1DZZA+e/xl1+YhIQjIxtzGW8/CqtCwyWI/MmYgwXhWnHhRsoCUJFrVeB0NlB9oYLm/AjVWu63TQzNN/KLzLWHNbDplH8/AP5WwHl9Q7jx1Ps+e7tlI/z9sxNuha6ccFW698sgA7W7gA3JzqGTsi+x+D35/hMTCEXc3rvokV7cG+v7ws5to+rJqnjMwGG8RvBr72CGOgckrAZvt+moKq+T568wPj387SQ82wC5Xh3URRyapB/h3Hw7NwNDdmZ35T+t1XJVnFrH6md3J3skoKWPwXJQehyoU0kn+aiFnCiY8ezgwAJsHI7z+gZSzEZEV8uOK53ArEiM4JdvB1DcB1AXL8zBqnwO+4sKQowhnxTsZnO6p8XSM6shkzEC3NukY5k3Cb6/Q9l1JxOqJpi7paAFWQjcsw6HoeOm80TAno1LHez9sEGIXmHd1F7erpmz1fe3gKOE1hJQ98AabK73ozT+X8x+LfNh+3KpGB5qRo4hpUR52sHWt3QhIJyinpF2NS2qhxfSTA7MaOzyODXoUVpfEBvL/3IfxXg2M5bt9kYf47FlevFZPK3AM9kecSb9Wnk7REG1nbyVfeQg/OWhFgXhAAhDIcqMN7uk49xRc87maNttGJEb//RqSsKfiRf9c4kPSKtUDVa49h02bdnmoauViU/NinSA1tdFpaog9tV+x8io5x2EdGjYcxwyc2bQbQpvVVdLm3Jt3sbEc=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230001)(366004)(83380400001)(66476007)(508600001)(4326008)(316002)(53546011)(6486002)(6506007)(86362001)(31696002)(66946007)(66556008)(6512007)(6666004)(8676002)(6916009)(2616005)(186003)(31686004)(44832011)(36756003)(26005)(2906002)(8936002)(5660300002)(38100700002)(43740500002)(45980500001);DIR:OUT;SFP:1101;
 X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?NjS/G++nNDWX14VVeKcUHQueNosBQWasJ2hxac9Ro1voqTX8GHf6pI/fvTKM?=
- =?us-ascii?Q?FCro1yHGpy5hAnPgW7QGN9+GQWGKo5m+Sig1UFDhaPUbtnmAQx1g/h9pj76d?=
- =?us-ascii?Q?d8bsa1e5Acz9EILnFeKdYLi2gQdtzI556wsuoWV/oCiOi8YzcSEjhSPEx2xK?=
- =?us-ascii?Q?0UXS+GeGpNcZZaYkZ23bIU8IUfubsS97kV/oV65TJpnP6d7L/mEsmNd0PRud?=
- =?us-ascii?Q?PTU/3Z8LxuKFw5f0b7LqRUWaRJf+8QDIlmyP4l83ePbwB19npgxovUZrhwpQ?=
- =?us-ascii?Q?8SUd5zX1i5aOyQozOi8+RQdk900xCyN/l7X3p8JjkHCgESz5rh5jCG+eOUhj?=
- =?us-ascii?Q?2oTtW+h28vD61E545T3EGwta7ABSVvuxgecNIR+Qi8trI9XmyHjBIBcb6ySP?=
- =?us-ascii?Q?t+extFSOXVIgTo6NvLqStk+NwlZWU1aaiXbwCJBjJPb91qIOIe+0Zxe/XVxQ?=
- =?us-ascii?Q?vHCNjz9qf2kjkYIYcoa6FV5nU298DbwXtXMhOdqWaKF9JRC+xOAMQY/PIZYc?=
- =?us-ascii?Q?BV1oIa9fBDaIgYt51CkXdKSDR8+qm4HdTbXkecnKzRTTwg4XYYY42jYMSneH?=
- =?us-ascii?Q?9W2tvvUgqnlY05zU13QNz65RJwQgHXvVG0dTNNQNITB3XCoSS1g0AmfniKOj?=
- =?us-ascii?Q?VafgijqkAp7QWYUrqtIWJRTxun5wg1FAPkBya3ZlxYSvURHHsl28Ehk0bD1b?=
- =?us-ascii?Q?+ScaKTj4CiBvEm1SCxBmSZhbdKzCGQl16nupI7SMWZH3K3u/8mmhgQGfuNcH?=
- =?us-ascii?Q?p8J2GSE5eGBiLywONBhKNa4p45fx/JOiYOo+BImGfNebPda3bhJJr5KMw2e/?=
- =?us-ascii?Q?6xFJe9Iburn219shXtmCll+vIFPi01v+GFh5WoE1NvLQl0pAUzRMmB2NmXuA?=
- =?us-ascii?Q?INfVWk+Y8YirnTxzulaWYGI1a6xbZ+/e0JQtPfkeBr+T6y4EtcKzdJOLJR8Y?=
- =?us-ascii?Q?orrU5TgbjRDBU7fyil5O9uw3iHCjiB+Z2T1qPPKjMRqyGu3PC6uxY+dRhEa5?=
- =?us-ascii?Q?EF16xCHXfd81XI0xYxaMOoHj/Ejf6x/6YEfjpBidp+2qA96eGZiASXM2Y5g1?=
- =?us-ascii?Q?MHPVgzSCa7kYDyCJqzS/50xivWXRIS3zLqGB0n15g4D8Pi2kkIKBWOHbxvQh?=
- =?us-ascii?Q?bbKvK7dumcturDp/iZMV4wzyvveP2huvog6zMAtdiEZw1mlanKzJtyWuD0ZX?=
- =?us-ascii?Q?H+wJnQjkOe0UaP+7JTIP6Lu1GLBSytQ80qFKECd131VH+SsCt7hYoL8wZZo8?=
- =?us-ascii?Q?V9Uvlz2AYNrgdL4FeU36xQJKO6jWmwH0v3H708fFVNtoMqO4RpszSiFn5lOH?=
- =?us-ascii?Q?WlhtfrXPeoJznnkIU/XMdTFJyTwLifQlf7rmPvibcwNAJNJRa5kmSf7BaSlN?=
- =?us-ascii?Q?xkc31ME3YN95y7FfqbqBj+o6o0FpfQnR5efd+MRrBrWo8wb9IZNZxNeOBAHL?=
- =?us-ascii?Q?SwWeKd4d9g4RegL7HIax/NDZRcDn8ArsPHgLp3GrJZroY+VM/4EDtA9+ssdG?=
- =?us-ascii?Q?9YWtATnC6COToGK3OU47JEeseJRu0cMhn5e6a0jtXJMtJXVHIM8goD/gVcWP?=
- =?us-ascii?Q?DRMp1MFqTgK4G6cKa8HTj41EIo+nnX0mwUoJBWSqIA0Gs4I0KnWoYk2T9dWp?=
- =?us-ascii?Q?9Fl7ZI9VNcvTks9GyycQ+a0+T0OU03w8xUrqF6ZaGd+XUwpI3za6FQDDsQ6j?=
- =?us-ascii?Q?oyal2Twzr+02rz5rnUE9XQysAnl3OorGkmTyv6UysTbD+fGfusoQpu++VJID?=
- =?us-ascii?Q?/xX32Ejzn5EZulO9Wn1O5qYGyWJwGHY=3D?=
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?ZlFEOGRQcWJtb0d1d0pTY2E0bk9XNS96clVkMDNQaHJQV2dyRHNUeUwzdmlJ?=
+ =?utf-8?B?bU9iMUdLUitNM2VxQ01NRGpRaXBERW5sMWl6VTFZeHJCeUgxVGJCcWMyVjRU?=
+ =?utf-8?B?OGlzTnBTL3h1TWZDSEZpY1ltOGFCQ2ZCZG1hSHdXTDF1dERTUVV4R21NLy9Z?=
+ =?utf-8?B?WlVtRTBtODJnWTNvSTVqV011SmZVNTlRejdnOC92c2ZZYkUrYVNiUjNtQWh4?=
+ =?utf-8?B?L2ZYaDhiUG5ZZGRYemNKa2QzVmZNa1pwUzJKcTdmek4wd1JuSElTLzFidHcx?=
+ =?utf-8?B?bUo2RDJnTjl3cTB5SnBuTzVYam9OWWlNenBkYUxSYkNEV1hPMml4eHNWVGlN?=
+ =?utf-8?B?TnFPaHBPYkpBdExhQmFMb0x3bklxYVhFOWlXMC9wZmdjMFNDR3IxYlFtZVFp?=
+ =?utf-8?B?Tm1SWnlSTGVqeGM4SmtNNWFYOHdRbWphNWloZ3hMRzRkeEhYdE1rbmROa0RE?=
+ =?utf-8?B?MlBYWDUvbGZyVlVRWjFLV0VhM0VvVFI2b2NtcDBBZmpJZWJVbk5US1Q0dk5L?=
+ =?utf-8?B?NU9kay9iNWRSQ09JbWlQQngwWDlaL01pMjBrL3pVcnVOZEFsYmJNcTZHZkI5?=
+ =?utf-8?B?bTBQR3JuTmVlZ3VKcEMyZllqeUsycldOckNaK3VER3MxejB4bHJDenlhTTYx?=
+ =?utf-8?B?bEtYdTE5N1M3UmhxcERONmlCTGRsVFhsWm5RSVRsdmNuM0YwS090UVhiNkg3?=
+ =?utf-8?B?MmRWTnIvbU5XbU5wT3poT1Y1SXRXT0Z3VkJrU2hZYytxdW5ybzJqSmovd0Nq?=
+ =?utf-8?B?amYvZ3UzMlFmd0pINW5sa0ZnSHRMdFRtcDIrWDZOWHB2SVVsYzB2WHdlaWJn?=
+ =?utf-8?B?R2ZBTlNSRnd1V2JpeDBmUVNxUFd4SGpZUmZ6YU1CT0JRQXFMenU2UHF2WDdk?=
+ =?utf-8?B?WE5rWm1MTkpsSS9ORU1ITXdBdC9yb0Q3TUwycWxzTDhjejIzZnBLQU9JaTcx?=
+ =?utf-8?B?R0RQTVVBNHdkS28vZmxVSzR4UE9qeUJxRXdBM092dTl4elJnOWg2WXA3dGVU?=
+ =?utf-8?B?eHVQcHRpVlEwMHpnMzNxcVJ2VnkxQ1JINjhQdEkvWFRBRXhZOFZKNlRnTTlS?=
+ =?utf-8?B?WkZYZ243L2lSL2JqRERlT2FUby8xanErZEw3RjFKdy9ldWhRL2Q1V1p6Q3NP?=
+ =?utf-8?B?VFBxa2pqSWFhUzNtZFU4TjZoSUVpelc0VkVVVXh4dTNuR3JxeDcyYlo3S1VQ?=
+ =?utf-8?B?Y01ObzFwa3IzcmJCdGo0MUltWUd3Q0xpaC9pamhEWmVwSGI1bjZQSjFrNUhh?=
+ =?utf-8?B?a0VGS2JlQ2E4VGphTXRRMDlDYjBUWVV4NlAxalA5UUpnZWg5N3RvYm96Q0NP?=
+ =?utf-8?B?Vkg3N1R5TnVzVDB4SFNjcnZINWMweXpaSTBrREVWYXV3c05rcENkbFlQeWVv?=
+ =?utf-8?B?TC91OGF4bklVejIrbk43WFN2WUNEMWlGSzczbGVwZ3hpb012OWlQdEhwSkJZ?=
+ =?utf-8?B?dXQ5eis5Yk04V0NXWUhNUHdKU1d4QmhSSVp0NGdmUDlOYk1HTnVKTnI3eTFZ?=
+ =?utf-8?B?NkxpVHFFWExTMUNSUTlUd3d6U3QwaWxtMnlRNmIrZ3JMYmtSNUZYVnZHZmkv?=
+ =?utf-8?B?SlJMUUdLVXloVjZzVnc3TW1LVk9YWDJhWGR1c0c1Y3BNZ2dmUFJ2UXRhVVBB?=
+ =?utf-8?B?TU1hVlB0RkRkWGFObndTTjdLUmxsNU5McE1qdzByd3hPOW8zK28wWUZEaVdW?=
+ =?utf-8?B?ZUdoOWMzczBNVzBab3AwVXhxOXBUbmtTWlJwdkNzcDZqbHBYYmdIbUxYOW01?=
+ =?utf-8?B?eno4SGVrWDRIR2lQOTN0S3V0bGVFL05mVDFVSGNtTUxNZnVMZnRQTVZycVRp?=
+ =?utf-8?B?YWtNQTR6Umx5S1NMR3RYZ2tTZ1FyQ2pjaTFWVEVFKzBpNUVOVjZwOUd6ai9C?=
+ =?utf-8?B?c0NvMVBwUnZjSnBtUWtBcXc1N1R1R3Ivano4T1FJbzR2Y3MwbkJPa3VTYUE2?=
+ =?utf-8?B?b2tOWWdEZ2RkVUVzWlNQbGk5OUh4M25yZ2dYZWJ0L0RVcHhkUFdJMUJYbHpH?=
+ =?utf-8?B?T3BlQU51bW9VY2JuR1REcGFEUS9oMTNHYXRXY1FveHordHArVGpxMEpuRWJY?=
+ =?utf-8?B?Y0hKVUFEQ3dkamVoYkl2cjd0TGdDUXNwZ2RWTVcvdkNxSytIbnZKVmprRTRV?=
+ =?utf-8?B?Qmh6VmlxUXlqTUNRdjYzV1oxMnNwaGlKL1dUdUlaZ2NvcFRYa21xa2VsY0tV?=
+ =?utf-8?B?WVNxUlZKeWtBa0NlYmh5N2wvYVpGWWgzbTNTbDlUQklpU1ppOW43R2lOT0c2?=
+ =?utf-8?B?ZWI1ZG1iZGpiTnQ1TTFBbmR3VEJYaUxiNmVtY2tyNVB5N1ZsNWh0NU53MWUx?=
+ =?utf-8?B?a0JsV2dhY2taS2dQbndUeHNQRTBtREVXU3BiWjltenpFSTNYN3Zwdz09?=
 X-OriginatorOrg: oracle.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 25b75646-c829-4237-8da7-08da16f82069
+X-MS-Exchange-CrossTenant-Network-Message-Id: 6b91f2f5-f59b-459b-f931-08da16f7f20a
 X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
 X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 05 Apr 2022 11:33:38.0334
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 05 Apr 2022 11:32:20.2553
  (UTC)
 X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
 X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
 X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: Upe2qEkGb3/ina6IdRB75+4JTfPBAIqknyj4s6XVDmHLiqhqCid86wx5O4B+9AtNyhZXGiP3ARaXJxwERZWGZw==
+X-MS-Exchange-CrossTenant-UserPrincipalName: 04p7v4afJd5Z/PnNeh1TKeJYAErmzI+I7uquJ3MR5Rn/JIPMIns1JznZheB81OhS+2RiECM8hmFC75AzxS6MLg==
 X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR10MB3952
 X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.425,18.0.850
  definitions=2022-04-05_02:2022-04-04,2022-04-05 signatures=0
@@ -136,122 +146,119 @@ X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 suspectscore=0 ma
  mlxlogscore=999 phishscore=0 spamscore=0 adultscore=0 bulkscore=0
  mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
  engine=8.12.0-2202240000 definitions=main-2204050068
-X-Proofpoint-ORIG-GUID: f-uofV678nXxIokp7SEKQi4I8tKlVjtr
-X-Proofpoint-GUID: f-uofV678nXxIokp7SEKQi4I8tKlVjtr
+X-Proofpoint-GUID: YltpZoXVS_bbjEOVmUiXeWzhInEYUPyZ
+X-Proofpoint-ORIG-GUID: YltpZoXVS_bbjEOVmUiXeWzhInEYUPyZ
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Linus Torvalds <torvalds@linux-foundation.org>
 
-commit fe673d3f5bf1fc50cdc4b754831db91a2ec10126 upstream
 
-Instead of using GUP, make fault_in_safe_writeable() actually force a
-'handle_mm_fault()' using the same fixup_user_fault() machinery that
-futexes already use.
+On 04/04/2022 17:41, Filipe Manana wrote:
+> On Sat, Apr 02, 2022 at 06:25:37PM +0800, Anand Jain wrote:
+>> This set fixes a process hang issue in btrfs and gf2 filesystems. When we
+>> do a direct IO read or write when the buffer given by the user is
+>> memory-mapped to the file range we are going to do IO, we end up ending
+>> in a deadlock. This is triggered by the test case generic/647 from
+>> fstests.
+>>
+>> This fix depends on the iov_iter and iomap changes introduced in the
+>> commit c03098d4b9ad ("Merge tag 'gfs2-v5.15-rc5-mmap-fault' of
+>> git://git.kernel.org/pub/scm/linux/kernel/git/gfs2/linux-gfs2") and they
+>> are part of this set for stable-5.15.y.
+>>
+>> Please note that patch 3/17 in this patchset changes the prototype and
+>> renames an exported symbol as below. All its references are updated as
+>> well.
+>>
+>> -EXPORT_SYMBOL(iov_iter_fault_in_readable);
+>> +EXPORT_SYMBOL(fault_in_iov_iter_readable);
+>>
+>> Andreas Gruenbacher (15):
+>>    powerpc/kvm: Fix kvm_use_magic_page
+>>    gup: Turn fault_in_pages_{readable,writeable} into
+>>      fault_in_{readable,writeable}
+>>    iov_iter: Turn iov_iter_fault_in_readable into
+>>      fault_in_iov_iter_readable
+>>    iov_iter: Introduce fault_in_iov_iter_writeable
+>>    gfs2: Add wrapper for iomap_file_buffered_write
+>>    gfs2: Clean up function may_grant
+>>    gfs2: Move the inode glock locking to gfs2_file_buffered_write
+>>    gfs2: Eliminate ip->i_gh
+>>    gfs2: Fix mmap + page fault deadlocks for buffered I/O
+>>    iomap: Fix iomap_dio_rw return value for user copies
+>>    iomap: Support partial direct I/O on user copy failures
+>>    iomap: Add done_before argument to iomap_dio_rw
+>>    gup: Introduce FOLL_NOFAULT flag to disable page faults
+>>    iov_iter: Introduce nofault flag to disable page faults
+>>    gfs2: Fix mmap + page fault deadlocks for direct I/O
+>>
+>> Bob Peterson (1):
+>>    gfs2: Introduce flag for glock holder auto-demotion
+>>
+>> Filipe Manana (1):
+>>    btrfs: fix deadlock due to page faults during direct IO reads and
+>>      writes
+> 
+> If this patchset is backported, then at least the following two commits
+> must also be backported:
+> 
+> commit fe673d3f5bf1fc50cdc4b754831db91a2ec10126
+> Author: Linus Torvalds <torvalds@linux-foundation.org>
+> Date:   Tue Mar 8 11:55:48 2022 -0800
+> 
+>      mm: gup: make fault_in_safe_writeable() use fixup_user_fault()
+> 
+> commit ca93e44bfb5fd7996b76f0f544999171f647f93b
+> Author: Filipe Manana <fdmanana@suse.com>
+> Date:   Wed Mar 2 11:48:39 2022 +0000
+> 
+>      btrfs: fallback to blocking mode when doing async dio over multiple extents
 
-Using the GUP machinery meant that fault_in_safe_writeable() did not do
-everything that a real fault would do, ranging from not auto-expanding
-the stack segment, to not updating accessed or dirty flags in the page
-tables (GUP sets those flags on the pages themselves).
+Thanks for pointing it out.
 
-The latter causes problems on architectures (like s390) that do accessed
-bit handling in software, which meant that fault_in_safe_writeable()
-didn't actually do all the fault handling it needed to, and trying to
-access the user address afterwards would still cause faults.
+> Maybe there's more that need to be backported. So cc'ing Andreas in
+> case he's aware of any such other commits.
 
-Reported-and-tested-by: Andreas Gruenbacher <agruenba@redhat.com>
-Fixes: cdd591fc86e3 ("iov_iter: Introduce fault_in_iov_iter_writeable")
-Link: https://lore.kernel.org/all/CAHc6FU5nP+nziNGG0JAF1FUx-GV7kKFvM7aZuU_XD2_1v4vnvg@mail.gmail.com/
-Acked-by: David Hildenbrand <david@redhat.com>
-Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- mm/gup.c | 57 +++++++++++++++++++-------------------------------------
- 1 file changed, 19 insertions(+), 38 deletions(-)
+I have scanned through the commits. I didn't find any further Fixes
+for this series.
 
-diff --git a/mm/gup.c b/mm/gup.c
-index a4c6affe6df3..ba2ab7a223f8 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1723,11 +1723,11 @@ EXPORT_SYMBOL(fault_in_writeable);
-  * @uaddr: start of address range
-  * @size: length of address range
-  *
-- * Faults in an address range using get_user_pages, i.e., without triggering
-- * hardware page faults.  This is primarily useful when we already know that
-- * some or all of the pages in the address range aren't in memory.
-+ * Faults in an address range for writing.  This is primarily useful when we
-+ * already know that some or all of the pages in the address range aren't in
-+ * memory.
-  *
-- * Other than fault_in_writeable(), this function is non-destructive.
-+ * Unlike fault_in_writeable(), this function is non-destructive.
-  *
-  * Note that we don't pin or otherwise hold the pages referenced that we fault
-  * in.  There's no guarantee that they'll stay in memory for any duration of
-@@ -1738,46 +1738,27 @@ EXPORT_SYMBOL(fault_in_writeable);
-  */
- size_t fault_in_safe_writeable(const char __user *uaddr, size_t size)
- {
--	unsigned long start = (unsigned long)untagged_addr(uaddr);
--	unsigned long end, nstart, nend;
-+	unsigned long start = (unsigned long)uaddr, end;
- 	struct mm_struct *mm = current->mm;
--	struct vm_area_struct *vma = NULL;
--	int locked = 0;
-+	bool unlocked = false;
- 
--	nstart = start & PAGE_MASK;
-+	if (unlikely(size == 0))
-+		return 0;
- 	end = PAGE_ALIGN(start + size);
--	if (end < nstart)
-+	if (end < start)
- 		end = 0;
--	for (; nstart != end; nstart = nend) {
--		unsigned long nr_pages;
--		long ret;
- 
--		if (!locked) {
--			locked = 1;
--			mmap_read_lock(mm);
--			vma = find_vma(mm, nstart);
--		} else if (nstart >= vma->vm_end)
--			vma = vma->vm_next;
--		if (!vma || vma->vm_start >= end)
--			break;
--		nend = end ? min(end, vma->vm_end) : vma->vm_end;
--		if (vma->vm_flags & (VM_IO | VM_PFNMAP))
--			continue;
--		if (nstart < vma->vm_start)
--			nstart = vma->vm_start;
--		nr_pages = (nend - nstart) / PAGE_SIZE;
--		ret = __get_user_pages_locked(mm, nstart, nr_pages,
--					      NULL, NULL, &locked,
--					      FOLL_TOUCH | FOLL_WRITE);
--		if (ret <= 0)
-+	mmap_read_lock(mm);
-+	do {
-+		if (fixup_user_fault(mm, start, FAULT_FLAG_WRITE, &unlocked))
- 			break;
--		nend = nstart + ret * PAGE_SIZE;
--	}
--	if (locked)
--		mmap_read_unlock(mm);
--	if (nstart == end)
--		return 0;
--	return size - min_t(size_t, nstart - start, size);
-+		start = (start + PAGE_SIZE) & PAGE_MASK;
-+	} while (start != end);
-+	mmap_read_unlock(mm);
-+
-+	if (size > (unsigned long)uaddr - start)
-+		return size - ((unsigned long)uaddr - start);
-+	return 0;
- }
- EXPORT_SYMBOL(fault_in_safe_writeable);
- 
--- 
-2.33.1
+I am sending these two patches in a new patch set as part2. Instead,
+if it is better, I am ok to include these and send v2.
 
+Thanks, Anand
+
+>>   arch/powerpc/kernel/kvm.c           |   3 +-
+>>   arch/powerpc/kernel/signal_32.c     |   4 +-
+>>   arch/powerpc/kernel/signal_64.c     |   2 +-
+>>   arch/x86/kernel/fpu/signal.c        |   7 +-
+>>   drivers/gpu/drm/armada/armada_gem.c |   7 +-
+>>   fs/btrfs/file.c                     | 142 ++++++++++--
+>>   fs/btrfs/ioctl.c                    |   5 +-
+>>   fs/erofs/data.c                     |   2 +-
+>>   fs/ext4/file.c                      |   5 +-
+>>   fs/f2fs/file.c                      |   2 +-
+>>   fs/fuse/file.c                      |   2 +-
+>>   fs/gfs2/bmap.c                      |  60 +----
+>>   fs/gfs2/file.c                      | 252 +++++++++++++++++++--
+>>   fs/gfs2/glock.c                     | 330 +++++++++++++++++++++-------
+>>   fs/gfs2/glock.h                     |  20 ++
+>>   fs/gfs2/incore.h                    |   4 +-
+>>   fs/iomap/buffered-io.c              |   2 +-
+>>   fs/iomap/direct-io.c                |  29 ++-
+>>   fs/ntfs/file.c                      |   2 +-
+>>   fs/ntfs3/file.c                     |   2 +-
+>>   fs/xfs/xfs_file.c                   |   6 +-
+>>   fs/zonefs/super.c                   |   4 +-
+>>   include/linux/iomap.h               |  11 +-
+>>   include/linux/mm.h                  |   3 +-
+>>   include/linux/pagemap.h             |  58 +----
+>>   include/linux/uio.h                 |   4 +-
+>>   lib/iov_iter.c                      |  98 +++++++--
+>>   mm/filemap.c                        |   4 +-
+>>   mm/gup.c                            | 139 +++++++++++-
+>>   29 files changed, 911 insertions(+), 298 deletions(-)
+>>
+>> -- 
+>> 2.33.1
+>>

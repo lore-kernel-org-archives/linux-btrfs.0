@@ -2,135 +2,84 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E9B5C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 15:01:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DDCCC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 15:02:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239582AbiDEPD2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 11:03:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60680 "EHLO
+        id S240017AbiDEPDt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 11:03:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41358 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1391999AbiDENt3 (ORCPT
+        with ESMTP id S1391998AbiDENt3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 09:49:29 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D6A569FFE
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 05:48:50 -0700 (PDT)
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D9B13B7C4
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 05:48:51 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B8457210EA
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 12:48:48 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 3D5EE1F745
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 12:48:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1649162928; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=8IEYzUhKxYrXLzg6TUfbpwH4IlFvHVWQG3dyYqPbqo0=;
-        b=eJm3O2pP+YNqZAu/sejgeepUJT8fWr+dJyA/JpI0hFSP+as2LbE28kxyNaCAq8kEaUQse0
-        USIDCs4X59lthvrqug8jsVQdy1dHc7nXppXyMvpBju0r/00E013lCX/eTEBZ1iUxSIWCT2
-        COwK6ZuGzcjRzkzQwJh/WqxP1qDBQaE=
+        t=1649162930; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=dm9wZpHzLRu1m2ubYA86QwPouRFMqU1XtBiS4Cecasc=;
+        b=NVTTu1hf2lsNCBSpFCPFC3w9uFGlBOhqmcQzx4sG/6lZaiOfwS908M6EION6BfB/ZVC16K
+        Mv2xx6rIiYKKyIuQcV3aiez7+rolw8hSJ5vyE6V09A8EDPCTPFYHRrazMHT90h0On0etK9
+        n9h4IcYXuj6D48tcoHFem2jmJr0Tqf8=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 13F3613A04
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 12:48:47 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8F42D13A04
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 12:48:49 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id RErEM686TGJLGgAAMHmgww
+        id OKcoFrE6TGJLGgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 12:48:47 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 12:48:49 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/8] btrfs-progs: add RAID56 rebuild ability at read time
-Date:   Tue,  5 Apr 2022 20:48:22 +0800
-Message-Id: <cover.1649162174.git.wqu@suse.com>
+Subject: [PATCH 1/8] btrfs-progs: remove the unnecessary BTRFS_SUPER_INFO_OFFSET path for tree block read
+Date:   Tue,  5 Apr 2022 20:48:23 +0800
+Message-Id: <1011cb461b7520030b1ea1eb5bb02804460a4d1c.1649162174.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1649162174.git.wqu@suse.com>
+References: <cover.1649162174.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This branch can be fetched from github:
-https://github.com/adam900710/btrfs-progs/tree/raid56_rebuild
+We used to use read_whole_eb() to read super block, but it's no longer
+the case (so long that I can not even find out which commit did the
+conversion).
 
-Please note that, the last time I check devel branch, the RAID56 warning
-patch is not yet merged.
+Thus there is no need for read_whole_eb() to handle super block read
+anymore.
 
-So this is based on the latest devel branch from github.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ kernel-shared/disk-io.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-And since we're adding proper RAID56 repair ability, there is no need
-for the patchset "btrfs-progs: check: avoid false alerts for --check-data-csum on RAID56"
-
-This patchset is mostly to add the ability to properly read data/metadata
-for RAID56 when mirror_num > 1.
-
-[PROBLEMS]
-There are several for current btrfs-progs:
-
-- No RAID56 rebuild ability
-  Thus for any mirror > 1 on RAID56, we will read the parity data
-  straight, causing no way to recover.
-
-- No unified logical read/write entrance
-  We have various different functions, for read we have
-  read_data_from_disk(), read_extent_data() and read_extent_from_disk().
-
-  Unlike kernel, we have no btrfs_map_bio() to address everything.
-
-  This makes adding RAID56 rebuild even hard.
-
-[FIXES]
-To address the problem, this patchset will:
-
-- Cleanup and refactors
-  Mostly to unify the logical read/write entrance.
-  In patch 1~6, we will unify the logical read write entrances to
-  only two functions:
-  * read_extent_from_disk()
-  * write_extent_to_disk()
-
-  They will do the chunk mapping and stripe splitting.
-
-- Add RAID56 read rebuild ability
-  We already have RAID56 RMW for write path.
-  Just add a new helper for mirror > 1 read on RAID56.
-
-- A new test case
-  In fact the same test case from previous RAID56 warning patchset.
-
-Qu Wenruo (8):
-  btrfs-progs: remove the unnecessary BTRFS_SUPER_INFO_OFFSET path for
-    tree block read
-  btrfs-progs: extract metadata restore read code into its own helper
-  btrfs-progs: don't use write_extent_to_disk() directly
-  btrfs-progs: use write_data_to_disk() to replace
-    write_extent_to_disk()
-  btrfs-progs: use read_data_from_disk() to replace
-    read_extent_from_disk() and replace read_extent_data()
-  btrfs-progs: remove extent_buffer::fd and extent_buffer::dev_bytes
-  btrfs-progs: allow read_data_from_disk() to rebuild RAID56 using P/Q
-  btrfs-progs: tests/fsck: add test case for data csum check on raid5
-
- btrfs-corrupt-block.c                         |  38 +---
- btrfs-map-logical.c                           |   5 +-
- btrfstune.c                                   |   3 +-
- check/main.c                                  |   2 +-
- check/mode-common.c                           |   4 +-
- cmds/restore.c                                |   4 +-
- image/main.c                                  |   2 +-
- kernel-shared/ctree.c                         |   5 +-
- kernel-shared/disk-io.c                       | 140 +++++--------
- kernel-shared/disk-io.h                       |   2 -
- kernel-shared/extent_io.c                     | 188 ++++++++++++------
- kernel-shared/extent_io.h                     |   9 +-
- kernel-shared/file.c                          |  20 +-
- kernel-shared/free-space-cache.c              |  20 +-
- kernel-shared/volumes.c                       |  39 ++--
- kernel-shared/volumes.h                       |   1 +
- .../056-raid56-false-alerts/test.sh           |  31 +++
- 17 files changed, 277 insertions(+), 236 deletions(-)
- create mode 100755 tests/fsck-tests/056-raid56-false-alerts/test.sh
-
+diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+index 2a9b2681a043..f2492547f77d 100644
+--- a/kernel-shared/disk-io.c
++++ b/kernel-shared/disk-io.c
+@@ -302,8 +302,7 @@ int read_whole_eb(struct btrfs_fs_info *info, struct extent_buffer *eb, int mirr
+ 		read_len = bytes_left;
+ 		device = NULL;
+ 
+-		if (!info->on_restoring &&
+-		    eb->start != BTRFS_SUPER_INFO_OFFSET) {
++		if (!info->on_restoring) {
+ 			ret = btrfs_map_block(info, READ, eb->start + offset,
+ 					      &read_len, &multi, mirror, NULL);
+ 			if (ret) {
 -- 
 2.35.1
 

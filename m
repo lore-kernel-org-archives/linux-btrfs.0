@@ -2,137 +2,82 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06AE0C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46773C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Apr 2022 21:15:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344291AbiDEVN0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 5 Apr 2022 17:13:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37366 "EHLO
+        id S1345064AbiDEVNb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 5 Apr 2022 17:13:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49476 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1457519AbiDEQDU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 12:03:20 -0400
-Received: from mail-ej1-x62b.google.com (mail-ej1-x62b.google.com [IPv6:2a00:1450:4864:20::62b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DB7C12606
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 08:58:48 -0700 (PDT)
-Received: by mail-ej1-x62b.google.com with SMTP id dr20so27503023ejc.6
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 08:58:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=5cr/uUizgr/4LNpusvZFcNmm9oWq5EZAD+WYWV0PPzE=;
-        b=b7tog62pv2fPQ1TZ9Jj5qy6e3KfwSPJR3+W/BOcdKx/d3vb140ht/lRhz4S8v2WkCy
-         o2GYojOl9q6tty2rR1vAj4wJaMYkLbzu9C3jFOULVo3NXjsPKXS31hQ2unsjguxrupMt
-         ps28ABr+7ajK98jOzYsA36byYngqlC4boPYFE=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=5cr/uUizgr/4LNpusvZFcNmm9oWq5EZAD+WYWV0PPzE=;
-        b=W/qTDdtUP74E2SjRoYPGmMy6Kxzm2aMqzAt/mLEd5Mz3hLoNSVlglyyIRPn0R2V0mL
-         N73OqovQnmJ/+JibhgTRZcdsn3rW/r99t60ZuRQaum/EgIFdVFXBFi8Z1miWCDH7sd2t
-         0Gg56QAdevxw0ODVct4ogl3gyj/wyo5eWVxZhEX63SSX4LHsBtcbRsqpDDw6OVdSdkbL
-         i8pL7hvV/EH6pz5tZXsEpu2xyQE19jDUYTDvSZtwCHo6YOQo41vLAVE2NTLRP9/Gv7Ts
-         4X15/7S9j9H0Dx7CvDJ7O/uH1X5r2uqc4P4As/mjfD0xI39vTSW9su/WA39KLuipHRV4
-         Jhbg==
-X-Gm-Message-State: AOAM530BTSAKsLWiDfnu3yuLxKNetG8mNxQTbBvBZ70AQ3arT3PQh5gq
-        EA8HjgeJtmHiIeJa7FhiChjNY3BOc3zhTaGsda0ftA==
-X-Google-Smtp-Source: ABdhPJzilsgNVvKQDJzpKqS53Wp6YBs1ihzZ9U8NbTzdYYs6GM+QQv3uAUJcWClXu8eKUS9vMxO9yfcEcTtMuykHP5w=
-X-Received: by 2002:a17:907:3e16:b0:6df:b4f0:5cc2 with SMTP id
- hp22-20020a1709073e1600b006dfb4f05cc2mr4278368ejc.285.1649174326720; Tue, 05
- Apr 2022 08:58:46 -0700 (PDT)
+        with ESMTP id S1447311AbiDEPqR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 11:46:17 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A0D5F92D30
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 07:21:08 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 640841F38D;
+        Tue,  5 Apr 2022 14:21:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1649168467; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=Y/HrSp+SiYmNHA34Q9Y3WX5pmJ5YbtfykkwGA+G8QiE=;
+        b=MuAnClznHcgr17Q6od1TPk8o3yimUrsx4p4nHadPuzvHkpLqZPyPd3JE45nghY9kr+TD5f
+        GZhzVGU3uc8sXxURurODYBv74iqLrtlx3k1r3SWAHqqG3gVCQphjgH/cxYnMd7mMOy83x+
+        sB91slK2X02fGTHuL2O4rcejoDKV//g=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1E02D13A04;
+        Tue,  5 Apr 2022 14:21:07 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id mjF0BFNQTGJMTAAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 05 Apr 2022 14:21:07 +0000
+Message-ID: <85af4827-0a21-80d4-5d60-43e0e398a4e2@suse.com>
+Date:   Tue, 5 Apr 2022 17:21:06 +0300
 MIME-Version: 1.0
-References: <cover.1649109877.git.dsterba@suse.com>
-In-Reply-To: <cover.1649109877.git.dsterba@suse.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Tue, 5 Apr 2022 08:58:35 -0700
-Message-ID: <CAADWXX-XPrfiD0TLGwMuzmGfs9pZ+HiTo1v9cs-mxb6x0OXpZw@mail.gmail.com>
-Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc2
-To:     David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>,
-        lkml <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.7.0
+Subject: Re: [RFC PATCH] btrfs-progs: prop: add datacow inode property
+Content-Language: en-US
+To:     Dominique Martinet <asmadeus@codewreck.org>,
+        linux-btrfs@vger.kernel.org
+Cc:     kernel-team@fb.com,
+        Dominique Martinet <dominique.martinet@atmark-techno.com>
+References: <20220324042235.1483914-1-asmadeus@codewreck.org>
+ <YkPuYyoV6LRWJdbS@codewreck.org>
+From:   Nikolay Borisov <nborisov@suse.com>
+In-Reply-To: <YkPuYyoV6LRWJdbS@codewreck.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 5, 2022 at 6:28 AM David Sterba <dsterba@suse.com> wrote:
->
-> please pull the following fixes for btrfs, thanks.
 
-Hmm. I got two copies of this...
 
-...and both were in my spam folder.
+On 30.03.22 г. 8:45 ч., Dominique Martinet wrote:
+> 
+> I appreciate it's a trifling feature, but I'd appreciate not having to
+> teach our users about chattr if they could only have to manipulate btrfs
+> properties so I'd appreciate some feedback!:)
+> 
+> If you just say 'no' I'll bite the bullet and install e2fsprogs just for
+> btrfs and document the command, but as things stand my users (embedded
+> device developpers) have no way of disabling cow for e.g. database
+> workloads and that's not really good long-term.
 
-I don't see anything wrong with the message (spf and dkim both
-fine).so I assume it's something about suse.sz or suse.de that gmail
-doesn't like. Presumably some spammer sitting on a nearby network on
-the same ISP.
 
-Anyway, not much you can do about it except perhaps ask whatever MIS
-people to see if they got put on some blacklist or whatever.
+Just my 2 cents: I think we should strive to rely as much as possible on 
+the generic infrastructure where we can. The nocow options is one such 
+case. The way I see it btrfs property is used to manage features which 
+are indeed specific to btrfs and have no generic alternative.
 
-I've obviously noticed the pull request despite it being in my spam folder.
-
-              Linus
-
->
-> - prevent deleting subvolume with active swapfile
->
-> - fix qgroup reserve limit calculation overflow
->
-> - remove device count in superblock and its item in one transaction so
->   they cant't get out of sync
->
-> - skip defragmenting an isolated sector, this could cause some extra IO
->
-> - unify handling of mtime/permissions in hole punch with fallocate
->
-> - zoned mode fixes:
->   - remove assert checking for only single mode, we have the DUP mode
->     implemented
->
->   - fix potential lockdep warning while traversing devices when checking
->     for zone activation
->
-> ----------------------------------------------------------------
-> The following changes since commit d3e29967079c522ce1c5cab0e9fab2c280b977eb:
->
->   btrfs: zoned: put block group after final usage (2022-03-14 13:13:54 +0100)
->
-> are available in the Git repository at:
->
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc1-tag
->
-> for you to fetch changes up to 60021bd754c6ca0addc6817994f20290a321d8d6:
->
->   btrfs: prevent subvol with swapfile from being deleted (2022-03-24 17:50:57 +0100)
->
-> ----------------------------------------------------------------
-> Darrick J. Wong (1):
->       btrfs: fix fallocate to use file_modified to update permissions consistently
->
-> Ethan Lien (1):
->       btrfs: fix qgroup reserve overflow the qgroup limit
->
-> Johannes Thumshirn (2):
->       btrfs: zoned: traverse devices under chunk_mutex in btrfs_can_activate_zone
->       btrfs: zoned: remove left over ASSERT checking for single profile
->
-> Josef Bacik (1):
->       btrfs: do not warn for free space inode in cow_file_range
->
-> Kaiwen Hu (1):
->       btrfs: prevent subvol with swapfile from being deleted
->
-> Qu Wenruo (2):
->       btrfs: remove device item and update super block in the same transaction
->       btrfs: avoid defragging extents whose next extents are not targets
->
->  fs/btrfs/extent_io.h |  2 +-
->  fs/btrfs/file.c      | 13 +++++++++--
->  fs/btrfs/inode.c     | 23 ++++++++++++++++++-
->  fs/btrfs/ioctl.c     | 20 +++++++++++-----
->  fs/btrfs/volumes.c   | 65 ++++++++++++++++++++++------------------------------
->  fs/btrfs/zoned.c     | 13 ++++-------
->  6 files changed, 81 insertions(+), 55 deletions(-)
+What's more I don't see how 'chattr +C /some/path' can be considered 
+'complex' to teach someone, plus chattr is a standard linux utility.

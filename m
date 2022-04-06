@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F6C2C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:29:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C932C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:29:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241738AbiDFJbW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 05:31:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57894 "EHLO
+        id S242484AbiDFJba (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 05:31:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57850 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1579179AbiDFJUU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:20:20 -0400
+        with ESMTP id S1580556AbiDFJVA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:21:00 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 861CB493CE3;
-        Tue,  5 Apr 2022 23:12:40 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9F70E4BEF33;
+        Tue,  5 Apr 2022 23:12:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:In-Reply-To:References;
-        bh=3yxxX62Zo/mR0Xi79MnBUJxnWH3rNCgddJGJ/Fluyic=; b=xPwhKOzKRifzeLf33Ougm7j3R2
-        9OOZnWBIUW9ywRPXYzADpSxAOJd+lc7Nw7PFDUE6dLbDnqAbJxYbqHABvtJLLVue+sw0/BD7jLpON
-        W1PzcvOTfGWKPcyWyiJoa8fKNjy8rHR6OcLI6ZFYu12/xuetEqKA/rpKsNxdu9lQHQeOr5ydVzOgP
-        Fr2RmExYOtvEtC783BVBrdtMNJLUMzEAMvbjwEGB3Vvz1513LvLpfZ5YHpp06ZknvjB+H6bXsW8d7
-        XHKUN342G7HYiwT3OxHnACoiLWGPpO9UWWSV0Px73qlxnLWFAMaudqzlG4JJxazpkO+xYsHCirA9E
-        Frp+ZxqA==;
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=WNO6sTXUX6Lx7qkV5Fa2+br/k0Bo8EgFlPApwDJnToY=; b=xn6wfwtVXlctp/6je7N/z3ay9E
+        vGgbs23+aruJ8Ua5VzorhXNI4nQMolw+5pKtcwBtlsPC54vTW3zS5Q3vVEOmi7hKNAeRnjCP5S2oc
+        MdDvUsYPr0xq+wTKucFCjIxAE2E0ovjCPpwm1eh2GygBnaD4y9og20yZkzsGTMXU5HfLXABk971aR
+        Hdpb4uVi+dtKTlTRcn2LAafiR1urZ/VfKUkW7R7a6J/8GstZI5Jz5EZ5CIp2kNLxmJRI4H15ddcHA
+        0hOoIrQx8+/15ngTv3AMezRv8D04WX+GJCeB5To1CSL5+vtqbrpg3UdV9n/ChPELmDeYtNeQueOc4
+        OCzyTuew==;
 Received: from 213-225-3-188.nat.highway.a1.net ([213.225.3.188] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nbyu6-003zG4-UT; Wed, 06 Apr 2022 06:12:31 +0000
+        id 1nbyuQ-003zQR-Ag; Wed, 06 Apr 2022 06:12:51 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
@@ -39,10 +39,12 @@ Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
         linux-kernel@vger.kernel.org, linux-bcache@vger.kernel.org,
         linux-raid@vger.kernel.org, target-devel@vger.kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: cleanup bio_kmalloc v3
-Date:   Wed,  6 Apr 2022 08:12:23 +0200
-Message-Id: <20220406061228.410163-1-hch@lst.de>
+Subject: [PATCH 5/5] pktcdvd: stop using bio_reset
+Date:   Wed,  6 Apr 2022 08:12:28 +0200
+Message-Id: <20220406061228.410163-6-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220406061228.410163-1-hch@lst.de>
+References: <20220406061228.410163-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
@@ -50,40 +52,105 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Jens,
+Just initialize the bios on-demand.
 
-this series finishes off the bio allocation interface cleanups by dealing
-with the weirdest member of the famility.  bio_kmalloc combines a kmalloc
-for the bio and bio_vecs with a hidden bio_init call and magic cleanup
-semantics.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ drivers/block/pktcdvd.c | 25 +++++++++----------------
+ 1 file changed, 9 insertions(+), 16 deletions(-)
 
-This series moves a few callers away from bio_kmalloc and then turns
-bio_kmalloc into a simple wrapper for a slab allocation of a bio and the
-inline biovecs.  The callers need to manually call bio_init instead with
-all that entails and the magic that turns bio_put into a kfree goes away
-as well, allowing for a proper debug check in bio_put that catches
-accidental use on a bio_init()ed bio.
+diff --git a/drivers/block/pktcdvd.c b/drivers/block/pktcdvd.c
+index 4a5b8730133c5..f270080f14786 100644
+--- a/drivers/block/pktcdvd.c
++++ b/drivers/block/pktcdvd.c
+@@ -525,7 +525,6 @@ static struct packet_data *pkt_alloc_packet_data(int frames)
+ 	pkt->w_bio = bio_kmalloc(frames, GFP_KERNEL);
+ 	if (!pkt->w_bio)
+ 		goto no_bio;
+-	bio_init(pkt->w_bio, NULL, pkt->w_bio->bi_inline_vecs, frames, 0);
+ 
+ 	for (i = 0; i < frames / FRAMES_PER_PAGE; i++) {
+ 		pkt->pages[i] = alloc_page(GFP_KERNEL|__GFP_ZERO);
+@@ -537,26 +536,20 @@ static struct packet_data *pkt_alloc_packet_data(int frames)
+ 	bio_list_init(&pkt->orig_bios);
+ 
+ 	for (i = 0; i < frames; i++) {
+-		struct bio *bio = bio_kmalloc(1, GFP_KERNEL);
+-		if (!bio)
++		pkt->r_bios[i] = bio_kmalloc(1, GFP_KERNEL);
++		if (!pkt->r_bios[i])
+ 			goto no_rd_bio;
+-		bio_init(bio, NULL, bio->bi_inline_vecs, 1, 0);
+-		pkt->r_bios[i] = bio;
+ 	}
+ 
+ 	return pkt;
+ 
+ no_rd_bio:
+-	for (i = 0; i < frames; i++) {
+-		if (pkt->r_bios[i])
+-			bio_uninit(pkt->r_bios[i]);
++	for (i = 0; i < frames; i++)
+ 		kfree(pkt->r_bios[i]);
+-	}
+ no_page:
+ 	for (i = 0; i < frames / FRAMES_PER_PAGE; i++)
+ 		if (pkt->pages[i])
+ 			__free_page(pkt->pages[i]);
+-	bio_uninit(pkt->w_bio);
+ 	kfree(pkt->w_bio);
+ no_bio:
+ 	kfree(pkt);
+@@ -571,13 +564,10 @@ static void pkt_free_packet_data(struct packet_data *pkt)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < pkt->frames; i++) {
+-		bio_uninit(pkt->r_bios[i]);
++	for (i = 0; i < pkt->frames; i++)
+ 		kfree(pkt->r_bios[i]);
+-	}
+ 	for (i = 0; i < pkt->frames / FRAMES_PER_PAGE; i++)
+ 		__free_page(pkt->pages[i]);
+-	bio_uninit(pkt->w_bio);
+ 	kfree(pkt->w_bio);
+ 	kfree(pkt);
+ }
+@@ -952,6 +942,7 @@ static void pkt_end_io_read(struct bio *bio)
+ 
+ 	if (bio->bi_status)
+ 		atomic_inc(&pkt->io_errors);
++	bio_uninit(bio);
+ 	if (atomic_dec_and_test(&pkt->io_wait)) {
+ 		atomic_inc(&pkt->run_sm);
+ 		wake_up(&pd->wqueue);
+@@ -969,6 +960,7 @@ static void pkt_end_io_packet_write(struct bio *bio)
+ 
+ 	pd->stats.pkt_ended++;
+ 
++	bio_uninit(bio);
+ 	pkt_bio_finished(pd);
+ 	atomic_dec(&pkt->io_wait);
+ 	atomic_inc(&pkt->run_sm);
+@@ -1023,7 +1015,7 @@ static void pkt_gather_data(struct pktcdvd_device *pd, struct packet_data *pkt)
+ 			continue;
+ 
+ 		bio = pkt->r_bios[f];
+-		bio_reset(bio, pd->bdev, REQ_OP_READ);
++		bio_init(bio, pd->bdev, bio->bi_inline_vecs, 1, REQ_OP_READ);
+ 		bio->bi_iter.bi_sector = pkt->sector + f * (CD_FRAMESIZE >> 9);
+ 		bio->bi_end_io = pkt_end_io_read;
+ 		bio->bi_private = pkt;
+@@ -1236,7 +1228,8 @@ static void pkt_start_write(struct pktcdvd_device *pd, struct packet_data *pkt)
+ {
+ 	int f;
+ 
+-	bio_reset(pkt->w_bio, pd->bdev, REQ_OP_WRITE);
++	bio_init(pkt->w_bio, pd->bdev, pkt->w_bio->bi_inline_vecs, pkt->frames,
++		 REQ_OP_WRITE);
+ 	pkt->w_bio->bi_iter.bi_sector = pkt->sector;
+ 	pkt->w_bio->bi_end_io = pkt_end_io_packet_write;
+ 	pkt->w_bio->bi_private = pkt;
+-- 
+2.30.2
 
-Changes since v2:
- - rebased to 5.18-rc1
- - fix bio freeing in squashfs
-
-Changes since v1:
- - update a pre-existing comment per maintainer suggestion
-
-Diffstat:
- block/bio.c                        |   47 ++++++++++++++-----------------------
- block/blk-crypto-fallback.c        |   14 ++++++-----
- block/blk-map.c                    |   42 +++++++++++++++++++++------------
- drivers/block/pktcdvd.c            |   34 +++++++++++---------------
- drivers/md/bcache/debug.c          |   10 ++++---
- drivers/md/dm-bufio.c              |    9 +++----
- drivers/md/raid1.c                 |   12 ++++++---
- drivers/md/raid10.c                |   21 +++++++++++-----
- drivers/target/target_core_pscsi.c |   36 ++++------------------------
- fs/btrfs/disk-io.c                 |    8 +++---
- fs/btrfs/volumes.c                 |   11 --------
- fs/btrfs/volumes.h                 |    2 -
- fs/squashfs/block.c                |   14 +++--------
- include/linux/bio.h                |    2 -
- 14 files changed, 116 insertions(+), 146 deletions(-)

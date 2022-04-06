@@ -2,115 +2,83 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B9A4C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 21:38:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 381C1C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 21:38:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236243AbiDFVjz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 17:39:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44132 "EHLO
+        id S236559AbiDFVj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 17:39:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33428 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235956AbiDFVhX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 17:37:23 -0400
-Received: from mail-io1-xd2e.google.com (mail-io1-xd2e.google.com [IPv6:2607:f8b0:4864:20::d2e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2B9B9EE4DC
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2022 13:51:26 -0700 (PDT)
-Received: by mail-io1-xd2e.google.com with SMTP id r2so4442889iod.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2022 13:51:26 -0700 (PDT)
+        with ESMTP id S238050AbiDFViv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 17:38:51 -0400
+Received: from mail-il1-x130.google.com (mail-il1-x130.google.com [IPv6:2607:f8b0:4864:20::130])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DCB5FFE
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2022 14:05:37 -0700 (PDT)
+Received: by mail-il1-x130.google.com with SMTP id 8so2845152ilq.4
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2022 14:05:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=O5QuozJn8SJm6ZtmTj2iM2rklI5jRjBkh+B7y5qWT2w=;
-        b=QPrEj+zIcZOik+sduxnDOSXLH7lP17+byfNuwf52XDJGZbqNnEqT9TAFU9+8/gES/6
-         1hJSSf8U5L0g8I699hgOGg4K2bLMt4vC2iqlxM0Ael4e1mXsDqfV+wn04xTYIWVn03Va
-         SFU0E0fv7VeSIWLmexwQx8sJLR88A13SpliKYUJDjkfH4BTQXm13/JwqrRRZ/gj7Tcwn
-         P2Hs/gV4/z86sHLE0ZmdOClTeK5hR+rNHq3vJM/VNJWR7t7qnT4fDBEDFlW5111sUI/j
-         OdosKqOmmgNkfHDp3DEL/MfAEhghGO0aDL4W4jA0WywFGrqXci3k3csygBlPdoEGy0Wx
-         Pnmw==
+        bh=ON85b9n3yvWeGkAZ1Z0X6eQHDgLkDGCCNiAQBbgKmDk=;
+        b=fSuFrJ33VcgnZ01zENvXUjrAtet6jKvVGQU3HqvLIjBF5NkpQ/ZL5XYvd4B8Vv3wbr
+         F59l5XbCWfV8qH4FoY68HbC3H/YDM6J0k8bVmr9j8iSdSj+YXrPHF4Oltr5Hjd765tKC
+         yU8+4eUx26YLqYtczXQym9yn7xoiZBx8bmnrkitidWk+UbZe8MK3vz6ukrFjYhB8NBd7
+         OlFONmhUZ7jYKcm2Nb6vpfaWhph33BsjZ6I9DcBloSfyLxu+5WxBKwHG3Tbi8oXoQ8ZU
+         zRFqXCcDz5xSQ6cO3qUc5u3dHFZDWWJiZA6q+pn+8UNpRiQ1ReSY36Ah72+CJN21NA3R
+         OvaQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=O5QuozJn8SJm6ZtmTj2iM2rklI5jRjBkh+B7y5qWT2w=;
-        b=ry3HtfVapFl+ozH24XVhrvmxaBJYKJq3L+GdDy91EpNPinIqfKr/JBuQOrPFxpesGz
-         3m69O7CpCJGPljFLAPzC1CC+CpeZOuI7C/2jW2GcYHh4zmjtrGm2WgnsuEqwrcFWI8VI
-         gu8eKhh/0s5PeKNAZGTY2GIRDlHPuJE1TtvL8EH9zOV9LOYVuoQo+GTtcHFYLUrLl+IJ
-         ds9naNeMjODLNlRR7Dfyg+xjGPdBp8Yf21KroMlHC5PZ6BnmlFJEYcu71XlLLqIhAfrE
-         tqkHLVPy3YjtLyNqoWpjp7aFlnNPwU03PbHqgYqzm4Ff5huiHHYxvqW7kNbwyZcyp/Y6
-         lXfg==
-X-Gm-Message-State: AOAM530/6CVmi9TrCQU+RUePn5nb4tPggCaNLZpk0iqbIkbNSc+2MdOb
-        q5D9a1KGGZP0ETGG3FaD4Cgx8bDfSuLtWqTzX0aezvSgaNE=
-X-Google-Smtp-Source: ABdhPJwazdpcBwYllykVqoLlgk03O8KGedXrzXGzc2f2b7HDasTW7ymwnIkq8GChrWQtzyxnO+FvhXGGqCGmR7SwQ4M=
-X-Received: by 2002:a02:b10f:0:b0:323:9bba:a956 with SMTP id
- r15-20020a02b10f000000b003239bbaa956mr5571513jah.313.1649278285096; Wed, 06
- Apr 2022 13:51:25 -0700 (PDT)
+        bh=ON85b9n3yvWeGkAZ1Z0X6eQHDgLkDGCCNiAQBbgKmDk=;
+        b=6684sCTWKTzI0/hSWAHBN8ta9v7LmFti6guJM+rDQCzoB6ifM4JUqVoCinnfy0YfGR
+         WvgxGI0IMv0EP5JTzrDvO88ePZKMjTXYqcPYZygFffqACSdzbvv8IFXBwWSt8Wkis3aq
+         WoPKwa3d8fggN1e+1JULywkiBLsqJ2mO6Xkd1aFlR1VcnOSKKzZx9c2GN2fBpMOXAavl
+         D7Gu3FORldj16VrWjMD7H4imzeakJa6T1sd00nd31DA3LkcjPVXvp+2BSyVnDly/GUGu
+         guPojRoKi9el7j0daYXJSDtt7MEnGHWop8NrmaCDmOhPR99VAk826Gxx5hgZbg1aJhGu
+         q2NQ==
+X-Gm-Message-State: AOAM533BmclrUrjBjY8CmImvHHNLhfsU919unHtmhfHHG9a98vvnq/au
+        wJV6pSytgQfAexu4qodgtSp6+MuzGkgWQSL4ihsrcvODY4Y=
+X-Google-Smtp-Source: ABdhPJxrBoaf5v9iPaK3GxhCKBtVSQQeQtSKrPsDXWw4+KTarJyM90pZoreLefCorh6M6S7LR5pHIDA34SoGRIX8Xvg=
+X-Received: by 2002:a05:6e02:170a:b0:2c9:f038:7f2e with SMTP id
+ u10-20020a056e02170a00b002c9f0387f2emr5121950ill.127.1649279136383; Wed, 06
+ Apr 2022 14:05:36 -0700 (PDT)
 MIME-Version: 1.0
-References: <20220405195901.GC28707@merlins.org> <CAEzrpqe-tBN9iuDJPwf7cj7J8=d6gtr27LnTat9nZiA7iVERNQ@mail.gmail.com>
- <20220405200805.GD28707@merlins.org> <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
- <YkzWAZtf7rcY/d+7@hungrycats.org> <20220406000844.GK28707@merlins.org>
- <Ykzvoz47Rvknw7aH@hungrycats.org> <20220406040913.GE3307770@merlins.org>
- <Yk3W88Eyh0pSm9mQ@hungrycats.org> <20220406191317.GC14804@merlins.org> <20220406203811.GF14804@merlins.org>
-In-Reply-To: <20220406203811.GF14804@merlins.org>
+References: <CAEzrpqfV9MgU_XbVxpnv05gKnKXQRnHy_BrSYddDfNLZFqi2+g@mail.gmail.com>
+ <20220406031255.GO28707@merlins.org> <20220406033404.GQ28707@merlins.org>
+ <CAEzrpqfnGCvE36-r-0OkN7yoA7j9XPCNqQVOnLrgA+cQZNoR3A@mail.gmail.com>
+ <20220406185431.GB14804@merlins.org> <CAEzrpqd0Pjx7qXz1nXEXubTfN3rmR++idOL8z6fx3tZtyaj2TQ@mail.gmail.com>
+ <20220406191636.GD14804@merlins.org> <CAEzrpqf0Vz=6nn-iMeyFsB0qLX+X48zO26Ero-3R6FLCqnzivg@mail.gmail.com>
+ <20220406203445.GE14804@merlins.org> <CAEzrpqdW-Kf7agSfTy_EK6UYUt2Wkf53j-WTzKjSPXWYgEUNkw@mail.gmail.com>
+ <20220406205621.GF3307770@merlins.org>
+In-Reply-To: <20220406205621.GF3307770@merlins.org>
 From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Wed, 6 Apr 2022 16:51:14 -0400
-Message-ID: <CAEzrpqdLm+Kwp9AWtPvxEBHXXm3wb_NhGLnhxsAsEXhufstPPw@mail.gmail.com>
-Subject: Re: figuring out why transient double raid failure caused a fair
- amount of btrfs corruption
+Date:   Wed, 6 Apr 2022 17:05:25 -0400
+Message-ID: <CAEzrpqekB7GZ7wytx-Q2D7AnidBwVK2P5sc-NcBww0J666M5oA@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
 To:     Marc MERLIN <marc@merlins.org>
-Cc:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 6, 2022 at 4:38 PM Marc MERLIN <marc@merlins.org> wrote:
+On Wed, Apr 6, 2022 at 4:56 PM Marc MERLIN <marc@merlins.org> wrote:
 >
-> This is an interesting discussion, so let's make a new thread out of it.
-> TL;DR: I think btrfs may have failed to go read only earlier, causing
-> more damage than needed to be, or some block layers just held enough
-> data in flight that partial data got written, causing more damage than
-> expected.
-> Figuring out the underlying problem would be good to avoid this again.
+> On Wed, Apr 06, 2022 at 04:38:06PM -0400, Josef Bacik wrote:
+> > Ah yeah I should have expected that, can you pull and re-run the same
+> > command?  It'll tell me which root we need to target next.  Thanks,
+>
+> Not sure it helped.
 >
 
-There's a lot here, and there's a lot of good information, but in
-general btrfs should never fail like this.  We have a lot of power
-fail testing and error handling testing, but this is very limited.  I
-found a bug last year where we would write an updated super block that
-pointed to garbage if we happened to be fsync'ing at the same time we
-were committing the transaction and got an error during the
-transaction commit phase.
-
-We can't do anything about the disks lying to us.  If a disk has a
-wonky FUA/FLUSH implementation then we're just sort of screwed.
-Unfortunately because our metadata moves around a lot we're waaaaay
-more susceptible to this failure case than ext4 or xfs, their metadata
-is relatively static they can put humpty dumpty back together again
-relatively simply.
-
-Btrfs needs to
-
-1. Go whole hog on error injection testing.  I only barely scratched
-the surface with my bpf error injection stuff.  This is on our roadmap
-and I plan on devoting developer time to this, but clearly that
-doesn't help you right now.
-2. Put a lot more effort into disaster recovery.  What I've written
-for you is an idea I've had in my head for a while.  Some of this
-failures aren't catastrophic, we can generally pretty easily put back
-together a file system that resembles something sane by simply
-stitching together blocks that we find that are close enough to what
-we wanted.  Unfortunately this gets back-burnered because in reality
-this doesn't happen that often.
-3. Test these btrfs+dmcrypt+mdraid setups.  Every time I notice one of
-these catastrophic failures it generally involves btrfs+<something
-else>.  This is likely just because it's a timing thing, you put more
-layers you get a wider window in per-io races, you're more likely to
-be sad in the event of a failure.  However it would be good to make
-sure these layers are doing the correct thing themselves.
-
-We need to be better about this scenario, both in making sure we don't
-have bugs that contribute to the problem, but also that we have the
-tools necessary to recover when things go wrong.  Thanks,
+Yup that's what I needed, the csum tree is screwed, and actually the
+reinit stuff won't ignore the csum root if we're also init'ing the
+csum root which is kind of annoying.  I updated the btrfs-find-root
+tool to do the tree repair thing for the csum root, you can run
+./btrfs-find-root /dev/whatever so it'll fixup that tree, and then you
+can re-try the btrfs check.  Thanks,
 
 Josef

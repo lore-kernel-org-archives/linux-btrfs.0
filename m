@@ -2,38 +2,46 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4DA3C4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 21:37:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7A22C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 21:38:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236429AbiDFVjv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 17:39:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33356 "EHLO
+        id S236481AbiDFVjw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 17:39:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52088 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238472AbiDFVjE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 17:39:04 -0400
+        with ESMTP id S237629AbiDFViP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 17:38:15 -0400
 Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A550269
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2022 14:14:04 -0700 (PDT)
-Received: from c-24-5-124-255.hsd1.ca.comcast.net ([24.5.124.255]:48738 helo=sauron.svh.merlins.org)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CA221BB0B5
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2022 13:56:22 -0700 (PDT)
+Received: from c-24-5-124-255.hsd1.ca.comcast.net ([24.5.124.255]:48736 helo=sauron.svh.merlins.org)
         by mail1.merlins.org with esmtpsa 
         (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
-        id 1ncCyY-00073z-8v by authid <merlins.org> with srv_auth_plain; Wed, 06 Apr 2022 14:14:02 -0700
+        id 1ncChS-00056c-13 by authid <merlins.org> with srv_auth_plain; Wed, 06 Apr 2022 13:56:22 -0700
 Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
         (envelope-from <marc@merlins.org>)
-        id 1ncCyY-00FcgA-2U; Wed, 06 Apr 2022 14:14:02 -0700
-Date:   Wed, 6 Apr 2022 14:14:02 -0700
+        id 1ncChR-00FbQP-RG; Wed, 06 Apr 2022 13:56:21 -0700
+Date:   Wed, 6 Apr 2022 13:56:21 -0700
 From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: figuring out why transient double raid failure caused a fair
- amount of btrfs corruption
-Message-ID: <20220406211402.GG3307770@merlins.org>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220406205621.GF3307770@merlins.org>
+References: <CAEzrpqfV9MgU_XbVxpnv05gKnKXQRnHy_BrSYddDfNLZFqi2+g@mail.gmail.com>
+ <20220406031255.GO28707@merlins.org>
+ <20220406033404.GQ28707@merlins.org>
+ <CAEzrpqfnGCvE36-r-0OkN7yoA7j9XPCNqQVOnLrgA+cQZNoR3A@mail.gmail.com>
+ <20220406185431.GB14804@merlins.org>
+ <CAEzrpqd0Pjx7qXz1nXEXubTfN3rmR++idOL8z6fx3tZtyaj2TQ@mail.gmail.com>
+ <20220406191636.GD14804@merlins.org>
+ <CAEzrpqf0Vz=6nn-iMeyFsB0qLX+X48zO26Ero-3R6FLCqnzivg@mail.gmail.com>
+ <20220406203445.GE14804@merlins.org>
+ <CAEzrpqdW-Kf7agSfTy_EK6UYUt2Wkf53j-WTzKjSPXWYgEUNkw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <Yk3t9U/XtQjFAcAE@hungrycats.org>
- <CAEzrpqdLm+Kwp9AWtPvxEBHXXm3wb_NhGLnhxsAsEXhufstPPw@mail.gmail.com>
+In-Reply-To: <CAEzrpqdW-Kf7agSfTy_EK6UYUt2Wkf53j-WTzKjSPXWYgEUNkw@mail.gmail.com>
 X-Sysadmin: BOFH
 X-URL:  http://marc.merlins.org/
 X-SA-Exim-Connect-IP: 24.5.124.255
@@ -42,110 +50,137 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-(Zygo, answer for you below)
+On Wed, Apr 06, 2022 at 04:38:06PM -0400, Josef Bacik wrote:
+> Ah yeah I should have expected that, can you pull and re-run the same
+> command?  It'll tell me which root we need to target next.  Thanks,
 
-On Wed, Apr 06, 2022 at 04:51:14PM -0400, Josef Bacik wrote:
-> We can't do anything about the disks lying to us.  If a disk has a
-> wonky FUA/FLUSH implementation then we're just sort of screwed.
-> Unfortunately because our metadata moves around a lot we're waaaaay
-> more susceptible to this failure case than ext4 or xfs, their metadata
-> is relatively static they can put humpty dumpty back together again
-> relatively simply.
- 
-Yeah, that's clearly been my experience. The average end user (which
-kind of includes me), totally understands that last data written,
-includig potentially directories, will get damaged, potentially beyond
-repair, but losing the entire filesystem when 99.99%+ never got touched
-by the last operations, is unexpected and undesired.
-That said, yes, I understand that btrfs does things that are both cool
-and complex, and they are less tolerant of corruption.
+Not sure it helped.
 
-> 2. Put a lot more effort into disaster recovery.  What I've written
-> for you is an idea I've had in my head for a while.  Some of this
+gargamel:/var/local/src/btrfs-progs-josefbacik# l btrfs
+-rwxr-xr-x 1 root staff 6217688 Apr  6 13:38 btrfs*
+gargamel:/var/local/src/btrfs-progs-josefbacik# git log | head -5
+commit d51753abbc0ce345b9e163fe0fdbff086c9c609d
+Author: Josef Bacik <josef@toxicpanda.com>
+Date:   Wed Apr 6 16:37:17 2022 -0400
 
-I truly appreciate the time you've been spending with me on this.
-In the end, I do have a backup, but I could not have one, or it could
-fail when I'm reading back from it, so being able to recover the
-filesystem to some workable state, is definitely a big plus.
-Honestly I don't even really care if I lose 0.1%, 1%, or 5% of the data
-(even if probably only <0.001% of the data got touched in the minute+
-that btrfs was still apparently trying to use the filesystem after the
-double failure), but a recovery that takes at most hours (for 24TB) and
-not days, or never (never is a multiple day restore over the network for
-me), will definitely be a great improvement.
+    i need the owner
 
-> 3. Test these btrfs+dmcrypt+mdraid setups.  Every time I notice one of
-> these catastrophic failures it generally involves btrfs+<something
-> else>.  This is likely just because it's a timing thing, you put more
-> layers you get a wider window in per-io races, you're more likely to
-> be sad in the event of a failure.  However it would be good to make
-> sure these layers are doing the correct thing themselves.
- 
-Totally agreed, I'm actually the worst case scenario, I have
+gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs check --init-extent-tree --repair /dev/mapper/dshelf1a 
+enabling repair mode
+WARNING:
 
-disk hw write cache + swraid5 + bcache + dmcrypt + btrfs
+	Do not use --repair unless you are advised to do so by a developer
+	or an experienced user, and then only after having accepted that no
+	fsck can successfully repair all types of filesystem corruption. Eg.
+	some software or hardware bugs can fatally damage a volume.
+	The operation will start in 10 seconds.
+	Use Ctrl-C to stop it.
+10 9 8 7 6 5 4 3 2 1
+Starting repair.
+Opening filesystem to check...
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+FS_INFO IS 0x55b85082dfc0
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+Couldn't find the last root for 8
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+FS_INFO AFTER IS 0x55b85082dfc0
+Checking filesystem on /dev/mapper/dshelf1a
+UUID: 96539b8c-ccc9-47bf-9e6c-29305890941e
+Creating a new extent tree
+checksum verify failed on 15645248897024 wanted 0xce96f609 found 0x2d1b5ea6
+checksum verify failed on 15645099524096 wanted 0x84d38588 found 0xebe9c53b
+checksum verify failed on 11651824091136 wanted 0x6d411825 found 0x3cf07c9d
+checksum verify failed on 606126080 wanted 0x8e0fb704 found 0xfc183188
+checksum verify failed on 15645807640576 wanted 0xe97841cd found 0x4fa14858
+checksum verify failed on 364863324160 wanted 0x741855d8 found 0x5aec3f82
+checksum verify failed on 364970688512 wanted 0x33a82891 found 0x154e33ed
+checksum verify failed on 15645256777728 wanted 0x6f64534d found 0x8547f2a5
+checksum verify failed on 15645178052608 wanted 0x4bb259dd found 0x4668121c
+checksum verify failed on 15645277880320 wanted 0x94805cc2 found 0xb68a1cef
+checksum verify failed on 15645849485312 wanted 0x7afc435f found 0x6977ed7c
+checksum verify failed on 15645146660864 wanted 0xfa138a06 found 0x10cddfd6
+checksum verify failed on 15645610672128 wanted 0x2ceeada6 found 0x2db846f5
+checksum verify failed on 15645208985600 wanted 0xbaaa42be found 0x769e23f0
+checksum verify failed on 11822142046208 wanted 0xc4cc3d0a found 0xace45394
+checksum verify failed on 11822142177280 wanted 0x1ac605a6 found 0x17c9826e
+checksum verify failed on 6294487416832 wanted 0xe2be154a found 0xff9fb6b0
+checksum verify failed on 11971034955776 wanted 0xcab8f347 found 0xdc99be9f
+checksum verify failed on 15646027497472 wanted 0xfe85f37e found 0x4e0364ef
+checksum verify failed on 15645802315776 wanted 0xdb3aba28 found 0x747ed64e
+checksum verify failed on 15645883285504 wanted 0x62bd1000 found 0x7f1300cc
+checksum verify failed on 13577053175808 wanted 0x4cec1ad0 found 0xf847830e
+checksum verify failed on 15646038179840 wanted 0xe040a9e4 found 0x31183a57
+checksum verify failed on 15646040834048 wanted 0x39f56fc2 found 0x336aee8b
+checksum verify failed on 15646040604672 wanted 0xa2ff0db7 found 0xff9b0719
+checksum verify failed on 15645608050688 wanted 0xe1019329 found 0x835ef4b7
+checksum verify failed on 15646038212608 wanted 0x06fb70d5 found 0x704233fa
+checksum verify failed on 15645668425728 wanted 0x12b8b29d found 0x7e5aee23
+checksum verify failed on 15645461397504 wanted 0xf186173b found 0xd3930df4
+checksum verify failed on 15645684269056 wanted 0x6222cf99 found 0x50b7b0dd
+checksum verify failed on 15645870178304 wanted 0xf8950821 found 0x1743580d
+checksum verify failed on 15646019764224 wanted 0xd96815db found 0xa62eb220
+checksum verify failed on 15645870358528 wanted 0x722138e3 found 0x9dbf8691
+checksum verify failed on 15646016913408 wanted 0xfe1e83f4 found 0x664795e4
+checksum verify failed on 10194600787968 wanted 0x37da9d7c found 0xf7d76f11
+checksum verify failed on 15645949083648 wanted 0x14efeeac found 0x46344821
+checksum verify failed on 13577202368512 wanted 0x4f5909be found 0x91649194
+checksum verify failed on 15645136207872 wanted 0x4a16db57 found 0x042787a6
+checksum verify failed on 13577220849664 wanted 0x31a222f0 found 0x98e6f9d5
+checksum verify failed on 13577388523520 wanted 0x254b7048 found 0x90c5f781
+checksum verify failed on 15645210001408 wanted 0xc64a49c0 found 0x8959550a
+checksum verify failed on 13577220997120 wanted 0xc1cf4d40 found 0xb20065f3
+checksum verify failed on 15645422108672 wanted 0x63b9fb01 found 0xef400164
+checksum verify failed on 365093765120 wanted 0xef058d7b found 0x6d2e4388
+checksum verify failed on 15645943742464 wanted 0xa84c7cdb found 0x7435ced6
+checksum verify failed on 15645944037376 wanted 0x1ce3f544 found 0x4110ee5a
+checksum verify failed on 15645943545856 wanted 0xb7391689 found 0x57835854
+checksum verify failed on 15645943644160 wanted 0xd112805c found 0x65133906
+checksum verify failed on 15645220012032 wanted 0xb4cb7eb3 found 0xe7134503
+checksum verify failed on 11971032399872 wanted 0x1b1c1591 found 0x62f69873
+checksum verify failed on 15645123133440 wanted 0xe29086d7 found 0x2bb17c15
+checksum verify failed on 15645117890560 wanted 0xf94e5973 found 0xdf7eb70e
+checksum verify failed on 15645445554176 wanted 0x9dae4aed found 0x1087f009
+checksum verify failed on 15645133553664 wanted 0x5840e80b found 0xa0492d9e
+checksum verify failed on 15645125804032 wanted 0xa71f19d7 found 0xd0d29066
+checksum verify failed on 15645870292992 wanted 0x764a5b63 found 0x65f2d096
+checksum verify failed on 15645209886720 wanted 0xdc6c9ccf found 0xfa3ec3d2
+checksum verify failed on 15645167927296 wanted 0xa4d01cb6 found 0x44fb24c2
+checksum verify failed on 15645786374144 wanted 0xb7242739 found 0x969cecbb
+checksum verify failed on 11971140157440 wanted 0x89f0ba19 found 0x761f18b3
+checksum verify failed on 15645076209664 wanted 0xb5e74fba found 0x18d2d38b
+checksum verify failed on 15645214834688 wanted 0x81dcde00 found 0xc22cbcc7
+checksum verify failed on 15645786636288 wanted 0x1edd6683 found 0xeeafe616
+checksum verify failed on 15645217849344 wanted 0xf7574b63 found 0x00ba9085
+checksum verify failed on 15645652893696 wanted 0x0fbc611c found 0x9539e808
+checksum verify failed on 15645734240256 wanted 0x6ab0998e found 0xb51c5e0c
+checksum verify failed on 15645733978112 wanted 0xff835175 found 0x8f517448
+checksum verify failed on 15645734010880 wanted 0x5363464a found 0x2aec1941
+checksum verify failed on 13577168486400 wanted 0x56b26cca found 0xeb90f5da
+checksum verify failed on 13577616375808 wanted 0x190c00d0 found 0x18c748c3
+checksum verify failed on 13577184264192 wanted 0x44d0fbb6 found 0x270072ce
+checksum verify failed on 13577226272768 wanted 0x14900bf7 found 0x2d0d3658
+checksum verify failed on 13577199779840 wanted 0x39a4976f found 0xec18a40c
+checksum verify failed on 13577199730688 wanted 0x3e524f64 found 0xe82c5965
+checksum verify failed on 13577225994240 wanted 0xc011d76f found 0x67bc3401
+checksum verify failed on 15645260890112 wanted 0x0a7005a3 found 0xd182e084
+checksum verify failed on 15645260890112 wanted 0x201bc700 found 0x462e9507
+checksum verify failed on 15645260890112 wanted 0x201bc700 found 0x462e9507
+bad tree block 15645260890112, bad level, 59 > 8
+Error reading tree block owner 7
+error pinning down used bytes
+ERROR: commit_root already set when starting transaction
+extent buffer leak: start 13577814573056 len 16384
 
-that's clearly a lot of layers. This is now my 4 or 5th pretty
-catastrophic btrfs failure over 2 arrays with those amount of layers
-over the last 8 years, but the last one was 2-3 years ago, so there is
-that :)
-I think it's pretty clear that having all those layers is significantly
-increasing my risk factor.
 
-> We need to be better about this scenario, both in making sure we don't
-> have bugs that contribute to the problem, but also that we have the
-> tools necessary to recover when things go wrong.  Thanks,
-
-agreed to both, thanks again for your time on this
-
-On Wed, Apr 06, 2022 at 03:45:57PM -0400, Zygo Blaxell wrote:
-> > shouldn't it go read only also?
-> > I haven't found a setting to tell it to do that if it's not the default.
-> 
-> bcache in writethrough mode could leave cached blocks dirty as long as
-> the SSD completes the write.  It should be reporting the write errors
-> back to upper layers.
-> Whether it actually does...I don't know, I haven't run that kind of
- 
-agreed.
-
-> > That's true, but I've seen btfrs remount read only before, and it didn't
-> > there. Shouldn't hard IO errors immediately cause btrfs to go read only?
-> 
-> No, only hard write IO errors on all metadata mirror drives, and cases
-> where btrfs needs to CoW a page or read free space tree, and can't find
-> an intact mirror.  Anything less is correctable (write failure on some
-> mirrors) or can be retried (any read failure) if the raid profile has
-> redundancy.
-
-Fair enough. And as you said, my errors were probably already staged in
-multiple layers and flushing before I got the first error reported back,
-so even by then it mau have been too late to stop it.
-
-> > I haven't heard that these drives have broken caching, but maybe they do?
-> > Device Model:     ST6000VN0041-2EL11C
-> > Serial Number:    ZA18TVFZ
-> > LU WWN Device Id: 5 000c50 0a4d9b49c
-> > Firmware Version: SC61
-> > User Capacity:    6,001,175,126,016 bytes [6.00 TB]
-> 
-> I've heard of problems with SC60, but IIRC SC61 was supposed to be the
-
-Well, there you go, just found out that I have a mix of SC60 and SC61.
-Ok, I'll just turn off write caching on them all.
-
-> The log excerpt I saw didn't show any write errors from btrfs, only
-> from mdadm.  That suggests to me that the failure happened earlier when
-> it was already too late to respond.  Also we can't rule out that bcache
-> is doing something stupid.
- 
-Yeah, at this point I think the logs agree with that statement.
-Also, I wasn't actually using that array, stuff doesn't really get
-written to it unless I manually start copies.
-
-Thanks for looking this over and your opinion/sanity check.
-
-Marc
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
  

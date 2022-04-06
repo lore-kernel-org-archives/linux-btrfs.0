@@ -2,81 +2,94 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A7D3C4167B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56ED6C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235820AbiDFErs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 00:47:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51992 "EHLO
+        id S231280AbiDFEsR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 00:48:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43854 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1450126AbiDFCuN (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 22:50:13 -0400
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 4A9511A383
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 16:51:30 -0700 (PDT)
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-        id 1C9002AEB2F; Tue,  5 Apr 2022 19:51:30 -0400 (EDT)
-Date:   Tue, 5 Apr 2022 19:51:29 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+        with ESMTP id S2361235AbiDFEZl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 00:25:41 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8A7182F5ABD
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 17:30:54 -0700 (PDT)
+Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
+        id 1nbtZU-0006Xl-O5 by authid <merlin>; Tue, 05 Apr 2022 17:30:52 -0700
+Date:   Tue, 5 Apr 2022 17:30:52 -0700
+From:   Marc MERLIN <marc@merlins.org>
 To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Marc MERLIN <marc@merlins.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
  transid verify failed + open_ctree failed)
-Message-ID: <YkzWAZtf7rcY/d+7@hungrycats.org>
-References: <CAEzrpqehq1tt5O_6jarggYK4dvyWCJ8O=_ps_qXuQbVJ9_bC6g@mail.gmail.com>
- <CAEzrpqdjTRc2VQBGGRB3Dcsk=BzN2ru-fA2=fMz__QnFubR7VQ@mail.gmail.com>
- <20220405181108.GA28707@merlins.org>
- <CAEzrpqc=h2A42nnHzeo_DwHik8Lu0xfkuNm2mhd=Ygams6aj=w@mail.gmail.com>
- <20220405195157.GA3307770@merlins.org>
- <CAEzrpqeQ=Q8u+Kgy6r+axYdbrZKs9=9cvMwEfKr=O2urgZTXHw@mail.gmail.com>
- <20220405195901.GC28707@merlins.org>
- <CAEzrpqe-tBN9iuDJPwf7cj7J8=d6gtr27LnTat9nZiA7iVERNQ@mail.gmail.com>
- <20220405200805.GD28707@merlins.org>
- <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
+Message-ID: <20220406003052.GL28707@merlins.org>
+References: <20220405203737.GE28707@merlins.org>
+ <CAEzrpqemQ2Uzi+ZJHtQtbF62=hZMTmuPT3HxwkYedUvAsXhdvQ@mail.gmail.com>
+ <20220405211412.GF28707@merlins.org>
+ <CAEzrpqeZoUF3+Pgyaup1DGFENs6zDKtRqHiJQ6sx_CoXE2HOOA@mail.gmail.com>
+ <20220405212655.GH28707@merlins.org>
+ <CAEzrpqc0Ss+J6oTqNPfTgWOwyhPAF2uHnRELmc6AO6je6Ht88w@mail.gmail.com>
+ <20220405214309.GI28707@merlins.org>
+ <CAEzrpqeDZxjbis5kPWH3khiOALyFqUoTuh5eojFtWHPcwj-Ygw@mail.gmail.com>
+ <20220405225808.GJ28707@merlins.org>
+ <CAEzrpqdtvY7vu50-xSFpdJoySutMWF3JYsqORjMBHNzmTZ52UQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
+In-Reply-To: <CAEzrpqdtvY7vu50-xSFpdJoySutMWF3JYsqORjMBHNzmTZ52UQ@mail.gmail.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 05, 2022 at 04:24:16PM -0400, Josef Bacik wrote:
-> On Tue, Apr 5, 2022 at 4:08 PM Marc MERLIN <marc@merlins.org> wrote:
+On Tue, Apr 05, 2022 at 08:23:42PM -0400, Josef Bacik wrote:
+> On Tue, Apr 5, 2022 at 6:58 PM Marc MERLIN <marc@merlins.org> wrote:
 > >
-> > On Tue, Apr 05, 2022 at 04:05:05PM -0400, Josef Bacik wrote:
-> > > Well it's still the same, and this thing is 20mib into your fs so IDK
-> > > how it would be screwing up now.  Can you do
-> > >
-> > > ./btrfs inspect-internal dump-tree -b 21069824
-> > >
-> > > and see what that spits out?  IDK why it would suddenly start
-> > > complaining about your chunk root.  Thanks,
+> > On Tue, Apr 05, 2022 at 06:41:02PM -0400, Josef Bacik wrote:
+> > > I'm wandering down this rabbit hole because if I'm able to read the
+> > > blocks fine, wtf is the device root not being found.  I've pushed more
+> > > printfs, lets see what that says.  Thanks,
 > >
-> > Thanks for your patience and sticking with me
-> > gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs inspect-internal dump-tree -b 21069824 /dev/mapper/dshelf1a >/dev/null
+> > Sure thing. Output is kind of big, summary here, full output bzipped and
+> > attached
+> > But isn't the tree found at the end?
+> > Found tree root at 13577814573056 gen 1602089 level 1
+> >
 > 
-> Ok well that worked, which means it found the chunk tree fine, I'm
+> Alright it's time for the crazy.  Go ahead and pull and start running.
+> This is going to take a while to run, we're basically going to walk
+> and check all the node pointers in the tree root, if it doesn't look
+> right we're going to search the metadata for the best copy to use, and
+> then update the block to point at the new block.  It has to do the
+> full search every time, because we don't have time for me to properly
+> implement a cache, so don't be worried if it takes a while.
 
-There's two copies of the chunk tree in dup metadata.  Maybe one of them
-is bad?
+Cool, thanks again for all your help, I hope it helps improving the tools
+and recovery for all
 
-It seems surprising to me if that's the case.  I didn't think the
-userspace read code did anything like the current->pid % 2 dance,
-and even if it did, I'd expect it to show up before now.
+gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs-find-root -o 1 /dev/mapper/dshelf1a 2>&1 |tee /tmp/outn
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+FS_INFO IS 0x562612a192a0
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
+Couldn't find the last root for 4
+Couldn't setup device tree
+FS_INFO AFTER IS 0x562612a192a0
 
-Other possibilites include irreproducible reads coming from the bcache
-layer if that's still active (e.g. if it was on mdadm raid1, and the
-raid1 mirrors were out of sync and didn't know it).  Hopefully not,
-because it would make this...challenging.
+I'll let it run and report back.
 
-> going to chalk this up to it just fucking with me and ignore it for
-> now.  I pushed some changes for the find root thing, can you re-run
-> 
-> ./btrfs-find-root -o 1 /dev/whatever
-> 
-> it should be less noisy and spit out one line at the end, "Found tree
-> root at blah blah".  Thanks,
-> 
-> Josef
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/  

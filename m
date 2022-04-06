@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 889ACC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:13:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C5F0C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:13:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347514AbiDFJP1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 05:15:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46706 "EHLO
+        id S244426AbiDFJPi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 05:15:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53082 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349398AbiDFJCq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:02:46 -0400
+        with ESMTP id S1359501AbiDFJDX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:03:23 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6EDFB48EC7E;
-        Tue,  5 Apr 2022 23:05:26 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA943478A54;
+        Tue,  5 Apr 2022 23:06:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=sINtR+pRAAWqBCMZRslKVJyakyubEJXVW4tI3wGLsb0=; b=gBrZsvegbTHoIEG5qdijcHzNWW
-        PfzclL3zzl2tB5xhm8Sj7w6skVV8SvvJytC4EH0RoMlbB62c3vMVvjooDHTIWQ3smYKaAuMQ4cOli
-        spZhkrdfcyNNrOGeIUuTpGtX63bYCgqfiIr52xJMA9AGK42nQUGH/2eHVQ3foGEH/zFa8lWfGs7Pp
-        Ay5KyAHLP9DhsOCOpCtbHRVbRjzyQdYUTq4TkVLaYR9+Sga+ljLLLtQo5Hukpu2Q5UAw6RMQTfLQg
-        vt8zwwfekDfQOHpKLK7/INfKF40CQ8temfgKOOdrhB506dWycfStoRSbi1wi6owABwmVkNNzYqcsL
-        kVwVOMFA==;
+        bh=65vdZDv/Oyhj9d7BIFQpxpieHFePRtIOo5rSsdbnvJY=; b=fnclFxf748Yk+HJEP8iaRVW3WB
+        aWWIhphvzxhVY6FZKXEjV9bmsgZxn1Kj0ojlUoEizIay0h/EV1KlYq6LYsLwUZoiL+Fz08VFbrmWJ
+        BYNbJJT671L+8hPCaASzQ9hicWQta9jTVuyI55rgNvXk3KOf4lbIG1gDSvXVJwm3aMnDnl4JurT3R
+        S8cYXnLnqA9S0vlUcqmBeds07qoRbn35ezQfJ8pyS1RE387ITcgzq6PHUXXwRZqcO/Sk1L5arJMLy
+        E+9ofKyWiYPnidQ8zD5I0ZyEozinv4MmGtOr/LudVUr7xp27guzf7u4zI6ERWqMoK3aOeUdBrl0mu
+        xcCu0PRw==;
 Received: from 213-225-3-188.nat.highway.a1.net ([213.225.3.188] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nbynD-003ul3-Rn; Wed, 06 Apr 2022 06:05:24 +0000
+        id 1nbyoD-003vVW-6V; Wed, 06 Apr 2022 06:06:25 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     dm-devel@redhat.com, linux-xfs@vger.kernel.org,
@@ -43,9 +43,9 @@ Cc:     dm-devel@redhat.com, linux-xfs@vger.kernel.org,
         cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
         linux-nilfs@vger.kernel.org, ntfs3@lists.linux.dev,
         ocfs2-devel@oss.oracle.com, linux-mm@kvack.org
-Subject: [PATCH 01/27] target: remove an incorrect unmap zeroes data deduction
-Date:   Wed,  6 Apr 2022 08:04:50 +0200
-Message-Id: <20220406060516.409838-2-hch@lst.de>
+Subject: [PATCH 17/27] block: use bdev_alignment_offset in disk_alignment_offset_show
+Date:   Wed,  6 Apr 2022 08:05:06 +0200
+Message-Id: <20220406060516.409838-18-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220406060516.409838-1-hch@lst.de>
 References: <20220406060516.409838-1-hch@lst.de>
@@ -56,31 +56,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For block devices the target code implements UNMAP as calls to
-blkdev_issue_discard, which does not guarantee zeroing just because
-Write Zeroes is supported.
+This does the same as the open coded variant except for an extra branch,
+and allows to remove queue_alignment_offset entirely.
 
-Note that this does not affect the file backed path which uses
-fallocate to punch holes.
-
-Fixes: 2237498f0b5c ("target/iblock: Convert WRITE_SAME to blkdev_issue_zeroout")
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/target/target_core_device.c | 1 -
- 1 file changed, 1 deletion(-)
+ block/genhd.c          | 2 +-
+ include/linux/blkdev.h | 8 --------
+ 2 files changed, 1 insertion(+), 9 deletions(-)
 
-diff --git a/drivers/target/target_core_device.c b/drivers/target/target_core_device.c
-index 44bb380e7390c..fa866acef5bb2 100644
---- a/drivers/target/target_core_device.c
-+++ b/drivers/target/target_core_device.c
-@@ -850,7 +850,6 @@ bool target_configure_unmap_from_queue(struct se_dev_attrib *attrib,
- 	attrib->unmap_granularity = q->limits.discard_granularity / block_size;
- 	attrib->unmap_granularity_alignment = q->limits.discard_alignment /
- 								block_size;
--	attrib->unmap_zeroes_data = !!(q->limits.max_write_zeroes_sectors);
- 	return true;
+diff --git a/block/genhd.c b/block/genhd.c
+index b8b6759d670f0..712031ce19070 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -1010,7 +1010,7 @@ static ssize_t disk_alignment_offset_show(struct device *dev,
+ {
+ 	struct gendisk *disk = dev_to_disk(dev);
+ 
+-	return sprintf(buf, "%d\n", queue_alignment_offset(disk->queue));
++	return sprintf(buf, "%d\n", bdev_alignment_offset(disk->part0));
  }
- EXPORT_SYMBOL(target_configure_unmap_from_queue);
+ 
+ static ssize_t disk_discard_alignment_show(struct device *dev,
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index f8c50b77543eb..d5346e72e3645 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -1251,14 +1251,6 @@ bdev_zone_write_granularity(struct block_device *bdev)
+ 	return queue_zone_write_granularity(bdev_get_queue(bdev));
+ }
+ 
+-static inline int queue_alignment_offset(const struct request_queue *q)
+-{
+-	if (q->limits.misaligned)
+-		return -1;
+-
+-	return q->limits.alignment_offset;
+-}
+-
+ static inline int queue_limit_alignment_offset(struct queue_limits *lim, sector_t sector)
+ {
+ 	unsigned int granularity = max(lim->physical_block_size, lim->io_min);
 -- 
 2.30.2
 

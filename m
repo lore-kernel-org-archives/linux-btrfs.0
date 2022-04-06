@@ -2,116 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE636C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:46:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2A66C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 04:47:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237463AbiDFEsj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 00:48:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51410 "EHLO
+        id S1347633AbiDFEsx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 00:48:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56272 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1577150AbiDEXLv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Apr 2022 19:11:51 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C18D66D84B
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 14:43:27 -0700 (PDT)
-Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nbqxB-0007eS-Q1 by authid <merlin>; Tue, 05 Apr 2022 14:43:09 -0700
-Date:   Tue, 5 Apr 2022 14:43:09 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220405214309.GI28707@merlins.org>
-References: <20220405195901.GC28707@merlins.org>
- <CAEzrpqe-tBN9iuDJPwf7cj7J8=d6gtr27LnTat9nZiA7iVERNQ@mail.gmail.com>
- <20220405200805.GD28707@merlins.org>
- <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
- <20220405203737.GE28707@merlins.org>
- <CAEzrpqemQ2Uzi+ZJHtQtbF62=hZMTmuPT3HxwkYedUvAsXhdvQ@mail.gmail.com>
- <20220405211412.GF28707@merlins.org>
- <CAEzrpqeZoUF3+Pgyaup1DGFENs6zDKtRqHiJQ6sx_CoXE2HOOA@mail.gmail.com>
- <20220405212655.GH28707@merlins.org>
- <CAEzrpqc0Ss+J6oTqNPfTgWOwyhPAF2uHnRELmc6AO6je6Ht88w@mail.gmail.com>
+        with ESMTP id S1346485AbiDFEeM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 00:34:12 -0400
+Received: from mail-io1-xd2f.google.com (mail-io1-xd2f.google.com [IPv6:2607:f8b0:4864:20::d2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 28D02A994F
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 17:39:28 -0700 (PDT)
+Received: by mail-io1-xd2f.google.com with SMTP id r2so1184861iod.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Apr 2022 17:39:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=rQ+lntHGRbfJLpoWFqPiuypFR/dttgitLYVXGMMixL4=;
+        b=HYlkf054NS5F7RlGtyPhgEvBCJUXIKHOkOg2XMcrhnBJkWnQPy/zG1DmAey9Too+9s
+         l318Hl9+Hob7VZ8JD8H981dnzlBH3d6PISBLmKqdxoxJN6DswM0sD5ib8Qmrqylsj6tF
+         nkBaWUI7Ess7RMRgtsqHqyjb/YOE2QGUf75lxj0BxlS4ZbACPYufWutC6JhvffzvWSDv
+         jfinM3BQmvzmEbfajiDxCL30W6ja9I2PYPtYVjsmsaPv9cTm0J3l1T+URnw3rNrsi+tS
+         wt6cRkWGHmmJYEQ692lZwgLbSE/Op82zqTodFM6lTXE5SKfki1O+UgM3IMM2S1PHEknW
+         bx0Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=rQ+lntHGRbfJLpoWFqPiuypFR/dttgitLYVXGMMixL4=;
+        b=s35sonxgboPNVY6ABZ6RdEQm2fEfNenQR0xVau0Hs2MTQd16N19luHdSqT1STkecTk
+         Jc2Yr1s5Lkms5rcg0mmxFxbEBzFcSXBvDFNZaY9WrkDDra0xwXWzBcNVQ4v6q5oXqGOk
+         xIwD/emYbbPnVyacGlG2LWBamlGiD86LRHOJzxl2gorMykgfjXKNB7Wt1AsEFoFjPScq
+         F0jW/okKmUKYx6ReHaHjfk+FaL9USVzqfVb4L1LksBB40nBdQ5zPpmB/R3RzefFyvTgm
+         oK9kHYK5icxR16IHA7WBIjK6qhqG2Eod/xOUoOr20kStkHHLaQEvLzZCJxymcbCRv1wa
+         5nqQ==
+X-Gm-Message-State: AOAM532b3pMZv+nN/aHO4B5XND9K/qTPkC4xl0mynLJPd6xSOYXpuVqE
+        T0hut8B2IABLSibC/BMfpiJDfA74OLO3TVkmtYeT/akvNzs=
+X-Google-Smtp-Source: ABdhPJyWxeJt22eS1Oi1kO/P3RvcmLQaQe8PGTDaOM0xE3M2Rf22Q2rP7tWyHEOaS/NWpNwJ5Mclo6erkaFzvzGeatw=
+X-Received: by 2002:a02:b10f:0:b0:323:9bba:a956 with SMTP id
+ r15-20020a02b10f000000b003239bbaa956mr3327658jah.313.1649205567413; Tue, 05
+ Apr 2022 17:39:27 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAEzrpqc0Ss+J6oTqNPfTgWOwyhPAF2uHnRELmc6AO6je6Ht88w@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: marc@merlins.org
+References: <20220405203737.GE28707@merlins.org> <CAEzrpqemQ2Uzi+ZJHtQtbF62=hZMTmuPT3HxwkYedUvAsXhdvQ@mail.gmail.com>
+ <20220405211412.GF28707@merlins.org> <CAEzrpqeZoUF3+Pgyaup1DGFENs6zDKtRqHiJQ6sx_CoXE2HOOA@mail.gmail.com>
+ <20220405212655.GH28707@merlins.org> <CAEzrpqc0Ss+J6oTqNPfTgWOwyhPAF2uHnRELmc6AO6je6Ht88w@mail.gmail.com>
+ <20220405214309.GI28707@merlins.org> <CAEzrpqeDZxjbis5kPWH3khiOALyFqUoTuh5eojFtWHPcwj-Ygw@mail.gmail.com>
+ <20220405225808.GJ28707@merlins.org> <CAEzrpqdtvY7vu50-xSFpdJoySutMWF3JYsqORjMBHNzmTZ52UQ@mail.gmail.com>
+ <20220406003521.GM28707@merlins.org>
+In-Reply-To: <20220406003521.GM28707@merlins.org>
+From:   Josef Bacik <josef@toxicpanda.com>
+Date:   Tue, 5 Apr 2022 20:39:16 -0400
+Message-ID: <CAEzrpqesUdkDXhdJXHewPZuFGPVu_qyGfH07i5Lxw=NDs=LASQ@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 05, 2022 at 05:35:02PM -0400, Josef Bacik wrote:
-> On Tue, Apr 5, 2022 at 5:26 PM Marc MERLIN <marc@merlins.org> wrote:
+On Tue, Apr 5, 2022 at 8:35 PM Marc MERLIN <marc@merlins.org> wrote:
+>
+> On Tue, Apr 05, 2022 at 08:23:42PM -0400, Josef Bacik wrote:
+> > Alright it's time for the crazy.  Go ahead and pull and start running.
+> > This is going to take a while to run, we're basically going to walk
+> > and check all the node pointers in the tree root, if it doesn't look
+> > right we're going to search the metadata for the best copy to use, and
+> > then update the block to point at the new block.  It has to do the
+> > full search every time, because we don't have time for me to properly
+> > implement a cache, so don't be worried if it takes a while.
 > >
-> > On Tue, Apr 05, 2022 at 05:19:57PM -0400, Josef Bacik wrote:
-> > > Otra vez por favor,
-> >
-> > (gdb) run -o 1 /dev/mapper/dshelf1a
-> > Starting program: /var/local/src/btrfs-progs-josefbacik/btrfs-find-root -o 1 /dev/mapper/dshelf1a
-> > [Thread debugging using libthread_db enabled]
-> > Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
-> > parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> > parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> > parent transid verify failed on 22216704 wanted 1600938 found 1602177
-> > FS_INFO IS 0x5555555cf2a0
-> > parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> > parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> > parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> > parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> > parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> > parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-> > Couldn't find the last root for 4
-> > Couldn't setup device tree
-> > FS_INFO AFTER IS 0x5555555cf2a0
-> > Superblock thinks the generation is 1602089
-> > Superblock thinks the level is 1
-> >
-> > Program received signal SIGSEGV, Segmentation fault.
-> 
-> Ugh sorry, try again.  Thanks,
+> > It may print out stuff, if it looks like it's looping stop it and let
+> > me know, but I don't think I fucked it up.  You're going to see a lot
+> > "fixed root <id>", "fixed slot <whatever>", if you see it repeating
+> > the same slot or root then we know we have a problem.
+>
+> I assume this is not good?
+> ERROR: failed to write bytenr 13577814573056 length 16384 devid 1 dev_bytenr 13439981355008: Operation not permitted
+>
+> I am running as root of course.
+>
 
+Yeah I'm just a dumbass, try again please. Thanks,
 
-Thanks. Note that you still have 2 functions to comment out
-From https://github.com/josefbacik/btrfs-progs
-   ce32ea15..914c9847  for-marc   -> origin/for-marc
-Updating ce32ea15..914c9847
-Fast-forward
- btrfs-find-root.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
-sauron:/var/local/src/btrfs-progs-josefbacik# make
-    [CC]     btrfs-find-root.o
-btrfs-find-root.c:383:13: warning: ‘print_find_root_result’ defined but not used [-Wunused-function]
-  383 | static void print_find_root_result(struct cache_tree *result,
-
-
-New version after I fixed the build warnings that were errors for me
-gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs-find-root -o 1 /dev/mapper/dshelf1a 2>&1 |tee /tmp/out
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-parent transid verify failed on 22216704 wanted 1600938 found 1602177
-FS_INFO IS 0x564897ec32a0
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-parent transid verify failed on 13577821667328 wanted 1602089 found 1602242
-Couldn't find the last root for 4
-Couldn't setup device tree
-FS_INFO AFTER IS 0x564897ec32a0
-Superblock thinks the generation is 1602089
-Superblock thinks the level is 1
-Found tree root at 13577814573056 gen 1602089 level 1
-gargamel:/var/local/src/btrfs-progs-josefbacik# 
-
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/  
+Josef

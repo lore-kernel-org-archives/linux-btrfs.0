@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C932C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:29:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 014ACC433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:29:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242484AbiDFJba (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 05:31:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57850 "EHLO
+        id S1351523AbiDFJbe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 05:31:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57710 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1580556AbiDFJVA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:21:00 -0400
+        with ESMTP id S1579549AbiDFJUa (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:20:30 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9F70E4BEF33;
-        Tue,  5 Apr 2022 23:12:59 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8747B493CEC;
+        Tue,  5 Apr 2022 23:12:44 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=WNO6sTXUX6Lx7qkV5Fa2+br/k0Bo8EgFlPApwDJnToY=; b=xn6wfwtVXlctp/6je7N/z3ay9E
-        vGgbs23+aruJ8Ua5VzorhXNI4nQMolw+5pKtcwBtlsPC54vTW3zS5Q3vVEOmi7hKNAeRnjCP5S2oc
-        MdDvUsYPr0xq+wTKucFCjIxAE2E0ovjCPpwm1eh2GygBnaD4y9og20yZkzsGTMXU5HfLXABk971aR
-        Hdpb4uVi+dtKTlTRcn2LAafiR1urZ/VfKUkW7R7a6J/8GstZI5Jz5EZ5CIp2kNLxmJRI4H15ddcHA
-        0hOoIrQx8+/15ngTv3AMezRv8D04WX+GJCeB5To1CSL5+vtqbrpg3UdV9n/ChPELmDeYtNeQueOc4
-        OCzyTuew==;
+        bh=oBOOfc3iQHyh4s/28CPoA+VriGqSgcKurZz21BM76xw=; b=pJCGiZx3jyaVpZeZ0r9wUwDapM
+        vnq8sVI2OmDjjjAlFeiXpQpXHd3qLUTQmrO2SbOe0V6Khalibg7qRuv2CX/PmXjL37DUcmx7RyXUD
+        uqV0VALE0g88DIoHQ8FOht85xvAYgQtSSQkYwAbHZrJs1DJK9oJoVWzqXmfVBMdHkAXiYPHbSqsOm
+        JRH353S+zCB5cxULSv0TJdyD4SZcedhDbR4o7iLNacPeClM4cp0ji0qL5BFynmSG+uTd35rxhyItY
+        UxPsxFWrFNYMOUR5XuvZyJCMiOjiUFIHRMbQ3DBI8Pg1KPplQ7VNfvN9RWt3m4kjFOi/RjGHDlxuI
+        e40KmP4g==;
 Received: from 213-225-3-188.nat.highway.a1.net ([213.225.3.188] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nbyuQ-003zQR-Ag; Wed, 06 Apr 2022 06:12:51 +0000
+        id 1nbyuA-003zHx-LZ; Wed, 06 Apr 2022 06:12:35 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
@@ -39,9 +39,9 @@ Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
         linux-kernel@vger.kernel.org, linux-bcache@vger.kernel.org,
         linux-raid@vger.kernel.org, target-devel@vger.kernel.org,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] pktcdvd: stop using bio_reset
-Date:   Wed,  6 Apr 2022 08:12:28 +0200
-Message-Id: <20220406061228.410163-6-hch@lst.de>
+Subject: [PATCH 1/5] btrfs: simplify ->flush_bio handling
+Date:   Wed,  6 Apr 2022 08:12:24 +0200
+Message-Id: <20220406061228.410163-2-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220406061228.410163-1-hch@lst.de>
 References: <20220406061228.410163-1-hch@lst.de>
@@ -52,105 +52,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Just initialize the bios on-demand.
+Use and embedded bios that is initialized when used instead of
+bio_kmalloc plus bio_reset.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: David Sterba <dsterba@suse.com>
 ---
- drivers/block/pktcdvd.c | 25 +++++++++----------------
- 1 file changed, 9 insertions(+), 16 deletions(-)
+ fs/btrfs/disk-io.c |  8 +++++---
+ fs/btrfs/volumes.c | 11 -----------
+ fs/btrfs/volumes.h |  4 ++--
+ 3 files changed, 7 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/block/pktcdvd.c b/drivers/block/pktcdvd.c
-index 4a5b8730133c5..f270080f14786 100644
---- a/drivers/block/pktcdvd.c
-+++ b/drivers/block/pktcdvd.c
-@@ -525,7 +525,6 @@ static struct packet_data *pkt_alloc_packet_data(int frames)
- 	pkt->w_bio = bio_kmalloc(frames, GFP_KERNEL);
- 	if (!pkt->w_bio)
- 		goto no_bio;
--	bio_init(pkt->w_bio, NULL, pkt->w_bio->bi_inline_vecs, frames, 0);
- 
- 	for (i = 0; i < frames / FRAMES_PER_PAGE; i++) {
- 		pkt->pages[i] = alloc_page(GFP_KERNEL|__GFP_ZERO);
-@@ -537,26 +536,20 @@ static struct packet_data *pkt_alloc_packet_data(int frames)
- 	bio_list_init(&pkt->orig_bios);
- 
- 	for (i = 0; i < frames; i++) {
--		struct bio *bio = bio_kmalloc(1, GFP_KERNEL);
--		if (!bio)
-+		pkt->r_bios[i] = bio_kmalloc(1, GFP_KERNEL);
-+		if (!pkt->r_bios[i])
- 			goto no_rd_bio;
--		bio_init(bio, NULL, bio->bi_inline_vecs, 1, 0);
--		pkt->r_bios[i] = bio;
- 	}
- 
- 	return pkt;
- 
- no_rd_bio:
--	for (i = 0; i < frames; i++) {
--		if (pkt->r_bios[i])
--			bio_uninit(pkt->r_bios[i]);
-+	for (i = 0; i < frames; i++)
- 		kfree(pkt->r_bios[i]);
--	}
- no_page:
- 	for (i = 0; i < frames / FRAMES_PER_PAGE; i++)
- 		if (pkt->pages[i])
- 			__free_page(pkt->pages[i]);
--	bio_uninit(pkt->w_bio);
- 	kfree(pkt->w_bio);
- no_bio:
- 	kfree(pkt);
-@@ -571,13 +564,10 @@ static void pkt_free_packet_data(struct packet_data *pkt)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b30309f187cf0..51f4cdf6bcaea 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -4225,6 +4225,7 @@ static int wait_dev_supers(struct btrfs_device *device, int max_mirrors)
+  */
+ static void btrfs_end_empty_barrier(struct bio *bio)
  {
- 	int i;
- 
--	for (i = 0; i < pkt->frames; i++) {
--		bio_uninit(pkt->r_bios[i]);
-+	for (i = 0; i < pkt->frames; i++)
- 		kfree(pkt->r_bios[i]);
--	}
- 	for (i = 0; i < pkt->frames / FRAMES_PER_PAGE; i++)
- 		__free_page(pkt->pages[i]);
--	bio_uninit(pkt->w_bio);
- 	kfree(pkt->w_bio);
- 	kfree(pkt);
++	bio_uninit(bio);
+ 	complete(bio->bi_private);
  }
-@@ -952,6 +942,7 @@ static void pkt_end_io_read(struct bio *bio)
  
- 	if (bio->bi_status)
- 		atomic_inc(&pkt->io_errors);
-+	bio_uninit(bio);
- 	if (atomic_dec_and_test(&pkt->io_wait)) {
- 		atomic_inc(&pkt->run_sm);
- 		wake_up(&pd->wqueue);
-@@ -969,6 +960,7 @@ static void pkt_end_io_packet_write(struct bio *bio)
- 
- 	pd->stats.pkt_ended++;
- 
-+	bio_uninit(bio);
- 	pkt_bio_finished(pd);
- 	atomic_dec(&pkt->io_wait);
- 	atomic_inc(&pkt->run_sm);
-@@ -1023,7 +1015,7 @@ static void pkt_gather_data(struct pktcdvd_device *pd, struct packet_data *pkt)
- 			continue;
- 
- 		bio = pkt->r_bios[f];
--		bio_reset(bio, pd->bdev, REQ_OP_READ);
-+		bio_init(bio, pd->bdev, bio->bi_inline_vecs, 1, REQ_OP_READ);
- 		bio->bi_iter.bi_sector = pkt->sector + f * (CD_FRAMESIZE >> 9);
- 		bio->bi_end_io = pkt_end_io_read;
- 		bio->bi_private = pkt;
-@@ -1236,7 +1228,8 @@ static void pkt_start_write(struct pktcdvd_device *pd, struct packet_data *pkt)
+@@ -4234,7 +4235,7 @@ static void btrfs_end_empty_barrier(struct bio *bio)
+  */
+ static void write_dev_flush(struct btrfs_device *device)
  {
- 	int f;
+-	struct bio *bio = device->flush_bio;
++	struct bio *bio = &device->flush_bio;
  
--	bio_reset(pkt->w_bio, pd->bdev, REQ_OP_WRITE);
-+	bio_init(pkt->w_bio, pd->bdev, pkt->w_bio->bi_inline_vecs, pkt->frames,
-+		 REQ_OP_WRITE);
- 	pkt->w_bio->bi_iter.bi_sector = pkt->sector;
- 	pkt->w_bio->bi_end_io = pkt_end_io_packet_write;
- 	pkt->w_bio->bi_private = pkt;
+ #ifndef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	/*
+@@ -4252,7 +4253,8 @@ static void write_dev_flush(struct btrfs_device *device)
+ 		return;
+ #endif
+ 
+-	bio_reset(bio, device->bdev, REQ_OP_WRITE | REQ_SYNC | REQ_PREFLUSH);
++	bio_init(bio, device->bdev, NULL, 0,
++		 REQ_OP_WRITE | REQ_SYNC | REQ_PREFLUSH);
+ 	bio->bi_end_io = btrfs_end_empty_barrier;
+ 	init_completion(&device->flush_wait);
+ 	bio->bi_private = &device->flush_wait;
+@@ -4266,7 +4268,7 @@ static void write_dev_flush(struct btrfs_device *device)
+  */
+ static blk_status_t wait_dev_flush(struct btrfs_device *device)
+ {
+-	struct bio *bio = device->flush_bio;
++	struct bio *bio = &device->flush_bio;
+ 
+ 	if (!test_bit(BTRFS_DEV_STATE_FLUSH_SENT, &device->dev_state))
+ 		return BLK_STS_OK;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1be7cb2f955fc..00517239b5c01 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -405,7 +405,6 @@ void btrfs_free_device(struct btrfs_device *device)
+ 	WARN_ON(!list_empty(&device->post_commit_list));
+ 	rcu_string_free(device->name);
+ 	extent_io_tree_release(&device->alloc_state);
+-	bio_put(device->flush_bio);
+ 	btrfs_destroy_dev_zone_info(device);
+ 	kfree(device);
+ }
+@@ -6956,16 +6955,6 @@ struct btrfs_device *btrfs_alloc_device(struct btrfs_fs_info *fs_info,
+ 	if (!dev)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	/*
+-	 * Preallocate a bio that's always going to be used for flushing device
+-	 * barriers and matches the device lifespan
+-	 */
+-	dev->flush_bio = bio_kmalloc(GFP_KERNEL, 0);
+-	if (!dev->flush_bio) {
+-		kfree(dev);
+-		return ERR_PTR(-ENOMEM);
+-	}
+-
+ 	INIT_LIST_HEAD(&dev->dev_list);
+ 	INIT_LIST_HEAD(&dev->dev_alloc_list);
+ 	INIT_LIST_HEAD(&dev->post_commit_list);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index bd297f23d19e7..628c9af894749 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -121,8 +121,8 @@ struct btrfs_device {
+ 	/* bytes used on the current transaction */
+ 	u64 commit_bytes_used;
+ 
+-	/* for sending down flush barriers */
+-	struct bio *flush_bio;
++	/* Bio used for flushing device barriers */
++	struct bio flush_bio;
+ 	struct completion flush_wait;
+ 
+ 	/* per-device scrub information */
 -- 
 2.30.2
 

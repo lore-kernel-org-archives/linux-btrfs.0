@@ -2,90 +2,153 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70517C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:29:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B74F3C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 09:29:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245401AbiDFJbK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 05:31:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57888 "EHLO
+        id S239674AbiDFJbP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 05:31:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1579875AbiDFJUm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:20:42 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4228F493CF6;
-        Tue,  5 Apr 2022 23:12:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=VAc1SDe4gjp1IeSSzcV0Im0HYJaPZbBGhfAm1TWpBFw=; b=Vx9zBRc9mFA8+LncYvFBjDM/Zb
-        pbcSroZVNHizo8ag1zgWczJkPwKyKrQV0Ddx6EtdqvoGmN3ZLUsdLKTvi8QUvBrGPji55y+TUibqi
-        zyo3CCB6cpnNSwb7pmnPjpZLbfI+B4eUtQGJWZq/5pEMe3rKUBPsxd5x/+cxg3WaQbqwyNjJEdwOv
-        wwzXFbniePin6IMVNBsd2AtdfZYr63VsrGFltkW81NlLLVM1vcyriYiHfwMSFTiiKxwjpPqx/tka1
-        AeQtcSuZloD2zhVzVK5deQgejH67DXoe5LPb6Dlnskg8Cwr4FIv0XDPOAN09vQpBnQ8QmlfUg1UAv
-        3CHBg+qg==;
-Received: from 213-225-3-188.nat.highway.a1.net ([213.225.3.188] helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nbyuE-003zKG-M9; Wed, 06 Apr 2022 06:12:39 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     Coly Li <colyli@suse.de>, Mike Snitzer <snitzer@redhat.com>,
-        Song Liu <song@kernel.org>,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Phillip Lougher <phillip@squashfs.org.uk>,
-        linux-block@vger.kernel.org, dm-devel@redhat.com,
-        linux-kernel@vger.kernel.org, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, target-devel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/5] squashfs: always use bio_kmalloc in squashfs_bio_read
-Date:   Wed,  6 Apr 2022 08:12:25 +0200
-Message-Id: <20220406061228.410163-3-hch@lst.de>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20220406061228.410163-1-hch@lst.de>
-References: <20220406061228.410163-1-hch@lst.de>
+        with ESMTP id S1581929AbiDFJVl (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 05:21:41 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 706201E1F5D
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Apr 2022 20:34:05 -0700 (PDT)
+Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
+        id 1nbwQm-0005QD-TD by authid <merlin>; Tue, 05 Apr 2022 20:34:04 -0700
+Date:   Tue, 5 Apr 2022 20:34:04 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220406033404.GQ28707@merlins.org>
+References: <20220405212655.GH28707@merlins.org>
+ <CAEzrpqc0Ss+J6oTqNPfTgWOwyhPAF2uHnRELmc6AO6je6Ht88w@mail.gmail.com>
+ <20220405214309.GI28707@merlins.org>
+ <CAEzrpqeDZxjbis5kPWH3khiOALyFqUoTuh5eojFtWHPcwj-Ygw@mail.gmail.com>
+ <20220405225808.GJ28707@merlins.org>
+ <CAEzrpqdtvY7vu50-xSFpdJoySutMWF3JYsqORjMBHNzmTZ52UQ@mail.gmail.com>
+ <20220406003521.GM28707@merlins.org>
+ <CAEzrpqesUdkDXhdJXHewPZuFGPVu_qyGfH07i5Lxw=NDs=LASQ@mail.gmail.com>
+ <CAEzrpqfV9MgU_XbVxpnv05gKnKXQRnHy_BrSYddDfNLZFqi2+g@mail.gmail.com>
+ <20220406031255.GO28707@merlins.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220406031255.GO28707@merlins.org>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If a plain kmalloc that is not backed by a mempool is safe here for a
-large read (and the actual page allocations), it must also be for a
-small one, so simplify the code a bit.
+On Tue, Apr 05, 2022 at 08:12:55PM -0700, Marc MERLIN wrote:
+> On Tue, Apr 05, 2022 at 09:08:32PM -0400, Josef Bacik wrote:
+> > Also keep in mind this isn't the final fix, this is the pre-repair so
+> > hopefully fsck can put the rest of it back together.  Thanks,
+> 
+> Done, so now I can run 
+> btrfs check --repair /dev/mapper/dshelf1a ?
+ 
+Here is regular check:
+gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs check /dev/mapper/dshelf1a
+Opening filesystem to check...
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+FS_INFO IS 0x564d665f1e50
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+Couldn't find the last root for 8
+checksum verify failed on 15645261971456 wanted 0x10a0c9b9 found 0x08b85944
+parent transid verify failed on 15645261971456 wanted 1602297 found 1600989
+checksum verify failed on 15645261971456 wanted 0x10a0c9b9 found 0x08b85944
+bad tree block 15645261971456, bad level, 127 > 8
+ERROR: failed to read block groups: Input/output error
+FS_INFO AFTER IS 0x564d665f1e50
+Checking filesystem on /dev/mapper/dshelf1a
+UUID: 96539b8c-ccc9-47bf-9e6c-29305890941e
+[1/7] checking root items
+checksum verify failed on 15645261971456 wanted 0x10a0c9b9 found 0x08b85944
+parent transid verify failed on 15645261971456 wanted 1602297 found 1600989
+checksum verify failed on 15645261971456 wanted 0x10a0c9b9 found 0x08b85944
+bad tree block 15645261971456, bad level, 127 > 8
+ERROR: failed to repair root items: Input/output error
+[2/7] checking extents
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 13577702703104 wanted 1602089 found 1602241
+parent transid verify failed on 13577702703104 wanted 1602089 found 1602241
+parent transid verify failed on 13577702703104 wanted 1602089 found 1602241
+parent transid verify failed on 12511683117056 wanted 1602089 found 1602202
+parent transid verify failed on 12511683117056 wanted 1602089 found 1602202
+parent transid verify failed on 12511683117056 wanted 1602089 found 1602202
+parent transid verify failed on 15645121789952 wanted 1602089 found 1602135
+parent transid verify failed on 15645121789952 wanted 1602089 found 1600922
+parent transid verify failed on 15645121789952 wanted 1602089 found 1602135
+parent transid verify failed on 15645274947584 wanted 1602089 found 1602298
+parent transid verify failed on 15645274947584 wanted 1602089 found 1602298
+parent transid verify failed on 15645274947584 wanted 1602089 found 1602298
+checksum verify failed on 13577870934016 wanted 0xfffb4d18 found 0xb0be1c94
+parent transid verify failed on 11160884019200 wanted 1602089 found 1602180
+parent transid verify failed on 11160884019200 wanted 1602089 found 1602180
+parent transid verify failed on 11160884019200 wanted 1602089 found 1602180
+parent transid verify failed on 15645280632832 wanted 1602089 found 1602298
+parent transid verify failed on 15645280632832 wanted 1602089 found 1601000
+parent transid verify failed on 15645280632832 wanted 1602089 found 1602298
+parent transid verify failed on 15645397942272 wanted 1602089 found 1602141
+parent transid verify failed on 15645397942272 wanted 1602089 found 1602141
+parent transid verify failed on 15645397942272 wanted 1602089 found 1602141
+parent transid verify failed on 15645399678976 wanted 1602089 found 1602243
+checksum verify failed on 15645399678976 wanted 0xf1e9450d found 0xe8cf0418
+checksum verify failed on 15645399678976 wanted 0xf1e9450d found 0xe8cf0418
+bad tree block 15645399678976, bad level, 236 > 8
+ERROR: errors found in extent allocation tree or chunk allocation
+[3/7] checking free space cache
+[4/7] checking fs roots
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+ERROR: invalid generation for root 5, have 1602297 expect (0, 1602090]
+checksum verify failed on 15645248897024 wanted 0xce96f609 found 0x2d1b5ea6
+parent transid verify failed on 15645248897024 wanted 1602297 found 1600937
+checksum verify failed on 15645248897024 wanted 0xce96f609 found 0x2d1b5ea6
+bad tree block 15645248897024, bad level, 66 > 8
+The following tree block(s) is corrupted in tree 5:
+	tree block bytenr: 15645248880640, level: 2, node key: (256, 1, 0)
+root 5 root dir 256 not found
+parent transid verify failed on 13577702703104 wanted 1602089 found 1602241
+parent transid verify failed on 12511683117056 wanted 1602089 found 1602202
+parent transid verify failed on 15645121789952 wanted 1602089 found 1602135
+parent transid verify failed on 15645274947584 wanted 1602089 found 1602298
+parent transid verify failed on 11160884019200 wanted 1602089 found 1602180
+parent transid verify failed on 15645280632832 wanted 1602089 found 1602298
+parent transid verify failed on 15645397942272 wanted 1602089 found 1602141
+parent transid verify failed on 15645399678976 wanted 1602089 found 1602243
+checksum verify failed on 15645399678976 wanted 0xf1e9450d found 0xe8cf0418
+checksum verify failed on 15645399678976 wanted 0xf1e9450d found 0xe8cf0418
+bad tree block 15645399678976, bad level, 236 > 8
+ERROR: errors found in fs roots
+found 0 bytes used, error(s) found
+total csum bytes: 0
+total tree bytes: 0
+total fs tree bytes: 0
+total extent tree bytes: 0
+btree space waste bytes: 0
+file data blocks allocated: 0
+ referenced 0
+gargamel:/var/local/src/btrfs-progs-josefbacik#
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Acked-by: Phillip Lougher <phillip@squashfs.org.uk>
----
- fs/squashfs/block.c | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
 
-diff --git a/fs/squashfs/block.c b/fs/squashfs/block.c
-index 622c844f6d118..4311a32218928 100644
---- a/fs/squashfs/block.c
-+++ b/fs/squashfs/block.c
-@@ -86,16 +86,11 @@ static int squashfs_bio_read(struct super_block *sb, u64 index, int length,
- 	int error, i;
- 	struct bio *bio;
- 
--	if (page_count <= BIO_MAX_VECS) {
--		bio = bio_alloc(sb->s_bdev, page_count, REQ_OP_READ, GFP_NOIO);
--	} else {
--		bio = bio_kmalloc(GFP_NOIO, page_count);
--		bio_set_dev(bio, sb->s_bdev);
--		bio->bi_opf = REQ_OP_READ;
--	}
--
-+	bio = bio_kmalloc(GFP_NOIO, page_count);
- 	if (!bio)
- 		return -ENOMEM;
-+	bio_set_dev(bio, sb->s_bdev);
-+	bio->bi_opf = REQ_OP_READ;
- 
- 	bio->bi_iter.bi_sector = block * (msblk->devblksize >> SECTOR_SHIFT);
- 
 -- 
-2.30.2
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/  

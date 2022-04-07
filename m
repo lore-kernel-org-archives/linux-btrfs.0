@@ -2,109 +2,96 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A79ADC433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 15:40:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C5A25C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 16:16:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344899AbiDGPlp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Apr 2022 11:41:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36824 "EHLO
+        id S1345657AbiDGQSV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Apr 2022 12:18:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58034 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229822AbiDGPlm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2022 11:41:42 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3271E1EAFB
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2022 08:39:42 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id DA0D621601;
-        Thu,  7 Apr 2022 15:39:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1649345980; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
+        with ESMTP id S1345667AbiDGQSS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2022 12:18:18 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 201A11E6F84
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2022 09:16:16 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id B93501F85A;
+        Thu,  7 Apr 2022 16:16:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649348174;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=QIGWU88siU+7Bosi70DfWq8vMokh96+X0A9lQBadniA=;
-        b=MXzTCOzjG8lkGO/MtEVTkJKtPB23JURTB8aAOTouoJu+K5o7lxYW9bM8apglH3XUv/F7SE
-        Unekw5YEpHeigKikRiFUK+LNyq/ttit5mMBffnAtxge2JQCfZe4s1EJfky4okXHl42HOxk
-        TWroG4htwgVgQgI/vAbdsXL1ppBZxQU=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B1C2D13A66;
-        Thu,  7 Apr 2022 15:39:40 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 8FmqKbwFT2LpdQAAMHmgww
-        (envelope-from <gniebler@suse.com>); Thu, 07 Apr 2022 15:39:40 +0000
-From:   Gabriel Niebler <gniebler@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     dsterba@suse.com, Gabriel Niebler <gniebler@suse.com>
-Subject: [PATCH 5/6] btrfs_kill_all_delayed_nodes: convert to using XArray API
-Date:   Thu,  7 Apr 2022 17:38:53 +0200
-Message-Id: <20220407153855.21089-6-gniebler@suse.com>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <20220407153855.21089-1-gniebler@suse.com>
+        bh=XCrpc+ySwryDYNrXrM21WZslLldWyY8gwlFlJhIeGe8=;
+        b=F3CR7CxszOYrziWAleG5jFWb2hOu1+Y+4z9esKQMDNkCiV6TZ4C3EaDtV9czcwML6KknN4
+        PIMKhC2hmlZc03aUFjkCPKnKoyKSqBElEbzJ98cK2mG1lhs6r7UANbMbWi8r9QD20fVZZW
+        GZw5ZPLLtqlCVc7WlwthXxIi+0y+Uck=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649348174;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=XCrpc+ySwryDYNrXrM21WZslLldWyY8gwlFlJhIeGe8=;
+        b=EO8wS2th0XJkCtYiyD/YXQxqrLu8dkh1KPiwllHj9ad4SGqy38c3nT3bR/eqmaoDSEfMc4
+        a+nT5HX0S3hRlyAQ==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id B1496A3B96;
+        Thu,  7 Apr 2022 16:16:14 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 1BB22DA80E; Thu,  7 Apr 2022 18:12:11 +0200 (CEST)
+Date:   Thu, 7 Apr 2022 18:12:11 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Gabriel Niebler <gniebler@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
+Subject: Re: [PATCH 1/6] Turn delayed_nodes_tree into delayed_nodes_xarray in
+ btrfs_root
+Message-ID: <20220407161211.GN15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Gabriel Niebler <gniebler@suse.com>,
+        linux-btrfs@vger.kernel.org, dsterba@suse.com
 References: <20220407153855.21089-1-gniebler@suse.com>
+ <20220407153855.21089-2-gniebler@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <20220407153855.21089-2-gniebler@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Signed-off-by: Gabriel Niebler <gniebler@suse.com>
----
- fs/btrfs/delayed-inode.c | 21 ++++++++++++---------
- 1 file changed, 12 insertions(+), 9 deletions(-)
+On Thu, Apr 07, 2022 at 05:38:49PM +0200, Gabriel Niebler wrote:
+> … but don't use the XArray API yet.
+> 
+> This works, since the radix_tree_root struct has already been turned into an xarray behind the scenes, via a macro.
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index a235f0941444..877ba00fbe83 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1863,29 +1863,32 @@ void btrfs_kill_delayed_inode_items(struct btrfs_inode *inode)
- 
- void btrfs_kill_all_delayed_nodes(struct btrfs_root *root)
- {
--	u64 inode_id = 0;
-+	unsigned long index;
-+	struct btrfs_delayed_node *delayed_node;
- 	struct btrfs_delayed_node *delayed_nodes[8];
- 	int i, n;
- 
- 	while (1) {
- 		spin_lock(&root->inode_lock);
--		n = radix_tree_gang_lookup(&root->delayed_nodes_xarray,
--					   (void **)delayed_nodes, inode_id,
--					   ARRAY_SIZE(delayed_nodes));
--		if (!n) {
-+		if (xa_empty(&root->delayed_nodes_xarray)) {
- 			spin_unlock(&root->inode_lock);
- 			break;
- 		}
- 
--		inode_id = delayed_nodes[n - 1]->inode_id + 1;
--		for (i = 0; i < n; i++) {
-+		n = 0;
-+		xa_for_each_start(&root->delayed_nodes_xarray, index,
-+				  delayed_node, index) {
- 			/*
- 			 * Don't increase refs in case the node is dead and
- 			 * about to be removed from the tree in the loop below
- 			 */
--			if (!refcount_inc_not_zero(&delayed_nodes[i]->refs))
--				delayed_nodes[i] = NULL;
-+			if (!refcount_inc_not_zero(&delayed_node->refs))
-+				delayed_nodes[n] = NULL;
-+			n++;
-+			if (n >= ARRAY_SIZE(delayed_nodes))
-+				break;
- 		}
-+		index++;
- 		spin_unlock(&root->inode_lock);
- 
- 		for (i = 0; i < n; i++) {
--- 
-2.35.1
+Please align the text to 74 chars.
 
+> Signed-off-by: Gabriel Niebler <gniebler@suse.com>
+> ---
+>  fs/btrfs/ctree.h         | 4 ++--
+>  fs/btrfs/delayed-inode.c | 8 ++++----
+>  fs/btrfs/disk-io.c       | 2 +-
+>  fs/btrfs/inode.c         | 2 +-
+>  4 files changed, 8 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index b7631b88426e..ccd42a1638b1 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1224,10 +1224,10 @@ struct btrfs_root {
+>  	struct rb_root inode_tree;
+>  
+>  	/*
+> -	 * radix tree that keeps track of delayed nodes of every inode,
+> +	 * XArray that keeps track of delayed nodes of every inode,
+>  	 * protected by inode_lock
+>  	 */
+> -	struct radix_tree_root delayed_nodes_tree;
+> +	struct xarray delayed_nodes_xarray;
+
+I'd rather not rename the variable, it's an implementation detail and
+maybe dropping the _tree completely is a better idea.

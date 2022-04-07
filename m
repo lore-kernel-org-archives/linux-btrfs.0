@@ -2,83 +2,230 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 381C1C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  6 Apr 2022 21:38:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E8C8C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 01:08:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236559AbiDFVj5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 6 Apr 2022 17:39:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33428 "EHLO
+        id S233339AbiDGBKT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 6 Apr 2022 21:10:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50802 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238050AbiDFViv (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 17:38:51 -0400
-Received: from mail-il1-x130.google.com (mail-il1-x130.google.com [IPv6:2607:f8b0:4864:20::130])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DCB5FFE
-        for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2022 14:05:37 -0700 (PDT)
-Received: by mail-il1-x130.google.com with SMTP id 8so2845152ilq.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Apr 2022 14:05:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=ON85b9n3yvWeGkAZ1Z0X6eQHDgLkDGCCNiAQBbgKmDk=;
-        b=fSuFrJ33VcgnZ01zENvXUjrAtet6jKvVGQU3HqvLIjBF5NkpQ/ZL5XYvd4B8Vv3wbr
-         F59l5XbCWfV8qH4FoY68HbC3H/YDM6J0k8bVmr9j8iSdSj+YXrPHF4Oltr5Hjd765tKC
-         yU8+4eUx26YLqYtczXQym9yn7xoiZBx8bmnrkitidWk+UbZe8MK3vz6ukrFjYhB8NBd7
-         OlFONmhUZ7jYKcm2Nb6vpfaWhph33BsjZ6I9DcBloSfyLxu+5WxBKwHG3Tbi8oXoQ8ZU
-         zRFqXCcDz5xSQ6cO3qUc5u3dHFZDWWJiZA6q+pn+8UNpRiQ1ReSY36Ah72+CJN21NA3R
-         OvaQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=ON85b9n3yvWeGkAZ1Z0X6eQHDgLkDGCCNiAQBbgKmDk=;
-        b=6684sCTWKTzI0/hSWAHBN8ta9v7LmFti6guJM+rDQCzoB6ifM4JUqVoCinnfy0YfGR
-         WvgxGI0IMv0EP5JTzrDvO88ePZKMjTXYqcPYZygFffqACSdzbvv8IFXBwWSt8Wkis3aq
-         WoPKwa3d8fggN1e+1JULywkiBLsqJ2mO6Xkd1aFlR1VcnOSKKzZx9c2GN2fBpMOXAavl
-         D7Gu3FORldj16VrWjMD7H4imzeakJa6T1sd00nd31DA3LkcjPVXvp+2BSyVnDly/GUGu
-         guPojRoKi9el7j0daYXJSDtt7MEnGHWop8NrmaCDmOhPR99VAk826Gxx5hgZbg1aJhGu
-         q2NQ==
-X-Gm-Message-State: AOAM533BmclrUrjBjY8CmImvHHNLhfsU919unHtmhfHHG9a98vvnq/au
-        wJV6pSytgQfAexu4qodgtSp6+MuzGkgWQSL4ihsrcvODY4Y=
-X-Google-Smtp-Source: ABdhPJxrBoaf5v9iPaK3GxhCKBtVSQQeQtSKrPsDXWw4+KTarJyM90pZoreLefCorh6M6S7LR5pHIDA34SoGRIX8Xvg=
-X-Received: by 2002:a05:6e02:170a:b0:2c9:f038:7f2e with SMTP id
- u10-20020a056e02170a00b002c9f0387f2emr5121950ill.127.1649279136383; Wed, 06
- Apr 2022 14:05:36 -0700 (PDT)
-MIME-Version: 1.0
-References: <CAEzrpqfV9MgU_XbVxpnv05gKnKXQRnHy_BrSYddDfNLZFqi2+g@mail.gmail.com>
- <20220406031255.GO28707@merlins.org> <20220406033404.GQ28707@merlins.org>
- <CAEzrpqfnGCvE36-r-0OkN7yoA7j9XPCNqQVOnLrgA+cQZNoR3A@mail.gmail.com>
- <20220406185431.GB14804@merlins.org> <CAEzrpqd0Pjx7qXz1nXEXubTfN3rmR++idOL8z6fx3tZtyaj2TQ@mail.gmail.com>
- <20220406191636.GD14804@merlins.org> <CAEzrpqf0Vz=6nn-iMeyFsB0qLX+X48zO26Ero-3R6FLCqnzivg@mail.gmail.com>
- <20220406203445.GE14804@merlins.org> <CAEzrpqdW-Kf7agSfTy_EK6UYUt2Wkf53j-WTzKjSPXWYgEUNkw@mail.gmail.com>
- <20220406205621.GF3307770@merlins.org>
-In-Reply-To: <20220406205621.GF3307770@merlins.org>
-From:   Josef Bacik <josef@toxicpanda.com>
-Date:   Wed, 6 Apr 2022 17:05:25 -0400
-Message-ID: <CAEzrpqekB7GZ7wytx-Q2D7AnidBwVK2P5sc-NcBww0J666M5oA@mail.gmail.com>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
- verify failed + open_ctree failed)
-To:     Marc MERLIN <marc@merlins.org>
+        with ESMTP id S233147AbiDGBKS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Apr 2022 21:10:18 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2542817FD13
+        for <linux-btrfs@vger.kernel.org>; Wed,  6 Apr 2022 18:08:20 -0700 (PDT)
+Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
+        id 1ncGdH-0003Fn-L1 by authid <merlin>; Wed, 06 Apr 2022 18:08:19 -0700
+Date:   Wed, 6 Apr 2022 18:08:19 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220407010819.GG14804@merlins.org>
+References: <20220406033404.GQ28707@merlins.org>
+ <CAEzrpqfnGCvE36-r-0OkN7yoA7j9XPCNqQVOnLrgA+cQZNoR3A@mail.gmail.com>
+ <20220406185431.GB14804@merlins.org>
+ <CAEzrpqd0Pjx7qXz1nXEXubTfN3rmR++idOL8z6fx3tZtyaj2TQ@mail.gmail.com>
+ <20220406191636.GD14804@merlins.org>
+ <CAEzrpqf0Vz=6nn-iMeyFsB0qLX+X48zO26Ero-3R6FLCqnzivg@mail.gmail.com>
+ <20220406203445.GE14804@merlins.org>
+ <CAEzrpqdW-Kf7agSfTy_EK6UYUt2Wkf53j-WTzKjSPXWYgEUNkw@mail.gmail.com>
+ <20220406205621.GF3307770@merlins.org>
+ <CAEzrpqekB7GZ7wytx-Q2D7AnidBwVK2P5sc-NcBww0J666M5oA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAEzrpqekB7GZ7wytx-Q2D7AnidBwVK2P5sc-NcBww0J666M5oA@mail.gmail.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 6, 2022 at 4:56 PM Marc MERLIN <marc@merlins.org> wrote:
->
-> On Wed, Apr 06, 2022 at 04:38:06PM -0400, Josef Bacik wrote:
-> > Ah yeah I should have expected that, can you pull and re-run the same
-> > command?  It'll tell me which root we need to target next.  Thanks,
->
-> Not sure it helped.
->
+On Wed, Apr 06, 2022 at 05:05:25PM -0400, Josef Bacik wrote:
+> Yup that's what I needed, the csum tree is screwed, and actually the
+> reinit stuff won't ignore the csum root if we're also init'ing the
+> csum root which is kind of annoying.  I updated the btrfs-find-root
+> tool to do the tree repair thing for the csum root, you can run
+> ./btrfs-find-root /dev/whatever so it'll fixup that tree, and then you
+> can re-try the btrfs check.  Thanks,
 
-Yup that's what I needed, the csum tree is screwed, and actually the
-reinit stuff won't ignore the csum root if we're also init'ing the
-csum root which is kind of annoying.  I updated the btrfs-find-root
-tool to do the tree repair thing for the csum root, you can run
-./btrfs-find-root /dev/whatever so it'll fixup that tree, and then you
-can re-try the btrfs check.  Thanks,
+Different output going back and forth, expected?
 
-Josef
+gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs-find-root -o 1 /dev/mapper/dshelf1a 2>&1 |tee /tmp/outo
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+parent transid verify failed on 22216704 wanted 1600938 found 1602177
+FS_INFO IS 0x55ba30af45f0
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+Couldn't find the last root for 8
+parent transid verify failed on 15645251010560 wanted 1602089 found 1602297
+FS_INFO AFTER IS 0x55ba30af45f0
+Couldn't find a replacement block for slot 178
+Couldn't find a replacement block for slot 206
+Couldn't find a replacement block for slot 62
+fixed slot 88
+fixed slot 235
+fixed slot 237
+Couldn't find a replacement block for slot 238
+Couldn't find a replacement block for slot 243
+fixed slot 33
+fixed slot 35
+fixed slot 32
+fixed slot 133
+fixed slot 136
+fixed slot 207
+Couldn't find a replacement block for slot 221
+Couldn't find a replacement block for slot 484
+Couldn't find a replacement block for slot 76
+fixed slot 229
+fixed slot 172
+fixed slot 174
+fixed slot 36
+Couldn't find a replacement block for slot 20
+fixed slot 24
+Couldn't find a replacement block for slot 28
+fixed slot 115
+fixed slot 148
+fixed slot 9
+Couldn't find a replacement block for slot 318
+fixed slot 245
+fixed slot 1
+Couldn't find a replacement block for slot 153
+Couldn't find a replacement block for slot 121
+Couldn't find a replacement block for slot 134
+fixed slot 159
+fixed slot 170
+fixed slot 204
+fixed slot 149
+fixed slot 185
+fixed slot 257
+fixed slot 46
+fixed slot 60
+fixed slot 91
+fixed slot 92
+fixed slot 95
+fixed slot 247
+fixed slot 105
+Couldn't find a replacement block for slot 109
+fixed slot 124
+fixed slot 191
+fixed slot 244
+fixed slot 9
+fixed slot 57
+Couldn't find a replacement block for slot 166
+fixed slot 163
+fixed slot 78
+fixed slot 179
+Couldn't find a replacement block for slot 50
+Couldn't find a replacement block for slot 218
+fixed slot 26
+fixed slot 75
+Couldn't find a replacement block for slot 68
+fixed slot 56
+fixed slot 60
+Couldn't find a replacement block for slot 231
+fixed slot 141
+fixed slot 151
+fixed slot 156
+fixed slot 159
+fixed slot 163
+fixed slot 171
+fixed slot 200
+fixed slot 5
+Couldn't find a replacement block for slot 157
+fixed slot 224
+fixed slot 44
+fixed slot 217
+fixed slot 122
+fixed slot 59
+Couldn't find a replacement block for slot 120
+fixed slot 181
+fixed slot 187
+Couldn't find a replacement block for slot 46
+Couldn't find a replacement block for slot 33
+Couldn't find a replacement block for slot 220
+fixed slot 60
+Couldn't find a replacement block for slot 160
+Couldn't find a replacement block for slot 237
+Couldn't find a replacement block for slot 192
+fixed slot 9
+fixed slot 7
+Couldn't find a replacement block for slot 226
+fixed slot 24
+fixed slot 49
+fixed slot 22
+Couldn't find a replacement block for slot 186
+fixed slot 149
+fixed slot 150
+Couldn't find a replacement block for slot 42
+fixed slot 218
+fixed slot 223
+fixed slot 228
+fixed slot 230
+fixed slot 233
+fixed slot 234
+fixed slot 240
+fixed slot 155
+fixed slot 24
+fixed slot 30
+fixed slot 376
+fixed slot 94
+fixed slot 104
+fixed slot 197
+Couldn't find a replacement block for slot 91
+Couldn't find a replacement block for slot 191
+fixed slot 139
+fixed slot 128
+Couldn't find a replacement block for slot 143
+fixed slot 16
+fixed slot 17
+fixed slot 114
+fixed slot 28
+Couldn't find a replacement block for slot 86
+Couldn't find a replacement block for slot 83
+fixed slot 86
+fixed slot 92
+fixed slot 149
+fixed slot 117
+Couldn't find a replacement block for slot 31
+fixed slot 188
+Couldn't find a replacement block for slot 102
+Couldn't find a replacement block for slot 23
+Couldn't find a replacement block for slot 203
+Couldn't find a replacement block for slot 79
+Couldn't find a replacement block for slot 180
+Couldn't find a replacement block for slot 21
+Couldn't find a replacement block for slot 167
+Couldn't find a replacement block for slot 276
+Couldn't find a replacement block for slot 282
+Couldn't find a replacement block for slot 283
+Couldn't find a replacement block for slot 284
+Couldn't find a replacement block for slot 285
+Couldn't find a replacement block for slot 286
+Couldn't find a replacement block for slot 287
+Couldn't find a replacement block for slot 289
+Couldn't find a replacement block for slot 290
+Couldn't find a replacement block for slot 291
+Couldn't find a replacement block for slot 69
+Couldn't find a replacement block for slot 231
+fixed slot 208
+Couldn't find a replacement block for slot 171
+Couldn't find a replacement block for slot 116
+
+(still running)
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/  

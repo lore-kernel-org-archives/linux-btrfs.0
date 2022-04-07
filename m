@@ -2,132 +2,81 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1043BC433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 12:28:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B916BC433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 15:00:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245145AbiDGMaU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Apr 2022 08:30:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53252 "EHLO
+        id S237542AbiDGPCa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Apr 2022 11:02:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35036 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245139AbiDGM36 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2022 08:29:58 -0400
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 02066A88AD
-        for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2022 05:27:55 -0700 (PDT)
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-        id 509CF2B521B; Thu,  7 Apr 2022 08:27:54 -0400 (EDT)
-Date:   Thu, 7 Apr 2022 08:27:54 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Marc MERLIN <marc@merlins.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: figuring out why transient double raid failure caused a fair
- amount of btrfs corruption
-Message-ID: <Yk7YyhQ/CdcMfoS7@hungrycats.org>
-References: <20220405200805.GD28707@merlins.org>
- <CAEzrpqf0Gz=UuJ83woXOsRvcdC7vhH-b2UphuG-1+dUOiRc2Kw@mail.gmail.com>
- <YkzWAZtf7rcY/d+7@hungrycats.org>
- <20220406000844.GK28707@merlins.org>
- <Ykzvoz47Rvknw7aH@hungrycats.org>
- <20220406040913.GE3307770@merlins.org>
- <Yk3W88Eyh0pSm9mQ@hungrycats.org>
- <20220406191317.GC14804@merlins.org>
- <20220406203811.GF14804@merlins.org>
- <CAEzrpqdLm+Kwp9AWtPvxEBHXXm3wb_NhGLnhxsAsEXhufstPPw@mail.gmail.com>
+        with ESMTP id S232775AbiDGPC3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2022 11:02:29 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3725A1EFE11
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2022 08:00:29 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id E28E41FDB6;
+        Thu,  7 Apr 2022 15:00:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649343627;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=UnKOMqoRRrfkhDUYPLS34Q8wFmUSnW/AcTZ7AMKvopY=;
+        b=nom1LCmWGRis4Lg48is5Ql7jx7P4ev5ak9LFGW7OJZWotN469eV371O2P0/UQrjRyYy+Dj
+        2NaJ04w1samSZzPrCTtS2OA1tgaeWWEijoH+Dss9K5f5o/ehTXYbAblgsOD03787sF4mVx
+        jvM48nWRoN8GLedTtA/K7vkvnkT9SS8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649343627;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=UnKOMqoRRrfkhDUYPLS34Q8wFmUSnW/AcTZ7AMKvopY=;
+        b=1Ng5P2/lLmkXzhbqPlBIBsg8GvNWL10o7vv2B+Ft+dcjmdoku4Iw+7neGmbdRtg0GRK1FD
+        y7jTh3CzMfmcqfBA==
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id DBA82A3B8A;
+        Thu,  7 Apr 2022 15:00:27 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id ACB41DA80E; Thu,  7 Apr 2022 16:56:25 +0200 (CEST)
+Date:   Thu, 7 Apr 2022 16:56:25 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: fix leaked plug after failure syncing log on
+ zoned filesystems
+Message-ID: <20220407145625.GG15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <c766f439fa12967383d8e62c6f5883bd1f62c483.1649245880.git.fdmanana@suse.com>
+ <7950a1a3db370ab5f38e8da4f43b002e11397b18.1649261167.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqdLm+Kwp9AWtPvxEBHXXm3wb_NhGLnhxsAsEXhufstPPw@mail.gmail.com>
+In-Reply-To: <7950a1a3db370ab5f38e8da4f43b002e11397b18.1649261167.git.fdmanana@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 06, 2022 at 04:51:14PM -0400, Josef Bacik wrote:
-> On Wed, Apr 6, 2022 at 4:38 PM Marc MERLIN <marc@merlins.org> wrote:
-> >
-> > This is an interesting discussion, so let's make a new thread out of it.
-> > TL;DR: I think btrfs may have failed to go read only earlier, causing
-> > more damage than needed to be, or some block layers just held enough
-> > data in flight that partial data got written, causing more damage than
-> > expected.
-> > Figuring out the underlying problem would be good to avoid this again.
-
-> We can't do anything about the disks lying to us.  If a disk has a
-> wonky FUA/FLUSH implementation then we're just sort of screwed.
-> Unfortunately because our metadata moves around a lot we're waaaaay
-> more susceptible to this failure case than ext4 or xfs, their metadata
-> is relatively static they can put humpty dumpty back together again
-> relatively simply.
-
-Disks are pretty good at FUA/FLUSH bugs these days, though you can
-still buy new old drives that have them.
-
-SSDs have a whole lot of bugs, especially if they get old. have a few bits
-fail, and try to recover themselves, but blow up the whole filesystem
-by losing a few pages.  These ones get through firmware qualification
-testing because they only misbehave when they're a year or two old.
-
-> Btrfs needs to
+On Wed, Apr 06, 2022 at 05:07:54PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> 1. Go whole hog on error injection testing.  I only barely scratched
-> the surface with my bpf error injection stuff.  This is on our roadmap
-> and I plan on devoting developer time to this, but clearly that
-> doesn't help you right now.
-> 2. Put a lot more effort into disaster recovery.  What I've written
-> for you is an idea I've had in my head for a while.  Some of this
-> failures aren't catastrophic, we can generally pretty easily put back
-> together a file system that resembles something sane by simply
-> stitching together blocks that we find that are close enough to what
-> we wanted.  Unfortunately this gets back-burnered because in reality
-> this doesn't happen that often.
-
-This does seem to be an important missing piece at the moment.  
-In practice, when we see "parent transid verify failed," we go directly
-to mkfs + restore backups, as none of the existing tools will touch it.
-They all want intact interior nodes in some tree to work, and that's
-the one thing that FUA/FLUSH bugs destroy.
-
-It doesn't solve the underlying problem--the drive will still trash
-the filesystem every other month until its write ordering gets fixed or
-worked around--but at least it lets users fix the filesystem in place
-without mkfs + restoring a full set of backups.
-
-> 3. Test these btrfs+dmcrypt+mdraid setups.  Every time I notice one of
-> these catastrophic failures it generally involves btrfs+<something
-> else>.  This is likely just because it's a timing thing, you put more
-> layers you get a wider window in per-io races, you're more likely to
-> be sad in the event of a failure.  However it would be good to make
-> sure these layers are doing the correct thing themselves.
-
-bcache and dmcache layers in series with the underlying storage multiply
-the failure rates (including software regressions) of the individual
-components, and mdadm blends firmware bugs from all the drives together.
-Statistically we're always going to see more problems if there are more
-moving parts in the system, especially if they aggregate risks and break
-fault isolation.
-
-FWIW I'm not seeing a difference in failure rate between "btrfs +
-mdadm" and "btrfs alone", but I'm intentionally avoiding the many mdadm
-configurations that introduce new failure modes by design (e.g. raid5
-without ppl or journal, raid1 without component device integrity, or
-single/raid1 SSD cache in writeback mode running over multiple drives).
-There isn't a fix for those except to not use them.  In most cases
-there's a better way to do the same thing, though there are some gaps
-(e.g. there's no working solution for writeback SSD caching on raid5).
-
-Thought experiment:  if you have 2 drives from vendor A and 2 drives
-from vendor B, and you want to build two filesystems that replicate
-to each other, where do you put the drives if you know one vendor has
-a firmware bug but you don't know which one?  With mdadm, you build
-filesystems with AA and BB drives, because that way a firmware bug
-corrupts one filesystems and leaves the other intact.  With btrfs, you
-build two filesystems with AB and AB drives, because that way a firmware
-bug gets autocorrected by btrfs and both filesystems remain intact.
-If you put btrfs on mdadm on AB drives, you combine the risk from both
-vendors, lose both filesystems, and skew the failure statistics.
-
-> We need to be better about this scenario, both in making sure we don't
-> have bugs that contribute to the problem, but also that we have the
-> tools necessary to recover when things go wrong.  Thanks,
+> On a zoned filesystem, if we fail to allocate the root node for the log
+> root tree while syncing the log, we end up returning without finishing
+> the IO plug we started before, resulting in leaking resources as we
+> have started writeback for extent buffers of a log tree before. That
+> allocation failure, which typically is either -ENOMEM or -ENOSPC, is not
+> fatal and the fsync can safely fallback to a full transaction commit.
 > 
-> Josef
+> So release the IO plug if we fail to allocate the extent buffer for the
+> root of the log root tree when syncing the log on a zoned filesystem.
+> 
+> Fixes: 3ddebf27fcd3a9 ("btrfs: zoned: reorder log node allocation on zoned filesystem")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Fixed typo in the subject, updated changelog.
+
+Added to misc-next, thanks.

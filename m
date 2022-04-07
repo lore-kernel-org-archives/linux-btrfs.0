@@ -2,105 +2,83 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 923B2C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 15:32:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21C1FC433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu,  7 Apr 2022 15:39:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344901AbiDGPdr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 7 Apr 2022 11:33:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47606 "EHLO
+        id S1344858AbiDGPlm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 7 Apr 2022 11:41:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36770 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345006AbiDGPci (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2022 11:32:38 -0400
+        with ESMTP id S229822AbiDGPll (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Apr 2022 11:41:41 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 34D78C36;
-        Thu,  7 Apr 2022 08:30:38 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id E56341F85A;
-        Thu,  7 Apr 2022 15:30:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649345436;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=zPq01JLA6dLoXnFchjjFxJhIcKHBhEdkrZLnR4TbLUY=;
-        b=arXCGHubFNDMJivA50IVAh5E18SENgaJ+8psB29O+dYSp9GznJDHN9eBNpNqVEEypC+xPt
-        YsOhdRjVTg1mFsMpWqZ4oNaVAGZnjLyClojrRdjsUuitokjLJy7oqe8RxGnlNpP0HUVyi6
-        8uSBZYdSoqUowgEJK8P6YGm7aUVWSbo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649345436;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=zPq01JLA6dLoXnFchjjFxJhIcKHBhEdkrZLnR4TbLUY=;
-        b=+RoHDuxhi8eXdx1m79jW3LC9fhbmevwd72sFBk44Osas+gmEsPN5qSbgbwIpqCBgrNluyA
-        EXeawVVGeX85rgBw==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id AE7A3A3B94;
-        Thu,  7 Apr 2022 15:30:36 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 5C928DA80E; Thu,  7 Apr 2022 17:26:34 +0200 (CEST)
-Date:   Thu, 7 Apr 2022 17:26:34 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, dm-devel@redhat.com,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-block@vger.kernel.org,
-        drbd-dev@lists.linbit.com, nbd@other.debian.org,
-        ceph-devel@vger.kernel.org,
-        virtualization@lists.linux-foundation.org,
-        xen-devel@lists.xenproject.org, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, linux-mmc@vger.kernel.org,
-        linux-mtd@lists.infradead.org, linux-nvme@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-scsi@vger.kernel.org,
-        target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
-        linux-nilfs@vger.kernel.org, ntfs3@lists.linux.dev,
-        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org
-Subject: Re: [PATCH 24/27] block: add a bdev_discard_granularity helper
-Message-ID: <20220407152634.GL15609@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        Jens Axboe <axboe@kernel.dk>, dm-devel@redhat.com,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-block@vger.kernel.org,
-        drbd-dev@lists.linbit.com, nbd@other.debian.org,
-        ceph-devel@vger.kernel.org,
-        virtualization@lists.linux-foundation.org,
-        xen-devel@lists.xenproject.org, linux-bcache@vger.kernel.org,
-        linux-raid@vger.kernel.org, linux-mmc@vger.kernel.org,
-        linux-mtd@lists.infradead.org, linux-nvme@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-scsi@vger.kernel.org,
-        target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
-        linux-nilfs@vger.kernel.org, ntfs3@lists.linux.dev,
-        ocfs2-devel@oss.oracle.com, linux-mm@kvack.org
-References: <20220406060516.409838-1-hch@lst.de>
- <20220406060516.409838-25-hch@lst.de>
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1B2B61EAC5
+        for <linux-btrfs@vger.kernel.org>; Thu,  7 Apr 2022 08:39:41 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id C13E01F85A;
+        Thu,  7 Apr 2022 15:39:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1649345979; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=0zryOdAOhXX+JSsIMiTAcfbYqiYW2F58vPtzR5jjMEE=;
+        b=lxhu1ZFGYS2LF8T6xvDWD89EPe40bWaJMp/JvwFnukuEYG6L1MSal1WjdO6HMyuDSpMPxB
+        K9HwusDpbiHM0ObZAVg1htvdBHzg7lfNbWy9DOyJ/MrDuYXlxLqC/XsIxPGJHAGpwfjZ7+
+        xvozVu0wgrzICmQMxYnPx5zAjtp7/AU=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9A22013A66;
+        Thu,  7 Apr 2022 15:39:39 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id qd/mI7sFT2LpdQAAMHmgww
+        (envelope-from <gniebler@suse.com>); Thu, 07 Apr 2022 15:39:39 +0000
+From:   Gabriel Niebler <gniebler@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     dsterba@suse.com, Gabriel Niebler <gniebler@suse.com>
+Subject: [PATCH 0/6] Turn delayed_nodes_tree into XArray and adjust usages
+Date:   Thu,  7 Apr 2022 17:38:48 +0200
+Message-Id: <20220407153855.21089-1-gniebler@suse.com>
+X-Mailer: git-send-email 2.35.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220406060516.409838-25-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 06, 2022 at 08:05:13AM +0200, Christoph Hellwig wrote:
-> Abstract away implementation details from file systems by providing a
-> block_device based helper to retreive the discard granularity.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  block/blk-lib.c                     |  5 ++---
->  drivers/block/drbd/drbd_nl.c        |  9 +++++----
->  drivers/block/drbd/drbd_receiver.c  |  3 +--
->  drivers/block/loop.c                |  2 +-
->  drivers/target/target_core_device.c |  3 +--
+XArrays offer a somewhat nicer API than radix trees and were implemented
+specifically to replace the latter. They utilize the exact same underlying
+data structure, but their API is notionally easier to use, as it provides
+array semantics to the user of radix trees. The higher level API also
+takes care of locking, adding even more ease of use.
 
-For
+The btrfs code uses radix trees directly in several places, such as for the
+`delayed_nodes_radix` member of the btrfs_root struct.
 
->  fs/btrfs/ioctl.c                    | 12 ++++--------
+This patchset converts `delayed_nodes_radix` into an XArray, renames it
+accordingly and adjusts all usages of this object to the XArray API.
+It survived a complete fstests run.
 
-Acked-by: David Sterba <dsterba@suse.com>
+Gabriel Niebler (6):
+  Turn delayed_nodes_tree into delayed_nodes_xarray in btrfs_root
+  btrfs_get_delayed_node: convert to using XArray API
+  btrfs_get_or_create_delayed_node: convert to using XArray API
+  __btrfs_release_delayed_node: convert to using XArray API
+  btrfs_kill_all_delayed_nodes: convert to using XArray API
+  __setup_root: convert to using XArray API for delayed_nodes_xarray
+
+ fs/btrfs/ctree.h         |  4 ++--
+ fs/btrfs/delayed-inode.c | 48 ++++++++++++++++++----------------------
+ fs/btrfs/disk-io.c       |  2 +-
+ fs/btrfs/inode.c         |  2 +-
+ 4 files changed, 26 insertions(+), 30 deletions(-)
+
+-- 
+2.35.1
+

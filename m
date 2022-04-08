@@ -2,129 +2,118 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E091C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Apr 2022 16:51:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1CC4C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri,  8 Apr 2022 16:51:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236937AbiDHQxB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 8 Apr 2022 12:53:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33354 "EHLO
+        id S236455AbiDHQxL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 8 Apr 2022 12:53:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34220 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238076AbiDHQw4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2022 12:52:56 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 24639B858
-        for <linux-btrfs@vger.kernel.org>; Fri,  8 Apr 2022 09:50:52 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id D7FE421602;
-        Fri,  8 Apr 2022 16:50:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649436650;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=AY0xuac9OP43lxO0c5s4GGBRf6L0cK5z4N3pxAqmxnw=;
-        b=UQFzSYSbLEOR9DmOs70j1jjJ6isJ7E0QNNUkuA0CAIH7tpjQKfcVBthU9ecQYd3j4VPhC+
-        BsFJY24iEGSWCuwzx/GO52DBmlEEErzRAOi9Bt6olawpxmIw3A3rfoiSh+k2DqpMVClALS
-        PZmwFYs5pzCRXXDaO53V/QbMJjwVMQc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649436650;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=AY0xuac9OP43lxO0c5s4GGBRf6L0cK5z4N3pxAqmxnw=;
-        b=XWT+dmbl5PY71zKADKaihFVfU4oXhyAl/0S1HSkp9ygo5FBhIVG+wiwRpmj27Ip5L01Nbp
-        vc9tIb7vvCcfN0DA==
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id CEEB4A3B82;
-        Fri,  8 Apr 2022 16:50:50 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 07CF5DA832; Fri,  8 Apr 2022 18:46:47 +0200 (CEST)
-Date:   Fri, 8 Apr 2022 18:46:47 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 05/16] btrfs: introduce btrfs_raid_bio::bio_sectors
-Message-ID: <20220408164647.GV15609@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1648807440.git.wqu@suse.com>
- <5737a015d302fb7cb3774deb3115f0e8a26258db.1648807440.git.wqu@suse.com>
+        with ESMTP id S234408AbiDHQxG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Apr 2022 12:53:06 -0400
+Received: from wp530.webpack.hosteurope.de (wp530.webpack.hosteurope.de [IPv6:2a01:488:42:1000:50ed:8234::])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4E97424F1F;
+        Fri,  8 Apr 2022 09:51:00 -0700 (PDT)
+Received: from ip4d144895.dynamic.kabel-deutschland.de ([77.20.72.149] helo=[192.168.66.200]); authenticated
+        by wp530.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
+        id 1ncrp0-0005Tj-A6; Fri, 08 Apr 2022 18:50:54 +0200
+Message-ID: <74e4cc73-f16d-3e79-9927-1de3beea4a11@leemhuis.info>
+Date:   Fri, 8 Apr 2022 18:50:53 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <5737a015d302fb7cb3774deb3115f0e8a26258db.1648807440.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.7.0
+Subject: Re: [regression] 5.15 kernel triggering 100x more inode evictions
+Content-Language: en-US
+To:     Filipe Manana <fdmanana@kernel.org>, dsterba@suse.cz,
+        Bruno Damasceno Freire <bdamasceno@hotmail.com.br>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "regressions@lists.linux.dev" <regressions@lists.linux.dev>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, fdmanana@suse.com
+References: <MN2PR20MB2512314446801B92562E26B5D2169@MN2PR20MB2512.namprd20.prod.outlook.com>
+ <07bb78be-1d58-7d88-288b-6516790f3b5d@leemhuis.info>
+ <MN2PR20MB251203B4B5445B4B0C4148C9D21D9@MN2PR20MB2512.namprd20.prod.outlook.com>
+ <35b62998-e386-2032-5a7a-07e3413b3bc1@leemhuis.info>
+ <MN2PR20MB251205164078C367C3FC4166D2E59@MN2PR20MB2512.namprd20.prod.outlook.com>
+ <9163b8a9-e852-5786-24fa-d324e3118890@leemhuis.info>
+ <20220408145222.GR15609@twin.jikos.cz> <YlBa/Rc0lvJCm5Rr@debian9.Home>
+From:   Thorsten Leemhuis <regressions@leemhuis.info>
+In-Reply-To: <YlBa/Rc0lvJCm5Rr@debian9.Home>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-bounce-key: webpack.hosteurope.de;regressions@leemhuis.info;1649436661;c6b98862;
+X-HE-SMSGID: 1ncrp0-0005Tj-A6
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 01, 2022 at 07:23:20PM +0800, Qu Wenruo wrote:
-> This new member is going to fully replace bio_pages in the future, but
-> for now let's keep them co-exist, until the full switch is done.
+First off: David, Filipe, many thx for your answers, that helped me a
+lot to get a better picture of the situation!
+
+On 08.04.22 17:55, Filipe Manana wrote:
+> On Fri, Apr 08, 2022 at 04:52:22PM +0200, David Sterba wrote:
+>> On Fri, Apr 08, 2022 at 12:32:20PM +0200, Thorsten Leemhuis wrote:
+>>> Hi, this is your Linux kernel regression tracker. Top-posting for once,
+>>> to make this easily accessible to everyone.
+>>>
+>>> Btrfs maintainers, what's up here? Yes, this regression report was a bit
+>>> confusing in the beginning, but Bruno worked on it. And apparently it's
+>>> already fixed in 5.16, but still in 5.15. Is this caused by a change
+>>> that is to big to backport or something?
+>>
+>> I haven't identified possible fixes in 5.16 so I can't tell how much
+>> backport efforts it could be. As the report is related to performance on
+>> package updates, my best guess is that the patches fixing it are those
+>> from Filipe related to fsync/logging, and there are several of such
+>> improvements in 5.16. Or something else that fixes it indirectly.
 > 
-> Currently cache_rbio_pages() and index_rbio_pages() will also populate
-> the new array.
+> So there's a lot of confusion in the thread,
+
+Yeah, definitely. That basically why I had hoped from a rough assessment
+from the btrfs maintainers.
+
+> and the original openSUSE 
+> bugzilla [1] is also a bit confusing and large to follow.
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/raid56.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++-
->  1 file changed, 53 insertions(+), 1 deletion(-)
+> Let me try to make it clear:
 > 
-> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> index 8cfe00db79c9..f23fd282d298 100644
-> --- a/fs/btrfs/raid56.c
-> +++ b/fs/btrfs/raid56.c
-> @@ -60,6 +60,7 @@ struct btrfs_stripe_hash_table {
->  struct sector_ptr {
->  	struct page *page;
->  	unsigned int pgoff;
-> +	unsigned int uptodate:1;
->  } __attribute__ ((__packed__));
+> 1) For some reason, outside btrfs' control, inode eviction is triggered
+>    a lot on 5.15 kernels in Bruno's test machine when doing package
+>    installations/updates with zypper.
 
-Even with packed this does not help as the full in is allocated for the
-single bit and it requires bit operations to set/clear. Up to 4 bools
-fit into one int and using them is better.
+So I assume there are no other reports like this? Great!
 
->  
->  enum btrfs_rbio_ops {
-> @@ -175,6 +176,9 @@ struct btrfs_raid_bio {
->  	 */
->  	struct page **stripe_pages;
->  
-> +	/* Pointers to the sectors in the bio_list, for faster lookup */
-> +	struct sector_ptr *bio_sectors;
-> +
->  	/* Pointers to the pages in the bio_list, for faster lookup */
->  	struct page **bio_pages;
->  
-> @@ -282,6 +286,24 @@ static void cache_rbio_pages(struct btrfs_raid_bio *rbio)
->  		copy_highpage(rbio->stripe_pages[i], rbio->bio_pages[i]);
->  		SetPageUptodate(rbio->stripe_pages[i]);
->  	}
-> +
-> +	/*
-> +	 * TODO: This work is duplicated with above loop, should remove above
+> [...]
 
-I think I told you several times, please don't write TODO notes. A plain
-comment explaining that the loop is duplicated is understandable by
-itself.
+> 6) In short, it is not known what causes the excessive evictions on 5.15
+>    on his machine for that specific workload - we don't have a commit to
+>    point at and say it caused a regression. [...]
 
-> +	 * loop when the switch is fully done.
-> +	 */
-> +	for (i = 0; i < rbio->nr_sectors; i++) {
-> +		/* Some range not covered by bio (partial write), skip it */
-> +		if (!rbio->bio_sectors[i].page)
-> +			continue;
-> +
-> +		ASSERT(rbio->stripe_sectors[i].page);
-> +		memcpy_page(rbio->stripe_sectors[i].page,
-> +			    rbio->stripe_sectors[i].pgoff,
-> +			    rbio->bio_sectors[i].page,
-> +			    rbio->bio_sectors[i].pgoff,
-> +			    rbio->bioc->fs_info->sectorsize);
-> +		rbio->stripe_sectors[i].uptodate = 1;
-> +	}
->  	set_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
->  }
->  
+Bruno, under these circumstances I'd say you need to bisect this to get
+us closer to the root of the problem (and a fix for it). Sadly that how
+it is sometimes, as briefly explained here:
+
+https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/tree/Documentation/admin-guide/reporting-regressions.rst#n140
+
+> This thread is also basically a revamp of an older thread [3].
+> 
+> [1] https://bugzilla.opensuse.org/show_bug.cgi?id=1193549
+> [2] https://lore.kernel.org/linux-btrfs/cover.1642676248.git.fdmanana@suse.com/
+> [3] https://lore.kernel.org/linux-fsdevel/MN2PR20MB251235DDB741CD46A9DD5FAAD24E9@MN2PR20MB2512.namprd20.prod.outlook.com/
+
+Yeah, but it was this thread that made me aware of the issue -- and just
+like [3] it didn't get a single reply from a btrfs maintainer, so I had
+to assume the report was ignored. A quick "we have no idea what my cause
+this issue and it's the only report with such symptoms so far; could you
+please bisect" would have made me happy already. :-D
+
+Ciao, Thorsten (wearing his 'the Linux kernel's regression tracker' hat)
+
+P.S.: As the Linux kernel's regression tracker I'm getting a lot of
+reports on my table. I can only look briefly into most of them and lack
+knowledge about most of the areas they concern. I thus unfortunately
+will sometimes get things wrong or miss something important. I hope
+that's not the case here; if you think it is, don't hesitate to tell me
+in a public reply, it's in everyone's interest to set the public record
+straight.

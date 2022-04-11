@@ -2,113 +2,80 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70D7FC433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Apr 2022 14:51:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B7CDC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Apr 2022 15:06:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347504AbiDKOxP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Apr 2022 10:53:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51426 "EHLO
+        id S1347503AbiDKPIP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Apr 2022 11:08:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59536 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1347537AbiDKOwh (ORCPT
+        with ESMTP id S242472AbiDKPIN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Apr 2022 10:52:37 -0400
+        Mon, 11 Apr 2022 11:08:13 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 636BE1A381
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2022 07:50:23 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8922F25C76
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Apr 2022 08:05:55 -0700 (PDT)
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id D41551F38D;
-        Mon, 11 Apr 2022 14:50:21 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id C34391F38D;
+        Mon, 11 Apr 2022 15:05:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649688621;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
+        t=1649689553;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=agAVKMToum/D49Pkc7aXJYB+WTTSIWEWJNLgA/M66eU=;
-        b=QKYiFACLwNvkWD7HPHuwSa1wnMOSbGQg0cpVMgGHpPet1JtNBTioDjBgHzZJAKVBH1x6Lh
-        3F+DcL6rMn+eJGyt6usoU72DxIZuYeEVze9lusakH/KjAscURV/2AaSkNN8+djwhiX5yrh
-        aLbl8XM+n7I7b6iphlQsAQ/020qkNo8=
+        bh=OJPk5RuZ9shOXGxCCb5S9E0uJryZGr0hJTgTAn4ZY3Q=;
+        b=ogGT35pEVU56VfPqGSq/OjP3JNdiLILtFJ24kT5EkxflS7jNpe6Do0xOa1V+mDu57a+QYN
+        G+mOTxzrt+K+zcV4WL997lPMNQZ6q/NieqDcFr9qApf7qu3xDvzl9RPpS9rjihYyzLMGck
+        8cY7UKPZYg01VzJv+ghoNG/2ssYOMmQ=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649688621;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
+        s=susede2_ed25519; t=1649689553;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=agAVKMToum/D49Pkc7aXJYB+WTTSIWEWJNLgA/M66eU=;
-        b=Z/VCjOXSIzbClMnxzbgWZ6qXQ2BEmRNlpDOEWK1kx7dgcLb0yVUJVU/i4jgua0/YxbmHsi
-        FVvzYH++N9tWQ4CA==
+        bh=OJPk5RuZ9shOXGxCCb5S9E0uJryZGr0hJTgTAn4ZY3Q=;
+        b=YkhIp8+IpMRt21Rb6wIWNy+qH/z5k4XhRczx+YmAjA/0tkQH6hdjr2JaJs1qvBhws0GbP4
+        ZR3dr+eIWa6DkyDw==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id CB240A3B83;
-        Mon, 11 Apr 2022 14:50:21 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id BB0CAA3B82;
+        Mon, 11 Apr 2022 15:05:53 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 627A7DA7DA; Mon, 11 Apr 2022 16:46:17 +0200 (CEST)
-Date:   Mon, 11 Apr 2022 16:46:17 +0200
+        id 5D03DDA7F7; Mon, 11 Apr 2022 17:01:49 +0200 (CEST)
+Date:   Mon, 11 Apr 2022 17:01:49 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 07/16] btrfs: make finish_parity_scrub() subpage
- compatible
-Message-ID: <20220411144617.GO15609@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/8] btrfs-progs: add RAID56 rebuild ability at read time
+Message-ID: <20220411150149.GP15609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1648807440.git.wqu@suse.com>
- <d0a5f106303ee83daba01f65d6671b011791289a.1648807440.git.wqu@suse.com>
- <20220408170434.GX15609@twin.jikos.cz>
- <3ecd3692-4974-8dcb-e678-7ff45fd3438a@gmx.com>
- <20220411143620.GN15609@twin.jikos.cz>
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1649162174.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220411143620.GN15609@twin.jikos.cz>
+In-Reply-To: <cover.1649162174.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 11, 2022 at 04:36:20PM +0200, David Sterba wrote:
-> On Sat, Apr 09, 2022 at 06:59:37AM +0800, Qu Wenruo wrote:
-> > 
-> > 
-> > On 2022/4/9 01:04, David Sterba wrote:
-> > > On Fri, Apr 01, 2022 at 07:23:22PM +0800, Qu Wenruo wrote:
-> > >> The core is to convert direct page usage into sector_ptr usage, and
-> > >> use memcpy() to replace copy_page().
-> > >>
-> > >> For pointers usage, we need to convert it to kmap_local_page() +
-> > >> sector->pgoff.
-> > >>
-> > >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> > >> ---
-> > >>   fs/btrfs/raid56.c | 56 +++++++++++++++++++++++++++--------------------
-> > >>   1 file changed, 32 insertions(+), 24 deletions(-)
-> > >>
-> > >> diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-> > >> index 07d0b26024dd..bd01e64ea4fc 100644
-> > >> --- a/fs/btrfs/raid56.c
-> > >> +++ b/fs/btrfs/raid56.c
-> > >> @@ -2492,14 +2492,15 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
-> > >>   					 int need_check)
-> > >>   {
-> > >>   	struct btrfs_io_context *bioc = rbio->bioc;
-> > >> +	const u32 sectorsize = bioc->fs_info->sectorsize;
-> > >>   	void **pointers = rbio->finish_pointers;
-> > >>   	unsigned long *pbitmap = rbio->finish_pbitmap;
-> > >>   	int nr_data = rbio->nr_data;
-> > >>   	int stripe;
-> > >>   	int sectornr;
-> > >>   	bool has_qstripe;
-> > >> -	struct page *p_page = NULL;
-> > >> -	struct page *q_page = NULL;
-> > >> +	struct sector_ptr p_sector = {};
-> > >> +	struct sector_ptr q_sector = {};
-> > >
-> > > This should be { 0 }
-> > 
-> > That's not what you said before.
-> > 
-> > You said that { 0 } conversion is not going to be merged and {} is fine.
-> 
-> Let me check, I could have misremembered that.
+On Tue, Apr 05, 2022 at 08:48:22PM +0800, Qu Wenruo wrote:
+> This branch can be fetched from github:
+> https://github.com/adam900710/btrfs-progs/tree/raid56_rebuild
 
-Nope, { 0 } it is
+The mkfs tests fail in 001 with the following last command:
 
-https://lore.kernel.org/all/9292fc4a-9c6e-8e28-8203-f70118e9ee20@gmx.com/
+====== RUN CHECK root_helper .../mkfs.btrfs -f -d raid5 -m raid5 /dev/loop0 /dev/loop1 /dev/loop2 /dev/loop3
+WARNING: RAID5/6 support has known problems is strongly discouraged
+         to be used besides testing or evaluation.
+
+kernel-shared/transaction.c:155: __commit_transaction: BUG_ON `ret` triggered, value 65536
+.../mkfs.btrfs(__commit_transaction+0x197)[0x43a107]
+/...mkfs.btrfs(btrfs_commit_transaction+0x13b)[0x43a26b]
+/...mkfs.btrfs(main+0x174b)[0x40f68d]
+/lib64/libc.so.6(+0x2d540)[0x7f969b5ea540]
+/lib64/libc.so.6(__libc_start_main+0x7c)[0x7f969b5ea5ec]
+/...mkfs.btrfs(_start+0x25)[0x40d965]
+/...tests/common: line 540: 29172 Aborted                 sudo -n "$@"
+failed: root_helper .../mkfs.btrfs -f -d raid5 -m raid5 /dev/loop0 /dev/loop1 /dev/loop2 /dev/loop3
+test failed for case 001-basic-profiles

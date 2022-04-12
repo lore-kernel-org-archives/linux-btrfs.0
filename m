@@ -2,84 +2,140 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC8E5C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Apr 2022 19:53:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC27BC433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Apr 2022 23:15:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230482AbiDLTzW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Apr 2022 15:55:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42162 "EHLO
+        id S229505AbiDLXSH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Apr 2022 19:18:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49972 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231463AbiDLTzF (ORCPT
+        with ESMTP id S229470AbiDLXSA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Apr 2022 15:55:05 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD1A26EB1C
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 12:47:56 -0700 (PDT)
+        Tue, 12 Apr 2022 19:18:00 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6037D223BE5
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 15:04:26 -0700 (PDT)
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 66E271F856;
-        Tue, 12 Apr 2022 19:47:55 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTP id EA94A2112B;
+        Tue, 12 Apr 2022 20:46:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649792875;
+        t=1649796392;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=yU4r5yHt8+mZLx2OfR+5TudxS2sV5raca2xBMiF+OxY=;
-        b=y9vCGyrGdmpzewwa/dBrQYtshcNUUmEv4LklK7qat3y8M9hBMn17xEmaURCUggKtYTAEWW
-        U1ea/KSVec/1WvrCaCkWp6dwJ6n1B0q+DJ4GYIxL8Xj0gZ9bG0T5LWle5008nRXQdFeGcV
-        PMsiBQ46DLvTX05l5SfgU15zSWzdonE=
+        bh=YIVSvtt6H1jOaR0Z7YawJvNY9d2jjHFLhVX+UW1rnmY=;
+        b=aDcVF2hNKQMTaUeqXJyIPVDKnbUMSssYT2sxLB1yK6RUuVJStUUUoWl7k2Eg3xQpBoisv7
+        IJvV0OWB5BFUTl4IuB+z04nUc64GIqgWurKt0yzSyii/5FnrCF1yCJl4EZaBa/9fXq23LJ
+        8zYpcqP+DGIS907HMb3lZn9PIoCv4xw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649792875;
+        s=susede2_ed25519; t=1649796392;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=yU4r5yHt8+mZLx2OfR+5TudxS2sV5raca2xBMiF+OxY=;
-        b=wSkCXw+ajCw8Yf9b61pYpNiDm9S0u9TL+7aC1ihR3/fSioJI56kClgUuZ9qWcDV8By9IAN
-        QgXMp4AZglWVzaBQ==
+        bh=YIVSvtt6H1jOaR0Z7YawJvNY9d2jjHFLhVX+UW1rnmY=;
+        b=kzeQhE2AfcvO6l57GcP1N4CmTzB85kvW8/CvnUxjnoqAUPBZ7hphlN8wxt5EEbozkjfBII
+        xTteoVvW60zRfmBg==
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 2B05FA3B87;
-        Tue, 12 Apr 2022 19:47:55 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id E21FAA3B82;
+        Tue, 12 Apr 2022 20:46:32 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 28E37DA7B0; Tue, 12 Apr 2022 21:43:50 +0200 (CEST)
-Date:   Tue, 12 Apr 2022 21:43:50 +0200
+        id EA531DA7B0; Tue, 12 Apr 2022 22:42:27 +0200 (CEST)
+Date:   Tue, 12 Apr 2022 22:42:27 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: fixes for handling of split direct I/O bios
-Message-ID: <20220412194349.GZ15609@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/3] btrfs: vairous bug fixes related to generic/475
+ failure with subpage cases
+Message-ID: <20220412204227.GB15609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
-        Qu Wenruo <wqu@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>,
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <20220324160628.1572613-1-hch@lst.de>
+References: <cover.1649766550.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220324160628.1572613-1-hch@lst.de>
+In-Reply-To: <cover.1649766550.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 24, 2022 at 05:06:26PM +0100, Christoph Hellwig wrote:
-> Hi all,
+On Tue, Apr 12, 2022 at 08:30:12PM +0800, Qu Wenruo wrote:
+> [CHANGELOG]
+> v2:
+> - Make submit_one_bio() to return void just in the same patch
 > 
-> this series fixes two problems in the direct I/O code where the
-> file_offset field in the dio_private structure is used in a context where
-> we really need the file_offset for the given low-level bios and not for
-> the bio submitted by the iomap direct I/O as recorded in the dio_private
-> structure.  To do so we need a new file_offset in the btrfs_dio
-> structure.
+> - Update the commit message the for 2nd patch
+>   To mention remaining error path (which is not really possible to
+>   trigger), to prove the first patch is already fixing all involved
+>   error paths.
 > 
-> Found by code inspection as part of my bio cleanups.
+> [DESCRIPTION]
+> When testing my subpage raid56 support, generic/475 is always hanging
+> with some data page unable to be unlocked.
 > 
-> Diffstat:
->  extent_io.c |    1 +
->  inode.c     |   18 ++++++++----------
->  volumes.h   |    3 +++
->  3 files changed, 12 insertions(+), 10 deletions(-)
+> It turns out that, the hang is not related to the raid56 subpage
+> support (obviously, as the test case is not utilizing RAID56 at all),
+> but a recent commit 1784b7d502a9 ("btrfs: handle csum lookup errors
+> properly on reads") introduced a new error path, and it caught us by
+> surprise.
+> 
+> The new error path is from btrfs_lookup_bio_sums(), which can now return
+> error if the csum search failed.
+> 
+> This new error path exposed several problems:
+> 
+> - Double cleanup for submit_one_bio() and its callers
+>   Bio submission hooks, btrfs_submit_data_bio() and
+>   btrfs_submit_metadata_bio() will call endio to cleanup on errors.
+> 
+>   But those bio submission hooks will also return error, and
+>   finally callers of submit_extent_page() will also try to do
+>   cleanup.
+> 
+>   This will be fixed by the first patch, by always returning 0 for
+>   submit_one_bio().
+>   This fix is kept as minimal as possible, to make backport easier.
+>   The proper conversion to return void will be done in the last patch.
+> 
+> - btrfs_do_readpage() can leave page locked on error
+>   If submit_extent_page() failed in btrfs_do_readpage(), we only
+>   cleanup the current range, and leaving the remaining subpage
+>   range locked.
+> 
+>   This bug is subpage specific, and will not affect regular cases.
+> 
+>   Fix it by cleaning up all the remaining subpage range before
+>   exiting.
+> 
+> - __extent_writepage_io() can return 0 even it hit some error
+>   Although we continue writing the remaining ranges, we didn't save
+>   the first error, causing @ret to be overwritten.
+>  
+>   This bug is subpage specific, as for regular cases we only have one
+>   sector inside the page.
+> 
+>   Fix it by introducing @has_error and @saved_ret.
+> 
+> I manually checked all other submit_extent_page() callers, they all
+> look fine and won't cause problems like the above.
+> 
+> Finally since submit_one_bio() will always return 0, the final patch
+> will make it return void, which greatly makes our code cleaner.
+> 
+> But that patch is introducing quite some modifications, not a candidate
+> for backport, unlike the first 3 patches.
+> 
+> Special thanks to Josef, as my initial bisection points to his patch and
+> I have no clue why it can cause problems at all.
+> His hints immediately solved all my questions, and lead to this
+> patchset.
+> 
+> 
+> Qu Wenruo (3):
+>   btrfs: avoid double clean up when submit_one_bio() failed
+>   btrfs: fix the error handling for submit_extent_page() for
+>     btrfs_do_readpage()
+>   btrfs: return correct error number for __extent_writepage_io()
 
-Added to to misc-next, thanks.
+Added as topic branch to for-next, thanks.

@@ -2,121 +2,137 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7758CC433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Apr 2022 12:56:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3261DC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Apr 2022 12:57:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351056AbiDLM7K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Apr 2022 08:59:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54064 "EHLO
+        id S1354758AbiDLM7O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Apr 2022 08:59:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54062 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243212AbiDLM4x (ORCPT
+        with ESMTP id S1351355AbiDLM4r (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Apr 2022 08:56:53 -0400
+        Tue, 12 Apr 2022 08:56:47 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E2D14C40D;
-        Tue, 12 Apr 2022 05:30:41 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E918B4B1EB
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 05:30:37 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 1680D1F38D;
-        Tue, 12 Apr 2022 12:30:40 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 916B61F38D
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 12:30:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1649766640; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=c909N8p9UDZ33r4cAGkIE34NqG09qoEJymolpr9qQDo=;
-        b=iCk3BcAXAL5K/Ip/ntu4ly/nDOCyeosj7r+5AzzJ3jFt4PWE4OthLdJ0JI5ZYRJeM71Yev
-        x7mtQHxDBVAJ8EocQ5bj0RPDkjrg0bui0OO+d9vkeQIQ4dxbi03GNgSUeXBTLp2vi5UpO6
-        32DDHMareTkaP/XfD/B23b8tfXpp5bo=
+        t=1649766636; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=/+CmOP2Ukl2NSSggFfi8hXlLM9Sq9HvLb3IefjtoNLQ=;
+        b=WavPmeAKzb9v2dXnq2QqA/8u4tCKywCCSAS49yhR614PqAWCYz/tvo4hU/NT6Mpe3iKMnY
+        uWr/AGDzqKSXUKCQa+gf6+yuMktNvxjf0NZfjBKXZAH5RsKVtVdJIGod06WrV6d63WrCFu
+        yqbO3OGohI/6Kc/EoDNQgInF2iLkjKM=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0A51513A99;
-        Tue, 12 Apr 2022 12:30:38 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 574A813A99
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 12:30:35 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id UGiBL+5wVWKBewAAMHmgww
-        (envelope-from <wqu@suse.com>); Tue, 12 Apr 2022 12:30:38 +0000
+        id +gmmButwVWKBewAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 12:30:35 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     stable@vger.kernel.org
-Subject: [PATCH v2 2/3] btrfs: fix the error handling for submit_extent_page() for btrfs_do_readpage()
-Date:   Tue, 12 Apr 2022 20:30:14 +0800
-Message-Id: <42552ddb69ec873472fc38bf516bcd10ca2e6869.1649766550.git.wqu@suse.com>
+Subject: [PATCH v2 0/3] btrfs: vairous bug fixes related to generic/475 failure with subpage cases
+Date:   Tue, 12 Apr 2022 20:30:12 +0800
+Message-Id: <cover.1649766550.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1649766550.git.wqu@suse.com>
-References: <cover.1649766550.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Test case generic/475 have a very high chance (almost 100%) to hit a fs
-hang, where a data page will never be unlocked and hang all later
-operations.
+[CHANGELOG]
+v2:
+- Make submit_one_bio() to return void just in the same patch
 
-[CAUSE]
-In btrfs_do_readpage(), if we hit an error from submit_extent_page() we
-will try to do the cleanup for our current io range, and exit.
+- Update the commit message the for 2nd patch
+  To mention remaining error path (which is not really possible to
+  trigger), to prove the first patch is already fixing all involved
+  error paths.
 
-This works fine for PAGE_SIZE == sectorsize cases, but not for subpage.
+[DESCRIPTION]
+When testing my subpage raid56 support, generic/475 is always hanging
+with some data page unable to be unlocked.
 
-For subpage btrfs_do_readpage() will lock the full page first, which can
-contain several different sectors and extents:
+It turns out that, the hang is not related to the raid56 subpage
+support (obviously, as the test case is not utilizing RAID56 at all),
+but a recent commit 1784b7d502a9 ("btrfs: handle csum lookup errors
+properly on reads") introduced a new error path, and it caught us by
+surprise.
 
- btrfs_do_readpage()
- |- begin_page_read()
- |  |- btrfs_subpage_start_reader();
- |     Now the page will hage PAGE_SIZE / sectorsize reader pending,
- |     and the page is locked.
- |
- |- end_page_read() for different branches
- |  This function will reduce subpage readers, and when readers
- |  reach 0, it will unlock the page.
+The new error path is from btrfs_lookup_bio_sums(), which can now return
+error if the csum search failed.
 
-But when submit_extent_page() failed, we only cleanup the current
-io range, while the remaining io range will never be cleaned up, and the
-page remains locked forever.
+This new error path exposed several problems:
 
-[FIX]
-Update the error handling of submit_extent_page() to cleanup all the
-remaining subpage range before exiting the loop.
+- Double cleanup for submit_one_bio() and its callers
+  Bio submission hooks, btrfs_submit_data_bio() and
+  btrfs_submit_metadata_bio() will call endio to cleanup on errors.
 
-Please note that, now submit_extent_page() can only fail due to
-sanity check in alloc_new_bio().
+  But those bio submission hooks will also return error, and
+  finally callers of submit_extent_page() will also try to do
+  cleanup.
 
-Thus regular IO errors are impossible to trigger the error path.
+  This will be fixed by the first patch, by always returning 0 for
+  submit_one_bio().
+  This fix is kept as minimal as possible, to make backport easier.
+  The proper conversion to return void will be done in the last patch.
 
-CC: stable@vger.kernel.org # 5.15+
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/extent_io.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+- btrfs_do_readpage() can leave page locked on error
+  If submit_extent_page() failed in btrfs_do_readpage(), we only
+  cleanup the current range, and leaving the remaining subpage
+  range locked.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 163aa6dee987..990d8475ba31 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3774,8 +3774,12 @@ int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
- 					 this_bio_flag,
- 					 force_bio_submit);
- 		if (ret) {
--			unlock_extent(tree, cur, cur + iosize - 1);
--			end_page_read(page, false, cur, iosize);
-+			/*
-+			 * We have to unlock the remaining range, or the page
-+			 * will never be unlocked.
-+			 */
-+			unlock_extent(tree, cur, end);
-+			end_page_read(page, false, cur, end + 1 - cur);
- 			goto out;
- 		}
- 		cur = cur + iosize;
+  This bug is subpage specific, and will not affect regular cases.
+
+  Fix it by cleaning up all the remaining subpage range before
+  exiting.
+
+- __extent_writepage_io() can return 0 even it hit some error
+  Although we continue writing the remaining ranges, we didn't save
+  the first error, causing @ret to be overwritten.
+ 
+  This bug is subpage specific, as for regular cases we only have one
+  sector inside the page.
+
+  Fix it by introducing @has_error and @saved_ret.
+
+I manually checked all other submit_extent_page() callers, they all
+look fine and won't cause problems like the above.
+
+Finally since submit_one_bio() will always return 0, the final patch
+will make it return void, which greatly makes our code cleaner.
+
+But that patch is introducing quite some modifications, not a candidate
+for backport, unlike the first 3 patches.
+
+Special thanks to Josef, as my initial bisection points to his patch and
+I have no clue why it can cause problems at all.
+His hints immediately solved all my questions, and lead to this
+patchset.
+
+
+Qu Wenruo (3):
+  btrfs: avoid double clean up when submit_one_bio() failed
+  btrfs: fix the error handling for submit_extent_page() for
+    btrfs_do_readpage()
+  btrfs: return correct error number for __extent_writepage_io()
+
+ fs/btrfs/extent_io.c | 135 ++++++++++++++++++-------------------------
+ fs/btrfs/extent_io.h |   3 +-
+ fs/btrfs/inode.c     |  13 ++---
+ 3 files changed, 62 insertions(+), 89 deletions(-)
+
 -- 
 2.35.1
 

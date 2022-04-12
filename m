@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4748C4707F
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E49C3C47080
 	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Apr 2022 10:36:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353395AbiDLKic (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Apr 2022 06:38:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55614 "EHLO
+        id S1353938AbiDLKie (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Apr 2022 06:38:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57850 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354234AbiDLKdi (ORCPT
+        with ESMTP id S1354535AbiDLKdl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Apr 2022 06:33:38 -0400
+        Tue, 12 Apr 2022 06:33:41 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 99E8C5B3E0
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 02:33:28 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 444B85643E
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 02:33:43 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5625D210EC
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 09:33:27 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 01C4A21608
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 09:33:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1649756007; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1649756022; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=WrXXpqDr4JlWHviYSnMPVtPDf1ooz09D4AaPd8hs6xg=;
-        b=At7BJmTZcml3fNYDXaa1XcmiXg6VxmaebzilpK+ChGcK7thScSs9zb8Qx1GVgYlz+XKxp1
-        o8L4Zg+j0AjV4tv3ycaM0KwhvrUBVRJknm0VsYFln43HsRGeSG0uUZngYq4XXKEtTBNbLn
-        5CPRssiYq7MwRuyNgmm05Th4FWGnKXA=
+        bh=rXWvSxUUm9oXDIpljbPrcYj/ac8pdBPkaz35zqdU1Ao=;
+        b=ISiRyiRYlLqAS85GRs8X7G6eeVsZdwXUe2SuGL5pEvo5y79CVN8r+2l9q3Ix41dpD2J+y0
+        iovzjBgGC8KAR4PniA4foGOXcyy31vMZEZYO34ttixB+fwix1FrcEh1I4H8qnEiA559ia6
+        mMpZZudKeBGhm+cy2sy3sUExx0cmcN8=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9FD3013A99
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 09:33:26 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4F03013A99
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 09:33:41 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id IAuEGWZHVWI8LwAAMHmgww
+        id sFnrBXVHVWI8LwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 09:33:26 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Apr 2022 09:33:41 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 01/17] btrfs: reduce width for stripe_len from u64 to u32
-Date:   Tue, 12 Apr 2022 17:32:51 +0800
-Message-Id: <bbb4daa6c6e5579aa240e5865d0907f2bf997a7e.1649753690.git.wqu@suse.com>
+Subject: [PATCH v2 14/17] btrfs: make set_bio_pages_uptodate() subpage compatible
+Date:   Tue, 12 Apr 2022 17:33:04 +0800
+Message-Id: <c83a07af72d774e9d08e8c5e1f9f7c981c168cb4.1649753690.git.wqu@suse.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1649753690.git.wqu@suse.com>
 References: <cover.1649753690.git.wqu@suse.com>
@@ -55,190 +55,107 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs uses fixed stripe length (64K), thus u32 is wide enough
-for the usage.
+Unlike previous code, we can not directly set PageUptodate for stripe
+pages now.
 
-Furthermore, even in the future we choose to enlarge stripe length to
-larger values, I don't believe we would want stripe as large as 4G or
-larger.
+Instead we have to iterate through all the sectors and set
+SECTOR_UPTODATE flag there.
 
-So this patch will reduce the width for all in-memory structures and
-parameters, this involves:
-
-- RAID56 related function argument lists
-  This allows us to do direct division related to stripe_len.
-  Although we will use bits shift to replace the division anyway.
-
-- btrfs_io_geometry structure
-  This involves one change to simplify the calculation of both @stripe_nr
-  and @stripe_offset, using div64_u64_rem().
-  And add extra sanity check to make sure @stripe_offset is always small
-  enough for u32.
-
-  This saves 8 bytes for the structure.
-
-- map_lookup structure
-  This convert @stripe_len to u32, which saves 8 bytes. (saved 4 bytes,
-  and removed a 4-bytes hole)
+Thus this patch introduced a new helper, find_stripe_sector(), to do the
+work.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c  | 15 ++++++++-------
- fs/btrfs/raid56.h  |  6 +++---
- fs/btrfs/volumes.c | 20 +++++++-------------
- fs/btrfs/volumes.h |  8 ++++----
- 4 files changed, 22 insertions(+), 27 deletions(-)
+ fs/btrfs/raid56.c | 45 +++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 39 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 79438cdd604e..daffa3076325 100644
+index af8ba1aff682..8de5294de7a5 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -949,9 +949,10 @@ static struct page *page_in_rbio(struct btrfs_raid_bio *rbio,
-  * number of pages we need for the entire stripe across all the
-  * drives
+@@ -1491,19 +1491,52 @@ static int fail_bio_stripe(struct btrfs_raid_bio *rbio,
+ 	return fail_rbio_index(rbio, failed);
+ }
+ 
++/*
++ * For subpage case, we can no longer set page Uptodate directly for
++ * stripe_pages[], thus we need to locate the sector.
++ */
++static struct sector_ptr *find_stripe_sector(struct btrfs_raid_bio *rbio,
++					     struct page *page,
++					     unsigned int pgoff)
++{
++	int i;
++
++	for (i = 0; i < rbio->nr_sectors; i++) {
++		struct sector_ptr *sector = &rbio->stripe_sectors[i];
++
++		if (sector->page == page && sector->pgoff == pgoff)
++			return sector;
++	}
++	return NULL;
++}
++
+ /*
+  * this sets each page in the bio uptodate.  It should only be used on private
+  * rbio pages, nothing that comes in from the higher layers
   */
--static unsigned long rbio_nr_pages(unsigned long stripe_len, int nr_stripes)
-+static unsigned long rbio_nr_pages(u32 stripe_len, int nr_stripes)
+-static void set_bio_pages_uptodate(struct bio *bio)
++static void set_bio_pages_uptodate(struct btrfs_raid_bio *rbio,
++				   struct bio *bio)
  {
--	return DIV_ROUND_UP(stripe_len, PAGE_SIZE) * nr_stripes;
-+	ASSERT(IS_ALIGNED(stripe_len, PAGE_SIZE));
-+	return (stripe_len >> PAGE_SHIFT) * nr_stripes;
++	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
+ 	struct bio_vec *bvec;
+ 	struct bvec_iter_all iter_all;
+ 
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+ 
+-	bio_for_each_segment_all(bvec, bio, iter_all)
+-		SetPageUptodate(bvec->bv_page);
++	bio_for_each_segment_all(bvec, bio, iter_all) {
++		struct sector_ptr *sector;
++		int pgoff;
++
++		for (pgoff = bvec->bv_offset;
++		     pgoff - bvec->bv_offset < bvec->bv_len;
++		     pgoff += sectorsize) {
++			sector = find_stripe_sector(rbio, bvec->bv_page, pgoff);
++			ASSERT(sector);
++			if (sector)
++				sector->uptodate = 1;
++		}
++
++	}
  }
  
  /*
-@@ -960,13 +961,13 @@ static unsigned long rbio_nr_pages(unsigned long stripe_len, int nr_stripes)
-  */
- static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
- 					 struct btrfs_io_context *bioc,
--					 u64 stripe_len)
-+					 u32 stripe_len)
- {
- 	struct btrfs_raid_bio *rbio;
- 	int nr_data = 0;
- 	int real_stripes = bioc->num_stripes - bioc->num_tgtdevs;
- 	int num_pages = rbio_nr_pages(stripe_len, real_stripes);
--	int stripe_npages = DIV_ROUND_UP(stripe_len, PAGE_SIZE);
-+	int stripe_npages = stripe_len >> PAGE_SHIFT;
- 	void *p;
+@@ -1521,7 +1554,7 @@ static void raid_rmw_end_io(struct bio *bio)
+ 	if (bio->bi_status)
+ 		fail_bio_stripe(rbio, bio);
+ 	else
+-		set_bio_pages_uptodate(bio);
++		set_bio_pages_uptodate(rbio, bio);
  
- 	rbio = kzalloc(sizeof(*rbio) +
-@@ -1692,7 +1693,7 @@ static void btrfs_raid_unplug(struct blk_plug_cb *cb, bool from_schedule)
-  * our main entry point for writes from the rest of the FS.
-  */
- int raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc,
--			u64 stripe_len)
-+			u32 stripe_len)
- {
- 	struct btrfs_fs_info *fs_info = bioc->fs_info;
- 	struct btrfs_raid_bio *rbio;
-@@ -2089,7 +2090,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
-  * of the drive.
-  */
- int raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
--			  u64 stripe_len, int mirror_num, int generic_io)
-+			  u32 stripe_len, int mirror_num, int generic_io)
- {
- 	struct btrfs_fs_info *fs_info = bioc->fs_info;
- 	struct btrfs_raid_bio *rbio;
-@@ -2195,7 +2196,7 @@ static void read_rebuild_work(struct btrfs_work *work)
+ 	bio_put(bio);
  
- struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 				struct btrfs_io_context *bioc,
--				u64 stripe_len, struct btrfs_device *scrub_dev,
-+				u32 stripe_len, struct btrfs_device *scrub_dev,
- 				unsigned long *dbitmap, int stripe_nsectors)
- {
- 	struct btrfs_fs_info *fs_info = bioc->fs_info;
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 72c00fc284b5..fb35ae157b02 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -31,15 +31,15 @@ struct btrfs_raid_bio;
- struct btrfs_device;
+@@ -2079,7 +2112,7 @@ static void raid_recover_end_io(struct bio *bio)
+ 	if (bio->bi_status)
+ 		fail_bio_stripe(rbio, bio);
+ 	else
+-		set_bio_pages_uptodate(bio);
++		set_bio_pages_uptodate(rbio, bio);
+ 	bio_put(bio);
  
- int raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
--			  u64 stripe_len, int mirror_num, int generic_io);
-+			  u32 stripe_len, int mirror_num, int generic_io);
- int raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc,
--			u64 stripe_len);
-+			u32 stripe_len);
+ 	if (!atomic_dec_and_test(&rbio->stripes_pending))
+@@ -2637,7 +2670,7 @@ static void raid56_parity_scrub_end_io(struct bio *bio)
+ 	if (bio->bi_status)
+ 		fail_bio_stripe(rbio, bio);
+ 	else
+-		set_bio_pages_uptodate(bio);
++		set_bio_pages_uptodate(rbio, bio);
  
- void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
- 			    u64 logical);
+ 	bio_put(bio);
  
- struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
--				struct btrfs_io_context *bioc, u64 stripe_len,
-+				struct btrfs_io_context *bioc, u32 stripe_len,
- 				struct btrfs_device *scrub_dev,
- 				unsigned long *dbitmap, int stripe_nsectors);
- void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2368a2ffbee7..93072a090fdd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6313,7 +6313,7 @@ int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, struct extent_map *em,
- 	u64 offset;
- 	u64 stripe_offset;
- 	u64 stripe_nr;
--	u64 stripe_len;
-+	u32 stripe_len;
- 	u64 raid56_full_stripe_start = (u64)-1;
- 	int data_stripes;
- 
-@@ -6324,19 +6324,13 @@ int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, struct extent_map *em,
- 	offset = logical - em->start;
- 	/* Len of a stripe in a chunk */
- 	stripe_len = map->stripe_len;
--	/* Stripe where this block falls in */
--	stripe_nr = div64_u64(offset, stripe_len);
--	/* Offset of stripe in the chunk */
--	stripe_offset = stripe_nr * stripe_len;
--	if (offset < stripe_offset) {
--		btrfs_crit(fs_info,
--"stripe math has gone wrong, stripe_offset=%llu offset=%llu start=%llu logical=%llu stripe_len=%llu",
--			stripe_offset, offset, em->start, logical, stripe_len);
--		return -EINVAL;
--	}
-+	/*
-+	 * Stripe_nr is where this block falls in
-+	 * stripe_offset is the offset of this block in its stripe.
-+	 */
-+	stripe_nr = div64_u64_rem(offset, stripe_len, &stripe_offset);
-+	ASSERT(stripe_offset < U32_MAX);
- 
--	/* stripe_offset is the offset of this block in its stripe */
--	stripe_offset = offset - stripe_offset;
- 	data_stripes = nr_data_stripes(map);
- 
- 	/* Only stripe based profiles needs to check against stripe length. */
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index bd297f23d19e..0332a0a25483 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -23,11 +23,11 @@ struct btrfs_io_geometry {
- 	/* offset of logical address in chunk */
- 	u64 offset;
- 	/* length of single IO stripe */
--	u64 stripe_len;
-+	u32 stripe_len;
-+	/* offset of address in stripe */
-+	u32 stripe_offset;
- 	/* number of stripe where address falls */
- 	u64 stripe_nr;
--	/* offset of address in stripe */
--	u64 stripe_offset;
- 	/* offset of raid56 stripe into the chunk */
- 	u64 raid56_stripe_offset;
- };
-@@ -427,7 +427,7 @@ struct map_lookup {
- 	u64 type;
- 	int io_align;
- 	int io_width;
--	u64 stripe_len;
-+	u32 stripe_len;
- 	int num_stripes;
- 	int sub_stripes;
- 	int verified_stripes; /* For mount time dev extent verification */
 -- 
 2.35.1
 

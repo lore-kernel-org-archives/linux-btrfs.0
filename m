@@ -2,42 +2,44 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1771C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 15:20:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8472BC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 15:20:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234689AbiDMPXM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S236419AbiDMPXM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 13 Apr 2022 11:23:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38042 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38050 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236418AbiDMPXL (ORCPT
+        with ESMTP id S236420AbiDMPXL (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 13 Apr 2022 11:23:11 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56FB9E0D2
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A51023E5CB
         for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 08:20:49 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 0B0EFB82367
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 48D6061D1D
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 15:20:49 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 33A6BC385A8
         for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 15:20:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4D382C385A3
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 15:20:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1649863246;
-        bh=oirIgyagpFWDdhJ6P5D71jof+XLSCqFuagADEe6Zlew=;
-        h=From:To:Subject:Date:From;
-        b=So3gQfyLI/7A6EDrTyf5i4rKikCAeV2GqOnuCK5ZSsQK4y+iS9GlyS8OL1qAMxARj
-         oXrwYWvas8mIyBTHy0Mh1t0ejM+gFmPVCfcRcwU74JQEEeO0Gf7wDdH0kZ6mvPISXP
-         7/mEyKFYujZmrVlgQlGWUVVYFAK/orVC0qlnJSm7gZjCccuHscuLHtvketRR7AICoJ
-         I+1efK5FMs/cENp8t+9RWuQtl5/Iv3CzPERnJNpjIJUU2GuMGua9koeXLM/tfCBbFD
-         DGQMBwNeL4IB3DqliVoNORfqQP7DPWH2vM4NRqOdpkaycMoiV2gXXHCEUpcphiatCl
-         h8fXbwnbHxNlA==
+        s=k20201202; t=1649863248;
+        bh=pAehwj0TEwWwtDINvOG8V2JZ0kKyGfKoBUXvsWg85I4=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=uYN/fH1W+W9VYbHhpnSbpQZao+mAgo46iUwOuvTlRyexcnafXJ+e1OTEK2IBaI0u+
+         nphq/w179Kmb6bi9sImp7eWDUQcquUD2AGK1EPvRoF7FXxcoGIOxGYJAc/kuhmVbLG
+         JRbXtaMhrysZ7taEPV2ihJOa+Tyx10LLq2LX6BVVrDZtR3pJZ7083U24o8INstPO0J
+         0Kpq/XkK7TUIbbn6AUTYKXT+hWk9bCsDyjL9+AHi9Fb+PB3IBjeZWoOXNODw+Ke5a6
+         Mt7UUN098xXUQnjigVcoTEGqJqcYGJlgCsovjZoDJsAMJ4U4BdBqVTdtdQu8jVNGzw
+         pTt1JLw47Fp7Q==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/5] btrfs: avoid some block group rbtree lock contention
-Date:   Wed, 13 Apr 2022 16:20:38 +0100
-Message-Id: <cover.1649862853.git.fdmanana@suse.com>
+Subject: [PATCH 2/5] btrfs: use rbtree with leftmost node cached for tracking lowest block group
+Date:   Wed, 13 Apr 2022 16:20:40 +0100
+Message-Id: <a3ecb78fd63413dc736b13c6ab102ffb932f0d79.1649862853.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1649862853.git.fdmanana@suse.com>
+References: <cover.1649862853.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -46,29 +48,218 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This patchset allows for better concurrency when accessing the red black
-tree of block groups, which is used very frequently and most accesses are
-read-only, as well as avoid some unnecessary searches in the tree during
-NOCOW writes. Details in the changelogs.
+We keep track of the start offset of the block group with the lowest start
+offset at fs_info->first_logical_byte. This requires explicitly updating
+that field everytime we add, delete or lookup a block group to/from the
+red black tree at fs_info->block_group_cache_tree.
 
-Filipe Manana (5):
-  btrfs: remove search start argument from first_logical_byte()
-  btrfs: use rbtree with leftmost node cached for tracking lowest block group
-  btrfs: use a read/write lock for protecting the block groups tree
-  btrfs: return block group directly at btrfs_next_block_group()
-  btrfs: avoid double search for block group during NOCOW writes
+Since the block group with the lowest start address happens to always be
+the one that is the leftmost node of the tree, we can use a red black tree
+that caches the left most node. Then when we need the start address of
+that block group, we can just quickly get the leftmost node in the tree
+and extract the start offset of that node's block group. This avoids the
+need to explicitly keep track of that address in the dedicated member
+fs_info->first_logical_byte, and it also allows the next patch in the
+series to switch the lock that protects the red black tree from a spin
+lock to a read/write lock - without this change it would be tricky
+because block group searches also update fs_info->first_logical_byte.
 
- fs/btrfs/block-group.c      | 130 ++++++++++++++++++++----------------
- fs/btrfs/block-group.h      |   5 +-
- fs/btrfs/ctree.h            |   5 +-
- fs/btrfs/disk-io.c          |   5 +-
- fs/btrfs/extent-tree.c      |  29 ++++----
- fs/btrfs/free-space-cache.c |   2 +-
- fs/btrfs/free-space-tree.c  |   2 +-
- fs/btrfs/inode.c            |  26 +++++---
- fs/btrfs/transaction.c      |   4 +-
- 9 files changed, 114 insertions(+), 94 deletions(-)
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/block-group.c      | 30 ++++++++++++------------------
+ fs/btrfs/ctree.h            |  3 +--
+ fs/btrfs/disk-io.c          |  3 +--
+ fs/btrfs/extent-tree.c      | 22 +++++++++-------------
+ fs/btrfs/free-space-cache.c |  2 +-
+ fs/btrfs/free-space-tree.c  |  2 +-
+ 6 files changed, 25 insertions(+), 37 deletions(-)
 
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 7bf10afab89c..a91938ab7ff8 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -168,11 +168,12 @@ static int btrfs_add_block_group_cache(struct btrfs_fs_info *info,
+ 	struct rb_node **p;
+ 	struct rb_node *parent = NULL;
+ 	struct btrfs_block_group *cache;
++	bool leftmost = true;
+ 
+ 	ASSERT(block_group->length != 0);
+ 
+ 	spin_lock(&info->block_group_cache_lock);
+-	p = &info->block_group_cache_tree.rb_node;
++	p = &info->block_group_cache_tree.rb_root.rb_node;
+ 
+ 	while (*p) {
+ 		parent = *p;
+@@ -181,6 +182,7 @@ static int btrfs_add_block_group_cache(struct btrfs_fs_info *info,
+ 			p = &(*p)->rb_left;
+ 		} else if (block_group->start > cache->start) {
+ 			p = &(*p)->rb_right;
++			leftmost = false;
+ 		} else {
+ 			spin_unlock(&info->block_group_cache_lock);
+ 			return -EEXIST;
+@@ -188,11 +190,8 @@ static int btrfs_add_block_group_cache(struct btrfs_fs_info *info,
+ 	}
+ 
+ 	rb_link_node(&block_group->cache_node, parent, p);
+-	rb_insert_color(&block_group->cache_node,
+-			&info->block_group_cache_tree);
+-
+-	if (info->first_logical_byte > block_group->start)
+-		info->first_logical_byte = block_group->start;
++	rb_insert_color_cached(&block_group->cache_node,
++			       &info->block_group_cache_tree, leftmost);
+ 
+ 	spin_unlock(&info->block_group_cache_lock);
+ 
+@@ -211,7 +210,7 @@ static struct btrfs_block_group *block_group_cache_tree_search(
+ 	u64 end, start;
+ 
+ 	spin_lock(&info->block_group_cache_lock);
+-	n = info->block_group_cache_tree.rb_node;
++	n = info->block_group_cache_tree.rb_root.rb_node;
+ 
+ 	while (n) {
+ 		cache = rb_entry(n, struct btrfs_block_group, cache_node);
+@@ -233,11 +232,8 @@ static struct btrfs_block_group *block_group_cache_tree_search(
+ 			break;
+ 		}
+ 	}
+-	if (ret) {
++	if (ret)
+ 		btrfs_get_block_group(ret);
+-		if (bytenr == 0 && info->first_logical_byte > ret->start)
+-			info->first_logical_byte = ret->start;
+-	}
+ 	spin_unlock(&info->block_group_cache_lock);
+ 
+ 	return ret;
+@@ -958,15 +954,13 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 
+ 	spin_lock(&fs_info->block_group_cache_lock);
+-	rb_erase(&block_group->cache_node,
+-		 &fs_info->block_group_cache_tree);
++	rb_erase_cached(&block_group->cache_node,
++			&fs_info->block_group_cache_tree);
+ 	RB_CLEAR_NODE(&block_group->cache_node);
+ 
+ 	/* Once for the block groups rbtree */
+ 	btrfs_put_block_group(block_group);
+ 
+-	if (fs_info->first_logical_byte == block_group->start)
+-		fs_info->first_logical_byte = (u64)-1;
+ 	spin_unlock(&fs_info->block_group_cache_lock);
+ 
+ 	down_write(&block_group->space_info->groups_sem);
+@@ -4014,11 +4008,11 @@ int btrfs_free_block_groups(struct btrfs_fs_info *info)
+ 	spin_unlock(&info->zone_active_bgs_lock);
+ 
+ 	spin_lock(&info->block_group_cache_lock);
+-	while ((n = rb_last(&info->block_group_cache_tree)) != NULL) {
++	while ((n = rb_last(&info->block_group_cache_tree.rb_root)) != NULL) {
+ 		block_group = rb_entry(n, struct btrfs_block_group,
+ 				       cache_node);
+-		rb_erase(&block_group->cache_node,
+-			 &info->block_group_cache_tree);
++		rb_erase_cached(&block_group->cache_node,
++				&info->block_group_cache_tree);
+ 		RB_CLEAR_NODE(&block_group->cache_node);
+ 		spin_unlock(&info->block_group_cache_lock);
+ 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index bc6b6a70791d..d4a9110d5174 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -680,8 +680,7 @@ struct btrfs_fs_info {
+ 
+ 	/* block group cache stuff */
+ 	spinlock_t block_group_cache_lock;
+-	u64 first_logical_byte;
+-	struct rb_root block_group_cache_tree;
++	struct rb_root_cached block_group_cache_tree;
+ 
+ 	/* keep track of unallocated space */
+ 	atomic64_t free_chunk_space;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2bc867d35308..252de49cba05 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3231,8 +3231,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 	btrfs_init_async_reclaim_work(fs_info);
+ 
+ 	spin_lock_init(&fs_info->block_group_cache_lock);
+-	fs_info->block_group_cache_tree = RB_ROOT;
+-	fs_info->first_logical_byte = (u64)-1;
++	fs_info->block_group_cache_tree = RB_ROOT_CACHED;
+ 
+ 	extent_io_tree_init(fs_info, &fs_info->excluded_extents,
+ 			    IO_TREE_FS_EXCLUDED_EXTENTS, NULL);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2a718727541c..cd79a5f4c643 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2494,23 +2494,19 @@ static u64 get_alloc_profile_by_root(struct btrfs_root *root, int data)
+ 
+ static u64 first_logical_byte(struct btrfs_fs_info *fs_info)
+ {
+-	struct btrfs_block_group *cache;
+-	u64 bytenr;
++	struct rb_node *leftmost;
++	u64 bytenr = 0;
+ 
+ 	spin_lock(&fs_info->block_group_cache_lock);
+-	bytenr = fs_info->first_logical_byte;
+-	spin_unlock(&fs_info->block_group_cache_lock);
+-
+-	if (bytenr < (u64)-1)
+-		return bytenr;
+-
+ 	/* Get the block group with the lowest logical start address. */
+-	cache = btrfs_lookup_first_block_group(fs_info, 0);
+-	if (!cache)
+-		return 0;
++	leftmost = rb_first_cached(&fs_info->block_group_cache_tree);
++	if (leftmost) {
++		struct btrfs_block_group *bg;
+ 
+-	bytenr = cache->start;
+-	btrfs_put_block_group(cache);
++		bg = rb_entry(leftmost, struct btrfs_block_group, cache_node);
++		bytenr = bg->start;
++	}
++	spin_unlock(&fs_info->block_group_cache_lock);
+ 
+ 	return bytenr;
+ }
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index ef84bc5030cd..f7adee6fa05e 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -4072,7 +4072,7 @@ static int cleanup_free_space_cache_v1(struct btrfs_fs_info *fs_info,
+ 
+ 	btrfs_info(fs_info, "cleaning free space cache v1");
+ 
+-	node = rb_first(&fs_info->block_group_cache_tree);
++	node = rb_first_cached(&fs_info->block_group_cache_tree);
+ 	while (node) {
+ 		block_group = rb_entry(node, struct btrfs_block_group, cache_node);
+ 		ret = btrfs_remove_free_space_inode(trans, NULL, block_group);
+diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
+index 0ae54d8c10d6..1bf89aa67216 100644
+--- a/fs/btrfs/free-space-tree.c
++++ b/fs/btrfs/free-space-tree.c
+@@ -1178,7 +1178,7 @@ int btrfs_create_free_space_tree(struct btrfs_fs_info *fs_info)
+ 		goto abort;
+ 	}
+ 
+-	node = rb_first(&fs_info->block_group_cache_tree);
++	node = rb_first_cached(&fs_info->block_group_cache_tree);
+ 	while (node) {
+ 		block_group = rb_entry(node, struct btrfs_block_group,
+ 				       cache_node);
 -- 
 2.35.1
 

@@ -2,79 +2,146 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20671C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 15:36:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 957FEC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 16:03:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235441AbiDMPjD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Apr 2022 11:39:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43466 "EHLO
+        id S236715AbiDMQFj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Apr 2022 12:05:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33058 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231842AbiDMPjD (ORCPT
+        with ESMTP id S229528AbiDMQFj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Apr 2022 11:39:03 -0400
-Received: from mail-ed1-x536.google.com (mail-ed1-x536.google.com [IPv6:2a00:1450:4864:20::536])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B5E8764713
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 08:36:41 -0700 (PDT)
-Received: by mail-ed1-x536.google.com with SMTP id d10so2937800edj.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 08:36:41 -0700 (PDT)
+        Wed, 13 Apr 2022 12:05:39 -0400
+Received: from mail-vs1-xe36.google.com (mail-vs1-xe36.google.com [IPv6:2607:f8b0:4864:20::e36])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D38ED580EF;
+        Wed, 13 Apr 2022 09:03:17 -0700 (PDT)
+Received: by mail-vs1-xe36.google.com with SMTP id i34so1022804vsv.6;
+        Wed, 13 Apr 2022 09:03:17 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=giaSEO4GbWIJdilGguCNBeXfJ9dwtuysAewBfgwwGjA=;
-        b=dJhj33BTmuKAOic1C62vC/Sl9EBP8O8meL/NED0uShCkg1pZV27M5KrqOymDZJOAqE
-         20iUTexAwYSjCz9LsZoR5OzLV2J07boMejat7LWypvXMxslvy2CcS9GCxavbh0Fqz29U
-         Lex65cNABU9Ud85QLLpVQdxjz5aB7FHSbtfAQtE7xr9ARmYeL7s/Dc57ULy6IlUzMY1+
-         hwBG1UUIOwSFtUHMJ8YIl6HVCC2uYhYvSdoUQufbueulxEYeCvtw8b9oBbPvOZkCbUFY
-         zb/ryZlkaeS7PQiQ3NhEbFJF3RT5qgVK8JoFlkkmhRkjYWSBgZC0ho10Q8BNBgrWKYFr
-         JBCQ==
+         :cc:content-transfer-encoding;
+        bh=AfVBOcs8TbWmDB0JA6H2aLSdPzU05jThWpLa6v2Z6KI=;
+        b=Ck/2Ng2+EQritbp1vgGqN5aG+YGHPGy3A5Z9PvraSx669ZdalePtKkEv6aCHMi0SJo
+         1h4aCwm7tzYMQOHHq/qAh9d1Qa13Aio/3mktyCdYZgAZmTUEMO6knyDxWtlFpeduuUPO
+         sWhmLXcfFHt7dS9ZamX9lmws9V8rGZL9b07z+cRxxk3Ervw6RPnQwTS5DMw/3313qa5k
+         pvEwSz+vq1NeCPuqrN83KgqrQk7BuI4XKZJo3Nca/Mp/xJKxma5fLSb4AlrZ+7Wo+bCb
+         F9K1O/UaVyG9NJ5NBi0O1RQpos4ip3FN6McGtLxbIeVv3pZokC5Eml36f1gznCa2/JVv
+         qVIA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=giaSEO4GbWIJdilGguCNBeXfJ9dwtuysAewBfgwwGjA=;
-        b=4hFaZhsb2VcU+MtVCfbgcX1a6te3tSYdpUoGz0Fx9q1J0G2cmrOQCtfKNel16k07Fd
-         +0gH3X+vdoCGJQqp6fscY55erLcTmXSEMhXpRxdcuCY81kTbPUbS/spC3m52gCybg7Gs
-         apgQs6ys1aCPZyt/o7/rVXYqCTXE+FC+VTeRfGIx1oJXS3O6obMaAUkjGx8qowSCiE5/
-         Iz1PLBphMMrggpHJODbRymIWGRSM84GP+HkLv8Qg0dPkKbV7WgP+cX+7lP9KsW6sedRP
-         O61djeUxNUgmPEQOvO8xOpuxFC0xLTLw2/q0dwgYgxb6X3Xs1s+8Tf8CQitC+QVZxzCW
-         CPAw==
-X-Gm-Message-State: AOAM531OJk8EzWl1HDcU+Tdhtva2MzRQ/yLn0oPhD/rfzMfDQKXmF8Dp
-        ArSPXWZ9f0fx7hvykk3Yecbqi00c4z0bkHbG6VU=
-X-Google-Smtp-Source: ABdhPJw8lq+2Gt7PmjpcKOd6pig/a6lndbblHJ9iI6C1yRqA8XjvK+MKOx6wjfcuZS5qIWO+fDUyhIy5OK1zWdy2z3s=
-X-Received: by 2002:a50:fb0b:0:b0:41d:8cd4:659f with SMTP id
- d11-20020a50fb0b000000b0041d8cd4659fmr10501062edq.10.1649864200205; Wed, 13
- Apr 2022 08:36:40 -0700 (PDT)
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=AfVBOcs8TbWmDB0JA6H2aLSdPzU05jThWpLa6v2Z6KI=;
+        b=3kQeyXO3I5RW0o+9KdoV93YrOjWRuooYZi2m0vu0vMffGPcHOX9KUzGjOyflfz93TG
+         k8r3RSPgZaKmpYJP7QEQAW69q4yJjKChgkkbAp+jmPaEd/xErthGGxgHBBe4rG7nsbb+
+         omRGAIERLvN8vThmT/PontWIB5xLIiwnR4ytQOIgKsGM61wFMXI05hl/tREbuZ6RRTBE
+         Gopu3SMO3nIVb3SEt06ssnP1YkCir38eW+VAaPzJLIqSg3eRv7gPfnXCfg5O0PPjwMsp
+         gmiuRTZSKwvDagN4Ugoi1+v4rtyCuH/a4/od9Kc6BT/D6BYeKdz0qYFEsdl8CPaCfLPw
+         ehFg==
+X-Gm-Message-State: AOAM533QSf6MEbIOqIrrFl9z5AwDD7J6K1puY3GA+5A33quymYsIyPwz
+        Ved6mK1qu75clF0j8D6tB7gU+9+hDBuCFa9XqbAtrHFW0wBhfg==
+X-Google-Smtp-Source: ABdhPJwMbHZ6SDpA+RhfmpicqxV0i4BNxl7r/8BKma92g74kjhX6w46FuCPd62AbR3+pGoWXuCLC5AbD/RgdVN9hV3E=
+X-Received: by 2002:a67:a44d:0:b0:320:601b:2a08 with SMTP id
+ p13-20020a67a44d000000b00320601b2a08mr13581695vsh.70.1649865796922; Wed, 13
+ Apr 2022 09:03:16 -0700 (PDT)
 MIME-Version: 1.0
-References: <20220409043432.1244773-1-cccheng@synology.com> <CAL3q7H77p6yFhHMu-1kpgh+J5jv_dKeqqwga8mJMRXY6r0wAvg@mail.gmail.com>
-In-Reply-To: <CAL3q7H77p6yFhHMu-1kpgh+J5jv_dKeqqwga8mJMRXY6r0wAvg@mail.gmail.com>
-From:   Chung-Chiang Cheng <shepjeng@gmail.com>
-Date:   Wed, 13 Apr 2022 23:36:29 +0800
-Message-ID: <CAHuHWt=LB9WvAuEmQe9nM8ZQpUBz6LG4Asr6ss+f2C_G3LNW2w@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: do not allow compression on nocow files
-To:     Filipe Manana <fdmanana@kernel.org>,
-        David Sterba <dsterba@suse.com>
-Cc:     Chung-Chiang Cheng <cccheng@synology.com>,
-        Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, kernel@cccheng.net,
-        Jayce Lin <jaycelin@synology.com>
+References: <20220411135136.GG15609@suse.cz> <20220411155540.36853-1-schspa@gmail.com>
+ <09c2a9ce-3b04-ed94-1d62-0e5a072b9dac@suse.com>
+In-Reply-To: <09c2a9ce-3b04-ed94-1d62-0e5a072b9dac@suse.com>
+From:   Schspa Shi <schspa@gmail.com>
+Date:   Thu, 14 Apr 2022 00:03:05 +0800
+Message-ID: <CAMA88TpjDczKAGN3f+tcsa98rbM7EA0XgT3bHn8UjDqNJ_DeFQ@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: zstd: use spin_lock in timer callback
+To:     Nikolay Borisov <nborisov@suse.com>
+Cc:     dsterba@suse.cz, clm@fb.com, dsterba@suse.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, terrelln@fb.com
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-> > +       if (!inode || BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW)
->
-> How can inode ever be NULL?
-> Unless I missed something, it can't be NULL.
->
-> We should also get a test case for fstests, to help prevent
-> regressions in the future.
->
-> Otherwise it looks fine.
+Nikolay Borisov <nborisov@suse.com> writes:
 
-Thanks for your comments. I will send a v2 patch and a fstest item
-later. And as David mentioned, inode_can_compress() can be reused to
-reduce duplication.
+> On 11.04.22 =D0=B3. 18:55 =D1=87., Schspa Shi wrote:
+>> This is an optimization for fix fee13fe96529 ("btrfs:
+>> correct zstd workspace manager lock to use spin_lock_bh()")
+>> The critical region for wsm.lock is only accessed by the process context=
+ and
+>> the softirq context.
+>> Because in the soft interrupt, the critical section will not be preempte=
+d by
+>> the
+>> soft interrupt again, there is no need to call spin_lock_bh(&wsm.lock) t=
+o turn
+>> off the soft interrupt, spin_lock(&wsm.lock) is enough for this situatio=
+n.
+>> Changelog:
+>> v1 -> v2:
+>>      - Change the commit message to make it more readable.
+>> [1] https://lore.kernel.org/all/20220408181523.92322-1-schspa@gmail.com/
+>> Signed-off-by: Schspa Shi <schspa@gmail.com>
+>
+> Has there been any measurable impact by this change? While it's correct i=
+t does mean that
+>  someone looking at the code would see that in one call site we use plain=
+ spinlock and in
+> another a _bh version and this is somewhat inconsistent.
+>
+Yes, it may seem a little confused. but it's allowed to save some
+little peace of CPU times.
+and "static inline void red_adaptative_timer(struct timer_list *t) in
+net/sched/sch_red.c"
+have similar usage.
 
-Thanks.
+> What's more I believe this is a noop since when softirqs are executing pr=
+eemptible() would
+> be false due to preempt_count() being non-0 and in the bh-disabling code
+> in the spinlock we have:
+>
+>  /* First entry of a task into a BH disabled section? */
+>     1         if (!current->softirq_disable_cnt) {
+>   167                 if (preemptible()) {
+>     1                         local_lock(&softirq_ctrl.lock);
+>     2                         /* Required to meet the RCU bottomhalf requ=
+irements. */
+>     3                         rcu_read_lock();
+>     4                 } else {
+>     5                         DEBUG_LOCKS_WARN_ON(this_cpu_read(softirq_c=
+trl.cnt));
+>     6                 }
+>     7         }
+>
+>
+> In this case we'd hit the else branch.
+
+We won't hit the else branch. because current->softirq_disable_cnt
+won't be zero in the origin case.
+
+__do_softirq(void)
+        softirq_handle_begin(void)
+        __local_bh_disable_ip(_RET_IP_, SOFTIRQ_OFFSET);
+                        current->softirq_disable_cnt will be > 0 at this ti=
+me.
+    ......
+        zstd_reclaim_timer_fn(struct timer_list *timer)
+                        spin_lock_bh(&wsm.lock);
+                        __local_bh_disable_ip(_RET_IP_, SOFTIRQ_OFFSET);
+                        if (!current->softirq_disable_cnt) {
+                                                // this if branch won't hit
+                                        }
+
+        softirq_handle_end();
+
+In this case, the "__local_bh_disable_ip(_RET_IP_, SOFTIRQ_OFFSET);"
+won't do anything useful it only
+increase softirq disable depth and decrease it in
+"__local_bh_enable_ip(_RET_IP_, SOFTIRQ_LOCK_OFFSET);".
+
+So it's safe to replace spin_lock_bh with spin_lock in a timer
+callback function.
+
+
+For the ksoftirqd, it's all the same.

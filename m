@@ -2,107 +2,140 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A61CAC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 07:01:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35A8DC433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 11:58:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232476AbiDMHEM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Apr 2022 03:04:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49634 "EHLO
+        id S235416AbiDMMAk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Apr 2022 08:00:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60378 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229689AbiDMHEL (ORCPT
+        with ESMTP id S235371AbiDMMAM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Apr 2022 03:04:11 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 214F31CFF9;
-        Wed, 13 Apr 2022 00:01:50 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        Wed, 13 Apr 2022 08:00:12 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E36775EDED;
+        Wed, 13 Apr 2022 04:56:51 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id CCB31B82032;
-        Wed, 13 Apr 2022 07:01:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 59B06C385A3;
-        Wed, 13 Apr 2022 07:01:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1649833307;
-        bh=TirwWPHAJh8hXQBbi2wqUHXLsJIF2sLZyUlzqx1HbFY=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=pFY1/odaUlSBNqM0oCoWHz+thvsu/L/qZUXjAaMq9ah8cqBnYFhiDbJMjAyWx+EbT
-         hOHZ0oPaDUVHoF1h5p/ymJKFqe/CciP/BF1tA/fOCPwTuzm7xjX7Sm+/y2xrSeiC1a
-         /zIsU46t1qJjMwK09BLKSl43YMpF0ROwyb5M2I+4iN+6jLOR8AzS6gY1JS0OfedstH
-         3sQjnqq1DO9VI633RwzCmqP59eLCxCNCPXEMsjjWMOlzKgYHqR7wSgVJfyVUEcsETs
-         Mxx/9JBcFmlEUN8F6bANCbqlWOeLFuPf47jiAUBWRE1Tol1IKlDmkCxmjxlbVfVvXW
-         sJ4VUrXj6WCHA==
-Date:   Wed, 13 Apr 2022 09:01:43 +0200
-From:   Christian Brauner <brauner@kernel.org>
-To:     fdmanana@kernel.org
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] common/rc: fix _try_scratch_mount() and _test_mount()
- when mount fails
-Message-ID: <20220413070143.qluv7bwd6kujb5km@wittgenstein>
-References: <0ab59504aef01776ab58f9f92c55e86bf1c75424.1649685964.git.fdmanana@suse.com>
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 9B8E11F858;
+        Wed, 13 Apr 2022 11:56:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649851010;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=NFlo9ERvfunpKvRo2LCQmzu6wLB5gQzmSAw9ElrfagY=;
+        b=C0klZyMwNH2YwBKvQaU1K8skw0l3TsfQhyIEle7cw8Cy73qhEFNvt83Gi8NjSnd5Ff6xYN
+        4IH731T4Oj+mfJTk52SKqX5erJOnjjhWLfKrT0b2JzI8O2q1RLt+1HU0FTgLTAdNUHkuFx
+        /ldbnxYq63FpkXOZmCTPtOh7rkpru+A=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649851010;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=NFlo9ERvfunpKvRo2LCQmzu6wLB5gQzmSAw9ElrfagY=;
+        b=lv0MbdD+I6RMoacMMHpo/mASJtmUdLvyq7ETJq6fN/TgDHnTxMtnO2xr75L/VRZHCNg+J2
+        KhcHJcn1gVZpmSDQ==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 71ED513A91;
+        Wed, 13 Apr 2022 11:56:50 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 0U4cG4K6VmLpVwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 13 Apr 2022 11:56:50 +0000
+Date:   Wed, 13 Apr 2022 13:52:43 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     torvalds@linux-foundation.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc3
+Message-ID: <20220413115243.GH15609@suse.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, torvalds@linux-foundation.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <cover.1649705056.git.dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <0ab59504aef01776ab58f9f92c55e86bf1c75424.1649685964.git.fdmanana@suse.com>
+In-Reply-To: <cover.1649705056.git.dsterba@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Apr 11, 2022 at 03:08:38PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Mon, Apr 11, 2022 at 11:31:43PM +0200, David Sterba wrote:
+> Hi,
 > 
-> After the recent commit 4a7b35d7a76cd9 ("common: allow to run all tests
-> on idmapped mounts"), some test that use _try_scratch_mount started to
-> fail. For example:
+> a few more code fixes and a warning fixes. There's one feature ioctl
+> removal patch slated for 5.18 that did not make it to the main pull
+> request.  It's just a one-liner and the ioctl has a v2 that's in use for
+> a long time, no point to postpone it to 5.19.
 > 
-> $ ./check btrfs/131 btrfs/220
-> FSTYP         -- btrfs
-> PLATFORM      -- Linux/x86_64 debian9 5.17.0-rc8-btrfs-next-114 (...)
-> MKFS_OPTIONS  -- /dev/sdc
-> MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
+> Please pull, thanks.
 > 
-> btrfs/131 2s ... - output mismatch (see .../results//btrfs/131.out.bad)
->     --- tests/btrfs/131.out	2020-06-10 19:29:03.818519162 +0100
->     +++ /home/fdmanana/git/hub/xfstests/results//btrfs/131.out.bad (...)
->     @@ -6,8 +6,6 @@
->      Disabling free space cache and enabling free space tree
->      free space tree is enabled
->      Trying to mount without free space tree
->     -mount failed
->     -mount failed
->      Mounting existing free space tree
->      free space tree is enabled
->     ...
->     (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/131.out ...
-> btrfs/220 7s ... - output mismatch (see .../results//btrfs/220.out.bad)
->     --- tests/btrfs/220.out	2020-10-16 23:13:46.802162554 +0100
->     +++ /home/fdmanana/git/hub/xfstests/results//btrfs/220.out.bad (...)
->     @@ -1,2 +1,32 @@
->      QA output created by 220
->     +Option fragment=invalid should fail to mount
->     +umount: /home/fdmanana/btrfs-tests/scratch_1: not mounted.
->     +Option nologreplay should fail to mount
->     +umount: /home/fdmanana/btrfs-tests/scratch_1: not mounted.
->     +Option norecovery should fail to mount
->     +umount: /home/fdmanana/btrfs-tests/scratch_1: not mounted.
->     ...
->     (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/220.out ...
-> Ran: btrfs/131 btrfs/220
-> Failures: btrfs/131 btrfs/220
-> Failed 2 of 2 tests
+> - fixes:
+>   - add back cgroup attribution for compressed writes
+>   - add super block write start/end annotations to asynchronous balance
+>   - fix root reference count on an error handling path
+>   - in zoned mode, activate zone at the chunk allocation time to avoid
+>     ENOSPC due to timing issues
+>   - fix delayed allocation accounting for direct IO
 > 
-> The reason is that if _try_scratch_mount() fails to mount the filesystem,
-> we don't return the failure, instead we call _idmapped_mount(), which
-> can succeed and make _try_scratch_mount() return 0 (success). The same
-> happens for _test_mount(), however a quick search revealed no tests
-> currently relying on the return value of _test_mount().
+> - remove balance v1 ioctl, superseded by v2 in 2012
 > 
-> So fix that by making _try_scratch_mount() return immediately if it gets
-> a mount failure. Also do the same for _test_mount().
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
+> - warning fixes:
+>   - simplify assertion condition in zoned check
+>   - remove an unused variable
 
-Thank you,
-Acked-by: Christian Brauner (Microsoft) <brauner@kernel.org>
+Has this ended up in your spam box again? The mail is in lore archives
+as https://lore.kernel.org/all/cover.1649705056.git.dsterba@suse.com/ .
+
+> ----------------------------------------------------------------
+> The following changes since commit 60021bd754c6ca0addc6817994f20290a321d8d6:
+> 
+>   btrfs: prevent subvol with swapfile from being deleted (2022-03-24 17:50:57 +0100)
+> 
+> are available in the Git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc2-tag
+> 
+> for you to fetch changes up to acee08aaf6d158d03668dc82b0a0eef41100531b:
+> 
+>   btrfs: fix btrfs_submit_compressed_write cgroup attribution (2022-04-06 00:50:51 +0200)
+> 
+> ----------------------------------------------------------------
+> Dennis Zhou (1):
+>       btrfs: fix btrfs_submit_compressed_write cgroup attribution
+> 
+> Haowen Bai (1):
+>       btrfs: zoned: remove redundant condition in btrfs_run_delalloc_range
+> 
+> Jia-Ju Bai (1):
+>       btrfs: fix root ref counts in error handling in btrfs_get_root_ref
+> 
+> Naohiro Aota (4):
+>       btrfs: release correct delalloc amount in direct IO write path
+>       btrfs: mark resumed async balance as writing
+>       btrfs: return allocated block group from do_chunk_alloc()
+>       btrfs: zoned: activate block group only for extent allocation
+> 
+> Nathan Chancellor (1):
+>       btrfs: remove unused variable in btrfs_{start,write}_dirty_block_groups()
+> 
+> Nikolay Borisov (1):
+>       btrfs: remove support of balance v1 ioctl
+> 
+>  fs/btrfs/block-group.c | 40 +++++++++++++++++++++++++++-------------
+>  fs/btrfs/block-group.h |  4 ++++
+>  fs/btrfs/compression.c |  8 ++++++++
+>  fs/btrfs/disk-io.c     |  5 +++--
+>  fs/btrfs/extent-tree.c |  2 +-
+>  fs/btrfs/inode.c       |  9 ++++-----
+>  fs/btrfs/ioctl.c       |  2 --
+>  fs/btrfs/volumes.c     |  2 ++
+>  8 files changed, 49 insertions(+), 23 deletions(-)
+> 

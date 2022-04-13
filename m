@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14D7CC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 15:20:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3350BC433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 15:20:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236425AbiDMPXO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Apr 2022 11:23:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38066 "EHLO
+        id S236422AbiDMPXP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Apr 2022 11:23:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38090 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236422AbiDMPXN (ORCPT
+        with ESMTP id S236424AbiDMPXO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Apr 2022 11:23:13 -0400
-Received: from sin.source.kernel.org (sin.source.kernel.org [145.40.73.55])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44E9322524
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 08:20:51 -0700 (PDT)
+        Wed, 13 Apr 2022 11:23:14 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C82D22524
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 08:20:53 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by sin.source.kernel.org (Postfix) with ESMTPS id 585BACE21D3
+        by ams.source.kernel.org (Postfix) with ESMTPS id F034CB82367
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 15:20:51 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 17EADC385AE
         for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 15:20:49 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 40195C385A4
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 15:20:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1649863247;
-        bh=YUqtFQblmDBlKp2S37N17KpAJETp28xhR8UPqKi+h1c=;
+        s=k20201202; t=1649863250;
+        bh=Es8bgnNJXh7LKeV2srT1EjbM8Q/yPusLT5RpQWXBO9c=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=WrJBnYxz4fum6vBLrABHK9uFzXgz+bh82NAjZMsHgFzjiHkUgbADLAPm05Tysf2gl
-         cEk/5eMOekt4JTHBZ4kBjuNVYJnEYlq9QC9JUWUHWWXMcHt95j1B24hsKsq9ie+3C2
-         eHuvMqKE5LhK9EL8GhGPPIR2+BzofDCCkKW3/OirDp/5Uxu+lYMYGz9i7Noh5txZY/
-         Z7MMaQVS3fnEEoRNXaj3BGg9B/GWdkg9w6ACQmU1M+h/UCSu/38J1T74LsxWsM+KW1
-         ELbr8f1bMMhe4yh4fR+euVHH5AM42XMptIm4RoeLIOB9gavOGiJWc9zJEtlk8AKRBG
-         9LGYwAzIXjHHA==
+        b=UAdiPf8hf5FTvBSjx9RG6pYTnU69MT3vwuj1G81+7Pw3Q1kUMBrYFAk/ccJbx+15e
+         FOLMRmWMy0/SpMY6NIDI4v6zpXNguwTtXpzDJHm8UHuNqazdVEZySkzUVU0ufBlA3w
+         CxxlQTxgFusBmBgMDB3eYQ7qsKi25N5viSzLXIz6dcD3oy6Zfyrv59i3GLCtyi0ish
+         Zpl6XrVaiS1+Se0ipiTOusYubz90o0WfFQqHr0+bv2LtENEF/hq5UOTozWENPMs33D
+         ZF/1Boiul4RCY3L6HkLRIAehW+QVMGy3tTp6RcMePBHkWYRzh1Mp0saNHy9TPLhU5P
+         Wg4Law1WSR5yw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/5] btrfs: remove search start argument from first_logical_byte()
-Date:   Wed, 13 Apr 2022 16:20:39 +0100
-Message-Id: <f422c0efabbf097771c2e7d6ea713d6ddfa9adb3.1649862853.git.fdmanana@suse.com>
+Subject: [PATCH 4/5] btrfs: return block group directly at btrfs_next_block_group()
+Date:   Wed, 13 Apr 2022 16:20:42 +0100
+Message-Id: <7e0cdb39d85edf363f2841ccc9e02860ca5ca6d0.1649862853.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1649862853.git.fdmanana@suse.com>
 References: <cover.1649862853.git.fdmanana@suse.com>
@@ -48,50 +48,32 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The search start argument passed to first_logical_byte() is always 0, as
-we always want to get the logical start address of the block group with
-the lowest logical start address. So remove it, as not only it is not
-necessary, it also makes the following patches that change the lock that
-protects the red black tree of block groups from a spin lock to a
-read/write lock.
+At btrfs_next_block_group(), we have this long line with two statements:
+
+  cache = btrfs_lookup_first_block_group(...); return cache;
+
+This makes it a bit harder to read due to two statements on the same
+line, so change that to directly return the result of the call to
+btrfs_lookup_first_block_group().
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/block-group.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fc5b9be06ec8..2a718727541c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2492,7 +2492,7 @@ static u64 get_alloc_profile_by_root(struct btrfs_root *root, int data)
- 	return ret;
- }
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 2c42ce00b84d..db112a01d711 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -271,7 +271,7 @@ struct btrfs_block_group *btrfs_next_block_group(
  
--static u64 first_logical_byte(struct btrfs_fs_info *fs_info, u64 search_start)
-+static u64 first_logical_byte(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_block_group *cache;
- 	u64 bytenr;
-@@ -2504,7 +2504,8 @@ static u64 first_logical_byte(struct btrfs_fs_info *fs_info, u64 search_start)
- 	if (bytenr < (u64)-1)
- 		return bytenr;
- 
--	cache = btrfs_lookup_first_block_group(fs_info, search_start);
-+	/* Get the block group with the lowest logical start address. */
-+	cache = btrfs_lookup_first_block_group(fs_info, 0);
- 	if (!cache)
- 		return 0;
- 
-@@ -4267,7 +4268,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		return ret;
- 
- 	ffe_ctl->search_start = max(ffe_ctl->search_start,
--				    first_logical_byte(fs_info, 0));
-+				    first_logical_byte(fs_info));
- 	ffe_ctl->search_start = max(ffe_ctl->search_start, ffe_ctl->hint_byte);
- 	if (ffe_ctl->search_start == ffe_ctl->hint_byte) {
- 		block_group = btrfs_lookup_block_group(fs_info,
+ 		read_unlock(&fs_info->block_group_cache_lock);
+ 		btrfs_put_block_group(cache);
+-		cache = btrfs_lookup_first_block_group(fs_info, next_bytenr); return cache;
++		return btrfs_lookup_first_block_group(fs_info, next_bytenr);
+ 	}
+ 	node = rb_next(&cache->cache_node);
+ 	btrfs_put_block_group(cache);
 -- 
 2.35.1
 

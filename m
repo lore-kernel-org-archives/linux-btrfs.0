@@ -2,109 +2,80 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 604A1C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 16:05:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F0BE4C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 13 Apr 2022 16:15:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234479AbiDMQHW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 13 Apr 2022 12:07:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35338 "EHLO
+        id S232634AbiDMQSJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 13 Apr 2022 12:18:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42716 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235154AbiDMQHT (ORCPT
+        with ESMTP id S230442AbiDMQSJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 13 Apr 2022 12:07:19 -0400
+        Wed, 13 Apr 2022 12:18:09 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 316F74F446;
-        Wed, 13 Apr 2022 09:04:56 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E3A2522B2A
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Apr 2022 09:15:47 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id CEEF52160E;
-        Wed, 13 Apr 2022 16:04:54 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id A1882210F4;
+        Wed, 13 Apr 2022 16:15:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1649865894;
+        t=1649866546;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=4XLAbSyVXPKjSGZzX2V8mPUgpCPzkvji4+ZrbQVbWJU=;
-        b=F/WT8vAqEWEcZeODhRqAMAWopyLiVbiuSVwKrvlT6VgfTD5SGW7u3tOusWJmsmQ3ddjgZM
-        /IpxNFBn7pDOiwkC0Lppwnoj1ljxUw/pQhodDFmvEWBlXrYVVY0jybzuPCZ1GsFSDe6Apy
-        lnXfjOI5Eb4DEwOZJ4FMAY/k7DvwZPw=
+        bh=JRSsHdH8MWJU4XFl4cj8exJRCqhSUhyRqivo97Bg7tE=;
+        b=HELbAbOHYvjsNFI76ZsvK9FCGeWbWvuJdUwIqetbTTcqrFETozQVNrcBDjZnkA6N9MIFfY
+        ui0WCh0YdiCILL9/xrAN4zScdKJJMb+Oh7vURFKhYVaamOkmu6zX5a15G6dc2ulq/aW8In
+        dtBs0UJ1Tv78OSuKzremHj0gJRSLiEk=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1649865894;
+        s=susede2_ed25519; t=1649866546;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=4XLAbSyVXPKjSGZzX2V8mPUgpCPzkvji4+ZrbQVbWJU=;
-        b=QM6xjLy0S7b49acN22RVsLVqYO+9S8On+wHsiYmO1TMGWRsLtpDNC889tTU+8xektbqnWl
-        k7a7351XVpycikDQ==
+        bh=JRSsHdH8MWJU4XFl4cj8exJRCqhSUhyRqivo97Bg7tE=;
+        b=lH8Gp0Fky4eYMEolObcJUi7phqvdQMMGdbA18k+IwXSC7DQruRiXptOnULIsIhKDnzV28w
+        EIm5tauFHrN8UyAA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 97D0F13AB8;
-        Wed, 13 Apr 2022 16:04:54 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8706513A91;
+        Wed, 13 Apr 2022 16:15:46 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id VTQqJKb0VmKQQAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 13 Apr 2022 16:04:54 +0000
-Date:   Wed, 13 Apr 2022 18:00:47 +0200
+        id DlYVIDL3VmIERQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 13 Apr 2022 16:15:46 +0000
+Date:   Wed, 13 Apr 2022 18:11:39 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     Schspa Shi <schspa@gmail.com>, clm@fb.com, dsterba@suse.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, terrelln@fb.com
-Subject: Re: [PATCH v2] btrfs: zstd: use spin_lock in timer callback
-Message-ID: <20220413160047.GL15609@suse.cz>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: use BTRFS_DIR_START_INDEX at
+ btrfs_create_new_inode()
+Message-ID: <20220413161139.GM15609@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        Schspa Shi <schspa@gmail.com>, clm@fb.com, dsterba@suse.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, terrelln@fb.com
-References: <20220411135136.GG15609@suse.cz>
- <20220411155540.36853-1-schspa@gmail.com>
- <09c2a9ce-3b04-ed94-1d62-0e5a072b9dac@suse.com>
+Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <ce76cc1a4fb3c2b4d6051c6d900286d6171885a3.1649862992.git.fdmanana@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <09c2a9ce-3b04-ed94-1d62-0e5a072b9dac@suse.com>
+In-Reply-To: <ce76cc1a4fb3c2b4d6051c6d900286d6171885a3.1649862992.git.fdmanana@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 13, 2022 at 05:58:41PM +0300, Nikolay Borisov wrote:
+On Wed, Apr 13, 2022 at 04:20:21PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
+> We are still using the magic value of 2 at btrfs_create_new_inode(), but
+> there's now a constant for that, named BTRFS_DIR_START_INDEX, which was
+> introduced in commit 528ee697126fd ("btrfs: put initial index value of a
+> directory in a constant"). So change that to use the constant.
 > 
-> On 11.04.22 г. 18:55 ч., Schspa Shi wrote:
-> > This is an optimization for fix fee13fe96529 ("btrfs:
-> > correct zstd workspace manager lock to use spin_lock_bh()")
-> > 
-> > The critical region for wsm.lock is only accessed by the process context and
-> > the softirq context.
-> > 
-> > Because in the soft interrupt, the critical section will not be preempted by the
-> > soft interrupt again, there is no need to call spin_lock_bh(&wsm.lock) to turn
-> > off the soft interrupt, spin_lock(&wsm.lock) is enough for this situation.
-> > 
-> > Changelog:
-> > v1 -> v2:
-> > 	- Change the commit message to make it more readable.
-> > 
-> > [1] https://lore.kernel.org/all/20220408181523.92322-1-schspa@gmail.com/
-> > 
-> > Signed-off-by: Schspa Shi <schspa@gmail.com>
-> 
-> Has there been any measurable impact by this change? While it's correct it does mean that
->   someone looking at the code would see that in one call site we use plain spinlock and in
-> another a _bh version and this is somewhat inconsistent.
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-I think it would be hard to measure the impact, maybe in some kind of
-load the _bh version would be unnecessarily blocking some other threads.
-
-Regarding the used locking primitives, I'll add a comment about that to
-the function, it is indeed inconsistent and not obvious from the
-context.
+Added to misc-next, thanks.

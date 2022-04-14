@@ -2,49 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E54E0C433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Apr 2022 15:58:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87737C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 14 Apr 2022 16:13:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349191AbiDNQAl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 14 Apr 2022 12:00:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54336 "EHLO
+        id S235840AbiDNQPq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 14 Apr 2022 12:15:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54790 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1352739AbiDNPRm (ORCPT
+        with ESMTP id S1350972AbiDNQE3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 14 Apr 2022 11:17:42 -0400
-X-Greylist: delayed 1544 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Thu, 14 Apr 2022 08:03:18 PDT
-Received: from twin.jikos.cz (twin.jikos.cz [91.219.245.39])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 4BD6395A07;
-        Thu, 14 Apr 2022 08:03:16 -0700 (PDT)
-Received: from twin.jikos.cz (dave@localhost [127.0.0.1])
-        by twin.jikos.cz (8.13.6/8.13.6) with ESMTP id 23EEbTZI002298
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO);
-        Thu, 14 Apr 2022 16:37:30 +0200
-Received: (from dave@localhost)
-        by twin.jikos.cz (8.13.6/8.13.6/Submit) id 23EEbT8S002297;
-        Thu, 14 Apr 2022 16:37:29 +0200
-Date:   Thu, 14 Apr 2022 16:37:29 +0200
-From:   David Sterba <dave@jikos.cz>
-To:     dsterba@suse.cz, torvalds@linux-foundation.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc3
-Message-ID: <20220414143729.GP3658@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-Mail-Followup-To: dsterba@suse.cz, torvalds@linux-foundation.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <cover.1649705056.git.dsterba@suse.com>
+        Thu, 14 Apr 2022 12:04:29 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD0DAF1ACC
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Apr 2022 08:47:50 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 624691F747;
+        Thu, 14 Apr 2022 15:47:49 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1649951269;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=hOiuKLfbnMIt1KlqSlKhs2vInj0XEwQGE4Ez+op7AJo=;
+        b=uCVRwAq6JNzF4/rlisppyYwSFQgH5nL6F59slhGDntF1+siXlkUwQhm3Mqe9EyaOR8qRef
+        Q63a2u9FyXPAvVMHcZFnTSsgtXOLUi0Y/aZvO6FKz8m5MiZmPeQ6SrPjhzkCH8Y6Y67rce
+        yk1tljsTEnlw44SSesO1cFKaom/j2yg=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1649951269;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=hOiuKLfbnMIt1KlqSlKhs2vInj0XEwQGE4Ez+op7AJo=;
+        b=srg00ZFmkj0bClljRwOOYndlHycYe4lwt/HU2gdIGiU643gplmxcLcx3/t9+dKWay/hJ9i
+        kkTb/tP5S0M/IODw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 350CA132C0;
+        Thu, 14 Apr 2022 15:47:49 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id iA8NDCVCWGI+eQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Thu, 14 Apr 2022 15:47:49 +0000
+Date:   Thu, 14 Apr 2022 17:43:42 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 07/17] btrfs: make rbio_add_io_page() subpage
+ compatible
+Message-ID: <20220414154341.GP15609@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1649753690.git.wqu@suse.com>
+ <d2873b5f3a00e9bb966150b4dd0253f4db107c12.1649753690.git.wqu@suse.com>
+ <20220413191456.GN15609@twin.jikos.cz>
+ <5b296828-65fb-b684-dedc-6f018e5ece4e@gmx.com>
+ <5b190bf5-892c-0856-e623-f6f716985b28@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1649705056.git.dsterba@suse.com>
+In-Reply-To: <5b190bf5-892c-0856-e623-f6f716985b28@gmx.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Thu, Apr 14, 2022 at 08:43:45AM +0800, Qu Wenruo wrote:
+> > Failed to reproduce here, both x86_64 and aarch64 survived over 64 loops
+> > of btrfs/023.
+> > 
+> > Although that's withy my github branch. Let me check the current branch
+> > to see what's wrong.
+> 
+> It's a rebase error.
+> 
+> At least one patch has incorrect diff snippet.
 
-I'm sending this from a different mail address after 2 days of no reply
-and no merge of the btrfs updates (message body deleted in case it
-triggers the spam filter). The mail is in lore archives at
-https://lore.kernel.org/all/cover.1649705056.git.dsterba@suse.com/
+Ok, my bad, I did not do a finall diff check, I'll update the patchset.
+
+> Mind to provide a branch for me to rebase my patchse upon?
+
+It was is for-next I guess you found it already.

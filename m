@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B99CC43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Apr 2022 04:55:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADE1DC433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Apr 2022 04:56:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349966AbiDOE5o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Apr 2022 00:57:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48100 "EHLO
+        id S1349850AbiDOE5H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Apr 2022 00:57:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47662 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349695AbiDOE4b (ORCPT
+        with ESMTP id S1349650AbiDOE4G (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Apr 2022 00:56:31 -0400
+        Fri, 15 Apr 2022 00:56:06 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36ACF710FB;
-        Thu, 14 Apr 2022 21:53:59 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7274B70F59;
+        Thu, 14 Apr 2022 21:53:38 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=V+N3WPhcjqbqmVRPAoIxuBjo6dgh1f5KuPVQDpaEGEs=; b=nvLDGsPTiAetPju9xhjyf64KX7
-        7ozMCWWCzv+ARhNAuWIGIewpeBs3t3aim/vmyIsXxJJQ8D6e6M3a/IJbXoQcPtzLYF8SFlKXBpOqM
-        ETxPrnhTBR4f07V6gtDeEqdGfb51nKXQBTRpYPNUhpzcsR3DXwU2yZKBDkC9971ryVgupM8yHNByX
-        XVPHLYl9bzyBrPwqQLBM+QwlQjI8z/UzTo262uc5gVNBSBEUT1iHLOtxrGXvyRuwX4DfSfPrfgzSz
-        mZOGRfCY5mWiQtABTIuaX0+Vh6+ub+qekGvIjW8PCF25qEYReZ47iYhf1WPmN6PzqNTyFHnP9LWNJ
-        HQK2650A==;
+        bh=3FWZlAG92h1RMyWa34xIeRgUUqbPb180tFAKbgq0RAE=; b=vLBRGmYA6jBMZDlzC6PXWv+Ksh
+        9na0CpZ5vQifHyF0I8hMiOODlZP67Q2wDV/bHkW9tDW3iYlbHmeg8cbzKsYytJTpwvlcHhRbVfqcX
+        u3Kb/T1hJpTRApCefLOPvQW0mKpxDcNm47SF5wKvwDYKsM4SjV65VWQFHoZN4xC3iqhdpTgH60xyD
+        3FkocDRpHF7/kXuVb8jwQtLL3ZBVVz+fa7PIdADFNqNFERroneG/Wkz00hQMCvFOcmh7+ThP9CfhC
+        oK97r2DvOPV2WXipkXhu1yEAGyGeER9Ori1+uKdJHNOs14UTWNR2qEKSdnT4Cxh5GrNg5oiq3V6Rp
+        ycclGS7g==;
 Received: from [2a02:1205:504b:4280:f5dd:42a4:896c:d877] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nfDxy-008PKU-DT; Fri, 15 Apr 2022 04:53:54 +0000
+        id 1nfDxe-008Oxy-2A; Fri, 15 Apr 2022 04:53:34 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     dm-devel@redhat.com, linux-xfs@vger.kernel.org,
@@ -44,10 +44,11 @@ Cc:     dm-devel@redhat.com, linux-xfs@vger.kernel.org,
         cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
         linux-nilfs@vger.kernel.org, ntfs3@lists.linux.dev,
         ocfs2-devel@oss.oracle.com, linux-mm@kvack.org,
-        "Martin K . Petersen" <martin.petersen@oracle.com>
-Subject: [PATCH 16/27] block: use bdev_alignment_offset in part_alignment_offset_show
-Date:   Fri, 15 Apr 2022 06:52:47 +0200
-Message-Id: <20220415045258.199825-17-hch@lst.de>
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>
+Subject: [PATCH 08/27] btrfs: use bdev_max_active_zones instead of open coding it
+Date:   Fri, 15 Apr 2022 06:52:39 +0200
+Message-Id: <20220415045258.199825-9-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220415045258.199825-1-hch@lst.de>
 References: <20220415045258.199825-1-hch@lst.de>
@@ -58,34 +59,34 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Replace the open coded offset calculation with the proper helper.
-This is an ABI change in that the -1 for a misaligned partition is
-properly propagated, which can be considered a bug fix and matches
-what is done on the whole device.
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Martin K. Petersen <martin.petersen@oracle.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Acked-by: David Sterba <dsterba@suse.com>
 ---
- block/partitions/core.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ fs/btrfs/zoned.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/block/partitions/core.c b/block/partitions/core.c
-index 2ef8dfa1e5c85..240b3fff521e4 100644
---- a/block/partitions/core.c
-+++ b/block/partitions/core.c
-@@ -200,11 +200,7 @@ static ssize_t part_ro_show(struct device *dev,
- static ssize_t part_alignment_offset_show(struct device *dev,
- 					  struct device_attribute *attr, char *buf)
- {
--	struct block_device *bdev = dev_to_bdev(dev);
--
--	return sprintf(buf, "%u\n",
--		queue_limit_alignment_offset(&bdev_get_queue(bdev)->limits,
--				bdev->bd_start_sect));
-+	return sprintf(buf, "%u\n", bdev_alignment_offset(dev_to_bdev(dev)));
- }
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 1b1b310c3c510..f72cad7391a11 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -350,7 +350,6 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ 	struct btrfs_fs_info *fs_info = device->fs_info;
+ 	struct btrfs_zoned_device_info *zone_info = NULL;
+ 	struct block_device *bdev = device->bdev;
+-	struct request_queue *queue = bdev_get_queue(bdev);
+ 	unsigned int max_active_zones;
+ 	unsigned int nactive;
+ 	sector_t nr_sectors;
+@@ -410,7 +409,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ 	if (!IS_ALIGNED(nr_sectors, zone_sectors))
+ 		zone_info->nr_zones++;
  
- static ssize_t part_discard_alignment_show(struct device *dev,
+-	max_active_zones = queue_max_active_zones(queue);
++	max_active_zones = bdev_max_active_zones(bdev);
+ 	if (max_active_zones && max_active_zones < BTRFS_MIN_ACTIVE_ZONES) {
+ 		btrfs_err_in_rcu(fs_info,
+ "zoned: %s: max active zones %u is too small, need at least %u active zones",
 -- 
 2.30.2
 

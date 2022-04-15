@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 246F6C4167D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Apr 2022 04:53:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 463B9C3A589
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Apr 2022 04:53:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349533AbiDOEz4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Apr 2022 00:55:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47404 "EHLO
+        id S1349733AbiDOE4R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Apr 2022 00:56:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47722 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349492AbiDOEzx (ORCPT
+        with ESMTP id S1349667AbiDOE4H (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Apr 2022 00:55:53 -0400
+        Fri, 15 Apr 2022 00:56:07 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9250A6A406;
-        Thu, 14 Apr 2022 21:53:26 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ACB6E716C6;
+        Thu, 14 Apr 2022 21:53:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:
-        To:From:Sender:Reply-To:Content-ID:Content-Description;
-        bh=be5XRqr6FpD/xPCRROQj1WW79ZNoTG4VrTyORPZGjVE=; b=zfdoWKjLNg8/93VMXMR/8dmem+
-        WdvS+5iIu6uir1zneoGsW/PVn5k5msDFRP3cNUjzgk48HwXHEWdbPPQegdyt6x56ivnd6KhVFEdRn
-        raW2CONj2YH3bKud1GU1IPcR9v/j6pw0pUmG9drywqIdz4cTw9frqxiK8uJ0qudjT7ff4EmR2zNpd
-        iXKlU7IflKK7BZ1vMlEvBpbCIpEVLMDJnliSIXYAubrng3TWL7OH99pGfDALzISzxUUJefgBXG3V5
-        WlBB+jh7r7m3TcfVeysrxVV3wHeAvYOUUoaQFeOXr6OBj0iU6tL7PMj+sYlQjUaSSJXCl4UqBVXnS
-        NdWcSxoQ==;
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=Bh+vV8H1PUD+w/3YWj6wMRz8JdOJ8okMcDjW6Mx/Fiw=; b=EDKTioiwyVTPK+3osA6SlCjZIh
+        XT2MFqWZOTWCp0TzWu6P4fqhDWPMpkttHrN+m9dRro3N5CDnlXbRs0EPkfGOyM+igunHSMpD1drYP
+        wVG9uOkzBpiVKojyqfYhi6+OMNU5l2i8PZR4B1REL+uCtnEoooz23D6FVFibL3Fu1/dIA+0rTSxtr
+        oKyzI2WMLHHUV9rvM0v15/lCAj3aZ6PKIBUE2kOCt4TslhWmWNZKgszd/7d2ie8DKfEQnXgchcj36
+        NzfvLJkjkLxSqax1JuD1ELqlJ8gRaVf5Gn7y07gnCWPWGyuEN/9bXBtizUFBY7p5eDKr/MYNHjMCe
+        ltnYH85Q==;
 Received: from [2a02:1205:504b:4280:f5dd:42a4:896c:d877] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nfDxU-008Opj-8L; Fri, 15 Apr 2022 04:53:24 +0000
+        id 1nfDxg-008P0P-IF; Fri, 15 Apr 2022 04:53:36 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     dm-devel@redhat.com, linux-xfs@vger.kernel.org,
@@ -44,101 +44,39 @@ Cc:     dm-devel@redhat.com, linux-xfs@vger.kernel.org,
         cluster-devel@redhat.com, jfs-discussion@lists.sourceforge.net,
         linux-nilfs@vger.kernel.org, ntfs3@lists.linux.dev,
         ocfs2-devel@oss.oracle.com, linux-mm@kvack.org,
-        =?UTF-8?q?Christoph=20B=C3=B6hmwalder?= 
-        <christoph.boehmwalder@linbit.com>
-Subject: [PATCH 04/27] drbd: remove assign_p_sizes_qlim
-Date:   Fri, 15 Apr 2022 06:52:35 +0200
-Message-Id: <20220415045258.199825-5-hch@lst.de>
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH 09/27] ntfs3: use bdev_logical_block_size instead of open coding it
+Date:   Fri, 15 Apr 2022 06:52:40 +0200
+Message-Id: <20220415045258.199825-10-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220415045258.199825-1-hch@lst.de>
 References: <20220415045258.199825-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fold each branch into its only caller.
-
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Acked-by: Christoph Böhmwalder <christoph.boehmwalder@linbit.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- drivers/block/drbd/drbd_main.c | 47 +++++++++++++++-------------------
- 1 file changed, 20 insertions(+), 27 deletions(-)
+ fs/ntfs3/super.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/block/drbd/drbd_main.c b/drivers/block/drbd/drbd_main.c
-index 4b0b25cc916ee..367715205c860 100644
---- a/drivers/block/drbd/drbd_main.c
-+++ b/drivers/block/drbd/drbd_main.c
-@@ -903,31 +903,6 @@ void drbd_gen_and_send_sync_uuid(struct drbd_peer_device *peer_device)
- 	}
- }
- 
--/* communicated if (agreed_features & DRBD_FF_WSAME) */
--static void
--assign_p_sizes_qlim(struct drbd_device *device, struct p_sizes *p,
--					struct request_queue *q)
--{
--	if (q) {
--		p->qlim->physical_block_size = cpu_to_be32(queue_physical_block_size(q));
--		p->qlim->logical_block_size = cpu_to_be32(queue_logical_block_size(q));
--		p->qlim->alignment_offset = cpu_to_be32(queue_alignment_offset(q));
--		p->qlim->io_min = cpu_to_be32(queue_io_min(q));
--		p->qlim->io_opt = cpu_to_be32(queue_io_opt(q));
--		p->qlim->discard_enabled = blk_queue_discard(q);
--		p->qlim->write_same_capable = 0;
--	} else {
--		q = device->rq_queue;
--		p->qlim->physical_block_size = cpu_to_be32(queue_physical_block_size(q));
--		p->qlim->logical_block_size = cpu_to_be32(queue_logical_block_size(q));
--		p->qlim->alignment_offset = 0;
--		p->qlim->io_min = cpu_to_be32(queue_io_min(q));
--		p->qlim->io_opt = cpu_to_be32(queue_io_opt(q));
--		p->qlim->discard_enabled = 0;
--		p->qlim->write_same_capable = 0;
--	}
--}
--
- int drbd_send_sizes(struct drbd_peer_device *peer_device, int trigger_reply, enum dds_flags flags)
- {
- 	struct drbd_device *device = peer_device->device;
-@@ -957,14 +932,32 @@ int drbd_send_sizes(struct drbd_peer_device *peer_device, int trigger_reply, enu
- 		q_order_type = drbd_queue_order_type(device);
- 		max_bio_size = queue_max_hw_sectors(q) << 9;
- 		max_bio_size = min(max_bio_size, DRBD_MAX_BIO_SIZE);
--		assign_p_sizes_qlim(device, p, q);
-+		p->qlim->physical_block_size =
-+			cpu_to_be32(queue_physical_block_size(q));
-+		p->qlim->logical_block_size =
-+			cpu_to_be32(queue_logical_block_size(q));
-+		p->qlim->alignment_offset =
-+			cpu_to_be32(queue_alignment_offset(q));
-+		p->qlim->io_min = cpu_to_be32(queue_io_min(q));
-+		p->qlim->io_opt = cpu_to_be32(queue_io_opt(q));
-+		p->qlim->discard_enabled = blk_queue_discard(q);
- 		put_ldev(device);
- 	} else {
-+		struct request_queue *q = device->rq_queue;
-+
-+		p->qlim->physical_block_size =
-+			cpu_to_be32(queue_physical_block_size(q));
-+		p->qlim->logical_block_size =
-+			cpu_to_be32(queue_logical_block_size(q));
-+		p->qlim->alignment_offset = 0;
-+		p->qlim->io_min = cpu_to_be32(queue_io_min(q));
-+		p->qlim->io_opt = cpu_to_be32(queue_io_opt(q));
-+		p->qlim->discard_enabled = 0;
-+
- 		d_size = 0;
- 		u_size = 0;
- 		q_order_type = QUEUE_ORDERED_NONE;
- 		max_bio_size = DRBD_MAX_BIO_SIZE; /* ... multiple BIOs per peer_request */
--		assign_p_sizes_qlim(device, p, NULL);
+diff --git a/fs/ntfs3/super.c b/fs/ntfs3/super.c
+index 278dcf5024102..cd30e81abbce0 100644
+--- a/fs/ntfs3/super.c
++++ b/fs/ntfs3/super.c
+@@ -920,7 +920,7 @@ static int ntfs_fill_super(struct super_block *sb, struct fs_context *fc)
  	}
  
- 	if (peer_device->connection->agreed_pro_version <= 94)
+ 	/* Parse boot. */
+-	err = ntfs_init_from_boot(sb, rq ? queue_logical_block_size(rq) : 512,
++	err = ntfs_init_from_boot(sb, bdev_logical_block_size(bdev),
+ 				  bdev_nr_bytes(bdev));
+ 	if (err)
+ 		goto out;
 -- 
 2.30.2
 

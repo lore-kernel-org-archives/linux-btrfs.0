@@ -2,97 +2,114 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FA0BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Apr 2022 06:48:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CA328C433FE
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Apr 2022 08:15:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229824AbiDPGvU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 16 Apr 2022 02:51:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49396 "EHLO
+        id S230294AbiDPISW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 16 Apr 2022 04:18:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52606 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229551AbiDPGvT (ORCPT
+        with ESMTP id S230108AbiDPISU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 16 Apr 2022 02:51:19 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43F6EFA238
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Apr 2022 23:48:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1650091723;
-        bh=UK5MYdEWItmZDpGZC2ZBCfm60MIV5ClK18iden1ZPps=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=CfwrCUp2FltTElrjcg7F3+Y0mg9riINRxInmIPk59t7380/ko3Xv+V/0h6llMbApb
-         e5+8JaOgAlZq/Srbh5/0lmPALCinr3O45B+X+2ymx2yNUwSmQ29nY/wyf3U6H1TD9D
-         xrR6AfpBtX2trf6V8nYsGqbZYvb+rP7JRlygKH5k=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MEUz4-1nhFs81y1K-00Fyjn; Sat, 16
- Apr 2022 08:48:43 +0200
-Message-ID: <eac890d4-f85f-a9fc-0088-3d55dbcdd3a5@gmx.com>
-Date:   Sat, 16 Apr 2022 14:48:38 +0800
+        Sat, 16 Apr 2022 04:18:20 -0400
+Received: from mail-pj1-x1031.google.com (mail-pj1-x1031.google.com [IPv6:2607:f8b0:4864:20::1031])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44F2A5F83;
+        Sat, 16 Apr 2022 01:15:48 -0700 (PDT)
+Received: by mail-pj1-x1031.google.com with SMTP id i24-20020a17090adc1800b001cd5529465aso8692431pjv.0;
+        Sat, 16 Apr 2022 01:15:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=iVfFJCMkrWLbyYUJOBj2PVHo9GdUj3rw5BmoGxMpBoo=;
+        b=iYCJ6Wum2Xv3OfVJqUjKKcIs4chqAe85/Ts0gdvaAhPlZcypz00oeX4nApt4uQ/IQM
+         Z/kGU5mHBZSb9cwIXqhlKJgLGbDSgyzXjte2f83Epit+PxLjJ4EZ5nvq6K/cvze/KLpV
+         WP3hiWF5BvZLNM0yjBJ/gYWOXc/A3aPeK9627J6poVefhVN+uUJNUq7nPJwXA0/05YWl
+         6XVvVYcQfJX6r08lZlHmq288j5fEPiyaUFTsEW6T8NT8d4Tgc14I/GLjt7eOXxgoSJ4L
+         tTv4KdfEoFhcmfbHm0XMaGw71L4uoZs/A6XJWQxKMgIKzxkvnRWiZwFoKy3LIzcvIXLR
+         ITDQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=iVfFJCMkrWLbyYUJOBj2PVHo9GdUj3rw5BmoGxMpBoo=;
+        b=xbT9YwH5mWims7iMY3SYveY/qhJFslcBt88dCfSZVaaeendUpEemHgBvFUjQodJ4p8
+         tVPZxK+vPgxl86tZLqbewuPluW3H4u/eqrE+IxOJ1zkwm5J63zV/Bdr/wuPtlopy8IEa
+         6GbzuqDu+a2fl2l1bAv91Ygrgv7AydazcvqBRFwIdYxENBDp6nwErHWikqM3Wlmt0BW2
+         VTROZrcaeMoESZCwr+jvHEC9qB2zbufZz+suZMeB7L5fSYtAqULnnMa0cxQ0FN/7G/oH
+         1tPIW9iZ5dmmGsqItpg4KZTbZLntlRwt6xOIjktup6TH1JYOT6loySTjGnyYZdxteoOd
+         wZhw==
+X-Gm-Message-State: AOAM532vcfNYmk0MbkBVCe6xAWN1qyl9Q7TMuSx+8wqcFQPSeeauoB9k
+        PSx/Tbnd2G1n2n0R100Avkophv1Tv7tcKocu
+X-Google-Smtp-Source: ABdhPJyMPbjlWbRSvxRImteK8nhcFkaxavzpAmXI8Nda6nL/B2Mb6fHzJYwRgmR8/Qxj1XUqk4txSw==
+X-Received: by 2002:a17:90b:3889:b0:1c6:408b:6b0f with SMTP id mu9-20020a17090b388900b001c6408b6b0fmr2814842pjb.43.1650096947494;
+        Sat, 16 Apr 2022 01:15:47 -0700 (PDT)
+Received: from debian.me (subs02-180-214-232-93.three.co.id. [180.214.232.93])
+        by smtp.gmail.com with ESMTPSA id z6-20020a056a00240600b004e17ab23340sm5513328pfh.177.2022.04.16.01.15.43
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 16 Apr 2022 01:15:46 -0700 (PDT)
+From:   Bagas Sanjaya <bagasdotme@gmail.com>
+To:     linux-doc@vger.kernel.org
+Cc:     Bagas Sanjaya <bagasdotme@gmail.com>,
+        kernel test robot <lkp@intel.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Nick Terrell <terrelln@fb.com>, Schspa Shi <schspa@gmail.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: zstd: add missing function name in zstd_reclaim_timer_fn() comment
+Date:   Sat, 16 Apr 2022 15:15:34 +0700
+Message-Id: <20220416081534.28729-1-bagasdotme@gmail.com>
+X-Mailer: git-send-email 2.35.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.0
-Subject: Re: [PATCH 4/5] btrfs: do not return errors from
- btrfs_submit_compressed_read
-Content-Language: en-US
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20220415143328.349010-1-hch@lst.de>
- <20220415143328.349010-5-hch@lst.de>
- <935e4667-2414-4620-382c-333075150f8f@gmx.com> <20220416044920.GB6162@lst.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220416044920.GB6162@lst.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:TFsPT5tSgFRUMTMdnifBpPMa9sTaHhqv1ws+RSLtKqIMkeSc19j
- k098qMu190QlaQqOn77wlb0IVyqkNDmci0olJmxQ4uUmxGIHG6EqXGieHjNuyWgiVqSn8eB
- sf7e5geArNnmnT/zxS+hG0gIxM8IZUrYJfURoqrBlRs+b7Pt+Yg8Iwv9QBYZ8mvCT+IqAAl
- ekXnU84Y+TxU9Hpp+n/uA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:XZbc450llhU=:b1r2XF9HV6hSlBY2I2v1VD
- Hf8GGJmgZT3vZ4dZiyrS7uMOXxzBF+10lc7kdOqAs4EZ5cRsZIo3ekelo8dZY0e//QUohXViQ
- WHKAzwhhef3Ra2b2Q9mlOQDoDW4+CtHlcCt0Ic3VCPv5+n5JGQvs+eLvg5MeG6b5YIHlQwE2A
- zHFL/srBgBJLdJidr44GhcRaIY8qyIDMTvN/MqjHZkeUUa9PwwhGC8j5t6XYbGk1Ui3BOTllI
- M+gJr58HAvSEy60bt4SIW0BzKhYBuomL+rDk1CiTxZ1OAxE1K7Mtg+t8/ILJ3cVdDlYewloFz
- 4j1Y4k9EQAe0yZ9Rnf1hNXp12UHBJ0i+hbpwwj4SqUpMzx/KnIRtffmuxPmEiOmGnjqNU10m3
- uG0xu1ymWB1XWd87hIVq5DtMGNFoz01OyDF9M/r/4mgA5+usPnmbvPHr5Z27dumilt7TsSLUN
- OTk76mR6/39r72roMRiy56l4wfIT8ItZcf+ijbEVfkbUOvRw6VsG7saB8M5ASOWdyo/76Acdz
- I5kTh5sOa0BhwGUXhEuyFeMgYFv71HZXP6lvYUCahpi5Y2GZG8sDMlDTaljOVWnuUu9OZLNez
- i/kIL4QD2Y7I2NZWklmSwofTpPgrEyUJcUsEmBArsNIiQ8t+2JmsnahT081AduunIJJ7WwIfX
- Dqzw1fSQYW0vloBSPE6fzMTJJKBjiRNrqV1d+o8ZkZUSkuvArvBfdVt47VOqMAKU5/XPLJ+O+
- 0vLSW1muaWg8QjKtIrr73m7l94dJ83SHaw3Tm/vHrMmV7u/FvhiRyCl3yx1EcCmQd0nG50fDt
- XQv+x1eyKtRKxq9niX3xhtFdYMStPixsFn+yOcvZ61JRK72wcYe2/6+IgL6fSxGRr9bKf9Ifg
- zRt8q5X+kojTav8/eBMN++wU/I/4Aq4vyVSocQvkfrI6VYGyk7R+HxXnxTI6RsI6siesWuOmX
- ZNXAjK/VB+/5Vkfs/4TKGSKfcyN5CG2YHIU4/m6+DxNqcG4HJKUZp0jNV2qA5P456ENueu8RC
- 4hGDGyKHcvBBG4v5jh+aK5cTmqr3wPPBWLNHG96sqe3hI/0U5jwOn1wH0MEc41KLzGo6bTwW5
- g4ysrK0GB9eTQs=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+kernel test robot reports kernel-doc warning:
 
+>> fs/btrfs/zstd.c:98: warning: This comment starts with '/**', but
+isn't a kernel-doc comment. Refer Documentation/doc-guide/kernel-doc.rst
 
-On 2022/4/16 12:49, Christoph Hellwig wrote:
-> On Sat, Apr 16, 2022 at 06:48:37AM +0800, Qu Wenruo wrote:
->> More and more bio submit functions are returning void and endio of the =
-bio.
->>
->> But there are still quite some not doing this, like btrfs_map_bio().
->>
->> I'm wondering at which boundary we should return void and handle
->> everything in-house?
->
-> I don't think it is quite clear.  All the I/O errors with a bio should
-> be handled through end_io, and we already have that, module the compress=
-ed
-> case with it's extra layer of bios.  Now at what point we call the
-> endio handler is a different question.  Duplicating it everywhere is
-> a bit annoying, so having some low-level helpers that just return an
-> error might be useful.  I plan a fair amount of refactoring around
-> btrfs_map_bio, so I'll see if lifting the end_io call into it might
-> or might no make sense while I'm at it.
+The warning is caused by missing function name (in this case
+zstd_reclaim_timer_fn) in the comment.
 
-Great to know that.
+Add the function name.
 
-Thanks,
-Qu
+Link: https://lore.kernel.org/linux-doc/202204151934.CkKcnvuJ-lkp@intel.com/
+Fixes: b672526e2ee935 (btrfs: use non-bh spin_lock in zstd timer callback)
+Reported-by: kernel test robot <lkp@intel.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: Nick Terrell <terrelln@fb.com>
+Cc: Schspa Shi <schspa@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Bagas Sanjaya <bagasdotme@gmail.com>
+---
+ This patch is applied on top of btrfs-devel/misc-next [1] tree.
+
+ [1]: https://github.com/kdave/btrfs-devel.git
+
+ fs/btrfs/zstd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index 0fe31a6f6e68f0..b2740358e94819 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -95,7 +95,7 @@ void zstd_free_workspace(struct list_head *ws);
+ struct list_head *zstd_alloc_workspace(unsigned int level);
+ 
+ /**
+- * Timer callback to free unused workspaces.
++ * zstd_reclaim_timer_fn() - Timer callback to free unused workspaces.
+  *
+  * @t: timer
+  *
+
+base-commit: 550a34e972578538fd0826916ae4fc407b62bb68
+-- 
+An old man doll... just what I always wanted! - Clara
+

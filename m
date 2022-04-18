@@ -2,93 +2,81 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75934C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Apr 2022 14:09:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91E92C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 18 Apr 2022 15:47:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245515AbiDROLs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Apr 2022 10:11:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46328 "EHLO
+        id S1345737AbiDRPtn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 18 Apr 2022 11:49:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60936 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344482AbiDROKQ (ORCPT
+        with ESMTP id S1345862AbiDRPtg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Apr 2022 10:10:16 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D4D536E09
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2022 06:10:46 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id BF169210EE
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2022 13:10:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1650287431; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=D6pnD33ydbcGt4kJ9gwMzCh5E/jm0KmEjg7zRACxSJM=;
-        b=kLPNUlNYU0U9AXNTKTYzk4F96NRqQqSiuhQlTq9IZaT3ktppjnSWfv/stbgrXwZWtObSHY
-        Wl0e8Y9TeAk8dxBuquBgIoAMSsVqZ/cZiuaPLwpV5B93gfN/qF10w+kTvlIrFmoV71Kp2N
-        nT4ANFxhMiYPTVf4yscjjkHjzydY910=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 14BF713ACB
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2022 13:10:30 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2G0YM0ZjXWKBMAAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2022 13:10:30 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: fix a memory leak when starting a transaction on fs with error
-Date:   Mon, 18 Apr 2022 21:10:07 +0800
-Message-Id: <0aa27221eba9359cd566fc6448d46b12583211f2.1650287150.git.wqu@suse.com>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1650287150.git.wqu@suse.com>
+        Mon, 18 Apr 2022 11:49:36 -0400
+Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B16FB3DA76
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2022 08:26:49 -0700 (PDT)
+Received: by mail-qk1-x734.google.com with SMTP id j9so3973787qkg.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Apr 2022 08:26:49 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=Ah0fueQ3iLWlIipxrI2Mp7PnF1WOJ+meFzcPfHC/7JM=;
+        b=Ec9GdXD1X1rIbBomiEeYu37YrPDeODbln9CqR1d3PZe3ueaOeKGwYWZOnkFKUzuJhc
+         I48SZgXKpxeROEhcm/eyv83icvxhG17HS0xd/fJrCwY3LMRsA5i0FN8OEYywYwKpA2o9
+         E4bQt7QrpfQoA5aT1YcUDiO3+cTuMS/BzZtjuCZ2zFbLNSsCguuWeksP7DCosEXWi5HT
+         8lm+jNKKH3S9ahUjZf5m4SSTKbt0jzbtkR9rv6DvU4jl4nHV+q21o1pUXRpHEcdwXIMB
+         RefbRDJBj/LgdEoLoSdxRanw4a6GtBEJPTR7pkh6VQ1jqsbpr/reB6KVHTrHNtyo5uq1
+         zBoA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=Ah0fueQ3iLWlIipxrI2Mp7PnF1WOJ+meFzcPfHC/7JM=;
+        b=ixKQTWnQjS3fHnTHWS7cyk1sSGM02REYwtcjEX74+07mlTPAWfK3Lhq2lUAHl0DeGE
+         Gmb3emsX2CJReTmNbghNpxqZwn6icobA1wuPAU5pSq2pq+2t10oEpFHYw7/hLe+AEnfv
+         DTzpFp97kbOJrDs9gVXGKe5XmQoaPh+JS60PHI07/ChmERIiqH87e5xAG5fjPi+LBRqm
+         wQ6eo1B3K1EbvsfVxJ5A3yMD0iTeNEw9aJ1sGUJUA/0bpZzxfZ1apQllpGMoMy/rxG3H
+         bqIDCzk+yAhfH+I7Z1g8zzwKm03rrohryricrZiKCHsGDa2xoRV2qWWKjzMOUbdFldyR
+         xnPg==
+X-Gm-Message-State: AOAM530tMFSZbMF075DD7UJCajes3QTovxCnsdTR9/qXPrAK2yIxm4Hb
+        0S1yMYxSbScKvSJiLI3EaTKSQA==
+X-Google-Smtp-Source: ABdhPJwOFwEOy4omdRFEmKvfWG2pAi4WkibjJExVNF3TDoyzJ2V4d36E/XxQDXUhiMZwrqXH1K48+Q==
+X-Received: by 2002:a37:9204:0:b0:69b:f7ea:4638 with SMTP id u4-20020a379204000000b0069bf7ea4638mr7100451qkd.77.1650295608747;
+        Mon, 18 Apr 2022 08:26:48 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id v17-20020ac85791000000b002f1ec31ed68sm6006245qta.91.2022.04.18.08.26.48
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 18 Apr 2022 08:26:48 -0700 (PDT)
+Date:   Mon, 18 Apr 2022 11:26:47 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: fix a memory leak when starting a
+ transaction on fs with error
+Message-ID: <Yl2DN8CyzdpZE3jh@localhost.localdomain>
 References: <cover.1650287150.git.wqu@suse.com>
+ <0aa27221eba9359cd566fc6448d46b12583211f2.1650287150.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <0aa27221eba9359cd566fc6448d46b12583211f2.1650287150.git.wqu@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Function btrfs_start_transaction() will allocate the memory
-unconditionally, but if the fs has an aborted transaction we don't free
-the allocated memory but return error directly.
+On Mon, Apr 18, 2022 at 09:10:07PM +0800, Qu Wenruo wrote:
+> Function btrfs_start_transaction() will allocate the memory
+> unconditionally, but if the fs has an aborted transaction we don't free
+> the allocated memory but return error directly.
+> 
+> Fix it by only allocate the new memory after the transaction_aborted
+> check.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Fix it by only allocate the new memory after the transaction_aborted
-check.
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- kernel-shared/transaction.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+Thanks,
 
-diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
-index 0201226678ba..799520a0ef71 100644
---- a/kernel-shared/transaction.c
-+++ b/kernel-shared/transaction.c
-@@ -25,13 +25,15 @@ struct btrfs_trans_handle* btrfs_start_transaction(struct btrfs_root *root,
- 		int num_blocks)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct btrfs_trans_handle *h = kzalloc(sizeof(*h), GFP_NOFS);
--
-+	struct btrfs_trans_handle *h;
-+	
- 	if (fs_info->transaction_aborted)
- 		return ERR_PTR(-EROFS);
- 
-+	h = kzalloc(sizeof(*h), GFP_NOFS);
- 	if (!h)
- 		return ERR_PTR(-ENOMEM);
-+
- 	if (root->commit_root) {
- 		error("commit_root already set when starting transaction");
- 		kfree(h);
--- 
-2.35.1
-
+Josef

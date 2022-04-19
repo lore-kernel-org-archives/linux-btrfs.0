@@ -2,132 +2,191 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E8D5C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Apr 2022 12:42:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5584C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Apr 2022 12:47:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350261AbiDSMpW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Apr 2022 08:45:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34852 "EHLO
+        id S1352419AbiDSMuf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Apr 2022 08:50:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41228 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238934AbiDSMpU (ORCPT
+        with ESMTP id S233135AbiDSMuf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 19 Apr 2022 08:45:20 -0400
-Received: from savella.carfax.org.uk (2001-ba8-1f1-f0e6-0-0-0-2.autov6rev.bitfolk.space [IPv6:2001:ba8:1f1:f0e6::2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00778369F4
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Apr 2022 05:42:37 -0700 (PDT)
-Received: from hrm by savella.carfax.org.uk with local (Exim 4.92)
-        (envelope-from <hrm@savella.carfax.org.uk>)
-        id 1ngnBh-0007zy-OP; Tue, 19 Apr 2022 13:42:33 +0100
-Date:   Tue, 19 Apr 2022 13:42:33 +0100
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Graham Cobb <g.btrfs@cobb.uk.net>
-Cc:     Alex Powell <alexj.powellalt@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: space still allocated post deletion
-Message-ID: <20220419124233.GA15632@savella.carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Graham Cobb <g.btrfs@cobb.uk.net>,
-        Alex Powell <alexj.powellalt@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-References: <CAKGv6Cq+uwBMgo6th6E16=om8321wTO3fZPXF151VLSYiexFUg@mail.gmail.com>
- <6672365e-c3d2-1a4c-7eb6-957f7a692d3a@cobb.uk.net>
+        Tue, 19 Apr 2022 08:50:35 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BC0537013;
+        Tue, 19 Apr 2022 05:47:52 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 32700210DC;
+        Tue, 19 Apr 2022 12:47:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1650372471; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=IIUEWqkdaS47NU4fQAGkXgkxYqxP+15bvx0Z2zfw+S8=;
+        b=fSSID0nZ2hSsccgNvWr0DZ2qYG58Y4DrN5lvsjKxuwH176RzP8tf5Cdi50bmJaXvCLTWRs
+        6YrW0elHpc8JZhpeU6fsd2BEm1f3/KO1+4yDB5XWrwLJ2vhHRLor1kgT+eaqWejo+KXnLK
+        TTRyIpTQqAyjKHLQ3FFHlC/tw2irHuA=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B4D1D139BE;
+        Tue, 19 Apr 2022 12:47:50 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 01jbKHavXmIxdQAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 19 Apr 2022 12:47:50 +0000
+Message-ID: <322a24a2-8ab3-63da-a284-e78663ddd0f8@suse.com>
+Date:   Tue, 19 Apr 2022 15:47:49 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.7.0
+Subject: Re: [PATCH] fstests: btrfs: test setting compression via xattr on
+ nodatacow files
+Content-Language: en-US
+To:     Chung-Chiang Cheng <cccheng@synology.com>, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, fdmanana@kernel.org, dsterba@suse.com
+Cc:     shepjeng@gmail.com, kernel@cccheng.net
+References: <20220418075430.484158-1-cccheng@synology.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+In-Reply-To: <20220418075430.484158-1-cccheng@synology.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <6672365e-c3d2-1a4c-7eb6-957f7a692d3a@cobb.uk.net>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Apr 19, 2022 at 12:21:31PM +0100, Graham Cobb wrote:
-> On 19/04/2022 11:41, Alex Powell wrote:
-> > Hi team,
-> > I have deleted hundreds of GB of files however space still remains the
-> > same, even after a full balance and a dusage=0 balance. The location I
-> > am deleting from is usually a mount point but I found some files had
-> > saved there while the array was unmounted, which I then removed.
-> 
-> Most likely you have files in subvolumes which are not currently mounted
-> anywhere. You need to mount the root subvolume of the filesystem to see
-> all the files. Many distros default to putting the system root into a
-> non-root subvolume.
-> 
-> I think you can see them all if you use:
-> 
-> btrfs subv list -a /
-> 
-> To access them...
-> 
-> mkdir /mnt/1
-> mount -o subvolid=5 /dev/sdh2 /mnt/1
 
-   As well as the above, the deleted files may also exist in
-snapshots, in which case the space is still needed to store the
-snapshot copy of it, and won't be released until all of those
-snapshots have been removed as well (this may simply be a case of
-waiting for the snapshots to time-out through your normal cleanup
-schedule).
 
-   If the things you deleted were themselves subvolumes, then it's
-possible that there was an open file on the subvol (or that it was
-monted elsewhere), in which case it won't be cleaned up until the open
-file/mount is closed. You can check that with "btrfs sub list -d", but
-I don't think that's likely to be the case here.
-
-   Hugo.
-
-> Graham
+On 18.04.22 г. 10:54 ч., Chung-Chiang Cheng wrote:
+> Compression and nodatacow are mutually exclusive. Besides ioctl, there
+> is another way to setting compression via xattrs, and shouldn't produce
+> invalid combinations.
 > 
-> > 
-> > root@bean:/home/bean# du -h --max-depth=1 /mnt/data/triage
-> > 6.4G /mnt/data/triage/complete
-> > 189G /mnt/data/triage/incomplete
-> > 195G /mnt/data/triage
-> > 
-> > root@bean:/home/bean# rm -rf /mnt/data/triage/complete/*
-> > root@bean:/home/bean# rm -rf /mnt/data/triage/incomplete/*
-> > root@bean:/home/bean# du -h --max-depth=1 /mnt/data/triage
-> > 0 /mnt/data/triage/complete
-> > 0 /mnt/data/triage/incomplete
-> > 0 /mnt/data/triage
-> > 
-> > root@bean:/home/bean# btrfs filesystem show
-> > Label: none  uuid: 24933208-0a7a-42ff-90d8-f0fc2028dec9
-> > Total devices 1 FS bytes used 209.03GiB
-> > devid    1 size 223.07GiB used 211.03GiB path /dev/sdh2
-> > 
-> > root@bean:/home/bean# du -h --max-depth=1 /
-> > 244M /boot
-> > 91M /home
-> > 7.5M /etc
-> > 0 /media
-> > 0 /dev
-> > 0 /mnt
-> > 0 /opt
-> > 0 /proc
-> > 2.7G /root
-> > 1.6M /run
-> > 0 /srv
-> > 0 /sys
-> > 0 /tmp
-> > 3.6G /usr
-> > 13G /var
-> > 710M /snap
-> > 22G /
-> > 
-> > Linux bean 5.15.0-25-generic #25-Ubuntu SMP Wed Mar 30 15:54:22 UTC
-> > 2022 x86_64 x86_64 x86_64 GNU/Linux
-> > btrfs-progs v5.16.2
+> Signed-off-by: Chung-Chiang Cheng <cccheng@synology.com>
+> ---
+>   tests/btrfs/264     | 76 +++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/264.out | 15 +++++++++
+>   2 files changed, 91 insertions(+)
+>   create mode 100755 tests/btrfs/264
+>   create mode 100644 tests/btrfs/264.out
 > 
+> diff --git a/tests/btrfs/264 b/tests/btrfs/264
+> new file mode 100755
+> index 000000000000..42bfcd4f93a0
+> --- /dev/null
+> +++ b/tests/btrfs/264
+> @@ -0,0 +1,76 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (C) 2022 Synology Inc. All Rights Reserved.
+> +#
+> +# FS QA Test No. 264
+> +#
+> +# Compression and nodatacow are mutually exclusive. Besides ioctl, there
+> +# is another way to setting compression via xattrs, and shouldn't produce
+> +# invalid combinations.
+> +#
+> +# To prevent mix any compression-related options with nodatacow, FS_NOCOMP_FL
+> +# is also rejected by ioctl as well as FS_COMPR_FL on nodatacow files. To
+> +# align with it, no and none are also unacceptable in this test.
+> +#
+> +# The regression is fixed by a patch with the following subject:
+> +#   btrfs: do not allow compression on nodatacow files
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick compress attr
+> +
+> +# Import common functions.
+> +. ./common/filter
+> +. ./common/attr
+> +
+> +# real QA test starts here
+> +
+> +_supported_fs btrfs
+> +_require_scratch
+> +_require_chattr C
+> +_require_chattr c
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1
+> +_scratch_mount
+> +
+> +#
+> +# DATACOW
+> +#
+> +test_file="$SCRATCH_MNT/foo"
+> +touch "$test_file"
+> +$CHATTR_PROG -C "$test_file"
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +
+> +$SETFATTR_PROG -n "btrfs.compression" -v zlib "$test_file" |& _filter_scratch
 
--- 
-Hugo Mills             | What's a Nazg�l like you doing in a place like this?
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                                Illiad
+In my testing setfattr doesn't produce any output, so why the 
+_filter_scratch ?
+
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+
+This (as all other lsattr lines) fail for me because of difference in 
+output - in your golden file there is a single space char between the 
+filename and its state whilst lsattr produces a number of spaces. So in 
+addition to filter_scratch this needs _filter_spaces as well :
+
++$LSATTR_PROG -l "$test_file" | _filter_scratch | _filter_spaces
+
+> +$SETFATTR_PROG -n "btrfs.compression" -v no   "$test_file" |& _filter_scratch
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +$SETFATTR_PROG -n "btrfs.compression" -v lzo  "$test_file" |& _filter_scratch
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +$SETFATTR_PROG -n "btrfs.compression" -v none "$test_file" |& _filter_scratch
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +$SETFATTR_PROG -n "btrfs.compression" -v zstd "$test_file" |& _filter_scratch
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +
+> +
+> +#
+> +# NODATACOW
+> +#
+> +test_file="$SCRATCH_MNT/bar"
+> +touch "$test_file"
+> +$CHATTR_PROG +C "$test_file"
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +
+> +# all valid compression type are not allowed on nodatacow files
+> +$SETFATTR_PROG -n "btrfs.compression" -v zlib "$test_file" |& _filter_scratch
+> +$SETFATTR_PROG -n "btrfs.compression" -v lzo  "$test_file" |& _filter_scratch
+> +$SETFATTR_PROG -n "btrfs.compression" -v zstd "$test_file" |& _filter_scratch
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +
+> +# no/none are also not allowed on nodatacow files
+> +$SETFATTR_PROG -n "btrfs.compression" -v no   "$test_file" |& _filter_scratch
+> +$SETFATTR_PROG -n "btrfs.compression" -v none "$test_file" |& _filter_scratch
+> +$LSATTR_PROG -l "$test_file" | _filter_scratch
+> +
+> +# success, all done
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/264.out b/tests/btrfs/264.out
+> new file mode 100644
+> index 000000000000..82c551411411
+> --- /dev/null
+> +++ b/tests/btrfs/264.out
+> @@ -0,0 +1,15 @@
+> +QA output created by 264
+> +SCRATCH_MNT/foo ---
+> +SCRATCH_MNT/foo Compression_Requested
+> +SCRATCH_MNT/foo ---
+> +SCRATCH_MNT/foo Compression_Requested
+> +SCRATCH_MNT/foo ---
+> +SCRATCH_MNT/foo Compression_Requested
+> +SCRATCH_MNT/bar No_COW
+> +setfattr: SCRATCH_MNT/bar: Invalid argument
+> +setfattr: SCRATCH_MNT/bar: Invalid argument
+> +setfattr: SCRATCH_MNT/bar: Invalid argument
+> +SCRATCH_MNT/bar No_COW
+> +setfattr: SCRATCH_MNT/bar: Invalid argument
+> +setfattr: SCRATCH_MNT/bar: Invalid argument
+> +SCRATCH_MNT/bar No_COW

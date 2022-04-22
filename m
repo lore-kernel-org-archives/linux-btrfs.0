@@ -2,64 +2,81 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68B78C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Apr 2022 20:25:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03B57C433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 22 Apr 2022 10:11:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1392316AbiDUU2X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Apr 2022 16:28:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46240 "EHLO
+        id S1446238AbiDVKOV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 22 Apr 2022 06:14:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49514 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1392313AbiDUU2V (ORCPT
+        with ESMTP id S1377723AbiDVKOU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 21 Apr 2022 16:28:21 -0400
-Received: from out30-54.freemail.mail.aliyun.com (out30-54.freemail.mail.aliyun.com [115.124.30.54])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6CCDF3FBD1;
-        Thu, 21 Apr 2022 13:25:30 -0700 (PDT)
-X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R631e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e01424;MF=jiapeng.chong@linux.alibaba.com;NM=1;PH=DS;RN=7;SR=0;TI=SMTPD_---0VAhNoEG_1650572724;
-Received: from localhost(mailfrom:jiapeng.chong@linux.alibaba.com fp:SMTPD_---0VAhNoEG_1650572724)
-          by smtp.aliyun-inc.com(127.0.0.1);
-          Fri, 22 Apr 2022 04:25:28 +0800
-From:   Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
-To:     clm@fb.com
-Cc:     josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Jiapeng Chong <jiapeng.chong@linux.alibaba.com>,
-        Abaci Robot <abaci@linux.alibaba.com>
-Subject: [PATCH] btrfs: zoned: Fix non-kernel-doc comment
-Date:   Fri, 22 Apr 2022 04:25:18 +0800
-Message-Id: <20220421202518.128992-1-jiapeng.chong@linux.alibaba.com>
-X-Mailer: git-send-email 2.20.1.7.g153144c
+        Fri, 22 Apr 2022 06:14:20 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F1AB96362
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Apr 2022 03:11:27 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id AE9CBB82BB6
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Apr 2022 10:11:26 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 21802C385A0;
+        Fri, 22 Apr 2022 10:11:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1650622285;
+        bh=kRxAWbARN7CAhGXFEExgW2m2+FmfUAuaWy089TtR0vc=;
+        h=Date:From:To:Subject:References:In-Reply-To:From;
+        b=n6PZnE9r5+Lg5cQncrxIvXVrGadqRFBx4X/6LTjZCs6biRYont++RwOzYbUh+oohM
+         JQO+FrkxawTgrMVTkAkrb03CdOMhVgol5EamNxKHZQzDC9x1+vyR5ahtFAmSx2F1MV
+         c8pvPP/JJ5QiBesxwCY4HJDgJa6rfvslOnBILdkS2/c3xSGUP+doHghusp/gXvvOPQ
+         5TxyY1ZrqLcWJyaDYXo05U4XP5G68psAWAsrN/KhRSXi+vPliD44Ufa8lYt290aCi0
+         fAyhUfPfIXs3i1nM7ZDNHVemRc1+FQkdcOS4B4UQog3Znkptp70IljLbn/kzEWQ61p
+         DZjgJT29HqDQQ==
+Date:   Fri, 22 Apr 2022 11:11:22 +0100
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Improve error reporting in
+ lookup_inline_extent_backref
+Message-ID: <YmJ/SlbQJJrS1ars@debian9.Home>
+References: <20220420115401.186147-1-nborisov@suse.com>
+ <20220420145203.GE1513@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220420145203.GE1513@twin.jikos.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Fixes the following W=1 kernel build warning:
+On Wed, Apr 20, 2022 at 04:52:04PM +0200, David Sterba wrote:
+> On Wed, Apr 20, 2022 at 02:54:00PM +0300, Nikolay Borisov wrote:
+> > When iterating the backrefs in an extent item if the ptr to the
+> > 'current' backref record goes beyond the extent item a warning is
+> > generated and -ENOENT is returned. However what's more appropriate to
+> > debug such cases would be to return EUCLEAN and also print the in-memory
+> > state of the offending leaf.
 
-fs/btrfs/zoned.c:1811: warning: This comment starts with '/**', but
-isn't a kernel-doc comment. Refer Documentation/doc-guide/kernel-doc.rst
- * Activate block group and underlying device zones
+How does printing only the leaf helps debugging anything?
 
-Reported-by: Abaci Robot <abaci@linux.alibaba.com>
-Signed-off-by: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
----
- fs/btrfs/zoned.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+You get the leaf dumped, but how do you know what you should be looking for?
+Which key in the leaf, and for which inline backref are we searching for?
 
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 081df456d6df..5da40e190942 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -1808,7 +1808,7 @@ struct btrfs_device *btrfs_zoned_get_device(struct btrfs_fs_info *fs_info,
- }
- 
- /**
-- * Activate block group and underlying device zones
-+ * btrfs_zone_activate() - Activate block group and underlying device zones
-  *
-  * @block_group: the block group to activate
-  *
--- 
-2.20.1.7.g153144c
+Dumping the leaf alone is not really useful, unless we also mention what we
+are searching for...
 
+So this should print as well:
+
+1) The key, which tells us which key to look at, the extent's bytenr, type
+   and size or owner;
+
+2) The type of reference we are looking for, stored in the variable 'want';
+
+3) The values of the variables 'root_objectid', 'parent' and 'offset'.
+   These are used to search for the backreference we want, once we find
+   one with the type we want.
+
+Thanks.
+
+> 
+> Agreed, EUCLEAN makese sense. Added to misc-next, thanks.

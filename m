@@ -2,105 +2,143 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CFBCC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Apr 2022 22:38:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8694DC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Apr 2022 22:44:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234747AbiDYWlt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Apr 2022 18:41:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42162 "EHLO
+        id S235102AbiDYWrS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Apr 2022 18:47:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234711AbiDYWlr (ORCPT
+        with ESMTP id S229928AbiDYWrS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Apr 2022 18:41:47 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA89641FA9
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Apr 2022 15:38:41 -0700 (PDT)
+        Mon, 25 Apr 2022 18:47:18 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E23F548891
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Apr 2022 15:44:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1650926315;
-        bh=z04m16JU1eiR2Q2n03yxPFwuKoPS7yPFvfZafam9BvE=;
+        s=badeba3b8450; t=1650926648;
+        bh=Ag+w5FtGBGwcWS/O7hL7zIoY8gpWnVY6TnrplKwo9tY=;
         h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-        b=SNkUh/dImtJ8f5oV/Ym3ETgLvLE3dacYfrK/T9PpkcLSEAfb83n5396yrhCmJfCmC
-         9ygzWEjylrmtAEnwtKwBoNF8Y2xckYNsOjdyHy30qaQbstHI+Nkvfhp41DLt9UMvZR
-         8bXD0artFfdf4X/F2MXO1K/Mkf3Qx82EHgfxfviQ=
+        b=Js+KDMhTQfb0i282Ev5QdXqOod7PKoZrH8sVJIOwJgzPV4Givt21TYJtC1ClhGSBC
+         pm8gPV4lZKXqPuEstr6KWbD9SaW+U36URIu6w1+cfYzIIiMwcHYocik7gfErdzBgHl
+         w1kibCIQ+FSfCC4ZHdGEr15EvKCPjvc6XcBhYvPw=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MAwbp-1ncDaN0Zdh-00BHAX; Tue, 26
- Apr 2022 00:38:35 +0200
-Message-ID: <e0739e20-c693-7bd8-4a09-343a215c044d@gmx.com>
-Date:   Tue, 26 Apr 2022 06:38:30 +0800
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mzyuc-1o3gor2pTK-00x7M3; Tue, 26
+ Apr 2022 00:44:08 +0200
+Message-ID: <57d6192b-e1fd-bd14-d869-d03559c34eb1@gmx.com>
+Date:   Tue, 26 Apr 2022 06:44:04 +0800
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.8.1
-Subject: Re: [PATCH 0/8] btrfs-progs: add RAID56 rebuild ability at read time
+Subject: Re: [PATCH 2/2] btrfs-progs: fsck-tests: check warning for seed and
+ sprouted filesystems
 Content-Language: en-US
 To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
-References: <cover.1649162174.git.wqu@suse.com>
- <20220411150149.GP15609@twin.jikos.cz> <20220425162913.GP18596@twin.jikos.cz>
+References: <cover.1650180472.git.wqu@suse.com>
+ <c1c97aca3ca89edfb23788858d186a50ed80d488.1650180472.git.wqu@suse.com>
+ <20220425170408.GR18596@twin.jikos.cz>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220425162913.GP18596@twin.jikos.cz>
+In-Reply-To: <20220425170408.GR18596@twin.jikos.cz>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:GisdZ1/T1ajWQbbuhTWKvOsPoiInsixZ7ajYZNyM8QPvGz+eH9+
- ZAdom4UYj1CvAV1rURP632eAP8GSkU5GGqAiRUITWHIXHeRGhLGFvrBR8U9URjzQsITEYdm
- larFdtiOPuy9UMjvu260ZOa4HHy5HCbTMLb7vjCDkPSOS+0/IG6dWL61mgPa02hPWAlKS8S
- O3pk/t0vjBgDHBIMtaZEg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:UMEMn4li+ZQ=:gI1ZzbuvgFWbm6hs1qgD1S
- n1EGKU7mDVUazbuRcyxgZrh2vU/UeO9HUtXsIcwYX7jztVONK3MP4kmMJ2vYv8UR2ZqL+hKqa
- X/GdOJ8YOEjTFDeUZmXtKGzWt8U2IU1VqpYuFZc0ttV9BnBAyrAooqJZV1uNDeQNqothmPn96
- 5FKvzccvP+28XJPoZZ6NFNYDo2WPU78WiqVtIq+7dmbu3qX4LxQ7AWXHa+7gxHfd1EVM/Oid3
- L74M62Dl5dKbiaCdgNw7i/pBgEkdwXVm0EhCnvh+McWO5l5jsYCISaiR77tdlnEFDBSMg4l1G
- 2gOu7LR173cNDVDP0ad/Lf38/L34viwuhVTKE/LEj7oHQpEE4EViUfRGDFP66F9dYQg2ROH3T
- mymgwyanYZ58I7z1HA2YbOD+AzGGtPd1xzYWQw6PebYmQJ30XgcVEjWGmrr0l27ZOXghh3A1j
- 5uV//T9L29Cfzcov0tw6gM+MFXZV6e32ulH60t/rx14ZzznwIlGvxgJ7iJRLwxCSaK5jw8LDj
- V3/55txpghasqv3AXKv7xrPnx/tHBlfZvthxcXrq81WCWK/xJrWfiT1BXtTb3r2nl6eIjhcrA
- RV/HoEd1ITOxXhIg6ic4xJ5D96B0dikHeP9nmGD7ZRth6RDLmorMKqnOYFtM1J9IbZyfioxLK
- M2LfTdkxrClblg5Zvg90epA4rS78HKSWDo7i7tPVQBAGrMOzW2jOhkTiQc9fVb97m5d05vEIZ
- IiOzzUINDqFeBFmk0KS0uB50RqvVBfogSfZYORoRBTnPyp7MGVf0oVx2K9o3A6TDR/hFWW6mP
- 3Z6SEJvKV/IZZ96YIdMPIAo9OC1WAg8IIPf6RqQGOZhhvCKAfDpWmlUVtn64SKpHZ43H3B1Kj
- XIe5fCzWNbq9JhRGUKgCrSfcnLYsQ3cR86kws+SkHHbtmf+8FvlIEWWZuupSvb2iCRsXDh9tQ
- krGeBxEWqVidKMzlH2yHJWJeBLpg1OTXzbzw9PTgNV4zx3pDb/t0hoFB2UbaIFp819yxCDa8p
- US0pWd3xXvZ/vgfDish70WisrYVXfso0qpdOkkAD5w9q1WMTUMmTVoGIJiBJFntuvFsI8R//0
- JOlbJvN/dn2GFM=
+X-Provags-ID: V03:K1:bYwvyS0yxT5XPMmEXUStskUc6+dGkoeVrc0hRe+BSNmgXlg55lP
+ R94MU/8iN9T19NWs7kZNv3zkbQi1/utS3iDLEmvElpoA0DEHKPVk6Ioorq/SVd33uAMKPdx
+ QBONIW0rP+jPXDQVXRLLcILNpVBguGhOEpDa9OMxyUS8iBflcM7Mtc9P29DooNmeI0L55N2
+ HE0nKI7SylWKT5dcgwv/A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:tH2PS+Elmuo=:t7h57WtaSf+rE/3NQvo12H
+ wrzqm+6X48paKmpyoC8MyDJZnYtIW9vPJj93pTHYvCUd3/gGXCCl1K+qnQhdt6s0OqiDusL0D
+ gAtZnCfE6M+OqGg/1WBEBavA6sf8NCfmAjTRKg2VteWudrUTxzdai/rvnGV8jqLGEIlV7mX4S
+ Gca/5qDuZyMU5d37NyWp6zsM2Y0Q/pQRNVsFukom8q4aquyl0SumM/coPD7KMIBNIFJj+4oHy
+ GN1v3/cp1u8Uhd4Iwk1LuKs+CmluVvLNiZFK60BWcsbOE7sn85ArDuJ7WZ+N7+Z8g3qsOSzSk
+ i3NHNdy7QErkAamaynt3a7OFAc25NxwYOejsglvDafJRcj37OFgtsKDs8uQzs6DzwaPStMCGs
+ LQbwM1LN8E7iWYcBeWRbxj/lf6FYOt+y53FZG4E2QHUaU/HQwxCG+mraTeVFfIc7F2MAzzLJD
+ SI4dKAM3/4+pNVsDNYd2HLycEIr73zqvLVBSrAK4Rdkq8nXvbkr5fBNHxWmpsXu1Kqrkl2SHD
+ FCPZWIwzKhsWqWsOK0UHzB8VEXTJZ6ziFYQTLl4mGJRJ4qcjk6eyTXgRX6TSXzaQy1WIqlCHH
+ Th823TRUvjpLzoLutTgKk3ae1SMpHEGsubBhoLFx2sLBfT+K4RyJ+mPXO+p6b9bcr3nPw4eKy
+ vwd6P5WiHu7EB1oyTag1C4lV1s/lr2x0jAb/6pqP01CaQ6mnp4CwhUuvKEi28qHJGBbz3ijpx
+ HdZiox3HvG/jJfCemOFuj2vwhg8HCWT92v+uMR/H8qsjf68xhKnHJTzrMMJPyyGgXwZPcLR7G
+ TnUH5zBM/XTm6nGNMVA5IswB2I7Xwh0qlkBBAr4U7lNm1uL4fpFlK69iQdGrDsXAnqpZZdyd6
+ E8Eievu/5H7Zhz6R54qpcTn11F8Lw130oMLzDPSr5cGikZI+SWtOnOYfuNbFrDTvqy981pLaE
+ Unb3+bPZUGSYtJHA53Mns72+zOA8BbRn1nCrH1lAZaB8M+5FWPgREiToyruoT+Do58QUDnRzt
+ 2qzDy+6dVlBCCcs/wqAQ9zUl/Rj1+snH51qUGMHSKMwlp55JG7BTTzL/0t3PNr0w+U84LwT1T
+ YAa7twuuCSi2H0=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2022/4/26 00:29, David Sterba wrote:
-> On Mon, Apr 11, 2022 at 05:01:49PM +0200, David Sterba wrote:
->> On Tue, Apr 05, 2022 at 08:48:22PM +0800, Qu Wenruo wrote:
->>> This branch can be fetched from github:
->>> https://github.com/adam900710/btrfs-progs/tree/raid56_rebuild
+On 2022/4/26 01:04, David Sterba wrote:
+> On Sun, Apr 17, 2022 at 03:30:36PM +0800, Qu Wenruo wrote:
+>> Previously we had a bug that btrfs check would report false warning for
+>> a sprouted filesystem.
 >>
->> The mkfs tests fail in 001 with the following last command:
+>> So this patch will add a new test case to make sure neither seed nor
+>> and sprouted filesystem will cause such false warning.
 >>
->> =3D=3D=3D=3D=3D=3D RUN CHECK root_helper .../mkfs.btrfs -f -d raid5 -m =
-raid5 /dev/loop0 /dev/loop1 /dev/loop2 /dev/loop3
->> WARNING: RAID5/6 support has known problems is strongly discouraged
->>           to be used besides testing or evaluation.
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   .../fsck-tests/057-seed-false-alerts/test.sh  | 51 ++++++++++++++++++=
++
+>>   1 file changed, 51 insertions(+)
+>>   create mode 100755 tests/fsck-tests/057-seed-false-alerts/test.sh
 >>
->> kernel-shared/transaction.c:155: __commit_transaction: BUG_ON `ret` tri=
-ggered, value 65536
->> .../mkfs.btrfs(__commit_transaction+0x197)[0x43a107]
->> /...mkfs.btrfs(btrfs_commit_transaction+0x13b)[0x43a26b]
->> /...mkfs.btrfs(main+0x174b)[0x40f68d]
->> /lib64/libc.so.6(+0x2d540)[0x7f969b5ea540]
->> /lib64/libc.so.6(__libc_start_main+0x7c)[0x7f969b5ea5ec]
->> /...mkfs.btrfs(_start+0x25)[0x40d965]
->> /...tests/common: line 540: 29172 Aborted                 sudo -n "$@"
->> failed: root_helper .../mkfs.btrfs -f -d raid5 -m raid5 /dev/loop0 /dev=
-/loop1 /dev/loop2 /dev/loop3
->> test failed for case 001-basic-profiles
+>> diff --git a/tests/fsck-tests/057-seed-false-alerts/test.sh b/tests/fsc=
+k-tests/057-seed-false-alerts/test.sh
+>> new file mode 100755
+>> index 000000000000..3a442c1202d0
+>> --- /dev/null
+>> +++ b/tests/fsck-tests/057-seed-false-alerts/test.sh
+>> @@ -0,0 +1,51 @@
+>> +#!/bin/bash
+>> +#
+>> +# Make sure "btrfs check" won't report false alerts on sprouted filesy=
+stems
+>> +#
+>> +
+>> +source "$TEST_TOP/common"
+>> +
+>> +check_prereq btrfs
+>> +check_prereq mkfs.btrfs
+>> +check_prereq btrfstune
+>> +check_global_prereq losetup
+>> +
+>> +setup_loopdevs 2
+>> +prepare_loopdevs
+>> +dev1=3D${loopdevs[1]}
+>> +dev2=3D${loopdevs[2]}
+>> +TEST_DEV=3D$dev1
+>> +
+>> +setup_root_helper
+>> +
+>> +run_check $SUDO_HELPERS "$TOP/mkfs.btrfs" -f $dev1
+>               ^^^^^^^^^^^^^
 >
-> It's caused by patch [PATCH 4/8] btrfs-progs: use write_data_to_disk()
-> to replace write_extent_to_disk()
+> It's $SUDO_HELPER, otherwise it does not work, also please quote all
+> shell variables, everywhere.
+>
+>> +run_check $SUDO_HELPERS "$TOP/btrfstune" -S1 $dev1
+>> +run_check_mount_test_dev
+>> +run_check $SUDO_HELPERS "$TOP/btrfs" device add -f $dev2 $TEST_MNT
+>> +
+>> +# Here we can not use umount helper, as it uses the seed device to do =
+the
+>> +# umount. We need to manually unmout using the mount point
+>> +run_check $SUDO_HELPERS umount $TEST_MNT
+>> +
+>> +seed_output=3D$(_mktemp --tmpdir btrfs-progs-seed-check-stdout.XXXXXX)
+>
+> This won't work as intended, there's a helper _mktemp_dir that creates a
+> temporary directory, otherwise --tmpdir is interpreted as the direcotry
+> name.
 
-That's a known one, I forgot to change the return value back to 0 for
-write_extent_to_disk().
+My bad, it should be mktemp without the "_" prefix, just like what we
+did in all the run* helpers.
 
-Do I need to update the whole series or just send an update based on this?
+And I'm not expected to create a directory, thus I don't need to
+_mktemp_dir.
 
 Thanks,
 Qu

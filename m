@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A3C1C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Apr 2022 07:56:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B173EC433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Apr 2022 07:56:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233539AbiDYH7Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Apr 2022 03:59:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36758 "EHLO
+        id S236418AbiDYH73 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Apr 2022 03:59:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51894 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241802AbiDYH5x (ORCPT
+        with ESMTP id S241821AbiDYH5x (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 25 Apr 2022 03:57:53 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F330CF5
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Apr 2022 00:54:37 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC69312AB4
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Apr 2022 00:54:42 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=6HVudaP4Q2ajBb8sgIouhJSTk1+t3X3wBj+DgRvCPWY=; b=iXOYUaPEkzmPM8JI1XEpVdNHD2
-        8Z68DWvE+3AxIBlv4X0rqDVyuC+xI6Tyq3oPFJ3r+nxwmeEZXMHVT3AHiPD/W325Dc6bimEQ+5pNX
-        YiufiYKguWFl/RgEJ82gJLBtQdmvrK6CgX1hxpy90lNbrqVG8u0/gaK/+bBoKbwyV4vll6tkG/dts
-        +CEx9jiPnLfr76BqRhz0kAOc3Xuo5QbRBW1zkm48fR/iH5hYWGdH5h45J67ao2xgwFcKkIWoUbcPv
-        caRKoPKMMK73OR0F2dydmqNv0Zy03mmZPGQAjSR8nGlFrI7v2JpsoxMeE1mBkf/odgt0ofKzcn/Pf
-        sdc94bnA==;
+        bh=T7lWEjph/SypMnlzOnS9w29dhO3ZFDyDZrJi5aoI4vk=; b=DcKDWn9PyZUGx4PoRl0Olr+8Bg
+        95yyI2nDw9qlniJZjGuuEApZPXsU8D353MopgAWDE+CbtXbAioHfdwnkYFD1HPjmwuBzjBg6GvKkH
+        TfwZzun3570GBpwZr+Xt5oc1LdmdE9tE3wY/57nS/Zoa2h/L88DfBaByV1QcQXVbXS7X9frLJ/tDr
+        Mm2gLU0W3+4WgNt0bdmOoNHaNQKOJHgPViAsDhrRqAdVlMqIFPZkJgDsPlX1N164AcJJv5rrX7iKc
+        pWuP354crIfQnwiy+MNWrSwL2FxQ8i2apieiaaiZAo4AjTOwrR0mEubU5ZKJ7bAgVQrpAeY/t/NJB
+        Ew6DDL5A==;
 Received: from 80-254-69-104.dynamic.monzoon.net ([80.254.69.104] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nitYG-008ggK-J2; Mon, 25 Apr 2022 07:54:33 +0000
+        id 1nitYM-008gia-3M; Mon, 25 Apr 2022 07:54:38 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/10] btrfs: split btrfs_submit_data_bio
-Date:   Mon, 25 Apr 2022 09:54:11 +0200
-Message-Id: <20220425075418.2192130-4-hch@lst.de>
+Subject: [PATCH 05/10] btrfs: defer I/O completion based on the btrfs_raid_bio
+Date:   Mon, 25 Apr 2022 09:54:13 +0200
+Message-Id: <20220425075418.2192130-6-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220425075418.2192130-1-hch@lst.de>
 References: <20220425075418.2192130-1-hch@lst.de>
@@ -45,229 +45,278 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Split btrfs_submit_data_bio into one helper for reads and one for writes.
+Instead of attaching a an extra allocation an indirect call to each
+low-level bio issued by the RAID code, add a work_struct to struct
+btrfs_raid_bio and only defer the per-rbio completion action.  The
+per-bio action for all the I/Os are trivial and can be safely done
+from interrupt context.
+
+As a nice side effect this also allows sharing the boilerplate code
+for the per-bio completions
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/ctree.h     |   6 +-
- fs/btrfs/extent_io.c |  12 ++--
- fs/btrfs/inode.c     | 131 ++++++++++++++++++++-----------------------
- 3 files changed, 73 insertions(+), 76 deletions(-)
+ fs/btrfs/ctree.h   |   2 +-
+ fs/btrfs/disk-io.c |  11 ++---
+ fs/btrfs/disk-io.h |   1 -
+ fs/btrfs/raid56.c  | 111 ++++++++++++++++++---------------------------
+ 4 files changed, 48 insertions(+), 77 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ec8487e119949..ab9a0cfed7bb0 100644
+index ab9a0cfed7bb0..a76291e4594f2 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -3250,8 +3250,10 @@ void btrfs_inode_safe_disk_i_size_write(struct btrfs_inode *inode, u64 new_i_siz
- u64 btrfs_file_extent_end(const struct btrfs_path *path);
+@@ -852,7 +852,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_workqueue *flush_workers;
+ 	struct btrfs_workqueue *endio_workers;
+ 	struct btrfs_workqueue *endio_meta_workers;
+-	struct btrfs_workqueue *endio_raid56_workers;
++	struct workqueue_struct *endio_raid56_workers;
+ 	struct workqueue_struct *rmw_workers;
+ 	struct btrfs_workqueue *endio_meta_write_workers;
+ 	struct btrfs_workqueue *endio_write_workers;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c5dba8a39e952..cb8fe234fbc0c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -754,14 +754,10 @@ static void end_workqueue_bio(struct bio *bio)
+ 			wq = fs_info->endio_meta_write_workers;
+ 		else if (end_io_wq->metadata == BTRFS_WQ_ENDIO_FREE_SPACE)
+ 			wq = fs_info->endio_freespace_worker;
+-		else if (end_io_wq->metadata == BTRFS_WQ_ENDIO_RAID56)
+-			wq = fs_info->endio_raid56_workers;
+ 		else
+ 			wq = fs_info->endio_write_workers;
+ 	} else {
+-		if (end_io_wq->metadata == BTRFS_WQ_ENDIO_RAID56)
+-			wq = fs_info->endio_raid56_workers;
+-		else if (end_io_wq->metadata)
++		if (end_io_wq->metadata)
+ 			wq = fs_info->endio_meta_workers;
+ 		else
+ 			wq = fs_info->endio_workers;
+@@ -2282,7 +2278,7 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
+ 	btrfs_destroy_workqueue(fs_info->hipri_workers);
+ 	btrfs_destroy_workqueue(fs_info->workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_workers);
+-	btrfs_destroy_workqueue(fs_info->endio_raid56_workers);
++	destroy_workqueue(fs_info->endio_raid56_workers);
+ 	destroy_workqueue(fs_info->rmw_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_write_workers);
+ 	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
+@@ -2490,8 +2486,7 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
+ 		btrfs_alloc_workqueue(fs_info, "endio-meta-write", flags,
+ 				      max_active, 2);
+ 	fs_info->endio_raid56_workers =
+-		btrfs_alloc_workqueue(fs_info, "endio-raid56", flags,
+-				      max_active, 4);
++		alloc_workqueue("btrfs-endio-raid56", flags, max_active);
+ 	fs_info->rmw_workers = alloc_workqueue("btrfs-rmw", flags, max_active);
+ 	fs_info->endio_write_workers =
+ 		btrfs_alloc_workqueue(fs_info, "endio-write", flags,
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 9340e3266e0ac..97255e3d7e524 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -21,7 +21,6 @@ enum btrfs_wq_endio_type {
+ 	BTRFS_WQ_ENDIO_DATA,
+ 	BTRFS_WQ_ENDIO_METADATA,
+ 	BTRFS_WQ_ENDIO_FREE_SPACE,
+-	BTRFS_WQ_ENDIO_RAID56,
+ };
  
- /* inode.c */
--void btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
--			   int mirror_num, unsigned long bio_flags);
-+void btrfs_submit_data_write_bio(struct inode *inode, struct bio *bio,
-+		int mirror_num, unsigned long bio_flags);
-+void btrfs_submit_data_read_bio(struct inode *inode, struct bio *bio,
-+		int mirror_num, unsigned long bio_flags);
- unsigned int btrfs_verify_data_csum(struct btrfs_bio *bbio,
- 				    u32 bio_offset, struct page *page,
- 				    u64 start, u64 end);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f9d6dd310c42b..80b4482c477c6 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -186,11 +186,15 @@ static void submit_one_bio(struct bio *bio, int mirror_num, unsigned long bio_fl
- 	/* Caller should ensure the bio has at least some range added */
- 	ASSERT(bio->bi_iter.bi_size);
+ static inline u64 btrfs_sb_offset(int mirror)
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index a5b623ee6facd..1a3c1a9b10d0b 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -164,6 +164,9 @@ struct btrfs_raid_bio {
+ 	atomic_t stripes_pending;
  
--	if (is_data_inode(tree->private_data))
--		btrfs_submit_data_bio(tree->private_data, bio, mirror_num,
-+	if (!is_data_inode(tree->private_data))
-+		btrfs_submit_metadata_bio(tree->private_data, bio, mirror_num);
-+	else if (btrfs_op(bio) == BTRFS_MAP_WRITE)
-+		btrfs_submit_data_write_bio(tree->private_data, bio, mirror_num,
- 					    bio_flags);
- 	else
--		btrfs_submit_metadata_bio(tree->private_data, bio, mirror_num);
-+		btrfs_submit_data_read_bio(tree->private_data, bio, mirror_num,
-+					    bio_flags);
+ 	atomic_t error;
++
++	struct work_struct end_io_work;
 +
  	/*
- 	 * Above submission hooks will handle the error by ending the bio,
- 	 * which will do the cleanup properly.  So here we should not return
-@@ -2773,7 +2777,7 @@ static blk_status_t submit_data_read_repair(struct inode *inode,
- 		ret = btrfs_repair_one_sector(inode, failed_bio,
- 				bio_offset + offset,
- 				page, pgoff + offset, start + offset,
--				failed_mirror, btrfs_submit_data_bio);
-+				failed_mirror, btrfs_submit_data_read_bio);
- 		if (!ret) {
- 			/*
- 			 * We have submitted the read repair, the page release
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b188f724eff2d..4429d831793d5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2552,91 +2552,82 @@ static blk_status_t extract_ordered_extent(struct btrfs_inode *inode,
- 	return errno_to_blk_status(ret);
+ 	 * these are two arrays of pointers.  We allocate the
+ 	 * rbio big enough to hold them both and setup their
+@@ -1552,15 +1555,7 @@ static void set_bio_pages_uptodate(struct btrfs_raid_bio *rbio, struct bio *bio)
+ 	}
  }
  
 -/*
-- * extent_io.c submission hook. This does the right thing for csum calculation
-- * on write, or reading the csums from the tree before a read.
+- * end io for the read phase of the rmw cycle.  All the bios here are physical
+- * stripe bios we've read from the disk so we can recalculate the parity of the
+- * stripe.
 - *
-- * Rules about async/sync submit,
-- * a) read:				sync submit
-- *
-- * b) write without checksum:		sync submit
-- *
-- * c) write with checksum:
-- *    c-1) if bio is issued by fsync:	sync submit
-- *         (sync_writers != 0)
-- *
-- *    c-2) if root is reloc root:	sync submit
-- *         (only in case of buffered IO)
-- *
-- *    c-3) otherwise:			async submit
+- * This will usually kick off finish_rmw once all the bios are read in, but it
+- * may trigger parity reconstruction if we had any errors along the way
 - */
--void btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
-+void btrfs_submit_data_write_bio(struct inode *inode, struct bio *bio,
- 			   int mirror_num, unsigned long bio_flags)
+-static void raid_rmw_end_io(struct bio *bio)
++static void raid56_bio_end_io(struct bio *bio)
  {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	enum btrfs_wq_endio_type metadata = BTRFS_WQ_ENDIO_DATA;
--	blk_status_t ret = 0;
--	int skip_sum;
--	int async = !atomic_read(&BTRFS_I(inode)->sync_writers);
--
--	skip_sum = (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM) ||
--		test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state);
--
--	if (btrfs_is_free_space_inode(BTRFS_I(inode)))
--		metadata = BTRFS_WQ_ENDIO_FREE_SPACE;
-+	struct btrfs_inode *bi = BTRFS_I(inode);
-+	blk_status_t ret;
+ 	struct btrfs_raid_bio *rbio = bio->bi_private;
  
- 	if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
--		struct page *page = bio_first_bvec_all(bio)->bv_page;
--		loff_t file_offset = page_offset(page);
--
--		ret = extract_ordered_extent(BTRFS_I(inode), bio, file_offset);
-+		ret = extract_ordered_extent(bi, bio,
-+				page_offset(bio_first_bvec_all(bio)->bv_page));
- 		if (ret)
- 			goto out;
- 	}
+@@ -1571,23 +1566,34 @@ static void raid_rmw_end_io(struct bio *bio)
  
--	if (btrfs_op(bio) != BTRFS_MAP_WRITE) {
--		ret = btrfs_bio_wq_end_io(fs_info, bio, metadata);
--		if (ret)
--			goto out;
--
--		if (bio_flags & EXTENT_BIO_COMPRESSED) {
--			/*
--			 * btrfs_submit_compressed_read will handle completing
--			 * the bio if there were any errors, so just return
--			 * here.
--			 */
--			btrfs_submit_compressed_read(inode, bio, mirror_num,
--						     bio_flags);
--			return;
--		} else {
--			/*
--			 * Lookup bio sums does extra checks around whether we
--			 * need to csum or not, which is why we ignore skip_sum
--			 * here.
--			 */
--			ret = btrfs_lookup_bio_sums(inode, bio, NULL);
-+	/*
-+	 * Rules for async/sync submit:
-+	 *   a) write without checksum:			sync submit
-+	 *   b) write with checksum:
-+	 *      b-1) if bio is issued by fsync:		sync submit
-+	 *           (sync_writers != 0)
-+	 *      b-2) if root is reloc root:		sync submit
-+	 *           (only in case of buffered IO)
-+	 *      b-3) otherwise:				async submit
-+	 */
-+	if (!(bi->flags & BTRFS_INODE_NODATASUM) &&
-+	    !test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state)) {
-+		if (atomic_read(&bi->sync_writers)) {
-+			ret = btrfs_csum_one_bio(bi, bio, (u64)-1, false);
- 			if (ret)
- 				goto out;
-+		} else if (btrfs_is_data_reloc_root(bi->root)) {
-+			; /* csum items have already been cloned */
-+		} else {
-+			ret = btrfs_wq_submit_bio(inode, bio,
-+					mirror_num, bio_flags, 0,
-+					btrfs_submit_bio_start);
-+			goto out;
- 		}
--		goto mapit;
--	} else if (async && !skip_sum) {
--		/* csum items have already been cloned */
--		if (btrfs_is_data_reloc_root(root))
--			goto mapit;
--		/* we're doing a write, do the async checksumming */
--		ret = btrfs_wq_submit_bio(inode, bio, mirror_num, bio_flags,
--					  0, btrfs_submit_bio_start);
-+	}
-+	ret = btrfs_map_bio(fs_info, bio, mirror_num);
-+out:
-+	if (ret) {
-+		bio->bi_status = ret;
-+		bio_endio(bio);
-+	}
+ 	bio_put(bio);
+ 
+-	if (!atomic_dec_and_test(&rbio->stripes_pending))
+-		return;
++	if (atomic_dec_and_test(&rbio->stripes_pending))
++		queue_work(rbio->bioc->fs_info->endio_raid56_workers,
++			   &rbio->end_io_work);
 +}
-+
-+void btrfs_submit_data_read_bio(struct inode *inode, struct bio *bio,
-+			   int mirror_num, unsigned long bio_flags)
+ 
+-	if (atomic_read(&rbio->error) > rbio->bioc->max_errors)
+-		goto cleanup;
++/*
++ * End io handler for the read phase of the rmw cycle.  All the bios here are
++ * physical stripe bios we've read from the disk so we can recalculate the
++ * parity of the stripe.
++ *
++ * This will usually kick off finish_rmw once all the bios are read in, but it
++ * may trigger parity reconstruction if we had any errors along the way
++ */
++static void raid56_rmw_end_io_work(struct work_struct *work)
 +{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	blk_status_t ret;
++	struct btrfs_raid_bio *rbio =
++		container_of(work, struct btrfs_raid_bio, end_io_work);
 +
-+	ret = btrfs_bio_wq_end_io(fs_info, bio,
-+			btrfs_is_free_space_inode(BTRFS_I(inode)) ?
-+			BTRFS_WQ_ENDIO_FREE_SPACE : BTRFS_WQ_ENDIO_DATA);
-+	if (ret)
- 		goto out;
--	} else if (!skip_sum) {
--		ret = btrfs_csum_one_bio(BTRFS_I(inode), bio, (u64)-1, false);
--		if (ret)
--			goto out;
-+
-+	if (bio_flags & EXTENT_BIO_COMPRESSED) {
-+		/*
-+		 * btrfs_submit_compressed_read will handle completing the bio
-+		 * if there were any errors, so just return here.
-+		 */
-+		btrfs_submit_compressed_read(inode, bio, mirror_num, bio_flags);
++	if (atomic_read(&rbio->error) > rbio->bioc->max_errors) {
++		rbio_orig_end_io(rbio, BLK_STS_IOERR);
 +		return;
++	}
+ 
+ 	/*
+-	 * this will normally call finish_rmw to start our write
+-	 * but if there are any failed stripes we'll reconstruct
+-	 * from parity first
++	 * This will normally call finish_rmw to start our write but if there
++	 * are any failed stripes we'll reconstruct from parity first.
+ 	 */
+ 	validate_rbio_for_rmw(rbio);
+-	return;
+-
+-cleanup:
+-
+-	rbio_orig_end_io(rbio, BLK_STS_IOERR);
+ }
+ 
+ /*
+@@ -1662,11 +1668,9 @@ static int raid56_rmw_stripe(struct btrfs_raid_bio *rbio)
+ 	 * touch it after that.
+ 	 */
+ 	atomic_set(&rbio->stripes_pending, bios_to_read);
++	INIT_WORK(&rbio->end_io_work, raid56_rmw_end_io_work);
+ 	while ((bio = bio_list_pop(&bio_list))) {
+-		bio->bi_end_io = raid_rmw_end_io;
+-
+-		btrfs_bio_wq_end_io(rbio->bioc->fs_info, bio, BTRFS_WQ_ENDIO_RAID56);
+-
++		bio->bi_end_io = raid56_bio_end_io;
+ 		submit_bio(bio);
+ 	}
+ 	/* the actual write will happen once the reads are done */
+@@ -2108,25 +2112,13 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
+ }
+ 
+ /*
+- * This is called only for stripes we've read from disk to
+- * reconstruct the parity.
++ * This is called only for stripes we've read from disk to reconstruct the
++ * parity.
+  */
+-static void raid_recover_end_io(struct bio *bio)
++static void raid_recover_end_io_work(struct work_struct *work)
+ {
+-	struct btrfs_raid_bio *rbio = bio->bi_private;
+-
+-	/*
+-	 * we only read stripe pages off the disk, set them
+-	 * up to date if there were no errors
+-	 */
+-	if (bio->bi_status)
+-		fail_bio_stripe(rbio, bio);
+-	else
+-		set_bio_pages_uptodate(rbio, bio);
+-	bio_put(bio);
+-
+-	if (!atomic_dec_and_test(&rbio->stripes_pending))
+-		return;
++	struct btrfs_raid_bio *rbio =
++		container_of(work, struct btrfs_raid_bio, end_io_work);
+ 
+ 	if (atomic_read(&rbio->error) > rbio->bioc->max_errors)
+ 		rbio_orig_end_io(rbio, BLK_STS_IOERR);
+@@ -2209,11 +2201,9 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	 * touch it after that.
+ 	 */
+ 	atomic_set(&rbio->stripes_pending, bios_to_read);
++	INIT_WORK(&rbio->end_io_work, raid_recover_end_io_work);
+ 	while ((bio = bio_list_pop(&bio_list))) {
+-		bio->bi_end_io = raid_recover_end_io;
+-
+-		btrfs_bio_wq_end_io(rbio->bioc->fs_info, bio, BTRFS_WQ_ENDIO_RAID56);
+-
++		bio->bi_end_io = raid56_bio_end_io;
+ 		submit_bio(bio);
  	}
  
--mapit:
-+	/*
-+	 * Lookup bio sums does extra checks around whether we need to csum or
-+	 * not, which is why we ignore skip_sum here.
-+	 */
-+	ret = btrfs_lookup_bio_sums(inode, bio, NULL);
-+	if (ret)
-+		goto out;
- 	ret = btrfs_map_bio(fs_info, bio, mirror_num);
--
- out:
- 	if (ret) {
- 		bio->bi_status = ret;
-@@ -7909,7 +7900,7 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 		goto map;
+@@ -2582,8 +2572,7 @@ static noinline void finish_parity_scrub(struct btrfs_raid_bio *rbio,
+ 	atomic_set(&rbio->stripes_pending, nr_data);
  
- 	if (write) {
--		/* check btrfs_submit_data_bio() for async submit rules */
-+		/* check btrfs_submit_data_write_bio() for async submit rules */
- 		if (async_submit && !atomic_read(&BTRFS_I(inode)->sync_writers))
- 			return btrfs_wq_submit_bio(inode, bio, 0, 0,
- 					file_offset,
+ 	while ((bio = bio_list_pop(&bio_list))) {
+-		bio->bi_end_io = raid_write_end_io;
+-
++		bio->bi_end_io = raid56_bio_end_io;
+ 		submit_bio(bio);
+ 	}
+ 	return;
+@@ -2671,24 +2660,14 @@ static void validate_rbio_for_parity_scrub(struct btrfs_raid_bio *rbio)
+  * This will usually kick off finish_rmw once all the bios are read in, but it
+  * may trigger parity reconstruction if we had any errors along the way
+  */
+-static void raid56_parity_scrub_end_io(struct bio *bio)
++static void raid56_parity_scrub_end_io_work(struct work_struct *work)
+ {
+-	struct btrfs_raid_bio *rbio = bio->bi_private;
+-
+-	if (bio->bi_status)
+-		fail_bio_stripe(rbio, bio);
+-	else
+-		set_bio_pages_uptodate(rbio, bio);
+-
+-	bio_put(bio);
+-
+-	if (!atomic_dec_and_test(&rbio->stripes_pending))
+-		return;
++	struct btrfs_raid_bio *rbio =
++		container_of(work, struct btrfs_raid_bio, end_io_work);
+ 
+ 	/*
+-	 * this will normally call finish_rmw to start our write
+-	 * but if there are any failed stripes we'll reconstruct
+-	 * from parity first
++	 * This will normally call finish_rmw to start our write, but if there
++	 * are any failed stripes we'll reconstruct from parity first
+ 	 */
+ 	validate_rbio_for_parity_scrub(rbio);
+ }
+@@ -2758,11 +2737,9 @@ static void raid56_parity_scrub_stripe(struct btrfs_raid_bio *rbio)
+ 	 * touch it after that.
+ 	 */
+ 	atomic_set(&rbio->stripes_pending, bios_to_read);
++	INIT_WORK(&rbio->end_io_work, raid56_parity_scrub_end_io_work);
+ 	while ((bio = bio_list_pop(&bio_list))) {
+-		bio->bi_end_io = raid56_parity_scrub_end_io;
+-
+-		btrfs_bio_wq_end_io(rbio->bioc->fs_info, bio, BTRFS_WQ_ENDIO_RAID56);
+-
++		bio->bi_end_io = raid56_bio_end_io;
+ 		submit_bio(bio);
+ 	}
+ 	/* the actual write will happen once the reads are done */
 -- 
 2.30.2
 

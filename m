@@ -2,168 +2,89 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB72CC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Apr 2022 04:22:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C689C4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Apr 2022 07:55:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241009AbiDYEZh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Apr 2022 00:25:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38562 "EHLO
+        id S231887AbiDYH6r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Apr 2022 03:58:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36760 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240876AbiDYEZe (ORCPT
+        with ESMTP id S241796AbiDYH5x (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Apr 2022 00:25:34 -0400
-Received: from synology.com (mail.synology.com [211.23.38.101])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5F3D18E20;
-        Sun, 24 Apr 2022 21:22:30 -0700 (PDT)
-From:   Chung-Chiang Cheng <cccheng@synology.com>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1650860549; bh=+yV5Rt5WXhW6BEhpy/tbcgIFt1lLIIjou6qKbrAZOd8=;
-        h=From:To:Cc:Subject:Date;
-        b=Y75XfYfpIEtvIdZqr1VSAKDLE3GCXwp1Jlr7io3xbbQP3d9JWt6/YS8xj4sSaejWk
-         ocKducEDSgs+bgiw8IUTN66mMpFue4DH51dPyRx1LaxdBsu4vCe1QMAdDss3XgKZIA
-         wHHx0wF7vMmoZO4f4WbGa0IOLKkcP+ia79Y6blek=
-To:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        nborisov@suse.com, fdmanana@kernel.org, dsterba@suse.com
-Cc:     kernel@cccheng.net, shepjeng@gmail.com,
-        Chung-Chiang Cheng <cccheng@synology.com>
-Subject: [PATCH v2] fstests: btrfs: test setting compression via xattr on nodatacow files
-Date:   Mon, 25 Apr 2022 12:22:26 +0800
-Message-Id: <20220425042226.302953-1-cccheng@synology.com>
+        Mon, 25 Apr 2022 03:57:53 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AEDAF299
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Apr 2022 00:54:37 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=kG3OkwKy25ss8i7xvQtXkOj9nzdJsB6ZYjoDtd3k6iQ=; b=EQ/M22qaYxS37uDl/vp07/DJgd
+        0NOqrgIDEK+P0gq+Uaw3M4O8JPRcp+Wioi7qz8ORAt1+j2a/AhDd0pAdE1a4kbtS/bVzxHliuzihA
+        R+24gyKt3TU15tBLy29nJwgEhKCs+6QUGoRnnVAueWIP+jhImRJu+bubDrvrC07jb2DA/UJW+5309
+        WW/VMCC7wYH/QvfotVOSMIJrm91JRoO3e7ANHMh3O/yC+xHkwIVu0uiNSO+71gM7obLuHKF/P/OsB
+        ujqupyg+BWCF4DOhxvX1oxf2ACgwXfnd9I86d9R5aXxstco4wWAqsSZZxhfW2+GmZtozOyzLXcUdr
+        fc20PvhQ==;
+Received: from 80-254-69-104.dynamic.monzoon.net ([80.254.69.104] helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1nitYJ-008ghb-Ah; Mon, 25 Apr 2022 07:54:35 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
+Cc:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 04/10] btrfs: don't double-defer bio completions for compressed reads
+Date:   Mon, 25 Apr 2022 09:54:12 +0200
+Message-Id: <20220425075418.2192130-5-hch@lst.de>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220425075418.2192130-1-hch@lst.de>
+References: <20220425075418.2192130-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Synology-MCP-Status: no
-X-Synology-Spam-Flag: no
-X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
-X-Synology-Virus-Status: no
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Compression and nodatacow are mutually exclusive. Besides ioctl, there
-is another way to setting compression via xattrs, and shouldn't produce
-invalid combinations.
+The bio completion handler of the bio used for the compressed data is
+already run in a workqueue using btrfs_bio_wq_end_io, so don't schedule
+the completion of the original bio to the same workqueue again but just
+execute it directly.
 
-Signed-off-by: Chung-Chiang Cheng <cccheng@synology.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- tests/btrfs/264     | 90 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/264.out | 11 ++++++
- 2 files changed, 101 insertions(+)
- create mode 100755 tests/btrfs/264
- create mode 100644 tests/btrfs/264.out
+ fs/btrfs/inode.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/tests/btrfs/264 b/tests/btrfs/264
-new file mode 100755
-index 00000000..bb11116c
---- /dev/null
-+++ b/tests/btrfs/264
-@@ -0,0 +1,90 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2022 Synology Inc. All Rights Reserved.
-+#
-+# FS QA Test No. 264
-+#
-+# Compression and nodatacow are mutually exclusive. Besides ioctl, there
-+# is another way to setting compression via xattrs, and shouldn't produce
-+# invalid combinations.
-+#
-+# To prevent mix any compression-related options with nodatacow, FS_NOCOMP_FL
-+# is also rejected by ioctl as well as FS_COMPR_FL on nodatacow files. To
-+# align with it, no and none are also unacceptable in this test.
-+#
-+# The regression is fixed by a patch with the following subject:
-+#   btrfs: do not allow compression on nodatacow files
-+#
-+. ./common/preamble
-+_begin_fstest auto quick compress attr
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4429d831793d5..d7b04e06da825 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2605,12 +2605,6 @@ void btrfs_submit_data_read_bio(struct inode *inode, struct bio *bio,
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	blk_status_t ret;
+ 
+-	ret = btrfs_bio_wq_end_io(fs_info, bio,
+-			btrfs_is_free_space_inode(BTRFS_I(inode)) ?
+-			BTRFS_WQ_ENDIO_FREE_SPACE : BTRFS_WQ_ENDIO_DATA);
+-	if (ret)
+-		goto out;
+-
+ 	if (bio_flags & EXTENT_BIO_COMPRESSED) {
+ 		/*
+ 		 * btrfs_submit_compressed_read will handle completing the bio
+@@ -2620,6 +2614,12 @@ void btrfs_submit_data_read_bio(struct inode *inode, struct bio *bio,
+ 		return;
+ 	}
+ 
++	ret = btrfs_bio_wq_end_io(fs_info, bio,
++			btrfs_is_free_space_inode(BTRFS_I(inode)) ?
++			BTRFS_WQ_ENDIO_FREE_SPACE : BTRFS_WQ_ENDIO_DATA);
++	if (ret)
++		goto out;
 +
-+# Import common functions.
-+. ./common/filter
-+. ./common/attr
-+
-+# real QA test starts here
-+
-+_supported_fs btrfs
-+_require_scratch
-+_require_attrs
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+set_compression() # $1: filename, $2: alg
-+{
-+	[ -f "$1" ] || return
-+	$SETFATTR_PROG -n "btrfs.compression" -v "$2" "$1" |& _filter_scratch
-+}
-+
-+# FS_NOCOMP_FL bit isn't recognized by chattr/lsattr before e2fsprogs 1.46.2
-+# In order to make this test available with an older version, we wrap the output
-+# of lsattr to distinguish FS_COMP_FL and FS_NOCOMP_FL
-+check_compression() # $1: filename
-+{
-+	$LSATTR_PROG -l "$1" | grep -q "Compression_Requested"
-+
-+	if [ $? -eq 0 ]; then
-+		echo "$1: Compression is set" | _filter_scratch
-+	else
-+		echo "$1: Compression is not set" | _filter_scratch
-+	fi
-+}
-+
-+#
-+# DATACOW
-+#
-+test_file="$SCRATCH_MNT/foo"
-+touch "$test_file"
-+$CHATTR_PROG -C "$test_file"
-+
-+set_compression "$test_file" zlib
-+check_compression "$test_file"
-+set_compression "$test_file" no
-+check_compression "$test_file"
-+set_compression "$test_file" lzo
-+check_compression "$test_file"
-+set_compression "$test_file" none
-+check_compression "$test_file"
-+set_compression "$test_file" zstd
-+check_compression "$test_file"
-+
-+#
-+# NODATACOW
-+#
-+test_file="$SCRATCH_MNT/bar"
-+touch "$test_file"
-+$CHATTR_PROG +C "$test_file"
-+
-+# all valid compression type are not allowed on nodatacow files
-+set_compression "$test_file" zlib
-+set_compression "$test_file" lzo
-+set_compression "$test_file" zstd
-+
-+# no/none are also not allowed on nodatacow files
-+set_compression "$test_file" no
-+set_compression "$test_file" none
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/264.out b/tests/btrfs/264.out
-new file mode 100644
-index 00000000..7dd36054
---- /dev/null
-+++ b/tests/btrfs/264.out
-@@ -0,0 +1,11 @@
-+QA output created by 264
-+SCRATCH_MNT/foo: Compression is set
-+SCRATCH_MNT/foo: Compression is not set
-+SCRATCH_MNT/foo: Compression is set
-+SCRATCH_MNT/foo: Compression is not set
-+SCRATCH_MNT/foo: Compression is set
-+setfattr: SCRATCH_MNT/bar: Invalid argument
-+setfattr: SCRATCH_MNT/bar: Invalid argument
-+setfattr: SCRATCH_MNT/bar: Invalid argument
-+setfattr: SCRATCH_MNT/bar: Invalid argument
-+setfattr: SCRATCH_MNT/bar: Invalid argument
+ 	/*
+ 	 * Lookup bio sums does extra checks around whether we need to csum or
+ 	 * not, which is why we ignore skip_sum here.
 -- 
-2.25.1
+2.30.2
 

@@ -2,119 +2,183 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C619C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Apr 2022 14:51:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CE89C43217
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Apr 2022 16:03:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238693AbiD0OyW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Apr 2022 10:54:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36688 "EHLO
+        id S241208AbiD0QGz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Apr 2022 12:06:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238678AbiD0OyV (ORCPT
+        with ESMTP id S241576AbiD0QGw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Apr 2022 10:54:21 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3417240E7B
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 07:51:09 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id D97241F37B
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 14:51:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1651071067; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=sN5PaeF2fLPGmD+pgQjb+llmR1C+kutongU4h9o6eTg=;
-        b=cxoDT/PRKcxlreDiREMJ4ZDQJD8Tze7CYBOwGbv6VOi+XF35uSjA45JrpazVf1Kjn3nv2Q
-        x+CV7CZgWBO7uKXV/9GEubOcH//ljCzyO3UtIepH/aAwdRDFmrX4O3R8FyfplQmgWoKnJP
-        zcvwJiSVJvtlfUEp/ww6DgDchc9El0I=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B8F8613A39
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 14:51:07 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id pjhWK1tYaWIVAwAAMHmgww
-        (envelope-from <gniebler@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 14:51:07 +0000
-Message-ID: <b110e69e-d371-a29e-fd89-f810a4391e7b@suse.com>
-Date:   Wed, 27 Apr 2022 16:51:07 +0200
+        Wed, 27 Apr 2022 12:06:52 -0400
+Received: from mailout1.w1.samsung.com (mailout1.w1.samsung.com [210.118.77.11])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C5B53C849E
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 09:03:01 -0700 (PDT)
+Received: from eucas1p1.samsung.com (unknown [182.198.249.206])
+        by mailout1.w1.samsung.com (KnoxPortal) with ESMTP id 20220427160259euoutp01f4e573a43bf72b51dc1050808b99abd7~pzE9Tdy7u0746107461euoutp01P
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 16:02:59 +0000 (GMT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.w1.samsung.com 20220427160259euoutp01f4e573a43bf72b51dc1050808b99abd7~pzE9Tdy7u0746107461euoutp01P
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
+        s=mail20170921; t=1651075379;
+        bh=kk01EsRG9bOHVzhx2cg7vI10rthuoQfVL8TCej8gbAs=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=FqFqteqGXSEnxZPhnX9rym6n42YAt++KmTUYH1akFOm0A7L9YLhwHpvVJ5z+0TJl9
+         A71EFZm4I1wTNw7c+GIBonIM8041uzM6cxt8uvhd7XeS0ftGXi1kqVecDOT0q+lFCo
+         xeb6kGclgglBpZfHmT9Vj1NgpQ/SIdZW/rLg5myE=
+Received: from eusmges3new.samsung.com (unknown [203.254.199.245]) by
+        eucas1p2.samsung.com (KnoxPortal) with ESMTP id
+        20220427160257eucas1p248f9fb67b38f65e92cd401d8333f1f48~pzE7tOLRh2334023340eucas1p2g;
+        Wed, 27 Apr 2022 16:02:57 +0000 (GMT)
+Received: from eucas1p2.samsung.com ( [182.198.249.207]) by
+        eusmges3new.samsung.com (EUCPMTA) with SMTP id 40.0A.10260.13969626; Wed, 27
+        Apr 2022 17:02:57 +0100 (BST)
+Received: from eusmtrp2.samsung.com (unknown [182.198.249.139]) by
+        eucas1p2.samsung.com (KnoxPortal) with ESMTPA id
+        20220427160257eucas1p21fb58d0129376a135fdf0b9c2fe88895~pzE7TkyRS2335223352eucas1p2Z;
+        Wed, 27 Apr 2022 16:02:57 +0000 (GMT)
+Received: from eusmgms1.samsung.com (unknown [182.198.249.179]) by
+        eusmtrp2.samsung.com (KnoxPortal) with ESMTP id
+        20220427160257eusmtrp29abf9fbaa39f05eb9b4bd28a52f41a07~pzE7Sr62r2598325983eusmtrp2c;
+        Wed, 27 Apr 2022 16:02:57 +0000 (GMT)
+X-AuditID: cbfec7f5-bddff70000002814-7e-62696931489b
+Received: from eusmtip1.samsung.com ( [203.254.199.221]) by
+        eusmgms1.samsung.com (EUCPMTA) with SMTP id 9B.71.09522.13969626; Wed, 27
+        Apr 2022 17:02:57 +0100 (BST)
+Received: from localhost (unknown [106.210.248.162]) by eusmtip1.samsung.com
+        (KnoxPortal) with ESMTPA id
+        20220427160256eusmtip1cbd768be896ffc9fa5c108cd32dcf1a6~pzE67wefT0884308843eusmtip1h;
+        Wed, 27 Apr 2022 16:02:56 +0000 (GMT)
+From:   Pankaj Raghav <p.raghav@samsung.com>
+To:     jaegeuk@kernel.org, axboe@kernel.dk, snitzer@kernel.org,
+        hch@lst.de, mcgrof@kernel.org, naohiro.aota@wdc.com,
+        sagi@grimberg.me, damien.lemoal@opensource.wdc.com,
+        dsterba@suse.com, johannes.thumshirn@wdc.com
+Cc:     linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        clm@fb.com, gost.dev@samsung.com, chao@kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, josef@toxicpanda.com,
+        jonathan.derrick@linux.dev, agk@redhat.com, kbusch@kernel.org,
+        kch@nvidia.com, linux-nvme@lists.infradead.org,
+        dm-devel@redhat.com, bvanassche@acm.org, jiangbo.365@bytedance.com,
+        linux-fsdevel@vger.kernel.org, matias.bjorling@wdc.com,
+        linux-block@vger.kernel.org, Pankaj Raghav <p.raghav@samsung.com>
+Subject: [PATCH 01/16] block: make blkdev_nr_zones and blk_queue_zone_no
+ generic for npo2 zsze
+Date:   Wed, 27 Apr 2022 18:02:40 +0200
+Message-Id: <20220427160255.300418-2-p.raghav@samsung.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20220427160255.300418-1-p.raghav@samsung.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.7.0
-Subject: Re: [PATCH] btrfs: Turn fs_roots_radix in btrfs_fs_info into an
- XArray
-Content-Language: en-US
-To:     linux-btrfs@vger.kernel.org
-References: <20220426214525.14192-1-gniebler@suse.com>
-From:   Gabriel Niebler <gniebler@suse.com>
-In-Reply-To: <20220426214525.14192-1-gniebler@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Brightmail-Tracker: H4sIAAAAAAAAA02Se1BUZRjG+8539pzDjmuH1dEv6ebOaGGGMEZ+E0YxOniwGeCf2GiYkQVO
+        sAWr7Epg6bTcDFaTywTCAgNYEFeXe1xEaUEuIcGwYMAQRrKjILAYEpctjOXQ5H/P+36/533f
+        Z+ZjoPQ6tYdRqs7yapUiXEaJyYbO1f43XZTKIOdLeY7Y8HMnxOW/pVA4c2EV4t6MPgKnp2TR
+        2NrXD3HrfI4ID6zEEni0rYnApeW3CTxl0EN8uW2BxP/oJjZ6CZMQ/z3pgtONdwE2D+sJ3Dr2
+        Bh68X0LjwWsn8I3WHhKbmnMpnF9spnHqxSWIR1LNAKd11YrwYlECja8/spC4e8zh/Zc409AH
+        3Hp3BcWlxc/TXP9ENcmZ+qK4mrJkiivUZkCu9vuvuJaCRYJrGdVS3Dfx8xTXlHhPxFluDlPc
+        lboywBnqhkkutbZa5Cv9WHw0hA9Xfs6rD7kHisMst/afSWJjLGurQAsaJTpgxyD2LZRQnAJ1
+        QMxI2RKAEjtnCaF4AtBYaRYtFIsAxa0li3SA2bQs1kcI/R8Aim9cEwnFNEC5+krKBlHsARSb
+        vGneyY4AlFZVtTkWsjMQDdT9StiW72AD0f2lAdqmSXYfmjMvQ5uWsO+gnyz1pHDgKyh7cJm2
+        DbVj3VDqnx8JiD3qyZ7aROAGEl+fs5kBsUVi9G3hVUrwHkdzGfNQ0DvQTFcdLegX0dOmfELQ
+        XyLziHXLnABQSpOBEmK6oSt3wm0Sso7I0HxIwD2QtqN+i9iORubshRO2o/SGq1BoS1DSRalA
+        y1DT6tTWUoRMcblboTiUXRVHpIK9+mfC6J8Jo/9/bwGAZWA3H6WJCOU1h1V8tJNGEaGJUoU6
+        BZ+OqAEbX7p3vWupEZTMPHYyAoIBRoAYKNspedISFiSVhCjOfcGrT59SR4XzGiNwYEjZbkmw
+        skohZUMVZ/nPeP4Mr/7vlWDs9mgJ57FrxzpaypPk28yPjpS997Z94ct7f/8x0hCou6Ct+DTT
+        xzQiD5qCmdW3tnnq7PhdFTEOQSGqx9Ou4wULN2oVp9r78Yf+d/c93OUXG3D+QnPA5TKmx+Ne
+        a87t4NKObBQ9kCaK9HTeb0l54fga3VnSoPOdtVLe098praqAoIyArNcr7Y95JMBqpf+Kw8MA
+        l+wVL6/JyEsFeHbtqOcvbWLSNOeGcr52Hf9kVO7zHHKslOe99m510Tlv18SV5UBj++Gbzxe7
+        6yas3Udq8h7QXvLxkxPrMX5yX+apn7d/dO+DO/nuV17V5p4kq+rP5x/kR2eHRq0KY277wT9i
+        PIdkPieS/gqUkZowhcsBqNYo/gWtMydhQQQAAA==
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFprLKsWRmVeSWpSXmKPExsVy+t/xu7qGmZlJBmsu8VisP3WM2WL13X42
+        i2kffjJbnJ56lsliUv8MdovfZ88zW+x9N5vV4sKPRiaLmwd2MlmsXH2UyeLJ+lnMFj0HPrBY
+        /O26BxRrechs8eehocWkQ9cYLZ5encVksfeWtsWlxyvYLS4tcrfYs/cki8XlXXPYLOYve8pu
+        MaHtK7PFjQlPGS0mHt/MavF5aQu7xbrX71ksTtySdpD1uHzF2+PfiTVsHhOb37F7nL+3kcXj
+        8tlSj02rOtk8FjZMZfbYvKTeY/eCz0weu282sHn0Nr9j89jZep/V4/2+q2wefVtWMXqs33KV
+        xWPC5o2sAUJRejZF+aUlqQoZ+cUltkrRhhZGeoaWFnpGJpZ6hsbmsVZGpkr6djYpqTmZZalF
+        +nYJehnv96sVdAhUvP/1k7GBcQdvFyMHh4SAicTnrbldjFwcQgJLGSV+PNjF2MXICRSXkLi9
+        sAnKFpb4c62LDaLoOaPEll2TmECa2QS0JBo72UHiIgJPGCXu/3zMAuIwCzSwSNyauIsJpFtY
+        IE5i5rFDzCA2i4CqxNun38FsXgEriYPvt7JAbJCXmHnpOzvIUE4Ba4kJnyJAwkJAJd2LbrFC
+        lAtKnJz5BKycGai8eets5gmMArOQpGYhSS1gZFrFKJJaWpybnltsqFecmFtcmpeul5yfu4kR
+        mE62Hfu5eQfjvFcf9Q4xMnEwHmKU4GBWEuH9sjsjSYg3JbGyKrUoP76oNCe1+BCjKdDZE5ml
+        RJPzgQktryTe0MzA1NDEzNLA1NLMWEmc17OgI1FIID2xJDU7NbUgtQimj4mDU6qBidvFgLde
+        KU2Y82fPlJdpbQYOeVKdrT8nT3Zp9Pj6z2de32p1k57g7xxG05c4HVkckRoT84zVlGX/068R
+        548EqHmt61bz5bh/wTjjCUfeQ4bqHexaC7W2bOSLuPV7i+rMeyH8OUptHw5s2bp94dn6fd48
+        xw08429uNq5fmZm7q8uq/KTxmvVfZy5uYXjf25yisU2u2EFIbncqy0K7WYa9j2bz3DRWNlwc
+        /0XLevpHofcCOleeiO5kuMZeM2mD2aZzB1k4tN5POijOtaC4/L/gnT1nPbS5plTdKfk1cZv4
+        KyPNxzP+OphweMVyeCp8dXoVczXr7Lbu0mUBOSv/Oa3N3OHt8YV/9cX87Pf163yclFiKMxIN
+        tZiLihMBAepjMLADAAA=
+X-CMS-MailID: 20220427160257eucas1p21fb58d0129376a135fdf0b9c2fe88895
+X-Msg-Generator: CA
+Content-Type: text/plain; charset="utf-8"
+X-RootMTR: 20220427160257eucas1p21fb58d0129376a135fdf0b9c2fe88895
+X-EPHeader: CA
+CMS-TYPE: 201P
+X-CMS-RootMailID: 20220427160257eucas1p21fb58d0129376a135fdf0b9c2fe88895
+References: <20220427160255.300418-1-p.raghav@samsung.com>
+        <CGME20220427160257eucas1p21fb58d0129376a135fdf0b9c2fe88895@eucas1p2.samsung.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Am 26.04.22 um 23:45 schrieb Gabriel Niebler:
-> … rename it to simply fs_roots and adjust all usages of this object to use
-> the XArray API, because it is notionally easier to use and unserstand, as
-> it provides array semantics, and also takes care of locking for us,
-> further simplifying the code.
-> 
-> Also do some refactoring, esp. where the API change requires largely
-> rewriting some functions, anyway.
-> 
-> Signed-off-by: Gabriel Niebler <gniebler@suse.com>
-> ---
->   fs/btrfs/ctree.h       |   5 +-
->   fs/btrfs/disk-io.c     | 176 ++++++++++++++++++++---------------------
->   fs/btrfs/inode.c       |  13 +--
->   fs/btrfs/transaction.c |  67 +++++++---------
->   4 files changed, 126 insertions(+), 135 deletions(-)
-> 
-> [...]
-> @@ -2346,28 +2340,23 @@ void btrfs_put_root(struct btrfs_root *root)
->   
->   void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info)
->   {
-> -	int ret;
-> -	struct btrfs_root *gang[8];
-> -	int i;
-> +	struct btrfs_root *root;
-> +	unsigned long index = 0;
->   
->   	while (!list_empty(&fs_info->dead_roots)) {
-> [...]   
-> -		if (test_bit(BTRFS_ROOT_IN_RADIX, &gang[0]->state))
-> -			btrfs_drop_and_free_fs_root(fs_info, gang[0]);
-> -		btrfs_put_root(gang[0]);
-> +		if (test_bit(BTRFS_ROOT_IN_RADIX, &root->state))
-> +			btrfs_drop_and_free_fs_root(fs_info, root);
-> +		btrfs_put_root(root);
+Adapt blkdev_nr_zones and blk_queue_zone_no function so that it can
+also work for non-power-of-2 zone sizes.
 
-It occurs to me that BTRFS_ROOT_IN_RADIX should probably be renamed to 
-something else within or following this patch...
+As the existing deployments of zoned devices had power-of-2
+assumption, power-of-2 optimized calculation is kept for those devices.
 
-... but what to rename it /to/?
+There are no direct hot paths modified and the changes just
+introduce one new branch per call.
 
-Naming things is hard. Here are some ideas I've had:
+Reviewed-by: Luis Chamberlain <mcgrof@kernel.org>
+Signed-off-by: Pankaj Raghav <p.raghav@samsung.com>
+---
+ block/blk-zoned.c      | 8 +++++++-
+ include/linux/blkdev.h | 8 +++++++-
+ 2 files changed, 14 insertions(+), 2 deletions(-)
 
-BTRFS_ROOT_IN_XARRAY is obvious, but it also includes kind of a needless 
-implementation detail.
+diff --git a/block/blk-zoned.c b/block/blk-zoned.c
+index 38cd840d8838..1dff4a8bd51d 100644
+--- a/block/blk-zoned.c
++++ b/block/blk-zoned.c
+@@ -117,10 +117,16 @@ EXPORT_SYMBOL_GPL(__blk_req_zone_write_unlock);
+ unsigned int blkdev_nr_zones(struct gendisk *disk)
+ {
+ 	sector_t zone_sectors = blk_queue_zone_sectors(disk->queue);
++	sector_t capacity = get_capacity(disk);
+ 
+ 	if (!blk_queue_is_zoned(disk->queue))
+ 		return 0;
+-	return (get_capacity(disk) + zone_sectors - 1) >> ilog2(zone_sectors);
++
++	if (is_power_of_2(zone_sectors))
++		return (capacity + zone_sectors - 1) >>
++		       ilog2(zone_sectors);
++
++	return div64_u64(capacity + zone_sectors - 1, zone_sectors);
+ }
+ EXPORT_SYMBOL_GPL(blkdev_nr_zones);
+ 
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index 60d016138997..c4e4c7071b7b 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -665,9 +665,15 @@ static inline unsigned int blk_queue_nr_zones(struct request_queue *q)
+ static inline unsigned int blk_queue_zone_no(struct request_queue *q,
+ 					     sector_t sector)
+ {
++	sector_t zone_sectors = blk_queue_zone_sectors(q);
++
+ 	if (!blk_queue_is_zoned(q))
+ 		return 0;
+-	return sector >> ilog2(q->limits.chunk_sectors);
++
++	if (is_power_of_2(zone_sectors))
++		return sector >> ilog2(zone_sectors);
++
++	return div64_u64(sector, zone_sectors);
+ }
+ 
+ static inline bool blk_queue_zone_is_seq(struct request_queue *q,
+-- 
+2.25.1
 
-BTRFS_ROOT_IN_(FS_)ROOTS would be technically accurate, but might be 
-confusing for the reader (e.g. if they don't know about 
-btrfs_fs_indo->fs_roots of the top off their head).
-
-BTRFS_ROOT_IN_FS_INFO_ROOTS makes that a bit clearer (someone might 
-think it refers to fbtrfs_fs_info->roots, but when they find that 
-doesn't exist they'd quickly catch on, I think), but a bit lengthy.
-
-BTRFS_ROOT_IN_FS_INFO_FS_ROOTS is probably the most accurate, but really 
-quite long...
-
-Does anyone else have any ideas?

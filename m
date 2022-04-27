@@ -2,160 +2,124 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AF7CC43219
-	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Apr 2022 16:06:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41319C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 27 Apr 2022 16:34:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241425AbiD0QJ6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 27 Apr 2022 12:09:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52452 "EHLO
+        id S243150AbiD0Qho (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 27 Apr 2022 12:37:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39060 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241864AbiD0QHc (ORCPT
+        with ESMTP id S243084AbiD0Qhi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 27 Apr 2022 12:07:32 -0400
-Received: from mailout2.w1.samsung.com (mailout2.w1.samsung.com [210.118.77.12])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E6FD3D6CE3
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 09:03:24 -0700 (PDT)
-Received: from eucas1p2.samsung.com (unknown [182.198.249.207])
-        by mailout2.w1.samsung.com (KnoxPortal) with ESMTP id 20220427160315euoutp020ea2e892d2737832613f364288934aa8~pzFL_cr8L1615616156euoutp02Z
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 16:03:15 +0000 (GMT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mailout2.w1.samsung.com 20220427160315euoutp020ea2e892d2737832613f364288934aa8~pzFL_cr8L1615616156euoutp02Z
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
-        s=mail20170921; t=1651075395;
-        bh=T09TdKd+PKEo6/XUyeNORY3qJAIzmSkSW/V2uBW8/x8=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=XvvkE/3L93M0ztjxYphRVPfQl3magsan30V9vvdhTP7mRxFlNLj1mjzC6AlyeLw9D
-         egBm9E1bwBN3Fpab3MnE8f1gc9fX+pdSSLpj/wkCXRe98K+GYu5s6ONn8p1sbDP6PN
-         t4b79Il3zRxkovf/IvCAhnueJaHPdSjBfydterzw=
-Received: from eusmges1new.samsung.com (unknown [203.254.199.242]) by
-        eucas1p2.samsung.com (KnoxPortal) with ESMTP id
-        20220427160313eucas1p28f302518de9cf124f9194cc8d376fd43~pzFKbY0Jn2334023340eucas1p2s;
-        Wed, 27 Apr 2022 16:03:13 +0000 (GMT)
-Received: from eucas1p2.samsung.com ( [182.198.249.207]) by
-        eusmges1new.samsung.com (EUCPMTA) with SMTP id C1.E7.10009.14969626; Wed, 27
-        Apr 2022 17:03:13 +0100 (BST)
-Received: from eusmtrp2.samsung.com (unknown [182.198.249.139]) by
-        eucas1p1.samsung.com (KnoxPortal) with ESMTPA id
-        20220427160313eucas1p1feecf74ec15c8c3d9250444710fd1676~pzFJ-Gzll2489024890eucas1p1n;
-        Wed, 27 Apr 2022 16:03:13 +0000 (GMT)
-Received: from eusmgms1.samsung.com (unknown [182.198.249.179]) by
-        eusmtrp2.samsung.com (KnoxPortal) with ESMTP id
-        20220427160313eusmtrp2cea78a3137da11659e89a20f8b5be479~pzFJ_NFx82598325983eusmtrp2p;
-        Wed, 27 Apr 2022 16:03:13 +0000 (GMT)
-X-AuditID: cbfec7f2-e7fff70000002719-93-62696941346b
-Received: from eusmtip1.samsung.com ( [203.254.199.221]) by
-        eusmgms1.samsung.com (EUCPMTA) with SMTP id 5E.81.09522.04969626; Wed, 27
-        Apr 2022 17:03:12 +0100 (BST)
-Received: from localhost (unknown [106.210.248.162]) by eusmtip1.samsung.com
-        (KnoxPortal) with ESMTPA id
-        20220427160312eusmtip1ae2f42acfa009ab15e75927ef0532d22~pzFJnZ99a1317113171eusmtip1M;
-        Wed, 27 Apr 2022 16:03:12 +0000 (GMT)
-From:   Pankaj Raghav <p.raghav@samsung.com>
-To:     jaegeuk@kernel.org, axboe@kernel.dk, snitzer@kernel.org,
-        hch@lst.de, mcgrof@kernel.org, naohiro.aota@wdc.com,
-        sagi@grimberg.me, damien.lemoal@opensource.wdc.com,
-        dsterba@suse.com, johannes.thumshirn@wdc.com
-Cc:     linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        clm@fb.com, gost.dev@samsung.com, chao@kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, josef@toxicpanda.com,
-        jonathan.derrick@linux.dev, agk@redhat.com, kbusch@kernel.org,
-        kch@nvidia.com, linux-nvme@lists.infradead.org,
-        dm-devel@redhat.com, bvanassche@acm.org, jiangbo.365@bytedance.com,
-        linux-fsdevel@vger.kernel.org, matias.bjorling@wdc.com,
-        linux-block@vger.kernel.org, Pankaj Raghav <p.raghav@samsung.com>
-Subject: [PATCH 16/16] dm-zoned: ensure only power of 2 zone sizes are
- allowed
-Date:   Wed, 27 Apr 2022 18:02:55 +0200
-Message-Id: <20220427160255.300418-17-p.raghav@samsung.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20220427160255.300418-1-p.raghav@samsung.com>
+        Wed, 27 Apr 2022 12:37:38 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C5765FF23
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Apr 2022 09:34:24 -0700 (PDT)
+Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
+        id 1njkcR-0003Kx-ME by authid <merlin>; Wed, 27 Apr 2022 09:34:23 -0700
+Date:   Wed, 27 Apr 2022 09:34:23 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220427163423.GN29107@merlins.org>
+References: <20220424231446.GF29107@merlins.org>
+ <CAEzrpqcGy3aac6Lb7PKux+nA2KzDgbPSMyjYG6B-0TbgXXP=-A@mail.gmail.com>
+ <20220425002415.GG29107@merlins.org>
+ <CAEzrpqcQkiMJt1B4Bx9NrCcRys1MD+_5Y3riActXYC6RQrkakw@mail.gmail.com>
+ <20220426002804.GI29107@merlins.org>
+ <20220426204326.GK12542@merlins.org>
+ <CAEzrpqcFewMWJ0e2umXNBdTkH32ehNi6_bnMQORAnGUg0nqFkw@mail.gmail.com>
+ <CAEzrpqdKTrP_USiq9sKTXv1=uY1JVWRD5bVfdU_inGMhboxQdg@mail.gmail.com>
+ <20220427035451.GM29107@merlins.org>
+ <CAEzrpqdN7FaMMpemFbr6fO9Vi8t6upGPbAjonTtP-dpWMzdJwQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Brightmail-Tracker: H4sIAAAAAAAAA02Se0xTVxzHc+69vb3tVrgUI2e1Y1pn5tDx2Ng8CQtItmRXpwvGLTJxj4J3
-        hQ0KawEH/kF5jGHdpJDgRoEIhJcULJROKRUFlllQCYS3JOJwsEU6XrZqUWFruZj53+f3O5/f
-        +Z5fcihc3ExKqARlKqtSyhNlpJC4eG1l4I3IhITY4Mc1UmS8fg1HhtuFJDq7tIKjGyX9GCou
-        /IWPnvQP4KhzoYyHBl3ZGLrVZcHQecPvGJox6nH0Y9cSgVa1U+5e3jSOnk6HoOKeMYBmR/UY
-        6pzchYb+bOCjoeoP0OXOPgINd5ST6FzdLB/p8h/gaEI3C1CRrY2HHLV5fHTBvkig3skte19m
-        hkc+ZNZ6m0imKHeBzwxMtRLMcH8aY2o8RTJVmhKcaavJYqyVDoyx3tKQzE+5CyRj+f4Oj1m8
-        MkoyZ8yNgDGaRwlG19bKixIfFb57nE1MSGdVQeFfCuPryoxEyrzgu0sFDzENyKO0QEBBOhTa
-        SisJLRBSYroBQPu4nccVTgDbR+oxrnAA+EPjIHg2Ml1TtzFSD+BvRZb1AzF9D8A5p1ILKIqk
-        A2D2Kb7H2URPAFjU0rJ+E07P4XDQPI55BnzpKPhHdf46E/QO6Bpq4nlYRIfB5SUXyaW9AkuH
-        HvE9lwrcfd39aE7xgX2lM4SHcbeS+2sZzum1Qthu9+H4fdhgG+Nz7AvnbOYNlsJ/Lecwjk/C
-        2YknuOdtkM4DsNBiJD1Z0J115maiB3H6dWjsCOL0SPjXdQfGGV5wYt6He4EXLL74M861RbAg
-        X8zZMmhZmdkIhXA4p5zgFAZe1r2jA9v0z62if24V/f+xlQBvBH5smjpJwapDlOyJQLU8SZ2m
-        VATGJSeZgPtH31iz3W8HFXPLgT0Ao0APgBQu2yRyWuNjxaLj8oxMVpX8hSotkVX3gC0UIfMT
-        xSW0yMW0Qp7KfsOyKazq2SlGCSQa7Jh3Lf1S5NhK+af1wuj0Kv+srpgLV2JPRGdcOhauurcv
-        Y+shA89bMGhojWiLPuJUEgFd+49Id2pHMr3uvnZwsysn5p895x9L3+KFer25q2nRdNuQ0lKd
-        vtk389Cib+DuCeeL3acP7ow5/HXEV93DyhrF4ZAK6tHRSWnHAe+n+7P7pmxT1u4X/Bci4+6o
-        k3M+X9B+RFRJVicfzMsVMyaXJHxv8dVtwj6rYfuy78c7RpAWCwt+uEfhqDLFBDVkn/b7NnZR
-        39wqk7+3dTUr6TNBlKRkjfcq1bzvb7s2dcnsH3Gy0REWerVA8HbsJ7kH7vJ2a3pzyWDnzbLt
-        FVnN5vHx/HmTVCcj1PHykABcpZb/B7EFCq9ABAAA
-X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFprHKsWRmVeSWpSXmKPExsVy+t/xu7oOmZlJBn+mW1usP3WM2WL13X42
-        i2kffjJbnJ56lsliUv8MdovfZ88zW+x9N5vV4sKPRiaLmwd2MlmsXH2UyeLJ+lnMFj0HPrBY
-        /O26BxRrechs8eehocWkQ9cYLZ5encVksfeWtsWlxyvYLS4tcrfYs/cki8XlXXPYLOYve8pu
-        MaHtK7PFjQlPGS0mHt/MavF5aQu7xbrX71ksTtySdpD1uHzF2+PfiTVsHhOb37F7nL+3kcXj
-        8tlSj02rOtk8FjZMZfbYvKTeY/eCz0weu282sHn0Nr9j89jZep/V4/2+q2wefVtWMXqs33KV
-        xWPC5o2sAUJRejZF+aUlqQoZ+cUltkrRhhZGeoaWFnpGJpZ6hsbmsVZGpkr6djYpqTmZZalF
-        +nYJehnLZq9nKXjLWbG94xtTA2MLRxcjJ4eEgInEwyXLWLoYuTiEBJYySmxYMJEdIiEhcXth
-        EyOELSzx51oXG4gtJPCcUeLhKrUuRg4ONgEticZOdpBeEYEnjBL3fz4GG8Qs0MAicWviLiaQ
-        BmEBP4mn+2+DDWIRUJX4cWkNK4jNK2At8fHDDzaIBfISMy99ZwcZygkUn/ApAmKXlUT3oltQ
-        5YISJ2c+YQGxmYHKm7fOZp7AKDALSWoWktQCRqZVjCKppcW56bnFhnrFibnFpXnpesn5uZsY
-        gQll27Gfm3cwznv1Ue8QIxMH4yFGCQ5mJRHeL7szkoR4UxIrq1KL8uOLSnNSiw8xmgKdPZFZ
-        SjQ5H5jS8kriDc0MTA1NzCwNTC3NjJXEeT0LOhKFBNITS1KzU1MLUotg+pg4OKUamOoNztk7
-        676Vqz9ou6rw0tv1akJitqWbtj5JydrfKbNS7pTm13VZmWtnX80QzUgviwhx+f3njLLFRY4H
-        jus3m76TDZhgq6r+UPdQkuSxF7I3Zcwf3M17EnTt2zJPO9mQLFPZw3oZlwr7ZVi6uDnXvMs2
-        Wxa0IffyTJUuqaayzraXsiaq269fZ/inmPLOu8n/eTr7t097n/vxftx9T0v1LJf242WN58+m
-        SjQ7Nd7scpjsoOQ7WZ9dwfHHeqO3cY1nzVYZ5T+dK6I3ycX+YP08SYNW7d7iz4xzeOabMp/t
-        jprluMSX1+T2XuHk96+iPz+a3B5yquyNt/+Xusthrvxz76zynMgj9TUtJHbX1z1NSizFGYmG
-        WsxFxYkA506w3bEDAAA=
-X-CMS-MailID: 20220427160313eucas1p1feecf74ec15c8c3d9250444710fd1676
-X-Msg-Generator: CA
-Content-Type: text/plain; charset="utf-8"
-X-RootMTR: 20220427160313eucas1p1feecf74ec15c8c3d9250444710fd1676
-X-EPHeader: CA
-CMS-TYPE: 201P
-X-CMS-RootMailID: 20220427160313eucas1p1feecf74ec15c8c3d9250444710fd1676
-References: <20220427160255.300418-1-p.raghav@samsung.com>
-        <CGME20220427160313eucas1p1feecf74ec15c8c3d9250444710fd1676@eucas1p1.samsung.com>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAEzrpqdN7FaMMpemFbr6fO9Vi8t6upGPbAjonTtP-dpWMzdJwQ@mail.gmail.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+User-Agent: Mutt/1.10.1 (2018-07-13)
+X-SA-Exim-Connect-IP: <locally generated>
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Luis Chamberlain <mcgrof@kernel.org>
+On Wed, Apr 27, 2022 at 10:44:26AM -0400, Josef Bacik wrote:
+> On Tue, Apr 26, 2022 at 11:54 PM Marc MERLIN <marc@merlins.org> wrote:
+> >
+> > On Tue, Apr 26, 2022 at 05:36:28PM -0400, Josef Bacik wrote:
+> > > On Tue, Apr 26, 2022 at 5:20 PM Josef Bacik <josef@toxicpanda.com> wrote:
+> > > >
+> > > > On Tue, Apr 26, 2022 at 4:43 PM Marc MERLIN <marc@merlins.org> wrote:
+> > > > >
+> > > > > Generally would you say we're still on the right path and helping your
+> > > > > recovery tools getting better, or is it getting close or to the time
+> > > > > where I should restore from backups?
+> > > > >
+> > > >
+> > > > Yup sorry for the radio silence, loads of meetings today, but good
+> > > > news is I've reproduced your problem locally, so I'm trying to hammer
+> > > > it out.  I hope to have something useful for you today.  Thanks,
+> > >
+> > > Sigh I'm dumb as fuck, can you pull and re-run tree-recover just to
+> > > make sure any stupidity I've caused is undone, and then run rescue
+> > > init-extent-tree and then we can go from there?  Thanks,
+> 
+> Ok back to this problem again, I've added some debugging.
+> Unfortunately the real bytenr is getting lost, so the new debugging
+> will print the actual bytenr we're trying to add, and then I can add
+> more targeted debugging to figure out whats going on.  Thanks,
 
-Today dm-zoned relies on the assumption that you have a zone size
-with a power of 2. Even though the block layer today enforces this
-requirement, these devices do exist and so provide a stop-gap measure
-to ensure these devices cannot be used by mistake
+Small typo:
+  409 |  prinf("doing insert of %llu\n", key->objectid);
+        |  ^~~~~
+	|  printf
 
-Signed-off-by: Luis Chamberlain <mcgrof@kernel.org>
-Signed-off-by: Pankaj Raghav <p.raghav@samsung.com>
----
- drivers/md/dm-zone.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+Result:
+doing insert of 12233379401728
+Failed to find [7750833868800, 168, 262144]
 
-diff --git a/drivers/md/dm-zone.c b/drivers/md/dm-zone.c
-index 57daa86c19cf..221e0aa0f1a7 100644
---- a/drivers/md/dm-zone.c
-+++ b/drivers/md/dm-zone.c
-@@ -231,6 +231,18 @@ static int dm_revalidate_zones(struct mapped_device *md, struct dm_table *t)
- 	struct request_queue *q = md->queue;
- 	unsigned int noio_flag;
- 	int ret;
-+	struct block_device *bdev = md->disk->part0;
-+	sector_t zone_sectors;
-+	char bname[BDEVNAME_SIZE];
-+
-+	zone_sectors = bdev_zone_sectors(bdev);
-+
-+	if (!is_power_of_2(zone_sectors)) {
-+		DMWARN("%s: %s only power of two zone size supported\n",
-+		       dm_device_name(md),
-+		       bdevname(bdev, bname));
-+		return 1;
-+	}
- 
- 	/*
- 	 * Check if something changed. If yes, cleanup the current resources
+Program received signal SIGSEGV, Segmentation fault.
+rb_search (root=root@entry=0x10000000060, key=key@entry=0x7fffffffdd00, comp=comp@entry=0x55555559aea8 <cache_tree_comp_range>, 
+    next_ret=next_ret@entry=0x7fffffffdd18) at common/rbtree-utils.c:48
+48              struct rb_node *n = root->rb_node;
+(gdb) bt
+#0  rb_search (root=root@entry=0x10000000060, key=key@entry=0x7fffffffdd00, comp=comp@entry=0x55555559aea8 <cache_tree_comp_range>, 
+    next_ret=next_ret@entry=0x7fffffffdd18) at common/rbtree-utils.c:48
+#1  0x000055555559b0ac in search_cache_extent (tree=tree@entry=0x10000000060, start=start@entry=100564992)
+    at common/extent-cache.c:179
+#2  0x0000555555584c3a in set_extent_bits (tree=0x10000000060, start=100564992, end=100564991, bits=bits@entry=1)
+    at kernel-shared/extent_io.c:380
+#3  0x0000555555584e6d in set_extent_dirty (tree=<optimized out>, start=<optimized out>, end=<optimized out>)
+    at kernel-shared/extent_io.c:486
+#4  0x0000555555585850 in set_extent_buffer_dirty (eb=eb@entry=0x555555729660) at kernel-shared/extent_io.c:976
+#5  0x000055555557bc1e in btrfs_mark_buffer_dirty (eb=eb@entry=0x555555729660) at kernel-shared/disk-io.c:2224
+#6  0x000055555557ee47 in setup_inline_extent_backref (refs_to_add=1, offset=0, owner=5507, root_objectid=93824992434256, parent=0, 
+    iref=0xffffffffffffffe4, path=0x555555b8cda0, root=<optimized out>) at kernel-shared/extent-tree.c:1085
+#7  insert_inline_extent_backref (refs_to_add=1, offset=0, owner=5507, root_objectid=93824992434256, parent=0, 
+    num_bytes=<optimized out>, bytenr=<optimized out>, path=0x555555b8cda0, root=<optimized out>, trans=<optimized out>)
+    at kernel-shared/extent-tree.c:1197
+#8  btrfs_inc_extent_ref (trans=trans@entry=0x555558a8d760, root=root@entry=0x55555564cde0, bytenr=<optimized out>, 
+    num_bytes=<optimized out>, parent=parent@entry=0, root_objectid=root_objectid@entry=1, owner=5507, offset=0)
+    at kernel-shared/extent-tree.c:1262
+#9  0x00005555555dfba4 in process_eb (trans=trans@entry=0x555558a8d760, root=root@entry=0x55555564cde0, eb=eb@entry=0x555559d00cc0, 
+    current=current@entry=0x7fffffffe098) at cmds/rescue-init-extent-tree.c:503
+#10 0x00005555555dfcb3 in process_eb (trans=trans@entry=0x555558a8d760, root=root@entry=0x55555564cde0, eb=0x555555944100, 
+    current=current@entry=0x7fffffffe098) at cmds/rescue-init-extent-tree.c:578
+#11 0x00005555555dff1b in record_root (root=0x55555564cde0) at cmds/rescue-init-extent-tree.c:649
+#12 0x00005555555e0225 in btrfs_init_extent_tree (path=path@entry=0x7fffffffe6c5 "/dev/mapper/dshelf1")
+    at cmds/rescue-init-extent-tree.c:785
+#13 0x00005555555d7a16 in cmd_rescue_init_extent_tree (cmd=<optimized out>, argc=<optimized out>, argv=<optimized out>)
+    at cmds/rescue.c:65
+#14 0x000055555556c17b in cmd_execute (argv=0x7fffffffe3c8, argc=2, cmd=0x555555642d40 <cmd_struct_rescue_init_extent_tree>)
+    at cmds/commands.h:125
+#15 handle_command_group (cmd=<optimized out>, argc=2, argv=0x7fffffffe3c8) at btrfs.c:152
+#16 0x000055555556c275 in cmd_execute (argv=0x7fffffffe
+
 -- 
-2.25.1
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/  

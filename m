@@ -2,116 +2,93 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 787FBC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Apr 2022 15:06:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9D1EC433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 28 Apr 2022 15:13:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348800AbiD1PKF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 28 Apr 2022 11:10:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45278 "EHLO
+        id S1348915AbiD1PQX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 28 Apr 2022 11:16:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36796 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348793AbiD1PKD (ORCPT
+        with ESMTP id S1345202AbiD1PQW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 28 Apr 2022 11:10:03 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D10B328E39
-        for <linux-btrfs@vger.kernel.org>; Thu, 28 Apr 2022 08:06:47 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Thu, 28 Apr 2022 11:16:22 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6696169CC7;
+        Thu, 28 Apr 2022 08:13:08 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 471282186F;
-        Thu, 28 Apr 2022 15:06:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1651158406;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dnyuQ/sjy9s4e1jhUjqVu1JuslPKDV50UyNsunyLSxg=;
-        b=efS2chHOzaNZxnHdxJc5Xw4ONafUHwdK3f3ogoe4FSfneD3T/D9flsWN/mKFWms3nrqiR4
-        rlJzFgXY2bWYZtcp2y9bN46G5NpDGVYLhA2agtj82lqzGEKslBiCIEuH4wuK04wjzV6DAU
-        5tLMIp0uqBAxNHrVcV9hVsYUGaTbljU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1651158406;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dnyuQ/sjy9s4e1jhUjqVu1JuslPKDV50UyNsunyLSxg=;
-        b=SPZPl7vw55YRh4ZMaq/ON+N+fT8ktdxWc4soxZL1SRkwW87e2IRPu14mokMt5G1Z207I7g
-        pCoxBmGs7MVKcTAA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1151F13491;
-        Thu, 28 Apr 2022 15:06:46 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id a+M9A4atamKRegAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 28 Apr 2022 15:06:46 +0000
-Date:   Thu, 28 Apr 2022 17:02:37 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org,
-        syzbot+a2c720e0f056114ea7c6@syzkaller.appspotmail.com
-Subject: Re: [PATCH] btrfs: don't call destroy_workqueue on NULL workqueues
-Message-ID: <20220428150237.GC18596@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        dsterba@suse.com, josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
-        syzbot+a2c720e0f056114ea7c6@syzkaller.appspotmail.com
-References: <20220428125341.4152527-1-hch@lst.de>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id F357661F3B;
+        Thu, 28 Apr 2022 15:13:07 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5245FC385A0;
+        Thu, 28 Apr 2022 15:13:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1651158787;
+        bh=YmTzsyBY8wtMBLxETN1cWIZCKSqnwg+rGNvlGsrNoc0=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=WgbzYEkF+5VS7YeIcjrKMKLt02iYGJOuQgApJcM2oiZZ2gSxsotTBDOBun6IJQ8SA
+         txER8pf7+XI+eFwA4hcKLOXotuSWA/Zwc3RrY4jFVvmni9rSt0HXQ+s4do6r07KjmF
+         ek4qDMyUopzWNrjVHlIotvvxplq5Yh0/TQv/WEwJhEskhTLtsc9a55Qs3Wygi4h+ox
+         eGKlO70Ho8eMms1P6Japbr12qP9xl3ODFBhlI/XB4fhFuNpPRbsmRgMH9uFu0kOSph
+         Nowi0xWumCtxhi5dj7Sqv5QuFJNj7Ji7xUH3VjAIeqfurX6xf67JMja6glUIcqqZWC
+         fWF59YJ5NCH+A==
+Date:   Thu, 28 Apr 2022 08:13:06 -0700
+From:   "Darrick J. Wong" <djwong@kernel.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: add some missing _require_loop's
+Message-ID: <20220428151306.GO17014@magnolia>
+References: <bd80e5861da3f901428ea66f271f8c4f267c4c23.1651158291.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220428125341.4152527-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <bd80e5861da3f901428ea66f271f8c4f267c4c23.1651158291.git.josef@toxicpanda.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Apr 28, 2022 at 05:53:41AM -0700, Christoph Hellwig wrote:
-> Unlike the btrfs_workueue code, the kernel workqueues don't like their
-> cleaup function called on a NULL pointer, so add checks for them.
+On Thu, Apr 28, 2022 at 11:05:00AM -0400, Josef Bacik wrote:
+> Got a new box running overnight fstests and noticed a couple of failures
+> because I forgot to enable loop device support.  Fix these two tests to
+> have _require_loop so they don't fail if there's no loop device support.
 > 
-> Fixes: a5eec25648da ("btrfs: use a normal workqueue for rmw_workers")
-> Reported-by: syzbot+a2c720e0f056114ea7c6@syzkaller.appspotmail.com
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> Tested-by: syzbot+a2c720e0f056114ea7c6@syzkaller.appspotmail.com
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-Thanks, folded to the patches.
+Yep, these both use loop mounts.
 
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2283,7 +2283,8 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
->  	btrfs_destroy_workqueue(fs_info->workers);
->  	btrfs_destroy_workqueue(fs_info->endio_workers);
->  	btrfs_destroy_workqueue(fs_info->endio_raid56_workers);
-> -	destroy_workqueue(fs_info->rmw_workers);
-> +	if (fs_info->rmw_workers)
-> +		destroy_workqueue(fs_info->rmw_workers);
+Reviewed-by: Darrick J. Wong <djwong@kernel.org>
 
-This is in "btrfs: use a normal workqueue for rmw_workers"
+--D
 
->  	btrfs_destroy_workqueue(fs_info->endio_write_workers);
->  	btrfs_destroy_workqueue(fs_info->endio_freespace_worker);
->  	btrfs_destroy_workqueue(fs_info->delayed_workers);
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index a614ddde8c624..3985225f27be5 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3967,9 +3967,12 @@ static void scrub_workers_put(struct btrfs_fs_info *fs_info)
->  		fs_info->scrub_parity_workers = NULL;
->  		mutex_unlock(&fs_info->scrub_lock);
+> ---
+>  tests/btrfs/012   | 1 +
+>  tests/generic/648 | 1 +
+>  2 files changed, 2 insertions(+)
+> 
+> diff --git a/tests/btrfs/012 b/tests/btrfs/012
+> index 29552b14..60461a34 100755
+> --- a/tests/btrfs/012
+> +++ b/tests/btrfs/012
+> @@ -30,6 +30,7 @@ _require_command "$MKFS_EXT4_PROG" mkfs.ext4
+>  _require_command "$E2FSCK_PROG" e2fsck
+>  # ext4 does not support zoned block device
+>  _require_non_zoned_device "${SCRATCH_DEV}"
+> +_require_loop
 >  
-> -		destroy_workqueue(scrub_workers);
-> -		destroy_workqueue(scrub_wr_comp);
-> -		destroy_workqueue(scrub_parity);
-> +		if (scrub_workers)
-> +			destroy_workqueue(scrub_workers);
-> +		if (scrub_wr_comp)
-> +			destroy_workqueue(scrub_wr_comp);
-> +		if (scrub_parity)
-> +			destroy_workqueue(scrub_parity);
-
-And this from "btrfs: use normal workqueues for scrub"
+>  BLOCK_SIZE=`_get_block_size $TEST_DIR`
+>  
+> diff --git a/tests/generic/648 b/tests/generic/648
+> index e5c743c5..d7bf5697 100755
+> --- a/tests/generic/648
+> +++ b/tests/generic/648
+> @@ -39,6 +39,7 @@ _require_scratch_reflink
+>  _require_cp_reflink
+>  _require_dm_target error
+>  _require_command "$KILLALL_PROG" "killall"
+> +_require_loop
+>  
+>  echo "Silence is golden."
+>  
+> -- 
+> 2.26.3
+> 

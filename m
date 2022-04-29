@@ -2,511 +2,262 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52014C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Apr 2022 14:31:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EB41DC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 29 Apr 2022 14:42:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1377459AbiD2OeX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 29 Apr 2022 10:34:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37110 "EHLO
+        id S1377668AbiD2Opb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 29 Apr 2022 10:45:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33394 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1377436AbiD2OeM (ORCPT
+        with ESMTP id S1377764AbiD2OpV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 29 Apr 2022 10:34:12 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7ADD02495E
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Apr 2022 07:30:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=e92WJgGRfKm4YX2kX1ByX9U72MdGeu7edsnfDo9JohQ=; b=QC/AzxnMDZgkQDW2IwpCct/thR
-        JiNwYwtDCOxOftsCJ/pRC39kUyqJRLvOaNPuPJhI5hbRDWH8++ZKHz8WOyWfJWLwZlTN5wvL3LKG4
-        C7x4dvCTh2ad9jXP0k7g5zL1RlAaZhWBodeQ6kMkAVdePPEef3TogNA35+K9/RTaJgIrxb/4h1uoe
-        y0lBecX7tO7VHwD6k/YmDfDQJmjg2znw7eOl4Ni3kAQRs1IqTbcwC3Mpy7Xc4jAoFh/Ow2VC1Mln3
-        s4TBgc2nxQPJhkLJ7n974WsqKVBAjgHKsqTfwtimm4lg0SaGMYkbtIY2NCyYs2a5wY4ZJmnnb5DQL
-        SkvPZsLw==;
-Received: from [2607:fb90:27d7:71af:6ca1:91e8:bf19:edd2] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nkRdw-00Bakl-UM; Fri, 29 Apr 2022 14:30:49 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/10] btrfs: remove btrfs_end_io_wq
-Date:   Fri, 29 Apr 2022 07:30:38 -0700
-Message-Id: <20220429143040.106889-9-hch@lst.de>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20220429143040.106889-1-hch@lst.de>
-References: <20220429143040.106889-1-hch@lst.de>
+        Fri, 29 Apr 2022 10:45:21 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 717F062BEB
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Apr 2022 07:41:51 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id D9CBB1F893;
+        Fri, 29 Apr 2022 14:41:49 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1651243309; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=w0OGzoAxMDJ4HqCEe/PwD4ZZuSg91MXOo7xhKBQqZfM=;
+        b=jrT+CB2MD/q2BIt1Bt6IyQH0jlfQ9Umk/UAGXZQAPgo9SfzdhtpTtOMwX7buiE/VTiL2Tr
+        yNLUxUwIa5yOfXiUGMZ4T8PY7csapkXaJdYbnL8P51csC+NpZqmvjPtDSyBhhn7bkDCyXK
+        Qvuz7pJrt6I4eCdQzePEqJWDJKF+Fxg=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1651243309;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=w0OGzoAxMDJ4HqCEe/PwD4ZZuSg91MXOo7xhKBQqZfM=;
+        b=6mj9D7WC9+k7SGjiexL5G5Xv5ND4Ag8JBykp2S0K8D6B0272gJwyGtuHO4gWPL2OP7ofkD
+        /korFI+QITlymsDw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8C3A413AE0;
+        Fri, 29 Apr 2022 14:41:49 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id jFYjGi35a2LjGwAAMHmgww
+        (envelope-from <rgoldwyn@suse.de>); Fri, 29 Apr 2022 14:41:49 +0000
+Date:   Fri, 29 Apr 2022 09:41:47 -0500
+From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Dave Sterba <DSterba@suse.com>
+Subject: Re: [PATCH] btrfs: Remove unnecessary inode_need_compress() check
+Message-ID: <20220429144147.xhfiqj27whufoyvt@fiona>
+References: <20220428200735.j3yxdpi6fgdptsph@fiona>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220428200735.j3yxdpi6fgdptsph@fiona>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All reads bio that go through btrfs_map_bio need to be completed in
-user context.  And read I/Os are the most common and timing critical
-in almost any file system workloads.
+Apparently, BTRFS_INODE_NOCOMPRESS can change runtime, so this patch is
+incorrect. Sorry.
 
-Embedd a work_struct into struct btrfs_bio and use it to complete all
-read bios submitted through btrfs_map, using the REQ_META flag to decide
-which workqueue they are placed on.
+On 15:07 28/04, Goldwyn Rodrigues wrote:
+> async extent writes are called only for compressed range. So, remove the
+> check for inode_need_compress() in compress_file_range() since it is
+> already checked in btrfs_run_delalloc_range().
+> 
+> Conditions for inode_can_compress() can be incorporated in
+> inode_need_compress()
+> 
+> To make the code more elegant, change the condition order in
+> btrfs_run_delalloc_range().
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> ---
+>  fs/btrfs/inode.c | 126 ++++++++++++++++++++---------------------------
+>  1 file changed, 54 insertions(+), 72 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 4dfc02fbbad5..a89768963d9f 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -480,17 +480,6 @@ static noinline int add_async_extent(struct async_chunk *cow,
+>  	return 0;
+>  }
+>  
+> -/*
+> - * Check if the inode has flags compatible with compression
+> - */
+> -static inline bool inode_can_compress(struct btrfs_inode *inode)
+> -{
+> -	if (inode->flags & BTRFS_INODE_NODATACOW ||
+> -	    inode->flags & BTRFS_INODE_NODATASUM)
+> -		return false;
+> -	return true;
+> -}
+> -
+>  /*
+>   * Check if the inode needs to be submitted to compression, based on mount
+>   * options, defragmentation, properties or heuristics.
+> @@ -500,12 +489,13 @@ static inline int inode_need_compress(struct btrfs_inode *inode, u64 start,
+>  {
+>  	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+>  
+> -	if (!inode_can_compress(inode)) {
+> -		WARN(IS_ENABLED(CONFIG_BTRFS_DEBUG),
+> -			KERN_ERR "BTRFS: unexpected compression for ino %llu\n",
+> -			btrfs_ino(inode));
+> +	/*
+> +	 * Check if the inode has flags compatible with compression
+> +	 */
+> +	if (inode->flags & BTRFS_INODE_NODATACOW ||
+> +	    inode->flags & BTRFS_INODE_NODATASUM)
+>  		return 0;
+> -	}
+> +
+>  	/*
+>  	 * Special check for subpage.
+>  	 *
+> @@ -661,62 +651,55 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+>  	total_in = 0;
+>  	ret = 0;
+>  
+> -	/*
+> -	 * we do compression for mount -o compress and when the
+> -	 * inode has not been flagged as nocompress.  This flag can
+> -	 * change at any time if we discover bad compression ratios.
+> -	 */
+> -	if (inode_need_compress(BTRFS_I(inode), start, end)) {
+> -		WARN_ON(pages);
+> -		pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+> -		if (!pages) {
+> -			/* just bail out to the uncompressed code */
+> -			nr_pages = 0;
+> -			goto cont;
+> -		}
+> +	WARN_ON(pages);
+> +	pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
+> +	if (!pages) {
+> +		/* just bail out to the uncompressed code */
+> +		nr_pages = 0;
+> +		goto cont;
+> +	}
+>  
+> -		if (BTRFS_I(inode)->defrag_compress)
+> -			compress_type = BTRFS_I(inode)->defrag_compress;
+> -		else if (BTRFS_I(inode)->prop_compress)
+> -			compress_type = BTRFS_I(inode)->prop_compress;
+> +	if (BTRFS_I(inode)->defrag_compress)
+> +		compress_type = BTRFS_I(inode)->defrag_compress;
+> +	else if (BTRFS_I(inode)->prop_compress)
+> +		compress_type = BTRFS_I(inode)->prop_compress;
+>  
+> -		/*
+> -		 * we need to call clear_page_dirty_for_io on each
+> -		 * page in the range.  Otherwise applications with the file
+> -		 * mmap'd can wander in and change the page contents while
+> -		 * we are compressing them.
+> -		 *
+> -		 * If the compression fails for any reason, we set the pages
+> -		 * dirty again later on.
+> -		 *
+> -		 * Note that the remaining part is redirtied, the start pointer
+> -		 * has moved, the end is the original one.
+> -		 */
+> -		if (!redirty) {
+> -			extent_range_clear_dirty_for_io(inode, start, end);
+> -			redirty = 1;
+> -		}
+> +	/*
+> +	 * we need to call clear_page_dirty_for_io on each
+> +	 * page in the range.  Otherwise applications with the file
+> +	 * mmap'd can wander in and change the page contents while
+> +	 * we are compressing them.
+> +	 *
+> +	 * If the compression fails for any reason, we set the pages
+> +	 * dirty again later on.
+> +	 *
+> +	 * Note that the remaining part is redirtied, the start pointer
+> +	 * has moved, the end is the original one.
+> +	 */
+> +	if (!redirty) {
+> +		extent_range_clear_dirty_for_io(inode, start, end);
+> +		redirty = 1;
+> +	}
+>  
+> -		/* Compression level is applied here and only here */
+> -		ret = btrfs_compress_pages(
+> +	/* Compression level is applied here and only here */
+> +	ret = btrfs_compress_pages(
+>  			compress_type | (fs_info->compress_level << 4),
+> -					   inode->i_mapping, start,
+> -					   pages,
+> -					   &nr_pages,
+> -					   &total_in,
+> -					   &total_compressed);
+> +			inode->i_mapping, start,
+> +			pages,
+> +			&nr_pages,
+> +			&total_in,
+> +			&total_compressed);
+>  
+> -		if (!ret) {
+> -			unsigned long offset = offset_in_page(total_compressed);
+> -			struct page *page = pages[nr_pages - 1];
+> +	if (!ret) {
+> +		unsigned long offset = offset_in_page(total_compressed);
+> +		struct page *page = pages[nr_pages - 1];
+>  
+> -			/* zero the tail end of the last page, we might be
+> -			 * sending it down to disk
+> -			 */
+> -			if (offset)
+> -				memzero_page(page, offset, PAGE_SIZE - offset);
+> -			will_compress = 1;
+> -		}
+> +		/* zero the tail end of the last page, we might be
+> +		 * sending it down to disk
+> +		 */
+> +		if (offset)
+> +			memzero_page(page, offset, PAGE_SIZE - offset);
+> +		will_compress = 1;
+>  	}
+>  cont:
+>  	/*
+> @@ -2019,18 +2002,17 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
+>  		ASSERT(!zoned || btrfs_is_data_reloc_root(inode->root));
+>  		ret = run_delalloc_nocow(inode, locked_page, start, end,
+>  					 page_started, nr_written);
+> -	} else if (!inode_can_compress(inode) ||
+> -		   !inode_need_compress(inode, start, end)) {
+> +	} else if (inode_need_compress(inode, start, end)) {
+> +		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT, &inode->runtime_flags);
+> +		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
+> +					   page_started, nr_written);
+> +	} else {
+>  		if (zoned)
+>  			ret = run_delalloc_zoned(inode, locked_page, start, end,
+>  						 page_started, nr_written);
+>  		else
+>  			ret = cow_file_range(inode, locked_page, start, end,
+>  					     page_started, nr_written, 1);
+> -	} else {
+> -		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT, &inode->runtime_flags);
+> -		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
+> -					   page_started, nr_written);
+>  	}
+>  	ASSERT(ret <= 0);
+>  	if (ret)
+> -- 
+> 2.35.3
+> 
+> 
+> -- 
+> Goldwyn
 
-This removes the need for a separate 128 byte allocation (typically
-rounded up to 192 bytes by slab) for all reads with a size increase
-of 24 bytes for struct btrfs_bio.  Future patches will reorgnize
-struct btrfs_bio to make use of this extra space for writes as well.
-
-(all sizes are based a on typical 64-bit non-debug build)
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/compression.c |   4 --
- fs/btrfs/ctree.h       |   4 +-
- fs/btrfs/disk-io.c     | 120 +++--------------------------------------
- fs/btrfs/disk-io.h     |  10 ----
- fs/btrfs/inode.c       |  24 +--------
- fs/btrfs/super.c       |  11 +---
- fs/btrfs/volumes.c     |  33 ++++++++++--
- fs/btrfs/volumes.h     |   3 ++
- 8 files changed, 42 insertions(+), 167 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 9d5986a30a4a2..c73ee8ae070d7 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -938,10 +938,6 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 			sums += fs_info->csum_size * nr_sectors;
- 
- 			ASSERT(comp_bio->bi_iter.bi_size);
--			ret = btrfs_bio_wq_end_io(fs_info, comp_bio,
--						  BTRFS_WQ_ENDIO_DATA);
--			if (ret)
--				goto finish_cb;
- 			ret = btrfs_map_bio(fs_info, comp_bio, mirror_num);
- 			if (ret)
- 				goto finish_cb;
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5ae482632327f..c2c8027067c48 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -851,8 +851,8 @@ struct btrfs_fs_info {
- 	struct btrfs_workqueue *hipri_workers;
- 	struct btrfs_workqueue *delalloc_workers;
- 	struct btrfs_workqueue *flush_workers;
--	struct btrfs_workqueue *endio_workers;
--	struct btrfs_workqueue *endio_meta_workers;
-+	struct workqueue_struct *endio_workers;
-+	struct workqueue_struct *endio_meta_workers;
- 	struct workqueue_struct *endio_raid56_workers;
- 	struct workqueue_struct *rmw_workers;
- 	struct workqueue_struct *compressed_write_workers;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b8837f66e0a43..b55761e21bde3 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -50,7 +50,6 @@
- 				 BTRFS_SUPER_FLAG_METADUMP |\
- 				 BTRFS_SUPER_FLAG_METADUMP_V2)
- 
--static void end_workqueue_fn(struct btrfs_work *work);
- static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				      struct btrfs_fs_info *fs_info);
-@@ -63,40 +62,6 @@ static int btrfs_destroy_pinned_extent(struct btrfs_fs_info *fs_info,
- static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info);
- static void btrfs_error_commit_super(struct btrfs_fs_info *fs_info);
- 
--/*
-- * btrfs_end_io_wq structs are used to do processing in task context when an IO
-- * is complete.  This is used during reads to verify checksums, and it is used
-- * by writes to insert metadata for new file extents after IO is complete.
-- */
--struct btrfs_end_io_wq {
--	struct bio *bio;
--	bio_end_io_t *end_io;
--	void *private;
--	struct btrfs_fs_info *info;
--	blk_status_t status;
--	enum btrfs_wq_endio_type metadata;
--	struct btrfs_work work;
--};
--
--static struct kmem_cache *btrfs_end_io_wq_cache;
--
--int __init btrfs_end_io_wq_init(void)
--{
--	btrfs_end_io_wq_cache = kmem_cache_create("btrfs_end_io_wq",
--					sizeof(struct btrfs_end_io_wq),
--					0,
--					SLAB_MEM_SPREAD,
--					NULL);
--	if (!btrfs_end_io_wq_cache)
--		return -ENOMEM;
--	return 0;
--}
--
--void __cold btrfs_end_io_wq_exit(void)
--{
--	kmem_cache_destroy(btrfs_end_io_wq_cache);
--}
--
- static void btrfs_free_csum_hash(struct btrfs_fs_info *fs_info)
- {
- 	if (fs_info->csum_shash)
-@@ -739,48 +704,6 @@ int btrfs_validate_metadata_buffer(struct btrfs_bio *bbio,
- 	return ret;
- }
- 
--static void end_workqueue_bio(struct bio *bio)
--{
--	struct btrfs_end_io_wq *end_io_wq = bio->bi_private;
--	struct btrfs_fs_info *fs_info;
--	struct btrfs_workqueue *wq;
--
--	fs_info = end_io_wq->info;
--	end_io_wq->status = bio->bi_status;
--
--	if (end_io_wq->metadata)
--		wq = fs_info->endio_meta_workers;
--	else
--		wq = fs_info->endio_workers;
--
--	btrfs_init_work(&end_io_wq->work, end_workqueue_fn, NULL, NULL);
--	btrfs_queue_work(wq, &end_io_wq->work);
--}
--
--blk_status_t btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
--			enum btrfs_wq_endio_type metadata)
--{
--	struct btrfs_end_io_wq *end_io_wq;
--
--	if (WARN_ON_ONCE(btrfs_op(bio) != BTRFS_MAP_WRITE))
--		return BLK_STS_IOERR;
--
--	end_io_wq = kmem_cache_alloc(btrfs_end_io_wq_cache, GFP_NOFS);
--	if (!end_io_wq)
--		return BLK_STS_RESOURCE;
--
--	end_io_wq->private = bio->bi_private;
--	end_io_wq->end_io = bio->bi_end_io;
--	end_io_wq->info = info;
--	end_io_wq->status = 0;
--	end_io_wq->bio = bio;
--	end_io_wq->metadata = metadata;
--
--	bio->bi_private = end_io_wq;
--	bio->bi_end_io = end_workqueue_bio;
--	return 0;
--}
--
- static void run_one_async_start(struct btrfs_work *work)
- {
- 	struct async_submit_bio *async;
-@@ -917,14 +840,7 @@ void btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio, int mirror_
- 	bio->bi_opf |= REQ_META;
- 
- 	if (btrfs_op(bio) != BTRFS_MAP_WRITE) {
--		/*
--		 * called for a read, do the setup so that checksum validation
--		 * can happen in the async kernel threads
--		 */
--		ret = btrfs_bio_wq_end_io(fs_info, bio,
--					  BTRFS_WQ_ENDIO_METADATA);
--		if (!ret)
--			ret = btrfs_map_bio(fs_info, bio, mirror_num);
-+		ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	} else if (!should_async_write(fs_info, BTRFS_I(inode))) {
- 		ret = btree_csum_one_bio(bio);
- 		if (!ret)
-@@ -1940,25 +1856,6 @@ struct btrfs_root *btrfs_get_fs_root_commit_root(struct btrfs_fs_info *fs_info,
- 	return root;
- }
- 
--/*
-- * called by the kthread helper functions to finally call the bio end_io
-- * functions.  This is where read checksum verification actually happens
-- */
--static void end_workqueue_fn(struct btrfs_work *work)
--{
--	struct bio *bio;
--	struct btrfs_end_io_wq *end_io_wq;
--
--	end_io_wq = container_of(work, struct btrfs_end_io_wq, work);
--	bio = end_io_wq->bio;
--
--	bio->bi_status = end_io_wq->status;
--	bio->bi_private = end_io_wq->private;
--	bio->bi_end_io = end_io_wq->end_io;
--	bio_endio(bio);
--	kmem_cache_free(btrfs_end_io_wq_cache, end_io_wq);
--}
--
- static int cleaner_kthread(void *arg)
- {
- 	struct btrfs_fs_info *fs_info = arg;
-@@ -2265,7 +2162,8 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	btrfs_destroy_workqueue(fs_info->delalloc_workers);
- 	btrfs_destroy_workqueue(fs_info->hipri_workers);
- 	btrfs_destroy_workqueue(fs_info->workers);
--	btrfs_destroy_workqueue(fs_info->endio_workers);
-+	if (fs_info->endio_workers)
-+		destroy_workqueue(fs_info->endio_workers);
- 	if (fs_info->endio_raid56_workers)
- 		destroy_workqueue(fs_info->endio_raid56_workers);
- 	if (fs_info->rmw_workers)
-@@ -2285,7 +2183,8 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	 * the queues used for metadata I/O, since tasks from those other work
- 	 * queues can do metadata I/O operations.
- 	 */
--	btrfs_destroy_workqueue(fs_info->endio_meta_workers);
-+	if (fs_info->endio_meta_workers)
-+		destroy_workqueue(fs_info->endio_meta_workers);
- }
- 
- static void free_root_extent_buffers(struct btrfs_root *root)
-@@ -2458,15 +2357,10 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
- 	fs_info->fixup_workers =
- 		btrfs_alloc_workqueue(fs_info, "fixup", flags, 1, 0);
- 
--	/*
--	 * endios are largely parallel and should have a very
--	 * low idle thresh
--	 */
- 	fs_info->endio_workers =
--		btrfs_alloc_workqueue(fs_info, "endio", flags, max_active, 4);
-+		alloc_workqueue("btrfs-endio", flags, max_active);
- 	fs_info->endio_meta_workers =
--		btrfs_alloc_workqueue(fs_info, "endio-meta", flags,
--				      max_active, 4);
-+		alloc_workqueue("btrfs-endio-meta", flags, max_active);
- 	fs_info->endio_raid56_workers =
- 		alloc_workqueue("btrfs-endio-raid56", flags, max_active);
- 	fs_info->rmw_workers = alloc_workqueue("btrfs-rmw", flags, max_active);
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 97255e3d7e524..424dbfc5fd784 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -17,12 +17,6 @@
-  */
- #define BTRFS_BDEV_BLOCKSIZE	(4096)
- 
--enum btrfs_wq_endio_type {
--	BTRFS_WQ_ENDIO_DATA,
--	BTRFS_WQ_ENDIO_METADATA,
--	BTRFS_WQ_ENDIO_FREE_SPACE,
--};
--
- static inline u64 btrfs_sb_offset(int mirror)
- {
- 	u64 start = SZ_16K;
-@@ -120,8 +114,6 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
- 			  int atomic);
- int btrfs_read_extent_buffer(struct extent_buffer *buf, u64 parent_transid,
- 			     int level, struct btrfs_key *first_key);
--blk_status_t btrfs_bio_wq_end_io(struct btrfs_fs_info *info, struct bio *bio,
--			enum btrfs_wq_endio_type metadata);
- blk_status_t btrfs_wq_submit_bio(struct inode *inode, struct bio *bio,
- 				 int mirror_num, unsigned long bio_flags,
- 				 u64 dio_file_offset,
-@@ -145,8 +137,6 @@ int btree_lock_page_hook(struct page *page, void *data,
- int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
- int btrfs_get_free_objectid(struct btrfs_root *root, u64 *objectid);
- int btrfs_init_root_free_objectid(struct btrfs_root *root);
--int __init btrfs_end_io_wq_init(void);
--void __cold btrfs_end_io_wq_exit(void);
- 
- #ifdef CONFIG_DEBUG_LOCK_ALLOC
- void btrfs_set_buffer_lockdep_class(u64 objectid,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 02c4cbd557dcd..7155f3c7d9f42 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2614,12 +2614,6 @@ void btrfs_submit_data_read_bio(struct inode *inode, struct bio *bio,
- 		return;
- 	}
- 
--	ret = btrfs_bio_wq_end_io(fs_info, bio,
--			btrfs_is_free_space_inode(BTRFS_I(inode)) ?
--			BTRFS_WQ_ENDIO_FREE_SPACE : BTRFS_WQ_ENDIO_DATA);
--	if (ret)
--		goto out;
--
- 	/*
- 	 * Lookup bio sums does extra checks around whether we need to csum or
- 	 * not, which is why we ignore skip_sum here.
-@@ -7785,9 +7779,6 @@ static void submit_dio_repair_bio(struct inode *inode, struct bio *bio,
- 
- 	BUG_ON(bio_op(bio) == REQ_OP_WRITE);
- 
--	if (btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA))
--		return;
--
- 	refcount_inc(&dip->refs);
- 	if (btrfs_map_bio(fs_info, bio, mirror_num))
- 		refcount_dec(&dip->refs);
-@@ -7888,19 +7879,12 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_dio_private *dip = bio->bi_private;
--	bool write = btrfs_op(bio) == BTRFS_MAP_WRITE;
- 	blk_status_t ret;
- 
--	if (!write) {
--		ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
--		if (ret)
--			return ret;
--	}
--
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
- 		goto map;
- 
--	if (write) {
-+	if (btrfs_op(bio) == BTRFS_MAP_WRITE) {
- 		/* check btrfs_submit_data_write_bio() for async submit rules */
- 		if (async_submit && !atomic_read(&BTRFS_I(inode)->sync_writers))
- 			return btrfs_wq_submit_bio(inode, bio, 0, 0,
-@@ -10250,12 +10234,6 @@ static blk_status_t submit_encoded_read_bio(struct btrfs_inode *inode,
- 			return ret;
- 	}
- 
--	ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
--	if (ret) {
--		btrfs_bio_free_csum(bbio);
--		return ret;
--	}
--
- 	atomic_inc(&priv->pending);
- 	ret = btrfs_map_bio(fs_info, bio, mirror_num);
- 	if (ret) {
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 9c683c466d585..64eb8aeed156f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1906,8 +1906,6 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
- 	btrfs_workqueue_set_max(fs_info->hipri_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->delalloc_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->caching_workers, new_pool_size);
--	btrfs_workqueue_set_max(fs_info->endio_workers, new_pool_size);
--	btrfs_workqueue_set_max(fs_info->endio_meta_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->endio_write_workers, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->endio_freespace_worker, new_pool_size);
- 	btrfs_workqueue_set_max(fs_info->delayed_workers, new_pool_size);
-@@ -2668,13 +2666,9 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		goto free_delayed_ref;
- 
--	err = btrfs_end_io_wq_init();
--	if (err)
--		goto free_prelim_ref;
--
- 	err = btrfs_interface_init();
- 	if (err)
--		goto free_end_io_wq;
-+		goto free_prelim_ref;
- 
- 	btrfs_print_mod_info();
- 
-@@ -2690,8 +2684,6 @@ static int __init init_btrfs_fs(void)
- 
- unregister_ioctl:
- 	btrfs_interface_exit();
--free_end_io_wq:
--	btrfs_end_io_wq_exit();
- free_prelim_ref:
- 	btrfs_prelim_ref_exit();
- free_delayed_ref:
-@@ -2729,7 +2721,6 @@ static void __exit exit_btrfs_fs(void)
- 	extent_state_cache_exit();
- 	extent_io_exit();
- 	btrfs_interface_exit();
--	btrfs_end_io_wq_exit();
- 	unregister_filesystem(&btrfs_fs_type);
- 	btrfs_exit_sysfs();
- 	btrfs_cleanup_fs_uuids();
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index aeacb87457687..5f18e9105fe08 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6621,11 +6621,27 @@ int btrfs_map_sblock(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 	return __btrfs_map_block(fs_info, op, logical, length, bioc_ret, 0, 1);
- }
- 
--static inline void btrfs_end_bioc(struct btrfs_io_context *bioc)
-+static struct workqueue_struct *btrfs_end_io_wq(struct btrfs_io_context *bioc)
-+{
-+	if (bioc->orig_bio->bi_opf & REQ_META)
-+		return bioc->fs_info->endio_meta_workers;
-+	return bioc->fs_info->endio_workers;
-+}
-+
-+static void btrfs_end_bio_work(struct work_struct *work)
-+{
-+	struct btrfs_bio *bbio =
-+		container_of(work, struct btrfs_bio, end_io_work);
-+
-+	bio_endio(&bbio->bio);
-+}
-+
-+static void btrfs_end_bioc(struct btrfs_io_context *bioc, bool async)
- {
- 	struct bio *orig_bio = bioc->orig_bio;
-+	struct btrfs_bio *bbio = btrfs_bio(orig_bio);
- 
--	btrfs_bio(orig_bio)->mirror_num = bioc->mirror_num;
-+	bbio->mirror_num = bioc->mirror_num;
- 	orig_bio->bi_private = bioc->private;
- 	orig_bio->bi_end_io = bioc->end_io;
- 
-@@ -6637,7 +6653,14 @@ static inline void btrfs_end_bioc(struct btrfs_io_context *bioc)
- 		orig_bio->bi_status = BLK_STS_IOERR;
- 	else
- 		orig_bio->bi_status = BLK_STS_OK;
--	bio_endio(orig_bio);
-+
-+	if (btrfs_op(orig_bio) == BTRFS_MAP_READ && async) {
-+		INIT_WORK(&bbio->end_io_work, btrfs_end_bio_work);
-+		queue_work(btrfs_end_io_wq(bioc), &bbio->end_io_work);
-+	} else {
-+		bio_endio(orig_bio);
-+	}
-+
- 	btrfs_put_bioc(bioc);
- }
- 
-@@ -6669,7 +6692,7 @@ static void btrfs_end_bio(struct bio *bio)
- 
- 	btrfs_bio_counter_dec(bioc->fs_info);
- 	if (atomic_dec_and_test(&bioc->stripes_pending))
--		btrfs_end_bioc(bioc);
-+		btrfs_end_bioc(bioc, true);
- }
- 
- static void submit_stripe_bio(struct btrfs_io_context *bioc, struct bio *bio,
-@@ -6767,7 +6790,7 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
- 		    !test_bit(BTRFS_DEV_STATE_WRITEABLE, &dev->dev_state))) {
- 			atomic_inc(&bioc->error);
- 			if (atomic_dec_and_test(&bioc->stripes_pending))
--				btrfs_end_bioc(bioc);
-+				btrfs_end_bioc(bioc, false);
- 			continue;
- 		}
- 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 12b2af9260e92..28e28b7c48649 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -371,6 +371,9 @@ struct btrfs_bio {
- 	u8 csum_inline[BTRFS_BIO_INLINE_CSUM_SIZE];
- 	struct bvec_iter iter;
- 
-+	/* for read end I/O handling */
-+	struct work_struct end_io_work;
-+
- 	/*
- 	 * This member must come last, bio_alloc_bioset will allocate enough
- 	 * bytes for entire btrfs_bio but relies on bio being last.
 -- 
-2.30.2
-
+Goldwyn

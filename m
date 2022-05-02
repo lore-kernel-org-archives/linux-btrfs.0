@@ -2,83 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 992D5C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  2 May 2022 18:42:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C3A7C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon,  2 May 2022 18:43:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240286AbiEBSpo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 2 May 2022 14:45:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55342 "EHLO
+        id S237367AbiEBSrV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 2 May 2022 14:47:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56282 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235087AbiEBSpj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 May 2022 14:45:39 -0400
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id A3ED85FA6
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2022 11:42:09 -0700 (PDT)
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-        id 5AC8D319A7C; Mon,  2 May 2022 14:42:04 -0400 (EDT)
-Date:   Mon, 2 May 2022 14:42:04 -0400
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Filipe Manana <fdmanana@kernel.org>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: misc-next 6a43055c266e: assertion failed: ret != -EEXIST, in
- fs/btrfs/tree-log.c:3857
-Message-ID: <YnAl/JlVTQcBurTI@hungrycats.org>
-References: <YmyefE9mc2xl5ZMz@hungrycats.org>
- <Ym+jpt5VmKwicgEf@debian9.Home>
+        with ESMTP id S230504AbiEBSrS (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 May 2022 14:47:18 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C3DCB5FA6
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2022 11:43:48 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 566341F749;
+        Mon,  2 May 2022 18:43:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1651517027;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=v9UYKxovVZF4MlGOG3zrWuKx4AotKOGK553BnebkBeQ=;
+        b=IMd2R2KVn4iZWVYW5bWQLko45ZFhQIdL35q0l0XNBU05fpqSOMuODzeY4OyV4ZNALlzHWu
+        YLOYhvoycoeyUWVUHRqDHvOcd1j1PLpMQFZP2AzUIWPYtkJA9H2Q1Zu+KbP+bIVTTba4R6
+        fPYeVVnaBklawMiJAb7UjF2hWJ7j40g=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1651517027;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=v9UYKxovVZF4MlGOG3zrWuKx4AotKOGK553BnebkBeQ=;
+        b=ZZuG5DdpAGbVWrCA4s76ELJvPa1HxZEyr0XTigzXQnpA8niAspzGP4M3EKFxXRjMEfwpSz
+        VFFbuEkDjAzFgjAg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 33A3213491;
+        Mon,  2 May 2022 18:43:47 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id /T63C2MmcGIaHwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 02 May 2022 18:43:47 +0000
+Date:   Mon, 2 May 2022 20:39:36 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Gabriel Niebler <gniebler@suse.com>
+Cc:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+Subject: Re: [PATCH] btrfs: Turn fs_roots_radix in btrfs_fs_info into an
+ XArray
+Message-ID: <20220502183936.GN18596@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Gabriel Niebler <gniebler@suse.com>,
+        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org,
+        dsterba@suse.com
+References: <20220426214525.14192-1-gniebler@suse.com>
+ <a2b7e2c4-440c-318c-ea1f-273be04591f0@suse.com>
+ <e4ced932-1f39-86fb-c0a4-018c47cf10fa@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <Ym+jpt5VmKwicgEf@debian9.Home>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <e4ced932-1f39-86fb-c0a4-018c47cf10fa@suse.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 02, 2022 at 10:25:58AM +0100, Filipe Manana wrote:
-> On Fri, Apr 29, 2022 at 10:27:08PM -0400, Zygo Blaxell wrote:
-> > Running my usual "run everything at once" test...
-> > 
-> > 	assertion failed: ret != -EEXIST, in fs/btrfs/tree-log.c:3857
-> > 	[198255.980839][ T7460] ------------[ cut here ]------------
-> > 	[198255.981666][ T7460] kernel BUG at fs/btrfs/ctree.h:3617!
-> > 	[198255.983141][ T7460] invalid opcode: 0000 [#1] PREEMPT SMP KASAN PTI
-> > 	[198255.984080][ T7460] CPU: 0 PID: 7460 Comm: repro-ghost-dir Not tainted 5.18.0-5314c78ac373-misc-next+ #159 9f66820f9a8b6f20d808b7fbd7aaeab2c04eefe1
+On Mon, May 02, 2022 at 10:59:01AM +0200, Gabriel Niebler wrote:
+> Am 28.04.22 um 13:59 schrieb Nikolay Borisov:
+> > On 27.04.22 г. 0:45 ч., Gabriel Niebler wrote:
+> >> … rename it to simply fs_roots and adjust all usages of this object to 
+> > While the while/xa_for_each_marked and not straight xa_for_each_marked?
 > 
-> This is a bit confusing, the subject mentions 6a43055c266e, but here
-> we see 5314c78ac373 and 9f66820f9a8b6f20d808b7fbd7aaeab2c04eefe1.
-
-6a43055c266e from the subject line is the misc-next commit for btrfs.
-
-5314c78ac373 from the kernel log is the git commit of the test kernel.
-It's the misc-next tree with a commit on top to record the build
-configuration.
-
-9f66820f9a8b6f20d808b7fbd7aaeab2c04eefe1 is the GCC build ID for
-debuginfod lookup, which would have been really convenient if it had
-existed years ago when I had to roll my own infrastructure for mapping
-kernel version strings back to specific build metadata.
-
-> >    3847                         if (key.offset > *last_old_dentry_offset + 1) {
-> >    3848                                 ret = insert_dir_log_key(trans, log, dst_path,
-> >    3849                                                  ino, *last_old_dentry_offset + 1,
-> >    3850                                                  key.offset - 1);
-> >    3851                                 /*
-> >    3852                                  * -EEXIST should never happen because when we
-> >    3853                                  * log a directory in full mode (LOG_INODE_ALL)
-> >    3854                                  * we drop all BTRFS_DIR_LOG_INDEX_KEY keys from
-> >    3855                                  * the log tree.
-> >    3856                                  */
-> >   >3857<                                ASSERT(ret != -EEXIST);
+> Like before, this just mimicks the old logic, because I wasn't sure 
+> whether the double loop is only due to the bunched nature of gang lookup 
+> or whether it has some additional safeguarding function.
 > 
-> It can actually happen, there's a harmless race between logging a directory
-> and inserting items from other inodes into a subvolume's tree that can result
-> in an attempt to log the same BTRFS_DIR_LOG_INDEX_KEY twice.
+> I'm fine with simplifying it to xa_for_each_marked if you say it's safe.
 > 
-> I'll fix that and send a patch soon.
-> Thanks.
+> Waiting for further feedback whether to resubmit or not.
 
-Cool.  Thanks!
-
-> >    3858                                 if (ret < 0)
-> >    3859                                         return ret;
-> >    3860                         }
-> > 
+I don't have any more comments and it's rc5 so not much time left before
+code freeze, so please resend, thanks.

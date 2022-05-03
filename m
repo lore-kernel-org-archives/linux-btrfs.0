@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3ED68C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 May 2022 06:52:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9267AC433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 May 2022 06:52:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230285AbiECGzy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 May 2022 02:55:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43562 "EHLO
+        id S230326AbiECG4A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 May 2022 02:56:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43692 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230270AbiECGxx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2022 02:53:53 -0400
+        with ESMTP id S230297AbiECGxy (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2022 02:53:54 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE802AE45
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2022 23:50:18 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F0B4C2614
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2022 23:50:22 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 70676210E4
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:17 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id B1958210EA
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1651560617; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1651560621; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=aKCX9G+XEWtjXX88wXsIzdhhpo/3PL5/L96FaRJS0uo=;
-        b=QzrG8z/VlMDjZ/0MnwZ0BwazWW+kBnRCerZCGcJsoU2tU0xqUyjZ/jx5z1TR8uydIDQYzt
-        4hEtWsW01H1AA+TJtOEz1SLm59vAeHcv5REGPjOdVKQjYiEupi6YhbJLoRVojkcgZNdQci
-        I6jrf+CDCBnkFk8eHBZsvjJryouIcg8=
+        bh=EzxOkWA7SEeLnlfuZoBPzzB1+J5tVtbez35bQHhpDJ0=;
+        b=l71NmSB6VJRirRkDl98OvfQenyfOv8gE9O5doj6ea92KmTOpi5vL+DlLvVtKdyhRCPsN/Y
+        2lErAuHD1wg+/CAHBkumK9pNbS22NWLCr7qrEVN2A9D8F1oA6IQR3GU/QrE9Hk/Eia5dmb
+        aTzRbTM7dObeUL4HhIhyBcu+pRQBVcQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D8D1613AA3
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:16 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1C4EE13AA3
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:20 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id SO0TKqjQcGIZDAAAMHmgww
+        id eJK4N6zQcGIZDAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2022 06:50:16 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2022 06:50:20 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 02/13] btrfs: quit early if the fs has no RAID56 support for raid56 related checks
-Date:   Tue,  3 May 2022 14:49:46 +0800
-Message-Id: <a8bfb1a0424fbdc2054d7c0a74a7ce33dbe570cb.1651559986.git.wqu@suse.com>
+Subject: [PATCH 06/13] btrfs: add a helper to queue a corrupted sector for read repair
+Date:   Tue,  3 May 2022 14:49:50 +0800
+Message-Id: <2cfd9d2766824ddce727b06068de24d7a4be9637.1651559986.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.0
 In-Reply-To: <cover.1651559986.git.wqu@suse.com>
 References: <cover.1651559986.git.wqu@suse.com>
@@ -54,47 +54,276 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The following functions do special handling for RAID56 chunks:
+The new helper, read_repair_bio_add_sector(), will either:
 
-- btrfs_is_parity_mirror()
-  Check if the range is in RAID56 chunks.
+- Add the sector range into btrfs_read_repair_ctrl::cur_bio
+  If we have the bio allocated and the sector range is adjacent to the
+  bio.
 
-- btrfs_full_stripe_len()
-  Either return sectorsize for non-RAID56 profiles or full stripe length
-  for RAID56 chunks.
+- Allocate a new btrfs_read_repair_bio and add the page sector range to
+  it
+  If we have btrfs_read_repair_ctrl::cur_bio, we will first submit it,
+  then allocate a new one.
 
-But if a filesystem without any RAID56 chunks, it will not have RAID56
-incompt flags, and we can skip the chunk tree looking up completely.
+This patch will also introduce a new type of bioset specifically for
+read repair, the reasons are:
+
+- A lot of extra members in btrfs_bio makes no sense for read repair
+
+- Possible mempool deadlock under heavy memory pressure.
+  We may have exhausted the last btrfs_bio in the mempool, and we will
+  fail to allocate a new btrfs_bio in our endio function.
+
+  This problem is already there for a long time in the existing read
+  repair code, in the endio function we're allocating new btrfs_bio for
+  each corrupted sector, which is way worse.
+
+Thus in this patch we introduce a new bioset specifically for read repair
+usage.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/volumes.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/read-repair.c | 117 +++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/read-repair.h |  33 ++++++++++++
+ fs/btrfs/super.c       |   9 +++-
+ 3 files changed, 157 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index eeddd5256411..a66541ef3b18 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5781,6 +5781,9 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
- 	struct map_lookup *map;
- 	unsigned long len = fs_info->sectorsize;
+diff --git a/fs/btrfs/read-repair.c b/fs/btrfs/read-repair.c
+index 048bb7c16c56..f75842dcdd02 100644
+--- a/fs/btrfs/read-repair.c
++++ b/fs/btrfs/read-repair.c
+@@ -5,6 +5,8 @@
+ #include "volumes.h"
+ #include "read-repair.h"
  
-+	if (!btrfs_fs_incompat(fs_info, RAID56))
-+		return len;
++static struct bio_set read_repair_bioset;
 +
- 	em = btrfs_get_chunk_map(fs_info, logical, len);
+ int btrfs_read_repair_alloc_bitmaps(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_bio *bbio)
+ {
+@@ -52,6 +54,8 @@ void btrfs_read_repair_add_sector(struct inode *inode,
+ 		ASSERT(ctrl->init_mirror);
+ 		ctrl->num_copies = btrfs_num_copies(fs_info, ctrl->logical,
+ 						    sectorsize);
++		init_waitqueue_head(&ctrl->io_wait);
++		atomic_set(&ctrl->io_bytes, 0);
+ 		/*
+ 		 * We use btrfs_bio::read_repair_bitmaps, which should be
+ 		 * preallocated before submission.
+@@ -74,6 +78,104 @@ void btrfs_read_repair_add_sector(struct inode *inode,
+ 		btrfs_bio(failed_bio)->read_repair_cur_bitmap);
+ }
  
- 	if (!WARN_ON(IS_ERR(em))) {
-@@ -5798,6 +5801,9 @@ int btrfs_is_parity_mirror(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 	struct map_lookup *map;
- 	int ret = 0;
- 
-+	if (!btrfs_fs_incompat(fs_info, RAID56))
-+		return 0;
++static struct btrfs_read_repair_bio *repair_bio(struct bio *bio)
++{
++	return container_of(bio, struct btrfs_read_repair_bio, bio);
++}
 +
- 	em = btrfs_get_chunk_map(fs_info, logical, len);
++static void read_repair_end_bio(struct bio *bio)
++{
++	struct btrfs_read_repair_ctrl *ctrl = bio->bi_private;
++	const struct btrfs_fs_info *fs_info = btrfs_sb(ctrl->inode->i_sb);
++	struct bvec_iter_all iter_all;
++	struct bio_vec *bvec;
++	const u64 logical = repair_bio(bio)->logical;
++	u32 offset = 0;
++	bool uptodate = (bio->bi_status == BLK_STS_OK);
++
++	bio_for_each_segment_all(bvec, bio, iter_all) {
++		unsigned long *bitmap =
++			btrfs_bio(ctrl->failed_bio)->read_repair_cur_bitmap;
++		/*
++		 * If we have a successful read, clear the error bit.
++		 * In read_repair_finish(), we will re-check the csum
++		 * (if exists) later.
++		 */
++		if (uptodate)
++			clear_bit((logical + offset - ctrl->logical) >>
++				fs_info->sectorsize_bits, bitmap);
++		offset += bvec->bv_len;
++	}
++	atomic_sub(offset, &ctrl->io_bytes);
++	wake_up(&ctrl->io_wait);
++	bio_put(bio);
++}
++
++/* Add a sector into the read repair bios list for later submission */
++static void read_repair_bio_add_sector(struct btrfs_read_repair_ctrl *ctrl,
++				       struct page *page, unsigned int pgoff,
++				       int sector_nr, int mirror)
++{
++	struct btrfs_fs_info *fs_info = btrfs_sb(ctrl->inode->i_sb);
++	struct btrfs_read_repair_bio *rbio;
++	struct bio *bio;
++	int ret;
++
++	/* Check if the sector can be added to the last bio */
++	if (ctrl->cur_bio) {
++		bio = ctrl->cur_bio;
++		rbio = repair_bio(bio);
++
++		ASSERT(rbio->logical);
++		if (rbio->logical + bio->bi_iter.bi_size ==
++		    ctrl->logical + (sector_nr << fs_info->sectorsize_bits))
++			goto add;
++
++		ASSERT(bio_op(bio) == REQ_OP_READ);
++		ASSERT(bio->bi_private == ctrl);
++		ASSERT(bio->bi_end_io == read_repair_end_bio);
++		ASSERT(repair_bio(bio)->logical >= ctrl->logical &&
++		       repair_bio(bio)->logical + bio->bi_iter.bi_size <=
++		       ctrl->logical + ctrl->bio_size);
++		/*
++		 * The current bio is not adjacent to the current range,
++		 * just submit it.
++		 *
++		 * Our endio is super atomic, and we don't want to waste time on
++		 * lookup data csum. So here we just call btrfs_map_bio()
++		 * directly.
++		 */
++		ret = btrfs_map_bio(fs_info, bio, mirror);
++		if (ret) {
++			bio->bi_status = ret;
++			bio_endio(bio);
++		}
++		ctrl->cur_bio = NULL;
++	}
++	ASSERT(ctrl->cur_bio == NULL);
++	bio = bio_alloc_bioset(NULL, BIO_MAX_VECS, 0, GFP_NOFS,
++			       &read_repair_bioset);
++	/* It's backed by mempool, thus should not fail */
++	ASSERT(bio);
++
++	rbio = repair_bio(bio);
++	rbio->logical = ctrl->logical + (sector_nr << fs_info->sectorsize_bits);
++	bio->bi_opf = REQ_OP_READ;
++	bio->bi_iter.bi_sector = rbio->logical >> SECTOR_SHIFT;
++	bio->bi_private = ctrl;
++	bio->bi_end_io = read_repair_end_bio;
++	ctrl->cur_bio = bio;
++
++add:
++	ret = bio_add_page(bio, page, fs_info->sectorsize, pgoff);
++	/*
++	 * We allocated the read bio with enough bvecs to contain
++	 * the original bio, thus it should not fail to add a sector.
++	 */
++	ASSERT(ret == fs_info->sectorsize);
++	atomic_add(fs_info->sectorsize, &ctrl->io_bytes);
++}
++
+ void btrfs_read_repair_finish(struct btrfs_read_repair_ctrl *ctrl)
+ {
+ 	if (!ctrl->failed_bio)
+@@ -86,3 +188,18 @@ void btrfs_read_repair_finish(struct btrfs_read_repair_ctrl *ctrl)
+ 	ctrl->error = false;
+ 	ctrl->failed_bio = NULL;
+ }
++
++void __cold btrfs_read_repair_exit(void)
++{
++	bioset_exit(&read_repair_bioset);
++}
++
++int __init btrfs_read_repair_init(void)
++{
++	int ret;
++
++	ret = bioset_init(&read_repair_bioset, BIO_POOL_SIZE,
++			  offsetof(struct btrfs_read_repair_bio, bio),
++			  BIOSET_NEED_BVECS);
++	return ret;
++}
+diff --git a/fs/btrfs/read-repair.h b/fs/btrfs/read-repair.h
+index 42a251f1300b..3e1430489f89 100644
+--- a/fs/btrfs/read-repair.h
++++ b/fs/btrfs/read-repair.h
+@@ -14,6 +14,13 @@ struct btrfs_read_repair_ctrl {
+ 	/* The initial failed bio, we will grab page/pgoff from it */
+ 	struct bio *failed_bio;
  
- 	if(!WARN_ON(IS_ERR(em))) {
++	/* Currently assembled bio for read/write */
++	struct bio *cur_bio;
++
++	wait_queue_head_t io_wait;
++
++	atomic_t io_bytes;
++
+ 	/* The logical bytenr of the original bio. */
+ 	u64 logical;
+ 
+@@ -39,9 +46,35 @@ struct btrfs_read_repair_ctrl {
+ 
+ int btrfs_read_repair_alloc_bitmaps(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_bio *bbio);
++
++/*
++ * Extra info for read repair bios.
++ *
++ * Read repair bios requires less info compared to btrfs_bio:
++ * - No need for csum
++ * - No need for mirror_num
++ * - No need for file_offset
++ *   They can all be fetched from the btrfs_read_repair_ctrl stored in
++ *   bi_private.
++ *
++ * - No need for iter
++ *   We use logical bytenr from btrfs_read_repair_bio::logical.
++ *   For bio iteration, our read repair bio will never cross stripe boundary,
++ *   thus we can use regular bio_for_each_segment_all().
++ *
++ * - No need for device
++ *   We just don't care at all.
++ */
++struct btrfs_read_repair_bio {
++	u64 logical;
++	struct bio bio;
++};
++
+ void btrfs_read_repair_add_sector(struct inode *inode,
+ 				  struct btrfs_read_repair_ctrl *ctrl,
+ 				  struct bio *failed_bio, u32 bio_offset,
+ 				  u64 file_offset);
+ void btrfs_read_repair_finish(struct btrfs_read_repair_ctrl *ctrl);
++int __init btrfs_read_repair_init(void);
++void __cold btrfs_read_repair_exit(void);
+ #endif
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 206f44005c52..db476e675962 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -48,6 +48,7 @@
+ #include "block-group.h"
+ #include "discard.h"
+ #include "qgroup.h"
++#include "read-repair.h"
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/btrfs.h>
+ 
+@@ -2642,10 +2643,12 @@ static int __init init_btrfs_fs(void)
+ 	err = extent_io_init();
+ 	if (err)
+ 		goto free_cachep;
+-
+-	err = extent_state_cache_init();
++	err = btrfs_read_repair_init();
+ 	if (err)
+ 		goto free_extent_io;
++	err = extent_state_cache_init();
++	if (err)
++		goto free_read_repair;
+ 
+ 	err = extent_map_init();
+ 	if (err)
+@@ -2709,6 +2712,8 @@ static int __init init_btrfs_fs(void)
+ 	extent_map_exit();
+ free_extent_state_cache:
+ 	extent_state_cache_exit();
++free_read_repair:
++	btrfs_read_repair_exit();
+ free_extent_io:
+ 	extent_io_exit();
+ free_cachep:
 -- 
 2.36.0
 

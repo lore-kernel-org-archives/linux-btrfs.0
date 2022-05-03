@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D34BC4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  3 May 2022 06:50:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 07832C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue,  3 May 2022 06:50:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230249AbiECGyS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 3 May 2022 02:54:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44210 "EHLO
+        id S230216AbiECGyU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 3 May 2022 02:54:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43814 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230320AbiECGyB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2022 02:54:01 -0400
+        with ESMTP id S230308AbiECGx5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 May 2022 02:53:57 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D626F17E0F
-        for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2022 23:50:29 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E28315832
+        for <linux-btrfs@vger.kernel.org>; Mon,  2 May 2022 23:50:25 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 96E79210E4
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:28 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 6131D210E4
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:24 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1651560628; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1651560624; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=hcR656EPTOYc0yZGpyxOeKwpj806qnZl2NbI+bdWOQE=;
-        b=KnWgG49gl8iYL2lGsFpWc5Ox1qxeWujsxDxE7t+LQ102+RjklUQA5Y9ZMmuO7WEr091iWE
-        I/AFW0kTw6Kt4slJE0ijqlF0YarNN2LhlwH//LBG8klhaDCTb3Owst2DUtpN4ON1wFH2wN
-        Ddg4VtFYgCgNN1gKbAL1cjxLeMAc05Q=
+        bh=nZbGW9K/p2Vc8WMs2dxy79g/NrW/eTai0TSGqnMkpIE=;
+        b=kuOjzs7CpGQ1S2RFFzOdCx67SqpOuoSnUeNsTdElWdg6JpqlYqXYW2x9UKE4tZJZMf//fk
+        oO/wmgozIuunjXeLbMK0KD06Y8mwnOV6JvGJ+sAAo+7DDHsxxKwBxO5Y4MI7p1r2i5H4cj
+        ZWezYlgGKKQJXNT/5mWnmynBEP4zrpY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0E14513AA3
-        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:27 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id CBE8C13AA3
+        for <linux-btrfs@vger.kernel.org>; Tue,  3 May 2022 06:50:23 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id mJ9DNLPQcGIZDAAAMHmgww
+        id CCTuJq/QcGIZDAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2022 06:50:27 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 May 2022 06:50:23 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/13] btrfs: remove btrfs_inode::io_failure_tree
-Date:   Tue,  3 May 2022 14:49:57 +0800
-Message-Id: <4c9d27f81cc9b2c004239f1501cbb28e421f0ad2.1651559986.git.wqu@suse.com>
+Subject: [PATCH 09/13] btrfs: handle RAID56 read repair differently
+Date:   Tue,  3 May 2022 14:49:53 +0800
+Message-Id: <80006286af884f8aec7e53f6a0c87b9f968ef920.1651559986.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.0
 In-Reply-To: <cover.1651559986.git.wqu@suse.com>
 References: <cover.1651559986.git.wqu@suse.com>
@@ -54,81 +54,95 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since we're handling all data read error inside the endio function,
-there is no need to record any error in io_failure_tree.
+Our current read repair facility does its work completely relying on
+mirror number.
+And for repaired sector, it will write the correct data back to the bad
+mirror.
 
-Let remove btrfs_inode::io_failure_tree completely.
+This works great for mirror based profiles, but for RAID56 it's a
+different story.
 
-Although we have extra memory usage for btrfs_read_repair_ctrl, its
-lifespan is only in endio, while the io_failure_tree has a lifespan as
-long as each inode.
-Thus this should bring a overall memory usage reduce.
+Partial write in btrfs raid56 will lead to unconditional RMW, completely
+ignoring the mirror number (which is to indicate the corrupted data
+stripe number).
+
+This will cause us to read back the corrupted data on-disk, and result
+further corruption.
+
+To address it, we introduce btrfs_read_repair_ctrl::is_raid56, and for
+RAID56 read-repair, we fallback to the tried-and-tree
+btrfs_repair_io_failure().
+
+That function handles RAID56 by using MAP_READ for btrfs_map_block() and
+directly write the correct data back to disk, avoiding the RMW problem.
+
+Unfortunately we lose the asynchronous bio assembly/submission, but it
+should still be more or less acceptable considering RAID56 is really an
+odd ball here.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/btrfs_inode.h       | 5 -----
- fs/btrfs/extent-io-tree.h    | 1 -
- fs/btrfs/inode.c             | 3 ---
- include/trace/events/btrfs.h | 1 -
- 4 files changed, 10 deletions(-)
+ fs/btrfs/read-repair.c | 26 ++++++++++++++++++++++++++
+ fs/btrfs/read-repair.h |  2 ++
+ 2 files changed, 28 insertions(+)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 32131a5d321b..2ff4da4ed2a1 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -91,11 +91,6 @@ struct btrfs_inode {
- 	/* the io_tree does range state (DIRTY, LOCKED etc) */
- 	struct extent_io_tree io_tree;
+diff --git a/fs/btrfs/read-repair.c b/fs/btrfs/read-repair.c
+index aecdc4ee54ba..e1b11990a480 100644
+--- a/fs/btrfs/read-repair.c
++++ b/fs/btrfs/read-repair.c
+@@ -55,6 +55,8 @@ void btrfs_read_repair_add_sector(struct inode *inode,
+ 		ASSERT(ctrl->init_mirror);
+ 		ctrl->num_copies = btrfs_num_copies(fs_info, ctrl->logical,
+ 						    sectorsize);
++		ctrl->is_raid56 = btrfs_is_parity_mirror(fs_info,
++						ctrl->logical, sectorsize);
+ 		init_waitqueue_head(&ctrl->io_wait);
+ 		atomic_set(&ctrl->io_bytes, 0);
+ 		/*
+@@ -153,6 +155,30 @@ static void read_repair_bio_add_sector(struct btrfs_read_repair_ctrl *ctrl,
+ 	if (opf == REQ_OP_WRITE) {
+ 		if (btrfs_repair_one_zone(fs_info, ctrl->logical))
+ 			return;
++
++		/*
++		 * For RAID56, we can not just write the bad data back, as
++		 * any write will trigger RMW and read back the corrrupted
++		 * on-disk stripe, causing further damage.
++		 * So here we do special repair for raid56.
++		 *
++		 * And unfortunately, this repair is very low level and not
++		 * compatible with the rest of the mirror based repair.
++		 * So it's still done in synchronous mode using
++		 * btrfs_repair_io_failure().
++		 */
++		if (ctrl->is_raid56) {
++			const u64 logical = ctrl->logical +
++					(sector_nr << fs_info->sectorsize_bits);
++			const u64 file_offset = ctrl->file_offset +
++					(sector_nr << fs_info->sectorsize_bits);
++
++			btrfs_repair_io_failure(fs_info,
++					btrfs_ino(BTRFS_I(ctrl->inode)),
++					file_offset, fs_info->sectorsize,
++					logical, page, pgoff, mirror);
++			return;
++		}
+ 	}
  
--	/* special utility tree used to record which mirrors have already been
--	 * tried when checksums fail for a given block
--	 */
--	struct extent_io_tree io_failure_tree;
--
- 	/*
- 	 * Keep track of where the inode has extent items mapped in order to
- 	 * make sure the i_size adjustments are accurate
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index d46c064e5dad..8ab9b6cd53ed 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -56,7 +56,6 @@ enum {
- 	IO_TREE_FS_EXCLUDED_EXTENTS,
- 	IO_TREE_BTREE_INODE_IO,
- 	IO_TREE_INODE_IO,
--	IO_TREE_INODE_IO_FAILURE,
- 	IO_TREE_RELOC_BLOCKS,
- 	IO_TREE_TRANS_DIRTY_PAGES,
- 	IO_TREE_ROOT_DIRTY_LOG_PAGES,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9c4cad0f4aee..31c89e707e9b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8833,12 +8833,9 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	inode = &ei->vfs_inode;
- 	extent_map_tree_init(&ei->extent_tree);
- 	extent_io_tree_init(fs_info, &ei->io_tree, IO_TREE_INODE_IO, inode);
--	extent_io_tree_init(fs_info, &ei->io_failure_tree,
--			    IO_TREE_INODE_IO_FAILURE, inode);
- 	extent_io_tree_init(fs_info, &ei->file_extent_tree,
- 			    IO_TREE_INODE_FILE_EXTENT, inode);
- 	ei->io_tree.track_uptodate = true;
--	ei->io_failure_tree.track_uptodate = true;
- 	atomic_set(&ei->sync_writers, 0);
- 	mutex_init(&ei->log_mutex);
- 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index f068ff30d654..020ca1f7687a 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -82,7 +82,6 @@ struct btrfs_space_info;
- 	EM( IO_TREE_FS_EXCLUDED_EXTENTS,  "EXCLUDED_EXTENTS")	    \
- 	EM( IO_TREE_BTREE_INODE_IO,	  "BTREE_INODE_IO")	    \
- 	EM( IO_TREE_INODE_IO,		  "INODE_IO")		    \
--	EM( IO_TREE_INODE_IO_FAILURE,	  "INODE_IO_FAILURE")	    \
- 	EM( IO_TREE_RELOC_BLOCKS,	  "RELOC_BLOCKS")	    \
- 	EM( IO_TREE_TRANS_DIRTY_PAGES,	  "TRANS_DIRTY_PAGES")      \
- 	EM( IO_TREE_ROOT_DIRTY_LOG_PAGES, "ROOT_DIRTY_LOG_PAGES")   \
+ 	/* Check if the sector can be added to the last bio */
+diff --git a/fs/btrfs/read-repair.h b/fs/btrfs/read-repair.h
+index 3e1430489f89..6cc816e2ce4a 100644
+--- a/fs/btrfs/read-repair.h
++++ b/fs/btrfs/read-repair.h
+@@ -42,6 +42,8 @@ struct btrfs_read_repair_ctrl {
+ 	 * at bio allocation time.
+ 	 */
+ 	bool error;
++
++	bool is_raid56;
+ };
+ 
+ int btrfs_read_repair_alloc_bitmaps(struct btrfs_fs_info *fs_info,
 -- 
 2.36.0
 

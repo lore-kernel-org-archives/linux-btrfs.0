@@ -2,83 +2,88 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB4DDC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 May 2022 16:46:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2477AC4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 May 2022 17:14:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347157AbiEDQt6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 May 2022 12:49:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50098 "EHLO
+        id S1355257AbiEDRRl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 May 2022 13:17:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55526 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345429AbiEDQt4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2022 12:49:56 -0400
+        with ESMTP id S1359025AbiEDRQV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2022 13:16:21 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E38426442
-        for <linux-btrfs@vger.kernel.org>; Wed,  4 May 2022 09:46:19 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5568B1D8
+        for <linux-btrfs@vger.kernel.org>; Wed,  4 May 2022 10:00:29 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 9EF2C210E5;
-        Wed,  4 May 2022 16:46:18 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id D16A4210E5;
+        Wed,  4 May 2022 17:00:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1651682778;
+        t=1651683610;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=j+EJbp/Hxpfd10P4rniMKv+QfplaIKZYeqmRegf7F4U=;
-        b=X0pQSzbLPZoaMI2mJcMHZ6hNKhmfx+HEzZIsJ2fJ6mwAz6BvTv8CdV77ZXBTTQd+Ewganh
-        2UNXGgJI9JXkwrRKrgs+JhmkUFOywmJeaKUzl2DPQYbZkrZVH4BCPOtyqNVOod3gDZZQ2C
-        A1b+TeRng/gLN+w7d4ivuv4FRJ2xcR8=
+        bh=vxY2OgL3XAPCmsFPupJeVPnSxdxiblyCHzgSZOxxMvU=;
+        b=tI71lGMgowI6Ath6GVIdpTempUaVft2D7EtV5w4L6yFmYrGwNRbduKlWKsd5DJvv2MCtUJ
+        jfQdfKQSfc1LLViQEJAdlK8NGwUhJmwAkr40squz9a4Zta6KdeXqXL6unMdVHW3+QxtJke
+        6/eQRsPZdiZSaSKiotq5Dhz3DExr52k=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1651682778;
+        s=susede2_ed25519; t=1651683610;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=j+EJbp/Hxpfd10P4rniMKv+QfplaIKZYeqmRegf7F4U=;
-        b=ZfZ8gJz9ITAP1QXTu5jzU1fHU2FoDsw0cUZwLCr37vJbX8rsYCToMDVF0gRzasb+Gg4LiM
-        jf9al2zYpY9ASeAA==
+        bh=vxY2OgL3XAPCmsFPupJeVPnSxdxiblyCHzgSZOxxMvU=;
+        b=1HS44wgzPpsl0FKKafmfbdrprPLyDpTQch6FPWLyphcp+kfEvf63DnHKR2fL4fdT2almcB
+        /LvSXN1XpnLmWIAA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7DEAA131BD;
-        Wed,  4 May 2022 16:46:18 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B579F131BD;
+        Wed,  4 May 2022 17:00:10 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 06HeHdqtcmJSUQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 04 May 2022 16:46:18 +0000
-Date:   Wed, 4 May 2022 18:42:07 +0200
+        id GtpzKxqxcmLoVgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 04 May 2022 17:00:10 +0000
+Date:   Wed, 4 May 2022 18:55:59 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Gabriel Niebler <gniebler@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, dsterba@suse.com
-Subject: Re: [PATCH v2] btrfs: Turn fs_roots_radix in btrfs_fs_info into an
- XArray
-Message-ID: <20220504164207.GS18596@twin.jikos.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/2] btrfs: zoned: fix zone activation logic
+Message-ID: <20220504165559.GT18596@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Gabriel Niebler <gniebler@suse.com>,
-        linux-btrfs@vger.kernel.org, dsterba@suse.com
-References: <20220503104443.24758-1-gniebler@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1651611385.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20220503104443.24758-1-gniebler@suse.com>
+In-Reply-To: <cover.1651611385.git.naohiro.aota@wdc.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 03, 2022 at 12:44:43PM +0200, Gabriel Niebler wrote:
-> … rename it to simply fs_roots and adjust all usages of this object to use
-> the XArray API, because it is notionally easier to use and understand, as
-> it provides array semantics, and also takes care of locking for us,
-> further simplifying the code.
+On Tue, May 03, 2022 at 02:10:03PM -0700, Naohiro Aota wrote:
+> btrfs_zone_activate() "continue"s on seeing a devie without max_active_zone
+> restriction, and it never set the block group as active if the block group
+> does not contain a device with the restriction.
 > 
-> Also do some refactoring, esp. where the API change requires largely
-> rewriting some functions, anyway.
+> While it still return true and make the allocation works, it is confusing
+> for other code and it is waste of time to iterate the loop every time
+> btrfs_zone_activate() is called.
 > 
-> Signed-off-by: Gabriel Niebler <gniebler@suse.com>
+> Also, there is a non-changing condition check in the loop.
+> 
+> Fix them with this series.
+> 
+> Naohiro Aota (2):
+>   btrfs: zoned: move non-changing condition check out of the loop
+>   btrfs: zoned: activate block group properly on unlimited active zone
+>     device
 
-Updated in misc-next, thanks.
+There's a minor conflict with the other series fixing the zone finish
+but this 2 patch series is a clear regression so I'll take it first for
+rc, not sure about the other yet.

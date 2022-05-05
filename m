@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64BD9C4167D
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 May 2022 20:11:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DC47C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 May 2022 20:11:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1385712AbiEEUPF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 May 2022 16:15:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35270 "EHLO
+        id S1385740AbiEEUPL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 May 2022 16:15:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35290 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241971AbiEEUPD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2022 16:15:03 -0400
+        with ESMTP id S1385707AbiEEUPE (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2022 16:15:04 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1A4A55F26F;
-        Thu,  5 May 2022 13:11:23 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DFA205F8EB;
+        Thu,  5 May 2022 13:11:24 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=fBVrbe6Bwv56qkohYH6YihFUc4A7+M1nHINpHwxi6xU=; b=0k+473pDQ4z4f6kipwABLtNjYh
-        AL+GUDVi7MDmHQlUKoBIhZi8TIt4fC+TOMejQZRlh84TkzL9uQZKjEnp/MFW6gq6bPd6qFJoM6iLX
-        iLaUJHCYZlWMIEUX8FD/SB2Fi4AAMClHsLrOpqTtMro+3Yqf+KEIAEgOcOsvGJ8NGj3ZMn1UbvD6N
-        G94IPLKHFCFB7fuw+H3lQR1dR/WWOpVLIzOE+UrOdV6lF/fMaKSZxehmYlYIAShuHrTacdI0/3Ak2
-        76liOR/Mb5npROsejlA4vPob1/ols2kQ8tqKDwFVcpEN2ogEr36jVad3xKwZPbaMczmP17d6WyMjb
-        YgQpO6KA==;
+        bh=nDH3ymgBZY1Z7qV7318Eaghbp5uJ1ymMWyGzPtDu5pc=; b=PwwUZ2g+MY7lREtPp5wsJt4QRM
+        J/o0ox27aj251PgbmEPFoz8fYpgfKi7tnrjg8gF/l35VMmjUzU4E4GsE5k1M/kt28zETll2Gpxv3u
+        YxoBvLanPCzJfwA6oyZfr29szeekPVwxV0OnRzwaDZ76lzQ6KKJP7mrlQeB+0LCvVUeAfvhbFkbHQ
+        MKq8Dg8TrQ0P7ZtSAg4GDY8F7xcwo520283PrBx/FhYvJRj41xCj6wQR5DybRQS1+6hi38d0YS9Y/
+        VIRhmM5OyzIQew7v1xaI44Rck6YTFRsw2W9b+6uKJn+8+zNT1I+8NHoPg9+IJaDThrqIhCbZBplbk
+        J+id1dIA==;
 Received: from 65-114-90-19.dia.static.qwest.net ([65.114.90.19] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nmhok-0006hv-9H; Thu, 05 May 2022 20:11:18 +0000
+        id 1nmhon-0006j2-69; Thu, 05 May 2022 20:11:21 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         "Darrick J. Wong" <djwong@kernel.org>
 Cc:     linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org
-Subject: [PATCH 1/7] btrfs: add a btrfs_dio_rw wrapper
-Date:   Thu,  5 May 2022 15:11:09 -0500
-Message-Id: <20220505201115.937837-2-hch@lst.de>
+Subject: [PATCH 4/7] btrfs: allocate dio_data on stack
+Date:   Thu,  5 May 2022 15:11:12 -0500
+Message-Id: <20220505201115.937837-5-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220505201115.937837-1-hch@lst.de>
 References: <20220505201115.937837-1-hch@lst.de>
@@ -46,86 +46,110 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a wrapper around iomap_dio_rw that keeps the direct I/O internals
-isolated in inode.c.
+Make use of the new iomap_iter->private field to avoid a memory
+allocation per iomap range.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/ctree.h |  5 +++--
- fs/btrfs/file.c  |  6 ++----
- fs/btrfs/inode.c | 11 +++++++++--
- 3 files changed, 14 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 34 +++++++++++-----------------------
+ 1 file changed, 11 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6e939bf01dcc3..aa6e71fdc72b9 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3358,9 +3358,10 @@ ssize_t btrfs_encoded_read(struct kiocb *iocb, struct iov_iter *iter,
- ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 			     const struct btrfs_ioctl_encoded_io_args *encoded);
- 
-+ssize_t btrfs_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
-+		     size_t done_before);
-+
- extern const struct dentry_operations btrfs_dentry_operations;
--extern const struct iomap_ops btrfs_dio_iomap_ops;
--extern const struct iomap_dio_ops btrfs_dio_ops;
- 
- /* Inode locking type flags, by default the exclusive lock is taken */
- #define BTRFS_ILOCK_SHARED	(1U << 0)
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b64fb93d90469..46c2baa8fdf54 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1929,8 +1929,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 	 */
- again:
- 	from->nofault = true;
--	err = iomap_dio_rw(iocb, from, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
--			   IOMAP_DIO_PARTIAL, written);
-+	err = btrfs_dio_rw(iocb, from, written);
- 	from->nofault = false;
- 
- 	/* No increment (+=) because iomap returns a cumulative value. */
-@@ -3693,8 +3692,7 @@ static ssize_t btrfs_direct_read(struct kiocb *iocb, struct iov_iter *to)
- 	 */
- 	pagefault_disable();
- 	to->nofault = true;
--	ret = iomap_dio_rw(iocb, to, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
--			   IOMAP_DIO_PARTIAL, read);
-+	ret = btrfs_dio_rw(iocb, to, read);
- 	to->nofault = false;
- 	pagefault_enable();
- 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b42d6e7e4049f..cdf96a2472821 100644
+index 88e617e9bf5df..9686f123bf4e3 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8155,15 +8155,22 @@ static void btrfs_submit_direct(const struct iomap_iter *iter,
- 	btrfs_dio_private_put(dip);
+@@ -7546,10 +7546,11 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 		loff_t length, unsigned int flags, struct iomap *iomap,
+ 		struct iomap *srcmap)
+ {
++	struct iomap_iter *iter = container_of(iomap, struct iomap_iter, iomap);
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 	struct extent_map *em;
+ 	struct extent_state *cached_state = NULL;
+-	struct btrfs_dio_data *dio_data = NULL;
++	struct btrfs_dio_data *dio_data = iter->private;
+ 	u64 lockstart, lockend;
+ 	const bool write = !!(flags & IOMAP_WRITE);
+ 	int ret = 0;
+@@ -7595,17 +7596,7 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 		}
+ 	}
+ 
+-	if (flags & IOMAP_NOWAIT) {
+-		dio_data = kzalloc(sizeof(*dio_data), GFP_NOWAIT);
+-		if (!dio_data)
+-			return -EAGAIN;
+-	} else {
+-		dio_data = kzalloc(sizeof(*dio_data), GFP_NOFS);
+-		if (!dio_data)
+-			return -ENOMEM;
+-	}
+-
+-	iomap->private = dio_data;
++	memset(dio_data, 0, sizeof(*dio_data));
+ 
+ 	/*
+ 	 * We always try to allocate data space and must do it before locking
+@@ -7769,23 +7760,22 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 		extent_changeset_free(dio_data->data_reserved);
+ 	}
+ 
+-	kfree(dio_data);
+-
+ 	return ret;
  }
  
--const struct iomap_ops btrfs_dio_iomap_ops = {
-+static const struct iomap_ops btrfs_dio_iomap_ops = {
- 	.iomap_begin            = btrfs_dio_iomap_begin,
- 	.iomap_end              = btrfs_dio_iomap_end,
- };
- 
--const struct iomap_dio_ops btrfs_dio_ops = {
-+static const struct iomap_dio_ops btrfs_dio_ops = {
- 	.submit_io		= btrfs_submit_direct,
- };
- 
-+ssize_t btrfs_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
-+		size_t done_before)
-+{
-+	return iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
-+			   IOMAP_DIO_PARTIAL, done_before);
-+}
-+
- static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
- 			u64 start, u64 len)
+ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
+ 		ssize_t written, unsigned int flags, struct iomap *iomap)
  {
+-	int ret = 0;
+-	struct btrfs_dio_data *dio_data = iomap->private;
++	struct iomap_iter *iter = container_of(iomap, struct iomap_iter, iomap);
++	struct btrfs_dio_data *dio_data = iter->private;
+ 	size_t submitted = dio_data->submitted;
+ 	const bool write = !!(flags & IOMAP_WRITE);
++	int ret = 0;
+ 
+ 	if (!write && (iomap->type == IOMAP_HOLE)) {
+ 		/* If reading from a hole, unlock and return */
+ 		unlock_extent(&BTRFS_I(inode)->io_tree, pos, pos + length - 1);
+-		goto out;
++		return 0;
+ 	}
+ 
+ 	if (submitted < length) {
+@@ -7802,10 +7792,6 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
+ 
+ 	if (write)
+ 		extent_changeset_free(dio_data->data_reserved);
+-out:
+-	kfree(dio_data);
+-	iomap->private = NULL;
+-
+ 	return ret;
+ }
+ 
+@@ -8041,7 +8027,7 @@ static void btrfs_submit_direct(const struct iomap_iter *iter,
+ 	int ret;
+ 	blk_status_t status;
+ 	struct btrfs_io_geometry geom;
+-	struct btrfs_dio_data *dio_data = iter->iomap.private;
++	struct btrfs_dio_data *dio_data = iter->private;
+ 	struct extent_map *em = NULL;
+ 
+ 	dip = btrfs_create_dio_private(dio_bio, inode, file_offset);
+@@ -8167,8 +8153,10 @@ static const struct iomap_dio_ops btrfs_dio_ops = {
+ ssize_t btrfs_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+ 		size_t done_before)
+ {
++	struct btrfs_dio_data data;
++
+ 	return iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
+-			   IOMAP_DIO_PARTIAL, NULL, done_before);
++			   IOMAP_DIO_PARTIAL, &data, done_before);
+ }
+ 
+ static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
 -- 
 2.30.2
 

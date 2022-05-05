@@ -2,217 +2,205 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F130C433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 May 2022 11:23:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B328C433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 May 2022 13:51:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1354844AbiEEL1C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 May 2022 07:27:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56770 "EHLO
+        id S1380210AbiEENyw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 May 2022 09:54:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41364 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236651AbiEEL1A (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2022 07:27:00 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98A7C53B73
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2022 04:23:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1651749796;
-        bh=/RBEHyRXtLJrP9cpWnOeRrEOtdh8vh/c6xG1dyz8lc4=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=CEix8c9OHCnURdzJBmRGpv34SrlzyXFYfBogfAinLmbbGnm40tCRcErPsVf4vUoa8
-         orbGWnWizBbEgwuHd+HVTYEcbcd0L0UVSSEOS0p01fjL4AqjU+ULFXh8GeFWHijrMZ
-         DBxZMI8hOQFWVkH4DyErMIUsHFPwA0vP6Rgvppsg=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1M5wPh-1njXJI1R2x-007Xvt; Thu, 05
- May 2022 13:23:15 +0200
-Message-ID: <a56fbdc1-e707-dfab-1150-fc7c1b205dce@gmx.com>
-Date:   Thu, 5 May 2022 19:23:11 +0800
+        with ESMTP id S1380165AbiEENyt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2022 09:54:49 -0400
+Received: from mailout1.w1.samsung.com (mailout1.w1.samsung.com [210.118.77.11])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 66E7D57178
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2022 06:51:09 -0700 (PDT)
+Received: from eucas1p2.samsung.com (unknown [182.198.249.207])
+        by mailout1.w1.samsung.com (KnoxPortal) with ESMTP id 20220505135108euoutp011cf5908467b201799f81329332622c6b~sOcHdyQP43116431164euoutp01u
+        for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2022 13:51:08 +0000 (GMT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.w1.samsung.com 20220505135108euoutp011cf5908467b201799f81329332622c6b~sOcHdyQP43116431164euoutp01u
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
+        s=mail20170921; t=1651758668;
+        bh=LMzILViEYGl7DXa37dpeTA+tqVrqwK5EcVpc6Ix2yY8=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=CPGQ9j92/rr1enTM8W51HIe+iuZEr6A+pmjVyB7wTM9oQYKbiJDfLBmKJxgvr+u5d
+         npf6DVf6mvZCT4debamywIdobwudx1L2C+Xeuk3k+NeDyd9YRWyd/NB7gcT9i76zY2
+         PfUIAswbVhwRgza41F2Utlnk2O9/yPWlY5G3pKFM=
+Received: from eusmges2new.samsung.com (unknown [203.254.199.244]) by
+        eucas1p1.samsung.com (KnoxPortal) with ESMTP id
+        20220505135105eucas1p1875318bd43e3622035711a71d689236f~sOcFcxcL70606606066eucas1p1W;
+        Thu,  5 May 2022 13:51:05 +0000 (GMT)
+Received: from eucas1p2.samsung.com ( [182.198.249.207]) by
+        eusmges2new.samsung.com (EUCPMTA) with SMTP id 60.BC.09887.946D3726; Thu,  5
+        May 2022 14:51:05 +0100 (BST)
+Received: from eusmtrp1.samsung.com (unknown [182.198.249.138]) by
+        eucas1p1.samsung.com (KnoxPortal) with ESMTPA id
+        20220505135105eucas1p1428258bde56a77a96d98509a2c0d5fe9~sOcFECa1e1070010700eucas1p1C;
+        Thu,  5 May 2022 13:51:05 +0000 (GMT)
+Received: from eusmgms2.samsung.com (unknown [182.198.249.180]) by
+        eusmtrp1.samsung.com (KnoxPortal) with ESMTP id
+        20220505135105eusmtrp19dbb21ab3bd151eb0520eaf17fcf130f~sOcFDNRxd1365913659eusmtrp1B;
+        Thu,  5 May 2022 13:51:05 +0000 (GMT)
+X-AuditID: cbfec7f4-45bff7000000269f-f7-6273d649daa6
+Received: from eusmtip1.samsung.com ( [203.254.199.221]) by
+        eusmgms2.samsung.com (EUCPMTA) with SMTP id A6.6A.09404.946D3726; Thu,  5
+        May 2022 14:51:05 +0100 (BST)
+Received: from localhost (unknown [106.210.248.170]) by eusmtip1.samsung.com
+        (KnoxPortal) with ESMTPA id
+        20220505135105eusmtip1f64a5a3601c119d85d57b328e28ec824~sOcEvSwAx2664626646eusmtip1f;
+        Thu,  5 May 2022 13:51:05 +0000 (GMT)
+From:   Pankaj Raghav <p.raghav@samsung.com>
+To:     axboe@kernel.dk, hch@lst.de, damien.lemoal@opensource.wdc.com,
+        dsterba@suse.com, jaegeuk@kernel.org, bvanassche@acm.org,
+        hare@suse.de
+Cc:     jonathan.derrick@linux.dev, jiangbo.365@bytedance.com,
+        matias.bjorling@wdc.com, gost.dev@samsung.com, pankydev8@gmail.com,
+        Pankaj Raghav <p.raghav@samsung.com>,
+        Luis Chamberlain <mcgrof@kernel.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v2 06/11] btrfs: zoned: Make sb_zone_number function non
+ power of 2 compatible
+Date:   Thu,  5 May 2022 15:47:06 +0200
+Message-Id: <20220505134710.132630-7-p.raghav@samsung.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20220505134710.132630-1-p.raghav@samsung.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.0
-Subject: Re: [PATCH 10/10] btrfs: do not allocate a btrfs_bio for low-level
- bios
-Content-Language: en-US
-To:     Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <20220504122524.558088-1-hch@lst.de>
- <20220504122524.558088-11-hch@lst.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220504122524.558088-11-hch@lst.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:SzZxCA+n8a0X8QiSSe5TyFWccU/GJiXMTUl6bHf/6McDd0StOKh
- mcEfZhvC7P6bOI/XWpgECSmtixIKL5Z3ILjrwGei4MMutD1hq03BPuk/iig43Mv8qEewIpe
- QPp3HLhY5HbQ4LqBlJNVQ8Nf2Lap2HanayZyO8s/QFdBffQu1l09ls6vvm881IXOGJQREba
- aoN5dd0jHgdeoeQ0KeqBQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:RfO6USnR8Jw=:4AUKWXp3+VKrImps+1VLAv
- FCQWA3JfmScXV4CnVT1nleyziHtRnpCGQ5JF5kcs4hjFMaLvtfU5uHYIm7ZIeSc3adNuWnJBW
- RDHa15X9vIVBjbaE5nqDZ9OzhY772ywKdbTXG/pk6NQZZDm+vviDPDNp4yXcaeM3U9Vuqu/uW
- mph1LbGpORT4LUtJDgEVv9W+2DhM8EaiAnYasjwAQq1Id9GLlyAgGWQLalpS2BckP8tV2+cJa
- Swfgo0qODIH/cSaAtdHb8mVY2pfc7N7dQYKdE3XW8Mh4JI2ydgiyFTbBPP2J+DHzt7qp407i8
- fhP7dsNa5lhCDzGzKhO11smfmiLitBtNBngTCinG0L/x3nUR6ZJlsj+CSokNMxoKS3jh8Fp7Y
- K/4R/BooSF2M/9EqTspF9thYcQCGXMv7rjpMu48JFx/43MKPb+fpnd6iZWbJckNkfoO7hQ28p
- BL71HY1kZ9zx6LGcpKENxuyXnnNXGwQGv5oDDzeJUjhuxcb2ZUMzh0sNu/Bmom+rqbn5IPZ9E
- AMe5uLgKEbJHjKDxMyshT+4a1Hc9A2BWIeqnH1jsmxyKtidPHVhv10kRKKlXlU3Gby2zh0kAy
- 5Pfu8TFTq9m5EfE3oZlxg8yD70ve/gKcg6c4Gp+6YJk+HhfS0mnE1jWHc9RBnHNOZUhZESiiB
- Wf2oWJzrZwm7DefDhmhfGHoAOOA6XWSfQC6Ckbv7aeaO/X3ZQymjYXtMLG16wY3PjrXQK3UKf
- KXBC7dlNbRLsHEdz5bszjaeRs5cPPB6+2GEglozlIGXeF4ytmWjGEOaWmq9Oy+OMmSY/sGgvo
- bmk02ou3VCeTIWe2p0zlOt3f4wKtBgbaXsxIXwCKNHlt6EPlAMiHK/3dH1OftVhtAM4EdiuU2
- RHnzuF8yolgcbAZJhSBYKy/0sLJyOtVrBO9serPO7J2dhKpvwkvCmn/L8zj/XnoIsUkIFnW6z
- maFFYzPXn4RCjycu51duVPorz/5dmGYaz+Gexksivgoau6IrQ6brYnL6Vno/vUys5opjnXzLN
- hwhwYDZScM3AzmDBK3Tudg4rOPiLNHaX69+Q+GvXcoKf9jnDrUDFX22QO5NLBNYV69LsxhBou
- FSNGrkj1JO9wog=
+Content-Transfer-Encoding: 8bit
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFvrCKsWRmVeSWpSXmKPExsWy7djP87qe14qTDJ4fM7dYfbefzWLah5/M
+        FpP6Z7Bb/D57ntniwo9GJoubB3YyWexZNInJYuXqo0wWT9bPYrboOfCBxWJly0Nmiz8PDS0u
+        PV7BbnF51xw2iwltX5ktbkx4ymjxeWkLu8Wam09ZHIQ8Ll/x9vh3Yg2bx8Tmd+weO2fdZfe4
+        fLbUY9OqTjaPhQ1TmT1232xg89jZep/Vo2/LKkaP9VuusnhsPl3tMWHzRlaPz5vkPNoPdDMF
+        8Edx2aSk5mSWpRbp2yVwZbz7vZWx4JBkxda7NxkbGD+JdDFyckgImEj83tfI0sXIxSEksIJR
+        YvqRqWwQzhdGiQn3GpggnM+MEh+edDHBtDy9dgSqajmjxNOpB6D6XzJKrJ42C8jh4GAT0JJo
+        7GQHiYsIdDNKnG1+A1bELHCKSaLx6m8mkCJhgQSJaauFQKayCKhKXPn5ghEkzCtgJXH4UDzE
+        MnmJmZe+s4PYnALWEnM6H7KC2LwCghInZz5hAbGZgWqat85mBhkvIXCNU+Ldw43sEM0uEpOX
+        PoSyhSVeHd8CZctInJ7cwwJhV0s8vfEbqrmFUaJ/53o2kCMkgLb1nckBMZkFNCXW79KHKHeU
+        WPW7nRWigk/ixltBiBP4JCZtm84MEeaV6GgTgqhWktj58wnUUgmJy01zWCBKPCSe/ZebwKg4
+        C8kvs5D8Mgth7QJG5lWM4qmlxbnpqcVGeanlesWJucWleel6yfm5mxiBCfP0v+NfdjAuf/VR
+        7xAjEwfjIUYJDmYlEV7npQVJQrwpiZVVqUX58UWlOanFhxilOViUxHmTMzckCgmkJ5akZqem
+        FqQWwWSZODilGpiS3r2UEZMXXphx7sB5tlsNtYumxq/R271kJaNBXH5rarqLxByhquUros2C
+        n78UnysSZPlJ61SyufQOwS+Xi+VvM5r13v5aYuu59MPabRm/J5zV6Wbtvi063XzRmQs8f2L8
+        HniE+59YKexp/1bZtl6l6ds9M0bt03dkd35R8XLd9fBf5tKZjC+1pz3v2DijYEYw70e2573O
+        i5couPNOSbRke7jRytOZ6Wto/+8Zhp7vG+ov3voRuzhceM69iOTvh95efDwlaOnz0tQX742X
+        8IcG2M9ue3O/s29XAWvVwVZPSebXywLeHmxhOzP/5lXN/YoBaien+Fwo/Gf8Is/u2Kdiy6l2
+        z2/NZjhr8un+bWUpJZbijERDLeai4kQARM0GwgcEAAA=
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFnrKIsWRmVeSWpSXmKPExsVy+t/xu7qe14qTDE6vl7ZYfbefzWLah5/M
+        FpP6Z7Bb/D57ntniwo9GJoubB3YyWexZNInJYuXqo0wWT9bPYrboOfCBxWJly0Nmiz8PDS0u
+        PV7BbnF51xw2iwltX5ktbkx4ymjxeWkLu8Wam09ZHIQ8Ll/x9vh3Yg2bx8Tmd+weO2fdZfe4
+        fLbUY9OqTjaPhQ1TmT1232xg89jZep/Vo2/LKkaP9VuusnhsPl3tMWHzRlaPz5vkPNoPdDMF
+        8Efp2RTll5akKmTkF5fYKkUbWhjpGVpa6BmZWOoZGpvHWhmZKunb2aSk5mSWpRbp2yXoZbz7
+        vZWx4JBkxda7NxkbGD+JdDFyckgImEg8vXaErYuRi0NIYCmjxO8FO5khEhIStxc2MULYwhJ/
+        rnVBFT1nlNj17w9rFyMHB5uAlkRjJztIXERgKqPEhe0XWEAcZoFrTBIND3exgXQLC8RJNNzc
+        BjaJRUBV4srPF4wgzbwCVhKHD8VDLJCXmHnpOzuIzSlgLTGn8yEriC0EVDLx4TuwMbwCghIn
+        Zz5hAbGZgeqbt85mnsAoMAtJahaS1AJGplWMIqmlxbnpucVGesWJucWleel6yfm5mxiB8b3t
+        2M8tOxhXvvqod4iRiYPxEKMEB7OSCK/z0oIkId6UxMqq1KL8+KLSnNTiQ4ymQGdPZJYSTc4H
+        Jpi8knhDMwNTQxMzSwNTSzNjJXFez4KORCGB9MSS1OzU1ILUIpg+Jg5OqQYmtTSvPQapMTFZ
+        a80L1q2q63sTy3/SKfwQz5kn218+eL/j6X6ur7vurVx5SHnxfWsu8ykuJy9v2cp05+GUwu2c
+        AS8+rU58sOBBivjKTK6e7zkW3ws+thX3KrCHBd9Pn+HGP+lwaYjex9zwKa9uuk4tXZBWdGBv
+        764k1fncNwRfs11RnL+bX3LN1/OlqpVL+AKfr+ry6ChJ7WxpKhFesnTHs+lxyzL9wloETGK9
+        Rc+bmj05v7omvWdL2WzfU9OXJSyZqKe4S1Pxc4XaJJbw46/XbQycxPmU+XjZz2USrJEs/80+
+        MtRYSaY4+58QVjT2Wq3RKR5/x7nxi6fcqUjnzQl+Xh4rn+SriIUZHciILyhUYinOSDTUYi4q
+        TgQAF6KNiXgDAAA=
+X-CMS-MailID: 20220505135105eucas1p1428258bde56a77a96d98509a2c0d5fe9
+X-Msg-Generator: CA
+Content-Type: text/plain; charset="utf-8"
+X-RootMTR: 20220505135105eucas1p1428258bde56a77a96d98509a2c0d5fe9
+X-EPHeader: CA
+CMS-TYPE: 201P
+X-CMS-RootMailID: 20220505135105eucas1p1428258bde56a77a96d98509a2c0d5fe9
+References: <20220505134710.132630-1-p.raghav@samsung.com>
+        <CGME20220505135105eucas1p1428258bde56a77a96d98509a2c0d5fe9@eucas1p1.samsung.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Make the calculation in sb_zone_number function to be generic and work
+for both power-of-2 and non power-of-2 zone sizes.
 
+The function signature has been modified to take block device and mirror
+as input as this function is only invoked from callers that have access
+to the block device. This enables to use the generic bdev_zone_no
+function provided by the block layer to calculate the zone number.
 
-On 2022/5/4 20:25, Christoph Hellwig wrote:
-> The bios submitted from btrfs_map_bio don't really interact with the
-> rest of btrfs and the only btrfs_bio member actually used in the
-> low-level bios is the pointer to the btrfs_io_contex used for endio
-> handler.
->
-> Use a union in struct btrfs_io_stripe that allows the endio handler to
-> find the btrfs_io_context and remove the spurious ->device assignment
-> so that a plain fs_bio_set bio can be used for the low-level bios
-> allocated inside btrfs_map_bio.
->
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+Even though division is used to calculate the zone index for non
+power-of-2 zone sizes, this function will not be used in the fast path as
+the sb_zone_location cache is used for the superblock zone location.
 
-Although such union is not that reader friendly, it should be safe enough.
+Reviewed-by: Luis Chamberlain <mcgrof@kernel.org>
+Signed-off-by: Pankaj Raghav <p.raghav@samsung.com>
+---
+ fs/btrfs/zoned.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index e8c7cebb2..5be2ef7bb 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -34,9 +34,6 @@
+ #define BTRFS_SB_LOG_FIRST_OFFSET	(512ULL * SZ_1G)
+ #define BTRFS_SB_LOG_SECOND_OFFSET	(4096ULL * SZ_1G)
+ 
+-#define BTRFS_SB_LOG_FIRST_SHIFT	const_ilog2(BTRFS_SB_LOG_FIRST_OFFSET)
+-#define BTRFS_SB_LOG_SECOND_SHIFT	const_ilog2(BTRFS_SB_LOG_SECOND_OFFSET)
+-
+ /* Number of superblock log zones */
+ #define BTRFS_NR_SB_LOG_ZONES 2
+ 
+@@ -153,15 +150,23 @@ static int sb_write_pointer(struct block_device *bdev, struct blk_zone *zones,
+ /*
+  * Get the first zone number of the superblock mirror
+  */
+-static inline u32 sb_zone_number(int shift, int mirror)
++static inline u32 sb_zone_number(struct block_device *bdev, int mirror)
+ {
+ 	u64 zone;
+ 
+ 	ASSERT(mirror < BTRFS_SUPER_MIRROR_MAX);
+ 	switch (mirror) {
+-	case 0: zone = 0; break;
+-	case 1: zone = 1ULL << (BTRFS_SB_LOG_FIRST_SHIFT - shift); break;
+-	case 2: zone = 1ULL << (BTRFS_SB_LOG_SECOND_SHIFT - shift); break;
++	case 0:
++		zone = 0;
++		break;
++	case 1:
++		zone = bdev_zone_no(bdev,
++				    BTRFS_SB_LOG_FIRST_OFFSET >> SECTOR_SHIFT);
++		break;
++	case 2:
++		zone = bdev_zone_no(bdev,
++				    BTRFS_SB_LOG_SECOND_OFFSET >> SECTOR_SHIFT);
++		break;
+ 	}
+ 
+ 	ASSERT(zone <= U32_MAX);
+@@ -514,7 +519,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
+ 	/* Cache the sb zone number */
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; ++i) {
+ 		zone_info->sb_zone_location[i] =
+-			sb_zone_number(zone_info->zone_size_shift, i);
++			sb_zone_number(bdev, i);
+ 	}
+ 	/* Validate superblock log */
+ 	nr_zones = BTRFS_NR_SB_LOG_ZONES;
+@@ -839,7 +844,7 @@ int btrfs_sb_log_location_bdev(struct block_device *bdev, int mirror, int rw,
+ 	nr_sectors = bdev_nr_sectors(bdev);
+ 	nr_zones = nr_sectors >> zone_sectors_shift;
+ 
+-	sb_zone = sb_zone_number(zone_sectors_shift + SECTOR_SHIFT, mirror);
++	sb_zone = sb_zone_number(bdev, mirror);
+ 	if (sb_zone + 1 >= nr_zones)
+ 		return -ENOENT;
+ 
+@@ -963,7 +968,7 @@ int btrfs_reset_sb_log_zones(struct block_device *bdev, int mirror)
+ 	nr_sectors = bdev_nr_sectors(bdev);
+ 	nr_zones = nr_sectors >> zone_sectors_shift;
+ 
+-	sb_zone = sb_zone_number(zone_sectors_shift + SECTOR_SHIFT, mirror);
++	sb_zone = sb_zone_number(bdev, mirror);
+ 	if (sb_zone + 1 >= nr_zones)
+ 		return -ENOENT;
+ 
+-- 
+2.25.1
 
-
-Although in the future, I may add a new bioset for such low-level bios
-for other purposes (like read-repair at per-stripe level), thus may
-allow a more readable solution.
-But that would be another story in the future anyway.
-
-Thanks,
-Qu
-> ---
->   fs/btrfs/extent_io.c | 13 -------------
->   fs/btrfs/extent_io.h |  1 -
->   fs/btrfs/volumes.c   | 20 ++++++++++----------
->   fs/btrfs/volumes.h   |  5 ++++-
->   4 files changed, 14 insertions(+), 25 deletions(-)
->
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 93191771e5bf1..7efbc964585d3 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -3210,19 +3210,6 @@ struct bio *btrfs_bio_alloc(unsigned int nr_iovec=
-s)
->   	return bio;
->   }
->
-> -struct bio *btrfs_bio_clone(struct block_device *bdev, struct bio *bio)
-> -{
-> -	struct btrfs_bio *bbio;
-> -	struct bio *new;
-> -
-> -	/* Bio allocation backed by a bioset does not fail */
-> -	new =3D bio_alloc_clone(bdev, bio, GFP_NOFS, &btrfs_bioset);
-> -	bbio =3D btrfs_bio(new);
-> -	btrfs_bio_init(bbio);
-> -	bbio->iter =3D bio->bi_iter;
-> -	return new;
-> -}
-> -
->   struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 =
-size)
->   {
->   	struct bio *bio;
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 17674b7e699c6..ce69a4732f718 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -248,7 +248,6 @@ void extent_clear_unlock_delalloc(struct btrfs_inode=
- *inode, u64 start, u64 end,
->
->   int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_a=
-rray);
->   struct bio *btrfs_bio_alloc(unsigned int nr_iovecs);
-> -struct bio *btrfs_bio_clone(struct block_device *bdev, struct bio *bio)=
-;
->   struct bio *btrfs_bio_clone_partial(struct bio *orig, u64 offset, u64 =
-size);
->
->   void end_extent_writepage(struct page *page, int err, u64 start, u64 e=
-nd);
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 28ac2bfb5d296..8577893ccb4b9 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6666,23 +6666,21 @@ static void btrfs_end_bioc(struct btrfs_io_conte=
-xt *bioc, bool async)
->
->   static void btrfs_end_bio(struct bio *bio)
->   {
-> -	struct btrfs_io_context *bioc =3D bio->bi_private;
-> +	struct btrfs_io_stripe *stripe =3D bio->bi_private;
-> +	struct btrfs_io_context *bioc =3D stripe->bioc;
->
->   	if (bio->bi_status) {
->   		atomic_inc(&bioc->error);
->   		if (bio->bi_status =3D=3D BLK_STS_IOERR ||
->   		    bio->bi_status =3D=3D BLK_STS_TARGET) {
-> -			struct btrfs_device *dev =3D btrfs_bio(bio)->device;
-> -
-> -			ASSERT(dev->bdev);
->   			if (btrfs_op(bio) =3D=3D BTRFS_MAP_WRITE)
-> -				btrfs_dev_stat_inc_and_print(dev,
-> +				btrfs_dev_stat_inc_and_print(stripe->dev,
->   						BTRFS_DEV_STAT_WRITE_ERRS);
->   			else if (!(bio->bi_opf & REQ_RAHEAD))
-> -				btrfs_dev_stat_inc_and_print(dev,
-> +				btrfs_dev_stat_inc_and_print(stripe->dev,
->   						BTRFS_DEV_STAT_READ_ERRS);
->   			if (bio->bi_opf & REQ_PREFLUSH)
-> -				btrfs_dev_stat_inc_and_print(dev,
-> +				btrfs_dev_stat_inc_and_print(stripe->dev,
->   						BTRFS_DEV_STAT_FLUSH_ERRS);
->   		}
->   	}
-> @@ -6714,14 +6712,16 @@ static void submit_stripe_bio(struct btrfs_io_co=
-ntext *bioc,
->   	}
->
->   	if (clone) {
-> -		bio =3D btrfs_bio_clone(dev->bdev, orig_bio);
-> +		bio =3D bio_alloc_clone(dev->bdev, orig_bio, GFP_NOFS,
-> +				      &fs_bio_set);
->   	} else {
->   		bio =3D orig_bio;
->   		bio_set_dev(bio, dev->bdev);
-> +		btrfs_bio(bio)->device =3D dev;
->   	}
->
-> -	bio->bi_private =3D bioc;
-> -	btrfs_bio(bio)->device =3D dev;
-> +	bioc->stripes[dev_nr].bioc =3D bioc;
-> +	bio->bi_private =3D &bioc->stripes[dev_nr];
->   	bio->bi_end_io =3D btrfs_end_bio;
->   	bio->bi_iter.bi_sector =3D physical >> 9;
->   	/*
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 28e28b7c48649..825e44c82f2b0 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -396,7 +396,10 @@ static inline void btrfs_bio_free_csum(struct btrfs=
-_bio *bbio)
->
->   struct btrfs_io_stripe {
->   	struct btrfs_device *dev;
-> -	u64 physical;
-> +	union {
-> +		u64 physical;			/* block mapping */
-> +		struct btrfs_io_context *bioc;	/* for the endio handler */
-> +	};
->   	u64 length; /* only used for discard mappings */
->   };
->

@@ -2,113 +2,100 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7E93C433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  5 May 2022 15:39:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2A56C4332F
+	for <linux-btrfs@archiver.kernel.org>; Thu,  5 May 2022 15:41:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1380786AbiEEPmv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 5 May 2022 11:42:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34754 "EHLO
+        id S1359305AbiEEPpN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 5 May 2022 11:45:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234105AbiEEPmu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2022 11:42:50 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 131C32182B
-        for <linux-btrfs@vger.kernel.org>; Thu,  5 May 2022 08:39:10 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S243704AbiEEPpK (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 May 2022 11:45:10 -0400
+Received: from sin.source.kernel.org (sin.source.kernel.org [145.40.73.55])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5DCB532F3;
+        Thu,  5 May 2022 08:41:30 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id BB3661F8D3;
-        Thu,  5 May 2022 15:39:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1651765148;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LgoV2x2L22bE4jHPgJxPs92QCgRaewaOsN/Y+Nzo6Nw=;
-        b=GPxUcLdK5xJhV/mx4FUH0uvvPgdFVLDNCfkGCw8xOSMvFZBg8okWmeHr0rINukp6kjaKk+
-        dTUsrCPyldCt2WKsmXkm544w9Aq0awPNOHanGp1uZPtZY3I8qzi43aa81wH9KaO40+wPsy
-        jM3G49LegQgbR2rzpMQrpqKOC2zKP74=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1651765148;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LgoV2x2L22bE4jHPgJxPs92QCgRaewaOsN/Y+Nzo6Nw=;
-        b=WQVZ2FMaO6ynMACC3E94cEcOLLsvHwe1oC5xsOjBgxVkZAzctT0grk1ChfzpBObl1jSj3H
-        o2QihBfBpbdWiPBA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8799813B11;
-        Thu,  5 May 2022 15:39:08 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id v2IzIJzvc2J/VAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 05 May 2022 15:39:08 +0000
-Date:   Thu, 5 May 2022 17:34:56 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: cleanup btrfs bio handling, part 2 v3
-Message-ID: <20220505153456.GW18596@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.com>,
-        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20220504122524.558088-1-hch@lst.de>
- <a6952ff4-1e4e-5650-7d57-8fd442e9d5aa@gmx.com>
+        by sin.source.kernel.org (Postfix) with ESMTPS id 05939CE2E50;
+        Thu,  5 May 2022 15:41:29 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3FD2AC385A4;
+        Thu,  5 May 2022 15:41:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1651765287;
+        bh=8tY7ik2G1ldHRLbmbjw0SfsVLofsLwZPaHeobuJTuFE=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=oITRBP3x8dU+04yOvM2PSQR/7qNJeN8GhMlflfauPcTOKnY9PCT3O5oEXeADQorky
+         R5odvPIgXrkyhlTy+OaNw2xgmeDCnWRuTyEXRHq84+EEdaQ0HmyEk5Pwncz+vGBwGy
+         +I2n+q7mqvp/8VTEfl+Q3qav9EaEPq/XxpwgViy4puPurctepUfP6Zlsq+quNIBgl0
+         uSaDBuTiISuv4dhdSUkk66gzXyxPRvzUK+KO8UkCb4azCyqV2AItYruxDh0d/1Hc2A
+         2JZ5mcVmPDO3TfUINX+1lwFctOKO21dxddEsxxq9uDriKcRnKX8FefIB7i/trVLyj/
+         ZpXAKJPcOMJpQ==
+Date:   Thu, 5 May 2022 08:41:26 -0700
+From:   "Darrick J. Wong" <djwong@kernel.org>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 2/5] iomap: add per-iomap_iter private data
+Message-ID: <20220505154126.GB27155@magnolia>
+References: <20220504162342.573651-1-hch@lst.de>
+ <20220504162342.573651-3-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <a6952ff4-1e4e-5650-7d57-8fd442e9d5aa@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20220504162342.573651-3-hch@lst.de>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, May 05, 2022 at 02:56:49PM +0800, Qu Wenruo wrote:
-> On 2022/5/4 20:25, Christoph Hellwig wrote:
-> > Hi all,
-> >
-> > this series removes the need to allocate a separate object for I/O
-> > completions for all read and some write I/Os, and reduced the memory
-> > usage of the low-level bios cloned by btrfs_map_bio by using plain bios
-> > instead of the much larger btrfs_bio.
+On Wed, May 04, 2022 at 09:23:39AM -0700, Christoph Hellwig wrote:
+> Allow the file system to keep state for all iterations.  For now only
+> wire it up for direct I/O as there is an immediate need for it there.
 > 
-> The most important part of this series is the patch "btrfs: remove
-> btrfs_end_io_wq()" I guess.
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  fs/iomap/direct-io.c  | 8 ++++++++
+>  include/linux/iomap.h | 1 +
+>  2 files changed, 9 insertions(+)
 > 
-> As a guy growing up mostly reading btrfs code, the btrfs_end_io_wq()
-> function looks straightforward to me initially, just put everything into
-> wq context and call it a day.
-> 
-> But as I started to look into how other fses handle their delayed work,
-> the btrfs way turns more "unique" other than straightforward.
-> 
-> So yes, aligning us to other fses, by only delaying into wq context when
-> necessary, should be a good thing.
-> Not reducing the memory allocation for the btrfs_end_io_wq structure,
-> but also making the atomic part of the endio function executed with less
-> delay.
-> 
-> But here I'm not sure if the btrfs way is a legacy from the past, or has
-> some hidden intention (possible related to performance?).
+> diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+> index 15929690d89e3..355abe2eacc6a 100644
+> --- a/fs/iomap/direct-io.c
+> +++ b/fs/iomap/direct-io.c
+> @@ -520,6 +520,14 @@ __iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
+>  	dio->submit.waiter = current;
+>  	dio->submit.poll_bio = NULL;
+>  
+> +	/*
+> +	 * Transfer the private data that was passed by the caller to the
+> +	 * iomap_iter, and clear it in the iocb, as iocb->private will be
+> +	 * used for polled bio completion later.
+> +	 */
+> +	iomi.private = iocb->private;
+> +	WRITE_ONCE(iocb->private, NULL);
 
-Same here, I'm a bit worried about the implications of removing the
-current end io way. I don't have a hard argument against, simplifying
-the path is a good thing but as it's one of the fundamental
-functionality I'd rather have it at least one cycle in the development
-queue. As we're in rc5, there's not enough time to do evaluation on
-various loads. Besides the test rig reports some performance degradation
-on misc-next so it would be hard to evaluate this series as we don't
-have a clean base line.
+Do we need to transfer it back after the bio completes?  Or is it a
+feature that iocb->private changes to the bio?
 
-So current plan is to take what is safe from this patchset to 5.19
-queue, the rest will appear in for-next. The misc-next will be frozen by
-the end of the week, then 5.19 forked with selected fixes applied. In
-parallel the for-next open is for any future development until 5.19-rc1.
+--D
+
+> +
+>  	if (iov_iter_rw(iter) == READ) {
+>  		if (iomi.pos >= dio->i_size)
+>  			goto out_free_dio;
+> diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+> index a5483020dad41..109c055865f73 100644
+> --- a/include/linux/iomap.h
+> +++ b/include/linux/iomap.h
+> @@ -188,6 +188,7 @@ struct iomap_iter {
+>  	unsigned flags;
+>  	struct iomap iomap;
+>  	struct iomap srcmap;
+> +	void *private;
+>  };
+>  
+>  int iomap_iter(struct iomap_iter *iter, const struct iomap_ops *ops);
+> -- 
+> 2.30.2
+> 

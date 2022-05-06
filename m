@@ -2,117 +2,67 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63808C4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 May 2022 17:49:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED3D8C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 May 2022 21:35:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1359542AbiEDRw6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 May 2022 13:52:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42944 "EHLO
+        id S231761AbiEFVjl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 May 2022 17:39:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59146 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1359125AbiEDRvd (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 May 2022 13:51:33 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D15484C439;
-        Wed,  4 May 2022 10:11:30 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S1354971AbiEFVjk (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 May 2022 17:39:40 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A254E11C14;
+        Fri,  6 May 2022 14:35:55 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 8BD9B1F38D;
-        Wed,  4 May 2022 17:11:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1651684289; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=N6EMoP13+uuDakjMHpvxy4PBHA2cakQS2VfsX4a/x94=;
-        b=DJBXlAYyuYbusnoUszCA+AfMUUtGYehcgNX/lQ0qb1pMGVJ8Y/wB2k+YBRDIZuhTeQqd7b
-        tHvLMy5QORZQYIpA9gIeZd+FIbx6yExh/jX0dTQhrTHcfqHSr/rMyA45YxKum1K9WKH687
-        TFFcsHo0sSle3EgUEzEdaFr8d2K/Tio=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1651684289;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=N6EMoP13+uuDakjMHpvxy4PBHA2cakQS2VfsX4a/x94=;
-        b=5hv3tExqNVDL20PvtwaVNk13uh5hLvjqypg4NlyuP/W5i/E/1fSmlov7z3Q727EOdt2Ymq
-        Cgfxb1jhrkiVgADw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 272C0131BD;
-        Wed,  4 May 2022 17:11:23 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id eGrpOruzcmIsWwAAMHmgww
-        (envelope-from <hare@suse.de>); Wed, 04 May 2022 17:11:23 +0000
-Message-ID: <2586cd78-cd54-97ed-86b0-8f78a444387a@suse.de>
-Date:   Wed, 4 May 2022 10:11:22 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.4.0
-Subject: Re: [PATCH 16/16] dm-zoned: ensure only power of 2 zone sizes are
- allowed
-Content-Language: en-US
-References: <20220427160255.300418-1-p.raghav@samsung.com>
- <CGME20220427160313eucas1p1feecf74ec15c8c3d9250444710fd1676@eucas1p1.samsung.com>
- <20220427160255.300418-17-p.raghav@samsung.com>
-From:   Hannes Reinecke <hare@suse.de>
-To:     undisclosed-recipients:;
-In-Reply-To: <20220427160255.300418-17-p.raghav@samsung.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+        by ams.source.kernel.org (Postfix) with ESMTPS id 114ACB839B1;
+        Fri,  6 May 2022 21:35:53 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id CC4DAC385A9;
+        Fri,  6 May 2022 21:35:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1651872951;
+        bh=uif5qSoOd4svX7t8pgNrtqryaK/4SsZVfdNrsbtTDyU=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=GEPhz76vRWYhkGuPG0SJ6UDZcOg0S06M0Ol4YkCQ0ozCtl8jHRk41Osd7DfQ4p9Yg
+         UQARd0a1v87nvKuPX7qDSsmvi2klWtcvgeKay6rELdCV04tHi9Kc9PBkcIKNml9yI5
+         J7WrhU2mCMca6v8f2y6bHiTorn28AaknhW+wVp55js7p3QQsEK7N+cPvFAvQIhvTSj
+         56shF2WbctDK8kX93wy4bfhBYnGLdE+nodoH4qZ535yV6bu/4zo7Pxal+vGMgNwwEG
+         c6lpS9rey5JuBrOjpViPm4grviM9i8BOulGLnPNnfx2iqVDfXdfX/9i1qFFhPMSGYU
+         csRkrOQJh5zOA==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id B7F42F03876;
+        Fri,  6 May 2022 21:35:51 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs fixes for 5.18-rc6, part 2
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1651860315.git.dsterba@suse.com>
+References: <cover.1651860315.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1651860315.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc5-tag
+X-PR-Tracked-Commit-Id: 3e1ad196385c65c1454aceab1226d9a4baca27d5
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 4b97bac0756a81cda5afd45417a99b5bccdcff67
+Message-Id: <165187295174.17607.2726486271724468528.pr-tracker-bot@kernel.org>
+Date:   Fri, 06 May 2022 21:35:51 +0000
+To:     David Sterba <dsterba@suse.com>
+Cc:     torvalds@linux-foundation.org, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 4/27/22 09:02, Pankaj Raghav wrote:
-> From: Luis Chamberlain <mcgrof@kernel.org>
-> 
-> Today dm-zoned relies on the assumption that you have a zone size
-> with a power of 2. Even though the block layer today enforces this
-> requirement, these devices do exist and so provide a stop-gap measure
-> to ensure these devices cannot be used by mistake
-> 
-> Signed-off-by: Luis Chamberlain <mcgrof@kernel.org>
-> Signed-off-by: Pankaj Raghav <p.raghav@samsung.com>
-> ---
->   drivers/md/dm-zone.c | 12 ++++++++++++
->   1 file changed, 12 insertions(+)
-> 
-> diff --git a/drivers/md/dm-zone.c b/drivers/md/dm-zone.c
-> index 57daa86c19cf..221e0aa0f1a7 100644
-> --- a/drivers/md/dm-zone.c
-> +++ b/drivers/md/dm-zone.c
-> @@ -231,6 +231,18 @@ static int dm_revalidate_zones(struct mapped_device *md, struct dm_table *t)
->   	struct request_queue *q = md->queue;
->   	unsigned int noio_flag;
->   	int ret;
-> +	struct block_device *bdev = md->disk->part0;
-> +	sector_t zone_sectors;
-> +	char bname[BDEVNAME_SIZE];
-> +
-> +	zone_sectors = bdev_zone_sectors(bdev);
-> +
-> +	if (!is_power_of_2(zone_sectors)) {
-> +		DMWARN("%s: %s only power of two zone size supported\n",
-> +		       dm_device_name(md),
-> +		       bdevname(bdev, bname));
-> +		return 1;
-> +	}
->   
->   	/*
->   	 * Check if something changed. If yes, cleanup the current resources
+The pull request you sent on Fri, 6 May 2022 22:55:06 +0200:
 
-Reviewed-by: Hannes Reinecke <hare@suse.de>
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.18-rc5-tag
 
-Cheers,
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/4b97bac0756a81cda5afd45417a99b5bccdcff67
 
-Hannes
+Thank you!
+
 -- 
-Dr. Hannes Reinecke                Kernel Storage Architect
-hare@suse.de                              +49 911 74053 688
-SUSE Software Solutions GmbH, Maxfeldstr. 5, 90409 Nürnberg
-HRB 36809 (AG Nürnberg), Geschäftsführer: Felix Imendörffer
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

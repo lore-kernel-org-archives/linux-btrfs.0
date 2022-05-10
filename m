@@ -2,87 +2,128 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 654A4C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 May 2022 05:42:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48590C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 May 2022 06:03:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236731AbiEJFqm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 May 2022 01:46:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47474 "EHLO
+        id S236972AbiEJGHa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 May 2022 02:07:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40356 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236730AbiEJFqh (ORCPT
+        with ESMTP id S233823AbiEJGH1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 May 2022 01:46:37 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E6655131D
-        for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2022 22:42:40 -0700 (PDT)
+        Tue, 10 May 2022 02:07:27 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AEFE729ED26
+        for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2022 23:03:30 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8567B21B85;
-        Tue, 10 May 2022 05:42:38 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 366631F8BF
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 May 2022 06:03:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1652161358; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=5OIk00LXGSvXFMwu0J12Iga44/VVWxQGubWkepoD8Tg=;
-        b=ll7bFUz2LK7WU7zOzRSmTCjPfLn+ExP1aSp3G6kzty7isoT6nRMgLYS4WwzGI+mLFi7eVm
-        K322TWI17wOzslJmg5aat7/Bn8MwqQHGzTGF5yl0AWgAdfmKSbDC2G0D4XuB/1UAqTT0oT
-        Hl6EiT6ogdFOHwoVI5zVGWzIxaMurWU=
+        t=1652162609; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=XcCtFOFgqqixqcw0ZYH6+UeMmlCXKhq+g0aoZqXsbRA=;
+        b=cmr0kPrpd565o2TGPXJLvBBKvFHIxb9WHvOO142ZDwkpHjjpu84P+aY3d7jKGWn/JIJClV
+        h1ROtSsfC5/UgZYPM+PkyZaGC8dSByUACwGDEgL/RYcbf0TA+jqhCWVLsLYR93NmLvzGzX
+        6qqDJeKQcG4YosTXyEUMBpGGGpbestk=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 477B8139F5;
-        Tue, 10 May 2022 05:42:38 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B062C13AC1
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 May 2022 06:03:27 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id k/XQDk77eWLTSwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Tue, 10 May 2022 05:42:38 +0000
-Message-ID: <bf19be5b-ce93-463b-f4f0-f72a75480503@suse.com>
-Date:   Tue, 10 May 2022 08:42:37 +0300
+        id dHurHi8AemJnUwAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 May 2022 06:03:27 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: print-tree: print the checksum of header without tailing zeros
+Date:   Tue, 10 May 2022 14:03:18 +0800
+Message-Id: <38bf1bf79e8443d570e982edb8a6b71f27cf1ab5.1652162441.git.wqu@suse.com>
+X-Mailer: git-send-email 2.36.0
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.1
-Subject: Re: [PATCH v2] btrfs: Use btrfs_try_lock_balance in
- btrfs_ioctl_balance
-Content-Language: en-US
-To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        kernel test robot <lkp@intel.com>,
-        Dan Carpenter <dan.carpenter@oracle.com>
-References: <20220504152501.GQ18596@twin.jikos.cz>
- <20220505070825.1218337-1-nborisov@suse.com>
- <20220509195104.GF18596@twin.jikos.cz>
-From:   Nikolay Borisov <nborisov@suse.com>
-In-Reply-To: <20220509195104.GF18596@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+For the default CRC32 checksum, print-tree now prints tons of
+unnecessary padding zeros:
 
+  btrfs-progs v5.17
+  chunk tree
+  leaf 22036480 items 7 free space 15430 generation 6 owner CHUNK_TREE
+  leaf 22036480 flags 0x1(WRITTEN) backref revision 1
+  checksum stored 0ac1b9fa00000000000000000000000000000000000000000000000000000000
+  checksum calced 0ac1b9fa00000000000000000000000000000000000000000000000000000000
+  fs uuid 3d95b7e3-3ab6-4927-af56-c58aa634342e
 
-On 9.05.22 г. 22:51 ч., David Sterba wrote:
-> On Thu, May 05, 2022 at 10:08:25AM +0300, Nikolay Borisov wrote:
->> This eliminates 2 labels and makes the code generally more streamlined.
->> Also rename the 'out_bargs' label to 'out_unlock' since bargs is going
->> to be freed under the 'out' label. This also fixes a memory leak since
->> bargs wasn't correctly freed in one of the condition which are now moved
->> in btrfs_try_lock_balance.
->>
->> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
->> Reported-by: kernel test robot <lkp@intel.com>
->> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
->> ---
->>
->> V2:
->>   * Removed extra call to kfree(bargs) which resulted in a double free
-> 
-> Where does this patch apply to? It's using btrfs_try_lock_balance but that
-> does not exist in code nor in the patch.
-> 
+This is caused by commit 1bb6fb896dfc ("btrfs-progs: btrfstune:
+experimental, new option to switch csums"), and it looks like most
+distros just enable EXPERIMENTAL features by default.
+(Which is a good thing to provide much better coverage).
 
-Well this is v2 2/2 so it's part of the same series just an update to 
-the 2nd patch.
+So here we just limit the csum print to the utilized csum size.
+
+Now the output looks like:
+
+  btrfs-progs v5.17
+  chunk tree
+  leaf 22036480 items 4 free space 15781 generation 6 owner CHUNK_TREE
+  leaf 22036480 flags 0x1(WRITTEN) backref revision 1
+  checksum stored 676b812f
+  checksum calced 676b812f
+  fs uuid d11f8799-b6dc-415d-b1ed-cebe6da5f0b7
+
+Fixes: 1bb6fb896dfc ("btrfs-progs: btrfstune: experimental, new option to switch csums")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ kernel-shared/print-tree.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 9c12dfcb4ca5..4f34645cf741 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -1224,7 +1224,7 @@ static void print_header_info(struct extent_buffer *eb, unsigned int mode)
+ 	u8 backref_rev;
+ 	char csum_str[2 * BTRFS_CSUM_SIZE + strlen(" csum 0x") + 1];
+ 	int i;
+-	int csum_size;
++	int csum_size = fs_info->csum_size;
+ 
+ 	flags = btrfs_header_flags(eb) & ~BTRFS_BACKREF_REV_MASK;
+ 	backref_rev = btrfs_header_flags(eb) >> BTRFS_BACKREF_REV_SHIFT;
+@@ -1249,7 +1249,6 @@ static void print_header_info(struct extent_buffer *eb, unsigned int mode)
+ 		char *tmp = csum_str;
+ 		u8 *csum = (u8 *)(eb->data + offsetof(struct btrfs_header, csum));
+ 
+-		csum_size = fs_info->csum_size;
+ 		strcpy(csum_str, " csum 0x");
+ 		tmp = csum_str + strlen(csum_str);
+ 		for (i = 0; i < csum_size; i++) {
+@@ -1268,7 +1267,7 @@ static void print_header_info(struct extent_buffer *eb, unsigned int mode)
+ 
+ #ifdef EXPERIMENTAL
+ 	printf("checksum stored ");
+-	for (i = 0; i < BTRFS_CSUM_SIZE; i++)
++	for (i = 0; i < csum_size; i++)
+ 		printf("%02hhx", (int)(eb->data[i]));
+ 	printf("\n");
+ 	memset(csum, 0, sizeof(csum));
+@@ -1276,7 +1275,7 @@ static void print_header_info(struct extent_buffer *eb, unsigned int mode)
+ 			(u8 *)eb->data + BTRFS_CSUM_SIZE,
+ 			csum, fs_info->nodesize - BTRFS_CSUM_SIZE);
+ 	printf("checksum calced ");
+-	for (i = 0; i < BTRFS_CSUM_SIZE; i++)
++	for (i = 0; i < csum_size; i++)
+ 		printf("%02hhx", (int)(csum[i]));
+ 	printf("\n");
+ #endif
+-- 
+2.36.0
+

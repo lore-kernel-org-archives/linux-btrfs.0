@@ -2,79 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF8CFC4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 May 2022 03:36:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 654A4C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 May 2022 05:42:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235659AbiEJDkl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 9 May 2022 23:40:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40200 "EHLO
+        id S236731AbiEJFqm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 May 2022 01:46:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47474 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235650AbiEJDjS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 May 2022 23:39:18 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 626532397AE;
-        Mon,  9 May 2022 20:33:07 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        with ESMTP id S236730AbiEJFqh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Tue, 10 May 2022 01:46:37 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E6655131D
+        for <linux-btrfs@vger.kernel.org>; Mon,  9 May 2022 22:42:40 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A2C12616F7;
-        Tue, 10 May 2022 03:33:06 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2351C385C2;
-        Tue, 10 May 2022 03:33:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1652153586;
-        bh=+2uASBmsqYQqhttQPHm/MX34q5RgNamnUz7NmlzcT3Q=;
-        h=Date:From:To:Subject:References:In-Reply-To:From;
-        b=NR5ghk9WTaVDnOfP1O7QDYL5jmvHz7wxPbVVEAVuAgbvBz4j8+kDgpJiv8lRcCROR
-         6AGatA3RxmZj0Wq4hyNlsdAkt7kTNjzJGMhMhoVWfl2Ocz44afiIY9ADFE8usmT8B/
-         6j+2UJ1DR0VFsaPaFEcDRXLF71KAosLwanSMceytXNnj2naYPKCOln475AWS/L+Hxk
-         pDl0q2kZEpt/oFotvytbZSl/GM6gNW3SbkzAfvvRImjjyd+IfKvstKc62dVdU05qPo
-         lG+SmVi6UpbUoyyQ7cAvxJuuOdgMIoHKb+WwOonY8lRwgfEJTDnW+To3CoNRmM/Qgp
-         6ZmLYSJHY97Pg==
-Date:   Mon, 9 May 2022 20:33:05 -0700
-From:   "Darrick J. Wong" <djwong@kernel.org>
-To:     dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: reduce memory allocation in the btrfs direct I/O path
-Message-ID: <20220510033305.GB27137@magnolia>
-References: <20220504162342.573651-1-hch@lst.de>
- <20220505155529.GY18596@suse.cz>
- <20220506171803.GA27137@magnolia>
- <20220507052649.GA28014@lst.de>
- <20220509184650.GA18596@twin.jikos.cz>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 8567B21B85;
+        Tue, 10 May 2022 05:42:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1652161358; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=5OIk00LXGSvXFMwu0J12Iga44/VVWxQGubWkepoD8Tg=;
+        b=ll7bFUz2LK7WU7zOzRSmTCjPfLn+ExP1aSp3G6kzty7isoT6nRMgLYS4WwzGI+mLFi7eVm
+        K322TWI17wOzslJmg5aat7/Bn8MwqQHGzTGF5yl0AWgAdfmKSbDC2G0D4XuB/1UAqTT0oT
+        Hl6EiT6ogdFOHwoVI5zVGWzIxaMurWU=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 477B8139F5;
+        Tue, 10 May 2022 05:42:38 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id k/XQDk77eWLTSwAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 10 May 2022 05:42:38 +0000
+Message-ID: <bf19be5b-ce93-463b-f4f0-f72a75480503@suse.com>
+Date:   Tue, 10 May 2022 08:42:37 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220509184650.GA18596@twin.jikos.cz>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.8.1
+Subject: Re: [PATCH v2] btrfs: Use btrfs_try_lock_balance in
+ btrfs_ioctl_balance
+Content-Language: en-US
+To:     dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+        kernel test robot <lkp@intel.com>,
+        Dan Carpenter <dan.carpenter@oracle.com>
+References: <20220504152501.GQ18596@twin.jikos.cz>
+ <20220505070825.1218337-1-nborisov@suse.com>
+ <20220509195104.GF18596@twin.jikos.cz>
+From:   Nikolay Borisov <nborisov@suse.com>
+In-Reply-To: <20220509195104.GF18596@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 09, 2022 at 08:46:50PM +0200, David Sterba wrote:
-> On Sat, May 07, 2022 at 07:26:49AM +0200, Christoph Hellwig wrote:
-> > On Fri, May 06, 2022 at 10:18:03AM -0700, Darrick J. Wong wrote:
-> > > > The series is reasonably short so I'd like to add it to 5.20 queue,
->                                                               ^^^^
-> Sorry, I meant 5.19, ie. the one that's about to start soon.
+
+
+On 9.05.22 г. 22:51 ч., David Sterba wrote:
+> On Thu, May 05, 2022 at 10:08:25AM +0300, Nikolay Borisov wrote:
+>> This eliminates 2 labels and makes the code generally more streamlined.
+>> Also rename the 'out_bargs' label to 'out_unlock' since bargs is going
+>> to be freed under the 'out' label. This also fixes a memory leak since
+>> bargs wasn't correctly freed in one of the condition which are now moved
+>> in btrfs_try_lock_balance.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> Reported-by: kernel test robot <lkp@intel.com>
+>> Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+>> ---
+>>
+>> V2:
+>>   * Removed extra call to kfree(bargs) which resulted in a double free
 > 
-> > > > provided that the iomap patches get acked by Darrick. Any fixups I'd
-> > > > rather fold into my local branch, no need to resend unless there are
-> > > > significant updates.
-> > > 
-> > > Hm.  I'm planning on pushing out a (very late) iomap-5.19-merge branch,
-> > > since (AFAICT) these changes are mostly plumbing.  Do you want me to
-> > > push the first three patches of this series for 5.19?
-> > 
-> > Given that we have no conflicts it might be easiest to just merge the
-> > whole series through the btrfs tree.
+> Where does this patch apply to? It's using btrfs_try_lock_balance but that
+> does not exist in code nor in the patch.
 > 
-> Yeah, I'd rather take it via the btrfs tree.
 
-Ah, *5.19*.  Yes, this plan now sounds good to me!
-
-(I had wondered, 5.20 seemed like an awfully long time to wait for
-something as straightforward as that.)
-
---D
+Well this is v2 2/2 so it's part of the same series just an update to 
+the 2nd patch.

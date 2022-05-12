@@ -2,96 +2,134 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 785ACC433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 May 2022 17:24:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7EA4C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 May 2022 23:01:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1352651AbiELRYe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 May 2022 13:24:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51324 "EHLO
+        id S1359341AbiELXBW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 May 2022 19:01:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1346170AbiELRYd (ORCPT
+        with ESMTP id S1359340AbiELXBV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 May 2022 13:24:33 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F9D58FF95
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2022 10:24:33 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C4A861F8EF;
-        Thu, 12 May 2022 17:24:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1652376271;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=ruqoYTOrJP6u9flf0qJIWZegF0itQIRuxCfFf0lBnjU=;
-        b=hMd6dfMJT/GQImnJC5roRJEt2i3AKw7uTEX0dWqtoGNcbs6NK1mjyn7D1DH6myrHkzqdct
-        DiSXR0CH99AmXEeB8fboRqptjdyAPEZCtaORBs8C47GmsKaL8qXlkaHdmbpqJ0bN4kSwYj
-        W4VcO28WQSxGDvMMPzG2ERWWsa6Qv1M=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1652376271;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=ruqoYTOrJP6u9flf0qJIWZegF0itQIRuxCfFf0lBnjU=;
-        b=bRSO4p1aylFJRAvyedMvIrOS9F8WYWRSJbbIM3KNXciLcik2ipUhIeEtfuUcz+/S/8yMtA
-        l5JtF9gHDeJ9DCBA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 93B5A13ABE;
-        Thu, 12 May 2022 17:24:31 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2+YMI89CfWJAJAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 12 May 2022 17:24:31 +0000
-Date:   Thu, 12 May 2022 19:20:15 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 06/13] btrfs: add a helper to queue a corrupted sector
- for read repair
-Message-ID: <20220512172015.GU18596@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@infradead.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        Thu, 12 May 2022 19:01:21 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 67D063981C
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2022 16:01:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1652396475;
+        bh=8hbISZX11UQUheF0Pa+fPhlglqFcEzYpgDFG6SwZYoE=;
+        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
+        b=i97ltXqTVpmRcp7deuXAkUiGQg7opLli4o6DKbvWlH6vxT5pdnkUF2+7ptCYXqUGJ
+         Rm0wM7O0/i94I9tU4KZwwBjUUQ8TaD+UKjNjCsfOhFeDVJJURGuujV/RZ5b4xsR/y3
+         IUEn+ZMw4QUoj/wSoniC9OGAAc5+PLIEjORhOMB4=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mkpf3-1oCZOP2V5D-00mOCe; Fri, 13
+ May 2022 01:01:15 +0200
+Message-ID: <fc35699e-236d-655c-bb2e-7dc1748b50fd@gmx.com>
+Date:   Fri, 13 May 2022 07:01:11 +0800
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.0
+Content-Language: en-US
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
         linux-btrfs@vger.kernel.org
 References: <cover.1651559986.git.wqu@suse.com>
- <2cfd9d2766824ddce727b06068de24d7a4be9637.1651559986.git.wqu@suse.com>
- <YnFFJGbbs4+MgKY1@infradead.org>
- <22700bdb-7606-a00a-5075-574966737793@gmx.com>
- <YnKIXKqBpa7gU/DO@infradead.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <YnKIXKqBpa7gU/DO@infradead.org>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+ <20220512170857.GS18596@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: [PATCH 00/13] btrfs: make read repair work in synchronous mode
+In-Reply-To: <20220512170857.GS18596@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:KxAzbk0jPBMUx/CxfhTW5IIr2l2yHfMfgZG5rMtxSSwmEMvC9vw
+ PItQRxy+TiZwB6rPZPBtYoeHQDfTd5rQ1zuzipp0qgxta7gGI51nt4MKUJ+CjADJPpvMRta
+ GMNu3eRzRzc/vjbCY4qeXV2FJ0HuyYuIyDZZRFednpnNSaLY89SgoZGPq7GfkdJVX4R0TJw
+ epRX10a01H/PsgHjLm4Aw==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:mNnGlJHbwaI=:YQSklQXNAqketBU10/NLl2
+ 5ATv5Rjh9CuobXWaNtkv9uEuHUweiWAFLRdyQvOLnET8nnTgaeWao0igMpKO7J7Hf4o/H0JCj
+ jpCjmQVLYrMK+kDa/23/rbpDiXe5EvfCyaM7ZH6Tl9+QXM62jYq69A2HwAfTrkWtD3upVevjR
+ ngnXn3QMVkHqHMTUI2MPCH+9NJmFBMaKIjizde4QxFri3vZc/Eftn8IMF7Q1syj0vemhe4STw
+ FS7oV8TA4Fe6vzluUwzC5G9iAdjoSEqhGg+Qmf9+b3joTvJKvVyWsa5Gc05f5nqSbHfRFdAEN
+ okIH0tdOK8yTyJQEZUm3AhX9Ytze/eIgzRexrwygFYKRpb83rj5wQyLLpT7p+3i8aMddE8xc/
+ KhFjmsffuj3WlqjGdTv1lm5qT+Ji1OROygHh7SauG3re8sHNAXOI19LWldgF7H1aXjTqhMULl
+ i/nprAGMdU7ROqNWfzk7NV/ckNKSOcN18wG+m187nIBA0uYQ4ILOamtnBopXns9UCqF3dat1r
+ 9L3vfsPAxB78DbAKjVA+xV2KBusdoGA1kX3lX/7+qWFA7fvmc8GNcOCr1QP1I0s93zRWRYUws
+ D1neRNrmrSIzsYXp8Suj7B4yuhJB4HGS9tnSMvhD+JQQp3sXIKzAu8fP94spCjKHyBWhzHHmO
+ ohITo4ReJkde3KMze0s2ia6zOjrelWnb/CzPOaQeyPPkvSZncwdl+XuAGyGGFUrZWp5fAXMmY
+ yiFrzntDBR8RHsPc8yDQs8wPjXIOcPt+HbEQ75E2TapDdZx8jvsr7XDDoRvn/wVqz2P/+t1ec
+ afRTjJq9ZfBylRBn2tGA+kjLQdPvbczkRknexrErVtCQ229vIF0FfKSJPWBezWqo1GryEBJWw
+ w3dqWTTSFGM4Wr36aK2Y1njTEVmeccEVX4NbqxbDYpDjrKnu86EfC3t2F77UCp8Pu8wp0UPFJ
+ vvRecrfKqgDm2cwSesCXUsay1LCVOC5mYDrH0gh3YIVg5oTbhFg0vNPJ012A8K0Lkt6wDkOIO
+ KBHKEN3Lcm5G4X/Gl6MNtTEc5YcDtDTB69hpoDe4yP15gLD6lzZzEYgVWeLLlgirfXP2DAkwa
+ 9ofcxZLW68YxSBQ/5VrotslauKJ6EzNMcQCAmPjHVuehm5Zk6FGXwiXNg==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 04, 2022 at 07:06:20AM -0700, Christoph Hellwig wrote:
-> On Wed, May 04, 2022 at 09:13:43AM +0800, Qu Wenruo wrote:
-> > On 2022/5/3 23:07, Christoph Hellwig wrote:
-> > > This adds an ununused static function and thus doesn't even compile.
-> > 
-> > It's just a warning and can pass the compile.
-> > 
-> > Or we have to have a patch with over 400 lines.
-> 
-> The latter is the only thing that makes sense.  Patches that are not
-> self contained also can't be reviewed self contained.  A larger patch
-> is much better than a random split.
 
-We've been doing it the way where a complex function is in a separate
-patch and its usage in another one. Yes there are different preferences
-and opinions on that. It also depends how one does the review, either in
-the mails or in the code. For me it's fine with the split as once I'm at
-second patch the function exists in the file. In the mails it's "how
-does it work" and "how it is used", so this can be seen as two different
-things, thus in two patches. On exception a short function in the same
-patch as it's use makes sense, for bigger ones I'm for patch split.
+
+On 2022/5/13 01:08, David Sterba wrote:
+> On Tue, May 03, 2022 at 02:49:44PM +0800, Qu Wenruo wrote:
+>
+>> By this we can:
+>> - Remove the re-entry behavior of endio function
+>>    Now everything is handled inside end_bio_extent_readpage().
+>>
+>> - Remove the io_failure_tree completely
+>>    As we don't need to record which mirror has failed.
+>>
+>> - Slightly reduced overhead on read repair
+>>    Now we won't call btrfs_map_bio() for each corrupted sector, as we c=
+an
+>>    merge the sectors into a much larger bio.
+>
+> I thake this as the summary points for the whole patchset and frankly I
+> don't see it justified given all the new problems with the preallocation
+> and shuffling with the structures. What we have now is not perfect and I
+> would like to get rid of the io_failure_tree too, yet it works.
+
+Indeed I have no better solution for the bitmap.
+
+I have one very limited optimization for it, e.g. if we hit profiles
+without any extra mirrors (like RAID0/SINGLE), we skip the preallocation
+and just error out.
+
+But that's all, we have to allocate the memory, and since I'm neither a
+fan of mempool (nor a good fit for variable length bitmap), we really
+only have two solutions:
+
+- Allocate bitmap when we hit the first error
+   The way I did in previous RFC version.
+   But it also means, if the memory allocation failed, we will error out
+   without reading out the correct mirror. (Christoph is strongly against
+   the error path)
+
+- Preallocate bitmap before we submit the bio
+   The way I did in this version.
+
+Now I think the first solution would be more sane, no change in
+btrfs_bio (which is already big).
+And the memory allocation failure will not really cause any bit damage,
+VFS will re-try a read with much smaller block size.
+
+>
+> The main point is probably to stop reentering the functions, though the
+> idea of having a single tree that tracks the repair state and there are
+> callbacks dealing with that is not IMHO bad design. The alternative is
+> to complicate data structures and endio handler. I'm not sure if it's
+> worth the risk.
+
+The point of the repair work is a first step towards less members in
+btrfs_bio.
+
+In fact, all logical read/write should not really care about read
+repair/csum/mirror num etc.
+
+Thus it can be hidden into lower layer, thus my ultimate goal is to make
+logical layer to only use plain bio completely.
+
+But the existing read repair is a blockage, thus why I'm purposing this
+patchset.
+
+Thanks,
+Qu

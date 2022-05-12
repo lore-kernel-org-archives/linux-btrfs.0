@@ -2,126 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14387C433F5
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 May 2022 17:20:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CAC4C43217
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 May 2022 17:22:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1356760AbiELRUu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 May 2022 13:20:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37432 "EHLO
+        id S1356998AbiELRWf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 May 2022 13:22:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43216 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1356972AbiELRUs (ORCPT
+        with ESMTP id S1356992AbiELRW2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 May 2022 13:20:48 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4E6113D1E
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 May 2022 10:20:46 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A014D21B4C;
-        Thu, 12 May 2022 17:20:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1652376045;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=rx1v3luk2lpwgawsxEeKozeb8bwAW0/IhD1mAnVDYug=;
-        b=yGu2odCwfPoFQk7nvWP5BnqwERrPcc7SJi+FOApbrJNnDaECS55/3iFsFoUdJmGVPvekmY
-        bcKTVhCpdKvyl8Xn5tEPpGE5fFKz0IO9uhRlVcrgSNhxnx9y9lZwe/iKYSRjExHTvb2RCc
-        X+bzI3tOPtKv4V4/VYq4ATaWl927ztE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1652376045;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=rx1v3luk2lpwgawsxEeKozeb8bwAW0/IhD1mAnVDYug=;
-        b=VTM9yI2emUBjMsSAlacssPiUzv2/XL0XxrST/JZv+1iB33uwgNjphhmFcVDhLIZhpPoIpU
-        OYOrrpkl7Q98vnCg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 743EC13ABE;
-        Thu, 12 May 2022 17:20:45 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id e1ByG+1BfWLSIgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 12 May 2022 17:20:45 +0000
-Date:   Thu, 12 May 2022 19:16:29 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 05/13] btrfs: add btrfs_read_repair_ctrl to record
- corrupted sectors
-Message-ID: <20220512171629.GT18596@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1651559986.git.wqu@suse.com>
- <3f9b82f1bcc955fbb689a469e749cf1534857ea1.1651559986.git.wqu@suse.com>
- <YnFE62oGR5C/8UN2@infradead.org>
- <dac4707a-04f4-f143-342b-cd69e0ffcd80@gmx.com>
- <YnKIM/KBIJEqU/6b@infradead.org>
- <efb8bdf0-28f0-0db9-c2b0-a08ffbd22623@gmx.com>
+        Thu, 12 May 2022 13:22:28 -0400
+Received: from mail-pj1-f47.google.com (mail-pj1-f47.google.com [209.85.216.47])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DDB5A66AF6;
+        Thu, 12 May 2022 10:22:26 -0700 (PDT)
+Received: by mail-pj1-f47.google.com with SMTP id gj17-20020a17090b109100b001d8b390f77bso8459933pjb.1;
+        Thu, 12 May 2022 10:22:26 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:to:cc:references:from:in-reply-to
+         :content-transfer-encoding;
+        bh=5EH2eizEJHj786C4i7iVooWJ/uE/QSj7BBR5bCHBing=;
+        b=1PFeuc56IeMf5lH0ePlwRZL1gyOO8WGy7nV7hybICwqSHHF/zBtu3v8EhKou9vg4AP
+         RikhnfvnWIdVt6FFjmv1eXUqKnqnDNnnPBX092IPR1gDYjhjNVUzNl8YEIcCRyBInV3S
+         Tsx/q44i884cS688y9kyeNsx5dke+1TN7wW3OG9tJQn2cHxCUkdxnN7YUakfUYd1wdXX
+         6dX8m9/1lajNdjXmNukJYwzfohhg/HiQycIGfP3bj5B7J/5LHzRfg9G000T5VnMNzzBG
+         4fUQRuhTMbKaJkZ+EBRkpGVrVptiiBmRsOeKw/MnwcwtiAm0jQvME0wRzfaZvJzPLtTr
+         mxTg==
+X-Gm-Message-State: AOAM5338mmL6w4SAZr9uS5gE0OY/dSmwQSKdkvqxMMi0eGp/jpiRKFAp
+        H4b94YE471/2PET1es/GYDQ=
+X-Google-Smtp-Source: ABdhPJygkMTlAbNp9soO/418oUT6tIypetUTVmiczgfvtfjDYTiV1B21f/kf4VZ7nutFi/2LHDujOg==
+X-Received: by 2002:a17:903:230e:b0:15e:ce57:d66f with SMTP id d14-20020a170903230e00b0015ece57d66fmr874623plh.35.1652376146314;
+        Thu, 12 May 2022 10:22:26 -0700 (PDT)
+Received: from ?IPV6:2620:15c:211:201:78c5:5d65:4254:a5e? ([2620:15c:211:201:78c5:5d65:4254:a5e])
+        by smtp.gmail.com with ESMTPSA id d2-20020a170902cec200b0015e8d4eb2ddsm121808plg.295.2022.05.12.10.22.24
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 12 May 2022 10:22:25 -0700 (PDT)
+Message-ID: <b14775a9-da39-f26a-fa46-b0b1b789c30e@acm.org>
+Date:   Thu, 12 May 2022 10:22:23 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <efb8bdf0-28f0-0db9-c2b0-a08ffbd22623@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.7.0
+Subject: Re: [PATCH v3 10/11] null_blk: allow non power of 2 zoned devices
+Content-Language: en-US
+To:     Pankaj Raghav <p.raghav@samsung.com>,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>,
+        jaegeuk@kernel.org, hare@suse.de, dsterba@suse.com,
+        axboe@kernel.dk, hch@lst.de, snitzer@kernel.org
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        linux-fsdevel@vger.kernel.org, matias.bjorling@wdc.com,
+        Jens Axboe <axboe@fb.com>, gost.dev@samsung.com,
+        jonathan.derrick@linux.dev, jiangbo.365@bytedance.com,
+        linux-nvme@lists.infradead.org, dm-devel@redhat.com,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-kernel@vger.kernel.org, Johannes Thumshirn <jth@kernel.org>,
+        Sagi Grimberg <sagi@grimberg.me>,
+        Alasdair Kergon <agk@redhat.com>, linux-block@vger.kernel.org,
+        Chaitanya Kulkarni <kch@nvidia.com>,
+        Keith Busch <kbusch@kernel.org>, linux-btrfs@vger.kernel.org,
+        Luis Chamberlain <mcgrof@kernel.org>
+References: <20220506081105.29134-1-p.raghav@samsung.com>
+ <CGME20220506081116eucas1p2cce67bbf30f4c9c4e6854965be41b098@eucas1p2.samsung.com>
+ <20220506081105.29134-11-p.raghav@samsung.com>
+ <39a80347-af70-8af0-024a-52f92e27a14a@opensource.wdc.com>
+ <aef68bcf-4924-8004-3320-325e05ca9b20@samsung.com>
+ <9eb00b42-ca5b-c94e-319d-a0e102b99f02@opensource.wdc.com>
+ <9f1385a3-b471-fcd9-2c0c-61f544fbc855@samsung.com>
+From:   Bart Van Assche <bvanassche@acm.org>
+In-Reply-To: <9f1385a3-b471-fcd9-2c0c-61f544fbc855@samsung.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, May 05, 2022 at 06:40:31AM +0800, Qu Wenruo wrote:
-> On 2022/5/4 22:05, Christoph Hellwig wrote:
-> > On Wed, May 04, 2022 at 09:12:50AM +0800, Qu Wenruo wrote:
-> >>> This is a really bad idea.  Now every read needs to pay the quite
-> >>> large price for corner case of a read repair.  As I mentioned last time
-> >>> I think a mempool with a few entries that any read repair can dip into
-> >>> is a much better choice here.
-> >>
-> >> The problem is, can mempool provide a variable length entry?
-> >
-> > It can't.  But you can allocate a few different bucket sizes as a
-> > starter or do a multi-level setup where you don't have a bitmap that
-> > operates on the entire bio.
-> 
-> That sounds way more complex than either the original method (just fail
-> to repair) or the current pre-allocation method.
-> 
-> We need to cover a pretty wide length variable, from the minimal 4K
-> (only need one bit), to much larger ones (observed bio over 16M, but
-> only for write).
-> 
-> It would make sense if we have a hard limit on how large a read bio can
-> be (I have only observed 4M as the biggest bio size for read, and if
-> limited to 4M, we only need 128bytes for the bitmap and can go mempool).
-> 
-> 
-> In fact, the original one (just error out if failed to allocate memory)
-> is way more robust than you think.
-> 
-> The point here is, if a large read bio failed, VFS will retry with much
-> smaller block size (normally just one page or one block), and if we even
-> failed to allocate memory for an u32, we're really screwed up.
-> 
-> Do we really need to go down the rabbit hole of using mempool for
-> variable length situation? Especially we're not that eager to ensure the
-> memory allocation.
+On 5/9/22 04:56, Pankaj Raghav wrote:
+> Even though I am not sure if this optimization will directly add value
+> looking at my experiments with the current change, I can fold this in
+> with a comment on top of zone_size_sect_shifts variable stating that
+> size can be npo2 and this variable is only meaningful for the po2 size
+> scenario.
 
-I'm reluctant to use mempools in filesystem on any other layer than for
-bios and better just wrapped under the biosets. Anywhere else it creates
-potential for high-level deadlocks between various threads. In this
-particular case of repair it does not seem that risky, as the only user
-of the mempool is the repair submission and does only that, ie. no
-interaction with other threads.
+Have these experiments perhaps been run on an x86_64 CPU? These CPUs 
+only need a single instruction to calculate ilog2(). No equivalent of 
+that instruction is available on ARM CPUs as far as I know. I think the 
+optimization Damien proposed will help on ARM CPUs.
 
-I think mempool in this case is a hammer too big, we could have a
-per-device preallocated chunk of memory for repair purposes and manage
-that by a lock and/or wait queue. There would be only a linear
-dependency: request (use) -> io -> wait -> endio (return. If the repair
-resource is not available any other request waits. Effectively what
-mempools do but much simpler.
+Thanks,
+
+Bart.

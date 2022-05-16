@@ -2,164 +2,248 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5BCFC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 16:53:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B44EBC4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 16:54:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232764AbiEPQxg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 May 2022 12:53:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49370 "EHLO
+        id S1343833AbiEPQy3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 May 2022 12:54:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51260 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231331AbiEPQxe (ORCPT
+        with ESMTP id S241678AbiEPQy1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 May 2022 12:53:34 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6914B23BDB
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 09:53:32 -0700 (PDT)
-Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nqdyM-0003Iv-OJ by authid <merlin>; Mon, 16 May 2022 09:53:31 -0700
-Date:   Mon, 16 May 2022 09:53:30 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220516165327.GD8056@merlins.org>
-References: <CAEzrpqcZQVWwt1JSDg6z44dBYKW6fmmXmOTFoXiDWpoGXxufwQ@mail.gmail.com>
- <20220515154122.GB8056@merlins.org>
- <CAEzrpqc6MyW0t1H9ue_GQL-1AhgpWfumBfj3MK0eGstwJ3R1aw@mail.gmail.com>
- <20220515212951.GC13006@merlins.org>
- <20220515230147.GD13006@merlins.org>
- <CAEzrpqdbjeTYEy16KbzJ39bBkd8rkNTHA2n53UXHG-CdeUo6xw@mail.gmail.com>
- <20220516005759.GE13006@merlins.org>
- <CAEzrpqfMbB-sGLZUjGHjxHt1Gga+uULGkoZTqjXHwKnzsjP5aA@mail.gmail.com>
- <20220516151653.GF13006@merlins.org>
- <20220516153651.GG13006@merlins.org>
+        Mon, 16 May 2022 12:54:27 -0400
+Received: from mailout2.w1.samsung.com (mailout2.w1.samsung.com [210.118.77.12])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E52EE31367
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 09:54:24 -0700 (PDT)
+Received: from eucas1p2.samsung.com (unknown [182.198.249.207])
+        by mailout2.w1.samsung.com (KnoxPortal) with ESMTP id 20220516165423euoutp02fa30320fdf7c0494e7cd05da921150fd~vpCQqGkFm2798227982euoutp02G
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 16:54:23 +0000 (GMT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 mailout2.w1.samsung.com 20220516165423euoutp02fa30320fdf7c0494e7cd05da921150fd~vpCQqGkFm2798227982euoutp02G
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
+        s=mail20170921; t=1652720063;
+        bh=qm0Anrgo2LRVYYSLS0+cudW9OU5s2MlxyVDAMmEqCV0=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=CZBmjxMwULUxzXs3JDSjBA2k6MT+1QDpOhDbrGJnKoKuyxJAG7E1+E1qmdz6pBUth
+         XPRyeQBnWyNb+UGuz3+9grsag73H9wxczoV4nEQt4saIBQP3EM+OsmFxrNV/k8bN4j
+         f1RqWTJS3BlB65UfOGtiLGOMZDF9i4LsGcLwE97E=
+Received: from eusmges1new.samsung.com (unknown [203.254.199.242]) by
+        eucas1p1.samsung.com (KnoxPortal) with ESMTP id
+        20220516165422eucas1p1162a8ccdd29e06f930ca66dececc3667~vpCPT6nb52560525605eucas1p1W;
+        Mon, 16 May 2022 16:54:22 +0000 (GMT)
+Received: from eucas1p2.samsung.com ( [182.198.249.207]) by
+        eusmges1new.samsung.com (EUCPMTA) with SMTP id 33.40.10009.DB182826; Mon, 16
+        May 2022 17:54:21 +0100 (BST)
+Received: from eusmtrp2.samsung.com (unknown [182.198.249.139]) by
+        eucas1p2.samsung.com (KnoxPortal) with ESMTPA id
+        20220516165421eucas1p2515446ac290987bdb9af24ffb835b287~vpCO3QdmY2457324573eucas1p2W;
+        Mon, 16 May 2022 16:54:21 +0000 (GMT)
+Received: from eusmgms2.samsung.com (unknown [182.198.249.180]) by
+        eusmtrp2.samsung.com (KnoxPortal) with ESMTP id
+        20220516165421eusmtrp214587cb0a00813fc775c1106b7d30871~vpCO2blGP1030710307eusmtrp2q;
+        Mon, 16 May 2022 16:54:21 +0000 (GMT)
+X-AuditID: cbfec7f2-e7fff70000002719-42-628281bd5f1f
+Received: from eusmtip1.samsung.com ( [203.254.199.221]) by
+        eusmgms2.samsung.com (EUCPMTA) with SMTP id 9B.00.09404.DB182826; Mon, 16
+        May 2022 17:54:21 +0100 (BST)
+Received: from localhost (unknown [106.210.248.7]) by eusmtip1.samsung.com
+        (KnoxPortal) with ESMTPA id
+        20220516165421eusmtip1899df696a585dc3044e16754fe6b8fbb~vpCOd7A2K2383023830eusmtip1Y;
+        Mon, 16 May 2022 16:54:21 +0000 (GMT)
+From:   Pankaj Raghav <p.raghav@samsung.com>
+To:     axboe@kernel.dk, damien.lemoal@opensource.wdc.com,
+        pankydev8@gmail.com, dsterba@suse.com, hch@lst.de
+Cc:     linux-nvme@lists.infradead.org, linux-fsdevel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, jiangbo.365@bytedance.com,
+        linux-block@vger.kernel.org, gost.dev@samsung.com,
+        p.raghav@samsung.com, linux-kernel@vger.kernel.org,
+        dm-devel@redhat.com, Luis Chamberlain <mcgrof@kernel.org>
+Subject: [PATCH v4 02/13] block: allow blk-zoned devices to have
+ non-power-of-2 zone size
+Date:   Mon, 16 May 2022 18:54:05 +0200
+Message-Id: <20220516165416.171196-3-p.raghav@samsung.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20220516165416.171196-1-p.raghav@samsung.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220516153651.GG13006@merlins.org>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: marc@merlins.org
+Content-Transfer-Encoding: 8bit
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFrrAKsWRmVeSWpSXmKPExsWy7djP87p7G5uSDL4+s7RYfbefzeL32fPM
+        FnvfzWa1uPCjkcni5oGdTBYrVx9lsug58IHFYu8tbYtLj1ewW+zZe5LF4vKuOWwW85c9Zbe4
+        MeEpo8XnpS3sFmtuPmVx4Pf4d2INm8fOWXfZPS6fLfXYtKqTzWPzknqP3TcbgMKt91k93u+7
+        yubRt2UVo8f6LVdZPD5vkgvgjuKySUnNySxLLdK3S+DKuLryCXvBV9WKx9OvMjYwXpLrYuTk
+        kBAwkWi4cIWxi5GLQ0hgBaPEods9LBDOF0aJ7QfvQTmfGSWWvj7B1MXIAdaycJY3RHw5o8TU
+        5ztZIZznjBKvtnWxgBSxCWhJNHayg6wQEciSmHbiIdgKZoHFTBIr90xmAUkIC0RLtF87yQxS
+        zyKgKnH1TxVImFfASmLNzAlsEOfJS8y89J0dpIRTwFpidRc3RImgxMmZT8CmMAOVNG+dzQxR
+        PptTYv1FZQjbReLS088sELawxKvjW9ghbBmJ/zvnM0HY1RJPb/xmBjlNQqCFUaJ/53o2iB+t
+        JfrO5ICYzAKaEut36UOUO0rMO3MPGgp8EjfeCkJcwCcxadt0Zogwr0RHmxBEtZLEzp9PoJZK
+        SFxumgN1jIfEhvlrmScwKs5C8sssJL/MQti7gJF5FaN4amlxbnpqsWFearlecWJucWleul5y
+        fu4mRmCiO/3v+KcdjHNffdQ7xMjEwXiIUYKDWUmE16CiIUmINyWxsiq1KD++qDQntfgQozQH
+        i5I4b3LmhkQhgfTEktTs1NSC1CKYLBMHp1QDE4ss7xpvr42T9+z0TVrJ2ZfcGJW942HcRNaV
+        VSJx+8Je1xppmEZOql3Sv3nmbqG3i4XPdLrL2J5RPJVgl3VXoGlDe9WfN79nb09ax3be+veC
+        9K+7i0Q/F4oHuNpeMesKDWF4ddU2Nlm/s82ieKNetEnO1I4XVidXzFyxr2vzVqNJP7gvRC7/
+        ks3o9eaOaNjFecvNj/en7+G/92/Nsu8nor/7fQ7YLSDmNdV/njB/zSHfEHsZjzb5cpGT85sS
+        g1d+P/K8b21ZwrSyuD6Nu8IbQ+/XKX6/NVGoXGo+G1esxQTdH5NLOWzduG1zXxY8vPUl8dCe
+        F6oyi32eJ7zb0irZztO16I0ll+ulF5FPag4rKbEUZyQaajEXFScCABLs197jAwAA
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFjrAIsWRmVeSWpSXmKPExsVy+t/xu7p7G5uSDG49l7RYfbefzeL32fPM
+        FnvfzWa1uPCjkcni5oGdTBYrVx9lsug58IHFYu8tbYtLj1ewW+zZe5LF4vKuOWwW85c9Zbe4
+        MeEpo8XnpS3sFmtuPmVx4Pf4d2INm8fOWXfZPS6fLfXYtKqTzWPzknqP3TcbgMKt91k93u+7
+        yubRt2UVo8f6LVdZPD5vkgvgjtKzKcovLUlVyMgvLrFVija0MNIztLTQMzKx1DM0No+1MjJV
+        0rezSUnNySxLLdK3S9DLuLryCXvBV9WKx9OvMjYwXpLrYuTgkBAwkVg4y7uLkYtDSGApo8SU
+        L+vZuhg5geISErcXNjFC2MISf651sUEUPWWU+Pd4HQtIM5uAlkRjJztIjYhAgcSc/i0sIDXM
+        AmuZJF7/eA/WLCwQKdHe/YQNpJ5FQFXi6p8qkDCvgJXEmpkToHbJS8y89J0dpIRTwFpidRc3
+        SFgIqOTrk1vsEOWCEidnPmEBsZmBypu3zmaewCgwC0lqFpLUAkamVYwiqaXFuem5xUZ6xYm5
+        xaV56XrJ+bmbGIFRue3Yzy07GFe++qh3iJGJg/EQowQHs5IIr0FFQ5IQb0piZVVqUX58UWlO
+        avEhRlOgqycyS4km5wPTQl5JvKGZgamhiZmlgamlmbGSOK9nQUeikEB6YklqdmpqQWoRTB8T
+        B6dUA5OogkPBl8x4JzU513Ucmlo7p1Qvud/gsJO9I77jscCcJW6L2CL/PsxWrjV8z6p9xHp1
+        UFZhYWP+hdUxu4/tMNVl03BlDJic/Wke9/mTirc1Fuz9/dfgbF+WxM80ltS3y2RDxL++euBh
+        OXnF9q2/Qx1UVkaZKPqeuS318s/VMp3g0+4a2TIZRrGFb7ydb6h/+SO3a3dvqN+Zef5MEx0U
+        ru4/uCbm26mp8/fPbJ2+8MXm/Jmrrsp685ldbVBc0OMUfi5c3yvChLVAybZjkqJynQ6/4wuN
+        1w9eKx+LFgvwKBHOrPn19l6yHG9q+439U9ht96+f+bCl0JFJhvHmk+zoB5odt/fpr33QsDVu
+        poJelBJLcUaioRZzUXEiAD2Ugp9TAwAA
+X-CMS-MailID: 20220516165421eucas1p2515446ac290987bdb9af24ffb835b287
+X-Msg-Generator: CA
+Content-Type: text/plain; charset="utf-8"
+X-RootMTR: 20220516165421eucas1p2515446ac290987bdb9af24ffb835b287
+X-EPHeader: CA
+CMS-TYPE: 201P
+X-CMS-RootMailID: 20220516165421eucas1p2515446ac290987bdb9af24ffb835b287
+References: <20220516165416.171196-1-p.raghav@samsung.com>
+        <CGME20220516165421eucas1p2515446ac290987bdb9af24ffb835b287@eucas1p2.samsung.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 16, 2022 at 08:36:51AM -0700, Marc MERLIN wrote:
-> Could you update the code so that it says "deleted"?
+Checking if a given sector is aligned to a zone is a common
+operation that is performed for zoned devices. Add
+blk_queue_is_zone_start helper to check for this instead of opencoding it
+everywhere.
+
+Convert the calculations on zone size to be generic instead of relying on
+power_of_2 based logic in the block layer using the helpers wherever
+possible.
+
+The only hot path affected by this change for power_of_2 zoned devices
+is in blk_check_zone_append() but blk_queue_is_zone_start() helper is
+used to optimize the calculation for po2 zone sizes. Note that the append
+path cannot be accessed by direct raw access to the block device but only
+through a filesystem abstraction.
+
+Finally, allow non power of 2 zoned devices provided that their zone
+capacity and zone size are equal. The main motivation to allow non
+power_of_2 zoned device is to remove the unmapped LBA between zcap and
+zsze for devices that cannot have a power_of_2 zcap.
+
+Reviewed-by: Luis Chamberlain <mcgrof@kernel.org>
+Signed-off-by: Pankaj Raghav <p.raghav@samsung.com>
+---
+ block/blk-core.c       |  3 +--
+ block/blk-zoned.c      | 27 +++++++++++++++++++++------
+ include/linux/blkdev.h | 22 ++++++++++++++++++++++
+ 3 files changed, 44 insertions(+), 8 deletions(-)
+
+diff --git a/block/blk-core.c b/block/blk-core.c
+index f305cb66c..b7051b7ea 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -634,8 +634,7 @@ static inline blk_status_t blk_check_zone_append(struct request_queue *q,
+ 		return BLK_STS_NOTSUPP;
  
-AI on this one? ^^^
-
-> I'm doing repair again, and I now see:
-> Fixed 0 roots.
-> [2/7] checking extents
-> checksum verify failed on 364637798400 wanted 0xc3ba5144 found 0x30a5fff1
-> checksum verify failed on 364637962240 wanted 0x91d33e8a found 0x00890be7
-> checksum verify failed on 11970891186176 wanted 0x6b46adfb found 0xe40e4cbe
-> checksum verify failed on 12511729680384 wanted 0x41be9fa6 found 0x01f06e9c
-> checksum verify failed on 12512010420224 wanted 0x365027e7 found 0xba73f602
-> checksum verify failed on 12512303677440 wanted 0xc08fc7a0 found 0x3cb30242
-> checksum verify failed on 13576951021568 wanted 0x9511e976 found 0xd8fe35ea
-> checksum verify failed on 13577013624832 wanted 0x76bbe220 found 0xdfabbbdb
-> checksum verify failed on 13577013919744 wanted 0xafb37267 found 0x69504e0d
-> checksum verify failed on 13577113485312 wanted 0x049c1e5a found 0x0ddcba27
-> checksum verify failed on 13577170976768 wanted 0x9585372b found 0x048e24e3
-> checksum verify failed on 13577420161024 wanted 0x6d37d200 found 0x45f7a0b8
-> checksum verify failed on 13577490890752 wanted 0x426c3628 found 0x35008768
-> checksum verify failed on 13577726541824 wanted 0xc3089b25 found 0x426c57c7
-> checksum verify failed on 13577776611328 wanted 0x50eba933 found 0x4f0ec122
-> checksum verify failed on 364983844864 wanted 0x3a556bff found 0xba7431e0
-> checksum verify failed on 364986433536 wanted 0xa2ee2364 found 0xc0023b14
-> checksum verify failed on 364986449920 wanted 0x55bf9ee9 found 0x9cda5c9f
-> checksum verify failed on 364986482688 wanted 0x5421a4b7 found 0x37ac4734
-> (...)
-> checksum verify failed on 15646006722560 wanted 0x760a06a0 found 0xb44fcd95
-> checksum verify failed on 15645319872512 wanted 0x3bfb10c8 found 0x2be82f60
-> checksum verify failed on 15645980491776 wanted 0xe1e674a7 found 0x0fdfda2c
-> checksum verify failed on 15645526884352 wanted 0xc2d409c1 found 0xb3eee8d2
-> checksum verify failed on 13577013936128 wanted 0x4ba00b03 found 0x64614751
-> Chunk[256, 228, 4523166793728] stripe[1, 4531228246016] is not found in dev extent
-> Chunk[256, 228, 4524240535552] stripe[1, 4532301987840] is not found in dev extent
-> Chunk[256, 228, 4525314277376] stripe[1, 4533375729664] is not found in dev extent
-> Chunk[256, 228, 4526388019200] stripe[1, 4534449471488] is not found in dev extent
-> Chunk[256, 228, 4527461761024] stripe[1, 4535523213312] is not found in dev extent
-> Chunk[256, 228, 4528535502848] stripe[1, 4536596955136] is not found in dev extent
-> Chunk[256, 228, 4529609244672] stripe[1, 4537670696960] is not found in dev extent
-> (...)
-> Chunk[256, 228, 15362624061440] stripe[1, 14782241439744] is not found in dev extent
-> Chunk[256, 228, 15363697803264] stripe[1, 14783315181568] is not found in dev extent
-> Chunk[256, 228, 15364771545088] stripe[1, 14784388923392] is not found in dev extent
-> Chunk[256, 228, 15365845286912] stripe[1, 14785462665216] is not found in dev extent
-> Chunk[256, 228, 15366919028736] stripe[1, 14786536407040] is not found in dev extent
-> Device extent[1, 11503033909248, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11595375706112, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11596449447936, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11597523189760, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11598596931584, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11599670673408, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11600744415232, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11601818157056, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11611481833472, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11612555575296, 1073741824] didn't find the relative chunk.
-> Device extent[1, 11613629317120, 1073741824] didn't find the relative chunk.
-> (...)
-> Device extent[1, 11422503272448, 1073741824] didn't find the relative chunk.
-> Device extent[1, 10616123162624, 1073741824] didn't find the relative chunk.
-> super bytes used 14180042272768 mismatches actual used 14180042223616
-> 
-> Ok to continue?
-
-It didn't take that long, so I let it finish.
-
-root 165299 inode 95699 errors 1000, some csum missing
-root 165299 inode 95700 errors 1000, some csum missing
-root 165299 inode 95701 errors 1000, some csum missing
-root 165299 inode 95702 errors 1000, some csum missing
-root 165299 inode 95703 errors 1000, some csum missing
-root 165299 inode 95704 errors 1000, some csum missing
-root 165299 inode 95705 errors 1000, some csum missing
-ERROR: errors found in fs roots
-Fixed the nlink of inode 74607
-reset isize for dir 74754 root 165098
-reset isize for dir 74978 root 165098
-reset isize for dir 75036 root 165098
-reset isize for dir 75038 root 165098
-reset isize for dir 76276 root 165098
-reset isize for dir 74754 root 165198
-reset isize for dir 74978 root 165198
-reset isize for dir 75036 root 165198
-reset isize for dir 75038 root 165198
-reset isize for dir 75937 root 165198
-reset isize for dir 76276 root 165198
-Fixed the nlink of inode 76565
-reset isize for dir 74754 root 165298
-reset isize for dir 74978 root 165298
-reset isize for dir 75036 root 165298
-reset isize for dir 75038 root 165298
-reset isize for dir 76276 root 165298
-found 226880675774464 bytes used, error(s) found
-total csum bytes: 0
-total tree bytes: 33496432640
-total fs tree bytes: 30395858944
-total extent tree bytes: 3034775552
-btree space waste bytes: 5386252957
-file data blocks allocated: 249664874872832
- referenced 249887841910784
-gargamel:/var/local/src/btrfs-progs-josefbacik# mount -o ro,recovery /dev/mapper/dshelf1 /mnt/mnt
-mount: /mnt/mnt: wrong fs type, bad option, bad superblock on /dev/mapper/dshelf1, missing codepage or helper program, or other error.
-
-BTRFS info (device dm-1): flagging fs with big metadata feature
-BTRFS warning (device dm-1): 'recovery' is deprecated, use 'rescue=usebackuproot' instead
-BTRFS info (device dm-1): trying to use backup root at mount time
-BTRFS info (device dm-1): disk space caching is enabled
-BTRFS info (device dm-1): has skinny extents
-BTRFS error (device dm-1): dev extent physical offset 943856812032 on devid 1 doesn't have corresponding chunk
-BTRFS error (device dm-1): failed to verify dev extents against chunks: -117
-BTRFS error (device dm-1): open_ctree failed
-
+ 	/* The bio sector must point to the start of a sequential zone */
+-	if (pos & (blk_queue_zone_sectors(q) - 1) ||
+-	    !blk_queue_zone_is_seq(q, pos))
++	if (!blk_queue_is_zone_start(q, pos) || !blk_queue_zone_is_seq(q, pos))
+ 		return BLK_STS_IOERR;
+ 
+ 	/*
+diff --git a/block/blk-zoned.c b/block/blk-zoned.c
+index 140230134..cfc2fb804 100644
+--- a/block/blk-zoned.c
++++ b/block/blk-zoned.c
+@@ -289,10 +289,10 @@ int blkdev_zone_mgmt(struct block_device *bdev, enum req_opf op,
+ 		return -EINVAL;
+ 
+ 	/* Check alignment (handle eventual smaller last zone) */
+-	if (sector & (zone_sectors - 1))
++	if (!blk_queue_is_zone_start(q, sector))
+ 		return -EINVAL;
+ 
+-	if ((nr_sectors & (zone_sectors - 1)) && end_sector != capacity)
++	if (!blk_queue_is_zone_start(q, nr_sectors) && end_sector != capacity)
+ 		return -EINVAL;
+ 
+ 	/*
+@@ -490,14 +490,29 @@ static int blk_revalidate_zone_cb(struct blk_zone *zone, unsigned int idx,
+ 	 * smaller last zone.
+ 	 */
+ 	if (zone->start == 0) {
+-		if (zone->len == 0 || !is_power_of_2(zone->len)) {
+-			pr_warn("%s: Invalid zoned device with non power of two zone size (%llu)\n",
+-				disk->disk_name, zone->len);
++		if (zone->len == 0) {
++			pr_warn("%s: Invalid zone size",
++				disk->disk_name);
++			return -ENODEV;
++		}
++
++		/*
++		 * Don't allow zoned device with non power_of_2 zone size with
++		 * zone capacity less than zone size.
++		 */
++		if (!is_power_of_2(zone->len) &&
++		    zone->capacity < zone->len) {
++			pr_warn("%s: Invalid zoned size with non power of 2 zone size and zone capacity < zone size",
++				disk->disk_name);
+ 			return -ENODEV;
+ 		}
+ 
+ 		args->zone_sectors = zone->len;
+-		args->nr_zones = (capacity + zone->len - 1) >> ilog2(zone->len);
++		/*
++		 * Division is used to calculate nr_zones for both power_of_2
++		 * and non power_of_2 zone sizes as it is not in the hot path.
++		 */
++		args->nr_zones = div64_u64(capacity + zone->len - 1, zone->len);
+ 	} else if (zone->start + args->zone_sectors < capacity) {
+ 		if (zone->len != args->zone_sectors) {
+ 			pr_warn("%s: Invalid zoned device with non constant zone size\n",
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index 22fe512ee..32d7bd7b1 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -686,6 +686,22 @@ static inline unsigned int blk_queue_zone_no(struct request_queue *q,
+ 	return div64_u64(sector, zone_sectors);
+ }
+ 
++static inline bool blk_queue_is_zone_start(struct request_queue *q, sector_t sec)
++{
++	sector_t zone_sectors = blk_queue_zone_sectors(q);
++	u64 remainder = 0;
++
++	if (!blk_queue_is_zoned(q))
++		return false;
++
++	if (is_power_of_2(zone_sectors))
++		return IS_ALIGNED(sec, zone_sectors);
++
++	div64_u64_rem(sec, zone_sectors, &remainder);
++	/* if there is a remainder, then the sector is not aligned */
++	return remainder == 0;
++}
++
+ static inline bool blk_queue_zone_is_seq(struct request_queue *q,
+ 					 sector_t sector)
+ {
+@@ -732,6 +748,12 @@ static inline unsigned int blk_queue_zone_no(struct request_queue *q,
+ {
+ 	return 0;
+ }
++
++static inline bool blk_queue_is_zone_start(struct request_queue *q, sector_t sec)
++{
++	return false;
++}
++
+ static inline unsigned int queue_max_open_zones(const struct request_queue *q)
+ {
+ 	return 0;
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/  
+2.25.1
+

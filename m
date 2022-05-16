@@ -2,102 +2,105 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0450CC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 15:05:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2958C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 15:06:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244936AbiEPPFT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 May 2022 11:05:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53150 "EHLO
+        id S244944AbiEPPG3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 May 2022 11:06:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55640 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244731AbiEPPFR (ORCPT
+        with ESMTP id S244941AbiEPPGJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 May 2022 11:05:17 -0400
-Received: from mail-qv1-xf2d.google.com (mail-qv1-xf2d.google.com [IPv6:2607:f8b0:4864:20::f2d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 501023B55C
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 08:05:08 -0700 (PDT)
-Received: by mail-qv1-xf2d.google.com with SMTP id kj8so12311652qvb.6
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 08:05:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=W34md6UR2q7uEnkNtrmvv6exofz4Bpa3AbMo/+9DL9Q=;
-        b=2CKWX73BTk55uniGjIjQt8bF9dCuNW2UkWvZ/8uUry2AVUwM4Dtd+qCG28l9EYI6rd
-         vO4f3NxUJbRvM/UxNIoPh3Lxa4GtLoV7xtYnxirRvFiMfftITz8phSAgfAbD/7m/ZIG0
-         E1qjCTxHFgtotDAhEvZUOzLssTqR5IIcl+zcYAH7nUX1OlWAf98bkfRbmBgoDESJxAiB
-         4ujQTb5t2Vz/DLtvLhuaID44+UgxeCz0isCX7B4HOE50bDT2qbYFOlP+zjej+RwDa4Y0
-         qriA/iEFNAE2+DdvC1jp9JEFdHhLEVKeH9DHaOHlRIkEV7rqFAqW+SvYXNWh/kWQyW+9
-         AY1Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=W34md6UR2q7uEnkNtrmvv6exofz4Bpa3AbMo/+9DL9Q=;
-        b=Q+23wvCIYAw7ZgjUIeyG+62uEzLxod293soHnp2cJ5U0nQuSLLp9v7dmlZqJnuf4zX
-         ig5NhjFG6akbwQDo1dmL0bNOP0Ep2+N4rQy7UPKijGbiNJMSgh1MxGgOIJXo7jr4cDL1
-         +6MS1830a/nc5KM5Wkv12B+B5xOO7TymB1won1B0u6cAT7/DjXjN52yNQpwLRIrKVw0Y
-         85mJd1E71vSj8AuLW1BnIWKkUikuxeCNKfSVP4BkryM5CNg7ozQ4Jrlh9upX1+susGlk
-         nQeZCLkzQNLP1DPe5UjiK2Ysnve94ka+W1m0fA3WT1g8OkcDeKPx9D4Zfw2zTepObGfo
-         vaBg==
-X-Gm-Message-State: AOAM530HAXvdLcHs45yJHx45+Q0SCNuIlDzTenc40fKy2+9GxxhsepSS
-        CrxslyE7dCwHUW6SrUKvzdz/Iw==
-X-Google-Smtp-Source: ABdhPJy5Z9RsbYTtFlvFHPbiXKFh/59gJ3ZzvRIoWqJbNb5QzC6ZnPGDsSa7GkCxu73VeBiCIp9btw==
-X-Received: by 2002:a05:6214:e86:b0:461:ca87:44aa with SMTP id hf6-20020a0562140e8600b00461ca8744aamr5713583qvb.112.1652713507158;
-        Mon, 16 May 2022 08:05:07 -0700 (PDT)
-Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id n4-20020ac85b44000000b002f3b561957asm6809251qtw.13.2022.05.16.08.05.06
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 16 May 2022 08:05:06 -0700 (PDT)
-Date:   Mon, 16 May 2022 11:05:05 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: prevent remounting to v1 space cache for subpage
- mount
-Message-ID: <YoJoIeDHKTOKljfv@localhost.localdomain>
-References: <1e09cf20ca9309f2b9daf57136c3e2c1b22f94f6.1652682383.git.wqu@suse.com>
+        Mon, 16 May 2022 11:06:09 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E51D03B020;
+        Mon, 16 May 2022 08:06:07 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 9F00421FEA;
+        Mon, 16 May 2022 15:06:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1652713566;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=c+0GsqPsSThaO2MnPpjoOsweO+GYaCoEg31L+IwHhqg=;
+        b=lKfTMpyCVoWa0JJn/rnPzzTlVHx2ecJ0azO4Oq8wJ918JZPwvcWiiwqptLzYfsfvHOcvva
+        eVKYcq2zMputu65NcBAD/BZxd32XuV4kL1bQPo4YcbyAmorFWXRa4KrC4saRreDnu2vpLQ
+        qSfuwKGQ4yAD8j7VmcEwQ2hgTQWYzRk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1652713566;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=c+0GsqPsSThaO2MnPpjoOsweO+GYaCoEg31L+IwHhqg=;
+        b=KUJhBgqvq8Nn18KvbQkJlvarVwEdcKV7K3hS0z2sv/TIdtUHzz4hHoz90zQ8V2mTb1xCeD
+        ficdnjVImsf/EiAA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5404813ADC;
+        Mon, 16 May 2022 15:06:06 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 7FWcE15ogmLfKQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 16 May 2022 15:06:06 +0000
+Date:   Mon, 16 May 2022 17:01:48 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Dan Carpenter <dan.carpenter@oracle.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix an error handling path in
+ btrfs_read_sys_array()
+Message-ID: <20220516150148.GX18596@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Dan Carpenter <dan.carpenter@oracle.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+References: <d915ceb4d459aff89c0264113db21592a6806db1.1652517184.git.christophe.jaillet@wanadoo.fr>
+ <120e4c34-da48-7d86-4a50-c31a3804600d@gmx.com>
+ <20220516135407.GM4009@kadam>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <1e09cf20ca9309f2b9daf57136c3e2c1b22f94f6.1652682383.git.wqu@suse.com>
+In-Reply-To: <20220516135407.GM4009@kadam>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 16, 2022 at 02:26:53PM +0800, Qu Wenruo wrote:
-> Upstream commit 9f73f1aef98b ("btrfs: force v2 space cache usage for
-> subpage mount") forces subpage mount to use v2 cache, to avoid
-> deprecated v1 cache which doesn't support subpage properly.
+On Mon, May 16, 2022 at 04:54:07PM +0300, Dan Carpenter wrote:
+> On Sun, May 15, 2022 at 06:57:25AM +0800, Qu Wenruo wrote:
+> > 
+> > 
+> > On 2022/5/14 20:01, Christophe JAILLET wrote:
+> > > If alloc_dummy_extent_buffer() we should return an error code, not 0 that
+> > > would mean success.
+> > > 
+> > > Fixes: a1fc41ac28d3 ("btrfs: use dummy extent buffer for super block sys chunk array read")
+> > > Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+> > 
+> > Reviewed-by: Qu Wenruo <wqu@suse.com>
+> > 
+> > All my fault, thanks for catching it.
+> > Qu
+> > 
 > 
-> But there is a loophole that user can still remount to v1 cache.
-> 
-> The existing check will only give users a warning, but not really
-> prevents the users to do the remount.
-> 
-> Although remounting to v1 will not cause any problems since the v1 cache
-> will always be marked invalid when mounted with a different page size,
-> it's still better to prevent v1 cache at all for subpage mounts.
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/super.c | 8 ++++++++
->  1 file changed, 8 insertions(+)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index b1fdc6a26c76..1617528a3367 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1985,6 +1985,14 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
->  	if (ret)
->  		goto restore;
->  
-> +	/* V1 cache is not supported for subpage mount. */
-> +	if (fs_info->sectorsize < PAGE_SIZE &&
-> +	    btrfs_test_opt(fs_info, SPACE_CACHE)) {
-> +		btrfs_warn(fs_info,
-> +	"v1 space cache is not supported for page size %lu with sectorsize %u",
-> +			   PAGE_SIZE, fs_info->sectorsize);
+> I sent this patch in January and David was going to fold it into the
+> original patch but it got lost.  Thanks, Christophe!
 
-Shouldn't we be doing ret = -EINVAL; here?  Thanks,
-
-Josef
+I found my reply to your fix that I folded the fixup, but then it got
+lost for some reason. Probably because I picked the patchset from
+mailing list again and did not take the local branch. I'll fold the fix
+again as it' still in the unmerged branch. Thanks.

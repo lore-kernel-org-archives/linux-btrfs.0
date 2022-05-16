@@ -2,104 +2,182 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97C49C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 14:31:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 108BBC433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 14:31:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232493AbiEPObu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 May 2022 10:31:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47390 "EHLO
+        id S244473AbiEPObw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 May 2022 10:31:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241425AbiEPObs (ORCPT
+        with ESMTP id S244468AbiEPObv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 May 2022 10:31:48 -0400
+        Mon, 16 May 2022 10:31:51 -0400
 Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C5431D30A
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 07:31:47 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 773501D30A
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 07:31:49 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1652711507; x=1684247507;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=p/C7S6PXeFY4ea+MYyGR78Tw/dMEewPXRz6m5ogMQWA=;
-  b=cRmbvHrr+A2aE4uMUfk/x/ZlyW8scqMoZ4KrwUlDY9hCsXK08czLHVdL
-   gHSYQGhJUSIQWZ5ERVuJeIK1880QclDOviw5HpOxwrrILzf0fgZOqLeVy
-   /zzjAW8d9MwPsYI/VoBNMfTrUJ9d3b05mtNhAkfhWinPufd23WbKGah9V
-   /0sSMZo0u6hi8KAB3SUcxJVqqhLanQ7XyVcD+3RjzIqgqpQZ1kS/9hB8f
-   cHZ6d3+RDZZT6mc146vf7B3anKX2fHtnHDcdTNUw7myExUGwYvD9RTjZX
-   cnyoMcuq7QelPmzq7J8GWpKlslbXFrQMNgN9g3sLIeHnjp4HswwPI47do
-   Q==;
+  t=1652711509; x=1684247509;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=N7IaAZK2OhkBxOuVYjm43d/ypc+u7QsecE/jcO5Z1Sk=;
+  b=XklpjfSqskxks95FeQOVsDXVP+RgDcFDf8N4A03Os7hqabhOdhdqBL3M
+   jCtcgGYZP3Gks3v4wJ4zKWPOrQhguO7aIfzZUXKVXEzleJa52/EfogPUK
+   0h8nkUzgUuEki1KDs0S1QuCkiuAt+LJAygx15e2loGJzcFPHxV3FaIwpH
+   SYzWL2vFgWlU9jd/GffYJJSLpgoifJDv9MDYWXaEJNTE3mv34BrUU5Np3
+   CnLdToxxH5eWH/BQ9eSuI8RjiUBtygkQr6T6XjbzOk21bJmuKBsz/KgN8
+   wln3g8MWOEBRZDQ+d7qL6dgo+PYkGI57hN5WoKNCnVinhFSibRuKU2Gib
+   g==;
 X-IronPort-AV: E=Sophos;i="5.91,230,1647273600"; 
-   d="scan'208";a="205309207"
+   d="scan'208";a="205309210"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 16 May 2022 22:31:46 +0800
-IronPort-SDR: yCDbVrIceeTy6hkw7lyNKN8EIhQQbgECAa8RYD+ocwIcpNv1gwhoFBgniYnSQpDbqPenuJjcis
- dUlonRr9c2ygj+AmqondfnJAKnAgymCOCmUfusr4AT0ZGSW5S/8xLj8kx3t2w+99V0OeRRU8Xv
- /KuC2bOh28GeU2wQQFJxcYJAb6gMD76n3iLPJO8FZFbzzSMjQDh3Gs5b4dr9rjmj2Fokzv8VNm
- /fqe3qXRR3wcUtVE1NY91Gbl+5dQThtiN4k1Kkf5nCnvL8teebcJI3qJk23o5P4o8tY845B0pc
- tLt5+w1DFBQNElxNqJO6VAKL
+  by ob1.hgst.iphmx.com with ESMTP; 16 May 2022 22:31:48 +0800
+IronPort-SDR: G/QEK9wRtNVmij3XDdN/Y05g9Lbfi7Ckl64LL5MUtuyJx0o4uB9AFVOwmGn+G1g6qYr9qZKhKP
+ alCVIO4gf87axStmK3/imUSpuVdOj/D4B8R7HSrXOmQ1X5W0DriZ4Z8+M5HI/BzIGo2/Z7TZ9n
+ 3mF4MoOlP4jA8ycW3wpL9Mz7r2b6mM1D8yCoAnVjHRVPe+3KRDoffzqnSoUdW/mbFVoNHLPYrG
+ lyDo0O46emw1tVW4wPy4ne/dc85EeVU2m/epn6PO11gsPnDqaa1cqjt87E5dMhJfG2RtZPMeWi
+ 7OdO4vFQ5AE95PwZjfNKel28
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 May 2022 06:57:28 -0700
-IronPort-SDR: tH7rWhsOgsx3l/QToF9snN+nBT2KbSGLALOYCpsr/1k5oHuEXWQABb7dVlg32JSKqHtPfSSzD9
- BV47TeHoAv3ZGD4Xuipibr1k4bAeQmSQFpPerV0q0SPIuIxjOQzzfO45odN23EKkKq0QEanqNf
- 9mpq1u1sVs3KjPlugRjwqqBH5k1O1jumwH4U9dGWucOiO3TugWV107agn409BhgVyiiU4PtRDd
- 41CEhRWHMyFFFEHpg7wI6D1tLfcBN+DAz4Tinz+tPyZIQNuWsMUyLYh9AeSHeWbja0DdC0V8DJ
- FlM=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 May 2022 06:57:29 -0700
+IronPort-SDR: RmnJrJcV3CGzcAKEF/7zQIPWWa4O+mmmyEg6N5/Z2ORD8wkF12zypz4JzMJZ1X5+C5At7ohU3L
+ b+mtRsVNzZpEQH67nekGnU/M3D/1jodqHm7oiM3q69UuaZWkZo36D5b7ec4CzUlbaMG5BO+8Ay
+ tScUZL00et9sFEj+SKbBSxr9N8FBtrsRpmiZWkgCtWsHGYLZRdWw+QAzEb9d36PZ7RM8OW7awh
+ lOC5Ftf7belCZtcb7vGJZBseGt39D4r4pMpnk3aA64l2EMlQpWtmHk+bDZhMeVPsdLszYeXeaL
+ jZo=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip02.wdc.com with ESMTP; 16 May 2022 07:31:46 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 16 May 2022 07:31:48 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [RFC ONLY 0/8] btrfs: introduce raid-stripe-tree
-Date:   Mon, 16 May 2022 07:31:35 -0700
-Message-Id: <cover.1652711187.git.johannes.thumshirn@wdc.com>
+Subject: [RFC ONLY 2/8] btrfs: move btrfs_io_context to volumes.h
+Date:   Mon, 16 May 2022 07:31:37 -0700
+Message-Id: <6bd71ff55e48686fc917736e686143ca7d5d2c64.1652711187.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.35.1
+In-Reply-To: <cover.1652711187.git.johannes.thumshirn@wdc.com>
+References: <cover.1652711187.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Introduce a raid-stripe-tree to record writes in a RAID environment.
+In preparation for upcoming changes, move 'struct btrfs_io_context' to
+volumes.h, so we can use it outside of volumes.c
 
-In essence this adds another address translation layer between the logical
-and the physical addresses in btrfs and is designed to close two gaps. The
-first is the ominous RAID-write-hole we suffer from with RAID5/6 and the
-second one is the inability of doing RAID with zoned block devices due to the
-constraints we have with REQ_OP_ZONE_APPEND writes.
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/volumes.h | 90 +++++++++++++++++++++++-----------------------
+ 1 file changed, 45 insertions(+), 45 deletions(-)
 
-Thsi is an RFC/PoC only which just shows how the code will look like for a
-zoned RAID1. Its sole purpose is to facilitate design reviews and is not
-intended to be merged yet. Or if merged to be used on an actual file-system.
-
-Johannes Thumshirn (8):
-  btrfs: add raid stripe tree definitions
-  btrfs: move btrfs_io_context to volumes.h
-  btrfs: read raid-stripe-tree from disk
-  btrfs: add boilerplate code to insert raid extent
-  btrfs: add code to delete raid extent
-  btrfs: add code to read raid extent
-  btrfs: zoned: allow zoned RAID1
-  btrfs: add raid stripe tree pretty printer
-
- fs/btrfs/Makefile               |   2 +-
- fs/btrfs/ctree.c                |   1 +
- fs/btrfs/ctree.h                |  29 ++++
- fs/btrfs/disk-io.c              |  12 ++
- fs/btrfs/extent-tree.c          |   9 ++
- fs/btrfs/file.c                 |   1 -
- fs/btrfs/print-tree.c           |  21 +++
- fs/btrfs/raid-stripe-tree.c     | 251 ++++++++++++++++++++++++++++++++
- fs/btrfs/raid-stripe-tree.h     |  39 +++++
- fs/btrfs/volumes.c              |  44 +++++-
- fs/btrfs/volumes.h              |  93 ++++++------
- fs/btrfs/zoned.c                |  39 +++++
- include/uapi/linux/btrfs.h      |   1 +
- include/uapi/linux/btrfs_tree.h |  17 +++
- 14 files changed, 509 insertions(+), 50 deletions(-)
- create mode 100644 fs/btrfs/raid-stripe-tree.c
- create mode 100644 fs/btrfs/raid-stripe-tree.h
-
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index bd297f23d19e..894d289a3b50 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -32,6 +32,51 @@ struct btrfs_io_geometry {
+ 	u64 raid56_stripe_offset;
+ };
+ 
++struct btrfs_io_stripe {
++	struct btrfs_device *dev;
++	u64 physical;
++	u64 length; /* only used for discard mappings */
++};
++
++/*
++ * Context for IO subsmission for device stripe.
++ *
++ * - Track the unfinished mirrors for mirror based profiles
++ *   Mirror based profiles are SINGLE/DUP/RAID1/RAID10.
++ *
++ * - Contain the logical -> physical mapping info
++ *   Used by submit_stripe_bio() for mapping logical bio
++ *   into physical device address.
++ *
++ * - Contain device replace info
++ *   Used by handle_ops_on_dev_replace() to copy logical bios
++ *   into the new device.
++ *
++ * - Contain RAID56 full stripe logical bytenrs
++ */
++struct btrfs_io_context {
++	refcount_t refs;
++	atomic_t stripes_pending;
++	struct btrfs_fs_info *fs_info;
++	u64 map_type; /* get from map_lookup->type */
++	bio_end_io_t *end_io;
++	struct bio *orig_bio;
++	void *private;
++	atomic_t error;
++	int max_errors;
++	int num_stripes;
++	int mirror_num;
++	int num_tgtdevs;
++	int *tgtdev_map;
++	/*
++	 * logical block numbers for the start of each stripe
++	 * The last one or two are p/q.  These are sorted,
++	 * so raid_map[0] is the start of our full stripe
++	 */
++	u64 *raid_map;
++	struct btrfs_io_stripe stripes[];
++};
++
+ /*
+  * Use sequence counter to get consistent device stat data on
+  * 32-bit processors.
+@@ -354,51 +399,6 @@ static inline void btrfs_bio_free_csum(struct btrfs_bio *bbio)
+ 	}
+ }
+ 
+-struct btrfs_io_stripe {
+-	struct btrfs_device *dev;
+-	u64 physical;
+-	u64 length; /* only used for discard mappings */
+-};
+-
+-/*
+- * Context for IO subsmission for device stripe.
+- *
+- * - Track the unfinished mirrors for mirror based profiles
+- *   Mirror based profiles are SINGLE/DUP/RAID1/RAID10.
+- *
+- * - Contain the logical -> physical mapping info
+- *   Used by submit_stripe_bio() for mapping logical bio
+- *   into physical device address.
+- *
+- * - Contain device replace info
+- *   Used by handle_ops_on_dev_replace() to copy logical bios
+- *   into the new device.
+- *
+- * - Contain RAID56 full stripe logical bytenrs
+- */
+-struct btrfs_io_context {
+-	refcount_t refs;
+-	atomic_t stripes_pending;
+-	struct btrfs_fs_info *fs_info;
+-	u64 map_type; /* get from map_lookup->type */
+-	bio_end_io_t *end_io;
+-	struct bio *orig_bio;
+-	void *private;
+-	atomic_t error;
+-	int max_errors;
+-	int num_stripes;
+-	int mirror_num;
+-	int num_tgtdevs;
+-	int *tgtdev_map;
+-	/*
+-	 * logical block numbers for the start of each stripe
+-	 * The last one or two are p/q.  These are sorted,
+-	 * so raid_map[0] is the start of our full stripe
+-	 */
+-	u64 *raid_map;
+-	struct btrfs_io_stripe stripes[];
+-};
+-
+ struct btrfs_device_info {
+ 	struct btrfs_device *dev;
+ 	u64 dev_offset;
 -- 
 2.35.1
 

@@ -2,105 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2958C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 15:06:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4ADD1C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 16 May 2022 15:10:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244944AbiEPPG3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 16 May 2022 11:06:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55640 "EHLO
+        id S245020AbiEPPKn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 16 May 2022 11:10:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35702 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244941AbiEPPGJ (ORCPT
+        with ESMTP id S244586AbiEPPKl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 16 May 2022 11:06:09 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E51D03B020;
-        Mon, 16 May 2022 08:06:07 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 9F00421FEA;
-        Mon, 16 May 2022 15:06:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1652713566;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=c+0GsqPsSThaO2MnPpjoOsweO+GYaCoEg31L+IwHhqg=;
-        b=lKfTMpyCVoWa0JJn/rnPzzTlVHx2ecJ0azO4Oq8wJ918JZPwvcWiiwqptLzYfsfvHOcvva
-        eVKYcq2zMputu65NcBAD/BZxd32XuV4kL1bQPo4YcbyAmorFWXRa4KrC4saRreDnu2vpLQ
-        qSfuwKGQ4yAD8j7VmcEwQ2hgTQWYzRk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1652713566;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=c+0GsqPsSThaO2MnPpjoOsweO+GYaCoEg31L+IwHhqg=;
-        b=KUJhBgqvq8Nn18KvbQkJlvarVwEdcKV7K3hS0z2sv/TIdtUHzz4hHoz90zQ8V2mTb1xCeD
-        ficdnjVImsf/EiAA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5404813ADC;
-        Mon, 16 May 2022 15:06:06 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 7FWcE15ogmLfKQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 16 May 2022 15:06:06 +0000
-Date:   Mon, 16 May 2022 17:01:48 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Dan Carpenter <dan.carpenter@oracle.com>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix an error handling path in
- btrfs_read_sys_array()
-Message-ID: <20220516150148.GX18596@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Dan Carpenter <dan.carpenter@oracle.com>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-References: <d915ceb4d459aff89c0264113db21592a6806db1.1652517184.git.christophe.jaillet@wanadoo.fr>
- <120e4c34-da48-7d86-4a50-c31a3804600d@gmx.com>
- <20220516135407.GM4009@kadam>
+        Mon, 16 May 2022 11:10:41 -0400
+Received: from mail-qv1-xf34.google.com (mail-qv1-xf34.google.com [IPv6:2607:f8b0:4864:20::f34])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 74F0A3B3FD
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 08:10:39 -0700 (PDT)
+Received: by mail-qv1-xf34.google.com with SMTP id kk28so12341407qvb.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 May 2022 08:10:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=oaXh2R0xByZJJoHmQMADUF2jVRfHzUS7FKKSBUYT5Rk=;
+        b=dwVaCM6hSwXiY02m42ayBu76ZV+Ip9+MFBYqIXTRFUsnrjaL1Vstujk+gr+Qls38JI
+         BCKrk3LRaSxiFm144UKQ0/3q6YjXCP1XTIUTBMbgDCOLrN6FBNNGpGwf/Ka1+Od9EUcB
+         DIdwaWX6On0KLJNFI1Z0WmHfRDJkiw3WskJyMd4twECg9WlbXbSjYCxIM1w3JAG8GAOD
+         Yd48VfZ1gweftfJDpzz1ObOHLqiSckKvBQqenyaDufky0RT8MH8qEaFkUBEhUWdhmYIO
+         ib4wEnI6wVuugwldj5V5DBseFopSO2uX4M9dh3qpalgBqAG27uMOiSm9S0ZvicZ1fnLp
+         yQwA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=oaXh2R0xByZJJoHmQMADUF2jVRfHzUS7FKKSBUYT5Rk=;
+        b=vHiImNEpfxvbdsJGr2zkVnXnXDXln6ZXWWU6JwvxS+XDs+r3QY/Z3ArzAGvrZ0ciCX
+         Y7dL1FnW6LnHuembgKqtMZcgy6BLrYCx+FCi779ah/jFRycd22YOaCNdFMAEQDpQACAP
+         lT5wfXbK21dzWbjWeBUW4zT4Q/NSquoyHDBLen1+tcgIl9WUAtX2f2okBC5FiqAdJVM0
+         dPxoAanlNlUUvxyL+jUrICnA371/3Zw/wwIQzrfrn60XnRMScwWTLaS0KuEtC/GKUsmn
+         lZUw+CaDwqz0fwOhZN18v30Rx9uTkghlvnNzMTwQPk0m/ujRVUbLr3Jjr8UffY5SsCKe
+         TFiQ==
+X-Gm-Message-State: AOAM532X3cM2lDbnNPzYdsw826TY1M2vb6dTY1zciv53zTYEHpm4UGXk
+        kYfZLM2vbpOi8PLq2Qfs7hbEDgyVt18Xqw==
+X-Google-Smtp-Source: ABdhPJxEtjAX8IXCo+mldzqClxxhU9YvKLFSPnknT03MHVmzkwkIdUrPfvacpOBdaiIWKlBAhfkQGA==
+X-Received: by 2002:a0c:d6c6:0:b0:456:4e6a:b875 with SMTP id l6-20020a0cd6c6000000b004564e6ab875mr15634142qvi.34.1652713838380;
+        Mon, 16 May 2022 08:10:38 -0700 (PDT)
+Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
+        by smtp.gmail.com with ESMTPSA id 16-20020a370710000000b0069fc13ce1d7sm5895168qkh.8.2022.05.16.08.10.37
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 16 May 2022 08:10:37 -0700 (PDT)
+Date:   Mon, 16 May 2022 11:10:36 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC ONLY 0/8] btrfs: introduce raid-stripe-tree
+Message-ID: <YoJpbIKbwEwweAup@localhost.localdomain>
+References: <cover.1652711187.git.johannes.thumshirn@wdc.com>
+ <YoJmpxKoIUKWyevt@localhost.localdomain>
+ <PH0PR04MB74166206230DEAF4BED182B99BCF9@PH0PR04MB7416.namprd04.prod.outlook.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220516135407.GM4009@kadam>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <PH0PR04MB74166206230DEAF4BED182B99BCF9@PH0PR04MB7416.namprd04.prod.outlook.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 16, 2022 at 04:54:07PM +0300, Dan Carpenter wrote:
-> On Sun, May 15, 2022 at 06:57:25AM +0800, Qu Wenruo wrote:
+On Mon, May 16, 2022 at 03:04:35PM +0000, Johannes Thumshirn wrote:
+> On 16/05/2022 16:58, Josef Bacik wrote:
+> > On Mon, May 16, 2022 at 07:31:35AM -0700, Johannes Thumshirn wrote:
+> >> Introduce a raid-stripe-tree to record writes in a RAID environment.
+> >>
+> >> In essence this adds another address translation layer between the logical
+> >> and the physical addresses in btrfs and is designed to close two gaps. The
+> >> first is the ominous RAID-write-hole we suffer from with RAID5/6 and the
+> >> second one is the inability of doing RAID with zoned block devices due to the
+> >> constraints we have with REQ_OP_ZONE_APPEND writes.
+> >>
+> >> Thsi is an RFC/PoC only which just shows how the code will look like for a
+> >> zoned RAID1. Its sole purpose is to facilitate design reviews and is not
+> >> intended to be merged yet. Or if merged to be used on an actual file-system.
+> >>
 > > 
-> > 
-> > On 2022/5/14 20:01, Christophe JAILLET wrote:
-> > > If alloc_dummy_extent_buffer() we should return an error code, not 0 that
-> > > would mean success.
-> > > 
-> > > Fixes: a1fc41ac28d3 ("btrfs: use dummy extent buffer for super block sys chunk array read")
-> > > Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-> > 
-> > Reviewed-by: Qu Wenruo <wqu@suse.com>
-> > 
-> > All my fault, thanks for catching it.
-> > Qu
-> > 
+> > This is hard to talk about without seeing the code to add the raid extents and
+> > such.  Reading it makes sense, but I don't know how often the stripes are meant
+> > to change.  Are they static once they're allocated, like dev extents?  I can't
+> > quite fit in my head the relationship with the rest of the allocation system.
+> > Are they coupled with the logical extent that gets allocated?  Or are they
+> > coupled with the dev extent?  Are they somewhere in between?
 > 
-> I sent this patch in January and David was going to fold it into the
-> original patch but it got lost.  Thanks, Christophe!
+> The stripe extents have a 1:1 relationship file the file-extents, i.e:
+> 
+> stripe_extent_key.objectid = btrfs_file_extent_item.disk_bytenr;
+> stripe_extent_type = BTRFS_RAID_STRIPE_EXTENT;
+> stripe_extent_offset = btrfs_file_extent_item.disk_num_bytes;
+> 
+> 
+> > Also I realize this is an RFC, but we're going to need some caching for reads so
+> > we're not having to do a tree search on every IO with the RAID stripe tree in
+> > place.
+> 
+> Do we really need to do caching of stripe tree entries? They're read, once the
+> corresponding btrfs_file_extent_item is read from disk, which then gets cached
+> in the page cache. Every override is cached in the page cache as well.
+> 
+> If we're flushing the cache, we need to re-read both, the file_extent_item and 
+> the stripe extents.
 
-I found my reply to your fix that I folded the fixup, but then it got
-lost for some reason. Probably because I picked the patchset from
-mailing list again and did not take the local branch. I'll fold the fix
-again as it' still in the unmerged branch. Thanks.
+Yup ok if we're 1:1 with the file-extents then we don't want the whole tree
+striped.
+
+Since we're 1:1 with the file-extents please make the stripe tree follow the
+same convention as the global roots, at least put the load code in the same area
+as the csum/fst/extent tree, if your stuff gets merged and turned on before
+extnet tree v2 it'll be easier for me to adapt it.  Thanks,
+
+Josef

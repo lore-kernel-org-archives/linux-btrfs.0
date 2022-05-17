@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AFC8C4321E
-	for <linux-btrfs@archiver.kernel.org>; Tue, 17 May 2022 14:51:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0DC6DC4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 17 May 2022 14:51:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349312AbiEQOvZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 17 May 2022 10:51:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38080 "EHLO
+        id S1349298AbiEQOv0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 17 May 2022 10:51:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349296AbiEQOuy (ORCPT
+        with ESMTP id S1349303AbiEQOu7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 17 May 2022 10:50:54 -0400
+        Tue, 17 May 2022 10:50:59 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79B8A639A
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2022 07:50:53 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B5209FDD
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 May 2022 07:50:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=WQ3L/s5YaYHYWa5p1q06fRK02FlpGwqOTxz4c7eotcE=; b=vzEIq8jxUg0r+lsPBtW301VaUX
-        zknG9332KuFQN3GTsyhBdl/HhbOvHa/wl1aAPBW+fa3Hnq2oBwuDrmA/genlGcqjzC7inOTELnNz5
-        svOtzW/duud5LhJW3SIKLlGRTU5qYy/qHh6kK3foRRJuoP3LEfgXYVl1SDlWCIILd5zUoU8spK1wS
-        Wnb9h6wBNCOVUhAueOdET5T2hlFNBd0bzYj25XoS3vA6lV/I0oAeQjPYj5TCW7FHUoinTYkkN41Yn
-        OBBJlgfhAtwhOJ7/ysav8eDydJBuQNECcJmr4V5ZG2TOq2PqzAMS3EdgzLmXQG9yrNXuE2EAJ2a9j
-        tjCGu+bA==;
+        bh=1l3lpKPkLNk10ZZ6IJyX9ESH2c9XV7eG7G9+whxn6+k=; b=KLbHHbzWGTQmE0Zx3FAFAlnQHo
+        IWAvxblpnncE+x1CGjkB/MgnEl8TIq+/iCLSRUpCkbapYLfcjGBDmSAW7LqbZqBza63ZQpfg08FW4
+        cgQzmy0kHzSm2Xfa6Mp8SPOBcqL0xH+7DvQ38YPTLaTkpvZNBWcbajPx2NjfpkBae2/JmugxUeYhH
+        G/E3glMe7TVHd8BYdxLBbi0Y7R8qVjYAuFLD3U2Vm56wY0N0Y961PWDiNQuAxsO/l0w4wGdMEvJuf
+        sQHKEaOeIjlQK7FVc7FdfYrraduLTzqiptxUlE/Whh1kn616/YD2oHHT7/ZwXejsl0eYuMgKnen0O
+        u5M9ybYA==;
 Received: from [89.144.222.138] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nqyX9-00EXA4-J6; Tue, 17 May 2022 14:50:48 +0000
+        id 1nqyXG-00EXAf-1G; Tue, 17 May 2022 14:50:54 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH 01/15] btrfs: introduce a pure data checksum checking helper
-Date:   Tue, 17 May 2022 16:50:25 +0200
-Message-Id: <20220517145039.3202184-2-hch@lst.de>
+Subject: [PATCH 03/15] btrfs: save the original bi_iter into btrfs_bio for buffered read
+Date:   Tue, 17 May 2022 16:50:27 +0200
+Message-Id: <20220517145039.3202184-4-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220517145039.3202184-1-hch@lst.de>
 References: <20220517145039.3202184-1-hch@lst.de>
@@ -47,159 +47,72 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-Although we have several data csum verification code, we never have a
-function really just to verify checksum for one sector.
+Although we have btrfs_bio::iter, it currently have very limited usage:
 
-Function check_data_csum() do extra work for error reporting, thus it
-requires a lot of extra things like file offset, bio_offset etc.
+- RAID56
+  Which is not needed at all
 
-Function btrfs_verify_data_csum() is even worse, it will utizlie page
-checked flag, which means it can not be utilized for direct IO pages.
+- btrfs_bio_clone()
+  This is used mostly for direct IO.
 
-Here we introduce a new helper, btrfs_check_data_sector(), which really
-only accept a sector in page, and expected checksum pointer.
+For the incoming read repair patches, we want to grab the original
+logical bytenr, and be able to iterate the range of the bio (no matter
+if it's cloned).
 
-We use this function to implement check_data_csum(), and export it for
-incoming patch.
+So this patch will also save btrfs_bio::iter for buffered read bios at
+submit_one_bio().
+And for the sake of consistency, also save the btrfs_bio::iter for
+direct IO at btrfs_submit_dio_bio().
+
+The reason that we didn't save the iter in btrfs_map_bio() is,
+btrfs_map_bio() is going to handle various bios, with or without
+btrfs_bio bioset.
+And we  want to keep btrfs_map_bio() to handle and only handle plain bios
+without bother the bioset.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
-[hch: keep passing the csum array as an arguments, as the callers want
-      to print it]
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/compression.c | 13 ++++---------
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/inode.c       | 40 ++++++++++++++++++++++++++++------------
- 3 files changed, 34 insertions(+), 21 deletions(-)
+ fs/btrfs/extent_io.c | 12 ++++++++++++
+ fs/btrfs/inode.c     |  2 ++
+ 2 files changed, 14 insertions(+)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index f4564f32f6d93..7212f63dec858 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -147,12 +147,10 @@ static int check_compressed_csum(struct btrfs_inode *inode, struct bio *bio,
- 				 u64 disk_start)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
- 	const u32 csum_size = fs_info->csum_size;
- 	const u32 sectorsize = fs_info->sectorsize;
- 	struct page *page;
- 	unsigned int i;
--	char *kaddr;
- 	u8 csum[BTRFS_CSUM_SIZE];
- 	struct compressed_bio *cb = bio->bi_private;
- 	u8 *cb_sum = cb->sums;
-@@ -161,8 +159,6 @@ static int check_compressed_csum(struct btrfs_inode *inode, struct bio *bio,
- 	    test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state))
- 		return 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 588c7c606a2c6..8fe5f505d6e92 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -188,6 +188,18 @@ static void submit_one_bio(struct bio *bio, int mirror_num,
+ 	/* Caller should ensure the bio has at least some range added */
+ 	ASSERT(bio->bi_iter.bi_size);
  
--	shash->tfm = fs_info->csum_shash;
--
- 	for (i = 0; i < cb->nr_pages; i++) {
- 		u32 pg_offset;
- 		u32 bytes_left = PAGE_SIZE;
-@@ -175,12 +171,11 @@ static int check_compressed_csum(struct btrfs_inode *inode, struct bio *bio,
- 		/* Hash through the page sector by sector */
- 		for (pg_offset = 0; pg_offset < bytes_left;
- 		     pg_offset += sectorsize) {
--			kaddr = kmap_atomic(page);
--			crypto_shash_digest(shash, kaddr + pg_offset,
--					    sectorsize, csum);
--			kunmap_atomic(kaddr);
-+			int ret;
- 
--			if (memcmp(&csum, cb_sum, csum_size) != 0) {
-+			ret = btrfs_check_data_sector(fs_info, page, pg_offset,
-+						      csum, cb_sum);
-+			if (ret) {
- 				btrfs_print_data_csum_error(inode, disk_start,
- 						csum, cb_sum, cb->mirror_num);
- 				if (btrfs_bio(bio)->device)
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0e49b1a0c0716..4713d59ed1105 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3253,6 +3253,8 @@ u64 btrfs_file_extent_end(const struct btrfs_path *path);
- /* inode.c */
- void btrfs_submit_data_bio(struct inode *inode, struct bio *bio,
- 			   int mirror_num, enum btrfs_compression_type compress_type);
-+int btrfs_check_data_sector(struct btrfs_fs_info *fs_info, struct page *page,
-+			    u32 pgoff, u8 *csum, u8 *csum_expected);
- unsigned int btrfs_verify_data_csum(struct btrfs_bio *bbio,
- 				    u32 bio_offset, struct page *page,
- 				    u64 start, u64 end);
++	/*
++	 * Save the original bi_iter for read bios, as read repair wants the
++	 * orignial logical bytenr.
++	 *
++	 * We don't do this in btrfs_map_bio() because that function is
++	 * bioset independent.
++	 * We can later pass bios without btrfs_bio or with other bioset into
++	 * btrfs_map_bio().
++	 */
++	if (bio_op(bio) == REQ_OP_READ)
++		btrfs_bio(bio)->iter = bio->bi_iter;
++
+ 	if (is_data_inode(tree->private_data))
+ 		btrfs_submit_data_bio(tree->private_data, bio, mirror_num,
+ 					    compress_type);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index da13bd0d10f12..76169e4e3ec36 100644
+index 76169e4e3ec36..cb0ad1971be30 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3326,6 +3326,29 @@ void btrfs_writepage_endio_finish_ordered(struct btrfs_inode *inode,
- 				       finish_ordered_fn, uptodate);
- }
+@@ -7987,6 +7987,8 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
+ 		ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
+ 		if (ret)
+ 			goto err;
++		/* Check submit_one_bio() for the reason. */
++		btrfs_bio(bio)->iter = bio->bi_iter;
+ 	}
  
-+/*
-+ * Verify the checksum for a single sector without any extra action that
-+ * depend on the type of I/O.
-+ */
-+int btrfs_check_data_sector(struct btrfs_fs_info *fs_info, struct page *page,
-+			    u32 pgoff, u8 *csum, u8 *csum_expected)
-+{
-+	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
-+	char *kaddr;
-+
-+	ASSERT(pgoff + fs_info->sectorsize <= PAGE_SIZE);
-+
-+	shash->tfm = fs_info->csum_shash;
-+
-+	kaddr = kmap_local_page(page) + pgoff;
-+	crypto_shash_digest(shash, kaddr, fs_info->sectorsize, csum);
-+	kunmap_local(kaddr);
-+
-+	if (memcmp(csum, csum_expected, fs_info->csum_size))
-+		return -EIO;
-+	return 0;
-+}
-+
- /*
-  * check_data_csum - verify checksum of one sector of uncompressed data
-  * @inode:	inode
-@@ -3336,14 +3359,15 @@ void btrfs_writepage_endio_finish_ordered(struct btrfs_inode *inode,
-  * @start:	logical offset in the file
-  *
-  * The length of such check is always one sector size.
-+ *
-+ * When csum mismatch detected, we will also report the error and fill the
-+ * corrupted range with zero. (thus it needs the extra parameters)
-  */
- static int check_data_csum(struct inode *inode, struct btrfs_bio *bbio,
- 			   u32 bio_offset, struct page *page, u32 pgoff,
- 			   u64 start)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
--	char *kaddr;
- 	u32 len = fs_info->sectorsize;
- 	const u32 csum_size = fs_info->csum_size;
- 	unsigned int offset_sectors;
-@@ -3355,17 +3379,9 @@ static int check_data_csum(struct inode *inode, struct btrfs_bio *bbio,
- 	offset_sectors = bio_offset >> fs_info->sectorsize_bits;
- 	csum_expected = ((u8 *)bbio->csum) + offset_sectors * csum_size;
- 
--	kaddr = kmap_atomic(page);
--	shash->tfm = fs_info->csum_shash;
--
--	crypto_shash_digest(shash, kaddr + pgoff, len, csum);
--	kunmap_atomic(kaddr);
--
--	if (memcmp(csum, csum_expected, csum_size))
--		goto zeroit;
-+	if (!btrfs_check_data_sector(fs_info, page, pgoff, csum, csum_expected))
-+		return 0;
- 
--	return 0;
--zeroit:
- 	btrfs_print_data_csum_error(BTRFS_I(inode), start, csum, csum_expected,
- 				    bbio->mirror_num);
- 	if (bbio->device)
+ 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
 -- 
 2.30.2
 

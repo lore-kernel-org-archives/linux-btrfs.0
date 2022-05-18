@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A66BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 09:17:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C59A2C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 09:17:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233938AbiERJRc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 May 2022 05:17:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38128 "EHLO
+        id S233992AbiERJRa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 May 2022 05:17:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37990 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233964AbiERJRZ (ORCPT
+        with ESMTP id S233938AbiERJRX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 May 2022 05:17:25 -0400
+        Wed, 18 May 2022 05:17:23 -0400
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A037C1A060
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 02:17:23 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0C941CFCC
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 02:17:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1652865444; x=1684401444;
+  t=1652865442; x=1684401442;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=KxQFsUJVGLomXi5JGfsV8Uj6ugKVdOX5yfiCfiBtgfQ=;
-  b=fF9d7W8+lZCPukJF/dNgY9l2pDJhTJUeJrlZm9eeZvCdn9/Nao4j3olM
-   CLmeHl9XISBeh+fLf7QrCbtT4Va7AENM4/kSXvcOXpvD5U4M/2ww0VAPK
-   rMfiBAQbAhCDKgk4qwEhyPTRDmTwoE60VDMkr+BOxskXfMRgouOmIeoYq
-   Ih6en4n85xwuimKaJM9opQht/25OcpqAQnBcUhPS6OPO5utNR3SjcdpT7
-   ANDE9M4PLMofeEFEJh2wAdaN+zv53NwFMqHzd/XOwkL0dXibTLgqrsJrE
-   ZHrfqzYnqs0b0YRk562RohlQjfx7E0Dy99rl6V6XYa5H2s6TTVDqD35fH
-   g==;
+  bh=ezC6m7jJf2tUpJVCviGpUIIm3wuctBs8UxcDDBa277g=;
+  b=o7kg2b/+8xN9eOYmfuY1mbYKoEyWEpd07ZNZIgYE1SKfWcTgBf0aHfdO
+   Dxv8XR1nl10apM09KfycEMF6RPFE472OGLmYQpVAgWOO7k9KY9Po17qpY
+   nabmv/GX2QsajC995q+FHCVWZWy2NwvBBGXPqVcEov0yTLFvZccwC1ZmK
+   42lRIhPMTEkAw1IYvsf0WFUJoWFdP1OEpvpJ0TtWU1tov/6WYLE0w8rxl
+   It0LkPKc32pCneyPogUooMynRsGXv7POq0gLeFXJ/EEZqYtydMvrt3xPZ
+   uNi0ii9qk5GaZnfvzjq3zNyLjVOrcQ2rgddX3zPe2NhVMBdhzYfDnQNju
+   Q==;
 X-IronPort-AV: E=Sophos;i="5.91,234,1647273600"; 
-   d="scan'208";a="201514751"
+   d="scan'208";a="201514745"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 18 May 2022 17:17:23 +0800
-IronPort-SDR: URAzZu3+RbQzi0IvAsWz1QR/Xa7uXNLxPFro+TAEdVK5rQqV3u1RLxO3A3y0fRb1ETajv0kl4i
- qBoUbjKAxNT6HRuQd8Spb50c2vqKnA5Xof7VrAx0MGAZcADf+gvyhRyKQiIb4C+yMHuA3AELYh
- NiAZjE/fhVDwffPao312ARbvWEWfXsXR7A/J43q2p0VICuqJj0G3AeB3ZJ+r/7C8vWvSrUQuNe
- V51jSUyX13mwwPgLzu80pinGn2LG5BWCtrf/GO8P0oimi4gElB21Vz+IXMgSkrQ98LTLM8Zue1
- ug/LC6eSAbdbIXvceYu75IDo
+  by ob1.hgst.iphmx.com with ESMTP; 18 May 2022 17:17:21 +0800
+IronPort-SDR: nGJs3OAsH4y4rGKFJvCNL66U/5jNBm//XXQ2Pe0zszw1W9GedVChA6O2yI6F4CG1U8h8QPpsXI
+ flcrUh1gucWVnyss5S/bMSGEisPwbOVE8Zv9lQP1sPYDclqVDZfh9S1ofFafP5wKsgnSECv9Ho
+ ovKazsFc6+/gYG/gEe2zUPHGGYXXcvf9l8DuJR8SeUkBBKKiQStgz9TDsPiM9lz6fWIB0nWIV8
+ I/XMweoZANz8bL7agb9RyL37mXeEaAd9/NHqstxZ0ZxZrcq9P4fwOnkAq6PWLcqblxI4EOpip+
+ 5Iq/b2+fvGU32VTeqgHfdN0P
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 May 2022 01:40:26 -0700
-IronPort-SDR: 3FUHEx3PxsT9/vErL0uOZRpF3UZIXid/BNvrwfTrpFyZ9sr0+XJ0O/p1Eo+1lBC7Miv6sTXavp
- GbZ2cAUoiD6bLat5nbEWNJ/paHNmQwtLzGyW6LSiPUMxS5jk4f/iWYRqPmVs8PcXvzXoFjuvCR
- /8FQk68fT0rcNUjZhkT76riSpNguXJyi6OJh0TV+hhhyKkFmr3Dpk+wu4qZSlDOg9q+2N7OKof
- k/KMD0hLPu52z8SvPfqFdQcdzGMGsLxC3VhKO8s8pUeM6bxPIuTgsRX6U+tUkRBFzjoAIqj34M
- Xg0=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 May 2022 01:40:23 -0700
+IronPort-SDR: g1pQox/b3egXTw6PqVZGbdmkZVKWxm9073Sl0B6kouTHSrOSX8TmLDl25B1dCE282svrnudLkc
+ uJE/fdSMFDlReqth8lotElv5KLsmNS4mz8y2mNphCVXdZGKjafyun0zPt6qZKAxUQBjRxxDj3A
+ Lab21LTvYpup6vwVzpsP32ZTxqffwUh2RyYHw/JDBOfDRINwiO/DHAQIu+CHyKrxnZZPT9fPh+
+ S3DP7agNmdsxmRq8TvXO3a4USNTVRaLFTZWunOpiCC9DdeIiGRC0ZKzeuU+W69TZglFvq0EYSC
+ oOI=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip02.wdc.com with ESMTP; 18 May 2022 02:17:22 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 18 May 2022 02:17:20 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [RFC ONLY 6/6] btrfs-progs: load zone info for all zoned devices
-Date:   Wed, 18 May 2022 02:17:16 -0700
-Message-Id: <20220518091716.786452-7-johannes.thumshirn@wdc.com>
+Subject: [RFC ONLY 3/6] btrfs-progs: add dump tree support for the raid stripe tree
+Date:   Wed, 18 May 2022 02:17:13 -0700
+Message-Id: <20220518091716.786452-4-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.35.3
 In-Reply-To: <20220518091716.786452-1-johannes.thumshirn@wdc.com>
 References: <20220518091716.786452-1-johannes.thumshirn@wdc.com>
@@ -64,24 +64,107 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- mkfs/main.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ cmds/inspect-dump-tree.c   |  5 +++++
+ kernel-shared/ctree.h      |  3 +++
+ kernel-shared/print-tree.c | 27 +++++++++++++++++++++++++++
+ 3 files changed, 35 insertions(+)
 
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 881de53b11fe..a43dae0ee253 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1638,6 +1638,10 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 		}
- 	}
+diff --git a/cmds/inspect-dump-tree.c b/cmds/inspect-dump-tree.c
+index daa7f9255139..999047ea0c28 100644
+--- a/cmds/inspect-dump-tree.c
++++ b/cmds/inspect-dump-tree.c
+@@ -163,6 +163,7 @@ static u64 treeid_from_string(const char *str, const char **end)
+ 		{ "TREE_RELOC", BTRFS_TREE_RELOC_OBJECTID },
+ 		{ "DATA_RELOC", BTRFS_DATA_RELOC_TREE_OBJECTID },
+ 		{ "BLOCK_GROUP_TREE", BTRFS_BLOCK_GROUP_TREE_OBJECTID },
++		{ "RAID_STRIPE", BTRFS_RAID_STRIPE_TREE_OBJECTID },
+ 	};
+ 
+ 	if (strncasecmp("BTRFS_", str, strlen("BTRFS_")) == 0)
+@@ -728,6 +729,10 @@ again:
+ 				if (!skip)
+ 					printf("block group");
+ 				break;
++			case BTRFS_RAID_STRIPE_TREE_OBJECTID:
++				if (!skip)
++					printf("raid stripe");
++				break;
+ 			default:
+ 				if (!skip) {
+ 					printf("file");
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 56b3185001af..40e5e09897b1 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -1493,6 +1493,9 @@ static inline u32 BTRFS_MAX_XATTR_SIZE(const struct btrfs_fs_info *info)
+ #define BTRFS_QGROUP_LIMIT_KEY		244
+ #define BTRFS_QGROUP_RELATION_KEY	246
  
 +
-+	if (zoned)
-+		btrfs_get_dev_zone_info_all_devices(fs_info);
++#define BTRFS_RAID_STRIPE_KEY		247
 +
- raid_groups:
- 	ret = create_raid_groups(trans, root, data_profile,
- 			 metadata_profile, mixed, &allocation);
+ /*
+  * Obsolete name, see BTRFS_TEMPORARY_ITEM_KEY.
+  */
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 9c12dfcb4ca5..d1b51065c2f3 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -635,6 +635,26 @@ static void print_free_space_header(struct extent_buffer *leaf, int slot)
+ 	       (unsigned long long)btrfs_free_space_bitmaps(leaf, header));
+ }
+ 
++static void print_raid_stripe_key(struct extent_buffer *eb,
++				  u32 item_size,
++				  struct btrfs_dp_stripe *stripe)
++{
++	int num_stripes;
++	int i;
++
++	num_stripes = (item_size - offsetof(struct btrfs_dp_stripe, extents)) /
++		sizeof(struct btrfs_stripe_extent);
++
++	printf("\t\tlogical %llu, size: %llu\n",
++	       (unsigned long long)btrfs_dp_stripe_logical(eb, stripe),
++	       (unsigned long long)btrfs_dp_stripe_size(eb, stripe));
++
++	for (i = 0; i < num_stripes; i++)
++		printf("\t\t\tstripe %d devid %llu offset %llu\n", i,
++		       (unsigned long long)btrfs_stripe_extent_devid_nr(eb, stripe, i),
++		       (unsigned long long)btrfs_stripe_extent_offset_nr(eb, stripe, i));
++}
++
+ void print_key_type(FILE *stream, u64 objectid, u8 type)
+ {
+ 	static const char* key_to_str[256] = {
+@@ -679,6 +699,7 @@ void print_key_type(FILE *stream, u64 objectid, u8 type)
+ 		[BTRFS_PERSISTENT_ITEM_KEY]	= "PERSISTENT_ITEM",
+ 		[BTRFS_UUID_KEY_SUBVOL]		= "UUID_KEY_SUBVOL",
+ 		[BTRFS_UUID_KEY_RECEIVED_SUBVOL] = "UUID_KEY_RECEIVED_SUBVOL",
++		[BTRFS_RAID_STRIPE_KEY]		= "RAID_STRIPE_KEY",
+ 	};
+ 
+ 	if (type == 0 && objectid == BTRFS_FREE_SPACE_OBJECTID) {
+@@ -788,6 +809,9 @@ void print_objectid(FILE *stream, u64 objectid, u8 type)
+ 	case BTRFS_BLOCK_GROUP_TREE_OBJECTID:
+ 		fprintf(stream, "BLOCK_GROUP_TREE");
+ 		break;
++	case  BTRFS_RAID_STRIPE_TREE_OBJECTID:
++		fprintf(stream, "RAID_STRIPE_TREE");
++		break;
+ 	case (u64)-1:
+ 		fprintf(stream, "-1");
+ 		break;
+@@ -1453,6 +1477,9 @@ void btrfs_print_leaf(struct extent_buffer *eb, unsigned int mode)
+ 		case BTRFS_TEMPORARY_ITEM_KEY:
+ 			print_temporary_item(eb, ptr, objectid, offset);
+ 			break;
++		case BTRFS_RAID_STRIPE_KEY:
++			print_raid_stripe_key(eb, item_size, ptr);
++			break;
+ 		};
+ 		fflush(stdout);
+ 	}
 -- 
 2.35.3
 

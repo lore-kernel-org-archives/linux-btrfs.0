@@ -2,200 +2,185 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BCBFAC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 10:59:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1EA97C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 11:23:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235270AbiERK7U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 May 2022 06:59:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33634 "EHLO
+        id S235564AbiERLXe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 May 2022 07:23:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235152AbiERK7T (ORCPT
+        with ESMTP id S235408AbiERLXX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 May 2022 06:59:19 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54B2B6278
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 03:59:16 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1652871553;
-        bh=bIHjORdFkFbnsFba8LXzyuwu7lAgA+3Co6schutC/dY=;
-        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
-        b=QLPENQaj1Q7bkHc6Wnrc4klAj8jxkq1/J41DWwZh7BjUuClWGppqbvp9q/diiqcYF
-         LqZGWuL+/ePl16+majzG/Hsu0+YbYx4Bv9v0ZhS5TUDNuL0r71ahbTOP/XDNykFk6d
-         G0bTOgu9qExex8vQQ/OIz5anSvkYZbZJKJEWr4eo=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MmDEg-1nQmHY3Xwe-00iGZv; Wed, 18
- May 2022 12:59:13 +0200
-Message-ID: <e62b429d-358e-ec38-30ca-671d43a5b5be@gmx.com>
-Date:   Wed, 18 May 2022 18:59:10 +0800
+        Wed, 18 May 2022 07:23:23 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 223CE16D5C3
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 04:23:19 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 879071F37F
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 11:23:18 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1652872998; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=5ofKgkigc8rgJDSy+9zBlf3fnXHjy34R9COdc4rlJwQ=;
+        b=W4sqU3z4FWpNCxHvRFGjzomG/9PMw+5mJQFSrnt9sza1rUJk7Pg8OvweAa3UUPqBa4CSj3
+        lf176edGtqc+LA2r9Bxbrszg5QmD9d+RUyH2SDHV+KCJItPfipH5pSYEL/IwzHlJ2RW5xF
+        qtVjVPNwFhkKSlgT/yaViTbU9mV9P98=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id F0B6313A6D
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 11:23:17 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id VCIOMCXXhGK3TQAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 11:23:17 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: do not abuse btrfs_commit_transaction() just to update super blocks
+Date:   Wed, 18 May 2022 19:23:00 +0800
+Message-Id: <4ee1030eb7d24d13ffa1bda98364de07258ca079.1652872975.git.wqu@suse.com>
+X-Mailer: git-send-email 2.36.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.0
-Content-Language: en-US
-To:     Johannes Kastl <kastl@b1-systems.de>, linux-btrfs@vger.kernel.org
-References: <17981e45-a182-60ce-5a02-31616609410a@b1-systems.de>
- <21dd5ba9-8dc0-7792-d5f4-4cd1ea91d75e@gmx.com>
- <53dabec5-14de-ed6f-1ef9-a300b96333a6@b1-systems.de>
- <00dcf063-aa51-e8f3-9664-d6ca97306711@gmx.com>
- <05775b94-7e69-99ce-f89e-5c7e634f5461@b1-systems.de>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: 'btrfs rescue' command (recommended by btrfs check) fails on old
- BTRFS RAID1 on (currently) openSUSE Leap 15.3
-In-Reply-To: <05775b94-7e69-99ce-f89e-5c7e634f5461@b1-systems.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:EbHzEY9TWvQJgeRrDYQtD1ToFyfrqKf3ceqZ8cgwogwqYmYQPjK
- 4nnAOfKQj3w72oUBzQOVZNraw9EXYFTRuLMYCmm41PDv6y7bftiKLCWh71JEA4xwUs08YCA
- 76DtWMlLLU6b+IQLpoVndjB5TjxU2u1awObBMNkIRM1BOCa0XnEblL+r/7fhqNe0/6hSMKD
- yuGX34YrCj46Kqda4iuIg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:8OXgNjCun2s=:zeFnNqAnkpiIj7YGrBDI54
- SPf42LVdDFFuewuiyeA9TLr5NkJ8mud8tQ26W6lGEWT5QWv1jJylm4CAHy7YQWAlDdL0u0xpX
- 1PHyRk3AYamrPU/NRMjqqUPvtheX5WlGQaswxNZpAOqXgEDj8+FezvCSbl0VO95dA6VcuLPcx
- vJJHc530NTektY/GVxxAcn59CwYoGTASvMoJ8rlK6INPGpVzwoRCh0eVhqGLxJ4MQlfHAUlcw
- fhFuvok8R2iDCOviiLU0ZR/qU/Zw2y7L+vxSC5T5KiXM3PrtBNPvndahJSp75sz+qkg/PXBCo
- JhQyxMvNLXs9irvMOO3fsYRggOk3mbKNhIk/p2Vm6IcK1R93951N8SfXNnssc1Zdcbed0IQ1z
- ymwkaLSobIzJOdcqWUnyqYkR9lMTH1k1xZSgLlrxAsTz2jCHlc9TkbFj/st0ecBzi0xMWuncr
- 03AIXM1IV3pXHGuilATyAPRSe8CigIBVnSrTn7S1qZinVI+lcgY3yL8i70+bB0DyG6+dILqq7
- oFmMArKfmswsMOtwy52o2sh4ILdYFb/9cJoq7rukdbbiXUQyCAekvqJcZbkrq92y6JPXHvKmE
- UALZuGGWOW15CQKgK6JWJvdYbe1QCfTkHYL6hlt+rG2mj2iBy1pDYgEEsIn/ZO6yFY7IPsM5j
- fU/ou12yesjCfgpPXaU1jDtckL2BXCUUe8kCnSTSxSUlH5v6UcrjZj6NsRjx01Wtmu2RBbTs/
- TmXPePPYp61gy4ebYIDZar68xF41CbIsRGVgBGKBYKydnV1iWLuw2SuiQs3geEBJsa5e0yNbx
- nio/4p9aV7INFW/MyJCXT/aDs5ZIeSKNjPWtFFm5byb0feaPVqV3oYAgzRZ4vvcbj3Xmzi/Hw
- OON01/BOj97kCl7aRyJSrHDXdEGPqjt12fm/nocH8vK2NqN4MUwTACUWS6jdcCb15Hdr0mrlV
- H2VSYb9TJ4wbG5OtYdCqL2cA39R6Vku4j+TOrb1z2HvazypL/JLldTt+r7kwloNyU+F1BG5PP
- Pt15zPIsntYG3tsnx2E1lwRnsPKk358hUroSChX+pdDXfARFxbX6Sx0EtCW0teE5ENSVs+lws
- az1fPZ7IeBPWnIsjd8JNdx6SknQ4H72AzUDM8bDPBkRT8z8WvFSgD1CJQ==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+There are several call sites utilizing btrfs_commit_transaction() just
+to update members in super blocks, without any metadata update.
 
+This can be problematic for some simple call sites, like zero_log_tree()
+or check_and_repair_super_num_devs().
 
-On 2022/5/18 18:38, Johannes Kastl wrote:
-> Hi Qu,
->
-> TL;DR: took a while until I had all of the data backed up properly and
-> had some time to test this. Unfortunately the filesystem is now no
-> longer mountable...
->
-> Any ideas?
->
-> Johannes
->
-> On 24.04.22 at 11:21 Qu Wenruo wrote:
->> On 2022/4/24 17:10, Johannes Kastl wrote:
->
->>> So would resizing the filesystem (to 8GiB) workaround this "limitation=
-",
->>> so afterwards it could properly fix the device size?
->>
->> I'm not yet sure if it's a bug in progs causing false ENOSPC, or really
->> there isn't many space left.
->>
->> For the former case, no matter how much free space you have, it won't
->> help.
->>
->> For the latter case, it would definitely help.
->
-> So, I deleted the partitions on both disks and re-created them with the
-> new (bigger size), keeping the start sector and the btrfs signature inta=
-ct.
->
-> I could then resize both disks to the same value successfully. At least,
-> the commands ran without errors.
->
-> Fixing the device size fails nonetheless (see below). And I can no
-> longer mount the filesystem, when I try I find this in the logs:
->
->> [87396.889043] BTRFS error (device sdb1): super_total_bytes
->> 15393162784768 mismatch with fs_devices total_rw_bytes 15393162788864
->> [87396.889974] BTRFS error (device sdb1): failed to read chunk tree: -2=
-2
->> [87396.892741] BTRFS error (device sdb1): open_ctree failed
->
-> (Don't get confused by sdb1, this is from a rescue system with only some
-> HDDs attached)
->
-> Fixing the device-size on Leap 15.3:
->> # btrfs filesystem show /mnt/DUMBO_BACKUP_4TB/
->> Label: 'DUMBO_BACKUP_4TB'=C2=A0 uuid: 50651b41-bf33-47e7-8a08-afbc71ba0=
-bf8
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Total devices 2 FS bytes use=
-d 3.17TiB
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 1 si=
-ze 7.00TiB used 3.64TiB path /dev/sdd1
->> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 devid=C2=A0=C2=A0=C2=A0 2 si=
-ze 7.00TiB used 3.63TiB path /dev/sdc1
+If we have big problems preventing the fs to be mounted in the first
+place, and need to clear the log or super block size, but by some other
+problems in extent tree, we're unable to allocate new blocks.
 
-That's super weird, we have tons of unallocated space.
+Then we fall into a deadlock that, we need to mount (even
+ro,rescue=all) to collect extra info, but btrfs-progs can not do any
+super block updates.
 
-So definitely something wrong in btrfs-progs.
-Normally `btrfs fi usage` would provide more info, but it needs the fs
-to be mountable.
+Fix the problem by allowing the following super blocks only operations
+to be done without using btrfs_commit_transaction():
 
-Can you prepare a building environment for btrfs-progs?
+- btrfs_fix_super_size()
+- check_and_repair_super_num_devs()
+- zero_log_tree().
 
-I can update the code to skip transaction commit so that we won't be
-bother with -ENOSPC at all.
+There are some exceptions in btrfstune.c, related to the csum type
+conversion and seed flags.
 
-And since we're not really doing any metadata update, we don't really
-need any new space.
+In those btrfstune cases, we in fact wants to proper error report in
+btrfs_commit_transaction(), as those operations are not mount critical,
+and any early error can be helpful to expose any problems in the fs.
 
-And after your building environment prepared, you can fetch this branch
-to compile the btrfs-progs and try to use the compiled `btrfs` command
-to rescue the device again.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ check/main.c            |  8 +-------
+ check/mode-common.c     | 16 +++-------------
+ kernel-shared/volumes.c | 14 ++------------
+ 3 files changed, 6 insertions(+), 32 deletions(-)
 
-https://github.com/adam900710/btrfs-progs/tree/dirty_fix
+diff --git a/check/main.c b/check/main.c
+index bcb016964e7a..03df343796c2 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -9659,17 +9659,11 @@ out:
+ 
+ static int zero_log_tree(struct btrfs_root *root)
+ {
+-	struct btrfs_trans_handle *trans;
+ 	int ret;
+ 
+-	trans = btrfs_start_transaction(root, 1);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		return ret;
+-	}
+ 	btrfs_set_super_log_root(gfs_info->super_copy, 0);
+ 	btrfs_set_super_log_root_level(gfs_info->super_copy, 0);
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = write_all_supers(fs_info);
+ 	return ret;
+ }
+ 
+diff --git a/check/mode-common.c b/check/mode-common.c
+index 2a3018428fc8..f7cb00c0f7b2 100644
+--- a/check/mode-common.c
++++ b/check/mode-common.c
+@@ -1628,7 +1628,6 @@ static int get_num_devs_in_chunk_tree(struct btrfs_fs_info *fs_info)
+ 
+ int check_and_repair_super_num_devs(struct btrfs_fs_info *fs_info)
+ {
+-	struct btrfs_trans_handle *trans;
+ 	int found_devs;
+ 	int ret;
+ 
+@@ -1651,22 +1650,13 @@ int check_and_repair_super_num_devs(struct btrfs_fs_info *fs_info)
+ 
+ 	/*
+ 	 * Repair is pretty simple, just reset the super block value and
+-	 * commit a new transaction.
++	 * write back all the super blocks.
+ 	 */
+-	trans = btrfs_start_transaction(fs_info->tree_root, 0);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		errno = -ret;
+-		error("failed to start trans: %m");
+-		return ret;
+-	}
+-
+ 	btrfs_set_super_num_devices(fs_info->super_copy, found_devs);
+-	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++	ret = write_all_supers(fs_info);
+ 	if (ret < 0) {
+ 		errno = -ret;
+-		error("failed to commit trans: %m");
+-		btrfs_abort_transaction(trans, ret);
++		error("failed to write super blocks: %m");
+ 		return ret;
+ 	}
+ 	printf("Successfully reset super num devices to %u\n", found_devs);
+diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
+index 97c09a1a4931..9a3b69903d32 100644
+--- a/kernel-shared/volumes.c
++++ b/kernel-shared/volumes.c
+@@ -2861,7 +2861,6 @@ err:
+  */
+ int btrfs_fix_super_size(struct btrfs_fs_info *fs_info)
+ {
+-	struct btrfs_trans_handle *trans;
+ 	struct btrfs_device *device;
+ 	struct list_head *dev_list = &fs_info->fs_devices->devices;
+ 	u64 total_bytes = 0;
+@@ -2886,19 +2885,10 @@ int btrfs_fix_super_size(struct btrfs_fs_info *fs_info)
+ 		return 0;
+ 
+ 	btrfs_set_super_total_bytes(fs_info->super_copy, total_bytes);
+-
+-	/* Commit transaction to update all super blocks */
+-	trans = btrfs_start_transaction(fs_info->tree_root, 1);
+-	if (IS_ERR(trans)) {
+-		ret = PTR_ERR(trans);
+-		errno = -ret;
+-		error("error starting transaction: %d (%m)", ret);
+-		return ret;
+-	}
+-	ret = btrfs_commit_transaction(trans, fs_info->tree_root);
++	ret = write_all_supers(fs_info);
+ 	if (ret < 0) {
+ 		errno = -ret;
+-		error("failed to commit current transaction: %d (%m)", ret);
++		error("failed to write super blocks: %d (%m)", ret);
+ 		return ret;
+ 	}
+ 	printf("Fixed super total bytes, old size: %llu new size: %llu\n",
+-- 
+2.36.1
 
-I did some local tests, it shows no problem, but not sure if it would
-work for you.
-
-Thanks,
-Qu
-
->>
->> # umount /mnt/DUMBO_BACKUP_4TB
->> # btrfs rescue fix-device-size /dev/sdd1
->> Unable to find block group for 0
->> Unable to find block group for 0
->> Unable to find block group for 0
->> transaction.c:189: btrfs_commit_transaction: BUG_ON `ret` triggered,
->> value -28
->> btrfs(+0x51f99)[0x55edf7a43f99]
->> btrfs(+0x525a9)[0x55edf7a445a9]
->> btrfs(btrfs_fix_super_size+0x98)[0x55edf7a2f438]
->> btrfs(btrfs_fix_device_and_super_size+0x84)[0x55edf7a2f584]
->> btrfs(+0x6ceee)[0x55edf7a5eeee]
->> btrfs(main+0x8e)[0x55edf7a1108e]
->> /lib64/libc.so.6(__libc_start_main+0xef)[0x7f672ad962bd]
->> btrfs(_start+0x2a)[0x55edf7a1128a]
->> Aborted (core dumped)
->> #
->
-> I tested fixing the device-id by booting from a Tumbleweed rescue stick,
-> running kernel 5.16 with btrfsprogs 5.16. This also fails, but spits out
-> an error message that is a little different:
->
->  > [...]
->> Unable to find block group for 0
->> Error: failed to commit current transaction: -28 (No space left on
->> device)
->> No device size related problem found
->> ERROR: commit_root already set when starting transaction
->> extent buffer leak: start ... len 16384
->
-> (I had to type this off of the screen)
->
-> As the mounting failed with an error related to chunks, I tried the
-> btrfs rescue chunk-recover command, but that also aborts and dumps a
-> core, even on Tumbleweed with kernel 5.16...
->
-> The error messages look something like this:
->  > Unable to find block group for 0
->  > Unable to find block group for 0
->  > Unable to find block group for 0
->
-> followed by a "...BUG_ON `ret` triggered, value -28"
->
-> So this could all be related to -28 (No space left on device)?
->

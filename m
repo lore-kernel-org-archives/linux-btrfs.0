@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FAF9C433F5
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F680C433EF
 	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 09:17:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233982AbiERJR3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 May 2022 05:17:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37994 "EHLO
+        id S233974AbiERJR0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 May 2022 05:17:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37692 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233955AbiERJRX (ORCPT
+        with ESMTP id S233953AbiERJRV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 May 2022 05:17:23 -0400
+        Wed, 18 May 2022 05:17:21 -0400
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5FCF21CFF7
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 02:17:22 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98E8B19F85
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 02:17:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1652865442; x=1684401442;
+  t=1652865440; x=1684401440;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=eic1LlmqxIbArYc8QtA8cTpQ9RBcvw/rCcmaEUkC+6U=;
-  b=mEWTm5m9py/NnYup94xqAnPSrV+vkNjojNQQMLT9rD41Ls5FBjE/FC0G
-   rx32eKi4ExA34d5Usx9plXdwO0/4PwecftddsvsFibBZFyFkkq6fHXNlM
-   XVLXXyXbB+J9hw52B+2S612fCovhN+BhiOPIdXMuu9+1C+gEEn80mLgSh
-   fNH5OAeHWhUeE5NX3O5/ystBw0LCkQ9SNablRpaypOvZ59S7ZiHl0wBld
-   Koqfhsjj4v8lEpwri7HgNWs9ffUxNGFVF5EtEFjUMgIvaO4tKbE5Y3cbY
-   2ZGBtQ54cgWKJSudE0opIX/CTWHLmhO4TsnFaTiWm9Jbt3UKZlFQcrxom
-   w==;
+  bh=Te0pR3/quGq/f/Wi8zoD6c9aeM5Y2/WeW3aOOyc6lNk=;
+  b=fIle5B5m6UxwlrUQ2xqOeNoJtzAYownsQCyBCrKHE4K/0mg7iMFYdy7P
+   Y2TzOsp1H4zaLrAT6oS5T7FLUUgrQnGmKoKgbFMz4rQo+7ZxR+ya/M3X9
+   wkwkq4GC/kBysKu8/saZ/zUo6jgTYMzWijY+miNhE0I6/RI6k4LLEs2LQ
+   wpiUEmmcPsBCzr+MeHJ+9Lki0hax42scgnYP538K1Ugk5mAXcG2D1BQob
+   n5OxenBfL/uwF66ge7aOKIahtqTJ/qac/cn9rwEf/Xcvr2pmo8iDTSnV4
+   OvgnMNEul5y87J9r4mMqVAJHIrXnOwwpUa4h6bnf5VjdMSqyI3y+sBmBK
+   Q==;
 X-IronPort-AV: E=Sophos;i="5.91,234,1647273600"; 
-   d="scan'208";a="201514748"
+   d="scan'208";a="201514743"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 18 May 2022 17:17:21 +0800
-IronPort-SDR: umq04vpoRgwO65U459Z1QnJw7MA1+qFS4jUgqsi8jGHpj7/JRpUkQfhky9lR120f9x3/6ii2zw
- Og9j9vLSviuL/OVzLACGlYXFsXzLpcNHpHCY29ZbB85A/dwmGuD8dYin+AT108I0f7v1Qg2HX7
- KEs62QonDpef5HcL5X3ZDCKdPSPNC1F5BkVxR886srXpIzr52qVwg2iNAYsc0ysQZLIVtgj5+S
- 3o9zDhmwYDEmDTsBQX91TmbyBzx+GP39rlT1iqzsPZM4kP3uExj1TIUqXqBZQCQzqH//QE8NnA
- nk4Li9UIk9ZJQlo5ogeR1/6l
+  by ob1.hgst.iphmx.com with ESMTP; 18 May 2022 17:17:19 +0800
+IronPort-SDR: H4gAm5Ke4Ipa9VHgl8XyiI2qpYW76dnEAUu8iqzSPrIQKRrc/QZaKhfSFIUJA4N5sVj3f8r7hJ
+ /bdImn3ihMO01M6N8OMtA/MbrUffqAJ9urfaF/CjYdEtpDsC6FnFxvARnREzdRa67p8OWN97cy
+ rBRK2EZSJ+546eOAoU5CD1UC/8L0ZZQfoUP4zT0wAYrprEj/oXBK5659CoSY0zzkYuveE3k9w+
+ Vku4bp96x2GkTVRgsbvA9TJENlUXVPq5nVg781M01j+DkM4C5UTopXqvXCUs1jfafiS5EE0WPM
+ B+nqAHxLm7B9/0HwEGLPn1Cz
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 May 2022 01:40:24 -0700
-IronPort-SDR: C4G0NsdmP0zxw/m3uNoPV/lqzYIMUMeEMpj/fTb0qZky0B2LOfJ+eZ94DzxAhS9GCf1GKTOF6d
- 3R9vjJn5vkZan8HUDpQlzIAhcrV18kBNdc8iZmgEbhjJCQ3+4CrruD7anqdABQFlSddtklLd6a
- 7ujk8KXG9QIlMtcXxTD33HPcqxD4FyWh1rw0uK2z7efyIdUmMVtJc+pIsKO352bRvtuF+aRo8U
- tAsQfn2YkCEmGGb4ZXTrcs9SEdbxIgivWmPt4reFfdvIK0Lj3DjEeF5IM1cEHaGws3Q92U25GE
- qFM=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 18 May 2022 01:40:22 -0700
+IronPort-SDR: OzdXNEYu8N+MOLkjCcfbHiQLFqEZcAXhvMJ7O8bnOmInWOj/S/+xBPipyHYSAmHVEPX14tvetW
+ GCC9diaqfFDsXAZveljTNwVNySXsNxkNrYD/XNNHYdpUV5N2EFlK9lFJC6WeEFty9rUu37dKO9
+ GatX5xBgO6XrKYtDRWRjhdHe1CFJ3ywTLH6tlYExQV6kDT2g8BJoSq3FYU0rneUwZfNNXkG1jp
+ +f/HgoU1lfWeJPldri8ZEF62hA4oqU+vYTX+Zjy4YeMYN8cfEX2o9tY0MqW8csyGeNoHdI/sKz
+ H/E=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip02.wdc.com with ESMTP; 18 May 2022 02:17:20 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 18 May 2022 02:17:18 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [RFC ONLY 4/6] btrfs-progs: allow zoned RAID1
-Date:   Wed, 18 May 2022 02:17:14 -0700
-Message-Id: <20220518091716.786452-5-johannes.thumshirn@wdc.com>
+Subject: [RFC ONLY 1/6] btrfs-progs: add raid-stripe-tree definitions
+Date:   Wed, 18 May 2022 02:17:11 -0700
+Message-Id: <20220518091716.786452-2-johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.35.3
 In-Reply-To: <20220518091716.786452-1-johannes.thumshirn@wdc.com>
 References: <20220518091716.786452-1-johannes.thumshirn@wdc.com>
@@ -64,93 +64,83 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- kernel-shared/zoned.c | 20 +++++++++++++++-----
- kernel-shared/zoned.h |  4 ++--
- mkfs/main.c           |  4 ++--
- 3 files changed, 19 insertions(+), 9 deletions(-)
+ kernel-shared/ctree.h | 49 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
-diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-index 396b74f0d906..7d6f4357ea9a 100644
---- a/kernel-shared/zoned.c
-+++ b/kernel-shared/zoned.c
-@@ -775,7 +775,7 @@ out:
- 	return ret;
- }
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 68943ff294cc..56b3185001af 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -300,6 +300,24 @@ struct btrfs_chunk {
+ 	/* additional stripes go here */
+ } __attribute__ ((__packed__));
  
--bool zoned_profile_supported(u64 map_type)
-+bool zoned_profile_supported(u64 map_type, bool rst)
- {
- 	bool data = (map_type & BTRFS_BLOCK_GROUP_DATA);
- 	u64 flags = (map_type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
-@@ -784,9 +784,18 @@ bool zoned_profile_supported(u64 map_type)
- 	if (flags == 0)
- 		return true;
++struct btrfs_stripe_extent {
++	/* btrfs device-id this raid extent  lives on */
++	__le64 devid;
++	/* offset from  the devextent start */
++	__le64 offset;
++} __attribute__ ((__packed__));
++
++struct btrfs_dp_stripe {
++	/* logical address for this stripe */
++	__le64 logical;
++	/* size of this stripe in bytes */
++	__le32 size;
++	/* reserved for future use/padding */
++	__le32 reserved;
++	/* array of stripe extents this stripe is comprised of */
++	struct btrfs_stripe_extent extents;
++} __attribute__ ((__packed__));
++
+ #define BTRFS_FREE_SPACE_EXTENT	1
+ #define BTRFS_FREE_SPACE_BITMAP	2
  
--	/* We can support DUP on metadata */
--	if (!data && (flags & BTRFS_BLOCK_GROUP_DUP))
--		return true;
-+	if (data) {
-+		/* Data RAID1 needs a raid-stripe-tree */
-+		if ((flags & BTRFS_BLOCK_GROUP_RAID1_MASK) && rst)
-+			return true;
-+	} else {
-+		/* We can support DUP on metadata/system */
-+		if (flags & BTRFS_BLOCK_GROUP_DUP)
-+			return true;
-+		/* We can support RAID1 on metadata/system */
-+		if (flags & BTRFS_BLOCK_GROUP_RAID1_MASK)
-+			return true;
-+	}
+@@ -1206,6 +1224,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_root *uuid_root;
+ 	struct btrfs_root *block_group_root;
++	struct btrfs_root *stripe_root;
  
- 	/* All other profiles are not supported yet */
- 	return false;
-@@ -903,7 +912,8 @@ int btrfs_load_block_group_zone_info(struct btrfs_fs_info *fs_info,
- 		}
- 	}
+ 	struct rb_root global_roots_tree;
+ 	struct rb_root fs_root_tree;
+@@ -1749,6 +1768,36 @@ BTRFS_SETGET_FUNCS(free_space_extent_count, struct btrfs_free_space_info,
+ 		   extent_count, 32);
+ BTRFS_SETGET_FUNCS(free_space_flags, struct btrfs_free_space_info, flags, 32);
  
--	if (!zoned_profile_supported(map->type)) {
-+	// XXX: not sure how to do yet
-+	if (!zoned_profile_supported(map->type, true)) {
- 		error("zoned: profile %s not yet supported",
- 		      btrfs_group_profile_str(map->type));
- 		ret = -EINVAL;
-diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
-index cc0d6b6f166d..c56788bcf07b 100644
---- a/kernel-shared/zoned.h
-+++ b/kernel-shared/zoned.h
-@@ -132,7 +132,7 @@ static inline bool btrfs_dev_is_empty_zone(struct btrfs_device *device, u64 pos)
- 	return zinfo->zones[zno].cond == BLK_ZONE_COND_EMPTY;
- }
- 
--bool zoned_profile_supported(u64 map_type);
-+bool zoned_profile_supported(u64 map_type, bool rst);
- int btrfs_reset_dev_zone(int fd, struct blk_zone *zone);
- u64 btrfs_find_allocatable_zones(struct btrfs_device *device, u64 hole_start,
- 				 u64 hole_end, u64 num_bytes);
-@@ -213,7 +213,7 @@ static inline int btrfs_wipe_temporary_sb(struct btrfs_fs_devices *fs_devices)
- 	return 0;
- }
- 
--static inline bool zoned_profile_supported(u64 map_type)
-+static inline bool zoned_profile_supported(u64 map_type, bool rst)
- {
- 	return false;
- }
-diff --git a/mkfs/main.c b/mkfs/main.c
-index a603ec5896f3..46dbc4c0c363 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -1424,8 +1424,8 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 	if (ret)
- 		goto error;
- 
--	if (zoned && (!zoned_profile_supported(BTRFS_BLOCK_GROUP_METADATA | metadata_profile) ||
--		      !zoned_profile_supported(BTRFS_BLOCK_GROUP_DATA | data_profile))) {
-+	if (zoned && (!zoned_profile_supported(BTRFS_BLOCK_GROUP_METADATA | metadata_profile, runtime_features & BTRFS_RUNTIME_FEATURE_RAID_STRIPE_TREE) ||
-+		      !zoned_profile_supported(BTRFS_BLOCK_GROUP_DATA | data_profile, runtime_features & BTRFS_RUNTIME_FEATURE_RAID_STRIPE_TREE))) {
- 		error("zoned mode does not yet support RAID/DUP profiles, please specify '-d single -m single' manually");
- 		goto error;
- 	}
++/* struct btrfs_dp_stripe */
++BTRFS_SETGET_FUNCS(dp_stripe_logical, struct btrfs_dp_stripe, logical, 64);
++BTRFS_SETGET_FUNCS(dp_stripe_size, struct btrfs_dp_stripe, size, 32);
++BTRFS_SETGET_FUNCS(stripe_extent_devid, struct btrfs_stripe_extent, devid, 64);
++BTRFS_SETGET_FUNCS(stripe_extent_offset, struct btrfs_stripe_extent, offset, 64);
++
++static inline struct btrfs_stripe_extent *btrfs_stripe_extent_nr(
++						 struct btrfs_dp_stripe *dps,
++						 int nr)
++{
++	unsigned long offset = (unsigned long)dps;
++	offset += offsetof(struct btrfs_dp_stripe, extents);
++	offset += nr * sizeof(struct btrfs_stripe_extent);
++	return (struct btrfs_stripe_extent *)offset;
++}
++
++static inline u64 btrfs_stripe_extent_devid_nr(struct extent_buffer *eb,
++					       struct btrfs_dp_stripe *dps,
++					       int nr)
++{
++	return btrfs_stripe_extent_devid(eb, btrfs_stripe_extent_nr(dps, nr));
++}
++
++static inline u64 btrfs_stripe_extent_offset_nr(struct extent_buffer *eb,
++						struct btrfs_dp_stripe *dps,
++						int nr)
++{
++	return btrfs_stripe_extent_offset(eb, btrfs_stripe_extent_nr(dps, nr));
++}
++
+ /* struct btrfs_inode_ref */
+ BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
 -- 
 2.35.3
 

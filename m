@@ -2,47 +2,53 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26946C433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 08:00:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C26F7C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 18 May 2022 08:44:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232989AbiERIAg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 18 May 2022 04:00:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32860 "EHLO
+        id S233363AbiERIon (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 18 May 2022 04:44:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36508 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232861AbiERIAf (ORCPT
+        with ESMTP id S233450AbiERIom (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 18 May 2022 04:00:35 -0400
+        Wed, 18 May 2022 04:44:42 -0400
 Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 30FE212719D;
-        Wed, 18 May 2022 01:00:34 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C51E15C36B
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 May 2022 01:44:40 -0700 (PDT)
 Received: by verein.lst.de (Postfix, from userid 2407)
-        id C8B2D68C7B; Wed, 18 May 2022 10:00:22 +0200 (CEST)
-Date:   Wed, 18 May 2022 10:00:20 +0200
+        id 33DCF68AFE; Wed, 18 May 2022 10:44:38 +0200 (CEST)
+Date:   Wed, 18 May 2022 10:44:37 +0200
 From:   Christoph Hellwig <hch@lst.de>
-To:     Javier =?iso-8859-1?Q?Gonz=E1lez?= <javier.gonz@samsung.com>
-Cc:     Christoph Hellwig <hch@lst.de>,
-        Pankaj Raghav <p.raghav@samsung.com>, axboe@kernel.dk,
-        damien.lemoal@opensource.wdc.com, pankydev8@gmail.com,
-        dsterba@suse.com, linux-nvme@lists.infradead.org,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        jiangbo.365@bytedance.com, linux-block@vger.kernel.org,
-        gost.dev@samsung.com, linux-kernel@vger.kernel.org,
-        dm-devel@redhat.com
-Subject: Re: [PATCH v4 00/13] support non power of 2 zoned devices
-Message-ID: <20220518080020.GA3697@lst.de>
-References: <CGME20220516165418eucas1p2be592d9cd4b35f6b71d39ccbe87f3fef@eucas1p2.samsung.com> <20220516165416.171196-1-p.raghav@samsung.com> <20220517081048.GA13947@lst.de> <20220517091834.dvkrab5l63v3b2zn@ArmHalley.local>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     Christoph Hellwig <hch@lst.de>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 01/15] btrfs: introduce a pure data checksum checking
+ helper
+Message-ID: <20220518084437.GB6933@lst.de>
+References: <20220517145039.3202184-1-hch@lst.de> <20220517145039.3202184-2-hch@lst.de> <PH0PR04MB74168E42A977889B254953D29BCE9@PH0PR04MB7416.namprd04.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20220517091834.dvkrab5l63v3b2zn@ArmHalley.local>
+In-Reply-To: <PH0PR04MB74168E42A977889B254953D29BCE9@PH0PR04MB7416.namprd04.prod.outlook.com>
 User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 17, 2022 at 11:18:34AM +0200, Javier González wrote:
-> Does the above help you reconsidering your interest in supporting this
-> in NVMe?
+On Tue, May 17, 2022 at 02:59:13PM +0000, Johannes Thumshirn wrote:
+> This makes the read flow a bit awkward IMHO, as it returns in the middle of the
+> function with the "good" condition and then continues with error handling.
+> 
+> How about:
+> 
+> 	if (btrfs_check_data_sector(...))
+> 		goto zeroit;
+> 
+> 	return 0;
+> 
+> zeroit:
+> 	btrfs_print_data_csum_error(...);
 
-Very little.  It just seems like a really bad idea.
+Well, the flow was just as a bad before, but otherwise I agree.

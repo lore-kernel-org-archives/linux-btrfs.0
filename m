@@ -2,124 +2,137 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1E88C433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 May 2022 11:37:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26CC0C433F5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 May 2022 11:37:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237460AbiESLhF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 May 2022 07:37:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35342 "EHLO
+        id S231908AbiESLhk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 May 2022 07:37:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37586 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234980AbiESLhB (ORCPT
+        with ESMTP id S231274AbiESLhg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 May 2022 07:37:01 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DF9F952517
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2022 04:36:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1652960217;
-        bh=I+SVI+10eWx8J2nf/EPE6Od/XRD42oHLcWVZ/vRA8m4=;
-        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-        b=LFQCzNeZTN04UJq20HP7/s3pzXlP58tkCs4tk8Q5z0bSSshPab/NRz9PqVArVniD7
-         9KO9dw0zUUue+8DzN40TS0euqs9CbGb2A709YpwRMIl+m5nWdeK6I0ku9+XCttcBwZ
-         SYWAymHjIUrtjQIrXxnhGTq/IrVxDDmkaF+O09CY=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MjS9C-1nSzlN3l8M-00kueP; Thu, 19
- May 2022 13:36:56 +0200
-Message-ID: <5679bb8d-d0af-187b-1bd0-fd8ccc85a867@gmx.com>
-Date:   Thu, 19 May 2022 19:36:52 +0800
+        Thu, 19 May 2022 07:37:36 -0400
+Received: from zaphod.cobb.me.uk (zaphod.cobb.me.uk [IPv6:2001:41c8:51:983::131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1351C5C361
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 May 2022 04:37:31 -0700 (PDT)
+Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
+        id 7D66E9B806; Thu, 19 May 2022 12:37:27 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.me.uk; s=201703;
+        t=1652960247; bh=T2FQvaFShlLMEGDubd4AXYQLXGEYqZJXI5pxmjUiMnA=;
+        h=Date:From:Subject:To:Cc:References:In-Reply-To:From;
+        b=FU3+IRyBZ8RUEVBuSjMN6FI724wiyKRvR5axlRuiMGqdBqQmWHdlR0OEnU+KlbXNN
+         lQQWzmFcISSamvZpZSjFKLwHiEHFCUUIEjCKx7duXV/V1ofT8b5X0ZK2ZA1dN6nvQz
+         QKkHA2By1JfQlLXopRRUAHVwjOp6JaXBaduR65LrvjgsPDBQH20YpvsohvmfJhWiSD
+         MSmO8v5Gzjp8uSriTmikPK/ft2owCMyMneN5f8H1jJ18nT7hiOEacZQhDkjFrqFnaS
+         1a8nEwAe9kbnqjMlzeuXELy8tEMydbpUValoXrVev7nzIIbEO69Zsp3bPDwHuwM3JG
+         wbVM6gf9/Nidw==
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 88D319B6AE;
+        Thu, 19 May 2022 12:32:26 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.me.uk; s=201703;
+        t=1652959946; bh=T2FQvaFShlLMEGDubd4AXYQLXGEYqZJXI5pxmjUiMnA=;
+        h=Date:From:Subject:To:Cc:References:In-Reply-To:From;
+        b=cAhBopxo0s49hAyNzVUxIQN5Wj60C+5N67/tjNX5YwOiDLOkziJTOsDdv9Qp/ZSYv
+         vfxHfC21cQX9YiFfr2lCXI2BXxa91xZWF/YwodYVG+4kVS7QCv/joWXYmcfyYAuWWf
+         ikxLin5NuBsHiTkExya9RkNmK2NGCr4JJJxnBwJL8j7ZyK3RCQr4rgpyvkrL0TS6iY
+         gvoiyq+8MGdKOMsleRM2u63NGUvqr5hHcXZJAS8/g+pgsJklyJFFRZM5LVtz2enHWa
+         tJ5xFgeuTbtnuaAHVOrBuT0esu03cyT/vpaK5xWK58CqrnLh7XmVTYUM5jUQVVsjvr
+         JZ5tCR3rhIFeg==
+Received: from [192.168.0.202] (ryzen.home.cobb.me.uk [192.168.0.202])
+        by black.home.cobb.me.uk (Postfix) with ESMTP id 4806616FC5C;
+        Thu, 19 May 2022 12:32:26 +0100 (BST)
+Message-ID: <fbc486d1-b798-c3f5-7dae-0f0cbf4613d9@cobb.uk.net>
+Date:   Thu, 19 May 2022 12:32:26 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.0
+ Thunderbird/91.8.1
+From:   Graham Cobb <g.btrfs@cobb.me.uk>
 Subject: Re: can't boot into filesystem
 Content-Language: en-US
-To:     arnaud gaboury <arnaud.gaboury@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To:     arnaud gaboury <arnaud.gaboury@gmail.com>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <CAK1hC9sdifM=m3iH7YVh6Cd1ZKHaW69B+6Hz9=aO_r1fh3D7Tg@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <CAK1hC9sdifM=m3iH7YVh6Cd1ZKHaW69B+6Hz9=aO_r1fh3D7Tg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:QONeARluEgWWZBJAqx9r0FB63sTe0L25ObrilaFDbpEyPht0Xiq
- 5jvnO0Yw8jTPfmQzGtEsYRo7j8PUqZCejVaniKrX559D+Y9j6Dy8+Am3N60dISDkCwkJCdi
- OZQbdAEhhDefQPSqBh/CLBkWpWtW3Z9f6tHjlKU46A7hY1O+gW+hnmOgVOAy+M/KUQ9yxf5
- MPf6EorBzxjzlsEUmzmdg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:VVplkOfupOY=:XvgWyjdoTuRGh+b2IOEPi4
- w2anboL+/sJUSCmbw5Yhj6nf7IBveZB6rZ0y5lrIpe6dIob4REJg8j8lm45f1dbTiYb+ZqVPA
- 9/eADZDfqoM4Rjue1zomgWAts6RLlnPAeaYKB+jzjZEdysbVRFsbJCvX1JS6XBisyGSUH8Kzh
- X3sFOZPm1jWLQTUDGE7lPgNsoBaQtrwuxVhX3PW3/Jta6S2R4sef02qGMGgt51u8x5Ts+yfYz
- R4KodM+CyaJFuyvFnk1zjWdiYm5wdt5Rt2zCunQ+HU5IH0h9bBJigoLl9H//0JFZVLGeQdlnr
- cciu5UIMPTI0NjUidUL070KsmUuMss875RuLkur6GFzOYaD2gJfZ54qlgCAnLFw/KZA27VFlQ
- lPEHFPS5kdSaQm11dQj0dr4RxKEhZTY4Cqtg2eRLpt+0/6S4VkNgzcx9oIUzK+ZdNwGrG3vQf
- ak9C6rAYX9iiaZAq9MYes/lgi29vViAYaH1xRyDY/YOFuhAGcY6A43WgBlqXKxmTrJs5FNtfL
- VEiiyie3KYt815GelzgmCn3lU/r7g7t+CvM/pp9BeQpXcaK/KK59lQvl5myXQadAvo0ee1yJo
- xiMstWy3+4WN33NM75Pu0MmsKveiShGJB/bObL+oB9Fo+lg6DvcfUZLXRBBvhMVqQLBUkrD3d
- xd5cDjkxhV0nxNzpPE4yHishyXH0MpJIudZgL5vodWJXcZqhhYvBBJNMQScRJ6880tE4bk6eW
- JJw8BVUk9WT+Ibc0dPa0SrfBPzd3qLmXa/fiTiwt9FXHP3lMfiyUdp7UsS3i2DKaBWjNKwKJK
- lh9JqLW0A1DS1bJUiSO/Is9MB/qlgfc9nNWkAkcQGZigGPwvfX/2MR0mutNc3TY/EgwpNPs8Z
- cxr+pXz+VB0oS4doXBxJ7b0rVXyXrGyhU2IRbRHI79vP6z7VtgQpTFjyu9cKibP8Lk2MrEOG+
- 2o2zeKrlLW5Z5jTLIwvLN7Hff+LEn1uUewIZYzjjAFVe5Ux2bewnoiH/hVIQ2nvxhkoluSvEL
- Js0X0cr3cC2RcoT8C4gc0z5w+dcP8hJHWtxizHtj0XWfpMX9XjmiEq5OdiEC9VHLJyWoj3+MA
- JqtVrnGgRlXqC+Z7Ut2OiL6KoAjXbVOlZ4kyZYyZipOa9A/R6+cujMERA==
+ <275444b7-de43-d0b5-dd4b-41670164e351@cobb.uk.net>
+ <CAK1hC9usm5ArZEf3xd4Tnd730_EBU4zwv3tL5wopu=XP2a4gJA@mail.gmail.com>
+In-Reply-To: <CAK1hC9usm5ArZEf3xd4Tnd730_EBU4zwv3tL5wopu=XP2a4gJA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 19/05/2022 12:14, arnaud gaboury wrote:
+> the issue has been solved.
+> I chrooted the filesystem, then run btrfs filesystem show. There, I
+> saw the external device I tried to attach tomy btrfs filesystem. That
+> was the change in my fstab. But I realized that the device was still
+> in my filesystem.
+> I ran btrfs delete and now I Am Back to my OS.
+> My error came from the fact that going back to the original fstab was
+> not enough as the external device was still added tomy filesystem.
 
+Great. In fact, if you add a device to a btrfs filesystem you do not
+make any change to fstab - when mounting a multi-device filesystem,
+btrfs will search for all the devices involved (and fail to mount if any
+are missing, by default).
 
-On 2022/5/19 17:58, arnaud gaboury wrote:
-> My OS has been freshly installed on a btrfs filesystem. I am quite new
-> to btrfs, especially when mounting specific partitions. After a change
-> in my fstab, I couldn't boot into the filesystem. Booting from a
-> rescue CD, I changed the fstab back to its original. Unfortunately I
-> still can't boot.
-> Here is part of the error message I have:
-> devid 2 uuid XXYYY is missing
-> failed to read chunk tree: -2
+For that reason, adding an external device to your root filesystem
+should be avoided if possible, as external devices, or their connectors
+or power supplies, are more likely to get damaged and then you can't boot.
 
-This is the reason, your fs is across multiple-device (like using RAID1
-profiles).
+> 
+> On Thu, May 19, 2022 at 12:39 PM Graham Cobb <g.btrfs@cobb.me.uk> wrote:
+>>
+>> You will probably get a much more useful reply from a developer later
+>> but in the meantime...
+>>
+>> Probably your rescue CD has an older kernel - new kernels do more
+>> validation on the filesystem. In that case, there is something wrong
+>> with the filesystem but the old kernel hasn't noticed.
+>>
+>> You might want to try a rescue CD based on a newer kernel. And/or you
+>> should do a "btrfs check" with the latest btrfs-progs that you can run.
+>> You could even chroot into /mnt/@ (bind mounting dev, proc and sys, of
+>> course) and see if you can run the btrfs image from /mnt/@/usr/bin/btrfs
+>> while booted in your rescue CD. If so, try using it to do a "btrfs
+>> check" on your filesystem. If not, use the btrfs check from the rescue
+>> CD itself. In either case, DO NOT SPECIFY --repair UNLESS A DEVELOPER
+>> TELLS YOU TO!!
+>>
+>> By the way, /mnt/@ IS your root - it isn't a copy of it. You can see in
+>> fstab that the "@" subvolume of your disk gets mounted into "/" on boot.
+>>
+>> On 19/05/2022 10:58, arnaud gaboury wrote:
+>>> My OS has been freshly installed on a btrfs filesystem. I am quite new
+>>> to btrfs, especially when mounting specific partitions. After a change
+>>> in my fstab, I couldn't boot into the filesystem. Booting from a
+>>> rescue CD, I changed the fstab back to its original. Unfortunately I
+>>> still can't boot.
+>>> Here is part of the error message I have:
+>>> devid 2 uuid XXYYY is missing
+>>> failed to read chunk tree: -2
+>>>
+>>> part of my fstab:
+>>> LABEL=magnolia   / btrfs  rw,noatime.....,subvol=@
+>>> LABEL=magnolia  /btrbk_pool  btrfs  noatime,....,subvolid=5
+>>> LABEL=magnolia   /home   btrfs .....,subvol=/@home
+>>> ......
+>>>
+>>>
+>>>
+>>> I am now back to rescue CD. I can mount my filesystem with no error:
+>>> # mount -t btrfs /dev/sdb2 /mnt
+>>> # ls -al /mnt/
+>>> @
+>>> btrbk_snapshots
+>>> @home
+>>> home
+>>>
+>>> I can see my filesystem when I ls the @ directory.
+>>> What can I do to boot my filesystem which is perfectly reproduced in
+>>> the @ subvolume? Shall I simply cp the whole filesystem stored in @ to
+>>> the root of /mnt  when my device sdb2 is mounted?
+>>> Sorry for the lack of formatting and info, but I can't use the browser
+>>> from the rescue CD so I am writing from another computer.
+>>
 
-And on boot, you initramfs doesn't call 'btrfs dev scan' to let btrfs
-scan all devices and assemble the full device list.
-
-Thus it can only detect one disk of your multi-device btrfs, and failed
-to mount.
-
-That's why your rescue CD can mount the fs.
-
-You may want to check the manual of distro to make sure the initramfs is
-doing proper preparation work for btrfs (mostly just scan the devices).
-
-For example of Archlinux:
-
-https://wiki.archlinux.org/title/mkinitcpio
-
-You need "btrfs" hook, which is doing exactly I mentioned, run "btrfs
-dev scan".
-
-Thanks,
-Qu
->
-> part of my fstab:
-> LABEL=3Dmagnolia   / btrfs  rw,noatime.....,subvol=3D@
-> LABEL=3Dmagnolia  /btrbk_pool  btrfs  noatime,....,subvolid=3D5
-> LABEL=3Dmagnolia   /home   btrfs .....,subvol=3D/@home
-> ......
->
->
->
-> I am now back to rescue CD. I can mount my filesystem with no error:
-> # mount -t btrfs /dev/sdb2 /mnt
-> # ls -al /mnt/
-> @
-> btrbk_snapshots
-> @home
-> home
->
-> I can see my filesystem when I ls the @ directory.
-> What can I do to boot my filesystem which is perfectly reproduced in
-> the @ subvolume? Shall I simply cp the whole filesystem stored in @ to
-> the root of /mnt  when my device sdb2 is mounted?
-> Sorry for the lack of formatting and info, but I can't use the browser
-> from the rescue CD so I am writing from another computer.

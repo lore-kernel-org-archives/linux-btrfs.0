@@ -2,41 +2,39 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AFAB4C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 22 May 2022 11:48:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC742C433FE
+	for <linux-btrfs@archiver.kernel.org>; Sun, 22 May 2022 11:48:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245672AbiEVLsN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 May 2022 07:48:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57602 "EHLO
+        id S245658AbiEVLsO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 May 2022 07:48:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57648 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237141AbiEVLsK (ORCPT
+        with ESMTP id S245708AbiEVLsN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 May 2022 07:48:10 -0400
+        Sun, 22 May 2022 07:48:13 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C2BB71659D
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 May 2022 04:48:09 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7CE0C252AA
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 May 2022 04:48:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=3HkxywVfQ3AMsTMMjilPPtGwVSc3Tp2mwj9m7F2GFyk=; b=nIvzAoLIIel1K/2R0ohh2Wry9D
-        c+BO6Btah58h0tZLAJDzOh9lpwb1AOFpk+bmUeKzaEhr9NdP4QCtldT9e/p/twZBieFws6A5JO6x4
-        tSYc5Sk7pe0OYG5kAf7JfiobvHP6iAZbmjC8Z8+zv1BV01oPbvq2xfLylJWJYpE4Qju7FUdJfw1Jw
-        v+mk3qeKJ37KCCachxqDhgz/LVq0GX11JiInXkJJAxT72vyLNEHTJ8FfPxl18vTFHC75PWFI3x2he
-        ZS13WvqW3xoz0IgsNO9ZZW1eIidp1mKTNrDKDwGNdouZmXf092mzO36c79kJsLUok+B3she44L1V6
-        aKWyTPpQ==;
+        bh=tPhBANDYHkVVSztiiRuLvH6bGaTqH0OvA8WX/2PF9cw=; b=wMEfEjt/S1htCYWc/+diFt5W5T
+        WhVk8Ibl784epRdof8/sbn/bW9BuMk1iSUHLbw339KAR8j3Q9xMhnhQGqkefUeVjkWQU1tmWwjFPx
+        w06vkocznHutxV4V+mzeLznKOBnlL32kcWLzparK4qQviTGA95jlpD57jQ/4fwukltRgxZgBADbZl
+        vgHrqLqqMkXj6QdA3uYOe67Cb3p37X3VJsKXBjdwZYn/g9p3kBZNdy45Hhr2PeUB7+qKHJ3ftFLk6
+        pAXz7YG8utxblJ+7bvC7AUz0XkHUgTAIyFm2z9cRvXHWgQnFcJGjGKaQCzP8vqmUPBc5MKZxCXoXr
+        633yFMBw==;
 Received: from [2001:4bb8:19a:6dab:76a3:f7ab:4f04:784a] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nsk44-001E2b-S0; Sun, 22 May 2022 11:48:05 +0000
+        id 1nsk49-001E45-QE; Sun, 22 May 2022 11:48:10 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Nikolay Borisov <nborisov@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 3/8] btrfs: remove duplicated parameters from submit_data_read_repair()
-Date:   Sun, 22 May 2022 13:47:49 +0200
-Message-Id: <20220522114754.173685-4-hch@lst.de>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 5/8] btrfs: refactor end_bio_extent_readpage
+Date:   Sun, 22 May 2022 13:47:51 +0200
+Message-Id: <20220522114754.173685-6-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220522114754.173685-1-hch@lst.de>
 References: <20220522114754.173685-1-hch@lst.de>
@@ -47,101 +45,144 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+Untangle the goto mess and remove the pointless 'ret' local variable.
 
-The function submit_data_read_repair() is only called for buffered data
-read path, thus those members can be calculated using bvec directly:
-
-- start
-  start = page_offset(bvec->bv_page) + bvec->bv_offset;
-
-- end
-  end = start + bvec->bv_len - 1;
-
-- page
-  page = bvec->bv_page;
-
-- pgoff
-  pgoff = bvec->bv_offset;
-
-Thus we can safely replace those 4 parameters with just one bio_vec.
-
-Also remove the unused return value.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-[hch: also remove the return value]
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/extent_io.c | 28 +++++++++++-----------------
- 1 file changed, 11 insertions(+), 17 deletions(-)
+ fs/btrfs/extent_io.c | 87 +++++++++++++++++++++-----------------------
+ 1 file changed, 41 insertions(+), 46 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 588c7c606a2c6..dbec9be6daf9f 100644
+index e87474f5b9415..1d144f655f653 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2727,18 +2727,17 @@ static void end_page_read(struct page *page, bool uptodate, u64 start, u32 len)
- 		btrfs_subpage_end_reader(fs_info, page, start, len);
- }
+@@ -3015,7 +3015,6 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 	 */
+ 	u32 bio_offset = 0;
+ 	int mirror;
+-	int ret;
+ 	struct bvec_iter_all iter_all;
  
--static blk_status_t submit_data_read_repair(struct inode *inode,
--					    struct bio *failed_bio,
--					    u32 bio_offset, struct page *page,
--					    unsigned int pgoff,
--					    u64 start, u64 end,
--					    int failed_mirror,
--					    unsigned int error_bitmap)
-+static void submit_data_read_repair(struct inode *inode, struct bio *failed_bio,
-+		u32 bio_offset, const struct bio_vec *bvec, int failed_mirror,
-+		unsigned int error_bitmap)
- {
-+	const unsigned int pgoff = bvec->bv_offset;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
-+	struct page *page = bvec->bv_page;
-+	const u64 start = page_offset(bvec->bv_page) + bvec->bv_offset;
-+	const u64 end = start + bvec->bv_len - 1;
- 	const u32 sectorsize = fs_info->sectorsize;
- 	const int nr_bits = (end + 1 - start) >> fs_info->sectorsize_bits;
--	int error = 0;
- 	int i;
- 
- 	BUG_ON(bio_op(failed_bio) == REQ_OP_WRITE);
-@@ -2785,11 +2784,9 @@ static blk_status_t submit_data_read_repair(struct inode *inode,
- 			continue;
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
+@@ -3026,6 +3025,7 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
+ 		const u32 sectorsize = fs_info->sectorsize;
+ 		unsigned int error_bitmap = (unsigned int)-1;
++		bool repair = false;
+ 		u64 start;
+ 		u64 end;
+ 		u32 len;
+@@ -3063,55 +3063,23 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 			if (is_data_inode(inode)) {
+ 				error_bitmap = btrfs_verify_data_csum(bbio,
+ 						bio_offset, page, start, end);
+-				ret = error_bitmap;
++				if (error_bitmap)
++					uptodate = false;
+ 			} else {
+-				ret = btrfs_validate_metadata_buffer(bbio,
+-					page, start, end, mirror);
++				if (btrfs_validate_metadata_buffer(bbio,
++						page, start, end, mirror))
++					uptodate = false;
+ 			}
+-			if (ret)
+-				uptodate = false;
+-			else
+-				clean_io_failure(BTRFS_I(inode)->root->fs_info,
+-						 failure_tree, tree, start,
+-						 page,
+-						 btrfs_ino(BTRFS_I(inode)), 0);
  		}
- 		/*
--		 * Repair failed, just record the error but still continue.
--		 * Or the remaining sectors will not be properly unlocked.
-+		 * Continue on failed repair, otherwise the remaining sectors
-+		 * will not be properly unlocked.
- 		 */
--		if (!error)
--			error = ret;
- next:
- 		end_page_read(page, uptodate, start + offset, sectorsize);
- 		if (uptodate)
-@@ -2802,7 +2799,6 @@ static blk_status_t submit_data_read_repair(struct inode *inode,
- 				start + offset + sectorsize - 1,
- 				&cached);
- 	}
--	return errno_to_blk_status(error);
- }
  
- /* lots and lots of room for performance fixes in the end_bio funcs */
-@@ -3093,10 +3089,8 @@ static void end_bio_extent_readpage(struct bio *bio)
- 			 * submit_data_read_repair() will handle all the good
- 			 * and bad sectors, we just continue to the next bvec.
- 			 */
--			submit_data_read_repair(inode, bio, bio_offset, page,
--						start - page_offset(page),
--						start, end, mirror,
--						error_bitmap);
+-		if (likely(uptodate))
+-			goto readpage_ok;
+-
+-		if (is_data_inode(inode)) {
+-			/*
+-			 * If we failed to submit the IO at all we'll have a
+-			 * mirror_num == 0, in which case we need to just mark
+-			 * the page with an error and unlock it and carry on.
+-			 */
+-			if (mirror == 0)
+-				goto readpage_ok;
+-
+-			/*
+-			 * submit_data_read_repair() will handle all the good
+-			 * and bad sectors, we just continue to the next bvec.
+-			 */
+-			submit_data_read_repair(inode, bio, bio_offset, bvec,
+-						mirror, error_bitmap);
+-
+-			ASSERT(bio_offset + len > bio_offset);
+-			bio_offset += len;
+-			continue;
+-		} else {
+-			struct extent_buffer *eb;
+-
+-			eb = find_extent_buffer_readpage(fs_info, page, start);
+-			set_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
+-			eb->read_mirror = mirror;
+-			atomic_dec(&eb->io_pages);
+-		}
+-readpage_ok:
+ 		if (likely(uptodate)) {
+ 			loff_t i_size = i_size_read(inode);
+ 			pgoff_t end_index = i_size >> PAGE_SHIFT;
+ 
++			clean_io_failure(BTRFS_I(inode)->root->fs_info,
++					 failure_tree, tree, start, page,
++					 btrfs_ino(BTRFS_I(inode)), 0);
++
+ 			/*
+ 			 * Zero out the remaining part if this range straddles
+ 			 * i_size.
+@@ -3128,14 +3096,41 @@ static void end_bio_extent_readpage(struct bio *bio)
+ 				zero_user_segment(page, zero_start,
+ 						  offset_in_page(end) + 1);
+ 			}
++		} else if (is_data_inode(inode)) {
++			/*
++			 * Only try to repair bios that actually made it to a
++			 * device.  If the bio failed to be submitted mirror
++			 * is 0 and we need to fail it without retrying.
++			 */
++			if (mirror > 0)
++				repair = true;
++		} else {
++			struct extent_buffer *eb;
++
++			eb = find_extent_buffer_readpage(fs_info, page, start);
++			set_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
++			eb->read_mirror = mirror;
++			atomic_dec(&eb->io_pages);
+ 		}
++
++		if (repair) {
++			/*
++			 * submit_data_read_repair() will handle all the good
++			 * and bad sectors, we just continue to the next bvec.
++			 */
 +			submit_data_read_repair(inode, bio, bio_offset, bvec,
 +						mirror, error_bitmap);
++		} else {
++			/* Update page status and unlock */
++			end_page_read(page, uptodate, start, len);
++			endio_readpage_release_extent(&processed,
++					BTRFS_I(inode), start, end,
++					PageUptodate(page));
++		}
++
+ 		ASSERT(bio_offset + len > bio_offset);
+ 		bio_offset += len;
  
- 			ASSERT(bio_offset + len > bio_offset);
- 			bio_offset += len;
+-		/* Update page status and unlock */
+-		end_page_read(page, uptodate, start, len);
+-		endio_readpage_release_extent(&processed, BTRFS_I(inode),
+-					      start, end, PageUptodate(page));
+ 	}
+ 	/* Release the last extent */
+ 	endio_readpage_release_extent(&processed, NULL, 0, 0, false);
 -- 
 2.30.2
 

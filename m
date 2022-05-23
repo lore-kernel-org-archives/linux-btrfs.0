@@ -2,50 +2,51 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C1B91C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 23 May 2022 01:48:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEFE1C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 23 May 2022 01:49:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351914AbiEWBs4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 22 May 2022 21:48:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47164 "EHLO
+        id S1351941AbiEWBs7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 22 May 2022 21:48:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47202 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351911AbiEWBsz (ORCPT
+        with ESMTP id S1351911AbiEWBs6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 22 May 2022 21:48:55 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 50C2613FB9
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 May 2022 18:48:54 -0700 (PDT)
+        Sun, 22 May 2022 21:48:58 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC3E113FB9
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 May 2022 18:48:57 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 01EEA1F385;
-        Mon, 23 May 2022 01:48:53 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 7828821A3D;
+        Mon, 23 May 2022 01:48:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1653270533; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1653270536; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=lm7PihVKbV+9QZsORzpyjvpOtsEvQ3YmWkfAcpKY6cU=;
-        b=gs5uYY1RCWmUdMMVZ67YBG2CUgijg7hlDv805RIfEfi3BdCuJ2sT6KgiWulhNI0glMHLa8
-        OArlmMP7X/3YS4+vLZ/AZ+H+b+XRBWmZes57M0xFhwzRViQJquSrGxgB6xpvCbs3RdNLR9
-        oyPNq6qQZVJ5hvqLdc5D23kYkbj4/lA=
+        bh=WDctNB/veqTz/MmZVxHHf3z6LX06phlfzDb+nWHeCSc=;
+        b=ceDnBp0meJ/kCgPYq5bXzetCnf3nko2iWiYFo84x7Yes5QEp8UyTO2CHDj3RzagZ8RKMOf
+        EozxEqDnmtYs0kSIjV02rJvPOZpNt+szCVznVTEuRUPSud8xTnzEMX7RDL5wuefELl2dTX
+        lEAtTPZHDQbnGq9M1Ymmkbac7+j3Zig=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1B00113ADF;
-        Mon, 23 May 2022 01:48:51 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5D24013ADF;
+        Mon, 23 May 2022 01:48:55 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 6N8+NQPoimLzOQAAMHmgww
-        (envelope-from <wqu@suse.com>); Mon, 23 May 2022 01:48:51 +0000
+        id iEO8CQfoimLzOQAAMHmgww
+        (envelope-from <wqu@suse.com>); Mon, 23 May 2022 01:48:55 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Christoph Hellwig <hch@lst.de>
-Subject: [PATCH 1/7] btrfs: save the original bi_iter into btrfs_bio for buffered read
-Date:   Mon, 23 May 2022 09:48:25 +0800
-Message-Id: <be8e94c5b3236cda374109f9af64f860f88804c4.1653270322.git.wqu@suse.com>
+Cc:     Christoph Hellwig <hch@lst.de>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH 3/7] btrfs: add a btrfs_map_bio_wait helper
+Date:   Mon, 23 May 2022 09:48:27 +0800
+Message-Id: <aef1280361f3251d35f5a0a09092ddf2a9270d89.1653270322.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <cover.1653270322.git.wqu@suse.com>
 References: <cover.1653270322.git.wqu@suse.com>
@@ -55,67 +56,63 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Although we have btrfs_bio::iter, it currently have very limited usage:
+From: Christoph Hellwig <hch@lst.de>
 
-- RAID56
-  Which is not needed at all
+This helpers works like submit_bio_wait, but goes through the btrfs bio
+mapping using btrfs_map_bio.
 
-- btrfs_bio_clone()
-  This is used mostly for direct IO.
-
-For the incoming read repair patches, we want to grab the original
-logical bytenr, and be able to iterate the range of the bio (no matter
-if it's cloned).
-
-So this patch will also save btrfs_bio::iter for buffered read bios at
-submit_one_bio().
-And for the sake of consistency, also save the btrfs_bio::iter for
-direct IO at btrfs_submit_dio_bio().
-
-The reason that we didn't save the iter in btrfs_map_bio() is,
-btrfs_map_bio() is going to handle various bios, with or without
-btrfs_bio bioset.
-And we  want to keep btrfs_map_bio() to handle and only handle plain bios
-without bother the bioset.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/extent_io.c | 7 +++++++
- fs/btrfs/inode.c     | 2 ++
- 2 files changed, 9 insertions(+)
+ fs/btrfs/volumes.c | 21 +++++++++++++++++++++
+ fs/btrfs/volumes.h |  2 ++
+ 2 files changed, 23 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1d144f655f65..1bd1b1253f9d 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -188,6 +188,13 @@ static void submit_one_bio(struct bio *bio, int mirror_num,
- 	/* Caller should ensure the bio has at least some range added */
- 	ASSERT(bio->bi_iter.bi_size);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0819db46dbc4..8925bc606db7 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6818,6 +6818,27 @@ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 	return BLK_STS_OK;
+ }
  
-+	/*
-+	 * Save the original bi_iter for read bios, as read repair wants the
-+	 * orignial logical bytenr.
-+	 */
-+	if (bio_op(bio) == REQ_OP_READ)
-+		btrfs_bio(bio)->iter = bio->bi_iter;
++static void btrfs_end_io_sync(struct bio *bio)
++{
++	complete(bio->bi_private);
++}
 +
- 	if (is_data_inode(tree->private_data))
- 		btrfs_submit_data_bio(tree->private_data, bio, mirror_num,
- 					    compress_type);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 34466b543ed9..dd0882e1b982 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7974,6 +7974,8 @@ static inline blk_status_t btrfs_submit_dio_bio(struct bio *bio,
- 		ret = btrfs_bio_wq_end_io(fs_info, bio, BTRFS_WQ_ENDIO_DATA);
- 		if (ret)
- 			goto err;
-+		/* Check submit_one_bio() for the reason. */
-+		btrfs_bio(bio)->iter = bio->bi_iter;
- 	}
- 
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM)
++blk_status_t btrfs_map_bio_wait(struct btrfs_fs_info *fs_info, struct bio *bio,
++		int mirror)
++{
++	DECLARE_COMPLETION_ONSTACK(done);
++	blk_status_t ret;
++
++	bio->bi_private = &done;
++	bio->bi_end_io = btrfs_end_io_sync;
++	ret = btrfs_map_bio(fs_info, bio, mirror);
++	if (ret)
++		return ret;
++
++	wait_for_completion_io(&done);
++	return bio->bi_status;
++}
++
+ static bool dev_args_match_fs_devices(const struct btrfs_dev_lookup_args *args,
+ 				      const struct btrfs_fs_devices *fs_devices)
+ {
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6f784d4f5466..b346f6c40151 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -555,6 +555,8 @@ struct btrfs_block_group *btrfs_create_chunk(struct btrfs_trans_handle *trans,
+ void btrfs_mapping_tree_free(struct extent_map_tree *tree);
+ blk_status_t btrfs_map_bio(struct btrfs_fs_info *fs_info, struct bio *bio,
+ 			   int mirror_num);
++blk_status_t btrfs_map_bio_wait(struct btrfs_fs_info *fs_info, struct bio *bio,
++		int mirror);
+ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ struct btrfs_device *btrfs_scan_one_device(const char *path,
 -- 
 2.36.1
 

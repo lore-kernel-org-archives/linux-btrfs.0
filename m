@@ -2,127 +2,304 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E31DC433F5
-	for <linux-btrfs@archiver.kernel.org>; Wed, 25 May 2022 17:05:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BD9A3C433F5
+	for <linux-btrfs@archiver.kernel.org>; Wed, 25 May 2022 20:17:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245577AbiEYRFY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 25 May 2022 13:05:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40130 "EHLO
+        id S233881AbiEYURG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 25 May 2022 16:17:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245516AbiEYRFX (ORCPT
+        with ESMTP id S1345360AbiEYUPh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 25 May 2022 13:05:23 -0400
-Received: from libero.it (smtp-33.italiaonline.it [213.209.10.33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A752FA8880
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2022 10:05:21 -0700 (PDT)
-Received: from [192.168.1.27] ([78.12.14.90])
-        by smtp-33.iol.local with ESMTPA
-        id tuRjnT8NmKYsNtuRjnAVcJ; Wed, 25 May 2022 19:05:20 +0200
-x-libjamoibt: 1601
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=libero.it; s=s2021;
-        t=1653498320; bh=vB/HUfWQzIXlI/Wvd3g9Ff/B5IETWpzb2T3ZEv0QZ2I=;
-        h=From;
-        b=DmSWw7GXQ8HBiBO3tDwzD73sb9fuL/OIVTgERcQS5Nj/r/KDnMne04o8MiJtv0lIg
-         dhoZhSFKMzOQbJyT0CzE1hvbkDSNzKd4x79/XU2MLRUs+zLkIYWZsTEtgAmLnPYlHc
-         5ycwIS5tY8OW/VLK7Tghg63oU3GvfAxPDupeMPpb6YMWqc1hVyu/eSFQ/NS+EzNyqA
-         V/EKMllyZhw1U9yLOkbVnReGmF0bsco59yE7VZuSOZOjPGef7nsLqlrcjYKcH1j8nu
-         z9DQMnaf1AP7/cpTWsKEd9fOd7ASIi45kcOoXU0r4caQ4yWpsVnfF5RDxbOg8ciHTI
-         hzbpRaSWMtTMg==
-X-CNFS-Analysis: v=2.4 cv=KtOIZUaN c=1 sm=1 tr=0 ts=628e61d0 cx=a_exe
- a=tzWkov1jpxwUGlXVT4HyzQ==:117 a=tzWkov1jpxwUGlXVT4HyzQ==:17
- a=IkcTkHD0fZMA:10 a=zxxO8GdMmFOkapouXo0A:9 a=QEXdDO2ut3YA:10
-Message-ID: <d1ccc0de-90b0-30ab-6798-42913933dbb2@libero.it>
-Date:   Wed, 25 May 2022 19:05:19 +0200
+        Wed, 25 May 2022 16:15:37 -0400
+Received: from mail-yw1-x1132.google.com (mail-yw1-x1132.google.com [IPv6:2607:f8b0:4864:20::1132])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 15EACBE07
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2022 13:15:33 -0700 (PDT)
+Received: by mail-yw1-x1132.google.com with SMTP id 00721157ae682-3003cb4e064so53956777b3.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 May 2022 13:15:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=2l6BSzDjAGPpF/ceeq5SPip6R9J2pSYTg3oFPWLdoQM=;
+        b=OSNchd5PcI3haN3cTDaJwxnquPlNX6qnvLgH5QbIFfUV4iysrU4QfLmvGF7NKb8+b/
+         1TFB80Pcjhizq+d67Z4Z4htOqUksIdhstHlPbc9G2pLReMP7uqiKSPre9GSPCtzx86iN
+         vmm50gV0TSREL2JnfTKM95gDPb0veAVGa+PgT5msg5ep0r0+laU5vnyuXvEx2G9FpbaI
+         ejuJxQhbl3sW3UEH0jeG8l9CwigF/twPh9UfeTvh+fy6iCXV5FYi9K8cOoAZOUrKtDvc
+         GWCp02fKBlQ5KbHyIRfiLg9oiUhVhnEuJSRLVg9Bl05VH+YCe48Cv7EQDBwQrQFZsfIm
+         R8gA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=2l6BSzDjAGPpF/ceeq5SPip6R9J2pSYTg3oFPWLdoQM=;
+        b=HZUfDdGutKCxiTZZ83TSoOQZQtF24PhDTIMTFDIJCoA/MCWyBBvuzkDjSknWbgdsN5
+         DNgvcbMDw+Elp3oZ3LtbP1zBgxTqIIzcoXQjrSlca1G8l8y7aHej9JIMsSDT1dGLHiEB
+         VrkmwUy3QCot3sBfeepgtcVXz8jLOUvh/ClSBQrKVWVEf8eSdWhX6KMpUIqlDyOIOn4v
+         FN0EBxxfFGDVEPNu1W0nS9I3KflWvel4In2QbcbVcoJvqIsHPxT65tkdgR/HkwcBGFGn
+         CrVjuCdX8PLBK/zky5rapHiIwiU8MQp/XPXdSfhylyV0Z02q9xcU3iWc8olSZsCREMcb
+         1iTw==
+X-Gm-Message-State: AOAM533yqvg14aqcpHNYxdSrT7XXFVWpr7ioXT7Z/6B7+PAEA+E2gfGu
+        FptQZHy/k+jIrw9GKoW2mNJs/01xcanF9UKWdUisdSOtoHc=
+X-Google-Smtp-Source: ABdhPJwesRUCVRF1AYPLXOhA0IlwxFTf9t+QgX3Oe5XxbKacKsiiuOJNwIOPRPvIyiD6XUg9VpJsV/ck1V7ypUribb8=
+X-Received: by 2002:a81:1f89:0:b0:2f7:c6bc:9680 with SMTP id
+ f131-20020a811f89000000b002f7c6bc9680mr36531240ywf.234.1653509731831; Wed, 25
+ May 2022 13:15:31 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.1
-Reply-To: Goffredo Baroncelli <kreijack@libero.it>
-Content-Language: en-US
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>, coreutils@gnu.org
-Cc:     Forza <forza@tnonline.net>,
-        Matthew Warren <matthewwarren101010@gmail.com>,
-        Andrei Borzenkov <arvidjaar@gmail.com>
-From:   Goffredo Baroncelli <kreijack@libero.it>
-Subject: [RFC][PATCH][cp] btrfs, nocow and cp --reflink
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4xfP1YrUibSZmxOFnPrx/uFTgCj6bW3lHmeashpLCSFlRWqb3Q5Xhh6bYhlpajOsX3yTcTUgh2w4MryQRaNQyb37RDSBod9w0hPzUlpOVnKJQxVtQyoIn0
- oltXfWN8MRtEkaO5RjMjnM7YiT6LOcrcEW9pL7KP0YRoZF4+BRwvWVdNFkQjMXsJCDRk4qGBYfKHQj1qxutA8Uu+4NbfnjQBaCChRJNZA3WQy+V4EW7i6qZ4
- JB0+IlMzrYjcxyo/wh2x9HZzUYOrYHpTe+7mrnTy3X/ybp5ylYX9Nj4bNMpdsbPYAwgDC3wuZjZRJjHC5K1fEV4eBk0rcIJKdAOkU24QA1Y=
+From:   Nathan Henrie <n8henrie@gmail.com>
+Date:   Wed, 25 May 2022 14:14:55 -0600
+Message-ID: <CAOMt5FCSFC8d-cioM39wZ3jME9+5=C4P8omZOfmQz34P9a8MdA@mail.gmail.com>
+Subject: Quota consistently brings machine to a crawl
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi All,
+Hello,
 
-recently I discovered that BTRFS allow to reflink a file only if the flag FS_NOCOW_FL is the same on both source and destination.
-In the end of this email I added a patch to "cp" to set the FS_NOCOW_FL flag according to the source.
+I've been using BTRFS root (BTRFS RAID1) on a reasonably powerful
+Linux machine for a couple of years now, and I've generally been very
+happy with it. The only persistent issue that I can't seem to resolve
+is that the entire system consistently slows to a complete crawl
+(several minutes to register keystrokes) if I enable quota.
 
-Even tough this works, I am wondering if this is the expected/the least surprise behavior by/for any user. This is the reason why this email is tagged as RFC.
+I use snapper for automated snapshots, and thinking that the number of
+snapshots may be the issue, I've increased the cleanup frequency to
+hourly and reduced the total number to <100 at all times.
 
-Without reflink, the default behavior is that the new file has the FS_NOCOW_FL flag set according to the parent directory; with this patch the flag would be the same as the source.
+```
+$ sudo btrfs subvol list -s / | wc -l
+89
+```
 
-I am not sure that this is the correct behviour without warning the user of this change.
+However, the issue persists. A little conversation on number of
+snapshots: https://www.reddit.com/r/btrfs/comments/tiqkh2/how_many_snapshots_are_too_many_with_quotas/
 
-Another possibility, is to flip the NOCOW flag only if --reflink=always is passed.
+My mount options are:
+`noatime,discard=async,autodefrag,compress-force=zstd:1,subvol=@`
 
-Thoughts ?
+My machine is a Ryzen threadripper with 128G RAM, across 3 NVME drives
+as BTRFS RAID1.
 
-BR
-G.Baroncelli
+```
+$ uname -a
+Linux n8machine 5.17.7-arch1-2 #1 SMP PREEMPT Sun, 15 May 2022
+05:00:14 +0000 x86_64 GNU/Linux
+$ btrfs --version
+btrfs-progs v5.17
+$ sudo btrfs fi show
+Label: 'Arch Linux' uuid: 0507d652-8d7a-4897-a843-2fb170634055
+           Total devices 3 FS bytes used 612.94GiB
+           devid 1 size 931.01GiB used 582.00GiB path /dev/nvme0n1p1
+           devid 3 size 418.00GiB used 69.03GiB path /dev/nvme2n1p1
+           devid 4 size 931.51GiB used 583.03GiB path /dev/nvme1n1
+$ sudo btrfs fi df /
+Data, RAID1: total=573.00GiB, used=570.19GiB
+System, RAID1: total=32.00MiB, used=128.00KiB
+Metadata, RAID1: total=44.00GiB, used=42.75GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+$ sudo dmesg | grep -i btrfs
+[649854.872742] audit: type=1130 audit(1653481410.602:7814): pid=1
+uid=0 auid=4294967295 ses=4294967295 msg='unit=grub-btrfs
+comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=?
+terminal=? res=success' [649854.872749] audit: type=1131
+audit(1653481410.602:7815): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [652048.645431] audit:
+type=1130 audit(1653483604.377:7830): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [652048.645438] audit: type=1131
+audit(1653483604.377:7831): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [653331.753733] BTRFS:
+device label NIXOS_SD devid 1 transid 7 /dev/loop1p3 scanned by mount
+(3237081) [653331.760159] BTRFS info (device loop1p3): flagging fs
+with big metadata feature [653331.760166] BTRFS info (device loop1p3):
+enabling ssd optimizations [653331.760168] BTRFS info (device
+loop1p3): using spread ssd allocation scheme [653331.760172] BTRFS
+info (device loop1p3): enabling free space tree [653331.760174] BTRFS
+info (device loop1p3): using free space tree [653331.760175] BTRFS
+info (device loop1p3): has skinny extents [653331.768221] BTRFS info
+(device loop1p3): creating free space tree [653331.771396] BTRFS info
+(device loop1p3): setting compat-ro feature flag for FREE_SPACE_TREE
+(0x1) [653331.771400] BTRFS info (device loop1p3): setting compat-ro
+feature flag for FREE_SPACE_TREE_VALID (0x2) [653331.902916] BTRFS
+info (device loop1p3): cleaning free space cache v1 [653331.980709]
+BTRFS info (device loop1p3): checking UUID tree [653332.061223] BTRFS
+info (device loop1p3): resize device /dev/loop1p3 (devid 1) from
+3352297472 to 4426039296 [653343.373112] BTRFS warning: duplicate
+device /dev/sde3 devid 1 generation 154 scanned by systemd-udevd
+(3237098) [653344.276810] BTRFS info (device loop1p3): flagging fs
+with big metadata feature [653344.276817] BTRFS info (device loop1p3):
+enabling ssd optimizations [653344.276819] BTRFS info (device
+loop1p3): using spread ssd allocation scheme [653344.276822] BTRFS
+info (device loop1p3): using free space tree [653344.276823] BTRFS
+info (device loop1p3): has skinny extents [653455.859628] audit:
+type=1130 audit(1653485011.610:7859): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [653455.859640] audit: type=1131
+audit(1653485011.610:7860): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [655648.680024] audit:
+type=1130 audit(1653487204.432:7877): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [655648.680032] audit: type=1131
+audit(1653487204.432:7878): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [655661.645800] BTRFS:
+device label NIXOS_SD devid 1 transid 7 /dev/loop1p3 scanned by mount
+(3296995) [655661.652011] BTRFS info (device loop1p3): flagging fs
+with big metadata feature [655661.652017] BTRFS info (device loop1p3):
+enabling ssd optimizations [655661.652020] BTRFS info (device
+loop1p3): using spread ssd allocation scheme [655661.652023] BTRFS
+info (device loop1p3): enabling free space tree [655661.652026] BTRFS
+info (device loop1p3): using free space tree [655661.652027] BTRFS
+info (device loop1p3): has skinny extents [655661.659897] BTRFS info
+(device loop1p3): creating free space tree [655661.662665] BTRFS info
+(device loop1p3): setting compat-ro feature flag for FREE_SPACE_TREE
+(0x1) [655661.662670] BTRFS info (device loop1p3): setting compat-ro
+feature flag for FREE_SPACE_TREE_VALID (0x2) [655661.977751] BTRFS
+info (device loop1p3): cleaning free space cache v1 [655662.148361]
+BTRFS info (device loop1p3): checking UUID tree [655662.321729] BTRFS
+info (device loop1p3): resize device /dev/loop1p3 (devid 1) from
+3352297472 to 4426039296 [655675.379516] BTRFS info (device loop1p3):
+flagging fs with big metadata feature [655675.379524] BTRFS info
+(device loop1p3): enabling ssd optimizations [655675.379526] BTRFS
+info (device loop1p3): using spread ssd allocation scheme
+[655675.379530] BTRFS info (device loop1p3): using free space tree
+[655675.379532] BTRFS info (device loop1p3): has skinny extents
+[655798.563024] BTRFS: device label NIXOS_SD devid 1 transid 7
+/dev/loop1p3 scanned by mount (3300821) [655798.569517] BTRFS info
+(device loop1p3): flagging fs with big metadata feature
+[655798.569525] BTRFS info (device loop1p3): enabling ssd
+optimizations [655798.569527] BTRFS info (device loop1p3): using
+spread ssd allocation scheme [655798.569532] BTRFS info (device
+loop1p3): enabling free space tree [655798.569534] BTRFS info (device
+loop1p3): using free space tree [655798.569536] BTRFS info (device
+loop1p3): has skinny extents [655798.578555] BTRFS info (device
+loop1p3): creating free space tree [655798.581715] BTRFS info (device
+loop1p3): setting compat-ro feature flag for FREE_SPACE_TREE (0x1)
+[655798.581719] BTRFS info (device loop1p3): setting compat-ro feature
+flag for FREE_SPACE_TREE_VALID (0x2) [655798.737827] BTRFS info
+(device loop1p3): cleaning free space cache v1 [655798.764508] BTRFS
+info (device loop1p3): checking UUID tree [655798.794795] BTRFS info
+(device loop1p3): resize device /dev/loop1p3 (devid 1) from 3352297472
+to 4426039296 [655809.880095] BTRFS info (device loop1p3): flagging fs
+with big metadata feature [655809.880104] BTRFS info (device loop1p3):
+enabling ssd optimizations [655809.880106] BTRFS info (device
+loop1p3): using spread ssd allocation scheme [655809.880110] BTRFS
+info (device loop1p3): using free space tree [655809.880111] BTRFS
+info (device loop1p3): has skinny extents [657063.131573] audit:
+type=1130 audit(1653488618.896:7945): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [657063.131583] audit: type=1131
+audit(1653488618.899:7946): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [659255.485198] audit:
+type=1130 audit(1653490811.280:7961): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [659255.485205] audit: type=1131
+audit(1653490811.280:7962): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [660665.821187] audit:
+type=1130 audit(1653492221.609:7980): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [660665.821200] audit: type=1131
+audit(1653492221.609:7981): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [662860.351399] audit:
+type=1130 audit(1653494416.155:7996): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [662860.351407] audit: type=1131
+audit(1653494416.155:7997): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [664268.696715] audit:
+type=1130 audit(1653495824.532:8015): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [664268.696728] audit: type=1131
+audit(1653495824.532:8016): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [666455.434235] audit:
+type=1130 audit(1653498011.262:8031): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [666455.434242] audit: type=1131
+audit(1653498011.262:8032): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [667871.982919] audit:
+type=1130 audit(1653499427.830:8050): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [667871.982926] audit: type=1131
+audit(1653499427.830:8051): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [670052.877326] audit:
+type=1130 audit(1653501608.743:8065): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [670052.877335] audit: type=1131
+audit(1653501608.743:8066): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [671474.908959] audit:
+type=1130 audit(1653503030.786:8111): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [671474.908968] audit: type=1131
+audit(1653503030.786:8112): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [673667.158937] audit:
+type=1130 audit(1653505223.038:8126): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [673667.158950] audit: type=1131
+audit(1653505223.038:8127): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [675077.960417] audit:
+type=1130 audit(1653506633.852:8146): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [675077.960427] audit: type=1131
+audit(1653506633.852:8147): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success' [677264.824892] audit:
+type=1130 audit(1653508820.737:8173): pid=1 uid=0 auid=4294967295
+ses=4294967295 msg='unit=grub-btrfs comm="systemd"
+exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=?
+res=success' [677264.824903] audit: type=1131
+audit(1653508820.737:8174): pid=1 uid=0 auid=4294967295 ses=4294967295
+msg='unit=grub-btrfs comm="systemd" exe="/usr/lib/systemd/systemd"
+hostname=? addr=? terminal=? res=success'
+```
 
+(The messages about the loop devices have to do with a separate issue,
+having trouble booting (u-boot) a NixOS-based Raspberry Pi from a
+compressed subvolume:
+https://lists.denx.de/pipermail/u-boot/2022-May/484855.html )
 
------
+The machine has no issues with a `balance --full-blance`, and `btrfs
+check` and `scrub` all complete without errors.
+If I disable quotas, it runs perfectly.
 
-diff --git a/src/copy.c b/src/copy.c
-index b15d91990..41df45cd5 100644
---- a/src/copy.c
-+++ b/src/copy.c
-@@ -22,6 +22,8 @@
-  #include <sys/ioctl.h>
-  #include <sys/types.h>
-  #include <selinux/selinux.h>
-+#include <sys/vfs.h>
-+#include <linux/magic.h>
-  
-  #if HAVE_HURD_H
-  # include <hurd.h>
-@@ -399,6 +401,32 @@ static inline int
-  clone_file (int dest_fd, int src_fd)
-  {
-  #ifdef FICLONE
-+# ifdef __linux__
-+  /* BTRFS requires that both source and dest have the same setting
-+     about FS_NOCOW_FL */
-+  int src_flags, dst_flags, r;
-+  struct statfs sbuf;
-+
-+  r = fstatfs(dest_fd, &sbuf);
-+  if (r < 0)
-+    return r;
-+  if (sbuf.f_type == BTRFS_SUPER_MAGIC || sbuf.f_type == BTRFS_TEST_MAGIC)
-+    {
-+      r = ioctl(src_fd, FS_IOC_GETFLAGS, &src_flags);
-+      if (r < 0)
-+        return r;
-+      r = ioctl(dest_fd, FS_IOC_GETFLAGS, &dst_flags);
-+      if (r < 0)
-+        return r;
-+      if ((src_flags ^ dst_flags) & FS_NOCOW_FL)
-+        {
-+          dst_flags ^= FS_NOCOW_FL;
-+          r = ioctl(dest_fd, FS_IOC_SETFLAGS, &dst_flags);
-+          if (r < 0)
-+            return r;
-+        }
-+    }
-+# endif
-    return ioctl (dest_fd, FICLONE, src_fd);
-  #else
-    (void) dest_fd;
+When I enable quotas, it runs for a few days until it starts locking
+up and lagging, with `btrfs-transacti` taking up 100% CPU.
 
+I've enabled and subsequently disabled quota support at least a dozen
+times now, hoping I can get it working reliably (especially in order
+to leverage snapper's quota-based cleanup algorithms to help avoid
+unanticipated out-of-space issues). Is there anything obvious in my
+setup or configuration that seems problematic? For example, I've
+specifically wondered about whether `autodefrag` could be breaking COW
+and causing the snapper cleanups to be more resource-intensive, but
+removing `autodefrag` didn't seem to noticeably change things a few
+months ago.
 
+Many thanks in advance for your attention and any suggestions.
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Nate

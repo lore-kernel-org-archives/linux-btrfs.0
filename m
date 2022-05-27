@@ -2,38 +2,38 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0E10C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 May 2022 08:19:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A58D9C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 May 2022 08:19:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349048AbiE0ITa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 May 2022 04:19:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39574 "EHLO
+        id S1349147AbiE0ITd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 May 2022 04:19:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39622 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238347AbiE0IT3 (ORCPT
+        with ESMTP id S238347AbiE0ITc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 May 2022 04:19:29 -0400
+        Fri, 27 May 2022 04:19:32 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF277F1373;
-        Fri, 27 May 2022 01:19:28 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C502ED8FE;
+        Fri, 27 May 2022 01:19:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=+hiFrIsAM9uZ02jYOz3NSMxqE01U6htfJ3t3La+ffc4=; b=RBSbWtXNqlkkxd/Ne2zrCQF/pq
-        LZpmwQajN7na4wOv0tuE7Avg8abdHGpYq9wxfXSmTFg3rMulaPro4BUu/wldqNO1m+StGmrVOYHK4
-        nntKDOlCvFrNjRHYUAD0lo9/9c4VFDO1P9yL+Pb1mczyiYeZpTy2Qi26JNMNbsIDJvSE4CYqVgYDK
-        umLG3SMLX04QOTzC+KVPa2pLrfL0yqrVZPgS6T0YrpTDGi68Ytc50g1k5u/VDmJTvBsJ7G6AejmFY
-        bZMWDiQdOOhMDmigj+Q9BvUrQLUVyFpCj60P2pZiRdrIuOHDC+8UTRujKfBYKkIAQvECmBFndf2mU
-        IpdlnnbQ==;
+        bh=rvAXoC5D7NbJKN/rkulBSzflMHUOEAI6TV/paGXXM4o=; b=RsqZr4WgmcXCfoaDd9c11Uo1X5
+        7cZQOWDWrTY9V2kdbJPMWGeUpSfqJ+kGbdufskfnn7ompN8mkX7ER4G04+hbA8OpYVDKFXBKiSEMz
+        zMOfu/NgR03NN8HFvtKqjkqx/htDpsTvYn+QqcuJLxRv6fYuwQj58k3eTO+SDcDwRIZIItR46K5rw
+        o5qBSRrK5uzPPNZO0rvxVB4EPchKTvce4d3uPL+uv1Ex5mBB3mgTTJouUFUh6hcS8UqaJ7hYI05Be
+        zxWSC0OP4bPCbuS2JvZnKjZOeLtam5uiXpifI+QvNjNQSFONlQ0+c1X/7Kz7e6VpbWNqkbbLWbUOq
+        k4cAN4ew==;
 Received: from [2001:4bb8:18c:7298:b5ab:7d49:c6be:2011] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nuVBv-00GzyG-Tn; Fri, 27 May 2022 08:19:28 +0000
+        id 1nuVBy-00GzzT-H0; Fri, 27 May 2022 08:19:30 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-Subject: [PATCH 04/10] btrfs/142: use common read repair helpers
-Date:   Fri, 27 May 2022 10:19:09 +0200
-Message-Id: <20220527081915.2024853-5-hch@lst.de>
+Subject: [PATCH 05/10] btrfs/143: use common read repair helpers
+Date:   Fri, 27 May 2022 10:19:10 +0200
+Message-Id: <20220527081915.2024853-6-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220527081915.2024853-1-hch@lst.de>
 References: <20220527081915.2024853-1-hch@lst.de>
@@ -50,14 +50,14 @@ a specific mirror.
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- tests/btrfs/142 | 10 +++-------
+ tests/btrfs/143 | 10 +++-------
  1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/tests/btrfs/142 b/tests/btrfs/142
-index 58d01add..7a63fb83 100755
---- a/tests/btrfs/142
-+++ b/tests/btrfs/142
-@@ -27,7 +27,6 @@ _require_scratch_dev_pool 2
+diff --git a/tests/btrfs/143 b/tests/btrfs/143
+index 71db861d..b6ff2a42 100755
+--- a/tests/btrfs/143
++++ b/tests/btrfs/143
+@@ -34,7 +34,6 @@ _require_scratch_dev_pool 2
  _require_dm_target dust
  
  _require_btrfs_command inspect-internal dump-tree
@@ -65,7 +65,7 @@ index 58d01add..7a63fb83 100755
  
  _scratch_dev_pool_get 2
  # step 1, create a raid1 btrfs which contains one 128k file.
-@@ -46,8 +45,7 @@ $XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 128K 0 128K" "$SCRATCH_MNT/foobar" |\
+@@ -53,8 +52,7 @@ $XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 128K 0 128K" "$SCRATCH_MNT/foobar" |\
  # step 2, corrupt the first 64k of stripe #1
  echo "step 2......corrupt file extent" >>$seqres.full
  
@@ -75,16 +75,16 @@ index 58d01add..7a63fb83 100755
  echo "Logical offset is $logical_in_btrfs" >>$seqres.full
  _scratch_unmount
  
-@@ -67,10 +65,8 @@ echo "step 3......repair the bad copy" >>$seqres.full
+@@ -74,10 +72,8 @@ echo "step 3......repair the bad copy" >>$seqres.full
  
  $DMSETUP_PROG message dust-test 0 addbadblock $((physical / 512))
  $DMSETUP_PROG message dust-test 0 enable
 -while [[ -z $( (( BASHPID % 2 == stripe )) &&
--	       exec $XFS_IO_PROG -d -c "pread -b 128K 0 128K" "$SCRATCH_MNT/foobar") ]]; do
+-	       exec $XFS_IO_PROG -c "pread -b 128K 0 128K" "$SCRATCH_MNT/foobar") ]]; do
 -	:
 -done
 +
-+_btrfs_direct_read_on_mirror $stripe 2 "$SCRATCH_MNT/foobar" 0 128K
++_btrfs_buffered_read_on_mirror $stripe 2 "$SCRATCH_MNT/foobar" 0 128K
  
  _cleanup_dust
  

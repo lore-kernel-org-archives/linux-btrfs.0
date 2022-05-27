@@ -2,40 +2,78 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BCA4C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 May 2022 15:03:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20F95C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 May 2022 15:06:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353590AbiE0PDM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 May 2022 11:03:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40544 "EHLO
+        id S1353052AbiE0PG3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 May 2022 11:06:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41982 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1353180AbiE0PDL (ORCPT
+        with ESMTP id S1352095AbiE0PG2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 May 2022 11:03:11 -0400
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2704D1207F4;
-        Fri, 27 May 2022 08:03:10 -0700 (PDT)
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id DC8D968AFE; Fri, 27 May 2022 17:03:06 +0200 (CEST)
-Date:   Fri, 27 May 2022 17:03:06 +0200
-From:   Christoph Hellwig <hch@lst.de>
-To:     Zorro Lang <zlang@redhat.com>
-Cc:     Christoph Hellwig <hch@lst.de>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH 01/10] btrfs: add a helpers for read repair testing
-Message-ID: <20220527150306.GA1534@lst.de>
-References: <20220527081915.2024853-1-hch@lst.de> <20220527081915.2024853-2-hch@lst.de> <20220527145445.fyrp3anncqdxb7sl@zlang-mailbox>
+        Fri, 27 May 2022 11:06:28 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C6E6015FC0
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2022 08:06:26 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 8554421AFE;
+        Fri, 27 May 2022 15:06:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1653663985;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=rnAAVU20Y9fXgV/pQgjWzbGjwcZYkEV01WvwkTyKJpA=;
+        b=Jn4/Jm+6X/ATHym+IceMxtfST6w0wVezYClD0YmvWhFSawIyK9PJqJ18CV8OUzfos0B3aG
+        SMepwba6ARu1PsrZK7vq6n2mrhTiADRF/zUocKR4KIDTHK9q6V/eP9Pfe4boDkAo8SxZ7L
+        RtmoRbkwhgBtbN6TdR2FHR9mkU2ELr4=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1653663985;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=rnAAVU20Y9fXgV/pQgjWzbGjwcZYkEV01WvwkTyKJpA=;
+        b=6I7LjWMQDceZDo3koFoo2Zdbl3w7Lj/ygq5/SbuY5hIm0Y0ivj3SJveAvdzp7fFMGFYEIK
+        lsvRYIAniadJsKDQ==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5E8FA13A84;
+        Fri, 27 May 2022 15:06:25 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 9za3FfHokGIGdAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 27 May 2022 15:06:25 +0000
+Date:   Fri, 27 May 2022 17:02:01 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: zoned: add upper and lower zone size
+ boundarys
+Message-ID: <20220527150201.GE20633@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <20220210134900.184638-1-johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220527145445.fyrp3anncqdxb7sl@zlang-mailbox>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+In-Reply-To: <20220210134900.184638-1-johannes.thumshirn@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, May 27, 2022 at 10:54:45PM +0800, Zorro Lang wrote:
-> You can send a single fixed patch for this one
+On Thu, Feb 10, 2022 at 05:49:00AM -0800, Johannes Thumshirn wrote:
+> As we're not supporting arbitrarily big or small zone sizes in the kernel,
+> reject devices that don't fit in progs as well.
+> 
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-I could do that, but I also need to fix up the comments in 266 and 267
-to say 64k instead of 4k.
+I've updated the lower limit to 4M so it matches the recent update in
+kernel and added patch to devel, thanks.

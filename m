@@ -2,78 +2,108 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20F95C433F5
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 May 2022 15:06:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 08F83C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 May 2022 15:13:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353052AbiE0PG3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 May 2022 11:06:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41982 "EHLO
+        id S1353507AbiE0PNn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 May 2022 11:13:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44658 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1352095AbiE0PG2 (ORCPT
+        with ESMTP id S236970AbiE0PNk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 May 2022 11:06:28 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C6E6015FC0
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2022 08:06:26 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8554421AFE;
-        Fri, 27 May 2022 15:06:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1653663985;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=rnAAVU20Y9fXgV/pQgjWzbGjwcZYkEV01WvwkTyKJpA=;
-        b=Jn4/Jm+6X/ATHym+IceMxtfST6w0wVezYClD0YmvWhFSawIyK9PJqJ18CV8OUzfos0B3aG
-        SMepwba6ARu1PsrZK7vq6n2mrhTiADRF/zUocKR4KIDTHK9q6V/eP9Pfe4boDkAo8SxZ7L
-        RtmoRbkwhgBtbN6TdR2FHR9mkU2ELr4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1653663985;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=rnAAVU20Y9fXgV/pQgjWzbGjwcZYkEV01WvwkTyKJpA=;
-        b=6I7LjWMQDceZDo3koFoo2Zdbl3w7Lj/ygq5/SbuY5hIm0Y0ivj3SJveAvdzp7fFMGFYEIK
-        lsvRYIAniadJsKDQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5E8FA13A84;
-        Fri, 27 May 2022 15:06:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 9za3FfHokGIGdAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 27 May 2022 15:06:25 +0000
-Date:   Fri, 27 May 2022 17:02:01 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: zoned: add upper and lower zone size
- boundarys
-Message-ID: <20220527150201.GE20633@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-References: <20220210134900.184638-1-johannes.thumshirn@wdc.com>
+        Fri, 27 May 2022 11:13:40 -0400
+Received: from mail.cock.li (unknown [37.120.193.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AAC141CFF3
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 May 2022 08:13:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220210134900.184638-1-johannes.thumshirn@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=firemail.cc; s=mail;
+        t=1653664417; bh=A04WBhvq4uoOwzMBacvDb0kWyK9asPmPZiSUTrRsxCM=;
+        h=Date:From:To:Subject:In-Reply-To:References:From;
+        b=QAa5oR83PdB67gN0sygy+UCQRGkHN+nayDyZ9XZ1C8/T1ouQ2W2qcs4UDOGtw91UM
+         jT/beoVpzLxXL/7JI7lQh30UJMDz99HnJH/p6GpyzqjQdBYSf2eXeIHpi/uVC798mD
+         fDwae7vmDLMYLvKkWXNavoLKfnlgQcdiU3gSDCYGSXpXeUn/y5n5RHD5aKnxjgxU3x
+         nGXN7J6G3SdBZHFkyKZdghGtuA4vTujUjNbnpTpLpC0tEFa6tRZWbFH+XP/ccKKwru
+         j7+wIkGr1n2gUFwQi61OnlEByz1+heBJWVlafb0VR1f6nvxV17QjKn2Q/bJ0zJy4EZ
+         FeLUN1YDNKWKg==
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+Date:   Fri, 27 May 2022 16:13:36 +0100
+From:   efkf@firemail.cc
+To:     Chris Murphy <lists@colorremedies.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Tried to replace a drive in a raid 1 and all hell broke loose
+In-Reply-To: <CAJCQCtT_PjKprryxHwsyn3qXc06qFFmnMR48CxZuvav8aQUOQQ@mail.gmail.com>
+References: <9a9d16a133c13bed724f2a6a406bd3b6@firemail.cc>
+ <5fd50e9.def5d621.180f273d002@tnonline.net>
+ <f39a23c9fe32b5ae79ddbe67e1edb7a8@firemail.cc>
+ <af34ef558ea7bbd414b5a076128b1011@firemail.cc>
+ <b713b9540ad29a83a3c2c672139d6e6f@firemail.cc>
+ <CAJCQCtT_PjKprryxHwsyn3qXc06qFFmnMR48CxZuvav8aQUOQQ@mail.gmail.com>
+Message-ID: <4e7fdc9608777774595bf060a028b600@firemail.cc>
+X-Sender: efkf@firemail.cc
+User-Agent: Roundcube Webmail/1.3.17
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Feb 10, 2022 at 05:49:00AM -0800, Johannes Thumshirn wrote:
-> As we're not supporting arbitrarily big or small zone sizes in the kernel,
-> reject devices that don't fit in progs as well.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+thanks a lot for reading into this
 
-I've updated the lower limit to 4M so it matches the recent update in
-kernel and added patch to devel, thanks.
+On 2022-05-24 20:11, Chris Murphy wrote:
+> I suggest mounting with "mount -o ro,rescue=all"
+Thanks a lot, with this command I was able to mount the filesystem again 
+and retrieve a lot more data!
+Only a very small percentage of the files (that i could check) were 
+corrupt.
+
+> Do you have a complete dmesg that shows boot, mount, and the kernel
+> errors while copying?
+If you mean the copying of the data mentioned on my update email then 
+yes, its the attached file on this one.
+
+
+> From one of your attached files:
+> 
+>> Total devices 2 FS bytes used 772.76GiB
+>> devid    2 size 1.82TiB used 334.00GiB path 
+>> /dev/mapper/ST2000DL003-###############
+>> devid    3 size 1.82TiB used 661.00GiB path 
+>> /dev/mapper/ST3000VN007-###############
+> 
+> This doesn't list a 3rd device so it suggests it's a 2x device raid1. 
+> However:
+
+I had (i think) successfully removed the failing drive with devid 1
+
+> 
+>> #btrfs fi df /mnt/sd/
+>> Data, RAID1: total=772.00GiB, used=771.22GiB
+>> Data, single: total=1.00GiB, used=2.25MiB
+>> System, RAID1: total=32.00MiB, used=96.00KiB
+>> System, single: total=32.00MiB, used=48.00KiB
+>> Metadata, RAID1: total=3.00GiB, used=1.54GiB
+>> Metadata, single: total=1.00GiB, used=0.00B
+> 
+> This is not good. Some of the data and some of the metadata
+> (specifically system profile which is the chunk tree) is only
+> available on one drive
+I had that issue with single chunks, run the command to make it all 
+raid1, run a scrub some checks messed around a tiny bit, most likely 
+mounted with -o degraded in the process and they appeared again ( on 
+linux 5.17.0 ).
+
+
+> Some older kernels would create single
+> profile chunks when a raid1 file system was mounted in degraded,rw
+> mode with a missing device. This happens silently.
+
+I had mounted the fs with -o degraded and one drive a couple of times 
+just as a sanity check to make sure the data really is in both drives, i 
+assume this would mount it rw and fall into the category you described. 
+The first chunks were created before having updated to debian testing 
+under kernel 5.10.0-11 but the same thing happened after updating to 
+testing
+I think i had tried to mount ro,degraded and it failed but i'm not sure.
+
+Once again thank you so much for suggesting -o rescue=all, i had 
+previously managed to recover around 300G and now i think i got the full 
+~800G with a very small amount of corrupted files !!

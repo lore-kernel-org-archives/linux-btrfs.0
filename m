@@ -2,121 +2,114 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7869DC433F5
-	for <linux-btrfs@archiver.kernel.org>; Sat, 28 May 2022 20:35:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19797C433EF
+	for <linux-btrfs@archiver.kernel.org>; Sat, 28 May 2022 21:04:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229904AbiE1Ufg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 28 May 2022 16:35:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33560 "EHLO
+        id S229912AbiE1VEi convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 28 May 2022 17:04:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56414 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229828AbiE1Uff (ORCPT
+        with ESMTP id S229828AbiE1VEh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 28 May 2022 16:35:35 -0400
-X-Greylist: delayed 299 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sat, 28 May 2022 13:35:34 PDT
-Received: from cmx-mtlrgo002.bell.net (mta-mtl-002.bell.net [209.71.208.12])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 03A7F43ADE
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 May 2022 13:35:33 -0700 (PDT)
-X-RG-CM-BuS: 0
-X-RG-CM-SC: 0
-X-RG-CM: Clean
-X-Originating-IP: [50.100.165.103]
-X-RG-Env-Sender: nick.steeves@bell.net
-X-RG-Rigid: 6284B4FF032C7BD4
-X-CM-Envelope: MS4xfHprFE0FQi6RcQlFeFaTmvK3wuioUscH098uXFaahJ1Z2AOousxXNCRtLpPGKeNF5zRlbrzPAHHI4EcMDSRe93FgF6T1rA4qRs9MXvvGaeSvcd6g1P8p
- CrsgGk1OzXQktHP4j5SO1FkkouzinlpeFmnrGfcqzt10AnCC6nOqZcgkvdjiyEiaM0XKM37Q7Jwj5EBdovyUv2MBykhMGA+L2S0A9LG4xifgOeHhTXtz4yMk
- 46ph4zug58zTpVtPuDSHnMKlKdPxfpEHRpSioNj7nhcvuDbYPgbeW18SgbAdN8JW+lz60/TOM65jTJgUco+JGvZFCNH08HLg4WuiY0O0nYMgEDSp24YmMk/X
- R2cis0xo
-X-CM-Analysis: v=2.4 cv=FMx4e8ks c=1 sm=1 tr=0 ts=62928391
- a=vswWDEstyRI1efcgUK+z7g==:117 a=vswWDEstyRI1efcgUK+z7g==:17
- a=oZkIemNP1mAA:10 a=pGLkceISAAAA:8 a=VGN1SOTxtNvDN4kOGlwA:9 a=QEXdDO2ut3YA:10
- a=SOQ05j2XoNk16DnxrhkA:9 a=FfaGCDsud1wA:10
-Received: from DigitalMercury.freeddns.org (50.100.165.103) by cmx-mtlrgo002.bell.net (5.8.807) (authenticated as nick.steeves@bell.net)
-        id 6284B4FF032C7BD4; Sat, 28 May 2022 16:18:25 -0400
-Received: by DigitalMercury.freeddns.org (Postfix, from userid 1000)
-        id C4972C570B1; Sat, 28 May 2022 16:18:24 -0400 (EDT)
-From:   Nicholas D Steeves <sten@debian.org>
-To:     John Center <jlcenter15@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs progs release 5.18
-In-Reply-To: <95422f7b-e0f9-c716-212e-ee1007176d7e@gmail.com>
-References: <20220525140644.21979-1-dsterba@suse.com>
- <95422f7b-e0f9-c716-212e-ee1007176d7e@gmail.com>
-Date:   Sat, 28 May 2022 16:18:21 -0400
-Message-ID: <87v8tpe7hu.fsf@DigitalMercury.freeddns.org>
+        Sat, 28 May 2022 17:04:37 -0400
+Received: from pio-pvt-msa2.bahnhof.se (pio-pvt-msa2.bahnhof.se [79.136.2.41])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9AFCACE5E5
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 May 2022 14:04:33 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+        by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTP id A8C9A3F772;
+        Sat, 28 May 2022 23:04:31 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from pio-pvt-msa2.bahnhof.se ([127.0.0.1])
+        by localhost (pio-pvt-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id 1kPERMo_abfc; Sat, 28 May 2022 23:04:30 +0200 (CEST)
+Received: by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id A66413F3CA;
+        Sat, 28 May 2022 23:04:29 +0200 (CEST)
+Received: from [192.168.0.113] (port=57656)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.94.2)
+        (envelope-from <forza@tnonline.net>)
+        id 1nv3bo-000BN4-GW; Sat, 28 May 2022 23:04:29 +0200
+Date:   Sat, 28 May 2022 23:04:29 +0200 (GMT+02:00)
+From:   Forza <forza@tnonline.net>
+To:     Nicholas D Steeves <nsteeves@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>, efkf@firemail.cc,
+        Duncan <1i5t5.duncan@cox.net>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <986874f.705b352e.1810c7c1c01@tnonline.net>
+In-Reply-To: <87tu99h0ic.fsf@DigitalMercury.freeddns.org>
+References: <9a9d16a133c13bed724f2a6a406bd3b6@firemail.cc> <5fd50e9.def5d621.180f273d002@tnonline.net> <f39a23c9fe32b5ae79ddbe67e1edb7a8@firemail.cc> <af34ef558ea7bbd414b5a076128b1011@firemail.cc> <b713b9540ad29a83a3c2c672139d6e6f@firemail.cc> <CAJCQCtT_PjKprryxHwsyn3qXc06qFFmnMR48CxZuvav8aQUOQQ@mail.gmail.com> <87tu99h0ic.fsf@DigitalMercury.freeddns.org>
+Subject: Re: Tried to replace a drive in a raid 1 and all hell broke loose
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-        micalg=pgp-sha512; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 8BIT
+X-Mailer: R2Mail2
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---=-=-=
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
 
-John Center <jlcenter15@gmail.com> writes:
 
-> Hi,
->
-> I usually build the btrfs-progs when it comes out.=C2=A0 I've upgraded fr=
-om=20
-> Ubuntu 20.04 to 22.04 & I'm having a problem with configure looking for=20
-> ext2fs.=C2=A0 I have e2fsprogs & libext2fs2 installed, but it fails with =
-"No=20
-> package 'ext2fs' found".=C2=A0 What am I missing?
->
-> Thanks!
->
->  =C2=A0=C2=A0=C2=A0 -John
->
+---- From: Nicholas D Steeves <nsteeves@gmail.com> -- Sent: 2022-05-28 - 22:20 ----
 
-You'll need e2fslibs-dev and other -dev packages.  The easiest way to
-get all of these dependencies in one go is probably to get a copy of the
-Debian/Ubuntu source package. To do this create "deb-src" lines based on
-the "deb" lines in your /etc/apt/sources.list, and
+> Hi Chris, Efkf, Duncan, and anyone else reading this,
+> 
+> Chris Murphy <lists@colorremedies.com> writes:
+> 
+>>>#btrfs fi df /mnt/sd/
+>>>Data, RAID1: total=772.00GiB, used=771.22GiB
+>>>Data, single: total=1.00GiB, used=2.25MiB
+>>>System, RAID1: total=32.00MiB, used=96.00KiB
+>>>System, single: total=32.00MiB, used=48.00KiB
+>>>Metadata, RAID1: total=3.00GiB, used=1.54GiB
+>>>Metadata, single: total=1.00GiB, used=0.00B
+>>
+>> This is not good. Some of the data and some of the metadata
+>> (specifically system profile which is the chunk tree) is only
+>> available on one drive and I can't tell from this if it's on a drive
+>> that is missing or is spewing errors. Anything that has a single copy
+>> that's also damaged, cannot be recovered. Unfortunately this file
+>> system is not completely raid1 and that's likely one source of the
+>> problem. The chunk tree is really critical so if any part of it is bad
+>> and not redundant (no good copy) the file system is not likely
+>> repairable. Get the data out as best you can. If rescue=all mount
+>> option doesn't work, the next opportunity is btrfs restore, but it too
+>> depends on the chunk tree being intact. There is a 'btrfs restore
+>> chunk-tree' option that will scan all the drives looking for plausible
+>> fragments of the chunk tree to try and recover it but it takes a long
+>> time (hours).
+>>
+>> 48KiB of chunk tree, if it's corrupt, is quite a lot and might prevent
+>> quite a lot of recovery. Some older kernels would create single
+>> profile chunks when a raid1 file system was mounted in degraded,rw
+>> mode with a missing device. This happens silently. And then when the
+>> raid1 is back to full strength again, there's no automatic conversion
+>> or even a warning by the kernel that this critical metadata isn't
+>> redundant still. The burden right now is unfortunately on the user to
+>> identify this reduction in redundancy and make sure to do a filtered
+>> balance to convert the single chunks into raid1 chunks.
+>>
+> 
+> I reported this issue "Wed, 02 Mar 2016 20:25:46 -0500" with Subject
+> "incomplete conversion to RAID1?", and it now looks that there's
+> evidence that this bug isn't harmless after all.
+> 
+> Efkf, would you please confirm if the filesystem was created with Linux
+> and btrfs-progs 5.10.x? (please keep me in CC)
+> 
+> If anyone knows if this issue was fixed for 5.15, please share the good
+> news!
+> 
+> 
+> Regards,
+> Nicholas
 
-  apt update
-  apt source btrfs-progs
+I believe this is a problem of having degraded mounts. If you go below two disks with a RAID1 profile with degraded mount, any data that needs to be written to the filesystem will be created in single chunks. If you then re-introduce a second device, a balance conversion is needed. (*) 
 
-Then
+Personally, l haven't seen the problem you mentioned in 2016 in a long time. Just did some quick testing using btrfs-progs 5.18 and could not see any issues. 
 
-  cd btrfs-progs
+* https://wiki.tnonline.net/w/Btrfs/Replacing_a_disk#Restoring_redundancy_after_a_replaced_disk
 
-and finally
+Thanks
+Forza
 
-  apt build-dep ./
-
-Then build the package as normal.  Note that this won't take care of any
-new dependencies (if any) added since the version of btrfs-progs
-released with 22.04.
-
-I think synaptic might be able to create the "deb-src" lines, and
-there's probably a GUI repository manager program that can do this, but
-I'm not familiar with these methods.  I'm sure you'll figure it out
-though!  Worst case scenario would be manually installing the -dev
-packages for all missing dependencies; there are at least eight or
-nine of these.
-
-Cheers,
-Nicholas
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQJEBAEBCgAuFiEE4qYmHjkArtfNxmcIWogwR199EGEFAmKSg40QHHN0ZW5AZGVi
-aWFuLm9yZwAKCRBaiDBHX30QYXIGD/9+FOFI/Wpf8S5Np0OZoEDBNLZy6OKu9s/E
-TsqZPlbF8cnAJKIjmX2fi4kUa3qo1sfM+9AyEawG4US3Opa7+Dlsu2OrHDaGeY++
-u7cVGe0Z4wYHV9b62Ou/6cC+BeyQ54nhw0LvRIQhDEshplKBFHeDmURISVrtEKm2
-OkS0qbGVp8NdzszVUxp4DCkygHdy6+SxEv5WZmKTr+DSWJfB6cwrQWZyHb5L/9Of
-sNnnlzsDuoM44lGb/DjBLhBxnM3r6zi/jDUI/6zK8coGN0OibZRw7BjGINN3XZLg
-Rik4R4woX5eXGfCp0uVscBExCXmYiKZf9hnsavumy4LDuOLawrW+niZQg7TGLAi3
-Cb3nWcUW0bsqDZ0YoG2/ykIruKVCRVxfhe18cFaBT6sxRuxBLtaOGJEF57ZqAG9n
-IfBftI4RuMkIO8seJDLOrR3OHMtdh+XK4aHJXUK4TMSqOFplQtMAUVhR42eLbEAD
-dsNk/RXhROHbya+KJyrEdkGup56MRWp6tCvDa6P5cOFnqgTZzqRIZMuyCV4vrFoT
-WeulNNBGqFqasWdOtrphjy/1Hx+ZCSp+zCd/QP3gbQW1keB3LYaQwr5ckHdWgI7i
-G/qLut23TYOUUuNfEwE6v0/bmOudjzOs/reAQjZu0X6v4spuzOyu4FrsTqDwf8KM
-ST8/LNWprw==
-=1VcE
------END PGP SIGNATURE-----
---=-=-=--

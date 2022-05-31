@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2C3FC43217
-	for <linux-btrfs@archiver.kernel.org>; Tue, 31 May 2022 15:06:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B51C4C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 31 May 2022 15:06:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345496AbiEaPGy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 31 May 2022 11:06:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58980 "EHLO
+        id S241907AbiEaPGx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 31 May 2022 11:06:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58950 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345499AbiEaPGw (ORCPT
+        with ESMTP id S1345431AbiEaPGv (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 May 2022 11:06:52 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 397D5F61
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 08:06:51 -0700 (PDT)
+        Tue, 31 May 2022 11:06:51 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F1049EA3
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 08:06:50 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id CABFF6133A
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 15:06:50 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B95F2C385A9
+        by ams.source.kernel.org (Postfix) with ESMTPS id 885C0B80FB3
         for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 15:06:49 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D0F65C3411D
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 15:06:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1654009610;
-        bh=cy5M7U5V1/1fK/NOxSLnbQ0mj7pkO54UG0xu9FM3puw=;
+        s=k20201202; t=1654009608;
+        bh=V9s216kD7I1lYMt7pYe5HLjLOzxgYleVWW6rvXXX+tU=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=KuQy3DAKX0uVVrij2bukdHIsGo1k08U9JqE35Mx3MnPyKXzQ4Xdfnb78NACLi2Q+j
-         o+BNWe+CT+XnqsvLs1LLnHnGqKQE21oT9Zw8jwrHvzaMEumg8W327AqD4cXgni27q8
-         6YOTFUMFuHJORJebfCYoqlug4Kejaw3cGVZMQuI9C/9sKRXA7VOYNEFPivPyrFy1d3
-         gvNS95c5UANCHcbtIyCEXpjp/u1EG/QaUETfQzrDtCsbhnkTRSUnEbC/168hdSC7/q
-         3CQ0sd0pqNI3BHSieJm0ydnYAkj4ZCoVojc/EJyBnzO0xEgdQ74w21BA525e8ZyzfM
-         MM8yQtmF9Qz1Q==
+        b=dsPyXvGpB++1IfFS6CYu9J+vqzI+as7wtTGfDoucT19kd7nrJ6fQTNaU5fRXOtKo6
+         +GkWhWYSMmHijODKY46tG5z2Bs5saO8VuuZZcJbHmpSROis4R2SHCi4CkFPEP/7MLx
+         8YM2s/tS7DFzHGGO9DJYnTkE/8dBjgqUe4Cump8gHqTcGaYSAwVIM1i1dpCAMNosUC
+         ThbkRqtHJii207x6Nxw0Ai0IbqQ6fFxHdWBoepiOadHmov+8o7948yJVAdvUqC0+fJ
+         RU7O4KPySWsrFib5EAbdZgbsRbMZtnbo6G2GgHZAWw/BafDxcf34qcqFO+J1d83Gse
+         0HsHNwi4ZbBPQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/12] btrfs: balance btree dirty pages and delayed items after clone and dedupe
-Date:   Tue, 31 May 2022 16:06:34 +0100
-Message-Id: <85eaa822185641693e99a9291175c0a733694937.1654009356.git.fdmanana@suse.com>
+Subject: [PATCH 01/12] btrfs: balance btree dirty pages and delayed items after a rename
+Date:   Tue, 31 May 2022 16:06:32 +0100
+Message-Id: <06a51882e0ce06794248a10f5c1c70b987dab62f.1654009356.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1654009356.git.fdmanana@suse.com>
 References: <cover.1654009356.git.fdmanana@suse.com>
@@ -48,63 +48,57 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When reflinking extents (clone and deduplication), we need to touch the
-the btree of the destination inode's subvolume, as well as potentially
-create a delayed inode for the destination inode (if it was not created
-before). However we are neither balancing the btree dirty pages nor the
-delayed items after such operations, so if we have a task that is doing
-a long series of clone or deduplication operations, it can result in
-accumulation of too many btree dirty pages and delayed items.
+A rename operation modifies a subvolume's btree, to remove the old dir
+item, add the new dir item, remove an inode ref and add a new inode ref.
+It can also create the delayed inode for the inodes involved in the
+operation, and it creates two delayed dir index items, one to delete
+the old name and another one to add the new name.
 
-So just call btrfs_btree_balance_dirty() after clone and deduplication,
-just like we do for every other system call that results on modifying a
-btree and adding delayed items.
+However we are neither balancing the btree dirty pages nor the delayed
+items after a rename, which can result in accumulation of too many
+btree dirty pages and delayed items, specially if a task is doing a
+series of rename operations (for example it can happen for package
+installations/upgrades through the zypper tool).
+
+So just call btrfs_btree_balance_dirty() after a rename, just like we
+do for every other system call that results on modifying a btree and
+adding delayed items.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/reflink.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index c39f8b3a5a4a..c0f1456be998 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -5,6 +5,7 @@
- #include "compression.h"
- #include "ctree.h"
- #include "delalloc-space.h"
-+#include "disk-io.h"
- #include "reflink.h"
- #include "transaction.h"
- #include "subpage.h"
-@@ -650,7 +651,8 @@ static void btrfs_double_mmap_unlock(struct inode *inode1, struct inode *inode2)
- static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 len,
- 				   struct inode *dst, u64 dst_loff)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ba913ea6f4d1..06d5bfa84d38 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9546,15 +9546,21 @@ static int btrfs_rename2(struct user_namespace *mnt_userns, struct inode *old_di
+ 			 struct dentry *old_dentry, struct inode *new_dir,
+ 			 struct dentry *new_dentry, unsigned int flags)
  {
--	const u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
-+	struct btrfs_fs_info *fs_info = BTRFS_I(src)->root->fs_info;
-+	const u64 bs = fs_info->sb->s_blocksize;
- 	int ret;
- 
- 	/*
-@@ -661,6 +663,8 @@ static int btrfs_extent_same_range(struct inode *src, u64 loff, u64 len,
- 	ret = btrfs_clone(src, dst, loff, len, ALIGN(len, bs), dst_loff, 1);
- 	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
- 
-+	btrfs_btree_balance_dirty(fs_info);
++	int ret;
 +
- 	return ret;
+ 	if (flags & ~(RENAME_NOREPLACE | RENAME_EXCHANGE | RENAME_WHITEOUT))
+ 		return -EINVAL;
+ 
+ 	if (flags & RENAME_EXCHANGE)
+-		return btrfs_rename_exchange(old_dir, old_dentry, new_dir,
+-					  new_dentry);
++		ret = btrfs_rename_exchange(old_dir, old_dentry, new_dir,
++					    new_dentry);
++	else
++		ret = btrfs_rename(mnt_userns, old_dir, old_dentry, new_dir,
++				   new_dentry, flags);
+ 
+-	return btrfs_rename(mnt_userns, old_dir, old_dentry, new_dir,
+-			    new_dentry, flags);
++	btrfs_btree_balance_dirty(BTRFS_I(new_dir)->root->fs_info);
++
++	return ret;
  }
  
-@@ -770,6 +774,8 @@ static noinline int btrfs_clone_files(struct file *file, struct file *file_src,
- 				round_down(destoff, PAGE_SIZE),
- 				round_up(destoff + len, PAGE_SIZE) - 1);
- 
-+	btrfs_btree_balance_dirty(fs_info);
-+
- 	return ret;
- }
- 
+ struct btrfs_delalloc_work {
 -- 
 2.35.1
 

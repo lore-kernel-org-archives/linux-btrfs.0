@@ -2,157 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C4740C43334
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jun 2022 20:46:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 497EDC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jun 2022 20:57:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229886AbiFAUp5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Jun 2022 16:45:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43420 "EHLO
+        id S230304AbiFAU51 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Jun 2022 16:57:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46182 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230048AbiFAUpj (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2022 16:45:39 -0400
-Received: from mail-wr1-x42f.google.com (mail-wr1-x42f.google.com [IPv6:2a00:1450:4864:20::42f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BAAA51D106A;
-        Wed,  1 Jun 2022 13:34:18 -0700 (PDT)
-Received: by mail-wr1-x42f.google.com with SMTP id h5so3904263wrb.0;
-        Wed, 01 Jun 2022 13:34:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=kfsG9LUOEPEKQ9LxxRuVY9iWrZQoJ7F8ml1zzQN1q0o=;
-        b=TV/JmovXx25zTSTxidCJIrIjB3J+6yovker1IPrJ45jkhZb0ZPkm/US+DsSNJ9OLQ1
-         x9L8kANnTgqmES1a/+y8c49aceJjSpf1T9prbrqFPMJlTUFuXUwDqMs92xFUAt4FrVD+
-         9hgDSm9pt07EkY8X3V+0TC+8MhEs0SQWTKG6PRjJAR+FQ+Q1k0ex0nEYGl4Z+flyzzAR
-         fG2wOLBo96n4dJdULvBRi3nzPk/HFjNfGIwMSGRrC1vdl/HKdin9jvMq+WCJpZkYD9oI
-         7UmQ3hh1HniIvM1moToPZwbhaEH9cZYx8rvVEIC7b5TmCRQ3Zqe12CpmtbL0Fyx0lVqy
-         9h5A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=kfsG9LUOEPEKQ9LxxRuVY9iWrZQoJ7F8ml1zzQN1q0o=;
-        b=p8fJEno81WfyZ0/2a1JMCWfwtiJO8eCt4tR9NVt++hC4Fr6guFEUsxDihSTey4xoPO
-         /rlAkeBg/8pLKn2WcMd3xW8rNfr+TcU9MB3QEQ6ydhl6/P4Yk+zooq26wWh13/pOfDLT
-         fmnLIXWAWvzHSUkgG4QbEUGtaXWGt9ePGZz6EY/FRQn4aUD8pVI+cFMh25waRmqsA0fM
-         Gh+uB2YfwbXL2S0BXIkedAeI+QiaAb+NrE75+1bYli1BvdUBUHFJJ7phY8dEx9JaCq39
-         /ujQNlOC5hL4H/xdcoFh5LBq/fba00u3ygt214ziwUVzETVNT0u8S3/33tMLvRJdpdjQ
-         dtuA==
-X-Gm-Message-State: AOAM530CvT04qwpDuWEFy+vvgHJPvEZsWiSA232SEemfEBC69VA3fvdy
-        lZerfdRjiwjKpjCaqoZ0B2PXD+qROE8=
-X-Google-Smtp-Source: ABdhPJx8MtWjiK3wPxQOfSWBDFZSlPWAUYVHkks7Qq/MkfVuM0OyvqCuGvG//AVEkW+7IRAj5J57ig==
-X-Received: by 2002:a17:907:9809:b0:6f5:1be8:5b13 with SMTP id ji9-20020a170907980900b006f51be85b13mr1069498ejc.412.1654113452261;
-        Wed, 01 Jun 2022 12:57:32 -0700 (PDT)
-Received: from opensuse.localnet (host-79-55-12-155.retail.telecomitalia.it. [79.55.12.155])
-        by smtp.gmail.com with ESMTPSA id rl7-20020a170907216700b006f3ef214e27sm1042428ejb.141.2022.06.01.12.57.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 01 Jun 2022 12:57:31 -0700 (PDT)
-From:   "Fabio M. De Francesco" <fmdefrancesco@gmail.com>
-To:     Chris Mason <chris.mason@fusionio.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Ira Weiny <ira.weiny@intel.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, kernel test robot <lkp@intel.com>
-Cc:     llvm@lists.linux.dev, kbuild-all@lists.01.org
-Subject: Re: [PATCH 3/3] btrfs: Replace kmap() with kmap_local_page() in zlib.c
-Date:   Wed, 01 Jun 2022 21:57:28 +0200
-Message-ID: <3146770.aV6nBDHxoP@opensuse>
-In-Reply-To: <202206010437.EX5Nj7cu-lkp@intel.com>
-References: <20220531145335.13954-4-fmdefrancesco@gmail.com> <202206010437.EX5Nj7cu-lkp@intel.com>
+        with ESMTP id S230355AbiFAU5Z (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jun 2022 16:57:25 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C22B560D81
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Jun 2022 13:57:23 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 7084521AC4;
+        Wed,  1 Jun 2022 19:38:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1654112301;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=BSCNWv/em99pWtcR9FuzMqUGDSKVeF6m25ptmosBtM0=;
+        b=AJ6q6xNbSqBCByvwbd0zJ6UvzX1Ocp2/Y46FKKPYVQn30LLWhcO9MsDZmm4hWMxYL4Kp0S
+        XN/NzfXCnt0cG/zsu/9u1qI2mRzYnQMqEHqOowqP12mQvX/KtrItFOjE4xVAD/4NKvvt9k
+        RaHywcFXBI8UzNgcwK0T/CHu7paUtWM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1654112301;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=BSCNWv/em99pWtcR9FuzMqUGDSKVeF6m25ptmosBtM0=;
+        b=i+db5JTd1uzkDSgGTn0uhJ0lwR+AbNmGhl1IxN6Kc5IshxeijUKDY9RggvuGM0IUxoIlMU
+        ZTAHSDpp4gieQCCg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 47C191330F;
+        Wed,  1 Jun 2022 19:38:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id VBOEEC3Al2JpFgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 01 Jun 2022 19:38:21 +0000
+Date:   Wed, 1 Jun 2022 21:33:55 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 06/10] btrfs: don't use btrfs_bio_wq_end_io for
+ compressed writes
+Message-ID: <20220601193355.GS20633@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
+        David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <20220526073642.1773373-1-hch@lst.de>
+ <20220526073642.1773373-7-hch@lst.de>
 MIME-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220526073642.1773373-7-hch@lst.de>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On marted=C3=AC 31 maggio 2022 22:35:30 CEST kernel test robot wrote:
-> Hi "Fabio,
->=20
-> Thank you for the patch! Perhaps something to improve:
->=20
+On Thu, May 26, 2022 at 09:36:38AM +0200, Christoph Hellwig wrote:
+> -	/* for reads, this is the bio we are copying the data into */
+> -	struct bio *orig_bio;
+> +	union {
+> +		/* for reads, this is the bio we are copying the data into */
 
-[snip]
+Comments should start witha capital letter unelss it's referring to an
+identifier.
 
-> If you fix the issue, kindly add following tag where applicable
-> Reported-by: kernel test robot <lkp@intel.com>
->=20
-> All warnings (new ones prefixed by >>):
->=20
-> >> fs/btrfs/zlib.c:125:6: warning: variable 'data_in' is used=20
-uninitialized whenever 'if' condition is true [-Wsometimes-uninitialized]
->            if (out_page =3D=3D NULL) {
->                ^~~~~~~~~~~~~~~~
->    fs/btrfs/zlib.c:270:6: note: uninitialized use occurs here
->            if (data_in) {
->                ^~~~~~~
->    fs/btrfs/zlib.c:125:2: note: remove the 'if' if its condition is=20
-always false
->            if (out_page =3D=3D NULL) {
->            ^~~~~~~~~~~~~~~~~~~~~~~
->    fs/btrfs/zlib.c:115:6: warning: variable 'data_in' is used=20
-uninitialized whenever 'if' condition is true [-Wsometimes-uninitialized]
->            if (Z_OK !=3D zlib_deflateInit(&workspace->strm, workspace-
->level)) {
->               =20
-^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
->    include/linux/zlib.h:148:25: note: expanded from macro 'Z_OK'
->    #define Z_OK            0
->                            ^
->    fs/btrfs/zlib.c:270:6: note: uninitialized use occurs here
->            if (data_in) {
->                ^~~~~~~
->    fs/btrfs/zlib.c:115:2: note: remove the 'if' if its condition is=20
-always false
->            if (Z_OK !=3D zlib_deflateInit(&workspace->strm, workspace-
->level)) {
->           =20
-^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
->    fs/btrfs/zlib.c:100:15: note: initialize the variable 'data_in' to=20
-silence this warning
->            char *data_in;
->                         ^
->                          =3D NULL
-> >> fs/btrfs/zlib.c:125:6: warning: variable 'cpage_out' is used=20
-uninitialized whenever 'if' condition is true [-Wsometimes-uninitialized]
->            if (out_page =3D=3D NULL) {
->                ^~~~~~~~~~~~~~~~
->    fs/btrfs/zlib.c:267:6: note: uninitialized use occurs here
->            if (cpage_out)
->                ^~~~~~~~~
->    fs/btrfs/zlib.c:125:2: note: remove the 'if' if its condition is=20
-always false
->            if (out_page =3D=3D NULL) {
->            ^~~~~~~~~~~~~~~~~~~~~~~
->    fs/btrfs/zlib.c:115:6: warning: variable 'cpage_out' is used=20
-uninitialized whenever 'if' condition is true [-Wsometimes-uninitialized]
->            if (Z_OK !=3D zlib_deflateInit(&workspace->strm, workspace-
->level)) {
->               =20
-^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
->    include/linux/zlib.h:148:25: note: expanded from macro 'Z_OK'
->    #define Z_OK            0
->                            ^
->    fs/btrfs/zlib.c:267:6: note: uninitialized use occurs here
->            if (cpage_out)
->                ^~~~~~~~~
->    fs/btrfs/zlib.c:115:2: note: remove the 'if' if its condition is=20
-always false
->            if (Z_OK !=3D zlib_deflateInit(&workspace->strm, workspace-
->level)) {
->           =20
-^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
->    fs/btrfs/zlib.c:101:17: note: initialize the variable 'cpage_out' to=20
-silence this warning
->            char *cpage_out;
->                           ^
->                            =3D NULL
->    4 warnings generated.
-
-I'll initialize these variables in v2.
-
-Thanks,
-
-=46abio
-
-
+> +		struct bio *orig_bio;
+> +		struct work_struct write_end_work;
+> +	};
+>  
+>  	/*
+>  	 * the start of a variable length array of checksums only

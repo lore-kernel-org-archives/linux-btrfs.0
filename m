@@ -2,77 +2,129 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47F7AC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jun 2022 02:25:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5E91C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Jun 2022 02:55:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240621AbiFACZg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 31 May 2022 22:25:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51686 "EHLO
+        id S236009AbiFACzc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 31 May 2022 22:55:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34358 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231981AbiFACZf (ORCPT
+        with ESMTP id S232241AbiFACzb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 31 May 2022 22:25:35 -0400
-Received: from out20-26.mail.aliyun.com (out20-26.mail.aliyun.com [115.124.20.26])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 17DC0814BA
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 19:25:33 -0700 (PDT)
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.4100785|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.423523-0.201013-0.375464;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047209;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.Nwu6xmY_1654050331;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.Nwu6xmY_1654050331)
-          by smtp.aliyun-inc.com(11.95.168.178);
-          Wed, 01 Jun 2022 10:25:31 +0800
-Date:   Wed, 01 Jun 2022 10:25:33 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH DRAFT] btrfs: RAID56J journal on-disk format draft
-Cc:     linux-btrfs@vger.kernel.org
-In-Reply-To: <1bcadb40-e478-1c56-27fc-ca87e7fae715@suse.com>
-References: <20220601100645.6500.409509F4@e16-tech.com> <1bcadb40-e478-1c56-27fc-ca87e7fae715@suse.com>
-Message-Id: <20220601102532.D262.409509F4@e16-tech.com>
+        Tue, 31 May 2022 22:55:31 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 61CFB6C0E8
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 May 2022 19:55:29 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1654052123;
+        bh=baN+12waLghZjNJNVqIYXDP7IXLXnTL7f+sD+JLlarw=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=NeUzFQMG1HrPIVzJhcQKqDkcS/Bzz4Jd3srm4YhfsP7CqoUld3yElhSIwwldnnqlI
+         22s4islJWChmN8DI27FU41LYvLtGy3MJSZn/EqCdrrc5vv1reMH6ZlFAS5p9kPyC2y
+         XUFpSOsYD5Un1O5NTvkXHRnO60qTgLxoDa7d7XKo=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1M26vL-1nyiQ71kDp-002YuX; Wed, 01
+ Jun 2022 04:55:23 +0200
+Message-ID: <49fb1216-189d-8801-d134-596284f62f1f@gmx.com>
+Date:   Wed, 1 Jun 2022 10:55:18 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.04 [en]
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.0
+Subject: Re: [PATCH DRAFT] btrfs: RAID56J journal on-disk format draft
+Content-Language: en-US
+To:     Wang Yugui <wangyugui@e16-tech.com>, Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20220601100645.6500.409509F4@e16-tech.com>
+ <1bcadb40-e478-1c56-27fc-ca87e7fae715@suse.com>
+ <20220601102532.D262.409509F4@e16-tech.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220601102532.D262.409509F4@e16-tech.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:pxt2/ts0fxAU5/L+ZI/nvs22YVz9S4ZvjRd5M8r9iiZ4FLVv7W6
+ NE3wCFONGnwIQjWwOEmqLHs0EGxSD24HU+DcirbGBfSnJlFKBvb25mrHC0j8N7a0qpVsX3u
+ Vfejhns/mRFwfNpxtS71vS5iGbk7RHxvjhpAfEw7FrOl8IV5vxG8LiBHV3sLggsqX64po6E
+ y0pSTEqn2ldNgohPFnoZA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:bXQQqCQ0lBU=:1U8nXY/FNTdO5FaajBD05I
+ 2KJ063RC5/1Ffi51uW+TTEKIZcVfdidsqeUsX9T+kUAebC0sGCVTeWMyzCxeNKaSKi6iXGr5y
+ u5JC+dGD56+1f0s8N5iP9h3S/HrWNA/EduWAuBlPLyCIUORu5jkNcXcKHraOJR7nzGxhHK8r/
+ 1cVSNmY34FMZLeelH2Z9UVkgEQ10z0eEEVukxL0MOgrxQ7W9JxLkqp9pmx7t3wWc4dBctagm7
+ ZUXxhY777UMOyTrmcNd8E6yBYGId44Hoyuri+5hF3hNaTE5k8s7KJ4LFgHI1G2kJUXReSz1JM
+ u4pCzRLrc6Gva896mpgOKene8z5780Tw/fbXYWBuyfDdQE8V1gXBOdZHOWJ+itk3bPmYueF6v
+ s5nEIUnFRrYXPRsi3XfapaOCQhXmCATkhhFzqHpQVQL5F71xR01kDpG4Tff0TGU/7K5e2Pvd0
+ 7uMj6IhT3A9tiVwJcLQIRusrOk7+dbxMYHFl8sSlyq+jIGUGVRV2JWcV/Q88segMzHoFeVAGc
+ IdBiviPM+ZRiCJ/TsUARds9sySX9deYob7NXzrjF6ejwdGb8xv2EhU/3V2pJEw+xd5HA3QZbj
+ Le1IcMnl9dMyaecxS6jkmijGgbdxJ0qAG1C9Kgm1pBDQlLKmbUs9N8QLki5FbP+xVtc0XT2lw
+ Zz6bOFhfo+qBUnYZXoY+ehp7+G0ZsqlJrFajCKpNuuFmSpNvY1daL+HJizzt+dFKNGYOko7wx
+ Lj6pQ3Zg7/gT9Rci+FxY9zSacR/H9SU7aRJIEJPPX7ImDCOy10mcl22XLd51LF7l9fxKrz0hd
+ DVfdLhN3X3LWvSNA7o/rsoKKXHgUtSEjdBBnH5jcrdbGzgdeqymYqKqGEKjbz8ijn+IkMeA00
+ vyiIkhKoyzWMFmBX0ZdqukGKUaD/7BRGebYOb/4AwfSdqzeiBvfJF0BBwBjEt1EtfzXEx6LW8
+ 3LECq/jY4871FyEIF62N9f/blgyplVE58pHCq7GZpMwZaaSvJbiplibnsRfRSHzYZ+fmOFZLU
+ JSSCTnnS1PIyNmYkkHRuadd3a5LW/t5+aIZoXodRsZULkVNeboXUyr4VbpqWHdOt2VqUZ3GUu
+ Vl3Ju0mIPapGN3raYgb6PgyTash94SK3lYlk29Br1JErsDXbf77irvQiQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
-
-> On 2022/6/1 10:06, Wang Yugui wrote:
-> > Hi,
-> >
-> >> This is the draft version of the on-disk format for RAID56J journal.
-> >>
-> >> The overall idea is, we have the following elements:
-> >>
-> >> 1) A fixed header
-> >>     Recording things like if the journal is clean or dirty, and how many
-> >>     entries it has.
-> >>
-> >> 2) One or at most 127 entries
-> >>     Each entry will point to a range of data in the per-device reserved
-> >>     range.
-> >
-> > Can we put this journal in a device just like 'mke2fs -O journal_dev'
-> > or 'mkfs.xfs -l logdev'?
-> >
-> > A fast & small journal device may help the performance.
-> 
-> Then that lacks the ability to lose one device.
-> 
-> The journal device must be there no matter what.
-> 
-> Furthermore, this will still need a on-disk format change for a special type of device.
-
-If we save journal on every RAID56 HDD, it will always be very slow, 
-because journal data is in a different place than normal data, so HDD
-seek is always happen?
-
-If we save journal on a device just like 'mke2fs -O journal_dev' or 'mkfs.xfs
--l logdev', then this device just works like NVDIMM?  We may not need
-RAID56/RAID1 for journal data.
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2022/06/01
 
 
+On 2022/6/1 10:25, Wang Yugui wrote:
+> Hi,
+>
+>> On 2022/6/1 10:06, Wang Yugui wrote:
+>>> Hi,
+>>>
+>>>> This is the draft version of the on-disk format for RAID56J journal.
+>>>>
+>>>> The overall idea is, we have the following elements:
+>>>>
+>>>> 1) A fixed header
+>>>>      Recording things like if the journal is clean or dirty, and how =
+many
+>>>>      entries it has.
+>>>>
+>>>> 2) One or at most 127 entries
+>>>>      Each entry will point to a range of data in the per-device reser=
+ved
+>>>>      range.
+>>>
+>>> Can we put this journal in a device just like 'mke2fs -O journal_dev'
+>>> or 'mkfs.xfs -l logdev'?
+>>>
+>>> A fast & small journal device may help the performance.
+>>
+>> Then that lacks the ability to lose one device.
+>>
+>> The journal device must be there no matter what.
+>>
+>> Furthermore, this will still need a on-disk format change for a special=
+ type of device.
+>
+> If we save journal on every RAID56 HDD, it will always be very slow,
+> because journal data is in a different place than normal data, so HDD
+> seek is always happen?
+>
+> If we save journal on a device just like 'mke2fs -O journal_dev' or 'mkf=
+s.xfs
+> -l logdev', then this device just works like NVDIMM?  We may not need
+> RAID56/RAID1 for journal data.
+
+That device is the single point of failure. You lost that device, write
+hole come again.
+
+RAID56 can tolerant one or two device failures for sure.
+Thus one point failure is against RAID56.
+
+
+If one is not bothered with writehole, then they doesn't need any
+journal at all.
+
+Thanks,
+Qu
+>
+> Best Regards
+> Wang Yugui (wangyugui@e16-tech.com)
+> 2022/06/01
+>
+>

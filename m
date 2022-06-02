@@ -2,108 +2,132 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A302C43334
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 781A8C433EF
 	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jun 2022 07:07:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231540AbiFBHHG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jun 2022 03:07:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51092 "EHLO
+        id S231335AbiFBHHH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jun 2022 03:07:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51204 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231335AbiFBHHC (ORCPT
+        with ESMTP id S231358AbiFBHHC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2022 03:07:02 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7F1725DA73
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 00:06:57 -0700 (PDT)
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C50A45DD29
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 00:06:59 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 3F52C21B00
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:56 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 814911F958
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1654153616; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=TqiG7vr9e+QjZ/iqX1bexDgTWRgmcbpmAKq4uI+JZn8=;
-        b=Putaxztt9MTXyhv5UBKM/rUaR/IoB3ALrDQ5bfsKDQ55LYRsOWSXcwpoGPrW3L1NlRvl2h
-        LUMhPNODXqC18Tvo8D7cTQolIz0liakaokrupnX3NCOrwRMquRJLrRW706k8eckJOD0elR
-        6VpjaQFTm202VqpntRaxUpinsIajfpA=
+        t=1654153618; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=7b15qRNrkRXKYIOD9LjFYvAjdJjMaEGnqcGjaBkCrMo=;
+        b=PEbEINa+7R1dwFUqA61CIrgeA86tD+qWG7xEAnBal5DIBpzRfYUwTSMnyTJRPWpvD250Dl
+        kVybRIIaaKs8+606O3Ck9Pnbm5y84MZLAraiUU17MRedpjHoFLx9XpNV3mehQA1buYzkYT
+        XsfSuViWhkVwmzVaUzkwQ7/x0O1hVDY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7AC8C134F3
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:55 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C6E8D134F3
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:57 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id Pu1XD49hmGKSAgAAMHmgww
+        id GF7uIpFhmGKSAgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2022 07:06:55 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2022 07:06:57 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/5] btrfs: avoid unnecessary double loop usage in RAID56
-Date:   Thu,  2 Jun 2022 15:06:32 +0800
-Message-Id: <cover.1654153382.git.wqu@suse.com>
+Subject: [PATCH 2/5] btrfs: avoid double for loop inside __raid56_parity_recover()
+Date:   Thu,  2 Jun 2022 15:06:34 +0800
+Message-Id: <93d3f15f66dab25c4591f93fc6dd928c2d29355d.1654153382.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.1
+In-Reply-To: <cover.1654153382.git.wqu@suse.com>
+References: <cover.1654153382.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are a lot of call patterns used in RAID56 like this:
+The double for loop can be easily converted to single for loop as we're
+really iterating the sectors in their bytenr order.
 
-	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
-		for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
-			struct sector_ptr *sector;
-			
-			sector = sector_in_rbio(rbio, stripe, sectornr, 1);
-			/* Do something with the sector */
-		}
-	}
+The only exception is the full stripe skip, however that can also easily
+be done inside the loop.
+Add an ASSERT() along with a comment for that specific case.
 
-Such double for loop could cause problems for continue/break, as we have
-to keep in mind which layer we're continuing or breaking out.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 39 +++++++++++++++++++--------------------
+ 1 file changed, 19 insertions(+), 20 deletions(-)
 
-In fact, for most call sites, they are just iterating all the sectors in
-their bytenr order.
-
-Thus there is really no need to do such double for loop.
-
-This patchset will convert all these unnecessary call sites to something
-like this:
-
-	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
-	     total_sector_nr++) {
-		struct sector_ptr *sector;
-
-		sector = sector_in_rbio(rbio, stripe, sectornr, 1);
-		/* Do something with the sector */
-	}
-
-So we don't need to bother if the break/continue is for which layer, and
-reduce one indent.
-
-There are some cases that, we may want to skip the full stripe.
-In that case, it can be done by modifying @total_sector_nr manually.
-
-Since modifying the iterator is not a good practice, every time we do
-that, there will be an ASSERT() (making sure we're the first sector),
-and a comment on the fact we're skipping the whole stripe.
-
-There are still call sites doing much smaller double loop, mostly for
-cases that explicitly want to handling a vertical stripe.
-For those call sites, just keep them as is.
-
-Qu Wenruo (5):
-  btrfs: avoid double for loop inside finish_rmw()
-  btrfs: avoid double for loop inside __raid56_parity_recover()
-  btrfs: avoid double for loop inside alloc_rbio_essential_pages()
-  btrfs: avoid double for loop inside raid56_rmw_stripe()
-  btrfs: avoid double for loop inside raid56_parity_scrub_stripe()
-
- fs/btrfs/raid56.c | 283 ++++++++++++++++++++++++----------------------
- 1 file changed, 146 insertions(+), 137 deletions(-)
-
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 91b53ef20b0e..7c17f35e0830 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -2127,8 +2127,7 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	int bios_to_read = 0;
+ 	struct bio_list bio_list;
+ 	int ret;
+-	int sectornr;
+-	int stripe;
++	int total_sector_nr;
+ 	struct bio *bio;
+ 
+ 	bio_list_init(&bio_list);
+@@ -2144,29 +2143,29 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	 * stripe cache, it is possible that some or all of these
+ 	 * pages are going to be uptodate.
+ 	 */
+-	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
++	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
++	     total_sector_nr++) {
++		int stripe = total_sector_nr / rbio->nr_sectors;
++		int sectornr = total_sector_nr % rbio->nr_sectors;
++		struct sector_ptr *sector;
++
+ 		if (rbio->faila == stripe || rbio->failb == stripe) {
+ 			atomic_inc(&rbio->error);
++			/* Skip the current stripe. */
++			ASSERT(sectornr == 0);
++			total_sector_nr += rbio->nr_sectors - 1;
+ 			continue;
+ 		}
++		/* The rmw code may have already read this page in. */
++		sector = rbio_stripe_sector(rbio, stripe, sectornr);
++		if (sector->uptodate)
++			continue;
+ 
+-		for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
+-			struct sector_ptr *sector;
+-
+-			/*
+-			 * the rmw code may have already read this
+-			 * page in
+-			 */
+-			sector = rbio_stripe_sector(rbio, stripe, sectornr);
+-			if (sector->uptodate)
+-				continue;
+-
+-			ret = rbio_add_io_sector(rbio, &bio_list, sector,
+-						 stripe, sectornr, rbio->stripe_len,
+-						 REQ_OP_READ);
+-			if (ret < 0)
+-				goto cleanup;
+-		}
++		ret = rbio_add_io_sector(rbio, &bio_list, sector, stripe,
++					 sectornr, rbio->stripe_len,
++					 REQ_OP_READ);
++		if (ret < 0)
++			goto cleanup;
+ 	}
+ 
+ 	bios_to_read = bio_list_size(&bio_list);
 -- 
 2.36.1
 

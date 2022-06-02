@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31B70C43334
-	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jun 2022 07:07:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BA6F9C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Jun 2022 07:07:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231506AbiFBHHE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 2 Jun 2022 03:07:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51190 "EHLO
+        id S231533AbiFBHHF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 2 Jun 2022 03:07:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51210 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231363AbiFBHHC (ORCPT
+        with ESMTP id S231461AbiFBHHC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jun 2022 03:07:02 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C0EF5DBCF
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 00:06:58 -0700 (PDT)
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1112860B84
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 00:07:00 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 5B82C1F8C7
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:57 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id A997721B00
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1654153617; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1654153619; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=83SOTEGmpGPk8XwGmBbUzZASoag2rFvTS90BN+fAHBM=;
-        b=L5VqXvButmCi9LQB/RzcgV21cQxCjx16nwkIYpFekwfeg5Us2ms1lPBoCcumDPsxOmd1Ow
-        3iE6RG7mPXyzrrq0OAVuBcRp9kvI/0K5VWyzkF42wJYjmQFqKjBmrr0CtNQQLrM/jjDW0l
-        osVGXYBFF/TbI9Alkjxcl3mULhbNd4E=
+        bh=8LFTR/Iy/whRasmG32YzPrBquan0Vm8KZo4e2D25BIY=;
+        b=f7MBMestCoBd30ReyLThyY98qzFlmzHHtIKXmPvy9meIJx3NbKUgCLlnYULdmRMhBh4Vuh
+        XbcZLZuYDYMhXz77WB6H7LNC5b8bjWb2akTBn3M3Zf0M3TshFbFdiroP/yz5CnVil+4+Sm
+        CgYQyKW8P7ZxVZIQG68wGTD5cJkrt4A=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A1393134F3
-        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:56 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EE02D134F3
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Jun 2022 07:06:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id eCCFGZBhmGKSAgAAMHmgww
+        id kEJgLJJhmGKSAgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2022 07:06:56 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jun 2022 07:06:58 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/5] btrfs: avoid double for loop inside finish_rmw()
-Date:   Thu,  2 Jun 2022 15:06:33 +0800
-Message-Id: <f372e2e97d0bebc9a89f7a338659be436a5fb807.1654153382.git.wqu@suse.com>
+Subject: [PATCH 3/5] btrfs: avoid double for loop inside alloc_rbio_essential_pages()
+Date:   Thu,  2 Jun 2022 15:06:35 +0800
+Message-Id: <78159f0e8ba96df617b1b95b34f08f542230540a.1654153382.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <cover.1654153382.git.wqu@suse.com>
 References: <cover.1654153382.git.wqu@suse.com>
@@ -54,151 +54,58 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We can easily calculate the stripe number and sector number inside the
-stripe.
+The double loop is just checking if the page for the vertical stripe
+is allocated.
 
-Thus there is not much need for a double for loop.
-
-For the only case we want to skip the whole stripe, we can manually
-increase @total_sector_nr.
-This is not a recommended behavior, thus every time the iterator get
-modified there will be a comment along with an ASSERT() for it.
+We can easily convert it to single loop and get rid of @stripe variable.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 94 +++++++++++++++++++++++++++--------------------
- 1 file changed, 54 insertions(+), 40 deletions(-)
+ fs/btrfs/raid56.c | 29 ++++++++++++++---------------
+ 1 file changed, 14 insertions(+), 15 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 03e82707d856..91b53ef20b0e 100644
+index 7c17f35e0830..ffb9ed9c625c 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -1185,7 +1185,10 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
- 	const u32 sectorsize = bioc->fs_info->sectorsize;
- 	void **pointers = rbio->finish_pointers;
- 	int nr_data = rbio->nr_data;
-+	/* The total sector number inside the full stripe. */
+@@ -2392,23 +2392,22 @@ void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
+ static int alloc_rbio_essential_pages(struct btrfs_raid_bio *rbio)
+ {
+ 	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
+-	int stripe;
+-	int sectornr;
+-
+-	for_each_set_bit(sectornr, &rbio->dbitmap, rbio->stripe_nsectors) {
+-		for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
+-			struct page *page;
+-			int index = (stripe * rbio->stripe_nsectors + sectornr) *
+-				    sectorsize >> PAGE_SHIFT;
 +	int total_sector_nr;
- 	int stripe;
-+	/* Sector number inside a stripe. */
- 	int sectornr;
- 	bool has_qstripe;
- 	struct bio_list bio_list;
-@@ -1270,63 +1273,74 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
- 	}
  
- 	/*
--	 * time to start writing.  Make bios for everything from the
-+	 * Time to start writing.  Make bios for everything from the
- 	 * higher layers (the bio_list in our rbio) and our p/q.  Ignore
- 	 * everything else.
- 	 */
--	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
--		for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
--			struct sector_ptr *sector;
+-			if (rbio->stripe_pages[index])
+-				continue;
 +	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
 +	     total_sector_nr++) {
-+		struct sector_ptr *sector;
++		struct page *page;
++		int sectornr = total_sector_nr % rbio->stripe_nsectors;
++		int index = (total_sector_nr * sectorsize) >> PAGE_SHIFT;
  
--			/* This vertical stripe has no data, skip it. */
--			if (!test_bit(sectornr, &rbio->dbitmap))
--				continue;
-+		stripe = total_sector_nr / rbio->stripe_nsectors;
-+		sectornr = total_sector_nr % rbio->stripe_nsectors;
- 
--			if (stripe < rbio->nr_data) {
--				sector = sector_in_rbio(rbio, stripe, sectornr, 1);
--				if (!sector)
--					continue;
--			} else {
--				sector = rbio_stripe_sector(rbio, stripe, sectornr);
--			}
-+		/* This vertical stripe has no data, skip it. */
+-			page = alloc_page(GFP_NOFS);
+-			if (!page)
+-				return -ENOMEM;
+-			rbio->stripe_pages[index] = page;
+-		}
 +		if (!test_bit(sectornr, &rbio->dbitmap))
 +			continue;
- 
--			ret = rbio_add_io_sector(rbio, &bio_list, sector, stripe,
--						 sectornr, rbio->stripe_len,
--						 REQ_OP_WRITE);
--			if (ret)
--				goto cleanup;
-+		if (stripe < rbio->nr_data) {
-+			sector = sector_in_rbio(rbio, stripe, sectornr, 1);
-+			if (!sector)
-+				continue;
-+		} else {
-+			sector = rbio_stripe_sector(rbio, stripe, sectornr);
- 		}
-+
-+		ret = rbio_add_io_sector(rbio, &bio_list, sector, stripe,
-+					 sectornr, rbio->stripe_len,
-+					 REQ_OP_WRITE);
-+		if (ret)
-+			goto cleanup;
- 	}
- 
- 	if (likely(!bioc->num_tgtdevs))
- 		goto write_data;
- 
--	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
--		if (!bioc->tgtdev_map[stripe])
--			continue;
-+	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
-+	     total_sector_nr++) {
-+		struct sector_ptr *sector;
- 
--		for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
--			struct sector_ptr *sector;
-+		stripe = total_sector_nr / rbio->stripe_nsectors;
-+		sectornr = total_sector_nr % rbio->stripe_nsectors;
- 
--			/* This vertical stripe has no data, skip it. */
--			if (!test_bit(sectornr, &rbio->dbitmap))
--				continue;
-+		if (!bioc->tgtdev_map[stripe]) {
-+			/*
-+			 * We can skip the whole stripe completely, note
-+			 * total_sector_nr will be increased by one anyway.
-+			 */
-+			ASSERT(sectornr == 0);
-+			total_sector_nr += rbio->stripe_nsectors - 1;
++		if (rbio->stripe_pages[index])
 +			continue;
-+		}
- 
--			if (stripe < rbio->nr_data) {
--				sector = sector_in_rbio(rbio, stripe, sectornr, 1);
--				if (!sector)
--					continue;
--			} else {
--				sector = rbio_stripe_sector(rbio, stripe, sectornr);
--			}
-+		/* This vertical stripe has no data, skip it. */
-+		if (!test_bit(sectornr, &rbio->dbitmap))
-+			continue;
- 
--			ret = rbio_add_io_sector(rbio, &bio_list, sector,
--					       rbio->bioc->tgtdev_map[stripe],
--					       sectornr, rbio->stripe_len,
--					       REQ_OP_WRITE);
--			if (ret)
--				goto cleanup;
-+		if (stripe < rbio->nr_data) {
-+			sector = sector_in_rbio(rbio, stripe, sectornr, 1);
-+			if (!sector)
-+				continue;
-+		} else {
-+			sector = rbio_stripe_sector(rbio, stripe, sectornr);
- 		}
-+
-+		ret = rbio_add_io_sector(rbio, &bio_list, sector,
-+				       rbio->bioc->tgtdev_map[stripe],
-+				       sectornr, rbio->stripe_len,
-+				       REQ_OP_WRITE);
-+		if (ret)
-+			goto cleanup;
++		page = alloc_page(GFP_NOFS);
++		if (!page)
++			return -ENOMEM;
++		rbio->stripe_pages[index] = page;
  	}
- 
- write_data:
+ 	index_stripe_sectors(rbio);
+ 	return 0;
 -- 
 2.36.1
 

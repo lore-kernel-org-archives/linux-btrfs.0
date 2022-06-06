@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24AE2C43334
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jun 2022 14:15:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DBE5C43334
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jun 2022 14:31:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236628AbiFFOPB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jun 2022 10:15:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52142 "EHLO
+        id S239650AbiFFObv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jun 2022 10:31:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45804 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239445AbiFFOO7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2022 10:14:59 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 001FC2CCB0
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jun 2022 07:14:58 -0700 (PDT)
+        with ESMTP id S239575AbiFFObu (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2022 10:31:50 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 390C2F7483
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jun 2022 07:31:49 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 7E2F81F92D;
-        Mon,  6 Jun 2022 14:14:57 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id EBAFB21A83;
+        Mon,  6 Jun 2022 14:31:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1654524897; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1654525907; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=AuPcrTNXZmTwinzh5BJX/Bvcr5Z8wPMTySmGF8G7BYE=;
-        b=UTFE3Kuom5+BI+Bao8LLNS9mTPaU+gQvxxy/z5Jo5TH8bi9XjThtwyEzLkFwYKmq6pWGVL
-        zyuJuFInWKBCXxByT+H4idGKSPFtFWW8okjZfOcMrOwgueAWSF92nL/CgW9iKKe8EibUW/
-        WSsws6fdTRXwWDN1GMep4ync3NyreNA=
+        bh=A/fniPRm9yDxqChMHy4cAUHMYV5Pl/jRXtsv9sFvmHk=;
+        b=CRohzbfDODlRv1N7QnRDXQU/Xxb8kOCKIAODc4IEJmCZYldprLscmLBFf3GhLw6TQ18jVu
+        D1IWcXhv+jV36ZMn1rxJ5WqOPaolfB3Fg9Pau9HdClpxDgU+CFmBuBl7MaBSYCdbXfNjIU
+        PEtgNpYJDccctuJsH+1RoYMOb0D2c0s=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4DB9B13A5F;
-        Mon,  6 Jun 2022 14:14:57 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BB6B8139F5;
+        Mon,  6 Jun 2022 14:31:47 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id XT20DuELnmKCXAAAMHmgww
-        (envelope-from <nborisov@suse.com>); Mon, 06 Jun 2022 14:14:57 +0000
-Message-ID: <b4211a54-c491-2b8f-8586-efb8c570bba3@suse.com>
-Date:   Mon, 6 Jun 2022 17:14:56 +0300
+        id cP4TKtMPnmIwYgAAMHmgww
+        (envelope-from <nborisov@suse.com>); Mon, 06 Jun 2022 14:31:47 +0000
+Message-ID: <445c4c65-9b94-4961-c498-5c3d9b140a3d@suse.com>
+Date:   Mon, 6 Jun 2022 17:31:47 +0300
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.9.1
@@ -85,8 +85,9 @@ On 6.06.22 г. 17:03 ч., Torbjörn Jansson wrote:
 > modified on the ext4 filesystem, correct? or?
 > 
 
-This suggests that btrfs progs is unable to properly read/parse the 
-superblock of the ext4 filesystem. So you are right that convert hasn't 
-even started in this case so your ext4 is intact.
+Care too run the following command and share the output:
 
-However, that's strange since for ext* related queries we do use libext2fs.
+echo "show_super_stats -h" | debugfs -f /dev/stdin /dev/loop0
+
+change /dev/loop0 to wherever is your ext4 filesyste, however debugfs 
+require the fs to be unmounted.

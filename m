@@ -2,30 +2,30 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1636EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jun 2022 20:47:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8BAFC43334
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jun 2022 20:47:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234472AbiFFUrj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jun 2022 16:47:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46420 "EHLO
+        id S234577AbiFFUrm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jun 2022 16:47:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50386 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234317AbiFFUrV (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2022 16:47:21 -0400
+        with ESMTP id S234069AbiFFUrU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2022 16:47:20 -0400
 Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F36313CA13;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1F94613C1FD;
         Mon,  6 Jun 2022 13:41:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
         References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
         Content-Type:Content-ID:Content-Description;
-        bh=2zqEa9EzjfvcCB/R36xszZ4AMZtdcV59XiMVDc9jTyM=; b=U+BqaoSQWdsShi/y8CPTtTig63
-        HCMa7+gIZx7Yyb6cusLNuXKWsG06WN8xz/erKBPWuYizRThCX0iiljqhNcZd2weflUVCtiqE770D/
-        Vb15aA5PxUQlAGcLo3M0XEH41Q/fMFbQWUysBrY6PEG35YJKOueNndbkU/J8qu3X5pGzhsOP7ol4W
-        F3RaDu2I/zP67juMsLCzxygZBIwXjKCl86d9jfX6rvdn+U142VP0hON97WCqvsixaBkAVbsODa0Rm
-        STrW9jc4kjH9X53B35Fdz629pIYD4+nkkWKOdWUlig7kbghCKRcjBc7pf8npYNE/LtOnrV8sVT0Vs
-        SEGqa5Hg==;
+        bh=jUHtPvxpwYn/CbCKtCO4gIDrDPVTvyaQoVGtIQShqV8=; b=jSXisP6LX46D6Mw+iXYFF/5dHQ
+        Cq+5Fi0773+cVC4U9ukK6uPnYuWIfkHADg3G9SiZaN1QWdL8Bw8OwfYPT7xfddEiqh5OKP81yWVIY
+        qERnKHNvRO9zfbKpGHImXAVxsBisgmn/CxiCns5EQmSUyg3J6K8R2kkkIDgNoaevsqaLFhC5Wxh52
+        Z38Ws7TQ5Dp7rpDRe4MO4DakZ/+co05qxKtyfgyK3bXqUiSNs9vH9ETqmdeoiAv+unUA3cgwymN9t
+        pq0eOgOppmxZCcU/ekIrK65xO/nlqiG9Pvvr5StvpmfjnqBIWv5xh9xJykbFL+Cw79+wHE0k8kIBA
+        U9JkUfCw==;
 Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nyJWx-00B19i-Jy; Mon, 06 Jun 2022 20:40:55 +0000
+        id 1nyJWx-00B19e-EV; Mon, 06 Jun 2022 20:40:55 +0000
 From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
@@ -37,9 +37,9 @@ Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         linux-ntfs-dev@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
         linux-mtd@lists.infradead.org,
         virtualization@lists.linux-foundation.org
-Subject: [PATCH 13/20] aio: Convert to migrate_folio
-Date:   Mon,  6 Jun 2022 21:40:43 +0100
-Message-Id: <20220606204050.2625949-14-willy@infradead.org>
+Subject: [PATCH 11/20] ubifs: Convert to filemap_migrate_folio()
+Date:   Mon,  6 Jun 2022 21:40:41 +0100
+Message-Id: <20220606204050.2625949-12-willy@infradead.org>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20220606204050.2625949-1-willy@infradead.org>
 References: <20220606204050.2625949-1-willy@infradead.org>
@@ -49,97 +49,61 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use a folio throughout this function.
+filemap_migrate_folio() is a little more general than ubifs really needs,
+but it's better to share the code.
 
 Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
- fs/aio.c | 36 ++++++++++++++++++------------------
- 1 file changed, 18 insertions(+), 18 deletions(-)
+ fs/ubifs/file.c | 29 ++---------------------------
+ 1 file changed, 2 insertions(+), 27 deletions(-)
 
-diff --git a/fs/aio.c b/fs/aio.c
-index 3c249b938632..a1911e86859c 100644
---- a/fs/aio.c
-+++ b/fs/aio.c
-@@ -400,8 +400,8 @@ static const struct file_operations aio_ring_fops = {
- };
- 
- #if IS_ENABLED(CONFIG_MIGRATION)
--static int aio_migratepage(struct address_space *mapping, struct page *new,
--			struct page *old, enum migrate_mode mode)
-+static int aio_migrate_folio(struct address_space *mapping, struct folio *dst,
-+			struct folio *src, enum migrate_mode mode)
- {
- 	struct kioctx *ctx;
- 	unsigned long flags;
-@@ -435,10 +435,10 @@ static int aio_migratepage(struct address_space *mapping, struct page *new,
- 		goto out;
- 	}
- 
--	idx = old->index;
-+	idx = src->index;
- 	if (idx < (pgoff_t)ctx->nr_pages) {
--		/* Make sure the old page hasn't already been changed */
--		if (ctx->ring_pages[idx] != old)
-+		/* Make sure the old folio hasn't already been changed */
-+		if (ctx->ring_pages[idx] != &src->page)
- 			rc = -EAGAIN;
- 	} else
- 		rc = -EINVAL;
-@@ -447,27 +447,27 @@ static int aio_migratepage(struct address_space *mapping, struct page *new,
- 		goto out_unlock;
- 
- 	/* Writeback must be complete */
--	BUG_ON(PageWriteback(old));
--	get_page(new);
-+	BUG_ON(folio_test_writeback(src));
-+	folio_get(dst);
- 
--	rc = migrate_page_move_mapping(mapping, new, old, 1);
-+	rc = folio_migrate_mapping(mapping, dst, src, 1);
- 	if (rc != MIGRATEPAGE_SUCCESS) {
--		put_page(new);
-+		folio_put(dst);
- 		goto out_unlock;
- 	}
- 
- 	/* Take completion_lock to prevent other writes to the ring buffer
--	 * while the old page is copied to the new.  This prevents new
-+	 * while the old folio is copied to the new.  This prevents new
- 	 * events from being lost.
- 	 */
- 	spin_lock_irqsave(&ctx->completion_lock, flags);
--	migrate_page_copy(new, old);
--	BUG_ON(ctx->ring_pages[idx] != old);
--	ctx->ring_pages[idx] = new;
-+	folio_migrate_copy(dst, src);
-+	BUG_ON(ctx->ring_pages[idx] != &src->page);
-+	ctx->ring_pages[idx] = &dst->page;
- 	spin_unlock_irqrestore(&ctx->completion_lock, flags);
- 
--	/* The old page is no longer accessible. */
--	put_page(old);
-+	/* The old folio is no longer accessible. */
-+	folio_put(src);
- 
- out_unlock:
- 	mutex_unlock(&ctx->ring_lock);
-@@ -475,13 +475,13 @@ static int aio_migratepage(struct address_space *mapping, struct page *new,
- 	spin_unlock(&mapping->private_lock);
- 	return rc;
+diff --git a/fs/ubifs/file.c b/fs/ubifs/file.c
+index 04ced154960f..f2353dd676ef 100644
+--- a/fs/ubifs/file.c
++++ b/fs/ubifs/file.c
+@@ -1461,29 +1461,6 @@ static bool ubifs_dirty_folio(struct address_space *mapping,
+ 	return ret;
  }
-+#else
-+#define aio_migrate_folio NULL
- #endif
  
- static const struct address_space_operations aio_ctx_aops = {
- 	.dirty_folio	= noop_dirty_folio,
--#if IS_ENABLED(CONFIG_MIGRATION)
--	.migratepage	= aio_migratepage,
+-#ifdef CONFIG_MIGRATION
+-static int ubifs_migrate_page(struct address_space *mapping,
+-		struct page *newpage, struct page *page, enum migrate_mode mode)
+-{
+-	int rc;
+-
+-	rc = migrate_page_move_mapping(mapping, newpage, page, 0);
+-	if (rc != MIGRATEPAGE_SUCCESS)
+-		return rc;
+-
+-	if (PagePrivate(page)) {
+-		detach_page_private(page);
+-		attach_page_private(newpage, (void *)1);
+-	}
+-
+-	if (mode != MIGRATE_SYNC_NO_COPY)
+-		migrate_page_copy(newpage, page);
+-	else
+-		migrate_page_states(newpage, page);
+-	return MIGRATEPAGE_SUCCESS;
+-}
 -#endif
-+	.migrate_folio	= aio_migrate_folio,
+-
+ static bool ubifs_release_folio(struct folio *folio, gfp_t unused_gfp_flags)
+ {
+ 	struct inode *inode = folio->mapping->host;
+@@ -1649,10 +1626,8 @@ const struct address_space_operations ubifs_file_address_operations = {
+ 	.write_end      = ubifs_write_end,
+ 	.invalidate_folio = ubifs_invalidate_folio,
+ 	.dirty_folio	= ubifs_dirty_folio,
+-#ifdef CONFIG_MIGRATION
+-	.migratepage	= ubifs_migrate_page,
+-#endif
+-	.release_folio    = ubifs_release_folio,
++	.migrate_folio	= filemap_migrate_folio,
++	.release_folio	= ubifs_release_folio,
  };
  
- static int aio_setup_ring(struct kioctx *ctx, unsigned int nr_events)
+ const struct inode_operations ubifs_file_inode_operations = {
 -- 
 2.35.1
 

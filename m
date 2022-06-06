@@ -2,77 +2,120 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6972AC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jun 2022 20:33:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2345EC43334
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Jun 2022 20:47:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233191AbiFFUdO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Jun 2022 16:33:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60262 "EHLO
+        id S234512AbiFFUrY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Jun 2022 16:47:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50030 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233650AbiFFUcA (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2022 16:32:00 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DB884EE1A
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Jun 2022 13:31:16 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7BE6621AED;
-        Mon,  6 Jun 2022 20:31:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1654547475;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=tMmI9w5Wre1LBQ1/9sJbVNe/PcUATp6vcko9NSPOEKE=;
-        b=QEtcjcyeIaHqKUFuwRSapXkuIEKMwxUPGRcvhp6U4Dit33/aR0hLbwfYBGNQMLyjQdBjBO
-        4ZL7WcmiZuWRYGgfAM7Bm9VIkwxU//kgw4HVcodZO+JB8rdD1+bCrfaaZjgCPgCfOEWl7p
-        x2TFP9f1u5YgHwNxe78cRlbKs2/DC88=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1654547475;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=tMmI9w5Wre1LBQ1/9sJbVNe/PcUATp6vcko9NSPOEKE=;
-        b=UghY0LLQ3rYPmeDMDV9ewO5hkCDClVDTf94/ETO2dW2VIpJTdp09xHVvD+otXtytNPkfB7
-        82e4olSDZ96yAXCw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5907413A5F;
-        Mon,  6 Jun 2022 20:31:15 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 58PMFBNknmKLTwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 06 Jun 2022 20:31:15 +0000
-Date:   Mon, 6 Jun 2022 22:26:46 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: extent_io bio submission cleanup
-Message-ID: <20220606202646.GF20633@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20220603071103.43440-1-hch@lst.de>
+        with ESMTP id S234482AbiFFUqs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jun 2022 16:46:48 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20CD513B8F2;
+        Mon,  6 Jun 2022 13:40:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
+        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
+        Content-Type:Content-ID:Content-Description;
+        bh=dRkMHaR981UE2djNCVPW4MUdY2rPYJAa6UnQ1arpxn4=; b=VhRq5mA6U/Le0FhZhCp9BX9vX0
+        eEJWByASrVCSrm9WetxXqV0UXZBjF0SuYe4mFnGXMFsUgOilHz8p+squ/1rM4gM36CwhSe5BBEQp6
+        i1dQyrlxzSUP+hK9Ax4brjnRi7zxuvpEv+ymkWeCRkQK8HkgmO0y7Vc+lYVUA7Hlj90Pkf8iPWxqv
+        CYXqz3bl8ul96I36GIcF4ldupbg1VWOjM55w+RuDYjPUC/TOKQiKqMH+XKBjwoHp0p03NK+LpBfPw
+        iNV++FmUm87jwl9SX46KBPV+Ri5X6qeVBMjICnW8mirhgRNBkbRKdvNkLwdTh42fXKSQ5I7volu41
+        cllWb9Yg==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1nyJWw-00B19O-PM; Mon, 06 Jun 2022 20:40:54 +0000
+From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-aio@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com, linux-mm@kvack.org,
+        linux-xfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-ntfs-dev@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
+        linux-mtd@lists.infradead.org,
+        virtualization@lists.linux-foundation.org
+Subject: [PATCH 03/20] mm/migrate: Convert writeout() to take a folio
+Date:   Mon,  6 Jun 2022 21:40:33 +0100
+Message-Id: <20220606204050.2625949-4-willy@infradead.org>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <20220606204050.2625949-1-willy@infradead.org>
+References: <20220606204050.2625949-1-willy@infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220603071103.43440-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 03, 2022 at 09:11:00AM +0200, Christoph Hellwig wrote:
-> Hi all,
-> 
-> this series cleans up how extent_io.c submits bios.
+Use a folio throughout this function.
 
-Thanks, added to misc-next, for now with the fixup as a separate patch
-so it's clear in case there's an error but I intend to merge it in to
-the third patch.
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+---
+ mm/migrate.c | 21 ++++++++++-----------
+ 1 file changed, 10 insertions(+), 11 deletions(-)
+
+diff --git a/mm/migrate.c b/mm/migrate.c
+index d772ce63d7e2..f19246c12fe9 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -762,11 +762,10 @@ int buffer_migrate_page_norefs(struct address_space *mapping,
+ #endif
+ 
+ /*
+- * Writeback a page to clean the dirty state
++ * Writeback a folio to clean the dirty state
+  */
+-static int writeout(struct address_space *mapping, struct page *page)
++static int writeout(struct address_space *mapping, struct folio *folio)
+ {
+-	struct folio *folio = page_folio(page);
+ 	struct writeback_control wbc = {
+ 		.sync_mode = WB_SYNC_NONE,
+ 		.nr_to_write = 1,
+@@ -780,25 +779,25 @@ static int writeout(struct address_space *mapping, struct page *page)
+ 		/* No write method for the address space */
+ 		return -EINVAL;
+ 
+-	if (!clear_page_dirty_for_io(page))
++	if (!folio_clear_dirty_for_io(folio))
+ 		/* Someone else already triggered a write */
+ 		return -EAGAIN;
+ 
+ 	/*
+-	 * A dirty page may imply that the underlying filesystem has
+-	 * the page on some queue. So the page must be clean for
+-	 * migration. Writeout may mean we loose the lock and the
+-	 * page state is no longer what we checked for earlier.
++	 * A dirty folio may imply that the underlying filesystem has
++	 * the folio on some queue. So the folio must be clean for
++	 * migration. Writeout may mean we lose the lock and the
++	 * folio state is no longer what we checked for earlier.
+ 	 * At this point we know that the migration attempt cannot
+ 	 * be successful.
+ 	 */
+ 	remove_migration_ptes(folio, folio, false);
+ 
+-	rc = mapping->a_ops->writepage(page, &wbc);
++	rc = mapping->a_ops->writepage(&folio->page, &wbc);
+ 
+ 	if (rc != AOP_WRITEPAGE_ACTIVATE)
+ 		/* unlocked. Relock */
+-		lock_page(page);
++		folio_lock(folio);
+ 
+ 	return (rc < 0) ? -EIO : -EAGAIN;
+ }
+@@ -818,7 +817,7 @@ static int fallback_migrate_folio(struct address_space *mapping,
+ 		default:
+ 			return -EBUSY;
+ 		}
+-		return writeout(mapping, &src->page);
++		return writeout(mapping, src);
+ 	}
+ 
+ 	/*
+-- 
+2.35.1
+

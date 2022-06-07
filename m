@@ -2,245 +2,101 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4201C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 00:33:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B9352C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 00:33:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346494AbiFHA2w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Jun 2022 20:28:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36310 "EHLO
+        id S1376630AbiFHA3G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Jun 2022 20:29:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52558 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1587674AbiFGXxc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jun 2022 19:53:32 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1809221C610
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 15:48:08 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id B90BB1F892;
-        Tue,  7 Jun 2022 22:48:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1654642086; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=O15+Ss7fS2iJzBANwdbWSHFCBHmkUXSz2vVE94mvMD0=;
-        b=jZRfKdwMuAmZhTFS6u591bF4PDY4LXMUjgGk037NiP1Vlvnw1dgZsTGTxVeYFZT03RvcbK
-        Bj7Qh2bL70cXkDf9zB+HWScM7rauC9nl/vRj9cj2YQuNgVR6cXdkK7Qkjgncjx/SazdUOh
-        xi8e0OouujIZVgBKvM7N28XkA6ESmi4=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id B0CDB2C141;
-        Tue,  7 Jun 2022 22:48:06 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id 33BB8DA8EA; Wed,  8 Jun 2022 00:43:38 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH RFC] btrfs: customizable log message id
-Date:   Wed,  8 Jun 2022 00:43:37 +0200
-Message-Id: <20220607224337.11898-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.36.1
+        with ESMTP id S1451893AbiFGXNQ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jun 2022 19:13:16 -0400
+Received: from mail-il1-x12a.google.com (mail-il1-x12a.google.com [IPv6:2607:f8b0:4864:20::12a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0BD3C3A7BE7
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 13:59:10 -0700 (PDT)
+Received: by mail-il1-x12a.google.com with SMTP id s1so15183291ilj.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jun 2022 13:59:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=jXwm++VzZDMNEKUCIc30GiyP1KNsRx3tcoVZ4wOCZJA=;
+        b=D3cgIXXj6d0IY39GInKI0ejqlpRDpaYqG+BJcjWbIHXGifKRiT/Ee/n6frXMxShuNX
+         xOBeHFyVBAs3OuKeHrPZynLzSe7jjjMeq/ilKVuXNbH2KIUIqQ7l1+GiBlRxJHk02lqi
+         8J0Y+whhev4V8ms1O6xvmDchT5JtQqvIp7wzQv42KwHArL2wQtKJmZV3AC5xRZrs7+w+
+         Muyv9oZzDhXnu6kS7iNYVKh1KlX79mC7JSHiQzn3PNhQ6IqSBPrUdqgXOtSbPkUDDJ1R
+         gsQKn3ywAQvJrYrfQpvq2j6LEgDQLakVgYyfNEOZpe7BZ8R9J/6sEjGRIZfJQ3WlRwKv
+         JeJQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=jXwm++VzZDMNEKUCIc30GiyP1KNsRx3tcoVZ4wOCZJA=;
+        b=n33RKMuOGoDKk4AyY4yL1AI2kXmE2jM6mQLrroA7S1JLavQvRCWzjvm2sIyKUpwNbg
+         gJBmBuq7nyomVD0/c7Tqcgg/28QKHeFUHMnDZoGeNriEo7RVtQusaxj93MdxNPpFipvo
+         uE0/+WnVced19SQw+ffqqzuLxBWcn5V5X5kuDshaS881HvYAz5MAQRYJM/Yed8gPNMvg
+         yvNEw8xmBmnsrnmo1QFGk+JXlCdgCT4LsG1gslEq4zEc6cxC1PxzJaiji3Mu6ybRDXfs
+         zK54uLrQRhmWZrFNNOlxK+dPijjMJn+iCxcpDW/O/2xutx8LlU7ENJ08KWASNoz6UCMn
+         swaA==
+X-Gm-Message-State: AOAM532VVGubm1YdmUHGWYyiF+ZjZZrMyLlchvHDwMUIXPWZNFiapjhV
+        EHBbQHizAJnW/OoPaaj6whVz1JlpCvGSPp0G8NGAEnwS0Kc=
+X-Google-Smtp-Source: ABdhPJztvid5O3sYTytpG1gAJx3SXNKQ75bjUG2s+o+32CyAaNFyb24qEYx+sruTSMVJG7L0HPqwHPWbMTSiTWV+OcQ=
+X-Received: by 2002:a05:6e02:216a:b0:2d1:71a0:c2b8 with SMTP id
+ s10-20020a056e02216a00b002d171a0c2b8mr18316543ilv.6.1654635549114; Tue, 07
+ Jun 2022 13:59:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20220607032240.GS22722@merlins.org> <CAEzrpqc8f3HzxUG0Ty1NQoQKAEEAW_3-+3ackv1fDk68qfyf6w@mail.gmail.com>
+ <20220607151829.GQ1745079@merlins.org> <CAEzrpqftCCPw1J-jA-MTgoBDG6fNVJ-bJoXCh7NAbCeDptiwag@mail.gmail.com>
+ <20220607153257.GR1745079@merlins.org> <CAEzrpqd9RJ8xoOQFWh_xLBdqeMYA+t=otXT4W5YcPkJqsPvG0A@mail.gmail.com>
+ <20220607182737.GU1745079@merlins.org> <CAEzrpqd335YbHi2U07nxnt62OSL8R60nx2XAUpMXE+RQjACSZQ@mail.gmail.com>
+ <20220607195744.GV22722@merlins.org> <CAEzrpqdp7JUPvpGrbctiLQY_qZpks7HyOSg4eNY=5xifErzy3A@mail.gmail.com>
+ <20220607204406.GX22722@merlins.org>
+In-Reply-To: <20220607204406.GX22722@merlins.org>
+From:   Josef Bacik <josef@toxicpanda.com>
+Date:   Tue, 7 Jun 2022 16:58:57 -0400
+Message-ID: <CAEzrpqccYbdBNs6gYDzZRw17D1O6tPU=9w1vLvDVOjJeMDuazw@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The btrfs messages are made of several parts, like prefix, the device
-for identification, and the message:
+On Tue, Jun 7, 2022 at 4:44 PM Marc MERLIN <marc@merlins.org> wrote:
+>
+> On Tue, Jun 07, 2022 at 04:10:02PM -0400, Josef Bacik wrote:
+> > Alright it looks like we've gotten everything we're going to get, go
+> > ahead and let init-extent-tree do its thing.  Thanks,
+>
+> Argh, it ran for a while and then it crashed, but I didn't have it run under gdb.
+>
+> searching 164624 for bad extents
+> processed 655360 of 109084672 possible bytes, 0%
+> Found an extent we don't have a block group for in the file 12283412910080
+> ref to path failed
+> Couldn't find any paths for this inode
+> Deleting [26761, 108, 34557952] root 15645018243072 path top 15645018243072 top slot 40 leaf 15645020192768 slot 3
+>
+> searching 164624 for bad extents
+> processed 655360 of 109084672 possible bytes, 0%
+> Found an extent we don't have a block group for in the file 12283452309504
+> ref to path failed
+> Couldn't find any paths for this inode
+> Deleting [26761, 108, 43954176] root 15645019504640 path top 15645019504640 top slot 40 leaf 15645020028928 slot 3
+> Segmentation fault
+>
+> re-running it thankfully crashed in the same place
+> processed 655360 of 109084672 possible bytes, 0%
+> Found an extent we don't have a block group for in the file 12283452309504
+> ref to path failed
+> Couldn't find any paths for this inode
+> Deleting [26761, 108, 43954176] root 15645019586560 path top 15645019586560 top slot 40 leaf 15645019602944 slot 3
+>
 
-  BTRFS info (device loop0): using free space tree
+Ok I think I fixed that, but I also updated the loop to bulk delete as
+many bad items in a leaf at a time, hopefully this will make it go
+much faster.  Expect more fireworks with the new code.  Thanks,
 
-Based on user feedback, something else than the device would be desired,
-like the uuid or label. As the messages are sort of a public interface,
-eg. for log scrapers or monitoring tools, changing current 'device' to
-a new default would potentially break that, and users have different
-preferences as the discussion showed.
-
-Thus it's configurable. As implemented now it's per filesystem and can
-be set after mount. There's no global setting but can be implemented.
-
-Configuration is done by sysfs by writing following strings to the file
-/sys/fs/btrfs/UUID/msgid:
-
-- device (current default)
-- uuid - will print the filesystem uuid/fsid
-
-  BTRFS info (uuid 7989fadb-469d-4969-ba6b-d1ead726a920): using free space tree
-
-- uuid-short - print only first part of the uuid
-
-  BTRFS info (uuid 7989fadb-469d): using free space tree
-
-- label - print label
-
-  BTRFS info (label TEST): using free space tree
-
-Signed-off-by: David Sterba <dsterba@suse.com>
----
-
-This is RFC, questions to discuss:
-
-- rename 'msgid' to something else
-- configurable at module load time as a parameter as the default
-- configurable after load gobally in sysfs (/sys/fs/btrfs/msgid)
-- both global and per-filesystem sysfs knob
-- change the default eventually but to what
-- other identification, suggestions were eg. devid, uuid+devid
-
- fs/btrfs/ctree.h   | 10 ++++++++++
- fs/btrfs/disk-io.c |  3 +++
- fs/btrfs/super.c   | 31 +++++++++++++++++++++++++++++--
- fs/btrfs/sysfs.c   | 40 ++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 82 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f7afdfd0bae7..e448394451f1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -646,6 +646,14 @@ enum {
- #endif
- };
- 
-+enum btrfs_msgid_type {
-+	BTRFS_MSGID_DEVICE,
-+	BTRFS_MSGID_UUID,
-+	BTRFS_MSGID_UUID_SHORT,
-+	BTRFS_MSGID_LABEL,
-+	BTRFS_MSGID_COUNT
-+};
-+
- /*
-  * Exclusive operations (device replace, resize, device add/remove, balance)
-  */
-@@ -744,6 +752,8 @@ struct btrfs_fs_info {
- 	 */
- 	u64 max_inline;
- 
-+	enum btrfs_msgid_type msgid_type;
-+
- 	struct btrfs_transaction *running_transaction;
- 	wait_queue_head_t transaction_throttle;
- 	wait_queue_head_t transaction_wait;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 800ad3a9c68e..d1c6d372d5f7 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3138,6 +3138,9 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 
- 	fs_info->bg_reclaim_threshold = BTRFS_DEFAULT_RECLAIM_THRESH;
- 	INIT_WORK(&fs_info->reclaim_bgs_work, btrfs_reclaim_bgs_work);
-+
-+	/* Set default here */
-+	fs_info->msgid_type = BTRFS_MSGID_UUID;
- }
- 
- static int init_mount_fs_info(struct btrfs_fs_info *fs_info, struct super_block *sb)
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 719dda57dc7a..8227bcce9817 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -291,10 +291,37 @@ void __cold _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt,
- 	if (__ratelimit(ratelimit)) {
- 		if (fs_info) {
- 			char statestr[STATE_STRING_BUF_LEN];
-+			char *idtype;
-+			char id[64] = { 0 };
-+			bool short_fsid = false;
-+
-+			switch (READ_ONCE(fs_info->msgid_type)) {
-+			default:
-+			case BTRFS_MSGID_DEVICE:
-+				idtype = "device";
-+				scnprintf(id, sizeof(id), "%s", fs_info->sb->s_id);
-+				break;
-+			case BTRFS_MSGID_UUID_SHORT:
-+				short_fsid = true;
-+				fallthrough;
-+			case BTRFS_MSGID_UUID:
-+				idtype = "fsid";
-+				scnprintf(id, sizeof(id), "%pU",
-+					  fs_info->fs_devices->fsid);
-+				if (short_fsid)
-+					id[13] = 0;
-+				break;
-+			case BTRFS_MSGID_LABEL:
-+				idtype = "label";
-+				/* Fixme: first 64 from label */
-+				scnprintf(id, sizeof(id), "%s",
-+					  fs_info->super_copy->label);
-+				break;
-+			}
- 
- 			btrfs_state_to_string(fs_info, statestr);
--			_printk("%sBTRFS %s (device %s%s): %pV\n", lvl, type,
--				fs_info->sb->s_id, statestr, &vaf);
-+			_printk("%sBTRFS %s (%s %s%s): %pV\n", lvl, type,
-+				idtype, id, statestr, &vaf);
- 		} else {
- 			_printk("%sBTRFS %s: %pV\n", lvl, type, &vaf);
- 		}
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 3554c7b4204f..94dd28112414 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -962,6 +962,8 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
- 	memcpy(fs_info->super_copy->label, buf, p_len);
- 	spin_unlock(&fs_info->super_lock);
- 
-+	/* Fixme: if label is empty, reset msgid_type to default */
-+
- 	/*
- 	 * We don't want to do full transaction commit from inside sysfs
- 	 */
-@@ -1214,6 +1216,43 @@ static ssize_t btrfs_bg_reclaim_threshold_store(struct kobject *kobj,
- BTRFS_ATTR_RW(, bg_reclaim_threshold, btrfs_bg_reclaim_threshold_show,
- 	      btrfs_bg_reclaim_threshold_store);
- 
-+static const char *msgid_strings[] = {
-+	[BTRFS_MSGID_DEVICE]	= "device",
-+	[BTRFS_MSGID_UUID]	= "uuid",
-+	[BTRFS_MSGID_UUID_SHORT] = "uuid-short",
-+	[BTRFS_MSGID_LABEL]	= "label",
-+};
-+
-+static ssize_t btrfs_msgid_show(struct kobject *kobj,
-+				struct kobj_attribute *a,
-+				char *buf)
-+{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+
-+	return sysfs_emit(buf, "%s\n", msgid_strings[fs_info->msgid_type]);
-+}
-+
-+static ssize_t btrfs_msgid_store(struct kobject *kobj,
-+				 struct kobj_attribute *a,
-+				 const char *buf, size_t len)
-+{
-+	struct btrfs_fs_info *fs_info = to_fs_info(kobj);
-+	int i;
-+
-+	for (i = 0; i < BTRFS_MSGID_COUNT; i++) {
-+		/* Fixme: if label is empty do a fallback */
-+		if (strmatch(buf, msgid_strings[i])) {
-+			WRITE_ONCE(fs_info->msgid_type, i);
-+			break;
-+		}
-+	}
-+	if (i == BTRFS_MSGID_COUNT)
-+		return -EINVAL;
-+
-+	return len;
-+}
-+BTRFS_ATTR_RW(, msgid, btrfs_msgid_show, btrfs_msgid_store);
-+
- /*
-  * Per-filesystem information and stats.
-  *
-@@ -1231,6 +1270,7 @@ static const struct attribute *btrfs_attrs[] = {
- 	BTRFS_ATTR_PTR(, generation),
- 	BTRFS_ATTR_PTR(, read_policy),
- 	BTRFS_ATTR_PTR(, bg_reclaim_threshold),
-+	BTRFS_ATTR_PTR(, msgid),
- 	NULL,
- };
- 
--- 
-2.36.1
-
+Josef

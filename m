@@ -2,92 +2,55 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7EF64CCA47B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 07:54:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6232DC43334
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 09:04:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230420AbiFHHyr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 03:54:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45218 "EHLO
+        id S230143AbiFHJEJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 05:04:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35210 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233757AbiFHHyI (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 03:54:08 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F9F5187C04;
-        Wed,  8 Jun 2022 00:20:42 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id CECB721BAD;
-        Wed,  8 Jun 2022 07:20:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1654672840; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=4kAUqU7oYw9DHR87K5m8UWS9lXofWSz1lGY1kx4IdTg=;
-        b=uPuW80p3xp/V4PKGl5/bSTEsKqPxcOUq+vGXSYz9qPsuSzWzw1TCC1qFdSJD6ddJMzXpYx
-        A7QEVELoinLVx3QVTIfxYPXEzJ2DPCXkuk+izcHZyxRwVg7zcri8UyeLgwPGM6jdVG4j7F
-        XJnef8kABatcul8QbTHFQcFQyS9YTEo=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id F27AA13A15;
-        Wed,  8 Jun 2022 07:20:39 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id sD+6LsdNoGJyGgAAMHmgww
-        (envelope-from <wqu@suse.com>); Wed, 08 Jun 2022 07:20:39 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] fstests: re-add btrfs/125 into auto group
-Date:   Wed,  8 Jun 2022 15:20:21 +0800
-Message-Id: <63471ce6c6d4a4e9db4c3f4771bb512f31131932.1654672817.git.wqu@suse.com>
-X-Mailer: git-send-email 2.36.1
+        with ESMTP id S233346AbiFHJCm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 05:02:42 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA5471B2171;
+        Wed,  8 Jun 2022 01:22:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=M7NmYC/Iylm9myghHwqILim55SAUt9QrM+UZYk0eJlw=; b=XZpaog3/TCuODd4lbgjHUCLi7x
+        x1dw2vGYlLqy0O4P0INgyQxrgGfTRy4wEsy7726U3KdO1hlZ1TtyKX/3Q+mVrxyNhLuNilejbL6Et
+        oWr1oU29LE+lbW3FXec5SfhVL/4QSpHDTGPMwWj3jZ9/Gjgz0/wqyXCq2GrNYzJif7Z9p1hjbOCjn
+        gmw8YYviv5YBoa+N4qz/e8SdKP0r4xEGs77+sR39vn0hSvQfOJWL+OdZWvqKnac+VAms4uQsKUU3J
+        dntDUvhDQaRlJgweGC8KZQuLGbi5RVkn7T1CZiVa3anrYWZsOvgqUMgITIK9P73UMTNZQ6gIUPRpu
+        ImsT2ntg==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1nyqmn-00BqOQ-Il; Wed, 08 Jun 2022 08:11:29 +0000
+Date:   Wed, 8 Jun 2022 01:11:29 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>
+Cc:     linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-block@vger.kernel.org, linux-aio@kvack.org,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-mm@kvack.org, linux-xfs@vger.kernel.org,
+        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
+        ocfs2-devel@oss.oracle.com, linux-mtd@lists.infradead.org,
+        virtualization@lists.linux-foundation.org
+Subject: Re: [PATCH 03/20] mm/migrate: Convert writeout() to take a folio
+Message-ID: <YqBZsUM8j/5ntRK0@infradead.org>
+References: <20220606204050.2625949-1-willy@infradead.org>
+ <20220606204050.2625949-4-willy@infradead.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220606204050.2625949-4-willy@infradead.org>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Test case btrfs/125 previous has a very random pass/fail ratio.
+Looks good:
 
-This is due to the fact that previously btrfs RAID56 recovery path will
-always trust the cached data.
-
-Thus if there is some operation reading part/all of the full stripe,
-that full stripe can be cached, making later recovery to generate bad
-data.
-
-As the cached data can be stale (intentionally caused by the test case).
-
-Upstream commit d4e28d9b5f04 ("btrfs: raid56: make steal_rbio() subpage
-compatible") incidentally disable all the cache re-use for btrfs RAID56,
-thus make btrfs/125 to always pass.
-
-Although we will later re-enable the cache behavior for btrfs RAID56, we
-will not let recovery path to use any cache at all, thus this will give
-us the best things from both worlds, making btrfs/125 to pass
-consistently, while still enable cache for regular read/write.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/125 | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/tests/btrfs/125 b/tests/btrfs/125
-index b58f2aa282bd..ced812cd921a 100755
---- a/tests/btrfs/125
-+++ b/tests/btrfs/125
-@@ -22,7 +22,7 @@
- # Verify if all three checkpoints match
- #
- . ./common/preamble
--_begin_fstest replace volume balance
-+_begin_fstest auto replace volume balance
- 
- # Override the default cleanup function.
- _cleanup()
--- 
-2.36.1
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 

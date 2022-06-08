@@ -2,95 +2,121 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED752C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 03:12:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 366DFCCA482
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 03:17:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230115AbiFHDMT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Jun 2022 23:12:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57826 "EHLO
+        id S237714AbiFHDR1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Jun 2022 23:17:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44146 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233196AbiFHDLG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jun 2022 23:11:06 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 086F622ABDA
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 14:25:23 -0700 (PDT)
-Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nyghX-0002Ow-2F by authid <merlin>; Tue, 07 Jun 2022 14:25:23 -0700
-Date:   Tue, 7 Jun 2022 14:25:23 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220607212523.GZ22722@merlins.org>
-References: <20220607151829.GQ1745079@merlins.org>
- <CAEzrpqftCCPw1J-jA-MTgoBDG6fNVJ-bJoXCh7NAbCeDptiwag@mail.gmail.com>
- <20220607153257.GR1745079@merlins.org>
- <CAEzrpqd9RJ8xoOQFWh_xLBdqeMYA+t=otXT4W5YcPkJqsPvG0A@mail.gmail.com>
- <20220607182737.GU1745079@merlins.org>
- <CAEzrpqd335YbHi2U07nxnt62OSL8R60nx2XAUpMXE+RQjACSZQ@mail.gmail.com>
- <20220607195744.GV22722@merlins.org>
- <CAEzrpqdp7JUPvpGrbctiLQY_qZpks7HyOSg4eNY=5xifErzy3A@mail.gmail.com>
- <20220607204406.GX22722@merlins.org>
- <CAEzrpqccYbdBNs6gYDzZRw17D1O6tPU=9w1vLvDVOjJeMDuazw@mail.gmail.com>
+        with ESMTP id S1349258AbiFHDOz (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jun 2022 23:14:55 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A755812A98
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 17:35:15 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 04C8321A0B
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2022 00:34:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1654648495; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=nuUrIZkjKRGvvi4HyOga0e4igSYR752S1oJqFNJuM3M=;
+        b=YeNSlhkMlFuGJ1lbteZBnHmCY+QY2JFXBxDy1vlFBg71LtWqnWstjtOYCCwya6lSD7OVhv
+        hMD7XfWPlVht0Icnz1L7UwV2P9Mhd/w584xfQ3wFqqPzIhvo9QhulLRWJngGyxo7YWr3Eb
+        vMNc3Giuo5t1vOqK31/vO1j7pYkQXmU=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5A2B2137FA
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2022 00:34:54 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 82RYCa7un2LiHQAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jun 2022 00:34:54 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/5] btrfs: avoid unnecessary double loop usage in RAID56
+Date:   Wed,  8 Jun 2022 08:34:31 +0800
+Message-Id: <cover.1654648358.git.wqu@suse.com>
+X-Mailer: git-send-email 2.36.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAEzrpqccYbdBNs6gYDzZRw17D1O6tPU=9w1vLvDVOjJeMDuazw@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: marc@merlins.org
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 07, 2022 at 04:58:57PM -0400, Josef Bacik wrote:
-> Ok I think I fixed that, but I also updated the loop to bulk delete as
-> many bad items in a leaf at a time, hopefully this will make it go
-> much faster.  Expect more fireworks with the new code.  Thanks,
+[CHANGELOG]
+v3:
+- Fix a crash in btrfs/125
+  This is caused by the 4th patch, which the original code is only
+  iterating data sectors, but not touching P/Q stripes.
+  This triggeres a BUG_ON().
 
-Found an extent we don't have a block group for in the file 10741731311616
-ref to path failed
-Couldn't find any paths for this inode
-Deleting [73101, 108, 0] root 15645020241920 path top 15645020241920 top slot 49 leaf 15645020766208 slot 26 nr 73
+v2:
+- Fix a bug in the 2nd patch that @stripe_nsector should be used
+  instead of @nr_sectors
+  This can cause btrfs/157 crash reliably
 
-searching 164629 for bad extents
-processed 802816 of 108838912 possible bytes, 0%
-Found an extent we don't have a block group for in the file 10741731311616
+There are a lot of call patterns used in RAID56 like this:
 
-Found an extent we don't have a block group for in the file 743378268160
+	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
+		for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
+			struct sector_ptr *sector;
+			
+			sector = sector_in_rbio(rbio, stripe, sectornr, 1);
+			/* Do something with the sector */
+		}
+	}
 
-Found an extent we don't have a block group for in the file 946736541696
-ref to path failed
-Couldn't find any paths for this inode
-Deleting [73101, 108, 427687936] root 15645019537408 path top 15645019537408 top slot 49 leaf 15645020766208 slot 26 nr 148
+Such double for loop could cause problems for continue/break, as we have
+to keep in mind which layer we're continuing or breaking out.
 
-searching 164629 for bad extents
-processed 802816 of 108838912 possible bytes, 0%
-Found an extent we don't have a block group for in the file 946736541696
-ref to path failed
-Couldn't find any paths for this inode
-Deleting [73101, 108, 1747189760] root 15645020241920 path top 15645020241920 top slot 49 leaf 15645020782592 slot 26 nr 1
+In fact, for most call sites, they are just iterating all the sectors in
+their bytenr order.
 
-searching 164629 for bad extents
-processed 835584 of 108838912 possible bytes, 0%
-corrupt leaf: root=164629 root bytenr 15645020241920 commit bytenr 0 block=15645020438528 physical=15054974140416 slot=0 level 0, invalid level for node, have 0 expect [1, 7]
-kernel-shared/ctree.c:148: btrfs_release_path: BUG_ON `ret` triggered, value -5
-/var/local/src/btrfs-progs-josefbacik/btrfs(btrfs_release_path+0x62)[0x555555573667]
-/var/local/src/btrfs-progs-josefbacik/btrfs(+0x8d1fe)[0x5555555e11fe]
-/var/local/src/btrfs-progs-josefbacik/btrfs(btrfs_init_extent_tree+0xc83)[0x5555555e2fd0]
-/var/local/src/btrfs-progs-josefbacik/btrfs(+0x845dd)[0x5555555d85dd]
-/var/local/src/btrfs-progs-josefbacik/btrfs(handle_command_group+0x49)[0x55555556c17b]
-/var/local/src/btrfs-progs-josefbacik/btrfs(main+0x94)[0x55555556c275]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xcd)[0x7ffff78617fd]
-/var/local/src/btrfs-progs-josefbacik/btrfs(_start+0x2a)[0x55555556be1a]
+Thus there is really no need to do such double for loop.
 
-Program received signal SIGABRT, Aborted.
-0x00007ffff78768a1 in raise () from /lib/x86_64-linux-gnu/libc.so.6
+This patchset will convert all these unnecessary call sites to something
+like this:
+
+	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
+	     total_sector_nr++) {
+		struct sector_ptr *sector;
+
+		sector = sector_in_rbio(rbio, stripe, sectornr, 1);
+		/* Do something with the sector */
+	}
+
+So we don't need to bother if the break/continue is for which layer, and
+reduce one indent.
+
+There are some cases that, we may want to skip the full stripe.
+In that case, it can be done by modifying @total_sector_nr manually.
+
+Since modifying the iterator is not a good practice, every time we do
+that, there will be an ASSERT() (making sure we're the first sector),
+and a comment on the fact we're skipping the whole stripe.
+
+There are still call sites doing much smaller double loop, mostly for
+cases that explicitly want to handling a vertical stripe.
+For those call sites, just keep them as is.
+
+
+Qu Wenruo (5):
+  btrfs: avoid double for loop inside finish_rmw()
+  btrfs: avoid double for loop inside __raid56_parity_recover()
+  btrfs: avoid double for loop inside alloc_rbio_essential_pages()
+  btrfs: avoid double for loop inside raid56_rmw_stripe()
+  btrfs: avoid double for loop inside raid56_parity_scrub_stripe()
+
+ fs/btrfs/raid56.c | 284 ++++++++++++++++++++++++----------------------
+ 1 file changed, 147 insertions(+), 137 deletions(-)
 
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/  
+2.36.1
+

@@ -2,68 +2,94 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98B08CCA481
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 05:04:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F37E9C43334
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 05:06:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231794AbiFHFEe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 01:04:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39462 "EHLO
+        id S231645AbiFHFGd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 01:06:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57132 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232777AbiFHFDY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 01:03:24 -0400
-Received: from szxga02-in.huawei.com (szxga02-in.huawei.com [45.249.212.188])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 433402EEBCE;
-        Tue,  7 Jun 2022 18:55:24 -0700 (PDT)
-Received: from canpemm500009.china.huawei.com (unknown [172.30.72.55])
-        by szxga02-in.huawei.com (SkyGuard) with ESMTP id 4LHqvW21W6zRnQp;
-        Wed,  8 Jun 2022 09:51:19 +0800 (CST)
-Received: from CHINA (10.175.102.38) by canpemm500009.china.huawei.com
- (7.192.105.203) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.2375.24; Wed, 8 Jun
- 2022 09:54:30 +0800
-From:   Wei Yongjun <weiyongjun1@huawei.com>
-To:     <weiyongjun1@huawei.com>, Stefan Roesch <shr@fb.com>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Nick Terrell <terrelln@fb.com>
-CC:     <linux-btrfs@vger.kernel.org>, <kernel-janitors@vger.kernel.org>,
-        Hulk Robot <hulkci@huawei.com>
-Subject: [PATCH -next] btrfs: sysfs: fix return value check in btrfs_force_chunk_alloc_s()
-Date:   Wed, 8 Jun 2022 02:12:52 +0000
-Message-ID: <20220608021252.990374-1-weiyongjun1@huawei.com>
-X-Mailer: git-send-email 2.34.1
+        with ESMTP id S233944AbiFHFAA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 01:00:00 -0400
+Received: from mail-io1-xd2a.google.com (mail-io1-xd2a.google.com [IPv6:2607:f8b0:4864:20::d2a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 16C3A2C069E
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 18:34:09 -0700 (PDT)
+Received: by mail-io1-xd2a.google.com with SMTP id s23so17394259iog.13
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jun 2022 18:34:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=UqLGuRndKu4zf8uhmNsxGKaG3S9bJlYQazZ8R/zyVs8=;
+        b=wjgF7yv8KDKuAGePG7QiqCXsTZ9a59fDWPGJ4ay0JSdYl0poBd7w9khtZzEJAkbyG2
+         gs47vjSAxvpNQxBfEAQ5Ng+xvdYBBqurDbZLHEOhodp4iIpw9GRJgVTHDnToyYxpLgTS
+         vDf95KTbYvCvwzv2rKSSGbKGqeNY38iAgZm+SZ7Oe1RtEx59n7dgEO0WALTfLDm8ClSC
+         5Z5CVeT7c7QQ9brijTEgA6r5KBn45qoNsuBxFPGJ1u1eyWSvcAnsj5vse9cZK7GiDBX3
+         rDjvvVONNxXk6A7NGSQ4/Z5uwUYE/keBgpPrtAAIgm4sjRwkY8nirkBe/fZ9izMnmhWj
+         mudw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=UqLGuRndKu4zf8uhmNsxGKaG3S9bJlYQazZ8R/zyVs8=;
+        b=3sW7DM0IjhSqKfaNcw2XFKz5Z2+uvZ0Q6Nf1XbeWiv9zkjO6i2N7HNuZ+N6jviOSeK
+         84aKIsgloIh2qjxxLmOsikTuwebt+XPeQvAEjoE6yzh4EeM8WD3B6wQNaYSAsTiCTe+I
+         pMtJImn8hNBuClqxB8M7Fi4hpwfz+Xg3coTThUvPSBEvoyzwuVRu2ZZAnJ6Y1PaMJTxp
+         Ay5jvssSJvnhIDlblicJ6LZjuen7yg5Cr7lqd8FuUvO28YOmhuvG0q+IWJ0JtHQHQ3LR
+         T8DDEzqqYqjiGpw43sAkk3QQPeSKY9FW3qB39YEmvTszZAix9CYvlfbUMTbM4+vKSs+C
+         GcGA==
+X-Gm-Message-State: AOAM532bICUrj5jW8FMWl53SODsHGZtBBor3HgDa4acwl8bwXq0O8bfJ
+        OLhs62NMkNaf7O2qhQStPShZ+KtafYWAYe47aR9rkRUUnI4=
+X-Google-Smtp-Source: ABdhPJyX+q71Cwqil5QFDhHGFqdTR4nbMN1Zg56OEsSOhHc7/r7lX4yjxpx8pknwhsaq8AFGP/fBaBLeGTr/aECzugc=
+X-Received: by 2002:a05:6602:1695:b0:665:8390:fcf with SMTP id
+ s21-20020a056602169500b0066583900fcfmr14913030iow.83.1654651899226; Tue, 07
+ Jun 2022 18:31:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type:   text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7BIT
-X-Originating-IP: [10.175.102.38]
-X-ClientProxiedBy: dggems704-chm.china.huawei.com (10.3.19.181) To
- canpemm500009.china.huawei.com (7.192.105.203)
-X-CFilter-Loop: Reflected
+References: <20220607195744.GV22722@merlins.org> <CAEzrpqdp7JUPvpGrbctiLQY_qZpks7HyOSg4eNY=5xifErzy3A@mail.gmail.com>
+ <20220607204406.GX22722@merlins.org> <CAEzrpqccYbdBNs6gYDzZRw17D1O6tPU=9w1vLvDVOjJeMDuazw@mail.gmail.com>
+ <20220607212523.GZ22722@merlins.org> <CAEzrpqex0PRGZA3_gaoUhpPb-7cpi-gi_mo1S3F=0xxKNptpEA@mail.gmail.com>
+ <20220607233734.GA22722@merlins.org> <CAEzrpqcVO99HbrhmtABUENRCm4HEsyg3+T3oK33DZFuXamwqgA@mail.gmail.com>
+ <20220608000700.GB22722@merlins.org> <CAEzrpqe79F=-0T7Q3dqb62J6+kcisOjnWP+aLkkY0z+EJY-m9Q@mail.gmail.com>
+ <20220608004241.GC22722@merlins.org>
+In-Reply-To: <20220608004241.GC22722@merlins.org>
+From:   Josef Bacik <josef@toxicpanda.com>
+Date:   Tue, 7 Jun 2022 21:31:28 -0400
+Message-ID: <CAEzrpqdq8zTBQaw_VneL4rfZn0JseUiwvtfwXQx0jq=DYBCFFw@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In case of error, the function btrfs_start_transaction() returns
-ERR_PTR() and never returns NULL. The NULL test in the return value
-check should be replaced with IS_ERR().
+On Tue, Jun 7, 2022 at 8:42 PM Marc MERLIN <marc@merlins.org> wrote:
+>
+> On Tue, Jun 07, 2022 at 08:32:33PM -0400, Josef Bacik wrote:
+> > > processed 622592 of 108838912 possible bytes, 0%
+> > > Recording extents for root 164631
+> > > ERROR: failed to insert the ref for the root block -17
+> > > wtf
+> > > it failed?? -17
+> >
+> > That shouldn't happen.  I reworked the code a bit and added some
+> > debugging, re-run init-extent-tree please.  Thanks,
+>
+> processed 196608 of 63193088 possible bytes, 0%
+> searching 18446744073709551607 for bad extents
+> processed 16384 of 16384 possible bytes, 100%
+> Recording extents for root 3
+> processed 180224 of 0 possible bytes, 0%
+> Recording extents for root 1
+> ERROR: commit_root already set when starting transaction
+> ERROR: error starting transaction
+> doing close???
+> extent buffer leak: start 11160502779904 len 16384
+> extent buffer leak: start 15645018308608 len 16384
+> Init extent tree failed
 
-Fixes: 46e1bce0ac34 ("btrfs: sysfs: add force_chunk_alloc trigger to force allocation")
-Reported-by: Hulk Robot <hulkci@huawei.com>
-Signed-off-by: Wei Yongjun <weiyongjun1@huawei.com>
----
- fs/btrfs/sysfs.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I swear first thing I'm doing after all this is updating the shared
+code.  Try again please,
 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index ebe76d7a4a64..4186fdcbcdee 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -807,7 +807,7 @@ static ssize_t btrfs_force_chunk_alloc_store(struct kobject *kobj,
- 	 * unexpected problems.
- 	 */
- 	trans = btrfs_start_transaction(fs_info->tree_root, 0);
--	if (!trans)
-+	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
- 	ret = btrfs_force_chunk_alloc(trans, space_info->flags);
- 	btrfs_end_transaction(trans);
-
+Josef

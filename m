@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A79F6C43334
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 01:20:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D965C43334
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 01:38:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244904AbiFHBUX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Jun 2022 21:20:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52634 "EHLO
+        id S232965AbiFHBil (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Jun 2022 21:38:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45132 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1390016AbiFHAgY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jun 2022 20:36:24 -0400
+        with ESMTP id S1386954AbiFHBhV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jun 2022 21:37:21 -0400
 Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88CA01F185F
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 13:44:53 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E90D01A070
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 17:07:00 -0700 (PDT)
 Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nyg3a-0005xD-LA by authid <merlin>; Tue, 07 Jun 2022 13:44:06 -0700
-Date:   Tue, 7 Jun 2022 13:44:06 -0700
+        id 1nyjDw-0008GJ-EO by authid <merlin>; Tue, 07 Jun 2022 17:07:00 -0700
+Date:   Tue, 7 Jun 2022 17:07:00 -0700
 From:   Marc MERLIN <marc@merlins.org>
 To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
  transid verify failed + open_ctree failed)
-Message-ID: <20220607204406.GX22722@merlins.org>
-References: <20220607032240.GS22722@merlins.org>
- <CAEzrpqc8f3HzxUG0Ty1NQoQKAEEAW_3-+3ackv1fDk68qfyf6w@mail.gmail.com>
- <20220607151829.GQ1745079@merlins.org>
- <CAEzrpqftCCPw1J-jA-MTgoBDG6fNVJ-bJoXCh7NAbCeDptiwag@mail.gmail.com>
- <20220607153257.GR1745079@merlins.org>
- <CAEzrpqd9RJ8xoOQFWh_xLBdqeMYA+t=otXT4W5YcPkJqsPvG0A@mail.gmail.com>
- <20220607182737.GU1745079@merlins.org>
+Message-ID: <20220608000700.GB22722@merlins.org>
+References: <20220607182737.GU1745079@merlins.org>
  <CAEzrpqd335YbHi2U07nxnt62OSL8R60nx2XAUpMXE+RQjACSZQ@mail.gmail.com>
  <20220607195744.GV22722@merlins.org>
  <CAEzrpqdp7JUPvpGrbctiLQY_qZpks7HyOSg4eNY=5xifErzy3A@mail.gmail.com>
+ <20220607204406.GX22722@merlins.org>
+ <CAEzrpqccYbdBNs6gYDzZRw17D1O6tPU=9w1vLvDVOjJeMDuazw@mail.gmail.com>
+ <20220607212523.GZ22722@merlins.org>
+ <CAEzrpqex0PRGZA3_gaoUhpPb-7cpi-gi_mo1S3F=0xxKNptpEA@mail.gmail.com>
+ <20220607233734.GA22722@merlins.org>
+ <CAEzrpqcVO99HbrhmtABUENRCm4HEsyg3+T3oK33DZFuXamwqgA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqdp7JUPvpGrbctiLQY_qZpks7HyOSg4eNY=5xifErzy3A@mail.gmail.com>
+In-Reply-To: <CAEzrpqcVO99HbrhmtABUENRCm4HEsyg3+T3oK33DZFuXamwqgA@mail.gmail.com>
 X-Sysadmin: BOFH
 X-URL:  http://marc.merlins.org/
 User-Agent: Mutt/1.10.1 (2018-07-13)
@@ -46,69 +46,98 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 07, 2022 at 04:10:02PM -0400, Josef Bacik wrote:
-> Alright it looks like we've gotten everything we're going to get, go
-> ahead and let init-extent-tree do its thing.  Thanks,
+On Tue, Jun 07, 2022 at 07:41:32PM -0400, Josef Bacik wrote:
+> > > Ugh come on, this must get triggered because we clean up some stuff
+> > > and then the corrupt blocks are suddenly right next to eachother.  Can
+> > > you re-run tree-recover and see if it deletes those keys?  Thanks,
+> >
+> > Sorry :(
+> >
+> Ok I think it's just the check is wrong, I removed the check, maybe
+> I'll get lucky for once?  Thanks,
 
-Argh, it ran for a while and then it crashed, but I didn't have it run under gdb.
+that helped.
 
-searching 164624 for bad extents
-processed 655360 of 109084672 possible bytes, 0%
-Found an extent we don't have a block group for in the file 12283412910080
+(...)
+Found an extent we don't have a block group for in the file 652682866688
+
+Found an extent we don't have a block group for in the file 652682862592
+
+Found an extent we don't have a block group for in the file 652723212288
+
+Found an extent we don't have a block group for in the file 390870233088
 ref to path failed
 Couldn't find any paths for this inode
-Deleting [26761, 108, 34557952] root 15645018243072 path top 15645018243072 top slot 40 leaf 15645020192768 slot 3
+Deleting [69105, 108, 0] root 15645018226688 path top 15645018226688 top slot 11 leaf 15645020864512 slot 1 nr 118
 
-searching 164624 for bad extents
-processed 655360 of 109084672 possible bytes, 0%
-Found an extent we don't have a block group for in the file 12283452309504
-ref to path failed
+searching 164823 for bad extents
+processed 163840 of 63193088 possible bytes, 0%
+Found an extent we don't have a block group for in the file 390870233088
 Couldn't find any paths for this inode
-Deleting [26761, 108, 43954176] root 15645019504640 path top 15645019504640 top slot 40 leaf 15645020028928 slot 3
-Segmentation fault
+Deleting [69134, 108, 36012032] root 15645018587136 path top 15645018587136 top slot 10 leaf 15645019553792 slot 45 nr 1
 
-re-running it thankfully crashed in the same place
-processed 655360 of 109084672 possible bytes, 0%
-Found an extent we don't have a block group for in the file 12283452309504
-ref to path failed
-Couldn't find any paths for this inode
-Deleting [26761, 108, 43954176] root 15645019586560 path top 15645019586560 top slot 40 leaf 15645019602944 slot 3
+searching 164823 for bad extents
+processed 196608 of 63193088 possible bytes, 0%
+Recording extents for root 3
+processed 180224 of 0 possible bytes, 0%
+Recording extents for root 1
+processed 999424 of 0 possible bytes, 0%
+doing roots
+Recording extents for root 4
+processed 163840 of 1064960 possible bytes, 15%
+Recording extents for root 5
+processed 65536 of 10960896 possible bytes, 0%
+Recording extents for root 7
+processed 16384 of 16570974208 possible bytes, 0%
+Recording extents for root 9
+processed 16384 of 16384 possible bytes, 100%
+Recording extents for root 161197
+processed 131072 of 108986368 possible bytes, 0%
+Recording extents for root 161199
+processed 196608 of 49479680 possible bytes, 0%
+Recording extents for root 161200
+processed 180224 of 254214144 possible bytes, 0%
+Recording extents for root 161889
+processed 196608 of 49446912 possible bytes, 0%
+Recording extents for root 162628
+processed 49152 of 49463296 possible bytes, 0%
+Recording extents for root 162632
+processed 114688 of 94633984 possible bytes, 0%
+Recording extents for root 163298
+processed 49152 of 49463296 possible bytes, 0%
+Recording extents for root 163302
+processed 98304 of 94633984 possible bytes, 0%
+Recording extents for root 163303
+processed 131072 of 76333056 possible bytes, 0%
+Recording extents for root 163316
+processed 98304 of 108544000 possible bytes, 0%
+Recording extents for root 163920
+processed 16384 of 108691456 possible bytes, 0%
+Recording extents for root 164620
+processed 49152 of 49463296 possible bytes, 0%
+Recording extents for root 164623
+processed 311296 of 63193088 possible bytes, 0%
+Recording extents for root 164624
+processed 933888 of 108822528 possible bytes, 0%
+Recording extents for root 164629
+processed 622592 of 108838912 possible bytes, 0%
+Recording extents for root 164631
+ERROR: failed to insert the ref for the root block -17
+wtf
+it failed?? -17
+doing close???
+ERROR: attempt to start transaction over already running one
+WARNING: reserved space leaked, flag=0x4 bytes_reserved=32768
+extent buffer leak: start 15645019488256 len 16384
+WARNING: dirty eb leak (aborted trans): start 15645019488256 len 16384
+extent buffer leak: start 15645020061696 len 16384
+WARNING: dirty eb leak (aborted trans): start 15645020061696 len 16384
+Init extent tree failed
+[Inferior 1 (process 7259) exited with code 0357]
 
-Program received signal SIGSEGV, Segmentation fault.
-0x00007ffff78e1c8f in ?? () from /lib/x86_64-linux-gnu/libc.so.6
-(gdb) bt
-#0  0x00007ffff78e1c8f in ?? () from /lib/x86_64-linux-gnu/libc.so.6
-#1  0x00005555555862f9 in memcpy (__len=17, __src=<optimized out>, __dest=0x7fffffffd5d0)
-    at /usr/include/x86_64-linux-gnu/bits/string_fortified.h:29
-#2  read_extent_buffer (eb=<optimized out>, dst=dst@entry=0x7fffffffd630, start=<optimized out>, len=len@entry=17)
-    at kernel-shared/extent_io.c:1002
-#3  0x00005555555735aa in btrfs_node_key (nr=<optimized out>, disk_key=0x7fffffffd630, eb=<optimized out>)
-    at ./kernel-shared/ctree.h:2113
-#4  btrfs_node_key_to_cpu (nr=<optimized out>, key=0x7fffffffd650, eb=<optimized out>) at ./kernel-shared/ctree.h:2113
-#5  check_block (fs_info=0x555555651bc0, path=path@entry=0x7fffffffd760, level=level@entry=49) at kernel-shared/ctree.c:854
-#6  0x0000555555577ecb in btrfs_del_items (trans=trans@entry=0x555555838ff0, root=root@entry=0x55555582c7b0, 
-    path=path@entry=0x7fffffffd760, slot=40, nr=nr@entry=1) at kernel-shared/ctree.c:3163
-#7  0x00005555555e18d1 in btrfs_del_item (path=0x7fffffffd760, root=0x55555582c7b0, trans=0x555555838ff0)
-    at ./kernel-shared/ctree.h:2781
-#8  delete_item (key=0x7fffffffd740, root=0x55555582c7b0) at cmds/rescue-init-extent-tree.c:208
-#9  process_leaf_item (slot=<optimized out>, eb=0x0, root=0x55555582c7b0) at cmds/rescue-init-extent-tree.c:297
-#10 look_for_bad_extents (root=root@entry=0x55555582c7b0, eb=eb@entry=0x555555834d90, current=current@entry=0x7fffffffda18)
-    at cmds/rescue-init-extent-tree.c:338
-#11 0x00005555555e1468 in look_for_bad_extents (root=root@entry=0x55555582c7b0, eb=0x5555557a4bb0, 
-    current=current@entry=0x7fffffffda18) at cmds/rescue-init-extent-tree.c:331
-#12 0x00005555555e1a66 in clear_bad_extents (root=0x55555582c7b0) at cmds/rescue-init-extent-tree.c:362
-#13 0x00005555555e1262 in foreach_root (fs_info=fs_info@entry=0x555555651bc0, cb=cb@entry=0x5555555e1a21 <clear_bad_extents>)
-    at cmds/rescue-init-extent-tree.c:152
-#14 0x00005555555e2ffe in reinit_extent_tree (fs_info=0x555555651bc0) at cmds/rescue-init-extent-tree.c:873
-#15 btrfs_init_extent_tree (path=path@entry=0x7fffffffe1ce "/dev/mapper/dshelf1") at cmds/rescue-init-extent-tree.c:1219
-#16 0x00005555555d867e in cmd_rescue_init_extent_tree (cmd=<optimized out>, argc=<optimized out>, argv=<optimized out>)
-    at cmds/rescue.c:139
-#17 0x000055555556c17b in cmd_execute (argv=0x7fffffffdeb8, argc=2, cmd=0x555555647c80 <cmd_struct_rescue_init_extent_tree>)
-    at cmds/commands.h:125
-#18 handle_command_group (cmd=<optimized out>, argc=2, argv=0x7fffffffdeb8) at btrfs.c:152
-#19 0x000055555556c275 in cmd_execute (argv=0x7fffffffdeb0, argc=3, cmd=0x555555648cc0 <cmd_struct_rescue>) at cmds/commands.h:125
-#20 main (argc=3, argv=0x7fffffffdeb0) at btrfs.c:405
+So can I go back to  check --repair /dev/mapper/dshelf1  ?
 
+Marc
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
  

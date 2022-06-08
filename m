@@ -2,118 +2,114 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FFC1C43334
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 14:11:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A98AECCA47E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 15:12:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241069AbiFHOLn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 10:11:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40784 "EHLO
+        id S243629AbiFHPMC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 11:12:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52824 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241014AbiFHOLm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 10:11:42 -0400
-Received: from mail-lf1-x12f.google.com (mail-lf1-x12f.google.com [IPv6:2a00:1450:4864:20::12f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 542091D64D6
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2022 07:11:41 -0700 (PDT)
-Received: by mail-lf1-x12f.google.com with SMTP id u26so32713628lfd.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jun 2022 07:11:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=message-id:date:mime-version:user-agent:subject:content-language:to
-         :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=OA9VYjSO8kCESKq3Hwc+caIrPTFYZSu9Zx1EENj091c=;
-        b=pMNV7nfmI+EjWqvNwBTS2icX5rKkMTN+I8bE8lIhek/oG8kA9+mhm2StyIcZCw3nQT
-         cW2K+32DN0yofxwDZeCvf5KOCXpKYIsbAMEIdYWrdQ+DO/t+uyweOqw0CzZTPfu4xMht
-         W0vfB0kr1qpnGf2WAlwYU3XvwRL0v4BXibQggi0XyavHWDmnwo5I/y86DnLIf629TqYo
-         DpipI98MUj5vUNWp3dR+qjfZbu01d8yBVParMtNlcT7/KIbT87oKBkyuwn/5HsSKbi5I
-         Wgce/t9Vm1eh9zBv2Jwa+DayRDPPxrEfMy4QVI1qUj+q+FDNrwAetl8BkibKw8EEu3aw
-         V2mg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:from:in-reply-to
-         :content-transfer-encoding;
-        bh=OA9VYjSO8kCESKq3Hwc+caIrPTFYZSu9Zx1EENj091c=;
-        b=6mL090c+GFGbaaYnegU8VUOknrqTh2DjUJZvst8jE6Zt4fIyvE8jdTA292gVeoVALw
-         73L+b8cDNI+ZvhmovfrvsFANnszg+pBVOp7DL4FEDD75QaYRj72RR1By8/eYXwIGsiLN
-         NMcZ62N52QqTFsnw0g5pWm5Ml1UJ9oR02N1nevbCas+kdhZpk7d3eOO2HSpiDYHnwuk9
-         eQWPN5/9Q45/RvVzt2qF4OK5SlP7w+yxyn7tMR/0d1gIEMe2HrOZ/lt4XvEbGtsIoKdb
-         iPwUI15qdfAupHKEeT6sbeF32NbzvHPUV1HTH1Hv/2vO1Nu8srMRVz2Kr9MRNi7Ssyuv
-         q+Jw==
-X-Gm-Message-State: AOAM531EgBC7uLZzC5cC4vLuckiu0HmHzuR0hGWi7soPp6sahv/npoAF
-        IJsLYj3Vm0BuYXxwtyS8vcA=
-X-Google-Smtp-Source: ABdhPJxdLvVx/iZpbmI6AI0V37eXo6WX0h60bpjU0eTUrGq5wKPbtUn7kgrXhFxxS/7GnAHUsv/Lkw==
-X-Received: by 2002:a05:6512:987:b0:479:3983:e744 with SMTP id w7-20020a056512098700b004793983e744mr11231055lft.402.1654697499376;
-        Wed, 08 Jun 2022 07:11:39 -0700 (PDT)
-Received: from ?IPV6:2a00:1370:8182:326:f23d:11ea:8518:cd53? ([2a00:1370:8182:326:f23d:11ea:8518:cd53])
-        by smtp.gmail.com with ESMTPSA id h16-20020a2e3a10000000b002556d356a1esm2436718lja.140.2022.06.08.07.11.37
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 08 Jun 2022 07:11:38 -0700 (PDT)
-Message-ID: <cf220242-25dd-9241-01d5-38555c262d9e@gmail.com>
-Date:   Wed, 8 Jun 2022 17:11:36 +0300
+        with ESMTP id S242279AbiFHPLp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 11:11:45 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A598A49B3E7;
+        Wed,  8 Jun 2022 08:03:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
+        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
+        Content-Type:Content-ID:Content-Description;
+        bh=QtCpoMtKxHZJjZ0zPsproZBlL3YauaUrqZHnxvuWLJc=; b=h1JJSDwi8sTy0t0Nv3IdyI/SSp
+        jIF5pVOj06evVaP6sUZABnjlIHzpvlc6aJOURe5UCkHnW3iI3QP4xuoymAKnzwHaD8MtjzeYqIepM
+        2Ts3fRtS1qfeNFFYMc3nNHdcseIK1Vy47ZmaV51+uXh6fNAnQeRAvvdhoGqHWjTFkPzF0v9O7acf2
+        xq4M713rzitxm3iOxcMIjCepwumvPeE3Jns/IcE3r6mlBV3OO8XJT8WSjSePKvPOSJ3+fKFPOWi4P
+        sRSqkPvbSbV6mgnrsExhzcPOl2ztfXK38fZitzA3s6knKBMiAmpJwGCXnWQovlCajyK2bKysaYFsQ
+        IcGOq5Vg==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1nyxCv-00CjFo-BL; Wed, 08 Jun 2022 15:02:53 +0000
+From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+        linux-kernel@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-aio@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com, linux-mm@kvack.org,
+        linux-xfs@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-ntfs-dev@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
+        linux-mtd@lists.infradead.org,
+        virtualization@lists.linux-foundation.org,
+        Christoph Hellwig <hch@lst.de>
+Subject: [PATCH v2 18/19] fs: Remove aops->migratepage()
+Date:   Wed,  8 Jun 2022 16:02:48 +0100
+Message-Id: <20220608150249.3033815-19-willy@infradead.org>
+X-Mailer: git-send-email 2.31.1
+In-Reply-To: <20220608150249.3033815-1-willy@infradead.org>
+References: <20220608150249.3033815-1-willy@infradead.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.1
-Subject: Re: What mechanisms protect against split brain?
-Content-Language: en-US
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Wang Yugui <wangyugui@e16-tech.com>, Qu Wenruo <wqu@suse.com>
-Cc:     Forza <forza@tnonline.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <c31c664.705b352f.1810f98f3ee@tnonline.net>
- <20220608104421.3759.409509F4@e16-tech.com>
- <20220608181502.4AB1.409509F4@e16-tech.com>
- <a97ff3a3-7b14-e6a4-32e9-b9da8cec422e@gmx.com>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-In-Reply-To: <a97ff3a3-7b14-e6a4-32e9-b9da8cec422e@gmx.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 08.06.2022 13:32, Qu Wenruo wrote:
-> 
-> 
-> On 2022/6/8 18:15, Wang Yugui wrote:
->> Hi, Forza, Qu Wenruo
->>
->> I write a script to test RAID1 split brain base on Qu's work of raid5(*1)
->> *1: https://lore.kernel.org/linux-btrfs/53f7bace2ac75d88ace42dd811d48b7912647301.1654672140.git.wqu@suse.com/T/#u
-> 
-> No no no, that is not to address split brain, but mostly to drop cache
-> for recovery path to maximize the chance of recovery.
-> 
-> It's not designed to solve split brain problem at all, it's just one
-> case of such problem.
-> 
-> In fact, fully split brain (both have the same generation, but
-> experienced their own degraded mount) case can not be solved by btrfs
-> itself at all.
-> 
-> Btrfs can only solve partial split brain case (one device has higher
-> generation, thus btrfs can still determine which copy is the correct one).
-> 
+With all users converted to migrate_folio(), remove this operation.
 
-Start with both devices having the same generation number N.
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+---
+ include/linux/fs.h | 2 --
+ mm/compaction.c    | 5 ++---
+ mm/migrate.c       | 3 ---
+ 3 files changed, 2 insertions(+), 8 deletions(-)
 
-Mount device1 separately, do some writes, device has generation N+1.
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 9e6b17da4e11..7e06919b8f60 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -367,8 +367,6 @@ struct address_space_operations {
+ 	 */
+ 	int (*migrate_folio)(struct address_space *, struct folio *dst,
+ 			struct folio *src, enum migrate_mode);
+-	int (*migratepage) (struct address_space *,
+-			struct page *, struct page *, enum migrate_mode);
+ 	int (*launder_folio)(struct folio *);
+ 	bool (*is_partially_uptodate) (struct folio *, size_t from,
+ 			size_t count);
+diff --git a/mm/compaction.c b/mm/compaction.c
+index 458f49f9ab09..a2c53fcf933e 100644
+--- a/mm/compaction.c
++++ b/mm/compaction.c
+@@ -1031,7 +1031,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
+ 
+ 			/*
+ 			 * Only pages without mappings or that have a
+-			 * ->migratepage callback are possible to migrate
++			 * ->migrate_folio callback are possible to migrate
+ 			 * without blocking. However, we can be racing with
+ 			 * truncation so it's necessary to lock the page
+ 			 * to stabilise the mapping as truncation holds
+@@ -1043,8 +1043,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
+ 
+ 			mapping = page_mapping(page);
+ 			migrate_dirty = !mapping ||
+-					mapping->a_ops->migrate_folio ||
+-					mapping->a_ops->migratepage;
++					mapping->a_ops->migrate_folio;
+ 			unlock_page(page);
+ 			if (!migrate_dirty)
+ 				goto isolate_fail_put;
+diff --git a/mm/migrate.c b/mm/migrate.c
+index bed0de86f3ae..767e41800d15 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -909,9 +909,6 @@ static int move_to_new_folio(struct folio *dst, struct folio *src,
+ 			 */
+ 			rc = mapping->a_ops->migrate_folio(mapping, dst, src,
+ 								mode);
+-		else if (mapping->a_ops->migratepage)
+-			rc = mapping->a_ops->migratepage(mapping, &dst->page,
+-							&src->page, mode);
+ 		else
+ 			rc = fallback_migrate_folio(mapping, dst, src, mode);
+ 	} else {
+-- 
+2.35.1
 
-Mount device2 separately, do some writes, device has generation N+2.
-
-Applying changes between N+1 and N+2 to device1 is wrong because content
-of N+1 is different on both devices.
-
-So there is absolutely no difference between "same generation" and
-"higher generation".
-
-The only thing btrfs could do is to try to detect this and refuse to
-integrate another device. One suggested rather radical approach was to
-change UUID on degraded mount, but this is probably unfeasible in real life.
-
-Removing missing device from device list in superblock (or at least
-marking it as permanently missing until replaced) is probably another
-option.
-
-And write intent log as discussed further in this thread could be used
-as well - if btrfs detects write intent log on device it should refuse
-to add it to existing filesystem.

@@ -2,127 +2,64 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BA1EC433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 05:11:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15FDFC433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 05:29:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232418AbiFHFK5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 01:10:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41970 "EHLO
+        id S232095AbiFHF2q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 01:28:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50624 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233126AbiFHFKH (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 01:10:07 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 61BFC1CE783
-        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 19:12:46 -0700 (PDT)
-Received: from merlin by mail1.merlins.org with local (Exim 4.94.2 #2)
-        id 1nylBd-0004K9-6V by authid <merlin>; Tue, 07 Jun 2022 19:12:45 -0700
-Date:   Tue, 7 Jun 2022 19:12:45 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220608021245.GD22722@merlins.org>
-References: <20220607204406.GX22722@merlins.org>
- <CAEzrpqccYbdBNs6gYDzZRw17D1O6tPU=9w1vLvDVOjJeMDuazw@mail.gmail.com>
- <20220607212523.GZ22722@merlins.org>
- <CAEzrpqex0PRGZA3_gaoUhpPb-7cpi-gi_mo1S3F=0xxKNptpEA@mail.gmail.com>
- <20220607233734.GA22722@merlins.org>
- <CAEzrpqcVO99HbrhmtABUENRCm4HEsyg3+T3oK33DZFuXamwqgA@mail.gmail.com>
- <20220608000700.GB22722@merlins.org>
- <CAEzrpqe79F=-0T7Q3dqb62J6+kcisOjnWP+aLkkY0z+EJY-m9Q@mail.gmail.com>
- <20220608004241.GC22722@merlins.org>
- <CAEzrpqdq8zTBQaw_VneL4rfZn0JseUiwvtfwXQx0jq=DYBCFFw@mail.gmail.com>
+        with ESMTP id S231938AbiFHF1l (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 01:27:41 -0400
+Received: from out20-206.mail.aliyun.com (out20-206.mail.aliyun.com [115.124.20.206])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90C5E18CA81
+        for <linux-btrfs@vger.kernel.org>; Tue,  7 Jun 2022 19:44:40 -0700 (PDT)
+X-Alimail-AntiSpam: AC=CONTINUE;BC=0.0614546|-1;BR=01201311R101S92rulernew998_84748_2000303;CH=blue;DM=|CONTINUE|false|;DS=CONTINUE|ham_social|0.0471917-0.00165341-0.951155;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047203;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.O.QbPwS_1654656257;
+Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.O.QbPwS_1654656257)
+          by smtp.aliyun-inc.com;
+          Wed, 08 Jun 2022 10:44:17 +0800
+Date:   Wed, 08 Jun 2022 10:44:21 +0800
+From:   Wang Yugui <wangyugui@e16-tech.com>
+To:     Forza <forza@tnonline.net>
+Subject: Re: What mechanisms protect against split brain?
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <c31c664.705b352f.1810f98f3ee@tnonline.net>
+References: <c31c664.705b352f.1810f98f3ee@tnonline.net>
+Message-Id: <20220608104421.3759.409509F4@e16-tech.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAEzrpqdq8zTBQaw_VneL4rfZn0JseUiwvtfwXQx0jq=DYBCFFw@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-User-Agent: Mutt/1.10.1 (2018-07-13)
-X-SA-Exim-Connect-IP: <locally generated>
-X-SA-Exim-Mail-From: marc@merlins.org
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+X-Mailer: Becky! ver. 2.75.04 [en]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 07, 2022 at 09:31:28PM -0400, Josef Bacik wrote:
-> > doing close???
-> > extent buffer leak: start 11160502779904 len 16384
-> > extent buffer leak: start 15645018308608 len 16384
-> > Init extent tree failed
+Hi,
+
+I tried some test about this case.
+
+After the missing RAID1 device is re-introduced,
+1, mount/read seem to work.
+   checksum based error detect help.
+   current pid based i/o patch select policy may help too.
+       preferred_mirror = first + (current->pid % num_stripes);
+
+2, 'btrfs scrub' failed to finish.
+    Any advice to return to clean state?
+
+Best Regards
+Wang Yugui (wangyugui@e16-tech.com)
+2022/06/08
+
+> Hi,
 > 
-> I swear first thing I'm doing after all this is updating the shared
-> code.  Try again please,
+> Recently there have been some discussions, both here on the mailing list and on #btrfs IRC, about the consequences of mounting one RAID1 mirror as degraded and then later re-introduce the missing device. But also on having degraded mount option in fstab and kernel command line.
+> 
+> So I wonder if Btrfs has some protective mechanisms against data loss/corruption if a drive is missing for a bit but later re-introduced. There is also the case of split brain where each mirror might be independently updated and then recombined.
+> 
+> Is there an official recommendation to have with regards to degraded mounts from kernel command line? I understand the use case as it allows the system to boot even if a device goes missing or dead after a reboot.
+> 
+> Thanks,
+> Forza
 
-It went farther:
 
-processed 163840 of 1064960 possible bytes, 15%
-Recording extents for root 5
-processed 65536 of 10960896 possible bytes, 0%
-Recording extents for root 7
-processed 16384 of 16570974208 possible bytes, 0%
-Recording extents for root 9
-processed 16384 of 16384 possible bytes, 100%
-Recording extents for root 161197
-processed 131072 of 108986368 possible bytes, 0%
-Recording extents for root 161199
-processed 196608 of 49479680 possible bytes, 0%
-Recording extents for root 161200
-processed 180224 of 254214144 possible bytes, 0%
-Recording extents for root 161889
-processed 196608 of 49446912 possible bytes, 0%
-Recording extents for root 162628
-processed 49152 of 49463296 possible bytes, 0%
-Recording extents for root 162632
-processed 114688 of 94633984 possible bytes, 0%
-Recording extents for root 163298
-processed 49152 of 49463296 possible bytes, 0%
-Recording extents for root 163302
-processed 98304 of 94633984 possible bytes, 0%
-Recording extents for root 163303
-processed 131072 of 76333056 possible bytes, 0%
-Recording extents for root 163316
-processed 98304 of 108544000 possible bytes, 0%
-Recording extents for root 163920
-processed 16384 of 108691456 possible bytes, 0%
-Recording extents for root 164620
-processed 49152 of 49463296 possible bytes, 0%
-Recording extents for root 164623
-processed 311296 of 63193088 possible bytes, 0%
-Recording extents for root 164624
-processed 933888 of 108822528 possible bytes, 0%
-Recording extents for root 164629
-processed 622592 of 108838912 possible bytes, 0%
-Recording extents for root 164631
-processed 16384 of 49430528 possible bytes, 0%
-Recording extents for root 164633
-processed 16384 of 75694080 possible bytes, 0%
-Recording extents for root 164823
-processed 131072 of 63193088 possible bytes, 0%
-Recording extents for root 18446744073709551607
-processed 16384 of 16384 possible bytes, 100%
-doing block accounting
-couldn't find a block group at bytenr 20971520 total left 180224
-cache 11106814787584 11107888529408 in range no
-cache 11108962271232 11110036013056 in range no
-cache 11110036013056 11111109754880 in range no
-(...)
-cache 15929559744512 15930633486336 in range no
-cache 15930633486336 15931707228160 in range no
-cache 15931707228160 15932780969984 in range no
-cache 15932780969984 15933854711808 in range no
-cache 15933854711808 15934928453632 in range no
-ERROR: update block group failed 20971520 180224 ret -1
-FIX BLOCK ACCOUNTING FAILED -1
-ERROR: The commit failed???? -1
-
-doing close???
-ERROR: commit_root already set when starting transaction
-extent buffer leak: start 15645020913664 len 16384
-Init extent tree failed
-
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/  

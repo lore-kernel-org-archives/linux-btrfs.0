@@ -2,123 +2,133 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62021CCA47B
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 13:06:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB742C43334
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 13:32:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239918AbiFHNG1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 09:06:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56918 "EHLO
+        id S240152AbiFHNcn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 09:32:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60586 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239855AbiFHNGZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 09:06:25 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id D9917136E84
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2022 06:06:23 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1654693582;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=USUlEZ1UMdOAkVgNJKy6bNhyk03F1F+22jSwcfgVGi0=;
-        b=UoJHHshZaUShraxSBVjI9WRQAg6Q8lBYAs+8JFhFch1f8CMfyCw5VlBsPzd0X33miW+LTV
-        n+tFAzMZNP2w2mf/RoLa1qgjKmsiAzj7xWGHz0ugiGJ3JHWu1q5zh2oMRdIe+6x9O6Sb7q
-        dIDTMPpWOFo8ML+JcvJ3jH62YcKv8sA=
-Received: from mail-qt1-f200.google.com (mail-qt1-f200.google.com
- [209.85.160.200]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-355-K9BIPDhzOQCRXazWCzdcbg-1; Wed, 08 Jun 2022 09:06:21 -0400
-X-MC-Unique: K9BIPDhzOQCRXazWCzdcbg-1
-Received: by mail-qt1-f200.google.com with SMTP id c16-20020a05622a059000b002f93304d0d8so16323103qtb.14
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jun 2022 06:06:21 -0700 (PDT)
+        with ESMTP id S240245AbiFHNch (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 09:32:37 -0400
+Received: from mail-lf1-x12c.google.com (mail-lf1-x12c.google.com [IPv6:2a00:1450:4864:20::12c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D547E10A625
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Jun 2022 06:32:34 -0700 (PDT)
+Received: by mail-lf1-x12c.google.com with SMTP id u26so32535458lfd.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jun 2022 06:32:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=colorremedies-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:from:date:message-id:subject:to;
+        bh=WrRztywCsLIxQa8brrUf1wCXBO+fVmDrzDM67hdJ5kI=;
+        b=eLG8O8JI6EXN8pus1NTjB8zVFU3Q9GPAhxnW3Er0efhlipZNKmjFWQUaa0kvYiC7wM
+         z/1Xsi0qsz/cdAMJxe7DA7460RNqumxQks1odNPclJ223ZSBWzKvXO+0qW5xCp07WmjJ
+         RzfPJWipsFwvBa3uvnG1qbj1hsfVEQ+JdL3qDGO1qe3x56x1dhN8gODvPlHWpZ8BOzrF
+         Sh3dxd6nVyPGbO/n6Ybcudwl6MRrrQvM6/iC5kjy2W6NeVAPbTO/JMM/2B3W3UGGAk4P
+         yV38DFMrKf1sVQyH3j8DWPrq2evMndacZzXog6vV/6sl5VTiwn/QUOQnkvzUA4gImfMP
+         tCOg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=USUlEZ1UMdOAkVgNJKy6bNhyk03F1F+22jSwcfgVGi0=;
-        b=13QWTyX5V/bi52XlnBKTcDFugWAeAZzBWUCkUPNgw3s76AV1FYk9JCPQGT89pbBzmh
-         kUNOna6LPkzicaxZK6DkSKnYksuEZKxFd2GqvUe/ZZx6hfoog9+/F4rS5i7EshVnAFhY
-         P/qwDE+6ZohOzSNnjM0F46VCEiUrrtYVVtQN5pTixyx71c8d+yDufz+dA/nswGBiI2AX
-         6Fus+C5bfop31bvHqXUEGvvS8ZwGc3WG9mAv0jnA/cPp4OLZ9/7Y4uriLSvJj6GMCQgD
-         UQz7vLxVp7QCvL1ZtY2oM6WgyvNEtSFvVqgfc7jphjpQNGdIUJ3cBsgbs/6GA8272dvM
-         pM7A==
-X-Gm-Message-State: AOAM530Sn0cQ9fj7ZXkcuMFEOF1bgNTjRzadw3OcAOCY3MxzrbX7ZJzX
-        aqpxU/qTXZE1rHqQUbI/V9Ddeirio/5F19KfX65cBkjP56fQ2ZscroZuzsqHLMR8h0m9ijR0/2R
-        e3xd5sLBDJoInsv4EcTm6y/s=
-X-Received: by 2002:a05:622a:1013:b0:305:3c:232e with SMTP id d19-20020a05622a101300b00305003c232emr2957097qte.180.1654693580931;
-        Wed, 08 Jun 2022 06:06:20 -0700 (PDT)
-X-Google-Smtp-Source: ABdhPJzmMXLqnBI6Og+4P0GHsdMp3mdyP17UTS82rMH1Kp6fTALPnxZvoiZs7I0UncTVXHO0B2TwhQ==
-X-Received: by 2002:a05:622a:1013:b0:305:3c:232e with SMTP id d19-20020a05622a101300b00305003c232emr2957043qte.180.1654693580507;
-        Wed, 08 Jun 2022 06:06:20 -0700 (PDT)
-Received: from optiplex-fbsd (c-73-182-255-193.hsd1.nh.comcast.net. [73.182.255.193])
-        by smtp.gmail.com with ESMTPSA id v10-20020a05620a440a00b0069fc13ce217sm4216712qkp.72.2022.06.08.06.06.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 08 Jun 2022 06:06:20 -0700 (PDT)
-Date:   Wed, 8 Jun 2022 09:06:17 -0400
-From:   Rafael Aquini <aquini@redhat.com>
-To:     David Hildenbrand <david@redhat.com>
-Cc:     Matthew Wilcox <willy@infradead.org>,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-aio@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-mm@kvack.org, linux-xfs@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        ocfs2-devel@oss.oracle.com, linux-mtd@lists.infradead.org,
-        virtualization@lists.linux-foundation.org,
-        Minchan Kim <minchan@kernel.org>
-Subject: Re: [PATCH 15/20] balloon: Convert to migrate_folio
-Message-ID: <YqCeyZO77Oi1wvxt@optiplex-fbsd>
-References: <20220606204050.2625949-1-willy@infradead.org>
- <20220606204050.2625949-16-willy@infradead.org>
- <e4d017a4-556d-bb5f-9830-a8843591bc8d@redhat.com>
- <Yp9fj/Si2qyb61Y3@casper.infradead.org>
- <Yp+lU55H4igaV3pB@casper.infradead.org>
- <36cc5e2b-b768-ce1c-fa30-72a932587289@redhat.com>
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to;
+        bh=WrRztywCsLIxQa8brrUf1wCXBO+fVmDrzDM67hdJ5kI=;
+        b=TYuQcJMGKDPQCLzyyX5Omz4clHB3R6u4LkpnxqQtEg0VMO+OZN1g6+0CdKx8oE3F/i
+         IgHMKoYcngtWbRjD7JMHhAMTRwmgsA5UdWaxVOwp2l2LmDUXVUQWeESNIbnY2TdWUuDJ
+         5yihK6oDWH+moz7+eAnU2dLoMAdt02wFkDF6I4na+nF4DV2Gm+SU2PsvbzGZVRi/OaHM
+         HRQ3BDKvOn2yYWD+9lOjtE4xrCrOhv5RI0cKqAGWZoQqJSwuUJepbqhfrFh9RWz1ih/C
+         FGcIkrJCSh+6aiImrx0qx55Sn5bzCGBmIYHKYtTFyop0YnAnIi4BQxdv++NPAJCBGZ29
+         +lSA==
+X-Gm-Message-State: AOAM533vrXPyCQXNfcLol0mMKvzo2JcGqIJrW/BgXuFHUILa9JpmFQGc
+        ff0Ht9/LeVDS81NejfSOeaFqDuT1mUWoT6YxnbLRYZsd2Kff6HZn
+X-Google-Smtp-Source: ABdhPJwoZVpazzGE8D7TTwpR8Jvl9bpwGbseceocD8qMIg+NmHwSkXbDK7UO6V9siwW427PVS0hiJq5rgAMOfbipdmg=
+X-Received: by 2002:a05:6512:20a:b0:479:8fb:2214 with SMTP id
+ a10-20020a056512020a00b0047908fb2214mr22953816lfo.473.1654695152158; Wed, 08
+ Jun 2022 06:32:32 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <36cc5e2b-b768-ce1c-fa30-72a932587289@redhat.com>
+From:   Chris Murphy <lists@colorremedies.com>
+Date:   Wed, 8 Jun 2022 09:32:16 -0400
+Message-ID: <CAJCQCtT0VogE6WUu-9z-FAt4mP=yMoOQSmS_ZQWY=XU65Sy4fg@mail.gmail.com>
+Subject: bug: warning at fs/btrfs/inode.c:8885 btrfs_destroy_inode
+To:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 08, 2022 at 11:59:31AM +0200, David Hildenbrand wrote:
-> On 07.06.22 21:21, Matthew Wilcox wrote:
-> > On Tue, Jun 07, 2022 at 03:24:15PM +0100, Matthew Wilcox wrote:
-> >> On Tue, Jun 07, 2022 at 09:36:21AM +0200, David Hildenbrand wrote:
-> >>> On 06.06.22 22:40, Matthew Wilcox (Oracle) wrote:
-> >>>>  const struct address_space_operations balloon_aops = {
-> >>>> -	.migratepage = balloon_page_migrate,
-> >>>> +	.migrate_folio = balloon_migrate_folio,
-> >>>>  	.isolate_page = balloon_page_isolate,
-> >>>>  	.putback_page = balloon_page_putback,
-> >>>>  };
-> >>>
-> >>> I assume you're working on conversion of the other callbacks as well,
-> >>> because otherwise, this ends up looking a bit inconsistent and confusing :)
-> >>
-> >> My intention was to finish converting aops for the next merge window.
-> >>
-> >> However, it seems to me that we goofed back in 2016 by merging
-> >> commit bda807d44454.  isolate_page() and putback_page() should
-> >> never have been part of address_space_operations.
-> >>
-> >> I'm about to embark on creating a new migrate_operations struct
-> >> for drivers to use that contains only isolate/putback/migrate.
-> >> No filesystem uses isolate/putback, so those can just be deleted.
-> >> Both migrate_operations & address_space_operations will contain a
-> >> migrate callback.
-> 
-> That makes sense to me. I wonder if there was a design
-> decision/discussion behind that. CCing Rafael.
->
+kernel 5.17.3
 
-None that I recollect. If memory still serves me, I think the idea behind
-bda807d44454 and friends was to provide a generic way to allow page
-mobility for drivers without adding complexity to the page isolation / putback
-paths, and since the migration callback was already part of the aops struct
-those new callbacks just followed suit.
+Not sure what workload the user was running at the time.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=2079294
+
+WARNING: CPU: 4 PID: 78 at fs/btrfs/inode.c:8885 btrfs_destroy_inode+0x203/0x220
+Modules linked in: overlay tls hid_logitech_hidpp uhid uinput rfcomm
+snd_seq_dummy snd_hrtimer nft_objref nf_conntrack_netbios_ns
+nf_conntrack_broadcast nft_fib_inet nft_fib_ipv4 nft_fib_ipv6 nft_fib
+nft_reject_inet nf_reject_ipv4 nf_reject_ipv6 nft_reject nft_ct
+nft_chain_nat nf_nat nf_conntrack nf_defrag_ipv6 nf_defrag_ipv4 ip_set
+nf_tables nfnetlink qrtr snd_hda_codec_hdmi bnep sunrpc
+snd_sof_pci_intel_cnl snd_sof_intel_hda_common soundwire_intel
+soundwire_generic_allocation soundwire_cadence snd_sof_intel_hda
+snd_sof_pci snd_sof_xtensa_dsp snd_sof vfat fat soundwire_bus
+snd_soc_skl intel_tcc_cooling x86_pkg_temp_thermal intel_powerclamp
+iwlmvm snd_soc_hdac_hda iTCO_wdt coretemp snd_hda_ext_core
+intel_pmc_bxt snd_soc_sst_ipc snd_soc_sst_dsp iTCO_vendor_support
+snd_soc_acpi_intel_match kvm_intel mei_pxp mei_hdcp intel_rapl_msr
+snd_soc_acpi dell_laptop mac80211 kvm snd_ctl_led irqbypass libarc4
+snd_soc_core dell_smm_hwmon snd_hda_codec_realtek snd_compress rapl
+ snd_hda_codec_generic ac97_bus snd_pcm_dmaengine intel_cstate
+intel_uncore iwlwifi pcspkr snd_usb_audio snd_hda_intel btusb dell_wmi
+snd_intel_dspcfg snd_intel_sdw_acpi ledtrig_audio iwlmei snd_hda_codec
+dell_wmi_sysman btrtl snd_usbmidi_lib dell_smbios
+firmware_attributes_class snd_hda_core dcdbas snd_rawmidi i2c_i801
+btbcm dell_wmi_descriptor cfg80211 wmi_bmof intel_wmi_thunderbolt
+snd_hwdep i2c_smbus snd_seq uvcvideo btintel snd_seq_device mei_me
+btmtk thunderbolt mei snd_pcm videobuf2_vmalloc videobuf2_memops
+bluetooth videobuf2_v4l2 videobuf2_common
+processor_thermal_device_pci_legacy snd_timer processor_thermal_device
+joydev processor_thermal_rfim idma64 videodev snd
+processor_thermal_mbox processor_thermal_rapl soundcore
+intel_rapl_common ecdh_generic rfkill mc intel_soc_dts_iosf
+intel_pch_thermal int3403_thermal int340x_thermal_zone intel_hid
+int3400_thermal acpi_tad acpi_pad sparse_keymap acpi_thermal_rel zram
+dm_crypt typec_displayport i915 rtsx_pci_sdmmc
+ crct10dif_pclmul mmc_core hid_multitouch crc32_pclmul nvme
+crc32c_intel ucsi_acpi nvme_core ghash_clmulni_intel typec_ucsi
+serio_raw rtsx_pci ttm typec wmi i2c_hid_acpi i2c_hid video
+pinctrl_cannonlake ip6_tables ip_tables ipmi_devintf ipmi_msghandler
+fuse
+CPU: 4 PID: 78 Comm: kswapd0 Not tainted 5.17.3-302.fc36.x86_64 #1
+Hardware name: Dell Inc. XPS 13 7390/0G2D0W, BIOS 1.13.0 02/10/2022
+RIP: 0010:btrfs_destroy_inode+0x203/0x220
+Code: fe ff ff 0f 0b 48 83 bb 78 ff ff ff 00 0f 84 62 fe ff ff 0f 0b
+48 83 bb 70 ff ff ff 00 0f 84 60 fe ff ff 0f 0b e9 59 fe ff ff <0f> 0b
+e9 89 fe ff ff 0f 0b e9 74 fe ff ff 66 66 2e 0f 1f 84 00 00
+RSP: 0018:ffffb5d180523b68 EFLAGS: 00010206
+RAX: 0000000000008000 RBX: ffff8f487fed7ce8 RCX: 0000000000000001
+RDX: 0000000000000000 RSI: 0000000000000001 RDI: ffff8f487fed7ce8
+RBP: ffff8f487fed7ab0 R08: 0000000000000001 R09: 0000000080330025
+R10: ffff8f496cb99e10 R11: ffff8f480a5aa000 R12: ffff8f4805633000
+R13: ffff8f480d145800 R14: 0000000000014c89 R15: 0000000005322400
+FS:  0000000000000000(0000) GS:ffff8f4b7e900000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007fd1ec62a128 CR3: 00000002d4e10006 CR4: 00000000003706e0
+Call Trace:
+ <TASK>
+ destroy_inode+0x38/0x70
+ dispose_list+0x48/0x60
+ prune_icache_sb+0x41/0x50
+ super_cache_scan+0x163/0x1e0
+ do_shrink_slab+0x13e/0x2f0
+ shrink_slab+0x1e1/0x280
+ shrink_node+0x2b3/0x6f0
+ balance_pgdat+0x33d/0x720
+ kswapd+0x1dc/0x390
+ ? do_wait_intr_irq+0xa0/0xa0
+ ? balance_pgdat+0x720/0x720
+ kthread+0xe6/0x110
+ ? kthread_complete_and_exit+0x20/0x20
+ ret_from_fork+0x1f/0x30
+ </TASK>
 
 
--- Rafael
-
+-- 
+Chris Murphy

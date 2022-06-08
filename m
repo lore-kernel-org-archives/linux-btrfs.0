@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B54F9C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 09:04:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1770C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 09:05:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234396AbiFHJEx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 05:04:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34566 "EHLO
+        id S234154AbiFHJE6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 05:04:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34338 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233242AbiFHJCf (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 05:02:35 -0400
+        with ESMTP id S233237AbiFHJCP (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 05:02:15 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C79D2986C4;
-        Wed,  8 Jun 2022 01:22:02 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4294C1A005B;
+        Wed,  8 Jun 2022 01:22:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=L1AvlWFHwiBlKlQQzU0xpyS1S48Sf4mV1g7YW62sB5o=; b=c8LIJtZY/Ea9Zj7ABHzI+bMXvA
-        OURxjVH1jqQKjooyu90JyWo9Lei4eHfWj74y8qzcjeGS15+HT4UyZsLxxjz7Yl1Q73yWI3sS+l4ik
-        sBIbOTs2vjWkv587GvrtnDe5+9gkgDAeLXwsxlGBXINihXqcmKzGQXi5mWdvAHa418P8Ia4x2E4gB
-        nu8+7+M3O7aQUiy5LHqW0BG2L704jiNW3H6eiQnf6+Hue4sZDXUBr+i4eZgEU86kQivSxLwVKkp+W
-        r6ZINI+yw8BsPr7FM2C9csARaKi3DWDVSMEi/cm4BvcRh7BZIPxuIbWJXaaVzzd2yEIC92+/LIJDR
-        HFBmQzvg==;
+        bh=M7NmYC/Iylm9myghHwqILim55SAUt9QrM+UZYk0eJlw=; b=iB9dmVG9Ng3F2WTe/9TMxSCMuj
+        ja0RHUmc9eQ5DhMz/J/4DLElaK1jbZ2WgebeBsycUKTpSk4XXZFan+9M4VKyV244r+9vrHLxfSXLu
+        1Den0nhP5oq1v1RsBXC4KWrnFQR1GBOy5k4TDdPwCR83x4wgMBUgNlNfVHjeNnQFCqIK9FnubxtMN
+        zWdv+oBD2Y2+ygzsJQKEKOjolNrf5KkOYpEfdDkwHbNa6JfEvO7NvQ802MWmg938HniKikRrHTl/j
+        MGOjmrWcaz3uDl43QgwvycXByY5WxieHX6UmoFYrw/Hv+/92Pu6qHF8ifergHW1d73fV9QIISQE8n
+        +Y5c58cg==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nyqt9-00Bt6z-2A; Wed, 08 Jun 2022 08:18:03 +0000
-Date:   Wed, 8 Jun 2022 01:18:03 -0700
+        id 1nyqvL-00BuLl-NH; Wed, 08 Jun 2022 08:20:19 +0000
+Date:   Wed, 8 Jun 2022 01:20:19 -0700
 From:   Christoph Hellwig <hch@infradead.org>
 To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>
 Cc:     linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -37,23 +37,19 @@ Cc:     linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
         ocfs2-devel@oss.oracle.com, linux-mtd@lists.infradead.org,
         virtualization@lists.linux-foundation.org
-Subject: Re: [PATCH 08/20] mm/migrate: Convert migrate_page() to
- migrate_folio()
-Message-ID: <YqBbO+yLvK2vCnk5@infradead.org>
+Subject: Re: [PATCH 13/20] aio: Convert to migrate_folio
+Message-ID: <YqBbwx5MhNRpqou/@infradead.org>
 References: <20220606204050.2625949-1-willy@infradead.org>
- <20220606204050.2625949-9-willy@infradead.org>
+ <20220606204050.2625949-14-willy@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220606204050.2625949-9-willy@infradead.org>
+In-Reply-To: <20220606204050.2625949-14-willy@infradead.org>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jun 06, 2022 at 09:40:38PM +0100, Matthew Wilcox (Oracle) wrote:
-> Convert all callers to pass a folio.  Most have the folio
-> already available.  Switch all users from aops->migratepage to
-> aops->migrate_folio.  Also turn the documentation into kerneldoc.
+Looks good:
 
 Reviewed-by: Christoph Hellwig <hch@lst.de>

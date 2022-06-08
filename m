@@ -2,54 +2,160 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1770C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 09:05:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 08936C43334
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Jun 2022 09:55:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234154AbiFHJE6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Jun 2022 05:04:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34338 "EHLO
+        id S234679AbiFHJzX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Jun 2022 05:55:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52202 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233237AbiFHJCP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 05:02:15 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4294C1A005B;
-        Wed,  8 Jun 2022 01:22:00 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=M7NmYC/Iylm9myghHwqILim55SAUt9QrM+UZYk0eJlw=; b=iB9dmVG9Ng3F2WTe/9TMxSCMuj
-        ja0RHUmc9eQ5DhMz/J/4DLElaK1jbZ2WgebeBsycUKTpSk4XXZFan+9M4VKyV244r+9vrHLxfSXLu
-        1Den0nhP5oq1v1RsBXC4KWrnFQR1GBOy5k4TDdPwCR83x4wgMBUgNlNfVHjeNnQFCqIK9FnubxtMN
-        zWdv+oBD2Y2+ygzsJQKEKOjolNrf5KkOYpEfdDkwHbNa6JfEvO7NvQ802MWmg938HniKikRrHTl/j
-        MGOjmrWcaz3uDl43QgwvycXByY5WxieHX6UmoFYrw/Hv+/92Pu6qHF8ifergHW1d73fV9QIISQE8n
-        +Y5c58cg==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1nyqvL-00BuLl-NH; Wed, 08 Jun 2022 08:20:19 +0000
-Date:   Wed, 8 Jun 2022 01:20:19 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>
-Cc:     linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-aio@kvack.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-mm@kvack.org, linux-xfs@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-ntfs-dev@lists.sourceforge.net,
-        ocfs2-devel@oss.oracle.com, linux-mtd@lists.infradead.org,
-        virtualization@lists.linux-foundation.org
-Subject: Re: [PATCH 13/20] aio: Convert to migrate_folio
-Message-ID: <YqBbwx5MhNRpqou/@infradead.org>
-References: <20220606204050.2625949-1-willy@infradead.org>
- <20220606204050.2625949-14-willy@infradead.org>
+        with ESMTP id S236273AbiFHJyN (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jun 2022 05:54:13 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 93B76E4424;
+        Wed,  8 Jun 2022 02:25:16 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 30786617F5;
+        Wed,  8 Jun 2022 09:25:16 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3E39EC3411C;
+        Wed,  8 Jun 2022 09:25:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1654680315;
+        bh=dcAB5EtQDyrZzmvmzkzYIxRS3J5vHsfxOzBah/JAS1w=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=FjO9qya2kG0H6jQt+roA3lb3vPp+3OyOuKT1pQAxude6xnAuFIUDSGPyF1uPTVJ5R
+         cM9VVJmNKXrQqo6j/eDARasQzy+7g6a08bjCTICJMl8C/aXhDMN0U13ZE3BkkPXP7T
+         y+KEhS0TuYIa8Bco6ZFLQxMEY0DbTPJp4JZw4a3EiPhCHxvBDknJKnUqgz3tUlfarT
+         LZkcGbRZFdZ5iXTa+YC7ufo7aYv5O0bpHbvCjQ1wxLSJWbQwQ0S45zqE7UOh5BcVuQ
+         +Dub3yXEox5rfipzYoX6A9aWzHitRtjOU3izl360wmhk3qRWuu6X24lwynBJDBiD1p
+         Rkv2jezD3gbYA==
+Date:   Wed, 8 Jun 2022 10:25:12 +0100
+From:   Filipe Manana <fdmanana@kernel.org>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: re-add btrfs/125 into auto group
+Message-ID: <20220608092512.GA3602146@falcondesktop>
+References: <63471ce6c6d4a4e9db4c3f4771bb512f31131932.1654672817.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220606204050.2625949-14-willy@infradead.org>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <63471ce6c6d4a4e9db4c3f4771bb512f31131932.1654672817.git.wqu@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Looks good:
+On Wed, Jun 08, 2022 at 03:20:21PM +0800, Qu Wenruo wrote:
+> Test case btrfs/125 previous has a very random pass/fail ratio.
+> 
+> This is due to the fact that previously btrfs RAID56 recovery path will
+> always trust the cached data.
+> 
+> Thus if there is some operation reading part/all of the full stripe,
+> that full stripe can be cached, making later recovery to generate bad
+> data.
+> 
+> As the cached data can be stale (intentionally caused by the test case).
+> 
+> Upstream commit d4e28d9b5f04 ("btrfs: raid56: make steal_rbio() subpage
+> compatible") incidentally disable all the cache re-use for btrfs RAID56,
+> thus make btrfs/125 to always pass.
+> 
+> Although we will later re-enable the cache behavior for btrfs RAID56, we
+> will not let recovery path to use any cache at all, thus this will give
+> us the best things from both worlds, making btrfs/125 to pass
+> consistently, while still enable cache for regular read/write.
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+The test has failed very often, and that's due to known problem with
+degraded rw mounts and partial stripe writes [1].
+
+I just ran it again, and the problem is obviously still there, as nothing
+changed regarding that problem:
+
+root 10:18:07 /home/fdmanana/git/hub/xfstests (for-next)> ./check btrfs/125
+FSTYP         -- btrfs
+PLATFORM      -- Linux/x86_64 debian9 5.18.0-btrfs-next-119 #1 SMP PREEMPT_DYNAMIC Sat May 28 20:28:23 WEST 2022
+MKFS_OPTIONS  -- /dev/sdb
+MOUNT_OPTIONS -- /dev/sdb /home/fdmanana/btrfs-tests/scratch_1
+
+btrfs/125 5s ... - output mismatch (see /home/fdmanana/git/hub/xfstests/results//btrfs/125.out.bad)
+    --- tests/btrfs/125.out	2020-06-10 19:29:03.818519162 +0100
+    +++ /home/fdmanana/git/hub/xfstests/results//btrfs/125.out.bad	2022-06-08 10:18:13.521948910 +0100
+    @@ -3,5 +3,15 @@
+     Write data with degraded mount
+     
+     Mount normal and balance
+    +ERROR: error during balancing '/home/fdmanana/btrfs-tests/scratch_1': Input/output error
+    +There may be more info in syslog - try dmesg | tail
+    +md5sum: /home/fdmanana/btrfs-tests/scratch_1/tf2: Input/output error
+     
+    ...
+    (Run 'diff -u /home/fdmanana/git/hub/xfstests/tests/btrfs/125.out /home/fdmanana/git/hub/xfstests/results//btrfs/125.out.bad'  to see the entire diff)
+Ran: btrfs/125
+Failures: btrfs/125
+Failed 1 of 1 tests
+
+root 10:18:17 /home/fdmanana/git/hub/xfstests (for-next)> dmesg
+[777880.530807] run fstests btrfs/125 at 2022-06-08 10:18:09
+[777881.341004] BTRFS: device fsid fc182050-867d-42b3-8b70-7a717d5d8c10 devid 1 transid 6 /dev/sdb scanned by mkfs.btrfs (3174370)
+[777881.343023] BTRFS: device fsid fc182050-867d-42b3-8b70-7a717d5d8c10 devid 2 transid 6 /dev/sdd scanned by mkfs.btrfs (3174370)
+[777881.343156] BTRFS: device fsid fc182050-867d-42b3-8b70-7a717d5d8c10 devid 3 transid 6 /dev/sde scanned by mkfs.btrfs (3174370)
+[777881.360352] BTRFS info (device sdb): flagging fs with big metadata feature
+[777881.360356] BTRFS info (device sdb): using free space tree
+[777881.360357] BTRFS info (device sdb): has skinny extents
+[777881.365900] BTRFS info (device sdb): checking UUID tree
+[777881.459545] BTRFS: device fsid fc182050-867d-42b3-8b70-7a717d5d8c10 devid 2 transid 8 /dev/sdd scanned by mount (3174418)
+[777881.459637] BTRFS: device fsid fc182050-867d-42b3-8b70-7a717d5d8c10 devid 1 transid 8 /dev/sdb scanned by mount (3174418)
+[777881.460202] BTRFS info (device sdb): flagging fs with big metadata feature
+[777881.460204] BTRFS info (device sdb): allowing degraded mounts
+[777881.460206] BTRFS info (device sdb): using free space tree
+[777881.460206] BTRFS info (device sdb): has skinny extents
+[777881.466293] BTRFS warning (device sdb): devid 3 uuid a9540970-da42-44f8-9e62-30e6fdf013af is missing
+[777881.466568] BTRFS warning (device sdb): devid 3 uuid a9540970-da42-44f8-9e62-30e6fdf013af is missing
+[777881.923840] BTRFS: device fsid 57e10060-7318-4cd3-8e2d-4c3e481b1dab devid 1 transid 16797 /dev/sda scanned by btrfs (3174443)
+[777881.939421] BTRFS info (device sdb): flagging fs with big metadata feature
+[777881.939425] BTRFS info (device sdb): using free space tree
+[777881.939426] BTRFS info (device sdb): has skinny extents
+[777881.959199] BTRFS info (device sdb): balance: start -d -m -s
+[777881.959348] BTRFS info (device sdb): relocating block group 754581504 flags data|raid5
+[777882.352088] verify_parent_transid: 787 callbacks suppressed
+[777882.352092] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.352327] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.352481] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.352692] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.352844] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.353066] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.353241] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.353567] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.353760] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.353982] BTRFS error (device sdb): parent transid verify failed on 38993920 wanted 9 found 5
+[777882.455036] BTRFS info (device sdb): balance: ended with status: -5
+[777882.456202] BTRFS: error (device sdb: state A) in do_free_extent_accounting:2864: errno=-5 IO failure
+
+So I don't think it should be added to the auto group.
+Thanks.
+
+[1] https://lore.kernel.org/linux-btrfs/CAL3q7H4oa70DUhOFE7kot62KjxcbvvZKxu62VfLpAcmgsinBFw@mail.gmail.com/
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  tests/btrfs/125 | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/tests/btrfs/125 b/tests/btrfs/125
+> index b58f2aa282bd..ced812cd921a 100755
+> --- a/tests/btrfs/125
+> +++ b/tests/btrfs/125
+> @@ -22,7 +22,7 @@
+>  # Verify if all three checkpoints match
+>  #
+>  . ./common/preamble
+> -_begin_fstest replace volume balance
+> +_begin_fstest auto replace volume balance
+>  
+>  # Override the default cleanup function.
+>  _cleanup()
+> -- 
+> 2.36.1
+> 

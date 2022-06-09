@@ -2,157 +2,252 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 352ABC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Jun 2022 21:15:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B851C433EF
+	for <linux-btrfs@archiver.kernel.org>; Thu,  9 Jun 2022 22:58:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232915AbiFIVPP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 9 Jun 2022 17:15:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57962 "EHLO
+        id S236068AbiFIW6W (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 9 Jun 2022 18:58:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54882 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230184AbiFIVPO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jun 2022 17:15:14 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B7EF0BC03
-        for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2022 14:15:12 -0700 (PDT)
-Received: from [76.132.34.178] (port=59246 helo=sauron.svh.merlins.org)
-        by mail1.merlins.org with esmtpsa 
-        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
-        id 1nzOmO-0007nD-P0 by authid <merlins.org> with srv_auth_plain; Thu, 09 Jun 2022 14:15:11 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
-        (envelope-from <marc@merlins.org>)
-        id 1nzPUl-005W5M-Pj; Thu, 09 Jun 2022 14:15:11 -0700
-Date:   Thu, 9 Jun 2022 14:15:11 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220609211511.GW1745079@merlins.org>
-References: <20220608004241.GC22722@merlins.org>
- <CAEzrpqdq8zTBQaw_VneL4rfZn0JseUiwvtfwXQx0jq=DYBCFFw@mail.gmail.com>
- <20220608021245.GD22722@merlins.org>
- <CAEzrpqeFFiHjbQ+VQ7zy9ZbV1MgaMT-V4ovJhB9iOan8Ao-cXg@mail.gmail.com>
- <20220608213030.GG22722@merlins.org>
- <CAEzrpqdxCycEEAVqu-hykG-qdoEyBBFuc5buKS631XDciVrs7A@mail.gmail.com>
- <20220608213845.GH22722@merlins.org>
- <CAEzrpqejNj3qTtTJ7Godb0VMsxKt094vMw+iT4XR1B9aayO7Nw@mail.gmail.com>
- <20220609030128.GJ22722@merlins.org>
- <CAEzrpqfy-sf_xGMohK1EVgtP58tLTso6e7s9iyd3t5XnM3zjCg@mail.gmail.com>
+        with ESMTP id S230371AbiFIW6V (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jun 2022 18:58:21 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 91F41344FD8
+        for <linux-btrfs@vger.kernel.org>; Thu,  9 Jun 2022 15:58:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1654815484;
+        bh=yH5aci23kp/TbSbU50M1ec4wjs2j4cwiq4eBotyngdk=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=E4pMgLJxHk0cfbYO6QWxJ2HoR6VkLjs9/Nqlolgu9OqC0nwkvpe/YHttfJDEtSvvH
+         KyrrkzsDbm81jB38/QAPg454axDaBRkEjbm2WRNZhb+3aoDWHwdbMyYQWNrAxZ2IWb
+         iNHYJLWXZC5b8T1gE62CGZNSk+xTFhhGDyolO3K0=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mlw7f-1nHGVr0Hch-00j0r4; Fri, 10
+ Jun 2022 00:58:04 +0200
+Message-ID: <17d8d373-f836-5d23-2939-d9dfcb65ae7e@gmx.com>
+Date:   Fri, 10 Jun 2022 06:58:00 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAEzrpqfy-sf_xGMohK1EVgtP58tLTso6e7s9iyd3t5XnM3zjCg@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-X-Broken-Reverse-DNS: no host name for IP address 76.132.34.178
-X-SA-Exim-Connect-IP: 76.132.34.178
-X-SA-Exim-Mail-From: marc@merlins.org
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.0
+Subject: Re: [PATCH v2] btrfs: use preallocated pages for super block write
+Content-Language: en-US
+To:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Cc:     willy@infradead.org, nborisov@suse.com
+References: <20220609164629.30316-1-dsterba@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220609164629.30316-1-dsterba@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:sDVnQjMrryhlFf5vKqRKTM4fu5s0eG2pSO7cmlI4OX5WtaEDYiq
+ gNsnsCtDv1uOdPN1WXzWqWGjXDrikYDho9VMyYObHHoKpLpupda/pLQkmP9mYX6dGXVK+ek
+ 4AmI26mG65j4oHiNDhHz+KzuAMXzW2gJmOUV/+PE65phgCXK/N9IN9srNBdUCe971Aksup0
+ rdu9wyNlj7DLA4rB7bBXQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:nGfknhuZ888=:fQ3OOl+jkoVwtqVb3ioLJo
+ crFky4fT6I6UT1Pms0j/dOHwHOIFcwK2gwGmMuNUnrrXq3Pd0d5BNOqBcHccpwMK45Couasod
+ JHM9gm25DOSOhsO9etyV77ej0qZ25ZOhD/8AQU2bZXQy9TbGoDzhvEO5jeMwG+6fY9KPY/Voj
+ QX32AVGRd6lfSToWM4SEji3OPZHiT2vCrYgrRHOde1jDxhYFZ+kO10ISpX2Sti4Tjue1o0kZ9
+ buo97sppgSE7Col4yGPPlYqp6btEGkxzLujqCitrhz0sBiNI0Rlj6ey/9EwbcJZvvKSlz4O9b
+ kagOZVlYpTVwbHl0/6m1ZzKzbqMaNvXGFL8MUODpU9CRCe8rzvanRpT8bGvTv008+Yd+5f75d
+ PKkaAW0JPlAdTMv72y2tIE4ZY0ItkKqKAnqkiY0RptQI93lGCO6uVUdXrnqCP25yPahLOi56M
+ x3Z3wc+T6Z+x+MpT0EFlAqCajp5BHGapCdVltoRnXLxPAIaW2h9Ol5sCERARts1IBz8Kp3BnG
+ fJP7eUMqX4TK3HEZp+U+9RNj/b1oT6VpheodAwKhrv+uG9QsBNKNpz3ZxXhcIXpRskNc+DqH3
+ tIsDgwVqa8kS2+HxidWv9XzcMV2xbxF6BqXATGFACMugsuuCTlpnGC6Uz2qxXsRXMmlhdnJxD
+ 7s8V+M5D0ROuTv1ndgsXLqJYcpfDdx7M320ULIQqS6WZYNal9572P2mD2OIn4ikDMiGYll2tp
+ MRaWdKr3GasHATkY7JB7EaTwCjEZzlcsF9e7uruKPi2REgBzaMRf/TkibPtaiIpJ3hBdad0a/
+ 1WrP+aqr0k6uwwhUc6IZnZbT25zYyBDBFLU71VdO0WUS3U0vpCK2j0zLaYuB9FCqSxiohqa49
+ 2V89EwlHwRWTcuj8TQTyruJbimaN5+OpyI/XVzHUOn2zdabf+o9RknKBWxidpKHuIxtDoVCT7
+ SeB9iZnTX5geLYEPSiJR3HwWNakaEg37fBfSG0cT5edzyMyUvxNXYAvlyV57DMm0jmaEwROlk
+ 1/AX/80MgHRmEO683DVpU9hcqsppRv4IAd1GF+k/3xeCs8IHQGwgxTcUZiATSJsjPRZpwLRLU
+ EcZJEXCcw+PeLzTWM3LkDGhkzIvQPZXvq/NjJEfpuKRToQkXq0l4KE95A==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jun 09, 2022 at 04:46:28PM -0400, Josef Bacik wrote:
-> Sorry this took me longer than normal to work out what happened and
-> how to fix it properly.
- 
-It takes the time it takes, I'm sure nothing there is obvious
 
-> You can pull and re-run btrfs check --repair <device> and it should
-> fix the device thing that's missing.  We can tackle the other fs
-> errors next, but I want to see if we can at least get you mounting the
-> fs.  Thanks,
 
-Done:
-WARNING: reserved space leaked, transid=2606858 flag=0x2 bytes_reserved=49152
-root 164629 inode 73099 errors 1000, some csum missing
-WARNING: reserved space leaked, transid=2606859 flag=0x2 bytes_reserved=49152
-root 164629 inode 73100 errors 1000, some csum missing
-        unresolved ref dir 791 index 0 namelen 25 name Banlieue 13 Ultimatum.avi filetype 1 errors 6, no dir index, no inode ref
-        unresolved ref dir 3676 index 0 namelen 62 name foo filetype 1 errors 6, no dir index, no inode ref
-ERROR: errors found in fs roots
-WARNING: reserved space leaked, flag=0x2 bytes_reserved=49152
-extent buffer leak: start 15645018226688 len 16384
+On 2022/6/10 00:46, David Sterba wrote:
+> Currently the super block page is from the mapping of the block device,
+> this is result of direct conversion from the previous buffer_head to bio
+> API.  We don't use the page cache or the mapping anywhere else, the page
+> is a temporary space for the associated bio.
+>
+> Allocate pages for all super block copies at device allocation time,
+> also to avoid any later allocation problems when writing the super
+> block. This simplifies the page reference tracking, but the page lock is
+> still used as waiting mechanism for the write and write error is tracked
+> in the page.
+>
+> As there is a separate page for each super block copy all can be
+> submitted in parallel, as before.
+>
+> This was inspired by Matthew's question
+> https://lore.kernel.org/all/Yn%2FtxWbij5voeGOB@casper.infradead.org/
+>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>
+> v2:
+>
+> - allocate 3 pages per device to keep parallelism, otherwise the
+>    submission would be serialized on the page lock
 
-Starting repair.
-Opening filesystem to check...
-Checking filesystem on /dev/mapper/dshelf1
-UUID: 96539b8c-ccc9-47bf-9e6c-29305890941e
-cache and super generation don't match, space cache will be invalidated
-Fixed the nlink of inode 5644
-reset nbytes for ino 54987 root 161199
-reset nbytes for ino 54997 root 161199
-reset nbytes for ino 55002 root 161199
-reset isize for dir 55138 root 161199
-reset nbytes for ino 55458 root 161199
-reset nbytes for ino 55467 root 161199
-reset nbytes for ino 55474 root 161199
-reset nbytes for ino 55525 root 161199
-reset nbytes for ino 54987 root 161889
-reset nbytes for ino 54997 root 161889
-reset nbytes for ino 55002 root 161889
-reset isize for dir 55138 root 161889
-reset nbytes for ino 55458 root 161889
-reset nbytes for ino 55467 root 161889
-reset nbytes for ino 55474 root 161889
-reset nbytes for ino 55525 root 161889
-Fixed the nlink of inode 95666
-Fixed the nlink of inode 95666
-Fixed the nlink of inode 95666
-reset isize for dir 4549 root 164624
-reset isize for dir 25810 root 164624
-reset isize for dir 25812 root 164624
-reset nbytes for ino 26004 root 164624
-reset isize for dir 31346 root 164624
-reset nbytes for ino 72418 root 164624
-reset isize for dir 72587 root 164624
-reset isize for dir 72592 root 164624
-reset isize for dir 72639 root 164624
-reset isize for dir 72640 root 164624
-reset isize for dir 72672 root 164624
-reset nbytes for ino 73001 root 164624
-reset nbytes for ino 73006 root 164624
-reset nbytes for ino 73045 root 164624
-reset nbytes for ino 73066 root 164624
-reset nbytes for ino 73082 root 164624
-reset nbytes for ino 73086 root 164624
-reset nbytes for ino 73099 root 164624
-reset nbytes for ino 73100 root 164624
-reset isize for dir 3747 root 164629
-reset isize for dir 3752 root 164629
-reset isize for dir 3965 root 164629
-reset isize for dir 4549 root 164629
-reset nbytes for ino 40537 root 164629
-reset nbytes for ino 72418 root 164629
-reset isize for dir 72587 root 164629
-reset isize for dir 72592 root 164629
-reset isize for dir 72639 root 164629
-reset isize for dir 72640 root 164629
-reset isize for dir 72672 root 164629
-reset nbytes for ino 73001 root 164629
-reset nbytes for ino 73006 root 164629
-reset nbytes for ino 73045 root 164629
-reset nbytes for ino 73066 root 164629
-reset nbytes for ino 73082 root 164629
-reset nbytes for ino 73086 root 164629
-reset nbytes for ino 73099 root 164629
-reset nbytes for ino 73100 root 164629
-found 21916315648 bytes used, error(s) found
-total csum bytes: 0
-total tree bytes: 8880128
-total fs tree bytes: 6799360
-total extent tree bytes: 606208
-btree space waste bytes: 2518033
-file data blocks allocated: 36729012224
- referenced 36727418880
-gargamel:/var/local/src/btrfs-progs-josefbacik# mount -o ro,recovery /dev/mapper/dshelf1 /mnt/mnt
-mount: /mnt/mnt: wrong fs type, bad option, bad superblock on /dev/mapper/dshelf1, missing codepage or helper program, or other error
+Wouldn't this cause extra memory overhead for non-4K page size systems?
 
-[3956372.768821] BTRFS info (device dm-1): disk space caching is enabled
-[3956372.789085] BTRFS info (device dm-1): has skinny extents
-[3956372.863763] BTRFS error (device dm-1): dev extent physical offset 709781094400 on devid 1 doesn't have corresponding chunk
-[3956372.899452] BTRFS error (device dm-1): failed to verify dev extents against chunks: -117
-[3956372.926355] BTRFS error (device dm-1): open_ctree failed
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+Would simpler kmalloc() fulfill the requirement for both 4K and non-4K
+page size systems?
+
+Thanks,
+Qu
+>
+> fs/btrfs/disk-io.c | 42 +++++++++++-------------------------------
+>   fs/btrfs/volumes.c | 12 ++++++++++++
+>   fs/btrfs/volumes.h |  3 +++
+>   3 files changed, 26 insertions(+), 31 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 800ad3a9c68e..8a9c7a868727 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3887,7 +3887,6 @@ static void btrfs_end_super_write(struct bio *bio)
+>   			SetPageUptodate(page);
+>   		}
+>
+> -		put_page(page);
+>   		unlock_page(page);
+>   	}
+>
+> @@ -3974,7 +3973,6 @@ static int write_dev_supers(struct btrfs_device *d=
+evice,
+>   			    struct btrfs_super_block *sb, int max_mirrors)
+>   {
+>   	struct btrfs_fs_info *fs_info =3D device->fs_info;
+> -	struct address_space *mapping =3D device->bdev->bd_inode->i_mapping;
+>   	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+>   	int i;
+>   	int errors =3D 0;
+> @@ -3989,7 +3987,6 @@ static int write_dev_supers(struct btrfs_device *d=
+evice,
+>   	for (i =3D 0; i < max_mirrors; i++) {
+>   		struct page *page;
+>   		struct bio *bio;
+> -		struct btrfs_super_block *disk_super;
+>
+>   		bytenr_orig =3D btrfs_sb_offset(i);
+>   		ret =3D btrfs_sb_log_location(device, i, WRITE, &bytenr);
+> @@ -4012,21 +4009,17 @@ static int write_dev_supers(struct btrfs_device =
+*device,
+>   				    BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE,
+>   				    sb->csum);
+>
+> -		page =3D find_or_create_page(mapping, bytenr >> PAGE_SHIFT,
+> -					   GFP_NOFS);
+> -		if (!page) {
+> -			btrfs_err(device->fs_info,
+> -			    "couldn't get super block page for bytenr %llu",
+> -			    bytenr);
+> -			errors++;
+> -			continue;
+> -		}
+> -
+> -		/* Bump the refcount for wait_dev_supers() */
+> -		get_page(page);
+> +		/*
+> +		 * Super block is copied to a temporary page, which is locked
+> +		 * and submitted for write. Page is unlocked after IO finishes.
+> +		 * No page references are needed, write error is returned as
+> +		 * page Error bit.
+> +		 */
+> +		page =3D device->sb_write_page[i];
+> +		ClearPageError(page);
+> +		lock_page(page);
+>
+> -		disk_super =3D page_address(page);
+> -		memcpy(disk_super, sb, BTRFS_SUPER_INFO_SIZE);
+> +		memcpy(page_address(page), sb, BTRFS_SUPER_INFO_SIZE);
+>
+>   		/*
+>   		 * Directly use bios here instead of relying on the page cache
+> @@ -4093,14 +4086,7 @@ static int wait_dev_supers(struct btrfs_device *d=
+evice, int max_mirrors)
+>   		    device->commit_total_bytes)
+>   			break;
+>
+> -		page =3D find_get_page(device->bdev->bd_inode->i_mapping,
+> -				     bytenr >> PAGE_SHIFT);
+> -		if (!page) {
+> -			errors++;
+> -			if (i =3D=3D 0)
+> -				primary_failed =3D true;
+> -			continue;
+> -		}
+> +		page =3D device->sb_write_page[i];
+>   		/* Page is submitted locked and unlocked once the IO completes */
+>   		wait_on_page_locked(page);
+>   		if (PageError(page)) {
+> @@ -4108,12 +4094,6 @@ static int wait_dev_supers(struct btrfs_device *d=
+evice, int max_mirrors)
+>   			if (i =3D=3D 0)
+>   				primary_failed =3D true;
+>   		}
+> -
+> -		/* Drop our reference */
+> -		put_page(page);
+> -
+> -		/* Drop the reference from the writing run */
+> -		put_page(page);
+>   	}
+>
+>   	/* log error, force error return */
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 12a6150ee19d..a00546d2c7ea 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -394,6 +394,8 @@ void btrfs_free_device(struct btrfs_device *device)
+>   	rcu_string_free(device->name);
+>   	extent_io_tree_release(&device->alloc_state);
+>   	btrfs_destroy_dev_zone_info(device);
+> +	for (int i =3D 0; i < BTRFS_SUPER_MIRROR_MAX; i++)
+> +		__free_page(device->sb_write_page[i]);
+>   	kfree(device);
+>   }
+>
+> @@ -6898,6 +6900,16 @@ struct btrfs_device *btrfs_alloc_device(struct bt=
+rfs_fs_info *fs_info,
+>   	if (!dev)
+>   		return ERR_PTR(-ENOMEM);
+>
+> +	for (int i =3D 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+> +		dev->sb_write_page[i] =3D alloc_page(GFP_KERNEL);
+> +		if (!dev->sb_write_page[i]) {
+> +			while (--i >=3D 0)
+> +				__free_page(dev->sb_write_page[i]);
+> +			kfree(dev);
+> +			return ERR_PTR(-ENOMEM);
+> +		}
+> +	}
+> +
+>   	INIT_LIST_HEAD(&dev->dev_list);
+>   	INIT_LIST_HEAD(&dev->dev_alloc_list);
+>   	INIT_LIST_HEAD(&dev->post_commit_list);
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 588367c76c46..516709e1d9f8 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -10,6 +10,7 @@
+>   #include <linux/sort.h>
+>   #include <linux/btrfs.h>
+>   #include "async-thread.h"
+> +#include "disk-io.h"
+>
+>   #define BTRFS_MAX_DATA_CHUNK_SIZE	(10ULL * SZ_1G)
+>
+> @@ -158,6 +159,8 @@ struct btrfs_device {
+>   	/* Bio used for flushing device barriers */
+>   	struct bio flush_bio;
+>   	struct completion flush_wait;
+> +	/* Temporary pages for writing the super block copies */
+> +	struct page *sb_write_page[BTRFS_SUPER_MIRROR_MAX];
+>
+>   	/* per-device scrub information */
+>   	struct scrub_ctx *scrub_ctx;

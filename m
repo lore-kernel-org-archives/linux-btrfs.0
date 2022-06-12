@@ -2,50 +2,99 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B966FC433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 12 Jun 2022 17:36:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F9D3C43334
+	for <linux-btrfs@archiver.kernel.org>; Sun, 12 Jun 2022 17:38:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231165AbiFLRgN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 12 Jun 2022 13:36:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39304 "EHLO
+        id S229864AbiFLRiC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 12 Jun 2022 13:38:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40846 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229864AbiFLRgM (ORCPT
+        with ESMTP id S231915AbiFLRh3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 12 Jun 2022 13:36:12 -0400
-X-Greylist: delayed 543 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sun, 12 Jun 2022 10:36:10 PDT
-Received: from users015.phy.heteml.jp (users015.phy.heteml.jp [157.7.188.161])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C7E6B5DA64
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Jun 2022 10:36:09 -0700 (PDT)
-Received: by users015.phy.heteml.jp (Postfix, from userid 492)
-        id 8177E4608B1; Mon, 13 Jun 2022 02:27:04 +0900 (JST)
-To:     linux-btrfs@vger.kernel.org
-Subject: =?UTF-8?B?6ZW35bSO44Kt44Ov44OL44K544Kv44Op44OW772c44GK5ZWP44GE5ZCI44KP?=  =?UTF-8?B?44Gb77yI44GU56K66KqN44Oh44O844Or77yJ?=
-X-PHP-Originating-Script: 22512:PHPMailer.php
-Date:   Sun, 12 Jun 2022 17:27:04 +0000
-From:   WordPress <info@nagasaki-kiwanis.com>
-Message-ID: <aUQ0PfBleOzzFDvjKJmrrHLuHwEyUvUI9Kp6GdOsE@nagasaki-kiwanis.com>
-X-Mailer: PHPMailer 6.6.0 (https://github.com/PHPMailer/PHPMailer)
+        Sun, 12 Jun 2022 13:37:29 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54ADC5DA67
+        for <linux-btrfs@vger.kernel.org>; Sun, 12 Jun 2022 10:37:26 -0700 (PDT)
+Received: from [172.58.16.183] (port=20468 helo=sauron.svh.merlins.org)
+        by mail1.merlins.org with esmtpsa 
+        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
+        id 1o0QoH-0007d6-FM by authid <merlins.org> with srv_auth_plain; Sun, 12 Jun 2022 10:37:24 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
+        (envelope-from <marc@merlins.org>)
+        id 1o0RWc-00AVFy-QD; Sun, 12 Jun 2022 10:37:22 -0700
+Date:   Sun, 12 Jun 2022 10:37:22 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
+ transid verify failed + open_ctree failed)
+Message-ID: <20220612173722.GA1843303@merlins.org>
+References: <20220608213845.GH22722@merlins.org>
+ <CAEzrpqejNj3qTtTJ7Godb0VMsxKt094vMw+iT4XR1B9aayO7Nw@mail.gmail.com>
+ <20220609030128.GJ22722@merlins.org>
+ <CAEzrpqfy-sf_xGMohK1EVgtP58tLTso6e7s9iyd3t5XnM3zjCg@mail.gmail.com>
+ <20220609211511.GW1745079@merlins.org>
+ <CAEzrpqfhUMDjkaJaa4ZugSuKOWpLyTVJ8nLu9nep5n_qzo-PiA@mail.gmail.com>
+ <20220610191156.GB1664812@merlins.org>
+ <CAEzrpqfEj3c5wodYzibBXg34NxtXmQCB60=MtD+Nic2PN8i5bQ@mail.gmail.com>
+ <20220611001404.GM22722@merlins.org>
+ <CAEzrpqda3=rDV8eLPsSDHbvmbyTnceecNkQUNA6mfOMmik=xDw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAEzrpqda3=rDV8eLPsSDHbvmbyTnceecNkQUNA6mfOMmik=xDw@mail.gmail.com>
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 172.58.16.183
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-この度は、長崎キワニスクラブへお問い合わせ頂き、誠にありがとうございました。
-後日、担当者よりご連絡いたします。
+On Sat, Jun 11, 2022 at 10:59:15AM -0400, Josef Bacik wrote:
+> Oops, sorry about that, fixed it up.  My wife is travelling this week
+> so I'm going to be a little slower than normal, but hopefully we're
+> getting close to the end here.  Thanks,
 
-差出人：😍 Have you ever tried this sex game before? GIVE IT A TRY: https://sweetkitty22.page.link/eNh4?1xxm 😍 <linux-btrfs@vger.kernel.org>
+In the meantime, I'm building the new replacement filesystem. I used
+your tree to have the latest mkfs.btrfs.
 
-電話番号：372000122817
+gargamel:/var/local/src/btrfs-progs-josefbacik# ./mkfs.btrfs -m dup -L dshelf1 /dev/mapper/dshelf1n
+btrfs-progs v5.16.2 
+See http://btrfs.wiki.kernel.org for more information.
 
-お問い合せ内容：
-nuol2x
+NOTE: several default settings have changed in version 5.15, please make sure
+      this does not affect your deployments:
+      - DUP for metadata (-m dup)
+      - enabled no-holes (-O no-holes)
+      - enabled free-space-tree (-R free-space-tree)
 
+Label:              dshelf1
+UUID:               ee91f407-39cb-41ef-bd7b-89eee4504ad5
+Node size:          16384
+Sector size:        4096
+Filesystem size:    43.66TiB
+Block group profiles:
+  Data:             single            8.00MiB
+  Metadata:         DUP               1.00GiB
+  System:           DUP               8.00MiB
+SSD detected:       no
+Zoned device:       no
+Incompat features:  extref, skinny-metadata, no-holes
+Runtime features:   free-space-tree
+Checksum:           crc32c
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1    43.66TiB  /dev/mapper/dshelf1n
 
+Does this look ok?
+(it's still running on top of cryptsetup, which is on top of mdadm raid5, but this time
+I added --consistency-policy=ppl and I removed bcache in the middle.
 
---------------------------------------------------------------
-長崎キワニスクラブ事務局
-〒852-8117　長崎市平野町22番40号　㈱九電工長崎支店内（担当：武富）
-TEL：095-801-0195　FAX：095-840-0825
-
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

@@ -2,152 +2,226 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9DE1C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jun 2022 19:57:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18600C43334
+	for <linux-btrfs@archiver.kernel.org>; Mon, 13 Jun 2022 19:59:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238261AbiFMT5D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 13 Jun 2022 15:57:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32842 "EHLO
+        id S239951AbiFMT7B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 13 Jun 2022 15:59:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33636 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229725AbiFMT4g (ORCPT
+        with ESMTP id S1350193AbiFMT6a (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 13 Jun 2022 15:56:36 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 439D5A5022
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2022 11:28:06 -0700 (PDT)
-Received: from rrcs-173-197-119-179.west.biz.rr.com ([173.197.119.179]:40181 helo=sauron.svh.merlins.org)
-        by mail1.merlins.org with esmtpsa 
-        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
-        id 1o0o4r-0006wh-6S by authid <merlins.org> with srv_auth_plain; Mon, 13 Jun 2022 11:28:04 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
-        (envelope-from <marc@merlins.org>)
-        id 1o0onD-00CGqH-RG; Mon, 13 Jun 2022 11:28:03 -0700
-Date:   Mon, 13 Jun 2022 11:28:03 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
- transid verify failed + open_ctree failed)
-Message-ID: <20220613182803.GQ1664812@merlins.org>
-References: <CAEzrpqdxCycEEAVqu-hykG-qdoEyBBFuc5buKS631XDciVrs7A@mail.gmail.com>
- <20220608213845.GH22722@merlins.org>
- <CAEzrpqejNj3qTtTJ7Godb0VMsxKt094vMw+iT4XR1B9aayO7Nw@mail.gmail.com>
- <20220609030128.GJ22722@merlins.org>
- <CAEzrpqfy-sf_xGMohK1EVgtP58tLTso6e7s9iyd3t5XnM3zjCg@mail.gmail.com>
- <20220609211511.GW1745079@merlins.org>
- <CAEzrpqfhUMDjkaJaa4ZugSuKOWpLyTVJ8nLu9nep5n_qzo-PiA@mail.gmail.com>
- <20220610191156.GB1664812@merlins.org>
- <CAEzrpqfEj3c5wodYzibBXg34NxtXmQCB60=MtD+Nic2PN8i5bQ@mail.gmail.com>
- <20220613175651.GM1664812@merlins.org>
+        Mon, 13 Jun 2022 15:58:30 -0400
+Received: from mail-io1-xd34.google.com (mail-io1-xd34.google.com [IPv6:2607:f8b0:4864:20::d34])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2241EA888C
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2022 11:29:42 -0700 (PDT)
+Received: by mail-io1-xd34.google.com with SMTP id b138so162089iof.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jun 2022 11:29:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=kVOZDdFgEOHcEvkVtOUhis/1IMWLqvn1MQI0jOuXQr0=;
+        b=BGy+hzh4aJu9ueWV3FHTUffic0lppZ2Vnf8/UMk1DjIfmjb5Q62KKKYBMAo5oUk1pQ
+         bpHIPhSaKqbZhnllciZYVqKTYgIHYcjnsXsDnODUfJPBsk2hAbpbmkPgSFF33/6NaXpP
+         L04dxTKqpdRYIE8EdY9f3mrHg/EN1WaIgD0dvK+FSvXe88tv1DtGAoCI6YG8xyMlyWjc
+         mDEjRaVA0Q48UE8bhHH0qMWwq99PKWKTnNqxL8Q/EnmoNW3+/9gU/TXZ8eXYsmN04QMD
+         069SWtkpEbo/YB/xIQPmdE1HvtyS4e0TWO17fRTGKkcx/gib4VUBvEGvFVhQdRevfvXo
+         gCOA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=kVOZDdFgEOHcEvkVtOUhis/1IMWLqvn1MQI0jOuXQr0=;
+        b=wj8OUMrnCCqv3jakSh4kS+ktdT2JaasIVSHwnqWbXuxasCdUc36IOe4hxGIkMs7j1M
+         Ih7FKDWtyW4RuWRSEbRzhksAoRDDD7Fl0t4m4Gbnf3Iz7TBUOhXejbajd4sn2tF/dBqi
+         4MMoBlg1vmOyRMExF6L/JGw2hHIbjJiawZ3mAJdyG/wk7bF/0ZbJHQ1KoshxaJijiyNx
+         1f3rVgZtmgbGjgay7xOiUekawR8xRIJgeQkktt+4BzvYShYDE5APox3mkTH4WG1NVwPh
+         o/bLTV+4gRCuLkWmQAofG683zFMVzX0nXbaSwREtfWi1mw65DHytsGoD3Jny+FENtqrI
+         G1yg==
+X-Gm-Message-State: AOAM530VmJZvnANGyGmp7Bg7geS9vOYES0hTss8yWMFIBiZu+zJ7tfsN
+        TcUC9OpaIlbAVzO9e8OFy/HQj0YRVPbZfIta21jIRoxLd2I=
+X-Google-Smtp-Source: ABdhPJwIRwSiGgOgbpPX44S2IDffP52qpeDBVtMvILfzZd78DEvQtD5+32KDIRyCsHg8ylFj7h2kE0Bu4gaQ2MFLvE4=
+X-Received: by 2002:a05:6602:2a45:b0:669:17b2:b71c with SMTP id
+ k5-20020a0566022a4500b0066917b2b71cmr585727iov.10.1655144981313; Mon, 13 Jun
+ 2022 11:29:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+References: <20220608213030.GG22722@merlins.org> <CAEzrpqdxCycEEAVqu-hykG-qdoEyBBFuc5buKS631XDciVrs7A@mail.gmail.com>
+ <20220608213845.GH22722@merlins.org> <CAEzrpqejNj3qTtTJ7Godb0VMsxKt094vMw+iT4XR1B9aayO7Nw@mail.gmail.com>
+ <20220609030128.GJ22722@merlins.org> <CAEzrpqfy-sf_xGMohK1EVgtP58tLTso6e7s9iyd3t5XnM3zjCg@mail.gmail.com>
+ <20220609211511.GW1745079@merlins.org> <CAEzrpqfhUMDjkaJaa4ZugSuKOWpLyTVJ8nLu9nep5n_qzo-PiA@mail.gmail.com>
+ <20220610191156.GB1664812@merlins.org> <CAEzrpqfEj3c5wodYzibBXg34NxtXmQCB60=MtD+Nic2PN8i5bQ@mail.gmail.com>
+ <20220613175651.GM1664812@merlins.org>
 In-Reply-To: <20220613175651.GM1664812@merlins.org>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-X-SA-Exim-Connect-IP: 173.197.119.179
-X-SA-Exim-Mail-From: marc@merlins.org
+From:   Josef Bacik <josef@toxicpanda.com>
+Date:   Mon, 13 Jun 2022 14:29:30 -0400
+Message-ID: <CAEzrpqdrRJGKPe8C1VvbyPaV3iEDtD1kB_oMiUP=bCs37NfSZw@mail.gmail.com>
+Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent transid
+ verify failed + open_ctree failed)
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Ok, yes and no, it mounted, but 99% of the files are missing.
-There are a few in lost+found but ultimately almost everything
-is gone.
+On Mon, Jun 13, 2022 at 1:56 PM Marc MERLIN <marc@merlins.org> wrote:
+>
+>  #####                                                    ###
+> #     #  #    #   ####    ####   ######   ####    ####    ###
+> #        #    #  #    #  #    #  #       #       #        ###
+>  #####   #    #  #       #       #####    ####    ####     #
+>       #  #    #  #       #       #            #       #
+> #     #  #    #  #    #  #    #  #       #    #  #    #   ###
+>  #####    ####    ####    ####   ######   ####    ####    ###
+>
+> On Fri, Jun 10, 2022 at 03:55:09PM -0400, Josef Bacik wrote:
+> > btrfs rescue recover-chunks <device>
+>
+> gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs rescue recover-chunks /dev/mapper/dshelf1
+> FS_INFO IS 0x56528f943bc0
+> Couldn't find the last root for 8
+> FS_INFO AFTER IS 0x56528f943bc0
+> Walking all our trees and pinning down the currently accessible blocks
+> No missing chunks, we're all done
+> doing close???
+> Recover chunks succeeded, you can run check now
+>
+> > btrfs rescue init-extent-tree <device>
+>
+> gargamel:/var/local/src/btrfs-progs-josefbacik# ./btrfs rescue init-extent-tree /dev/mapper/dshelf1
+> FS_INFO IS 0x55fd039e2bc0
+> Couldn't find the last root for 8
+> FS_INFO AFTER IS 0x55fd039e2bc0
+> Walking all our trees and pinning down the currently accessible blocks
+> Clearing the extent root and re-init'ing the block groups
+> deleting space cache for 20971520
+> deleting space cache for 11106814787584
+> deleting space cache for 11108962271232
+> deleting space cache for 11110036013056
+> deleting space cache for 11111109754880
+> (...)
+> doing roots
+> (...)
+> processed 49152 of 49463296 possible bytes, 0%
+> Recording extents for root 164633
+> processed 16384 of 75694080 possible bytes, 0%
+> Recording extents for root 164823
+> processed 507904 of 63504384 possible bytes, 0%
+> Recording extents for root 18446744073709551607
+> processed 16384 of 16384 possible bytes, 100%
+> doing block accounting
+> doing close???
+> Init extent tree finished, you can run check now
+>
+> > btrfs check --repair <device>
+>
+> FS_INFO AFTER IS 0x5641f2a63bd0
+> [1/7] checking root items
+> checksum verify failed on 15645959372800 wanted 0x847c08bf found 0x17a9e2f1
+> checksum verify failed on 15645959389184 wanted 0x3cc757a7 found 0x3b4eff03
+> checksum verify failed on 15645681451008 wanted 0x7516a3d9 found 0x97f7437d
+> checksum verify failed on 15646003970048 wanted 0xf18cc579 found 0x1bc64584
+> checksum verify failed on 15645867720704 wanted 0x14cc427a found 0x9f516106
+> checksum verify failed on 15645529604096 wanted 0xd11e24d5 found 0x8d01bc00
+> checksum verify failed on 15645781344256 wanted 0xb81e3df4 found 0xb5c70846
+> checksum verify failed on 15645959356416 wanted 0x2fa8537e found 0x90ac1f4e
+> checksum verify failed on 15645692067840 wanted 0x7874ded3 found 0x1e94afcd
+> checksum verify failed on 15645529620480 wanted 0x9ba9c3df found 0x1813c193
+> checksum verify failed on 15645608165376 wanted 0x2af09d83 found 0xdc3aa13d
+> checksum verify failed on 15645815291904 wanted 0x27e465d0 found 0x3e898f04
+> checksum verify failed on 15645419667456 wanted 0xde0dab28 found 0x3ceddd16
+> checksum verify failed on 15645815357440 wanted 0xeff7f183 found 0x21b9d056
+> checksum verify failed on 15645781196800 wanted 0xef669b11 found 0x46985a93
+> Fixed 0 roots.
+> [2/7] checking extents
+> Chunk[256, 228, 20971520] stripe[1, 20971520] is not found in dev extent
+> Chunk[256, 228, 20971520] stripe[1, 29360128] is not found in dev extent
+> [3/7] checking free space cache
+> (...)
+> root 164629 inode 73099 errors 1000, some csum missing
+> root 164629 inode 73100 errors 1000, some csum missing
+>         unresolved ref dir 791 index 0 namelen 25 name file filetype 1 errors 6, no dir index, no inode ref
+>         unresolved ref dir 3676 index 0 namelen 62 name file2 filetype 1 errors 6, no dir index, no inode ref
+> ERROR: errors found in fs roots
+>
+> Starting repair.
+> Opening filesystem to check...
+> Checking filesystem on /dev/mapper/dshelf1
+> UUID: 96539b8c-ccc9-47bf-9e6c-29305890941e
+> No device size related problem found
+> cache and super generation don't match, space cache will be invalidated
+> found 21916200960 bytes used, error(s) found
+> total csum bytes: 0
+> total tree bytes: 8765440
+> total fs tree bytes: 6799360
+> total extent tree bytes: 573440
+> btree space waste bytes: 2514656
+> file data blocks allocated:
+>
+>
+> gargamel:~# mount /dev/mapper/dshelf1 /mnt/mnt
+> gargamel:~#
+> [4289823.922324] BTRFS info (device dm-1): trying to use backup root at mount time
+> [4289823.922326] BTRFS info (device dm-1): disk space caching is enabled
+> [4289823.922327] BTRFS info (device dm-1): has skinny extents
+> [4289824.188614] BTRFS info (device dm-1): enabling ssd optimizations
+> [4289847.574926] BTRFS info (device dm-1): flagging fs with big metadata feature
+> [4289847.598104] BTRFS info (device dm-1): disk space caching is enabled
+> [4289847.651582] BTRFS info (device dm-1): has skinny extents
+> [4289847.699541] BTRFS info (device dm-1): enabling ssd optimizations
+> [4289847.730931] BTRFS info (device dm-1): checking UUID tree
+> [4289847.798826] BTRFS error (device dm-1): bad tree block level 19 on 15645959372800
+> [4289847.912586] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959372800 (dev /dev/mapper/dshelf1 sector 29403983072)
+> [4289847.956640] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959376896 (dev /dev/mapper/dshelf1 sector 29403983080)
+> [4289848.000894] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959380992 (dev /dev/mapper/dshelf1 sector 29403983088)
+> [4289848.045141] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959385088 (dev /dev/mapper/dshelf1 sector 29403983096)
+> [4289848.083771] BTRFS error (device dm-1): bad tree block level 39 on 15645959389184
+> [4289848.111468] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959389184 (dev /dev/mapper/dshelf1 sector 29403983104)
+> [4289848.155838] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959393280 (dev /dev/mapper/dshelf1 sector 29403983112)
+> [4289848.199940] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959397376 (dev /dev/mapper/dshelf1 sector 29403983120)
+> [4289848.244198] BTRFS info (device dm-1): read error corrected: ino 0 off 15645959401472 (dev /dev/mapper/dshelf1 sector 29403983128)
+> [4289848.281912] BTRFS error (device dm-1): bad tree block level 85 on 15645681451008
+> [4289848.358339] BTRFS info (device dm-1): read error corrected: ino 0 off 15645681451008 (dev /dev/mapper/dshelf1 sector 29403440256)
+> [4289848.396605] BTRFS info (device dm-1): read error corrected: ino 0 off 15645681455104 (dev /dev/mapper/dshelf1 sector 29403440264)
+> [4289848.436740] BTRFS error (device dm-1): bad tree block level 22 on 15646003970048
+> [4289848.493665] BTRFS error (device dm-1): bad tree block level 127 on 15645867720704
+> [4289848.549485] BTRFS error (device dm-1): bad tree block level 165 on 15645529604096
+> [4289848.640033] BTRFS error (device dm-1): bad tree block level 32 on 15645781344256
+> [4289848.713594] BTRFS error (device dm-1): bad tree block level 16 on 15645959356416
+> [4289848.786591] BTRFS warning (device dm-1): checksum verify failed on 15645692067840 wanted 0x7874ded3 found 0x1e94afcd level 7
+> [4289848.837010] BTRFS error (device dm-1): bad tree block level 62 on 15645529620480
+> [4289848.905220] BTRFS error (device dm-1): bad tree block level 151 on 15645608165376
+> [4289848.941769] BTRFS error (device dm-1): bad tree block level 24 on 15645815291904
+> [4289848.991611] BTRFS error (device dm-1): bad tree block level 34 on 15645419667456
+> [4289849.061467] BTRFS error (device dm-1): bad tree block level 26 on 15645815357440
+> [4289849.109509] BTRFS error (device dm-1): bad tree block level 18 on 15645781196800
+>
+> There is still some damage that maybe check/repair should fix, but it's
+> mountable, that's definitely a huge success!
+>
+> Thanks Josef, that was a lot of work and determination :)
+>
+> Let me know if there is more you'd like to look at, and/or try and get
+> the FS to a state where it's actually clean, but honestly as long as it
+> mounts, that's already a lot, obviously.
+>
 
-The top structure is there, but then mostly empty underneath:
+Alright so we have the missing csum things, which can be fixed with
 
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 .beeshome/
--rw-r--r-- 1 root   root    13569961558 Jul 16  2020 DS1
-drwx------ 1 root   root           5062 Jun  8 15:52 lost+found/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media/
-d????????? ? ?      ?                 ?            ? media_daily.20220325_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_daily.20220326_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_daily.20220327_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_daily.20220328_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_hourly.20220328_22:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_hourly.20220328_23:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_hourly.20220329_00:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_hourly.20220329_01:01:01/
-drwxr-xr-x 1 root   root             28 Jun  8 16:12 media_ro.20220227_00:24:39/
-drwxr-xr-x 1 root   root             28 Jun  8 16:22 media_ro.20220306_00:24:43/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_ro.20220313_00:24:44/
-drwxr-xr-x 1 root   root             28 Jun  8 16:42 media_ro.20220320_00:24:47/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_ro.20220327_00:24:32/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_weekly.20220130_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_weekly.20220206_02:03:01/
-drwxr-xr-x 1 root   root             20 Jun  8 16:00 media_weekly.20220213_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 media_weekly.20220306_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other/
-d????????? ? ?      ?                 ?            ? other_daily.20220325_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_daily.20220326_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_daily.20220327_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_daily.20220328_01:02:01/
-d????????? ? ?      ?                 ?            ? other_hourly.20220328_21:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_hourly.20220328_22:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_hourly.20220328_23:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_hourly.20220329_00:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_hourly.20220329_01:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_ro.20220227_00:25:38/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_ro.20220306_00:25:40/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_ro.20220313_00:26:11/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_ro.20220320_00:25:35/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_ro.20220327_00:24:58/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_weekly.20220130_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_weekly.20220206_02:03:01/
-drwxr-xr-x 1 root   root             28 Jun  8 16:06 other_weekly.20220213_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 other_weekly.20220306_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 SW/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 SW_ro.20220227_00:34:48/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 SW_ro.20220306_00:33:55/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 SW_ro.20220313_00:33:42/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 SW_ro.20220320_00:35:42/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 SW_ro.20220327_00:32:46/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound/
-d????????? ? ?      ?                 ?            ? Sound_daily.20220325_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_daily.20220326_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_daily.20220327_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_daily.20220328_01:02:01/
-d????????? ? ?      ?                 ?            ? Sound_hourly.20220328_22:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_hourly.20220328_23:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_hourly.20220329_00:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_hourly.20220329_01:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_ro.20220227_00:40:41/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_ro.20220306_00:45:46/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_ro.20220313_00:37:25/
-drwxr-xr-x 1 merlin hideftp          70 Jun 25  2021 Sound_ro.20220320_00:39:38/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_ro.20220327_00:35:22/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_weekly.20220130_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_weekly.20220206_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_weekly.20220213_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Sound_weekly.20220306_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2/
-d????????? ? ?      ?                 ?            ? Med2_daily.20220325_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_daily.20220326_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_daily.20220327_01:02:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_daily.20220328_01:02:01/
-d????????? ? ?      ?                 ?            ? Med2_hourly.20220328_22:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_hourly.20220328_23:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_hourly.20220329_00:01:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_hourly.20220329_01:01:01/
-drwxr-xr-x 1 root   root             20 Jun  8 16:15 Med2_ro.20220227_00:46:32/
-drwxr-xr-x 1 root   root             20 Jun  8 16:24 Med2_ro.20220306_00:46:14/
-drwxr-xr-x 1 root   root             20 Jun  8 16:42 Med2_ro.20220313_00:38:01/
-drwxr-xr-x 1 merlin hideftp         102 Jun 25  2021 Med2_ro.20220320_00:40:27/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_ro.20220327_00:35:50/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_weekly.20220130_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 Med2_weekly.20220206_02:03:01/
-drwxr-xr-x 1 root   root             20 Jun  8 15:54 Med2_weekly.20220213_02:03:01/
-drwxr-xr-x 1 root   root             20 Jun  8 16:35 Med2_weekly.20220306_02:03:01/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 W/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 W_ro.20220227_02:10:25/
-drwxr-xr-x 1 root   root           4498 Mar 28 11:01 W_ro.20220306_00:47:32/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 W_ro.20220313_00:38:28/
-drwxr-xr-x 1 root   root             34 Jun  8 17:52 W_ro.20220320_01:12:38/
-drwxr-xr-x 1 root   root              0 Jun 13 11:26 W_ro.20220327_00:37:15/
+btrfs rescue init-csum-tree <device>
 
+now that everything is back the way it's supposed to be.
 
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+After that you can mount the fs and run a scrub, because you have
+copies of metadata that are fucked, but copies that were ok, which is
+why I disabled the block error warnings since they were confusing me.
+Scrub should go along and fix all of that up.
+
+The next thing is to fix the fs errors, which I imagine will cause
+other problems like not being able to find directories and files and
+such.  Once we've gotten the csum tree and the scrub done we can
+tackle the remaining fs error problems which should be less terrifying
+to mess with.  Thanks,
+
+Josef

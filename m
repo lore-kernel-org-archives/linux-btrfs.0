@@ -2,35 +2,38 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 515B3C433EF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jun 2022 23:21:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 698DEC43334
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jun 2022 23:43:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345630AbiFOXVr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Jun 2022 19:21:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37394 "EHLO
+        id S244334AbiFOXnp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Jun 2022 19:43:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56524 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1346114AbiFOXVp (ORCPT
+        with ESMTP id S1354680AbiFOXno (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Jun 2022 19:21:45 -0400
-Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0616F107
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2022 16:21:44 -0700 (PDT)
-Received: from [76.132.34.178] (port=59326 helo=sauron.svh.merlins.org)
-        by mail1.merlins.org with esmtpsa 
-        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
-        id 1o1bc6-0003O6-TI by authid <merlins.org> with srv_auth_plain; Wed, 15 Jun 2022 16:21:42 -0700
-Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
-        (envelope-from <marc@merlins.org>)
-        id 1o1cKT-00Ghrg-UN; Wed, 15 Jun 2022 16:21:41 -0700
-Date:   Wed, 15 Jun 2022 16:21:41 -0700
-From:   Marc MERLIN <marc@merlins.org>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+        Wed, 15 Jun 2022 19:43:44 -0400
+X-Greylist: delayed 548 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 15 Jun 2022 16:43:42 PDT
+Received: from npcomp.net (unknown [209.195.0.149])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DCF1D377CE
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2022 16:43:42 -0700 (PDT)
+Received: by npcomp.net (Postfix, from userid 1000)
+        id E2096E2B75; Wed, 15 Jun 2022 23:26:00 +0000 ()
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=eldondev.com;
+        s=eldondev; t=1655335560;
+        bh=65+u0VFjb5yFDFDGuAeYoucW6tTnKNkojkvt0GvdMxM=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To;
+        b=aFrGArFHn2kyDmrd3AO5JjNA+HSVyzrXpbSWJQXL5n0i+Tbe+QqUuZysKCfDnjCnR
+         yJgfmv8CBlHXfp1o2EHPgo8CnE2OHZe+cHu+LazBuVQwjxTKfZUO6UAXj5KC6pUA09
+         PYiqmqySNRKxTqixUBAIQhGkgwPVYenYXgGNXImc=
+Date:   Wed, 15 Jun 2022 23:26:00 +0000
+From:   Eldon <btrfs@eldondev.com>
+To:     Marc MERLIN <marc@merlins.org>
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: Rebuilding 24TB Raid5 array (was btrfs corruption: parent
  transid verify failed + open_ctree failed)
-Message-ID: <20220615232141.GX1664812@merlins.org>
-References: <CAEzrpqfhUMDjkaJaa4ZugSuKOWpLyTVJ8nLu9nep5n_qzo-PiA@mail.gmail.com>
- <20220610191156.GB1664812@merlins.org>
+Message-ID: <YqpqVSvxP8Dcz53V@invalid>
+References: <20220610191156.GB1664812@merlins.org>
  <CAEzrpqfEj3c5wodYzibBXg34NxtXmQCB60=MtD+Nic2PN8i5bQ@mail.gmail.com>
  <20220613175651.GM1664812@merlins.org>
  <CAEzrpqdrRJGKPe8C1VvbyPaV3iEDtD1kB_oMiUP=bCs37NfSZw@mail.gmail.com>
@@ -39,45 +42,22 @@ References: <CAEzrpqfhUMDjkaJaa4ZugSuKOWpLyTVJ8nLu9nep5n_qzo-PiA@mail.gmail.com>
  <CAEzrpqdRn9mO0pDOogf37qWH07GryACqidHDbZcpoe7t73GDeQ@mail.gmail.com>
  <20220615215314.GW1664812@merlins.org>
  <CAEzrpqfZMA=NjqAaS1XKZgguD5L73kc7zKFL+cVHnMGxdK6rXw@mail.gmail.com>
+ <20220615232141.GX1664812@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <CAEzrpqfZMA=NjqAaS1XKZgguD5L73kc7zKFL+cVHnMGxdK6rXw@mail.gmail.com>
-X-Sysadmin: BOFH
-X-URL:  http://marc.merlins.org/
-X-Broken-Reverse-DNS: no host name for IP address 76.132.34.178
-X-SA-Exim-Connect-IP: 76.132.34.178
-X-SA-Exim-Mail-From: marc@merlins.org
+In-Reply-To: <20220615232141.GX1664812@merlins.org>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 15, 2022 at 07:16:52PM -0400, Josef Bacik wrote:
-> > Up to you, happy to continue if it helps your efforts, but it looks like
-> > my data is mostly gone.
-> > I do remember one command along this thread that had over 100,000 lines
-> > of inodes that were cleared once that bit got automated.
-> >
-> 
-> Yeah I'm going to go rip that code out.  I should have paid more
-> attention to what was happening instead of just assuming we had a few
-> corrupt extents that needed to be removed.
- 
-No worries. I knew this was working on live data and that it was
-untested code that couuld damage it further :)
+On Wed, Jun 15, 2022 at 04:21:41PM -0700, Marc MERLIN wrote:
+> Sorry to everyone else following along, hopefully it was somewhat
+> entertaining :)
 
-> I think we've gotten plenty out of this exercise, sorry I ended up
-> nuking all of your data.  I know what I need to change to fix these
-> tools to be more useful later on, and I'll just make a bunch of test
-> images to validate the work.  Thanks,
+You have no idea. Most entertaining thing this year. Popcorn, suspense,
+joy, tragedy, redemption.
 
-Cool, that was the main goal.
+You really need to put out a tip jar or something.  ;D
 
-Sorry to everyone else following along, hopefully it was somewhat
-entertaining :)
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
- 
-Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08
+Eldon

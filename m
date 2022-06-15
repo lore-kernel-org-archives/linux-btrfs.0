@@ -2,70 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72639CCA47F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jun 2022 08:11:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A36DAC43334
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Jun 2022 11:14:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242762AbiFOILs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Jun 2022 04:11:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47242 "EHLO
+        id S1347200AbiFOLOt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Jun 2022 07:14:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40948 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236475AbiFOILr (ORCPT
+        with ESMTP id S1346695AbiFOLOs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Jun 2022 04:11:47 -0400
-Received: from sin.source.kernel.org (sin.source.kernel.org [145.40.73.55])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E8B402AE02;
-        Wed, 15 Jun 2022 01:11:46 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        Wed, 15 Jun 2022 07:14:48 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E763E3B2A0
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jun 2022 04:14:47 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by sin.source.kernel.org (Postfix) with ESMTPS id 4C4FCCE1D62;
-        Wed, 15 Jun 2022 08:11:45 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 353B6C34115;
-        Wed, 15 Jun 2022 08:11:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1655280703;
-        bh=G8h+IDpJR0CvhZVQBHmA8xXUGMUALrZIeamkPUOOwAc=;
-        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=J6Y3XOcwoC/TgUHQEi+SmCxARb6tPwZNqAYZg5XUTUI3Q/ll5OApOdFtKbROVKu0J
-         G3wBk9/2zrpVCGzGGdhz1ESbgkoh73YGsKSRIOJUxvsHV+/K5Zd6avT4WMepRjY9H4
-         wamp6FUhQPTuGWEhQiYvx6IJuRvj3n1pbZp2ZHUm41s47toXZ4TP69nqNoX31VqQXs
-         PJkwswu6LBuH667SA02KF13mHrfORzWm/2zDlI2HgW90bjJCTh4CmOq+CyWlVyareR
-         TNZ8wmpjenOnCxxJfBdf7GMJYbuk/uABYuIiv48owX1ckCCiZaFExYBEBPHV4h2PdO
-         DbPuKfjHUQGOA==
-Message-ID: <5fdec03e-efb6-554b-55b3-49e7e7f2be5e@kernel.org>
-Date:   Wed, 15 Jun 2022 16:11:36 +0800
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 9344321C5E;
+        Wed, 15 Jun 2022 11:14:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1655291686;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=tLBFzSbQjbJYnEYflsSOG+Jqxa7H0Fbf95dDXs99v2o=;
+        b=K2lGjO/ZNCayt6D2COb0MHEzrXe7WmJ03n9vX7NJQkLQpS4VWUYUKtI11vEmUv+jH1+bpN
+        H49/qQQ6OkmTctKVeOqb8b1mqNGANqMmfy16noByHKrV4oCa1EVeGhmZiT16qt9uFOCeLi
+        2JFINvsgnEbxHRyX+vUIY41JOcg0I3g=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1655291686;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=tLBFzSbQjbJYnEYflsSOG+Jqxa7H0Fbf95dDXs99v2o=;
+        b=nrQ5A16PGikr3cFAHE7Lvgzk7cTGAspyJVWjimoxyhwy7tU85su+nX6XYN2lFiW/RsdC61
+        OlpVrZ9dsLfFiAAw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 644D313A35;
+        Wed, 15 Jun 2022 11:14:46 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id yAyBFya/qWKLbAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 15 Jun 2022 11:14:46 +0000
+Date:   Wed, 15 Jun 2022 13:10:12 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     kernel test robot <oliver.sang@intel.com>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        lkp@lists.01.org, lkp@intel.com
+Subject: Re: [btrfs] [confidence: ] b3eab9f80b:
+ kernel_BUG_at_fs/btrfs/raid56.c
+Message-ID: <20220615111012.GQ20633@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        kernel test robot <oliver.sang@intel.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, lkp@lists.01.org, lkp@intel.com
+References: <20220615062938.GA36441@xsang-OptiPlex-9020>
+ <11a59839-de31-a088-cf04-70a1a2cd07ee@gmx.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
- Thunderbird/91.10.0
-Subject: Re: [f2fs-dev] [PATCH v2 14/19] f2fs: Convert to
- filemap_migrate_folio()
-Content-Language: en-US
-To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-fsdevel@vger.kernel.org
-Cc:     linux-aio@kvack.org, linux-nfs@vger.kernel.org,
-        cluster-devel@redhat.com, linux-ntfs-dev@lists.sourceforge.net,
-        linux-kernel@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-block@vger.kernel.org, linux-mm@kvack.org,
-        linux-mtd@lists.infradead.org, ocfs2-devel@oss.oracle.com,
-        linux-ext4@vger.kernel.org,
-        virtualization@lists.linux-foundation.org,
-        linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org
-References: <20220608150249.3033815-1-willy@infradead.org>
- <20220608150249.3033815-15-willy@infradead.org>
-From:   Chao Yu <chao@kernel.org>
-In-Reply-To: <20220608150249.3033815-15-willy@infradead.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <11a59839-de31-a088-cf04-70a1a2cd07ee@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 2022/6/8 23:02, Matthew Wilcox (Oracle) wrote:
-> filemap_migrate_folio() fits f2fs's needs perfectly.
+On Wed, Jun 15, 2022 at 03:12:08PM +0800, Qu Wenruo wrote:
 > 
-> Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+> 
+> On 2022/6/15 14:29, kernel test robot wrote:
+> >
+> >
+> > Greeting,
+> >
+> > FYI, we noticed the following commit (built with gcc-11):
+> >
+> > commit: b3eab9f80b60e3333e3ce3a7b7fbd323c71b00b1 ("btrfs: raid56: avoid double for loop inside raid56_rmw_stripe()")
+> > https://github.com/kdave/btrfs-devel.git dev/sb-own-page
+> 
+> That's already an older commit.
 
-Acked-by: Chao Yu <chao@kernel.org>
-
-Thanks,
+Also that's from my WIP branch from last week, that was based on your
+raid patches at that time. The fixed v3 has been merged meanwhile and
+new version of the superblock and page is not merged yet.

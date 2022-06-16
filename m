@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 83671CCA47A
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D49B2CCA47E
 	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 15:45:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1377111AbiFPPpy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Jun 2022 11:45:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52928 "EHLO
+        id S1377179AbiFPPpz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Jun 2022 11:45:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230491AbiFPPpx (ORCPT
+        with ESMTP id S237882AbiFPPpy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Jun 2022 11:45:53 -0400
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00ABC3915A
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 08:45:52 -0700 (PDT)
+        Thu, 16 Jun 2022 11:45:54 -0400
+Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94FC439172
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 08:45:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1655394352; x=1686930352;
+  t=1655394354; x=1686930354;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=FnUWjYVlcjE8no8J7C43gmV2S93JNcnEaSB2dpLOq+A=;
-  b=GzProt0YDoPFK7pk0mCbiG83jVwaj10yjczhDSRLn/cm9e6Q8PDZjECZ
-   1e9INF9dvOteDiWsdIaZ3C1J5ofzYzZwsfrxB3Petbp9u5C+zgLkfckzo
-   UHxKVaA5Ih2bXmmXYBncAOCgKBd95Ja/K8UGZjH2gdisBadjtsnwvLbvU
-   CpWHX8PcDhwli/MVCq6CvfqJ2+GLn/mTA2oexztX5+7rJ6VoTLqmT/l0C
-   lsmt82goKegf+J87hy8wMByfvnnqemI0PFeKmff1rv5jf1QPtpw8Avn5W
-   C5XTGdbs2M6zP9pW0bUsJxLGjCqBJAQyFa/nXbU6v3jC1vUk1IZrg1J5g
-   A==;
+  bh=KpSj8w6uqqCaVBn0k0Rp5RipretDmasRScMVOgX/ToA=;
+  b=EWJCQr+08gIDtAG/zuhSqCxrdSd0dLEGMYSNQDDO8nco/fpBpUGfxsVH
+   oR6UV0OJLUBneT/ongJiZuWz5PojYknc5zs7FJITpq6aIJGh7I7n/2Ap7
+   v0hj4vsdbkoMDizMifh6C4HdI+MRKjeBSplT5orJAu2FUuz39Nt7wuaR1
+   Sp8s+UPMryR3+UUmQYb99OjoA/8SjvXHswYVZ3wNbeqGIAeLQ/SKN7Umb
+   aORTlfHbHIToDp/PIb3584YN6OdBKFSynYuvqtDI7M8GlceZGS7o5Gxi2
+   tBdeV6wL6klNfMHubs8enjTFj/ydpbepuvbH+48Vt3bQ181jhKL+DtK7u
+   w==;
 X-IronPort-AV: E=Sophos;i="5.92,305,1650902400"; 
-   d="scan'208";a="208198920"
+   d="scan'208";a="204103912"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
   by ob1.hgst.iphmx.com with ESMTP; 16 Jun 2022 23:45:52 +0800
-IronPort-SDR: uj/aaKN39krKk+PbxvG7pRA0yGMhl6zn2cBYSlZV4C5Z4xo0yAhxhb8cSbEjZDcFak6N9DcBjR
- 2s7O2WyB71nY3eg3ZB+u7RO9I8FfofTvm5oWTRPXH0wopO6ptAD8a3h6uFI1e9Rlc98FIR19nT
- JsF9CGFvveC9GqYC+zcgOCRn/HtGKP/cqzG/ug6WQed7HK2AmthCwHHun5AtJAfMz9yVWaGceY
- KvdAHAOJK3TqjwkyeYVwyomZoTnGJgXR9RsJtXJrXSg3TRMVvKNMpVBw8sG4uni2lfO4hVUsde
- kQS5pduqX1BkCbjWiLkjIrd/
+IronPort-SDR: nBmkJz6mJ1BS88NAEl2TYZfc8qyvrETWT2mgImy2o06NQUwYkGtIp/t2qzzMFSRxuI7mhivW4b
+ aNvJREFFwPZKGw0CsePaZAsJxV3/xPbdwwa0IUdph71VTbJe8N0wA5RN98Tx+tnYCBO2M7Rerf
+ I0iqRXF+kTaIfD+CupKjvJ58LkN5FtrDz5mw179VqSIIzNVYy0qf1CA4dVn5QvDRw2gQa0U8IC
+ bu9W2ZoiBd94wcAP596R1rbrM+esqGHJYwVG+eEY/OSH/jvZqPSXfyvEQx9E25C4xj2BvUHu9B
+ 9rGmLZ+Ejbj/9AyL55eVFnPL
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 Jun 2022 08:04:05 -0700
-IronPort-SDR: fnsC9IdEW/gCbWyo0c61zTCOGx143gWAA+Y5GwWnEOa/he/3VXxSL1i/KNSuZBsKE3ShVjY+eT
- D4zZcxq6EKdQfjptEdPs+r4qsT2QaTCyNIum6IGJwJximovp8aca33TXhaFBpgg2bsjBkQ4/Qy
- AEPS8ds5B6c0iDylf2EX5L+0p3D/kFMsHfj22AcawhgI5IRuwnIM39k/eu1xbNW09T6Z4PepXt
- nlmm3bAkblrnCOpLJagjv4CZ06+yW01DG0u4C5loHugYFwNJ7bLE1cYCqA0ZgYyj0VbwR534eb
- 8SI=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 Jun 2022 08:04:03 -0700
+IronPort-SDR: RWe2B8v/pJyb2pK3tanNY/91cqU/WglOzVbIc9M09hddoXcKYaWCx1Y+VYbN5hzxYpWVky68pw
+ h2S6sCv3p6iqITVjIBq2swa/6iBxm2hO3+J+rpNtsUvsGSztcyqEvKiW04PDsMDk0y2oM+oQTt
+ CbN4BzQ39LNC2LPUkkStFmlzJXZg4kRl12eM9uYiag0EtQJ9jEzNDCSDSPjzMJPw5o68kJxAdt
+ hpJH4QHxn4N+Fz7PF1jgp0unWnaN27IbO7WVtL6dfvCM4whUt0fsI+CTCye6ayxYnyyXaf3X86
+ g64=
 WDCIronportException: Internal
 Received: from jpf010151.ad.shared (HELO naota-xeon.wdc.com) ([10.225.50.117])
-  by uls-op-cesaip01.wdc.com with ESMTP; 16 Jun 2022 08:45:52 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 16 Jun 2022 08:45:51 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 4/4] btrfs: replace unnecessary goto with direct return
-Date:   Fri, 17 Jun 2022 00:45:42 +0900
-Message-Id: <7ccae9fc6975246cbb2be58c83d9ca6e3fcbb123.1655391633.git.naohiro.aota@wdc.com>
+Subject: [PATCH 2/4] btrfs: extend btrfs_cleanup_ordered_extens for NULL locked_page
+Date:   Fri, 17 Jun 2022 00:45:40 +0900
+Message-Id: <6de954aed27f8e5ebccd780bbc40ce37a6ddf4f1.1655391633.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1655391633.git.naohiro.aota@wdc.com>
 References: <cover.1655391633.git.naohiro.aota@wdc.com>
@@ -62,56 +62,81 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The "goto out;"s in cow_file_range() just results in a simple "return
-ret;" which are not really useful. Replace them with proper direct
-"return"s. It also makes the success path vs failure path stands out.
+btrfs_cleanup_ordered_extents() assumes locked_page to be non-NULL, so it
+is not usable for submit_uncompressed_range() which can habe NULL
+locked_page.
+
+This commit supports locked_page == NULL case. Also, it rewrites redundant
+"page_offset(locked_page)".
 
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/inode.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 36 +++++++++++++++++++++---------------
+ 1 file changed, 21 insertions(+), 15 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index cae15924fc99..055c573e2eb3 100644
+index 0c3d9998470f..4e1100f84a88 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1253,7 +1253,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 			 * inline extent or a compressed extent.
- 			 */
- 			unlock_page(locked_page);
--			goto out;
-+			return 0;
- 		} else if (ret < 0) {
- 			goto out_unlock;
+@@ -195,11 +195,14 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
+ {
+ 	unsigned long index = offset >> PAGE_SHIFT;
+ 	unsigned long end_index = (offset + bytes - 1) >> PAGE_SHIFT;
+-	u64 page_start = page_offset(locked_page);
+-	u64 page_end = page_start + PAGE_SIZE - 1;
+-
++	u64 page_start, page_end;
+ 	struct page *page;
+ 
++	if (locked_page) {
++		page_start = page_offset(locked_page);
++		page_end = page_start + PAGE_SIZE - 1;
++	}
++
+ 	while (index <= end_index) {
+ 		/*
+ 		 * For locked page, we will call end_extent_writepage() on it
+@@ -212,7 +215,7 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
+ 		 * btrfs_mark_ordered_io_finished() would skip the accounting
+ 		 * for the page range, and the ordered extent will never finish.
+ 		 */
+-		if (index == (page_offset(locked_page) >> PAGE_SHIFT)) {
++		if (locked_page && index == (page_start >> PAGE_SHIFT)) {
+ 			index++;
+ 			continue;
  		}
-@@ -1366,8 +1366,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 		if (ret)
- 			goto out_unlock;
- 	}
--out:
--	return ret;
-+	return 0;
- 
- out_drop_extent_cache:
- 	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
-@@ -1425,7 +1424,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 					     page_ops);
- 		start += cur_alloc_size;
- 		if (start >= end)
--			goto out;
-+			return ret;
+@@ -231,17 +234,20 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
+ 		put_page(page);
  	}
  
- 	/*
-@@ -1437,7 +1436,7 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
- 	extent_clear_unlock_delalloc(inode, start, end, locked_page,
- 				     clear_bits | EXTENT_CLEAR_DATA_RESV,
- 				     page_ops);
--	goto out;
-+	return ret;
- }
+-	/* The locked page covers the full range, nothing needs to be done */
+-	if (bytes + offset <= page_offset(locked_page) + PAGE_SIZE)
+-		return;
+-	/*
+-	 * In case this page belongs to the delalloc range being instantiated
+-	 * then skip it, since the first page of a range is going to be
+-	 * properly cleaned up by the caller of run_delalloc_range
+-	 */
+-	if (page_start >= offset && page_end <= (offset + bytes - 1)) {
+-		bytes = offset + bytes - page_offset(locked_page) - PAGE_SIZE;
+-		offset = page_offset(locked_page) + PAGE_SIZE;
++	if (locked_page) {
++		/* The locked page covers the full range, nothing needs to be done */
++		if (bytes + offset <= page_start + PAGE_SIZE)
++			return;
++		/*
++		 * In case this page belongs to the delalloc range being
++		 * instantiated then skip it, since the first page of a range is
++		 * going to be properly cleaned up by the caller of
++		 * run_delalloc_range
++		 */
++		if (page_start >= offset && page_end <= (offset + bytes - 1)) {
++			bytes = offset + bytes - page_offset(locked_page) - PAGE_SIZE;
++			offset = page_offset(locked_page) + PAGE_SIZE;
++		}
+ 	}
  
- /*
+ 	return __endio_write_update_ordered(inode, offset, bytes, false);
 -- 
 2.35.1
 

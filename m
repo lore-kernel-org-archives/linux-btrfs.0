@@ -2,141 +2,205 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D49B2CCA47E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 15:45:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7741BCCA480
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 15:45:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1377179AbiFPPpz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Jun 2022 11:45:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52940 "EHLO
+        id S1377192AbiFPPp4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Jun 2022 11:45:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52938 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237882AbiFPPpy (ORCPT
+        with ESMTP id S1376929AbiFPPpy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 16 Jun 2022 11:45:54 -0400
-Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94FC439172
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 08:45:53 -0700 (PDT)
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ECA3338DA5
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 08:45:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1655394354; x=1686930354;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=KpSj8w6uqqCaVBn0k0Rp5RipretDmasRScMVOgX/ToA=;
-  b=EWJCQr+08gIDtAG/zuhSqCxrdSd0dLEGMYSNQDDO8nco/fpBpUGfxsVH
-   oR6UV0OJLUBneT/ongJiZuWz5PojYknc5zs7FJITpq6aIJGh7I7n/2Ap7
-   v0hj4vsdbkoMDizMifh6C4HdI+MRKjeBSplT5orJAu2FUuz39Nt7wuaR1
-   Sp8s+UPMryR3+UUmQYb99OjoA/8SjvXHswYVZ3wNbeqGIAeLQ/SKN7Umb
-   aORTlfHbHIToDp/PIb3584YN6OdBKFSynYuvqtDI7M8GlceZGS7o5Gxi2
-   tBdeV6wL6klNfMHubs8enjTFj/ydpbepuvbH+48Vt3bQ181jhKL+DtK7u
-   w==;
+  t=1655394353; x=1686930353;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=+Ctz5naj87v0EPT8ddakut0zVQ4cgeGI+uNrldEAPiw=;
+  b=V6npQ/Ck6zobmpTMrGYkUVm5kjPulrDuIkceL/5QTd/lRNMae/vmgBVs
+   L2QHvf9gYTMo2gzrwpYNTL6O3en+FBIus7QAS2UL7hl+3HZS0KFlFzhTI
+   XEYglceWLAGxvS7LGtVxcEQkBvyXYelgLb95KCpVG5uonGP+yursnrezJ
+   CKThbVckPWRIGWK9cjdEs+mrmw0kCEpV6XhQ4ydwHNxHgHVXBUXqxI2pj
+   ysrE79BK2AbZzs1k/Aosd0+kXxWH+cKAm46uALorKNKr0txUtilZc4mt2
+   UDMjN4WvdDS8HWRBJLOCpsuOHqayZ9+xbvChO0C0I4PK60sreMLRsIh/t
+   A==;
 X-IronPort-AV: E=Sophos;i="5.92,305,1650902400"; 
-   d="scan'208";a="204103912"
+   d="scan'208";a="202050976"
 Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 16 Jun 2022 23:45:52 +0800
-IronPort-SDR: nBmkJz6mJ1BS88NAEl2TYZfc8qyvrETWT2mgImy2o06NQUwYkGtIp/t2qzzMFSRxuI7mhivW4b
- aNvJREFFwPZKGw0CsePaZAsJxV3/xPbdwwa0IUdph71VTbJe8N0wA5RN98Tx+tnYCBO2M7Rerf
- I0iqRXF+kTaIfD+CupKjvJ58LkN5FtrDz5mw179VqSIIzNVYy0qf1CA4dVn5QvDRw2gQa0U8IC
- bu9W2ZoiBd94wcAP596R1rbrM+esqGHJYwVG+eEY/OSH/jvZqPSXfyvEQx9E25C4xj2BvUHu9B
- 9rGmLZ+Ejbj/9AyL55eVFnPL
+  by ob1.hgst.iphmx.com with ESMTP; 16 Jun 2022 23:45:51 +0800
+IronPort-SDR: gZ+lDqT9lbEq2ArggwtBiccYUKs6RP0/QRRg8FYuD8x/NngjiaQCV9IvHJ4MRPWE4FhNQdvz+S
+ cUjPusqkOLCI1VrLNqAOf8GW4AcoKqsarLag1GOz5bjqx5E7Guo0mzaRGx4MASNijNUwHcZzX5
+ 678sDiOev4WISxf1T89AjveYloXFq7SY27FXAscRA6U13QeTJ3HgD2sPzXwpM3CshtJHZOGpJS
+ MMfDAE3eiWUuitJ+WpZawUu7AJOR3aNcM9SpzCXLEwEdBIgcQ20veC0toubidkmopMQd9LiD1B
+ /oSSRefYXFXr2CaJqVthfNG9
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 Jun 2022 08:04:03 -0700
-IronPort-SDR: RWe2B8v/pJyb2pK3tanNY/91cqU/WglOzVbIc9M09hddoXcKYaWCx1Y+VYbN5hzxYpWVky68pw
- h2S6sCv3p6iqITVjIBq2swa/6iBxm2hO3+J+rpNtsUvsGSztcyqEvKiW04PDsMDk0y2oM+oQTt
- CbN4BzQ39LNC2LPUkkStFmlzJXZg4kRl12eM9uYiag0EtQJ9jEzNDCSDSPjzMJPw5o68kJxAdt
- hpJH4QHxn4N+Fz7PF1jgp0unWnaN27IbO7WVtL6dfvCM4whUt0fsI+CTCye6ayxYnyyXaf3X86
- g64=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 Jun 2022 08:04:02 -0700
+IronPort-SDR: ds/7dImw5re+sc4tducR0ccX8zXdrrQ6AoQ4uL9MyU9r6+4dYkhlh7r88RVsSBQnPEwUazQ7s1
+ sUJ4louaecI13aiaF6921N9QA/QG5e+5lyLKytIEKPD9Xbxc7bX2wAyRet2HP1upMpUpJlumPQ
+ XwEVpOECf1Eu3cMidyDDkEPuQTHfwi+Yu6HEcNBLIYTQqsOpwPFFDtVK0eNdaJLm5WzYmQrSCL
+ 3z/LqziB8aB3vLwJAph5iWt6V53JHR3UPVRs3qA6qlfXlCqtHFLCovr98Qyuk1T514Z+AG5Q+/
+ a8A=
 WDCIronportException: Internal
 Received: from jpf010151.ad.shared (HELO naota-xeon.wdc.com) ([10.225.50.117])
-  by uls-op-cesaip01.wdc.com with ESMTP; 16 Jun 2022 08:45:51 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 16 Jun 2022 08:45:49 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 2/4] btrfs: extend btrfs_cleanup_ordered_extens for NULL locked_page
-Date:   Fri, 17 Jun 2022 00:45:40 +0900
-Message-Id: <6de954aed27f8e5ebccd780bbc40ce37a6ddf4f1.1655391633.git.naohiro.aota@wdc.com>
+Subject: [PATCH 0/4] btrfs: fix error handling of cow_file_range(unlock = 0)
+Date:   Fri, 17 Jun 2022 00:45:38 +0900
+Message-Id: <cover.1655391633.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.35.1
-In-Reply-To: <cover.1655391633.git.naohiro.aota@wdc.com>
-References: <cover.1655391633.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_cleanup_ordered_extents() assumes locked_page to be non-NULL, so it
-is not usable for submit_uncompressed_range() which can habe NULL
-locked_page.
+This series is a revisit of patch "btrfs: ensure pages are unlocked on
+cow_file_range() failure" [1].
 
-This commit supports locked_page == NULL case. Also, it rewrites redundant
-"page_offset(locked_page)".
+[1] https://lore.kernel.org/linux-btrfs/20211213034338.949507-1-naohiro.aota@wdc.com/
 
-Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
----
- fs/btrfs/inode.c | 36 +++++++++++++++++++++---------------
- 1 file changed, 21 insertions(+), 15 deletions(-)
+We have a hang report like below which is caused by a locked page.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0c3d9998470f..4e1100f84a88 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -195,11 +195,14 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
- {
- 	unsigned long index = offset >> PAGE_SHIFT;
- 	unsigned long end_index = (offset + bytes - 1) >> PAGE_SHIFT;
--	u64 page_start = page_offset(locked_page);
--	u64 page_end = page_start + PAGE_SIZE - 1;
--
-+	u64 page_start, page_end;
- 	struct page *page;
- 
-+	if (locked_page) {
-+		page_start = page_offset(locked_page);
-+		page_end = page_start + PAGE_SIZE - 1;
-+	}
-+
- 	while (index <= end_index) {
- 		/*
- 		 * For locked page, we will call end_extent_writepage() on it
-@@ -212,7 +215,7 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
- 		 * btrfs_mark_ordered_io_finished() would skip the accounting
- 		 * for the page range, and the ordered extent will never finish.
- 		 */
--		if (index == (page_offset(locked_page) >> PAGE_SHIFT)) {
-+		if (locked_page && index == (page_start >> PAGE_SHIFT)) {
- 			index++;
- 			continue;
- 		}
-@@ -231,17 +234,20 @@ static inline void btrfs_cleanup_ordered_extents(struct btrfs_inode *inode,
- 		put_page(page);
- 	}
- 
--	/* The locked page covers the full range, nothing needs to be done */
--	if (bytes + offset <= page_offset(locked_page) + PAGE_SIZE)
--		return;
--	/*
--	 * In case this page belongs to the delalloc range being instantiated
--	 * then skip it, since the first page of a range is going to be
--	 * properly cleaned up by the caller of run_delalloc_range
--	 */
--	if (page_start >= offset && page_end <= (offset + bytes - 1)) {
--		bytes = offset + bytes - page_offset(locked_page) - PAGE_SIZE;
--		offset = page_offset(locked_page) + PAGE_SIZE;
-+	if (locked_page) {
-+		/* The locked page covers the full range, nothing needs to be done */
-+		if (bytes + offset <= page_start + PAGE_SIZE)
-+			return;
-+		/*
-+		 * In case this page belongs to the delalloc range being
-+		 * instantiated then skip it, since the first page of a range is
-+		 * going to be properly cleaned up by the caller of
-+		 * run_delalloc_range
-+		 */
-+		if (page_start >= offset && page_end <= (offset + bytes - 1)) {
-+			bytes = offset + bytes - page_offset(locked_page) - PAGE_SIZE;
-+			offset = page_offset(locked_page) + PAGE_SIZE;
-+		}
- 	}
- 
- 	return __endio_write_update_ordered(inode, offset, bytes, false);
+[  726.328648] INFO: task rocksdb:high0:11085 blocked for more than 241 seconds.
+[  726.329839]       Not tainted 5.16.0-rc1+ #1
+[  726.330484] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  726.331603] task:rocksdb:high0   state:D stack:    0 pid:11085 ppid: 11082 flags:0x00000000
+[  726.331608] Call Trace:
+[  726.331611]  <TASK>
+[  726.331614]  __schedule+0x2e5/0x9d0
+[  726.331622]  schedule+0x58/0xd0
+[  726.331626]  io_schedule+0x3f/0x70
+[  726.331629]  __folio_lock+0x125/0x200
+[  726.331634]  ? find_get_entries+0x1bc/0x240
+[  726.331638]  ? filemap_invalidate_unlock_two+0x40/0x40
+[  726.331642]  truncate_inode_pages_range+0x5b2/0x770
+[  726.331649]  truncate_inode_pages_final+0x44/0x50
+[  726.331653]  btrfs_evict_inode+0x67/0x480
+[  726.331658]  evict+0xd0/0x180
+[  726.331661]  iput+0x13f/0x200
+[  726.331664]  do_unlinkat+0x1c0/0x2b0
+[  726.331668]  __x64_sys_unlink+0x23/0x30
+[  726.331670]  do_syscall_64+0x3b/0xc0
+[  726.331674]  entry_SYSCALL_64_after_hwframe+0x44/0xae
+
+When cow_file_range(unlock = 0), we never unlock a page after an ordered
+extent is allocated for the page. When the allocation loop fails after some
+ordered extents are allocated, we have three things to do: (1) unlock the
+pages in the successfully allocated ordered extents, (2) clean-up the
+allocated ordered extents, and (3) propagate the error to the userland.
+
+However, current code fails to do (1) in the all cow_file_range(unlock = 0)
+case and cause the above hang. Also, it fails to do (2) and (3) in
+submit_uncompressed_range() case.
+
+This series addresses these three issues on error handling of
+cow_file_range(unlock = 0) case.
+
+To test the series, I applied the following two patches to stress
+submit_uncompressed_range() and to inject an error.
+
+The following first diff forces the compress_type to be
+BTRFS_COMPRESS_NONE, so that all "compress" writes go through
+submit_uncompressed_range path.
+
+    diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+    index 7a54f964ff37..eb12c47d02b8 100644
+    --- a/fs/btrfs/inode.c
+    +++ b/fs/btrfs/inode.c
+    @@ -706,6 +706,7 @@ static noinline int compress_file_range(struct async_chunk *async_chunk)
+     			compress_type = BTRFS_I(inode)->defrag_compress;
+     		else if (BTRFS_I(inode)->prop_compress)
+     			compress_type = BTRFS_I(inode)->prop_compress;
+    +		compress_type = BTRFS_COMPRESS_NONE;
+     
+     		/*
+     		 * we need to call clear_page_dirty_for_io on each
+
+The following second diff limits the allocation size at most 256KB to run
+the loop many times. Also, it fails the allocation at the specific offset
+(fail_offset).
+
+    diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+    index eb12c47d02b8..1247690e7021 100644
+    --- a/fs/btrfs/inode.c
+    +++ b/fs/btrfs/inode.c
+    @@ -1155,6 +1155,8 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+     	bool extent_reserved = false;
+     	int ret = 0;
+     
+    +	u64 fail_offset = SZ_1M + (u64)SZ_256K * 0;
+    +
+     	if (btrfs_is_free_space_inode(inode)) {
+     		ret = -EINVAL;
+     		goto out_unlock;
+    @@ -1239,9 +1241,13 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
+     
+     	while (num_bytes > 0) {
+     		cur_alloc_size = num_bytes;
+    -		ret = btrfs_reserve_extent(root, cur_alloc_size, cur_alloc_size,
+    -					   min_alloc_size, 0, alloc_hint,
+    -					   &ins, 1, 1);
+    +		cur_alloc_size = min_t(u64, SZ_256K, num_bytes);
+    +		if (start != fail_offset)
+    +			ret = btrfs_reserve_extent(root, cur_alloc_size, cur_alloc_size,
+    +						   min_alloc_size, 0, alloc_hint,
+    +						   &ins, 1, 1);
+    +		else
+    +			ret = -ENOSPC;
+     		if (ret < 0)
+     			goto out_unlock;
+     		cur_alloc_size = ins.offset;
+
+I ran the following script with these patches + the series applied changing
+the fail_offset from "1MB + 256KB * 0" to "1MB + 256KB * 15" step by 256KB,
+and confirmed the above three error handlings are properly done.
+
+    run() {
+    	local mkfs_opts=$1
+    	local mount_opts=$2
+    
+    	for x in $(seq 100); do
+    		echo $x
+    		mkfs.btrfs -f -d single -m single ${mkfs_opts} /dev/nullb0
+    		mount ${mount_opts} /dev/nullb0 /mnt/test
+    		dd if=/dev/zero of=/mnt/test/file bs=1M count=4 seek=1 oflag=sync 2>&1 | tee /tmp/err
+    		# check error propagation
+    		grep -q 'No space left' /tmp/err || exit 1
+    		sync
+    		umount /mnt/test
+    		dmesg | grep -q WARN && exit 1
+    	done
+    }
+    
+    run ""         ""
+    run ""         "-o compress-force"
+    run "-O zoned" ""
+    run "-O zoned" "-o compress-force"
+
+Patch 1 addresses the (1) by unlocking the pages in the error case. Also,
+it adds a figure to clarify what to do for each range in the error case.
+
+Patches 2 and 3 do (2) and (3) by fixing the error case of
+submit_uncompressed_range().
+
+Patch 4 is a refactoring patch to replace unnecessary "goto out"s with
+direct return.
+
+Naohiro Aota (4):
+  btrfs: ensure pages are unlocked on cow_file_range() failure
+  btrfs: extend btrfs_cleanup_ordered_extens for NULL locked_page
+  btrfs: fix error handling of fallbacked uncompress write
+  btrfs: replace unnecessary goto with direct return
+
+ fs/btrfs/inode.c | 132 ++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 103 insertions(+), 29 deletions(-)
+
 -- 
 2.35.1
 

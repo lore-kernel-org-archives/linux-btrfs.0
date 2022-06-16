@@ -2,173 +2,127 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 39327C43334
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 15:08:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1F9EC43334
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 15:24:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1376442AbiFPPIg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Jun 2022 11:08:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47772 "EHLO
+        id S1377326AbiFPPYy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Jun 2022 11:24:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33446 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1377884AbiFPPIc (ORCPT
+        with ESMTP id S234927AbiFPPYy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Jun 2022 11:08:32 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B5CE3EABE
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 08:08:31 -0700 (PDT)
+        Thu, 16 Jun 2022 11:24:54 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5A5C12BB2F
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 08:24:53 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id BA25B21B3C;
-        Thu, 16 Jun 2022 15:08:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1655392109;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 072591F8E0;
+        Thu, 16 Jun 2022 15:24:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1655393092; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=YjXXtWFmc3z6h7LTd52bXT7NC+Ex6iDz+jyUPTCtm6Q=;
-        b=LOjL69YIA+34+rcxAwGGaMQAerByWNgmErDyfa4eVycopMRvEPVI61Jd5THsAMetc0Y18V
-        dykachKv4GssMjlEdZBPSQ9Vy7vqERbVEApZfgoZ7ZbxRKHv77l3pt15UUKr+rP/ettOCK
-        bffyLX+/oQ06D8/6IpGsy8V2Ug5sYb0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1655392109;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=YjXXtWFmc3z6h7LTd52bXT7NC+Ex6iDz+jyUPTCtm6Q=;
-        b=So5qjdYXyH1n5e0r7gBqU209kihAeu9C7J6WFLQNQJ7U9yP1ZWw6bCgUEcdXcSKg4iaqJL
-        t3eMkKBy332bMgAA==
+        bh=b8+tCPeHCg4xq6RjzkNt15tRgXWhBdrhi/XpVQnN8Bw=;
+        b=IUcvaUqyuzaeZjKua/v4/5dKcZhj/fkAiMkiHkrOk92aL5XE0JtLDtBc9S2VhIW6/r/Qyf
+        UUwZJiP9At7gmJJJl+l5QGh/Kjp3aGwhPejtF41WD88O47XLnvtvpDrqQbtxCO6xe5h4wu
+        l4YKB7jFUK+5Q5gIj1pefhBsC+xgElw=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 80A941344E;
-        Thu, 16 Jun 2022 15:08:29 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B05021344E;
+        Thu, 16 Jun 2022 15:24:51 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id /ylhHm1Hq2LyPAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 16 Jun 2022 15:08:29 +0000
-Date:   Thu, 16 Jun 2022 17:03:55 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Boris Burkov <boris@bur.io>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: warn about dev extents that are inside the
- reserved range
-Message-ID: <20220616150355.GC20633@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Boris Burkov <boris@bur.io>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1655103954.git.wqu@suse.com>
- <c4b02ac7bf6e4171d8cfb13dcd11b3bad8d2e4df.1655103954.git.wqu@suse.com>
- <YqeKZuET4MDe0D5w@zen>
- <7d764668-cb95-f410-4846-9a1a98e3b861@gmx.com>
- <Yqiprewvw0q6OYza@zen>
- <4ee22ab7-6597-b254-d85d-fc8268fbfcd2@gmx.com>
+        id ARBVKENLq2KPQgAAMHmgww
+        (envelope-from <nborisov@suse.com>); Thu, 16 Jun 2022 15:24:51 +0000
+Message-ID: <8020b3cf-ea57-fe85-1784-630e83bd558a@suse.com>
+Date:   Thu, 16 Jun 2022 18:24:51 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4ee22ab7-6597-b254-d85d-fc8268fbfcd2@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.1
+Subject: Re: [PATCH v2 2/2] btrfs: Expose the BTRFS commit stats through sysfs
+Content-Language: en-US
+To:     Boris Burkov <boris@bur.io>, dsterba@suse.cz,
+        Ioannis Angelakopoulos <iangelak@fb.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <20220614222231.2582876-1-iangelak@fb.com>
+ <20220614222231.2582876-3-iangelak@fb.com>
+ <916ea0a3-d3a0-6c60-1307-7873438286e3@suse.com>
+ <20220615133130.GY20633@twin.jikos.cz> <YqpQANRnbc4uBmjT@zen>
+From:   Nikolay Borisov <nborisov@suse.com>
+In-Reply-To: <YqpQANRnbc4uBmjT@zen>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 15, 2022 at 06:12:29AM +0800, Qu Wenruo wrote:
-> On 2022/6/14 23:30, Boris Burkov wrote:
-> > On Tue, Jun 14, 2022 at 03:48:06PM +0800, Qu Wenruo wrote:
-> >> On 2022/6/14 03:05, Boris Burkov wrote:
-> >>> On Mon, Jun 13, 2022 at 03:06:35PM +0800, Qu Wenruo wrote:
-> >>>> Btrfs has reserved the first 1MiB for the primary super block (at 64KiB
-> >>>> offset) and legacy programs like older bootloaders.
-> >>>>
-> >>>> This behavior is only introduced since v4.1 btrfs-progs release,
-> >>>> although kernel can ensure we never touch the reserved range of super
-> >>>> blocks, it's better to inform the end users, and a balance will resolve
-> >>>> the problem.
-> >>>>
-> >>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >>>> ---
-> >>>>    fs/btrfs/volumes.c | 10 ++++++++++
-> >>>>    1 file changed, 10 insertions(+)
-> >>>>
-> >>>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> >>>> index 051d124679d1..b39f4030d2ba 100644
-> >>>> --- a/fs/btrfs/volumes.c
-> >>>> +++ b/fs/btrfs/volumes.c
-> >>>> @@ -7989,6 +7989,16 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
-> >>>>    		goto out;
-> >>>>    	}
-> >>>>
-> >>>> +	/*
-> >>>> +	 * Very old mkfs.btrfs (before v4.1) will not respect the reserved
-> >>>> +	 * space. Although kernel can handle it without problem, better to
-> >>>> +	 * warn the users.
-> >>>> +	 */
-> >>>> +	if (physical_offset < BTRFS_DEFAULT_RESERVED)
-> >>>> +		btrfs_warn(fs_info,
-> >>>> +"devid %llu physical %llu len %llu is inside the reserved space, balance is needed to solve this problem.",
-> >>>
-> >>> If I saw this warning, I wouldn't know what balance to run, and it's
-> >>> not obvious what to search for online either (if it's even documented).
-> >>> I think a more explicit instruction like "btrfs balance start XXXX"
-> >>> would be helpful.
-> >>
-> >> Firstly, the balance command needs extra filters, thus the command can
-> >> be pretty long, like:
-> >>
-> >> # btrfs balance start -mdrange=0..1048576 -ddrange=0..1048576
-> >> -srange0..1048576 <mnt>
-> >>
-> >> I'm not sure if this is a good idea to put all these into the already
-> >> long message.
-> >>
-> >>>
-> >>> If it's something we're ok with in general, then maybe a URL for a wiki
-> >>> page that explains the issue and the workaround would be the most
-> >>> useful.
-> >>
-> >> URL can be helpful but not always. Imagine a poor sysadmin in a noisy
-> >> server room, seeing a URL in dmesg, and has to type the full URL into
-> >> their phone, if the server has very limited network access.
-> >
-> > I don't see how the poor sysadmin would be any better off with "you need
-> > to do a balance" vs "you need to do a balance: <URL>" or "you need to do
-> > a balance using mdrange and ddrange to move the affected extents" etc..
-> >
-> > My high level point is that you clearly have something in mind that the
-> > person needs to do in the unlikely event they hit this, but I have no
-> > idea how they are supposed to figure it out. Send a mail to our mailing
-> > list and hope you notice it?
-> 
-> I guess you miss the point here.
-> 
-> First, this is really rare case, it need older mkfs.btrfs and never
-> balanced the fs.
-> 
-> Second, the warning message itself is fine, kernel is 100% fine handling
-> it. The warning message can be ignored as long as there is no usage of
-> legacy bootloader.
-> 
-> >
-> >>
-> >> In fact, this error message for now will be super rare already.
-> >>
-> >> The main usage of this message is for the incoming feature, which will
-> >> allow btrfs to reserve extra space for its internal usage.
-> >>
-> >> In that case, we will allow btrfstune to set the reservation (even it's
-> >> already used by some dev extent), and btrfstune would give a commandline
-> >> how to do the balance.
-> 
-> In fact, that would be where the detailed balance command line to be shown.
-> 
-> Btrfs check and btrfstune would output the detailed command line to do that.
 
-I don't think this is a good place either. There's a WIP page
-file:///home/ds/x/btrfs-progs/Documentation/_build/html/trouble-index.html
 
-that should be the starting point to explain errors or error messages in
-greater detail than what can be fit to one line. There is/was a similar
-page on wiki but not was used or lacked details.
+On 16.06.22 г. 0:32 ч., Boris Burkov wrote:
+> On Wed, Jun 15, 2022 at 03:31:30PM +0200, David Sterba wrote:
+>> On Wed, Jun 15, 2022 at 03:47:51PM +0300, Nikolay Borisov wrote:
+>>>> +
+>>>> +	return sysfs_emit(buf,
+>>>> +		"commits %llu\n"
+>>>> +		"last_commit_dur %llu ms\n"
+>>>> +		"max_commit_dur %llu ms\n"
+>>>> +		"total_commit_dur %llu ms\n",
+>>>> +		fs_info->commit_stats.commit_counter,
+>>>> +		fs_info->commit_stats.last_commit_dur / NSEC_PER_MSEC,
+>>>> +		fs_info->commit_stats.max_commit_dur / NSEC_PER_MSEC,
+>>>> +		fs_info->commit_stats.total_commit_dur / NSEC_PER_MSEC);
+>>>> +}
+>>>> +
+>>>> +static ssize_t btrfs_commit_stats_store(struct kobject *kobj,
+>>>> +						struct kobj_attribute *a,
+>>>> +						const char *buf, size_t len)
+>>>> +{
+>>>
+>>> Is there really value in being able to zero out the current stats?
+>>
+>> I think it makes sense for the max commit time, one might want to track
+>> that for some workload and then reset. For the other it can go both
+>> ways, eg. a monitoring tool saves the stats completely and resets them.
+>> OTOH long term stats would be lost in case there's more than one
+>> application reading it.
+> 
+> As far as I can see, our options are roughly:
+> 1. separate files per stat, only max file has clear
+> 2. clear only max when clearing the joint file
+> 3. clear everything in the joint file (current patch)
+> 4. clear bitmap to control which fields to clear
+> 
+> 1 seems the clearest, but is sort of messy in terms of spamming lots of
+> files. There can be a "1b" variant which is one file with
+> count/total/last and a second file with max (rather than one each for all
+> four). 2 is a bit weird, just due to asymmetry. The "multiple separate
+> clearers" problem Dave came up with seems  serious for 3: it means if I
+> want to clear max and you want to clear total, we might make each other
+> lose data. 4 would work around that, but is an untuitive interface.
+> 
+> One other reason clearing total could be good is if we are counting in
+> nanoseconds, overflow becomes a non-trivial risk. For this reason, I
+> think I vote for 1 (separate files), but 2 (only clear max in a single
+> file) seems like a decent compromise. 4 feels overengineered, but is
+> kind of a souped-up version of 2.
+
+
+I don't know why but I like 2, even though when I think more about it it 
+indeed introduces somewhat non-trivial asymmetry. But given that sysfs 
+interfaces aren't considered ABI we can get it wrong the first time and 
+we won't have to bother to support until the end of times.
+
+A different POV would be that those stats would mostly be useful when 
+doing measurements of a particular workload and in those cases you can 
+reset the stats by remounting the fs, no ? From a monitoring POV I'd 
+expect that the most interesting stats would be last_commit_dur as you 
+can read it every x seconds, plot it and see how transaction latency 
+varies over time. From such stats you can derive a max value, probably 
+not THE max, but it should be within the ballpark. Total_commit and 
+commit_counter - yeah, I dunno about those.

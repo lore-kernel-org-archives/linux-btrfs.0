@@ -2,84 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63B0DC433EF
-	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 10:32:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23FFFC43334
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Jun 2022 10:55:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231612AbiFPKcs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 16 Jun 2022 06:32:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49024 "EHLO
+        id S1376600AbiFPKzD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 16 Jun 2022 06:55:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42232 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229717AbiFPKcr (ORCPT
+        with ESMTP id S229717AbiFPKzB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 16 Jun 2022 06:32:47 -0400
-Received: from michel.telenet-ops.be (michel.telenet-ops.be [IPv6:2a02:1800:110:4::f00:18])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96AD115833
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 03:32:44 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed30:5439:2bcc:4a70:48e8])
-        by michel.telenet-ops.be with bizsmtp
-        id jmYi270064lJ8fu06mYioK; Thu, 16 Jun 2022 12:32:42 +0200
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1o1mRv-004AbF-4n; Thu, 16 Jun 2022 12:10:03 +0200
-Received: from geert by rox.of.borg with local (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1o1kY2-007ZgO-8u; Thu, 16 Jun 2022 10:08:14 +0200
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-To:     Ioannis Angelakopoulos <iangelak@fb.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Subject: [PATCH] btrfs: Fix 64-bit divisions in btrfs_commit_stats_show() on 32-bit
-Date:   Thu, 16 Jun 2022 10:08:14 +0200
-Message-Id: <20220616080814.1805417-1-geert@linux-m68k.org>
-X-Mailer: git-send-email 2.25.1
+        Thu, 16 Jun 2022 06:55:01 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC5715DE56
+        for <linux-btrfs@vger.kernel.org>; Thu, 16 Jun 2022 03:55:00 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id E5D1D67373; Thu, 16 Jun 2022 12:54:56 +0200 (CEST)
+Date:   Thu, 16 Jun 2022 12:54:56 +0200
+From:   Christoph Hellwig <hch@lst.de>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.com>,
+        Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/5] btrfs: remove the raid56_parity_{write,recover}
+ return value
+Message-ID: <20220616105456.GA10225@lst.de>
+References: <20220615151515.888424-1-hch@lst.de> <20220615151515.888424-5-hch@lst.de> <281a06be-aba0-bcce-5681-dc81b0245124@gmx.com> <e2d5e49f-28da-95de-20b6-b29c0ce00cf9@gmx.com> <20220616063618.GB5608@lst.de> <63bf9e04-373a-0bee-5200-c843f0490f42@gmx.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <63bf9e04-373a-0bee-5200-c843f0490f42@gmx.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 32-bit (e.g. m68k):
+On Thu, Jun 16, 2022 at 05:53:52PM +0800, Qu Wenruo wrote:
+> But I didn't see the caller increasing the counter either.
+>
+> Or did I miss something? (I expect the counter inc/dec still get
+> properly paired at least inside the same patch)
 
-    ERROR: modpost: "__udivdi3" [fs/btrfs/btrfs.ko] undefined!
-
-Fix this by using div_u64() instead.
-
-Reported-by: noreply@ellerman.id.au
-Fixes: e665ec2ab6e1ae36 ("btrfs: Expose the BTRFS commit stats through sysfs")
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
----
- fs/btrfs/sysfs.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index bce2573b02861149..a24cf7e0900a23cb 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -9,6 +9,7 @@
- #include <linux/spinlock.h>
- #include <linux/completion.h>
- #include <linux/bug.h>
-+#include <linux/math64.h>
- #include <crypto/hash.h>
- 
- #include "ctree.h"
-@@ -1002,9 +1003,9 @@ static ssize_t btrfs_commit_stats_show(struct kobject *kobj,
- 		"max_commit_ms %llu\n"
- 		"total_commit_ms %llu\n",
- 		fs_info->commit_stats.commit_count,
--		fs_info->commit_stats.last_commit_dur / NSEC_PER_MSEC,
--		fs_info->commit_stats.max_commit_dur / NSEC_PER_MSEC,
--		fs_info->commit_stats.total_commit_dur / NSEC_PER_MSEC);
-+		div_u64(fs_info->commit_stats.last_commit_dur, NSEC_PER_MSEC),
-+		div_u64(fs_info->commit_stats.max_commit_dur, NSEC_PER_MSEC),
-+		div_u64(fs_info->commit_stats.total_commit_dur, NSEC_PER_MSEC));
- }
- 
- static ssize_t btrfs_commit_stats_store(struct kobject *kobj,
--- 
-2.25.1
-
+btrfs_submit_bio increments it, and then decrements it after calling
+the raid helpers.

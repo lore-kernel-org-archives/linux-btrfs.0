@@ -2,90 +2,53 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADA03C43334
-	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jun 2022 15:16:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84EFAC433EF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 17 Jun 2022 15:58:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1383109AbiFQPQL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 17 Jun 2022 11:16:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46892 "EHLO
+        id S1382860AbiFQP6T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 17 Jun 2022 11:58:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48236 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1383088AbiFQPQK (ORCPT
+        with ESMTP id S234143AbiFQP6T (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 17 Jun 2022 11:16:10 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 17F453CFFB
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2022 08:16:10 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id C873221B49;
-        Fri, 17 Jun 2022 15:16:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1655478968;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=7BrJsrS59VRPDG7NPkr8MsEFTzC+6IaTQxQMxzbdZxg=;
-        b=nCsmzJtakGDENDvrWT+tz2wdS+wO7qt/nin5XUYFHAMysvjUL21aqq40QDVFLEWqRWIVnY
-        Y/HBuOFyi3ILKVk4Tm3g4TdkUsJvuOwWcd9UoZ62I/Qb9Yjh1TcDQrypzI3I9WvZJjTe/F
-        mWbP8HzswyrpdXAwjPWnMjcsND+cAkI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1655478968;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=7BrJsrS59VRPDG7NPkr8MsEFTzC+6IaTQxQMxzbdZxg=;
-        b=ZTRr/5VziKZA26g2hxj46V6CVFO5AarHHr0j5HgYXLNPearNrb+UwBeizF3PaJGdyc742y
-        TlVheG4gK5X9N2Ag==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AD8841348E;
-        Fri, 17 Jun 2022 15:16:08 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id dpl4KbiarGLoQwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 17 Jun 2022 15:16:08 +0000
-Date:   Fri, 17 Jun 2022 17:11:33 +0200
-From:   David Sterba <dsterba@suse.cz>
+        Fri, 17 Jun 2022 11:58:19 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6DC873BF84
+        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jun 2022 08:58:17 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 62DFE68AA6; Fri, 17 Jun 2022 17:58:13 +0200 (CEST)
+Date:   Fri, 17 Jun 2022 17:58:12 +0200
+From:   Christoph Hellwig <hch@lst.de>
 To:     Nikolay Borisov <nborisov@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: Batch up release of reserved metadata for
- delayed items used for deletion
-Message-ID: <20220617151133.GO20633@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Nikolay Borisov <nborisov@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <20220617125334.1067259-1-nborisov@suse.com>
+Cc:     Christoph Hellwig <hch@lst.de>, clm@fb.com, josef@toxicpanda.com,
+        dsterba@suse.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: don't limit direct reads to a single sector
+Message-ID: <20220617155812.GB31552@lst.de>
+References: <20220616080224.953968-1-hch@lst.de> <a2dd54d7-ea9e-8647-261c-7d622f536f53@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220617125334.1067259-1-nborisov@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <a2dd54d7-ea9e-8647-261c-7d622f536f53@suse.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 17, 2022 at 03:53:34PM +0300, Nikolay Borisov wrote:
-> With Filipe's recent rework of the delayed inode code one aspect which
-> isn't batched is the release of the reserved metadata of delayed inode's
-> delete items. With this patch on top of Filipe's rework and running the
-> same test as provided in the description of a patch titled
-> "btrfs: improve batch deletion of delayed dir index items" I observe
-> the following change of the number of calls to btrfs_block_rsv_release:
-> 
-> Before this change:
-> @block_rsv_release: 1004
-> @btrfs_delete_delayed_items_total_time: 14602
-> @delete_batches: 505
-> 
-> After:
-> @block_rsv_release: 510
-> @btrfs_delete_delayed_items_total_time: 13643
-> @delete_batches: 507
-> 
-> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+On Fri, Jun 17, 2022 at 06:01:07PM +0300, Nikolay Borisov wrote:
+> The limit here has direct repercussion on how much space we could 
+> potentially allocated in btrfs_submit_direct for csums. For 1m read this 
+> means we end up with 256 entries array (provided a blocksize of 4k). For 
+> crc32c that's 1k of data, for blake2/sha256 that'd be 8k of data. It would 
+> be good to put this into the change log to demonstrated that at least some 
+> consideration has been given to this aspect.
+> In any case perhaps putting some sane upper limit might make sense?
 
-Added to misc-next, thanks.
+Now that you mentioned an upper limit around 1MB might make sense. 
+Below that this new code isn't any different from how the bbio->csum is
+allocated for buffered I/O, and in one of the next round of patches I do
+plan to switch it over to using that, including the optimization with
+the inline csums to help small I/O.
+
+But with huge pages we can go above the 1MB for direct I/O, while for
+buffered I/O we'd need large folio support first, which isn't supported
+for btrfs.

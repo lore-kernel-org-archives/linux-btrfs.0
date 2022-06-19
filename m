@@ -2,88 +2,196 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B761C433EF
-	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Jun 2022 20:06:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D82BC43334
+	for <linux-btrfs@archiver.kernel.org>; Sun, 19 Jun 2022 21:38:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236467AbiFSUGm convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 19 Jun 2022 16:06:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55094 "EHLO
+        id S232318AbiFSViJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 19 Jun 2022 17:38:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33690 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235196AbiFSUGl (ORCPT
+        with ESMTP id S229716AbiFSViI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 19 Jun 2022 16:06:41 -0400
-Received: from avasout-peh-004.plus.net (avasout-peh-004.plus.net [212.159.14.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 851BBA19B
-        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jun 2022 13:06:39 -0700 (PDT)
-Received: from APOLLO ([212.159.61.44])
-        by smtp with ESMTPA
-        id 31BsoVncXuTE031BtoH7vm; Sun, 19 Jun 2022 21:06:37 +0100
-X-Clacks-Overhead: "GNU Terry Pratchett"
-X-CM-Score: 0.00
-X-CNFS-Analysis: v=2.4 cv=DfIEF9hW c=1 sm=1 tr=0 ts=62af81cd
- a=AGp1duJPimIJhwGXxSk9fg==:117 a=AGp1duJPimIJhwGXxSk9fg==:17
- a=IkcTkHD0fZMA:10 a=pGLkceISAAAA:8 a=P1kZ4gAsAAAA:8 a=7YfXLusrAAAA:8
- a=VwQbUJbxAAAA:8 a=q5LqLRgPK19_t2V6OpIA:9 a=QEXdDO2ut3YA:10
- a=fn9vMg-Z9CMH7MoVPInU:22 a=SLz71HocmBbuEhFRYD3r:22 a=AjGcO6oz07-iQ99wixmX:22
-X-AUTH: perdrix52@:2500
-From:   "David C. Partridge" <david.partridge@perdrix.co.uk>
-To:     "'Qu Wenruo'" <quwenruo.btrfs@gmx.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <001f01d88344$ed8aa1d0$c89fe570$@perdrix.co.uk> <603196b9-fa55-f5cc-d9b5-3cf69f19c6ef@gmx.com> <000001d8837c$91bc74e0$b5355ea0$@perdrix.co.uk> <838a65c7-214b-adc1-2c9e-3923da6575e2@gmx.com> <000001d883c7$698edad0$3cac9070$@perdrix.co.uk> <e7c18d33-4807-7d6f-53f5-6e3f59b687ef@gmx.com> <000401d883cd$cc588fc0$6509af40$@perdrix.co.uk> <393cf34a-0ae9-d34c-b2bb-ea74d906dfa5@gmx.com> <000201d883db$a22686e0$e67394a0$@perdrix.co.uk> <000901d883e0$289d73b0$79d85b10$@perdrix.co.uk> <b8579f1c-a277-2a01-2126-77ffcc0ab2d5@gmx.com> <000c01d883e7$1757e570$4607b050$@perdrix.co.uk> <cbc6be27-fa40-f5e3-657b-742e274dceec@gmail.com>
-In-Reply-To: <cbc6be27-fa40-f5e3-657b-742e274dceec@gmail.com>
-Subject: RE: Problems with BTRFS formatted disk
-Date:   Sun, 19 Jun 2022 21:06:36 +0100
-Message-ID: <003801d88418$15096b50$3f1c41f0$@perdrix.co.uk>
+        Sun, 19 Jun 2022 17:38:08 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D40D65F7F
+        for <linux-btrfs@vger.kernel.org>; Sun, 19 Jun 2022 14:38:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1655674679;
+        bh=sbZRAAlUFPmKQCDieiEPgjbT87AVa2sfJDKbCB5cOLc=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=Sj890q/bIyFkpRDFN3twgmMr8REGjPAWBmDg/1JYTmBctZk23CvLgYPp8EAk/hRex
+         +UQFv5DeCpQmO9C+ZWKotFr5lehZS7kW0KueyIabSmV1gzK2LGsv/FCuW/OEbtXClg
+         W429BGJois7/uHagf5PhsB0eN5nlNrnV5HoyuAjw=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mkpap-1nGokz40Jr-00mGOY; Sun, 19
+ Jun 2022 23:37:59 +0200
+Message-ID: <f787a218-5f40-5d8f-2817-7cca666c5e1a@gmx.com>
+Date:   Mon, 20 Jun 2022 05:37:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain;
-        charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-X-Mailer: Microsoft Outlook 16.0
-Thread-Index: AQE6G7yNOJVUJ6Zum7z6uCsu/gieNwG3iWv+Afjb+GUCCjux4wI0aTcjAwQd14sByWWhmwIjQYotAgDDGGgCPmdhdAFAo2axApahge4DEToUb63DvNnw
-Content-Language: en-gb
-X-CMAE-Envelope: MS4xfBgD1HfOkLbmzy9wLnShpIH8I9lULi99P2jC81Vxxo13hg4PjSJcaj19c7AuFu+4v/lgFWxJoWT7Yk41pC/AruSMBl+PReg8z/IHajOHJJQUEpuMxh+o
- 72uMfU42C7hXI+LtFO2WIz/K44S0Y4NjYNgAKBGQHW+s/cMPpFIe/c87T0lwp7mMFDyjgZeHw3CKu+Oo4R0nnpEHNMXJfPsWcfM=
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.10.0
+Subject: Re: [PATCH] btrfs: output mirror number for bad metadata
+Content-Language: en-US
+To:     Wang Yugui <wangyugui@e16-tech.com>, Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <ae3c7264a3aefe55c64e3c6a0426289800023742.1655646447.git.wqu@suse.com>
+ <20220619221013.BD1C.409509F4@e16-tech.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220619221013.BD1C.409509F4@e16-tech.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:gXG08BNYm/4EoeW/2sjXud2KIVK1z+SGT5OmBJK5BkmQitnGSWo
+ 5halv77LAJjCQywYluM2l7pw0kWzFI9ZdrQqCfLGY9rheV2FNkjzW4FLP+mTyyXiUPmr0KL
+ FCh1DX+qC+5hipDRujU7wbKjFRmrhSZssmeS6JIxbXI4ImU26ZXHuFhqIT2I52tob+5dVVF
+ nFBb84iwaPo2vthjb+Www==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:+GaMuxBiqrs=:wAq84HKUGZakkC/7oC1LdI
+ RKG1j6h0m4GmzINHS1LOmAx8TterX2b+ncC7wdlayCO8uFTVcYeMBssY8+nBHzcdoqRc+Yw+S
+ 7h4LRmJ3lsWvwlgsQ5GOK+qSEDfHdSp0OGRUcJZlxYNKtN65XpDf1a0h6lcnwNHQoblgkXyP9
+ VpYri7R/ZzHM4eQ70HTxvXk/xN7cS2h1bbP5/trjX5v9VGcc95TnjoTFn/+Ssey6ntbh9jZY5
+ WH0CL3/wu1YKbaTQ69SqHn2tWeTODO8xr7jHOEqMQMb/VkThwmGTVycUBa7911GExhMSZ6YA3
+ 3HcCwIE1UgBL/OoW2wN/KUUFpKbVS4uQcamXhoT25FWLDnEdgnmXZMkgW6TxkzWiWLn9EctE1
+ Ap/ALRHN4wjLl37NhW20qF/ckqISSlhR1RX5gS80MEqDpogA8016Fj1ervOlrA/X3IerZKe5I
+ /GP/4No7kQGa2/6TRIqLtZjAbkwEYYHa8WieSS9JWIYrLx+5+0ISVpaATAj6Zsn/ah2q0CSsY
+ DvxFHSwpmBNE8I+EsVVi9t5/kJkp+d//8jtsS/t03BVRdZXLbLbSCDOka0+DEbMeCu1W0DKaP
+ uBjfVvFmJKvi0cWm7nHYx7Al7OgUC5WKQFiQNZ5QfX+oz6OJdfVZU6ZQ3/TX3SuBHQkgyYZvt
+ NHSfhzvtGUlYnfX7LFZJN12wSFlArw8vzsGK/c1EvhrnKyCtbewj4yiSgQ4IDLjqgVjQUyCft
+ a1CofqvbvUUxcnzoyp0nt2Lpg+4Z9Fjw3WgDlqjYG9DBP3Ru6C3MsVlNc6mcymIz6ebDJHbVG
+ 7yWhB6kfkPi/pMoUny7mftbsXaHPDReTG68eEHEJLkwnRwR9n+S9bxk2hglhgxS/evNOStgvT
+ AwhPCLKJAYf5HkqCqas2xomQlDAmhsyVGS8V0BqsWI425mtqKGXl/I+0+JEGUy79DY6FHcXE/
+ 9vXJY+YTPDwEnCqgoO88GKREfr94CNWddHB0VuqIPtMWLA+uWlUce0ZaJS6aRgKNtg5IRoYAB
+ ErV2qPYtuXf7HKWt50yFa0SCzOntvRqIEpP3Au5Xpw/TvpsRbREhVPtTAUuHvkAhRi/mIXPFe
+ KPFhNtog12j45hORfb1ilp30fZZPTDU+xi5laqj2J3d2LZvNrPiX4JgMQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Yes write caching was enabled - I suspect that the way it worked was that on power fail the super-caps held the data until power was restored.
-
-Sadly it wasn't restored for a few weeks by which time the super-caps had lost their charge.
-
-I've reconfigured to use write through.
 
 
------Original Message-----
-From: Andrei Borzenkov <arvidjaar@gmail.com> 
-Sent: 19 June 2022 20:06
-To: David C. Partridge <david.partridge@perdrix.co.uk>; 'Qu Wenruo' <quwenruo.btrfs@gmx.com>; linux-btrfs@vger.kernel.org
-Subject: Re: Problems with BTRFS formatted disk
+On 2022/6/19 22:10, Wang Yugui wrote:
+> Hi,
+>
+>> When handling a real world transid mismatch image, it's hard to know
+>> which copy is corrupted, as the error messages just look like this:
+>>
+>> BTRFS warning (device dm-3): checksum verify failed on 30408704 wanted =
+0xcdcdcdcd found 0x3c0adc8e level 0
+>> BTRFS warning (device dm-3): checksum verify failed on 30408704 wanted =
+0xcdcdcdcd found 0x3c0adc8e level 0
+>> BTRFS warning (device dm-3): checksum verify failed on 30408704 wanted =
+0xcdcdcdcd found 0x3c0adc8e level 0
+>> BTRFS warning (device dm-3): checksum verify failed on 30408704 wanted =
+0xcdcdcdcd found 0x3c0adc8e level 0
+>
+> Is this case like the flowing:
+> metadata minor 1: updated with new data
+> metadata minor 2: old data
+> data minor 1: old data
+> data minor 2: old data
 
-On 19.06.2022 17:15, David C. Partridge wrote:
-> I can't "grab what I can" as I don't have enough TB to copy the data I want to save ☹
-> 
-> Does it make any sense to try:
-> 
->  mount -o remount,rw /mnt
->  btrfs subvolume delete /mnt/@
->  btrfs subvolume delete /mnt/@_daily.20220525_00:11:01
->  btrfs subvolume delete /mnt/@_daily.20220526_00:11:01
->  btrfs subvolume delete /mnt/@_hourly.20220526_06:00:01
->  btrfs subvolume delete /mnt/@_hourly.20220526_09:00:01
->  btrfs subvolume delete /mnt/@_hourly.20220526_12:00:01
-> 
->  mv /mnt/@_daily.20220524_00:11:01 /mnt/@
-> 
-> or is that doomed to total failure?
-> 
-> The disks behind the raid card are all Western Digital WD4001FYYG SAS drives
-> 
-
-Is write caching enabled for these disks? I know that it is default for
-some RAID cards (at least, for some profiles).
-
-For disks behind RAID controller write caching is normally managed by
-RAID controller itself.
-
+It's a crafted case that all metadata copies are corrupted (0xcdcd is
+the default xfs io pwrite pattern)
+>
+> Best Regards
+> Wang Yugui (wangyugui@e16-tech.com)
+> 2022/06/19
+>
+>
+>> We don't even know if the retry is caused by btrfs or the VFS retry.
+>>
+>> To make things a little easier to read, this patch will add mirror
+>> number for all related tree block read errors.
+>>
+>> So the above messages would look like this:
+>>
+>>   BTRFS warning (device dm-3): checksum verify failed on 30408704 mirro=
+r 1 wanted 0xcdcdcdcd found 0x3c0adc8e level 0
+>>   BTRFS warning (device dm-3): checksum verify failed on 30408704 mirro=
+r 2 wanted 0xcdcdcdcd found 0x3c0adc8e level 0
+>>   BTRFS warning (device dm-3): checksum verify failed on 30408704 mirro=
+r 1 wanted 0xcdcdcdcd found 0x3c0adc8e level 0
+>>   BTRFS warning (device dm-3): checksum verify failed on 30408704 mirro=
+r 2 wanted 0xcdcdcdcd found 0x3c0adc8e level 0
+>>
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>>   fs/btrfs/disk-io.c | 25 +++++++++++++------------
+>>   1 file changed, 13 insertions(+), 12 deletions(-)
+>>
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index 800ad3a9c68e..506d48b5fd7e 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -220,8 +220,8 @@ static int verify_parent_transid(struct extent_io_t=
+ree *io_tree,
+>>   		goto out;
+>>   	}
+>>   	btrfs_err_rl(eb->fs_info,
+>> -		"parent transid verify failed on %llu wanted %llu found %llu",
+>> -			eb->start,
+>> +	"parent transid verify failed on %llu mirror %u wanted %llu found %ll=
+u",
+>> +			eb->start, eb->read_mirror,
+>>   			parent_transid, btrfs_header_generation(eb));
+>>   	ret =3D 1;
+>>   	clear_extent_buffer_uptodate(eb);
+>> @@ -551,21 +551,22 @@ static int validate_extent_buffer(struct extent_b=
+uffer *eb)
+>>
+>>   	found_start =3D btrfs_header_bytenr(eb);
+>>   	if (found_start !=3D eb->start) {
+>> -		btrfs_err_rl(fs_info, "bad tree block start, want %llu have %llu",
+>> -			     eb->start, found_start);
+>> +		btrfs_err_rl(fs_info,
+>> +			"bad tree block start, mirror %u want %llu have %llu",
+>> +			     eb->read_mirror, eb->start, found_start);
+>>   		ret =3D -EIO;
+>>   		goto out;
+>>   	}
+>>   	if (check_tree_block_fsid(eb)) {
+>> -		btrfs_err_rl(fs_info, "bad fsid on block %llu",
+>> -			     eb->start);
+>> +		btrfs_err_rl(fs_info, "bad fsid on block %llu mirror %u",
+>> +			     eb->start, eb->read_mirror);
+>>   		ret =3D -EIO;
+>>   		goto out;
+>>   	}
+>>   	found_level =3D btrfs_header_level(eb);
+>>   	if (found_level >=3D BTRFS_MAX_LEVEL) {
+>> -		btrfs_err(fs_info, "bad tree block level %d on %llu",
+>> -			  (int)btrfs_header_level(eb), eb->start);
+>> +		btrfs_err(fs_info, "bad tree block mirror %u level %d on %llu",
+>> +			  eb->read_mirror, btrfs_header_level(eb), eb->start);
+>>   		ret =3D -EIO;
+>>   		goto out;
+>>   	}
+>> @@ -576,8 +577,8 @@ static int validate_extent_buffer(struct extent_buf=
+fer *eb)
+>>
+>>   	if (memcmp(result, header_csum, csum_size) !=3D 0) {
+>>   		btrfs_warn_rl(fs_info,
+>> -	"checksum verify failed on %llu wanted " CSUM_FMT " found " CSUM_FMT =
+" level %d",
+>> -			      eb->start,
+>> +	"checksum verify failed on %llu mirror %u wanted " CSUM_FMT " found "=
+ CSUM_FMT " level %d",
+>> +			      eb->start, eb->read_mirror,
+>>   			      CSUM_FMT_VALUE(csum_size, header_csum),
+>>   			      CSUM_FMT_VALUE(csum_size, result),
+>>   			      btrfs_header_level(eb));
+>> @@ -602,8 +603,8 @@ static int validate_extent_buffer(struct extent_buf=
+fer *eb)
+>>   		set_extent_buffer_uptodate(eb);
+>>   	else
+>>   		btrfs_err(fs_info,
+>> -			  "block=3D%llu read time tree block corruption detected",
+>> -			  eb->start);
+>> +		"block=3D%llu mirror %u read time tree block corruption detected",
+>> +			  eb->start, eb->read_mirror);
+>>   out:
+>>   	return ret;
+>>   }
+>> --
+>> 2.36.1
+>
+>

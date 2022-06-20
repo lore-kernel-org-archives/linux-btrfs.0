@@ -2,82 +2,79 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B0C0C43334
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jun 2022 15:16:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CCEDCCA479
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Jun 2022 15:53:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243877AbiFTPQM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Jun 2022 11:16:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44052 "EHLO
+        id S242462AbiFTPxv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Jun 2022 11:53:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52876 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243499AbiFTPPz (ORCPT
+        with ESMTP id S229487AbiFTPxu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Jun 2022 11:15:55 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 24B07B7C
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jun 2022 08:05:00 -0700 (PDT)
+        Mon, 20 Jun 2022 11:53:50 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 92FBB1D31E
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jun 2022 08:53:49 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id CD1621F74D;
-        Mon, 20 Jun 2022 15:04:58 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 5191921B7B;
+        Mon, 20 Jun 2022 15:53:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1655737498;
+        t=1655740428;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=XkWXj7SItirN6+WfMnc2Pho8xWh+bs8zmHpfkHfAeOw=;
-        b=1Z0Y/V9apkKJO+kH3xZQCmJp/50P+1kYCNWFvMBjebEhjYl9djGvEywQugpHbuTKJnGrYR
-        evfqhbVF8DbavK3kBXjeepNlSRX6pYncwXiCRFZLixT2fE5yXOt1DWsS6VNJvlVfwV2tIq
-        WeeoduhRlndSUJrYsMyTrGMoS6IKV+c=
+        bh=tlQxbXlkLudwSAZIxIldgQgHgg/66CFLYtqYx8Rb9sA=;
+        b=OhF3lKKlXgD+KDO6R37RW9XkB1nheRPndNleNxvW8EnqKYFrod393NvdgaKaUFisnpeGrK
+        LgYGna0EK0vZZ/2RweJonRVDrj832aEBS6oBJpUse17Nr/KPorlPZnHX5QjIA+N5ao79R5
+        ll2OGynfRrySf48DPxQ/030XT3qy/UU=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1655737498;
+        s=susede2_ed25519; t=1655740428;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=XkWXj7SItirN6+WfMnc2Pho8xWh+bs8zmHpfkHfAeOw=;
-        b=0ILNHrLdjdy15/NWYkmjtEkxJqHDN2wrR+jB04GPv4k6H3MDceKRjbRPXFfhVx9o1rDyB8
-        B4edrlf1N8434JCA==
+        bh=tlQxbXlkLudwSAZIxIldgQgHgg/66CFLYtqYx8Rb9sA=;
+        b=Bxtdd0HseyUJ9Y/EbcQIE3emud1fYsP0z2soKCzVNdjHGrRKrdxamDSPH7WQmyoOfX6Gcb
+        jVXTBLhnRsgsgkDQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9D9E213638;
-        Mon, 20 Jun 2022 15:04:58 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 29332134CA;
+        Mon, 20 Jun 2022 15:53:48 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id GsJjJZqMsGItcQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 20 Jun 2022 15:04:58 +0000
-Date:   Mon, 20 Jun 2022 17:00:21 +0200
+        id gKKNCAyYsGJSCQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 20 Jun 2022 15:53:48 +0000
+Date:   Mon, 20 Jun 2022 17:49:10 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Christoph Hellwig <hch@lst.de>
-Cc:     dsterba@suse.com, Nikolay Borisov <nborisov@suse.com>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: don't limit direct reads to a single sector
-Message-ID: <20220620150021.GQ20633@suse.cz>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove the finish_func argument to
+ btrfs_mark_ordered_io_finished
+Message-ID: <20220620154910.GR20633@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
-        dsterba@suse.com, Nikolay Borisov <nborisov@suse.com>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-References: <20220616080224.953968-1-hch@lst.de>
- <a2dd54d7-ea9e-8647-261c-7d622f536f53@suse.com>
- <20220617155812.GB31552@lst.de>
- <20220620075216.GA12443@lst.de>
+        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+References: <20220619060705.1850530-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220620075216.GA12443@lst.de>
+In-Reply-To: <20220619060705.1850530-1-hch@lst.de>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jun 20, 2022 at 09:52:16AM +0200, Christoph Hellwig wrote:
-> David, I saw this patch is already in misc-next.  Do you want me to
-> send an incremental patch or a new revision with the limit?  Incremental
-> would look kinda silly, so I'd prefer the updated version.
+On Sun, Jun 19, 2022 at 08:07:05AM +0200, Christoph Hellwig wrote:
+> finish_func is always set to finish_ordered_fn, so remove it and also
+> the now pointless and somewhat confusingly named
+> __endio_write_update_ordered wrapper.
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Please send a v2 so we can see the limit code in context. Otherwise,
-it also works to send an incremental in case it's something obvious.
-Patches in misc-next are meant to be updated or replaced if needed, we
-want to have self contained commits instead of fixes-on-fixes.
+Added to misc-next, thanks.

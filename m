@@ -2,110 +2,102 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C72B3CCA481
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jun 2022 13:34:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D724C43334
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jun 2022 13:39:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233360AbiFUNe3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jun 2022 09:34:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55630 "EHLO
+        id S231148AbiFUNjy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jun 2022 09:39:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34948 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351903AbiFUNdI (ORCPT
+        with ESMTP id S1351704AbiFUNjj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jun 2022 09:33:08 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5AD0026558
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jun 2022 06:29:37 -0700 (PDT)
+        Tue, 21 Jun 2022 09:39:39 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8A5DAB6E
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jun 2022 06:39:28 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 1AC911F917;
-        Tue, 21 Jun 2022 13:29:36 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id B787821C90;
+        Tue, 21 Jun 2022 13:39:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1655818176;
+        t=1655818752;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=8CfouJc0F2o07ELzdMnVvnBmoD+Kz6QjgXm6R1pcHL4=;
-        b=uycpXtnRbfEIDj4nGX5u9AXbPhrufToHglfPQUWvHG2tCoeJUqlCkxLJf9H+cUsEjOx+vq
-        QVSMKZyF7miP4cyPBcjdiOVj87OBhq6BHmWFgMtTW2Xjqs/1J+rasnUW6zyMjrzQkC0GDq
-        6Eb6DZNV9p65Zv7Yo9i71jUydgwf8/o=
+        bh=4lFAjYh/Ut/kaea3vmA6xhGdRrZJMQGdf2tKBPCYzP0=;
+        b=qKhXdC/vIWWRNjNcbuARwLwNU+Xs5ZGTlSO4l3M3BT0dVlv2aSjtqtgzydn/+GLigbGeoh
+        su5W9jB4qS6eB080jKEJVUln2vxuyQwCOgyxqUEIPVsUc/nAkIV4MTgBwMEaate75JcHQ2
+        PaImtzmCSf71Z6IahE09rSGHcbc8iBU=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1655818176;
+        s=susede2_ed25519; t=1655818752;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=8CfouJc0F2o07ELzdMnVvnBmoD+Kz6QjgXm6R1pcHL4=;
-        b=vGwn1cjlw3W7elk7X89JWmj/6j09A4MdjqnewGiW1cw5unvbpKvkGOyQ0BEQ6lbuyvcw7B
-        i//uuaxqUM1cYqDg==
+        bh=4lFAjYh/Ut/kaea3vmA6xhGdRrZJMQGdf2tKBPCYzP0=;
+        b=qqpuGIdkjkmJn3X13UkwTFaET2eD85ovkuxnvMHDfq3cdIhuEjmhhwZZCoNkRBgUC1xlmF
+        UMt64s36UVpkf2DQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DD56813A88;
-        Tue, 21 Jun 2022 13:29:35 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 872CD13A88;
+        Tue, 21 Jun 2022 13:39:12 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id PksWNb/HsWIGLgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 21 Jun 2022 13:29:35 +0000
-Date:   Tue, 21 Jun 2022 15:24:58 +0200
+        id XwvSHwDKsWIlMwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 21 Jun 2022 13:39:12 +0000
+Date:   Tue, 21 Jun 2022 15:34:35 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, willy@infradead.org, nborisov@suse.com
-Subject: Re: [PATCH v2] btrfs: use preallocated pages for super block write
-Message-ID: <20220621132458.GX20633@twin.jikos.cz>
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: don't limit direct reads to a single sector
+Message-ID: <20220621133435.GY20633@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, willy@infradead.org, nborisov@suse.com
-References: <20220609164629.30316-1-dsterba@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
+        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+References: <20220621062627.2637632-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220609164629.30316-1-dsterba@suse.com>
+In-Reply-To: <20220621062627.2637632-1-hch@lst.de>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jun 09, 2022 at 06:46:29PM +0200, David Sterba wrote:
-> Currently the super block page is from the mapping of the block device,
-> this is result of direct conversion from the previous buffer_head to bio
-> API.  We don't use the page cache or the mapping anywhere else, the page
-> is a temporary space for the associated bio.
+On Tue, Jun 21, 2022 at 08:26:27AM +0200, Christoph Hellwig wrote:
+> Btrfs currently limits direct I/O reads to a single sector, which goes
+> back to commit c329861da406 ("Btrfs: don't allocate a separate csums
+> array for direct reads") from Josef.  That commit changes the direct I/O
+> code to ".. use the private part of the io_tree for our csums.", but ten
+> years later that isn't how checksums for direct reads work, instead they
+> use a csums allocation on a per-btrfs_dio_private basis (which have their
+> own performance problem for small I/O, but that will be addressed later).
 > 
-> Allocate pages for all super block copies at device allocation time,
-> also to avoid any later allocation problems when writing the super
-> block. This simplifies the page reference tracking, but the page lock is
-> still used as waiting mechanism for the write and write error is tracked
-> in the page.
+> There is no fundamental limit in btrfs itself to limit the I/O size
+> except for the size of the checksum array that scales linearly with
+> the number of sectors in an I/O.  Pick a somewhat arbitrary limit of
+> 256 limits, which matches what the buffered reads typically see as
+> the upper limit as the limit for direct I/O as well.
 > 
-> As there is a separate page for each super block copy all can be
-> submitted in parallel, as before.
+> This significantly improves direct read performance.  For example a fio
+> run doing 1 MiB aio reads with a queue depth of 1 roughly triples the
+> throughput:
 > 
-> This was inspired by Matthew's question
-> https://lore.kernel.org/all/Yn%2FtxWbij5voeGOB@casper.infradead.org/
+> Baseline:
 > 
-> Signed-off-by: David Sterba <dsterba@suse.com>
+> READ: bw=65.3MiB/s (68.5MB/s), 65.3MiB/s-65.3MiB/s (68.5MB/s-68.5MB/s), io=19.1GiB (20.6GB), run=300013-300013msec
+> 
+> With this patch:
+> 
+> READ: bw=196MiB/s (206MB/s), 196MiB/s-196MiB/s (206MB/s-206MB/s), io=57.5GiB (61.7GB), run=300006-300006msc
+> 
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
 > ---
-> 
-> v2:
-> 
-> - allocate 3 pages per device to keep parallelism, otherwise the
->   submission would be serialized on the page lock
 
-I'll continue with the super block write in the future, so far the patch
-has uncovered several issues:
-
-- preallocated page must be for each super block copy (offset, checksum)
-
-- bio for each page can be preallocated too
-
-- wait on super block page/bio should move from page lock (eg.
-  completion)
-
-- we want parallel submission due to performance reasons and impact on
-  operations that may block on commit (fsync)
-
-- using page cache vs direct write, read from user space may get stale
-  data if super block write does not use page cache, there's also page
-  cache read in kernel but that won't race with write
+Added to misc-next, thanks. I've renamed the constant to
+BTRFS_MAX_BIO_SECTORS and updated the subject per Nikolay's suggestion.

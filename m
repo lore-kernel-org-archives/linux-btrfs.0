@@ -2,142 +2,82 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1249AC433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jun 2022 08:38:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 627B5C43334
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Jun 2022 12:45:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346647AbiFUIh7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Jun 2022 04:37:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54232 "EHLO
+        id S1350574AbiFUMpz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Jun 2022 08:45:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46976 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229895AbiFUIh6 (ORCPT
+        with ESMTP id S1350547AbiFUMpy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Jun 2022 04:37:58 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 60BB163BF
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jun 2022 01:37:57 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 0EFFB21E13;
-        Tue, 21 Jun 2022 08:37:56 +0000 (UTC)
+        Tue, 21 Jun 2022 08:45:54 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 93B6B1EC5F;
+        Tue, 21 Jun 2022 05:45:53 -0700 (PDT)
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out2.suse.de (Postfix) with ESMTP id 4C85F1F8A3;
+        Tue, 21 Jun 2022 12:45:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1655800676; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=+/+POUtb0hLQcKoQOYJpJvzBIK1gTBbkZtrX4pujvu4=;
-        b=nUcd9ZLdWtH9pDF1l0thIz1sFe00omPfD6qVnuSl/aO0v6cWeNpHG55pZ4VUJkXVMdZIiS
-        jYfxByd7ojDNJVNP221akjN8FCduHxy3A5YXpVasSl92G1aqdWuHyp3cjjttiUTIiBSKGr
-        ZdXSFMYelIT+1ZCnxSQfgDd2yo+2UyU=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B822413A88;
-        Tue, 21 Jun 2022 08:37:55 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id NPBLKmODsWLWCwAAMHmgww
-        (envelope-from <nborisov@suse.com>); Tue, 21 Jun 2022 08:37:55 +0000
-Message-ID: <f1d81d56-b948-73c7-3bf4-3129af53852b@suse.com>
-Date:   Tue, 21 Jun 2022 11:37:55 +0300
+        t=1655815552; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=gOBExk5CeiV+de5yPYSWWhO9HrXnqPSCpeLO4mmWiBc=;
+        b=YXhDQgpM1Uo0PIOJUVO9FnjzR0ytrwEfg74iGRDftfhFLVs8mpTkhhw7b59Uj+KDFje6vJ
+        l+7nVPRBX0cCJzGLM5SeyT9SDCHZ/TSzhISTMBSLBmVJFF81FWJVZ+fQ9j5UItRgCvUez9
+        0m8sDhAQLIpj8wsMgwxB/0R2i16G590=
+Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
+        by relay2.suse.de (Postfix) with ESMTP id 42DB12C141;
+        Tue, 21 Jun 2022 12:45:52 +0000 (UTC)
+Received: by ds.suse.cz (Postfix, from userid 10065)
+        id 4627ADA853; Tue, 21 Jun 2022 14:41:16 +0200 (CEST)
+From:   David Sterba <dsterba@suse.com>
+To:     torvalds@linux-foundation.org
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Fixes for btrfs 5.19-rc4
+Date:   Tue, 21 Jun 2022 14:41:15 +0200
+Message-Id: <cover.1655815078.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.36.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.1
-Subject: Re: [PATCH v2] btrfs: don't limit direct reads to a single sector
-Content-Language: en-US
-To:     Christoph Hellwig <hch@lst.de>, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org
-References: <20220621062627.2637632-1-hch@lst.de>
-From:   Nikolay Borisov <nborisov@suse.com>
-In-Reply-To: <20220621062627.2637632-1-hch@lst.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi,
+
+a few more fixes. Please pull thanks.
+
+- print more error messages for invalid mount option values
+
+- prevent remount with v1 space cache for subpage filesystem
+
+- fix hang during unmount when block group reclaim task is running
 
 
-On 21.06.22 г. 9:26 ч., Christoph Hellwig wrote:
-> Btrfs currently limits direct I/O reads to a single sector, which goes
-> back to commit c329861da406 ("Btrfs: don't allocate a separate csums
-> array for direct reads") from Josef.  That commit changes the direct I/O
-> code to ".. use the private part of the io_tree for our csums.", but ten
-> years later that isn't how checksums for direct reads work, instead they
-> use a csums allocation on a per-btrfs_dio_private basis (which have their
-> own performance problem for small I/O, but that will be addressed later).
-> 
-> There is no fundamental limit in btrfs itself to limit the I/O size
-> except for the size of the checksum array that scales linearly with
-> the number of sectors in an I/O.  Pick a somewhat arbitrary limit of
-> 256 limits, which matches what the buffered reads typically see as
-> the upper limit as the limit for direct I/O as well.
-> 
-> This significantly improves direct read performance.  For example a fio
-> run doing 1 MiB aio reads with a queue depth of 1 roughly triples the
-> throughput:
-> 
-> Baseline:
-> 
-> READ: bw=65.3MiB/s (68.5MB/s), 65.3MiB/s-65.3MiB/s (68.5MB/s-68.5MB/s), io=19.1GiB (20.6GB), run=300013-300013msec
-> 
-> With this patch:
-> 
-> READ: bw=196MiB/s (206MB/s), 196MiB/s-196MiB/s (206MB/s-206MB/s), io=57.5GiB (61.7GB), run=300006-300006msc
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
+----------------------------------------------------------------
+The following changes since commit 0a05fafe9def0d9f0fbef3dfc8094925af9e3185:
 
-LGTM. However I think a more appropriate subject would be "increase 
-direct read size limit to 256 sectors"
+  btrfs: zoned: introduce a minimal zone size 4M and reject mount (2022-05-17 20:15:25 +0200)
 
+are available in the Git repository at:
 
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-5.19-rc3-tag
 
-> 
-> Changes since v1:
->    - keep a (large) upper limit on the I/O size.
-> 
->   fs/btrfs/inode.c   | 6 +++++-
->   fs/btrfs/volumes.h | 7 +++++++
->   2 files changed, 12 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 33ba4d22e1430..f6dc6e8c54e3a 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -7592,8 +7592,12 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
->   	const u64 data_alloc_len = length;
->   	bool unlock_extents = false;
->   
-> +	/*
-> +	 * Cap the size of reads to that usually seen in buffered I/O as we need
-> +	 * to allocate a contiguous array for the checksums.
-> +	 */
->   	if (!write)
-> -		len = min_t(u64, len, fs_info->sectorsize);
-> +		len = min_t(u64, len, fs_info->sectorsize * BTRFS_MAX_SECTORS);
->   
->   	lockstart = start;
->   	lockend = start + len - 1;
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index b61508723d5d2..5f2cea9a44860 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -354,6 +354,13 @@ struct btrfs_fs_devices {
->   				- 2 * sizeof(struct btrfs_chunk))	\
->   				/ sizeof(struct btrfs_stripe) + 1)
->   
-> +/*
-> + * Maximum number of sectors for a single bio to limit the size of the
-> + * checksum array.  This matches the number of bio_vecs per bio and thus the
-> + * I/O size for buffered I/O.
-> + */
-> +#define BTRFS_MAX_SECTORS	256
-> +
->   /*
->    * Additional info to pass along bio.
->    *
+for you to fetch changes up to e3a4167c880cf889f66887a152799df4d609dd21:
+
+  btrfs: add error messages to all unrecognized mount options (2022-06-07 17:29:50 +0200)
+
+----------------------------------------------------------------
+David Sterba (1):
+      btrfs: add error messages to all unrecognized mount options
+
+Filipe Manana (1):
+      btrfs: fix hang during unmount when block group reclaim task is running
+
+Qu Wenruo (1):
+      btrfs: prevent remounting to v1 space cache for subpage mount
+
+ fs/btrfs/disk-io.c | 13 +++++++++++--
+ fs/btrfs/super.c   | 47 ++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 51 insertions(+), 9 deletions(-)

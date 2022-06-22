@@ -2,108 +2,82 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 54C61C43334
-	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jun 2022 14:12:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4B00C433EF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 22 Jun 2022 16:12:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1357636AbiFVOML (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 22 Jun 2022 10:12:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33854 "EHLO
+        id S1358734AbiFVQMI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 22 Jun 2022 12:12:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47622 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1357211AbiFVOMK (ORCPT
+        with ESMTP id S1358282AbiFVQMG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 22 Jun 2022 10:12:10 -0400
+        Wed, 22 Jun 2022 12:12:06 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCF9838D84
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jun 2022 07:12:09 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 731B93A5E9
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jun 2022 09:12:05 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 89D261FD06;
-        Wed, 22 Jun 2022 14:12:08 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id C912C1F86A;
+        Wed, 22 Jun 2022 16:12:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1655907128;
+        t=1655914323;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=iohvcaDwZtgkqJB5cR75lM0/fVrgNZ0qy74Rx3cpx1c=;
-        b=rQLmedMHLKCTb0Y5K3Vu8R6eMtfYoJQTHB/ExwhsvpmV9pYJmq+Op2u4AmnX5KdmgX9jYC
-        MslnqltxMMr7u/gW3p+hBtLcq+KmLSboS75kQCnzKcB8edlYygGs0Eys+u71WsgInwqiBQ
-        Nt4D68OUGLjzadsTw2QRfezMAiCgJ2o=
+        bh=YXuC5tCBVQO5MoptajgHS/IM5+lBoWy32IMAunpNJyQ=;
+        b=a9mSEQ4pVStvFVolQ6iJRkT7wpSTz2c4oAboioSpx+kgFxEgvvqBRJqfZqJ1UytDC0nu+X
+        R7mki3njDPcVYVjvqhbxakk8moxqDIuYdpbaM7UQG/J2Q/UAV1tWFLwy7ckGXoKD2GI8Xo
+        vA71JLqFFJfiRitBB9bdkrVh0ucX4bw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1655907128;
+        s=susede2_ed25519; t=1655914323;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=iohvcaDwZtgkqJB5cR75lM0/fVrgNZ0qy74Rx3cpx1c=;
-        b=RG/BcZKRmt/IVylxt6jpY5DXntaL13fGt1AHAltlS+DgCE38N6GxhAInWaZHLY9Z+uMxrP
-        aZ/oiwNL5TU3yXAQ==
+        bh=YXuC5tCBVQO5MoptajgHS/IM5+lBoWy32IMAunpNJyQ=;
+        b=qaBguk1L/jfFwUyQUSMo0kSd9vB3d8hwlb4Z4tAa+0UZwvRs1L5K8pwB6jPCHEVaFS4A2E
+        GdeUXT7oiac1uECQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 40A3113A5D;
-        Wed, 22 Jun 2022 14:12:08 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A160A134A9;
+        Wed, 22 Jun 2022 16:12:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 5CfKDjgjs2K+TAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 22 Jun 2022 14:12:08 +0000
-Date:   Wed, 22 Jun 2022 16:07:30 +0200
+        id NgCWJlM/s2L7CwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 22 Jun 2022 16:12:03 +0000
+Date:   Wed, 22 Jun 2022 18:07:25 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Christoph Hellwig <hch@lst.de>
-Cc:     dsterba@suse.cz, David Sterba <dsterba@suse.com>,
+Cc:     David Sterba <dsterba@suse.com>,
         Josef Bacik <josef@toxicpanda.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: Re: [PATCH 01/10] btrfs: remove a bunch of pointles stripe_len
- arguments
-Message-ID: <20220622140730.GI20633@twin.jikos.cz>
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 10/10] btrfs: remove bioc->stripes_pending
+Message-ID: <20220622160725.GJ20633@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz, Christoph Hellwig <hch@lst.de>,
         David Sterba <dsterba@suse.com>, Josef Bacik <josef@toxicpanda.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <20220617100414.1159680-1-hch@lst.de>
- <20220617100414.1159680-2-hch@lst.de>
- <20220620171608.GU20633@twin.jikos.cz>
- <20220620173834.GA23580@lst.de>
- <20220622041915.GA21099@lst.de>
+ <20220617100414.1159680-11-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220622041915.GA21099@lst.de>
+In-Reply-To: <20220617100414.1159680-11-hch@lst.de>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jun 22, 2022 at 06:19:15AM +0200, Christoph Hellwig wrote:
-> On Mon, Jun 20, 2022 at 07:38:34PM +0200, Christoph Hellwig wrote:
-> > > I'd rather keep it there so it gets used eventually, we have ongoing
-> > > work to fix the corner cases of raid56 so removing and adding it back
-> > > causes churn, but I'll give it another thought.
-> > 
-> > Well, right now it is very much dead code and complicates a lot
-> > of the argument passing as well as bloating the code size.
-> > 
-> > IFF the superblock member were to be actually used in the future,
-> > it would make sense to expose it in the btrfs_fs_info and use that
-> > instead of the constant, but still skip all the argument passing.
-> > 
-> > hch@brick:~/work/linux$ size btrfs.o.*
-> >    text	   data	    bss	    dec	    hex	filename
-> > 1502453	 125590	  28776	1656819	 1947f3	btrfs.o.new
-> > 1502599	 125590	  28776	1656965	 194885	btrfs.o.old
-> 
-> So I guess this wasn't convincing enough. My plan B would be the fs_info
-> member.  The related member seems to be the sectorsize field in the super
-> block, which is checked if it is a power of two but otherwise completely
-> ignored.  The fs_info has a stripe_size member that is initialized to the
-> sectorsize after reading the super_block but then also mostly ignored.
-> 
-> So this is a ll a bit of a mess unfortunately :(
+On Fri, Jun 17, 2022 at 12:04:14PM +0200, Christoph Hellwig wrote:
+> Replace the stripes_pending field with the pending counter in the bio.
+> This avoid an extra field and prepares splitting the btrfs_bio at the
+> stripe boundary.
 
-Hold on, it would be better to remove the code, as Qu also noted it's
-not used consistently everywhere. My initial objection is more of a
-general direction of such changes, but cleaning up the raid56 code to
-the level of current functionality should work.
+This does not seem sufficient as changelog, does not explain why the
+stripes_pending is being removed, just that it's some prep work. Given
+the questions that Nikolay had I think this needs to be expanded. I'll
+try to summarize the discussion but in the bio code nothing is that
+simple that reading the patch would answer all questions.

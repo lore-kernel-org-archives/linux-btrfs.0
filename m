@@ -2,106 +2,157 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8378CC433EF
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jun 2022 13:51:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5EBDC43334
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jun 2022 13:57:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230348AbiFXNvs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jun 2022 09:51:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50962 "EHLO
+        id S231971AbiFXN5O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jun 2022 09:57:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54138 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229830AbiFXNvr (ORCPT
+        with ESMTP id S230049AbiFXN5M (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jun 2022 09:51:47 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 686BB4CD61
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2022 06:51:46 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 25E181F8B4;
-        Fri, 24 Jun 2022 13:51:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1656078705;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=rb9bGJUaggnozV7/Mk/dhE1t8S0MzISgNPHCIySOB+U=;
-        b=E48/7K22vv4Egnwv4R8zehZJcLyFoLrpsnsyOEANOp/f+BtQMcA3DJP/DB52+iXf4QFj8C
-        MPHBbzMom2v8wvhKdJp6e/IEv5CXPrS7zgPejV64Ck5vkAizy7mk4Ov8TwZ8JYfHlbvlA0
-        Kjpq3mxBYCNqvL7UMRgiZXITfyI1mPc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1656078705;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=rb9bGJUaggnozV7/Mk/dhE1t8S0MzISgNPHCIySOB+U=;
-        b=NxLg4q0qJqtCBE3/Du274vXb9VjcRMh5KC60KF3lpWZLdHBBYTGxaN45jFYdav2nwiAI9J
-        4331E9ohlAdUkQCw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 071A313480;
-        Fri, 24 Jun 2022 13:51:45 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id yClzAHHBtWJSEAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 24 Jun 2022 13:51:45 +0000
-Date:   Fri, 24 Jun 2022 15:47:06 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: remove MIXED_BACKREF sysfs file
-Message-ID: <20220624134706.GV20633@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Nikolay Borisov <nborisov@suse.com>, linux-btrfs@vger.kernel.org
-References: <20220624080123.1521917-1-nborisov@suse.com>
- <20220624080123.1521917-2-nborisov@suse.com>
- <21f7eb10-09d7-826c-48c3-ded892984d50@gmx.com>
- <3e01475c-8296-4cf1-14cd-5774d780b6e2@suse.com>
- <27f72ec4-a365-20ba-03f1-8d603a66e011@gmx.com>
+        Fri, 24 Jun 2022 09:57:12 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 192314D620;
+        Fri, 24 Jun 2022 06:57:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1656079022;
+        bh=r0MaBQlHinmqnGDGTmFiEj78Fo8p+iOCL6h0Z28ZnnI=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=EYIr21HMcbAdYkvFQSql3bP+Wf6SIFuLQagUDNEQzzvPL+BqwC75tArpz4L/wjrM8
+         Xmk+33ZXgpmEm5WSd/1No2HvzafcEA5S0cHIbbu1lRYB8y4VyC7fY/TwNPHQliY+6V
+         w5mw261ZgJV6M4I/1akf5ynTquTYRHVDhzTUTIYE=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MNbp3-1oKMsf0TBz-00P9q3; Fri, 24
+ Jun 2022 15:57:02 +0200
+Message-ID: <568f1582-3ff2-aae5-cd98-cf76172d89cb@gmx.com>
+Date:   Fri, 24 Jun 2022 21:56:57 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <27f72ec4-a365-20ba-03f1-8d603a66e011@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.10.0
+Subject: Re: [PATCH] btrfs: remove btrfs_writepage_cow_fixup
+Content-Language: en-US
+To:     Jan Kara <jack@suse.cz>
+Cc:     Christoph Hellwig <hch@lst.de>, clm@fb.com, josef@toxicpanda.com,
+        dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+References: <20220624122334.80603-1-hch@lst.de>
+ <7c30b6a4-e628-baea-be83-6557750f995a@gmx.com> <20220624125118.GA789@lst.de>
+ <20220624130750.cu26nnm6hjrru4zd@quack3.lan>
+ <1b37cfc6-7369-69c1-bd90-5851cc79960d@gmx.com>
+ <20220624134041.ktqj3af7lysaszrc@quack3.lan>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220624134041.ktqj3af7lysaszrc@quack3.lan>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:mYkgCA3IY86Q6jbvGgswMOOV/5XIWBNhBDspBM4bZKcUIPfUCch
+ AsgIjXMndkDc+9NUlGu749XIkqGRtMCHv+2Qc5WBk/tq71WNI5f16tkaZhIDn1E//5AAZcl
+ GWYR3Ef93myRz8uOWxZyLsjcnAcCg13Du4mGIYsGbmKcePvU1FyirUDqhfGxfUPNWlotUyE
+ 5cxkrebvd5fsvQ5mFPa3Q==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:AsOwb6571Dk=:rzf2d7alKj49kbsz0Y09+E
+ HaJHkInMD5LjXBAkaCf9rPrSfveOqxNwQFe91pmwTZNeiMKd16Mf2qVXkC1rm89XcpHSr5V3r
+ LgIoBKOqFDYekIEG2jaI/iOGPQKgZ/tD1CeOWEazhq76nUk8hVInbUY7+/G+vQ8Ghn6mGMhIQ
+ 2raIEvMzHv2VzAkv9r9IhMsWYEB1UyZlv3GcLBYNGNsIYdeTBH9jRt3k6wyJDKcCx+0HOzblu
+ +VcnxQjtxGppKk7pQlhpd+si+WHKvlP9SBnBoViUkpMl+GSMILIttEzxcuuO9xZcVtPYjTVo0
+ SwXPcyEkc61fk/p+xoNYcd8dRw518R+X9jbeI6Sc0aHFRbaJ069Eiae3sZ8mmCLDd3uDY5k8a
+ IWM8PqNxxH21MVjbOwVlveBhHP/OpK30XWRzm6VHciSByuVa8JmBxXM8ibCm3A8vx08h8cokn
+ KSKINKopxxCOV2KjYQk1yuDIAgFQOVDGFiPJSZaEKEzWTJFMInbeeD+rJ9XltLqIvXibjoPGD
+ aG9scVt3ow8LNcHxHW8SrHXjPXIuEt2hsUu6RfRaVN6DEMAFP6+o3H9quKyGRbTY74qdTpqSe
+ iWdP3CmCWTnYeiHl4ewprabxzvPMfvPnTOGPwsErqAsrLbRpHmoYuLItqvRC2Ys3AkYY+WpTx
+ YM6j+jNY3bMASNhXwFX3CcTCG7xM9EXhuDV1jXcx1HsLDw8O/TS9CUiLPdJ7q33B2tmCRG2SZ
+ 13u0nf94S/SP+4E0A5LyplyDZHepwTy1lL3yE2xpE12f0ZttQQGVT3w9XM98ecxb2hW+oBl/U
+ 95sRnGyCj0lMyglDIWNMAMVHidVJfAO8KEO3BQ+v20MpVCd3HGml97bosl2Nc7HPqm6hw5i8i
+ k0lapiMdMgFVe5v7UXCGFWAlAOv1/t9PhmVBpbvzp5sNP0G2zY+ItcqTvL6T4lRo2Rcho+Gd+
+ mc2HFvCBXX4P3Ic1EXWikPcycGz3UbGM3d7oV5ERza0WmAQCDo0nLfvRKhSS6MD0z4GLpskUs
+ 1tdO85EIBTTSqKB2yjlqcZjEUkt3dGWHegMzo4mc4rqwpBA5QbbqwoEwouruJl6r8JiN/8Q9s
+ EFiP5KxR6Oryc6FcytaN8IGFeX2T4iMzUZ2KrowG9fJD1eMk20xRG5FnQ==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jun 24, 2022 at 07:46:12PM +0800, Qu Wenruo wrote:
-> On 2022/6/24 19:32, Nikolay Borisov wrote:
-> > On 24.06.22 г. 11:13 ч., Qu Wenruo wrote:
-> >>
-> >> I don't think that's the correct way to go.
-> >>
-> >> In fact, I think sysfs should have everything, no matter how long
-> >> supported it is.
-> >
-> > I disagree, for things which are considered stand alone features - yes.
-> > Like free space tree 2, but for something like backrefs, heck I think
-> > we've even removed code which predates mixed backrefs so I'm not
-> > entirely use the filesystem can function with that feature turned off,
-> > actually it's not possible to create a non-mixedbackref file system
-> > since this behavior is hard-coded in btrfs-progs. Also the commit for
-> > the backrefs states:
-> >
-> >
-> > This commit introduces a new kind of back reference for btrfs metadata.
-> > Once a filesystem has been mounted with this commit, IT WILL NO LONGER
-> > BE MOUNTABLE BY OLDER KERNELS.
-> 
-> That means we're hiding incompat features from the user.
-> 
-> Even if it's not tunable and should always be enabled, we still need to
-> add that.
 
-I think the mixed_backref is an exception because it's been part of the
-default format for so long that we don't even remember there was
-something else. For users it does not mean anything today, moreover it
-could be confused with mixed block groups.
+
+On 2022/6/24 21:40, Jan Kara wrote:
+> On Fri 24-06-22 21:19:04, Qu Wenruo wrote:
+>>
+>>
+>> On 2022/6/24 21:07, Jan Kara wrote:
+>>> On Fri 24-06-22 14:51:18, Christoph Hellwig wrote:
+>>>> On Fri, Jun 24, 2022 at 08:30:00PM +0800, Qu Wenruo wrote:
+>>>>> But from my previous feedback on subpage code, it looks like it's so=
+me
+>>>>> hardware archs (S390?) that can not do page flags update atomically.
+>>>>>
+>>>>> I have tested similar thing, with extra ASSERT() to make sure the co=
+w
+>>>>> fixup code never get triggered.
+>>>>>
+>>>>> At least for x86_64 and aarch64 it's OK here.
+>>>>>
+>>>>> So I hope this time we can get a concrete reason on why we need the
+>>>>> extra page Private2 bit in the first place.
+>>>>
+>>>> I don't think atomic page flags are a thing here.  I remember Jan
+>>>> had chased a bug where we'd get into trouble into this area in
+>>>> ext4 due to the way pages are locked down for direct I/O, but I
+>>>> don't even remember seeing that on XFS.  Either way the PageOrdered
+>>>> check prevents a crash in that case and we really can't expect
+>>>> data to properly be written back in that case.
+>>>
+>>> I'm not sure I get the context 100% right but pages getting randomly d=
+irty
+>>> behind filesystem's back can still happen - most commonly with RDMA an=
+d
+>>> similar stuff which calls set_page_dirty() on pages it has got from
+>>> pin_user_pages() once the transfer is done.
+>>
+>> Just curious, things like RMDA can mark those pages dirty even without
+>> letting kernel know, but how could those pages be from page cache? By
+>> mmap()?
+>
+> Yes, you pass virtual address to RDMA ioctl and it uses memory at that
+> address as a target buffer for RDMA. If the target address happens to be
+> mmapped file, filesystem has problems...
+
+Oh my god, this is going to be disaster.
+
+RDMA is really almost a blackbox which can do anything to the pages.
+
+If some RDMA drivers choose to screw up with Private2, the btrfs
+workaround is also screwed up.
+
+Another problem is related to subpage.
+
+Btrfs (and iomap) all uses page->private to store extra bitmaps for
+subpage usage.
+If RDMA is changing page flags, it can easily lead to de-sync between
+subpage bitmaps with real page flags.
+
+I can no longer sleep well knowing this...
+
+Thanks,
+Qu
+>
+>>> page_maybe_dma_pinned() should
+>>> be usable within filesystems to detect such cases and protect the
+>>> filesystem but so far neither me nor John Hubbart has got to implement=
+ this
+>>> in the generic writeback infrastructure + some filesystem as a sample =
+case
+>>> others could copy...
+>>
+>> So the generic idea is just to detect if the page is marked dirty by
+>> traditional means, and if not, skip the writeback for them, and wait fo=
+r
+>> proper notification to fs?
+>
+> Kind of. The idea is to treat page_maybe_dma_pinned() pages as permanent=
+ly
+> dirty (because we have no control over when the hardware decides to modi=
+fy
+> the page contents by DMA). So skip the writeback if we can (e.g. memory
+> cleaning type of writeback) and use bounce pages to do data integrity
+> writeback (which cannot be skipped).
+>
+> 								Honza

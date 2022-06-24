@@ -2,127 +2,167 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C00ECCA473
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jun 2022 14:06:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67B8DC43334
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Jun 2022 15:23:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232130AbiFXOGw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 24 Jun 2022 10:06:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60354 "EHLO
+        id S232098AbiFXPXg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 24 Jun 2022 11:23:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33712 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232422AbiFXOGh (ORCPT
+        with ESMTP id S231530AbiFXPXg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 24 Jun 2022 10:06:37 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5EBCA4F1E3
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2022 07:06:19 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 60C8A21A8F;
-        Fri, 24 Jun 2022 14:06:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1656079578; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=37Zi2HMq0UYlxwNZ4+aL5bUyIa1yJEaH4hskYHOkAsA=;
-        b=bEfRmy1+miVCEJzvd63c0ItAz7mRVsiITBQng7YOx6FFTE15ZDvNvrNMESo9F4nCPdPPCs
-        uDASBs6u2ub5ftLwTloC0dIMsJCq5BN/dsCZ9IO3H+Wlg1vKDVNQwGJovq7d03XQLP/iYh
-        2ozq9D/vzaty29LzvL4mQ/UrQ/bPaq0=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 592B62C24A;
-        Fri, 24 Jun 2022 14:06:18 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BD6CBDA82F; Fri, 24 Jun 2022 16:01:40 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/3] btrfs: use u8 type for btrfs_block_rsv::type
-Date:   Fri, 24 Jun 2022 16:01:40 +0200
-Message-Id: <2ff62613189d8f58f8da90a1558ad5726172057b.1656079178.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <cover.1656079178.git.dsterba@suse.com>
-References: <cover.1656079178.git.dsterba@suse.com>
+        Fri, 24 Jun 2022 11:23:36 -0400
+Received: from pio-pvt-msa2.bahnhof.se (pio-pvt-msa2.bahnhof.se [79.136.2.41])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CBA744ECDE
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2022 08:23:32 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+        by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTP id 3AAAF3F3B5
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2022 17:23:30 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from pio-pvt-msa2.bahnhof.se ([127.0.0.1])
+        by localhost (pio-pvt-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id ysGJGODkioAC for <linux-btrfs@vger.kernel.org>;
+        Fri, 24 Jun 2022 17:23:29 +0200 (CEST)
+Received: by pio-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id 20D393F26B
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jun 2022 17:23:29 +0200 (CEST)
+Received: from [192.168.0.134] (port=53430)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.94.2)
+        (envelope-from <forza@tnonline.net>)
+        id 1o4l9c-000D97-2v
+        for linux-btrfs@vger.kernel.org; Fri, 24 Jun 2022 17:23:28 +0200
+Message-ID: <98c43f5e-2091-b222-edad-632caef9f9e3@tnonline.net>
+Date:   Fri, 24 Jun 2022 17:23:27 +0200
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.1
+To:     linux-btrfs@vger.kernel.org
+Content-Language: en-GB
+From:   Forza <forza@tnonline.net>
+Subject: FSTRIM timeout/errors on WD RED SA500 NAS SSD
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The number of block group reserve types BTRFS_BLOCK_RSV_* is small and
-fits to u8 and there's enough left in case we want to add more.
+Hi,
 
-The structure size is now 48 on release build, making a slight
-improvement in structures where it's embedded, like btrfs_fs_info or
-btrfs_inode.
+I have discovered an odd issue where "fstrim" on an Btrfs filesystem 
+consistently fails, while "mkfs.btrfs" always succeeds with full device 
+discard.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/block-rsv.c |  7 +++----
- fs/btrfs/block-rsv.h | 10 +++++-----
- 2 files changed, 8 insertions(+), 9 deletions(-)
+Hardware:
+* SuperMicro server
+* LSI/Broadcom HBA 9500-8i SAS/SATA controller
+* WD RED SA500 NAS SATA SSD 2TB (WDS200T1R0A-68A4W0)
+   Drive FW: 411000WR
+* Alpine Linux kernel 5.15.48
 
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 26c43a6ef5d2..5384c6ae8fe8 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -171,7 +171,7 @@ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src,
- 	return 0;
- }
- 
--void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type)
-+void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, u8 type)
- {
- 	memset(rsv, 0, sizeof(*rsv));
- 	spin_lock_init(&rsv->lock);
-@@ -179,8 +179,7 @@ void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type)
- }
- 
- void btrfs_init_metadata_block_rsv(struct btrfs_fs_info *fs_info,
--				   struct btrfs_block_rsv *rsv,
--				   unsigned short type)
-+				   struct btrfs_block_rsv *rsv, u8 type)
- {
- 	btrfs_init_block_rsv(rsv, type);
- 	rsv->space_info = btrfs_find_space_info(fs_info,
-@@ -188,7 +187,7 @@ void btrfs_init_metadata_block_rsv(struct btrfs_fs_info *fs_info,
- }
- 
- struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_fs_info *fs_info,
--					      unsigned short type)
-+					      u8 type)
- {
- 	struct btrfs_block_rsv *block_rsv;
- 
-diff --git a/fs/btrfs/block-rsv.h b/fs/btrfs/block-rsv.h
-index 0702d4087ff6..bb449c75ee4c 100644
---- a/fs/btrfs/block-rsv.h
-+++ b/fs/btrfs/block-rsv.h
-@@ -27,7 +27,8 @@ struct btrfs_block_rsv {
- 	spinlock_t lock;
- 	bool full;
- 	bool failfast;
--	unsigned short type;
-+	/* Block reserve type, one of BTRFS_BLOCK_RSV_* */
-+	u8 type;
- 
- 	/*
- 	 * Qgroup equivalent for @size @reserved
-@@ -49,13 +50,12 @@ struct btrfs_block_rsv {
- 	u64 qgroup_rsv_reserved;
- };
- 
--void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type);
-+void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, u8 type);
- void btrfs_init_root_block_rsv(struct btrfs_root *root);
- struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_fs_info *fs_info,
--					      unsigned short type);
-+					      u8 type);
- void btrfs_init_metadata_block_rsv(struct btrfs_fs_info *fs_info,
--				   struct btrfs_block_rsv *rsv,
--				   unsigned short type);
-+				   struct btrfs_block_rsv *rsv, u8 type);
- void btrfs_free_block_rsv(struct btrfs_fs_info *fs_info,
- 			  struct btrfs_block_rsv *rsv);
- int btrfs_block_rsv_add(struct btrfs_fs_info *fs_info,
--- 
-2.36.1
+* /sys/block/sdf/queue/
+   discard_granularity:512
+   discard_max_bytes:134217216
+   discard_max_hw_bytes:134217216
 
+# btrfs fi us -T /mnt/nas_ssd/
+Overall:
+     Device size:                   7.13TiB
+     Device allocated:             90.06GiB
+     Device unallocated:            7.04TiB
+     Device missing:                  0.00B
+     Used:                         86.73GiB
+     Free (estimated):              3.52TiB      (min: 3.52TiB)
+     Free (statfs, df):             3.52TiB
+     Data ratio:                       2.00
+     Metadata ratio:                   2.00
+     Global reserve:               94.58MiB      (used: 0.00B)
+     Multiple profiles:                  no
+
+              Data     Metadata  System
+Id Path      RAID1    RAID1     RAID1    Unallocated
+-- --------- -------- --------- -------- -----------
+  9 /dev/sdc1 44.00GiB   1.00GiB 32.00MiB     1.77TiB
+10 /dev/sdf1 44.00GiB   1.00GiB 32.00MiB     1.77TiB
+11 /dev/sdd1        -         -        -   894.25GiB
+12 /dev/sde1        -         -        -   894.25GiB
+13 /dev/sdg1        -         -        -     1.82TiB
+14 /dev/sdh1        -         -        -     1.82TiB
+-- --------- -------- --------- -------- -----------
+    Total     44.00GiB   1.00GiB 32.00MiB     8.94TiB
+    Used      43.23GiB 133.44MiB 16.00KiB
+
+
+
+
+The root cause I believe is that the WD drives take 1.5-2.5 minutes to 
+do a full device discard. The Kingston DC500 drives only take 6-7 
+seconds for the same. I have 4 identical WD drives and 2 Kingston 
+drives. All WD drives have the same issue.
+
+When issuing 'fstrim -v /mnt/btrfs' I get the following message in dmesg 
+after about 30 seconds:
+
+# time fstrim -v /mnt/nas_ssd/
+/mnt/nas_ssd/: 6.2 TiB (6834839748608 bytes) trimmed
+
+real    4m21.356s
+user    0m0.001s
+sys     0m0.241s
+
+[  +0.000003] scsi target6:0:4: handle(0x0029), 
+sas_address(0x5003048020db4543), phy(3)
+[  +0.000003] scsi target6:0:4: enclosure logical 
+id(0x5003048020db457f), slot(3)
+[  +0.000003] scsi target6:0:4: enclosure level(0x0000), connector name( 
+C0.1)
+[  +0.000003] sd 6:0:4:0: No reference found at driver, assuming 
+scmd(0x00000000eb0d9438) might have completed
+[  +0.000003] sd 6:0:4:0: task abort: SUCCESS scmd(0x00000000eb0d9438)
+[  +0.000012] sd 6:0:4:0: attempting task 
+abort!scmd(0x0000000075f63919), outstanding for 30397 ms & timeout 30000 ms
+[  +0.000003] sd 6:0:4:0: [sdg] tag#2762 CDB: opcode=0x42 42 00 00 00 00 
+00 00 00 18 00
+[  +0.000002] scsi target6:0:4: handle(0x0029), 
+sas_address(0x5003048020db4543), phy(3)
+[  +0.000004] scsi target6:0:4: enclosure logical 
+id(0x5003048020db457f), slot(3)
+[  +0.000002] scsi target6:0:4: enclosure level(0x0000), connector name( 
+C0.1)
+[  +0.000003] sd 6:0:4:0: No reference found at driver, assuming 
+scmd(0x0000000075f63919) might have completed
+[  +0.000003] sd 6:0:4:0: task abort: SUCCESS scmd(0x0000000075f63919)
+[  +0.255021] sd 6:0:4:0: Power-on or device reset occurred
+
+
+
+
+An interesting observation is that "fstrim" works on the same device if 
+it is mounted as ext4. There are no errors in dmesg.
+
+To sum up:
+
+Works:
+* "mkfs.btrfs"
+* "btrfs replace"
+* "btrfs device add"
+* "fstrim" on ext4 mounted device.
+
+Does not work:
+* "fstrim" on Btrfs mounted device
+* "blkdiscard" on /dev/sdX
+
+The btrfs-progs code seems to do 'BLKDISCARD' on 1GiB chunks. This may 
+explain why "mkfs.btrfs" and "btrfs relace" and "btrfs device add" 
+works, while "fstrim" and "blkdiscard" tools do not.
+https://github.com/kdave/btrfs-progs/blob/c0ad9bde429196db7e8710ea1abfab7a2bca2e43/common/device-utils.c#L79
+
+Not exactly sure how ext4 handles the "fstrim" case, but it seems to 
+group trim requests in smaller batches, which may explain why the SSD 
+returns status before the 30s timeout of the HBA.
+https://github.com/torvalds/linux/blob/92f20ff72066d8d7e2ffb655c2236259ac9d1c5d/fs/ext4/mballoc.c#L6467
+
+Can we work around the Btrfs fstrim issue, for example by splitting up 
+fstrim requests in "discard_max_bytes" sized chunks?
+
+Thanks,
+Forza

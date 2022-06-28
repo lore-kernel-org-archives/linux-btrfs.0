@@ -2,121 +2,146 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63D78C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jun 2022 11:58:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64620C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jun 2022 12:37:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344202AbiF1L6o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Jun 2022 07:58:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57310 "EHLO
+        id S1344475AbiF1MhH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Jun 2022 08:37:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35312 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344832AbiF1L6l (ORCPT
+        with ESMTP id S230292AbiF1MhG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Jun 2022 07:58:41 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4E0E56337;
-        Tue, 28 Jun 2022 04:58:39 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id E741B21E69;
-        Tue, 28 Jun 2022 11:58:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1656417517;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0uGu7K4Rqu3ezVw8tmoJpMFQURgPc1ipNiiYFEj1I2A=;
-        b=yxFOQEWFLpu/oNZdG0wx7s21jDqiwHhxlL25m7DHpY8fTiAlCVmGs/AovRoPrW+e5lAv4b
-        ULaGR7D/E3II/YFDbIXrg1VQZ15wYFSt/o9LqL54P+UIimZUKMQVrpQPC5sRtoInScVibP
-        OVtJdVVEA2CoDAK8uxX7gYwcIOI6jTM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1656417517;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0uGu7K4Rqu3ezVw8tmoJpMFQURgPc1ipNiiYFEj1I2A=;
-        b=Q1AnzTXaVXg/QjyyepPg5mfbFyEBOp+DIpo/N9gLOFTOSL1X9AqbyFiTaOJnQR3bOdsoGU
-        a+uGd0tNIU2PQVCg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B34A4139E9;
-        Tue, 28 Jun 2022 11:58:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id fT/XKu3sumIvEgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 28 Jun 2022 11:58:37 +0000
-Date:   Tue, 28 Jun 2022 13:53:56 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@lst.de>,
-        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: remove btrfs_writepage_cow_fixup
-Message-ID: <20220628115356.GB20633@suse.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Jan Kara <jack@suse.cz>, Christoph Hellwig <hch@lst.de>, clm@fb.com,
-        josef@toxicpanda.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-References: <20220624122334.80603-1-hch@lst.de>
- <7c30b6a4-e628-baea-be83-6557750f995a@gmx.com>
- <20220624125118.GA789@lst.de>
- <20220624130750.cu26nnm6hjrru4zd@quack3.lan>
- <20220625091143.GA23118@lst.de>
- <20220627101914.gpoz7f6riezkolad@quack3.lan>
- <e73be42e-fce5-733a-310d-db9dc5011796@gmx.com>
+        Tue, 28 Jun 2022 08:37:06 -0400
+Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C8CD2ED77
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2022 05:37:06 -0700 (PDT)
+Received: by mail-pj1-x102a.google.com with SMTP id h9-20020a17090a648900b001ecb8596e43so12472897pjj.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2022 05:37:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:to:cc:references
+         :from:in-reply-to:content-transfer-encoding;
+        bh=10KqDo3l+oRJpK2nuoOEd70Fhsb76bpSh2Wi9097fMo=;
+        b=KE+ozFhqZIqAqsS1Jh2RdtT2CWGNBxIbpoLAX4HrPe9rZNnn2xFMW9Bl54M379GyYp
+         dgqARDamfcOievZuyNl7qBkLlp1MXiWbHiPuRa/MF1Z9ChSkECyDfOn6WrJBWjVZvL+/
+         q2yyPgy3LQRmetxOdbj8UODUuzJnAL2d3DBxGaq/rRFCb0JCa6LOiOMxrAmCxg/ZO1Qr
+         wJRKoOlcd9qArFH0/8E7F0uxyLQ/kOJHmlcFnH69Sw00Bri2w7giJBz69z9pcUYBZGej
+         g5C2HFAN2BeZtvSpH7AIJOnnUOyLGUkP6MuKAG/O2/oinXoKRwZ/Bf+Ds6IaF6UJuzAX
+         meVA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :to:cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=10KqDo3l+oRJpK2nuoOEd70Fhsb76bpSh2Wi9097fMo=;
+        b=EyK4XcU/+ch+doLNIxnI51v/+nYZiv/a5a6X9p5+2QPI1gsTh3BDXTQXCyCqJdjc6F
+         mM7T++ku3H4yIFlnJsdlbqXz8g+4j3d///I/JVC/mCtRkrRrhldRiSv9hPUt4NXyTHzq
+         kKWFK0Ctwqvr2TCyuO1wfN7V0g293Z9F/BxfYu7CvbuB7u2qEOCH5w/wixwAKCLtQ4Zr
+         KbfVZro4dv4elJjFDqU/+o1TOCzzH5v0Ynhi7jXNWT7moA2VcHZPujLYPNdFPjOsRVr6
+         UTrqqt9rvcIGXmnmV1qbVL9KLDrZ02hloOg4mYM9bpQQTqceO/+ur03uvPgEUA6sAK00
+         sgIQ==
+X-Gm-Message-State: AJIora8NDzE4Rvcj9CLNXB2JzFkQgv8w/p62i6P5Fy9USLuAZ9p1SKJH
+        Qgi1kPnw2JdxKfTZU4oVoOs=
+X-Google-Smtp-Source: AGRyM1v1LOR56VlboBTcD6o/LS58rokcZdQDekHNJuY4yqG58mMpDMcldLcOYlL8NnkgxVKbSDTyvw==
+X-Received: by 2002:a17:903:18f:b0:16a:5c43:9a85 with SMTP id z15-20020a170903018f00b0016a5c439a85mr4715326plg.122.1656419825563;
+        Tue, 28 Jun 2022 05:37:05 -0700 (PDT)
+Received: from [127.0.0.1] ([103.215.126.123])
+        by smtp.gmail.com with ESMTPSA id g9-20020aa78749000000b005254ad7ba0fsm9582675pfo.171.2022.06.28.05.37.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 28 Jun 2022 05:37:05 -0700 (PDT)
+Message-ID: <6f958407-0c3c-1cd6-ced2-08bc9c267d17@gmail.com>
+Date:   Tue, 28 Jun 2022 20:36:57 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e73be42e-fce5-733a-310d-db9dc5011796@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.1
+Subject: Re: [PATCH RFC 2/8] fs: always get the file size in _fs_read()
+To:     Qu Wenruo <wqu@suse.com>, u-boot@lists.denx.de
+Cc:     marek.behun@nic.cz, linux-btrfs@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, trini@konsulko.com,
+        joaomarcos.costa@bootlin.com, thomas.petazzoni@bootlin.com,
+        miquel.raynal@bootlin.com
+References: <cover.1656401086.git.wqu@suse.com>
+ <cd417bc9dc4b44c4ac8d98f146e47c98cf4aac5a.1656401086.git.wqu@suse.com>
+From:   Huang Jianan <jnhuang95@gmail.com>
+In-Reply-To: <cd417bc9dc4b44c4ac8d98f146e47c98cf4aac5a.1656401086.git.wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 28, 2022 at 08:24:07AM +0800, Qu Wenruo wrote:
-> On 2022/6/27 18:19, Jan Kara wrote:
-> > On Sat 25-06-22 11:11:43, Christoph Hellwig wrote:
-> >> On Fri, Jun 24, 2022 at 03:07:50PM +0200, Jan Kara wrote:
-> >>> I'm not sure I get the context 100% right but pages getting randomly dirty
-> >>> behind filesystem's back can still happen - most commonly with RDMA and
-> >>> similar stuff which calls set_page_dirty() on pages it has got from
-> >>> pin_user_pages() once the transfer is done. page_maybe_dma_pinned() should
-> >>> be usable within filesystems to detect such cases and protect the
-> >>> filesystem but so far neither me nor John Hubbart has got to implement this
-> >>> in the generic writeback infrastructure + some filesystem as a sample case
-> >>> others could copy...
-> >>
-> >> Well, so far the strategy elsewhere seems to be to just ignore pages
-> >> only dirtied through get_user_pages.  E.g. iomap skips over pages
-> >> reported as holes, and ext4_writepage complains about pages without
-> >> buffers and then clears the dirty bit and continues.
-> >>
-> >> I'm kinda surprised that btrfs wants to treat this so special
-> >> especially as more of the btrfs page and sub-page status will be out
-> >> of date as well.
-> >
-> > I agree btrfs probably needs a different solution than what it is currently
-> > doing if they want to get things right. I just wanted to make it clear that
-> > the code you are ripping out may be a wrong solution but to a real problem.
-> 
-> IHMO I believe btrfs should also ignore such dirty but not managed by fs
-> pages.
-> 
-> But I still have a small concern here.
-> 
-> Is it ensured that, after RDMA dirtying the pages, would we finally got
-> a proper notification to fs that those pages are marked written?
-> 
-> If not, I would guess those pages would never got a chance to be written
-> back.
-> 
-> If yes, then I'm totally fine to go the ignoring path.
+Hi, wenruo,
 
-This would work only for the higher level API where eg. RDMA notifies
-the filesystem, but there's still the s390 case that is part of the
-hardware architecture. The fixup worker is there as a safety for all
-other cases, I'm not fine removing or ignoring it.
+在 2022/6/28 15:28, Qu Wenruo 写道:
+> For _fs_read(), @len == 0 means we read the whole file.
+> And we just pass @len == 0 to make each filesystem to handle it.
+>
+> In fact we have info->size() call to properly get the filesize.
+>
+> So we can not only call info->size() to grab the file_size for len == 0
+> case, but also detect invalid @len (e.g. @len > file_size) in advance or
+> truncate @len.
+>
+> This behavior also allows us to handle unaligned better in the incoming
+> patches.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>   fs/fs.c | 25 +++++++++++++++++++++----
+>   1 file changed, 21 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/fs.c b/fs/fs.c
+> index 6de1a3eb6d5d..d992cdd6d650 100644
+> --- a/fs/fs.c
+> +++ b/fs/fs.c
+> @@ -579,6 +579,7 @@ static int _fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
+>   {
+>   	struct fstype_info *info = fs_get_info(fs_type);
+>   	void *buf;
+> +	loff_t file_size;
+>   	int ret;
+>   
+>   #ifdef CONFIG_LMB
+> @@ -589,10 +590,26 @@ static int _fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
+>   	}
+>   #endif
+>   
+> -	/*
+> -	 * We don't actually know how many bytes are being read, since len==0
+> -	 * means read the whole file.
+> -	 */
+> +	ret = info->size(filename, &file_size);
+
+I get an error when running the erofs test cases. The return value isn't 
+as expected
+when reading symlink file.
+For symlink file, erofs_size will return the size of the symlink itself 
+here.
+> +	if (ret < 0) {
+> +		log_err("** Unable to get file size for %s, %d **\n",
+> +				filename, ret);
+> +		return ret;
+> +	}
+> +	if (offset >= file_size) {
+> +		log_err(
+> +		"** Invalid offset, offset (%llu) >= file size (%llu)\n",
+> +			offset, file_size);
+> +		return -EINVAL;
+> +
+> +	}
+> +	if (len == 0 || offset + len > file_size) {
+> +		if (len > file_size)
+> +			log_info(
+> +	"** Truncate read length from %llu to %llu, as file size is %llu **\n",
+> +				 len, file_size, file_size);
+> +		len = file_size - offset;
+Then, we will get a wrong len in the case of len==0. So I think we need 
+to do something
+extra with the symlink file?
+
+Thanks,
+Jianan
+> +	}
+>   	buf = map_sysmem(addr, len);
+>   	ret = info->read(filename, buf, offset, len, actread);
+>   	unmap_sysmem(buf);
+

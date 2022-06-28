@@ -2,156 +2,169 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C118ECCA47B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jun 2022 02:21:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87C9DCCA47B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jun 2022 02:22:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243700AbiF1CVU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Jun 2022 22:21:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32806 "EHLO
+        id S243739AbiF1CWu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Jun 2022 22:22:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60944 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243587AbiF1CUm (ORCPT
+        with ESMTP id S243804AbiF1CWB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Jun 2022 22:20:42 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2EFCB24BE7;
-        Mon, 27 Jun 2022 19:20:19 -0700 (PDT)
+        Mon, 27 Jun 2022 22:22:01 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B476248F4;
+        Mon, 27 Jun 2022 19:21:37 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id CF32EB818E4;
-        Tue, 28 Jun 2022 02:20:17 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 68968C341CB;
-        Tue, 28 Jun 2022 02:20:15 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 26F64B818E4;
+        Tue, 28 Jun 2022 02:21:36 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F3298C341CB;
+        Tue, 28 Jun 2022 02:21:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1656382816;
-        bh=K9ia8O3vm2iIwML8IcB1DpRQglcVE9/U1gPMqOenZkw=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=sf4xfPS4+gGAmr6ObiuOBzKOIK6mJjDRKDGj0x6h6T6bmrUGaSVQyhdhgPkp/DqvO
-         5boJz7RGZmzZYLTbc/XpE+lSIuWx5XzDW80rhCB1ZYcWhyaco/GNa9ak+jIHE7H3xY
-         +wizDAkclocbCDDDY6Uicu6SVuE65I3eys/DynjaE9PRFiX++ynypejveJ9O347gTx
-         Bw9zkaJzRXn1m8GcxazyHTZfXJ3AVS5xjvv/9yYRutiTqUiu57iiT1x+iO21+9Yf2k
-         eK1DPBOPAXCHub2oKX7b8ASj96CNgXs1tV13SUoeVxrFBNq+HN/4DV2fv79LBbHInK
-         /bxhg1FfNEnfQ==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Filipe Manana <fdmanana@suse.com>, Boris Burkov <boris@bur.io>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.18 35/53] btrfs: add missing inode updates on each iteration when replacing extents
-Date:   Mon, 27 Jun 2022 22:18:21 -0400
-Message-Id: <20220628021839.594423-35-sashal@kernel.org>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <20220628021839.594423-1-sashal@kernel.org>
-References: <20220628021839.594423-1-sashal@kernel.org>
+        s=k20201202; t=1656382894;
+        bh=pqPD6qoEi8JT199in7jg5DAol4iF8DjKFPgIGYlvQoc=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=GyqsByaDXQg5yOq6smuSw5cw5zuxTHl+rHrYo/OlHMZ1OuAvd9ONI8/jqrzLdImbD
+         VTWK7UP5itlkHBzyKuMpIHQb6qIkgBzcX3Jxv+GaaOi42Ij7zVfd0aNVRCj/2kEQLZ
+         O6R0SdzzjedD8BThjNur1AhOSXcjIOf8wUfiJdziqd597shekW5NqBhdePKYvvXsYS
+         oJiSFkiCFnaZl7loW+605mJuFv8NTwWJO3O6z94S5MRsftmK5FPbSEThNMZ5b+uoVL
+         ifMihZ1oD6Ug5EuhwczB9HuCayJu7LpnnMklqlMLvNn/Nf3BKVwwKkKVP3/5TDDlCW
+         d3gJG/ZMvv/2g==
+Date:   Tue, 28 Jun 2022 04:21:29 +0200
+From:   "Gustavo A. R. Silva" <gustavoars@kernel.org>
+To:     Jason Gunthorpe <jgg@ziepe.ca>
+Cc:     Daniel Borkmann <daniel@iogearbox.net>,
+        Kees Cook <keescook@chromium.org>,
+        linux-kernel@vger.kernel.org, x86@kernel.org, dm-devel@redhat.com,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-s390@vger.kernel.org, kvm@vger.kernel.org,
+        intel-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org,
+        netdev@vger.kernel.org, bpf@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-can@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org,
+        linux1394-devel@lists.sourceforge.net, io-uring@vger.kernel.org,
+        lvs-devel@vger.kernel.org, linux-mtd@lists.infradead.org,
+        kasan-dev@googlegroups.com, linux-mmc@vger.kernel.org,
+        nvdimm@lists.linux.dev, netfilter-devel@vger.kernel.org,
+        coreteam@netfilter.org, linux-perf-users@vger.kernel.org,
+        linux-raid@vger.kernel.org, linux-sctp@vger.kernel.org,
+        linux-stm32@st-md-mailman.stormreply.com,
+        linux-arm-kernel@lists.infradead.org, linux-scsi@vger.kernel.org,
+        target-devel@vger.kernel.org, linux-usb@vger.kernel.org,
+        virtualization@lists.linux-foundation.org,
+        v9fs-developer@lists.sourceforge.net, linux-rdma@vger.kernel.org,
+        alsa-devel@alsa-project.org, linux-hardening@vger.kernel.org
+Subject: Re: [PATCH][next] treewide: uapi: Replace zero-length arrays with
+ flexible-array members
+Message-ID: <20220628022129.GA8452@embeddedor>
+References: <20220627180432.GA136081@embeddedor>
+ <6bc1e94c-ce1d-a074-7d0c-8dbe6ce22637@iogearbox.net>
+ <20220628004052.GM23621@ziepe.ca>
+ <20220628005825.GA161566@embeddedor>
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <20220628005825.GA161566@embeddedor>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Jun 28, 2022 at 02:58:25AM +0200, Gustavo A. R. Silva wrote:
+> On Mon, Jun 27, 2022 at 09:40:52PM -0300, Jason Gunthorpe wrote:
+> > On Mon, Jun 27, 2022 at 08:27:37PM +0200, Daniel Borkmann wrote:
+> > > On 6/27/22 8:04 PM, Gustavo A. R. Silva wrote:
+> > > > There is a regular need in the kernel to provide a way to declare
+> > > > having a dynamically sized set of trailing elements in a structure.
+> > > > Kernel code should always use “flexible array members”[1] for these
+> > > > cases. The older style of one-element or zero-length arrays should
+> > > > no longer be used[2].
+> > > > 
+> > > > This code was transformed with the help of Coccinelle:
+> > > > (linux-5.19-rc2$ spatch --jobs $(getconf _NPROCESSORS_ONLN) --sp-file script.cocci --include-headers --dir . > output.patch)
+> > > > 
+> > > > @@
+> > > > identifier S, member, array;
+> > > > type T1, T2;
+> > > > @@
+> > > > 
+> > > > struct S {
+> > > >    ...
+> > > >    T1 member;
+> > > >    T2 array[
+> > > > - 0
+> > > >    ];
+> > > > };
+> > > > 
+> > > > -fstrict-flex-arrays=3 is coming and we need to land these changes
+> > > > to prevent issues like these in the short future:
+> > > > 
+> > > > ../fs/minix/dir.c:337:3: warning: 'strcpy' will always overflow; destination buffer has size 0,
+> > > > but the source string has length 2 (including NUL byte) [-Wfortify-source]
+> > > > 		strcpy(de3->name, ".");
+> > > > 		^
+> > > > 
+> > > > Since these are all [0] to [] changes, the risk to UAPI is nearly zero. If
+> > > > this breaks anything, we can use a union with a new member name.
+> > > > 
+> > > > [1] https://en.wikipedia.org/wiki/Flexible_array_member
+> > > > [2] https://www.kernel.org/doc/html/v5.16/process/deprecated.html#zero-length-and-one-element-arrays
+> > > > 
+> > > > Link: https://github.com/KSPP/linux/issues/78
+> > > > Build-tested-by: https://lore.kernel.org/lkml/62b675ec.wKX6AOZ6cbE71vtF%25lkp@intel.com/
+> > > > Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+> > > > ---
+> > > > Hi all!
+> > > > 
+> > > > JFYI: I'm adding this to my -next tree. :)
+> > > 
+> > > Fyi, this breaks BPF CI:
+> > > 
+> > > https://github.com/kernel-patches/bpf/runs/7078719372?check_suite_focus=true
+> > > 
+> > >   [...]
+> > >   progs/map_ptr_kern.c:314:26: error: field 'trie_key' with variable sized type 'struct bpf_lpm_trie_key' not at the end of a struct or class is a GNU extension [-Werror,-Wgnu-variable-sized-type-not-at-end]
+> > >           struct bpf_lpm_trie_key trie_key;
+> > >                                   ^
+> > 
+> > This will break the rdma-core userspace as well, with a similar
+> > error:
+> > 
+> > /usr/bin/clang-13 -DVERBS_DEBUG -Dibverbs_EXPORTS -Iinclude -I/usr/include/libnl3 -I/usr/include/drm -g -O2 -fdebug-prefix-map=/__w/1/s=. -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -Wmissing-prototypes -Wmissing-declarations -Wwrite-strings -Wformat=2 -Wcast-function-type -Wformat-nonliteral -Wdate-time -Wnested-externs -Wshadow -Wstrict-prototypes -Wold-style-definition -Werror -Wredundant-decls -g -fPIC   -std=gnu11 -MD -MT libibverbs/CMakeFiles/ibverbs.dir/cmd_flow.c.o -MF libibverbs/CMakeFiles/ibverbs.dir/cmd_flow.c.o.d -o libibverbs/CMakeFiles/ibverbs.dir/cmd_flow.c.o   -c ../libibverbs/cmd_flow.c
+> > In file included from ../libibverbs/cmd_flow.c:33:
+> > In file included from include/infiniband/cmd_write.h:36:
+> > In file included from include/infiniband/cmd_ioctl.h:41:
+> > In file included from include/infiniband/verbs.h:48:
+> > In file included from include/infiniband/verbs_api.h:66:
+> > In file included from include/infiniband/ib_user_ioctl_verbs.h:38:
+> > include/rdma/ib_user_verbs.h:436:34: error: field 'base' with variable sized type 'struct ib_uverbs_create_cq_resp' not at the end of a struct or class is a GNU extension [-Werror,-Wgnu-variable-sized-type-not-at-end]
+> >         struct ib_uverbs_create_cq_resp base;
+> >                                         ^
+> > include/rdma/ib_user_verbs.h:644:34: error: field 'base' with variable sized type 'struct ib_uverbs_create_qp_resp' not at the end of a struct or class is a GNU extension [-Werror,-Wgnu-variable-sized-type-not-at-end]
+> >         struct ib_uverbs_create_qp_resp base;
+> > 
+> > Which is why I gave up trying to change these..
+> > 
+> > Though maybe we could just switch off -Wgnu-variable-sized-type-not-at-end  during configuration ?
+> 
+> No. I think now we can easily workaround these sorts of problems with
+> something like this:
+> 
+> 	struct flex {
+> 		any_type any_member;
+> 		union {
+> 			type array[0];
+> 			__DECLARE_FLEX_ARRAY(type, array_flex);
+> 		};
+> 	};
 
-[ Upstream commit 983d8209c6803345c9958f4cc358d1155f93a099 ]
+Mmmh... nope; this doesn't work[1].
 
-When replacing file extents, called during fallocate, hole punching,
-clone and deduplication, we may not be able to replace/drop all the
-target file extent items with a single transaction handle. We may get
--ENOSPC while doing it, in which case we release the transaction handle,
-balance the dirty pages of the btree inode, flush delayed items and get
-a new transaction handle to operate on what's left of the target range.
+We need to think in a different strategy.
 
-By dropping and replacing file extent items we have effectively modified
-the inode, so we should bump its iversion and update its mtime/ctime
-before we update the inode item. This is because if the transaction
-we used for partially modifying the inode gets committed by someone after
-we release it and before we finish the rest of the range, a power failure
-happens, then after mounting the filesystem our inode has an outdated
-iversion and mtime/ctime, corresponding to the values it had before we
-changed it.
+--
+Gustavo
 
-So add the missing iversion and mtime/ctime updates.
-
-Reviewed-by: Boris Burkov <boris@bur.io>
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/ctree.h   |  2 ++
- fs/btrfs/file.c    | 19 +++++++++++++++++++
- fs/btrfs/inode.c   |  1 +
- fs/btrfs/reflink.c |  1 +
- 4 files changed, 23 insertions(+)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 077c95e9baa5..fd831047994f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1331,6 +1331,8 @@ struct btrfs_replace_extent_info {
- 	 * existing extent into a file range.
- 	 */
- 	bool is_new_extent;
-+	/* Indicate if we should update the inode's mtime and ctime. */
-+	bool update_times;
- 	/* Meaningful only if is_new_extent is true. */
- 	int qgroup_reserved;
- 	/*
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 380054c94e4b..ab882ddfb0e8 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2850,6 +2850,25 @@ int btrfs_replace_file_extents(struct btrfs_inode *inode,
- 			extent_info->file_offset += replace_len;
- 		}
- 
-+		/*
-+		 * We are releasing our handle on the transaction, balance the
-+		 * dirty pages of the btree inode and flush delayed items, and
-+		 * then get a new transaction handle, which may now point to a
-+		 * new transaction in case someone else may have committed the
-+		 * transaction we used to replace/drop file extent items. So
-+		 * bump the inode's iversion and update mtime and ctime except
-+		 * if we are called from a dedupe context. This is because a
-+		 * power failure/crash may happen after the transaction is
-+		 * committed and before we finish replacing/dropping all the
-+		 * file extent items we need.
-+		 */
-+		inode_inc_iversion(&inode->vfs_inode);
-+
-+		if (!extent_info || extent_info->update_times) {
-+			inode->vfs_inode.i_mtime = current_time(&inode->vfs_inode);
-+			inode->vfs_inode.i_ctime = inode->vfs_inode.i_mtime;
-+		}
-+
- 		ret = btrfs_update_inode(trans, root, inode);
- 		if (ret)
- 			break;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 861b9748a0d9..acd0604aced9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9916,6 +9916,7 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
- 	extent_info.file_offset = file_offset;
- 	extent_info.extent_buf = (char *)&stack_fi;
- 	extent_info.is_new_extent = true;
-+	extent_info.update_times = true;
- 	extent_info.qgroup_reserved = qgroup_released;
- 	extent_info.insertions = 0;
- 
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 998e3f180d90..79ea8353994e 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -489,6 +489,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 			clone_info.file_offset = new_key.offset;
- 			clone_info.extent_buf = buf;
- 			clone_info.is_new_extent = false;
-+			clone_info.update_times = !no_time_update;
- 			ret = btrfs_replace_file_extents(BTRFS_I(inode), path,
- 					drop_start, new_key.offset + datal - 1,
- 					&clone_info, &trans);
--- 
-2.35.1
-
+[1] https://godbolt.org/z/av79Pqbfz

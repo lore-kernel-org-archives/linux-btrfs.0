@@ -2,53 +2,54 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5CD7CCA479
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jun 2022 07:28:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E56DC43334
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Jun 2022 07:28:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229942AbiF1H2x (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Jun 2022 03:28:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59128 "EHLO
+        id S242044AbiF1H2z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Jun 2022 03:28:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59016 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230110AbiF1H2n (ORCPT
+        with ESMTP id S242084AbiF1H2t (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Jun 2022 03:28:43 -0400
+        Tue, 28 Jun 2022 03:28:49 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1743BE008
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2022 00:28:42 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE0F62CDEA
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Jun 2022 00:28:48 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id CCC681FB3C;
-        Tue, 28 Jun 2022 07:28:40 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 9CFA81FB3C;
+        Tue, 28 Jun 2022 07:28:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1656401320; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1656401327; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=fqDh39Eux/iXUNBq/dB1wZRAl5zZcXfXHaBWI4ElYTI=;
-        b=Lif/iwWm1brMCb1ac9Aw6rr1E2FN9YS/dOZOEKZkYg46+NzjlO4zx1NsxYS2E+VQE++ptC
-        SqU6vcUDDKd/tHz8lbDCFFm8nM4F3w3Eh3Vpt4P8tsjbb8wAtxUwnOfuGI6DlbY7JBI/2t
-        DrU4Z/HBjgZjVwKliaSnUlOxZyQ+BPs=
+        bh=hloSUbimKPIEYh1/9v8Sy8+7YBlPPiZ44GRZGeoZWho=;
+        b=ihZIXOHg+H6I4I3bZfP/iaE7yg6YDMLA15FZqgmRDDLt5XDncNzrEdoQ7kacrl1mnI4QiB
+        xkq95VoSNvFQX7h7MQq7mmaaPEAwRA+iTF7vewnG4e6lgk83eOn9UQKf2Vk27Nfjy1mYql
+        hKr1rEpquRQSqYwUJQXr78zIHLndzpI=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5E4CB139E9;
-        Tue, 28 Jun 2022 07:28:38 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1DC47139E9;
+        Tue, 28 Jun 2022 07:28:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id ULBZCqatumJzFQAAMHmgww
-        (envelope-from <wqu@suse.com>); Tue, 28 Jun 2022 07:28:38 +0000
+        id wIevNautumJzFQAAMHmgww
+        (envelope-from <wqu@suse.com>); Tue, 28 Jun 2022 07:28:43 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     u-boot@lists.denx.de
 Cc:     marek.behun@nic.cz, linux-btrfs@vger.kernel.org,
         jnhuang95@gmail.com, linux-erofs@lists.ozlabs.org,
         trini@konsulko.com, joaomarcos.costa@bootlin.com,
-        thomas.petazzoni@bootlin.com, miquel.raynal@bootlin.com
-Subject: [PATCH RFC 4/8] fs: ext4: rely on _fs_read() to pass block aligned range into ext4fs_read_file()
-Date:   Tue, 28 Jun 2022 15:28:04 +0800
-Message-Id: <d001706f1471ca0d4e98b7de9f9080188ddd2252.1656401086.git.wqu@suse.com>
+        thomas.petazzoni@bootlin.com, miquel.raynal@bootlin.com,
+        Simon Glass <sjg@chromium.org>
+Subject: [PATCH RFC 6/8] fs: sandboxfs: add sandbox_fs_get_blocksize()
+Date:   Tue, 28 Jun 2022 15:28:06 +0800
+Message-Id: <9f4b43b84a688b0367a87da2d4e0eb303a36bf32.1656401086.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <cover.1656401086.git.wqu@suse.com>
 References: <cover.1656401086.git.wqu@suse.com>
@@ -58,77 +59,116 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since _fs_read() is handling the unaligned read internally, ext4 driver
-only need to handle block aligned read.
+This is to make sandboxfs to report blocksize it supports for
+_fs_read() to handle unaligned read.
 
-Unfortunately I'm not familiar with ext4 and its driver, thus not
-confident enough to cleanup all the unaligned read related code.
+Unlike all other fses, sandboxfs can handle unaligned read/write without
+any problem since it's calling read()/write(), which doesn't bother the
+blocksize at all.
 
-So here we will have some dead code, and any help to clean them up is
-appreciated.
+This change is mostly to make testing of _fs_read() much easier.
 
-Cc: Tom Rini <trini@konsulko.com>
+Cc: Simon Glass <sjg@chromium.org>
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/ext4/ext4fs.c | 11 +++++++++++
- fs/fs.c          |  2 +-
- include/ext4fs.h |  1 +
- 3 files changed, 13 insertions(+), 1 deletion(-)
+ arch/sandbox/cpu/os.c  | 11 +++++++++++
+ fs/fs.c                |  2 +-
+ fs/sandbox/sandboxfs.c | 14 ++++++++++++++
+ include/os.h           |  8 ++++++++
+ include/sandboxfs.h    |  1 +
+ 5 files changed, 35 insertions(+), 1 deletion(-)
 
-diff --git a/fs/ext4/ext4fs.c b/fs/ext4/ext4fs.c
-index 4c89152ce4ad..be2680994d8b 100644
---- a/fs/ext4/ext4fs.c
-+++ b/fs/ext4/ext4fs.c
-@@ -71,6 +71,10 @@ int ext4fs_read_file(struct ext2fs_node *node, loff_t pos,
- 
- 	ext_cache_init(&cache);
- 
-+	/* Higher layer has ensured to pass block aligned range here. */
-+	assert(IS_ALIGNED(pos, blocksize));
-+	assert(IS_ALIGNED(len, blocksize));
-+
- 	/* Adjust len so it we can't read past the end of the file. */
- 	if (len + pos > filesize)
- 		len = (filesize - pos);
-@@ -183,6 +187,13 @@ int ext4fs_read_file(struct ext2fs_node *node, loff_t pos,
- 	return 0;
+diff --git a/arch/sandbox/cpu/os.c b/arch/sandbox/cpu/os.c
+index 5ea54179176c..6c29f29bdd9b 100644
+--- a/arch/sandbox/cpu/os.c
++++ b/arch/sandbox/cpu/os.c
+@@ -46,6 +46,17 @@ ssize_t os_read(int fd, void *buf, size_t count)
+ 	return read(fd, buf, count);
  }
  
-+int ext4fs_get_blocksize(const char *filename)
++ssize_t os_get_blocksize(int fd)
 +{
-+	struct ext_filesystem *fs = get_fs();
++	struct stat stat = {0};
++	int ret;
 +
-+	return fs->blksz;
++	ret = fstat(fd, &stat);
++	if (ret < 0)
++		return -errno;
++	return stat.st_blksize;
 +}
 +
- int ext4fs_ls(const char *dirname)
+ ssize_t os_write(int fd, const void *buf, size_t count)
  {
- 	struct ext2fs_node *dirnode = NULL;
+ 	return write(fd, buf, count);
 diff --git a/fs/fs.c b/fs/fs.c
-index 30696ac6c1a3..e69a0968bb6d 100644
+index 7e4ead9b790b..337d5711c28c 100644
 --- a/fs/fs.c
 +++ b/fs/fs.c
-@@ -236,7 +236,7 @@ static struct fstype_info fstypes[] = {
- 		.exists = ext4fs_exists,
- 		.size = ext4fs_size,
- 		.read = ext4_read_file,
+@@ -261,7 +261,7 @@ static struct fstype_info fstypes[] = {
+ 		.exists = sandbox_fs_exists,
+ 		.size = sandbox_fs_size,
+ 		.read = fs_read_sandbox,
 -		.get_blocksize = fs_get_blocksize_unsupported,
-+		.get_blocksize = ext4fs_get_blocksize,
- #ifdef CONFIG_CMD_EXT4_WRITE
- 		.write = ext4_write_file,
- 		.ln = ext4fs_create_link,
-diff --git a/include/ext4fs.h b/include/ext4fs.h
-index cb5d9cc0a5c0..cc40cfedd954 100644
---- a/include/ext4fs.h
-+++ b/include/ext4fs.h
-@@ -146,6 +146,7 @@ int ext4fs_create_link(const char *target, const char *fname);
- struct ext_filesystem *get_fs(void);
- int ext4fs_open(const char *filename, loff_t *len);
- int ext4fs_read(char *buf, loff_t offset, loff_t len, loff_t *actread);
-+int ext4fs_get_blocksize(const char *filename);
- int ext4fs_mount(unsigned part_length);
- void ext4fs_close(void);
- void ext4fs_reinit_global(void);
++		.get_blocksize = sandbox_fs_get_blocksize,
+ 		.write = fs_write_sandbox,
+ 		.uuid = fs_uuid_unsupported,
+ 		.opendir = fs_opendir_unsupported,
+diff --git a/fs/sandbox/sandboxfs.c b/fs/sandbox/sandboxfs.c
+index 4ae41d5b4db1..130fee088621 100644
+--- a/fs/sandbox/sandboxfs.c
++++ b/fs/sandbox/sandboxfs.c
+@@ -55,6 +55,20 @@ int sandbox_fs_read_at(const char *filename, loff_t pos, void *buffer,
+ 	return ret;
+ }
+ 
++int sandbox_fs_get_blocksize(const char *filename)
++{
++	int fd;
++	int ret;
++
++	fd = os_open(filename, OS_O_RDONLY);
++	if (fd < 0)
++		return fd;
++
++	ret = os_get_blocksize(fd);
++	os_close(fd);
++	return ret;
++}
++
+ int sandbox_fs_write_at(const char *filename, loff_t pos, void *buffer,
+ 			loff_t towrite, loff_t *actwrite)
+ {
+diff --git a/include/os.h b/include/os.h
+index 10e198cf503e..a864d9ca39b2 100644
+--- a/include/os.h
++++ b/include/os.h
+@@ -26,6 +26,14 @@ struct sandbox_state;
+  */
+ ssize_t os_read(int fd, void *buf, size_t count);
+ 
++/**
++ * Get the optimial blocksize through stat() call.
++ *
++ * @fd:		File descriptor as returned by os_open()
++ * Return:	>=0 for the blocksize. <0 for error.
++ */
++ssize_t os_get_blocksize(int fd);
++
+ /**
+  * Access to the OS write() system call
+  *
+diff --git a/include/sandboxfs.h b/include/sandboxfs.h
+index 783dd5c88a73..6937068f7b82 100644
+--- a/include/sandboxfs.h
++++ b/include/sandboxfs.h
+@@ -32,6 +32,7 @@ void sandbox_fs_close(void);
+ int sandbox_fs_ls(const char *dirname);
+ int sandbox_fs_exists(const char *filename);
+ int sandbox_fs_size(const char *filename, loff_t *size);
++int sandbox_fs_get_blocksize(const char *filename);
+ int fs_read_sandbox(const char *filename, void *buf, loff_t offset, loff_t len,
+ 		    loff_t *actread);
+ int fs_write_sandbox(const char *filename, void *buf, loff_t offset,
 -- 
 2.36.1
 

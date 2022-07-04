@@ -2,56 +2,56 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE633CCA479
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Jul 2022 04:59:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E60AC433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Jul 2022 04:59:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232358AbiGDE67 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Jul 2022 00:58:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33052 "EHLO
+        id S232171AbiGDE7A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Jul 2022 00:59:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33106 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232171AbiGDE6y (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jul 2022 00:58:54 -0400
+        with ESMTP id S231356AbiGDE64 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jul 2022 00:58:56 -0400
 Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 007335FAA
-        for <linux-btrfs@vger.kernel.org>; Sun,  3 Jul 2022 21:58:53 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5035662E7
+        for <linux-btrfs@vger.kernel.org>; Sun,  3 Jul 2022 21:58:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1656910733; x=1688446733;
+  t=1656910734; x=1688446734;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=EwDmWFc5fh5vTWPE6ypaTUYaucgB5pHnSi/gvodbfSs=;
-  b=otLk3ZlTSsE1ifoTulv8utpqZzQUI5qXd93G22U6TwdvY7J4GKhI+Xuq
-   CmlfZWRDAW0ix9m79LPq+Ediywrmyhy1OFfUySmyzrr0QZgLi4lX7L5eQ
-   gX48Xfc4cNH8HnKSvNAVR+pYOSa1lEoN8ROImS32fsdOUrK785yaUNI2D
-   +5l9ngiWdwBll1Eb5T22Yhq4u9G4EhMUvH0xq2GUeZMDZDNCHHmnlF+9j
-   qyRUWYbZy0Bg9tg+KE/+mqa0KubcXURwLoj3QkuYTOA/KQC2eQOI2UtVI
-   nWgcT4d5k2OgFPsMe6e5JKPEQ8ThWFlQQEX9tzdauBZLgITmbdeAp1/IX
+  bh=a9skFt42ZiIPVwzVrx254d/+4T4+JdXMMXYVtNvFxB8=;
+  b=k/9oEzEZIHu13C6HlFN/z4D3OY90uYADbL9eHflaMEH+USQ8zn8iNMbL
+   010xanHTXBBG+WslhBvLswFRcRDiHLiY49WbKqJVEhwOQWCN5b+mVE6eS
+   o5jqDtWCZCMn5Td9tWU3bAOAxTdo6Nh7wooa87obP985Ro1/MUzPKTNBj
+   RWAWn+hy+QRPBmVYb47ICm+hKKVOHxPrZWO5QePdPAvCEov5WucFxODRf
+   mSxElYCsA3pUszK/L0GuxCZeBRf49ZfgJc3JUAbwupxnQR3RrqKA13NAw
+   kJSnxryNDF4rRlUXF7bm1TwWVYJrUxsD7TvVex5pjFyhRJJyV34vX1Fw6
    g==;
 X-IronPort-AV: E=Sophos;i="5.92,243,1650902400"; 
-   d="scan'208";a="204732412"
+   d="scan'208";a="204732414"
 Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 04 Jul 2022 12:58:53 +0800
-IronPort-SDR: G6jXy+mdj8OhArLiJuMVRTyo5ukqdR3eMI/xkIphVuyRo07K5gJPU8LwZqV7HcMAKl8GaYISKW
- TasAoc8rRDi98ZQVQSCJBPQtaYsOMFub2wXkn0cIrJArBTt8IjcV1wxV11vM669aNLt+4h2pAD
- 9fRRlNJdb9Uwco8yWNMwwu4moEztMNYjhb/QXIg79W3GrndkYdX2MqbY3hpDasSU03whioobpm
- dtPlVTI5mrLwtUXDemSbkQu/xdR+alObRClqnhP35XiMlbNOFhoV/D/PW+Ni6/yXv0ESEVr04u
- 8nLvC8lc/mWjFqcuXjm2Tznv
+  by ob1.hgst.iphmx.com with ESMTP; 04 Jul 2022 12:58:54 +0800
+IronPort-SDR: ZmAWaU1ROv4TV50bk0I5AI4l4h4lrJgMSThhUzo6vR+mEhcPeSxHxXi5jCJagmZWPNS6ArlRyS
+ 7hk9vAuQ7JizdXu2bxqJJDsAas6MNLE9fiU1B/1M8asmSWZHfkwAlxepY4kVOvvb+ZVx0uDxKZ
+ 4s3OM/ZQnPXHJLKG4bpwkjH+fBaBMOdoU58nZ5YWI+dB9tOSjxTokKeqT5Fhof1aK8+VTRF/5l
+ LC41YmdfX/h7tk6VaWZ5aC3f1vrcBTw2D8MQ/yTcD1BbZcm25Lquky92JXopBc5EXX8Vg5k5G8
+ du3wdgcFJSV+7reKZRGVaD6m
 Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Jul 2022 21:20:46 -0700
-IronPort-SDR: eymQ4IV0M8SXNYztIs5SnsfarfddlmhJgHeidh7j6KpeI9FNDOSOdQHPpl9gVEr2yShn12CMsm
- aEZLK9GeEQSXEzqcM0y7Q0UY1K9WR0nwIc7iW04iBzn45LtQsKB9d2hK/RaUV694snCeVWHqa0
- nWbaDvslUuqEgKiWmeKEkQU84QzKu9xfDbuA+iHwoIh/3r+zynBB+2pkTBpicUFjhKJHrYb8L4
- 9aQbKVMRENajpn4HsHYNGjEiWvXpXf7mZr/LgRd4eCRwicHdhqvCO3wXcMnWXrUxHyoPIBBiU5
- YM0=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 03 Jul 2022 21:20:47 -0700
+IronPort-SDR: s81DjSIuHLRhRM0aPErxmH9+++xn1tnaV+1CGA7u8P/xzbSJvWlz/b0TPSpNtmy9nYm/13VwuI
+ rz3OYGHEWzl+A/l/MZ1cjUwUKNTesN2epDTQRmnyEvi09/5n3h09umPKXbTWjlrsKZKLsu0OYM
+ MwIgSIUXXBBy3e0Pkxm8Su637qR2Hgk3KGP4OJLQrxQlYp0LDuyxdq+ZWZti/sedjAOmsTTPhC
+ 86jRyU/8Zpy8MzmE3UbmChL4ZNkAd+58TUDJa+ZYnuU0skrKf3mY/YnegJVnq8g3RYPF+opRRQ
+ UbM=
 WDCIronportException: Internal
 Received: from h5lk5s2.ad.shared (HELO naota-xeon.wdc.com) ([10.225.53.119])
-  by uls-op-cesaip02.wdc.com with ESMTP; 03 Jul 2022 21:58:53 -0700
+  by uls-op-cesaip02.wdc.com with ESMTP; 03 Jul 2022 21:58:55 -0700
 From:   Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 09/13] btrfs: zoned: disable metadata overcommit for zoned
-Date:   Mon,  4 Jul 2022 13:58:13 +0900
-Message-Id: <3d7e559990ec7abe5cc5433b1916f62b5c44e818.1656909695.git.naohiro.aota@wdc.com>
+Subject: [PATCH 11/13] btrfs: zoned: activate necessary block group
+Date:   Mon,  4 Jul 2022 13:58:15 +0900
+Message-Id: <bbdd836915d620e57416174ece589c6c33da4511.1656909695.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <cover.1656909695.git.naohiro.aota@wdc.com>
 References: <cover.1656909695.git.naohiro.aota@wdc.com>
@@ -61,37 +61,47 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The metadata overcommit makes the space reservation flexible but it is also
-harmful to active zone tracking. Since we cannot finish a block group from
-the metadata allocation context, we might not activate a new block group
-and might not be able to actually write out the overcommit reservations.
-
-So, disable metadata overcommit for zoned btrfs. We will ensure the
-reservations are under active_total_bytes in the following patches.
+There are two places where allocating a chunk is not enough. These two
+places are trying to ensure the space by allocating a chunk. To meet the
+condition for active_total_bytes, we also need to activate a block group
+there.
 
 CC: stable@vger.kernel.org # 5.16+
 Fixes: afba2bc036b0 ("btrfs: zoned: implement active zone tracking")
 Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 ---
- fs/btrfs/space-info.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ fs/btrfs/block-group.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index c7a60341b2d2..4ce9dfbabd97 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -399,7 +399,10 @@ int btrfs_can_overcommit(struct btrfs_fs_info *fs_info,
- 		return 0;
- 
- 	used = btrfs_space_info_used(space_info, true);
--	avail = calc_available_free_space(fs_info, space_info, flush);
-+	if (btrfs_is_zoned(fs_info) && (space_info->flags & BTRFS_BLOCK_GROUP_METADATA))
-+		avail = 0;
-+	else
-+		avail = calc_available_free_space(fs_info, space_info, flush);
- 
- 	if (used + bytes < writable_total_bytes(fs_info, space_info) + avail)
- 		return 1;
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index 51e7c1f1d93f..1c22cfe91a65 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2664,6 +2664,11 @@ int btrfs_inc_block_group_ro(struct btrfs_block_group *cache,
+ 	ret = btrfs_chunk_alloc(trans, alloc_flags, CHUNK_ALLOC_FORCE);
+ 	if (ret < 0)
+ 		goto out;
++	/*
++	 * We have allocated a new chunk. We also need to activate that chunk to
++	 * grant metadata tickets for zoned btrfs.
++	 */
++	btrfs_zoned_activate_one_bg(fs_info, cache->space_info, true);
+ 	ret = inc_block_group_ro(cache, 0);
+ 	if (ret == -ETXTBSY)
+ 		goto unlock_out;
+@@ -3889,6 +3894,12 @@ static void reserve_chunk_space(struct btrfs_trans_handle *trans,
+ 		if (IS_ERR(bg)) {
+ 			ret = PTR_ERR(bg);
+ 		} else {
++			/*
++			 * We have a new chunk. We also need to activate it for
++			 * zoned btrfs.
++			 */
++			btrfs_zoned_activate_one_bg(fs_info, info, true);
++
+ 			/*
+ 			 * If we fail to add the chunk item here, we end up
+ 			 * trying again at phase 2 of chunk allocation, at
 -- 
 2.35.1
 

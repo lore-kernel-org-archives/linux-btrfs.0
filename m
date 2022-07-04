@@ -2,43 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20AC2C433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Jul 2022 11:42:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41BF6C43334
+	for <linux-btrfs@archiver.kernel.org>; Mon,  4 Jul 2022 11:42:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232982AbiGDLmk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 4 Jul 2022 07:42:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53198 "EHLO
+        id S232947AbiGDLmm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 4 Jul 2022 07:42:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53456 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233471AbiGDLmM (ORCPT
+        with ESMTP id S233381AbiGDLmM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jul 2022 07:42:12 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E027110B0
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2022 04:42:11 -0700 (PDT)
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B6F6199
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2022 04:42:10 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 7CF2E60B1F
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2022 11:42:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 65E88C3411E
-        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2022 11:42:10 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 9B7EB60AE3
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2022 11:42:09 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 82877C341CD
+        for <linux-btrfs@vger.kernel.org>; Mon,  4 Jul 2022 11:42:08 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1656934930;
-        bh=KBoz1o1dXdw43pFqErIx4yF26CNm+xlWUljXVW2JgFU=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Gcwq0V7wroCsnK6fKTDciIMHBjJ/n2s6WySDe51Sz4R/RIqGTgBkBUx1aQQM7WrGh
-         SErOAo25me6Jt1NlEl7xTmMazrBk3jDYA6tdhbSaM6n6Jus2rPgr7ijC0HsrJQ7qD8
-         1mOMUlfvWdkd4rMFyu0iANbvB6vBfPLbzWLdKEw4a9CTE6lbjJhQW88KyoKzkPg4C2
-         1EB0sECx7irDttEGh5hMAfOVPNuHmpwNwzSFu58woEMRhj9rcrlFZLzqyCphkfsl8j
-         LwiHStHz6sKlkM4tchb05RgCyiekLMqGcF3uz8yKL3AqaEqH34orIANNFTlZWL1lR+
-         mml1ykFUC4SvQ==
+        s=k20201202; t=1656934929;
+        bh=r8AvoU2fZ+01KvGx86OdS4eZy19Wbar4s7BVN4ugZXE=;
+        h=From:To:Subject:Date:From;
+        b=PPbRoVR4ysKQXpI6n2oN9DG67Ufhopkfml9W9K7Fl7q/2aKS3jVYAycyz9yC/i1WV
+         Cf8V32n3LIo2no80hg2gg2wSB9LfWJMu0k7Tg6odfgEFGpX91SxRtQvJMiUro1s2ID
+         nzzBRmB4JhubCCmxdwQUzdPaRE9UhiMc92+Ojq6g0vEg5PUkJIwfaoKrAzgd0gHl2N
+         sAsSCwD8q8vm/ZeW8Yt2WWGZAZvcfZ2mEgaUnCrk/X2W3seBtDWB4uKWBFtQTY17Xt
+         vX2nihpi2pt17scbGjnjkmjH0nXuY/j7OxreDyemJGw7yGirXiLu5xO2vk3dPocuIy
+         kvaEVcbDOMFPQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/3] btrfs: don't fallback to buffered IO for NOWAIT direct IO writes
-Date:   Mon,  4 Jul 2022 12:42:04 +0100
-Message-Id: <1a7080444b73f8ca1481a7786e52bdf405193be9.1656934419.git.fdmanana@suse.com>
+Subject: [PATCH 0/3] btrfs: a few direct IO fixes/improvements
+Date:   Mon,  4 Jul 2022 12:42:02 +0100
+Message-Id: <cover.1656934419.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1656934419.git.fdmanana@suse.com>
-References: <cover.1656934419.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -47,50 +45,26 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Currently, for a direct IO write, if we need to fallback to buffered IO,
-either the satisfy the whole write operation or just a part of it, we do
-it in the current context even if it's a NOWAIT context. This is not ideal
-because we currently don't have support for NOWAIT semantics in the
-buffered IO path (we can block for several reasons), so we should instead
-return -EAGAIN to the caller, so that it knows it should retry (the whole
-operation or what's left of it) in a context where blocking is acceptable.
+Several fixes and improvements regarding direct IO, with the first one being
+recently reported by Dominique when using qemu with io_uring on images that
+have a mix of compressed and non-compressed extents. That in particular
+exposed a bug in qemu's handling of partial reads, fixed recently by
+Dominique, but despite that we could avoid returning a partial read when
+there's really no need to, not just for efficiency but also because many
+applications don't take into consideration partial reads (MariaDB for
+example didn't use to until recently) or are buggy dealing with them.
+More details in the changelogs.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/file.c | 16 +++++++++++++++-
- 1 file changed, 15 insertions(+), 1 deletion(-)
+Filipe Manana (3):
+  btrfs: return -EAGAIN for NOWAIT dio reads/writes on compressed and
+    inline extents
+  btrfs: don't fallback to buffered IO for NOWAIT direct IO writes
+  btrfs: fault in pages for dio reads/writes in a more controlled way
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index da41a0c371bc..9c8e3a668d70 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1971,11 +1971,25 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 	if (is_sync_write)
- 		iocb->ki_flags |= IOCB_DSYNC;
- 
--	/* If 'err' is -ENOTBLK then it means we must fallback to buffered IO. */
-+	/*
-+	 * If 'err' is -ENOTBLK or we have not written all data, then it means
-+	 * we must fallback to buffered IO.
-+	 */
- 	if ((err < 0 && err != -ENOTBLK) || !iov_iter_count(from))
- 		goto out;
- 
- buffered:
-+	/*
-+	 * If we are in a NOWAIT context, then return -EAGAIN to signal the caller
-+	 * it must retry the operation in a context where blocking is acceptable,
-+	 * since we currently don't have NOWAIT semantics support for buffered IO
-+	 * and may block there for many reasons (reserving space for example).
-+	 */
-+	if (iocb->ki_flags & IOCB_NOWAIT) {
-+		err = -EAGAIN;
-+		goto out;
-+	}
-+
- 	pos = iocb->ki_pos;
- 	written_buffered = btrfs_buffered_write(iocb, from);
- 	if (written_buffered < 0) {
+ fs/btrfs/file.c  | 72 ++++++++++++++++++++++++++++++++++++------------
+ fs/btrfs/inode.c | 14 +++++++++-
+ 2 files changed, 68 insertions(+), 18 deletions(-)
+
 -- 
 2.35.1
 

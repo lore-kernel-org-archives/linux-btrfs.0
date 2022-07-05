@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 47E03C433EF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5F5BC43334
 	for <linux-btrfs@archiver.kernel.org>; Tue,  5 Jul 2022 07:39:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230200AbiGEHjk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S230210AbiGEHjk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 5 Jul 2022 03:39:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37342 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37372 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230162AbiGEHjg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jul 2022 03:39:36 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BDBF313D1C
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jul 2022 00:39:34 -0700 (PDT)
+        with ESMTP id S229626AbiGEHji (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jul 2022 03:39:38 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDE1A13D0E
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jul 2022 00:39:36 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7F359224BB
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jul 2022 07:39:33 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id A76971F9BF
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jul 2022 07:39:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1657006773; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1657006775; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=Bbuz35aYGGlIOmXJlPgihigDXD7+a/SPH0Ikalhnhtw=;
-        b=jWi1Zdwez4NMS1xiua/uy1TZqC3d5X/GONB/niC65dVYIScDwy3as7AVK32qvmtBgBrsUz
-        Fcj/sO83gg8oCLKVjNed0WLnuw6LlKiRg5XL/pTvEmnpGQ72+5muIpEENMCSXZL6bCcX8u
-        9jBQ4aaje5+elt6CzRrHBxCWWKa8ANo=
+        bh=QCVTq+nLUTbwjNpOFA353mI3mKirIJBPM6fhcatjdWk=;
+        b=p+g58hmG0HsZbHuGKe0IAYUawOY9iMM0YMni0tWOj4hGiqM+eaO/rSe11eVO7nRDNfass8
+        VDYQ2qzhrRrbW81MtC8VBYjPZnIOpZ1FQ97iwkhfMe6vqaCTH/zsOPOVKDtO4hH6GkqqOO
+        Ib5O/39VS+rdcgIe3LYuuuoSeb9XYJI=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D18701339A
-        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jul 2022 07:39:32 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EF33A1339A
+        for <linux-btrfs@vger.kernel.org>; Tue,  5 Jul 2022 07:39:34 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 8O+jJrTqw2L6OwAAMHmgww
+        id yDnQLbbqw2L6OwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jul 2022 07:39:32 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jul 2022 07:39:34 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 01/11] btrfs: introduce new compat RO flag, EXTRA_SUPER_RESERVED
-Date:   Tue,  5 Jul 2022 15:39:03 +0800
-Message-Id: <67f49ace41bb92c4ed0ad663c553e96d56acf5af.1657004556.git.wqu@suse.com>
+Subject: [PATCH RFC 03/11] btrfs: introduce the on-disk format of btrfs write intent bitmaps
+Date:   Tue,  5 Jul 2022 15:39:05 +0800
+Message-Id: <20e6fdb9e8fa3ba80a5b2c1988a377e7f5733abb.1657004556.git.wqu@suse.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <cover.1657004556.git.wqu@suse.com>
 References: <cover.1657004556.git.wqu@suse.com>
@@ -54,229 +54,256 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From the beginning of btrfs kernel module, kernel will avoid allocating
-dev extents into the first 1MiB of each device, not only for the
-superblock at 64KiB, but also for legacy bootloaders to store their
-data.
-
-Here for later expansion, we introduce a new compat RO flag,
-EXTRA_SUPER_RESERVED, this allows btrfs to have extra reserved space
-beyond the default 1MiB.
-
-The extra reserved space can be utilized by things like write-intent
-log.
-
-Several new checks are introduced:
-
-- No super_reserved_bytes should be smaller than the old 1MiB limit
-- No zoned device support
-  Such reserved space will be utilized in a no COW way, thus it can
-  not be supported by zoned device.
-
-We still allow dev extents to exist in the new reserved_bytes range,
-this is to allow btrfstune to set reserved_bytes, then rely on kernel
-balance to reserve the new space.
-
-But later, if there is any feature relying on the reserved_bytes, we
-will disable those features automatically.
-
-There is a special catch, the new member @reserved_bytes is located at
-the end of the superblock, to utilize the padding bytes.
-
-The reason is, due to some undetermined extent tree v2 on-disk format
-mess, we don't have reliable location inside the reserved8[] array.
-I just want a stable location undisturbed.
+With extra comments explaining the on-disk format and the basic
+workflow.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ctree.h           | 14 +++++++++++---
- fs/btrfs/disk-io.c         |  9 +++++++++
- fs/btrfs/sysfs.c           |  2 ++
- fs/btrfs/volumes.c         | 22 ++++++++++++++++++----
- fs/btrfs/zoned.c           |  8 ++++++++
- include/uapi/linux/btrfs.h | 10 ++++++++++
- 6 files changed, 58 insertions(+), 7 deletions(-)
+ fs/btrfs/disk-io.c      |   4 +-
+ fs/btrfs/raid56.c       |   1 +
+ fs/btrfs/write-intent.h | 199 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 203 insertions(+), 1 deletion(-)
+ create mode 100644 fs/btrfs/write-intent.h
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4e2569f84aab..12019904f1cf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -293,14 +293,19 @@ struct btrfs_super_block {
- 	__le64 block_group_root_generation;
- 	u8 block_group_root_level;
- 
--	/* future expansion */
- 	u8 reserved8[7];
- 	__le64 reserved[25];
- 	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
- 	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
- 
-+	/*
-+	 * How many bytes are reserved at the beginning of a device.
-+	 * Should be >= BTRFS_DEFAULT_RESERVED.
-+	 */
-+	__le32 reserved_bytes;
-+
- 	/* Padded to 4096 bytes */
--	u8 padding[565];
-+	u8 padding[561];
- } __attribute__ ((__packed__));
- static_assert(sizeof(struct btrfs_super_block) == BTRFS_SUPER_INFO_SIZE);
- 
-@@ -315,7 +320,8 @@ static_assert(sizeof(struct btrfs_super_block) == BTRFS_SUPER_INFO_SIZE);
- #define BTRFS_FEATURE_COMPAT_RO_SUPP			\
- 	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |	\
- 	 BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID | \
--	 BTRFS_FEATURE_COMPAT_RO_VERITY)
-+	 BTRFS_FEATURE_COMPAT_RO_VERITY |		\
-+	 BTRFS_FEATURE_COMPAT_RO_EXTRA_SUPER_RESERVED)
- 
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
-@@ -2539,6 +2545,8 @@ BTRFS_SETGET_STACK_FUNCS(super_block_group_root_generation,
- 			 block_group_root_generation, 64);
- BTRFS_SETGET_STACK_FUNCS(super_block_group_root_level, struct btrfs_super_block,
- 			 block_group_root_level, 8);
-+BTRFS_SETGET_STACK_FUNCS(super_reserved_bytes, struct btrfs_super_block,
-+			 reserved_bytes, 32);
- 
- int btrfs_super_csum_size(const struct btrfs_super_block *s);
- const char *btrfs_super_csum_name(u16 csum_type);
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 70b388de4d66..1df2da2509ca 100644
+index 967c020c380a..963a89cd4bfb 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2822,6 +2822,15 @@ static int validate_super(struct btrfs_fs_info *fs_info,
- 		ret = -EINVAL;
- 	}
+@@ -42,6 +42,7 @@
+ #include "space-info.h"
+ #include "zoned.h"
+ #include "subpage.h"
++#include "write-intent.h"
  
-+	if (btrfs_super_compat_ro_flags(sb) &
-+	    BTRFS_FEATURE_COMPAT_RO_EXTRA_SUPER_RESERVED &&
-+	    btrfs_super_reserved_bytes(sb) < BTRFS_DEVICE_RANGE_RESERVED) {
-+		btrfs_err(fs_info,
-+"EXTRA_SUPER_RESERVED feature enabled, but reserved space is smaller than default (%u)",
-+			    BTRFS_DEVICE_RANGE_RESERVED);
-+		ret = -EINVAL;
-+	}
+ #define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN |\
+ 				 BTRFS_HEADER_FLAG_RELOC |\
+@@ -2844,7 +2845,8 @@ static int validate_super(struct btrfs_fs_info *fs_info,
+ 		 * Extra check like the length check against the reserved space
+ 		 * will happen at bitmap load time.
+ 		 */
+-		if (btrfs_super_reserved_bytes(sb) < BTRFS_DEVICE_RANGE_RESERVED) {
++		if (btrfs_super_reserved_bytes(sb) <
++		    BTRFS_DEVICE_RANGE_RESERVED + WRITE_INTENT_BITMAPS_SIZE) {
+ 			btrfs_err(fs_info,
+ 			"not enough reserved space for write intent bitmap");
+ 			ret = -EINVAL;
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index c6411c849fea..7b2d2b6c8c61 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -19,6 +19,7 @@
+ #include "volumes.h"
+ #include "raid56.h"
+ #include "async-thread.h"
++#include "write-intent.h"
+ 
+ /* set when additional merges to this rbio are not allowed */
+ #define RBIO_RMW_LOCKED_BIT	1
+diff --git a/fs/btrfs/write-intent.h b/fs/btrfs/write-intent.h
+new file mode 100644
+index 000000000000..b851917bb0b6
+--- /dev/null
++++ b/fs/btrfs/write-intent.h
+@@ -0,0 +1,199 @@
++/* SPDX-License-Identifier: GPL-2.0 */
 +
- 	/*
- 	 * The generation is a global counter, we'll trust it more than the others
- 	 * but it's still possible that it's the one that's wrong.
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index d5d0717fd09a..7fd38539315f 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -287,6 +287,7 @@ BTRFS_FEAT_ATTR_INCOMPAT(no_holes, NO_HOLES);
- BTRFS_FEAT_ATTR_INCOMPAT(metadata_uuid, METADATA_UUID);
- BTRFS_FEAT_ATTR_COMPAT_RO(free_space_tree, FREE_SPACE_TREE);
- BTRFS_FEAT_ATTR_INCOMPAT(raid1c34, RAID1C34);
-+BTRFS_FEAT_ATTR_COMPAT_RO(extra_super_reserved, EXTRA_SUPER_RESERVED);
- #ifdef CONFIG_BLK_DEV_ZONED
- BTRFS_FEAT_ATTR_INCOMPAT(zoned, ZONED);
- #endif
-@@ -317,6 +318,7 @@ static struct attribute *btrfs_supported_feature_attrs[] = {
- 	BTRFS_FEAT_ATTR_PTR(metadata_uuid),
- 	BTRFS_FEAT_ATTR_PTR(free_space_tree),
- 	BTRFS_FEAT_ATTR_PTR(raid1c34),
-+	BTRFS_FEAT_ATTR_PTR(extra_super_reserved),
- #ifdef CONFIG_BLK_DEV_ZONED
- 	BTRFS_FEAT_ATTR_PTR(zoned),
- #endif
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2d788a351c1f..2a4ac905e39f 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1401,8 +1401,13 @@ static bool contains_pending_extent(struct btrfs_device *device, u64 *start,
- 
- static u64 dev_extent_search_start(struct btrfs_device *device, u64 start)
- {
-+	struct btrfs_fs_info *fs_info = device->fs_devices->fs_info;
++/* Btrfs specific write-intent bitmaps. */
 +
- 	switch (device->fs_devices->chunk_alloc_policy) {
- 	case BTRFS_CHUNK_ALLOC_REGULAR:
-+		if (btrfs_fs_compat_ro(fs_info, EXTRA_SUPER_RESERVED))
-+			return max_t(u64, start,
-+				btrfs_super_reserved_bytes(fs_info->super_copy));
- 		return max_t(u64, start, BTRFS_DEVICE_RANGE_RESERVED);
- 	case BTRFS_CHUNK_ALLOC_ZONED:
- 		/*
-@@ -7969,11 +7974,14 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 	struct extent_map *em;
- 	struct map_lookup *map;
- 	struct btrfs_device *dev;
-+	u32 super_reserved = BTRFS_DEVICE_RANGE_RESERVED;
- 	u64 stripe_len;
- 	bool found = false;
- 	int ret = 0;
- 	int i;
- 
-+	if (btrfs_fs_compat_ro(fs_info, EXTRA_SUPER_RESERVED))
-+		super_reserved = btrfs_super_reserved_bytes(fs_info->super_copy);
- 	read_lock(&em_tree->lock);
- 	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
- 	read_unlock(&em_tree->lock);
-@@ -7998,11 +8006,17 @@ static int verify_one_dev_extent(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/*
--	 * Very old mkfs.btrfs (before v4.1) will not respect the reserved
--	 * space. Although kernel can handle it without problem, better to warn
--	 * the users.
-+	 * This can be caused by two cases:
-+	 * - Very old mkfs.btrfs (before v4.1) and no balance at all
-+	 *   This should be pretty rare now, as balance will relocate
-+	 *   those dev extents in reserved range.
-+	 *
-+	 * - Newly set btrfs_super_block::reserved_bytes
-+	 *   We are rely on this mount to relocate those dev extents.
-+	 *
-+	 * So here, we just give a warning and continue the mount.
- 	 */
--	if (physical_offset < BTRFS_DEVICE_RANGE_RESERVED)
-+	if (physical_offset < super_reserved)
- 		btrfs_warn(fs_info,
- 		"devid %llu physical %llu len %llu inside the reserved space",
- 			   devid, physical_offset, physical_len);
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 7a0f8fa44800..ec16c0a6fb22 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -703,6 +703,14 @@ int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info)
- 		goto out;
- 	}
- 
-+	if (incompat_zoned && btrfs_fs_compat_ro(fs_info, EXTRA_SUPER_RESERVED)) {
-+		btrfs_err(fs_info,
-+			"zoned: incompatible optional feature detected: 0x%llx",
-+			BTRFS_FEATURE_COMPAT_RO_EXTRA_SUPER_RESERVED);
-+		ret = -EINVAL;
-+		goto out;
-+	}
++#ifndef BTRFS_WRITE_INTENT_H
++#define BTRFS_WRITE_INTENT_H
 +
- 	/*
- 	 * stripe_size is always aligned to BTRFS_STRIPE_LEN in
- 	 * btrfs_create_chunk(). Since we want stripe_len == zone_size,
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index f54dc91e4025..4a0c9f4f55d1 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -290,6 +290,16 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE_VALID	(1ULL << 1)
- #define BTRFS_FEATURE_COMPAT_RO_VERITY			(1ULL << 2)
- 
++#include <linux/types.h>
++#include <linux/sizes.h>
++/* For BTRFS_STRIPE_LEN. */
++#include "volumes.h"
++
++#define WRITE_INTENT_SUPER_MAGIC 0x515F62536249775FULL /* ascii _wIbSb_Q */
++
++/* This write-intent bitmap records writes for RAID56 writes. */
++#define WRITE_INTENT_FLAGS_TARGET_RAID56	(1ULL << 0)
++
++/* This write-intent bitmap is internal, aka locates at 1MiB of each device. */
++#define WRITE_INTENT_FLAGS_INTERNAL		(1ULL << 1)
++
++/* This write-intent bitmap uses logical bytenr. */
++#define WRITE_INTENT_FLAGS_BYTENR_LOGICAL	(1ULL << 2)
++
++#define WRITE_INTENT_FLAGS_SUPPORTED			\
++	(WRITE_INTENT_FLAGS_TARGET_RAID56 |		\
++	 WRITE_INTENT_FLAGS_INTERNAL |			\
++	 WRITE_INTENT_FLAGS_BYTENR_LOGICAL)
++
 +/*
-+ * Allow btrfs to have extra reserved space (other than the default 1MiB) at
-+ * the beginning of each device.
-+ *
-+ * This feature will enable the usage of btrfs_super_block::reserved_bytes.
-+ *
-+ * This feature would only be available for non-zoned filesystems.
++ * We use BTRFS_STRIPE_LEN as blocksize.
++ * This makes a RAID56 full stripe to @nr_data bits, and greatly
++ * enlarge how many bytes we can represent just using 4KiB.
 + */
-+#define BTRFS_FEATURE_COMPAT_RO_EXTRA_SUPER_RESERVED	(1ULL << 3)
++#define WRITE_INTENT_BLOCKSIZE			(BTRFS_STRIPE_LEN)
 +
- #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
- #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
++/*
++ * For now, 4KiB is enough, as using 64KiB blocksize we can save bitmaps
++ * for 896MiB (224 entries, each entri can cache 64KiB * 64) sized logical
++ * range.
++ */
++#define WRITE_INTENT_BITMAPS_SIZE		(SZ_4K)
++
++
++/*
++ * The super block of write intent bitmaps, should be at physical offset 1MiB of
++ * every writeable device.
++ */
++struct write_intent_super {
++	/* Csum for the super block and all the internal entries. */
++	__u8 csum[BTRFS_CSUM_SIZE];
++	__u8 fsid[BTRFS_FSID_SIZE];
++
++	__le64 magic;
++
++	/* Important behavior flags would be set here. */
++	__le64 flags;
++
++	/*
++	 * Event counter for the bitmap, every time the bitmaps get written
++	 * this value increases.
++	 */
++	__le64 events;
++
++	/*
++	 * Total size of the bitmaps, including this super block and all the
++	 * entries.
++	 *
++	 * U32 should be enough for internal bitmaps, but just in case we want
++	 * to support external device as dedicated journal/bitmap device.
++	 */
++	__le64 size;
++
++	/* How many entries we have utilized. */
++	__le64 nr_entries;
++
++	/* How many bytes one bit represents. */
++	__le32 blocksize;
++	/*
++	 * This should be the same as btrfs_super_block::csum_type.
++	 * Cache csum type here so we read the write intent superblock without
++	 * a fully opened btrfs (for dump purpose).
++	 */
++	__le16 csum_type;
++
++	/* For future expansion, padding to 512 bytes. */
++	__u8 reserved1[418];
++} __attribute__ ((__packed__));
++
++static_assert(sizeof(struct write_intent_super) == 512);
++
++struct write_intent_entry {
++	/*
++	 * Bytenr 0 is special, means this entry is empty, and also means the
++	 * end of the bitmaps.
++	 */
++	__le64 bytenr;
++	__le64 bitmap;
++};
++
++/* How many entries we can have in the bitmaps. */
++#define WRITE_INTENT_INTERNAL_BITMAPS_MAX_ENTRIES		\
++	((WRITE_INTENT_BITMAPS_SIZE -				\
++	  sizeof(struct write_intent_super)) /			\
++	 sizeof(struct write_intent_entry))
++
++/* The number of bits we can have in one entry. */
++#define WRITE_INTENT_BITS_PER_ENTRY		(64)
++
++/*
++ * ON-DISK FORMAT
++ * ==============
++ *
++ * [ super ][ entry 1 ][ entry 2 ] ... [entry N]
++ * |<------------  super::size --------------->|
++ *
++ * Normally it's 4KiB in size for internal bitmap.
++ *
++ * Currently the write-intent bitmaps is only for RAID56 writes, thus its
++ * blocksize is always 64KiB.
++ * Thus one entry can represent at most 4MiB (64 * 64 KiB) of logical range.
++ *
++ * When one raid56 full stripe needs partial writeback, the full stripe logical
++ * bytenr range will be included into at least one entry.
++ *
++ * After the last used entry, the remaining entries will all be filled with 0.
++ *
++ * WORKFLOW
++ * ========
++ *
++ * 1) Write bio arrive
++ *    Every write meets the requirement (so far, only RAID56 partial write) will
++ *    have its bio delayed, until corresponding range are marked in the entry.
++ *
++ * 2) Update the write-intent bitmaps
++ *    The entries will be populated, and write back to all writeable devices,
++ *    with FUA flag set.
++ *    Will wait until the write reaches disks.
++ *
++ * 3) Allow the involved write bios to be submitted
++ *
++ * 4) Write bios finish
++ *    The corresponding range will be recorded to be freed at next flush.
++ *
++ * 5) All devices get flushed (caused by btrfs super block writeback or bitmaps
++ *    pressure)
++ *    The recorded ranges will be cleared. And if an entry is empty, it will be
++ *    freed.
++ *    Then update the write-intent bitmaps with its superblock (writeback with FUA
++ *    flag and wait for it).
++ */
++
++#define WRITE_INTENT_SETGET_FUNCS(name, type, member, bits)	\
++static inline u##bits wi_##name(const type *s)			\
++{								\
++	return le##bits##_to_cpu(s->member);			\
++}								\
++static inline void wi_set_##name(type *s, u##bits val)		\
++{								\
++	s->member = cpu_to_le##bits(val);			\
++}
++
++WRITE_INTENT_SETGET_FUNCS(super_magic, struct write_intent_super, magic, 64);
++WRITE_INTENT_SETGET_FUNCS(super_flags, struct write_intent_super, flags, 64);
++WRITE_INTENT_SETGET_FUNCS(super_events, struct write_intent_super, events, 64);
++WRITE_INTENT_SETGET_FUNCS(super_size, struct write_intent_super, size, 64);
++WRITE_INTENT_SETGET_FUNCS(super_nr_entries, struct write_intent_super,
++			  nr_entries, 64);
++WRITE_INTENT_SETGET_FUNCS(super_blocksize, struct write_intent_super,
++			  blocksize, 32);
++WRITE_INTENT_SETGET_FUNCS(super_csum_type, struct write_intent_super,
++			  csum_type, 16);
++WRITE_INTENT_SETGET_FUNCS(entry_bytenr, struct write_intent_entry, bytenr, 64);
++
++static inline void wie_get_bitmap(struct write_intent_entry *entry,
++				  unsigned long *bitmap)
++{
++#ifdef __LITTLE_ENDIAN
++	bitmap_from_arr64(bitmap, &entry->bitmap, WRITE_INTENT_BITS_PER_ENTRY);
++#else
++	u64 val = le64_to_cpu(entry->bitmap);
++
++	bitmap_from_arr64(bitmap, &val, WRITE_INTENT_BITS_PER_ENTRY);
++#endif
++}
++
++static inline void wie_set_bitmap(struct write_intent_entry *entry,
++				  unsigned long *bitmap)
++{
++#ifdef __LITTLE_ENDIAN
++	bitmap_to_arr64(&entry->bitmap, bitmap, WRITE_INTENT_BITS_PER_ENTRY);
++#else
++	u64 val;
++
++	bitmap_to_arr64(&val, bitmap, WRITE_INTENT_BITS_PER_ENTRY);
++	entry->bitmap = cpu_to_le64(val);
++#endif
++}
++
++#endif
 -- 
 2.36.1
 

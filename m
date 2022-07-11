@@ -2,97 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B608BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jul 2022 14:31:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C428C43334
+	for <linux-btrfs@archiver.kernel.org>; Mon, 11 Jul 2022 15:16:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230021AbiGKObY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 11 Jul 2022 10:31:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52258 "EHLO
+        id S231716AbiGKPQX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 11 Jul 2022 11:16:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229544AbiGKObU (ORCPT
+        with ESMTP id S229616AbiGKPQW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 11 Jul 2022 10:31:20 -0400
+        Mon, 11 Jul 2022 11:16:22 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 61A5461D96
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2022 07:31:19 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29CDE23BE2
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jul 2022 08:16:21 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 205BD1FFD7;
-        Mon, 11 Jul 2022 14:31:18 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id DB79820396;
+        Mon, 11 Jul 2022 15:16:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1657549878; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=cGBChuOVsDXfysIbU2c1zuiafHtA5bsz+364RnBFZ18=;
-        b=cf7n6SQ/DdugqNZHUYeeexcpiKJ2ooJ71pq98+dgoR1ywGyRO0t1bv9jc7DUf7PUZB1/av
-        bkE2+WJKhVAMi6lY4adHty3u0x7chlS/R7yrcBMXODc3Tt4I/Pl4zOGhTQIeKa7IfyD8Lu
-        k8qo1gB7JVWpDhP8Z2Zu8iR9HyR1dYk=
+        t=1657552579; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=GptR72rUMn3NLrfbeR1dL2xzaLONyE5+YTit1Xo+X1w=;
+        b=tvQMFnOcQuUY1NoYRD9WZy0YOb6ATnpfCE6bwzotsXZT9i9x//xnXiwnAz30xttTBMDJ82
+        JQIau/mVpN10ZREHzCUqJzR/wniibKIIKubuZmJ8DioTwmhBFofArtro+kRNz3NVf/Z5Ju
+        ZLzV5ql0Etfon8E5bfsIJjI6tXUsgaQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E160D13524;
-        Mon, 11 Jul 2022 14:31:17 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AA75E13322;
+        Mon, 11 Jul 2022 15:16:19 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id ptEPNDU0zGL8SgAAMHmgww
-        (envelope-from <nborisov@suse.com>); Mon, 11 Jul 2022 14:31:17 +0000
-Message-ID: <022b5a0e-8c1b-873a-e231-8ffd367514d5@suse.com>
-Date:   Mon, 11 Jul 2022 17:31:17 +0300
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.1
-Subject: Re: [PATCH 1/2] btrfs: set the objectid of the btree inode's location
- key
-Content-Language: en-US
-To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <cover.1657549024.git.fdmanana@suse.com>
- <92f0a873da8c66fd4b6615a3b2c580d3a410a11f.1657549024.git.fdmanana@suse.com>
+        id zBz3JsM+zGLnXQAAMHmgww
+        (envelope-from <nborisov@suse.com>); Mon, 11 Jul 2022 15:16:19 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
-In-Reply-To: <92f0a873da8c66fd4b6615a3b2c580d3a410a11f.1657549024.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To:     linux-btrfs@vger.kernel.org
+Cc:     Nikolay Borisov <nborisov@suse.com>
+Subject: [PATCH] btrfs: simplify error handling in btrfs_lookup_dentry
+Date:   Mon, 11 Jul 2022 18:16:18 +0300
+Message-Id: <20220711151618.2518485-1-nborisov@suse.com>
+X-Mailer: git-send-email 2.25.1
+MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+In btrfs_lookup_dentry releasing the reference of the sub_root and the
+running orphan cleanup should only happen if the dentry found actually
+represents a subvolume. This can only be true in the 'else' branch as
+otherwise either fixup_tree_root_location returned an ENOENT error, in
+which case sub_root wouldn't have been changed or if we got a different
+errno this means btrfs_get_fs_root couldn't have executed successfully
+again meaning sub_root will equal to root. So simplify all the branches
+by moving the code into the 'else'.
 
+Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+---
+ fs/btrfs/inode.c | 4 ----
+ 1 file changed, 4 deletions(-)
 
-On 11.07.22 г. 17:22 ч., fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> We currently don't use the location key of the btree inode, its content
-> is set to zeroes, as it's a special inode that is not persisted (it has
-> no inode item stored in any btree).
-> 
-> At btrfs_ino(), an inline function used extensively in btrfs, we have
-> this special check if the given inode's location objectid is 0, and if it
-> is, we return the value stored in the VFS' inode i_ino field instead
-> (which is BTRFS_BTREE_INODE_OBJECTID for the btree inode).
-> 
-> To reduce the code at btrfs_ino(), we can simply set the objectid of the
-> btree inode to the value BTRFS_BTREE_INODE_OBJECTID. This eliminates the
-> need to check for the special case of the objectid being zero, with the
-> side effect of reducing the overall code size and having less code to
-> execute, as btrfs_ino() is an inline function.
-> 
-> Before:
-> 
-> $ size fs/btrfs/btrfs.ko
->     text	   data	    bss	    dec	    hex	filename
-> 1620502	 189240	  29032	1838774	 1c0eb6	fs/btrfs/btrfs.ko
-> 
-> After:
-> 
-> $ size fs/btrfs/btrfs.ko
->     text	   data	    bss	    dec	    hex	filename
-> 1617487	 189240	  29032	1835759	 1c02ef	fs/btrfs/btrfs.ko
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0b17335555e0..1dd073e96696 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5821,11 +5821,7 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+ 			inode = new_simple_dir(dir->i_sb, &location, sub_root);
+ 	} else {
+ 		inode = btrfs_iget(dir->i_sb, location.objectid, sub_root);
+-	}
+-	if (root != sub_root)
+ 		btrfs_put_root(sub_root);
+-
+-	if (!IS_ERR(inode) && root != sub_root) {
+ 		down_read(&fs_info->cleanup_work_sem);
+ 		if (!sb_rdonly(inode->i_sb))
+ 			ret = btrfs_orphan_cleanup(sub_root);
+-- 
+2.25.1
 
-Cool, that's around 3k of code savings.
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>

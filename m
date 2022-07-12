@@ -2,75 +2,147 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C64F3C43334
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jul 2022 20:37:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD854C433EF
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jul 2022 21:13:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231408AbiGLUhh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jul 2022 16:37:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41628 "EHLO
+        id S231426AbiGLVNn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jul 2022 17:13:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50212 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229681AbiGLUhg (ORCPT
+        with ESMTP id S231289AbiGLVNk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jul 2022 16:37:36 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 511CFB197F;
-        Tue, 12 Jul 2022 13:37:35 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 086663383C;
-        Tue, 12 Jul 2022 20:37:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1657658254;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=+trnDr+pJ3wLMVAOo1gWxDwo59FKwzr7H7Yzaf8eevI=;
-        b=TkZUtJ/zJtDGMW+Po0eZTMCLNlc7r7X6Yk57RK2DkqUMd2+C3pTQ4M1BHdSg/R6nqxszok
-        FabfKDihrviiMBchbp5XlIjYHmzvsF8MA9Jj8aszl5RyIcMcWJxrOM0V+UaZ8uLxeglfjj
-        wIXef8ByyOWeox6BcIV0driTyMW0KHg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1657658254;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=+trnDr+pJ3wLMVAOo1gWxDwo59FKwzr7H7Yzaf8eevI=;
-        b=Ww+lKtut8MSwQbl2P1XEcJO7G+G/2cb7pUxQRbkSc/QIkf69gsIEo2pFfCxR/wD/7XWqje
-        3SNMqxx3RfcORbDQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DB79013A94;
-        Tue, 12 Jul 2022 20:37:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id EfGHNI3bzWLlXQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 12 Jul 2022 20:37:33 +0000
-Date:   Tue, 12 Jul 2022 22:32:44 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-Subject: Re: [PATCH v2 00/13] btrfs: zoned: fix active zone tracking issues
-Message-ID: <20220712203244.GE15169@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org
-References: <cover.1657321126.git.naohiro.aota@wdc.com>
+        Tue, 12 Jul 2022 17:13:40 -0400
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D426BD8
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2022 14:13:37 -0700 (PDT)
+Received: from pps.filterd (m0109333.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 26CL8VAa014941
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2022 14:13:37 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=date : from : to : cc :
+ subject : message-id : references : mime-version : content-type :
+ in-reply-to : content-transfer-encoding; s=facebook;
+ bh=Y9DSj1AWVpuWLtI2syzA0F0XAXL4E+p2diffvjYGkUU=;
+ b=ImPWnZ4GBmA9d6lsbrOvSQgUq0R6Cx5zJXw0GuQVs3rdLhk9aH1Do7+2S1E3SxGnv9oF
+ Y5shI07w7cQF1FN9TZqD7KfaobVPHcU52QNXX3cvu4F+2jK/0knc5crP5EcRQ33rLrML
+ 3f2qUitfVa7KYrCDNP2DWSvxjMC71Fy5WJk= 
+Received: from mail.thefacebook.com ([163.114.132.120])
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3h8nndj4pj-3
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2022 14:13:37 -0700
+Received: from twshared25107.07.ash9.facebook.com (2620:10d:c085:208::11) by
+ mail.thefacebook.com (2620:10d:c085:11d::6) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2375.28; Tue, 12 Jul 2022 14:13:35 -0700
+Received: by devbig009.nao1.facebook.com (Postfix, from userid 431575)
+        id 8A2236A8D709; Tue, 12 Jul 2022 14:13:34 -0700 (PDT)
+Date:   Tue, 12 Jul 2022 14:13:34 -0700
+From:   Rohit Singh <rh0@fb.com>
+To:     Nikolay Borisov <nborisov@suse.com>
+CC:     <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] btrfs: simplify error handling in btrfs_lookup_dentry
+Message-ID: <Ys3j/s/h3SEExtOA@fb.com>
+References: <20220711151618.2518485-1-nborisov@suse.com>
+ <Ys3Rdl7HrV+bbtmB@fb.com>
+ <4ceb1340-0844-53d9-3e24-660f50019a1c@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="utf-8"
 Content-Disposition: inline
-In-Reply-To: <cover.1657321126.git.naohiro.aota@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <4ceb1340-0844-53d9-3e24-660f50019a1c@suse.com>
+Content-Transfer-Encoding: quoted-printable
+X-FB-Internal: Safe
+X-Proofpoint-GUID: Y_VIq0W39fGCFwufXKRPLymE5zPjguV7
+X-Proofpoint-ORIG-GUID: Y_VIq0W39fGCFwufXKRPLymE5zPjguV7
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.883,Hydra:6.0.517,FMLib:17.11.122.1
+ definitions=2022-07-12_12,2022-07-12_01,2022-06-22_01
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Jul 09, 2022 at 08:18:37AM +0900, Naohiro Aota wrote:
-> This series addresses mainly two issues on zoned btrfs' active zone
+On Tue, Jul 12, 2022 at 11:36:00PM +0300, Nikolay Borisov wrote:
+>=20
+>=20
+> On 12.07.22 =D0=B3. 22:54 =D1=87., Rohit Singh wrote:
+> > On Mon, Jul 11, 2022 at 06:16:18PM +0300, Nikolay Borisov wrote:
+> > > In btrfs_lookup_dentry releasing the reference of the sub_root and =
+the
+> > > running orphan cleanup should only happen if the dentry found actua=
+lly
+> > > represents a subvolume. This can only be true in the 'else' branch =
+as
+> > > otherwise either fixup_tree_root_location returned an ENOENT error,=
+ in
+> > > which case sub_root wouldn't have been changed or if we got a diffe=
+rent
+> > > errno this means btrfs_get_fs_root couldn't have executed successfu=
+lly
+> > > again meaning sub_root will equal to root. So simplify all the bran=
+ches
+> > > by moving the code into the 'else'.
+> > >=20
+> > > Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+> > > ---
+> > >   fs/btrfs/inode.c | 4 ----
+> > >   1 file changed, 4 deletions(-)
+> > >=20
+> > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > > index 0b17335555e0..1dd073e96696 100644
+> > > --- a/fs/btrfs/inode.c
+> > > +++ b/fs/btrfs/inode.c
+> > > @@ -5821,11 +5821,7 @@ struct inode *btrfs_lookup_dentry(struct ino=
+de *dir, struct dentry *dentry)
+> > >   			inode =3D new_simple_dir(dir->i_sb, &location, sub_root);
+> > >   	} else {
+> > >   		inode =3D btrfs_iget(dir->i_sb, location.objectid, sub_root);
+> > > -	}
+> > > -	if (root !=3D sub_root)
+> > >   		btrfs_put_root(sub_root);
+> > > -
+> > > -	if (!IS_ERR(inode) && root !=3D sub_root) {
+> >=20
+> > It looks like the root !=3D sub_root stuff looks correct.
+> >=20
+> > Can't the btrfs inode have an error state on it though?
+>=20
+> Yes it can, under low memory condition. So I guess the correct version =
+would be:
+>=20
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 0b17335555e0..44a2f38b2de0 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -5821,18 +5821,16 @@ struct inode *btrfs_lookup_dentry(struct inode =
+*dir, struct dentry *dentry)
+>                         inode =3D new_simple_dir(dir->i_sb, &location, =
+sub_root);
+>         } else {
+>                 inode =3D btrfs_iget(dir->i_sb, location.objectid, sub_=
+root);
+> -       }
+> -       if (root !=3D sub_root)
+>                 btrfs_put_root(sub_root);
+> -
+> -       if (!IS_ERR(inode) && root !=3D sub_root) {
+> -               down_read(&fs_info->cleanup_work_sem);
+> -               if (!sb_rdonly(inode->i_sb))
+> -                       ret =3D btrfs_orphan_cleanup(sub_root);
+> -               up_read(&fs_info->cleanup_work_sem);
+> -               if (ret) {
+> -                       iput(inode);
+> -                       inode =3D ERR_PTR(ret);
+> +               if (!IS_ERR(inode)) {
+> +                       down_read(&fs_info->cleanup_work_sem);
+> +                       if (!sb_rdonly(inode->i_sb))
+> +                               ret =3D btrfs_orphan_cleanup(sub_root);
+> +                       up_read(&fs_info->cleanup_work_sem);
+> +                       if (ret) {
+> +                               iput(inode);
+> +                               inode =3D ERR_PTR(ret);
+> +                       }
+>                 }
+>         }
+>=20
 
-Btw, I have one minor remark that's in many patches: please don't use
-'zoned btrfs' when referring to it, either use 'zoned filesystem' or
-'zoned mode'. I've fixed it where I noticed but in the future it would
-be good to have it in the patches from the beginning. Thanks.
+Looks good!
+
+Reviewed-by: Rohit Singh <rh0@fb.com>

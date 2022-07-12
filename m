@@ -2,105 +2,130 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9825DC43334
-	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jul 2022 20:24:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C686C43334
+	for <linux-btrfs@archiver.kernel.org>; Tue, 12 Jul 2022 20:36:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233395AbiGLUYR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 12 Jul 2022 16:24:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32906 "EHLO
+        id S231146AbiGLUgF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 12 Jul 2022 16:36:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40812 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233064AbiGLUYM (ORCPT
+        with ESMTP id S229681AbiGLUgE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 12 Jul 2022 16:24:12 -0400
-X-Greylist: delayed 277 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 12 Jul 2022 13:24:11 PDT
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E77C0A852E
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2022 13:24:11 -0700 (PDT)
+        Tue, 12 Jul 2022 16:36:04 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C65AFBEB58
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jul 2022 13:36:02 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 988C21F94E;
-        Tue, 12 Jul 2022 20:24:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1657657450;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 5563F3382A;
+        Tue, 12 Jul 2022 20:36:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1657658161; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=BFNBlfS/GCL6Rk1DB/4QGi/Yr0gBRyM5N5AGan2xfBI=;
-        b=uzdmqU38W8tN9dhqy2cMWOoYuNQfvDGY44fagep9+WpTxsJWFFlW4NQuEcFv/3dH1Pdos5
-        anD4QOSkm1XiwxaiE6N17bAMu9W5/vGWEg2esfC0mLGu4XMk84XfrGlWj8YBK/QuOYHfdb
-        DjQlerfAoayzJN+1LIFPKYilNh5QeMo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1657657450;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=BFNBlfS/GCL6Rk1DB/4QGi/Yr0gBRyM5N5AGan2xfBI=;
-        b=th+dW+pkOcfleVJMbxKoZMRJ6sW1yyRKNiP7r+3QpzNQGCzc5JNqtWa3Jf8CQ5Qg7grxxG
-        I09VVnZE+AZt6CBg==
+        bh=aHLNVgQObr8mDiE+4lY8Vl/3w/iEzS8jgmAvhCHbJ4A=;
+        b=tIiAvkYKbSjDckYYznFr5ZzFLXlgmUyp7+gvM/AOLrMUPFBr8+3Tjp6yyFwme6T1f0xBqT
+        fgnB1jSHUhKQyjOmWQPQI2qh7f/B+eUONsE/9yk9pAv9nXqoIWbiTIge8jb3Iw0NmWQC9q
+        Gh1++Ijeh1tFa45CXgtHAt7ylSzTn1c=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6532913A94;
-        Tue, 12 Jul 2022 20:24:10 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 275E713A94;
+        Tue, 12 Jul 2022 20:36:01 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id /UyqF2rYzWJeWgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 12 Jul 2022 20:24:10 +0000
-Date:   Tue, 12 Jul 2022 22:19:20 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org, bingjingc@synology.com,
-        Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v2] btrfs: send: always use the rbtree based inode ref
- management infrastructure
-Message-ID: <20220712201920.GD15169@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, fdmanana@kernel.org,
-        linux-btrfs@vger.kernel.org, bingjingc@synology.com,
-        Filipe Manana <fdmanana@suse.com>
-References: <7ceaa34df153e9aada0a093407542fa81355c83c.1657637387.git.fdmanana@suse.com>
- <4b2af2eb7790ca710edeb123e449b9c1595c7210.1657639757.git.fdmanana@suse.com>
+        id MiucBjHbzWKLXQAAMHmgww
+        (envelope-from <nborisov@suse.com>); Tue, 12 Jul 2022 20:36:01 +0000
+Message-ID: <4ceb1340-0844-53d9-3e24-660f50019a1c@suse.com>
+Date:   Tue, 12 Jul 2022 23:36:00 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4b2af2eb7790ca710edeb123e449b9c1595c7210.1657639757.git.fdmanana@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.1
+Subject: Re: [PATCH] btrfs: simplify error handling in btrfs_lookup_dentry
+Content-Language: en-US
+To:     Rohit Singh <rh0@fb.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20220711151618.2518485-1-nborisov@suse.com>
+ <Ys3Rdl7HrV+bbtmB@fb.com>
+From:   Nikolay Borisov <nborisov@suse.com>
+In-Reply-To: <Ys3Rdl7HrV+bbtmB@fb.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jul 12, 2022 at 04:31:22PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> After the patch "btrfs: send: fix sending link commands for existing file
-> paths", we now have two infrastructures to detect and eliminate duplicated
-> inode references (due to names that got removed and re-added between the
-> send and parent snapshots):
-> 
-> 1) One that works on a single inode ref/extref item;
-> 
-> 2) A new one that works acrosss all ref/extref items for an inode, and
->    it's also more efficient because even in the single ref/extref item
->    case, it does not do a linear search for all the names encoded in the
->    ref/extref item, it uses red black trees to speedup up the search.
-> 
-> There's no good reason to keep both infrastructures, we can use the new
-> one everywhere, and it's always more efficient.
-> 
-> So remove the old infrastructure and change all sites that are using it
-> to use the new one.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Also remove the no longer used definition of struct find_ref_ctx.
-> 
-> This applies on top of the patchset at:
-> 
-> https://lore.kernel.org/linux-btrfs/20220712013632.7042-1-bingjingc@synology.com/
 
-Added to misc-next, thanks, with minor fixups after changes I made to
-the patches above.
+
+On 12.07.22 г. 22:54 ч., Rohit Singh wrote:
+> On Mon, Jul 11, 2022 at 06:16:18PM +0300, Nikolay Borisov wrote:
+>> In btrfs_lookup_dentry releasing the reference of the sub_root and the
+>> running orphan cleanup should only happen if the dentry found actually
+>> represents a subvolume. This can only be true in the 'else' branch as
+>> otherwise either fixup_tree_root_location returned an ENOENT error, in
+>> which case sub_root wouldn't have been changed or if we got a different
+>> errno this means btrfs_get_fs_root couldn't have executed successfully
+>> again meaning sub_root will equal to root. So simplify all the branches
+>> by moving the code into the 'else'.
+>>
+>> Signed-off-by: Nikolay Borisov <nborisov@suse.com>
+>> ---
+>>   fs/btrfs/inode.c | 4 ----
+>>   1 file changed, 4 deletions(-)
+>>
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index 0b17335555e0..1dd073e96696 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -5821,11 +5821,7 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+>>   			inode = new_simple_dir(dir->i_sb, &location, sub_root);
+>>   	} else {
+>>   		inode = btrfs_iget(dir->i_sb, location.objectid, sub_root);
+>> -	}
+>> -	if (root != sub_root)
+>>   		btrfs_put_root(sub_root);
+>> -
+>> -	if (!IS_ERR(inode) && root != sub_root) {
+> 
+> It looks like the root != sub_root stuff looks correct.
+> 
+> Can't the btrfs inode have an error state on it though?
+
+Yes it can, under low memory condition. So I guess the correct version would be:
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0b17335555e0..44a2f38b2de0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5821,18 +5821,16 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
+                         inode = new_simple_dir(dir->i_sb, &location, sub_root);
+         } else {
+                 inode = btrfs_iget(dir->i_sb, location.objectid, sub_root);
+-       }
+-       if (root != sub_root)
+                 btrfs_put_root(sub_root);
+-
+-       if (!IS_ERR(inode) && root != sub_root) {
+-               down_read(&fs_info->cleanup_work_sem);
+-               if (!sb_rdonly(inode->i_sb))
+-                       ret = btrfs_orphan_cleanup(sub_root);
+-               up_read(&fs_info->cleanup_work_sem);
+-               if (ret) {
+-                       iput(inode);
+-                       inode = ERR_PTR(ret);
++               if (!IS_ERR(inode)) {
++                       down_read(&fs_info->cleanup_work_sem);
++                       if (!sb_rdonly(inode->i_sb))
++                               ret = btrfs_orphan_cleanup(sub_root);
++                       up_read(&fs_info->cleanup_work_sem);
++                       if (ret) {
++                               iput(inode);
++                               inode = ERR_PTR(ret);
++                       }
+                 }
+         }
+

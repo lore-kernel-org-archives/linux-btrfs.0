@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2068ECCA480
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Jul 2022 19:45:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F303C43334
+	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Jul 2022 19:45:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229609AbiGOTpi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Jul 2022 15:45:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46658 "EHLO
+        id S230333AbiGOTpm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Jul 2022 15:45:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46730 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230325AbiGOTph (ORCPT
+        with ESMTP id S229872AbiGOTpk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Jul 2022 15:45:37 -0400
-Received: from mail-qv1-xf31.google.com (mail-qv1-xf31.google.com [IPv6:2607:f8b0:4864:20::f31])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7158C63935
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2022 12:45:36 -0700 (PDT)
-Received: by mail-qv1-xf31.google.com with SMTP id kh20so4433114qvb.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2022 12:45:36 -0700 (PDT)
+        Fri, 15 Jul 2022 15:45:40 -0400
+Received: from mail-qk1-x72c.google.com (mail-qk1-x72c.google.com [IPv6:2607:f8b0:4864:20::72c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F1D96392F
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2022 12:45:39 -0700 (PDT)
+Received: by mail-qk1-x72c.google.com with SMTP id g1so3588178qki.7
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2022 12:45:39 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=dCKjzeRLOYLMFmhiCIGIrTLm9nKcs6CkJtFyBmnwN74=;
-        b=L6KlJeZkTx4uQQrsQH1pxZgty/vAmwB6ADbibjZx3o3Hbl/t3KgP2lhIvYa0EWgPaq
-         6HWKe/wcqGoUlK1u2Fw7T8hMno+WD273NZA7kZl2V1BW8hpw72ddYmYVUvKTvTrkWVFa
-         fU2LNEpCcYYbL+n3thPR9EEdP/JoK8M3Xh/FYbTwA5ojOBaCVqhES76KHxarSPdk/gzD
-         EtN2dErNMqJ1DdR2TwuxOmxgCYlgbVScARiZeqzA0F6shsFl5LdYlR6NM+a7Trk+QWES
-         TOMGOoSQ5mhcxQCFR6VygnOq6jz0bg/htv49m8DCVYZt/2vdNzTG8rKvAxWalXqBWmfI
-         eCTg==
+        bh=kjkRwg8jfH6b+qiR1JFfbgIzBXQec75ehKw85ntmgHo=;
+        b=H/ipUhBXJ8VxeF8x98xOsTReuCshgEKSwS4DokqKIXL+UAoeHChFsbaY/5lxNJ1eI7
+         uC6jBy7cWEH2lPh6D+LHeBKoTZk4GpKNX1laz6mqSsF/DphI4AqhFg7C3KCKRUNXN9jS
+         UR3ortKALZlVd4j+NcqdpVBO9iG4S8vA8MTcMUQ/mcPen26d0PvTG367Mjj4pBpFNBNd
+         7q99VGmlBQiuZmNHs3cddziAXgIJo0H0a1dCiQzypczQpi8rNUvq+ST+9OXzeU9S9fh2
+         QVlNOom7s9WJ/pAEnlCA8K/f8wpN5gGpXTML+fhXbgo/0XNfS+ZfQ9rGyF6KhueVg6QN
+         NBwA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=dCKjzeRLOYLMFmhiCIGIrTLm9nKcs6CkJtFyBmnwN74=;
-        b=tA7Z0QwaPA6h4KJd8LWEwwfxRQDrNZSj5Z/CpGnVLM4JR4aF3kzmHD4XgA2ObniZW8
-         3fLSYWWiYqrt8B1360Mbl2Our7R7Pq0gEcblrdrukGS60BPrd5k5ctFbaALLLKofGQj9
-         F1L8xgrs3k6PtKUSPdVOOxliEEh0UfYfROQ1aYsjftBWB+NY9wC5a/8FQkBK1VnQqSV+
-         rsnJqdronKw8XSCLwsIAjGTxbUAx8jINdFipz9AxHJ1N+MgWshNPWDKrwCUBTID+q79X
-         wyLRRPLdjXqn+LwUV3EJxPUHqvJ1Qsytkk2XzoEpfEHe6eb/aOniCreYSeRb80fMk4Ew
-         +UsA==
-X-Gm-Message-State: AJIora9C+QAqCqC1ZwdcLHbiIk/Vg4IA2JYs2AVPfsOPveO7XRiTwPNv
-        KYKE916pLY+QTO+YrOmET88XbN6txAbFhw==
-X-Google-Smtp-Source: AGRyM1sMlVw7hzHMGwofyghbjdZuQosKxnh/u6mm/8+ozaq0awEKPzNMrzKL+UNVPsgzjh1QM5jvvA==
-X-Received: by 2002:a05:6214:500b:b0:473:561f:1295 with SMTP id jo11-20020a056214500b00b00473561f1295mr13450094qvb.23.1657914335242;
-        Fri, 15 Jul 2022 12:45:35 -0700 (PDT)
+        bh=kjkRwg8jfH6b+qiR1JFfbgIzBXQec75ehKw85ntmgHo=;
+        b=wW44wVmohKhxe1zP9vy6CHCty7mcoX3reICQj8UwwI4xoaHsB2TSBWpPlhEh3U7oiJ
+         /R+MGdPabPU4Z1KTSmeGEWy0bmEu4xmNgZDzI+Le8y/aMvutGNsOImbZvO7tD9SRk1dJ
+         c53xsyQqHPn4BfLQDo6qeLtQ1+18GXcjfIlj65+fye/286/Vdcd6U2LuJdZMJ87UF0Jg
+         qGGqkbrGrLXjIAiV3VNg5cED31Unh6YaOeU2TRcJXbhYe53cEqBLhXT3W7yiE5hECXK1
+         N0hxtZYiF8iOA/w7PqRJPWY9SV+PJuWtXIQ6RY3fPYbqWofhCols7ZmZ/T5nF8BjxibV
+         5TAg==
+X-Gm-Message-State: AJIora9ATFikmjZtrXTaqedV+J6xfOSCrQif9h7TxdvyAjYC2HpsGFj5
+        hgb0BXpaSNEs5NFVDyTpe59LRZDNfGFuDQ==
+X-Google-Smtp-Source: AGRyM1v4CCFxauyw42oF4xxko4wpw8UyV8+eWda1Fm+d6gqx4r8RivrKjC1u1Re7h0EnuTMWy/dP0A==
+X-Received: by 2002:a05:620a:1641:b0:6b5:bef0:e30 with SMTP id c1-20020a05620a164100b006b5bef00e30mr8362177qko.478.1657914338140;
+        Fri, 15 Jul 2022 12:45:38 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id s7-20020a05620a254700b006b568bdd7d5sm4304780qko.71.2022.07.15.12.45.34
+        by smtp.gmail.com with ESMTPSA id cm17-20020a05622a251100b00304f3e320f2sm4399768qtb.4.2022.07.15.12.45.37
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 15 Jul 2022 12:45:34 -0700 (PDT)
+        Fri, 15 Jul 2022 12:45:37 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 3/9] btrfs: handle space_info setting of bg in btrfs_add_bg_to_space_info
-Date:   Fri, 15 Jul 2022 15:45:23 -0400
-Message-Id: <f23fc4f261b7f033f5eac74d48f36c489f1cf289.1657914198.git.josef@toxicpanda.com>
+Subject: [PATCH v2 5/9] btrfs: remove block_group->lock protection for TO_COPY
+Date:   Fri, 15 Jul 2022 15:45:25 -0400
+Message-Id: <321f4d3aeec3c8c56b16207cb62dd88da6c3a547.1657914198.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1657914198.git.josef@toxicpanda.com>
 References: <cover.1657914198.git.josef@toxicpanda.com>
@@ -62,148 +62,76 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We previously had the pattern of
-
-btrfs_update_space_info(all, the, bg, fields, &space_info);
-link_block_group(bg);
-bg->space_info = space_info;
-
-Now that we're passing the bg into btrfs_add_bg_to_space_info we can do
-the linking in that function, transforming this to simply
-
-btrfs_add_bg_to_space_info(fs_info, bg);
-
-and put the link_block_group() and bg->space_info assignment directly in
-btrfs_add_bg_to_space_info.
+We use this during device replace for zoned devices, we were simply
+taking the lock because it was in a bit field and we needed the lock to
+be safe with other modifications in the bitfield.  With the bit helpers
+we no longer require that locking.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/block-group.c | 26 +++-----------------------
- fs/btrfs/space-info.c  | 13 +++++++++----
- fs/btrfs/space-info.h  |  3 +--
- 3 files changed, 13 insertions(+), 29 deletions(-)
+ fs/btrfs/dev-replace.c | 5 -----
+ fs/btrfs/scrub.c       | 3 ---
+ fs/btrfs/volumes.c     | 2 --
+ 3 files changed, 10 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 36bacf215c22..5669e3cd25c0 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1905,16 +1905,6 @@ static int exclude_super_stripes(struct btrfs_block_group *cache)
- 	return 0;
- }
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index f85bbd99230b..488f2105c5d0 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -545,10 +545,7 @@ static int mark_block_group_to_copy(struct btrfs_fs_info *fs_info,
+ 		if (!cache)
+ 			continue;
  
--static void link_block_group(struct btrfs_block_group *cache)
--{
--	struct btrfs_space_info *space_info = cache->space_info;
--	int index = btrfs_bg_flags_to_raid_index(cache->flags);
+-		spin_lock(&cache->lock);
+ 		set_bit(BLOCK_GROUP_FLAG_TO_COPY, &cache->runtime_flags);
+-		spin_unlock(&cache->lock);
 -
--	down_write(&space_info->groups_sem);
--	list_add_tail(&cache->list, &space_info->block_groups[index]);
--	up_write(&space_info->groups_sem);
--}
--
- static struct btrfs_block_group *btrfs_create_block_group_cache(
- 		struct btrfs_fs_info *fs_info, u64 start)
- {
-@@ -2017,7 +2007,6 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 				int need_clear)
- {
- 	struct btrfs_block_group *cache;
--	struct btrfs_space_info *space_info;
- 	const bool mixed = btrfs_fs_incompat(info, MIXED_GROUPS);
- 	int ret;
- 
-@@ -2110,11 +2099,7 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- 		goto error;
+ 		btrfs_put_block_group(cache);
  	}
- 	trace_btrfs_add_block_group(info, cache, 0);
--	btrfs_add_bg_to_space_info(info, cache, &space_info);
--
--	cache->space_info = space_info;
--
--	link_block_group(cache);
-+	btrfs_add_bg_to_space_info(info, cache);
+ 	if (iter_ret < 0)
+@@ -610,9 +607,7 @@ bool btrfs_finish_block_group_to_copy(struct btrfs_device *srcdev,
+ 	}
  
- 	set_avail_alloc_bits(info, cache->flags);
- 	if (btrfs_chunk_writeable(info, cache->start)) {
-@@ -2138,7 +2123,6 @@ static int read_one_block_group(struct btrfs_fs_info *info,
- static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
- {
- 	struct extent_map_tree *em_tree = &fs_info->mapping_tree;
--	struct btrfs_space_info *space_info;
- 	struct rb_node *node;
- 	int ret = 0;
+ 	/* Last stripe on this device */
+-	spin_lock(&cache->lock);
+ 	clear_bit(BLOCK_GROUP_FLAG_TO_COPY, &cache->runtime_flags);
+-	spin_unlock(&cache->lock);
  
-@@ -2179,9 +2163,7 @@ static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
- 			break;
+ 	return true;
+ }
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index b7be62f1cd8e..14af085fe868 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3764,14 +3764,11 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
  		}
  
--		btrfs_add_bg_to_space_info(fs_info, bg, &space_info);
--		bg->space_info = space_info;
--		link_block_group(bg);
-+		btrfs_add_bg_to_space_info(fs_info, bg);
+ 		if (sctx->is_dev_replace && btrfs_is_zoned(fs_info)) {
+-			spin_lock(&cache->lock);
+ 			if (!test_bit(BLOCK_GROUP_FLAG_TO_COPY,
+ 				      &cache->runtime_flags)) {
+-				spin_unlock(&cache->lock);
+ 				btrfs_put_block_group(cache);
+ 				goto skip;
+ 			}
+-			spin_unlock(&cache->lock);
+ 		}
  
- 		set_avail_alloc_bits(fs_info, bg->flags);
- 	}
-@@ -2559,11 +2541,9 @@ struct btrfs_block_group *btrfs_make_block_group(struct btrfs_trans_handle *tran
- 	 * the rbtree, update the space info's counters.
- 	 */
- 	trace_btrfs_add_block_group(fs_info, cache, 1);
--	btrfs_add_bg_to_space_info(fs_info, cache, &cache->space_info);
-+	btrfs_add_bg_to_space_info(fs_info, cache);
- 	btrfs_update_global_block_rsv(fs_info);
+ 		/*
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7637eae1a699..83c9bae144c7 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6148,9 +6148,7 @@ static bool is_block_group_to_copy(struct btrfs_fs_info *fs_info, u64 logical)
  
--	link_block_group(cache);
--
- 	list_add_tail(&cache->bg_list, &trans->new_bgs);
- 	trans->delayed_ref_updates++;
- 	btrfs_update_delayed_refs_rsv(trans);
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index a9433d19d827..f89aa49f53d4 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -294,11 +294,10 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
- }
+ 	cache = btrfs_lookup_block_group(fs_info, logical);
  
- void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
--				struct btrfs_block_group *block_group,
--				struct btrfs_space_info **space_info)
-+				struct btrfs_block_group *block_group)
- {
- 	struct btrfs_space_info *found;
--	int factor;
-+	int factor, index;
+-	spin_lock(&cache->lock);
+ 	ret = test_bit(BLOCK_GROUP_FLAG_TO_COPY, &cache->runtime_flags);
+-	spin_unlock(&cache->lock);
  
- 	factor = btrfs_bg_type_to_factor(block_group->flags);
- 
-@@ -317,7 +316,13 @@ void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
- 		found->full = 0;
- 	btrfs_try_granting_tickets(info, found);
- 	spin_unlock(&found->lock);
--	*space_info = found;
-+
-+	block_group->space_info = found;
-+
-+	index = btrfs_bg_flags_to_raid_index(block_group->flags);
-+	down_write(&found->groups_sem);
-+	list_add_tail(&block_group->list, &found->block_groups[index]);
-+	up_write(&found->groups_sem);
- }
- 
- struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 101e83828ee5..2039096803ed 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -124,8 +124,7 @@ DECLARE_SPACE_INFO_UPDATE(bytes_pinned, "pinned");
- 
- int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
- void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
--				struct btrfs_block_group *block_group,
--				struct btrfs_space_info **space_info);
-+				struct btrfs_block_group *block_group);
- void btrfs_update_space_info_chunk_size(struct btrfs_space_info *space_info,
- 					u64 chunk_size);
- struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
+ 	btrfs_put_block_group(cache);
+ 	return ret;
 -- 
 2.26.3
 

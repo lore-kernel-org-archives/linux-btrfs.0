@@ -2,224 +2,194 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C95ACCA47F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 15 Jul 2022 21:22:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C43EC43334
+	for <linux-btrfs@archiver.kernel.org>; Sat, 16 Jul 2022 00:34:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229804AbiGOVWX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 15 Jul 2022 17:22:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58510 "EHLO
+        id S229975AbiGPAer (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 15 Jul 2022 20:34:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37272 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229532AbiGOVWT (ORCPT
+        with ESMTP id S229791AbiGPAeq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 15 Jul 2022 17:22:19 -0400
-Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5A71372EF1
-        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2022 14:22:17 -0700 (PDT)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.nyi.internal (Postfix) with ESMTP id C198C5C00C6;
-        Fri, 15 Jul 2022 17:22:15 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute5.internal (MEProxy); Fri, 15 Jul 2022 17:22:15 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-        :content-transfer-encoding:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm3; t=1657920135; x=1658006535; bh=An
-        j/K/yAX9qAALqiNBOl88TcJ4kgt8AcX5R3qXUrs5E=; b=Z+Hi6ocQyWC+mny6fK
-        YixfKkbHJ5EV7qQgWGwBgKXroDgeHn54vxmm8hwpM5ETp5mSM58Q1JDK9Bgru5H9
-        vauNFQJkFHxdK67V8oWY9ccuMUfRpVkvMo8A5eQRwTnK851iigd4gUIMkvYdLV/4
-        y5Lw2HMkgu55omapCbDBo9Jdc8EUyTXVn/EUOfhb+cCy4zdXW/VRUj/TViIbTOqB
-        PWpmcGrWP+zbi5Z807s/EgjgTv3ESnLiIL4Ko4BK3ZsDN1Jp8G8pofEQuzLnT6dH
-        A6y6Sv+/psRIj2IAiu9Ls3ed2KcGcoBrrQ1su8R+HPdZ2gmJVRDlusbJRY/4VtHW
-        2YnQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:content-transfer-encoding:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm3; t=1657920135; x=1658006535; bh=Anj/K/yAX9qAA
-        LqiNBOl88TcJ4kgt8AcX5R3qXUrs5E=; b=1XyWPQehGcltAO3/sh2tcnsDOgaOH
-        ZMgCSbTB9UEEXCqjUScmvxLcAt4Wic+zXh2ldnLM0sIqo69L/BdFriYjoVjrFEhL
-        ARMFX/bsi1G2Mb6hnVR7VnsnNtdfGaa4uGmJx/HbDNogb6cY8YhLIhuEudY1dX+M
-        b+fwEmJ3cJZdUlz6BmLCbU8RIddyzhL2pSwijOKLoUfCQMbeJCV0Y6so/TwV0ABy
-        o7oXGTq6w0bFamfD1vAKtQt1WHLeQzIx7CPq6s3muaVHnNnQdsicOnR8dW0PmwN8
-        mBx5vahhJzs/aOQzV6W2EsIqg/6QbvqwyEWq9S86i1IQwIi313qQEOfmw==
-X-ME-Sender: <xms:h9rRYoOG-oCD8wK3Y9YYUhJ0P891qEyQTS5guV5M-mXhGPo0fiRsVA>
-    <xme:h9rRYu8TP-IXKIK1_lcniWk48psI9Zox_Jf5DpOJoxvLKaX4cFLVfFcnfDcAZCg_z
-    tvhpyiyQV66fv-Psas>
-X-ME-Received: <xmr:h9rRYvSOeJp_NgwEeH4-COkIAtk8T_fm45LtnD-ss2IHzEPUKBcjqp49mPGCdEAyP-ZXnVq_Tf7vNT1haXnP5ok8S7rpHQ>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrudekuddgudeivdcutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
-    necuuegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtke
-    ertdertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhr
-    rdhioheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejff
-    evvdehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghm
-    pehmrghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:h9rRYguCl7sp3y-WIQWVUnsnP3NwPHLUxyOGgcmhLqcHSY19Viw5VQ>
-    <xmx:h9rRYgcFwKYjVfe7jIIoKA0Yc4eoyPfpKv2scYyNmr3YWSs7xpY5Ug>
-    <xmx:h9rRYk0Kobm6D-pauDD7NgXyGTnwKPG2ga5Q4nyZcPmLgU2ka3yJqw>
-    <xmx:h9rRYokW5SeDYLmYyBNTQ7RohLIDiI7tvAWY7Yt76Xur7RwBf8Ao7w>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
- 15 Jul 2022 17:22:15 -0400 (EDT)
-From:   Boris Burkov <boris@bur.io>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 1/2] btrfs-progs: corrupt generic item data with btrfs-corrupt-block
-Date:   Fri, 15 Jul 2022 14:22:11 -0700
-Message-Id: <4c0d4b0003c31f1c1ee1d7a475f70f25663b98f6.1657919808.git.boris@bur.io>
-X-Mailer: git-send-email 2.37.0
-In-Reply-To: <cover.1657919808.git.boris@bur.io>
-References: <cover.1657919808.git.boris@bur.io>
+        Fri, 15 Jul 2022 20:34:46 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5F95423BE7
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jul 2022 17:34:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1657931676;
+        bh=/rfWBPAX6gRyescsz+4k6g9iqAMavGcYUUmKACXf2k0=;
+        h=X-UI-Sender-Class:Date:To:Cc:References:From:Subject:In-Reply-To;
+        b=NLGd2VFkPJ4uqwvOK4fqvJDLzLNXVK9pTUvhVFkAZg/+FVKecJ4LK4+azpRuZNvnr
+         mWRwONGYIO1ixAJD95ql2YFQ4qP7W1AIlwh3GVwzX4vzCxEF3YYmiPeVyUe3AW//LZ
+         RBi8KvUeICQ8PPBD4r0OHkHRFvt9XYT3vD2YFFNs=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1M8QWG-1o882l3ZJ2-004VX9; Sat, 16
+ Jul 2022 02:34:36 +0200
+Message-ID: <1dcfecba-92fc-6f49-bdea-705896ece036@gmx.com>
+Date:   Sat, 16 Jul 2022 08:34:30 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.11.0
+Content-Language: en-US
+To:     Thiago Ramon <thiagoramon@gmail.com>, kreijack@inwind.it
+Cc:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Qu Wenruo <wqu@suse.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <cover.1652711187.git.johannes.thumshirn@wdc.com>
+ <78daa7e4-7c88-d6c0-ccaa-fb148baf7bc8@gmx.com>
+ <PH0PR04MB74164213B5F136059236B78C9B899@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <03630cb7-e637-3375-37c6-d0eb8546c958@gmx.com>
+ <PH0PR04MB7416D257F7B349FC754E30169B899@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <1cf403d4-46a7-b122-96cf-bd1307829e5b@gmx.com>
+ <PH0PR04MB741638E2A15F4E106D8A6FAF9B899@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <96da9455-f30d-b3fc-522b-7cbd08ad3358@suse.com>
+ <PH0PR04MB7416E68375C1C27C33D347119B889@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <61694368-30ea-30a0-df74-fd607c4b7456@gmx.com>
+ <PH0PR04MB7416243FCD419B4BDDB04D8C9B889@PH0PR04MB7416.namprd04.prod.outlook.com>
+ <8b3cf3d0-4812-0e92-d850-09a8d08b8169@libero.it>
+ <CAO1Y9woJUhuQ+Q2yWSvscnBJb9D5cYiBaY-WG3Re=7V=OzWVhw@mail.gmail.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: RAID56 discussion related to RST. (Was "Re: [RFC ONLY 0/8] btrfs:
+ introduce raid-stripe-tree")
+In-Reply-To: <CAO1Y9woJUhuQ+Q2yWSvscnBJb9D5cYiBaY-WG3Re=7V=OzWVhw@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:lnNykYkyDRx2Zcvq8kQCOkeqeeh2O3I2RRWCKSFAhpipucbHT1v
+ D7ZTnnQt3RvQJwBITBPIm4lhzCA1fnkcZMrkHTEn+lN7ocdmFjpGPksPACzze197iNJvquT
+ VZgcm33eYbgEUn4AE7DNMSVEzwuoIqOFRMIK5uPMLyVssS6310hyNWpKGCYfl1J58yH2xcj
+ MFJ4l+g1QvL50K03tuXWA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:K9x0T9s7Fco=:wq2mGiIAo0sshsh7cnaEYT
+ TdaZnJe1YluqGjz/n+a2FdByQvarnvXRoYv18eCJQfvuEB9Qcuvd7hm/rrPc7RNbj1AX5lLoe
+ b4SFV+IBQLN8ELgZTwGkFnAxLuQBv/QshgQ15dxM0aX5v4Loyx4g5t5RbQsgFYj0sB2qlDnr2
+ pT2SPTfez9V2ZEdgfYdpSA5hOW6umfD7nnIhAWrWFA/mYN4YPu27A/GkX6rcQutKcjpiCCGk5
+ 0GhExIfXPgPTTVnaTiTMzjiZA7cDvRkVWzsa62Qir/riNqOH1szavzOYwIh+iBafuTyyEnYbr
+ xNxE18eCGUItUOF8Oi4PoDtKYcFX4qUREuN2lvKqa+xe+JZg9pW/xletd2VYsk7aUeC8FCBf5
+ XYAvFHcKdbkPwKFfYjJCkhPU+mWarY0TF6HV7zjO13XZEGE9rJbPtx/foN3kNUCZCP7HU2ddL
+ YMTZqcNkrIcrr9kpsoQfyZhbIMr6EHlndqIYDmdyBrPSRMe0lUQ/YulFZjKsevJv10ul/TkzR
+ oNZD7+twQ0yXZ1wLb1NhkKjc6wQ4KhoTf6szo9HZ9t4ifSNlqe+AEUY8GFaNuaFxeVMg+vudm
+ DhuBbpOovER4Dkb2bvuB3Qe2E+qC+OVqW21P2XM7IDCyADdgJ6RLfgb4rfGX4+95Gr3eBY1/D
+ jOQK8y4tOwLrTSpw9+v7heXu49Bta2iXL1A/l9iOwixul6CwAOUmv+GKIRFkKIXjINYyG/0Pd
+ Wi5oCDGinS7vQWowIFVZufD4S2C+jwUcYr5FdZPqesTclF6yh44A7dDiERrJsaR7dcVUKkYcC
+ vuZE+yrw75WXJnOFsZgzpUX0EJwEZPydkbwNEOiOLQ4vnbv8+JkxEUenvBfj5I1HLkDbg1xP+
+ IfOV9oDVa1lXl6sns2mHW6urPy4CuaFf3eZ7A8b4fdrW6GIp5Afeb5Bn9M5rqKvG+34vwKV4F
+ 0o9oXSqs6QedsEafzy22HfrVblVZ9Iliwklbw1VdlGOxl/5WWn4vQkrzYtWC8cjc+z0yLw1AR
+ 1/8s+MpJ1MsLsmYvvXPIXH8lcwkAvM+qdW6Se3Qx/ioxAEEuX9MG0JEeIMQVeacCilxRL9E/D
+ QLqwAUfcbMu14WICfjknDWWnniHiZIBtyDAvvSPRAXR18zEwqK4cm+mNA==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs-corrupt-block already has a mix of generic and specific corruption
-options, but currently lacks the capacity for totally arbitrary
-corruption in item data.
 
-There is already a flag for corruption size (bytes/-b), so add a flag
-for an offset and a value to memset the item with. Exercise the new
-flags with a new variant for -I (item) corruption. Look up the item as
-before, but instead of corrupting a field in the item struct, corrupt an
-offset/size in the item data.
 
-The motivating example for this is that in testing fsverity with btrfs,
-we need to corrupt the generated Merkle tree--metadata item data which
-is an opaque blob to btrfs.
+On 2022/7/16 03:08, Thiago Ramon wrote:
+> As a user of RAID6 here, let me jump in because I think this
+> suggestion is actually a very good compromise.
+>
+> With stripes written only once, we completely eliminate any possible
+> write-hole, and even without any changes on the current disk layout
+> and allocation,
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- btrfs-corrupt-block.c | 71 +++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 68 insertions(+), 3 deletions(-)
+Unfortunately current extent allocator won't understand the requirement
+at all.
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index e961255d5..5c39459db 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -98,12 +98,14 @@ static void print_usage(int ret)
- 	printf("\t-m   The metadata block to corrupt (must also specify -f for the field to corrupt)\n");
- 	printf("\t-K <u64,u8,u64> Corrupt the given key (must also specify -f for the field and optionally -r for the root)\n");
- 	printf("\t-f   The field in the item to corrupt\n");
--	printf("\t-I <u64,u8,u64> Corrupt an item corresponding to the passed key triplet (must also specify the field to corrupt and root for the item)\n");
-+	printf("\t-I <u64,u8,u64> Corrupt an item corresponding to the passed key triplet (must also specify the field, or bytes, offset, and value to corrupt and root for the item)\n");
- 	printf("\t-D <u64,u8,u64> Corrupt a dir item corresponding to the passed key triplet, must also specify a field\n");
- 	printf("\t-d <u64,u8,u64> Delete item corresponding to passed key triplet\n");
- 	printf("\t-r   Operate on this root\n");
- 	printf("\t-C   Delete a csum for the specified bytenr.  When used with -b it'll delete that many bytes, otherwise it's just sectorsize\n");
- 	printf("\t--block-group OFFSET  corrupt the given block group\n");
-+	printf("\t-v   Value to use for corrupting item data\n");
-+	printf("\t-o   Offset to use for corrupting item data\n");
- 	exit(ret);
- }
- 
-@@ -974,6 +976,50 @@ out:
- 	return ret;
- }
- 
-+static int corrupt_btrfs_item_data(struct btrfs_root *root,
-+				   struct btrfs_key *key,
-+				   u64 bogus_offset, u64 bogus_size,
-+				   char bogus_value)
-+{
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_path *path;
-+	int ret;
-+	void *data;
-+	struct extent_buffer *leaf;
-+	int slot;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (IS_ERR(trans)) {
-+		fprintf(stderr, "Couldn't start transaction %ld\n",
-+			PTR_ERR(trans));
-+		ret = PTR_ERR(trans);
-+		goto free_path;
-+	}
-+
-+	ret = btrfs_search_slot(trans, root, key, path, 0, 1);
-+	if (ret != 0) {
-+		fprintf(stderr, "Error searching to node %d\n", ret);
-+		goto commit_txn;
-+	}
-+	leaf = path->nodes[0];
-+	slot = path->slots[0];
-+	data = btrfs_item_ptr(leaf, slot, void);
-+	// TODO: check offset/size legitimacy
-+	data += bogus_offset;
-+	memset_extent_buffer(leaf, bogus_value, (unsigned long)data, bogus_size);
-+	btrfs_mark_buffer_dirty(leaf);
-+
-+commit_txn:
-+	btrfs_commit_transaction(trans, root);
-+free_path:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- static int delete_item(struct btrfs_root *root, struct btrfs_key *key)
- {
- 	struct btrfs_trans_handle *trans;
-@@ -1230,6 +1276,8 @@ int main(int argc, char **argv)
- 	u64 csum_bytenr = 0;
- 	u64 block_group = 0;
- 	char field[FIELD_BUF_LEN];
-+	u64 bogus_value = (u64)-1;
-+	u64 bogus_offset = (u64)-1;
- 
- 	field[0] = '\0';
- 	memset(&key, 0, sizeof(key));
-@@ -1258,11 +1306,13 @@ int main(int argc, char **argv)
- 			{ "root", no_argument, NULL, 'r'},
- 			{ "csum", required_argument, NULL, 'C'},
- 			{ "block-group", required_argument, NULL, GETOPT_VAL_BLOCK_GROUP},
-+			{ "value", required_argument, NULL, 'v'},
-+			{ "offset", required_argument, NULL, 'o'},
- 			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
- 			{ NULL, 0, NULL, 0 }
- 		};
- 
--		c = getopt_long(argc, argv, "l:c:b:eEkuUi:f:x:m:K:I:D:d:r:C:",
-+		c = getopt_long(argc, argv, "l:c:b:eEkuUi:f:x:m:K:I:D:d:r:C:v:o:",
- 				long_options, NULL);
- 		if (c < 0)
- 			break;
-@@ -1328,6 +1378,12 @@ int main(int argc, char **argv)
- 			case GETOPT_VAL_BLOCK_GROUP:
- 				block_group = arg_strtou64(optarg);
- 				break;
-+			case 'v':
-+				bogus_value = arg_strtou64(optarg);
-+				break;
-+			case 'o':
-+				bogus_offset = arg_strtou64(optarg);
-+				break;
- 			case GETOPT_VAL_HELP:
- 			default:
- 				print_usage(c != GETOPT_VAL_HELP);
-@@ -1454,7 +1510,16 @@ int main(int argc, char **argv)
- 		if (!root_objectid)
- 			print_usage(1);
- 
--		ret = corrupt_btrfs_item(target_root, &key, field);
-+		if (*field != 0)
-+			ret = corrupt_btrfs_item(target_root, &key, field);
-+		else if (bogus_offset != (u64)-1 &&
-+			 bytes != (u64)-1 &&
-+			 bogus_value != (u64)-1)
-+			ret = corrupt_btrfs_item_data(target_root, &key,
-+						      bogus_offset, bytes,
-+						      bogus_value);
-+		else
-+			print_usage(1);
- 		goto out_close;
- 	}
- 	if (delete) {
--- 
-2.37.1
+Currently the extent allocator although tends to use clustered free
+space, when it can not find a clustered space, it goes where it can find
+a free space. No matter if it's a substripe write.
 
+
+Thus to full stripe only write, it's really the old idea about a new
+extent allocator to avoid sub-stripe writes.
+
+Nowadays with the zoned code, I guess it is now more feasible than previou=
+s.
+
+Now I think it's time to revive the extent allcator idea, and explore
+the extent allocator based idea, at least it requires no on-disk format
+change, which even write-intent still needs a on-disk format change (at
+least needs a compat ro flag)
+
+Thanks,
+Qu
+
+> there shouldn't be much wasted space (in my case, I
+> have a 12-disk RAID6, so each full stripe holds 640kb, and discounting
+> single-sector writes that should go into metadata space, any
+> reasonable write should fill that buffer in a few seconds).
+>
+> The additional suggestion of using smaller stripe widths in case there
+> isn't enough data to fill a whole stripe would make it very easy to
+> reclaim the wasted space by rebalancing with a stripe count filter,
+> which can be easily automated and run very frequently.
+>
+> On-disk format also wouldn't change and be fully usable by older
+> kernels, and it should "only" require changes on the allocator to
+> implement.
+>
+> On Fri, Jul 15, 2022 at 2:58 PM Goffredo Baroncelli <kreijack@libero.it>=
+ wrote:
+>>
+>> On 14/07/2022 09.46, Johannes Thumshirn wrote:
+>>> On 14.07.22 09:32, Qu Wenruo wrote:
+>>>> [...]
+>>>
+>>> Again if you're doing sub-stripe size writes, you're asking stupid thi=
+ngs and
+>>> then there's no reason to not give the user stupid answers.
+>>>
+>>
+>> Qu is right, if we consider only full stripe write the "raid hole" prob=
+lem
+>> disappear, because if a "full stripe" is not fully written it is not
+>> referenced either.
+>>
+>>
+>> Personally I think that the ZFS variable stripe size, may be interestin=
+g
+>> to evaluate. Moreover, because the BTRFS disk format is quite flexible,
+>> we can store different BG with different number of disks. Let me to mak=
+e an
+>> example: if we have 10 disks, we could allocate:
+>> 1 BG RAID1
+>> 1 BG RAID5, spread over 4 disks only
+>> 1 BG RAID5, spread over 8 disks only
+>> 1 BG RAID5, spread over 10 disks
+>>
+>> So if we have short writes, we could put the extents in the RAID1 BG; f=
+or longer
+>> writes we could use a RAID5 BG with 4 or 8 or 10 disks depending by len=
+gth
+>> of the data.
+>>
+>> Yes this would require a sort of garbage collector to move the data to =
+the biggest
+>> raid5 BG, but this would avoid (or reduce) the fragmentation which affe=
+ct the
+>> variable stripe size.
+>>
+>> Doing so we don't need any disk format change and it would be backward =
+compatible.
+>>
+>>
+>> Moreover, if we could put the smaller BG in the faster disks, we could =
+have a
+>> decent tiering....
+>>
+>>
+>>> If a user is concerned about the write or space amplicfication of sub-=
+stripe
+>>> writes on RAID56 he/she really needs to rethink the architecture.
+>>>
+>>>
+>>>
+>>> [1]
+>>> S. K. Mishra and P. Mohapatra,
+>>> "Performance study of RAID-5 disk arrays with data and parity cache,"
+>>> Proceedings of the 1996 ICPP Workshop on Challenges for Parallel Proce=
+ssing,
+>>> 1996, pp. 222-229 vol.1, doi: 10.1109/ICPP.1996.537164.
+>>
+>> --
+>> gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+>> Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+>>

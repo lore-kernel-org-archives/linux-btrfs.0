@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29E4ACCA481
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EAF90C433EF
 	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jul 2022 05:11:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235412AbiGSFLp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 19 Jul 2022 01:11:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59578 "EHLO
+        id S235434AbiGSFLq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jul 2022 01:11:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59576 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234481AbiGSFLm (ORCPT
+        with ESMTP id S234561AbiGSFLm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 19 Jul 2022 01:11:42 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F1AE52B24A
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 22:11:41 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9607E2B1BE
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 22:11:39 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A2BC1343DF;
-        Tue, 19 Jul 2022 05:11:40 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 3856C343B6;
+        Tue, 19 Jul 2022 05:11:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1658207500; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1658207498; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=VZiqQjTy1KvIZEc1TPEU/fAp7QJW+gird9Zf1nCI278=;
-        b=akTbspcmzavCmrD9/X6MMG5UkZ6x7Zb/jLMuNTehbKXsn3xAqXRyUk5yQRiVYGDn8FiOu7
-        HVBto9H4YawemWZS6GvemldTndEKowePueQYm2qJN6HTTOyEsrWYwty91VjOWMbXOyxHOb
-        zliJIkdg9cHCwerctLunl1JIyvh7nvc=
+        bh=0rChjh1HO/l13BAhBfXwPLZO5mxkEvqBKAqXCNXLOJA=;
+        b=X1c9nn6rS3Bd0GsHzodbaRfTelVi6b+NGS9obeWhBGAt5NtJRhVqFytjAwvAqFE1IKvYao
+        bH2FCJxT9xxQ/QsRkVqlmeBF/YDIvi+r0ptxY0rRDEN0HF5KHQLyOClCBkBTYomqSVexkh
+        DMiqdCl6U1c5pIvlciJP9bwryFvgC0I=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id CAB2413754;
-        Tue, 19 Jul 2022 05:11:39 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5DAB613754;
+        Tue, 19 Jul 2022 05:11:37 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id IMuZJQs91mJTeAAAMHmgww
-        (envelope-from <wqu@suse.com>); Tue, 19 Jul 2022 05:11:39 +0000
+        id mAJ0Cgk91mJTeAAAMHmgww
+        (envelope-from <wqu@suse.com>); Tue, 19 Jul 2022 05:11:37 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v2 3/4] btrfs: make DUMP_BLOCK_RSV() to have better output
-Date:   Tue, 19 Jul 2022 13:11:17 +0800
-Message-Id: <92480f4ce87377ab24c835d87754113f655898f5.1658207325.git.wqu@suse.com>
+Subject: [PATCH v2 1/4] btrfs: output human readable space info flag
+Date:   Tue, 19 Jul 2022 13:11:15 +0800
+Message-Id: <79cbc7064028a2f214a60abbb702f0d174b630a5.1658207325.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.0
 In-Reply-To: <cover.1658207325.git.wqu@suse.com>
 References: <cover.1658207325.git.wqu@suse.com>
@@ -55,103 +55,61 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This involves the following change:
+For btrfs_space_info, its flags has only 4 possible values:
+- BTRFS_BLOCK_GROUP_SYSTEM
+- BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA
+- BTRFS_BLOCK_GROUP_METADATA
+- BTRFS_BLOCK_GROUP_DATA
 
-- Remove "_block_rsv" suffix
+Thus do debuggers a favor by output a human readable flags in
+__btrfs_dump_space_info().
 
-- Better alignment for the numbers
+Now the summary line of __btrfs_dump_space_info() looks like:
 
-- Better naming distinguish for delayed refs and delayed inode
-
-- Skip "size" and "reserved" output
-  Just output the numbers directly
-
-Before:
-
-  BTRFS info (device dm-1: state A): global_block_rsv: size 3670016 reserved 3653632
-  BTRFS info (device dm-1: state A): trans_block_rsv: size 0 reserved 0
-  BTRFS info (device dm-1: state A): chunk_block_rsv: size 0 reserved 0
-  BTRFS info (device dm-1: state A): delayed_block_rsv: size 0 reserved 0
-  BTRFS info (device dm-1: state A): delayed_refs_rsv: size 524288 reserved 360448
-
-After:
-
- BTRFS info (device dm-1: state A): dumping metadata reservation: (reserved/size)
- BTRFS info (device dm-1: state A):   global:          (3670016/3670016)
- BTRFS info (device dm-1: state A):   trans:           (0/0)
- BTRFS info (device dm-1: state A):   chunk:           (0/0)
- BTRFS info (device dm-1: state A):   delayed_inode:   (0/0)
- BTRFS info (device dm-1: state A):   delayed_refs:    (524288/524288)
-
-Also, this patch will separate the metadata reservation dumping into a
-separate function for later usage.
+ BTRFS info (device dm-1: state A): space_info META has 251494400 free, is not full
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/space-info.c | 25 +++++++++++++++----------
- 1 file changed, 15 insertions(+), 10 deletions(-)
+ fs/btrfs/space-info.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 623fa0488545..81457049816e 100644
+index 62d25112310d..36b466525318 100644
 --- a/fs/btrfs/space-info.c
 +++ b/fs/btrfs/space-info.c
-@@ -441,12 +441,12 @@ void btrfs_try_granting_tickets(struct btrfs_fs_info *fs_info,
- 	}
- }
- 
--#define DUMP_BLOCK_RSV(fs_info, rsv_name)				\
-+#define DUMP_BLOCK_RSV(fs_info, member, name)				\
- do {									\
--	struct btrfs_block_rsv *__rsv = &(fs_info)->rsv_name;		\
-+	struct btrfs_block_rsv *__rsv = &(fs_info)->member;		\
- 	spin_lock(&__rsv->lock);					\
--	btrfs_info(fs_info, #rsv_name ": size %llu reserved %llu",	\
--		   __rsv->size, __rsv->reserved);			\
-+	btrfs_info(fs_info, "  %-16s (%llu/%llu)",			\
-+		   name, __rsv->reserved, __rsv->size);			\
+@@ -450,14 +450,29 @@ do {									\
  	spin_unlock(&__rsv->lock);					\
  } while (0)
  
-@@ -484,13 +484,16 @@ static void __btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
- 	if (btrfs_is_zoned(fs_info))
- 		btrfs_info(fs_info,
- 			    "  zone_unusable: %llu", info->bytes_zone_unusable);
-+}
- 
--	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
--
-+static void dump_metadata_rsv(struct btrfs_fs_info *fs_info)
++static const char *space_info_flag_to_str(struct btrfs_space_info *space_info)
 +{
-+	btrfs_info(fs_info, "dumping metadata reservation: (reserved/size)");
-+	DUMP_BLOCK_RSV(fs_info, global_block_rsv, "global:");
-+	DUMP_BLOCK_RSV(fs_info, trans_block_rsv, "trans:");
-+	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv, "chunk:");
-+	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv, "delayed_inode:");
-+	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv, "delayed_refs:");
- }
++	if (space_info->flags == BTRFS_BLOCK_GROUP_SYSTEM)
++		return "SYS";
++
++	/* Handle mixed data+metadata first. */
++	if (space_info->flags == (BTRFS_BLOCK_GROUP_METADATA |
++				  BTRFS_BLOCK_GROUP_DATA))
++		return "DATA+META";
++	if (space_info->flags == BTRFS_BLOCK_GROUP_DATA)
++		return "DATA";
++	return "META";
++}
++
+ static void __btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_space_info *info)
+ {
++	const char *flag_str = space_info_flag_to_str(info);
+ 	lockdep_assert_held(&info->lock);
  
- void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
-@@ -502,6 +505,7 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
- 
- 	spin_lock(&info->lock);
- 	__btrfs_dump_space_info(fs_info, info);
-+	dump_metadata_rsv(fs_info);
- 	spin_unlock(&info->lock);
- 
- 	if (!dump_block_groups)
-@@ -957,6 +961,7 @@ static bool maybe_fail_all_tickets(struct btrfs_fs_info *fs_info,
- 	if (btrfs_test_opt(fs_info, ENOSPC_DEBUG)) {
- 		btrfs_info(fs_info, "cannot satisfy tickets, dumping space info");
- 		__btrfs_dump_space_info(fs_info, space_info);
-+		dump_metadata_rsv(fs_info);
- 	}
- 
- 	while (!list_empty(&space_info->tickets) &&
+ 	/* The free space could be negative in case of overcommit */
+-	btrfs_info(fs_info, "space_info %llu has %lld free, is %sfull",
+-		   info->flags,
++	btrfs_info(fs_info, "space_info %s has %lld free, is %sfull",
++		   flag_str,
+ 		   (s64)(info->total_bytes - btrfs_space_info_used(info, true)),
+ 		   info->full ? "" : "not ");
+ 	btrfs_info(fs_info,
 -- 
 2.37.0
 

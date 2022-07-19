@@ -2,74 +2,107 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C674C433EF
-	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jul 2022 03:35:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 37EACC43334
+	for <linux-btrfs@archiver.kernel.org>; Tue, 19 Jul 2022 04:11:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232059AbiGSDfl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 18 Jul 2022 23:35:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39382 "EHLO
+        id S232269AbiGSELQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 19 Jul 2022 00:11:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58590 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229916AbiGSDfj (ORCPT
+        with ESMTP id S236802AbiGSELO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 18 Jul 2022 23:35:39 -0400
-Received: from mail-oa1-x31.google.com (mail-oa1-x31.google.com [IPv6:2001:4860:4864:20::31])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F269733A32
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 20:35:37 -0700 (PDT)
-Received: by mail-oa1-x31.google.com with SMTP id 586e51a60fabf-10bec750eedso29021715fac.8
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 20:35:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=colorremedies-com.20210112.gappssmtp.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=YRb/jT0/MM9+niCGXr6tUFC5S1benAp6957ABloN7M8=;
-        b=gCiT/QMLuZKeHdtTo8ZRtcFA1EkD+e9w6qZDEzHA/T71+ixSTvzDqoNTNIC8hSLuCL
-         JHT5WG6rG4TCYA0etgOLyJPYeMu53m5T/JHWMg2HdfI7aWEy4VPR9xf1BvUkLkC8PJP1
-         eYgA+erW8TgnM1dHAn5Mz++5NR/z5j4B1I21qmw45oBMyitFtp4AjsZBoV78+dFmgvG7
-         8/WU11jKbKGSNM71UCekcM3nxRvVs+xF9GVPR0t1EDoP5Nl/VM7YQt6ZHh7hvYezyJeo
-         nlINmtrchjSEgLf02luyLN69qMGK78dPTxV0FMOm/He/UbM7MMqgNN1t2ARHxEpfyRtA
-         0WHA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=YRb/jT0/MM9+niCGXr6tUFC5S1benAp6957ABloN7M8=;
-        b=4u1nRRikVYfXIrIPTvK5A4LchCYkC6qVAvzLQgPE1KStoBMgUp9yp7KqfasnZbb5Hy
-         /jfBsyqQFJuNQRaMafJDuyqCkSE/6OGVuewDBO1nme3Bj8HHIJ6SftTOZBXON9Ei58Wa
-         r2KETjyGwXs0uTULSlK+i7NHoLhJiJYlSk0HVMG8hZkX0oDeRRVfF0XQDj0JklMmh++u
-         xeBQxhcscuySH49ezfm2ayQ16cXavSFN64p0tBMpsbloMnsiT1JBBFZk2svvNrxefuWU
-         Db7au7RJASX7N8+gWBxbTTcGIJkxqyx4OOd7BEWN23fQwIlmG7dSdkhhHzVPm4ifU+Aj
-         p05g==
-X-Gm-Message-State: AJIora+iIsmensr6d9+ukxcdKVZGgNGA0wcvFsAJKFkuWki9o1xdqj8n
-        EAypChu21TpkWLF68cyQUA0cURzJ6XdUHqVM+GHdtxqjqREQvg==
-X-Google-Smtp-Source: AGRyM1viFZES0nYLXZJNUOum/t3xcPEcQYY8LIs4Ullyb9qZQ9/S+4Ffj5ESsZ/mxqa1wYro6ccAj+h01fcXsQmYm5E=
-X-Received: by 2002:a05:6808:16a7:b0:2f9:39c4:c597 with SMTP id
- bb39-20020a05680816a700b002f939c4c597mr15411916oib.101.1658201737239; Mon, 18
- Jul 2022 20:35:37 -0700 (PDT)
+        Tue, 19 Jul 2022 00:11:14 -0400
+Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE26F3E773
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 21:11:12 -0700 (PDT)
+Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 26IGhxva030382
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 21:11:11 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : subject :
+ date : message-id : content-type : content-transfer-encoding :
+ mime-version; s=facebook; bh=MwN7dpBk9JqxqSXKD81Lg/lSNoRD6vffsYilGrtE84E=;
+ b=FqTtWHDIP/Psh4o9oR4CWnsK3PIzKS9OWYDSDH4+E6mjD0yTB89WbS/muV8QzZKZ82Xq
+ f6JY+na6s63LEocpJBOUAg/gSoDyJ8SteYVsrBQpqCi4dwgnvlu9EUOeXvVbNyGTFRS/
+ 2V5yw1jJlZN3Kn7VMcfDIAudDU1U4deHmYc= 
+Received: from maileast.thefacebook.com ([163.114.130.16])
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3hcs5krq34-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jul 2022 21:11:11 -0700
+Received: from twshared25478.08.ash9.facebook.com (2620:10d:c0a8:1b::d) by
+ mail.thefacebook.com (2620:10d:c0a8:83::6) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2375.28; Mon, 18 Jul 2022 21:11:10 -0700
+Received: by devvm7778.ftw0.facebook.com (Postfix, from userid 558217)
+        id 6A1CA24A8291; Mon, 18 Jul 2022 21:11:00 -0700 (PDT)
+From:   Ioannis Angelakopoulos <iangelak@fb.com>
+To:     <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: [PATCH v2 0/5] btrfs: Annotate wait events with lockdep
+Date:   Mon, 18 Jul 2022 21:09:50 -0700
+Message-ID: <20220719040954.3964407-1-iangelak@fb.com>
+X-Mailer: git-send-email 2.30.2
+X-FB-Internal: Safe
+Content-Type: text/plain
+X-Proofpoint-GUID: 05Z-AfSd6f-bkb_kkNvXnMS9ZLERp0Wr
+X-Proofpoint-ORIG-GUID: 05Z-AfSd6f-bkb_kkNvXnMS9ZLERp0Wr
+Content-Transfer-Encoding: quoted-printable
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 MIME-Version: 1.0
-References: <000001d899d0$57fb6490$07f22db0$@perdrix.co.uk>
- <CAJCQCtTAx=82boq175vtAu1Z_S9D1tcNSErir1wTK8MbtMfsvw@mail.gmail.com> <009001d89b02$b7f2eb60$27d8c220$@perdrix.co.uk>
-In-Reply-To: <009001d89b02$b7f2eb60$27d8c220$@perdrix.co.uk>
-From:   Chris Murphy <lists@colorremedies.com>
-Date:   Mon, 18 Jul 2022 23:35:21 -0400
-Message-ID: <CAJCQCtTV4gSBXCmqVG-6dqEC151V=MWRatrTX+hthur_PLT4eQ@mail.gmail.com>
-Subject: Re: Odd output from scrub status
-To:     "David C. Partridge" <david.partridge@perdrix.co.uk>
-Cc:     Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.883,Hydra:6.0.517,FMLib:17.11.122.1
+ definitions=2022-07-18_22,2022-07-18_01,2022-06-22_01
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 18, 2022 at 8:01 PM David C. Partridge
-<david.partridge@perdrix.co.uk> wrote:
->
-> btrfs-progs 5.4.1-2
+Hello,
 
-Well, if you can find a newer version that'd help determine if it's a
-current bug or one long since fixed. Current version is 5.18.1.
+With this patch series we annotate wait events in btrfs with lockdep to
+catch deadlocks involving these wait events.
+
+Recently the btrfs developers fixed a non trivial deadlock involving
+wait events
+https://lore.kernel.org/linux-btrfs/20220614131413.GJ20633@twin.jikos.cz/
+
+Currently lockdep is unable to catch these deadlocks since it does not
+support wait events by default.
+
+With our lockdep annotations we train lockdep to track these wait events
+and catch more potential deadlocks.
+
+Specifically, we annotate the below wait events in fs/btrfs/transaction.c
+and in fs/btrfs/ordered-data.c:
+
+  1) The num_writers wait event
+  2) The num_extwriters wait event
+  3) The transaction states wait events
+  4) The pending_ordered wait event
+  5) The ordered extents wait event
+
+Changes from v1:
+  1) Added 2 labels in the cleanup code of btrfs_commit_transaction() in
+  fs/btrfs/transaction.c so that btrfs_lockdep_release() is not called
+  multiple times during the error paths.
+  2) Added lockdep annotations for the btrfs transaction states wait
+  events.
+  3) Added a lockdep annotation for the pending_ordered wait event.
+  4) Added a lockdep annotation for the ordered extents wait event.
 
 
+Ioannis Angelakopoulos (5):
+  btrfs: Add a lockdep model for the num_writers wait event
+  btrfs: Add a lockdep model for the num_extwriters wait event
+  btrfs: Add lockdep models for the transaction states wait events
+  btrfs: Add a lockdep model for the pending_ordered wait event
+  btrfs: Add a lockdep model for the ordered extents wait event
 
--- 
-Chris Murphy
+ fs/btrfs/ctree.h            |  37 ++++++++++++
+ fs/btrfs/disk-io.c          |  35 ++++++++++++
+ fs/btrfs/free-space-cache.c |  11 ++++
+ fs/btrfs/inode.c            |  13 +++++
+ fs/btrfs/ordered-data.c     |  21 +++++++
+ fs/btrfs/transaction.c      | 108 ++++++++++++++++++++++++++++++++----
+ 6 files changed, 214 insertions(+), 11 deletions(-)
+
+--=20
+2.30.2
+

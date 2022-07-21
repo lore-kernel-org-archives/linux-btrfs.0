@@ -2,144 +2,72 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2B8EC43334
-	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jul 2022 13:50:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B314CCA487
+	for <linux-btrfs@archiver.kernel.org>; Thu, 21 Jul 2022 13:50:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230210AbiGUNub (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 21 Jul 2022 09:50:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59672 "EHLO
+        id S230182AbiGUNuc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 21 Jul 2022 09:50:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59578 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231185AbiGUNu0 (ORCPT
+        with ESMTP id S230123AbiGUNu0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Thu, 21 Jul 2022 09:50:26 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18B48BC97
-        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jul 2022 06:50:12 -0700 (PDT)
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 80D9E65BF
+        for <linux-btrfs@vger.kernel.org>; Thu, 21 Jul 2022 06:50:11 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 25C803412A;
-        Thu, 21 Jul 2022 13:50:11 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 5160434013;
+        Thu, 21 Jul 2022 13:50:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1658411411; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=npPK0/AvXiNC6l3OGlILHinaKAJBg6kMrjnHHzGAYBk=;
-        b=ePJxkQMaRsFtkPs3m9mgUyDPftcL3zA+zTGiaiWdi7pPy3DkB15usjg5pZwglFR7XeWcY7
-        h1vA6FHB6CPPr37paQIWekonrRvpZKqaWf+z5T6CGPEJcUjQXuwvoaDnacFjoyZdPEfSFk
-        Ju/9dJzu9H7lLsbz+jjt7W3CQleP84g=
+        t=1658411410; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=VxRzY/P4b+v5ogNO+jUobNSdlItNxObG1UyA7+2oaZ4=;
+        b=nsrCAMr6Y8Qzw61rpUkO1f7JO1LAGw6jF/33VW3b171qYdP/+DsHVC6IeHsiMRD7lGsPye
+        g/v4spl/fL6kDIseuGSI4gYpD2N96FOiCenqlJvCBQg80LSFn2Q1nZFXUyaQTCBe3fpGS/
+        1ohzqP4ul8MZM5PfoBioLQOcbxdP0fQ=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E8B4913A1B;
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1614713A1B;
         Thu, 21 Jul 2022 13:50:10 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id oFcnNpJZ2WIPMgAAMHmgww
+        id Tm4XApJZ2WIPMgAAMHmgww
         (envelope-from <nborisov@suse.com>); Thu, 21 Jul 2022 13:50:10 +0000
 From:   Nikolay Borisov <nborisov@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Nikolay Borisov <nborisov@suse.com>
-Subject: [PATCH 3/3] btrfs: use btrfs_find_inode in find_next_inode
-Date:   Thu, 21 Jul 2022 16:50:06 +0300
-Message-Id: <20220721135006.3345302-4-nborisov@suse.com>
+Subject: [PATCH 0/3] Remove duplicate code in btrfs_prune_dentries/find_next_inode
+Date:   Thu, 21 Jul 2022 16:50:03 +0300
+Message-Id: <20220721135006.3345302-1-nborisov@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20220721135006.3345302-1-nborisov@suse.com>
-References: <20220721135006.3345302-1-nborisov@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Start using btrfs_find_inode in find_next_inode, now that the common
-logic has been encapsulated in the former function. This simplifies the
-body of find_next_inode.
+Both functions share similar logic to find a particular inode. So this series
+first factors out the common code in btrfs_find_inode and subsequently uses it
+to remove most of the internals of the two client functions. This greatly
+streamlines the codeflow in the affected functions.
 
-Signed-off-by: Nikolay Borisov <nborisov@suse.com>
----
- fs/btrfs/relocation.c | 54 +++++++++++++++----------------------------
- 1 file changed, 19 insertions(+), 35 deletions(-)
+The changes survived a full xfstest run.
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index a6dc827e75af..fdb99e2ce949 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -951,52 +951,36 @@ int btrfs_update_reloc_root(struct btrfs_trans_handle *trans,
-  */
- static struct inode *find_next_inode(struct btrfs_root *root, u64 objectid)
- {
--	struct rb_node *node;
--	struct rb_node *prev;
--	struct btrfs_inode *entry;
--	struct inode *inode;
-+	struct rb_node *node = NULL;
-+	struct inode *inode = NULL;
- 
- 	spin_lock(&root->inode_lock);
--again:
--	node = root->inode_tree.rb_node;
--	prev = NULL;
--	while (node) {
--		prev = node;
--		entry = rb_entry(node, struct btrfs_inode, rb_node);
- 
--		if (objectid < btrfs_ino(entry))
--			node = node->rb_left;
--		else if (objectid > btrfs_ino(entry))
--			node = node->rb_right;
--		else
--			break;
--	}
--	if (!node) {
--		while (prev) {
--			entry = rb_entry(prev, struct btrfs_inode, rb_node);
--			if (objectid <= btrfs_ino(entry)) {
--				node = prev;
-+	do {
-+		struct btrfs_inode *entry;
-+
-+		if (!node) {
-+			node = btrfs_find_inode(root, objectid);
-+			if (!node)
- 				break;
--			}
--			prev = rb_next(prev);
- 		}
--	}
--	while (node) {
-+
- 		entry = rb_entry(node, struct btrfs_inode, rb_node);
-+		objectid = btrfs_ino(entry) + 1;
- 		inode = igrab(&entry->vfs_inode);
--		if (inode) {
--			spin_unlock(&root->inode_lock);
--			return inode;
--		}
-+		if (inode)
-+			break;
- 
--		objectid = btrfs_ino(entry) + 1;
--		if (cond_resched_lock(&root->inode_lock))
--			goto again;
-+		if (cond_resched_lock(&root->inode_lock)) {
-+			node = NULL;
-+			continue;
-+		}
- 
- 		node = rb_next(node);
--	}
-+	} while(node);
-+
- 	spin_unlock(&root->inode_lock);
--	return NULL;
-+	return inode;
- }
- 
- /*
--- 
+Nikolay Borisov (3):
+  btrfs: introduce btrfs_find_inode
+  btrfs: use btrfs_find_inode in btrfs_prune_dentries
+  btrfs: use btrfs_find_inode in find_next_inode
+
+ fs/btrfs/ctree.h      |  1 +
+ fs/btrfs/inode.c      | 75 ++++++++++++++++++++++++++++++-------------
+ fs/btrfs/relocation.c | 54 +++++++++++--------------------
+ 3 files changed, 73 insertions(+), 57 deletions(-)
+
+--
 2.25.1
 

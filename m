@@ -2,71 +2,277 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2869BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Jul 2022 06:31:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBCAEC433EF
+	for <linux-btrfs@archiver.kernel.org>; Sat, 23 Jul 2022 12:02:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230167AbiGWGb3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 23 Jul 2022 02:31:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46826 "EHLO
+        id S234550AbiGWMCY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 23 Jul 2022 08:02:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229708AbiGWGb2 (ORCPT
+        with ESMTP id S230010AbiGWMCY (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 23 Jul 2022 02:31:28 -0400
-X-Greylist: delayed 515 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 22 Jul 2022 23:31:26 PDT
-Received: from mail.tol.fr (mail.tol.fr [82.66.50.48])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D1EBF422F0
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jul 2022 23:31:26 -0700 (PDT)
-Message-ID: <4ade214c-db16-dd74-7118-8d0fa128ea52@couderc.eu>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=couderc.eu; s=2017;
-        t=1658557368; h=from:from:sender:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:in-reply-to:
-         references; bh=pXf36MDiHfUHI3sYeVpK6hmUK4clJxfDqf6Aqmh9StE=;
-        b=Sw2qAJME0C5dereo7g+iiY5t/u2os8idIoIl3LEES+Ttbz+TdL/2+8s9CStSCJk2hl4D8q
-        jQaTK3jcfhjyQsNltVUHk3nEEqb6z63SfOlh19Ez46huCaJMOxW7Xzq32pq+KHw0y3z1x3
-        WvnspZ9NJQ1LvHyfMh4RlErKM9EvGtUylX94qnumnL4dcju3xkHRBM5OC7zFyaseX1VvrY
-        HVQ81GZQ7x5gwEcQX4r6DP35xPtlvCCLg3aIOtr/ASPQSK0e8bDgqalgLHfkCmIvrUZ00h
-        XLfxs16IUn0q6Jm2dFNmY+g+0HQIYwJ1d4wz5ry9ppoGDznadqLHX/6t6RQozA==
-Date:   Sat, 23 Jul 2022 08:22:48 +0200
-MIME-Version: 1.0
+        Sat, 23 Jul 2022 08:02:24 -0400
+Received: from mail-pj1-x1030.google.com (mail-pj1-x1030.google.com [IPv6:2607:f8b0:4864:20::1030])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2185F9FE3
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Jul 2022 05:02:23 -0700 (PDT)
+Received: by mail-pj1-x1030.google.com with SMTP id ku18so6451600pjb.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 23 Jul 2022 05:02:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id;
+        bh=yZDSjFlBqTyPgDDSYyOzpwaAh0DhKD46dx/+k62ky0E=;
+        b=hQ0FzeOdzAybutiFBsV00UYzs9TQz3kCbKYQbapMHNNVcQ+KrVjnRom3k/PBGf4gSn
+         xbvJ4TcYAGMhf1qahSFj28SmfZ3qdMMAUnAfelswSfm9ZZPzxTavopxX6yLGFwNiBwny
+         9A1Y3+8IZH97SGABqoJoURM71q+X4jY6XoBZIoMEhRTyG37Mi8TvyczzGJBxod0bG7yK
+         PKbxczm+tYwU86rJ0gnM0veNjd1dZ6gcOcJHo2oUUieBZEVasLy5/8/xyASHFeknu4R0
+         gdlJs729MtYGEaZ55IepaYyp1mp/bkzsMBs8Kck/2DA8K5/UNu8/waM+vHfPfyA7K9jw
+         8FYw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id;
+        bh=yZDSjFlBqTyPgDDSYyOzpwaAh0DhKD46dx/+k62ky0E=;
+        b=r4VCQmqlNVWFzm3gyavmgANXOsKZyrZjOA2PY1UJ27v2QNHrfcG+fqcN9VimvAug2g
+         JNEimfH8DSu4rUlkSIr7yXGjwztp+FMMjzaEMQcB32UgN7yv/oAWfail48X+qsc2IeuO
+         LnfzApsjMrvSP7Pby0ned8p2EwkpGKjXO5pmwly8Kjex7SUTC5TOyCnCsl7mPHAzQxhU
+         o/a5GJqBgAxKgdJw2HsCNqy3RxU6rRBdMfkyuBLzTFC0z6dO/rIe30hITewJ3mlEi7kp
+         r7u0KkwqaYRln7v6YZe6t5eF+96lLYVPVZDsukWiGKYL6S5pat0m46xyQZMKWT8PrbDs
+         HFig==
+X-Gm-Message-State: AJIora866JRmHB/R1/kCmNMkMMNLcxlumsIqQMb+vFHRKwrN3gb0IXd/
+        aQpYBwyxRYLfKXp+QVAZe0rQJfKIXGttzUGO/lY=
+X-Google-Smtp-Source: AGRyM1uSJ88g23G4vRKFFVXLANH3H0NOTUxXTaMLOVCWdwzVHh6pBq80n8Hg5FzyonkvcMPhH0nIWA==
+X-Received: by 2002:a17:90b:4b49:b0:1ef:a03e:b671 with SMTP id mi9-20020a17090b4b4900b001efa03eb671mr21996934pjb.108.1658577741960;
+        Sat, 23 Jul 2022 05:02:21 -0700 (PDT)
+Received: from zllke.localdomain ([219.137.142.59])
+        by smtp.gmail.com with ESMTPSA id d30-20020a631d1e000000b0041a6638b357sm4943037pgd.72.2022.07.23.05.02.20
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 23 Jul 2022 05:02:21 -0700 (PDT)
+From:   Li Zhang <zhanglikernel@gmail.com>
 To:     linux-btrfs@vger.kernel.org
-Content-Language: en-US
-From:   Pierre Couderc <pierre@couderc.eu>
-Subject: Best way to programmatically send/receive ?
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=couderc.eu;
-        s=2017; t=1658557368; h=from:from:sender:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:mime-version:mime-version:
-         content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:in-reply-to:
-         references; bh=pXf36MDiHfUHI3sYeVpK6hmUK4clJxfDqf6Aqmh9StE=;
-        b=NYi7mPo7jlNHNFQjE3mzlPpMbhxWOFZa/2lEO95zcx7YwS6K0oj94cx7RoWCTwTmKJENPE
-        OJUB8uDe4/IGJlqtsPy2kcNWBS+hy9xGn6GEOtnI0G4jT+DOlO+jJdGWdPPSORj+PM3KBW
-        CexJj/mzCe8E/XfJo0N0fDhM/mK2nF6REUhh+GNmA1M3nUHkqFZw4s6v/fEk+Fh7cYm8ta
-        zRioYYjIhRpwgURleTT1HqYxzQJO/2RkcV+fsFxooKusWIzyMcDL46nZ4rxWeSNIhTGxxM
-        0bRtzwZw/T99nLsKaMTw5QiXP38tJFIuvv+9uBA8PJj5KKHT+7p7blgdThYVSA==
-ARC-Seal: i=1; s=2017; d=couderc.eu; t=1658557368; a=rsa-sha256; cv=none;
-        b=Boi4AcWbzd3oSsu58ffh0dZ+CQIuY49/Y8cibSk99EQPaIzkwSCXa7HueCsYqXSeWFFeWptX6mpOpxCmZbEJParx9XAaIzgEILw45sWBELRlGejnTRGvp6Dsd5NvK/p2peMLjapJUxRok4f0XNnGxeSt5DB4ZDlkqOCGOaCxgivV5kdPwmEFz09ovzx2niJtF3H+PdYNxK9KzE5jRIadZ0lEHdX+N2PYekxgvYO7+fqxTsKtNhFhdE/QZX5m8zOgqFfJ9hC5LoKL6C/pM8yE+28PUFqr2S9OZOOrPO6FLTxNf7/qrGGnIWVrlbdAvZsUoOenh2vj+8D/RYyLQAAFrw==
-ARC-Authentication-Results: i=1;
-        ORIGINATING;
-        auth=pass smtp.auth=tol smtp.mailfrom=pierre@couderc.eu
+Cc:     Li Zhang <zhanglikernel@gmail.com>
+Subject: [PATCH] btrfs-progs: fix btrfs resize failed.
+Date:   Sat, 23 Jul 2022 20:02:10 +0800
+Message-Id: <1658577730-11447-1-git-send-email-zhanglikernel@gmail.com>
+X-Mailer: git-send-email 1.8.3.1
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-I am doing a utility to manage backup of btrfs subvolumes.
+related issuse:
+https://github.com/kdave/btrfs-progs/issues/470
 
-I need to save a subvolume using btrfs send/receive
+V1 link:
+https://www.spinics.net/lists/linux-btrfs/msg126661.html
 
+[BUG]
+If there is no devid=1, when the user uses the btrfs file system tool, 
+the following error will be reported,
 
-I use libbtrfsutils, which is very fine, but I have found no entry about 
-send/receive in it.
+$ sudo btrfs filesystem show /mnt/1
+Label: none  uuid: 64dc0f68-9afa-4465-9ea1-2bbebfdb6cec
+    Total devices 2 FS bytes used 704.00KiB
+    devid    2 size 15.00GiB used 1.16GiB path /dev/loop2
+    devid    3 size 15.00GiB used 1.16GiB path /dev/loop3
+$ sudo btrfs filesystem resize -1G /mnt/1
+ERROR: cannot find devid: 1
+ERROR: unable to resize '/mnt/1': No such device
 
-What is the best  way to do that in C/C++...?
+[CAUSE]
+If the user does not specify the devid id explicitly,
+btrfs will use the default devid 1, so it will report an error when dev 1 is missing.
 
-Thanks
+[FIX]
+If the file system contains multiple devices, output an error message to the user.
 
-PC
+If the filesystem has only one device, resize should automatically add the unique devid.
+
+[RESULT]
+
+$ sudo btrfs filesystem show /mnt/1/
+Label: none  uuid: 2025e6ae-0b6d-40b4-8685-3e7e9fc9b2c2
+	Total devices 2 FS bytes used 144.00KiB
+	devid    2 size 15.00GiB used 1.16GiB path /dev/loop2
+	devid    3 size 15.00GiB used 1.16GiB path /dev/loop3
+
+$ sudo btrfs filesystem resize -1G /mnt/1
+ERROR: The file system has multiple devices, please specify devid exactly.
+ERROR: The device information list is as follows.
+	devid    2 size 15.00GiB used 1.16GiB path /dev/loop2
+	devid    3 size 15.00GiB used 1.16GiB path /dev/loop3
+
+$ sudo btrfs device delete 2 /mnt/1/
+
+$ sudo btrfs filesystem show /mnt/1/
+Label: none  uuid: 2025e6ae-0b6d-40b4-8685-3e7e9fc9b2c2
+	Total devices 1 FS bytes used 144.00KiB
+	devid    3 size 15.00GiB used 1.28GiB path /dev/loop3
+
+$ sudo btrfs filesystem resize -1G /mnt/1
+Resize device id 3 (/dev/loop3) from 15.00GiB to 14.00GiB
+
+Signed-off-by: Li Zhang <zhanglikernel@gmail.com>
+---
+ cmds/filesystem.c | 63 ++++++++++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 51 insertions(+), 12 deletions(-)
+
+diff --git a/cmds/filesystem.c b/cmds/filesystem.c
+index 7cd08fc..c26ba2b 100644
+--- a/cmds/filesystem.c
++++ b/cmds/filesystem.c
+@@ -1087,7 +1087,8 @@ static const char * const cmd_filesystem_resize_usage[] = {
+ 	NULL
+ };
+ 
+-static int check_resize_args(const char *amount, const char *path) {
++static int check_resize_args(char * const amount, const char *path)
++{
+ 	struct btrfs_ioctl_fs_info_args fi_args;
+ 	struct btrfs_ioctl_dev_info_args *di_args = NULL;
+ 	int ret, i, dev_idx = -1;
+@@ -1102,7 +1103,8 @@ static int check_resize_args(const char *amount, const char *path) {
+ 
+ 	if (ret) {
+ 		error("unable to retrieve fs info");
+-		return 1;
++		ret = 1;
++		goto out;
+ 	}
+ 
+ 	if (!fi_args.num_devices) {
+@@ -1112,11 +1114,14 @@ static int check_resize_args(const char *amount, const char *path) {
+ 	}
+ 
+ 	ret = snprintf(amount_dup, BTRFS_VOL_NAME_MAX, "%s", amount);
++check:
+ 	if (strlen(amount) != ret) {
+ 		error("newsize argument is too long");
+ 		ret = 1;
+ 		goto out;
+ 	}
++	if (strcmp(amount, amount_dup) != 0)
++		strcpy(amount, amount_dup);
+ 
+ 	sizestr = amount_dup;
+ 	devstr = strchr(sizestr, ':');
+@@ -1133,6 +1138,24 @@ static int check_resize_args(const char *amount, const char *path) {
+ 			ret = 1;
+ 			goto out;
+ 		}
++	} else if (fi_args.num_devices != 1) {
++		error("The file system has multiple devices, please specify devid exactly.");
++		error("The device information list is as follows.");
++		for (i = 0; i < fi_args.num_devices; i++) {
++			fprintf(stderr, "\tdevid %4llu size %s used %s path %s\n",
++				di_args[i].devid,
++				pretty_size_mode(di_args[i].total_bytes, UNITS_DEFAULT),
++				pretty_size_mode(di_args[i].bytes_used, UNITS_DEFAULT),
++				di_args[i].path);
++		}
++		ret = 1;
++		goto out;
++	} else {
++		memset(amount_dup, 0, BTRFS_VOL_NAME_MAX);
++		ret = snprintf(amount_dup, BTRFS_VOL_NAME_MAX, "%llu:", di_args[0].devid);
++		ret = snprintf(amount_dup + strlen(amount_dup),
++			BTRFS_VOL_NAME_MAX - strlen(amount_dup), "%s", amount);
++		goto check;
+ 	}
+ 
+ 	dev_idx = -1;
+@@ -1200,10 +1223,11 @@ static int check_resize_args(const char *amount, const char *path) {
+ 		di_args[dev_idx].path,
+ 		pretty_size_mode(di_args[dev_idx].total_bytes, UNITS_DEFAULT),
+ 		res_str);
++	ret = 1;
+ 
+ out:
+ 	free(di_args);
+-	return 0;
++	return ret;
+ }
+ 
+ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+@@ -1235,8 +1259,10 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 		}
+ 	}
+ 
+-	if (check_argc_exact(argc - optind, 2))
+-		return 1;
++	if (check_argc_exact(argc - optind, 2)) {
++		ret = 1;
++		goto out;
++	}
+ 
+ 	amount = argv[optind];
+ 	path = argv[optind + 1];
+@@ -1244,7 +1270,8 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 	len = strlen(amount);
+ 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+ 		error("resize value too long (%s)", amount);
+-		return 1;
++		ret = 1;
++		goto out;
+ 	}
+ 
+ 	cancel = (strcmp("cancel", amount) == 0);
+@@ -1258,7 +1285,8 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 		"directories as argument. Passing file containing a btrfs image\n"
+ 		"would resize the underlying filesystem instead of the image.\n");
+ 		}
+-		return 1;
++		ret = 1;
++		goto out;
+ 	}
+ 
+ 	/*
+@@ -1273,14 +1301,22 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 				error(
+ 			"unable to check status of exclusive operation: %m");
+ 			close_file_or_dir(fd, dirstream);
+-			return 1;
++			goto out;
+ 		}
+ 	}
+ 
++	amount = (char *)malloc(BTRFS_VOL_NAME_MAX);
++	if (!amount) {
++		ret = -ENOMEM;
++		goto out;
++	}
++	strcpy(amount, argv[optind]);
++
+ 	ret = check_resize_args(amount, path);
+ 	if (ret != 0) {
+ 		close_file_or_dir(fd, dirstream);
+-		return 1;
++		ret = 1;
++		goto free_amount;
+ 	}
+ 
+ 	memset(&args, 0, sizeof(args));
+@@ -1298,7 +1334,7 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 			error("unable to resize '%s': %m", path);
+ 			break;
+ 		}
+-		return 1;
++		ret = 1;
+ 	} else if (res > 0) {
+ 		const char *err_str = btrfs_err_str(res);
+ 
+@@ -1308,9 +1344,12 @@ static int cmd_filesystem_resize(const struct cmd_struct *cmd,
+ 			error("resizing of '%s' failed: unknown error %d",
+ 				path, res);
+ 		}
+-		return 1;
++		ret = 1;
+ 	}
+-	return 0;
++free_amount:
++	free(amount);
++out:
++	return ret;
+ }
+ static DEFINE_SIMPLE_COMMAND(filesystem_resize, "resize");
+ 
+-- 
+1.8.3.1
 

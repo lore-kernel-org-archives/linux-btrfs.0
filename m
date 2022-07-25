@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B570BC433EF
-	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Jul 2022 05:38:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 622F5C433EF
+	for <linux-btrfs@archiver.kernel.org>; Mon, 25 Jul 2022 05:38:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231157AbiGYFic (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 25 Jul 2022 01:38:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57594 "EHLO
+        id S231686AbiGYFig (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 25 Jul 2022 01:38:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57678 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230357AbiGYFib (ORCPT
+        with ESMTP id S231283AbiGYFic (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 25 Jul 2022 01:38:31 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 03A20101FA
-        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jul 2022 22:38:30 -0700 (PDT)
+        Mon, 25 Jul 2022 01:38:32 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CEB0EFD34
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jul 2022 22:38:31 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 844E91FFC8
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jul 2022 05:38:28 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 635DC34C64
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jul 2022 05:38:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1658727508; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1658727510; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=Lg4i8vYhUhIwPEF/RkwA0AqhKhVBkdeV+f6hoF4vgw8=;
-        b=ZXJLi/xfUs/rSbMkZf9LkM0WoQFzUeQgouDkpJpkGoeAJIlRxbZUSal88gYiSZHf32hO0H
-        7QXR0aPtvLveSeI8xeYlnVrdT+yW4+QfW75/K3kI306DNQIX1vuImvu5JO0dIRwgs7yt+z
-        sTv9fhLKMz5BOTw36FP+feeSrHJWoJM=
+        bh=EYDoAoz71a7/a9NCef+z2IRWoyfLnYQzdBSfnllryfY=;
+        b=nU8Yp92PutH02TNshmztaHCAd32qw6ibsEB5TSUHSYv3DwmnmCR0ibf/PH0o5Te5kBFsBm
+        1KSmGaPZfD61HhwBAdzilZsGFv9qrJuG1lgKJTVgLpmcv81PYrK4BYq9y1jbmR26rB5bDp
+        PadTrAZRaqCJ4oIteNWkFdn74cPjVC8=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id ECB8A13A8D
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jul 2022 05:38:27 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C8D1813A8D
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jul 2022 05:38:29 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id aJDTLlMs3mJOLAAAMHmgww
+        id 8NTsJVUs3mJOLAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jul 2022 05:38:27 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jul 2022 05:38:29 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/14] btrfs: write back write intent bitmap after barrier_all_devices()
-Date:   Mon, 25 Jul 2022 13:37:57 +0800
-Message-Id: <08e61c46fe21dabf37e607d97a693df081407353.1658726692.git.wqu@suse.com>
+Subject: [PATCH 11/14] btrfs: raid56: clear write-intent bimaps when a full stripe finishes.
+Date:   Mon, 25 Jul 2022 13:37:59 +0800
+Message-Id: <47cddbde147ebb034f05a226aa3f7a28a923296d.1658726692.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.0
 In-Reply-To: <cover.1658726692.git.wqu@suse.com>
 References: <cover.1658726692.git.wqu@suse.com>
@@ -55,218 +55,199 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The new function, btrfs_write_intent_writeback(), will also accept a u64
-parameter, @event, to do extra fastpath check to avoid unnecessary
-writeback.
-
-For now we just pass 0 to write the current bitmap to disk.
-
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c                          |  9 +++
- fs/btrfs/tests/write-intent-bitmaps-tests.c |  2 +
- fs/btrfs/write-intent.c                     | 79 ++++++++++++++++++++-
- fs/btrfs/write-intent.h                     | 25 +++++++
- 4 files changed, 114 insertions(+), 1 deletion(-)
+ fs/btrfs/raid56.c       |  7 +++++++
+ fs/btrfs/write-intent.c | 45 +++++++++++++++++++++++++++++------------
+ fs/btrfs/write-intent.h |  8 ++++++++
+ 3 files changed, 47 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 98480bf6e5e2..89bf3b2693a5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4381,6 +4381,15 @@ int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors)
- 		}
- 	}
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 1b9a9f40df29..0a0a2a1e96c3 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -817,6 +817,13 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t err)
  
-+	ret = btrfs_write_intent_writeback(fs_info, 0);
-+	if (ret < 0) {
-+		mutex_unlock(
-+			&fs_info->fs_devices->device_list_mutex);
-+		btrfs_handle_fs_error(fs_info, ret,
-+			"errors while writing back write intent bitmaps.");
-+		return ret;
-+	}
+ 	if (rbio->generic_bio_cnt)
+ 		btrfs_bio_counter_sub(rbio->bioc->fs_info, rbio->generic_bio_cnt);
 +
- 	list_for_each_entry(dev, head, dev_list) {
- 		if (!dev->bdev) {
- 			total_errors++;
-diff --git a/fs/btrfs/tests/write-intent-bitmaps-tests.c b/fs/btrfs/tests/write-intent-bitmaps-tests.c
-index c956acaea1c7..1b81720f21d1 100644
---- a/fs/btrfs/tests/write-intent-bitmaps-tests.c
-+++ b/fs/btrfs/tests/write-intent-bitmaps-tests.c
-@@ -25,6 +25,8 @@ static struct write_intent_ctrl *alloc_dummy_ctrl(void)
- 	ctrl->blocksize = BTRFS_STRIPE_LEN;
- 	atomic64_set(&ctrl->event, 1);
- 	spin_lock_init(&ctrl->lock);
-+	init_waitqueue_head(&ctrl->overflow_wait);
-+	init_waitqueue_head(&ctrl->write_wait);
- 	memzero_page(ctrl->page, 0, WRITE_INTENT_BITMAPS_SIZE);
- 	wis = page_address(ctrl->page);
- 	wi_set_super_magic(wis, WRITE_INTENT_SUPER_MAGIC);
++	/* Clear the write-intent bitmap range for write operation. */
++	if (rbio->operation == BTRFS_RBIO_WRITE)
++		btrfs_write_intent_clear_dirty(rbio->bioc->fs_info,
++				       rbio->bioc->raid_map[0],
++				       rbio->nr_data * BTRFS_STRIPE_LEN);
++
+ 	/*
+ 	 * Clear the data bitmap, as the rbio may be cached for later usage.
+ 	 * do this before before unlock_stripe() so there will be no new bio
 diff --git a/fs/btrfs/write-intent.c b/fs/btrfs/write-intent.c
-index b4a205cb0c88..5e26813a06e0 100644
+index 8520105d0d84..40d579574f3d 100644
 --- a/fs/btrfs/write-intent.c
 +++ b/fs/btrfs/write-intent.c
-@@ -76,8 +76,17 @@ static int write_intent_writeback(struct btrfs_fs_info *fs_info)
+@@ -61,6 +61,7 @@ static int write_intent_writeback(struct btrfs_fs_info *fs_info)
+ 	struct bitmap_writeback_contrl wb_ctrl = {0};
+ 	SHASH_DESC_ON_STACK(shash, fs_info->csum_shash);
+ 	const int nr_devs_max = fs_info->fs_devices->open_devices + 4;
++	unsigned long flags;
+ 	int nr_devs = 0;
+ 	int total_errors = 0;
+ 	int ret;
+@@ -75,13 +76,13 @@ static int write_intent_writeback(struct btrfs_fs_info *fs_info)
+ 
  	shash->tfm = fs_info->csum_shash;
  
- 	spin_lock(&ctrl->lock);
--	wis = page_address(ctrl->page);
+-	spin_lock(&ctrl->lock);
++	spin_lock_irqsave(&ctrl->lock, flags);
  
-+	/* No update on the bitmap, just skip this writeback. */
-+	if (!memcmp(page_address(ctrl->page), page_address(ctrl->commit_page),
-+		    WRITE_INTENT_BITMAPS_SIZE)) {
-+		ctrl->writing_event = 0;
-+		spin_unlock(&ctrl->lock);
-+		wake_up(&ctrl->write_wait);
-+		return 0;
-+	}
-+
-+	wis = page_address(ctrl->page);
- 	/*
- 	 * Bump up the event counter each time this bitmap is going to be
- 	 * written.
-@@ -127,6 +136,13 @@ static int write_intent_writeback(struct btrfs_fs_info *fs_info)
+ 	/* No update on the bitmap, just skip this writeback. */
+ 	if (!memcmp(page_address(ctrl->page), page_address(ctrl->commit_page),
+ 		    WRITE_INTENT_BITMAPS_SIZE)) {
+ 		ctrl->writing_event = 0;
+-		spin_unlock(&ctrl->lock);
++		spin_unlock_irqrestore(&ctrl->lock, flags);
+ 		wake_up(&ctrl->write_wait);
+ 		return 0;
+ 	}
+@@ -98,7 +99,7 @@ static int write_intent_writeback(struct btrfs_fs_info *fs_info)
+ 	atomic64_inc(&ctrl->event);
+ 	memcpy_page(ctrl->commit_page, 0, ctrl->page, 0,
+ 		    WRITE_INTENT_BITMAPS_SIZE);
+-	spin_unlock(&ctrl->lock);
++	spin_unlock_irqrestore(&ctrl->lock, flags);
+ 
+ 	init_waitqueue_head(&wb_ctrl.wait);
+ 	atomic_set(&wb_ctrl.pending_bios, 0);
+@@ -136,11 +137,11 @@ static int write_intent_writeback(struct btrfs_fs_info *fs_info)
  	}
  	wait_event(wb_ctrl.wait, atomic_read(&wb_ctrl.pending_bios) == 0);
  
-+	spin_lock(&ctrl->lock);
-+	if (ctrl->writing_event > ctrl->committed_event)
-+		ctrl->committed_event = ctrl->writing_event;
-+	ctrl->writing_event = 0;
-+	spin_unlock(&ctrl->lock);
-+	wake_up(&ctrl->write_wait);
-+
- 	if (total_errors + atomic_read(&wb_ctrl.errors) >
- 	    btrfs_super_num_devices(fs_info->super_copy) - 1) {
- 		btrfs_err(fs_info, "failed to writeback write-intent bitmaps");
-@@ -624,6 +640,63 @@ void write_intent_clear_bits(struct write_intent_ctrl *ctrl, u64 bytenr,
- 		WARN_ON_ONCE(1);
- }
+-	spin_lock(&ctrl->lock);
++	spin_lock_irqsave(&ctrl->lock, flags);
+ 	if (ctrl->writing_event > ctrl->committed_event)
+ 		ctrl->committed_event = ctrl->writing_event;
+ 	ctrl->writing_event = 0;
+-	spin_unlock(&ctrl->lock);
++	spin_unlock_irqrestore(&ctrl->lock, flags);
+ 	wake_up(&ctrl->write_wait);
  
-+int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event)
-+{
-+	struct write_intent_ctrl *ctrl = fs_info->wi_ctrl;
-+
-+	if (!btrfs_fs_compat_ro(fs_info, WRITE_INTENT_BITMAP))
-+		return 0;
-+
-+	ASSERT(ctrl);
-+
-+again:
-+	spin_lock(&ctrl->lock);
-+
-+	/*
-+	 * The bitmap has already been written to disk at least once. Our update
-+	 * has already reached disk.
-+	 */
-+	if (event && ctrl->committed_event > event) {
-+		spin_unlock(&ctrl->lock);
-+		return 0;
-+	}
-+
-+	/* Previous writing hasn't finished, wait for it and retry. */
-+	if (ctrl->writing_event && ctrl->writing_event <= event) {
-+		DEFINE_WAIT(__wait);
-+
-+		prepare_to_wait_event(&ctrl->write_wait, &__wait,
-+				      TASK_UNINTERRUPTIBLE);
-+		spin_unlock(&ctrl->lock);
-+		schedule();
-+		finish_wait(&ctrl->write_wait, &__wait);
-+		goto again;
-+	}
-+
-+	/* Someone is already writing back the bitmap. */
-+	if (ctrl->writing_event) {
-+		DEFINE_WAIT(__wait);
-+
-+		ASSERT(ctrl->writing_event > event);
-+		prepare_to_wait_event(&ctrl->write_wait, &__wait,
-+				      TASK_UNINTERRUPTIBLE);
-+		spin_unlock(&ctrl->lock);
-+		schedule();
-+		finish_wait(&ctrl->write_wait, &__wait);
-+		return 0;
-+	}
-+
-+	/*
-+	 * We're the one to write back the bitmap, update @writing_event so
-+	 * all the other caller will just wait for us.
-+	 */
-+	ctrl->writing_event = atomic64_read(&ctrl->event) + 1;
-+	spin_unlock(&ctrl->lock);
-+
-+	/* Slow path, do the submission and wait. */
-+	return write_intent_writeback(fs_info);
+ 	if (total_errors + atomic_read(&wb_ctrl.errors) >
+@@ -648,6 +649,7 @@ void btrfs_write_intent_mark_dirty(struct btrfs_fs_info *fs_info, u64 logical,
+ {
+ 	struct write_intent_ctrl *ctrl = fs_info->wi_ctrl;
+ 	struct write_intent_super *wis;
++	unsigned long flags;
+ 	u32 entry_len;
+ 	int nr_entries;
+ 
+@@ -658,7 +660,7 @@ void btrfs_write_intent_mark_dirty(struct btrfs_fs_info *fs_info, u64 logical,
+ 	ASSERT(IS_ALIGNED(len, BTRFS_STRIPE_LEN));
+ 
+ again:
+-	spin_lock(&ctrl->lock);
++	spin_lock_irqsave(&ctrl->lock, flags);
+ 	entry_len = ctrl->blocksize * WRITE_INTENT_BITS_PER_ENTRY;
+ 	nr_entries = (round_up(logical + len, entry_len) -
+ 		      round_down(logical, entry_len)) / entry_len;
+@@ -674,7 +676,7 @@ void btrfs_write_intent_mark_dirty(struct btrfs_fs_info *fs_info, u64 logical,
+ 
+ 		prepare_to_wait_event(&ctrl->overflow_wait, &__wait,
+ 				      TASK_UNINTERRUPTIBLE);
+-		spin_unlock(&ctrl->lock);
++		spin_unlock_irqrestore(&ctrl->lock, flags);
+ 		schedule();
+ 		finish_wait(&ctrl->write_wait, &__wait);
+ 		goto again;
+@@ -683,12 +685,29 @@ void btrfs_write_intent_mark_dirty(struct btrfs_fs_info *fs_info, u64 logical,
+ 	/* Update the bitmap. */
+ 	write_intent_set_bits(ctrl, logical, len);
+ 	*event_ret = atomic64_read(&ctrl->event);
+-	spin_unlock(&ctrl->lock);
++	spin_unlock_irqrestore(&ctrl->lock, flags);
 +}
 +
- int btrfs_write_intent_init(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_device *highest_dev = NULL;
-@@ -648,6 +721,8 @@ int btrfs_write_intent_init(struct btrfs_fs_info *fs_info)
- 	}
++void btrfs_write_intent_clear_dirty(struct btrfs_fs_info *fs_info, u64 logical,
++				    u32 len)
++{
++	struct write_intent_ctrl *ctrl = fs_info->wi_ctrl;
++	unsigned long flags;
++
++	if (!btrfs_fs_compat_ro(fs_info, WRITE_INTENT_BITMAP))
++		return;
++	ASSERT(ctrl);
++	ASSERT(IS_ALIGNED(len, BTRFS_STRIPE_LEN));
++
++	spin_lock_irqsave(&ctrl->lock, flags);
++	write_intent_clear_bits(ctrl, logical, len);
++	spin_unlock_irqrestore(&ctrl->lock, flags);
+ }
  
- 	spin_lock_init(&fs_info->wi_ctrl->lock);
-+	init_waitqueue_head(&fs_info->wi_ctrl->overflow_wait);
-+	init_waitqueue_head(&fs_info->wi_ctrl->write_wait);
+ int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event)
+ {
+ 	struct write_intent_ctrl *ctrl = fs_info->wi_ctrl;
++	unsigned long flags;
+ 
+ 	if (!btrfs_fs_compat_ro(fs_info, WRITE_INTENT_BITMAP))
+ 		return 0;
+@@ -696,14 +715,14 @@ int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event)
+ 	ASSERT(ctrl);
+ 
+ again:
+-	spin_lock(&ctrl->lock);
++	spin_lock_irqsave(&ctrl->lock, flags);
  
  	/*
- 	 * Go through every writeable device to find the highest event.
-@@ -688,6 +763,8 @@ int btrfs_write_intent_init(struct btrfs_fs_info *fs_info)
- 				  dev->devid, ret);
- 			goto cleanup;
- 		}
-+		memcpy_page(fs_info->wi_ctrl->commit_page, 0,
-+			    fs_info->wi_ctrl->page, 0, WRITE_INTENT_BITMAPS_SIZE);
- 		wis = page_address(fs_info->wi_ctrl->page);
- 		atomic64_set(&fs_info->wi_ctrl->event, wi_super_events(wis));
- 		fs_info->wi_ctrl->blocksize = wi_super_blocksize(wis);
+ 	 * The bitmap has already been written to disk at least once. Our update
+ 	 * has already reached disk.
+ 	 */
+ 	if (event && ctrl->committed_event > event) {
+-		spin_unlock(&ctrl->lock);
++		spin_unlock_irqrestore(&ctrl->lock, flags);
+ 		return 0;
+ 	}
+ 
+@@ -713,7 +732,7 @@ int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event)
+ 
+ 		prepare_to_wait_event(&ctrl->write_wait, &__wait,
+ 				      TASK_UNINTERRUPTIBLE);
+-		spin_unlock(&ctrl->lock);
++		spin_unlock_irqrestore(&ctrl->lock, flags);
+ 		schedule();
+ 		finish_wait(&ctrl->write_wait, &__wait);
+ 		goto again;
+@@ -726,7 +745,7 @@ int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event)
+ 		ASSERT(ctrl->writing_event > event);
+ 		prepare_to_wait_event(&ctrl->write_wait, &__wait,
+ 				      TASK_UNINTERRUPTIBLE);
+-		spin_unlock(&ctrl->lock);
++		spin_unlock_irqrestore(&ctrl->lock, flags);
+ 		schedule();
+ 		finish_wait(&ctrl->write_wait, &__wait);
+ 		return 0;
+@@ -737,7 +756,7 @@ int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event)
+ 	 * all the other caller will just wait for us.
+ 	 */
+ 	ctrl->writing_event = atomic64_read(&ctrl->event) + 1;
+-	spin_unlock(&ctrl->lock);
++	spin_unlock_irqrestore(&ctrl->lock, flags);
+ 
+ 	/* Slow path, do the submission and wait. */
+ 	return write_intent_writeback(fs_info);
 diff --git a/fs/btrfs/write-intent.h b/fs/btrfs/write-intent.h
-index 00eb116e4c38..bf84737e0706 100644
+index e1e3a16f8929..872a707ef67d 100644
 --- a/fs/btrfs/write-intent.h
 +++ b/fs/btrfs/write-intent.h
-@@ -123,12 +123,30 @@ struct write_intent_ctrl {
- 	/* A copy for writeback. */
- 	struct page *commit_page;
- 
-+	/*
-+	 * For callers who has updated their bitmap, wait for the bitmap to be
-+	 * flushed to disk.
-+	 */
-+	wait_queue_head_t write_wait;
-+
-+	/*
-+	 * For callers whose bits can not be updated as no enough space left
-+	 * int the bitmap.
-+	 */
-+	wait_queue_head_t overflow_wait;
-+
- 	/* Cached event counter.*/
- 	atomic64_t event;
- 
- 	/* Lock for reading/writing above @page. */
- 	spinlock_t lock;
- 
-+	/* Event number for the bitmap being written. */
-+	u64 writing_event;
-+
-+	/* Event number for the last committed bitmap. */
-+	u64 committed_event;
-+
- 	/* Cached blocksize from write intent super. */
- 	u32 blocksize;
- };
-@@ -250,4 +268,11 @@ void write_intent_clear_bits(struct write_intent_ctrl *ctrl, u64 bytenr,
- int btrfs_write_intent_init(struct btrfs_fs_info *fs_info);
- void btrfs_write_intent_free(struct btrfs_fs_info *fs_info);
+@@ -284,4 +284,12 @@ int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event);
+ void btrfs_write_intent_mark_dirty(struct btrfs_fs_info *fs_info, u64 logical,
+ 				   u32 len, u64 *event_ret);
  
 +/*
-+ * Ensure the bitmap for @event is already written to disk.
++ * Clear the range dirty in write intent bitmaps.
 + *
-+ * If @event is 0, it means to write current bitmap to disk.
++ * This function should not sleep, and no need to wait for the bitmap to be
++ * flushed.
 + */
-+int btrfs_write_intent_writeback(struct btrfs_fs_info *fs_info, u64 event);
-+
++void btrfs_write_intent_clear_dirty(struct btrfs_fs_info *fs_info, u64 logical,
++				    u32 len);
  #endif
 -- 
 2.37.0

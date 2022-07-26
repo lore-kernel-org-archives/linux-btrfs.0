@@ -2,52 +2,51 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17E6EC00140
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jul 2022 19:21:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 927FBC00140
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jul 2022 19:25:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239789AbiGZTV5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jul 2022 15:21:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51130 "EHLO
+        id S239800AbiGZTZ4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jul 2022 15:25:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53086 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229379AbiGZTV4 (ORCPT
+        with ESMTP id S229379AbiGZTZz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jul 2022 15:21:56 -0400
-X-Greylist: delayed 114 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 26 Jul 2022 12:21:55 PDT
+        Tue, 26 Jul 2022 15:25:55 -0400
 Received: from wnew3-smtp.messagingengine.com (wnew3-smtp.messagingengine.com [64.147.123.17])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8887733E39;
-        Tue, 26 Jul 2022 12:21:55 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A018B1A807;
+        Tue, 26 Jul 2022 12:25:54 -0700 (PDT)
 Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-        by mailnew.west.internal (Postfix) with ESMTP id A251F2B05A51;
-        Tue, 26 Jul 2022 15:21:54 -0400 (EDT)
+        by mailnew.west.internal (Postfix) with ESMTP id 963022B05B4C;
+        Tue, 26 Jul 2022 15:19:58 -0400 (EDT)
 Received: from imap50 ([10.202.2.100])
-  by compute3.internal (MEProxy); Tue, 26 Jul 2022 15:21:55 -0400
+  by compute3.internal (MEProxy); Tue, 26 Jul 2022 15:19:59 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         colorremedies.com; h=cc:cc:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm1; t=1658863313; x=
-        1658866913; bh=PweAMHjIOF+cYwdE1sZvaXlEvHMPXsTwGJg3RCero2A=; b=s
-        E4jewDf/Y186GuJwrzpJjZHrzlm5ACMkQXEi8FvBHZO7LY0IB2xJ4fZdmP1Tp3/8
-        WtOQ27WItUBGA5DqezCiwVxcZ5vqUL7mwEon2k+hgORrDXr562AJgpjChfB001QC
-        cIP6TxEUrbqqYNl9g960vSdDvADBYOpB7OqlHy8aVvSvXZdATUeheHvQOkN62l+r
-        07+ObqS5iaAl8398HWSCMipL+SnNm+TqRkBRzVeKwJ/FiQI/G6U0ftmcRgU2bBqt
-        HEQXJBzxn/a/GHn/x9cmNagIc36yoMwvppf3CF1cfl/qNQAvJrsctoBl3W+GvF82
-        2Ccq6epBophGUxSXJVpuw==
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1658863198; x=
+        1658866798; bh=y3t0wMrfyAqUUNVLPOLMRMGGh0t/qSHeaVbcb4BusIw=; b=D
+        oZFPi6fuudfAb6NIcUi2L0g7R2dj+ZZueMT5LIgc4i0/yfEasJvJnA9D1kOEBrwl
+        icbgyf7YBv5OrjUSm7IPQnge+xRqAO1+vCLPlg2MbCSohqzUxekkkn9IerCWKfnY
+        q+p5ViSG2BEkmC/UYCrnHtYRUhvnNXIL4Ba/Qd1Lk1E+7CaPeFLmowpSRTekUWak
+        2vxsJ6Ozye12crn735EL8SQKomOoYnzFEOU6+BY5iUZxHyGmtgUpQX7R5QYdXxEG
+        GZjwnZQs/591MUwQXEQkvEC/dY+4Rsojayl+V0RBalBoLejKHqCuCT/Vyu02VKIP
+        6Gcqpe3KScjj1x3rKVO4w==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
         :feedback-id:from:from:in-reply-to:in-reply-to:message-id
         :mime-version:references:reply-to:sender:subject:subject:to:to
         :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-        i06494636.fm3; t=1658863313; x=1658866913; bh=PweAMHjIOF+cYwdE1s
-        ZvaXlEvHMPXsTwGJg3RCero2A=; b=OG/aZT1lhkvxuon3xOhXN69opPfmNSxdOe
-        fuP/yBp61U4YRAvSzhTrWN/IqDxkpFWR1P0RctvfxfApo0cH2VDLgkaCdE33ayXQ
-        xSXcHCdFa9eTvQlUD2EeuplRz+LzL9REEReXxWMKejb9nE/zJptpbo8dB6vB07PP
-        6PM/skbfqT1TeAUjPcIKwf9mFYHkpwY3vtgWuxln5vO4K/LZWL9jtp/1AeWrSrj5
-        fq+FN6I7PTmIYMQ0xs8pBTeqvGLMx8FI6Ry0JXXbXaqOqGBcucIc1ljbzdZVdPr4
-        dI6WsSSLJQ4xbTcFwDflR7efTt2UukJLNE976iFxxTBbpsPNQeaw==
-X-ME-Sender: <xms:0D7gYvhRhQB72pQV0y4cd_SxUmBmxya7toPD2dpIXs9295mL9ats8A>
-    <xme:0D7gYsDS_uhXvCuYxKEXVAL84BH6vViMk1lumhgN5tVsuwlUZbwr7PhqOoFjcfC_r
-    m8yqD3vG6CWXXOWts8>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvddutddgudefjecutefuodetggdotefrod
+        i06494636.fm3; t=1658863198; x=1658866798; bh=y3t0wMrfyAqUUNVLPO
+        LMRMGGh0t/qSHeaVbcb4BusIw=; b=QNPLNe5allO8z/7dyz17HVBl0CB+jmUYAx
+        P7XtU1G0gDJiK7fDnyLy53XxSL9prQd+pWYRfydkM4YqcDLIshb7QFPv/gtnbmG3
+        ulJrEiA4o4IIUl0JVmGtXY8q2h4XNVOtqdj0aWpPnTaCaWlZ5AvvHbM1vKZt3W/A
+        AhzPt8dYiJlvtgfR0wQ4061QpQUPt2YchB/UxXIDhbYIwg0srl/3FRDrSRD+6cK+
+        BXb6inoZMgmkXH0pYQAz3P+rwNiUIodhWveJ9JnL9oH4PcZ13KaeUvoceT/fAtcf
+        OdrdlpKTLlsbfd15JujTfSXceMNQwX334Oznd/LQvklRBM9zel0Q==
+X-ME-Sender: <xms:XT7gYpdXfQJbL-mihJa-J_MeXWnFoV9EKW-J5I9siK4bOvH6Z9dpHA>
+    <xme:XT7gYnMROqXTyXYFk_rx2ma0KmIVQFJ7VJqeA9E7Qz8t9L1ADBPH7-nvQCj1Ciyyj
+    TfS3JWgOb04ma2gz8o>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvddutddgudefiecutefuodetggdotefrod
     ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
     necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
     enucfjughrpefofgggkfgjfhffhffvvefutgesthdtredtreertdenucfhrhhomhepfdev
@@ -55,22 +54,21 @@ X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvddutddgudefjecutefuodetgg
     homheqnecuggftrfgrthhtvghrnhepgfdvueektdefgfefgfdtleffvdeileetgfefuddt
     ffelueeiveeiveekhedtheeunecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpe
     hmrghilhhfrhhomheplhhishhtshestgholhhorhhrvghmvgguihgvshdrtghomh
-X-ME-Proxy: <xmx:0D7gYvGTOOZ36ji9VpPzcyLMkV7YiZSQxNfpfSZxuel9DUKgEgiI0w>
-    <xmx:0D7gYsTvEIA86sBvGN8guB4bLH1xqZ-qS8_T_D-d756lE46n7h2mHA>
-    <xmx:0D7gYszyk_sqHkmtLIoS_BqiiaZrGW6ewCe0EDw_2LrBZQYoXIb8ug>
-    <xmx:0T7gYpqvxIVlHjsnS4_B69XZ5BlqZ6Ks22vmLeE4d68Zz1_9kKTB4q_2DrovD-1g>
+X-ME-Proxy: <xmx:XT7gYigYy0xpOS4NrNX2IRZhecy6BkXiC_dpvTrEZDddyQBfmB5mMg>
+    <xmx:XT7gYi-l8GMLm4XqOV9kQYSgjK6vtTPzjiEGeEZH4jNA-qAd98cz8Q>
+    <xmx:XT7gYltTdgfp0RvWP8dQ3__NhEL0UV8RPcyxY6h7T20AO9FvhUGdXQ>
+    <xmx:Xj7gYmWHv4TxmKPjnNi_6X4iBadIXOtk0o7YAhX7Ziy-8EnbOesh9CzKwHQ6kkgb>
 Feedback-ID: i06494636:Fastmail
 Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id A9D31170007E; Tue, 26 Jul 2022 15:21:52 -0400 (EDT)
+        id 970E6170007E; Tue, 26 Jul 2022 15:19:57 -0400 (EDT)
 X-Mailer: MessagingEngine.com Webmail Interface
 User-Agent: Cyrus-JMAP/3.7.0-alpha0-757-gc3ad9c75d3-fm-20220722.001-gc3ad9c75
 Mime-Version: 1.0
-Message-Id: <92e9ca9b-f458-409f-a9c4-150f6bce0b75@www.fastmail.com>
-In-Reply-To: <fa57195c-cd1e-464e-b099-7552f65e39f5@www.fastmail.com>
+Message-Id: <fa57195c-cd1e-464e-b099-7552f65e39f5@www.fastmail.com>
+In-Reply-To: <20220726164250.GE13489@twin.jikos.cz>
 References: <CABXGCsN+BcaGO0+0bJszDPvA=5JF_bOPfXC=OLzMzsXY2M8hyQ@mail.gmail.com>
  <20220726164250.GE13489@twin.jikos.cz>
- <fa57195c-cd1e-464e-b099-7552f65e39f5@www.fastmail.com>
-Date:   Tue, 26 Jul 2022 15:21:32 -0400
+Date:   Tue, 26 Jul 2022 15:19:34 -0400
 From:   "Chris Murphy" <lists@colorremedies.com>
 To:     "David Sterba" <dsterba@suse.cz>,
         =?UTF-8?Q?=D0=9C=D0=B8=D1=85=D0=B0=D0=B8=D0=BB_=D0=93=D0=B0=D0=B2=D1=80?=
@@ -86,19 +84,16 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On Tue, Jul 26, 2022, at 3:19 PM, Chris Murphy wrote:
-> On Tue, Jul 26, 2022, at 12:42 PM, David Sterba wrote:
->> On Tue, Jul 26, 2022 at 05:32:54PM +0500, Mikhail Gavrilov wrote:
->>> Hi guys.
->>> Always with intensive writing on a btrfs volume, the message "BUG:
->>> MAX_LOCKDEP_CHAIN_HLOCKS too low!" appears in the kernel logs.
->>
->> Increase the config value of LOCKDEP_CHAINS_BITS, default is 16, 18
->> tends to work.
+On Tue, Jul 26, 2022, at 12:42 PM, David Sterba wrote:
+> On Tue, Jul 26, 2022 at 05:32:54PM +0500, Mikhail Gavrilov wrote:
+>> Hi guys.
+>> Always with intensive writing on a btrfs volume, the message "BUG:
+>> MAX_LOCKDEP_CHAIN_HLOCKS too low!" appears in the kernel logs.
 >
-> Fedora is using 17. I'll make a request to bump it to 18. Thanks.
+> Increase the config value of LOCKDEP_CHAINS_BITS, default is 16, 18
+> tends to work.
 
-Should it be 18 across all archs? Or is it OK to only bump x86_64?
+Fedora is using 17. I'll make a request to bump it to 18. Thanks.
 
--- 
+--
 Chris Murphy

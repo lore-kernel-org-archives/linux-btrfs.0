@@ -2,70 +2,70 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C15BFC00140
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jul 2022 20:42:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFE20C04A68
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jul 2022 20:42:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239907AbiGZUms (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jul 2022 16:42:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40556 "EHLO
+        id S239966AbiGZUmt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jul 2022 16:42:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40592 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239825AbiGZUmo (ORCPT
+        with ESMTP id S239950AbiGZUmp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jul 2022 16:42:44 -0400
+        Tue, 26 Jul 2022 16:42:45 -0400
 Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C24A37FA5
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jul 2022 13:42:41 -0700 (PDT)
-Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
-        by mailout.nyi.internal (Postfix) with ESMTP id 3E3E75C00DD;
-        Tue, 26 Jul 2022 16:42:40 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute4.internal (MEProxy); Tue, 26 Jul 2022 16:42:40 -0400
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8128137FB2
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jul 2022 13:42:44 -0700 (PDT)
+Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
+        by mailout.nyi.internal (Postfix) with ESMTP id DD2F25C00E9;
+        Tue, 26 Jul 2022 16:42:43 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute1.internal (MEProxy); Tue, 26 Jul 2022 16:42:43 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:date:date:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm3; t=1658868160; x=1658954560; bh=vT
-        lLWDs28Pz5+Fv8nHZ/ylT5+60PvoCzY/gL1UfAH3U=; b=Ip+CXG9/lHLrH3Vdf8
-        JbPmEThfmAsYFECIa4s51CLMfqTFFar5MVjKG4X/Qyq+kI/fkWTpkKyAlRaDEIZm
-        +VQNi2EuDfWiw9OV9jEAvdER5Gs3Gk6rqy7/M1XZeFOspi1bMltLwuuUNpaAqTYJ
-        hwPKp3fpkQZa81idHB7196aPew+c354j/vA0gLVeMaidr4BV6aRWlL9AJRMavmjB
-        KZRC/ruw4GdVjPy5h2QfVzZ7paGfW5P88ygbkNr/+vaSu+/UtjFhajnNxbe0m3es
-        L2OE4jzdnY79nkRPblT4uNQRNFOFHbNviXdAIP1px1ycJLoTvw3xF2EuATifRLH9
-        MmxA==
+        :subject:subject:to:to; s=fm3; t=1658868163; x=1658954563; bh=YQ
+        E1as417hVaN/9yuDu41+GmAoAztRgRgECFyP+bmH8=; b=hG78etout3n4bNnDAk
+        FwANWggoR3rNCtOuOx5kJRzYY5zDTwL7nJv/Ci7NsuWFwazDfUoGyI/IgpZ7Dpho
+        MSZtfQkMJRcAr68ZPHH6LXrrvpJoCG3Ic0rJBNmct90zYTIROUccGFq9c4MN+Loa
+        FtR3re/YRsy0uNm4ZqvEzewu8p5IoFfzQlPx/ql85iAxrn5A1lw1D8SDJnTQlsRU
+        gnNMJZcCTczeKYLr8oYGBDIpuqVzmaM/yJQfnRYTXPWn/xyc3F0HOiV6E+oRvZ0k
+        eoKKOasA8y5JwHsUEpHqW/wCSgp7oWM+UXXOngo3DLswzlZ8+gQ+ICpMXRqpS5a1
+        MisA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:date:date
         :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
         :message-id:mime-version:references:reply-to:sender:subject
         :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm3; t=1658868160; x=1658954560; bh=vTlLWDs28Pz5+
-        Fv8nHZ/ylT5+60PvoCzY/gL1UfAH3U=; b=QWc3maXFX1irIPFzBiAdTKKNGQILt
-        uTbuVZ1tINoIFlx+ptXVIdc6xt30fgmURB4b8+lmIXT1VZ06XPavMQWz3gK/HSWR
-        4mZmrZJzpcdHOnowvCxJgWyXCm3fl8AA4myiBl+TVf7QiZNgRBEl2M3Glckvn8vU
-        nsIrFuXQmV5CeDRPfKQoOd1dEgHgwKMpD4HALCDCxVRnUz64BvQP8xN0IkGY+uqP
-        UyVKBcsrm7OiO6xcBZ35dZRU58PnoTL7/Q2sHr87FjhcTFVaW/e33YoNnQ94o5BV
-        nntEm0WT84QTNdM93kSnUcB3cBQNMjXgyLIpcNN4n7HAQRx+PbqwPUhbA==
-X-ME-Sender: <xms:wFHgYhk8lIOzMtq3P_vrz6hRjexcur-cXPv_RrQ9DHPqJ7XMP4nkaw>
-    <xme:wFHgYs0oHpHQZk4xYtfw6XB-VXvICIcx4psYJodp8xl0WfvBnEJRscv3joD3PVb0X
-    43uf4avRJ4nwi2OCSY>
-X-ME-Received: <xmr:wFHgYnrl2zxUcR1XwY-hgOaBEYbPHgNglRAIX8uGQOccDjA68dWqxmVAL1o06RSV_6PPVZfsZmDw26sPpO5S5MpsS0QCAw>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvddutddgudehgecutefuodetggdotefrod
+        :x-sasl-enc; s=fm3; t=1658868163; x=1658954563; bh=YQE1as417hVaN
+        /9yuDu41+GmAoAztRgRgECFyP+bmH8=; b=3DAfkFG0/JN+SsY6h/ChNGXAiRjSf
+        SU30wjPkpy4z63HjHgafdggRRA5kO/XybYfCIiIqRbBsBnlRdLq33IRFDsoJfXaJ
+        c9R6nbYkCE/i8dEXGkQFWERLJho9dDeWac/cD93Hsrzkyzvkh7ZbhToj23G8N+YQ
+        lKryC/GydbGIPU43OPwg8rqilM2q8B7i3RHPV3x6mL7MFB4ai+IDn4HdDFJ5UKpI
+        FviEDaN839+YmKXL4yIRQmUSRMXs6vh+UQjYKur159bWOqhYhsuh3ZxS7gIs2V11
+        saKl8X3u6gyDDIShADV/QQjRJgXuxLnsmkGnn4a/iGPXeWc+ZqO85/LPw==
+X-ME-Sender: <xms:w1HgYgMhCY_Uz1pKeNBkj8mobqOWzp9AHSN-O4_pQ6J9Uu5kBy_Pkg>
+    <xme:w1HgYm_cRWthCkbB4meoPaHSbhoE3D4PuGdduJUBEjqUTQO7PuWwjQK1OWMkuZpSZ
+    _MwFP6bnx2mV47YBRI>
+X-ME-Received: <xmr:w1HgYnTtfuC41lt4Jj0SXoOWcPuB_eWDyxXh66PRnY-XJLdNI1Z0DYPYlB-l-QOAl9vL20TZiN3m40y4lZzXzNYZv_AI8w>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvddutddgudehfecutefuodetggdotefrod
     ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
     necuuegrihhlohhuthemuceftddtnecunecujfgurhephffvufffkffojghfggfgsedtke
     ertdertddtnecuhfhrohhmpeeuohhrihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhr
     rdhioheqnecuggftrfgrthhtvghrnhepieeuffeuvdeiueejhfehiefgkeevudejjeejff
     evvdehtddufeeihfekgeeuheelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghm
     pehmrghilhhfrhhomhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:wFHgYhm9JxdDNwKadgQh0P5zP2rU6VD00aXBRwSxWKH5jqsiAyLwPw>
-    <xmx:wFHgYv29H80GUcWV3b6MBvfYt8TPyN727objLgaLQ9mLuyG-oBCj2w>
-    <xmx:wFHgYgvPV-fXq39qNLJ6B_5g1LB4aycAPJps_QFyTiaw9ixg9KQXuA>
-    <xmx:wFHgYs93zoRhQhS3NAL7ObY8DLZDIuFvN78ky6EdZ_9CAbX8jJ5XGA>
+X-ME-Proxy: <xmx:w1HgYou-NGN96b5F3_F1t_EcEwcJVIfwgcgCra4avbUDopEQWlPRDA>
+    <xmx:w1HgYofHDQ_WF1DcGRXXqJOpvT62_sW-FTyUn6FOZXFw59xgaUTHQA>
+    <xmx:w1HgYs3ae03dMKcnqvExqjsiEjcc1ftToal3aUZBO3495JkYic0CFQ>
+    <xmx:w1HgYgnF6Es2Wy5ELCrYp8ooAHbowWYXV2TpRJeJwZ4UO1-qbnULtg>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 26 Jul 2022 16:42:39 -0400 (EDT)
+ 26 Jul 2022 16:42:43 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 1/4] btrfs-corrupt-block: define (u64)-1 as UNSET_U64
-Date:   Tue, 26 Jul 2022 13:43:22 -0700
-Message-Id: <d2ddc9d1cae29816a103c4c623398bbf4d23e4dc.1658867979.git.boris@bur.io>
+Subject: [PATCH v4 3/4] btrfs-progs: expand corrupt_file_extent in btrfs-corrupt-block
+Date:   Tue, 26 Jul 2022 13:43:24 -0700
+Message-Id: <201580699f460cb985849a71c98ff7299ac33cd1.1658867979.git.boris@bur.io>
 X-Mailer: git-send-email 2.37.0
 In-Reply-To: <cover.1658867979.git.boris@bur.io>
 References: <cover.1658867979.git.boris@bur.io>
@@ -75,134 +75,84 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-we use this placeholder for many inputs in this script, so give it a
-name for clarity.
+To corrupt holes/prealloc/inline extents, we need to mess with
+extent data items. This patch makes it possible to modify
+disk_bytenr with a specific value (useful for hole corruptions)
+and to modify the type field (useful for prealloc corruptions)
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 Reviewed-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- btrfs-corrupt-block.c | 29 +++++++++++++++--------------
- 1 file changed, 15 insertions(+), 14 deletions(-)
+ btrfs-corrupt-block.c | 20 +++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
 
 diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index e961255d5..b826c9c2e 100644
+index 225818817..0c5a09298 100644
 --- a/btrfs-corrupt-block.c
 +++ b/btrfs-corrupt-block.c
-@@ -35,6 +35,7 @@
- #include "common/help.h"
+@@ -308,6 +308,7 @@ enum btrfs_inode_field {
  
- #define FIELD_BUF_LEN 80
-+#define UNSET_U64 ((u64)-1)
+ enum btrfs_file_extent_field {
+ 	BTRFS_FILE_EXTENT_DISK_BYTENR,
++	BTRFS_FILE_EXTENT_TYPE,
+ 	BTRFS_FILE_EXTENT_BAD,
+ };
  
- static int debug_corrupt_block(struct extent_buffer *eb,
- 		struct btrfs_root *root, u64 bytenr, u32 blocksize, u64 copy)
-@@ -180,7 +181,7 @@ static int corrupt_extent(struct btrfs_trans_handle *trans,
+@@ -380,6 +381,8 @@ static enum btrfs_file_extent_field convert_file_extent_field(char *field)
+ {
+ 	if (!strncmp(field, "disk_bytenr", FIELD_BUF_LEN))
+ 		return BTRFS_FILE_EXTENT_DISK_BYTENR;
++	if (!strncmp(field, "type", FIELD_BUF_LEN))
++		return BTRFS_FILE_EXTENT_TYPE;
+ 	return BTRFS_FILE_EXTENT_BAD;
+ }
  
- 	key.objectid = bytenr;
- 	key.type = (u8)-1;
--	key.offset = (u64)-1;
-+	key.offset = UNSET_U64;
+@@ -753,13 +756,12 @@ out:
  
- 	extent_root = btrfs_extent_root(trans->fs_info, bytenr);
- 	while(1) {
-@@ -664,7 +665,7 @@ static int corrupt_inode(struct btrfs_trans_handle *trans,
- 
- 	key.objectid = inode;
- 	key.type = BTRFS_INODE_ITEM_KEY;
--	key.offset = (u64)-1;
-+	key.offset = UNSET_U64;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -880,7 +881,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 
- 		root_key.objectid = root_objectid;
- 		root_key.type = BTRFS_ROOT_ITEM_KEY;
--		root_key.offset = (u64)-1;
-+		root_key.offset = UNSET_U64;
- 
- 		root = btrfs_read_fs_root(fs_info, &root_key);
- 		if (IS_ERR(root)) {
-@@ -1084,8 +1085,8 @@ static int corrupt_chunk_tree(struct btrfs_trans_handle *trans,
- 	if (!path)
- 		return -ENOMEM;
- 
--	key.objectid = (u64)-1;
--	key.offset = (u64)-1;
-+	key.objectid = UNSET_U64;
-+	key.offset = UNSET_U64;
- 	key.type = (u8)-1;
- 
- 	/* Here, cow and ins_len must equals 0 for the following reasons:
-@@ -1193,7 +1194,7 @@ static struct btrfs_root *open_root(struct btrfs_fs_info *fs_info,
- 
- 	root_key.objectid = root_objectid;
- 	root_key.type = BTRFS_ROOT_ITEM_KEY;
--	root_key.offset = (u64)-1;
-+	root_key.offset = UNSET_U64;
- 
- 	root = btrfs_read_fs_root(fs_info, &root_key);
- 	if (IS_ERR(root)) {
-@@ -1209,8 +1210,8 @@ int main(int argc, char **argv)
+ static int corrupt_file_extent(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root, u64 inode, u64 extent,
+-			       char *field)
++			       char *field, u64 bogus)
+ {
+ 	struct btrfs_file_extent_item *fi;
+ 	struct btrfs_path *path;
  	struct btrfs_key key;
- 	struct btrfs_root *root, *target_root;
- 	char *dev;
--	/* chunk offset can be 0,so change to (u64)-1 */
--	u64 logical = (u64)-1;
-+	/* chunk offset can be 0,so change to UNSET_U64 */
-+	u64 logical = UNSET_U64;
+ 	enum btrfs_file_extent_field corrupt_field;
+-	u64 bogus;
+ 	u64 orig;
  	int ret = 0;
- 	u64 copy = 0;
- 	u64 bytes = 4096;
-@@ -1225,7 +1226,7 @@ int main(int argc, char **argv)
- 	int should_corrupt_key = 0;
- 	u64 metadata_block = 0;
- 	u64 inode = 0;
--	u64 file_extent = (u64)-1;
-+	u64 file_extent = UNSET_U64;
- 	u64 root_objectid = 0;
- 	u64 csum_bytenr = 0;
- 	u64 block_group = 0;
-@@ -1353,7 +1354,7 @@ int main(int argc, char **argv)
- 	if (extent_rec) {
- 		struct btrfs_trans_handle *trans;
  
--		if (logical == (u64)-1)
-+		if (logical == UNSET_U64)
- 			print_usage(1);
- 		trans = btrfs_start_transaction(root, 1);
- 		BUG_ON(IS_ERR(trans));
-@@ -1378,7 +1379,7 @@ int main(int argc, char **argv)
- 		struct btrfs_path *path;
- 		int del;
- 
--		if (logical == (u64)-1)
-+		if (logical == UNSET_U64)
- 			print_usage(1);
- 		del = rand_range(3);
- 		path = btrfs_alloc_path();
-@@ -1420,7 +1421,7 @@ int main(int argc, char **argv)
- 
- 		trans = btrfs_start_transaction(root, 1);
- 		BUG_ON(IS_ERR(trans));
--		if (file_extent == (u64)-1) {
-+		if (file_extent == UNSET_U64) {
+@@ -792,9 +794,17 @@ static int corrupt_file_extent(struct btrfs_trans_handle *trans,
+ 	switch (corrupt_field) {
+ 	case BTRFS_FILE_EXTENT_DISK_BYTENR:
+ 		orig = btrfs_file_extent_disk_bytenr(path->nodes[0], fi);
+-		bogus = generate_u64(orig);
++		bogus = (bogus == UNSET_U64) ? generate_u64(orig) : bogus;
+ 		btrfs_set_file_extent_disk_bytenr(path->nodes[0], fi, bogus);
+ 		break;
++	case BTRFS_FILE_EXTENT_TYPE:
++		if (bogus == UNSET_U64) {
++			fprintf(stderr, "Specify a new extent type value (-v)\n");
++			ret = -EINVAL;
++			goto out;
++		}
++		btrfs_set_file_extent_type(path->nodes[0], fi, (u8)bogus);
++		break;
+ 	default:
+ 		ret = -EINVAL;
+ 		break;
+@@ -1487,9 +1497,9 @@ int main(int argc, char **argv)
  			printf("corrupting inode\n");
  			ret = corrupt_inode(trans, root, inode, field);
  		} else {
-@@ -1481,10 +1482,10 @@ int main(int argc, char **argv)
- 	 * If we made it here and we have extent set then we didn't specify
- 	 * inode and we're screwed.
- 	 */
--	if (file_extent != (u64)-1)
-+	if (file_extent != UNSET_U64)
- 		print_usage(1);
- 
--	if (logical == (u64)-1)
-+	if (logical == UNSET_U64)
- 		print_usage(1);
- 
- 	if (bytes == 0)
+-			printf("corrupting file extent\n");
+ 			ret = corrupt_file_extent(trans, root, inode,
+-						  file_extent, field);
++						  file_extent, field,
++						  bogus_value);
+ 		}
+ 		btrfs_commit_transaction(trans, root);
+ 		goto out_close;
 -- 
 2.37.1
 

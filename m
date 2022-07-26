@@ -2,84 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27C25C00144
-	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jul 2022 21:07:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7368CC00144
+	for <linux-btrfs@archiver.kernel.org>; Tue, 26 Jul 2022 21:40:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231566AbiGZVHr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 26 Jul 2022 17:07:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57980 "EHLO
+        id S239069AbiGZVkY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 26 Jul 2022 17:40:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45240 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229493AbiGZVHr (ORCPT
+        with ESMTP id S229480AbiGZVkW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 26 Jul 2022 17:07:47 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BBE5327
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jul 2022 14:07:46 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 216C734FD9;
-        Tue, 26 Jul 2022 21:07:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1658869665;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=yMksGq4btginZ99oRqzYU5RIz6mgYjD4NYyjQZxKKMg=;
-        b=bg++NWG+Q66ZpSeuLxAoku0/JUfhWpcvCNRnbPc/s1idISRT5Jby/IdasnjKsZKg6O+Iv7
-        M/MuiN9JD53QCQWD8LF9cB8zJay7vFO1rJDn2dnfzH0GGgErPKRaC1b63X0EuLoguEB0Oh
-        Wey0G0ZkzyGGiGMUY+Rx0HD3jTjkunw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1658869665;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=yMksGq4btginZ99oRqzYU5RIz6mgYjD4NYyjQZxKKMg=;
-        b=XL7GDWfT/jGPzAdlDZKs9zQZuC4jhRMpO6biSQdjW7rO44GsVluGAh1z34YdPo9enHKhfv
-        gG7vTwWxWp0cxkAA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E6F0413322;
-        Tue, 26 Jul 2022 21:07:44 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id kmnhNqBX4GILTwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 26 Jul 2022 21:07:44 +0000
-Date:   Tue, 26 Jul 2022 23:02:47 +0200
-From:   David Sterba <dsterba@suse.cz>
+        Tue, 26 Jul 2022 17:40:22 -0400
+Received: from rin.romanrm.net (rin.romanrm.net [IPv6:2001:bc8:2dd2:1000::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B1F4A624E
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jul 2022 14:40:19 -0700 (PDT)
+Received: from nvm (nvm2.home.romanrm.net [IPv6:fd39::4a:3cff:fe57:d6b5])
+        by rin.romanrm.net (Postfix) with SMTP id DA56A5BD;
+        Tue, 26 Jul 2022 21:40:16 +0000 (UTC)
+Date:   Wed, 27 Jul 2022 02:40:15 +0500
+From:   Roman Mamedov <rm@romanrm.net>
 To:     Rich Rauenzahn <rrauenza@gmail.com>
 Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: Combining two filesystems into single pool
-Message-ID: <20220726210247.GN13489@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Rich Rauenzahn <rrauenza@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Message-ID: <20220727024015.3e87bb13@nvm>
+In-Reply-To: <CAG+QAKUu6TXJqoq=eQczE+CWJCL06bN8oymbSFQVCzXto+fzyQ@mail.gmail.com>
 References: <CAG+QAKUu6TXJqoq=eQczE+CWJCL06bN8oymbSFQVCzXto+fzyQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAG+QAKUu6TXJqoq=eQczE+CWJCL06bN8oymbSFQVCzXto+fzyQ@mail.gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jul 26, 2022 at 01:32:22PM -0700, Rich Rauenzahn wrote:
-> I've spent a little while trying to google for this and haven't seem
-> to hit the right keywords yet or it just isn't possible.
-> 
-> I have two btrfs filesystems.  These are independent filesystems with
-> mutually exclusive sets of disks.  RAID1, if that matters.
-> 
-> They are mounted on / -- let's say /A and /B.
-> 
-> I'd like to combine the disks into a single filesystem.  These file
-> systems are large, so creating a third filesystem and merging them is
-> not practical, nor is copying /B onto /A.
-> 
+On Tue, 26 Jul 2022 13:32:22 -0700
+Rich Rauenzahn <rrauenza@gmail.com> wrote:
+
 > Could I, say, move /A to a subvolume A in itself and then permanently
 > "connect" /B as a subvolume B, putting all the disks into a single
 > pool?  And then mount the two subvolumes as /A and /B?
@@ -87,17 +43,11 @@ On Tue, Jul 26, 2022 at 01:32:22PM -0700, Rich Rauenzahn wrote:
 > I'd swear I'd seen instructions on how to combine filesystem pools
 > before, but I can't find it again.
 
-I'm curious how it would be possible, using btrfs means and not eg.
-overlayfs or other meta filesystem providing single view into more
-filesystems.
+Check out MergerFS.
 
-Each fielsystem is using a different number (subvolume id, inode) space,
-there's no way to join two into one directly. Some transofrmation or
-translation is needed and there's no such feature provided by btrfs.
-Theoretically it would be possible to implement, renumbering subvolumes
-so they don't collide, add chunk mappings from one filesystem to
-devices of the other and merge the directory structures.
+Although that adds a FUSE layer on top of both filesystems, which might be
+fine for a home media library, but maybe not for some other uses.
 
-Otherwise I see only the options you don't want, copying or 3rd
-filesystem. You could do some tricks with deleting device from A and
-adding it to B, move some data and repeat.
+-- 
+With respect,
+Roman

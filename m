@@ -2,96 +2,144 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D761CC00140
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Aug 2022 18:04:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31A3EC00140
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Aug 2022 18:09:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236895AbiHBSEH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Aug 2022 14:04:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53150 "EHLO
+        id S237490AbiHBSJf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Aug 2022 14:09:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57344 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237378AbiHBSDx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2022 14:03:53 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED02E51A36
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 11:03:46 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id B062520A95;
-        Tue,  2 Aug 2022 18:03:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1659463425;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Oscnt2PCKQZlRLg7yHY6yvxxwxObWeszcjiAU/36RjU=;
-        b=UNVSjw2Nd9MzUnhM2GnPNjyeaX30vfbJ6Yw04EcQe40gK5Ml49eoFzygchXNndMUBLzWqw
-        ns9cKeQKMkfGLk/Txxg0eIMwDtCl13urE9/DHphvNhtL3x4E2rTGSpkja4Hh+G0zgEL7g4
-        htfKWTSvweha/4xZV+95pGHJ16wcQM0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1659463425;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Oscnt2PCKQZlRLg7yHY6yvxxwxObWeszcjiAU/36RjU=;
-        b=oM8Gr8X2tdHUiAx59ZHBf2sOXASCgKMC06domavUtue5a3wAPiC7CvOuA/ocZOnpuLCri+
-        wGNMzsPmxd121dBA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 86EF91345B;
-        Tue,  2 Aug 2022 18:03:45 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id PxI+HwFn6WIDTAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 02 Aug 2022 18:03:45 +0000
-Date:   Tue, 2 Aug 2022 19:58:43 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Ioannis Angelakopoulos <iangelak@fb.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v4 0/7] btrfs: Annotate wait events with lockdep
-Message-ID: <20220802175843.GW13489@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Ioannis Angelakopoulos <iangelak@fb.com>,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-References: <20220725221150.3959022-1-iangelak@fb.com>
+        with ESMTP id S237498AbiHBSJV (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2022 14:09:21 -0400
+Received: from mail-qk1-x733.google.com (mail-qk1-x733.google.com [IPv6:2607:f8b0:4864:20::733])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BC21A25EB0
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 11:09:19 -0700 (PDT)
+Received: by mail-qk1-x733.google.com with SMTP id w6so1248505qkf.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Aug 2022 11:09:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :reply-to:in-reply-to:references:mime-version:from:to:cc;
+        bh=Hrwa3tPiXPQVwtzpp+EsczzzZ5tfCC2WA0tUJGLJH7U=;
+        b=c5Evj5gk3+c50575533mMc4rjz5/y39GkmSq2RW7DK2klGwrTGwt9q3khQ/1Z8Ysg+
+         ICxNZqbycjNbTB8R9CGbFWmFRJ0kJzJmUUHuSNKImZNUZEXfkNMdcU3sc524+F+1pU1H
+         Q1XbrVPl2SAxHBHbAqmRrqzqQTgdoWQ2QFYkxca4fk1GCq+ox1X1mkZ9Ybk3TQl/CiD7
+         EXxm22REhw/eYDqFdL15ip4bHGYg1h/oTw+KHCV9/Dg3uxFa5/56s056+ObyTs+8VudC
+         5Y8O2z9kD1pUQpfq5fR9j0TS5uwNa7YzFLleHi0UD6yK8s72uEzN5tbE7EG7GEex0p6L
+         NdrA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :reply-to:in-reply-to:references:mime-version:x-gm-message-state
+         :from:to:cc;
+        bh=Hrwa3tPiXPQVwtzpp+EsczzzZ5tfCC2WA0tUJGLJH7U=;
+        b=xxYalCPUIzeWErMdaFC7nHPuXr44qROTygYTnv0FGIVyL0zmqK8VPmCN6R/IqGeKx4
+         uHlkAofNNveSyVXdj8kfyvO8Uiq40WpgJ8REhkwOnPK9SubnNPoC9o0cw5XbzIAnPD5x
+         sfMncUR1VgOaqZioNHWw5uHKUpUHWvsmdymcVHrfgokLZnJ7wEgoRBSHdu/AoWOG9jC3
+         k02zQLZSplHObZPwN20loq+ZruIoieowW/lci1Cpi8gj97BaosoOV8Wi3ZpgeoCdfDBJ
+         gvEa2xdwI4FekX9BiOc0LSlojsack8gedr8fNmznc52T+rinfbKU6eCAA0rfENlZpb7s
+         lyvw==
+X-Gm-Message-State: AJIora8FMT8c5QxEUTsoc9Ay9LJEYQm/S2OoLHq3VWgvwFIuYkCNiuVN
+        aUYonKCXP6cAhQXdgxGXoPrirvrdaQ0/V5weU3w=
+X-Google-Smtp-Source: AGRyM1vevCiiNxx2ZQ4vEW79eps5twnD8IKAC9L+PqJDnZNYlG72FccYRV2JAHI+0k66ZHUE1D8LiqzOOjbzIxxOI0w=
+X-Received: by 2002:a05:620a:4905:b0:6b5:c742:6161 with SMTP id
+ ed5-20020a05620a490500b006b5c7426161mr16452524qkb.107.1659463758827; Tue, 02
+ Aug 2022 11:09:18 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220725221150.3959022-1-iangelak@fb.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <27a36e2b4cf30de8f7a04e718ba47bb9e98ddb85.1658419807.git.josef@toxicpanda.com>
+In-Reply-To: <27a36e2b4cf30de8f7a04e718ba47bb9e98ddb85.1658419807.git.josef@toxicpanda.com>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Tue, 2 Aug 2022 19:08:42 +0100
+Message-ID: <CAL3q7H7=jb5j=p14khCNN2uev23bVg8+ttAFisKU7nmQsFCv_Q@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix infinite loop with dio faulting
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Jul 25, 2022 at 03:11:44PM -0700, Ioannis Angelakopoulos wrote:
-> Hello,
-> 
-> With this patch series we annotate wait events in btrfs with lockdep to
-> catch deadlocks involving these wait events.
-> 
-> Recently the btrfs developers fixed a non trivial deadlock involving
-> wait events
-> https://lore.kernel.org/linux-btrfs/20220614131413.GJ20633@twin.jikos.cz/
-> 
-> Currently lockdep is unable to catch these deadlocks since it does not
-> support wait events by default.
-> 
-> With our lockdep annotations we train lockdep to track these wait events
-> and catch more potential deadlocks.
-> 
-> Specifically, we annotate the below wait events in fs/btrfs/transaction.c
-> and in fs/btrfs/ordered-data.c:
-> 
->   1) The num_writers wait event
->   2) The num_extwriters wait event
->   3) The transaction states wait events
->   4) The pending_ordered wait event
->   5) The ordered extents wait event
+On Thu, Jul 21, 2022 at 5:12 PM Josef Bacik <josef@toxicpanda.com> wrote:
+>
+> Filipe removed the check for the case where we are constantly trying to
+> fault in the buffer from user space for DIO reads.  He left it for
+> writes, but for reads you can end up in this infinite loop trying to
+> fault in a page that won't fault in.
 
-That's very useful, thanks. I've edited some changelogs, reformatted
-some comments or minor style things. It would be nice to get it merged
-soon but we also need time for testing, so tentative plan is to get it
-to rc3 at the latest. Until then it'll be in misc-next.
+Yes, and the removal was intentional (not by accident).
+
+Adding the check back makes the same check at dio_fault_in_size()
+useless and redundant.
+
+> This is the patch I applied ontop
+> of his patch, without this I was able to get generic/475 to get stuck
+> infinite looping.
+
+This doesn't answer why the infinite loop happens.
+Why can't we faultin at least one page? Have you checked why this happens?
+
+So I'd rather not fold this into the original patch, and instead
+revert it until we know exactly why we end in the infinite loop.
+
+Thanks.
+
+> This patch is currently staged so we can probably just fold this into
+> his actual patch.
+>
+> Fixes: 5ad7531dbe67 ("btrfs: fault in pages for direct io reads/writes in=
+ a more controlled way")
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/file.c | 15 ++++++++-------
+>  1 file changed, 8 insertions(+), 7 deletions(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 1876072dee9d..79f866e36368 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -3806,20 +3806,21 @@ static ssize_t btrfs_direct_read(struct kiocb *io=
+cb, struct iov_iter *to)
+>                 read =3D ret;
+>
+>         if (iov_iter_count(to) > 0 && (ret =3D=3D -EFAULT || ret > 0)) {
+> -               if (iter_is_iovec(to)) {
+> -                       const size_t left =3D iov_iter_count(to);
+> -                       const size_t size =3D dio_fault_in_size(iocb, to,=
+ prev_left);
+> +               const size_t left =3D iov_iter_count(to);
+>
+> -                       fault_in_iov_iter_writeable(to, size);
+> -                       prev_left =3D left;
+> -                       goto again;
+> -               } else {
+> +               if (left =3D=3D prev_left) {
+>                         /*
+>                          * fault_in_iov_iter_writeable() only works for i=
+ovecs,
+>                          * return with a partial read and fallback to buf=
+fered
+>                          * IO for the rest of the range.
+>                          */
+>                         ret =3D read;
+> +               } else {
+> +                       const size_t size =3D dio_fault_in_size(iocb, to,=
+ prev_left);
+> +
+> +                       fault_in_iov_iter_writeable(to, size);
+> +                       prev_left =3D left;
+> +                       goto again;
+>                 }
+>         }
+>         btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
+> --
+> 2.26.3
+>
+
+
+--=20
+Filipe David Manana,
+
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

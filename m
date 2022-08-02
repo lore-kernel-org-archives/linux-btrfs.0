@@ -2,114 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58E54C19F29
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8DAFC00140
 	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Aug 2022 07:53:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235345AbiHBHxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S235693AbiHBHxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 2 Aug 2022 03:53:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33310 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33306 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235114AbiHBHxG (ORCPT
+        with ESMTP id S235113AbiHBHxG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2022 03:53:06 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3CC9B115E
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C012C71
         for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 00:53:05 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 9E8D92041E
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 07:53:03 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id ADF66203E4
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 07:53:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1659426783; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=eQu9ud6zjxmJ7nlbCfxpk/VKVz4Rw2DvHS/t7uZqtQY=;
-        b=ZSLUSEMdtXNH/t8CPRu1aOYpeQp3xQmtZfPq9yWga2el7lfgPxTIFi1qgboI9UPbGJa2Vj
-        RIG9R2gjrhw5pwM2UZcxDQ9x7D7/ZBX4gavWRkRoNpSpqZBn8rcGr/tH+XNxJKhCJlintz
-        VXRTYZOR5fGQFaDO1e28Jukb0h1KhMA=
+        t=1659426780; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=d5hGwGdv6EQVlmKvyrWyqMWEmPPglKhB/QTrCE9UyR8=;
+        b=W0QLnwOUaikIhwl0XA3OdOH1x7VDWF3fE1j/BvFUFzlf0blD6eG99xV3G5OcDzCM0WPfGa
+        F27v+9VIFr4pr5lh1xEhMsAl9goAUdslzm0zjVxxKOPPOPIX25ctDVzF5tU2CEesDLgUxs
+        VqbBPz575Kx0jFkVQ5DU8ivxo1D7s6c=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0AF0B13A8E
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 07:53:02 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 21CB313A8E
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 07:52:59 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2GiBM97X6GKlOgAAMHmgww
+        id vhT2ONvX6GKlOgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Aug 2022 07:53:02 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Aug 2022 07:52:59 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/3] btrfs-progs: use write_data_to_disk() to handle RAID56 in write_and_map_eb()
-Date:   Tue,  2 Aug 2022 15:52:43 +0800
-Message-Id: <8737d093b224c21253afc93d4f62c6ff70e0ed4a.1659426744.git.wqu@suse.com>
+Subject: [PATCH v2 0/3] btrfs-progs: avoid repeated data write for metadata and a small cleanup
+Date:   Tue,  2 Aug 2022 15:52:40 +0800
+Message-Id: <cover.1659426744.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.0
-In-Reply-To: <cover.1659426744.git.wqu@suse.com>
-References: <cover.1659426744.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Function write_data_to_disk() can handle RAID56 writes without any
-problem.
+[CHANGELOG]
+v2:
+- Separate the fixes from the initial patch
+- Fix a bug in BUG_ON() condition which causes mkfs test failure
 
-So just call write_data_to_disk() inside write_and_map_eb() instead of
-manually doing the RAID56 write.
+There is a bug report from Shinichiro that for zoned device mkfs -m DUP
+(using RST) doesn't work.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- kernel-shared/disk-io.c | 31 +------------------------------
- 1 file changed, 1 insertion(+), 30 deletions(-)
+It turns out to be a bug in commit 2a93728391a1 ("btrfs-progs: use
+write_data_to_disk() to replace write_extent_to_disk()"), which I
+wrongly assumed that write_data_to_disk() will only write the data to
+one mirror.
 
-diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index a6e66aee7bf7..d276e52df060 100644
---- a/kernel-shared/disk-io.c
-+++ b/kernel-shared/disk-io.c
-@@ -452,39 +452,10 @@ struct extent_buffer* read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
- int write_and_map_eb(struct btrfs_fs_info *fs_info, struct extent_buffer *eb)
- {
- 	int ret;
--	u64 length;
- 	u64 *raid_map = NULL;
- 	struct btrfs_multi_bio *multi = NULL;
- 
--	length = eb->len;
--	ret = btrfs_map_block(fs_info, WRITE, eb->start, &length,
--			      &multi, 0, &raid_map);
--	if (ret < 0) {
--		errno = -ret;
--		error("failed to map bytenr %llu length %u: %m",
--			eb->start, eb->len);
--		goto out;
--	}
--
--	/* RAID56 write back need RMW */
--	if (raid_map) {
--		ret = write_raid56_with_parity(fs_info, eb, multi,
--					       length, raid_map);
--		if (ret < 0) {
--			errno = -ret;
--			error(
--		"failed to write raid56 stripe for bytenr %llu length %llu: %m",
--				eb->start, length);
--		} else {
--			ret = 0;
--		}
--		goto out;
--	}
--
--	/*
--	 * For non-RAID56, we just writeback data to all mirrors using
--	 * write_data_to_disk().
--	 */
-+	/* write_data_to_disk() will handle all mirrors and RAID56. */
- 	ret = write_data_to_disk(fs_info, eb->data, eb->start, eb->len);
- 	if (ret < 0) {
- 		errno = -ret;
+In fact, write_data_to_disk() writes data to all mirrors, thus the
+@mirror argument is completely unnecessary.
+
+The first patch will fix the problem and cleanup the unnecessary
+argument to avoid confusion.
+
+Then the 2nd patch will fix a BUG_ON() condition.
+
+Finally the last patch will cleanup write_and_map_eb() to completely
+rely on write_data_to_disk(), without manually handling RAID56. 
+
+
+Qu Wenruo (3):
+  btrfs-progs: avoid repeated data write for metadata
+  btrfs-progs: fix a BUG_ON() condition for write_data_to_disk()
+  btrfs-progs: use write_data_to_disk() to handle RAID56 in
+    write_and_map_eb()
+
+ image/main.c              |  2 +-
+ kernel-shared/disk-io.c   | 39 +++------------------------------------
+ kernel-shared/extent_io.c | 12 +++++++++---
+ kernel-shared/extent_io.h |  2 +-
+ 4 files changed, 14 insertions(+), 41 deletions(-)
+
 -- 
 2.37.0
 

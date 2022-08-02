@@ -2,119 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43614C19F29
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Aug 2022 18:11:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC481C00140
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 Aug 2022 18:21:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233706AbiHBSLa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 Aug 2022 14:11:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59016 "EHLO
+        id S232353AbiHBSVc (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 Aug 2022 14:21:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37926 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237846AbiHBSLJ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2022 14:11:09 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDD0517E1C;
-        Tue,  2 Aug 2022 11:11:05 -0700 (PDT)
+        with ESMTP id S229748AbiHBSVb (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Aug 2022 14:21:31 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 584603ED75
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 Aug 2022 11:21:30 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A8F3F381C5;
-        Tue,  2 Aug 2022 18:11:04 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 817971FE0D;
+        Tue,  2 Aug 2022 18:21:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1659463864;
+        t=1659464488;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Pz4nohXMnV6DoQDiLTQldnM+q/whU1JUDeaFPyIhZ1g=;
-        b=qbwOAxE67O43QdxlU3BgVNMFcqw+bIAks9zkzBZrdIt+p9QtP3Fv7xMPLaENAdVp7Aedx9
-        XzoRSqRbgRcLUXbFDFMud/GksDdqcgMn+9twIIJ4cRQFVh+siuSiTKL0Shqw/NSsGMSWNj
-        Sj0WJF2iodrQNqR8K7qbSku3yKszI1E=
+        bh=OfM82AaayIHxCYw40L2oMVxTCMCxhvURzOG1/mSsKko=;
+        b=liDgmwOGr68ZwL9kF//Q9rQCn5QkCAR07qzScFpduUn0aM8+hZIbHuN7oc2p3ifi1wB6EX
+        ZFRkwSoCLet4TozAyqxu9HtXZzhje0RoR7oObbYONOEY8cwsnRBiXyEE5A/AczGdQ1m1VO
+        FvG2P1a6CmdsCDcH3NpBddAboIvZ3Yw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1659463864;
+        s=susede2_ed25519; t=1659464488;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=Pz4nohXMnV6DoQDiLTQldnM+q/whU1JUDeaFPyIhZ1g=;
-        b=B3fB4DC8HPOsEVk5KmGSn/lYbNT4tRMJqrUYo2XAEFOxE+jYElYC0WLOUq4qB59SfGVsCj
-        5wjm/c5z7w+cjuBg==
+        bh=OfM82AaayIHxCYw40L2oMVxTCMCxhvURzOG1/mSsKko=;
+        b=MXo1uAiAd5F1WxjofgDNFcdtn5hFldQfFxaM6eabmge23dcfoB5eckny01KZW2W3QTVnAu
+        pyufmuEhJeTyrRAA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6C8841345B;
-        Tue,  2 Aug 2022 18:11:04 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5A9651345B;
+        Tue,  2 Aug 2022 18:21:28 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id LWGzGbho6WJzTgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 02 Aug 2022 18:11:04 +0000
-Date:   Tue, 2 Aug 2022 20:06:02 +0200
+        id lmgsFShr6WJYUgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 02 Aug 2022 18:21:28 +0000
+Date:   Tue, 2 Aug 2022 20:16:26 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     alexlzhu@fb.com
-Cc:     kernel-team@fb.com, linux-mm@kvack.org, clm@fb.com,
-        josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2] mm: fix alginment of VMA for memory mapped files on
- THP
-Message-ID: <20220802180602.GX13489@twin.jikos.cz>
+To:     Filipe Manana <fdmanana@gmail.com>
+Cc:     David Sterba <dsterba@suse.cz>, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs: fix infinite loop with dio faulting
+Message-ID: <20220802181626.GY13489@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, alexlzhu@fb.com, kernel-team@fb.com,
-        linux-mm@kvack.org, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20220801184740.2134364-1-alexlzhu@fb.com>
+Mail-Followup-To: dsterba@suse.cz, Filipe Manana <fdmanana@gmail.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, kernel-team@fb.com
+References: <27a36e2b4cf30de8f7a04e718ba47bb9e98ddb85.1658419807.git.josef@toxicpanda.com>
+ <20220802171744.GU13489@twin.jikos.cz>
+ <CAL3q7H4i891513XvuGoDgWtpg_GggLsCkoqthadRfYg4+op1MA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220801184740.2134364-1-alexlzhu@fb.com>
+In-Reply-To: <CAL3q7H4i891513XvuGoDgWtpg_GggLsCkoqthadRfYg4+op1MA@mail.gmail.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 01, 2022 at 11:47:40AM -0700, alexlzhu@fb.com wrote:
-> From: alexlzhu <alexlzhu@fb.com>
+On Tue, Aug 02, 2022 at 07:09:28PM +0100, Filipe Manana wrote:
+> On Tue, Aug 2, 2022 at 7:00 PM David Sterba <dsterba@suse.cz> wrote:
+> >
+> > On Thu, Jul 21, 2022 at 12:10:14PM -0400, Josef Bacik wrote:
+> > > Filipe removed the check for the case where we are constantly trying to
+> > > fault in the buffer from user space for DIO reads.  He left it for
+> > > writes, but for reads you can end up in this infinite loop trying to
+> > > fault in a page that won't fault in.  This is the patch I applied ontop
+> > > of his patch, without this I was able to get generic/475 to get stuck
+> > > infinite looping.
+> > >
+> > > This patch is currently staged so we can probably just fold this into
+> > > his actual patch.
+> >
+> > Folded to the patch, thanks.
 > 
-> With CONFIG_READ_ONLY_THP_FOR_FS, the Linux kernel supports using THPs for
-> read-only mmapped files, such as shared libraries. However, the
-> kernel makes no attempt to actually align those mappings on 2MB boundaries,
-> which makes it impossible to use those THPs most of the time. This issue
-> applies to general file mapping THP as well as existing setups using
-> CONFIG_READ_ONLY_THP_FOR_FS. This is easily fixed by using
-> thp_get_unmapped_area for the unmapped_area function in btrfs, which is
-> what ext2, ext4, fuse, and xfs all use.
+> Please don't, revert instead the original patch.
 
-Commit dbe6ec815641 ("ext2/4, xfs: call thp_get_unmapped_area() for pmd
-mappings") adds the callback for DAX, that btrfs does not support so it
-was left out.
-
-> The problem can be seen in
-> /proc/PID/smaps where THPeligible is set to 0 on mappings to eligible
-> shared object files as shown below.
-> 
-> Before this patch:
-> 
-> 7fc6a7e18000-7fc6a80cc000 r-xp 00000000 00:1e 199856
-> /usr/lib64/libcrypto.so.1.1.1k
-> Size:               2768 kB
-> THPeligible:    0
-> VmFlags: rd ex mr mw me
-> 
-> With this patch the library is mapped at a 2MB aligned address:
-> 
-> fbdfe200000-7fbdfe4b4000 r-xp 00000000 00:1e 199856
-> /usr/lib64/libcrypto.so.1.1.1k
-> Size:               2768 kB
-> THPeligible:    1
-> VmFlags: rd ex mr mw me
-> 
-> This fixes the alignment of VMAs for any mmap of a file that has the
-> rd and ex permissions and size >= 2MB. The VMA alignment and
-> THPeligible field for anonymous memory is handled separately and
-> is thus not effected by this change.
-> 
-> Signed-off-by: alexlzhu <alexlzhu@fb.com>
-
-Please use full name for signed-off.
-
-Also the subject should start with "btrfs:", this is not a memory
-management patch. Thanks.
+OK, patch removed from misc-next, no need to revert.

@@ -2,107 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B43AC19F28
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Aug 2022 19:16:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DB32C19F2B
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Aug 2022 19:29:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238503AbiHCTQA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Aug 2022 15:16:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54404 "EHLO
+        id S238697AbiHCT3v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Aug 2022 15:29:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60602 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238144AbiHCTPq (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Aug 2022 15:15:46 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2BACD18360
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Aug 2022 12:15:42 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id CF8D133744;
-        Wed,  3 Aug 2022 19:15:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1659554140;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=ulq2ZESnc3SkgFWGL9j1qQc7OHFMx5Zuc4oZQSnLVB8=;
-        b=Prkqy1rBXvjhedUa04xUepXblLignl9PV3tc+mnVmcv0KCyw4yPFRNPET38ShN2ODzXHWt
-        PvdI7idKeqDFV4F8Tqpf+XTGiki2Av0lOu+aI6tlfxt7mZrr+2OFJk4tKK5ZoqeGhN2v9q
-        OAwmdFXgnKrIBWkp03VXPdgGuR7wLpU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1659554140;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=ulq2ZESnc3SkgFWGL9j1qQc7OHFMx5Zuc4oZQSnLVB8=;
-        b=hCuf/83ID4G4DUgCzitb3GMuOU1fsibfzeCYNjKNAOQCxmyGv0HzXAaXOOfwMLpFNVXHB9
-        54DQP5Sd/gD5pCBw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 914A513AD8;
-        Wed,  3 Aug 2022 19:15:40 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id wZ5wIlzJ6mJ9EwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 03 Aug 2022 19:15:40 +0000
-Date:   Wed, 3 Aug 2022 21:10:38 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/3] btrfs: separate BLOCK_GROUP_TREE feature from
- extent-tree-v2
-Message-ID: <20220803191038.GI13489@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1658293417.git.wqu@suse.com>
- <20220726175922.GH13489@twin.jikos.cz>
- <56492a5b-8d98-38af-50f2-57a75a3417fc@gmx.com>
- <20220726215252.GQ13489@twin.jikos.cz>
- <27f3ed12-6b94-d370-279d-aba825d5a643@gmx.com>
- <46235fd6-8b31-9291-5025-b4305be1c678@gmx.com>
+        with ESMTP id S238444AbiHCT3c (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Aug 2022 15:29:32 -0400
+Received: from mail-qt1-x82e.google.com (mail-qt1-x82e.google.com [IPv6:2607:f8b0:4864:20::82e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 135385B798;
+        Wed,  3 Aug 2022 12:28:43 -0700 (PDT)
+Received: by mail-qt1-x82e.google.com with SMTP id u12so13434176qtk.0;
+        Wed, 03 Aug 2022 12:28:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc;
+        bh=j6ua6sSOMR01Px12y7LQZ7sRXPuWjo+RHnWucuaPxno=;
+        b=nFavfSVf4GaJ45pNBa9bpH1I0dEul2AoNgoS13aXm0cw3J1IxW3XneSEKO50iU6gLm
+         vHp4LOsHMcUKGSckeiHJ0xUW1XG6tdXTb9YvHA/bc5ZThulmvQgUSzSsrnZyIkye2WNf
+         Gd+2kZaE9opkD31v/NFditb0gS4/TSv4tYTFzcyHPIQQNnBWgyRBTEECim2q+smDEffS
+         5EGy2EeXXALA03Q5io8L0M0jxbcwRr/U7e/bDcSgqmYwXvfacsYVY9v6yLgKUsr4ZZ3/
+         MRN9aoatDVS7+GSYyT9YQGYObw3wa+pqhu5srDsRx+jBuBYXpDvMdjpO8JTjRLTIolPI
+         4XJA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc;
+        bh=j6ua6sSOMR01Px12y7LQZ7sRXPuWjo+RHnWucuaPxno=;
+        b=V3YINXf4Iz/nyEk5zREIduvMDc4iKABLBz9Nk7B0QZo/DGMeWwBtg9H185Rr5sS7bq
+         EuD1/eqmmU/0guIWK3UzAPn/8u4VID74iZW1TkKK9a1c92sL6GVrQLBYyDR2pkq+G0Es
+         k6muTCUaQe9HLQq4NWKB8AZLZ+7KdDz/8N/qvgkR0IAs6uWWxwXFJKVS51ntk4ocDjQ1
+         WBY8RWBu2K2wqqZLtYTgyy+iY7IDx948QI2o6oD1BGcz+M5gQyGdAge/EB+MfBdfqaQe
+         iHF1X7lAxrybcwu1seXw0/fwnRtppXW+874QLQBUjWZjkLiTjV1wTXJey8GnusAEvxC2
+         B/uQ==
+X-Gm-Message-State: AJIora+G7oZfLm7EextXOudxF0IJQD2bOuZCWfM5NxpvX48gYChZIReY
+        CuKFFW6Ml+bSnWK5srxvlo5QUtY/nNkIX8fDgFI=
+X-Google-Smtp-Source: AGRyM1sKsNtOmA0uxL5XpZY/qqHfTGj5qb1aIPlGf97a4nzpeDMDnxOUU7vl0oK8CDue6thIYHzB0UU5X3wkc9Vl6uw=
+X-Received: by 2002:ac8:5fd1:0:b0:31f:31a6:55c0 with SMTP id
+ k17-20020ac85fd1000000b0031f31a655c0mr23480147qta.506.1659554922083; Wed, 03
+ Aug 2022 12:28:42 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <46235fd6-8b31-9291-5025-b4305be1c678@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <CABXGCsN+BcaGO0+0bJszDPvA=5JF_bOPfXC=OLzMzsXY2M8hyQ@mail.gmail.com>
+ <20220726164250.GE13489@twin.jikos.cz>
+In-Reply-To: <20220726164250.GE13489@twin.jikos.cz>
+From:   Mikhail Gavrilov <mikhail.v.gavrilov@gmail.com>
+Date:   Thu, 4 Aug 2022 00:28:31 +0500
+Message-ID: <CABXGCsMNF_SKns-av1kAWtR5Yd7u6sjwsFT9er8tSebfuLG8VQ@mail.gmail.com>
+Subject: Re: BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
+To:     dsterba@suse.cz, Mikhail Gavrilov <mikhail.v.gavrilov@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Linux List Kernel Mailing <linux-kernel@vger.kernel.org>
+Cc:     Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>,
+        dvyukov@google.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jul 28, 2022 at 06:02:44PM +0800, Qu Wenruo wrote:
-> >> Ok, good. I'm thinking if we should go for an online conversion too or
-> >> not, because on a many-TB filesystem it would possibly take a long time
-> >> but the benefit is not to unmount and do the conversion.
-> >
-> > For my previous tests, even TB level (used space) fs, it only takes
-> > seconds to do the convert (although on SSD).
-> >
-> > For HDD systems, it would be as slow as the mount time for the convert.
-> > Most of time spent would be just searching the block group items,
-> > writing them into bg tree would be super fast though.
-> 
-> Despite the incoming multi-transaction bg tree convert tool
-> (bidirectional), mind me to update the kernel series to address one of
-> the concern from Josef?
-> 
-> To reduce the test matrix, I'd like to make bg tree to rely on free
-> space tree and no holes features.
-> 
-> Although those features have no linkage to each other, such artificial
-> requirement should greatly reduce our test combinations.
+On Tue, Jul 26, 2022 at 9:47 PM David Sterba <dsterba@suse.cz> wrote:
+>
+> On Tue, Jul 26, 2022 at 05:32:54PM +0500, Mikhail Gavrilov wrote:
+> > Hi guys.
+> > Always with intensive writing on a btrfs volume, the message "BUG:
+> > MAX_LOCKDEP_CHAIN_HLOCKS too low!" appears in the kernel logs.
+>
+> Increase the config value of LOCKDEP_CHAINS_BITS, default is 16, 18
+> tends to work.
 
-That's a good idea, we add the features incrementally and we've probably
-reached the point where we should have a basic set that everybody wants
-and should use.
+I confirm that after bumping LOCKDEP_CHAINS_BITS to 18 several days of
+continuous writing on the BTRFS partition with different files with a
+total size of 10Tb I didn't see this kernel bug message again.
+Tetsuo, I saw your commit 5dc33592e95534dc8455ce3e9baaaf3dae0fff82 [1]
+set for LOCKDEP_CHAINS_BITS default value 16.
+Why not increase LOCKDEP_CHAINS_BITS to 18 by default?
+Thanks.
 
-Features that are clear optimizations or improvements should be easy to
-decide, the other depend eg. on hardware (zoned) or are individual
-features like quotas or raid1c34.
 
-On mkfs side it would require more checks so that selecting
-block-group-tree and disabling free-space-tree can't be done and
-additional checks in kernel.
+[1] https://github.com/torvalds/linux/blame/master/lib/Kconfig.debug#L1387
+
+-- 
+Best Regards,
+Mike Gavrilov.

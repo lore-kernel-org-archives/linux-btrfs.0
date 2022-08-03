@@ -2,101 +2,83 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02B5AC19F28
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Aug 2022 19:30:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D95E9C19F28
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 Aug 2022 19:38:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237931AbiHCTai (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 Aug 2022 15:30:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33480 "EHLO
+        id S238144AbiHCTio (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 Aug 2022 15:38:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40746 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238655AbiHCTaT (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Aug 2022 15:30:19 -0400
+        with ESMTP id S229782AbiHCTio (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Aug 2022 15:38:44 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FE715B7A1
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 Aug 2022 12:30:04 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7BA8D5B784
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 Aug 2022 12:38:43 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 35EAC34BD7;
-        Wed,  3 Aug 2022 19:30:03 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 39B8733962;
+        Wed,  3 Aug 2022 19:38:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1659555003;
+        t=1659555522;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=wdiJvRqmMh1kUJU+gCpTLeRKgBWuos/Ofg4M1pPK1SE=;
-        b=ZPoNtEaMC84phiy6zDOP2gVxFGHHjL5ivpnatZdMdBgVBDjWbpOrdPikm6iFG7oBXbdZvf
-        MvwQHLOwsoVNZhuUxhZPVFHuCKxWlSmW3QrC/OKwC2+XCAScqIhK2JKHdSTDakQoDgNIJ8
-        3zQSSmJg9sx9q4j+rF6Lw6NDUGS9hok=
+        bh=xJ1zRJladjzQafF6iJYVhhwyxtB6a7OA5ydkm8Z6fpc=;
+        b=2wwEdOffz0IyT5bAg3bJYQj/3AHNOLga4/TEYLHV1OhtrQNusyBUIZ2yrXSSIk5fry73ud
+        yMoockz4FM9tLhQdFqvWa4kPVrpKxY8VVKPObHtywf+IuU7mLvAW8OaOUDTvHhDOuBhEtR
+        B4lVrXTc3nBaRxrLcrgBTeFoBji9mdA=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1659555003;
+        s=susede2_ed25519; t=1659555522;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=wdiJvRqmMh1kUJU+gCpTLeRKgBWuos/Ofg4M1pPK1SE=;
-        b=dnH0jQiYdxbOAM882L3BeeaqiaNGGO6pJZk6+yZgPBCaRyjRnZs0fmCpt/LwUjfi7lznSB
-        EXUmSceQfrKbFiDA==
+        bh=xJ1zRJladjzQafF6iJYVhhwyxtB6a7OA5ydkm8Z6fpc=;
+        b=Z/fry6DFlCQc46BbopJC9CFcKirGmcsYYRH3mEkmhfpbmvQVDwo9d1r6prAGulPLA9kYcz
+        gyd52zsuayTHDcBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0A15513AD8;
-        Wed,  3 Aug 2022 19:30:03 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 196C413AD8;
+        Wed,  3 Aug 2022 19:38:42 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id eGSKAbvM6mK1GAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 03 Aug 2022 19:30:03 +0000
-Date:   Wed, 3 Aug 2022 21:25:00 +0200
+        id epQtBcLO6mLBGwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 03 Aug 2022 19:38:42 +0000
+Date:   Wed, 3 Aug 2022 21:33:39 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/3] btrfs-progs: avoid repeated data write for
- metadata and a small cleanup
-Message-ID: <20220803192500.GJ13489@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH] btrfs-progs: check for invalid free space tree entries
+Message-ID: <20220803193339.GK13489@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1659426744.git.wqu@suse.com>
+Mail-Followup-To: dsterba@suse.cz, Josef Bacik <josef@toxicpanda.com>,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com
+References: <e3fa3936cd8b01a05390d364a2cf41ca6c3f7834.1659128926.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1659426744.git.wqu@suse.com>
+In-Reply-To: <e3fa3936cd8b01a05390d364a2cf41ca6c3f7834.1659128926.git.josef@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 02, 2022 at 03:52:40PM +0800, Qu Wenruo wrote:
-> [CHANGELOG]
-> v2:
-> - Separate the fixes from the initial patch
-> - Fix a bug in BUG_ON() condition which causes mkfs test failure
+On Fri, Jul 29, 2022 at 05:08:53PM -0400, Josef Bacik wrote:
+> While testing some changes to how we reclaim block groups I started
+> hitting failures with my TEST_DEV.  This occurred because I had a bug
+> and failed to properly remove a block groups free space tree entries.
+> However this wasn't caught in testing when it happened because
+> btrfs check only checks that the free space cache for the existing block
+> groups is valid, it doesn't check for free space entries that don't have
+> a corresponding block group.
 > 
-> There is a bug report from Shinichiro that for zoned device mkfs -m DUP
-> (using RST) doesn't work.
+> Fix this by checking for free space entries that don't have a
+> corresponding block group.  Additionally add a test image to validate
+> this fix.
 > 
-> It turns out to be a bug in commit 2a93728391a1 ("btrfs-progs: use
-> write_data_to_disk() to replace write_extent_to_disk()"), which I
-> wrongly assumed that write_data_to_disk() will only write the data to
-> one mirror.
-> 
-> In fact, write_data_to_disk() writes data to all mirrors, thus the
-> @mirror argument is completely unnecessary.
-> 
-> The first patch will fix the problem and cleanup the unnecessary
-> argument to avoid confusion.
-> 
-> Then the 2nd patch will fix a BUG_ON() condition.
-> 
-> Finally the last patch will cleanup write_and_map_eb() to completely
-> rely on write_data_to_disk(), without manually handling RAID56. 
-> 
-> 
-> Qu Wenruo (3):
->   btrfs-progs: avoid repeated data write for metadata
->   btrfs-progs: fix a BUG_ON() condition for write_data_to_disk()
->   btrfs-progs: use write_data_to_disk() to handle RAID56 in
->     write_and_map_eb()
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
 Added to devel, thanks.

@@ -2,56 +2,56 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14198C25B08
-	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Aug 2022 14:15:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67BA7C25B0C
+	for <linux-btrfs@archiver.kernel.org>; Fri,  5 Aug 2022 14:15:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240918AbiHEOPN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 5 Aug 2022 10:15:13 -0400
+        id S240913AbiHEOPO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 5 Aug 2022 10:15:14 -0400
 Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240901AbiHEOPG (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2022 10:15:06 -0400
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A68B558B75
-        for <linux-btrfs@vger.kernel.org>; Fri,  5 Aug 2022 07:15:04 -0700 (PDT)
-Received: by mail-qt1-x82c.google.com with SMTP id h7so2125254qtu.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Aug 2022 07:15:04 -0700 (PDT)
+        with ESMTP id S240912AbiHEOPM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Aug 2022 10:15:12 -0400
+Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 08ED95724C
+        for <linux-btrfs@vger.kernel.org>; Fri,  5 Aug 2022 07:15:07 -0700 (PDT)
+Received: by mail-qk1-x731.google.com with SMTP id a2so1949497qkk.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Aug 2022 07:15:07 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=from:to:subject:date:message-id:in-reply-to:references:mime-version
          :content-transfer-encoding;
-        bh=tpyuaUWUEr/HvjX02hJmxRhH53TwNp0wUJb9DBCHLNY=;
-        b=nBc3EWzRaKyL8zZG7396mDvBQD4CIyjindesEGw/8KU2XQA0TodtIJ3zQZi0E/Hi9x
-         s5AeT5Sg1QVlNk6YipN7qvGmpYAGRzNPnmkHln+vDcKmlWdwhQo7gvW2NDUsj0FeeIM8
-         XvT++Vaev3awNDikMQl7wdQihL8/qXcWMHUWsMqdN9FL0dbFOk84t0/90PxatOt/jfdH
-         VsPA7GWYyr8XjGTeQ1HsPonv+YnKl1XGxae+saYFEZVVjRJD76PluI9k6HIv3NrnfpiD
-         6TEHnFRCZttulX5JRNfX9i6y7WBrpZNK0As6DBZEgxVY2HMef+hrgtndTxvlu7Y0eYlY
-         vhSw==
+        bh=57qCfcsItQsdOjii2/x/L4L4WxHB5ORjui4nrT085gA=;
+        b=UBTzlXjUS13uj2f7WtrTfOi4KuoPEZaGwRbH65POJgw1NsPi82mYrm7s9tqU4TNujG
+         aRQ8obInj9+KDy72OV7XPxDDIaWvYqgLkPD5gv3PlyYlvhD6cimqMSVt/mMI1a3xRabp
+         NIu3uAxoAXzGegzNAbwU3ElgpHRcLL4864diUOesuz643THfU1JyDd6vV+ZA9HDi58jz
+         2Y92xZUc/zWOne1w4G3LlsuHPGIb/U9QJ3Gr1mFOCSjycRJLq9fmzMtiAyYp4nysdPVj
+         DlPJpSHCc3g19BhH+7of48xRX8qtABzg8MalpNPosfedMC8gs5Yp3XvzQxUhNqFlz/h1
+         OShA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=tpyuaUWUEr/HvjX02hJmxRhH53TwNp0wUJb9DBCHLNY=;
-        b=J/Ro2TmJ/M55BKedL78qsb3rlTc2HrNH+ByMmJSb5OfkseBaAktkaCiwcLeA8RF2cP
-         o88avgJusUJFlpmGjpVG5FoQaGENDrxoHm/6jBMM5pp5TQ03MvTMkzkeJF36iIBou9UO
-         BFVm4+YWzA24ZwUej30AGcovqOeJ6p1ZuQ8sIWwtTQSVHxsqLM5FB0wnf5WqPeUL/yNS
-         +369ivdWXtT2OE2rTzy8ykjatSnFstH+4h8PZkyb5/t1kzgbUi63fQrYGxqL2D1UYd4C
-         hDBrPf3ieGPDBtWH56IFNM6rwxPl3yDXSYARWrEhySkKOjH3TL8/TORWWU5Gc3T/Opfm
-         FgIw==
-X-Gm-Message-State: ACgBeo2WAljyS1ONSCcYP2r/UZskpmWxCOulXoMFNy4vOSPmKu0gLiEp
-        25LR86YUtObhLg7jxJ3CT3AHhy8S4TF2wg==
-X-Google-Smtp-Source: AA6agR4jM0xxCcsa7wR0/FVyxraIZFxIwKxhto9Rb93zaZQY5QONeHw1WVgEqQDs7alqbV/XBqGIDQ==
-X-Received: by 2002:ac8:5708:0:b0:31f:d02:ff83 with SMTP id 8-20020ac85708000000b0031f0d02ff83mr6033321qtw.555.1659708903444;
-        Fri, 05 Aug 2022 07:15:03 -0700 (PDT)
+        bh=57qCfcsItQsdOjii2/x/L4L4WxHB5ORjui4nrT085gA=;
+        b=BX3cWKmGF6GKA+BsozMRmTLdFIJGCTOAwqpuY/GiJpxcjmrpgJGwSOyhAKwa12vvHL
+         3P4sAHF1I43uo9A9cRCUSe93ed0FKdIAxk97FCnIjKkX56RA+AmBP1G128RqNP2CIO1/
+         cvrqGl6dGfORCjWFof31L3jTSGo8gIWgdWB1xVeVjClcEUp6vgMVbDo0rdrZ+Ek8Blk+
+         i404/5mq4XpqcdRDWhl9oSBg7D5JgQNGtLFrjvDpKWdrJ5EMQon2vfiKA+SqQKAQvQ2o
+         bK+rfT4piO0FKCg6k3QSdF2Epc2lWSsdo4bQJZqqkfCpSFGcBXOf3O4Sl2cHPdTU/tRs
+         XIRw==
+X-Gm-Message-State: ACgBeo2S3rXecShYo7XyK0FRIk6JjjwHyBuNzmcgF4LlV3nYhNOr2toh
+        FCx4yBoG2Yx4gzMzgjXKZaAFlr2K0uSB+w==
+X-Google-Smtp-Source: AA6agR4B1Ni1g+KRby4CSXHkKPw8+kQq9936fYt5DEq5wm8Q17pUugdt9lCKHew6NPHvgcwo2nyKXA==
+X-Received: by 2002:ae9:e102:0:b0:6b8:f8e6:7f8d with SMTP id g2-20020ae9e102000000b006b8f8e67f8dmr4953243qkm.139.1659708906010;
+        Fri, 05 Aug 2022 07:15:06 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id l22-20020ac848d6000000b003051f450049sm2634839qtr.8.2022.08.05.07.15.02
+        by smtp.gmail.com with ESMTPSA id y17-20020a05620a25d100b006b627d42616sm3033784qko.35.2022.08.05.07.15.05
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 05 Aug 2022 07:15:03 -0700 (PDT)
+        Fri, 05 Aug 2022 07:15:05 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 1/9] btrfs: use btrfs_fs_closing for background bg work
-Date:   Fri,  5 Aug 2022 10:14:52 -0400
-Message-Id: <d9935db922bf64954df0250391afa246dfe6abc7.1659708822.git.josef@toxicpanda.com>
+Subject: [PATCH v3 3/9] btrfs: handle space_info setting of bg in btrfs_add_bg_to_space_info
+Date:   Fri,  5 Aug 2022 10:14:54 -0400
+Message-Id: <516660b8cd99f8d0ed090c5554b4390bc32d0b02.1659708822.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1659708822.git.josef@toxicpanda.com>
 References: <cover.1659708822.git.josef@toxicpanda.com>
@@ -61,40 +61,152 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For both unused bg deletion and async balance work we'll happily run if
-the fs is closing.  However I want to move these to their own worker
-thread, and they can be long running jobs, so add a check to see if
-we're closing and simply bail.
+We previously had the pattern of
+
+btrfs_update_space_info(all, the, bg, fields, &space_info);
+link_block_group(bg);
+bg->space_info = space_info;
+
+Now that we're passing the bg into btrfs_add_bg_to_space_info we can do
+the linking in that function, transforming this to simply
+
+btrfs_add_bg_to_space_info(fs_info, bg);
+
+and put the link_block_group() and bg->space_info assignment directly in
+btrfs_add_bg_to_space_info.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/block-group.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/block-group.c | 25 +++----------------------
+ fs/btrfs/space-info.c  | 13 +++++++++----
+ fs/btrfs/space-info.h  |  3 +--
+ 3 files changed, 13 insertions(+), 28 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 993aca2f1e18..fd3bf13d5b40 100644
+index 9790f01de93e..5f062c5d3b6f 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -1321,6 +1321,9 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 	if (!test_bit(BTRFS_FS_OPEN, &fs_info->flags))
- 		return;
+@@ -1913,16 +1913,6 @@ static int exclude_super_stripes(struct btrfs_block_group *cache)
+ 	return 0;
+ }
  
-+	if (btrfs_fs_closing(fs_info))
-+		return;
+-static void link_block_group(struct btrfs_block_group *cache)
+-{
+-	struct btrfs_space_info *space_info = cache->space_info;
+-	int index = btrfs_bg_flags_to_raid_index(cache->flags);
+-
+-	down_write(&space_info->groups_sem);
+-	list_add_tail(&cache->list, &space_info->block_groups[index]);
+-	up_write(&space_info->groups_sem);
+-}
+-
+ static struct btrfs_block_group *btrfs_create_block_group_cache(
+ 		struct btrfs_fs_info *fs_info, u64 start)
+ {
+@@ -2025,7 +2015,6 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ 				int need_clear)
+ {
+ 	struct btrfs_block_group *cache;
+-	struct btrfs_space_info *space_info;
+ 	const bool mixed = btrfs_fs_incompat(info, MIXED_GROUPS);
+ 	int ret;
+ 
+@@ -2118,11 +2107,7 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ 		goto error;
+ 	}
+ 	trace_btrfs_add_block_group(info, cache, 0);
+-	btrfs_add_bg_to_space_info(info, cache, &space_info);
+-
+-	cache->space_info = space_info;
+-
+-	link_block_group(cache);
++	btrfs_add_bg_to_space_info(info, cache);
+ 
+ 	set_avail_alloc_bits(info, cache->flags);
+ 	if (btrfs_chunk_writeable(info, cache->start)) {
+@@ -2146,7 +2131,6 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+ static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
+ {
+ 	struct extent_map_tree *em_tree = &fs_info->mapping_tree;
+-	struct btrfs_space_info *space_info;
+ 	struct rb_node *node;
+ 	int ret = 0;
+ 
+@@ -2187,9 +2171,7 @@ static int fill_dummy_bgs(struct btrfs_fs_info *fs_info)
+ 			break;
+ 		}
+ 
+-		btrfs_add_bg_to_space_info(fs_info, bg, &space_info);
+-		bg->space_info = space_info;
+-		link_block_group(bg);
++		btrfs_add_bg_to_space_info(fs_info, bg);
+ 
+ 		set_avail_alloc_bits(fs_info, bg->flags);
+ 	}
+@@ -2558,7 +2540,7 @@ struct btrfs_block_group *btrfs_make_block_group(struct btrfs_trans_handle *tran
+ 	 * the rbtree, update the space info's counters.
+ 	 */
+ 	trace_btrfs_add_block_group(fs_info, cache, 1);
+-	btrfs_add_bg_to_space_info(fs_info, cache, &cache->space_info);
++	btrfs_add_bg_to_space_info(fs_info, cache);
+ 	btrfs_update_global_block_rsv(fs_info);
+ 
+ #ifdef CONFIG_BTRFS_DEBUG
+@@ -2569,7 +2551,6 @@ struct btrfs_block_group *btrfs_make_block_group(struct btrfs_trans_handle *tran
+ 		fragment_free_space(cache);
+ 	}
+ #endif
+-	link_block_group(cache);
+ 
+ 	list_add_tail(&cache->bg_list, &trans->new_bgs);
+ 	trans->delayed_ref_updates++;
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index a9433d19d827..f89aa49f53d4 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -294,11 +294,10 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
+ }
+ 
+ void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
+-				struct btrfs_block_group *block_group,
+-				struct btrfs_space_info **space_info)
++				struct btrfs_block_group *block_group)
+ {
+ 	struct btrfs_space_info *found;
+-	int factor;
++	int factor, index;
+ 
+ 	factor = btrfs_bg_type_to_factor(block_group->flags);
+ 
+@@ -317,7 +316,13 @@ void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
+ 		found->full = 0;
+ 	btrfs_try_granting_tickets(info, found);
+ 	spin_unlock(&found->lock);
+-	*space_info = found;
 +
- 	/*
- 	 * Long running balances can keep us blocked here for eternity, so
- 	 * simply skip deletion if we're unable to get the mutex.
-@@ -1560,6 +1563,9 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
- 	if (!test_bit(BTRFS_FS_OPEN, &fs_info->flags))
- 		return;
- 
-+	if (btrfs_fs_closing(fs_info))
-+		return;
++	block_group->space_info = found;
 +
- 	if (!btrfs_should_reclaim(fs_info))
- 		return;
++	index = btrfs_bg_flags_to_raid_index(block_group->flags);
++	down_write(&found->groups_sem);
++	list_add_tail(&block_group->list, &found->block_groups[index]);
++	up_write(&found->groups_sem);
+ }
  
+ struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index 101e83828ee5..2039096803ed 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -124,8 +124,7 @@ DECLARE_SPACE_INFO_UPDATE(bytes_pinned, "pinned");
+ 
+ int btrfs_init_space_info(struct btrfs_fs_info *fs_info);
+ void btrfs_add_bg_to_space_info(struct btrfs_fs_info *info,
+-				struct btrfs_block_group *block_group,
+-				struct btrfs_space_info **space_info);
++				struct btrfs_block_group *block_group);
+ void btrfs_update_space_info_chunk_size(struct btrfs_space_info *space_info,
+ 					u64 chunk_size);
+ struct btrfs_space_info *btrfs_find_space_info(struct btrfs_fs_info *info,
 -- 
 2.26.3
 

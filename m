@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18DC6C25B06
-	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Aug 2022 08:03:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5230EC25B0C
+	for <linux-btrfs@archiver.kernel.org>; Sat,  6 Aug 2022 08:04:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229866AbiHFIDy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 6 Aug 2022 04:03:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54590 "EHLO
+        id S235909AbiHFIEC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 6 Aug 2022 04:04:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54700 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229446AbiHFIDx (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Aug 2022 04:03:53 -0400
+        with ESMTP id S229871AbiHFID5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Aug 2022 04:03:57 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88A5C13DEC
-        for <linux-btrfs@vger.kernel.org>; Sat,  6 Aug 2022 01:03:51 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51CA813E1C
+        for <linux-btrfs@vger.kernel.org>; Sat,  6 Aug 2022 01:03:56 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=wBEY1wRI26rpH3N8d+NQJssjoOMzEsRJkbXG+hoqjLg=; b=xtuQFYdCGaBKpK1KvjU4K2WWlI
-        YcdIKtlboo2L9jW3Dj/uiDwNLfYu5Aa3ZYuBNkFLcj2VjS3oGxsEfs1gS8jolKQIPT5ZiI93DMwUM
-        1xMI/fkKScyBbMuWbiTKecNbMkj+MEm82zD/PnXTTxapKKocnX792Chc70iUTs5YyrFbpvnYKZuFq
-        LnZCQGKWOBtHKjLJLxezHamZwByuRfPaAp9+dSGGFl1kOj2gqKrOmKm/xKo83NbR4JKCl4QS4brZP
-        P3lx7QgqOqLtij3cE56ZVmtOvJ4VKAmY43+igBYPCqSCQRPcTOrYyEMHqWfgPNt2QWSZXinZDiQdT
-        zw5rRM+g==;
+        bh=7CuF7TZF3UQnTLgwSagp7RkyQCLscz9Iej/wBS7Yt5E=; b=2EhC8blomIOnY6jVPpA3X4rYRw
+        66KCs7YkOIssMwth8wLybM8MVQEgjtoNKN9GVEcvvncKPKlgz9Ott1bKkApYfqmYTtPBKzk/Dh6di
+        CTdrFogMscxDrkYkaG559kJhqClMF2DgS+8JSgZRoHt4swpf8jdRr3BbJ8378LfraWULGplyx1wH7
+        YFnQk9H6S5tyOmaefenH/XOo8KKzaglga/IVbojOaUs7T79s9dn0VMoKCx5LvFX6iSRPPlj70+8BT
+        kGXAX7gkjMxqzqtec9xSdUEanHIKJYpo/OEA6JP3nx5Bh6MrZVg9oqy/cl518Vhxa6N182GIPEFtA
+        4Bd2cmNw==;
 Received: from [2001:4bb8:192:6d54:4997:d9fe:27ec:4c3c] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1oKEmh-006LrG-Qa; Sat, 06 Aug 2022 08:03:48 +0000
+        id 1oKEmm-006LuL-Pz; Sat, 06 Aug 2022 08:03:53 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Nikolay Borisov <nborisov@suse.com>,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/11] btrfs: properly abstract the parity raid bio handling
-Date:   Sat,  6 Aug 2022 10:03:25 +0200
-Message-Id: <20220806080330.3823644-7-hch@lst.de>
+Subject: [PATCH 08/11] btrfs: split submit_stripe_bio
+Date:   Sat,  6 Aug 2022 10:03:27 +0200
+Message-Id: <20220806080330.3823644-9-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220806080330.3823644-1-hch@lst.de>
 References: <20220806080330.3823644-1-hch@lst.de>
@@ -46,288 +46,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The parity raid write/recover functionality is currently not very well
-abstracted from the bio submission and completion handling in volumes.c:
-
- - the raid56 code directly completes the original btrfs_bio fed into
-   btrfs_submit_bio instead of dispatching back to volumes.c
- - the raid56 code consumes the bioc and bio_counter references taken
-   by volumes.c, which also leads to ugly special casing of the calls
-   from the scrub code into the raid56 code
-
-To fix this up supply a bi_end_io handler that calls back into the
-volumes.c machinery, which then puts the bioc, decrements the bio_counter
-and completes the original bio, and updates the scrub code to also
-take ownership of the bioc and bio_counter in all cases.
+Split out a low-level btrfs_submit_dev_bio helper that just submits
+the bio without any cloning decisions or setting up the end I/O handler
+for future reuse by a different caller.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-Tested-by: Nikolay Borisov <nborisov@suse.com>
-Tested-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/raid56.c  | 45 +++++++--------------------------------------
- fs/btrfs/raid56.h  |  4 +---
- fs/btrfs/scrub.c   |  7 +++++--
- fs/btrfs/volumes.c | 18 +++++++++++++++++-
- 4 files changed, 30 insertions(+), 44 deletions(-)
+ fs/btrfs/volumes.c | 51 +++++++++++++++++++++++++---------------------
+ 1 file changed, 28 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 1afe32d5ab017..d767814653249 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -275,7 +275,6 @@ static void merge_rbio(struct btrfs_raid_bio *dest,
- 	/* Also inherit the bitmaps from @victim. */
- 	bitmap_or(&dest->dbitmap, &victim->dbitmap, &dest->dbitmap,
- 		  dest->stripe_nsectors);
--	dest->generic_bio_cnt += victim->generic_bio_cnt;
- 	bio_list_init(&victim->bio_list);
- }
- 
-@@ -814,8 +813,6 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t err)
- 	struct bio *cur = bio_list_get(&rbio->bio_list);
- 	struct bio *extra;
- 
--	if (rbio->generic_bio_cnt)
--		btrfs_bio_counter_sub(rbio->bioc->fs_info, rbio->generic_bio_cnt);
- 	/*
- 	 * Clear the data bitmap, as the rbio may be cached for later usage.
- 	 * do this before before unlock_stripe() so there will be no new bio
-@@ -946,6 +943,7 @@ static struct btrfs_raid_bio *alloc_rbio(struct btrfs_fs_info *fs_info,
- 	spin_lock_init(&rbio->bio_list_lock);
- 	INIT_LIST_HEAD(&rbio->stripe_cache);
- 	INIT_LIST_HEAD(&rbio->hash_list);
-+	btrfs_get_bioc(bioc);
- 	rbio->bioc = bioc;
- 	rbio->nr_pages = num_pages;
- 	rbio->nr_sectors = num_sectors;
-@@ -1813,15 +1811,12 @@ void raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc)
- 
- 	rbio = alloc_rbio(fs_info, bioc);
- 	if (IS_ERR(rbio)) {
--		btrfs_put_bioc(bioc);
- 		ret = PTR_ERR(rbio);
--		goto out_dec_counter;
-+		goto fail;
- 	}
- 	rbio->operation = BTRFS_RBIO_WRITE;
- 	rbio_add_bio(rbio, bio);
- 
--	rbio->generic_bio_cnt = 1;
--
- 	/*
- 	 * don't plug on full rbios, just get them out the door
- 	 * as quickly as we can
-@@ -1829,7 +1824,7 @@ void raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc)
- 	if (rbio_is_full(rbio)) {
- 		ret = full_stripe_write(rbio);
- 		if (ret)
--			goto out_dec_counter;
-+			goto fail;
- 		return;
- 	}
- 
-@@ -1844,13 +1839,12 @@ void raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc)
- 	} else {
- 		ret = __raid56_parity_write(rbio);
- 		if (ret)
--			goto out_dec_counter;
-+			goto fail;
- 	}
- 
- 	return;
- 
--out_dec_counter:
--	btrfs_bio_counter_dec(fs_info);
-+fail:
- 	bio->bi_status = errno_to_blk_status(ret);
- 	bio_endio(bio);
- }
-@@ -2198,18 +2192,11 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
-  * of the drive.
-  */
- void raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
--			   int mirror_num, bool generic_io)
-+			   int mirror_num)
- {
- 	struct btrfs_fs_info *fs_info = bioc->fs_info;
- 	struct btrfs_raid_bio *rbio;
- 
--	if (generic_io) {
--		ASSERT(bioc->mirror_num == mirror_num);
--		btrfs_bio(bio)->mirror_num = mirror_num;
--	} else {
--		btrfs_get_bioc(bioc);
--	}
--
- 	rbio = alloc_rbio(fs_info, bioc);
- 	if (IS_ERR(rbio)) {
- 		bio->bi_status = errno_to_blk_status(PTR_ERR(rbio));
-@@ -2225,14 +2212,11 @@ void raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
- "%s could not find the bad stripe in raid56 so that we cannot recover any more (bio has logical %llu len %llu, bioc has map_type %llu)",
- 			   __func__, bio->bi_iter.bi_sector << 9,
- 			   (u64)bio->bi_iter.bi_size, bioc->map_type);
--		kfree(rbio);
-+		__free_raid_bio(rbio);
- 		bio->bi_status = BLK_STS_IOERR;
- 		goto out_end_bio;
- 	}
- 
--	if (generic_io)
--		rbio->generic_bio_cnt = 1;
--
- 	/*
- 	 * Loop retry:
- 	 * for 'mirror == 2', reconstruct from all other stripes.
-@@ -2261,8 +2245,6 @@ void raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
- 	return;
- 
- out_end_bio:
--	btrfs_bio_counter_dec(fs_info);
--	btrfs_put_bioc(bioc);
- 	bio_endio(bio);
- }
- 
-@@ -2326,13 +2308,6 @@ struct btrfs_raid_bio *raid56_parity_alloc_scrub_rbio(struct bio *bio,
- 	ASSERT(i < rbio->real_stripes);
- 
- 	bitmap_copy(&rbio->dbitmap, dbitmap, stripe_nsectors);
--
--	/*
--	 * We have already increased bio_counter when getting bioc, record it
--	 * so we can free it at rbio_orig_end_io().
--	 */
--	rbio->generic_bio_cnt = 1;
--
- 	return rbio;
- }
- 
-@@ -2772,12 +2747,6 @@ raid56_alloc_missing_rbio(struct bio *bio, struct btrfs_io_context *bioc)
- 		return NULL;
- 	}
- 
--	/*
--	 * When we get bioc, we have already increased bio_counter, record it
--	 * so we can free it at rbio_orig_end_io()
--	 */
--	rbio->generic_bio_cnt = 1;
--
- 	return rbio;
- }
- 
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 6f48f9e4c8694..91d5c0adad151 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -89,8 +89,6 @@ struct btrfs_raid_bio {
- 	 */
- 	int bio_list_bytes;
- 
--	int generic_bio_cnt;
--
- 	refcount_t refs;
- 
- 	atomic_t stripes_pending;
-@@ -166,7 +164,7 @@ static inline int nr_data_stripes(const struct map_lookup *map)
- struct btrfs_device;
- 
- void raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
--			   int mirror_num, bool generic_io);
-+			   int mirror_num);
- void raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc);
- 
- void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index d05025034b0aa..e1aad8eaab64c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1389,7 +1389,7 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
- 	bio->bi_private = &done;
- 	bio->bi_end_io = scrub_bio_wait_endio;
- 	raid56_parity_recover(bio, sector->recover->bioc,
--			      sector->sblock->sectors[0]->mirror_num, false);
-+			      sector->sblock->sectors[0]->mirror_num);
- 
- 	wait_for_completion_io(&done);
- 	return blk_status_to_errno(bio->bi_status);
-@@ -2093,6 +2093,7 @@ static void scrub_missing_raid56_end_io(struct bio *bio)
- 	struct scrub_block *sblock = bio->bi_private;
- 	struct btrfs_fs_info *fs_info = sblock->sctx->fs_info;
- 
-+	btrfs_bio_counter_dec(fs_info);
- 	if (bio->bi_status)
- 		sblock->no_io_error_seen = 0;
- 
-@@ -2195,6 +2196,7 @@ static void scrub_missing_raid56_pages(struct scrub_block *sblock)
- 	scrub_block_get(sblock);
- 	scrub_pending_bio_inc(sctx);
- 	raid56_submit_missing_rbio(rbio);
-+	btrfs_put_bioc(bioc);
- 	return;
- 
- rbio_out:
-@@ -2765,6 +2767,7 @@ static void scrub_parity_bio_endio_worker(struct work_struct *work)
- 						    work);
- 	struct scrub_ctx *sctx = sparity->sctx;
- 
-+	btrfs_bio_counter_dec(sctx->fs_info);
- 	scrub_free_parity(sparity);
- 	scrub_pending_bio_dec(sctx);
- }
-@@ -2815,6 +2818,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
- 					      sparity->scrub_dev,
- 					      &sparity->dbitmap,
- 					      sparity->nsectors);
-+	btrfs_put_bioc(bioc);
- 	if (!rbio)
- 		goto rbio_out;
- 
-@@ -2826,7 +2830,6 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
- 	bio_put(bio);
- bioc_out:
- 	btrfs_bio_counter_dec(fs_info);
--	btrfs_put_bioc(bioc);
- 	bitmap_or(&sparity->ebitmap, &sparity->ebitmap, &sparity->dbitmap,
- 		  sparity->nsectors);
- 	spin_lock(&sctx->stat_lock);
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8775f2a635919..0b2eea9ccf094 100644
+index 7c8f84ff659ea..5c5beb789594d 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6678,6 +6678,20 @@ static void btrfs_end_bio_work(struct work_struct *work)
- 	bio_endio(&bbio->bio);
+@@ -6743,28 +6743,8 @@ static void btrfs_clone_write_end_io(struct bio *bio)
+ 	bio_put(bio);
  }
  
-+static void btrfs_raid56_end_io(struct bio *bio)
+-static void submit_stripe_bio(struct btrfs_io_context *bioc,
+-			      struct bio *orig_bio, int dev_nr, bool clone)
++static void btrfs_submit_dev_bio(struct btrfs_device *dev, struct bio *bio)
+ {
+-	struct btrfs_fs_info *fs_info = bioc->fs_info;
+-	struct btrfs_device *dev = bioc->stripes[dev_nr].dev;
+-	u64 physical = bioc->stripes[dev_nr].physical;
+-	struct bio *bio;
+-
+-	if (clone) {
+-		bio = bio_alloc_clone(NULL, orig_bio, GFP_NOFS, &fs_bio_set);
+-		bio_inc_remaining(orig_bio);
+-		bio->bi_end_io = btrfs_clone_write_end_io;
+-	} else {
+-		bio = orig_bio;
+-		btrfs_bio(bio)->device = dev;
+-		bio->bi_end_io = btrfs_end_bio;
+-	}
+-
+-	bioc->stripes[dev_nr].bioc = bioc;
+-	bio->bi_private = &bioc->stripes[dev_nr];
+-	bio->bi_iter.bi_sector = physical >> 9;
+-
+ 	if (!dev || !dev->bdev ||
+ 	    test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state) ||
+ 	    (btrfs_op(bio) == BTRFS_MAP_WRITE &&
+@@ -6780,8 +6760,11 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc,
+ 	 * zone
+ 	 */
+ 	if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
++		u64 physical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
++
+ 		if (btrfs_dev_is_sequential(dev, physical)) {
+-			u64 zone_start = round_down(physical, fs_info->zone_size);
++			u64 zone_start = round_down(physical,
++						    dev->fs_info->zone_size);
+ 
+ 			bio->bi_iter.bi_sector = zone_start >> SECTOR_SHIFT;
+ 		} else {
+@@ -6789,7 +6772,7 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc,
+ 			bio->bi_opf |= REQ_OP_WRITE;
+ 		}
+ 	}
+-	btrfs_debug_in_rcu(fs_info,
++	btrfs_debug_in_rcu(dev->fs_info,
+ 	"%s: rw %d 0x%x, sector=%llu, dev=%lu (%s id %llu), size=%u",
+ 		__func__, bio_op(bio), bio->bi_opf, bio->bi_iter.bi_sector,
+ 		(unsigned long)dev->bdev->bd_dev, rcu_str_deref(dev->name),
+@@ -6799,6 +6782,28 @@ static void submit_stripe_bio(struct btrfs_io_context *bioc,
+ 	submit_bio(bio);
+ }
+ 
++static void submit_stripe_bio(struct btrfs_io_context *bioc,
++			      struct bio *orig_bio, int dev_nr, bool clone)
 +{
-+	struct btrfs_io_context *bioc = bio->bi_private;
-+	struct btrfs_bio *bbio = btrfs_bio(bio);
++	struct bio *bio;
 +
-+	btrfs_bio_counter_dec(bioc->fs_info);
-+	bbio->mirror_num = bioc->mirror_num;
-+	bio->bi_end_io = bioc->end_io;
-+	bio->bi_private = bioc->private;
-+	bio->bi_end_io(bio);
++	/* Reuse the bio embedded into the btrfs_bio for the last mirror */
++	if (!clone) {
++		bio = orig_bio;
++		btrfs_bio(bio)->device = bioc->stripes[dev_nr].dev;
++		bio->bi_end_io = btrfs_end_bio;
++	} else {
++		bio = bio_alloc_clone(NULL, orig_bio, GFP_NOFS, &fs_bio_set);
++		bio_inc_remaining(orig_bio);
++		bio->bi_end_io = btrfs_clone_write_end_io;
++	}
 +
-+	btrfs_put_bioc(bioc);
++	bio->bi_private = &bioc->stripes[dev_nr];
++	bio->bi_iter.bi_sector = bioc->stripes[dev_nr].physical >> SECTOR_SHIFT;
++	bioc->stripes[dev_nr].bioc = bioc;
++	btrfs_submit_dev_bio(bioc->stripes[dev_nr].dev, bio);
 +}
 +
- static void btrfs_end_bio(struct bio *bio)
+ void btrfs_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio, int mirror_num)
  {
- 	struct btrfs_io_stripe *stripe = bio->bi_private;
-@@ -6811,10 +6825,12 @@ void btrfs_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio, int mirror
- 
- 	if ((bioc->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) &&
- 	    ((btrfs_op(bio) == BTRFS_MAP_WRITE) || (mirror_num > 1))) {
-+		bio->bi_private = bioc;
-+		bio->bi_end_io = btrfs_raid56_end_io;
- 		if (btrfs_op(bio) == BTRFS_MAP_WRITE)
- 			raid56_parity_write(bio, bioc);
- 		else
--			raid56_parity_recover(bio, bioc, mirror_num, true);
-+			raid56_parity_recover(bio, bioc, mirror_num);
- 		return;
- 	}
- 
+ 	u64 logical = bio->bi_iter.bi_sector << 9;
 -- 
 2.30.2
 

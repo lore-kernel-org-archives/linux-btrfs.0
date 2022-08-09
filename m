@@ -2,82 +2,89 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA458C25B07
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Aug 2022 08:30:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1D99C19F2D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 Aug 2022 11:23:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231545AbiHIIaI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 Aug 2022 04:30:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35672 "EHLO
+        id S232769AbiHILXM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 Aug 2022 07:23:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48930 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236481AbiHIIaF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2022 04:30:05 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA16321814
-        for <linux-btrfs@vger.kernel.org>; Tue,  9 Aug 2022 01:29:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=M+p9oJoytZG6k9F07sqRy4UNGV3+j8Ifwvb7Eg1kEr8=; b=FrzUVRn3/VB+KUddjDLKm406ZZ
-        S39n/gPW57o5BNl0a2NcyL6MXZWz6gPg7FI0ixJMz2Veu9ywZ4yCp76VKpWf8M15xh2IKSwuBrbjG
-        J2yd1MH3L8dzBx/mY/UWSDusn7P1zPwp2smpOPCyGddQL4GYRMStJQamGs+ydSrSd1XtjneTO/mBc
-        zcIKDZgtO6/OWOOf+8hP0iDba8Zzs9eJQLEFCBcXU6s4A4KIGGKzNhGQTXvkM6C8gzkyLtHXLHUEF
-        8y0k0uxTtdDyIazmnFudHhRKdt1k/xYnGMe6KaGT21aQ7T5ZvGcLJhkkwlds3awnm+vSDJ1Amw1wM
-        /MxQ0N5Q==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1oLKch-002lpp-K4; Tue, 09 Aug 2022 08:29:59 +0000
-Date:   Tue, 9 Aug 2022 01:29:59 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: misc-next and for-next: kernel BUG at fs/btrfs/extent_io.c:2350!
- during raid5 recovery
-Message-ID: <YvIbB5l4gtG4f/S9@infradead.org>
-References: <YvHVJ8t5vzxH9fS9@hungrycats.org>
+        with ESMTP id S231308AbiHILXL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Aug 2022 07:23:11 -0400
+Received: from mail-out-02.servage.net (mail-out-02.servage.net [93.90.146.12])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C53F1EC65
+        for <linux-btrfs@vger.kernel.org>; Tue,  9 Aug 2022 04:23:08 -0700 (PDT)
+X-Halon-ID: a2914f3e-17d5-11ed-a59e-005056913d2d
+Authorized-sender: u1m2114@blauwurf.info
+Received: from [10.2.10.3] (firewall1a.robinson.cam.ac.uk [193.60.93.97])
+        by mail-out-01.servage.net (Halon) with ESMTPSA
+        id a2914f3e-17d5-11ed-a59e-005056913d2d;
+        Tue, 09 Aug 2022 13:23:06 +0200 (CEST)
+Message-ID: <83bf3b4b-7f4c-387a-b286-9251e3991e34@bluemole.com>
+Date:   Tue, 9 Aug 2022 12:23:03 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <YvHVJ8t5vzxH9fS9@hungrycats.org>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.11.0
+From:   Michael Zacherl <ubu@bluemole.com>
+Subject: Re: Corrupted btrfs (LUKS), seeking advice
+To:     linux-btrfs@vger.kernel.org
+References: <12ad8fa0-a4f6-815d-dcab-1b6efa1c9da8@bluemole.com>
+ <ebc960af-2511-457e-88ef-d1ee2d995c7d@www.fastmail.com>
+ <60689fac-9a38-9045-262c-7f147d71a3d2@bluemole.com>
+ <b817538a-687e-0fee-fa05-a1b0cfe956f3@suse.com>
+Content-Language: en-US
+Cc:     wqu@suse.com
+Reply-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <b817538a-687e-0fee-fa05-a1b0cfe956f3@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Aug 08, 2022 at 11:31:51PM -0400, Zygo Blaxell wrote:
-> There is now a BUG_ON arising from this test case:
+On 8/9/22 01:22, Qu Wenruo wrote:
+> You can try "mount -o ro,rescue=all", which will skip the block group
+> item search, but still there will be other corruptions.
+>
+> I'm more interested in how this happened.
+> The main point here is, the found transid is newer than the on-disk
+> transid, which means metadata COW is not working at all.
+>
+> Are you using unsafe mount options like disabling barriers?
+
+No, this upgraded setup is fairly new and completely stock.
+(and most of that terminology I have to look up anyway)
+Btrfs is new to me and I don't experiment on systems I need for work.
+
+I think what happened is having had mounted the FS twice by accident:
+The former system (Mint 19.3/ext4) has been cloned to a USB-stick which I can boot from.
+In one such session I mounted the new btrfs nvme on the old system for some data exchange.
+I put the old system to hibernation but forgot to unmount the nvme prior to that. :(
+
+So when booting up the new system from the nvme it was like having had a hard shutdown.
+So that in itself wouldn't be the problem, I'd think.
+But the other day I again booted from the old system from its hibernation with the forgotten nvme mounted.
+And that was the killer, I'd say, since a lot of metadata has changed on that btrfs meanwhile.
+
+On top of it, btrfs is v4.15.1 on the old system, many things just don't exits on this version, AFAICT.
+If that made things worse, I can't say.
+
+On 8/9/22 01:24, Qu Wenruo wrote:
+> Try this mount option "-o ro,rescue=all,rescue=nologreplay".
+
+Oh, I thought "nologgreplay" would be included in "all"?
+
+>> Is this FS repairable to a usable state?
 > 
-> 	[  241.051326][   T45] btrfs_print_data_csum_error: 156 callbacks suppressed
-> 	[  241.100910][   T45] ------------[ cut here ]------------
-> 	[  241.102531][   T45] kernel BUG at fs/btrfs/extent_io.c:2350!
+> Definitely no.
 
-This
+Ouch. But meanwhile I can see the damage I did to it.
+I'm currently abroad, so no access to my regular backup infrastructure.
 
-        BUG_ON(!mirror_num);
+However, since I've to re-install the new system when I'm back:
+There would be enough space on the new ssd for a second partition, which I'd like not to go for.
+Or is there an option for additional redundancy within the same btrfs to help in case of such a bad mistake (I'd dearly try to avoid anyway, but ...)?
 
-so repair_io_failure gets called with a mirror_num of 0..
+Thanks a lot for your time, Michael.
 
-> 	[  241.128354][   T45]  clean_io_failure+0x21a/0x260
-
-.. from clean_io_failure.  Which starts from failrec->this_mirror and
-tries to go back to failrec->failed_mirror using the prev_mirror
-helper.  prev_mirror looks like:
-
-static int prev_mirror(const struct io_failure_record *failrec, int cur_mirror)
-{
-        if (cur_mirror == 1)
-		return failrec->num_copies;
-	return cur_mirror - 1;
-}
-
-So the only way we could end up with a mirror = 0 is if
-failrec->num_copies is 0.  -failrec->num_copies is initialized
-in btrfs_get_io_failure_record by doing:
-
-        failrec->num_copies = btrfs_num_copies(fs_info, failrec->logical, sectorsize);
-
-just adter allocating the failrec.  I can't see any obvious way how
-btrfs_num_copies would return 0, though, as for raid5 it just copies
-from btrfs_raid_array.
-
-Any chance you could share a script for your reproducer?
 

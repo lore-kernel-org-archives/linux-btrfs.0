@@ -2,76 +2,65 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFA62C19F2D
-	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Aug 2022 16:03:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58DEBC19F2D
+	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Aug 2022 17:36:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239750AbiHMQDA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 13 Aug 2022 12:03:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48216 "EHLO
+        id S238656AbiHMRgV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 13 Aug 2022 13:36:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58240 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239703AbiHMQC7 (ORCPT
+        with ESMTP id S235596AbiHMRgU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 13 Aug 2022 12:02:59 -0400
-Received: from out20-133.mail.aliyun.com (out20-133.mail.aliyun.com [115.124.20.133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C9B77BE16
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Aug 2022 09:02:57 -0700 (PDT)
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.06259475|-1;BR=01201311R151S12rulernew998_84748_2000303;CH=blue;DM=|CONTINUE|false|;DS=CONTINUE|ham_social|0.0706021-0.000990026-0.928408;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047213;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.OsgPPpF_1660406574;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.OsgPPpF_1660406574)
-          by smtp.aliyun-inc.com;
-          Sun, 14 Aug 2022 00:02:54 +0800
-Date:   Sun, 14 Aug 2022 00:03:01 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     Bart Van Assche <bvanassche@acm.org>
-Subject: Re: A sparse(make C=1) warning in btrfs about the 'blk_opf_t'
-Cc:     linux-btrfs@vger.kernel.org
-In-Reply-To: <e129b7aa-9589-242e-b259-298b73382002@acm.org>
-References: <20220813125331.3F71.409509F4@e16-tech.com> <e129b7aa-9589-242e-b259-298b73382002@acm.org>
-Message-Id: <20220814000301.7CAD.409509F4@e16-tech.com>
+        Sat, 13 Aug 2022 13:36:20 -0400
+Received: from rin.romanrm.net (rin.romanrm.net [IPv6:2001:bc8:2dd2:1000::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F18E613E03
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Aug 2022 10:36:16 -0700 (PDT)
+Received: from nvm (nvm2.home.romanrm.net [IPv6:fd39::4a:3cff:fe57:d6b5])
+        by rin.romanrm.net (Postfix) with SMTP id 488945D0;
+        Sat, 13 Aug 2022 17:36:14 +0000 (UTC)
+Date:   Sat, 13 Aug 2022 22:36:13 +0500
+From:   Roman Mamedov <rm@romanrm.net>
+To:     Ash Logan <ash@heyquark.com>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Subject: Re: Corrupt leaf, trying to recover
+Message-ID: <20220813223613.0245732f@nvm>
+In-Reply-To: <593e9196-7455-1874-750f-2f11443d7841@heyquark.com>
+References: <6270a749-5fb2-0b36-529b-07f0e2ce4639@heyquark.com>
+        <0b4a3bca-cafd-b47d-d03c-a97922e49228@gmx.com>
+        <c1b246ad-6665-1216-166c-a1ad32222b35@heyquark.com>
+        <a9d3eb38-e939-4751-4dc8-896fa653be73@gmx.com>
+        <593e9196-7455-1874-750f-2f11443d7841@heyquark.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.04 [en]
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Sat, 13 Aug 2022 18:28:36 +1000
+Ash Logan <ash@heyquark.com> wrote:
 
-> On 8/12/22 21:53, Wang Yugui wrote:
-> > both '__field(enum req_op,opf)' and '__field(blk_opf_t,opf)' failed to work.
-> >
-> > ./include/trace/events/btrfs.h:2327:1: warning: incorrect type in assignment (different base types)
-> > ./include/trace/events/btrfs.h:2327:1:    expected unsigned int [usertype] opf
-> > ./include/trace/events/btrfs.h:2327:1:    got restricted blk_opf_t enum req_op
-> >
-> > /ssd/git/os/linux-5.19/fs/btrfs/super.c: note: in included file (through include/trace/trace_events.h, include/trace/define_trace.h, include/trace/events/btrfs.h):
-> > ./include/trace/events/btrfs.h:2327:1: warning: cast to restricted blk_opf_t
-> > ./include/trace/events/btrfs.h:2327:1: warning: cast to restricted blk_opf_t
-> > ./include/trace/events/btrfs.h:2327:1: warning: restricted blk_opf_t degrades to integer
-> > ./include/trace/events/btrfs.h:2327:1: warning: restricted blk_opf_t degrades to integer
+> > That new sanity check introduced in v5.11 should save a lot of hassle
+> > like this.
 > 
->  From https://en.wikipedia.org/wiki/Posting_style:
-> 
-> A: Because it messes up the order in which people normally read text.
-> Q: Why is top-posting such a bad thing?
-> A: Top-posting.
-> Q: What is the most annoying thing in e-mail?
+> Debian doesn't ship it, though.. Will have to see what my options are 
+> there. Maybe time to build my own.
 
-Thanks for the comment.
+Kernel 5.18 is available in the backports repository for Debian 11:
+https://packages.debian.org/search?keywords=linux-image-5.18
 
+See https://backports.debian.org/Instructions/
 
-> Regarding the warnings reported above: please apply patch "[PATCH] tracing: Suppress sparse warnings triggered by is_signed_type()" before testing my patch.
-> 
-> Thanks,
-> 
-> Bart.
+As for bitflip, I would be concerned to keep using this hardware (RAM). It
+might be that you are using tests that are not rigorous enough. For instance
+once I got some sticks which were "stable" in MemTest86+, but TestMem5 with
+its custom 'extreme' profiles has reported errors.
 
-After applied patch "[PATCH] tracing: Suppress sparse warnings triggered
-by is_signed_type()",  both '__field(enum req_op,opf)' and 
-'__field(blk_opf_t,opf)' work well without sparse warning(make C=1).
+Or at least next time you get a weird Btrfs issue, which is quite good, with
+its currently present write-time/read-time sanity checks, at tripping on any
+bad RAM in a loud way, you will know there is definitely something wrong with
+it.
 
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2022/08/13
-
-
+-- 
+With respect,
+Roman

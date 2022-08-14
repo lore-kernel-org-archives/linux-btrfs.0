@@ -2,102 +2,83 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF055C3F6B0
-	for <linux-btrfs@archiver.kernel.org>; Sat, 13 Aug 2022 22:17:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ED3B1C3F6B0
+	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Aug 2022 00:11:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238737AbiHMWR5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 13 Aug 2022 18:17:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53754 "EHLO
+        id S229899AbiHNALW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 13 Aug 2022 20:11:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54316 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229615AbiHMWR4 (ORCPT
+        with ESMTP id S229555AbiHNALV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 13 Aug 2022 18:17:56 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0766A51418;
-        Sat, 13 Aug 2022 15:17:54 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1660429071;
-        bh=UF3uFQaAJ971E8vhPiKhwDtYTU2Q/panS+SBFaCif5Q=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=RyUhCRWPMjbOXzxt56i7kpqmoeqEKlCOKwGzH64eWET7rlUXzCypwlth4KACS2wVe
-         /iyPYJ1cLwaIqbfOH+OTM3nsj/7PA352i0+qIfE9Ti6AUgg6HHAhb2Nf0F9Sq9IkRW
-         WXTyv6AOegY7Q1xlXtPk4ggZXaG1PJz7MuVZUffM=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MMobU-1o6Z3q0CXM-00ImUR; Sun, 14
- Aug 2022 00:17:50 +0200
-Message-ID: <b10f1e72-0846-f46c-816a-352646ae5661@gmx.com>
-Date:   Sun, 14 Aug 2022 06:17:45 +0800
+        Sat, 13 Aug 2022 20:11:21 -0400
+X-Greylist: delayed 58490 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sat, 13 Aug 2022 17:11:19 PDT
+Received: from relay5-d.mail.gandi.net (relay5-d.mail.gandi.net [IPv6:2001:4b98:dc4:8::225])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 949351CFE5
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Aug 2022 17:11:19 -0700 (PDT)
+Received: (Authenticated sender: ash@heyquark.com)
+        by mail.gandi.net (Postfix) with ESMTPSA id 20EB61C0006;
+        Sun, 14 Aug 2022 00:11:15 +0000 (UTC)
+Message-ID: <69235bca-d420-37de-54a2-68790af40d7a@heyquark.com>
+Date:   Sun, 14 Aug 2022 10:11:12 +1000
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.12.0
-Subject: Re: [PATCH STABLE 5.18 0/2] btrfs: raid56 backports to reduce
- destructive RMW
-Content-Language: en-US
-To:     Greg KH <gregkh@linuxfoundation.org>, Qu Wenruo <wqu@suse.com>,
-        David Sterba <dsterba@suse.cz>
-Cc:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-References: <cover.1659600630.git.wqu@suse.com> <YvESBmvjMqIXvqjp@kroah.com>
- <Yvejlr1Nds8wtyKj@kroah.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <Yvejlr1Nds8wtyKj@kroah.com>
+ Thunderbird/91.9.0
+Subject: Re: Corrupt leaf, trying to recover
+Content-Language: en-AU
+To:     Roman Mamedov <rm@romanrm.net>
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <6270a749-5fb2-0b36-529b-07f0e2ce4639@heyquark.com>
+ <0b4a3bca-cafd-b47d-d03c-a97922e49228@gmx.com>
+ <c1b246ad-6665-1216-166c-a1ad32222b35@heyquark.com>
+ <a9d3eb38-e939-4751-4dc8-896fa653be73@gmx.com>
+ <593e9196-7455-1874-750f-2f11443d7841@heyquark.com>
+ <20220813223613.0245732f@nvm>
+From:   Ash Logan <ash@heyquark.com>
+In-Reply-To: <20220813223613.0245732f@nvm>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:LyKhzR3dDLPxZfY5yUPFn52uNzEVoCZ0RAwTIGGSZocoLAk/voL
- IunH/du7pLU5no26empxRkiyTnAlde/h9tdnRST9pO7KRWaDSXJZMxSmnUIIfOaIK3EnkT1
- UxUuDc87Wsj8ZCJx1Q0RCFmILWlLVwcpQ0Auq6yopDJSizzAqEIQQ4tLD08zjeQ9RCcBpsB
- 7bGvwG66qOAIY1a7pm5Ew==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Rt1pgHqZMOQ=:tvsGULfL5FihZgDEsB9ZXJ
- 6DSqcFgfnfXVdTn8OyXIz6surTKrg/JrVhwNNbcYTUUXktp0M4h/btbK6nVm2LitfFRtI6PRa
- vGVMUMfjYcyC8KDEvZjmVrCpZe+XV1DT3mzg0B7rE8MCpW41xkXOBDrDyxET/PRAQ+i1bvoDD
- +i/+22M/GzgTNc2BX93MjzomS3MWUV+ROBRFMhkDvged8mlBiwFRia9yiozYtRUCD1XgWUCmj
- IyNYoBvYIIzWjyZ5XrWJPB7/MrPIqKbVrEP5Jd+7A3OFnrOPgBa1Jietn7AlAAiZuS9+Uusjq
- tmZXE9o2A9dhBvHU77fujv+p0KzPNBrG5LjOu17nkJppNZfjbQKkY/Y2ltLzZUt8iaXj6Zv88
- ZnsyYt7EE+kzqN/sbL4xHboynsjzT9NdUzyYkvT+835GJrhVc6VdSTbskVXCB1LEhTHEgybiN
- lZyEsVXA2MD/Aiyfq7VHCsi6n3LZgHR6hnDUJ3hO19d1Gtdd32PMoh3PGULnJHwBot4yDcy+j
- XKgOEvqmno95zceWBWKrrknw8QnUGSO6aadQuzXsdGM1C4FmG/aQllD/+skdwudw01wULOCne
- gIv+C/ZnhJIYcTxcoIzrPrY1eh6b+5P2BMdGH+JsKPTVXTEQ91FlaBh+1+BB5yY1y1hCjjQkQ
- uDJ/ds/+Rwa3dikOUUiRldFna6qEfkccwGmtZ38iuRy7dA8cGKCodJMVjt3uTtUCaInx3WM5Z
- M+CR9juRP6aLV0CgBw75Yljx28NGGUUXlEySHVqFVZgqhU8Ox4L/16oKqy6j1I/mWw50x6rdM
- GXi0SfXpfkiCC+8i89YB0RwNhELBr+dZzA8e7W0YBFtPk7pWSFE36QkrnRoOE7KQwIZvzXLhH
- 1u+w+ROzK4s1kaEFh9WvWmE4KX2vA8JwiwhPjlrA62ZI6xtlsZRfBKZTC4OSAeDtOSpVu2Nxn
- ikXvyUV5cDK9rlrzFtJE2O/anIwsM9eEgobwUk8kF0ikW7Z3gu1YqByKzTEXTtcZNxahgwXVR
- dWh0Y3EiYU6bvfOVPXsXX8CdbSj2yuwxIufi/qBToQzKcSQNVBcADJnDInE6xaJ7bXd+VntEV
- 0InNIkaIXJ1glYs8jXf1jTujM83zQ+PEJuAon1AMIiJxUYh8KcB1GXQmA==
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-
-On 2022/8/13 21:13, Greg KH wrote:
-> On Mon, Aug 08, 2022 at 03:39:18PM +0200, Greg KH wrote:
->> On Thu, Aug 04, 2022 at 04:10:57PM +0800, Qu Wenruo wrote:
->>> Hi Greg and Sasha,
->>>
->>> This two patches are backports for v5.18 branch.
->>
->> I also need these for the 5.19.y branch if we were to take them into
->> 5.18.y as you do not want anyone to suffer a regression when moving to
->> the newer kernel release.
->>
->> So I'll wait for those to be sent before taking any of these.
+On 14/8/22 03:36, Roman Mamedov wrote:
+> On Sat, 13 Aug 2022 18:28:36 +1000
+> Ash Logan <ash@heyquark.com> wrote:
 >
-> I've dropped all of these btrfs backports from my "to review" queue now.
-> Please fix them all up, get the needed acks, and then resend them and I
-> will be glad to reconsider them at that point in time.
+>>> That new sanity check introduced in v5.11 should save a lot of hassle
+>>> like this.
+>> Debian doesn't ship it, though.. Will have to see what my options are
+>> there. Maybe time to build my own.
+> Kernel 5.18 is available in the backports repository for Debian 11:
+> https://packages.debian.org/search?keywords=linux-image-5.18
+>
+> See https://backports.debian.org/Instructions/
+Perfect, thanks.
+> As for bitflip, I would be concerned to keep using this hardware (RAM). It
+> might be that you are using tests that are not rigorous enough. For instance
+> once I got some sticks which were "stable" in MemTest86+, but TestMem5 with
+> its custom 'extreme' profiles has reported errors.
+>
+> Or at least next time you get a weird Btrfs issue, which is quite good, with
+> its currently present write-time/read-time sanity checks, at tripping on any
+> bad RAM in a loud way, you will know there is definitely something wrong with
+> it.
 
-To David,
+I did end up finding another (larger!) RAM stick which also tested 
+clean, so I now have that in there.
 
-Mind to give an ACK for these backports?
+I actually had another subvolume (ID 410) with the exact same incorrect 
+flag bit set. Given the filesystem otherwise seems totally clean, I no 
+longer suspect a memory bitflip - it seems more likely that across 
+various software versions (ReadyNAS OS, Debian versions, etc...) someone 
+had a customisation or a bug that went unnoticed due to the lack of checks.
 
-As mentioned in the pull digest, these two backports are to reduce the
-possibility of data corruption of RAID56.
+<speculation> I noticed the two problematic subvolumes also are the only 
+ones that had snapshots.. perhaps ReadyNAS or the like used such a flag 
+to track if snapshots are enabled? </speculation>
 
 Thanks,
-Qu
+Ash
 
->
-> thanks,
->
-> greg k-h

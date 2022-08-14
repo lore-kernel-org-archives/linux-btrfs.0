@@ -2,48 +2,48 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81C11C25B0F
-	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Aug 2022 05:48:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CA281C25B0F
+	for <linux-btrfs@archiver.kernel.org>; Sun, 14 Aug 2022 05:52:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229600AbiHNFsn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 14 Aug 2022 01:48:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52320 "EHLO
+        id S230002AbiHNFw2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 14 Aug 2022 01:52:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56494 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229436AbiHNFsm (ORCPT
+        with ESMTP id S229843AbiHNFwU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 14 Aug 2022 01:48:42 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 967D94E874;
-        Sat, 13 Aug 2022 22:48:39 -0700 (PDT)
+        Sun, 14 Aug 2022 01:52:20 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B48E052E67;
+        Sat, 13 Aug 2022 22:52:19 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 5064960225;
-        Sun, 14 Aug 2022 05:48:38 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 446914E179;
+        Sun, 14 Aug 2022 05:52:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1660456118; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1660456337; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=GZcamxzHJYEv/cHoziawXC1ooIo8k2Be7AvQt7zvJoc=;
-        b=ZXIPTgFH15bDa3oD8vuW35cYojbrXgILYPx9KwtjskRvK0d0y/dqHGav5iYyKVBb1IGtul
-        2zT+aa+0bJklTS7pWsWoJ2jdln5uJTxSJrdj/S3ZVNcGqvajXg97YTH7cahOhqmmis5ema
-        OKWEz86TZoWpJT9nEeOQ4QQ4+DR3MoM=
+        bh=r0TKV5vCxELQizKJwfwf77i75jprDE/OhAhcF7Xee5I=;
+        b=g9zwliZHjY91YcftJ7kma5WDACoqkyZQULAgDOQJH1soGaX9MghWzm/5f3tXqp+vINtXvn
+        xR8InA4GUpsVLhkBLcAiHN1ig58xARbLbcU06DL4V4PQdma2uyMwO6aCtHMuvyr3AXpeZg
+        Q35sCbNH0OKwxsKprM+XgbwJDhIykJE=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 19C6C13305;
-        Sun, 14 Aug 2022 05:48:36 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9223013305;
+        Sun, 14 Aug 2022 05:52:15 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id FniaM7SM+GKeDAAAMHmgww
-        (envelope-from <wqu@suse.com>); Sun, 14 Aug 2022 05:48:36 +0000
+        id iQmaFY+N+GJoDQAAMHmgww
+        (envelope-from <wqu@suse.com>); Sun, 14 Aug 2022 05:52:15 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH STABLE 4.19] btrfs: reject log replay if there is unsupported RO compat flag
-Date:   Sun, 14 Aug 2022 13:48:18 +0800
-Message-Id: <da663ad230a69e165284d8f3ac012db314d26c09.1660456007.git.wqu@suse.com>
+Subject: [PATCH STABLE 4.9 4.14] btrfs: reject log replay if there is unsupported RO compat flag
+Date:   Sun, 14 Aug 2022 13:51:57 +0800
+Message-Id: <13ad48d4d5245d935d182173e5d77a6a4b09fd1f.1660456302.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -96,7 +96,7 @@ end user to read the old data, and cause confusion.
 Since the such case is really rare, we're mostly fine to just reject the
 mount with an error message, which also includes the proper workaround.
 
-CC: stable@vger.kernel.org #4.19
+CC: stable@vger.kernel.org #4.9 4.14
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
@@ -105,10 +105,10 @@ Signed-off-by: David Sterba <dsterba@suse.com>
  1 file changed, 14 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c9fd018dcf76..98f87cc47433 100644
+index 46ecb7405af1..b83e96f51a5f 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2920,6 +2920,20 @@ int open_ctree(struct super_block *sb,
+@@ -2774,6 +2774,20 @@ int open_ctree(struct super_block *sb,
  		err = -EINVAL;
  		goto fail_alloc;
  	}
@@ -127,8 +127,8 @@ index c9fd018dcf76..98f87cc47433 100644
 +	}
 +
  
- 	ret = btrfs_init_workqueues(fs_info, fs_devices);
- 	if (ret) {
+ 	max_active = fs_info->thread_pool_size;
+ 
 -- 
 2.37.1
 

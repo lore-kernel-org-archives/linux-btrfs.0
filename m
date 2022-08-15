@@ -2,126 +2,82 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17CAAC00140
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Aug 2022 11:47:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 71E56C00140
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 Aug 2022 12:37:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231551AbiHOLrl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 Aug 2022 07:47:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59980 "EHLO
+        id S232128AbiHOMhQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 Aug 2022 08:37:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47958 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233567AbiHOLpm (ORCPT
+        with ESMTP id S229623AbiHOMhP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 Aug 2022 07:45:42 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38E259FFF
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2022 04:45:41 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id D794A20839;
-        Mon, 15 Aug 2022 11:45:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1660563939; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=IG+W3GPsQxJWKRJrpoGUzYeFPdMahNbOtgGnByA4Hcw=;
-        b=meKxjjkmwQXUW9IiarwIO229i5TZFyDTGKRWyFm+HJ+oblNkq8d60rnFRMPF8ngbD81lec
-        CN5W9zfP0QwepLi9z2Z4aqYTFpi20lvik7rI2MpFBm2YoDQ1dMhu2vQUfxjbrC0XE+s6v/
-        U9Bl31kt7X5pWvg0LskSs09Ciu60Vpk=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 469D413A93;
-        Mon, 15 Aug 2022 11:45:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id hiARA+Ex+mLsGAAAMHmgww
-        (envelope-from <wqu@suse.com>); Mon, 15 Aug 2022 11:45:37 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     u-boot@lists.denx.de
-Cc:     marek.behun@nic.cz, linux-btrfs@vger.kernel.org,
-        jnhuang95@gmail.com, linux-erofs@lists.ozlabs.org,
-        trini@konsulko.com, joaomarcos.costa@bootlin.com,
-        thomas.petazzoni@bootlin.com, miquel.raynal@bootlin.com
-Subject: [PATCH v3 0/8] U-boot: fs: add generic unaligned read offset handling
-Date:   Mon, 15 Aug 2022 19:45:11 +0800
-Message-Id: <cover.1660563403.git.wqu@suse.com>
-X-Mailer: git-send-email 2.37.1
+        Mon, 15 Aug 2022 08:37:15 -0400
+Received: from mail-pl1-x631.google.com (mail-pl1-x631.google.com [IPv6:2607:f8b0:4864:20::631])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7F1C01EC66
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2022 05:37:13 -0700 (PDT)
+Received: by mail-pl1-x631.google.com with SMTP id 13so6193141plo.12
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2022 05:37:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc;
+        bh=T1UfNu4f+rVvsx1YdFcBiMg+GL/kJZ/ghdBps7XP4cU=;
+        b=YVS+wIH8Dk89zvFwfMZmYEbnrIgb6//X4VgvU9AVOhDIKQdtqkUXqZXL1R1iLiCQO5
+         E6OZiFaNSPceyWcdZgG3sfUbJ5ngVgFyYIIP96ElwAMviX9rIEGHHTX5fY6ft8S7Jogc
+         KDeQyHGCU1lKKb9PrpY+7su2+OVBl1H4yfI3hNi/zBkltcIjicYmgYcelPeqK/m5+gmJ
+         vUuF9Qci+/b0mXzMnT79sTQ6GErqOLgYONulJqHWO54Pt5DhrPkdVHwJPbxvEkgWtGhB
+         zpd9/BpQ5I7PuU+WHTlpHa+c50ysaBJ62jnYPyGZIVZ6acOaOvOYkt8tZMkiT5AferYf
+         pXFw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc;
+        bh=T1UfNu4f+rVvsx1YdFcBiMg+GL/kJZ/ghdBps7XP4cU=;
+        b=VEvIer2M7Zh0HYtXRRgU9252yRSQLyt48ENhl+81UuvotLX5A6G/JvcusjAobYo/EJ
+         vyz6uTfIjnfixX5DDwzRfr0XXarXbh4LQjPwk9d123FqvMKCnH5hlEwDgPGAm0NFAJdA
+         UisHRPAxKN376eMob17B6rc+CTEqe2mcXqT1E52TaUYDgtPkeA376FzA+CtAnALMJ8uh
+         awwN20dazMHF8kuGoAjolw9sRY3NYXE/WEVomkBViRLR3wnYRMHBgt5qjA6RskJ/N5Xg
+         qCyB5DUfYvlcV5JOoIHKD95ZjPuyYtDg3z19UJJChCug94A6kGAzmd6/nEmP+1Lft7cy
+         d15w==
+X-Gm-Message-State: ACgBeo0ys6BcVPok1rPDk5Wnr6b76ZDdSEyIxNcotGNmqOieornE2n7a
+        oMIKbUnrYPKKQYlyOHMfPDHfCPk6GFw=
+X-Google-Smtp-Source: AA6agR46LN9Nd7czCSQ1E1OA5+QvrVqNElDE1Mzo2eZ32wzqmnIpLXSBS8yHEKLDXE1Uow9npGHOzw==
+X-Received: by 2002:a17:902:b086:b0:171:2632:cd3b with SMTP id p6-20020a170902b08600b001712632cd3bmr17500304plr.111.1660567032000;
+        Mon, 15 Aug 2022 05:37:12 -0700 (PDT)
+Received: from realwakka-vm.. ([59.12.165.26])
+        by smtp.gmail.com with ESMTPSA id i17-20020aa796f1000000b0052d46b43006sm6485533pfq.156.2022.08.15.05.37.10
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 15 Aug 2022 05:37:11 -0700 (PDT)
+From:   Sidong Yang <realwakka@gmail.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Sidong Yang <realwakka@gmail.com>
+Subject: [RFC PATCH 0/2] support all option for resize command
+Date:   Mon, 15 Aug 2022 12:36:50 +0000
+Message-Id: <20220815123652.52314-1-realwakka@gmail.com>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[CHANGELOG]
-v3:
-- Fix an error that we always return 0 actread bytes for unsupported fses
-  For unsupported fses, we should also populate @total_read.
-  Or we will just read the data but still return 0 for actually bytes.
+Hi,
 
-  Now it pass all test_fs* cases.
+This patch series is for supporting resize command in btrfs-progs.
+It resolves btrfs-progs github issue #471
 
-v2
-- Fix a linkage error where (U64 % U32) is called without proper helper
-  Fix it with U64 & (U32 - 1), as the U32 value (@blocksize) should
-  always be power of 2, thus (@blocksize - 1) is the mask we want to
-  calculate the offset inside the block.
+This is prototype for work. It also needs to add manual for option.
+I want to know that it's good way to implement the option.
 
-  Above change only affects the 4th patch, everything else is not
-  touched.
+If there is better way, I'd appreciate it.
 
-RFC->v1:
-- More (manual) testing
-  Unfortunately, in the latest master (75967970850a), the fs-tests.sh
-  always seems to hang at preparing the fs image.
+Sidong Yang (2):
+  btrfs-progs: fi resize: refactor function check_resize_args()
+  btrfs-progs: fi resize: support all option for resize
 
-  Thus still has to do manual testing, tested btrfs, ext4 and fat, with
-  aligned and unaligned read, also added soft link read, all looks fine here.
-
-  Extra testing is still appreciated.
-
-- Two more btrfs specific bug fixes
-  All exposed during manual tests
-
-- Remove the tailing unaligned block handling
-  In fact, all fses can easily handle such case, just a min() call is
-  enough.
-
-- Remove the support for sandboxfs
-  Since it's using read() calls, really no need to do block alignment
-  check.
-
-- Enhanced blocksize check
-  Ensure the returned blocksize is not only non-error, but also
-  non-zero.
-
-
-Qu Wenruo (8):
-  fs: fat: unexport file_fat_read_at()
-  fs: btrfs: fix a bug which no data get read if the length is not 0
-  fs: btrfs: fix a crash if specified range is beyond file size
-  fs: btrfs: move the unaligned read code to _fs_read() for btrfs
-  fs: ext4: rely on _fs_read() to handle leading unaligned block read
-  fs: fat: rely on higher layer to get block aligned read range
-  fs: ubifs: rely on higher layer to do unaligned read
-  fs: erofs: add unaligned read range handling
-
- fs/btrfs/btrfs.c      |  33 ++++++++---
- fs/btrfs/inode.c      |  89 +++--------------------------
- fs/erofs/internal.h   |   1 +
- fs/erofs/super.c      |   6 ++
- fs/ext4/ext4fs.c      |  22 +++++++
- fs/fat/fat.c          |  17 +++++-
- fs/fs.c               | 130 +++++++++++++++++++++++++++++++++++++++---
- fs/ubifs/ubifs.c      |  13 +++--
- include/btrfs.h       |   1 +
- include/erofs.h       |   1 +
- include/ext4fs.h      |   1 +
- include/fat.h         |   3 +-
- include/ubifs_uboot.h |   1 +
- 13 files changed, 212 insertions(+), 106 deletions(-)
+ cmds/filesystem.c | 218 +++++++++++++++++++++++++++-------------------
+ 1 file changed, 127 insertions(+), 91 deletions(-)
 
 -- 
-2.37.1
+2.34.1
 

@@ -2,282 +2,118 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56787C2BB47
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Aug 2022 05:01:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F024C28B2C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Aug 2022 06:30:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232380AbiHPFBu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Aug 2022 01:01:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41368 "EHLO
+        id S229900AbiHPGaS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Aug 2022 02:30:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35564 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234638AbiHPFBQ (ORCPT
+        with ESMTP id S229673AbiHPGaB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Aug 2022 01:01:16 -0400
-Received: from wout1-smtp.messagingengine.com (wout1-smtp.messagingengine.com [64.147.123.24])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E739F2D1C4;
-        Mon, 15 Aug 2022 13:56:33 -0700 (PDT)
-Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
-        by mailout.west.internal (Postfix) with ESMTP id 0BC94320092F;
-        Mon, 15 Aug 2022 16:56:32 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute4.internal (MEProxy); Mon, 15 Aug 2022 16:56:33 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-        :content-transfer-encoding:date:date:from:from:in-reply-to
-        :message-id:mime-version:reply-to:sender:subject:subject:to:to;
-         s=fm1; t=1660596992; x=1660683392; bh=+AeD9/fPYivTmizjOXPOejqGH
-        WW8ff0iMGTf0qo3xbg=; b=LnLoBjXTv73gO/AgbpxLhsB/tws9nUaBqNXsYRMKa
-        Nd9Wf8i8cg6H1w3kQtI3FabKiCUek5u5g1legD8LFdwyMh3i5vTx2vVtLfM/SSOI
-        nYns23MtHl122i45AogXhyoSp0xTIHamNEdNCaR1lA1QoMHVMiopWFWSO5657Fbi
-        G60mrG/mfsaz3cV0s+LjBUZivnwv/vpYagglGhy0N78uGGENZlRdmO98uoSHX6GK
-        /Us9itCJ1qP/gCnkLetkqdTQmFXDScsgZ43vnjsczUW8krpeYzs5RY7RO66Y9ylR
-        W1hMlekC7afNuyX7I6UsX1vD4ULMXUIiz+PgF3cJHUXRQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-transfer-encoding:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:message-id
-        :mime-version:reply-to:sender:subject:subject:to:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-        1660596992; x=1660683392; bh=+AeD9/fPYivTmizjOXPOejqGHWW8ff0iMGT
-        f0qo3xbg=; b=t47c2ynB+zqehYQH1ivXn2hg4NdS/Pq/E2wxbW3Vy199FxbD2LW
-        lD9utXB6d1pBZRUleZfYhdawRPAXNXm3+OvDWlNhILsLNvkgg4PBX71/dowSpEqh
-        cYAdy7oZXCYCN2TvAmxc2571wGyn5Q/kiuNhOVJ/8S+9ATs+HiNUprPKveua44tX
-        2EhjNjILzyNere8ynCg0LEkhy///JaasgyMJX6VDVDtknsvMl5shEKdV8Wi3DXyp
-        jZhPTjcsHZvz0+lRfQnAtonlucIdzCys6W+B43TAPtV9cukRnB+n2ws1SDawo1k2
-        PirQKSTHqf1Mz1ZCMJf2u57VabS7VS4mcdQ==
-X-ME-Sender: <xms:ALP6YmFMbHOJyvP0qjuehHJyCoA3kLjh9_VaNGTd_bQRnQKbEi3KSA>
-    <xme:ALP6YnXHHUGIa_QiTFFO4MmiK_H2doWVy3aFFoFW8dCUYb355nAiNavunVtILP4KS
-    aGroPhWWVYfzrpObek>
-X-ME-Received: <xmr:ALP6YgJjHci73xEaC4TLfDWMQy_vOInejwYEeuPlm6geMVMAnmP77LI8WPvD9i-lt5en-CdAMllZDSp6RDvz5XGSjZ5Rdg>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvdehvddgudehjecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
-    necuuegrihhlohhuthemuceftddtnecunecujfgurhephffvvefufffkofgggfestdekre
-    dtredttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdr
-    ihhoqeenucggtffrrghtthgvrhhnpeejkeffleevudfgudffleffgeeludevvdekleefue
-    fgjeehudduhffhlefhuefhtdenucffohhmrghinhepfhhsvhdrshhsnecuvehluhhsthgv
-    rhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessghurhdrih
-    ho
-X-ME-Proxy: <xmx:ALP6YgFgMuJiECEFzIwv70XXc9aJpabk897e_MhN_jkaUr_agrgRdg>
-    <xmx:ALP6YsWK4yxudbOB0YTQmhPaQnuhPFmwhMCKccLqZOZnHz9E9w4dYw>
-    <xmx:ALP6YjOwEdBfNIApexejGfgvY6eJmTF_eMDPP-yEFBGEOgMEJvvtEw>
-    <xmx:ALP6YphLyUIjYCY--D0uFKgcu5atMCbM0LPv6LjdbldiVTz_Ma6wug>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 15 Aug 2022 16:56:32 -0400 (EDT)
-From:   Boris Burkov <boris@bur.io>
-To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Cc:     kernel-team@fb.com, linux-fscrypt@vger.kernel.org
-Subject: [PATCH] fstests: add btrfs fs-verity send/recv test
-Date:   Mon, 15 Aug 2022 13:57:56 -0700
-Message-Id: <9e0ee6345a406765cf06594b805cb3568de16acc.1660596985.git.boris@bur.io>
-X-Mailer: git-send-email 2.37.0
+        Tue, 16 Aug 2022 02:30:01 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FF3E3649CE
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2022 17:45:29 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1660610726;
+        bh=uX0Xp40x8zJe3SWBPoegHG57D97DTPCeZpUXLT+pEeQ=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=Y11cSeI0AGDhhq5XrpDiXFbqJXW9h2L29NIY7eCCFIrwSmqrlXQuourdB5pEQv8vT
+         O2QFoZD93aINE8FH/1QAoW27sj4JFGBbndgNka8+36Doo1zNgk0+O1FuXlnSu4JUxN
+         FIozKLOix2ybfnJ+DeLfjSogxbIggbmaZ7lZI5qc=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MGz1f-1oAGRS2stP-00E5P0; Tue, 16
+ Aug 2022 02:45:26 +0200
+Message-ID: <f578f0d3-5433-36be-26d5-851833624c49@gmx.com>
+Date:   Tue, 16 Aug 2022 08:45:22 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.12.0
+Subject: Re: [PATCH] Check if root is readonly while setting xattr
+Content-Language: en-US
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>, linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.cz>
+References: <20220815193402.7fmuwafu3qpalniz@fiona>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220815193402.7fmuwafu3qpalniz@fiona>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:qsh7IpRnyllAA6MuxPPpygfVIrhjHaxTKPX/AvsK5e6N2n8FRic
+ 3zNKtjJyAtAChS24ix68K1zpfY6f4QBPxjsqbD9BDPHmiv1x/p0ErXOx6DklZXKUXd5uluO
+ a8jYh3KHPkQ80TwlDYABzUyd9+hpJIexd/hqJakTJR5GgNqAO/6pCmhggZPt4m5HwKiyXz7
+ VNr5qxNmbVE0Zke/0t4rQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:sCLr91/6wCc=:qM11MG/kYapo3XcSQDbtwU
+ otNOYnagJfzgG8BWCOGC0V8bD7L7kMHDxN1mEVvbcvQAMPPO5LZfruzymYepaRRYp1mILV1Xf
+ DSqgzLxa9GSOO7iyEk3fbIEujf9L3rCp4ZFpEPlNg7OILX6SuYZG/o0U7ZKGzyvNjZoAcxvAU
+ z3tMoZl520osMyZ2h80uIZ8EbM6NfX/UdTYJvmRg7O5/yZ2K7UkwqqWpOsQqGrwbJhN2zFPWS
+ TBIkoHN2L744rAGxUH5YE1sWh6HrbWVNgzw+exZqj5yyYCe7nB+BxAf6BP6wqxUhJylZL/GHj
+ mAGDhCT2P3r0cqWqO2QWjE6JVSBzxkZYHjFAifDXBkgTlJIYINxz5REKuR0THuWLZaMzmaVNu
+ 4G3nDGTC93ImFrybRYqcbmLQ+hx5wTrkwNqJuc9jpstWzCNSTbpeSJHYpe9S2AMh6/802g2u3
+ BjZXi5+jH2fQZEbe0IHMX8NwAxVSEc7hMIjWaO+356JRPCaPiTZjPBG4Tjdb2yxJw1/jW5DbS
+ yE0rSxWi/EMJALEjl8l9TGONV0ZQ4K+I+gCoh0+iScOAzAa7cjLC1RC9WAUNBNCTjfeXGzNyg
+ lHCMuCermWiodAjfoTWyC/BghyK79NRWJcRF/fgMtQyZia8RuckiYvNkkdMmsmGCYfo/b6mQU
+ O1lnlK34Obe48DNzFQrTn0jtLYCRkl2bt7a91QnpFFRTKoG8oZhq39Vg8hy2xOgvlTD2jqt4/
+ 5rKvkC4wKr3JKwbi3jGd0yzlCgcQ17lyuQdy9RLYUbB9tb+i1/DLC8t47Gsox77W20ook+tuK
+ m2SmCqd+rF7u6kOjkizG0VjMJTITueaL6aXPEYwosrX7W/00XAVlC5d5bXmqZbobPZMSgIC1O
+ 4MayMFSVBIIhxU23pktTtNudECXDrf3nEIgxHwqnmlH7fLxFVzm3e8hycaQK9C81VGpaCXNgF
+ dNyYGDsz0SI/Vc7kox6uUaKRex1TBG9Sd47uYsOK66308e9c8KWn1uW3VLIPt2wI7cLh/omm6
+ NagDLItYf73uxmLiRoBkpm3pn11qinaAmR2X8HgjpmE+cKFARSkd7hoqJGJM0KkQHUnKxXtl3
+ cJNYybIyyFFV0o1o+KiYIqajWv0+Hi3cAZmp7J7dFfQ3LBbyzDx8OEEvg==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Test btrfs send/recv support for fs-verity. Includes tests for
-signatures, salts, and interaction with chmod/caps. The last of those is
-to ensure the various features that go in during inode_finalize interact
-properly.
 
-This depends on the kernel patch adding support for send:
-btrfs: send: add support for fs-verity
 
-And the btrfs-progs patch adding support for recv:
-btrfs-progs: receive: add support for fs-verity
+On 2022/8/16 03:34, Goldwyn Rodrigues wrote:
+> For a filesystem which has btrfs read-only property set to true, all
+> write operations including xattr should be denied. However, security
+> xattr can still be changed even if btrfs ro property is true.
+>
+> This patch checks if the root is read-only before performing the set
+> xattr operation.
+>
+> Testcase:
+>
+> #!/bin/bash
+>
+> DEV=3D/dev/vdb
+> MNT=3D/mnt
+>
+> mkfs.btrfs -f $DEV
+> mount $DEV $MNT
+> echo "file one" > $MNT/f1
+> setfattr -n "security.one" -v 2 $MNT/f1
+> btrfs property set $MNT ro true
+>
+> # Following statement should fail
+> setfattr -n "security.one" -v 1 $MNT/f1
+>
+> umount $MNT
+>
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- tests/btrfs/271     | 114 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/271.out |  59 +++++++++++++++++++++++
- 2 files changed, 173 insertions(+)
- create mode 100755 tests/btrfs/271
- create mode 100644 tests/btrfs/271.out
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-diff --git a/tests/btrfs/271 b/tests/btrfs/271
-new file mode 100755
-index 00000000..93b34540
---- /dev/null
-+++ b/tests/btrfs/271
-@@ -0,0 +1,114 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2022 YOUR NAME HERE.  All Rights Reserved.
-+#
-+# FS QA Test 271
-+#
-+# Test sendstreams involving fs-verity enabled files
-+#
-+. ./common/preamble
-+_begin_fstest auto quick verity send
-+
-+# Override the default cleanup function.
-+_cleanup()
-+{
-+	cd /
-+	_restore_fsverity_signatures
-+	rm -r -f $tmp.*
-+}
-+
-+# Import common functions.
-+. ./common/filter
-+. ./common/verity
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_require_scratch_verity
-+_require_fsverity_builtin_signatures
-+_require_command "$SETCAP_PROG" setcap
-+_require_command "$GETCAP_PROG" getcap
-+_require_test
-+
-+subv=$SCRATCH_MNT/subv
-+fsv_file=$subv/file.fsv
-+keyfile=$tmp.key.pem
-+certfile=$tmp.cert.pem
-+certfileder=$tmp.cert.der
-+sigfile=$tmp.sig
-+stream=$tmp.fsv.ss
-+
-+_test_send_verity() {
-+	local sig=$1
-+	local salt=$2
-+	local extra_args=""
-+
-+	_scratch_mkfs >> $seqres.full
-+	_scratch_mount
-+	echo -e "\nverity send/recv test: sig: $sig salt: $salt"
-+	_disable_fsverity_signatures
-+
-+	echo "create subvolume"
-+	$BTRFS_UTIL_PROG subv create $subv >> $seqres.full
-+	echo "create file"
-+	$XFS_IO_PROG -fc "pwrite -q -S 0x58 0 12288" $fsv_file
-+	if [ $salt -eq 1 ]; then
-+		extra_args+=" --salt=deadbeef"
-+	fi
-+	if [ $sig -eq 1 ]; then
-+		echo "generate keys and cert"
-+		_fsv_generate_cert $keyfile $certfile $certfileder
-+		echo "clear keyring"
-+		_fsv_clear_keyring
-+		echo "load cert into keyring"
-+		_fsv_load_cert $certfileder
-+		echo "require signatures"
-+		_enable_fsverity_signatures
-+		echo "sign file digest"
-+		_fsv_sign $fsv_file $sigfile --key=$keyfile --cert=$certfile \
-+			$extra_args | _filter_scratch >> $seqres.full
-+		extra_args+=" --signature=$sigfile"
-+	fi
-+	echo "enable verity"
-+	_fsv_enable $fsv_file $extra_args
-+	_fsv_measure $fsv_file > $tmp.digest-before
-+
-+	# ensure send plays nice with other properties that are set when
-+	# finishing the file during send, like chmod and capabilities.
-+	echo "modify other properties"
-+	chmod a+x $fsv_file
-+	$SETCAP_PROG "cap_sys_ptrace+ep cap_sys_nice+ep" $fsv_file
-+	$GETCAP_PROG $fsv_file > $tmp.cap-before
-+
-+	echo "set subvolume read only"
-+	$BTRFS_UTIL_PROG property set $subv ro true
-+	echo "send subvolume"
-+	$BTRFS_UTIL_PROG send $subv -f $stream -q >> $seqres.full
-+
-+	echo "blow away fs"
-+	_scratch_unmount
-+	_scratch_mkfs >> $seqres.full
-+	_scratch_mount
-+
-+	echo "receive sendstream"
-+	$BTRFS_UTIL_PROG receive $SCRATCH_MNT -f $stream -q >> $seqres.full
-+
-+	echo "check received subvolume..."
-+	echo 3 > /proc/sys/vm/drop_caches
-+	_fsv_measure $fsv_file > $tmp.digest-after
-+	$GETCAP_PROG $fsv_file > $tmp.cap-after
-+	diff $tmp.digest-before $tmp.digest-after
-+	diff $tmp.cap-before $tmp.cap-after
-+	_scratch_unmount
-+	echo OK
-+}
-+
-+_test_send_verity 0 0
-+_test_send_verity 0 1
-+_test_send_verity 1 0
-+_test_send_verity 1 1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/271.out b/tests/btrfs/271.out
-new file mode 100644
-index 00000000..9a484404
---- /dev/null
-+++ b/tests/btrfs/271.out
-@@ -0,0 +1,59 @@
-+QA output created by 271
-+
-+verity send/recv test: sig: 0 salt: 0
-+create subvolume
-+create file
-+enable verity
-+modify other properties
-+set subvolume read only
-+send subvolume
-+blow away fs
-+receive sendstream
-+check received subvolume...
-+OK
-+
-+verity send/recv test: sig: 0 salt: 1
-+create subvolume
-+create file
-+enable verity
-+modify other properties
-+set subvolume read only
-+send subvolume
-+blow away fs
-+receive sendstream
-+check received subvolume...
-+OK
-+
-+verity send/recv test: sig: 1 salt: 0
-+create subvolume
-+create file
-+generate keys and cert
-+clear keyring
-+load cert into keyring
-+require signatures
-+sign file digest
-+enable verity
-+modify other properties
-+set subvolume read only
-+send subvolume
-+blow away fs
-+receive sendstream
-+check received subvolume...
-+OK
-+
-+verity send/recv test: sig: 1 salt: 1
-+create subvolume
-+create file
-+generate keys and cert
-+clear keyring
-+load cert into keyring
-+require signatures
-+sign file digest
-+enable verity
-+modify other properties
-+set subvolume read only
-+send subvolume
-+blow away fs
-+receive sendstream
-+check received subvolume...
-+OK
--- 
-2.37.1
-
+Thanks,
+Qu
+>
+>
+> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+> index 7421abcf325a..5bb8d8c86311 100644
+> --- a/fs/btrfs/xattr.c
+> +++ b/fs/btrfs/xattr.c
+> @@ -371,6 +371,9 @@ static int btrfs_xattr_handler_set(const struct xatt=
+r_handler *handler,
+>   				   const char *name, const void *buffer,
+>   				   size_t size, int flags)
+>   {
+> +	if (btrfs_root_readonly(BTRFS_I(inode)->root))
+> +		return -EROFS;
+> +
+>   	name =3D xattr_full_name(handler, name);
+>   	return btrfs_setxattr_trans(inode, name, buffer, size, flags);
+>   }
+>

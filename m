@@ -2,152 +2,106 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5ECF6C2BB41
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Aug 2022 08:19:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2A1EC32774
+	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Aug 2022 09:30:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232565AbiHPITL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Aug 2022 04:19:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41580 "EHLO
+        id S233285AbiHPJaw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 16 Aug 2022 05:30:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50718 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232555AbiHPISg (ORCPT
+        with ESMTP id S233485AbiHPJaJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Aug 2022 04:18:36 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F38ED6555A
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Aug 2022 22:38:11 -0700 (PDT)
+        Tue, 16 Aug 2022 05:30:09 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7AB0DD51F2
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2022 00:50:26 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1660628288;
-        bh=2uPX5arQa+M/FFGsIGZLBPvnnk2035l1JRDAyTXcD/0=;
-        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
-        b=WgzfFHRKQ1H/DP/UznV61US/I5TBQil9UScareEXvsfnntt/aYPh5Ekm65Ewd29sz
-         gzviIk/FFvuCrMSR6eU9ruYEVn8qo1bdGBTAKIVj6ASgvVF4c0ulUQjRd+neOcDqnC
-         W11ceLfLAy2rAsDnoAE36tbYHTPvAQ/y0+GEakEY=
+        s=badeba3b8450; t=1660636221;
+        bh=ySKUGR+bCMe0V7jvI8tvUhcj37WAZLSbQpWl1RLLwnM=;
+        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+        b=bgZt8e3/HVNpiHBg3MWA+fR/U8atVGKvQ+QI33Th5FlRNNP4jdg2MNk7jaRCVwx67
+         JyBCQ5ckG9ftwAf5K1kvzCQn4X1xUM9VJYWfawofGAtNF5zS2IKLT8OiJQKXL0Bxbm
+         4DAkqH8+hSY4JXc8DF/su1fhXer8YRCd7jaLEytk=
 X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mqs4Z-1nbH2613B3-00msae; Tue, 16
- Aug 2022 07:38:07 +0200
-Message-ID: <7553372e-1485-63ae-d3f1-e9e0a318b2f6@gmx.com>
-Date:   Tue, 16 Aug 2022 13:38:04 +0800
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MFbVu-1o93DO3Krm-00H3Yp; Tue, 16
+ Aug 2022 09:50:21 +0200
+Message-ID: <c48fd0c4-64b4-cce2-273f-90c6940e3d99@gmx.com>
+Date:   Tue, 16 Aug 2022 15:50:17 +0800
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.12.0
+Subject: Re: [PATCH] btrfs-progs: avoid redefined __bitwise__ warning
 Content-Language: en-US
-To:     hmsjwzb <hmsjwzb@zoho.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <fb056073-5bd6-6143-9699-4a5af1bd496d@zoho.com>
- <655f97cc-64e6-9f57-5394-58f9c3b83a6f@gmx.com>
- <40b209eb-9048-da0c-e776-5e143ab38571@zoho.com>
- <72a78cc0-4524-47e7-803c-7d094b8713ee@gmx.com>
- <00984321-3006-764d-c29e-1304f89652ae@zoho.com>
- <18300547-1811-e9da-252e-f9476dca078c@gmx.com>
- <4691b710-3d71-bd26-d00a-66cc398f57c5@zoho.com>
+To:     Wang Yugui <wangyugui@e16-tech.com>, linux-btrfs@vger.kernel.org
+References: <20220816013703.72722-1-wangyugui@e16-tech.com>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: some help for improvement in btrfs
-In-Reply-To: <4691b710-3d71-bd26-d00a-66cc398f57c5@zoho.com>
+In-Reply-To: <20220816013703.72722-1-wangyugui@e16-tech.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:jpD2R5FCqnmTVMNURY7MRAbVtNpoaItW/VgGtnWHosGAs6iwZZa
- qC9Vj6wl9eKcw0P+lFXrjyAgP/7RzTYtDj+YPJIzoRfKX2uS342PbgaLffMc19OZ1iORfCQ
- X7Nq2L3o699guQHh5u8DYBcaWLZUgg1LEyfEICRTvQXZVKogmBzcdcZqlf2421/OnJCPWDR
- xNjB9N5CQu90hvXFRVy4A==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:jwjKEMlAq2Y=:06unGffnRvZ8rgxNsRFeV8
- 2pbKSW1cVMQ+8gX4NCcpsln51lC3G40aL+S0X3o2zGGahVY+tylPED6zTEO2BTkIbSbQ0yMfj
- nee0IlcDGsK8hH8goaA3ECcfVXcFiVewMBekInAGXd4tlFB4r4AJJ6+n4+NJX21WBBZrKDmFI
- LVBm/sGQjCqwsbEqBlwBobum3ShEQfUYNT77VuijAhUTq6Epnrml+QVULJOSGtAtIMoiYRDIe
- hSNLzqOoWyBIZQDzbfDMuDuHJ89JOboynZh5nK3hi5utFFsow3sd23n+yxIEtnIUlcxUZjRVO
- uh6owr3CW9OS5ro3jlVp3+yMMmJBKN/vYjEGWOgmKM9P8NpRyqi+71XgQcb0IiH+0gM+sQ5Ox
- BbzSbbnnd3rmBiQyiLVE40wBVm4AeqSDbMdZgv/HeoD5y5WnVtOuR35D6PEW6PuvrNrjcfPCH
- f6ixhFfjaGh8Eq45kWAiVNyn75s9AMBLdetKlfj+Tm/h+Zfvv+hGfUyGtiv27DtSX69g286bE
- LHjN2hmRyGu3o45cm6fDVh2msWGqgXpabJY4wjmXNtrvcePzKjOuNPxBUt3VWDj4IPPZHdUBw
- y8J43NLsDuVRM++ADG0L756Ikv2wnoCb3gN8dmw+Fun0QqVuny2lcQjKPInoXbF5ur2FqiLi9
- qKGNbfSO/cfkcLt6M7oqnDsBmB9xLX402p77s/vuMEpjEQqpYzCkklpLeuSIpghCbfI8d+KEV
- yh7jsXmm7VIbl4JKBjxGng+M/EtALCMwS3ZkHQuVFpsnCQ1RM86bniJGkzbbwmMKNYXxTn0yO
- VgUZdOwFaklQ+Yb1uJCMpMmbBilt9iwjYqxK0gmBU/1inV1rp8yr6GqaRAIDY3bB1s2dTwNHd
- CMdRc+n/CL4SQ/qjHvZhUvLyLU1datDNvRBnEI+i2oTQSkeJhB/+Vykc5WrgO6suCT08C0HEe
- gvHqRi7ERvktJrBE3FcuLeoiJU262EigO3zhBo9BQ31GohADgxAeU6LOQG25YOTVagBHJTC0K
- uojSp8a7UjSh33iHyHAdjfQgbN4bIfkZCTX0zUnUYcu8Kq9ifK2c77Fuj2rA9pORM4T3Do6Uf
- 5Wd8SkFoFBlZQvfKU6HwrhJMpiR1gHzlyds/cCIvAz7GTf7YqTOhNvA8w==
+X-Provags-ID: V03:K1:xi9Cs6+bTDF/NT6KuGV489emJIDOs9IiLNKM8KExIEJomN7ueNk
+ C6HQRqenrBzU0N+OCIgN2B8IBlajXxzoPkQ9XHREP3CTD0Gha76U7ZtXeO4q4cA4zkPAZYQ
+ QToLh+wpMmNQkxlQGE9rJDrDAnzpy2yErQ8exZmpaS4ACyU68+k49QIuQhKaj3EppO9OIsQ
+ QY/FUUGW1ArdZhYDKWsGg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:r3j3ahFZWNk=:tTz+A8DXP7yqx47uKPaJWT
+ XjEu7aQU2ow/fUR955X/AbQk11+5F1wdEhjUoQFU1CAETljp+1/KsHKUQKAxbHykDAQTcVXgA
+ AbHwr0OR4h5TZP1M2iJYM3ruTHcet01ZIeUCwEGbM10vFpnNFKlTouayX85DcR57sZklrphzm
+ 3AHsj1yGfvD6PM/U6kEC6EXJkNjqu0CsqgT9VeNuWb47C5r7kQJUJWzrzRxUTfnR2Jgg7fTt8
+ sVc1Oe/OIrkTO1ekbQJeo2EUFCHOUnVqM4rM6g8ANR9GScrc5mTq5Gf4NZMnnSUC8EsMP5ElF
+ 5wRx6tYul+vDvRm9phFy++9wLZQt4bmpHdAWvLhEIlmwOTPrkSTsq5ZuClYGJN7sIxaSBCTw+
+ l5i3vR5TgiKFHD63n6EBZN+6s/EaH1tbgRz78tdntph98w5K25dtzNIobbAnyIOjalm0l0mWH
+ Emcq/YSi/TcMVralVE44ckTJn5y8xY8/mrsyb+wEWWR5LoFW6r9kcP6sIyk4iTJ0taO7NN5YF
+ xNm7fEC7pBSIzUiW2E+OXfPHjv3IyZ9Pf51c0IHE/G9v4gb5zyC14ibmbOL3mrauxIbQHzgos
+ GvsOdwwljRo3bc56jWt/ub0DmlJhed28xgqPmnXlPNTjB7VnS+8ikxfQackoyNmcqco1heg7o
+ gxbj01GsYla8N1EsDAYKB8gPfcAbHxaEGiY5amJgmrPk8Wewt9KmZEHZhjKjS9IYLbhhGOoWe
+ kv8ylXOmd7AG9PAPs+H+H9R0m9YTm7rgZe81KSeL5FXhroSd//MErVL/anlC/Cd1gddnArF8c
+ 2Ps28GzoYWwXpcJVDNbdk6c2E0biaCkHyluicUVED8WFDTItUkvp3yxKnGm3tjyKtQlyvrsKy
+ DpXZoYYQCjlz8gMZNa4uIgR06ygnYNL/GmH7TlnBfbPTY4YNczwlbQB8hmLzQilut1yBRfuUn
+ mZJ159Df6Bwd7wzLkDo4D/mtR0BlW9qv81z0MyY8F8wQDvaCvxCXX/9igqKvoQUk+2LWsuqBj
+ NKrEqQVT9UHYkJSHM+/ABAg9EszS5fW8EACvvrq2gVHm7DL82xdkhdgRoL0tNliO/mRapWYJB
+ 8jl9yCOL4lqC3rlayqQYaVsLh6erkxKa7GK1TQxPbNpZ6enU2/FIJfQ7g==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2022/8/16 10:47, hmsjwzb wrote:
-> Hi Qu,
+On 2022/8/16 09:37, Wang Yugui wrote:
+> compile warning:
+>      ./kerncompat.h:142: warning: "__bitwise__" redefined
+>      #define __bitwise__
 >
-> Sorry for interrupt you so many times.
+>      In file included from ./kerncompat.h:35,
+>                      from check/qgroup-verify.c:24:
+>      /usr/include/linux/types.h:25: note: this is the location of the pr=
+evious definition
+>      #define __bitwise__ __bitwise
 >
-> As for
-> 	scrub level checks at RAID56 substripe write time.
+> Because  __bitwise__ is already defined in newer kernel-headers
+> (/usr/include/linux/types.h), so add #ifndef to avoid this warning.
 >
-> Is this feature available in latest linux-next branch?
-
-Nope, no one is working on that, thus no patches at all.
-
-> Or may I need to get patches from mail list.
-> What is the core function of this feature ?
-
-The following small script would explain it pretty well:
-
-   mkfs.btrfs -f -m raid5 -d raid5 -b 1G $dev1 $dev2 $dev3
-   mount $dev1 $mnt
-
-   xfs_io -f -c "pwrite -S 0xee 0 64K" $mnt/file1
-   sync
-   umount $mnt
-
-   # Currupt data stripe 1 of full stripe of above 64K write
-   xfs_io -f -c "pwrite -S 0xff 119865344 64K" $dev1
-
-   mount $dev1 $mnt
-
-   # Do a new write into data stripe 2,
-   # We will trigger a RMW, which will use on-disk (corrupted) data to
-   # generate new P/Q.
-   xfs_io -f -c "pwrite -S 0xee 0 64K" -c sync $mnt/file2
-
-   # Now we can no longer read file1, as its data is corrupted, and
-   # above write generated new P/Q using corrupted data stripe 1,
-   # preventing us to recover the data stripe 1.
-   cat $mnt/file1 > /dev/null
-   umount $mnt
-
-Above script is the best way to demonstrate the "destructive RMW".
-Although this is not btrfs specific (other RAID56 is also affected),
-it's definitely a real problem.
-
-There are several different directions to solve it:
-
-- A way to add CSUM for P/Q stripes
-   In theory this should be the easiest way implementation wise.
-   We can easily know if a P/Q stripe is correct, then before doing
-   RMW, we verify the result of P/Q.
-   If the result doesn't match, we know some data stripe(s) are
-   corrupted, then rebuild the data first before write.
-
-   Unfortunately, this needs a on-disk format.
-
-- Full stripe verification before writes
-   This means, before we submit sub-stripe writes, we use some scrub like
-   method to verify all data stripes first.
-   Then we can do recovery if needed, then do writes.
-
-   Unfortunately, scrub-like checks has quite some limitations.
-   Regular scrub only works on RO block groups, thus extent tree and csum
-   tree are consistent.
-   But for RAID56 writes, we have no such luxury, I'm not 100% sure if
-   this can even pass stress tests.
+> Signed-off-by: Wang Yugui <wangyugui@e16-tech.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
-
+> ---
+>   kerncompat.h | 2 ++
+>   1 file changed, 2 insertions(+)
 >
-> I think I may use qemu and gdb to get basic understanding about this fea=
-ture.
+> diff --git a/kerncompat.h b/kerncompat.h
+> index f6477990..15595500 100644
+> --- a/kerncompat.h
+> +++ b/kerncompat.h
+> @@ -139,8 +139,10 @@ static inline void bugon_trace(const char *assertio=
+n, const char *filename,
+>   #define __bitwise__ __attribute__((bitwise))
+>   #else
+>   #define __force
+> +#ifndef __bitwise__
+>   #define __bitwise__
+>   #endif
+> +#endif
 >
-> Thanks,
-> Flint
->
-> On 8/15/22 04:54, Qu Wenruo wrote:
->> scrub level checks at RAID56 substripe write time.
+>   #ifndef __CHECKER__
+>   /*

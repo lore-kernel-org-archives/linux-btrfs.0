@@ -2,33 +2,33 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31E17C25B08
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:50:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BEA6DC32772
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:50:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240463AbiHQOu4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 10:50:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36728 "EHLO
+        id S240166AbiHQOu5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 10:50:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36746 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240442AbiHQOuv (ORCPT
+        with ESMTP id S240437AbiHQOuy (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 10:50:51 -0400
+        Wed, 17 Aug 2022 10:50:54 -0400
 Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CAFA2870AE;
-        Wed, 17 Aug 2022 07:50:49 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 415C83E749;
+        Wed, 17 Aug 2022 07:50:53 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 31DF180B43;
-        Wed, 17 Aug 2022 10:50:49 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id 9F12281140;
+        Wed, 17 Aug 2022 10:50:52 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1660747849; bh=5ltf9+aHzLL7uF7ovh9MyC2pwbWq7b6ckluppS6/LWc=;
+        t=1660747852; bh=ORZrkqsA05BXOYu2otqHJ6RtbItHF/27zv6HhRn6/JA=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Y+VWLScwjDI71g9mMJUqR8xeG9eF9byVgwkTzJ6net42j+7IMS7nnUHsyfPFPTgo7
-         uiygcoRZSlw3OhAFY3/8TDLGRr0ch59CbPkAXIqvC4ihGSon51O04BPcDopS2laGot
-         V+dK4FXkHs3h/Sy8gaTFxRbyWxQoe/Ity35ES5TbicoasxEUhWcCDZUZSTZlFCAn37
-         8DE+nEEXEzQkzKSLqHPaCUi+Rp/HlBuSMLJlZSAJZe8V87qoIVFk0awCP9jajz9VX0
-         V5dPNdRftBzgX+gXhAUCzSKbXZ5yY+Qx3XQUPN6HXOAbxPhxGxaozmgfwistEmngmW
-         wS1O89hyEeAAg==
+        b=aIzq7OZ/vIJ6siSv4LsIptpRxUMfIdCJucppaSOK1tCGakV1Uw9eIqWnUdJ4njCjy
+         +OANC7d61TU1v3VXkjlx3c97TGfEhEnf6c4Qjn2bZzklTryvFUBcGcYeFdZVIVboIz
+         HJaAZKdnJa75yhyXD2iXxsn4y06vIicnmFGBQ92DAHredlRV8rubaSxGMBbDFt6Zzw
+         NRmU3lj6MwMyJHnHEDIKcNZTEpU+qtP2QYGm8wbPBz+OUc2F0+zAM68oirmCZ0X2Ve
+         xGLGi2Syq+Uix3bpxEzTIo/5iazp3AwfYP6tV8kXYHrB2tqRpJqDgPEIOlZpkPyvV+
+         J+8HPIuJ8XBtA==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
@@ -37,10 +37,11 @@ To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Eric Biggers <ebiggers@kernel.org>,
         linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 15/21] btrfs: add iv generation function for fscrypt
-Date:   Wed, 17 Aug 2022 10:49:59 -0400
-Message-Id: <229f4296f3105acb17477bf791ecbbb9e5e587a8.1660744500.git.sweettea-kernel@dorminy.me>
+Cc:     Omar Sandoval <osandov@osandov.com>,
+        Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH 17/21] btrfs: Add new FEATURE_INCOMPAT_FSCRYPT feature flag.
+Date:   Wed, 17 Aug 2022 10:50:01 -0400
+Message-Id: <2f7e98905d9275ad6f5515678c081a085380999b.1660744500.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1660744500.git.sweettea-kernel@dorminy.me>
 References: <cover.1660744500.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -49,44 +50,54 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As btrfs cannot use the standard inode or logical block based encryption
-for data block encryption, it must provide a IV generation function and
-users must use the IV_FROM_FS policy. For filenames, we can just use the
-nonce that fscrypt stores per-inode, since these encrypted datum are not
-shared between inodes; later on, we will store an IV per file extent,
-and return it in this function for data encryption.
+From: Omar Sandoval <osandov@osandov.com>
 
+As fscrypt files will be incompatible with older filesystem versions,
+new filesystems should be created with an incompat flag for fscrypt.
+
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- fs/btrfs/fscrypt.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ fs/btrfs/ctree.h           | 6 ++++--
+ include/uapi/linux/btrfs.h | 1 +
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/fscrypt.c b/fs/btrfs/fscrypt.c
-index 959efc4c179b..95a84d426d06 100644
---- a/fs/btrfs/fscrypt.c
-+++ b/fs/btrfs/fscrypt.c
-@@ -187,9 +187,21 @@ static bool btrfs_fscrypt_empty_dir(struct inode *inode)
- 	return true;
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 40ceaef462ac..be4a3458b4d6 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -334,7 +334,8 @@ static_assert(sizeof(struct btrfs_super_block) == BTRFS_SUPER_INFO_SIZE);
+ 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID1C34	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_ZONED		|	\
+-	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
++	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	|	\
++	 BTRFS_FEATURE_INCOMPAT_FSCRYPT)
+ #else
+ #define BTRFS_FEATURE_INCOMPAT_SUPP			\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+@@ -349,7 +350,8 @@ static_assert(sizeof(struct btrfs_super_block) == BTRFS_SUPER_INFO_SIZE);
+ 	 BTRFS_FEATURE_INCOMPAT_NO_HOLES	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID1C34	|	\
+-	 BTRFS_FEATURE_INCOMPAT_ZONED)
++	 BTRFS_FEATURE_INCOMPAT_ZONED		|	\
++	 BTRFS_FEATURE_INCOMPAT_FSCRYPT)
+ #endif
  
-+static void btrfs_fscrypt_get_iv(u8 *iv, int ivsize, struct inode *inode,
-+				 u64 lblk_num)
-+{
-+	/*
-+	 * For encryption that doesn't involve extent data, juse use the
-+	 * nonce already loaded into the iv buffer.
-+	 */
-+	return;
-+}
-+
- const struct fscrypt_operations btrfs_fscrypt_ops = {
-+	.flags = FS_CFLG_ALLOW_PARTIAL,
- 	.key_prefix = "btrfs:",
- 	.get_context = btrfs_fscrypt_get_context,
- 	.set_context = btrfs_fscrypt_set_context,
- 	.empty_dir = btrfs_fscrypt_empty_dir,
-+	.get_fs_defined_iv = btrfs_fscrypt_get_iv,
- };
+ #define BTRFS_FEATURE_INCOMPAT_SAFE_SET			\
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index f54dc91e4025..b19fc3725769 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -310,6 +310,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
+ #define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
+ #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
++#define BTRFS_FEATURE_INCOMPAT_FSCRYPT		(1ULL << 14)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
 -- 
 2.35.1
 

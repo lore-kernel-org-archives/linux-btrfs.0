@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71764C32772
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 11:23:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A762C25B08
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 11:23:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239159AbiHQLXO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 07:23:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39074 "EHLO
+        id S238472AbiHQLXS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 07:23:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238251AbiHQLXL (ORCPT
+        with ESMTP id S231508AbiHQLXN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 07:23:11 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE793E038
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 04:23:09 -0700 (PDT)
+        Wed, 17 Aug 2022 07:23:13 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2A4626315
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 04:23:10 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 5F003B81CC2
+        by dfw.source.kernel.org (Postfix) with ESMTPS id A41D6614A3
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:23:09 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 80E51C433D7
         for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:23:08 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 55338C433D6
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:23:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1660735387;
-        bh=SamOxjksVUv1wNv9V3KvF+4r+UkI8+Yce1ZTwjobYCE=;
+        s=k20201202; t=1660735389;
+        bh=jpH9AnhE1WbyjTZWf0Net8UEp1kmq4oL5S95sB+O/rs=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=O9xq4bQV91B7UsfeoGer9uPLCZhoup8y4/ctFWh0cY7UJT3N3W+f2zViDv/sKxGlj
-         LOJVqZ1O4q7iheDRYJY8DbsR7gPL+r9DTzRn+i01jD57fdX7rcUEaa48KA2zNFzYk+
-         /w5uUPq7mBfLdHvmAf2a/NoBzrfcxZ7tP6QzoyXvGt6hVEzWPv33yQnhmwhgCkHHcP
-         LIjVJMX2jR+YDjBpQdOdCifNQTk8fDRySuSYiF00jZdyFAVWlcZY1aC32pyqf1wIqc
-         SHRwFSu/LwdzO7GJIGLvqqK+IchRBU9dApYICdpewtYUJtyqHIkt737X2/9T2X4F1j
-         0aS4d6Y5ZtmaQ==
+        b=r9Z5rDfiiG/C/WEhdmpbDC3SmsKtDn9C0opGnQ3K4/tgllxDDjREgce48/qBWFp8j
+         GbzBDUM071ywb7v6uLiGm+pAT/IlfApvMfG9zKbs0JCqYxq/07B59kRcNIcNAzFH4i
+         wLwjvVoR/Oc3EWPnEFBgEh/PFAzaouyu/pK49BX/qvjW+2+uYOmPbd94qkQg8Z95bW
+         CmBAWDmeuqILxPwZ02zlu8hKcOv4u0w+wMqqyY+9HzX3IbIA9dco2U3sjaOtVaU6dP
+         j0l1TfMxdxzNxzcfcKjqUoQXedFswd3p1vgiBHPrm9dumLVtJWXLW21l1l4xd5LoRs
+         XNgl3hj/eZ/uw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/15] btrfs: log conflicting inodes without holding log mutex of the initial inode
-Date:   Wed, 17 Aug 2022 12:22:46 +0100
-Message-Id: <98f70b3a99b7a295fea706c001ce0e67d4874f48.1660735025.git.fdmanana@suse.com>
+Subject: [PATCH 15/15] btrfs: use delayed items when logging a directory
+Date:   Wed, 17 Aug 2022 12:22:48 +0100
+Message-Id: <85edb6cc38e26f257b321d566f8502e570b98261.1660735025.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1660735024.git.fdmanana@suse.com>
 References: <cover.1660735024.git.fdmanana@suse.com>
@@ -48,553 +48,898 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When logging an inode, if we detect the inode has a reference that
-conflicts with some other inode that got renamed, we log that other inode
-while holding the log mutex of the current inode. We then find out if
-there are other inodes that conflict with the first conflicting inode,
-and log them while under the log mutex of the original inode. This is
-fine because the recursion can only happen once.
+When logging a directory we start by flushing all its delayed items.
+That results in adding dir index items to the subvolume btree, for new
+dentries, and removing dir index items from the subvolume btree for any
+dentries that were deleted.
 
-For the upcoming work where we directly log delayed items without flushing
-them first to the subvolume tree, this recursion adds a lot of complexity
-and it's hard to keep lockdep happy about it.
+This makes it straightforward to log a directory simply by iterating over
+all the modified subvolume btree leaves, especially when we used to log
+both dir index keys and dir item keys (before commit 339d035424849c
+("btrfs: only copy dir index keys when logging a directory") and when we
+used to copy old dir index entries for leaves modified in the current
+transaction (before commit 732d591a5d6c12 ("btrfs: stop copying old dir
+items when logging a directory")).
 
-So collect a list of conflicting inodes and then log the inodes after
-unlocking the log mutex of the inode we started with.
+From an efficiency point of view this has a couple of drawbacks:
 
-Also limit the maximum number of conflict inodes we log to 10, to avoid
-spending too much time logging (and maybe allocating too many list
-elements too), as typically we don't have more than 1 or 2 conflicting
-inodes - if we go over the limit, simply fallback to a transaction commit.
+1) Adds extra latency, due to copying delayed items to the subvolume btree
+   and deleting dir index items from the btree.
 
-It is possible to have a very long list of conflicting inodes to be
-intentionally created by a user if he/she creates a very long succession
-of renames like this:
+   Further if there are other tasks accessing the btree, which is common
+   (syscalls like creat, mkdir, rename, link, unlink, truncate, reflinks,
+   etc, finishing an ordered extent, etc), lock contention can cause
+   further delays, both to the task logging a directory and to the other
+   tasks accessing the btree;
 
-  (...)
-  rename E to F
-  rename D to E
-  rename C to D
-  rename B to C
-  rename A to B
-  touch A (create a new file named A)
-  fsync A
+2) More time spent overall flushing delayed items, if after logging the
+   directory further changes are done to the directory in the same
+   transaction.
 
-If that happened for a sequence of hundreds or thousands of renames, it
-could massively slow down the logging and cause other secondary effects
-like for example blocking other fsync operations and transaction commits
-for a very long time (assuming it wouldn't run into -ENOSPC or -ENOMEM
-first). However such cases are very uncommon to happen in practice,
-nevertheless it's better to be prepared for them and avoid chaos.
-Such long sequence of conflicting inodes could be created before this
-change.
+   For example, if we add 10 dentries to a directory, fsync it, add more
+   10 dentries, fsync it again, then add more 10 dentries and fsync it
+   again, then we end up inserting 3 batches of 10 items to the subvolume
+   btree. With the changes from this patch, we flush all the delayed items
+   to the btree only once - a single batch of 30 items, and outside the
+   logging code (transaction commit or when delayed items are flushed
+   asynchronously).
+
+This change simply skips the flushing of delayed items everytime we log a
+directory. Instead we copy the delayed insertion items directly to the log
+tree and delete delayed deletion items directly from the log tree.
+Therefore avoiding changing first the subvolume btree and then scanning it
+for new items to copy from it to the log tree and detecting deletions
+by observing gaps in consecutive dir index keys in subvolume btree leaves.
+
+Running the following tests on a non-debug kernel (Debian's default kernel
+config), on a box with a nvme device, a 12 cores Intel cpu and 64G of ram,
+produced the results below.
+
+The results compare a branch without this patch and all the other patches
+it depends on versus the same branch with the patchset applied.
+
+The patchset is comprised of the following patches:
+
+  btrfs: don't drop dir index range items when logging a directory
+  btrfs: remove the root argument from log_new_dir_dentries()
+  btrfs: update stale comment for log_new_dir_dentries()
+  btrfs: free list element sooner at log_new_dir_dentries()
+  btrfs: avoid memory allocation at log_new_dir_dentries() for common case
+  btrfs: remove root argument from btrfs_delayed_item_reserve_metadata()
+  btrfs: store index number instead of key in struct btrfs_delayed_item
+  btrfs: remove unused logic when looking up delayed items
+  btrfs: shrink the size of struct btrfs_delayed_item
+  btrfs: search for last logged dir index if it's not cached in the inode
+  btrfs: move need_log_inode() to above log_conflicting_inodes()
+  btrfs: move log_new_dir_dentries() above btrfs_log_inode()
+  btrfs: log conflicting inodes without holding log mutex of the initial inode
+  btrfs: skip logging parent dir when conflicting inode is not a dir
+  btrfs: use delayed items when logging a directory
+
+Custom test script for testing time spent at btrfs_log_inode():
+
+   #!/bin/bash
+
+   DEV=/dev/nvme0n1
+   MNT=/mnt/nvme0n1
+
+   # Total number of files to create in the test directory.
+   NUM_FILES=10000
+   # Fsync after creating or renaming N files.
+   FSYNC_AFTER=100
+
+   umount $DEV &> /dev/null
+   mkfs.btrfs -f $DEV
+   mount -o ssd $DEV $MNT
+
+   TEST_DIR=$MNT/testdir
+   mkdir $TEST_DIR
+
+   echo "Creating files..."
+   for ((i = 1; i <= $NUM_FILES; i++)); do
+           echo -n > $TEST_DIR/file_$i
+           if (( ($i % $FSYNC_AFTER) == 0 )); then
+                   xfs_io -c "fsync" $TEST_DIR
+           fi
+   done
+
+   sync
+
+   echo "Renaming files..."
+   for ((i = 1; i <= $NUM_FILES; i++)); do
+           mv $TEST_DIR/file_$i $TEST_DIR/file_$i.renamed
+           if (( ($i % $FSYNC_AFTER) == 0 )); then
+                   xfs_io -c "fsync" $TEST_DIR
+           fi
+   done
+
+   umount $MNT
+
+And using the following bpftrace script to capture the total time that is
+spent at btrfs_log_inode():
+
+   #!/usr/bin/bpftrace
+
+   k:btrfs_log_inode
+   {
+           @start_log_inode[tid] = nsecs;
+   }
+
+   kr:btrfs_log_inode
+   /@start_log_inode[tid]/
+   {
+           $dur = (nsecs - @start_log_inode[tid]) / 1000;
+           @btrfs_log_inode_total_time = sum($dur);
+           delete(@start_log_inode[tid]);
+   }
+
+   END
+   {
+           clear(@start_log_inode);
+   }
+
+Result before applying patchset:
+
+   @btrfs_log_inode_total_time: 622642
+
+Result after applying patchset:
+
+   @btrfs_log_inode_total_time: 354134    (-43.1% time spent)
+
+The following dbench script was also used for testing:
+
+   #!/bin/bash
+
+   NUM_JOBS=$(nproc --all)
+
+   DEV=/dev/nvme0n1
+   MNT=/mnt/nvme0n1
+   MOUNT_OPTIONS="-o ssd"
+   MKFS_OPTIONS="-O no-holes -R free-space-tree"
+
+   echo "performance" | \
+       tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+
+   umount $DEV &> /dev/null
+   mkfs.btrfs -f $MKFS_OPTIONS $DEV
+   mount $MOUNT_OPTIONS $DEV $MNT
+
+   dbench -D $MNT --skip-cleanup -t 120 -S $NUM_JOBS
+
+   umount $MNT
+
+Before patchset:
+
+ Operation      Count    AvgLat    MaxLat
+ ----------------------------------------
+ NTCreateX    3322265     0.034    21.032
+ Close        2440562     0.002     0.994
+ Rename        140664     1.150   269.633
+ Unlink        670796     1.093   269.678
+ Deltree           96     5.481    15.510
+ Mkdir             48     0.004     0.052
+ Qpathinfo    3010924     0.014     8.127
+ Qfileinfo     528055     0.001     0.518
+ Qfsinfo       552113     0.003     0.372
+ Sfileinfo     270575     0.005     0.688
+ Find         1164176     0.052    13.931
+ WriteX       1658537     0.019     5.918
+ ReadX        5207412     0.003     1.034
+ LockX          10818     0.003     0.079
+ UnlockX        10818     0.002     0.313
+ Flush         232811     1.027   269.735
+
+Throughput 869.867 MB/sec (sync dirs)  12 clients  12 procs  max_latency=269.741 ms
+
+After patchset:
+
+ Operation      Count    AvgLat    MaxLat
+ ----------------------------------------
+ NTCreateX    4152738     0.029    20.863
+ Close        3050770     0.002     1.119
+ Rename        175829     0.871   211.741
+ Unlink        838447     0.845   211.724
+ Deltree          120     4.798    14.162
+ Mkdir             60     0.003     0.005
+ Qpathinfo    3763807     0.011     4.673
+ Qfileinfo     660111     0.001     0.400
+ Qfsinfo       690141     0.003     0.429
+ Sfileinfo     338260     0.005     0.725
+ Find         1455273     0.046     6.787
+ WriteX       2073307     0.017     5.690
+ ReadX        6509193     0.003     1.171
+ LockX          13522     0.003     0.077
+ UnlockX        13522     0.002     0.125
+ Flush         291044     0.811   211.631
+
+Throughput 1089.27 MB/sec (sync dirs)  12 clients  12 procs  max_latency=211.750 ms
+
+(+25.2% throughput, -21.5% max latency)
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c     |   1 +
- fs/btrfs/tree-log.c | 341 ++++++++++++++++++++++++--------------------
- fs/btrfs/tree-log.h |   6 +
- 3 files changed, 196 insertions(+), 152 deletions(-)
+ fs/btrfs/delayed-inode.c | 149 +++++++++++----
+ fs/btrfs/delayed-inode.h |  21 +-
+ fs/btrfs/tree-log.c      | 403 +++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 522 insertions(+), 51 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 14466b99863b..9b693d780431 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2397,6 +2397,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	ret = btrfs_commit_transaction(trans);
- out:
- 	ASSERT(list_empty(&ctx.list));
-+	ASSERT(list_empty(&ctx.conflict_inodes));
- 	err = file_check_and_advance_wb_err(file);
- 	if (!ret)
- 		ret = err;
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index b35eddcac846..2837b2dbd611 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -315,6 +315,8 @@ static struct btrfs_delayed_item *btrfs_alloc_delayed_item(u16 data_len,
+ 		item->bytes_reserved = 0;
+ 		item->delayed_node = node;
+ 		RB_CLEAR_NODE(&item->rb_node);
++		INIT_LIST_HEAD(&item->log_list);
++		item->logged = false;
+ 		refcount_set(&item->refs, 1);
+ 	}
+ 	return item;
+@@ -1175,43 +1177,6 @@ int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans, int nr)
+ 	return __btrfs_run_delayed_items(trans, nr);
+ }
+ 
+-int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+-				     struct btrfs_inode *inode)
+-{
+-	struct btrfs_delayed_node *delayed_node = btrfs_get_delayed_node(inode);
+-	struct btrfs_path *path;
+-	struct btrfs_block_rsv *block_rsv;
+-	int ret;
+-
+-	if (!delayed_node)
+-		return 0;
+-
+-	mutex_lock(&delayed_node->mutex);
+-	if (!delayed_node->count) {
+-		mutex_unlock(&delayed_node->mutex);
+-		btrfs_release_delayed_node(delayed_node);
+-		return 0;
+-	}
+-	mutex_unlock(&delayed_node->mutex);
+-
+-	path = btrfs_alloc_path();
+-	if (!path) {
+-		btrfs_release_delayed_node(delayed_node);
+-		return -ENOMEM;
+-	}
+-
+-	block_rsv = trans->block_rsv;
+-	trans->block_rsv = &delayed_node->root->fs_info->delayed_block_rsv;
+-
+-	ret = __btrfs_commit_inode_delayed_items(trans, path, delayed_node);
+-
+-	btrfs_release_delayed_node(delayed_node);
+-	btrfs_free_path(path);
+-	trans->block_rsv = block_rsv;
+-
+-	return ret;
+-}
+-
+ int btrfs_commit_inode_delayed_inode(struct btrfs_inode *inode)
+ {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+@@ -2045,3 +2010,113 @@ void btrfs_destroy_delayed_inodes(struct btrfs_fs_info *fs_info)
+ 	}
+ }
+ 
++void btrfs_log_get_delayed_items(struct btrfs_inode *inode,
++				 struct list_head *ins_list,
++				 struct list_head *del_list)
++{
++	struct btrfs_delayed_node *node;
++	struct btrfs_delayed_item *item;
++
++	node = btrfs_get_delayed_node(inode);
++	if (!node)
++		return;
++
++	mutex_lock(&node->mutex);
++	item = __btrfs_first_delayed_insertion_item(node);
++	while (item) {
++		/*
++		 * It's possible that the item is already in a log list. This
++		 * can happen in case two tasks are trying to log the same
++		 * directory. For example if we have tasks A and task B:
++		 *
++		 * Task A collected the delayed items into a log list while
++		 * under the inode's log_mutex (at btrfs_log_inode()), but it
++		 * only releases the items after logging the inodes they point
++		 * to (if they are new inodes), which happens after unlocking
++		 * the log mutex;
++		 *
++		 * Task B enters btrfs_log_inode() and acquires the log_mutex
++		 * of the same directory inode, before task B releases the
++		 * delayed items. This can happen for example when logging some
++		 * inode we need to trigger logging of its parent directory, so
++		 * logging two files that have the same parent directory can
++		 * lead to this.
++		 *
++		 * If this happens, just ignore delayed items already in a log
++		 * list. All the tasks logging the directory are under a log
++		 * transaction and whichever finishes first can not sync the log
++		 * before the other completes and leaves the log transaction.
++		 */
++		if (!item->logged && list_empty(&item->log_list)) {
++			refcount_inc(&item->refs);
++			list_add_tail(&item->log_list, ins_list);
++		}
++		item = __btrfs_next_delayed_item(item);
++	}
++
++	item = __btrfs_first_delayed_deletion_item(node);
++	while (item) {
++		/* It may be non-empty, for the same reason mentioned above. */
++		if (!item->logged && list_empty(&item->log_list)) {
++			refcount_inc(&item->refs);
++			list_add_tail(&item->log_list, del_list);
++		}
++		item = __btrfs_next_delayed_item(item);
++	}
++	mutex_unlock(&node->mutex);
++
++	/*
++	 * We are called during inode logging, which means the inode is in use
++	 * and can not be evicted before we finish logging the inode. So we never
++	 * have the last reference on the delayed inode.
++	 * Also, we don't use btrfs_release_delayed_node() because that would
++	 * requeue the delayed inode (change its order in the list of prepared
++	 * nodes) and we don't want to do such change because we don't create or
++	 * delete delayed items.
++	 */
++	ASSERT(refcount_read(&node->refs) > 1);
++	refcount_dec(&node->refs);
++}
++
++void btrfs_log_put_delayed_items(struct btrfs_inode *inode,
++				 struct list_head *ins_list,
++				 struct list_head *del_list)
++{
++	struct btrfs_delayed_node *node;
++	struct btrfs_delayed_item *item;
++	struct btrfs_delayed_item *next;
++
++	node = btrfs_get_delayed_node(inode);
++	if (!node)
++		return;
++
++	mutex_lock(&node->mutex);
++
++	list_for_each_entry_safe(item, next, ins_list, log_list) {
++		item->logged = true;
++		list_del_init(&item->log_list);
++		if (refcount_dec_and_test(&item->refs))
++			kfree(item);
++	}
++
++	list_for_each_entry_safe(item, next, del_list, log_list) {
++		item->logged = true;
++		list_del_init(&item->log_list);
++		if (refcount_dec_and_test(&item->refs))
++			kfree(item);
++	}
++
++	mutex_unlock(&node->mutex);
++
++	/*
++	 * We are called during inode logging, which means the inode is in use
++	 * and can not be evicted before we finish logging the inode. So we never
++	 * have the last reference on the delayed inode.
++	 * Also, we don't use btrfs_release_delayed_node() because that would
++	 * requeue the delayed inode (change its order in the list of prepared
++	 * nodes) and we don't want to do such change because we don't create or
++	 * delete delayed items.
++	 */
++	ASSERT(refcount_read(&node->refs) > 1);
++	refcount_dec(&node->refs);
++}
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index 729d352ca8a1..95898ddc35e1 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -78,10 +78,21 @@ struct btrfs_delayed_item {
+ 	u64 index;
+ 	struct list_head tree_list;	/* used for batch insert/delete items */
+ 	struct list_head readdir_list;	/* used for readdir items */
++	/*
++	 * Used when logging a directory.
++	 * Insertions and deletions to this list are protected by the parent
++	 * delayed node's mutex.
++	 */
++	struct list_head log_list;
+ 	u64 bytes_reserved;
+ 	struct btrfs_delayed_node *delayed_node;
+ 	refcount_t refs;
+ 	enum btrfs_delayed_item_type type:1;
++	/*
++	 * Track if this delayed item was already logged.
++	 * Protected by the mutex of the parent delayed inode.
++	 */
++	bool logged;
+ 	/* The maximum leaf size is 64K, so u16 is more than enough. */
+ 	u16 data_len;
+ 	char data[];
+@@ -115,8 +126,6 @@ int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans, int nr);
+ 
+ void btrfs_balance_delayed_items(struct btrfs_fs_info *fs_info);
+ 
+-int btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+-				     struct btrfs_inode *inode);
+ /* Used for evicting the inode. */
+ void btrfs_remove_delayed_node(struct btrfs_inode *inode);
+ void btrfs_kill_delayed_inode_items(struct btrfs_inode *inode);
+@@ -147,6 +156,14 @@ int btrfs_should_delete_dir_index(struct list_head *del_list,
+ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+ 				    struct list_head *ins_list);
+ 
++/* Used during directory logging. */
++void btrfs_log_get_delayed_items(struct btrfs_inode *inode,
++				 struct list_head *ins_list,
++				 struct list_head *del_list);
++void btrfs_log_put_delayed_items(struct btrfs_inode *inode,
++				 struct list_head *ins_list,
++				 struct list_head *del_list);
++
+ /* for init */
+ int __init btrfs_delayed_inode_init(void);
+ void __cold btrfs_delayed_inode_exit(void);
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index e92a0b3b8088..2b56057dd199 100644
+index 626c17392626..2b357b9549b3 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -22,6 +22,8 @@
- #include "zoned.h"
- #include "inode-item.h"
- 
-+#define MAX_CONFLICT_INODES 10
-+
- /* magic values for the inode_only field in btrfs_log_inode:
-  *
-  * LOG_INODE_ALL means to log everything
-@@ -31,8 +33,6 @@
- enum {
- 	LOG_INODE_ALL,
- 	LOG_INODE_EXISTS,
--	LOG_OTHER_INODE,
--	LOG_OTHER_INODE_ALL,
- };
- 
- /*
-@@ -5518,105 +5518,201 @@ struct btrfs_ino_list {
- 	struct list_head list;
- };
- 
--static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
--				  struct btrfs_root *root,
--				  struct btrfs_path *path,
--				  struct btrfs_log_ctx *ctx,
--				  u64 ino, u64 parent)
-+static void free_conflicting_inodes(struct btrfs_log_ctx *ctx)
-+{
-+	struct btrfs_ino_list *curr;
-+	struct btrfs_ino_list *next;
-+
-+	list_for_each_entry_safe(curr, next, &ctx->conflict_inodes, list) {
-+		list_del(&curr->list);
-+		kfree(curr);
-+	}
-+}
-+
-+static int add_conflicting_inode(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root,
-+				 u64 ino, u64 parent,
-+				 struct btrfs_log_ctx *ctx)
- {
- 	struct btrfs_ino_list *ino_elem;
--	LIST_HEAD(inode_list);
--	int ret = 0;
-+	struct inode *inode;
-+
-+	/*
-+	 * It's rare to have a lot of conflicting inodes, in practice it is not
-+	 * common to have more than 1 or 2. We don't want to collect too many,
-+	 * as we could end up logging too many inodes (even if only in
-+	 * LOG_INODE_EXISTS mode) and slow down other fsyncs or transaction
-+	 * commits.
-+	 */
-+	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES)
-+		return BTRFS_LOG_FORCE_COMMIT;
-+
-+	inode = btrfs_iget(root->fs_info->sb, ino, root);
-+	/*
-+	 * If the other inode that had a conflicting dir entry was deleted in
-+	 * the current transaction, we need to log its parent directory.
-+	 * We can't simply ignore it and let the current inode's reference cause
-+	 * an unlink of the conflicting inode when replaying the log - because
-+	 * the conflicting inode may be a deleted subvolume/snapshot or it may
-+	 * be a directory that had subvolumes/snapshots inside it (or had one
-+	 * or more subdirectories with subvolumes/snapshots, etc). If that's the
-+	 * case, then when logging the parent directory we will fallback to a
-+	 * transaction commit because the parent directory will have a
-+	 * last_unlink_trans that matches the current transaction.
-+	 */
-+	if (IS_ERR(inode)) {
-+		int ret = PTR_ERR(inode);
-+
-+		if (ret != -ENOENT)
-+			return ret;
-+
-+		ino_elem = kmalloc(sizeof(*ino_elem), GFP_NOFS);
-+		if (!ino_elem)
-+			return -ENOMEM;
-+		ino_elem->ino = ino;
-+		ino_elem->parent = parent;
-+		list_add_tail(&ino_elem->list, &ctx->conflict_inodes);
-+		ctx->num_conflict_inodes++;
-+
-+		return 0;
-+	}
-+
-+	/*
-+	 * If the inode was already logged skip it - otherwise we can hit an
-+	 * infinite loop. Example:
-+	 *
-+	 * From the commit root (previous transaction) we have the following
-+	 * inodes:
-+	 *
-+	 * inode 257 a directory
-+	 * inode 258 with references "zz" and "zz_link" on inode 257
-+	 * inode 259 with reference "a" on inode 257
-+	 *
-+	 * And in the current (uncommitted) transaction we have:
-+	 *
-+	 * inode 257 a directory, unchanged
-+	 * inode 258 with references "a" and "a2" on inode 257
-+	 * inode 259 with reference "zz_link" on inode 257
-+	 * inode 261 with reference "zz" on inode 257
-+	 *
-+	 * When logging inode 261 the following infinite loop could
-+	 * happen if we don't skip already logged inodes:
-+	 *
-+	 * - we detect inode 258 as a conflicting inode, with inode 261
-+	 *   on reference "zz", and log it;
-+	 *
-+	 * - we detect inode 259 as a conflicting inode, with inode 258
-+	 *   on reference "a", and log it;
-+	 *
-+	 * - we detect inode 258 as a conflicting inode, with inode 259
-+	 *   on reference "zz_link", and log it - again! After this we
-+	 *   repeat the above steps forever.
-+	 *
-+	 * Here we can use need_log_inode() because we only need to log the
-+	 * inode in LOG_INODE_EXISTS mode and rename operations update the log,
-+	 * so that the log ends up with the new name and without the old name.
-+	 */
-+	if (!need_log_inode(trans, BTRFS_I(inode))) {
-+		btrfs_add_delayed_iput(inode);
-+		return 0;
-+	}
-+
-+	btrfs_add_delayed_iput(inode);
- 
- 	ino_elem = kmalloc(sizeof(*ino_elem), GFP_NOFS);
- 	if (!ino_elem)
- 		return -ENOMEM;
- 	ino_elem->ino = ino;
- 	ino_elem->parent = parent;
--	list_add_tail(&ino_elem->list, &inode_list);
-+	list_add_tail(&ino_elem->list, &ctx->conflict_inodes);
-+	ctx->num_conflict_inodes++;
- 
--	while (!list_empty(&inode_list)) {
--		struct btrfs_fs_info *fs_info = root->fs_info;
--		struct btrfs_key key;
--		struct inode *inode;
-+	return 0;
-+}
- 
--		ino_elem = list_first_entry(&inode_list, struct btrfs_ino_list,
--					    list);
--		ino = ino_elem->ino;
--		parent = ino_elem->parent;
--		list_del(&ino_elem->list);
--		kfree(ino_elem);
--		if (ret)
--			continue;
-+static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
-+				  struct btrfs_root *root,
-+				  struct btrfs_log_ctx *ctx)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	int ret = 0;
- 
--		btrfs_release_path(path);
-+	/*
-+	 * Conflicting inodes are logged by the first call to btrfs_log_inode(),
-+	 * otherwise we could have unbounded recursion of btrfs_log_inode()
-+	 * calls. This check guarantees we can have only 1 level of recursion.
-+	 */
-+	if (ctx->logging_conflict_inodes)
-+		return 0;
-+
-+	ctx->logging_conflict_inodes = true;
-+
-+	/*
-+	 * New conflicting inodes may be found and added to the list while we
-+	 * are logging a conflicting inode, so keep iterating while the list is
-+	 * not empty.
-+	 */
-+	while (!list_empty(&ctx->conflict_inodes)) {
-+		struct btrfs_ino_list *curr;
-+		struct inode *inode;
-+		u64 ino;
-+		u64 parent;
-+
-+		curr = list_first_entry(&ctx->conflict_inodes,
-+					struct btrfs_ino_list, list);
-+		ino = curr->ino;
-+		parent = curr->parent;
-+		list_del(&curr->list);
-+		kfree(curr);
- 
- 		inode = btrfs_iget(fs_info->sb, ino, root);
- 		/*
- 		 * If the other inode that had a conflicting dir entry was
- 		 * deleted in the current transaction, we need to log its parent
--		 * directory.
-+		 * directory. See the comment at add_conflicting_inode().
- 		 */
- 		if (IS_ERR(inode)) {
- 			ret = PTR_ERR(inode);
--			if (ret == -ENOENT) {
--				inode = btrfs_iget(fs_info->sb, parent, root);
--				if (IS_ERR(inode)) {
--					ret = PTR_ERR(inode);
--				} else {
--					ret = btrfs_log_inode(trans,
--						      BTRFS_I(inode),
--						      LOG_OTHER_INODE_ALL,
--						      ctx);
--					btrfs_add_delayed_iput(inode);
--				}
-+			if (ret != -ENOENT)
-+				break;
-+
-+			inode = btrfs_iget(fs_info->sb, parent, root);
-+			if (IS_ERR(inode)) {
-+				ret = PTR_ERR(inode);
-+				break;
- 			}
-+
-+			/*
-+			 * Always log the directory, we cannot make this
-+			 * conditional on need_log_inode() because the directory
-+			 * might have been logged in LOG_INODE_EXISTS mode or
-+			 * the dir index of the conflicting inode is not in a
-+			 * dir index key range logged for the directory. So we
-+			 * must make sure the deletion is recorded.
-+			 */
-+			ret = btrfs_log_inode(trans, BTRFS_I(inode),
-+					      LOG_INODE_ALL, ctx);
-+			btrfs_add_delayed_iput(inode);
-+			if (ret)
-+				break;
- 			continue;
- 		}
-+
- 		/*
--		 * If the inode was already logged skip it - otherwise we can
--		 * hit an infinite loop. Example:
--		 *
--		 * From the commit root (previous transaction) we have the
--		 * following inodes:
--		 *
--		 * inode 257 a directory
--		 * inode 258 with references "zz" and "zz_link" on inode 257
--		 * inode 259 with reference "a" on inode 257
--		 *
--		 * And in the current (uncommitted) transaction we have:
--		 *
--		 * inode 257 a directory, unchanged
--		 * inode 258 with references "a" and "a2" on inode 257
--		 * inode 259 with reference "zz_link" on inode 257
--		 * inode 261 with reference "zz" on inode 257
--		 *
--		 * When logging inode 261 the following infinite loop could
--		 * happen if we don't skip already logged inodes:
--		 *
--		 * - we detect inode 258 as a conflicting inode, with inode 261
--		 *   on reference "zz", and log it;
--		 *
--		 * - we detect inode 259 as a conflicting inode, with inode 258
--		 *   on reference "a", and log it;
-+		 * Here we can use need_log_inode() because we only need to log
-+		 * the inode in LOG_INODE_EXISTS mode and rename operations
-+		 * update the log, so that the log ends up with the new name and
-+		 * without the old name.
- 		 *
--		 * - we detect inode 258 as a conflicting inode, with inode 259
--		 *   on reference "zz_link", and log it - again! After this we
--		 *   repeat the above steps forever.
-+		 * We did this check at add_conflicting_inode(), but here we do
-+		 * it again because if some other task logged the inode after
-+		 * that, we can avoid doing it again.
- 		 */
--		spin_lock(&BTRFS_I(inode)->lock);
--		/*
--		 * Check the inode's logged_trans only instead of
--		 * btrfs_inode_in_log(). This is because the last_log_commit of
--		 * the inode is not updated when we only log that it exists (see
--		 * btrfs_log_inode()).
--		 */
--		if (BTRFS_I(inode)->logged_trans == trans->transid) {
--			spin_unlock(&BTRFS_I(inode)->lock);
-+		if (!need_log_inode(trans, BTRFS_I(inode))) {
- 			btrfs_add_delayed_iput(inode);
- 			continue;
- 		}
--		spin_unlock(&BTRFS_I(inode)->lock);
-+
- 		/*
- 		 * We are safe logging the other inode without acquiring its
- 		 * lock as long as we log with the LOG_INODE_EXISTS mode. We
-@@ -5624,67 +5720,16 @@ static int log_conflicting_inodes(struct btrfs_trans_handle *trans,
- 		 * well because during a rename we pin the log and update the
- 		 * log with the new name before we unpin it.
- 		 */
--		ret = btrfs_log_inode(trans, BTRFS_I(inode), LOG_OTHER_INODE, ctx);
--		if (ret) {
--			btrfs_add_delayed_iput(inode);
--			continue;
--		}
--
--		key.objectid = ino;
--		key.type = BTRFS_INODE_REF_KEY;
--		key.offset = 0;
--		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--		if (ret < 0) {
--			btrfs_add_delayed_iput(inode);
--			continue;
--		}
--
--		while (true) {
--			struct extent_buffer *leaf = path->nodes[0];
--			int slot = path->slots[0];
--			u64 other_ino = 0;
--			u64 other_parent = 0;
--
--			if (slot >= btrfs_header_nritems(leaf)) {
--				ret = btrfs_next_leaf(root, path);
--				if (ret < 0) {
--					break;
--				} else if (ret > 0) {
--					ret = 0;
--					break;
--				}
--				continue;
--			}
--
--			btrfs_item_key_to_cpu(leaf, &key, slot);
--			if (key.objectid != ino ||
--			    (key.type != BTRFS_INODE_REF_KEY &&
--			     key.type != BTRFS_INODE_EXTREF_KEY)) {
--				ret = 0;
--				break;
--			}
--
--			ret = btrfs_check_ref_name_override(leaf, slot, &key,
--					BTRFS_I(inode), &other_ino,
--					&other_parent);
--			if (ret < 0)
--				break;
--			if (ret > 0) {
--				ino_elem = kmalloc(sizeof(*ino_elem), GFP_NOFS);
--				if (!ino_elem) {
--					ret = -ENOMEM;
--					break;
--				}
--				ino_elem->ino = other_ino;
--				ino_elem->parent = other_parent;
--				list_add_tail(&ino_elem->list, &inode_list);
--				ret = 0;
--			}
--			path->slots[0]++;
--		}
-+		ret = btrfs_log_inode(trans, BTRFS_I(inode), LOG_INODE_EXISTS, ctx);
- 		btrfs_add_delayed_iput(inode);
-+		if (ret)
-+			break;
- 	}
- 
-+	ctx->logging_conflict_inodes = false;
-+	if (ret)
-+		free_conflicting_inodes(ctx);
-+
+@@ -5943,6 +5943,367 @@ static int copy_inode_items_to_log(struct btrfs_trans_handle *trans,
  	return ret;
  }
  
-@@ -5695,7 +5740,6 @@ static int copy_inode_items_to_log(struct btrfs_trans_handle *trans,
- 				   struct btrfs_path *path,
- 				   struct btrfs_path *dst_path,
- 				   const u64 logged_isize,
--				   const bool recursive_logging,
- 				   const int inode_only,
- 				   struct btrfs_log_ctx *ctx,
- 				   bool *need_log_inode_item)
-@@ -5734,8 +5778,8 @@ static int copy_inode_items_to_log(struct btrfs_trans_handle *trans,
- 			break;
- 		} else if ((min_key->type == BTRFS_INODE_REF_KEY ||
- 			    min_key->type == BTRFS_INODE_EXTREF_KEY) &&
--			   inode->generation == trans->transid &&
--			   !recursive_logging) {
-+			   (inode->generation == trans->transid ||
-+			    ctx->logging_conflict_inodes)) {
- 			u64 other_ino = 0;
- 			u64 other_parent = 0;
- 
-@@ -5759,11 +5803,12 @@ static int copy_inode_items_to_log(struct btrfs_trans_handle *trans,
- 					return ret;
- 				ins_nr = 0;
- 
--				ret = log_conflicting_inodes(trans, root, path,
--						ctx, other_ino, other_parent);
-+				btrfs_release_path(path);
-+				ret = add_conflicting_inode(trans, root,
-+							    other_ino,
-+							    other_parent, ctx);
- 				if (ret)
- 					return ret;
--				btrfs_release_path(path);
- 				goto next_key;
- 			}
- 		} else if (min_key->type == BTRFS_XATTR_ITEM_KEY) {
-@@ -5877,9 +5922,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	u64 logged_isize = 0;
++static int insert_delayed_items_batch(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *log,
++				      struct btrfs_path *path,
++				      const struct btrfs_item_batch *batch,
++				      const struct btrfs_delayed_item *first_item)
++{
++	const struct btrfs_delayed_item *curr = first_item;
++	int ret;
++
++	ret = btrfs_insert_empty_items(trans, log, path, batch);
++	if (ret)
++		return ret;
++
++	for (int i = 0; i < batch->nr; i++) {
++		char *data_ptr;
++
++		data_ptr = btrfs_item_ptr(path->nodes[0], path->slots[0], char);
++		write_extent_buffer(path->nodes[0], &curr->data,
++				    (unsigned long)data_ptr, curr->data_len);
++		curr = list_next_entry(curr, log_list);
++		path->slots[0]++;
++	}
++
++	btrfs_release_path(path);
++
++	return 0;
++}
++
++static int log_delayed_insertion_items(struct btrfs_trans_handle *trans,
++				       struct btrfs_inode *inode,
++				       struct btrfs_path *path,
++				       const struct list_head *delayed_ins_list,
++				       struct btrfs_log_ctx *ctx)
++{
++	/* 195 (4095 bytes of keys and sizes) fits in a single 4K page. */
++	const int max_batch_size = 195;
++	const int leaf_data_size = BTRFS_LEAF_DATA_SIZE(trans->fs_info);
++	const u64 ino = btrfs_ino(inode);
++	struct btrfs_root *log = inode->root->log_root;
++	struct btrfs_item_batch batch = {
++		.nr = 0,
++		.total_data_size = 0,
++	};
++	const struct btrfs_delayed_item *first = NULL;
++	const struct btrfs_delayed_item *curr;
++	char *ins_data;
++	struct btrfs_key *ins_keys;
++	u32 *ins_sizes;
++	u64 curr_batch_size = 0;
++	int batch_idx = 0;
++	int ret;
++
++	/* We are adding dir index items to the log tree. */
++	lockdep_assert_held(&inode->log_mutex);
++
++	/*
++	 * We collect delayed items before copying index keys from the subvolume
++	 * to the log tree. However just after we collected them, they may have
++	 * been flushed (all of them or just some of them), and therefore we
++	 * could have copied them from the subvolume tree to the log tree.
++	 * So find the first delayed item that was not yet logged (they are
++	 * sorted by index number).
++	 */
++	list_for_each_entry(curr, delayed_ins_list, log_list) {
++		if (curr->index > inode->last_dir_index_offset) {
++			first = curr;
++			break;
++		}
++	}
++
++	/* Empty list or all delayed items were already logged. */
++	if (!first)
++		return 0;
++
++	ins_data = kmalloc(max_batch_size * sizeof(u32) +
++			   max_batch_size * sizeof(struct btrfs_key), GFP_NOFS);
++	if (!ins_data)
++		return -ENOMEM;
++	ins_sizes = (u32 *)ins_data;
++	batch.data_sizes = ins_sizes;
++	ins_keys = (struct btrfs_key *)(ins_data + max_batch_size * sizeof(u32));
++	batch.keys = ins_keys;
++
++	curr = first;
++	while (!list_entry_is_head(curr, delayed_ins_list, log_list)) {
++		const u32 curr_size = curr->data_len + sizeof(struct btrfs_item);
++
++		if (curr_batch_size + curr_size > leaf_data_size ||
++		    batch.nr == max_batch_size) {
++			ret = insert_delayed_items_batch(trans, log, path,
++							 &batch, first);
++			if (ret)
++				goto out;
++			batch_idx = 0;
++			batch.nr = 0;
++			batch.total_data_size = 0;
++			curr_batch_size = 0;
++			first = curr;
++		}
++
++		ins_sizes[batch_idx] = curr->data_len;
++		ins_keys[batch_idx].objectid = ino;
++		ins_keys[batch_idx].type = BTRFS_DIR_INDEX_KEY;
++		ins_keys[batch_idx].offset = curr->index;
++		curr_batch_size += curr_size;
++		batch.total_data_size += curr->data_len;
++		batch.nr++;
++		batch_idx++;
++		curr = list_next_entry(curr, log_list);
++	}
++
++	ASSERT(batch.nr >= 1);
++	ret = insert_delayed_items_batch(trans, log, path, &batch, first);
++
++	curr = list_last_entry(delayed_ins_list, struct btrfs_delayed_item,
++			       log_list);
++	inode->last_dir_index_offset = curr->index;
++out:
++	kfree(ins_data);
++
++	return ret;
++}
++
++static int log_delayed_deletions_full(struct btrfs_trans_handle *trans,
++				      struct btrfs_inode *inode,
++				      struct btrfs_path *path,
++				      const struct list_head *delayed_del_list,
++				      struct btrfs_log_ctx *ctx)
++{
++	const u64 ino = btrfs_ino(inode);
++	const struct btrfs_delayed_item *curr;
++
++	curr = list_first_entry(delayed_del_list, struct btrfs_delayed_item,
++				log_list);
++
++	while (!list_entry_is_head(curr, delayed_del_list, log_list)) {
++		u64 first_dir_index = curr->index;
++		u64 last_dir_index;
++		const struct btrfs_delayed_item *next;
++		int ret;
++
++		/*
++		 * Find a range of consecutive dir index items to delete. Like
++		 * this we log a single dir range item spanning several contiguous
++		 * dir items instead of logging one range item per dir index item.
++		 */
++		next = list_next_entry(curr, log_list);
++		while (!list_entry_is_head(next, delayed_del_list, log_list)) {
++			if (next->index != curr->index + 1)
++				break;
++			curr = next;
++			next = list_next_entry(next, log_list);
++		}
++
++		last_dir_index = curr->index;
++		ASSERT(last_dir_index >= first_dir_index);
++
++		ret = insert_dir_log_key(trans, inode->root->log_root, path,
++					 ino, first_dir_index, last_dir_index);
++		if (ret)
++			return ret;
++		curr = list_next_entry(curr, log_list);
++	}
++
++	return 0;
++}
++
++static int batch_delete_dir_index_items(struct btrfs_trans_handle *trans,
++					struct btrfs_inode *inode,
++					struct btrfs_path *path,
++					struct btrfs_log_ctx *ctx,
++					const struct list_head *delayed_del_list,
++					const struct btrfs_delayed_item *first,
++					const struct btrfs_delayed_item **last_ret)
++{
++	const struct btrfs_delayed_item *next;
++	struct extent_buffer *leaf = path->nodes[0];
++	const int last_slot = btrfs_header_nritems(leaf) - 1;
++	int slot = path->slots[0] + 1;
++	const u64 ino = btrfs_ino(inode);
++
++	next = list_next_entry(first, log_list);
++
++	while (slot < last_slot &&
++	       !list_entry_is_head(next, delayed_del_list, log_list)) {
++		struct btrfs_key key;
++
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		if (key.objectid != ino ||
++		    key.type != BTRFS_DIR_INDEX_KEY ||
++		    key.offset != next->index)
++			break;
++
++		slot++;
++		*last_ret = next;
++		next = list_next_entry(next, log_list);
++	}
++
++	return btrfs_del_items(trans, inode->root->log_root, path,
++			       path->slots[0], slot - path->slots[0]);
++}
++
++static int log_delayed_deletions_incremental(struct btrfs_trans_handle *trans,
++					     struct btrfs_inode *inode,
++					     struct btrfs_path *path,
++					     const struct list_head *delayed_del_list,
++					     struct btrfs_log_ctx *ctx)
++{
++	struct btrfs_root *log = inode->root->log_root;
++	const struct btrfs_delayed_item *curr;
++	u64 last_range_start;
++	u64 last_range_end = 0;
++	struct btrfs_key key;
++
++	key.objectid = btrfs_ino(inode);
++	key.type = BTRFS_DIR_INDEX_KEY;
++	curr = list_first_entry(delayed_del_list, struct btrfs_delayed_item,
++				log_list);
++
++	while (!list_entry_is_head(curr, delayed_del_list, log_list)) {
++		const struct btrfs_delayed_item *last = curr;
++		u64 first_dir_index = curr->index;
++		u64 last_dir_index;
++		bool deleted_items = false;
++		int ret;
++
++		key.offset = curr->index;
++		ret = btrfs_search_slot(trans, log, &key, path, -1, 1);
++		if (ret < 0) {
++			return ret;
++		} else if (ret == 0) {
++			ret = batch_delete_dir_index_items(trans, inode, path, ctx,
++							   delayed_del_list, curr,
++							   &last);
++			if (ret)
++				return ret;
++			deleted_items = true;
++		}
++
++		btrfs_release_path(path);
++
++		/*
++		 * If we deleted items from the leaf, it means we have a range
++		 * item logging their range, so no need to add one or update an
++		 * existing one. Otherwise we have to log a dir range item.
++		 */
++		if (deleted_items)
++			goto next_batch;
++
++		last_dir_index = last->index;
++		ASSERT(last_dir_index >= first_dir_index);
++		/*
++		 * If this range starts right after where the previous one ends,
++		 * then we want to reuse the previous range item and change its
++		 * end offset to the end of this range. This is just to minimize
++		 * leaf space usage, by avoiding adding a new range item.
++		 */
++		if (last_range_end != 0 && first_dir_index == last_range_end + 1)
++			first_dir_index = last_range_start;
++
++		ret = insert_dir_log_key(trans, log, path, key.objectid,
++					 first_dir_index, last_dir_index);
++		if (ret)
++			return ret;
++
++		last_range_start = first_dir_index;
++		last_range_end = last_dir_index;
++next_batch:
++		curr = list_next_entry(last, log_list);
++	}
++
++	return 0;
++}
++
++static int log_delayed_deletion_items(struct btrfs_trans_handle *trans,
++				      struct btrfs_inode *inode,
++				      struct btrfs_path *path,
++				      const struct list_head *delayed_del_list,
++				      struct btrfs_log_ctx *ctx)
++{
++	/*
++	 * We are deleting dir index items from the log tree or adding range
++	 * items to it.
++	 */
++	lockdep_assert_held(&inode->log_mutex);
++
++	if (list_empty(delayed_del_list))
++		return 0;
++
++	if (ctx->logged_before)
++		return log_delayed_deletions_incremental(trans, inode, path,
++							 delayed_del_list, ctx);
++
++	return log_delayed_deletions_full(trans, inode, path, delayed_del_list,
++					  ctx);
++}
++
++/*
++ * Similar logic as for log_new_dir_dentries(), but it iterates over the delayed
++ * items instead of the subvolume tree.
++ */
++static int log_new_delayed_dentries(struct btrfs_trans_handle *trans,
++				    struct btrfs_inode *inode,
++				    const struct list_head *delayed_ins_list,
++				    struct btrfs_log_ctx *ctx)
++{
++	const bool orig_log_new_dentries = ctx->log_new_dentries;
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_delayed_item *item;
++	int ret = 0;
++
++	/*
++	 * No need for the log mutex, plus to avoid potential deadlocks or
++	 * lockdep annotations due to nesting of delayed inode mutexes and log
++	 * mutexes.
++	 */
++	lockdep_assert_not_held(&inode->log_mutex);
++
++	list_for_each_entry(item, delayed_ins_list, log_list) {
++		struct btrfs_dir_item *dir_item;
++		struct inode *di_inode;
++		struct btrfs_key key;
++		int log_mode = LOG_INODE_EXISTS;
++
++		dir_item = (struct btrfs_dir_item *)item->data;
++		btrfs_disk_key_to_cpu(&key, &dir_item->location);
++
++		if (key.type == BTRFS_ROOT_ITEM_KEY)
++			continue;
++
++		di_inode = btrfs_iget(fs_info->sb, key.objectid, inode->root);
++		if (IS_ERR(di_inode)) {
++			ret = PTR_ERR(di_inode);
++			break;
++		}
++
++		if (!need_log_inode(trans, BTRFS_I(di_inode))) {
++			btrfs_add_delayed_iput(di_inode);
++			continue;
++		}
++
++		if (btrfs_stack_dir_type(dir_item) == BTRFS_FT_DIR)
++			log_mode = LOG_INODE_ALL;
++
++		ctx->log_new_dentries = false;
++		ret = btrfs_log_inode(trans, BTRFS_I(di_inode), log_mode, ctx);
++
++		if (!ret && ctx->log_new_dentries)
++			ret = log_new_dir_dentries(trans, BTRFS_I(di_inode), ctx);
++
++		btrfs_add_delayed_iput(di_inode);
++
++		if (ret)
++			break;
++	}
++
++	ctx->log_new_dentries = orig_log_new_dentries;
++
++	return ret;
++}
++
+ /* log a single inode in the tree log.
+  * At least one parent directory for this inode must exist in the tree
+  * or be logged already.
+@@ -5975,6 +6336,8 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
  	bool need_log_inode_item = true;
  	bool xattrs_logged = false;
--	bool recursive_logging = false;
  	bool inode_item_dropped = true;
--	const bool orig_logged_before = ctx->logged_before;
++	LIST_HEAD(delayed_ins_list);
++	LIST_HEAD(delayed_del_list);
  
  	path = btrfs_alloc_path();
  	if (!path)
-@@ -5918,16 +5961,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 			goto out;
- 	}
+@@ -6002,17 +6365,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 		max_key.type = (u8)-1;
+ 	max_key.offset = (u64)-1;
  
--	if (inode_only == LOG_OTHER_INODE || inode_only == LOG_OTHER_INODE_ALL) {
--		recursive_logging = true;
--		if (inode_only == LOG_OTHER_INODE)
--			inode_only = LOG_INODE_EXISTS;
--		else
--			inode_only = LOG_INODE_ALL;
--		mutex_lock_nested(&inode->log_mutex, SINGLE_DEPTH_NESTING);
--	} else {
--		mutex_lock(&inode->log_mutex);
+-	/*
+-	 * Only run delayed items if we are a directory. We want to make sure
+-	 * all directory indexes hit the fs/subvolume tree so we can find them
+-	 * and figure out which index ranges have to be logged.
+-	 */
+-	if (S_ISDIR(inode->vfs_inode.i_mode)) {
+-		ret = btrfs_commit_inode_delayed_items(trans, inode);
+-		if (ret)
+-			goto out;
 -	}
-+	mutex_lock(&inode->log_mutex);
+-
+ 	mutex_lock(&inode->log_mutex);
  
  	/*
- 	 * For symlinks, we must always log their content, which is stored in an
-@@ -6033,7 +6067,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 
- 	ret = copy_inode_items_to_log(trans, inode, &min_key, &max_key,
- 				      path, dst_path, logged_isize,
--				      recursive_logging, inode_only, ctx,
-+				      inode_only, ctx,
- 				      &need_log_inode_item);
+@@ -6117,6 +6469,16 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
  	if (ret)
  		goto out_unlock;
-@@ -6142,8 +6176,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 
++	/*
++	 * If we are logging a directory in full mode, collect the delayed items
++	 * before iterating the subvolume tree, so that we don't miss any new
++	 * dir index items in case they get flushed while or right after we are
++	 * iterating the subvolume tree.
++	 */
++	if (S_ISDIR(inode->vfs_inode.i_mode) && inode_only == LOG_INODE_ALL)
++		btrfs_log_get_delayed_items(inode, &delayed_ins_list,
++					    &delayed_del_list);
++
+ 	ret = copy_inode_items_to_log(trans, inode, &min_key, &max_key,
+ 				      path, dst_path, logged_isize,
+ 				      inode_only, ctx,
+@@ -6176,6 +6538,14 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 		ret = log_directory_changes(trans, inode, path, dst_path, ctx);
+ 		if (ret)
+ 			goto out_unlock;
++		ret = log_delayed_insertion_items(trans, inode, path,
++						  &delayed_ins_list, ctx);
++		if (ret)
++			goto out_unlock;
++		ret = log_delayed_deletion_items(trans, inode, path,
++						 &delayed_del_list, ctx);
++		if (ret)
++			goto out_unlock;
+ 	}
+ 
+ 	spin_lock(&inode->lock);
+@@ -6224,7 +6594,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 
+ out_unlock:
+ 	mutex_unlock(&inode->log_mutex);
+-out:
++
  	btrfs_free_path(path);
  	btrfs_free_path(dst_path);
  
--	if (recursive_logging)
--		ctx->logged_before = orig_logged_before;
-+	if (ret)
-+		free_conflicting_inodes(ctx);
-+	else
-+		ret = log_conflicting_inodes(trans, inode->root, ctx);
+@@ -6233,6 +6603,15 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	else
+ 		ret = log_conflicting_inodes(trans, inode->root, ctx);
  
++	if (S_ISDIR(inode->vfs_inode.i_mode) && inode_only == LOG_INODE_ALL) {
++		if (!ret)
++			ret = log_new_delayed_dentries(trans, inode,
++						       &delayed_ins_list, ctx);
++
++		btrfs_log_put_delayed_items(inode, &delayed_ins_list,
++					    &delayed_del_list);
++	}
++
  	return ret;
  }
-@@ -6998,6 +7034,7 @@ void btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 	 * inconsistent state after a rename operation.
- 	 */
- 	btrfs_log_inode_parent(trans, inode, parent, LOG_INODE_EXISTS, &ctx);
-+	ASSERT(list_empty(&ctx.conflict_inodes));
- out:
- 	/*
- 	 * If an error happened mark the log for a full commit because it's not
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index 57ab5f3b8dc7..4e34fe4b7762 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -28,6 +28,9 @@ struct btrfs_log_ctx {
- 	struct list_head list;
- 	/* Only used for fast fsyncs. */
- 	struct list_head ordered_extents;
-+	struct list_head conflict_inodes;
-+	int num_conflict_inodes;
-+	bool logging_conflict_inodes;
- };
  
- static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx,
-@@ -41,6 +44,9 @@ static inline void btrfs_init_log_ctx(struct btrfs_log_ctx *ctx,
- 	ctx->inode = inode;
- 	INIT_LIST_HEAD(&ctx->list);
- 	INIT_LIST_HEAD(&ctx->ordered_extents);
-+	INIT_LIST_HEAD(&ctx->conflict_inodes);
-+	ctx->num_conflict_inodes = 0;
-+	ctx->logging_conflict_inodes = false;
- }
- 
- static inline void btrfs_release_log_ctx_extents(struct btrfs_log_ctx *ctx)
 -- 
 2.35.1
 

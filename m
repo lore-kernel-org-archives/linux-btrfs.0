@@ -2,112 +2,98 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40B14C25B08
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 10:58:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AED17C25B08
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 11:22:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235987AbiHQK6j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 06:58:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54200 "EHLO
+        id S234752AbiHQLW6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 07:22:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38294 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239161AbiHQK6Y (ORCPT
+        with ESMTP id S231172AbiHQLW4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 06:58:24 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A695482D04
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 03:58:06 -0700 (PDT)
+        Wed, 17 Aug 2022 07:22:56 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F05E7606A4
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 04:22:55 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 8DBB1B81CD1
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 10:58:05 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E2C2BC433D6;
-        Wed, 17 Aug 2022 10:58:03 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 99239614C7
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:22:55 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7212DC433D7
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:22:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1660733884;
-        bh=fpNl77PKVy5YvpWQE8bHFhzvfq8TcYauJJ04enyi4HQ=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=G0MCo/5tg/TH13sAfK7l+SXSKj4cw3PeaafSzR2AYFWHWs/HedBGSVqM0RtBqHU6P
-         0oJw3pOVGWVVZZJoEtret8EZnT/1XPHc+UbJbhjKRkTwCL/ou56CgRZFvsqavkK3Nh
-         h+4Y05DeMTYde6pt/cvPu7TyufqhlQg7BNaROVnOQPBwVsVTJa9FRbkfxfUtvNroXt
-         rxWEcmIPfAXptRJBvxsTxHQ1yJ3D4sRNqD7a55MZegHtve5GobFW+QJtApRnr2XUIU
-         OMPqfLMJ+hTabmA6RYAtBWDzhQJGB4NAubHAgtI4bqcf8ZcFZqJuaQ5vaTyit1chLx
-         rSXc45Mr4crEw==
-Date:   Wed, 17 Aug 2022 11:58:00 +0100
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Check if root is readonly while setting
- security xattr
-Message-ID: <20220817105800.GA2823553@falcondesktop>
-References: <20220816214256.t5ikj7pyqe6l6qgn@fiona>
+        s=k20201202; t=1660735375;
+        bh=j/ODHUZcA8OtCTa/SH4CvYiotd90a7Eerw3O0tw+FbI=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=kRRh44esS593MoSSbTEPM80OPYc4Ku4ShE5G24kxN+Uda74NO2TOgB0TAynPpmkp4
+         xTUHg1uXAMha2PHcYIYaREjD4AyHkvvsDZ1u4e0Qx65GzHXf41ju2xgWESsa8OgJmr
+         Ror6bJdWec2yWYsuy1uANfBpst7ravlc0mF7QnMqVvcGUkw73oeV+wkwFwMHNyCEiT
+         4jBfdETVfRrPXal8Umi0XDF5oCLjq0mw4e7NK1b1leGau1oKQRQml8AI/QEeGDfMON
+         wH29CiDiOjglaAsyL66HUvyfxZyIClnCMLXre8iNWfizCxQS+rBq3q9GXU8k5YOmWa
+         Uy8p+jqFjCOhw==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 01/15] btrfs: don't drop dir index range items when logging a directory
+Date:   Wed, 17 Aug 2022 12:22:34 +0100
+Message-Id: <f3363d4a3f46944f5788940871b00b2cc4009c5e.1660735024.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1660735024.git.fdmanana@suse.com>
+References: <cover.1660735024.git.fdmanana@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220816214256.t5ikj7pyqe6l6qgn@fiona>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Aug 16, 2022 at 04:42:56PM -0500, Goldwyn Rodrigues wrote:
-> For a filesystem which has btrfs read-only property set to true, all
-> write operations including xattr should be denied. However, security
-> xattr can still be changed even if btrfs ro property is true.
-> 
-> This happens because xattr_permission() does not have any restrictions
-> on security.*, system.*  and in some cases trusted.* from VFS and
-> the decision is left to the underlying filesystem. See comments in
-> xattr_permission() for more details.
-> 
-> This patch checks if the root is read-only before performing the set
-> xattr operation.
-> 
-> Testcase: 
-> 
-> #!/bin/bash
-> 
-> DEV=/dev/vdb
-> MNT=/mnt
-> 
-> mkfs.btrfs -f $DEV
-> mount $DEV $MNT
-> echo "file one" > $MNT/f1
-> 
-> setfattr -n "security.one" -v 2 $MNT/f1
-> btrfs property set /mnt ro true
-> 
-> # Following statement should fail
-> setfattr -n "security.one" -v 1 $MNT/f1
-> 
-> umount $MNT
-> 
-> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+When logging a directory that was previously logged in the current
+transaction, we drop all the range items (BTRFS_DIR_LOG_INDEX_KEY key
+type). This is because we will process all leaves in the subvolume's tree
+that were changed in the current transaction and then add range items for
+covering new dir index items and deleted dir index items, which could
+cover now a larger range than before.
 
-Looks good now, thanks.
+We used to fail if we tried to insert a range item key that already
+exists, so we dropped all range items to avoid failing. However nowadays,
+since commit 750ee454908e90 ("btrfs: fix assertion failure when logging
+directory key range item"), we simply update any range item that already
+exists, increasing its range's last dir index if needed. Since the range
+covered by a range item can never decrease, due to the fact that dir index
+values come from a monotonically increasing counter and are never reused,
+we can stop dropping all range items before we start logging a directory.
+By not dropping the items we can avoid having occasional tree rebalance
+operations.
 
-Btw, as noted in the review of the test case for fstests, the subject
-should be "btrfs: check ..." and not "btrfs: Check ...", as that's
-the convention used for btrfs. David will likely change that when
-picking the patch, as usual.
+This will also be needed for an incoming change where we start logging
+delayed items directly, without flushing them first.
 
-> 
-> 
-> diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-> index 7421abcf325a..5bb8d8c86311 100644
-> --- a/fs/btrfs/xattr.c
-> +++ b/fs/btrfs/xattr.c
-> @@ -371,6 +371,9 @@ static int btrfs_xattr_handler_set(const struct xattr_handler *handler,
->  				   const char *name, const void *buffer,
->  				   size_t size, int flags)
->  {
-> +	if (btrfs_root_readonly(BTRFS_I(inode)->root))
-> +		return -EROFS;
-> +
->  	name = xattr_full_name(handler, name);
->  	return btrfs_setxattr_trans(inode, name, buffer, size, flags);
->  }
-> 
-> -- 
-> Goldwyn
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/tree-log.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 4d2d19fea112..cffd15e23614 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -5716,14 +5716,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	 * copies of everything.
+ 	 */
+ 	if (S_ISDIR(inode->vfs_inode.i_mode)) {
+-		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
+-
+ 		clear_bit(BTRFS_INODE_COPY_EVERYTHING, &inode->runtime_flags);
+-		if (inode_only == LOG_INODE_EXISTS)
+-			max_key_type = BTRFS_XATTR_ITEM_KEY;
+ 		if (ctx->logged_before)
+ 			ret = drop_inode_items(trans, log, path, inode,
+-					       max_key_type);
++					       BTRFS_XATTR_ITEM_KEY);
+ 	} else {
+ 		if (inode_only == LOG_INODE_EXISTS && ctx->logged_before) {
+ 			/*
+-- 
+2.35.1
+

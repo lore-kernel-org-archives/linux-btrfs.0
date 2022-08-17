@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2B26C2BB41
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 11:23:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AA83C3F6B0
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 11:23:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236331AbiHQLXK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 07:23:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38694 "EHLO
+        id S238986AbiHQLXL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 07:23:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38780 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229627AbiHQLXH (ORCPT
+        with ESMTP id S234305AbiHQLXI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 07:23:07 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7538C113
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 04:23:05 -0700 (PDT)
+        Wed, 17 Aug 2022 07:23:08 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02F2DC37
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 04:23:06 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 1BDD4B81CD1
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 74CC5614C3
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:23:06 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5739CC433C1
         for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:23:05 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5BD37C433C1
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 11:23:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1660735383;
-        bh=x8BSqGugTS6NCFR4Ed40bSJN1R2bqTqkyp500w7s47M=;
+        s=k20201202; t=1660735385;
+        bh=OJZspfzaf2WbzsDN/PF7oZk85lEqPaI5zcTz7WM9OU8=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=e8Ni7L5mXZNT5D/5Cy0yA8rPha+fL/1jc3vN7WcI7BMjL6XypaOjf9tZ2ekTwMfKA
-         YtTfHQ90xsjXBNENkuNfwoZJp0l3C3CZaOL2Ov3tBa9SP5/LmdEcva2yIotPLFby5a
-         gsD0Qni5UxFEVVi9vgVogvbv+Kpo4gvATEE0hUkAR0QQc9OrLWf3f3SaJf3RfHLhu0
-         zJnL4e0MIFpyZ7AokoZkkOIMCPH8DoR1fx6rydBScwfcDPr79K3LOpFoTYAT3vMdu8
-         H13rYgVF81sti7Uzwapm/pD087b89RLiuxajQoBFFRdL+ddihbOkg2ZJxBz1jdERlw
-         CdYkaxMajvEfg==
+        b=E5viYOm1R7cmEYPxzQ+8mRwwZJL+xHq3M+HhMtFgHFq3y9ENnmULSVrDl8U6i/HPn
+         xN5AETIwwZPsAbzVaxJYH1kHE0hvoIPgVFg3YWMptynwUXFu3mcBJrJoenHQ3RrA3c
+         CPX2b8A/4rvz1PbzHSVcPZq9Vq19Roz+FaTMIQKpsu/S2AoKWSamHUh/WmBNRuYro0
+         sp0zLGrqx9MTCAn4GbOlXMH9cI9dzdl2toOqMBxtQjP3QuU5ayfrbtTVitzIo8AtsK
+         P5sypTikiI4V/Jeuis2N9aQnxXusbzlCmWdXsmpphRSxpKSyTTd99Ympb7ywqLKv+k
+         f40xHEGR000fw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/15] btrfs: search for last logged dir index if it's not cached in the inode
-Date:   Wed, 17 Aug 2022 12:22:43 +0100
-Message-Id: <a9117bbdd5d3d0c4378a599eb6d856b577aea6c3.1660735025.git.fdmanana@suse.com>
+Subject: [PATCH 12/15] btrfs: move log_new_dir_dentries() above btrfs_log_inode()
+Date:   Wed, 17 Aug 2022 12:22:45 +0100
+Message-Id: <529af5c2be46c45d79abb3a8a6f2870fbf6169bd.1660735025.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1660735024.git.fdmanana@suse.com>
 References: <cover.1660735024.git.fdmanana@suse.com>
@@ -48,98 +48,370 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The key offset of the last dir index item that was logged is stored in
-the inode's last_dir_index_offset field. However that field is not
-persisted in the inode item or elsewhere, so if the inode gets evicted
-and reloaded, it gets a value of (u64)-1, so that when we are logging
-dir index items we check if they were logged before, to avoid attempts
-to insert duplicated keys and fallback to a transaction commit.
-
-Improve on this by searching for the last dir index that was logged when
-we start logging a directory if the inode's last_dir_index_offset is not
-set (has a value of (u64)-1) and it was not logged before. This avoids
-checking if each dir index item we find was already logged before.
-
-This will also be needed for an incoming change where we start logging
-delayed items directly, without flushing them first.
+The static function log_new_dir_dentries() is currently defined below
+btrfs_log_inode(), but in an upcoming patch a new function is introduced
+that is called by btrfs_log_inode() and this new function needs to call
+log_new_dir_dentries(). So move log_new_dir_dentries() to a location
+between btrfs_log_inode() and need_log_inode() (the later is called by
+log_new_dir_dentries()).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 54 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ fs/btrfs/tree-log.c | 334 ++++++++++++++++++++++----------------------
+ 1 file changed, 167 insertions(+), 167 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 94026098bb68..4678bf5d6224 100644
+index 921f344a051f..e92a0b3b8088 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3995,6 +3995,56 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 	return err;
+@@ -5345,6 +5345,173 @@ static bool need_log_inode(const struct btrfs_trans_handle *trans,
+ 	return true;
  }
  
++struct btrfs_dir_list {
++	u64 ino;
++	struct list_head list;
++};
++
 +/*
-+ * If the inode was logged before and it was evicted, then its
-+ * last_dir_index_offset is (u64)-1, so we don't the value of the last index
-+ * key offset. If that's the case, search for it and update the inode. This
-+ * is to avoid lookups in the log tree every time we try to insert a dir index
-+ * key from a leaf changed in the current transaction, and to allow us to always
-+ * do batch insertions of dir index keys.
++ * Log the inodes of the new dentries of a directory.
++ * See process_dir_items_leaf() for details about why it is needed.
++ * This is a recursive operation - if an existing dentry corresponds to a
++ * directory, that directory's new entries are logged too (same behaviour as
++ * ext3/4, xfs, f2fs, reiserfs, nilfs2). Note that when logging the inodes
++ * the dentries point to we do not acquire their VFS lock, otherwise lockdep
++ * complains about the following circular lock dependency / possible deadlock:
++ *
++ *        CPU0                                        CPU1
++ *        ----                                        ----
++ * lock(&type->i_mutex_dir_key#3/2);
++ *                                            lock(sb_internal#2);
++ *                                            lock(&type->i_mutex_dir_key#3/2);
++ * lock(&sb->s_type->i_mutex_key#14);
++ *
++ * Where sb_internal is the lock (a counter that works as a lock) acquired by
++ * sb_start_intwrite() in btrfs_start_transaction().
++ * Not acquiring the VFS lock of the inodes is still safe because:
++ *
++ * 1) For regular files we log with a mode of LOG_INODE_EXISTS. It's possible
++ *    that while logging the inode new references (names) are added or removed
++ *    from the inode, leaving the logged inode item with a link count that does
++ *    not match the number of logged inode reference items. This is fine because
++ *    at log replay time we compute the real number of links and correct the
++ *    link count in the inode item (see replay_one_buffer() and
++ *    link_to_fixup_dir());
++ *
++ * 2) For directories we log with a mode of LOG_INODE_ALL. It's possible that
++ *    while logging the inode's items new index items (key type
++ *    BTRFS_DIR_INDEX_KEY) are added to fs/subvol tree and the logged inode item
++ *    has a size that doesn't match the sum of the lengths of all the logged
++ *    names - this is ok, not a problem, because at log replay time we set the
++ *    directory's i_size to the correct value (see replay_one_name() and
++ *    do_overwrite_item()).
 + */
-+static int update_last_dir_index_offset(struct btrfs_inode *inode,
-+					struct btrfs_path *path,
-+					const struct btrfs_log_ctx *ctx)
++static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
++				struct btrfs_inode *start_inode,
++				struct btrfs_log_ctx *ctx)
 +{
-+	const u64 ino = btrfs_ino(inode);
-+	struct btrfs_key key;
-+	int ret;
++	struct btrfs_root *root = start_inode->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_path *path;
++	LIST_HEAD(dir_list);
++	struct btrfs_dir_list *dir_elem;
++	u64 ino = btrfs_ino(start_inode);
++	int ret = 0;
 +
-+	lockdep_assert_held(&inode->log_mutex);
-+
-+	if (inode->last_dir_index_offset != (u64)-1)
++	/*
++	 * If we are logging a new name, as part of a link or rename operation,
++	 * don't bother logging new dentries, as we just want to log the names
++	 * of an inode and that any new parents exist.
++	 */
++	if (ctx->logging_new_name)
 +		return 0;
 +
-+	if (!ctx->logged_before) {
-+		inode->last_dir_index_offset = BTRFS_DIR_START_INDEX - 1;
-+		return 0;
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	while (true) {
++		struct extent_buffer *leaf;
++		struct btrfs_key min_key;
++		bool continue_curr_inode = true;
++		int nritems;
++		int i;
++
++		min_key.objectid = ino;
++		min_key.type = BTRFS_DIR_INDEX_KEY;
++		min_key.offset = 0;
++again:
++		btrfs_release_path(path);
++		ret = btrfs_search_forward(root, &min_key, path, trans->transid);
++		if (ret < 0) {
++			break;
++		} else if (ret > 0) {
++			ret = 0;
++			goto next;
++		}
++
++		leaf = path->nodes[0];
++		nritems = btrfs_header_nritems(leaf);
++		for (i = path->slots[0]; i < nritems; i++) {
++			struct btrfs_dir_item *di;
++			struct btrfs_key di_key;
++			struct inode *di_inode;
++			int log_mode = LOG_INODE_EXISTS;
++			int type;
++
++			btrfs_item_key_to_cpu(leaf, &min_key, i);
++			if (min_key.objectid != ino ||
++			    min_key.type != BTRFS_DIR_INDEX_KEY) {
++				continue_curr_inode = false;
++				break;
++			}
++
++			di = btrfs_item_ptr(leaf, i, struct btrfs_dir_item);
++			type = btrfs_dir_type(leaf, di);
++			if (btrfs_dir_transid(leaf, di) < trans->transid)
++				continue;
++			btrfs_dir_item_key_to_cpu(leaf, di, &di_key);
++			if (di_key.type == BTRFS_ROOT_ITEM_KEY)
++				continue;
++
++			btrfs_release_path(path);
++			di_inode = btrfs_iget(fs_info->sb, di_key.objectid, root);
++			if (IS_ERR(di_inode)) {
++				ret = PTR_ERR(di_inode);
++				goto out;
++			}
++
++			if (!need_log_inode(trans, BTRFS_I(di_inode))) {
++				btrfs_add_delayed_iput(di_inode);
++				break;
++			}
++
++			ctx->log_new_dentries = false;
++			if (type == BTRFS_FT_DIR)
++				log_mode = LOG_INODE_ALL;
++			ret = btrfs_log_inode(trans, BTRFS_I(di_inode),
++					      log_mode, ctx);
++			btrfs_add_delayed_iput(di_inode);
++			if (ret)
++				goto out;
++			if (ctx->log_new_dentries) {
++				dir_elem = kmalloc(sizeof(*dir_elem), GFP_NOFS);
++				if (!dir_elem) {
++					ret = -ENOMEM;
++					goto out;
++				}
++				dir_elem->ino = di_key.objectid;
++				list_add_tail(&dir_elem->list, &dir_list);
++			}
++			break;
++		}
++
++		if (continue_curr_inode && min_key.offset < (u64)-1) {
++			min_key.offset++;
++			goto again;
++		}
++
++next:
++		if (list_empty(&dir_list))
++			break;
++
++		dir_elem = list_first_entry(&dir_list, struct btrfs_dir_list, list);
++		ino = dir_elem->ino;
++		list_del(&dir_elem->list);
++		kfree(dir_elem);
 +	}
-+
-+	key.objectid = ino;
-+	key.type = BTRFS_DIR_INDEX_KEY;
-+	key.offset = (u64)-1;
-+
-+	ret = btrfs_search_slot(NULL, inode->root->log_root, &key, path, 0, 0);
-+	if (ret <= 0)
-+		goto out;
-+
-+	ret = 0;
-+	inode->last_dir_index_offset = BTRFS_DIR_START_INDEX - 1;
-+
-+	if (path->slots[0] == 0)
-+		goto out;
-+
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0] - 1);
-+	if (key.objectid == ino && key.type == BTRFS_DIR_INDEX_KEY)
-+		inode->last_dir_index_offset = key.offset;
-+
 +out:
-+	btrfs_release_path(path);
++	btrfs_free_path(path);
++	if (ret) {
++		struct btrfs_dir_list *next;
++
++		list_for_each_entry_safe(dir_elem, next, &dir_list, list)
++			kfree(dir_elem);
++	}
 +
 +	return ret;
 +}
 +
- /*
-  * logging directories is very similar to logging inodes, We find all the items
-  * from the current transaction and write them to the log.
-@@ -4017,6 +4067,10 @@ static noinline int log_directory_changes(struct btrfs_trans_handle *trans,
- 	u64 max_key;
- 	int ret;
+ struct btrfs_ino_list {
+ 	u64 ino;
+ 	u64 parent;
+@@ -5981,173 +6148,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
  
-+	ret = update_last_dir_index_offset(inode, path, ctx);
-+	if (ret)
-+		return ret;
-+
- 	min_key = BTRFS_DIR_START_INDEX;
- 	max_key = 0;
- 	ctx->last_dir_item_offset = inode->last_dir_index_offset;
+-struct btrfs_dir_list {
+-	u64 ino;
+-	struct list_head list;
+-};
+-
+-/*
+- * Log the inodes of the new dentries of a directory.
+- * See process_dir_items_leaf() for details about why it is needed.
+- * This is a recursive operation - if an existing dentry corresponds to a
+- * directory, that directory's new entries are logged too (same behaviour as
+- * ext3/4, xfs, f2fs, reiserfs, nilfs2). Note that when logging the inodes
+- * the dentries point to we do not acquire their VFS lock, otherwise lockdep
+- * complains about the following circular lock dependency / possible deadlock:
+- *
+- *        CPU0                                        CPU1
+- *        ----                                        ----
+- * lock(&type->i_mutex_dir_key#3/2);
+- *                                            lock(sb_internal#2);
+- *                                            lock(&type->i_mutex_dir_key#3/2);
+- * lock(&sb->s_type->i_mutex_key#14);
+- *
+- * Where sb_internal is the lock (a counter that works as a lock) acquired by
+- * sb_start_intwrite() in btrfs_start_transaction().
+- * Not acquiring the VFS lock of the inodes is still safe because:
+- *
+- * 1) For regular files we log with a mode of LOG_INODE_EXISTS. It's possible
+- *    that while logging the inode new references (names) are added or removed
+- *    from the inode, leaving the logged inode item with a link count that does
+- *    not match the number of logged inode reference items. This is fine because
+- *    at log replay time we compute the real number of links and correct the
+- *    link count in the inode item (see replay_one_buffer() and
+- *    link_to_fixup_dir());
+- *
+- * 2) For directories we log with a mode of LOG_INODE_ALL. It's possible that
+- *    while logging the inode's items new index items (key type
+- *    BTRFS_DIR_INDEX_KEY) are added to fs/subvol tree and the logged inode item
+- *    has a size that doesn't match the sum of the lengths of all the logged
+- *    names - this is ok, not a problem, because at log replay time we set the
+- *    directory's i_size to the correct value (see replay_one_name() and
+- *    do_overwrite_item()).
+- */
+-static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+-				struct btrfs_inode *start_inode,
+-				struct btrfs_log_ctx *ctx)
+-{
+-	struct btrfs_root *root = start_inode->root;
+-	struct btrfs_fs_info *fs_info = root->fs_info;
+-	struct btrfs_path *path;
+-	LIST_HEAD(dir_list);
+-	struct btrfs_dir_list *dir_elem;
+-	u64 ino = btrfs_ino(start_inode);
+-	int ret = 0;
+-
+-	/*
+-	 * If we are logging a new name, as part of a link or rename operation,
+-	 * don't bother logging new dentries, as we just want to log the names
+-	 * of an inode and that any new parents exist.
+-	 */
+-	if (ctx->logging_new_name)
+-		return 0;
+-
+-	path = btrfs_alloc_path();
+-	if (!path)
+-		return -ENOMEM;
+-
+-	while (true) {
+-		struct extent_buffer *leaf;
+-		struct btrfs_key min_key;
+-		bool continue_curr_inode = true;
+-		int nritems;
+-		int i;
+-
+-		min_key.objectid = ino;
+-		min_key.type = BTRFS_DIR_INDEX_KEY;
+-		min_key.offset = 0;
+-again:
+-		btrfs_release_path(path);
+-		ret = btrfs_search_forward(root, &min_key, path, trans->transid);
+-		if (ret < 0) {
+-			break;
+-		} else if (ret > 0) {
+-			ret = 0;
+-			goto next;
+-		}
+-
+-		leaf = path->nodes[0];
+-		nritems = btrfs_header_nritems(leaf);
+-		for (i = path->slots[0]; i < nritems; i++) {
+-			struct btrfs_dir_item *di;
+-			struct btrfs_key di_key;
+-			struct inode *di_inode;
+-			int log_mode = LOG_INODE_EXISTS;
+-			int type;
+-
+-			btrfs_item_key_to_cpu(leaf, &min_key, i);
+-			if (min_key.objectid != ino ||
+-			    min_key.type != BTRFS_DIR_INDEX_KEY) {
+-				continue_curr_inode = false;
+-				break;
+-			}
+-
+-			di = btrfs_item_ptr(leaf, i, struct btrfs_dir_item);
+-			type = btrfs_dir_type(leaf, di);
+-			if (btrfs_dir_transid(leaf, di) < trans->transid)
+-				continue;
+-			btrfs_dir_item_key_to_cpu(leaf, di, &di_key);
+-			if (di_key.type == BTRFS_ROOT_ITEM_KEY)
+-				continue;
+-
+-			btrfs_release_path(path);
+-			di_inode = btrfs_iget(fs_info->sb, di_key.objectid, root);
+-			if (IS_ERR(di_inode)) {
+-				ret = PTR_ERR(di_inode);
+-				goto out;
+-			}
+-
+-			if (!need_log_inode(trans, BTRFS_I(di_inode))) {
+-				btrfs_add_delayed_iput(di_inode);
+-				break;
+-			}
+-
+-			ctx->log_new_dentries = false;
+-			if (type == BTRFS_FT_DIR)
+-				log_mode = LOG_INODE_ALL;
+-			ret = btrfs_log_inode(trans, BTRFS_I(di_inode),
+-					      log_mode, ctx);
+-			btrfs_add_delayed_iput(di_inode);
+-			if (ret)
+-				goto out;
+-			if (ctx->log_new_dentries) {
+-				dir_elem = kmalloc(sizeof(*dir_elem), GFP_NOFS);
+-				if (!dir_elem) {
+-					ret = -ENOMEM;
+-					goto out;
+-				}
+-				dir_elem->ino = di_key.objectid;
+-				list_add_tail(&dir_elem->list, &dir_list);
+-			}
+-			break;
+-		}
+-
+-		if (continue_curr_inode && min_key.offset < (u64)-1) {
+-			min_key.offset++;
+-			goto again;
+-		}
+-
+-next:
+-		if (list_empty(&dir_list))
+-			break;
+-
+-		dir_elem = list_first_entry(&dir_list, struct btrfs_dir_list, list);
+-		ino = dir_elem->ino;
+-		list_del(&dir_elem->list);
+-		kfree(dir_elem);
+-	}
+-out:
+-	btrfs_free_path(path);
+-	if (ret) {
+-		struct btrfs_dir_list *next;
+-
+-		list_for_each_entry_safe(dir_elem, next, &dir_list, list)
+-			kfree(dir_elem);
+-	}
+-
+-	return ret;
+-}
+-
+ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_inode *inode,
+ 				 struct btrfs_log_ctx *ctx)
 -- 
 2.35.1
 

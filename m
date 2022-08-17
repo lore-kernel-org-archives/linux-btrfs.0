@@ -2,337 +2,197 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13BBBC2BB41
-	for <linux-btrfs@archiver.kernel.org>; Tue, 16 Aug 2022 23:12:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 21486C25B08
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 04:33:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237545AbiHPXM3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 16 Aug 2022 19:12:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49822 "EHLO
+        id S231495AbiHQEds (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 00:33:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54220 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237491AbiHPXM0 (ORCPT
+        with ESMTP id S229448AbiHQEdr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 16 Aug 2022 19:12:26 -0400
-Received: from mail-pg1-x52a.google.com (mail-pg1-x52a.google.com [IPv6:2607:f8b0:4864:20::52a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D77AD923E3
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2022 16:12:23 -0700 (PDT)
-Received: by mail-pg1-x52a.google.com with SMTP id s206so10575633pgs.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Aug 2022 16:12:23 -0700 (PDT)
+        Wed, 17 Aug 2022 00:33:47 -0400
+Received: from mail-lf1-x12b.google.com (mail-lf1-x12b.google.com [IPv6:2a00:1450:4864:20::12b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9458171725;
+        Tue, 16 Aug 2022 21:33:46 -0700 (PDT)
+Received: by mail-lf1-x12b.google.com with SMTP id e15so17614283lfs.0;
+        Tue, 16 Aug 2022 21:33:46 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=osandov-com.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc;
-        bh=3a4TqtkHcbsVC/tLvafFZxS6Ql3tQG6iF3M5JznUDrE=;
-        b=bU5AqjggHqiK4UKq5WuJwZaFJ7MWt8+2E/xjzHhfwcsCzvtOjUqRm7UvHr+j/4sH/Z
-         KHo/LPDzrW7+C5xr7u2l2E5SXeTpDnV/h5MzllkD+ttz68x/PvlzrRBGhR0f+6gwsjot
-         kxVFi3df4BFdcxPCtazSca7dtn2cOkk8k7tLJI1UANFel4U/M6WwVYSIbeBdlyOxRF2Q
-         npFtot3sfE4Z8Q9+dprkxMKq1obOm1aKWlV8MU1eZinYv78V2WtcTNf96fkpTVrpUcOv
-         astAw/uJxhSyrdQNhQxKhIR1hsBsvQ/q9XdRB5aCnqDnqJTDYvUGftIpGvgGfwFevx+e
-         UOhA==
+        d=gmail.com; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc;
+        bh=nOdb6n13ohDqgquF5+hz9jSYLtO6Hr9UX14Xr/YTGlM=;
+        b=dMkCJ8QcXk8CCKs+JMzTMBHDLD4h16lKjhPfa818z1aMbkmqmpn4lSJ/hn0QuEWAWS
+         OdymGqhTo4Pn/bNpk8llqrNNi6dl8VAXbfkDlgq0LGsfqFbAcRfU/QkVvvQTJ7XjPdlo
+         G+V2u884J/ZowvVBoBep11BxqGF+P30pLFDrYUsxDKLvHcyrL3YTPIhXXvypH5+ZedHM
+         Q6nLlNLv4ELt/1W812op/++Q7j7T/KiIOBtNGNFaXYckan6OxeLrFHGSmGqS9Sv/ONIM
+         vOholq/pwx6EFwcprMgfhLQiGkgA1WhOigSaEZYsgkNRN8sM2DbUANkpN8czCaKsVb/N
+         LnWg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc;
-        bh=3a4TqtkHcbsVC/tLvafFZxS6Ql3tQG6iF3M5JznUDrE=;
-        b=SJlmMuYuVGlyr3DCqwmO3VInZWBt5YPzpyme7mudp9NzdKflVI+p9Ium0JV+57Ng9C
-         y+6SqK4A8FwfBTOZV/GGGRbLDEw2NTgnc8O3cFK0Yv3FXC9Iv0G5Etc2lKnKE7vKgsL9
-         I0SmIzI5UELGXKJ1rYmM0Zu5t+2ypvTpKMxWBhnt1kG0cYOKI0qTqdIso7l3bZtQrbIi
-         mAh8/9Hnfb+EJ+87QvADlyysL+N2JUHtlrj1nxA1S56uywuyDQ9fi+YaGDOdbelRztua
-         DJ1mTkZnC+xii+67L7l7eI9pgU7EgAFIb2BHMIHvG0Wl9ZuWC226NETtw4j7C/036phl
-         Zp5w==
-X-Gm-Message-State: ACgBeo3xoLvBNyzqFDSW4A0ladzU/pgv8NuCyXpv2aIx4nom+6bnjBnN
-        aWDgoTEU3c+07ebLmmpjCC2uBgCmpAD7dg==
-X-Google-Smtp-Source: AA6agR4P8GawT46JaZhgdgJy9gI7GPjrL9IdhL78OGEewyVVfFEHVGJclLEsmKSQaE/nNugDrISVnA==
-X-Received: by 2002:a05:6a00:a19:b0:535:49ee:da43 with SMTP id p25-20020a056a000a1900b0053549eeda43mr3321689pfh.53.1660691542998;
-        Tue, 16 Aug 2022 16:12:22 -0700 (PDT)
-Received: from relinquished.hsd1.wa.comcast.net ([2601:602:a300:cc0::f972])
-        by smtp.gmail.com with ESMTPSA id p3-20020a170902e74300b0016c4f0065b4sm9721316plf.84.2022.08.16.16.12.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 16 Aug 2022 16:12:22 -0700 (PDT)
-From:   Omar Sandoval <osandov@osandov.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     kernel-team@fb.com
-Subject: [PATCH 1/2] btrfs: fix space cache corruption and potential double allocations
-Date:   Tue, 16 Aug 2022 16:12:15 -0700
-Message-Id: <9ee45db86433bb8e4d7daff35502db241c69ad16.1660690698.git.osandov@fb.com>
-X-Mailer: git-send-email 2.37.2
-In-Reply-To: <cover.1660690698.git.osandov@fb.com>
-References: <cover.1660690698.git.osandov@fb.com>
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc;
+        bh=nOdb6n13ohDqgquF5+hz9jSYLtO6Hr9UX14Xr/YTGlM=;
+        b=OsWWGCltHbq4mCPfNKmMeUnoPo8nL2aWSTpUCULgcJ6uHA1/MkzE0mhb9MdNLvMrbR
+         qzJy8VYknUaVoqKpuaUYK0YttVY1loZub+QFigT5CaEOktrZFtuG+eB9Uxu60/MBZna5
+         0kEn/mGZjyQVf72103GM8mBtaOJEyhyvF4oLRKzOLZLcOV+ywCQBwRP/ZnY1tEAgiKf8
+         9zWvy6G02rWI3AcEwvwRRMY/R+bpGXNA58X92i3WBQOwGkwnVmLBrW4Dd4Q2zF3ldM4w
+         HDTRBeQv+kUSnVWAuS2CNOjetpxmDq34hvxPdpEZSYhQqu8mOd+qt/ll6gH5ajXNHRpp
+         5FuA==
+X-Gm-Message-State: ACgBeo0sr+qfR+HvFg7/OL6DrgeUfAUgjrvLSJ2g99h330+DtXvN9VPz
+        D4M9qwj3uif0rpaLFAb4XgAjO7Td4TyXHoPar3Lh1sVmggeuVA==
+X-Google-Smtp-Source: AA6agR4ayOuxJuJF95sigIXKXvupZgqxuRi33BQPTzqVIVjNi8KVzdUB91zyQecU/E0l18dwY2r2S77NesDl86NyYpE=
+X-Received: by 2002:a05:6512:12c7:b0:48b:3bc4:10f4 with SMTP id
+ p7-20020a05651212c700b0048b3bc410f4mr7766818lfg.411.1660710824597; Tue, 16
+ Aug 2022 21:33:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20220816175246.42401-1-vishal.moola@gmail.com> <20220816175246.42401-6-vishal.moola@gmail.com>
+In-Reply-To: <20220816175246.42401-6-vishal.moola@gmail.com>
+From:   Ryusuke Konishi <konishi.ryusuke@gmail.com>
+Date:   Wed, 17 Aug 2022 13:33:27 +0900
+Message-ID: <CAKFNMome2DoupJxiNT4YtuMDLUgUD1aevHSExd+M+Q+ghXwaEw@mail.gmail.com>
+Subject: Re: [PATCH v2 5/7] nilfs2: Convert nilfs_find_uncommited_extent() to
+ use filemap_get_folios_contig()
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-nilfs@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@fb.com>
+On Wed, Aug 17, 2022 at 2:54 AM Vishal Moola (Oracle)  wrote:
+>
+> Converted function to use folios throughout. This is in preparation for
+> the removal of find_get_pages_contig(). Now also supports large folios.
+>
+> Also cleaned up an unnecessary if statement - pvec.pages[0]->index > index
+> will always evaluate to false, and filemap_get_folios_contig() returns 0 if
+> there is no folio found at index.
+>
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+> ---
+>
+> v2:
+>   - Fixed a warning regarding a now unused label "out"
+>   - Reported-by: kernel test robot <lkp@intel.com>
+> ---
+>  fs/nilfs2/page.c | 39 +++++++++++++++++----------------------
+>  1 file changed, 17 insertions(+), 22 deletions(-)
+>
+> diff --git a/fs/nilfs2/page.c b/fs/nilfs2/page.c
+> index 3267e96c256c..14629e03d0da 100644
+> --- a/fs/nilfs2/page.c
+> +++ b/fs/nilfs2/page.c
+> @@ -480,13 +480,13 @@ unsigned long nilfs_find_uncommitted_extent(struct inode *inode,
+>                                             sector_t start_blk,
+>                                             sector_t *blkoff)
+>  {
+> -       unsigned int i;
+> +       unsigned int i, nr;
+>         pgoff_t index;
+>         unsigned int nblocks_in_page;
+>         unsigned long length = 0;
+>         sector_t b;
+> -       struct pagevec pvec;
+> -       struct page *page;
+> +       struct folio_batch fbatch;
+> +       struct folio *folio;
+>
+>         if (inode->i_mapping->nrpages == 0)
+>                 return 0;
+> @@ -494,27 +494,24 @@ unsigned long nilfs_find_uncommitted_extent(struct inode *inode,
+>         index = start_blk >> (PAGE_SHIFT - inode->i_blkbits);
+>         nblocks_in_page = 1U << (PAGE_SHIFT - inode->i_blkbits);
+>
+> -       pagevec_init(&pvec);
+> +       folio_batch_init(&fbatch);
+>
+>  repeat:
+> -       pvec.nr = find_get_pages_contig(inode->i_mapping, index, PAGEVEC_SIZE,
+> -                                       pvec.pages);
+> -       if (pvec.nr == 0)
+> +       nr = filemap_get_folios_contig(inode->i_mapping, &index, ULONG_MAX,
+> +                       &fbatch);
+> +       if (nr == 0)
+>                 return length;
+>
+> -       if (length > 0 && pvec.pages[0]->index > index)
+> -               goto out;
+> -
+> -       b = pvec.pages[0]->index << (PAGE_SHIFT - inode->i_blkbits);
+> +       b = fbatch.folios[0]->index << (PAGE_SHIFT - inode->i_blkbits);
+>         i = 0;
+>         do {
+> -               page = pvec.pages[i];
+> +               folio = fbatch.folios[i];
+>
+> -               lock_page(page);
+> -               if (page_has_buffers(page)) {
+> +               folio_lock(folio);
+> +               if (folio_buffers(folio)) {
+>                         struct buffer_head *bh, *head;
+>
+> -                       bh = head = page_buffers(page);
+> +                       bh = head = folio_buffers(folio);
+>                         do {
+>                                 if (b < start_blk)
+>                                         continue;
+> @@ -532,18 +529,16 @@ unsigned long nilfs_find_uncommitted_extent(struct inode *inode,
+>
 
-When testing space_cache v2 on a large set of machines, we encountered a
-few symptoms:
+>                         b += nblocks_in_page;
 
-1. "unable to add free space :-17" (EEXIST) errors.
-2. Missing free space info items, sometimes caught with a "missing free
-   space info for X" error.
-3. Double-accounted space: ranges that were allocated in the extent tree
-   and also marked as free in the free space tree, ranges that were
-   marked as allocated twice in the extent tree, or ranges that were
-   marked as free twice in the free space tree. If the latter made it
-   onto disk, the next reboot would hit the BUG_ON() in
-   add_new_free_space().
-4. On some hosts with no on-disk corruption or error messages, the
-   in-memory space cache (dumped with drgn) disagreed with the free
-   space tree.
+Here, It looks like the block index "b" should be updated with the
+number of blocks in the
+folio because the loop is now per folio, not per page.
 
-All of these symptoms have the same underlying cause: a race between
-caching the free space for a block group and returning free space to the
-in-memory space cache for pinned extents causes us to double-add a free
-range to the space cache. This race exists when free space is cached
-from the free space tree (space_cache=v2) or the extent tree
-(nospace_cache, or space_cache=v1 if the cache needs to be regenerated).
-struct btrfs_block_group::last_byte_to_unpin and struct
-btrfs_block_group::progress are supposed to protect against this race,
-but commit d0c2f4fa555e ("btrfs: make concurrent fsyncs wait less when
-waiting for a transaction commit") subtly broke this by allowing
-multiple transactions to be unpinning extents at the same time.
+Instead of replacing it with a calculation that uses folio_size(folio)
+or folio_shift(folio),
+I think it would be better to move the calculation of "b" inside the
+branch where the folio
+has buffers as follows:
 
-Specifically, the race is as follows:
+                if (folio_buffers(folio)) {
+                        struct buffer_head *bh, *head;
+                        sector_t b;
 
-1. An extent is deleted from an uncached block group in transaction A.
-2. btrfs_commit_transaction() is called for transaction A.
-3. btrfs_run_delayed_refs() -> __btrfs_free_extent() runs the delayed
-   ref for the deleted extent.
-4. __btrfs_free_extent() -> do_free_extent_accounting() ->
-   add_to_free_space_tree() adds the deleted extent back to the free
-   space tree.
-5. do_free_extent_accounting() -> btrfs_update_block_group() ->
-   btrfs_cache_block_group() queues up the block group to get cached.
-   block_group->progress is set to block_group->start.
-6. btrfs_commit_transaction() for transaction A calls
-   switch_commit_roots(). It sets block_group->last_byte_to_unpin to
-   block_group->progress, which is block_group->start because the block
-   group hasn't been cached yet.
-7. The caching thread gets to our block group. Since the commit roots
-   were already switched, load_free_space_tree() sees the deleted extent
-   as free and adds it to the space cache. It finishes caching and sets
-   block_group->progress to U64_MAX.
-8. btrfs_commit_transaction() advances transaction A to
-   TRANS_STATE_SUPER_COMMITTED.
-9. fsync calls btrfs_commit_transaction() for transaction B. Since
-   transaction A is already in TRANS_STATE_SUPER_COMMITTED and the
-   commit is for fsync, it advances.
-10. btrfs_commit_transaction() for transaction B calls
-    switch_commit_roots(). This time, the block group has already been
-    cached, so it sets block_group->last_byte_to_unpin to U64_MAX.
-11. btrfs_commit_transaction() for transaction A calls
-    btrfs_finish_extent_commit(), which calls unpin_extent_range() for
-    the deleted extent. It sees last_byte_to_unpin set to U64_MAX (by
-    transaction B!), so it adds the deleted extent to the space cache
-    again!
+                        b = folio->index << (PAGE_SHIFT - inode->i_blkbits);
+                        bh = head = folio_buffers(folio);
+                        ...
+               } else if (length > 0) {
+                       goto out_locked;
+               }
 
-This explains all of our symptoms above:
+This way, we can remove calculations for the block index "b" outside
+the above part
+and the variable "nblocks_in_page" as well.
 
-* If the sequence of events is exactly as described above, when the free
-  space is re-added in step 11, it will fail with EEXIST.
-* If another thread reallocates the deleted extent in between steps 7
-  and 11, then step 11 will silently re-add that space to the space
-  cache as free even though it is actually allocated. Then, if that
-  space is allocated *again*, the free space tree will be corrupted
- (namely, the wrong item will be deleted).
-* If we don't catch this free space tree corruption, it will continue
-  to get worse as extents are deleted and reallocated.
+Thanks,
+Ryusuke Konishi
 
-The v1 space_cache is synchronously loaded when an extent is deleted
-(btrfs_update_block_group() with alloc=0 calls btrfs_cache_block_group()
-with load_cache_only=1), so it is not normally affected by this bug.
-However, as noted above, if we fail to load the space cache, we will
-fall back to caching from the extent tree and may hit this bug.
-
-The easiest fix for this race is to also make caching from the free
-space tree or extent tree synchronous. Josef tested this and found no
-performance regressions.
-
-A few extra changes fall out of this change. Namely, this fix does the
-following, with step 2 being the crucial fix:
-
-1. Factor btrfs_caching_ctl_wait_done() out of
-   btrfs_wait_block_group_cache_done() to allow waiting on a caching_ctl
-   that we already hold a reference to.
-2. Change the call in btrfs_cache_block_group() of
-   btrfs_wait_space_cache_v1_finished() to
-   btrfs_caching_ctl_wait_done(), which makes us wait regardless of the
-   space_cache option.
-3. Delete the now unused btrfs_wait_space_cache_v1_finished() and
-   space_cache_v1_done().
-4. Change btrfs_cache_block_group()'s `int load_cache_only` parameter to
-   `bool wait` to more accurately describe its new meaning.
-5. Change a few callers which had a separate call to
-   btrfs_wait_block_group_cache_done() to use wait = true instead.
-6. Make btrfs_wait_block_group_cache_done() static now that it's not
-   used outside of block-group.c anymore.
-
-Fixes: d0c2f4fa555e ("btrfs: make concurrent fsyncs wait less when waiting for a transaction commit")
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/block-group.c | 36 ++++++++++++++----------------------
- fs/btrfs/block-group.h |  3 +--
- fs/btrfs/extent-tree.c | 30 ++++++------------------------
- 3 files changed, 21 insertions(+), 48 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index c8162b8d85a2..1af6fc395a52 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -440,33 +440,26 @@ void btrfs_wait_block_group_cache_progress(struct btrfs_block_group *cache,
- 	btrfs_put_caching_control(caching_ctl);
- }
- 
--int btrfs_wait_block_group_cache_done(struct btrfs_block_group *cache)
-+static int btrfs_caching_ctl_wait_done(struct btrfs_block_group *cache,
-+				      struct btrfs_caching_control *caching_ctl)
-+{
-+	wait_event(caching_ctl->wait, btrfs_block_group_done(cache));
-+	return cache->cached == BTRFS_CACHE_ERROR ? -EIO : 0;
-+}
-+
-+static int btrfs_wait_block_group_cache_done(struct btrfs_block_group *cache)
- {
- 	struct btrfs_caching_control *caching_ctl;
--	int ret = 0;
-+	int ret;
- 
- 	caching_ctl = btrfs_get_caching_control(cache);
- 	if (!caching_ctl)
- 		return (cache->cached == BTRFS_CACHE_ERROR) ? -EIO : 0;
--
--	wait_event(caching_ctl->wait, btrfs_block_group_done(cache));
--	if (cache->cached == BTRFS_CACHE_ERROR)
--		ret = -EIO;
-+	ret = btrfs_caching_ctl_wait_done(cache, caching_ctl);
- 	btrfs_put_caching_control(caching_ctl);
- 	return ret;
- }
- 
--static bool space_cache_v1_done(struct btrfs_block_group *cache)
--{
--	bool ret;
--
--	spin_lock(&cache->lock);
--	ret = cache->cached != BTRFS_CACHE_FAST;
--	spin_unlock(&cache->lock);
--
--	return ret;
--}
--
- #ifdef CONFIG_BTRFS_DEBUG
- static void fragment_free_space(struct btrfs_block_group *block_group)
- {
-@@ -744,9 +737,8 @@ static noinline void caching_thread(struct btrfs_work *work)
- 	btrfs_put_block_group(block_group);
- }
- 
--int btrfs_cache_block_group(struct btrfs_block_group *cache, int load_cache_only)
-+int btrfs_cache_block_group(struct btrfs_block_group *cache, bool wait)
- {
--	DEFINE_WAIT(wait);
- 	struct btrfs_fs_info *fs_info = cache->fs_info;
- 	struct btrfs_caching_control *caching_ctl = NULL;
- 	int ret = 0;
-@@ -794,8 +786,8 @@ int btrfs_cache_block_group(struct btrfs_block_group *cache, int load_cache_only
- 
- 	btrfs_queue_work(fs_info->caching_workers, &caching_ctl->work);
- out:
--	if (load_cache_only && caching_ctl)
--		wait_event(caching_ctl->wait, space_cache_v1_done(cache));
-+	if (wait && caching_ctl)
-+		ret = btrfs_caching_ctl_wait_done(cache, caching_ctl);
- 	if (caching_ctl)
- 		btrfs_put_caching_control(caching_ctl);
- 
-@@ -3288,7 +3280,7 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 		 * space back to the block group, otherwise we will leak space.
- 		 */
- 		if (!alloc && !btrfs_block_group_done(cache))
--			btrfs_cache_block_group(cache, 1);
-+			btrfs_cache_block_group(cache, true);
- 
- 		byte_in_group = bytenr - cache->start;
- 		WARN_ON(byte_in_group > cache->length);
-diff --git a/fs/btrfs/block-group.h b/fs/btrfs/block-group.h
-index b5c8425839dc..9dba28bb1806 100644
---- a/fs/btrfs/block-group.h
-+++ b/fs/btrfs/block-group.h
-@@ -267,9 +267,8 @@ void btrfs_dec_nocow_writers(struct btrfs_block_group *bg);
- void btrfs_wait_nocow_writers(struct btrfs_block_group *bg);
- void btrfs_wait_block_group_cache_progress(struct btrfs_block_group *cache,
- 				           u64 num_bytes);
--int btrfs_wait_block_group_cache_done(struct btrfs_block_group *cache);
- int btrfs_cache_block_group(struct btrfs_block_group *cache,
--			    int load_cache_only);
-+			    bool wait);
- void btrfs_put_caching_control(struct btrfs_caching_control *ctl);
- struct btrfs_caching_control *btrfs_get_caching_control(
- 		struct btrfs_block_group *cache);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7bb05d49809b..86ac953c69ac 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2551,17 +2551,10 @@ int btrfs_pin_extent_for_log_replay(struct btrfs_trans_handle *trans,
- 		return -EINVAL;
- 
- 	/*
--	 * pull in the free space cache (if any) so that our pin
--	 * removes the free space from the cache.  We have load_only set
--	 * to one because the slow code to read in the free extents does check
--	 * the pinned extents.
-+	 * Fully cache the free space first so that our pin removes the free space
-+	 * from the cache.
- 	 */
--	btrfs_cache_block_group(cache, 1);
--	/*
--	 * Make sure we wait until the cache is completely built in case it is
--	 * missing or is invalid and therefore needs to be rebuilt.
--	 */
--	ret = btrfs_wait_block_group_cache_done(cache);
-+	ret = btrfs_cache_block_group(cache, true);
- 	if (ret)
- 		goto out;
- 
-@@ -2584,12 +2577,7 @@ static int __exclude_logged_extent(struct btrfs_fs_info *fs_info,
- 	if (!block_group)
- 		return -EINVAL;
- 
--	btrfs_cache_block_group(block_group, 1);
--	/*
--	 * Make sure we wait until the cache is completely built in case it is
--	 * missing or is invalid and therefore needs to be rebuilt.
--	 */
--	ret = btrfs_wait_block_group_cache_done(block_group);
-+	ret = btrfs_cache_block_group(block_group, true);
- 	if (ret)
- 		goto out;
- 
-@@ -4400,7 +4388,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
- 		ffe_ctl->cached = btrfs_block_group_done(block_group);
- 		if (unlikely(!ffe_ctl->cached)) {
- 			ffe_ctl->have_caching_bg = true;
--			ret = btrfs_cache_block_group(block_group, 0);
-+			ret = btrfs_cache_block_group(block_group, false);
- 
- 			/*
- 			 * If we get ENOMEM here or something else we want to
-@@ -6170,13 +6158,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
- 
- 		if (end - start >= range->minlen) {
- 			if (!btrfs_block_group_done(cache)) {
--				ret = btrfs_cache_block_group(cache, 0);
--				if (ret) {
--					bg_failed++;
--					bg_ret = ret;
--					continue;
--				}
--				ret = btrfs_wait_block_group_cache_done(cache);
-+				ret = btrfs_cache_block_group(cache, true);
- 				if (ret) {
- 					bg_failed++;
- 					bg_ret = ret;
--- 
-2.37.2
-
+>                 }
+> -               unlock_page(page);
+> +               folio_unlock(folio);
+>
+> -       } while (++i < pagevec_count(&pvec));
+> +       } while (++i < nr);
+>
+> -       index = page->index + 1;
+> -       pagevec_release(&pvec);
+> +       folio_batch_release(&fbatch);
+>         cond_resched();
+>         goto repeat;
+>
+>  out_locked:
+> -       unlock_page(page);
+> -out:
+> -       pagevec_release(&pvec);
+> +       folio_unlock(folio);
+> +       folio_batch_release(&fbatch);
+>         return length;
+>  }
+> --
+> 2.36.1
+>

@@ -2,108 +2,105 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E548C28B2B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:43:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44928C25B08
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:45:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240349AbiHQOnz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 10:43:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56448 "EHLO
+        id S237307AbiHQOpG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 10:45:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58670 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240305AbiHQOnr (ORCPT
+        with ESMTP id S236892AbiHQOpF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 10:43:47 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2CFA875CEC
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 07:43:42 -0700 (PDT)
-Received: from authenticated-user (box.fidei.email [71.19.144.250])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+        Wed, 17 Aug 2022 10:45:05 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 52D7B9AF93
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Aug 2022 07:45:04 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 896FB80A9D;
-        Wed, 17 Aug 2022 10:43:41 -0400 (EDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1660747422; bh=GN+UOAXwTW8iDc3zN0WFJa5yXDq5JDXTjZir2RNcpOU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=fTlXrm4W5OP7NMdqoQBZUMdBIch8yQ9BG9iT88NjYecCzJjX+yCIUvQxXZTWdsk7j
-         EjzBpqjVo6OMs6oQgjrnmgGcxhQwndiz7qNrqXOj55fLxiaP2PbCQ3cXH3EZhDe7lO
-         uhlWgz3DGnekYHs77qE6NY8/PNxo9FPGueNloerGERyFLKg/H00KIuaTDkPbktnr2M
-         CFXOOeUvlAKxgad6vwIi1Mdr65BYvmQe7bdhvyQwDfEtzmLFYHx/Ukpwd8DFmMnSAj
-         SQVurDwgiskQg+Xl+Z4GrszYFjxgYhNNUp3+Nscoz/UuMHxMxJBNalf2dZI7aFEXE4
-         Od9LjNtCin9Jw==
-From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 6/6] btrfs-progs: update inline extent length checking
-Date:   Wed, 17 Aug 2022 10:42:59 -0400
-Message-Id: <640399bd56c8795ef2606a0a5349bac498e92ee4.1660729916.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1660729916.git.sweettea-kernel@dorminy.me>
-References: <cover.1660729916.git.sweettea-kernel@dorminy.me>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id AFEDC37ED9;
+        Wed, 17 Aug 2022 14:45:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1660747502;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=kGDH2cmzfdhUDYi2Nx5VoisHSOZrZCZjXhMREjrX97E=;
+        b=DNvbIQBlNFPy2q1lTNQ0+1KD2DZid9kaP/aOP9D+snLLlG4ZuggMs5DBrke4nrgg/tgN25
+        92vIsbVGbOBQ46JtfPyMtdBcELjW/OaLSPURW8UmnmvWO/v3Tcxlcjs4bcN3QdKRL9iuk8
+        jovPooMA/mBx6eMoRNAitCVpV0TYTL8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1660747502;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=kGDH2cmzfdhUDYi2Nx5VoisHSOZrZCZjXhMREjrX97E=;
+        b=wXSHet7QyxGR+NCyN4FxbBukcjh3ztBrdflPQp8ZbrXpPkiWPIdhNoOy9/BMWM95iUvd1j
+        YA0gqEA4HogXVTDg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8446A13428;
+        Wed, 17 Aug 2022 14:45:02 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 1ElVH+7+/GJVfAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 17 Aug 2022 14:45:02 +0000
+Date:   Wed, 17 Aug 2022 16:39:52 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
+Cc:     linux-btrfs@vger.kernel.org, fdmanana@kernel.org
+Subject: Re: [PATCH v2] btrfs: Check if root is readonly while setting
+ security xattr
+Message-ID: <20220817143951.GD13489@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Goldwyn Rodrigues <rgoldwyn@suse.de>,
+        linux-btrfs@vger.kernel.org, fdmanana@kernel.org
+References: <20220816214256.t5ikj7pyqe6l6qgn@fiona>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220816214256.t5ikj7pyqe6l6qgn@fiona>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As part of the encryption changes, encrypted inline file extents record
-their actual data length in ram_bytes, like compressed inline file
-extents, while the item's length records the actual size. As such,
-encrypted inline extents must be treated like compressed ones for
-inode length consistency checking.
+On Tue, Aug 16, 2022 at 04:42:56PM -0500, Goldwyn Rodrigues wrote:
+> For a filesystem which has btrfs read-only property set to true, all
+> write operations including xattr should be denied. However, security
+> xattr can still be changed even if btrfs ro property is true.
+> 
+> This happens because xattr_permission() does not have any restrictions
+> on security.*, system.*  and in some cases trusted.* from VFS and
+> the decision is left to the underlying filesystem. See comments in
+> xattr_permission() for more details.
+> 
+> This patch checks if the root is read-only before performing the set
+> xattr operation.
+> 
+> Testcase: 
+> 
+> #!/bin/bash
+> 
+> DEV=/dev/vdb
+> MNT=/mnt
+> 
+> mkfs.btrfs -f $DEV
+> mount $DEV $MNT
+> echo "file one" > $MNT/f1
+> 
+> setfattr -n "security.one" -v 2 $MNT/f1
+> btrfs property set /mnt ro true
+> 
+> # Following statement should fail
+> setfattr -n "security.one" -v 1 $MNT/f1
+> 
+> umount $MNT
+> 
+> Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
----
- check/main.c | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
-
-diff --git a/check/main.c b/check/main.c
-index bfcd16fc..5ed665ef 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -1623,7 +1623,7 @@ static int process_file_extent(struct btrfs_root *root,
- 	u64 mask = gfs_info->sectorsize - 1;
- 	u32 max_inline_size = min_t(u32, mask,
- 				BTRFS_MAX_INLINE_DATA_SIZE(gfs_info));
--	u8 compression;
-+	u8 compression, encryption;
- 	int extent_type;
- 	int ret;
- 
-@@ -1648,25 +1648,25 @@ static int process_file_extent(struct btrfs_root *root,
- 	fi = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
- 	extent_type = btrfs_file_extent_type(eb, fi);
- 	compression = btrfs_file_extent_compression(eb, fi);
-+	encryption = btrfs_file_extent_encryption(eb, fi);
- 
- 	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
--		num_bytes = btrfs_file_extent_ram_bytes(eb, fi);
--		if (num_bytes == 0)
-+		u64 num_decoded_bytes = btrfs_file_extent_ram_bytes(eb, fi);
-+		u64 num_disk_bytes =  btrfs_file_extent_inline_item_len(eb, slot);
-+		if (num_decoded_bytes == 0)
- 			rec->errors |= I_ERR_BAD_FILE_EXTENT;
--		if (compression) {
--			if (btrfs_file_extent_inline_item_len(eb, slot) >
--			    max_inline_size ||
--			    num_bytes > gfs_info->sectorsize)
-+		if (compression || encryption) {
-+			if (num_disk_bytes > max_inline_size ||
-+			    num_decoded_bytes > gfs_info->sectorsize)
- 				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
- 		} else {
--			if (num_bytes > max_inline_size)
-+			if (num_decoded_bytes > max_inline_size)
- 				rec->errors |= I_ERR_FILE_EXTENT_TOO_LARGE;
--			if (btrfs_file_extent_inline_item_len(eb, slot) !=
--			    num_bytes)
-+			if (num_disk_bytes != num_decoded_bytes)
- 				rec->errors |= I_ERR_INLINE_RAM_BYTES_WRONG;
- 		}
--		rec->found_size += num_bytes;
--		num_bytes = (num_bytes + mask) & ~mask;
-+		rec->found_size += num_decoded_bytes;
-+		num_bytes = (num_decoded_bytes + mask) & ~mask;
- 	} else if (extent_type == BTRFS_FILE_EXTENT_REG ||
- 		   extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
- 		num_bytes = btrfs_file_extent_num_bytes(eb, fi);
--- 
-2.35.1
-
+Added to misc-next, thanks.

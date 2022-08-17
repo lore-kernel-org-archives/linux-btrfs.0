@@ -2,350 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AE00C28B2B
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:46:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12FFDC25B08
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:48:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240451AbiHQOqF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 10:46:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59754 "EHLO
+        id S239738AbiHQOsO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 10:48:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33450 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239585AbiHQOqE (ORCPT
+        with ESMTP id S237192AbiHQOsM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 10:46:04 -0400
-Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8260D9C2E2;
-        Wed, 17 Aug 2022 07:46:00 -0700 (PDT)
-Received: from authenticated-user (box.fidei.email [71.19.144.250])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
+        Wed, 17 Aug 2022 10:48:12 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 08D9FB49;
+        Wed, 17 Aug 2022 07:48:09 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 0ED8080F11;
-        Wed, 17 Aug 2022 10:45:58 -0400 (EDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1660747559; bh=+tj91MH5uinNbo9wdIP6bc/AzwaMuZup+5nSv515UzM=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=TeX0mKOnWF74PV6WYmfcCkbpJ3wXlC5Q9e7envKu1YZ9k9RJMGk1SSG+7YPOH6zje
-         qQIH1X6pG7BXEe81YNMBYXQEpopIs01caA+GC5eiArMCZ5k4ClfgsnpzPd1io38hOj
-         EkGmPDcjhDzsY+UwtnHY60uVp0puaU3h6Ymbdjh8YpoHmm+AKryRl78mVyuZuYI5hm
-         dOIV7GJ4Ga28d8brPtLkbL1+tTIEcTD5TNyAN7chVftKIYKix5/UllGWzJRonBdKzu
-         sNhyuFMJnr65SW7A4HDQqW6lvE6Y8nBX5GfyiMgTg0AHM0O9GOebl3vg0TWCFyxDuM
-         exeMCRwzPiHDQ==
-From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-To:     fstests@vger.kernel.org, linux-fscrypt@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 2/2] fstests: fscrypt: update tests of encryption contents for btrfs
-Date:   Wed, 17 Aug 2022 10:45:46 -0400
-Message-Id: <97f8063f0220933afe504d3a52fa2fecac8dce8a.1660729861.git.sweettea-kernel@dorminy.me>
-In-Reply-To: <cover.1660729861.git.sweettea-kernel@dorminy.me>
-References: <cover.1660729861.git.sweettea-kernel@dorminy.me>
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 7CA8D1F8E7;
+        Wed, 17 Aug 2022 14:48:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1660747687;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=15A3o8pzw2uvkF+OZu80gJIKsHpWU2h8OmqN7hLoi9c=;
+        b=byZ5M6OkqndNJf5cravAAyIk73wnU1evVNDbRHdMR6hAkH2WSadTfZ/Szc9uThaVMfzxso
+        QLTLf0YuXJuEtp9RBseB3lcML773Q4ZDEHixMxVMHw+K00fHwvx0qlQnzlACpovkXfKelK
+        QpC8pKChdEn2Ic80Adbo7jsTQpq8Q+o=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1660747687;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=15A3o8pzw2uvkF+OZu80gJIKsHpWU2h8OmqN7hLoi9c=;
+        b=ftmddMI9wXtkN8ie6tQbGQp9dnaD607NHOnj9dTSTyTuou+4snPz1AgVhJNpgbFpZUXtQ2
+        kpX7Z/2yg4Q5jfBg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3BB2E13428;
+        Wed, 17 Aug 2022 14:48:07 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id HRqJDaf//GKIfQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 17 Aug 2022 14:48:07 +0000
+Date:   Wed, 17 Aug 2022 16:42:56 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Zixuan Fu <r33s3n6@gmail.com>
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        baijiaju1990@gmail.com, TOTE Robot <oslab@tsinghua.edu.cn>
+Subject: Re: [PATCH] fs: btrfs: fix possible memory leaks in
+ btrfs_get_dev_args_from_path()
+Message-ID: <20220817144256.GE13489@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, Zixuan Fu <r33s3n6@gmail.com>,
+        clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        baijiaju1990@gmail.com, TOTE Robot <oslab@tsinghua.edu.cn>
+References: <20220815151606.3479183-1-r33s3n6@gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220815151606.3479183-1-r33s3n6@gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As btrfs has a new encryption policy, and requires a particular set of
-policy flags, both the tests to verify contents and filename encryption,
-and the tool to verify against, need updates to use the new policy for
-btrfs. This change updates the tool with the new fscrypt policy
-behavior; updates the test functions to extract per-extent IVs, assuming
-there is only one extent per inode; and updates the test functions to
-use btrfs's dump-tree as necessary to extract information.
+On Mon, Aug 15, 2022 at 11:16:06PM +0800, Zixuan Fu wrote:
+> In btrfs_get_dev_args_from_path(), btrfs_get_bdev_and_sb() can fail if the
+> path is invalid. In this case, btrfs_get_dev_args_from_path() returns
+> directly without freeing args->uuid and args->fsid allocated before, which
+> causes memory leaks.
+> 
+> To fix these possible leaks, when btrfs_get_bdev_and_sb() fails, 
+> btrfs_put_dev_args_from_path() is called to clean up the memory.
+> 
+> Fixes: faa775c41d655 ("btrfs: add a btrfs_get_dev_args_from_path helper")
+> Reported-by: TOTE Robot <oslab@tsinghua.edu.cn>
+> Signed-off-by: Zixuan Fu <r33s3n6@gmail.com>
 
-It is somewhat fragile to assume that the contents always fit within one
-extent, but no test yet uses large enough files for this to be an issue.
-
-Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
----
- common/encrypt           | 75 +++++++++++++++++++++++++++++++++++-----
- src/fscrypt-crypt-util.c | 34 ++++++++++++++++--
- tests/generic/576        |  1 +
- 3 files changed, 99 insertions(+), 11 deletions(-)
-
-diff --git a/common/encrypt b/common/encrypt
-index b011c3e8..ce6ebdf9 100644
---- a/common/encrypt
-+++ b/common/encrypt
-@@ -110,7 +110,7 @@ _require_encryption_policy_support()
- 
- 	if [ "$FSTYP" = "btrfs" ]; then
- 		if (( policy_flags & ~FSCRYPT_POLICY_FLAG_IV_FROM_FS )); then
--			_fail "Btrfs accepts policy flags of IV_FROM_FS only"
-+			_notrun "Btrfs accepts policy flags of IV_FROM_FS only"
- 		fi
- 	fi
- 
-@@ -635,6 +635,40 @@ _get_encryption_nonce()
- 	esac
- }
- 
-+# Retrieve the encryption IV of the first file extent in an inode as a hex
-+# string.  The IV was randomly generated by the filesystem, in the case of
-+# btrfs, and isn't exposed directly to userspace.  But it can be read using
-+# the filesystem's debugging tools.
-+_get_encryption_iv()
-+{
-+	local device=$1
-+	local inode=$2
-+
-+	case $FSTYP in
-+	btrfs)
-+		# btrfs prints the file extents (for simple unshared
-+		# inodes) like:
-+		#         item 21 key ($inode EXTENT_DATA 0) itemoff 2534 itemsize 69
-+		#                generation 7 type 1 (regular)
-+                #		 extent data disk byte 5304320 nr 1048576
-+                #		 extent data offset 0 nr 1048576 ram 1048576
-+                #		 extent compression 0 (none)
-+                #		 extent encryption 81 (1, 16: IV 77d05501da7c23920f9ca00872f0bbc3)
-+
-+		#
-+		$BTRFS_UTIL_PROG inspect-internal dump-tree $device | \
-+			grep -A 5 "key ($inode EXTENT_DATA 0)" | \
-+			awk '/ IV [[:xdigit:]]+)/ {
-+				match($0, /IV ([[:xdigit:]]+)\)/,a);
-+				print a[1];
-+			}'
-+		;;
-+	*)
-+		_fail "_get_encryption_iv() isn't implemented on $FSTYP"
-+		;;
-+	esac
-+}
-+
- # Require support for _get_encryption_nonce()
- _require_get_encryption_nonce_support()
- {
-@@ -669,6 +703,19 @@ _get_ciphertext_filename()
- 	local dir_inode=$3
- 
- 	case $FSTYP in
-+	btrfs)
-+		# Extract the filename from the inode_ref object, similar to:
-+		# item 24 key (259 INODE_REF 257) itemoff 14826 itemsize 26
-+		# 	index 3 namelen 16 name: J\xf7\x15tD\x8eL\xae/\x98\x9f\x09\xc1\xb6\x09>
-+		#
-+		$BTRFS_UTIL_PROG inspect-internal dump-tree $device | \
-+			grep -A 1 "key ($inode INODE_REF " | tail -n 1 | \
-+			perl -ne '
-+				s/.*?name: //;
-+				chomp;
-+				s/\\x([[:xdigit:]]{2})/chr hex $1/eg;
-+				print;'
-+		;;
- 	ext4)
- 		# Extract the filename from the debugfs output line like:
- 		#
-@@ -806,6 +853,7 @@ _do_verify_ciphertext_for_encryption_policy()
- 	local raw_key_hex=$6
- 	local crypt_contents_cmd="$here/src/fscrypt-crypt-util $7"
- 	local crypt_filename_cmd="$here/src/fscrypt-crypt-util $8"
-+	local use_iv=$9
- 
- 	local blocksize=$(_get_block_size $SCRATCH_MNT)
- 	local test_contents_files=()
-@@ -860,18 +908,24 @@ _do_verify_ciphertext_for_encryption_policy()
- 
- 	echo "Verifying encrypted file contents" >> $seqres.full
- 	for f in "${test_contents_files[@]}"; do
-+		local iv_arg=""
- 		read -r src inode blocklist <<< "$f"
- 		nonce=$(_get_encryption_nonce $SCRATCH_DEV $inode)
- 		_dump_ciphertext_blocks $SCRATCH_DEV $blocklist > $tmp.actual_contents
-+		if [ -n "$use_iv" ]; then
-+			local iv_hex=$(_get_encryption_iv $SCRATCH_DEV $inode)
-+			iv_arg=" --iv=$iv_hex"
-+		fi
-+			
- 		$crypt_contents_cmd $contents_encryption_mode $raw_key_hex \
- 			--file-nonce=$nonce --block-size=$blocksize \
--			--inode-number=$inode < $src > $tmp.expected_contents
-+			--inode-number=$inode $iv_arg < $src > $tmp.expected_contents
- 		if ! cmp $tmp.expected_contents $tmp.actual_contents; then
- 			_fail "Expected encrypted contents != actual encrypted contents.  File: $f"
- 		fi
- 		$crypt_contents_cmd $contents_encryption_mode $raw_key_hex \
- 			--decrypt --file-nonce=$nonce --block-size=$blocksize \
--			--inode-number=$inode \
-+			--inode-number=$inode $iv_arg \
- 			< $tmp.actual_contents > $tmp.decrypted_contents
- 		if ! cmp $src $tmp.decrypted_contents; then
- 			_fail "Contents decryption sanity check failed.  File: $f"
-@@ -957,9 +1011,10 @@ _verify_ciphertext_for_encryption_policy()
- 	local crypt_util_contents_args=""
- 	local crypt_util_filename_args=""
- 	local expected_identifier
-+	local use_iv=""
- 
- 	if [ "$FSTYP" = "btrfs" ]; then
--		policy_version = 2
-+		policy_version=2
- 	fi
- 	
- 	shift 2
-@@ -999,9 +1054,9 @@ _verify_ciphertext_for_encryption_policy()
- 		crypt_util_args+=" --kdf=HKDF-SHA512"
- 		if [ "$FSTYP" = "btrfs" ]; then
- 			if (( policy_flags & ~FSCRYPT_POLICY_FLAG_IV_FROM_FS )); then
--				_fail "Btrfs accepts policy flags of IV_FROM_FS only"
-+				_notrun "Btrfs accepts policy flags of IV_FROM_FS only"
- 			fi	
--			policy_flags |= FSCRYPT_POLICY_FLAG_IV_FROM_FS
-+			(( policy_flags |= FSCRYPT_POLICY_FLAG_IV_FROM_FS ))
- 		fi
- 		if (( policy_flags & FSCRYPT_POLICY_FLAG_DIRECT_KEY )); then
- 			crypt_util_args+=" --direct-key"
-@@ -1009,6 +1064,9 @@ _verify_ciphertext_for_encryption_policy()
- 			crypt_util_args+=" --iv-ino-lblk-64"
- 		elif (( policy_flags & FSCRYPT_POLICY_FLAG_IV_INO_LBLK_32 )); then
- 			crypt_util_args+=" --iv-ino-lblk-32"
-+		elif (( policy_flags & FSCRYPT_POLICY_FLAG_IV_FROM_FS )); then
-+			crypt_util_args+=" --iv-from-fs"
-+			use_iv=1
- 		fi
- 	else
- 		if (( policy_flags & ~FSCRYPT_POLICY_FLAG_DIRECT_KEY )); then
-@@ -1026,7 +1084,7 @@ _verify_ciphertext_for_encryption_policy()
- 	_require_test_program "fscrypt-crypt-util"
- 	_require_xfs_io_command "fiemap"
- 	_require_get_encryption_nonce_support
--	_require_get_ciphertext_filename_support
-+	#_require_get_ciphertext_filename_support
- 	if (( policy_version == 1 )); then
- 		_require_command "$KEYCTL_PROG" keyctl
- 	fi
-@@ -1094,7 +1152,8 @@ EOF
- 		"$keyspec" \
- 		"$raw_key_hex" \
- 		"$crypt_util_contents_args" \
--		"$crypt_util_filename_args"
-+		"$crypt_util_filename_args" \
-+		"$use_iv"
- }
- 
- # Replace no-key filenames in the given directory with "NOKEY_NAME".
-diff --git a/src/fscrypt-crypt-util.c b/src/fscrypt-crypt-util.c
-index ffb9534d..6f4f8190 100644
---- a/src/fscrypt-crypt-util.c
-+++ b/src/fscrypt-crypt-util.c
-@@ -76,10 +76,14 @@ static void usage(FILE *fp)
- "  --inode-number=INUM         The file's inode number.  Required for\n"
- "                                --iv-ino-lblk-32 and --iv-ino-lblk-64;\n"
- "                                otherwise is unused.\n"
-+"  --iv=IV                     For the IV-from-FS format, the starting IV for\n"
-+"                                the file\n"
- "  --iv-ino-lblk-32            Similar to --iv-ino-lblk-64, but selects the\n"
- "                                32-bit variant.\n"
- "  --iv-ino-lblk-64            Use the format where the IVs include the inode\n"
- "                                number and the same key is shared across files.\n"
-+"  --iv-from-fs                Use the format where the IV is specifically\n"
-+"                                supplied by the filesystem\n"
- "  --kdf=KDF                   Key derivation function to use: AES-128-ECB,\n"
- "                                HKDF-SHA512, or none.  Default: none\n"
- "  --mode-num=NUM              The encryption mode number.  This may be required\n"
-@@ -1794,8 +1798,11 @@ struct key_and_iv_params {
- 	u8 file_nonce[FILE_NONCE_SIZE];
- 	bool file_nonce_specified;
- 	bool direct_key;
-+	u8 iv[MAX_IV_SIZE];
-+	bool iv_set;
- 	bool iv_ino_lblk_64;
- 	bool iv_ino_lblk_32;
-+	bool iv_from_fs;
- 	u64 block_number;
- 	u64 inode_number;
- 	u8 fs_uuid[UUID_SIZE];
-@@ -1809,6 +1816,7 @@ struct key_and_iv_params {
- #define HKDF_CONTEXT_DIRHASH_KEY	5
- #define HKDF_CONTEXT_IV_INO_LBLK_32_KEY	6
- #define HKDF_CONTEXT_INODE_HASH_KEY	7
-+#define HKDF_CONTEXT_IV_FROM_FS		8
- 
- /* Hash the file's inode number using SipHash keyed by a derived key */
- static u32 hash_inode_number(const struct key_and_iv_params *params)
-@@ -1881,9 +1889,10 @@ static void derive_real_key(const struct key_and_iv_params *params,
- 			info[infolen++] = params->mode_num;
- 			memcpy(&info[infolen], params->fs_uuid, UUID_SIZE);
- 			infolen += UUID_SIZE;
--		} else {
--			if (!params->file_nonce_specified)
--				die("--kdf=HKDF-SHA512 requires --file-nonce or --iv-ino-lblk-{64,32}");
-+		} else if (params->iv_from_fs) {
-+			info[infolen++] = HKDF_CONTEXT_IV_FROM_FS;
-+			info[infolen++] = params->mode_num;
-+		} else if (params->file_nonce_specified) {
- 			info[infolen++] = HKDF_CONTEXT_PER_FILE_ENC_KEY;
- 			memcpy(&info[infolen], params->file_nonce,
- 			       FILE_NONCE_SIZE);
-@@ -1906,6 +1915,10 @@ static void generate_iv(const struct key_and_iv_params *params,
- 			die("--direct-key requires --file-nonce");
- 		iv->block_number = cpu_to_le64(params->block_number);
- 		memcpy(iv->nonce, params->file_nonce, FILE_NONCE_SIZE);
-+	} else if (params->iv_from_fs) {
-+		memcpy(iv->nonce, params->file_nonce, FILE_NONCE_SIZE);
-+		if (params->iv_set)
-+			memcpy(iv->bytes, params->iv, MAX_IV_SIZE);
- 	} else if (params->iv_ino_lblk_64) {
- 		if (params->block_number > UINT32_MAX)
- 			die("iv-ino-lblk-64 can't use --block-number > UINT32_MAX");
-@@ -1987,8 +2000,10 @@ enum {
- 	OPT_FS_UUID,
- 	OPT_HELP,
- 	OPT_INODE_NUMBER,
-+	OPT_IV,
- 	OPT_IV_INO_LBLK_32,
- 	OPT_IV_INO_LBLK_64,
-+	OPT_IV_FROM_FS,
- 	OPT_KDF,
- 	OPT_MODE_NUM,
- 	OPT_PADDING,
-@@ -2004,8 +2019,10 @@ static const struct option longopts[] = {
- 	{ "fs-uuid",         required_argument, NULL, OPT_FS_UUID },
- 	{ "help",            no_argument,       NULL, OPT_HELP },
- 	{ "inode-number",    required_argument, NULL, OPT_INODE_NUMBER },
-+	{ "iv",              required_argument, NULL, OPT_IV },
- 	{ "iv-ino-lblk-32",  no_argument,       NULL, OPT_IV_INO_LBLK_32 },
- 	{ "iv-ino-lblk-64",  no_argument,       NULL, OPT_IV_INO_LBLK_64 },
-+	{ "iv-from-fs",      no_argument,       NULL, OPT_IV_FROM_FS },
- 	{ "kdf",             required_argument, NULL, OPT_KDF },
- 	{ "mode-num",        required_argument, NULL, OPT_MODE_NUM },
- 	{ "padding",         required_argument, NULL, OPT_PADDING },
-@@ -2082,12 +2099,23 @@ int main(int argc, char *argv[])
- 			if (params.inode_number <= 0 || *tmp || errno)
- 				die("Invalid inode number: %s", optarg);
- 			break;
-+		case OPT_IV:
-+			int iv_len = hex2bin(optarg, params.iv, MAX_IV_SIZE);
-+			if ((iv_len != AES_BLOCK_SIZE) &&
-+			    (iv_len != ADIANTUM_IV_SIZE))
-+				die("Invalid iv length: %d (must be %u or %u)",
-+				    iv_len, AES_BLOCK_SIZE, ADIANTUM_IV_SIZE);
-+			params.iv_set = true;
-+			break;
- 		case OPT_IV_INO_LBLK_32:
- 			params.iv_ino_lblk_32 = true;
- 			break;
- 		case OPT_IV_INO_LBLK_64:
- 			params.iv_ino_lblk_64 = true;
- 			break;
-+		case OPT_IV_FROM_FS:
-+			params.iv_from_fs = true;
-+			break;
- 		case OPT_KDF:
- 			params.kdf = parse_kdf_algorithm(optarg);
- 			break;
-diff --git a/tests/generic/576 b/tests/generic/576
-index 7a368a8d..060d5ac8 100755
---- a/tests/generic/576
-+++ b/tests/generic/576
-@@ -61,6 +61,7 @@ cmp $fsv_orig_file $fsv_file && echo "Files matched"
- 
- # Just in case, try again after a mount cycle to empty the page cache.
- _scratch_cycle_mount
-+_add_default_policy_key $raw_key &>> $seqres.full
- cmp $fsv_orig_file $fsv_file && echo "Files matched"
- 
- # Corrupt some bytes as a sanity check that fs-verity is really working.
--- 
-2.35.1
-
+Added to misc-next, thanks.

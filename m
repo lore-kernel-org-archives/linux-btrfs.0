@@ -2,33 +2,33 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D3E3C32789
-	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:50:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41ABFC32771
+	for <linux-btrfs@archiver.kernel.org>; Wed, 17 Aug 2022 14:50:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240377AbiHQOum (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 17 Aug 2022 10:50:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36376 "EHLO
+        id S240387AbiHQOuo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 17 Aug 2022 10:50:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36406 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240200AbiHQOuY (ORCPT
+        with ESMTP id S240312AbiHQOu2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 17 Aug 2022 10:50:24 -0400
-Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 14BFC33A26;
-        Wed, 17 Aug 2022 07:50:23 -0700 (PDT)
+        Wed, 17 Aug 2022 10:50:28 -0400
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8FF4933A26;
+        Wed, 17 Aug 2022 07:50:27 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 7F54F80B43;
-        Wed, 17 Aug 2022 10:50:22 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id E24C88042B;
+        Wed, 17 Aug 2022 10:50:26 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1660747822; bh=GtmYH3TgxqB5l7PKC/VM40EVlreaKDd+6X5hNidwOXM=;
+        t=1660747827; bh=JHa6cPgPBqm+c/l427NbSPkp5eYmufffl4SozhKvgaQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=bUevRMfxzvl5Hi9ZpHRcO+kGEC1ApvsLrhPzPJ8WHAwpQCboSTMPnP1/XkseClEuy
-         P4jFU8Jl1wsxYnBTphhzT6YSc/pSMhgw3rpXgTn0fhHY8F3t90VjbRJSKZu/qCD1SW
-         n4kPwbWKWvysaWsaDwxwOUAKtdp+Q2ZXyy1Lt+vjK9UpnAysCUBMwrMTqYc+vurfqN
-         Z8phT9nPg9bjBAyrHAcPp3k7hJBki6rb8axcIXy9dgGdy55Ak3o9E17YEtFHfk4ycH
-         RTyqNywGS1hGbOGWGx7242LgbmghHcL/s3FAS5z2MIzuJ2RQWkxH6ALxmEruQTjG3o
-         TxB2F7A/cCZVg==
+        b=HXfA/tBlDmIjYMx7blrpDRIeKa4OoG9RVTZXgCuyMRPhW3ILu0EzLusuAGDriz/vl
+         aAkEdpuQRfRLBxcPfrsasjyuA2Nn7+EjmN5sk4xQ2EtXFu2I1v2NQclXm+ZijiBLsf
+         CfeJLfG2eqBZMsPK77MOlW1gsXz69Io9i0alFHKX4y3PTL11dZ7kc4ajKBsroLGc55
+         NjjWuXtxF9bpQhiHBhwKryeffDie0Ui4HI8bFKWMcCinL0rDTgAW4hLyggXzdS4ghz
+         UvRjKXz2gqP5Hg/MyV+XsDBqLXCUc9hHnZUD8s5jZNY6o4/sKNkxzeeUAzhx1uTVtt
+         FMyYalr2DP8Tg==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
@@ -37,11 +37,10 @@ To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         Eric Biggers <ebiggers@kernel.org>,
         linux-fscrypt@vger.kernel.org, linux-btrfs@vger.kernel.org,
         kernel-team@fb.com
-Cc:     Omar Sandoval <osandov@osandov.com>,
-        Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH 02/21] fscrypt: add flag allowing partially-encrypted directories
-Date:   Wed, 17 Aug 2022 10:49:46 -0400
-Message-Id: <d6e310e8dc7fd22e8ba0ac32c5a9bbb0620d97c3.1660744500.git.sweettea-kernel@dorminy.me>
+Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH 04/21] fscrypt: add a function for a filesystem to generate an IV
+Date:   Wed, 17 Aug 2022 10:49:48 -0400
+Message-Id: <40f17d7f64a80e0d2746972b4f6b4b5831d4f455.1660744500.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1660744500.git.sweettea-kernel@dorminy.me>
 References: <cover.1660744500.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -50,84 +49,79 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Omar Sandoval <osandov@osandov.com>
+Unlike other filesystems, which store all necessary encryption context
+in the per-inode fscrypt context, btrfs will need to store an IV per
+extent in order to support snapshots and reflinks. To avoid exposing the
+internal details of extents to fscrypt, and to centralize IV generation
+in fscrypt, this change provides fscrypt_generate_random_iv(), which
+will be called for each newly created btrfs extent and will populate a
+btrfs-provided buffer with a new IV. Additionally, a function to get
+the necessary buffer size, fscrypt_mode_ivsize(), is also necessary.
 
-Creating several new subvolumes out of snapshots of another subvolume,
-each for a different VM's storage, is a important usecase for btrfs.  We
-would like to give each VM a unique encryption key to use for new writes
-to its subvolume, so that secure deletion of the VM's data is as simple
-as securely deleting the key; to avoid needing multiple keys in each VM,
-we envision the initial subvolume being unencrypted. However, this means
-that the snapshot's directories would have a mix of encrypted and
-unencrypted files. During lookup with a key, both unencrypted and
-encrypted forms of the desired name must be queried.
-
-To allow this, add another FS_CFLG to allow filesystems to opt into
-partially encrypted directories.
-
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 ---
- fs/crypto/fname.c       | 17 ++++++++++++++++-
- include/linux/fscrypt.h |  2 ++
- 2 files changed, 18 insertions(+), 1 deletion(-)
+ fs/crypto/crypto.c      | 26 ++++++++++++++++++++++++++
+ include/linux/fscrypt.h |  3 +++
+ 2 files changed, 29 insertions(+)
 
-diff --git a/fs/crypto/fname.c b/fs/crypto/fname.c
-index 5d5c26d827fd..c5dd19c1d19e 100644
---- a/fs/crypto/fname.c
-+++ b/fs/crypto/fname.c
-@@ -389,6 +389,7 @@ int fscrypt_setup_filename(struct inode *dir, const struct qstr *iname,
- 	fname->usr_fname = iname;
+diff --git a/fs/crypto/crypto.c b/fs/crypto/crypto.c
+index e78be66bbf01..e0e30d64837e 100644
+--- a/fs/crypto/crypto.c
++++ b/fs/crypto/crypto.c
+@@ -23,6 +23,7 @@
+ #include <linux/pagemap.h>
+ #include <linux/mempool.h>
+ #include <linux/module.h>
++#include <linux/random.h>
+ #include <linux/scatterlist.h>
+ #include <linux/ratelimit.h>
+ #include <crypto/skcipher.h>
+@@ -69,6 +70,31 @@ void fscrypt_free_bounce_page(struct page *bounce_page)
+ }
+ EXPORT_SYMBOL(fscrypt_free_bounce_page);
  
- 	if (!IS_ENCRYPTED(dir) || fscrypt_is_dot_dotdot(iname)) {
-+unencrypted:
- 		fname->disk_name.name = (unsigned char *)iname->name;
- 		fname->disk_name.len = iname->len;
- 		return 0;
-@@ -424,8 +425,16 @@ int fscrypt_setup_filename(struct inode *dir, const struct qstr *iname,
- 	 * user-supplied name
- 	 */
- 
--	if (iname->len > FSCRYPT_NOKEY_NAME_MAX_ENCODED)
-+	if (iname->len > FSCRYPT_NOKEY_NAME_MAX_ENCODED) {
-+		/*
-+		 * This isn't a valid nokey name, but it could be an unencrypted
-+		 * name if the filesystem allows partially encrypted
-+		 * directories.
-+		 */
-+		if (dir->i_sb->s_cop->flags & FS_CFLG_ALLOW_PARTIAL)
-+			goto unencrypted;
- 		return -ENOENT;
-+	}
- 
- 	fname->crypto_buf.name = kmalloc(FSCRYPT_NOKEY_NAME_MAX, GFP_KERNEL);
- 	if (fname->crypto_buf.name == NULL)
-@@ -436,6 +445,12 @@ int fscrypt_setup_filename(struct inode *dir, const struct qstr *iname,
- 	if (ret < (int)offsetof(struct fscrypt_nokey_name, bytes[1]) ||
- 	    (ret > offsetof(struct fscrypt_nokey_name, sha256) &&
- 	     ret != FSCRYPT_NOKEY_NAME_MAX)) {
-+		/* Again, this could be an unencrypted name. */
-+		if (dir->i_sb->s_cop->flags & FS_CFLG_ALLOW_PARTIAL) {
-+			kfree(fname->crypto_buf.name);
-+			fname->crypto_buf.name = NULL;
-+			goto unencrypted;
-+		}
- 		ret = -ENOENT;
- 		goto errout;
- 	}
++int fscrypt_mode_ivsize(struct inode *inode)
++{
++	struct fscrypt_info *ci;
++
++	if (!fscrypt_needs_contents_encryption(inode))
++		return 0;
++
++	ci = inode->i_crypt_info;
++	if (WARN_ON_ONCE(!ci))
++		return 0;
++	return ci->ci_mode->ivsize;
++}
++EXPORT_SYMBOL(fscrypt_mode_ivsize);
++
++/**
++ * fscrypt_generate_random_iv() - initialize a new iv for an IV_FROM_FS filesystem
++ * @inode: the inode to which the new IV will belong
++ * @iv: an output buffer, long enough for the requisite IV
++ */
++void fscrypt_generate_random_iv(struct inode *inode, u8 *iv)
++{
++	get_random_bytes(iv, fscrypt_mode_ivsize(inode));
++}
++EXPORT_SYMBOL(fscrypt_generate_random_iv);
++
+ /*
+  * Generate the IV for the given logical block number within the given file.
+  * For filenames encryption, lblk_num == 0.
 diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
-index 6020b738c3b2..fb48961c46f6 100644
+index 1686b25f6d9c..ff572f8a88f8 100644
 --- a/include/linux/fscrypt.h
 +++ b/include/linux/fscrypt.h
-@@ -102,6 +102,8 @@ struct fscrypt_nokey_name {
-  * pages for writes and therefore won't need the fscrypt bounce page pool.
-  */
- #define FS_CFLG_OWN_PAGES (1U << 1)
-+/* The filesystem allows partially encrypted directories/files. */
-+#define FS_CFLG_ALLOW_PARTIAL (1U << 2)
+@@ -317,6 +317,9 @@ static inline struct page *fscrypt_pagecache_page(struct page *bounce_page)
  
- /* Crypto operations for filesystems */
- struct fscrypt_operations {
+ void fscrypt_free_bounce_page(struct page *bounce_page);
+ 
++int fscrypt_mode_ivsize(struct inode *inode);
++void fscrypt_generate_random_iv(struct inode *inode, u8 *iv);
++
+ /* policy.c */
+ int fscrypt_have_same_policy(struct inode *inode1, struct inode *inode2);
+ int fscrypt_ioctl_set_policy(struct file *filp, const void __user *arg);
 -- 
 2.35.1
 

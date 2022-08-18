@@ -2,209 +2,124 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E8B5C00140
-	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Aug 2022 12:55:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 205CDC32772
+	for <linux-btrfs@archiver.kernel.org>; Thu, 18 Aug 2022 13:50:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244835AbiHRMzq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 18 Aug 2022 08:55:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45126 "EHLO
+        id S245259AbiHRNus (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 18 Aug 2022 09:50:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44498 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244892AbiHRMzo (ORCPT
+        with ESMTP id S245307AbiHRNue (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 18 Aug 2022 08:55:44 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 427DD21838
-        for <linux-btrfs@vger.kernel.org>; Thu, 18 Aug 2022 05:55:43 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id F1E4C3EF74;
-        Thu, 18 Aug 2022 12:55:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1660827342;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=sJEwWSFqU6oCQ3hFoCpEh8KwtvEuuUKuQbO2CF8zCc8=;
-        b=h1OLkr82SewDyYOY4iBD9lIIE+v444KNmpoV3cbmGueLnAJ7EHicb4rHKxisw2La5Iglyu
-        FSm0RPrbXoRLnrV+1exuaPBzlROPGXoSRAg4yJKBwAbHVyJm7o6dC62ePZMSIKGmcwrrR4
-        30z+YpcY9gK2GzHyRbnbMSLPArHm9ZE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1660827342;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=sJEwWSFqU6oCQ3hFoCpEh8KwtvEuuUKuQbO2CF8zCc8=;
-        b=7GEb1o+ob+UZ0gz9UzqgWkBPASolx2pCDw+wtXcI+tDAhtGiEqFTONOckvRA9D8fr3s9bF
-        QThvU/Z5z18tfnBQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BF00A133B5;
-        Thu, 18 Aug 2022 12:55:41 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id DeCjLc02/mKdUAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 18 Aug 2022 12:55:41 +0000
-Date:   Thu, 18 Aug 2022 14:50:30 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v2] btrfs: don't merge pages into bio if their page
- offset is not continuous
-Message-ID: <20220818125030.GK13489@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org,
-        Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Christoph Hellwig <hch@lst.de>
-References: <1d9b69af6ce0a79e54fbaafcc65ead8f71b54b60.1660377678.git.wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1d9b69af6ce0a79e54fbaafcc65ead8f71b54b60.1660377678.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        Thu, 18 Aug 2022 09:50:34 -0400
+Received: from new4-smtp.messagingengine.com (new4-smtp.messagingengine.com [66.111.4.230])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FF4FBB9;
+        Thu, 18 Aug 2022 06:50:29 -0700 (PDT)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailnew.nyi.internal (Postfix) with ESMTP id B24AB580847;
+        Thu, 18 Aug 2022 09:50:28 -0400 (EDT)
+Received: from imap50 ([10.202.2.100])
+  by compute3.internal (MEProxy); Thu, 18 Aug 2022 09:50:28 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        colorremedies.com; h=cc:cc:content-type:date:date:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1660830628; x=
+        1660834228; bh=JrWFwbCtn41niA34uNUTGzKOa60xVpzU+xS6F63mBuk=; b=x
+        genQHvVViPsfshnTiNUWobTMSLkmLCImNPOcT3Dc0xK9xoQ1J8XQC1W8fFIIS4lK
+        P/4wWrOchGCVlf0ogXih7crYxV3pTvaoilztu7Z7UlcucO9w01lqWkvdKntYT3qu
+        VMgUiV6A0hPIJ4A76qkxEw6HDo6ZUl//Wfnym/evbQcxAweJFVuMB44sSxbUcjVf
+        gYx3iuQq9ZhkenTdonmjrbct87c9jyuZlhM9kY+PUiorhZnjNwJ+4P4WQjMyzVQx
+        YlX/n1T4s91l9/CThxc4cYVPRd/2Iwf1pJwWPzljxAEOrOp0PcvI955jVT/wO+es
+        Dgb6ZBQv9OG2MiC1cDJxA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
+        :feedback-id:from:from:in-reply-to:in-reply-to:message-id
+        :mime-version:references:reply-to:sender:subject:subject:to:to
+        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+        fm1; t=1660830628; x=1660834228; bh=JrWFwbCtn41niA34uNUTGzKOa60x
+        VpzU+xS6F63mBuk=; b=yStHHx4uC/vnnp1i9wGZk94xvh/jiSULPJjeC1e5NG0a
+        s0aQ1HkP2kis1v5o7RPvQxLlRih3YuGsLVp2KMvnKvboPpHFGK1aaHQwKFrX9wBy
+        k2/kYlydGRXI522YI0wFhw/PnbR5nl4djeiF3KNipeVGOivqzdilsON2iekuGWNT
+        WkV14IvAXKZ/2Hq+yeg2m9KOtIp5IVXqSCTSHIBauIymtCN/6Gq9sipqYcsqqJCk
+        S4647BZkNZkRzYcO/n3mZuAmIXSfT2n91pLHNsYDOWrbNUHxnoLLN3ZH5TUg83mK
+        bxIkNIxKjPdDSL6lyM1pqbJgSWhNhlc4VJiPX6xyYQ==
+X-ME-Sender: <xms:pEP-YnHDxWKDkyDnHD5gon8nELjEuDVuJMguC8NzulIcaBfxSjyPjg>
+    <xme:pEP-YkXZ7S1B9xfXvPdClTnnIWc7-VwldtsQzmbPk8S_apn2iuEN222hoJWk9Qz4E
+    Uy6yl5sifj-eYBzOmE>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvdehledggeegucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedfvehh
+    rhhishcuofhurhhphhihfdcuoehlihhsthhssegtohhlohhrrhgvmhgvughivghsrdgtoh
+    hmqeenucggtffrrghtthgvrhhnpefgvdeukedtfefgfefgtdelffdvieeltefgfedutdff
+    leeuieevieevkeehtdehueenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmh
+    grihhlfhhrohhmpehlihhsthhssegtohhlohhrrhgvmhgvughivghsrdgtohhm
+X-ME-Proxy: <xmx:pEP-YpLYdVibr6u3RS0w-JWWfItk_DsFPLdRd__CKfGE_zmIBk1fqw>
+    <xmx:pEP-YlHOOxKf9tpuXSfAYp7feNTi3iC4O0I-ryfuD6u1hQHRKbpmUg>
+    <xmx:pEP-YtViwys_vKarLCXa1KxAlkiwOHTDPxvUhLP8U5pPh3gHA-SNfQ>
+    <xmx:pEP-YsE-xMoxK7S8p6ZNGeFf6A3phPeIGofE2plBDgH1_zqz05s4fQ>
+Feedback-ID: i06494636:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 28CF11700082; Thu, 18 Aug 2022 09:50:28 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.7.0-alpha0-841-g7899e99a45-fm-20220811.002-g7899e99a
+Mime-Version: 1.0
+Message-Id: <aadeb600-4e3a-4b69-bc17-fd2918c5b061@www.fastmail.com>
+In-Reply-To: <Yv3NIQlDL0T3lstU@T590>
+References: <Yv0A6UhioH3rbi0E@T590>
+ <f633c476-bdc9-40e2-a93f-29601979f833@www.fastmail.com>
+ <Yv0KmT8UYos2/4SX@T590>
+ <35f0d608-7448-4276-8922-19a23d8f9049@www.fastmail.com>
+ <Yv2P0zyoVvz35w/m@T590>
+ <568465de-5c3b-4d94-a74b-5b83ce2f942f@www.fastmail.com>
+ <Yv2w+Tuhw1RAoXI5@T590>
+ <9f2f608a-cd5f-4736-9e6d-07ccc2eca12c@www.fastmail.com>
+ <a817431f-276f-4aab-9ff8-c3e397494339@www.fastmail.com>
+ <5426d0f9-6539-477d-8feb-2b49136b960f@www.fastmail.com>
+ <Yv3NIQlDL0T3lstU@T590>
+Date:   Thu, 18 Aug 2022 09:50:07 -0400
+From:   "Chris Murphy" <lists@colorremedies.com>
+To:     "Ming Lei" <ming.lei@redhat.com>
+Cc:     "Nikolay Borisov" <nborisov@suse.com>,
+        "Jens Axboe" <axboe@kernel.dk>, "Jan Kara" <jack@suse.cz>,
+        "Paolo Valente" <paolo.valente@linaro.org>,
+        "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>,
+        Linux-RAID <linux-raid@vger.kernel.org>,
+        linux-block <linux-block@vger.kernel.org>,
+        linux-kernel <linux-kernel@vger.kernel.org>,
+        "Josef Bacik" <josef@toxicpanda.com>
+Subject: Re: stalling IO regression since linux 5.12, through 5.18
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Aug 13, 2022 at 04:06:53PM +0800, Qu Wenruo wrote:
-> [BUG]
-> Zygo reported on latest devel branch, he can hit ASSERT()/BUG_ON()
-> caused crash when doing RAID5 recovery (intentionally corrupt one disk,
-> and let btrfs to recovery the data during read/scrub).
-> 
-> And The following minimal reproducer can cause extent state leakage at
-> rmmod time:
-> 
->   mkfs.btrfs -f -d raid5 -m raid5 $dev1 $dev2 $dev3 -b 1G > /dev/null
->   mount $dev1 $mnt
->   fsstress -w -d $mnt -n 25 -s 1660807876
->   sync
->   fssum -A -f -w /tmp/fssum.saved $mnt
->   umount $mnt
-> 
->   # Wipe the dev1 but keeps its super block
->   xfs_io -c "pwrite -S 0x0 1m 1023m" $dev1
->   mount $dev1 $mnt
->   fssum -r /tmp/fssum.saved $mnt > /dev/null
->   umount $mnt
->   rmmod btrfs
-> 
-> This will lead to the following extent states leakage:
-> 
->  BTRFS: state leak: start 499712 end 503807 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 495616 end 499711 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 491520 end 495615 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 487424 end 491519 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 483328 end 487423 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 479232 end 483327 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 475136 end 479231 state 5 in tree 1 refs 1
->  BTRFS: state leak: start 471040 end 475135 state 5 in tree 1 refs 1
-> 
-> [CAUSE]
-> Since commit 7aa51232e204 ("btrfs: pass a btrfs_bio to
-> btrfs_repair_one_sector"), we always use btrfs_bio->file_offset to
-> determine the file offset of a page.
-> 
-> But that usage assume that, one bio has all its page having a continuous
-> page offsets.
-> 
-> Unfortunately that's not true, btrfs only requires the logical bytenr
-> continuous when assembling its bios.
-> 
-> >From above script, we have one bio looks like this:
->   fssum-27671  submit_one_bio: bio logical=217739264 len=36864
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=466944 <<<
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=724992 <<<
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=729088
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=733184
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=737280
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=741376
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=745472
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=749568
->   fssum-27671  submit_one_bio:   r/i=5/261 page_offset=753664
-> 
-> Note that the 1st and the 2nd page has non-continuous page offsets.
-> 
-> This means, at repair time, we will have completely wrong file offset
-> passed in:
-> 
->    kworker/u32:2-19927  btrfs_repair_one_sector: r/i=5/261 page_off=729088 file_off=475136 bio_offset=8192
-> 
-> Since the file offset is incorrect, we latter incorrectly set the extent
-> states, and no way to really release them.
-> 
-> Thus later it causes the leakage.
-> 
-> In fact, this can be even worse, since the file offset is incorrect, we
-> can hit cases like the incorrect file offset belongs to a HOLE, and
-> later cause btrfs_num_copies() to trigger error, finally hit
-> BUG_ON()/ASSERT() later.
-> 
-> [FIX]
-> This patch will add an extra condition in btrfs_bio_add_page() for
-> uncompressed IO.
-> 
-> Now we will have more strict requirement for bio pages:
-> 
-> - They should all have the same mapping
->   (the mapping check is already implied by the call chain)
-> 
-> - Their logical bytenr should be adjacent
->   This is the same as the old condition.
-> 
-> - Their page_offset() (file offset) should be adjacent
->   This is the new check.
->   This would result a slightly increased amount of bios from btrfs
->   (needs holes and inside the same stripe boundary to trigger).
-> 
->   But this would greatly reduce the confusion, as it's pretty common
->   to assume a btrfs bio would only contain continuous page cache.
-> 
-> Later we may need extra cleanups, as we no longer needs to handle gaps
-> between page offsets in endio functions.
-> 
-> Currently this should be the minimal patch to fix commit 7aa51232e204
-> ("btrfs: pass a btrfs_bio to btrfs_repair_one_sector").
-> 
-> Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-> Cc: Christoph Hellwig <hch@lst.de>
-> Fixes: 7aa51232e204 ("btrfs: pass a btrfs_bio to btrfs_repair_one_sector")
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Thanks for fixing it, added to misc-next.
 
-> @@ -3265,10 +3265,34 @@ static int btrfs_bio_add_page(struct btrfs_bio_ctrl *bio_ctrl,
->  	if (bio_ctrl->compress_type != compress_type)
->  		return 0;
->  
-> -	if (bio_ctrl->compress_type != BTRFS_COMPRESS_NONE)
-> +
-> +	if (bio->bi_iter.bi_size == 0) {
-> +		/* We can always add a page into an empty bio. */
-> +		contig = true;
-> +	} else if (bio_ctrl->compress_type == BTRFS_COMPRESS_NONE) {
-> +		struct bio_vec *bvec = bio_last_bvec_all(bio);
-> +
-> +		/*
-> +		 * The contig check requires the following conditions to be met:
-> +		 * 1) The pages are belonging to the same inode
-> +		 *    This is implied by the call chain.
-> +		 *
-> +		 * 2) The range has adjacent logical bytenr
-> +		 *
-> +		 * 3) The range has adjacent file offset (NEW)
-> +		 *    This is required for the usage of btrfs_bio->file_offset.
-> +		 */
-> +		contig = bio_end_sector(bio) == sector &&
-> +			 page_offset(bvec->bv_page) + bvec->bv_offset +
-> +			 bvec->bv_len == page_offset(page) + pg_offset;
+On Thu, Aug 18, 2022, at 1:24 AM, Ming Lei wrote:
 
-I've converted this to an if(), the one line condition assignments
-should be used for simple expressions like "X = (A == B)", otherwise
-it's hard to read.
+>
+> Also please test the following one too:
+>
+>
+> diff --git a/block/blk-mq.c b/block/blk-mq.c
+> index 5ee62b95f3e5..d01c64be08e2 100644
+> --- a/block/blk-mq.c
+> +++ b/block/blk-mq.c
+> @@ -1991,7 +1991,8 @@ bool blk_mq_dispatch_rq_list(struct blk_mq_hw_ctx 
+> *hctx, struct list_head *list,
+>  		if (!needs_restart ||
+>  		    (no_tag && list_empty_careful(&hctx->dispatch_wait.entry)))
+>  			blk_mq_run_hw_queue(hctx, true);
+> -		else if (needs_restart && needs_resource)
+> +		else if (needs_restart && (needs_resource ||
+> +					blk_mq_is_shared_tags(hctx->flags)))
+>  			blk_mq_delay_run_hw_queue(hctx, BLK_MQ_RESOURCE_DELAY);
+> 
+>  		blk_mq_update_dispatch_busy(hctx, true);
+>
+
+Should I test both patches at the same time, or separately? On top of v5.17 clean, or with b6e68ee82585 still reverted?
+
+-- 
+Chris Murphy

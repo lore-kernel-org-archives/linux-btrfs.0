@@ -2,257 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CD09C32789
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Aug 2022 12:01:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5323C32771
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Aug 2022 12:06:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348834AbiHSMBp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Aug 2022 08:01:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48636 "EHLO
+        id S1348550AbiHSMGI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Aug 2022 08:06:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59194 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348781AbiHSMBh (ORCPT
+        with ESMTP id S1348496AbiHSMGH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2022 08:01:37 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D47F6E398F;
-        Fri, 19 Aug 2022 05:01:35 -0700 (PDT)
+        Fri, 19 Aug 2022 08:06:07 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 514F8100963;
+        Fri, 19 Aug 2022 05:06:05 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 8E9921FFF7;
-        Fri, 19 Aug 2022 12:01:34 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 03DF42020E;
+        Fri, 19 Aug 2022 12:06:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1660910494; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=VchSJ8zL9t2yRZMc3QKpghUaYLX8w6jzvETUG3cyHw0=;
-        b=qLNf7+QlD5gGaBG2w0FSjXABy/poC+vni4/qHZEtX47qEz6y+yf2OfVK24+C7Ez843wrav
-        x23kdarAJhXBNu7U3YqNCv4q90WEKcL/yktQdLDc0VyguS+0Re9J8dWkbjmYkzY5Wk30tA
-        eyYGEX5cxb4IZ2d9bXiDJ9lh0iF9Cx4=
+        t=1660910764;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type;
+        bh=s8JuKXuquxAHWWI+QjuKLmXu6m/+exD+rUksSV7bL9U=;
+        b=pGr9BqV15xyOVLEeTm7Gc+cpOYlTyIDe0UvexnFuFVkegZ6kh6jvSu3pCQ35YMGxf+VenF
+        i6Y/STjbx5bjc9o2bm0rKfsK1oeVz38UfUsYKTdCj5xjbO3BEXGbpXILbc5CWYKDl91o9b
+        JJyrSRx+IoQbJGlzU5YT4H9wPGsYOEk=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7E40813AC1;
-        Fri, 19 Aug 2022 12:01:33 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D298B13AC1;
+        Fri, 19 Aug 2022 12:06:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id uElaEp17/2LLOwAAMHmgww
-        (envelope-from <wqu@suse.com>); Fri, 19 Aug 2022 12:01:33 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH STABLE 5.10 2/2] btrfs: raid56: don't trust any cached sector in __raid56_parity_recover()
-Date:   Fri, 19 Aug 2022 20:01:10 +0800
-Message-Id: <9127f6cbf1d95f0591ca87c3fcee257b68442f1e.1660906975.git.wqu@suse.com>
-X-Mailer: git-send-email 2.37.1
-In-Reply-To: <cover.1660906975.git.wqu@suse.com>
-References: <cover.1660906975.git.wqu@suse.com>
+        id t8BqMqt8/2JpPQAAMHmgww
+        (envelope-from <dsterba@suse.com>); Fri, 19 Aug 2022 12:06:03 +0000
+Date:   Fri, 19 Aug 2022 14:00:51 +0200
+From:   David Sterba <dsterba@suse.com>
+To:     torvalds@linux-foundation.org
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 6.0-rc2
+Message-ID: <cover.1660908668.git.dsterba@suse.com>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, torvalds@linux-foundation.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-commit f6065f8edeb25f4a9dfe0b446030ad995a84a088 upstream.
+Hi,
 
-[BUG]
-There is a small workload which will always fail with recent kernel:
-(A simplified version from btrfs/125 test case)
+a few short fixes and a lockdep warning fix (needs moving some code).
+Please pull, thanks.
 
-  mkfs.btrfs -f -m raid5 -d raid5 -b 1G $dev1 $dev2 $dev3
-  mount $dev1 $mnt
-  xfs_io -f -c "pwrite -S 0xee 0 1M" $mnt/file1
-  sync
-  umount $mnt
-  btrfs dev scan -u $dev3
-  mount -o degraded $dev1 $mnt
-  xfs_io -f -c "pwrite -S 0xff 0 128M" $mnt/file2
-  umount $mnt
-  btrfs dev scan
-  mount $dev1 $mnt
-  btrfs balance start --full-balance $mnt
-  umount $mnt
+- tree-log replay fixes
+  - fix error handling when looking up extent refs
+  - fix warning when setting inode number of links
 
-The failure is always failed to read some tree blocks:
+- relocation fixes
+  - reset block group read-only status when relocation fails
+  - unset control structure if transaction fails when starting to
+    process a block group
+  - add lockdep annotations to fix a warning during relocation where
+    blocks temporarily belong to another tree and can lead to reversed
+    dependencies
 
-  BTRFS info (device dm-4): relocating block group 217710592 flags data|raid5
-  BTRFS error (device dm-4): parent transid verify failed on 38993920 wanted 9 found 7
-  BTRFS error (device dm-4): parent transid verify failed on 38993920 wanted 9 found 7
-  ...
+- tree-checker verifies if extent items don't overlap
 
-[CAUSE]
-With the recently added debug output, we can see all RAID56 operations
-related to full stripe 38928384:
+----------------------------------------------------------------
+The following changes since commit 0b078d9db8793b1bd911e97be854e3c964235c78:
 
-  56.1183: raid56_read_partial: full_stripe=38928384 devid=2 type=DATA1 offset=0 opf=0x0 physical=9502720 len=65536
-  56.1185: raid56_read_partial: full_stripe=38928384 devid=3 type=DATA2 offset=16384 opf=0x0 physical=9519104 len=16384
-  56.1185: raid56_read_partial: full_stripe=38928384 devid=3 type=DATA2 offset=49152 opf=0x0 physical=9551872 len=16384
-  56.1187: raid56_write_stripe: full_stripe=38928384 devid=3 type=DATA2 offset=0 opf=0x1 physical=9502720 len=16384
-  56.1188: raid56_write_stripe: full_stripe=38928384 devid=3 type=DATA2 offset=32768 opf=0x1 physical=9535488 len=16384
-  56.1188: raid56_write_stripe: full_stripe=38928384 devid=1 type=PQ1 offset=0 opf=0x1 physical=30474240 len=16384
-  56.1189: raid56_write_stripe: full_stripe=38928384 devid=1 type=PQ1 offset=32768 opf=0x1 physical=30507008 len=16384
-  56.1218: raid56_write_stripe: full_stripe=38928384 devid=3 type=DATA2 offset=49152 opf=0x1 physical=9551872 len=16384
-  56.1219: raid56_write_stripe: full_stripe=38928384 devid=1 type=PQ1 offset=49152 opf=0x1 physical=30523392 len=16384
-  56.2721: raid56_parity_recover: full stripe=38928384 eb=39010304 mirror=2
-  56.2723: raid56_parity_recover: full stripe=38928384 eb=39010304 mirror=2
-  56.2724: raid56_parity_recover: full stripe=38928384 eb=39010304 mirror=2
+  btrfs: don't call btrfs_page_set_checked in finish_compressed_bio_read (2022-07-25 19:56:16 +0200)
 
-Before we enter raid56_parity_recover(), we have triggered some metadata
-write for the full stripe 38928384, this leads to us to read all the
-sectors from disk.
+are available in the Git repository at:
 
-Furthermore, btrfs raid56 write will cache its calculated P/Q sectors to
-avoid unnecessary read.
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-6.0-rc1-tag
 
-This means, for that full stripe, after any partial write, we will have
-stale data, along with P/Q calculated using that stale data.
+for you to fetch changes up to 899b7f69f244e539ea5df1b4d756046337de44a5:
 
-Thankfully due to patch "btrfs: only write the sectors in the vertical stripe
-which has data stripes" we haven't submitted all the corrupted P/Q to disk.
+  btrfs: tree-checker: check for overlapping extent items (2022-08-17 16:20:25 +0200)
 
-When we really need to recover certain range, aka in
-raid56_parity_recover(), we will use the cached rbio, along with its
-cached sectors (the full stripe is all cached).
+----------------------------------------------------------------
+Filipe Manana (2):
+      btrfs: fix lost error handling when looking up extended ref on log replay
+      btrfs: fix warning during log replay when bumping inode link count
 
-This explains why we have no event raid56_scrub_read_recover()
-triggered.
+Josef Bacik (4):
+      btrfs: reset RO counter on block group if we fail to relocate
+      btrfs: move lockdep class helpers to locking.c
+      btrfs: fix lockdep splat with reloc root extent buffers
+      btrfs: tree-checker: check for overlapping extent items
 
-Since we have the cached P/Q which is calculated using the stale data,
-the recovered one will just be stale.
+Zixuan Fu (1):
+      btrfs: unset reloc control if transaction commit fails in prepare_to_relocate()
 
-In our particular test case, it will always return the same incorrect
-metadata, thus causing the same error message "parent transid verify
-failed on 39010304 wanted 9 found 7" again and again.
-
-[BTRFS DESTRUCTIVE RMW PROBLEM]
-
-Test case btrfs/125 (and above workload) always has its trouble with
-the destructive read-modify-write (RMW) cycle:
-
-        0       32K     64K
-Data1:  | Good  | Good  |
-Data2:  | Bad   | Bad   |
-Parity: | Good  | Good  |
-
-In above case, if we trigger any write into Data1, we will use the bad
-data in Data2 to re-generate parity, killing the only chance to recovery
-Data2, thus Data2 is lost forever.
-
-This destructive RMW cycle is not specific to btrfs RAID56, but there
-are some btrfs specific behaviors making the case even worse:
-
-- Btrfs will cache sectors for unrelated vertical stripes.
-
-  In above example, if we're only writing into 0~32K range, btrfs will
-  still read data range (32K ~ 64K) of Data1, and (64K~128K) of Data2.
-  This behavior is to cache sectors for later update.
-
-  Incidentally commit d4e28d9b5f04 ("btrfs: raid56: make steal_rbio()
-  subpage compatible") has a bug which makes RAID56 to never trust the
-  cached sectors, thus slightly improve the situation for recovery.
-
-  Unfortunately, follow up fix "btrfs: update stripe_sectors::uptodate in
-  steal_rbio" will revert the behavior back to the old one.
-
-- Btrfs raid56 partial write will update all P/Q sectors and cache them
-
-  This means, even if data at (64K ~ 96K) of Data2 is free space, and
-  only (96K ~ 128K) of Data2 is really stale data.
-  And we write into that (96K ~ 128K), we will update all the parity
-  sectors for the full stripe.
-
-  This unnecessary behavior will completely kill the chance of recovery.
-
-  Thankfully, an unrelated optimization "btrfs: only write the sectors
-  in the vertical stripe which has data stripes" will prevent
-  submitting the write bio for untouched vertical sectors.
-
-  That optimization will keep the on-disk P/Q untouched for a chance for
-  later recovery.
-
-[FIX]
-Although we have no good way to completely fix the destructive RMW
-(unless we go full scrub for each partial write), we can still limit the
-damage.
-
-With patch "btrfs: only write the sectors in the vertical stripe which
-has data stripes" now we won't really submit the P/Q of unrelated
-vertical stripes, so the on-disk P/Q should still be fine.
-
-Now we really need to do is just drop all the cached sectors when doing
-recovery.
-
-By this, we have a chance to read the original P/Q from disk, and have a
-chance to recover the stale data, while still keep the cache to speed up
-regular write path.
-
-In fact, just dropping all the cache for recovery path is good enough to
-allow the test case btrfs/125 along with the small script to pass
-reliably.
-
-The lack of metadata write after the degraded mount, and forced metadata
-COW is saving us this time.
-
-So this patch will fix the behavior by not trust any cache in
-__raid56_parity_recover(), to solve the problem while still keep the
-cache useful.
-
-But please note that this test pass DOES NOT mean we have solved the
-destructive RMW problem, we just do better damage control a little
-better.
-
-Related patches:
-
-- btrfs: only write the sectors in the vertical stripe
-- d4e28d9b5f04 ("btrfs: raid56: make steal_rbio() subpage compatible")
-- btrfs: update stripe_sectors::uptodate in steal_rbio
-
-Acked-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/raid56.c | 19 ++++++-------------
- 1 file changed, 6 insertions(+), 13 deletions(-)
-
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 0a56f13f2f1a..9678d7fa4dcc 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -2094,9 +2094,12 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
- 	atomic_set(&rbio->error, 0);
- 
- 	/*
--	 * read everything that hasn't failed.  Thanks to the
--	 * stripe cache, it is possible that some or all of these
--	 * pages are going to be uptodate.
-+	 * Read everything that hasn't failed. However this time we will
-+	 * not trust any cached sector.
-+	 * As we may read out some stale data but higher layer is not reading
-+	 * that stale part.
-+	 *
-+	 * So here we always re-read everything in recovery path.
- 	 */
- 	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
- 		if (rbio->faila == stripe || rbio->failb == stripe) {
-@@ -2105,16 +2108,6 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
- 		}
- 
- 		for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
--			struct page *p;
--
--			/*
--			 * the rmw code may have already read this
--			 * page in
--			 */
--			p = rbio_stripe_page(rbio, stripe, pagenr);
--			if (PageUptodate(p))
--				continue;
--
- 			ret = rbio_add_io_page(rbio, &bio_list,
- 				       rbio_stripe_page(rbio, stripe, pagenr),
- 				       stripe, pagenr, rbio->stripe_len);
--- 
-2.37.1
-
+ fs/btrfs/block-group.c  |  4 ++-
+ fs/btrfs/ctree.c        |  3 ++
+ fs/btrfs/ctree.h        |  2 ++
+ fs/btrfs/disk-io.c      | 82 --------------------------------------------
+ fs/btrfs/disk-io.h      | 10 ------
+ fs/btrfs/extent-tree.c  | 18 +++++++++-
+ fs/btrfs/extent_io.c    | 11 +++++-
+ fs/btrfs/locking.c      | 91 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/locking.h      | 14 ++++++++
+ fs/btrfs/relocation.c   |  9 ++++-
+ fs/btrfs/tree-checker.c | 25 ++++++++++++--
+ fs/btrfs/tree-log.c     |  8 +++--
+ 12 files changed, 176 insertions(+), 101 deletions(-)

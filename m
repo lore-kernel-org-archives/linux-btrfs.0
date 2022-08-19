@@ -2,116 +2,116 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5323C32771
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Aug 2022 12:06:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC840C3F6B0
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Aug 2022 14:39:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348550AbiHSMGI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Aug 2022 08:06:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59194 "EHLO
+        id S1349583AbiHSOjo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Aug 2022 10:39:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47108 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348496AbiHSMGH (ORCPT
+        with ESMTP id S1349585AbiHSOjl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2022 08:06:07 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 514F8100963;
-        Fri, 19 Aug 2022 05:06:05 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 03DF42020E;
-        Fri, 19 Aug 2022 12:06:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1660910764;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type;
-        bh=s8JuKXuquxAHWWI+QjuKLmXu6m/+exD+rUksSV7bL9U=;
-        b=pGr9BqV15xyOVLEeTm7Gc+cpOYlTyIDe0UvexnFuFVkegZ6kh6jvSu3pCQ35YMGxf+VenF
-        i6Y/STjbx5bjc9o2bm0rKfsK1oeVz38UfUsYKTdCj5xjbO3BEXGbpXILbc5CWYKDl91o9b
-        JJyrSRx+IoQbJGlzU5YT4H9wPGsYOEk=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D298B13AC1;
-        Fri, 19 Aug 2022 12:06:03 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id t8BqMqt8/2JpPQAAMHmgww
-        (envelope-from <dsterba@suse.com>); Fri, 19 Aug 2022 12:06:03 +0000
-Date:   Fri, 19 Aug 2022 14:00:51 +0200
-From:   David Sterba <dsterba@suse.com>
-To:     torvalds@linux-foundation.org
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 6.0-rc2
-Message-ID: <cover.1660908668.git.dsterba@suse.com>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, torvalds@linux-foundation.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+        Fri, 19 Aug 2022 10:39:41 -0400
+Received: from wout3-smtp.messagingengine.com (wout3-smtp.messagingengine.com [64.147.123.19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 30A66ED001;
+        Fri, 19 Aug 2022 07:39:39 -0700 (PDT)
+Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
+        by mailout.west.internal (Postfix) with ESMTP id 07D7E32003CE;
+        Fri, 19 Aug 2022 10:39:36 -0400 (EDT)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute4.internal (MEProxy); Fri, 19 Aug 2022 10:39:37 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kroah.com; h=cc
+        :cc:content-type:date:date:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to; s=fm1; t=1660919976; x=1661006376; bh=fZII8GyCA2
+        yRaqfhy5Sp+pvzUV5l79DuSRqq+3GxzNk=; b=mh9ClG6cRZI47g1MciZw9j6gIr
+        sM2TpsLKoCppnbmmV36Rb4ZKvtOOU8FO0G7TJ2xmYdpl8hmrLYeyWrRK75UclqOf
+        4V1gfXG72XcldRKbalBdjv9Tf3zJoYngELMcnYRa2cSEKpwEO69TR5VTb1jAgdYS
+        PCDJiA716fMtJR2Htl0IaaNYSkphAGQrnJcR8I/fXFz1O5DuX3FHDZx/xIMK1kaW
+        68RACwa3P5x8kewtFyIv2aKinNaM7w7s4m8T3DIpa5/T5Yjm3EdaIR0TSPxE5Diy
+        igA7rgxUn/0V/YBZ2ra4KvMfmclEUugOCkFkwxbDq5nngKTxif97ENIjICBA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
+        :feedback-id:from:from:in-reply-to:in-reply-to:message-id
+        :mime-version:references:reply-to:sender:subject:subject:to:to
+        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+        fm1; t=1660919976; x=1661006376; bh=fZII8GyCA2yRaqfhy5Sp+pvzUV5l
+        79DuSRqq+3GxzNk=; b=yKvWuz7rC8UvR1VkzCIrirGMOaBXHXkPi10ac5PoRu/4
+        iMSXwfb3vF/j9Wl473JIvIi60t58BI6n0KOtOQfqP3WkBLmsMjHvUAB5afMQlBRH
+        X/WZMv6daIlptrNc01vn+y99eX3asmEXSuEsbOy2GZyf6vdeZSjeV1wYF0FY7m7q
+        u0gvzt3fVqQvPfQBxD7Ebl2kuPqDM5FkmYO1jERaPAtK6aCiyoqSt03QkE5OkYs0
+        b6nSx2PDruimbKyF32+z9iOu9ZWOHk8+aAmCV4xmVSiq7XldOoJxdZBUAhNuid+u
+        Xj5ML1JZRNZPbUONgCKan5OvHDBlV1zSwLjneNb4eQ==
+X-ME-Sender: <xms:qKD_YoMwjchNwpFTd4mX1ePMzsyzwSfguhhD9P-Dx6ZI1DNc2CarBA>
+    <xme:qKD_Yu91bdgKicUEL5KqIQGdYWehDHQnc1DBz2VuUaKCadMUx2QFB9f7YfqYvsEK6
+    o0Nj--daIyTXQ>
+X-ME-Received: <xmr:qKD_YvRIRHD1rgvRibD1PVjBej8d3TDciYbnbwX63wEEGInw5SQYLOXJYtMH2xLJ2iZ9rLDNKT1e_D3PQY6wPD0dLKJahH-t>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrvdeiuddgkedtucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepifhrvghg
+    ucfmjfcuoehgrhgvgheskhhrohgrhhdrtghomheqnecuggftrfgrthhtvghrnhepgeehue
+    ehgfdtledutdelkeefgeejteegieekheefudeiffdvudeffeelvedttddvnecuffhomhgr
+    ihhnpehkvghrnhgvlhdrohhrghenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmh
+    epmhgrihhlfhhrohhmpehgrhgvgheskhhrohgrhhdrtghomh
+X-ME-Proxy: <xmx:qKD_Ygu0cUQAuEGAq0godjgh6w7vfijnnKos5PbFsu6t8flEiv0wdw>
+    <xmx:qKD_YgdPkwy6dvVxAIraVqG5CMzEGFGWiF6Jbxo95LNvl8IZ77qA-w>
+    <xmx:qKD_Yk2MEyF2Ne4Pgp6mJolrU1Tde2tP4B2lG4lN5brILlId5OOMhA>
+    <xmx:qKD_Yv6luiUwOCaHYiQx1LIoclNiJU2J_CZgS7Qfuj7mPV9rySH2qA>
+Feedback-ID: i787e41f1:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 19 Aug 2022 10:39:35 -0400 (EDT)
+Date:   Fri, 19 Aug 2022 16:39:31 +0200
+From:   Greg KH <greg@kroah.com>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH STABLE 5.10 0/2] btrfs: raid56: backports to reduce
+ corruption
+Message-ID: <Yv+go4KbjBbWoGo3@kroah.com>
+References: <cover.1660906975.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <cover.1660906975.git.wqu@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Fri, Aug 19, 2022 at 08:01:08PM +0800, Qu Wenruo wrote:
+> This is the backport for v5.10.x stable branch.
+> 
+> The full explananation can be found here:
+> https://lore.kernel.org/linux-btrfs/cover.1660891713.git.wqu@suse.com/
+> 
+> Difference between v5.10.x and v5.15.x backports:
+> 
+> - Naming change in btrfs_io_contrl
+>   In v5.15, we don't have the btrfs_io_contrl rename, thus only
+>   btrfs_bio.
+> 
+> - Missing btrfs_fs_info::sectorsize_bits
+>   Since RAID56 doesn't support anything but PAGE_SIZE == sectorsize
+>   (until v5.19+), here we just use PAGE_SHIFT.
+> 
+> Another thing related to v5.10.x testing is, there are some lockdep
+> assert triggered related to uuid_mutex.
+> 
+> I'm not 100% sure, but at least RAID56 code is not touching that mutex,
+> thus I guess it's some other problems.
+> 
+> Qu Wenruo (2):
+>   btrfs: only write the sectors in the vertical stripe which has data
+>     stripes
+>   btrfs: raid56: don't trust any cached sector in
+>     __raid56_parity_recover()
+> 
+>  fs/btrfs/raid56.c | 74 ++++++++++++++++++++++++++++++++++++-----------
+>  1 file changed, 57 insertions(+), 17 deletions(-)
+> 
+> -- 
+> 2.37.1
+> 
 
-a few short fixes and a lockdep warning fix (needs moving some code).
-Please pull, thanks.
+Now queued up, thanks.
 
-- tree-log replay fixes
-  - fix error handling when looking up extent refs
-  - fix warning when setting inode number of links
-
-- relocation fixes
-  - reset block group read-only status when relocation fails
-  - unset control structure if transaction fails when starting to
-    process a block group
-  - add lockdep annotations to fix a warning during relocation where
-    blocks temporarily belong to another tree and can lead to reversed
-    dependencies
-
-- tree-checker verifies if extent items don't overlap
-
-----------------------------------------------------------------
-The following changes since commit 0b078d9db8793b1bd911e97be854e3c964235c78:
-
-  btrfs: don't call btrfs_page_set_checked in finish_compressed_bio_read (2022-07-25 19:56:16 +0200)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-6.0-rc1-tag
-
-for you to fetch changes up to 899b7f69f244e539ea5df1b4d756046337de44a5:
-
-  btrfs: tree-checker: check for overlapping extent items (2022-08-17 16:20:25 +0200)
-
-----------------------------------------------------------------
-Filipe Manana (2):
-      btrfs: fix lost error handling when looking up extended ref on log replay
-      btrfs: fix warning during log replay when bumping inode link count
-
-Josef Bacik (4):
-      btrfs: reset RO counter on block group if we fail to relocate
-      btrfs: move lockdep class helpers to locking.c
-      btrfs: fix lockdep splat with reloc root extent buffers
-      btrfs: tree-checker: check for overlapping extent items
-
-Zixuan Fu (1):
-      btrfs: unset reloc control if transaction commit fails in prepare_to_relocate()
-
- fs/btrfs/block-group.c  |  4 ++-
- fs/btrfs/ctree.c        |  3 ++
- fs/btrfs/ctree.h        |  2 ++
- fs/btrfs/disk-io.c      | 82 --------------------------------------------
- fs/btrfs/disk-io.h      | 10 ------
- fs/btrfs/extent-tree.c  | 18 +++++++++-
- fs/btrfs/extent_io.c    | 11 +++++-
- fs/btrfs/locking.c      | 91 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/locking.h      | 14 ++++++++
- fs/btrfs/relocation.c   |  9 ++++-
- fs/btrfs/tree-checker.c | 25 ++++++++++++--
- fs/btrfs/tree-log.c     |  8 +++--
- 12 files changed, 176 insertions(+), 101 deletions(-)
+greg k-h

@@ -2,179 +2,122 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AA5AC28B2B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Aug 2022 17:24:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A934AC32772
+	for <linux-btrfs@archiver.kernel.org>; Fri, 19 Aug 2022 17:35:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1350785AbiHSRYE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Aug 2022 13:24:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48172 "EHLO
+        id S1354626AbiHSRfS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 19 Aug 2022 13:35:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40772 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1350654AbiHSRXa (ORCPT
+        with ESMTP id S1354687AbiHSRes (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2022 13:23:30 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 85C6115078E
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2022 09:42:22 -0700 (PDT)
+        Fri, 19 Aug 2022 13:34:48 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E80F73CBFD
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2022 09:53:36 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id A6B65B827FA
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2022 16:42:16 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id ECF15C433C1;
-        Fri, 19 Aug 2022 16:42:14 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id EFBE361899
+        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2022 16:50:19 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0A4B3C433C1;
+        Fri, 19 Aug 2022 16:50:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1660927335;
-        bh=i6IpbQgcnxWdZo0Q1+M1VJ6oaZ2cChhdVBcYVkD4UbM=;
+        s=k20201202; t=1660927819;
+        bh=QCJq3dlz4OeOaniJxAatfqVTa+7Opl6ErQdm438J/44=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=LVLBEOEEwE/ItxIY4hCZLWuaNKLWue4QU7JR3hUJV9ujiQCCp9ytKbEj+iZ5MhZk5
-         jHLSKl2xwPP59LV+hffq38H9azJIeOMSMJp63Q8uMYmXPE6un0+SNwXOJLX0L/vpBq
-         Stk98A3XIVIhN49IU1TZBWvdAh50oAxyq9gW5UZsJuXcX07UUAZPNaleHBxDFMcNvY
-         2h/TjzAM6RZcPwpccKdbqfDCLvvXo62eGldRE/qDKki5E8ZNrz2z7Cf5Q8ICWMntWk
-         fUURERvReAJyGxgStYYv/wPmKa5NNhR+pwRd4qWdShuobR6cpYyKm1s63ZovHnCv3r
-         4CId1gZ4Roc8w==
-Date:   Fri, 19 Aug 2022 17:42:12 +0100
+        b=h/xiP2zNgetAUEdyGj63KUB3qwRcejaS/UEbmtaBY/NBGh3cQdi+Ra7GF0KTGOZXI
+         c4gQi66/ofPLZFQBR2RF9ijVFPGmL7qJnau5d1ADp/P3SAhSp9S4KlHiMsptnE8mTa
+         i2rc3vrjtJXwHjw5qkhO9BWOnMi2SgQD1F8ZGsnfPQ2KnZMN99z1qWIyLIxnGPe0I4
+         Pbeh8Bc/iTac0vnRdctoX6AL7fwFagA9DQBrjm4zbZbnxIyb2GroNiIL7gkfax0HPN
+         rwXnouazXKVC/bFVejhJ3EPOp0WXARhjEm9IMjN5PikvI2lGu1hiUUz9XDwLJe4cI5
+         Hjx3iP5I7iG2A==
+Date:   Fri, 19 Aug 2022 17:50:16 +0100
 From:   Filipe Manana <fdmanana@kernel.org>
-To:     ethanlien <ethanlien@synology.com>
-Cc:     linux-btrfs@vger.kernel.org, cunankimo@gmail.com
-Subject: Re: [PATCH v2] btrfs: remove unnecessary EXTENT_UPTODATE state in
- buffered I/O path
-Message-ID: <20220819164212.GA3012163@falcondesktop>
-References: <20220819024408.9714-1-ethanlien@synology.com>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     kernel-team@fb.com, linux-btrfs@vger.kernel.org,
+        Dylan Yudaken <dylany@fb.com>
+Subject: Re: [PATCH] btrfs: don't allow large NOWAIT direct reads
+Message-ID: <20220819165016.GB3012163@falcondesktop>
+References: <882730e60b58b8d970bd8bc3a670e598184eefef.1660924379.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220819024408.9714-1-ethanlien@synology.com>
+In-Reply-To: <882730e60b58b8d970bd8bc3a670e598184eefef.1660924379.git.josef@toxicpanda.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Aug 19, 2022 at 10:44:08AM +0800, ethanlien wrote:
-> From: Ethan Lien <ethanlien@synology.com>
+On Fri, Aug 19, 2022 at 11:53:39AM -0400, Josef Bacik wrote:
+> Dylan and Jens reported a problem where they had an io_uring test that
+> was returning short reads, and bisected it to ee5b46a353af ("btrfs:
+> increase direct io read size limit to 256 sectors").
 > 
-> After we copied data to page cache in buffered I/O, we
-> 1. Insert a EXTENT_UPTODATE state into inode's io_tree, by
->    endio_readpage_release_extent(), set_extent_delalloc() or
->    set_extent_defrag().
-> 2. Set page uptodate before we unlock the page.
+> The root cause is their test was doing larger reads via io_uring with
+> NOWAIT and async.  This was triggering a page fault during the direct
+> read, however the first page was able to work just fine and thus we
+> submitted a 4k read for a larger iocb.
 > 
-> But the only place we check io_tree's EXTENT_UPTODATE state is in
-> btrfs_do_readpage(). We know we enter btrfs_do_readpage() only when we
-> have a non-uptodate page, so it is unnecessary to set EXTENT_UPTODATE.
+> Btrfs allows for partial IO's in this case specifically because we don't
+> allow page faults, and thus we'll attempt to do any io that we can,
+> submit what we could, come back and fault in the rest of the range and
+> try to do the remaining IO.
 > 
-> For example, when performing a buffered random read:
+> However for !is_sync_kiocb() we'll call ->ki_complete() as soon as the
+> partial dio is done, which is incorrect.  In the sync case we can exit
+> the iomap code, submit more io's, and return with the amount of IO we
+> were able to complete successfully.
 > 
-> 	fio --rw=randread --ioengine=libaio --direct=0 --numjobs=4 \
-> 		--filesize=32G --size=4G --bs=4k --name=job \
-> 		--filename=/mnt/file --name=job
+> We were always doing short reads in this case, but for NOWAIT we were
+> getting saved by the fact that we were limiting direct reads to
+> sectorsize, and if we were larger than that we would return EAGAIN.
 > 
-> Then check how many extent_state in io_tree:
+> Fix the regression by simply returning EAGAIN in the NOWAIT case with
+> larger reads, that way io_uring can retry and get the larger IO and have
+> the fault logic handle everything properly.
 > 
-> 	cat /proc/slabinfo | grep btrfs_extent_state | awk '{print $2}'
+> This still leaves the AIO short read case, but that existed before this
+> change.  The way to properly fix this would be to handle partial iocb
+> completions, but that's a lot of work, for now deal with the regression
+> in the most straightforward way possible.
 > 
-> w/o this patch, we got 640567 btrfs_extent_state.
-> w/  this patch, we got    204 btrfs_extent_state.
-> 
-> Maintaining such a big tree brings overhead since every I/O needs to insert
-> EXTENT_LOCKED, insert EXTENT_UPTODATE, then remove EXTENT_LOCKED. And in
-> every insert or remove, we need to lock io_tree, do tree search, alloc or
-> dealloc extent states. By removing unnecessary EXTENT_UPTODATE, we keep
-> io_tree in a minimal size and reduce overhead when performing buffered I/O.
-> 
-> Signed-off-by: Ethan Lien <ethanlien@synology.com>
-> Reviewed-by: Robbie Ko <robbieko@synology.com>
-> ---
-> 
-> V2: Remove set_extent_uptodate() from btrfs_get_extent(), and when we found
->     a inline extent, set page uptodate in btrfs_do_readpage().
-
-Yep, that was what I had in mind.
-Thanks for trying it out. I've given it some testing, including a full run of
-fstests just to confirm I hadn't missed something.
-
-Looks good, so:
+> Reported-by: Dylan Yudaken <dylany@fb.com>
+> Fixes: ee5b46a353af ("btrfs: increase direct io read size limit to 256 sectors")
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Thanks.
+Looks good, thanks.
 
-
+> ---
+>  fs/btrfs/inode.c | 14 ++++++++++++++
+>  1 file changed, 14 insertions(+)
 > 
->  fs/btrfs/extent-io-tree.h |  4 ++--
->  fs/btrfs/extent_io.c      | 16 +---------------
->  fs/btrfs/inode.c          |  2 --
->  3 files changed, 3 insertions(+), 19 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-> index c3eb52dbe61c..53ae849d0248 100644
-> --- a/fs/btrfs/extent-io-tree.h
-> +++ b/fs/btrfs/extent-io-tree.h
-> @@ -211,7 +211,7 @@ static inline int set_extent_delalloc(struct extent_io_tree *tree, u64 start,
->  				      struct extent_state **cached_state)
->  {
->  	return set_extent_bit(tree, start, end,
-> -			      EXTENT_DELALLOC | EXTENT_UPTODATE | extra_bits,
-> +			      EXTENT_DELALLOC | extra_bits,
->  			      0, NULL, cached_state, GFP_NOFS, NULL);
->  }
->  
-> @@ -219,7 +219,7 @@ static inline int set_extent_defrag(struct extent_io_tree *tree, u64 start,
->  		u64 end, struct extent_state **cached_state)
->  {
->  	return set_extent_bit(tree, start, end,
-> -			      EXTENT_DELALLOC | EXTENT_UPTODATE | EXTENT_DEFRAG,
-> +			      EXTENT_DELALLOC | EXTENT_DEFRAG,
->  			      0, NULL, cached_state, GFP_NOFS, NULL);
->  }
->  
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index bfae67c593c5..7e082770a088 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2924,9 +2924,6 @@ static void endio_readpage_release_extent(struct processed_extent *processed,
->  	 * Now we don't have range contiguous to the processed range, release
->  	 * the processed range now.
->  	 */
-> -	if (processed->uptodate && tree->track_uptodate)
-> -		set_extent_uptodate(tree, processed->start, processed->end,
-> -				    &cached, GFP_ATOMIC);
->  	unlock_extent_cached_atomic(tree, processed->start, processed->end,
->  				    &cached);
->  
-> @@ -3718,20 +3715,9 @@ static int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
->  			continue;
->  		}
->  		/* the get_extent function already copied into the page */
-> -		if (test_range_bit(tree, cur, cur_end,
-> -				   EXTENT_UPTODATE, 1, NULL)) {
-> -			unlock_extent(tree, cur, cur + iosize - 1);
-> -			end_page_read(page, true, cur, iosize);
-> -			cur = cur + iosize;
-> -			pg_offset += iosize;
-> -			continue;
-> -		}
-> -		/* we have an inline extent but it didn't get marked up
-> -		 * to date.  Error out
-> -		 */
->  		if (block_start == EXTENT_MAP_INLINE) {
->  			unlock_extent(tree, cur, cur + iosize - 1);
-> -			end_page_read(page, false, cur, iosize);
-> +			end_page_read(page, true, cur, iosize);
->  			cur = cur + iosize;
->  			pg_offset += iosize;
->  			continue;
 > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index f0c97d25b4a0..639edbcce9fe 100644
+> index 5101111c5557..b39673e49732 100644
 > --- a/fs/btrfs/inode.c
 > +++ b/fs/btrfs/inode.c
-> @@ -7031,8 +7031,6 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
->  			}
->  			flush_dcache_page(page);
->  		}
-> -		set_extent_uptodate(io_tree, em->start,
-> -				    extent_map_end(em) - 1, NULL, GFP_NOFS);
->  		goto insert;
->  	}
->  not_found:
+> @@ -7694,6 +7694,20 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+>  	const u64 data_alloc_len = length;
+>  	bool unlock_extents = false;
+>  
+> +	/*
+> +	 * We could potentially fault if we have a buffer > PAGE_SIZE, and if
+> +	 * we're NOWAIT we may submit a bio for a partial range and return
+> +	 * EIOCBQUEUED, which would result in an errant short read.
+> +	 *
+> +	 * The best way to handle this would be to allow for partial completions
+> +	 * of iocb's, so we could submit the partial bio, return and fault in
+> +	 * the rest of the pages, and then submit the io for the rest of the
+> +	 * range.  However we don't have that currently, so simply return
+> +	 * -EAGAIN at this point so that the normal path is used.
+> +	 */
+> +	if (!write && (flags & IOMAP_NOWAIT) && length > PAGE_SIZE)
+> +		return -EAGAIN;
+> +
+>  	/*
+>  	 * Cap the size of reads to that usually seen in buffered I/O as we need
+>  	 * to allocate a contiguous array for the checksums.
 > -- 
-> 2.17.1
+> 2.26.3
 > 

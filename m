@@ -2,240 +2,257 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B3D15C28D13
-	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Aug 2022 01:40:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 122A4C32774
+	for <linux-btrfs@archiver.kernel.org>; Sat, 20 Aug 2022 06:35:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245405AbiHTBk0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 19 Aug 2022 21:40:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39572 "EHLO
+        id S245202AbiHTGff (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 20 Aug 2022 02:35:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60846 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245396AbiHTBkY (ORCPT
+        with ESMTP id S244833AbiHTGf0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 19 Aug 2022 21:40:24 -0400
-Received: from mga11.intel.com (mga11.intel.com [192.55.52.93])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A4D11C0E62
-        for <linux-btrfs@vger.kernel.org>; Fri, 19 Aug 2022 18:40:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1660959622; x=1692495622;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=NPGHzyP5OchTE4PrA/8k6USemq1cvLwbS8EX2HmNpD0=;
-  b=RD3fshJwYB9dVLYMaqWJAvqEPSQKoTsM9LltZ0AqfybOYSzkrAPm+xbo
-   bIEhgH9VRVxjIBYdnCy8FD9NIll5NiyBzGjeSBphCFFpF8rugnACR2Rtl
-   Y1VdMfDJzKHsbC9DS3VpYYsyNfUcrKId20i+ntnmJt2zBQVWkogLDLoEN
-   gG3EVo4Sbcywla4CR7APM9BSX1NHPHBOJY3qPMT8zP8SV1bvBtW9I7pMD
-   nRYcpDIEDnCmvjfRLrfetjZHlR8l7Uu1FF1EedrnyBIMbUDF7IxDkO/Da
-   FdOgpk5IAPvXUs5jMObMhwV6GHcgsESWLdGE3ixwVZxAtE3WCdzVDGu2h
-   A==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10444"; a="290700218"
-X-IronPort-AV: E=Sophos;i="5.93,249,1654585200"; 
-   d="scan'208";a="290700218"
-Received: from orsmga003.jf.intel.com ([10.7.209.27])
-  by fmsmga102.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 19 Aug 2022 18:40:21 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.93,249,1654585200"; 
-   d="scan'208";a="559138784"
-Received: from lkp-server01.sh.intel.com (HELO 44b6dac04a33) ([10.239.97.150])
-  by orsmga003.jf.intel.com with ESMTP; 19 Aug 2022 18:40:19 -0700
-Received: from kbuild by 44b6dac04a33 with local (Exim 4.96)
-        (envelope-from <lkp@intel.com>)
-        id 1oPDTH-00020L-11;
-        Sat, 20 Aug 2022 01:40:19 +0000
-Date:   Sat, 20 Aug 2022 09:39:26 +0800
-From:   kernel test robot <lkp@intel.com>
-To:     Josef Bacik <josef@toxicpanda.com>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Cc:     llvm@lists.linux.dev, kbuild-all@lists.01.org
-Subject: Re: [PATCH] btrfs: take the correct ctl lock when removing free
- space cache
-Message-ID: <202208200922.2GjdXWTx-lkp@intel.com>
-References: <409ff4f5a9365bec56c6a6dc77190b7a3b3645e6.1660938272.git.josef@toxicpanda.com>
+        Sat, 20 Aug 2022 02:35:26 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8AD1576947;
+        Fri, 19 Aug 2022 23:35:24 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 31136338C4;
+        Sat, 20 Aug 2022 06:35:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1660977323; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=revCCObzs3Tz8jJ/nemqBf6D39pVRsiEgiwmO5v1C0Y=;
+        b=WBvyMVpKbwB0cmhn+bX0nQNIPSAe6iMyTGaLIwqzgwkciy6RZ7VfXYTNMRO4fpSGYxnKS+
+        Vq4QFT2MZv/gqaGVJ6huFpshQwIgxEZgt2L/1BBnnxtvNfwMvBZjEmlhD1Dpzb6byNumGJ
+        AX//A9A49h8HFBuKhPy3ZTS2YhWb7so=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 810A313523;
+        Sat, 20 Aug 2022 06:35:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id GJNmEamAAGOCBwAAMHmgww
+        (envelope-from <wqu@suse.com>); Sat, 20 Aug 2022 06:35:21 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH STABLE 5.4 2/2] btrfs: raid56: don't trust any cached sector in __raid56_parity_recover()
+Date:   Sat, 20 Aug 2022 14:35:00 +0800
+Message-Id: <f681096966272baafb5ef89183a851ab506a064f.1660977189.git.wqu@suse.com>
+X-Mailer: git-send-email 2.37.1
+In-Reply-To: <cover.1660977189.git.wqu@suse.com>
+References: <cover.1660977189.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <409ff4f5a9365bec56c6a6dc77190b7a3b3645e6.1660938272.git.josef@toxicpanda.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Josef,
+commit f6065f8edeb25f4a9dfe0b446030ad995a84a088 upstream.
 
-I love your patch! Yet something to improve:
+[BUG]
+There is a small workload which will always fail with recent kernel:
+(A simplified version from btrfs/125 test case)
 
-[auto build test ERROR on kdave/for-next]
-[also build test ERROR on next-20220819]
-[cannot apply to linus/master v6.0-rc1]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch#_base_tree_information]
+  mkfs.btrfs -f -m raid5 -d raid5 -b 1G $dev1 $dev2 $dev3
+  mount $dev1 $mnt
+  xfs_io -f -c "pwrite -S 0xee 0 1M" $mnt/file1
+  sync
+  umount $mnt
+  btrfs dev scan -u $dev3
+  mount -o degraded $dev1 $mnt
+  xfs_io -f -c "pwrite -S 0xff 0 128M" $mnt/file2
+  umount $mnt
+  btrfs dev scan
+  mount $dev1 $mnt
+  btrfs balance start --full-balance $mnt
+  umount $mnt
 
-url:    https://github.com/intel-lab-lkp/linux/commits/Josef-Bacik/btrfs-take-the-correct-ctl-lock-when-removing-free-space-cache/20220820-034858
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
-config: arm64-randconfig-r031-20220820 (https://download.01.org/0day-ci/archive/20220820/202208200922.2GjdXWTx-lkp@intel.com/config)
-compiler: clang version 16.0.0 (https://github.com/llvm/llvm-project 0ac597f3cacf60479ffd36b03766fa7462dabd78)
-reproduce (this is a W=1 build):
-        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
-        chmod +x ~/bin/make.cross
-        # install arm64 cross compiling tool for clang build
-        # apt-get install binutils-aarch64-linux-gnu
-        # https://github.com/intel-lab-lkp/linux/commit/318faedfa41e18cc0da723a0405510d0c474d99e
-        git remote add linux-review https://github.com/intel-lab-lkp/linux
-        git fetch --no-tags linux-review Josef-Bacik/btrfs-take-the-correct-ctl-lock-when-removing-free-space-cache/20220820-034858
-        git checkout 318faedfa41e18cc0da723a0405510d0c474d99e
-        # save the config file
-        mkdir build_dir && cp config build_dir/.config
-        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=clang make.cross W=1 O=build_dir ARCH=arm64 SHELL=/bin/bash ./ fs/
+The failure is always failed to read some tree blocks:
 
-If you fix the issue, kindly add following tag where applicable
-Reported-by: kernel test robot <lkp@intel.com>
+  BTRFS info (device dm-4): relocating block group 217710592 flags data|raid5
+  BTRFS error (device dm-4): parent transid verify failed on 38993920 wanted 9 found 7
+  BTRFS error (device dm-4): parent transid verify failed on 38993920 wanted 9 found 7
+  ...
 
-All errors (new ones prefixed by >>):
+[CAUSE]
+With the recently added debug output, we can see all RAID56 operations
+related to full stripe 38928384:
 
->> fs/btrfs/free-space-cache.c:1038:21: error: member reference type 'struct btrfs_free_space_ctl' is not a pointer; did you mean to use '.'?
-                   spin_lock(&tmp_ctl->tree_lock);
-                              ~~~~~~~^~
-                                     .
->> fs/btrfs/free-space-cache.c:1038:13: error: cannot take the address of an rvalue of type 'spinlock_t' (aka 'struct spinlock')
-                   spin_lock(&tmp_ctl->tree_lock);
-                             ^~~~~~~~~~~~~~~~~~~
-   fs/btrfs/free-space-cache.c:1040:23: error: member reference type 'struct btrfs_free_space_ctl' is not a pointer; did you mean to use '.'?
-                   spin_unlock(&tmp_ctl->tree_lock);
-                                ~~~~~~~^~
-                                       .
-   fs/btrfs/free-space-cache.c:1040:15: error: cannot take the address of an rvalue of type 'spinlock_t' (aka 'struct spinlock')
-                   spin_unlock(&tmp_ctl->tree_lock);
-                               ^~~~~~~~~~~~~~~~~~~
-   4 errors generated.
+  56.1183: raid56_read_partial: full_stripe=38928384 devid=2 type=DATA1 offset=0 opf=0x0 physical=9502720 len=65536
+  56.1185: raid56_read_partial: full_stripe=38928384 devid=3 type=DATA2 offset=16384 opf=0x0 physical=9519104 len=16384
+  56.1185: raid56_read_partial: full_stripe=38928384 devid=3 type=DATA2 offset=49152 opf=0x0 physical=9551872 len=16384
+  56.1187: raid56_write_stripe: full_stripe=38928384 devid=3 type=DATA2 offset=0 opf=0x1 physical=9502720 len=16384
+  56.1188: raid56_write_stripe: full_stripe=38928384 devid=3 type=DATA2 offset=32768 opf=0x1 physical=9535488 len=16384
+  56.1188: raid56_write_stripe: full_stripe=38928384 devid=1 type=PQ1 offset=0 opf=0x1 physical=30474240 len=16384
+  56.1189: raid56_write_stripe: full_stripe=38928384 devid=1 type=PQ1 offset=32768 opf=0x1 physical=30507008 len=16384
+  56.1218: raid56_write_stripe: full_stripe=38928384 devid=3 type=DATA2 offset=49152 opf=0x1 physical=9551872 len=16384
+  56.1219: raid56_write_stripe: full_stripe=38928384 devid=1 type=PQ1 offset=49152 opf=0x1 physical=30523392 len=16384
+  56.2721: raid56_parity_recover: full stripe=38928384 eb=39010304 mirror=2
+  56.2723: raid56_parity_recover: full stripe=38928384 eb=39010304 mirror=2
+  56.2724: raid56_parity_recover: full stripe=38928384 eb=39010304 mirror=2
 
+Before we enter raid56_parity_recover(), we have triggered some metadata
+write for the full stripe 38928384, this leads to us to read all the
+sectors from disk.
 
-vim +1038 fs/btrfs/free-space-cache.c
+Furthermore, btrfs raid56 write will cache its calculated P/Q sectors to
+avoid unnecessary read.
 
-   942	
-   943	int load_free_space_cache(struct btrfs_block_group *block_group)
-   944	{
-   945		struct btrfs_fs_info *fs_info = block_group->fs_info;
-   946		struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
-   947		struct btrfs_free_space_ctl tmp_ctl = {};
-   948		struct inode *inode;
-   949		struct btrfs_path *path;
-   950		int ret = 0;
-   951		bool matched;
-   952		u64 used = block_group->used;
-   953	
-   954		/*
-   955		 * Because we could potentially discard our loaded free space, we want
-   956		 * to load everything into a temporary structure first, and then if it's
-   957		 * valid copy it all into the actual free space ctl.
-   958		 */
-   959		btrfs_init_free_space_ctl(block_group, &tmp_ctl);
-   960	
-   961		/*
-   962		 * If this block group has been marked to be cleared for one reason or
-   963		 * another then we can't trust the on disk cache, so just return.
-   964		 */
-   965		spin_lock(&block_group->lock);
-   966		if (block_group->disk_cache_state != BTRFS_DC_WRITTEN) {
-   967			spin_unlock(&block_group->lock);
-   968			return 0;
-   969		}
-   970		spin_unlock(&block_group->lock);
-   971	
-   972		path = btrfs_alloc_path();
-   973		if (!path)
-   974			return 0;
-   975		path->search_commit_root = 1;
-   976		path->skip_locking = 1;
-   977	
-   978		/*
-   979		 * We must pass a path with search_commit_root set to btrfs_iget in
-   980		 * order to avoid a deadlock when allocating extents for the tree root.
-   981		 *
-   982		 * When we are COWing an extent buffer from the tree root, when looking
-   983		 * for a free extent, at extent-tree.c:find_free_extent(), we can find
-   984		 * block group without its free space cache loaded. When we find one
-   985		 * we must load its space cache which requires reading its free space
-   986		 * cache's inode item from the root tree. If this inode item is located
-   987		 * in the same leaf that we started COWing before, then we end up in
-   988		 * deadlock on the extent buffer (trying to read lock it when we
-   989		 * previously write locked it).
-   990		 *
-   991		 * It's safe to read the inode item using the commit root because
-   992		 * block groups, once loaded, stay in memory forever (until they are
-   993		 * removed) as well as their space caches once loaded. New block groups
-   994		 * once created get their ->cached field set to BTRFS_CACHE_FINISHED so
-   995		 * we will never try to read their inode item while the fs is mounted.
-   996		 */
-   997		inode = lookup_free_space_inode(block_group, path);
-   998		if (IS_ERR(inode)) {
-   999			btrfs_free_path(path);
-  1000			return 0;
-  1001		}
-  1002	
-  1003		/* We may have converted the inode and made the cache invalid. */
-  1004		spin_lock(&block_group->lock);
-  1005		if (block_group->disk_cache_state != BTRFS_DC_WRITTEN) {
-  1006			spin_unlock(&block_group->lock);
-  1007			btrfs_free_path(path);
-  1008			goto out;
-  1009		}
-  1010		spin_unlock(&block_group->lock);
-  1011	
-  1012		/*
-  1013		 * Reinitialize the class of struct inode's mapping->invalidate_lock for
-  1014		 * free space inodes to prevent false positives related to locks for normal
-  1015		 * inodes.
-  1016		 */
-  1017		lockdep_set_class(&(&inode->i_data)->invalidate_lock,
-  1018				  &btrfs_free_space_inode_key);
-  1019	
-  1020		ret = __load_free_space_cache(fs_info->tree_root, inode, &tmp_ctl,
-  1021					      path, block_group->start);
-  1022		btrfs_free_path(path);
-  1023		if (ret <= 0)
-  1024			goto out;
-  1025	
-  1026		matched = (tmp_ctl.free_space == (block_group->length - used -
-  1027						  block_group->bytes_super));
-  1028	
-  1029		if (matched) {
-  1030			ret = copy_free_space_cache(block_group, &tmp_ctl);
-  1031			/*
-  1032			 * ret == 1 means we successfully loaded the free space cache,
-  1033			 * so we need to re-set it here.
-  1034			 */
-  1035			if (ret == 0)
-  1036				ret = 1;
-  1037		} else {
-> 1038			spin_lock(&tmp_ctl->tree_lock);
-  1039			__btrfs_remove_free_space_cache(&tmp_ctl);
-  1040			spin_unlock(&tmp_ctl->tree_lock);
-  1041			btrfs_warn(fs_info,
-  1042				   "block group %llu has wrong amount of free space",
-  1043				   block_group->start);
-  1044			ret = -1;
-  1045		}
-  1046	out:
-  1047		if (ret < 0) {
-  1048			/* This cache is bogus, make sure it gets cleared */
-  1049			spin_lock(&block_group->lock);
-  1050			block_group->disk_cache_state = BTRFS_DC_CLEAR;
-  1051			spin_unlock(&block_group->lock);
-  1052			ret = 0;
-  1053	
-  1054			btrfs_warn(fs_info,
-  1055				   "failed to load free space cache for block group %llu, rebuilding it now",
-  1056				   block_group->start);
-  1057		}
-  1058	
-  1059		spin_lock(&ctl->tree_lock);
-  1060		btrfs_discard_update_discardable(block_group);
-  1061		spin_unlock(&ctl->tree_lock);
-  1062		iput(inode);
-  1063		return ret;
-  1064	}
-  1065	
+This means, for that full stripe, after any partial write, we will have
+stale data, along with P/Q calculated using that stale data.
 
+Thankfully due to patch "btrfs: only write the sectors in the vertical stripe
+which has data stripes" we haven't submitted all the corrupted P/Q to disk.
+
+When we really need to recover certain range, aka in
+raid56_parity_recover(), we will use the cached rbio, along with its
+cached sectors (the full stripe is all cached).
+
+This explains why we have no event raid56_scrub_read_recover()
+triggered.
+
+Since we have the cached P/Q which is calculated using the stale data,
+the recovered one will just be stale.
+
+In our particular test case, it will always return the same incorrect
+metadata, thus causing the same error message "parent transid verify
+failed on 39010304 wanted 9 found 7" again and again.
+
+[BTRFS DESTRUCTIVE RMW PROBLEM]
+
+Test case btrfs/125 (and above workload) always has its trouble with
+the destructive read-modify-write (RMW) cycle:
+
+        0       32K     64K
+Data1:  | Good  | Good  |
+Data2:  | Bad   | Bad   |
+Parity: | Good  | Good  |
+
+In above case, if we trigger any write into Data1, we will use the bad
+data in Data2 to re-generate parity, killing the only chance to recovery
+Data2, thus Data2 is lost forever.
+
+This destructive RMW cycle is not specific to btrfs RAID56, but there
+are some btrfs specific behaviors making the case even worse:
+
+- Btrfs will cache sectors for unrelated vertical stripes.
+
+  In above example, if we're only writing into 0~32K range, btrfs will
+  still read data range (32K ~ 64K) of Data1, and (64K~128K) of Data2.
+  This behavior is to cache sectors for later update.
+
+  Incidentally commit d4e28d9b5f04 ("btrfs: raid56: make steal_rbio()
+  subpage compatible") has a bug which makes RAID56 to never trust the
+  cached sectors, thus slightly improve the situation for recovery.
+
+  Unfortunately, follow up fix "btrfs: update stripe_sectors::uptodate in
+  steal_rbio" will revert the behavior back to the old one.
+
+- Btrfs raid56 partial write will update all P/Q sectors and cache them
+
+  This means, even if data at (64K ~ 96K) of Data2 is free space, and
+  only (96K ~ 128K) of Data2 is really stale data.
+  And we write into that (96K ~ 128K), we will update all the parity
+  sectors for the full stripe.
+
+  This unnecessary behavior will completely kill the chance of recovery.
+
+  Thankfully, an unrelated optimization "btrfs: only write the sectors
+  in the vertical stripe which has data stripes" will prevent
+  submitting the write bio for untouched vertical sectors.
+
+  That optimization will keep the on-disk P/Q untouched for a chance for
+  later recovery.
+
+[FIX]
+Although we have no good way to completely fix the destructive RMW
+(unless we go full scrub for each partial write), we can still limit the
+damage.
+
+With patch "btrfs: only write the sectors in the vertical stripe which
+has data stripes" now we won't really submit the P/Q of unrelated
+vertical stripes, so the on-disk P/Q should still be fine.
+
+Now we really need to do is just drop all the cached sectors when doing
+recovery.
+
+By this, we have a chance to read the original P/Q from disk, and have a
+chance to recover the stale data, while still keep the cache to speed up
+regular write path.
+
+In fact, just dropping all the cache for recovery path is good enough to
+allow the test case btrfs/125 along with the small script to pass
+reliably.
+
+The lack of metadata write after the degraded mount, and forced metadata
+COW is saving us this time.
+
+So this patch will fix the behavior by not trust any cache in
+__raid56_parity_recover(), to solve the problem while still keep the
+cache useful.
+
+But please note that this test pass DOES NOT mean we have solved the
+destructive RMW problem, we just do better damage control a little
+better.
+
+Related patches:
+
+- btrfs: only write the sectors in the vertical stripe
+- d4e28d9b5f04 ("btrfs: raid56: make steal_rbio() subpage compatible")
+- btrfs: update stripe_sectors::uptodate in steal_rbio
+
+Acked-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/raid56.c | 19 ++++++-------------
+ 1 file changed, 6 insertions(+), 13 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 155bb288bbc9..226a17a335da 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -2116,9 +2116,12 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 	atomic_set(&rbio->error, 0);
+ 
+ 	/*
+-	 * read everything that hasn't failed.  Thanks to the
+-	 * stripe cache, it is possible that some or all of these
+-	 * pages are going to be uptodate.
++	 * Read everything that hasn't failed. However this time we will
++	 * not trust any cached sector.
++	 * As we may read out some stale data but higher layer is not reading
++	 * that stale part.
++	 *
++	 * So here we always re-read everything in recovery path.
+ 	 */
+ 	for (stripe = 0; stripe < rbio->real_stripes; stripe++) {
+ 		if (rbio->faila == stripe || rbio->failb == stripe) {
+@@ -2127,16 +2130,6 @@ static int __raid56_parity_recover(struct btrfs_raid_bio *rbio)
+ 		}
+ 
+ 		for (pagenr = 0; pagenr < rbio->stripe_npages; pagenr++) {
+-			struct page *p;
+-
+-			/*
+-			 * the rmw code may have already read this
+-			 * page in
+-			 */
+-			p = rbio_stripe_page(rbio, stripe, pagenr);
+-			if (PageUptodate(p))
+-				continue;
+-
+ 			ret = rbio_add_io_page(rbio, &bio_list,
+ 				       rbio_stripe_page(rbio, stripe, pagenr),
+ 				       stripe, pagenr, rbio->stripe_len);
 -- 
-0-DAY CI Kernel Test Service
-https://01.org/lkp
+2.37.1
+

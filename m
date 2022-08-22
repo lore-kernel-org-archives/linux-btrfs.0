@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F26EC28D13
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 10:51:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61CBCC28D13
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 10:51:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233660AbiHVKvv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Aug 2022 06:51:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43400 "EHLO
+        id S233773AbiHVKv5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Aug 2022 06:51:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43410 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233679AbiHVKvu (ORCPT
+        with ESMTP id S233679AbiHVKvw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Aug 2022 06:51:50 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F4A72F659
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 03:51:50 -0700 (PDT)
+        Mon, 22 Aug 2022 06:51:52 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EFD8C2F671
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 03:51:51 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A76B860FDE
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:49 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91F6CC433C1
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:48 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 8A1B960FDE
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:51 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6ED73C433D6
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1661165509;
-        bh=j/ODHUZcA8OtCTa/SH4CvYiotd90a7Eerw3O0tw+FbI=;
+        s=k20201202; t=1661165510;
+        bh=mbx+WQp/WDRHPgNuv/DepEccXVahMV+YyevwAR9Pw6k=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=cz2+dd8bzPxBh5PcKE8q4kPLq0rKSJ+hZFGKSATSxKJdp/yc4qj8AZNaSve/inFzw
-         +W8hbOZY9iZyXYlWBFI5B3QM1Xemx5NR1EW7yXxskXuNazmps0pz1py7xCGrH3oTEB
-         QeIM8BBkL/5luXjENCCvNXcuk0Oxt+4xGk0on7NvMaJzIXOt6E+9NdokBE0ATUZnH0
-         s5GJ6Pt5MiI0E60himN5TC+Or4sl5p8iQzF2D4RZGMUYM8Io145NjOuTpwtahxMy0Z
-         cz015E6aP5fISXzvGr1RjdotIV+0R5JdWaepkcFkFFCUZ3T+qdLmPFrIa1UiYhwQUF
-         rZaANIwOIKkoA==
+        b=RFiYsQSnheOZRtbFui8FprLExFCyFcjFktFKIvKjgGAesEYkBewa9ly0vAvUcd7V0
+         hi/kPDdjAbOd7bzyb86VEdrKu+OK7ZU+s+4RNMByz1brVeZDQ//sB455lzZ21mZzqI
+         m2G+zoAjD1CMMiwYhe6Gr3WtrOcdTTpLyI0Y9bL6Zyn+VSab0Kg/PxX9Nf47+SQAY4
+         8A1n9nOfq4/Mz8RUOu3b05hDqlaY8KrlIdbDh1y0khhD18kXTBNFB0n35H9iB/+UrG
+         6zJHYdeel/sbFgNpoDcGyQFdmEcrk3IcFr3zL/0b3AWjNZsNglTJEcgCEQEsqFap2/
+         Q14+OW054KNnQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 01/15] btrfs: don't drop dir index range items when logging a directory
-Date:   Mon, 22 Aug 2022 11:51:30 +0100
-Message-Id: <be82faa3791cc86405485f7cd6df4e626aabd05d.1661165149.git.fdmanana@suse.com>
+Subject: [PATCH v2 03/15] btrfs: update stale comment for log_new_dir_dentries()
+Date:   Mon, 22 Aug 2022 11:51:32 +0100
+Message-Id: <c6d19e12d63731ab5772f26a5c68b7796c3ff331.1661165149.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1661165149.git.fdmanana@suse.com>
 References: <cover.1661165149.git.fdmanana@suse.com>
@@ -48,52 +48,50 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When logging a directory that was previously logged in the current
-transaction, we drop all the range items (BTRFS_DIR_LOG_INDEX_KEY key
-type). This is because we will process all leaves in the subvolume's tree
-that were changed in the current transaction and then add range items for
-covering new dir index items and deleted dir index items, which could
-cover now a larger range than before.
+The comment refers to the function log_dir_items() in order to check why
+the inodes of new directory entries need to be logged, but the relevant
+comments are no longer at log_dir_items(), they were moved to the function
+process_dir_items_leaf() in commit eb10d85ee77f09 ("btrfs: factor out the
+copying loop of dir items from log_dir_items()"). So update it with the
+current function name.
 
-We used to fail if we tried to insert a range item key that already
-exists, so we dropped all range items to avoid failing. However nowadays,
-since commit 750ee454908e90 ("btrfs: fix assertion failure when logging
-directory key range item"), we simply update any range item that already
-exists, increasing its range's last dir index if needed. Since the range
-covered by a range item can never decrease, due to the fact that dir index
-values come from a monotonically increasing counter and are never reused,
-we can stop dropping all range items before we start logging a directory.
-By not dropping the items we can avoid having occasional tree rebalance
-operations.
-
-This will also be needed for an incoming change where we start logging
-delayed items directly, without flushing them first.
+Also remove references with i_mutex to "VFS lock", since the inode lock
+is no longer a mutex since 2016 (it's now a rw semaphore).
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 6 +-----
- 1 file changed, 1 insertion(+), 5 deletions(-)
+ fs/btrfs/tree-log.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4d2d19fea112..cffd15e23614 100644
+index 56fbd3b9f642..9625707bfa8a 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -5716,14 +5716,10 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	 * copies of everything.
- 	 */
- 	if (S_ISDIR(inode->vfs_inode.i_mode)) {
--		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
--
- 		clear_bit(BTRFS_INODE_COPY_EVERYTHING, &inode->runtime_flags);
--		if (inode_only == LOG_INODE_EXISTS)
--			max_key_type = BTRFS_XATTR_ITEM_KEY;
- 		if (ctx->logged_before)
- 			ret = drop_inode_items(trans, log, path, inode,
--					       max_key_type);
-+					       BTRFS_XATTR_ITEM_KEY);
- 	} else {
- 		if (inode_only == LOG_INODE_EXISTS && ctx->logged_before) {
- 			/*
+@@ -5933,12 +5933,12 @@ struct btrfs_dir_list {
+ };
+ 
+ /*
+- * Log the inodes of the new dentries of a directory. See log_dir_items() for
+- * details about the why it is needed.
++ * Log the inodes of the new dentries of a directory.
++ * See process_dir_items_leaf() for details about why it is needed.
+  * This is a recursive operation - if an existing dentry corresponds to a
+  * directory, that directory's new entries are logged too (same behaviour as
+  * ext3/4, xfs, f2fs, reiserfs, nilfs2). Note that when logging the inodes
+- * the dentries point to we do not lock their i_mutex, otherwise lockdep
++ * the dentries point to we do not acquire their VFS lock, otherwise lockdep
+  * complains about the following circular lock dependency / possible deadlock:
+  *
+  *        CPU0                                        CPU1
+@@ -5950,7 +5950,7 @@ struct btrfs_dir_list {
+  *
+  * Where sb_internal is the lock (a counter that works as a lock) acquired by
+  * sb_start_intwrite() in btrfs_start_transaction().
+- * Not locking i_mutex of the inodes is still safe because:
++ * Not acquiring the VFS lock of the inodes is still safe because:
+  *
+  * 1) For regular files we log with a mode of LOG_INODE_EXISTS. It's possible
+  *    that while logging the inode new references (names) are added or removed
 -- 
 2.35.1
 

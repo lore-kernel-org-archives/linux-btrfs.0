@@ -2,167 +2,245 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A79A4C32789
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 08:13:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A758C28D13
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 08:15:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233621AbiHVINN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Aug 2022 04:13:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43080 "EHLO
+        id S233826AbiHVIPO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Aug 2022 04:15:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47296 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231278AbiHVINL (ORCPT
+        with ESMTP id S233778AbiHVIPH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Aug 2022 04:13:11 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F9961001;
-        Mon, 22 Aug 2022 01:13:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1661155988;
-        bh=VF47xpSy5FMXLFoHD4vWRnBzqe4OlQT5XGbK7tkpYXU=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=IVQw/rdTWqU73uPZgM+iIdgxTLOl++xT82L4OfB9UYPsnw0lKlNc+xOpoRLuT4Vdp
-         H/5zYEWDEGOr/st/28+/t8Z3KMeE0XrWd650BAx26xzSpE0DLsCH8/OjiebSUdn0yg
-         +XiMw+YtJ+hqyC6ZLsKaSS+KHu5mhoVf0qoDCK38=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MhD2Y-1p3Cmv0A5q-00eJ17; Mon, 22
- Aug 2022 10:13:08 +0200
-Message-ID: <acc6051b-748f-4f06-63b3-919eb831217c@gmx.com>
-Date:   Mon, 22 Aug 2022 16:13:03 +0800
+        Mon, 22 Aug 2022 04:15:07 -0400
+X-Greylist: delayed 571 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 22 Aug 2022 01:14:56 PDT
+Received: from zaphod.cobb.me.uk (zaphod.cobb.me.uk [IPv6:2001:41c8:51:983::131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 622FC1C105
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 01:14:56 -0700 (PDT)
+Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
+        id AC9599B6AE; Mon, 22 Aug 2022 09:05:22 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1661155522;
+        bh=CxLACLqkC92pED8R98uU4QAbKOSfdW0uQ70E40HsADg=;
+        h=Date:From:Subject:To:References:In-Reply-To:From;
+        b=emZn/c+4sd+edlq6bOqwuFrqU1CkNfaYpX3eThERcHLE+ombN0j9mJMia51y04X2x
+         tx3CgvOgOtyS6aTf2g7driRbW+A4mM0uIXpsxDk/bJ91Z48MU4UDCwfnC344lO8WxF
+         6YFiXhbpECKZCFWq5AT5gYcd9OPWjCe5BCSzw6fWcBK/KSVT7BHks0DWBb1bSjx4LN
+         rAal7v9Y3O3YBciZG2USf8FuCNBvi792wSi7O0zrWnkGGaJbjaWhzplFyhgksOVSfh
+         8/6d75Z64wI6tIHafWe0PGPRBlWLxbOsnfz2SGd+oFCg9mL1Hs0UfFcXE12IfIOkEe
+         jGwprbMbki86w==
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 9833F9B6AE;
+        Mon, 22 Aug 2022 09:00:21 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1661155221;
+        bh=CxLACLqkC92pED8R98uU4QAbKOSfdW0uQ70E40HsADg=;
+        h=Date:From:Subject:To:References:In-Reply-To:From;
+        b=nXSkcpl+NbYE94s0S305WEYW84ZTWxjv16WqUp8c8F0JQq1/Ns/ERArEBqApjDl0a
+         Z4G3UoZPoI9dzCDPlcQEW4FQEfIhmTiM3lWtu5dM9fb1t3G+8K/SHA+ADPfwJrlyuO
+         ya/0GbEya6uSK1JQKRWci+GucJtii0ZX8R9DBH5BYTqZ6VhCqozogGAjtYIQ/KcErN
+         V2NqFWlnaf8rOPmq51Yj2672e1+yhSEb68pr/wcqsBprrqelxXNR6/meny6lTH6Jlz
+         B9JWglDNhR5EKWGZFfgcO0y7trmiyVdcrEbC285D5wRlq2yInCwxaNIUnUz49Cq5hG
+         zan2QWDoeg1PA==
+Received: from [192.168.0.202] (ryzen.home.cobb.me.uk [192.168.0.202])
+        by black.home.cobb.me.uk (Postfix) with ESMTP id 46B781D2FCE;
+        Mon, 22 Aug 2022 09:00:21 +0100 (BST)
+Message-ID: <8c703e22-3425-0e7a-23d3-41793d7ed6e7@cobb.uk.net>
+Date:   Mon, 22 Aug 2022 09:00:21 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.12.0
-Subject: Re: LTS kernel Linux 4.14.290 unable to boot with edk2-ovmf (x86_64
- UEFI runtime)
+ Thunderbird/91.10.0
+From:   Graham Cobb <g.btrfs@cobb.uk.net>
+Subject: Re: [PATCH] btrfs-progs: scrub: add extra warning for scrub on single
+ device
 Content-Language: en-US
-To:     Greg KH <gregkh@linuxfoundation.org>
-Cc:     stable <stable@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-x86_64@vger.kernel.org
-References: <2d6012e8-805d-4225-80ed-d317c28f1899@gmx.com>
- <YwMhXX6OhROLZ/LR@kroah.com> <1ed5a33a-b667-0e8e-e010-b4365f3713d6@gmx.com>
- <YwMxRAfrrsPE6sNI@kroah.com> <8aff5c17-d414-2412-7269-c9d15f574037@gmx.com>
- <YwM3DwvPIGkfE4Tu@kroah.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <YwM3DwvPIGkfE4Tu@kroah.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:sa08DhrSOFunKMqMAgmYyystR5b0QdhInYEnY/iilAcBcCRmr2O
- jULTD4n6NLrmyiBAHcczjIeXmmZyQQEEYMpjNLtb3WX3FsNCh21G++VRWgbYEL3tStNSTM9
- UxmyS3XTy2TxMjvjkp3MHhjyypzKX0n1od5cEx/mhrCoFioEHH+IQ/8Hyd482bazh50ZkOs
- WKW1E0ma9g1teivfwu3BA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:7v3WyKqh90c=:vfXhF5ASvCGzNdxahB2n72
- LRcZIHkygQ2OHfY9TL5uMPjXFJcgmh4FgtaM+CqeqSeDBh4nGzHNjRl/qjoXCtFK8jAsy/tCC
- zgIs/D5uSHKMrW36u4g/Lsv3pDcH/0ER0ZT82VIMo3eVGcBZr5a1x3/eKcm3cA3Y5zOxlLtTC
- WRVk2//VvPhK9MOYe6/1XwHE40O4sIE2RrhR5t04yJLRZtniVlKnVPaVNuu1n6y70UYap59r/
- tZg4JSMDsaCc/VHllbL5PXt+xGfPQPKdGr76c8hAPdvq4miC1NTs9qo1Ut40GrbUdI4xRD9vQ
- lxUAjOtGC8O1euDaPPnJjN3ms/nFxkNdHIcBmX3ddE+FLCyCfpw0Ms1bLrRIFJlzxjK6CLZvW
- t6Zm6UTufgmZCYZ1/e//rzw3DWDU+7KFT7xOZXoIpkLxOe981HQ9cXkNYTxgZRSYGCRtQFKAN
- y0FJ9dC8iOvuXBY3x85f7e6LPcoian2xnIiJbfxPlBREeY2VGMuBXF2Ef5ktJlb5qYX+6clfm
- 6o0La93oz+hbQ/+Aeb5RebE6tXaVpJndZ2qCE4T3Oun62GjgpTBHYpbF1NKEb+eHjwtcXbCZm
- XidrB6bmWwcQ8yxuhDq2zZpA8HwBE57wuvBIWGlVwYdSFdqZ/kIuIJmYTl6RcmBVb6B1U7pZ2
- FnHvfpJ5N2pJx+T2UslFJEqDVSQPkW/3sgV7WviVCCbE6ffi0JPGLrqyo7wfQMGh/T2zaKiQs
- pRL33l6HCvgnm6xYV8Ma1RT98BMb59AAvw+YaEh2TrKRNFrLEAW1Yfgg39v49/2sGtAcs1BgC
- kjbeZ+GF8/vPR5T8JYZ6e9sZC1i5ypfTOyjNy/EDaMs/dwLLx7hBjkmhRCJ6OHCZ0/GuBnUim
- ZnDfGZL89TWkkpbKl0x5D2Bm+8XvXicMj/vGSZDcTZhcRXiXmveZfWwcVENdzB4cT65YY9iT8
- aNCsM3AhDcRP7T6oaxoJ/FWtj0h8Ckm5PMv9F2qQsDYNVAbXo5TDbQic765Y/WMrJLSDhQhvy
- bv0msPgdcpZBeSXppWWLlpmeihOZCuBWF8chaYL6sc2ziJY7PU2W7hk2dtqy7Sr31rl9kkGoq
- S81hIZJWwvrWthoeX7x4MUv6bX2ZJDLWPvcvAjPTUtVuh0N6QaZt1EU7oqTe0pxsKZiuncabl
- peaxYYx6i9YSg6Uye69xXyUcNqXeqzFAEbCF7oBBwqodk9v6Gyg2NLxC++6BDuVlmgf0oemkJ
- lPiGP+eT2yoJZn4l1+gRG1C622VUpAS7g1oLsCd7Yywen8JCb0chf6/P2iU2qeekmINa8atdl
- 7Rj7xICUyqs3mJBFfxCBN9g1RDXFuA==
+To:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+References: <7834c0cac7eaa195952b7450c4d4a150376ba21e.1661152421.git.wqu@suse.com>
+In-Reply-To: <7834c0cac7eaa195952b7450c4d4a150376ba21e.1661152421.git.wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On 22/08/2022 08:15, Qu Wenruo wrote:
+> [PROBLEM]
+> 
+> Command "btrfs scrub start" can be executed with single device or a
+> mount point.
+> 
+> If executed with single device, it will only start a scrub for that
+> device.
+> 
+> This is fine for SINGLE/DUP/RAID1*/RAID10/RAID0, as they are all
+> mirror/simple stripe based profiles.
+> 
+> But this can be a problem for RAID56, as for RAID56 scrub, data stripes
+> are treated as RAID0, while only when scrubbing the P/Q stripes or doing
+> data rebuild we will try to do a full stripe read/rebuild.
+> 
+> This means, for the following case:
+> 
+> Dev 1:  |<--- Data stripe 1 (good) -->|
+> Dev 2:  |<--- Data stripe 2 (good) -->|
+> Dev 3:  |<--- Parity stripe (bad)  -->|
+> 
+> If we only scrub dev 1 or dev 2, the corrupted parity on dev 3 will not
+> be repaired, breaking the one corrupted/missing device tolerance.
+> (if we lost device 1 or 2, no data can be recovered for this full
+> stripe).
+> 
+> Unfortunately for the existing btrfs RAID56 users, there seems to be a
+> trend to use single device scrub instead of full fs scrub.
+> 
+> [CAUSE]
+> 
+> This is due to the bad design of btrfs_scrub_dev(), by treating data
+> stripes just like RAID0.
+> This means, we will read data stripes several times (2x for RAID5, 3x
+> for RAID6), not only causing more IO, but much slower read for each
+> device.
+> 
+> At least the end users should be fully informed, and choose their poison
+> to drink (until a better ioctl introduced).
+> 
+> [WORKAROUND]
+> 
+> This patch will introduce the following workarounds:
+> 
+> - Extra warning for "btrfs scrub start <dev>"
+>   If we detect we're doing single device scrub, and the fs has RAID56
+>   feature, we output a warning for the user.
+>   (But still allow the command to execute)
+> 
+> - Extra man page warning.
+>   Now there is an extra section for scrub and RAID56.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> BTW there is a WIP new ioctl, btrfs_scrub_fs(), that is going to change
+> the situation for RAID56, by not only reducing the IO for RAID56, but
+> with better error reporting (including P/Q mismatch cases), and simpler
+> and streamlined code for verification.
+> 
+> Thus in the future, we may switch to the new ioctl and in that case, the
+> error message will no longer be needed for the new ioctl.
+> ---
+>  Documentation/btrfs-scrub.rst | 13 +++++++++++++
+>  cmds/scrub.c                  | 29 +++++++++++++++++++++++++++++
+>  2 files changed, 42 insertions(+)
+> 
+> diff --git a/Documentation/btrfs-scrub.rst b/Documentation/btrfs-scrub.rst
+> index 75079eecc9ef..bbf342d4b6c8 100644
+> --- a/Documentation/btrfs-scrub.rst
+> +++ b/Documentation/btrfs-scrub.rst
+> @@ -48,6 +48,19 @@ start [-BdqrRf] [-c <ioprio_class> -n <ioprio_classdata>] <path>|<device>
+>          configured similar to the ``ionice(1)`` syntax using *-c* and *-n*
+>          options.  Note that not all IO schedulers honor the ionice settings.
+>  
+> +        .. warning::
+> +                Using ``btrfs scrub start <device>`` on a RAID56 fs is strongly
+> +                discouraged.
 
+It isn't immediately obvious to the reader that you mean to distinguish
+the single-device case from the mounted-filesystem case here. How about:
 
-On 2022/8/22 15:58, Greg KH wrote:
-> On Mon, Aug 22, 2022 at 03:49:51PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2022/8/22 15:33, Greg KH wrote:
->>> On Mon, Aug 22, 2022 at 03:24:53PM +0800, Qu Wenruo wrote:
->>>>
->>>>
->>>> On 2022/8/22 14:25, Greg KH wrote:
->>>>> On Mon, Aug 22, 2022 at 09:15:59AM +0800, Qu Wenruo wrote:
->>>>>> Hi,
->>>>>>
->>>>>> When backporting some btrfs specific patches to all LTS kernels, I =
-found
->>>>>> v4.14.290 kernel unable to boot as a KVM guest with edk2-ovmf
->>>>>> (edk2-ovmf: 202205, qemu 7.0.0, libvirt 1:8.6.0).
->>>>>>
->>>>>> While all other LTS/stable branches (4.19.x, 5.4.x, 5.10.x, 5.15.x,
->>>>>> 5.18.x, 5.19.x) can boot without a hipccup.
->>>>>>
->>>>>> I tried the following configs, but none of them can even provide an
->>>>>> early output:
->>>>>>
->>>>>> - CONFIG_X86_VERBOSE_BOOTUP
->>>>>> - CONFIG_EARLY_PRINTK
->>>>>> - CONFIG_EARLY_PRINTK_EFI
->>>>>>
->>>>>> Is this a known bug or something new?
->>>>>
->>>>> Has this ever worked properly on this very old kernel tree?  If so, =
-can
->>>>> you use 'git bisect' to find the offending commit?
->>>>
->>>> Unfortunately the initial v4.14 from upstream can not even be compile=
-d.
->>>
->>> Really?  Try using an older version of gcc and you should be fine.  It
->>> did build properly back in 2017 when it was released :)
->>
->> Yeah, I'm pretty sure my toolchain is too new for v4.14.0. But my distr=
-o
->> only provides the latest and mostly upstream packages.
->>
->> It may be a even worse disaster to find a way to rollback to older
->> toolchains using my distro...
->>
->> Also my hardware may not be well suited for older kernels either.
->> (Zen 3 CPU used here)
->>
->> In fact, I even find it hard just to locate a v4.14.x tag that can comp=
-ile.
->> After some bisection between v4.14.x tags, only v4.14.268 and newer tag=
-s
->> can even be compiled using latest toolchain.
->> (But still tons of warning, and tons of objdump warnings against
->> insn_get_length()).
->>
->> I'm not sure what's the normal practice for backports to such old branc=
-h.
->>
->> Do you stable guys keep dedicated VMs loaded with older distro just for
->> these old branches?
->
-> I don't, that's why those kernels can be built with newer versions of
-> gcc.
->
-> Your distro should have a version of gcc-10 or gcc-9 that can be
-> installed, right?
+Using single device scrub on a RAID56 filesystem (``btrfs scrub start
+<device>``) is strongly discouraged.
 
-This may sounds like a meme, but I'm really using Archlinux for my VM
-and host, and it doesn't provide older GCC at all.
+> +
+> +                Due to the bad design of RAID56 scrub, single device scrubbing
+> +                will tread the data stripes as RAID0, only for data recovery
+> +                (data stripes has bad csum) or P/Q stripes we do full stripe
+> +                checks.
+> +
+> +                This means, if running ``btrfs scrub start <device>``,
+> +                corruption in P/Q stripes has a high chance not to be repaired,
+> +                greatly reducing the robustness of RAID56.
 
->  Or maybe use the gcc versions on kernel.org that only
-> work for kernel builds?
->
->> If so, any recommendation on those kinda retro distro?
->
-> Try installing an old version of Debian, or better yet, use a distro
-> that provides old versions of gcc :)
+How about replacing both the above paragraphs with:
 
-I guess that's the only way to go.
+The current implementation of single device scrubbing for RAID56
+filesystems will only check data checksums on the specified device, and
+will not check parity stripes on other devices, greatly reducing the
+robustness of RAID56.
 
-Thanks for all the advice,
-Qu
+For full scrub and repair of RAID56 filesystems always use ``btrfs scrub
+start <path>``.
 
->
-> good luck!
->
-> greg k-h
+> +
+>          ``Options``
+>  
+>          -B
+> diff --git a/cmds/scrub.c b/cmds/scrub.c
+> index 7c2d9b79c275..a69de8c1402b 100644
+> --- a/cmds/scrub.c
+> +++ b/cmds/scrub.c
+> @@ -42,6 +42,7 @@
+>  #include "kernel-shared/volumes.h"
+>  #include "kernel-shared/disk-io.h"
+>  #include "common/open-utils.h"
+> +#include "common/path-utils.h"
+>  #include "common/units.h"
+>  #include "cmds/commands.h"
+>  #include "common/help.h"
+> @@ -1143,6 +1144,7 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+>  		       bool resume)
+>  {
+>  	int fdmnt;
+> +	int sysfsfd = -1;
+>  	int prg_fd = -1;
+>  	int fdres = -1;
+>  	int ret;
+> @@ -1188,6 +1190,8 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+>  	DIR *dirstream = NULL;
+>  	int force = 0;
+>  	int nothing_to_resume = 0;
+> +	bool is_block_dev = false;
+> +	bool is_raid56 = false;
+>  
+>  	while ((c = getopt(argc, argv, "BdqrRc:n:f")) != -1) {
+>  		switch (c) {
+> @@ -1242,6 +1246,9 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+>  
+>  	path = argv[optind];
+>  
+> +	if (path_is_block_device(path))
+> +		is_block_dev = true;
+> +
+>  	fdmnt = open_path_or_dev_mnt(path, &dirstream, !do_quiet);
+>  	if (fdmnt < 0)
+>  		return 1;
+> @@ -1254,6 +1261,28 @@ static int scrub_start(const struct cmd_struct *cmd, int argc, char **argv,
+>  		err = 1;
+>  		goto out;
+>  	}
+> +
+> +	sysfsfd = sysfs_open_fsid_file(fdmnt, "features/raid56");
+> +	if (sysfsfd >= 0) {
+> +		is_raid56 = true;
+> +		close(sysfsfd);
+> +	}
+> +
+> +	/*
+> +	 * If we're scrubbing a single device on fs with RAID56, that scrub
+> +	 * will not verify the data on the other stripes unless we're scrubbing
+> +	 * a P/Q stripe.
+> +	 * Due to the current scrub_dev ioctl design, we can cause way more
+> +	 * IO for data stripes, thus full scrub on RAID56 can be slow.
+> +	 *
+> +	 * Some one uses single device scrub to speed up the progress, but the
+> +	 * hidden cost of corrupted/unscrubbed data must not be hidden.
+> +	 */
+> +	if (is_raid56 && is_block_dev) {
+> +		warning("scrub single device of a btrfs RAID56 is not recommened.");
+
+Recommended
+
+> +		warning("Check 'btrfs-scrub'(8) for more details");
+> +	}
+> +
+>  	if (!fi_args.num_devices) {
+>  		error_on(!do_quiet, "no devices found");
+>  		err = 1;
+
+Graham

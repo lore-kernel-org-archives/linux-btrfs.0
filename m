@@ -2,83 +2,80 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A188C32789
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 11:54:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7DA6C3F6B0
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 11:58:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234336AbiHVLyX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Aug 2022 07:54:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59404 "EHLO
+        id S234422AbiHVL6T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Aug 2022 07:58:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34028 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234204AbiHVLyK (ORCPT
+        with ESMTP id S234444AbiHVL6S (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Aug 2022 07:54:10 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A12AE37F94
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 04:53:54 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id DD697B81134
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 11:53:52 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0C477C433B5
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 11:53:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1661169231;
-        bh=sYMgyG5cnmto6HDXA8qk3LKkoWCdWyuh1tgaxI0AZLk=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=f51AtSlvko+K/GH+wjTCn6rnMvs9ZNdnayRaVTzcBpkyQidphOnBjaVk1LkIbFNXA
-         eBqA8rVZ3OU/1ahAQBKICwSGJ1yK4eXjoR6pSw7u78SCs3J0niZD5XCSx5CebLSKHo
-         hDVWXAj0oGvwIBtpnHxjCz0mZQjB1PASSj7iDSpn4rNzsNskM5zODom78b0zCkqJr3
-         yz/+CXSjt6Z/ZnyD2Nmp+v+zYrN3lMlUNO0w4bSjNnEW40j0nbkcLTmsFwMY09nTcq
-         PvhTgcIM3uud4VOZ/TTeBcbGKvNCXU2UJG6S068Fe5xy89K9gE5IiNMcQFPMnoqzyQ
-         GtKHY89FLNvdA==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix silent failure when deleting root reference
-Date:   Mon, 22 Aug 2022 12:53:46 +0100
-Message-Id: <68e07ceeb473de5523baa079d0653c0087c221ac.1661168931.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1661168931.git.fdmanana@suse.com>
-References: <cover.1661168931.git.fdmanana@suse.com>
+        Mon, 22 Aug 2022 07:58:18 -0400
+Received: from 1wt.eu (wtarreau.pck.nerim.net [62.212.114.60])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 1E069286;
+        Mon, 22 Aug 2022 04:58:12 -0700 (PDT)
+Received: (from willy@localhost)
+        by pcw.home.local (8.15.2/8.15.2/Submit) id 27MBwBf8019247;
+        Mon, 22 Aug 2022 13:58:11 +0200
+Date:   Mon, 22 Aug 2022 13:58:11 +0200
+From:   Willy Tarreau <w@1wt.eu>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Greg KH <gregkh@linuxfoundation.org>,
+        stable <stable@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-x86_64@vger.kernel.org
+Subject: Re: LTS kernel Linux 4.14.290 unable to boot with edk2-ovmf (x86_64
+ UEFI runtime)
+Message-ID: <20220822115811.GE17080@1wt.eu>
+References: <2d6012e8-805d-4225-80ed-d317c28f1899@gmx.com>
+ <YwMhXX6OhROLZ/LR@kroah.com>
+ <1ed5a33a-b667-0e8e-e010-b4365f3713d6@gmx.com>
+ <YwMxRAfrrsPE6sNI@kroah.com>
+ <8aff5c17-d414-2412-7269-c9d15f574037@gmx.com>
+ <YwM3DwvPIGkfE4Tu@kroah.com>
+ <acc6051b-748f-4f06-63b3-919eb831217c@gmx.com>
+ <YwNFxIouYoRo/wT+@kroah.com>
+ <34793a7b-64e4-f1cb-b84e-5804b4f6fac3@gmx.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <34793a7b-64e4-f1cb-b84e-5804b4f6fac3@gmx.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Mon, Aug 22, 2022 at 07:43:18PM +0800, Qu Wenruo wrote:
+> Tried to compile gcc10 from AUR, which failed to compile.
+> 
+> 
+> Anyway, thanks to the advice from Willy, I got the pre-built crosstool
+> (gcc 7.5) set up, with some small tweaks like disabling
+> CONFIG_RANDOMIZE_BASE to workaround the RELOCS failure, it at least
+> compiles for v4.14.0.
+> 
+> Although there is still warning from test_gen_len:
+> 
+>  Warning: ffffffff818158cc:	0f ff e9             	ud0    %ecx,%ebp
+>  Warning: objdump says 3 bytes, but insn_get_length() says 2
+>  Warning: arch/x86/tools/test_get_len found difference at
+> <cpu_idle_poll>:ffffffff818159b0
 
-At btrfs_del_root_ref(), if btrfs_search_slot() returns an error, we end
-up returning from the function with a value of 0 (success). This happens
-because the function returns the value stored in the variable 'err', which
-is 0, while the error value we got from btrfs_search_slot() is stored in
-the 'ret' variable.
+Strange, sounds like a binutils issue though I could be wrong.
 
-So fix it by setting 'err' with the error value.
+> And unfortunately v4.14 still fails to boot, even with GCC 7.5, which
+> provides an almost perfect (except above wanrings) build.
+> 
+> I also tried to reduce the CPUid, from host-passthru to qemu64, and
+> rebuild, no change (same test_get_len wanrings, same boot failure).
+> 
+> No clue at all now, would try older debian in a VM then.
 
-Fixes: 8289ed9f93bef2 ("btrfs: replace the BUG_ON in btrfs_del_root_ref with proper error handling")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/root-tree.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+I suggest that instead of switching distros you should rather first
+try 4.14.0 to verify if there was a regression affecting your system.
+And if so, then a bisect will certainly be welcome. If it still does
+not work, then maybe a different distro could help, though I doubt it.
 
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index a64b26b16904..d647cb2938c0 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -349,9 +349,10 @@ int btrfs_del_root_ref(struct btrfs_trans_handle *trans, u64 root_id,
- 	key.offset = ref_id;
- again:
- 	ret = btrfs_search_slot(trans, tree_root, &key, path, -1, 1);
--	if (ret < 0)
-+	if (ret < 0) {
-+		err = ret;
- 		goto out;
--	if (ret == 0) {
-+	} else if (ret == 0) {
- 		leaf = path->nodes[0];
- 		ref = btrfs_item_ptr(leaf, path->slots[0],
- 				     struct btrfs_root_ref);
--- 
-2.35.1
-
+Willy

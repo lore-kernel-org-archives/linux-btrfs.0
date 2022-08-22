@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C432C32789
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C785FC3F6B0
 	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 10:51:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233774AbiHVKv5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Aug 2022 06:51:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43426 "EHLO
+        id S233794AbiHVKv6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Aug 2022 06:51:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43428 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233747AbiHVKvx (ORCPT
+        with ESMTP id S233748AbiHVKvx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 22 Aug 2022 06:51:53 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 811C13121A
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DA9013123B
         for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 03:51:52 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 3DF6CB81015
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 70E5660FFF
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:52 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5E7C3C433B5
         for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:51 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8077DC433D7
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 10:51:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1661165510;
-        bh=xMMo1GFYJ7m6Lbnm9+ridGF3gHkC/kuAQUkyT8oNIWs=;
+        s=k20201202; t=1661165511;
+        bh=6EcyOPKEZ8ByNUXXAzW34NNHJMETgjPq0nFeRVwdIbs=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Yf8o6M6OjjnVv8apD7QGmjBlc83MsX4Nbp9ymYu8jaLjrkqeOmVvHEODrcqjbgTMl
-         2A7TAq78pdeTfWPxGBfkevZJsOip++TDlEw3hSgR3rNCqEne61YlSYy2EyiU9MCM39
-         DXPXw/lILv9kkCOTVaVJMgqwkFon/QUexC5DBJy1hIh8MAmrS7G9cko2z8I/vnmsbT
-         +lEv1km/DX+pd87wE0iZeutgJVL4JjjfI4y8CHYrJP8jqQnwkiB5AYuIIeQQUAZ9hp
-         gAsWwd93MiSp968I8sg9eaGUpZIqDAe18WFQjsJIDo2AhtDBy9Wt55rqdJRJgttPjX
-         U/euWVV1ymIJg==
+        b=R/P2/OzA0Z9YF3f8MTBTUJZtGhplxczKCDHxEvMeGG5i/p9Vgzc4vB9oS04PzA8QL
+         mR5iXUZwKnVo4NIJ3+Nt7b6CFXsn/L1ocjwM0Ahpgd2ZVhFloI2Td3MMQqBJf3AGvm
+         iJ5XGWivTz5lsWCWK8Ia9Z6dkR8aYKcqQqpLREsKJrBjWdw7hOkgZCjtjNShQizxFD
+         tDHZr6I/ZPtCwo60OOdMaUV8tRnB4dKjDl2ju9Plrd3ca05CXEaActZv3wnX5xZ2EN
+         D8vQgKTebWi3xqjiU9h+iGURin3qK4/uIwC9CO/rUbpJnxBMKfzwuBk9gCd85Tf0Dd
+         KZ/CwJDSpqvIg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 02/15] btrfs: remove the root argument from log_new_dir_dentries()
-Date:   Mon, 22 Aug 2022 11:51:31 +0100
-Message-Id: <3696e99984ac2a21e57bfc2cfe75b8bf7c282b09.1661165149.git.fdmanana@suse.com>
+Subject: [PATCH v2 04/15] btrfs: free list element sooner at log_new_dir_dentries()
+Date:   Mon, 22 Aug 2022 11:51:33 +0100
+Message-Id: <bcfff559fa2ceb5d935de5f71fc5ae346bd75787.1661165149.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1661165149.git.fdmanana@suse.com>
 References: <cover.1661165149.git.fdmanana@suse.com>
@@ -48,49 +48,136 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There's no point in passing a root argument to log_new_dir_dentries()
-because it always corresponds to the root of the given inode. So remove
-it and extract the root from the given inode.
+At log_new_dir_dentries(), there's no need to keep the current list
+element allocated while processing the leaves with directory items for
+the current directory, and while logging other inodes. Plus in case we
+find a subdirectory, we also end up allocating a new list element while
+the current one is still allocated, temporarily using more memory than
+necessary.
+
+So free the current list element early on, before processing leaves.
+Also make the removal and release of all list elements in case of an
+error more simple by eliminating the label and goto, adding an explicit
+loop to release all list elements in case an error happens.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-log.c | 52 ++++++++++++++++++++++++++-------------------
+ 1 file changed, 30 insertions(+), 22 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index cffd15e23614..56fbd3b9f642 100644
+index 9625707bfa8a..bd50509e9839 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -5969,10 +5969,10 @@ struct btrfs_dir_list {
-  *    do_overwrite_item()).
-  */
- static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root,
- 				struct btrfs_inode *start_inode,
- 				struct btrfs_log_ctx *ctx)
- {
-+	struct btrfs_root *root = start_inode->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct btrfs_path *path;
- 	LIST_HEAD(dir_list);
-@@ -6199,7 +6199,7 @@ static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
- 			ret = btrfs_log_inode(trans, BTRFS_I(dir_inode),
- 					      LOG_INODE_ALL, ctx);
- 			if (!ret && ctx->log_new_dentries)
--				ret = log_new_dir_dentries(trans, root,
-+				ret = log_new_dir_dentries(trans,
- 						   BTRFS_I(dir_inode), ctx);
- 			btrfs_add_delayed_iput(dir_inode);
- 			if (ret)
-@@ -6514,7 +6514,7 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		goto end_trans;
+@@ -6002,25 +6002,28 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 	while (!list_empty(&dir_list)) {
+ 		struct extent_buffer *leaf;
+ 		struct btrfs_key min_key;
++		u64 ino;
++		bool continue_curr_inode = true;
+ 		int nritems;
+ 		int i;
  
- 	if (log_dentries)
--		ret = log_new_dir_dentries(trans, root, inode, ctx);
-+		ret = log_new_dir_dentries(trans, inode, ctx);
- 	else
- 		ret = 0;
- end_trans:
+ 		dir_elem = list_first_entry(&dir_list, struct btrfs_dir_list,
+ 					    list);
+-		if (ret)
+-			goto next_dir_inode;
++		ino = dir_elem->ino;
++		list_del(&dir_elem->list);
++		kfree(dir_elem);
+ 
+-		min_key.objectid = dir_elem->ino;
++		min_key.objectid = ino;
+ 		min_key.type = BTRFS_DIR_INDEX_KEY;
+ 		min_key.offset = 0;
+ again:
+ 		btrfs_release_path(path);
+ 		ret = btrfs_search_forward(root, &min_key, path, trans->transid);
+ 		if (ret < 0) {
+-			goto next_dir_inode;
++			break;
+ 		} else if (ret > 0) {
+ 			ret = 0;
+-			goto next_dir_inode;
++			continue;
+ 		}
+ 
+ 		leaf = path->nodes[0];
+@@ -6029,14 +6032,15 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 			struct btrfs_dir_item *di;
+ 			struct btrfs_key di_key;
+ 			struct inode *di_inode;
+-			struct btrfs_dir_list *new_dir_elem;
+ 			int log_mode = LOG_INODE_EXISTS;
+ 			int type;
+ 
+ 			btrfs_item_key_to_cpu(leaf, &min_key, i);
+-			if (min_key.objectid != dir_elem->ino ||
+-			    min_key.type != BTRFS_DIR_INDEX_KEY)
+-				goto next_dir_inode;
++			if (min_key.objectid != ino ||
++			    min_key.type != BTRFS_DIR_INDEX_KEY) {
++				continue_curr_inode = false;
++				break;
++			}
+ 
+ 			di = btrfs_item_ptr(leaf, i, struct btrfs_dir_item);
+ 			type = btrfs_dir_type(leaf, di);
+@@ -6050,7 +6054,7 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 			di_inode = btrfs_iget(fs_info->sb, di_key.objectid, root);
+ 			if (IS_ERR(di_inode)) {
+ 				ret = PTR_ERR(di_inode);
+-				goto next_dir_inode;
++				goto out;
+ 			}
+ 
+ 			if (!need_log_inode(trans, BTRFS_I(di_inode))) {
+@@ -6065,29 +6069,33 @@ static int log_new_dir_dentries(struct btrfs_trans_handle *trans,
+ 					      log_mode, ctx);
+ 			btrfs_add_delayed_iput(di_inode);
+ 			if (ret)
+-				goto next_dir_inode;
++				goto out;
+ 			if (ctx->log_new_dentries) {
+-				new_dir_elem = kmalloc(sizeof(*new_dir_elem),
+-						       GFP_NOFS);
+-				if (!new_dir_elem) {
++				dir_elem = kmalloc(sizeof(*dir_elem), GFP_NOFS);
++				if (!dir_elem) {
+ 					ret = -ENOMEM;
+-					goto next_dir_inode;
++					goto out;
+ 				}
+-				new_dir_elem->ino = di_key.objectid;
+-				list_add_tail(&new_dir_elem->list, &dir_list);
++				dir_elem->ino = di_key.objectid;
++				list_add_tail(&dir_elem->list, &dir_list);
+ 			}
+ 			break;
+ 		}
+-		if (min_key.offset < (u64)-1) {
++
++		if (continue_curr_inode && min_key.offset < (u64)-1) {
+ 			min_key.offset++;
+ 			goto again;
+ 		}
+-next_dir_inode:
+-		list_del(&dir_elem->list);
+-		kfree(dir_elem);
+ 	}
+-
++out:
+ 	btrfs_free_path(path);
++	if (ret) {
++		struct btrfs_dir_list *next;
++
++		list_for_each_entry_safe(dir_elem, next, &dir_list, list)
++			kfree(dir_elem);
++	}
++
+ 	return ret;
+ }
+ 
 -- 
 2.35.1
 

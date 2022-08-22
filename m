@@ -2,146 +2,109 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52536C3F6B0
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 11:59:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03BC4C28D13
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 Aug 2022 12:02:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234855AbiHVL7q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 Aug 2022 07:59:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38284 "EHLO
+        id S233689AbiHVMCI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 Aug 2022 08:02:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40702 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234856AbiHVL7n (ORCPT
+        with ESMTP id S230122AbiHVMCH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 Aug 2022 07:59:43 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94FC82409B;
-        Mon, 22 Aug 2022 04:59:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1661169559;
-        bh=55muDY/ySML+7EMD98wouKtWDQPnhZsyR2VnvOweULg=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=kE87WRRkeVHJ/AH2I3Pk666R+8W0sNBXS3BfVooHZhCYDobfNDwPCsUUrBqAOHVYd
-         R+Xifr3xdXEG0pDnEOPZ1ElirfGuSx/xneHAhLKpuM7ojInoxTVA8oSW7zHHxy/AhO
-         t7OPT3Y0oblG0PGif40+8B9jvAkP1qOir29LTp/c=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MqJmF-1pBmmD1Q5T-00nNJX; Mon, 22
- Aug 2022 13:59:18 +0200
-Message-ID: <a002f2a6-7c5f-c8f1-f331-7f1ca47132f9@gmx.com>
-Date:   Mon, 22 Aug 2022 19:59:14 +0800
+        Mon, 22 Aug 2022 08:02:07 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 69B222DA83
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 Aug 2022 05:02:04 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 19F0D344ED;
+        Mon, 22 Aug 2022 12:02:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1661169723;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=+FnxzNbftSUSFX2upl+4Rx9qbpxZq0KE0laQDUGyDpU=;
+        b=vL7oB3s/zuTN9WuV16UOFkGG/FdX+X05YJ3XhAe4OcG5iDS8Os0RhVunsR1g2IaSmwMURO
+        vPFnV+nk78nbQ+jIntBlGQV6U8SKyfBKmUbVdjz/wBMKKtVp0enTz2+qdrsu2tFRZWSViw
+        up4mox7b0pC4aRTtnL4+HAuVOC9AJAY=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1661169723;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=+FnxzNbftSUSFX2upl+4Rx9qbpxZq0KE0laQDUGyDpU=;
+        b=1sHNs22D5z9V1nnGoloVqw0ST4sLSdV6Yn3T0sAAAFGmCnBsj5W8Tto+JF2JblOOL+vYaY
+        hOKDwgEUn8GArtDg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DDF1513523;
+        Mon, 22 Aug 2022 12:02:02 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id jTZBNTpwA2NePgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 22 Aug 2022 12:02:02 +0000
+Date:   Mon, 22 Aug 2022 13:56:49 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     ethanlien <ethanlien@synology.com>
+Cc:     linux-btrfs@vger.kernel.org, cunankimo@gmail.com
+Subject: Re: [PATCH v2] btrfs: remove unnecessary EXTENT_UPTODATE state in
+ buffered I/O path
+Message-ID: <20220822115649.GS13489@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+Mail-Followup-To: dsterba@suse.cz, ethanlien <ethanlien@synology.com>,
+        linux-btrfs@vger.kernel.org, cunankimo@gmail.com
+References: <20220819024408.9714-1-ethanlien@synology.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.12.0
-Subject: Re: LTS kernel Linux 4.14.290 unable to boot with edk2-ovmf (x86_64
- UEFI runtime)
-Content-Language: en-US
-To:     Willy Tarreau <w@1wt.eu>
-Cc:     Greg KH <gregkh@linuxfoundation.org>,
-        stable <stable@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-x86_64@vger.kernel.org
-References: <2d6012e8-805d-4225-80ed-d317c28f1899@gmx.com>
- <YwMhXX6OhROLZ/LR@kroah.com> <1ed5a33a-b667-0e8e-e010-b4365f3713d6@gmx.com>
- <YwMxRAfrrsPE6sNI@kroah.com> <8aff5c17-d414-2412-7269-c9d15f574037@gmx.com>
- <20220822080456.GB17080@1wt.eu>
- <4c42af33-dc05-315a-87d9-be0747a74df4@gmx.com>
- <20220822083044.GC17080@1wt.eu>
- <9aa83875-0a05-6b28-b4df-4071ba8ee343@gmx.com>
- <20220822115326.GD17080@1wt.eu>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220822115326.GD17080@1wt.eu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:eIlOP7EvzP5ueZ1cEazO+3tjXliFXEve5LYT4WlWFKv2M2wae6i
- KRM34pNWnQM9bJprT4j4WL38c/B/VepQbB2p224NMOiBUeWviuVFjisDSg+PNKOhDgzaX1J
- DhNnEv8kISY/6srMavgVNj/qFe3+By6iKYrZ+BGWksqKoru6FH6T8wCsPQlNn7vNq7waPMb
- ZVbgPgl/rh8hdyhi4OLgw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:5WG29oMkM7I=:WgGbrlNFXNhi7sufw9qC9q
- PmFhODQZ65E0Tf8ZaGg7uUKKIDAyiV6NyLTEposwG5JnapLkIkF331q1mCsDBh0DRKgVfRXC8
- 4aoQbbj+5njDFg+PhdC5NfGatOAOQFgeL8zv910jRysthRmGML9e55yBEBF4Vu1yqIuksiMz7
- okDONN3NEIJWfWWzQb4OvBneJJ7kHcUm3BvbEZ1K39+WEC3QC/CkcPXLPRvTivfsZaH+rDCNE
- yObJfJZYCB9j/uuYa0Brla1AjnTp+X6edX/0llJ9LJJ9DwKWuW+82VZOI0OSy9aObw/Pv9GSc
- 2ubhRFHuxp5KJg2kdN3sFLIEtuLfBgBg4O+Yuap25dAbnCi+OUqHyZjW41sJG+B6uCpoWJbGl
- j74+sNdUJABDsZHjXYAFshUWQbJvjm2kL8EKCUPuegmHZHgve4zI1SYHx3XUlXHvtDqYZ6tuL
- xi76jlvLUIsKKIUUWuW12YjDkAXnRwvL/meGJbd7CDOUW0IMjJnPOQ2T4brsDDzuDEl5XnEv8
- tpFZlOOEv30LBQ+21REFdaFrHCZT5Ww2FpLinDqOVT7FmBP/W+BmN89A6UjkQsiPim5IrXrqJ
- +Zfwvqsg5TXKP/jpk04Xc9el+Pyq3VuVa/O7hyrFDSrrNRBTBWAbuFoWP4ufFqY7X8W/vNL14
- vdAMx1fR4G0GZMPsSmDBEmjXbv4OGEbem30bFUqOLgBqXdPtMKeWhmSh9Bx9iuQifQ4KxGm2u
- tGpCMx/FiIhIdx83J4Rdl8tIK2CUa5Jqq+LCpnH714Cq8ktpfKu1CYUKf0IP0qS59XRT1xN0A
- zyJa3RMDKFnjMx/y6a4N8yuPx/XXrIt28MJ+64z2rp+O+Ky7Y5J7ju2pWHHK/sd820yq1UvGx
- DTsQ6ef2e8+ic/C0ovFYGrxxfd+hEh2umWnn0nlbsf5ALkXX23nnXypnGRikqCASPBNhWdEi+
- lanAUoo5R1BT9oKzwx3X50mj/iUDFoVX08LD+ykfDv/pDvKtt/A/jTOPmTGLW8edIdL6HfErZ
- JtyfWE4CvHx84p/hkEf5y4WMzgneVpKNnRw3YYec21ob0UmlnGqZKa+FxPNakfq2gy5oJoDR0
- 1lPN5A5l8QUPi7v97kIgRblibEmaCjgbn39vfUA4IVJevLm7ydIPPCpvg==
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220819024408.9714-1-ethanlien@synology.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Fri, Aug 19, 2022 at 10:44:08AM +0800, ethanlien wrote:
+> From: Ethan Lien <ethanlien@synology.com>
+> 
+> After we copied data to page cache in buffered I/O, we
+> 1. Insert a EXTENT_UPTODATE state into inode's io_tree, by
+>    endio_readpage_release_extent(), set_extent_delalloc() or
+>    set_extent_defrag().
+> 2. Set page uptodate before we unlock the page.
+> 
+> But the only place we check io_tree's EXTENT_UPTODATE state is in
+> btrfs_do_readpage(). We know we enter btrfs_do_readpage() only when we
+> have a non-uptodate page, so it is unnecessary to set EXTENT_UPTODATE.
+> 
+> For example, when performing a buffered random read:
+> 
+> 	fio --rw=randread --ioengine=libaio --direct=0 --numjobs=4 \
+> 		--filesize=32G --size=4G --bs=4k --name=job \
+> 		--filename=/mnt/file --name=job
+> 
+> Then check how many extent_state in io_tree:
+> 
+> 	cat /proc/slabinfo | grep btrfs_extent_state | awk '{print $2}'
+> 
+> w/o this patch, we got 640567 btrfs_extent_state.
+> w/  this patch, we got    204 btrfs_extent_state.
+> 
+> Maintaining such a big tree brings overhead since every I/O needs to insert
+> EXTENT_LOCKED, insert EXTENT_UPTODATE, then remove EXTENT_LOCKED. And in
+> every insert or remove, we need to lock io_tree, do tree search, alloc or
+> dealloc extent states. By removing unnecessary EXTENT_UPTODATE, we keep
+> io_tree in a minimal size and reduce overhead when performing buffered I/O.
+> 
+> Signed-off-by: Ethan Lien <ethanlien@synology.com>
+> Reviewed-by: Robbie Ko <robbieko@synology.com>
+> ---
+> 
+> V2: Remove set_extent_uptodate() from btrfs_get_extent(), and when we found
+>     a inline extent, set page uptodate in btrfs_do_readpage().
 
-
-On 2022/8/22 19:53, Willy Tarreau wrote:
-> On Mon, Aug 22, 2022 at 07:07:19PM +0800, Qu Wenruo wrote:
->>
->>
->> On 2022/8/22 16:30, Willy Tarreau wrote:
->>> On Mon, Aug 22, 2022 at 04:19:49PM +0800, Qu Wenruo wrote:
->>>>> Regardless, if you need an older compiler, just use these ones:
->>>>>
->>>>>       https://mirrors.edge.kernel.org/pub/tools/crosstool/
->>>>>
->>>>> They go back to 4.9.4 for x86, you'll surely find the right one for =
-your
->>>>> usage. I've long used 4.7.4 for kernels up to 4.9 and 6.5 for 4.19 a=
-nd
->>>>> above, so something within that area will surely match your needs.
->>>>
->>>> BTW, it would be way more awesome if the page can provide some hint o=
-n
->>>> the initial release date of the compilers.
->>>>
->>>> It would help a lot of choose the toolchain then.
->>>
->>> It wouldn't help, if you look closely, you'll notice that in the "othe=
-r
->>> releases" section you have the most recent version of each of them. Th=
-at
->>> does not preclude the existence of the branch earlier. For example gcc=
--9
->>> was released in 2019 and 9.5 was emitted 3 years later. That's quite a=
-n
->>> amplitude that doesn't help.
->>
->> Maybe I'm totally wrong, but if GCC10.1 is released May 2020, and even
->> 10.4 is released 2022, then shouldn't we expect the kernel releases
->> around 2020 can be compiled for all GCC 10.x releases?
->>
->> Thus the initial release date should be a good enough hint for most cas=
-es.
->
-> If you speak about initial release, yes that should generally be a valid
-> assumption.
->
->> If go this method, for v4.14 I guess I should go gcc 7.x, as gcc 7.1 is
->> released May 2017, even the latest 7.5 is released 2019.
->
-> Then it should definitely work. But I think you're spending way too much
-> time comparing dates and discussing on the subject. By the time it took
-> to check these dates, you could already have downloaded one such compile=
-r
-> and built a kernel to verify it did build correctly ;-)
-
-That's completely true.
-
-Except the fact that, even with time period correct tool chain (gcc
-7.5), the compiled v4.14.x kernel (tried both 4.14.0 and latest
-4.14.290), neither can boot nor cause any early boot message to pop up. :(
-
-Anyway, thank you very much for the toolchain part, it would definitely
-help for my future adventure related to stable kernels (looking at tons
-of v4.12 related branches with sad face).
-
-Thanks,
-Qu
-
->
-> Willy
+Added to misc-next, thanks.

@@ -2,357 +2,233 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15F80C28D13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Aug 2022 05:20:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52AADC28D13
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Aug 2022 07:09:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233462AbiHYFUb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Aug 2022 01:20:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44790 "EHLO
+        id S237060AbiHYHJh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Aug 2022 03:09:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42608 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229577AbiHYFU3 (ORCPT
+        with ESMTP id S236838AbiHYHJe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2022 01:20:29 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7EA559DB72
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Aug 2022 22:20:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1661404825;
-        bh=E8QYio2aovRzN6qEbqb0Ax2OBFJs17DXUe5AOzZyUjY=;
-        h=X-UI-Sender-Class:Date:To:References:From:Subject:In-Reply-To;
-        b=ibA8Fd8bSLdns8k4PguEmx/M2cjmDlyeco7nX+AwJ1ZHfIX0yGA81r/snC//l7Z/i
-         7s2eOtnxczk1Xyas/8U4g9OGpWg8Q4DA5ARLoVZidv5eAnAteCSIev9AHjAJZjcHBG
-         sTxgknYqItTClHzTWGIP/30GSHupTOLD/3k0iEOY=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MmDEg-1p9FkG1AAK-00i96n; Thu, 25
- Aug 2022 07:20:24 +0200
-Message-ID: <c3dc352c-8393-c564-4366-42fb9ece021e@gmx.com>
-Date:   Thu, 25 Aug 2022 13:20:21 +0800
+        Thu, 25 Aug 2022 03:09:34 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9C6039E2C2
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 00:09:32 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 5881433934
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1661411371; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=1iE0tpNlzgALWU0T27m9cXm28re76VzBwOMcNxpDbGY=;
+        b=r9S9w1zACDRYG/YFVqx4hY6FEymUcATQu8zLUKyz9PPKcvadA7woyEMKETlh1CIrHpMBvl
+        3F8o5C05SoL1KsTZzNsiDxcCHhEvV8VQ2jSfxDBIHijf85jsAllDKJZx0Ea9+CvZJOw866
+        9225QD2QEbvuMbNtv21y2hz4ollCqUo=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B20C313A47
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:30 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id oERMHyogB2PZRgAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:30 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 2/2] btrfs: dump all space infos if we abort transaction due to ENOSPC
+Date:   Thu, 25 Aug 2022 15:09:10 +0800
+Message-Id: <81564013f3f6a7997f9e2ca13f2a42431c0a55eb.1661410915.git.wqu@suse.com>
+X-Mailer: git-send-email 2.37.2
+In-Reply-To: <cover.1661410915.git.wqu@suse.com>
+References: <cover.1661410915.git.wqu@suse.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.12.0
-Content-Language: en-US
-To:     Li Zhang <zhanglikernel@gmail.com>, linux-btrfs@vger.kernel.org
-References: <1661357103-22735-1-git-send-email-zhanglikernel@gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: [PATCH] Make btrfs_prepare_device parallel during mkfs.btrfs
-In-Reply-To: <1661357103-22735-1-git-send-email-zhanglikernel@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:vsP4mZ4hbbhXG/E3HRh7KMTCPhS0zdXCgblZyVAzr4L4TpB4M6z
- 8oLp1Pu+E9yS4YLC5G+0D/lkgIO9pGuLhVZJ99yLD0SIG9+WcgjGjYeFo9+Tzvz3mmXz/J4
- ZVkvv/RTm/Q4VcX4NYbL8TGC7erY7u+3vnAP/2p4MULxgqTj0P5Mjs9ixepxGSxc3hcaUMA
- NP0tvVtEn2AqXrE4vjXMw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Le3licDkjRE=:vvtuyz1K5v0Vk/YnpBmHTn
- wUynbsJ8SeipvGROmpXkJaO1z65t2/CndFdgVJ3Y4ZaC4GWfClEEn/IGS/kYbtOcXu4PaBqw+
- cADZ2SDYCOPylb4IXh5eM2kgTDo/c6pd+QAa6d7q6pzVnat4UAYM9izwMnNow1f0e+zV7ailA
- qJnEGFkDG7cmOQBO5Epx4fZJ5fTdZ7agDLUO9P41U5vagn45Wzzf47Pk300x3IDz6c7oZAtFo
- 0UxM816f2C52KoySU7rhLOZjrRduUeiX/FFv+2IjM9PQ5JEsHdpny1JEIyOK+AwcHm6X+5OwV
- j/J1BK7tNiapW7pUuvXd2QwOigqF7bP63cB9vRMtbHVC3AxHLfqmNoUJMP1Bp+9NK4eW3n8WO
- A+Z70rfZ6i8bCTs+L1PqcfwH6kID+5HnxpX/WF97La0jHisd3cHoq4D9F2VHUi08hbgqMT7Cy
- 8eo8z9vJFtbpix32jOMAWrOGJH095tze+0h+tp1njkYklU1r8zybVxi3CaAnzevTGfujfepSa
- mauddDv73Uq6ihQLv6D3wAASpAgAyGKBRIKD1rYLUsQBMTkN7CT0nwFN3mOMFXMNP7/AATBo/
- jZwoR/8S7cKo+iqF3UriyNz8p+kRDQBVFvREZ2MU+tPTmq8X6LrG68wUIUZ9ZoNESFwWA12q2
- JbRl1+RrBSJ7hcSyt9cjtcXJk0Rf2cgmcrpF4HR0lTp8P+4F9cFcOsTY7gw/RxHdoCb4UpCxH
- dWOcOXja5iL7MkpP53wY2qp2ov5o3rVWy03VWG0oNHZWE6XOlLjtkQhJFyKfnvahcGsZ+DO6g
- 2NiPE3Vkwk5Sk8PU2RmGsCjRECTPxiVVIraqj9RHiULs4bIRyem2mxoYb6mMLGV0ehA111+R+
- 5f/SK6k9j+u4n2UVCJL5nrXy6hUUsMxdhQ+6ubsniyAQbERZkwU2RWvIqYm843BM6deCpw0KA
- oM0TCMYUj3wBog4JaSfgwMkwFYNjd+MF5Wcde4fafL65CzaEwhZ5vJK5pwDRy/g/eIzn6zxrx
- pdymXXJJlJWT0J/pCMq/Kgfd1i6pE6F5RrRebPea94yrtNp4BiCfYkQVd1dvUQ/UkMq58dkLP
- HdwwKZc06yBea4Hq7Z7NsOikoYjhjy4r6a2fi98y5y/SmvBVUP+aR+lbg==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+We have hit some transaction abort due to -ENOSPC internally.
 
+Normally we should always reserve enough space for metadata for every
+transaction, thus hitting -ENOSPC should really indicate some cases we
+didn't expect.
 
-On 2022/8/25 00:05, Li Zhang wrote:
-> [enhancement]
-> When a disk is formatted as btrfs, it calls
-> btrfs_prepare_device for each device, which takes too much time.
+But unfrotunately current error reporting will only give a kernel
+wanring and backtrace, not really helpful to debug what's causing the
+problem.
 
-The idea is awesome.
+And debug_enospc can only help when user can reproduce the problem, but
+under most cases, such transaction abort by -ENOSPC is really hard to
+reproduce.
 
->
-> [implementation]
-> Put each btrfs_prepare_device into a thread,
-> wait for the first thread to complete to mkfs.btrfs,
-> and wait for other threads to complete before adding
-> other devices to the file system.
->
-> [test]
-> Using the btrfs-progs test case mkfs-tests, mkfs.btrfs works fine.
->
-> But I don't have an actual zoed device,
-> so I don't know how much time it saves, If you guys
-> have a way to test it, please let me know.
->
-> Signed-off-by: Li Zhang <zhanglikernel@gmail.com>
-> ---
-> Issue: 496
->
->   mkfs/main.c | 113 +++++++++++++++++++++++++++++++++++++++++++++-------=
---------
->   1 file changed, 86 insertions(+), 27 deletions(-)
->
-> diff --git a/mkfs/main.c b/mkfs/main.c
-> index ce096d3..35fefe2 100644
-> --- a/mkfs/main.c
-> +++ b/mkfs/main.c
-> @@ -31,6 +31,7 @@
->   #include <uuid/uuid.h>
->   #include <ctype.h>
->   #include <blkid/blkid.h>
-> +#include <pthread.h>
->   #include "kernel-shared/ctree.h"
->   #include "kernel-shared/disk-io.h"
->   #include "kernel-shared/free-space-tree.h"
-> @@ -60,6 +61,18 @@ struct mkfs_allocation {
->   	u64 system;
->   };
->
-> +
-> +struct prepare_device_progress {
-> +	char *file;
-> +	u64 dev_block_count;
-> +	u64 block_count;
+So this patch will dump all space infos (data, metadata, system) when we
+abort the first transaction with -ENOSPC.
 
-> +	bool zero_end;
-> +	bool discard;
-> +	bool zoned;
-> +	int oflags;
+This should at least provide some clue to us.
 
-A small nitpick.
+The example of a dump would look like this:
 
-Aren't those 4 values the same shared by all devices?
-Thus I'm not sure if they need to be put into prepare_device_progress at
-all.
+ ------------[ cut here ]------------
+ BTRFS: Transaction aborted (error -28)
+ WARNING: CPU: 8 PID: 3366 at fs/btrfs/transaction.c:2137 btrfs_commit_transaction+0xf81/0xfb0 [btrfs]
+ <call trace skipped>
+ ---[ end trace 0000000000000000 ]---
+ BTRFS info (device dm-1: state A): dumping space info:
+ BTRFS info (device dm-1: state A): space_info DATA has 6791168 free, is not full
+ BTRFS info (device dm-1: state A): space_info total=8388608, used=1597440, pinned=0, reserved=0, may_use=0, readonly=0 zone_unusable=0
+ BTRFS info (device dm-1: state A): space_info METADATA has 257114112 free, is not full
+ BTRFS info (device dm-1: state A): space_info total=268435456, used=131072, pinned=180224, reserved=65536, may_use=10878976, readonly=65536 zone_unusable=0
+ BTRFS info (device dm-1: state A): space_info SYS has 8372224 free, is not full
+ BTRFS info (device dm-1: state A): space_info total=8388608, used=16384, pinned=0, reserved=0, may_use=0, readonly=0 zone_unusable=0
+ BTRFS info (device dm-1: state A): global_block_rsv: size 3670016 reserved 3670016
+ BTRFS info (device dm-1: state A): trans_block_rsv: size 0 reserved 0
+ BTRFS info (device dm-1: state A): chunk_block_rsv: size 0 reserved 0
+ BTRFS info (device dm-1: state A): delayed_block_rsv: size 4063232 reserved 4063232
+ BTRFS info (device dm-1: state A): delayed_refs_rsv: size 3145728 reserved 3145728
+ BTRFS: error (device dm-1: state A) in btrfs_commit_transaction:2137: errno=-28 No space left
+ BTRFS info (device dm-1: state EA): forced readonly
 
-IIRC, we may want some shared memory between all the threads:
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/ctree.h      |  6 ++++--
+ fs/btrfs/space-info.c | 31 ++++++++++++++++++++++++-------
+ fs/btrfs/space-info.h |  2 ++
+ fs/btrfs/super.c      |  4 +++-
+ 4 files changed, 33 insertions(+), 10 deletions(-)
 
-- A pthread_mutex
-   Will be explained later
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3dc30f5e6fd0..8781f86aa534 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3830,7 +3830,7 @@ const char * __attribute_const__ btrfs_decode_error(int errno);
+ __cold
+ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 			       const char *function,
+-			       unsigned int line, int errno);
++			       unsigned int line, int errno, bool first_hit);
+ 
+ /*
+  * Call btrfs_abort_transaction as early as possible when an error condition is
+@@ -3838,9 +3838,11 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+  */
+ #define btrfs_abort_transaction(trans, errno)		\
+ do {								\
++	bool first = false;					\
+ 	/* Report first abort since mount */			\
+ 	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
+ 			&((trans)->fs_info->fs_state))) {	\
++		first = true;					\
+ 		if ((errno) != -EIO && (errno) != -EROFS) {		\
+ 			WARN(1, KERN_DEBUG				\
+ 			"BTRFS: Transaction aborted (error %d)\n",	\
+@@ -3852,7 +3854,7 @@ do {								\
+ 		}						\
+ 	}							\
+ 	__btrfs_abort_transaction((trans), __func__,		\
+-				  __LINE__, (errno));		\
++				  __LINE__, (errno), first);	\
+ } while (0)
+ 
+ #ifdef CONFIG_PRINTK_INDEX
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 1f524b62313c..b0a9ba34eca2 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -492,6 +492,15 @@ static const char *space_info_flag_to_str(struct btrfs_space_info *space_info)
+ 	}
+ }
+ 
++static void dump_global_block_rsv(struct btrfs_fs_info *fs_info)
++{
++	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
++	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
++}
++
+ static void __btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 				    struct btrfs_space_info *info)
+ {
+@@ -508,13 +517,6 @@ static void __btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 		info->total_bytes, info->bytes_used, info->bytes_pinned,
+ 		info->bytes_reserved, info->bytes_may_use,
+ 		info->bytes_readonly, info->bytes_zone_unusable);
+-
+-	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
+-	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
+-	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
+-	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
+-	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
+-
+ }
+ 
+ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+@@ -526,6 +528,7 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 
+ 	spin_lock(&info->lock);
+ 	__btrfs_dump_space_info(fs_info, info);
++	dump_global_block_rsv(fs_info);
+ 	spin_unlock(&info->lock);
+ 
+ 	if (!dump_block_groups)
+@@ -1770,3 +1773,17 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
+ 	}
+ 	return ret;
+ }
++
++/* Dump all the space infos when we abort a transaction due to ENOSPC. */
++__cold void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_space_info *space_info;
++
++	btrfs_info(fs_info, "dumping space info:");
++	list_for_each_entry(space_info, &fs_info->space_info, list) {
++		spin_lock(&space_info->lock);
++		__btrfs_dump_space_info(fs_info, space_info);
++		spin_unlock(&space_info->lock);
++	}
++	dump_global_block_rsv(fs_info);
++}
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index 2039096803ed..8f5948740941 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -157,4 +157,6 @@ static inline void btrfs_space_info_free_bytes_may_use(
+ }
+ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
+ 			     enum btrfs_reserve_flush_enum flush);
++void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info);
++
+ #endif /* BTRFS_SPACE_INFO_H */
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f1c6ca59299e..019141371c14 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -346,12 +346,14 @@ void __cold btrfs_err_32bit_limit(struct btrfs_fs_info *fs_info)
+ __cold
+ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 			       const char *function,
+-			       unsigned int line, int errno)
++			       unsigned int line, int errno, bool first_hit)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 
+ 	WRITE_ONCE(trans->aborted, errno);
+ 	WRITE_ONCE(trans->transaction->aborted, errno);
++	if (first_hit && errno == -ENOSPC)
++		btrfs_dump_space_info_for_trans_abort(fs_info);
+ 	/* Wake up anybody who may be waiting on this transaction */
+ 	wake_up(&fs_info->transaction_wait);
+ 	wake_up(&fs_info->transaction_blocked_wait);
+-- 
+2.37.2
 
-- All the other shared infos like above flags/oflags
-
-It can be global or passed by some pointers.
-
-> +	int ret;
-> +};
-> +
->   static int create_metadata_block_groups(struct btrfs_root *root, bool =
-mixed,
->   				struct mkfs_allocation *allocation)
->   {
-> @@ -969,6 +982,28 @@ fail:
->   	return ret;
->   }
->
-> +static void *prepare_one_dev(void *ctx)
-> +{
-> +	struct prepare_device_progress *prepare_ctx =3D ctx;
-> +	int fd;
-> +
-> +	fd =3D open(prepare_ctx->file, prepare_ctx->oflags);
-> +	if (fd < 0) {
-> +		error("unable to open %s: %m", prepare_ctx->file);
-
-If we have no permission for all devices (pretty common in fact, e.g.
-forgot to use sudo), we will have multiple threads printing out the same
-time.
-
-Without a lock, the output will be a mess.
-
-Thus we may want a mutex, even it's just for synchronizing the output.
-
-> +		prepare_ctx->ret =3D fd;
-> +		return NULL;
-> +	}
-> +	prepare_ctx->ret =3D btrfs_prepare_device(fd,
-> +		prepare_ctx->file, &prepare_ctx->dev_block_count,
-> +		prepare_ctx->block_count,
-> +		(bconf.verbose ? PREP_DEVICE_VERBOSE : 0) |
-> +		(prepare_ctx->zero_end ? PREP_DEVICE_ZERO_END : 0) |
-> +		(prepare_ctx->discard ? PREP_DEVICE_DISCARD : 0) |
-> +		(prepare_ctx->zoned ? PREP_DEVICE_ZONED : 0));
-> +	close(fd);
-> +	return NULL;
-> +}
-> +
->   int BOX_MAIN(mkfs)(int argc, char **argv)
->   {
->   	char *file;
-> @@ -997,7 +1032,6 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
->   	bool ssd =3D false;
->   	bool zoned =3D false;
->   	bool force_overwrite =3D false;
-> -	int oflags;
->   	char *source_dir =3D NULL;
->   	bool source_dir_set =3D false;
->   	bool shrink_rootdir =3D false;
-> @@ -1006,6 +1040,8 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
->   	u64 shrink_size;
->   	int dev_cnt =3D 0;
->   	int saved_optind;
-> +	pthread_t *t_prepare =3D NULL;
-> +	struct prepare_device_progress *prepare_ctx =3D NULL;
->   	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] =3D { 0 };
->   	u64 features =3D BTRFS_MKFS_DEFAULT_FEATURES;
->   	u64 runtime_features =3D BTRFS_MKFS_DEFAULT_RUNTIME_FEATURES;
-> @@ -1428,29 +1464,45 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
->   		goto error;
->   	}
->
-> -	dev_cnt--;
-> -
-> -	oflags =3D O_RDWR;
-> -	if (zoned && zoned_model(file) =3D=3D ZONED_HOST_MANAGED)
-> -		oflags |=3D O_DIRECT;
-> +	t_prepare =3D malloc(dev_cnt * sizeof(*t_prepare));
-> +	prepare_ctx =3D malloc(dev_cnt * sizeof(*prepare_ctx));
->
-> -	/*
-> -	 * Open without O_EXCL so that the problem should not occur by the
-> -	 * following operation in kernel:
-> -	 * (btrfs_register_one_device() fails if O_EXCL is on)
-> -	 */
-> -	fd =3D open(file, oflags);
-> -	if (fd < 0) {
-> -		error("unable to open %s: %m", file);
-> +	if (!t_prepare || !prepare_ctx) {
-> +		error("unable to prepare dev");
-
-Isn't this ENOMEM? The message doesn't seem to match the situation.
-
->   		goto error;
->   	}
-> -	ret =3D btrfs_prepare_device(fd, file, &dev_block_count, block_count,
-> -			(zero_end ? PREP_DEVICE_ZERO_END : 0) |
-> -			(discard ? PREP_DEVICE_DISCARD : 0) |
-> -			(bconf.verbose ? PREP_DEVICE_VERBOSE : 0) |
-> -			(zoned ? PREP_DEVICE_ZONED : 0));
-> +
-> +	for (i =3D 0; i < dev_cnt; i++) {
-> +		prepare_ctx[i].file =3D argv[optind + i - 1];
-> +		prepare_ctx[i].block_count =3D block_count;
-> +		prepare_ctx[i].dev_block_count =3D block_count;
-> +		prepare_ctx[i].zero_end =3D zero_end;
-> +		prepare_ctx[i].discard =3D discard;
-> +		prepare_ctx[i].zoned =3D zoned;
-> +		if (i =3D=3D 0) {
-> +			prepare_ctx[i].oflags =3D O_RDWR;
-> +			/*
-> +			 * Open without O_EXCL so that the problem should
-> +			 * not occur by the following operation in kernel:
-> +			 * (btrfs_register_one_device() fails if O_EXCL is on)
-> +			 */
-
-The comment seems out-dated, no O_EXCL involved anywhere.
-
-> +			if (zoned && zoned_model(file) =3D=3D ZONED_HOST_MANAGED)
-> +				prepare_ctx[i].oflags =3D O_RDWR | O_DIRECT;
-
-Do we need to treat the initial and other devices differently?
-
-Can't we use the same flags for all devices?
-
-
-> +		} else {
-> +			prepare_ctx[i].oflags =3D O_RDWR;
-> +		}
-> +		ret =3D pthread_create(&t_prepare[i], NULL,
-> +			prepare_one_dev, &prepare_ctx[i]);
-> +	}
-> +	pthread_join(t_prepare[0], NULL);
-> +	ret =3D prepare_ctx[0].ret; > +
-
-Can't we just wait for all devices?
-
-I don't think treating them different could have much benefit.
-
-Yes, we can have multiple-devices with different performance
-characteristics, thus if the first device is the fastest one, it may
-finish before all the others.
-
-But this also means, the first one can be the slowest.
-
-To me, parallel initialization is already a big enough improvement, and
-for the most common case, all the devices should have the same or
-similar performance characteristics, thus waiting for them all shouldn't
-cause much difference.
-
->   	if (ret)
->   		goto error;
-> +
-> +	dev_cnt--;
-> +	fd =3D open(file, prepare_ctx[0].oflags);
-> +	dev_block_count =3D prepare_ctx[0].dev_block_count;
->   	if (block_count && block_count > dev_block_count) {
->   		error("%s is smaller than requested size, expected %llu, found %llu"=
-,
->   		      file, (unsigned long long)block_count,
-> @@ -1459,7 +1511,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
->   	}
->
->   	/* To create the first block group and chunk 0 in make_btrfs */
-> -	system_group_size =3D zoned ?  zone_size(file) : BTRFS_MKFS_SYSTEM_GRO=
-UP_SIZE;
-> +	system_group_size =3D zoned ? zone_size(file) : BTRFS_MKFS_SYSTEM_GROU=
-P_SIZE;
->   	if (dev_block_count < system_group_size) {
->   		error("device is too small to make filesystem, must be at least %llu=
-",
->   				(unsigned long long)system_group_size);
-> @@ -1557,6 +1609,12 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
->   	if (dev_cnt =3D=3D 0)
->   		goto raid_groups;
->
-> +	for (i =3D 0 ; i < dev_cnt; i++) {
-> +		pthread_join(t_prepare[i+1], NULL);
-> +		if (prepare_ctx[i+1].ret) {
-> +			goto error;
-> +		}
-> +	}
->   	while (dev_cnt-- > 0) {
->   		file =3D argv[optind++];
->
-> @@ -1578,12 +1636,9 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
->   			close(fd);
->   			continue;
->   		}
-> -		ret =3D btrfs_prepare_device(fd, file, &dev_block_count,
-> -				block_count,
-> -				(bconf.verbose ? PREP_DEVICE_VERBOSE : 0) |
-> -				(zero_end ? PREP_DEVICE_ZERO_END : 0) |
-> -				(discard ? PREP_DEVICE_DISCARD : 0) |
-> -				(zoned ? PREP_DEVICE_ZONED : 0));
-> +		dev_block_count =3D prepare_ctx[argc - saved_optind - dev_cnt - 1]
-> +			.dev_block_count;
-> +
->   		if (ret) {
->   			goto error;
->   		}
-
-This goto error is a dead code now.
-
-Thanks for the great idea on reducing the preparation time!
-Qu
-
-> @@ -1763,12 +1818,16 @@ out:
->
->   	btrfs_close_all_devices();
->   	free(label);
-> -
-> +	free(t_prepare);
-> +	free(prepare_ctx);
->   	return !!ret;
-> +
->   error:
->   	if (fd > 0)
->   		close(fd);
->
-> +	free(t_prepare);
-> +	free(prepare_ctx);
->   	free(label);
->   	exit(1);
->   success:

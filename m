@@ -2,79 +2,84 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52AADC28D13
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Aug 2022 07:09:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81C7FC04AA5
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 Aug 2022 07:09:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237060AbiHYHJh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 Aug 2022 03:09:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42608 "EHLO
+        id S236958AbiHYHJj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 Aug 2022 03:09:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42640 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236838AbiHYHJe (ORCPT
+        with ESMTP id S236826AbiHYHJb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 Aug 2022 03:09:34 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9C6039E2C2
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 00:09:32 -0700 (PDT)
+        Thu, 25 Aug 2022 03:09:31 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 082AAA1D67
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 00:09:30 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5881433934
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:31 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id B254D1FB04
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1661411371; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=1iE0tpNlzgALWU0T27m9cXm28re76VzBwOMcNxpDbGY=;
-        b=r9S9w1zACDRYG/YFVqx4hY6FEymUcATQu8zLUKyz9PPKcvadA7woyEMKETlh1CIrHpMBvl
-        3F8o5C05SoL1KsTZzNsiDxcCHhEvV8VQ2jSfxDBIHijf85jsAllDKJZx0Ea9+CvZJOw866
-        9225QD2QEbvuMbNtv21y2hz4ollCqUo=
+        t=1661411368; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=VUBiticGAoOWTB1Kb6/h+BgPBCRUA0nClKIEBR48+VA=;
+        b=nltLarRTYmWMaEc5j9YKKzLKHNvb5fLLb2hlN9wdIvyv9NRNCGBgxfPkCo7PsbxykOU2Q9
+        JhRq5gsQUiM97eJ/xmZHP4tiyemuKFUpxQMd5NFFI8gWkCe3y6bTIhuHer2xnnYFLmjaO4
+        EXqS6ZPMhGs5Tjm27pI7fWcA6cYD1Ok=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B20C313A47
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:30 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 09EB113A47
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:27 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id oERMHyogB2PZRgAAMHmgww
+        id LBi/MScgB2PZRgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:30 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Aug 2022 07:09:27 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/2] btrfs: dump all space infos if we abort transaction due to ENOSPC
-Date:   Thu, 25 Aug 2022 15:09:10 +0800
-Message-Id: <81564013f3f6a7997f9e2ca13f2a42431c0a55eb.1661410915.git.wqu@suse.com>
+Subject: [PATCH v3 0/2] btrfs: output more info for -ENOSPC caused transaction abort
+Date:   Thu, 25 Aug 2022 15:09:08 +0800
+Message-Id: <cover.1661410915.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.2
-In-Reply-To: <cover.1661410915.git.wqu@suse.com>
-References: <cover.1661410915.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have hit some transaction abort due to -ENOSPC internally.
+[Changelog]
+v3:
+- Drop the multi-line output change
+  The biggest problem is, for the space info dump, it can be ratelimited
+  especially for enospc_debug mount option.
+  Thus multi-line can be more confusing when it's related-limited or
+  interrupted by other lines.
 
-Normally we should always reserve enough space for metadata for every
-transaction, thus hitting -ENOSPC should really indicate some cases we
-didn't expect.
+  So this version will reuse the old single line output.
 
-But unfrotunately current error reporting will only give a kernel
-wanring and backtrace, not really helpful to debug what's causing the
-problem.
+v2:
+- Add a new line to show the meaning of the metadata dump.
+  Previous output only includes the reserved bytes and size bytes,
+  but not showing which is which, thus still need to check the code
 
-And debug_enospc can only help when user can reproduce the problem, but
-under most cases, such transaction abort by -ENOSPC is really hard to
-reproduce.
+We have some internal reports of transaction abort with -ENOSPC.
 
-So this patch will dump all space infos (data, metadata, system) when we
-abort the first transaction with -ENOSPC.
+Unfortunately it's really hard to debug, since we really got nothing
+other than the error message for most cases.
 
-This should at least provide some clue to us.
+Also we have helpers like __btrfs_dump_space_info(), it needs enospc_debug
+mount option which only makes sense if the user can reproduce the bug
+and retry with that mount option.
 
-The example of a dump would look like this:
+Considering ENOSPC should not happen for critical paths which failure
+means transaction abort, we should dump all space info for debug purpose
+if the transaction arbot is caused by -ENOSPC.
+
+One example of the output at transaction abort time:
 
  ------------[ cut here ]------------
  BTRFS: Transaction aborted (error -28)
@@ -96,139 +101,17 @@ The example of a dump would look like this:
  BTRFS: error (device dm-1: state A) in btrfs_commit_transaction:2137: errno=-28 No space left
  BTRFS info (device dm-1: state EA): forced readonly
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/ctree.h      |  6 ++++--
- fs/btrfs/space-info.c | 31 ++++++++++++++++++++++++-------
+
+Qu Wenruo (2):
+  btrfs: output human readable space info flag
+  btrfs: dump all space infos if we abort transaction due to ENOSPC
+
+ fs/btrfs/ctree.h      |  6 +++--
+ fs/btrfs/space-info.c | 52 +++++++++++++++++++++++++++++++++++--------
  fs/btrfs/space-info.h |  2 ++
  fs/btrfs/super.c      |  4 +++-
- 4 files changed, 33 insertions(+), 10 deletions(-)
+ 4 files changed, 52 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3dc30f5e6fd0..8781f86aa534 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3830,7 +3830,7 @@ const char * __attribute_const__ btrfs_decode_error(int errno);
- __cold
- void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       const char *function,
--			       unsigned int line, int errno);
-+			       unsigned int line, int errno, bool first_hit);
- 
- /*
-  * Call btrfs_abort_transaction as early as possible when an error condition is
-@@ -3838,9 +3838,11 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
-  */
- #define btrfs_abort_transaction(trans, errno)		\
- do {								\
-+	bool first = false;					\
- 	/* Report first abort since mount */			\
- 	if (!test_and_set_bit(BTRFS_FS_STATE_TRANS_ABORTED,	\
- 			&((trans)->fs_info->fs_state))) {	\
-+		first = true;					\
- 		if ((errno) != -EIO && (errno) != -EROFS) {		\
- 			WARN(1, KERN_DEBUG				\
- 			"BTRFS: Transaction aborted (error %d)\n",	\
-@@ -3852,7 +3854,7 @@ do {								\
- 		}						\
- 	}							\
- 	__btrfs_abort_transaction((trans), __func__,		\
--				  __LINE__, (errno));		\
-+				  __LINE__, (errno), first);	\
- } while (0)
- 
- #ifdef CONFIG_PRINTK_INDEX
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 1f524b62313c..b0a9ba34eca2 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -492,6 +492,15 @@ static const char *space_info_flag_to_str(struct btrfs_space_info *space_info)
- 	}
- }
- 
-+static void dump_global_block_rsv(struct btrfs_fs_info *fs_info)
-+{
-+	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
-+	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
-+}
-+
- static void __btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
- 				    struct btrfs_space_info *info)
- {
-@@ -508,13 +517,6 @@ static void __btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
- 		info->total_bytes, info->bytes_used, info->bytes_pinned,
- 		info->bytes_reserved, info->bytes_may_use,
- 		info->bytes_readonly, info->bytes_zone_unusable);
--
--	DUMP_BLOCK_RSV(fs_info, global_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, trans_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, chunk_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, delayed_block_rsv);
--	DUMP_BLOCK_RSV(fs_info, delayed_refs_rsv);
--
- }
- 
- void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
-@@ -526,6 +528,7 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
- 
- 	spin_lock(&info->lock);
- 	__btrfs_dump_space_info(fs_info, info);
-+	dump_global_block_rsv(fs_info);
- 	spin_unlock(&info->lock);
- 
- 	if (!dump_block_groups)
-@@ -1770,3 +1773,17 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
- 	}
- 	return ret;
- }
-+
-+/* Dump all the space infos when we abort a transaction due to ENOSPC. */
-+__cold void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_space_info *space_info;
-+
-+	btrfs_info(fs_info, "dumping space info:");
-+	list_for_each_entry(space_info, &fs_info->space_info, list) {
-+		spin_lock(&space_info->lock);
-+		__btrfs_dump_space_info(fs_info, space_info);
-+		spin_unlock(&space_info->lock);
-+	}
-+	dump_global_block_rsv(fs_info);
-+}
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 2039096803ed..8f5948740941 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -157,4 +157,6 @@ static inline void btrfs_space_info_free_bytes_may_use(
- }
- int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
- 			     enum btrfs_reserve_flush_enum flush);
-+void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info);
-+
- #endif /* BTRFS_SPACE_INFO_H */
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f1c6ca59299e..019141371c14 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -346,12 +346,14 @@ void __cold btrfs_err_32bit_limit(struct btrfs_fs_info *fs_info)
- __cold
- void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       const char *function,
--			       unsigned int line, int errno)
-+			       unsigned int line, int errno, bool first_hit)
- {
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 
- 	WRITE_ONCE(trans->aborted, errno);
- 	WRITE_ONCE(trans->transaction->aborted, errno);
-+	if (first_hit && errno == -ENOSPC)
-+		btrfs_dump_space_info_for_trans_abort(fs_info);
- 	/* Wake up anybody who may be waiting on this transaction */
- 	wake_up(&fs_info->transaction_wait);
- 	wake_up(&fs_info->transaction_blocked_wait);
 -- 
 2.37.2
 

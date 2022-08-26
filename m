@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50C99C0502C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Aug 2022 21:47:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C74E2C54EE9
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 Aug 2022 21:47:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345071AbiHZVrL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 Aug 2022 17:47:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52466 "EHLO
+        id S1345154AbiHZVrZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 Aug 2022 17:47:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52746 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230463AbiHZVrJ (ORCPT
+        with ESMTP id S1345125AbiHZVrU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 Aug 2022 17:47:09 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 25206BE4CB;
-        Fri, 26 Aug 2022 14:47:08 -0700 (PDT)
+        Fri, 26 Aug 2022 17:47:20 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3635DC6518;
+        Fri, 26 Aug 2022 14:47:14 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A953161262;
-        Fri, 26 Aug 2022 21:47:07 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 279A4C433D6;
-        Fri, 26 Aug 2022 21:47:05 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id D7D5AB82F01;
+        Fri, 26 Aug 2022 21:47:12 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 84EF1C433D7;
+        Fri, 26 Aug 2022 21:47:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1661550427;
-        bh=mvfUetTQSU0z0A8jrDKhU0i3r8eb9afKtfhlAOCnk1c=;
-        h=From:To:Cc:Subject:Date:From;
-        b=HmYzIge0wCpr7KDG+1qpIoRCMtA/hc9uQF+y3qciRiIzjOZjL13FHap5Tucb51Kcw
-         BslTB43uaNtYz+uPnwgBdjoxg9sMJtihdb/ZLUanvBgRMTjwYNANo1AR6VzPJRSkho
-         KaS67bl8Erxl5CV/yjL8zgd5InJw45rd0zJAabKM4nLsAOC7shmdFfqtqIK/soPaUf
-         /NiSEwy5UYIEYQ9IMHFkxdFrJfGBJO3b2y4fSjWQsv0Xn501Lb+CzHQ++HK6MUX9N4
-         qJAHA4zJ5L7ddJakJwyNOb28qizWsmLfJi7InKu3rmDxtcpAX3Va4AkAlP/jgwo64d
-         ebNX10Max/bZw==
+        s=k20201202; t=1661550431;
+        bh=llyB/dDhp4yZ6iBnnqq9hSWRMDoSq987ZrVnUNGUnaI=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=d5nGuGeVr7KQupMAutNZrCLCkD0dEHSGGZE9JYfECP0H7I7OVx80fNFBJWF+EB1p0
+         hua15DoRUx6z6kQtH4GsQK+HWQZrU8UhS4G5OCJK6rzm0u4MhCD/aTyE6AFSUbP9Mb
+         45wAIl2HVmzYZj/Z+OswTDQ86+Jmcou176f1icl8Veu3ku091WlXrOV7GnxSqfnaH4
+         PXmn3M8ll+oJmRdMu53DzVXi+QW14yGnTekLyNHVovVSphdXHK+U45eKG840O5rG3S
+         U9jLJgfGIZkWYpXHmvmsKOxrwBBc8tEOFmzCjXbpSU5spxdFz7/KK9RMoeNwuE0iCc
+         vKa8MCgZ+2IKA==
 From:   Jeff Layton <jlayton@kernel.org>
 To:     tytso@mit.edu, adilger.kernel@dilger.ca, djwong@kernel.org,
         david@fromorbit.com, trondmy@hammerspace.com, neilb@suse.de,
@@ -42,229 +42,170 @@ Cc:     linux-api@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-ceph@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-nfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: [PATCH v3 0/7] vfs: clean up i_version behavior and expose it via statx
-Date:   Fri, 26 Aug 2022 17:46:56 -0400
-Message-Id: <20220826214703.134870-1-jlayton@kernel.org>
+Subject: [PATCH v3 2/7] ext4: fix i_version handling in ext4
+Date:   Fri, 26 Aug 2022 17:46:58 -0400
+Message-Id: <20220826214703.134870-3-jlayton@kernel.org>
 X-Mailer: git-send-email 2.37.2
+In-Reply-To: <20220826214703.134870-1-jlayton@kernel.org>
+References: <20220826214703.134870-1-jlayton@kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The purpose of this patchset is two-fold:
+ext4 currently updates the i_version counter when the atime is updated
+during a read. This is less than ideal as it can cause unnecessary cache
+invalidations with NFSv4 and unnecessary remeasurements for IMA.
 
-1/ correct performance issues in the existing i_version counter
-implementations and (hopefully) to bring them into behavioral
-alignment.
+The increment in ext4_mark_iloc_dirty is also problematic since it can
+corrupt the i_version counter for ea_inodes. We aren't bumping the file
+times in ext4_mark_iloc_dirty, so changing the i_version there seems
+wrong, and is the cause of both problems.
 
-2/ expose the i_version field to userland via statx. This is useful for
-testing the various i_version implementations, but may also be useful for
-userland applications that want a way to tell whether a file might
-have changed.
+Remove that callsite and add increments to the setattr, setxattr and
+ioctl codepaths, at the same times that we update the ctime. The
+i_version bump that already happens during timestamp updates should take
+care of the rest.
 
-The i_version field in Linux has been around since 1994, but its meaning
-and behavior has subtly changed over time [1]. The first patch in this
-series fleshes out the comments in iversion.h to try and give a clear
-explanation of what's expected from the filesystem. My first ask is for
-feedback on this -- does the proposed definition seem reasonable for
-presenting to userland?
+In ext4_move_extents, increment the i_version on both inodes, and also
+add in missing ctime updates.
 
-There are two main consumers of i_version in the kernel: nfsd and IMA.
-They both only want to see a change to the i_version iff there was an
-explicit change to the inode. They can cope with an implementation that
-does more increments than that, but that measurably harms performance.
+Cc: Lukas Czerner <lczerner@redhat.com>
+Reviewed-by: Jan Kara <jack@suse.cz>
+Reviewed-by: Christian Brauner (Microsoft) <brauner@kernel.org>
+Signed-off-by: Jeff Layton <jlayton@kernel.org>
+---
+ fs/ext4/inode.c       | 10 +++++-----
+ fs/ext4/ioctl.c       |  8 ++++++++
+ fs/ext4/move_extent.c |  8 ++++++++
+ fs/ext4/xattr.c       |  2 ++
+ 4 files changed, 23 insertions(+), 5 deletions(-)
 
-I'll argue that atime-only updates SHOULD be excluded from i_version
-bumps since they don't represent a "real" change to the inode. Spurious
-updates to the i_version have real, measurable performance impacts with
-NFSv4, and possibly with IMA.
+This may have some minor conflicts with one of Lukas' patches. It shouldn't
+be too hard to resolve though.
 
-There are 3 kernel-managed i_version implementations in the kernel:
-btrfs, ext4 and xfs.
-
-btrfs seems to work as we'd expect. It doesn't bump the i_version
-on atime-only updates and seems to bump it appropriately for other
-activity.
-
-ext4 currently bumps the i_version even when only the atime is being
-updated. I have a patch to fix this that Jan and Christian have
-Reviewed, but I haven't yet heard from Ted or Andreas.
-
-xfs has the same issue as ext4 bumping i_version on atime updates.  He
-has NACK'ed the patch I proposed since there are evidently tools that
-depend on every log transaction being represented in i_version.
-
-I've included the xfs patch in this series, but if it's not suitable I'm
-open to fixing this other ways, but I'll need some feedback as to what
-the xfs developers would like to do here. Should we add a new on-disk
-field to the inode? Try to do something clever with "unused" parts of
-the ctime? What would be best?
-
-Lastly, there are patches to allow NFS and Ceph to report this value
-as well. They should be fairly straightforward once the earlier pile is
-resolved.
-
-Note that I dropped the patch to make AFS report STATX_INO_VERSION since
-its semantics don't match the proposed definition.
-
-[1]: Now, for your entertainment...
-
-A BRIEF HISTORY OF THE I_VERSION FIELD
-======================================
-
-PRE-GIT-HISTORY ERA:
---------------------
-The i_version field first appears in v1.1.30 (summer 1994) with more increments
-added to ext2 over next few v1.1.x versions. There were ioctls to set and fetch
-the value in ext2. They're still there but they access the i_generation
-counter now.
-
-It was mostly used to catch races in lookup and readdir due to directory
-changes, and a lot of filesystems still use it that way today. Non-directory
-inodes would have this value set, but the kernel didn't do much with it.
-
-GIT HISTORY ERA:
-----------------
-Then in 2.6.24, Jean Noel Cordenner from Bull increased the size to 64
-bits, added the MS_I_VERSION flag, and started incrementing it in
-file_update_time:
-
-    commit 7a224228ed79d587ece2304869000aad1b8e97dd
-    Author: Jean Noel Cordenner <jean-noel.cordenner@bull.net>
-    Date:   Mon Jan 28 23:58:27 2008 -0500
-
-        vfs: Add 64 bit i_version support
-
-        The i_version field of the inode is changed to be a 64-bit counter that
-        is set on every inode creation and that is incremented every time the
-        inode data is modified (similarly to the "ctime" time-stamp).
-        The aim is to fulfill a NFSv4 requirement for rfc3530.
-        This first part concerns the vfs, it converts the 32-bit i_version in
-        the generic inode to a 64-bit, a flag is added in the super block in
-        order to check if the feature is enabled and the i_version is
-        incremented in the vfs.
-
-        Signed-off-by: Mingming Cao <cmm@us.ibm.com>
-        Signed-off-by: Jean Noel Cordenner <jean-noel.cordenner@bull.net>
-        Signed-off-by: Kalpak Shah <kalpak@clusterfs.com>
-
-Then he added support to ext4, plus the mount option to enable it. The
-problem with the i_version being incremented during atime updates
-probably dates back to this patch. I imagine it was probably just an
-oversight, though it could just have been due to unclear definition for
-the change attr in the NFSv4.0 spec:
-
-    commit 25ec56b518257a56d2ff41a941d288e4b5ff9488
-    Author: Jean Noel Cordenner <jean-noel.cordenner@bull.net>
-    Date:   Mon Jan 28 23:58:27 2008 -0500
-
-        ext4: Add inode version support in ext4
-
-        This patch adds 64-bit inode version support to ext4. The lower 32 bits
-        are stored in the osd1.linux1.l_i_version field while the high 32 bits
-        are stored in the i_version_hi field newly created in the ext4_inode.
-        This field is incremented in case the ext4_inode is large enough. A
-        i_version mount option has been added to enable the feature.
-
-        Signed-off-by: Mingming Cao <cmm@us.ibm.com>
-        Signed-off-by: Andreas Dilger <adilger@clusterfs.com>
-        Signed-off-by: Kalpak Shah <kalpak@clusterfs.com>
-        Signed-off-by: Aneesh Kumar K.V <aneesh.kumar@linux.vnet.ibm.com>
-        Signed-off-by: Jean Noel Cordenner <jean-noel.cordenner@bull.net>
-
-Bruce then added support for it to nfsd:
-
-    commit c654b8a9cba6002aad1c01919e4928a79a4a6dcf
-    Author: J. Bruce Fields <bfields@citi.umich.edu>
-    Date:   Thu Apr 16 17:33:25 2009 -0400
-
-        nfsd: support ext4 i_version
-
-        ext4 supports a real NFSv4 change attribute, which is bumped whenever
-        the ctime would be updated, including times when two updates arrive
-        within a jiffy of each other.  (Note that although ext4 has space for
-        nanosecond-precision ctime, the real resolution is lower: it actually
-        uses jiffies as the time-source.)  This ensures clients will invalidate
-        their caches when they need to.
-
-        There is some fear that keeping the i_version up-to-date could have
-        performance drawbacks, so for now it's turned on only by a mount option.
-        We hope to do something better eventually.
-
-        Signed-off-by: J. Bruce Fields <bfields@citi.umich.edu>
-        Cc: Theodore Tso <tytso@mit.edu>
-
-Josef converted btrfs to use it instead of their own internal counter.
-It looks like the btrfs implementation has probably avoided the issue
-with atime updates causing i_version bumps.
-
-    commit 0c4d2d95d06e920e0c61707e62c7fffc9c57f63a
-    Author: Josef Bacik <josef@redhat.com>
-    Date:   Thu Apr 5 15:03:02 2012 -0400
-
-        Btrfs: use i_version instead of our own sequence
-
-        We've been keeping around the inode sequence number in hopes that somebody
-        would use it, but nobody uses it and people actually use i_version which
-        serves the same purpose, so use i_version where we used the incore inode's
-        sequence number and that way the sequence is updated properly across the
-        board, and not just in file write.  Thanks,
-
-        Signed-off-by: Josef Bacik <josef@redhat.com>
-
-Then, in 2013 Dave added support for xfs with v3 superblocks. There were
-some later changes of how it was stored, but its behavior has largely
-been the same on xfs since then. Note that at the time, the stated
-reason for adding this was to provide NFSv4 semantics:
-
-    commit dc037ad7d24f3711e431a45c053b5d425995e9e4
-    Author: Dave Chinner <dchinner@redhat.com>
-    Date:   Thu Jun 27 16:04:59 2013 +1000
-
-        xfs: implement inode change count
-
-        For CRC enabled filesystems, add support for the monotonic inode
-        version change counter that is needed by protocols like NFSv4 for
-        determining if the inode has changed in any way at all between two
-        unrelated operations on the inode.
-
-        This bumps the change count the first time an inode is dirtied in a
-        transaction. Since all modifications to the inode are logged, this
-        will catch all changes that are made to the inode, including
-        timestamp updates that occur during data writes.
-
-        Signed-off-by: Dave Chinner <dchinner@redhat.com>
-        Reviewed-by: Mark Tinguely <tinguely@sgi.com>
-        Reviewed-by: Chandra Seetharaman <sekharan@us.ibm.com>
-        Signed-off-by: Ben Myers <bpm@sgi.com>
-
-Jeff Layton (7):
-  iversion: update comments with info about atime updates
-  ext4: fix i_version handling in ext4
-  ext4: unconditionally enable the i_version counter
-  xfs: don't bump the i_version on an atime update in xfs_vn_update_time
-  vfs: report an inode version in statx for IS_I_VERSION inodes
-  nfs: report the inode version in statx if requested
-  ceph: fill in the change attribute in statx requests
-
- fs/ceph/inode.c                 | 14 +++++++++-----
- fs/ext4/inode.c                 | 10 +++++-----
- fs/ext4/ioctl.c                 |  4 ++++
- fs/ext4/move_extent.c           |  6 ++++++
- fs/ext4/super.c                 | 13 ++++---------
- fs/ext4/xattr.c                 |  1 +
- fs/nfs/inode.c                  |  7 +++++--
- fs/stat.c                       |  7 +++++++
- fs/xfs/libxfs/xfs_log_format.h  |  2 +-
- fs/xfs/libxfs/xfs_trans_inode.c |  2 +-
- fs/xfs/xfs_iops.c               | 11 +++++++++--
- include/linux/iversion.h        | 23 +++++++++++++++++++++--
- include/linux/stat.h            |  1 +
- include/uapi/linux/stat.h       |  3 ++-
- samples/vfs/test-statx.c        |  8 ++++++--
- 15 files changed, 82 insertions(+), 30 deletions(-)
-
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 601214453c3a..aa37bce4c541 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -5342,6 +5342,7 @@ int ext4_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+ 	int error, rc = 0;
+ 	int orphan = 0;
+ 	const unsigned int ia_valid = attr->ia_valid;
++	bool inc_ivers = IS_I_VERSION(inode);
+ 
+ 	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
+ 		return -EIO;
+@@ -5425,8 +5426,8 @@ int ext4_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+ 			return -EINVAL;
+ 		}
+ 
+-		if (IS_I_VERSION(inode) && attr->ia_size != inode->i_size)
+-			inode_inc_iversion(inode);
++		if (attr->ia_size == inode->i_size)
++			inc_ivers = false;
+ 
+ 		if (shrink) {
+ 			if (ext4_should_order_data(inode)) {
+@@ -5528,6 +5529,8 @@ int ext4_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
+ 	}
+ 
+ 	if (!error) {
++		if (inc_ivers)
++			inode_inc_iversion(inode);
+ 		setattr_copy(mnt_userns, inode, attr);
+ 		mark_inode_dirty(inode);
+ 	}
+@@ -5731,9 +5734,6 @@ int ext4_mark_iloc_dirty(handle_t *handle,
+ 	}
+ 	ext4_fc_track_inode(handle, inode);
+ 
+-	if (IS_I_VERSION(inode))
+-		inode_inc_iversion(inode);
+-
+ 	/* the do_update_inode consumes one bh->b_count */
+ 	get_bh(iloc->bh);
+ 
+diff --git a/fs/ext4/ioctl.c b/fs/ext4/ioctl.c
+index 3cf3ec4b1c21..60e77ae9342d 100644
+--- a/fs/ext4/ioctl.c
++++ b/fs/ext4/ioctl.c
+@@ -452,6 +452,8 @@ static long swap_inode_boot_loader(struct super_block *sb,
+ 	swap_inode_data(inode, inode_bl);
+ 
+ 	inode->i_ctime = inode_bl->i_ctime = current_time(inode);
++	if (IS_I_VERSION(inode))
++		inode_inc_iversion(inode);
+ 
+ 	inode->i_generation = prandom_u32();
+ 	inode_bl->i_generation = prandom_u32();
+@@ -665,6 +667,8 @@ static int ext4_ioctl_setflags(struct inode *inode,
+ 	ext4_set_inode_flags(inode, false);
+ 
+ 	inode->i_ctime = current_time(inode);
++	if (IS_I_VERSION(inode))
++		inode_inc_iversion(inode);
+ 
+ 	err = ext4_mark_iloc_dirty(handle, inode, &iloc);
+ flags_err:
+@@ -775,6 +779,8 @@ static int ext4_ioctl_setproject(struct inode *inode, __u32 projid)
+ 
+ 	EXT4_I(inode)->i_projid = kprojid;
+ 	inode->i_ctime = current_time(inode);
++	if (IS_I_VERSION(inode))
++		inode_inc_iversion(inode);
+ out_dirty:
+ 	rc = ext4_mark_iloc_dirty(handle, inode, &iloc);
+ 	if (!err)
+@@ -1257,6 +1263,8 @@ static long __ext4_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 		err = ext4_reserve_inode_write(handle, inode, &iloc);
+ 		if (err == 0) {
+ 			inode->i_ctime = current_time(inode);
++			if (IS_I_VERSION(inode))
++				inode_inc_iversion(inode);
+ 			inode->i_generation = generation;
+ 			err = ext4_mark_iloc_dirty(handle, inode, &iloc);
+ 		}
+diff --git a/fs/ext4/move_extent.c b/fs/ext4/move_extent.c
+index 701f1d6a217f..d73ab3153218 100644
+--- a/fs/ext4/move_extent.c
++++ b/fs/ext4/move_extent.c
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include <linux/fs.h>
++#include <linux/iversion.h>
+ #include <linux/quotaops.h>
+ #include <linux/slab.h>
+ #include <linux/sched/mm.h>
+@@ -683,6 +684,13 @@ ext4_move_extents(struct file *o_filp, struct file *d_filp, __u64 orig_blk,
+ 			break;
+ 		o_start += cur_len;
+ 		d_start += cur_len;
++
++		orig_inode->i_ctime = current_time(orig_inode);
++		donor_inode->i_ctime = current_time(donor_inode);
++		if (IS_I_VERSION(orig_inode))
++			inode_inc_iversion(orig_inode);
++		if (IS_I_VERSION(donor_inode))
++			inode_inc_iversion(donor_inode);
+ 	}
+ 	*moved_len = o_start - orig_blk;
+ 	if (*moved_len > len)
+diff --git a/fs/ext4/xattr.c b/fs/ext4/xattr.c
+index 533216e80fa2..e975442e4ab2 100644
+--- a/fs/ext4/xattr.c
++++ b/fs/ext4/xattr.c
+@@ -2412,6 +2412,8 @@ ext4_xattr_set_handle(handle_t *handle, struct inode *inode, int name_index,
+ 	if (!error) {
+ 		ext4_xattr_update_super_block(handle, inode->i_sb);
+ 		inode->i_ctime = current_time(inode);
++		if (IS_I_VERSION(inode))
++			inode_inc_iversion(inode);
+ 		if (!value)
+ 			no_expand = 0;
+ 		error = ext4_mark_iloc_dirty(handle, inode, &is.iloc);
 -- 
 2.37.2
 

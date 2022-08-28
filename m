@@ -2,68 +2,43 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C80AFECAAD5
-	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Aug 2022 18:18:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CB68ECAAA2
+	for <linux-btrfs@archiver.kernel.org>; Sun, 28 Aug 2022 21:06:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230249AbiH1SSi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 28 Aug 2022 14:18:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36602 "EHLO
+        id S229744AbiH1VG3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 28 Aug 2022 17:06:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35600 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229797AbiH1SSd (ORCPT
+        with ESMTP id S229445AbiH1VG1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 28 Aug 2022 14:18:33 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 83E3826AED;
-        Sun, 28 Aug 2022 11:18:32 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 2C56FB80B8A;
-        Sun, 28 Aug 2022 18:18:31 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id D3525C43470;
-        Sun, 28 Aug 2022 18:18:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1661710709;
-        bh=DvYkl+ieyA4IhDG/sdFILB+gMm14s2VYDeuX4qdiN5k=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=pMkEBcKAoAO/52YWb29UpUuIythuqmm9x5fB3uf1Ut04KR9jP4KoZ6B1FZhkqch5D
-         etnxtkPksDwHFMy6tv6kf9QSG2zSSZiaZsUFmR7n6UPJM4hNJl8dRUsbpy1xNfKk3e
-         8/rwD5QiltWf9v+r91P1UxUTxsjI2jeJ71mC1t/OaYWFcFJkO7fAP+Ac9JIv2M7yh1
-         PHaN5MY9usIegTYWYGlV/TUwNUDAiCLYgqm6nmaISSTV61VNsxvkPfEfd9S4gZTIzT
-         ZhbOQSCaUZKUT5wxodUnMBauRlac9MJ32N8TwfAe6AJEfi1aVSpLcMnbLNwLCyjj3E
-         UHP6iYdD+1e3g==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id C2A00C4166E;
-        Sun, 28 Aug 2022 18:18:29 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs fixes for v6.0-rc3
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1661690960.git.dsterba@suse.com>
-References: <cover.1661690960.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1661690960.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-6.0-rc3-tag
-X-PR-Tracked-Commit-Id: f2c3bec215694fb8bc0ef5010f2a758d1906fc2d
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 8379c0b31fbc5d20946f617f8e2fe4791e6f58c1
-Message-Id: <166171070979.6107.1251277983847921240.pr-tracker-bot@kernel.org>
-Date:   Sun, 28 Aug 2022 18:18:29 +0000
-To:     David Sterba <dsterba@suse.com>
-Cc:     torvalds@linux-foundation.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+        Sun, 28 Aug 2022 17:06:27 -0400
+Received: from b5network.net (unknown [27.112.106.26])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EC4FE1582E
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Aug 2022 14:06:25 -0700 (PDT)
+Received: (qmail 2157 invoked by uid 48); 29 Aug 2022 06:06:24 +0900
+To:     linux-btrfs@vger.kernel.org
+Subject: Telegram: Sind Sie es leid, in Schulden zu leben? Es gibt einen Ausweg und es ist sehr einfach.
+X-PHP-Originating-Script: 10042:class-phpmailer.php
+Date:   Sun, 28 Aug 2022 21:06:24 +0000
+From:   Douglasabifs <linux-btrfs@vger.kernel.org>
+Message-ID: <9ba6e81ff5a302fb53dca9298c17abad@www.chups.co.jp>
+X-Priority: 3
+X-Mailer: PHPMailer 5.2.1 (http://code.google.com/a/apache-extras.org/p/phpmailer/)
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="ISO-2022-JP"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The pull request you sent on Sun, 28 Aug 2022 14:57:29 +0200:
+お問い合わせありがとうございます。
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-6.0-rc3-tag
+東大阪バレーボールクラブ・ロッキーです。
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/8379c0b31fbc5d20946f617f8e2fe4791e6f58c1
+内容を確認次第お返事いたしますので今しばらくお待ちくださいませ。
 
-Thank you!
+メッセージ本文:
+Willst du reich werden? Fahre fort http://vaue-of-bitcoin-today.tracemyvideo.com/news-4564
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+--
+

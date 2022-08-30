@@ -2,89 +2,100 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 22120ECAAD4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Aug 2022 22:00:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3798FECAAD4
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 Aug 2022 22:15:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232182AbiH3WAm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 Aug 2022 18:00:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47188 "EHLO
+        id S231335AbiH3WPZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 Aug 2022 18:15:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46998 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232173AbiH3WAN (ORCPT
+        with ESMTP id S229640AbiH3WPX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 Aug 2022 18:00:13 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 33227A0249
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2022 14:55:38 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 61C6822020;
-        Tue, 30 Aug 2022 21:54:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1661896461;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dPNfTFYzdc1CLpTThKwlqRdHX2xVWBZBAcSN9vYbCSI=;
-        b=LkKIbYJtlIns9vZMggjtxWOZsx3HWkKQ6m+okV2ZDoYzwC7sAupkwFfeTt/5CinfCvkp3j
-        8Kf/7pG+l4OEtZ95ZLFb20HqwNXnHe/DGvuo9HMT/WIfV45u68V/THwxFnRJ5I/Q73giQq
-        Pb9m//KENpIch0lsVjTsh2FvN3ahUr0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1661896461;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dPNfTFYzdc1CLpTThKwlqRdHX2xVWBZBAcSN9vYbCSI=;
-        b=MaZbAFOufO77uzhDd4GKEVM9kC1O2KVYL/0JtVQFOKvcMNKyNQB5WPhiff5OoXzYqIN89K
-        5S5z97Wx2dYmAeDA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3BB5113B0C;
-        Tue, 30 Aug 2022 21:54:21 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Opg2DQ2HDmMwYAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 30 Aug 2022 21:54:21 +0000
-Date:   Tue, 30 Aug 2022 23:49:02 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
+        Tue, 30 Aug 2022 18:15:23 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 03D5C29CB3
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Aug 2022 15:15:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1661897719;
+        bh=1JM93rndJIAO2RbGdcTboxeo3bTCbDt4pjD3RmOUNlI=;
+        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+        b=KyO3re2cytjHSqDy7cg8JThUTkFnRLHLTV99UBjoc5GRZEXk4GROWPD3KqHzmdHtz
+         77OMDj8g/WcLakNcQMkVFw9A4b4gvFAkHMTDQEluo+M2DprSzeoM4fIiQkfpDwcYUh
+         XJmV/aK6i2so03Pj+Mg0xlmR4tgT3wgmwlUXrjWU=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MvK4f-1pK9Zf0Vsn-00rEid; Wed, 31
+ Aug 2022 00:15:18 +0200
+Message-ID: <99439be1-d7af-5db6-7eb7-7bac5657ef05@gmx.com>
+Date:   Wed, 31 Aug 2022 06:15:15 +0800
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.2.0
 Subject: Re: [PATCH] btrfs-progs: fix eb leakage caused by missing
  btrfs_release_path() call.
-Message-ID: <20220830214902.GE13489@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Content-Language: en-US
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org
 References: <043f1db2c7548723eaff302ebba4183afb910830.1661835430.git.wqu@suse.com>
  <20220830171730.GB13489@twin.jikos.cz>
  <72b31d43-07fc-6126-b326-5110315ae342@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <72b31d43-07fc-6126-b326-5110315ae342@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+ <20220830214902.GE13489@twin.jikos.cz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220830214902.GE13489@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:eQ9R0o051t/kzZ/znDL5J6STHemfDM83hRm0MzewbFaYDMM3fJk
+ HT6VGlnw2qcS8fL01Q/0ztlSl/J6NAkFXtIzX1wDg2H3HinFlAVhWuENBkyJNtSCf8hu4eY
+ B1flbuliDnYUakjxzQKDGyOACG2Bm1JUp4kLWjArRb5Fom+CBhUykJ9FqHKjv9BS+HQM2/7
+ rrvCecAV8LSwluANjlR9w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:HNCE2kfl8BU=:pdMGF6SsP2RbLCdLEJ9N2U
+ QktiE150IuGlUT0jFvDDQerBBpjlPHrdkBNRDkTX1FjOC6GVg3GfzRrI+jeMc/GdDH5rFwLNK
+ egM4064k8s0x08/6M5nUnShiydGJeRRbYOxcqnrZujF9oVX/+eCrVufeav/5KREaRGsZIyvZk
+ qYX1Uz+GPPffiLNBcmXjfFwoTcsHsDMoM17rew64sE034NGsJkfdp4FC+WKJ+Z1hJ6SIKhMIt
+ ngNVVKyaN4DU5Vaa8BjFPf2QtWUgf2zhsUNBOjUkWqTsKpGccNO03YgNTP/Z3QJuzhSBJVdAU
+ RnKkmGtxLhyz4l+pDUFZwF152h7POp4S+RqqDnhaNl5jTFtjEe7Ozui7fijoDUDHW8Csjxw4R
+ M2yk+FkdYbWmWgdHhBJpoIk9z7vNY9GUVf6OijiGy3UMri5eRkCfln8ErYLkg9tuu02nfs5+d
+ EdhiDKXZPaRiSmfmFsCIl+Ywz+juH6lrNBrH+y9PyVZdFe9EFhh4TAWBdYl6jCsmWf9oBrV/o
+ 8QV284VZKiJvIXzI9NzOgg17r41KzmPpLoJMgPkF22twKemoJCX7mAHYOs1NkfnQFW/cIJOlp
+ e4UCz9/ToZi/VZ+lFmL7a/392Xg42vBzitiHD3fV23nSa5UlD+k0tuyjGnaCdmd2Csnl8IJ39
+ goDkqbwKhKuVz87fvYF9nENScB8GBHP9MsrnujabdaCPZpXiugT6pRA8f95i8M00+VhWtl/Vo
+ NqCKufh7NVFdujMeFtGKkF0cm/fHtYaPObpC0JEsIs6cQ5jSYVCM6m0rgjPddBslYddyQ6jz/
+ Fd5BvRppqvDnwWZsXik5IhioCpzjp08gWoR4rYFyuqH06YAzP1qSeISjm+jL0t0V6rzQiytJL
+ +VclZja1+POWZXu2yCMpYIXuWqGzaBmFLoyl3EhQbnrtTZzPedH9nm74DabLGS+TSZtFPv3MA
+ cfjXUrS/hRNsL/VOjjFcftHsSXL+FNIRtfU0yd1MedtetcMzyIjYaONNQ9KkH/3MmXmDupgvo
+ l0x4EbY+MPp/wBPY1BORmqk/EWxCFtDmBuvSoZIACzblodqZm/x3cM3xXNhJqX2FqoEUJHva2
+ 0frOt14XtDDrT31aeufWO1uoTOj9Fk7iSkOyP9wbJfck8DQj3tf124ksg==
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Aug 31, 2022 at 05:49:13AM +0800, Qu Wenruo wrote:
-> > I do that because that's the preferred style, but not all people respond
-> > to mailing list comments so we're left with unfixed bug with patch or a
-> > unclean version committed if there's no followup. Or something in
-> > between that could introduce bugs.
-> 
-> Another thing related to this on-stack path usage is, do we need the
-> same change in kernel space?
 
-No, in kernel the stack space is a limited resource.
 
-> And do we prefer on-stack path initialized to all 0, or use
-> btrfs_init_path()?
+On 2022/8/31 05:49, David Sterba wrote:
+> On Wed, Aug 31, 2022 at 05:49:13AM +0800, Qu Wenruo wrote:
+>>> I do that because that's the preferred style, but not all people respo=
+nd
+>>> to mailing list comments so we're left with unfixed bug with patch or =
+a
+>>> unclean version committed if there's no followup. Or something in
+>>> between that could introduce bugs.
+>>
+>> Another thing related to this on-stack path usage is, do we need the
+>> same change in kernel space?
+>
+> No, in kernel the stack space is a limited resource.
 
-It's initialized by btrfs_init_path everywhere else so for consistency
-this should be used, though the memset 0 is also possible, there are
-only int types or pointers in the structure.
+Should it be a case by case check or a general recommendation?
+
+As for some call sites which is known to have very shallow stack height,
+can we use on-stack path or just avoid it for all cases?
+
+Thanks,
+Qu
+>
+>> And do we prefer on-stack path initialized to all 0, or use
+>> btrfs_init_path()?
+>
+> It's initialized by btrfs_init_path everywhere else so for consistency
+> this should be used, though the memset 0 is also possible, there are
+> only int types or pointers in the structure.

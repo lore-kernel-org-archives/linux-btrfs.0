@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 654BDC6FA83
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5200CECAAD2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235027AbiIAW7b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Sep 2022 18:59:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40780 "EHLO
+        id S235072AbiIAW7g (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Sep 2022 18:59:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40952 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234985AbiIAW73 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 18:59:29 -0400
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3BB727AC20
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Sep 2022 15:59:28 -0700 (PDT)
-Received: from pps.filterd (m0109333.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 281Moiq0032142
-        for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:28 -0700
+        with ESMTP id S235074AbiIAW7f (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 18:59:35 -0400
+Received: from mx0a-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E5B57FE4C
+        for <linux-btrfs@vger.kernel.org>; Thu,  1 Sep 2022 15:59:34 -0700 (PDT)
+Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
+        by m0089730.ppops.net (8.17.1.5/8.17.1.5) with ESMTP id 281MnZVX010621
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:33 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding : content-type; s=facebook;
- bh=xz+EAz6+zKBuUOvQcHZ+CnrZ7d987bD644W6QeALQ2k=;
- b=K13dRc/L9kP06cCoDEx6KjyA7mBlwcH+/mTKovDy1orYKRVyvt2kWpdaEN2PaR/AsXv3
- NDtjTpJBj8IOS9vEp5vSegzNGpIekM0NtkohPBOjgFVqS1khtZ0NImUmgqWx77PB12RE
- ZbXJyKDhVFa4uFxsr+GSRtksNzeSa6snEzA= 
+ bh=XVCHQQfWhWgKAKMZPJkW78hrbIW41ozZ96M/ldxVQ+c=;
+ b=KnfGKqv7uHvGB11KFCpX830jJ3sANFbKSsaAmgoXCzTsPUhtufoSOCIvuAJTN5Q7wgj7
+ X9Z32atEmqtYTU02Xh3BKZVQUdiu2Xk2+FiYH6bsDRQyeFXYzPHuDCKpXczHqD4N2zgP
+ yVV4rtFwygZ73dnfTB5aFcZtHOGeBdmoydQ= 
 Received: from mail.thefacebook.com ([163.114.132.120])
-        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jagegys05-1
+        by m0089730.ppops.net (PPS) with ESMTPS id 3jam3vesbp-1
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:27 -0700
-Received: from twshared13579.04.prn5.facebook.com (2620:10d:c085:108::4) by
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:33 -0700
+Received: from twshared22593.02.prn5.facebook.com (2620:10d:c085:208::11) by
  mail.thefacebook.com (2620:10d:c085:11d::4) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2375.31; Thu, 1 Sep 2022 15:59:27 -0700
+ 15.1.2375.31; Thu, 1 Sep 2022 15:59:32 -0700
 Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
-        id 43F4C19149C9; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
+        id 5C00119149D3; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
         <linux-btrfs@vger.kernel.org>
 CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>
-Subject: [PATCH v1 05/10] btrfs: make btrfs_check_nocow_lock nowait compatible
-Date:   Thu, 1 Sep 2022 15:58:44 -0700
-Message-ID: <20220901225849.42898-6-shr@fb.com>
+Subject: [PATCH v1 10/10] btrfs: enable nowait async buffered writes
+Date:   Thu, 1 Sep 2022 15:58:49 -0700
+Message-ID: <20220901225849.42898-11-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220901225849.42898-1-shr@fb.com>
 References: <20220901225849.42898-1-shr@fb.com>
@@ -48,8 +48,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-GUID: O3VGSqToFdZjIwxrfqpJRWOGgT-Rflnk
-X-Proofpoint-ORIG-GUID: O3VGSqToFdZjIwxrfqpJRWOGgT-Rflnk
+X-Proofpoint-GUID: CGABbtso-PWS5XHGnmD6NEo-kzFwgqWx
+X-Proofpoint-ORIG-GUID: CGABbtso-PWS5XHGnmD6NEo-kzFwgqWx
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-09-01_12,2022-08-31_03,2022-06-22_01
@@ -57,122 +57,46 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+Enable nowait async buffered writes in btrfs_do_write_iter() and
+btrfs_file_open().
 
-Now all the helpers that btrfs_check_nocow_lock uses handle nowait, add
-a nowait flag to btrfs_check_nocow_lock so it can be used by the write
-path.
-
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Stefan Roesch <shr@fb.com>
 ---
- fs/btrfs/ctree.h |  2 +-
- fs/btrfs/file.c  | 33 ++++++++++++++++++++++-----------
- fs/btrfs/inode.c |  2 +-
- 3 files changed, 24 insertions(+), 13 deletions(-)
+ fs/btrfs/file.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 536bbc8551fc..06cb25f2d3bd 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3482,7 +3482,7 @@ int btrfs_dirty_pages(struct btrfs_inode *inode, st=
-ruct page **pages,
- 		      struct extent_state **cached, bool noreserve);
- int btrfs_fdatawrite_range(struct inode *inode, loff_t start, loff_t end=
-);
- int btrfs_check_nocow_lock(struct btrfs_inode *inode, loff_t pos,
--			   size_t *write_bytes);
-+			   size_t *write_bytes, bool nowait);
- void btrfs_check_nocow_unlock(struct btrfs_inode *inode);
-=20
- /* tree-defrag.c */
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 0f257205c63d..da6742a3c715 100644
+index b498541228ca..984225a92207 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1481,7 +1481,7 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode =
-*inode, struct page **pages,
-  * NOTE: Callers need to call btrfs_check_nocow_unlock() if we return > =
-0.
-  */
- int btrfs_check_nocow_lock(struct btrfs_inode *inode, loff_t pos,
--			   size_t *write_bytes)
-+			   size_t *write_bytes, bool nowait)
- {
- 	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
- 	struct btrfs_root *root =3D inode->root;
-@@ -1500,16 +1500,21 @@ int btrfs_check_nocow_lock(struct btrfs_inode *in=
-ode, loff_t pos,
- 			   fs_info->sectorsize) - 1;
- 	num_bytes =3D lockend - lockstart + 1;
+@@ -2107,13 +2107,13 @@ ssize_t btrfs_do_write_iter(struct kiocb *iocb, s=
+truct iov_iter *from,
+ 	if (BTRFS_FS_ERROR(inode->root->fs_info))
+ 		return -EROFS;
 =20
--	btrfs_lock_and_flush_ordered_range(inode, lockstart, lockend, NULL);
-+	if (nowait) {
-+		if (!btrfs_try_lock_ordered_range(inode, lockstart, lockend)) {
-+			btrfs_drew_write_unlock(&root->snapshot_lock);
-+			return -EWOULDBLOCK;
-+		}
-+	} else {
-+		btrfs_lock_and_flush_ordered_range(inode, lockstart, lockend, NULL);
-+	}
- 	ret =3D can_nocow_extent(&inode->vfs_inode, lockstart, &num_bytes,
--			NULL, NULL, NULL, false, false);
--	if (ret <=3D 0) {
--		ret =3D 0;
-+			NULL, NULL, NULL, nowait, false);
-+	if (ret <=3D 0)
- 		btrfs_drew_write_unlock(&root->snapshot_lock);
--	} else {
-+	else
- 		*write_bytes =3D min_t(size_t, *write_bytes ,
- 				     num_bytes - pos + lockstart);
--	}
- 	unlock_extent(&inode->io_tree, lockstart, lockend);
+-	if ((iocb->ki_flags & IOCB_NOWAIT) && !(iocb->ki_flags & IOCB_DIRECT))
+-		return -EOPNOTSUPP;
+-
+ 	if (sync)
+ 		atomic_inc(&inode->sync_writers);
 =20
- 	return ret;
-@@ -1666,16 +1671,22 @@ static noinline ssize_t btrfs_buffered_write(stru=
-ct kiocb *iocb,
- 						  &data_reserved, pos,
- 						  write_bytes, false);
- 		if (ret < 0) {
-+			int tmp;
+ 	if (encoded) {
++		if (iocb->ki_flags & IOCB_NOWAIT)
++			return -EOPNOTSUPP;
 +
- 			/*
- 			 * If we don't have to COW at the offset, reserve
- 			 * metadata only. write_bytes may get smaller than
- 			 * requested here.
- 			 */
--			if (btrfs_check_nocow_lock(BTRFS_I(inode), pos,
--						   &write_bytes) > 0)
--				only_release_metadata =3D true;
--			else
-+			tmp =3D btrfs_check_nocow_lock(BTRFS_I(inode), pos,
-+						     &write_bytes, false);
-+			if (tmp < 0)
-+				ret =3D tmp;
-+			if (tmp > 0)
-+				ret =3D 0;
-+			if (ret)
- 				break;
-+			only_release_metadata =3D true;
- 		}
+ 		num_written =3D btrfs_encoded_write(iocb, from, encoded);
+ 		num_sync =3D encoded->len;
+ 	} else if (iocb->ki_flags & IOCB_DIRECT) {
+@@ -3755,7 +3755,7 @@ static int btrfs_file_open(struct inode *inode, str=
+uct file *filp)
+ {
+ 	int ret;
 =20
- 		num_pages =3D DIV_ROUND_UP(write_bytes + offset, PAGE_SIZE);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 36e755f73764..5426d4f4ac23 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4884,7 +4884,7 @@ int btrfs_truncate_block(struct btrfs_inode *inode,=
- loff_t from, loff_t len,
- 	ret =3D btrfs_check_data_free_space(inode, &data_reserved, block_start,
- 					  blocksize, false);
- 	if (ret < 0) {
--		if (btrfs_check_nocow_lock(inode, block_start, &write_bytes) > 0) {
-+		if (btrfs_check_nocow_lock(inode, block_start, &write_bytes, false) > =
-0) {
- 			/* For nocow case, no need to reserve data space */
- 			only_release_metadata =3D true;
- 		} else {
+-	filp->f_mode |=3D FMODE_NOWAIT | FMODE_BUF_RASYNC;
++	filp->f_mode |=3D FMODE_NOWAIT | FMODE_BUF_RASYNC | FMODE_BUF_WASYNC;
+=20
+ 	ret =3D fsverity_file_open(inode, filp);
+ 	if (ret)
 --=20
 2.30.2
 

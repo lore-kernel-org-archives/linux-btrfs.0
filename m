@@ -2,140 +2,165 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D0A9ECAAD1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 Aug 2022 21:43:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64BF4C54EE9
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 07:03:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230002AbiHaVn2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 Aug 2022 17:43:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46156 "EHLO
+        id S233553AbiIAHDf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Sep 2022 03:03:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48810 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229498AbiHaVn0 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 Aug 2022 17:43:26 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 945E4DDB4A
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Aug 2022 14:43:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
-        s=badeba3b8450; t=1661982202;
-        bh=WaTRMiWEkLnbRw/s6qtdJKdwhxSB2jZ5BzTI7/g7WnQ=;
-        h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
-        b=SF3Wy74Gju37agdAMrfRJrudLAr0anIJTQYrjk+Vq1RRdyYeK4TKTKIWQGtlJhY+d
-         8Kb+LvAV8/S9lzvpq1u366V3284BIOnUOCk7Yl73Bp8P4tnGoYkJcfJEwOilNW7wGE
-         6kBDrh2bfGg42MhIke2LFTbxJ18I7/tY+zlPB7Ko=
-X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MZktj-1owKCc45EV-00WkPH; Wed, 31
- Aug 2022 23:43:22 +0200
-Message-ID: <66396669-7174-dd04-aaa9-d8322bc39fdb@gmx.com>
-Date:   Thu, 1 Sep 2022 05:43:19 +0800
+        with ESMTP id S232374AbiIAHDG (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 03:03:06 -0400
+Received: from dggsgout12.his.huawei.com (unknown [45.249.212.56])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 32732125369;
+        Thu,  1 Sep 2022 00:02:09 -0700 (PDT)
+Received: from mail02.huawei.com (unknown [172.30.67.143])
+        by dggsgout12.his.huawei.com (SkyGuard) with ESMTP id 4MJBky3fZSz6T57F;
+        Thu,  1 Sep 2022 15:00:26 +0800 (CST)
+Received: from [10.174.176.73] (unknown [10.174.176.73])
+        by APP2 (Coremail) with SMTP id Syh0CgA3inPrWBBjs6fcAA--.6039S3;
+        Thu, 01 Sep 2022 15:02:05 +0800 (CST)
+Subject: Re: stalling IO regression since linux 5.12, through 5.18
+To:     Ming Lei <ming.lei@redhat.com>,
+        Chris Murphy <lists@colorremedies.com>, Jan Kara <jack@suse.cz>
+Cc:     Nikolay Borisov <nborisov@suse.com>, Jens Axboe <axboe@kernel.dk>,
+        Paolo Valente <paolo.valente@linaro.org>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Linux-RAID <linux-raid@vger.kernel.org>,
+        linux-block <linux-block@vger.kernel.org>,
+        linux-kernel <linux-kernel@vger.kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "yukuai (C)" <yukuai3@huawei.com>
+References: <Yv0KmT8UYos2/4SX@T590>
+ <35f0d608-7448-4276-8922-19a23d8f9049@www.fastmail.com>
+ <Yv2P0zyoVvz35w/m@T590>
+ <568465de-5c3b-4d94-a74b-5b83ce2f942f@www.fastmail.com>
+ <Yv2w+Tuhw1RAoXI5@T590>
+ <9f2f608a-cd5f-4736-9e6d-07ccc2eca12c@www.fastmail.com>
+ <a817431f-276f-4aab-9ff8-c3e397494339@www.fastmail.com>
+ <5426d0f9-6539-477d-8feb-2b49136b960f@www.fastmail.com>
+ <Yv3NIQlDL0T3lstU@T590>
+ <0f731b0a-fbd5-4e7b-a3df-0ed63360c1e0@www.fastmail.com>
+ <YwCGlyDMhWubqKoL@T590>
+From:   Yu Kuai <yukuai1@huaweicloud.com>
+Message-ID: <297cbb87-87aa-2e1d-1fc3-8e96c241f28f@huaweicloud.com>
+Date:   Thu, 1 Sep 2022 15:02:03 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
+ Thunderbird/60.8.0
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.2.0
-Subject: Re: [PATCH v3 3/5] btrfs-progs: separate block group tree from extent
- tree v2
-Content-Language: en-US
-To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-References: <cover.1660024949.git.wqu@suse.com>
- <5eef4fd2d55a02dab38a6d1dec43dbcd82652508.1660024949.git.wqu@suse.com>
- <20220831191442.GL13489@twin.jikos.cz>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <20220831191442.GL13489@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:CUOXP2MZx9T3J4PFyGYJq2F2hAliBmBwM+HzIwhP6iXAtkLsjwn
- hhGtVf4rcncX64qP2tFMgRRrgEoQ50PS6lujuk4iUWzJdneoC/Z07LKgE1+GVzfl2w0TSo4
- 7HfTgV9X9uR0gKTPwqgviGP1dDgR5bDDYRFleesqlccVManu9KxMwMF8Pwh5fVMGpZZBZsn
- PYSBtuEJQqf3Swe1Ydi0w==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:Fq1ps9rrzkI=:orF1tpXWmzVI2ELBzQ+soL
- KAoeZzosSzNw0vv511MQaC7n7Ix400RM26hEYbyST0hCBld93FNVub6NkmwddBlpJiQ6UC0I+
- NnTn9dtGfmGZHs9zQPPcWBZ11uLcC3+RRn/vgxcF22tXPCyWKt3gzNof+0vSNDZJfLJ1vGOaH
- Xf+Rdc4CBDkcNhhYvAT1z19F7adRLG+Uq4R8GQ1w8S4yXdvWcjv6zntaiWxAePc8AMQsudEi4
- n5+5iBl5kwHCnHOKXkamhSxcHhKnoZR45Co73IIps2IWy3osPsXKArGISsi2EvgAvZ/2Cje95
- IEpxvrq7KwZFa3eoQa6RLX6ZX8fTwReefn2LJ1IBo92hB4AR2k3BfWhIIqEsXRFWDlp4H6pFl
- WcOlLe+nzaOzFVJ5An3W8sQZJYzt6gGTbH02ru1qNx/POcMEcdh31Qtja4MpulQkQujE2ide9
- AS5BqLCj7ygq2Qdp0LVfKPwRZGnG6WC1+8t2AlL+tryf4dHIt80V5BIklpj7YwIC/0KckyA/T
- t+0OgU94DzR05Z3R9JBWG9t1BM7D/+d7SkJNVbiwhmiyknsMlBbeVBqYE03ya4MiJN8N4RGZA
- nKX6nsJLwKRdZN7vCWrDQvTjd5u3YXHm9w21stVYedY4cF80WWEXABCXscvQuhCFa5/fK+brL
- 1CrVwlIka9c8gEHO6XksUBjOGgzRpQj/ZOs3DnBhNFuqPiVA4cdkZxJbs415m25P137v7/jjI
- RGcGNR6aLhDaHPW7/SvD1iZ/IF2YIhDck1oHwDSGN1PQCTtry0OSTrZ7cReb1Nqe3MSEyK1Do
- KARJ+9xghuvuLhYzL8RyyLV8965quvmxo8EC/LEA/YDrozS4109dDUsooUDXFNqKLgypTNdpa
- Rr20v8lpaQ+Zac32lr3Na5aKcbcnnEnV3KRns7imYH1Ku9b9aLJeuvAN5pj6I4MpUh3oMkPR/
- DDts9IuUoxcRxefj2TxDJc3H8HwQrQoQIX/StAMbARsfoFpR/ehSFtthBYTtYuh+LPp6KmZwm
- qz+U+CCYcNJPfWYnEu0k7QrRO/0165l1XbXOQAwZT/HGG+gAKuK2+5ADUKl4Cbvxnm+iBKn0E
- f3UbfXXbJ6g2jgkjjnOjUwVknRT088356BwPyEVbgOF2PbhM+xwu+n9ag==
+In-Reply-To: <YwCGlyDMhWubqKoL@T590>
+Content-Type: text/plain; charset=gbk; format=flowed
+Content-Transfer-Encoding: 8bit
+X-CM-TRANSID: Syh0CgA3inPrWBBjs6fcAA--.6039S3
+X-Coremail-Antispam: 1UD129KBjvJXoWxWw45CF4UJF1UZw1DJF1UKFg_yoW5XFyfpF
+        Z7tanYkanIqr10kryI9a18tr1rtws8Gr98WFyFy343JrnF9r90gF4IqrWYkrykXrs5Cr42
+        yFWjyFyxWr15Z3DanT9S1TB71UUUUUUqnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
+        9KBjDU0xBIdaVrnRJUUUvIb4IE77IF4wAFF20E14v26r4j6ryUM7CY07I20VC2zVCF04k2
+        6cxKx2IYs7xG6rWj6s0DM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4
+        vEj48ve4kI8wA2z4x0Y4vE2Ix0cI8IcVAFwI0_tr0E3s1l84ACjcxK6xIIjxv20xvEc7Cj
+        xVAFwI0_Gr1j6F4UJwA2z4x0Y4vEx4A2jsIE14v26rxl6s0DM28EF7xvwVC2z280aVCY1x
+        0267AKxVW0oVCq3wAS0I0E0xvYzxvE52x082IY62kv0487Mc02F40EFcxC0VAKzVAqx4xG
+        6I80ewAv7VC0I7IYx2IY67AKxVWUJVWUGwAv7VC2z280aVAFwI0_Jr0_Gr1lOx8S6xCaFV
+        Cjc4AY6r1j6r4UM4x0Y48IcVAKI48JM4IIrI8v6xkF7I0E8cxan2IY04v7Mxk0xIA0c2IE
+        e2xFo4CEbIxvr21l42xK82IYc2Ij64vIr41l4I8I3I0E4IkC6x0Yz7v_Jr0_Gr1lx2IqxV
+        Aqx4xG67AKxVWUJVWUGwC20s026x8GjcxK67AKxVWUGVWUWwC2zVAF1VAY17CE14v26r1q
+        6r43MIIYrxkI7VAKI48JMIIF0xvE2Ix0cI8IcVAFwI0_Jr0_JF4lIxAIcVC0I7IYx2IY6x
+        kF7I0E14v26r4j6F4UMIIF0xvE42xK8VAvwI8IcIk0rVWrZr1j6s0DMIIF0xvEx4A2jsIE
+        14v26r1j6r4UMIIF0xvEx4A2jsIEc7CjxVAFwI0_Gr0_Gr1UYxBIdaVFxhVjvjDU0xZFpf
+        9x07UWE__UUUUU=
+X-CM-SenderInfo: 51xn3trlr6x35dzhxuhorxvhhfrp/
+X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hi, Chris
 
-
-On 2022/9/1 03:14, David Sterba wrote:
-> On Tue, Aug 09, 2022 at 02:03:53PM +0800, Qu Wenruo wrote:
->> Block group tree feature is completely a standalone feature, and it has
->> been over 5 years before the initial introduction to solve the long
->> mount time.
+ÔÚ 2022/08/20 15:00, Ming Lei Ð´µÀ:
+> On Fri, Aug 19, 2022 at 03:20:25PM -0400, Chris Murphy wrote:
 >>
->> I don't really want to waste another 5 years waiting for a feature whic=
-h
->> may or may not work, but definitely not properly reviewed for its
->> preparation patches.
->
-> This should go to the cover letter but in the commit such ranting does
-> not bring much information for the code change. And I rephrase or delete
-> such things unless it's somehow relevant.
->
->> So this patch will separate the block group tree feature into a
->> standalone compat RO feature.
 >>
->> There is a catch, in mkfs create_block_group_tree(), current
->> tree-checker only accepts block group item with valid chunk_objectid,
->> but the existing code from extent-tree-v2 didn't properly initialize it=
-.
+>> On Thu, Aug 18, 2022, at 1:24 AM, Ming Lei wrote:
+>>> On Thu, Aug 18, 2022 at 12:27:04AM -0400, Chris Murphy wrote:
+>>>>
+>>>>
+>>>> On Thu, Aug 18, 2022, at 12:18 AM, Chris Murphy wrote:
+>>>>> On Thu, Aug 18, 2022, at 12:12 AM, Chris Murphy wrote:
+>>>>>> On Wed, Aug 17, 2022, at 11:41 PM, Ming Lei wrote:
+>>>>>>
+>>>>>>> OK, can you post the blk-mq debugfs log after you trigger it on v5.17?
+>>>>
+>>>> Same boot, 3rd log. But the load is above 300 so I kinda need to sysrq+b soon.
+>>>>
+>>>> https://drive.google.com/file/d/1375H558kqPTdng439rvG6LuXXWPXLToo/view?usp=sharing
+>>>>
+>>>
+>>> Also please test the following one too:
+>>>
+>>>
+>>> diff --git a/block/blk-mq.c b/block/blk-mq.c
+>>> index 5ee62b95f3e5..d01c64be08e2 100644
+>>> --- a/block/blk-mq.c
+>>> +++ b/block/blk-mq.c
+>>> @@ -1991,7 +1991,8 @@ bool blk_mq_dispatch_rq_list(struct blk_mq_hw_ctx
+>>> *hctx, struct list_head *list,
+>>>   		if (!needs_restart ||
+>>>   		    (no_tag && list_empty_careful(&hctx->dispatch_wait.entry)))
+>>>   			blk_mq_run_hw_queue(hctx, true);
+>>> -		else if (needs_restart && needs_resource)
+>>> +		else if (needs_restart && (needs_resource ||
+>>> +					blk_mq_is_shared_tags(hctx->flags)))
+>>>   			blk_mq_delay_run_hw_queue(hctx, BLK_MQ_RESOURCE_DELAY);
+>>>
+>>>   		blk_mq_update_dispatch_busy(hctx, true);
+>>>
 >>
->> This patch will also fix above mentioned problem so kernel can mount it
->> correctly.
 >>
->> Now mkfs/fsck should be able to handle the fs with block group tree.
->>
->> --- a/common/fsfeatures.c
->> +++ b/common/fsfeatures.c
->> @@ -172,6 +172,14 @@ static const struct btrfs_feature runtime_features=
-[] =3D {
->>   		VERSION_TO_STRING2(safe, 4,9),
->>   		VERSION_TO_STRING2(default, 5,15),
->>   		.desc		=3D "free space tree (space_cache=3Dv2)"
->> +	}, {
->> +		.name		=3D "block-group-tree",
->> +		.flag		=3D BTRFS_RUNTIME_FEATURE_BLOCK_GROUP_TREE,
->> +		.sysfs_name =3D "block_group_tree",
->> +		VERSION_TO_STRING2(compat, 6,0),
->> +		VERSION_NULL(safe),
->> +		VERSION_NULL(default),
->> +		.desc		=3D "block group tree to reduce mount time"
->
-> Like explaining that this is a runtime feature and I have not noticed
-> until I tried to test it expecting to see it among the mkfs-time
-> features but there was nothing in 'mkfs.btrfs -O list-all'.
->
-> This is a mkfs-time feature as it creates a fundamental on-disk
-> structure, basically a subset of extent tree.
+>> With just this patch on top of 5.17.0, it still hangs. I've captured block debugfs log:
+>> https://drive.google.com/file/d/1ic4YHxoL9RrCdy_5FNdGfh_q_J3d_Ft0/view?usp=sharing
+> 
+> The log is similar with before, and the only difference is RESTART not
+> set.
+> 
+> Also follows another patch merged to v5.18 and it fixes io stall too, feel free to test it:
+> 
+> 8f5fea65b06d blk-mq: avoid extending delays of active hctx from blk_mq_delay_run_hw_queues
 
-This comes to the decision to make bg-tree feature as a compat RO flag.
+Have you tried this patch?
 
-As we didn't put free-space-tree into "-O" options, but "-R" options.
-So the same should be done for most compat RO flags.
+We meet a similar problem in our test, and I'm pretty sure about the
+situation at the scene,
 
-Furthermore I remember I discussed about this before, extent tree change
-should not need a full incompat flag, as pure read-only tools, like
-btrfs-fuse should still be able to read the subvolume/csum/chunk/root
-trees without any problem.
+Our test environment£ºnvme with bfq ioscheduler,
 
-So following above reasons, bg-tree is compat RO, and compat RO goes
-into "-R" options, I see no reason to put it into "-O" options.
+How io is stalled:
+
+1. hctx1 dispatch rq from bfq in service queue, bfqq becomes empty,
+dispatch somehow fails and rq is inserted to hctx1->dispatch, new run
+work is queued.
+
+2. other hctx tries to dispatch rq, however, in service bfqq is
+empty, bfq_dispatch_request return NULL, thus
+blk_mq_delay_run_hw_queues is called.
+
+3. for the problem described in above patch£¬run work from "hctx1"
+can be stalled.
+
+Above patch should fix this io stall, however, it seems to me bfq do
+have some problems that in service bfqq doesn't expire under following
+situation:
+
+1. dispatched rqs don't complete
+2. no new rq is issued to bfq
 
 Thanks,
-Qu
+Kuai
+> 
+> 
+> 
+> Thanks,
+> Ming
+> 
+> .
+> 
 
->
-> As it's in one patch please send a fixup so I can fold it. Thanks.

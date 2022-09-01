@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2CC7ECAAD3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 07:44:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 703F2C64991
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 07:44:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234225AbiIAHoK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Sep 2022 03:44:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34806 "EHLO
+        id S233898AbiIAHoM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Sep 2022 03:44:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34524 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233756AbiIAHnM (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 03:43:12 -0400
+        with ESMTP id S233324AbiIAHnh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 03:43:37 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C58B81257FC;
-        Thu,  1 Sep 2022 00:43:10 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 171711264A7;
+        Thu,  1 Sep 2022 00:43:18 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=k/bCRqhIEe5EhCH7REQnZWBBj0b2P9XHUMRdc2s+emM=; b=RJro6QENp+ATJxjQYZBSEm2m6k
-        H9IF1Owaw6OuVJZmyYl3RtIdOuu2muedMSl8OC099YK+EJXkDH4LLua9j0GUjK2GT/MnHuHhDAnR0
-        /S+Cycno1M4TpgpltNq/mTv4wZL6pM07ekiX4mGanWFKT+pL/IBuD5BF3e85X4dKxa0srgrx5iBxb
-        1N7F3srEeW3h/BNPVF5HxYXvdHFfW7rCZcK4r+GgtiegnakSgWRYTG3Qh8qnvwIc/7CZ8BRB2nSOY
-        aI18DV5QFCYLsIgHKBH15smQTpjvVwIxDxLUnZs83iLdOunBGc0aRUKAZ6FH0cRPmhnBFP4GDpSrc
-        PUsdyPXQ==;
+        bh=xsLsepdDzI92/2ENAfo4C5Xjkuy4xHWvAk9PUbduG/M=; b=vEsy/WwxjHl81dUC4T+ib9A5WG
+        O+OA/hTvVc7qOewlAMaHxouFYT6JSAOfNAxw86BondRgWcyEUTUxV2O1Ej3DQUL4VDJYA9u9mJfhH
+        SoFVlIAPnJLsh7Qy/eDtyEZnM2f/akRx+KpQBuIccRfcnocp+2G+aNpoTrvXE4hBA5Do4ZqHrb8tE
+        uJIa+XE+qLHC6OhbUdzd8ETKoA8aMKhV5oJ/EOdhhFDELAv0/TS6Inl+YYYC7Hr3QsVvHZ73xkusi
+        US17JEnxKK8OUEfZte+MBTgFFGvIpF1Nh9h0zBKBAubJzgpkC6/SBiOCoHNKzBpuMQqQ/Zfim2CoM
+        xfUZdgAg==;
 Received: from 213-225-1-14.nat.highway.a1.net ([213.225.1.14] helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1oTeqv-00ANj6-36; Thu, 01 Sep 2022 07:43:06 +0000
+        id 1oTer3-00ANlX-DP; Thu, 01 Sep 2022 07:43:14 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
@@ -36,9 +36,9 @@ Cc:     Damien Le Moal <damien.lemoal@wdc.com>,
         Qu Wenruo <wqu@suse.com>, Jens Axboe <axboe@kernel.dk>,
         "Darrick J. Wong" <djwong@kernel.org>, linux-block@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 11/17] btrfs: remove stripe boundary calculation for encoded I/O
-Date:   Thu,  1 Sep 2022 10:42:10 +0300
-Message-Id: <20220901074216.1849941-12-hch@lst.de>
+Subject: [PATCH 13/17] btrfs: remove submit_encoded_read_bio
+Date:   Thu,  1 Sep 2022 10:42:12 +0300
+Message-Id: <20220901074216.1849941-14-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220901074216.1849941-1-hch@lst.de>
 References: <20220901074216.1849941-1-hch@lst.de>
@@ -49,66 +49,69 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+Just opencode the functionality in the only caller and remove the
+now superflous error handling there.
 
-Stop looking at the stripe boundary in
-btrfs_encoded_read_regular_fill_pages() now that that btrfs_submit_bio
-can split bios.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/inode.c | 23 ++---------------------
- 1 file changed, 2 insertions(+), 21 deletions(-)
+ fs/btrfs/inode.c | 23 +++--------------------
+ 1 file changed, 3 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 833ea647f7887..399381a4f8e69 100644
+index 399381a4f8e69..25194e75c0812 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -10025,7 +10025,6 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
+@@ -9990,17 +9990,6 @@ struct btrfs_encoded_read_private {
+ 	blk_status_t status;
+ };
+ 
+-static blk_status_t submit_encoded_read_bio(struct btrfs_inode *inode,
+-					    struct bio *bio, int mirror_num)
+-{
+-	struct btrfs_encoded_read_private *priv = btrfs_bio(bio)->private;
+-	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-
+-	atomic_inc(&priv->pending);
+-	btrfs_submit_bio(fs_info, bio, mirror_num);
+-	return BLK_STS_OK;
+-}
+-
+ static void btrfs_encoded_read_endio(struct btrfs_bio *bbio)
+ {
+ 	struct btrfs_encoded_read_private *priv = bbio->private;
+@@ -10025,6 +10014,7 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
  					  u64 file_offset, u64 disk_bytenr,
  					  u64 disk_io_size, struct page **pages)
  {
--	struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
  	struct btrfs_encoded_read_private priv = {
  		.inode = inode,
  		.file_offset = file_offset,
-@@ -10033,33 +10032,15 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
- 	};
- 	unsigned long i = 0;
- 	u64 cur = 0;
--	int ret;
+@@ -10055,14 +10045,8 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
  
- 	init_waitqueue_head(&priv.wait);
- 	/*
--	 * Submit bios for the extent, splitting due to bio or stripe limits as
--	 * necessary.
-+	 * Submit bios for the extent, splitting due to bio limits as necessary.
- 	 */
- 	while (cur < disk_io_size) {
--		struct extent_map *em;
--		struct btrfs_io_geometry geom;
- 		struct bio *bio = NULL;
--		u64 remaining;
-+		u64 remaining = disk_io_size - cur;
+ 			if (!bytes ||
+ 			    bio_add_page(bio, pages[i], bytes, 0) < bytes) {
+-				blk_status_t status;
+-
+-				status = submit_encoded_read_bio(inode, bio, 0);
+-				if (status) {
+-					WRITE_ONCE(priv.status, status);
+-					bio_put(bio);
+-					goto out;
+-				}
++				atomic_inc(&priv.pending);
++				btrfs_submit_bio(fs_info, bio, 0);
+ 				bio = NULL;
+ 				continue;
+ 			}
+@@ -10073,7 +10057,6 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
+ 		}
+ 	}
  
--		em = btrfs_get_chunk_map(fs_info, disk_bytenr + cur,
--					 disk_io_size - cur);
--		if (IS_ERR(em)) {
--			ret = PTR_ERR(em);
--		} else {
--			ret = btrfs_get_io_geometry(fs_info, em, BTRFS_MAP_READ,
--						    disk_bytenr + cur, &geom);
--			free_extent_map(em);
--		}
--		if (ret) {
--			WRITE_ONCE(priv.status, errno_to_blk_status(ret));
--			break;
--		}
--		remaining = min(geom.len, disk_io_size - cur);
- 		while (bio || remaining) {
- 			size_t bytes = min_t(u64, remaining, PAGE_SIZE);
- 
+-out:
+ 	if (atomic_dec_return(&priv.pending))
+ 		io_wait_event(priv.wait, !atomic_read(&priv.pending));
+ 	/* See btrfs_encoded_read_endio() for ordering. */
 -- 
 2.30.2
 

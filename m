@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68027C6FA83
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D962ECAAD3
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235074AbiIAW7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S235139AbiIAW7i (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Thu, 1 Sep 2022 18:59:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40962 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40958 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235109AbiIAW7f (ORCPT
+        with ESMTP id S235082AbiIAW7f (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 18:59:35 -0400
 Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AB24D785BA
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6F7D88003C
         for <linux-btrfs@vger.kernel.org>; Thu,  1 Sep 2022 15:59:34 -0700 (PDT)
 Received: from pps.filterd (m0109331.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 281MrjHv018332
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 281Mrtml018595
         for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:33 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding : content-type; s=facebook;
- bh=rw0k7DZmYMzQBjK5YB9+d7ZEbsfOy10Ymshr2skiNpE=;
- b=LcWhyHgF4AGV09ky4ce0xq4TuS2z1+c00VB3X9JBdXrDtQZvWvGBuoSlnj9weZ68Wh1E
- hmseKVC6cfMPaJsVVkZWeXEKVvxaBklE9rRMHDU4q3/cE/3NxwWxhR5SyUJckkUZdw2/
- QXoQFIeg4mxFQx8Oto63Sc0qEgK5WHDIQqY= 
-Received: from mail.thefacebook.com ([163.114.132.120])
-        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3ja8n3kfye-2
+ bh=hsJAxAzmOwMNMYJvEbqP+/u6T458kZ1bS+yG/tPQemQ=;
+ b=LFhc8DiaKEuyK/WlR5t5TnFbaRbeTsUcBffAm5wZ3sGyPboGu8YJ8CJTYSfRaeql50Wx
+ CmAFeBcsRAmrQIrWBus+qJlW7xVcLHdq8TTtGUrPLRrVRnoXzTritz00tUQJ2eLp5QjW
+ XZVKyPTc42aWFoPU/04+sqsLopBDt0F9fuY= 
+Received: from maileast.thefacebook.com ([163.114.130.16])
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3ja8n3kfyf-2
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
         for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:33 -0700
-Received: from twshared22593.02.prn5.facebook.com (2620:10d:c085:108::8) by
- mail.thefacebook.com (2620:10d:c085:21d::5) with Microsoft SMTP Server
+Received: from twshared16308.14.prn3.facebook.com (2620:10d:c0a8:1b::d) by
+ mail.thefacebook.com (2620:10d:c0a8:83::7) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2375.31; Thu, 1 Sep 2022 15:59:31 -0700
+ 15.1.2375.31; Thu, 1 Sep 2022 15:59:32 -0700
 Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
-        id 4D98A19149CD; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
+        id 5739D19149D1; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
         <linux-btrfs@vger.kernel.org>
 CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>
-Subject: [PATCH v1 07/10] btrfs: make lock_and_cleanup_extent_if_need nowait compatible
-Date:   Thu, 1 Sep 2022 15:58:46 -0700
-Message-ID: <20220901225849.42898-8-shr@fb.com>
+Subject: [PATCH v1 09/10] btrfs: make balance_dirty_pages nowait compatible
+Date:   Thu, 1 Sep 2022 15:58:48 -0700
+Message-ID: <20220901225849.42898-10-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220901225849.42898-1-shr@fb.com>
 References: <20220901225849.42898-1-shr@fb.com>
@@ -48,8 +48,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-GUID: AiluL980QtLQWPjZdgR1NrDES1dos_wE
-X-Proofpoint-ORIG-GUID: AiluL980QtLQWPjZdgR1NrDES1dos_wE
+X-Proofpoint-GUID: jLFUKxYD181GNu1QxDiOViJA4utNB0AW
+X-Proofpoint-ORIG-GUID: jLFUKxYD181GNu1QxDiOViJA4utNB0AW
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-09-01_12,2022-08-31_03,2022-06-22_01
@@ -57,62 +57,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This adds the nowait parameter to lock_and_cleanup_extent_if_need(). If
-the nowait parameter is specified we try to lock the extent in nowait
-mode.
+This replaces the call to function balance_dirty_pages_ratelimited() in
+the function btrfs_buffered_write() with a call to
+balance_dirty_pages_ratelimited_flags().
+
+It also moves the function after the again label. This can cause the
+function to be called a bit later, but this should have no impact in the
+real world.
 
 Signed-off-by: Stefan Roesch <shr@fb.com>
 ---
- fs/btrfs/file.c | 18 +++++++++++++++---
- 1 file changed, 15 insertions(+), 3 deletions(-)
+ fs/btrfs/file.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index d529f61ac5b9..ef9175efbf99 100644
+index 0789ef9f083b..b498541228ca 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1440,7 +1440,7 @@ static noinline int
- lock_and_cleanup_extent_if_need(struct btrfs_inode *inode, struct page *=
-*pages,
- 				size_t num_pages, loff_t pos,
- 				size_t write_bytes,
--				u64 *lockstart, u64 *lockend,
-+				u64 *lockstart, u64 *lockend, bool nowait,
- 				struct extent_state **cached_state)
- {
- 	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
-@@ -1455,8 +1455,20 @@ lock_and_cleanup_extent_if_need(struct btrfs_inode=
- *inode, struct page **pages,
- 	if (start_pos < inode->vfs_inode.i_size) {
- 		struct btrfs_ordered_extent *ordered;
-=20
--		lock_extent_bits(&inode->io_tree, start_pos, last_pos,
-+		if (nowait) {
-+			if (!try_lock_extent(&inode->io_tree, start_pos, last_pos)) {
-+				for (i =3D 0; i < num_pages; i++) {
-+					unlock_page(pages[i]);
-+					put_page(pages[i]);
-+				}
-+
-+				return -EWOULDBLOCK;
-+			}
-+		} else {
-+			lock_extent_bits(&inode->io_tree, start_pos, last_pos,
- 				cached_state);
-+		}
-+
- 		ordered =3D btrfs_lookup_ordered_range(inode, start_pos,
- 						     last_pos - start_pos + 1);
- 		if (ordered &&
-@@ -1755,7 +1767,7 @@ static noinline ssize_t btrfs_buffered_write(struct=
+@@ -1654,6 +1654,7 @@ static noinline ssize_t btrfs_buffered_write(struct=
  kiocb *iocb,
- 		extents_locked =3D lock_and_cleanup_extent_if_need(
- 				BTRFS_I(inode), pages,
- 				num_pages, pos, write_bytes, &lockstart,
--				&lockend, &cached_state);
-+				&lockend, false, &cached_state);
- 		if (extents_locked < 0) {
- 			if (extents_locked =3D=3D -EAGAIN)
- 				goto again;
+ 	loff_t old_isize =3D i_size_read(inode);
+ 	unsigned int ilock_flags =3D 0;
+ 	bool nowait =3D iocb->ki_flags & IOCB_NOWAIT;
++	unsigned int bdp_flags =3D nowait ? BDP_ASYNC : 0;
+=20
+ 	if (nowait)
+ 		ilock_flags |=3D BTRFS_ILOCK_TRY;
+@@ -1756,6 +1757,10 @@ static noinline ssize_t btrfs_buffered_write(struc=
+t kiocb *iocb,
+=20
+ 		release_bytes =3D reserve_bytes;
+ again:
++		ret =3D balance_dirty_pages_ratelimited_flags(inode->i_mapping, bdp_fl=
+ags);
++		if (unlikely(ret))
++			break;
++
+ 		/*
+ 		 * This is going to setup the pages array with the number of
+ 		 * pages we want, so we don't really need to worry about the
+@@ -1860,8 +1865,6 @@ static noinline ssize_t btrfs_buffered_write(struct=
+ kiocb *iocb,
+=20
+ 		cond_resched();
+=20
+-		balance_dirty_pages_ratelimited(inode->i_mapping);
+-
+ 		pos +=3D copied;
+ 		num_written +=3D copied;
+ 	}
 --=20
 2.30.2
 

@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26842C6FA85
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3908EECAAD3
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234987AbiIAW72 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Sep 2022 18:59:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40744 "EHLO
+        id S231455AbiIAW73 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Sep 2022 18:59:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40752 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234945AbiIAW70 (ORCPT
+        with ESMTP id S234948AbiIAW70 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 18:59:26 -0400
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1E187D1E7
+Received: from mx0a-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 963F17C1D0
         for <linux-btrfs@vger.kernel.org>; Thu,  1 Sep 2022 15:59:25 -0700 (PDT)
-Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 281MrXEh028918
-        for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:25 -0700
+Received: from pps.filterd (m0089730.ppops.net [127.0.0.1])
+        by m0089730.ppops.net (8.17.1.5/8.17.1.5) with ESMTP id 281MnZEF010630
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:24 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding : content-type; s=facebook;
- bh=KiNh9NWl/t+gaUifKEHYXP9JSrLUJuO5m9kBYkX6Hvc=;
- b=Fd+VNUeXGFqJxIT6HoPx0n11JsG/Z14sBpBF7Yhun5NOC+ljacL0bM9CKqUUM8v8pN+z
- b/W7MzNJqryr7RyoeNJAA/kKp9Bww8lsCuj4e9yVabj+57TDXZaU7jbhsQAY8zQUeiqL
- AbYmaxHFe2qc0kbxmK0utsLvDCm6G1DQVpI= 
+ bh=1/2c8hCjNmmR1fl2QOq90LSIJeT/NHWpxBRYDOAviuw=;
+ b=XjGhBTGmdyAOgTCoBto1U8096C1+iRho3jG7n6thu9ncbC+Dl1bVxIDRKsrU9ZQPoFEg
+ Z5yVNHxSCV/bKXITYu5Wc5X6tCxQ0WArm+MwSy42GodMGOppR4NvkFvkbEA9xyJn+QOm
+ pK9v+tgTbSuEconSAJT4/EUciHGNlNFtJkc= 
 Received: from maileast.thefacebook.com ([163.114.130.16])
-        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jaf2n09st-2
+        by m0089730.ppops.net (PPS) with ESMTPS id 3jam3vesb0-2
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:25 -0700
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:24 -0700
 Received: from twshared20183.05.prn5.facebook.com (2620:10d:c0a8:1b::d) by
- mail.thefacebook.com (2620:10d:c0a8:82::f) with Microsoft SMTP Server
+ mail.thefacebook.com (2620:10d:c0a8:83::4) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
  15.1.2375.31; Thu, 1 Sep 2022 15:59:23 -0700
 Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
-        id 48D1A19149CB; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
+        id 34FB919149C3; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
         <linux-btrfs@vger.kernel.org>
 CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>
-Subject: [PATCH v1 06/10] btrfs: make prepare_pages nowait compatible
-Date:   Thu, 1 Sep 2022 15:58:45 -0700
-Message-ID: <20220901225849.42898-7-shr@fb.com>
+Subject: [PATCH v1 02/10] btrfs: make can_nocow_extent nowait compatible
+Date:   Thu, 1 Sep 2022 15:58:41 -0700
+Message-ID: <20220901225849.42898-3-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220901225849.42898-1-shr@fb.com>
 References: <20220901225849.42898-1-shr@fb.com>
@@ -48,8 +48,8 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-GUID: dG6RsirRjeGxuT3H2Ceu5nnUgQ7wkozs
-X-Proofpoint-ORIG-GUID: dG6RsirRjeGxuT3H2Ceu5nnUgQ7wkozs
+X-Proofpoint-GUID: 6ES8IBAOoRlhGEy4oLRCDDrRnn991mcH
+X-Proofpoint-ORIG-GUID: 6ES8IBAOoRlhGEy4oLRCDDrRnn991mcH
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-09-01_12,2022-08-31_03,2022-06-22_01
@@ -57,102 +57,269 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add nowait parameter to the prepare_pages function. In case nowait is
-specified for an async buffered write request, do a nowait allocation or
-return -EAGAIN.
+From: Josef Bacik <josef@toxicpanda.com>
 
+If we have NOWAIT specified on our IOCB and we're writing into a
+PREALLOC or NOCOW extent then we need to be able to tell
+can_nocow_extent that we don't want to wait on any locks or metadata IO.
+Fix can_nocow_extent to allow for NOWAIT.
+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Stefan Roesch <shr@fb.com>
 ---
- fs/btrfs/file.c | 43 ++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 36 insertions(+), 7 deletions(-)
+ fs/btrfs/ctree.h       |  5 +++--
+ fs/btrfs/extent-tree.c |  5 +++++
+ fs/btrfs/file-item.c   |  4 +++-
+ fs/btrfs/file.c        |  2 +-
+ fs/btrfs/inode.c       | 16 ++++++++++------
+ fs/btrfs/relocation.c  |  2 +-
+ fs/btrfs/scrub.c       |  4 ++--
+ fs/btrfs/tree-log.c    |  6 +++---
+ 8 files changed, 28 insertions(+), 16 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index da6742a3c715..d529f61ac5b9 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1339,26 +1339,55 @@ static int prepare_uptodate_page(struct inode *in=
-ode,
- 	return 0;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d6d05450198d..536bbc8551fc 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3276,7 +3276,8 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handl=
+e *trans,
+ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *b=
+io,
+ 				u64 offset, bool one_ordered);
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end=
+,
+-			     struct list_head *list, int search_commit);
++			     struct list_head *list, int search_commit,
++			     bool nowait);
+ void btrfs_extent_item_to_extent_map(struct btrfs_inode *inode,
+ 				     const struct btrfs_path *path,
+ 				     struct btrfs_file_extent_item *fi,
+@@ -3306,7 +3307,7 @@ struct extent_map *btrfs_get_extent_fiemap(struct b=
+trfs_inode *inode,
+ 					   u64 start, u64 len);
+ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 			      u64 *orig_start, u64 *orig_block_len,
+-			      u64 *ram_bytes, bool strict);
++			      u64 *ram_bytes, bool nowait, bool strict);
+=20
+ void __btrfs_del_delalloc_inode(struct btrfs_root *root,
+ 				struct btrfs_inode *inode);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6914cd8024ba..c868946fc068 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2220,6 +2220,11 @@ static noinline int check_delayed_ref(struct btrfs=
+_root *root,
+ 	}
+=20
+ 	if (!mutex_trylock(&head->mutex)) {
++		if (path->nowait) {
++			spin_unlock(&delayed_refs->lock);
++			return -EWOULDBLOCK;
++		}
++
+ 		refcount_inc(&head->refs);
+ 		spin_unlock(&delayed_refs->lock);
+=20
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index c828f971a346..fcc6ce861409 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -503,7 +503,8 @@ blk_status_t btrfs_lookup_bio_sums(struct inode *inod=
+e, struct bio *bio, u8 *dst
  }
 =20
-+static int get_prepare_fgp_flags(bool nowait)
-+{
-+	int fgp_flags;
-+
-+	fgp_flags =3D FGP_LOCK|FGP_ACCESSED|FGP_CREAT;
-+	if (nowait)
-+		fgp_flags |=3D FGP_NOWAIT;
-+
-+	return fgp_flags;
-+}
-+
-+static gfp_t get_prepare_gfp_flags(struct inode *inode, bool nowait)
-+{
-+	gfp_t gfp;
-+
-+	gfp =3D btrfs_alloc_write_mask(inode->i_mapping);
-+	if (nowait) {
-+		gfp &=3D ~__GFP_DIRECT_RECLAIM;
-+		gfp |=3D GFP_NOWAIT;
-+	}
-+
-+	return gfp;
-+}
-+
- /*
-  * this just gets pages into the page cache and locks them down.
-  */
- static noinline int prepare_pages(struct inode *inode, struct page **pag=
-es,
- 				  size_t num_pages, loff_t pos,
--				  size_t write_bytes, bool force_uptodate)
-+				  size_t write_bytes, bool force_uptodate,
-+				  bool nowait)
+ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end=
+,
+-			     struct list_head *list, int search_commit)
++			     struct list_head *list, int search_commit,
++			     bool nowait)
  {
- 	int i;
- 	unsigned long index =3D pos >> PAGE_SHIFT;
--	gfp_t mask =3D btrfs_alloc_write_mask(inode->i_mapping);
-+	gfp_t mask =3D get_prepare_gfp_flags(inode, nowait);
-+	int fgp_flags =3D get_prepare_fgp_flags(nowait);
- 	int err =3D 0;
- 	int faili;
+ 	struct btrfs_fs_info *fs_info =3D root->fs_info;
+ 	struct btrfs_key key;
+@@ -525,6 +526,7 @@ int btrfs_lookup_csums_range(struct btrfs_root *root,=
+ u64 start, u64 end,
+ 	if (!path)
+ 		return -ENOMEM;
 =20
- 	for (i =3D 0; i < num_pages; i++) {
- again:
--		pages[i] =3D find_or_create_page(inode->i_mapping, index + i,
--					       mask | __GFP_WRITE);
-+		pages[i] =3D pagecache_get_page(inode->i_mapping, index + i,
-+					fgp_flags, mask | __GFP_WRITE);
- 		if (!pages[i]) {
- 			faili =3D i - 1;
--			err =3D -ENOMEM;
-+			if (nowait)
-+				err =3D -EAGAIN;
-+			else
-+				err =3D -ENOMEM;
- 			goto fail;
- 		}
++	path->nowait =3D nowait;
+ 	if (search_commit) {
+ 		path->skip_locking =3D 1;
+ 		path->reada =3D READA_FORWARD;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 5a3f6e0d9688..f4aa198f0f87 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1502,7 +1502,7 @@ int btrfs_check_nocow_lock(struct btrfs_inode *inod=
+e, loff_t pos,
 =20
-@@ -1376,7 +1405,7 @@ static noinline int prepare_pages(struct inode *ino=
-de, struct page **pages,
- 						    pos + write_bytes, false);
- 		if (err) {
- 			put_page(pages[i]);
--			if (err =3D=3D -EAGAIN) {
-+			if (!nowait && err =3D=3D -EAGAIN) {
- 				err =3D 0;
- 				goto again;
- 			}
-@@ -1716,7 +1745,7 @@ static noinline ssize_t btrfs_buffered_write(struct=
- kiocb *iocb,
- 		 */
- 		ret =3D prepare_pages(inode, pages, num_pages,
- 				    pos, write_bytes,
--				    force_page_uptodate);
-+				    force_page_uptodate, false);
+ 	btrfs_lock_and_flush_ordered_range(inode, lockstart, lockend, NULL);
+ 	ret =3D can_nocow_extent(&inode->vfs_inode, lockstart, &num_bytes,
+-			NULL, NULL, NULL, false);
++			NULL, NULL, NULL, false, false);
+ 	if (ret <=3D 0) {
+ 		ret =3D 0;
+ 		btrfs_drew_write_unlock(&root->snapshot_lock);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ad250892028d..8ad3bea26652 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1667,7 +1667,7 @@ static noinline int run_delalloc_zoned(struct btrfs=
+_inode *inode,
+ }
+=20
+ static noinline int csum_exist_in_range(struct btrfs_fs_info *fs_info,
+-					u64 bytenr, u64 num_bytes)
++					u64 bytenr, u64 num_bytes, bool nowait)
+ {
+ 	struct btrfs_root *csum_root =3D btrfs_csum_root(fs_info, bytenr);
+ 	struct btrfs_ordered_sum *sums;
+@@ -1675,7 +1675,8 @@ static noinline int csum_exist_in_range(struct btrf=
+s_fs_info *fs_info,
+ 	LIST_HEAD(list);
+=20
+ 	ret =3D btrfs_lookup_csums_range(csum_root, bytenr,
+-				       bytenr + num_bytes - 1, &list, 0);
++				       bytenr + num_bytes - 1, &list, 0,
++				       nowait);
+ 	if (ret =3D=3D 0 && list_empty(&list))
+ 		return 0;
+=20
+@@ -1801,6 +1802,7 @@ static int can_nocow_file_extent(struct btrfs_path =
+*path,
+ 	u8 extent_type;
+ 	int can_nocow =3D 0;
+ 	int ret =3D 0;
++	bool nowait =3D path->nowait;
+=20
+ 	fi =3D btrfs_item_ptr(leaf, path->slots[0], struct btrfs_file_extent_it=
+em);
+ 	extent_type =3D btrfs_file_extent_type(leaf, fi);
+@@ -1877,7 +1879,8 @@ static int can_nocow_file_extent(struct btrfs_path =
+*path,
+ 	 * Force COW if csums exist in the range. This ensures that csums for a
+ 	 * given extent are either valid or do not exist.
+ 	 */
+-	ret =3D csum_exist_in_range(root->fs_info, args->disk_bytenr, args->num=
+_bytes);
++	ret =3D csum_exist_in_range(root->fs_info, args->disk_bytenr, args->num=
+_bytes,
++				  nowait);
+ 	WARN_ON_ONCE(ret > 0 && is_freespace_inode);
+ 	if (ret !=3D 0)
+ 		goto out;
+@@ -7293,7 +7296,7 @@ static bool btrfs_extent_readonly(struct btrfs_fs_i=
+nfo *fs_info, u64 bytenr)
+  */
+ noinline int can_nocow_extent(struct inode *inode, u64 offset, u64 *len,
+ 			      u64 *orig_start, u64 *orig_block_len,
+-			      u64 *ram_bytes, bool strict)
++			      u64 *ram_bytes, bool nowait, bool strict)
+ {
+ 	struct btrfs_fs_info *fs_info =3D btrfs_sb(inode->i_sb);
+ 	struct can_nocow_file_extent_args nocow_args =3D { 0 };
+@@ -7309,6 +7312,7 @@ noinline int can_nocow_extent(struct inode *inode, =
+u64 offset, u64 *len,
+ 	path =3D btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
++	path->nowait =3D nowait;
+=20
+ 	ret =3D btrfs_lookup_file_extent(NULL, root, path,
+ 			btrfs_ino(BTRFS_I(inode)), offset, 0);
+@@ -7578,7 +7582,7 @@ static int btrfs_get_blocks_direct_write(struct ext=
+ent_map **map,
+ 		block_start =3D em->block_start + (start - em->start);
+=20
+ 		if (can_nocow_extent(inode, start, &len, &orig_start,
+-				     &orig_block_len, &ram_bytes, false) =3D=3D 1) {
++				     &orig_block_len, &ram_bytes, false, false) =3D=3D 1) {
+ 			bg =3D btrfs_inc_nocow_writers(fs_info, block_start);
+ 			if (bg)
+ 				can_nocow =3D true;
+@@ -11243,7 +11247,7 @@ static int btrfs_swap_activate(struct swap_info_s=
+truct *sis, struct file *file,
+ 		free_extent_map(em);
+ 		em =3D NULL;
+=20
+-		ret =3D can_nocow_extent(inode, start, &len, NULL, NULL, NULL, true);
++		ret =3D can_nocow_extent(inode, start, &len, NULL, NULL, NULL, false, =
+true);
+ 		if (ret < 0) {
+ 			goto out;
+ 		} else if (ret) {
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 45c02aba2492..dfc3f6c04b13 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4339,7 +4339,7 @@ int btrfs_reloc_clone_csums(struct btrfs_inode *ino=
+de, u64 file_pos, u64 len)
+ 	disk_bytenr =3D file_pos + inode->index_cnt;
+ 	csum_root =3D btrfs_csum_root(fs_info, disk_bytenr);
+ 	ret =3D btrfs_lookup_csums_range(csum_root, disk_bytenr,
+-				       disk_bytenr + len - 1, &list, 0);
++				       disk_bytenr + len - 1, &list, 0, false);
+ 	if (ret)
+ 		goto out;
+=20
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3afe5fa50a63..1cb3eed8b917 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3077,7 +3077,7 @@ static int scrub_raid56_data_stripe_for_parity(stru=
+ct scrub_ctx *sctx,
+=20
+ 		ret =3D btrfs_lookup_csums_range(csum_root, extent_start,
+ 					       extent_start + extent_size - 1,
+-					       &sctx->csum_list, 1);
++					       &sctx->csum_list, 1, false);
  		if (ret) {
- 			btrfs_delalloc_release_extents(BTRFS_I(inode),
- 						       reserve_bytes);
+ 			scrub_parity_mark_sectors_error(sparity, extent_start,
+ 							extent_size);
+@@ -3303,7 +3303,7 @@ static int scrub_simple_mirror(struct scrub_ctx *sc=
+tx,
+ 		if (extent_flags & BTRFS_EXTENT_FLAG_DATA) {
+ 			ret =3D btrfs_lookup_csums_range(csum_root, cur_logical,
+ 					cur_logical + scrub_len - 1,
+-					&sctx->csum_list, 1);
++					&sctx->csum_list, 1, false);
+ 			if (ret)
+ 				break;
+ 		}
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9205c4a5ca81..8af30dab2a17 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -801,7 +801,7 @@ static noinline int replay_one_extent(struct btrfs_tr=
+ans_handle *trans,
+=20
+ 			ret =3D btrfs_lookup_csums_range(root->log_root,
+ 						csum_start, csum_end - 1,
+-						&ordered_sums, 0);
++						&ordered_sums, 0, false);
+ 			if (ret)
+ 				goto out;
+ 			/*
+@@ -4513,7 +4513,7 @@ static noinline int copy_items(struct btrfs_trans_h=
+andle *trans,
+ 		disk_bytenr +=3D extent_offset;
+ 		ret =3D btrfs_lookup_csums_range(csum_root, disk_bytenr,
+ 					       disk_bytenr + extent_num_bytes - 1,
+-					       &ordered_sums, 0);
++					       &ordered_sums, 0, false);
+ 		if (ret)
+ 			goto out;
+=20
+@@ -4709,7 +4709,7 @@ static int log_extent_csums(struct btrfs_trans_hand=
+le *trans,
+ 	ret =3D btrfs_lookup_csums_range(csum_root,
+ 				       em->block_start + csum_offset,
+ 				       em->block_start + csum_offset +
+-				       csum_len - 1, &ordered_sums, 0);
++				       csum_len - 1, &ordered_sums, 0, false);
+ 	if (ret)
+ 		return ret;
+=20
 --=20
 2.30.2
 

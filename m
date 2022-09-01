@@ -2,51 +2,54 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35514ECAAD3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9CC15ECAAD2
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Sep 2022 22:59:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233822AbiIAW7Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Sep 2022 18:59:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40586 "EHLO
+        id S234869AbiIAW7Z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Sep 2022 18:59:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40694 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231455AbiIAW7P (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 18:59:15 -0400
+        with ESMTP id S231455AbiIAW7X (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Sep 2022 18:59:23 -0400
 Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E62E5785BA
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Sep 2022 15:59:14 -0700 (PDT)
-Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 281MnmhD005248
-        for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:14 -0700
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D45647AC04
+        for <linux-btrfs@vger.kernel.org>; Thu,  1 Sep 2022 15:59:22 -0700 (PDT)
+Received: from pps.filterd (m0148460.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 281Mndqh024297
+        for <linux-btrfs@vger.kernel.org>; Thu, 1 Sep 2022 15:59:22 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
- : date : message-id : mime-version : content-transfer-encoding :
- content-type; s=facebook; bh=pOeLR7xmdM88xwwC8tHg94MHHdooLeshYcrJC5bEeSY=;
- b=I9kFd2WoxAUsM66Yu0JvQ4uC1rAJkS8tCBGa12HrMZhjxB0hoXIrlr83V0k0gr6b+zaW
- ZTIDeiilBjtmYsntLq+GW3AmfmkgFRa2svp6NlM8Wl79++TzHj7Mi7igzDf4h3YzhyWi
- dAbILy6UuqKQvLAe9Z3XQaLthGV8zSzetmQ= 
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding : content-type; s=facebook;
+ bh=nn6pNmrfqii0Pxc5tRFGzs2eYju00h6nYRh4yWgopAs=;
+ b=lipAF9n17miItZ/keJspriOSSOw4NUnXTlfP6lUMBuH0QWdXvti/EtOXbvlJKZb0WrMY
+ rhxrsIWPttJw9u4ge0KT/Ybh1pJB+krj5dF4FNQsUNr4Hwc93gCrwbxfiVzVaxEr/fr8
+ MYKTH4rWRjVfq7J8OBsKVjtYtlZlStcMjw4= 
 Received: from maileast.thefacebook.com ([163.114.130.16])
-        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jat6s55qd-1
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jaab32msg-2
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:14 -0700
-Received: from twshared20183.05.prn5.facebook.com (2620:10d:c0a8:1b::d) by
- mail.thefacebook.com (2620:10d:c0a8:82::e) with Microsoft SMTP Server
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Sep 2022 15:59:22 -0700
+Received: from twshared16308.14.prn3.facebook.com (2620:10d:c0a8:1b::d) by
+ mail.thefacebook.com (2620:10d:c0a8:83::4) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2375.31; Thu, 1 Sep 2022 15:59:13 -0700
+ 15.1.2375.31; Thu, 1 Sep 2022 15:59:20 -0700
 Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
-        id 6947C19149B1; Thu,  1 Sep 2022 15:59:06 -0700 (PDT)
+        id 3A06419149C5; Thu,  1 Sep 2022 15:59:13 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
         <linux-btrfs@vger.kernel.org>
 CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>
-Subject: [PATCH v1 00/10] io-uring/btrfs: support async buffered writes
-Date:   Thu, 1 Sep 2022 15:58:39 -0700
-Message-ID: <20220901225849.42898-1-shr@fb.com>
+Subject: [PATCH v1 03/10] btrfs: add the ability to use NO_FLUSH for data reservations
+Date:   Thu, 1 Sep 2022 15:58:42 -0700
+Message-ID: <20220901225849.42898-4-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220901225849.42898-1-shr@fb.com>
+References: <20220901225849.42898-1-shr@fb.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-GUID: qydgiDeTNY0jRzgZkyUzVfTVsJob6aoj
-X-Proofpoint-ORIG-GUID: qydgiDeTNY0jRzgZkyUzVfTVsJob6aoj
+X-Proofpoint-GUID: m_Mk3dBTndP5ooJnyVkgpSk2gLIDv-8M
+X-Proofpoint-ORIG-GUID: m_Mk3dBTndP5ooJnyVkgpSk2gLIDv-8M
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.517,FMLib:17.11.122.1
  definitions=2022-09-01_12,2022-08-31_03,2022-06-22_01
@@ -54,109 +57,149 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This patch series adds support for async buffered writes when using both
-btrfs and io-uring. Currently io-uring only supports buffered writes (for=
- btrfs)
-in the slow path, by processing them in the io workers. With this patch s=
-eries
-it is now possible to support buffered writes in the fast path. To be abl=
-e to use
-the fast path, the required pages must be in the page cache, the required=
- locks
-in btrfs can be granted immediately and no additional blocks need to be r=
-ead
-form disk.
+From: Josef Bacik <josef@toxicpanda.com>
 
-This patch series makes use of the changes that have been introduced by a
-previous patch series: "io-uring/xfs: support async buffered writes"
+In order to accommodate NOWAIT IOCB's we need to be able to do NO_FLUSH
+data reservations, so plumb this through the delalloc reservation
+system.
 
-Performance results:
-  For fio the following results have been obtained with a queue depth of
-  1 and 4k block size (runtime 600 secs):
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Stefan Roesch <shr@fb.com>
+---
+ fs/btrfs/block-group.c    |  2 +-
+ fs/btrfs/delalloc-space.c | 13 ++++++++++---
+ fs/btrfs/delalloc-space.h |  3 ++-
+ fs/btrfs/file.c           |  2 +-
+ fs/btrfs/inode.c          |  4 ++--
+ fs/btrfs/space-info.c     |  3 ++-
+ 6 files changed, 18 insertions(+), 9 deletions(-)
 
-                 sequential writes:
-                 without patch           with patch      libaio     psync
-  iops:              55k                    134k          117K       148K
-  bw:               221MB/s                 538MB/s       469MB/s    592M=
-B/s
-  clat:           15286ns                    82ns         994ns     6340n=
-s
-
-
-For an io depth of 1, the new patch improves throughput by over two times
-(compared to the exiting behavior, where buffered writes are processed by=
- an
-io-worker process) and also the latency is considerably reduced. To achie=
-ve the
-same or better performance with the exisiting code an io depth of 4 is re=
-quired.
-Increasing the iodepth further does not lead to improvements.
-
-
-BTRFS changes:
-  Add option for NOWAIT IOCB's to tell that searches do not wait on locks=
-. This
-  adds the nowait option to btrfs_path.
-
-  For NOWAIT buffered writes on PREALLOC or NOCOW extents tell can_nocow_=
-extent()
-  that we don't want to wait on any locks or metadata IO.
-
-  Support no_flush reservations for nowait buffered writes.
-
-  Add btrfs_try_lock_ordered_range() function.
-
-  Add nowait flag to btrfs_check_nocow_lock() to use it in write code pat=
-h.
-
-  Add nowait parameter to prepare_pages() function.
-
-  Plumb nowait through the write code path.
-
-  Enable nowait buffered writes.
-
-
-Testing:
-  This patch has been tested with xfstests, fsx, fio. xfstests shows no n=
-ew
-  diffs compared to running without the patch series.
-
-
-Josef Bacik (5):
-  btrfs: implement a nowait option for tree searches
-  btrfs: make can_nocow_extent nowait compatible
-  btrfs: add the ability to use NO_FLUSH for data reservations
-  btrfs: add btrfs_try_lock_ordered_range
-  btrfs: make btrfs_check_nocow_lock nowait compatible
-
-Stefan Roesch (5):
-  btrfs: make prepare_pages nowait compatible
-  btrfs: make lock_and_cleanup_extent_if_need nowait compatible
-  btrfs: btrfs: plumb NOWAIT through the write path
-  btrfs: make balance_dirty_pages nowait compatible
-  btrfs: enable nowait async buffered writes
-
- fs/btrfs/block-group.c    |   2 +-
- fs/btrfs/ctree.c          |  39 +++++++++++-
- fs/btrfs/ctree.h          |   8 ++-
- fs/btrfs/delalloc-space.c |  13 +++-
- fs/btrfs/delalloc-space.h |   3 +-
- fs/btrfs/extent-tree.c    |   5 ++
- fs/btrfs/file-item.c      |   4 +-
- fs/btrfs/file.c           | 124 ++++++++++++++++++++++++++++----------
- fs/btrfs/inode.c          |  22 ++++---
- fs/btrfs/locking.c        |  23 +++++++
- fs/btrfs/locking.h        |   1 +
- fs/btrfs/ordered-data.c   |  28 +++++++++
- fs/btrfs/ordered-data.h   |   1 +
- fs/btrfs/relocation.c     |   2 +-
- fs/btrfs/scrub.c          |   4 +-
- fs/btrfs/space-info.c     |   3 +-
- fs/btrfs/tree-log.c       |   6 +-
- 17 files changed, 229 insertions(+), 59 deletions(-)
-
-
-base-commit: b90cb1053190353cc30f0fef0ef1f378ccc063c5
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index e0375ba9d0fe..9df51245ba93 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2869,7 +2869,7 @@ static int cache_save_setup(struct btrfs_block_grou=
+p *block_group,
+ 	cache_size *=3D fs_info->sectorsize;
+=20
+ 	ret =3D btrfs_check_data_free_space(BTRFS_I(inode), &data_reserved, 0,
+-					  cache_size);
++					  cache_size, false);
+ 	if (ret)
+ 		goto out_put;
+=20
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index 1e8f17ff829e..118b2e20b2e1 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -127,9 +127,11 @@ int btrfs_alloc_data_chunk_ondemand(struct btrfs_ino=
+de *inode, u64 bytes)
+ }
+=20
+ int btrfs_check_data_free_space(struct btrfs_inode *inode,
+-			struct extent_changeset **reserved, u64 start, u64 len)
++				struct extent_changeset **reserved, u64 start,
++				u64 len, bool noflush)
+ {
+ 	struct btrfs_fs_info *fs_info =3D inode->root->fs_info;
++	enum btrfs_reserve_flush_enum flush =3D BTRFS_RESERVE_FLUSH_DATA;
+ 	int ret;
+=20
+ 	/* align the range */
+@@ -137,7 +139,12 @@ int btrfs_check_data_free_space(struct btrfs_inode *=
+inode,
+ 	      round_down(start, fs_info->sectorsize);
+ 	start =3D round_down(start, fs_info->sectorsize);
+=20
+-	ret =3D btrfs_alloc_data_chunk_ondemand(inode, len);
++	if (noflush)
++		flush =3D BTRFS_RESERVE_NO_FLUSH;
++	else if (btrfs_is_free_space_inode(inode))
++		flush =3D BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE;
++
++	ret =3D btrfs_reserve_data_bytes(fs_info, len, flush);
+ 	if (ret < 0)
+ 		return ret;
+=20
+@@ -454,7 +461,7 @@ int btrfs_delalloc_reserve_space(struct btrfs_inode *=
+inode,
+ {
+ 	int ret;
+=20
+-	ret =3D btrfs_check_data_free_space(inode, reserved, start, len);
++	ret =3D btrfs_check_data_free_space(inode, reserved, start, len, false)=
+;
+ 	if (ret < 0)
+ 		return ret;
+ 	ret =3D btrfs_delalloc_reserve_metadata(inode, len, len, false);
+diff --git a/fs/btrfs/delalloc-space.h b/fs/btrfs/delalloc-space.h
+index 28bf5c3ef430..e07d46043455 100644
+--- a/fs/btrfs/delalloc-space.h
++++ b/fs/btrfs/delalloc-space.h
+@@ -7,7 +7,8 @@ struct extent_changeset;
+=20
+ int btrfs_alloc_data_chunk_ondemand(struct btrfs_inode *inode, u64 bytes=
+);
+ int btrfs_check_data_free_space(struct btrfs_inode *inode,
+-			struct extent_changeset **reserved, u64 start, u64 len);
++			struct extent_changeset **reserved, u64 start, u64 len,
++			bool noflush);
+ void btrfs_free_reserved_data_space(struct btrfs_inode *inode,
+ 			struct extent_changeset *reserved, u64 start, u64 len);
+ void btrfs_delalloc_release_space(struct btrfs_inode *inode,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index f4aa198f0f87..0f257205c63d 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1664,7 +1664,7 @@ static noinline ssize_t btrfs_buffered_write(struct=
+ kiocb *iocb,
+ 		extent_changeset_release(data_reserved);
+ 		ret =3D btrfs_check_data_free_space(BTRFS_I(inode),
+ 						  &data_reserved, pos,
+-						  write_bytes);
++						  write_bytes, false);
+ 		if (ret < 0) {
+ 			/*
+ 			 * If we don't have to COW at the offset, reserve
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8ad3bea26652..36e755f73764 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4882,7 +4882,7 @@ int btrfs_truncate_block(struct btrfs_inode *inode,=
+ loff_t from, loff_t len,
+ 	block_end =3D block_start + blocksize - 1;
+=20
+ 	ret =3D btrfs_check_data_free_space(inode, &data_reserved, block_start,
+-					  blocksize);
++					  blocksize, false);
+ 	if (ret < 0) {
+ 		if (btrfs_check_nocow_lock(inode, block_start, &write_bytes) > 0) {
+ 			/* For nocow case, no need to reserve data space */
+@@ -7767,7 +7767,7 @@ static int btrfs_dio_iomap_begin(struct inode *inod=
+e, loff_t start,
+ 	if (write && !(flags & IOMAP_NOWAIT)) {
+ 		ret =3D btrfs_check_data_free_space(BTRFS_I(inode),
+ 						  &dio_data->data_reserved,
+-						  start, data_alloc_len);
++						  start, data_alloc_len, false);
+ 		if (!ret)
+ 			dio_data->data_space_reserved =3D true;
+ 		else if (ret && !(BTRFS_I(inode)->flags &
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index d0cbeb7ae81c..0738e1efed79 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1737,7 +1737,8 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *=
+fs_info, u64 bytes,
+ 	int ret;
+=20
+ 	ASSERT(flush =3D=3D BTRFS_RESERVE_FLUSH_DATA ||
+-	       flush =3D=3D BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE);
++	       flush =3D=3D BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE ||
++	       flush =3D=3D BTRFS_RESERVE_NO_FLUSH);
+ 	ASSERT(!current->journal_info || flush !=3D BTRFS_RESERVE_FLUSH_DATA);
+=20
+ 	ret =3D __reserve_bytes(fs_info, data_sinfo, bytes, flush);
 --=20
 2.30.2
 

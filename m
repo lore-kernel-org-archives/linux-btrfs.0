@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18E7BC6FA82
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 20:17:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34F68ECAAD5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 20:17:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229961AbiIBURL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Sep 2022 16:17:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38882 "EHLO
+        id S229873AbiIBURM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Sep 2022 16:17:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38886 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229846AbiIBUQ7 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 16:16:59 -0400
-Received: from mail-qk1-x733.google.com (mail-qk1-x733.google.com [IPv6:2607:f8b0:4864:20::733])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C21DD7CD0
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Sep 2022 13:16:54 -0700 (PDT)
-Received: by mail-qk1-x733.google.com with SMTP id f14so2662761qkm.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Sep 2022 13:16:54 -0700 (PDT)
+        with ESMTP id S229849AbiIBURA (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 16:17:00 -0400
+Received: from mail-qv1-xf2f.google.com (mail-qv1-xf2f.google.com [IPv6:2607:f8b0:4864:20::f2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A2331CE303
+        for <linux-btrfs@vger.kernel.org>; Fri,  2 Sep 2022 13:16:57 -0700 (PDT)
+Received: by mail-qv1-xf2f.google.com with SMTP id y15so2281496qvn.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 02 Sep 2022 13:16:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=UsmJoToCMvCmoMs6CQlYQ4tOCsfoDyl/L9fYIABJ7oE=;
-        b=uq9BbXe/uZ0mXNjQnL5WAHYUiRvwy/aHqFfImR56Y3iBQOXNskRr5R78H2xMYiM+44
-         9Bk+ZTJ4ZjFJD6ldm19b8rVSbzZVOk9QsUo/Hhs22LZXVNnB5tBUYnfqhr0tUhM5LDLe
-         tJRh+m0Uko6OfXIJcu3W77qNU1JvhMjigsIn1fF3qHFyltABtNv7KBbQFUtRLnwQ8o4o
-         NkDLwlL6hOh7A6PUsckwdOXc9hwIq77WTxwQt7JXXvL9rzhrIe7Fv0YcNojuh5LeMkUx
-         KZ0PXVwozwFIwiBWu4vZ2Bo44FNF6oatOKj+mv2qj0CKSbpFqRrtITknG6wU/kyo2m5K
-         wEbA==
+        bh=ZzcvWi/eDe71X+0jhazlHVz7b/oAGDfCILaIoMWD+vE=;
+        b=p7j6NPf6zJerjIM4WJhldVcy1TSJ6x88yl+mKubfx8kO5n3WHL37ZfJjpgVL7mGmv1
+         Jmm7jw29hr0ZExwtTcwbgKpfA5s+wBCckUmE3FmZ4u40Mi33O6U8fYq2kQERt+WJBJfc
+         AUhtrKOgmwEnAN08u2zDIQQvzz9b61Izsb6i0z8DdfQrAwE8WkJ6Lq7yLQ2uGEGuCZ7S
+         tHPB3bOP5hesw3LU3JZ5uIyBgaFP+nPKUH7vuPKIA/C7V1tVC41dFkMPKtI17PE74X/5
+         XkENdyuPXBXpaUzp7WxaxmNy7VJ9vm5HIIRc57+8oFQvLb92Dn82wVVFoW7nIao9zboR
+         aM/g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=UsmJoToCMvCmoMs6CQlYQ4tOCsfoDyl/L9fYIABJ7oE=;
-        b=Usdm4l+aqgkdVLG0Ixt11a59K3WZUEzHz8JBGMYbL0OgJVAN7P8Jx+NbC7HJk9X44V
-         jGW73AfcwVMr3LVc0+i3Pig+WDjdSIW3Q7Da03oe1WjZs++LUEqJq9BsjuOAn/R+thhx
-         7qeX7dkJ/XgGnB17CKXTsZq3CnHuwCnwGe35a2aAW4HgznsZBZPADQRFz5VWyNveBV9H
-         a0PsBGIJGczmONG9u2fpPpOl7rVUF9z6Fw5W0Cd0/rOj10bfDTjdBWiwooZULBpxdQTs
-         z415ZhvhunaheVbnG3UIlRUIrZhcUzHDYUgzLGwR04VWPuJQvLCB8S/sJNCYp6RrOMKL
-         LNFw==
-X-Gm-Message-State: ACgBeo0Kl+9g31TyME0h2ZviVe1OWvFoqdBuoljlNI6SGcTirVHE/U2U
-        7phyaZS5NxFdV49aOObc6KTiXMERFNNnmQ==
-X-Google-Smtp-Source: AA6agR4IN3k0Vvu1eAAVkauPLfM8MrigmgS78BUKiAEQTWEEULp54K2pxHm/pP3zTT0+S6gOrt6Ifg==
-X-Received: by 2002:a05:620a:4409:b0:6bb:beeb:215e with SMTP id v9-20020a05620a440900b006bbbeeb215emr25857374qkp.414.1662149812705;
-        Fri, 02 Sep 2022 13:16:52 -0700 (PDT)
+        bh=ZzcvWi/eDe71X+0jhazlHVz7b/oAGDfCILaIoMWD+vE=;
+        b=yS66F7jKRpsTRDsyM5tSwzLrFiHQmH2sEdewpAFRKM1hhEdO0Lo6NV4tAlAuTbR+Gc
+         1MIwmme7+M0cCJC0Gaj1BdvH3dqTK5RNHlHmukGOHZKIGbrczZ0zFiZPor+aF5L6Aoc3
+         0MWYntyO1sOKRH7mVqEOq2Hkfv8jNYe4pPiT2Y62YVMTU317kChTgwj5fEnUTgwvmaPM
+         JcP+hHb2GLnnq2RyJS3KCEoEKSvok8JiUWGtDW38IjNqBp+NMbHAnPIbJUW98S7FKbJS
+         smVbktk3RQEgBZAngRXcTkcHN6VSuVMahpk8InE9Ct2mp4tRctGCC1tnuUhyMFHQLN1x
+         5rnQ==
+X-Gm-Message-State: ACgBeo2NPOXM7AgacL5BYAU8QAcS0nSHE0JcmsqkpmKCubbVdnpFOgAZ
+        +5qH+Sc79mXGqm/FyB87h6POA8PxR2Ss8w==
+X-Google-Smtp-Source: AA6agR4wmGVh9XfzRWhW+87xisVzbGCSLGmyW7GgQKBLm6pNwJcC+kjLIcrPiqjpSmAlyRXS9RCtIw==
+X-Received: by 2002:ad4:5bc7:0:b0:48b:e9ed:47a8 with SMTP id t7-20020ad45bc7000000b0048be9ed47a8mr30616715qvt.108.1662149816453;
+        Fri, 02 Sep 2022 13:16:56 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id bl4-20020a05620a1a8400b006b9526cfe6bsm2008497qkb.80.2022.09.02.13.16.52
+        by smtp.gmail.com with ESMTPSA id bl28-20020a05620a1a9c00b006bc5cdc890bsm1866755qkb.77.2022.09.02.13.16.55
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 02 Sep 2022 13:16:52 -0700 (PDT)
+        Fri, 02 Sep 2022 13:16:56 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 08/31] btrfs: move extent state init and alloc functions to their own file
-Date:   Fri,  2 Sep 2022 16:16:13 -0400
-Message-Id: <a7e5b59218ea8b73a24e3e180b3ecadb2c5388c6.1662149276.git.josef@toxicpanda.com>
+Subject: [PATCH 10/31] btrfs: move simple extent bit helpers out of extent_io.c
+Date:   Fri,  2 Sep 2022 16:16:15 -0400
+Message-Id: <066177b3509944b0af49e1900358b7e9d6b14139.1662149276.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1662149276.git.josef@toxicpanda.com>
 References: <cover.1662149276.git.josef@toxicpanda.com>
@@ -62,438 +62,193 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Start cleaning up extent_io.c by moving the extent state code out of it.
-This patch starts with the extent state allocation code and the
-extent_io_tree init code.
+These are just variants and wrappers around the actual work horses of
+the extent state.  Extract these out of extent_io.c.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/Makefile         |   2 +-
- fs/btrfs/extent-io-tree.c | 160 ++++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent-io-tree.h |   5 ++
- fs/btrfs/extent_io.c      | 155 ------------------------------------
- 4 files changed, 166 insertions(+), 156 deletions(-)
- create mode 100644 fs/btrfs/extent-io-tree.c
+ fs/btrfs/extent-io-tree.c | 45 +++++++++++++++++++++++++++++
+ fs/btrfs/extent-io-tree.h | 20 +++++++++----
+ fs/btrfs/extent_io.c      | 60 ---------------------------------------
+ 3 files changed, 60 insertions(+), 65 deletions(-)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 99f9995670ea..fa9ddcc9eb0b 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -31,7 +31,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
- 	   uuid-tree.o props.o free-space-tree.o tree-checker.o space-info.o \
- 	   block-rsv.o delalloc-space.o block-group.o discard.o reflink.o \
--	   subpage.o tree-mod-log.o
-+	   subpage.o tree-mod-log.o extent-io-tree.o
- 
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
 diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-new file mode 100644
-index 000000000000..2aedac452636
---- /dev/null
+index 2aedac452636..7b8ac9b3bc55 100644
+--- a/fs/btrfs/extent-io-tree.c
 +++ b/fs/btrfs/extent-io-tree.c
-@@ -0,0 +1,160 @@
-+// SPDX-License-Identifier: GPL-2.0
-+
-+#include <linux/slab.h>
-+#include <trace/events/btrfs.h>
-+#include "ctree.h"
-+#include "extent-io-tree.h"
-+
-+static struct kmem_cache *extent_state_cache;
-+
-+#ifdef CONFIG_BTRFS_DEBUG
-+static LIST_HEAD(states);
-+static DEFINE_SPINLOCK(leak_lock);
-+
-+static inline void btrfs_leak_debug_add_state(struct extent_state *state)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&leak_lock, flags);
-+	list_add(&state->leak_list, &states);
-+	spin_unlock_irqrestore(&leak_lock, flags);
-+}
-+
-+static inline void btrfs_leak_debug_del_state(struct extent_state *state)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&leak_lock, flags);
-+	list_del(&state->leak_list);
-+	spin_unlock_irqrestore(&leak_lock, flags);
-+}
-+
-+static inline void btrfs_extent_state_leak_debug_check(void)
-+{
-+	struct extent_state *state;
-+
-+	while (!list_empty(&states)) {
-+		state = list_entry(states.next, struct extent_state, leak_list);
-+		pr_err("BTRFS: state leak: start %llu end %llu state %u in tree %d refs %d\n",
-+		       state->start, state->end, state->state,
-+		       extent_state_in_tree(state),
-+		       refcount_read(&state->refs));
-+		list_del(&state->leak_list);
-+		kmem_cache_free(extent_state_cache, state);
-+	}
-+}
-+#else
-+#define btrfs_leak_debug_add_state(state)		do {} while (0)
-+#define btrfs_leak_debug_del_state(state)		do {} while (0)
-+#define btrfs_extent_state_leak_debug_check()		do {} while (0)
-+#endif
-+
-+/*
-+ * For the file_extent_tree, we want to hold the inode lock when we lookup and
-+ * update the disk_i_size, but lockdep will complain because our io_tree we hold
-+ * the tree lock and get the inode lock when setting delalloc.  These two things
-+ * are unrelated, so make a class for the file_extent_tree so we don't get the
-+ * two locking patterns mixed up.
-+ */
-+static struct lock_class_key file_extent_tree_class;
-+
-+void extent_io_tree_init(struct btrfs_fs_info *fs_info,
-+			 struct extent_io_tree *tree, unsigned int owner,
-+			 void *private_data)
-+{
-+	tree->fs_info = fs_info;
-+	tree->state = RB_ROOT;
-+	tree->dirty_bytes = 0;
-+	spin_lock_init(&tree->lock);
-+	tree->private_data = private_data;
-+	tree->owner = owner;
-+	if (owner == IO_TREE_INODE_FILE_EXTENT)
-+		lockdep_set_class(&tree->lock, &file_extent_tree_class);
-+}
-+
-+void extent_io_tree_release(struct extent_io_tree *tree)
-+{
-+	spin_lock(&tree->lock);
-+	/*
-+	 * Do a single barrier for the waitqueue_active check here, the state
-+	 * of the waitqueue should not change once extent_io_tree_release is
-+	 * called.
-+	 */
-+	smp_mb();
-+	while (!RB_EMPTY_ROOT(&tree->state)) {
-+		struct rb_node *node;
-+		struct extent_state *state;
-+
-+		node = rb_first(&tree->state);
-+		state = rb_entry(node, struct extent_state, rb_node);
-+		rb_erase(&state->rb_node, &tree->state);
-+		RB_CLEAR_NODE(&state->rb_node);
-+		/*
-+		 * btree io trees aren't supposed to have tasks waiting for
-+		 * changes in the flags of extent states ever.
-+		 */
-+		ASSERT(!waitqueue_active(&state->wq));
-+		free_extent_state(state);
-+
-+		cond_resched_lock(&tree->lock);
-+	}
-+	spin_unlock(&tree->lock);
-+}
-+
-+struct extent_state *alloc_extent_state(gfp_t mask)
-+{
-+	struct extent_state *state;
-+
-+	/*
-+	 * The given mask might be not appropriate for the slab allocator,
-+	 * drop the unsupported bits
-+	 */
-+	mask &= ~(__GFP_DMA32|__GFP_HIGHMEM);
-+	state = kmem_cache_alloc(extent_state_cache, mask);
-+	if (!state)
-+		return state;
-+	state->state = 0;
-+	RB_CLEAR_NODE(&state->rb_node);
-+	btrfs_leak_debug_add_state(state);
-+	refcount_set(&state->refs, 1);
-+	init_waitqueue_head(&state->wq);
-+	trace_alloc_extent_state(state, mask, _RET_IP_);
-+	return state;
-+}
-+
-+struct extent_state *alloc_extent_state_atomic(struct extent_state *prealloc)
-+{
-+	if (!prealloc)
-+		prealloc = alloc_extent_state(GFP_ATOMIC);
-+
-+	return prealloc;
-+}
-+
-+void free_extent_state(struct extent_state *state)
-+{
-+	if (!state)
-+		return;
-+	if (refcount_dec_and_test(&state->refs)) {
-+		WARN_ON(extent_state_in_tree(state));
-+		btrfs_leak_debug_del_state(state);
-+		trace_free_extent_state(state, _RET_IP_);
-+		kmem_cache_free(extent_state_cache, state);
-+	}
-+}
-+
-+void __cold extent_state_free_cachep(void)
-+{
-+	btrfs_extent_state_leak_debug_check();
-+	kmem_cache_destroy(extent_state_cache);
-+}
-+
-+int __init extent_state_init_cachep(void)
-+{
-+	extent_state_cache = kmem_cache_create("btrfs_extent_state",
-+			sizeof(struct extent_state), 0,
-+			SLAB_MEM_SPREAD, NULL);
-+	if (!extent_state_cache)
-+		return -ENOMEM;
-+
-+	return 0;
-+}
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index 8e7a548b88e9..56266e75b4fe 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -253,4 +253,9 @@ int btrfs_clean_io_failure(struct btrfs_inode *inode, u64 start,
- struct extent_state *alloc_extent_state_atomic(struct extent_state *prealloc);
- struct extent_state *alloc_extent_state(gfp_t mask);
- 
-+static inline bool extent_state_in_tree(const struct extent_state *state)
-+{
-+	return !RB_EMPTY_NODE(&state->rb_node);
-+}
-+
- #endif /* BTRFS_EXTENT_IO_TREE_H */
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 47b12837edd6..dade06901937 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -31,18 +31,9 @@
- #include "block-group.h"
- #include "compression.h"
- 
--static struct kmem_cache *extent_state_cache;
- static struct kmem_cache *extent_buffer_cache;
- 
--static inline bool extent_state_in_tree(const struct extent_state *state)
--{
--	return !RB_EMPTY_NODE(&state->rb_node);
--}
--
- #ifdef CONFIG_BTRFS_DEBUG
--static LIST_HEAD(states);
--static DEFINE_SPINLOCK(leak_lock);
--
- static inline void btrfs_leak_debug_add_eb(struct extent_buffer *eb)
- {
- 	struct btrfs_fs_info *fs_info = eb->fs_info;
-@@ -53,15 +44,6 @@ static inline void btrfs_leak_debug_add_eb(struct extent_buffer *eb)
- 	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
- }
- 
--static inline void btrfs_leak_debug_add_state(struct extent_state *state)
--{
--	unsigned long flags;
--
--	spin_lock_irqsave(&leak_lock, flags);
--	list_add(&state->leak_list, &states);
--	spin_unlock_irqrestore(&leak_lock, flags);
--}
--
- static inline void btrfs_leak_debug_del_eb(struct extent_buffer *eb)
- {
- 	struct btrfs_fs_info *fs_info = eb->fs_info;
-@@ -72,15 +54,6 @@ static inline void btrfs_leak_debug_del_eb(struct extent_buffer *eb)
- 	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
- }
- 
--static inline void btrfs_leak_debug_del_state(struct extent_state *state)
--{
--	unsigned long flags;
--
--	spin_lock_irqsave(&leak_lock, flags);
--	list_del(&state->leak_list);
--	spin_unlock_irqrestore(&leak_lock, flags);
--}
--
- void btrfs_extent_buffer_leak_debug_check(struct btrfs_fs_info *fs_info)
- {
- 	struct extent_buffer *eb;
-@@ -108,21 +81,6 @@ void btrfs_extent_buffer_leak_debug_check(struct btrfs_fs_info *fs_info)
- 	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
- }
- 
--static inline void btrfs_extent_state_leak_debug_check(void)
--{
--	struct extent_state *state;
--
--	while (!list_empty(&states)) {
--		state = list_entry(states.next, struct extent_state, leak_list);
--		pr_err("BTRFS: state leak: start %llu end %llu state %u in tree %d refs %d\n",
--		       state->start, state->end, state->state,
--		       extent_state_in_tree(state),
--		       refcount_read(&state->refs));
--		list_del(&state->leak_list);
--		kmem_cache_free(extent_state_cache, state);
--	}
--}
--
- #define btrfs_debug_check_extent_io_range(tree, start, end)		\
- 	__btrfs_debug_check_extent_io_range(__func__, (tree), (start), (end))
- static inline void __btrfs_debug_check_extent_io_range(const char *caller,
-@@ -143,10 +101,7 @@ static inline void __btrfs_debug_check_extent_io_range(const char *caller,
- }
- #else
- #define btrfs_leak_debug_add_eb(eb)			do {} while (0)
--#define btrfs_leak_debug_add_state(state)		do {} while (0)
- #define btrfs_leak_debug_del_eb(eb)			do {} while (0)
--#define btrfs_leak_debug_del_state(state)		do {} while (0)
--#define btrfs_extent_state_leak_debug_check()		do {} while (0)
- #define btrfs_debug_check_extent_io_range(c, s, e)	do {} while (0)
- #endif
- 
-@@ -249,17 +204,6 @@ static void submit_write_bio(struct extent_page_data *epd, int ret)
+@@ -142,6 +142,51 @@ void free_extent_state(struct extent_state *state)
  	}
  }
  
--int __init extent_state_init_cachep(void)
--{
--	extent_state_cache = kmem_cache_create("btrfs_extent_state",
--			sizeof(struct extent_state), 0,
--			SLAB_MEM_SPREAD, NULL);
--	if (!extent_state_cache)
--		return -ENOMEM;
--
--	return 0;
--}
--
- int __init extent_buffer_init_cachep(void)
++/* wrappers around set/clear extent bit */
++int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
++			   u32 bits, struct extent_changeset *changeset)
++{
++	/*
++	 * We don't support EXTENT_LOCKED yet, as current changeset will
++	 * record any bits changed, so for EXTENT_LOCKED case, it will
++	 * either fail with -EEXIST or changeset will record the whole
++	 * range.
++	 */
++	ASSERT(!(bits & EXTENT_LOCKED));
++
++	return set_extent_bit(tree, start, end, bits, 0, NULL, NULL, GFP_NOFS,
++			      changeset);
++}
++
++int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
++		u32 bits, struct extent_changeset *changeset)
++{
++	/*
++	 * Don't support EXTENT_LOCKED case, same reason as
++	 * set_record_extent_bits().
++	 */
++	ASSERT(!(bits & EXTENT_LOCKED));
++
++	return __clear_extent_bit(tree, start, end, bits, 0, 0, NULL, GFP_NOFS,
++				  changeset);
++}
++
++int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
++{
++	int err;
++	u64 failed_start;
++
++	err = set_extent_bit(tree, start, end, EXTENT_LOCKED, EXTENT_LOCKED,
++			     &failed_start, NULL, GFP_NOFS, NULL);
++	if (err == -EEXIST) {
++		if (failed_start > start)
++			clear_extent_bit(tree, start, failed_start - 1,
++					 EXTENT_LOCKED, 1, 0, NULL);
++		return 0;
++	}
++	return 1;
++}
++
+ void __cold extent_state_free_cachep(void)
  {
- 	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
-@@ -271,12 +215,6 @@ int __init extent_buffer_init_cachep(void)
- 	return 0;
+ 	btrfs_extent_state_leak_debug_check();
+diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
+index 56266e75b4fe..16a9da4149f3 100644
+--- a/fs/btrfs/extent-io-tree.h
++++ b/fs/btrfs/extent-io-tree.h
+@@ -120,14 +120,19 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		   u32 bits, int filled, struct extent_state *cached_state);
+ int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 			     u32 bits, struct extent_changeset *changeset);
+-int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		     u32 bits, int wake, int delete,
+-		     struct extent_state **cached);
+ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		     u32 bits, int wake, int delete,
+ 		     struct extent_state **cached, gfp_t mask,
+ 		     struct extent_changeset *changeset);
+ 
++static inline int clear_extent_bit(struct extent_io_tree *tree, u64 start,
++				   u64 end, u32 bits, int wake, int delete,
++				   struct extent_state **cached)
++{
++	return __clear_extent_bit(tree, start, end, bits, wake, delete,
++				  cached, GFP_NOFS, NULL);
++}
++
+ static inline int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end)
+ {
+ 	return clear_extent_bit(tree, start, end, EXTENT_LOCKED, 1, 0, NULL);
+@@ -164,8 +169,13 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		   u32 bits, unsigned exclusive_bits, u64 *failed_start,
+ 		   struct extent_state **cached_state, gfp_t mask,
+ 		   struct extent_changeset *changeset);
+-int set_extent_bits_nowait(struct extent_io_tree *tree, u64 start, u64 end,
+-			   u32 bits);
++
++static inline int set_extent_bits_nowait(struct extent_io_tree *tree, u64 start,
++					 u64 end, u32 bits)
++{
++	return set_extent_bit(tree, start, end, bits, 0, NULL, NULL,
++			      GFP_NOWAIT, NULL);
++}
+ 
+ static inline int set_extent_bits(struct extent_io_tree *tree, u64 start,
+ 		u64 end, u32 bits)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 028dc72d8b6a..b8fdd4aa7583 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1283,50 +1283,6 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	return err;
  }
  
--void __cold extent_state_free_cachep(void)
+-/* wrappers around set/clear extent bit */
+-int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-			   u32 bits, struct extent_changeset *changeset)
 -{
--	btrfs_extent_state_leak_debug_check();
--	kmem_cache_destroy(extent_state_cache);
--}
--
- void __cold extent_buffer_free_cachep(void)
- {
- 	/*
-@@ -287,91 +225,6 @@ void __cold extent_buffer_free_cachep(void)
- 	kmem_cache_destroy(extent_buffer_cache);
- }
- 
--/*
-- * For the file_extent_tree, we want to hold the inode lock when we lookup and
-- * update the disk_i_size, but lockdep will complain because our io_tree we hold
-- * the tree lock and get the inode lock when setting delalloc.  These two things
-- * are unrelated, so make a class for the file_extent_tree so we don't get the
-- * two locking patterns mixed up.
-- */
--static struct lock_class_key file_extent_tree_class;
--
--void extent_io_tree_init(struct btrfs_fs_info *fs_info,
--			 struct extent_io_tree *tree, unsigned int owner,
--			 void *private_data)
--{
--	tree->fs_info = fs_info;
--	tree->state = RB_ROOT;
--	tree->dirty_bytes = 0;
--	spin_lock_init(&tree->lock);
--	tree->private_data = private_data;
--	tree->owner = owner;
--	if (owner == IO_TREE_INODE_FILE_EXTENT)
--		lockdep_set_class(&tree->lock, &file_extent_tree_class);
--}
--
--void extent_io_tree_release(struct extent_io_tree *tree)
--{
--	spin_lock(&tree->lock);
 -	/*
--	 * Do a single barrier for the waitqueue_active check here, the state
--	 * of the waitqueue should not change once extent_io_tree_release is
--	 * called.
+-	 * We don't support EXTENT_LOCKED yet, as current changeset will
+-	 * record any bits changed, so for EXTENT_LOCKED case, it will
+-	 * either fail with -EEXIST or changeset will record the whole
+-	 * range.
 -	 */
--	smp_mb();
--	while (!RB_EMPTY_ROOT(&tree->state)) {
--		struct rb_node *node;
--		struct extent_state *state;
+-	ASSERT(!(bits & EXTENT_LOCKED));
 -
--		node = rb_first(&tree->state);
--		state = rb_entry(node, struct extent_state, rb_node);
--		rb_erase(&state->rb_node, &tree->state);
--		RB_CLEAR_NODE(&state->rb_node);
--		/*
--		 * btree io trees aren't supposed to have tasks waiting for
--		 * changes in the flags of extent states ever.
--		 */
--		ASSERT(!waitqueue_active(&state->wq));
--		free_extent_state(state);
--
--		cond_resched_lock(&tree->lock);
--	}
--	spin_unlock(&tree->lock);
+-	return set_extent_bit(tree, start, end, bits, 0, NULL, NULL, GFP_NOFS,
+-			      changeset);
 -}
 -
--struct extent_state *alloc_extent_state(gfp_t mask)
+-int set_extent_bits_nowait(struct extent_io_tree *tree, u64 start, u64 end,
+-			   u32 bits)
 -{
--	struct extent_state *state;
+-	return set_extent_bit(tree, start, end, bits, 0, NULL, NULL,
+-			      GFP_NOWAIT, NULL);
+-}
 -
+-int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		     u32 bits, int wake, int delete,
+-		     struct extent_state **cached)
+-{
+-	return __clear_extent_bit(tree, start, end, bits, wake, delete,
+-				  cached, GFP_NOFS, NULL);
+-}
+-
+-int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		u32 bits, struct extent_changeset *changeset)
+-{
 -	/*
--	 * The given mask might be not appropriate for the slab allocator,
--	 * drop the unsupported bits
+-	 * Don't support EXTENT_LOCKED case, same reason as
+-	 * set_record_extent_bits().
 -	 */
--	mask &= ~(__GFP_DMA32|__GFP_HIGHMEM);
--	state = kmem_cache_alloc(extent_state_cache, mask);
--	if (!state)
--		return state;
--	state->state = 0;
--	RB_CLEAR_NODE(&state->rb_node);
--	btrfs_leak_debug_add_state(state);
--	refcount_set(&state->refs, 1);
--	init_waitqueue_head(&state->wq);
--	trace_alloc_extent_state(state, mask, _RET_IP_);
--	return state;
+-	ASSERT(!(bits & EXTENT_LOCKED));
+-
+-	return __clear_extent_bit(tree, start, end, bits, 0, 0, NULL, GFP_NOFS,
+-				  changeset);
 -}
 -
--void free_extent_state(struct extent_state *state)
--{
--	if (!state)
--		return;
--	if (refcount_dec_and_test(&state->refs)) {
--		WARN_ON(extent_state_in_tree(state));
--		btrfs_leak_debug_del_state(state);
--		trace_free_extent_state(state, _RET_IP_);
--		kmem_cache_free(extent_state_cache, state);
--	}
--}
--
- /**
-  * Search @tree for an entry that contains @offset. Such entry would have
-  * entry->start <= offset && entry->end >= offset.
-@@ -710,14 +563,6 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 	return next;
+ /*
+  * either insert or lock state struct between start and end use mask to tell
+  * us if waiting is desired.
+@@ -1351,22 +1307,6 @@ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 	return err;
  }
  
--struct extent_state *alloc_extent_state_atomic(struct extent_state *prealloc)
+-int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
 -{
--	if (!prealloc)
--		prealloc = alloc_extent_state(GFP_ATOMIC);
+-	int err;
+-	u64 failed_start;
 -
--	return prealloc;
+-	err = set_extent_bit(tree, start, end, EXTENT_LOCKED, EXTENT_LOCKED,
+-			     &failed_start, NULL, GFP_NOFS, NULL);
+-	if (err == -EEXIST) {
+-		if (failed_start > start)
+-			clear_extent_bit(tree, start, failed_start - 1,
+-					 EXTENT_LOCKED, 1, 0, NULL);
+-		return 0;
+-	}
+-	return 1;
 -}
 -
- static void extent_io_tree_panic(struct extent_io_tree *tree, int err)
+ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
  {
- 	btrfs_panic(tree->fs_info, err,
+ 	unsigned long index = start >> PAGE_SHIFT;
 -- 
 2.26.3
 

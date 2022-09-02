@@ -2,157 +2,181 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C544BECAAD5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 15:52:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66C89C38145
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 16:00:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237340AbiIBPwX convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Sep 2022 11:52:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58882 "EHLO
+        id S237810AbiIBQAf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Sep 2022 12:00:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58678 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235792AbiIBPwE (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 11:52:04 -0400
-Received: from bee.birch.relay.mailchannels.net (bee.birch.relay.mailchannels.net [23.83.209.14])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94712BFEA9
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Sep 2022 08:43:19 -0700 (PDT)
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-        by relay.mailchannels.net (Postfix) with ESMTP id 209206C29A7;
-        Fri,  2 Sep 2022 15:43:16 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-        (Authenticated sender: instrampxe0y3a)
-        by relay.mailchannels.net (Postfix) with ESMTPA id 111336C29BA;
-        Fri,  2 Sep 2022 15:43:14 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1662133395; a=rsa-sha256;
-        cv=none;
-        b=NN2ioeDN4bV1yfkueZLfVTBoz/fwJuzvdboYq7WD8gwcVNPDZwDSNys78a/s1slmM7g69E
-        cfzEOFwvcLCPm6Xwnid8d7rtrwksrU23rsFIEbqZEwbVWaNDSLX1+8J/itKRFMBNEmwUQd
-        tB3N1zrWfKQxUr1vA7Q4u31RlTlfAsIzz7U87DLZqxd1TnbKyAmENUnz94WjBSkYW/bBzp
-        RtFNuWJEpnA1JDWmR/IpVeMvxhNQX/j6RiAWTXrAJlauk4faIJtv97/pOfAjy5oSBquDAs
-        cpdiE6AGETKwtIgiy2t25DhKzP5lW0wLRqqciuIKglfHDsebADwkSkEW7LTGYQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-        s=arc-2022; t=1662133395;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=FxBPl4PZPteqVUuLVoIOaxqJ4veHJPnOy90Rvf1ssl0=;
-        b=X3SHNM1S1NKHGGp89oxyhGOqEWHdPIsZBMED7mb3H6Zmb10OVrpEUBwSUkdr5HDxfAUJLC
-        o+a/5KRCkyk+ipsg1wQVWPKM0plLjAhWsfUfdSO/V6YqMEY03NOZ2ZiunRtMdr0Mm+eVoV
-        ueh6C+I9dLHc5xxn6l5DxcJUI+ojNR9CZFHGaMZAo3fT8EsvY931jFWnV8nG2q9URm+Roy
-        e/OR5u/6ayRAGOjgFpp128PiahvRSkb3lD1m/1Km7nYQL/vaqNr34O0zoEJgnT0WLbT5cr
-        CqX3kUtZujqTqKMRJtJMxLF/037FUmNxunnSLWMM7bbumNXqkh/T45ILt+rw4g==
-ARC-Authentication-Results: i=1;
-        rspamd-64cc6f7466-zldmm;
-        auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Industry-Illustrious: 0d0ebc6013fda72d_1662133395702_2799880310
-X-MC-Loop-Signature: 1662133395702:2318811570
-X-MC-Ingress-Time: 1662133395702
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-        by 100.126.240.197 (trex/6.7.1);
-        Fri, 02 Sep 2022 15:43:15 +0000
-Received: from ppp-46-244-252-68.dynamic.mnet-online.de ([46.244.252.68]:51346 helo=heisenberg.fritz.box)
-        by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.95)
-        (envelope-from <calestyo@scientia.org>)
-        id 1oU8p5-00011O-96;
-        Fri, 02 Sep 2022 15:43:13 +0000
-Message-ID: <5ed8515b0d26f18f2c561b5afb20ddc09acb91f3.camel@scientia.org>
-Subject: Re: [PATCH 1/2] btrfs: fix space cache corruption and potential
- double allocations
-From:   Christoph Anton Mitterer <calestyo@scientia.org>
-To:     Omar Sandoval <osandov@osandov.com>
-Cc:     Linux BTRFS <linux-btrfs@vger.kernel.org>
-Date:   Fri, 02 Sep 2022 17:43:07 +0200
-In-Reply-To: <YxD3iM29bDpnxeNg@relinquished.localdomain>
-References: <cover.1660690698.git.osandov@fb.com>
-         <9ee45db86433bb8e4d7daff35502db241c69ad16.1660690698.git.osandov@fb.com>
-         <CAK-xaQZYDBuL2DMeOiZDubujSmZTcNJfkgqa03Q+24=nhCmynw@mail.gmail.com>
-         <dbc8b0ee60b174f1b2c17a7469918a32a381c51b.camel@scientia.org>
-         <Yv2A+Du6J7BWWWih@relinquished.localdomain>
-         <b5d37d4d059e220313341d2804cbf1daf2956563.camel@scientia.org>
-         <Yv2IIwNQBb3ivK7D@relinquished.localdomain>
-         <467e49af8348d085e21079e8969bedbe379b3145.camel@scientia.org>
-         <751cc484a56fc0bbe3838929feae3c214c297001.camel@scientia.org>
-         <YxD3iM29bDpnxeNg@relinquished.localdomain>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.44.4-1+b1 
+        with ESMTP id S237826AbiIBQAM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 12:00:12 -0400
+Received: from mail-oo1-xc34.google.com (mail-oo1-xc34.google.com [IPv6:2607:f8b0:4864:20::c34])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 21B234B4B5;
+        Fri,  2 Sep 2022 08:05:34 -0700 (PDT)
+Received: by mail-oo1-xc34.google.com with SMTP id u3-20020a4ab5c3000000b0044b125e5d9eso405978ooo.12;
+        Fri, 02 Sep 2022 08:05:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :reply-to:in-reply-to:references:mime-version:from:to:cc:subject
+         :date;
+        bh=m9v7oop8rTcU1E99FRL05uZUidYjHyiKvJlObLLnlsI=;
+        b=oP/20gdMpaQ73qqaervtXrorePCXOnhfzYuW0DjvrKnRJbzzJsfrvXF/DaHDq1ElXt
+         F3dL3jSk3pm7GqR1RIfUXkp+c41WV1EoIl1e5QZnU7Xx0BtZzjcgTxQ+1IkzPM04+ykk
+         cTib3QxLAIyt1FY5oSLap0TUSqxTkwvlJP8TBaU8ssGuZnb+tLo2UgQRe1PL6nkMjpIb
+         QFarm/AJYJN4FiISHPMWkcW7PLfn8L24QlEqpdAOVncrvTU/wnbocxv9YWkSXLieRyen
+         YxUsZ65kOJG5C3Jptk6+zOUiqUHqAZE8ZTx/SaKagHWcsdippB6zwtnuX2jKIEbX4IoA
+         yO8g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :reply-to:in-reply-to:references:mime-version:x-gm-message-state
+         :from:to:cc:subject:date;
+        bh=m9v7oop8rTcU1E99FRL05uZUidYjHyiKvJlObLLnlsI=;
+        b=41AuSZC6jJvXGH/Fscy4RTN+rlM2A0aXW0Z1OBAAZLCKnQcQcH3U51PRBL+vE2I5ot
+         rla+Yzl1e8gZ+CD9btJtwewFCWjAC3LMRATNDp2s/Fv08/fUCR0fDjL8IVOgdbyjKkig
+         K7c//u0qYnDpgM7aRdufNPg0CF/buHj09jC9CeJ3O2nXUmliJ/SJ+aqXdmCkGhJ/0zxv
+         IkCJw4Z8oX2ag+R9KD5dYsohc263f7GLMuCAt8MUFuOzSDxjHSuNe/KaRFxxNxpsAPsR
+         SDU7V9S9q+0M16RkvOdrIA71U+/DOfakL8ppbZWkS3NCpvliWd0MQ39wWNm+1SLQnnbc
+         DQEQ==
+X-Gm-Message-State: ACgBeo2K9JGYQySXQTQdwnVqrhxrgOoWhCahgFtiCJPJBDVVjzvLIKPp
+        mHiA0NmWcP1P+9tf111E7Fuv/nSHlLV4LyUj+dw=
+X-Google-Smtp-Source: AA6agR7exQncoh9YeOpPhGSlB5sD9iV0VfLz8fguIbl/BQTHKwpQzgtYBQfzkCwqlHq8KkVbdLme2k1YAJ0wipkgJ8s=
+X-Received: by 2002:a4a:5d44:0:b0:44e:2b42:316c with SMTP id
+ w65-20020a4a5d44000000b0044e2b42316cmr4498715ooa.15.1662131133463; Fri, 02
+ Sep 2022 08:05:33 -0700 (PDT)
 MIME-Version: 1.0
-X-OutGoing-Spam-Status: No, score=-0.2
-X-AuthUser: calestyo@scientia.org
+References: <20220901225849.42898-1-shr@fb.com> <20220901225849.42898-2-shr@fb.com>
+ <CAL3q7H7Xm+HkUXE6zeT+0fH+9Hi9XhE7gXH7mYcGeAoYR5D2XQ@mail.gmail.com> <d42ec471-b67f-6504-72bf-8bbc761ac3e7@kernel.dk>
+In-Reply-To: <d42ec471-b67f-6504-72bf-8bbc761ac3e7@kernel.dk>
+Reply-To: fdmanana@gmail.com
+From:   Filipe Manana <fdmanana@gmail.com>
+Date:   Fri, 2 Sep 2022 16:04:57 +0100
+Message-ID: <CAL3q7H6GLm+hbcJP5Mc0mjyFcWX-8wGD9LVJeYUE6HmgoZK1Vg@mail.gmail.com>
+Subject: Re: [PATCH v1 01/10] btrfs: implement a nowait option for tree searches
+To:     Jens Axboe <axboe@kernel.dk>
+Cc:     Stefan Roesch <shr@fb.com>, kernel-team@fb.com,
+        io-uring@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        josef@toxicpanda.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, 2022-09-01 at 11:18 -0700, Omar Sandoval wrote:
-> The tool is here for now:
-> https://github.com/osandov/osandov-linux/blob/master/scripts/btrfs_check_space_cache.c
+On Fri, Sep 2, 2022 at 3:57 PM Jens Axboe <axboe@kernel.dk> wrote:
+>
+> On 9/2/22 8:48 AM, Filipe Manana wrote:
+> > On Fri, Sep 2, 2022 at 12:01 AM Stefan Roesch <shr@fb.com> wrote:
+> >>
+> >> From: Josef Bacik <josef@toxicpanda.com>
+> >>
+> >> For NOWAIT IOCB's we'll need a way to tell search to not wait on locks
+> >> or anything.  Accomplish this by adding a path->nowait flag that will
+> >> use trylocks and skip reading of metadata, returning -EWOULDBLOCK in
+> >> either of these cases.  For now we only need this for reads, so only t=
+he
+> >> read side is handled.  Add an ASSERT() to catch anybody trying to use
+> >> this for writes so they know they'll have to implement the write side.
+> >>
+> >> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> >> Signed-off-by: Stefan Roesch <shr@fb.com>
+> >> ---
+> >>  fs/btrfs/ctree.c   | 39 ++++++++++++++++++++++++++++++++++++---
+> >>  fs/btrfs/ctree.h   |  1 +
+> >>  fs/btrfs/locking.c | 23 +++++++++++++++++++++++
+> >>  fs/btrfs/locking.h |  1 +
+> >>  4 files changed, 61 insertions(+), 3 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> >> index ebfa35fe1c38..052c768b2297 100644
+> >> --- a/fs/btrfs/ctree.c
+> >> +++ b/fs/btrfs/ctree.c
+> >> @@ -1447,6 +1447,11 @@ read_block_for_search(struct btrfs_root *root, =
+struct btrfs_path *p,
+> >>                         return 0;
+> >>                 }
+> >>
+> >> +               if (p->nowait) {
+> >> +                       free_extent_buffer(tmp);
+> >> +                       return -EWOULDBLOCK;
+> >> +               }
+> >> +
+> >>                 if (unlock_up)
+> >>                         btrfs_unlock_up_safe(p, level + 1);
+> >>
+> >> @@ -1467,6 +1472,8 @@ read_block_for_search(struct btrfs_root *root, s=
+truct btrfs_path *p,
+> >>                         ret =3D -EAGAIN;
+> >>
+> >>                 goto out;
+> >> +       } else if (p->nowait) {
+> >> +               return -EWOULDBLOCK;
+> >>         }
+> >>
+> >>         if (unlock_up) {
+> >> @@ -1634,7 +1641,13 @@ static struct extent_buffer *btrfs_search_slot_=
+get_root(struct btrfs_root *root,
+> >>                  * We don't know the level of the root node until we a=
+ctually
+> >>                  * have it read locked
+> >>                  */
+> >> -               b =3D btrfs_read_lock_root_node(root);
+> >> +               if (p->nowait) {
+> >> +                       b =3D btrfs_try_read_lock_root_node(root);
+> >> +                       if (IS_ERR(b))
+> >> +                               return b;
+> >> +               } else {
+> >> +                       b =3D btrfs_read_lock_root_node(root);
+> >> +               }
+> >>                 level =3D btrfs_header_level(b);
+> >>                 if (level > write_lock_level)
+> >>                         goto out;
+> >> @@ -1910,6 +1923,13 @@ int btrfs_search_slot(struct btrfs_trans_handle=
+ *trans, struct btrfs_root *root,
+> >>         WARN_ON(p->nodes[0] !=3D NULL);
+> >>         BUG_ON(!cow && ins_len);
+> >>
+> >> +       /*
+> >> +        * For now only allow nowait for read only operations.  There'=
+s no
+> >> +        * strict reason why we can't, we just only need it for reads =
+so I'm
+> >> +        * only implementing it for reads right now.
+> >> +        */
+> >> +       ASSERT(!p->nowait || !cow);
+> >> +
+> >>         if (ins_len < 0) {
+> >>                 lowest_unlock =3D 2;
+> >>
+> >> @@ -1936,7 +1956,12 @@ int btrfs_search_slot(struct btrfs_trans_handle=
+ *trans, struct btrfs_root *root,
+> >>
+> >>         if (p->need_commit_sem) {
+> >>                 ASSERT(p->search_commit_root);
+> >> -               down_read(&fs_info->commit_root_sem);
+> >> +               if (p->nowait) {
+> >> +                       if (!down_read_trylock(&fs_info->commit_root_s=
+em))
+> >> +                               return -EAGAIN;
+> >
+> > Why EAGAIN here and everywhere else EWOULDBLOCK? See below.
+>
+> Is EWOULDBLOCK ever different from EAGAIN? But it should be used
+> consistently, EAGAIN would be the return of choice for that.
 
-Thanks.
+Oh right, EWOULDBLOCK is defined as EAGAIN, same values.
+It would be best to use the same everywhere, avoiding confusion...
 
-> sudo ./btrfs_check_space_cache $MOUNTED_FILESYSTEM_PATH
-
-I assume this would work on all data of the fs, even if that was
-mounted on a subvolume?
-
-And does it also check v1 space cache? And is it going to be part of
-btrfs check?
-
-
-> It'll print out a diagnosis and some advice. Please let me know what
-> output it gives you and any suggestions you have.
-
-I just ran it on the still unfixed kernel on several filesystems,...
-some with v1 some with v2.
-
-The output was e.g.
------------------------------------------------------------------------
-
-# ./btrfs_check_space_cache /data/a/1/
-Space cache checker 1.0
-retries = 2, freeze = 0
-Running on Linux 5.18.0-4-amd64 #1 SMP PREEMPT_DYNAMIC Debian 5.18.16-1
-(2022-08-10) x86_64
-Free space tree is enabled
-
-No corruption detected :)
-
-You should install a kernel with the fix as soon as possible and avoid
-rebooting until then.
-
-Once you are running a kernel with the fix:
-
-1. Run this program again.
-2. Run btrfs scrub.
------------------------------------------------------------------------
-
-
-But to me it's still absolutely unclear what that really means now.
-
-Is it just a: you're 99% safe... or 100%?
-
-Were all trees/metadata checked? Would any corruption be detected, even
-if it happened in the past and maybe the double allocation had been
-cleared by chance in meantime?
-
-Would the scrub detect any corruptions?
-
-Basically it boils down to the questions I've had asked in:
-https://lore.kernel.org/linux-btrfs/467e49af8348d085e21079e8969bedbe379b3145.camel@scientia.org/
+>
+> --
+> Jens Axboe
 
 
 
-But it seem right now, one cannot really give a definite answer, so I
-probably have to recover everything from backups?!
+--=20
+Filipe David Manana,
 
-
-Thanks,
-Chris.
+=E2=80=9CWhether you think you can, or you think you can't =E2=80=94 you're=
+ right.=E2=80=9D

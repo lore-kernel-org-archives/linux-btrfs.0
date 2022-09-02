@@ -2,85 +2,88 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0239C38145
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 13:41:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4302DC38145
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 13:49:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236873AbiIBNl5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Sep 2022 09:41:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40612 "EHLO
+        id S235662AbiIBNtC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Sep 2022 09:49:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33416 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236909AbiIBNlS (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 09:41:18 -0400
+        with ESMTP id S237838AbiIBNsU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 09:48:20 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F7AD237E6
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Sep 2022 06:18:35 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4546E166AA5;
+        Fri,  2 Sep 2022 06:23:17 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 6107E5BE4C;
-        Fri,  2 Sep 2022 12:53:15 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id D9D2F5BE03;
+        Fri,  2 Sep 2022 12:34:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1662123195;
+        t=1662122070;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=rcsAfAYfPwyqxHHhVAY3dKVf4T6fRJYkGzfhs8EUWQI=;
-        b=EoJzoWot/finkbzlco530bRKReb94d0MEyfOsy9UAyYZehLmV5fjz56TP2mtNz1znexXf9
-        07bTRQq7nGLgHQxKeU3Mx9TG1CPhDMbjjpkvBOJYHe+ed4FpA9Yuu3WPMY07I4VsnHF2Hx
-        BMLFR2qz8QcUUan5cfjpv6mYIEmv+HE=
+        bh=ZSh2REjiRAk/k5oPQg2yXZGh/unc7sc3tPapfoccmRI=;
+        b=wdEwtN3JZgc/dJfXvHTB2OuHq5iMMkwcvGadpvdtKl82JBp/CVm4q6hNc+Y/iWTf2Xz+aI
+        YGNc8TruF0sa2O/2hm9jHou3PZrcjEVob/160cOGyJ77oxrhQEaONmpuSIM0yX+QUzatCh
+        /RsJEpuKLTyOxrED2kdzlFs5ZvtVXAo=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1662123195;
+        s=susede2_ed25519; t=1662122070;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=rcsAfAYfPwyqxHHhVAY3dKVf4T6fRJYkGzfhs8EUWQI=;
-        b=DCA8H02yhW64+Acj6qkkw6b0XOWy2ux0nz0awoqhyV4NVxp5jCvJex+VtYnDdeEDl46mWe
-        mBF2nvCp3nO5q5AA==
+        bh=ZSh2REjiRAk/k5oPQg2yXZGh/unc7sc3tPapfoccmRI=;
+        b=KENUHNHD48w8jrLxhOstCJQGwUAg1XngO63jvWwXMV9t3VvgwJ8T1JrqwXS/ustyoxYoL+
+        euH2Gj9JTUuJQ1CQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3D87E1330E;
-        Fri,  2 Sep 2022 12:53:15 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9A82A13328;
+        Fri,  2 Sep 2022 12:34:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0L8RDrv8EWOscQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 02 Sep 2022 12:53:15 +0000
-Date:   Fri, 2 Sep 2022 14:47:54 +0200
+        id Wbq4JFb4EWMIaQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 02 Sep 2022 12:34:30 +0000
+Date:   Fri, 2 Sep 2022 14:29:10 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        Naohiro Aota <naohiro.aota@wdc.com>
-Subject: Re: [PATCH] btrfs: zoned: fix mounting with conventional zones
-Message-ID: <20220902124754.GW13489@twin.jikos.cz>
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     linux-fsdevel@vger.kernel.org, linux-afs@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com, linux-nilfs@vger.kernel.org,
+        linux-mm@kvack.org
+Subject: Re: [PATCH 07/23] btrfs: Convert extent_write_cache_pages() to use
+ filemap_get_folios_tag()
+Message-ID: <20220902122910.GV13489@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 Mail-Followup-To: dsterba@suse.cz,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-References: <0fef711e5ed1d9df00a5a749aab9e3cd3fe4c14c.1662042048.git.johannes.thumshirn@wdc.com>
+        "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
+        linux-fsdevel@vger.kernel.org, linux-afs@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-cifs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com, linux-nilfs@vger.kernel.org,
+        linux-mm@kvack.org
+References: <20220901220138.182896-1-vishal.moola@gmail.com>
+ <20220901220138.182896-8-vishal.moola@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <0fef711e5ed1d9df00a5a749aab9e3cd3fe4c14c.1662042048.git.johannes.thumshirn@wdc.com>
+In-Reply-To: <20220901220138.182896-8-vishal.moola@gmail.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 01, 2022 at 07:21:07AM -0700, Johannes Thumshirn wrote:
-> Since commit 6a921de58992 ("btrfs: zoned: introduce
-> space_info->active_total_bytes"), we're only counting the bytes of a
-> block-group on an active zone as usable for metadata writes. But on a SMR
-> drive, we don't have active zones and short circuit some of the logic.
+On Thu, Sep 01, 2022 at 03:01:22PM -0700, Vishal Moola (Oracle) wrote:
+> Converted function to use folios throughout. This is in preparation for
+> the removal of find_get_pages_range_tag(). Now also supports large
+> folios.
 > 
-> This leads to an error on mount, because we cannot reserve space for
-> metadata writes.
-> 
-> Fix this by also setting the BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE bit in the
-> block-group's runtime flag if the zone is a conventional zone.
-> 
-> Fixes: 6a921de58992 ("btrfs: zoned: introduce space_info->active_total_bytes")
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
 
-Added to misc-next, thanks.
+Acked-by: David Sterba <dsterba@suse.com>

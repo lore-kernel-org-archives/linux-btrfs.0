@@ -2,162 +2,144 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A76CECAAD5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 09:27:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB4B3C38145
+	for <linux-btrfs@archiver.kernel.org>; Fri,  2 Sep 2022 09:31:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235333AbiIBJ1F (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 2 Sep 2022 05:27:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35618 "EHLO
+        id S235601AbiIBJbU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 2 Sep 2022 05:31:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38102 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235568AbiIBJ1D (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 05:27:03 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4A404B940E
-        for <linux-btrfs@vger.kernel.org>; Fri,  2 Sep 2022 02:27:02 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S232699AbiIBJan (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Sep 2022 05:30:43 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C20044E62E;
+        Fri,  2 Sep 2022 02:30:42 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id D66B1342A0;
-        Fri,  2 Sep 2022 09:27:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1662110820;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=sB+anVqfGLVd447UcWFn53Do0/PsFPiEMe9BZ5/jr7o=;
-        b=NHSj3PSTl0ojEcLjIJpO6Nh/JacHlObovD96WyZksohdX1Zs+iwx4VFUtpiYNKzPwVZ3EZ
-        MU8CIrv5NyGSCSOKyGPYuMxRjEH85Km0UaQfYAGZRPY+IAv5JDthFJnSxVfMhM8cGvhboQ
-        Rqs39XeG7a3mq0WUFJYnVQqUyYEUw8c=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1662110820;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=sB+anVqfGLVd447UcWFn53Do0/PsFPiEMe9BZ5/jr7o=;
-        b=AuSHPKkSg/W7U6Wo0tb+2G87mYmRDx4ruzCYbU3nm8aLlRlkAnfHFYovV1hP/FZRg9M/VC
-        /ZRfdwuUPF3aiWBg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A93C213328;
-        Fri,  2 Sep 2022 09:27:00 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id /Kz9J2TMEWMEEwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 02 Sep 2022 09:27:00 +0000
-Date:   Fri, 2 Sep 2022 11:21:40 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 3/5] btrfs-progs: separate block group tree from
- extent tree v2
-Message-ID: <20220902092140.GP13489@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-Mail-Followup-To: dsterba@suse.cz, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1660024949.git.wqu@suse.com>
- <5eef4fd2d55a02dab38a6d1dec43dbcd82652508.1660024949.git.wqu@suse.com>
- <20220831191442.GL13489@twin.jikos.cz>
- <66396669-7174-dd04-aaa9-d8322bc39fdb@gmx.com>
- <ab123921-773a-9e1b-1d49-9e82614a37d9@gmx.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 5F7AE61BBA;
+        Fri,  2 Sep 2022 09:30:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EC1D4C433D6;
+        Fri,  2 Sep 2022 09:30:40 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1662111041;
+        bh=Bh9FHDBNwHPp/BxUYYcvt3nGhxk1gOj+ynGQSWWRg2c=;
+        h=From:To:Cc:Subject:Date:From;
+        b=iAJ0cxC4se7PTUeRWeKb+bnYZdtvZAL5GBXgQSFaOEynr3xl+akxADJd4EwnHVjmV
+         o5lWFze/H2UBL+mzxtxs4MA6lOqfQ14TOyFTNHX32j5qTZetl6B7hzxLhwaOG82dFf
+         zU27LcH50sHYcgWaV5HVW8nmRgMQdg3TiSW/YkqvEdnsKHgqXPC6NjFge3NEHtd8NV
+         ZN34JSIEBh8+MHz63+YECq7kdYbaJjVU1fMo43AYE8pFRw+gjcNIa4xXgVQNrHPD4k
+         r8RO4M+j3OMNNUoQsaLHp9OKh7/yJxb78Z/RJBT3eqR827XzKC8PZk0+ipQUnexaT6
+         OoWHkPa6znCWg==
+From:   fdmanana@kernel.org
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] btrfs: test that we can not delete a subvolume with an active swap file
+Date:   Fri,  2 Sep 2022 10:30:32 +0100
+Message-Id: <0bc9cd4abfbde3f76b981628942f94631cef7162.1662110839.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.35.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <ab123921-773a-9e1b-1d49-9e82614a37d9@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 01, 2022 at 08:15:07PM +0800, Qu Wenruo wrote:
-> >>> --- a/common/fsfeatures.c
-> >>> +++ b/common/fsfeatures.c
-> >>> @@ -172,6 +172,14 @@ static const struct btrfs_feature
-> >>> runtime_features[] = {
-> >>>           VERSION_TO_STRING2(safe, 4,9),
-> >>>           VERSION_TO_STRING2(default, 5,15),
-> >>>           .desc        = "free space tree (space_cache=v2)"
-> >>> +    }, {
-> >>> +        .name        = "block-group-tree",
-> >>> +        .flag        = BTRFS_RUNTIME_FEATURE_BLOCK_GROUP_TREE,
-> >>> +        .sysfs_name = "block_group_tree",
-> >>> +        VERSION_TO_STRING2(compat, 6,0),
-> >>> +        VERSION_NULL(safe),
-> >>> +        VERSION_NULL(default),
-> >>> +        .desc        = "block group tree to reduce mount time"
-> >>
-> >> Like explaining that this is a runtime feature and I have not noticed
-> >> until I tried to test it expecting to see it among the mkfs-time
-> >> features but there was nothing in 'mkfs.btrfs -O list-all'.
-> >>
-> >> This is a mkfs-time feature as it creates a fundamental on-disk
-> >> structure, basically a subset of extent tree.
-> >
-> > This comes to the decision to make bg-tree feature as a compat RO flag.
-> >
-> > As we didn't put free-space-tree into "-O" options, but "-R" options.
-> > So the same should be done for most compat RO flags.
-> >
-> > Furthermore I remember I discussed about this before, extent tree change
-> > should not need a full incompat flag, as pure read-only tools, like
-> > btrfs-fuse should still be able to read the subvolume/csum/chunk/root
-> > trees without any problem.
-> >
-> > So following above reasons, bg-tree is compat RO, and compat RO goes
-> > into "-R" options, I see no reason to put it into "-O" options.
-> 
-> After more consideration, I believe we shouldn't split all the features
-> (including quota) between "-O" and "-R" options.
+From: Filipe Manana <fdmanana@suse.com>
 
-After reading your previous I got to the same conclusion.
+Verify that we can not delete a subvolume that has an active swap file,
+and that after disabling the swap file, we can delete it.
 
-> Firstly, although free space tree is compat RO (and a lot of future
-> features will also be compat RO), it's still a on-disk format change (a
-> new tree, some new keys).
-> 
-> It's even a bigger change compared to NO_HOLES features.
-> No to mention the block group tree.
-> 
-> Now we have a very bad split for -R and -O, some of them are on-disk
-> format change that is large enough, but still compat RO.
+This tests a fix done by kernel commit 60021bd754c6ca ("btrfs: prevent
+subvol with swapfile from being deleted"), which landed in kernel 5.18.
 
-Agreed.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-> Some of them should be compat RO, but still set as incompt flags.
-> 
-> To me, end users should not really bother what the feature is
-> implemented, they only need to bother:
-> 
-> - What the feature is doing
-> - What is the compatibility
->    The incompat and compat RO doesn't make too much difference for most
->    users, they just care about which kernel version is compatible.
-> 
-> So from this point of view, -O/-R split it not really helpful from the
-> very beginning.
-> 
-> It may make sense for quota, which is the only exception, it's supported
-> from the very beginning, without a compat RO/incompat flag.
-> 
-> But for more and more features, -O/-R split doesn't make much sense.
+V2: Add _cleanup() override to make sure swapfile is disabled in case
+    the test is interrupted.
 
-Yeah, the free-space-tree is misplaced and I did not realize that back
-then. That something is possible to switch on at run time by a mount
-option should not be the only condition to put the option to the -R option.
+ tests/btrfs/274     | 58 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/274.out |  6 +++++
+ 2 files changed, 64 insertions(+)
+ create mode 100755 tests/btrfs/274
+ create mode 100644 tests/btrfs/274.out
 
-Quota are maybe still a good example of the runtime feature, there's a
-command to enable and disable it. There are additional structures
-created or deleted but it's not something fundamental. The distinction
-in the options should hint at what's the type "what if I don't select
-this now, can I turn it on later?", perhaps documentation should be more
-explicit about that.
+diff --git a/tests/btrfs/274 b/tests/btrfs/274
+new file mode 100755
+index 00000000..c0594e25
+--- /dev/null
++++ b/tests/btrfs/274
+@@ -0,0 +1,58 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (C) 2022 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# FS QA Test 274
++#
++# Test that we can not delete a subvolume that has an active swap file.
++#
++. ./common/preamble
++_begin_fstest auto quick swap subvol
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	test -n "$swap_file" && swapoff $swap_file &> /dev/null
++}
++
++. ./common/filter
++
++_supported_fs btrfs
++_fixed_by_kernel_commit 60021bd754c6ca \
++    "btrfs: prevent subvol with swapfile from being deleted"
++_require_scratch_swapfile
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++
++swap_file="$SCRATCH_MNT/subvol/swap"
++$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subvol | _filter_scratch
++
++echo "Creating and activating swap file..."
++_format_swapfile $swap_file $(($(get_page_size) * 32)) >> $seqres.full
++_swapon_file $swap_file
++
++echo "Attempting to delete subvolume with swap file enabled..."
++# Output differs with different btrfs-progs versions and some display multiple
++# lines on failure like this for example:
++#
++#   ERROR: Could not destroy subvolume/snapshot: Operation not permitted
++#   WARNING: deletion failed with EPERM, send may be in progress
++#   Delete subvolume (no-commit): '/home/fdmanana/btrfs-tests/scratch_1/subvol'
++#
++# So just redirect all output to the .full file and check the command's exit
++# status instead.
++$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/subvol >> $seqres.full 2>&1 && \
++    echo "subvolume deletion successful, expected failure!"
++
++echo "Disabling swap file..."
++swapoff $swap_file
++
++echo "Attempting to delete subvolume after disabling swap file..."
++$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/subvol >> $seqres.full 2>&1 || \
++   echo "subvolume deletion failure, expected success!"
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/274.out b/tests/btrfs/274.out
+new file mode 100644
+index 00000000..66e0de25
+--- /dev/null
++++ b/tests/btrfs/274.out
+@@ -0,0 +1,6 @@
++QA output created by 274
++Create subvolume 'SCRATCH_MNT/subvol'
++Creating and activating swap file...
++Attempting to delete subvolume with swap file enabled...
++Disabling swap file...
++Attempting to delete subvolume after disabling swap file...
+-- 
+2.35.1
 
-For compatibility we need to keep free-space-tree under -R but we can
-add an alias to -O and everything of that sort add there too, like the
-block group tree.

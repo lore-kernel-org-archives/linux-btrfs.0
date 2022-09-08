@@ -2,156 +2,241 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E17DECAAD3
-	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Sep 2022 00:14:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 56C18ECAAD3
+	for <linux-btrfs@archiver.kernel.org>; Thu,  8 Sep 2022 00:26:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229775AbiIHAOo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Sep 2022 20:14:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45404 "EHLO
+        id S229793AbiIHA0b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Sep 2022 20:26:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34604 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229771AbiIHAOm (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2022 20:14:42 -0400
-Received: from mga18.intel.com (mga18.intel.com [134.134.136.126])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DB1C2253B
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2022 17:14:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1662596081; x=1694132081;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=4XqZFeOz2EIPekahPLRfowofq8lVRFP2QuNl/K8SuII=;
-  b=NIhT8URF86IugjeJ1UtYUpchA0noP+VGl2JYKI1Yk7S3Nn/AADh2uiFX
-   9QxFc7AF8wpgCwmLZLBR3tgSx8q+nx1Rqy/lcPpRXCrItXcY1ZoiD9+8A
-   AkN28/Vy+gX6sVpP63Sk3+LQTm4fFfiWU4y6JmZQ0K5qNUVFAW+119eM1
-   ydPOLoKGHFAPKTnQTOp3feTASvtOMv6pAdmfpPGnhj0ia1fZyCGQQqTJl
-   IY5rwPvEWDKZioZsKE/HH/LAVoFYmiIxHjltehlwAfIZfEIEJsGp9WjJn
-   +VOX8lDwOwgP1nnDcZlDoEEB6LdIVAEL1NIHen+7gM9VJmnAcnKTfHFxY
-   A==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10463"; a="280058408"
-X-IronPort-AV: E=Sophos;i="5.93,298,1654585200"; 
-   d="scan'208";a="280058408"
-Received: from fmsmga005.fm.intel.com ([10.253.24.32])
-  by orsmga106.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Sep 2022 17:14:40 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.93,298,1654585200"; 
-   d="scan'208";a="943115627"
-Received: from lkp-server02.sh.intel.com (HELO 95dfd251caa2) ([10.239.97.151])
-  by fmsmga005.fm.intel.com with ESMTP; 07 Sep 2022 17:14:39 -0700
-Received: from kbuild by 95dfd251caa2 with local (Exim 4.96)
-        (envelope-from <lkp@intel.com>)
-        id 1oW5Bn-000781-0F;
-        Thu, 08 Sep 2022 00:14:39 +0000
-Date:   Thu, 8 Sep 2022 08:13:43 +0800
-From:   kernel test robot <lkp@intel.com>
-To:     Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org
-Cc:     kbuild-all@lists.01.org, Naohiro Aota <naohiro.aota@wdc.com>
-Subject: Re: [PATCH] btrfs: zoned: wait extent buffer IOs before finishing a
- zone
-Message-ID: <202209080826.AuNlP9ys-lkp@intel.com>
-References: <6ea8d3e9d0165f6ff37a1d12aad93ba279acfd93.1662561769.git.naohiro.aota@wdc.com>
+        with ESMTP id S229611AbiIHA0a (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Sep 2022 20:26:30 -0400
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BC868101C8
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Sep 2022 17:26:29 -0700 (PDT)
+Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 287Hnkt4026380
+        for <linux-btrfs@vger.kernel.org>; Wed, 7 Sep 2022 17:26:29 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding : content-type; s=facebook;
+ bh=dDEz00zliKIpzfOoURpM+cs2uiLbplotBqEkHQfuUf8=;
+ b=iIPlJXM7C2TU+OE61FhNgf8RLiK3Gmsq9m5tg5qfPyULlzkqsGNnQX6tAjgAuBqTUaAU
+ 1gLsrMw64sAaHykWvXDKop1rVxtSrP4TovLRxUTGqOMHt8oUOjzMVxuS/xp9snszxrru
+ g3r6CBziOoRYsTaAZemUGg2cwI+l/9qXXZI= 
+Received: from mail.thefacebook.com ([163.114.132.120])
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jeppk623v-2
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Sep 2022 17:26:29 -0700
+Received: from snc-exhub201.TheFacebook.com (2620:10d:c085:21d::7) by
+ snc-exhub104.TheFacebook.com (2620:10d:c085:11d::4) with Microsoft SMTP
+ Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2375.31; Wed, 7 Sep 2022 17:26:28 -0700
+Received: from twshared15978.04.prn5.facebook.com (2620:10d:c085:108::4) by
+ mail.thefacebook.com (2620:10d:c085:21d::7) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2375.31; Wed, 7 Sep 2022 17:26:28 -0700
+Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
+        id B794D1D2F036; Wed,  7 Sep 2022 17:26:19 -0700 (PDT)
+From:   Stefan Roesch <shr@fb.com>
+To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>
+CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>,
+        <fdmanana@gmail.com>
+Subject: [PATCH v2 02/12] btrfs: implement a nowait option for tree searches
+Date:   Wed, 7 Sep 2022 17:26:06 -0700
+Message-ID: <20220908002616.3189675-3-shr@fb.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220908002616.3189675-1-shr@fb.com>
+References: <20220908002616.3189675-1-shr@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <6ea8d3e9d0165f6ff37a1d12aad93ba279acfd93.1662561769.git.naohiro.aota@wdc.com>
+Content-Transfer-Encoding: quoted-printable
+X-FB-Internal: Safe
+Content-Type: text/plain
+X-Proofpoint-GUID: rUgybMcKNJm0ypQOOCOzXbFRBPFU3VvT
+X-Proofpoint-ORIG-GUID: rUgybMcKNJm0ypQOOCOzXbFRBPFU3VvT
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
+ definitions=2022-09-07_10,2022-09-07_02,2022-06-22_01
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi Naohiro,
+From: Josef Bacik <josef@toxicpanda.com>
 
-I love your patch! Perhaps something to improve:
+For NOWAIT IOCB's we'll need a way to tell search to not wait on locks
+or anything.  Accomplish this by adding a path->nowait flag that will
+use trylocks and skip reading of metadata, returning -EWOULDBLOCK in
+either of these cases.  For now we only need this for reads, so only the
+read side is handled.  Add an ASSERT() to catch anybody trying to use
+this for writes so they know they'll have to implement the write side.
 
-[auto build test WARNING on kdave/for-next]
-[also build test WARNING on linus/master v6.0-rc4 next-20220907]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch#_base_tree_information]
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Stefan Roesch <shr@fb.com>
+---
+ fs/btrfs/ctree.c   | 39 ++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/ctree.h   |  1 +
+ fs/btrfs/locking.c | 23 +++++++++++++++++++++++
+ fs/btrfs/locking.h |  1 +
+ 4 files changed, 61 insertions(+), 3 deletions(-)
 
-url:    https://github.com/intel-lab-lkp/linux/commits/Naohiro-Aota/btrfs-zoned-wait-extent-buffer-IOs-before-finishing-a-zone/20220907-224702
-base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
-config: s390-randconfig-s041-20220907 (https://download.01.org/0day-ci/archive/20220908/202209080826.AuNlP9ys-lkp@intel.com/config)
-compiler: s390-linux-gcc (GCC) 12.1.0
-reproduce:
-        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
-        chmod +x ~/bin/make.cross
-        # apt-get install sparse
-        # sparse version: v0.6.4-39-gce1a6720-dirty
-        # https://github.com/intel-lab-lkp/linux/commit/f858e96a8ad7eb5499e18501bfbcaad594eace1f
-        git remote add linux-review https://github.com/intel-lab-lkp/linux
-        git fetch --no-tags linux-review Naohiro-Aota/btrfs-zoned-wait-extent-buffer-IOs-before-finishing-a-zone/20220907-224702
-        git checkout f858e96a8ad7eb5499e18501bfbcaad594eace1f
-        # save the config file
-        mkdir build_dir && cp config build_dir/.config
-        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-12.1.0 make.cross C=1 CF='-fdiagnostic-prefix -D__CHECK_ENDIAN__' O=build_dir ARCH=s390 SHELL=/bin/bash
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index ebfa35fe1c38..71b238364939 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1447,6 +1447,11 @@ read_block_for_search(struct btrfs_root *root, str=
+uct btrfs_path *p,
+ 			return 0;
+ 		}
+=20
++		if (p->nowait) {
++			free_extent_buffer(tmp);
++			return -EAGAIN;
++		}
++
+ 		if (unlock_up)
+ 			btrfs_unlock_up_safe(p, level + 1);
+=20
+@@ -1467,6 +1472,8 @@ read_block_for_search(struct btrfs_root *root, stru=
+ct btrfs_path *p,
+ 			ret =3D -EAGAIN;
+=20
+ 		goto out;
++	} else if (p->nowait) {
++		return -EAGAIN;
+ 	}
+=20
+ 	if (unlock_up) {
+@@ -1634,7 +1641,13 @@ static struct extent_buffer *btrfs_search_slot_get=
+_root(struct btrfs_root *root,
+ 		 * We don't know the level of the root node until we actually
+ 		 * have it read locked
+ 		 */
+-		b =3D btrfs_read_lock_root_node(root);
++		if (p->nowait) {
++			b =3D btrfs_try_read_lock_root_node(root);
++			if (IS_ERR(b))
++				return b;
++		} else {
++			b =3D btrfs_read_lock_root_node(root);
++		}
+ 		level =3D btrfs_header_level(b);
+ 		if (level > write_lock_level)
+ 			goto out;
+@@ -1910,6 +1923,13 @@ int btrfs_search_slot(struct btrfs_trans_handle *t=
+rans, struct btrfs_root *root,
+ 	WARN_ON(p->nodes[0] !=3D NULL);
+ 	BUG_ON(!cow && ins_len);
+=20
++	/*
++	 * For now only allow nowait for read only operations.  There's no
++	 * strict reason why we can't, we just only need it for reads so I'm
++	 * only implementing it for reads right now.
++	 */
++	ASSERT(!p->nowait || !cow);
++
+ 	if (ins_len < 0) {
+ 		lowest_unlock =3D 2;
+=20
+@@ -1936,7 +1956,12 @@ int btrfs_search_slot(struct btrfs_trans_handle *t=
+rans, struct btrfs_root *root,
+=20
+ 	if (p->need_commit_sem) {
+ 		ASSERT(p->search_commit_root);
+-		down_read(&fs_info->commit_root_sem);
++		if (p->nowait) {
++			if (!down_read_trylock(&fs_info->commit_root_sem))
++				return -EAGAIN;
++		} else {
++			down_read(&fs_info->commit_root_sem);
++		}
+ 	}
+=20
+ again:
+@@ -2082,7 +2107,15 @@ int btrfs_search_slot(struct btrfs_trans_handle *t=
+rans, struct btrfs_root *root,
+ 				btrfs_tree_lock(b);
+ 				p->locks[level] =3D BTRFS_WRITE_LOCK;
+ 			} else {
+-				btrfs_tree_read_lock(b);
++				if (p->nowait) {
++					if (!btrfs_try_tree_read_lock(b)) {
++						free_extent_buffer(b);
++						ret =3D -EAGAIN;
++						goto done;
++					}
++				} else {
++					btrfs_tree_read_lock(b);
++				}
+ 				p->locks[level] =3D BTRFS_READ_LOCK;
+ 			}
+ 			p->nodes[level] =3D b;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9ef162dbd4bc..d6d05450198d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -443,6 +443,7 @@ struct btrfs_path {
+ 	 * header (ie. sizeof(struct btrfs_item) is not included).
+ 	 */
+ 	unsigned int search_for_extension:1;
++	unsigned int nowait:1;
+ };
+ #define BTRFS_MAX_EXTENT_ITEM_SIZE(r) ((BTRFS_LEAF_DATA_SIZE(r->fs_info)=
+ >> 4) - \
+ 					sizeof(struct btrfs_item))
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 9063072b399b..d6c88922d3e2 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -285,6 +285,29 @@ struct extent_buffer *btrfs_read_lock_root_node(stru=
+ct btrfs_root *root)
+ 	return eb;
+ }
+=20
++/*
++ * Loop around taking references on and locking the root node of the tre=
+e in
++ * nowait mode until we end up with a lock on the root node or returning=
+ to
++ * avoid blocking.
++ *
++ * Return: root extent buffer with read lock held or -EWOULDBLOCK.
++ */
++struct extent_buffer *btrfs_try_read_lock_root_node(struct btrfs_root *r=
+oot)
++{
++	struct extent_buffer *eb;
++
++	while (1) {
++		eb =3D btrfs_root_node(root);
++		if (!btrfs_try_tree_read_lock(eb))
++			return ERR_PTR(-EAGAIN);
++		if (eb =3D=3D root->node)
++			break;
++		btrfs_tree_read_unlock(eb);
++		free_extent_buffer(eb);
++	}
++	return eb;
++}
++
+ /*
+  * DREW locks
+  * =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+index ab268be09bb5..490c7a79e995 100644
+--- a/fs/btrfs/locking.h
++++ b/fs/btrfs/locking.h
+@@ -94,6 +94,7 @@ int btrfs_try_tree_read_lock(struct extent_buffer *eb);
+ int btrfs_try_tree_write_lock(struct extent_buffer *eb);
+ struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root);
+ struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root)=
+;
++struct extent_buffer *btrfs_try_read_lock_root_node(struct btrfs_root *r=
+oot);
+=20
+ #ifdef CONFIG_BTRFS_DEBUG
+ static inline void btrfs_assert_tree_write_locked(struct extent_buffer *=
+eb)
+--=20
+2.30.2
 
-If you fix the issue, kindly add following tag where applicable
-Reported-by: kernel test robot <lkp@intel.com>
-
-sparse warnings: (new ones prefixed by >>)
-   fs/btrfs/zoned.c:137:29: sparse: sparse: restricted __le64 degrades to integer
-   fs/btrfs/zoned.c:137:52: sparse: sparse: restricted __le64 degrades to integer
->> fs/btrfs/zoned.c:1932:9: sparse: sparse: incorrect type in assignment (different address spaces) @@     expected void **slot @@     got void [noderef] __rcu ** @@
-   fs/btrfs/zoned.c:1932:9: sparse:     expected void **slot
-   fs/btrfs/zoned.c:1932:9: sparse:     got void [noderef] __rcu **
->> fs/btrfs/zoned.c:1932:9: sparse: sparse: incorrect type in assignment (different address spaces) @@     expected void **slot @@     got void [noderef] __rcu ** @@
-   fs/btrfs/zoned.c:1932:9: sparse:     expected void **slot
-   fs/btrfs/zoned.c:1932:9: sparse:     got void [noderef] __rcu **
->> fs/btrfs/zoned.c:1934:44: sparse: sparse: incorrect type in argument 1 (different address spaces) @@     expected void [noderef] __rcu **slot @@     got void **slot @@
-   fs/btrfs/zoned.c:1934:44: sparse:     expected void [noderef] __rcu **slot
-   fs/btrfs/zoned.c:1934:44: sparse:     got void **slot
-   fs/btrfs/zoned.c:1938:30: sparse: sparse: incorrect type in assignment (different address spaces) @@     expected void **slot @@     got void [noderef] __rcu ** @@
-   fs/btrfs/zoned.c:1938:30: sparse:     expected void **slot
-   fs/btrfs/zoned.c:1938:30: sparse:     got void [noderef] __rcu **
-   fs/btrfs/zoned.c:1947:47: sparse: sparse: incorrect type in argument 1 (different address spaces) @@     expected void [noderef] __rcu **slot @@     got void **slot @@
-   fs/btrfs/zoned.c:1947:47: sparse:     expected void [noderef] __rcu **slot
-   fs/btrfs/zoned.c:1947:47: sparse:     got void **slot
-   fs/btrfs/zoned.c:1947:22: sparse: sparse: incorrect type in assignment (different address spaces) @@     expected void **slot @@     got void [noderef] __rcu ** @@
-   fs/btrfs/zoned.c:1947:22: sparse:     expected void **slot
-   fs/btrfs/zoned.c:1947:22: sparse:     got void [noderef] __rcu **
-   fs/btrfs/zoned.c:1932:9: sparse: sparse: incorrect type in argument 1 (different address spaces) @@     expected void [noderef] __rcu **slot @@     got void **slot @@
-   fs/btrfs/zoned.c:1932:9: sparse:     expected void [noderef] __rcu **slot
-   fs/btrfs/zoned.c:1932:9: sparse:     got void **slot
->> fs/btrfs/zoned.c:1932:9: sparse: sparse: incorrect type in assignment (different address spaces) @@     expected void **slot @@     got void [noderef] __rcu ** @@
-   fs/btrfs/zoned.c:1932:9: sparse:     expected void **slot
-   fs/btrfs/zoned.c:1932:9: sparse:     got void [noderef] __rcu **
-   fs/btrfs/zoned.c:2303:25: sparse: sparse: context imbalance in 'btrfs_zoned_activate_one_bg' - different lock contexts for basic block
-
-vim +1932 fs/btrfs/zoned.c
-
-  1922	
-  1923	static void wait_eb_writebacks(struct btrfs_block_group *block_group)
-  1924	{
-  1925		struct btrfs_fs_info *fs_info = block_group->fs_info;
-  1926		const u64 end = block_group->start + block_group->length;
-  1927		struct radix_tree_iter iter;
-  1928		struct extent_buffer *eb;
-  1929		void **slot;
-  1930	
-  1931		rcu_read_lock();
-> 1932		radix_tree_for_each_slot(slot, &fs_info->buffer_radix, &iter,
-  1933					 block_group->start >> fs_info->sectorsize_bits) {
-> 1934			eb = radix_tree_deref_slot(slot);
-  1935			if (!eb)
-  1936				continue;
-  1937			if (radix_tree_deref_retry(eb)) {
-  1938				slot = radix_tree_iter_retry(&iter);
-  1939				continue;
-  1940			}
-  1941	
-  1942			if (eb->start < block_group->start)
-  1943				continue;
-  1944			if (eb->start >= end)
-  1945				break;
-  1946	
-  1947			slot = radix_tree_iter_resume(slot, &iter);
-  1948			rcu_read_unlock();
-  1949			wait_on_extent_buffer_writeback(eb);
-  1950			rcu_read_lock();
-  1951		}
-  1952		rcu_read_unlock();
-  1953	}
-  1954	
-
--- 
-0-DAY CI Kernel Test Service
-https://01.org/lkp

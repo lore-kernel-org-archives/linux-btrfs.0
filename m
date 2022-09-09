@@ -2,92 +2,134 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20FEDECAAD5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 20:45:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F131ECAAA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:48:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231540AbiIIUo4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 16:44:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37656 "EHLO
+        id S231678AbiIIVsY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 17:48:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47426 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229890AbiIIUou (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 16:44:50 -0400
-X-Greylist: delayed 613 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 09 Sep 2022 13:44:35 PDT
-Received: from mail.stoffel.org (li1843-175.members.linode.com [172.104.24.175])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6AD518E3C;
-        Fri,  9 Sep 2022 13:44:28 -0700 (PDT)
-Received: from quad.stoffel.org (068-116-170-226.res.spectrum.com [68.116.170.226])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by mail.stoffel.org (Postfix) with ESMTPSA id 7A8FB270B5;
-        Fri,  9 Sep 2022 16:34:14 -0400 (EDT)
-Received: by quad.stoffel.org (Postfix, from userid 1000)
-        id 2733AA7E79; Fri,  9 Sep 2022 16:34:14 -0400 (EDT)
+        with ESMTP id S229818AbiIIVsU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:48:20 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D026F3410
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:48:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Sender:Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:
+        Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=LWIa5YXTGtofGANsSvKQGkq4gG99m16VAOIG1hPy8aM=; b=aBuIHxztJ6TgHlVQ+mUrlfOLdK
+        12x1uj7v6CJkcaYxo0ZKkLUech5XspZDeAM3jIx1iDMY1XpPqz7tRTZf1pBNAjRZEzlOI6jZfT56L
+        GvuObs1Nvdd1wPr7cYfcRJpu47LMAaQXyNjuQ4UNRkGlvKxIqT9NXx0tAbQLcMH/Ub+bDdW7cOfcg
+        Kpi5oxVI2yaBbNkqqTvkYIr1iBh2O5spk0JzJwMmt2gw6+gYDt8Yx0egKHbhPYfolpRVs4Qup3HTn
+        af4pI1a6aHWkf0f4/C+BqVCSFNkkHkA/v9fvBFJVgEvkFiRjNBGV6X879urNaTjJOHyersPuimp5u
+        MsZAdJCQ==;
+Received: from mcgrof by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1oWlrD-003CE9-9E; Fri, 09 Sep 2022 21:48:15 +0000
+From:   Luis Chamberlain <mcgrof@kernel.org>
+To:     dsterba@suse.com, johannes.thumshirn@wdc.com, naohiro.aota@wdc.com,
+        linux-btrfs@vger.kernel.org, damien.lemoal@wdc.com
+Cc:     pankydev8@gmail.com, p.raghav@samsung.com, mcgrof@kernel.org
+Subject: [PATCH 1/2] btrfs-progs: mkfs: fix error message for minimum zoned filesystem size
+Date:   Fri,  9 Sep 2022 14:48:09 -0700
+Message-Id: <20220909214810.761928-2-mcgrof@kernel.org>
+X-Mailer: git-send-email 2.37.1
+In-Reply-To: <20220909214810.761928-1-mcgrof@kernel.org>
+References: <20220909214810.761928-1-mcgrof@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Message-ID: <25371.41798.87576.861659@quad.stoffel.home>
-Date:   Fri, 9 Sep 2022 16:34:14 -0400
-From:   "John Stoffel" <john@stoffel.org>
-To:     Jeff Layton <jlayton@kernel.org>
-Cc:     "J. Bruce Fields" <bfields@fieldses.org>,
-        Theodore Ts'o <tytso@mit.edu>, Jan Kara <jack@suse.cz>,
-        NeilBrown <neilb@suse.de>, adilger.kernel@dilger.ca,
-        djwong@kernel.org, david@fromorbit.com, trondmy@hammerspace.com,
-        viro@zeniv.linux.org.uk, zohar@linux.ibm.com, xiubli@redhat.com,
-        chuck.lever@oracle.com, lczerner@redhat.com, brauner@kernel.org,
-        fweimer@redhat.com, linux-man@vger.kernel.org,
-        linux-api@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        ceph-devel@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-xfs@vger.kernel.org
-Subject: Re: [man-pages RFC PATCH v4] statx, inode: document the new
- STATX_INO_VERSION field
-In-Reply-To: <44efe219dbf511492b21a653905448d43d0f3363.camel@kernel.org>
-References: <79aaf122743a295ddab9525d9847ac767a3942aa.camel@kernel.org>
-        <20220907125211.GB17729@fieldses.org>
-        <771650a814ab1ff4dc5473d679936b747d9b6cf5.camel@kernel.org>
-        <20220907135153.qvgibskeuz427abw@quack3>
-        <166259786233.30452.5417306132987966849@noble.neil.brown.name>
-        <20220908083326.3xsanzk7hy3ff4qs@quack3>
-        <YxoIjV50xXKiLdL9@mit.edu>
-        <02928a8c5718590bea5739b13d6b6ebe66cac577.camel@kernel.org>
-        <20220908155605.GD8951@fieldses.org>
-        <9e06c506fd6b3e3118da0ec24276e85ea3ee45a1.camel@kernel.org>
-        <20220908182252.GA18939@fieldses.org>
-        <44efe219dbf511492b21a653905448d43d0f3363.camel@kernel.org>
-X-Mailer: VM 8.2.0b under 27.1 (x86_64-pc-linux-gnu)
+Content-Transfer-Encoding: 8bit
+Sender: Luis Chamberlain <mcgrof@infradead.org>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
->>>>> "Jeff" == Jeff Layton <jlayton@kernel.org> writes:
+The minimum size for a filesystem on a zone storage device
+actually depends on the size of a devices' zone size, given 5
+dedicated zones are required, regardless of their fulll size
+of the drive:
 
-> On Thu, 2022-09-08 at 14:22 -0400, J. Bruce Fields wrote:
->> On Thu, Sep 08, 2022 at 01:40:11PM -0400, Jeff Layton wrote:
->> > Yeah, ok. That does make some sense. So we would mix this into the
->> > i_version instead of the ctime when it was available. Preferably, we'd
->> > mix that in when we store the i_version rather than adding it afterward.
->> > 
->> > Ted, how would we access this? Maybe we could just add a new (generic)
->> > super_block field for this that ext4 (and other filesystems) could
->> > populate at mount time?
->> 
->> Couldn't the filesystem just return an ino_version that already includes
->> it?
->> 
+  * 2 zones for the primary superblock
+  * 1 zone for the system block group
+  * 1 zone for a metadata block group
+  * 1 zone for a data block group
 
-> Yes. That's simple if we want to just fold it in during getattr. If we
-> want to fold that into the values stored on disk, then I'm a little less
-> clear on how that will work.
+So the minimum size for a btrfs filesystem for a zone storage
+device is completely device specific.
 
-I wonder if this series should also include some updates to the
-various xfstests to hopefully document in code what this statx() call
-will do in various situations.  Or at least document how to test it in
-some manner?  Especially since it's layers on top of layers to make
-this work. 
+The check for this however complains about the minimum
+size required for btrfs in general, not for the above
+consideration. Fix the error message so that users
+understand the exact reason why mkfs might fail
+if you want to create a filesystem which cannot
+possibly fit into less than 5 zones. Also clarify how
+the minimum size then is completely device specific.
 
-My assumption is that if the underlying filesystem doesn't support the
-new values, it just returns 0 or c_time?
+Without this a user can end up scratching their heads
+if they tried to create say a 512 MiB filesystem on
+a 100 GiB NVMe ZNS drive with 128 MiB zone size.
+In this case 5 * 128 = 640 MiB is the minimum required.
+Without this patch a user will end up with the following
+error message:
 
-John
+ERROR: size 268435456 is too small to make a usable filesystem
+ERROR: minimum size for a zoned btrfs filesystem is 47185920
+
+Clearly 268435456 (256 MiB) >  47185920 (45 MiB). Fix
+the error message so that the user knows what to do if
+they want the mimimum filesystem for btrfs zone storage
+device.
+
+With this now the user sees:
+
+ERROR: Size 512.00MiB is too small to make a usable filesystem.
+ERROR: The minimum size for a zoned btrfs filesystem requires
+ERROR: 5 dedicated zones. This device's zone size is 128.00MiB so
+ERROR: the minimum size for a btrfs filesystem for this zoned
+ERROR: storage device (/dev/nvme5n1) is 640.00MiB
+
+The following fstests fail because of this issue, and at first glance
+it was not clear why:
+
+  * brfs/132
+  * generic/226
+  * generic/416
+  * generic/650
+
+Now it's clear what the issue is and what needs to get done to
+fix those respective tests. But note, that if working on a sequential
+zone then parallel writes are expected to fail, so tests which require
+that and use parallel writes must also check for sequential zones
+and bail if one is to be used. Each of these tests needs to be adapted
+a bit for zoned devices to work properly.
+
+Signed-off-by: Luis Chamberlain <mcgrof@kernel.org>
+---
+ mkfs/main.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/mkfs/main.c b/mkfs/main.c
+index eaecdc061dfe..ebf462587bd5 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1401,10 +1401,14 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	 * 1 zone for a data block group
+ 	 */
+ 	if (zoned && block_count && block_count < 5 * zone_size(file)) {
+-		error("size %llu is too small to make a usable filesystem",
+-			block_count);
+-		error("minimum size for a zoned btrfs filesystem is %llu",
+-			min_dev_size);
++		error("Size %s is too small to make a usable filesystem.",
++			pretty_size_mode(block_count, UNITS_DEFAULT));
++		error("The minimum size for a zoned btrfs filesystem requires");
++		error("5 dedicated zones. This device's zone size is %s so",
++			pretty_size_mode(zone_size(file), UNITS_DEFAULT));
++		error("the minimum size for a btrfs filesystem for this zoned");
++		error("storage device (%s) is %s",
++			file, pretty_size_mode(5 * zone_size(file), UNITS_DEFAULT));
+ 		goto error;
+ 	}
+ 
+-- 
+2.35.1
+

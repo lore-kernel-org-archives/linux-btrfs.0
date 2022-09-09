@@ -2,90 +2,101 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9880CECAAA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 15:22:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B91E8ECAAA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 15:45:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230430AbiIIPW5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 11:22:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46538 "EHLO
+        id S231666AbiIIPpL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 11:45:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46298 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229728AbiIIPW4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 11:22:56 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 247BB13F6A
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 08:22:56 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id BA09D22339;
-        Fri,  9 Sep 2022 15:22:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1662736974;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0S7f9Bbo3d3X68tJwbpKeV5ODdW8uUTc5sm5ZwUeAmY=;
-        b=Ilc8tt6RkB01DGnRENs0HFCHK6XoLpQew/hRIyBg2+ebx1VQV7EtkTvad5fHsH7/e2sL7I
-        EEbNFwpIu/27rPBsDBsddpyvki5wLGlhjtVuXsRMuxfjgrNVj/ZPrkhibBHclTbR9W2ikK
-        PvGwmQro1wZRH+Y/BQ3SMBTo0WyxDz0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1662736974;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0S7f9Bbo3d3X68tJwbpKeV5ODdW8uUTc5sm5ZwUeAmY=;
-        b=2BPN6aASRCo4XBLWu5YbjUMyHFDND5fCmkxCaZT/I1bmd+L/5bnoVWfsfG8EmoxJgFvKXO
-        5W0YJ3nF1nShU9AQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9FC8E139D5;
-        Fri,  9 Sep 2022 15:22:54 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 7QUWJk5aG2OwbwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 09 Sep 2022 15:22:54 +0000
-Date:   Fri, 9 Sep 2022 17:17:30 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <naohiro.aota@wdc.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: zoned: wait extent buffer IOs before finishing
- a zone
-Message-ID: <20220909151730.GD32411@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <3c6d8c45b61b6977f3bb2e5f8534ca844e291d90.1662706550.git.naohiro.aota@wdc.com>
+        with ESMTP id S230108AbiIIPpJ (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 11:45:09 -0400
+Received: from fieldses.org (fieldses.org [IPv6:2600:3c00:e000:2f7::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 048067391B;
+        Fri,  9 Sep 2022 08:45:07 -0700 (PDT)
+Received: by fieldses.org (Postfix, from userid 2815)
+        id 090513EFA; Fri,  9 Sep 2022 11:45:07 -0400 (EDT)
+DKIM-Filter: OpenDKIM Filter v2.11.0 fieldses.org 090513EFA
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fieldses.org;
+        s=default; t=1662738307;
+        bh=V/DLdRPq1zvs/q2asuE3/COTboZaddvEjKL48nZq+Ag=;
+        h=Date:To:Cc:Subject:References:In-Reply-To:From:From;
+        b=nst+nwaO6YbS4rXF/b6lFwOretBhbDsuXZPoezitk+nlqiztyBadpNSM4FUr7jnwg
+         8MJVasi6mMG6bgkD27Rw1rr7K/yhOcWkv0PLxFUO25Jk7I2jBCLUizMlSPpqpB05Pm
+         j19t4ySKDY3IIRE1n2ES5Fq9mNY9GKx9BLcF0ZUY=
+Date:   Fri, 9 Sep 2022 11:45:06 -0400
+To:     Jeff Layton <jlayton@kernel.org>
+Cc:     Theodore Ts'o <tytso@mit.edu>, Jan Kara <jack@suse.cz>,
+        NeilBrown <neilb@suse.de>, adilger.kernel@dilger.ca,
+        djwong@kernel.org, david@fromorbit.com, trondmy@hammerspace.com,
+        viro@zeniv.linux.org.uk, zohar@linux.ibm.com, xiubli@redhat.com,
+        chuck.lever@oracle.com, lczerner@redhat.com, brauner@kernel.org,
+        fweimer@redhat.com, linux-man@vger.kernel.org,
+        linux-api@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        ceph-devel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-nfs@vger.kernel.org, linux-xfs@vger.kernel.org
+Subject: Re: [man-pages RFC PATCH v4] statx, inode: document the new
+ STATX_INO_VERSION field
+Message-ID: <20220909154506.GB5674@fieldses.org>
+References: <771650a814ab1ff4dc5473d679936b747d9b6cf5.camel@kernel.org>
+ <20220907135153.qvgibskeuz427abw@quack3>
+ <166259786233.30452.5417306132987966849@noble.neil.brown.name>
+ <20220908083326.3xsanzk7hy3ff4qs@quack3>
+ <YxoIjV50xXKiLdL9@mit.edu>
+ <02928a8c5718590bea5739b13d6b6ebe66cac577.camel@kernel.org>
+ <20220908155605.GD8951@fieldses.org>
+ <9e06c506fd6b3e3118da0ec24276e85ea3ee45a1.camel@kernel.org>
+ <20220908182252.GA18939@fieldses.org>
+ <44efe219dbf511492b21a653905448d43d0f3363.camel@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <3c6d8c45b61b6977f3bb2e5f8534ca844e291d90.1662706550.git.naohiro.aota@wdc.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <44efe219dbf511492b21a653905448d43d0f3363.camel@kernel.org>
+User-Agent: Mutt/1.5.21 (2010-09-15)
+From:   bfields@fieldses.org (J. Bruce Fields)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Sep 09, 2022 at 03:59:55PM +0900, Naohiro Aota wrote:
-> Before sending REQ_OP_ZONE_FINISH to a zone, we need to ensure that ongoing
-> IOs already finished. Or, we will see a "Zone Is Full" error for the IOs,
-> as the ZONE_FINISH command makes the zone full.
+On Thu, Sep 08, 2022 at 03:07:58PM -0400, Jeff Layton wrote:
+> On Thu, 2022-09-08 at 14:22 -0400, J. Bruce Fields wrote:
+> > On Thu, Sep 08, 2022 at 01:40:11PM -0400, Jeff Layton wrote:
+> > > Yeah, ok. That does make some sense. So we would mix this into the
+> > > i_version instead of the ctime when it was available. Preferably, we'd
+> > > mix that in when we store the i_version rather than adding it afterward.
+> > > 
+> > > Ted, how would we access this? Maybe we could just add a new (generic)
+> > > super_block field for this that ext4 (and other filesystems) could
+> > > populate at mount time?
+> > 
+> > Couldn't the filesystem just return an ino_version that already includes
+> > it?
+> > 
 > 
-> We ensure that with btrfs_wait_block_group_reservations() and
-> btrfs_wait_ordered_roots() for a data block group. And, for a metadata
-> block group, the comparison of alloc_offset vs meta_write_pointer mostly
-> ensures IOs for the allocated region already sent. However, there still can
-> be a little time-frame where the IOs are sent but not yet completed.
+> Yes. That's simple if we want to just fold it in during getattr. If we
+> want to fold that into the values stored on disk, then I'm a little less
+> clear on how that will work.
 > 
-> Introduce wait_eb_writebacks() to ensure such IOs are completed for a
-> metadata block group. It walks the buffer_radix to find extent buffers in
-> the block group and wait_on_extent_buffer_writeback() on them.
+> Maybe I need a concrete example of how that will work:
 > 
-> Fixes: afba2bc036b0 ("btrfs: zoned: implement active zone tracking")
-> CC: stable@vger.kernel.org # 5.19+
-> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
-> ---
-> v2: Added __rcu mark to fix build warning.
->     https://lore.kernel.org/linux-btrfs/202209080826.AuNlP9ys-lkp@intel.com/
+> Suppose we have an i_version value X with the previous crash counter
+> already factored in that makes it to disk. We hand out a newer version
+> X+1 to a client, but that value never makes it to disk.
+> 
+> The machine crashes and comes back up, and we get a query for i_version
+> and it comes back as X. Fine, it's an old version. Now there is a write.
+> What do we do to ensure that the new value doesn't collide with X+1? 
 
-It should go to -rc6 but I'd appreciate a review, until then it'll be in
-for-next. Thanks.
+I was assuming we could partition i_version's 64 bits somehow: e.g., top
+16 bits store the crash counter.  You increment the i_version by: 1)
+replacing the top bits by the new crash counter, if it has changed, and
+2) incrementing.
+
+Do the numbers work out?  2^16 mounts after unclean shutdowns sounds
+like a lot for one filesystem, as does 2^48 changes to a single file,
+but people do weird things.  Maybe there's a better partitioning, or
+some more flexible way of maintaining an i_version that still allows you
+to identify whether a given i_version preceded a crash.
+
+--b.

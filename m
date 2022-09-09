@@ -2,78 +2,66 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15D36ECAAA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 12:52:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD558C6FA82
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 13:00:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229659AbiIIMwZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 08:52:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42346 "EHLO
+        id S230101AbiIINAa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 09:00:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229486AbiIIMwY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 08:52:24 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 53F7B102D6B
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 05:52:23 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id D0A441F8F2;
-        Fri,  9 Sep 2022 12:52:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1662727941;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=e0ai3tj0A2SAunTJQ8xCAS1ROnwfGyxgLV0gSp0PWrw=;
-        b=LXrRYYa/XAj4CMnPSMMGvmoIEyCSfn6IbDPzHh4Ybl/RblWfmBTu9lKyPS7fu8IJOa6Cte
-        iEQTO+h/F7LeLOcNAdwLo2bwDdvJrGmqAjLQa9C9S4cHaU5BmMZgROhuNTguG09KJxswqS
-        v48LHD+RNnE8qj/dgF+DepuNZVHwMps=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1662727941;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=e0ai3tj0A2SAunTJQ8xCAS1ROnwfGyxgLV0gSp0PWrw=;
-        b=6TXfbkq8xCTKwy/Viqc683M+8bsvYLPuacCHtIorHbB0vBauIYVi7qCltTA164oJNoGf+F
-        jWVyTWuBaB0jxvDg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9AC28139D5;
-        Fri,  9 Sep 2022 12:52:21 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Hx6dJAU3G2NiNQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 09 Sep 2022 12:52:21 +0000
-Date:   Fri, 9 Sep 2022 14:46:57 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH] btrfs: stop tracking failed reads in the I/O tree
-Message-ID: <20220909124657.GX32411@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20220907111741.2572029-1-hch@lst.de>
+        with ESMTP id S229437AbiIINA2 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 09:00:28 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 039E671BC4;
+        Fri,  9 Sep 2022 06:00:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=86y5u3egiuwhwOpqr54rVCTQLM24tVvojlrH7los6mQ=; b=NfAsRc24FOnWkstmpT7uyv5Ff7
+        2QG2p9QbpU5pljMjgTCRKbQXO88chaw8a5gZQJt0+FeQX6+qfB0eVnN7cXZXBZQH/Bu2+OgUQpyMg
+        uULi014s3ZycXM2jGzLO+13ThTYF4MTD8zjQEOeGLJ4myGHdTS+TeAcBnRwxP9Ud7m7F7ArG0bKXy
+        8icnFYadfecIG9DWC4jLCff1ZmhkXcKYPvOzrB+Q21gs81XzH8YVgHgQ+O2iDzN+lgkXDZUg/RXb0
+        hARGTyZj05UbO7Zu/3g1IQpFeQkhSm9wpGTBbHLTgk6hXcDSplHAHRmBjgApAB1Nz7OhqMSPqLTWp
+        x2slEQbg==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1oWdcD-00GCOm-8l; Fri, 09 Sep 2022 13:00:13 +0000
+Date:   Fri, 9 Sep 2022 06:00:13 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     David Sterba <dsterba@suse.cz>
+Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>,
+        "Theodore Y. Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        Eric Biggers <ebiggers@kernel.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        Omar Sandoval <osandov@osandov.com>, linux-spdx@vger.kernel.org
+Subject: Re: [PATCH v2 10/20] btrfs: factor a fscrypt_name matching method
+Message-ID: <Yxs43SlMqqJ4Fa2h@infradead.org>
+References: <cover.1662420176.git.sweettea-kernel@dorminy.me>
+ <685c8abce7bdb110bc306752314b4fb0e7867290.1662420176.git.sweettea-kernel@dorminy.me>
+ <20220909101521.GS32411@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20220907111741.2572029-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20220909101521.GS32411@twin.jikos.cz>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Sep 07, 2022 at 01:17:41PM +0200, Christoph Hellwig wrote:
-> There is a separate I/O failure tree to track the fail reads, so remove
-> the extra EXTENT_DAMAGED bit in the I/O tree.
+On Fri, Sep 09, 2022 at 12:15:21PM +0200, David Sterba wrote:
+> > +// SPDX-License-Identifier: GPL-2.0
+> > +/*
+> > + * Copyright (C) 2020 Facebook
+> > + */
 > 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> ---
+> Please use only SPDX in new files
 > 
-> Split out from the "consolidate btrfs checksumming, repair and bio
-> splitting" series as it makes sens on its own.
+> https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Copyright_notices_in_files.2C_SPDX
 
-Right, added to misc-next, thanks.
+The wiki is incorrect.  The SPDX tag deals with the licensing tags
+only.  It is not a replacement for the copyright notice in any way, and
+having been involved with Copyright enforcement I can tell you that
+at least in some jurisdictions Copytight notices absolutely do matter.

@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D1F9ECAAD5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:54:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7ED44C6FA89
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:54:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231931AbiIIVyn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 17:54:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59194 "EHLO
+        id S231937AbiIIVyp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 17:54:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59222 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231922AbiIIVyh (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:54:37 -0400
-Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7B2DFBE08
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:54:34 -0700 (PDT)
-Received: by mail-qt1-x82a.google.com with SMTP id h21so2356946qta.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 14:54:34 -0700 (PDT)
+        with ESMTP id S231752AbiIIVyi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:54:38 -0400
+Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B72DDF09
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:54:37 -0700 (PDT)
+Received: by mail-qk1-x732.google.com with SMTP id g16so2201418qkl.11
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 14:54:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=DpiMVNvlYtLPNTjvXUge7d748tI5+GHZp/+OkrCZSy4=;
-        b=faWZ6/Wfi9xRnxZIeHfY3Bs0Wus7fc+pzIuhMHgESUBXZsu1+jQkDDe4Y6y7ilFV0U
-         6oYB3cjXbXaDiVVsv3UC3qxvAxrT31kF8NQd7x39mHyR7jDA0tHnaNF3SYJ6vODf0owA
-         T2bNZXhni/AWGzvvFCsAIhwZQMFRqHcdh12QFNpqy6yNnH91NVXxHi1K3vEI1L68itzi
-         vn4pAaNbYrUpkX5JaSVTl9kJ9RERR0Oaeaf4si1DnX3updV3N7mJ6Lfg6bEz4UPPmkwU
-         kVqtM78vD93VY/QlPY1lM6pTObZBJHyd+54GWQR4CcWwFPiL3E8u3nZbDbsk9Ds+14i7
-         wEdA==
+        bh=RTkD+qbae4uFlT0kEygAF/P6qE9mHsq/YnBnP/cR3tA=;
+        b=k5cZayDbY2FINcOpKIteE2+wjOjO7HWGoatzWL44XiLwFZLUAWZgUMyA5UOWPrhUWd
+         zt4g9vlZtCXt+heqDn1bi9NspZvOU8C4HpVpLnqEoShrsdc0roxbpUx2H4EaltGXt/dD
+         OtWNC5eOM4Ds263WbUF/hbIHG7B4s7DnPwfi7C9cuUiSxWT/4N+sv2Imeq32vKwjyl33
+         Stv0Mru8RAUGfW96BFbnctSbG9ffAB/YRL2iLzGFssIZ1tV0kX5IhX2hx1kgXgpVwKdD
+         STZh1pSWXr3L7cbqZTQf/lwC2RJh4IKRplO4gRD/vlbwh9gpXIrEERsaUnL+OW8wG0ie
+         361w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=DpiMVNvlYtLPNTjvXUge7d748tI5+GHZp/+OkrCZSy4=;
-        b=pQp4SGjVEy/4NAvasFL8h6vK/9Qd0V6R9n2oignKnrO74bq+H9qCgsSJWnlsRLIzqH
-         f5ZmMq1Hey+N2//+CqLYwLrZa4EeTS6WZor1eah5pmI9F4VsmwKOgl8PthPeSw+Bc6vI
-         WvbSBxU+EIsvFmS+CrFq5x3GqIiQEA89DhZeKOgkqzS+vma5m98xuI1/g4JzMLiUhqVW
-         xWePcMKmkJ9NUmB/DHW0PUr6lrVmx9G4hlCZmw1//4UrwOqpanCTGuJU9Ei2j5nYaT4q
-         nWeYJwhDNCoRETIUuM53YH+3uLHy26Tk/xZhunKLDAaLY3g4XRE1H4tYDDx5JhinZyGr
-         yPNw==
-X-Gm-Message-State: ACgBeo0rHGCLYu0PCuLAhX9sRZHpyHsZLLgCT3US6CZYj+uXuhesgIRO
-        FnkTqYiFtPDfHQOiwMdoJ9eyzhyqi4Xirg==
-X-Google-Smtp-Source: AA6agR4gNcitF1ijmtM50AfkpH65lqbEYWwV8l4eHGIQbSNVpCTLLckmmS6ZZrnfIMBllwWHBSz7DA==
-X-Received: by 2002:a05:622a:5d4:b0:344:98a8:8dae with SMTP id d20-20020a05622a05d400b0034498a88daemr14590623qtb.164.1662760473284;
-        Fri, 09 Sep 2022 14:54:33 -0700 (PDT)
+        bh=RTkD+qbae4uFlT0kEygAF/P6qE9mHsq/YnBnP/cR3tA=;
+        b=Q04XafilH4t2TxczL90a+Ivk28QCx/eaKGX+WKeLqReHmdZVy7ARBMTQn+M2EIBbFZ
+         afsDWRZyve1ik/ZG3+NFm4DP74zxep3n85BA7x9nbkuxZmxrWe8QnBilUH8ry1uJCs6X
+         VCXJA+88fAgdOSaz7959qRBnsjtMLNNXUZnVhTK0AfTKFEDFWCICzQ9FYVayCWAqN+nd
+         GFpfu+kJrFJNAyXSWO4iqtV0bT/KPHCbzT/4w5cfkCQO6FUBZE84UHtaStMy/fO4ATKe
+         GKuUIdfmjEPhGQ35SvtwbpgWrtYrhn99nveKmmOZibVt/GSOVH4La7+MGEaQgs9y+vNW
+         51ow==
+X-Gm-Message-State: ACgBeo3VF7mFIFJXjCX/wl7bb/q4Jz7KXY+tMRaglPXDf0BaxmLOP7xl
+        KN5Z5McDKJTUxi0u3A8t+D9UCVMqx0Bf9g==
+X-Google-Smtp-Source: AA6agR4E67YIKDszHP4iqX3kr2QNS64OrsLJz5JChNuAYOE1y98gIzMj4rt4Kr7eSreKX525wwARog==
+X-Received: by 2002:a05:620a:2685:b0:6bc:374a:8f44 with SMTP id c5-20020a05620a268500b006bc374a8f44mr11734592qkp.165.1662760476606;
+        Fri, 09 Sep 2022 14:54:36 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id bs19-20020a05620a471300b006ba9b2167a2sm93151qkb.16.2022.09.09.14.54.32
+        by smtp.gmail.com with ESMTPSA id w28-20020a05622a191c00b0034454aff529sm1127005qtc.80.2022.09.09.14.54.35
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Sep 2022 14:54:32 -0700 (PDT)
+        Fri, 09 Sep 2022 14:54:36 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 29/36] btrfs: drop extent_changeset from set_extent_bit
-Date:   Fri,  9 Sep 2022 17:53:42 -0400
-Message-Id: <afae2a3040bb21f3f76208f533eaf589314e1563.1662760286.git.josef@toxicpanda.com>
+Subject: [PATCH v2 31/36] btrfs: remove extent_io_tree::track_uptodate
+Date:   Fri,  9 Sep 2022 17:53:44 -0400
+Message-Id: <3d4ea0d498f6389292fb435d5d461f4120579e84.1662760286.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1662760286.git.josef@toxicpanda.com>
 References: <cover.1662760286.git.josef@toxicpanda.com>
@@ -62,127 +62,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The only places that set extent_changeset is set_record_extent_bits,
-everywhere else sets it to NULL.  Drop this argument from
-set_extent_bit.
+Since
+
+btrfs: remove unnecessary EXTENT_UPTODATE state in buffered I/O path
+
+we no longer check ->track_uptodate, remove it.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-io-tree.c |  5 ++---
- fs/btrfs/extent-io-tree.h | 18 ++++++++----------
- fs/btrfs/inode.c          |  4 ++--
- 3 files changed, 12 insertions(+), 15 deletions(-)
+ fs/btrfs/disk-io.c        | 1 -
+ fs/btrfs/extent-io-tree.h | 1 -
+ fs/btrfs/inode.c          | 1 -
+ 3 files changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 7d6e0e748238..10c8f40c35f6 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -1173,11 +1173,10 @@ static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0bb0c496a023..eedb39d89be5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2232,7 +2232,6 @@ static void btrfs_init_btree_inode(struct btrfs_fs_info *fs_info)
+ 	RB_CLEAR_NODE(&BTRFS_I(inode)->rb_node);
+ 	extent_io_tree_init(fs_info, &BTRFS_I(inode)->io_tree,
+ 			    IO_TREE_BTREE_INODE_IO, inode);
+-	BTRFS_I(inode)->io_tree.track_uptodate = false;
+ 	extent_map_tree_init(&BTRFS_I(inode)->extent_tree);
  
- int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
--		   u32 bits, struct extent_state **cached_state, gfp_t mask,
--		   struct extent_changeset *changeset)
-+		   u32 bits, struct extent_state **cached_state, gfp_t mask)
- {
- 	return __set_extent_bit(tree, start, end, bits, NULL, cached_state,
--				changeset, mask);
-+				NULL, mask);
- }
- 
- /**
+ 	BTRFS_I(inode)->root = btrfs_grab_root(fs_info->tree_root);
 diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index 991bfa3a8391..113727a1c8d1 100644
+index aa0314f6802c..37543fb713bd 100644
 --- a/fs/btrfs/extent-io-tree.h
 +++ b/fs/btrfs/extent-io-tree.h
-@@ -160,19 +160,18 @@ static inline int clear_extent_bits(struct extent_io_tree *tree, u64 start,
- int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
- 			   u32 bits, struct extent_changeset *changeset);
- int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
--		   u32 bits, struct extent_state **cached_state, gfp_t mask,
--		   struct extent_changeset *changeset);
-+		   u32 bits, struct extent_state **cached_state, gfp_t mask);
+@@ -70,7 +70,6 @@ struct extent_io_tree {
+ 	struct btrfs_fs_info *fs_info;
+ 	void *private_data;
+ 	u64 dirty_bytes;
+-	bool track_uptodate;
  
- static inline int set_extent_bits_nowait(struct extent_io_tree *tree, u64 start,
- 					 u64 end, u32 bits)
- {
--	return set_extent_bit(tree, start, end, bits, NULL, GFP_NOWAIT, NULL);
-+	return set_extent_bit(tree, start, end, bits, NULL, GFP_NOWAIT);
- }
- 
- static inline int set_extent_bits(struct extent_io_tree *tree, u64 start,
- 		u64 end, u32 bits)
- {
--	return set_extent_bit(tree, start, end, bits, NULL, GFP_NOFS, NULL);
-+	return set_extent_bit(tree, start, end, bits, NULL, GFP_NOFS);
- }
- 
- static inline int clear_extent_uptodate(struct extent_io_tree *tree, u64 start,
-@@ -185,7 +184,7 @@ static inline int clear_extent_uptodate(struct extent_io_tree *tree, u64 start,
- static inline int set_extent_dirty(struct extent_io_tree *tree, u64 start,
- 		u64 end, gfp_t mask)
- {
--	return set_extent_bit(tree, start, end, EXTENT_DIRTY, NULL, mask, NULL);
-+	return set_extent_bit(tree, start, end, EXTENT_DIRTY, NULL, mask);
- }
- 
- static inline int clear_extent_dirty(struct extent_io_tree *tree, u64 start,
-@@ -206,7 +205,7 @@ static inline int set_extent_delalloc(struct extent_io_tree *tree, u64 start,
- {
- 	return set_extent_bit(tree, start, end,
- 			      EXTENT_DELALLOC | extra_bits,
--			      cached_state, GFP_NOFS, NULL);
-+			      cached_state, GFP_NOFS);
- }
- 
- static inline int set_extent_defrag(struct extent_io_tree *tree, u64 start,
-@@ -214,21 +213,20 @@ static inline int set_extent_defrag(struct extent_io_tree *tree, u64 start,
- {
- 	return set_extent_bit(tree, start, end,
- 			      EXTENT_DELALLOC | EXTENT_DEFRAG,
--			      cached_state, GFP_NOFS, NULL);
-+			      cached_state, GFP_NOFS);
- }
- 
- static inline int set_extent_new(struct extent_io_tree *tree, u64 start,
- 		u64 end)
- {
--	return set_extent_bit(tree, start, end, EXTENT_NEW, NULL, GFP_NOFS,
--			      NULL);
-+	return set_extent_bit(tree, start, end, EXTENT_NEW, NULL, GFP_NOFS);
- }
- 
- static inline int set_extent_uptodate(struct extent_io_tree *tree, u64 start,
- 		u64 end, struct extent_state **cached_state, gfp_t mask)
- {
- 	return set_extent_bit(tree, start, end, EXTENT_UPTODATE,
--			      cached_state, mask, NULL);
-+			      cached_state, mask);
- }
- 
- int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+ 	/* Who owns this io tree, should be one of IO_TREE_* */
+ 	u8 owner;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ff2eae4474e5..ee0901944cbe 100644
+index 7519233b922f..c417bbc29986 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2816,7 +2816,7 @@ static int btrfs_find_new_delalloc_bytes(struct btrfs_inode *inode,
- 		ret = set_extent_bit(&inode->io_tree, search_start,
- 				     search_start + em_len - 1,
- 				     EXTENT_DELALLOC_NEW, cached_state,
--				     GFP_NOFS, NULL);
-+				     GFP_NOFS);
- next:
- 		search_start = extent_map_end(em);
- 		free_extent_map(em);
-@@ -4962,7 +4962,7 @@ int btrfs_truncate_block(struct btrfs_inode *inode, loff_t from, loff_t len,
- 
- 	if (only_release_metadata)
- 		set_extent_bit(&inode->io_tree, block_start, block_end,
--			       EXTENT_NORESERVE, NULL, GFP_NOFS, NULL);
-+			       EXTENT_NORESERVE, NULL, GFP_NOFS);
- 
- out_unlock:
- 	if (ret) {
+@@ -8805,7 +8805,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	extent_io_tree_init(fs_info, &ei->file_extent_tree,
+ 			    IO_TREE_INODE_FILE_EXTENT, inode);
+ 	ei->io_failure_tree = RB_ROOT;
+-	ei->io_tree.track_uptodate = true;
+ 	atomic_set(&ei->sync_writers, 0);
+ 	mutex_init(&ei->log_mutex);
+ 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
 -- 
 2.26.3
 

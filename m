@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 827A1ECAAD5
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:53:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1FF44ECAAD3
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:54:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231754AbiIIVx5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 17:53:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57944 "EHLO
+        id S231784AbiIIVyA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 17:54:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57982 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231752AbiIIVx4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:53:56 -0400
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1A4AF651D
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:53:55 -0700 (PDT)
-Received: by mail-qt1-x832.google.com with SMTP id r6so2344273qtx.6
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 14:53:55 -0700 (PDT)
+        with ESMTP id S231755AbiIIVx7 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:53:59 -0400
+Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com [IPv6:2607:f8b0:4864:20::72a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 74C21CEB26
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:53:58 -0700 (PDT)
+Received: by mail-qk1-x72a.google.com with SMTP id s22so2222580qkj.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 14:53:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=7jGBXCtrgUnh5/1FxVC7N8Uh5dkFu9GRNKiXChcgn94=;
-        b=ImCnNIBpYj0YjelRLe1AmDmeuT4OZfQMR5+Wdl0AWhbWH5OSVGg1Uo6QehFnNhDSDw
-         uwIt8F2rFWRuCueyl1B04yCWVangk6wCazR4VdxKfBnKxacIj+aHK1dD/FC6ir8+7Irf
-         q5L+kl0yb5SmFnE+jS7DwyVdbTI5Sc4nyiAFyBZF1SFUsF9gt2kH6pk5igSxZUyZ5fwy
-         ulzsHV+0gjIbIko9bEUBrmn8HJBQAYCuRtptzxcugneqnzFS0sXLJFWPNpxl0NPmg/1E
-         uYVl4mNrpwIkKbs3Bc3ecb5wU7q/b0buw/hz2F4RZDdEuA3DiTUH1WOmghnKobNvwvkj
-         D/xA==
+        bh=HHuriAKnGvqRraw4EjngMZzAEBRl513RxLJo1fLnj8U=;
+        b=mOW7zp91pdKBzlL4gtJ6P4R4cFi9hfeV8DEChfCQLRr95uwdu6jT5TisHsFOinnMcN
+         +5G578l8IOBUeq51oQcZKerzHe5DYIVPPDpdyGH8Z0ZyAiCl50MxocXzFb/bL7vbMtxy
+         BYl8Y3Tpr5Pb4vajMsKzS49xv1wgw+Ngfzqfp+mXdN7+a0yqvOOBg3Nk/Qy1bgC71mGU
+         BuR+QR1AaGEZ9Uh8aO+Sc2KO0y6cC41dCAJsbgTyusns265zwfg28Top+S+gw1DDV5rF
+         sUvPYe5V7JCJp7yGaM5X7j9YpXiJa7VSjU00vtB/zl9vCPBbpGQa/B9B3ZaMur+0LV+0
+         I+0g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=7jGBXCtrgUnh5/1FxVC7N8Uh5dkFu9GRNKiXChcgn94=;
-        b=yhmwOJlW47rwjLEryUhawYOSmVyv/9wMMF5+GKyrrlqyPEeSeYfQVPkiV4/U8We6nc
-         /k2WL5l4dndPofTawK0juloyRoapBLPRmSNRcgVNf7vF9CGaPH28/1G2HJdhYmRBbrvf
-         aKPljlTJTaBAAW3bS5GMPsgCPI8KP39C8+KPL410yaHsbC53PPLSpjFVSkfaYINqkoa7
-         JcGDCiSo3gCSAsyxdx1jv3ScBDDTIIpis6vXbLbiPiT6yhKCkmb3I/wOdaOc5J0W2ZlO
-         Utu70CrgUKinV4VLShJWcqWjvRwvBNB1raxD39tlmndyTgYzu28uDz4OTI9EbI+lSL44
-         alWQ==
-X-Gm-Message-State: ACgBeo1YMOK8puKyIT0oarnR9r4pUwxnVJ30xD42b4qjDw3U7kYu3bAs
-        rD4DeonkliRAyWvzJMCZparP1rzW9Sp8AQ==
-X-Google-Smtp-Source: AA6agR7xl253ROUghBq852arcpTec+SpFbcjKdtEc77BAFx9JKtj1VW5ZlnuGougFt56BUeIg98L9g==
-X-Received: by 2002:ac8:7f43:0:b0:35b:a52f:1c14 with SMTP id g3-20020ac87f43000000b0035ba52f1c14mr2307025qtk.138.1662760434449;
-        Fri, 09 Sep 2022 14:53:54 -0700 (PDT)
+        bh=HHuriAKnGvqRraw4EjngMZzAEBRl513RxLJo1fLnj8U=;
+        b=LvMgpUCgk1SoJa+gbl2sge3spCthOClG/nSKA9h1VK0mD5Rtrq0qQ+YvR/CtEp+u6t
+         PdJMYMwIfTg0vqk48Z1pHhcnChYJe2Qm27NhhL/r1PaS1whBYcizGFPXcSeVUY28iple
+         +MarlBwty9BYV5GefQ1xP+Xwu+VrdVOlo6NKJ3OVssD9XjDXDZK4klOKmTEjnGpX7ENk
+         SNLVSZLn50dzjJam6BLyry+NMIZEIlqT948UnC2t5gzUDe0rkmUCBpRgiy+sxfJPcxKA
+         he4NO31NRu6RjCr4hVUYmtW3ia+6/Ry6etWtN+Zn7xCYQ1O2N0tWsiGhyD1GJhBwIgIx
+         V1aw==
+X-Gm-Message-State: ACgBeo1Yc5kClbXoSLxciIUN/m2uDIVKp5ZUGMAFzXb4Bl8lZ/8H2b9r
+        we52OtQOUzaVuuBLCF8l28/9oydFKNviMg==
+X-Google-Smtp-Source: AA6agR5SME4jJV0E6hiosmeCwYvPl0MM69kON7siIl7tqJXQLdv+r3eWWwqMEenBoXUNbSU8lHHveQ==
+X-Received: by 2002:a05:620a:14a6:b0:6cd:df30:3ae6 with SMTP id x6-20020a05620a14a600b006cddf303ae6mr2697968qkj.556.1662760437261;
+        Fri, 09 Sep 2022 14:53:57 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id gd25-20020a05622a5c1900b0035ba3cae6basm1218710qtb.34.2022.09.09.14.53.53
+        by smtp.gmail.com with ESMTPSA id m16-20020ac84450000000b0034361fb2f75sm1069821qtn.22.2022.09.09.14.53.56
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Sep 2022 14:53:53 -0700 (PDT)
+        Fri, 09 Sep 2022 14:53:56 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 02/36] btrfs: unexport internal failrec functions
-Date:   Fri,  9 Sep 2022 17:53:15 -0400
-Message-Id: <baa7597615c94103ff8b597cc27d6282f505b3dd.1662760286.git.josef@toxicpanda.com>
+Subject: [PATCH v2 04/36] btrfs: use find_first_extent_bit in btrfs_clean_io_failure
+Date:   Fri,  9 Sep 2022 17:53:17 -0400
+Message-Id: <52eddebdf9d7f5d9605a469c0dd56d7421be61bb.1662760286.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1662760286.git.josef@toxicpanda.com>
 References: <cover.1662760286.git.josef@toxicpanda.com>
@@ -62,72 +62,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These are internally used functions and are not used outside of
-extent_io.c.
+Currently we're using find_first_extent_bit_state to check if our state
+contains the given failrec range, however this is more of an internal
+extent_io_tree helper, and is technically unsafe to use because we're
+accessing the state outside of the extent_io_tree lock.
+
+Instead use the normal helper find_first_extent_bit which returns the
+range of the extent state we find in find_first_extent_bit_state and use
+that to do our sanity checking.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-io-tree.h |  6 ------
- fs/btrfs/extent_io.c      | 13 +++++++------
- 2 files changed, 7 insertions(+), 12 deletions(-)
+ fs/btrfs/extent_io.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index bb71b4a69022..5584968643eb 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -248,14 +248,8 @@ bool btrfs_find_delalloc_range(struct extent_io_tree *tree, u64 *start,
- 			       struct extent_state **cached_state);
- 
- /* This should be reworked in the future and put elsewhere. */
--struct io_failure_record *get_state_failrec(struct extent_io_tree *tree, u64 start);
--int set_state_failrec(struct extent_io_tree *tree, u64 start,
--		      struct io_failure_record *failrec);
- void btrfs_free_io_failure_record(struct btrfs_inode *inode, u64 start,
- 		u64 end);
--int free_io_failure(struct extent_io_tree *failure_tree,
--		    struct extent_io_tree *io_tree,
--		    struct io_failure_record *rec);
- int btrfs_clean_io_failure(struct btrfs_inode *inode, u64 start,
- 			   struct page *page, unsigned int pg_offset);
- 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5ee8b5be636d..589a82d68994 100644
+index 972181451561..0f087ab1b175 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2163,8 +2163,8 @@ u64 count_range_bits(struct extent_io_tree *tree,
-  * set the private field for a given byte offset in the tree.  If there isn't
-  * an extent_state there already, this does nothing.
-  */
--int set_state_failrec(struct extent_io_tree *tree, u64 start,
--		      struct io_failure_record *failrec)
-+static int set_state_failrec(struct extent_io_tree *tree, u64 start,
-+			     struct io_failure_record *failrec)
- {
- 	struct rb_node *node;
- 	struct extent_state *state;
-@@ -2191,7 +2191,8 @@ int set_state_failrec(struct extent_io_tree *tree, u64 start,
- 	return ret;
- }
+@@ -2395,9 +2395,10 @@ int btrfs_clean_io_failure(struct btrfs_inode *inode, u64 start,
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct extent_io_tree *io_tree = &inode->io_tree;
+ 	u64 ino = btrfs_ino(inode);
++	u64 locked_start, locked_end;
+ 	struct io_failure_record *failrec;
+-	struct extent_state *state;
+ 	int mirror;
++	int ret;
  
--struct io_failure_record *get_state_failrec(struct extent_io_tree *tree, u64 start)
-+static struct io_failure_record *get_state_failrec(struct extent_io_tree *tree,
-+						   u64 start)
- {
- 	struct rb_node *node;
- 	struct extent_state *state;
-@@ -2275,9 +2276,9 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	return bitset;
- }
+ 	failrec = get_failrec(inode, start);
+ 	if (IS_ERR(failrec))
+@@ -2408,14 +2409,10 @@ int btrfs_clean_io_failure(struct btrfs_inode *inode, u64 start,
+ 	if (sb_rdonly(fs_info->sb))
+ 		goto out;
  
--int free_io_failure(struct extent_io_tree *failure_tree,
--		    struct extent_io_tree *io_tree,
--		    struct io_failure_record *rec)
-+static int free_io_failure(struct extent_io_tree *failure_tree,
-+			   struct extent_io_tree *io_tree,
-+			   struct io_failure_record *rec)
- {
- 	int ret;
- 	int err = 0;
+-	spin_lock(&io_tree->lock);
+-	state = find_first_extent_bit_state(io_tree,
+-					    failrec->bytenr,
+-					    EXTENT_LOCKED);
+-	spin_unlock(&io_tree->lock);
+-
+-	if (!state || state->start > failrec->bytenr ||
+-	    state->end < failrec->bytenr + failrec->len - 1)
++	ret = find_first_extent_bit(io_tree, failrec->bytenr, &locked_start,
++				    &locked_end, EXTENT_LOCKED, NULL);
++	if (ret || locked_start > failrec->bytenr ||
++	    locked_end < failrec->bytenr + failrec->len - 1)
+ 		goto out;
+ 
+ 	mirror = failrec->this_mirror;
 -- 
 2.26.3
 

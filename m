@@ -2,57 +2,57 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E325ECAAA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:54:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23909ECAAD5
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 21:54:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231791AbiIIVyF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 17:54:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58070 "EHLO
+        id S231799AbiIIVyG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 17:54:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58124 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231755AbiIIVyD (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:54:03 -0400
-Received: from mail-qk1-x72d.google.com (mail-qk1-x72d.google.com [IPv6:2607:f8b0:4864:20::72d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CBAB310300F
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:54:02 -0700 (PDT)
-Received: by mail-qk1-x72d.google.com with SMTP id 3so1822255qka.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 14:54:02 -0700 (PDT)
+        with ESMTP id S231755AbiIIVyF (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 17:54:05 -0400
+Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E42CFF6BA2
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 14:54:04 -0700 (PDT)
+Received: by mail-qt1-x832.google.com with SMTP id r20so1645226qtn.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 14:54:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=pP3dhZ+ZmPQsVzNojbnTAghRS+VVB3ge1tStzWbVoNU=;
-        b=03oWBACHNozXHNsspaWwOsvSfbINB5jVFL1Nf4stxFGozIk4cg6bmaO4vheKS0RQ/s
-         3VmHHIQCj1PntcF7pPek2IX3IDviiZk5mAfzKquB+MSEM6gdBQZDp+EHOHoFXw+xM4k5
-         2zXncNe0vJGA7kBddQq7lwJrNI9+jG+Prtc9ePz0Ezv5zYuQkZt6Jb/49eOcpVPfxM6r
-         Qdl8eSev6LwxRpT1Jg2dtG/x+E5FIyAuswkRanozbTARLjZxJlZHD3krN63oRCALXDk+
-         APqrIWHAaFiRLXt3wdEloMKYmRncmUEAObIic7yuoDdRk4vaMDWzyZvQOEerax3wy7/w
-         KX2w==
+        bh=8wPG5OFv/+Cm5y2CedtG1fVh2+JfzN3tKiGya+HyIbQ=;
+        b=7kgtLUKDLzHNhyZj3iQ4bDl0cm3/hHatwBNVZpYHzGQ0Ri9jMYfUyQumBCuBSIg1uF
+         0efwRGZjvlmKuv2yoZ12wChis42QZHdlEiUu2F2jz42+RnQaB7IoTtxXvRGBAKkM3LE/
+         gf/EOttoxK1j4zc1X/2hen/cUnsPwkELz8kBS3lziSZrw9u9zrcDU9Lvck0HJmZ+6YLn
+         CniPJ10MUtaEHSrzc9fpJcjJ89e+LwWLSMJpXDe1DX/1NhBR61Dj+iyX3vP3uEHvKRfo
+         axBPRU2ftTEt7A6WWKw0l3g3HrCAYmEpxKebP2n40/OFB1clI3ytLYcTuuvR67rPTtI7
+         0BdA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=pP3dhZ+ZmPQsVzNojbnTAghRS+VVB3ge1tStzWbVoNU=;
-        b=C+tI6J1zN5uYOrQNb68xPGLj2pnlgLBfxF1kRAtE6mYW01I/zyOhWDXKh4z+4x9g9G
-         33/SnB2LfjPIFpb7p+mZdDIIVfr28wxu3/IMlBh5+O27Qp9WbfU62IWtJACeFQEVs6Ib
-         rrvQNql6M2B6CTmK0Yn7wFCr5JbYdxg9SHwWgKVvVMw9Efp9NL0dgu8/VRohhZzEagQZ
-         9t8KdqD8vkpcZ6B72B4JoEs1cDXui5m1/jNhxcE6hb7fWy/DHwvzwHd+pm7c0rtAU0Hm
-         iOcE9Mre44OT7sS9Ao2cR7rUTgvdpF2nv1nqeYLaauw25JBFTsiKIIFhqqYfQcVluxXa
-         pOXA==
-X-Gm-Message-State: ACgBeo2ghmOpsDsP7UXiucTTqP3xMq8wNYM1G60adW90NW4iH25D0QCH
-        vsO85uhsx/or+1FpMy1xwNIopNefz9bYKQ==
-X-Google-Smtp-Source: AA6agR74Q+uc6mKMHfTPvwV2XNh93wtfFPkJQwq6Bq6L7CqxCHAHSLip5wGBeoHtWMhYL2tELX70BQ==
-X-Received: by 2002:a05:620a:122c:b0:6c9:cefa:f6d2 with SMTP id v12-20020a05620a122c00b006c9cefaf6d2mr11600107qkj.313.1662760441440;
-        Fri, 09 Sep 2022 14:54:01 -0700 (PDT)
+        bh=8wPG5OFv/+Cm5y2CedtG1fVh2+JfzN3tKiGya+HyIbQ=;
+        b=K3Aj17VqeNMA9hBh9/8/DVpAJbUGJOzrzMkoiR9l5wHlpyiWP6Sqs0htFivDXXhBHF
+         Uqg2hARZqCbZTBW1wIZKCw/+H3GRqC7Cvkg6IkjKeZYKuCb7pX8QzJ4QSDzexL7MdUQ0
+         jjshtwdeGkEuHasVJmRqUVXCPGfu7So1egNrqPjSvWH4UDIguMiliGFtWvMxycVPGf6y
+         wt5WxUjE0curRtpYoi7DFUM5xmlG4HnxUFdIYTEh2ZpprEUmDmqVkBRCLlMfvcZ4tgBX
+         ki9MXwxg3TCF+qb2oKJrbiBiH7F4jFUxEwdVbI48qnfYtvjd15/Xk9v3ri6rDMT/Vkth
+         iKEw==
+X-Gm-Message-State: ACgBeo0+I5PJmMUgEvomwUeseTR/Mh/NXVy3O4OWA02Zg+YvME6EZeEw
+        tJVgtpv+v1Uie69M2CpfZcqw5BKPgkeHsQ==
+X-Google-Smtp-Source: AA6agR4BiR2PtLe10uJKdwivKl19XpJ7tcMNTJytGzboM2K9YrxYklWdDdXyfDZIgr/w41yFz+ewrw==
+X-Received: by 2002:a05:622a:613:b0:342:f81f:4f7e with SMTP id z19-20020a05622a061300b00342f81f4f7emr14251758qta.198.1662760444296;
+        Fri, 09 Sep 2022 14:54:04 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id 4-20020ac85744000000b00342f8984348sm1295926qtx.87.2022.09.09.14.54.00
+        by smtp.gmail.com with ESMTPSA id x8-20020a05620a258800b006b919c6749esm1324815qko.91.2022.09.09.14.54.03
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Sep 2022 14:54:00 -0700 (PDT)
+        Fri, 09 Sep 2022 14:54:03 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 07/36] btrfs: temporarily export alloc_extent_state helpers
-Date:   Fri,  9 Sep 2022 17:53:20 -0400
-Message-Id: <0a21adef99bb0f2bb90d0c7032c007fdcba2bd77.1662760286.git.josef@toxicpanda.com>
+Subject: [PATCH v2 09/36] btrfs: convert BUG_ON(EXTENT_BIT_LOCKED) checks to ASSERT's
+Date:   Fri,  9 Sep 2022 17:53:22 -0400
+Message-Id: <f8bbc048691e020cfa0a7121bad620d54a5a7824.1662760286.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1662760286.git.josef@toxicpanda.com>
 References: <cover.1662760286.git.josef@toxicpanda.com>
@@ -62,51 +62,38 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're going to move this code in stages, but while we're doing that we
-need to export these helpers so we can more easily move the code into
-the new file.
+We only call these functions from the qgroup code which doesn't call
+with EXTENT_BIT_LOCKED.  These are BUG_ON()'s that exist to keep us
+developers from using these functions with EXTENT_BIT_LOCKED, so convert
+them to ASSERT()'s.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/extent-io-tree.h | 3 +++
- fs/btrfs/extent_io.c      | 5 ++---
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index 6c2016db304b..8e7a548b88e9 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -250,4 +250,7 @@ void btrfs_free_io_failure_record(struct btrfs_inode *inode, u64 start,
- int btrfs_clean_io_failure(struct btrfs_inode *inode, u64 start,
- 			   struct page *page, unsigned int pg_offset);
- 
-+struct extent_state *alloc_extent_state_atomic(struct extent_state *prealloc);
-+struct extent_state *alloc_extent_state(gfp_t mask);
-+
- #endif /* BTRFS_EXTENT_IO_TREE_H */
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 35811d40e2f1..412dabccb1f4 100644
+index ae746857dd6c..5ad22bc27951 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -339,7 +339,7 @@ void extent_io_tree_release(struct extent_io_tree *tree)
- 	spin_unlock(&tree->lock);
- }
+@@ -1293,7 +1293,7 @@ int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 	 * either fail with -EEXIST or changeset will record the whole
+ 	 * range.
+ 	 */
+-	BUG_ON(bits & EXTENT_LOCKED);
++	ASSERT(!(bits & EXTENT_LOCKED));
  
--static struct extent_state *alloc_extent_state(gfp_t mask)
-+struct extent_state *alloc_extent_state(gfp_t mask)
- {
- 	struct extent_state *state;
+ 	return set_extent_bit(tree, start, end, bits, 0, NULL, NULL, GFP_NOFS,
+ 			      changeset);
+@@ -1321,7 +1321,7 @@ int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 	 * Don't support EXTENT_LOCKED case, same reason as
+ 	 * set_record_extent_bits().
+ 	 */
+-	BUG_ON(bits & EXTENT_LOCKED);
++	ASSERT(!(bits & EXTENT_LOCKED));
  
-@@ -710,8 +710,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 	return next;
- }
- 
--static struct extent_state *
--alloc_extent_state_atomic(struct extent_state *prealloc)
-+struct extent_state *alloc_extent_state_atomic(struct extent_state *prealloc)
- {
- 	if (!prealloc)
- 		prealloc = alloc_extent_state(GFP_ATOMIC);
+ 	return __clear_extent_bit(tree, start, end, bits, 0, 0, NULL, GFP_NOFS,
+ 				  changeset);
 -- 
 2.26.3
 

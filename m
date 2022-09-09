@@ -2,178 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 44DDEECAAA1
-	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 15:18:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9880CECAAA1
+	for <linux-btrfs@archiver.kernel.org>; Fri,  9 Sep 2022 15:22:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232317AbiIIPSs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 9 Sep 2022 11:18:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37840 "EHLO
+        id S230430AbiIIPW5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 9 Sep 2022 11:22:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46538 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231768AbiIIPSr (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 11:18:47 -0400
-Received: from mail-oa1-x35.google.com (mail-oa1-x35.google.com [IPv6:2001:4860:4864:20::35])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EF12414672E
-        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 08:18:45 -0700 (PDT)
-Received: by mail-oa1-x35.google.com with SMTP id 586e51a60fabf-1278624b7c4so4710922fac.5
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Sep 2022 08:18:45 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date;
-        bh=z6Jy7WTQMImA6LM/9bYUO4MpARv1mTbkBlW6SCcQ3CE=;
-        b=iCWzNl8NrfVUSCkve1iw2v1iKRViSa+oxBvdNqXme+GjxNRt8/s5IzcMAv3VdOOgaQ
-         BYWh/HumHowXU/xO+T2Eu9yAKvYS9buUqufPQWOoq+RCSqPsPTmZJwWnKMmaq1qWJGKT
-         C+3pKkZ41/fQX+pE+jpFyMLHpscD4mTIy+lLc=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date;
-        bh=z6Jy7WTQMImA6LM/9bYUO4MpARv1mTbkBlW6SCcQ3CE=;
-        b=Vvqu8lAeMabQCTIiwJEY7jQlF5k02arxHvuQkzIpZt+iCQqgRzvzc2tsJxkGHgtynh
-         tTkdY7mPPYu+pnZkqDoCsJMx1wA0I1p9ESdyL8cCaSmXA+djqEZzr0GD3ZTKoIwdktUJ
-         TU08XDxHMW1JwOf4u1TxFu619YA+YyUpOIcUIZhm6OLR/yIUYEgI76SJ7G6UBsZwV8Fl
-         R1vPdlQdEu2x1+knU00ibGyCMILev1ihm2Zm5hOxb3ezHiEnmubf6CiAdG0vO9NaO9xb
-         ylYyPsDpIhJ23CPsB6IG9XUNPdPFnTsKzpoxmiMONq8jeJzJcIq7xkjBtdzDPsLWO5gu
-         TiNw==
-X-Gm-Message-State: ACgBeo0GK0VDSyJj1CSOrTQVwj3IfS9trTYp1fDZPpw6A/zuZwTWaSx+
-        SIDDu57kjHnkN+zhMnacT18hKg==
-X-Google-Smtp-Source: AA6agR72I94eWZfQD/AmcKdpZ7Z03aH4B70v5T4r1MMcqh8gx0/CxQYUs/5c92P/mg372scUruuH3A==
-X-Received: by 2002:a05:6870:88a6:b0:126:b40a:1f2d with SMTP id m38-20020a05687088a600b00126b40a1f2dmr5078073oam.119.1662736724994;
-        Fri, 09 Sep 2022 08:18:44 -0700 (PDT)
-Received: from sjg1.roam.corp.google.com (c-67-190-102-125.hsd1.co.comcast.net. [67.190.102.125])
-        by smtp.gmail.com with ESMTPSA id eq22-20020a056870a91600b0012779ba00fesm591977oab.2.2022.09.09.08.18.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Sep 2022 08:18:44 -0700 (PDT)
-From:   Simon Glass <sjg@chromium.org>
-To:     U-Boot Mailing List <u-boot@lists.denx.de>
-Cc:     Simon Glass <sjg@chromium.org>,
-        Heinrich Schuchardt <xypron.glpk@gmx.de>,
-        =?UTF-8?q?Marek=20Beh=C3=BAn?= <kabel@kernel.org>,
-        =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
-        Philippe Reynes <philippe.reynes@softathome.com>,
-        Qu Wenruo <wqu@suse.com>, Stefan Roese <sr@denx.de>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/14] fs: Quieten down the filesystems more
-Date:   Fri,  9 Sep 2022 09:17:53 -0600
-Message-Id: <20220909151801.336551-7-sjg@chromium.org>
-X-Mailer: git-send-email 2.37.2.789.g6183377224-goog
-In-Reply-To: <20220909151801.336551-1-sjg@chromium.org>
-References: <20220909151801.336551-1-sjg@chromium.org>
+        with ESMTP id S229728AbiIIPW4 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Sep 2022 11:22:56 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 247BB13F6A
+        for <linux-btrfs@vger.kernel.org>; Fri,  9 Sep 2022 08:22:56 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id BA09D22339;
+        Fri,  9 Sep 2022 15:22:54 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1662736974;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=0S7f9Bbo3d3X68tJwbpKeV5ODdW8uUTc5sm5ZwUeAmY=;
+        b=Ilc8tt6RkB01DGnRENs0HFCHK6XoLpQew/hRIyBg2+ebx1VQV7EtkTvad5fHsH7/e2sL7I
+        EEbNFwpIu/27rPBsDBsddpyvki5wLGlhjtVuXsRMuxfjgrNVj/ZPrkhibBHclTbR9W2ikK
+        PvGwmQro1wZRH+Y/BQ3SMBTo0WyxDz0=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1662736974;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=0S7f9Bbo3d3X68tJwbpKeV5ODdW8uUTc5sm5ZwUeAmY=;
+        b=2BPN6aASRCo4XBLWu5YbjUMyHFDND5fCmkxCaZT/I1bmd+L/5bnoVWfsfG8EmoxJgFvKXO
+        5W0YJ3nF1nShU9AQ==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9FC8E139D5;
+        Fri,  9 Sep 2022 15:22:54 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 7QUWJk5aG2OwbwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 09 Sep 2022 15:22:54 +0000
+Date:   Fri, 9 Sep 2022 17:17:30 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Naohiro Aota <naohiro.aota@wdc.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2] btrfs: zoned: wait extent buffer IOs before finishing
+ a zone
+Message-ID: <20220909151730.GD32411@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <3c6d8c45b61b6977f3bb2e5f8534ca844e291d90.1662706550.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <3c6d8c45b61b6977f3bb2e5f8534ca844e291d90.1662706550.git.naohiro.aota@wdc.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When looking for a filesystem on a partition we should do so quietly. At
-present if the filesystem is very small (e.g. 512 bytes) we get a host of
-messages.
+On Fri, Sep 09, 2022 at 03:59:55PM +0900, Naohiro Aota wrote:
+> Before sending REQ_OP_ZONE_FINISH to a zone, we need to ensure that ongoing
+> IOs already finished. Or, we will see a "Zone Is Full" error for the IOs,
+> as the ZONE_FINISH command makes the zone full.
+> 
+> We ensure that with btrfs_wait_block_group_reservations() and
+> btrfs_wait_ordered_roots() for a data block group. And, for a metadata
+> block group, the comparison of alloc_offset vs meta_write_pointer mostly
+> ensures IOs for the allocated region already sent. However, there still can
+> be a little time-frame where the IOs are sent but not yet completed.
+> 
+> Introduce wait_eb_writebacks() to ensure such IOs are completed for a
+> metadata block group. It walks the buffer_radix to find extent buffers in
+> the block group and wait_on_extent_buffer_writeback() on them.
+> 
+> Fixes: afba2bc036b0 ("btrfs: zoned: implement active zone tracking")
+> CC: stable@vger.kernel.org # 5.19+
+> Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+> ---
+> v2: Added __rcu mark to fix build warning.
+>     https://lore.kernel.org/linux-btrfs/202209080826.AuNlP9ys-lkp@intel.com/
 
-Update these to only show when debugging.
-
-Signed-off-by: Simon Glass <sjg@chromium.org>
----
-
- disk/part_efi.c       | 15 +++++++--------
- fs/btrfs/disk-io.c    |  7 ++++---
- fs/ext4/ext4_common.c |  2 +-
- fs/fs_internal.c      |  3 +--
- 4 files changed, 13 insertions(+), 14 deletions(-)
-
-diff --git a/disk/part_efi.c b/disk/part_efi.c
-index 5090efd1192..911089f76dd 100644
---- a/disk/part_efi.c
-+++ b/disk/part_efi.c
-@@ -266,20 +266,19 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
- 
- 	/* "part" argument must be at least 1 */
- 	if (part < 1) {
--		printf("%s: Invalid Argument(s)\n", __func__);
--		return -1;
-+		log_debug("Invalid Argument(s)\n");
-+		return -EINVAL;
- 	}
- 
- 	/* This function validates AND fills in the GPT header and PTE */
- 	if (find_valid_gpt(dev_desc, gpt_head, &gpt_pte) != 1)
--		return -1;
-+		return -EINVAL;
- 
- 	if (part > le32_to_cpu(gpt_head->num_partition_entries) ||
- 	    !is_pte_valid(&gpt_pte[part - 1])) {
--		debug("%s: *** ERROR: Invalid partition number %d ***\n",
--			__func__, part);
-+		log_debug("*** ERROR: Invalid partition number %d ***\n", part);
- 		free(gpt_pte);
--		return -1;
-+		return -EPERM;
- 	}
- 
- 	/* The 'lbaint_t' casting may limit the maximum disk size to 2 TB */
-@@ -302,8 +301,8 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
- 			info->type_guid, UUID_STR_FORMAT_GUID);
- #endif
- 
--	debug("%s: start 0x" LBAF ", size 0x" LBAF ", name %s\n", __func__,
--	      info->start, info->size, info->name);
-+	log_debug("start 0x" LBAF ", size 0x" LBAF ", name %s\n", info->start,
-+		  info->size, info->name);
- 
- 	/* Remember to free pte */
- 	free(gpt_pte);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8043abc1bd6..e2562877e0a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1,6 +1,7 @@
- // SPDX-License-Identifier: GPL-2.0+
- #include <common.h>
- #include <fs_internal.h>
-+#include <log.h>
- #include <uuid.h>
- #include <memalign.h>
- #include "kernel-shared/btrfs_tree.h"
-@@ -912,9 +913,9 @@ static int btrfs_scan_fs_devices(struct blk_desc *desc,
- 
- 	if (round_up(BTRFS_SUPER_INFO_SIZE + BTRFS_SUPER_INFO_OFFSET,
- 		     desc->blksz) > (part->size << desc->log2blksz)) {
--		error("superblock end %u is larger than device size " LBAFU,
--				BTRFS_SUPER_INFO_SIZE + BTRFS_SUPER_INFO_OFFSET,
--				part->size << desc->log2blksz);
-+		log_debug("superblock end %u is larger than device size " LBAFU,
-+			  BTRFS_SUPER_INFO_SIZE + BTRFS_SUPER_INFO_OFFSET,
-+			  part->size << desc->log2blksz);
- 		return -EINVAL;
- 	}
- 
-diff --git a/fs/ext4/ext4_common.c b/fs/ext4/ext4_common.c
-index d49ba4a9954..1185cb2c046 100644
---- a/fs/ext4/ext4_common.c
-+++ b/fs/ext4/ext4_common.c
-@@ -2415,7 +2415,7 @@ int ext4fs_mount(unsigned part_length)
- 
- 	return 1;
- fail:
--	printf("Failed to mount ext2 filesystem...\n");
-+	log_debug("Failed to mount ext2 filesystem...\n");
- fail_noerr:
- 	free(data);
- 	ext4fs_root = NULL;
-diff --git a/fs/fs_internal.c b/fs/fs_internal.c
-index ae1cb8584c7..111f91b355d 100644
---- a/fs/fs_internal.c
-+++ b/fs/fs_internal.c
-@@ -29,8 +29,7 @@ int fs_devread(struct blk_desc *blk, struct disk_partition *partition,
- 	/* Check partition boundaries */
- 	if ((sector + ((byte_offset + byte_len - 1) >> log2blksz))
- 	    >= partition->size) {
--		log_err("%s read outside partition " LBAFU "\n", __func__,
--			sector);
-+		log_debug("read outside partition " LBAFU "\n", sector);
- 		return 0;
- 	}
- 
--- 
-2.37.2.789.g6183377224-goog
-
+It should go to -rc6 but I'd appreciate a review, until then it'll be in
+for-next. Thanks.

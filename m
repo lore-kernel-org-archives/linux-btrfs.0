@@ -2,165 +2,196 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADCC4C6FA83
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 15:33:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C841C6FA90
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 15:49:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230311AbiILPdz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Sep 2022 11:33:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58506 "EHLO
+        id S230194AbiILPtn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Sep 2022 11:49:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55146 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230050AbiILPdy (ORCPT
+        with ESMTP id S230354AbiILPtk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2022 11:33:54 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 401092AC48;
-        Mon, 12 Sep 2022 08:33:53 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Mon, 12 Sep 2022 11:49:40 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 66FCB6419;
+        Mon, 12 Sep 2022 08:49:39 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id E8E1B203C4;
-        Mon, 12 Sep 2022 15:33:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1662996831;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=eRpjiBTXPA34slJCEVvqta+I3LTtT85gBwO0gzk+thc=;
-        b=VWyqSWKbD8LfsNkEZC6EfWdMhvQPVUdRjk4fuYRSvzsQEKrce6OwrVOAdkzMBS+wiq2JY5
-        akEn052RhfK8DuSDzFpXLpel3PV/i3bgfauRV9s3y5tv1gP4xqAGKyh0U3fHMHaJXaMA0+
-        qSbhiUWWNwPX7E4t4wrz8TraWqGJA7A=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1662996831;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=eRpjiBTXPA34slJCEVvqta+I3LTtT85gBwO0gzk+thc=;
-        b=hwTtR/8JTQzhvO35pkm4yWhMWS+i/ViXhcrAXDNSu6OFhBd2TME2kaufjoQXSL7nbHj4M7
-        lJhly5+/lT1fk1AA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7D94F139E0;
-        Mon, 12 Sep 2022 15:33:51 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id MKGgHV9RH2OaYgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 12 Sep 2022 15:33:51 +0000
-Date:   Mon, 12 Sep 2022 17:28:25 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Jens Axboe <axboe@kernel.dk>, Matthew Wilcox <willy@infradead.org>,
-        Johannes Weiner <hannes@cmpxchg.org>,
-        Suren Baghdasaryan <surenb@google.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Gao Xiang <xiang@kernel.org>,
-        Chao Yu <chao@kernel.org>, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-mm@kvack.org
-Subject: Re: [PATCH 3/5] btrfs: add manual PSI accounting for compressed reads
-Message-ID: <20220912152825.GH32411@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20220910065058.3303831-1-hch@lst.de>
- <20220910065058.3303831-4-hch@lst.de>
+        by ams.source.kernel.org (Postfix) with ESMTPS id 01429B80DB9;
+        Mon, 12 Sep 2022 15:49:38 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 84D37C433C1;
+        Mon, 12 Sep 2022 15:49:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1662997776;
+        bh=Y9o8zlfMXVNo23NhygxCl5rFupwZ9JDKU3q8+i8soGs=;
+        h=Subject:From:To:Cc:Date:In-Reply-To:References:From;
+        b=VgtwOgaOC5ZZZKkHfIbpB574JJEJoW23SXv6vimyQ2E1GZB5xR05EY54KK2XjKTQL
+         RuWGai+VBLlIHFi7nY6rbzs9+SbPCKNiChnIdOWdNfZ/GHCGtjH0ZzOdaYHWLEKBBQ
+         rcAw9ghpBEVXcE8bjP4GrwYj1Ahu4PzyQ3EEfVbx+NaXmVeffa939fEiix8ie8z9TR
+         i8iTLXaYSq9HD9AFPkI/HN5maYCq4lDKoCuMvS/tqG7CFhcIT0iQ4ePyQY0SsUI0HT
+         vMiIPRHoFzoXgYtCZ8+s4l/lefw4tdfUv3svux60hS94qA8CxQc+bobZwTg5Cq9PpS
+         LREs3tt82vYCw==
+Message-ID: <f50919004f95782f0e8f26d9ac0513ee0c7ee432.camel@kernel.org>
+Subject: Re: [man-pages RFC PATCH v4] statx, inode: document the new
+ STATX_INO_VERSION field
+From:   Jeff Layton <jlayton@kernel.org>
+To:     Trond Myklebust <trondmy@hammerspace.com>,
+        "bfields@fieldses.org" <bfields@fieldses.org>
+Cc:     "zohar@linux.ibm.com" <zohar@linux.ibm.com>,
+        "djwong@kernel.org" <djwong@kernel.org>,
+        "brauner@kernel.org" <brauner@kernel.org>,
+        "linux-xfs@vger.kernel.org" <linux-xfs@vger.kernel.org>,
+        "neilb@suse.de" <neilb@suse.de>,
+        "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>,
+        "david@fromorbit.com" <david@fromorbit.com>,
+        "fweimer@redhat.com" <fweimer@redhat.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "xiubli@redhat.com" <xiubli@redhat.com>,
+        "chuck.lever@oracle.com" <chuck.lever@oracle.com>,
+        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>,
+        "tytso@mit.edu" <tytso@mit.edu>,
+        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+        "jack@suse.cz" <jack@suse.cz>,
+        "linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+        "linux-man@vger.kernel.org" <linux-man@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "adilger.kernel@dilger.ca" <adilger.kernel@dilger.ca>,
+        "lczerner@redhat.com" <lczerner@redhat.com>,
+        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
+Date:   Mon, 12 Sep 2022 11:49:33 -0400
+In-Reply-To: <44884eeb662c2e304ba644d585b14c65b7dc1a0a.camel@hammerspace.com>
+References: <20220908182252.GA18939@fieldses.org>
+         <44efe219dbf511492b21a653905448d43d0f3363.camel@kernel.org>
+         <20220909154506.GB5674@fieldses.org>
+         <125df688dbebaf06478b0911e76e228e910b04b3.camel@kernel.org>
+         <20220910145600.GA347@fieldses.org>
+         <9eaed9a47d1aef11fee95f0079e302bc776bc7ff.camel@kernel.org>
+         <87a67423la.fsf@oldenburg.str.redhat.com>
+         <7c71050e139a479e08ab7cf95e9e47da19a30687.camel@kernel.org>
+         <20220912135131.GC9304@fieldses.org>
+         <aeb314e7104647ccfd83a82bd3092005c337d953.camel@hammerspace.com>
+         <20220912145057.GE9304@fieldses.org>
+         <626f7e46aa25d967b3b92be61cf7059067d1a9c3.camel@hammerspace.com>
+         <44884eeb662c2e304ba644d585b14c65b7dc1a0a.camel@hammerspace.com>
+Content-Type: text/plain; charset="ISO-8859-15"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.44.4 (3.44.4-1.fc36) 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220910065058.3303831-4-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Sep 10, 2022 at 08:50:56AM +0200, Christoph Hellwig wrote:
-> btrfs compressed reads try to always read the entire compressed chunk,
-> even if only a subset is requested.  Currently this is covered by the
-> magic PSI accounting underneath submit_bio, but that is about to go
-> away. Instead add manual psi_memstall_{enter,leave} annotations.
-> 
-> Note that for readahead this really should be using readahead_expand,
-> but the additionals reads are also done for plain ->read_folio where
-> readahead_expand can't work, so this overall logic is left as-is for
-> now.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+On Mon, 2022-09-12 at 15:32 +0000, Trond Myklebust wrote:
+> On Mon, 2022-09-12 at 14:56 +0000, Trond Myklebust wrote:
+> > On Mon, 2022-09-12 at 10:50 -0400, J. Bruce Fields wrote:
+> > > On Mon, Sep 12, 2022 at 02:15:16PM +0000, Trond Myklebust wrote:
+> > > > On Mon, 2022-09-12 at 09:51 -0400, J. Bruce Fields wrote:
+> > > > > On Mon, Sep 12, 2022 at 08:55:04AM -0400, Jeff Layton wrote:
+> > > > > > Because of the "seen" flag, we have a 63 bit counter to play
+> > > > > > with.
+> > > > > > Could
+> > > > > > we use a similar scheme to the one we use to handle when
+> > > > > > "jiffies"
+> > > > > > wraps?=A0Assume that we'd never compare two values that were
+> > > > > > more
+> > > > > > than
+> > > > > > 2^62 apart? We could add i_version_before/i_version_after
+> > > > > > macros to
+> > > > > > make
+> > > > > > it simple to handle this.
+> > > > >=20
+> > > > > As far as I recall the protocol just assumes it can never
+> > > > > wrap.=A0
+> > > > > I
+> > > > > guess
+> > > > > you could add a new change_attr_type that works the way you
+> > > > > describe.
+> > > > > But without some new protocol clients aren't going to know what
+> > > > > to do
+> > > > > with a change attribute that wraps.
+> > > > >=20
+> > > > > I think this just needs to be designed so that wrapping is
+> > > > > impossible
+> > > > > in
+> > > > > any realistic scenario.=A0 I feel like that's doable?
+> > > > >=20
+> > > > > If we feel we have to catch that case, the only 100% correct
+> > > > > behavior
+> > > > > would probably be to make the filesystem readonly.
+> > > > >=20
+> > > >=20
+> > > > Which protocol? If you're talking about basic NFSv4, it doesn't
+> > > > assume
+> > > > anything about the change attribute and wrapping.
+> > > >=20
+> > > > The NFSv4.2 protocol did introduce the optional attribute
+> > > > 'change_attr_type' that tries to describe the change attribute
+> > > > behaviour to the client. It tells you if the behaviour is
+> > > > monotonically
+> > > > increasing, but doesn't say anything about the behaviour when the
+> > > > attribute value overflows.
+> > > >=20
+> > > > That said, the Linux NFSv4.2 client, which uses that
+> > > > change_attr_type
+> > > > attribute does deal with overflow by assuming standard uint64_t
+> > > > wrap
+> > > > around rules. i.e. it assumes bit values > 63 are truncated,
+> > > > meaning
+> > > > that the value obtained by incrementing (2^64-1) is 0.
+> > >=20
+> > > Yeah, it was the MONOTONIC_INCRE case I was thinking of.=A0 That's
+> > > interesting, I didn't know the client did that.
+> > >=20
+> >=20
+> > If you look at where we compare version numbers, it is always some
+> > variant of the following:
+> >=20
+> > static int nfs_inode_attrs_cmp_monotonic(const struct nfs_fattr
+> > *fattr,
+> > =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=
+=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 const struct inode *ino=
+de)
+> > {
+> > =A0=A0=A0=A0=A0=A0=A0 s64 diff =3D fattr->change_attr -
+> > inode_peek_iversion_raw(inode);
+> > =A0=A0=A0=A0=A0=A0=A0 if (diff > 0)
+> > =A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0=A0 return 1;
+> > =A0=A0=A0=A0=A0=A0=A0 return diff =3D=3D 0 ? 0 : -1;
+> > }
+> >=20
+> > i.e. we do an unsigned 64-bit subtraction, and then cast it to the
+> > signed 64-bit equivalent in order to figure out which is the more
+> > recent value.
+> >=20
 
-With some small fixups,
+Good! This seems like the reasonable thing to do, given that the spec
+doesn't really say that the change attribute has to start at low values.
 
-Acked-by: David Sterba <dsterba@suse.com>
+>=20
+> ...and by the way, yes this does mean that if you suddenly add a value
+> of 2^63 to the change attribute, then you are likely to cause the
+> client to think that you just handed it an old value.
+>=20
+> i.e. you're better off having the crash counter increment the change
+> attribute by a relatively small value. One that is guaranteed to be
+> larger than the values that may have been lost, but that is not
+> excessively large.
+>=20
 
->  fs/btrfs/compression.c | 14 ++++++++++++--
->  1 file changed, 12 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index e84d22c5c6a83..f7889a00e0055 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -15,6 +15,7 @@
->  #include <linux/string.h>
->  #include <linux/backing-dev.h>
->  #include <linux/writeback.h>
-> +#include <linux/psi.h>
->  #include <linux/slab.h>
->  #include <linux/sched/mm.h>
->  #include <linux/log2.h>
-> @@ -519,7 +520,8 @@ static u64 bio_end_offset(struct bio *bio)
->   */
->  static noinline int add_ra_bio_pages(struct inode *inode,
->  				     u64 compressed_end,
-> -				     struct compressed_bio *cb)
-> +				     struct compressed_bio *cb,
-> +				     unsigned long *pflags)
->  {
->  	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
->  	unsigned long end_index;
-> @@ -588,6 +590,9 @@ static noinline int add_ra_bio_pages(struct inode *inode,
->  			continue;
->  		}
->  
-> +		if (unlikely(PageWorkingset(page)))
+Yeah.
 
-Please drop the 'unlikely', in this case it does not seem to make much
-sense.
+Like with jiffies, you need to make sure the samples you're comparing
+aren't _too_ far off. That should be doable here -- 62 bits is plenty of
+room to store a lot of change values.
 
-> +			psi_memstall_enter(pflags);
-> +
->  		ret = set_page_extent_mapped(page);
->  		if (ret < 0) {
->  			unlock_page(page);
-> @@ -674,6 +679,8 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
->  	u64 em_len;
->  	u64 em_start;
->  	struct extent_map *em;
-> +	/* initialize to 1 to make skip psi_memstall_leave unless needed */
+My benchmark (maybe wrong, but maybe good enough) is to figure on an
+increment per nanosecond for a worst-case scenario. With that, 2^40
+nanoseconds is >12 days. Maybe that's overkill.
 
-First letter in comment should be upper case unless it's an identifier.
-
-> +	unsigned long pflags = 1;
->  	blk_status_t ret;
->  	int ret2;
->  	int i;
-> @@ -729,7 +736,7 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
->  		goto fail;
->  	}
->  
-> -	add_ra_bio_pages(inode, em_start + em_len, cb);
-> +	add_ra_bio_pages(inode, em_start + em_len, cb, &pflags);
->  
->  	/* include any pages we added in add_ra-bio_pages */
->  	cb->len = bio->bi_iter.bi_size;
-> @@ -810,6 +817,9 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
->  		}
->  	}
->  
-> +	if (!pflags)
-> +		psi_memstall_leave(&pflags);
-> +
->  	if (refcount_dec_and_test(&cb->pending_ios))
->  		finish_compressed_bio_read(cb);
->  	return;
-> -- 
-> 2.30.2
-> 
+2^32 ns is about an hour and 20 mins. That's probably a reasonable value
+to use. If we can't get a a new value onto disk in that time then
+something is probably very wrong.
+--=20
+Jeff Layton <jlayton@kernel.org>

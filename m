@@ -2,120 +2,85 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17E3FC6FA89
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 18:29:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DCECC6FA89
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 19:28:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230430AbiILS3V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Sep 2022 14:29:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52402 "EHLO
+        id S229502AbiILT2I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Sep 2022 15:28:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50192 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230493AbiILS2c (ORCPT
+        with ESMTP id S229575AbiILT2G (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2022 14:28:32 -0400
-Received: from mail-pl1-x62d.google.com (mail-pl1-x62d.google.com [IPv6:2607:f8b0:4864:20::62d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B8791AF01;
-        Mon, 12 Sep 2022 11:26:11 -0700 (PDT)
-Received: by mail-pl1-x62d.google.com with SMTP id d12so9376264plr.6;
-        Mon, 12 Sep 2022 11:26:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date;
-        bh=lkGrgC7rGv3gNtROZri1LZJW+W1eletv7YqP1zeCUhw=;
-        b=fCy8TLtpc+2sHdfZpYJzZ3/33zUyiKgotMXve7zJnxVipv/nh1oXHb8bS2ysugI/9v
-         DPPmXTfFd2REo9KrIQqrSQArNmn2PIXW2Xf5/1Ut4j4N93Wdp+lwmDib+aOUEWzjjW2z
-         ZE7UUCvkcyVxvhRcudTBKvbY7PZCczmbSlXfRTufHjK1lQKZiPD4cVbUJ3kgQLIdrvTd
-         DEsLz2Pp7SVPdQ+qvHM0m7ftgUr0guyVgV77dhlT4Kf3Rdhp8jR2Z6CWYrkquI7PqWFw
-         z1Xy/MN+eXfTN+XVOyRTS9mw9r9QLcv9wmvp2cqbpHgbAYtX/bPNPHQhK3HBKbjjHYbK
-         mZ4A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date;
-        bh=lkGrgC7rGv3gNtROZri1LZJW+W1eletv7YqP1zeCUhw=;
-        b=bDk0euRFurrgogLmyvfiMiVJXJZMGPiV70fUXljn6o/6tFieCjph5fyFY46iGUrhr/
-         V24uDwBSAbfGUII8y4RC0kEEwV/4A1fBlYsX10WO5LOpAHNlj9P6c+E9FsiZ3vKpqT0D
-         +nYiRrhdQrzrUNV4tPn080DmzGLz2FQlbFzwebbMECU1dpfxlnfvXm4tNk/kW/C/I3V6
-         6DsVva3O/3K7Y5+RJLeKtq2JjM9YdS+xTlbJcE6nt7f6qDZw2Vb8Rh2Gg54T7QcbKylZ
-         iSnfOHpyb33QgikvOnrYm03IyRVSeqGmq2MHQvHT7LhjCtO8+mTUIjq5SAQPQMrGNvnG
-         uC7A==
-X-Gm-Message-State: ACgBeo0g0MzG5JLNUvjpdqpsis/Fd3o0gPdPWW92vlm2YQFKpnEVN+ZQ
-        AVrGfI1quP0BIV0fGNmBmUPGNgFzJabOVA==
-X-Google-Smtp-Source: AA6agR7ugObnvvF7oyQiEw4Z3c3fWFD4/N8jwEvlip2DlQU6J5KyEtNgXLRq2aVr22deGLsWpY1Yvg==
-X-Received: by 2002:a17:90b:1d8c:b0:202:abf5:4b21 with SMTP id pf12-20020a17090b1d8c00b00202abf54b21mr13212396pjb.162.1663007158527;
-        Mon, 12 Sep 2022 11:25:58 -0700 (PDT)
-Received: from vmfolio.. (c-73-189-111-8.hsd1.ca.comcast.net. [73.189.111.8])
-        by smtp.googlemail.com with ESMTPSA id x127-20020a626385000000b0053b2681b0e0sm5916894pfb.39.2022.09.12.11.25.57
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 12 Sep 2022 11:25:58 -0700 (PDT)
-From:   "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nilfs@vger.kernel.org, linux-mm@kvack.org,
-        "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
-        Ryusuke Konishi <konishi.ryusuke@gmail.com>
-Subject: [PATCH v2 22/23] nilfs2: Convert nilfs_clear_dirty_pages() to use filemap_get_folios_tag()
-Date:   Mon, 12 Sep 2022 11:22:23 -0700
-Message-Id: <20220912182224.514561-23-vishal.moola@gmail.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <20220912182224.514561-1-vishal.moola@gmail.com>
-References: <20220912182224.514561-1-vishal.moola@gmail.com>
+        Mon, 12 Sep 2022 15:28:06 -0400
+Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9B2912608
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:03 -0700 (PDT)
+Received: from pps.filterd (m0044012.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28CGHDCR008703
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:03 -0700
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
+ : date : message-id : in-reply-to : references : mime-version :
+ content-transfer-encoding : content-type; s=facebook;
+ bh=tArxVrq0k2OSiB82LYYz96Za/5QZHxy2tKRMamgWKpw=;
+ b=EyBgo4f6ZmsFOzw008tyGPunFAaCqWFa4NkT6J8ChAg8ixDHLbFSEV1bHJYT1nlJ1Iig
+ 9djDC8xl9kLqJljYh66K3oQt1jorIgG5Oo+YZMW2+bxo7EtlIIEHBtuBF/f6kSCsHYgk
+ HwJ0ChcLoqsPubVMjzi9/iIrLHcT+Bx4Cq0= 
+Received: from maileast.thefacebook.com ([163.114.130.16])
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jgr9smh73-8
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:03 -0700
+Received: from twshared20183.05.prn5.facebook.com (2620:10d:c0a8:1b::d) by
+ mail.thefacebook.com (2620:10d:c0a8:83::4) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2375.31; Mon, 12 Sep 2022 12:28:01 -0700
+Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
+        id E68CB2085228; Mon, 12 Sep 2022 12:27:53 -0700 (PDT)
+From:   Stefan Roesch <shr@fb.com>
+To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>, <linux-mm@kvack.org>
+CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>,
+        <fdmanana@gmail.com>, kernel test robot <lkp@intel.com>
+Subject: [PATCH v3 01/12] mm: export balance_dirty_pages_ratelimited_flags()
+Date:   Mon, 12 Sep 2022 12:27:41 -0700
+Message-ID: <20220912192752.3785061-2-shr@fb.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220912192752.3785061-1-shr@fb.com>
+References: <20220912192752.3785061-1-shr@fb.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-FB-Internal: Safe
+Content-Type: text/plain
+X-Proofpoint-ORIG-GUID: kNHL7Ec4GT7f4wC6y4thxzUmJLKs1zAA
+X-Proofpoint-GUID: kNHL7Ec4GT7f4wC6y4thxzUmJLKs1zAA
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
+ definitions=2022-09-12_13,2022-09-12_02,2022-06-22_01
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Convert function to use folios throughout. This is in preparation for
-the removal of find_get_pages_range_tag().
+Export the function balance_dirty_pages_ratelimited_flags(). It is now
+also called from btrfs.
 
-Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
-Acked-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
+Signed-off-by: Stefan Roesch <shr@fb.com>
+Reported-by: kernel test robot <lkp@intel.com>
 ---
- fs/nilfs2/page.c | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ mm/page-writeback.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/fs/nilfs2/page.c b/fs/nilfs2/page.c
-index 5c96084e829f..b66f4e988016 100644
---- a/fs/nilfs2/page.c
-+++ b/fs/nilfs2/page.c
-@@ -358,22 +358,22 @@ void nilfs_copy_back_pages(struct address_space *dmap,
-  */
- void nilfs_clear_dirty_pages(struct address_space *mapping, bool silent)
- {
--	struct pagevec pvec;
-+	struct folio_batch fbatch;
- 	unsigned int i;
- 	pgoff_t index = 0;
- 
--	pagevec_init(&pvec);
-+	folio_batch_init(&fbatch);
- 
--	while (pagevec_lookup_tag(&pvec, mapping, &index,
--					PAGECACHE_TAG_DIRTY)) {
--		for (i = 0; i < pagevec_count(&pvec); i++) {
--			struct page *page = pvec.pages[i];
-+	while (filemap_get_folios_tag(mapping, &index, (pgoff_t)-1,
-+				PAGECACHE_TAG_DIRTY, &fbatch)) {
-+		for (i = 0; i < folio_batch_count(&fbatch); i++) {
-+			struct folio *folio = fbatch.folios[i];
- 
--			lock_page(page);
--			nilfs_clear_dirty_page(page, silent);
--			unlock_page(page);
-+			folio_lock(folio);
-+			nilfs_clear_dirty_page(&folio->page, silent);
-+			folio_unlock(folio);
- 		}
--		pagevec_release(&pvec);
-+		folio_batch_release(&fbatch);
- 		cond_resched();
- 	}
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 032a7bf8d259..7e9d8d857ecc 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -1933,6 +1933,7 @@ int balance_dirty_pages_ratelimited_flags(struct ad=
+dress_space *mapping,
+ 	wb_put(wb);
+ 	return ret;
  }
--- 
-2.36.1
++EXPORT_SYMBOL_GPL(balance_dirty_pages_ratelimited_flags);
+=20
+ /**
+  * balance_dirty_pages_ratelimited - balance dirty memory state.
+--=20
+2.30.2
 

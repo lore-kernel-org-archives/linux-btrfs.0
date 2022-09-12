@@ -2,47 +2,47 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46E27C6FA8B
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 19:28:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB397C6FA82
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 19:28:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230060AbiILT2U (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Sep 2022 15:28:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50588 "EHLO
+        id S230059AbiILT2X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Sep 2022 15:28:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50680 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229901AbiILT2T (ORCPT
+        with ESMTP id S230079AbiILT2V (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2022 15:28:19 -0400
-Received: from mx0a-00082601.pphosted.com (mx0a-00082601.pphosted.com [67.231.145.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86B49459BF
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:17 -0700 (PDT)
-Received: from pps.filterd (m0109334.ppops.net [127.0.0.1])
-        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28CIEppe022502
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:16 -0700
+        Mon, 12 Sep 2022 15:28:21 -0400
+Received: from mx0b-00082601.pphosted.com (mx0b-00082601.pphosted.com [67.231.153.30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FF5146238
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:18 -0700 (PDT)
+Received: from pps.filterd (m0109332.ppops.net [127.0.0.1])
+        by mx0a-00082601.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 28CIuZlj020563
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:17 -0700
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fb.com; h=from : to : cc : subject
  : date : message-id : in-reply-to : references : mime-version :
  content-transfer-encoding : content-type; s=facebook;
- bh=8RVRQ6/cQX6qNy5uU4Kh4lX2fZOOQ9gq7/Aw+KIXpjA=;
- b=XRbmhapx5q387X5gok3qOUaceqcy5ZmlZXPOIt2VKkhfje2A0uCU0CcR5RvK/BG/vmQU
- 4zTzi3giUVTCrJhzHRmHCWoYOL5r/4ihGoIlfFLax+bGgG/eOgznzsy1Dctv1M/ndNH4
- AGwcQocHNG1CKh8Y54jvmyhLycJuLQEazyk= 
+ bh=Xfmv/q1sJqX2orN/Q6I/sqaH1MCfWUK4TQnNtY5BWDc=;
+ b=Km2YyidxKG/uK1G+0axv3B9xehd9q+GKNg9XZeaKqLeJlxnkPGMq2weZwkDxM3Y9cCPO
+ dnFLwxfqA+FdHqCTgg/Nf/wr5jRYcnlR/TfQSzS0QvybHHS03tRkotm1DDKTXl2PEh/L
+ pq0MjTSUvrTkpiVp4x/XGQaej3UTZ4aj5Ac= 
 Received: from maileast.thefacebook.com ([163.114.130.16])
-        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jgsw4ccjw-6
+        by mx0a-00082601.pphosted.com (PPS) with ESMTPS id 3jgrb1mec9-3
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128 verify=NOT)
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:16 -0700
-Received: from twshared15978.04.prn5.facebook.com (2620:10d:c0a8:1b::d) by
- mail.thefacebook.com (2620:10d:c0a8:83::4) with Microsoft SMTP Server
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 12:28:17 -0700
+Received: from twshared13315.14.prn3.facebook.com (2620:10d:c0a8:1b::d) by
+ mail.thefacebook.com (2620:10d:c0a8:82::e) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2375.31; Mon, 12 Sep 2022 12:28:12 -0700
+ 15.1.2375.31; Mon, 12 Sep 2022 12:28:16 -0700
 Received: by dev1180.prn1.facebook.com (Postfix, from userid 425415)
-        id 162392085234; Mon, 12 Sep 2022 12:27:54 -0700 (PDT)
+        id 266C1208523A; Mon, 12 Sep 2022 12:27:54 -0700 (PDT)
 From:   Stefan Roesch <shr@fb.com>
 To:     <kernel-team@fb.com>, <io-uring@vger.kernel.org>,
         <linux-btrfs@vger.kernel.org>, <linux-mm@kvack.org>
 CC:     <shr@fb.com>, <axboe@kernel.dk>, <josef@toxicpanda.com>,
         <fdmanana@gmail.com>
-Subject: [PATCH v3 07/12] btrfs: make prepare_pages nowait compatible
-Date:   Mon, 12 Sep 2022 12:27:47 -0700
-Message-ID: <20220912192752.3785061-8-shr@fb.com>
+Subject: [PATCH v3 10/12] btrfs: make balance_dirty_pages nowait compatible
+Date:   Mon, 12 Sep 2022 12:27:50 -0700
+Message-ID: <20220912192752.3785061-11-shr@fb.com>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220912192752.3785061-1-shr@fb.com>
 References: <20220912192752.3785061-1-shr@fb.com>
@@ -50,110 +50,64 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: quoted-printable
 X-FB-Internal: Safe
 Content-Type: text/plain
-X-Proofpoint-ORIG-GUID: oFYS4M_ewYxezqjDFKj8HdQa-t2Pkxu-
-X-Proofpoint-GUID: oFYS4M_ewYxezqjDFKj8HdQa-t2Pkxu-
+X-Proofpoint-ORIG-GUID: Bb4Bbo1ADbAN-BXJ8HjqSK5ewZiSkRVN
+X-Proofpoint-GUID: Bb4Bbo1ADbAN-BXJ8HjqSK5ewZiSkRVN
 X-Proofpoint-Virus-Version: vendor=baseguard
  engine=ICAP:2.0.205,Aquarius:18.0.895,Hydra:6.0.528,FMLib:17.11.122.1
- definitions=2022-09-12_12,2022-09-12_02,2022-06-22_01
+ definitions=2022-09-12_13,2022-09-12_02,2022-06-22_01
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add nowait parameter to the prepare_pages function. In case nowait is
-specified for an async buffered write request, do a nowait allocation or
-return -EAGAIN.
+This replaces the call to function balance_dirty_pages_ratelimited() in
+the function btrfs_buffered_write() with a call to
+balance_dirty_pages_ratelimited_flags().
+
+It also moves the function after the again label. This can cause the
+function to be called a bit later, but this should have no impact in the
+real world.
 
 Signed-off-by: Stefan Roesch <shr@fb.com>
 ---
- fs/btrfs/file.c | 42 +++++++++++++++++++++++++++++++++++-------
- 1 file changed, 35 insertions(+), 7 deletions(-)
+ fs/btrfs/file.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f18efd9f2bc3..d4362ee7e09e 100644
+index 3d038e1257f9..4dc6484ff229 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -1339,26 +1339,54 @@ static int prepare_uptodate_page(struct inode *in=
-ode,
- 	return 0;
- }
-=20
-+static int get_prepare_fgp_flags(bool nowait)
-+{
-+	int fgp_flags =3D FGP_LOCK | FGP_ACCESSED | FGP_CREAT;
-+
-+	if (nowait)
-+		fgp_flags |=3D FGP_NOWAIT;
-+
-+	return fgp_flags;
-+}
-+
-+static gfp_t get_prepare_gfp_flags(struct inode *inode, bool nowait)
-+{
-+	gfp_t gfp;
-+
-+	gfp =3D btrfs_alloc_write_mask(inode->i_mapping);
-+	if (nowait) {
-+		gfp &=3D ~__GFP_DIRECT_RECLAIM;
-+		gfp |=3D GFP_NOWAIT;
-+	}
-+
-+	return gfp;
-+}
-+
- /*
-  * this just gets pages into the page cache and locks them down.
-  */
- static noinline int prepare_pages(struct inode *inode, struct page **pag=
-es,
- 				  size_t num_pages, loff_t pos,
--				  size_t write_bytes, bool force_uptodate)
-+				  size_t write_bytes, bool force_uptodate,
-+				  bool nowait)
- {
- 	int i;
- 	unsigned long index =3D pos >> PAGE_SHIFT;
--	gfp_t mask =3D btrfs_alloc_write_mask(inode->i_mapping);
-+	gfp_t mask =3D get_prepare_gfp_flags(inode, nowait);
-+	int fgp_flags =3D get_prepare_fgp_flags(nowait);
- 	int err =3D 0;
- 	int faili;
-=20
- 	for (i =3D 0; i < num_pages; i++) {
- again:
--		pages[i] =3D find_or_create_page(inode->i_mapping, index + i,
--					       mask | __GFP_WRITE);
-+		pages[i] =3D pagecache_get_page(inode->i_mapping, index + i,
-+					fgp_flags, mask | __GFP_WRITE);
- 		if (!pages[i]) {
- 			faili =3D i - 1;
--			err =3D -ENOMEM;
-+			if (nowait)
-+				err =3D -EAGAIN;
-+			else
-+				err =3D -ENOMEM;
- 			goto fail;
- 		}
-=20
-@@ -1376,7 +1404,7 @@ static noinline int prepare_pages(struct inode *ino=
-de, struct page **pages,
- 						    pos + write_bytes, false);
- 		if (err) {
- 			put_page(pages[i]);
--			if (err =3D=3D -EAGAIN) {
-+			if (!nowait && err =3D=3D -EAGAIN) {
- 				err =3D 0;
- 				goto again;
- 			}
-@@ -1716,7 +1744,7 @@ static noinline ssize_t btrfs_buffered_write(struct=
+@@ -1654,6 +1654,7 @@ static noinline ssize_t btrfs_buffered_write(struct=
  kiocb *iocb,
- 		 */
- 		ret =3D prepare_pages(inode, pages, num_pages,
- 				    pos, write_bytes,
--				    force_page_uptodate);
-+				    force_page_uptodate, false);
- 		if (ret) {
- 			btrfs_delalloc_release_extents(BTRFS_I(inode),
- 						       reserve_bytes);
+ 	loff_t old_isize =3D i_size_read(inode);
+ 	unsigned int ilock_flags =3D 0;
+ 	const bool nowait =3D iocb->ki_flags & IOCB_NOWAIT;
++	unsigned int bdp_flags =3D nowait ? BDP_ASYNC : 0;
+=20
+ 	if (nowait)
+ 		ilock_flags |=3D BTRFS_ILOCK_TRY;
+@@ -1756,6 +1757,10 @@ static noinline ssize_t btrfs_buffered_write(struc=
+t kiocb *iocb,
+=20
+ 		release_bytes =3D reserve_bytes;
+ again:
++		ret =3D balance_dirty_pages_ratelimited_flags(inode->i_mapping, bdp_fl=
+ags);
++		if (ret)
++			break;
++
+ 		/*
+ 		 * This is going to setup the pages array with the number of
+ 		 * pages we want, so we don't really need to worry about the
+@@ -1860,8 +1865,6 @@ static noinline ssize_t btrfs_buffered_write(struct=
+ kiocb *iocb,
+=20
+ 		cond_resched();
+=20
+-		balance_dirty_pages_ratelimited(inode->i_mapping);
+-
+ 		pos +=3D copied;
+ 		num_written +=3D copied;
+ 	}
 --=20
 2.30.2
 

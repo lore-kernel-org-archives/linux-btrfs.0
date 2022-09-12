@@ -2,91 +2,48 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDD74ECAAA1
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 07:58:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D896DC6FA83
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Sep 2022 08:34:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229924AbiILH6o (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Sep 2022 03:58:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57912 "EHLO
+        id S229605AbiILIeD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Sep 2022 04:34:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54368 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229807AbiILH6n (ORCPT
+        with ESMTP id S229583AbiILIeC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Sep 2022 03:58:43 -0400
-Received: from out20-219.mail.aliyun.com (out20-219.mail.aliyun.com [115.124.20.219])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3EE102C128
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Sep 2022 00:58:41 -0700 (PDT)
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04652883|-1;BR=01201311R191S84rulernew998_84748_2000303;CH=blue;DM=|CONTINUE|false|;DS=CONTINUE|ham_regular_dialog|0.000883908-4.96713e-05-0.999066;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047198;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.PDdX3Ax_1662969518;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.PDdX3Ax_1662969518)
-          by smtp.aliyun-inc.com;
-          Mon, 12 Sep 2022 15:58:38 +0800
-Date:   Mon, 12 Sep 2022 15:58:47 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: fi resize: fix return value check_resize_args()
-Cc:     Sidong Yang <realwakka@gmail.com>
-In-Reply-To: <20220811152239.2845-1-realwakka@gmail.com>
-References: <20220811152239.2845-1-realwakka@gmail.com>
-Message-Id: <20220912155843.F86F.409509F4@e16-tech.com>
+        Mon, 12 Sep 2022 04:34:02 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5F2721F63C;
+        Mon, 12 Sep 2022 01:34:01 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 3E45768C7B; Mon, 12 Sep 2022 10:33:54 +0200 (CEST)
+Date:   Mon, 12 Sep 2022 10:33:53 +0200
+From:   Christoph Hellwig <hch@lst.de>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
+        Johannes Weiner <hannes@cmpxchg.org>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Gao Xiang <xiang@kernel.org>,
+        Chao Yu <chao@kernel.org>, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-mm@kvack.org
+Subject: Re: [PATCH 1/5] mm: add PSI accounting around ->read_folio and
+ ->readahead calls
+Message-ID: <20220912083353.GA11318@lst.de>
+References: <20220910065058.3303831-1-hch@lst.de> <20220910065058.3303831-2-hch@lst.de> <YxzW2wZzhaDvjS1c@casper.infradead.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.75.04 [en]
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <YxzW2wZzhaDvjS1c@casper.infradead.org>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Sat, Sep 10, 2022 at 07:26:35PM +0100, Matthew Wilcox wrote:
+> I don't have time to look at this properly right now (about to catch a
+> bus to the plane), but I think this should be |=, not =?
 
-> check_resize_args() function checks user argument amount and should
-> returns it's validity. But now the code returns only zero. This patch
-> make it correct to return ret.
-> 
-> Signed-off-by: Sidong Yang <realwakka@gmail.com>
-> ---
->  cmds/filesystem.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/cmds/filesystem.c b/cmds/filesystem.c
-> index 7cd08fcd..9eff5680 100644
-> --- a/cmds/filesystem.c
-> +++ b/cmds/filesystem.c
-> @@ -1203,7 +1203,7 @@ static int check_resize_args(const char *amount, const char *path) {
->  
->  out:
->  	free(di_args);
-> -	return 0;
-> +	return ret;
->  }
->  
->  static int cmd_filesystem_resize(const struct cmd_struct *cmd,
-
-This patch will make 'btrfs filesystem resize' always fail, and then break
-fstests btrfs/177.
-
-# df -h /mnt/scratch/
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb2       1.0G  3.4M  927M   1% /mnt/scratch
-
-# btrfs filesystem resize 3G /mnt/scratch/
-Resize device id 1 (/dev/sdb2) from 3.00GiB to 3.00GiB
-# echo $?
-1
-
-# df -h /mnt/scratch/
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb2       1.0G  3.4M  927M   1% /mnt/scratch
-
-
-'ret' is set to 2 here.
-    ret = snprintf(amount_dup, BTRFS_VOL_NAME_MAX, "%s", amount);
-    if (strlen(amount) != ret) {
-        error("newsize argument is too long");
-        ret = 1;
-        goto out;
-    }
-
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2022/09/12
-
-
+Yes.

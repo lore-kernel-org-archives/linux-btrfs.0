@@ -2,81 +2,114 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E31AEC6FA82
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Sep 2022 07:20:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2A7FC54EE9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Sep 2022 07:20:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231181AbiIMHT7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Sep 2022 03:19:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51238 "EHLO
+        id S230493AbiIMHUF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Sep 2022 03:20:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51768 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230308AbiIMHTr (ORCPT
+        with ESMTP id S231202AbiIMHTx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Sep 2022 03:19:47 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 35B13C37
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 00:19:46 -0700 (PDT)
+        Tue, 13 Sep 2022 03:19:53 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9557D62D4
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 00:19:48 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id E6AA05BEE3
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:44 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 00FC73488F
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1663053584; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=CzWRwiWF//x0NqIrcRScS1zxe2O0tgjNPihvJLAZCFI=;
-        b=hP5dKzPRxu7seay/UpffsAiwPMOireCJqsarcE6Ae3+yR+PR4V8DbTgUMbrGIFs4IegMfw
-        Wwsd42nRypjvpQNVbAEGv2EqiI+x7jV+WNOvmhUxAQ5GMTWAs3M1J06HYIs03wcusGOLs/
-        xdpQQ7FT8O7riidS2vdfj149ftdlDV0=
+        t=1663053587; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=45BQtxSMBmROObkjmy6A7IRq2kY7wwXgBQs3hj/0syU=;
+        b=bQXjj9aza3cWx9rzM+yBvrV4reFloDjtUtS8HNTfbD+SFubT/RaacpO2so7TQyosIcfOlD
+        gEHpC3eN1x68TyOM0ZtUa9xmzMFuVAudSJvKVYptARd7jmnUNAt5BKscUIV2o/hysruHpU
+        Z1fpZMGnEeXYKhGvtAcINgY6npX+JvU=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 48FF513AB5
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:44 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 57D1213AB5
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:46 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id HMp1BRAvIGMOfAAAMHmgww
+        id cCQwCRIvIGMOfAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:44 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:46 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/2] btrfs-progs: make corrupt-block metadata geneartion corruption work again
-Date:   Tue, 13 Sep 2022 15:19:24 +0800
-Message-Id: <cover.1663053391.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs-progs: corrupt-block: re-generate the checksum for generation corruption
+Date:   Tue, 13 Sep 2022 15:19:26 +0800
+Message-Id: <426aaa1e6b83b99fddd66bc892499aca03105748.1663053391.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.3
+In-Reply-To: <cover.1663053391.git.wqu@suse.com>
+References: <cover.1663053391.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is preparing for the incoming metadata validation refactor in
-kernel, thus I need a way to corrupt transid reliably with correct
-checksum.
+[BUG]
+If using btrfs-corrupt-block to corrupt the generation of a tree
+block (in my example, it's csum root), it will cause csum mismatch other
+than the expected transid mismatch:
 
-The first patch is to unexport csum_tree_block() which also has a stale
-definition .
+ # ./btrfs-corrupt-block --metadata-block 30474240 -f generation \
+   /dev/test/scratch1
+ # btrfs check /dev/test/scratch1
+ Opening filesystem to check...
+ checksum verify failed on 30474240 wanted 0xb3e8059a found 0xb4a4b45c
+ checksum verify failed on 30474240 wanted 0xb3e8059a found 0xb4a4b45c
+ checksum verify failed on 30474240 wanted 0xb3e8059a found 0xb4a4b45c
+ Csum didn't match
+ ERROR: could not setup csum tree
+ ERROR: cannot open file system
 
-The second patch is to fix the csum for metadata block with corrupted
-generation.
+[CAUSE]
+Inside the switch branch BTRFS_METADATA_BLOCK_GENERATION in
+corrupt_metadata_block(), we just set the generation and trigger
+write_and_map_eb().
 
-Now btrfs-corrupt-block can properly corrupt the generation of a tree
-block.
+However write_and_map_eb() doesn't re-generate the checksum by itself,
+thus we make the victim tree block to have a stale checksum.
 
-(But unfortunately it corrupts all copies, which is still not exactly
-what I need, but is already good enough)
+[FIX]
+Just call csum_tree_block_size() before write_and_map_eb().
 
-Qu Wenruo (2):
-  btrfs-progs: unexport csum_tree_block()
-  btrfs-progs: corrupt-block: re-generate the checksum for generation
-    corruption
+Now the corrupted fs have the expected corruption pattern now:
 
- btrfs-corrupt-block.c   | 2 ++
- common/utils.h          | 2 --
- kernel-shared/disk-io.c | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ # btrfs check /dev/test/scratch1
+ Opening filesystem to check...
+ parent transid verify failed on 30474240 wanted 7 found 11814770867473404344
+ parent transid verify failed on 30474240 wanted 7 found 11814770867473404344
+ parent transid verify failed on 30474240 wanted 7 found 11814770867473404344
+ Ignoring transid failure
+ ...
 
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ btrfs-corrupt-block.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 4fa27b98fe16..b6aefe658ead 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -885,6 +885,8 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
+ 		u64 bogus = generate_u64(orig);
+ 
+ 		btrfs_set_header_generation(eb, bogus);
++		csum_tree_block_size(eb, fs_info->csum_size, 0,
++				     fs_info->csum_type);
+ 		ret = write_and_map_eb(fs_info, eb);
+ 		free_extent_buffer(eb);
+ 		if (ret < 0) {
 -- 
 2.37.3
 

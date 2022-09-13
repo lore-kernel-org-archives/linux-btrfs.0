@@ -2,102 +2,101 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD643C6FA8A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Sep 2022 07:20:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9F01C6FA8A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 13 Sep 2022 09:39:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230292AbiIMHUD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 13 Sep 2022 03:20:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51054 "EHLO
+        id S231599AbiIMJjh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 13 Sep 2022 05:39:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231153AbiIMHTw (ORCPT
+        with ESMTP id S231290AbiIMJje (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 13 Sep 2022 03:19:52 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 24E1311165
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 00:19:47 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id EC76F5BEE8
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1663053585; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=JWDwslo1Y4C8Y6uoyGwp+2ZLuS6kc87S4Ywh7naJBM0=;
-        b=XeGhtk5OQZOLRND4SuotAetxGVPXc4qcbATjb05deH8XDDQ6SLaFHUn8eT27ZY80elIr+t
-        ySDLQqKk/Xp27h0a2BgPw4NwDrCyJW/uYjWSG/Nuqg/j7BeOjcOE151eliRKXwjgtc4wNO
-        gt1637+c8Vcva6+189wME2lJtW9o8h0=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5041813AB5
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:45 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id kAZOBxEvIGMOfAAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Sep 2022 07:19:45 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: unexport csum_tree_block()
-Date:   Tue, 13 Sep 2022 15:19:25 +0800
-Message-Id: <2e7fa0afb6a4788de55bb1c4067dbfb41a4d96b8.1663053391.git.wqu@suse.com>
-X-Mailer: git-send-email 2.37.3
-In-Reply-To: <cover.1663053391.git.wqu@suse.com>
-References: <cover.1663053391.git.wqu@suse.com>
+        Tue, 13 Sep 2022 05:39:34 -0400
+Received: from outgoing.mit.edu (outgoing-auth-1.mit.edu [18.9.28.11])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 49D2A10E9;
+        Tue, 13 Sep 2022 02:39:31 -0700 (PDT)
+Received: from letrec.thunk.org ([185.122.133.20])
+        (authenticated bits=0)
+        (User authenticated as tytso@ATHENA.MIT.EDU)
+        by outgoing.mit.edu (8.14.7/8.12.4) with ESMTP id 28D9cu5U003944
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Tue, 13 Sep 2022 05:38:59 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=mit.edu; s=outgoing;
+        t=1663061946; bh=G7mfMTxIhO2dJDEzf6XiznIO1C37bfNYVMZnFYYDpfM=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To;
+        b=Y6+LcTEHkFj2wDbDzypsKBa9asmbb+u9juMHKg/la5ygB9di9baoPrd7VsSQ4J4rq
+         O3CPHqjPzIpUq7+6bePkemcvx00k04ANvoHk06kgSuxF+xjvcdL4SmzfwkprV00hzf
+         oBlG0nNC/6UE+zcALHHnyykTa5afqLKozgNsm5vNYO2JeaWb3TFqmh+NHFYyQxG4QB
+         z9tvj/8dF9pGJk4lewP2AZElY4oQUwLqXJZCyzRnO34YGbGES+UlFPNBEpcgh30Gjo
+         qgK6OTNSq/Yi1PCL811322LaNiQN473z3jZTj0GjzbUY4XCEGPD1uEPr8uk5AL+wIX
+         kOBun6/6OYd3g==
+Received: by letrec.thunk.org (Postfix, from userid 15806)
+        id 6C7A48C3288; Tue, 13 Sep 2022 05:38:56 -0400 (EDT)
+Date:   Tue, 13 Sep 2022 05:38:56 -0400
+From:   "Theodore Ts'o" <tytso@mit.edu>
+To:     NeilBrown <neilb@suse.de>
+Cc:     Dave Chinner <david@fromorbit.com>,
+        Jeff Layton <jlayton@kernel.org>,
+        "J. Bruce Fields" <bfields@fieldses.org>, Jan Kara <jack@suse.cz>,
+        adilger.kernel@dilger.ca, djwong@kernel.org,
+        trondmy@hammerspace.com, viro@zeniv.linux.org.uk,
+        zohar@linux.ibm.com, xiubli@redhat.com, chuck.lever@oracle.com,
+        lczerner@redhat.com, brauner@kernel.org, fweimer@redhat.com,
+        linux-man@vger.kernel.org, linux-api@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, ceph-devel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: [man-pages RFC PATCH v4] statx, inode: document the new
+ STATX_INO_VERSION field
+Message-ID: <YyBPsDZoEL5yDc3G@mit.edu>
+References: <20220908182252.GA18939@fieldses.org>
+ <44efe219dbf511492b21a653905448d43d0f3363.camel@kernel.org>
+ <20220909154506.GB5674@fieldses.org>
+ <125df688dbebaf06478b0911e76e228e910b04b3.camel@kernel.org>
+ <20220910145600.GA347@fieldses.org>
+ <9eaed9a47d1aef11fee95f0079e302bc776bc7ff.camel@kernel.org>
+ <20220913004146.GD3600936@dread.disaster.area>
+ <166303374350.30452.17386582960615006566@noble.neil.brown.name>
+ <20220913024109.GF3600936@dread.disaster.area>
+ <166303985824.30452.7333958999671590160@noble.neil.brown.name>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <166303985824.30452.7333958999671590160@noble.neil.brown.name>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The function csum_tree_block() is not really utilized by anyone, all
-current callers just use csum_tree_block_size().
+On Tue, Sep 13, 2022 at 01:30:58PM +1000, NeilBrown wrote:
+> On Tue, 13 Sep 2022, Dave Chinner wrote:
+> > 
+> > Indeed, we know there are many systems out there that mount a
+> > filesystem, preallocate and map the blocks that are allocated to a
+> > large file, unmount the filesysetm, mmap the ranges of the block
+> > device and pass them to RDMA hardware, then have sensor arrays rdma
+> > data directly into the block device.....
+> 
+> And this tool doesn't update the i_version?  Sounds like a bug.
 
-Furthermore there is a stale definition in common/utils.h which is using
-the old "struct btrfs_root" as the first argument, while we have already
-migrated to "struct btrfs_fs_info".
+Tools that do this include "grub" and "lilo".  Fortunately, most
+people aren't trying to export their /boot directory over NFS.  :-P
 
-So just unexport csum_tree_block() and remove the stale definition.
+That being said, all we can strive for is "good enough" and not
+"perfection".  So if I were to add a "crash counter" to the ext4
+superblock, I can make sure it gets incremented (a) whenever the
+journal is replayed (assuming that we decide to use lazytime-style
+update for i_version for performance reasons), or (b) when fsck needs
+to fix some file system inconsistency, or (c) when some external tool
+like debugfs or fuse2fs is modifying the file system.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- common/utils.h          | 2 --
- kernel-shared/disk-io.c | 4 ++--
- 2 files changed, 2 insertions(+), 4 deletions(-)
+Will this get *everything*?  No.  For example, in addition Linux boot
+loaders, there might be userspace which uses FIEMAP to get the
+physical blocks #'s for a file, and then reads and writes to those
+blocks using a kernel-bypass interface for high-speed SSDs, for
+example.  I happen to know of thousands of machines that are doing
+this with ext4 in production today, so this isn't hypothetical
+example; fortuntely, they aren't exporting their file system over NFS,
+nor are they likely to do so.  :-)
 
-diff --git a/common/utils.h b/common/utils.h
-index ea05fe5b21fe..f6cdb7f4dc70 100644
---- a/common/utils.h
-+++ b/common/utils.h
-@@ -61,8 +61,6 @@ int set_label(const char *btrfs_dev, const char *label);
- int check_arg_type(const char *input);
- int get_label_mounted(const char *mount_path, char *labelp);
- int get_label_unmounted(const char *dev, char *label);
--int csum_tree_block(struct btrfs_fs_info *root, struct extent_buffer *buf,
--		    int verify);
- int ask_user(const char *question);
- int lookup_path_rootid(int fd, u64 *rootid);
- int find_mount_fsroot(const char *subvol, const char *subvolid, char **mount);
-diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 2701c464cbfc..857280cc7cb7 100644
---- a/kernel-shared/disk-io.c
-+++ b/kernel-shared/disk-io.c
-@@ -208,8 +208,8 @@ int verify_tree_block_csum_silent(struct extent_buffer *buf, u16 csum_size,
- 	return __csum_tree_block_size(buf, csum_size, 1, 1, csum_type);
- }
- 
--int csum_tree_block(struct btrfs_fs_info *fs_info,
--		    struct extent_buffer *buf, int verify)
-+static int csum_tree_block(struct btrfs_fs_info *fs_info,
-+			   struct extent_buffer *buf, int verify)
- {
- 	u16 csum_size = fs_info->csum_size;
- 	u16 csum_type = fs_info->csum_type;
--- 
-2.37.3
-
+		    	    	      		   - Ted

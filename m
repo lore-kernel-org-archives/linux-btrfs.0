@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55BC5ECAAD3
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Sep 2022 23:05:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A043C6FA86
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Sep 2022 23:05:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229915AbiINXFT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Sep 2022 19:05:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49050 "EHLO
+        id S229918AbiINXFV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Sep 2022 19:05:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49192 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229903AbiINXFM (ORCPT
+        with ESMTP id S229910AbiINXFO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2022 19:05:12 -0400
-Received: from mail-qk1-x72e.google.com (mail-qk1-x72e.google.com [IPv6:2607:f8b0:4864:20::72e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3EED5208E
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:05:10 -0700 (PDT)
-Received: by mail-qk1-x72e.google.com with SMTP id c19so10149606qkm.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:05:10 -0700 (PDT)
+        Wed, 14 Sep 2022 19:05:14 -0400
+Received: from mail-qv1-xf29.google.com (mail-qv1-xf29.google.com [IPv6:2607:f8b0:4864:20::f29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B85925A819
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:05:13 -0700 (PDT)
+Received: by mail-qv1-xf29.google.com with SMTP id s13so12907244qvq.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:05:13 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=IJ8ywYZKmUwHnTrQRqY8oE7rBMDhidpHtuV4magLbVE=;
-        b=MGiCSMWeQBTy+5F1IycbP/TXZp73zr4Vud1uV/jGV9H6BH+QUNLWTN24jtIYEZv7Dx
-         0xEv3IBwI0fDl37J5QquO69jc+qh3PsJodK5vpgnPn4EPYzkUE+t9QyKULKUN2nas+OO
-         hv6Xp5Hne8nIzmVLX8sbaUeNTXw9zwiVKrsCQUmwQ3G41T2f0U1bDh3F7WeflVPadZ2v
-         ipNXAIShZDT9xYon6Oc6BU4VD9YUrNuLTCMZ11IaEllrm5VLVTSFbCPmS4OKVMTMmcui
-         pAJpBALQOOeb+7FmvCGZZMqOq/r2r/Z3411U6l/xL1h0iniyW/yLpuIIEHGP+9zcwNEX
-         otSg==
+        bh=YkYpwOZ3ipijD5TV2M7lqztPnS1fiH1tauIgb8biVpQ=;
+        b=j+w7r+/sncW5MKWNRf4ANBc5DEoB/wVZ0oy0pnavHNztMxI8o6a+pNdlXPAvMZ5+bw
+         VPugZ0jtaCw3i+dUzbTJFb9fRQmB5cziniXtD4+gX1rc2WZesjpS0exT8y2DLaGBWhY6
+         f2jzeYL8510EjBGogdcWzW97mZFOKBnEJ0HPhiunU9VbVtVM00hoA9pdLgMOSE/MV6gE
+         hro7nXzibC+ulAaHySxaJGYBe8UYPR361rHRtUBL5JxN9euRks69svizitzrv0BdpRoQ
+         6Uyn9LI1fUd6w4osyRsSeUm65DJnrsN2j8SWJWLXi/2CfTX8EHkDQrgq4L8SB7nzcm0H
+         dXAQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=IJ8ywYZKmUwHnTrQRqY8oE7rBMDhidpHtuV4magLbVE=;
-        b=37UyBcK0LiiRw6d3++RIYmQBNc4RxWTqqwrkt0GkAXJlPvHCjZQKaD2WjW8YDCx/Ys
-         5zl7rUvYDNh3oANnsLOfU5kZW0ya7hVoW5BJAjlP5W8mXAcAH32QzSYwd/9woZ9+YB3w
-         eDEGC2NTxEy82CTUpr1XhIdQFhGEUM0fz9lpz7+8PI23mzkqVuqV4TtIKBXcSo2JwUnC
-         CpydGV9cOoWEygUG22YVqzWcNU6iecKK0E45NzPiXutI29ETibUPGeOGNOtf/VjzOKGD
-         v2r9LfYGjjjArxWAOCmzGVRrLLTKMmuPiIx/y6a2xr5FV1GsjaEijji+dQZfKwPdDfQd
-         SkdA==
-X-Gm-Message-State: ACgBeo0pVSXLoJR6i+1lAcQL2tPizZ1fSKhEGG3tWKHx4crMbta/9Dj9
-        GK2ybQ8ytJZxjkqM3R4ErsHQ7yvuKqVMfg==
-X-Google-Smtp-Source: AA6agR5+ymwzKOHSkDNHJ16QZGRTQf7NMCpbPZDXLAsyww9k+5LMWq/Z3qsKsm8LYOHsFK9z6ClgDQ==
-X-Received: by 2002:a05:620a:489a:b0:6ce:4014:5455 with SMTP id ea26-20020a05620a489a00b006ce40145455mr11853841qkb.716.1663196709575;
-        Wed, 14 Sep 2022 16:05:09 -0700 (PDT)
+        bh=YkYpwOZ3ipijD5TV2M7lqztPnS1fiH1tauIgb8biVpQ=;
+        b=p/5B4K4Cy7bBAtnJkAsVpC07y8vFrV3EAeullxH3avhs/5dcFvQMWHdUASnIa3RcZM
+         IVffQMbWCKoyoR97HpLwbLzUnkFA01ORvOLa7hm3xANa+qTSGRtOLpoCPJo/qFJQVmz/
+         2qYpu7Dd99lxfV2aoSiO5THy2oGCjuK2nYz/6ycAI0N7t/q+U4ZQYT55JZIBR7z5H40s
+         /Ja7PT0axFwLUA/yhukCA3dCa0rXOZXQKGJzUOgYYpFkiRgCG/tx2WIGOok9ZIghSRxy
+         ZsS6Y0YuAE9JETJ2uCGeZlPOJ7xKpt/LMQ8eT3JSLLS50dRaHVcoJfjXYOVZoo9RA+PJ
+         dbGA==
+X-Gm-Message-State: ACgBeo0LzlpZXb2FY2ie29R5mT7yDkreJAEKHZ95eO/bJzMP41C2MKBC
+        0xOMgFpP+l9w84jxdhY9PbGsoDiC0Z4ckg==
+X-Google-Smtp-Source: AA6agR6J8ujVQXfZM/6t3KVP3GpS4BRxU9L2LLDMMBNlA5M8vfLckynlcJhsx63bTDSi/UxDSCSxSg==
+X-Received: by 2002:a05:6214:20e3:b0:4a7:618d:44d8 with SMTP id 3-20020a05621420e300b004a7618d44d8mr33820963qvk.47.1663196713028;
+        Wed, 14 Sep 2022 16:05:13 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id u16-20020a05620a0c5000b006bbe7ded98csm2739565qki.112.2022.09.14.16.05.09
+        by smtp.gmail.com with ESMTPSA id d21-20020ac86695000000b0035bbb0fe90bsm2360895qtp.47.2022.09.14.16.05.12
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 14 Sep 2022 16:05:09 -0700 (PDT)
+        Wed, 14 Sep 2022 16:05:12 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 12/15] btrfs: delete btrfs_inode_sectorsize helper
-Date:   Wed, 14 Sep 2022 19:04:48 -0400
-Message-Id: <030e2b0b061a8ae57037f810ae3bfb2b4c9b0f4d.1663196541.git.josef@toxicpanda.com>
+Subject: [PATCH 14/15] btrfs: use a runtime flag to indicate an inode is a free space inode
+Date:   Wed, 14 Sep 2022 19:04:50 -0400
+Message-Id: <d8e32fa383bfa555cf49c9b184c45699bdc84ea3.1663196541.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1663196541.git.josef@toxicpanda.com>
 References: <cover.1663196541.git.josef@toxicpanda.com>
@@ -63,93 +63,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is defined in btrfs_inode.h, and dereferences btrfs_root and
-btrfs_fs_info, both of which aren't defined in btrfs_inode.h.
-Additionally, in many places we already have root or fs_info, so this
-helper often makes the code harder to read.  So delete the helper and
-simply open code it in the few places that we use it.
+We always check the root of an inode as well as it's inode number to
+determine if it's a free space inode.  This is problematic as the helper
+is in a header file where it doesn't have the fs_info definition.  To
+avoid this and make the check a little cleaner simply add a flag to the
+runtime_flags to indicate that the inode is a free space inode, set that
+when we create the inode, and then change the helper to check for this
+flag.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/btrfs_inode.h |  5 -----
- fs/btrfs/extent_io.c   |  4 ++--
- fs/btrfs/file.c        | 11 +++++------
- 3 files changed, 7 insertions(+), 13 deletions(-)
+ fs/btrfs/btrfs_inode.h | 10 +++-------
+ fs/btrfs/inode.c       |  5 +++++
+ 2 files changed, 8 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 890c9f979a3d..b24f78145fa6 100644
+index 44edc6a3db6b..530a0ebfab3f 100644
 --- a/fs/btrfs/btrfs_inode.h
 +++ b/fs/btrfs/btrfs_inode.h
-@@ -251,11 +251,6 @@ struct btrfs_inode {
- 	struct inode vfs_inode;
+@@ -65,6 +65,8 @@ enum {
+ 	 * on the same file.
+ 	 */
+ 	BTRFS_INODE_VERITY_IN_PROGRESS,
++	/* Set when this inode is a free space inode. */
++	BTRFS_INODE_FREE_SPACE_INODE,
  };
  
--static inline u32 btrfs_inode_sectorsize(const struct btrfs_inode *inode)
--{
--	return inode->root->fs_info->sectorsize;
--}
+ /* in memory btrfs inode */
+@@ -301,13 +303,7 @@ static inline void btrfs_i_size_write(struct btrfs_inode *inode, u64 size)
+ 
+ static inline bool btrfs_is_free_space_inode(struct btrfs_inode *inode)
+ {
+-	struct btrfs_root *root = inode->root;
 -
- static inline struct btrfs_inode *BTRFS_I(const struct inode *inode)
- {
- 	return container_of(inode, struct btrfs_inode, vfs_inode);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b1d57727be02..f5eb6c66911c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3925,8 +3925,8 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
- 		goto out;
- 	}
+-	if (root == root->fs_info->tree_root &&
+-	    btrfs_ino(inode) != BTRFS_BTREE_INODE_OBJECTID)
+-		return true;
+-
+-	return false;
++	return test_bit(BTRFS_INODE_FREE_SPACE_INODE, &inode->runtime_flags);
+ }
  
--	lockstart = round_down(start, btrfs_inode_sectorsize(inode));
--	lockend = round_up(start + len, btrfs_inode_sectorsize(inode));
-+	lockstart = round_down(start, root->fs_info->sectorsize);
-+	lockend = round_up(start + len, root->fs_info->sectorsize);
- 	prev_extent_end = lockstart;
+ static inline bool is_data_inode(struct inode *inode)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 62dc3dcf835b..1f38d9b98132 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5731,6 +5731,11 @@ static int btrfs_init_locked_inode(struct inode *inode, void *p)
+ 	BTRFS_I(inode)->location.offset = 0;
+ 	BTRFS_I(inode)->root = btrfs_grab_root(args->root);
+ 	BUG_ON(args->root && !BTRFS_I(inode)->root);
++
++	if (args->root && args->root == args->root->fs_info->tree_root &&
++	    args->ino != BTRFS_BTREE_INODE_OBJECTID)
++		set_bit(BTRFS_INODE_FREE_SPACE_INODE,
++			&BTRFS_I(inode)->runtime_flags);
+ 	return 0;
+ }
  
- 	lock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index c395bf8e7522..c418468428ad 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3010,9 +3010,8 @@ static int btrfs_punch_hole(struct file *file, loff_t offset, loff_t len)
- 	if (ret)
- 		goto out_only_mutex;
- 
--	lockstart = round_up(offset, btrfs_inode_sectorsize(BTRFS_I(inode)));
--	lockend = round_down(offset + len,
--			     btrfs_inode_sectorsize(BTRFS_I(inode))) - 1;
-+	lockstart = round_up(offset, fs_info->sectorsize);
-+	lockend = round_down(offset + len, fs_info->sectorsize) - 1;
- 	same_block = (BTRFS_BYTES_TO_BLKS(fs_info, offset))
- 		== (BTRFS_BYTES_TO_BLKS(fs_info, offset + len - 1));
- 	/*
-@@ -3214,7 +3213,7 @@ enum {
- static int btrfs_zero_range_check_range_boundary(struct btrfs_inode *inode,
- 						 u64 offset)
- {
--	const u64 sectorsize = btrfs_inode_sectorsize(inode);
-+	const u64 sectorsize = inode->root->fs_info->sectorsize;
- 	struct extent_map *em;
- 	int ret;
- 
-@@ -3244,7 +3243,7 @@ static int btrfs_zero_range(struct inode *inode,
- 	struct extent_changeset *data_reserved = NULL;
- 	int ret;
- 	u64 alloc_hint = 0;
--	const u64 sectorsize = btrfs_inode_sectorsize(BTRFS_I(inode));
-+	const u64 sectorsize = fs_info->sectorsize;
- 	u64 alloc_start = round_down(offset, sectorsize);
- 	u64 alloc_end = round_up(offset + len, sectorsize);
- 	u64 bytes_to_reserve = 0;
-@@ -3430,7 +3429,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	u64 data_space_reserved = 0;
- 	u64 qgroup_reserved = 0;
- 	struct extent_map *em;
--	int blocksize = btrfs_inode_sectorsize(BTRFS_I(inode));
-+	int blocksize = BTRFS_I(inode)->root->fs_info->sectorsize;
- 	int ret;
- 
- 	/* Do not allow fallocate in ZONED mode */
 -- 
 2.26.3
 

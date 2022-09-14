@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1786BC6FA8A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Sep 2022 15:07:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18630ECAAD3
+	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Sep 2022 15:07:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230119AbiINPHP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Sep 2022 11:07:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57338 "EHLO
+        id S230140AbiINPHQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Sep 2022 11:07:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57188 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230155AbiINPHB (ORCPT
+        with ESMTP id S229681AbiINPHF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2022 11:07:01 -0400
-Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C7B0A7694D
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 08:07:00 -0700 (PDT)
-Received: by mail-qk1-x731.google.com with SMTP id d15so11069356qka.9
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 08:07:00 -0700 (PDT)
+        Wed, 14 Sep 2022 11:07:05 -0400
+Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E613E77EB0
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 08:07:03 -0700 (PDT)
+Received: by mail-qt1-x835.google.com with SMTP id y2so11382553qtv.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 08:07:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=WhDj7S4ZAtRZpe7QjuqEx84NdUSTMg4XxgEuAjzN58w=;
-        b=uJwNzcJ4b34m2xHmZsulTW5hIFE1HDE92Lc7VW0c+4aw6RUcXOQl2qzz99nYcmaZ4o
-         djniHVNNDkAaGawW/Hh5VYLaJ2F+HKJhCXaTOsBukRpFDCdFAhNks+Tq5MsvmPD5Diew
-         odjx11yhSCk/KurXX1W29dEbdj+yZXEQwiLr9YLQKY89cUxRBFSPJ6/RMy9Dj4hqaA+q
-         vDoUM+aRU3s+e/3LVkLlRp6t594MMDbqBi7RxFVYKu4ilbdYcdazaVFsWKJW3bOW73KL
-         Z1xHDwILOQbsrhn99mt2vKKCK9G02ocXMuITqOBcj35dcRp022mMnQ4PBVl/DvfyAJe7
-         hsGA==
+        bh=yChKzDuGkSJeaB68JMiVPP35OWAvh8MC5ifwtbkDGEE=;
+        b=q/dJXf1kl0HxAiJ/dH3dVECqGxdAretzZj2gS4oezVwbk86rteqzhqS9nnNs0F8dw9
+         8Q0Iz1GPupbQd+zfAt61iMH1Y+fAl+XhcdtDuWitxhZuyZ+bxZTzz1eq9xVafPayo8PH
+         5K5a+OWSEi+1kZYkRn69whrB76v1FO6vPONLKKpZiaes+UnyzN6uZE/pWSerSD67+Bul
+         LuLDj1JcIEjQyyuRZzF9HxYT/yQsx00t2mGB7Xx5Mctodv2VuvCdkhsWUxkDR3NwBxsS
+         SB9vsAxKx96+TFelAeeOfUAIRTom1vv8HXKa6oNyWiRr+fVDRZj6Msaa3dYYpuez0w4S
+         SApQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=WhDj7S4ZAtRZpe7QjuqEx84NdUSTMg4XxgEuAjzN58w=;
-        b=UHxqItgK1tyXoRopdOnBICbHxZqgqqma5SsVBZ/BCuwpYwVFu8W+/9VNqTuFtNdTHi
-         7iN9W83L+H+rPEDP7HOTaeyLK2sodDIlrCkDdXBycUzQ/I+dJYVBfheU8/cJ0gi2TdcZ
-         yBpQL0rLiOdPV4j+TChxPorQlQSWQGEWibQ5sVrCtzjO4nc8M45OD4OR5mFrJw/vbGH6
-         XIk3axfWKg1jmN4MxpVnfZ7JGwr8YRt7A/YwRfnd1jZ+rOHQ1mE75h0VNVH+iTf024r7
-         e2cPANT062LSoa7RewNANPqSE2UnPz2FGpifesQMvghneHxwiEzan/nlwsfMtCZxEoOB
-         bCRg==
-X-Gm-Message-State: ACgBeo2KRNjSMgrGTD+CrflvTan6piUqxWL2v0RQGdJpmDbSiGdcEe0F
-        60DNc8ryWJ52vTEGeFSl8JCBsJJS9KlVNQ==
-X-Google-Smtp-Source: AA6agR5u3NoHsBbXRdqDmT1FHg3sIcGMrMMyhn1q7FyegkJoW7PTUrbVVlcatHWYGg0EHiDmsF2u0w==
-X-Received: by 2002:a05:620a:13cf:b0:6ce:3df8:5ccc with SMTP id g15-20020a05620a13cf00b006ce3df85cccmr10700816qkl.623.1663168019344;
-        Wed, 14 Sep 2022 08:06:59 -0700 (PDT)
+        bh=yChKzDuGkSJeaB68JMiVPP35OWAvh8MC5ifwtbkDGEE=;
+        b=3nGohGDx5nf7vWbNhERrLM+28zTBK42QNbbPCZvT+DOm9qeDnLSqz3LXVeUu0Vi3Vu
+         2cTr2nx1KhZwTH7fpUEISzXbP4nw0Wa6OgtGu67uz0IJzA2mSbULVq+39n8+z+ZW4yYa
+         9RNRAru8lt6PhTzeo/eGa/M0REeONHUjUzsK/x6HqB3ko3V7o/mDYlgmDys0QdYAeD54
+         t2VXzCilCk3nlpy3FlUWChRVH3ooKd0ZD28pm7JqESfeVNFsWDD9h3ec+AeO++QCr9Ie
+         a+QjIJg/Fn1i+/65qsHB3a/f3Kjv0Or1R5ZgGLo+O3kVkZDNjRvSuEbvT4gMD/EUDei6
+         cPzA==
+X-Gm-Message-State: ACgBeo1Evz4/5loW49Vz21QGwulJZ61/TkqkvC1qsHrIEFHrFYla3+hA
+        cSDXcaNxK2Z9utV9yeveUTO3csbUfRYTjw==
+X-Google-Smtp-Source: AA6agR5q3EZPFzygkEpz+X1v9HfO1zkxPF+WMQezPCwiKyCqfOBvOC+EWgE/vO+n3ll/UWEsz+2JKw==
+X-Received: by 2002:ac8:5885:0:b0:343:74df:9b26 with SMTP id t5-20020ac85885000000b0034374df9b26mr33924346qta.406.1663168022627;
+        Wed, 14 Sep 2022 08:07:02 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id bl27-20020a05620a1a9b00b006bbc09af9f5sm1844441qkb.101.2022.09.14.08.06.58
+        by smtp.gmail.com with ESMTPSA id d21-20020a05620a205500b006b942f4ffe3sm1770741qka.18.2022.09.14.08.07.02
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 14 Sep 2022 08:06:58 -0700 (PDT)
+        Wed, 14 Sep 2022 08:07:02 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 11/17] btrfs: move flush related definitions to space-info.h
-Date:   Wed, 14 Sep 2022 11:06:35 -0400
-Message-Id: <a946709036f0527dba6ec810e9cd61b19d267d6c.1663167823.git.josef@toxicpanda.com>
+Subject: [PATCH 13/17] btrfs: move trans_handle_cachep out of ctree.h
+Date:   Wed, 14 Sep 2022 11:06:37 -0400
+Message-Id: <68e9b87432b738ef6547294d9e5d307cfbdaf13d.1663167823.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1663167823.git.josef@toxicpanda.com>
 References: <cover.1663167823.git.josef@toxicpanda.com>
@@ -63,219 +63,144 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This code is used in space-info.c, move the definitions to space-info.h.
+This is local to the transaction code, remove it from ctree.h and
+inode.c, create new helpers in the transaction to handle the init work
+and move the cachep locally to transaction.c.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h         | 59 ----------------------------------------
- fs/btrfs/delayed-inode.c |  1 +
- fs/btrfs/inode-item.c    |  1 +
- fs/btrfs/props.c         |  1 +
- fs/btrfs/relocation.c    |  1 +
- fs/btrfs/space-info.h    | 59 ++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/super.c         |  1 +
- 7 files changed, 64 insertions(+), 59 deletions(-)
+ fs/btrfs/ctree.h       |  1 -
+ fs/btrfs/inode.c       |  8 --------
+ fs/btrfs/super.c       |  9 ++++++++-
+ fs/btrfs/transaction.c | 17 +++++++++++++++++
+ fs/btrfs/transaction.h |  2 ++
+ 5 files changed, 27 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 60f8817f5b7c..d99720cf4835 100644
+index d99720cf4835..439b205f4207 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2654,65 +2654,6 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+@@ -41,7 +41,6 @@ struct btrfs_pending_snapshot;
+ struct btrfs_delayed_ref_root;
+ struct btrfs_space_info;
+ struct btrfs_block_group;
+-extern struct kmem_cache *btrfs_trans_handle_cachep;
+ extern struct kmem_cache *btrfs_path_cachep;
+ extern struct kmem_cache *btrfs_free_space_cachep;
+ extern struct kmem_cache *btrfs_free_space_bitmap_cachep;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 998d1c7134ff..78e7f5397d58 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -107,7 +107,6 @@ static const struct address_space_operations btrfs_aops;
+ static const struct file_operations btrfs_dir_file_operations;
  
- void btrfs_clear_space_info_full(struct btrfs_fs_info *info);
+ static struct kmem_cache *btrfs_inode_cachep;
+-struct kmem_cache *btrfs_trans_handle_cachep;
+ struct kmem_cache *btrfs_path_cachep;
+ struct kmem_cache *btrfs_free_space_cachep;
+ struct kmem_cache *btrfs_free_space_bitmap_cachep;
+@@ -8938,7 +8937,6 @@ void __cold btrfs_destroy_cachep(void)
+ 	rcu_barrier();
+ 	bioset_exit(&btrfs_dio_bioset);
+ 	kmem_cache_destroy(btrfs_inode_cachep);
+-	kmem_cache_destroy(btrfs_trans_handle_cachep);
+ 	kmem_cache_destroy(btrfs_path_cachep);
+ 	kmem_cache_destroy(btrfs_free_space_cachep);
+ 	kmem_cache_destroy(btrfs_free_space_bitmap_cachep);
+@@ -8953,12 +8951,6 @@ int __init btrfs_init_cachep(void)
+ 	if (!btrfs_inode_cachep)
+ 		goto fail;
  
--/*
-- * Different levels for to flush space when doing space reservations.
-- *
-- * The higher the level, the more methods we try to reclaim space.
-- */
--enum btrfs_reserve_flush_enum {
--	/* If we are in the transaction, we can't flush anything.*/
--	BTRFS_RESERVE_NO_FLUSH,
+-	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle",
+-			sizeof(struct btrfs_trans_handle), 0,
+-			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
+-	if (!btrfs_trans_handle_cachep)
+-		goto fail;
 -
--	/*
--	 * Flush space by:
--	 * - Running delayed inode items
--	 * - Allocating a new chunk
--	 */
--	BTRFS_RESERVE_FLUSH_LIMIT,
--
--	/*
--	 * Flush space by:
--	 * - Running delayed inode items
--	 * - Running delayed refs
--	 * - Running delalloc and waiting for ordered extents
--	 * - Allocating a new chunk
--	 */
--	BTRFS_RESERVE_FLUSH_EVICT,
--
--	/*
--	 * Flush space by above mentioned methods and by:
--	 * - Running delayed iputs
--	 * - Committing transaction
--	 *
--	 * Can be interrupted by a fatal signal.
--	 */
--	BTRFS_RESERVE_FLUSH_DATA,
--	BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE,
--	BTRFS_RESERVE_FLUSH_ALL,
--
--	/*
--	 * Pretty much the same as FLUSH_ALL, but can also steal space from
--	 * global rsv.
--	 *
--	 * Can be interrupted by a fatal signal.
--	 */
--	BTRFS_RESERVE_FLUSH_ALL_STEAL,
--};
--
--enum btrfs_flush_state {
--	FLUSH_DELAYED_ITEMS_NR	=	1,
--	FLUSH_DELAYED_ITEMS	=	2,
--	FLUSH_DELAYED_REFS_NR	=	3,
--	FLUSH_DELAYED_REFS	=	4,
--	FLUSH_DELALLOC		=	5,
--	FLUSH_DELALLOC_WAIT	=	6,
--	FLUSH_DELALLOC_FULL	=	7,
--	ALLOC_CHUNK		=	8,
--	ALLOC_CHUNK_FORCE	=	9,
--	RUN_DELAYED_IPUTS	=	10,
--	COMMIT_TRANS		=	11,
--};
--
- int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 				     struct btrfs_block_rsv *rsv,
- 				     int nitems, bool use_global_rsv);
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index cac5169eaf8d..a411f04a7b97 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -14,6 +14,7 @@
- #include "qgroup.h"
- #include "locking.h"
- #include "inode-item.h"
-+#include "space-info.h"
- 
- #define BTRFS_DELAYED_WRITEBACK		512
- #define BTRFS_DELAYED_BACKGROUND	128
-diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
-index 0eeb5ea87894..366f3a788c6a 100644
---- a/fs/btrfs/inode-item.c
-+++ b/fs/btrfs/inode-item.c
-@@ -8,6 +8,7 @@
- #include "disk-io.h"
- #include "transaction.h"
- #include "print-tree.h"
-+#include "space-info.h"
- 
- struct btrfs_inode_ref *btrfs_find_name_in_backref(struct extent_buffer *leaf,
- 						   int slot, const char *name,
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 055a631276ce..07f62e3ba6a5 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -10,6 +10,7 @@
- #include "ctree.h"
- #include "xattr.h"
- #include "compression.h"
-+#include "space-info.h"
- 
- #define BTRFS_PROP_HANDLERS_HT_BITS 8
- static DEFINE_HASHTABLE(prop_handlers_ht, BTRFS_PROP_HANDLERS_HT_BITS);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index d87020ae5810..41adbfa3a5f6 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -27,6 +27,7 @@
- #include "subpage.h"
- #include "zoned.h"
- #include "inode-item.h"
-+#include "space-info.h"
- 
- /*
-  * Relocation overview
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 8f5948740941..729820582fa7 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -5,6 +5,65 @@
- 
- #include "volumes.h"
- 
-+/*
-+ * Different levels for to flush space when doing space reservations.
-+ *
-+ * The higher the level, the more methods we try to reclaim space.
-+ */
-+enum btrfs_reserve_flush_enum {
-+	/* If we are in the transaction, we can't flush anything.*/
-+	BTRFS_RESERVE_NO_FLUSH,
-+
-+	/*
-+	 * Flush space by:
-+	 * - Running delayed inode items
-+	 * - Allocating a new chunk
-+	 */
-+	BTRFS_RESERVE_FLUSH_LIMIT,
-+
-+	/*
-+	 * Flush space by:
-+	 * - Running delayed inode items
-+	 * - Running delayed refs
-+	 * - Running delalloc and waiting for ordered extents
-+	 * - Allocating a new chunk
-+	 */
-+	BTRFS_RESERVE_FLUSH_EVICT,
-+
-+	/*
-+	 * Flush space by above mentioned methods and by:
-+	 * - Running delayed iputs
-+	 * - Committing transaction
-+	 *
-+	 * Can be interrupted by a fatal signal.
-+	 */
-+	BTRFS_RESERVE_FLUSH_DATA,
-+	BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE,
-+	BTRFS_RESERVE_FLUSH_ALL,
-+
-+	/*
-+	 * Pretty much the same as FLUSH_ALL, but can also steal space from
-+	 * global rsv.
-+	 *
-+	 * Can be interrupted by a fatal signal.
-+	 */
-+	BTRFS_RESERVE_FLUSH_ALL_STEAL,
-+};
-+
-+enum btrfs_flush_state {
-+	FLUSH_DELAYED_ITEMS_NR	=	1,
-+	FLUSH_DELAYED_ITEMS	=	2,
-+	FLUSH_DELAYED_REFS_NR	=	3,
-+	FLUSH_DELAYED_REFS	=	4,
-+	FLUSH_DELALLOC		=	5,
-+	FLUSH_DELALLOC_WAIT	=	6,
-+	FLUSH_DELALLOC_FULL	=	7,
-+	ALLOC_CHUNK		=	8,
-+	ALLOC_CHUNK_FORCE	=	9,
-+	RUN_DELAYED_IPUTS	=	10,
-+	COMMIT_TRANS		=	11,
-+};
-+
- struct btrfs_space_info {
- 	spinlock_t lock;
- 
+ 	btrfs_path_cachep = kmem_cache_create("btrfs_path",
+ 			sizeof(struct btrfs_path), 0,
+ 			SLAB_MEM_SPREAD, NULL);
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index be7df8d1d5b8..2add5b23c476 100644
+index 2add5b23c476..9f7fc1c71148 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -49,6 +49,7 @@
- #include "discard.h"
- #include "qgroup.h"
- #include "raid56.h"
-+#include "space-info.h"
- #define CREATE_TRACE_POINTS
- #include <trace/events/btrfs.h>
+@@ -2737,10 +2737,14 @@ static int __init init_btrfs_fs(void)
+ 	if (err)
+ 		goto free_compress;
  
+-	err = extent_state_init_cachep();
++	err = btrfs_transaction_init();
+ 	if (err)
+ 		goto free_cachep;
+ 
++	err = extent_state_init_cachep();
++	if (err)
++		goto free_transaction;
++
+ 	err = extent_buffer_init_cachep();
+ 	if (err)
+ 		goto free_extent_cachep;
+@@ -2809,6 +2813,8 @@ static int __init init_btrfs_fs(void)
+ 	extent_buffer_free_cachep();
+ free_extent_cachep:
+ 	extent_state_free_cachep();
++free_transaction:
++	btrfs_transaction_exit();
+ free_cachep:
+ 	btrfs_destroy_cachep();
+ free_compress:
+@@ -2820,6 +2826,7 @@ static int __init init_btrfs_fs(void)
+ 
+ static void __exit exit_btrfs_fs(void)
+ {
++	btrfs_transaction_exit();
+ 	btrfs_destroy_cachep();
+ 	btrfs_delayed_ref_exit();
+ 	btrfs_auto_defrag_exit();
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index d1f1da6820fb..ae7d4aca771d 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -24,6 +24,8 @@
+ #include "space-info.h"
+ #include "zoned.h"
+ 
++static struct kmem_cache *btrfs_trans_handle_cachep;
++
+ #define BTRFS_ROOT_TRANS_TAG 0
+ 
+ /*
+@@ -2600,3 +2602,18 @@ void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info)
+ 		btrfs_warn(fs_info,
+ 			"unknown pending changes left 0x%lx, ignoring", prev);
+ }
++
++int __init btrfs_transaction_init(void)
++{
++	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle",
++			sizeof(struct btrfs_trans_handle), 0,
++			SLAB_TEMPORARY | SLAB_MEM_SPREAD, NULL);
++	if (!btrfs_trans_handle_cachep)
++		return -ENOMEM;
++	return 0;
++}
++
++void __cold btrfs_transaction_exit(void)
++{
++	kmem_cache_destroy(btrfs_trans_handle_cachep);
++}
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 970ff316069d..b5651c372946 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -236,4 +236,6 @@ void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_root *root);
+ void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans);
+ 
++int __init btrfs_transaction_init(void);
++void __cold btrfs_transaction_exit(void);
+ #endif
 -- 
 2.26.3
 

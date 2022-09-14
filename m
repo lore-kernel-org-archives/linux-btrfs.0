@@ -2,58 +2,58 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F77CECAAD3
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC264C6FA86
 	for <linux-btrfs@archiver.kernel.org>; Wed, 14 Sep 2022 23:08:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229824AbiINXIB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 14 Sep 2022 19:08:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52424 "EHLO
+        id S229832AbiINXIC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 14 Sep 2022 19:08:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52434 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229696AbiINXH7 (ORCPT
+        with ESMTP id S229812AbiINXIB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 14 Sep 2022 19:07:59 -0400
-Received: from mail-qt1-x833.google.com (mail-qt1-x833.google.com [IPv6:2607:f8b0:4864:20::833])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C77087081
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:07:55 -0700 (PDT)
-Received: by mail-qt1-x833.google.com with SMTP id s18so9392008qtx.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:07:55 -0700 (PDT)
+        Wed, 14 Sep 2022 19:08:01 -0400
+Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E64F88DF6
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:07:58 -0700 (PDT)
+Received: by mail-qt1-x834.google.com with SMTP id w2so8747139qtv.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Sep 2022 16:07:58 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date;
-        bh=MFDwn1dwx6PkSD57bKJCt2SMDtuYBMpaUpYFyW+I6Us=;
-        b=X/slaij+DoAvmJjYsEa9vlDL/IQgKGKv73aoeduqBTxQ//DNWq1JkJ9nkPWahDMgbY
-         GCRzfVaYm7EJWxSo5VoPaxVrK2QqRrRfWH6smmYrKmxgJaE+ujj3x97mUiChnHbSQtg1
-         71RZVmi+GSC7iPq6fFxT5fDfrvOeFsYNg9ve4l8WvTz33RNZ2M6pIIVGjFue+IhzRx4D
-         15bHZSfCFmIg6NPOIfxrbhDq9MErHFLb5KRYJuGr7fDtMFgKjdOUIGqpvqYSQXLkCY3f
-         UYXtvsh/DbgRIq0aw1VtwWpc/ZeePG5+DA2lLgWnGHt3sQ3K5ROi9jePjsjdFP+ykgXt
-         iiqQ==
+        bh=6JrsQeBhWMZTS5cFS5BZe+GUQzsKrqLxavip0LbAT3E=;
+        b=ujrQfnmRMUKH7nGqSjdS+QUXsQxGibTyRW+cuTBGLZn2+QVUS8wpWS5yinCxrEuGKH
+         Ybp5LRdsSpMVyg2FLIvSQnojC1uVJpSRgRVXIKJordKj8rlzoAWCbi9oQlMdRfhGtxMM
+         kXKuxg+6qHkF6qNIaoC64usuGKYD63RkLdVqXLmVanazmx8989KtO7sw7yjjmF6rqLGa
+         6SrwaI/hVF5EdSvG0Ym+vIEDpJ/f6UkJwb/Uk5ZCk3t2CkJV9myOj78JLOkh1nZ7Ibnk
+         sVWjWNqcnYC2TgaGyNY5BgjCZzMVX6/vbGAhIaSEPXnQYWpXaKlWb/WfHBqk15CMD6in
+         RwOA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=MFDwn1dwx6PkSD57bKJCt2SMDtuYBMpaUpYFyW+I6Us=;
-        b=4enrnCCDEEjxssmLdC+D7+zxlNUfaBGYZ0E8mZLLk1d89uS3cvJRlWXxHHcO4mvAFk
-         9HfwBq+91jnGxjJWgxPE0cSCeFv5g7RHLisHERx0iEM6ZWQ3TzAmFhWT0XotS/jr2EpE
-         FuZkHIGFlcL5JfY4jxbDWGx5PH6niGQLeiSK2CjQC9mw4vjhUoHpei3vEQznVgX1XxKe
-         +RaYEt3V3BbpwGRIPIZPlqMAR/kfU4HNJSzAhKvKMrSvjmAhSzaDE99CJgkaJTpLUngm
-         vp65zqGQTmJgZRbGN1G/7uxk7dr+czOOVo59B1C6mkVtjE3AzMeQU184R4P9cowjNocH
-         0/Dg==
-X-Gm-Message-State: ACgBeo1PWp8TdxVSzct3pmzoX8TTAKx7QEwxQrBcNmLwJB7OrKH3VhqF
-        NcmOl7pN9WUQ2+ajzeP3mY3yNziXrWoNiw==
-X-Google-Smtp-Source: AA6agR50mzpZWgfxc9Zcx8M45Ux1Eg7bylsFevWiBhJe7tUPcyxGwGYoY2NF8GWpvvUepgM4La42nA==
-X-Received: by 2002:a05:622a:290:b0:35b:bc26:d98c with SMTP id z16-20020a05622a029000b0035bbc26d98cmr10492687qtw.489.1663196874323;
-        Wed, 14 Sep 2022 16:07:54 -0700 (PDT)
+        bh=6JrsQeBhWMZTS5cFS5BZe+GUQzsKrqLxavip0LbAT3E=;
+        b=lIoNFGiyVEw4sHI3rJoeoN2ylrZYsLaJHtCSH8wdTPMJLA2AaSvgHs9MlVwi09nr2m
+         QXD68MMLFx018i5QedpJgwq8cLsJ8q/pENrPwkzsux9IEWQQice3tp9uRuPlYKuPx4+n
+         kbBKxSY2hFChdFT22HXN225xM8hYds/k/UWvyUr1X2xOtXk6eDigvXj/MfPpia0TtETb
+         jjombz5ASqf/BGQEm0Yu9TRZBAdo2jCi4okhRXRHUx4ezSLQXpE5YxZ0kSQGDxitfHrD
+         8c9+iNIXphRaUKb/huO7w8E+eFsGIDW2A9bKmbyOcIWwRItudzfq4Y8F+4HoHh7Q870I
+         Wjrg==
+X-Gm-Message-State: ACgBeo0ogRPBjGBzOyeUOLfGkWCP/SkrU0+A4uDxch2wMjIbzt2UIEha
+        nM7WhITHmbsOntNs09PXH3lzvOKaADo1bA==
+X-Google-Smtp-Source: AA6agR4LQKpNU9I5cVQswXdHlZTbz+CEAdk9B3XLWO4uhLHfEmHU0DNNB4eK9xEWiVeMzXUyoqslGQ==
+X-Received: by 2002:ac8:5ac7:0:b0:35b:b658:4b6c with SMTP id d7-20020ac85ac7000000b0035bb6584b6cmr13969978qtd.207.1663196876940;
+        Wed, 14 Sep 2022 16:07:56 -0700 (PDT)
 Received: from localhost (cpe-174-109-172-136.nc.res.rr.com. [174.109.172.136])
-        by smtp.gmail.com with ESMTPSA id az6-20020a05620a170600b006b919c6749esm2824976qkb.91.2022.09.14.16.07.53
+        by smtp.gmail.com with ESMTPSA id fw8-20020a05622a4a8800b00338ae1f5421sm2425078qtb.0.2022.09.14.16.07.56
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 14 Sep 2022 16:07:53 -0700 (PDT)
+        Wed, 14 Sep 2022 16:07:56 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 02/10] btrfs: move btrfs_check_device_zone_type into volumes.c
-Date:   Wed, 14 Sep 2022 19:07:42 -0400
-Message-Id: <a156cf2430eeaf93a748882f49ca9dd1cf7d51d4.1663196746.git.josef@toxicpanda.com>
+Subject: [PATCH 04/10] btrfs: move btrfs_check_super_location into scrub.c
+Date:   Wed, 14 Sep 2022 19:07:44 -0400
+Message-Id: <32978def2ae6a480ad5734ce4d1c5661db0206c0.1663196746.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1663196746.git.josef@toxicpanda.com>
 References: <cover.1663196746.git.josef@toxicpanda.com>
@@ -63,76 +63,55 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that this is only used in volumes.c move it out of zoned.h locally
-to volumes.c.  This is in order to avoid having a helper that uses
-functions not defined in zoned.h.
+This helper is only used in scrub.c, move it out of zoned.h locally to
+scrub.c to avoid using code that isn't defined in zoned.h.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/volumes.c | 19 +++++++++++++++++++
- fs/btrfs/zoned.h   | 19 -------------------
- 2 files changed, 19 insertions(+), 19 deletions(-)
+ fs/btrfs/scrub.c | 9 +++++++++
+ fs/btrfs/zoned.h | 9 ---------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ea76458d7c70..29652323ef9b 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2583,6 +2583,25 @@ static int btrfs_finish_sprout(struct btrfs_trans_handle *trans)
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index d5c23faceb8e..927431217131 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -4140,6 +4140,15 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
  	return ret;
  }
  
-+static inline bool btrfs_check_device_zone_type(const struct btrfs_fs_info *fs_info,
-+						struct block_device *bdev)
++static inline bool btrfs_check_super_location(struct btrfs_device *device, u64 pos)
 +{
-+	if (btrfs_is_zoned(fs_info)) {
-+		/*
-+		 * We can allow a regular device on a zoned filesystem, because
-+		 * we will emulate the zoned capabilities.
-+		 */
-+		if (!bdev_is_zoned(bdev))
-+			return true;
-+
-+		return fs_info->zone_size ==
-+			(bdev_zone_sectors(bdev) << SECTOR_SHIFT);
-+	}
-+
-+	/* Do not allow Host Manged zoned device */
-+	return bdev_zoned_model(bdev) != BLK_ZONED_HM;
++	/*
++	 * On a non-zoned device, any address is OK. On a zoned device,
++	 * non-SEQUENTIAL WRITE REQUIRED zones are capable.
++	 */
++	return device->zone_info == NULL || !btrfs_dev_is_sequential(device, pos);
 +}
 +
- struct block_device *btrfs_open_device_for_adding(struct btrfs_fs_info *fs_info,
- 						  const char *device_path)
+ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 					   struct btrfs_device *scrub_dev)
  {
 diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index 094f3e44c53c..20d7f35406d4 100644
+index aabdd364e889..0a1298afa049 100644
 --- a/fs/btrfs/zoned.h
 +++ b/fs/btrfs/zoned.h
-@@ -311,25 +311,6 @@ static inline void btrfs_dev_clear_zone_empty(struct btrfs_device *device, u64 p
+@@ -311,15 +311,6 @@ static inline void btrfs_dev_clear_zone_empty(struct btrfs_device *device, u64 p
  	btrfs_dev_set_empty_zone_bit(device, pos, false);
  }
  
--static inline bool btrfs_check_device_zone_type(const struct btrfs_fs_info *fs_info,
--						struct block_device *bdev)
+-static inline bool btrfs_check_super_location(struct btrfs_device *device, u64 pos)
 -{
--	if (btrfs_is_zoned(fs_info)) {
--		/*
--		 * We can allow a regular device on a zoned filesystem, because
--		 * we will emulate the zoned capabilities.
--		 */
--		if (!bdev_is_zoned(bdev))
--			return true;
--
--		return fs_info->zone_size ==
--			(bdev_zone_sectors(bdev) << SECTOR_SHIFT);
--	}
--
--	/* Do not allow Host Manged zoned device */
--	return bdev_zoned_model(bdev) != BLK_ZONED_HM;
+-	/*
+-	 * On a non-zoned device, any address is OK. On a zoned device,
+-	 * non-SEQUENTIAL WRITE REQUIRED zones are capable.
+-	 */
+-	return device->zone_info == NULL || !btrfs_dev_is_sequential(device, pos);
 -}
 -
- static inline bool btrfs_check_super_location(struct btrfs_device *device, u64 pos)
+ static inline void btrfs_zoned_meta_io_lock(struct btrfs_fs_info *fs_info)
  {
- 	/*
+ 	if (!btrfs_is_zoned(fs_info))
 -- 
 2.26.3
 

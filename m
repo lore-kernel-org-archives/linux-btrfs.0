@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A105ECAAD3
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Sep 2022 09:42:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A8F9C6FA86
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Sep 2022 09:42:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229832AbiIOJmR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Sep 2022 05:42:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37630 "EHLO
+        id S229890AbiIOJmW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Sep 2022 05:42:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37738 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229570AbiIOJmP (ORCPT
+        with ESMTP id S229886AbiIOJmV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2022 05:42:15 -0400
+        Thu, 15 Sep 2022 05:42:21 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B37D086FF2;
-        Thu, 15 Sep 2022 02:42:14 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A2F9494126;
+        Thu, 15 Sep 2022 02:42:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=SxtVDqdat7BUx/W51wS73TW46FWCaaqoJViREBV0E4g=; b=XCKKlba980yHrEb7U2Z7nxXZcq
-        YZzQTA/3rSfLmxP/itoKa1cbxHecjo6lZ+/daLAoQ54ZywDoNmcYhRKQh7BhjSSHYgAkEROhNV0/F
-        14GG/i0DGrSzBpEno94+6Ri22JjcTLo6AeQn1wLhshEvNQWMAE80uVSy7lfx0Ic4vGDqbQuJxd+jz
-        TiTrR0NISz7uCi8jJpu5X0J1hYZD+scAZRZY54MvRA9w34a9r6/My0FLliJ93QY1RS4/0GnzTnRsB
-        BSei3Ct+cvW3zZBM7lACxj9tSoD9XtuX3iLfVJvhdqhe9e4BywOrgFoGIoW0PNpYxnkBWmNGmZv+S
-        fkJwuS3g==;
+        bh=zSqQSYiG/yhGt5jVAkpLYmREyG39C2nKNIUNc2bjsak=; b=LBYTaNgK69SCGNd0NypzW88Xv5
+        Yx58YrbfYXYM3VU1TTaXmnHJhmAosi9GxG5fHizuaiSpsfQyyTrQq+gWKQKGswDMr3IXN1ZrWzMVP
+        UY1tiT8IDnZgbhBOAQ3xCJ+2VZ7AX9J7984+cTjW67hOwi9a/fxdM4uq9b3MQocffDqEAIF78Qo78
+        gqCr/pS8eAu+ePAIAL48Nsgbsq1v9+2L+IYizWE+7uXKkal5cK3KhOBwcusamcfxoDVeuG3s8KEDX
+        vjUdj6mQwI2K2tNhBci5SxLXAld8gZc6Vz+gdOMjtgn/GsCCBLZKbXJ5lYzK1oAc2wfdMZD/5hqfX
+        L5xq1muA==;
 Received: from [185.122.133.20] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1oYlNk-005b0u-Ql; Thu, 15 Sep 2022 09:42:05 +0000
+        id 1oYlNs-005b4u-GP; Thu, 15 Sep 2022 09:42:13 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>, Matthew Wilcox <willy@infradead.org>,
         Johannes Weiner <hannes@cmpxchg.org>,
@@ -37,10 +37,11 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Gao Xiang <xiang@kernel.org>,
         Chao Yu <chao@kernel.org>, linux-block@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-mm@kvack.org
-Subject: [PATCH 1/5] mm: add PSI accounting around ->read_folio and ->readahead calls
-Date:   Thu, 15 Sep 2022 10:41:56 +0100
-Message-Id: <20220915094200.139713-2-hch@lst.de>
+        linux-erofs@lists.ozlabs.org, linux-mm@kvack.org,
+        Gao Xiang <hsiangkao@linux.alibaba.com>
+Subject: [PATCH 4/5] erofs: add manual PSI accounting for the compressed address space
+Date:   Thu, 15 Sep 2022 10:41:59 +0100
+Message-Id: <20220915094200.139713-5-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220915094200.139713-1-hch@lst.de>
 References: <20220915094200.139713-1-hch@lst.de>
@@ -51,140 +52,70 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-PSI tries to account for the cost of bringing back in pages discarded by
-the MM LRU management.  Currently the prime place for that is hooked into
-the bio submission path, which is a rather bad place:
-
- - it does not actually account I/O for non-block file systems, of which
-   we have many
- - it adds overhead and a layering violation to the block layer
-
-Add the accounting into the two places in the core MM code that read
-pages into an address space by calling into ->read_folio and ->readahead
-so that the entire file system operations are covered, to broaden
-the coverage and allow removing the accounting in the block layer going
-forward.
-
-As psi_memstall_enter can deal with nested calls this will not lead to
-double accounting even while the bio annotations are still present.
+erofs uses an additional address space for compressed data read from disk
+in addition to the one directly associated with the inode.  Reading into
+the lower address space is open coded using add_to_page_cache_lru instead
+of using the filemap.c helper for page allocation micro-optimizations,
+which means it is not covered by the MM PSI annotations for ->read_folio
+and ->readahead, so add manual ones instead.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Acked-by: Johannes Weiner <hannes@cmpxchg.org>
+Acked-by: Gao Xiang <hsiangkao@linux.alibaba.com>
 ---
- include/linux/pagemap.h |  2 ++
- mm/filemap.c            |  7 +++++++
- mm/readahead.c          | 22 ++++++++++++++++++----
- 3 files changed, 27 insertions(+), 4 deletions(-)
+ fs/erofs/zdata.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
-index 0178b2040ea38..201dc7281640b 100644
---- a/include/linux/pagemap.h
-+++ b/include/linux/pagemap.h
-@@ -1173,6 +1173,8 @@ struct readahead_control {
- 	pgoff_t _index;
- 	unsigned int _nr_pages;
- 	unsigned int _batch_count;
-+	bool _workingset;
-+	unsigned long _pflags;
- };
+diff --git a/fs/erofs/zdata.c b/fs/erofs/zdata.c
+index 5792ca9e0d5ef..143a101a36887 100644
+--- a/fs/erofs/zdata.c
++++ b/fs/erofs/zdata.c
+@@ -7,6 +7,7 @@
+ #include "zdata.h"
+ #include "compress.h"
+ #include <linux/prefetch.h>
++#include <linux/psi.h>
  
- #define DEFINE_READAHEAD(ractl, f, r, m, i)				\
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 15800334147b3..c943d1b90cc26 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2382,6 +2382,8 @@ static void filemap_get_read_batch(struct address_space *mapping,
- static int filemap_read_folio(struct file *file, filler_t filler,
- 		struct folio *folio)
- {
-+	bool workingset = folio_test_workingset(folio);
-+	unsigned long pflags;
- 	int error;
+ #include <trace/events/erofs.h>
+ 
+@@ -1365,6 +1366,8 @@ static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
+ 	struct block_device *last_bdev;
+ 	unsigned int nr_bios = 0;
+ 	struct bio *bio = NULL;
++	/* initialize to 1 to make skip psi_memstall_leave unless needed */
++	unsigned long pflags = 1;
+ 
+ 	bi_private = jobqueueset_init(sb, q, fgq, force_fg);
+ 	qtail[JQ_BYPASS] = &q[JQ_BYPASS]->head;
+@@ -1414,10 +1417,15 @@ static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
+ 			if (bio && (cur != last_index + 1 ||
+ 				    last_bdev != mdev.m_bdev)) {
+ submit_bio_retry:
++				if (!pflags)
++					psi_memstall_leave(&pflags);
+ 				submit_bio(bio);
+ 				bio = NULL;
+ 			}
+ 
++			if (unlikely(PageWorkingset(page)))
++				psi_memstall_enter(&pflags);
++
+ 			if (!bio) {
+ 				bio = bio_alloc(mdev.m_bdev, BIO_MAX_VECS,
+ 						REQ_OP_READ, GFP_NOIO);
+@@ -1445,8 +1453,11 @@ static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
+ 			move_to_bypass_jobqueue(pcl, qtail, owned_head);
+ 	} while (owned_head != Z_EROFS_PCLUSTER_TAIL);
+ 
+-	if (bio)
++	if (bio) {
++		if (!pflags)
++			psi_memstall_leave(&pflags);
+ 		submit_bio(bio);
++	}
  
  	/*
-@@ -2390,8 +2392,13 @@ static int filemap_read_folio(struct file *file, filler_t filler,
- 	 * fails.
- 	 */
- 	folio_clear_error(folio);
-+
- 	/* Start the actual read. The read will unlock the page. */
-+	if (unlikely(workingset))
-+		psi_memstall_enter(&pflags);
- 	error = filler(file, folio);
-+	if (unlikely(workingset))
-+		psi_memstall_leave(&pflags);
- 	if (error)
- 		return error;
- 
-diff --git a/mm/readahead.c b/mm/readahead.c
-index fdcd28cbd92de..b10f0cf81d804 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -122,6 +122,7 @@
- #include <linux/task_io_accounting_ops.h>
- #include <linux/pagevec.h>
- #include <linux/pagemap.h>
-+#include <linux/psi.h>
- #include <linux/syscalls.h>
- #include <linux/file.h>
- #include <linux/mm_inline.h>
-@@ -152,6 +153,8 @@ static void read_pages(struct readahead_control *rac)
- 	if (!readahead_count(rac))
- 		return;
- 
-+	if (unlikely(rac->_workingset))
-+		psi_memstall_enter(&rac->_pflags);
- 	blk_start_plug(&plug);
- 
- 	if (aops->readahead) {
-@@ -179,6 +182,9 @@ static void read_pages(struct readahead_control *rac)
- 	}
- 
- 	blk_finish_plug(&plug);
-+	if (unlikely(rac->_workingset))
-+		psi_memstall_leave(&rac->_pflags);
-+	rac->_workingset = false;
- 
- 	BUG_ON(readahead_count(rac));
- }
-@@ -252,6 +258,7 @@ void page_cache_ra_unbounded(struct readahead_control *ractl,
- 		}
- 		if (i == nr_to_read - lookahead_size)
- 			folio_set_readahead(folio);
-+		ractl->_workingset |= folio_test_workingset(folio);
- 		ractl->_nr_pages++;
- 	}
- 
-@@ -480,11 +487,14 @@ static inline int ra_alloc_folio(struct readahead_control *ractl, pgoff_t index,
- 	if (index == mark)
- 		folio_set_readahead(folio);
- 	err = filemap_add_folio(ractl->mapping, folio, index, gfp);
--	if (err)
-+	if (err) {
- 		folio_put(folio);
--	else
--		ractl->_nr_pages += 1UL << order;
--	return err;
-+		return err;
-+	}
-+
-+	ractl->_nr_pages += 1UL << order;
-+	ractl->_workingset |= folio_test_workingset(folio);
-+	return 0;
- }
- 
- void page_cache_ra_order(struct readahead_control *ractl,
-@@ -826,6 +836,10 @@ void readahead_expand(struct readahead_control *ractl,
- 			put_page(page);
- 			return;
- 		}
-+		if (unlikely(PageWorkingset(page)) && !ractl->_workingset) {
-+			ractl->_workingset = true;
-+			psi_memstall_enter(&ractl->_pflags);
-+		}
- 		ractl->_nr_pages++;
- 		if (ra) {
- 			ra->size++;
+ 	 * although background is preferred, no one is pending for submission.
 -- 
 2.30.2
 

@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A8F9C6FA86
-	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Sep 2022 09:42:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CB99C6FA92
+	for <linux-btrfs@archiver.kernel.org>; Thu, 15 Sep 2022 09:42:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229890AbiIOJmW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 15 Sep 2022 05:42:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37738 "EHLO
+        id S229900AbiIOJmZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 15 Sep 2022 05:42:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37674 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229886AbiIOJmV (ORCPT
+        with ESMTP id S229877AbiIOJmR (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 15 Sep 2022 05:42:21 -0400
+        Thu, 15 Sep 2022 05:42:17 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A2F9494126;
-        Thu, 15 Sep 2022 02:42:20 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B729C8993E;
+        Thu, 15 Sep 2022 02:42:16 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=zSqQSYiG/yhGt5jVAkpLYmREyG39C2nKNIUNc2bjsak=; b=LBYTaNgK69SCGNd0NypzW88Xv5
-        Yx58YrbfYXYM3VU1TTaXmnHJhmAosi9GxG5fHizuaiSpsfQyyTrQq+gWKQKGswDMr3IXN1ZrWzMVP
-        UY1tiT8IDnZgbhBOAQ3xCJ+2VZ7AX9J7984+cTjW67hOwi9a/fxdM4uq9b3MQocffDqEAIF78Qo78
-        gqCr/pS8eAu+ePAIAL48Nsgbsq1v9+2L+IYizWE+7uXKkal5cK3KhOBwcusamcfxoDVeuG3s8KEDX
-        vjUdj6mQwI2K2tNhBci5SxLXAld8gZc6Vz+gdOMjtgn/GsCCBLZKbXJ5lYzK1oAc2wfdMZD/5hqfX
-        L5xq1muA==;
+        bh=f10ud+4Yk8zuOd0FwaSc+xsLEXHksvzyDOLFsDza1gY=; b=Z0mbKLDUJODd7WIJH7zNtS2L90
+        vOmMj4hDPPXiSDw+aMBTpUxgy0asgtgfV+4+J+l4oS+R2K/YUyuJ8I/elEQRBtiYerT7+cF5+veE0
+        As2MLe9Jh+crJYKoXZY8Yx6HDQSgstxsDLr8ptgQnaOoxvx+vyNis0c4HBZ1yJWMJml91LbKDJ6sT
+        o8ABQhBEkp2KFWBYACzfFvirFth7WnnmAhhowLIfySIykeZwWp4JCLieTfsniUw4AZwmamm7MT3nC
+        xxaJOz0cCYfhy3q/EURHz/sxkq0xwdjKLYezjVO8xCGkodJzvbpVbeUUBWYy02JEErH3z9SzjWEdA
+        jKe0ukpg==;
 Received: from [185.122.133.20] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1oYlNs-005b4u-GP; Thu, 15 Sep 2022 09:42:13 +0000
+        id 1oYlNn-005b1k-MR; Thu, 15 Sep 2022 09:42:08 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Jens Axboe <axboe@kernel.dk>, Matthew Wilcox <willy@infradead.org>,
         Johannes Weiner <hannes@cmpxchg.org>,
@@ -37,11 +37,10 @@ Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>, Gao Xiang <xiang@kernel.org>,
         Chao Yu <chao@kernel.org>, linux-block@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-erofs@lists.ozlabs.org, linux-mm@kvack.org,
-        Gao Xiang <hsiangkao@linux.alibaba.com>
-Subject: [PATCH 4/5] erofs: add manual PSI accounting for the compressed address space
-Date:   Thu, 15 Sep 2022 10:41:59 +0100
-Message-Id: <20220915094200.139713-5-hch@lst.de>
+        linux-erofs@lists.ozlabs.org, linux-mm@kvack.org
+Subject: [PATCH 2/5] sched/psi: export psi_memstall_{enter,leave}
+Date:   Thu, 15 Sep 2022 10:41:57 +0100
+Message-Id: <20220915094200.139713-3-hch@lst.de>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20220915094200.139713-1-hch@lst.de>
 References: <20220915094200.139713-1-hch@lst.de>
@@ -52,70 +51,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-erofs uses an additional address space for compressed data read from disk
-in addition to the one directly associated with the inode.  Reading into
-the lower address space is open coded using add_to_page_cache_lru instead
-of using the filemap.c helper for page allocation micro-optimizations,
-which means it is not covered by the MM PSI annotations for ->read_folio
-and ->readahead, so add manual ones instead.
+To properly account for all refaults from file system logic, file systems
+need to call psi_memstall_enter directly, so export it.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Acked-by: Johannes Weiner <hannes@cmpxchg.org>
-Acked-by: Gao Xiang <hsiangkao@linux.alibaba.com>
 ---
- fs/erofs/zdata.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ kernel/sched/psi.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/erofs/zdata.c b/fs/erofs/zdata.c
-index 5792ca9e0d5ef..143a101a36887 100644
---- a/fs/erofs/zdata.c
-+++ b/fs/erofs/zdata.c
-@@ -7,6 +7,7 @@
- #include "zdata.h"
- #include "compress.h"
- #include <linux/prefetch.h>
-+#include <linux/psi.h>
+diff --git a/kernel/sched/psi.c b/kernel/sched/psi.c
+index ecb4b4ff4ce0a..7f6030091aeee 100644
+--- a/kernel/sched/psi.c
++++ b/kernel/sched/psi.c
+@@ -917,6 +917,7 @@ void psi_memstall_enter(unsigned long *flags)
  
- #include <trace/events/erofs.h>
+ 	rq_unlock_irq(rq, &rf);
+ }
++EXPORT_SYMBOL_GPL(psi_memstall_enter);
  
-@@ -1365,6 +1366,8 @@ static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
- 	struct block_device *last_bdev;
- 	unsigned int nr_bios = 0;
- 	struct bio *bio = NULL;
-+	/* initialize to 1 to make skip psi_memstall_leave unless needed */
-+	unsigned long pflags = 1;
+ /**
+  * psi_memstall_leave - mark the end of an memory stall section
+@@ -946,6 +947,7 @@ void psi_memstall_leave(unsigned long *flags)
  
- 	bi_private = jobqueueset_init(sb, q, fgq, force_fg);
- 	qtail[JQ_BYPASS] = &q[JQ_BYPASS]->head;
-@@ -1414,10 +1417,15 @@ static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
- 			if (bio && (cur != last_index + 1 ||
- 				    last_bdev != mdev.m_bdev)) {
- submit_bio_retry:
-+				if (!pflags)
-+					psi_memstall_leave(&pflags);
- 				submit_bio(bio);
- 				bio = NULL;
- 			}
+ 	rq_unlock_irq(rq, &rf);
+ }
++EXPORT_SYMBOL_GPL(psi_memstall_leave);
  
-+			if (unlikely(PageWorkingset(page)))
-+				psi_memstall_enter(&pflags);
-+
- 			if (!bio) {
- 				bio = bio_alloc(mdev.m_bdev, BIO_MAX_VECS,
- 						REQ_OP_READ, GFP_NOIO);
-@@ -1445,8 +1453,11 @@ static void z_erofs_submit_queue(struct z_erofs_decompress_frontend *f,
- 			move_to_bypass_jobqueue(pcl, qtail, owned_head);
- 	} while (owned_head != Z_EROFS_PCLUSTER_TAIL);
- 
--	if (bio)
-+	if (bio) {
-+		if (!pflags)
-+			psi_memstall_leave(&pflags);
- 		submit_bio(bio);
-+	}
- 
- 	/*
- 	 * although background is preferred, no one is pending for submission.
+ #ifdef CONFIG_CGROUPS
+ int psi_cgroup_alloc(struct cgroup *cgroup)
 -- 
 2.30.2
 

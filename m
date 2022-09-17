@@ -2,86 +2,79 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A851ECAAD8
-	for <linux-btrfs@archiver.kernel.org>; Fri, 16 Sep 2022 22:55:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B2865ECAAA1
+	for <linux-btrfs@archiver.kernel.org>; Sat, 17 Sep 2022 16:00:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229743AbiIPWz4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 16 Sep 2022 18:55:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39298 "EHLO
+        id S229515AbiIQQA3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 17 Sep 2022 12:00:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56366 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229725AbiIPWzy (ORCPT
+        with ESMTP id S229518AbiIQQA1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 16 Sep 2022 18:55:54 -0400
-X-Greylist: delayed 2219 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 16 Sep 2022 15:55:52 PDT
-Received: from mx1.supremebox.com (mx2.supremebox.com [198.23.53.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2B00EABF10;
-        Fri, 16 Sep 2022 15:55:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=jilayne.com
-        ; s=default; h=Content-Transfer-Encoding:Content-Type:In-Reply-To:From:
-        References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender:Reply-To:
-        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
-        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=EJzOhgSSv2MWdF1Cpycu1xYUB5X/V+5T1f/8hC9RPmc=; b=J2iMMXA6DFtSl8eNUhs170UAPv
-        RHwcP7RZmV04ha33f7fgnW+nS4FJ446fqNJRQ/vSj9u/jCTdFsTJidtZhLIxkE+p5lnnwLVDEOIg/
-        WzvtrPWOLMyoh+/ao3RgnoBFlDHY7RUVSQD5yg0V5y1sYHQq5hEumljIwKOniHJTdPbY=;
-Received: from 71-211-172-5.hlrn.qwest.net ([71.211.172.5] helo=[192.168.0.91])
-        by mx1.supremebox.com with esmtpa (Exim 4.92)
-        (envelope-from <opensource@jilayne.com>)
-        id 1oZJfd-0002GR-Fu; Fri, 16 Sep 2022 22:18:49 +0000
-Message-ID: <b4d3d155-e614-2075-8918-3082c42e099f@jilayne.com>
-Date:   Fri, 16 Sep 2022 16:18:47 -0600
+        Sat, 17 Sep 2022 12:00:27 -0400
+Received: from rin.romanrm.net (rin.romanrm.net [51.158.148.128])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5CA5015FFF
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Sep 2022 09:00:25 -0700 (PDT)
+Received: from nvm (nvm2.home.romanrm.net [IPv6:fd39::4a:3cff:fe57:d6b5])
+        by rin.romanrm.net (Postfix) with SMTP id 233105B0
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Sep 2022 16:00:22 +0000 (UTC)
+Date:   Sat, 17 Sep 2022 21:00:21 +0500
+From:   Roman Mamedov <rm@romanrm.net>
+To:     linux-btrfs@vger.kernel.org
+Subject: Converting from single to raid0 creates a ton of unused data chunks
+Message-ID: <20220917210021.5a84dc82@nvm>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0)
- Gecko/20100101 Thunderbird/102.2.2
-Subject: Re: [PATCH v2 10/20] btrfs: factor a fscrypt_name matching method
-Content-Language: en-US
-To:     dsterba@suse.cz, Christoph Hellwig <hch@infradead.org>
-Cc:     Sweet Tea Dorminy <sweettea-kernel@dorminy.me>,
-        "Theodore Y. Ts'o" <tytso@mit.edu>,
-        Jaegeuk Kim <jaegeuk@kernel.org>,
-        Eric Biggers <ebiggers@kernel.org>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, kernel-team@fb.com,
-        Omar Sandoval <osandov@osandov.com>, linux-spdx@vger.kernel.org
-References: <cover.1662420176.git.sweettea-kernel@dorminy.me>
- <685c8abce7bdb110bc306752314b4fb0e7867290.1662420176.git.sweettea-kernel@dorminy.me>
- <20220909101521.GS32411@twin.jikos.cz> <Yxs43SlMqqJ4Fa2h@infradead.org>
- <20220909133400.GY32411@twin.jikos.cz>
-From:   J Lovejoy <opensource@jilayne.com>
-In-Reply-To: <20220909133400.GY32411@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-X-Sender-Ident-agJab5osgicCis: opensource@jilayne.com
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+Hello,
 
+Just finished converting the remaining "single" data chunks on my FS to
+"raid0", with btrfs-progs v5.10.1, kernel 5.10.140.
 
-On 9/9/22 7:34 AM, David Sterba wrote:
-> On Fri, Sep 09, 2022 at 06:00:13AM -0700, Christoph Hellwig wrote:
->> On Fri, Sep 09, 2022 at 12:15:21PM +0200, David Sterba wrote:
->>>> +// SPDX-License-Identifier: GPL-2.0
->>>> +/*
->>>> + * Copyright (C) 2020 Facebook
->>>> + */
->>> Please use only SPDX in new files
->>>
->>> https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Copyright_notices_in_files.2C_SPDX
->> The wiki is incorrect.  The SPDX tag deals with the licensing tags
->> only.  It is not a replacement for the copyright notice in any way, and
->> having been involved with Copyright enforcement I can tell you that
->> at least in some jurisdictions Copytight notices absolutely do matter.
-> I believe you and can update the wiki text so it's more explicit about
-> the license an copyright.
+Before:
 
-Can you update the wiki text to remove "SPDX" from the heading and 
-remove the sentence stating, "An initiative started in 2017 [1] aims to 
-unify licensing information in all files using SPDX tags, this is driven 
-by the Linux Foundation."
+  Data, RAID0: total=200.00GiB, used=193.06GiB
+  Data, single: total=107.00GiB, used=105.12GiB
+  System, RAID1: total=32.00MiB, used=48.00KiB
+  Metadata, RAID1: total=2.00GiB, used=488.64MiB
+  GlobalReserve, single: total=353.98MiB, used=0.00B
+  WARNING: Multiple block group profiles detected, see 'man btrfs(5)'.
+  WARNING:   Data: single, raid0
 
-Thanks,
-Jilayne
+Converting:
 
+  # btrfs fi balance start -dprofiles=single -dconvert=raid0,soft /mnt/ssdm/
+  Done, had to relocate 110 out of 209 chunks
+
+After:
+
+  Data, RAID0: total=412.00GiB, used=297.21GiB
+  System, RAID1: total=32.00MiB, used=48.00KiB
+  Metadata, RAID1: total=2.00GiB, used=466.83MiB
+  GlobalReserve, single: total=332.31MiB, used=0.00B
+
+As you can see it created a ton of "slack" in the RAID0 Data allocation.
+
+Sure, I can collapse it down with:
+
+  # btrfs fi balance start -dusage=50 /mnt/ssdm/
+  Done, had to relocate 56 out of 209 chunks
+
+And the result will be:
+
+  Data, RAID0: total=302.00GiB, used=297.21GiB
+  System, RAID1: total=32.00MiB, used=48.00KiB
+  Metadata, RAID1: total=2.00GiB, used=466.83MiB
+  GlobalReserve, single: total=332.19MiB, used=0.00B
+
+But is this expected? I wonder what if this somewhat runaway chunk creation
+would face no more free space to allocate for these, would the balance fail
+with ENOSPC then?
+
+-- 
+With respect,
+Roman

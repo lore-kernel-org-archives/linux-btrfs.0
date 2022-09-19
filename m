@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CB51BECAAD3
-	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Sep 2022 14:07:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E147BC54EE9
+	for <linux-btrfs@archiver.kernel.org>; Mon, 19 Sep 2022 14:07:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230258AbiISOHA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 19 Sep 2022 10:07:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53652 "EHLO
+        id S230333AbiISOHB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 19 Sep 2022 10:07:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53660 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230203AbiISOGz (ORCPT
+        with ESMTP id S230247AbiISOG4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 19 Sep 2022 10:06:55 -0400
+        Mon, 19 Sep 2022 10:06:56 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9DDEB2E6AA
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2022 07:06:54 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 681B931DF4
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2022 07:06:55 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 43582B81BFA
+        by ams.source.kernel.org (Postfix) with ESMTPS id 0C969B81BF7
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2022 14:06:55 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 413B6C433B5
         for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2022 14:06:54 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7C8E6C43470
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Sep 2022 14:06:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1663596413;
-        bh=oOMd3KmLAJ36CiE90qV3nn/xPTnzC3MC+xnhZSZHBjk=;
+        s=k20201202; t=1663596414;
+        bh=/TY8SqEgMQnTmuEB1ZREYUpUPI7o9H1l4BTmP1teOv4=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=bbpT7+Ohph7n53ys+5dAX6iuUHFexeIMFrll1UX3AkRL3mzkP4JrJ5BfEC9fQILaY
-         LTjYWn9vqJfZk5dOvTQ0lG1PLpEfNmu56QimsxB8seL3krOjaWwK/mJS3HQgxE0xCc
-         pAhafpQzSfgY414hoMeX9/ZdEZlPMjCrpYvZAquaBZMTAFabdazX3dKseU45TfQ0m3
-         uosPeqbH9yjf9zteHKeN1WSWWjv9ezc7G701aG0oAicHBXakqFVUF4s0/LmzsIu7au
-         KMgLucGdWUqDG0wDeX1KW+PQIsuJqvxXLkRQJtW6XtqAGi4RMEi4jLtxd7Fqc1vVON
-         ykALisRyBN9wQ==
+        b=s74tCLm/PCWC7zllFNAY7RK3NRuJ5sWZB97q2AFBvOZTlOIIRGfQNb9kiQKZmpVGK
+         OVyvOCvf5yf10/A++cJ4DlblAIqq9Okj+21J4BhXfgwrTmDx2StlmahBYDE8+20Z1H
+         kI4/GF/Z+pinnxfCiejfDAL6MEwize1T+JnWe4x46/61P2KqwIA07WPNYHW4mKHFLa
+         M6AYtEptrDr5/01UMzmlmq07lzbZdQVcQ1YJHV1a+4ZEEl/E7NHXP7/4sM5aygd8SU
+         Qe6Un02LXxNvk/AelY5OqqlNehEgX6D79hm1hzsvUtboP1FGUvFXaIK57aOIQjiXBj
+         LJPgogJU+6QaA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/13] btrfs: remove unnecessary NULL pointer checks when searching extent maps
-Date:   Mon, 19 Sep 2022 15:06:37 +0100
-Message-Id: <28c638167c79d62903a2bfb411f63170aa90de5f.1663594828.git.fdmanana@suse.com>
+Subject: [PATCH 12/13] btrfs: avoid pointless extent map tree search when flushing delalloc
+Date:   Mon, 19 Sep 2022 15:06:39 +0100
+Message-Id: <9d2ede948c70a5b9b64631cddbcd1ae8db8d56ae.1663594828.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1663594828.git.fdmanana@suse.com>
 References: <cover.1663594828.git.fdmanana@suse.com>
@@ -48,56 +48,36 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The previous and next pointer arguments passed to __tree_search() are
-never NULL as the only caller of this function, __lookup_extent_mapping(),
-always passes the address of two on stack pointers. So remove the NULL
-checks.
+When flushing delalloc, in COW mode at cow_file_range(), before entering
+the loop that allocates extents and creates ordered extents, we do a call
+to btrfs_drop_extent_map_range() for the whole range. This is pointless
+because in the loop we call create_io_em(), which will also call
+btrfs_drop_extent_map_range() before inserting the new extent map.
+
+So remove that call at cow_file_range() not only because it is not needed,
+but also because it will make the btrfs_drop_extent_map_range() calls made
+from create_io_em() waste time searching the extent map tree, and that
+tree can be large for files with many extents. It also makes us waste time
+at btrfs_drop_extent_map_range() allocating and freeing the split extent
+maps for nothing.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent_map.c | 25 +++++++++++--------------
- 1 file changed, 11 insertions(+), 14 deletions(-)
+ fs/btrfs/inode.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index f1616aa8d0f5..12538ff04525 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -163,24 +163,21 @@ static struct rb_node *__tree_search(struct rb_root *root, u64 offset,
- 			return n;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 024183c7480f..32fe3712ea9d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1254,7 +1254,6 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
  	}
  
--	if (prev_ret) {
--		orig_prev = prev;
--		while (prev && offset >= extent_map_end(prev_entry)) {
--			prev = rb_next(prev);
--			prev_entry = rb_entry(prev, struct extent_map, rb_node);
--		}
--		*prev_ret = prev;
--		prev = orig_prev;
-+	orig_prev = prev;
-+	while (prev && offset >= extent_map_end(prev_entry)) {
-+		prev = rb_next(prev);
-+		prev_entry = rb_entry(prev, struct extent_map, rb_node);
- 	}
-+	*prev_ret = prev;
-+	prev = orig_prev;
+ 	alloc_hint = get_extent_allocation_hint(inode, start, num_bytes);
+-	btrfs_drop_extent_map_range(inode, start, start + num_bytes - 1, false);
  
--	if (next_ret) {
-+	prev_entry = rb_entry(prev, struct extent_map, rb_node);
-+	while (prev && offset < prev_entry->start) {
-+		prev = rb_prev(prev);
- 		prev_entry = rb_entry(prev, struct extent_map, rb_node);
--		while (prev && offset < prev_entry->start) {
--			prev = rb_prev(prev);
--			prev_entry = rb_entry(prev, struct extent_map, rb_node);
--		}
--		*next_ret = prev;
- 	}
-+	*next_ret = prev;
-+
- 	return NULL;
- }
- 
+ 	/*
+ 	 * Relocation relies on the relocated extents to have exactly the same
 -- 
 2.35.1
 

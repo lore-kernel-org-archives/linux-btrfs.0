@@ -2,96 +2,96 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02AD5ECAAD8
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Sep 2022 10:28:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC69FC54EE9
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Sep 2022 11:48:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229978AbiITK2w (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Sep 2022 06:28:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39410 "EHLO
+        id S229736AbiITLsw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Sep 2022 07:48:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44488 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230355AbiITK2g (ORCPT
+        with ESMTP id S230102AbiITLsb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Sep 2022 06:28:36 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ACA42719A5
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2022 03:28:33 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id E5750B81919
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2022 10:28:31 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A4154C433C1
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2022 10:28:30 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1663669710;
-        bh=7pGEIXJIv8t4DVjeCorI27agj4IL1Fk3mHiVgAbvc48=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=jMm7DSCFhtib75YMVSjmiePv6tZHJMQ3az25UPI/N0I5xqNNb1XdosFoJUN72zn3j
-         UR6O/u0UKLAf4p/OADfABAB2k5Itvgc6oeZvqQ/Zalkr6BcM8Tv2k24OEN7ij5Z4ON
-         Wu8bRotjylRGD5Pe85YEHv53JIQlcwuuwbN+cMWgesmbYlu96fOHTVV2AM18ADDmv0
-         b2ELP7XOErwIGC9c3OMhddrtjk2dApFS4++iiPIypuZLhWVITPBUQ5p3/aWezGq2mx
-         butxuCTXeSd4AQX3se2zLEUDIphEs95ycaSngQiP3+yGDKbLSmFsMqBodAekRQ49Y+
-         bQLOu8jQTeN0g==
-Received: by mail-oa1-f51.google.com with SMTP id 586e51a60fabf-11eab59db71so3483776fac.11
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2022 03:28:30 -0700 (PDT)
-X-Gm-Message-State: ACrzQf1fuxMZMsE/FjfyUqDbhwWJcLUpH5zzT8IWaa7Pv8KWmeAhn/zU
-        fzMETs9/t5pVeCnCEe8qsFebL/EBYpZttLg8Xcw=
-X-Google-Smtp-Source: AMsMyM5bv1mn0HsY26MRDUkMMJp2RhalZ6r2Gfv2bjKh1TByLg452yHHgVJdccfO5FtZDipz9obyq1JCJueOPUxzDDc=
-X-Received: by 2002:a05:6870:63a6:b0:12b:85ee:59ff with SMTP id
- t38-20020a05687063a600b0012b85ee59ffmr1625555oap.98.1663669709782; Tue, 20
- Sep 2022 03:28:29 -0700 (PDT)
+        Tue, 20 Sep 2022 07:48:31 -0400
+Received: from www262.sakura.ne.jp (www262.sakura.ne.jp [202.181.97.72])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4EF5D167E3
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Sep 2022 04:48:30 -0700 (PDT)
+Received: from fsav411.sakura.ne.jp (fsav411.sakura.ne.jp [133.242.250.110])
+        by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 28KBmRtP040830;
+        Tue, 20 Sep 2022 20:48:27 +0900 (JST)
+        (envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from www262.sakura.ne.jp (202.181.97.72)
+ by fsav411.sakura.ne.jp (F-Secure/fsigk_smtp/550/fsav411.sakura.ne.jp);
+ Tue, 20 Sep 2022 20:48:27 +0900 (JST)
+X-Virus-Status: clean(F-Secure/fsigk_smtp/550/fsav411.sakura.ne.jp)
+Received: from [192.168.1.9] (M106072142033.v4.enabler.ne.jp [106.72.142.33])
+        (authenticated bits=0)
+        by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 28KBmRuR040827
+        (version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+        Tue, 20 Sep 2022 20:48:27 +0900 (JST)
+        (envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Message-ID: <062d63c8-39bf-62d8-4562-625184e97b6c@I-love.SAKURA.ne.jp>
+Date:   Tue, 20 Sep 2022 20:48:26 +0900
 MIME-Version: 1.0
-References: <cover.1663594828.git.fdmanana@suse.com> <25d72acc3215f74fbb885562667bf12401c214e9.1663594828.git.fdmanana@suse.com>
- <ab13659e-6166-7de5-986a-54f98bc74e66@oracle.com>
-In-Reply-To: <ab13659e-6166-7de5-986a-54f98bc74e66@oracle.com>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Tue, 20 Sep 2022 11:27:53 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7=hSQi1gVOOXB3g860iFz9YO9n6OTdZaJtmtbduNqcdw@mail.gmail.com>
-Message-ID: <CAL3q7H7=hSQi1gVOOXB3g860iFz9YO9n6OTdZaJtmtbduNqcdw@mail.gmail.com>
-Subject: Re: [PATCH 01/13] btrfs: fix missed extent on fsync after dropping
- extent maps
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:102.0) Gecko/20100101
+ Thunderbird/102.2.2
+Subject: [PATCH] btrfs: Call btrfs_set_header_generation() before
+ btrfs_clean_tree_block()
+Content-Language: en-US
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Nikolay Borisov <nborisov@suse.com>
+References: <000000000000a4618905d1361d3e@google.com>
+Cc:     linux-btrfs@vger.kernel.org,
+        syzbot <syzbot+fba8e2116a12609b6c59@syzkaller.appspotmail.com>,
+        syzkaller-bugs@googlegroups.com,
+        Alexander Potapenko <glider@google.com>
+From:   Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+In-Reply-To: <000000000000a4618905d1361d3e@google.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Sep 20, 2022 at 11:19 AM Anand Jain <anand.jain@oracle.com> wrote:
->
-> On 19/09/2022 22:06, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > When dropping extent maps for a range, through btrfs_drop_extent_cache(),
-> > if we find an extent map that starts before our target range and/or ends
-> > before the target range, and we are not able to allocate extent maps for
-> > splitting that extent map, then we don't fail and simply remove the entire
-> > extent map from the inode's extent map tree.
->
->
-> > +             if (testend && em->start + em->len > start + len)
->
->   %len comes from
->
->         u64 len = end - start + 1;
->
->   IMO >= was correct here; because including %start + %len is already
->   after the range as in the original code. No?
+syzbot is reporting uninit-value in btrfs_clean_tree_block() [1], for
+commit bc877d285ca3dba2 ("btrfs: Deduplicate extent_buffer init code")
+missed that btrfs_set_header_generation() in btrfs_init_new_buffer() must
+not be moved to after clean_tree_block() because clean_tree_block() is
+calling btrfs_header_generation() since commit 55c69072d6bd5be1 ("Btrfs:
+Fix extent_buffer usage when nodesize != leafsize").
 
-No, > is the correct thing to do. It only matters if the extent map's
-range ends after our range.
-Try the math with a simple example, with a start of 0 and a length of
-4096 (end offset if 4095), and you'll see.
+Link: https://syzkaller.appspot.com/bug?extid=fba8e2116a12609b6c59 [1]
+Reported-by: syzbot <syzbot+fba8e2116a12609b6c59@syzkaller.appspotmail.com>
+Signed-off-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+Fixes: bc877d285ca3dba2 ("btrfs: Deduplicate extent_buffer init code")
+---
+This patch is not tested due to lack of reproducer.
+I don't know whether initializing only generation field is sufficient.
+Please check before applying.
 
-Thanks.
+ fs/btrfs/extent-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
->
-> > +                     ends_after_range = true;
-> >               flags = em->flags;
-> >               gen = em->generation;
-> >               if (skip_pinned && test_bit(EXTENT_FLAG_PINNED, &em->flags)) {
-> > -                     if (testend && em->start + em->len >= start + len) {
-> > +                     if (ends_after_range) {
-> >                               free_extent_map(em);
-> >                               write_unlock(&em_tree->lock);
-> >                               break;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6914cd8024ba..9c7bf0ef6a5f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4895,6 +4895,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	 */
+ 	btrfs_set_buffer_lockdep_class(lockdep_owner, buf, level);
+ 
++	btrfs_set_header_generation(buf, trans->transid);
+ 	__btrfs_tree_lock(buf, nest);
+ 	btrfs_clean_tree_block(buf);
+ 	clear_bit(EXTENT_BUFFER_STALE, &buf->bflags);
+@@ -4905,7 +4906,6 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	memzero_extent_buffer(buf, 0, sizeof(struct btrfs_header));
+ 	btrfs_set_header_level(buf, level);
+ 	btrfs_set_header_bytenr(buf, buf->start);
+-	btrfs_set_header_generation(buf, trans->transid);
+ 	btrfs_set_header_backref_rev(buf, BTRFS_MIXED_BACKREF_REV);
+ 	btrfs_set_header_owner(buf, owner);
+ 	write_extent_buffer_fsid(buf, fs_info->fs_devices->metadata_uuid);
+-- 
+2.18.4
+

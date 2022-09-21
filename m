@@ -2,73 +2,100 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB451ECAAD8
-	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Sep 2022 21:55:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BAE50ECAAD8
+	for <linux-btrfs@archiver.kernel.org>; Wed, 21 Sep 2022 22:20:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229523AbiIUVzI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Sep 2022 17:55:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35806 "EHLO
+        id S231209AbiIUWUi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Sep 2022 18:20:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230510AbiIUVys (ORCPT
+        with ESMTP id S231185AbiIUWUg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2022 17:54:48 -0400
-Received: from out20-159.mail.aliyun.com (out20-159.mail.aliyun.com [115.124.20.159])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 46A20E08F
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 14:54:44 -0700 (PDT)
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04765089|-1;BR=01201311R701S88rulernew998_84748_2000303;CH=blue;DM=|CONTINUE|false|;DS=CONTINUE|ham_enroll_verification|0.000574772-7.00592e-05-0.999355;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047206;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=2;RT=2;SR=0;TI=SMTPD_---.PLBdUP5_1663797282;
-Received: from T640.e16-tech.com(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.PLBdUP5_1663797282)
-          by smtp.aliyun-inc.com;
-          Thu, 22 Sep 2022 05:54:42 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Wang Yugui <wangyugui@e16-tech.com>
-Subject: [PATCH v2] btrfs-progs: balance: deprecate old syntax
-Date:   Thu, 22 Sep 2022 05:54:42 +0800
-Message-Id: <20220921215442.65360-1-wangyugui@e16-tech.com>
-X-Mailer: git-send-email 2.36.2
-In-Reply-To: <20220914055846.52008-1-wangyugui@e16-tech.com>
-References: <20220914055846.52008-1-wangyugui@e16-tech.com>
+        Wed, 21 Sep 2022 18:20:36 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6CECBA5995
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 15:20:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.net;
+        s=badeba3b8450; t=1663798829;
+        bh=jgI2piL0w+jg1Qh9227eH8KWpzn5WJIQR9xX6b84uis=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=UQomYw8oZJdOuGlTLQXRIBZOvrPlyLXS34P/j9PZpZdACQohC6LdRnwjEiTPdB1lv
+         xbI69vTEZGFUVfgSwKmx2Qdn7ufVFsB9vsJdpJ9v1jcIBnOHAuXJWysoMbDstiztYy
+         6Yn1Byp6/dOmbYoaNsxxuqn+P9WP6xF9KpDpbZQE=
+X-UI-Sender-Class: 01bb95c1-4bf8-414a-932a-4f6e2808ef9c
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx004
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MmULr-1p19QL2JpB-00iWGd; Thu, 22
+ Sep 2022 00:20:29 +0200
+Message-ID: <ecd14905-6ff1-3d26-7354-93631684fa0c@gmx.com>
+Date:   Thu, 22 Sep 2022 06:20:25 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.2.2
+Subject: Re: [PATCH] btrfs-progs: hide block group tree behind experimental
+ feature
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <0b8f20ae26661e040dfcaae90928bbc1c6fff5cd.1662952308.git.wqu@suse.com>
+ <20220921140611.GG32411@twin.jikos.cz>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20220921140611.GG32411@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:AarefrKcHRcmVtQ0JB0zkYfOe8rZIuCTA6QzWzjF6+U4B/x7sLo
+ gltVo6CJMmPmaPVzjKAJRmx+M+0xYZIdHeeoZUiwngaIYmP9pbYFK80vu8FWzp1AwqSmJvG
+ GAhhKoReMKKpwxKmCJBq2Z5oPw8/b02EfkEkoXoCxLoHWsz0bQudTnSlYR2RToT6yx2gSVc
+ IKGMCmt+AJOJSH4GbOeaA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:TQmso396ctQ=:XoPCmY7nghql/V4AhH15Fz
+ xAe8XYK0DViLpWxfI8ip+/roFMRsyHksx9P6c5ezHgy7WVO+wVb97N6AHjxZljexNcesvkqza
+ DtlruirrABt+GZbTle0Y2VlkX/oEAXD+gZGQt6PQOycJSUHVj7jut/ySvOxWdvZNgrsOmrPld
+ QKqn2noZ3qGNU5wPo8BDPsg8xS/nofZRyBu6nQtfdQw7tHKRl5CHfr5kkx6ggcbIbZG6rglUA
+ vX0g7kfuKGk/GWbkRMmKkUtn1JHploSrUtBU7jyKJyFZDIl+YrNrsUM+O1yVUGYsTEhuof+Rg
+ 5FBZ6RequdMtWsl44xsSTCy70Hvsx7dD6ZestmoFh2NXpJGrudL+Xc++jw4dqy61Jk9//nBl9
+ zl1k4Z98J3upZTc9J7nL3eL8Il91steZA06dTxlP23Uduc4tsDYJ+qQf18gbuYzONyU2maFZ0
+ A1z/GYt0MnMS5hCnN0pLSC3LuQLGFeOaHnmFdkew2ZL2muQxG0/JHTE8MGe2UfI5ut6ss/ZVc
+ 5rxyIBRtVAcTScAUmiFxujT5nfXS2m69rp1dQpTbCWE8X3lyYNMHj+4K83u3AmpSv9GwCKr/y
+ pji90IU1aKGZobNRyIsDbkgPe8PPHXiEUZjFH2lboA0DqK+C8iIYMYLVn8expzc1G3yGbf33C
+ VjtB4gBD3VplIlQguLWQFM2sqFB5OR4BoRDDtjxc/vOBs+I9dpLSP0TnpAdm8gHD0TqsJAkZh
+ lBF9N1Vt9oL1Xde5GZo8oDq4VqBXsTLi2WpmSCm6VeS/8LZWs5RzKp5KmwScMl/2RXQmNk9xc
+ s0hco8QVcEAKR8kFRWGJsSKZgzYm7Q6n0Xmsj71Me/JxZlXURHLcjVfhXd9IH6HKdcKCtkr8e
+ ANK86MpzEFnTmzT9IbwfAR9GGS0TIxRif0rsjpAiWA+ildcxiLaQmE5026N0j2ZvYxOH5E6B/
+ 2HIX7SOzVv55CyM/jZqHHbOsrEBiyJT+Ifv6ZDnOj3RhBvPK5c3qh0iGYCY8K+b0kDYaDjTRo
+ g4QeMKBh1XdNYu2X55KlqI8ZRjFIs88igZuAuamnh5q0QsKGBswmIWRQIcn5abKG5phTapsl8
+ 5r/8S+TDtV0divVukjSMD2Ch9TMlMZmI2jc+9L2PeMtFJGT7+fVlksQaI7gB4UOkGWMdLrPqh
+ aILU6SGuByP1UIKoF0fZWqUdrr
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-deprecate btrfs blanace old syntax since new syntax is already introduced in
-2012.
 
-we will remove the old syntax completely in a few releases.
 
-Signed-off-by: Wang Yugui <wangyugui@e16-tech.com>
----
-changes since v1:
-	fix typo(btrfs balance replace -> btrfs balance start)
+On 2022/9/21 22:06, David Sterba wrote:
+> On Mon, Sep 12, 2022 at 11:12:01AM +0800, Qu Wenruo wrote:
+>> The block group tree doesn't yet have full bi-directional conversion
+>> support from btrfstune, and it seems we may want one or two release
+>> cycles to rule out some extra bugs before really releasing the progs
+>> support.
+>>
+>> This patch will hide the block group tree feature behind experimental
+>> flag for the following tools:
+>>
+>> - btrfstune
+>>    "-b" option to convert to bg tree.
+>>
+>> - mkfs.btrfs
+>>    hide "block-group-tree" feature from both -O (the new default positi=
+on
+>>    for all features) and -R (the old, soon to be deprecated one).
+>
+> The block group tree is going to 6.1, so the progs support will be
+> experimental in 6.0 and enabled no later than 6.1. It might be enabled
+> earlier so we can use the normal build in testing.
 
- cmds/balance.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+Personally speaking, I'd hope bg tree would be hidden behind
+experimental until the bi-directional convert is implemented.
 
-diff --git a/cmds/balance.c b/cmds/balance.c
-index d1e66d42..3cb6334a 100644
---- a/cmds/balance.c
-+++ b/cmds/balance.c
-@@ -37,7 +37,7 @@
- 
- static const char * const balance_cmd_group_usage[] = {
- 	"btrfs balance <command> [options] <path>",
--	"btrfs balance <path>",
-+	"btrfs balance <path>        deprecated by 'btrfs balance start'",
- 	NULL
- };
- 
-@@ -882,6 +882,8 @@ static int cmd_balance(const struct cmd_struct *cmd, int argc, char **argv)
- 		/* old 'btrfs filesystem balance <path>' syntax */
- 		struct btrfs_ioctl_balance_args args;
- 
-+		warning("deprecated by 'btrfs balance start'");
-+
- 		memset(&args, 0, sizeof(args));
- 		args.flags |= BTRFS_BALANCE_TYPE_MASK;
- 
--- 
-2.36.2
+(AKA, I should finish the remaining part of the btrfstune for bg tree)
 
+Thanks,
+Qu

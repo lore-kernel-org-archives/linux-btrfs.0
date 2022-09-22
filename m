@@ -2,120 +2,125 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1388C6FA91
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Sep 2022 05:26:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF424C6FA92
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Sep 2022 05:55:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230147AbiIVF0d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 22 Sep 2022 01:26:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42532 "EHLO
+        id S229918AbiIVFzm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Sep 2022 01:55:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50696 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229635AbiIVF0b (ORCPT
+        with ESMTP id S229904AbiIVFzk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 22 Sep 2022 01:26:31 -0400
-Received: from mail-pg1-x531.google.com (mail-pg1-x531.google.com [IPv6:2607:f8b0:4864:20::531])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C99DA1A6E
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 22:26:29 -0700 (PDT)
-Received: by mail-pg1-x531.google.com with SMTP id f193so8127301pgc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 22:26:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date;
-        bh=1AAj0jz/3WOf/ZinmBg4e5WZyKIExnDIP+4ApRXDWXk=;
-        b=E6vw8sjIHY/i68R43dGnMLa/5LLUaNZd7XsoFQWcc3w5wUJdtXNsxsEfsPht7kxdNG
-         JJ1tXBTf3XQqnlgOex/RZ+o0XMhSMgfcjsVoIr6koV6H3KyiaZ1lUXPNyODzP4yferwZ
-         bLRSqfuB8yrx2QNr5YGtL8EgG0hPZHJq7V7xk=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date;
-        bh=1AAj0jz/3WOf/ZinmBg4e5WZyKIExnDIP+4ApRXDWXk=;
-        b=Sxd8iFe/V6llPsX9DI5yUnqIeyvCddvf8ePSU/ClrJLp5k+hPpTTUiJScrIU+HTCh2
-         rZMMQGuwFW8Qe5kii/Lh7AWCVD72TlZLoeYFF7V6BkH86YScWLcPMAKq2rvkcnP84zxt
-         zlQlWXv/1CWwAbsCOP+VxYKw6pB+J5t6UYSBZq5mXH7w7oIM+B1hpqD88wH/Vm9ZwDlF
-         DAXFOOIscodswRTRRH/W1O2ZZh7SQ63HKT1kg201tWmF6t7i9K0493Y1nC2+xJShLzlA
-         Qu4qIXbYnLfWOVTaRsGhidB9iLfychVX/gNqAdxbwAX/WohVv7H1f9CS2FWkwm7zJHeL
-         zxaw==
-X-Gm-Message-State: ACrzQf1TP0RLInvdeD5UF02lYP9B+Qk/KMA84x2B1bwUSPK+dvJA/xru
-        0LFPdre/+aXwZIn+snev94qdbw==
-X-Google-Smtp-Source: AMsMyM4a+GHcnQt0UeqKstHRefYZ2pfi5aegxBG+GRLeLtm77LwF22DDWI605QZJjTDKHxZFsdcd6w==
-X-Received: by 2002:a63:cf56:0:b0:439:41ed:78fc with SMTP id b22-20020a63cf56000000b0043941ed78fcmr1597609pgj.419.1663824388949;
-        Wed, 21 Sep 2022 22:26:28 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
-        by smtp.gmail.com with ESMTPSA id l10-20020a170903120a00b0016f196209c9sm3102876plh.123.2022.09.21.22.26.28
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 21 Sep 2022 22:26:28 -0700 (PDT)
-Date:   Wed, 21 Sep 2022 22:26:27 -0700
-From:   Kees Cook <keescook@chromium.org>
-To:     Kalle Valo <kvalo@kernel.org>
-Cc:     Vlastimil Babka <vbabka@suse.cz>,
-        Gregory Greenman <gregory.greenman@intel.com>,
-        Johannes Berg <johannes.berg@intel.com>,
-        linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Eric Dumazet <edumazet@google.com>,
-        Jakub Kicinski <kuba@kernel.org>,
-        Paolo Abeni <pabeni@redhat.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Alex Elder <elder@kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Sumit Semwal <sumit.semwal@linaro.org>,
-        Christian =?iso-8859-1?Q?K=F6nig?= <christian.koenig@amd.com>,
-        Jesse Brandeburg <jesse.brandeburg@intel.com>,
-        Daniel Micay <danielmicay@gmail.com>,
-        Yonghong Song <yhs@fb.com>, Marco Elver <elver@google.com>,
-        Miguel Ojeda <ojeda@kernel.org>,
-        Jacob Shin <jacob.shin@amd.com>, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        linux-media@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linaro-mm-sig@lists.linaro.org, linux-fsdevel@vger.kernel.org,
-        intel-wired-lan@lists.osuosl.org, dev@openvswitch.org,
-        x86@kernel.org, llvm@lists.linux.dev,
-        linux-hardening@vger.kernel.org
-Subject: Re: [PATCH 10/12] iwlwifi: Track scan_cmd allocation size explicitly
-Message-ID: <202209212224.A2F1DB798@keescook>
-References: <20220922031013.2150682-1-keescook@chromium.org>
- <20220922031013.2150682-11-keescook@chromium.org>
- <87fsgk6nys.fsf@kernel.org>
+        Thu, 22 Sep 2022 01:55:40 -0400
+Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE902B4420;
+        Wed, 21 Sep 2022 22:55:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1663826139; x=1695362139;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=fuX+N/jPRiLEpVvBWbWnHHkQ24UIw9RfyIEX4XwB7qo=;
+  b=jbagDYYDrOoRmvFVLNOHqZng9KmfZF0t7LX4JRY4TNv1twxLIeMq8w+p
+   3d80Jc7Hh1A6Ou2uJwHjv3EUccEAVW4dInUAYVrmhhL+nnmCmVAvc6COI
+   KDnMpFig/AnUyguwGq+Hj7sIZZJeKiiy/56JqKfPLFztXAnfmoVRM3ATl
+   Pu1cgd5mTC/Aay6cVBKh+zU14XmtdvyNNUkY6bgCE5d7EEKkPp9GdR1Oi
+   j5zbohlvBLg58LECwNCh/fZ6FdrIkaVXoClwVSyWGaH+b4W9nqVtUGiWi
+   re5Djuwrtz8fJrIlwtg5ZsS84O8uIj0PdFncvcbkPuebiWnPxgcUvoWZS
+   g==;
+X-IronPort-AV: E=Sophos;i="5.93,335,1654531200"; 
+   d="scan'208";a="324089196"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 22 Sep 2022 13:55:39 +0800
+IronPort-SDR: Mi1gDXmM48GU1xSIZFx0yYUgCnVIggG1JAS2YBA3MdCxS/T79Yg+Nk1ZfZoM/0Wey5JWVOp/Le
+ N74rE5oJXS1T/wKtxrbUBUdC4ktR5KiDAL7uN1LvU6vvnEI0Pn4hR5ppINgJmJfmp5Z78aCG+q
+ JBeGS2R/zSqUXO6wOennC2t1W+FfMp211SKv3gNuUWhbT4rooAqyQtA1qcB7gw65WKIaQHsGLk
+ WTAeE8BjVbqiSPmDva86hJ6Otd6u+4gm4SvlQiB1n0zfKuKnDitkZZcvvALnEVDe8hFeG+EHJ6
+ AcyvFO1gG/LGUzITLTGvHl4E
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 21 Sep 2022 22:10:13 -0700
+IronPort-SDR: j2idZ8wu9C8ck77ehJDkMTUjYtjy6/ipMS3OlGFq8AL+MvqmrXTQME/Zb6bOJO+UqGgfv57QBX
+ sH1NKKwEMxh9arSw1QpCzlTleaE3H+8U2TFaQk6K4OxJLw/yyHZIsYFEUGw7Ia3mSyJy9EYekS
+ InyCAEv73naKXMhI370SK0KqeTz6q1c/71kS0wQzpz68MWnGrDJYIbcAkuCq8VCpNzdMiVy2GE
+ uwzjf3rHAeyW7u8fnDDwoMLzNV4MOK+ngJ47xq2oST4ERV0jOV/sA/Vot1i11+kRave6qMYxHK
+ rrQ=
+WDCIronportException: Internal
+Received: from ghkxqv2.ad.shared (HELO naota-xeon.wdc.com) ([10.225.49.86])
+  by uls-op-cesaip01.wdc.com with ESMTP; 21 Sep 2022 22:55:39 -0700
+From:   Naohiro Aota <naohiro.aota@wdc.com>
+To:     fstests@vger.kernel.org
+Cc:     linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
+Subject: [PATCH 1/2] common: introduce zone_capacity() to return a zone capacity
+Date:   Thu, 22 Sep 2022 14:54:58 +0900
+Message-Id: <97ede9bba67f0848fc0b706d757170d7dfacb7fd.1663825728.git.naohiro.aota@wdc.com>
+X-Mailer: git-send-email 2.37.3
+In-Reply-To: <cover.1663825728.git.naohiro.aota@wdc.com>
+References: <cover.1663825728.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87fsgk6nys.fsf@kernel.org>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Sep 22, 2022 at 07:18:51AM +0300, Kalle Valo wrote:
-> Kees Cook <keescook@chromium.org> writes:
-> 
-> > In preparation for reducing the use of ksize(), explicitly track the
-> > size of scan_cmd allocations. This also allows for noticing if the scan
-> > size changes unexpectedly. Note that using ksize() was already incorrect
-> > here, in the sense that ksize() would not match the actual allocation
-> > size, which would trigger future run-time allocation bounds checking.
-> > (In other words, memset() may know how large scan_cmd was allocated for,
-> > but ksize() will return the upper bounds of the actually allocated memory,
-> > causing a run-time warning about an overflow.)
-> >
-> > Cc: Gregory Greenman <gregory.greenman@intel.com>
-> > Cc: Kalle Valo <kvalo@kernel.org>
-> > Cc: Johannes Berg <johannes.berg@intel.com>
-> > Cc: linux-wireless@vger.kernel.org
-> > Cc: netdev@vger.kernel.org
-> > Signed-off-by: Kees Cook <keescook@chromium.org>
-> 
-> Via which tree is this iwlwifi patch going? Normally via wireless-next
-> or something else?
+Introduce _zone_capacity() to return a zone capacity of the given address
+in the given device (optional). Rewrite btrfs/237 with it.
 
-This doesn't depend on the kmalloc_size_roundup() helper at all, so I
-would be happy for it to go via wireless-next if the patch seems
-reasonable.
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ common/zbd      | 17 +++++++++++++++++
+ tests/btrfs/237 |  8 ++------
+ 2 files changed, 19 insertions(+), 6 deletions(-)
+ create mode 100644 common/zbd
 
+diff --git a/common/zbd b/common/zbd
+new file mode 100644
+index 000000000000..329bb7be6b7b
+--- /dev/null
++++ b/common/zbd
+@@ -0,0 +1,17 @@
++#
++# Common zoned block device specific functions
++#
++
++. common/filter
++
++_zone_capacity() {
++    local phy=$1
++    local dev=$2
++
++    [ -z "$dev" ] && dev=$SCRATCH_DEV
++
++    size=$($BLKZONE_PROG report -o $phy -l 1 $dev |\
++	       _filter_blkzone_report |\
++	       grep -Po "cap 0x[[:xdigit:]]+" | cut -d ' ' -f 2)
++    echo $((size << 9))
++}
+diff --git a/tests/btrfs/237 b/tests/btrfs/237
+index bc6522e2200a..101094b5ce70 100755
+--- a/tests/btrfs/237
++++ b/tests/btrfs/237
+@@ -13,7 +13,7 @@
+ _begin_fstest auto quick zone balance
+ 
+ # Import common functions.
+-. ./common/filter
++. ./common/zbd
+ 
+ # real QA test starts here
+ 
+@@ -56,11 +56,7 @@ fi
+ 
+ start_data_bg_phy=$(get_data_bg_physical)
+ start_data_bg_phy=$((start_data_bg_phy >> 9))
+-
+-size=$($BLKZONE_PROG report -o $start_data_bg_phy -l 1 $SCRATCH_DEV |\
+-	_filter_blkzone_report |\
+-	grep -Po "cap 0x[[:xdigit:]]+" | cut -d ' ' -f 2)
+-size=$((size << 9))
++size=$(_zone_capacity $start_data_bg_phy)
+ 
+ reclaim_threshold=75
+ echo $reclaim_threshold > /sys/fs/btrfs/"$uuid"/bg_reclaim_threshold
 -- 
-Kees Cook
+2.37.3
+

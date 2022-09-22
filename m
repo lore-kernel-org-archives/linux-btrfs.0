@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7AB2C6FA8E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Sep 2022 00:07:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 806B7C6FA90
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Sep 2022 00:07:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229916AbiIVAHP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Sep 2022 20:07:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47324 "EHLO
+        id S229935AbiIVAHQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 21 Sep 2022 20:07:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47330 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229909AbiIVAHN (ORCPT
+        with ESMTP id S229787AbiIVAHN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 21 Sep 2022 20:07:13 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B307C9C2D6
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 17:07:12 -0700 (PDT)
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5650A00FF
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 17:07:09 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 6A57C1F8E5
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2022 00:07:11 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 89C6B21ABA
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2022 00:07:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1663805231; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1663805227; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=IYU6Us/1DxhmoZqa1rDaLK/pI/jaIqrUDN9l/DbaQag=;
-        b=o3rs1OzaDTeU8zIg9vHztmSsbZlFiV+o4WaBU3Sv2EIfp8GC4p18Ln2HwXmhHkBA01qwR1
-        hyZwEcWUb2E9mrsbrljJ5uMpdpb1MpX9GCN5V/Snxad56quFmax7KhZlVOvPj5qs097Lxi
-        t9ieQlub1CERonyFQxnl1bVQlj7dM6E=
+        bh=z9aMp/2O2QHzHhxjf2DCny0B42nxWD/Ft8+DOm+qwic=;
+        b=N7GJlqmXHXPSNCyDne/pLPIAdqv8xisZn2E2PfTfkylIaPHWeMXdH8LTr+nvP8WMQZF9iS
+        BaNsyRAVXJ4O/gWBOXCiohuZlzm7PIDV9r5M9dL2/kFgtJ80eYjXQbuquhS08O5LMgUXnW
+        i92pjXjd6fvDwKWIWuVGD4oKBbTFNCk=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C443E139EF
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2022 00:07:10 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3E808139EF
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2022 00:07:05 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id EDK4Iy6nK2O1LwAAMHmgww
+        id UOEQOymnK2O1LwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2022 00:07:10 +0000
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Sep 2022 00:07:05 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/16] btrfs: move btrfs_init_workqueus() and btrfs_stop_all_workers() into open_ctree_seq[]
-Date:   Thu, 22 Sep 2022 08:06:24 +0800
-Message-Id: <711ca0a9e7c8d21cfa814a68ec376f0673d4798c.1663804335.git.wqu@suse.com>
+Subject: [PATCH 04/16] btrfs: extract btree inode init code into its own init/exit helpers
+Date:   Thu, 22 Sep 2022 08:06:21 +0800
+Message-Id: <0e9f2fdef904a97e68eb2665e803abff03284b71.1663804335.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.3
 In-Reply-To: <cover.1663804335.git.wqu@suse.com>
 References: <cover.1663804335.git.wqu@suse.com>
@@ -55,82 +55,228 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Those two helpers are already doing all the work, just move them into
-the open_ctree_seq[] array.
+Just like how we handle init_btrfs_fs(), here we also use an array to
+handle the open_ctree() sequence.
 
-There is only one small change:
+This patch will do the first step by introducing the arrays, and put
+btree_inode init/exit code into two helpers:
 
-- Call btrfs_stop_all_workers() inside btrfs_init_workqueus() for error
-  handling
-  Since open_ctree_seq[] makes all error path to call the exit function
-  if and only if the corresponding init function finished without error.
+- open_ctree_btree_inode_init
+- open_ctree_btree_inode_exit
 
-  This means, if btrfs_init_workqueus() failed due to -ENOMEM, then we
-  won't call btrfs_stop_all_workers() to cleanup whatever is already
-  allocatd.
+[EXPOSED LABEL MISMATCH]
+- Bad btrfs_mapping_tree_free() call
+  Currently in fail_alloc tag, we call not only iput() on btree_inode, but
+  also free the fs_info->mapping_tree, which is not correct.
 
-  To fix this problem, call btrfs_stop_all_workers() inside
-  btrfs_init_workqueus() when we hit errors.
-  Function btrfs_stop_all_workers() already has the checks to
-  handle NULL pointers.
+  As the first time we touch mapping_tree is at btrfs_read_sys_array(),
+  thus the btrfs_mapping_tree_free() call is already a label mismatch.
+
+  This will be addressed when we refactor the chunk tree init code.
+
+- Bad invalidate_inode_pages2() call
+  After initiliazing the btree inode, we should invalidate all the page
+  cache for metadata before we put the btree inode.
+
+  But the old code is calling invalidate_inode_pages2() before stopping
+  all workers.
+
+  This is addressed by this patch as we're really the last exit function
+  to be executed, thus we're safe to call invalidate_inode_pages2() then
+  iput().
+
+[SPECIAL HANDLING]
+After init_mount_fs_info() if we hit some error, we don't need to undo
+the work of init_mount_fs_info(), as caller will call btrfs_free_fs_info()
+to free it anyway.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ fs/btrfs/disk-io.c | 116 ++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 82 insertions(+), 34 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index ec9038eeaa0f..0e1fe12c1c99 100644
+index 5fbf73daa388..79507c384146 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2318,11 +2318,12 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
- 	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
- 	      fs_info->caching_workers && fs_info->fixup_workers &&
- 	      fs_info->delayed_workers && fs_info->qgroup_rescan_workers &&
--	      fs_info->discard_ctl.discard_workers)) {
--		return -ENOMEM;
--	}
--
-+	      fs_info->discard_ctl.discard_workers))
-+		goto error;
- 	return 0;
-+error:
-+	btrfs_stop_all_workers(fs_info);
-+	return -ENOMEM;
+@@ -3290,6 +3290,69 @@ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info)
+ 	return ret;
  }
  
- static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
-@@ -3577,6 +3578,9 @@ static const struct init_sequence open_ctree_seq[] = {
- 	}, {
- 		.init_func = open_ctree_features_init,
- 		.exit_func = NULL,
-+	}, {
-+		.init_func = btrfs_init_workqueues,
-+		.exit_func = btrfs_stop_all_workers,
- 	}
- };
++static int open_ctree_btree_inode_init(struct btrfs_fs_info *fs_info)
++{
++	int ret;
++
++	/*
++	 * The members initialized inside init_mount_fs_info() will be
++	 * handled in btrfs_free_fs_info() by the caller.
++	 * Thus we don't need to handle its error here.
++	 */
++	ret = init_mount_fs_info(fs_info);
++	if (ret < 0)
++		return ret;
++
++	/*
++	 * These need to be init'ed before we start creating inodes and such.
++	 *
++	 * And this 
++	 */
++	fs_info->tree_root = btrfs_alloc_root(fs_info, BTRFS_ROOT_TREE_OBJECTID,
++					      GFP_KERNEL);
++	fs_info->chunk_root = btrfs_alloc_root(fs_info, BTRFS_CHUNK_TREE_OBJECTID,
++					       GFP_KERNEL);
++	if (!fs_info->tree_root || !fs_info->chunk_root)
++		goto enomem;
++	fs_info->btree_inode = new_inode(fs_info->sb);
++	if (!fs_info->btree_inode)
++		goto enomem;
++
++	mapping_set_gfp_mask(fs_info->btree_inode->i_mapping, GFP_NOFS);
++	btrfs_init_btree_inode(fs_info);
++	invalidate_bdev(fs_info->fs_devices->latest_dev->bdev);
++	return 0;
++enomem:
++	btrfs_put_root(fs_info->tree_root);
++	btrfs_put_root(fs_info->chunk_root);
++	fs_info->tree_root = NULL;
++	fs_info->chunk_root = NULL;
++	return -ENOMEM;
++}
++
++static void open_ctree_btree_inode_exit(struct btrfs_fs_info *fs_info)
++{
++	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
++	iput(fs_info->btree_inode);
++	btrfs_put_root(fs_info->tree_root);
++	btrfs_put_root(fs_info->chunk_root);
++	fs_info->tree_root = NULL;
++	fs_info->chunk_root = NULL;
++}
++
++struct init_sequence {
++	int (*init_func)(struct btrfs_fs_info *fs_info);
++	void (*exit_func)(struct btrfs_fs_info *fs_info);
++};
++
++static const struct init_sequence open_ctree_seq[] = {
++	{
++		.init_func = open_ctree_btree_inode_init,
++		.exit_func = open_ctree_btree_inode_exit,
++	}
++};
++
++
+ int __cold open_ctree(struct super_block *sb, char *options)
+ {
+ 	u32 sectorsize;
+@@ -3298,47 +3361,26 @@ int __cold open_ctree(struct super_block *sb, char *options)
+ 	u64 generation;
+ 	u64 features;
+ 	u16 csum_type;
++	bool open_ctree_res[ARRAY_SIZE(open_ctree_seq)] = {0};
+ 	struct btrfs_super_block *disk_super;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+ 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+-	struct btrfs_root *tree_root;
+-	struct btrfs_root *chunk_root;
+ 	int ret;
+ 	int err = -EINVAL;
+ 	int level;
++	int i;
  
-@@ -3604,12 +3608,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
- 		open_ctree_res[i] = true;
- 	}
+ 	fs_info->sb = sb;
  
--	ret = btrfs_init_workqueues(fs_info);
+ 	/* Caller should have already initialized fs_info->fs_devices. */
+ 	ASSERT(fs_info->fs_devices);
+ 
+-	ret = init_mount_fs_info(fs_info);
 -	if (ret) {
 -		err = ret;
--		goto fail_sb_buffer;
+-		goto fail;
 -	}
 -
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(fs_info);
- 	mutex_unlock(&fs_info->chunk_mutex);
-@@ -3854,7 +3852,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
+-	/* These need to be init'ed before we start creating inodes and such. */
+-	tree_root = btrfs_alloc_root(fs_info, BTRFS_ROOT_TREE_OBJECTID,
+-				     GFP_KERNEL);
+-	fs_info->tree_root = tree_root;
+-	chunk_root = btrfs_alloc_root(fs_info, BTRFS_CHUNK_TREE_OBJECTID,
+-				      GFP_KERNEL);
+-	fs_info->chunk_root = chunk_root;
+-	if (!tree_root || !chunk_root) {
+-		err = -ENOMEM;
+-		goto fail;
+-	}
+-
+-	fs_info->btree_inode = new_inode(fs_info->sb);
+-	if (!fs_info->btree_inode) {
+-		err = -ENOMEM;
+-		goto fail;
++	for (i = 0; i < ARRAY_SIZE(open_ctree_seq); i++) {
++		ret = open_ctree_seq[i].init_func(fs_info);
++		if (ret < 0)
++			goto fail;
++		open_ctree_res[i] = true;
+ 	}
+-	mapping_set_gfp_mask(fs_info->btree_inode->i_mapping, GFP_NOFS);
+-	btrfs_init_btree_inode(fs_info);
+-
+-	invalidate_bdev(fs_devices->latest_dev->bdev);
+ 
+ 	/*
+ 	 * Read super block and check the signature bytes only
+@@ -3557,14 +3599,15 @@ int __cold open_ctree(struct super_block *sb, char *options)
+ 
+ 	generation = btrfs_super_chunk_root_generation(disk_super);
+ 	level = btrfs_super_chunk_root_level(disk_super);
+-	ret = load_super_root(chunk_root, btrfs_super_chunk_root(disk_super),
++	ret = load_super_root(fs_info->chunk_root,
++			      btrfs_super_chunk_root(disk_super),
+ 			      generation, level);
+ 	if (ret) {
+ 		btrfs_err(fs_info, "failed to read chunk root");
+ 		goto fail_tree_roots;
+ 	}
+ 
+-	read_extent_buffer(chunk_root->node, fs_info->chunk_tree_uuid,
++	read_extent_buffer(fs_info->chunk_root->node, fs_info->chunk_tree_uuid,
+ 			   offsetof(struct btrfs_header, chunk_tree_uuid),
+ 			   BTRFS_UUID_SIZE);
+ 
+@@ -3688,7 +3731,7 @@ int __cold open_ctree(struct super_block *sb, char *options)
+ 		goto fail_sysfs;
+ 
+ 	fs_info->transaction_kthread = kthread_run(transaction_kthread,
+-						   tree_root,
++						   fs_info->tree_root,
+ 						   "btrfs-transaction");
+ 	if (IS_ERR(fs_info->transaction_kthread))
+ 		goto fail_cleaner;
+@@ -3803,17 +3846,22 @@ int __cold open_ctree(struct super_block *sb, char *options)
+ 	if (fs_info->data_reloc_root)
+ 		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
  	free_root_pointers(fs_info, true);
+-	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
  
  fail_sb_buffer:
--	btrfs_stop_all_workers(fs_info);
+ 	btrfs_stop_all_workers(fs_info);
  	btrfs_free_block_groups(fs_info);
+ fail_alloc:
  	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+-
+-	iput(fs_info->btree_inode);
  fail:
++	for (i = ARRAY_SIZE(open_ctree_seq) - 1; i >= 0; i--) {
++		if (!open_ctree_res[i] || !open_ctree_seq[i].exit_func)
++			continue;
++		open_ctree_seq[i].exit_func(fs_info);
++		open_ctree_res[i] = false;
++	}
+ 	btrfs_close_devices(fs_info->fs_devices);
++	if (ret < 0)
++		err = ret;
+ 	return err;
+ }
+ ALLOW_ERROR_INJECTION(open_ctree, ERRNO);
 -- 
 2.37.3
 

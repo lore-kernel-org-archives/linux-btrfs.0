@@ -2,53 +2,42 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1BEE0C32771
-	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Sep 2022 03:14:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA5C0C6FA92
+	for <linux-btrfs@archiver.kernel.org>; Thu, 22 Sep 2022 04:19:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231194AbiIVDOI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 21 Sep 2022 23:14:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44776 "EHLO
+        id S230296AbiIVETK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 22 Sep 2022 00:19:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37546 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231302AbiIVDL6 (ORCPT
+        with ESMTP id S230247AbiIVETG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 21 Sep 2022 23:11:58 -0400
-Received: from mail-pg1-x52a.google.com (mail-pg1-x52a.google.com [IPv6:2607:f8b0:4864:20::52a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C5F56C75D
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 20:10:29 -0700 (PDT)
-Received: by mail-pg1-x52a.google.com with SMTP id r23so7851806pgr.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Sep 2022 20:10:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date;
-        bh=8ihjvmU6X32IA3g0n6Ob0CbMhk1X+mcnfaE/5Wfmhd8=;
-        b=YKrPYMNBSJFFHg571lPm5+W8CN7DnIcMIRdXREqQlAZ+eLEk9A8maJxy/vrjrQP/eu
-         TYffJ29H5vDdp6sidFBvQbhMXABopPXRk6i9GT1lOsVVh5dTUpn3JKlyT+VRKM4PpYM3
-         aDSZJo/bWB/q00QaHXbLQBN7xuQW5YNdYkiuA=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date;
-        bh=8ihjvmU6X32IA3g0n6Ob0CbMhk1X+mcnfaE/5Wfmhd8=;
-        b=BaNoX7i8kJzMH8b7SgVVwr47Bs26OW3jJj+orApD8WXHpmei5+7H1WLActV8B7Sy9F
-         Px227mF9PRKxqezvu7uAvmmY2fsxGBQSMgjHXCeRZWBd4g5BxbDiwCEpdu/7yQe5P6t/
-         7sQZyBPpaEXP0L7zpRF+Zsia5IgJVQCUC81JUyIbdrQzIDKAt0uD9aILz0uO8YHxWNxM
-         MiyF9gYL8NPUsvID9G8XNm0riDJayp43cD0vxlDlSoXBIHZm7t/0bB5ROCHb0W+58vDW
-         CzZp64ZA8cDEiyJxRPkepDQxyLyAfTQaZXYx696EQz9OMfb7ZfRW8fQDe2WjtAv4Wdyq
-         TxcQ==
-X-Gm-Message-State: ACrzQf0qclk6CuFGwnDjregxnHjQXRs1mQkjrX4KnEpGZSa9D34XfRfd
-        kyEzA8thUs1RVVSEtWtvQ5RewQ==
-X-Google-Smtp-Source: AMsMyM76eF8+VNznj7IzekXG0QSV+my0aV1DgaIJkS6htzHMwsh1R3Wrb+39lk5TYLYW7ESUsWFZBQ==
-X-Received: by 2002:a63:e305:0:b0:439:6e0c:f81e with SMTP id f5-20020a63e305000000b004396e0cf81emr1277721pgh.50.1663816228246;
-        Wed, 21 Sep 2022 20:10:28 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
-        by smtp.gmail.com with ESMTPSA id i62-20020a17090a3dc400b001facf455c91sm2649631pjc.21.2022.09.21.20.10.24
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 21 Sep 2022 20:10:26 -0700 (PDT)
-From:   Kees Cook <keescook@chromium.org>
-To:     Vlastimil Babka <vbabka@suse.cz>
-Cc:     Kees Cook <keescook@chromium.org>, linux-fsdevel@vger.kernel.org,
+        Thu, 22 Sep 2022 00:19:06 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 35995A221B;
+        Wed, 21 Sep 2022 21:19:05 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C0F2D62FAD;
+        Thu, 22 Sep 2022 04:19:04 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4C3BEC433D6;
+        Thu, 22 Sep 2022 04:18:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1663820344;
+        bh=8xodEWMTndBecZO1JG0sANGtdcIZJhdCKz1ZoOkxjMk=;
+        h=From:To:Cc:Subject:References:Date:In-Reply-To:From;
+        b=uW+exXsXSGrew87ZojaTnnu2Pv1UtGXzQqjjLX2b7oGph4+PQelJUJX11FgjpqatQ
+         ELoqv5pR8bSV3/7535PDpBw6BVY4bi59s4BaKlJSIYVXzNRY6aDLmLKhJLPFtzieTO
+         iB7297vU052/FKz0Dc21FYTixE1ykO1VrtaDUUK3SkYuK3biSXS0J7OKhhQjo/eWra
+         7mj2sPUPAmfSHWCc1MV6VYkGtcRnMWzr/LNBb6lPibVdaMWLqUzHsztksp0W4hjZYv
+         zIN6846mujkb0CwMdnKoomN+OWU5pYCeMqp4QWw7CJvtecSieKja+ya7GWiRyAj90B
+         2nqT/vaz2aB1w==
+From:   Kalle Valo <kvalo@kernel.org>
+To:     Kees Cook <keescook@chromium.org>
+Cc:     Vlastimil Babka <vbabka@suse.cz>,
+        Gregory Greenman <gregory.greenman@intel.com>,
+        Johannes Berg <johannes.berg@intel.com>,
+        linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
         Pekka Enberg <penberg@kernel.org>,
         David Rientjes <rientjes@google.com>,
         Joonsoo Kim <iamjoonsoo.kim@lge.com>,
@@ -63,68 +52,54 @@ Cc:     Kees Cook <keescook@chromium.org>, linux-fsdevel@vger.kernel.org,
         Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sumit Semwal <sumit.semwal@linaro.org>,
-        =?UTF-8?q?Christian=20K=C3=B6nig?= <christian.koenig@amd.com>,
+        Christian =?utf-8?Q?K=C3=B6nig?= <christian.koenig@amd.com>,
         Jesse Brandeburg <jesse.brandeburg@intel.com>,
         Daniel Micay <danielmicay@gmail.com>,
         Yonghong Song <yhs@fb.com>, Marco Elver <elver@google.com>,
         Miguel Ojeda <ojeda@kernel.org>,
         Jacob Shin <jacob.shin@amd.com>, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, netdev@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-media@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org,
+        linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        linux-media@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linaro-mm-sig@lists.linaro.org, linux-fsdevel@vger.kernel.org,
         intel-wired-lan@lists.osuosl.org, dev@openvswitch.org,
-        x86@kernel.org, linux-wireless@vger.kernel.org,
-        llvm@lists.linux.dev, linux-hardening@vger.kernel.org
-Subject: [PATCH 06/12] coredump: Proactively round up to kmalloc bucket size
-Date:   Wed, 21 Sep 2022 20:10:07 -0700
-Message-Id: <20220922031013.2150682-7-keescook@chromium.org>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20220922031013.2150682-1-keescook@chromium.org>
+        x86@kernel.org, llvm@lists.linux.dev,
+        linux-hardening@vger.kernel.org
+Subject: Re: [PATCH 10/12] iwlwifi: Track scan_cmd allocation size explicitly
 References: <20220922031013.2150682-1-keescook@chromium.org>
+        <20220922031013.2150682-11-keescook@chromium.org>
+Date:   Thu, 22 Sep 2022 07:18:51 +0300
+In-Reply-To: <20220922031013.2150682-11-keescook@chromium.org> (Kees Cook's
+        message of "Wed, 21 Sep 2022 20:10:11 -0700")
+Message-ID: <87fsgk6nys.fsf@kernel.org>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1167; h=from:subject; bh=pDNvsGLyQA8RpBfkkqJxHruRXSdA8gdZalovRqbX85w=; b=owEBbQKS/ZANAwAKAYly9N/cbcAmAcsmYgBjK9IT/n4E1MQAIRbO7TQnliesxT9vRRUjnB997VqU NfNmMx2JAjMEAAEKAB0WIQSlw/aPIp3WD3I+bhOJcvTf3G3AJgUCYyvSEwAKCRCJcvTf3G3AJv1uD/ 0UeTRzC7PYbrNFpo0erBLhfyq0OXI7KWJPUznMmMf+cAop1hoIyAS6RCvOy3P43EFrYY2LvmcGU3Aj SICc7baXEFvYdMhDJ8d101AolLKruLzinzUGntwccPS2dZe2w/x8T733W5uMnEOoDIW14/zr4IUtRh Vlx7PoTaeYeaEQPZwbWSdxU7qtxeqxD9LsQu+HlBYfR1k5rQ/OwJUa0VLmxQS3VuLxNzcqUFIRrz3E N9wSWjXJ1fpBM5rUyeWWd8dLef4aKwvQUrxvsQ2VWqLB5t57NofX/QpwkS3ypabCJnUg2eUl37eba5 OV6vc8FtBSMSsXXhnZ0qRfqcqAOpIlqc5fvFIq+bl3f4xCiJNeEM7atqS3LN6ZEK9rF9EWiIyjfIU1 rFgqaXZ47QKcNt6D+tThDEVTDgBDzW+/xD6gFm/gAUYLMU55Xrc41oHohWX310hGuJ4uQfMnkpzfJD l7QDNBoaF6Eo/aHjjnO/L/2LHxrNen15gNgss8f3Pbl5cYUEIwKYQTUHz4t+WuflfhJ72ydBaVxPhi nvK5XI8oXLZUTCjvvJ0NvdCQbKmYhFiTddotTbfTvs9VyXcsa4oRA58e65OY4nlgV9+2HJHYaTy3u4 CX+OyRwkHX1tSGbw74SSBv0sSXX5LiEItWNDNN9XJyygxijXQxQ7uWbdLfNg==
-X-Developer-Key: i=keescook@chromium.org; a=openpgp; fpr=A5C3F68F229DD60F723E6E138972F4DFDC6DC026
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Instead of discovering the kmalloc bucket size _after_ allocation, round
-up proactively so the allocation is explicitly made for the full size,
-allowing the compiler to correctly reason about the resulting size of
-the buffer through the existing __alloc_size() hint.
+Kees Cook <keescook@chromium.org> writes:
 
-Cc: linux-fsdevel@vger.kernel.org
-Signed-off-by: Kees Cook <keescook@chromium.org>
----
- fs/coredump.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+> In preparation for reducing the use of ksize(), explicitly track the
+> size of scan_cmd allocations. This also allows for noticing if the scan
+> size changes unexpectedly. Note that using ksize() was already incorrect
+> here, in the sense that ksize() would not match the actual allocation
+> size, which would trigger future run-time allocation bounds checking.
+> (In other words, memset() may know how large scan_cmd was allocated for,
+> but ksize() will return the upper bounds of the actually allocated memory,
+> causing a run-time warning about an overflow.)
+>
+> Cc: Gregory Greenman <gregory.greenman@intel.com>
+> Cc: Kalle Valo <kvalo@kernel.org>
+> Cc: Johannes Berg <johannes.berg@intel.com>
+> Cc: linux-wireless@vger.kernel.org
+> Cc: netdev@vger.kernel.org
+> Signed-off-by: Kees Cook <keescook@chromium.org>
 
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 9f4aae202109..0894b2c35d98 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -68,7 +68,10 @@ struct core_name {
- 
- static int expand_corename(struct core_name *cn, int size)
- {
--	char *corename = krealloc(cn->corename, size, GFP_KERNEL);
-+	char *corename;
-+
-+	size = kmalloc_size_roundup(size);
-+	corename = krealloc(cn->corename, size, GFP_KERNEL);
- 
- 	if (!corename)
- 		return -ENOMEM;
-@@ -76,7 +79,7 @@ static int expand_corename(struct core_name *cn, int size)
- 	if (size > core_name_size) /* racy but harmless */
- 		core_name_size = size;
- 
--	cn->size = ksize(corename);
-+	cn->size = size;
- 	cn->corename = corename;
- 	return 0;
- }
+Via which tree is this iwlwifi patch going? Normally via wireless-next
+or something else?
+
 -- 
-2.34.1
+https://patchwork.kernel.org/project/linux-wireless/list/
 
+https://wireless.wiki.kernel.org/en/developers/documentation/submittingpatches

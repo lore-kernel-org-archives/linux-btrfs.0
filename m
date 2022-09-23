@@ -2,96 +2,198 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EBC4C07E9D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Sep 2022 18:53:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A718C6FA94
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Sep 2022 20:32:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232066AbiIWSxm convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Sep 2022 14:53:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58004 "EHLO
+        id S232163AbiIWUcu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Sep 2022 16:32:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52400 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232665AbiIWSxg (ORCPT
+        with ESMTP id S232696AbiIWUc2 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2022 14:53:36 -0400
-Received: from bee.birch.relay.mailchannels.net (bee.birch.relay.mailchannels.net [23.83.209.14])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3975412113F
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 11:53:34 -0700 (PDT)
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-Received: from relay.mailchannels.net (localhost [127.0.0.1])
-        by relay.mailchannels.net (Postfix) with ESMTP id 0E6778219EA;
-        Fri, 23 Sep 2022 18:53:34 +0000 (UTC)
-Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
-        (Authenticated sender: instrampxe0y3a)
-        by relay.mailchannels.net (Postfix) with ESMTPA id 449A98207E9;
-        Fri, 23 Sep 2022 18:53:33 +0000 (UTC)
-ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1663959213; a=rsa-sha256;
-        cv=none;
-        b=tpRyoOqOn5+G0xuUUmM3QerE51RbLAXRf9wucXTDo9mlvrqedID49nrQzbuVpCgC2Q5YCK
-        UmdHoPzIb7kUF4QtrjlhJI5ivn7wbzSkINicS6CF8aq0yQCRfnTLyHxtQxKDOga3Uv2xQe
-        9NrUw+bCPi3txy+U5QCUFgVg8xbBFUEtV/pbqefZ9HEN4mFoSYobxgPnj2fLsecHyzpZEx
-        vVAaauJGQquX1NKRVGvacVjfiJTEfi8+Lb1/h1kleph9105KbmyDAe5m+K1B7fwqKqAn4L
-        dCVfgux333qPcmD55Aukw7RzF2QsKQ9NICduUXlDUQc/2UB0RAHR3YArlQMrwQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
- d=mailchannels.net;
-        s=arc-2022; t=1663959213;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=loiIiRc67RlHcrWLOnsRHl9P4YjbVboyzHc3dXY0AKo=;
-        b=IswEHPX0/VBRU5gHm4mlm/1P8rSNhHORdeoN8HpW3BZ4iAbfH6qfpEZDSeRqnfisJnQgNh
-        HUzWzAmHO5OWYXDQI47Z/xjhdicqNf8muuyYb2dSc+dFN4J5Gg/LkYSTnd/xRu0aU9nCwp
-        E7NDDXn8pSqB7IxIVNmwZmOJs8EDGtx+jAjMiQVXmTD4g2snuNyeXVr4D3p8QB9AigYVQB
-        9VlNr62GeMGsIsO+guSM4iGs+Jccxbwrqf3LhBNwVQOcPSjp7SC24Oh3de+shfJp/XDoAc
-        1uDcy6k82URKNgyDDnGeJq6Bf7YWCjtx10ZaNlAbbXxk0ox1bYxwa0c8hCIrAw==
-ARC-Authentication-Results: i=1;
-        rspamd-7c485dd8cf-ng7fn;
-        auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
-X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MC-Relay: Neutral
-X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
-X-MailChannels-Auth-Id: instrampxe0y3a
-X-Arithmetic-Illustrious: 0456db8f5633bd89_1663959213729_1240439065
-X-MC-Loop-Signature: 1663959213729:4280716135
-X-MC-Ingress-Time: 1663959213728
-Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
- [3.69.87.180])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
-        by 100.97.77.221 (trex/6.7.1);
-        Fri, 23 Sep 2022 18:53:33 +0000
-Received: from p54b6dffd.dip0.t-ipconnect.de ([84.182.223.253]:58514 helo=heisenberg.fritz.box)
-        by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.95)
-        (envelope-from <calestyo@scientia.org>)
-        id 1obnnm-0000lD-Lh;
-        Fri, 23 Sep 2022 18:53:31 +0000
-Message-ID: <71898f735214914a06772ee838b030aef0f436ff.camel@scientia.org>
-Subject: Re: call trace when btrfs-check tries to write on ro-blockdev
-From:   Christoph Anton Mitterer <calestyo@scientia.org>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-Date:   Fri, 23 Sep 2022 20:53:26 +0200
-In-Reply-To: <4d8f3ce4-f488-d065-ef7e-c7705ac4efee@gmx.com>
-References: <70591e96d9dbc46cfaa44316f0eb1bcccc7017f5.camel@scientia.org>
-         <6d72763c-d024-3224-be8e-0ade32540883@gmx.com>
-         <52bf0daaa1f88fe1069f4871e28ca18a90d1d5c1.camel@scientia.org>
-         <4d8f3ce4-f488-d065-ef7e-c7705ac4efee@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.0-2 
+        Fri, 23 Sep 2022 16:32:28 -0400
+Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com [IPv6:2607:f8b0:4864:20::1029])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 555B832EF9
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 13:28:26 -0700 (PDT)
+Received: by mail-pj1-x1029.google.com with SMTP id q15-20020a17090a304f00b002002ac83485so1313619pjl.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 13:28:26 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date;
+        bh=YGvtsu71vtHcP1IwH8KHiY99VHKmYF+/gM9Vu/q9kHU=;
+        b=IFb3o6XSbaR/uQunXfgk/OAgUcbyiUG/neLZN7u63Mb8Dqi7z6PDoN9BNOVaTqa26y
+         SRlzwgeKQKd7R1FctE6Aq8Of9Rx/sgZevcaBDxM7zwYZdr/ifKEynY9SIWqMo8+dRdxg
+         Y1YODqFn9CHpITGWx8VNcWimDUOWaa7761v9Y=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date;
+        bh=YGvtsu71vtHcP1IwH8KHiY99VHKmYF+/gM9Vu/q9kHU=;
+        b=N3S/nj1XYXOp3siKUi0u4OCwdYwVH1L+rKlsJOn4jjEJbh+B+WkLveBoBM1KD2XUr2
+         6kU5XwP+AiEkqYwp7jX/9RZixzKZVVZi7UvIL3RZAGgqcdQGxSpli1MnRJvEInXt06vj
+         XRYQCsWOoGDcRQyOj01eZmXM7ok3P0aASomv5L5iqGqGtDtzefxv25/3mz4yzoMDKCFx
+         5BizPGQhzfNpFx7ZSyumpg+TD5qKC4S2Izei2jWDNUa+OeD3ra+xTmQu3NZ4mXdrF+K0
+         1yBMgVGWUNUYKtnUi+nbkgb5mqpL3fe5+09VJhx+8KKBNOcHztd77rntwGVwVcy/gykt
+         SB1g==
+X-Gm-Message-State: ACrzQf11p0CBO6SwcN9endwmGpQ+3GZRuIgqw4nydTeY5yqh8l5Gky10
+        dPNyBAOjEazPaISyKbilxb8aqQ==
+X-Google-Smtp-Source: AMsMyM4GlI4eTJyA9jGLi9lKSnvEwSBc6wqIcYDsgYSV7Hnp4hgp4C2mRxXo8b79UHawMzdaoq59kQ==
+X-Received: by 2002:a17:90a:e7c5:b0:200:ab1a:f32 with SMTP id kb5-20020a17090ae7c500b00200ab1a0f32mr22617314pjb.100.1663964905845;
+        Fri, 23 Sep 2022 13:28:25 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+        by smtp.gmail.com with ESMTPSA id q9-20020a17090311c900b0017829f986a5sm6477104plh.133.2022.09.23.13.28.24
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 23 Sep 2022 13:28:25 -0700 (PDT)
+From:   Kees Cook <keescook@chromium.org>
+To:     Vlastimil Babka <vbabka@suse.cz>
+Cc:     Kees Cook <keescook@chromium.org>,
+        Christoph Lameter <cl@linux.com>,
+        Pekka Enberg <penberg@kernel.org>,
+        David Rientjes <rientjes@google.com>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        Marco Elver <elver@google.com>, linux-mm@kvack.org,
+        "Ruhl, Michael J" <michael.j.ruhl@intel.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Nick Desaulniers <ndesaulniers@google.com>,
+        Alex Elder <elder@kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Sumit Semwal <sumit.semwal@linaro.org>,
+        =?UTF-8?q?Christian=20K=C3=B6nig?= <christian.koenig@amd.com>,
+        Jesse Brandeburg <jesse.brandeburg@intel.com>,
+        Daniel Micay <danielmicay@gmail.com>,
+        Yonghong Song <yhs@fb.com>, Miguel Ojeda <ojeda@kernel.org>,
+        linux-kernel@vger.kernel.org, netdev@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-media@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org,
+        linux-fsdevel@vger.kernel.org, intel-wired-lan@lists.osuosl.org,
+        dev@openvswitch.org, x86@kernel.org, llvm@lists.linux.dev,
+        linux-hardening@vger.kernel.org
+Subject: [PATCH v2 01/16] slab: Remove __malloc attribute from realloc functions
+Date:   Fri, 23 Sep 2022 13:28:07 -0700
+Message-Id: <20220923202822.2667581-2-keescook@chromium.org>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20220923202822.2667581-1-keescook@chromium.org>
+References: <20220923202822.2667581-1-keescook@chromium.org>
 MIME-Version: 1.0
-X-OutGoing-Spam-Status: No, score=-1.0
-X-AuthUser: calestyo@scientia.org
+X-Developer-Signature: v=1; a=openpgp-sha256; l=4158; h=from:subject; bh=MMNKX5wNJYq+FFEmxyLeG88Y0pnaYb/m5JRZI7mnarg=; b=owEBbQKS/ZANAwAKAYly9N/cbcAmAcsmYgBjLhbj8zMWKpgfJIfLMPzhNCTicodYe34AHw5xM3H6 j5Q5e5iJAjMEAAEKAB0WIQSlw/aPIp3WD3I+bhOJcvTf3G3AJgUCYy4W4wAKCRCJcvTf3G3AJkqXEA C0CZsQPuFBR2/YBQC6kBOKXs3AnUbDd1vBqtB/SiXvO/znjATFPdq/AAaSBC59HBiMKMePM5lvoiuf aYrT/n/J7UMzadTeGJDsCFyc95mxXFpunUjeXGaTgZojjSgAVg4DABiW54DaumW0lAWFAYegD26yeW JBuJYikNr/QTKW2lM4rlUyCE6YeklCEU+t6NysjAG5alyIx4W0dgH5pUSaAsO6hX65jz8XnK6X4gIg /ftbvkJQdCA8yp6HbKj3bRnJNwHhei3Ew8kR8tRkxr/QCstK0qco60yvO2mmfdDhJOTt8ljlhX+99P ki8iAJ2IUxqLrohWV0+vBNh/UwJAT/E2xl9J7vSz0a5lE1JDaJni0l7B9aWJ6wdTRIlb2RIw/25CU3 2jH0hGLqeXUGTIW8ZuajWL/FWv6nUhF3N+Zql34CZfjXaiVB/8urV6hGJYu0PjR4RhPJtooFtvcGnc NN4P/rvByw1L7/4EGJFqF8KQolNWMu558pdQ29AecI/zn4E9FW41pu2k0zXuekf9ZHdzPr//MRq0VK jji3tNn5ZbZXQWzbxXbbkECT6CK1qfq6Re4GlmJrjPbAnkWCC4gXdw7JW6JIg/Km6CtttHx519iZge eYs/03ai/ytBwKoKeQmOX9IHVAAm1pTNUYNBd0RtV+OAb1aVL8B7TsN5Okig==
+X-Developer-Key: i=keescook@chromium.org; a=openpgp; fpr=A5C3F68F229DD60F723E6E138972F4DFDC6DC026
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, 2022-09-23 at 18:39 +0800, Qu Wenruo wrote:
-> Got the reason.
+The __malloc attribute should not be applied to "realloc" functions, as
+the returned pointer may alias the storage of the prior pointer. Instead
+of splitting __malloc from __alloc_size, which would be a huge amount of
+churn, just create __realloc_size for the few cases where it is needed.
 
-As so often:
+Additionally removes the conditional test for __alloc_size__, which is
+always defined now.
 
-thanks for your efforts :-)
+Cc: Christoph Lameter <cl@linux.com>
+Cc: Pekka Enberg <penberg@kernel.org>
+Cc: David Rientjes <rientjes@google.com>
+Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Roman Gushchin <roman.gushchin@linux.dev>
+Cc: Hyeonggon Yoo <42.hyeyoo@gmail.com>
+Cc: Marco Elver <elver@google.com>
+Cc: linux-mm@kvack.org
+Signed-off-by: Kees Cook <keescook@chromium.org>
+---
+ include/linux/compiler_types.h | 13 +++++--------
+ include/linux/slab.h           | 12 ++++++------
+ mm/slab_common.c               |  4 ++--
+ 3 files changed, 13 insertions(+), 16 deletions(-)
 
+diff --git a/include/linux/compiler_types.h b/include/linux/compiler_types.h
+index 4f2a819fd60a..f141a6f6b9f6 100644
+--- a/include/linux/compiler_types.h
++++ b/include/linux/compiler_types.h
+@@ -271,15 +271,12 @@ struct ftrace_likely_data {
+ 
+ /*
+  * Any place that could be marked with the "alloc_size" attribute is also
+- * a place to be marked with the "malloc" attribute. Do this as part of the
+- * __alloc_size macro to avoid redundant attributes and to avoid missing a
+- * __malloc marking.
++ * a place to be marked with the "malloc" attribute, except those that may
++ * be performing a _reallocation_, as that may alias the existing pointer.
++ * For these, use __realloc_size().
+  */
+-#ifdef __alloc_size__
+-# define __alloc_size(x, ...)	__alloc_size__(x, ## __VA_ARGS__) __malloc
+-#else
+-# define __alloc_size(x, ...)	__malloc
+-#endif
++#define __alloc_size(x, ...)	__alloc_size__(x, ## __VA_ARGS__) __malloc
++#define __realloc_size(x, ...)	__alloc_size__(x, ## __VA_ARGS__)
+ 
+ #ifndef asm_volatile_goto
+ #define asm_volatile_goto(x...) asm goto(x)
+diff --git a/include/linux/slab.h b/include/linux/slab.h
+index 0fefdf528e0d..41bd036e7551 100644
+--- a/include/linux/slab.h
++++ b/include/linux/slab.h
+@@ -184,7 +184,7 @@ int kmem_cache_shrink(struct kmem_cache *s);
+ /*
+  * Common kmalloc functions provided by all allocators
+  */
+-void * __must_check krealloc(const void *objp, size_t new_size, gfp_t flags) __alloc_size(2);
++void * __must_check krealloc(const void *objp, size_t new_size, gfp_t flags) __realloc_size(2);
+ void kfree(const void *objp);
+ void kfree_sensitive(const void *objp);
+ size_t __ksize(const void *objp);
+@@ -647,10 +647,10 @@ static inline __alloc_size(1, 2) void *kmalloc_array(size_t n, size_t size, gfp_
+  * @new_size: new size of a single member of the array
+  * @flags: the type of memory to allocate (see kmalloc)
+  */
+-static inline __alloc_size(2, 3) void * __must_check krealloc_array(void *p,
+-								    size_t new_n,
+-								    size_t new_size,
+-								    gfp_t flags)
++static inline __realloc_size(2, 3) void * __must_check krealloc_array(void *p,
++								      size_t new_n,
++								      size_t new_size,
++								      gfp_t flags)
+ {
+ 	size_t bytes;
+ 
+@@ -774,7 +774,7 @@ static inline __alloc_size(1, 2) void *kvcalloc(size_t n, size_t size, gfp_t fla
+ }
+ 
+ extern void *kvrealloc(const void *p, size_t oldsize, size_t newsize, gfp_t flags)
+-		      __alloc_size(3);
++		      __realloc_size(3);
+ extern void kvfree(const void *addr);
+ extern void kvfree_sensitive(const void *addr, size_t len);
+ 
+diff --git a/mm/slab_common.c b/mm/slab_common.c
+index 17996649cfe3..457671ace7eb 100644
+--- a/mm/slab_common.c
++++ b/mm/slab_common.c
+@@ -1134,8 +1134,8 @@ module_init(slab_proc_init);
+ 
+ #endif /* CONFIG_SLAB || CONFIG_SLUB_DEBUG */
+ 
+-static __always_inline void *__do_krealloc(const void *p, size_t new_size,
+-					   gfp_t flags)
++static __always_inline __realloc_size(2) void *
++__do_krealloc(const void *p, size_t new_size, gfp_t flags)
+ {
+ 	void *ret;
+ 	size_t ks;
+-- 
+2.34.1
 
-Cheers,
-Chris.

@@ -2,69 +2,67 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F546C07E9D
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Sep 2022 20:35:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBF39C07E9D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Sep 2022 20:41:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232098AbiIWUfE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Sep 2022 16:35:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52400 "EHLO
+        id S233219AbiIWUlF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Sep 2022 16:41:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46850 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232048AbiIWUcs (ORCPT
+        with ESMTP id S233095AbiIWUk3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 23 Sep 2022 16:32:48 -0400
-Received: from mail-pl1-x62c.google.com (mail-pl1-x62c.google.com [IPv6:2607:f8b0:4864:20::62c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B8E6714C06E
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 13:28:34 -0700 (PDT)
-Received: by mail-pl1-x62c.google.com with SMTP id w13so1193636plp.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 13:28:34 -0700 (PDT)
+        Fri, 23 Sep 2022 16:40:29 -0400
+Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D60E21514C3
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 13:35:41 -0700 (PDT)
+Received: by mail-pj1-x102a.google.com with SMTP id g1-20020a17090a708100b00203c1c66ae3so1289971pjk.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Sep 2022 13:35:41 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=chromium.org; s=google;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date;
-        bh=09XDqhCmbOxMmk4st3n1VevKxFvu8TBGt9LJYr24nIA=;
-        b=C8a8bBwBCPpYqJC0ttlBfkppX2uMw5viHVMSx4NSUdlu6Mk2tJYnIkpj1O3sRUaf2n
-         YvaKYhZaGs/8xWczPFhL4W6+saiCUf5KQGmW47sQE/VjI9iBzvPK3eyEePf3h3djFnDv
-         4Xw5J5dvAI2eSiF2SIboitvBfMPVts9ASzBRc=
+        bh=KTqecIsN+rZ/r5vRTPXwhG2Fjp/tipSlLDdfMKYcgLM=;
+        b=f94Wfd7xAB1tMy6calf6l5p3x+2in7DyzsV50yDKB7taURdsPaCM2OydY1fFaru/ZW
+         GjJIt1JF0yieLkvcBlF4pMte8sdTYkDdvEAsIZ7RUdwd9PufKMe5RpGZe3MTKJDT6pI8
+         HpvD4dvO90+mj+6aFpo4NQqtgUTesDjf+bmbw=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date;
-        bh=09XDqhCmbOxMmk4st3n1VevKxFvu8TBGt9LJYr24nIA=;
-        b=2onNC18SRDfumitA/XFwqcnq1oNAtnj26LtEo+3buYoXhTKU5wmafkqUGrnVoCp3Wd
-         l8TdHAWhmgvzT2wvNHVmu3LkTVMqrkti14aDhmQplsimn72k6GPtTY4Xs7QcwNHNNjfA
-         UbxFEjvkgSu+W6wBgAy7uOiCcGunLIMlPyQ6eRh3Ch06IOMPSEmkwdUEbNO9etZujSeL
-         MMR5L5rH6JQeOvrrNEff1vLNBKu7IZmXQUFGdk0LHMC+nYPL8Ap+mQPeweaS5PwV3+Cx
-         Smf/9LDmeUXxSZYn7quwcQ+tkfMJPlc4IUpGOqe/xZMVb97kNcPtjYIikwRe1evhFpcw
-         iLDQ==
-X-Gm-Message-State: ACrzQf3Sc5CyYd0MUWcQnWYOC734Q30k6g0HMfYOqbZhCjEVVeNpxmY+
-        jbi1g84CpjWVEqt5f2h/g2x6pw==
-X-Google-Smtp-Source: AMsMyM7DXBOfv6ahzpoYpFJ1XA+uXLlf1m80ImgaNTw1lXpXdBLHWAXCKtzP0wavX+dE1aJb2tOr4Q==
-X-Received: by 2002:a17:903:2015:b0:178:8022:ff1 with SMTP id s21-20020a170903201500b0017880220ff1mr10285638pla.18.1663964913651;
-        Fri, 23 Sep 2022 13:28:33 -0700 (PDT)
+        bh=KTqecIsN+rZ/r5vRTPXwhG2Fjp/tipSlLDdfMKYcgLM=;
+        b=ReQeBNVmicsB+TD24yKRkUOS8H8L0q+89+NSaNsvXUzfZlGOnXYW5DMPd0A1jDLDyC
+         IYdZyYVSoNPuEMCzkfgxm6K/h8G6Vac6HjVUxSY6BLpOsCzlTJhpAAqEOXVDhW5zpUZ0
+         /Mf+420uhzfvhkI0lc1vMcmvPxEnPxh4f1wEVgP1tZH8YFBVVgYOdLyn+BikYtL9bcc4
+         bUM90H+PdBTNcPTTgKgD/iegk8C9FWFCGRKaJIgPCoOa/jtfDhmTvReYsfQz4M4z2iMW
+         EjntXj5muaCHEx/IDusk1cJmpx/vAKVFYibDmGL77R0bbBpRhbl+vU8EDzlcx71umXYQ
+         ciSA==
+X-Gm-Message-State: ACrzQf1VUwXuewe32BYbu/XmyLwc6GCR1866qwUxPXHjAwxu+3ZyI9H9
+        NS2dGo56L6Gn8KH2b+XUR7/Jgg==
+X-Google-Smtp-Source: AMsMyM7vRbdvmLwAu4r0h4O20VFgjtnhlCkk0pZbrUyBGB40i196nKU6gbtNpTH2GFxoX0kIPq3SIA==
+X-Received: by 2002:a17:903:244d:b0:178:a0eb:d4bc with SMTP id l13-20020a170903244d00b00178a0ebd4bcmr10401235pls.33.1663965329543;
+        Fri, 23 Sep 2022 13:35:29 -0700 (PDT)
 Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
-        by smtp.gmail.com with ESMTPSA id i3-20020aa796e3000000b00535da15a252sm6765031pfq.165.2022.09.23.13.28.28
+        by smtp.gmail.com with ESMTPSA id n2-20020a170902d2c200b001715a939ac5sm6372093plc.295.2022.09.23.13.35.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 23 Sep 2022 13:28:32 -0700 (PDT)
+        Fri, 23 Sep 2022 13:35:28 -0700 (PDT)
 From:   Kees Cook <keescook@chromium.org>
 To:     Vlastimil Babka <vbabka@suse.cz>
 Cc:     Kees Cook <keescook@chromium.org>,
-        Alexei Starovoitov <ast@kernel.org>,
-        Daniel Borkmann <daniel@iogearbox.net>,
-        John Fastabend <john.fastabend@gmail.com>,
-        Andrii Nakryiko <andrii@kernel.org>,
-        Martin KaFai Lau <martin.lau@linux.dev>,
-        Song Liu <song@kernel.org>, Yonghong Song <yhs@fb.com>,
-        KP Singh <kpsingh@kernel.org>,
-        Stanislav Fomichev <sdf@google.com>,
-        Hao Luo <haoluo@google.com>, Jiri Olsa <jolsa@kernel.org>,
-        bpf@vger.kernel.org, "Ruhl, Michael J" <michael.j.ruhl@intel.com>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
         Christoph Lameter <cl@linux.com>,
         Pekka Enberg <penberg@kernel.org>,
         David Rientjes <rientjes@google.com>,
         Joonsoo Kim <iamjoonsoo.kim@lge.com>,
         Andrew Morton <akpm@linux-foundation.org>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        Andrey Ryabinin <ryabinin.a.a@gmail.com>,
+        Alexander Potapenko <glider@google.com>,
+        Andrey Konovalov <andreyknvl@gmail.com>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Vincenzo Frascino <vincenzo.frascino@arm.com>,
+        linux-mm@kvack.org, kasan-dev@googlegroups.com,
+        "Ruhl, Michael J" <michael.j.ruhl@intel.com>,
         "David S. Miller" <davem@davemloft.net>,
         Eric Dumazet <edumazet@google.com>,
         Jakub Kicinski <kuba@kernel.org>,
@@ -78,165 +76,138 @@ Cc:     Kees Cook <keescook@chromium.org>,
         =?UTF-8?q?Christian=20K=C3=B6nig?= <christian.koenig@amd.com>,
         Jesse Brandeburg <jesse.brandeburg@intel.com>,
         Daniel Micay <danielmicay@gmail.com>,
-        Marco Elver <elver@google.com>,
+        Yonghong Song <yhs@fb.com>, Marco Elver <elver@google.com>,
         Miguel Ojeda <ojeda@kernel.org>, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org, netdev@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-media@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linaro-mm-sig@lists.linaro.org,
-        linux-fsdevel@vger.kernel.org, intel-wired-lan@lists.osuosl.org,
-        dev@openvswitch.org, x86@kernel.org, llvm@lists.linux.dev,
+        netdev@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-media@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linaro-mm-sig@lists.linaro.org, linux-fsdevel@vger.kernel.org,
+        intel-wired-lan@lists.osuosl.org, dev@openvswitch.org,
+        x86@kernel.org, llvm@lists.linux.dev,
         linux-hardening@vger.kernel.org
-Subject: [PATCH v2 11/16] bpf: Use kmalloc_size_roundup() to match ksize() usage
-Date:   Fri, 23 Sep 2022 13:28:17 -0700
-Message-Id: <20220923202822.2667581-12-keescook@chromium.org>
+Subject: [PATCH v2 15/16] mm: Make ksize() a reporting-only function
+Date:   Fri, 23 Sep 2022 13:28:21 -0700
+Message-Id: <20220923202822.2667581-16-keescook@chromium.org>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <20220923202822.2667581-1-keescook@chromium.org>
 References: <20220923202822.2667581-1-keescook@chromium.org>
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=4987; h=from:subject; bh=+umEDwGyJCv3Ovyx4Pj2CYIL4lHo8xavtPhh0E8bcL8=; b=owEBbQKS/ZANAwAKAYly9N/cbcAmAcsmYgBjLhblZrOjZBzDi2GSWosP6rXkUyCU3IxBEiC+Kuw9 wTqv/j+JAjMEAAEKAB0WIQSlw/aPIp3WD3I+bhOJcvTf3G3AJgUCYy4W5QAKCRCJcvTf3G3AJjMAEA CfzaZuEjLR7HquBXo8+EM4GS8NWzszH99hX9xWPHebOuW16pmhNIEq+Aju+xJdnrhZANxwQ9Vh+iy8 ymNAeDJdi1cPUvm/XvEjIQdHYJrutoIiSKB2d0AEqLwbsec1LjBhbvhDu0LI7jqNxIfIv2/9Wt0lw+ FLC6qE+PRYixT6MQix4PHQQlKlYq57pj+xWZMmEn7EdqoqjCDsI3K/t90ikcx3WVUqhltKxdMQKBBV x5co1XdfKAeNPVoBf0Q4pGe8YOFn/SbYAQ3SUpg9WyQETPSbnLumwlf27mINUyCKWF27Tg53zEYExy CL2Y77JbZEY8nCSjb5ET/WZ4BJLz8w55BmqKLuG+LHoVxmG9As/KzYhd4wNeF/dVm0OLi7gOh89qzi GEU1kcMn/xDpv1MQ2jDoG8VufwjUDPawkqASsD3lyfggklYm5al7OV0DrKzqFXHwaeBjaWHmM6KLKe 37QfdNfUsWdCuBvcEjoUX7Za+u901T3eO2SKiBvJCpX2sc6vi67INLI4syc1DeZAWI+wioCztNVLto FEw2RcZEC86T5zincgBp5Ofm7ehCRUPa/wet1Ayqkgvsrtnt1X+1xS1o6I1ntxzju/C/TzBCm6nHcb R4gLY+rvdc1IBBznpLWzmV3Cz3ue47gmjjlvg+BX0gGRJVy0rhqVwTrXOpsA==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=4409; h=from:subject; bh=eTOvroLnBC5lEfD5J+pHwkaq4l0Z2pdeLmvVu9h6d+U=; b=owEBbQKS/ZANAwAKAYly9N/cbcAmAcsmYgBjLhbmYN/aRzOKQ1vH75NEteIR/Vhz22yGW0UEIcgR Yp367AqJAjMEAAEKAB0WIQSlw/aPIp3WD3I+bhOJcvTf3G3AJgUCYy4W5gAKCRCJcvTf3G3AJiNkD/ 92DJis5bkVWVuBFAf6aPfGIKZn18fqqWhgDNIB1gL3+/JoYlzCund6gFEcY8zTobmS/RbZGu3aZ6aG eGxVM7yZ+jxRPM4eiG3l1HwhmL3cHQjHtqkRmDgIyPZ9xwxYKivuUOcVZws84e+7hawBwlAhMt8li+ bgO93T234fS5FLzN/RobhSkg6ISNsI03S8QmlYHytLaSLXUZwSR0/mPUZnFFUrJZk61wAHwMxs68nu PInfWb4QkBwNwAwxJn7jG6OEI5/PSX0n80TMD9CEDNK8sroaMS2C4k5gxVvI8qQZGlT6YpdDGy5BFI oEYbO9baL9bYedtNrwWblW1L3ZmdrGVL1MbXkb3ToBxpDPvQrgQHkNTDqQsY4nttLsp3PP7SZolYSA EuyQgZv8SE2uzK0Y60dBBdrNDexKK0+R5g1mk0Fk/fCLG+1/b859Ulh7OdVyoMlBRQRnPMPCaAyju1 28AEPnC9DBu3Gim8BVHKN3GTgZ0QlUPONvmBGSbAWx359vzIQcmmHIqEMaug8yVrFqRB+cIVXcvtuT EI3ZSAAQpODVZpTsW0ZJatcd0IVMg0oWKcDLxZqolmsP3Ns+cC1eix7TMk2B/1g377zgGeJaByDfib tGymOAoaYv3yr/v92FdCHUFaW37DaZ7ARFElDKWqSBGJtj//OOcTik6X79dA==
 X-Developer-Key: i=keescook@chromium.org; a=openpgp; fpr=A5C3F68F229DD60F723E6E138972F4DFDC6DC026
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Round up allocations with kmalloc_size_roundup() so that the verifier's
-use of ksize() is always accurate and no special handling of the memory
-is needed by KASAN, UBSAN_BOUNDS, nor FORTIFY_SOURCE. Pass the new size
-information back up to callers so they can use the space immediately,
-so array resizing to happen less frequently as well. Explicitly zero
-any trailing bytes in new allocations.
+With all "silently resizing" callers of ksize() refactored, remove the
+logic in ksize() that would allow it to be used to effectively change
+the size of an allocation (bypassing __alloc_size hints, etc). Users
+wanting this feature need to either use kmalloc_size_roundup() before an
+allocation, or call krealloc() directly.
 
-Additionally fix a memory allocation leak: if krealloc() fails, "arr"
-wasn't freed, but NULL was return to the caller of realloc_array() would
-be writing NULL to the lvalue, losing the reference to the original
-memory.
+For kfree_sensitive(), move the unpoisoning logic inline. Replace the
+open-coded ksize() in __do_krealloc with ksize() now that it doesn't
+perform unpoisoning.
 
-Cc: Alexei Starovoitov <ast@kernel.org>
-Cc: Daniel Borkmann <daniel@iogearbox.net>
-Cc: John Fastabend <john.fastabend@gmail.com>
-Cc: Andrii Nakryiko <andrii@kernel.org>
-Cc: Martin KaFai Lau <martin.lau@linux.dev>
-Cc: Song Liu <song@kernel.org>
-Cc: Yonghong Song <yhs@fb.com>
-Cc: KP Singh <kpsingh@kernel.org>
-Cc: Stanislav Fomichev <sdf@google.com>
-Cc: Hao Luo <haoluo@google.com>
-Cc: Jiri Olsa <jolsa@kernel.org>
-Cc: bpf@vger.kernel.org
+Cc: Christoph Lameter <cl@linux.com>
+Cc: Pekka Enberg <penberg@kernel.org>
+Cc: David Rientjes <rientjes@google.com>
+Cc: Joonsoo Kim <iamjoonsoo.kim@lge.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Vlastimil Babka <vbabka@suse.cz>
+Cc: Roman Gushchin <roman.gushchin@linux.dev>
+Cc: Hyeonggon Yoo <42.hyeyoo@gmail.com>
+Cc: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+Cc: Alexander Potapenko <glider@google.com>
+Cc: Andrey Konovalov <andreyknvl@gmail.com>
+Cc: Dmitry Vyukov <dvyukov@google.com>
+Cc: Vincenzo Frascino <vincenzo.frascino@arm.com>
+Cc: linux-mm@kvack.org
+Cc: kasan-dev@googlegroups.com
 Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- kernel/bpf/verifier.c | 49 +++++++++++++++++++++++++++----------------
- 1 file changed, 31 insertions(+), 18 deletions(-)
+ mm/slab_common.c | 38 ++++++++++++++------------------------
+ 1 file changed, 14 insertions(+), 24 deletions(-)
 
-diff --git a/kernel/bpf/verifier.c b/kernel/bpf/verifier.c
-index 096fdac70165..80531f8f0d36 100644
---- a/kernel/bpf/verifier.c
-+++ b/kernel/bpf/verifier.c
-@@ -978,42 +978,53 @@ static void print_insn_state(struct bpf_verifier_env *env,
-  */
- static void *copy_array(void *dst, const void *src, size_t n, size_t size, gfp_t flags)
- {
--	size_t bytes;
-+	size_t src_bytes, dst_bytes;
+diff --git a/mm/slab_common.c b/mm/slab_common.c
+index d7420cf649f8..60b77bcdc2e3 100644
+--- a/mm/slab_common.c
++++ b/mm/slab_common.c
+@@ -1160,13 +1160,8 @@ __do_krealloc(const void *p, size_t new_size, gfp_t flags)
+ 	void *ret;
+ 	size_t ks;
  
- 	if (ZERO_OR_NULL_PTR(src))
- 		goto out;
+-	/* Don't use instrumented ksize to allow precise KASAN poisoning. */
+-	if (likely(!ZERO_OR_NULL_PTR(p))) {
+-		if (!kasan_check_byte(p))
+-			return NULL;
+-		ks = kfence_ksize(p) ?: __ksize(p);
+-	} else
+-		ks = 0;
++	/* How large is the allocation actually? */
++	ks = ksize(p);
  
--	if (unlikely(check_mul_overflow(n, size, &bytes)))
-+	if (unlikely(check_mul_overflow(n, size, &src_bytes)))
- 		return NULL;
+ 	/* If the object still fits, repoison it precisely. */
+ 	if (ks >= new_size) {
+@@ -1232,8 +1227,10 @@ void kfree_sensitive(const void *p)
+ 	void *mem = (void *)p;
  
--	if (ksize(dst) < bytes) {
-+	dst_bytes = kmalloc_size_roundup(src_bytes);
-+	if (ksize(dst) < dst_bytes) {
- 		kfree(dst);
--		dst = kmalloc_track_caller(bytes, flags);
-+		dst = kmalloc_track_caller(dst_bytes, flags);
- 		if (!dst)
- 			return NULL;
- 	}
- 
--	memcpy(dst, src, bytes);
-+	memcpy(dst, src, src_bytes);
-+	memset(dst + src_bytes, 0, dst_bytes - src_bytes);
- out:
- 	return dst ? dst : ZERO_SIZE_PTR;
- }
- 
--/* resize an array from old_n items to new_n items. the array is reallocated if it's too
-- * small to hold new_n items. new items are zeroed out if the array grows.
-+/* Resize an array from old_n items to *new_n items. The array is reallocated if it's too
-+ * small to hold *new_n items. New items are zeroed out if the array grows. Allocation
-+ * is rounded up to next kmalloc bucket size to reduce frequency of resizing. *new_n
-+ * contains the new total number of items that will fit.
-  *
-- * Contrary to krealloc_array, does not free arr if new_n is zero.
-+ * Contrary to krealloc, does not free arr if new_n is zero.
-  */
--static void *realloc_array(void *arr, size_t old_n, size_t new_n, size_t size)
-+static void *realloc_array(void *arr, size_t old_n, size_t *new_n, size_t size)
- {
--	if (!new_n || old_n == new_n)
-+	void *old_arr = arr;
-+	size_t alloc_size;
-+
-+	if (!new_n || !*new_n || old_n == *new_n)
- 		goto out;
- 
--	arr = krealloc_array(arr, new_n, size, GFP_KERNEL);
--	if (!arr)
-+	alloc_size = kmalloc_size_roundup(size_mul(*new_n, size));
-+	arr = krealloc(old_arr, alloc_size, GFP_KERNEL);
-+	if (!arr) {
-+		kfree(old_arr);
- 		return NULL;
+ 	ks = ksize(mem);
+-	if (ks)
++	if (ks) {
++		kasan_unpoison_range(mem, ks);
+ 		memzero_explicit(mem, ks);
 +	}
- 
--	if (new_n > old_n)
--		memset(arr + old_n * size, 0, (new_n - old_n) * size);
-+	*new_n = alloc_size / size;
-+	if (*new_n > old_n)
-+		memset(arr + old_n * size, 0, (*new_n - old_n) * size);
- 
- out:
- 	return arr ? arr : ZERO_SIZE_PTR;
-@@ -1045,7 +1056,7 @@ static int copy_stack_state(struct bpf_func_state *dst, const struct bpf_func_st
- 
- static int resize_reference_state(struct bpf_func_state *state, size_t n)
+ 	kfree(mem);
+ }
+ EXPORT_SYMBOL(kfree_sensitive);
+@@ -1242,10 +1239,11 @@ EXPORT_SYMBOL(kfree_sensitive);
+  * ksize - get the actual amount of memory allocated for a given object
+  * @objp: Pointer to the object
+  *
+- * kmalloc may internally round up allocations and return more memory
++ * kmalloc() may internally round up allocations and return more memory
+  * than requested. ksize() can be used to determine the actual amount of
+- * memory allocated. The caller may use this additional memory, even though
+- * a smaller amount of memory was initially specified with the kmalloc call.
++ * allocated memory. The caller may NOT use this additional memory, unless
++ * it calls krealloc(). To avoid an alloc/realloc cycle, callers can use
++ * kmalloc_size_roundup() to find the size of the associated kmalloc bucket.
+  * The caller must guarantee that objp points to a valid object previously
+  * allocated with either kmalloc() or kmem_cache_alloc(). The object
+  * must not be freed during the duration of the call.
+@@ -1254,13 +1252,11 @@ EXPORT_SYMBOL(kfree_sensitive);
+  */
+ size_t ksize(const void *objp)
  {
--	state->refs = realloc_array(state->refs, state->acquired_refs, n,
-+	state->refs = realloc_array(state->refs, state->acquired_refs, &n,
- 				    sizeof(struct bpf_reference_state));
- 	if (!state->refs)
- 		return -ENOMEM;
-@@ -1061,11 +1072,11 @@ static int grow_stack_state(struct bpf_func_state *state, int size)
- 	if (old_n >= n)
+-	size_t size;
+-
+ 	/*
+-	 * We need to first check that the pointer to the object is valid, and
+-	 * only then unpoison the memory. The report printed from ksize() is
+-	 * more useful, then when it's printed later when the behaviour could
+-	 * be undefined due to a potential use-after-free or double-free.
++	 * We need to first check that the pointer to the object is valid.
++	 * The KASAN report printed from ksize() is more useful, then when
++	 * it's printed later when the behaviour could be undefined due to
++	 * a potential use-after-free or double-free.
+ 	 *
+ 	 * We use kasan_check_byte(), which is supported for the hardware
+ 	 * tag-based KASAN mode, unlike kasan_check_read/write().
+@@ -1274,13 +1270,7 @@ size_t ksize(const void *objp)
+ 	if (unlikely(ZERO_OR_NULL_PTR(objp)) || !kasan_check_byte(objp))
  		return 0;
  
--	state->stack = realloc_array(state->stack, old_n, n, sizeof(struct bpf_stack_state));
-+	state->stack = realloc_array(state->stack, old_n, &n, sizeof(struct bpf_stack_state));
- 	if (!state->stack)
- 		return -ENOMEM;
- 
--	state->allocated_stack = size;
-+	state->allocated_stack = n * BPF_REG_SIZE;
- 	return 0;
+-	size = kfence_ksize(objp) ?: __ksize(objp);
+-	/*
+-	 * We assume that ksize callers could use whole allocated area,
+-	 * so we need to unpoison this area.
+-	 */
+-	kasan_unpoison_range(objp, size);
+-	return size;
++	return kfence_ksize(objp) ?: __ksize(objp);
  }
+ EXPORT_SYMBOL(ksize);
  
-@@ -2472,9 +2483,11 @@ static int push_jmp_history(struct bpf_verifier_env *env,
- {
- 	u32 cnt = cur->jmp_history_cnt;
- 	struct bpf_idx_pair *p;
-+	size_t size;
- 
- 	cnt++;
--	p = krealloc(cur->jmp_history, cnt * sizeof(*p), GFP_USER);
-+	size = kmalloc_size_roundup(size_mul(cnt, sizeof(*p)));
-+	p = krealloc(cur->jmp_history, size, GFP_USER);
- 	if (!p)
- 		return -ENOMEM;
- 	p[cnt - 1].idx = env->insn_idx;
 -- 
 2.34.1
 

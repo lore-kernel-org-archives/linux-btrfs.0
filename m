@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7370C04A95
-	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Sep 2022 08:36:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FB42C32771
+	for <linux-btrfs@archiver.kernel.org>; Wed, 28 Sep 2022 08:36:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232396AbiI1IgR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 28 Sep 2022 04:36:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49382 "EHLO
+        id S232660AbiI1IgT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 28 Sep 2022 04:36:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49400 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232646AbiI1IgM (ORCPT
+        with ESMTP id S232681AbiI1IgO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 28 Sep 2022 04:36:12 -0400
+        Wed, 28 Sep 2022 04:36:14 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7842B9AF8D
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 01:36:08 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7B1199DDA2
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 01:36:11 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 52B031F891
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 08:36:07 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 9B52E1F8B3
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 08:36:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1664354167; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1664354169; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=+xFPm0OR9nJMOxJmS8P2txrQ4qGr94fQ2BN2ZeyDl6E=;
-        b=ayl3bYmDVTH4Dfz6Hp7hSVLLTBDlQ9IP3fKRztHvlYNYTZ+aIbqpUhMPC271M7mNgDmOZo
-        zAZcvvBW+E6yxkf9nlUVrbCBtpzpOnPu1G+ifrb9YwWceICZ+wmqcE8xoKZ+coY0RnxOLj
-        3P22BiHEkyoIVWETQeN5Jt/MxllIPXY=
+        bh=+VJiN2lY+uw+3pR0u2g8ww7nMg3esG0uXpOsXRo17Io=;
+        b=EEFiqd6DkJfZ2rw2o49GvJlZcGIPl5DCf0pk1XTWShfSE4PZRc8MiwODlhfaMeYykEpUlY
+        MwFc25nyAJEvJoulbFlMcd5IdOWWaFRxoNk2AkFeZbhlOd/vjtVRn3HChRb+r30XYl+WnK
+        i4HuB2BuB1tH0SUJBbEQxVuKD04s/EU=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9A8C913A84
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 08:36:06 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E2B5613A84
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 08:36:08 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id UKK0F3YHNGO2VgAAMHmgww
+        id KF6MKXgHNGO2VgAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 08:36:06 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Sep 2022 08:36:08 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH PoC v2 01/10] btrfs: introduce BTRFS_IOC_SCRUB_FS family of ioctls
-Date:   Wed, 28 Sep 2022 16:35:38 +0800
-Message-Id: <36c909e90fa85813afa206e7f0e0a10177c841b3.1664353497.git.wqu@suse.com>
+Subject: [PATCH PoC v2 03/10] btrfs: scrub: introduce a place holder helper scrub_fs_iterate_bgs()
+Date:   Wed, 28 Sep 2022 16:35:40 +0800
+Message-Id: <9a80361fc9cc1176e08a3c670ea960b9616dc00d.1664353497.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.3
 In-Reply-To: <cover.1664353497.git.wqu@suse.com>
 References: <cover.1664353497.git.wqu@suse.com>
@@ -55,251 +55,235 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The new ioctls are to address the disadvantages of the existing
-btrfs_scrub_dev():
+This new helper is mostly the same as scrub_enumerate_chunks(), but with
+some small changes:
 
-a One thread per-device
-  This can cause multiple block groups to be marked read-only for scrub,
-  reducing available space temporarily.
+- No need for dev-replace branches
 
-  This also causes higher CPU/IO usage.
-  For scrub, we should use the minimal amount of CPU and cause less
-  IO when possible.
+- No need to search dev-extent tree
+  We can directly iterate the block groups.
 
-b Extra IO for RAID56
-  For data stripes, we will cause at least 2x IO if we run "btrfs scrub
-  start <mnt>".
-  1x from scrubbing the device of data stripe.
-  The other 1x from scrubbing the parity stripe.
+The new helper currently will only iterate all the bgs, but doing
+nothing for the iterated bgs.
 
-  This duplicated IO should definitely be avoided
+Also one smaller helper is introduced:
 
-c Bad progress report for RAID56
-  We can not report any repaired P/Q bytes at all.
+- scrub_fs_alloc_ctx()
+  To allocate a scrub_fs_ctx, which has way less members (for now and
+  for the future) compared to scrub_ctx.
 
-The a and b will be addressed by the new one thread per-fs
-btrfs_scrub_fs ioctl.
-
-While c will be addressed by the new btrfs_scrub_fs_progress structure,
-which has better comments and classification for all errors.
-
-This patch is only a skeleton for the new family of ioctls, will return
--EOPNOTSUPP for now.
+  The scrub_fs_ctx will have a very defined lifespan (only inside
+  btrfs_scrub_fs(), and can only have one scrub_fs_ctx, thus not need to
+  be ref counted)
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/ioctl.c           |   6 ++
- include/uapi/linux/btrfs.h | 174 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 180 insertions(+)
+ fs/btrfs/scrub.c | 164 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 162 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d5dd8bed1488..6944216e1425 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5508,6 +5508,12 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_scrub_cancel(fs_info);
- 	case BTRFS_IOC_SCRUB_PROGRESS:
- 		return btrfs_ioctl_scrub_progress(fs_info, argp);
-+	case BTRFS_IOC_SCRUB_FS:
-+		return -EOPNOTSUPP;
-+	case BTRFS_IOC_SCRUB_FS_CANCEL:
-+		return -EOPNOTSUPP;
-+	case BTRFS_IOC_SCRUB_FS_PROGRESS:
-+		return -EOPNOTSUPP;
- 	case BTRFS_IOC_BALANCE_V2:
- 		return btrfs_ioctl_balance(file, argp);
- 	case BTRFS_IOC_BALANCE_CTL:
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 5655e89b962b..86169e2ffefe 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -191,6 +191,175 @@ struct btrfs_ioctl_scrub_args {
- 	__u64 unused[(1024-32-sizeof(struct btrfs_scrub_progress))/8];
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index d3d64f048c7b..97da8545c9ab 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -198,6 +198,24 @@ struct scrub_ctx {
+ 	refcount_t              refs;
  };
  
-+struct btrfs_scrub_fs_progress {
-+	/*
-+	 * Fatal errors, including -ENOMEM, or csum/extent tree search errors.
-+	 *
-+	 * Normally after hitting such fatal errors, we error out, thus later
-+	 * accounting will no longer be reliable.
-+	 */
-+	__u16	nr_fatal_errors;
++/* This structure should only has a lifespan inside btrfs_scrub_fs(). */
++struct scrub_fs_ctx {
++	struct btrfs_fs_info		*fs_info;
 +
-+	/*
-+	 * All super errors, from invalid members and IO error all go into
-+	 * nr_super_errors.
-+	 */
-+	__u16	nr_super_errors;
++	/* Current block group we're scurbbing. */
++	struct btrfs_block_group	*cur_bg;
 +
-+	/* Super block accounting. */
-+	__u16	nr_super_scrubbed;
-+	__u16	nr_super_repaired;
++	/* Current logical bytenr being scrubbed. */
++	u64				cur_logical;
 +
-+	/*
-+	 * Data accounting in bytes.
-+	 *
-+	 * We only care about how many bytes we scrubbed, thus no
-+	 * accounting for number of extents.
-+	 *
-+	 * This accounting includes the extra mirrors.
-+	 * E.g. for RAID1, one 16KiB extent will cause 32KiB in @data_scrubbed.
-+	 */
-+	__u64	data_scrubbed;
++	atomic_t			bios_under_io;
 +
-+	/* How many bytes can be recovered. */
-+	__u64	data_recoverable;
++	bool				readonly;
 +
-+	/*
-+	 * How many bytes don't have csum.
-+	 *
-+	 * For nocsum case we won't even try to compare the different copies.
-+	 * As for NOCSUM case we can not distignuish NODATASUM data and
-+	 * pre-allocated extents without doing expensive backref walk.
-+	 */
-+	__u64	data_nocsum;
-+
-+	/*
-+	 * For data error bytes, these means determining errors, including:
-+	 *
-+	 * - IO failure, including missing dev.
-+	 * - Data csum mismatch
-+	 *   Csum tree search failure must go above case.
-+	 */
-+	__u64	data_io_fail;
-+	__u64	data_csum_mismatch;
-+
-+	/*
-+	 * All the unmentioned cases, including data matching its csum (of
-+	 * course, implies IO suceeded) and data has no csum but matches all
-+	 * other copies/parities, are the expected cases, no need to record.
-+	 */
-+
-+	/*
-+	 * Metadata accounting in bytes, pretty much the same as data.
-+	 *
-+	 * And since metadata has mandatory csum, there is no uncertain case.
-+	 */
-+	__u64	meta_scrubbed;
-+	__u64	meta_recoverable;
-+
-+	/*
-+	 * For meta, the checks are mostly progressive:
-+	 *
-+	 * - Unable to read
-+	 *   @meta_io_fail
-+	 *
-+	 * - Unable to pass basic sanity checks (e.g. bytenr check)
-+	 *   @meta_invalid
-+	 *
-+	 * - Pass basic sanity checks, but bad csum
-+	 *   @meta_bad_csum
-+	 *
-+	 * - Pass basic checks and csum, but bad transid
-+	 *   @meta_bad_transid
-+	 *
-+	 * - Pass all checks
-+	 *   The expected case, no special accounting needed.
-+	 */
-+	__u64 meta_io_fail;
-+	__u64 meta_invalid;
-+	__u64 meta_bad_csum;
-+	__u64 meta_bad_transid;
-+
-+	/*
-+	 * Parity accounting.
-+	 *
-+	 * NOTE: for unused data sectors (but still contributes to P/Q
-+	 * calculation, like the following case), they don't contribute
-+	 * to any accounting.
-+	 *
-+	 * Data 1:	|<--- Unused ---->| <<<
-+	 * Data 2:	|<- Data extent ->|
-+	 * Parity:	|<--- Parity ---->|
-+	 */
-+	__u64 parity_scrubbed;
-+	__u64 parity_recoverable;
-+
-+	/*
-+	 * This happens when there is not enough info to determine if the
-+	 * parity is correct, mostly happens when vertical stripes are
-+	 * *all* NODATASUM sectors.
-+	 *
-+	 * If there is any sector with checksum in the vertical stripe,
-+	 * parity itself will be no longer uncertain.
-+	 */
-+	__u64 parity_uncertain;
-+
-+	/*
-+	 * For parity, the checks are progressive too:
-+	 *
-+	 * - Unable to read
-+	 *   @parity_io_fail
-+	 *
-+	 * - Mismatch and any veritical data stripe has csum and
-+	 *   the data stripe csum matches
-+	 *   @parity_mismatch
-+	 *   We want to repair the parity then.
-+	 *
-+	 * - Mismatch and veritical data stripe has csum, and data
-+	 *   csum mismatch. And rebuilt data passes csum.
-+	 *   This will go @data_recoverable or @data_csum_mismatch instead.
-+	 *
-+	 * - Mismatch but no veritical data stripe has csum
-+	 *   @parity_uncertain
-+	 *
-+	 */
-+	__u64 parity_io_fail;
-+	__u64 parity_mismatch;
-+
-+	/* Padding to 256 bytes, and for later expansion. */
-+	__u64 __unused[15];
-+};
-+static_assert(sizeof(struct btrfs_scrub_fs_progress) == 256);
-+
-+/*
-+ * Readonly scrub fs will not try any repair (thus *_repaired member
-+ * in scrub_fs_progress should always be 0).
-+ */
-+#define BTRFS_SCRUB_FS_FLAG_READONLY	(1ULL << 0)
-+
-+/*
-+ * All supported flags.
-+ *
-+ * From the very beginning, scrub_fs ioctl would reject any unsupported
-+ * flags, making later expansion much simper.
-+ */
-+#define BTRFS_SCRUB_FS_FLAG_SUPP	(BTRFS_SCRUB_FS_FLAG_READONLY)
-+
-+struct btrfs_ioctl_scrub_fs_args {
-+	/* Input, logical bytenr to start the scrub */
-+	__u64 start;
-+
-+	/* Input, the logical bytenr end (inclusive) */
-+	__u64 end;
-+
-+	__u64 flags;
-+	__u64 reserved[8];
-+	struct btrfs_scrub_fs_progress progress; /* out */
-+
-+	/* pad to 1K */
-+	__u8 unused[1024 - 24 - 64 - sizeof(struct btrfs_scrub_fs_progress)];
++	/* There will and only be one thread touching @stat. */
++	struct btrfs_scrub_fs_progress	stat;
 +};
 +
- #define BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_ALWAYS	0
- #define BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV_MODE_AVOID	1
- struct btrfs_ioctl_dev_replace_start_params {
-@@ -1143,5 +1312,10 @@ enum btrfs_err_code {
- 				    struct btrfs_ioctl_encoded_io_args)
- #define BTRFS_IOC_ENCODED_WRITE _IOW(BTRFS_IOCTL_MAGIC, 64, \
- 				     struct btrfs_ioctl_encoded_io_args)
-+#define BTRFS_IOC_SCRUB_FS	_IOWR(BTRFS_IOCTL_MAGIC, 65, \
-+				      struct btrfs_ioctl_scrub_fs_args)
-+#define BTRFS_IOC_SCRUB_FS_CANCEL _IO(BTRFS_IOCTL_MAGIC, 66)
-+#define BTRFS_IOC_SCRUB_FS_PROGRESS _IOWR(BTRFS_IOCTL_MAGIC, 67, \
-+				       struct btrfs_ioctl_scrub_fs_args)
+ struct scrub_warning {
+ 	struct btrfs_path	*path;
+ 	u64			extent_item_size;
+@@ -4427,6 +4445,126 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	return ret;
+ }
  
- #endif /* _UAPI_LINUX_BTRFS_H */
++static struct scrub_fs_ctx *scrub_fs_alloc_ctx(struct btrfs_fs_info *fs_info,
++					       bool readonly)
++{
++	struct scrub_fs_ctx *sfctx;
++	int ret;
++
++	sfctx = kzalloc(sizeof(*sfctx), GFP_KERNEL);
++	if (!sfctx) {
++		ret = -ENOMEM;
++		goto error;
++	}
++
++	sfctx->fs_info = fs_info;
++	sfctx->readonly = readonly;
++	atomic_set(&sfctx->bios_under_io, 0);
++	return sfctx;
++error:
++	kfree(sfctx);
++	return ERR_PTR(ret);
++}
++
++static int scrub_fs_iterate_bgs(struct scrub_fs_ctx *sfctx, u64 start, u64 end)
++{
++	struct btrfs_fs_info *fs_info = sfctx->fs_info;
++	u64 cur = start;
++	int ret;
++
++	while (cur < end) {
++		struct btrfs_block_group *bg;
++		bool ro_set = false;
++
++		bg = btrfs_lookup_first_block_group(fs_info, cur);
++		if (!bg)
++			break;
++		if (bg->start + bg->length >= end) {
++			btrfs_put_block_group(bg);
++			break;
++		}
++		spin_lock(&bg->lock);
++
++		/* Already deleted bg, skip to the next one. */
++		if (test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags)) {
++			spin_unlock(&bg->lock);
++			cur = bg->start + bg->length;
++			btrfs_put_block_group(bg);
++			continue;
++		}
++		btrfs_freeze_block_group(bg);
++		spin_unlock(&bg->lock);
++
++		/*
++		 * we need call btrfs_inc_block_group_ro() with scrubs_paused,
++		 * to avoid deadlock caused by:
++		 * btrfs_inc_block_group_ro()
++		 * -> btrfs_wait_for_commit()
++		 * -> btrfs_commit_transaction()
++		 * -> btrfs_scrub_pause()
++		 */
++		scrub_pause_on(fs_info);
++
++		/*
++		 * Check the comments before btrfs_inc_block_group_ro() inside
++		 * scrub_enumerate_chunks() for reasons.
++		 */
++		ret = btrfs_inc_block_group_ro(bg, false);
++		if (ret == 0)
++			ro_set = true;
++		if (ret == -ETXTBSY) {
++			btrfs_warn(fs_info,
++		   "skipping scrub of block group %llu due to active swapfile",
++				   bg->start);
++			scrub_pause_off(fs_info);
++			ret = 0;
++			goto next;
++		}
++		if (ret < 0 && ret != -ENOSPC) {
++			btrfs_warn(fs_info,
++				   "failed setting block group ro: %d", ret);
++			scrub_pause_off(fs_info);
++			goto next;
++		}
++
++		scrub_pause_off(fs_info);
++
++		/* Place holder for the real chunk scrubbing code. */
++		ret = 0;
++
++		if (ro_set)
++			btrfs_dec_block_group_ro(bg);
++
++		/*
++		 * We might have prevented the cleaner kthread from deleting
++		 * this block group if it was already unused because we raced
++		 * and set it to RO mode first. So add it back to the unused
++		 * list, otherwise it might not ever be deleted unless a manual
++		 * balance is triggered or it becomes used and unused again.
++		 */
++		spin_lock(&bg->lock);
++		if (!test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags) &&
++		    !bg->ro && bg->reserved == 0 && bg->used == 0) {
++			spin_unlock(&bg->lock);
++			if (btrfs_test_opt(fs_info, DISCARD_ASYNC))
++				btrfs_discard_queue_work(&fs_info->discard_ctl,
++							 bg);
++			else
++				btrfs_mark_bg_unused(bg);
++		} else {
++			spin_unlock(&bg->lock);
++		}
++next:
++		cur = bg->start + bg->length;
++
++		btrfs_unfreeze_block_group(bg);
++		btrfs_put_block_group(bg);
++		if (ret)
++			break;
++	}
++	return ret;
++}
++
+ /*
+  * Unlike btrfs_scrub_dev(), this function works completely in logical bytenr
+  * level, and has the following advantage:
+@@ -4474,6 +4612,8 @@ int btrfs_scrub_fs(struct btrfs_fs_info *fs_info, u64 start, u64 end,
+ 		   struct btrfs_scrub_fs_progress *progress,
+ 		   bool readonly)
+ {
++	struct scrub_fs_ctx *sfctx;
++	unsigned int nofs_flag;
+ 	int ret;
+ 
+ 	if (btrfs_fs_closing(fs_info))
+@@ -4510,8 +4650,25 @@ int btrfs_scrub_fs(struct btrfs_fs_info *fs_info, u64 start, u64 end,
+ 	btrfs_info(fs_info, "scrub_fs: started");
+ 	mutex_unlock(&fs_info->scrub_lock);
+ 
+-	/* Place holder for real workload. */
+-	ret = -EOPNOTSUPP;
++	sfctx = scrub_fs_alloc_ctx(fs_info, readonly);
++	if (IS_ERR(sfctx)) {
++		ret = PTR_ERR(sfctx);
++		sfctx = NULL;
++		goto out;
++	}
++
++	if (progress)
++		memcpy(&sfctx->stat, progress, sizeof(*progress));
++
++	/*
++	 * Check the comments before memalloc_nofs_save() in btrfs_scrub_dev()
++	 * for reasons.
++	 */
++	nofs_flag = memalloc_nofs_save();
++	ret = scrub_fs_iterate_bgs(sfctx, start, end);
++	memalloc_nofs_restore(nofs_flag);
++out:
++	kfree(sfctx);
+ 
+ 	mutex_lock(&fs_info->scrub_lock);
+ 	atomic_dec(&fs_info->scrubs_running);
+@@ -4520,6 +4677,9 @@ int btrfs_scrub_fs(struct btrfs_fs_info *fs_info, u64 start, u64 end,
+ 	mutex_unlock(&fs_info->scrub_lock);
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
++	if (progress)
++		memcpy(progress, &sfctx->stat, sizeof(*progress));
++
+ 	return ret;
+ }
+ 
 -- 
 2.37.3
 

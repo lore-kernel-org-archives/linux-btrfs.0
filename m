@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E8C8CC4167B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Sep 2022 11:27:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AAB18C433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Sep 2022 11:27:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231855AbiI3L07 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Sep 2022 07:26:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57170 "EHLO
+        id S230375AbiI3L1I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Sep 2022 07:27:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32840 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232155AbiI3L02 (ORCPT
+        with ESMTP id S231177AbiI3L0b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Sep 2022 07:26:28 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DDE7A17586;
-        Fri, 30 Sep 2022 04:18:49 -0700 (PDT)
+        Fri, 30 Sep 2022 07:26:31 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DA7E2EE2E;
+        Fri, 30 Sep 2022 04:19:06 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 5875A62299;
-        Fri, 30 Sep 2022 11:18:49 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B809DC4347C;
-        Fri, 30 Sep 2022 11:18:46 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 77060B8280D;
+        Fri, 30 Sep 2022 11:19:05 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4AF6BC4347C;
+        Fri, 30 Sep 2022 11:19:02 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1664536728;
-        bh=G3/t3BDJDz9EMHp0QOUkv/5jjrPwNlRd22Dc40GCbVw=;
+        s=k20201202; t=1664536744;
+        bh=x94ngh3SR30xuVLdH4ioO8YH0PC8Q6w0q3cK1o2WgAs=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=C25sKiNghUeIo8SwmYaYrlE+zqQ8SiqFO1YRyhXnVgyCIbnfvq9wmQYyiIqF4zFsv
-         rSZh+fnIP5m63rqFcDKETiVW/X9XMxJme7LIGk8zgSkJCNKnKqPFNjX2YVRgqO0Xat
-         pWCw1FipBPRWr9MCej2o/JrTvT7fANuSyH5vsOxqloZ99kutXIsgZTaKLP4MJneiPb
-         90+iOUXbBP+d+xXmnjJF3BjfZ0AmRT95opCBPYg28qO6uaZrehTC9U1CH6OnxdBMkq
-         xg7JPVll9IPj7BrNU4AUfgIJ9QGSRvH+Tw/ZwggNIU1uq90lmtvvXkR1AUTBLtyBgB
-         fhIcj1YFTc/aA==
+        b=E1+suCyBf4Mq23dZykr03FKvOkB2KN2pmo4hPt9FSzh5mDyAgRwzx4IBi3jD2xYta
+         2aH0OFlPU2JQZt0iJZDPo+cYiYNcx36IEelulL17hYdS4gazqnHPs16SmxbYG7/sIh
+         Mn4Q66DPEqaqeLSh88qk9dZa9Z+SLVE+UCijLAM0IQjzkK+04GeTC+Y6owqADky9WX
+         6QI36erT6IJdk6dUqhK+InrXSOp5nQD/lPUXYB6IWKocKgbeYVjwswHwH3urvBP8HN
+         fKO0R+gneckl6h3osuEOy9z4kQ2Iw97ImHbJTgAgvforuxHZb1TWNVjqkRNIonephB
+         t2vFf8ic4Ckug==
 From:   Jeff Layton <jlayton@kernel.org>
 To:     tytso@mit.edu, adilger.kernel@dilger.ca, djwong@kernel.org,
         david@fromorbit.com, trondmy@hammerspace.com, neilb@suse.de,
@@ -41,10 +41,10 @@ To:     tytso@mit.edu, adilger.kernel@dilger.ca, djwong@kernel.org,
 Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
         linux-kernel@vger.kernel.org, ceph-devel@vger.kernel.org,
         linux-ext4@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org, Colin Walters <walters@verbum.org>
-Subject: [PATCH v6 2/9] iversion: clarify when the i_version counter must be updated
-Date:   Fri, 30 Sep 2022 07:18:33 -0400
-Message-Id: <20220930111840.10695-3-jlayton@kernel.org>
+        linux-xfs@vger.kernel.org
+Subject: [PATCH v6 9/9] ext4: update times after I/O in write codepaths
+Date:   Fri, 30 Sep 2022 07:18:40 -0400
+Message-Id: <20220930111840.10695-10-jlayton@kernel.org>
 X-Mailer: git-send-email 2.37.3
 In-Reply-To: <20220930111840.10695-1-jlayton@kernel.org>
 References: <20220930111840.10695-1-jlayton@kernel.org>
@@ -54,41 +54,79 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The i_version field in the kernel has had different semantics over
-the decades, but NFSv4 has certain expectations. Update the comments
-in iversion.h to describe when the i_version must change.
+The times currently get updated before the data is copied (or the DIO is
+issued) which is problematic for NFSv4. A READ+GETATTR could race with a
+write in such a way to make the client associate the state of the file
+with the wrong change attribute, and that association could persist
+indefinitely if the file sees no further changes.
 
-Cc: Colin Walters <walters@verbum.org>
-Cc: NeilBrown <neilb@suse.de>
-Cc: Trond Myklebust <trondmy@hammerspace.com>
-Cc: Dave Chinner <david@fromorbit.com>
-Link: https://lore.kernel.org/linux-xfs/166086932784.5425.17134712694961326033@noble.neil.brown.name/#t
+For this reason, it's better to bump the times and change attribute
+after the data has been copied or the DIO write issued.
+
 Signed-off-by: Jeff Layton <jlayton@kernel.org>
 ---
- include/linux/iversion.h | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ fs/ext4/file.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/iversion.h b/include/linux/iversion.h
-index 6755d8b4f20b..9925cac1fa94 100644
---- a/include/linux/iversion.h
-+++ b/include/linux/iversion.h
-@@ -9,8 +9,14 @@
-  * ---------------------------
-  * The change attribute (i_version) is mandated by NFSv4 and is mostly for
-  * knfsd, but is also used for other purposes (e.g. IMA). The i_version must
-- * appear different to observers if there was a change to the inode's data or
-- * metadata since it was last queried.
-+ * appear larger to observers if there was an explicit change to the inode's
-+ * data or metadata since it was last queried.
-+ *
-+ * An explicit change is one that would ordinarily result in a change to the
-+ * inode status change time (aka ctime). i_version must appear to change, even
-+ * if the ctime does not (since the whole point is to avoid missing updates due
-+ * to timestamp granularity). If POSIX mandates that the ctime must change due
-+ * to an operation, then the i_version counter must be incremented as well.
-  *
-  * Observers see the i_version as a 64-bit number that never decreases. If it
-  * remains the same since it was last checked, then nothing has changed in the
+diff --git a/fs/ext4/file.c b/fs/ext4/file.c
+index 109d07629f81..1fa8e0239856 100644
+--- a/fs/ext4/file.c
++++ b/fs/ext4/file.c
+@@ -246,7 +246,7 @@ static ssize_t ext4_write_checks(struct kiocb *iocb, struct iov_iter *from)
+ 	if (count <= 0)
+ 		return count;
+ 
+-	ret = file_modified(iocb->ki_filp);
++	ret = file_remove_privs(iocb->ki_filp);
+ 	if (ret)
+ 		return ret;
+ 	return count;
+@@ -269,7 +269,11 @@ static ssize_t ext4_buffered_write_iter(struct kiocb *iocb,
+ 	current->backing_dev_info = inode_to_bdi(inode);
+ 	ret = generic_perform_write(iocb, from);
+ 	current->backing_dev_info = NULL;
+-
++	if (ret > 0) {
++		ssize_t ret2 = file_update_time(iocb->ki_filp);
++		if (ret2)
++			ret = ret2;
++	}
+ out:
+ 	inode_unlock(inode);
+ 	if (likely(ret > 0)) {
+@@ -455,7 +459,7 @@ static ssize_t ext4_dio_write_checks(struct kiocb *iocb, struct iov_iter *from,
+ 		goto restart;
+ 	}
+ 
+-	ret = file_modified(file);
++	ret = file_remove_privs(file);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -572,6 +576,11 @@ static ssize_t ext4_dio_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ 	if (extend)
+ 		ret = ext4_handle_inode_extension(inode, offset, ret, count);
+ 
++	if (ret > 0) {
++		ssize_t ret2 = file_update_time(iocb->ki_filp);
++		if (ret2)
++			ret = ret2;
++	}
+ out:
+ 	if (ilock_shared)
+ 		inode_unlock_shared(inode);
+@@ -653,6 +662,11 @@ ext4_dax_write_iter(struct kiocb *iocb, struct iov_iter *from)
+ 
+ 	if (extend)
+ 		ret = ext4_handle_inode_extension(inode, offset, ret, count);
++	if (ret > 0) {
++		ssize_t ret2 = file_update_time(iocb->ki_filp);
++		if (ret2)
++			ret = ret2;
++	}
+ out:
+ 	inode_unlock(inode);
+ 	if (ret > 0)
 -- 
 2.37.3
 

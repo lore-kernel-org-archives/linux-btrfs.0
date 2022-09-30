@@ -2,121 +2,105 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81C6BC4332F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Sep 2022 11:27:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CDAADC433F5
+	for <linux-btrfs@archiver.kernel.org>; Fri, 30 Sep 2022 12:19:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231276AbiI3L1d (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 30 Sep 2022 07:27:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48904 "EHLO
+        id S230401AbiI3MTr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 30 Sep 2022 08:19:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47630 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232598AbiI3L03 (ORCPT
+        with ESMTP id S231295AbiI3MTp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 30 Sep 2022 07:26:29 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0743F18B09;
-        Fri, 30 Sep 2022 04:18:57 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 9DC85B827BA;
-        Fri, 30 Sep 2022 11:18:56 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7186AC433B5;
-        Fri, 30 Sep 2022 11:18:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1664536735;
-        bh=xnrewwvldKIjoeh5ebiZu+onJb8qn6gj1nIuV6NIss8=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=NcCbX8EemXumNyb6KT05tfi/yNz/uFtXUTZvXGxbnSuQ2ZLVjG52bwXYXh5fpucLL
-         Axp4jUtiz64IRjTVjSGPMpgOGwmu8wvMssoRLFOIpJI522UPlfZVlcKmzveia0MsA0
-         QXEv6KjqFhnOQUm7yvMwpovx4fomvggXw6gH6kOyDiUirhpwVhUyKpaIclmtmJt7RQ
-         kx5xoyorCoq1DbAdE8t5XYdq8PRHdXV81SrEz057Yr0UW5CY0v+c4HHNpWyI2ju5z3
-         XlPgr7T1s3XlyK0ebZK7J8b1c6Sx0BGR1KCu1Fdmob2dvqZZYmgMwUW2ECkfNDyAWo
-         +oq2fJMT+cU2w==
-From:   Jeff Layton <jlayton@kernel.org>
-To:     tytso@mit.edu, adilger.kernel@dilger.ca, djwong@kernel.org,
-        david@fromorbit.com, trondmy@hammerspace.com, neilb@suse.de,
-        viro@zeniv.linux.org.uk, zohar@linux.ibm.com, xiubli@redhat.com,
-        chuck.lever@oracle.com, lczerner@redhat.com, jack@suse.cz,
-        bfields@fieldses.org, brauner@kernel.org, fweimer@redhat.com
-Cc:     linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-ext4@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-xfs@vger.kernel.org
-Subject: [PATCH v6 5/9] ceph: report the inode version in getattr if requested
-Date:   Fri, 30 Sep 2022 07:18:36 -0400
-Message-Id: <20220930111840.10695-6-jlayton@kernel.org>
-X-Mailer: git-send-email 2.37.3
-In-Reply-To: <20220930111840.10695-1-jlayton@kernel.org>
-References: <20220930111840.10695-1-jlayton@kernel.org>
+        Fri, 30 Sep 2022 08:19:45 -0400
+X-Greylist: delayed 435 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 30 Sep 2022 05:19:43 PDT
+Received: from pio-pvt-msa1.bahnhof.se (pio-pvt-msa1.bahnhof.se [79.136.2.40])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D47F1EC4E
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Sep 2022 05:19:42 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+        by pio-pvt-msa1.bahnhof.se (Postfix) with ESMTP id DE8D43FFE7;
+        Fri, 30 Sep 2022 14:12:24 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at bahnhof.se
+Received: from pio-pvt-msa1.bahnhof.se ([127.0.0.1])
+        by localhost (pio-pvt-msa1.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id OEALvKJQCCoz; Fri, 30 Sep 2022 14:12:24 +0200 (CEST)
+Received: by pio-pvt-msa1.bahnhof.se (Postfix) with ESMTPA id 1BF903FE2E;
+        Fri, 30 Sep 2022 14:12:23 +0200 (CEST)
+Received: from [192.168.0.134] (port=55622)
+        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
+        (Exim 4.94.2)
+        (envelope-from <forza@tnonline.net>)
+        id 1oeEsR-000AUz-Eo; Fri, 30 Sep 2022 14:12:23 +0200
+Message-ID: <093db874-03f3-7504-8fd8-488d5ce8ef10@tnonline.net>
+Date:   Fri, 30 Sep 2022 14:12:23 +0200
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.11.0
+Subject: Re: btrfs and hibernation to swap file on it?
+Content-Language: en-GB
+To:     Christoph Anton Mitterer <calestyo@scientia.org>,
+        linux-btrfs@vger.kernel.org
+References: <31660c315eeba4c461b6006b6d798355696d2155.camel@scientia.org>
+From:   Forza <forza@tnonline.net>
+In-Reply-To: <31660c315eeba4c461b6006b6d798355696d2155.camel@scientia.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When getattr requests the STX_VERSION, request the full gamut of caps
-(similarly to how ctime is handled). When the change attribute seems to
-be valid, return it in the ino_version field and set the flag in the
-reply mask. Also, unconditionally enable STATX_ATTR_VERSION_MONOTONIC.
 
-Reviewed-by: Xiubo Li <xiubli@redhat.com>
-Signed-off-by: Jeff Layton <jlayton@kernel.org>
----
- fs/ceph/inode.c | 16 +++++++++++-----
- 1 file changed, 11 insertions(+), 5 deletions(-)
 
-diff --git a/fs/ceph/inode.c b/fs/ceph/inode.c
-index 42351d7a0dd6..bcab855bf1ae 100644
---- a/fs/ceph/inode.c
-+++ b/fs/ceph/inode.c
-@@ -2415,10 +2415,10 @@ static int statx_to_caps(u32 want, umode_t mode)
- {
- 	int mask = 0;
- 
--	if (want & (STATX_MODE|STATX_UID|STATX_GID|STATX_CTIME|STATX_BTIME))
-+	if (want & (STATX_MODE|STATX_UID|STATX_GID|STATX_CTIME|STATX_BTIME|STATX_VERSION))
- 		mask |= CEPH_CAP_AUTH_SHARED;
- 
--	if (want & (STATX_NLINK|STATX_CTIME)) {
-+	if (want & (STATX_NLINK|STATX_CTIME|STATX_VERSION)) {
- 		/*
- 		 * The link count for directories depends on inode->i_subdirs,
- 		 * and that is only updated when Fs caps are held.
-@@ -2429,11 +2429,10 @@ static int statx_to_caps(u32 want, umode_t mode)
- 			mask |= CEPH_CAP_LINK_SHARED;
- 	}
- 
--	if (want & (STATX_ATIME|STATX_MTIME|STATX_CTIME|STATX_SIZE|
--		    STATX_BLOCKS))
-+	if (want & (STATX_ATIME|STATX_MTIME|STATX_CTIME|STATX_SIZE|STATX_BLOCKS|STATX_VERSION))
- 		mask |= CEPH_CAP_FILE_SHARED;
- 
--	if (want & (STATX_CTIME))
-+	if (want & (STATX_CTIME|STATX_VERSION))
- 		mask |= CEPH_CAP_XATTR_SHARED;
- 
- 	return mask;
-@@ -2475,6 +2474,11 @@ int ceph_getattr(struct user_namespace *mnt_userns, const struct path *path,
- 		valid_mask |= STATX_BTIME;
- 	}
- 
-+	if (request_mask & STATX_VERSION) {
-+		stat->version = inode_peek_iversion_raw(inode);
-+		valid_mask |= STATX_VERSION;
-+	}
-+
- 	if (ceph_snap(inode) == CEPH_NOSNAP)
- 		stat->dev = inode->i_sb->s_dev;
- 	else
-@@ -2498,6 +2502,8 @@ int ceph_getattr(struct user_namespace *mnt_userns, const struct path *path,
- 			stat->nlink = 1 + 1 + ci->i_subdirs;
- 	}
- 
-+	stat->attributes_mask |= STATX_ATTR_VERSION_MONOTONIC;
-+	stat->attributes |= STATX_ATTR_VERSION_MONOTONIC;
- 	stat->result_mask = request_mask & valid_mask;
- 	return err;
- }
--- 
-2.37.3
+On 2022-09-27 17:45, Christoph Anton Mitterer wrote:
+> Hey.
+> 
+> Maybe someone could help me with that question:
+> 
+> I'd like to set up hibernation, using a swapfile on btrfs (which itself
+> is on dm-crypt).
+> 
+> Now I'm aware of the section on swaptfiles in btrfs(5) and their
+> restrictions... and I think these should be fine for me.
+> 
+> 
+> What I don't quite get is:
+> 
+> a) Hibernate seems to want an offset parameter for the swapfile. How is
+> that used respectively why is it needed.
+> 
+> Does that mean that hibernation directly writes/reads to/from the block
+> device?
 
+Yes. The kernel stores Hibernation information (RAM contents) in the file.
+
+> And wouldn't that be kind of fragile (if something internally moves in
+> the fs... or if it's split in several extents and not one big
+> contiguous space)?
+> 
+
+Btrfs will not move the swap-file once it is created, so it is ok.
+
+> Guess I would be kinda scared to get some corruptions if something
+> writes directly to the btrfs' block device - other than btrfs.
+> 
+> Are there any suggestions with respect to btrfs? Like not using a
+> swapfile for hibernation, or is it considered safe?
+
+Swapfile should work fine. Btrfs tells the kernel on what blocks it can 
+write to. This brings the limitations as you already mentionee; no 
+snapshots, no datacow, no compression and also no DUP/RAID profile.
+
+For those reasons I usually prefer to have a separate swap partition so 
+that I am free to use snapshots and other Btrfs features. If you use 
+dm-crypt you can setup another lv or another partition for swap.
+
+> 
+> 
+> b) Internet resources say that for btrfs one cannot use filefrag to get
+> the offset.
+> I found Omar's tool, but wondered whether the same had been directly
+> integrated into btrfs-progs in the meantime?
+> 
+> 
+> 
+> Thanks,
+> Chris.

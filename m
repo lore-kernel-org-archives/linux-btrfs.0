@@ -2,232 +2,204 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B454AC433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Oct 2022 14:58:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A42ECC4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  3 Oct 2022 22:57:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229780AbiJCO6j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 3 Oct 2022 10:58:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40588 "EHLO
+        id S229837AbiJCW46 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 3 Oct 2022 18:56:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37066 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230061AbiJCO6c (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Oct 2022 10:58:32 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3EAC43C15B;
-        Mon,  3 Oct 2022 07:58:29 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        with ESMTP id S229549AbiJCW45 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Oct 2022 18:56:57 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DCAB31373;
+        Mon,  3 Oct 2022 15:56:55 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id C9917B8117A;
-        Mon,  3 Oct 2022 14:58:27 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A993CC433D7;
-        Mon,  3 Oct 2022 14:58:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1664809106;
-        bh=tkvcnmn0rzId1765Ob53Fa9jAy+ddPjtOc7y0am5s1s=;
-        h=From:To:Cc:Subject:Date:From;
-        b=S41jda3kXk55XqNPD7TYFR9kXf9+Sa72o5SSmOAjdzMnCyYIE2VpJrOuIR0LPBb/F
-         /0srTe6AN1cEtQQVejKku2H6smqgiP8uhFpDan6cvzGUTcfszL3/NW2f4DGpn9Ml9u
-         zrDAaS59W3SeSnYD0fo/B+L4lrWMpVu4GxG4LV0vNZ0XYVcLeHJX4h2pEUpMjeU8hB
-         hF+aVWP9+UlhJUv2VgArhlDhB/5p7wTNSm1bWleDygziIf/JpV6oGGiy18za5gL1Ni
-         /u4TZmuJutsbSVxpVQ5e4+2ubUC0tKh/ZDKMaADOTU029k4ox9RzuGRQoSkf/jVVuV
-         fP+c/4THbOY0g==
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: test fiemap on large file with extents shared through a snapshot
-Date:   Mon,  3 Oct 2022 15:58:17 +0100
-Message-Id: <d4bf2bc47e3be1437d5693a0b728e199acb549fd.1664808949.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.35.1
+        by smtp-out1.suse.de (Postfix) with ESMTPS id AC70821902;
+        Mon,  3 Oct 2022 22:56:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1664837813; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=V1nQZ58TJ+GEmzZcpyTOK5ayREv1t5fIjSbrNpFEZ4o=;
+        b=yimo5/6EB/XmhspbZuEjyIRw3HYb3bw8toqAtzev2eUQkTn/03jPZw7eZ/PQk4+m4i7XKR
+        /P7hp7Rh9MPX3ISKaj08hoFSFB5nZGLSrQZAQ0tf7AriKJ34pb0PaXqYz68VYIIXSXFXHU
+        A8NmMmj/VcMLYYmVhJTBBt+nwRVmZBs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1664837813;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=V1nQZ58TJ+GEmzZcpyTOK5ayREv1t5fIjSbrNpFEZ4o=;
+        b=jrlkmi0B7QBCeHc3w4JoJ77FztOga2B/4GULpyIMCqDJyJ85OhF+N3KBk6kStvshIiqYZK
+        R0gpizHBYQ/QCNDA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E65291332F;
+        Mon,  3 Oct 2022 22:56:46 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id geubJ65oO2NBDwAAMHmgww
+        (envelope-from <neilb@suse.de>); Mon, 03 Oct 2022 22:56:46 +0000
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From:   "NeilBrown" <neilb@suse.de>
+To:     "Amir Goldstein" <amir73il@gmail.com>
+Cc:     "Jeff Layton" <jlayton@kernel.org>, tytso@mit.edu,
+        adilger.kernel@dilger.ca, djwong@kernel.org, david@fromorbit.com,
+        trondmy@hammerspace.com, viro@zeniv.linux.org.uk,
+        zohar@linux.ibm.com, xiubli@redhat.com, chuck.lever@oracle.com,
+        lczerner@redhat.com, jack@suse.cz, bfields@fieldses.org,
+        brauner@kernel.org, fweimer@redhat.com,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org, ceph-devel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-xfs@vger.kernel.org
+Subject: Re: [PATCH v6 8/9] vfs: update times after copying data in
+ __generic_file_write_iter
+In-reply-to: <CAOQ4uxi6pPDexF7Z1wshnpV0kbSKsHUeawaUkhjq4FNGbqWU+A@mail.gmail.com>
+References: <20220930111840.10695-1-jlayton@kernel.org>,
+ <20220930111840.10695-9-jlayton@kernel.org>,
+ <CAOQ4uxgofERYwN7AfYFWqQMpQH5y3LV+6UuGfjU29gZXNf7-vQ@mail.gmail.com>,
+ <df91b9ec61bc49aa5330714e3319dcea2531953b.camel@kernel.org>,
+ <CAOQ4uxi6pPDexF7Z1wshnpV0kbSKsHUeawaUkhjq4FNGbqWU+A@mail.gmail.com>
+Date:   Tue, 04 Oct 2022 09:56:42 +1100
+Message-id: <166483780286.14457.1388505585556274283@noble.neil.brown.name>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, 04 Oct 2022, Amir Goldstein wrote:
+> On Mon, Oct 3, 2022 at 4:01 PM Jeff Layton <jlayton@kernel.org> wrote:
+> >
+> > On Sun, 2022-10-02 at 10:08 +0300, Amir Goldstein wrote:
+> > > On Fri, Sep 30, 2022 at 2:30 PM Jeff Layton <jlayton@kernel.org> wrote:
+> > > >
+> > > > The c/mtime and i_version currently get updated before the data is
+> > > > copied (or a DIO write is issued), which is problematic for NFS.
+> > > >
+> > > > READ+GETATTR can race with a write (even a local one) in such a way as
+> > > > to make the client associate the state of the file with the wrong cha=
+nge
+> > > > attribute. That association can persist indefinitely if the file sees=
+ no
+> > > > further changes.
+> > > >
+> > > > Move the setting of times to the bottom of the function in
+> > > > __generic_file_write_iter and only update it if something was
+> > > > successfully written.
+> > > >
+> > >
+> > > This solution is wrong for several reasons:
+> > >
+> > > 1. There is still file_update_time() in ->page_mkwrite() so you haven't
+> > >     solved the problem completely
+> >
+> > Right. I don't think there is a way to solve the problem vs. mmap.
+> > Userland can write to a writeable mmap'ed page at any time and we'd
+> > never know. We have to specifically carve out mmap as an exception here.
+> > I'll plan to add something to the manpage patch for this.
+> >
+> > > 2. The other side of the coin is that post crash state is more likely t=
+o end
+> > >     up data changes without mtime/ctime change
+> > >
+> >
+> > Is this really something filesystems rely on? I suppose the danger is
+> > that some cached data gets written to disk before the write returns and
+> > the inode on disk never gets updated.
+> >
+> > But...isn't that a danger now? Some of the cached data could get written
+> > out and the updated inode just never makes it to disk before a crash
+> > (AFAIU). I'm not sure that this increases our exposure to that problem.
+> >
+> >
+>=20
+> You are correct that that danger exists, but it only exists for overwriting
+> to allocated blocks.
+>=20
+> For writing to new blocks, mtime change is recorded in transaction
+> before the block mapping is recorded in transaction so there is no
+> danger in this case (before your patch).
+>=20
+> Also, observing size change without observing mtime change
+> after crash seems like a very bad outcome that may be possible
+> after your change.
+>=20
+> These are just a few cases that I could think of, they may be filesystem
+> dependent, but my gut feeling is that if you remove the time update before
+> the operation, that has been like that forever, a lot of s#!t is going to f=
+loat
+> for various filesystems and applications.
+>=20
+> And it is not one of those things that are discovered  during rc or even
+> stable kernel testing - they are discovered much later when users start to
+> realize their applications got bogged up after crash, so it feels like to me
+> like playing with fire.
+>=20
+> > > If I read the problem description correctly, then a solution that inval=
+idates
+> > > the NFS cache before AND after the write would be acceptable. Right?
+> > > Would an extra i_version bump after the write solve the race?
+> > >
+> >
+> > I based this patch on Neil's assertion that updating the time before an
+> > operation was pointless if we were going to do it afterward. The NFS
+> > client only really cares about seeing it change after a write.
+> >
+>=20
+> Pointless to NFS client maybe.
+> Whether or not this is not changing user behavior for other applications
+> is up to you to prove and I doubt that you can prove it because I doubt
+> that it is true.
+>=20
+> > Doing both would be fine from a correctness standpoint, and in most
+> > cases, the second would be a no-op anyway since a query would have to
+> > race in between the two for that to happen.
+> >
+> > FWIW, I think we should update the m/ctime and version at the same time.
+> > If the version changes, then there is always the potential that a timer
+> > tick has occurred. So, that would translate to a second call to
+> > file_update_time in here.
+> >
+> > The downside of bumping the times/version both before and after is that
+> > these are hot codepaths, and we'd be adding extra operations there. Even
+> > in the case where nothing has changed, we'd have to call
+> > inode_needs_update_time a second time for every write. Is that worth the
+> > cost?
+>=20
+> Is there a practical cost for iversion bump AFTER write as I suggested?
+> If you NEED m/ctime update AFTER write and iversion update is not enough
+> then I did not understand from your commit message why that is.
+>=20
+> Thanks,
+> Amir.
+>=20
 
-Verify that fiemap correctly reports the sharedness of extents for a file
-with a very large number of extents, spanning many b+tree leaves in the fs
-tree, and when the file's subvolume was snapshoted.
+Maybe we should split i_version updates from ctime updates.
 
-Currently this passes on all kernel releases and its purpose is to prevent
-and detect regressions in the future, as this actually happened during
-recent development on the btrfs' fiemap related code. With this test we
-now have better coverage for fiemap when a file is shared through a
-snapshot.
+While it isn't true that ctime updates have happened before the write
+"forever" it has been true since 2.3.43[1] which is close to forever.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- doc/group-names.txt |   1 +
- tests/btrfs/276     | 123 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/276.out |  16 ++++++
- 3 files changed, 140 insertions(+)
- create mode 100755 tests/btrfs/276
- create mode 100644 tests/btrfs/276.out
+For ctime there doesn't appear to be a strong specification of when the
+change happens, so history provides a good case for leaving it before.
+For i_version we want to provide clear and unambiguous semantics.
+Performing 2 updates makes the specification muddy.
 
-diff --git a/doc/group-names.txt b/doc/group-names.txt
-index ef411b5e..6cc9af78 100644
---- a/doc/group-names.txt
-+++ b/doc/group-names.txt
-@@ -47,6 +47,7 @@ eio			IO error reporting
- encrypt			encrypted file contents
- enospc			ENOSPC error reporting
- exportfs		file handles
-+fiemap			fiemap ioctl
- filestreams		XFS filestreams allocator
- freeze			filesystem freeze tests
- fsck			general fsck tests
-diff --git a/tests/btrfs/276 b/tests/btrfs/276
-new file mode 100755
-index 00000000..5946dad9
---- /dev/null
-+++ b/tests/btrfs/276
-@@ -0,0 +1,123 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2022 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 276
-+#
-+# Verify that fiemap correctly reports the sharedness of extents for a file with
-+# a very large number of extents, spanning many b+tree leaves in the fs tree,
-+# and when the file's subvolume was snapshoted.
-+#
-+. ./common/preamble
-+_begin_fstest auto snapshot compress fiemap
-+
-+. ./common/filter
-+
-+_supported_fs btrfs
-+_require_scratch
-+_require_xfs_io_command "fiemap" "ranged"
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+# We use compression because it's a very quick way to create a file with a very
-+# large number of extents (compression limits the maximum extent size to 128K)
-+# and while using very little disk space.
-+_scratch_mount -o compress
-+
-+fiemap_test_file()
-+{
-+	local offset=$1
-+	local len=$2
-+
-+	# Skip the first two lines of xfs_io's fiemap output (file path and
-+	# header describing the output columns).
-+	$XFS_IO_PROG -c "fiemap -v $offset $len" $SCRATCH_MNT/foo | tail -n +3
-+}
-+
-+# Count the number of shared extents for the whole test file or just for a given
-+# range.
-+count_shared_extents()
-+{
-+	local offset=$1
-+	local len=$2
-+
-+	# Column 5 (from xfs_io's "fiemap -v" command) is the flags (hex field).
-+	# 0x2000 is the value for the FIEMAP_EXTENT_SHARED flag.
-+	fiemap_test_file $offset $len | \
-+		$AWK_PROG --source 'BEGIN { cnt = 0 }' \
-+			  --source '{ if (and(strtonum($5), 0x2000)) cnt++ }' \
-+			  --source 'END { print cnt }'
-+}
-+
-+# Count the number of non shared extents for the whole test file or just for a
-+# given range.
-+count_not_shared_extents()
-+{
-+	local offset=$1
-+	local len=$2
-+
-+	# Column 5 (from xfs_io's "fiemap -v" command) is the flags (hex field).
-+	# 0x2000 is the value for the FIEMAP_EXTENT_SHARED flag.
-+	fiemap_test_file $offset $len | \
-+		$AWK_PROG --source 'BEGIN { cnt = 0 }' \
-+			  --source '{ if (!and(strtonum($5), 0x2000)) cnt++ }' \
-+			  --source 'END { print cnt }'
-+}
-+
-+# Create a 16G file as that results in 131072 extents, all with a size of 128K
-+# (due to compression), and a fs tree with a height of 3 (root node at level 2).
-+# We want to verify later that fiemap correctly reports the sharedness of each
-+# extent, even when it needs to switch from one leaf to the next one and from a
-+# node at level 1 to the next node at level 1.
-+#
-+$XFS_IO_PROG -f -c "pwrite -b 8M 0 16G" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# Sync to flush delalloc and commit the current transaction, so fiemap will see
-+# all extents in the fs tree and extent trees and not look at delalloc.
-+sync
-+
-+echo "Number of non-shared extents in the whole file: $(count_not_shared_extents)"
-+
-+# Creating a snapshot.
-+$BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap | _filter_scratch
-+
-+# We have a snapshot, so now all extents should be reported as shared.
-+echo "Number of shared extents in the whole file: $(count_shared_extents)"
-+
-+# Now COW two files ranges, of 1M each, in the snapshot's file.
-+# So 16 extents should become non-shared after this.
-+#
-+$XFS_IO_PROG -c "pwrite -b 1M 8M 1M" \
-+	     -c "pwrite -b 1M 12G 1M" \
-+	     $SCRATCH_MNT/snap/foo | _filter_xfs_io
-+
-+# Sync to flush delalloc and commit the current transaction, so fiemap will see
-+# all extents in the fs tree and extent trees and not look at delalloc.
-+sync
-+
-+# Now we should have 16 non-shared extents and 131056 (131072 - 16) shared
-+# extents.
-+echo "Number of non-shared extents in the whole file: $(count_not_shared_extents)"
-+echo "Number of shared extents in the whole file: $(count_shared_extents)"
-+
-+# Check that the non-shared extents are indeed in the expected file ranges (each
-+# with 8 extents).
-+echo "Number of non-shared extents in range [8M, 9M): $(count_not_shared_extents 8M 1M)"
-+echo "Number of non-shared extents in range [12G, 12G + 1M): $(count_not_shared_extents 12G 1M)"
-+
-+# Now delete the snapshot.
-+$BTRFS_UTIL_PROG subvolume delete -c $SCRATCH_MNT/snap | _filter_scratch
-+
-+# We deleted the snapshot and committed the transaction used to delete it (-c),
-+# but all its extents (both metadata and data) are actually only deleted in the
-+# background, by the cleaner kthread. So remount, which wakes up the cleaner
-+# kthread, with a commit interval of 1 second and sleep for 1.1 seconds - after
-+# this we are guaranteed all extents of the snapshot were deleted.
-+_scratch_remount commit=1
-+sleep 1.1
-+
-+# Now all extents should be reported as not shared (131072 extents).
-+echo "Number of non-shared extents in the whole file: $(count_not_shared_extents)"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/276.out b/tests/btrfs/276.out
-new file mode 100644
-index 00000000..3bf5a5e6
---- /dev/null
-+++ b/tests/btrfs/276.out
-@@ -0,0 +1,16 @@
-+QA output created by 276
-+wrote 17179869184/17179869184 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Number of non-shared extents in the whole file: 131072
-+Create a snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap'
-+Number of shared extents in the whole file: 131072
-+wrote 1048576/1048576 bytes at offset 8388608
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 1048576/1048576 bytes at offset 12884901888
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Number of non-shared extents in the whole file: 16
-+Number of shared extents in the whole file: 131056
-+Number of non-shared extents in range [8M, 9M): 8
-+Number of non-shared extents in range [12G, 12G + 1M): 8
-+Delete subvolume (commit): 'SCRATCH_MNT/snap'
-+Number of non-shared extents in the whole file: 131072
--- 
-2.35.1
+So I would prefer a single update for i_version, performed after the
+change becomes visible.  If that means it has to be separate from ctime,
+then so be it.
 
+NeilBrown
+
+
+[1]:  https://git.kernel.org/pub/scm/linux/kernel/git/history/history.git/com=
+mit/?id=3D636b38438001a00b25f23e38747a91cb8428af29

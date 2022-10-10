@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD837C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Oct 2022 10:22:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EC514C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Oct 2022 10:22:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231631AbiJJKWt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Oct 2022 06:22:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45694 "EHLO
+        id S231629AbiJJKWu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Oct 2022 06:22:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45586 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231806AbiJJKWj (ORCPT
+        with ESMTP id S231835AbiJJKWj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 10 Oct 2022 06:22:39 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DB2552810
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 03:22:32 -0700 (PDT)
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E0B06B8CA
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 03:22:33 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3DD9760EB1
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:32 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D484C43142
+        by ams.source.kernel.org (Postfix) with ESMTPS id 238C3B80D99
         for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:31 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 63AE9C433D6
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665397351;
-        bh=KLOatonutJdhc2zQ41HbfT1Fc5B9bIxn0dHI21Nma6w=;
+        s=k20201202; t=1665397349;
+        bh=Ydd7XrNtQanncJc+agHB/7DLxRHL6YAvBmgB+GRihYM=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=fZX6+AN7bG/3kf08O3B3OHz5kk/LKOW1IoHkHIuFqXRGPTNYA8qhLzpjZEGfVBXtV
-         NuUTes2gFkOcE43ZnvYATLW49Aut6jGbRNgCW4rcxmHXgXCKJL3SY3ErSjXxuEAGuT
-         v8WdGL0TFbEMNJJiiPh5nAS9th9cxyCCEj1Ipz9DkCWS6Pw+ONc2CmGNE5cvwM6+/F
-         1oFFIa4RkNOnKyHTUf4Siqoor/r/5FAQy8qeFdveLT2wZUSoneKtgriC7hPdUayOXM
-         7YivwIS32sszbjnw9FWSicy+EfLdEbehjlvB/OjbrGUdaIylvFKiIDDZkPH/Zf0trU
-         k9iVWX84mk0jA==
+        b=mHcU3bot6rS6RRjnDz4fF0PoP99jK5fm6CUzp51eJ5kkvzwFph8MxCwEmt1nj7Peo
+         wTMGaNWNKmo+Ixr9LWbVr8cChHq+kGgCCZYahEPyLM8FJSAqWBHCPuW7PsUR3uhipc
+         0S1vu+VDTgTrjl6bF5vIRilWdHe0PXH85je8WQRqCYmO8pSMOgCgINzSHof59m2Sel
+         6ESloV/DRyqXpjXJ6Ju1R3kv4wZXd1idIHcD90fjI9ZkLK1MiA3XgSlnFxWNn7CbhC
+         aH+yU6S3Vaq+2t9SyMArdkDpi3ZbqJ1tYK+ql1e/I97chB+sl+bnoKr1spZGlp/pgm
+         Fc3g60Su441uA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/18] btrfs: remove checks for a 0 inode number during backref walking
-Date:   Mon, 10 Oct 2022 11:22:11 +0100
-Message-Id: <c2d41be4cb9a0cc789e7581063df74f33ec17c88.1665396437.git.fdmanana@suse.com>
+Subject: [PATCH 07/18] btrfs: drop redundant bflags initialization when allocating extent buffer
+Date:   Mon, 10 Oct 2022 11:22:09 +0100
+Message-Id: <ada1ba1d03ae7263d64ffb649d55328869a3417a.1665396437.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1665396437.git.fdmanana@suse.com>
 References: <cover.1665396437.git.fdmanana@suse.com>
@@ -48,49 +48,30 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When doing backref walking to determine if an extent is shared, we are
-testing if the inode number, stored in the 'inum' field of struct
-share_check, is 0. However that can never be case, since the all instances
-of the structure are created at btrfs_is_data_extent_shared(), which
-always initializes it with the inode number from a fs tree (and the number
-for any inode from any tree can never be 0). So remove the checks.
+When allocating an extent buffer, at __alloc_extent_buffer(), there's no
+point in explicitly assigning zero to the bflags field of the new extent
+buffer because we allocated it with kmem_cache_zalloc().
+
+So just remove the redundant initialization, it saves one mov instruction
+in the generated assembly code for x86_64 ("movq $0x0,0x10(%rax)").
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/backref.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index c112c99af1a1..bc3345dae381 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -887,7 +887,7 @@ static int add_delayed_refs(const struct btrfs_fs_info *fs_info,
- 			 * Found a inum that doesn't match our known inum, we
- 			 * know it's shared.
- 			 */
--			if (sc && sc->inum && ref->objectid != sc->inum) {
-+			if (sc && ref->objectid != sc->inum) {
- 				ret = BACKREF_FOUND_SHARED;
- 				goto out;
- 			}
-@@ -1023,7 +1023,7 @@ static int add_inline_refs(const struct btrfs_fs_info *fs_info,
- 			key.type = BTRFS_EXTENT_DATA_KEY;
- 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c9a9f784d21c..ca67f041e43e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4269,7 +4269,6 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+ 	eb->start = start;
+ 	eb->len = len;
+ 	eb->fs_info = fs_info;
+-	eb->bflags = 0;
+ 	init_rwsem(&eb->lock);
  
--			if (sc && sc->inum && key.objectid != sc->inum) {
-+			if (sc && key.objectid != sc->inum) {
- 				ret = BACKREF_FOUND_SHARED;
- 				break;
- 			}
-@@ -1122,7 +1122,7 @@ static int add_keyed_refs(struct btrfs_root *extent_root,
- 			key.type = BTRFS_EXTENT_DATA_KEY;
- 			key.offset = btrfs_extent_data_ref_offset(leaf, dref);
- 
--			if (sc && sc->inum && key.objectid != sc->inum) {
-+			if (sc && key.objectid != sc->inum) {
- 				ret = BACKREF_FOUND_SHARED;
- 				break;
- 			}
+ 	btrfs_leak_debug_add_eb(eb);
 -- 
 2.35.1
 

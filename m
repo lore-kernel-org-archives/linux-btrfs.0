@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC514C433F5
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Oct 2022 10:22:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA8F8C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Oct 2022 10:22:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231629AbiJJKWu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Oct 2022 06:22:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45586 "EHLO
+        id S231443AbiJJKWw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Oct 2022 06:22:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45536 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231835AbiJJKWj (ORCPT
+        with ESMTP id S231697AbiJJKWk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2022 06:22:39 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E0B06B8CA
+        Mon, 10 Oct 2022 06:22:40 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D50236B8D2
         for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 03:22:33 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 238C3B80D99
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 1DCC760EC9
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:33 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1223DC433D6
         for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:31 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 63AE9C433D6
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665397349;
-        bh=Ydd7XrNtQanncJc+agHB/7DLxRHL6YAvBmgB+GRihYM=;
+        s=k20201202; t=1665397352;
+        bh=vjRmnwCztk2q7u258H0PxMtfwEjOM3poX9UPco3p+Hg=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=mHcU3bot6rS6RRjnDz4fF0PoP99jK5fm6CUzp51eJ5kkvzwFph8MxCwEmt1nj7Peo
-         wTMGaNWNKmo+Ixr9LWbVr8cChHq+kGgCCZYahEPyLM8FJSAqWBHCPuW7PsUR3uhipc
-         0S1vu+VDTgTrjl6bF5vIRilWdHe0PXH85je8WQRqCYmO8pSMOgCgINzSHof59m2Sel
-         6ESloV/DRyqXpjXJ6Ju1R3kv4wZXd1idIHcD90fjI9ZkLK1MiA3XgSlnFxWNn7CbhC
-         aH+yU6S3Vaq+2t9SyMArdkDpi3ZbqJ1tYK+ql1e/I97chB+sl+bnoKr1spZGlp/pgm
-         Fc3g60Su441uA==
+        b=RlmglKs6A/CAsTcfOAURujZ8EVoSbd1WueFnOd864gYLJv5nW+hoeOh4MdcklVMNc
+         AFf6EYQ70tBzXt0fhNLx3C0vSx5tJG7+EYqTJBfKcElUMEua+2REDiu4fvbkXBFFNv
+         h6hyxsXWQ8neQHEf46w0rvdsk3XZJl8sqy4b2gr33D1LrsKU7i0bscVSZi53z4rpGY
+         XR6C5mzeGvQo98ZVpdyIUYUkxqIBTpPKlWQLpKAkLhdgBH4JbtuMvte4ZF3cf55LvO
+         2EN2xc40r030Do0gP/dy09H3/R7Td5y3IS3CkmBGDzUXZrZPgWWBYuw1ml5WC9FBrb
+         3iVGrQ2c7xQ4A==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/18] btrfs: drop redundant bflags initialization when allocating extent buffer
-Date:   Mon, 10 Oct 2022 11:22:09 +0100
-Message-Id: <ada1ba1d03ae7263d64ffb649d55328869a3417a.1665396437.git.fdmanana@suse.com>
+Subject: [PATCH 10/18] btrfs: directly pass the inode to btrfs_is_data_extent_shared()
+Date:   Mon, 10 Oct 2022 11:22:12 +0100
+Message-Id: <a026f395f46a1170a91bafa748a20c7e13cc5226.1665396437.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1665396437.git.fdmanana@suse.com>
 References: <cover.1665396437.git.fdmanana@suse.com>
@@ -48,30 +48,134 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When allocating an extent buffer, at __alloc_extent_buffer(), there's no
-point in explicitly assigning zero to the bflags field of the new extent
-buffer because we allocated it with kmem_cache_zalloc().
-
-So just remove the redundant initialization, it saves one mov instruction
-in the generated assembly code for x86_64 ("movq $0x0,0x10(%rax)").
+Currently we pass a root and an inode number as arguments for
+btrfs_is_data_extent_shared() and the inode number is always from an
+inode that belongs to that root (it wouldn't make sense otherwise).
+In every context that we call btrfs_is_data_extent_shared() (fiemap only),
+we have an inode available, so directly pass the inode to the function
+instead of a root and inode number. This reduces the number of parameters
+and it makes the function's signature conform to most other functions we
+have.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent_io.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/backref.c   |  8 ++++----
+ fs/btrfs/backref.h   |  2 +-
+ fs/btrfs/extent_io.c | 16 +++++++---------
+ 3 files changed, 12 insertions(+), 14 deletions(-)
 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index bc3345dae381..8effe318cd0c 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1631,8 +1631,7 @@ static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
+ /*
+  * Check if a data extent is shared or not.
+  *
+- * @root:        The root the inode belongs to.
+- * @inum:        Number of the inode whose extent we are checking.
++ * @inode:       The inode whose extent we are checking.
+  * @bytenr:      Logical bytenr of the extent we are checking.
+  * @extent_gen:  Generation of the extent (file extent item) or 0 if it is
+  *               not known.
+@@ -1651,11 +1650,12 @@ static void store_backref_shared_cache(struct btrfs_backref_shared_cache *cache,
+  *
+  * Return: 0 if extent is not shared, 1 if it is shared, < 0 on error.
+  */
+-int btrfs_is_data_extent_shared(struct btrfs_root *root, u64 inum, u64 bytenr,
++int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
+ 				u64 extent_gen,
+ 				struct ulist *roots, struct ulist *tmp,
+ 				struct btrfs_backref_shared_cache *cache)
+ {
++	struct btrfs_root *root = inode->root;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_trans_handle *trans;
+ 	struct ulist_iterator uiter;
+@@ -1664,7 +1664,7 @@ int btrfs_is_data_extent_shared(struct btrfs_root *root, u64 inum, u64 bytenr,
+ 	int ret = 0;
+ 	struct share_check shared = {
+ 		.root_objectid = root->root_key.objectid,
+-		.inum = inum,
++		.inum = btrfs_ino(inode),
+ 		.share_count = 0,
+ 	};
+ 	int level;
+diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
+index 8e69584d538d..c846fa2bdf93 100644
+--- a/fs/btrfs/backref.h
++++ b/fs/btrfs/backref.h
+@@ -77,7 +77,7 @@ int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
+ 			  u64 start_off, struct btrfs_path *path,
+ 			  struct btrfs_inode_extref **ret_extref,
+ 			  u64 *found_off);
+-int btrfs_is_data_extent_shared(struct btrfs_root *root, u64 inum, u64 bytenr,
++int btrfs_is_data_extent_shared(struct btrfs_inode *inode, u64 bytenr,
+ 				u64 extent_gen,
+ 				struct ulist *roots, struct ulist *tmp,
+ 				struct btrfs_backref_shared_cache *cache);
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c9a9f784d21c..ca67f041e43e 100644
+index ca67f041e43e..01feeb215bd9 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -4269,7 +4269,6 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
- 	eb->start = start;
- 	eb->len = len;
- 	eb->fs_info = fs_info;
--	eb->bflags = 0;
- 	init_rwsem(&eb->lock);
+@@ -3715,7 +3715,6 @@ static int fiemap_process_hole(struct btrfs_inode *inode,
+ 			       u64 start, u64 end)
+ {
+ 	const u64 i_size = i_size_read(&inode->vfs_inode);
+-	const u64 ino = btrfs_ino(inode);
+ 	u64 cur_offset = start;
+ 	u64 last_delalloc_end = 0;
+ 	u32 prealloc_flags = FIEMAP_EXTENT_UNWRITTEN;
+@@ -3755,8 +3754,8 @@ static int fiemap_process_hole(struct btrfs_inode *inode,
  
- 	btrfs_leak_debug_add_eb(eb);
+ 		if (prealloc_len > 0) {
+ 			if (!checked_extent_shared && fieinfo->fi_extents_max) {
+-				ret = btrfs_is_data_extent_shared(inode->root,
+-							  ino, disk_bytenr,
++				ret = btrfs_is_data_extent_shared(inode,
++							  disk_bytenr,
+ 							  extent_gen, roots,
+ 							  tmp_ulist,
+ 							  backref_cache);
+@@ -3805,8 +3804,8 @@ static int fiemap_process_hole(struct btrfs_inode *inode,
+ 		}
+ 
+ 		if (!checked_extent_shared && fieinfo->fi_extents_max) {
+-			ret = btrfs_is_data_extent_shared(inode->root,
+-							  ino, disk_bytenr,
++			ret = btrfs_is_data_extent_shared(inode,
++							  disk_bytenr,
+ 							  extent_gen, roots,
+ 							  tmp_ulist,
+ 							  backref_cache);
+@@ -3907,7 +3906,6 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 	const u64 ino = btrfs_ino(inode);
+ 	struct extent_state *cached_state = NULL;
+ 	struct btrfs_path *path;
+-	struct btrfs_root *root = inode->root;
+ 	struct fiemap_cache cache = { 0 };
+ 	struct btrfs_backref_shared_cache *backref_cache;
+ 	struct ulist *roots;
+@@ -3928,8 +3926,8 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 		goto out;
+ 	}
+ 
+-	lockstart = round_down(start, root->fs_info->sectorsize);
+-	lockend = round_up(start + len, root->fs_info->sectorsize);
++	lockstart = round_down(start, inode->root->fs_info->sectorsize);
++	lockend = round_up(start + len, inode->root->fs_info->sectorsize);
+ 	prev_extent_end = lockstart;
+ 
+ 	lock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
+@@ -4037,7 +4035,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 		} else {
+ 			/* We have a regular extent. */
+ 			if (fieinfo->fi_extents_max) {
+-				ret = btrfs_is_data_extent_shared(root, ino,
++				ret = btrfs_is_data_extent_shared(inode,
+ 								  disk_bytenr,
+ 								  extent_gen,
+ 								  roots,
 -- 
 2.35.1
 

@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA0E0C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Oct 2022 10:22:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DE6D9C433F5
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Oct 2022 10:22:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231555AbiJJKWl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Oct 2022 06:22:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45562 "EHLO
+        id S231863AbiJJKWm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Oct 2022 06:22:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45548 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231656AbiJJKWe (ORCPT
+        with ESMTP id S231398AbiJJKWg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Oct 2022 06:22:34 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F8DA6B159
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 03:22:27 -0700 (PDT)
+        Mon, 10 Oct 2022 06:22:36 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 880CE6B652
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 03:22:30 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id D76FC60ECE
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:26 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CE4C8C433C1
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:25 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 87CF960EE7
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:29 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7E673C433C1
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Oct 2022 10:22:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665397346;
-        bh=XEHhBU03Mz+hEp5lxPdN8/D4vUQeaLBenLlnWZU9ya4=;
+        s=k20201202; t=1665397349;
+        bh=KZB5HiCiAzQDv4MD+fbkXTqvjvIwuYOQUoXd8iAgIfA=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=orIfnMFPBGNv0ART9CKmJz+qxLLKk7bPysh7hYceqfNXnCpBTnfbiw4EJ1oOMuRP6
-         k8An3j15mxNtsQ2w3ft7s0gmnPsJVgN+isgLFwitRUWlErKIAiaG0JXAfEWX3kV2KU
-         B4qvyMDpWw9sk69x8txthY7tvd9SbPU0ELvJWK0Qp9ZFoOYeBrBPRL5mBMlyTqwgmi
-         gh/bZiGSz1zENXH294GRPsTRkSDSTHIP+oWrTebgqrZseObEmwyIyWXHZQflVyl+QV
-         4LoMf3FuyGrKr1/2AIzZWWDLbGMfpAgTBfdTsw/1s/UP5BPm7S0buBeH9wKntcraIl
-         JWUTN8K2TgnTw==
+        b=djWfCHdIPbvghQDopPb9C1uL4fPJ8hUo82xEkryfUZuRveKV4btYD9O9aQa6YQEAL
+         wpbG4wqYuFTRLhFfOJDdM3QWQhen2fHUcvw/b7b06y0zV0WU0MeqoAOT6N/n3zU4tD
+         tP2TXAGc4q70ToKtf+Tf6ABolHyUAzMAJIW+oMvC2LwhYIY+BNXTarX8Z4a4DJyKNq
+         h8g9fVn4WCGa52nEWBOBTPBa2uvpn4YC6WdApUDS+kxWmO1EeXHJ16fHK3tuwaXMNb
+         B79DnlMLfsJreFUrlOpErMaOwMjpMwKih0nD3L7BWgAiOlPRcuuePDAQlcd+3UNTHG
+         n9KT3Z5MArAQA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/18] btrfs: get the next extent map during fiemap/lseek more efficiently
-Date:   Mon, 10 Oct 2022 11:22:05 +0100
-Message-Id: <2ec5bdb13c1bb6a2d1fb883000f695037cb0f3ac.1665396437.git.fdmanana@suse.com>
+Subject: [PATCH 06/18] btrfs: drop pointless memset when cloning extent buffer
+Date:   Mon, 10 Oct 2022 11:22:08 +0100
+Message-Id: <bc0998eb62c0cf79f7ec38abf4c758b7a6be2894.1665396437.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1665396437.git.fdmanana@suse.com>
 References: <cover.1665396437.git.fdmanana@suse.com>
@@ -48,157 +48,48 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At find_delalloc_subrange(), when we need to get the next extent map, we
-do a full search on the extent map tree (a red black tree). This is fine
-but it's a lot more efficient to simply use rb_next(), which typically
-requires iterating over less nodes of the tree and never needs to compare
-the ranges of nodes with the one we are looking for.
+At btrfs_clone_extent_buffer(), before allocating the pages array for the
+new extent buffer we are calling memset() to zero out the pages array of
+the extent buffer. This is pointless however, because the extent buffer
+already has every element in its pages array pointing to NULL, as it was
+allocated with kmem_cache_zalloc(). The memset() was introduced with
+commit dd137dd1f2d719 ("btrfs: factor out allocating an array of pages"),
+but even before that commit we already depended on the pages array being
+initialized to NULL for the error paths that need to call
+btrfs_release_extent_buffer().
 
-So add a public helper to extent_map.{h,c} to get the extent map that
-immediately follows another extent map, using rb_next(), and use that
-helper at find_delalloc_subrange().
+So remove the memset(), it's useless and slightly increases the object
+text size.
+
+Before this change:
+
+   $ size fs/btrfs/extent_io.o
+      text	   data	    bss	    dec	    hex	filename
+     70580	   5469	     40	  76089	  12939	fs/btrfs/extent_io.o
+
+After this change:
+
+   $ size fs/btrfs/extent_io.o
+      text	   data	    bss	    dec	    hex	filename
+     70564	   5469	     40	  76073	  12929	fs/btrfs/extent_io.o
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent_map.c | 31 +++++++++++++++++++++++++++++-
- fs/btrfs/extent_map.h |  2 ++
- fs/btrfs/file.c       | 44 ++++++++++++++++++++++++++-----------------
- 3 files changed, 59 insertions(+), 18 deletions(-)
+ fs/btrfs/extent_io.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 6092a4eedc92..715979807ae1 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -523,7 +523,7 @@ void replace_extent_mapping(struct extent_map_tree *tree,
- 	setup_extent_mapping(tree, new, modified);
- }
- 
--static struct extent_map *next_extent_map(struct extent_map *em)
-+static struct extent_map *next_extent_map(const struct extent_map *em)
- {
- 	struct rb_node *next;
- 
-@@ -533,6 +533,35 @@ static struct extent_map *next_extent_map(struct extent_map *em)
- 	return container_of(next, struct extent_map, rb_node);
- }
- 
-+/*
-+ * Get the extent map that immediately follows another one.
-+ *
-+ * @tree:       The extent map tree that the extent map belong to.
-+ *              Holding read or write access on the tree's lock is required.
-+ * @em:         An extent map from the given tree. The caller must ensure that
-+ *              between getting @em and between calling this function, the
-+ *              extent map @em is not removed from the tree - for example, by
-+ *              holding the tree's lock for the duration of those 2 operations.
-+ *
-+ * Returns the extent map that immediately follows @em, or NULL if @em is the
-+ * last extent map in the tree.
-+ */
-+struct extent_map *btrfs_next_extent_map(const struct extent_map_tree *tree,
-+					 const struct extent_map *em)
-+{
-+	struct extent_map *next;
-+
-+	/* The lock must be acquired either in read mode or write mode. */
-+	lockdep_assert_held(&tree->lock);
-+	ASSERT(extent_map_in_tree(em));
-+
-+	next = next_extent_map(em);
-+	if (next)
-+		refcount_inc(&next->refs);
-+
-+	return next;
-+}
-+
- static struct extent_map *prev_extent_map(struct extent_map *em)
- {
- 	struct rb_node *prev;
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index ad311864272a..68d3f2c9ea1d 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -87,6 +87,8 @@ static inline u64 extent_map_block_end(struct extent_map *em)
- void extent_map_tree_init(struct extent_map_tree *tree);
- struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
- 					 u64 start, u64 len);
-+struct extent_map *btrfs_next_extent_map(const struct extent_map_tree *tree,
-+					 const struct extent_map *em);
- int add_extent_mapping(struct extent_map_tree *tree,
- 		       struct extent_map *em, int modified);
- void remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 176b432035ae..4a9a2e660b42 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -3550,40 +3550,50 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 1eae68fbae21..c9a9f784d21c 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4302,7 +4302,6 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
  	 */
- 	read_lock(&em_tree->lock);
- 	em = lookup_extent_mapping(em_tree, start, len);
--	read_unlock(&em_tree->lock);
-+	if (!em) {
-+		read_unlock(&em_tree->lock);
-+		return (delalloc_len > 0);
-+	}
+ 	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
  
- 	/* extent_map_end() returns a non-inclusive end offset. */
--	em_end = em ? extent_map_end(em) : 0;
-+	em_end = extent_map_end(em);
- 
- 	/*
- 	 * If we have a hole/prealloc extent map, check the next one if this one
- 	 * ends before our range's end.
- 	 */
--	if (em && (em->block_start == EXTENT_MAP_HOLE ||
--		   test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) && em_end < end) {
-+	if ((em->block_start == EXTENT_MAP_HOLE ||
-+	     test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) && em_end < end) {
- 		struct extent_map *next_em;
- 
--		read_lock(&em_tree->lock);
--		next_em = lookup_extent_mapping(em_tree, em_end, len - em_end);
--		read_unlock(&em_tree->lock);
--
-+		next_em = btrfs_next_extent_map(em_tree, em);
- 		free_extent_map(em);
--		em_end = next_em ? extent_map_end(next_em) : 0;
-+
-+		/*
-+		 * There's no next extent map or the next one starts beyond our
-+		 * range, return the range found in the io tree (if any).
-+		 */
-+		if (!next_em || next_em->start > end) {
-+			read_unlock(&em_tree->lock);
-+			free_extent_map(next_em);
-+			return (delalloc_len > 0);
-+		}
-+
-+		em_end = extent_map_end(next_em);
- 		em = next_em;
- 	}
- 
--	if (em && (em->block_start == EXTENT_MAP_HOLE ||
--		   test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
--		free_extent_map(em);
--		em = NULL;
--	}
-+	read_unlock(&em_tree->lock);
- 
- 	/*
--	 * No extent map or one for a hole or prealloc extent. Use the delalloc
--	 * range we found in the io tree if we have one.
-+	 * We have a hole or prealloc extent that ends at or beyond our range's
-+	 * end, return the range found in the io tree (if any).
- 	 */
--	if (!em)
-+	if (em->block_start == EXTENT_MAP_HOLE ||
-+	    test_bit(EXTENT_FLAG_PREALLOC, &em->flags)) {
-+		free_extent_map(em);
- 		return (delalloc_len > 0);
-+	}
- 
- 	/*
- 	 * We don't have any range as EXTENT_DELALLOC in the io tree, so the
+-	memset(new->pages, 0, sizeof(*new->pages) * num_pages);
+ 	ret = btrfs_alloc_page_array(num_pages, new->pages);
+ 	if (ret) {
+ 		btrfs_release_extent_buffer(new);
 -- 
 2.35.1
 

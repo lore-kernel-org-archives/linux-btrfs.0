@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BC34C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:53:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7605FC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:53:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229911AbiJKOxG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 10:53:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35242 "EHLO
+        id S230250AbiJKOxK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 10:53:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36938 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230150AbiJKOvz (ORCPT
+        with ESMTP id S230062AbiJKOwU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 10:51:55 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1034B9A9CE;
-        Tue, 11 Oct 2022 07:51:01 -0700 (PDT)
+        Tue, 11 Oct 2022 10:52:20 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F42159A9E3;
+        Tue, 11 Oct 2022 07:51:02 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 546C2B8124E;
-        Tue, 11 Oct 2022 14:50:59 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E199C43147;
-        Tue, 11 Oct 2022 14:50:57 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id AF271611C1;
+        Tue, 11 Oct 2022 14:51:02 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5C587C433B5;
+        Tue, 11 Oct 2022 14:51:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499858;
-        bh=QEEJPb16Pm9R+x2qQLK/1+PijYhxQF1TFO6866ROspY=;
+        s=k20201202; t=1665499862;
+        bh=jw6kVGx12KhxtP8Erz7CrOz0ABEzDOjQ3XnV4ZUu7jM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=ACIJN9q9t4u5q5P1JM808zfAXwi33KsQD8l+dREp1MUJZCX2wYXHBrQWC8jBqkq8h
-         0bv3YSZFLLaStM4/lH3lgcaSff9wGZBCZrX7iZp8VcS8wYmogKmL5DlcHCZvesBb0K
-         1rWmHaCwq0bQEYYfAILvMSOkdKWtMiUYs3tSPSvj+RcpmKMFJZxi0D6MWf3uhl9MXZ
-         rPUYy0XPuYea6v86B3uTTGGey8JslMUSZoohdi5ZHlQVWCaeALQE9N6aY4fVXgH/JE
-         aiWvY3MjhddFpdbl9qeKOG7NiNCVssSj+T5X/9m0SbCyQxKlHm/D+o5a2lm9tAL2x2
-         kSNCgjwyK0OCA==
+        b=U6cTMEgs8/MRyjaedKuvFlmQK3Z7heJbJVa3JQyrgg6SoULYR8rE9nVTAzr5r/NLB
+         XVOMEfhpfYY7URegniua5MR3ijRYUxaAkiNhm02MpKKDqWYO7r/lSaFRZovT1HpF2+
+         uNJ0Y8baV4GPSlFnbbNt9lmyjpsW90T4rPMZk9s+U/5m00XjOKbcF59vRLosRazkLZ
+         /4dmWhmpjYU55KofDUOR1RxtAhsy7EzzNOROprnx6CjM6o/L4jxnScocZaIdUSJJin
+         Q2wUUi743gc/Wdd81W89BCCc4gt2ir+nTxN0nh6Dwjs9k9k6RWuVTqGk1mYdhuJAvG
+         VPCruJ7ZdX5Dg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
@@ -39,9 +39,9 @@ Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.0 26/46] btrfs: add lockdep annotations for num_extwriters wait event
-Date:   Tue, 11 Oct 2022 10:49:54 -0400
-Message-Id: <20221011145015.1622882-26-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.0 29/46] btrfs: change the lockdep class of free space inode's invalidate_lock
+Date:   Tue, 11 Oct 2022 10:49:57 -0400
+Message-Id: <20221011145015.1622882-29-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20221011145015.1622882-1-sashal@kernel.org>
 References: <20221011145015.1622882-1-sashal@kernel.org>
@@ -55,110 +55,57 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Ioannis Angelakopoulos <iangelak@fb.com>
 
-[ Upstream commit 5a9ba6709f13313984900d635b4c73c9eb7d644e ]
+[ Upstream commit 9d7464c87b159bbf763c24faeb7a2dcaac96e4a1 ]
 
-Similarly to the num_writers wait event in fs/btrfs/transaction.c add a
-lockdep annotation for the num_extwriters wait event.
+Reinitialize the class of the lockdep map for struct inode's
+mapping->invalidate_lock in load_free_space_cache() function in
+fs/btrfs/free-space-cache.c. This will prevent lockdep from producing
+false positives related to execution paths that make use of free space
+inodes and paths that make use of normal inodes.
+
+Specifically, with this change lockdep will create separate lock
+dependencies that include the invalidate_lock, in the case that free
+space inodes are used and in the case that normal inodes are used.
+
+The lockdep class for this lock was first initialized in
+inode_init_always() in fs/inode.c.
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Ioannis Angelakopoulos <iangelak@fb.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/disk-io.c     |  1 +
- fs/btrfs/transaction.c | 13 +++++++++++++
- 3 files changed, 15 insertions(+)
+ fs/btrfs/free-space-cache.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 707e644bab92..e886cf639c0f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1097,6 +1097,7 @@ struct btrfs_fs_info {
- 	 * compiled without lockdep).
- 	 */
- 	struct lockdep_map btrfs_trans_num_writers_map;
-+	struct lockdep_map btrfs_trans_num_extwriters_map;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 85404c62a1c2..835071fa39a9 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -920,6 +920,8 @@ static int copy_free_space_cache(struct btrfs_block_group *block_group,
+ 	return ret;
+ }
  
- #ifdef CONFIG_BTRFS_FS_REF_VERIFY
- 	spinlock_t ref_verify_lock;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a04b32f7df9d..811d743e26e6 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2991,6 +2991,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	seqlock_init(&fs_info->profiles_lock);
- 
- 	btrfs_lockdep_init_map(fs_info, btrfs_trans_num_writers);
-+	btrfs_lockdep_init_map(fs_info, btrfs_trans_num_extwriters);
- 
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
- 	INIT_LIST_HEAD(&fs_info->space_info);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index b3cb54d852f8..44e47db4c8e8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -314,6 +314,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 		extwriter_counter_inc(cur_trans, type);
- 		spin_unlock(&fs_info->trans_lock);
- 		btrfs_lockdep_acquire(fs_info, btrfs_trans_num_writers);
-+		btrfs_lockdep_acquire(fs_info, btrfs_trans_num_extwriters);
- 		return 0;
++static struct lock_class_key btrfs_free_space_inode_key;
++
+ int load_free_space_cache(struct btrfs_block_group *block_group)
+ {
+ 	struct btrfs_fs_info *fs_info = block_group->fs_info;
+@@ -989,6 +991,14 @@ int load_free_space_cache(struct btrfs_block_group *block_group)
  	}
- 	spin_unlock(&fs_info->trans_lock);
-@@ -336,6 +337,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 		return -ENOMEM;
- 
- 	btrfs_lockdep_acquire(fs_info, btrfs_trans_num_writers);
-+	btrfs_lockdep_acquire(fs_info, btrfs_trans_num_extwriters);
- 
- 	spin_lock(&fs_info->trans_lock);
- 	if (fs_info->running_transaction) {
-@@ -343,11 +345,13 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 		 * someone started a transaction after we unlocked.  Make sure
- 		 * to redo the checks above
- 		 */
-+		btrfs_lockdep_release(fs_info, btrfs_trans_num_extwriters);
- 		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
- 		kfree(cur_trans);
- 		goto loop;
- 	} else if (BTRFS_FS_ERROR(fs_info)) {
- 		spin_unlock(&fs_info->trans_lock);
-+		btrfs_lockdep_release(fs_info, btrfs_trans_num_extwriters);
- 		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
- 		kfree(cur_trans);
- 		return -EROFS;
-@@ -1028,6 +1032,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 
- 	cond_wake_up(&cur_trans->writer_wait);
- 
-+	btrfs_lockdep_release(info, btrfs_trans_num_extwriters);
- 	btrfs_lockdep_release(info, btrfs_trans_num_writers);
- 
- 	btrfs_put_transaction(cur_trans);
-@@ -2270,6 +2275,13 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (ret)
- 		goto lockdep_release;
+ 	spin_unlock(&block_group->lock);
  
 +	/*
-+	 * The thread has started/joined the transaction thus it holds the
-+	 * lockdep map as a reader. It has to release it before acquiring the
-+	 * lockdep map as a writer.
++	 * Reinitialize the class of struct inode's mapping->invalidate_lock for
++	 * free space inodes to prevent false positives related to locks for normal
++	 * inodes.
 +	 */
-+	btrfs_lockdep_release(fs_info, btrfs_trans_num_extwriters);
-+	btrfs_might_wait_for_event(fs_info, btrfs_trans_num_extwriters);
- 	wait_event(cur_trans->writer_wait,
- 		   extwriter_counter_read(cur_trans) == 0);
- 
-@@ -2541,6 +2553,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	return ret;
- 
- lockdep_release:
-+	btrfs_lockdep_release(fs_info, btrfs_trans_num_extwriters);
- 	btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
- 	goto cleanup_transaction;
- }
++	lockdep_set_class(&(&inode->i_data)->invalidate_lock,
++			  &btrfs_free_space_inode_key);
++
+ 	ret = __load_free_space_cache(fs_info->tree_root, inode, &tmp_ctl,
+ 				      path, block_group->start);
+ 	btrfs_free_path(path);
 -- 
 2.35.1
 

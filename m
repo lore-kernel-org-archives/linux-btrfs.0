@@ -2,49 +2,49 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6426FC4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:32:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C439C43217
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:42:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231747AbiJKPc4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 11:32:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35442 "EHLO
+        id S230078AbiJKPmk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 11:42:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33512 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231797AbiJKPc3 (ORCPT
+        with ESMTP id S229614AbiJKPmO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 11:32:29 -0400
+        Tue, 11 Oct 2022 11:42:14 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C48629DDA9;
-        Tue, 11 Oct 2022 08:21:42 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01D2CAD99F;
+        Tue, 11 Oct 2022 08:32:16 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 9A79EB81633;
-        Tue, 11 Oct 2022 14:53:34 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5628FC43470;
-        Tue, 11 Oct 2022 14:53:32 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 731AEB8162A;
+        Tue, 11 Oct 2022 14:53:00 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 49766C433D6;
+        Tue, 11 Oct 2022 14:52:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665500013;
-        bh=wEdwXKsCN6anstaaDpgBE/tfOjXSIg8GvgNaZFp6SOg=;
+        s=k20201202; t=1665499979;
+        bh=b7UHDwpP1svXAaw8vOJjZ9cu4ApBTC5OFE1tj6lCgNc=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=AHEiENsB9hm/mfeBgO9ClUW/wySVJppssV9oaiU0QswpHMfTCGQYlcbeT2DW+VvVs
-         h3hfI8jc+c1aCfBo4vKz6GZR7illyrUM+3DlZvuD2R47/1Vorx9jpp15BltGevsV7I
-         SAmv7hkYEca5dqykBn1pBcrte+AxyMK3NrBxXor0VBMmMwHqSB8DrBVT1vx/EITZqB
-         +fiHM62PHV8pkPKN4yk8BwGQspwyeXB7eY5fQQIRTpofMLGbbYcpdSG9p5OUOwChmH
-         RDqsMhc2zgX4XZZQ825sbFdC2lq3wfoEJFx90zXPOMqJt660hIq3HewwXhEc21GE++
-         n815pX7Sg0Obw==
+        b=A4tBvr/PBXQImSW/aSAwAF0xEQpnRmh+Otu2PzrMHwnpIehxEvAzVXZRqvKZn9IQn
+         W4/U2lWl3JoSSJxXTDaQYh7Ou7qq4sYHdEdIBsvpgt3RKsDyIw2m5/dH7J8D7yq4Pl
+         53VRLDTuoJ3MbarQqZGyvwwx02Px1Rrvd1jFc1yZcCxlBwZ8MvMguqWXxlYEgHcVAZ
+         gs0YZMWYkOmUnN0H7g+gqjM3jXBEfsG+5jAAm3dbBbPU8wRRmUvOTzgz9MyLb228CW
+         BZdFT99gZZZYwdiOhOPkvn1e9jIpAr1mItCXZ35O8jGYk9a3L0uwbgxqQ5Xhc7cQOK
+         oiUPYgQ+qHecw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Goffredo Baroncelli <kreijack@libero.it>,
-        Anand Jain <anand.jain@oracle.com>,
+Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.10 14/17] btrfs: check superblock to ensure the fs was not modified at thaw time
-Date:   Tue, 11 Oct 2022 10:53:09 -0400
-Message-Id: <20221011145312.1624341-14-sashal@kernel.org>
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.15 17/26] btrfs: add macros for annotating wait events with lockdep
+Date:   Tue, 11 Oct 2022 10:52:24 -0400
+Message-Id: <20221011145233.1624013-17-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
-In-Reply-To: <20221011145312.1624341-1-sashal@kernel.org>
-References: <20221011145312.1624341-1-sashal@kernel.org>
+In-Reply-To: <20221011145233.1624013-1-sashal@kernel.org>
+References: <20221011145233.1624013-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -53,251 +53,141 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+From: Ioannis Angelakopoulos <iangelak@fb.com>
 
-[ Upstream commit a05d3c9153145283ce9c58a1d7a9056fbb85f6a1 ]
+[ Upstream commit ab9a323f9ab576000795285dd7ac6afeedf29e32 ]
 
-[BACKGROUND]
-There is an incident report that, one user hibernated the system, with
-one btrfs on removable device still mounted.
+Introduce four macros that are used to annotate wait events in btrfs code
+with lockdep;
 
-Then by some incident, the btrfs got mounted and modified by another
-system/OS, then back to the hibernated system.
+  1) the btrfs_lockdep_init_map
+  2) the btrfs_lockdep_acquire,
+  3) the btrfs_lockdep_release
+  4) the btrfs_might_wait_for_event macros.
 
-After resuming from the hibernation, new write happened into the victim btrfs.
+The btrfs_lockdep_init_map macro is used to initialize a lockdep map.
 
-Now the fs is completely broken, since the underlying btrfs is no longer
-the same one before the hibernation, and the user lost their data due to
-various transid mismatch.
+The btrfs_lockdep_<acquire,release> macros are used by threads to take
+the lockdep map as readers (shared lock) and release it, respectively.
 
-[REPRODUCER]
-We can emulate the situation using the following small script:
+The btrfs_might_wait_for_event macro is used by threads to take the
+lockdep map as writers (exclusive lock) and release it.
 
-  truncate -s 1G $dev
-  mkfs.btrfs -f $dev
-  mount $dev $mnt
-  fsstress -w -d $mnt -n 500
-  sync
-  xfs_freeze -f $mnt
-  cp $dev $dev.backup
+In general, the lockdep annotation for wait events work as follows:
 
-  # There is no way to mount the same cloned fs on the same system,
-  # as the conflicting fsid will be rejected by btrfs.
-  # Thus here we have to wipe the fs using a different btrfs.
-  mkfs.btrfs -f $dev.backup
+The condition for a wait event can be modified and signaled at the same
+time by multiple threads. These threads hold the lockdep map as readers
+when they enter a context in which blocking would prevent signaling the
+condition. Frequently, this occurs when a thread violates a condition
+(lockdep map acquire), before restoring it and signaling it at a later
+point (lockdep map release).
 
-  dd if=$dev.backup of=$dev bs=1M
-  xfs_freeze -u $mnt
-  fsstress -w -d $mnt -n 20
-  umount $mnt
-  btrfs check $dev
+The threads that block on the wait event take the lockdep map as writers
+(exclusive lock). These threads have to block until all the threads that
+hold the lockdep map as readers signal the condition for the wait event
+and release the lockdep map.
 
-The final fsck will fail due to some tree blocks has incorrect fsid.
+The lockdep annotation is used to warn about potential deadlock scenarios
+that involve the threads that modify and signal the wait event condition
+and threads that block on the wait event. A simple example is illustrated
+below:
 
-This is enough to emulate the problem hit by the unfortunate user.
+Without lockdep:
 
-[ENHANCEMENT]
-Although such case should not be that common, it can still happen from
-time to time.
+TA                                        TB
+cond = false
+                                          lock(A)
+                                          wait_event(w, cond)
+                                          unlock(A)
+lock(A)
+cond = true
+signal(w)
+unlock(A)
 
-From the view of btrfs, we can detect any unexpected super block change,
-and if there is any unexpected change, we just mark the fs read-only,
-and thaw the fs.
+With lockdep:
 
-By this we can limit the damage to minimal, and I hope no one would lose
-their data by this anymore.
+TA                                        TB
+rwsem_acquire_read(lockdep_map)
+cond = false
+                                          lock(A)
+                                          rwsem_acquire(lockdep_map)
+                                          rwsem_release(lockdep_map)
+                                          wait_event(w, cond)
+                                          unlock(A)
+lock(A)
+cond = true
+signal(w)
+unlock(A)
+rwsem_release(lockdep_map)
 
-Suggested-by: Goffredo Baroncelli <kreijack@libero.it>
-Link: https://lore.kernel.org/linux-btrfs/83bf3b4b-7f4c-387a-b286-9251e3991e34@bluemole.com/
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+In the second case, with the lockdep annotation, lockdep would warn about
+an ABBA deadlock, while the first case would just deadlock at some point.
+
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Ioannis Angelakopoulos <iangelak@fb.com>
+Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/disk-io.c | 25 ++++++++++++++-----
- fs/btrfs/disk-io.h |  4 +++-
- fs/btrfs/super.c   | 60 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c |  2 +-
- 4 files changed, 83 insertions(+), 8 deletions(-)
+ fs/btrfs/ctree.h | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f2abd8bfd4a0..8af0d722ab9a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2400,8 +2400,8 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
-  * 		1, 2	2nd and 3rd backup copy
-  * 	       -1	skip bytenr check
-  */
--static int validate_super(struct btrfs_fs_info *fs_info,
--			    struct btrfs_super_block *sb, int mirror_num)
-+int btrfs_validate_super(struct btrfs_fs_info *fs_info,
-+			 struct btrfs_super_block *sb, int mirror_num)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 02d3ee6c7d9b..3ab1219db32e 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1108,6 +1108,51 @@ enum {
+ 	BTRFS_ROOT_RESET_LOCKDEP_CLASS,
+ };
+ 
++/*
++ * Lockdep annotation for wait events.
++ *
++ * @owner:  The struct where the lockdep map is defined
++ * @lock:   The lockdep map corresponding to a wait event
++ *
++ * This macro is used to annotate a wait event. In this case a thread acquires
++ * the lockdep map as writer (exclusive lock) because it has to block until all
++ * the threads that hold the lock as readers signal the condition for the wait
++ * event and release their locks.
++ */
++#define btrfs_might_wait_for_event(owner, lock)					\
++	do {									\
++		rwsem_acquire(&owner->lock##_map, 0, 0, _THIS_IP_);		\
++		rwsem_release(&owner->lock##_map, _THIS_IP_);			\
++	} while (0)
++
++/*
++ * Protection for the resource/condition of a wait event.
++ *
++ * @owner:  The struct where the lockdep map is defined
++ * @lock:   The lockdep map corresponding to a wait event
++ *
++ * Many threads can modify the condition for the wait event at the same time
++ * and signal the threads that block on the wait event. The threads that modify
++ * the condition and do the signaling acquire the lock as readers (shared
++ * lock).
++ */
++#define btrfs_lockdep_acquire(owner, lock)					\
++	rwsem_acquire_read(&owner->lock##_map, 0, 0, _THIS_IP_)
++
++/*
++ * Used after signaling the condition for a wait event to release the lockdep
++ * map held by a reader thread.
++ */
++#define btrfs_lockdep_release(owner, lock)					\
++	rwsem_release(&owner->lock##_map, _THIS_IP_)
++
++/* Initialization of the lockdep map */
++#define btrfs_lockdep_init_map(owner, lock)					\
++	do {									\
++		static struct lock_class_key lock##_key;			\
++		lockdep_init_map(&owner->lock##_map, #lock, &lock##_key, 0);	\
++	} while (0)
++
+ static inline void btrfs_wake_unfinished_drop(struct btrfs_fs_info *fs_info)
  {
- 	u64 nodesize = btrfs_super_nodesize(sb);
- 	u64 sectorsize = btrfs_super_sectorsize(sb);
-@@ -2576,7 +2576,7 @@ static int validate_super(struct btrfs_fs_info *fs_info,
-  */
- static int btrfs_validate_mount_super(struct btrfs_fs_info *fs_info)
- {
--	return validate_super(fs_info, fs_info->super_copy, 0);
-+	return btrfs_validate_super(fs_info, fs_info->super_copy, 0);
- }
- 
- /*
-@@ -2590,7 +2590,7 @@ static int btrfs_validate_write_super(struct btrfs_fs_info *fs_info,
- {
- 	int ret;
- 
--	ret = validate_super(fs_info, sb, -1);
-+	ret = btrfs_validate_super(fs_info, sb, -1);
- 	if (ret < 0)
- 		goto out;
- 	if (!btrfs_supported_super_csum(btrfs_super_csum_type(sb))) {
-@@ -3500,7 +3500,7 @@ static void btrfs_end_super_write(struct bio *bio)
- }
- 
- struct btrfs_super_block *btrfs_read_dev_one_super(struct block_device *bdev,
--						   int copy_num)
-+						   int copy_num, bool drop_cache)
- {
- 	struct btrfs_super_block *super;
- 	struct page *page;
-@@ -3511,6 +3511,19 @@ struct btrfs_super_block *btrfs_read_dev_one_super(struct block_device *bdev,
- 	if (bytenr + BTRFS_SUPER_INFO_SIZE >= i_size_read(bdev->bd_inode))
- 		return ERR_PTR(-EINVAL);
- 
-+	if (drop_cache) {
-+		/* This should only be called with the primary sb. */
-+		ASSERT(copy_num == 0);
-+
-+		/*
-+		 * Drop the page of the primary superblock, so later read will
-+		 * always read from the device.
-+		 */
-+		invalidate_inode_pages2_range(mapping,
-+				bytenr >> PAGE_SHIFT,
-+				(bytenr + BTRFS_SUPER_INFO_SIZE) >> PAGE_SHIFT);
-+	}
-+
- 	page = read_cache_page_gfp(mapping, bytenr >> PAGE_SHIFT, GFP_NOFS);
- 	if (IS_ERR(page))
- 		return ERR_CAST(page);
-@@ -3542,7 +3555,7 @@ struct btrfs_super_block *btrfs_read_dev_super(struct block_device *bdev)
- 	 * later supers, using BTRFS_SUPER_MIRROR_MAX instead
- 	 */
- 	for (i = 0; i < 1; i++) {
--		super = btrfs_read_dev_one_super(bdev, i);
-+		super = btrfs_read_dev_one_super(bdev, i, false);
- 		if (IS_ERR(super))
- 			continue;
- 
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index 182540bdcea0..a1bcd388dfec 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -54,10 +54,12 @@ int __cold open_ctree(struct super_block *sb,
- 	       struct btrfs_fs_devices *fs_devices,
- 	       char *options);
- void __cold close_ctree(struct btrfs_fs_info *fs_info);
-+int btrfs_validate_super(struct btrfs_fs_info *fs_info,
-+			 struct btrfs_super_block *sb, int mirror_num);
- int write_all_supers(struct btrfs_fs_info *fs_info, int max_mirrors);
- struct btrfs_super_block *btrfs_read_dev_super(struct block_device *bdev);
- struct btrfs_super_block *btrfs_read_dev_one_super(struct block_device *bdev,
--						   int copy_num);
-+						   int copy_num, bool drop_cache);
- int btrfs_commit_super(struct btrfs_fs_info *fs_info);
- struct btrfs_root *btrfs_read_tree_root(struct btrfs_root *tree_root,
- 					struct btrfs_key *key);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8bf8cdb62a3a..97b06c24e443 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2400,11 +2400,71 @@ static int btrfs_freeze(struct super_block *sb)
- 	return btrfs_commit_transaction(trans);
- }
- 
-+static int check_dev_super(struct btrfs_device *dev)
-+{
-+	struct btrfs_fs_info *fs_info = dev->fs_info;
-+	struct btrfs_super_block *sb;
-+	int ret = 0;
-+
-+	/* This should be called with fs still frozen. */
-+	ASSERT(test_bit(BTRFS_FS_FROZEN, &fs_info->flags));
-+
-+	/* Missing dev, no need to check. */
-+	if (!dev->bdev)
-+		return 0;
-+
-+	/* Only need to check the primary super block. */
-+	sb = btrfs_read_dev_one_super(dev->bdev, 0, true);
-+	if (IS_ERR(sb))
-+		return PTR_ERR(sb);
-+
-+	/* Btrfs_validate_super() includes fsid check against super->fsid. */
-+	ret = btrfs_validate_super(fs_info, sb, 0);
-+	if (ret < 0)
-+		goto out;
-+
-+	if (btrfs_super_generation(sb) != fs_info->last_trans_committed) {
-+		btrfs_err(fs_info, "transid mismatch, has %llu expect %llu",
-+			btrfs_super_generation(sb),
-+			fs_info->last_trans_committed);
-+		ret = -EUCLEAN;
-+		goto out;
-+	}
-+out:
-+	btrfs_release_disk_super(sb);
-+	return ret;
-+}
-+
- static int btrfs_unfreeze(struct super_block *sb)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
-+	struct btrfs_device *device;
-+	int ret = 0;
- 
-+	/*
-+	 * Make sure the fs is not changed by accident (like hibernation then
-+	 * modified by other OS).
-+	 * If we found anything wrong, we mark the fs error immediately.
-+	 *
-+	 * And since the fs is frozen, no one can modify the fs yet, thus
-+	 * we don't need to hold device_list_mutex.
-+	 */
-+	list_for_each_entry(device, &fs_info->fs_devices->devices, dev_list) {
-+		ret = check_dev_super(device);
-+		if (ret < 0) {
-+			btrfs_handle_fs_error(fs_info, ret,
-+				"super block on devid %llu got modified unexpectedly",
-+				device->devid);
-+			break;
-+		}
-+	}
- 	clear_bit(BTRFS_FS_FROZEN, &fs_info->flags);
-+
-+	/*
-+	 * We still return 0, to allow VFS layer to unfreeze the fs even the
-+	 * above checks failed. Since the fs is either fine or read-only, we're
-+	 * safe to continue, without causing further damage.
-+	 */
- 	return 0;
- }
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d4d89e0738ff..e14bd23cc75c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2069,7 +2069,7 @@ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
- 		struct page *page;
- 		int ret;
- 
--		disk_super = btrfs_read_dev_one_super(bdev, copy_num);
-+		disk_super = btrfs_read_dev_one_super(bdev, copy_num, false);
- 		if (IS_ERR(disk_super))
- 			continue;
- 
+ 	clear_and_wake_up_bit(BTRFS_FS_UNFINISHED_DROPS, &fs_info->flags);
 -- 
 2.35.1
 

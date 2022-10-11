@@ -2,45 +2,46 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B911DC433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:57:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 896EAC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:57:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230382AbiJKO5N (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 10:57:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54502 "EHLO
+        id S231200AbiJKO5e (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 10:57:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44518 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230170AbiJKO4P (ORCPT
+        with ESMTP id S229480AbiJKO4b (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 10:56:15 -0400
+        Tue, 11 Oct 2022 10:56:31 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A9D659DD93;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C888B9C7D9;
         Tue, 11 Oct 2022 07:52:10 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 17BD1611CA;
-        Tue, 11 Oct 2022 14:52:08 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 85E71C433B5;
-        Tue, 11 Oct 2022 14:52:06 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 84E4F61166;
+        Tue, 11 Oct 2022 14:52:10 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 35A3AC433B5;
+        Tue, 11 Oct 2022 14:52:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499927;
-        bh=TlFvzsGM4Nex1avejFrjzErcNggEJVizUEc0EWbwmEE=;
+        s=k20201202; t=1665499930;
+        bh=56MpE/2gqJCki0xuTIRAy8hj5fU5wmOZT9wlOM39ins=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=gyjr+A0elPMBmIJLXxwz8xR/3bTIGSHy9oozGcqb7Lmw89HI8hWqvNaGETyevLFLt
-         pOffDyyxMg1vU59PKCalHvBjl5FFvlZ7td6P6+C17t2BUGW54BN8ia7akTAlCN/+6a
-         6TsB/N+liwNKsD2+k7f72WlU517XqC6wxgVS0v4mtUYVFT3MDzeizGzEAjDIx9n1/p
-         04TpGeWZLnOWSuxU6XMAH8RarBu5bFPukBm5hNpIJ+0CZqgyDnGkFUWDG65TY8CSYe
-         eidC/2xNGqTB/1mIR9M9tgcQKTypvs1mG/nByxp5Aq00sIXQ6Ppce5k3ACXMLTYuZA
-         LZXOBk1V/jmrA==
+        b=UDXCioXfWLrF39PmX9LR7vtuFCbHHJbFREqo/RMD8o5u/I6Nh3UOixQpVhvki3mBL
+         Q1f+/Civ+Uq3qxuCtCaNCTuF3qSKADRQOcmlOMbpgkwnWdDEvasVvUeHl8IpxOCzjJ
+         f+GpcunnBCdS02YbGV6XQQZH59h5LgeMUtZJSCY7P0G7BNU548UegRUEai7SUZCwAZ
+         UyAoqBEWGc0xRqYxiLDc7jU/cEcOuDmqKDz2LTdsL7G0PUFiYcCBWSIyJP4kPcBAIE
+         Zc1AOKhcnmcI9CbMmLlOmD7C3LL95XvuCyftWtb6x9bOJgLatQI9eRRica9fRXV3A9
+         sNKLcqPCILh0Q==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
+Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.19 23/40] btrfs: dump extra info if one free space cache has more bitmaps than it should
-Date:   Tue, 11 Oct 2022 10:51:12 -0400
-Message-Id: <20221011145129.1623487-23-sashal@kernel.org>
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.19 25/40] btrfs: change the lockdep class of free space inode's invalidate_lock
+Date:   Tue, 11 Oct 2022 10:51:14 -0400
+Message-Id: <20221011145129.1623487-25-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20221011145129.1623487-1-sashal@kernel.org>
 References: <20221011145129.1623487-1-sashal@kernel.org>
@@ -52,63 +53,59 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+From: Ioannis Angelakopoulos <iangelak@fb.com>
 
-[ Upstream commit 62cd9d4474282a1eb84f945955c56cbfc42e1ffe ]
+[ Upstream commit 9d7464c87b159bbf763c24faeb7a2dcaac96e4a1 ]
 
-There is an internal report on hitting the following ASSERT() in
-recalculate_thresholds():
+Reinitialize the class of the lockdep map for struct inode's
+mapping->invalidate_lock in load_free_space_cache() function in
+fs/btrfs/free-space-cache.c. This will prevent lockdep from producing
+false positives related to execution paths that make use of free space
+inodes and paths that make use of normal inodes.
 
- 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
+Specifically, with this change lockdep will create separate lock
+dependencies that include the invalidate_lock, in the case that free
+space inodes are used and in the case that normal inodes are used.
 
-Above @max_bitmaps is calculated using the following variables:
+The lockdep class for this lock was first initialized in
+inode_init_always() in fs/inode.c.
 
-- bytes_per_bg
-  8 * 4096 * 4096 (128M) for x86_64/x86.
-
-- block_group->length
-  The length of the block group.
-
-@max_bitmaps is the rounded up value of block_group->length / 128M.
-
-Normally one free space cache should not have more bitmaps than above
-value, but when it happens the ASSERT() can be triggered if
-CONFIG_BTRFS_ASSERT is also enabled.
-
-But the ASSERT() itself won't provide enough info to know which is going
-wrong.
-Is the bg too small thus it only allows one bitmap?
-Or is there something else wrong?
-
-So although I haven't found extra reports or crash dump to do further
-investigation, add the extra info to make it more helpful to debug.
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: Ioannis Angelakopoulos <iangelak@fb.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/free-space-cache.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/free-space-cache.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index b1ae3ba2ca2c..16710d4571da 100644
+index 16710d4571da..d9577f822ba5 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -693,6 +693,12 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+@@ -920,6 +920,8 @@ static int copy_free_space_cache(struct btrfs_block_group *block_group,
+ 	return ret;
+ }
  
- 	max_bitmaps = max_t(u64, max_bitmaps, 1);
++static struct lock_class_key btrfs_free_space_inode_key;
++
+ int load_free_space_cache(struct btrfs_block_group *block_group)
+ {
+ 	struct btrfs_fs_info *fs_info = block_group->fs_info;
+@@ -989,6 +991,14 @@ int load_free_space_cache(struct btrfs_block_group *block_group)
+ 	}
+ 	spin_unlock(&block_group->lock);
  
-+	if (ctl->total_bitmaps > max_bitmaps)
-+		btrfs_err(block_group->fs_info,
-+"invalid free space control: bg start=%llu len=%llu total_bitmaps=%u unit=%u max_bitmaps=%llu bytes_per_bg=%llu",
-+			  block_group->start, block_group->length,
-+			  ctl->total_bitmaps, ctl->unit, max_bitmaps,
-+			  bytes_per_bg);
- 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
- 
- 	/*
++	/*
++	 * Reinitialize the class of struct inode's mapping->invalidate_lock for
++	 * free space inodes to prevent false positives related to locks for normal
++	 * inodes.
++	 */
++	lockdep_set_class(&(&inode->i_data)->invalidate_lock,
++			  &btrfs_free_space_inode_key);
++
+ 	ret = __load_free_space_cache(fs_info->tree_root, inode, &tmp_ctl,
+ 				      path, block_group->start);
+ 	btrfs_free_path(path);
 -- 
 2.35.1
 

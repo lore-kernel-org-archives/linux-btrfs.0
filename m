@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE001C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:52:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8CFFC4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:52:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230086AbiJKOw1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 10:52:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35364 "EHLO
+        id S230123AbiJKOwq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 10:52:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35518 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230016AbiJKOvU (ORCPT
+        with ESMTP id S230125AbiJKOvj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 10:51:20 -0400
+        Tue, 11 Oct 2022 10:51:39 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D090F98CAC;
-        Tue, 11 Oct 2022 07:50:58 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E52739834A;
+        Tue, 11 Oct 2022 07:51:01 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3E19B611CB;
-        Tue, 11 Oct 2022 14:50:57 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C204EC433C1;
-        Tue, 11 Oct 2022 14:50:55 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 823FB611B1;
+        Tue, 11 Oct 2022 14:51:01 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 16439C433C1;
+        Tue, 11 Oct 2022 14:50:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499856;
-        bh=e9OTnvLXO3T6YLDIow2pwUGTs1YW6DDt9WTM+zMjobw=;
+        s=k20201202; t=1665499860;
+        bh=pO9gHWeRi4XCpJEbr35YjEyd2oLIaxjzIdvvbxQBObE=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=FOCYrkDBeQAKXrLLSWPploafToQP1TrZKeWbY4n7DdEEAXWdZQ6LiCDLR6XhHpCoh
-         tiJ5jIt1fhTiV1Rt23oeqGyYmaB6ZVPCZdcCSUPEb8iojZvymzCHG//BCIONBAGWL9
-         cvP+zLN8pWmFxYWePaj+MBWayYSNy3BVgg8gDuX1cnohGX7BNsMgs8PbMkO68nhZAI
-         w5Pv/GJRst9i+bTOGU3+FwaQttO4j0WcFgljiEOKJ1dNnZ3XJB2b1SHTfnk4W/WfVF
-         YIAF1ZeYVapc0h66aHtpFSZEFG0brZzyWRmqTFIBMzGPv2IxCwSutAzrGy1XWTWdcS
-         y//Jtl1soomEQ==
+        b=od9vK6OzfmOfiwz2cccYSNYUey3bXTqt4lSKzVOHHwZZzlf6tc3TNaUDP8YUxo7w1
+         6Ae3JHlfcnuiCWphDrNkD+VT0xqJk4uw2V1uvK63XEpGY4B+J6IyIocP+517vfqwzk
+         EueTpM8ICOP0Lt9BIm9PAWuKeJ3NoD05buH2EvQxxXY8rPQmD3/+CRlkNoE68LG8/l
+         fN8IAo4kwGtRyDOsyey3G8alJaHMwtG4U63+3NFRnJyXh7d+VrywEFqxH4sevZjdDi
+         iYfuZXlLoG72Xg3EPxMlLJd1JRmqYrIqMN+1/toAZuzcMRbozseWNm+Na8Y7LCJNwR
+         4u849ECR5M8tg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
@@ -39,9 +39,9 @@ Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.0 25/46] btrfs: add lockdep annotations for num_writers wait event
-Date:   Tue, 11 Oct 2022 10:49:53 -0400
-Message-Id: <20221011145015.1622882-25-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.0 28/46] btrfs: add lockdep annotations for pending_ordered wait event
+Date:   Tue, 11 Oct 2022 10:49:56 -0400
+Message-Id: <20221011145015.1622882-28-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20221011145015.1622882-1-sashal@kernel.org>
 References: <20221011145015.1622882-1-sashal@kernel.org>
@@ -55,10 +55,20 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Ioannis Angelakopoulos <iangelak@fb.com>
 
-[ Upstream commit e1489b4fe6045a79a5e9c658eed65311977e230a ]
+[ Upstream commit 8b53779eaa98b55f4cccadd4d12b3233e9633140 ]
 
-Annotate the num_writers wait event in fs/btrfs/transaction.c with
-lockdep in order to catch deadlocks involving this wait event.
+In contrast to the num_writers and num_extwriters wait events, the
+condition for the pending ordered wait event is signaled in a different
+context from the wait event itself. The condition signaling occurs in
+btrfs_remove_ordered_extent() in fs/btrfs/ordered-data.c while the wait
+event is implemented in btrfs_commit_transaction() in
+fs/btrfs/transaction.c
+
+Thus the thread signaling the condition has to acquire the lockdep map
+as a reader at the start of btrfs_remove_ordered_extent() and release it
+after it has signaled the condition. In this case some dependencies
+might be left out due to the placement of the annotation, but it is
+better than no annotation at all.
 
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 Signed-off-by: Ioannis Angelakopoulos <iangelak@fb.com>
@@ -66,166 +76,69 @@ Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/ctree.h       |  6 ++++++
- fs/btrfs/disk-io.c     |  2 ++
- fs/btrfs/transaction.c | 38 +++++++++++++++++++++++++++++++++-----
- 3 files changed, 41 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h        | 1 +
+ fs/btrfs/disk-io.c      | 1 +
+ fs/btrfs/ordered-data.c | 3 +++
+ fs/btrfs/transaction.c  | 1 +
+ 4 files changed, 6 insertions(+)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index dfeb7174219e..707e644bab92 100644
+index f8172e269f03..8bd9a6d5ade6 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -1092,6 +1092,12 @@ struct btrfs_fs_info {
- 	/* Updates are not protected by any lock */
- 	struct btrfs_commit_stats commit_stats;
+@@ -1099,6 +1099,7 @@ struct btrfs_fs_info {
+ 	struct lockdep_map btrfs_trans_num_writers_map;
+ 	struct lockdep_map btrfs_trans_num_extwriters_map;
+ 	struct lockdep_map btrfs_state_change_map[4];
++	struct lockdep_map btrfs_trans_pending_ordered_map;
  
-+	/*
-+	 * Annotations for transaction events (structures are empty when
-+	 * compiled without lockdep).
-+	 */
-+	struct lockdep_map btrfs_trans_num_writers_map;
-+
  #ifdef CONFIG_BTRFS_FS_REF_VERIFY
  	spinlock_t ref_verify_lock;
- 	struct rb_root block_tree;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2633137c3e9f..a04b32f7df9d 100644
+index 68c6cb4e9283..393553fdfed6 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2990,6 +2990,8 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
- 	mutex_init(&fs_info->zoned_data_reloc_io_lock);
- 	seqlock_init(&fs_info->profiles_lock);
+@@ -2992,6 +2992,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
  
-+	btrfs_lockdep_init_map(fs_info, btrfs_trans_num_writers);
+ 	btrfs_lockdep_init_map(fs_info, btrfs_trans_num_writers);
+ 	btrfs_lockdep_init_map(fs_info, btrfs_trans_num_extwriters);
++	btrfs_lockdep_init_map(fs_info, btrfs_trans_pending_ordered);
+ 	btrfs_state_lockdep_init_map(fs_info, btrfs_trans_commit_start,
+ 				     BTRFS_LOCKDEP_TRANS_COMMIT_START);
+ 	btrfs_state_lockdep_init_map(fs_info, btrfs_trans_unblocked,
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 1952ac85222c..2a4cb6db42d1 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -525,6 +525,7 @@ void btrfs_remove_ordered_extent(struct btrfs_inode *btrfs_inode,
+ 	struct rb_node *node;
+ 	bool pending;
+ 
++	btrfs_lockdep_acquire(fs_info, btrfs_trans_pending_ordered);
+ 	/* This is paired with btrfs_add_ordered_extent. */
+ 	spin_lock(&btrfs_inode->lock);
+ 	btrfs_mod_outstanding_extents(btrfs_inode, -1);
+@@ -580,6 +581,8 @@ void btrfs_remove_ordered_extent(struct btrfs_inode *btrfs_inode,
+ 		}
+ 	}
+ 
++	btrfs_lockdep_release(fs_info, btrfs_trans_pending_ordered);
 +
- 	INIT_LIST_HEAD(&fs_info->dirty_cowonly_roots);
- 	INIT_LIST_HEAD(&fs_info->space_info);
- 	INIT_LIST_HEAD(&fs_info->tree_mod_seq_list);
+ 	spin_lock(&root->ordered_extent_lock);
+ 	list_del_init(&entry->root_extent_list);
+ 	root->nr_ordered_extents--;
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 0bec10740ad3..b3cb54d852f8 100644
+index d3576f84020d..6e3b2cb6a04a 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -313,6 +313,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 		atomic_inc(&cur_trans->num_writers);
- 		extwriter_counter_inc(cur_trans, type);
- 		spin_unlock(&fs_info->trans_lock);
-+		btrfs_lockdep_acquire(fs_info, btrfs_trans_num_writers);
- 		return 0;
- 	}
- 	spin_unlock(&fs_info->trans_lock);
-@@ -334,16 +335,20 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 	if (!cur_trans)
- 		return -ENOMEM;
+@@ -2310,6 +2310,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	 * transaction. Otherwise if this transaction commits before the ordered
+ 	 * extents complete we lose logged data after a power failure.
+ 	 */
++	btrfs_might_wait_for_event(fs_info, btrfs_trans_pending_ordered);
+ 	wait_event(cur_trans->pending_wait,
+ 		   atomic_read(&cur_trans->pending_ordered) == 0);
  
-+	btrfs_lockdep_acquire(fs_info, btrfs_trans_num_writers);
-+
- 	spin_lock(&fs_info->trans_lock);
- 	if (fs_info->running_transaction) {
- 		/*
- 		 * someone started a transaction after we unlocked.  Make sure
- 		 * to redo the checks above
- 		 */
-+		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
- 		kfree(cur_trans);
- 		goto loop;
- 	} else if (BTRFS_FS_ERROR(fs_info)) {
- 		spin_unlock(&fs_info->trans_lock);
-+		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
- 		kfree(cur_trans);
- 		return -EROFS;
- 	}
-@@ -1022,6 +1027,9 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	extwriter_counter_dec(cur_trans, trans->type);
- 
- 	cond_wake_up(&cur_trans->writer_wait);
-+
-+	btrfs_lockdep_release(info, btrfs_trans_num_writers);
-+
- 	btrfs_put_transaction(cur_trans);
- 
- 	if (current->journal_info == trans)
-@@ -1994,6 +2002,12 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans, int err)
- 	if (cur_trans == fs_info->running_transaction) {
- 		cur_trans->state = TRANS_STATE_COMMIT_DOING;
- 		spin_unlock(&fs_info->trans_lock);
-+
-+		/*
-+		 * The thread has already released the lockdep map as reader
-+		 * already in btrfs_commit_transaction().
-+		 */
-+		btrfs_might_wait_for_event(fs_info, btrfs_trans_num_writers);
- 		wait_event(cur_trans->writer_wait,
- 			   atomic_read(&cur_trans->num_writers) == 1);
- 
-@@ -2222,7 +2236,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 
- 			btrfs_put_transaction(prev_trans);
- 			if (ret)
--				goto cleanup_transaction;
-+				goto lockdep_release;
- 		} else {
- 			spin_unlock(&fs_info->trans_lock);
- 		}
-@@ -2236,7 +2250,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		 */
- 		if (BTRFS_FS_ERROR(fs_info)) {
- 			ret = -EROFS;
--			goto cleanup_transaction;
-+			goto lockdep_release;
- 		}
- 	}
- 
-@@ -2250,19 +2264,21 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 
- 	ret = btrfs_start_delalloc_flush(fs_info);
- 	if (ret)
--		goto cleanup_transaction;
-+		goto lockdep_release;
- 
- 	ret = btrfs_run_delayed_items(trans);
- 	if (ret)
--		goto cleanup_transaction;
-+		goto lockdep_release;
- 
- 	wait_event(cur_trans->writer_wait,
- 		   extwriter_counter_read(cur_trans) == 0);
- 
- 	/* some pending stuffs might be added after the previous flush. */
- 	ret = btrfs_run_delayed_items(trans);
--	if (ret)
-+	if (ret) {
-+		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
- 		goto cleanup_transaction;
-+	}
- 
- 	btrfs_wait_delalloc_flush(fs_info);
- 
-@@ -2284,6 +2300,14 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	add_pending_snapshot(trans);
- 	cur_trans->state = TRANS_STATE_COMMIT_DOING;
- 	spin_unlock(&fs_info->trans_lock);
-+
-+	/*
-+	 * The thread has started/joined the transaction thus it holds the
-+	 * lockdep map as a reader. It has to release it before acquiring the
-+	 * lockdep map as a writer.
-+	 */
-+	btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
-+	btrfs_might_wait_for_event(fs_info, btrfs_trans_num_writers);
- 	wait_event(cur_trans->writer_wait,
- 		   atomic_read(&cur_trans->num_writers) == 1);
- 
-@@ -2515,6 +2539,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	cleanup_transaction(trans, ret);
- 
- 	return ret;
-+
-+lockdep_release:
-+	btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
-+	goto cleanup_transaction;
- }
- 
- /*
 -- 
 2.35.1
 

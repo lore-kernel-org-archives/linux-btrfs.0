@@ -2,46 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7C439C43217
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:42:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3921C433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:43:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230078AbiJKPmk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 11:42:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33512 "EHLO
+        id S230058AbiJKPnP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 11:43:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38968 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229614AbiJKPmO (ORCPT
+        with ESMTP id S230009AbiJKPmi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 11:42:14 -0400
+        Tue, 11 Oct 2022 11:42:38 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01D2CAD99F;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01C6FABD55;
         Tue, 11 Oct 2022 08:32:16 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 731AEB8162A;
-        Tue, 11 Oct 2022 14:53:00 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 49766C433D6;
-        Tue, 11 Oct 2022 14:52:58 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 6025FB81627;
+        Tue, 11 Oct 2022 14:53:08 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 63F4AC4347C;
+        Tue, 11 Oct 2022 14:53:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499979;
-        bh=b7UHDwpP1svXAaw8vOJjZ9cu4ApBTC5OFE1tj6lCgNc=;
+        s=k20201202; t=1665499987;
+        bh=1pVX9rksVRwtq2NovXP4JcEYv/3m4lpwbJLpsdXjXAc=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=A4tBvr/PBXQImSW/aSAwAF0xEQpnRmh+Otu2PzrMHwnpIehxEvAzVXZRqvKZn9IQn
-         W4/U2lWl3JoSSJxXTDaQYh7Ou7qq4sYHdEdIBsvpgt3RKsDyIw2m5/dH7J8D7yq4Pl
-         53VRLDTuoJ3MbarQqZGyvwwx02Px1Rrvd1jFc1yZcCxlBwZ8MvMguqWXxlYEgHcVAZ
-         gs0YZMWYkOmUnN0H7g+gqjM3jXBEfsG+5jAAm3dbBbPU8wRRmUvOTzgz9MyLb228CW
-         BZdFT99gZZZYwdiOhOPkvn1e9jIpAr1mItCXZ35O8jGYk9a3L0uwbgxqQ5Xhc7cQOK
-         oiUPYgQ+qHecw==
+        b=f5LXIUzyKkVfBEiPfdYMeVxCOMJHNnQZH0TUyCYzwnf2CJV9QYu5Gl6pgrhJiud1E
+         wUFsIThfP+qI1BGK0863VNrFUXh0gZuxzp5elMmXUViX2omgfv/v4YRxyM1WLnjgQJ
+         wAIbIwrJAUqKjHF1RaxC9fXiqkdmBsYuQAaRFcBLLbrUWt7vz2IVLlfKrGd2hOHA45
+         y9pg/w/5MZBNXbPTPldIvRYqyZP4TaVu9V1OlvyKbgR4V8mVH9N4ShDihbYvbLVsKb
+         Cjrj8zc90rCrusv89ayHywt/sDzLywpocLkV6+Wyh8EA8nRpEjPdSxP+Lxld1gnJ/h
+         ivco3v9O7zCNQ==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
+Cc:     Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.15 17/26] btrfs: add macros for annotating wait events with lockdep
-Date:   Tue, 11 Oct 2022 10:52:24 -0400
-Message-Id: <20221011145233.1624013-17-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.15 23/26] btrfs: separate out the eb and extent state leak helpers
+Date:   Tue, 11 Oct 2022 10:52:30 -0400
+Message-Id: <20221011145233.1624013-23-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20221011145233.1624013-1-sashal@kernel.org>
 References: <20221011145233.1624013-1-sashal@kernel.org>
@@ -53,141 +52,142 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Ioannis Angelakopoulos <iangelak@fb.com>
+From: Josef Bacik <josef@toxicpanda.com>
 
-[ Upstream commit ab9a323f9ab576000795285dd7ac6afeedf29e32 ]
+[ Upstream commit a40246e8afc0af3ffdee21854fb755c9364b8346 ]
 
-Introduce four macros that are used to annotate wait events in btrfs code
-with lockdep;
+Currently we have the add/del functions generic so that we can use them
+for both extent buffers and extent states.  We want to separate this
+code however, so separate these helpers into per-object helpers in
+anticipation of the split.
 
-  1) the btrfs_lockdep_init_map
-  2) the btrfs_lockdep_acquire,
-  3) the btrfs_lockdep_release
-  4) the btrfs_might_wait_for_event macros.
-
-The btrfs_lockdep_init_map macro is used to initialize a lockdep map.
-
-The btrfs_lockdep_<acquire,release> macros are used by threads to take
-the lockdep map as readers (shared lock) and release it, respectively.
-
-The btrfs_might_wait_for_event macro is used by threads to take the
-lockdep map as writers (exclusive lock) and release it.
-
-In general, the lockdep annotation for wait events work as follows:
-
-The condition for a wait event can be modified and signaled at the same
-time by multiple threads. These threads hold the lockdep map as readers
-when they enter a context in which blocking would prevent signaling the
-condition. Frequently, this occurs when a thread violates a condition
-(lockdep map acquire), before restoring it and signaling it at a later
-point (lockdep map release).
-
-The threads that block on the wait event take the lockdep map as writers
-(exclusive lock). These threads have to block until all the threads that
-hold the lockdep map as readers signal the condition for the wait event
-and release the lockdep map.
-
-The lockdep annotation is used to warn about potential deadlock scenarios
-that involve the threads that modify and signal the wait event condition
-and threads that block on the wait event. A simple example is illustrated
-below:
-
-Without lockdep:
-
-TA                                        TB
-cond = false
-                                          lock(A)
-                                          wait_event(w, cond)
-                                          unlock(A)
-lock(A)
-cond = true
-signal(w)
-unlock(A)
-
-With lockdep:
-
-TA                                        TB
-rwsem_acquire_read(lockdep_map)
-cond = false
-                                          lock(A)
-                                          rwsem_acquire(lockdep_map)
-                                          rwsem_release(lockdep_map)
-                                          wait_event(w, cond)
-                                          unlock(A)
-lock(A)
-cond = true
-signal(w)
-unlock(A)
-rwsem_release(lockdep_map)
-
-In the second case, with the lockdep annotation, lockdep would warn about
-an ABBA deadlock, while the first case would just deadlock at some point.
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Ioannis Angelakopoulos <iangelak@fb.com>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/ctree.h | 45 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 45 insertions(+)
+ fs/btrfs/extent_io.c | 58 +++++++++++++++++++++++++++++---------------
+ 1 file changed, 38 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 02d3ee6c7d9b..3ab1219db32e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1108,6 +1108,51 @@ enum {
- 	BTRFS_ROOT_RESET_LOCKDEP_CLASS,
- };
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 7bd704779a99..eef6e38915ab 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -43,25 +43,42 @@ static inline bool extent_state_in_tree(const struct extent_state *state)
+ static LIST_HEAD(states);
+ static DEFINE_SPINLOCK(leak_lock);
  
-+/*
-+ * Lockdep annotation for wait events.
-+ *
-+ * @owner:  The struct where the lockdep map is defined
-+ * @lock:   The lockdep map corresponding to a wait event
-+ *
-+ * This macro is used to annotate a wait event. In this case a thread acquires
-+ * the lockdep map as writer (exclusive lock) because it has to block until all
-+ * the threads that hold the lock as readers signal the condition for the wait
-+ * event and release their locks.
-+ */
-+#define btrfs_might_wait_for_event(owner, lock)					\
-+	do {									\
-+		rwsem_acquire(&owner->lock##_map, 0, 0, _THIS_IP_);		\
-+		rwsem_release(&owner->lock##_map, _THIS_IP_);			\
-+	} while (0)
+-static inline void btrfs_leak_debug_add(spinlock_t *lock,
+-					struct list_head *new,
+-					struct list_head *head)
++static inline void btrfs_leak_debug_add_eb(struct extent_buffer *eb)
++{
++	struct btrfs_fs_info *fs_info = eb->fs_info;
++	unsigned long flags;
 +
-+/*
-+ * Protection for the resource/condition of a wait event.
-+ *
-+ * @owner:  The struct where the lockdep map is defined
-+ * @lock:   The lockdep map corresponding to a wait event
-+ *
-+ * Many threads can modify the condition for the wait event at the same time
-+ * and signal the threads that block on the wait event. The threads that modify
-+ * the condition and do the signaling acquire the lock as readers (shared
-+ * lock).
-+ */
-+#define btrfs_lockdep_acquire(owner, lock)					\
-+	rwsem_acquire_read(&owner->lock##_map, 0, 0, _THIS_IP_)
++	spin_lock_irqsave(&fs_info->eb_leak_lock, flags);
++	list_add(&eb->leak_list, &fs_info->allocated_ebs);
++	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
++}
 +
-+/*
-+ * Used after signaling the condition for a wait event to release the lockdep
-+ * map held by a reader thread.
-+ */
-+#define btrfs_lockdep_release(owner, lock)					\
-+	rwsem_release(&owner->lock##_map, _THIS_IP_)
-+
-+/* Initialization of the lockdep map */
-+#define btrfs_lockdep_init_map(owner, lock)					\
-+	do {									\
-+		static struct lock_class_key lock##_key;			\
-+		lockdep_init_map(&owner->lock##_map, #lock, &lock##_key, 0);	\
-+	} while (0)
-+
- static inline void btrfs_wake_unfinished_drop(struct btrfs_fs_info *fs_info)
++static inline void btrfs_leak_debug_add_state(struct extent_state *state)
  {
- 	clear_and_wake_up_bit(BTRFS_FS_UNFINISHED_DROPS, &fs_info->flags);
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(lock, flags);
+-	list_add(new, head);
+-	spin_unlock_irqrestore(lock, flags);
++	spin_lock_irqsave(&leak_lock, flags);
++	list_add(&state->leak_list, &states);
++	spin_unlock_irqrestore(&leak_lock, flags);
++}
++
++static inline void btrfs_leak_debug_del_eb(struct extent_buffer *eb)
++{
++	struct btrfs_fs_info *fs_info = eb->fs_info;
++	unsigned long flags;
++
++	spin_lock_irqsave(&fs_info->eb_leak_lock, flags);
++	list_del(&eb->leak_list);
++	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
+ }
+ 
+-static inline void btrfs_leak_debug_del(spinlock_t *lock,
+-					struct list_head *entry)
++static inline void btrfs_leak_debug_del_state(struct extent_state *state)
+ {
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(lock, flags);
+-	list_del(entry);
+-	spin_unlock_irqrestore(lock, flags);
++	spin_lock_irqsave(&leak_lock, flags);
++	list_del(&state->leak_list);
++	spin_unlock_irqrestore(&leak_lock, flags);
+ }
+ 
+ void btrfs_extent_buffer_leak_debug_check(struct btrfs_fs_info *fs_info)
+@@ -124,9 +141,11 @@ static inline void __btrfs_debug_check_extent_io_range(const char *caller,
+ 	}
+ }
+ #else
+-#define btrfs_leak_debug_add(lock, new, head)	do {} while (0)
+-#define btrfs_leak_debug_del(lock, entry)	do {} while (0)
+-#define btrfs_extent_state_leak_debug_check()	do {} while (0)
++#define btrfs_leak_debug_add_eb(eb)			do {} while (0)
++#define btrfs_leak_debug_add_state(state)		do {} while (0)
++#define btrfs_leak_debug_del_eb(eb)			do {} while (0)
++#define btrfs_leak_debug_del_state(state)		do {} while (0)
++#define btrfs_extent_state_leak_debug_check()		do {} while (0)
+ #define btrfs_debug_check_extent_io_range(c, s, e)	do {} while (0)
+ #endif
+ 
+@@ -343,7 +362,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
+ 	state->state = 0;
+ 	state->failrec = NULL;
+ 	RB_CLEAR_NODE(&state->rb_node);
+-	btrfs_leak_debug_add(&leak_lock, &state->leak_list, &states);
++	btrfs_leak_debug_add_state(state);
+ 	refcount_set(&state->refs, 1);
+ 	init_waitqueue_head(&state->wq);
+ 	trace_alloc_extent_state(state, mask, _RET_IP_);
+@@ -356,7 +375,7 @@ void free_extent_state(struct extent_state *state)
+ 		return;
+ 	if (refcount_dec_and_test(&state->refs)) {
+ 		WARN_ON(extent_state_in_tree(state));
+-		btrfs_leak_debug_del(&leak_lock, &state->leak_list);
++		btrfs_leak_debug_del_state(state);
+ 		trace_free_extent_state(state, _RET_IP_);
+ 		kmem_cache_free(extent_state_cache, state);
+ 	}
+@@ -5830,7 +5849,7 @@ static void btrfs_release_extent_buffer_pages(struct extent_buffer *eb)
+ static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
+ {
+ 	btrfs_release_extent_buffer_pages(eb);
+-	btrfs_leak_debug_del(&eb->fs_info->eb_leak_lock, &eb->leak_list);
++	btrfs_leak_debug_del_eb(eb);
+ 	__free_extent_buffer(eb);
+ }
+ 
+@@ -5847,8 +5866,7 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
+ 	eb->bflags = 0;
+ 	init_rwsem(&eb->lock);
+ 
+-	btrfs_leak_debug_add(&fs_info->eb_leak_lock, &eb->leak_list,
+-			     &fs_info->allocated_ebs);
++	btrfs_leak_debug_add_eb(eb);
+ 	INIT_LIST_HEAD(&eb->release_list);
+ 
+ 	spin_lock_init(&eb->refs_lock);
+@@ -6294,7 +6312,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
+ 			spin_unlock(&eb->refs_lock);
+ 		}
+ 
+-		btrfs_leak_debug_del(&eb->fs_info->eb_leak_lock, &eb->leak_list);
++		btrfs_leak_debug_del_eb(eb);
+ 		/* Should be safe to release our pages at this point */
+ 		btrfs_release_extent_buffer_pages(eb);
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
 -- 
 2.35.1
 

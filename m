@@ -2,192 +2,147 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3921C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:43:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51FC5C433F5
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:51:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230058AbiJKPnP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 11:43:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38968 "EHLO
+        id S230113AbiJKPvv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 11:51:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55682 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230009AbiJKPmi (ORCPT
+        with ESMTP id S230097AbiJKPvc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 11:42:38 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01C6FABD55;
-        Tue, 11 Oct 2022 08:32:16 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 6025FB81627;
-        Tue, 11 Oct 2022 14:53:08 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 63F4AC4347C;
-        Tue, 11 Oct 2022 14:53:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499987;
-        bh=1pVX9rksVRwtq2NovXP4JcEYv/3m4lpwbJLpsdXjXAc=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=f5LXIUzyKkVfBEiPfdYMeVxCOMJHNnQZH0TUyCYzwnf2CJV9QYu5Gl6pgrhJiud1E
-         wUFsIThfP+qI1BGK0863VNrFUXh0gZuxzp5elMmXUViX2omgfv/v4YRxyM1WLnjgQJ
-         wAIbIwrJAUqKjHF1RaxC9fXiqkdmBsYuQAaRFcBLLbrUWt7vz2IVLlfKrGd2hOHA45
-         y9pg/w/5MZBNXbPTPldIvRYqyZP4TaVu9V1OlvyKbgR4V8mVH9N4ShDihbYvbLVsKb
-         Cjrj8zc90rCrusv89ayHywt/sDzLywpocLkV6+Wyh8EA8nRpEjPdSxP+Lxld1gnJ/h
-         ivco3v9O7zCNQ==
-From:   Sasha Levin <sashal@kernel.org>
-To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.15 23/26] btrfs: separate out the eb and extent state leak helpers
-Date:   Tue, 11 Oct 2022 10:52:30 -0400
-Message-Id: <20221011145233.1624013-23-sashal@kernel.org>
-X-Mailer: git-send-email 2.35.1
-In-Reply-To: <20221011145233.1624013-1-sashal@kernel.org>
-References: <20221011145233.1624013-1-sashal@kernel.org>
+        Tue, 11 Oct 2022 11:51:32 -0400
+Received: from mail-io1-xd2d.google.com (mail-io1-xd2d.google.com [IPv6:2607:f8b0:4864:20::d2d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DB1D92A2
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 08:47:46 -0700 (PDT)
+Received: by mail-io1-xd2d.google.com with SMTP id o65so11164844iof.4
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 08:47:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=eg7NZ/gvF36cOS9+OajFvVi8wwVoxnQgu+EK7dzNVOc=;
+        b=f87qOrGhU0qVZayOTG0AVB6wo4cH38tdD0T1DPAOyhQh+XGygouQEgyFye8nL71C3Z
+         GeaJL0qCHje7gLmnX9aRGQKwKx8SVJTywHK1PytEVyskDm6ya8I0r7i299Fa+noDw99N
+         FYUUsylKPt3DZ3Ub8JLxKAhTD4ur8vLaClhhM=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=eg7NZ/gvF36cOS9+OajFvVi8wwVoxnQgu+EK7dzNVOc=;
+        b=Gh9bzDhN1T1Zwwyo3n/M6IpouC2sX2GA7HiV0CJ0W28ro8lj2Ctv+yfrnthvHPkegK
+         JqOssbOvribXEc6G8OjyXGB5KMmkFLkNAdItne7BrdXlS4763hGNPhhBAKOcH6brq8jE
+         mYy4wPN2KY4Rr+VmjNfdtbyfkFokVnZt5S4xSLqS8dpfu4hcv4Eodz7Ze23T6/wco9Y5
+         oYH0pLRT873/UdjMylbA9Gp09umeVGgkDPYI0rOZ3Ad3bLt8hZIY1+29P6sXD78PPjxs
+         ClGMgaIgVn0Np75qH2JvYiU9nI83IWseFjYx4nD3ApneH+BWMO9bBcvPqvY2RC2GX7i5
+         l8nQ==
+X-Gm-Message-State: ACrzQf0Sjxe9dFeWuBuG6gctliBTXERCFaM0sfWpW0Nib0D2iL8/TWqE
+        5AAu/NrSv8De7/XL3QmpqU6lcw==
+X-Google-Smtp-Source: AMsMyM6KAFSMVdq1HEUo+Ua9Le3UYuS8JkiiBH3iaOwbivmWIIzpArnmNC4BY8CcMzJ3R6z2aua/Bg==
+X-Received: by 2002:a05:6638:3492:b0:363:b821:3831 with SMTP id t18-20020a056638349200b00363b8213831mr6038497jal.157.1665503266342;
+        Tue, 11 Oct 2022 08:47:46 -0700 (PDT)
+Received: from sjg1.roam.corp.google.com (c-67-190-102-125.hsd1.co.comcast.net. [67.190.102.125])
+        by smtp.gmail.com with ESMTPSA id r12-20020a922a0c000000b002f9b55e7e92sm4988680ile.0.2022.10.11.08.47.44
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 11 Oct 2022 08:47:45 -0700 (PDT)
+From:   Simon Glass <sjg@chromium.org>
+To:     U-Boot Mailing List <u-boot@lists.denx.de>
+Cc:     Simon Glass <sjg@chromium.org>,
+        Artem Lapkin <email2tema@gmail.com>,
+        Daniel Golle <daniel@makrotopia.org>,
+        Heinrich Schuchardt <xypron.glpk@gmx.de>,
+        Jerry Van Baren <vanbaren@cideas.com>,
+        John Keeping <john@metanate.com>,
+        =?UTF-8?q?Marek=20Beh=C3=BAn?= <kabel@kernel.org>,
+        Marek Vasut <marex@denx.de>,
+        =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
+        Patrick Delaunay <patrick.delaunay@foss.st.com>,
+        Pavel Herrmann <morpheus.ibis@gmail.com>,
+        Philippe Reynes <philippe.reynes@softathome.com>,
+        Qu Wenruo <wqu@suse.com>, Ramon Fried <rfried.dev@gmail.com>,
+        Stefan Roese <sr@denx.de>, linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 00/14] vbe: Support device tree fixups for OS requests
+Date:   Tue, 11 Oct 2022 09:47:06 -0600
+Message-Id: <20221011154720.550320-1-sjg@chromium.org>
+X-Mailer: git-send-email 2.38.0.rc1.362.ged0d419d3c-goog
 MIME-Version: 1.0
-X-stable: review
-X-Patchwork-Hint: Ignore
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Josef Bacik <josef@toxicpanda.com>
+VBE provides the ability for an OS to request that information be passed
+to it when it is booted. This is added into the /chosen node, in addition
+to things like the bootargs for Linux, for example.
 
-[ Upstream commit a40246e8afc0af3ffdee21854fb755c9364b8346 ]
+VBE's OS requests are intended to replace the need for the EFI 'boot-time
+services'. This works via a 'stub' which runs before Linux, collects the
+information from U-Boot, writes it to the device tree (mostly) and then
+jumps to Linux with the updated device tree.
 
-Currently we have the add/del functions generic so that we can use them
-for both extent buffers and extent states.  We want to separate this
-code however, so separate these helpers into per-object helpers in
-anticipation of the split.
+Rather than just jumping into Linux and waiting for it to request things
+from U-Boot, we can look at the requests in the FIT and process them
+before jumping to Linux. This is simpler and easier to test. It is also
+more deterministic, since we can tell whether we might lack something
+needed by Linux, before jumping to it.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- fs/btrfs/extent_io.c | 58 +++++++++++++++++++++++++++++---------------
- 1 file changed, 38 insertions(+), 20 deletions(-)
+This series adds initial support for OS requests, with just a few simple
+ones provided. Further work will expand these out.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7bd704779a99..eef6e38915ab 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -43,25 +43,42 @@ static inline bool extent_state_in_tree(const struct extent_state *state)
- static LIST_HEAD(states);
- static DEFINE_SPINLOCK(leak_lock);
- 
--static inline void btrfs_leak_debug_add(spinlock_t *lock,
--					struct list_head *new,
--					struct list_head *head)
-+static inline void btrfs_leak_debug_add_eb(struct extent_buffer *eb)
-+{
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&fs_info->eb_leak_lock, flags);
-+	list_add(&eb->leak_list, &fs_info->allocated_ebs);
-+	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
-+}
-+
-+static inline void btrfs_leak_debug_add_state(struct extent_state *state)
- {
- 	unsigned long flags;
- 
--	spin_lock_irqsave(lock, flags);
--	list_add(new, head);
--	spin_unlock_irqrestore(lock, flags);
-+	spin_lock_irqsave(&leak_lock, flags);
-+	list_add(&state->leak_list, &states);
-+	spin_unlock_irqrestore(&leak_lock, flags);
-+}
-+
-+static inline void btrfs_leak_debug_del_eb(struct extent_buffer *eb)
-+{
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&fs_info->eb_leak_lock, flags);
-+	list_del(&eb->leak_list);
-+	spin_unlock_irqrestore(&fs_info->eb_leak_lock, flags);
- }
- 
--static inline void btrfs_leak_debug_del(spinlock_t *lock,
--					struct list_head *entry)
-+static inline void btrfs_leak_debug_del_state(struct extent_state *state)
- {
- 	unsigned long flags;
- 
--	spin_lock_irqsave(lock, flags);
--	list_del(entry);
--	spin_unlock_irqrestore(lock, flags);
-+	spin_lock_irqsave(&leak_lock, flags);
-+	list_del(&state->leak_list);
-+	spin_unlock_irqrestore(&leak_lock, flags);
- }
- 
- void btrfs_extent_buffer_leak_debug_check(struct btrfs_fs_info *fs_info)
-@@ -124,9 +141,11 @@ static inline void __btrfs_debug_check_extent_io_range(const char *caller,
- 	}
- }
- #else
--#define btrfs_leak_debug_add(lock, new, head)	do {} while (0)
--#define btrfs_leak_debug_del(lock, entry)	do {} while (0)
--#define btrfs_extent_state_leak_debug_check()	do {} while (0)
-+#define btrfs_leak_debug_add_eb(eb)			do {} while (0)
-+#define btrfs_leak_debug_add_state(state)		do {} while (0)
-+#define btrfs_leak_debug_del_eb(eb)			do {} while (0)
-+#define btrfs_leak_debug_del_state(state)		do {} while (0)
-+#define btrfs_extent_state_leak_debug_check()		do {} while (0)
- #define btrfs_debug_check_extent_io_range(c, s, e)	do {} while (0)
- #endif
- 
-@@ -343,7 +362,7 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
- 	state->state = 0;
- 	state->failrec = NULL;
- 	RB_CLEAR_NODE(&state->rb_node);
--	btrfs_leak_debug_add(&leak_lock, &state->leak_list, &states);
-+	btrfs_leak_debug_add_state(state);
- 	refcount_set(&state->refs, 1);
- 	init_waitqueue_head(&state->wq);
- 	trace_alloc_extent_state(state, mask, _RET_IP_);
-@@ -356,7 +375,7 @@ void free_extent_state(struct extent_state *state)
- 		return;
- 	if (refcount_dec_and_test(&state->refs)) {
- 		WARN_ON(extent_state_in_tree(state));
--		btrfs_leak_debug_del(&leak_lock, &state->leak_list);
-+		btrfs_leak_debug_del_state(state);
- 		trace_free_extent_state(state, _RET_IP_);
- 		kmem_cache_free(extent_state_cache, state);
- 	}
-@@ -5830,7 +5849,7 @@ static void btrfs_release_extent_buffer_pages(struct extent_buffer *eb)
- static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
- {
- 	btrfs_release_extent_buffer_pages(eb);
--	btrfs_leak_debug_del(&eb->fs_info->eb_leak_lock, &eb->leak_list);
-+	btrfs_leak_debug_del_eb(eb);
- 	__free_extent_buffer(eb);
- }
- 
-@@ -5847,8 +5866,7 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
- 	eb->bflags = 0;
- 	init_rwsem(&eb->lock);
- 
--	btrfs_leak_debug_add(&fs_info->eb_leak_lock, &eb->leak_list,
--			     &fs_info->allocated_ebs);
-+	btrfs_leak_debug_add_eb(eb);
- 	INIT_LIST_HEAD(&eb->release_list);
- 
- 	spin_lock_init(&eb->refs_lock);
-@@ -6294,7 +6312,7 @@ static int release_extent_buffer(struct extent_buffer *eb)
- 			spin_unlock(&eb->refs_lock);
- 		}
- 
--		btrfs_leak_debug_del(&eb->fs_info->eb_leak_lock, &eb->leak_list);
-+		btrfs_leak_debug_del_eb(eb);
- 		/* Should be safe to release our pages at this point */
- 		btrfs_release_extent_buffer_pages(eb);
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+Changes in v2:
+- Add new patch to update docs about oftree_from_fdt()
+
+Simon Glass (14):
+  bootm: Change incorrect 'unsupported' error
+  bootm: Avoid returning error codes from command
+  bootm: Drop #ifdef from do_bootm()
+  boot: Correct handling of addresses in boot_relocate_fdt()
+  fs: Quieten down the filesystems more
+  fdt: Show a message when the working FDT changes
+  bootstd: Move VBE setup into a shared function
+  sandbox: Support FDT fixups
+  boot: Pass the correct FDT to the EVT_FT_FIXUP event
+  boot: Tidy up logging and naming in vbe_simple
+  test: Move common FIT code into a separate fit_util file
+  vbe: Add fixups for a basic set of OS requests
+  dm: core: Update docs about oftree_from_fdt()
+  vbe: Add a test for VBE device tree fixups
+
+ arch/sandbox/lib/bootm.c              |  17 ++
+ boot/Makefile                         |   2 +-
+ boot/bootm.c                          |   2 +-
+ boot/image-fdt.c                      |  37 ++--
+ boot/vbe_fixup.c                      | 233 ++++++++++++++++++++++++++
+ boot/vbe_simple.c                     |  16 +-
+ cmd/bootm.c                           |  25 +--
+ cmd/fdt.c                             |   1 +
+ configs/sandbox_flattree_defconfig    |   2 +-
+ disk/part_efi.c                       |  15 +-
+ doc/develop/driver-model/livetree.rst |   2 +-
+ doc/develop/vbe.rst                   |   3 +-
+ doc/usage/cmd/fdt.rst                 |   1 +
+ fs/btrfs/disk-io.c                    |   7 +-
+ fs/ext4/ext4_common.c                 |   2 +-
+ fs/fs_internal.c                      |   3 +-
+ include/dm/ofnode.h                   |   3 +
+ test/boot/Makefile                    |   1 +
+ test/boot/bootflow.c                  |   2 +
+ test/boot/bootstd_common.c            |  49 ++++++
+ test/boot/bootstd_common.h            |  16 ++
+ test/boot/vbe_fixup.c                 |  59 +++++++
+ test/boot/vbe_simple.c                |  34 +---
+ test/cmd/fdt.c                        |  11 +-
+ test/py/tests/fit_util.py             |  93 ++++++++++
+ test/py/tests/test_event_dump.py      |   1 +
+ test/py/tests/test_fit.py             |  79 +--------
+ test/py/tests/test_vbe.py             | 123 ++++++++++++++
+ 28 files changed, 684 insertions(+), 155 deletions(-)
+ create mode 100644 boot/vbe_fixup.c
+ create mode 100644 test/boot/vbe_fixup.c
+ create mode 100644 test/py/tests/fit_util.py
+ create mode 100644 test/py/tests/test_vbe.py
+
 -- 
-2.35.1
+2.38.0.rc1.362.ged0d419d3c-goog
 

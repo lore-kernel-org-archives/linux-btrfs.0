@@ -2,48 +2,47 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49C7BC43219
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:00:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B641C43217
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 15:00:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230484AbiJKPAS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 11:00:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55278 "EHLO
+        id S231126AbiJKPAU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 11:00:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54912 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231285AbiJKO6p (ORCPT
+        with ESMTP id S231377AbiJKO65 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 10:58:45 -0400
+        Tue, 11 Oct 2022 10:58:57 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA2A09E6BD;
-        Tue, 11 Oct 2022 07:52:58 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E52D9F768;
+        Tue, 11 Oct 2022 07:53:32 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 6425B611D6;
-        Tue, 11 Oct 2022 14:52:58 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DAE65C433D7;
-        Tue, 11 Oct 2022 14:52:56 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 4086D611C3;
+        Tue, 11 Oct 2022 14:53:32 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C15B8C433D6;
+        Tue, 11 Oct 2022 14:53:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499977;
-        bh=BZEIFEUmeeXSxmDXckwWq4R0JJOlPtiqcyBKnTZUr8w=;
+        s=k20201202; t=1665500011;
+        bh=DldUW7Lm57Tuv67v64bf+Aur5Zpyj3o2v/3TEU1dk1o=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=VihmzIkEI4m4NdfrPZ+2idxubCnlvPEdlSz+2GhoHc4088VEYd4wZfY4hex3DW2iG
-         ARy4W29OTGogdHKeSmAzFwnEHIAVLif1zsyLCphyIv8bvK7mt0NcgFDTDzcE/wlECh
-         5beWBXTXjXB90rTsIzpLg7rGio0XhF5gZz7FlzNW3dSTOjBnFyE5zzZK/c7s3cos8T
-         7mm+Db3rOZfOD536pvd+BRUdJXLUCVZSKXhL+alMIQhPBYqgx7NgcOcxNt/XFySpQ4
-         ZRGb/eQquvDKWJ6ngM32Y5sZjYwLbTMhBPeR8XfqtLVhgO1MvaV99koJjqo+FfSANc
-         8KE9DssdWVq1Q==
+        b=IvlQCMTkRGU/ECK0Mo/FL/XBOZECPuD1/Caeaphm25V4s9uaWhIVXqskasCvMP9ro
+         w4rRjUhK+DpLB8JnwlhDHil58hy9HB7bNXBL0fTw8N/dj+3pYdklTSae/EgALX2qjD
+         M7kx3IdlV5ibq1JaggtfFBo+qSZqZbskriYesyr4qQMDKE1Jf2x7h3YcLbiZ320IBq
+         4x1GFGxeHLwCUS7Z5Qequk9M8jZeB1pDb52NeCjidv1fYjS0djDMC/c/hgkg11Q3vu
+         5vVFSD25Mp0vgQl3ankzXIzgIr5ZEngOSIJlGZSgA3uIx8L4IdsMKrhcoWteB/0g7p
+         NUA7+P3PSdrKw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Qu Wenruo <wqu@suse.com>, Anand Jain <anand.jain@oracle.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.15 16/26] btrfs: dump extra info if one free space cache has more bitmaps than it should
-Date:   Tue, 11 Oct 2022 10:52:23 -0400
-Message-Id: <20221011145233.1624013-16-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 13/17] btrfs: scrub: try to fix super block errors
+Date:   Tue, 11 Oct 2022 10:53:08 -0400
+Message-Id: <20221011145312.1624341-13-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
-In-Reply-To: <20221011145233.1624013-1-sashal@kernel.org>
-References: <20221011145233.1624013-1-sashal@kernel.org>
+In-Reply-To: <20221011145312.1624341-1-sashal@kernel.org>
+References: <20221011145312.1624341-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -54,61 +53,143 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit 62cd9d4474282a1eb84f945955c56cbfc42e1ffe ]
+[ Upstream commit f9eab5f0bba76742af654f33d517bf62a0db8f12 ]
 
-There is an internal report on hitting the following ASSERT() in
-recalculate_thresholds():
+[BUG]
+The following script shows that, although scrub can detect super block
+errors, it never tries to fix it:
 
- 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
+	mkfs.btrfs -f -d raid1 -m raid1 $dev1 $dev2
+	xfs_io -c "pwrite 67108864 4k" $dev2
 
-Above @max_bitmaps is calculated using the following variables:
+	mount $dev1 $mnt
+	btrfs scrub start -B $dev2
+	btrfs scrub start -Br $dev2
+	umount $mnt
 
-- bytes_per_bg
-  8 * 4096 * 4096 (128M) for x86_64/x86.
+The first scrub reports the super error correctly:
 
-- block_group->length
-  The length of the block group.
+  scrub done for f3289218-abd3-41ac-a630-202f766c0859
+  Scrub started:    Tue Aug  2 14:44:11 2022
+  Status:           finished
+  Duration:         0:00:00
+  Total to scrub:   1.26GiB
+  Rate:             0.00B/s
+  Error summary:    super=1
+    Corrected:      0
+    Uncorrectable:  0
+    Unverified:     0
 
-@max_bitmaps is the rounded up value of block_group->length / 128M.
+But the second read-only scrub still reports the same super error:
 
-Normally one free space cache should not have more bitmaps than above
-value, but when it happens the ASSERT() can be triggered if
-CONFIG_BTRFS_ASSERT is also enabled.
+  Scrub started:    Tue Aug  2 14:44:11 2022
+  Status:           finished
+  Duration:         0:00:00
+  Total to scrub:   1.26GiB
+  Rate:             0.00B/s
+  Error summary:    super=1
+    Corrected:      0
+    Uncorrectable:  0
+    Unverified:     0
 
-But the ASSERT() itself won't provide enough info to know which is going
-wrong.
-Is the bg too small thus it only allows one bitmap?
-Or is there something else wrong?
+[CAUSE]
+The comments already shows that super block can be easily fixed by
+committing a transaction:
 
-So although I haven't found extra reports or crash dump to do further
-investigation, add the extra info to make it more helpful to debug.
+	/*
+	 * If we find an error in a super block, we just report it.
+	 * They will get written with the next transaction commit
+	 * anyway
+	 */
 
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
+But the truth is, such assumption is not always true, and since scrub
+should try to repair every error it found (except for read-only scrub),
+we should really actively commit a transaction to fix this.
+
+[FIX]
+Just commit a transaction if we found any super block errors, after
+everything else is done.
+
+We cannot do this just after scrub_supers(), as
+btrfs_commit_transaction() will try to pause and wait for the running
+scrub, thus we can not call it with scrub_lock hold.
+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/free-space-cache.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/scrub.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index da0eee7c9e5f..529907ea3825 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -672,6 +672,12 @@ static void recalculate_thresholds(struct btrfs_free_space_ctl *ctl)
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 0392c556af60..88b9a5394561 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3811,6 +3811,7 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	int ret;
+ 	struct btrfs_device *dev;
+ 	unsigned int nofs_flag;
++	bool need_commit = false;
  
- 	max_bitmaps = max_t(u64, max_bitmaps, 1);
+ 	if (btrfs_fs_closing(fs_info))
+ 		return -EAGAIN;
+@@ -3924,6 +3925,12 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	 */
+ 	nofs_flag = memalloc_nofs_save();
+ 	if (!is_dev_replace) {
++		u64 old_super_errors;
++
++		spin_lock(&sctx->stat_lock);
++		old_super_errors = sctx->stat.super_errors;
++		spin_unlock(&sctx->stat_lock);
++
+ 		btrfs_info(fs_info, "scrub: started on devid %llu", devid);
+ 		/*
+ 		 * by holding device list mutex, we can
+@@ -3932,6 +3939,16 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 		mutex_lock(&fs_info->fs_devices->device_list_mutex);
+ 		ret = scrub_supers(sctx, dev);
+ 		mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++
++		spin_lock(&sctx->stat_lock);
++		/*
++		 * Super block errors found, but we can not commit transaction
++		 * at current context, since btrfs_commit_transaction() needs
++		 * to pause the current running scrub (hold by ourselves).
++		 */
++		if (sctx->stat.super_errors > old_super_errors && !sctx->readonly)
++			need_commit = true;
++		spin_unlock(&sctx->stat_lock);
+ 	}
  
-+	if (ctl->total_bitmaps > max_bitmaps)
-+		btrfs_err(block_group->fs_info,
-+"invalid free space control: bg start=%llu len=%llu total_bitmaps=%u unit=%u max_bitmaps=%llu bytes_per_bg=%llu",
-+			  block_group->start, block_group->length,
-+			  ctl->total_bitmaps, ctl->unit, max_bitmaps,
-+			  bytes_per_bg);
- 	ASSERT(ctl->total_bitmaps <= max_bitmaps);
+ 	if (!ret)
+@@ -3958,6 +3975,25 @@ int btrfs_scrub_dev(struct btrfs_fs_info *fs_info, u64 devid, u64 start,
+ 	scrub_workers_put(fs_info);
+ 	scrub_put_ctx(sctx);
  
- 	/*
++	/*
++	 * We found some super block errors before, now try to force a
++	 * transaction commit, as scrub has finished.
++	 */
++	if (need_commit) {
++		struct btrfs_trans_handle *trans;
++
++		trans = btrfs_start_transaction(fs_info->tree_root, 0);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			btrfs_err(fs_info,
++	"scrub: failed to start transaction to fix super block errors: %d", ret);
++			return ret;
++		}
++		ret = btrfs_commit_transaction(trans);
++		if (ret < 0)
++			btrfs_err(fs_info,
++	"scrub: failed to commit transaction to fix super block errors: %d", ret);
++	}
+ 	return ret;
+ out:
+ 	scrub_workers_put(fs_info);
 -- 
 2.35.1
 

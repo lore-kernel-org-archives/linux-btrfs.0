@@ -2,46 +2,44 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D717CC433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:57:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A899FC4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 14:58:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231175AbiJKO5h (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 10:57:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52970 "EHLO
+        id S231238AbiJKO5v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 10:57:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54372 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230501AbiJKO4u (ORCPT
+        with ESMTP id S230451AbiJKO4x (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 10:56:50 -0400
+        Tue, 11 Oct 2022 10:56:53 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44CE99DDA6;
-        Tue, 11 Oct 2022 07:52:13 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 624539DDBD;
+        Tue, 11 Oct 2022 07:52:15 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id F2C7EB8124B;
-        Tue, 11 Oct 2022 14:52:09 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E1378C433C1;
-        Tue, 11 Oct 2022 14:52:07 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 9BE55B8160D;
+        Tue, 11 Oct 2022 14:52:12 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6D5C5C433C1;
+        Tue, 11 Oct 2022 14:52:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665499928;
-        bh=1fpohBoFCSYjW4aMN3buF/BPmY5gY/NlefzrIDT83+M=;
+        s=k20201202; t=1665499931;
+        bh=mZXZ26tA7ttCTsWuOIwX3tsboXgN7RDn17R3Kdc+NzI=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=tvkVcTEQDgQKka8cp+oUWgfDxh7+/qCP+OdxLwL4zDbnV66p7DC6FetkVyr6vBeNJ
-         +dJaO5Fhh0yHXbQAw5J/0t/taLyrv1MXsP2rx8G0svKsp04QPgziFvL1yjDIXDK/yX
-         IgvWaptz+dGbSJNVEhlxcNCnDLhCO6HDpDrq7PFgXga0NgtjUoszzm1kil4TqxK4b4
-         wHxBq5HLNwDTeO22gZWOeEAybhz62kNKz92j1aA3EvknuRDxlCzVTmzMJ35cT5W59j
-         5KghfVXOLnn4kRXB5ZJydIbjQCir6ND1jRs2Mp/H/I/DmGOPHaRoHIEVO4+QmriqGZ
-         T/nVEoq0j3OyQ==
+        b=ktd7wEbnR4NZqa8eQjVU7Hk8EaeMermA/M9q9UuYuog5JuOsANxQkfZtZk9NRUyuq
+         TaGH8xSCxNPyNF/a5H0emxVGn53/QBjPpblXYQTvhDoPv99pD3VqRgXVI81QNrC0zA
+         SpEDUgv5e6e0glJgov31SuOQgDQ+yuA/PicLPcVikcb+i/jqI35Yo4RSvIZNbx7/PK
+         uPdxB9Gyo7fwUiHE3DTf/WX2oAOEQLjMyb56aP7RMeMXY4ZfAmDvzeEVfKSxEOXa3U
+         yrr0dhBO5MhnM2qUgntX9tDNbuJs0HoofE7C8UeflbTdyOQdTC46t4XTDps6obCGUp
+         wS3DQ0/LVroGw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
-Cc:     Ioannis Angelakopoulos <iangelak@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
+Cc:     Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.19 24/40] btrfs: add macros for annotating wait events with lockdep
-Date:   Tue, 11 Oct 2022 10:51:13 -0400
-Message-Id: <20221011145129.1623487-24-sashal@kernel.org>
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.19 26/40] btrfs: scrub: properly report super block errors in system log
+Date:   Tue, 11 Oct 2022 10:51:15 -0400
+Message-Id: <20221011145129.1623487-26-sashal@kernel.org>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20221011145129.1623487-1-sashal@kernel.org>
 References: <20221011145129.1623487-1-sashal@kernel.org>
@@ -53,141 +51,143 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Ioannis Angelakopoulos <iangelak@fb.com>
+From: Qu Wenruo <wqu@suse.com>
 
-[ Upstream commit ab9a323f9ab576000795285dd7ac6afeedf29e32 ]
+[ Upstream commit e69bf81c9a339f1b2c041b112a6fbb9f60fc9340 ]
 
-Introduce four macros that are used to annotate wait events in btrfs code
-with lockdep;
+[PROBLEM]
 
-  1) the btrfs_lockdep_init_map
-  2) the btrfs_lockdep_acquire,
-  3) the btrfs_lockdep_release
-  4) the btrfs_might_wait_for_event macros.
+Unlike data/metadata corruption, if scrub detected some error in the
+super block, the only error message is from the updated device status:
 
-The btrfs_lockdep_init_map macro is used to initialize a lockdep map.
+  BTRFS info (device dm-1): scrub: started on devid 2
+  BTRFS error (device dm-1): bdev /dev/mapper/test-scratch2 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+  BTRFS info (device dm-1): scrub: finished on devid 2 with status: 0
 
-The btrfs_lockdep_<acquire,release> macros are used by threads to take
-the lockdep map as readers (shared lock) and release it, respectively.
+This is not helpful at all.
 
-The btrfs_might_wait_for_event macro is used by threads to take the
-lockdep map as writers (exclusive lock) and release it.
+[CAUSE]
+Unlike data/metadata error reporting, there is no visible report in
+kernel dmesg to report supper block errors.
 
-In general, the lockdep annotation for wait events work as follows:
+In fact, return value of scrub_checksum_super() is intentionally
+skipped, thus scrub_handle_errored_block() will never be called for
+super blocks.
 
-The condition for a wait event can be modified and signaled at the same
-time by multiple threads. These threads hold the lockdep map as readers
-when they enter a context in which blocking would prevent signaling the
-condition. Frequently, this occurs when a thread violates a condition
-(lockdep map acquire), before restoring it and signaling it at a later
-point (lockdep map release).
+[FIX]
+Make super block errors to output an error message, now the full
+dmesg would looks like this:
 
-The threads that block on the wait event take the lockdep map as writers
-(exclusive lock). These threads have to block until all the threads that
-hold the lockdep map as readers signal the condition for the wait event
-and release the lockdep map.
+  BTRFS info (device dm-1): scrub: started on devid 2
+  BTRFS warning (device dm-1): super block error on device /dev/mapper/test-scratch2, physical 67108864
+  BTRFS error (device dm-1): bdev /dev/mapper/test-scratch2 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+  BTRFS info (device dm-1): scrub: finished on devid 2 with status: 0
+  BTRFS info (device dm-1): scrub: started on devid 2
 
-The lockdep annotation is used to warn about potential deadlock scenarios
-that involve the threads that modify and signal the wait event condition
-and threads that block on the wait event. A simple example is illustrated
-below:
+This fix involves:
 
-Without lockdep:
+- Move the super_errors reporting to scrub_handle_errored_block()
+  This allows the device status message to show after the super block
+  error message.
+  But now we no longer distinguish super block corruption and generation
+  mismatch, now all counted as corruption.
 
-TA                                        TB
-cond = false
-                                          lock(A)
-                                          wait_event(w, cond)
-                                          unlock(A)
-lock(A)
-cond = true
-signal(w)
-unlock(A)
+- Properly check the return value from scrub_checksum_super()
+- Add extra super block error reporting for scrub_print_warning().
 
-With lockdep:
-
-TA                                        TB
-rwsem_acquire_read(lockdep_map)
-cond = false
-                                          lock(A)
-                                          rwsem_acquire(lockdep_map)
-                                          rwsem_release(lockdep_map)
-                                          wait_event(w, cond)
-                                          unlock(A)
-lock(A)
-cond = true
-signal(w)
-unlock(A)
-rwsem_release(lockdep_map)
-
-In the second case, with the lockdep annotation, lockdep would warn about
-an ABBA deadlock, while the first case would just deadlock at some point.
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Signed-off-by: Ioannis Angelakopoulos <iangelak@fb.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 Signed-off-by: Sasha Levin <sashal@kernel.org>
 ---
- fs/btrfs/ctree.h | 45 +++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 45 insertions(+)
+ fs/btrfs/scrub.c | 33 ++++++++++++---------------------
+ 1 file changed, 12 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1bbc810574f2..8d35db5b2b62 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1148,6 +1148,51 @@ enum {
- 	BTRFS_ROOT_RESET_LOCKDEP_CLASS,
- };
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index e7b0323e6efd..f62bfa023178 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -731,6 +731,13 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	dev = sblock->sectors[0]->dev;
+ 	fs_info = sblock->sctx->fs_info;
  
-+/*
-+ * Lockdep annotation for wait events.
-+ *
-+ * @owner:  The struct where the lockdep map is defined
-+ * @lock:   The lockdep map corresponding to a wait event
-+ *
-+ * This macro is used to annotate a wait event. In this case a thread acquires
-+ * the lockdep map as writer (exclusive lock) because it has to block until all
-+ * the threads that hold the lock as readers signal the condition for the wait
-+ * event and release their locks.
-+ */
-+#define btrfs_might_wait_for_event(owner, lock)					\
-+	do {									\
-+		rwsem_acquire(&owner->lock##_map, 0, 0, _THIS_IP_);		\
-+		rwsem_release(&owner->lock##_map, _THIS_IP_);			\
-+	} while (0)
-+
-+/*
-+ * Protection for the resource/condition of a wait event.
-+ *
-+ * @owner:  The struct where the lockdep map is defined
-+ * @lock:   The lockdep map corresponding to a wait event
-+ *
-+ * Many threads can modify the condition for the wait event at the same time
-+ * and signal the threads that block on the wait event. The threads that modify
-+ * the condition and do the signaling acquire the lock as readers (shared
-+ * lock).
-+ */
-+#define btrfs_lockdep_acquire(owner, lock)					\
-+	rwsem_acquire_read(&owner->lock##_map, 0, 0, _THIS_IP_)
-+
-+/*
-+ * Used after signaling the condition for a wait event to release the lockdep
-+ * map held by a reader thread.
-+ */
-+#define btrfs_lockdep_release(owner, lock)					\
-+	rwsem_release(&owner->lock##_map, _THIS_IP_)
-+
-+/* Initialization of the lockdep map */
-+#define btrfs_lockdep_init_map(owner, lock)					\
-+	do {									\
-+		static struct lock_class_key lock##_key;			\
-+		lockdep_init_map(&owner->lock##_map, #lock, &lock##_key, 0);	\
-+	} while (0)
-+
- static inline void btrfs_wake_unfinished_drop(struct btrfs_fs_info *fs_info)
++	/* Super block error, no need to search extent tree. */
++	if (sblock->sectors[0]->flags & BTRFS_EXTENT_FLAG_SUPER) {
++		btrfs_warn_in_rcu(fs_info, "%s on device %s, physical %llu",
++			errstr, rcu_str_deref(dev->name),
++			sblock->sectors[0]->physical);
++		return;
++	}
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return;
+@@ -806,7 +813,7 @@ static inline void scrub_put_recover(struct btrfs_fs_info *fs_info,
+ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
  {
- 	clear_and_wake_up_bit(BTRFS_FS_UNFINISHED_DROPS, &fs_info->flags);
+ 	struct scrub_ctx *sctx = sblock_to_check->sctx;
+-	struct btrfs_device *dev;
++	struct btrfs_device *dev = sblock_to_check->sectors[0]->dev;
+ 	struct btrfs_fs_info *fs_info;
+ 	u64 logical;
+ 	unsigned int failed_mirror_index;
+@@ -827,13 +834,15 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	fs_info = sctx->fs_info;
+ 	if (sblock_to_check->sectors[0]->flags & BTRFS_EXTENT_FLAG_SUPER) {
+ 		/*
+-		 * if we find an error in a super block, we just report it.
++		 * If we find an error in a super block, we just report it.
+ 		 * They will get written with the next transaction commit
+ 		 * anyway
+ 		 */
++		scrub_print_warning("super block error", sblock_to_check);
+ 		spin_lock(&sctx->stat_lock);
+ 		++sctx->stat.super_errors;
+ 		spin_unlock(&sctx->stat_lock);
++		btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_CORRUPTION_ERRS);
+ 		return 0;
+ 	}
+ 	logical = sblock_to_check->sectors[0]->logical;
+@@ -842,7 +851,6 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	is_metadata = !(sblock_to_check->sectors[0]->flags &
+ 			BTRFS_EXTENT_FLAG_DATA);
+ 	have_csum = sblock_to_check->sectors[0]->have_csum;
+-	dev = sblock_to_check->sectors[0]->dev;
+ 
+ 	if (!sctx->is_dev_replace && btrfs_repair_one_zone(fs_info, logical))
+ 		return 0;
+@@ -1773,7 +1781,7 @@ static int scrub_checksum(struct scrub_block *sblock)
+ 	else if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
+ 		ret = scrub_checksum_tree_block(sblock);
+ 	else if (flags & BTRFS_EXTENT_FLAG_SUPER)
+-		(void)scrub_checksum_super(sblock);
++		ret = scrub_checksum_super(sblock);
+ 	else
+ 		WARN_ON(1);
+ 	if (ret)
+@@ -1912,23 +1920,6 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 	if (memcmp(calculated_csum, s->csum, sctx->fs_info->csum_size))
+ 		++fail_cor;
+ 
+-	if (fail_cor + fail_gen) {
+-		/*
+-		 * if we find an error in a super block, we just report it.
+-		 * They will get written with the next transaction commit
+-		 * anyway
+-		 */
+-		spin_lock(&sctx->stat_lock);
+-		++sctx->stat.super_errors;
+-		spin_unlock(&sctx->stat_lock);
+-		if (fail_cor)
+-			btrfs_dev_stat_inc_and_print(sector->dev,
+-				BTRFS_DEV_STAT_CORRUPTION_ERRS);
+-		else
+-			btrfs_dev_stat_inc_and_print(sector->dev,
+-				BTRFS_DEV_STAT_GENERATION_ERRS);
+-	}
+-
+ 	return fail_cor + fail_gen;
+ }
+ 
 -- 
 2.35.1
 

@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62A92C433F5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 12:17:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CD29C433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Oct 2022 12:17:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229755AbiJKMR3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 11 Oct 2022 08:17:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41408 "EHLO
+        id S229768AbiJKMRa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Oct 2022 08:17:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41474 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229739AbiJKMRW (ORCPT
+        with ESMTP id S229741AbiJKMRX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 11 Oct 2022 08:17:22 -0400
+        Tue, 11 Oct 2022 08:17:23 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 869B642E50
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 05:17:21 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 55C214B0D6
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 05:17:22 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 417B1B815B3
+        by ams.source.kernel.org (Postfix) with ESMTPS id E9CB7B815AE
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 12:17:21 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 467CAC433D6
         for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 12:17:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 814D6C433C1
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Oct 2022 12:17:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665490639;
-        bh=KZB5HiCiAzQDv4MD+fbkXTqvjvIwuYOQUoXd8iAgIfA=;
+        s=k20201202; t=1665490640;
+        bh=xF9/R7YVjtghfkYXEeRbo+TbuqPX3iNh3BFvcCajNc0=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=XSFgQraLmbC9iibQdc8kbcAL0rJMaOeM94ah4fc36NIjXlIzB1kNzA6RbtNQMztIK
-         Br38yIQo0gktYBpk0gQQpT7N0R5urb0um1cnBdwJ00Eg6yHiVYaE28LacXdhE8HDQ3
-         JNsSaRR9hewHFqdl1P2pR/uowDWlPCkYxUc1iJDh7rH/85L8694q0L0QdwBxtLl0oq
-         +fRW98SGqsNcJ4qsDLkpX7sH0iSXHE3o1ukEB4670OG0XR0irLTnqCa3UtiZA/jAw/
-         IKkbqX13/5uRZ69/RQJb03TUqH3c+dEYH0BiAlxS5bWKOPQYjrwLrN03m0zyQdNDAp
-         uWvHsm0g5GqwA==
+        b=utiJ1hCbfJQaFYzyi0ToHlyHrPPqNuqIXV5vgsufTJNgWYGPgnad2kXvNRyszTYzt
+         /1NfcOM4qz3kZxEEtexs6nFtTjjfhH9KlDnLdDmbvoAiHHqgnlW/qBjTk6V28jMB2l
+         fMA22P6dSju+kCgJAiZRa2q3vuFuBe0E/A+oJd7E3xYqN5zP9W8mWwl9y15VfTQv60
+         tk0IQ05MQeQZfIhIWyw5IlHjR4OHs2uV0cLI37TYWqDxFrBzBXhWxrf5XB7NHj4bbp
+         50YaW/khmmr9KLENdz8j4PGc5bHV7mUH5n2FfihqeWgd1a6poB7XfB69JfwciAAoM6
+         CZtgdO/eB/rPg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 07/19] btrfs: drop pointless memset when cloning extent buffer
-Date:   Tue, 11 Oct 2022 13:16:57 +0100
-Message-Id: <624ea4cace0e7dc7ec9fd3983159121a8311d8fc.1665490018.git.fdmanana@suse.com>
+Subject: [PATCH v2 09/19] btrfs: remove checks for a root with id 0 during backref walking
+Date:   Tue, 11 Oct 2022 13:16:59 +0100
+Message-Id: <f5496a81ec0a5d9590fd7de1730f0dd9a46777c6.1665490018.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1665490018.git.fdmanana@suse.com>
 References: <cover.1665490018.git.fdmanana@suse.com>
@@ -48,48 +48,41 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At btrfs_clone_extent_buffer(), before allocating the pages array for the
-new extent buffer we are calling memset() to zero out the pages array of
-the extent buffer. This is pointless however, because the extent buffer
-already has every element in its pages array pointing to NULL, as it was
-allocated with kmem_cache_zalloc(). The memset() was introduced with
-commit dd137dd1f2d719 ("btrfs: factor out allocating an array of pages"),
-but even before that commit we already depended on the pages array being
-initialized to NULL for the error paths that need to call
-btrfs_release_extent_buffer().
-
-So remove the memset(), it's useless and slightly increases the object
-text size.
-
-Before this change:
-
-   $ size fs/btrfs/extent_io.o
-      text	   data	    bss	    dec	    hex	filename
-     70580	   5469	     40	  76089	  12939	fs/btrfs/extent_io.o
-
-After this change:
-
-   $ size fs/btrfs/extent_io.o
-      text	   data	    bss	    dec	    hex	filename
-     70564	   5469	     40	  76073	  12929	fs/btrfs/extent_io.o
+When doing backref walking to determine if an extent is shared, we are
+testing the root_objectid of the given share_check struct is 0, but that
+is an impossible case, since btrfs_is_data_extent_shared() always
+initializes the root_objectid field with the id of the given root, and
+no root can have an objectid of 0. So remove those checks.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent_io.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/backref.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1eae68fbae21..c9a9f784d21c 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4302,7 +4302,6 @@ struct extent_buffer *btrfs_clone_extent_buffer(const struct extent_buffer *src)
- 	 */
- 	set_bit(EXTENT_BUFFER_UNMAPPED, &new->bflags);
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 4ec18ceb2f21..4757f9af948a 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -705,8 +705,7 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
+ 			continue;
+ 		}
  
--	memset(new->pages, 0, sizeof(*new->pages) * num_pages);
- 	ret = btrfs_alloc_page_array(num_pages, new->pages);
- 	if (ret) {
- 		btrfs_release_extent_buffer(new);
+-		if (sc && sc->root_objectid &&
+-		    ref->root_id != sc->root_objectid) {
++		if (sc && ref->root_id != sc->root_objectid) {
+ 			free_pref(ref);
+ 			ret = BACKREF_FOUND_SHARED;
+ 			goto out;
+@@ -1330,8 +1329,7 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
+ 		 * and would retain their original ref->count < 0.
+ 		 */
+ 		if (roots && ref->count && ref->root_id && ref->parent == 0) {
+-			if (sc && sc->root_objectid &&
+-			    ref->root_id != sc->root_objectid) {
++			if (sc && ref->root_id != sc->root_objectid) {
+ 				ret = BACKREF_FOUND_SHARED;
+ 				goto out;
+ 			}
 -- 
 2.35.1
 

@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16E3EC43219
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Oct 2022 09:13:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34F40C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Oct 2022 09:13:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229436AbiJLJNq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Oct 2022 05:13:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56164 "EHLO
+        id S229812AbiJLJNr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Oct 2022 05:13:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56204 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229844AbiJLJNj (ORCPT
+        with ESMTP id S229849AbiJLJNk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2022 05:13:39 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 06734BBE26
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 02:13:37 -0700 (PDT)
+        Wed, 12 Oct 2022 05:13:40 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD58FBBF1A
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 02:13:38 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 424D41F37C
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:35 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 55D7F21CEF
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1665566015; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1665566017; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=EyVMHPRVCNtAUYro1bXHOetsZ9fNLG1U95K8stMp3+k=;
-        b=Ctu1DvEnNKl4egSnFde6xaSduVMuJIi3/7ciWUoxYRrTwEQpg8opEPjz71646Hk37ifx8p
-        vbZ8Uv1GU7Ct1etYRnLNnliBT9fp+q92+KJjOPNPNgEI68RlywkIlRVabcvomP/qZzVH53
-        GBX3OtcEQsZb4z3tEF1nyUEHeDX+89c=
+        bh=oTL8HXaA6vHj82tB+MEQFt8FoXhZInkFFrZ/iuWohOU=;
+        b=YMpMoTR7CcoiLr9AiqX1oveoqFDQ2Xy03MoT5iMgLfDY4Dc9vPhxSqVPfHGy2b+VAs1mLz
+        7Px4uNTuRPLYycexUGC45DmD3ro+IMq7UvZNddqkTFALMMwWj3tU3hdt2yj3gJdReGxe+6
+        egG4NCZxRtJGDSW+OJliXGxjAjhw4AY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9939213A5C
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:34 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A65E913A5C
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:36 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id OBgZGT6FRmPKcQAAMHmgww
+        id +F2IHECFRmPKcQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:34 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:36 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 06/15] btrfs: move btrfs_init_workqueus() and btrfs_stop_all_workers() into open_ctree_seq[]
-Date:   Wed, 12 Oct 2022 17:13:02 +0800
-Message-Id: <9bae6cc24eeaaccf90d1f1cacacada8631899a36.1665565866.git.wqu@suse.com>
+Subject: [PATCH v2 08/15] btrfs: extract tree roots and zone info initialization into init/exit helpers
+Date:   Wed, 12 Oct 2022 17:13:04 +0800
+Message-Id: <989b25fdddb492c839f060c079f1669db57cb0a6.1665565866.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.3
 In-Reply-To: <cover.1665565866.git.wqu@suse.com>
 References: <cover.1665565866.git.wqu@suse.com>
@@ -55,82 +55,142 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Those two helpers are already doing all the work, just move them into
-the open_ctree_seq[] array.
+No functional change, but one special thing to notice:
 
-There is only one small change:
+- No need to cleanup zone info
+  As we call btrfs_close_devices() at error path to cleanup all
+  zone device info, thus we don't need to handle it at
+  open_ctree_tree_roots_init().
 
-- Call btrfs_stop_all_workers() inside btrfs_init_workqueus() for error
-  handling
-  Since open_ctree_seq[] makes all error path to call the exit function
-  if and only if the corresponding init function finished without error.
-
-  This means, if btrfs_init_workqueus() failed due to -ENOMEM, then we
-  won't call btrfs_stop_all_workers() to cleanup whatever is already
-  allocatd.
-
-  To fix this problem, call btrfs_stop_all_workers() inside
-  btrfs_init_workqueus() when we hit errors.
-  Function btrfs_stop_all_workers() already has the checks to
-  handle NULL pointers.
+  This is a break of the init/exit layer, but since devices info is
+  not per-device, but shared for the whole btrfs module, such break
+  should still be acceptable.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ fs/btrfs/disk-io.c | 88 ++++++++++++++++++++++++++++------------------
+ 1 file changed, 53 insertions(+), 35 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 650eabb3d144..59775f37368f 100644
+index 54c7a2d66322..cfed53675359 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2324,11 +2324,12 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
- 	      fs_info->endio_freespace_worker && fs_info->rmw_workers &&
- 	      fs_info->caching_workers && fs_info->fixup_workers &&
- 	      fs_info->delayed_workers && fs_info->qgroup_rescan_workers &&
--	      fs_info->discard_ctl.discard_workers)) {
--		return -ENOMEM;
--	}
--
-+	      fs_info->discard_ctl.discard_workers))
-+		goto error;
- 	return 0;
-+error:
-+	btrfs_stop_all_workers(fs_info);
-+	return -ENOMEM;
+@@ -3683,6 +3683,56 @@ static void open_ctree_chunk_tree_exit(struct btrfs_fs_info *fs_info)
+ 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
  }
  
- static int btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
-@@ -3613,6 +3614,9 @@ static const struct init_sequence open_ctree_seq[] = {
++static int open_ctree_tree_roots_init(struct btrfs_fs_info *fs_info)
++{
++	int ret;
++
++	ret = init_tree_roots(fs_info);
++	if (ret)
++		goto error;
++
++	/*
++	 * Get zone type information of zoned block devices. This will also
++	 * handle emulation of a zoned filesystem if a regular device has the
++	 * zoned incompat feature flag set.
++	 */
++	ret = btrfs_get_dev_zone_info_all_devices(fs_info);
++	if (ret) {
++		btrfs_err(fs_info,
++			  "zoned: failed to read device zone info: %d",
++			  ret);
++		goto error;
++	}
++
++	/*
++	 * If we have a uuid root and we're not being told to rescan we need to
++	 * check the generation here so we can set the
++	 * BTRFS_FS_UPDATE_UUID_TREE_GEN bit.  Otherwise we could commit the
++	 * transaction during a balance or the log replay without updating the
++	 * uuid generation, and then if we crash we would rescan the uuid tree,
++	 * even though it was perfectly fine.
++	 */
++	if (fs_info->uuid_root && !btrfs_test_opt(fs_info, RESCAN_UUID_TREE) &&
++	    fs_info->generation ==
++	    btrfs_super_uuid_tree_generation(fs_info->super_copy))
++		set_bit(BTRFS_FS_UPDATE_UUID_TREE_GEN, &fs_info->flags);
++
++	return 0;
++
++error:
++	if (fs_info->data_reloc_root)
++		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
++	free_root_pointers(fs_info, true);
++	return ret;
++}
++
++static void open_ctree_tree_roots_exit(struct btrfs_fs_info *fs_info)
++{
++	if (fs_info->data_reloc_root)
++		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
++	free_root_pointers(fs_info, true);
++}
++
+ struct init_sequence {
+ 	int (*init_func)(struct btrfs_fs_info *fs_info);
+ 	void (*exit_func)(struct btrfs_fs_info *fs_info);
+@@ -3704,6 +3754,9 @@ static const struct init_sequence open_ctree_seq[] = {
  	}, {
- 		.init_func = open_ctree_features_init,
- 		.exit_func = NULL,
+ 		.init_func = open_ctree_chunk_tree_init,
+ 		.exit_func = open_ctree_chunk_tree_exit,
 +	}, {
-+		.init_func = btrfs_init_workqueues,
-+		.exit_func = btrfs_stop_all_workers,
++		.init_func = open_ctree_tree_roots_init,
++		.exit_func = open_ctree_tree_roots_exit,
  	}
  };
  
-@@ -3640,12 +3644,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
+@@ -3729,36 +3782,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
  		open_ctree_res[i] = true;
  	}
  
--	ret = btrfs_init_workqueues(fs_info);
+-	ret = init_tree_roots(fs_info);
+-	if (ret)
+-		goto fail_tree_roots;
+-
+-	/*
+-	 * Get zone type information of zoned block devices. This will also
+-	 * handle emulation of a zoned filesystem if a regular device has the
+-	 * zoned incompat feature flag set.
+-	 */
+-	ret = btrfs_get_dev_zone_info_all_devices(fs_info);
 -	if (ret) {
--		err = ret;
--		goto fail_sb_buffer;
+-		btrfs_err(fs_info,
+-			  "zoned: failed to read device zone info: %d",
+-			  ret);
+-		goto fail_block_groups;
 -	}
 -
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(fs_info);
- 	mutex_unlock(&fs_info->chunk_mutex);
-@@ -3903,7 +3901,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
- 	free_root_pointers(fs_info, true);
+-	/*
+-	 * If we have a uuid root and we're not being told to rescan we need to
+-	 * check the generation here so we can set the
+-	 * BTRFS_FS_UPDATE_UUID_TREE_GEN bit.  Otherwise we could commit the
+-	 * transaction during a balance or the log replay without updating the
+-	 * uuid generation, and then if we crash we would rescan the uuid tree,
+-	 * even though it was perfectly fine.
+-	 */
+-	if (fs_info->uuid_root && !btrfs_test_opt(fs_info, RESCAN_UUID_TREE) &&
+-	    fs_info->generation ==
+-	    btrfs_super_uuid_tree_generation(fs_info->super_copy))
+-		set_bit(BTRFS_FS_UPDATE_UUID_TREE_GEN, &fs_info->flags);
+-
+ 	ret = btrfs_verify_dev_extents(fs_info);
+ 	if (ret) {
+ 		btrfs_err(fs_info,
+@@ -3918,11 +3941,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
  
- fail_sb_buffer:
--	btrfs_stop_all_workers(fs_info);
+ fail_block_groups:
+ 	btrfs_put_block_group_cache(fs_info);
+-
+-fail_tree_roots:
+-	if (fs_info->data_reloc_root)
+-		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
+-	free_root_pointers(fs_info, true);
  	btrfs_free_block_groups(fs_info);
- 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
  fail:
+ 	for (i = ARRAY_SIZE(open_ctree_seq) - 1; i >= 0; i--) {
 -- 
 2.37.3
 

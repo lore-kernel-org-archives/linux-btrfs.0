@@ -2,128 +2,147 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEDDEC4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Oct 2022 09:13:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F3E3C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Oct 2022 09:13:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229676AbiJLJNd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Oct 2022 05:13:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55958 "EHLO
+        id S229845AbiJLJNj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Oct 2022 05:13:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56028 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229436AbiJLJNc (ORCPT
+        with ESMTP id S229695AbiJLJNe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2022 05:13:32 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81002140F0
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 02:13:31 -0700 (PDT)
+        Wed, 12 Oct 2022 05:13:34 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0C60BBF35
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 02:13:32 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 163741F381
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:29 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 30C1D21CEE
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1665566009; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=wkBEWoQduLn67TyxVs3VyJb48Avin5W7hzfbU/3wYZ8=;
-        b=PHw0BQowozGhoCi8OXtsdZMM7gVsMU2Sv312HUXEQ62BmbrSLXODUbjD2T1pACL+goehkh
-        XidELi2MRs7+hPPDXkklBztX1FcLzRt5mbaYkBQaaK7vm4iUZo+j1g6rNW8qATY2vho4QY
-        8sE+VnJ5ViabAc4x0jjmHR6HhD5hpwQ=
+        t=1665566011; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=PbIusAyDp9Yh4qbhwl8hRu3p9VXFawDV0eEV+4YB+X8=;
+        b=jsQ3CUGR5TD92QQ+N8MhhtPXbrPGRhKigPk6oNdzWOlcisa75AUkyz3nTWIos8CR0VDxFn
+        FcOSVOb+iwgZeE3rWqbEBbFbp/cBxI8I/HqV8QiwqIiQDTpNT9nCgQdmLWwzvCIFa2VB9s
+        tbRoHPyqhQigioboQjdp1YBRMGpmecU=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6529D13A5C
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:28 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7C35213A5C
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id FVDvCziFRmPKcQAAMHmgww
+        id yDEmEjqFRmPKcQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:28 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:30 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 00/15] btrfs: make open_ctree() init/exit sequence strictly matched
-Date:   Wed, 12 Oct 2022 17:12:56 +0800
-Message-Id: <cover.1665565866.git.wqu@suse.com>
+Subject: [PATCH v2 02/15] btrfs: remove @fs_devices argument from open_ctree()
+Date:   Wed, 12 Oct 2022 17:12:58 +0800
+Message-Id: <62d2ded5f56d3ef1d56f75657a57fe1dde03bf13.1665565866.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.3
+In-Reply-To: <cover.1665565866.git.wqu@suse.com>
+References: <cover.1665565866.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[Changelog]
-v2:
-- Rebased to latest misc-next
-  Most conflicts comes from the new function btrfs_check_features().
+At the timing of open_ctree(), we have already initialized
+fs_info->fs_devics, thus no need to pass a dedicated @fs_devices
+argument into open_ctree().
 
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/disk-io.c | 7 +++++--
+ fs/btrfs/disk-io.h | 4 +---
+ fs/btrfs/super.c   | 5 ++---
+ 3 files changed, 8 insertions(+), 8 deletions(-)
 
-Just like init_btrfs_fs(), open_ctree() also has tons of different
-labels for its error handling.
-
-And unsurprisingly the error handling labels are not matched correctly,
-e.g. we always call btrfs_mapping_tree_free() even we didn't reach
-sys chunk array read.
-
-And every time we need to add some new function, it will be a disaster
-just to understand where the new function should be put and how the
-error handling should be done.
-
-This patchset will follow the init_btrfs_fs() method, by introducing
-an open_ctree_seq[] array, which contains the following sections:
-
-- btree_inode init/exit
-- super block read and verification
-- mount options and features check
-- workqueues init/exit
-- chunk tree init/exit
-- tree roots init/exit
-- mount time check and various item load
-- sysfs init/exit
-- block group tree init/exit
-- subvolume trees init/exit
-- kthread init/exit
-- qgroup init/exit
-
-The remaining part of open_ctree() is only less than 50 lines, and are
-all related to the very end of the mount progress, including log-replay,
-uuid tree check.
-
-Also to do better testing, for DEBUG build there will be a new mount
-option, "fail_mount=%u" to allow open_ctree() to fail at certain stage
-of open_ctree_seq[].
-
-Unfortunately since that mount option can only be parsed in
-open_ctree_features_init(), this means we can only fail after stage 2.
-But this should still provide much better testing coverage.
-
-Qu Wenruo (15):
-  btrfs: initialize fs_info->sb at the very beginning of open_ctree()
-  btrfs: remove @fs_devices argument from open_ctree()
-  btrfs: extract btree inode init code into its own init/exit helpers
-  btrfs: extract super block read code into its own init helper
-  btrfs: extract mount options and features init code into its own init
-    helper
-  btrfs: move btrfs_init_workqueus() and btrfs_stop_all_workers() into
-    open_ctree_seq[]
-  btrfs: extract chunk tree read code into its own init/exit helpers
-  btrfs: extract tree roots and zone info initialization into init/exit
-    helpers
-  btrfs: extract mount time checks and items load code into its init
-    helper
-  btrfs: extract sysfs init into its own helper
-  btrfs: extra block groups read code into its own init/exit helpers
-  btrfs: move the fs root related code into its own init/exit helpers
-  btrfs: extract kthread code into its own init/exit helpers
-  btrfs: move qgroup init/exit code into open_ctree_seq[] array
-  btrfs: introduce a debug mount option to do error injection for each
-    stage of open_ctree()
-
- fs/btrfs/ctree.h   |   7 +
- fs/btrfs/disk-io.c | 611 +++++++++++++++++++++++++++++----------------
- fs/btrfs/disk-io.h |   4 +-
- fs/btrfs/super.c   |  18 +-
- 4 files changed, 418 insertions(+), 222 deletions(-)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c00999212c91..ba9fe0041e6f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3402,8 +3402,7 @@ int btrfs_check_features(struct btrfs_fs_info *fs_info, struct super_block *sb)
+ 	return 0;
+ }
+ 
+-int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_devices,
+-		      char *options)
++int __cold open_ctree(struct super_block *sb, char *options)
+ {
+ 	u32 sectorsize;
+ 	u32 nodesize;
+@@ -3413,6 +3412,7 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	u16 csum_type;
+ 	struct btrfs_super_block *disk_super;
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	struct btrfs_root *tree_root;
+ 	struct btrfs_root *chunk_root;
+ 	int ret;
+@@ -3421,6 +3421,9 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 
+ 	fs_info->sb = sb;
+ 
++	/* Caller should have already initialized fs_info->fs_devices. */
++	ASSERT(fs_info->fs_devices);
++
+ 	ret = init_mount_fs_info(fs_info);
+ 	if (ret) {
+ 		err = ret;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 0a77948bb703..15a1a56258c8 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -42,9 +42,7 @@ struct extent_buffer *btrfs_find_create_tree_block(
+ void btrfs_clean_tree_block(struct extent_buffer *buf);
+ void btrfs_clear_oneshot_options(struct btrfs_fs_info *fs_info);
+ int btrfs_start_pre_rw_mount(struct btrfs_fs_info *fs_info);
+-int __cold open_ctree(struct super_block *sb,
+-	       struct btrfs_fs_devices *fs_devices,
+-	       char *options);
++int __cold open_ctree(struct super_block *sb, char *options);
+ void __cold close_ctree(struct btrfs_fs_info *fs_info);
+ int btrfs_validate_super(struct btrfs_fs_info *fs_info,
+ 			 struct btrfs_super_block *sb, int mirror_num);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 688f7704d3fd..bbdbd2a6e3bc 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1429,7 +1429,6 @@ static int get_default_subvol_objectid(struct btrfs_fs_info *fs_info, u64 *objec
+ }
+ 
+ static int btrfs_fill_super(struct super_block *sb,
+-			    struct btrfs_fs_devices *fs_devices,
+ 			    void *data)
+ {
+ 	struct inode *inode;
+@@ -1458,7 +1457,7 @@ static int btrfs_fill_super(struct super_block *sb,
+ 		return err;
+ 	}
+ 
+-	err = open_ctree(sb, fs_devices, (char *)data);
++	err = open_ctree(sb, (char *)data);
+ 	if (err) {
+ 		btrfs_err(fs_info, "open_ctree failed");
+ 		return err;
+@@ -1826,7 +1825,7 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 		btrfs_sb(s)->bdev_holder = fs_type;
+ 		if (!strstr(crc32c_impl(), "generic"))
+ 			set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
+-		error = btrfs_fill_super(s, fs_devices, data);
++		error = btrfs_fill_super(s, data);
+ 	}
+ 	if (!error)
+ 		error = security_sb_set_mnt_opts(s, new_sec_opts, 0, NULL);
 -- 
 2.37.3
 

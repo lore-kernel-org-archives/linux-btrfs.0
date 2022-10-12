@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 234DFC4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Oct 2022 09:13:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 825D3C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Oct 2022 09:13:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229612AbiJLJNt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Oct 2022 05:13:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56206 "EHLO
+        id S229849AbiJLJNw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Oct 2022 05:13:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56216 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229851AbiJLJNk (ORCPT
+        with ESMTP id S229862AbiJLJNl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Oct 2022 05:13:40 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B96ABBF01
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 02:13:38 -0700 (PDT)
+        Wed, 12 Oct 2022 05:13:41 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEE20140F0
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 02:13:39 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 4B60621CEE
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:36 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 5772621DB9
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1665566016; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1665566018; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=OzraXUEsQ8KbHUDzl/rw4G2vkTJCX90PsO8vtiRJ2JM=;
-        b=NLSifoaaJj4Ba4IHNTZ5Jewq4kXXS5Cll+4mPnU8BU6b1d/ZOk38NERVp12gGSiJjZXsA6
-        eH26Zp8B5+GWm61m37EK5FMoepqFaL39Y8l9TBTF8eAfLFd6rwEXOymbZUJMAFXOH97YIj
-        TftRAFistoTsge4XYfXsssUeOHmSgiI=
+        bh=LYvOeAag2/SEuwSpPAI1LcmqOGjjaZNlyC4Luw8Rmlw=;
+        b=DYr99lMOIh1rcKAXIt9Qkb+Q1b4A2jzme0k5AnQxQlxy5ePzh5DtvZesbUdMh7neSgJihn
+        R/91OIhcefQ2+OEVw1r1Nh9ksDhw5XivA79vqDG9EjeU+XlnZVlpw/jCONHHzPl+4P4SjW
+        0e4jvA4uCFxgZwBQuvJhTyRcjLTCdoY=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9E45613A5C
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:35 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AFB6D13A5C
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:37 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0B2EGj+FRmPKcQAAMHmgww
+        id mOR9HkGFRmPKcQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:35 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Oct 2022 09:13:37 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 07/15] btrfs: extract chunk tree read code into its own init/exit helpers
-Date:   Wed, 12 Oct 2022 17:13:03 +0800
-Message-Id: <9f0167d7a50e31e6c80d0c4a5f0c8698883cc9a6.1665565866.git.wqu@suse.com>
+Subject: [PATCH v2 09/15] btrfs: extract mount time checks and items load code into its init helper
+Date:   Wed, 12 Oct 2022 17:13:05 +0800
+Message-Id: <0d5a59495b60dfcc65e0d476e298b5ad2b9dfc89.1665565866.git.wqu@suse.com>
 X-Mailer: git-send-email 2.37.3
 In-Reply-To: <cover.1665565866.git.wqu@suse.com>
 References: <cover.1665565866.git.wqu@suse.com>
@@ -55,246 +55,131 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Involved functional changes:
+One thing to notice is, since we're also initializing zoned mode, also
+move later btrfs_free_zone_cache() call into the helper to concentrace
+the zoned code.
 
-- Properly free the chunk map and chunk root ebs at error handling
-  Previously we rely the final close_ctree() to properly free the chunk
-  root extent buffers.
-
-  With the more strict open_ctree_seq[] requirement, since we're the
-  first one to fully populate chunk root extent buffers, at error
-  we should also free the extent buffers.
-
-  Note, the tree root and chunk root themselves are first allocated by
-  open_ctree_btree_inode_init(), thus we should not free the chunk_root
-  pointer, but just the extent buffers.
-
-- Do degradable check immediately after loading chunk tree
-  The degradable check only requires the full chunk mapping, can be done
-  immediately after btrfs_read_chunk_tree().
-
-This also exposed one exiting label mismatch, at chunk tree read, we
-didn't create block group items at all, but at the old fail_sb_buffer:
-label we call btrfs_free_block_groups().
-
-It doesn't hurt but just shows how bad the original code labels are
-managed.
+As later I found it pretty hard to find any logical connection around
+that btrfs_free_zone_cache() call.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 153 ++++++++++++++++++++++++++-------------------
- 1 file changed, 87 insertions(+), 66 deletions(-)
+ fs/btrfs/disk-io.c | 81 +++++++++++++++++++++++++++-------------------
+ 1 file changed, 47 insertions(+), 34 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 59775f37368f..54c7a2d66322 100644
+index cfed53675359..bee6204d357d 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3599,6 +3599,90 @@ static int open_ctree_features_init(struct btrfs_fs_info *fs_info)
- 	return 0;
+@@ -3733,6 +3733,50 @@ static void open_ctree_tree_roots_exit(struct btrfs_fs_info *fs_info)
+ 	free_root_pointers(fs_info, true);
  }
  
-+static int open_ctree_chunk_tree_init(struct btrfs_fs_info *fs_info)
++/* Load various items for balance/replace, and do various mount time check. */
++static int open_ctree_load_items_init(struct btrfs_fs_info *fs_info)
 +{
-+	u64 generation;
-+	int level;
 +	int ret;
 +
-+	mutex_lock(&fs_info->chunk_mutex);
-+	ret = btrfs_read_sys_array(fs_info);
-+	mutex_unlock(&fs_info->chunk_mutex);
-+	if (ret) {
-+		btrfs_err(fs_info, "failed to read the system array: %d", ret);
-+		goto free_mapping;
-+	}
-+
-+	generation = btrfs_super_chunk_root_generation(fs_info->super_copy);
-+	level = btrfs_super_chunk_root_level(fs_info->super_copy);
-+	ret = load_super_root(fs_info->chunk_root,
-+			      btrfs_super_chunk_root(fs_info->super_copy),
-+			      generation, level);
-+	if (ret) {
-+		btrfs_err(fs_info, "failed to read chunk root");
-+		goto free_root;
-+	}
-+
-+	read_extent_buffer(fs_info->chunk_root->node, fs_info->chunk_tree_uuid,
-+			   offsetof(struct btrfs_header, chunk_tree_uuid),
-+			   BTRFS_UUID_SIZE);
-+
-+	ret = btrfs_read_chunk_tree(fs_info);
-+	if (ret) {
-+		btrfs_err(fs_info, "failed to read chunk tree: %d", ret);
-+		goto free_root;
-+	}
-+
 +	/*
-+	 * At this point we know all the devices that make this filesystem,
-+	 * including the seed devices but we don't know yet if the replace
-+	 * target is required. So free devices that are not part of this
-+	 * filesystem but skip the replace target device which is checked
-+	 * below in btrfs_init_dev_replace().
++	 * Dev extents can only be verified after both dev tree and chunk tree
++	 * being initialized.
 +	 */
-+	btrfs_free_extra_devids(fs_info->fs_devices);
-+	if (!fs_info->fs_devices->latest_dev->bdev) {
-+		btrfs_err(fs_info, "failed to read devices");
-+		goto free_root;
++	ret = btrfs_verify_dev_extents(fs_info);
++	if (ret) {
++		btrfs_err(fs_info,
++			  "failed to verify dev extents against chunks: %d",
++			  ret);
++		return ret;
++	}
++	ret = btrfs_recover_balance(fs_info);
++	if (ret) {
++		btrfs_err(fs_info, "failed to recover balance: %d", ret);
++		return ret;
 +	}
 +
-+	/* We have full chunk tree loaded, can do degradable check now. */
-+	if (!sb_rdonly(fs_info->sb) && fs_info->fs_devices->missing_devices &&
-+	    !btrfs_check_rw_degradable(fs_info, NULL)) {
-+		btrfs_warn(fs_info,
-+		"writable mount is not allowed due to too many missing devices");
-+		ret = -EIO;
-+		goto free_root;
++	ret = btrfs_init_dev_stats(fs_info);
++	if (ret) {
++		btrfs_err(fs_info, "failed to init dev_stats: %d", ret);
++		return ret;
 +	}
 +
-+#ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
-+	/* And integrity check also relies on fully loaded chunk tree. */
-+	if (btrfs_test_opt(fs_info, CHECK_INTEGRITY)) {
-+		ret = btrfsic_mount(fs_info, fs_info->fs_devices,
-+				    btrfs_test_opt(fs_info,
-+					CHECK_INTEGRITY_DATA) ? 1 : 0,
-+				    fs_info->check_integrity_print_mask);
-+		if (ret)
-+			btrfs_warn(fs_info,
-+				"failed to initialize integrity check module: %d",
-+				ret);
++	ret = btrfs_init_dev_replace(fs_info);
++	if (ret) {
++		btrfs_err(fs_info, "failed to init dev_replace: %d", ret);
++		return ret;
 +	}
-+#endif
++
++	ret = btrfs_check_zoned_mode(fs_info);
++	if (ret) {
++		btrfs_err(fs_info, "failed to initialize zoned mode: %d", ret);
++		return ret;
++	}
++	btrfs_free_zone_cache(fs_info);
++
 +	return 0;
-+
-+free_root:
-+	free_root_extent_buffers(fs_info->chunk_root);
-+free_mapping:
-+	btrfs_mapping_tree_free(&fs_info->mapping_tree);
-+	return ret;
-+}
-+
-+static void open_ctree_chunk_tree_exit(struct btrfs_fs_info *fs_info)
-+{
-+	free_root_extent_buffers(fs_info->chunk_root);
-+	btrfs_mapping_tree_free(&fs_info->mapping_tree);
 +}
 +
  struct init_sequence {
  	int (*init_func)(struct btrfs_fs_info *fs_info);
  	void (*exit_func)(struct btrfs_fs_info *fs_info);
-@@ -3617,18 +3701,19 @@ static const struct init_sequence open_ctree_seq[] = {
+@@ -3757,6 +3801,9 @@ static const struct init_sequence open_ctree_seq[] = {
  	}, {
- 		.init_func = btrfs_init_workqueues,
- 		.exit_func = btrfs_stop_all_workers,
+ 		.init_func = open_ctree_tree_roots_init,
+ 		.exit_func = open_ctree_tree_roots_exit,
 +	}, {
-+		.init_func = open_ctree_chunk_tree_init,
-+		.exit_func = open_ctree_chunk_tree_exit,
++		.init_func = open_ctree_load_items_init,
++		.exit_func = NULL,
  	}
  };
  
- int __cold open_ctree(struct super_block *sb, char *options)
- {
--	u64 generation;
- 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	bool open_ctree_res[ARRAY_SIZE(open_ctree_seq)] = {0};
- 	int ret;
- 	int err = -EINVAL;
--	int level;
- 	int i;
- 
- 	fs_info->sb = sb;
-@@ -3644,47 +3729,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
+@@ -3782,38 +3829,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
  		open_ctree_res[i] = true;
  	}
  
--	mutex_lock(&fs_info->chunk_mutex);
--	ret = btrfs_read_sys_array(fs_info);
--	mutex_unlock(&fs_info->chunk_mutex);
+-	ret = btrfs_verify_dev_extents(fs_info);
 -	if (ret) {
--		btrfs_err(fs_info, "failed to read the system array: %d", ret);
--		goto fail_sb_buffer;
+-		btrfs_err(fs_info,
+-			  "failed to verify dev extents against chunks: %d",
+-			  ret);
+-		goto fail_block_groups;
 -	}
--
--	generation = btrfs_super_chunk_root_generation(fs_info->super_copy);
--	level = btrfs_super_chunk_root_level(fs_info->super_copy);
--	ret = load_super_root(fs_info->chunk_root,
--			      btrfs_super_chunk_root(fs_info->super_copy),
--			      generation, level);
+-	ret = btrfs_recover_balance(fs_info);
 -	if (ret) {
--		btrfs_err(fs_info, "failed to read chunk root");
--		goto fail_tree_roots;
+-		btrfs_err(fs_info, "failed to recover balance: %d", ret);
+-		goto fail_block_groups;
 -	}
 -
--	read_extent_buffer(fs_info->chunk_root->node, fs_info->chunk_tree_uuid,
--			   offsetof(struct btrfs_header, chunk_tree_uuid),
--			   BTRFS_UUID_SIZE);
--
--	ret = btrfs_read_chunk_tree(fs_info);
+-	ret = btrfs_init_dev_stats(fs_info);
 -	if (ret) {
--		btrfs_err(fs_info, "failed to read chunk tree: %d", ret);
--		goto fail_tree_roots;
+-		btrfs_err(fs_info, "failed to init dev_stats: %d", ret);
+-		goto fail_block_groups;
 -	}
 -
--	/*
--	 * At this point we know all the devices that make this filesystem,
--	 * including the seed devices but we don't know yet if the replace
--	 * target is required. So free devices that are not part of this
--	 * filesystem but skip the replace target device which is checked
--	 * below in btrfs_init_dev_replace().
--	 */
--	btrfs_free_extra_devids(fs_devices);
--	if (!fs_devices->latest_dev->bdev) {
--		btrfs_err(fs_info, "failed to read devices");
--		goto fail_tree_roots;
+-	ret = btrfs_init_dev_replace(fs_info);
+-	if (ret) {
+-		btrfs_err(fs_info, "failed to init dev_replace: %d", ret);
+-		goto fail_block_groups;
 -	}
 -
- 	ret = init_tree_roots(fs_info);
- 	if (ret)
- 		goto fail_tree_roots;
-@@ -3774,13 +3818,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
+-	ret = btrfs_check_zoned_mode(fs_info);
+-	if (ret) {
+-		btrfs_err(fs_info, "failed to initialize zoned mode: %d",
+-			  ret);
+-		goto fail_block_groups;
+-	}
+-
+ 	ret = btrfs_sysfs_add_fsid(fs_devices);
+ 	if (ret) {
+ 		btrfs_err(fs_info, "failed to init sysfs fsid interface: %d",
+@@ -3839,8 +3854,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
+ 		goto fail_sysfs;
+ 	}
  
- 	btrfs_free_zone_cache(fs_info);
- 
--	if (!sb_rdonly(sb) && fs_info->fs_devices->missing_devices &&
--	    !btrfs_check_rw_degradable(fs_info, NULL)) {
--		btrfs_warn(fs_info,
--		"writable mount is not allowed due to too many missing devices");
--		goto fail_sysfs;
--	}
+-	btrfs_free_zone_cache(fs_info);
 -
  	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, fs_info,
  					       "btrfs-cleaner");
  	if (IS_ERR(fs_info->cleaner_kthread))
-@@ -3798,19 +3835,6 @@ int __cold open_ctree(struct super_block *sb, char *options)
- 	 */
- 	btrfs_apply_pending_changes(fs_info);
- 
--#ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
--	if (btrfs_test_opt(fs_info, CHECK_INTEGRITY)) {
--		ret = btrfsic_mount(fs_info, fs_info->fs_devices,
--				    btrfs_test_opt(fs_info,
--					CHECK_INTEGRITY_DATA) ? 1 : 0,
--				    fs_info->check_integrity_print_mask);
--		if (ret)
--			btrfs_warn(fs_info,
--				"failed to initialize integrity check module: %d",
--				ret);
--	}
--#endif
--
- 	ret = btrfs_read_qgroup_config(fs_info);
- 	if (ret)
- 		goto fail_trans_kthread;
-@@ -3899,10 +3923,7 @@ int __cold open_ctree(struct super_block *sb, char *options)
- 	if (fs_info->data_reloc_root)
- 		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
- 	free_root_pointers(fs_info, true);
--
--fail_sb_buffer:
- 	btrfs_free_block_groups(fs_info);
--	btrfs_mapping_tree_free(&fs_info->mapping_tree);
- fail:
- 	for (i = ARRAY_SIZE(open_ctree_seq) - 1; i >= 0; i--) {
- 		if (!open_ctree_res[i] || !open_ctree_seq[i].exit_func)
 -- 
 2.37.3
 

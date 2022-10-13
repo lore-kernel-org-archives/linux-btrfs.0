@@ -2,97 +2,104 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27A3CC433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Oct 2022 17:58:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BAF4C433FE
+	for <linux-btrfs@archiver.kernel.org>; Thu, 13 Oct 2022 18:11:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230049AbiJMR6Y (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 13 Oct 2022 13:58:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53554 "EHLO
+        id S231726AbiJMSLv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 13 Oct 2022 14:11:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34316 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230151AbiJMR5p (ORCPT
+        with ESMTP id S231488AbiJMSLP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 13 Oct 2022 13:57:45 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75E81B5FED;
-        Thu, 13 Oct 2022 10:57:23 -0700 (PDT)
+        Thu, 13 Oct 2022 14:11:15 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 12546152C4D;
+        Thu, 13 Oct 2022 11:08:13 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 927D4B82023;
-        Thu, 13 Oct 2022 17:56:56 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2C115C433D6;
-        Thu, 13 Oct 2022 17:56:55 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 30948618CF;
+        Thu, 13 Oct 2022 17:56:38 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6CC1AC433D7;
+        Thu, 13 Oct 2022 17:56:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665683815;
-        bh=y+nUBGq5tB1wZxetm97uvPW+VajTy591xqNbeojGCUI=;
+        s=k20201202; t=1665683797;
+        bh=3BQqcau0mTJ2WJ8I+0RhdaTW9TR9ahxBYKkS/ywxSgE=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=THRWMPZj1u71R105pw6mVhDwikvx7jgGOnyNJNAnA3Zr+5pfkVeNWLBpsPriyG3X+
-         b5otynQ6faVOyuFlTq7g20RrfFiYXeCvupv29SkwvSgO66rlt8k3gIDB3XkbEOypOR
-         petA2n6sNCk4ChfeRUizJmjynhR08hEhSTE4pkgtxjtdU5Bd81q36Iox5UZ1QowSAT
-         sTC+5ajISnzlRyryrbrrEQ0zJnOJLUrxwrQlE5NKEbelOT+1MXN4xPolI7pG3H0vTK
-         b6HoNuviF4tR/MYLicfdWo4EYnV8L5CfB94D0UcMLz+g3Hgb53KWYh+CURkVN9oMtJ
-         JcBL2foHCXdmw==
-Date:   Thu, 13 Oct 2022 13:56:54 -0400
+        b=e60sYZxotFftMrl0lGwyZqUrma4ZcaZ7Da3q+ZuQJkwrPNR1vSDmHJowHhpeXiWsw
+         p/psL85p3HjyhpXaV2SIUPHAgL4of/Z1egpTe3Ky1ufRM1A+hy22972zOgny3OBkpn
+         HrQstIfKQCh631cbGyHMzPvIWse5I/tpbXb2GCu1tgNiQezK2efwe0xnE9zjGndVF4
+         q4bugui5ZeK6VurFAjDvSU+JQ9manSHb4jx69p2+N47EP4hV6vQPgxKHC2T9iZ+2vq
+         aYm7t/Yg69tOsecRwKM8OKgC7r1TmXzY/kVjT7t1fifjdwDq0cpf4vFJT8XBDqabwn
+         RmNxE8FFByL5A==
+Date:   Thu, 13 Oct 2022 13:56:36 -0400
 From:   Sasha Levin <sashal@kernel.org>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-        zhang songyi <zhang.songyi@zte.com.cn>,
-        Zeal Robot <zealci@zte.com.cn>,
-        Anand Jain <anand.jain@oracle.com>,
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     dsterba@suse.cz, linux-kernel@vger.kernel.org,
+        stable@vger.kernel.org, Qu Wenruo <wqu@suse.com>,
         David Sterba <dsterba@suse.com>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 6.0 37/46] btrfs: remove the unnecessary result
- variables
-Message-ID: <Y0hRZss8cOHw2vqa@sashalap>
+Subject: Re: [PATCH AUTOSEL 6.0 38/46] btrfs: introduce
+ BTRFS_QGROUP_RUNTIME_FLAG_CANCEL_RESCAN
+Message-ID: <Y0hRVO+l3oSPlJd6@sashalap>
 References: <20221011145015.1622882-1-sashal@kernel.org>
- <20221011145015.1622882-37-sashal@kernel.org>
- <20221012115418.GW13389@suse.cz>
+ <20221011145015.1622882-38-sashal@kernel.org>
+ <20221012125648.GX13389@suse.cz>
+ <7cf55e21-4d68-8371-a4a5-08cd8278bcf9@gmx.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii; format=flowed
 Content-Disposition: inline
-In-Reply-To: <20221012115418.GW13389@suse.cz>
+In-Reply-To: <7cf55e21-4d68-8371-a4a5-08cd8278bcf9@gmx.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Oct 12, 2022 at 01:54:18PM +0200, David Sterba wrote:
->On Tue, Oct 11, 2022 at 10:50:05AM -0400, Sasha Levin wrote:
->> From: zhang songyi <zhang.songyi@zte.com.cn>
->>
->> [ Upstream commit bd64f6221a98fb1857485c63fd3d8da8d47406c6 ]
->>
->> Return the sysfs_emit() and iterate_object_props() directly instead of
->> using unnecessary variables.
->>
->> Reported-by: Zeal Robot <zealci@zte.com.cn>
->> Reviewed-by: Anand Jain <anand.jain@oracle.com>
->> Signed-off-by: zhang songyi <zhang.songyi@zte.com.cn>
->> Reviewed-by: David Sterba <dsterba@suse.com>
->> Signed-off-by: David Sterba <dsterba@suse.com>
->> Signed-off-by: Sasha Levin <sashal@kernel.org>
->> ---
->>  fs/btrfs/props.c |  5 +----
->>  fs/btrfs/sysfs.c | 10 ++--------
->>  2 files changed, 3 insertions(+), 12 deletions(-)
->>
->> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
->> index a2ec8ecae8de..055a631276ce 100644
->> --- a/fs/btrfs/props.c
->> +++ b/fs/btrfs/props.c
->> @@ -270,11 +270,8 @@ int btrfs_load_inode_props(struct inode *inode, struct btrfs_path *path)
->>  {
->>  	struct btrfs_root *root = BTRFS_I(inode)->root;
->>  	u64 ino = btrfs_ino(BTRFS_I(inode));
->> -	int ret;
->> -
->> -	ret = iterate_object_props(root, path, ino, inode_prop_iterator, inode);
->>
->> -	return ret;
->> +	return iterate_object_props(root, path, ino, inode_prop_iterator, inode);
+On Thu, Oct 13, 2022 at 07:12:10AM +0800, Qu Wenruo wrote:
 >
->Please drop the patch from stable queues, it's an obvious cleanup.
+>
+>On 2022/10/12 20:56, David Sterba wrote:
+>>On Tue, Oct 11, 2022 at 10:50:06AM -0400, Sasha Levin wrote:
+>>>From: Qu Wenruo <wqu@suse.com>
+>>>
+>>>[ Upstream commit e562a8bdf652b010ce2525bcf15d145c9d3932bf ]
+>>>
+>>>Introduce a new runtime flag, BTRFS_QGROUP_RUNTIME_FLAG_CANCEL_RESCAN,
+>>>which will inform qgroup rescan to cancel its work asynchronously.
+>>>
+>>>This is to address the window when an operation makes qgroup numbers
+>>>inconsistent (like qgroup inheriting) while a qgroup rescan is running.
+>>>
+>>>In that case, qgroup inconsistent flag will be cleared when qgroup
+>>>rescan finishes.
+>>>But we changed the ownership of some extents, which means the rescan is
+>>>already meaningless, and the qgroup inconsistent flag should not be
+>>>cleared.
+>>>
+>>>With the new flag, each time we set INCONSISTENT flag, we also set this
+>>>new flag to inform any running qgroup rescan to exit immediately, and
+>>>leaving the INCONSISTENT flag there.
+>>>
+>>>The new runtime flag can only be cleared when a new rescan is started.
+>>
+>>Qu, does this patch make sense for stable on itself? It was part of a
+>>series adding some new flags and the sysfs knob.  As I read it there's a
+>>case where it can affect how the rescan is done and that it can be
+>>cancelled but still am not sure if it's worth the backport.
+>
+>Considering the qgroup still lacks a way to handle large subvolume drop,
+>and a lot of things can mark qgroup inconsistent halfway, I think
+>backporting this patch itself is not that bad.
+>
+>The problem is, why only backporting this one?
+>
+>To me, it would make more sense to backport either all or none.
+>
+>Sure, if we can cancel rescan it's an improvement, but rescan itself is
+>already relatively cheap compared to other qgroup operations.
+>Thus I prefer to backport all the qgroup patches.
 
-Ack, I'll drop this and the other btrfs commits you've pointed out.
+I'll drop this one and happily take a series if you want to send one
+out.
 
 -- 
 Thanks,

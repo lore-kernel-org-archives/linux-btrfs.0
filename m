@@ -2,80 +2,106 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99535C43219
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:09:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C76BC43219
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 15:44:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229674AbiJNOJt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Oct 2022 10:09:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43814 "EHLO
+        id S229875AbiJNPoU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Oct 2022 11:44:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40308 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229582AbiJNOJr (ORCPT
+        with ESMTP id S229471AbiJNPoS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2022 10:09:47 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8094D1FFA3
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:09:44 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Fri, 14 Oct 2022 11:44:18 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF6A027B16;
+        Fri, 14 Oct 2022 08:44:17 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id CC2F51F385;
-        Fri, 14 Oct 2022 14:04:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1665756281;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=TddYCZ9UZ0POeC/ZhpE2Im6E6lHG5OwlFpFh878Hxe8=;
-        b=opIoEwKusbYXyDHpIXenclGbmdVJHlg4e8+umNKlmdLl1xi+9JWUaNBEy0Iu3L/MEH9a3+
-        BWh+hcYuEyVhzqg6pxlvcQubu7n35B5zEZEvTpLL2wMcIxHNaoizLFCMDEi/+miDZo8arI
-        qWjeuQF9lxUsKjQ8GfPhh62q8wrIyKk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1665756281;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=TddYCZ9UZ0POeC/ZhpE2Im6E6lHG5OwlFpFh878Hxe8=;
-        b=QPSCPTsP470h7lHaL93NAy2yBAS/PqIydtRERqWbBP9p1AxVSYVYWK54QRwegOMBNEX/IE
-        qvCFpyZI5qwI/lBg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AE88413451;
-        Fri, 14 Oct 2022 14:04:41 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id npOQKXlsSWOiQQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 14 Oct 2022 14:04:41 +0000
-Date:   Fri, 14 Oct 2022 16:04:34 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/2] btrfs: drop no longer needed atomic allocation
- for tree mod log operations
-Message-ID: <20221014140434.GJ13389@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1665656353.git.fdmanana@suse.com>
- <cover.1665754838.git.fdmanana@suse.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 4B52C61BB3;
+        Fri, 14 Oct 2022 15:44:17 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 91F66C433D6;
+        Fri, 14 Oct 2022 15:44:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1665762256;
+        bh=a5ohXX2HljiK2lNNucw1xbywST/b4xYjzGhuCnryDTo=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=BojrB6HSrEMn1FhOgfcP/WBFDRf35mrgRpMiajKBb27i/tgA0yefz/nT4qQzAhWud
+         I2BIVssXLeiYN1j+rCLBf8YukEVGRs/Yo7TcK41ggGHF1t8gNqn7JmlWjM9nbQTpay
+         Bo6K8LKowNqInWjustkMtzWpwqYUb3dK79HqY6jzscgi+4qSDsEd54sSQ98ZxN9SSg
+         WbN6PEb8FHoe6zPwitBWhHa8UGo/t58coOzis1+FRAp3U8lEIgrB9QvPSd9PYSHaIC
+         +IEzfryV+tWCKGx95u9xR0HrB9NwDP3GqRC4BFQFgbqBZlGnfqVyboxmulVghVWA3B
+         Xo1doKeBNsfuQ==
+Date:   Fri, 14 Oct 2022 08:44:16 -0700
+From:   "Darrick J. Wong" <djwong@kernel.org>
+To:     Hrutvik Kanabar <hrkanabar@gmail.com>
+Cc:     Hrutvik Kanabar <hrutvik@google.com>,
+        Marco Elver <elver@google.com>,
+        Aleksandr Nogikh <nogikh@google.com>,
+        kasan-dev@googlegroups.com,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Theodore Ts'o <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        linux-ext4@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
+        linux-f2fs-devel@lists.sourceforge.net, linux-xfs@vger.kernel.org,
+        Namjae Jeon <linkinjeon@kernel.org>,
+        Sungjong Seo <sj1557.seo@samsung.com>,
+        Anton Altaparmakov <anton@tuxera.com>,
+        linux-ntfs-dev@lists.sourceforge.net
+Subject: Re: [PATCH RFC 5/7] fs/xfs: support `DISABLE_FS_CSUM_VERIFICATION`
+ config option
+Message-ID: <Y0mD0LcNvu+QTlQ9@magnolia>
+References: <20221014084837.1787196-1-hrkanabar@gmail.com>
+ <20221014084837.1787196-6-hrkanabar@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1665754838.git.fdmanana@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <20221014084837.1787196-6-hrkanabar@gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 14, 2022 at 02:44:31PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Fri, Oct 14, 2022 at 08:48:35AM +0000, Hrutvik Kanabar wrote:
+> From: Hrutvik Kanabar <hrutvik@google.com>
 > 
-> We are still doing an atomic memory allocation for tree mod log operations
-> which is not needed anymore after we switch extent buffer locks to rw
-> semaphores. This replaces that atomic allocation with a GFP_NOFS one, and
-> then removes redundant gfp_t argument for btrfs_tree_mod_log_insert_key().
+> When `DISABLE_FS_CSUM_VERIFICATION` is enabled, return truthy value for
+> `xfs_verify_cksum`, which is the key function implementing checksum
+> verification for XFS.
 > 
-> V2: Updated patch 2/2 to also remove the allocation flag from
->     alloc_tree_mod_elem().
+> Signed-off-by: Hrutvik Kanabar <hrutvik@google.com>
 
-Updated to v2 in misc-next, thanks.
+NAK, we're not going to break XFS for the sake of automated fuzz tools.
+
+You'll have to adapt your fuzzing tools to rewrite the block header
+checksums, like the existing xfs fuzz testing framework does.  See
+the xfs_db 'fuzz -d' command and the relevant fstests.
+
+--D
+
+> ---
+>  fs/xfs/libxfs/xfs_cksum.h | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/xfs/libxfs/xfs_cksum.h b/fs/xfs/libxfs/xfs_cksum.h
+> index 999a290cfd72..ba55b1afa382 100644
+> --- a/fs/xfs/libxfs/xfs_cksum.h
+> +++ b/fs/xfs/libxfs/xfs_cksum.h
+> @@ -76,7 +76,10 @@ xfs_verify_cksum(char *buffer, size_t length, unsigned long cksum_offset)
+>  {
+>  	uint32_t crc = xfs_start_cksum_safe(buffer, length, cksum_offset);
+>  
+> -	return *(__le32 *)(buffer + cksum_offset) == xfs_end_cksum(crc);
+> +	if (IS_ENABLED(CONFIG_DISABLE_FS_CSUM_VERIFICATION))
+> +		return 1;
+> +	else
+> +		return *(__le32 *)(buffer + cksum_offset) == xfs_end_cksum(crc);
+>  }
+>  
+>  #endif /* _XFS_CKSUM_H */
+> -- 
+> 2.38.0.413.g74048e4d9e-goog
+> 

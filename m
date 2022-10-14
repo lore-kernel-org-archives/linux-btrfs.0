@@ -2,90 +2,97 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43EE6C4332F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 13:48:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 24B78C433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:02:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229841AbiJNNsQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Oct 2022 09:48:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53952 "EHLO
+        id S230109AbiJNOCd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Oct 2022 10:02:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38894 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229768AbiJNNsN (ORCPT
+        with ESMTP id S230336AbiJNOCI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2022 09:48:13 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B63DA1CFF25
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 06:48:12 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 09F37B820BD
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 13:48:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C77CDC433C1
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 13:48:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665755289;
-        bh=wH1txcPRAvSEhe/cU05LZcjYAmBF5BDA+aQ289v7UW4=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=UgHskDp7u71Hgunil3PN4K/tbSlg+GChsB9vZlPCnEnmglQh8lqS+NP/aFu4Tybla
-         O46d3OxfYntBlwWKtLihLMy+5f1kG0/5UHVbpMLHEsRraWYHZIqL0hicOhG41ShqFv
-         zEFNmflwSzBcF2qDNuRllWF2l1w+bYFYyMZecnt/drYXutMYIT/xrga4vv9ZywqOEP
-         yBvtlxv9XqjUAjqPdLHxp+IsXYE2gEZ1zULQf6sM/yqYbouz8siz7TNdhhA/yv/xCs
-         8t0F3iBXH39uEvGvWjmzEapYkkcPsMJ11JizH/IfKjMXrj7CtYdY3fTrzk18yXRhTB
-         uxKUzJem2cl5A==
-Received: by mail-oa1-f48.google.com with SMTP id 586e51a60fabf-1370acb6588so5878302fac.9
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 06:48:09 -0700 (PDT)
-X-Gm-Message-State: ACrzQf2i85RLWITimulKXdSlIJCw/aCHIgvwZY2Hx8fl3uGCgEpsFisG
-        AujuOcBV/EXv8ev92Kk3n8D7vIRYkZVRhtyY2TM=
-X-Google-Smtp-Source: AMsMyM4WdlKOPYWD283scK7rtVrjcquAxjpsMHrex0rQ3pYEkUZiw1EBrEmV/uKeuSga7p5RizugrtrpOb3eRv6ScX0=
-X-Received: by 2002:a05:6870:2052:b0:132:7b2:2fe6 with SMTP id
- l18-20020a056870205200b0013207b22fe6mr2821027oad.98.1665755288932; Fri, 14
- Oct 2022 06:48:08 -0700 (PDT)
+        Fri, 14 Oct 2022 10:02:08 -0400
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C1801D346F
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:29 -0700 (PDT)
+Received: by mail-qv1-xf2c.google.com with SMTP id mg6so3255330qvb.10
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:29 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=0JY9hla8Mv+TDdIFHGhPq78JDSMYmT5EcO5gUnud1Mo=;
+        b=Zzip7Z7tYEr1obL/tHLCZmlfFzFmidFsOo7Q8ocWrEqzVFd4SMF8+tpS6h+OJlJQcG
+         tkAun62iawWiOPAtjGtXsupWd47uq+x2MyaH5IQexalqZkRBGLIZG2CxAa3f+RFAMioO
+         HZT0RqoE56A5HMfTlltIST3rwTwbjoKDdz+GOycFM40HDWoVo/nxt6HJYCbE67iCrmjb
+         bWBAv2Ge5SgTfnXa2s00H+SxaLxZn6uez4t3NPGHv6gRVMCfys5QCqjYiFCUGk8ED65N
+         cTGghyaSGpk9EgcafTTfZBQqyElmTp40QcmSXrSFIkPQR71hnZLtGfQ4cQt/LUfkpJ2G
+         6qXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=0JY9hla8Mv+TDdIFHGhPq78JDSMYmT5EcO5gUnud1Mo=;
+        b=pijOEqYxh+L/HWmhWA87rBPjq2EgO0ds3ru1FeaHXkiaYvHnoGAwPelXe2+iDSsCjD
+         hSR8ZlX7Z3ej92Fb5CtxUc5EJW1gixXha2J31+eI/ShkORR+323HczoOTZct6XzCxLzr
+         zxW1bt6SbIy5Wd/hLoRS113H0eTugjOxHBTXnmvCWDXcBrx9UECWPulNLgz9BTn0cXKK
+         6idfN7YrTCQW2RKUD2vcJHRg2n0fJRcl7FQZyytFqbd1tC55KHyT3eRbAlmdRtQy0GT/
+         SO7MO4bbOidHAhZ3G6RVA4eRbG6LSDT+/dyCCaj3n8OWqY3x5uGAvTiEY30Vfo/W7bIH
+         3zAw==
+X-Gm-Message-State: ACrzQf1Wbf04hfc7Ltjn1Ex2iP/kWiJ7IBae5eLGnQqN7JWgMpVW/yD+
+        Ppo4Ew6iPj0ZW7NHY6c5sbmhnUbdx6h8hA==
+X-Google-Smtp-Source: AMsMyM4Y5NW0p2B9bgi8Uqm/qcl5sOUuIdTbOm2cMvHLridrnOYHcIhJR+24FPupchev/PTbyjrlCw==
+X-Received: by 2002:a0c:cb85:0:b0:4b1:8e41:d0b8 with SMTP id p5-20020a0ccb85000000b004b18e41d0b8mr4329558qvk.71.1665756047925;
+        Fri, 14 Oct 2022 07:00:47 -0700 (PDT)
+Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
+        by smtp.gmail.com with ESMTPSA id y13-20020a05620a25cd00b006cbe3be300esm2598117qko.12.2022.10.14.07.00.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 14 Oct 2022 07:00:47 -0700 (PDT)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH 2/3] btrfs: remove unlock_extent_atomic
+Date:   Fri, 14 Oct 2022 10:00:40 -0400
+Message-Id: <852b4be23ee74070c3745103686233f94b914687.1665755095.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1665755095.git.josef@toxicpanda.com>
+References: <cover.1665755095.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-References: <cover.1665656353.git.fdmanana@suse.com> <903be4beb2a83dcfaa278329c59f055f5a15c42e.1665656353.git.fdmanana@suse.com>
- <20221014133011.GH13389@twin.jikos.cz>
-In-Reply-To: <20221014133011.GH13389@twin.jikos.cz>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Fri, 14 Oct 2022 14:47:32 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4MWu6UuhcAbko51PuuV5ta6XP6V4Q_FBQuJybLM1vE7w@mail.gmail.com>
-Message-ID: <CAL3q7H4MWu6UuhcAbko51PuuV5ta6XP6V4Q_FBQuJybLM1vE7w@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs: remove gfp_t flag from btrfs_tree_mod_log_insert_key()
-To:     dsterba@suse.cz
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 14, 2022 at 2:30 PM David Sterba <dsterba@suse.cz> wrote:
->
-> On Thu, Oct 13, 2022 at 11:36:26AM +0100, fdmanana@kernel.org wrote:
-> >index 8a3a14686d3e..6606534fc36a 100644
-> > --- a/fs/btrfs/tree-mod-log.c
-> > +++ b/fs/btrfs/tree-mod-log.c
-> > @@ -220,7 +220,7 @@ static struct tree_mod_elem *alloc_tree_mod_elem(struct extent_buffer *eb,
-> >  }
-> >
-> >  int btrfs_tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
-> > -                               enum btrfs_mod_log_op op, gfp_t flags)
-> > +                               enum btrfs_mod_log_op op)
-> >  {
-> >       struct tree_mod_elem *tm;
-> >       int ret;
-> > @@ -228,7 +228,7 @@ int btrfs_tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
-> >       if (!tree_mod_need_log(eb->fs_info, eb))
-> >               return 0;
-> >
-> > -     tm = alloc_tree_mod_elem(eb, slot, op, flags);
-> > +     tm = alloc_tree_mod_elem(eb, slot, op, GFP_NOFS);
->
-> And after that alloc_tree_mod_elem is also called only with GFP_NOFS.
+As of
 
-Indeed.
-Just sent a v2 with that change as well.
+  btrfs: do not use GFP_ATOMIC in the read endio
 
-Thanks.
+we no longer have any users of unlock_extent_atomic, remove it.
 
->
-> >       if (!tm)
-> >               return -ENOMEM;
-> >
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/extent-io-tree.h | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
+index a855f40dd61d..8187f3360056 100644
+--- a/fs/btrfs/extent-io-tree.h
++++ b/fs/btrfs/extent-io-tree.h
+@@ -139,13 +139,6 @@ static inline int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end,
+ 				  GFP_NOFS, NULL);
+ }
+ 
+-static inline int unlock_extent_atomic(struct extent_io_tree *tree, u64 start,
+-				       u64 end, struct extent_state **cached)
+-{
+-	return __clear_extent_bit(tree, start, end, EXTENT_LOCKED, cached,
+-				  GFP_ATOMIC, NULL);
+-}
+-
+ static inline int clear_extent_bits(struct extent_io_tree *tree, u64 start,
+ 				    u64 end, u32 bits)
+ {
+-- 
+2.26.3
+

@@ -2,75 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91FF6C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:05:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 26908C433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:09:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230432AbiJNOFQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Oct 2022 10:05:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43434 "EHLO
+        id S229936AbiJNOJO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Oct 2022 10:09:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230445AbiJNOE5 (ORCPT
+        with ESMTP id S230061AbiJNOJM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2022 10:04:57 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B39F67068
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:04:16 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1665756180;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=k8qQltuyjmygy+O43yanVxeFaxBvrjiQoX3IXlPZtGE=;
-        b=RKHBQA/A4GlnxFkvwLNIpONxGhyNEOoKxzT/Ei36YkDnL+VAzlv3bscrVdg1uB565Zn0wN
-        e/Fvg0sj6dh7zV1RUi+wGHP76038mbA2w9LCAhFCtWWVnmQQGifGavsIwhIhy+tz3wGnAl
-        QHUBtd+tWXuW+oAphqRgaDMVjTvnq0E=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-244-0ngC2H1gONipQ71LSLOWqQ-1; Fri, 14 Oct 2022 09:59:38 -0400
-X-MC-Unique: 0ngC2H1gONipQ71LSLOWqQ-1
-Received: from smtp.corp.redhat.com (int-mx09.intmail.prod.int.rdu2.redhat.com [10.11.54.9])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        Fri, 14 Oct 2022 10:09:12 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 441691D3447
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:09:11 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id C2DFA3C10687;
-        Fri, 14 Oct 2022 13:59:37 +0000 (UTC)
-Received: from warthog.procyon.org.uk (unknown [10.33.36.78])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 456D84030DF;
-        Fri, 14 Oct 2022 13:59:36 +0000 (UTC)
-Organization: Red Hat UK Ltd. Registered Address: Red Hat UK Ltd, Amberley
-        Place, 107-111 Peascod Street, Windsor, Berkshire, SI4 1TE, United
-        Kingdom.
-        Registered in England and Wales under Company Registration No. 3798903
-From:   David Howells <dhowells@redhat.com>
-In-Reply-To: <20220901220138.182896-6-vishal.moola@gmail.com>
-References: <20220901220138.182896-6-vishal.moola@gmail.com> <20220901220138.182896-1-vishal.moola@gmail.com>
-To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
-Cc:     dhowells@redhat.com, linux-fsdevel@vger.kernel.org,
-        linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nilfs@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH 05/23] afs: Convert afs_writepages_region() to use filemap_get_folios_tag()
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 0478A1F383;
+        Fri, 14 Oct 2022 14:09:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1665756550;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=98QH/2inju+VgBTDsnGLY5wPQNAQ4P/nDL871FxvPVo=;
+        b=EtC38kSMgtitiaxJssmP0M1SxBwilAACchd03MDocyYak7WKGjS4Wfz2UA75ECQuTS/uM2
+        sDXyQL+63RPPuBjh8HZXfvQF6QlvtfHs869iGrBBCLmbjERNxwj1qxj+Evr5El1hJZwt4i
+        +GVEd5VH4k4c4sTEROwENSwqVpDRzWo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1665756550;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=98QH/2inju+VgBTDsnGLY5wPQNAQ4P/nDL871FxvPVo=;
+        b=OtliOifu3tZecV1ptO3swtZ4R0u3Isp6RnPWAizruwU+DtSrMQCgM9Ad31USuebdAVUII6
+        A4QkPmItwazQFjBg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D6AF213451;
+        Fri, 14 Oct 2022 14:09:09 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id NEyMM4VtSWP+QwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 14 Oct 2022 14:09:09 +0000
+Date:   Fri, 14 Oct 2022 16:09:02 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Boris Burkov <boris@bur.io>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com,
+        'Filipe Manana ' <fdmanana@kernel.org>
+Subject: Re: [PATCH v2 0/2] btrfs: minor reclaim tuning
+Message-ID: <20221014140902.GK13389@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1665701210.git.boris@bur.io>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-ID: <1569539.1665755974.1@warthog.procyon.org.uk>
-Date:   Fri, 14 Oct 2022 14:59:34 +0100
-Message-ID: <1569540.1665755974@warthog.procyon.org.uk>
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.9
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1665701210.git.boris@bur.io>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Vishal Moola (Oracle) <vishal.moola@gmail.com> wrote:
-
-> Convert to use folios throughout. This function is in preparation to
-> remove find_get_pages_range_tag().
+On Thu, Oct 13, 2022 at 03:52:08PM -0700, Boris Burkov wrote:
+> Two minor reclaim fixes that reduce relocations when they aren't quite
+> necessary. These are a basic first step in a broader effort to reduce
+> the alarmingly high rate of relocation we have observed in production
+> at Meta.
 > 
-> Also modified this function to write the whole batch one at a time,
-> rather than calling for a new set every single write.
+> The first patch skips empty relocation.
 > 
-> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+> The second patch skips relocation that no longer passes the reclaim
+> threshold check at reclaim time.
+> 
+> Changes in v2:
+> - added the re-check patch
+> - improved commit message and comment in the skip-empty patch.
+> 
+> Boris Burkov (2):
+>   btrfs: skip reclaim if block_group is empty
+>   btrfs: re-check reclaim condition in reclaim worker
 
-Tested-by: David Howells <dhowells@redhat.com>
-
+Added to misc-next, thanks.

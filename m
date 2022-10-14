@@ -2,179 +2,75 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7D31C4332F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:02:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91FF6C433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:05:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230373AbiJNOCw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Oct 2022 10:02:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39692 "EHLO
+        id S230432AbiJNOFQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Oct 2022 10:05:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43434 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230369AbiJNOCh (ORCPT
+        with ESMTP id S230445AbiJNOE5 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2022 10:02:37 -0400
-Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5EC81D347D
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:31 -0700 (PDT)
-Received: by mail-qt1-x836.google.com with SMTP id cr19so417920qtb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=k2nhG6drTSbfSI7gf5b0s8uqBtc2n80Gqrd3Oc8irVY=;
-        b=efiIYEjGgelJWZJhUsO0OYEoeLiYUiom8j7cryx8s5+drhMTmlkJf+uqvJQDF2K09q
-         jo1IlMkCcYdoypof9lwyhH4M2nujSaY3SZwl/x1sCBufflxh/ZUJ1cFsnaWI1d1Y/Jh+
-         6BQZ0+sFukLLz0AaExSi0Mx8zNXDMatZ0tqPjl7eXDGuMsZ9SclVATZ4El4PjBmSIjHF
-         vRBvWAfQpFrU6WJGh9BN4exY6bc6rlUycJaAsFe026sTqF2vb1GN6B2j4mIM0yuyb+I4
-         JfMBcuYjHI+RdhIznHORZQ5MVbqJBL+tYDPBccOvRzCpuAmvwuDKcNd6SXjgpEL030vZ
-         IOGw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=k2nhG6drTSbfSI7gf5b0s8uqBtc2n80Gqrd3Oc8irVY=;
-        b=vViLqNkzxa/8roEyK2hgSjIs1SZPlTrEqRrw3eeg68PXZVzXmDLHfSlWPR94q/odOr
-         xfuoYTqB228bRQE92R0yAGquCZ7FxLC9cLqNuxu8zylne/vmy3TvOT0yPt+lIS98Qbky
-         R58LOAb2bd46nBSKl7QZ9P16KTNvFRLGXEGdimDkFTMYIHfhf3P3yMMNChwRvU6/sRRP
-         lIRHmQDpBmByLwWtiqpu3w9JiaADwY/iEKe60HSQYRCZ1TYMmsFVq4ID602BhCufIjfZ
-         A2syTpP3rRS6j8kmzW1AFZotsUSqS5xi4eXn+5GTdEVWI+xO0XG7RkuZajsxnKo6pz/V
-         uM3Q==
-X-Gm-Message-State: ACrzQf3oIttCb+FQ7ks/N9W+ojqGdsq9R9uYH1H3EgPFpxVaDsoGIjqo
-        RfOL8PDUduEo6E/hrFbqTkimvubgQRlhMA==
-X-Google-Smtp-Source: AMsMyM467O3VjBQAfp7ghHx/Umj2ffZHQRywhnBIEcGz5vljOEZSqYQwPyBgik9PtdzVMReSLkQjhA==
-X-Received: by 2002:ac8:7d90:0:b0:35b:b5b2:e05a with SMTP id c16-20020ac87d90000000b0035bb5b2e05amr4140245qtd.513.1665756049831;
-        Fri, 14 Oct 2022 07:00:49 -0700 (PDT)
-Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id d8-20020a05622a100800b0039cd508f1d3sm2136907qte.75.2022.10.14.07.00.49
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 14 Oct 2022 07:00:49 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 3/3] btrfs: do not panic if we can't allocate a prealloc extent state
-Date:   Fri, 14 Oct 2022 10:00:41 -0400
-Message-Id: <97fb0828deb341efe99ef2bc35cda0eccc5963de.1665755095.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1665755095.git.josef@toxicpanda.com>
-References: <cover.1665755095.git.josef@toxicpanda.com>
+        Fri, 14 Oct 2022 10:04:57 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B39F67068
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:04:16 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1665756180;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=k8qQltuyjmygy+O43yanVxeFaxBvrjiQoX3IXlPZtGE=;
+        b=RKHBQA/A4GlnxFkvwLNIpONxGhyNEOoKxzT/Ei36YkDnL+VAzlv3bscrVdg1uB565Zn0wN
+        e/Fvg0sj6dh7zV1RUi+wGHP76038mbA2w9LCAhFCtWWVnmQQGifGavsIwhIhy+tz3wGnAl
+        QHUBtd+tWXuW+oAphqRgaDMVjTvnq0E=
+Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
+ [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-244-0ngC2H1gONipQ71LSLOWqQ-1; Fri, 14 Oct 2022 09:59:38 -0400
+X-MC-Unique: 0ngC2H1gONipQ71LSLOWqQ-1
+Received: from smtp.corp.redhat.com (int-mx09.intmail.prod.int.rdu2.redhat.com [10.11.54.9])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id C2DFA3C10687;
+        Fri, 14 Oct 2022 13:59:37 +0000 (UTC)
+Received: from warthog.procyon.org.uk (unknown [10.33.36.78])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 456D84030DF;
+        Fri, 14 Oct 2022 13:59:36 +0000 (UTC)
+Organization: Red Hat UK Ltd. Registered Address: Red Hat UK Ltd, Amberley
+        Place, 107-111 Peascod Street, Windsor, Berkshire, SI4 1TE, United
+        Kingdom.
+        Registered in England and Wales under Company Registration No. 3798903
+From:   David Howells <dhowells@redhat.com>
+In-Reply-To: <20220901220138.182896-6-vishal.moola@gmail.com>
+References: <20220901220138.182896-6-vishal.moola@gmail.com> <20220901220138.182896-1-vishal.moola@gmail.com>
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     dhowells@redhat.com, linux-fsdevel@vger.kernel.org,
+        linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nilfs@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH 05/23] afs: Convert afs_writepages_region() to use filemap_get_folios_tag()
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-ID: <1569539.1665755974.1@warthog.procyon.org.uk>
+Date:   Fri, 14 Oct 2022 14:59:34 +0100
+Message-ID: <1569540.1665755974@warthog.procyon.org.uk>
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.9
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We sometimes have to allocate new extent states when clearing or setting
-new bits in an extent io tree.  Generally we preallocate this before
-taking the tree spin lock, but we can use this preallocated extent state
-sometimes and then need to try to do a GFP_ATOMIC allocation under the
-lock.
+Vishal Moola (Oracle) <vishal.moola@gmail.com> wrote:
 
-Unfortunately sometimes this fails, and then we hit the BUG_ON() and
-bring the box down.  This happens roughly 20 times a week in our fleet.
+> Convert to use folios throughout. This function is in preparation to
+> remove find_get_pages_range_tag().
+> 
+> Also modified this function to write the whole batch one at a time,
+> rather than calling for a new set every single write.
+> 
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
 
-However the vast majority of callers use GFP_NOFS, which means that if
-this GFP_ATOMIC allocation fails, we could simply drop the spin lock, go
-back and allocate a new extent state with our given gfp mask, and begin
-again from where we left off.
-
-For the remaining callers that do not use GFP_NOFS, they are generally
-using GFP_NOWAIT, which still allows for some reclaim.  So allow these
-allocations to attempt to happen outside of the spin lock so we don't
-need to rely on GFP_ATOMIC allocations.
-
-This in essence creates an infinite loop for anything that isn't
-GFP_NOFS.  To address this we will want to migrate to using mempools for
-extent states so that we will always have emergency reserves in order to
-make our allocations.
-
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/extent-io-tree.c | 22 ++++++++++++++--------
- 1 file changed, 14 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 618275af19c4..6ad09ba28aae 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -572,7 +572,7 @@ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	if (bits & (EXTENT_LOCKED | EXTENT_BOUNDARY))
- 		clear = 1;
- again:
--	if (!prealloc && gfpflags_allow_blocking(mask)) {
-+	if (!prealloc) {
- 		/*
- 		 * Don't care for allocation failure here because we might end
- 		 * up not needing the pre-allocated extent state at all, which
-@@ -636,7 +636,8 @@ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 
- 	if (state->start < start) {
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			goto search_again;
- 		err = split_state(tree, state, prealloc, start);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
-@@ -657,7 +658,8 @@ int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	 */
- 	if (state->start <= end && state->end > end) {
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			goto search_again;
- 		err = split_state(tree, state, prealloc, end + 1);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
-@@ -966,7 +968,7 @@ static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	else
- 		ASSERT(failed_start == NULL);
- again:
--	if (!prealloc && gfpflags_allow_blocking(mask)) {
-+	if (!prealloc) {
- 		/*
- 		 * Don't care for allocation failure here because we might end
- 		 * up not needing the pre-allocated extent state at all, which
-@@ -991,7 +993,8 @@ static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	state = tree_search_for_insert(tree, start, &p, &parent);
- 	if (!state) {
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			goto search_again;
- 		prealloc->start = start;
- 		prealloc->end = end;
- 		insert_state_fast(tree, prealloc, p, parent, bits, changeset);
-@@ -1062,7 +1065,8 @@ static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		}
- 
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			goto search_again;
- 		err = split_state(tree, state, prealloc, start);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
-@@ -1099,7 +1103,8 @@ static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 			this_end = last_start - 1;
- 
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			goto search_again;
- 
- 		/*
- 		 * Avoid to free 'prealloc' if it can be merged with the later
-@@ -1130,7 +1135,8 @@ static int __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		}
- 
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			goto search_again;
- 		err = split_state(tree, state, prealloc, end + 1);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
--- 
-2.26.3
+Tested-by: David Howells <dhowells@redhat.com>
 

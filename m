@@ -2,97 +2,107 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 24B78C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:02:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 941BBC433FE
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 14:02:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230109AbiJNOCd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Oct 2022 10:02:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38894 "EHLO
+        id S230363AbiJNOCh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Oct 2022 10:02:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36082 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230336AbiJNOCI (ORCPT
+        with ESMTP id S230258AbiJNOCK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2022 10:02:08 -0400
-Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C1801D346F
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:29 -0700 (PDT)
-Received: by mail-qv1-xf2c.google.com with SMTP id mg6so3255330qvb.10
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:29 -0700 (PDT)
+        Fri, 14 Oct 2022 10:02:10 -0400
+Received: from mail-qt1-x82d.google.com (mail-qt1-x82d.google.com [IPv6:2607:f8b0:4864:20::82d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BEAD01D344D
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:23 -0700 (PDT)
+Received: by mail-qt1-x82d.google.com with SMTP id z8so3686461qtv.5
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 07:01:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=0JY9hla8Mv+TDdIFHGhPq78JDSMYmT5EcO5gUnud1Mo=;
-        b=Zzip7Z7tYEr1obL/tHLCZmlfFzFmidFsOo7Q8ocWrEqzVFd4SMF8+tpS6h+OJlJQcG
-         tkAun62iawWiOPAtjGtXsupWd47uq+x2MyaH5IQexalqZkRBGLIZG2CxAa3f+RFAMioO
-         HZT0RqoE56A5HMfTlltIST3rwTwbjoKDdz+GOycFM40HDWoVo/nxt6HJYCbE67iCrmjb
-         bWBAv2Ge5SgTfnXa2s00H+SxaLxZn6uez4t3NPGHv6gRVMCfys5QCqjYiFCUGk8ED65N
-         cTGghyaSGpk9EgcafTTfZBQqyElmTp40QcmSXrSFIkPQR71hnZLtGfQ4cQt/LUfkpJ2G
-         6qXA==
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=cn4ctQDs25dy93Qu0l7omk6cgWB/17lYbUN0P+LFM+8=;
+        b=Q3A0IKrXoULLJPkIspNwgta9TLdtRfL4jhZhk688Ip5QTH6jHlFVZzY1y+nuGEfjZF
+         uvfoAZeamn2JQBpWG3E/1eRACqizPZX9FF7kuNDedewCzaD2VNw0RwpcNTAJUeq+ZHBI
+         IISHSwu/bD6YHshF72BZOXSbRNLqGxxf74xNHZGzIPfNTmVwUKDXTzcxQlvSuxgr10TN
+         9+jEUOgm2Fb7fvhIBfrrlT4nK9vH5z5QPgbvlCw3xBIzikroe2hy8UO95ZtZeVFs4cvo
+         4dpre+lIE/R9CuOOcytluFRaJTLnuQd3MfwOuZ7ZFoWX37Apqv4H8RYWarG6kMeyXcTY
+         hPwA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=0JY9hla8Mv+TDdIFHGhPq78JDSMYmT5EcO5gUnud1Mo=;
-        b=pijOEqYxh+L/HWmhWA87rBPjq2EgO0ds3ru1FeaHXkiaYvHnoGAwPelXe2+iDSsCjD
-         hSR8ZlX7Z3ej92Fb5CtxUc5EJW1gixXha2J31+eI/ShkORR+323HczoOTZct6XzCxLzr
-         zxW1bt6SbIy5Wd/hLoRS113H0eTugjOxHBTXnmvCWDXcBrx9UECWPulNLgz9BTn0cXKK
-         6idfN7YrTCQW2RKUD2vcJHRg2n0fJRcl7FQZyytFqbd1tC55KHyT3eRbAlmdRtQy0GT/
-         SO7MO4bbOidHAhZ3G6RVA4eRbG6LSDT+/dyCCaj3n8OWqY3x5uGAvTiEY30Vfo/W7bIH
-         3zAw==
-X-Gm-Message-State: ACrzQf1Wbf04hfc7Ltjn1Ex2iP/kWiJ7IBae5eLGnQqN7JWgMpVW/yD+
-        Ppo4Ew6iPj0ZW7NHY6c5sbmhnUbdx6h8hA==
-X-Google-Smtp-Source: AMsMyM4Y5NW0p2B9bgi8Uqm/qcl5sOUuIdTbOm2cMvHLridrnOYHcIhJR+24FPupchev/PTbyjrlCw==
-X-Received: by 2002:a0c:cb85:0:b0:4b1:8e41:d0b8 with SMTP id p5-20020a0ccb85000000b004b18e41d0b8mr4329558qvk.71.1665756047925;
-        Fri, 14 Oct 2022 07:00:47 -0700 (PDT)
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=cn4ctQDs25dy93Qu0l7omk6cgWB/17lYbUN0P+LFM+8=;
+        b=c+nroiyIHrg2gnBPVyx+eZZAcZcv2l3BFPdVNcdbyEQ6A1+KJpj1j9NYT4N0+NtG6c
+         z4TM2+f0Hl9GNmaZg9JPsA9cXVfhEg7f97v81aLNdGsSbyJDdlyVcVJYItkc37QQZaS0
+         IUFad+DgciCcH+X3pTfHhQ439xfI9JmN51PRZK5fYobcCmH8jEZ+RcpWB2IltBK7E3FH
+         yXt8GSHQ6ORz6S3LlzGUXVB5gldPBP1Z4dnI7u9JUXg3iCfzG4zPNbcwgTO4JTdhYbGs
+         /WJ6e+qZnzDGC51FLg2fLILfj44McG/3ma87osNYFZwgfGza9jlxZwUu0NM788fYyWKs
+         5e1w==
+X-Gm-Message-State: ACrzQf1RJ6/fAGqr5WIJy7uOYaZT/WtFE4oD26uPk9vtL13Bl6+VrJCm
+        sQ9t11ntDTx/P4ICiYXW5efkYH+QhlraQA==
+X-Google-Smtp-Source: AMsMyM5eQtOwTC7+UHSYjvDUB8zfp+XYgMPEytvSZjmBEttW8+ZbsPrJUsbYtk919OpIerstkFvCig==
+X-Received: by 2002:ac8:7dce:0:b0:398:c5ab:6bc4 with SMTP id c14-20020ac87dce000000b00398c5ab6bc4mr4333671qte.347.1665756043841;
+        Fri, 14 Oct 2022 07:00:43 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id y13-20020a05620a25cd00b006cbe3be300esm2598117qko.12.2022.10.14.07.00.47
+        by smtp.gmail.com with ESMTPSA id r187-20020a37a8c4000000b006d1d8fdea8asm2347379qke.85.2022.10.14.07.00.42
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 14 Oct 2022 07:00:47 -0700 (PDT)
+        Fri, 14 Oct 2022 07:00:42 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 2/3] btrfs: remove unlock_extent_atomic
-Date:   Fri, 14 Oct 2022 10:00:40 -0400
-Message-Id: <852b4be23ee74070c3745103686233f94b914687.1665755095.git.josef@toxicpanda.com>
+Subject: [PATCH 0/3] btrfs: avoid GFP_ATOMIC allocation failures during endio
+Date:   Fri, 14 Oct 2022 10:00:38 -0400
+Message-Id: <cover.1665755095.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1665755095.git.josef@toxicpanda.com>
-References: <cover.1665755095.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As of
+Hello,
 
+As you can imagine we have workloads that don't behave super well sometimes, and
+they'll OOM the box in a really spectacular fashion.  Sometimes these trip the
+BUG_ON(!prealloc) things inside of the extent io tree code.
+
+We've talked about switching these allocations to mempools for a while, but
+that's going to require some extra work.  We can drastically reduce the
+likelihood of failing these allocations by simply dropping the tree lock and
+attempting to make the allocation with the original gfp_mask.
+
+The main problem with that approach is we've been using GFP_ATOMIC in the endio
+path for....reasons?  I *think* the read endio work used to happen in IRQ
+context, but it hasn't for at least a decade, and in fact if we get read
+failures we do our failrec allocations with GFP_NOFS, so clearly GFP_ATOMIC
+isn't really required in this path.
+
+So kill the GFP_ATOMIC allocations in the endio path, which is where we see
+these panics, and then change the extent io code to simply do the loop again if
+it can't allocate the prealloc extent with GFP_ATOMIC so we can make the
+allocation with the callers gfp_mask.
+
+This is perfectly safe, we'll drop the tree lock and loop around any time we
+have to re-search the tree after modifying part of our range, we don't need to
+hold the lock for our entire operation.
+
+The only drawback here is that we could infinite loop if we can't make our
+allocation.  This is why a mempool would be the proper solution, as we can't
+fail these allocations without brining the box down, which is what we currently
+do anyway.
+
+Josef
+
+Josef Bacik (3):
   btrfs: do not use GFP_ATOMIC in the read endio
+  btrfs: remove unlock_extent_atomic
+  btrfs: do not panic if we can't allocate a prealloc extent state
 
-we no longer have any users of unlock_extent_atomic, remove it.
+ fs/btrfs/extent-io-tree.c | 22 ++++++++++++++--------
+ fs/btrfs/extent-io-tree.h |  7 -------
+ fs/btrfs/extent_io.c      |  8 ++++----
+ 3 files changed, 18 insertions(+), 19 deletions(-)
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/extent-io-tree.h | 7 -------
- 1 file changed, 7 deletions(-)
-
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index a855f40dd61d..8187f3360056 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -139,13 +139,6 @@ static inline int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end,
- 				  GFP_NOFS, NULL);
- }
- 
--static inline int unlock_extent_atomic(struct extent_io_tree *tree, u64 start,
--				       u64 end, struct extent_state **cached)
--{
--	return __clear_extent_bit(tree, start, end, EXTENT_LOCKED, cached,
--				  GFP_ATOMIC, NULL);
--}
--
- static inline int clear_extent_bits(struct extent_io_tree *tree, u64 start,
- 				    u64 end, u32 bits)
- {
 -- 
 2.26.3
 

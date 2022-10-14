@@ -2,78 +2,90 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86CA3C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 13:45:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43EE6C4332F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 14 Oct 2022 13:48:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229918AbiJNNpG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 14 Oct 2022 09:45:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42466 "EHLO
+        id S229841AbiJNNsQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 14 Oct 2022 09:48:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53952 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229749AbiJNNpD (ORCPT
+        with ESMTP id S229768AbiJNNsN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 14 Oct 2022 09:45:03 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87BD464FF
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 06:44:53 -0700 (PDT)
+        Fri, 14 Oct 2022 09:48:13 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B63DA1CFF25
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 06:48:12 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id EE4D3B82344
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 13:44:38 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 412CFC433C1
-        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 13:44:37 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 09F37B820BD
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 13:48:11 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C77CDC433C1
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 13:48:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665755077;
-        bh=+vvhwOUGt9icQ/FTN3OTnNZPakffhxinxc10wDsZSEY=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=ZBP0iE/yo0hvoSExxHt5fPQzSQBJpld1Xg6L9ty6Ow8rcmU0k9yCowolq5G764AUs
-         7133k+Ru8gDu8tKaQYOTFH+klVrt8zqYdyTCM+FGElWY1IRgDQhYo7svedkj5hsoiB
-         GDXGVMwV4JzPI8cA30CV2Oevf5uzfBr5SdCXmsC64BIWJsR0NPfNxw4gSJtza2Rz8u
-         0Hh5+ik+Law43MTCxtBpgtLo2ZYVjYfcEUZ0hV1g5OwuJOcb8bCCMNAQ165j8Aj5nS
-         Uxl3FIhZKBBxbr4gVufB7jnLSlZDtP8IWsoFc/+eoMHhyMfKGLZfRDXUsYlJ/qec5l
-         cZLL/VbTXZh7w==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/2] btrfs: switch GFP_ATOMIC to GFP_NOFS when fixing up low keys
-Date:   Fri, 14 Oct 2022 14:44:32 +0100
-Message-Id: <8a28f1e28d7a01038303b98d3ccd5c1ea8b625e3.1665754838.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1665754838.git.fdmanana@suse.com>
-References: <cover.1665754838.git.fdmanana@suse.com>
+        s=k20201202; t=1665755289;
+        bh=wH1txcPRAvSEhe/cU05LZcjYAmBF5BDA+aQ289v7UW4=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=UgHskDp7u71Hgunil3PN4K/tbSlg+GChsB9vZlPCnEnmglQh8lqS+NP/aFu4Tybla
+         O46d3OxfYntBlwWKtLihLMy+5f1kG0/5UHVbpMLHEsRraWYHZIqL0hicOhG41ShqFv
+         zEFNmflwSzBcF2qDNuRllWF2l1w+bYFYyMZecnt/drYXutMYIT/xrga4vv9ZywqOEP
+         yBvtlxv9XqjUAjqPdLHxp+IsXYE2gEZ1zULQf6sM/yqYbouz8siz7TNdhhA/yv/xCs
+         8t0F3iBXH39uEvGvWjmzEapYkkcPsMJ11JizH/IfKjMXrj7CtYdY3fTrzk18yXRhTB
+         uxKUzJem2cl5A==
+Received: by mail-oa1-f48.google.com with SMTP id 586e51a60fabf-1370acb6588so5878302fac.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 14 Oct 2022 06:48:09 -0700 (PDT)
+X-Gm-Message-State: ACrzQf2i85RLWITimulKXdSlIJCw/aCHIgvwZY2Hx8fl3uGCgEpsFisG
+        AujuOcBV/EXv8ev92Kk3n8D7vIRYkZVRhtyY2TM=
+X-Google-Smtp-Source: AMsMyM4WdlKOPYWD283scK7rtVrjcquAxjpsMHrex0rQ3pYEkUZiw1EBrEmV/uKeuSga7p5RizugrtrpOb3eRv6ScX0=
+X-Received: by 2002:a05:6870:2052:b0:132:7b2:2fe6 with SMTP id
+ l18-20020a056870205200b0013207b22fe6mr2821027oad.98.1665755288932; Fri, 14
+ Oct 2022 06:48:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <cover.1665656353.git.fdmanana@suse.com> <903be4beb2a83dcfaa278329c59f055f5a15c42e.1665656353.git.fdmanana@suse.com>
+ <20221014133011.GH13389@twin.jikos.cz>
+In-Reply-To: <20221014133011.GH13389@twin.jikos.cz>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Fri, 14 Oct 2022 14:47:32 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4MWu6UuhcAbko51PuuV5ta6XP6V4Q_FBQuJybLM1vE7w@mail.gmail.com>
+Message-ID: <CAL3q7H4MWu6UuhcAbko51PuuV5ta6XP6V4Q_FBQuJybLM1vE7w@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs: remove gfp_t flag from btrfs_tree_mod_log_insert_key()
+To:     dsterba@suse.cz
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Oct 14, 2022 at 2:30 PM David Sterba <dsterba@suse.cz> wrote:
+>
+> On Thu, Oct 13, 2022 at 11:36:26AM +0100, fdmanana@kernel.org wrote:
+> >index 8a3a14686d3e..6606534fc36a 100644
+> > --- a/fs/btrfs/tree-mod-log.c
+> > +++ b/fs/btrfs/tree-mod-log.c
+> > @@ -220,7 +220,7 @@ static struct tree_mod_elem *alloc_tree_mod_elem(struct extent_buffer *eb,
+> >  }
+> >
+> >  int btrfs_tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
+> > -                               enum btrfs_mod_log_op op, gfp_t flags)
+> > +                               enum btrfs_mod_log_op op)
+> >  {
+> >       struct tree_mod_elem *tm;
+> >       int ret;
+> > @@ -228,7 +228,7 @@ int btrfs_tree_mod_log_insert_key(struct extent_buffer *eb, int slot,
+> >       if (!tree_mod_need_log(eb->fs_info, eb))
+> >               return 0;
+> >
+> > -     tm = alloc_tree_mod_elem(eb, slot, op, flags);
+> > +     tm = alloc_tree_mod_elem(eb, slot, op, GFP_NOFS);
+>
+> And after that alloc_tree_mod_elem is also called only with GFP_NOFS.
 
-When fixing up the first key of each node above the current level, at
-fixup_low_keys(), we are doing a GFP_ATOMIC allocation for inserting an
-operation record for the tree mod log. However we can do just fine with
-GFP_NOFS nowadays. The need for GFP_ATOMIC was for the old days when we
-had custom locks with spinning behaviour for extent buffers and we were
-in spinning mode while at fixup_low_keys(). Now we use rw semaphores for
-extent buffer locks, so we can safely use GFP_NOFS.
+Indeed.
+Just sent a v2 with that change as well.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thanks.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b39b339fbf96..5d4add61f0a0 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2400,7 +2400,7 @@ static void fixup_low_keys(struct btrfs_path *path,
- 			break;
- 		t = path->nodes[i];
- 		ret = btrfs_tree_mod_log_insert_key(t, tslot,
--				BTRFS_MOD_LOG_KEY_REPLACE, GFP_ATOMIC);
-+				BTRFS_MOD_LOG_KEY_REPLACE, GFP_NOFS);
- 		BUG_ON(ret < 0);
- 		btrfs_set_node_key(t, key, tslot);
- 		btrfs_mark_buffer_dirty(path->nodes[i]);
--- 
-2.35.1
-
+>
+> >       if (!tm)
+> >               return -ENOMEM;
+> >

@@ -2,199 +2,333 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 55613C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 19:09:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5212DC43219
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 19:09:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230095AbiJQTJV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Oct 2022 15:09:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46822 "EHLO
+        id S230043AbiJQTJY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Oct 2022 15:09:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46802 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230201AbiJQTJS (ORCPT
+        with ESMTP id S230224AbiJQTJV (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2022 15:09:18 -0400
-Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95DF875FDA
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:16 -0700 (PDT)
-Received: by mail-qt1-x836.google.com with SMTP id s3so8335287qtn.12
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:16 -0700 (PDT)
+        Mon, 17 Oct 2022 15:09:21 -0400
+Received: from mail-qv1-xf2f.google.com (mail-qv1-xf2f.google.com [IPv6:2607:f8b0:4864:20::f2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A11F5CF
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:19 -0700 (PDT)
+Received: by mail-qv1-xf2f.google.com with SMTP id h10so7995929qvq.7
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:19 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=/lORXHrsS2cSSEhciWjIh0YpG2wj6C+znsOQvtmpkKs=;
-        b=G/CIdio0FsRm38wnQgdUqVDGn7QZzR8bxQeWz1Iywr2oASjEalZWSYB5p1y3eqOz5f
-         RYxnKQ3OSuMTKWX45fuv/f+306we7MedBZIlWwIzNuot1UB4ldOJjkP8cPDk0Z9nFDci
-         LL4kDU+ha2dTz1nTqn99yU5ZA+Dpn3Mx6Tr7KgUoYzrPU/ce9qerGpqhVJYm15A0NqlS
-         z22Mk6g+qyPVpRGZDvltnlOPUzQXeoIUuvyktpQFQgTo1LRLndkYxLjMu91Ie7V07nFa
-         gdKh+jWwOZzYd0fncQSKljiy72SHv39ij+2R5INrzPJ2WNt+ZB1393etKqkiT34S4jrN
-         CCjg==
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=YYdcAPOcXfVd6197w0C9DNr241Mt1Gqrqxu3YlVIxmE=;
+        b=DRnacWy7/KhYrj9Qp1dCbp4qJs0NrOThCoByx3nw/GkH4voBqxLfHN373vOUIzAbqX
+         QISwYcgtX0ByqgZQck6/GGxhSlCf7zphpVp7TNCV5FAbuzu94zkqgu9pxHYMiiWxTExa
+         +42OoBtyj05ugh1aizx6s2rHzMkZVPFuW3Nxkw0Y/O+IV72hmQ4Cm6msnPnHCX7pKgQf
+         rhh8gBzIm7vxgpIA1yX5OQf8Wz8tMHTwD78KA55IG8JkkcZMFMUNnuqpqFyv+fP/e6nT
+         Kxpgim0k6qhOK7xLDOCeDTWVJ2w0ipNK02CY0kvuNHn/XFu2ofzBK6geD+1DP1Evk9sJ
+         QOdw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=/lORXHrsS2cSSEhciWjIh0YpG2wj6C+znsOQvtmpkKs=;
-        b=ATluWFGD/tDGrltmJfEZe/I3qxj2h80Umg0Hm23MCAo/kHY0H8SAwFxOmf3x9AWuO3
-         XYfP26A8grAsXqjL4nP7XDWdZ5HmL+34Z0AReis40d/woNPvJXnzBV48+3nIYGTgzn4N
-         hsrNgye2XCpUov0241IPRiglZPCtsktwkG9E/rX1fglB54ubT5ZGDdWWvKESNSsVBx7i
-         NcolgvbAnb9VwsSHoA2kMrEA2kOopfv/49WTNdO7peONitjUr5fJg/ywb21EZV4GUVGY
-         rFfHPjhhCAlYFCsLLzbSERyMbZL4kLonShC7aTmZh2WlVP+j+i66nhHC8ps1zPG6XcQw
-         MMUQ==
-X-Gm-Message-State: ACrzQf2XJYoKJ6BmJW2mffKK1rQFYEFbGt98T6k7ABzvtQ9M5EVDQZHg
-        siFVJjlekpl6SVGZ2C5zzhxJjN8rG7kJEw==
-X-Google-Smtp-Source: AMsMyM56sa00EXO4wHCAmhq4WOqJfEDfTXwvwmFhfPjgAV6muhP1KFj0WbsPd7etvTMjuCLcYcP7VQ==
-X-Received: by 2002:ac8:7d49:0:b0:399:d201:840b with SMTP id h9-20020ac87d49000000b00399d201840bmr10232804qtb.309.1666033755229;
-        Mon, 17 Oct 2022 12:09:15 -0700 (PDT)
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=YYdcAPOcXfVd6197w0C9DNr241Mt1Gqrqxu3YlVIxmE=;
+        b=aHQSv6t3xxcFuZa82ehUSBVrM3j27OWaRYZ1TM4k9TJDdqGFFYSKMRhQ1PgSLmovB5
+         T/K/9Ej8O45s47p7vjzXJWNpNhHTGGqfcNgaUCXM5kGlqip8hPUqrNpFw5XnYo+Ndko9
+         NDnzr1SIXGo3eFQ8jjeHuxmu5w7BmwE4zDmDxSP0ni9SjNnl3N7oyWp/Aa52TSs+yw73
+         iQQSPDv/CBsnrLjAzxLeWtqp+LQDcYk7ewKVy/RmAsRldS4QSmeJwdQTx/zP/vq92Chx
+         SHmYcBecLrqIMKlJOU1wkO6E81kiXmOkSzWnr94bPhkrer7ofgwaNJdUULN779p0YsPO
+         u4Og==
+X-Gm-Message-State: ACrzQf0jWK+UJwDcKhArrXcvmGWbKbJc47Wrsh0VTbt0gTfMzD+4KG28
+        lcVmzG77GRhOrWq0RCFh5QLXrpukfpfezA==
+X-Google-Smtp-Source: AMsMyM6ioPtavByu1JenspQWEhbANLi+55cuDCmjh8PFVZkawlE6DhF23JzmqQhPJPjDKMrKqSz+2Q==
+X-Received: by 2002:a05:6214:d06:b0:4b3:f2ea:f67c with SMTP id 6-20020a0562140d0600b004b3f2eaf67cmr9658556qvh.84.1666033758301;
+        Mon, 17 Oct 2022 12:09:18 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id r2-20020ae9d602000000b006ceb933a9fesm410755qkk.81.2022.10.17.12.09.14
+        by smtp.gmail.com with ESMTPSA id d4-20020ac81184000000b00359961365f1sm370629qtj.68.2022.10.17.12.09.17
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 17 Oct 2022 12:09:14 -0700 (PDT)
+        Mon, 17 Oct 2022 12:09:17 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 00/16] btrfs: split out larger chunks of ctree.h
-Date:   Mon, 17 Oct 2022 15:08:57 -0400
-Message-Id: <cover.1666033501.git.josef@toxicpanda.com>
+Subject: [PATCH v2 02/16] btrfs: move larger compat flag helpers to their own c file
+Date:   Mon, 17 Oct 2022 15:08:59 -0400
+Message-Id: <bd00bf180e1f4437d887fb7b893bd37d5103c25c.1666033501.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1666033501.git.josef@toxicpanda.com>
+References: <cover.1666033501.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-v1->v2:
-- renamed btrfs-printk.h and item-accessors.* to messages.h and accessors.*.
-- I dropped "btrfs: push extra checks into __btrfs_abort_transaction" so the
-  WARN_ON would be where the abort happens.
-- I reworked the incompat/compat get helpers to be defines instead of inlines to
-  maintain the faster code instead of un-inlining the helper, and this way we
-  have a little better header cleanliness.
-- I gave up on my idea of having headers able to be included at any order at
-  this point and made sure everything was included in the proper order.  Once
-  things are completely split out we can go back through and try to make all the
-  header files as clean as possible.
+These helpers use a lot of different functions that would be defined
+elsewhere.  Push them into a C file so we don't end up with weird header
+file dependencies.
 
---- Original email ---
-Hello,
-
-This series is based on the series
-
-  btrfs: initial ctree.h cleanups, simple stuff
-
-which needs to be in place before applying these patches.
-
-This is likely going to have the largest patch of the series, which bulk moves
-all of the struct funcs defines out of ctree.h into their own file.  This isn't
-really possible to do piecemeal like other changes because we're using macros
-instead of functions.  However the code is well organized so it allows for a
-bulk copy and paste, so is straightforward.
-
-I've done my best with naming, but I'm open to suggestions.  My general plan is
-to have all fs wide definitions in fs.h, and then separate out individual things
-to their own headers.
-
-The biggest things I've done in this series are
-
-1. Move the printk helpers into their own files.
-2. Move the main state flags and core fs helpers into their own files.
-3. Moved the struct func definitions to their own files.
-
-This is by no means complete, this is just the first big pass, but as you can
-see is already 17 patches long.  Subsequent patches will move more code and do
-more cleanups.  Thanks,
-
-Josef Bacik (16):
-  btrfs: move fs wide helpers out of ctree.h
-  btrfs: move larger compat flag helpers to their own c file
-  btrfs: move the printk helpers out of ctree.h
-  btrfs: move assert and error helpers out of messages.h
-  btrfs: push printk index code into their respective helpers
-  btrfs: move BTRFS_FS_STATE* defs and helpers to fs.h
-  btrfs: convert incompat and compat flag test helpers to defines
-  btrfs: move mount option definitions to fs.h
-  btrfs: move fs_info->flags enum to fs.h
-  btrfs: add a BTRFS_FS_NEED_TRANS_COMMIT flag
-  btrfs: remove fs_info::pending_changes and related code
-  btrfs: move the compat/incompat flag masks to fs.h
-  btrfs: rename struct-funcs.c -> accessors.c
-  btrfs: move btrfs_map_token to accessors
-  btrfs: move accessor helpers into accessors.h
-  btrfs: remove temporary btrfs_map_token declaration in ctree.h
-
- fs/btrfs/Makefile                        |    4 +-
- fs/btrfs/{struct-funcs.c => accessors.c} |   10 +
- fs/btrfs/accessors.h                     | 1104 ++++++++++++++
- fs/btrfs/backref.c                       |    2 +
- fs/btrfs/backref.h                       |    1 +
- fs/btrfs/block-group.c                   |    2 +
- fs/btrfs/block-rsv.c                     |    2 +
- fs/btrfs/check-integrity.c               |    2 +
- fs/btrfs/compression.c                   |    1 +
- fs/btrfs/ctree.c                         |    3 +
- fs/btrfs/ctree.h                         | 1782 +---------------------
- fs/btrfs/delalloc-space.c                |    2 +
- fs/btrfs/delayed-inode.c                 |    6 +-
- fs/btrfs/delayed-ref.c                   |    2 +
- fs/btrfs/dev-replace.c                   |    2 +
- fs/btrfs/dir-item.c                      |    2 +
- fs/btrfs/discard.c                       |    1 +
- fs/btrfs/disk-io.c                       |    8 +-
- fs/btrfs/export.c                        |    1 +
- fs/btrfs/extent-io-tree.c                |    1 +
- fs/btrfs/extent-tree.c                   |    2 +
- fs/btrfs/extent_io.c                     |    2 +
- fs/btrfs/extent_map.c                    |    1 +
- fs/btrfs/file-item.c                     |    3 +
- fs/btrfs/file.c                          |    2 +
- fs/btrfs/free-space-cache.c              |    6 +-
- fs/btrfs/free-space-tree.c               |    3 +
- fs/btrfs/fs.c                            |   94 ++
- fs/btrfs/fs.h                            |  322 ++++
- fs/btrfs/inode-item.c                    |    3 +
- fs/btrfs/inode.c                         |    2 +
- fs/btrfs/ioctl.c                         |    2 +
- fs/btrfs/locking.c                       |    1 +
- fs/btrfs/lzo.c                           |    1 +
- fs/btrfs/messages.h                      |  226 +++
- fs/btrfs/ordered-data.c                  |    1 +
- fs/btrfs/print-tree.c                    |    2 +
- fs/btrfs/props.c                         |    3 +
- fs/btrfs/qgroup.c                        |    2 +
- fs/btrfs/raid56.c                        |    1 +
- fs/btrfs/ref-verify.c                    |    3 +
- fs/btrfs/reflink.c                       |    5 +-
- fs/btrfs/relocation.c                    |    2 +
- fs/btrfs/root-tree.c                     |    4 +
- fs/btrfs/scrub.c                         |    2 +
- fs/btrfs/send.c                          |    1 +
- fs/btrfs/space-info.c                    |    2 +
- fs/btrfs/subpage.c                       |    1 +
- fs/btrfs/super.c                         |   34 +-
- fs/btrfs/sysfs.c                         |    7 +-
- fs/btrfs/tests/btrfs-tests.c             |    1 +
- fs/btrfs/tests/extent-buffer-tests.c     |    1 +
- fs/btrfs/tests/free-space-tree-tests.c   |    1 +
- fs/btrfs/tests/inode-tests.c             |    1 +
- fs/btrfs/tests/qgroup-tests.c            |    2 +
- fs/btrfs/transaction.c                   |   29 +-
- fs/btrfs/transaction.h                   |    1 -
- fs/btrfs/tree-checker.c                  |    3 +
- fs/btrfs/tree-defrag.c                   |    1 +
- fs/btrfs/tree-log.c                      |    2 +
- fs/btrfs/tree-log.h                      |    1 +
- fs/btrfs/tree-mod-log.c                  |    3 +
- fs/btrfs/ulist.c                         |    1 +
- fs/btrfs/uuid-tree.c                     |    4 +-
- fs/btrfs/verity.c                        |    3 +
- fs/btrfs/volumes.c                       |    2 +
- fs/btrfs/xattr.c                         |    3 +
- fs/btrfs/zoned.c                         |    2 +
- fs/btrfs/zoned.h                         |    1 +
- 69 files changed, 1916 insertions(+), 1824 deletions(-)
- rename fs/btrfs/{struct-funcs.c => accessors.c} (96%)
- create mode 100644 fs/btrfs/accessors.h
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/Makefile |   2 +-
+ fs/btrfs/fs.c     |  92 ++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/fs.h     | 106 ++++++----------------------------------------
+ 3 files changed, 106 insertions(+), 94 deletions(-)
  create mode 100644 fs/btrfs/fs.c
- create mode 100644 fs/btrfs/fs.h
- create mode 100644 fs/btrfs/messages.h
 
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index fa9ddcc9eb0b..eebb45c06485 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -31,7 +31,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+ 	   uuid-tree.o props.o free-space-tree.o tree-checker.o space-info.o \
+ 	   block-rsv.o delalloc-space.o block-group.o discard.o reflink.o \
+-	   subpage.o tree-mod-log.o extent-io-tree.o
++	   subpage.o tree-mod-log.o extent-io-tree.o fs.o
+ 
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+diff --git a/fs/btrfs/fs.c b/fs/btrfs/fs.c
+new file mode 100644
+index 000000000000..d4ba948eba56
+--- /dev/null
++++ b/fs/btrfs/fs.c
+@@ -0,0 +1,92 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include "ctree.h"
++#include "fs.h"
++
++void __btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag,
++			     const char *name)
++{
++	struct btrfs_super_block *disk_super;
++	u64 features;
++
++	disk_super = fs_info->super_copy;
++	features = btrfs_super_incompat_flags(disk_super);
++	if (!(features & flag)) {
++		spin_lock(&fs_info->super_lock);
++		features = btrfs_super_incompat_flags(disk_super);
++		if (!(features & flag)) {
++			features |= flag;
++			btrfs_set_super_incompat_flags(disk_super, features);
++			btrfs_info(fs_info,
++				"setting incompat feature flag for %s (0x%llx)",
++				name, flag);
++		}
++		spin_unlock(&fs_info->super_lock);
++	}
++}
++
++void __btrfs_clear_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag,
++			       const char *name)
++{
++	struct btrfs_super_block *disk_super;
++	u64 features;
++
++	disk_super = fs_info->super_copy;
++	features = btrfs_super_incompat_flags(disk_super);
++	if (features & flag) {
++		spin_lock(&fs_info->super_lock);
++		features = btrfs_super_incompat_flags(disk_super);
++		if (features & flag) {
++			features &= ~flag;
++			btrfs_set_super_incompat_flags(disk_super, features);
++			btrfs_info(fs_info,
++				"clearing incompat feature flag for %s (0x%llx)",
++				name, flag);
++		}
++		spin_unlock(&fs_info->super_lock);
++	}
++}
++
++void __btrfs_set_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
++			      const char *name)
++{
++	struct btrfs_super_block *disk_super;
++	u64 features;
++
++	disk_super = fs_info->super_copy;
++	features = btrfs_super_compat_ro_flags(disk_super);
++	if (!(features & flag)) {
++		spin_lock(&fs_info->super_lock);
++		features = btrfs_super_compat_ro_flags(disk_super);
++		if (!(features & flag)) {
++			features |= flag;
++			btrfs_set_super_compat_ro_flags(disk_super, features);
++			btrfs_info(fs_info,
++				"setting compat-ro feature flag for %s (0x%llx)",
++				name, flag);
++		}
++		spin_unlock(&fs_info->super_lock);
++	}
++}
++
++void __btrfs_clear_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
++				const char *name)
++{
++	struct btrfs_super_block *disk_super;
++	u64 features;
++
++	disk_super = fs_info->super_copy;
++	features = btrfs_super_compat_ro_flags(disk_super);
++	if (features & flag) {
++		spin_lock(&fs_info->super_lock);
++		features = btrfs_super_compat_ro_flags(disk_super);
++		if (features & flag) {
++			features &= ~flag;
++			btrfs_set_super_compat_ro_flags(disk_super, features);
++			btrfs_info(fs_info,
++				"clearing compat-ro feature flag for %s (0x%llx)",
++				name, flag);
++		}
++		spin_unlock(&fs_info->super_lock);
++	}
++}
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 56be405a008c..fc7564ebf286 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -4,124 +4,44 @@
+ #define BTRFS_FS_H
+ 
+ /* compatibility and incompatibility defines */
++void __btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag,
++			     const char *name);
++void __btrfs_clear_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag,
++			       const char *name);
++void __btrfs_set_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
++			      const char *name);
++void __btrfs_clear_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
++				const char *name);
+ 
+ #define btrfs_set_fs_incompat(__fs_info, opt) \
+ 	__btrfs_set_fs_incompat((__fs_info), BTRFS_FEATURE_INCOMPAT_##opt, \
+ 				#opt)
+ 
+-static inline void __btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info,
+-					   u64 flag, const char* name)
+-{
+-	struct btrfs_super_block *disk_super;
+-	u64 features;
+-
+-	disk_super = fs_info->super_copy;
+-	features = btrfs_super_incompat_flags(disk_super);
+-	if (!(features & flag)) {
+-		spin_lock(&fs_info->super_lock);
+-		features = btrfs_super_incompat_flags(disk_super);
+-		if (!(features & flag)) {
+-			features |= flag;
+-			btrfs_set_super_incompat_flags(disk_super, features);
+-			btrfs_info(fs_info,
+-				"setting incompat feature flag for %s (0x%llx)",
+-				name, flag);
+-		}
+-		spin_unlock(&fs_info->super_lock);
+-	}
+-}
+-
+ #define btrfs_clear_fs_incompat(__fs_info, opt) \
+ 	__btrfs_clear_fs_incompat((__fs_info), BTRFS_FEATURE_INCOMPAT_##opt, \
+ 				  #opt)
+ 
+-static inline void __btrfs_clear_fs_incompat(struct btrfs_fs_info *fs_info,
+-					     u64 flag, const char* name)
+-{
+-	struct btrfs_super_block *disk_super;
+-	u64 features;
+-
+-	disk_super = fs_info->super_copy;
+-	features = btrfs_super_incompat_flags(disk_super);
+-	if (features & flag) {
+-		spin_lock(&fs_info->super_lock);
+-		features = btrfs_super_incompat_flags(disk_super);
+-		if (features & flag) {
+-			features &= ~flag;
+-			btrfs_set_super_incompat_flags(disk_super, features);
+-			btrfs_info(fs_info,
+-				"clearing incompat feature flag for %s (0x%llx)",
+-				name, flag);
+-		}
+-		spin_unlock(&fs_info->super_lock);
+-	}
+-}
+-
+ #define btrfs_fs_incompat(fs_info, opt) \
+ 	__btrfs_fs_incompat((fs_info), BTRFS_FEATURE_INCOMPAT_##opt)
+ 
+-static inline bool __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
+-{
+-	struct btrfs_super_block *disk_super;
+-	disk_super = fs_info->super_copy;
+-	return !!(btrfs_super_incompat_flags(disk_super) & flag);
+-}
+-
+ #define btrfs_set_fs_compat_ro(__fs_info, opt) \
+ 	__btrfs_set_fs_compat_ro((__fs_info), BTRFS_FEATURE_COMPAT_RO_##opt, \
+ 				 #opt)
+ 
+-static inline void __btrfs_set_fs_compat_ro(struct btrfs_fs_info *fs_info,
+-					    u64 flag, const char *name)
+-{
+-	struct btrfs_super_block *disk_super;
+-	u64 features;
+-
+-	disk_super = fs_info->super_copy;
+-	features = btrfs_super_compat_ro_flags(disk_super);
+-	if (!(features & flag)) {
+-		spin_lock(&fs_info->super_lock);
+-		features = btrfs_super_compat_ro_flags(disk_super);
+-		if (!(features & flag)) {
+-			features |= flag;
+-			btrfs_set_super_compat_ro_flags(disk_super, features);
+-			btrfs_info(fs_info,
+-				"setting compat-ro feature flag for %s (0x%llx)",
+-				name, flag);
+-		}
+-		spin_unlock(&fs_info->super_lock);
+-	}
+-}
+-
+ #define btrfs_clear_fs_compat_ro(__fs_info, opt) \
+ 	__btrfs_clear_fs_compat_ro((__fs_info), BTRFS_FEATURE_COMPAT_RO_##opt, \
+ 				   #opt)
+ 
+-static inline void __btrfs_clear_fs_compat_ro(struct btrfs_fs_info *fs_info,
+-					      u64 flag, const char *name)
++#define btrfs_fs_compat_ro(fs_info, opt) \
++	__btrfs_fs_compat_ro((fs_info), BTRFS_FEATURE_COMPAT_RO_##opt)
++
++static inline bool __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
+ {
+ 	struct btrfs_super_block *disk_super;
+-	u64 features;
+-
+ 	disk_super = fs_info->super_copy;
+-	features = btrfs_super_compat_ro_flags(disk_super);
+-	if (features & flag) {
+-		spin_lock(&fs_info->super_lock);
+-		features = btrfs_super_compat_ro_flags(disk_super);
+-		if (features & flag) {
+-			features &= ~flag;
+-			btrfs_set_super_compat_ro_flags(disk_super, features);
+-			btrfs_info(fs_info,
+-				"clearing compat-ro feature flag for %s (0x%llx)",
+-				name, flag);
+-		}
+-		spin_unlock(&fs_info->super_lock);
+-	}
++	return !!(btrfs_super_incompat_flags(disk_super) & flag);
+ }
+ 
+-#define btrfs_fs_compat_ro(fs_info, opt) \
+-	__btrfs_fs_compat_ro((fs_info), BTRFS_FEATURE_COMPAT_RO_##opt)
+-
+ static inline int __btrfs_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag)
+ {
+ 	struct btrfs_super_block *disk_super;
 -- 
 2.26.3
 

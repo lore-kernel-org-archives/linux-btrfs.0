@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 452FEC4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 19:09:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE524C433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 19:09:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230182AbiJQTJk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Oct 2022 15:09:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47898 "EHLO
+        id S230125AbiJQTJl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Oct 2022 15:09:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47892 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230237AbiJQTJb (ORCPT
+        with ESMTP id S230192AbiJQTJd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2022 15:09:31 -0400
-Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D1715B70
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:24 -0700 (PDT)
-Received: by mail-qv1-xf2c.google.com with SMTP id l19so7996157qvu.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:24 -0700 (PDT)
+        Mon, 17 Oct 2022 15:09:33 -0400
+Received: from mail-qv1-xf34.google.com (mail-qv1-xf34.google.com [IPv6:2607:f8b0:4864:20::f34])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 803CDE82
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:30 -0700 (PDT)
+Received: by mail-qv1-xf34.google.com with SMTP id i12so8013946qvs.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 12:09:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=kgWKminQZLRDL2c0JhOdPQ/xaia24bW4Ds8aFsfltok=;
-        b=vANxUPVeqAL9AZCp0D7/DWXdi1dHJT2tbfjiwPRfa78KWOzgsuKTuaRecerBanSIi8
-         aHURzDGa1XXF0wpnPRXLtqE3NxayGRb/Ep5z658C1rt+qCMD+IjpsjpJVHH+2DbtPmrc
-         1MYefh0rDW7TfzKMHZ+QWtZ11yziRA5zn0DB6RaOlapog7VQiYz6meKHpoAKLhUriP2I
-         +l5+VRhQ2ahMJztW79K2TyDpFu8QR+zDxEtmC71j2HvWrcF8P0H0ONAH0VQ+eR2QOUHD
-         T3qGyWIwrDUxditD0bto5oXfKkQ3rsNAYzbRpSibUH2UGEy47uiw6cwDIF5TPYQuxKVi
-         6G6A==
+        bh=UIPZ9UOjvk2gRUyzeQTAQLyHf8+XHrgFBnj+8ZbKSj0=;
+        b=dyGo727uYGV4s0bsRIXke6cIl1gBwolu883DZkt2SDnzUrXWgvFFNzR10cLFNFFRge
+         l9C2BDVMPT1uuAt+7YhoF/wOExyquTPkqKxKWl76N/ZXespHDQ7A2UHIc3E1LqVVkBn/
+         qY4gn+3orWZYHsaKILdjXkJNOCbdbcXR3KLn4LBiC5d9uY/SotAaeDh0QGaZQCYR2LGL
+         PtPDEvAYfRJ4qWAB0pS+oGxX4xu08rVR6tlRMgFoscz1IEuui2QyaQ6YqXXlGBZnKFza
+         jjMHYU9e0OINiCYMPOm7UEya6iLq07A+Yh3hl+AL5ujxdQsoxegnOjUKGe+RicisHpIm
+         9ptg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=kgWKminQZLRDL2c0JhOdPQ/xaia24bW4Ds8aFsfltok=;
-        b=DNGca4ydmjmizsYT9aKRlMRipy8NOpsfFf9NWK2TlbS1zbpZh4SCRN3yGIAkJw16Wm
-         O71PV20sqKbf3t88XJUB75390bwhNKNsNe23snX+WPnidP66vtWC3qQF5vYdzrW+Ks+e
-         DeDj5cK/9LavTZt+YbzWTmYX2Yt7K5T01gBtxWcGU8GxI0IS3N+jertKInny0yxGfIey
-         ONp59CqyKtsGfCu4M+42cWLQQUlED5FZSoSNLp/2EHbh3S4Jendkrbzpa8FCxlnGD0YZ
-         dgA9YvcEgSxeZ+dKTxFJ7bDTx6x3ZDGi/MWaTBhxW50U+wRQVmLtmywpxOJq0Hqylzw5
-         t5uA==
-X-Gm-Message-State: ACrzQf03AYX0s6EVNxEb08w8ybyQttcRscCtKDNpDvuVK4ULAmvQoSz0
-        MKtwxx9LvLh3ORYQfF2aSeqx6mrq9kzYxQ==
-X-Google-Smtp-Source: AMsMyM5vtAF5i6kDQBnpZFylMHjoJmU7rVYmpJi+THs6ZoELTsTIBS06vokCEZCkdES/gxP9bT32cg==
-X-Received: by 2002:a05:6214:2464:b0:4b3:6cce:9860 with SMTP id im4-20020a056214246400b004b36cce9860mr9502843qvb.120.1666033763578;
-        Mon, 17 Oct 2022 12:09:23 -0700 (PDT)
+        bh=UIPZ9UOjvk2gRUyzeQTAQLyHf8+XHrgFBnj+8ZbKSj0=;
+        b=BqSVudxAZDnKOUi1AYTMJUdwS6ugaZ20SLvWmSYkRg+iO9iGEKShUI96cVztrxjslx
+         8i1BhgS2OVWXF0FPaePkxUAssicggJrrFx9dm8jY9leP0BXYYzV1+iZbVSrNISxPPWwh
+         KyNeoQS2luLTAbP4bCF11SGsCXM+G6gBUDiqsSrdPeiQvVVeDiePE5kf2Vumd2fMwoxh
+         kH3UniC/f1u4pilTz0u+OPPjIWDTdc2neFwaoxR5T4Qp6XZzC5NOcWi80tiAYTDYnkJp
+         7obNMp/DPC0oulKkC/nkxn117ZgKqSoQXATTieVHatFBr0VeI7OCQ63oY1ijU/7bRYEP
+         Rk8g==
+X-Gm-Message-State: ACrzQf0DEMKi/+RGLBfnIlUz7onKanYczRcoOdF9rpmdLb6+5sry5ZkH
+        i5ovjzWq0j0vrqdoc0x87Lqv+m/8HVsZJw==
+X-Google-Smtp-Source: AMsMyM4u7OmO0jW5ZiHTySTsHLphgqoeexouLpIahZbnDSQPzcaoQM7B9xwrdxe3urGp8nEJySUyHA==
+X-Received: by 2002:a05:6214:2483:b0:4b3:99ff:87a4 with SMTP id gi3-20020a056214248300b004b399ff87a4mr9717338qvb.18.1666033769100;
+        Mon, 17 Oct 2022 12:09:29 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id bi26-20020a05620a319a00b006ce7bb8518bsm508579qkb.5.2022.10.17.12.09.23
+        by smtp.gmail.com with ESMTPSA id m13-20020a05620a24cd00b006ce76811a07sm415855qkn.75.2022.10.17.12.09.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 17 Oct 2022 12:09:23 -0700 (PDT)
+        Mon, 17 Oct 2022 12:09:28 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 06/16] btrfs: move BTRFS_FS_STATE* defs and helpers to fs.h
-Date:   Mon, 17 Oct 2022 15:09:03 -0400
-Message-Id: <49eb8ddf7ed81dfad378f73b290a2f6c1e332feb.1666033501.git.josef@toxicpanda.com>
+Subject: [PATCH v2 10/16] btrfs: add a BTRFS_FS_NEED_TRANS_COMMIT flag
+Date:   Mon, 17 Oct 2022 15:09:07 -0400
+Message-Id: <243a33d43e7c4cf294762fff62a9dfa45c64fe6c.1666033501.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666033501.git.josef@toxicpanda.com>
 References: <cover.1666033501.git.josef@toxicpanda.com>
@@ -64,346 +64,82 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We're going to use fs.h to hold fs wide related helpers and definitions,
-move the FS_STATE enum and related helpers to fs.h, and then update all
-files that need these definitions to include fs.h.
+Currently we are only using fs_info->pending_changes to indicate that we
+need a transaction commit.  The original users for this were removed
+years ago, so this is the only remaining reason to have this field.  Add
+a flag so we can remove this code.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/compression.c       |  1 +
- fs/btrfs/ctree.c             |  1 +
- fs/btrfs/ctree.h             | 46 ---------------------------------
- fs/btrfs/delalloc-space.c    |  1 +
- fs/btrfs/delayed-inode.c     |  3 ++-
- fs/btrfs/dev-replace.c       |  1 +
- fs/btrfs/extent_io.c         |  1 +
- fs/btrfs/free-space-cache.c  |  3 ++-
- fs/btrfs/fs.h                | 50 ++++++++++++++++++++++++++++++++++++
- fs/btrfs/inode-item.c        |  3 ++-
- fs/btrfs/reflink.c           |  3 ++-
- fs/btrfs/root-tree.c         |  3 ++-
- fs/btrfs/sysfs.c             |  1 +
- fs/btrfs/tests/btrfs-tests.c |  1 +
- fs/btrfs/xattr.c             |  3 ++-
- 15 files changed, 69 insertions(+), 52 deletions(-)
+ fs/btrfs/fs.h          | 3 +++
+ fs/btrfs/super.c       | 3 ++-
+ fs/btrfs/sysfs.c       | 4 ++--
+ fs/btrfs/transaction.c | 2 ++
+ 4 files changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 54caa00a2245..7e516e816c4a 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -21,6 +21,7 @@
- #include <crypto/hash.h>
- #include "misc.h"
- #include "ctree.h"
-+#include "fs.h"
- #include "disk-io.h"
- #include "transaction.h"
- #include "btrfs_inode.h"
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 8deba9cc0ee3..8ba72009bacb 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -18,6 +18,7 @@
- #include "qgroup.h"
- #include "tree-mod-log.h"
- #include "tree-checker.h"
-+#include "fs.h"
- 
- static struct kmem_cache *btrfs_path_cachep;
- 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 45df323caa38..b7a5263b6a3f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -59,37 +59,6 @@ struct reloc_control;
- 
- #define BTRFS_MAX_EXTENT_SIZE SZ_128M
- 
--/*
-- * Runtime (in-memory) states of filesystem
-- */
--enum {
--	/* Global indicator of serious filesystem errors */
--	BTRFS_FS_STATE_ERROR,
--	/*
--	 * Filesystem is being remounted, allow to skip some operations, like
--	 * defrag
--	 */
--	BTRFS_FS_STATE_REMOUNTING,
--	/* Filesystem in RO mode */
--	BTRFS_FS_STATE_RO,
--	/* Track if a transaction abort has been reported on this filesystem */
--	BTRFS_FS_STATE_TRANS_ABORTED,
--	/*
--	 * Bio operations should be blocked on this filesystem because a source
--	 * or target device is being destroyed as part of a device replace
--	 */
--	BTRFS_FS_STATE_DEV_REPLACING,
--	/* The btrfs_fs_info created for self-tests */
--	BTRFS_FS_STATE_DUMMY_FS_INFO,
--
--	BTRFS_FS_STATE_NO_CSUMS,
--
--	/* Indicates there was an error cleaning up a log tree. */
--	BTRFS_FS_STATE_LOG_CLEANUP_ERROR,
--
--	BTRFS_FS_STATE_COUNT
--};
--
- #define BTRFS_SUPER_INFO_OFFSET			SZ_64K
- #define BTRFS_SUPER_INFO_SIZE			4096
- static_assert(sizeof(struct btrfs_super_block) == BTRFS_SUPER_INFO_SIZE);
-@@ -3211,12 +3180,6 @@ static inline unsigned long get_eb_page_index(unsigned long offset)
- #define EXPORT_FOR_TESTS
- #endif
- 
--#define BTRFS_FS_ERROR(fs_info)	(unlikely(test_bit(BTRFS_FS_STATE_ERROR, \
--						   &(fs_info)->fs_state)))
--#define BTRFS_FS_LOG_CLEANUP_ERROR(fs_info)				\
--	(unlikely(test_bit(BTRFS_FS_STATE_LOG_CLEANUP_ERROR,		\
--			   &(fs_info)->fs_state)))
--
- /* acl.c */
- #ifdef CONFIG_BTRFS_FS_POSIX_ACL
- struct posix_acl *btrfs_get_acl(struct inode *inode, int type, bool rcu);
-@@ -3310,15 +3273,6 @@ static inline int btrfs_get_verity_descriptor(struct inode *inode, void *buf,
- /* Sanity test specific functions */
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
- void btrfs_test_destroy_inode(struct inode *inode);
--static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
--{
--	return test_bit(BTRFS_FS_STATE_DUMMY_FS_INFO, &fs_info->fs_state);
--}
--#else
--static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
--{
--	return 0;
--}
- #endif
- 
- static inline bool btrfs_is_data_reloc_root(const struct btrfs_root *root)
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 045545145a2b..605d8874a446 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -9,6 +9,7 @@
- #include "transaction.h"
- #include "qgroup.h"
- #include "block-group.h"
-+#include "fs.h"
- 
- /*
-  * HOW DOES THIS WORK
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 8cf5ee646147..2f68570fbb53 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -6,12 +6,13 @@
- 
- #include <linux/slab.h>
- #include <linux/iversion.h>
-+#include "ctree.h"
-+#include "fs.h"
- #include "messages.h"
- #include "misc.h"
- #include "delayed-inode.h"
- #include "disk-io.h"
- #include "transaction.h"
--#include "ctree.h"
- #include "qgroup.h"
- #include "locking.h"
- #include "inode-item.h"
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 61e58066b5fd..348aef453e69 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -23,6 +23,7 @@
- #include "sysfs.h"
- #include "zoned.h"
- #include "block-group.h"
-+#include "fs.h"
- 
- /*
-  * Device replace overview
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1eae68fbae21..907c8518dab9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -30,6 +30,7 @@
- #include "zoned.h"
- #include "block-group.h"
- #include "compression.h"
-+#include "fs.h"
- 
- static struct kmem_cache *extent_buffer_cache;
- 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 83d866f5ab6c..703902156f97 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -11,9 +11,10 @@
- #include <linux/ratelimit.h>
- #include <linux/error-injection.h>
- #include <linux/sched/mm.h>
-+#include "ctree.h"
-+#include "fs.h"
- #include "messages.h"
- #include "misc.h"
--#include "ctree.h"
- #include "free-space-cache.h"
- #include "transaction.h"
- #include "disk-io.h"
 diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index fc7564ebf286..c4786e838ee0 100644
+index 2d06add70695..7b221d37ad0e 100644
 --- a/fs/btrfs/fs.h
 +++ b/fs/btrfs/fs.h
-@@ -3,6 +3,37 @@
- #ifndef BTRFS_FS_H
- #define BTRFS_FS_H
+@@ -90,6 +90,9 @@ enum {
+ 	/* Indicate we have to finish a zone to do next allocation. */
+ 	BTRFS_FS_NEED_ZONE_FINISH,
  
-+/*
-+ * Runtime (in-memory) states of filesystem
-+ */
-+enum {
-+	/* Global indicator of serious filesystem errors */
-+	BTRFS_FS_STATE_ERROR,
-+	/*
-+	 * Filesystem is being remounted, allow to skip some operations, like
-+	 * defrag
-+	 */
-+	BTRFS_FS_STATE_REMOUNTING,
-+	/* Filesystem in RO mode */
-+	BTRFS_FS_STATE_RO,
-+	/* Track if a transaction abort has been reported on this filesystem */
-+	BTRFS_FS_STATE_TRANS_ABORTED,
-+	/*
-+	 * Bio operations should be blocked on this filesystem because a source
-+	 * or target device is being destroyed as part of a device replace
-+	 */
-+	BTRFS_FS_STATE_DEV_REPLACING,
-+	/* The btrfs_fs_info created for self-tests */
-+	BTRFS_FS_STATE_DUMMY_FS_INFO,
++	/* Indicate that we want to commit the transaction. */
++	BTRFS_FS_NEED_TRANS_COMMIT,
 +
-+	BTRFS_FS_STATE_NO_CSUMS,
-+
-+	/* Indicates there was an error cleaning up a log tree. */
-+	BTRFS_FS_STATE_LOG_CLEANUP_ERROR,
-+
-+	BTRFS_FS_STATE_COUNT
-+};
-+
- /* compatibility and incompatibility defines */
- void __btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag,
- 			     const char *name);
-@@ -87,4 +118,23 @@ static inline void btrfs_clear_sb_rdonly(struct super_block *sb)
- 	sb->s_flags &= ~SB_RDONLY;
- 	clear_bit(BTRFS_FS_STATE_RO, &btrfs_sb(sb)->fs_state);
- }
-+
-+#define BTRFS_FS_ERROR(fs_info)	(unlikely(test_bit(BTRFS_FS_STATE_ERROR, \
-+						   &(fs_info)->fs_state)))
-+#define BTRFS_FS_LOG_CLEANUP_ERROR(fs_info)				\
-+	(unlikely(test_bit(BTRFS_FS_STATE_LOG_CLEANUP_ERROR,		\
-+			   &(fs_info)->fs_state)))
-+
-+#ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-+static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
-+{
-+	return test_bit(BTRFS_FS_STATE_DUMMY_FS_INFO, &fs_info->fs_state);
-+}
-+#else
-+static inline int btrfs_is_testing(struct btrfs_fs_info *fs_info)
-+{
-+	return 0;
-+}
-+#endif
-+
- #endif /* BTRFS_FS_H */
-diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
-index b301d8e3df87..25e9f1d65067 100644
---- a/fs/btrfs/inode-item.c
-+++ b/fs/btrfs/inode-item.c
-@@ -3,8 +3,9 @@
-  * Copyright (C) 2007 Oracle.  All rights reserved.
-  */
- 
--#include "messages.h"
- #include "ctree.h"
-+#include "fs.h"
-+#include "messages.h"
- #include "inode-item.h"
- #include "disk-io.h"
- #include "transaction.h"
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index 6179864de6e7..daf65bfad30e 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -2,9 +2,10 @@
- 
- #include <linux/blkdev.h>
- #include <linux/iversion.h>
-+#include "ctree.h"
-+#include "fs.h"
- #include "messages.h"
- #include "compression.h"
--#include "ctree.h"
- #include "delalloc-space.h"
- #include "disk-io.h"
- #include "reflink.h"
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 44c8c8ad0a16..112b4bf3c3b8 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -5,8 +5,9 @@
- 
- #include <linux/err.h>
- #include <linux/uuid.h>
--#include "messages.h"
- #include "ctree.h"
-+#include "fs.h"
-+#include "messages.h"
- #include "transaction.h"
- #include "disk-io.h"
- #include "print-tree.h"
+ #if BITS_PER_LONG == 32
+ 	/* Indicate if we have error/warn message printed on 32bit systems */
+ 	BTRFS_FS_32BIT_ERROR,
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 6d67d7ae99e9..0ec69466dfbc 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1534,7 +1534,8 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 			 * Exit unless we have some pending changes
+ 			 * that need to go through commit
+ 			 */
+-			if (fs_info->pending_changes == 0)
++			if (!test_bit(BTRFS_FS_NEED_TRANS_COMMIT,
++				      &fs_info->flags))
+ 				return 0;
+ 			/*
+ 			 * A non-blocking test if the fs is frozen. We must not
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 404a314ec8a2..0d98984af0e9 100644
+index 0d98984af0e9..eb1a98991ec3 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -23,6 +23,7 @@
- #include "block-group.h"
- #include "qgroup.h"
- #include "misc.h"
-+#include "fs.h"
+@@ -250,7 +250,7 @@ static ssize_t btrfs_feature_attr_store(struct kobject *kobj,
+ 	/*
+ 	 * We don't want to do full transaction commit from inside sysfs
+ 	 */
+-	btrfs_set_pending(fs_info, COMMIT);
++	set_bit(BTRFS_FS_NEED_TRANS_COMMIT, &fs_info->flags);
+ 	wake_up_process(fs_info->transaction_kthread);
  
- /*
-  * Structure name                       Path
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index 9c478fa256f6..1538c65f2b17 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -16,6 +16,7 @@
- #include "../disk-io.h"
- #include "../qgroup.h"
- #include "../block-group.h"
-+#include "../fs.h"
+ 	return count;
+@@ -961,7 +961,7 @@ static ssize_t btrfs_label_store(struct kobject *kobj,
+ 	/*
+ 	 * We don't want to do full transaction commit from inside sysfs
+ 	 */
+-	btrfs_set_pending(fs_info, COMMIT);
++	set_bit(BTRFS_FS_NEED_TRANS_COMMIT, &fs_info->flags);
+ 	wake_up_process(fs_info->transaction_kthread);
  
- static struct vfsmount *test_mnt = NULL;
+ 	return len;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index bae77fb05e2b..7b6b68ab089a 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -2104,6 +2104,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 	ASSERT(refcount_read(&trans->use_count) == 1);
+ 	btrfs_trans_state_lockdep_acquire(fs_info, BTRFS_LOCKDEP_TRANS_COMMIT_START);
  
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index d12903f01f83..b26c869f0226 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -12,8 +12,9 @@
- #include <linux/posix_acl_xattr.h>
- #include <linux/iversion.h>
- #include <linux/sched/mm.h>
--#include "messages.h"
- #include "ctree.h"
-+#include "fs.h"
-+#include "messages.h"
- #include "btrfs_inode.h"
- #include "transaction.h"
- #include "xattr.h"
++	clear_bit(BTRFS_FS_NEED_TRANS_COMMIT, &fs_info->flags);
++
+ 	/* Stop the commit early if ->aborted is set */
+ 	if (TRANS_ABORTED(cur_trans)) {
+ 		ret = cur_trans->aborted;
 -- 
 2.26.3
 

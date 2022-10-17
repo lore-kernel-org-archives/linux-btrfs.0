@@ -2,127 +2,86 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6322C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 20:29:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E7ACC4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 21:30:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230445AbiJQU3I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Oct 2022 16:29:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56070 "EHLO
+        id S230017AbiJQVav (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Oct 2022 17:30:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43284 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230316AbiJQU06 (ORCPT
+        with ESMTP id S229989AbiJQVat (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2022 16:26:58 -0400
-Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 011467E80C;
-        Mon, 17 Oct 2022 13:25:40 -0700 (PDT)
-Received: by mail-pj1-x102a.google.com with SMTP id x1-20020a17090ab00100b001fda21bbc90so15316905pjq.3;
-        Mon, 17 Oct 2022 13:25:40 -0700 (PDT)
+        Mon, 17 Oct 2022 17:30:49 -0400
+Received: from mail-oa1-x29.google.com (mail-oa1-x29.google.com [IPv6:2001:4860:4864:20::29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBBD37C31C
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 14:30:48 -0700 (PDT)
+Received: by mail-oa1-x29.google.com with SMTP id 586e51a60fabf-1370acb6588so14755988fac.9
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Oct 2022 14:30:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=VPyaEfnfsN/s28KIqk5JK9av//7f4plsWX6QMWBWYvw=;
-        b=AAaBUf6AYZwl2VDHcCjIUHoo+BDNMPnV+R8K7xw03ITt3bJu/PXwBptMp+Cd78GqHp
-         N1fPmeaEcgT0dNOi5heH8RkIvQzLgdDjFTLLFkJTMuZtMzDzhqm3A5e2TUW+009WVhvP
-         LnQ+Qnxue4GNQ/W4GSqfITdI/xtl/FcZVOsSAxzDrhPsnLCBNI0Pam1Vx851IlCokycW
-         3ihi+TyICcYVO2geBMteJjeyBoyopJkqhfYcH/Zh5WCo+KIFfIyQ0WkYt52MgC2bUa65
-         R8/gksQ//p7O7voqbBaQcC5j/XMc08BKModktLu/0bF2tT6gRFEgGcvAeXRPf7IXx8T9
-         8+gw==
+        d=chromium.org; s=google;
+        h=cc:to:subject:message-id:date:references:in-reply-to:from:sender
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=VdRc97JpBohoqF6/o/tl+OhgR/OgymDvdNyqLFO538k=;
+        b=RFhgON0DbmQz76y+3UpSYw8O6qTRaT1vOdEiw4TSAzDgqWmyDWLtaCLwwQim4+RxX0
+         NTkgce1empp6vhMV4BG1Hdx1IalwBgWqqJ7zw2Ja5vwXT1yRh3jJTPvdWnupZRc3tvVl
+         3djdlFWhe2pVEpWkV4s8nvHDou3t1AcnlpuzU=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=VPyaEfnfsN/s28KIqk5JK9av//7f4plsWX6QMWBWYvw=;
-        b=K3y+vz/l6cbKQZH0UzfP5sO9SBtBV3lMKDyNWS7HqJ7LlyDd2aQ28wm2an+T+Gppcs
-         pDN6ji5qucv9gQMRdrZRYPqAW/NECZt58Rdn75RsL1IqiGE5oBuEZW/Y/sYXahHqhxyo
-         Fg0TkB67eJ4XvuZPqC97zjEezoRVAJkbjeB6uneGeY3OCYnCOb3diWBUkM7EZzv3JPfT
-         p+jfuo8z0F8fau22VenNXGrQSCOpAMHAnyJH6yePaCXDGqvucDrR9FloZ2Fmh5zObwOz
-         +cuTEswL+Ip488HgT7kpTFx4isssijH0vQPjYaRWtDUgJ6TlTffK3dKfqr+HR6wYwd6d
-         SP7Q==
-X-Gm-Message-State: ACrzQf0aebnu0k+J/SH1P2HTE2qIB/UcID/XAIEX47mH3lyKmY0KReS6
-        81xKvEbRqcjF2XY7PEjLKBrY7kF0NF+qQA==
-X-Google-Smtp-Source: AMsMyM7v1A0Nwi1EfmmDwlAxUHQ5Y+/Mfh5CmuQv94z7lhNxS6TEescrW3W2GC19QPdRPdkxp8Fsag==
-X-Received: by 2002:a17:90a:4216:b0:20d:2891:157 with SMTP id o22-20020a17090a421600b0020d28910157mr35557408pjg.47.1666038307198;
-        Mon, 17 Oct 2022 13:25:07 -0700 (PDT)
-Received: from vmfolio.. (c-76-102-73-225.hsd1.ca.comcast.net. [76.102.73.225])
-        by smtp.googlemail.com with ESMTPSA id pj12-20020a17090b4f4c00b00200b12f2bf5sm145037pjb.1.2022.10.17.13.25.06
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 17 Oct 2022 13:25:06 -0700 (PDT)
-From:   "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
-To:     linux-fsdevel@vger.kernel.org
-Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
-        linux-nilfs@vger.kernel.org, linux-mm@kvack.org,
-        "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
-Subject: [PATCH v3 13/23] f2fs: Convert f2fs_sync_node_pages() to use filemap_get_folios_tag()
-Date:   Mon, 17 Oct 2022 13:24:41 -0700
-Message-Id: <20221017202451.4951-14-vishal.moola@gmail.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <20221017202451.4951-1-vishal.moola@gmail.com>
-References: <20221017202451.4951-1-vishal.moola@gmail.com>
+        h=cc:to:subject:message-id:date:references:in-reply-to:from:sender
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=VdRc97JpBohoqF6/o/tl+OhgR/OgymDvdNyqLFO538k=;
+        b=nged60K0YynzkUbGd60qkvGrC7Z3wBW+B3O7oz+AOBF94q4AXwZrzp4hqnDbwvi+Xh
+         fsXjU4YcpPHnx0gc6SAPjw/m78HVs+oMm7zrehCpyR710f6+6HOSJTxo/P3Gs2KjOTKt
+         jBVhmyCtQVUvr01hpcivWlQcustM/JxS6xuAgq+5aO2PLFv6QtB6Mxun4Cz0jQp3Du1C
+         6oB++11ntTGvlcPFHdcLaaopY7BTDu7Ym/JyJxyGegVyHEztkf7HdXu/aFhL53RVBVvq
+         F2G5ekpFKYYeXUtoIyDQWx3dNZtUzdngyWQt96S/SNW5rI5yZhJoWhOUlVeuwwuoU89m
+         Hqkw==
+X-Gm-Message-State: ACrzQf3qtOClCZS/IravOqyDkv53JaAzcXQBANuCsd3ttHfbDjozlgT1
+        5v+q+mKEAGg+UR8kX7BOkmVZlZFL04q65bH+i4MX/g==
+X-Google-Smtp-Source: AMsMyM5Rx7CPp1xUKFsnViNQyXO5p9JfPXNoFeIlFy8L99TZi6fHTCqPIjyQ0/ZY8jO9CmAYf7M2+jmKw0/TAAZ4Pb4=
+X-Received: by 2002:a05:6870:4250:b0:132:b47f:c92c with SMTP id
+ v16-20020a056870425000b00132b47fc92cmr7030414oac.64.1666042247887; Mon, 17
+ Oct 2022 14:30:47 -0700 (PDT)
+Received: from 480794996271 named unknown by gmailapi.google.com with
+ HTTPREST; Mon, 17 Oct 2022 14:30:16 -0700
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Sender: Simon Glass <sjg@chromium.org>
+From:   Simon Glass <sjg@chromium.org>
+In-Reply-To: <20221011154720.550320-6-sjg@chromium.org>
+References: <20221011154720.550320-6-sjg@chromium.org> <20221011154720.550320-1-sjg@chromium.org>
+Date:   Mon, 17 Oct 2022 14:30:16 -0700
+X-Google-Sender-Auth: YDmZ0DYlnH3phHPTUNfx_h2Vvxo
+Message-ID: <CAPnjgZ2MV72B6LFgij8KrEtg_Fs4jQG0r+KY7EPyd9w61A4GGw@mail.gmail.com>
+Subject: Re: [PATCH v2 05/14] fs: Quieten down the filesystems more
+To:     Simon Glass <sjg@chromium.org>
+Cc:     Heinrich Schuchardt <xypron.glpk@gmx.de>,
+        =?UTF-8?B?TWFyZWsgQmVow7pu?= <kabel@kernel.org>,
+        =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>,
+        Philippe Reynes <philippe.reynes@softathome.com>,
+        Qu Wenruo <wqu@suse.com>, Stefan Roese <sr@denx.de>,
+        linux-btrfs@vger.kernel.org,
+        U-Boot Mailing List <u-boot@lists.denx.de>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Convert function to use a folio_batch instead of pagevec. This is in
-preparation for the removal of find_get_pages_range_tag().
+When looking for a filesystem on a partition we should do so quietly. At
+present if the filesystem is very small (e.g. 512 bytes) we get a host of
+messages.
 
-Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+Update these to only show when debugging.
+
+Signed-off-by: Simon Glass <sjg@chromium.org>
 ---
- fs/f2fs/node.c | 17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
-index a2f477cc48c7..38f32b4d61dc 100644
---- a/fs/f2fs/node.c
-+++ b/fs/f2fs/node.c
-@@ -1935,23 +1935,24 @@ int f2fs_sync_node_pages(struct f2fs_sb_info *sbi,
- 				bool do_balance, enum iostat_type io_type)
- {
- 	pgoff_t index;
--	struct pagevec pvec;
-+	struct folio_batch fbatch;
- 	int step = 0;
- 	int nwritten = 0;
- 	int ret = 0;
--	int nr_pages, done = 0;
-+	int nr_folios, done = 0;
- 
--	pagevec_init(&pvec);
-+	folio_batch_init(&fbatch);
- 
- next_step:
- 	index = 0;
- 
--	while (!done && (nr_pages = pagevec_lookup_tag(&pvec,
--			NODE_MAPPING(sbi), &index, PAGECACHE_TAG_DIRTY))) {
-+	while (!done && (nr_folios = filemap_get_folios_tag(NODE_MAPPING(sbi),
-+				&index, (pgoff_t)-1, PAGECACHE_TAG_DIRTY,
-+				&fbatch))) {
- 		int i;
- 
--		for (i = 0; i < nr_pages; i++) {
--			struct page *page = pvec.pages[i];
-+		for (i = 0; i < nr_folios; i++) {
-+			struct page *page = &fbatch.folios[i]->page;
- 			bool submitted = false;
- 
- 			/* give a priority to WB_SYNC threads */
-@@ -2026,7 +2027,7 @@ int f2fs_sync_node_pages(struct f2fs_sb_info *sbi,
- 			if (--wbc->nr_to_write == 0)
- 				break;
- 		}
--		pagevec_release(&pvec);
-+		folio_batch_release(&fbatch);
- 		cond_resched();
- 
- 		if (wbc->nr_to_write == 0) {
--- 
-2.36.1
+(no changes since v1)
 
+ disk/part_efi.c       | 15 +++++++--------
+ fs/btrfs/disk-io.c    |  7 ++++---
+ fs/ext4/ext4_common.c |  2 +-
+ fs/fs_internal.c      |  3 +--
+ 4 files changed, 13 insertions(+), 14 deletions(-)
+
+Applied to u-boot-dm, thanks!

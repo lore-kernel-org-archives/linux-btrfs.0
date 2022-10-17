@@ -2,54 +2,54 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 646E5ECAAA7
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4405C47089
 	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Oct 2022 20:27:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231490AbiJQU1j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Oct 2022 16:27:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56080 "EHLO
+        id S231504AbiJQU1p (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Oct 2022 16:27:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53920 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230362AbiJQU1A (ORCPT
+        with ESMTP id S230440AbiJQU1B (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Oct 2022 16:27:00 -0400
-Received: from mail-pl1-x629.google.com (mail-pl1-x629.google.com [IPv6:2607:f8b0:4864:20::629])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E50037E83C;
-        Mon, 17 Oct 2022 13:25:46 -0700 (PDT)
-Received: by mail-pl1-x629.google.com with SMTP id l1so11789228pld.13;
-        Mon, 17 Oct 2022 13:25:46 -0700 (PDT)
+        Mon, 17 Oct 2022 16:27:01 -0400
+Received: from mail-pf1-x434.google.com (mail-pf1-x434.google.com [IPv6:2607:f8b0:4864:20::434])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 609477EFC6;
+        Mon, 17 Oct 2022 13:25:48 -0700 (PDT)
+Received: by mail-pf1-x434.google.com with SMTP id 67so12111271pfz.12;
+        Mon, 17 Oct 2022 13:25:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=HDAaQjWw9mFQrxjxUUwcIUCSC2HAIvgNCPk+fwsNTgA=;
-        b=KyZrIS2cRBI9Wi/s6j+k5Un+7xp/wwbjLfcNmkVss+gpEVM+6g9eB8E+kDr4ib/o9h
-         aHZiqvGPcTO1RO0jkEq+CHtdYaQKQfVuoWerdbvVDifz5h14hCHY1ghQf1SL3/CEdh11
-         opq+bBxZbhYQFO+7l9ipSWqSYpcVET1qxgS/dFbZ3YpA8WAY5aRBjLdlXQ+GF1IEYumz
-         mhbeFFWVxeBoA+sLdrLdfFPXm81t+2pA2/aP8VFL3BoQvWah+LWY3LmumYhfXUeul7r/
-         qn4+/zr/qr23Eqfc68ILRUEWUJNu0aVAW3XQ2taH9/TvZGJMRKjkxGOL4AtxxdlkSFnb
-         Lm5w==
+        bh=BQteUz3c9SmxpbrkCwFkAif0aIJ90TCQG7A+tAmDyzA=;
+        b=Fjdsm+Pk28Zc97Y3NfxZL728h8TE5RyApTDow3aidnlAK3LTkxWjYLDilgvIsLE/vY
+         DG2gnD/1V7xSRF9OsJCuy+QagbO7ftNrkZXcC/buneGyVqq9VL7AeRJOtRVYGhe2g3EB
+         a/blG4d7UpkK2Y2MOZagl8fy+aFT9x6oOzcS45P8bK45kIEfwM/C09l7FqmJaWnoZXwX
+         gFZ3AcnGYu59H2kxWRp0XYa5xE9P9qVWQYQvuOmeTw7vv99Hq0namT7cuf+rd9Gkq85p
+         7ZTnLCbq+RCD+NDxRapqFx6sJOCTXTzxUuQk7bLK0jIgrjjyBfZ8t57LhzVtWkrgsAPJ
+         0NWQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=HDAaQjWw9mFQrxjxUUwcIUCSC2HAIvgNCPk+fwsNTgA=;
-        b=S/vJbqpl9QLK4LMYeF9sWeATRLx81rz9Lh5ODLtS9V+vujCyAn+GX69M36ZYdJnTZP
-         e9/Ldh8AD3U8nYJWMF5IcwR/z9v1F0R/qQJE+LyC/U+C/Rz6AezwfjH5+FL5fcZtipyB
-         6SNgLflRpJFsDIyiZronayw13gu3TJF7xVnuGPt9Tiwr0K0oW7JFV6KuybZq4JrR/Vxa
-         kwFZxcs0MoOCmxYHraPTFpoDShJEAKavlA+8n7O/yc3iVge0cVTFZk6xtDQmLShRzBB1
-         M7v/RdxXFNgqOutWRDIW+XZU/o3PhiA6Vhu/abtkfljO3aRF4GqkRoz+WnEBugeUz9oA
-         1Ucg==
-X-Gm-Message-State: ACrzQf1R5BSwAVxipBa35F1r0p08afXtY9nkfR3L/3+U50OqwKLQ8gwg
-        SmlsgUEsrHBPhJfwx8yibdmZ6niqfqlUVQ==
-X-Google-Smtp-Source: AMsMyM5Oo/lMY32Rbjb2P42pIGit9i9BhaRia6oUIpcpnkGGb4iF3F4dLHfVbSpgqfYoEpbtvaO4MA==
-X-Received: by 2002:a17:902:d714:b0:17f:5813:1df4 with SMTP id w20-20020a170902d71400b0017f58131df4mr14158278ply.148.1666038312014;
-        Mon, 17 Oct 2022 13:25:12 -0700 (PDT)
+        bh=BQteUz3c9SmxpbrkCwFkAif0aIJ90TCQG7A+tAmDyzA=;
+        b=tYipH4VV39gNPycdmDeXtiw6xB+LC70XFcNGrm+ZqU+zeRrRsGQEivVbXF77iKBfzW
+         V/9R/6upuTr0h1TVK2+6l83xwjUUBoOhIkSxAbKZmXQud+8iOOgC+DrVBP9SFL6RKpLf
+         QoOfFLQ0INd8cXeoe2O7RK/liZ/YB+UyVJzCkW/IMFQ1J2p6Yy/JeWkZGEQEUsyJDM7w
+         j1RqDlgelxEuwqgxHNxujrioXqksNaU/DAMEC1JK3YWFpM1x32TG/LDTLWMQoQ/9tgWi
+         SaUrUP+Yw+tCc49zgvrLQVGjo1eaaCBlU3MTvENyLE43AJrA7jHE/2EZV3k90/TIbH0J
+         HsWA==
+X-Gm-Message-State: ACrzQf0bzQk1Syu5PzlKPz7jFUwJ3Sny/ip1rBOIQK61Q7cMCWBvEdOd
+        c0PBlFJJg14sdCcRxnwFpmUX379gjem+/Q==
+X-Google-Smtp-Source: AMsMyM7GsVccXFW8FJ9vOs/U7xJaHdzejE7eEDTC6PUn9s2c9m9uJgd4Zj+a2O6Gv65QrZVSHiZncQ==
+X-Received: by 2002:aa7:8a15:0:b0:566:1817:6fcf with SMTP id m21-20020aa78a15000000b0056618176fcfmr14383803pfa.85.1666038313899;
+        Mon, 17 Oct 2022 13:25:13 -0700 (PDT)
 Received: from vmfolio.. (c-76-102-73-225.hsd1.ca.comcast.net. [76.102.73.225])
-        by smtp.googlemail.com with ESMTPSA id pj12-20020a17090b4f4c00b00200b12f2bf5sm145037pjb.1.2022.10.17.13.25.11
+        by smtp.googlemail.com with ESMTPSA id pj12-20020a17090b4f4c00b00200b12f2bf5sm145037pjb.1.2022.10.17.13.25.13
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 17 Oct 2022 13:25:11 -0700 (PDT)
+        Mon, 17 Oct 2022 13:25:13 -0700 (PDT)
 From:   "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
@@ -59,9 +59,9 @@ Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
         linux-nilfs@vger.kernel.org, linux-mm@kvack.org,
         "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
         Ryusuke Konishi <konishi.ryusuke@gmail.com>
-Subject: [PATCH v3 18/23] nilfs2: Convert nilfs_lookup_dirty_data_buffers() to use filemap_get_folios_tag()
-Date:   Mon, 17 Oct 2022 13:24:46 -0700
-Message-Id: <20221017202451.4951-19-vishal.moola@gmail.com>
+Subject: [PATCH v3 20/23] nilfs2: Convert nilfs_btree_lookup_dirty_buffers() to use filemap_get_folios_tag()
+Date:   Mon, 17 Oct 2022 13:24:48 -0700
+Message-Id: <20221017202451.4951-21-vishal.moola@gmail.com>
 X-Mailer: git-send-email 2.36.1
 In-Reply-To: <20221017202451.4951-1-vishal.moola@gmail.com>
 References: <20221017202451.4951-1-vishal.moola@gmail.com>
@@ -77,75 +77,48 @@ the removal of find_get_pages_range_tag().
 Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
 Acked-by: Ryusuke Konishi <konishi.ryusuke@gmail.com>
 ---
- fs/nilfs2/segment.c | 29 ++++++++++++++++-------------
- 1 file changed, 16 insertions(+), 13 deletions(-)
+ fs/nilfs2/btree.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/fs/nilfs2/segment.c b/fs/nilfs2/segment.c
-index b4cebad21b48..2183e1698f8e 100644
---- a/fs/nilfs2/segment.c
-+++ b/fs/nilfs2/segment.c
-@@ -680,7 +680,7 @@ static size_t nilfs_lookup_dirty_data_buffers(struct inode *inode,
- 					      loff_t start, loff_t end)
- {
- 	struct address_space *mapping = inode->i_mapping;
+diff --git a/fs/nilfs2/btree.c b/fs/nilfs2/btree.c
+index b9d15c3df3cc..da6a19eede9a 100644
+--- a/fs/nilfs2/btree.c
++++ b/fs/nilfs2/btree.c
+@@ -2141,7 +2141,7 @@ static void nilfs_btree_lookup_dirty_buffers(struct nilfs_bmap *btree,
+ 	struct inode *btnc_inode = NILFS_BMAP_I(btree)->i_assoc_inode;
+ 	struct address_space *btcache = btnc_inode->i_mapping;
+ 	struct list_head lists[NILFS_BTREE_LEVEL_MAX];
 -	struct pagevec pvec;
 +	struct folio_batch fbatch;
- 	pgoff_t index = 0, last = ULONG_MAX;
- 	size_t ndirties = 0;
- 	int i;
-@@ -694,23 +694,26 @@ static size_t nilfs_lookup_dirty_data_buffers(struct inode *inode,
- 		index = start >> PAGE_SHIFT;
- 		last = end >> PAGE_SHIFT;
- 	}
+ 	struct buffer_head *bh, *head;
+ 	pgoff_t index = 0;
+ 	int level, i;
+@@ -2151,19 +2151,19 @@ static void nilfs_btree_lookup_dirty_buffers(struct nilfs_bmap *btree,
+ 	     level++)
+ 		INIT_LIST_HEAD(&lists[level]);
+ 
 -	pagevec_init(&pvec);
 +	folio_batch_init(&fbatch);
-  repeat:
- 	if (unlikely(index > last) ||
--	    !pagevec_lookup_range_tag(&pvec, mapping, &index, last,
--				PAGECACHE_TAG_DIRTY))
-+	      !filemap_get_folios_tag(mapping, &index, last,
-+		      PAGECACHE_TAG_DIRTY, &fbatch))
- 		return ndirties;
  
--	for (i = 0; i < pagevec_count(&pvec); i++) {
-+	for (i = 0; i < folio_batch_count(&fbatch); i++) {
- 		struct buffer_head *bh, *head;
--		struct page *page = pvec.pages[i];
-+		struct folio *folio = fbatch.folios[i];
- 
--		lock_page(page);
--		if (!page_has_buffers(page))
--			create_empty_buffers(page, i_blocksize(inode), 0);
--		unlock_page(page);
-+		folio_lock(folio);
-+		head = folio_buffers(folio);
-+		if (!head) {
-+			create_empty_buffers(&folio->page, i_blocksize(inode), 0);
-+			head = folio_buffers(folio);
-+		}
-+		folio_unlock(folio);
- 
--		bh = head = page_buffers(page);
-+		bh = head;
- 		do {
- 			if (!buffer_dirty(bh) || buffer_async_write(bh))
- 				continue;
-@@ -718,13 +721,13 @@ static size_t nilfs_lookup_dirty_data_buffers(struct inode *inode,
- 			list_add_tail(&bh->b_assoc_buffers, listp);
- 			ndirties++;
- 			if (unlikely(ndirties >= nlimit)) {
--				pagevec_release(&pvec);
-+				folio_batch_release(&fbatch);
- 				cond_resched();
- 				return ndirties;
- 			}
- 		} while (bh = bh->b_this_page, bh != head);
+-	while (pagevec_lookup_tag(&pvec, btcache, &index,
+-					PAGECACHE_TAG_DIRTY)) {
+-		for (i = 0; i < pagevec_count(&pvec); i++) {
+-			bh = head = page_buffers(pvec.pages[i]);
++	while (filemap_get_folios_tag(btcache, &index, (pgoff_t)-1,
++				PAGECACHE_TAG_DIRTY, &fbatch)) {
++		for (i = 0; i < folio_batch_count(&fbatch); i++) {
++			bh = head = folio_buffers(fbatch.folios[i]);
+ 			do {
+ 				if (buffer_dirty(bh))
+ 					nilfs_btree_add_dirty_buffer(btree,
+ 								     lists, bh);
+ 			} while ((bh = bh->b_this_page) != head);
+ 		}
+-		pagevec_release(&pvec);
++		folio_batch_release(&fbatch);
+ 		cond_resched();
  	}
--	pagevec_release(&pvec);
-+	folio_batch_release(&fbatch);
- 	cond_resched();
- 	goto repeat;
- }
+ 
 -- 
 2.36.1
 

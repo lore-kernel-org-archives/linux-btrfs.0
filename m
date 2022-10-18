@@ -2,82 +2,84 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45491C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Oct 2022 14:27:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7399C4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Oct 2022 14:27:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231381AbiJRO1r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 18 Oct 2022 10:27:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39170 "EHLO
+        id S231418AbiJRO1u (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 18 Oct 2022 10:27:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39198 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231367AbiJRO1q (ORCPT
+        with ESMTP id S231367AbiJRO1s (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2022 10:27:46 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 60B1EC0981
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2022 07:27:45 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 188B51FD9C;
-        Tue, 18 Oct 2022 14:27:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1666103264; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=lzFFr3x6V34+dftiSXn+8k33YPo52MjKwQnbxj+59ws=;
-        b=SB9aYmO9lbm25zwW8hH/h0wr/m9TXpf0pFWczCiBjlKuPGyKBJwMlYh8kAgeM3pc5WEQnM
-        6zn7WYlQ5mLDYz74tkdJzpDkDgXWvF3f77JPTe7sotPPNwc9MjnsKUhIs1W6jgXHSXXJ1a
-        RTzZ8Fqh+kw1lqusWXFXBOHKxnhtbuc=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 0E3332C141;
-        Tue, 18 Oct 2022 14:27:44 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id A789ADA79B; Tue, 18 Oct 2022 16:27:35 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/4] btrfs: switch GFP_NOFS to GFP_KERNEL in scrub_setup_recheck_block
-Date:   Tue, 18 Oct 2022 16:27:35 +0200
-Message-Id: <aed6063361919c409c72b208d361be0a5d094b3a.1666103172.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.37.3
-In-Reply-To: <cover.1666103172.git.dsterba@suse.com>
-References: <cover.1666103172.git.dsterba@suse.com>
+        Tue, 18 Oct 2022 10:27:48 -0400
+Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EB1FDC0981
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2022 07:27:46 -0700 (PDT)
+Received: by mail-qk1-x732.google.com with SMTP id t25so8719544qkm.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2022 07:27:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=LdNQEqJlTgCNX/thLCc2I4lCuFk0cwSwMo4N+YBcHrU=;
+        b=Jw3yp01Fx8maduVqaLh4vDmteS407yLFl5ZE7frNlvZ8zooT3+k1jSjE8D2Iirs70S
+         TqHh3PG2+dbCgfu9vTyGKgdkv3ctt7NTcfvONwjOG/ii9t1Zuvuz+sMKJT8Bo2OVW63o
+         1jye23159xYwKO04xSM5rUCQwSaQYwr4g++x2gyB+SUAijFzb8ce+quxduSCuzedwuS3
+         QtE03ulcNuD67t7NavKOr2fiCO7djW9nm2lOc2wB+OXbPmAod5bLgkBFi1MRTJUkOoRw
+         djY2t4Dezpyg1Dg90vsnBOGH7hPnz90ov0LsznXE2docTJGEYn5CEwOF30c8Xz3gTVMM
+         gP1g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=LdNQEqJlTgCNX/thLCc2I4lCuFk0cwSwMo4N+YBcHrU=;
+        b=u0TwOlbQ69weBzJNPF0oefUnTYszYkwKbM3ocOcF7ByulFFJXnN+8upOnxmAXhL/d2
+         ge72fh3m8h3Cl/t3MGl951NE1KdZXEwrNKnIVm1oMwgsy8HafE0bhNKG1ftcLEuJYK4p
+         7i+7o2mUEAhwbbfdjmasUqJyoQYoMSvuvxmyhQE4O2MhSH05Q00A3k0i9fmsKOAzjhDj
+         WQd+jR+cYLypmvMD+UHFgie7UNaQf7uhT2c4uXr4IWF3Vrh64xH+OmxkCFkpS3B0iEQS
+         kkeUypU2Yb3tn4FbayUVuuMTepV79t+ePH/y01x9y9SVSwOkF5VJz3qDa++6a1FWcp9E
+         qKgw==
+X-Gm-Message-State: ACrzQf12Tqa2NZUd1KIcLl+srdrJL3vKiA7AIpZ5X4pBaQof8d1M1IAA
+        1niv/xrbr3eXIljSydLkNCv9EdpWoSUgxA==
+X-Google-Smtp-Source: AMsMyM59n58wTRcLL76oWw8s1tDFcQgHc5h5+3OEuGapoJftavQMiHJOzwrYFsC2ZqUa2jLzbISG4A==
+X-Received: by 2002:a05:620a:2601:b0:6bc:70bb:c56b with SMTP id z1-20020a05620a260100b006bc70bbc56bmr2052523qko.416.1666103265809;
+        Tue, 18 Oct 2022 07:27:45 -0700 (PDT)
+Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
+        by smtp.gmail.com with ESMTPSA id k11-20020a05620a0b8b00b006ed99931456sm2419348qkh.88.2022.10.18.07.27.45
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 18 Oct 2022 07:27:45 -0700 (PDT)
+Date:   Tue, 18 Oct 2022 10:27:44 -0400
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "kernel-team@fb.com" <kernel-team@fb.com>
+Subject: Re: [PATCH v2 02/16] btrfs: move larger compat flag helpers to their
+ own c file
+Message-ID: <Y0634IUR2qH2vK/4@localhost.localdomain>
+References: <cover.1666033501.git.josef@toxicpanda.com>
+ <bd00bf180e1f4437d887fb7b893bd37d5103c25c.1666033501.git.josef@toxicpanda.com>
+ <761748f6-ae18-5467-548e-256d56ce5f92@wdc.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <761748f6-ae18-5467-548e-256d56ce5f92@wdc.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There's only one caller that calls scrub_setup_recheck_block in the
-memalloc_nofs_save/_restore protection so it's effectively already
-GFP_NOFS and it's safe to use GFP_KERNEL.
+On Tue, Oct 18, 2022 at 07:42:52AM +0000, Johannes Thumshirn wrote:
+> On 17.10.22 21:09, Josef Bacik wrote:
+> > These helpers use a lot of different functions that would be defined
+> > elsewhere.  Push them into a C file so we don't end up with weird header
+> > file dependencies.
+> 
+> Can't this be merged into patch 1? I find it a bit wired, that these functions
+> are moved twice.
+> 
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/scrub.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Yeah you're right, sorry about that, some of this stuff is a "hey this should go
+here", and then I tackled a different part later and then moved it again.  I'll
+clean this up and re-send.  Thanks,
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 9e3b2e60e571..2fc70a2cc7fe 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1491,7 +1491,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 			return -EIO;
- 		}
- 
--		recover = kzalloc(sizeof(struct scrub_recover), GFP_NOFS);
-+		recover = kzalloc(sizeof(struct scrub_recover), GFP_KERNEL);
- 		if (!recover) {
- 			btrfs_put_bioc(bioc);
- 			btrfs_bio_counter_dec(fs_info);
-@@ -1514,7 +1514,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 			sblock = sblocks_for_recheck[mirror_index];
- 			sblock->sctx = sctx;
- 
--			sector = alloc_scrub_sector(sblock, logical, GFP_NOFS);
-+			sector = alloc_scrub_sector(sblock, logical, GFP_KERNEL);
- 			if (!sector) {
- 				spin_lock(&sctx->stat_lock);
- 				sctx->stat.malloc_errors++;
--- 
-2.37.3
-
+Josef

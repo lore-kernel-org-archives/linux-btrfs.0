@@ -2,117 +2,76 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79A22C43217
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Oct 2022 14:27:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 647CBC4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Oct 2022 14:43:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231409AbiJRO1v (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 18 Oct 2022 10:27:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39206 "EHLO
+        id S230265AbiJROnl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 18 Oct 2022 10:43:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50236 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231404AbiJRO1s (ORCPT
+        with ESMTP id S229763AbiJROnj (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Oct 2022 10:27:48 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98757C098A
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2022 07:27:47 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 379DA2072A;
-        Tue, 18 Oct 2022 14:27:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1666103266; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
+        Tue, 18 Oct 2022 10:43:39 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E33BE659E2
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Oct 2022 07:43:37 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 9DC8533DF3;
+        Tue, 18 Oct 2022 14:43:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1666104216;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=TzpKuf8eHbqy1xMBoR1NUCvs1QFJO3V3rUl9QUTsSd4=;
-        b=VXSMLhn+8X8dvNaeG90m+zQO7zT41aCA/N7XReB4UswONYGlTDYX7FNVmZDQ+6k03PVwB8
-        OczmOgVwpd+Yt7/MIHc6UJs48kl7xTDgjtW8T8su2ANn966LWJMRowl1loWMncca5QWw7h
-        MBgJwsgczg5Pc3ysHDSvjjsCluOrjCk=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 2ED982C141;
-        Tue, 18 Oct 2022 14:27:46 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id CDF81DA79B; Tue, 18 Oct 2022 16:27:37 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/4] btrfs: sink gfp_t parameter to alloc_scrub_sector
-Date:   Tue, 18 Oct 2022 16:27:37 +0200
-Message-Id: <a33272553ef02334c55eb6fea1c286bef8c7c871.1666103172.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.37.3
-In-Reply-To: <cover.1666103172.git.dsterba@suse.com>
-References: <cover.1666103172.git.dsterba@suse.com>
+        bh=RpFUKwgWFR733ZqOe4s+vO2l63UNN+HjQoTJ5ucPZh8=;
+        b=TUU2xNFLJBYXVcanU9kLZvxmSG3IZzzzad1lzqOnD2iQFgxCoJQJhrJ9BkEi/TFm073yx9
+        TtjRUAkZWbfXGLpxuSOLpZ2r0DEQx3X0o0pCQJzNtzbJCJWXsUu0Tg5Aksd3uAiygYiaeb
+        cF1ObMDEHIH6tRmeMW/wTpvTFQQ5Jiw=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1666104216;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=RpFUKwgWFR733ZqOe4s+vO2l63UNN+HjQoTJ5ucPZh8=;
+        b=07vb0uV6jCUaUKNmWM+od4WfrmJRPYWUNEhhGcAmnXCu5ypv1H+eEut9MuXoGPpfS+9riy
+        GPsyYzd0DCb6B0Cg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 786CE13480;
+        Tue, 18 Oct 2022 14:43:36 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id datsHJi7TmPXSAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 18 Oct 2022 14:43:36 +0000
+Date:   Tue, 18 Oct 2022 16:43:26 +0200
+From:   David Sterba <dsterba@suse.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH v2 07/16] btrfs: convert incompat and compat flag test
+ helpers to defines
+Message-ID: <20221018144326.GA13389@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1666033501.git.josef@toxicpanda.com>
+ <b0865d613f9bf886670806b3d2487d149b770745.1666033501.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <b0865d613f9bf886670806b3d2487d149b770745.1666033501.git.josef@toxicpanda.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All callers pas GFP_KERNEL as parameter so we can use it directly in
-alloc_scrub_sector.
+On Mon, Oct 17, 2022 at 03:09:04PM -0400, Josef Bacik wrote:
+> These helpers use functions not defined in fs.h, they're simply
+> accessors of the super block in fs_info, convert them to define's so
+> that we don't have a weird dependency between fs.h and accessor.h.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/scrub.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 2fc70a2cc7fe..79d0ef534d5f 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -295,7 +295,7 @@ static struct scrub_block *alloc_scrub_block(struct scrub_ctx *sctx,
-  * Will also allocate new pages for @sblock if needed.
-  */
- static struct scrub_sector *alloc_scrub_sector(struct scrub_block *sblock,
--					       u64 logical, gfp_t gfp)
-+					       u64 logical)
- {
- 	const pgoff_t page_index = (logical - sblock->logical) >> PAGE_SHIFT;
- 	struct scrub_sector *ssector;
-@@ -303,7 +303,7 @@ static struct scrub_sector *alloc_scrub_sector(struct scrub_block *sblock,
- 	/* We must never have scrub_block exceed U32_MAX in size. */
- 	ASSERT(logical - sblock->logical < U32_MAX);
- 
--	ssector = kzalloc(sizeof(*ssector), gfp);
-+	ssector = kzalloc(sizeof(*ssector), GFP_KERNEL);
- 	if (!ssector)
- 		return NULL;
- 
-@@ -311,7 +311,7 @@ static struct scrub_sector *alloc_scrub_sector(struct scrub_block *sblock,
- 	if (!sblock->pages[page_index]) {
- 		int ret;
- 
--		sblock->pages[page_index] = alloc_page(gfp);
-+		sblock->pages[page_index] = alloc_page(GFP_KERNEL);
- 		if (!sblock->pages[page_index]) {
- 			kfree(ssector);
- 			return NULL;
-@@ -1514,7 +1514,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 			sblock = sblocks_for_recheck[mirror_index];
- 			sblock->sctx = sctx;
- 
--			sector = alloc_scrub_sector(sblock, logical, GFP_KERNEL);
-+			sector = alloc_scrub_sector(sblock, logical);
- 			if (!sector) {
- 				spin_lock(&sctx->stat_lock);
- 				sctx->stat.malloc_errors++;
-@@ -2436,7 +2436,7 @@ static int scrub_sectors(struct scrub_ctx *sctx, u64 logical, u32 len,
- 		 */
- 		u32 l = min(sectorsize, len);
- 
--		sector = alloc_scrub_sector(sblock, logical, GFP_KERNEL);
-+		sector = alloc_scrub_sector(sblock, logical);
- 		if (!sector) {
- 			spin_lock(&sctx->stat_lock);
- 			sctx->stat.malloc_errors++;
-@@ -2773,7 +2773,7 @@ static int scrub_sectors_for_parity(struct scrub_parity *sparity,
- 	for (index = 0; len > 0; index++) {
- 		struct scrub_sector *sector;
- 
--		sector = alloc_scrub_sector(sblock, logical, GFP_KERNEL);
-+		sector = alloc_scrub_sector(sblock, logical);
- 		if (!sector) {
- 			spin_lock(&sctx->stat_lock);
- 			sctx->stat.malloc_errors++;
--- 
-2.37.3
-
+Right, we can switch inlines to macros to avoid that, though with
+inlines there's type checking but we'd notice if there's a wrong type
+that wouldn't have ->super_copy.

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB051C4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Oct 2022 14:58:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AA17C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Oct 2022 14:58:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230439AbiJSO6B (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Oct 2022 10:58:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40984 "EHLO
+        id S231518AbiJSO6H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Oct 2022 10:58:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45634 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231786AbiJSO5g (ORCPT
+        with ESMTP id S231601AbiJSO5h (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Oct 2022 10:57:36 -0400
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E9E212742A
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2022 07:51:09 -0700 (PDT)
-Received: by mail-qt1-x832.google.com with SMTP id s3so11783396qtn.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2022 07:51:09 -0700 (PDT)
+        Wed, 19 Oct 2022 10:57:37 -0400
+Received: from mail-qt1-x829.google.com (mail-qt1-x829.google.com [IPv6:2607:f8b0:4864:20::829])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BC12252DCE
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2022 07:51:11 -0700 (PDT)
+Received: by mail-qt1-x829.google.com with SMTP id c23so11794689qtw.8
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Oct 2022 07:51:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=cs/XdTV43YB+F7SqNGEkidHffTnMxmeODs94xd6e8Js=;
-        b=61rMvGnKggy232EQlc6BF73mFkDrPk823WOUgPbamASlS+I1eRuzFqyW9x+MAYFDu2
-         lAv87OE0bLBmYq0SbmohFFgeW4sVJpTOT2u5GH7urUZ2yYk7KXH06ZtOnNOVDy8VoJPb
-         lhRDklomF0658QH7FLscjRWwlai+090thllrEVodYBOCfDiAmVH+30KnYnYtDWjgQgdw
-         57s44X9GKpku6aZB4PkVasuBT0bOu0hlpgOFgVnWQ6EGK982Wis5Vw6p83DFb6QsNXCC
-         M3fp1Wrx3ahSwoRngnHYLpkwcX8HwEBtuFHO6tUan2Rf99JJxpF/FY9O1c5VYnKc/3dG
-         dYIg==
+        bh=JU4VKhg8LTV9enNbcbYCihSMv9ZppQGg8e3plhOGyps=;
+        b=vuejGXOuA0sanOBhIa8Xp68FmmAviQem7VKusna6JqWlKacrGG4NU5zognFf8njrz6
+         YOvppPQTQqG4pwY4MTfWzt6RfsOJ/7VjmBPtuOGB063q6U01HujM7RRrG52PQKUfS1Rv
+         zkAiKsGN1X6Mm07aP6YniX/UWARBhMECR0EQ5NWtO1eHoq0Gb24Bj1cbjw9NoMxPhOMs
+         nQw12ZeiUzZmTU4pAoBtjnIvCC3eDseygxALes7N3zfjR7iYMlCGRfccpa95z9xt5rpk
+         Nf7mWUknmtNFzkkTDIaPMD/sEcXR2rzpQjpJlKSHZRaX+d6zkL6Vc389B+UxCIgXVepM
+         NEcw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=cs/XdTV43YB+F7SqNGEkidHffTnMxmeODs94xd6e8Js=;
-        b=dU/TW2vELetpTkOre79FEhWngUOeaKho3g801idt4AVH59bDB41+PPmTjdYah7+vkc
-         ArQYrPMmqs6MeFhPMa9TB1BpccA4Yfi8PDPcfzW49tMxfLFCOGCuR13g+Blj1gFuwJJZ
-         uV7EM246boWwou2sqzhyvkpFTIqawnvBx4Rg2UwclOl/t1lVhtPQRB2seetc3yM96HmU
-         FN2E4Vn3QbfUIH/+RPOE6sNrjtM/L16Rpg9rIet8HJzZ3UxQNx5kw4RfFEaHR33pRVJu
-         Gs8HqRT7/q2pfFtco4asKEuQJiskBQl645araZhRk0RPFXEwvBc8rt8eD/EPyOQb+BTO
-         4Glw==
-X-Gm-Message-State: ACrzQf0sJEFk4ORShSJs/dz2+0XyJXj+F9Ezs7r8tGQ6eaDKVZgHFZ6+
-        ofI//kytUKjJ209NI4n1uBaFVH4B72/o4Q==
-X-Google-Smtp-Source: AMsMyM4jw+vZjsfTIH/1MqRzNstFlLN9RvOdQat0kqB1+HaV3wjxxvHJLnGJj9GNWsDvPMfpQc9UNQ==
-X-Received: by 2002:ac8:5a0f:0:b0:39c:ea8b:8835 with SMTP id n15-20020ac85a0f000000b0039cea8b8835mr6781975qta.599.1666191068125;
-        Wed, 19 Oct 2022 07:51:08 -0700 (PDT)
+        bh=JU4VKhg8LTV9enNbcbYCihSMv9ZppQGg8e3plhOGyps=;
+        b=jxtCJjDSKVnd08LzOv/fGKxwA1Awt9+tTlgRyF8H07B608sRz3M2XUKLBxSX5AwqT9
+         T3M70pw3EEhcHYcN4rNf+c2Tmb4dOC6cLJkSbuKz7bbniZ+ozkaDDdvA6DdediMV5KfJ
+         lYk4Injeij2DDJZOvmK50lviQX6mRCEbDsXiTbSBB6KjPoZ/uRoF6Xpdo6z/GZrClBEJ
+         YNA05WG516NS1QWWLUMDmhcSheLG3VjARv4jE6Hew9GlKIdh18A3Lb5etKDK+D2Fn6/d
+         xQb0PEBqH4u8bc9LbgUTu0uAFoG7g4uLi4GLKilciRpuRJoXrWaz2oxI+EVYi+ZktHMv
+         9CvQ==
+X-Gm-Message-State: ACrzQf2SJml+spaTbDPpNTEKyEp5EB8YixNMp0DyujYlJWJe6IRGFtiB
+        vip/SDLezGCpBzDAe6Nmi1QofLBBpBtCJQ==
+X-Google-Smtp-Source: AMsMyM41bnR7ZEHM3fZDd1n0cjQqyTL5UMKbzm04WFEoos7zJknrCtIUhhC1oh/itT7koJWeTAIcrA==
+X-Received: by 2002:ac8:5bc9:0:b0:39a:348b:857e with SMTP id b9-20020ac85bc9000000b0039a348b857emr6737821qtb.462.1666191071014;
+        Wed, 19 Oct 2022 07:51:11 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id i3-20020a05622a08c300b0039cc665d60fsm4122708qte.64.2022.10.19.07.51.07
+        by smtp.gmail.com with ESMTPSA id o14-20020a05620a2a0e00b006cbc00db595sm5217082qkp.23.2022.10.19.07.51.10
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Oct 2022 07:51:07 -0700 (PDT)
+        Wed, 19 Oct 2022 07:51:10 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 04/15] btrfs: push printk index code into their respective helpers
-Date:   Wed, 19 Oct 2022 10:50:50 -0400
-Message-Id: <ee9bced22f908cf5240dcb77e4b9658d4614589a.1666190849.git.josef@toxicpanda.com>
+Subject: [PATCH v3 06/15] btrfs: convert incompat and compat flag test helpers to defines
+Date:   Wed, 19 Oct 2022 10:50:52 -0400
+Message-Id: <ddf7048a28c82a3d640d173c1f27a9dec6e8b549.1666190849.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666190849.git.josef@toxicpanda.com>
 References: <cover.1666190849.git.josef@toxicpanda.com>
@@ -64,104 +64,53 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The printk index work can be pushed into the printk helpers themselves,
-this allows us to further sanitize btrfs-printk.h, removing the last
-include in the header itself.
+These helpers use functions not defined in fs.h, they're simply
+accessors of the super block in fs_info, convert them to define's so
+that we don't have a weird dependency between fs.h and accessor.h.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/messages.h | 29 +----------------------------
- fs/btrfs/super.c    | 12 +++++++++++-
- 2 files changed, 12 insertions(+), 29 deletions(-)
+ fs/btrfs/fs.h | 20 ++++++--------------
+ 1 file changed, 6 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/messages.h b/fs/btrfs/messages.h
-index 441b112345d0..4c9f4bd3b150 100644
---- a/fs/btrfs/messages.h
-+++ b/fs/btrfs/messages.h
-@@ -13,19 +13,7 @@ void btrfs_no_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index c4786e838ee0..857caa07fd77 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -44,6 +44,12 @@ void __btrfs_set_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
+ void __btrfs_clear_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
+ 				const char *name);
+ 
++#define __btrfs_fs_incompat(__fs_info, flags)		\
++	(!!(btrfs_super_incompat_flags((__fs_info)->super_copy) & flags))
++
++#define __btrfs_fs_compat_ro(__fs_info, flags)		\
++	(!!(btrfs_super_compat_ro_flags((__fs_info)->super_copy) & flags))
++
+ #define btrfs_set_fs_incompat(__fs_info, opt) \
+ 	__btrfs_set_fs_incompat((__fs_info), BTRFS_FEATURE_INCOMPAT_##opt, \
+ 				#opt)
+@@ -66,20 +72,6 @@ void __btrfs_clear_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag,
+ #define btrfs_fs_compat_ro(fs_info, opt) \
+ 	__btrfs_fs_compat_ro((fs_info), BTRFS_FEATURE_COMPAT_RO_##opt)
+ 
+-static inline bool __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
+-{
+-	struct btrfs_super_block *disk_super;
+-	disk_super = fs_info->super_copy;
+-	return !!(btrfs_super_incompat_flags(disk_super) & flag);
+-}
+-
+-static inline int __btrfs_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag)
+-{
+-	struct btrfs_super_block *disk_super;
+-	disk_super = fs_info->super_copy;
+-	return !!(btrfs_super_compat_ro_flags(disk_super) & flag);
+-}
+-
+ static inline int btrfs_fs_closing(struct btrfs_fs_info *fs_info)
  {
- }
- 
--#ifdef CONFIG_PRINTK_INDEX
--
--#define btrfs_printk(fs_info, fmt, args...)					\
--do {										\
--	printk_index_subsys_emit("%sBTRFS %s (device %s): ", NULL, fmt);	\
--	_btrfs_printk(fs_info, fmt, ##args);					\
--} while (0)
--
--__printf(2, 3)
--__cold
--void _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...);
--
--#elif defined(CONFIG_PRINTK)
-+#ifdef CONFIG_PRINTK
- 
- #define btrfs_printk(fs_info, fmt, args...)				\
- 	_btrfs_printk(fs_info, fmt, ##args)
-@@ -220,25 +208,10 @@ do {								\
- 				  __LINE__, (errno), first);	\
- } while (0)
- 
--#ifdef CONFIG_PRINTK_INDEX
--
--#define btrfs_handle_fs_error(fs_info, errno, fmt, args...)		\
--do {									\
--	printk_index_subsys_emit(					\
--		"BTRFS: error (device %s%s) in %s:%d: errno=%d %s",	\
--		KERN_CRIT, fmt);					\
--	__btrfs_handle_fs_error((fs_info), __func__, __LINE__,		\
--				(errno), fmt, ##args);			\
--} while (0)
--
--#else
--
- #define btrfs_handle_fs_error(fs_info, errno, fmt, args...)		\
- 	__btrfs_handle_fs_error((fs_info), __func__, __LINE__,		\
- 				(errno), fmt, ##args)
- 
--#endif
--
- __printf(5, 6)
- __cold
- void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index d04d530356dd..daab56b6a582 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -182,6 +182,12 @@ void __btrfs_handle_fs_error(struct btrfs_fs_info *fs_info, const char *function
- 	const char *errstr;
- #endif
- 
-+#ifdef CONFIG_PRINTK_INDEX
-+	printk_index_subsys_emit(
-+		"BTRFS: error (device %s%s) in %s:%d: errno=%d %s",
-+		KERN_CRIT, fmt);
-+#endif
-+
  	/*
- 	 * Special case: if the error is EROFS, and we're already
- 	 * under SB_RDONLY, then it is safe here.
-@@ -207,7 +213,7 @@ void __btrfs_handle_fs_error(struct btrfs_fs_info *fs_info, const char *function
- 		pr_crit("BTRFS: error (device %s%s) in %s:%d: errno=%d %s\n",
- 			sb->s_id, statestr, function, line, errno, errstr);
- 	}
--#endif
-+#endif /* CONFIG_PRINTK */
- 
- 	/*
- 	 * Today we only save the error info to memory.  Long term we'll
-@@ -274,6 +280,10 @@ void __cold _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt,
- 	const char *type = logtypes[4];
- 	struct ratelimit_state *ratelimit = &printk_limits[4];
- 
-+#ifdef CONFIG_PRINTK_INDEX
-+	printk_index_subsys_emit("%sBTRFS %s (device %s): ", NULL, fmt);
-+#endif
-+
- 	va_start(args, fmt);
- 
- 	while ((kern_level = printk_get_level(fmt)) != 0) {
 -- 
 2.26.3
 

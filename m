@@ -2,176 +2,184 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EB34C4332F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Oct 2022 16:39:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D78BC43219
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Oct 2022 16:59:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229742AbiJTQj0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Oct 2022 12:39:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49366 "EHLO
+        id S230038AbiJTQ7H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Oct 2022 12:59:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45764 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230146AbiJTQjY (ORCPT
+        with ESMTP id S230013AbiJTQ7D (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Oct 2022 12:39:24 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C935FB4B0
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Oct 2022 09:39:21 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Thu, 20 Oct 2022 12:59:03 -0400
+Received: from box.fidei.email (box.fidei.email [71.19.144.250])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9376E1D8F0A;
+        Thu, 20 Oct 2022 09:59:02 -0700 (PDT)
+Received: from authenticated-user (box.fidei.email [71.19.144.250])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8420522B63;
-        Thu, 20 Oct 2022 16:39:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1666283960;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=4VnXI6IQ/0gGqmZ4lj8xgQT8ZueIO1pNLUz+eE4wTto=;
-        b=gAnbF6jNNHkYYTKnRbvvFzFdNiGYp2XtVNluI4GbqszAQ3uQWybSq0ssseGZEj9e3L7q/D
-        xzsunI7ypoD7VP7Yg2lrMNleR38BJ+4APINVXcfXvrCm1a1Z74LHLL7rzl9OUg+9ZRmGlv
-        w/I85ctbO1LHl39GACkw9h8BQwq4mB8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1666283960;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=4VnXI6IQ/0gGqmZ4lj8xgQT8ZueIO1pNLUz+eE4wTto=;
-        b=boAs6kvkjVpHUQGDDiB829pnSPIRtho9eewiKBf8XGZM2d3chvXbpp7TbGCGyjriRvmS1Q
-        eTZMLPAur2trwjBg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5527813494;
-        Thu, 20 Oct 2022 16:39:20 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id dxreE7h5UWOcKgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 20 Oct 2022 16:39:20 +0000
-Date:   Thu, 20 Oct 2022 18:39:09 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] btrfs: sink gfp_t parameter to
- btrfs_qgroup_trace_extent
-Message-ID: <20221020163909.GN13389@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1666103172.git.dsterba@suse.com>
- <851400b247c547bd420dafa4b7ae78345f4a7ae4.1666103172.git.dsterba@suse.com>
- <0c79b07b-88bc-0fb1-804d-724e046f6b44@oracle.com>
+        by box.fidei.email (Postfix) with ESMTPSA id 8DBC9811B6;
+        Thu, 20 Oct 2022 12:59:01 -0400 (EDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
+        t=1666285142; bh=4bgw/NcPLnF7PkmEEjFiXOsYU64Yp6d1eA4MBwRNnF4=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=t5iZIG4tkVacfqGQAzzT1CU1X9gWq482ZDE7/jqF10qpj6gmMvMNkgpVZQoIVybFf
+         2+r+vv2qmwRhypoyxYJh6kdGB8TTyudr2lsLnauVvD6zYyjas7jkxDdvTTnkdnQgW2
+         kcrsOVqjZBibeAS9g8OTldi/XotewkI4EOoJaj+nMZfnM/Ixn3pxlC2zbG/boTYSOa
+         dPYAyCsDAWswNN1xFj0+1ap7J15vOoGgr88YevDrWNexg8t8a+iF5EUEgCAyo3yGHo
+         TB2MY1/AnoNJ4HPIySWIyqlf8nR8CzgC4QB7cuWugVe2+BMzOaUerY6SF6eiY0S5C7
+         kGjsRAO9kuqqQ==
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+To:     "Theodore Y. Ts'o" <tytso@mit.edu>,
+        Jaegeuk Kim <jaegeuk@kernel.org>,
+        Eric Biggers <ebiggers@kernel.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, linux-fscrypt@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, kernel-team@meta.com
+Cc:     Omar Sandoval <osandov@osandov.com>,
+        Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Subject: [PATCH v3 01/22] fscrypt: expose fscrypt_nokey_name
+Date:   Thu, 20 Oct 2022 12:58:20 -0400
+Message-Id: <4b42184921d1ab601505bd4c7075cf528a0933c9.1666281277.git.sweettea-kernel@dorminy.me>
+In-Reply-To: <cover.1666281276.git.sweettea-kernel@dorminy.me>
+References: <cover.1666281276.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <0c79b07b-88bc-0fb1-804d-724e046f6b44@oracle.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Oct 20, 2022 at 02:01:56PM +0800, Anand Jain wrote:
-> On 18/10/2022 22:27, David Sterba wrote:
-> > All callers pass GFP_NOFS, we can drop the parameter and use it
-> > directly.
-> > 
-> > Signed-off-by: David Sterba <dsterba@suse.com>
-> > ---
-> >   fs/btrfs/qgroup.c     | 17 +++++++----------
-> >   fs/btrfs/qgroup.h     |  2 +-
-> >   fs/btrfs/relocation.c |  2 +-
-> >   fs/btrfs/tree-log.c   |  3 +--
-> >   4 files changed, 10 insertions(+), 14 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> > index 9334c3157c22..34f0e4dabe25 100644
-> > --- a/fs/btrfs/qgroup.c
-> > +++ b/fs/btrfs/qgroup.c
-> > @@ -1840,7 +1840,7 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_trans_handle *trans,
-> >   }
-> >   
-> >   int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
-> > -			      u64 num_bytes, gfp_t gfp_flag)
-> > +			      u64 num_bytes)
-> >   {
-> >   	struct btrfs_fs_info *fs_info = trans->fs_info;
-> >   	struct btrfs_qgroup_extent_record *record;
-> > @@ -1850,7 +1850,7 @@ int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
-> >   	if (!test_bit(BTRFS_FS_QUOTA_ENABLED, &fs_info->flags)
-> >   	    || bytenr == 0 || num_bytes == 0)
-> >   		return 0;
-> > -	record = kzalloc(sizeof(*record), gfp_flag);
-> > +	record = kzalloc(sizeof(*record), GFP_NOFS);
-> >   	if (!record)
-> >   		return -ENOMEM;
-> >   
-> > @@ -1902,8 +1902,7 @@ int btrfs_qgroup_trace_leaf_items(struct btrfs_trans_handle *trans,
-> >   
-> >   		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
-> >   
-> > -		ret = btrfs_qgroup_trace_extent(trans, bytenr, num_bytes,
-> > -						GFP_NOFS);
-> > +		ret = btrfs_qgroup_trace_extent(trans, bytenr, num_bytes);
-> >   		if (ret)
-> >   			return ret;
-> >   	}
-> > @@ -2102,12 +2101,11 @@ static int qgroup_trace_extent_swap(struct btrfs_trans_handle* trans,
-> >   	 * blocks for qgroup accounting.
-> >   	 */
-> >   	ret = btrfs_qgroup_trace_extent(trans, src_path->nodes[dst_level]->start,
-> > -			nodesize, GFP_NOFS);
-> > +					nodesize);
-> >   	if (ret < 0)
-> >   		goto out;
-> > -	ret = btrfs_qgroup_trace_extent(trans,
-> > -			dst_path->nodes[dst_level]->start,
-> > -			nodesize, GFP_NOFS);
-> > +	ret = btrfs_qgroup_trace_extent(trans, dst_path->nodes[dst_level]->start,
-> > +					nodesize);
-> >   	if (ret < 0)
-> >   		goto out;
-> >   
-> > @@ -2391,8 +2389,7 @@ int btrfs_qgroup_trace_subtree(struct btrfs_trans_handle *trans,
-> >   			path->locks[level] = BTRFS_READ_LOCK;
-> >   
-> >   			ret = btrfs_qgroup_trace_extent(trans, child_bytenr,
-> > -							fs_info->nodesize,
-> > -							GFP_NOFS);
-> > +							fs_info->nodesize);
-> >   			if (ret)
-> >   				goto out;
-> >   		}
-> > diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> > index 3fb5459c9309..7bffa10589d6 100644
-> > --- a/fs/btrfs/qgroup.h
-> > +++ b/fs/btrfs/qgroup.h
-> > @@ -321,7 +321,7 @@ int btrfs_qgroup_trace_extent_post(struct btrfs_trans_handle *trans,
-> >    * (NULL trans)
-> >    */
-> >   int btrfs_qgroup_trace_extent(struct btrfs_trans_handle *trans, u64 bytenr,
-> > -			      u64 num_bytes, gfp_t gfp_flag);
-> > +			      u64 num_bytes);
-> >   
-> >   /*
-> >    * Inform qgroup to trace all leaf items of data
-> 
-> 
-> 
-> > diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> > index 216a4485d914..f5564aa313f5 100644
-> > --- a/fs/btrfs/relocation.c
-> > +++ b/fs/btrfs/relocation.c
-> > @@ -471,7 +471,7 @@ static noinline_for_stack struct btrfs_backref_node *build_backref_tree(
-> >   	int ret;
-> >   	int err = 0;
-> >   
-> > -	iter = btrfs_backref_iter_alloc(rc->extent_root->fs_info, GFP_NOFS);
-> > +	iter = btrfs_backref_iter_alloc(rc->extent_root->fs_info);
-> >   	if (!iter)
-> >   		return ERR_PTR(-ENOMEM);
-> >   	path = btrfs_alloc_path();
-> 
-> 
->   This change should be part of the patch 1/4.
->   Except that, rest looks good.
+From: Omar Sandoval <osandov@osandov.com>
 
-Ah I see, that's what was Johannes complained about, I did not realize
-that the change was split. I'll fix it.
+btrfs stores its data structures, including filenames in directories, in
+its own buffer implementation, struct extent_buffer, composed of
+several non-contiguous pages. We could copy filenames into a
+temporary buffer and use fscrypt_match_name() against that buffer, such
+extensive memcpying would be expensive. Instead, exposing
+fscrypt_nokey_name as in this change allows btrfs to recapitulate
+fscrypt_match_name() using methods on struct extent_buffer instead of
+dealing with a raw byte array.
+
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/crypto/fname.c       | 39 +--------------------------------------
+ include/linux/fscrypt.h | 37 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 38 deletions(-)
+
+diff --git a/fs/crypto/fname.c b/fs/crypto/fname.c
+index 12bd61d20f69..6c092a1533f7 100644
+--- a/fs/crypto/fname.c
++++ b/fs/crypto/fname.c
+@@ -14,7 +14,6 @@
+ #include <linux/namei.h>
+ #include <linux/scatterlist.h>
+ #include <crypto/hash.h>
+-#include <crypto/sha2.h>
+ #include <crypto/skcipher.h>
+ #include "fscrypt_private.h"
+ 
+@@ -26,43 +25,7 @@
+ #define FSCRYPT_FNAME_MIN_MSG_LEN 16
+ 
+ /*
+- * struct fscrypt_nokey_name - identifier for directory entry when key is absent
+- *
+- * When userspace lists an encrypted directory without access to the key, the
+- * filesystem must present a unique "no-key name" for each filename that allows
+- * it to find the directory entry again if requested.  Naively, that would just
+- * mean using the ciphertext filenames.  However, since the ciphertext filenames
+- * can contain illegal characters ('\0' and '/'), they must be encoded in some
+- * way.  We use base64url.  But that can cause names to exceed NAME_MAX (255
+- * bytes), so we also need to use a strong hash to abbreviate long names.
+- *
+- * The filesystem may also need another kind of hash, the "dirhash", to quickly
+- * find the directory entry.  Since filesystems normally compute the dirhash
+- * over the on-disk filename (i.e. the ciphertext), it's not computable from
+- * no-key names that abbreviate the ciphertext using the strong hash to fit in
+- * NAME_MAX.  It's also not computable if it's a keyed hash taken over the
+- * plaintext (but it may still be available in the on-disk directory entry);
+- * casefolded directories use this type of dirhash.  At least in these cases,
+- * each no-key name must include the name's dirhash too.
+- *
+- * To meet all these requirements, we base64url-encode the following
+- * variable-length structure.  It contains the dirhash, or 0's if the filesystem
+- * didn't provide one; up to 149 bytes of the ciphertext name; and for
+- * ciphertexts longer than 149 bytes, also the SHA-256 of the remaining bytes.
+- *
+- * This ensures that each no-key name contains everything needed to find the
+- * directory entry again, contains only legal characters, doesn't exceed
+- * NAME_MAX, is unambiguous unless there's a SHA-256 collision, and that we only
+- * take the performance hit of SHA-256 on very long filenames (which are rare).
+- */
+-struct fscrypt_nokey_name {
+-	u32 dirhash[2];
+-	u8 bytes[149];
+-	u8 sha256[SHA256_DIGEST_SIZE];
+-}; /* 189 bytes => 252 bytes base64url-encoded, which is <= NAME_MAX (255) */
+-
+-/*
+- * Decoded size of max-size no-key name, i.e. a name that was abbreviated using
++ * Decoded size of max-size nokey name, i.e. a name that was abbreviated using
+  * the strong hash and thus includes the 'sha256' field.  This isn't simply
+  * sizeof(struct fscrypt_nokey_name), as the padding at the end isn't included.
+  */
+diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
+index cad78b569c7e..4cdff7c15544 100644
+--- a/include/linux/fscrypt.h
++++ b/include/linux/fscrypt.h
+@@ -16,6 +16,7 @@
+ #include <linux/fs.h>
+ #include <linux/mm.h>
+ #include <linux/slab.h>
++#include <crypto/sha2.h>
+ #include <uapi/linux/fscrypt.h>
+ 
+ /*
+@@ -54,6 +55,42 @@ struct fscrypt_name {
+ #define fname_name(p)		((p)->disk_name.name)
+ #define fname_len(p)		((p)->disk_name.len)
+ 
++/*
++ * struct fscrypt_nokey_name - identifier for directory entry when key is absent
++ *
++ * When userspace lists an encrypted directory without access to the key, the
++ * filesystem must present a unique "no-key name" for each filename that allows
++ * it to find the directory entry again if requested.  Naively, that would just
++ * mean using the ciphertext filenames.  However, since the ciphertext filenames
++ * can contain illegal characters ('\0' and '/'), they must be encoded in some
++ * way.  We use base64url.  But that can cause names to exceed NAME_MAX (255
++ * bytes), so we also need to use a strong hash to abbreviate long names.
++ *
++ * The filesystem may also need another kind of hash, the "dirhash", to quickly
++ * find the directory entry.  Since filesystems normally compute the dirhash
++ * over the on-disk filename (i.e. the ciphertext), it's not computable from
++ * no-key names that abbreviate the ciphertext using the strong hash to fit in
++ * NAME_MAX.  It's also not computable if it's a keyed hash taken over the
++ * plaintext (but it may still be available in the on-disk directory entry);
++ * casefolded directories use this type of dirhash.  At least in these cases,
++ * each no-key name must include the name's dirhash too.
++ *
++ * To meet all these requirements, we base64url-encode the following
++ * variable-length structure.  It contains the dirhash, or 0's if the filesystem
++ * didn't provide one; up to 149 bytes of the ciphertext name; and for
++ * ciphertexts longer than 149 bytes, also the SHA-256 of the remaining bytes.
++ *
++ * This ensures that each no-key name contains everything needed to find the
++ * directory entry again, contains only legal characters, doesn't exceed
++ * NAME_MAX, is unambiguous unless there's a SHA-256 collision, and that we only
++ * take the performance hit of SHA-256 on very long filenames (which are rare).
++ */
++struct fscrypt_nokey_name {
++	u32 dirhash[2];
++	u8 bytes[149];
++	u8 sha256[SHA256_DIGEST_SIZE];
++}; /* 189 bytes => 252 bytes base64url-encoded, which is <= NAME_MAX (255) */
++
+ /* Maximum value for the third parameter of fscrypt_operations.set_context(). */
+ #define FSCRYPT_SET_CONTEXT_MAX_SIZE	40
+ 
+-- 
+2.35.1
+

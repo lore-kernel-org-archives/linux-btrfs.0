@@ -2,108 +2,72 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBF72C433FE
-	for <linux-btrfs@archiver.kernel.org>; Sun, 23 Oct 2022 13:54:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 801D7ECAAA1
+	for <linux-btrfs@archiver.kernel.org>; Sun, 23 Oct 2022 17:19:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230084AbiJWNy0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 23 Oct 2022 09:54:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37174 "EHLO
+        id S230432AbiJWRTq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 23 Oct 2022 13:19:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46590 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229497AbiJWNyY (ORCPT
+        with ESMTP id S230207AbiJWRTl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 23 Oct 2022 09:54:24 -0400
-Received: from mail-lf1-x12e.google.com (mail-lf1-x12e.google.com [IPv6:2a00:1450:4864:20::12e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A0052AD8
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Oct 2022 06:54:22 -0700 (PDT)
-Received: by mail-lf1-x12e.google.com with SMTP id o12so12824910lfq.9
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Oct 2022 06:54:21 -0700 (PDT)
+        Sun, 23 Oct 2022 13:19:41 -0400
+Received: from mail-pj1-x1030.google.com (mail-pj1-x1030.google.com [IPv6:2607:f8b0:4864:20::1030])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2CA6555A9
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Oct 2022 10:19:33 -0700 (PDT)
+Received: by mail-pj1-x1030.google.com with SMTP id m6-20020a17090a5a4600b00212f8dffec9so1694735pji.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 23 Oct 2022 10:19:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=content-transfer-encoding:in-reply-to:from:references:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=5oAEtx2ggx7Ry1nkhfZptphuZuq09FUGeyM5kj19LsE=;
-        b=JaX395LJDgCn5OE5LNCrNCaV/fsnwiAEsKVyfMxTv7C6lDiSlUNQYKSKB/7Q6s8aWE
-         xMrb4vQ8NoLX+YTsHwjNfgs71hn4bllwSW3de7BaFEI8v4D1g+VU85M5+EAxQCNw69VH
-         7s9YygwfcGigqqcqpt1AUHThu7MccgPgpsbysKZnaY1dq5OVrRMBYePzmnKutUUKBTxD
-         ypPtLWHDcR+XoFn2hCLZYbGBe4Gj3yFa7NmBLRZMx774n7OEDcCtypLcUbTk7xvRxRv5
-         XE+4nRoqyGIZNsg11MZcHynCYxZFhPNVcDyZ2gsWfuzJuwIB7eBbHbUMgKR+msN70Db7
-         uFeA==
+        d=googlemail.com; s=20210112;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=DXGFRRl8QKqIOt8okkG2YA5y9wwKi4Y+4+u6oVSDjFI=;
+        b=fF+cWRHIBAMZU6kocUWQe+kpmiq7oLc3WEd+rnQXFKDAejmCnbz3Srjy5QBQClP5+J
+         fXELRGx6VqEp9IfKXgJWu/BBlvXgo3DEfC7LPTkoLXclFrHghqujVz8lRTj895zh27yD
+         LtyNqny7f458ySYzEF7yIFenM5QHcjV2E1aP3jIEmIGTbzYtxPbkKM7QGsxy9wuZh8nY
+         sxeU2QQKGANt9b1lfJA9a+I9wUaZV2foeTHeB5uuilt80sWW1Ba6OihXcATWFTiTlXit
+         ps0UGOvC1cjK7ro7BBza7qb/uHIgvZSbFnHpDAL0U5nk8D7WsDhrcWgJDOqpOYVGm/+5
+         TsPw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:in-reply-to:from:references:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=5oAEtx2ggx7Ry1nkhfZptphuZuq09FUGeyM5kj19LsE=;
-        b=PvIwqaQkXo1N43YZ00dcbDaSA0viVCMJ8InYnMUY1YUJqPiSN4HL2XTDoXifwZAsTl
-         quXVT4f4v54bk+PawcxNiJJKt8MnMj429dmRO0izVPlJj7GtMztq/l1X8Aqv2J2yLyjP
-         nBAqyh6ltmm+kdnoj3pe9V3L96OmYWY/xMtGhvWgkYmJY5zmyBjEJNVe3eE1pTxbMnOW
-         pgES8wtX9ow7RUc3h51RGid2uhEJ7DVWDo1Kg75XsTTCnBdP41S4dg3JldQiUkyVwYYZ
-         IPcaS2O0LzXFAodk1f1Si3YBnF6+q9/DEPp8swPNhHqUkVjBDD6fgIa5slhRi8tfMw97
-         91rw==
-X-Gm-Message-State: ACrzQf36E5u8r4ACBktPjbTS7joy5wu5DIESAd3SEpge1S/01+MJ/oWt
-        lL3TP9NbgeWZc8hCLCOnVJ8UE2NUvdU=
-X-Google-Smtp-Source: AMsMyM50+GlBBdGtM9Q/k3WVbq0WoJKseUTnBzemwKcauVZwC8ztXU1aK/sHeLLHcd9sinlqgaXKXw==
-X-Received: by 2002:a05:6512:158c:b0:4a2:5cf6:5338 with SMTP id bp12-20020a056512158c00b004a25cf65338mr10102449lfb.81.1666533260238;
-        Sun, 23 Oct 2022 06:54:20 -0700 (PDT)
-Received: from ?IPV6:2a00:1370:8182:683d:c840:bdd:653a:30ea? ([2a00:1370:8182:683d:c840:bdd:653a:30ea])
-        by smtp.gmail.com with ESMTPSA id d30-20020a19385e000000b004979da67114sm4037738lfj.255.2022.10.23.06.54.18
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 23 Oct 2022 06:54:19 -0700 (PDT)
-Message-ID: <9799c630-ec3d-232c-92c4-4aa3dee839ba@gmail.com>
-Date:   Sun, 23 Oct 2022 16:54:17 +0300
+        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=DXGFRRl8QKqIOt8okkG2YA5y9wwKi4Y+4+u6oVSDjFI=;
+        b=oiuOaIeBXlhNVCM+tItTdjlA4IrT6mnDDWchel4Pux0TlxzMR6iLrj8ZyhxKnEc/1e
+         mq7ozbPqg8Vgns+fBL9LXEFjZICdeEMmM3e/eSa2yvMaQfos8dYBaotxA3XZ2u2YYxOX
+         eU3sXrdkpbf3QpjRgWeatQdizLwK8bKp0wVbwQ6f8x19XUsCqN2IxaBaHAszNdep+TXD
+         P/P1cvNjqqAGumd1QOQv3oJVkvztfaaUNqYg/hfbXCFJLGSsZI+aLAd9eIJyvy+9HkzB
+         lawWnKj73ipfVwkndyI5qaRjSsDnFOyypbumAQ73XDbCYsoPkcEX7fiCQYAgxwzf8Chg
+         Ms/Q==
+X-Gm-Message-State: ACrzQf31rUdMyi/0e5RWU9BnsYzIkNfiHGIBnuKSk1X/f/njhAGotYff
+        3rYVJPPgdRInqAKeR+LsNWZmKHL07OzaoWqz249zzVT6ELo=
+X-Google-Smtp-Source: AMsMyM4OLKMPDyGUQOY/A71JptLkv2T9mmePFGSR/8o76VU0kSBSS8w+BwY9WhgFAqi+mc8853R80SHHILMjqS9MKBU=
+X-Received: by 2002:a17:903:2452:b0:186:99e0:672d with SMTP id
+ l18-20020a170903245200b0018699e0672dmr5177698pls.95.1666545572450; Sun, 23
+ Oct 2022 10:19:32 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.2.2
-Subject: Re: Is it safe to use snapshot without data as 'btrfs send' parent?
-Content-Language: en-US
-To:     Nemcev Aleksey <Nemcev_Aleksey@inbox.ru>,
-        linux-btrfs@vger.kernel.org
-References: <d87ce800-670e-9ca2-b524-8b20678abd9b@inbox.ru>
- <d59f04b3-9b79-905c-dca9-5fc4ce7be0a9@gmail.com>
- <3f97ee58-4f52-7660-a9b3-916598d6a463@inbox.ru>
-From:   Andrei Borzenkov <arvidjaar@gmail.com>
-In-Reply-To: <3f97ee58-4f52-7660-a9b3-916598d6a463@inbox.ru>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+From:   Tobias Powalowski <tobias.powalowski@googlemail.com>
+Date:   Sun, 23 Oct 2022 19:19:20 +0200
+Message-ID: <CAHfPjO-gtcdvzgjm1o5NdS0bRy8ukyROH24UhWUATn6ouj07yw@mail.gmail.com>
+Subject: 6.0.3 broke space_cache=v1 devices
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 23.10.2022 12:32, Nemcev Aleksey wrote:
-> 
-> 
-> I thought it will be possible to somehow track changes for ongoing
-> incremental backup but also be able to delete files on original FS and
-> immideately reclaim free space without losing incremental backup
-> ability. I don't use snapshot on original FS as backup, only as parent
-> reference for incremental send and would be happy if it will be any way
-> to avoid space consumption by this snapshot for deleted files (just to
-> keep track "this file should be deleted or overwritten" references).
-
-btrfs data sharing is extent based, not file based, so it is more 
-complicated.
-
-> But it seems the only way to use incremental send|receive requires to
-> keep normal snapshot on original FS as parent.
-> 
-
-btrfs send works by computing difference between two subvolumes, so yes, 
-you must have two subvolumes to be able to compute difference. It may 
-theoretically be possible to use some metadata dump (like btrfs-image) 
-instead of source subvolume, but it does not sound like a trivial task.
-
-If data change rate is so high that even keeping snapshot for one day is 
-a problem, you can achieve similar effects by combining btrfs snapshots 
-and rsync
-
-- on source create read-only snapshot (simply to have consistent image)
-- on destination clone previous backup to a new volume
-- run "rsync --inplace from source to target
-- remove snapshot on source
-
-This will effectively do the same as incremental btrfs send by sending 
-only changed blocks. It does mean increased IO load on both source and 
-destination though. If you have mostly small files, using rsync 
---whole-file may mitigate it.
-
+Hi,
+https://bugs.archlinux.org/task/76266
+as talked to darkling on IRC here the report for the ML.
+My servers got broken with kernel 6.0.3, downgrading to 6.0.2 solved my issue.
+My btrfs was using version 1 of space_cache, after upgrading it to version 2
+6.0.3 worked.
+greetings
+tpowa
+-- 
+Tobias Powalowski
+Arch Linux Developer & Package Maintainer (tpowa)
+https://www.archlinux.org
+tpowa@archlinux.org
+Archboot Developer
+https://bit.ly/archboot

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BAE59FA373F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Oct 2022 20:37:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 73B5EFA3740
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Oct 2022 20:37:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234442AbiJXUhW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Oct 2022 16:37:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44200 "EHLO
+        id S234544AbiJXUh0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Oct 2022 16:37:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42624 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234440AbiJXUge (ORCPT
+        with ESMTP id S234411AbiJXUgh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2022 16:36:34 -0400
-Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1AB871CC75D
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:25 -0700 (PDT)
-Received: by mail-qk1-x731.google.com with SMTP id m6so6643081qkm.4
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:25 -0700 (PDT)
+        Mon, 24 Oct 2022 16:36:37 -0400
+Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com [IPv6:2607:f8b0:4864:20::72a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7500F115419
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:21 -0700 (PDT)
+Received: by mail-qk1-x72a.google.com with SMTP id 8so6652727qka.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=VUQv0b9y+FnSE/941xqXglEbXL2ugL78z0kytNSqe90=;
-        b=09oYtDU+tznnB36K2OS8VKh6CiBX7mTYc8526BuR8Szw8320bQgb/zoxkJucGYOTlE
-         9yPZdXwqhiqZDQwcRzQHtPuABJk3eru5Ax6ooOxRcQI0kuqkKz76msgugb2QyNVoeala
-         ge5xDJTCO3Ymp4y/BxRKLhrau+wqB/9AlPU3RMP6z4sdWpy4GGHuPkjrfmdu8aWg2e1T
-         XfAmYHyptI4T4tGUOqbYvDlJP7AMb+ZMoRWg8Z8T6+cJIDGSoO5TDQOuW83c4gqPhAQI
-         6nF/HWGmZSzSl/jTB93/rFEE8paLrF7IsB3cZunaDI57fwj3cTJFtpiatTEC7dLT6qQg
-         8tzA==
+        bh=7U9vJ1S+2YCZX38IBL50e8D2GSKEb1ULkalAktZ3N8Y=;
+        b=b8+9Q6RecC9P9y0HJ/g+9hJCyZTPc6Z192KmuivRzLFyifekTZmUYILV96ZIIN9CRD
+         ReS7gtXDu+Y0o6P4Rw8ln6r6oOAgvK0LCBVgCh3ELWheX6Xbw5LnsU6Xls8iFWEMIc5h
+         euRQ5cB42qC1Nr8kji1tadZUEumSR6hnEwSfd/H+izwU0ppqtBTms38pmL36E84YR6rw
+         azFOcxcRNNGSO57ime/ZQR3ilfSRlhVAi21gxoTleB8Yeol3jWuM8cFYB3lmWZfLShjE
+         YF/0rw9Ao8CxvD7APcUuKYV36h5Drp7ec1JzQtC8MCPb9SG7ERuVqljjlA0ImlXeQ/vB
+         pfRg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=VUQv0b9y+FnSE/941xqXglEbXL2ugL78z0kytNSqe90=;
-        b=45oVsu1XekQuJPqrmQ/ZOXVTpC820/wKzcmd+193tTnd2qVt5chSdUh97H93gnfNUP
-         Pc0ySKrVWFHyWrfmrAtwCMJsahPXfojNog1i3HaLdFci00WrHE+67fulAZClOyTd6qJ+
-         Uei3MKQEde5WPp493f2ALuHjlMzXdJjW1fbj5ntDULavXlCcgWlRmZbBn3akkx0aSS5y
-         xr8MW+qe1QfBUkppziSpelUbraZq8cNJejK1kEPFF8n2BUjDWJj87keRFLtoix7qJ/mr
-         iqkZLGJmMK+Lo8WZpjPaq1do08aZ9QNWwlDmUBVr6Z822ZHIYOGIDDamqbtIxhlsJgFP
-         9u0A==
-X-Gm-Message-State: ACrzQf1eoIrRyE3/P4yjmaAe2nDqHE3pWpusNuZE7AS2De5Nv7aG6xNc
-        FCgpFilvupZZ0hnzgPl1Kpw8CtajL+a8aA==
-X-Google-Smtp-Source: AMsMyM7hd2qqVrEDjqaahcvz8xxBClpxfbCzC2ywzvMSL4eyWs1eNDQyoeVuNM6UqmUisFvPOyzv0g==
-X-Received: by 2002:a37:4247:0:b0:6e7:6992:93c4 with SMTP id p68-20020a374247000000b006e7699293c4mr23725065qka.696.1666637234975;
-        Mon, 24 Oct 2022 11:47:14 -0700 (PDT)
+        bh=7U9vJ1S+2YCZX38IBL50e8D2GSKEb1ULkalAktZ3N8Y=;
+        b=XaDQA1nDCeR1rxGH1BwAQYljEK+Tsbm2UmEsN6GxoNAZXW5AnTH5P2XUQq8hqPrwBl
+         BUZi3/8vB+03LKhG1Z5NOOUvknwinRNWP0Oq1MV8K38jGAUC59VEPDdxkgWPc4lwB3fW
+         66HblAObfz/af7OAdREmYg9pAfhaIYHbI9DAhkPgTro9fTbF2gwszNY3PT/G8pa6Vwf1
+         hw26UF1Do6GhZr04zIUWz+Nqz3RKX1URPgBBgK4DB85xE3R9vnObd7VEXJ2Iymjj1qhl
+         2AVIyLtXnFG8Cfs34y4qSujuq/5aXNxU4w1cW5cqJbzuYRa07e+jpnhTKsTVpK8EK8I1
+         R4zQ==
+X-Gm-Message-State: ACrzQf20QG6VH275r1Jz9MyysyFoutKikX9k1CFueUziFi3QZ+todUho
+        mjFGezXMmtxTCNCFjabnUi9D/irJWPkfFQ==
+X-Google-Smtp-Source: AMsMyM6WHEEXbG4DvJJtt/Z3LgHGrVMQTdyFgrD3CkODhOKgwV+NrMtyb2DPMtUKkUeoRDxvNveZmA==
+X-Received: by 2002:a05:620a:4725:b0:6ee:bf5c:915a with SMTP id bs37-20020a05620a472500b006eebf5c915amr23959233qkb.326.1666637230581;
+        Mon, 24 Oct 2022 11:47:10 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id fc18-20020a05622a489200b0039cb59f00fcsm380478qtb.30.2022.10.24.11.47.14
+        by smtp.gmail.com with ESMTPSA id fz9-20020a05622a5a8900b00398426e706fsm330781qtb.65.2022.10.24.11.47.10
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 24 Oct 2022 11:47:14 -0700 (PDT)
+        Mon, 24 Oct 2022 11:47:10 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 8/9] btrfs: delete unused function prototypes in ctree.h
-Date:   Mon, 24 Oct 2022 14:46:59 -0400
-Message-Id: <13fc8df173747660da9bbc8e8da7e082d7ff060a.1666637013.git.josef@toxicpanda.com>
+Subject: [PATCH 5/9] btrfs: move btrfs_account_ro_block_groups_free_space into space-info.c
+Date:   Mon, 24 Oct 2022 14:46:56 -0400
+Message-Id: <f37e23c809dc73fd97bf69ce615e4f6aec08802a.1666637013.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666637013.git.josef@toxicpanda.com>
 References: <cover.1666637013.git.josef@toxicpanda.com>
@@ -64,31 +64,127 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This batch of prototypes no longer have code associated with them, so
-remove them.
+This was prototyped in ctree.h and the code existed in extent-tree.c,
+but it's space-info related so move it into space-info.c.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h | 6 ------
- 1 file changed, 6 deletions(-)
+ fs/btrfs/ctree.h       |  1 -
+ fs/btrfs/extent-tree.c | 34 ----------------------------------
+ fs/btrfs/space-info.c  | 34 ++++++++++++++++++++++++++++++++++
+ fs/btrfs/space-info.h  |  1 +
+ 4 files changed, 35 insertions(+), 35 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 04d1568b4bd4..1aff14f35796 100644
+index 32c3bd724bc9..514b0eba290c 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -498,12 +498,6 @@ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
- 			 u64 num_bytes, u64 *actual_bytes);
- int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range);
+@@ -567,7 +567,6 @@ void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes);
  
--int btrfs_delayed_refs_qgroup_accounting(struct btrfs_trans_handle *trans,
--					 struct btrfs_fs_info *fs_info);
--int btrfs_start_write_no_snapshotting(struct btrfs_root *root);
--void btrfs_end_write_no_snapshotting(struct btrfs_root *root);
--void btrfs_wait_for_snapshot_creation(struct btrfs_root *root);
+ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+ 				    u64 disk_num_bytes, bool noflush);
+-u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 				   u64 start, u64 end);
+ int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9c242066cf30..db3d417ae9b0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5974,40 +5974,6 @@ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
+-/*
+- * helper to account the unused space of all the readonly block group in the
+- * space_info. takes mirrors into account.
+- */
+-u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+-{
+-	struct btrfs_block_group *block_group;
+-	u64 free_bytes = 0;
+-	int factor;
 -
- /* ctree.c */
- int __init btrfs_ctree_init(void);
- void __cold btrfs_ctree_exit(void);
+-	/* It's df, we don't care if it's racy */
+-	if (list_empty(&sinfo->ro_bgs))
+-		return 0;
+-
+-	spin_lock(&sinfo->lock);
+-	list_for_each_entry(block_group, &sinfo->ro_bgs, ro_list) {
+-		spin_lock(&block_group->lock);
+-
+-		if (!block_group->ro) {
+-			spin_unlock(&block_group->lock);
+-			continue;
+-		}
+-
+-		factor = btrfs_bg_type_to_factor(block_group->flags);
+-		free_bytes += (block_group->length -
+-			       block_group->used) * factor;
+-
+-		spin_unlock(&block_group->lock);
+-	}
+-	spin_unlock(&sinfo->lock);
+-
+-	return free_bytes;
+-}
+-
+ int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 				   u64 start, u64 end)
+ {
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index bf7c5e26dc1e..e4a59d611f07 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1789,3 +1789,37 @@ __cold void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info)
+ 	}
+ 	dump_global_block_rsv(fs_info);
+ }
++
++/*
++ * helper to account the unused space of all the readonly block group in the
++ * space_info. takes mirrors into account.
++ */
++u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
++{
++	struct btrfs_block_group *block_group;
++	u64 free_bytes = 0;
++	int factor;
++
++	/* It's df, we don't care if it's racy */
++	if (list_empty(&sinfo->ro_bgs))
++		return 0;
++
++	spin_lock(&sinfo->lock);
++	list_for_each_entry(block_group, &sinfo->ro_bgs, ro_list) {
++		spin_lock(&block_group->lock);
++
++		if (!block_group->ro) {
++			spin_unlock(&block_group->lock);
++			continue;
++		}
++
++		factor = btrfs_bg_type_to_factor(block_group->flags);
++		free_bytes += (block_group->length -
++			       block_group->used) * factor;
++
++		spin_unlock(&block_group->lock);
++	}
++	spin_unlock(&sinfo->lock);
++
++	return free_bytes;
++}
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index 6e2947688c53..77d83fea84a4 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -218,5 +218,6 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
+ 			     enum btrfs_reserve_flush_enum flush);
+ void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info);
+ void btrfs_init_async_reclaim_work(struct btrfs_fs_info *fs_info);
++u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+ 
+ #endif /* BTRFS_SPACE_INFO_H */
 -- 
 2.26.3
 

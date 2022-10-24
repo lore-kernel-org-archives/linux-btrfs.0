@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73B5EFA3740
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Oct 2022 20:37:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C194FA373F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Oct 2022 20:37:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234544AbiJXUh0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Oct 2022 16:37:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42624 "EHLO
+        id S234479AbiJXUh3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Oct 2022 16:37:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42774 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234411AbiJXUgh (ORCPT
+        with ESMTP id S233895AbiJXUgk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2022 16:36:37 -0400
-Received: from mail-qk1-x72a.google.com (mail-qk1-x72a.google.com [IPv6:2607:f8b0:4864:20::72a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7500F115419
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:21 -0700 (PDT)
-Received: by mail-qk1-x72a.google.com with SMTP id 8so6652727qka.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:21 -0700 (PDT)
+        Mon, 24 Oct 2022 16:36:40 -0400
+Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AB20F1C19EF
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:19 -0700 (PDT)
+Received: by mail-qt1-x82c.google.com with SMTP id r19so6168877qtx.6
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 11:48:19 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=7U9vJ1S+2YCZX38IBL50e8D2GSKEb1ULkalAktZ3N8Y=;
-        b=b8+9Q6RecC9P9y0HJ/g+9hJCyZTPc6Z192KmuivRzLFyifekTZmUYILV96ZIIN9CRD
-         ReS7gtXDu+Y0o6P4Rw8ln6r6oOAgvK0LCBVgCh3ELWheX6Xbw5LnsU6Xls8iFWEMIc5h
-         euRQ5cB42qC1Nr8kji1tadZUEumSR6hnEwSfd/H+izwU0ppqtBTms38pmL36E84YR6rw
-         azFOcxcRNNGSO57ime/ZQR3ilfSRlhVAi21gxoTleB8Yeol3jWuM8cFYB3lmWZfLShjE
-         YF/0rw9Ao8CxvD7APcUuKYV36h5Drp7ec1JzQtC8MCPb9SG7ERuVqljjlA0ImlXeQ/vB
-         pfRg==
+        bh=GGy/T4AMKc0XfOeWGua96eFOtXWcYTuKkFcHz60T+5g=;
+        b=PG+DDTGlHbc06Ha5eFZW/2U4t8oGN7R+o0gTYRmwQqm2oSgymAnv1SZSGnIc4/FJbY
+         bWhM9ArkYJuBv4Fl/hEjRvnyI/rxlp5uBfoRmrIcTdANRFoAa/LbxIpjKjhMrHjhbnPo
+         NS88gkNxu+NxPuN1WKFcKSKjNF22fuQ4tReJUISC+tq82gqG4tZ3rC+Swc79FFUVgB7B
+         xqX+fmlvlXfetTezrnC9FhTFSOL73cxt3Kle0qXTmGI7P3y1BMdodN8mTDm3VdgzpQyD
+         0K3ccWyLR8uf+6dMUzNFwTnkB27bhdhvgB3YvZn0pkX5wAD83oTT9e3AdkiRcvOc//hG
+         USwA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=7U9vJ1S+2YCZX38IBL50e8D2GSKEb1ULkalAktZ3N8Y=;
-        b=XaDQA1nDCeR1rxGH1BwAQYljEK+Tsbm2UmEsN6GxoNAZXW5AnTH5P2XUQq8hqPrwBl
-         BUZi3/8vB+03LKhG1Z5NOOUvknwinRNWP0Oq1MV8K38jGAUC59VEPDdxkgWPc4lwB3fW
-         66HblAObfz/af7OAdREmYg9pAfhaIYHbI9DAhkPgTro9fTbF2gwszNY3PT/G8pa6Vwf1
-         hw26UF1Do6GhZr04zIUWz+Nqz3RKX1URPgBBgK4DB85xE3R9vnObd7VEXJ2Iymjj1qhl
-         2AVIyLtXnFG8Cfs34y4qSujuq/5aXNxU4w1cW5cqJbzuYRa07e+jpnhTKsTVpK8EK8I1
-         R4zQ==
-X-Gm-Message-State: ACrzQf20QG6VH275r1Jz9MyysyFoutKikX9k1CFueUziFi3QZ+todUho
-        mjFGezXMmtxTCNCFjabnUi9D/irJWPkfFQ==
-X-Google-Smtp-Source: AMsMyM6WHEEXbG4DvJJtt/Z3LgHGrVMQTdyFgrD3CkODhOKgwV+NrMtyb2DPMtUKkUeoRDxvNveZmA==
-X-Received: by 2002:a05:620a:4725:b0:6ee:bf5c:915a with SMTP id bs37-20020a05620a472500b006eebf5c915amr23959233qkb.326.1666637230581;
-        Mon, 24 Oct 2022 11:47:10 -0700 (PDT)
+        bh=GGy/T4AMKc0XfOeWGua96eFOtXWcYTuKkFcHz60T+5g=;
+        b=Zk5RIATLKNS0z5VfdfEkvUxO/bLUvpQvy/NDCRhIDbi1Udy7JQNP2ETZpTUdlXsjFq
+         lBlYsHDc2pI7S2jAxdgZSK3/8fUaZZ5JNh9YtyJdNaM7/76vSH9ffIlwD3zWvxU49ElW
+         0eEQJbnbPFmv5knN3FnQoxncv6aM6cr8qSxgH9hE0dc8cWK2+BsEXRU1t8cZzlhrxxh2
+         XmVJI9zJpyo/nMeHNGIAC7IuE6xJDeB9YVLq7Y0wM2F4sIrmYDrzCXdexYiahVucdrps
+         1dsKrLe/+L4r71lgyPPYQpQQ3lKxQlK7WMHMxzcEpCgJ5tfb7/Ip6mpsPxjMGzjI4MLD
+         q/gw==
+X-Gm-Message-State: ACrzQf1c6kZmvnwClMYRAagnJ/0QYq31+UjOGGW+n0WeBYwsnqMjSGZk
+        3f4YvqYdFJv7Op5z6gYlBApnQ4bxxBs8yA==
+X-Google-Smtp-Source: AMsMyM4RuRynokK4YbrY+gKSLjq9uJ1SkF8svkrp6S0Pt9QDTONxgIXJyyd0BPbfW4LlFWGS6ajhZA==
+X-Received: by 2002:ac8:5d49:0:b0:39c:526f:217d with SMTP id g9-20020ac85d49000000b0039c526f217dmr29022992qtx.543.1666637225798;
+        Mon, 24 Oct 2022 11:47:05 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id fz9-20020a05622a5a8900b00398426e706fsm330781qtb.65.2022.10.24.11.47.10
+        by smtp.gmail.com with ESMTPSA id 3-20020ac85903000000b00399d5d564b7sm373669qty.56.2022.10.24.11.47.04
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 24 Oct 2022 11:47:10 -0700 (PDT)
+        Mon, 24 Oct 2022 11:47:05 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 5/9] btrfs: move btrfs_account_ro_block_groups_free_space into space-info.c
-Date:   Mon, 24 Oct 2022 14:46:56 -0400
-Message-Id: <f37e23c809dc73fd97bf69ce615e4f6aec08802a.1666637013.git.josef@toxicpanda.com>
+Subject: [PATCH 2/9] btrfs: move the lockdep helpers into locking.h
+Date:   Mon, 24 Oct 2022 14:46:53 -0400
+Message-Id: <b9918fd6d70153a51c3870381b90b34d3eb026c7.1666637013.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666637013.git.josef@toxicpanda.com>
 References: <cover.1666637013.git.josef@toxicpanda.com>
@@ -64,127 +64,190 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This was prototyped in ctree.h and the code existed in extent-tree.c,
-but it's space-info related so move it into space-info.c.
+These more naturally fit in with the locking related code, and they're
+all defines so they can easily go anywhere, move them out of ctree.h
+into locking.h
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h       |  1 -
- fs/btrfs/extent-tree.c | 34 ----------------------------------
- fs/btrfs/space-info.c  | 34 ++++++++++++++++++++++++++++++++++
- fs/btrfs/space-info.h  |  1 +
- 4 files changed, 35 insertions(+), 35 deletions(-)
+ fs/btrfs/ctree.h   | 76 ----------------------------------------------
+ fs/btrfs/locking.h | 76 ++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 76 insertions(+), 76 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 32c3bd724bc9..514b0eba290c 100644
+index 065137f0920f..df60aa960ce0 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -567,7 +567,6 @@ void btrfs_delalloc_release_extents(struct btrfs_inode *inode, u64 num_bytes);
+@@ -172,82 +172,6 @@ enum {
+ 	BTRFS_ROOT_RESET_LOCKDEP_CLASS,
+ };
  
- int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 				    u64 disk_num_bytes, bool noflush);
--u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
- int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
- 				   u64 start, u64 end);
- int btrfs_discard_extent(struct btrfs_fs_info *fs_info, u64 bytenr,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9c242066cf30..db3d417ae9b0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5974,40 +5974,6 @@ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
+-enum btrfs_lockdep_trans_states {
+-	BTRFS_LOCKDEP_TRANS_COMMIT_START,
+-	BTRFS_LOCKDEP_TRANS_UNBLOCKED,
+-	BTRFS_LOCKDEP_TRANS_SUPER_COMMITTED,
+-	BTRFS_LOCKDEP_TRANS_COMPLETED,
+-};
+-
 -/*
-- * helper to account the unused space of all the readonly block group in the
-- * space_info. takes mirrors into account.
+- * Lockdep annotation for wait events.
+- *
+- * @owner:  The struct where the lockdep map is defined
+- * @lock:   The lockdep map corresponding to a wait event
+- *
+- * This macro is used to annotate a wait event. In this case a thread acquires
+- * the lockdep map as writer (exclusive lock) because it has to block until all
+- * the threads that hold the lock as readers signal the condition for the wait
+- * event and release their locks.
 - */
--u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
--{
--	struct btrfs_block_group *block_group;
--	u64 free_bytes = 0;
--	int factor;
+-#define btrfs_might_wait_for_event(owner, lock)					\
+-	do {									\
+-		rwsem_acquire(&owner->lock##_map, 0, 0, _THIS_IP_);		\
+-		rwsem_release(&owner->lock##_map, _THIS_IP_);			\
+-	} while (0)
 -
--	/* It's df, we don't care if it's racy */
--	if (list_empty(&sinfo->ro_bgs))
--		return 0;
+-/*
+- * Protection for the resource/condition of a wait event.
+- *
+- * @owner:  The struct where the lockdep map is defined
+- * @lock:   The lockdep map corresponding to a wait event
+- *
+- * Many threads can modify the condition for the wait event at the same time
+- * and signal the threads that block on the wait event. The threads that modify
+- * the condition and do the signaling acquire the lock as readers (shared
+- * lock).
+- */
+-#define btrfs_lockdep_acquire(owner, lock)					\
+-	rwsem_acquire_read(&owner->lock##_map, 0, 0, _THIS_IP_)
 -
--	spin_lock(&sinfo->lock);
--	list_for_each_entry(block_group, &sinfo->ro_bgs, ro_list) {
--		spin_lock(&block_group->lock);
+-/*
+- * Used after signaling the condition for a wait event to release the lockdep
+- * map held by a reader thread.
+- */
+-#define btrfs_lockdep_release(owner, lock)					\
+-	rwsem_release(&owner->lock##_map, _THIS_IP_)
 -
--		if (!block_group->ro) {
--			spin_unlock(&block_group->lock);
--			continue;
--		}
+-/*
+- * Macros for the transaction states wait events, similar to the generic wait
+- * event macros.
+- */
+-#define btrfs_might_wait_for_state(owner, i)					\
+-	do {									\
+-		rwsem_acquire(&owner->btrfs_state_change_map[i], 0, 0, _THIS_IP_); \
+-		rwsem_release(&owner->btrfs_state_change_map[i], _THIS_IP_);	\
+-	} while (0)
 -
--		factor = btrfs_bg_type_to_factor(block_group->flags);
--		free_bytes += (block_group->length -
--			       block_group->used) * factor;
+-#define btrfs_trans_state_lockdep_acquire(owner, i)				\
+-	rwsem_acquire_read(&owner->btrfs_state_change_map[i], 0, 0, _THIS_IP_)
 -
--		spin_unlock(&block_group->lock);
--	}
--	spin_unlock(&sinfo->lock);
+-#define btrfs_trans_state_lockdep_release(owner, i)				\
+-	rwsem_release(&owner->btrfs_state_change_map[i], _THIS_IP_)
 -
--	return free_bytes;
--}
+-/* Initialization of the lockdep map */
+-#define btrfs_lockdep_init_map(owner, lock)					\
+-	do {									\
+-		static struct lock_class_key lock##_key;			\
+-		lockdep_init_map(&owner->lock##_map, #lock, &lock##_key, 0);	\
+-	} while (0)
 -
- int btrfs_error_unpin_extent_range(struct btrfs_fs_info *fs_info,
- 				   u64 start, u64 end)
- {
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index bf7c5e26dc1e..e4a59d611f07 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1789,3 +1789,37 @@ __cold void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info)
- 	}
- 	dump_global_block_rsv(fs_info);
- }
+-/* Initialization of the transaction states lockdep maps. */
+-#define btrfs_state_lockdep_init_map(owner, lock, state)			\
+-	do {									\
+-		static struct lock_class_key lock##_key;			\
+-		lockdep_init_map(&owner->btrfs_state_change_map[state], #lock,	\
+-				 &lock##_key, 0);				\
+-	} while (0)
+-
+ /*
+  * Record swapped tree blocks of a subvolume tree for delayed subtree trace
+  * code. For detail check comment in fs/btrfs/qgroup.c.
+diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+index 490c7a79e995..11c2269b4b6f 100644
+--- a/fs/btrfs/locking.h
++++ b/fs/btrfs/locking.h
+@@ -78,6 +78,82 @@ enum btrfs_lock_nesting {
+ 	BTRFS_NESTING_MAX,
+ };
+ 
++enum btrfs_lockdep_trans_states {
++	BTRFS_LOCKDEP_TRANS_COMMIT_START,
++	BTRFS_LOCKDEP_TRANS_UNBLOCKED,
++	BTRFS_LOCKDEP_TRANS_SUPER_COMMITTED,
++	BTRFS_LOCKDEP_TRANS_COMPLETED,
++};
 +
 +/*
-+ * helper to account the unused space of all the readonly block group in the
-+ * space_info. takes mirrors into account.
++ * Lockdep annotation for wait events.
++ *
++ * @owner:  The struct where the lockdep map is defined
++ * @lock:   The lockdep map corresponding to a wait event
++ *
++ * This macro is used to annotate a wait event. In this case a thread acquires
++ * the lockdep map as writer (exclusive lock) because it has to block until all
++ * the threads that hold the lock as readers signal the condition for the wait
++ * event and release their locks.
 + */
-+u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
-+{
-+	struct btrfs_block_group *block_group;
-+	u64 free_bytes = 0;
-+	int factor;
++#define btrfs_might_wait_for_event(owner, lock)					\
++	do {									\
++		rwsem_acquire(&owner->lock##_map, 0, 0, _THIS_IP_);		\
++		rwsem_release(&owner->lock##_map, _THIS_IP_);			\
++	} while (0)
 +
-+	/* It's df, we don't care if it's racy */
-+	if (list_empty(&sinfo->ro_bgs))
-+		return 0;
++/*
++ * Protection for the resource/condition of a wait event.
++ *
++ * @owner:  The struct where the lockdep map is defined
++ * @lock:   The lockdep map corresponding to a wait event
++ *
++ * Many threads can modify the condition for the wait event at the same time
++ * and signal the threads that block on the wait event. The threads that modify
++ * the condition and do the signaling acquire the lock as readers (shared
++ * lock).
++ */
++#define btrfs_lockdep_acquire(owner, lock)					\
++	rwsem_acquire_read(&owner->lock##_map, 0, 0, _THIS_IP_)
 +
-+	spin_lock(&sinfo->lock);
-+	list_for_each_entry(block_group, &sinfo->ro_bgs, ro_list) {
-+		spin_lock(&block_group->lock);
++/*
++ * Used after signaling the condition for a wait event to release the lockdep
++ * map held by a reader thread.
++ */
++#define btrfs_lockdep_release(owner, lock)					\
++	rwsem_release(&owner->lock##_map, _THIS_IP_)
 +
-+		if (!block_group->ro) {
-+			spin_unlock(&block_group->lock);
-+			continue;
-+		}
++/*
++ * Macros for the transaction states wait events, similar to the generic wait
++ * event macros.
++ */
++#define btrfs_might_wait_for_state(owner, i)					\
++	do {									\
++		rwsem_acquire(&owner->btrfs_state_change_map[i], 0, 0, _THIS_IP_); \
++		rwsem_release(&owner->btrfs_state_change_map[i], _THIS_IP_);	\
++	} while (0)
 +
-+		factor = btrfs_bg_type_to_factor(block_group->flags);
-+		free_bytes += (block_group->length -
-+			       block_group->used) * factor;
++#define btrfs_trans_state_lockdep_acquire(owner, i)				\
++	rwsem_acquire_read(&owner->btrfs_state_change_map[i], 0, 0, _THIS_IP_)
 +
-+		spin_unlock(&block_group->lock);
-+	}
-+	spin_unlock(&sinfo->lock);
++#define btrfs_trans_state_lockdep_release(owner, i)				\
++	rwsem_release(&owner->btrfs_state_change_map[i], _THIS_IP_)
 +
-+	return free_bytes;
-+}
-diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
-index 6e2947688c53..77d83fea84a4 100644
---- a/fs/btrfs/space-info.h
-+++ b/fs/btrfs/space-info.h
-@@ -218,5 +218,6 @@ int btrfs_reserve_data_bytes(struct btrfs_fs_info *fs_info, u64 bytes,
- 			     enum btrfs_reserve_flush_enum flush);
- void btrfs_dump_space_info_for_trans_abort(struct btrfs_fs_info *fs_info);
- void btrfs_init_async_reclaim_work(struct btrfs_fs_info *fs_info);
-+u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
++/* Initialization of the lockdep map */
++#define btrfs_lockdep_init_map(owner, lock)					\
++	do {									\
++		static struct lock_class_key lock##_key;			\
++		lockdep_init_map(&owner->lock##_map, #lock, &lock##_key, 0);	\
++	} while (0)
++
++/* Initialization of the transaction states lockdep maps. */
++#define btrfs_state_lockdep_init_map(owner, lock, state)			\
++	do {									\
++		static struct lock_class_key lock##_key;			\
++		lockdep_init_map(&owner->btrfs_state_change_map[state], #lock,	\
++				 &lock##_key, 0);				\
++	} while (0)
++
+ static_assert(BTRFS_NESTING_MAX <= MAX_LOCKDEP_SUBCLASSES,
+ 	      "too many lock subclasses defined");
  
- #endif /* BTRFS_SPACE_INFO_H */
 -- 
 2.26.3
 

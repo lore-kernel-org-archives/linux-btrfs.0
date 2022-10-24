@@ -2,109 +2,115 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74061C38A2D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Oct 2022 16:58:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 135F3FA373F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 24 Oct 2022 18:45:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229742AbiJXQ6H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Oct 2022 12:58:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44382 "EHLO
+        id S232573AbiJXSpl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Oct 2022 14:45:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41854 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229719AbiJXQz5 (ORCPT
+        with ESMTP id S232528AbiJXSpQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2022 12:55:57 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6F053EA691
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Oct 2022 08:36:58 -0700 (PDT)
+        Mon, 24 Oct 2022 14:45:16 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3DA5870AD;
+        Mon, 24 Oct 2022 10:27:01 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C00AE1FD8B;
-        Mon, 24 Oct 2022 14:18:58 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id E14361FD97;
+        Mon, 24 Oct 2022 17:10:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1666621138;
+        t=1666631455;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=oFJ1saGqgzlhjEPD9K9nK1dSmoZx4znTQA8mtLx5u10=;
-        b=1faX1TOp57VhkhhDEQfwVAEHL7fvWPE+iGhODaJh5F2bIdSvKJFHahVwHc2wJLD5/XRxBI
-        NWiyCItRo1R1zLFTuR2NRoDwdk1ZjsCyVzo5iqRljnDK8i1MuqmOLvDT7TJqiGe6i+qk68
-        CZvMm6WQcOxgVl17Smc3nsRphCdG7XU=
+        bh=aC6p+GauHhTwiVaGS9r9HmOfPKbxmm1GNcmgMdevwBk=;
+        b=Acp94ozKle+jv/2WEFMaqZmogz/OyT93zcoivCwqGrUvGLFim4tFv662GdkvpzzMz3Fo/+
+        y8/gfC8mRbmK23qh1CQoiK6fQLjLXLJaS5Ku+R6D/a3OaO6lrk9L7wCzngF7qZCLufG1Vu
+        pxIhSqS9xrROK6J6wMEtpUPec8v41r4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1666621138;
+        s=susede2_ed25519; t=1666631455;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=oFJ1saGqgzlhjEPD9K9nK1dSmoZx4znTQA8mtLx5u10=;
-        b=G0KcdsdhqRH7C+myeyYJCfwxUJ32HLCxbPcjeT4yTeT7hU6/G7WLroag4tepzFpCJ5OtNO
-        11x4MdvOr8Uab6BA==
+        bh=aC6p+GauHhTwiVaGS9r9HmOfPKbxmm1GNcmgMdevwBk=;
+        b=LySjBzc7NzSfLBIctB/+lARoMwBffdkqkTv4nhaiNiy09hX/2LfE63Kalr0pzuef38Ltkg
+        S/uyGtFcDgjme0DQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9803113A79;
-        Mon, 24 Oct 2022 14:18:58 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9416713A79;
+        Mon, 24 Oct 2022 17:10:55 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 6cQvJNKeVmM6GwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 24 Oct 2022 14:18:58 +0000
-Date:   Mon, 24 Oct 2022 16:18:45 +0200
+        id cQkoIx/HVmO4eQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 24 Oct 2022 17:10:55 +0000
+Date:   Mon, 24 Oct 2022 19:10:42 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        kernel test robot <oliver.sang@intel.com>,
-        Viktor Kuzmin <kvaster@gmail.com>
-Subject: Re: [PATCH] btrfs: btrfs: don't trust sub_stripes from disk
-Message-ID: <20221024141845.GE5824@twin.jikos.cz>
+To:     Chris Mason <clm@meta.com>
+Cc:     Christoph Hellwig <hch@lst.de>,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Damien Le Moal <Damien.LeMoal@wdc.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Jens Axboe <axboe@kernel.dk>,
+        "Darrick J. Wong" <djwong@kernel.org>,
+        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Subject: Re: consolidate btrfs checksumming, repair and bio splitting
+Message-ID: <20221024171042.GF5824@suse.cz>
 Reply-To: dsterba@suse.cz
-References: <90e84962486d7ab5a8bca92e329fe3ee6864680f.1666312963.git.wqu@suse.com>
+References: <20220901074216.1849941-1-hch@lst.de>
+ <347dc0b3-0388-54ee-6dcb-0c1d0ca08d05@wdc.com>
+ <20221024144411.GA25172@lst.de>
+ <773539e2-b5f1-8386-aa2a-96086f198bf8@meta.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <90e84962486d7ab5a8bca92e329fe3ee6864680f.1666312963.git.wqu@suse.com>
+In-Reply-To: <773539e2-b5f1-8386-aa2a-96086f198bf8@meta.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Oct 21, 2022 at 08:43:45AM +0800, Qu Wenruo wrote:
-> [BUG]
-> There are two reports (the earliest one from LKP, a more recent one from
-> kernel bugzilla) that we can have some chunks with 0 as sub_stripes.
+On Mon, Oct 24, 2022 at 11:25:04AM -0400, Chris Mason wrote:
+> On 10/24/22 10:44 AM, Christoph Hellwig wrote:
+> > On Mon, Oct 24, 2022 at 08:12:29AM +0000, Johannes Thumshirn wrote:
+> >> David, what's your plan to progress with this series?
+> > 
+> > FYI, I object to merging any of my code into btrfs without a proper
+> > copyright notice, and I also need to find some time to remove my
+> > previous significant changes given that the btrfs maintainer
+> > refuses to take the proper and legally required copyright notice.
+> > 
+> > So don't waste any of your time on this.
 > 
-> This will cause divide-by-zero errors at btrfs_rmap_block, which is
-> introduced by a recent kernel patch ac0677348f3c ("btrfs: merge
-> calculations for simple striped profiles in btrfs_rmap_block"):
+> Christoph's request is well within the norms for the kernel, given that 
+> he's making substantial changes to these files.  I talked this over with 
+> GregKH, who pointed me at:
 > 
-> 		if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
-> 				 BTRFS_BLOCK_GROUP_RAID10)) {
-> 			stripe_nr = stripe_nr * map->num_stripes + i;
-> 			stripe_nr = div_u64(stripe_nr, map->sub_stripes); <<<
-> 		}
+> https://www.linuxfoundation.org/blog/blog/copyright-notices-in-open-source-software-projects
 > 
-> [CAUSE]
-> >From the more recent report, it has been proven that we have some chunks
-> with 0 as sub_stripes, mostly caused by older mkfs.
-> 
-> It turns out that the mkfs.btrfs fix is only introduced in 6718ab4d33aa
-> ("btrfs-progs: Initialize sub_stripes to 1 in btrfs_alloc_data_chunk")
-> which is included in v5.4 btrfs-progs release.
-> 
-> So there would be quite some old fses with such 0 sub_stripes.
-> 
-> [FIX]
-> Just don't trust the sub_stripes values from disk.
-> 
-> We have a trusted btrfs_raid_array[] to fetch the correct sub_stripes
-> numbers for each profile.
-> 
-> By this, we can keep the compatibility with older fses while still avoid
-> divide-by-zero bugs.
-> 
-> Fixes: ac0677348f3c ("btrfs: merge calculations for simple striped profiles in btrfs_rmap_block")
-> Reported-by: kernel test robot <oliver.sang@intel.com>
-> Reported-by: Viktor Kuzmin <kvaster@gmail.com>
-> Link: https://bugzilla.kernel.org/show_bug.cgi?id=216559
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Even if we'd taken up some of the other policies suggested by this doc, 
+> I'd still defer to preferences of developers who have made significant 
+> changes.
 
-Added to misc-next, thanks.
+I've asked for recommendations or best practice similar to the SPDX
+process. Something that TAB can acknowledge and that is perhaps also
+consulted with lawyers. And understood within the linux project,
+not just that some dudes have an argument because it's all clear as mud
+and people are used to do things differently.
+
+The link from linux foundation blog is nice but unless this is codified
+into the process it's just somebody's blog post. Also there's a paragraph
+about "Why not list every copyright holder?" that covers several points
+why I don't want to do that.
+
+But, if TAB says so I will do, perhaps spending hours of unproductive
+time looking up the whole history of contributors and adding year, name,
+company whatever to files.

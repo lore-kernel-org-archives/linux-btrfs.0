@@ -2,33 +2,33 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8BD84C67871
-	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Oct 2022 00:43:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92A28FA3740
+	for <linux-btrfs@archiver.kernel.org>; Tue, 25 Oct 2022 00:43:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231219AbiJYAnF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 24 Oct 2022 20:43:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35724 "EHLO
+        id S230099AbiJYAnK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 24 Oct 2022 20:43:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35732 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230111AbiJYAmZ (ORCPT
+        with ESMTP id S231217AbiJYAm1 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 24 Oct 2022 20:42:25 -0400
+        Mon, 24 Oct 2022 20:42:27 -0400
 Received: from box.fidei.email (box.fidei.email [71.19.144.250])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC316186F2;
-        Mon, 24 Oct 2022 16:14:30 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D35A183AC;
+        Mon, 24 Oct 2022 16:14:36 -0700 (PDT)
 Received: from authenticated-user (box.fidei.email [71.19.144.250])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits))
         (No client certificate requested)
-        by box.fidei.email (Postfix) with ESMTPSA id 0B55B811D7;
-        Mon, 24 Oct 2022 19:13:59 -0400 (EDT)
+        by box.fidei.email (Postfix) with ESMTPSA id 7C9DB811C2;
+        Mon, 24 Oct 2022 19:14:05 -0400 (EDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
-        t=1666653240; bh=DM3CC6t2fbok6CzqMUsPW6N1ixGhc+b5yss6kVAQI3g=;
+        t=1666653245; bh=wn4nscwr0stEGgJC/0rhkuNvqjwyTBTHJAwOi0YHllI=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=GIOoeYQ26gmQ8C+HYJtrghepyS4ovQzPA/9zEk00/vuLTfLbg/w4bUMbMASOUuhMm
-         SoIY1dc/hR9Y71obqgC6Zp5isMoL6C/4LAYUwF5n+7omO8j6JAh70Nav3n/Fz/znq8
-         mYYtlYo9MHTO2vjUX7ZNsVJGm62tdw7zBFxoVvLoW40tiRVBDCYGi7autMPsvaGoVM
-         pDgbCRQm0RILSSVhfndUlNVlA1jMtUJiOWC2tTSsCfos9BCinedKW/Oui7ervxcbHp
-         FSuIyCc6LgwKlk/myF6lF6FpGYi/juyLjR4/rzUcVY+oD0VQVMRBsMv0xQM614XlPl
-         YF1RPuVr+DcuQ==
+        b=Dl6lQPpIvCYBsKrTsenLOdeSbUtp9XrecffCOeoVrLfhTLOfGmUHC/BqHPU1huSG6
+         /Om4ppjovGR/4uE7H3akHSK9PPpFGYDWDIqKG/HrUi1q6SMMsFMJyLEyY5D7QMwFtG
+         5jxu6BwhY32GeuPUUIs5AqOnj3amyXPnb3tX5bEG1fNR471SgmY8kREZD1eO7djWr9
+         z5ZLVbil9ffAbzdigXVkF8e+zl/6S97BcTrBd7xCV/tyBqGceraRXuA1ammfbl+LgK
+         KNylvK2A64Joqd+oCOM21NTAXIWcH3OP0jE1QzLov7LbvyNkelOxUsEP+mjSfM5psN
+         J3rDT7qSZHJsw==
 From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
 To:     "Theodore Y. Ts'o" <tytso@mit.edu>,
         Jaegeuk Kim <jaegeuk@kernel.org>,
@@ -38,9 +38,9 @@ To:     "Theodore Y. Ts'o" <tytso@mit.edu>,
         linux-btrfs@vger.kernel.org, kernel-team@meta.com
 Cc:     Omar Sandoval <osandov@osandov.com>,
         Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
-Subject: [PATCH v4 11/21] btrfs: disable various operations on encrypted inodes
-Date:   Mon, 24 Oct 2022 19:13:21 -0400
-Message-Id: <cf0d8515689bb928a815806e29c47ef33036d1a0.1666651724.git.sweettea-kernel@dorminy.me>
+Subject: [PATCH v4 14/21] btrfs: translate btrfs encryption flags and encrypted inode flag
+Date:   Mon, 24 Oct 2022 19:13:24 -0400
+Message-Id: <a7a27198299a215fe31b259bd90d1579ed175a1c.1666651724.git.sweettea-kernel@dorminy.me>
 In-Reply-To: <cover.1666651724.git.sweettea-kernel@dorminy.me>
 References: <cover.1666651724.git.sweettea-kernel@dorminy.me>
 MIME-Version: 1.0
@@ -51,90 +51,65 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Omar Sandoval <osandov@osandov.com>
 
-Initially, only normal data extents, using the normal (non-direct) IO
-path, will be encrypted. This change forbids various other bits:
-- allows reflinking only if both inodes have the same encryption status
-- disables compressing encrypted inodes
-- disables direct IO on encrypted inodes
-- disable inline data on encrypted inodes
+In btrfs, a file can be encrypted either if its directory is encrypted
+or its root subvolume is encrypted, so translate both to the standard
+flags.
 
 Signed-off-by: Omar Sandoval <osandov@osandov.com>
 Signed-off-by: Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+Reviewed-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/btrfs_inode.h | 3 +++
- fs/btrfs/file.c        | 4 ++--
- fs/btrfs/inode.c       | 3 ++-
- fs/btrfs/reflink.c     | 7 +++++++
- 4 files changed, 14 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 530a0ebfab3f..af23bd1fde36 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -385,6 +385,9 @@ static inline bool btrfs_inode_in_log(struct btrfs_inode *inode, u64 generation)
-  */
- static inline bool btrfs_inode_can_compress(const struct btrfs_inode *inode)
- {
-+	if (IS_ENCRYPTED(&inode->vfs_inode))
-+		return false;
-+
- 	if (inode->flags & BTRFS_INODE_NODATACOW ||
- 	    inode->flags & BTRFS_INODE_NODATASUM)
- 		return false;
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index a30ddd2697de..97d098b3c2e6 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1808,7 +1808,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
- 		goto relock;
- 	}
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b28b7588f651..9cd59ab5a8a9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -7,6 +7,7 @@
+ #include <linux/bio.h>
+ #include <linux/file.h>
+ #include <linux/fs.h>
++#include <linux/fscrypt.h>
+ #include <linux/fsnotify.h>
+ #include <linux/pagemap.h>
+ #include <linux/highmem.h>
+@@ -149,6 +150,10 @@ static unsigned int btrfs_inode_flags_to_fsflags(struct btrfs_inode *binode)
+ 		iflags |= FS_NOCOW_FL;
+ 	if (ro_flags & BTRFS_INODE_RO_VERITY)
+ 		iflags |= FS_VERITY_FL;
++	if ((binode->flags & BTRFS_INODE_FSCRYPT_CONTEXT) ||
++	    (btrfs_root_flags(&binode->root->root_item) &
++	     BTRFS_ROOT_SUBVOL_FSCRYPT))
++		iflags |= FS_ENCRYPT_FL;
  
--	if (check_direct_IO(fs_info, from, pos)) {
-+	if (IS_ENCRYPTED(inode) || check_direct_IO(fs_info, from, pos)) {
- 		btrfs_inode_unlock(inode, ilock_flags);
- 		goto buffered;
- 	}
-@@ -4045,7 +4045,7 @@ static ssize_t btrfs_direct_read(struct kiocb *iocb, struct iov_iter *to)
- 	ssize_t read = 0;
- 	ssize_t ret;
+ 	if (flags & BTRFS_INODE_NOCOMPRESS)
+ 		iflags |= FS_NOCOMP_FL;
+@@ -178,10 +183,14 @@ void btrfs_sync_inode_flags_to_i_flags(struct inode *inode)
+ 		new_fl |= S_DIRSYNC;
+ 	if (binode->ro_flags & BTRFS_INODE_RO_VERITY)
+ 		new_fl |= S_VERITY;
++	if ((binode->flags & BTRFS_INODE_FSCRYPT_CONTEXT) ||
++	    (btrfs_root_flags(&binode->root->root_item) &
++	     BTRFS_ROOT_SUBVOL_FSCRYPT))
++		new_fl |= S_ENCRYPTED;
  
--	if (fsverity_active(inode))
-+	if (IS_ENCRYPTED(inode) || fsverity_active(inode))
- 		return 0;
+ 	set_mask_bits(&inode->i_flags,
+ 		      S_SYNC | S_APPEND | S_IMMUTABLE | S_NOATIME | S_DIRSYNC |
+-		      S_VERITY, new_fl);
++		      S_VERITY | S_ENCRYPTED, new_fl);
+ }
  
- 	if (check_direct_read(btrfs_sb(inode->i_sb), to, iocb->ki_pos))
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c41ae611767c..55a8fe278435 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -432,7 +432,8 @@ static noinline int cow_file_range_inline(struct btrfs_inode *inode, u64 size,
- 	 * compressed) data fits in a leaf and the configured maximum inline
- 	 * size.
- 	 */
--	if (size < i_size_read(&inode->vfs_inode) ||
-+	if (IS_ENCRYPTED(&inode->vfs_inode) ||
-+	    size < i_size_read(&inode->vfs_inode) ||
- 	    size > fs_info->sectorsize ||
- 	    data_len > BTRFS_MAX_INLINE_DATA_SIZE(fs_info) ||
- 	    data_len > fs_info->max_inline)
-diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
-index f0243eb33df7..4143ebf22d7f 100644
---- a/fs/btrfs/reflink.c
-+++ b/fs/btrfs/reflink.c
-@@ -808,6 +808,13 @@ static int btrfs_remap_file_range_prep(struct file *file_in, loff_t pos_in,
- 		ASSERT(inode_in->i_sb == inode_out->i_sb);
- 	}
+ /*
+@@ -194,7 +203,7 @@ static int check_fsflags(unsigned int old_flags, unsigned int flags)
+ 		      FS_NOATIME_FL | FS_NODUMP_FL | \
+ 		      FS_SYNC_FL | FS_DIRSYNC_FL | \
+ 		      FS_NOCOMP_FL | FS_COMPR_FL |
+-		      FS_NOCOW_FL))
++		      FS_NOCOW_FL | FS_ENCRYPT_FL))
+ 		return -EOPNOTSUPP;
  
-+	/*
-+	 * Can only reflink encrypted files if both files are encrypted.
-+	 */
-+	if (!fscrypt_have_same_policy(inode_in, inode_out)) {
-+		return -EINVAL;
-+	}
-+
- 	/* Don't make the dst file partly checksummed */
- 	if ((BTRFS_I(inode_in)->flags & BTRFS_INODE_NODATASUM) !=
- 	    (BTRFS_I(inode_out)->flags & BTRFS_INODE_NODATASUM)) {
+ 	/* COMPR and NOCOMP on new/old are valid */
 -- 
 2.35.1
 

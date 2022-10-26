@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA810C38A2D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 05:06:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59A8AFA373E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 05:06:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232662AbiJZFGt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Oct 2022 01:06:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52160 "EHLO
+        id S232539AbiJZFGv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Oct 2022 01:06:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52198 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232539AbiJZFGn (ORCPT
+        with ESMTP id S232563AbiJZFGo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2022 01:06:43 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B0C4658DE7
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2022 22:06:41 -0700 (PDT)
+        Wed, 26 Oct 2022 01:06:44 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DBB4368CFC
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2022 22:06:43 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 89C701FB9E
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:40 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 9C1791FD14
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1666760800; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1666760802; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=PlL+KBBDJ5/oUJP7n4249I/HvtylSsEDYX/To87TWyU=;
-        b=BOHazNSOAC80pzN7pQdknFXuYHf4O/0nSYYHWeXOD+TZ58DQqjxOoXZLWZMi5rRlUbh/kZ
-        6hgNRwgkSW2NBa+GS5QHxbgWRRc9daBUCRd3lVlf/4vXl4D01962oDAQ+3pOFw0fOIpOub
-        QYgXcEMvwX1nSCARynanzlrD4HlDUfo=
+        bh=0Hk0MLyid46+Lr5p4xye7rgk+YLefr9ELc1sVn2KU9s=;
+        b=HumuvHFWNPX6Kfj9xTvX97jurQbN/B5ee3IjQ5bxKZKM1I+HOrXCFVyAGtQg8JH4iyfhfG
+        qjmork2zUALOuoXB94MEBNLae371g2TZPG67KSnXBPP9S5N8f8rZ+TBx8FfzDGAEZ9yzgZ
+        NB4znQJQGmnhxHkICyUnSPNpjSumb1Y=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E1B8E13A6E
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:39 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0102D13A6E
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:41 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id WCS4Kl/AWGP7XQAAMHmgww
+        id wCuPL2HAWGP7XQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:39 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:41 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/8] btrfs: raid56: implement the degraded write for run_one_write_rbio()
-Date:   Wed, 26 Oct 2022 13:06:29 +0800
-Message-Id: <a0ccf5b129c04cbc3b4077865b1060ef500f5c5b.1666760699.git.wqu@suse.com>
+Subject: [PATCH 7/8] btrfs: raid56: implement raid56_parity_write_v2()
+Date:   Wed, 26 Oct 2022 13:06:31 +0800
+Message-Id: <a22cbdab32dde8f243a1730f6f01f2077fe638f8.1666760699.git.wqu@suse.com>
 X-Mailer: git-send-email 2.38.1
 In-Reply-To: <cover.1666760699.git.wqu@suse.com>
 References: <cover.1666760699.git.wqu@suse.com>
@@ -55,174 +55,139 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For degraded mount (with missing device), before doing a RMW, we should
-read out all the good sectors, and recovery the missing device.
+This is the main entrance for raid56 writes.
 
-This patch will implement the following new functions:
+The difference between this and the old one is:
 
-- recover_submit_reads()
-  This is different from rmw_submit_reads() by:
+- Unified queuing
+  Now no matter if we're doing full stripe write, or sub-stripe write,
+  we always queue the work into rmw_workers, and in that context we
+  grab the full stripe lock, and call run_one_write_rbio().
 
-  * won't trust any cache
-  * will read P/Q stripes
-
-- recover_one_rbio()
-  Mostly the recovery part of __raid_recover_end_io() but follows the
-  submit-and-wait idea.
+- Simplified plug
+  Since there is no work run at the same context of the caller, we have
+  no need to delay the unplug work.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 130 +++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 129 insertions(+), 1 deletion(-)
+ fs/btrfs/raid56.c | 94 +++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/raid56.h |  1 +
+ 2 files changed, 95 insertions(+)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index ffcb9bb226be..592286783e95 100644
+index 4f648720b97a..96be2764433e 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -2901,6 +2901,125 @@ static int rmw_submit_reads(struct btrfs_raid_bio *rbio)
- 	return -EIO;
+@@ -3242,3 +3242,97 @@ void run_one_write_rbio(struct btrfs_raid_bio *rbio)
+ 	 */
+ 	rbio_orig_end_io(rbio, errno_to_blk_status(ret));
  }
- 
-+static int recover_submit_reads(struct btrfs_raid_bio *rbio)
++
++static void run_one_write_rbio_work(struct work_struct *work)
 +{
-+	int bios_to_read = 0;
-+	struct bio_list bio_list;
++	struct btrfs_raid_bio *rbio =
++		container_of(work, struct btrfs_raid_bio, work);
 +	int ret;
-+	int total_sector_nr;
-+	struct bio *bio;
 +
-+	ASSERT(rbio->faila >= 0 || rbio->failb >= 0);
-+	bio_list_init(&bio_list);
-+	atomic_set(&rbio->error, 0);
++	ret = lock_stripe_add(rbio);
++	if (ret == 0)
++		run_one_write_rbio(rbio);
++}
 +
-+	/* Read out all sectors that doesn't failed. */
-+	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
-+	     total_sector_nr++) {
-+		int stripe = total_sector_nr / rbio->stripe_nsectors;
-+		int sectornr = total_sector_nr % rbio->stripe_nsectors;
-+		struct sector_ptr *sector;
++static void queue_write_rbio(struct btrfs_raid_bio *rbio)
++{
++	INIT_WORK(&rbio->work, run_one_write_rbio_work);
++	queue_work(rbio->bioc->fs_info->rmw_workers, &rbio->work);
++}
 +
-+		if (rbio->faila == stripe || rbio->failb == stripe) {
-+			atomic_inc(&rbio->error);
-+			/* Skip the current stripe. */
-+			ASSERT(sectornr == 0);
-+			total_sector_nr += rbio->stripe_nsectors - 1;
++static void raid_unplug(struct blk_plug_cb *cb, bool from_schedule)
++{
++	struct btrfs_plug_cb *plug = container_of(cb, struct btrfs_plug_cb, cb);
++	struct btrfs_raid_bio *cur;
++	struct btrfs_raid_bio *last = NULL;
++
++	list_sort(NULL, &plug->rbio_list, plug_cmp);
++
++	while (!list_empty(&plug->rbio_list)) {
++		cur = list_entry(plug->rbio_list.next,
++				 struct btrfs_raid_bio, plug_list);
++		list_del_init(&cur->plug_list);
++
++		if (rbio_is_full(cur)) {
++			/* We have a full stripe, queue it down. */
++			queue_write_rbio(cur);
 +			continue;
 +		}
-+		/* We don't trust any cache this time. */
-+		sector = rbio_stripe_sector(rbio, stripe, sectornr);
-+		ret = rbio_add_io_sector(rbio, &bio_list, sector, stripe,
-+					 sectornr, REQ_OP_READ);
-+		if (ret < 0)
-+			goto error;
-+	}
-+
-+	bios_to_read = bio_list_size(&bio_list);
-+	/*
-+	 * We should always need to read some stripes, as we don't use
-+	 * any cache.
-+	 */
-+	ASSERT(bios_to_read);
-+
-+	atomic_set(&rbio->stripes_pending, bios_to_read);
-+	while ((bio = bio_list_pop(&bio_list))) {
-+		bio->bi_end_io = raid_wait_read_end_io;
-+
-+		if (trace_raid56_read_partial_enabled()) {
-+			struct raid56_bio_trace_info trace_info = { 0 };
-+
-+			bio_get_trace_info(rbio, bio, &trace_info);
-+			trace_raid56_read_partial(rbio, bio, &trace_info);
++		if (last) {
++			if (rbio_can_merge(last, cur)) {
++				merge_rbio(last, cur);
++				free_raid_bio(cur);
++				continue;
++			}
++			queue_write_rbio(cur);
 +		}
-+		submit_bio(bio);
++		last = cur;
 +	}
-+	return 0;
-+
-+error:
-+	while ((bio = bio_list_pop(&bio_list)))
-+		bio_put(bio);
-+
-+	return -EIO;
++	if (last)
++		queue_write_rbio(cur);
++	kfree(plug);
 +}
 +
-+static int recover_one_rbio(struct btrfs_raid_bio *rbio)
++void raid56_parity_write_v2(struct bio *bio, struct btrfs_io_context *bioc)
 +{
-+	void **pointers = NULL;
-+	void **unmap_array = NULL;
++	struct btrfs_fs_info *fs_info = bioc->fs_info;
++	struct btrfs_raid_bio *rbio;
++	struct btrfs_plug_cb *plug = NULL;
++	struct blk_plug_cb *cb;
 +	int ret = 0;
-+	int i;
 +
++	rbio = alloc_rbio(fs_info, bioc);
++	if (IS_ERR(rbio)) {
++		ret = PTR_ERR(rbio);
++		goto fail;
++	}
++	rbio->operation = BTRFS_RBIO_WRITE;
++	rbio_add_bio(rbio, bio);
++
++	/* No need to plug on full rbios, just queue this rbio immediately. */
++	if (rbio_is_full(rbio))
++		goto queue_rbio;
++
++	/* Plug to try merge with other writes into the same full stripe. */
++	cb = blk_check_plugged(raid_unplug, fs_info, sizeof(*plug));
++	if (cb) {
++		plug = container_of(cb, struct btrfs_plug_cb, cb);
++		if (!plug->info) {
++			plug->info = fs_info;
++			INIT_LIST_HEAD(&plug->rbio_list);
++		}
++		list_add_tail(&rbio->plug_list, &plug->rbio_list);
++		return;
++	}
++queue_rbio:
 +	/*
-+	 * @pointers array stores the pointer for each sector, thus it has the
-+	 * extra pgoff value added from each sector
-+	 *
-+	 * @unmap_array is a copy of pointers that does not get reordered during
-+	 * reconstruction so that kunmap_local works.
-+	 * This is to keep the order of kunmap_local().
++	 * Either we don't have any existing plug, or we're doing a full stripe,
++	 * Just queue the rbio.
 +	 */
-+	pointers = kcalloc(rbio->real_stripes, sizeof(void *), GFP_NOFS);
-+	unmap_array = kcalloc(rbio->real_stripes, sizeof(void *), GFP_NOFS);
-+	if (!pointers || !unmap_array) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
++	queue_write_rbio(rbio);
 +
-+	/*
-+	 * Firstly read out all sectors we didn't failed. This time we won't
-+	 * trust any cache.
-+	 */
-+	ret = recover_submit_reads(rbio);
-+	if (ret < 0)
-+		goto out;
-+	wait_event(rbio->io_wait, atomic_read(&rbio->stripes_pending) == 0);
-+	if (atomic_read(&rbio->error) > rbio->bioc->max_errors) {
-+		ret = -EIO;
-+		goto out;
-+	}
-+
-+	/* Make sure faila and fail b are in order. */
-+	if (rbio->faila >= 0 && rbio->failb >= 0 && rbio->faila > rbio->failb)
-+		swap(rbio->faila, rbio->failb);
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
-+		spin_lock_irq(&rbio->bio_list_lock);
-+		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
-+		spin_unlock_irq(&rbio->bio_list_lock);
-+	}
-+
-+	/* Now recovery the full stripe. */
-+	for (i = 0; i < rbio->stripe_nsectors; i++)
-+		recover_vertical(rbio, i, pointers, unmap_array);
-+
-+	index_rbio_pages(rbio);
-+
-+out:
-+	kfree(pointers);
-+	kfree(unmap_array);
-+	return ret;
++	return;
++fail:
++	bio->bi_status = errno_to_blk_status(ret);
++	bio_endio(bio);
 +}
-+
- /*
-  * This is the main entry to run a write rbio, which will do read-modify-write
-  * cycle.
-@@ -2942,7 +3061,16 @@ void run_one_write_rbio(struct btrfs_raid_bio *rbio)
- 	 */
- 	wait_event(rbio->io_wait, atomic_read(&rbio->stripes_pending) == 0);
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index 8657cafd32c0..9ae9e89190e4 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -168,6 +168,7 @@ struct btrfs_device;
+ void raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
+ 			   int mirror_num);
+ void raid56_parity_write(struct bio *bio, struct btrfs_io_context *bioc);
++void raid56_parity_write_v2(struct bio *bio, struct btrfs_io_context *bioc);
  
--	/* Place holder for extra verification for above reads and data csum. */
-+	/*
-+	 * We have some sectors on the missing device(s), needs to recover
-+	 * the full stripe before writing.
-+	 */
-+	if (rbio->faila >= 0 || rbio->failb >= 0) {
-+		ret = recover_one_rbio(rbio);
-+		if (ret < 0)
-+			goto out;
-+	}
-+
- write:
- 	/* Place holder for real write code. */
- 	wait_event(rbio->io_wait, atomic_read(&rbio->stripes_pending) == 0);
+ void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
+ 			    unsigned int pgoff, u64 logical);
 -- 
 2.38.1
 

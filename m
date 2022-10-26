@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6AC2C433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 19:11:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CAF2EECDFA1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 19:11:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234983AbiJZTLy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Oct 2022 15:11:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43096 "EHLO
+        id S235048AbiJZTL4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Oct 2022 15:11:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43164 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234980AbiJZTLc (ORCPT
+        with ESMTP id S234997AbiJZTLe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2022 15:11:32 -0400
-Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0F3E13C3E2
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:08:58 -0700 (PDT)
-Received: by mail-qt1-x82a.google.com with SMTP id r19so10719657qtx.6
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:08:58 -0700 (PDT)
+        Wed, 26 Oct 2022 15:11:34 -0400
+Received: from mail-qv1-xf30.google.com (mail-qv1-xf30.google.com [IPv6:2607:f8b0:4864:20::f30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D389113C3D8
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:02 -0700 (PDT)
+Received: by mail-qv1-xf30.google.com with SMTP id u7so12403320qvn.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=A7q1qlNX01JE5wzvoLl3hqTqXs8DjRjUyGN45lH3tFE=;
-        b=AdReZVLYVAEzKT4ZGpfBib4jmIZAokhkzWJKGU8XDahrZBekSHocPfqy3RnC5I7keV
-         3JSo8RfQ2KnaW/jBmxfRWJOcP9LDwaGGaLIPQkThHAyOnWi4W0IOi9Ni6sbOK3xQ3KoW
-         LhE0cXEZk1pBqqY2JpVnQnmVzKi6ypiKgQToEsMn0jKgu4+V+nGGSsCq3YXhiV8grGot
-         d6jZXq5jYekCP3py+L8JXP8rih7pCrZJHiC260QGz4GE4hVSlPZgBP3mq/OYNnW+kmxU
-         4qVGZDhdXFjiTCCo1J+COOS7XoFwgyRW3QwP36huXlfgLOBZbg9GtBYhiCnbt7oNIss1
-         jmQw==
+        bh=BFZTFqnXe1S/H1W1OFRC1EZQYoPF4k11sOc3QYaLULU=;
+        b=c1HFRhEMVoYj7Aj7jYRlgWau8vB7Sooj/0NlXmNEAIzedNL8mygQEGFPXoKjUdVSsb
+         ajHsTNTNL/3g1kTFTWCsHEwc+KrzME6T9XxtlfEWR48vWOI4PuqWreior93n2DdiMqPi
+         ZLRcM3fdrFE1tA4IB0iR/VL4hX4we0Lp+uF2Dfzkk5w3jMymJvd2gnlLxOdSBlEQKt1t
+         U2/ID90Y0JKafGyT3hYjfAaDrkHRdA3pDNx/b0l2tacvFLbY2J6X2YGr1vG4MwlQFVDo
+         wejpq+Pi8foZvjgnugYKZvRwt4qKGi0dCxYOa2dTPTzyUnFLUF4a3km+ilEsLmSNAj5c
+         g8NQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=A7q1qlNX01JE5wzvoLl3hqTqXs8DjRjUyGN45lH3tFE=;
-        b=it1lwahUKNsiww5dMWKqHtMf1N2cObNUl7uxIqQ9O50wWDS726DJuH/ATlw9jZszXP
-         16xChkz3G2MKK6yS+TvBX6w5nWUVNk87FmJMePiUd90GRWqij+SZFTqR3s3JT3Lf1/D5
-         Ns8hmd3BvB3f8QyrIEiMK9rtb7YNlbx6uvt6FmARYf/cJX1yKcmJ4t/bcUAfrqZpi3/v
-         vMUxIlrx33PDZVN17VfU3QN84DpVlv/EwqThoQX0b/xkDkTVdmCXgNg+AwQf2fkTdhyc
-         82B4TDHqT7LXbRFZI0/OhyjyOiZ43IPSl4jCooncki7QPMj7oh3OLLB04P0SgW8k4qvE
-         NT1A==
-X-Gm-Message-State: ACrzQf3Amlt5OVLkKbjp2mHcy2DRU4woOkL90ztRwz1j5b7eLTrg1+k1
-        z9ZnGFqXso+aRHiENDHkA1L1wXF/wq9QjQ==
-X-Google-Smtp-Source: AMsMyM7w4j4FVjW+7Vs2wwSCXT2ZkO1QDnE+VswVTd2KaIGcEnL0speHzPGMCugJ5FNGMf1LFDTZZA==
-X-Received: by 2002:ac8:5e06:0:b0:399:1f54:8db4 with SMTP id h6-20020ac85e06000000b003991f548db4mr37651850qtx.100.1666811337574;
-        Wed, 26 Oct 2022 12:08:57 -0700 (PDT)
+        bh=BFZTFqnXe1S/H1W1OFRC1EZQYoPF4k11sOc3QYaLULU=;
+        b=YxPfDyb5qwqgfDLV7+5kBv0bXFAMEhUoIoUKczvJrvn9OCrQGbDIu+zlerlQauTVju
+         aEW1nYt4kZvoBZ7j/wIJfD7Z1WWV3msSzZEvF1mBLZYT6EOmGULDxcsCq5sFEZg42PIE
+         HHnq77+PwLTdwJzqD76ujBLliNEQtdSOgnn5kNi5iD5zEkKk/7Ki8QNqQ0JtvpAyHQAm
+         5OA7jK9LQJDF3JEj96X3Nxy7bmJGT65a3MWxTcn9CGyVvoeszmDjZHOtjx1mpu5G+IZB
+         d69G/JWpMBh0z119QxeIDa0EJdPJ+h/t+0xz5iKC39U5OS575ZAnfW3qrUjR5eMz9IQF
+         nOrw==
+X-Gm-Message-State: ACrzQf3S600xaQd7sG4ul8L/8LpVnr0hMEXiXRVmXBeyv8Jc9b0j/D5Y
+        vZQQpJTmIGeq6nMNSHCOVMEemqIBi4goPg==
+X-Google-Smtp-Source: AMsMyM6ocPn9Znqqt84sFg/3P1n1Z5eax4aK8Y5EJnMM3aZlGhI1/1Kkp63FjG44YFSjl/HF/V0ZRw==
+X-Received: by 2002:a05:6214:2a4a:b0:4bb:64a3:7268 with SMTP id jf10-20020a0562142a4a00b004bb64a37268mr18382749qvb.85.1666811341604;
+        Wed, 26 Oct 2022 12:09:01 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id y13-20020a05620a25cd00b006e6a7c2a269sm4513299qko.22.2022.10.26.12.08.57
+        by smtp.gmail.com with ESMTPSA id k11-20020a05620a0b8b00b006cf3592cc20sm4348378qkh.55.2022.10.26.12.09.01
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 26 Oct 2022 12:08:57 -0700 (PDT)
+        Wed, 26 Oct 2022 12:09:01 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 10/26] btrfs: move defrag related prototypes to their own header
-Date:   Wed, 26 Oct 2022 15:08:25 -0400
-Message-Id: <c190b1a94b741f0e8c8bfb9253932f24da006a67.1666811038.git.josef@toxicpanda.com>
+Subject: [PATCH 13/26] btrfs: move uuid tree prototypes to uuid-tree.h
+Date:   Wed, 26 Oct 2022 15:08:28 -0400
+Message-Id: <5f0b2d67f001541482da9ef9067a0dcf97727dbe.1666811039.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666811038.git.josef@toxicpanda.com>
 References: <cover.1666811038.git.josef@toxicpanda.com>
@@ -64,170 +64,129 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that the defrag code is all in one file, create a defrag.h and move
-all the defrag related prototypes and helper out of ctree.h and into
-defrag.h.
+Move these out of ctree.h into uuid-tree.h to cut down on the code in
+ctree.h.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h       | 18 ------------------
- fs/btrfs/defrag.c      |  1 +
- fs/btrfs/defrag.h      | 23 +++++++++++++++++++++++
+ fs/btrfs/ctree.h       |  7 -------
  fs/btrfs/disk-io.c     |  1 +
  fs/btrfs/inode.c       |  1 +
  fs/btrfs/ioctl.c       |  1 +
- fs/btrfs/super.c       |  1 +
  fs/btrfs/transaction.c |  1 +
- 8 files changed, 29 insertions(+), 18 deletions(-)
- create mode 100644 fs/btrfs/defrag.h
+ fs/btrfs/uuid-tree.c   |  1 +
+ fs/btrfs/uuid-tree.h   | 12 ++++++++++++
+ fs/btrfs/volumes.c     |  1 +
+ 8 files changed, 18 insertions(+), 7 deletions(-)
+ create mode 100644 fs/btrfs/uuid-tree.h
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c81fc444780d..6828a4640acf 100644
+index 6bfea55c82a0..910a23e7cd8f 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -772,19 +772,10 @@ int btrfs_fileattr_set(struct user_namespace *mnt_userns,
- int btrfs_ioctl_get_supported_features(void __user *arg);
- void btrfs_sync_inode_flags_to_i_flags(struct inode *inode);
- int __pure btrfs_is_empty_uuid(u8 *uuid);
--int btrfs_defrag_file(struct inode *inode, struct file_ra_state *ra,
--		      struct btrfs_ioctl_defrag_range_args *range,
--		      u64 newer_than, unsigned long max_to_defrag);
- void btrfs_update_ioctl_balance_args(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_ioctl_balance_args *bargs);
+@@ -682,13 +682,6 @@ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
+ 			struct extent_buffer *node,
+ 			struct extent_buffer *parent);
  
- /* file.c */
--int __init btrfs_auto_defrag_init(void);
--void __cold btrfs_auto_defrag_exit(void);
--int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
--			   struct btrfs_inode *inode, u32 extent_thresh);
--int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
--void btrfs_cleanup_defrag_inodes(struct btrfs_fs_info *fs_info);
- int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
- extern const struct file_operations btrfs_file_operations;
- int btrfs_drop_extents(struct btrfs_trans_handle *trans,
-@@ -810,10 +801,6 @@ void btrfs_check_nocow_unlock(struct btrfs_inode *inode);
- bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
- 				  u64 *delalloc_start_ret, u64 *delalloc_end_ret);
- 
--/* tree-defrag.c */
--int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
--			struct btrfs_root *root);
+-/* uuid-tree.c */
+-int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
+-			u64 subid);
+-int btrfs_uuid_tree_remove(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
+-			u64 subid);
+-int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info);
 -
- /* super.c */
- int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
- 			unsigned long new_flags);
-@@ -944,11 +931,6 @@ static inline int is_fstree(u64 rootid)
- 	return 0;
- }
- 
--static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
--{
--	return signal_pending(current);
--}
--
- /* verity.c */
- #ifdef CONFIG_FS_VERITY
- 
-diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-index 01a8d5ff706b..98234aa4ee33 100644
---- a/fs/btrfs/defrag.c
-+++ b/fs/btrfs/defrag.c
-@@ -13,6 +13,7 @@
- #include "messages.h"
- #include "delalloc-space.h"
- #include "subpage.h"
-+#include "defrag.h"
- 
- static struct kmem_cache *btrfs_inode_defrag_cachep;
- /*
-diff --git a/fs/btrfs/defrag.h b/fs/btrfs/defrag.h
-new file mode 100644
-index 000000000000..5ef85e6d762a
---- /dev/null
-+++ b/fs/btrfs/defrag.h
-@@ -0,0 +1,23 @@
-+// SPDX-License-Identifier: GPL-2.0
-+
-+#ifndef BTRFS_DEFRAG_H
-+#define BTRFS_DEFRAG_H
-+
-+int btrfs_defrag_file(struct inode *inode, struct file_ra_state *ra,
-+		      struct btrfs_ioctl_defrag_range_args *range,
-+		      u64 newer_than, unsigned long max_to_defrag);
-+int __init btrfs_auto_defrag_init(void);
-+void __cold btrfs_auto_defrag_exit(void);
-+int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
-+			   struct btrfs_inode *inode, u32 extent_thresh);
-+int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
-+void btrfs_cleanup_defrag_inodes(struct btrfs_fs_info *fs_info);
-+int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
-+			struct btrfs_root *root);
-+
-+static inline int btrfs_defrag_cancelled(struct btrfs_fs_info *fs_info)
-+{
-+	return signal_pending(current);
-+}
-+
-+#endif
+ /* orphan.c */
+ int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root, u64 offset);
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7fefd5baa86b..fe7c6f4ac20b 100644
+index fe7c6f4ac20b..c5ff0b12cd5b 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -47,6 +47,7 @@
- #include "accessors.h"
+@@ -48,6 +48,7 @@
  #include "extent-tree.h"
  #include "root-tree.h"
-+#include "defrag.h"
+ #include "defrag.h"
++#include "uuid-tree.h"
  
  #define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN |\
  				 BTRFS_HEADER_FLAG_RELOC |\
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f2c0842cffb5..1634a872f9c8 100644
+index 237efcab7c34..0be05e267283 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -59,6 +59,7 @@
- #include "accessors.h"
- #include "extent-tree.h"
- #include "root-tree.h"
-+#include "defrag.h"
+@@ -62,6 +62,7 @@
+ #include "defrag.h"
+ #include "dir-item.h"
+ #include "file-item.h"
++#include "uuid-tree.h"
  
  struct btrfs_iget_args {
  	u64 ino;
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0af0596bf127..2ae437b2432a 100644
+index e728bcec9419..d255757b3450 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -54,6 +54,7 @@
- #include "accessors.h"
- #include "extent-tree.h"
+@@ -56,6 +56,7 @@
  #include "root-tree.h"
-+#include "defrag.h"
+ #include "defrag.h"
+ #include "dir-item.h"
++#include "uuid-tree.h"
  
  #ifdef CONFIG_64BIT
  /* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index a4030dfeb2f2..f105d360d6c9 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -52,6 +52,7 @@
- #include "raid56.h"
- #include "fs.h"
- #include "accessors.h"
-+#include "defrag.h"
- #define CREATE_TRACE_POINTS
- #include <trace/events/btrfs.h>
- 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 9624bbb4b777..0a5258780e00 100644
+index 910d176ccec0..ded084cb46d9 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -28,6 +28,7 @@
- #include "accessors.h"
- #include "extent-tree.h"
+@@ -30,6 +30,7 @@
  #include "root-tree.h"
-+#include "defrag.h"
+ #include "defrag.h"
+ #include "dir-item.h"
++#include "uuid-tree.h"
  
  static struct kmem_cache *btrfs_trans_handle_cachep;
+ 
+diff --git a/fs/btrfs/uuid-tree.c b/fs/btrfs/uuid-tree.c
+index 70304b89f31f..7c7001f42b14 100644
+--- a/fs/btrfs/uuid-tree.c
++++ b/fs/btrfs/uuid-tree.c
+@@ -12,6 +12,7 @@
+ #include "print-tree.h"
+ #include "fs.h"
+ #include "accessors.h"
++#include "uuid-tree.h"
+ 
+ static void btrfs_uuid_to_key(u8 *uuid, u8 type, struct btrfs_key *key)
+ {
+diff --git a/fs/btrfs/uuid-tree.h b/fs/btrfs/uuid-tree.h
+new file mode 100644
+index 000000000000..ffd28106f429
+--- /dev/null
++++ b/fs/btrfs/uuid-tree.h
+@@ -0,0 +1,12 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#ifndef BTRFS_UUID_TREE_H
++#define BTRFS_UUID_TREE_H
++
++int btrfs_uuid_tree_add(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
++			u64 subid);
++int btrfs_uuid_tree_remove(struct btrfs_trans_handle *trans, u8 *uuid, u8 type,
++			u64 subid);
++int btrfs_uuid_tree_iterate(struct btrfs_fs_info *fs_info);
++
++#endif /* BTRFS_UUID_TREE_H */
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0182ae70911e..2495c8f62d87 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -35,6 +35,7 @@
+ #include "zoned.h"
+ #include "fs.h"
+ #include "accessors.h"
++#include "uuid-tree.h"
+ 
+ static struct bio_set btrfs_bioset;
  
 -- 
 2.26.3

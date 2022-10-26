@@ -2,130 +2,196 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C718BC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 05:06:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96259C38A2D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 05:06:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232516AbiJZFGj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Oct 2022 01:06:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52020 "EHLO
+        id S232640AbiJZFGo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Oct 2022 01:06:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52088 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230327AbiJZFGi (ORCPT
+        with ESMTP id S232530AbiJZFGl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2022 01:06:38 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B3DF4F643
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2022 22:06:36 -0700 (PDT)
+        Wed, 26 Oct 2022 01:06:41 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2B20458DE7
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Oct 2022 22:06:38 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 5288D2203D
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:35 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 7747822040
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:37 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1666760795; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=+8IGIc1eL2rb+7OjLb6MLeVvxmqr9Kj/ys/syAjW2/I=;
-        b=CmXySlRmJmHTPTddv89iR9NiPita8L7ig3Ys6VNNYATSHGRjWGLSUULW7sik2ihzArZLby
-        JJsTko5vwXVguYTUqaJbPUVesrzXUxotNmYwsGBncrZJJRPkgcpDiTQQ4X+QMQ4rE+SbpV
-        QQBvEZfZurcDGcXmzXBf0JiOMmuKHHI=
+        t=1666760797; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=k6NAyeDkUSasEFCQW9LgNO8moqhV6Ud1nvMXLoHXPDA=;
+        b=SaHIdtboBZQtnzmwnStpt9RjeLCPVJxB5JNNhy99zg+rObXlPIa20i+8irTD4Xe+IYMVb1
+        a/Xd5Rmikg4/8rkpIWsazTACNoz9PxsGj4c78awHFw4QLOupxXQwMtc+K1EVE5nQZtkB1L
+        VqW1XwSjGVuSwbp0+gzVV0ZTzm73poA=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A8F4513A6E
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:34 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C05BD13A6E
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:36 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id u7vrHFrAWGP7XQAAMHmgww
+        id eF+DIlzAWGP7XQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:34 +0000
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 05:06:36 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/8] btrfs: raid56: use submit-and-wait method to handle raid56 writes
-Date:   Wed, 26 Oct 2022 13:06:24 +0800
-Message-Id: <cover.1666760699.git.wqu@suse.com>
+Subject: [PATCH 2/8] btrfs: raid56: extract the pq generation code into a helper
+Date:   Wed, 26 Oct 2022 13:06:26 +0800
+Message-Id: <1057ff2dd342d3dc742db14e18d0b2bc0e1735aa.1666760699.git.wqu@suse.com>
 X-Mailer: git-send-email 2.38.1
+In-Reply-To: <cover.1666760699.git.wqu@suse.com>
+References: <cover.1666760699.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Currently btrfs raid56 is have many and very chaotic function entrances:
+Currently finish_rmw() will updates the P/Q stripes before submitting
+the writes.
 
-- full_stripe_write()
-  For full stripe write, will try to lock the full stripe and then do
-  the write.
+It's done behind a for loop, it's a little congested indent wise, so
+extract the code into a helper called generate_pq_vertical().
 
-- finish_rmw()
-  For rbio which holds the full stripe lock, only do the writes, for
-  either full stripe write, or sub-stripe write with cached rbio.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 90 +++++++++++++++++++++++------------------------
+ 1 file changed, 44 insertions(+), 46 deletions(-)
 
-- raid56_rmw_stripe()
-  For sub-stripe write which owns the full stripe lock.
-
-Furthermore we are using endio functions to go the next stage of the
-work, it's really hard to properly follow the workflow.
-
-
-The truth is, full-stripe is just a subset of a full RMW cycle, there
-really not that much difference to treat full-stripe that differently
-(except skip the plug).
-
-
-This patchset will rework the raid56 write path (recover and scrub path
-is not touched yet) by:
-
-- Introduce a main function for raid56 writes
-  The main function will be called run_one_write_rbio(), and it always
-  executed in rmw_worker workqueue.
-
-- Unified handling for all writes (full/sub-stripe, cached/non-cached,
-  degraded or not)
-  For full stripe write, it skips the read, and go into write part
-  directly.
-
-  For sub-stripe write, we will try to read the missing sectors first,
-  and wait for it (we may not read anything if it's cached).
-
-  Then check if we have some missing devices for the above read.
-  If so, do recovery first.
-
-  Finally we have everything needed, can submit the write bios, and wait
-  for the write to finish.
-
-- No more need for end_io_work
-  Since we don't rely on endio functions to jump to the next step.
-
-  Unfortunately rbio::end_io_work can only be removed when recovery
-  and scrub path are also migrated to the new single main thread way.
-
-By this, we have unified entrance for all raid56 writes, and no extra
-jumping/workqueue mess to interrupt the workflow.
-
-This would make later destructive RMW fix much easier to add, as the
-timing of each step in RMW cycle should be very easy to grasp.
-
-Thus I hope this series can be merged before the previous RFC series of
-destructive RMW fix.
-
-
-Qu Wenruo (8):
-  btrfs: raid56: extract the vertical stripe recovery code into
-    recover_vertical()
-  btrfs: raid56: extract the pq generation code into a helper
-  btrfs: raid56: introduce a new framework for RAID56 writes
-  btrfs: raid56: implement the read part for run_one_write_rbio()
-  btrfs: raid56: implement the degraded write for run_one_write_rbio()
-  btrfs: raid56: implement the write submission part for
-    run_one_write_bio()
-  btrfs: raid56: implement raid56_parity_write_v2()
-  btrfs: raid56: switch to the new run_one_write_rbio()
-
- fs/btrfs/raid56.c | 1199 +++++++++++++++++++++++++++------------------
- fs/btrfs/raid56.h |    4 +
- 2 files changed, 727 insertions(+), 476 deletions(-)
-
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 085c549a09a9..acf36fcaa9f2 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1192,6 +1192,48 @@ static void bio_get_trace_info(struct btrfs_raid_bio *rbio, struct bio *bio,
+ 	trace_info->stripe_nr = -1;
+ }
+ 
++/* Generate PQ for one veritical stripe. */
++static void generate_pq_vertical(struct btrfs_raid_bio *rbio, int sectornr)
++{
++	void **pointers = rbio->finish_pointers;
++	const u32 sectorsize = rbio->bioc->fs_info->sectorsize;
++	struct sector_ptr *sector;
++	int stripe;
++	const bool has_qstripe = rbio->bioc->map_type & BTRFS_BLOCK_GROUP_RAID6;
++
++	/* First collect one sector from each data stripe */
++	for (stripe = 0; stripe < rbio->nr_data; stripe++) {
++		sector = sector_in_rbio(rbio, stripe, sectornr, 0);
++		pointers[stripe] = kmap_local_page(sector->page) +
++				   sector->pgoff;
++	}
++
++	/* Then add the parity stripe */
++	sector = rbio_pstripe_sector(rbio, sectornr);
++	sector->uptodate = 1;
++	pointers[stripe++] = kmap_local_page(sector->page) + sector->pgoff;
++
++	if (has_qstripe) {
++		/*
++		 * RAID6, add the qstripe and call the library function
++		 * to fill in our p/q
++		 */
++		sector = rbio_qstripe_sector(rbio, sectornr);
++		sector->uptodate = 1;
++		pointers[stripe++] = kmap_local_page(sector->page) +
++				     sector->pgoff;
++
++		raid6_call.gen_syndrome(rbio->real_stripes, sectorsize,
++					pointers);
++	} else {
++		/* raid5 */
++		memcpy(pointers[rbio->nr_data], pointers[0], sectorsize);
++		run_xor(pointers + 1, rbio->nr_data - 1, sectorsize);
++	}
++	for (stripe = stripe - 1; stripe >= 0; stripe--)
++		kunmap_local(pointers[stripe]);
++}
++
+ /*
+  * this is called from one of two situations.  We either
+  * have a full stripe from the higher layers, or we've read all
+@@ -1203,28 +1245,17 @@ static void bio_get_trace_info(struct btrfs_raid_bio *rbio, struct bio *bio,
+ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ {
+ 	struct btrfs_io_context *bioc = rbio->bioc;
+-	const u32 sectorsize = bioc->fs_info->sectorsize;
+-	void **pointers = rbio->finish_pointers;
+-	int nr_data = rbio->nr_data;
+ 	/* The total sector number inside the full stripe. */
+ 	int total_sector_nr;
+ 	int stripe;
+ 	/* Sector number inside a stripe. */
+ 	int sectornr;
+-	bool has_qstripe;
+ 	struct bio_list bio_list;
+ 	struct bio *bio;
+ 	int ret;
+ 
+ 	bio_list_init(&bio_list);
+ 
+-	if (rbio->real_stripes - rbio->nr_data == 1)
+-		has_qstripe = false;
+-	else if (rbio->real_stripes - rbio->nr_data == 2)
+-		has_qstripe = true;
+-	else
+-		BUG();
+-
+ 	/* We should have at least one data sector. */
+ 	ASSERT(bitmap_weight(&rbio->dbitmap, rbio->stripe_nsectors));
+ 
+@@ -1257,41 +1288,8 @@ static noinline void finish_rmw(struct btrfs_raid_bio *rbio)
+ 	else
+ 		clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
+ 
+-	for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++) {
+-		struct sector_ptr *sector;
+-
+-		/* First collect one sector from each data stripe */
+-		for (stripe = 0; stripe < nr_data; stripe++) {
+-			sector = sector_in_rbio(rbio, stripe, sectornr, 0);
+-			pointers[stripe] = kmap_local_page(sector->page) +
+-					   sector->pgoff;
+-		}
+-
+-		/* Then add the parity stripe */
+-		sector = rbio_pstripe_sector(rbio, sectornr);
+-		sector->uptodate = 1;
+-		pointers[stripe++] = kmap_local_page(sector->page) + sector->pgoff;
+-
+-		if (has_qstripe) {
+-			/*
+-			 * RAID6, add the qstripe and call the library function
+-			 * to fill in our p/q
+-			 */
+-			sector = rbio_qstripe_sector(rbio, sectornr);
+-			sector->uptodate = 1;
+-			pointers[stripe++] = kmap_local_page(sector->page) +
+-					     sector->pgoff;
+-
+-			raid6_call.gen_syndrome(rbio->real_stripes, sectorsize,
+-						pointers);
+-		} else {
+-			/* raid5 */
+-			memcpy(pointers[nr_data], pointers[0], sectorsize);
+-			run_xor(pointers + 1, nr_data - 1, sectorsize);
+-		}
+-		for (stripe = stripe - 1; stripe >= 0; stripe--)
+-			kunmap_local(pointers[stripe]);
+-	}
++	for (sectornr = 0; sectornr < rbio->stripe_nsectors; sectornr++)
++		generate_pq_vertical(rbio, sectornr);
+ 
+ 	/*
+ 	 * Start writing.  Make bios for everything from the higher layers (the
 -- 
 2.38.1
 

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D06E0ECDFA1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 19:12:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12971C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 19:12:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235036AbiJZTMN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Oct 2022 15:12:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35636 "EHLO
+        id S234858AbiJZTMO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Oct 2022 15:12:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35582 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235034AbiJZTLl (ORCPT
+        with ESMTP id S235039AbiJZTLl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 26 Oct 2022 15:11:41 -0400
-Received: from mail-io1-xd31.google.com (mail-io1-xd31.google.com [IPv6:2607:f8b0:4864:20::d31])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29698FE91D
+Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5CD9DBBD1
         for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:15 -0700 (PDT)
-Received: by mail-io1-xd31.google.com with SMTP id s27so4840944ioa.10
+Received: by mail-qt1-x836.google.com with SMTP id cr19so10746935qtb.0
         for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=p/Phw7/gATXP7Xzb19gl+17rrzysKl6GYM3Y9ZqJ3Y4=;
-        b=vXsJsk0moNy1+b8wMtoSK+4dbphNp8S9JeZXHXlgkBHhg0iKwToxQ3b5Cp7nDPT/di
-         kN3jEGRJyxJX+4HeuwUzA5DK4MM8vJB7rSlYW26fQouCJnGyE+HCaGARxWaXd9toEgnR
-         /PmHHA8+d0pkqWPlXZQUP80sWBPGyfsf2z9rwl+VUx2EZqK/ZBO/IflAmeMDYlqy44j6
-         QDih1/k0YFyp7r4br45wfWlTHXVmRQZm5ekcKJpaNZSp1CcxoLABl5waW+P4LiSP6o8/
-         GKYkstc8+Pg458BWEeGVModNrRZb8FjGK6AopSUGMyw9EKqZStClL7vnoLal4JoxdCZ+
-         nsCg==
+        bh=PxtLu7rOWf4YatZY9mq5Cvs8QlJ+/d7F9DqDLXes5lM=;
+        b=v6TljkC8agFynjLlBJ+09AW5y4TwWMbDzvCVfP6JwZZ8MZJN5EwHjq7pph8QR7KTuv
+         QEILrQ1km5l/coFo1wPJfJiVTuI/ezJWow9DV58Hcpp50QiQGzofm3uPx73G1a1BpQ8p
+         LrGBzx+ru2whZpq7dVLXvHNnzyl9Q3boTU3xmlBlkYdgjG4KSk90hnzMu8R1wiC5vdAZ
+         81N2eZ3j2E6SbxFQSys3IdoiAUG6a5A0VPtshDD/WiitILnfAQ5dcMd4NogwYVftoHkA
+         CsFXZif7JzmkHP/5sVmBNMRkbOD67PuHkpaBXNq2fr2CRE3oatSRqEoVe7Ug3AJVYVnP
+         mC0A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=p/Phw7/gATXP7Xzb19gl+17rrzysKl6GYM3Y9ZqJ3Y4=;
-        b=JdA3zJmIvwGOoXOBB+FpKyx2bq5TfgwjEvW2gQiszC34T32VKgPxii5OgiYmbKF4Ze
-         2Zq/ES8ummuk44uUQaPO8t0qzJX6b/woEtNYni4qT7xRO/BYL1V/GGgazMGqcwId9zIL
-         NuDwWjpXXNN5USLZvf/d0anuJl9pynHgz4JGW4QNT0QAHJOajt8SyNpBCfCu6AxaFdZH
-         WTgpNd50uM9+wS59LVyUFmqDs+qd9oNkT8MH+VmJSHU+b/xCMpJ8tMfSIcyEwV8TXONk
-         8lQDwg+8v3weqWPpJoNl01QQD7V9EZUNeAJxlWoqF6YqTwlksi+572NhTc9upXolNCsW
-         EYYQ==
-X-Gm-Message-State: ACrzQf15S93Gnzn+9WPlFZR5KAz2o92lsnYrCmKmZiYAJLCB858v52A8
-        +NIWpgDDs7t48CrH0AdTh1jnR0eBU6YLyw==
-X-Google-Smtp-Source: AMsMyM4PTQhF7EWXHyvS/h2wIOFNpCa9D8jM469OExrv0PQ5t/MYBlQco81ap7EWcGHQsBvqSVQFxw==
-X-Received: by 2002:ac8:5f87:0:b0:39c:dfc2:40f9 with SMTP id j7-20020ac85f87000000b0039cdfc240f9mr37824734qta.315.1666811343127;
-        Wed, 26 Oct 2022 12:09:03 -0700 (PDT)
+        bh=PxtLu7rOWf4YatZY9mq5Cvs8QlJ+/d7F9DqDLXes5lM=;
+        b=Wf/u9juS0iqtMnNzKn4C2M7hLugOlq9+GfFO2xCsHXFrtjxIS1NPRxNnObDMdHoWjP
+         0sgfKL8NXVVVo06HeZmyUJCCXi19CEAayDF4lJK4Wl0EZbk7G2S4q2whn4dznNU/RsAL
+         l+m7Ln0XJq4j2LnCx+Xh+DXyQdfnScpGXK0xJD9SwVjug1/ZwwPlwZdT8EYoJ4aDuhT+
+         zcIb2w8v2q1vANTB+ino+d2uDg3LDkFu6/Lh2hkEFKT4Wmo5dq12QZZjDU86bFdTL6HR
+         ulILD2wiuQjLThzNPaVUz5T/2vwPAF9gR6i+1jMmj+cMljyZUeQnidBILI6yZ4NTyqWO
+         R8bw==
+X-Gm-Message-State: ACrzQf1tydlI9u04W5tdcL/YmHmvfOQRPecADSgAW9W5Mkhy6ZKLhaDU
+        qpgNkTcVzHDrrT3XqQiboYAt8KJ0Yyub8w==
+X-Google-Smtp-Source: AMsMyM4xf0Tcz7lL3ZFhffQqXAWlmm8hETO+RBpHup81wabWc/iNOKY8Nrn9AgqE1wbifN0BwZ1LQw==
+X-Received: by 2002:a05:622a:488:b0:39c:f823:1539 with SMTP id p8-20020a05622a048800b0039cf8231539mr37828526qtx.78.1666811354691;
+        Wed, 26 Oct 2022 12:09:14 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id dm10-20020a05620a1d4a00b006af0ce13499sm4521008qkb.115.2022.10.26.12.09.02
+        by smtp.gmail.com with ESMTPSA id y16-20020a37e310000000b006eeae49537bsm4252858qki.98.2022.10.26.12.09.14
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 26 Oct 2022 12:09:02 -0700 (PDT)
+        Wed, 26 Oct 2022 12:09:14 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 14/26] btrfs: move ioctl prototypes into ioctl.h
-Date:   Wed, 26 Oct 2022 15:08:29 -0400
-Message-Id: <779e5d48b8e1c54974e6d90d5825b6477f5750aa.1666811039.git.josef@toxicpanda.com>
+Subject: [PATCH 22/26] btrfs: move verity prototypes into verity.h
+Date:   Wed, 26 Oct 2022 15:08:37 -0400
+Message-Id: <13e4b83f430478460fcee9eb6e4ab160346fb0d5.1666811039.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666811038.git.josef@toxicpanda.com>
 References: <cover.1666811038.git.josef@toxicpanda.com>
@@ -64,165 +64,133 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Move these out of ctree.h into ioctl.h to cut down on code in ctree.h.
+Move these out of ctree.h into verity.h to cut down on code in ctree.h.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h       | 12 ------------
- fs/btrfs/file.c        |  1 +
- fs/btrfs/inode.c       |  1 +
- fs/btrfs/ioctl.c       |  1 +
- fs/btrfs/ioctl.h       | 17 +++++++++++++++++
- fs/btrfs/send.c        |  1 +
- fs/btrfs/super.c       |  1 +
- fs/btrfs/transaction.c |  1 +
- fs/btrfs/verity.c      |  1 +
- fs/btrfs/volumes.c     |  1 +
- 10 files changed, 25 insertions(+), 12 deletions(-)
- create mode 100644 fs/btrfs/ioctl.h
+ fs/btrfs/ctree.h  | 22 ----------------------
+ fs/btrfs/inode.c  |  1 +
+ fs/btrfs/send.c   |  1 +
+ fs/btrfs/super.c  |  1 +
+ fs/btrfs/verity.c |  1 +
+ fs/btrfs/verity.h | 27 +++++++++++++++++++++++++++
+ 6 files changed, 31 insertions(+), 22 deletions(-)
+ create mode 100644 fs/btrfs/verity.h
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 910a23e7cd8f..87930337b301 100644
+index 84bc33ff003f..15bb90536460 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -688,18 +688,6 @@ int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
- int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, u64 offset);
+@@ -741,28 +741,6 @@ static inline int is_fstree(u64 rootid)
+ 	return 0;
+ }
  
--/* ioctl.c */
--long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
--long btrfs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
--int btrfs_fileattr_get(struct dentry *dentry, struct fileattr *fa);
--int btrfs_fileattr_set(struct user_namespace *mnt_userns,
--		       struct dentry *dentry, struct fileattr *fa);
--int btrfs_ioctl_get_supported_features(void __user *arg);
--void btrfs_sync_inode_flags_to_i_flags(struct inode *inode);
--int __pure btrfs_is_empty_uuid(u8 *uuid);
--void btrfs_update_ioctl_balance_args(struct btrfs_fs_info *fs_info,
--			       struct btrfs_ioctl_balance_args *bargs);
+-/* verity.c */
+-#ifdef CONFIG_FS_VERITY
 -
- /* file.c */
- int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
- extern const struct file_operations btrfs_file_operations;
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 65a98bd5e395..7b361a3d7785 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -34,6 +34,7 @@
- #include "accessors.h"
- #include "extent-tree.h"
- #include "file-item.h"
-+#include "ioctl.h"
- 
- /* simple helper to fault in pages and copy.  This should go away
-  * and be replaced with calls into generic code.
+-extern const struct fsverity_operations btrfs_verityops;
+-int btrfs_drop_verity_items(struct btrfs_inode *inode);
+-int btrfs_get_verity_descriptor(struct inode *inode, void *buf, size_t buf_size);
+-
+-#else
+-
+-static inline int btrfs_drop_verity_items(struct btrfs_inode *inode)
+-{
+-	return 0;
+-}
+-
+-static inline int btrfs_get_verity_descriptor(struct inode *inode, void *buf,
+-					      size_t buf_size)
+-{
+-	return -EPERM;
+-}
+-
+-#endif
+-
+ /* Sanity test specific functions */
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ void btrfs_test_destroy_inode(struct inode *inode);
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0be05e267283..d33b4f9f4aaa 100644
+index fd733fc3c583..6a172ccd7847 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -63,6 +63,7 @@
- #include "dir-item.h"
- #include "file-item.h"
- #include "uuid-tree.h"
-+#include "ioctl.h"
+@@ -67,6 +67,7 @@
+ #include "file.h"
+ #include "acl.h"
+ #include "relocation.h"
++#include "verity.h"
  
  struct btrfs_iget_args {
  	u64 ino;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d255757b3450..2d691d147876 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -57,6 +57,7 @@
- #include "defrag.h"
- #include "dir-item.h"
- #include "uuid-tree.h"
-+#include "ioctl.h"
- 
- #ifdef CONFIG_64BIT
- /* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-new file mode 100644
-index 000000000000..2cd749cfcfb6
---- /dev/null
-+++ b/fs/btrfs/ioctl.h
-@@ -0,0 +1,17 @@
-+// SPDX-License-Identifier: GPL-2.0
-+
-+#ifndef BTRFS_IOCTL_H
-+#define BTRFS_IOCTL_H
-+
-+long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
-+long btrfs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
-+int btrfs_fileattr_get(struct dentry *dentry, struct fileattr *fa);
-+int btrfs_fileattr_set(struct user_namespace *mnt_userns,
-+		       struct dentry *dentry, struct fileattr *fa);
-+int btrfs_ioctl_get_supported_features(void __user *arg);
-+void btrfs_sync_inode_flags_to_i_flags(struct inode *inode);
-+int __pure btrfs_is_empty_uuid(u8 *uuid);
-+void btrfs_update_ioctl_balance_args(struct btrfs_fs_info *fs_info,
-+			       struct btrfs_ioctl_balance_args *bargs);
-+
-+#endif /* BTRFS_IOCTL_H */
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 07524d070c48..1ee8149c0440 100644
+index 1ee8149c0440..50063ac83830 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -30,6 +30,7 @@
- #include "accessors.h"
+@@ -31,6 +31,7 @@
  #include "dir-item.h"
  #include "file-item.h"
-+#include "ioctl.h"
+ #include "ioctl.h"
++#include "verity.h"
  
  /*
   * Maximum number of references an extent can have in order for us to attempt to
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 9756b0cda626..2cd05246bcd3 100644
+index 4bfda9be4556..ae49bdf71d32 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -54,6 +54,7 @@
- #include "accessors.h"
- #include "defrag.h"
+@@ -56,6 +56,7 @@
  #include "dir-item.h"
-+#include "ioctl.h"
+ #include "ioctl.h"
+ #include "scrub.h"
++#include "verity.h"
  #define CREATE_TRACE_POINTS
  #include <trace/events/btrfs.h>
  
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index ded084cb46d9..e491fbcd404f 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -31,6 +31,7 @@
- #include "defrag.h"
- #include "dir-item.h"
- #include "uuid-tree.h"
-+#include "ioctl.h"
- 
- static struct kmem_cache *btrfs_trans_handle_cachep;
- 
 diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index d02fa354fc2b..00ba5143a17d 100644
+index 00ba5143a17d..b31d6c7627ff 100644
 --- a/fs/btrfs/verity.c
 +++ b/fs/btrfs/verity.c
-@@ -18,6 +18,7 @@
- #include "locking.h"
+@@ -19,6 +19,7 @@
  #include "fs.h"
  #include "accessors.h"
-+#include "ioctl.h"
+ #include "ioctl.h"
++#include "verity.h"
  
  /*
   * Implementation of the interface defined in struct fsverity_operations.
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2495c8f62d87..4b70cfab02ab 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -36,6 +36,7 @@
- #include "fs.h"
- #include "accessors.h"
- #include "uuid-tree.h"
-+#include "ioctl.h"
- 
- static struct bio_set btrfs_bioset;
- 
+diff --git a/fs/btrfs/verity.h b/fs/btrfs/verity.h
+new file mode 100644
+index 000000000000..960ce3556b33
+--- /dev/null
++++ b/fs/btrfs/verity.h
+@@ -0,0 +1,27 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#ifndef BTRFS_VERITY_H
++#define BTRFS_VERITY_H
++
++#ifdef CONFIG_FS_VERITY
++
++extern const struct fsverity_operations btrfs_verityops;
++int btrfs_drop_verity_items(struct btrfs_inode *inode);
++int btrfs_get_verity_descriptor(struct inode *inode, void *buf, size_t buf_size);
++
++#else
++
++static inline int btrfs_drop_verity_items(struct btrfs_inode *inode)
++{
++	return 0;
++}
++
++static inline int btrfs_get_verity_descriptor(struct inode *inode, void *buf,
++					      size_t buf_size)
++{
++	return -EPERM;
++}
++
++#endif /* CONFIG_FS_VERITY */
++
++#endif /* BTRFS_VERITY_H */
 -- 
 2.26.3
 

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 904BEC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 19:12:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C621ECDFA1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Oct 2022 19:12:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234919AbiJZTMR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Oct 2022 15:12:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42384 "EHLO
+        id S235090AbiJZTMS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Oct 2022 15:12:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39508 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235005AbiJZTLn (ORCPT
+        with ESMTP id S234859AbiJZTLo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Oct 2022 15:11:43 -0400
-Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 55120FE930
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:18 -0700 (PDT)
-Received: by mail-qk1-x734.google.com with SMTP id z30so11354714qkz.13
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:18 -0700 (PDT)
+        Wed, 26 Oct 2022 15:11:44 -0400
+Received: from mail-qk1-x72c.google.com (mail-qk1-x72c.google.com [IPv6:2607:f8b0:4864:20::72c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC711102536
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:21 -0700 (PDT)
+Received: by mail-qk1-x72c.google.com with SMTP id d13so11384463qko.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Oct 2022 12:09:21 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=YpZq0+z0PAwW3zpfdF1sbpMYA/2f17N3tEnRTajRLP4=;
-        b=XEVraDHaNwTmEWF5UbfunqydZXVe6aWm68LjCMHFV9ocxQtdx0q+IKH84Ra3hEIXoe
-         /KCgTadShHzN4wtJ8DDrN+9feY4BIn2oUTEhst739Rle75BHfs/u2VSD0yexds1EYloY
-         0XpdNPOvEIc/BiC61BPq0rvtyP+5JR+5Gj9X+8ZlQ99m/Hf3Qc2I4co0n1eLYpFlMvoo
-         SPmpe2m/rdoHT9Hwn2079nb7y7Z92amypcsY7Ad4xYOMxQRUQJrNZgt6kO7jhf+/VknK
-         vRmG+9Tjjzns+OVJVzp8B4sEMVHBNDQb5hmyO5OH9mAkk1J5w2r5vk7YoEeDb3zVmkZd
-         5ybg==
+        bh=7DVsOFHF9exduGMuGNZtUfDS2WzyjDxNQEPNceICI38=;
+        b=z/OQMTmdePbJoMm/hm0qH356m9ZZWTby8ep2IS0TfpkWznUfo/MwktHDy7UBgCHklh
+         rqx5znZrTF+xNbt5EqTMgpN1/h1/XaWNtEi6V1vwLsZcvBCgPfm+P/vm8c4B8+5v5m9B
+         V6BhZhMeW+HeeRrMDuvucfTDwFJgRb84w7hs2cEFKY+2io+Cn3k7kBHWME9vocTp4gv2
+         12mp9P0JA8t9RerhgemnYsfxiAm/nUPVaGNzLAqVkTPRZqF6XHTQf/X9TxSDuAZAMqaB
+         Jzei0pK1c3+PVQje1a494Dpwp3nQFsmaROdKwp1Mkzr4MaIvN3+ZFJEQYJ+RqVMzNkhx
+         3dLA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=YpZq0+z0PAwW3zpfdF1sbpMYA/2f17N3tEnRTajRLP4=;
-        b=u+kvwppU3zjGrN6c8p1jASCOuShIInqE5tzZhjNOIjtXl5OC9/Gk4DSi+RnexwcM0i
-         p3kMC0cu6ZN5BFoRrcZzaIRBKa9OOIjolZ5C/dXLPYgMsI9hM3SXl702TJg8WGc5OiVT
-         WX0WLVcHge7SvQ+a1PvDUEFZKhjGVMncWDoht/X3UaCqANTkhHA4aaRil3zlSu2r36XD
-         3xnJ2gsUamssOvQQ18IQUWaE5AOc1P5UoKf5x4WtsYwUuP6ld2ahI9EcpTLwvH6+YWak
-         nKPeXSLPQfT4twe96bRMLc5ao/Y+4snOnbC+wKoRu3VNRCDKsK/cChcMIVZp1h+VBuDQ
-         +QjA==
-X-Gm-Message-State: ACrzQf34hYFzL0jd4zPU4YWrki1UJ5dfCBkvClUA0pUP0SlCEWDDn9UT
-        Q0vC5H3/RWC0ANG5KR96e36EeBIVfUaPIA==
-X-Google-Smtp-Source: AMsMyM4BD0C6Dq5WrD5CfdEWsjXxTr0ApkMvaWroiUQJyw7y4lJ4B0dRjzDDlzcmAAZj1CZeaotCXA==
-X-Received: by 2002:a05:620a:191c:b0:6ed:88c5:e839 with SMTP id bj28-20020a05620a191c00b006ed88c5e839mr32679770qkb.627.1666811357673;
-        Wed, 26 Oct 2022 12:09:17 -0700 (PDT)
+        bh=7DVsOFHF9exduGMuGNZtUfDS2WzyjDxNQEPNceICI38=;
+        b=lhCtZ+N7gDCm2Hd/AWzR3M1g4jzyTvt3mK07jypvRG8L5Voxnw+bhGRaJlpsEFYBdq
+         Z1curCAqKYb5Lo/Z0zJaWb/wR+ifsXN563+6+9fzt7CdYn7BjYz9UWi1mh1Zz2MV3iSH
+         fjuQKMKghFnVWhsGutRvPjpgqZ+8cs/pYgztwXXAkpC0sYbxxxVaQlOGB1XwDjaKm459
+         ykwYVobxWadAfKvddOy4OWk2vdqUQIt16++fe2yVNhbNRcLAzEQjvw4JXbgaHDE2fInH
+         GJX3fuhEm0Or+DrEtrIzMCnss6V79hpyFoqShDeyL4KkxRGS6wfry2kKOnd04rECT11o
+         97Dg==
+X-Gm-Message-State: ACrzQf0zfqVEUhwrTdlP5kYVXdTD5w662AjrUvf2x5miCCut5GhpCKrC
+        +eUqaYK1D7w1bq0YGXvjKJHf2KzdyiJyxg==
+X-Google-Smtp-Source: AMsMyM6uml7oXUwyYn3N7OaTJV153cAbYXOSZZSdMQZvmxa6xaFCvNfICQffi02GQvdTQl3o/htLIw==
+X-Received: by 2002:a37:8987:0:b0:6f9:9f1a:aee3 with SMTP id l129-20020a378987000000b006f99f1aaee3mr2053103qkd.478.1666811360686;
+        Wed, 26 Oct 2022 12:09:20 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id u6-20020a37ab06000000b006bb2cd2f6d1sm4242698qke.127.2022.10.26.12.09.17
+        by smtp.gmail.com with ESMTPSA id fz9-20020a05622a5a8900b00398426e706fsm3544478qtb.65.2022.10.26.12.09.20
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 26 Oct 2022 12:09:17 -0700 (PDT)
+        Wed, 26 Oct 2022 12:09:20 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 24/26] btrfs: move super prototypes into super.h
-Date:   Wed, 26 Oct 2022 15:08:39 -0400
-Message-Id: <c0794bdde20ee17cc6badcf059a1b870f5b470f1.1666811039.git.josef@toxicpanda.com>
+Subject: [PATCH 26/26] btrfs: move orphan prototypes into orphan.h
+Date:   Wed, 26 Oct 2022 15:08:41 -0400
+Message-Id: <839fac08903cd0fea21bb8dacb2506332bae03c7.1666811039.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1666811038.git.josef@toxicpanda.com>
 References: <cover.1666811038.git.josef@toxicpanda.com>
@@ -64,90 +64,114 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Move these out of ctree.h into super.h to cut down on code in ctree.h.
+Move these out of ctree.h into orphan.h to cut down on code in ctree.h.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.h   |  7 -------
- fs/btrfs/disk-io.c |  1 +
- fs/btrfs/ioctl.c   |  1 +
- fs/btrfs/super.c   |  1 +
- fs/btrfs/super.h   | 12 ++++++++++++
- 5 files changed, 15 insertions(+), 7 deletions(-)
- create mode 100644 fs/btrfs/super.h
+ fs/btrfs/ctree.h       |  6 ------
+ fs/btrfs/extent-tree.c |  1 +
+ fs/btrfs/inode.c       |  1 +
+ fs/btrfs/orphan.h      | 11 +++++++++++
+ fs/btrfs/root-tree.c   |  1 +
+ fs/btrfs/tree-log.c    |  1 +
+ fs/btrfs/verity.c      |  1 +
+ 7 files changed, 16 insertions(+), 6 deletions(-)
+ create mode 100644 fs/btrfs/orphan.h
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 27bfedf3a9fb..c32f6b6ae972 100644
+index c32f6b6ae972..5649f8907984 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -682,13 +682,6 @@ int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
- int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, u64 offset);
+@@ -676,12 +676,6 @@ static inline int btrfs_next_item(struct btrfs_root *root, struct btrfs_path *p)
+ }
+ int btrfs_leaf_free_space(struct extent_buffer *leaf);
  
--/* super.c */
--int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
--			unsigned long new_flags);
--int btrfs_sync_fs(struct super_block *sb, int wait);
--char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
--					  u64 subvol_objectid);
+-/* orphan.c */
+-int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
+-			     struct btrfs_root *root, u64 offset);
+-int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
+-			  struct btrfs_root *root, u64 offset);
 -
  /*
   * Get the correct offset inside the page of extent buffer.
   *
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 917594ff1786..5c099d046170 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -51,6 +51,7 @@
- #include "uuid-tree.h"
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 940d4fe23cfb..b037107678c8 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -41,6 +41,7 @@
+ #include "extent-tree.h"
+ #include "root-tree.h"
+ #include "file-item.h"
++#include "orphan.h"
+ 
+ #undef SCRAMBLE_DELAYED_REFS
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ef0bf2e070ed..56ec304e2c6a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -69,6 +69,7 @@
  #include "relocation.h"
- #include "scrub.h"
-+#include "super.h"
- 
- #define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN |\
- 				 BTRFS_HEADER_FLAG_RELOC |\
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a254207f98d5..da0147d3cb5d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -60,6 +60,7 @@
- #include "ioctl.h"
- #include "file.h"
- #include "scrub.h"
-+#include "super.h"
- 
- #ifdef CONFIG_64BIT
- /* If we have a 32-bit userspace and 64-bit kernel, then the UAPI
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index ae49bdf71d32..d54bfec8e506 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -57,6 +57,7 @@
- #include "ioctl.h"
- #include "scrub.h"
  #include "verity.h"
-+#include "super.h"
- #define CREATE_TRACE_POINTS
- #include <trace/events/btrfs.h>
+ #include "super.h"
++#include "orphan.h"
  
-diff --git a/fs/btrfs/super.h b/fs/btrfs/super.h
+ struct btrfs_iget_args {
+ 	u64 ino;
+diff --git a/fs/btrfs/orphan.h b/fs/btrfs/orphan.h
 new file mode 100644
-index 000000000000..04e28aa01f8a
+index 000000000000..8ec7a4bcca56
 --- /dev/null
-+++ b/fs/btrfs/super.h
-@@ -0,0 +1,12 @@
++++ b/fs/btrfs/orphan.h
+@@ -0,0 +1,11 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
-+#ifndef BTRFS_SUPER_H
-+#define BTRFS_SUPER_H
++#ifndef BTRFS_ORPHAN_H
++#define BTRFS_ORPHAN_H
 +
-+int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
-+			unsigned long new_flags);
-+int btrfs_sync_fs(struct super_block *sb, int wait);
-+char *btrfs_get_subvol_name_from_objectid(struct btrfs_fs_info *fs_info,
-+					  u64 subvol_objectid);
++int btrfs_insert_orphan_item(struct btrfs_trans_handle *trans,
++			     struct btrfs_root *root, u64 offset);
++int btrfs_del_orphan_item(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root, u64 offset);
 +
-+#endif /* BTRFS_SUPER_H */
++#endif /* BTRFS_ORPHAN_H */
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 09175ffc143a..8efb8a91bf31 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -16,6 +16,7 @@
+ #include "fs.h"
+ #include "accessors.h"
+ #include "root-tree.h"
++#include "orphan.h"
+ 
+ /*
+  * Read a root item from the tree. In case we detect a root item smaller then
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index b014e6946534..3e91451fd8f1 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -28,6 +28,7 @@
+ #include "dir-item.h"
+ #include "file-item.h"
+ #include "file.h"
++#include "orphan.h"
+ 
+ #define MAX_CONFLICT_INODES 10
+ 
+diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+index b31d6c7627ff..bf9eb693a6a7 100644
+--- a/fs/btrfs/verity.c
++++ b/fs/btrfs/verity.c
+@@ -20,6 +20,7 @@
+ #include "accessors.h"
+ #include "ioctl.h"
+ #include "verity.h"
++#include "orphan.h"
+ 
+ /*
+  * Implementation of the interface defined in struct fsverity_operations.
 -- 
 2.26.3
 

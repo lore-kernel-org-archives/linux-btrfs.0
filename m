@@ -2,115 +2,77 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 397CDECAAA1
-	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Oct 2022 21:50:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9ECEFA3743
+	for <linux-btrfs@archiver.kernel.org>; Fri, 28 Oct 2022 22:47:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230071AbiJ1Vun (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 28 Oct 2022 17:50:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33302 "EHLO
+        id S230000AbiJ1Wrt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 28 Oct 2022 18:47:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54804 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230027AbiJ1Vuk (ORCPT
+        with ESMTP id S229501AbiJ1Wrs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 28 Oct 2022 17:50:40 -0400
-Received: from mail-io1-f70.google.com (mail-io1-f70.google.com [209.85.166.70])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E935220C9B5
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2022 14:50:37 -0700 (PDT)
-Received: by mail-io1-f70.google.com with SMTP id a6-20020a056602208600b006bff2e56943so5202219ioa.11
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Oct 2022 14:50:37 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=to:from:subject:message-id:in-reply-to:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=qTT5yVHbI3cRvy7cj7RM85ugbVqlsjULyFzBJneDTsQ=;
-        b=SuYgI4IetPxZTirTppRqUj1Slyb6Ut1zNsj2WWRYhOOyCC8tVJHN9LHutZaKi+8Edw
-         2TA7+qwsUKA7YvFxynooy3NKHjMeizuT2lv9aUkccZY/vPFh3FX+LP/z1Sx9F8rezpAG
-         zSngQb+NmlrHAHgvV718AdCDN8L+pX2Devb4ofD11YiXwHrZC5NvpqCtBjKX0n80QQdc
-         zV6bRM1pacvX87fox8pp3WsdjzzSzZk9caM4WzkT11okUvr0mV3yc8pjqhHesXKgCxi5
-         kfzC3oE96LL8HZegdKbO3UE5glBau16BuHAIGR5A81kBYbN/JlMVCh7sL/8ce7ULo5lk
-         XCmg==
-X-Gm-Message-State: ACrzQf03IWjPeld+wHajkdKpHD6rCx+SUtu4gXpQVYampHisc9mszNmR
-        BdTjBa7eGig07tbjGKLv0GILoaQPxHDEaPRz2GuSIGfw+B1k
-X-Google-Smtp-Source: AMsMyM4CqM4wTKB8EY7iDLrJHptNnEglkyhWl/77ILewUSD5YGIf1Ft6WnOOLlYythZCEjRa+WdefD2nlpGl0Z2Xzoty0yxIMpAE
+        Fri, 28 Oct 2022 18:47:48 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 618DB199F45;
+        Fri, 28 Oct 2022 15:47:47 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id E53F062A9A;
+        Fri, 28 Oct 2022 22:47:46 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D9EEC43470;
+        Fri, 28 Oct 2022 22:47:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1666997266;
+        bh=bqK81I/T6k3G4i3s/QXoplbiUG5b/2q9qN47fUeLeWQ=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=iw9YE3wb75BUEOFeFHw5T2uj6gkdp+UdqpvS6EZgDy36esM9mRbr6PCr9iHEOp1yy
+         EcNOS70sj+GbP1Coa89lWAZsPe7RubuqyUm37SNUfCiQtTCwaw1OTs493O4AxwlW2u
+         7ANrvU1NFT3nO6/TiQDMlRZ4EtiZvNfLBI8rIT6y4ADKJRJycR3DKWLtD+Ongrpes3
+         vBXcQMu8t5B/k5SHqyr3KxngyzSBzqhOk7Sb2qAh6CJf5ua1uVSxp8i8nE4Ea/UEuI
+         XLWPs0uSmdY6a8BxGO5Iz6XFwo+5VkXnIUEhpwOIfy3TzZUvmM4cASyjOIPh+3navN
+         UIT4TNd6qrKUw==
+From:   Eric Biggers <ebiggers@kernel.org>
+To:     linux-fscrypt@vger.kernel.org
+Cc:     linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org
+Subject: [PATCH 3/6] ext4: simplify ext4_readpage_limit()
+Date:   Fri, 28 Oct 2022 15:45:36 -0700
+Message-Id: <20221028224539.171818-4-ebiggers@kernel.org>
+X-Mailer: git-send-email 2.38.0
+In-Reply-To: <20221028224539.171818-1-ebiggers@kernel.org>
+References: <20221028224539.171818-1-ebiggers@kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a05:6e02:1688:b0:2fc:50d7:6961 with SMTP id
- f8-20020a056e02168800b002fc50d76961mr694493ila.230.1666993837040; Fri, 28 Oct
- 2022 14:50:37 -0700 (PDT)
-Date:   Fri, 28 Oct 2022 14:50:37 -0700
-In-Reply-To: <00000000000095ab2705eb49b484@google.com>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <0000000000007ff3e705ec1f3f90@google.com>
-Subject: Re: [syzbot] WARNING in btrfs_add_link
-From:   syzbot <syzbot+b531e31d583db14070d4@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-syzbot has found a reproducer for the following issue on:
+From: Eric Biggers <ebiggers@google.com>
 
-HEAD commit:    b229b6ca5abb Merge tag 'perf-tools-fixes-for-v6.1-2022-10-..
-git tree:       upstream
-console+strace: https://syzkaller.appspot.com/x/log.txt?x=11afbf6a880000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=1d3548a4365ba17d
-dashboard link: https://syzkaller.appspot.com/bug?extid=b531e31d583db14070d4
-compiler:       Debian clang version 13.0.1-++20220126092033+75e33f71c2da-1~exp1~20220126212112.63, GNU ld (GNU Binutils for Debian) 2.35.2
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=124ae5f6880000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=1008c991880000
+Now that the implementation of FS_IOC_ENABLE_VERITY has changed to not
+involve reading back Merkle tree blocks that were previously written,
+there is no need for ext4_readpage_limit() to allow for this case.
 
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/24728b72a896/disk-b229b6ca.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/10a3c40c60e1/vmlinux-b229b6ca.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/69f963b02b7e/bzImage-b229b6ca.xz
-mounted in repro: https://storage.googleapis.com/syzbot-assets/fefdce45ff1c/mount_0.gz
+Signed-off-by: Eric Biggers <ebiggers@google.com>
+---
+ fs/ext4/readpage.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+b531e31d583db14070d4@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-WARNING: CPU: 1 PID: 3605 at fs/btrfs/inode.c:6568 btrfs_add_link+0x862/0xca0 fs/btrfs/inode.c:6568
-Modules linked in:
-CPU: 0 PID: 3605 Comm: syz-executor377 Not tainted 6.1.0-rc2-syzkaller-00105-gb229b6ca5abb #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/11/2022
-RIP: 0010:btrfs_add_link+0x862/0xca0 fs/btrfs/inode.c:6568
-Code: 40 f8 da 8a 8b 54 24 08 31 c0 e8 7b 50 a7 06 e9 21 ff ff ff e8 8f 55 fd fd 48 c7 c7 40 f7 da 8a 44 89 e6 31 c0 e8 de f3 c4 fd <0f> 0b 41 b4 01 45 0f b6 c4 48 89 df 48 c7 c6 00 ff da 8a ba a8 19
-RSP: 0018:ffffc90003cff460 EFLAGS: 00010246
-RAX: ade94f10cf44a400 RBX: ffff888072095150 RCX: ffff888024b7ba80
-RDX: 0000000000000000 RSI: 0000000080000000 RDI: 0000000000000000
-RBP: ffffc90003cff588 R08: ffffffff816b8dfd R09: ffffed1017364f13
-R10: ffffed1017364f13 R11: 1ffff11017364f12 R12: 00000000fffffff4
-R13: 00000000fffffff4 R14: ffff8880720951a0 R15: 1ffff1100e412a34
-FS:  0000555556786300(0000) GS:ffff8880b9b00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000557c351539e0 CR3: 0000000076ed0000 CR4: 00000000003506e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-Call Trace:
- <TASK>
- btrfs_create_new_inode+0x1778/0x2270 fs/btrfs/inode.c:6504
- btrfs_create_common+0x2eb/0x420 fs/btrfs/inode.c:6639
- lookup_open fs/namei.c:3413 [inline]
- open_last_lookups fs/namei.c:3481 [inline]
- path_openat+0x12d0/0x2df0 fs/namei.c:3710
- do_filp_open+0x264/0x4f0 fs/namei.c:3740
- do_sys_openat2+0x124/0x4e0 fs/open.c:1310
- do_sys_open fs/open.c:1326 [inline]
- __do_sys_openat fs/open.c:1342 [inline]
- __se_sys_openat fs/open.c:1337 [inline]
- __x64_sys_openat+0x243/0x290 fs/open.c:1337
- do_syscall_x64 arch/x86/entry/common.c:50 [inline]
- do_syscall_64+0x3d/0xb0 arch/x86/entry/common.c:80
- entry_SYSCALL_64_after_hwframe+0x63/0xcd
-RIP: 0033:0x7f0d1504bdd9
-Code: ff ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 40 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 c0 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007fff9971cc08 EFLAGS: 00000246 ORIG_RAX: 0000000000000101
-RAX: ffffffffffffffda RBX: 0000000000000003 RCX: 00007f0d1504bdd9
-RDX: 000000000000275a RSI: 00000000200001c0 RDI: 00000000ffffff9c
-RBP: 00007fff9971cc40 R08: 0000000000000002 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000004
-R13: 00007f0d1508bf00 R14: 00007fff9971cc90 R15: 0000000000000001
- </TASK>
+diff --git a/fs/ext4/readpage.c b/fs/ext4/readpage.c
+index e604ea4e102b7..babaa7160c556 100644
+--- a/fs/ext4/readpage.c
++++ b/fs/ext4/readpage.c
+@@ -211,8 +211,7 @@ static void ext4_set_bio_post_read_ctx(struct bio *bio,
+ 
+ static inline loff_t ext4_readpage_limit(struct inode *inode)
+ {
+-	if (IS_ENABLED(CONFIG_FS_VERITY) &&
+-	    (IS_VERITY(inode) || ext4_verity_in_progress(inode)))
++	if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode))
+ 		return inode->i_sb->s_maxbytes;
+ 
+ 	return i_size_read(inode);
+-- 
+2.38.0
 

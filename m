@@ -2,46 +2,44 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD569FA3742
-	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Oct 2022 11:11:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D996CFA3740
+	for <linux-btrfs@archiver.kernel.org>; Mon, 31 Oct 2022 11:44:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230139AbiJaLLi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 31 Oct 2022 07:11:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53378 "EHLO
+        id S230496AbiJaLoQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 31 Oct 2022 07:44:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42156 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230107AbiJaLLg (ORCPT
+        with ESMTP id S231164AbiJaLoK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 31 Oct 2022 07:11:36 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9BD13B847;
-        Mon, 31 Oct 2022 04:11:35 -0700 (PDT)
+        Mon, 31 Oct 2022 07:44:10 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43863EE30
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Oct 2022 04:44:02 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 54903B815E2;
-        Mon, 31 Oct 2022 11:11:34 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2FE14C433D7;
-        Mon, 31 Oct 2022 11:11:32 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 01763B815DD
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Oct 2022 11:44:01 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30A38C433D7
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Oct 2022 11:43:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1667214693;
-        bh=KgBdBtmhw7LMT5jL6xTCRVd52JXwApMCk08xC5XsQ7E=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=nmQ1c2kw4JXFSnhAlEixf352xihZja5bkRoDQt/B+ELoL9uIqMQeL5NZj9VnRJ6Pr
-         3NMF0eyjlNJvS0gLIPf7xhr6hUIQ6+gpkCV/pETTqsF+IGzk81XGRfJmqM7139nYJD
-         CutYeiHO8uAaHFY6TLN/sfKLnRb5VYPh6uIHVJHeW8vEB8lHB4v7aQR1KQqcgnQVhb
-         mLvEE6gWaCzd8Rpo0eevJtuon8aFkYUqreyi9usXyBBLKqEpf2dRFzpSXrvWRrUd/Y
-         23XlPtZqhQ1o+hE00fDdjy2AQMSmiMtLdv8jZXlWBmMhevATymoEWEf5QhkuaVy8zj
-         KXi6glO12YKUA==
+        s=k20201202; t=1667216639;
+        bh=UyTiJPtNpvnkeuv3VsVVKtlp+J920tjtrbZvetBtpW0=;
+        h=From:To:Subject:Date:From;
+        b=hggLON7RwV+EK7Gz7uGnDByMsmkjcnPzU500+y1q0R4SiaZksgQ1YI2jxdYJt8iPZ
+         NGhDb34sxbk4knLZ236nzKV627sivCYt/Q71HbI2ylGUSUtHV5qyi1JbDr8gelYbtR
+         6emI3gt6uo0OaLjF54gmLkZkNbwLY1g131LB9C4lUTiSIgUkYHzd+2d1HEWhnTDW23
+         hpKT1Xop+KWy8JQwQNXJ5Ko5a0CW0CQMCusr3bjATxnHa9z7xXZbenEYOGCQPCdoWe
+         /GpRhIW56X8vz1kJMsm0XllsbGL+GNR2ogFrFMf6uhoCuYup99voSE6jmyYRmPGNOl
+         w7CrgAXpZqVog==
 From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/3] btrfs: test that fiemap reports extent as not shared after deleting file
-Date:   Mon, 31 Oct 2022 11:11:20 +0000
-Message-Id: <27a0c4ab551b7a7410f4062f5235f20c88e77cfc.1667214081.git.fdmanana@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: fix direct IO writes with nowait and dsync iocb not syncing
+Date:   Mon, 31 Oct 2022 11:43:54 +0000
+Message-Id: <cover.1667215075.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1667214081.git.fdmanana@suse.com>
-References: <cover.1667214081.git.fdmanana@suse.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -49,160 +47,26 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that if we have two files with shared extents, after removing one of
-the files, if we do a fiemap against the other file, it does not report
-extents as shared anymore.
+This fixes direct IO writes with nowait and dsync not getting synced after
+the writes complete (except when we fallback to blocking context). The first
+patch is the fix, while the second one only updates a comment that is now
+stale after 6.1-rc1.
 
-This exercises the processing of delayed references for data extents in
-the backref walking code, used by fiemap to determine if an extent is
-shared.
+Patch only applies to current misc-next, because a function prototype
+declaration was recently moved out of ctree.h into btrfs_inode.h. I left
+a version that applies cleanly against 6.0.6 and 6.1-rc at:
 
-This used to fail until very recently and was fixed by the following
-kernel commit that landed in 6.1-rc2:
+  https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git/log/?h=async_dio_fsync_fix_6.1_6.0
 
-  4fc7b5722824 (""btrfs: fix processing of delayed data refs during backref walking")
+Filipe Manana (2):
+  btrfs: fix lost file sync on direct IO write with nowait and dsync iocb
+  btrfs: update stale comment for nowait direct IO writes
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/279     | 82 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/279.out | 39 +++++++++++++++++++++
- 2 files changed, 121 insertions(+)
- create mode 100755 tests/btrfs/279
- create mode 100644 tests/btrfs/279.out
+ fs/btrfs/btrfs_inode.h |  5 ++++-
+ fs/btrfs/file.c        | 26 ++++++++++++++++++--------
+ fs/btrfs/inode.c       | 14 +++++++++++---
+ 3 files changed, 33 insertions(+), 12 deletions(-)
 
-diff --git a/tests/btrfs/279 b/tests/btrfs/279
-new file mode 100755
-index 00000000..5b5824fd
---- /dev/null
-+++ b/tests/btrfs/279
-@@ -0,0 +1,82 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2022 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 279
-+#
-+# Test that if we have two files with shared extents, after removing one of the
-+# files, if we do a fiemap against the other file, it does not report extents as
-+# shared anymore.
-+#
-+# This exercises the processing of delayed references for data extents in the
-+# backref walking code, used by fiemap to determine if an extent is shared.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick subvol fiemap clone
-+
-+. ./common/filter
-+. ./common/reflink
-+. ./common/punch # for _filter_fiemap_flags
-+
-+_supported_fs btrfs
-+_require_scratch_reflink
-+_require_cp_reflink
-+_require_xfs_io_command "fiemap"
-+
-+_fixed_by_kernel_commit 4fc7b5722824 \
-+	"btrfs: fix processing of delayed data refs during backref walking"
-+
-+run_test()
-+{
-+	local file_path_1=$1
-+	local file_path_2=$2
-+	local do_sync=$3
-+
-+	$XFS_IO_PROG -f -c "pwrite 0 64K" $file_path_1 | _filter_xfs_io
-+	_cp_reflink $file_path_1 $file_path_2
-+
-+	if [ $do_sync -eq 1 ]; then
-+		sync
-+	fi
-+
-+	echo "Fiemap of $file_path_1 before deleting $file_path_2:" | \
-+		_filter_scratch
-+	$XFS_IO_PROG -c "fiemap -v" $file_path_1 | _filter_fiemap_flags
-+
-+	rm -f $file_path_2
-+
-+	echo "Fiemap of $file_path_1 after deleting $file_path_2:" | \
-+		_filter_scratch
-+	$XFS_IO_PROG -c "fiemap -v" $file_path_1 | _filter_fiemap_flags
-+}
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+_scratch_mount
-+
-+# Create two test subvolumes, we'll reflink files between them.
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subv1 | _filter_scratch
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/subv2 | _filter_scratch
-+
-+echo
-+echo "Testing with same subvolume and without transaction commit"
-+echo
-+run_test "$SCRATCH_MNT/subv1/f1" "$SCRATCH_MNT/subv1/f2" 0
-+
-+echo
-+echo "Testing with same subvolume and with transaction commit"
-+echo
-+run_test "$SCRATCH_MNT/subv1/f3" "$SCRATCH_MNT/subv1/f4" 1
-+
-+echo
-+echo "Testing with different subvolumes and without transaction commit"
-+echo
-+run_test "$SCRATCH_MNT/subv1/f5" "$SCRATCH_MNT/subv2/f6" 0
-+
-+echo
-+echo "Testing with different subvolumes and with transaction commit"
-+echo
-+run_test "$SCRATCH_MNT/subv1/f7" "$SCRATCH_MNT/subv2/f8" 1
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/279.out b/tests/btrfs/279.out
-new file mode 100644
-index 00000000..a959a86d
---- /dev/null
-+++ b/tests/btrfs/279.out
-@@ -0,0 +1,39 @@
-+QA output created by 279
-+Create subvolume 'SCRATCH_MNT/subv1'
-+Create subvolume 'SCRATCH_MNT/subv2'
-+
-+Testing with same subvolume and without transaction commit
-+
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Fiemap of SCRATCH_MNT/subv1/f1 before deleting SCRATCH_MNT/subv1/f2:
-+0: [0..127]: shared|last
-+Fiemap of SCRATCH_MNT/subv1/f1 after deleting SCRATCH_MNT/subv1/f2:
-+0: [0..127]: last
-+
-+Testing with same subvolume and with transaction commit
-+
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Fiemap of SCRATCH_MNT/subv1/f3 before deleting SCRATCH_MNT/subv1/f4:
-+0: [0..127]: shared|last
-+Fiemap of SCRATCH_MNT/subv1/f3 after deleting SCRATCH_MNT/subv1/f4:
-+0: [0..127]: last
-+
-+Testing with different subvolumes and without transaction commit
-+
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Fiemap of SCRATCH_MNT/subv1/f5 before deleting SCRATCH_MNT/subv2/f6:
-+0: [0..127]: shared|last
-+Fiemap of SCRATCH_MNT/subv1/f5 after deleting SCRATCH_MNT/subv2/f6:
-+0: [0..127]: last
-+
-+Testing with different subvolumes and with transaction commit
-+
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Fiemap of SCRATCH_MNT/subv1/f7 before deleting SCRATCH_MNT/subv2/f8:
-+0: [0..127]: shared|last
-+Fiemap of SCRATCH_MNT/subv1/f7 after deleting SCRATCH_MNT/subv2/f8:
-+0: [0..127]: last
 -- 
 2.35.1
 

@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38B50C43217
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0903C4321E
 	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Nov 2022 16:16:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230382AbiKAQQI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S230291AbiKAQQI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Tue, 1 Nov 2022 12:16:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53538 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53542 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230291AbiKAQQF (ORCPT
+        with ESMTP id S230357AbiKAQQF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2022 12:16:05 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75E9F1C431
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 09:16:01 -0700 (PDT)
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FBD61C43C
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 09:16:05 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 3100FB81E25
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:00 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5D55EC433C1
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:15:58 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C0DB761668
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:04 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B163AC433B5
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1667319358;
-        bh=tDAA8mxKthMiBQmk7+y+rLW7gD/lsOxJMvLAyvkrj9s=;
+        s=k20201202; t=1667319364;
+        bh=3K3P9e8w5JnraVT1Fw84V2xWefAooN0iMB8CHdOJDYw=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=mlJNDStjU0X9QVcPG6q9E6P6Sz4ZDElUwuLw1cHkBj9bLXHhJg3N/cZBlCIqI+aKJ
-         gBTxRDOhR5gRo/nZYsZQ6kj0fJauVPajn4+YvIlAThHpIdI534KXqiR8mPb8AMW78L
-         bPdtmDDuRdLHi6NGzyzVojK2KC8DwloChAs1jic6Dg5rK4ru3cGjm3OiHrLWsDNLPS
-         QpIFnHdhkE4SLjC/IPA8d5Amrd8bC5uZbljvBPB6Upx+GGkPCq6UMwBJhJ/ydmb3du
-         ypB+qTaJJ+6bWcHFxSklSUt3VxszkUip+VPi9UFzCWulF407VnF+6A6Ebusd0k+8Ym
-         teLOv8nR0Ae5w==
+        b=uTjggoyS60PUZ5NjtCrZ2lAvWjBs5/sI98JX5QHOGaKNWGi2Ko+IswYQABF6rodCb
+         WT3nfG8Y36k5ZCT+fFGcBJBtLC93LJHNW5vtgHvq3+wWgR0pv5llfQ0h4huZc+zOc9
+         7t7lIkRSQEgMtkdiSypuB4qiEHSgZw2S51pjFfE6YqdILhEU/mQccw81MpUGSN+k62
+         Pgh67Bt1HUUefO7kd2x3blcQ3QwbdZuNwSXmPWg0eFalDBbi3oCPxhQD8x3NKsXxdy
+         6DsTMRcai3ITOUGmcMOAwSQ1nB9YvKVH+Yjbwh/L94SlHWah3EzmkfFALN8IvukVQm
+         fIXEg/fq4cbCA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 01/18] btrfs: fix inode list leak during backref walking at resolve_indirect_refs()
-Date:   Tue,  1 Nov 2022 16:15:37 +0000
-Message-Id: <87e27f27fb2ebf760e574f97fd2d2f7d37f50350.1667315100.git.fdmanana@suse.com>
+Subject: [PATCH 07/18] btrfs: send: drop unnecessary backref context field initializations
+Date:   Tue,  1 Nov 2022 16:15:43 +0000
+Message-Id: <1f57dc1e48aa4b4fe4701e72963353d1ac4e4d52.1667315100.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1667315100.git.fdmanana@suse.com>
 References: <cover.1667315100.git.fdmanana@suse.com>
@@ -47,85 +47,58 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-During backref walking, at resolve_indirect_refs(), if we get an error
-we jump to the 'out' label and call ulist_free() on the 'parents' ulist,
-which frees all the elements in the ulist - however that does not free
-any inode lists that may be attached to elements, through the 'aux' field
-of a ulist node, so we end up leaking lists if we have any attached to
-the unodes.
+At find_extent_clone() we are initializing to zero the 'found_itself' and
+'found' fields of the backref context before we use it but we have already
+initialized the structure to zeroes when we declared it on stack, so it's
+pointless to initialize those fields and they are unnecessarily increasing
+the object text size with two "mov" instructions (x86_64).
 
-Fix this by calling free_leaf_list() instead of ulist_free() when we exit
-from resolve_indirect_refs(). The static function free_leaf_list() is
-moved up for this to be possible and it's slightly simplified by removing
-unnecessary code.
+Similarly make the 'extent_len' initialization more clear by using an if-
+-then-else instead of a double assignment to it in case the extent's end
+crosses the i_size boundary.
 
-Fixes: 3301958b7c1d ("Btrfs: add inodes before dropping the extent lock in find_all_leafs")
+Before this change:
+
+   $ size fs/btrfs/send.o
+      text	   data	    bss	    dec	    hex	filename
+     68694	   4252	     16	  72962	  11d02	fs/btrfs/send.o
+
+After this change:
+
+   $ size fs/btrfs/send.o
+      text	   data	    bss	    dec	    hex	filename
+     68678	   4252	     16	  72946	  11cf2	fs/btrfs/send.o
+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/backref.c | 36 +++++++++++++++++-------------------
- 1 file changed, 17 insertions(+), 19 deletions(-)
+ fs/btrfs/send.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 013c2c085229..82c4cad0ca00 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -678,6 +678,18 @@ unode_aux_to_inode_list(struct ulist_node *node)
- 	return (struct extent_inode_elem *)(uintptr_t)node->aux;
- }
- 
-+static void free_leaf_list(struct ulist *ulist)
-+{
-+	struct ulist_node *node;
-+	struct ulist_iterator uiter;
-+
-+	ULIST_ITER_INIT(&uiter);
-+	while ((node = ulist_next(ulist, &uiter)))
-+		free_inode_elem_list(unode_aux_to_inode_list(node));
-+
-+	ulist_free(ulist);
-+}
-+
- /*
-  * We maintain three separate rbtrees: one for direct refs, one for
-  * indirect refs which have a key, and one for indirect refs which do not
-@@ -791,7 +803,11 @@ static int resolve_indirect_refs(struct btrfs_fs_info *fs_info,
- 		cond_resched();
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 63f2ac33e85b..61496d3e1355 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1432,11 +1432,8 @@ static int find_extent_clone(struct send_ctx *sctx,
  	}
- out:
--	ulist_free(parents);
-+	/*
-+	 * We may have inode lists attached to refs in the parents ulist, so we
-+	 * must free them before freeing the ulist and its refs.
-+	 */
-+	free_leaf_list(parents);
- 	return ret;
- }
  
-@@ -1621,24 +1637,6 @@ static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 	return ret;
- }
+ 	backref_ctx.sctx = sctx;
+-	backref_ctx.found = 0;
+ 	backref_ctx.cur_objectid = ino;
+ 	backref_ctx.cur_offset = data_offset;
+-	backref_ctx.found_itself = 0;
+-	backref_ctx.extent_len = num_bytes;
  
--static void free_leaf_list(struct ulist *blocks)
--{
--	struct ulist_node *node = NULL;
--	struct extent_inode_elem *eie;
--	struct ulist_iterator uiter;
--
--	ULIST_ITER_INIT(&uiter);
--	while ((node = ulist_next(blocks, &uiter))) {
--		if (!node->aux)
--			continue;
--		eie = unode_aux_to_inode_list(node);
--		free_inode_elem_list(eie);
--		node->aux = 0;
--	}
--
--	ulist_free(blocks);
--}
--
- /*
-  * Finds all leafs with a reference to the specified combination of bytenr and
-  * offset. key_list_head will point to a list of corresponding keys (caller must
+ 	/*
+ 	 * The last extent of a file may be too large due to page alignment.
+@@ -1445,6 +1442,8 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	 */
+ 	if (data_offset + num_bytes >= ino_size)
+ 		backref_ctx.extent_len = ino_size - data_offset;
++	else
++		backref_ctx.extent_len = num_bytes;
+ 
+ 	/*
+ 	 * Now collect all backrefs.
 -- 
 2.35.1
 

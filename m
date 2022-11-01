@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74584C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Nov 2022 20:12:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51F42C433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Nov 2022 20:12:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230022AbiKAUMQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Nov 2022 16:12:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52104 "EHLO
+        id S229898AbiKAUMV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Nov 2022 16:12:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52176 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230005AbiKAUMO (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2022 16:12:14 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C10AB1D30A
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 13:12:13 -0700 (PDT)
+        with ESMTP id S230005AbiKAUMT (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2022 16:12:19 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F2DC1DF34
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 13:12:18 -0700 (PDT)
 Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out1.suse.de (Postfix) with ESMTP id 7BBBA336C4;
-        Tue,  1 Nov 2022 20:12:12 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTP id B66A51F8C2;
+        Tue,  1 Nov 2022 20:12:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1667333532; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1667333536; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=SBecMNgl5yesEGJcdkt9oBACt3ZwKCLholzF37VtZtg=;
-        b=m3BRssfWBvF1gbzQ4ETRdmWCTXG1NjjUM03ZbmQHjp6lQdzT5zpV6JltEIm7dfFSZ8QmVh
-        pwJAnazBrZQ8+8a4s/fz4J9o87dgBHLLEz8RvW69rTfyJtcN1b7vpno+0ZkYDrfZTJ5ngq
-        dlwqYIQY3uoPi9uikrd9VYDWYchbEaE=
+        bh=J2/5GX8SEtCPrMWScYF+uV97ZwmvFgt3IBXaiF5lsog=;
+        b=dYjbkBeHxsxI8bJgIf/QIusqJWjJxKgDLU3AGzbexDtIVyP2LCziUB6LjccjtSrL72Cbr2
+        XhHykfeA24R8zYUcjNfNP60HevNiDfuUplwdPGmoNzUyc/6LT+buZFGPkPOeMb18LgNquv
+        XMFrWzueNPWJuiq393qwEGU+k1Rcq8g=
 Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 744892C141;
-        Tue,  1 Nov 2022 20:12:12 +0000 (UTC)
+        by relay2.suse.de (Postfix) with ESMTP id AEF172C141;
+        Tue,  1 Nov 2022 20:12:16 +0000 (UTC)
 Received: by ds.suse.cz (Postfix, from userid 10065)
-        id BC88ADA79D; Tue,  1 Nov 2022 21:11:55 +0100 (CET)
+        id 0B222DA79D; Tue,  1 Nov 2022 21:12:00 +0100 (CET)
 From:   David Sterba <dsterba@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH 07/40] btrfs: pass btrfs_inode to btrfs_submit_bio_start_direct_io
-Date:   Tue,  1 Nov 2022 21:11:55 +0100
-Message-Id: <95180f3a98ceb8f2a6ab7e57dbb9fc254bf6d6af.1667331828.git.dsterba@suse.com>
+Subject: [PATCH 09/40] btrfs: pass btrfs_inode to btrfs_submit_metadata_bio
+Date:   Tue,  1 Nov 2022 21:11:59 +0100
+Message-Id: <761056d110d39612bd870386b0e0538494ca0207.1667331828.git.dsterba@suse.com>
 X-Mailer: git-send-email 2.37.3
 In-Reply-To: <cover.1667331828.git.dsterba@suse.com>
 References: <cover.1667331828.git.dsterba@suse.com>
@@ -51,55 +51,64 @@ btrfs_inode.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/btrfs_inode.h | 2 +-
- fs/btrfs/disk-io.c     | 2 +-
- fs/btrfs/inode.c       | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c   | 8 ++++----
+ fs/btrfs/disk-io.h   | 2 +-
+ fs/btrfs/extent_io.c | 2 +-
+ 3 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 4ec6a74dd6ba..a41d4f953bfa 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -416,7 +416,7 @@ void btrfs_submit_data_read_bio(struct inode *inode, struct bio *bio,
- 			int mirror_num, enum btrfs_compression_type compress_type);
- void btrfs_submit_dio_repair_bio(struct inode *inode, struct bio *bio, int mirror_num);
- blk_status_t btrfs_submit_bio_start(struct btrfs_inode *inode, struct bio *bio);
--blk_status_t btrfs_submit_bio_start_direct_io(struct inode *inode,
-+blk_status_t btrfs_submit_bio_start_direct_io(struct btrfs_inode *inode,
- 					      struct bio *bio,
- 					      u64 dio_file_offset);
- int btrfs_check_sector_csum(struct btrfs_fs_info *fs_info, struct page *page,
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6319df271cff..49c2beb72d21 100644
+index ced90987127b..c86513e70ff3 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -645,7 +645,7 @@ static void run_one_async_start(struct btrfs_work *work)
- 		ret = btrfs_submit_bio_start(async->inode, async->bio);
- 		break;
- 	case WQ_SUBMIT_DATA_DIO:
--		ret = btrfs_submit_bio_start_direct_io(&async->inode->vfs_inode,
-+		ret = btrfs_submit_bio_start_direct_io(async->inode,
- 				async->bio, async->dio_file_offset);
- 		break;
- 	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aa27c8b990cf..2c786075196a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7964,11 +7964,11 @@ static blk_status_t btrfs_check_read_dio_bio(struct btrfs_dio_private *dip,
- 	return err;
+@@ -766,9 +766,9 @@ static bool should_async_write(struct btrfs_fs_info *fs_info,
+ 	return true;
  }
  
--blk_status_t btrfs_submit_bio_start_direct_io(struct inode *inode,
-+blk_status_t btrfs_submit_bio_start_direct_io(struct btrfs_inode *inode,
- 					      struct bio *bio,
- 					      u64 dio_file_offset)
+-void btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio, int mirror_num)
++void btrfs_submit_metadata_bio(struct btrfs_inode *inode, struct bio *bio, int mirror_num)
  {
--	return btrfs_csum_one_bio(BTRFS_I(inode), bio, dio_file_offset, false);
-+	return btrfs_csum_one_bio(inode, bio, dio_file_offset, false);
- }
+-	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+ 	struct btrfs_bio *bbio = btrfs_bio(bio);
+ 	blk_status_t ret;
  
- static void btrfs_end_dio_bio(struct btrfs_bio *bbio)
+@@ -783,8 +783,8 @@ void btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio, int mirror_
+ 	 * Kthread helpers are used to submit writes so that checksumming can
+ 	 * happen in parallel across all CPUs.
+ 	 */
+-	if (should_async_write(fs_info, BTRFS_I(inode)) &&
+-	    btrfs_wq_submit_bio(BTRFS_I(inode), bio, mirror_num, 0, WQ_SUBMIT_METADATA))
++	if (should_async_write(fs_info, inode) &&
++	    btrfs_wq_submit_bio(inode, bio, mirror_num, 0, WQ_SUBMIT_METADATA))
+ 		return;
+ 
+ 	ret = btree_csum_one_bio(bio);
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 65cf976b74e8..f2c507fd0e04 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -86,7 +86,7 @@ void btrfs_drop_and_free_fs_root(struct btrfs_fs_info *fs_info,
+ int btrfs_validate_metadata_buffer(struct btrfs_bio *bbio,
+ 				   struct page *page, u64 start, u64 end,
+ 				   int mirror);
+-void btrfs_submit_metadata_bio(struct inode *inode, struct bio *bio, int mirror_num);
++void btrfs_submit_metadata_bio(struct btrfs_inode *inode, struct bio *bio, int mirror_num);
+ #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+ struct btrfs_root *btrfs_alloc_dummy_root(struct btrfs_fs_info *fs_info);
+ #endif
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index cc05ae772fa5..e770cbc5cb6a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -134,7 +134,7 @@ static void submit_one_bio(struct btrfs_bio_ctrl *bio_ctrl)
+ 	btrfs_bio(bio)->file_offset = page_offset(bv->bv_page) + bv->bv_offset;
+ 
+ 	if (!is_data_inode(inode))
+-		btrfs_submit_metadata_bio(inode, bio, mirror_num);
++		btrfs_submit_metadata_bio(BTRFS_I(inode), bio, mirror_num);
+ 	else if (btrfs_op(bio) == BTRFS_MAP_WRITE)
+ 		btrfs_submit_data_write_bio(inode, bio, mirror_num);
+ 	else
 -- 
 2.37.3
 

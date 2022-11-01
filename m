@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0903C4321E
-	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Nov 2022 16:16:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C350C4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue,  1 Nov 2022 16:16:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230291AbiKAQQI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 1 Nov 2022 12:16:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53542 "EHLO
+        id S230393AbiKAQQJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 1 Nov 2022 12:16:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53566 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230357AbiKAQQF (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2022 12:16:05 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FBD61C43C
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 09:16:05 -0700 (PDT)
+        with ESMTP id S230364AbiKAQQH (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Nov 2022 12:16:07 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 67E4E1C90E
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 09:16:03 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id C0DB761668
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:04 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B163AC433B5
-        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:03 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id F28E3611DA
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:02 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E6D33C4347C
+        for <linux-btrfs@vger.kernel.org>; Tue,  1 Nov 2022 16:16:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1667319364;
-        bh=3K3P9e8w5JnraVT1Fw84V2xWefAooN0iMB8CHdOJDYw=;
+        s=k20201202; t=1667319362;
+        bh=5ood/zz0uWAJhNxB/ehvZP6xcqECuC8Jj+qtE+otfaU=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=uTjggoyS60PUZ5NjtCrZ2lAvWjBs5/sI98JX5QHOGaKNWGi2Ko+IswYQABF6rodCb
-         WT3nfG8Y36k5ZCT+fFGcBJBtLC93LJHNW5vtgHvq3+wWgR0pv5llfQ0h4huZc+zOc9
-         7t7lIkRSQEgMtkdiSypuB4qiEHSgZw2S51pjFfE6YqdILhEU/mQccw81MpUGSN+k62
-         Pgh67Bt1HUUefO7kd2x3blcQ3QwbdZuNwSXmPWg0eFalDBbi3oCPxhQD8x3NKsXxdy
-         6DsTMRcai3ITOUGmcMOAwSQ1nB9YvKVH+Yjbwh/L94SlHWah3EzmkfFALN8IvukVQm
-         fIXEg/fq4cbCA==
+        b=O9OxuyxuYj14+vH2raAKOdy1BwnRmIKfUlT3HMISTaHhJl9v20H51H7RdfTq+XS5/
+         6Az9GgjNX1a0mNaHUe4rG3iox48IjYIhEHRx6acsZnGm6y4j70YCCsu+cI08NzrzeL
+         XnMIYrAwsBnsEXhYjl/xXtdDQreLjOzGWr4oWZ1bxfhmk9cnIy/d2E6JDDQ0vfTp44
+         60d7cqNFEqkWiwXPE/sQBQireP8VvCx7Xb79Q7lMLC/SS2moTq0IRo981BZrnuqs+u
+         WOHg4a4sXT4jq/zxzNlSuZAkocOw6Bn9S/6GIMyWLK7Xt9Mrc8f+/LUHqUqXSULDqG
+         1wL5s0IsGAEyw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/18] btrfs: send: drop unnecessary backref context field initializations
-Date:   Tue,  1 Nov 2022 16:15:43 +0000
-Message-Id: <1f57dc1e48aa4b4fe4701e72963353d1ac4e4d52.1667315100.git.fdmanana@suse.com>
+Subject: [PATCH 05/18] btrfs: send: avoid unnecessary path allocations when finding extent clone
+Date:   Tue,  1 Nov 2022 16:15:41 +0000
+Message-Id: <8a45ac7ffef6caedbbee1a22bdbe1c7049091caa.1667315100.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1667315100.git.fdmanana@suse.com>
 References: <cover.1667315100.git.fdmanana@suse.com>
@@ -47,58 +47,78 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At find_extent_clone() we are initializing to zero the 'found_itself' and
-'found' fields of the backref context before we use it but we have already
-initialized the structure to zeroes when we declared it on stack, so it's
-pointless to initialize those fields and they are unnecessarily increasing
-the object text size with two "mov" instructions (x86_64).
-
-Similarly make the 'extent_len' initialization more clear by using an if-
--then-else instead of a double assignment to it in case the extent's end
-crosses the i_size boundary.
-
-Before this change:
-
-   $ size fs/btrfs/send.o
-      text	   data	    bss	    dec	    hex	filename
-     68694	   4252	     16	  72962	  11d02	fs/btrfs/send.o
-
-After this change:
-
-   $ size fs/btrfs/send.o
-      text	   data	    bss	    dec	    hex	filename
-     68678	   4252	     16	  72946	  11cf2	fs/btrfs/send.o
+When looking for an extent clone, at find_extent_clone(), we start by
+allocating a path and then check for cases where we can't have clones
+and exit immediately in those cases. It's a waste of time to allocate
+the path before those cases, so reorder the logic so that we check for
+those cases before allocating the path.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/send.c | 37 ++++++++++++++++---------------------
+ 1 file changed, 16 insertions(+), 21 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 63f2ac33e85b..61496d3e1355 100644
+index 50063ac83830..2226296ca691 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1432,11 +1432,8 @@ static int find_extent_clone(struct send_ctx *sctx,
+@@ -1365,40 +1365,35 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	int compressed;
+ 	u32 i;
+ 
+-	tmp_path = alloc_path_for_send();
+-	if (!tmp_path)
+-		return -ENOMEM;
+-
+-	/* We only use this path under the commit sem */
+-	tmp_path->need_commit_sem = 0;
+-
+ 	if (data_offset >= ino_size) {
+ 		/*
+ 		 * There may be extents that lie behind the file's size.
+ 		 * I at least had this in combination with snapshotting while
+ 		 * writing large files.
+ 		 */
+-		ret = 0;
+-		goto out;
++		return 0;
  	}
  
- 	backref_ctx.sctx = sctx;
--	backref_ctx.found = 0;
- 	backref_ctx.cur_objectid = ino;
- 	backref_ctx.cur_offset = data_offset;
--	backref_ctx.found_itself = 0;
--	backref_ctx.extent_len = num_bytes;
+-	fi = btrfs_item_ptr(eb, path->slots[0],
+-			struct btrfs_file_extent_item);
++	fi = btrfs_item_ptr(eb, path->slots[0], struct btrfs_file_extent_item);
+ 	extent_type = btrfs_file_extent_type(eb, fi);
+-	if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+-		ret = -ENOENT;
+-		goto out;
+-	}
+-	compressed = btrfs_file_extent_compression(eb, fi);
++	if (extent_type == BTRFS_FILE_EXTENT_INLINE)
++		return -ENOENT;
  
- 	/*
- 	 * The last extent of a file may be too large due to page alignment.
-@@ -1445,6 +1442,8 @@ static int find_extent_clone(struct send_ctx *sctx,
- 	 */
- 	if (data_offset + num_bytes >= ino_size)
- 		backref_ctx.extent_len = ino_size - data_offset;
-+	else
-+		backref_ctx.extent_len = num_bytes;
+-	num_bytes = btrfs_file_extent_num_bytes(eb, fi);
+ 	disk_byte = btrfs_file_extent_disk_bytenr(eb, fi);
+-	if (disk_byte == 0) {
+-		ret = -ENOENT;
+-		goto out;
+-	}
++	if (disk_byte == 0)
++		return -ENOENT;
++
++	compressed = btrfs_file_extent_compression(eb, fi);
++	num_bytes = btrfs_file_extent_num_bytes(eb, fi);
+ 	logical = disk_byte + btrfs_file_extent_offset(eb, fi);
  
- 	/*
- 	 * Now collect all backrefs.
++	tmp_path = alloc_path_for_send();
++	if (!tmp_path)
++		return -ENOMEM;
++
++	/* We only use this path under the commit sem */
++	tmp_path->need_commit_sem = 0;
++
+ 	down_read(&fs_info->commit_root_sem);
+ 	ret = extent_from_logical(fs_info, disk_byte, tmp_path,
+ 				  &found_key, &flags);
 -- 
 2.35.1
 

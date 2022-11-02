@@ -2,135 +2,162 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 00773C4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Nov 2022 16:01:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E9E09C43219
+	for <linux-btrfs@archiver.kernel.org>; Wed,  2 Nov 2022 16:11:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231173AbiKBQBj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 2 Nov 2022 12:01:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40948 "EHLO
+        id S231292AbiKBQLK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 2 Nov 2022 12:11:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50172 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230078AbiKBQBc (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2022 12:01:32 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FC862BB1F
-        for <linux-btrfs@vger.kernel.org>; Wed,  2 Nov 2022 09:01:29 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 4265D22D46;
-        Wed,  2 Nov 2022 16:01:28 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1667404888;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=YN0FSnKBjbDHRMmEZz0oARuqL2aGZlq9i5qNrf7g8qM=;
-        b=EuRftTaBZgBHeyX1uP/4vadpVhJDlEwTM/VTA3r2ZxzjVJUKyfRIVUm2nAfFUPpmm9Oxhm
-        dS8kiLb5CkN/vyhd7orgDp4Kd7d9yIcXpBaR1qk8GUC4hwnG5Dox7AA/WKX6ll9Zc+7g66
-        ++isIIMZmycZLSB6Bh4fstZN/70IFlY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1667404888;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=YN0FSnKBjbDHRMmEZz0oARuqL2aGZlq9i5qNrf7g8qM=;
-        b=O6IdndhwDgth5rY0G+oCQl2UrqOlT/YJmthJvLxK7Qdixlv5WEmH7hKdFo99cjqN5GbIXO
-        nq3Yh5r8uNCU+XBQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 12C7E139D3;
-        Wed,  2 Nov 2022 16:01:28 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id yG9TA1iUYmPcFAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 02 Nov 2022 16:01:28 +0000
-Date:   Wed, 2 Nov 2022 17:01:09 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     fdmanana@kernel.org
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/18] btrfs: make send scale and perform better with
- shared extents
-Message-ID: <20221102160108.GH5824@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1667315100.git.fdmanana@suse.com>
+        with ESMTP id S231272AbiKBQLI (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Nov 2022 12:11:08 -0400
+Received: from mail-pf1-x429.google.com (mail-pf1-x429.google.com [IPv6:2607:f8b0:4864:20::429])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA1D72C667;
+        Wed,  2 Nov 2022 09:11:07 -0700 (PDT)
+Received: by mail-pf1-x429.google.com with SMTP id b185so16820222pfb.9;
+        Wed, 02 Nov 2022 09:11:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=Mngda3aHEeBTLGy2LfOMAwbMGwmKJm3kMZgi9Ib34ls=;
+        b=CzwkZPeCCOjWsyC7BlL9IBJTrlmYa77xNpFSOioq+e8OPdv5fbZ/zAK/WD5VaCSnaf
+         5wiT7RR/cG5GPZCjJ+Co+cRbnq0d7qvJjY3sdWpdys5S6A8w0OZe4/5smnTYFKe3NLzZ
+         5wcozYB2mpTn2ymfQyRigL4lpLb5qvdDX4Kdyh4H+2z75vNY4RC4jXXiiTVaGfLOy97h
+         uLbe3bGG1wM1TT2K00V5wMH2vpszUj/G4ZhsAUVnBiAEAK3CxOz0DxDqHYdVVOTDhWjV
+         zp2OhnRtDn0qTZBfVT4zVHKT7w33B/qlC8Fh+c591akUyRXj9kHwG407cxvWxSpLW5pP
+         0PDQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Mngda3aHEeBTLGy2LfOMAwbMGwmKJm3kMZgi9Ib34ls=;
+        b=w9VuzM3+4av5YPDjdTsGCrJgB88BI5SteH1uSjpOIPArMv/r7rxC5oA8fA/OXKMPLN
+         QWsA/9/GJu+HMX+vBqSiXBzsQ2g+ISm0SdxA2yIbuFheWxmA1z7sYGxBKwo2T5b4ktUi
+         yvtKZo8JRnf5ZQfk62p8fdpO41aUbXoBDaBtKPk1ZQcd8gazlJVuKbKMieJxoTRG0hf/
+         webbdYKzJ7cSdkPeFfibMWJp6KXgoQF34Y/JQcMeVxp9WAVseUg6LCaf04dn/F/CtTzS
+         d+u5R/OGURorFfJNYeJpEE3H1AFbQdWYcU3NGqfqXwOK6fNg2IVF19khxUP5khLBcjEc
+         34kw==
+X-Gm-Message-State: ACrzQf2oCZCoDfrfovZvAaTvyUBTB7roBqt+ndZ+GQ5dyFS/bIH1RzsD
+        bYQ+YVHuCV746JZy7x8Y4sInFyl8MSHV3A==
+X-Google-Smtp-Source: AMsMyM7hDOKBTXi34y4zB4HRcT4xPCgGrRzz1Zqhk7+jgpV1qJt102zpwOy+bMEbiQ6tv1xeWLGSXw==
+X-Received: by 2002:a05:6a00:88f:b0:52c:6962:274f with SMTP id q15-20020a056a00088f00b0052c6962274fmr26591050pfj.12.1667405466831;
+        Wed, 02 Nov 2022 09:11:06 -0700 (PDT)
+Received: from fedora.hsd1.ca.comcast.net ([2601:644:8002:1c20::8080])
+        by smtp.googlemail.com with ESMTPSA id ms4-20020a17090b234400b00210c84b8ae5sm1632101pjb.35.2022.11.02.09.11.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 02 Nov 2022 09:11:06 -0700 (PDT)
+From:   "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+To:     linux-fsdevel@vger.kernel.org
+Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
+        linux-nilfs@vger.kernel.org, linux-mm@kvack.org,
+        "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Subject: [PATCH v4 00/23] Convert to filemap_get_folios_tag()
+Date:   Wed,  2 Nov 2022 09:10:08 -0700
+Message-Id: <20221102161031.5820-1-vishal.moola@gmail.com>
+X-Mailer: git-send-email 2.38.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1667315100.git.fdmanana@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Nov 01, 2022 at 04:15:36PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> There are two problems with send regarding cloned extents:
-> 
-> 1) Sometimes it ends up not cloning whole extents, but only a section of
->    the extents, reducing in less extent sharing at the receiver and extra
->    IO on the send side (reading data, issuing write commands) and on the
->    receiver side too (writing more data). This is not only not optimal
->    but it also surprises users and often gets reported (such as in the
->    thread referenced in patch 09/18);
-> 
-> 2) When we find that a data extent is directly shared more than 64 times,
->    we don't attempt to clone it, because that requires backref walking to
->    determine from which inode and range we should clone from and for
->    extents with many backreferences, that can be too slow, specially if
->    we have many thousands of extents with a huge amount of sharing each.
-> 
-> This patchset solves the first problem completely (patch 09/18), and for
-> the second issue while not fully eliminated, it's significantly improved.
-> In a test scenario with 50 000 files where each file is reflinked 50 times,
-> there's a performance improvement of ~70% to ~75% for both full and
-> incremental send operations. This test and results are in the changelog
-> of patch 17/18.
-> 
-> After this we can now bump the limit from 64 max references to 1024, which
-> is still a conservative value, but the goal is to get rid of such limit in
-> the future (some more work required for that, but we're getting there).
-> 
-> There's also a nice and simple performance optimization when processing
-> extents that are not shared and we are using only one clone source (the
-> send root itself, very common), with gains varying between ~9% to ~18%
-> in some small scale tests where there are no shared extents or the majority
-> of the extents are not shared. That's patch 08/18.
-> 
-> The rest is just refactoring and cleanups in preparation for the optimization
-> work for send, and a few bug fixes for error paths in the backref walking
-> code and qgroup self tests. In particular the error paths for backref walking
-> are important because with the latest patches they are triggered not just in
-> case an error happens but also when the backref walking callbacks tell the
-> backref walking code to stop early.
-> 
-> More details in the changelogs of the patches.
-> 
-> I've also left this in a git tree at:
-> 
->   https://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git/log/?h=send_clone_performance_scalability
-> 
-> Filipe Manana (18):
->   btrfs: fix inode list leak during backref walking at resolve_indirect_refs()
->   btrfs: fix inode list leak during backref walking at find_parent_nodes()
->   btrfs: fix ulist leaks in error paths of qgroup self tests
->   btrfs: remove pointless and double ulist frees in error paths of qgroup tests
->   btrfs: send: avoid unnecessary path allocations when finding extent clone
->   btrfs: send: update comment at find_extent_clone()
->   btrfs: send: drop unnecessary backref context field initializations
->   btrfs: send: avoid unnecessary backref lookups when finding clone source
->   btrfs: send: optimize clone detection to increase extent sharing
->   btrfs: use a single argument for extent offset in backref walking functions
->   btrfs: use a structure to pass arguments to backref walking functions
->   btrfs: reuse roots ulist on each leaf iteration for iterate_extent_inodes()
->   btrfs: constify ulist parameter of ulist_next()
->   btrfs: send: cache leaf to roots mapping during backref walking
->   btrfs: send: skip unnecessary backref iterations
->   btrfs: send: avoid double extent tree search when finding clone source
->   btrfs: send: skip resolution of our own backref when finding clone source
->   btrfs: send: bump the extent reference count limit for backref walking
+This patch series replaces find_get_pages_range_tag() with
+filemap_get_folios_tag(). This also allows the removal of multiple
+calls to compound_head() throughout.
+It also makes a good chunk of the straightforward conversions to folios,
+and takes the opportunity to introduce a function that grabs a folio
+from the pagecache.
 
-Thanks a lot, the improvements look great. Added to misc-next.
+F2fs and Ceph have quite a lot of work to be done regarding folios, so
+for now those patches only have the changes necessary for the removal of
+find_get_pages_range_tag(), and only support folios of size 1 (which is
+all they use right now anyways).
+
+I've run xfstests on btrfs, ext4, f2fs, and nilfs2, but more testing may be
+beneficial. The page-writeback and filemap changes implicitly work. Testing
+and review of the other changes (afs, ceph, cifs, gfs2) would be appreciated.
+
+---
+v4:
+  Fixed a bug with reference counting in cifs changes
+  - Reported-by: kernel test robot <oliver.sang@intel.com> 
+  Improved commit messages to be more meaningful
+  Got some Acked-bys and Reviewed-bys
+
+v3:
+  Rebased onto upstream 6.1
+  Simplified the ceph patch to only necessary changes
+  Changed commit messages throughout to be clearer
+  Got an Acked-by for another nilfs patch
+  Got Tested-by for afs
+
+v2:
+  Got Acked-By tags for nilfs and btrfs changes
+  Fixed an error arising in f2fs
+  - Reported-by: kernel test robot <lkp@intel.com>
+
+Vishal Moola (Oracle) (23):
+  pagemap: Add filemap_grab_folio()
+  filemap: Added filemap_get_folios_tag()
+  filemap: Convert __filemap_fdatawait_range() to use
+    filemap_get_folios_tag()
+  page-writeback: Convert write_cache_pages() to use
+    filemap_get_folios_tag()
+  afs: Convert afs_writepages_region() to use filemap_get_folios_tag()
+  btrfs: Convert btree_write_cache_pages() to use
+    filemap_get_folio_tag()
+  btrfs: Convert extent_write_cache_pages() to use
+    filemap_get_folios_tag()
+  ceph: Convert ceph_writepages_start() to use filemap_get_folios_tag()
+  cifs: Convert wdata_alloc_and_fillpages() to use
+    filemap_get_folios_tag()
+  ext4: Convert mpage_prepare_extent_to_map() to use
+    filemap_get_folios_tag()
+  f2fs: Convert f2fs_fsync_node_pages() to use filemap_get_folios_tag()
+  f2fs: Convert f2fs_flush_inline_data() to use filemap_get_folios_tag()
+  f2fs: Convert f2fs_sync_node_pages() to use filemap_get_folios_tag()
+  f2fs: Convert f2fs_write_cache_pages() to use filemap_get_folios_tag()
+  f2fs: Convert last_fsync_dnode() to use filemap_get_folios_tag()
+  f2fs: Convert f2fs_sync_meta_pages() to use filemap_get_folios_tag()
+  gfs2: Convert gfs2_write_cache_jdata() to use filemap_get_folios_tag()
+  nilfs2: Convert nilfs_lookup_dirty_data_buffers() to use
+    filemap_get_folios_tag()
+  nilfs2: Convert nilfs_lookup_dirty_node_buffers() to use
+    filemap_get_folios_tag()
+  nilfs2: Convert nilfs_btree_lookup_dirty_buffers() to use
+    filemap_get_folios_tag()
+  nilfs2: Convert nilfs_copy_dirty_pages() to use
+    filemap_get_folios_tag()
+  nilfs2: Convert nilfs_clear_dirty_pages() to use
+    filemap_get_folios_tag()
+  filemap: Remove find_get_pages_range_tag()
+
+ fs/afs/write.c          | 114 +++++++++++++++++++++-------------------
+ fs/btrfs/extent_io.c    |  57 ++++++++++----------
+ fs/ceph/addr.c          |  58 ++++++++++----------
+ fs/cifs/file.c          |  32 +++++++++--
+ fs/ext4/inode.c         |  55 ++++++++++---------
+ fs/f2fs/checkpoint.c    |  49 +++++++++--------
+ fs/f2fs/compress.c      |  13 ++---
+ fs/f2fs/data.c          |  69 +++++++++++++-----------
+ fs/f2fs/f2fs.h          |   5 +-
+ fs/f2fs/node.c          |  72 +++++++++++++------------
+ fs/gfs2/aops.c          |  64 ++++++++++++----------
+ fs/nilfs2/btree.c       |  14 ++---
+ fs/nilfs2/page.c        |  59 +++++++++++----------
+ fs/nilfs2/segment.c     |  44 ++++++++--------
+ include/linux/pagemap.h |  32 +++++++----
+ include/linux/pagevec.h |   8 ---
+ mm/filemap.c            |  84 ++++++++++++++---------------
+ mm/page-writeback.c     |  44 ++++++++--------
+ mm/swap.c               |  10 ----
+ 19 files changed, 465 insertions(+), 418 deletions(-)
+
+-- 
+2.38.1
+

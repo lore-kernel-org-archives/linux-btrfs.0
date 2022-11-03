@@ -2,117 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7B18C433FE
-	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Nov 2022 08:20:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E13CFC43217
+	for <linux-btrfs@archiver.kernel.org>; Thu,  3 Nov 2022 08:49:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230461AbiKCIUm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 3 Nov 2022 04:20:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35258 "EHLO
+        id S231128AbiKCItT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 3 Nov 2022 04:49:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51458 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230394AbiKCIUg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Nov 2022 04:20:36 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BB8786401;
-        Thu,  3 Nov 2022 01:20:34 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7B603220CC;
-        Thu,  3 Nov 2022 08:20:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1667463633; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=ouZNBMNvvrnkZSRBeuTvoKMw9UcQXO1wNpACVbg3cbo=;
-        b=FHIiUHpq8kqmiBvbiZIzQZcHVVijmK/UpBmXYgGDDpKMjhoes0eoyBDNsIOT+feaqkxFxg
-        YaUrdak8yGX8ckWchrmP7gtE+g+RW3hVqzIizF+UtLlNdv0/3dRac3hSUr2TMFwMX+wv1A
-        EpaQKNqflIpCrvhc/yLew8VCMAP9ZTE=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 25B3C13AAF;
-        Thu,  3 Nov 2022 08:20:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id lweEBtF5Y2NYNgAAMHmgww
-        (envelope-from <nborisov@suse.com>); Thu, 03 Nov 2022 08:20:33 +0000
-Message-ID: <357d9e4e-a975-7198-a496-1832d1ade3e9@suse.com>
-Date:   Thu, 3 Nov 2022 10:20:32 +0200
+        with ESMTP id S231221AbiKCItO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Nov 2022 04:49:14 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 31FD2271C;
+        Thu,  3 Nov 2022 01:49:14 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id E521368AA6; Thu,  3 Nov 2022 09:49:09 +0100 (CET)
+Date:   Thu, 3 Nov 2022 09:49:09 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Chris Mason <clm@meta.com>
+Cc:     Andreas Dilger <adilger@dilger.ca>, Christoph Hellwig <hch@lst.de>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        David Sterba <dsterba@suse.cz>,
+        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Damien Le Moal <Damien.LeMoal@wdc.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>, Qu Wenruo <wqu@suse.com>,
+        Jens Axboe <axboe@kernel.dk>,
+        "Darrick J. Wong" <djwong@kernel.org>,
+        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Subject: Re: consolidate btrfs checksumming, repair and bio splitting
+Message-ID: <20221103084909.GA6448@lst.de>
+References: <20221024144411.GA25172@lst.de> <773539e2-b5f1-8386-aa2a-96086f198bf8@meta.com> <20221024171042.GF5824@suse.cz> <9f443843-4145-155b-2fd0-50613a9f7913@wdc.com> <20221026074145.2be5ca09@gandalf.local.home> <20221031121912.GY5824@twin.jikos.cz> <20221102000022.36df0cc1@rorschach.local.home> <20221102062907.GA8619@lst.de> <8AAF3B43-BCD3-43B4-BC78-2E9E8E702792@dilger.ca> <5f742ea1-b1c2-5a61-53a7-5f144ca169f7@meta.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.2.2
-Subject: Re: [PATCH] btrfs: fix match incorrectly in dev_args_match_device
-Content-Language: en-US
-To:     Liu Shixin <liushixin2@huawei.com>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20221103083301.626561-1-liushixin2@huawei.com>
-From:   Nikolay Borisov <nborisov@suse.com>
-In-Reply-To: <20221103083301.626561-1-liushixin2@huawei.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <5f742ea1-b1c2-5a61-53a7-5f144ca169f7@meta.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Nov 02, 2022 at 06:07:27PM -0400, Chris Mason wrote:
+> We talked about this at the btrfs meeting today and I'm sure it'll get
+> resolved soon.
 
-
-On 3.11.22 г. 10:33 ч., Liu Shixin wrote:
-> syzkaller found an assert failed:
-> 
->   assertion failed: (args->devid != (u64)-1) || args->missing, in fs/btrfs/volumes.c:6921
-> 
-> This can be trigger when we set devid to (u64)-1) by ioctl. In this case,
-> the match of devid will be skipped and the match of device may be succeed
-> incorrectly.
-> 
-> Patch 562d7b1512f7 introduced this function which is used to match device.
-> This function contaions two matching scenarios, we can distinguish them by
-> checking the value of args->missing rather than check whether args->devid
-> and args->uuid is default value.
-> 
-> Reported-by: syzbot+031687116258450f9853@syzkaller.appspotmail.com
-> Fixes: 562d7b1512f7 ("btrfs: handle device lookup with btrfs_dev_lookup_args")
-> Signed-off-by: Liu Shixin <liushixin2@huawei.com>
-
-Reviewed-by: Nikolay Borisov <nborisov@suse.com>
-
-> ---
->   fs/btrfs/volumes.c | 16 ++++++++--------
->   1 file changed, 8 insertions(+), 8 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 94ba46d57920..bf2d886cfb4b 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -6918,18 +6918,18 @@ static bool dev_args_match_fs_devices(const struct btrfs_dev_lookup_args *args,
->   static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
->   				  const struct btrfs_device *device)
->   {
-> -	ASSERT((args->devid != (u64)-1) || args->missing);
-> +	if (args->missing) {
-> +		if (test_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state) &&
-> +		    !device->bdev)
-> +			return true;
-> +		return false;
-> +	}
->   
-> -	if ((args->devid != (u64)-1) && device->devid != args->devid)
-> +	if (device->devid != args->devid)
->   		return false;
->   	if (args->uuid && memcmp(device->uuid, args->uuid, BTRFS_UUID_SIZE) != 0)
->   		return false;
-> -	if (!args->missing)
-> -		return true;
-> -	if (test_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &device->dev_state) &&
-> -	    !device->bdev)
-> -		return true;
-> -	return false;
-> +	return true;
->   }
->   
->   /*
+Thanks.  That wasn't my impression so far, but I'm glad I was wrong.

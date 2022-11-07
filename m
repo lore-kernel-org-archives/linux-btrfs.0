@@ -2,208 +2,130 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C553DC4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Nov 2022 09:46:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C2B9EC4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  7 Nov 2022 12:22:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231865AbiKGJqO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 7 Nov 2022 04:46:14 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39932 "EHLO
+        id S232112AbiKGMWN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 7 Nov 2022 07:22:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49126 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231861AbiKGJqL (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2022 04:46:11 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ADC7518375;
-        Mon,  7 Nov 2022 01:46:09 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 4401A60FA2;
-        Mon,  7 Nov 2022 09:46:09 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AB8EDC43142;
-        Mon,  7 Nov 2022 09:46:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1667814368;
-        bh=wFvcsLMFbhzjBuDFLZXeBaOLJuL2mPqVmFxuTKWPh+M=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=ZkqZA5NRPmUxPNxr9e2s8B8xHMIY9fe6l61zZoUofLTneZhcYieimM4yE5cp4ikQP
-         airFjLIFbxXhBRM4qRZadSZ/Q6ki3CNcfwtweIQOJ+e78XT0bhVXrsncEuK0CHi3XZ
-         wV2ScnoK+q62um2WB2+2iq/CQSZ8Qspn8fS0KWyxp07GfdGLGdT3aith3aCywlbnPq
-         GUuBvSDrBnpqvMKxPgDF1WaB8Hf8HYo5oALCMDXajY/R6w9ooofdkbc4xS9M6jPT4P
-         BoIoG5WBcBVv4m5NdkrD5qrI7vz1WTXT2j7kWvpAC61qgChrzXhNKYt9qBEZlSLxPa
-         YUPsajAqQinrw==
-Received: by mail-oa1-f54.google.com with SMTP id 586e51a60fabf-13ae8117023so12020552fac.9;
-        Mon, 07 Nov 2022 01:46:08 -0800 (PST)
-X-Gm-Message-State: ACrzQf272UeBnYh8aLRC4+yurGLG+40FvQmNzgJzBYpxtLtmT4cqnQP4
-        6KLvsTQryx4aANZNGVQ2zbd5/7+9L5JiRR4iJoc=
-X-Google-Smtp-Source: AMsMyM77akpsaW5PlYw7dmyRvnDxpBHl9EO1ad5w+3EPEF3yMakUzFJWCtcPURl2TLpKia0b+TpzqdWu3uFR+GEArtM=
-X-Received: by 2002:a05:6870:2052:b0:132:7b2:2fe6 with SMTP id
- l18-20020a056870205200b0013207b22fe6mr29541489oad.98.1667814367860; Mon, 07
- Nov 2022 01:46:07 -0800 (PST)
+        with ESMTP id S232024AbiKGMWM (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Nov 2022 07:22:12 -0500
+Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DF498D62;
+        Mon,  7 Nov 2022 04:22:11 -0800 (PST)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.nyi.internal (Postfix) with ESMTP id 11E815C0185;
+        Mon,  7 Nov 2022 07:22:11 -0500 (EST)
+Received: from mailfrontend2 ([10.202.2.163])
+  by compute3.internal (MEProxy); Mon, 07 Nov 2022 07:22:11 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kroah.com; h=cc
+        :cc:content-transfer-encoding:content-type:date:date:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1667823731; x=
+        1667910131; bh=XvW4y+OvD3m2wCaNiof4U12PyYREji7eszG/mpI1LJg=; b=d
+        XvlOoXdkOt9jxdzFm/kSPsHuEJuybuMgQW6wLPlscY6S5UrS/kYnkx1c6ayyTBXs
+        /DPh6uP2/Sha6g/j3EsZpJ91X+Dy/T1PrLzLIbZ47mk4kSVQhLwZapUxiZQjBWKN
+        ywNnsXwRBw7VbeuaOmkiz4k6RBEn8tkSvWGFrJ5qVqortCg/tvbWzVTxbg3rs8/h
+        PoOl5Pk6XHK5Ii/LHSbMYm4b7kesM7GaNhHqDwZWST3sJ26DMyweNfjVln27Wuoc
+        iIxauQttHip5yxyV0PCTScnfjs+bQ8BdKwYF0nDGUaZEX6I2blugluLjk+yfpcJI
+        tmg43KmDVrYpCbjDbVSrg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-transfer-encoding
+        :content-type:date:date:feedback-id:feedback-id:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to:x-me-proxy:x-me-proxy
+        :x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1667823731; x=
+        1667910131; bh=XvW4y+OvD3m2wCaNiof4U12PyYREji7eszG/mpI1LJg=; b=w
+        meYzvu4h+miaHQgps7+s+bM5+JX9pnBCo32ruyLkrUlfm4LWbs4Cd76V0Qc4+l3i
+        eELSgmiwtfaKYOtD2NcHVCG6Txxs3Vvbk9ppOSQV9ANAtHoax76mMbpq95VT/8ET
+        onY7Jv2qXHiWzMagw7Pxt20azD8pTVbX36rcpzff4rSv4rJDtUn2S4K5nP1Qze9B
+        Bg00/nvOamcgqcFGTveFmr3DHIfIS3bz20Rk/Tt1JYyg5HVouzKy9YsGKSuv3JJT
+        Dky9mxtztmtqQr8nQX5gLXfyFEHMZXWQ5t4VGG5T7SdXg1rhPRfmGCSBsdreUx6q
+        g6c6MsXrp3k4vDVgKPZLQ==
+X-ME-Sender: <xms:cvhoY07i2M1xQ9o1Dl9j1nJ5Fkr4olQmZQQ8mdwtDKFmZVHZF5LfGw>
+    <xme:cvhoY16LiAyR8eJ3ZaUZ6HUe2hKrS2F2jNVVQZzGskDq4I4gIDRsxrAKS8WVMAz_E
+    iK5w9NCXjzWvg>
+X-ME-Received: <xmr:cvhoYzcjYvmvLvvgZuOnBlujXoXPGtwjUFYSFunJq-k0wcr16yBq8vr6d-Tw9IwtiuY01pnOT-mLu4w9RcUbAVTdLdEqywkh>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvgedrvdekgdefkecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
+    fjughrpeffhffvvefukfhfgggtugfgjgesthekredttddtjeenucfhrhhomhepifhrvghg
+    ucfmjfcuoehgrhgvgheskhhrohgrhhdrtghomheqnecuggftrfgrthhtvghrnhepleekhe
+    ejjeeiheejvdetheejveekudegueeigfefudefgfffhfefteeuieekudefnecuffhomhgr
+    ihhnpehkvghrnhgvlhdrohhrghenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmh
+    epmhgrihhlfhhrohhmpehgrhgvgheskhhrohgrhhdrtghomh
+X-ME-Proxy: <xmx:cvhoY5LUA8jU37n3O_TXdPulu42ZXniMtom4TE69TVhZF8EH0QgJ1Q>
+    <xmx:cvhoY4JyeGltXpyD1DCAMIN9JvfxZzj88GoEXV0W6IMRfMPnPQLf1Q>
+    <xmx:cvhoY6wp6OtnGLChppzrMeyrAur7h5j11wVM5etQ8P5qKgF4hmN8IQ>
+    <xmx:c_hoY1CpyOvhlV82Kv7SD0pvO-aTFTlMxrIdUmOBLFxucdm5KhU7vQ>
+Feedback-ID: i787e41f1:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
+ 7 Nov 2022 07:22:10 -0500 (EST)
+Date:   Mon, 7 Nov 2022 13:22:07 +0100
+From:   Greg KH <greg@kroah.com>
+To:     fdmanana@kernel.org
+Cc:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>,
+        =?utf-8?B?0JzQsNGA0Log0JrQvtGA0LXQvdCx0LXRgNCz?= 
+        <socketpair@gmail.com>, David Sterba <dsterba@suse.com>
+Subject: Re: [PATCH for 5.15.x] btrfs: fix lost file sync on direct IO write
+ with nowait and dsync iocb
+Message-ID: <Y2j4bx15xkJx42Kh@kroah.com>
+References: <3046b907b319071aef61d0a1b3dfaf0f71f2c9aa.1667582440.git.fdmanana@suse.com>
 MIME-Version: 1.0
-References: <fbbab438744d69d4882dbe6a2125a32affa20cd9.1667813872.git.fdmanana@suse.com>
-In-Reply-To: <fbbab438744d69d4882dbe6a2125a32affa20cd9.1667813872.git.fdmanana@suse.com>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Mon, 7 Nov 2022 09:45:31 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7UqVJtYpG51q7QnEL8g3kZBB_ELyx9xCU5=2KLvS29zg@mail.gmail.com>
-Message-ID: <CAL3q7H7UqVJtYpG51q7QnEL8g3kZBB_ELyx9xCU5=2KLvS29zg@mail.gmail.com>
-Subject: Re: [PATCH] generic: check direct IO writes with io_uring and O_DSYNC
- are durable
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <3046b907b319071aef61d0a1b3dfaf0f71f2c9aa.1667582440.git.fdmanana@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Nov 7, 2022 at 9:44 AM <fdmanana@kernel.org> wrote:
->
+On Mon, Nov 07, 2022 at 09:41:35AM +0000, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
->
-> Test that direct IO writes with io_uring and O_DSYNC are durable if a power
-> failure happens after they complete.
->
-> This is motivated by a regression on btrfs, affecting 5.15 stable kernels
-> and kernels up to 6.0, where often the writes were not persisted (same
-> behaviour as if O_DSYNC was not provided). This was recently fixed by the
-> following commit:
->
-> 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
-
-Wrong copy-paste, this was meant to be:
-
-8184620ae212 ("btrfs: fix lost file sync on direct IO write with
-nowait and dsync iocb")
-
-Thanks.
-
-
->
+> 
+> commit 8184620ae21213d51eaf2e0bd4186baacb928172 upstream.
+> 
+> When doing a direct IO write using a iocb with nowait and dsync set, we
+> end up not syncing the file once the write completes.
+> 
+> This is because we tell iomap to not call generic_write_sync(), which
+> would result in calling btrfs_sync_file(), in order to avoid a deadlock
+> since iomap can call it while we are holding the inode's lock and
+> btrfs_sync_file() needs to acquire the inode's lock. The deadlock happens
+> only if the write happens synchronously, when iomap_dio_rw() calls
+> iomap_dio_complete() before it returns. Instead we do the sync ourselves
+> at btrfs_do_write_iter().
+> 
+> For a nowait write however we can end up not doing the sync ourselves at
+> at btrfs_do_write_iter() because the write could have been queued, and
+> therefore we get -EIOCBQUEUED returned from iomap in such case. That makes
+> us skip the sync call at btrfs_do_write_iter(), as we don't do it for
+> any error returned from btrfs_direct_write(). We can't simply do the call
+> even if -EIOCBQUEUED is returned, since that would block the task waiting
+> for IO, both for the data since there are bios still in progress as well
+> as potentially blocking when joining a log transaction and when syncing
+> the log (writing log trees, super blocks, etc).
+> 
+> So let iomap do the sync call itself and in order to avoid deadlocks for
+> the case of synchronous writes (without nowait), use __iomap_dio_rw() and
+> have ourselves call iomap_dio_complete() after unlocking the inode.
+> 
+> A test case will later be sent for fstests, after this is fixed in Linus'
+> tree.
+> 
+> Fixes: 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
+> Reported-by: Марк Коренберг <socketpair@gmail.com>
+> Link: https://lore.kernel.org/linux-btrfs/CAEmTpZGRKbzc16fWPvxbr6AfFsQoLmz-Lcg-7OgJOZDboJ+SGQ@mail.gmail.com/
+> CC: stable@vger.kernel.org # 6.0+
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: David Sterba <dsterba@suse.com>
 > ---
->  tests/generic/703     | 104 ++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/703.out |   2 +
->  2 files changed, 106 insertions(+)
->  create mode 100755 tests/generic/703
->  create mode 100644 tests/generic/703.out
->
-> diff --git a/tests/generic/703 b/tests/generic/703
-> new file mode 100755
-> index 00000000..39ae3773
-> --- /dev/null
-> +++ b/tests/generic/703
-> @@ -0,0 +1,104 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (C) 2022 SUSE Linux Products GmbH. All Rights Reserved.
-> +#
-> +# FS QA Test 703
-> +#
-> +# Test that direct IO writes with io_uring and O_DSYNC are durable if a power
-> +# failure happens after they complete.
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick log prealloc io_uring
-> +
-> +_cleanup()
-> +{
-> +       _cleanup_flakey
-> +       cd /
-> +       rm -r -f $tmp.*
-> +}
-> +
-> +. ./common/filter
-> +. ./common/dmflakey
-> +
-> +fio_config=$tmp.fio
-> +fio_out=$tmp.fio.out
-> +test_file="${SCRATCH_MNT}/foo"
-> +
-> +[ $FSTYP == "btrfs" ] &&
-> +       _fixed_by_kernel_commit 8184620ae212 \
-> +       "btrfs: fix lost file sync on direct IO write with nowait and dsync iocb"
-> +
-> +_supported_fs generic
-> +# We allocate 256M of data for the test file, so require a higher size of 512M
-> +# which gives a margin of safety for a COW filesystem like btrfs (where metadata
-> +# is always COWed).
-> +_require_scratch_size $((512 * 1024))
-> +_require_odirect
-> +_require_io_uring
-> +_require_dm_target flakey
-> +_require_xfs_io_command "falloc"
-> +
-> +cat >$fio_config <<EOF
-> +[test_io_uring_dio_dsync]
-> +ioengine=io_uring
-> +direct=1
-> +bs=64K
-> +sync=1
-> +filename=$test_file
-> +rw=randwrite
-> +time_based
-> +runtime=10
-> +EOF
-> +
-> +_require_fio $fio_config
-> +
-> +_scratch_mkfs >>$seqres.full 2>&1
-> +_require_metadata_journaling $SCRATCH_DEV
-> +_init_flakey
-> +_mount_flakey
-> +
-> +# We do 64K writes in the fio job.
-> +_require_congruent_file_oplen $SCRATCH_MNT $((64 * 1024))
-> +
-> +touch $test_file
-> +
-> +# On btrfs IOCB_NOWAIT writes can only be done on NOCOW files, so enable
-> +# nodatacow on the file if we are running on btrfs.
-> +if [ $FSTYP == "btrfs" ]; then
-> +       _require_chattr C
-> +       $CHATTR_PROG +C $test_file
-> +fi
-> +
-> +$XFS_IO_PROG -c "falloc 0 256M" $test_file
-> +
-> +# Persist everything, make sure the file exists after power failure.
-> +sync
-> +
-> +echo -e "Running fio with config:\n" >> $seqres.full
-> +cat $fio_config >> $seqres.full
-> +
-> +$FIO_PROG $fio_config --output=$fio_out
-> +
-> +echo -e "\nOutput from fio:\n" >> $seqres.full
-> +cat $fio_out >> $seqres.full
-> +
-> +digest_before=$(_md5_checksum $test_file)
-> +
-> +# Simulate a power failure and mount the filesystem to check that all the data
-> +# previously written are available.
-> +_flakey_drop_and_remount
-> +
-> +digest_after=$(_md5_checksum $test_file)
-> +
-> +if [ "$digest_after" != "$digest_before" ]; then
-> +       echo "Error: not all file data got persisted."
-> +       echo "Digest before power failure: $digest_before"
-> +       echo "Digest after power failure:  $digest_after"
-> +fi
-> +
-> +_unmount_flakey
-> +
-> +# success, all done
-> +echo "Silence is golden"
-> +status=0
-> +exit
-> diff --git a/tests/generic/703.out b/tests/generic/703.out
-> new file mode 100644
-> index 00000000..fba62571
-> --- /dev/null
-> +++ b/tests/generic/703.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 703
-> +Silence is golden
-> --
-> 2.35.1
->
+> 
+> The commit in the Fixes tag was backported to 5.15 stable releases, so
+> this patch is meant for 5.15.x and was tested on top of 5.15.77.
+
+Now queued up, thanks.
+
+greg k-h

@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A77F6C433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Nov 2022 11:50:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E997C4321E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Nov 2022 11:50:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233446AbiKKLuu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 11 Nov 2022 06:50:50 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53546 "EHLO
+        id S233270AbiKKLuv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 11 Nov 2022 06:50:51 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53554 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233426AbiKKLus (ORCPT
+        with ESMTP id S233437AbiKKLus (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 11 Nov 2022 06:50:48 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F1B8F27910
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 03:50:46 -0800 (PST)
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B708527DFE
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 03:50:47 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 8CFC4B825D2
+        by ams.source.kernel.org (Postfix) with ESMTPS id 5B472B825D1
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 11:50:47 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 913D1C433C1
         for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 11:50:45 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CA552C433D6
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 11:50:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1668167444;
-        bh=SLaN3flFkRefdXdkhA2P2UmXgAW4s+Hy7QIBAM2yyCU=;
+        s=k20201202; t=1668167446;
+        bh=flc+OlLp4siZK4hJVRla/9qefL5DIv3KYEKILD+W8GE=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=ft17+chNWUaiNbZy9GXhSU8Lf8qUybip+5G1I+BDUkqPmwChNGMQfcUSR3ocY6Xxl
-         TBGOzLsovO77heYrtvQuVitktTknaghRuh2tVD4p4xSPvTg9wFR80SVDhJmVw43GF7
-         X/pSwyQCUKpfRQVQhwC1JLVJhYavmPeDsdeq7BWDUIh3dG7tl+pBegYi+Y8SG5gwz2
-         6IM+EVdE2quTMqIX8iw7b08LFKu7ZJeLE0neATbd7ko8rh9LZPASqncDizfH7Fzm69
-         mUrxsUTHxTVI8ba7SRzhhZb507dxfghRIGYfvgrNdZqWha2WFzqNNNQq90MvnCeYy8
-         OHPrayopYwPXw==
+        b=Omshl2UKV3IOIFNtXmswTD5ISmNTw8Xq3xNN7SteDZm7Ad2FXyu7VEsbVzY7GP5Eu
+         6lJRF6Q/OJmMSuULOc44Bel0MXQ4rpWLGInzUOjaEjyrRcdKNfmwzZxrRcBEYdpqBT
+         f1jq4SM6CdxC6AeLP/hBo2zGKCwVLiM/f0OtvbW8xS0gBOaQJY5Kvz3j4RZ9OpNp/i
+         4NoPb+DJf2Z95bDEa9D4tmClVW8EGKKUY441MwUhTFpRvbTw+aP1MMPyZ9AAeb6AY5
+         BrEvKMWrFpY88ML3yahE87tSQm3f3QcVo1fxdgio09okmJ82ApkN6/C8gOYjQrZEF4
+         UHnrbUJHCmfQA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/9] btrfs: allow passing a cached state record to count_range_bits()
-Date:   Fri, 11 Nov 2022 11:50:32 +0000
-Message-Id: <76708fd3ce546fb710ddc6f8792cc85f8d592620.1668166764.git.fdmanana@suse.com>
+Subject: [PATCH 8/9] btrfs: use cached state when looking for delalloc ranges with fiemap
+Date:   Fri, 11 Nov 2022 11:50:34 +0000
+Message-Id: <d7bee83ed765fe81b96349c7de00cd2e647d228b.1668166764.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1668166764.git.fdmanana@suse.com>
 References: <cover.1668166764.git.fdmanana@suse.com>
@@ -48,18 +48,18 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-An inode's io_tree can be quite large and there are cases where due to
-delalloc it can have thousands of extent state records, which makes the
-red black tree have a depth of 10 or more, making the operation of
-count_range_bits() slow if we repeatedly call it for a range that starts
-where, or after, the previous one we called it for. Such use cases are
-when searching for delalloc in a file range that corresponds to a hole or
-a prealloc extent, which is done during lseek SEEK_HOLE/DATA and fiemap.
+During fiemap, whenever we find a hole or prealloc extent, we will look
+for delalloc in that range, and one of the things we do for that is to
+find out ranges in the inode's io_tree marked with EXTENT_DELALLOC, using
+calls to count_range_bits().
 
-So introduce a cached state parameter to count_range_bits() which we use
-to store the last extent state record we visited, and then allow the
-caller to pass it again on its next call to count_range_bits(). The next
-patches in the series will make fiemap and lseek use the new parameter.
+Since we process file extents from left to right, if we have a file with
+several holes or prealloc extents, we benefit from keeping a cached extent
+state record for calls to count_range_bits(). Most of the time the last
+extent state record we visited in one call to count_range_bits() matches
+the first extent state record we will use in the next call to
+count_range_bits(), so there's a benefit here. So use an extent state
+record to cache results from count_range_bits() calls during fiemap.
 
 This change is part of a patchset that has the goal to make performance
 better for applications that use lseek's SEEK_HOLE and SEEK_DATA modes to
@@ -83,131 +83,157 @@ Link: https://lore.kernel.org/linux-btrfs/20221106073028.71F9.409509F4@e16-tech.
 Link: https://lore.kernel.org/linux-btrfs/CAL3q7H5NSVicm7nYBJ7x8fFkDpno8z3PYt5aPU43Bajc1H0h1Q@mail.gmail.com/
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.c | 47 ++++++++++++++++++++++++++++++++++++---
- fs/btrfs/extent-io-tree.h |  3 ++-
- fs/btrfs/file.c           |  3 ++-
- fs/btrfs/inode.c          |  2 +-
- 4 files changed, 49 insertions(+), 6 deletions(-)
+ fs/btrfs/extent_io.c | 11 ++++++++++-
+ fs/btrfs/file.c      | 10 +++++++---
+ fs/btrfs/file.h      |  1 +
+ 3 files changed, 18 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
-index 285b0ff6e953..6b0d78df7eee 100644
---- a/fs/btrfs/extent-io-tree.c
-+++ b/fs/btrfs/extent-io-tree.c
-@@ -1521,9 +1521,11 @@ void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
-  */
- u64 count_range_bits(struct extent_io_tree *tree,
- 		     u64 *start, u64 search_end, u64 max_bytes,
--		     u32 bits, int contig)
-+		     u32 bits, int contig,
-+		     struct extent_state **cached_state)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index bf19011037d1..1e8d58fc0806 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3698,6 +3698,7 @@ static int fiemap_search_slot(struct btrfs_inode *inode, struct btrfs_path *path
+ static int fiemap_process_hole(struct btrfs_inode *inode,
+ 			       struct fiemap_extent_info *fieinfo,
+ 			       struct fiemap_cache *cache,
++			       struct extent_state **delalloc_cached_state,
+ 			       struct btrfs_backref_share_check_ctx *backref_ctx,
+ 			       u64 disk_bytenr, u64 extent_offset,
+ 			       u64 extent_gen,
+@@ -3722,6 +3723,7 @@ static int fiemap_process_hole(struct btrfs_inode *inode,
+ 		bool delalloc;
+ 
+ 		delalloc = btrfs_find_delalloc_in_range(inode, cur_offset, end,
++							delalloc_cached_state,
+ 							&delalloc_start,
+ 							&delalloc_end);
+ 		if (!delalloc)
+@@ -3892,6 +3894,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
  {
--	struct extent_state *state;
-+	struct extent_state *state = NULL;
-+	struct extent_state *cached;
- 	u64 cur_start = *start;
- 	u64 total_bytes = 0;
- 	u64 last = 0;
-@@ -1534,11 +1536,41 @@ u64 count_range_bits(struct extent_io_tree *tree,
+ 	const u64 ino = btrfs_ino(inode);
+ 	struct extent_state *cached_state = NULL;
++	struct extent_state *delalloc_cached_state = NULL;
+ 	struct btrfs_path *path;
+ 	struct fiemap_cache cache = { 0 };
+ 	struct btrfs_backref_share_check_ctx *backref_ctx;
+@@ -3966,6 +3969,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 			const u64 range_end = min(key.offset, lockend) - 1;
  
- 	spin_lock(&tree->lock);
+ 			ret = fiemap_process_hole(inode, fieinfo, &cache,
++						  &delalloc_cached_state,
+ 						  backref_ctx, 0, 0, 0,
+ 						  prev_extent_end, range_end);
+ 			if (ret < 0) {
+@@ -4006,6 +4010,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 						 extent_len, flags);
+ 		} else if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+ 			ret = fiemap_process_hole(inode, fieinfo, &cache,
++						  &delalloc_cached_state,
+ 						  backref_ctx,
+ 						  disk_bytenr, extent_offset,
+ 						  extent_gen, key.offset,
+@@ -4013,6 +4018,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 		} else if (disk_bytenr == 0) {
+ 			/* We have an explicit hole. */
+ 			ret = fiemap_process_hole(inode, fieinfo, &cache,
++						  &delalloc_cached_state,
+ 						  backref_ctx, 0, 0, 0,
+ 						  key.offset, extent_end - 1);
+ 		} else {
+@@ -4070,7 +4076,8 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 	path = NULL;
  
-+	if (!cached_state || !*cached_state)
-+		goto search;
-+
-+	cached = *cached_state;
-+
-+	if (!extent_state_in_tree(cached))
-+		goto search;
-+
-+	if (cached->start <= cur_start && cur_start <= cached->end) {
-+		state = cached;
-+	} else if (cached->start > cur_start) {
-+		struct extent_state *prev;
-+
-+		/*
-+		 * The cached state starts after our search range's start. Check
-+		 * if the previous state record starts at or before the range we
-+		 * are looking for, and if so, use it - this is a common case
-+		 * when there are holes between records in the tree. If there is
-+		 * no previous state record, we can start from our cached state.
-+		 */
-+		prev = prev_state(cached);
-+		if (!prev)
-+			state = cached;
-+		else if (prev->start <= cur_start && cur_start <= prev->end)
-+			state = prev;
-+	}
-+
- 	/*
- 	 * This search will find all the extents that end after our range
- 	 * starts.
- 	 */
--	state = tree_search(tree, cur_start);
-+search:
-+	if (!state)
-+		state = tree_search(tree, cur_start);
-+
- 	while (state) {
- 		if (state->start > search_end)
- 			break;
-@@ -1559,7 +1591,16 @@ u64 count_range_bits(struct extent_io_tree *tree,
- 		}
- 		state = next_state(state);
- 	}
-+
-+	if (cached_state) {
-+		free_extent_state(*cached_state);
-+		*cached_state = state;
-+		if (state)
-+			refcount_inc(&state->refs);
-+	}
-+
- 	spin_unlock(&tree->lock);
-+
- 	return total_bytes;
- }
- 
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index 18ab82f62611..e3eeec380844 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -119,7 +119,8 @@ void __cold extent_state_free_cachep(void);
- 
- u64 count_range_bits(struct extent_io_tree *tree,
- 		     u64 *start, u64 search_end,
--		     u64 max_bytes, u32 bits, int contig);
-+		     u64 max_bytes, u32 bits, int contig,
-+		     struct extent_state **cached_state);
- 
- void free_extent_state(struct extent_state *state);
- int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	if (!stopped && prev_extent_end < lockend) {
+-		ret = fiemap_process_hole(inode, fieinfo, &cache, backref_ctx,
++		ret = fiemap_process_hole(inode, fieinfo, &cache,
++					  &delalloc_cached_state, backref_ctx,
+ 					  0, 0, 0, prev_extent_end, lockend - 1);
+ 		if (ret < 0)
+ 			goto out_unlock;
+@@ -4088,6 +4095,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ 			delalloc = btrfs_find_delalloc_in_range(inode,
+ 								prev_extent_end,
+ 								i_size - 1,
++								&delalloc_cached_state,
+ 								&delalloc_start,
+ 								&delalloc_end);
+ 			if (!delalloc)
+@@ -4102,6 +4110,7 @@ int extent_fiemap(struct btrfs_inode *inode, struct fiemap_extent_info *fieinfo,
+ out_unlock:
+ 	unlock_extent(&inode->io_tree, lockstart, lockend, &cached_state);
+ out:
++	free_extent_state(delalloc_cached_state);
+ 	btrfs_free_backref_share_ctx(backref_ctx);
+ 	btrfs_free_path(path);
+ 	return ret;
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 6bc2397e324c..dc8399610ca3 100644
+index dc8399610ca3..da390f891220 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -3235,7 +3235,8 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
- 			*delalloc_start_ret = start;
+@@ -3214,6 +3214,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+  * looping while it gets adjacent subranges, and merging them together.
+  */
+ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end,
++				   struct extent_state **cached_state,
+ 				   bool *search_io_tree,
+ 				   u64 *delalloc_start_ret, u64 *delalloc_end_ret)
+ {
+@@ -3236,7 +3237,7 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
  			delalloc_len = count_range_bits(&inode->io_tree,
  							delalloc_start_ret, end,
--							len, EXTENT_DELALLOC, 1);
-+							len, EXTENT_DELALLOC, 1,
-+							NULL);
+ 							len, EXTENT_DELALLOC, 1,
+-							NULL);
++							cached_state);
  		} else {
  			spin_unlock(&inode->lock);
  		}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aec1b232a71c..83898bca39d5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1769,7 +1769,7 @@ static int fallback_to_cow(struct btrfs_inode *inode, struct page *locked_page,
- 	 * when starting writeback.
- 	 */
- 	count = count_range_bits(io_tree, &range_start, end, range_bytes,
--				 EXTENT_NORESERVE, 0);
-+				 EXTENT_NORESERVE, 0, NULL);
- 	if (count > 0 || is_space_ino || is_reloc_ino) {
- 		u64 bytes = count;
- 		struct btrfs_fs_info *fs_info = inode->root->fs_info;
+@@ -3324,6 +3325,8 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
+  *                       sector size aligned.
+  * @end:                 The end offset (inclusive value) of the search range.
+  *                       It does not need to be sector size aligned.
++ * @cached_state:        Extent state record used for speeding up delalloc
++ *                       searches in the inode's io_tree. Can be NULL.
+  * @delalloc_start_ret:  Output argument, set to the start offset of the
+  *                       subrange found with delalloc (may not be sector size
+  *                       aligned).
+@@ -3335,6 +3338,7 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
+  * end offsets of the subrange.
+  */
+ bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
++				  struct extent_state **cached_state,
+ 				  u64 *delalloc_start_ret, u64 *delalloc_end_ret)
+ {
+ 	u64 cur_offset = round_down(start, inode->root->fs_info->sectorsize);
+@@ -3348,7 +3352,7 @@ bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
+ 		bool delalloc;
+ 
+ 		delalloc = find_delalloc_subrange(inode, cur_offset, end,
+-						  &search_io_tree,
++						  cached_state, &search_io_tree,
+ 						  &delalloc_start,
+ 						  &delalloc_end);
+ 		if (!delalloc)
+@@ -3400,7 +3404,7 @@ static bool find_desired_extent_in_hole(struct btrfs_inode *inode, int whence,
+ 	u64 delalloc_end;
+ 	bool delalloc;
+ 
+-	delalloc = btrfs_find_delalloc_in_range(inode, start, end,
++	delalloc = btrfs_find_delalloc_in_range(inode, start, end, NULL,
+ 						&delalloc_start, &delalloc_end);
+ 	if (delalloc && whence == SEEK_DATA) {
+ 		*start_ret = delalloc_start;
+diff --git a/fs/btrfs/file.h b/fs/btrfs/file.h
+index f3d794e33d46..82b34fbb295f 100644
+--- a/fs/btrfs/file.h
++++ b/fs/btrfs/file.h
+@@ -27,6 +27,7 @@ int btrfs_check_nocow_lock(struct btrfs_inode *inode, loff_t pos,
+ 			   size_t *write_bytes, bool nowait);
+ void btrfs_check_nocow_unlock(struct btrfs_inode *inode);
+ bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
++				  struct extent_state **cached_state,
+ 				  u64 *delalloc_start_ret, u64 *delalloc_end_ret);
+ 
+ #endif
 -- 
 2.35.1
 

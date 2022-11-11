@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BE9DC43217
-	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Nov 2022 11:50:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EDACC43219
+	for <linux-btrfs@archiver.kernel.org>; Fri, 11 Nov 2022 11:50:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233276AbiKKLuq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S233413AbiKKLuq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Fri, 11 Nov 2022 06:50:46 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53492 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53504 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232979AbiKKLun (ORCPT
+        with ESMTP id S233378AbiKKLup (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 11 Nov 2022 06:50:43 -0500
+        Fri, 11 Nov 2022 06:50:45 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7FE8C286DE
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 03:50:42 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 415022657C
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 03:50:44 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 35CC0B825D2
+        by ams.source.kernel.org (Postfix) with ESMTPS id ECC27B82510
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 11:50:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2C3B1C433D6
         for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 11:50:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 67903C433D7
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Nov 2022 11:50:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1668167439;
-        bh=M555hlG9Gd4CJ56gd/hrF61UhAMZr1TtqzmcIx+gReU=;
+        s=k20201202; t=1668167441;
+        bh=YJ4AYQQylpYc/jA4Wbp/NIRUWPIzjgYpsif7MDR53Jc=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=MFiVPTBhLLbi8ul8A+3olEaxtGm59X8DJff4aaYW83wacd7q1dX99mS/jWT62OBqy
-         IpDA593Hes0h+eI+Iqydcqp4Z1jhZi9fVDK3FGM4OcskYMH5EL1ClUQZP7no7rmp4Y
-         zsEwPc2HZVo1URaOuGWPLV7iFLCVqUaG/VbchNhWXTfsazDGg7ASwzBFzx5JTv+VfE
-         uC6HbPXn77MoviF3C3BZyjjdWQe/hpa+djOkFV+Gwb4Hoai3J1lpkobTXlMPs98X7u
-         XpDtZQxS6CIPMUuNhKk7AazLpz7CO8h0BHwRUUhYjBXc3fS78YPBxDxG78I1xhHiHA
-         N1wSpwH5YK3lQ==
+        b=an/PVE/ZlxGc40towd7Vkm7FwW4ehW3jgzAm1dZL7uKHWFOwVMFYYcYm2DEX13Sbz
+         dWJzZPmKY7lrH16inDsAwuCHXM/iwlRK85is9lhTRvPKctKEbKbCcrITECDArimA0n
+         /yQoGhELmHWcSkc/8WQVqFI/YBi7ZtpYcmtIskyZfnRUwyDHX1+QQk3MXfwVyES32D
+         S26l14Rsp0FJTgp120Qexrmo+/YGJx0ReZDk5uaIZBqbVMC3FjsO0PKFcWOk8pg077
+         6dpIwmEjAJVqisnXg/M9G+PrbfNht8smmaDqdqrzVzsE6OL7NIlj73SPMWq4DLVSpW
+         Wqrl3TjSIFVcQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/9] btrfs: remove leftover setting of EXTENT_UPTODATE state in an inode's io_tree
-Date:   Fri, 11 Nov 2022 11:50:27 +0000
-Message-Id: <4579e6b56a708df83d409a5b2e38ff91299ddea5.1668166764.git.fdmanana@suse.com>
+Subject: [PATCH 3/9] btrfs: skip unnecessary delalloc searches during lseek/fiemap
+Date:   Fri, 11 Nov 2022 11:50:29 +0000
+Message-Id: <6c37d5df98ea62a42aed127822c760053a6583dc.1668166764.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1668166764.git.fdmanana@suse.com>
 References: <cover.1668166764.git.fdmanana@suse.com>
@@ -48,16 +48,12 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We don't need to set the EXTENT_UPDATE bit in an inode's io_tree to mark a
-range as uptodate, we rely on the pages themselves being uptodate - page
-reading is not triggered for already uptodate pages. Recently we removed
-most use of the EXTENT_UPTODATE for buffered IO with commit 52b029f42751
-("btrfs: remove unnecessary EXTENT_UPTODATE state in buffered I/O path"),
-but there were a few leftovers, namely when reading from holes and
-successfully finishing read repair.
-
-These leftovers are unnecessarily making an inode's tree larger and deeper,
-slowing down searches on it. So remove all the leftovers.
+During lseek (SEEK_HOLE/DATA) and fiemap, when processing a file range
+that corresponds to a hole or a prealloc extent, if we find that there is
+no delalloc marked in the inode's io_tree but there is delalloc due to
+an extent map in the io tree, then on the next iteration that calls
+find_delalloc_subrange() we can skip searching the io tree again, since
+on the first call we had no delalloc in the io tree for the whole range.
 
 This change is part of a patchset that has the goal to make performance
 better for applications that use lseek's SEEK_HOLE and SEEK_DATA modes to
@@ -81,78 +77,56 @@ Link: https://lore.kernel.org/linux-btrfs/20221106073028.71F9.409509F4@e16-tech.
 Link: https://lore.kernel.org/linux-btrfs/CAL3q7H5NSVicm7nYBJ7x8fFkDpno8z3PYt5aPU43Bajc1H0h1Q@mail.gmail.com/
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-io-tree.h |  7 -------
- fs/btrfs/extent_io.c      | 19 +++----------------
- 2 files changed, 3 insertions(+), 23 deletions(-)
+ fs/btrfs/file.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-io-tree.h b/fs/btrfs/extent-io-tree.h
-index cdee8c0854c8..18ab82f62611 100644
---- a/fs/btrfs/extent-io-tree.h
-+++ b/fs/btrfs/extent-io-tree.h
-@@ -216,13 +216,6 @@ static inline int set_extent_new(struct extent_io_tree *tree, u64 start,
- 	return set_extent_bit(tree, start, end, EXTENT_NEW, NULL, GFP_NOFS);
- }
- 
--static inline int set_extent_uptodate(struct extent_io_tree *tree, u64 start,
--		u64 end, struct extent_state **cached_state, gfp_t mask)
--{
--	return set_extent_bit(tree, start, end, EXTENT_UPTODATE,
--			      cached_state, mask);
--}
--
- int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
- 			  u64 *start_ret, u64 *end_ret, u32 bits,
- 			  struct extent_state **cached_state);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 859a41624c31..bf19011037d1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -901,14 +901,9 @@ static void end_sector_io(struct page *page, u64 offset, bool uptodate)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9b1f76109682..99cc95487d42 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -3214,6 +3214,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+  * looping while it gets adjacent subranges, and merging them together.
+  */
+ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end,
++				   bool *search_io_tree,
+ 				   u64 *delalloc_start_ret, u64 *delalloc_end_ret)
  {
- 	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
- 	const u32 sectorsize = inode->root->fs_info->sectorsize;
--	struct extent_state *cached = NULL;
+ 	u64 len = end + 1 - start;
+@@ -3231,7 +3232,7 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
+ 	spin_lock(&inode->lock);
+ 	outstanding_extents = inode->outstanding_extents;
  
- 	end_page_read(page, uptodate, offset, sectorsize);
--	if (uptodate)
--		set_extent_uptodate(&inode->io_tree, offset,
--				    offset + sectorsize - 1, &cached, GFP_NOFS);
--	unlock_extent(&inode->io_tree, offset, offset + sectorsize - 1,
--		      &cached);
-+	unlock_extent(&inode->io_tree, offset, offset + sectorsize - 1, NULL);
- }
- 
- static void submit_data_read_repair(struct inode *inode,
-@@ -1781,13 +1776,9 @@ static int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
- 
- 		ASSERT(IS_ALIGNED(cur, fs_info->sectorsize));
- 		if (cur >= last_byte) {
--			struct extent_state *cached = NULL;
--
- 			iosize = PAGE_SIZE - pg_offset;
- 			memzero_page(page, pg_offset, iosize);
--			set_extent_uptodate(tree, cur, cur + iosize - 1,
--					    &cached, GFP_NOFS);
--			unlock_extent(tree, cur, cur + iosize - 1, &cached);
-+			unlock_extent(tree, cur, cur + iosize - 1, NULL);
- 			end_page_read(page, true, cur, iosize);
- 			break;
+-	if (inode->delalloc_bytes > 0) {
++	if (*search_io_tree && inode->delalloc_bytes > 0) {
+ 		spin_unlock(&inode->lock);
+ 		*delalloc_start_ret = start;
+ 		delalloc_len = count_range_bits(&inode->io_tree,
+@@ -3257,6 +3258,9 @@ static bool find_delalloc_subrange(struct btrfs_inode *inode, u64 start, u64 end
+ 			start = *delalloc_end_ret + 1;
+ 			len = end + 1 - start;
  		}
-@@ -1863,13 +1854,9 @@ static int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
++	} else {
++		/* No delalloc, future calls don't need to search again. */
++		*search_io_tree = false;
+ 	}
  
- 		/* we've found a hole, just zero and go on */
- 		if (block_start == EXTENT_MAP_HOLE) {
--			struct extent_state *cached = NULL;
--
- 			memzero_page(page, pg_offset, iosize);
+ 	/*
+@@ -3390,6 +3394,7 @@ bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
+ {
+ 	u64 cur_offset = round_down(start, inode->root->fs_info->sectorsize);
+ 	u64 prev_delalloc_end = 0;
++	bool search_io_tree = true;
+ 	bool ret = false;
  
--			set_extent_uptodate(tree, cur, cur + iosize - 1,
--					    &cached, GFP_NOFS);
--			unlock_extent(tree, cur, cur + iosize - 1, &cached);
-+			unlock_extent(tree, cur, cur + iosize - 1, NULL);
- 			end_page_read(page, true, cur, iosize);
- 			cur = cur + iosize;
- 			pg_offset += iosize;
+ 	while (cur_offset < end) {
+@@ -3398,6 +3403,7 @@ bool btrfs_find_delalloc_in_range(struct btrfs_inode *inode, u64 start, u64 end,
+ 		bool delalloc;
+ 
+ 		delalloc = find_delalloc_subrange(inode, cur_offset, end,
++						  &search_io_tree,
+ 						  &delalloc_start,
+ 						  &delalloc_end);
+ 		if (!delalloc)
 -- 
 2.35.1
 

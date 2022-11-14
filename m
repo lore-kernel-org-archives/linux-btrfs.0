@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B0A6FC4332F
-	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Nov 2022 00:27:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3006BC43217
+	for <linux-btrfs@archiver.kernel.org>; Mon, 14 Nov 2022 00:27:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235616AbiKNA1Q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 13 Nov 2022 19:27:16 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33728 "EHLO
+        id S235617AbiKNA1R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 13 Nov 2022 19:27:17 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33740 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235606AbiKNA1J (ORCPT
+        with ESMTP id S235600AbiKNA1J (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Sun, 13 Nov 2022 19:27:09 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5583E008
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2022 16:26:56 -0800 (PST)
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88D7CE001
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Nov 2022 16:26:58 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 046122008F
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2022 00:26:55 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 45AFE1FBA5
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2022 00:26:57 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1668385615; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1668385617; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=zAngCxAtJicGGK0IBezD9CTi2v1aV1/GF2J4KuKR6g8=;
-        b=Y3pv2FirPQEaHWBTrfmNZbwERSotBGoWhthKn18v+p33T6+oJtau/n3GcCCMnVLf/C1Sjr
-        YxHa0XSojSZyQxGgTK2HkO4mZoIxCPpHk1invflRZVmP4ASHXGDdV40+ZTGVdei/zUZzPM
-        a7pEst+yLOG2bbWumDVZcZ+V81Lvkd8=
+        bh=CghSm/0+PDoxgCNfjcy52OL6m2FSHW4lpgi+Pzkuk1U=;
+        b=HtaUUbiUsLhexfRd+ioiu0REdruJAFlgLMNiZ7LUfYEJKBhhR+fm6eoOneYBWOQfivAcxN
+        kTi2YooydTASmZkhe/wNA0xgflj+Xb6maVKbDqwukbcIKuD5PUcE+LjfhBTnLwydbEkzZn
+        Vztq2P4XFM47/lTZuuRICeFPMdh3UZg=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 49A6713A18
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2022 00:26:54 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8ED6D13A18
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2022 00:26:56 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 0DBzBE6LcWN9dAAAMHmgww
+        id YPdlFVCLcWN9dAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2022 00:26:54 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Nov 2022 00:26:56 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/5] btrfs: refactor btrfs_lookup_csums_range()
-Date:   Mon, 14 Nov 2022 08:26:31 +0800
-Message-Id: <abff20eb54be743da39cd44d248e65b5ab5c31d3.1668384746.git.wqu@suse.com>
+Subject: [PATCH 4/5] btrfs: raid56: prepare data checksums for later RMW data csum  verification
+Date:   Mon, 14 Nov 2022 08:26:33 +0800
+Message-Id: <6620c738ea5f959085bfad0c0c843880f4c4e6e2.1668384746.git.wqu@suse.com>
 X-Mailer: git-send-email 2.38.1
 In-Reply-To: <cover.1668384746.git.wqu@suse.com>
 References: <cover.1668384746.git.wqu@suse.com>
@@ -55,182 +55,148 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The refactor involves the following parts:
+This is for later data verification at RMW time.
 
-- Introduce bytes_to_csum_size() and csum_size_to_bytes() helpers
-  As we have quite some open-coded calculation, some of them are even
-  split into two assignments just to fit 80 chars limit.
+This patch will try to allocate the needed memory for a locked rbio if
+the rbio is for data exclusively (we don't want to handle mixed bg yet).
 
-- Remove the @csum_size parameter from max_ordered_sum_bytes()
-  Csum size can be fetched from @fs_info.
-  And we will use the csum_size_to_bytes() helper anyway.
-
-- Add a comment explaining how we handle the first search result
-
-- Use newly introduced helpers to cleanup btrfs_lookup_csums_range()
-
-- Move variables declaration to the minimal scope
-
-- Never mix number of sectors with bytes
-  There are several locations doing things like:
-
- 			size = min_t(size_t, csum_end - start,
-				     max_ordered_sum_bytes(fs_info));
-			...
-			size >>= fs_info->sectorsize_bits
-
-  Or
-
-			offset = (start - key.offset) >> fs_info->sectorsize_bits;
-			offset *= csum_size;
-
-  Make sure those variables can only represent BYTES inside the
-  function, by using the above bytes_to_csum_size() helpers.
+And the memory will be released when the rbio is finished.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/file-item.c | 69 ++++++++++++++++++++++++++++++--------------
- 1 file changed, 48 insertions(+), 21 deletions(-)
+ fs/btrfs/raid56.c | 74 +++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/raid56.h | 12 ++++++++
+ 2 files changed, 86 insertions(+)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 456f71b42a9c..652a9bc3b676 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -126,12 +126,26 @@ int btrfs_inode_clear_file_extent_range(struct btrfs_inode *inode, u64 start,
- 				start + len - 1, EXTENT_DIRTY, NULL);
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 11be5d0a7eab..242d3611d2dd 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -20,6 +20,7 @@
+ #include "volumes.h"
+ #include "raid56.h"
+ #include "async-thread.h"
++#include "file-item.h"
+ 
+ /* set when additional merges to this rbio are not allowed */
+ #define RBIO_RMW_LOCKED_BIT	1
+@@ -835,6 +836,11 @@ static void rbio_orig_end_io(struct btrfs_raid_bio *rbio, blk_status_t err)
+ 	struct bio *cur = bio_list_get(&rbio->bio_list);
+ 	struct bio *extra;
+ 
++	kfree(rbio->csum_buf);
++	bitmap_free(rbio->csum_bitmap);
++	rbio->csum_buf = NULL;
++	rbio->csum_bitmap = NULL;
++
+ 	/*
+ 	 * Clear the data bitmap, as the rbio may be cached for later usage.
+ 	 * do this before before unlock_stripe() so there will be no new bio
+@@ -2048,6 +2054,67 @@ void raid56_parity_recover(struct bio *bio, struct btrfs_io_context *bioc,
+ 	start_async_work(rbio, recover_rbio_work);
  }
  
--static inline u32 max_ordered_sum_bytes(struct btrfs_fs_info *fs_info,
--					u16 csum_size)
-+static size_t bytes_to_csum_size(struct btrfs_fs_info *fs_info, u32 bytes)
++static void fill_data_csums(struct btrfs_raid_bio *rbio)
++{
++	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
++	struct btrfs_root *csum_root = btrfs_csum_root(fs_info,
++						       rbio->bioc->raid_map[0]);
++	const u64 start = rbio->bioc->raid_map[0];
++	const u32 len = (rbio->nr_data * rbio->stripe_nsectors) <<
++			fs_info->sectorsize_bits;
++	int ret;
++
++	/* The rbio should not has its csum buffer initialized. */
++	ASSERT(!rbio->csum_buf && !rbio->csum_bitmap);
++
++	/*
++	 * Skip the csum search if:
++	 *
++	 * - The rbio doesn't belongs to data block groups
++	 *   Then we are doing IO for tree blocks, no need to
++	 *   search csums.
++	 *
++	 * - The rbio belongs to mixed block groups
++	 *   This is to avoid deadlock, as we're already holding
++	 *   the full stripe lock, if we trigger a metadata read, and
++	 *   it needs to do raid56 recovery, we will deadlock.
++	 */
++	if (!(rbio->bioc->map_type & BTRFS_BLOCK_GROUP_DATA) ||
++	    rbio->bioc->map_type & BTRFS_BLOCK_GROUP_METADATA)
++		return;
++
++	rbio->csum_buf = kzalloc(rbio->nr_data * rbio->stripe_nsectors *
++				 fs_info->csum_size, GFP_NOFS);
++	rbio->csum_bitmap = bitmap_zalloc(rbio->nr_data * rbio->stripe_nsectors,
++				 GFP_NOFS);
++	if (!rbio->csum_buf || !rbio->csum_bitmap)
++		goto error;
++
++	ret = btrfs_lookup_csums_bitmap(csum_root, start, start + len - 1,
++					rbio->csum_buf, rbio->csum_bitmap);
++	if (ret < 0)
++		goto error;
++	if (bitmap_empty(rbio->csum_bitmap, len >> fs_info->sectorsize_bits))
++		goto no_csum;
++	return;
++
++error:
++	/*
++	 * We failed to allocate memory or grab the csum,
++	 * but it's not the end of day, we can still continue.
++	 * But better to warn users that RMW is no longer safe for this
++	 * particular sub-stripe write.
++	 */
++	btrfs_warn_rl(fs_info,
++"sub-stripe write for full stripe %llu is not safe, failed to get csum: %d",
++			rbio->bioc->raid_map[0], ret);
++no_csum:
++	kfree(rbio->csum_buf);
++	bitmap_free(rbio->csum_bitmap);
++	rbio->csum_buf = NULL;
++	rbio->csum_bitmap = NULL;
++}
++
+ static int rmw_read_and_wait(struct btrfs_raid_bio *rbio)
  {
--	u32 ncsums = (PAGE_SIZE - sizeof(struct btrfs_ordered_sum)) / csum_size;
-+	ASSERT(IS_ALIGNED(bytes, fs_info->sectorsize));
+ 	struct bio_list bio_list;
+@@ -2056,6 +2123,13 @@ static int rmw_read_and_wait(struct btrfs_raid_bio *rbio)
  
--	return ncsums * fs_info->sectorsize;
-+	return (bytes >> fs_info->sectorsize_bits) * fs_info->csum_size;
-+}
+ 	bio_list_init(&bio_list);
+ 
++	/*
++	 * Fill the data csum we need for data verification.
++	 * We need to fill the csum_bitmap/csum_buf first, as our endio
++	 * function will try to verify the data sectors.
++	 */
++	fill_data_csums(rbio);
 +
-+static size_t csum_size_to_bytes(struct btrfs_fs_info *fs_info, u32 csum_size)
-+{
-+	ASSERT(IS_ALIGNED(csum_size, fs_info->csum_size));
+ 	ret = rmw_assemble_read_bios(rbio, &bio_list);
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
+index a2e653e93fd8..951acd52cd4f 100644
+--- a/fs/btrfs/raid56.h
++++ b/fs/btrfs/raid56.h
+@@ -129,6 +129,18 @@ struct btrfs_raid_bio {
+ 	 * Thus making it much harder to iterate.
+ 	 */
+ 	unsigned long *error_bitmap;
 +
-+	return (csum_size / fs_info->csum_size) << fs_info->sectorsize_bits;
-+}
++	/*
++	 * Checksum buffer if the rbio is for data.
++	 * The buffer should cover all data sectors (exlcuding P/Q sectors).
++	 */
++	u8 *csum_buf;
 +
-+static inline u32 max_ordered_sum_bytes(struct btrfs_fs_info *fs_info)
-+{
-+	int max_csum_size = round_down(PAGE_SIZE - sizeof(struct btrfs_ordered_sum),
-+				       fs_info->csum_size);
-+
-+	return csum_size_to_bytes(fs_info, max_csum_size);
- }
++	/*
++	 * Each bit represents if the corresponding sector has data csum found.
++	 * Should only cover data sectors (excluding P/Q sectors).
++	 */
++	unsigned long *csum_bitmap;
+ };
  
  /*
-@@ -140,9 +154,8 @@ static inline u32 max_ordered_sum_bytes(struct btrfs_fs_info *fs_info,
-  */
- static int btrfs_ordered_sum_size(struct btrfs_fs_info *fs_info, unsigned long bytes)
- {
--	int num_sectors = (int)DIV_ROUND_UP(bytes, fs_info->sectorsize);
--
--	return sizeof(struct btrfs_ordered_sum) + num_sectors * fs_info->csum_size;
-+	return sizeof(struct btrfs_ordered_sum) +
-+	       bytes_to_csum_size(fs_info, bytes);
- }
- 
- int btrfs_insert_hole_extent(struct btrfs_trans_handle *trans,
-@@ -526,11 +539,7 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	struct btrfs_ordered_sum *sums;
- 	struct btrfs_csum_item *item;
- 	LIST_HEAD(tmplist);
--	unsigned long offset;
- 	int ret;
--	size_t size;
--	u64 csum_end;
--	const u32 csum_size = fs_info->csum_size;
- 
- 	ASSERT(IS_ALIGNED(start, fs_info->sectorsize) &&
- 	       IS_ALIGNED(end + 1, fs_info->sectorsize));
-@@ -556,16 +565,33 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	if (ret > 0 && path->slots[0] > 0) {
- 		leaf = path->nodes[0];
- 		btrfs_item_key_to_cpu(leaf, &key, path->slots[0] - 1);
-+
-+		/*
-+		 * There are two cases we can hit here for the previous
-+		 * csum item.
-+		 *
-+		 *		|<- search range ->|
-+		 *	|<- csum item ->|
-+		 *
-+		 * Or
-+		 *				|<- search range ->|
-+		 *	|<- csum item ->|
-+		 *
-+		 * Check if the previous csum item covers the leading part
-+		 * of the search range.
-+		 * If so we have to start from previous csum item.
-+		 */
- 		if (key.objectid == BTRFS_EXTENT_CSUM_OBJECTID &&
- 		    key.type == BTRFS_EXTENT_CSUM_KEY) {
--			offset = (start - key.offset) >> fs_info->sectorsize_bits;
--			if (offset * csum_size <
-+			if (bytes_to_csum_size(fs_info, start - key.offset) <
- 			    btrfs_item_size(leaf, path->slots[0] - 1))
- 				path->slots[0]--;
- 		}
- 	}
- 
- 	while (start <= end) {
-+		u64 csum_end;
-+
- 		leaf = path->nodes[0];
- 		if (path->slots[0] >= btrfs_header_nritems(leaf)) {
- 			ret = btrfs_next_leaf(root, path);
-@@ -585,8 +611,8 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 		if (key.offset > start)
- 			start = key.offset;
- 
--		size = btrfs_item_size(leaf, path->slots[0]);
--		csum_end = key.offset + (size / csum_size) * fs_info->sectorsize;
-+		csum_end = key.offset + csum_size_to_bytes(fs_info,
-+					btrfs_item_size(leaf, path->slots[0]));
- 		if (csum_end <= start) {
- 			path->slots[0]++;
- 			continue;
-@@ -596,8 +622,11 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 		item = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				      struct btrfs_csum_item);
- 		while (start < csum_end) {
-+			unsigned long offset;
-+			size_t size;
-+
- 			size = min_t(size_t, csum_end - start,
--				     max_ordered_sum_bytes(fs_info, csum_size));
-+				     max_ordered_sum_bytes(fs_info));
- 			sums = kzalloc(btrfs_ordered_sum_size(fs_info, size),
- 				       GFP_NOFS);
- 			if (!sums) {
-@@ -608,16 +637,14 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			sums->bytenr = start;
- 			sums->len = (int)size;
- 
--			offset = (start - key.offset) >> fs_info->sectorsize_bits;
--			offset *= csum_size;
--			size >>= fs_info->sectorsize_bits;
-+			offset = bytes_to_csum_size(fs_info, start - key.offset);
- 
- 			read_extent_buffer(path->nodes[0],
- 					   sums->sums,
- 					   ((unsigned long)item) + offset,
--					   csum_size * size);
-+					   bytes_to_csum_size(fs_info, size));
- 
--			start += fs_info->sectorsize * size;
-+			start += size;
- 			list_add_tail(&sums->list, &tmplist);
- 		}
- 		path->slots[0]++;
 -- 
 2.38.1
 

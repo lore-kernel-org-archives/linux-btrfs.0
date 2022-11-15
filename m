@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12E56C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 18:45:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D3DDC433FE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 19:53:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230253AbiKOSpd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Nov 2022 13:45:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48454 "EHLO
+        id S230387AbiKOTxG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Nov 2022 14:53:06 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229633AbiKOSpd (ORCPT
+        with ESMTP id S229940AbiKOTxE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2022 13:45:33 -0500
+        Tue, 15 Nov 2022 14:53:04 -0500
 Received: from zmcc-3-mx.zmailcloud.com (zmcc-3-mx.zmailcloud.com [34.200.143.36])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC44865F2
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 10:45:31 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AB28962D6
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 11:53:01 -0800 (PST)
 Received: from zmcc-3.zmailcloud.com (183.87.154.104.bc.googleusercontent.com [104.154.87.183])
         (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by zmcc-3-mx.zmailcloud.com (Postfix) with ESMTPS id D74674056B
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 12:49:23 -0600 (CST)
+        by zmcc-3-mx.zmailcloud.com (Postfix) with ESMTPS id DD22B404FA;
+        Tue, 15 Nov 2022 13:56:53 -0600 (CST)
 Received: from zmcc-3.zmailcloud.com (localhost [127.0.0.1])
-        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTPS id B0E3E8036FAD
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 12:45:30 -0600 (CST)
+        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTPS id AD4038036FCB;
+        Tue, 15 Nov 2022 13:53:00 -0600 (CST)
 Received: from localhost (localhost [127.0.0.1])
-        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTP id A248B8036FB3
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 12:45:30 -0600 (CST)
+        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTP id 9CDB98036FDA;
+        Tue, 15 Nov 2022 13:53:00 -0600 (CST)
 Received: from zmcc-3.zmailcloud.com ([127.0.0.1])
         by localhost (zmcc-3-mta-1.zmailcloud.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id skqQg1ae4PFA for <linux-btrfs@vger.kernel.org>;
-        Tue, 15 Nov 2022 12:45:30 -0600 (CST)
+        with ESMTP id IEz6vKWV9hum; Tue, 15 Nov 2022 13:53:00 -0600 (CST)
 Received: from [10.4.2.11] (unknown [37.19.198.182])
-        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTPSA id 28C7E8036FAD
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 12:45:29 -0600 (CST)
-Date:   Tue, 15 Nov 2022 13:45:23 -0500
+        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTPSA id 1B9858036FCB;
+        Tue, 15 Nov 2022 13:52:59 -0600 (CST)
+Date:   Tue, 15 Nov 2022 14:52:52 -0500
 From:   Eric Levy <contact@ericlevy.name>
-Subject: Re: property designating root subvolumes
-To:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <N3KELR.FXYFWHCH7XYX2@ericlevy.name>
-In-Reply-To: <ba47a0c3-ae7b-8aa9-96fd-2f1eab6e3885@libero.it>
-References: <VB2DLR.FVM1D1665BSY2@ericlevy.name>
-        <ba47a0c3-ae7b-8aa9-96fd-2f1eab6e3885@libero.it>
+Subject: Re: separate mailing list for patches?
+To:     Lukas Straub <lukasstraub2@web.de>
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+Message-Id: <48NELR.GD3GOBQRO8OC3@ericlevy.name>
+In-Reply-To: <20221115194744.6a343639@gecko.fritz.box>
+References: <0YIELR.GA2T7GBWR97P2@ericlevy.name>
+        <20221115194744.6a343639@gecko.fritz.box>
 X-Mailer: geary/40.0
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii; format=flowed
@@ -49,62 +49,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-On Tue, Nov 15 2022 at 07:23:21 PM +0100, Goffredo Baroncelli 
-<kreijack@libero.it> wrote:
-> I don't know rEFInd very well, but I don't think that it is job of 
-> the bootloader to do the automatic OS discovery.
+
+On Tue, Nov 15 2022 at 07:47:44 PM +0000, Lukas Straub 
+<lukasstraub2@web.de> wrote:
+> On Tue, 15 Nov 2022 13:20:24 -0500
+> Eric Levy <contact@ericlevy.name> wrote:
 > 
-> If you want to perform an OS discovery, at first it would be enough 
-> to check the presence of "/bin/init" (or /init or ...) for linux and 
-> the equivalent for Windows and OS-X.
-> But this will not give the information like:
-> 	- os name
-> 	- initrd
-> 	- the linux boot parameter...
+>>  I have subscribed to the Btrfs development list occasionally, for
+>>  seeking support and raising issues, though I am not involved in the
+>>  development effort. Currently, there is no channel of communication
+>>  more accessible to members of the public, yet, the list is often 
+>> used
+>>  for patches sent among the development team. For many of us, it may
+>>  seem cumbersome to be flooded by so many messages carrying the 
+>> patches.
+>> 
+>>  Perhaps it would be useful to consider a separate mailing list for
+>>  patches, or to open a web interface that is friendly to those 
+>> seeking
+>>  to interact with the group for more occasional support. Hopefully, 
+>> it
+>>  would not much affect those regularly involved to subscribe to two
+>>  lists, using one for patches and the other for basic correspondence.
+>> 
+>> 
+>> 
 > 
-> Some (most) setup have different boot entries for the same filesystem 
-> (e.g. the standard one, and the emergency one).
+> By the way: You don't have to be subscribed to the mailing-list at 
+> all.
+> You can just send emails to linux-btrfs@vger.kernel.org. The implied
+> reply-policy on pretty much any mailing list is reply-to-all so if
+> anyone replies to you he will send with To: You and CC:
+> linux-btrfs@vger.kernel.org and also CC: anyone else involved in the
+> discussion so far (Thats what the Reply-to-all button in your mail
+> client does). So it just works without being subscribed.
 > 
-> I prefer the other way that it is used in the linux world: it is 
-> responsibility of the os to inform the bootloader about its existence.
-> Look at the BLS specification (even not so widespread adopted).
+> Regards,
+> Lukas Straub
+> 
+> --
 
-Yes, I respect the preference you have provided, but in a sense, merely 
-affirming the preference is begging the larger question.
 
-The intention of rEFInd is as a bootloader, though less advanced 
-overall than Grub, that is more user friendly, supporting autodiscovery 
-of resident operating systems without needing to be preconfigured by 
-tools installed on one of those operating systems. rEFInd does support 
-some static configuration, similar to the Grub configuration system, 
-but it is not generally required, and supported primarily as an 
-afterthought, for advanced use cases not currently possible through the 
-main method of on-the-fly autodetection.
+Thank you for the extremely useful information. I have not been 
+following the policy, and also, probably was also carrying an 
+assumption that messages are only accepted from subscribers, as I think 
+is the policy on some lists, perhaps to control spam and trolling.
 
-Grub is planned primarily with the assumption that a single operating 
-system, of some Linux variety, is the one dominantly used on a system, 
-and all others, whether also Linux or not, are in some sense 
-subordinate, installed only for occasional use. At times, such an 
-assumption may be agreeable, but not always.
-
-I think there is a place in the discussion for preferences about the 
-design of the bootloader. However, I also think the discussion should 
-not reject the historical observation, that due to demand for the 
-feature, the default subvolume selector is being used, in a sense 
-incorrectly, for detecting a root file system, because no better 
-approach has been identified. Someone familiar with the nuances might 
-try to discuss with the developer whether the suggested logic for 
-detecting the root tree is a helpful approach, more so than using the 
-default selector. If, from the standpoint of the bootloader, the 
-approach of analyzing the file tree is more agreeable than using 
-features of the file system, then perhaps the current request is not 
-needed.
-
-However, even so, I have concerns about desired handling of snapshots, 
-as well as about the other reasons that a subvolume may appear 
-internally as hosting a root tree, but not being desired for showing as 
-an item in the boot menu.
-
-Regardless, I suggest that the status quo deserves some inspection.
+At any rate, perhaps some subscribers have the preference for not 
+receiving patches, and might appreciate my idea, but I will be happy 
+simply to use the list following in the way you suggest.
 
 

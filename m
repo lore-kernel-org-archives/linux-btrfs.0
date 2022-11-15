@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8168C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 16:16:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F36F4C43217
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 16:16:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238527AbiKOQQg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Nov 2022 11:16:36 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36820 "EHLO
+        id S238495AbiKOQQh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Nov 2022 11:16:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36844 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238461AbiKOQQ1 (ORCPT
+        with ESMTP id S238490AbiKOQQe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2022 11:16:27 -0500
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 283D62AC56
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 08:16:27 -0800 (PST)
-Received: by mail-qt1-x82c.google.com with SMTP id z6so9000555qtv.5
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 08:16:27 -0800 (PST)
+        Tue, 15 Nov 2022 11:16:34 -0500
+Received: from mail-qv1-xf35.google.com (mail-qv1-xf35.google.com [IPv6:2607:f8b0:4864:20::f35])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2656B2B1A3
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 08:16:30 -0800 (PST)
+Received: by mail-qv1-xf35.google.com with SMTP id ml12so10130936qvb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 08:16:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=7B6+OIlb58W5naN5L6pQYFYKHzaAa0xWTDBO6WCdnWU=;
-        b=aphTRMAcSjFaCNG0Pf5iIGD8PdfUsXcA200vwqHO3g7bLipFH7qhsWCcH3hUn5bQVZ
-         8KfWHPosD0ikcaMQUp4wuTw7NL1BzQ0xvKJKulahtCXIKSyEJpEcdKkansyYYbzrnLkT
-         FyS/8lbx3iPW6hqT8i88bpob7Vdkx927KXsbol+LtqOK3jAOVdUoQwkiR3snqiulQP0a
-         9Wvpl8r4/k0nrkDa5hrgdJE+jbDEurYM5oXsZxvkmjIrXnPZTVdW3S41teiyxV892UtG
-         vcTmGQXgUbV4RfiDoTKyy6he5qTqoB5fCzz7T3nILmDN+LNdjwzJnBzskK6YGq93ESli
-         deaA==
+        bh=GpQbmkn/wCCyPf9qWFkNtTqxqr24ENXVU2K01bgzEQk=;
+        b=e3BqAEGvcIa2S6eU2cmM8xsF6MNKgqMLi8Nq951GbXYZBOajT93SLL10Lav+OQcn/z
+         hN/l3raK9t4ZFsl+vR792hgOduVZPnQB4J6hp/ItLPhiyb3vvZO3cvFRZ+O0riX5tH7i
+         gnfhbpMObTXFhnDm+Nopl/UEwZvtsevKYvMEGzU6m1MfdGMRj30R++T9+Y/wMiusTFlC
+         9l8tay0XAVjLMezVPp7fJBmWTng5FIP19+XBYUunmv7WXTFQdTMSqY92ul/8t+k3GikC
+         eNDmb9MnrvzAVRO1muW+RdhEGct7IItJJqcCDPD4gHrA4Bho0M48cUaIK9+rYSob6zBK
+         km/g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=7B6+OIlb58W5naN5L6pQYFYKHzaAa0xWTDBO6WCdnWU=;
-        b=xPpxiV0AzDyjX19Sj5lRyAE29iMXcBf1r3JnznrZWZxBecrjXai4sT41+R7daW9+TM
-         Sf5eZh+cVlgSZRURe1YznNye6X/BJ4REi+0RQ0MFvsDNOuVpo2hEbvYydqYPtKilVuF3
-         pR017yexk7MrgcsWvBPeWGJWk/4KQ1m40MtZFPwYcmAqqG46tmuXeqDIL6XCurKFVxhB
-         o9yAJAaHWvOoZ+irW35gkB/FUWe7V7q0eeO0ijZmf2LnOoWAJ2+jGKkiAMN92z3U5v2N
-         NXRJxO6BAZ8vjmKodXfVKaoeqUn5kvs2SvwY5mvYOVMOJzmjQvXPc/yRcp1vaVDEzeLs
-         sukA==
-X-Gm-Message-State: ANoB5pmcmIWhWRn6x8sx6MaMADuQkMfDC7YeDODtRuMLJlh8AP4Ez42+
-        zNCkotbaIL3jqmvRgGiZ6+TeA9+ePOuG0g==
-X-Google-Smtp-Source: AA0mqf4+/D+9QIszMY3U6KphMn9Uh1UHiCEDHMKVb5v8gNVP3Alhxvr8b0plPmAWoPOiIqxt7ba6Dg==
-X-Received: by 2002:a05:622a:997:b0:3a5:58f9:cd0b with SMTP id bw23-20020a05622a099700b003a558f9cd0bmr17379181qtb.404.1668528985978;
-        Tue, 15 Nov 2022 08:16:25 -0800 (PST)
+        bh=GpQbmkn/wCCyPf9qWFkNtTqxqr24ENXVU2K01bgzEQk=;
+        b=o7p1v9R2Ib309q4CuMGFGELtll0eB2ompXSPPkVWDB3ejOfZwCVZKv/cvA7X54wdUt
+         doa0Q3NyCOsuLDOMi1ticdwIUfQE3lMp682aZt5ZrWz6OtkWll6XBRc14zW4tI/+UJJj
+         /m35ueaBZM1XUTD89iqhNOMgK0eSUspEjozXtowKjLteRxZp0N952/psEQx/xzjW/gRz
+         I7B/x/p0H0RWlZBXjqyor5s6/1vwe0SkAjv30D+olBY2h8IW7XxL5j53ztkaxSokhcva
+         mo5HjhO93+iEZElRRKTs7IAAMXrEYiBd7beAudut/bPrSwawOhYt+y9NtuDq3QO4QeM5
+         EFDg==
+X-Gm-Message-State: ANoB5pneS8h4VzX83wH2/o5mCDgLYkJ/RBMAxxegZ+kybLA0q/CMJu/6
+        tNiTEuPlRg69y+AmJ4+c/lVscxVi3n8b7A==
+X-Google-Smtp-Source: AA0mqf4pfzc18QS3DUdhBAXAdk07rI7++P1T2bzkYrqNH9mBMxf5dNGkqS0pEy/BYMVgiB4tTB2DQQ==
+X-Received: by 2002:a05:6214:1194:b0:4bb:60ef:4acd with SMTP id t20-20020a056214119400b004bb60ef4acdmr17026228qvv.11.1668528988795;
+        Tue, 15 Nov 2022 08:16:28 -0800 (PST)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id p70-20020a374249000000b006eef13ef4c8sm8293919qka.94.2022.11.15.08.16.25
+        by smtp.gmail.com with ESMTPSA id i1-20020ac860c1000000b00399edda03dfsm7163345qtm.67.2022.11.15.08.16.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 15 Nov 2022 08:16:25 -0800 (PST)
+        Tue, 15 Nov 2022 08:16:28 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 02/11] btrfs: move leaf_data_end into ctree.c
-Date:   Tue, 15 Nov 2022 11:16:11 -0500
-Message-Id: <9b57e241bcf733479552803d3cd7997330f8b87f.1668526429.git.josef@toxicpanda.com>
+Subject: [PATCH 04/11] btrfs: move eb offset helpers into extent_io.h
+Date:   Tue, 15 Nov 2022 11:16:13 -0500
+Message-Id: <676fe32c016806b851863320910008146e53ea75.1668526429.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1668526429.git.josef@toxicpanda.com>
 References: <cover.1668526429.git.josef@toxicpanda.com>
@@ -64,86 +64,105 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is only used in ctree.c, with the exception of zero'ing out extent
-buffers we're getting ready to write out.  In theory we shouldn't have
-an extent buffer with 0 items that we're writing out, however I'd rather
-be safe than sorry so open code it in extent_io.c, and then copy the
-helper into ctree.c.  This will make it easier to sync accessors.[ch]
-into btrfs-progs, as this requires a helper that isn't defined in
-accessors.h.
+These are very specific to how the extent buffer is defined, so this
+differs between btrfs-progs and the kernel.  Make things easier by
+moving these helpers into extent_io.h so we don't have to worry about
+this when syncing ctree.h.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/accessors.h | 13 -------------
- fs/btrfs/ctree.c     | 13 +++++++++++++
- fs/btrfs/extent_io.c |  6 +++++-
- 3 files changed, 18 insertions(+), 14 deletions(-)
+ fs/btrfs/ctree.h     | 33 ---------------------------------
+ fs/btrfs/extent_io.h | 33 +++++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 33 deletions(-)
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index 57ba6894a5f4..b9d9a69685df 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -897,19 +897,6 @@ const char *btrfs_super_csum_name(u16 csum_type);
- const char *btrfs_super_csum_driver(u16 csum_type);
- size_t __attribute_const__ btrfs_get_num_csums(void);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3870a556f421..c1e9da49ef9b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -685,39 +685,6 @@ static inline int btrfs_next_item(struct btrfs_root *root, struct btrfs_path *p)
+ }
+ int btrfs_leaf_free_space(struct extent_buffer *leaf);
  
 -/*
-- * The leaf data grows from end-to-front in the node.  this returns the address
-- * of the start of the last item, which is the stop of the leaf data stack.
+- * Get the correct offset inside the page of extent buffer.
+- *
+- * @eb:		target extent buffer
+- * @start:	offset inside the extent buffer
+- *
+- * Will handle both sectorsize == PAGE_SIZE and sectorsize < PAGE_SIZE cases.
 - */
--static inline unsigned int leaf_data_end(const struct extent_buffer *leaf)
+-static inline size_t get_eb_offset_in_page(const struct extent_buffer *eb,
+-					   unsigned long offset)
 -{
--	u32 nr = btrfs_header_nritems(leaf);
--
--	if (nr == 0)
--		return BTRFS_LEAF_DATA_SIZE(leaf->fs_info);
--	return btrfs_item_offset(leaf, nr - 1);
+-	/*
+-	 * For sectorsize == PAGE_SIZE case, eb->start will always be aligned
+-	 * to PAGE_SIZE, thus adding it won't cause any difference.
+-	 *
+-	 * For sectorsize < PAGE_SIZE, we must only read the data that belongs
+-	 * to the eb, thus we have to take the eb->start into consideration.
+-	 */
+-	return offset_in_page(offset + eb->start);
 -}
 -
- /* struct btrfs_file_extent_item */
- BTRFS_SETGET_STACK_FUNCS(stack_file_extent_type, struct btrfs_file_extent_item,
- 			 type, 8);
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 8443a2e42fd5..a70355d2edca 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -51,6 +51,19 @@ static const struct btrfs_csums {
- 				     .driver = "blake2b-256" },
+-static inline unsigned long get_eb_page_index(unsigned long offset)
+-{
+-	/*
+-	 * For sectorsize == PAGE_SIZE case, plain >> PAGE_SHIFT is enough.
+-	 *
+-	 * For sectorsize < PAGE_SIZE case, we only support 64K PAGE_SIZE,
+-	 * and have ensured that all tree blocks are contained in one page,
+-	 * thus we always get index == 0.
+-	 */
+-	return offset >> PAGE_SHIFT;
+-}
+-
+ static inline int is_fstree(u64 rootid)
+ {
+ 	if (rootid == BTRFS_FS_TREE_OBJECTID ||
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 805e262811b4..a024655d4237 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -94,6 +94,39 @@ struct extent_buffer {
+ #endif
  };
  
 +/*
-+ * The leaf data grows from end-to-front in the node.  this returns the address
-+ * of the start of the last item, which is the stop of the leaf data stack.
++ * Get the correct offset inside the page of extent buffer.
++ *
++ * @eb:		target extent buffer
++ * @start:	offset inside the extent buffer
++ *
++ * Will handle both sectorsize == PAGE_SIZE and sectorsize < PAGE_SIZE cases.
 + */
-+static inline unsigned int leaf_data_end(const struct extent_buffer *leaf)
++static inline size_t get_eb_offset_in_page(const struct extent_buffer *eb,
++					   unsigned long offset)
 +{
-+	u32 nr = btrfs_header_nritems(leaf);
-+
-+	if (nr == 0)
-+		return BTRFS_LEAF_DATA_SIZE(leaf->fs_info);
-+	return btrfs_item_offset(leaf, nr - 1);
++	/*
++	 * For sectorsize == PAGE_SIZE case, eb->start will always be aligned
++	 * to PAGE_SIZE, thus adding it won't cause any difference.
++	 *
++	 * For sectorsize < PAGE_SIZE, we must only read the data that belongs
++	 * to the eb, thus we have to take the eb->start into consideration.
++	 */
++	return offset_in_page(offset + eb->start);
 +}
 +
- int btrfs_super_csum_size(const struct btrfs_super_block *s)
- {
- 	u16 t = btrfs_super_csum_type(s);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 859a41624c31..6b382070b4ad 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2664,7 +2664,11 @@ static void prepare_eb_write(struct extent_buffer *eb)
- 		 * header 0 1 2 .. N ... data_N .. data_2 data_1 data_0
- 		 */
- 		start = btrfs_item_nr_offset(nritems);
--		end = BTRFS_LEAF_DATA_OFFSET + leaf_data_end(eb);
-+		end = BTRFS_LEAF_DATA_OFFSET;
-+		if (nritems == 0)
-+			end += BTRFS_LEAF_DATA_SIZE(eb->fs_info);
-+		else
-+			end += btrfs_item_offset(eb, nritems - 1);
- 		memzero_extent_buffer(eb, start, end - start);
- 	}
- }
++static inline unsigned long get_eb_page_index(unsigned long offset)
++{
++	/*
++	 * For sectorsize == PAGE_SIZE case, plain >> PAGE_SHIFT is enough.
++	 *
++	 * For sectorsize < PAGE_SIZE case, we only support 64K PAGE_SIZE,
++	 * and have ensured that all tree blocks are contained in one page,
++	 * thus we always get index == 0.
++	 */
++	return offset >> PAGE_SHIFT;
++}
++
+ /*
+  * Structure to record how many bytes and which ranges are set/cleared
+  */
 -- 
 2.26.3
 

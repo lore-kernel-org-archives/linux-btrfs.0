@@ -2,123 +2,101 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CDF80C433FE
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 19:53:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE2A4C4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 19:57:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230471AbiKOTxM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Nov 2022 14:53:12 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46070 "EHLO
+        id S229776AbiKOT5F convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Nov 2022 14:57:05 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49500 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229940AbiKOTxK (ORCPT
+        with ESMTP id S229645AbiKOT5D (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2022 14:53:10 -0500
-X-Greylist: delayed 304 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 15 Nov 2022 11:53:09 PST
-Received: from mout.web.de (mout.web.de [212.227.15.14])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B13E0167D0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 11:53:09 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=web.de; s=s29768273;
-        t=1668541988; bh=1kGJVIOT6Z93FVptjIz0ky6ZHTEL5Jq7ddFb95c/VIE=;
-        h=X-UI-Sender-Class:Date:From:To:Cc:Subject:In-Reply-To:References;
-        b=mrfi21LSxuK7LlVZGpEah7NJtn9EOM/IGAGH92iduAsxs5LIiAhZD5YdRaBxo0hS1
-         z0gEcxjV13p4+u9wAczoa6E4CpryNe56JCBoEZV+p4pA+ZXHi08kdOo8XjG5oajZsU
-         hy1YDDy+OVHVuaEXakRLtKEA8krfhiOMDiP0zsA/wwIr6hcEEEphY4SwEPGHMXNNcp
-         PixIPSejsTkk2Ig5igXnS3TEUzIWu7+CzyiXyhdMDoNBjmHPlC17GqZ0OQRMiLVF/T
-         5XaNdN2J7AVUohNgIRupdePZxeTjVbuZTtQXuGvPcThLwYldmz+ig1blz4fd4fKhYl
-         2/bRmsOjierog==
-X-UI-Sender-Class: 814a7b36-bfc1-4dae-8640-3722d8ec6cd6
-Received: from gecko.fritz.box ([82.207.254.116]) by smtp.web.de (mrweb006
- [213.165.67.108]) with ESMTPSA (Nemesis) id 1MSqXS-1oXGcp1c3a-00UMuB; Tue, 15
- Nov 2022 20:48:01 +0100
-Date:   Tue, 15 Nov 2022 19:47:44 +0000
-From:   Lukas Straub <lukasstraub2@web.de>
+        Tue, 15 Nov 2022 14:57:03 -0500
+Received: from beige.elm.relay.mailchannels.net (beige.elm.relay.mailchannels.net [23.83.212.16])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 71163C58
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 11:57:02 -0800 (PST)
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+Received: from relay.mailchannels.net (localhost [127.0.0.1])
+        by relay.mailchannels.net (Postfix) with ESMTP id 18EE61409B0;
+        Tue, 15 Nov 2022 19:57:01 +0000 (UTC)
+Received: from cpanel-007-fra.hostingww.com (unknown [127.0.0.6])
+        (Authenticated sender: instrampxe0y3a)
+        by relay.mailchannels.net (Postfix) with ESMTPA id 16819140AC9;
+        Tue, 15 Nov 2022 19:56:59 +0000 (UTC)
+ARC-Seal: i=1; s=arc-2022; d=mailchannels.net; t=1668542220; a=rsa-sha256;
+        cv=none;
+        b=3aJLXXKhxEdxFAr+W4EeVWkA4D7eA8V7SrZJO2ZuB0FPTowVsTl5S9kw9K7i0uTY1gI4KJ
+        A3bigk8r0t7uUKM795rhX+5C6gRkyD8/Qn+KPCH5SFUfLGo3Xhic0ArRn6QjP6yL9k1u2f
+        UB8CH3Jhz8+H/UtP3IMaetNgs1RUuhIiRa3sdJyvUvN/pL/vyOzHyHxbCBB3Jqr8oxy4mu
+        MUyd+KtwXaQlCiD7fmqq9wapYZFsO9GUg9h5ZD4zrLpn3twgdqbGwgv3UnqKJwnAz3tf9T
+        55B6Yf0GVWpKk3uq7tCjGtlSv1Xz9e6W1jGRK/2rhaNBfPXxj+ftFgJneG23GQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=mailchannels.net;
+        s=arc-2022; t=1668542220;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=lDmXqkEM46KHHAsyeyblWsMIBh1epx68KG4+aF33SRc=;
+        b=x5DY0dBLqQTHX/C/Ysv9PZ/lwPgZbcvcStKh7lSaGlEF51tg6w5ERfdT8E5sZxoxUOtnyB
+        458cDa4hZ9ztbu3ULok+rIKInW6Au4WkyuECRCP0k7npoatEUwOJBoBWRtkTRcKfwJIdMj
+        hWROk5GOC3WY3lyfgJ8IkQQydoP+Fgas9zqNcmwiTRNeXOt97xGBIKcYMiZyMmCrGCfh+o
+        +i02B013kqHaSBd8jYD7iBT1YS9OpszdQ6S+t3q6oUIqkpvqL0AmYHQwu6tyD7LnhrgyPa
+        UdmsUH4fXVpPS6OSL/jqyTMtaDQEChOj2NatH0Uz8untJEZxd99QJmEwDe60Nw==
+ARC-Authentication-Results: i=1;
+        rspamd-5cb65d95c4-qxtjv;
+        auth=pass smtp.auth=instrampxe0y3a smtp.mailfrom=calestyo@scientia.org
+X-Sender-Id: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MC-Relay: Neutral
+X-MailChannels-SenderId: instrampxe0y3a|x-authuser|calestyo@scientia.org
+X-MailChannels-Auth-Id: instrampxe0y3a
+X-Shoe-Chemical: 6016014353fe81c1_1668542220730_3318791709
+X-MC-Loop-Signature: 1668542220730:1964376781
+X-MC-Ingress-Time: 1668542220729
+Received: from cpanel-007-fra.hostingww.com (cpanel-007-fra.hostingww.com
+ [3.69.87.180])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384)
+        by 100.109.138.54 (trex/6.7.1);
+        Tue, 15 Nov 2022 19:57:00 +0000
+Received: from ppp-46-244-242-174.dynamic.mnet-online.de ([46.244.242.174]:43816 helo=heisenberg.fritz.box)
+        by cpanel-007-fra.hostingww.com with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.95)
+        (envelope-from <calestyo@scientia.org>)
+        id 1ov23D-00036T-GD;
+        Tue, 15 Nov 2022 19:56:58 +0000
+Message-ID: <4f3526771aa69fe275693aaa07e98e8e12452e99.camel@scientia.org>
+Subject: Re: separate mailing list for patches?
+From:   Christoph Anton Mitterer <calestyo@scientia.org>
 To:     Eric Levy <contact@ericlevy.name>
 Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: separate mailing list for patches?
-Message-ID: <20221115194744.6a343639@gecko.fritz.box>
-In-Reply-To: <0YIELR.GA2T7GBWR97P2@ericlevy.name>
+Date:   Tue, 15 Nov 2022 20:56:53 +0100
+In-Reply-To: <48NELR.GD3GOBQRO8OC3@ericlevy.name>
 References: <0YIELR.GA2T7GBWR97P2@ericlevy.name>
+         <20221115194744.6a343639@gecko.fritz.box>
+         <48NELR.GD3GOBQRO8OC3@ericlevy.name>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.1-1 
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="Sig_/SIti9.596DffjlEVDHs+UWG";
- protocol="application/pgp-signature"; micalg=pgp-sha256
-X-Provags-ID: V03:K1:9H0IXwZZnnJw1elXkMcWU/6L2MuOuAGIMhDEmJdRU5/FOkQeVqS
- jVsAJW986qhnIXSwGOn98dvGtQKenjTSetf0ZEtW0hb4hA1UpjbefsrYTPYc5VYXnVOLrH9
- YATgMMtqdWZJtfnN9XwZB/ZdSiEQp2LL+C7tT6mJDv/c5GwIMvNgxZPgk44j4/NIrM6geig
- uYMIDdjgUYTpPHCnIf/Zw==
-UI-OutboundReport: notjunk:1;M01:P0:WqWJkRBCBkw=;G9OVE+abo1TmjG5kxhEpdXxF4fT
- skPS/u+6NsstPwOQ+xJf4jtOxAanttBwqDSTdAY5c1FzibI8WT7kg9l19voSIev0xnD+skRyl
- bLerJwk6S7xd6qNrPEoPVTqo49TENLBJuj/3hlYlrNY2MbagV0Gb6eO05qHZbDCXd0BzNHEoe
- SAI6wPC45A5n+n5VGuLTli1oku3zfZ7aZN6ZTzYlNwFofxy/W3yLbZIbfSwWqAPXPxm21bv1X
- J203zRLqD1NfQF7Rlf2k8ktHfLwLkHe6rpEjno7vDUmC1wNw0nevyKphjayG0QMq0rBmCOfD6
- 4Dyrfo+n7Ejl9Al/h8zp7CIA9kEVIfAntqf8TSukYMVzLINd4w4kHeii+YlspKgYQw1csFpG7
- jXY1pPFVlRI/OZJWo6PRFcuxWBvvApVbGwEdU7hX++xTcNqrRetWXlejxXrBspiGwTCXrL9rt
- PN3SmvIu+8XFqzkkjotjywj/TCOlF6hyfNZ2eR1MDILVAL6RqMFAVrPNsKjtqUbYIoiT/+n0W
- dCHufKhL+MK2fMVB/9JN5iGSzzG6Jk937tCKzGI9MJkHQT/9f6YufCcDOPOqYc9wCiYCPx12J
- KxjFL8GYC9KhrfB1s7T8/h+Ko934WExFvTl1AgocWEhbPf/5sGOnPT9ZFt5wLAdgHs8WTIBac
- AIklezZUC9MQqKXrg3Js1so0gXtLGnhY+GlH5lzMeiAkoMHFAVcknqkSe0CgwAdyY45VFLeHv
- ZNM4pZR3qCJ8sNeqVyAvlOnjQztUB761n2oDgrkp3zFetPOSz3bu6CZxu4xjsKYCZTxCheGX0
- ER+GBMtkBTKpMh3uiaTu18KDCk1IFHlJhfB/iMTRCX9SZXRMb0rJqabE7Fb/CV8yapDA8+OaM
- PYWe+XTM6LvRrgyuBIBW69J+HJNMdML/FViv4k87xHP/8BoqMwX3PYoGRwIM+VjHl3MDDpsGa
- /cgtsXwp9Rc4DCByY/GiJhowtcs=
+X-OutGoing-Spam-Status: No, score=-1.0
+X-AuthUser: calestyo@scientia.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
---Sig_/SIti9.596DffjlEVDHs+UWG
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tue, 2022-11-15 at 14:52 -0500, Eric Levy wrote:
+> At any rate, perhaps some subscribers have the preference for not 
+> receiving patches, and might appreciate my idea
 
-On Tue, 15 Nov 2022 13:20:24 -0500
-Eric Levy <contact@ericlevy.name> wrote:
-
-> I have subscribed to the Btrfs development list occasionally, for=20
-> seeking support and raising issues, though I am not involved in the=20
-> development effort. Currently, there is no channel of communication=20
-> more accessible to members of the public, yet, the list is often used=20
-> for patches sent among the development team. For many of us, it may=20
-> seem cumbersome to be flooded by so many messages carrying the patches.
->=20
-> Perhaps it would be useful to consider a separate mailing list for=20
-> patches, or to open a web interface that is friendly to those seeking=20
-> to interact with the group for more occasional support. Hopefully, it=20
-> would not much affect those regularly involved to subscribe to two=20
-> lists, using one for patches and the other for basic correspondence.
->=20
->=20
->=20
-
-By the way: You don't have to be subscribed to the mailing-list at all.
-You can just send emails to linux-btrfs@vger.kernel.org. The implied
-reply-policy on pretty much any mailing list is reply-to-all so if
-anyone replies to you he will send with To: You and CC:
-linux-btrfs@vger.kernel.org and also CC: anyone else involved in the
-discussion so far (Thats what the Reply-to-all button in your mail
-client does). So it just works without being subscribed.
-
-Regards,
-Lukas Straub
-
---=20
+While I cannot speak for the developers, I'd guess they'd want to keep
+*this* one as the development list, and rather have a separate user
+list (if at all).
 
 
---Sig_/SIti9.596DffjlEVDHs+UWG
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
+This however has also it's downsides (in particular for the users):
+namely likely less attention by the developers ;-)
 
------BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCAAdFiEEg/qxWKDZuPtyYo+kNasLKJxdslgFAmNz7OAACgkQNasLKJxd
-slhq8xAAh65Xau6CypxAndqii+twAGhAh+wwguweN3xzp5CXms7yz1IozCe1VeBT
-nwDTBYUAXeuhSkfVJzfAxpRE+PpYR8TJi8qDnrz+JNWnYMkn9ohDDWfqjmQNAeWw
-Vf/Y468SIRc8OdcD/Bxryj2FF7Tz9YffOG6VUG9mWBBh6WOpy4u67qVZQB2eU23v
-v/tPfZxGbbGGPixkPrKzbPP6xdkqTfTb8O2VNYY9pQ1jYIAdGhh3YRhrKu4fsqhs
-uZxfIrGakORK+pjAkFVkzZslKP7sTx5V6TQsPD5iEUyB5AKy2nYNCCC+scJwV2lr
-fZ/g87uSQ4dIRGcjzTizQlf2bfQKs83mriAWRSMEn1lsrNIWN3Ar+m2pHZFPtyfm
-14U9xRm2Gjg3IwrRnlzw5KRzsZelotByaJhWubPFcq7OHNWKgjzIb3YSJhjTJYQI
-TLosjpf5w6r7hPG0ag94ouD7GJxctQuB9TsJWzd8vved3ZLcdFR+7h5c1EjTX4cu
-O/2w2oSvcaym9B2s3/RfUQ+T+uVvVyFvdGV7YuIbRyB9vdsMG9LLyHCAH352eUnW
-4Ex2JW4HiPROs4MWtSIsLNNV3PomXbDWPpq+sz+/u7PphfR719a1nZp0WMBCcpbf
-iAK8J0WbtsG3jvA/EwvhI941d0CEZRkqmMosdvcsCzcfjesZN3I=
-=Uext
------END PGP SIGNATURE-----
-
---Sig_/SIti9.596DffjlEVDHs+UWG--
+Cheers,
+Chris.

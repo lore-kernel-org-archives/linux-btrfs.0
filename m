@@ -2,63 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50170C4332F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 15:21:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 20689C4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 15:32:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231360AbiKOPV1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Nov 2022 10:21:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54892 "EHLO
+        id S230115AbiKOPcB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Nov 2022 10:32:01 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60684 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231363AbiKOPVW (ORCPT
+        with ESMTP id S238246AbiKOPbi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2022 10:21:22 -0500
-Received: from avasout-peh-001.plus.net (avasout-peh-001.plus.net [212.159.14.17])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC74C29C8A
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 07:21:21 -0800 (PST)
-Received: from selket.spencercollyer.plus.com ([80.189.102.133])
-        by smtp with ESMTP
-        id uxkVo5sGGZhEluxkWocnee; Tue, 15 Nov 2022 15:21:20
- +0000
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=plus.com; s=042019;
-        t=1668525680; bh=mHp0SmaMlC6sdMtaHCymHkP9eZj6h3DUZSltqqNzIiI=;
-        h=Date:From:To:Subject:In-Reply-To:References;
-        b=V2nMoDIi+I2GqHyDiReHU/1ofdkI2CLRxuI/Yd6W6g/bMAn/aKmqemOglidqw0c3J
-         bMUqM5K2qzfABdzVvFs26KLYdLvYeZSb6llQ/EZwTD3cUGOS2rJBvU+hhmXfXGmoWH
-         RGNc2JA2NTng+LOGlVeEGaeyiKoiwsbB/wEFDp4k92C1ThDGcTsvuk+4yieIhCt+fz
-         M9lM/VLWdAN5qw07NtecDvvlWWJN6bY3xCCb41GD+JSzIegsGOLuocgiTBY4xs8gLb
-         3a0CLgsymet/AcoEcF8xyoR5GuHNqjmBbM+8zIvJdZnI1vJ7+5/Ld8IdoMcW1jrZ+W
-         Q7GuhIT4z8gsw==
-X-Clacks-Overhead: "GNU Terry Pratchett"
-X-CM-Score: 0.00
-X-CNFS-Analysis: v=2.4 cv=XcOaca15 c=1 sm=1 tr=0 ts=6373ae70
- a=t3eprasJVEmiovQRZ0k/8A==:117 a=t3eprasJVEmiovQRZ0k/8A==:17
- a=kj9zAlcOel0A:10 a=9xFQ1JgjjksA:10 a=KhWKbWAMehFtYlDSfboA:9 a=CjuIK1q_8ugA:10
-Received: from selket (localhost.localdomain [127.0.0.1])
-        by selket.spencercollyer.plus.com (Postfix) with ESMTP id 11C9780055
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 15:21:19 +0000 (GMT)
-Date:   Tue, 15 Nov 2022 15:21:18 +0000
-From:   Spencer Collyer <spencer@spencercollyer.plus.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: Change BTRFS filesystem back to R/W from R/O
-Message-ID: <20221115152118.76f4d011@selket>
-In-Reply-To: <20221115140847.12fa1902@selket>
-References: <20221115122702.4ca83887@selket>
-        <7be0584d-5596-189a-353a-63e4b21c3b5e@gmx.com>
-        <20221115140847.12fa1902@selket>
-X-Mailer: Claws Mail 4.1.1 (GTK 3.24.34; x86_64-pc-linux-gnu)
+        Tue, 15 Nov 2022 10:31:38 -0500
+Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 525132E69B
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 07:31:31 -0800 (PST)
+Received: by mail-qt1-x82c.google.com with SMTP id s4so8903217qtx.6
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 07:31:31 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Vub/YGyob+lvK8mviiw67Vt9Borg9BoCnIRVylzUkCA=;
+        b=28RRIMs7DLfRu3dwyzWyfh1djl5bwD22UGTf3xQmWpy2u+Kamh7r3kJrA9IwwC4acK
+         ADG11o+xUMfSdW9jHKimwCWW4X3fe3jNjt5eRVuZFwA0+YYjIaW/mduaEZFY6L339TqQ
+         W00zCS/KAr5ZcV+jjjR6ZdzvT1pf56lK9JTyaB5cHSJ6/ajFRmUNqJiySm1F4m1vWX4a
+         nU31y3CBtv79SBwdc5OKyVtU9WC0v2FKWhEhAW+ppRQtX65r6t6HZgLcFUSbbGJO6FMF
+         f/eYKOj50wtnQf/gz/n9l2UdcIwKauUZi80JxrlDnK02She59J3zwoU6OyjPY+DxONRe
+         iEnA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Vub/YGyob+lvK8mviiw67Vt9Borg9BoCnIRVylzUkCA=;
+        b=m1e2D45GzdDeqfZIAxZL2Z13/qanAapz0hU6ZI7QYlRzImZRCm3Zn6L619sIiXRYjM
+         8PgkBW+fG1/G2aezexKQJeqIoWElCWHO3Rhd3t5lpPy+bOTwHgYXx1/5V9235rAHV6Uz
+         SwolbT3p0tgohYjH9hKx3lSP0FOCIRD9dDnfrAOeul1YAtE8YFl6JZCOAyJCNA9WOyji
+         erDDWM/veb4OGsvb4lNiBByg0vOcIcu+P56I8CeITQssfTzOUQQ5TdCuXfANbR7VZWil
+         10xVSgOu5917i0bg95QLncQglUhVDuCTNem+v6+syTOfXhwYeJ2lGCAUOqjVm6zVX1LU
+         5I5w==
+X-Gm-Message-State: ANoB5pnHKN+w+i8BQ2lU39RMqu3uONQ8XGh3Axsm4fBlFI4fe6oy5mvo
+        m3Ay6GJqvz1iMvZblFAQhElpMbyzgvpJ5Q==
+X-Google-Smtp-Source: AA0mqf59RDzUDwnao+nAwe9qmOhaSS7auDfwro1za/aHdXwAe8IR7eKNgfYZeMwIFY5hUk4EQeYQYg==
+X-Received: by 2002:ac8:71d7:0:b0:3a5:24f4:ad1c with SMTP id i23-20020ac871d7000000b003a524f4ad1cmr16608822qtp.124.1668526290207;
+        Tue, 15 Nov 2022 07:31:30 -0800 (PST)
+Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
+        by smtp.gmail.com with ESMTPSA id ay42-20020a05622a22aa00b0039a08c0a594sm7291616qtb.82.2022.11.15.07.31.29
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 15 Nov 2022 07:31:29 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v2 01/18] btrfs-progs: turn on more compiler warnings and use -Wall
+Date:   Tue, 15 Nov 2022 10:31:10 -0500
+Message-Id: <ce81309292ac0b5d445e4d7e2b269fc3d0e85d32.1668526161.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1668526161.git.josef@toxicpanda.com>
+References: <cover.1668526161.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-X-CMAE-Envelope: MS4xfCX8laU6RUewyyFwnquFbvgL4FRWBs0Bo3/HzjvY8Ev5K7zIZ+Zkwew4gHwmtNW7B1ZJMf2hEJhi3wI7dgZ4+tAeGu70VLUJr6BPfR1zN1/nMzcFF0x8
- MXwOYJ6CLKMOgBpN//e3mujsxxjRaoNMU7qZiBrST0lx23po9aRI1LgGvp7szio6RdIPwYjo4qb2/0zVgDyiGUy82IdwKAwa379lkodwSiM+CPmvnfPypHDt
- 8HWZMfYMB0YCLoOUJxfjSg==
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, 15 Nov 2022 14:08:47 +0000, Spencer Collyer wrote:
-> 
+In converting some of our helpers to take new args I would miss some
+locations because we don't stop on any warning, and I would miss the
+warning in the scrollback.  Fix this by stopping compiling on any error
+and turn on the fancy compiler checks.
 
-In the end I just did a umount / mount and it came back fine. So now I'm busy moving stuff off the filesystem to backup :)
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Spencer
+diff --git a/Makefile b/Makefile
+index c74a2ea9..1777a22e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -94,6 +94,9 @@ CFLAGS = $(SUBST_CFLAGS) \
+ 	 -D_XOPEN_SOURCE=700  \
+ 	 -fno-strict-aliasing \
+ 	 -fPIC \
++	 -Wall \
++	 -Wunused-but-set-parameter \
++	 -Werror \
+ 	 -I$(TOPDIR) \
+ 	 $(CRYPTO_CFLAGS) \
+ 	 -DCOMPRESSION_LZO=$(COMPRESSION_LZO) \
+-- 
+2.26.3
+

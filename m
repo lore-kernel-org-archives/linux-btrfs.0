@@ -2,60 +2,60 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9745C43217
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2570C4167D
 	for <linux-btrfs@archiver.kernel.org>; Tue, 15 Nov 2022 18:02:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237647AbiKOSBx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 15 Nov 2022 13:01:53 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51784 "EHLO
+        id S238455AbiKOSB4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 15 Nov 2022 13:01:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238341AbiKOSBM (ORCPT
+        with ESMTP id S230480AbiKOSBN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 15 Nov 2022 13:01:12 -0500
+        Tue, 15 Nov 2022 13:01:13 -0500
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EB38C10AE
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 10:01:00 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C318218C
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Nov 2022 10:01:11 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A33AE33688;
-        Tue, 15 Nov 2022 18:00:59 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 0D66D33688;
+        Tue, 15 Nov 2022 18:01:10 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1668535259; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1668535270; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=m1S9aFMQgZSYdBscg33X+SuuffT4OeQntDrE+719T5g=;
-        b=y3Pcok3KHoxrF/lXKuNqsQnliJgVLU7T3SW+nZmMqT93jwRfZe3ztIVqmsVETWpXm8es6j
-        Dy3awhZRYpGK03d0/VipBEvbcuTYmubvu4jIwz3JTyoaHEadMVZpQ5iuEk+tegU+Ytg9c/
-        omjTTev0adf1oDgtQEhQjKyuHbrfVZk=
+        bh=3KeGJ7XtW0nREon3ApSWnE6cR8oVkL/5sql3WTZUJQg=;
+        b=gBk0/KcaRpb9/DZzqcJ4mMatr+G0t3ZWwNTlMtRxyxFLEN6iZg96wIQnu7GN3pIv8q0c9Q
+        Oo9LLCeKqNQevD+ZZAnYx/8XUoPTfkxDx8+a3TvqOYoNNgkMbrPe2gg8T0XOVIy8JNTPjU
+        jxen2pdXy03e5Sw53ecrAXafBUfsL2c=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1668535259;
+        s=susede2_ed25519; t=1668535270;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=m1S9aFMQgZSYdBscg33X+SuuffT4OeQntDrE+719T5g=;
-        b=EMoDjGiEDamFEdBqROVOUUrx4kJ6SrQTamq7ObuMLAFDa4UApUDaJJxGjpobB+RKL+HaZz
-        lIwoM0IoW2ienNAg==
+        bh=3KeGJ7XtW0nREon3ApSWnE6cR8oVkL/5sql3WTZUJQg=;
+        b=VrXdUn8RL+1/N42jgMvt2D/piUMG05Qn16XHmtW1Wjv35vYHxqTkQJLyZNN1btvYXFVdxm
+        B3eQRvw8EH9FYUDg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5BF9313A91;
-        Tue, 15 Nov 2022 18:00:59 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B8B8F13A91;
+        Tue, 15 Nov 2022 18:01:09 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id YRQ5DtvTc2OuZAAAMHmgww
-        (envelope-from <rgoldwyn@suse.de>); Tue, 15 Nov 2022 18:00:59 +0000
+        id fPwyJeXTc2PNZAAAMHmgww
+        (envelope-from <rgoldwyn@suse.de>); Tue, 15 Nov 2022 18:01:09 +0000
 From:   Goldwyn Rodrigues <rgoldwyn@suse.de>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Goldwyn Rodrigues <rgoldwyn@suse.de>,
         Goldwyn Rodrigues <rgoldwyn@suse.com>
-Subject: [PATCH 10/16] btrfs: decide early if range should be async
-Date:   Tue, 15 Nov 2022 12:00:28 -0600
-Message-Id: <a822dc88a07268a9472823a77f17ee2384408e81.1668530684.git.rgoldwyn@suse.com>
+Subject: [PATCH 15/16] btrfs: lock extent before pages in encoded write
+Date:   Tue, 15 Nov 2022 12:00:33 -0600
+Message-Id: <b576b57fa84a22b4bf114b15f342de89698a6fd8.1668530684.git.rgoldwyn@suse.com>
 X-Mailer: git-send-email 2.35.3
 In-Reply-To: <cover.1668530684.git.rgoldwyn@suse.com>
 References: <cover.1668530684.git.rgoldwyn@suse.com>
@@ -65,71 +65,121 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This sets the async bit early in the writeback and uses it to decide if
-it should write asynchronously.
-
-Since there could be missing pages, check if page is NULL while
-performing heuristics.
+Lock the extent range while performing direct encoded writes, as opposed
+to individual pages.
 
 Signed-off-by: Goldwyn Rodrigues <rgoldwyn@suse.com>
 ---
- fs/btrfs/compression.c |  4 ++++
- fs/btrfs/inode.c       | 11 +++++++----
- 2 files changed, 11 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 52 +++++++++++++++++++++++++-----------------------
+ 1 file changed, 27 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 7f6452c4234e..09b846a516ed 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -1610,6 +1610,10 @@ static void heuristic_collect_sample(struct inode *inode, u64 start, u64 end,
- 	curr_sample_pos = 0;
- 	while (index < index_end) {
- 		page = find_get_page(inode->i_mapping, index);
-+		if (!page) {
-+			index++;
-+			continue;
-+		}
- 		in_data = kmap_local_page(page);
- 		/* Handle case where the start is not aligned to PAGE_SIZE */
- 		i = start % PAGE_SIZE;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index aa393219019b..070fb7071e39 100644
+index 3c3f38b0048d..e640eb8eb4ec 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2264,8 +2264,7 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
- 		ASSERT(!zoned || btrfs_is_data_reloc_root(inode->root));
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, nr_written);
--	} else if (!btrfs_inode_can_compress(inode) ||
--		   !inode_need_compress(inode, start, end)) {
-+	} else if (!test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT, &inode->runtime_flags)) {
- 		if (zoned)
- 			ret = run_delalloc_zoned(inode, locked_page, start, end,
- 						 page_started, nr_written);
-@@ -2273,7 +2272,6 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
- 			ret = cow_file_range(inode, locked_page, start, end,
- 					     page_started, nr_written, 1, NULL);
- 	} else {
--		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT, &inode->runtime_flags);
- 		ret = cow_file_range_async(inode, wbc, locked_page, start, end,
- 					   page_started, nr_written);
- 	}
-@@ -8257,9 +8255,14 @@ static int btrfs_writepages(struct address_space *mapping,
- 	 */
- 	async_wb = btrfs_inode_can_compress(inode) &&
- 		   inode_need_compress(inode, start, end);
--	if (!async_wb)
-+
-+	if (async_wb)
-+		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT, &inode->runtime_flags);
-+	else
- 		lock_extent(&inode->io_tree, start, end, &cached);
-+
- 	ret = extent_writepages(mapping, wbc);
-+
- 	if (!async_wb)
- 		unlock_extent(&inode->io_tree, start, end, &cached);
+@@ -10768,37 +10768,18 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	pages = kvcalloc(nr_pages, sizeof(struct page *), GFP_KERNEL_ACCOUNT);
+ 	if (!pages)
+ 		return -ENOMEM;
+-	for (i = 0; i < nr_pages; i++) {
+-		size_t bytes = min_t(size_t, PAGE_SIZE, iov_iter_count(from));
+-		char *kaddr;
+-
+-		pages[i] = alloc_page(GFP_KERNEL_ACCOUNT);
+-		if (!pages[i]) {
+-			ret = -ENOMEM;
+-			goto out_pages;
+-		}
+-		kaddr = kmap_local_page(pages[i]);
+-		if (copy_from_iter(kaddr, bytes, from) != bytes) {
+-			kunmap_local(kaddr);
+-			ret = -EFAULT;
+-			goto out_pages;
+-		}
+-		if (bytes < PAGE_SIZE)
+-			memset(kaddr + bytes, 0, PAGE_SIZE - bytes);
+-		kunmap_local(kaddr);
+-	}
  
+ 	for (;;) {
+ 		struct btrfs_ordered_extent *ordered;
+ 
+ 		ret = btrfs_wait_ordered_range(&inode->vfs_inode, start, num_bytes);
+ 		if (ret)
+-			goto out_pages;
++			goto out;
+ 		ret = invalidate_inode_pages2_range(inode->vfs_inode.i_mapping,
+ 						    start >> PAGE_SHIFT,
+ 						    end >> PAGE_SHIFT);
+ 		if (ret)
+-			goto out_pages;
++			goto out;
+ 		lock_extent(io_tree, start, end, &cached_state);
+ 		ordered = btrfs_lookup_ordered_range(inode, start, num_bytes);
+ 		if (!ordered &&
+@@ -10810,6 +10791,26 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 		cond_resched();
+ 	}
+ 
++	for (i = 0; i < nr_pages; i++) {
++		size_t bytes = min_t(size_t, PAGE_SIZE, iov_iter_count(from));
++		char *kaddr;
++
++		pages[i] = alloc_page(GFP_KERNEL_ACCOUNT);
++		if (!pages[i]) {
++			ret = -ENOMEM;
++			goto out_pages;
++		}
++		kaddr = kmap_local_page(pages[i]);
++		if (copy_from_iter(kaddr, bytes, from) != bytes) {
++			kunmap_local(kaddr);
++			ret = -EFAULT;
++			goto out_pages;
++		}
++		if (bytes < PAGE_SIZE)
++			memset(kaddr + bytes, 0, PAGE_SIZE - bytes);
++		kunmap_local(kaddr);
++	}
++
+ 	/*
+ 	 * We don't use the higher-level delalloc space functions because our
+ 	 * num_bytes and disk_num_bytes are different.
+@@ -10867,8 +10868,6 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	if (start + encoded->len > inode->vfs_inode.i_size)
+ 		i_size_write(&inode->vfs_inode, start + encoded->len);
+ 
+-	unlock_extent(io_tree, start, end, &cached_state);
+-
+ 	btrfs_delalloc_release_extents(inode, num_bytes);
+ 
+ 	if (btrfs_submit_compressed_write(inode, start, num_bytes, ins.objectid,
+@@ -10878,6 +10877,9 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 		ret = -EIO;
+ 		goto out_pages;
+ 	}
++
++	unlock_extent(io_tree, start, end, &cached_state);
++
+ 	ret = orig_count;
+ 	goto out;
+ 
+@@ -10897,14 +10899,14 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
+ 	 */
+ 	if (!extent_reserved)
+ 		btrfs_free_reserved_data_space_noquota(fs_info, disk_num_bytes);
+-out_unlock:
+-	unlock_extent(io_tree, start, end, &cached_state);
+ out_pages:
+ 	for (i = 0; i < nr_pages; i++) {
+ 		if (pages[i])
+ 			__free_page(pages[i]);
+ 	}
+ 	kvfree(pages);
++out_unlock:
++	unlock_extent(io_tree, start, end, &cached_state);
+ out:
+ 	if (ret >= 0)
+ 		iocb->ki_pos += encoded->len;
 -- 
 2.35.3
 

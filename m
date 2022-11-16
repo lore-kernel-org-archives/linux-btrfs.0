@@ -2,85 +2,104 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9976AC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Nov 2022 22:00:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 335E2C433FE
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Nov 2022 22:55:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233464AbiKPWA5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Nov 2022 17:00:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60386 "EHLO
+        id S233946AbiKPWzB convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Nov 2022 17:55:01 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38378 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229931AbiKPWA4 (ORCPT
+        with ESMTP id S232854AbiKPWzB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2022 17:00:56 -0500
-X-Greylist: delayed 1795 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 16 Nov 2022 14:00:54 PST
-Received: from fanzine2.igalia.com (fanzine2.igalia.com [213.97.179.56])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B0BC34385D
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2022 14:00:54 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=igalia.com;
-        s=20170329; h=Content-Transfer-Encoding:Content-Type:In-Reply-To:From:
-        References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender:Reply-To:
-        Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
-        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=buNZNTyw64cqYMlD9qTjxpOJv6jJm2RBfN6awvTNne0=; b=Rg/nHM4Y7bjdKKFaabdtKZVna4
-        ZJy9JJO/gcyqIblYZaAEBVi33I+P3Ey1h4QlaJe+hMn9emCJvBXUSxF4eKnacBINFHLFJf22ihB3u
-        0YCRllCI3CIgvQN8gDT9dmqRkw5Ijof/v4hc25YWmgocx8duhnzETIRgx7oktby1Tp69bavYk8Gd3
-        GEG3SjpPsaJT3G71UeEpB8wCFz17iZRkY219hvqL1FwzkaH6UrNtFi0dyON62MqeDpPWDfz4bx89i
-        /lvR+7zL/fw9gc7vSQcYM9KmEO1RuxDtLfPMIXucqELbsgTMGsV47FjQ45XG+7oH3x81Z9XgV89+R
-        V217s2vg==;
-Received: from [177.102.6.147] (helo=[192.168.1.60])
-        by fanzine2.igalia.com with esmtpsa 
-        (Cipher TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_128_GCM:128) (Exim)
-        id 1ovPzk-0022VS-6H; Wed, 16 Nov 2022 22:30:56 +0100
-Message-ID: <0878ac61-ce4b-f9a8-96dd-fb4cec0d711e@igalia.com>
-Date:   Wed, 16 Nov 2022 18:30:53 -0300
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.3.2
-Subject: Re: About duplicate fsid images in different devices
-Content-Language: en-US
-To:     Torstein Eide <torsteine@gmail.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <CAL5DHTH7MRuq1d+CgvdQz58gnxaTSO-rbx7ha=C_r4Hf-T8LjQ@mail.gmail.com>
-From:   "Guilherme G. Piccoli" <gpiccoli@igalia.com>
-In-Reply-To: <CAL5DHTH7MRuq1d+CgvdQz58gnxaTSO-rbx7ha=C_r4Hf-T8LjQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+        Wed, 16 Nov 2022 17:55:01 -0500
+Received: from mail.cardoe.co.uk (cardoe.plus.com [81.174.243.101])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C953A663D2
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2022 14:54:58 -0800 (PST)
+Received: from localhost (localhost [127.0.0.1])
+        by mail.cardoe.co.uk (Postfix) with ESMTP id 1061156004A
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2022 22:54:57 +0000 (GMT)
+Received: from mail.cardoe.co.uk ([127.0.0.1])
+        by localhost (mail.cardoe.co.uk [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id l_7AzETh1iWO for <linux-btrfs@vger.kernel.org>;
+        Wed, 16 Nov 2022 22:54:55 +0000 (GMT)
+Received: from smtpclient.apple (cardoe.plus.com [81.174.243.101])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.cardoe.co.uk (Postfix) with ESMTPSA id E045C560006
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2022 22:54:54 +0000 (GMT)
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8BIT
+From:   Peter Cardoe <peter@cardoe.co.uk>
+Mime-Version: 1.0 (1.0)
+Subject: Re: root item with a more recent gen
+Date:   Wed, 16 Nov 2022 22:54:54 +0000
+Message-Id: <16C8B1A2-2500-44C2-ABB4-DE65D37ED838@cardoe.co.uk>
+References: <119134c3dcaec15277b5850fc4ccb630.squirrel@mail.cardoe.co.uk>
+In-Reply-To: <119134c3dcaec15277b5850fc4ccb630.squirrel@mail.cardoe.co.uk>
+To:     linux-btrfs@vger.kernel.org
+X-Mailer: iPhone Mail (19H12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 16/11/2022 16:04, Torstein Eide wrote:
-> Hi Guilherme
-> ## Have you tried changing volumes instead of the partition?
-> https://btrfs.readthedocs.io/en/latest/btrfs-subvolume.html
-> <https://btrfs.readthedocs.io/en/latest/btrfs-subvolume.html>
+Should I be asking these questions on this mailing list or somewhere else, please?
+
+> On 16 Nov 2022, at 10:47, Peter Cardoe <peter@cardoe.co.uk> wrote:
 > 
-> ## Given that  SteamOS does not change much between updates. 
-> Maybe look in to union Filesystem, like docker uses:
-> https://martinheinz.dev/blog/44 <https://martinheinz.dev/blog/44>
-> https://gdevillele.github.io/engine/userguide/storagedriver/btrfs-driver/ <https://gdevillele.github.io/engine/userguide/storagedriver/btrfs-driver/>
+> ﻿Hello,
+> Please can someone tell me
+> (1) how to display the root item in question
+> (2) how to display the found root node in question
+> (3) if there a utility for patching the error back to what it should be?
 > 
-> ## Alternativ 2 The use of snapshots of the OS partition/subvolume, like
-> snapper:
-> https://btrfs.readthedocs.io/en/latest/btrfs-subvolume.html#subvolume-and-snapshot <https://btrfs.readthedocs.io/en/latest/btrfs-subvolume.html#subvolume-and-snapshot>
-> https://wiki.archlinux.org/title/snapper
-> <https://wiki.archlinux.org/title/snapper>
+> Thanks very much,
+> Peter.
+> ---------------------------- Original Message ----------------------------
+> Subject: root item with a more recent gen
+> From:    "Peter Cardoe" <peter@cardoe.co.uk>
+> Date:    Sun, November 13, 2022 3:59 pm
+> To:      linux-btrfs@vger.kernel.org
+> --------------------------------------------------------------------------
 > 
 > 
-> -- 
-> Torstein Eide
-> Torsteine@gmail.com <mailto:Torsteine@gmail.com>
-
-Thank you Torstein! I'm not sure snapshot or Union filesystem approaches
-would help - we just want a RO fs and be able to mount any of two
-identical partitions (with the same fs/fsid) on btrfs. It doesn't work
-in btrfs but it's fine on ext4. We could try improving the code with a
-mount option, but this email to collect opinions if that would harm some
-fundamental principle in btrfs and, indeed, would be unacceptable.
-
-Cheers,
-
-
-Guilherme
-
+> 
+> How can I fix the following error please:
+> 
+> btrfs check -b --repair /dev/sdb2
+> 
+> enabling repair mode
+> 
+> WARNING:
+> 
+> Do not use --repair unless you are advised to do so by a developer
+> 
+> or an experienced user, and then only after having accepted that no
+> 
+> fsck can successfully repair all types of filesystem corruption. Eg.
+> 
+> some software or hardware bugs can fatally damage a volume.
+> 
+> The operation will start in 10 seconds.
+> 
+> Use Ctrl-C to stop it.
+> 
+> 10 9 8 7 6 5 4 3 2 1
+> 
+> Starting repair.
+> 
+> Opening filesystem to check...
+> 
+> Checking filesystem on /dev/sdb2
+> 
+> UUID: b5e07514-ad87-47ac-b4f7-3d797cb689bd
+> 
+> [1/7] checking root items
+> 
+> root 258 has a root item with a more recent gen (118911) compared to the
+> found root node (118707)
+> 
+> ERROR: failed to repair root items: Invalid argument
+> 
+> 

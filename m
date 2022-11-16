@@ -2,127 +2,124 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ACDB9C4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Nov 2022 21:10:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1913FC4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 16 Nov 2022 21:46:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234155AbiKPVKC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 16 Nov 2022 16:10:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50358 "EHLO
+        id S233862AbiKPVqb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 16 Nov 2022 16:46:31 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48924 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239222AbiKPVJq (ORCPT
+        with ESMTP id S232774AbiKPVqa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 16 Nov 2022 16:09:46 -0500
-Received: from zmcc-3-mx.zmailcloud.com (zmcc-3-mx.zmailcloud.com [34.200.143.36])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C61744B99D
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2022 13:08:51 -0800 (PST)
-Received: from zmcc-3.zmailcloud.com (183.87.154.104.bc.googleusercontent.com [104.154.87.183])
-        (using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by zmcc-3-mx.zmailcloud.com (Postfix) with ESMTPS id DBBA840586;
-        Wed, 16 Nov 2022 15:12:44 -0600 (CST)
-Received: from zmcc-3.zmailcloud.com (localhost [127.0.0.1])
-        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTPS id 063698036FCD;
-        Wed, 16 Nov 2022 15:08:51 -0600 (CST)
-Received: from localhost (localhost [127.0.0.1])
-        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTP id EB9CD8036FE1;
-        Wed, 16 Nov 2022 15:08:50 -0600 (CST)
-Received: from zmcc-3.zmailcloud.com ([127.0.0.1])
-        by localhost (zmcc-3-mta-1.zmailcloud.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id PPZRPD3aH-FR; Wed, 16 Nov 2022 15:08:50 -0600 (CST)
-Received: from [10.4.2.11] (unknown [37.19.198.182])
-        by zmcc-3-mta-1.zmailcloud.com (Postfix) with ESMTPSA id 741C68036FCD;
-        Wed, 16 Nov 2022 15:08:50 -0600 (CST)
-Date:   Wed, 16 Nov 2022 16:08:43 -0500
-From:   Eric Levy <contact@ericlevy.name>
-Subject: Re: property designating root subvolumes
-To:     kreijack@inwind.it
-Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <JELGLR.YEZIP9YROWNN3@ericlevy.name>
-In-Reply-To: <b31bfe5a-ae85-2ea0-da65-698e095cc180@libero.it>
-References: <VB2DLR.FVM1D1665BSY2@ericlevy.name>
-        <ba47a0c3-ae7b-8aa9-96fd-2f1eab6e3885@libero.it>
-        <N3KELR.FXYFWHCH7XYX2@ericlevy.name>
-        <b31bfe5a-ae85-2ea0-da65-698e095cc180@libero.it>
-X-Mailer: geary/40.0
+        Wed, 16 Nov 2022 16:46:30 -0500
+X-Greylist: delayed 466 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 16 Nov 2022 13:46:27 PST
+Received: from zaphod.cobb.me.uk (zaphod.cobb.me.uk [213.138.97.131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B167513DDD
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Nov 2022 13:46:27 -0800 (PST)
+Received: by zaphod.cobb.me.uk (Postfix, from userid 107)
+        id CFE999B805; Wed, 16 Nov 2022 21:38:39 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1668634719;
+        bh=o5XiCHkrc+ogH+flv/Ha3klZuzGAyJDWD6u5NgtAlSs=;
+        h=Date:From:Subject:To:Cc:References:In-Reply-To:From;
+        b=x44IPuEwekGoj3G7Bz+c2kjTlDzFii/aNArnljK0a1KUflJxNN+D6a1JJfIb7DAiN
+         3EfAIoJwi0/UsADjlKXOGPFmmmViiaAI3lCBkuYzpDUY/xN41MgS7VTIsd4uXP3F4V
+         kAGKZVznCYbb/tbNuvOoZf1ZjdJ+NJZwtE3DoMiijwfSJ9orAs3mRxBOn33CW21T9y
+         YuB0bwn2IWZIGINSOpPZ/bywF6nGMTSXcravwP5SinwFf/aP6CGbKtXCnqSDoX5JAx
+         mddDliFj+ND0wnCXb2vMcwrdwDlR/t0qXDXwCVwDi6iRd74v512cIJVb7D1DG8PBNl
+         Ku15MctlvCXJQ==
+Received: from black.home.cobb.me.uk (unknown [192.168.0.205])
+        by zaphod.cobb.me.uk (Postfix) with ESMTP id 03B519B6A5;
+        Wed, 16 Nov 2022 21:37:50 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cobb.uk.net;
+        s=201703; t=1668634670;
+        bh=o5XiCHkrc+ogH+flv/Ha3klZuzGAyJDWD6u5NgtAlSs=;
+        h=Date:From:Subject:To:Cc:References:In-Reply-To:From;
+        b=OebONA8RTgNc50+nc/t6kpHcL2ku4X9tmGLW4UpY2tOnaG992t3ojOLA3faMGTjTR
+         BFaPshWQ668VllonKS347IY4lYg8bOaP83OnlkSHFaCJvPRf/YsNHnO5rYkOENeM56
+         iQMPkX6qRCeU1QD2D4ACF86pPP24TmSkupYahh65X4xUJZL+r34vNXjEYgoaFerZnX
+         ArxgOHxqL3cZXyDFoaWJHHAJ3WDTqJHDq3W7O/zEJ904MFZ+aW7RHNirugqTl1nO8Q
+         1VYDGZlmufpUAO4xg6w/J9YXDMIGjFMZ55xWe+vR3Y+NIoiJxiDsHrzdvndkbA17kA
+         om51xH72NQDNg==
+Received: from [192.168.0.202] (ryzen.home.cobb.me.uk [192.168.0.202])
+        by black.home.cobb.me.uk (Postfix) with ESMTP id D38EE289455;
+        Wed, 16 Nov 2022 21:37:49 +0000 (GMT)
+Message-ID: <0004f4a3-f68d-ffea-cedd-3d70177c28d7@cobb.uk.net>
+Date:   Wed, 16 Nov 2022 21:37:49 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.10.0
+From:   Graham Cobb <g.btrfs@cobb.uk.net>
+Subject: Re: property designating root subvolumes
+Content-Language: en-US
+To:     Eric Levy <contact@ericlevy.name>, kreijack@inwind.it
+Cc:     linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <VB2DLR.FVM1D1665BSY2@ericlevy.name>
+ <ba47a0c3-ae7b-8aa9-96fd-2f1eab6e3885@libero.it>
+ <N3KELR.FXYFWHCH7XYX2@ericlevy.name>
+ <b31bfe5a-ae85-2ea0-da65-698e095cc180@libero.it>
+ <JELGLR.YEZIP9YROWNN3@ericlevy.name>
+In-Reply-To: <JELGLR.YEZIP9YROWNN3@ericlevy.name>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
-
-On Wed, Nov 16 2022 at 08:09:05 PM +0100, Goffredo Baroncelli 
-<kreijack@libero.it> wrote:
->> The intention of rEFInd is as a bootloader, though less advanced 
->> overall than Grub, that is more user friendly, supporting 
->> autodiscovery of resident operating systems without needing to be 
->> preconfigured by tools installed on one of those operating systems. 
->> rEFInd does support some static configuration, similar to the Grub 
->> configuration system, but it is not generally required, and 
->> supported primarily as an afterthought, for advanced use cases not 
->> currently possible through the main method of on-the-fly 
->> autodetection.
->> 
+On 16/11/2022 21:08, Eric Levy wrote:
 > 
-> My point is that the "on fly autodetection", is more complex than 
-> find the root of the filesystem, which is indeed quite trivial (e.g. 
-> looking ad /bin/init or /init or /sbin/init); the snapshot is a bit 
-> more challenging, but due the fact that these have a pointer to the 
-> parent (PARENT_UUID) is still doable.
-
-The way I was framing the conversation is that inspecting the files in 
-a subvolume is one way to achieve "on-the-fly autodetection", in 
-contrast to other approaches, current or hypothetical. It tends to 
-loose the point of my concerns to suggest that the bootloader such as 
-rEFInd ought to use an approach more similar to the one used by Grub. 
-Being oriented toward autodetection is the overarching design choice of 
-rEFInd, and this broad distinction gives it a reason to exist, instead 
-of simply being a direct competitor or clone of Grub.
-
-> The concept of "default subvolume" doesn't mix well with "multiple os 
-> on the same filesystem"; in my setups  I prefer to pass the root 
-> subvolume in the commandline (e.g. 'rootflags=subvol=@rootfs'); 
-> recently I discovered that Debian does the same thing.
-
-Yes, but again, isn't it missing the point, that the default subvolume 
-may be used as an alternative to the subvolume argument, but not so in 
-a way that generalizes well for multiple resident OSs?
-
-
->> 
->> However, even so, I have concerns about desired handling of 
->> snapshots, as well as about the other reasons that a subvolume may 
->> appear internally as hosting a root tree, but not being desired for 
->> showing as an item in the boot menu.
->> 
-> About this point I agree more, but from a different point of view:
-> - the subvolume is the unit of snapshot
-> - a filesystem may be composed by different subvolumes (e.g. @boot, 
-> @log, @portables mounted over @rootfs)
-> - each subvolume may have different snapshot policy
-> - assuming that the place of a subvolume doesn't change over the time 
-> in the filesystem, I would like to find a filesystem layout where it 
-> is possible to mount a full filesystem or its snapshot with only a 
-> command.
-
-I believe that presently, it is possible to revert to a previous 
-snapshot of the root subvolume in any of three ways, 1) changing the 
-location of the snapshot to replace the main subvolume, 2) changing the 
-bootloader or system configurations to select the correct subvolume, 
-and 3) changing the subvolume selected for default mounting, assuming 
-none is configured explicitly.
-
-The first two are generally drastic, whereas the the latter is trivial. 
-It is, however, limited, due to requiring that one operating system 
-"take over" the entire file system, in the sense of using a resource of 
-which the entire file system provides only one, the selection of the 
-default subvolume.
-
-The main topic is how to designate certain subvolumes as bootable, if 
-the count of such subvolumes is desired as being more than one, but not 
-necessarily as many as the total count of snapshots, in a way that is 
-nearly as straightforward as changing the default subvolume.
 > 
+> On Wed, Nov 16 2022 at 08:09:05 PM +0100, Goffredo Baroncelli
+> <kreijack@libero.it> wrote:
+>>> The intention of rEFInd is as a bootloader, though less advanced
+>>> overall than Grub, that is more user friendly, supporting
+>>> autodiscovery of resident operating systems without needing to be
+>>> preconfigured by tools installed on one of those operating systems.
+>>> rEFInd does support some static configuration, similar to the Grub
+>>> configuration system, but it is not generally required, and supported
+>>> primarily as an afterthought, for advanced use cases not currently
+>>> possible through the main method of on-the-fly autodetection.
+>>>
+>>
+>> My point is that the "on fly autodetection", is more complex than find
+>> the root of the filesystem, which is indeed quite trivial (e.g.
+>> looking ad /bin/init or /init or /sbin/init); the snapshot is a bit
+>> more challenging, but due the fact that these have a pointer to the
+>> parent (PARENT_UUID) is still doable.
+> 
+> The way I was framing the conversation is that inspecting the files in a
+> subvolume is one way to achieve "on-the-fly autodetection", in contrast
+> to other approaches, current or hypothetical. It tends to loose the
+> point of my concerns to suggest that the bootloader such as rEFInd ought
+> to use an approach more similar to the one used by Grub. Being oriented
+> toward autodetection is the overarching design choice of rEFInd, and
+> this broad distinction gives it a reason to exist, instead of simply
+> being a direct competitor or clone of Grub.
+> 
+>> The concept of "default subvolume" doesn't mix well with "multiple os
+>> on the same filesystem"; in my setups  I prefer to pass the root
+>> subvolume in the commandline (e.g. 'rootflags=subvol=@rootfs');
+>> recently I discovered that Debian does the same thing.
+> 
+> Yes, but again, isn't it missing the point, that the default subvolume
+> may be used as an alternative to the subvolume argument, but not so in a
+> way that generalizes well for multiple resident OSs?
 
+So, what you are asking for is the ability to add some information to a
+btrfs filesystem listing a set of possible "alternate default"
+subvolumes. How any user, OS, application or boot manager might use that
+information is unspecified and up to them. It would have no impact on
+btrfs behaviour - just provide a useful place to store some hints for
+alternative subvolumes users or applications might choose to try to
+mount as the filesystem root subvolume if they want. It wouldn't
+interact with the existing concept of setting a default subvolume - it
+would just be hint to users that here are some other subvolumes they
+might want to try mounting.
 
+rEFInd could, if it wished, look that list of alternates and create
+choices for trying to boot using each of those subvolumes as the mount
+point. What happens then would depend on what the user had put in those
+subvolumes.
+
+Graham

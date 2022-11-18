@@ -2,82 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2307DC433FE
-	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Nov 2022 20:08:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7BDAC4332F
+	for <linux-btrfs@archiver.kernel.org>; Fri, 18 Nov 2022 20:09:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229615AbiKRUIx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 18 Nov 2022 15:08:53 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46916 "EHLO
+        id S231605AbiKRUJr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 18 Nov 2022 15:09:47 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47548 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229470AbiKRUIv (ORCPT
+        with ESMTP id S231617AbiKRUJp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 18 Nov 2022 15:08:51 -0500
-X-Greylist: delayed 598 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 18 Nov 2022 12:08:49 PST
-Received: from gw.red-soft.ru (red-soft.ru [188.246.186.2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id DA46ABF7D;
-        Fri, 18 Nov 2022 12:08:48 -0800 (PST)
-Received: from localhost.biz (unknown [10.81.81.211])
-        by gw.red-soft.ru (Postfix) with ESMTPA id E1A263E0DB1;
-        Fri, 18 Nov 2022 22:51:28 +0300 (MSK)
-From:   Artem Chernyshev <artem.chernyshev@red-soft.ru>
-To:     Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>
-Cc:     Artem Chernyshev <artem.chernyshev@red-soft.ru>,
-        Josef Bacik <josef@toxicpanda.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        lvc-project@linuxtesting.org
-Subject: [PATCH] btrsf: rcu_string: Replace strncpy() with strscpy()
-Date:   Fri, 18 Nov 2022 22:50:31 +0300
-Message-Id: <20221118195031.691815-1-artem.chernyshev@red-soft.ru>
-X-Mailer: git-send-email 2.30.3
+        Fri, 18 Nov 2022 15:09:45 -0500
+Received: from mail-qk1-x730.google.com (mail-qk1-x730.google.com [IPv6:2607:f8b0:4864:20::730])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8105F17AA7
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2022 12:09:44 -0800 (PST)
+Received: by mail-qk1-x730.google.com with SMTP id z1so4217917qkl.9
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Nov 2022 12:09:44 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:from:to:cc:subject:date:message-id:reply-to;
+        bh=abkvfUNhQl+VcWk86be86Up3S0wCdbhCPl914Mvaqcg=;
+        b=o4FfP7p/YotAmKU6EMOunY7YImMh82um5mW1DTru0ND1XE5di2EK886AsLwTtDdYHj
+         VL4g1xpSXoz9DPHJc7TGfUwAhBVGnEnSRctEZNwLtWMEojD1UGzdYNNnaChk9IVz0TYC
+         bDdzCjDAra5oDKaFCevyAj8Ip7EEkrZAAxba0MkCHgWeztFWiBgEVCQl2azdB2cp5dKS
+         7E5q18s0iIxUtIxrO+Ig03/sYstucyLwFlhwUC5xzmiapYMmvUJb/evajG+wK1SuNuBE
+         q411aEMN6y9VdAqHB9+4jqWl5G4s2W7aZ5w8vHqTufrLYZhwRnIKsN31KAO4Ni4zzQiy
+         WUSg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=abkvfUNhQl+VcWk86be86Up3S0wCdbhCPl914Mvaqcg=;
+        b=1y1NMbNC0oC7cZtCGo2O7e6OyAz0Wn9yRGlYubRZ4X/hvmJ61knlDD3OM4Xi48/KpG
+         dMlPlgyTQBTm/VUwcpewnFT79r7TXtNibwUwMwGTvH/hUe1vBQTmpm9Fvd3fZpW7yckP
+         UMRRp01l5q1rh7Jz8Ow2s4YMMfgFNyRebbi+aIDymuZPwKaocddBJGCNsbhaKLNiJWaW
+         1J2Ux0CMHZAnwtW9Q2/J/OUAYeq6Jy25giYz/UDHXQInBTJCHQJYsredVr7sItBphZ6W
+         Z00Ic1bPm6qxfehuI5emooxbD2pvxPI2y0CEjI2UCEd4yKye5yHcuQXYcwf50xCgCZPb
+         HRXw==
+X-Gm-Message-State: ANoB5pkEpRMSN02yzAj4/xAxXCGzWUP3eFlnrDDZVhwlTpk5oPQKv4lo
+        sCCGiDmvfizGqaIbkuAMVxWq/MIcKnosWg==
+X-Google-Smtp-Source: AA0mqf4pXSFstnutx/TP3W5WLd8qx6tElXjdJmZ7+8O6qFUPhbP+SoM9Da1ajVbbkdv4pKzmsfoaTw==
+X-Received: by 2002:a37:6847:0:b0:6fa:22f4:6a62 with SMTP id d68-20020a376847000000b006fa22f46a62mr7211877qkc.268.1668802183336;
+        Fri, 18 Nov 2022 12:09:43 -0800 (PST)
+Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
+        by smtp.gmail.com with ESMTPSA id h9-20020a05620a284900b006f9ddaaf01esm3074548qkp.102.2022.11.18.12.09.42
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 18 Nov 2022 12:09:43 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH] btrfs: fix uninitialized variable in find_first_clear_extent_bit
+Date:   Fri, 18 Nov 2022 15:09:42 -0500
+Message-Id: <bf7143200d35786f2d20e929cb3a626a94b4e9b4.1668802173.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-KLMS-Rule-ID: 1
-X-KLMS-Message-Action: clean
-X-KLMS-AntiSpam-Lua-Profiles: 173644 [Nov 18 2022]
-X-KLMS-AntiSpam-Version: 5.9.59.0
-X-KLMS-AntiSpam-Envelope-From: artem.chernyshev@red-soft.ru
-X-KLMS-AntiSpam-Rate: 0
-X-KLMS-AntiSpam-Status: not_detected
-X-KLMS-AntiSpam-Method: none
-X-KLMS-AntiSpam-Auth: dkim=none
-X-KLMS-AntiSpam-Info: LuaCore: 502 502 69dee8ef46717dd3cb3eeb129cb7cc8dab9e30f6, {Tracking_from_domain_doesnt_match_to}, localhost.biz:7.1.1;127.0.0.199:7.1.2;red-soft.ru:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1
-X-MS-Exchange-Organization-SCL: -1
-X-KLMS-AntiSpam-Interceptor-Info: scan successful
-X-KLMS-AntiPhishing: Clean, bases: 2022/11/18 15:59:00
-X-KLMS-AntiVirus: Kaspersky Security for Linux Mail Server, version 8.0.3.30, bases: 2022/11/18 15:44:00 #20582602
-X-KLMS-AntiVirus-Status: Clean, skipped
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Using strncpy() on NUL-terminated strings are deprecated.
-To avoid possible forming of non-terminated string
-strscpy() could be used.
+This was caught when syncing extent-io-tree.c into btrfs-progs.  This
+however isn't really a problem, the only way next would be uninitialized
+is if we found the range we were looking for, and in this case we don't
+care about next.  However it's a compile error, so fix it up.
 
-Found by Linux Verification Center (linuxtesting.org) with SVACE.
-
-Fixes: 606686eeac45 ("Btrfs: use rcu to protect device->name")
-Signed-off-by: Artem Chernyshev <artem.chernyshev@red-soft.ru>
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/rcu-string.h | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-io-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/rcu-string.h b/fs/btrfs/rcu-string.h
-index 5c1a617eb25d..d9894da7a05a 100644
---- a/fs/btrfs/rcu-string.h
-+++ b/fs/btrfs/rcu-string.h
-@@ -18,7 +18,10 @@ static inline struct rcu_string *rcu_string_strdup(const char *src, gfp_t mask)
- 					 (len * sizeof(char)), mask);
- 	if (!ret)
- 		return ret;
--	strncpy(ret->str, src, len);
-+	if (WARN_ON(strscpy(ret->str, src, len) < 0)) {
-+		kfree(ret);
-+		return NULL;
-+	}
- 	return ret;
- }
+diff --git a/fs/btrfs/extent-io-tree.c b/fs/btrfs/extent-io-tree.c
+index 25215667a3de..af11e3b89125 100644
+--- a/fs/btrfs/extent-io-tree.c
++++ b/fs/btrfs/extent-io-tree.c
+@@ -1425,7 +1425,7 @@ void find_first_clear_extent_bit(struct extent_io_tree *tree, u64 start,
+ 				 u64 *start_ret, u64 *end_ret, u32 bits)
+ {
+ 	struct extent_state *state;
+-	struct extent_state *prev = NULL, *next;
++	struct extent_state *prev = NULL, *next = NULL;
+ 
+ 	spin_lock(&tree->lock);
  
 -- 
-2.30.3
+2.26.3
 

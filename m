@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7D3EC4332F
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Nov 2022 22:38:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B053C4167D
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Nov 2022 22:38:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229796AbiKWWiZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Nov 2022 17:38:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55690 "EHLO
+        id S229820AbiKWWi0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Nov 2022 17:38:26 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55812 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229776AbiKWWh7 (ORCPT
+        with ESMTP id S229777AbiKWWiB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2022 17:37:59 -0500
-Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1A31EFCFD
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:57 -0800 (PST)
-Received: by mail-qk1-x731.google.com with SMTP id k2so13471779qkk.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:57 -0800 (PST)
+        Wed, 23 Nov 2022 17:38:01 -0500
+Received: from mail-qk1-x72e.google.com (mail-qk1-x72e.google.com [IPv6:2607:f8b0:4864:20::72e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AACEE101E8
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:59 -0800 (PST)
+Received: by mail-qk1-x72e.google.com with SMTP id d8so13461641qki.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:59 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=BGTLGPNKt9rHwMmVBTUJWDbcQrsnFY5gBQrILtbVypo=;
-        b=Y/6V3zB/iBve35MCQo0YbbSAlW0xn3JNqlAjqyjzxF7iYTFI9UhRsWwpcKABBWRQDY
-         iuJ+vQyT5TWDkkF0dZcTSwvQQAhIWkgWZhNBPEfnu5bI6PIZ8XBs4/EmrkmYsvdUpJNK
-         KIV9wLjTff1mpDWHkeZIMNYoSOy252P7zKeF5F74jrek7jqdLefiflh3OESLBfMw6GoS
-         uF69KgDRbhYVtGDx4daAckQUNTNcynXLgRJFzYbT2Ygt38cwrt74gWjp/nBX4qo8abf+
-         PsfpHE2GaSC/8urVWdZYB3C2NYkXcjVGO1MvtUw6bNwD+dtQo0wHOBYmHOMMrh5hPlN/
-         0lwQ==
+        bh=+a9t2rbSZiRUOuExHq+1TWeATRk9YCY5aTuvq80WToE=;
+        b=GYeZGT7SkEHJ4gIOmvuefVweDT/T1Agc2IEQZrnasTwQgrmN88k89W4wGz5n2KbMgM
+         urzihLU26DkRtdAfIAQ3YEE71JCnAqH0+gsCMtl4xXNMtJK2uSrADoH2u3dCenftdpaY
+         g24sceNXxDKtNzdDJZhUqmu91uqoLVfKZfRQTKtkvtn6b9n4hiZ05Vxc/MylRytF0AmN
+         RwcTQ0IvPpYvSfKX7yon5AdU3nb2xXpwBNkpLkdsWgG4Z+W1H4djYhFn0moiDxjiDTfb
+         DTMMfIFSPzULwzZcILLGT0RwNT74JoOb9O262iHDtttNQV8DSjjKIzC9M1EQAd+PneO0
+         e9Dw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=BGTLGPNKt9rHwMmVBTUJWDbcQrsnFY5gBQrILtbVypo=;
-        b=QGzuA66jC09vMPod1l+vOYZS6DrfIq8qhgSk8OJuEiTMV1+kkTzcoH57acsXNLbfrM
-         wAnKdPuwSPEWsdokI8KtjYCaXRs4HRtlNxqHYnX2V+8V53YCU1NOYwm9YYnpR0L1R6kF
-         d+T5MfufFBlASqMRN+0Y0xaUxx3GwLFWCDekefrBLD79mJlj7Z+uRpm2N/EUuNIV6+tq
-         9e6DjEiM0Ev9TaB2izK89JyD5HMtwvE4FRHhWtU7lQGiJvKlfYcuJ4lznPT6B1/SNRuM
-         hlPLiEZ6tIq6UW+CWtPrQgukcvqf7jegT7jSNhsVy6JqR5DwIouSB/xMOro+IFsIgf9v
-         X9Ng==
-X-Gm-Message-State: ANoB5pkT+rhP4ZliWM3vS613Lbg+7ErFnkCnCi//IkdQ1sN+Vc8nZrNL
-        G9vXX3NruSmwO25+cyLgdlX1GL4GGMAGKQ==
-X-Google-Smtp-Source: AA0mqf6TInCOPG7xHxUv3izbMMjXCBpxJo1vLt8u+DtqwUP30ZTL2yzMoz6vpRfQ+HaUQRAn+ymH1Q==
-X-Received: by 2002:a37:af05:0:b0:6fa:da64:4879 with SMTP id y5-20020a37af05000000b006fada644879mr14119882qke.312.1669243076432;
-        Wed, 23 Nov 2022 14:37:56 -0800 (PST)
+        bh=+a9t2rbSZiRUOuExHq+1TWeATRk9YCY5aTuvq80WToE=;
+        b=MBKflWOMDVTZ6jVd69/89fQg2sBEZvwU1LUm9QpnTrFPh8gR2Z3e/KlWLWKRDJApXb
+         39+FR4VuOV0Of2qq/SCclPH9utTKw89q4yj3yFXy5YrHNG/fIUEpCeb+8GVVCCu1kdRq
+         tzPfdf3CjRDWY0hfcfqaMnc1QbqcQoxzRZzGIjLfKBnuqEfHDtpcxVg0cZTAV0GoKrZF
+         LNawajiA68+newFT2GUfIlT0cd7x1hzEeAxMaLjhNU7sAySYzvsruRpePEUJ/oHVxVvP
+         8zHX28jD/LSNS7ZxCN0wXYLC+a3FClMHz23Audo72RkTJhwZr6Pkt0rq1Y/Nd+eA86Li
+         Elmw==
+X-Gm-Message-State: ANoB5pkLV/MjqQPIHlbS2ox7LnKM7pIA7517i8pBBEZ7jkGy53ZxWi3O
+        MVVfQidP7BOdYpHYBgBlmenPAlDbgzJEYw==
+X-Google-Smtp-Source: AA0mqf76XJ7c2769E+wiKeVP6sF6xDqXw2FppwpWT+obYQ43sG1d0PI1xypqn638Vg0QMckVuhwekQ==
+X-Received: by 2002:a05:620a:c95:b0:6fa:91f9:c84d with SMTP id q21-20020a05620a0c9500b006fa91f9c84dmr26672039qki.724.1669243078974;
+        Wed, 23 Nov 2022 14:37:58 -0800 (PST)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id u12-20020a05620a084c00b006ee949b8051sm12390637qku.51.2022.11.23.14.37.55
+        by smtp.gmail.com with ESMTPSA id d17-20020a05620a241100b006f87d28ea3asm12994611qkn.54.2022.11.23.14.37.58
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Nov 2022 14:37:56 -0800 (PST)
+        Wed, 23 Nov 2022 14:37:58 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 13/29] btrfs-progs: stop using btrfs_root_item_v0
-Date:   Wed, 23 Nov 2022 17:37:21 -0500
-Message-Id: <9c33821261448abb06676c0cca57ebab56498807.1669242804.git.josef@toxicpanda.com>
+Subject: [PATCH v3 15/29] btrfs-progs: move dirty eb tracking to it's own io_tree
+Date:   Wed, 23 Nov 2022 17:37:23 -0500
+Message-Id: <66d6451a0c3d62cecfd2bcfc70c4b4c7f990ccc1.1669242804.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1669242804.git.josef@toxicpanda.com>
 References: <cover.1669242804.git.josef@toxicpanda.com>
@@ -64,30 +64,89 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This isn't defined in the kernel, we simply check if the root item size
-is less than btrfs_root_item, so adjust the user of btrfs_root_item_v0
-to make a similar check.
+btrfs-progs has a cache tree embedded in the extent_io_tree in order to
+track extent buffers.  We use the extent_io_tree part to track dirty,
+and the cache tree to keep the extent buffers in.  When we sync
+extent-io-tree.[ch] we'll lose this ability, so separate out the dirty
+tracking into its own extent_io_tree.  Subsequent patches will adjust
+the extent buffer lookup so it doesn't use the custom extent_io_tree
+thing.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- cmds/subvolume-list.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ kernel-shared/ctree.h       | 1 +
+ kernel-shared/disk-io.c     | 2 ++
+ kernel-shared/extent_io.c   | 4 ++--
+ kernel-shared/transaction.c | 2 +-
+ 4 files changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/cmds/subvolume-list.c b/cmds/subvolume-list.c
-index 6997d877..1c734f50 100644
---- a/cmds/subvolume-list.c
-+++ b/cmds/subvolume-list.c
-@@ -870,8 +870,8 @@ static int list_subvol_search(int fd, struct rb_root *root_lookup)
- 				ri = (struct btrfs_root_item *)(args.buf + off);
- 				gen = btrfs_root_generation(ri);
- 				flags = btrfs_root_flags(ri);
--				if(sh.len >
--				   sizeof(struct btrfs_root_item_v0)) {
-+				if(sh.len <
-+				   sizeof(struct btrfs_root_item)) {
- 					otime = btrfs_stack_timespec_sec(&ri->otime);
- 					ogen = btrfs_root_otransid(ri);
- 					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 3f674484..b9a58325 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -1218,6 +1218,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *log_root_tree;
+ 
+ 	struct extent_io_tree extent_cache;
++	struct extent_io_tree dirty_buffers;
+ 	struct extent_io_tree free_space_cache;
+ 	struct extent_io_tree pinned_extents;
+ 	struct extent_io_tree extent_ins;
+diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+index ad4d0f4c..382d15f5 100644
+--- a/kernel-shared/disk-io.c
++++ b/kernel-shared/disk-io.c
+@@ -867,6 +867,7 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
+ 		goto free_all;
+ 
+ 	extent_io_tree_init(&fs_info->extent_cache);
++	extent_io_tree_init(&fs_info->dirty_buffers);
+ 	extent_io_tree_init(&fs_info->free_space_cache);
+ 	extent_io_tree_init(&fs_info->pinned_extents);
+ 	extent_io_tree_init(&fs_info->extent_ins);
+@@ -1350,6 +1351,7 @@ void btrfs_cleanup_all_caches(struct btrfs_fs_info *fs_info)
+ 		free_extent_buffer(eb);
+ 	}
+ 	free_mapping_cache_tree(&fs_info->mapping_tree.cache_tree);
++	extent_io_tree_cleanup(&fs_info->dirty_buffers);
+ 	extent_io_tree_cleanup(&fs_info->extent_cache);
+ 	extent_io_tree_cleanup(&fs_info->free_space_cache);
+ 	extent_io_tree_cleanup(&fs_info->pinned_extents);
+diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
+index bdfb2de6..4b6e0bee 100644
+--- a/kernel-shared/extent_io.c
++++ b/kernel-shared/extent_io.c
+@@ -1042,7 +1042,7 @@ out:
+ 
+ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ {
+-	struct extent_io_tree *tree = &eb->fs_info->extent_cache;
++	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
+ 	if (!(eb->flags & EXTENT_DIRTY)) {
+ 		eb->flags |= EXTENT_DIRTY;
+ 		set_extent_dirty(tree, eb->start, eb->start + eb->len - 1);
+@@ -1053,7 +1053,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ 
+ int clear_extent_buffer_dirty(struct extent_buffer *eb)
+ {
+-	struct extent_io_tree *tree = &eb->fs_info->extent_cache;
++	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
+ 	if (eb->flags & EXTENT_DIRTY) {
+ 		eb->flags &= ~EXTENT_DIRTY;
+ 		clear_extent_dirty(tree, eb->start, eb->start + eb->len - 1);
+diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
+index c50abfca..c1364d69 100644
+--- a/kernel-shared/transaction.c
++++ b/kernel-shared/transaction.c
+@@ -136,7 +136,7 @@ int __commit_transaction(struct btrfs_trans_handle *trans,
+ 	u64 end;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct extent_buffer *eb;
+-	struct extent_io_tree *tree = &fs_info->extent_cache;
++	struct extent_io_tree *tree = &fs_info->dirty_buffers;
+ 	int ret;
+ 
+ 	while(1) {
 -- 
 2.26.3
 

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BB96CC433FE
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Nov 2022 22:38:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89708C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Nov 2022 22:38:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229486AbiKWWi3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Nov 2022 17:38:29 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55390 "EHLO
+        id S229803AbiKWWia (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Nov 2022 17:38:30 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54176 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229803AbiKWWiG (ORCPT
+        with ESMTP id S229757AbiKWWiB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2022 17:38:06 -0500
-Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2DCE424BE0
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:38:05 -0800 (PST)
-Received: by mail-qt1-x836.google.com with SMTP id jr19so132267qtb.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:38:05 -0800 (PST)
+        Wed, 23 Nov 2022 17:38:01 -0500
+Received: from mail-qk1-x733.google.com (mail-qk1-x733.google.com [IPv6:2607:f8b0:4864:20::733])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0914E10FF
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:58 -0800 (PST)
+Received: by mail-qk1-x733.google.com with SMTP id d7so13485899qkk.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:58 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=uR3lErDo7/kuATg8JdB5xvhjhL6I3cwUx15NLkCw2Ko=;
-        b=HpcM90PyF7F67n+pELt8MTLW+yRxSxygnzboy1kslHW2AG3hxc1SkXhknmMYPESnmQ
-         DcOFb1K0LIvJOBAE3rO3hi4C7Lzam/ubUMrEfXbVpxgJwuC+NmcZnc9y8Us+Q3S5di4N
-         8RJSigGTaPCeqltRjl6BVr53/7wIShVpHIHe+iFKxu5bjibHSOFqqn1upJmsscJ2tbiW
-         v5YAygT+K7LegaXP3Z0e4wPLWwJHZ2I8sNFQPz6iRBCwCEbsLVBH/44PE/4EUld7a8bG
-         0GDk0BE1QaPev9nIBZYDSus2DRxStMc/gQve9P4o6BX1bwFjiWxcxfSUFYKcN7/wTxyS
-         B/kw==
+        bh=tMV+EvVW/9gxm7EbfBgQRdnBIwmlJ4bs05kZBZaXF4M=;
+        b=IYdUtg8jKczxGTIxji1Zw/jOWMevrb6Vq4dJ1iWf3WZT//PD58uT9BOhiyFjqKg9SS
+         28G+Chdv+jnzWIvNNEpYenWR/zhQtedrolGHSV2OPbwl42Y0qdz8SPNxax8+r4rCc+AG
+         BKyR1W9Nfr1TC6OVAvgCJIfUAQ+jr3LOAcBzp+gaJVWmnWKxUiNhMEYz/BKN7eaaM9XA
+         9ZV3o0wjmlgVcR7rCFlbUKdVSdAMkzBA3Rwdik4CPo3QZcAHaULKjp/HfLPfIvuHeBC4
+         PXJO5EU+DTzM28sAXW2f8UTmB77hic+jSjEZYIu9lwbOtKs4vbJacD6zm6UNEAGP7NCl
+         +fPw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=uR3lErDo7/kuATg8JdB5xvhjhL6I3cwUx15NLkCw2Ko=;
-        b=hkuLQL3cLNNmG9s+LzaBJKRfa5bb2YCYAY2Fe/XIAlroOcz0yo+GJvc0mSge9qVjhK
-         zuRdZxWIDhZvLT3yWaK8RkZ04Jl/k1Je2EH2VhKeayUPpG5FIDA8uQpR7YEMkVXHR4FX
-         3YIEvU9nIPz8ep5BHEA9TOjL7d7rm1nuOo6J1+nsFvNE3Luq4KK7UOTa0mTfb98MPamb
-         oXdTS/3IpjLG+ojz8Qlg74JS1Iup9AGB/Ugi6RkBFg8OSb6jCbXJwdj9TA+hdzAmAvuH
-         Wyq16xiGNlT2+u4qtDYoY+KWB6pXpotGrjD2fzOdd2MQ2X+6HYoYIovM/4+twxKMNVlH
-         5ZUg==
-X-Gm-Message-State: ANoB5pmiqyBrpkbOSw6IBNALbprMQ+QItg3Mslq8xLXw5uiClQdKtugA
-        wkjtZQuEVmHpmsXTi8S+0z19W9ztWAEeuw==
-X-Google-Smtp-Source: AA0mqf4hKcb7LH/IvcyT4IaYmVVD4iGPzlhBHPApF5w0dyAOVVycEGecUm0ZDS8ScnMmWuV6fXS0ow==
-X-Received: by 2002:ac8:1183:0:b0:3a5:8517:c3f3 with SMTP id d3-20020ac81183000000b003a58517c3f3mr28231551qtj.618.1669243083990;
-        Wed, 23 Nov 2022 14:38:03 -0800 (PST)
+        bh=tMV+EvVW/9gxm7EbfBgQRdnBIwmlJ4bs05kZBZaXF4M=;
+        b=Z0qGGtBUMvxqGU5NOIK6RuShOawB/b2xaWigBdy5Z0HuSeMOqnn5DBaO4FWtqgczx/
+         pwjlGYNQ4vfFoGFgg+Fx3pW7r72qLPKfRwupC6Mrx/dkaJ7ShNU4tWCqYRlsyOIK/GCp
+         ajiXBeXQgvWSSd0/Q1LVuBguv3W8+ZrE5GVKyc/MDcImJwMlqNtJgtGXDs5uzOJ7246x
+         4NWPEbDBr2x7flU0azqpUp/2wJq9vCVXChKhTeXBl23Ln1yqpNDtwDNyLe55uReAQnBv
+         c//lsUO6CF7XtY5GY3em0WQZwujUhh2USbeEz02HqPPLLv24rNj8BN7WSO9p40Qh6Ymf
+         alhg==
+X-Gm-Message-State: ANoB5pn1avlfMXIa5JqdkAGbnzbUk1vVJyPfT5c7kKt+DkuV1uRw7km+
+        roK984XThB3+9iUnQCIvyWcfqPd7xRjQFg==
+X-Google-Smtp-Source: AA0mqf6j+gLsoPQZk7S7hGpn6J0Qssd+52M4WyAgFXnHOdQAy+b5LI1PIaNTdyE40/eNczRGNCvxyQ==
+X-Received: by 2002:a05:620a:215c:b0:6fa:937f:61d4 with SMTP id m28-20020a05620a215c00b006fa937f61d4mr12649245qkm.280.1669243077659;
+        Wed, 23 Nov 2022 14:37:57 -0800 (PST)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id i15-20020a05620a248f00b006fa9d101775sm13071473qkn.33.2022.11.23.14.38.03
+        by smtp.gmail.com with ESMTPSA id z26-20020ac875da000000b003a622111f2csm9982724qtq.86.2022.11.23.14.37.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 23 Nov 2022 14:38:03 -0800 (PST)
+        Wed, 23 Nov 2022 14:37:57 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v3 19/29] btrfs-progs: rename extent buffer flags to EXTENT_BUFFER_*
-Date:   Wed, 23 Nov 2022 17:37:27 -0500
-Message-Id: <aebccc7f609a3252f81afa85630433c7ed61b4c8.1669242804.git.josef@toxicpanda.com>
+Subject: [PATCH v3 14/29] btrfs-progs: make the find extent buffer helpers take fs_info
+Date:   Wed, 23 Nov 2022 17:37:22 -0500
+Message-Id: <7473bfae6a54af4d74b0993556df96a4dd8508d1.1669242804.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1669242804.git.josef@toxicpanda.com>
 References: <cover.1669242804.git.josef@toxicpanda.com>
@@ -64,162 +64,101 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We have been overloading the extent_state flags for use on the extent
-buffers as well.  When we sync extent-io-tree.[ch] this will become
-impossible, so rename these flags to EXTENT_BUFFER_* and use those
-definitions instead of the extent_state definitions.
+This is a cleanup patch to make syncing the btrfs kernel code into
+btrfs-progs easier.  In btrfs-progs we have an extra cache in the
+extent_io_tree that's exclusively used for the extent buffer tracking.
+In order to untangle this dependency start passing around the fs_info to
+search for extent_buffers, and then have the helpers use the appropriate
+structure to find the extent buffer.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/main.c              |  2 +-
- check/mode-lowmem.c       |  2 +-
- kernel-shared/ctree.c     |  2 +-
- kernel-shared/disk-io.c   |  4 ++--
- kernel-shared/extent_io.c | 10 +++++-----
- kernel-shared/extent_io.h | 13 ++++++++-----
- 6 files changed, 18 insertions(+), 15 deletions(-)
+ kernel-shared/disk-io.c     | 3 +--
+ kernel-shared/extent_io.c   | 6 ++++--
+ kernel-shared/extent_io.h   | 4 ++--
+ kernel-shared/transaction.c | 4 ++--
+ 4 files changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 4d8d6882..4af6cd4e 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -3641,7 +3641,7 @@ static int check_fs_root(struct btrfs_root *root,
- 		      super_generation + 1);
- 		generation_err = true;
- 		if (opt_check_repair) {
--			root->node->flags |= EXTENT_BAD_TRANSID;
-+			root->node->flags |= EXTENT_BUFFER_BAD_TRANSID;
- 			ret = recow_extent_buffer(root, root->node);
- 			if (!ret) {
- 				printf("Reset generation for root %llu\n",
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index c62d8326..2cde3b63 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -5282,7 +5282,7 @@ static int check_btrfs_root(struct btrfs_root *root, int check_all)
- 		      super_generation + 1);
- 		err |= INVALID_GENERATION;
- 		if (opt_check_repair) {
--			root->node->flags |= EXTENT_BAD_TRANSID;
-+			root->node->flags |= EXTENT_BUFFER_BAD_TRANSID;
- 			ret = recow_extent_buffer(root, root->node);
- 			if (!ret) {
- 				printf("Reset generation for root %llu\n",
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index d6ff0008..9b9fc9eb 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -473,7 +473,7 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	write_extent_buffer(cow, root->fs_info->fs_devices->metadata_uuid,
- 			    btrfs_header_fsid(), BTRFS_FSID_SIZE);
- 
--	WARN_ON(!(buf->flags & EXTENT_BAD_TRANSID) &&
-+	WARN_ON(!(buf->flags & EXTENT_BUFFER_BAD_TRANSID) &&
- 		btrfs_header_generation(buf) > trans->transid);
- 
- 	update_ref_for_cow(trans, root, buf, cow);
 diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index c266f9c2..4050566a 100644
+index 776758e9..ad4d0f4c 100644
 --- a/kernel-shared/disk-io.c
 +++ b/kernel-shared/disk-io.c
-@@ -276,7 +276,7 @@ static int verify_parent_transid(struct extent_buffer *eb, u64 parent_transid,
- 	       (unsigned long long)parent_transid,
- 	       (unsigned long long)btrfs_header_generation(eb));
- 	if (ignore) {
--		eb->flags |= EXTENT_BAD_TRANSID;
-+		eb->flags |= EXTENT_BUFFER_BAD_TRANSID;
- 		printk("Ignoring transid failure\n");
- 		return 0;
- 	}
-@@ -374,7 +374,7 @@ struct extent_buffer* read_tree_block(struct btrfs_fs_info *fs_info, u64 bytenr,
- 		if (ret == 0 && csum_tree_block(fs_info, eb, 1) == 0 &&
- 		    check_tree_block(fs_info, eb) == 0 &&
- 		    verify_parent_transid(eb, parent_transid, ignore) == 0) {
--			if (eb->flags & EXTENT_BAD_TRANSID &&
-+			if (eb->flags & EXTENT_BUFFER_BAD_TRANSID &&
- 			    list_empty(&eb->recow)) {
- 				list_add_tail(&eb->recow,
- 					      &fs_info->recow_ebs);
+@@ -227,8 +227,7 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+ 					    u64 bytenr, u32 blocksize)
+ {
+-	return find_extent_buffer(&fs_info->extent_cache,
+-				  bytenr, blocksize);
++	return find_extent_buffer(fs_info, bytenr, blocksize);
+ }
+ 
+ struct extent_buffer* btrfs_find_create_tree_block(
 diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
-index baaf7234..99191fe2 100644
+index f112983a..bdfb2de6 100644
 --- a/kernel-shared/extent_io.c
 +++ b/kernel-shared/extent_io.c
-@@ -648,7 +648,7 @@ static void free_extent_buffer_internal(struct extent_buffer *eb, bool free_now)
- 	eb->refs--;
- 	BUG_ON(eb->refs < 0);
- 	if (eb->refs == 0) {
--		if (eb->flags & EXTENT_DIRTY) {
-+		if (eb->flags & EXTENT_BUFFER_DIRTY) {
- 			warning(
- 			"dirty eb leak (aborted trans): start %llu len %u",
- 				eb->start, eb->len);
-@@ -1027,8 +1027,8 @@ out:
- int set_extent_buffer_dirty(struct extent_buffer *eb)
+@@ -682,9 +682,10 @@ void free_extent_buffer_nocache(struct extent_buffer *eb)
+ 	free_extent_buffer_internal(eb, 1);
+ }
+ 
+-struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
++struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					 u64 bytenr, u32 blocksize)
  {
- 	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
--	if (!(eb->flags & EXTENT_DIRTY)) {
--		eb->flags |= EXTENT_DIRTY;
-+	if (!(eb->flags & EXTENT_BUFFER_DIRTY)) {
-+		eb->flags |= EXTENT_BUFFER_DIRTY;
- 		set_extent_dirty(tree, eb->start, eb->start + eb->len - 1);
- 		extent_buffer_get(eb);
- 	}
-@@ -1038,8 +1038,8 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
- int clear_extent_buffer_dirty(struct extent_buffer *eb)
++	struct extent_io_tree *tree = &fs_info->extent_cache;
+ 	struct extent_buffer *eb = NULL;
+ 	struct cache_extent *cache;
+ 
+@@ -698,9 +699,10 @@ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
+ 	return eb;
+ }
+ 
+-struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
++struct extent_buffer *find_first_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					       u64 start)
  {
- 	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
--	if (eb->flags & EXTENT_DIRTY) {
--		eb->flags &= ~EXTENT_DIRTY;
-+	if (eb->flags & EXTENT_BUFFER_DIRTY) {
-+		eb->flags &= ~EXTENT_BUFFER_DIRTY;
- 		clear_extent_dirty(tree, eb->start, eb->start + eb->len - 1);
- 		free_extent_buffer(eb);
- 	}
++	struct extent_io_tree *tree = &fs_info->extent_cache;
+ 	struct extent_buffer *eb = NULL;
+ 	struct cache_extent *cache;
+ 
 diff --git a/kernel-shared/extent_io.h b/kernel-shared/extent_io.h
-index 4529919a..88fb6171 100644
+index ccdf768c..e4ae2dcd 100644
 --- a/kernel-shared/extent_io.h
 +++ b/kernel-shared/extent_io.h
-@@ -33,10 +33,13 @@
- #define EXTENT_DEFRAG_DONE	(1U << 7)
- #define EXTENT_BUFFER_FILLED	(1U << 8)
- #define EXTENT_CSUM		(1U << 9)
--#define EXTENT_BAD_TRANSID	(1U << 10)
--#define EXTENT_BUFFER_DUMMY	(1U << 11)
- #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
+@@ -129,9 +129,9 @@ static inline int extent_buffer_uptodate(struct extent_buffer *eb)
  
-+#define EXTENT_BUFFER_UPTODATE		(1U << 0)
-+#define EXTENT_BUFFER_DIRTY		(1U << 1)
-+#define EXTENT_BUFFER_BAD_TRANSID	(1U << 2)
-+#define EXTENT_BUFFER_DUMMY		(1U << 3)
-+
- #define BLOCK_GROUP_DATA	(1U << 1)
- #define BLOCK_GROUP_METADATA	(1U << 2)
- #define BLOCK_GROUP_SYSTEM	(1U << 4)
-@@ -108,13 +111,13 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end);
- int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end);
- static inline int set_extent_buffer_uptodate(struct extent_buffer *eb)
- {
--	eb->flags |= EXTENT_UPTODATE;
-+	eb->flags |= EXTENT_BUFFER_UPTODATE;
- 	return 0;
- }
+ int set_state_private(struct extent_io_tree *tree, u64 start, u64 xprivate);
+ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *xprivate);
+-struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
++struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					 u64 bytenr, u32 blocksize);
+-struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
++struct extent_buffer *find_first_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					       u64 start);
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					  u64 bytenr, u32 blocksize);
+diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
+index 28b16848..c50abfca 100644
+--- a/kernel-shared/transaction.c
++++ b/kernel-shared/transaction.c
+@@ -150,7 +150,7 @@ again:
+ 			goto again;
  
- static inline int clear_extent_buffer_uptodate(struct extent_buffer *eb)
- {
--	eb->flags &= ~EXTENT_UPTODATE;
-+	eb->flags &= ~EXTENT_BUFFER_UPTODATE;
- 	return 0;
- }
+ 		while(start <= end) {
+-			eb = find_first_extent_buffer(tree, start);
++			eb = find_first_extent_buffer(fs_info, start);
+ 			BUG_ON(!eb || eb->start != start);
+ 			ret = write_tree_block(trans, fs_info, eb);
+ 			if (ret < 0) {
+@@ -180,7 +180,7 @@ cleanup:
+ 			break;
  
-@@ -122,7 +125,7 @@ static inline int extent_buffer_uptodate(struct extent_buffer *eb)
- {
- 	if (!eb || IS_ERR(eb))
- 		return 0;
--	if (eb->flags & EXTENT_UPTODATE)
-+	if (eb->flags & EXTENT_BUFFER_UPTODATE)
- 		return 1;
- 	return 0;
- }
+ 		while (start <= end) {
+-			eb = find_first_extent_buffer(tree, start);
++			eb = find_first_extent_buffer(fs_info, start);
+ 			BUG_ON(!eb || eb->start != start);
+ 			start += eb->len;
+ 			clear_extent_buffer_dirty(eb);
 -- 
 2.26.3
 

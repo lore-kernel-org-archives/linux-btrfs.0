@@ -2,92 +2,92 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BF32C4167D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Nov 2022 22:23:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AA25C4332F
+	for <linux-btrfs@archiver.kernel.org>; Wed, 23 Nov 2022 22:38:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229491AbiKWWXP convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 23 Nov 2022 17:23:15 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59240 "EHLO
+        id S229779AbiKWWiD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 23 Nov 2022 17:38:03 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55224 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229495AbiKWWXF (ORCPT
+        with ESMTP id S229823AbiKWWhs (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 23 Nov 2022 17:23:05 -0500
-X-Greylist: delayed 463 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 23 Nov 2022 14:22:59 PST
-Received: from ste-pvt-msa2.bahnhof.se (ste-pvt-msa2.bahnhof.se [213.80.101.71])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A84942F666
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:22:57 -0800 (PST)
-Received: from localhost (localhost [127.0.0.1])
-        by ste-pvt-msa2.bahnhof.se (Postfix) with ESMTP id A6F3F3F92A;
-        Wed, 23 Nov 2022 23:15:12 +0100 (CET)
-X-Virus-Scanned: Debian amavisd-new at bahnhof.se
-Received: from ste-pvt-msa2.bahnhof.se ([127.0.0.1])
-        by localhost (ste-ftg-msa2.bahnhof.se [127.0.0.1]) (amavisd-new, port 10024)
-        with ESMTP id 79h5f1ohM5ps; Wed, 23 Nov 2022 23:15:11 +0100 (CET)
-Received: by ste-pvt-msa2.bahnhof.se (Postfix) with ESMTPA id C70D93F8FB;
-        Wed, 23 Nov 2022 23:15:11 +0100 (CET)
-Received: from [104.28.225.223] (port=56895 helo=[10.92.241.26])
-        by tnonline.net with esmtpsa  (TLS1.3) tls TLS_AES_128_GCM_SHA256
-        (Exim 4.94.2)
-        (envelope-from <forza@tnonline.net>)
-        id 1oxy1P-000N6K-5I; Wed, 23 Nov 2022 23:15:11 +0100
-Date:   Wed, 23 Nov 2022 23:15:09 +0100 (GMT+01:00)
-From:   Forza <forza@tnonline.net>
-To:     Joakim <ahoj79@gmail.com>, linux-btrfs@vger.kernel.org
-Message-ID: <aff65aa.d623d93e.184a68f2476@tnonline.net>
-In-Reply-To: <CAFka4xNPJby02JcK+immNU+AL6w-=iH7tNB4ZjULoYxnwG7U+Q@mail.gmail.com>
-References: <CAFka4xNPJby02JcK+immNU+AL6w-=iH7tNB4ZjULoYxnwG7U+Q@mail.gmail.com>
-Subject: Re: Speed up mount time?
+        Wed, 23 Nov 2022 17:37:48 -0500
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94D801835F
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:41 -0800 (PST)
+Received: by mail-qv1-xf2c.google.com with SMTP id q10so2213845qvt.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Nov 2022 14:37:41 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Vub/YGyob+lvK8mviiw67Vt9Borg9BoCnIRVylzUkCA=;
+        b=yOXtQzooJ0Ackq769KAjCeHNlDeguBFyRt46faGo0wkK4pf0rY3P8gouBKF4uR8aw9
+         YOFaMQOmSABGUaF/NvBSe0f0pCUfv7+y0PbXVemuUiFDbXOEiOUYpPkw2c1YJgztsg/m
+         9vVHtNNUirseNS29Vzm6DlvqyNAupScT1VX7y03wUOyjB0tSFuYBphVvlOgX26oN3bzM
+         92VABWUMjNhKv+0gYmosSccewbIY6OVGudGzVlWR1SOdsYJKmvYqMMLMiNOI/czHGnul
+         Y8LTWNvK9UZPwjmarVQgghotI7PWYau2WX8Z0uB16Pys3iaTqNI1CbBVRc9zAcX+adVk
+         yr7g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Vub/YGyob+lvK8mviiw67Vt9Borg9BoCnIRVylzUkCA=;
+        b=nJ5tZHBSRCL1qrBtWMNBeZ+GKdOTHT3rSoGn/WA75Hjz3ScRv2Qz8jtTYPStlLSJhT
+         8WM0qW7vaEQRV0uAD9NtT63t7Mc3suHzyEcNHWx4bYd5M0vKm7mtfchcaO9sZ1Yzc0b1
+         tuO5lXFm3akYAHjtdw4/TdAbQXZ//5V+vJLp0u3VWgOtc84IoZ4BYVx1mrZhNTMHIfiS
+         xUIGEDd8gm1ZDPUz8VN+2vSwpfC6l30KceN+qEzZYBtXCqF2ontrMsug9Ehm2ltpVfnT
+         8DKOx+fl0zh//OzHFYJF8KbJpbxxr3U5KpYdnCREBoBHdljL9OQOevyqEyfiVfon5dOQ
+         HSGg==
+X-Gm-Message-State: ANoB5pl1yCRkJXvC6CzyjggGMT+nNN0rucDt0TvV+FeVolciAHUv+Lgh
+        dch2tC+mrmo5j8ISFET4WR8LdN8/H6IeUg==
+X-Google-Smtp-Source: AA0mqf6aJdosbFC8prJlqXg/+47/aRxj7oASswqqJODRlBwyiBXgs+15P+QTRns3kfZjHI5+LBbOUg==
+X-Received: by 2002:a05:6214:14eb:b0:4c6:b062:c619 with SMTP id k11-20020a05621414eb00b004c6b062c619mr12421797qvw.107.1669243060050;
+        Wed, 23 Nov 2022 14:37:40 -0800 (PST)
+Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
+        by smtp.gmail.com with ESMTPSA id bn4-20020a05622a1dc400b003a62dcf09f0sm9069529qtb.6.2022.11.23.14.37.39
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 23 Nov 2022 14:37:39 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v3 01/29] btrfs-progs: turn on more compiler warnings and use -Wall
+Date:   Wed, 23 Nov 2022 17:37:09 -0500
+Message-Id: <ce81309292ac0b5d445e4d7e2b269fc3d0e85d32.1669242804.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1669242804.git.josef@toxicpanda.com>
+References: <cover.1669242804.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 8BIT
-X-Mailer: R2Mail2
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+In converting some of our helpers to take new args I would miss some
+locations because we don't stop on any warning, and I would miss the
+warning in the scrollback.  Fix this by stopping compiling on any error
+and turn on the fancy compiler checks.
 
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
 
----- From: Joakim <ahoj79@gmail.com> -- Sent: 2022-11-23 - 13:33 ----
-
-> I have a couple of machines (A and B) set up where each machine has a
-> ~430 TB BTRFS subvolume, same data on both. Mounting these volumes
-> with the following flags: noatime,compress=lzo,space_cache=v2
-> 
-> Initially mount times were quite long, about 10 minutes. But after i
-> did run a defrag with -c option on machine B the mount time increased
-> to over 30 minutes. This volume has a little over 100 TB stored.
-> 
-> How come the mount time increased by this?
-
-You now have now extents to keep track of, which means more metadata to parse at mount. 
-
-> 
-> And is there any way to decrease the mount times? 10 minutes is long
-> but acceptable, while 30 minutes is way too long.
-> 
-> Advice would be highly appreciated. :)
-> 
-
-You can defrag the subvolume and extent trees by using `btrfs fi defrag /path/to/subvol`. You can do this on each subvol and on the top level volume. This can reduce amounts of seeks, improving performance some. 
-
-> 
-> 
-> Linux sm07b 5.4.17-2136.311.6.1.el8uek.x86_64 #2 SMP Thu Sep 22
-> 19:29:28 PDT 2022 x86_64 x86_64 x86_64 GNU/Linux
-> btrfs-progs v5.15.1
-> Label: 'Storage'  uuid: 6ecd172e-3ebd-478c-9515-68162a41590d
->         Total devices 1 FS bytes used 105.04TiB
->         devid    1 size 436.57TiB used 107.87TiB path /dev/sdb
-> 
-> Data, single: total=107.34TiB, used=104.82TiB
-> System, DUP: total=40.00MiB, used=11.23MiB
-> Metadata, DUP: total=269.00GiB, used=221.57GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> [   51.764445] BTRFS info (device sdb): flagging fs with big metadata feature
-> [   51.764450] BTRFS info (device sdb): use lzo compression, level 0
-> [   51.764454] BTRFS info (device sdb): using free space tree
-> [   51.764455] BTRFS info (device sdb): has skinny extents
-
+diff --git a/Makefile b/Makefile
+index c74a2ea9..1777a22e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -94,6 +94,9 @@ CFLAGS = $(SUBST_CFLAGS) \
+ 	 -D_XOPEN_SOURCE=700  \
+ 	 -fno-strict-aliasing \
+ 	 -fPIC \
++	 -Wall \
++	 -Wunused-but-set-parameter \
++	 -Werror \
+ 	 -I$(TOPDIR) \
+ 	 $(CRYPTO_CFLAGS) \
+ 	 -DCOMPRESSION_LZO=$(COMPRESSION_LZO) \
+-- 
+2.26.3
 

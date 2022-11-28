@@ -2,112 +2,87 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D6C0C4167D
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Nov 2022 12:17:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0495DC4167D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Nov 2022 12:30:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230298AbiK1MRP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Nov 2022 07:17:15 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57838 "EHLO
+        id S231598AbiK1Mav (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Nov 2022 07:30:51 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42054 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230249AbiK1MQh (ORCPT
+        with ESMTP id S231697AbiK1Mab (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2022 07:16:37 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70D7D2A271;
-        Mon, 28 Nov 2022 04:08:04 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 6142EB80D87;
-        Mon, 28 Nov 2022 12:07:45 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 33F2AC433C1;
-        Mon, 28 Nov 2022 12:07:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1669637264;
-        bh=FGvdoor3l+WjHvBfaSO2rgUjQ70wu9j8ZNwkdBI8kpE=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=GrllKa/R2vBxFb3GpHADXH58VClIfRp28jimqgjZSoXJw2S/pxczvUsj/YjvwS+t4
-         3AAFqopCkyfyuLfR7+wR5PVtFzjL+uftlvS8+v/PoTBHrcONkctGn2wqYS/G2Pp1m8
-         RXJkrWctdea8uFNqLQ0zNpiZVr62KxSaJk+NlMPvVj9biU6aWw1NPJ8PQG7zGsvSgV
-         L7rM5z2y1ZyIStq/UpUZq54U7sE5ayOqBxXh0op3zwCEQ2cmD/FoqyY1FRiuOegoA1
-         70hSXxOc1bYMUcDGt7R+A/YJ+NB2jSIzK7eUMboMil2/hmxpYu/e15/AEe/mfP+QGw
-         TaIXmFKLy4Tmg==
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 3/4] btrfs/280: also verify that fiemap reports extents as encoded
-Date:   Mon, 28 Nov 2022 12:07:23 +0000
-Message-Id: <0b80a51c716c252c437f218ab224e9ddc8a501f2.1669636339.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1669636339.git.fdmanana@suse.com>
-References: <cover.1669636339.git.fdmanana@suse.com>
+        Mon, 28 Nov 2022 07:30:31 -0500
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00ADF17E39;
+        Mon, 28 Nov 2022 04:29:56 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1669638596; x=1701174596;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=7sY2S5+qLikwQWi919rHRp5zUl5g+7YXqvjyZGwL4io=;
+  b=aT+m+iprFUXsBBO0Gtn7kHMTrFnyoMKjWq3kDaLrwycxRrwnLx5cW2ya
+   s0FzYZ8Out9a476/EvzcuJJUUu1run5QMqp0fHnmBWwpz52/CkUrd4rps
+   YQa8G4tqOFLPqd/0vB3GAxjVnF/FXGN22dVnrV96a89bFIuU6bAqtgXbu
+   fJHF2jEQwaQozz5I0xIK8zxd03IQUyPDzzc4EBQdAaEbIHi+USGaYQDzO
+   bLpqZIVMpgOJ2wjcjGCP9ZMMgymA8HQS0fbtF6fCE3E32AJ6RX435Q3xA
+   aGLI/BOR1Z4/4/ny1Uh0bfJeH96L5a97LFTwbp4EoaPrZ9gN3ambVNmkh
+   A==;
+X-IronPort-AV: E=Sophos;i="5.96,200,1665417600"; 
+   d="scan'208";a="321693545"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 28 Nov 2022 20:29:55 +0800
+IronPort-SDR: lJ2cKCOaT7Vw8CiJxIPFT2NtGDAHDAUWb/HpWzsgsfYp7RkBCYQeYXUDUYM80c5vNDW/KnFYp5
+ 3F/imj2O2JDmrI5jJRd2xIS8WJpd0KvHNB1h+Qj1EBQOCaH3uHL0JVegdarZV5bRtAJLWdwhR7
+ J3P26uVAbTd+GapUcq25Z35N7XQKgTb4+GHv8m+MQrJodz1gROU4oZkgziqcWPvXoGW7LUkHoB
+ j+i1BfVdmufp9TowV/mnxmtWDqJm3Jrid476LGpZz4xV5u0XrX4u9863sEVrsjbjxBYujGiQzd
+ cQU=
+Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 28 Nov 2022 03:42:52 -0800
+IronPort-SDR: U3p2ci+b5mfqqzwEJ7DtJHEUhNDOjRLDxeWjh6YvLeuj2aua+TJXniCGfoTnMoJ6GkuHskBoZg
+ kwbHbv4sNgdJ74CLZ2K+54Mxd6e2Bl9QxcWZqhLaHq3pbv9t7Pb39FWpJKi2UfMgyl4Lyf2Zfz
+ ZG3LSV9ayN97qHmcl8VJlNi+spg8m3vUVP7SUCVamwvUiTbp62yxHZ1b9jL2ZVRytoscqcwX1p
+ OgMRMMNpvAaTxUMY+qaR+D0V8apntWDcyh/f+LleEQIfAY+gb2AJpKpY00PHp+Zwy0gR1TQ/ys
+ GS0=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
+  by uls-op-cesaip02.wdc.com with ESMTP; 28 Nov 2022 04:29:54 -0800
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     Zorro Lang <zlang@redhat.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+Subject: [PATCH] fstests: skip btrfs/253 for zoned devices
+Date:   Mon, 28 Nov 2022 04:29:52 -0800
+Message-Id: <20221128122952.51680-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.38.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+The test-case btrfs/253 tests btrfs' chunk size setting, which is not
+available on zoned btrfs, so the test will always fail.
 
-Now that _filter_fiemap_flags() optionally reports the encoded flag and
-since btrfs/280 explicitly uses and tests compression, make it check that
-fiemap reports the compressed extents with the encoded flag set.
+Skip the test in case of a zoned device.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- tests/btrfs/280     |  4 ++--
- tests/btrfs/280.out | 12 ++++++------
- 2 files changed, 8 insertions(+), 8 deletions(-)
+ tests/btrfs/253 | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/tests/btrfs/280 b/tests/btrfs/280
-index 06ef221e..fc049adb 100755
---- a/tests/btrfs/280
-+++ b/tests/btrfs/280
-@@ -42,7 +42,7 @@ $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap | _filter_scr
- echo
- echo "File foo fiemap before COWing extent:"
- echo
--$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags
-+$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags 1
+diff --git a/tests/btrfs/253 b/tests/btrfs/253
+index fbbb81fae754..99eaee1e7cde 100755
+--- a/tests/btrfs/253
++++ b/tests/btrfs/253
+@@ -81,6 +81,7 @@ alloc_size() {
+ _supported_fs btrfs
+ _require_test
+ _require_scratch
++_require_non_zoned_device "${SCRATCH_DEV}"
  
- echo
- echo "Overwriting file range [120M, 120M + 128K) in the snapshot"
-@@ -57,7 +57,7 @@ echo "File foo fiemap after COWing extent in the snapshot:"
- echo
- # Now we should have all extents marked as shared except the 128K extent in the
- # file range [120M, 120M + 128K).
--$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags
-+$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags 1
- 
- # success, all done
- status=0
-diff --git a/tests/btrfs/280.out b/tests/btrfs/280.out
-index c3f82966..5371f3b0 100644
---- a/tests/btrfs/280.out
-+++ b/tests/btrfs/280.out
-@@ -5,8 +5,8 @@ Create a snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap'
- 
- File foo fiemap before COWing extent:
- 
--0: [0..261887]: shared
--1: [261888..262143]: shared|last
-+0: [0..261887]: shared|encoded
-+1: [261888..262143]: shared|encoded|last
- 
- Overwriting file range [120M, 120M + 128K) in the snapshot
- 
-@@ -15,7 +15,7 @@ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
- 
- File foo fiemap after COWing extent in the snapshot:
- 
--0: [0..245759]: shared
--1: [245760..246015]: none
--2: [246016..261887]: shared
--3: [261888..262143]: shared|last
-+0: [0..245759]: shared|encoded
-+1: [245760..246015]: encoded
-+2: [246016..261887]: shared|encoded
-+3: [261888..262143]: shared|encoded|last
+ # Delete log file if it exists.
+ rm -f "${seqres}.full"
 -- 
-2.35.1
+2.38.1
 

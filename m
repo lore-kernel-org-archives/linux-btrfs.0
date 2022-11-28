@@ -2,88 +2,102 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFEF9C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Nov 2022 12:51:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AAA6BC433FE
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Nov 2022 15:08:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230094AbiK1MvN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Nov 2022 07:51:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54516 "EHLO
+        id S231579AbiK1PHy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Nov 2022 10:07:54 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52694 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229659AbiK1MvM (ORCPT
+        with ESMTP id S231605AbiK1PHi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2022 07:51:12 -0500
-Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6330064F9;
-        Mon, 28 Nov 2022 04:51:11 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1669639871; x=1701175871;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=nt80dKsPY1N6+jeHJ/cbVDo92m+nMSPtbDfxjdIM0kc=;
-  b=ityPpWylco1pAKtbPDs2G5N7hgKD/YG983Jn6/fMjrk/pFLS7JISuWfv
-   BjV0QCorQJEHBBB37Gh6hTQyq0uu6agNv7/8cerU+vO5VFdeIlHI+d76u
-   yFoUefXyUofFWkaO8Rb5OaXUFSW2hXXn4VMq1J2p0kpAv8hVGdR5OoMEA
-   TTaL9Yr/TA+SeQMoI48RUJqHZYoB8+sJ9v03kvVnjUn/eJuBLmSn89xSV
-   QJSN9bb7O6xzp9NAMdOlMTKahvKNM0uDqIDWI5CBzMFlqwW8hsKjp/Dph
-   Nd5i5XvPTHRbl4Dz0YkdeuB8u3toy5cpufWaJ8uRAS4u4Y+k7S+0dJp5/
-   w==;
-X-IronPort-AV: E=Sophos;i="5.96,200,1665417600"; 
-   d="scan'208";a="222499504"
-Received: from uls-op-cesaip01.wdc.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 28 Nov 2022 20:51:10 +0800
-IronPort-SDR: Nb/2bkstSckHHv6NAqxTSIQ8opRVTJb9z1U0o28mlj4s19gVPRrz8z9A+V37cR7UOlSJ5YMtYQ
- gVGkob7bxjSSds2Xs9vIBuoM3vk69SOQsfhEEJZ5/HsAX9XM/+oRGPKFN3tEZuAXkY9gKWaaA4
- 3aUyl/AWc3DaD/dnM7V7W4YjlkR5vRWMypHGbwkvbKYUG/b4OLtLp/9Asf/6AwMrmTkeugTANN
- fKuq+3XCEZsnXoDNfqnjBl44vdEDsZGj4CSFYDh1iu4EZoRKJjVdKp5YRIT9PbG+igvrS43JYk
- KfU=
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 28 Nov 2022 04:09:52 -0800
-IronPort-SDR: jrnmJoM7lMytfYEm/8E2eVPv9SQ6KzuICMLpALJrICzPSrKOmZnwyqVDbdEVwpoGIfBsYZH0OP
- TxLxPxRWT2zHDRCPlCeImUt2/IjAW8V4WX2f/VQqFSeC3U257Wnkw4TtKOeZAmw50i13n4f4HG
- hsQ7qyAoB2+oVGvEp6kq1sRGwoXwWLXZjJUJzJFwWJTMIK1ON11xg1eDgVsRQ/i5OuM2SXGFp6
- 00J4r32lNEwi/ymtTJvsAxP+vTL3qe9sSPDLxDAjpgwkCLuxVNHSyFkbZxQJLcseaNE5IabVVg
- dwc=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip02.wdc.com with ESMTP; 28 Nov 2022 04:51:09 -0800
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     Zorro Lang <zlang@redhat.com>
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: [PATCH] fstests: skip btrfs/254 in case MIN_FSSIZE is more than 1G
-Date:   Mon, 28 Nov 2022 04:51:05 -0800
-Message-Id: <20221128125105.52458-1-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.38.1
+        Mon, 28 Nov 2022 10:07:38 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 63EF86444
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2022 07:07:36 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 1FFA4B80DE3
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2022 15:07:35 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 53A7BC433C1
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Nov 2022 15:07:33 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1669648053;
+        bh=4EXByzpGA3PHcMfO1pdKXYK9sWCnYpOgFwh4HRo6AXQ=;
+        h=From:To:Subject:Date:From;
+        b=fbv3uOCbx20R65KQGENHNHuDee4ivCjEfTPRjJNu+z+t0dac7ZdEb5GYEI+jwmo+M
+         2aFb7di/eKZ0eB9rF1AuBrwzcUpFExlPnJ8RizcEqOar2lw+JNdbjXlKOJ/XuzUz+8
+         QK/dlnS88aQDtod4pXVKt+0QCnBDiF6Q3V6wUTu2xHVexxmiw0xc9bN5nV4xtU304K
+         lyulmDRnBwRgYvrvnO0o8IHq2J/yg94cXNNn45QwkvaNbmuTOYr4zo4iJdEoFankL/
+         6v1uNl6EFCWbAr8CstUciin1WhP0r8JTSQs0UB1pAvQfJlZVnSdw77diLNgMdiMbtR
+         siyieRnNZt7TA==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: do not BUG_ON() on ENOMEM when dropping extent items for a range
+Date:   Mon, 28 Nov 2022 15:07:30 +0000
+Message-Id: <59ccc7b41be79e5c3b0f39ad5da6591554927af7.1669647978.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The test-case btrfs/254 creates a 1G device-mapper setup, but this might
-be too small for the filesystem to actually operate (i.e. in case of a
-zoned block device which needs at least 5 zones).
+From: Filipe Manana <fdmanana@suse.com>
 
-Skip the test if MIN_FSSIZE is set to a value above 1G.
+If we get -ENOMEM while dropping file extent items in a given range, at
+btrfs_drop_extents(), due to failure to allocate memory when attempting to
+increment the reference count for an extent or drop the reference count,
+we handle it with a BUG_ON(). This is excessive, instead we can simply
+abort the transaction and return the error to the caller. In fact most
+callers of btrfs_drop_extents(), directly or indirectly, already abort
+the transaction if btrfs_drop_extents() returns any error.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Also, we already have error paths at btrfs_drop_extents() that may return
+-ENOMEM and in those cases we abort the transaction, like for example
+anything that changes the b+tree may return -ENOMEM due to a failure to
+allocate a new extent buffer when COWing an existing extent buffer, such
+as a call to btrfs_duplicate_item() for example.
+
+So replace the BUG_ON() calls with proper logic to abort the transaction
+and return the error.
+
+Reported-by: syzbot+0b1fb6b0108c27419f9f@syzkaller.appspotmail.com
+Link: https://lore.kernel.org/linux-btrfs/00000000000089773e05ee4b9cb4@google.com/
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/254 | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/file.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/tests/btrfs/254 b/tests/btrfs/254
-index 5d6e33f40bb5..ae55ae8ca3a2 100755
---- a/tests/btrfs/254
-+++ b/tests/btrfs/254
-@@ -40,6 +40,7 @@ _require_dm_target linear
- _require_btrfs_forget_or_module_loadable
- _require_scratch_nocheck
- _require_command "$WIPEFS_PROG" wipefs
-+_check_minimal_fs_size $((1024 * 1024 * 1024))
- 
- _scratch_dev_pool_get 3
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 448b143a5cb2..91b00eb2440e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -380,7 +380,10 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 						args->start - extent_offset,
+ 						0, false);
+ 				ret = btrfs_inc_extent_ref(trans, &ref);
+-				BUG_ON(ret); /* -ENOMEM */
++				if (ret) {
++					btrfs_abort_transaction(trans, ret);
++					break;
++				}
+ 			}
+ 			key.offset = args->start;
+ 		}
+@@ -467,7 +470,10 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
+ 						key.offset - extent_offset, 0,
+ 						false);
+ 				ret = btrfs_free_extent(trans, &ref);
+-				BUG_ON(ret); /* -ENOMEM */
++				if (ret) {
++					btrfs_abort_transaction(trans, ret);
++					break;
++				}
+ 				args->bytes_found += extent_end - key.offset;
+ 			}
  
 -- 
-2.38.1
+2.35.1
 

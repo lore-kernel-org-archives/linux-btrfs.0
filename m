@@ -2,43 +2,45 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1C71C433FE
-	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Nov 2022 12:17:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D6C0C4167D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 28 Nov 2022 12:17:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229878AbiK1MRO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 28 Nov 2022 07:17:14 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56942 "EHLO
+        id S230298AbiK1MRP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 28 Nov 2022 07:17:15 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57838 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231442AbiK1MQa (ORCPT
+        with ESMTP id S230249AbiK1MQh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 28 Nov 2022 07:16:30 -0500
+        Mon, 28 Nov 2022 07:16:37 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 866C52A24F;
-        Mon, 28 Nov 2022 04:08:02 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70D7D2A271;
+        Mon, 28 Nov 2022 04:08:04 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 96F1AB80ABE;
-        Mon, 28 Nov 2022 12:07:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 83F82C433C1;
-        Mon, 28 Nov 2022 12:07:39 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 6142EB80D87;
+        Mon, 28 Nov 2022 12:07:45 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 33F2AC433C1;
+        Mon, 28 Nov 2022 12:07:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1669637260;
-        bh=4Lw7leUPy/1sxV9yrRek1PiVw3JFZsgbNqED3C3x7yA=;
-        h=From:To:Cc:Subject:Date:From;
-        b=E3AOZI6zT7227dwygjjNnrH20X2usONHjkgSAvRhPoC800vkyevcP2ZCgmWhtIglW
-         J5lTpKsc/mIz+pKaVUndVL37GEvMeG4+u07HE5QpDzUIB0yBxuhINYEY44vu6bXu5N
-         dT6CnBkOx+4IyzQbROeH9Lt40NQPVYNXR4d8QGTMXdc0JF+c758hS9S19q9vA233gH
-         lJWcpTQULjXZTNigQ4+SQrR+dFW1MuGRVquEqQP2eFnBY4ydTHSZGBhLVjS8RAMUaj
-         lcRH9fdgO+opx76kOIqhfMVGDY5ZMpfyU6SFbeckRfNoOv9PBuVV24dOpaQQtRYDMl
-         w4ApLLfE+e5ZA==
+        s=k20201202; t=1669637264;
+        bh=FGvdoor3l+WjHvBfaSO2rgUjQ70wu9j8ZNwkdBI8kpE=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=GrllKa/R2vBxFb3GpHADXH58VClIfRp28jimqgjZSoXJw2S/pxczvUsj/YjvwS+t4
+         3AAFqopCkyfyuLfR7+wR5PVtFzjL+uftlvS8+v/PoTBHrcONkctGn2wqYS/G2Pp1m8
+         RXJkrWctdea8uFNqLQ0zNpiZVr62KxSaJk+NlMPvVj9biU6aWw1NPJ8PQG7zGsvSgV
+         L7rM5z2y1ZyIStq/UpUZq54U7sE5ayOqBxXh0op3zwCEQ2cmD/FoqyY1FRiuOegoA1
+         70hSXxOc1bYMUcDGt7R+A/YJ+NB2jSIzK7eUMboMil2/hmxpYu/e15/AEe/mfP+QGw
+         TaIXmFKLy4Tmg==
 From:   fdmanana@kernel.org
 To:     fstests@vger.kernel.org
 Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 0/4] fstests/btrfs: add a test case for send v2 and an update
-Date:   Mon, 28 Nov 2022 12:07:20 +0000
-Message-Id: <cover.1669636339.git.fdmanana@suse.com>
+Subject: [PATCH 3/4] btrfs/280: also verify that fiemap reports extents as encoded
+Date:   Mon, 28 Nov 2022 12:07:23 +0000
+Message-Id: <0b80a51c716c252c437f218ab224e9ddc8a501f2.1669636339.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1669636339.git.fdmanana@suse.com>
+References: <cover.1669636339.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -47,28 +49,65 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This adds a test case specific for send v2 with some preparatory work in
-order to allow for that. Support for v2 send streams was added in
-btrfs-progs v5.19 and the kernel support introduced with kernel 6.0.
+Now that _filter_fiemap_flags() optionally reports the encoded flag and
+since btrfs/280 explicitly uses and tests compression, make it check that
+fiemap reports the compressed extents with the encoded flag set.
 
-More send v2 specific tests will be added later.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/280     |  4 ++--
+ tests/btrfs/280.out | 12 ++++++------
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
-Filipe Manana (4):
-  btrfs: add a _require_btrfs_send_v2 helper
-  common: make _filter_fiemap_flags optionally print the encoded flag
-  btrfs/280: also verify that fiemap reports extents as encoded
-  btrfs: test a case with compressed send stream and a shared extent
-
- common/btrfs        | 14 +++++++
- common/punch        | 40 ++++++++++++++++++--
- tests/btrfs/280     |  4 +-
- tests/btrfs/280.out | 12 +++---
- tests/btrfs/281     | 89 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/281.out | 17 +++++++++
- 6 files changed, 164 insertions(+), 12 deletions(-)
- create mode 100755 tests/btrfs/281
- create mode 100644 tests/btrfs/281.out
-
+diff --git a/tests/btrfs/280 b/tests/btrfs/280
+index 06ef221e..fc049adb 100755
+--- a/tests/btrfs/280
++++ b/tests/btrfs/280
+@@ -42,7 +42,7 @@ $BTRFS_UTIL_PROG subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap | _filter_scr
+ echo
+ echo "File foo fiemap before COWing extent:"
+ echo
+-$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags
++$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags 1
+ 
+ echo
+ echo "Overwriting file range [120M, 120M + 128K) in the snapshot"
+@@ -57,7 +57,7 @@ echo "File foo fiemap after COWing extent in the snapshot:"
+ echo
+ # Now we should have all extents marked as shared except the 128K extent in the
+ # file range [120M, 120M + 128K).
+-$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags
++$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags 1
+ 
+ # success, all done
+ status=0
+diff --git a/tests/btrfs/280.out b/tests/btrfs/280.out
+index c3f82966..5371f3b0 100644
+--- a/tests/btrfs/280.out
++++ b/tests/btrfs/280.out
+@@ -5,8 +5,8 @@ Create a snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap'
+ 
+ File foo fiemap before COWing extent:
+ 
+-0: [0..261887]: shared
+-1: [261888..262143]: shared|last
++0: [0..261887]: shared|encoded
++1: [261888..262143]: shared|encoded|last
+ 
+ Overwriting file range [120M, 120M + 128K) in the snapshot
+ 
+@@ -15,7 +15,7 @@ XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ 
+ File foo fiemap after COWing extent in the snapshot:
+ 
+-0: [0..245759]: shared
+-1: [245760..246015]: none
+-2: [246016..261887]: shared
+-3: [261888..262143]: shared|last
++0: [0..245759]: shared|encoded
++1: [245760..246015]: encoded
++2: [246016..261887]: shared|encoded
++3: [261888..262143]: shared|encoded|last
 -- 
 2.35.1
 

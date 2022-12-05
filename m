@@ -2,33 +2,32 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 748AEC4708D
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Dec 2022 09:52:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEB2DC4321E
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Dec 2022 09:52:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230356AbiLEJwR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Dec 2022 04:52:17 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35402 "EHLO
+        id S230286AbiLEJwQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Dec 2022 04:52:16 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35286 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230511AbiLEJvk (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2022 04:51:40 -0500
+        with ESMTP id S231464AbiLEJvo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Dec 2022 04:51:44 -0500
 Received: from synology.com (mail.synology.com [211.23.38.101])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00DB2DEF2
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Dec 2022 01:51:37 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 80FE9F59F
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Dec 2022 01:51:43 -0800 (PST)
 From:   robbieko <robbieko@synology.com>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=synology.com; s=123;
-        t=1670233896; bh=FZiWfKbxHokXbGAYSTg/VyUnUA/E1Gph5idgH7yvMHY=;
-        h=From:To:Cc:Subject:Date;
-        b=JhwNgzC7GrZ3tMp5gFXDxQKxdvP0sCaXxLD9OFeCbAMtg6UmKV+sWlwf8p6meUMAs
-         /2rDdnksPthEkDd11SPHAkXboSrxWK8buN8yJUj0+5NR4bNyQKWemsTE6YJ4nBMVka
-         lxDYHAhjhhP0FqSZF+bpBaF8rUYYACYZodXNoE+8=
+        t=1670233901; bh=z3wqk3fC71KAbfg9sguvuAErxJ2SlZc6MRLD69u5x0c=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References;
+        b=uUcMDTmlkCd+y8xyqzt3uwBp2+g5oyPvPAX5mu3IrGr7778hFc0O00WjL4kBzZJ8w
+         OzcSM60UOGR5bfBx8Uor4Mi0onq7yp/i+elE7KFVVOtchFxmOqfkZJLZZQ+jdYzerH
+         RljlTR/SQ3QaKM+4GWPPFZckqrfZJaCC6Yog/+uY=
 To:     linux-btrfs@vger.kernel.org
 Cc:     Robbie Ko <robbieko@synology.com>
-Subject: [PATCH 0/3] btrfs: fix unexpected -ENOMEM with percpu_counter_init when create snapshot
-Date:   Mon,  5 Dec 2022 17:51:19 +0800
-Message-Id: <20221205095122.17011-1-robbieko@synology.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH 3/3] btrfs: add snapshot_lock to new_fs_root_args
+Date:   Mon,  5 Dec 2022 17:51:22 +0800
+Message-Id: <20221205095122.17011-4-robbieko@synology.com>
+In-Reply-To: <20221205095122.17011-1-robbieko@synology.com>
+References: <20221205095122.17011-1-robbieko@synology.com>
 X-Synology-MCP-Status: no
 X-Synology-Spam-Flag: no
 X-Synology-Spam-Status: score=0, required 6, WHITELIST_FROM_ADDRESS 0
@@ -39,56 +38,99 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Robbie Ko <robbieko@synology.com>
 
-[Issue]
-When creating subvolume/snapshot, the transaction may be abort due to -ENOMEM
+Add snapshot_lock into new_fs_root_args to prevent
+percpu_counter_init enter unexpected -ENOMEM when
+calling btrfs_init_fs_root.
 
-  WARNING: CPU: 1 PID: 411 at fs/btrfs/transaction.c:1937 create_pending_snapshot+0xe30/0xe70 [btrfs]()
-  CPU: 1 PID: 411 Comm: btrfs Tainted: P O 4.4.180+ #42661
-  Call Trace:
-    create_pending_snapshot+0xe30/0xe70 [btrfs]
-    create_pending_snapshots+0x89/0xb0 [btrfs]
-    btrfs_commit_transaction+0x469/0xc60 [btrfs]
-    btrfs_mksubvol+0x5bd/0x690 [btrfs]
-    btrfs_mksnapshot+0x102/0x170 [btrfs]
-    btrfs_ioctl_snap_create_transid+0x1ad/0x1c0 [btrfs]
-    btrfs_ioctl_snap_create_v2+0x102/0x160 [btrfs]
-    btrfs_ioctl+0x2111/0x3130 [btrfs]
-    do_vfs_ioctl+0x7ea/0xa80
-    SyS_ioctl+0xa1/0xb0
-    entry_SYSCALL_64_fastpath+0x1e/0x8e
-  ---[ end trace 910c8f86780ca385 ]---
-  BTRFS: error (device dm-2) in create_pending_snapshot:1937: errno=-12 Out of memory
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+ fs/btrfs/disk-io.c | 44 +++++++++++++++++++++++++++++++-------------
+ fs/btrfs/disk-io.h |  2 ++
+ 2 files changed, 33 insertions(+), 13 deletions(-)
 
-[Cause]
-During creating a subvolume/snapshot, it is necessary to allocate memory for Initializing fs root.
-Therefore, it can only use GFP_NOFS to allocate memory to avoid deadlock issues.
-However, atomic allocation is required when processing percpu_counter_init
-without GFP_KERNEL due to the unique structure of percpu_counter.
-In this situation, allocating memory for initializing fs root may cause
-unexpected -ENOMEM when free memory is low and causes btrfs transaction to abort.
-
-[Fix]
-We allocate memory at the beginning of creating a subvolume/snapshot.
-This way, we can ensure the memory is enough when initializing fs root.
-Even -ENOMEM happens at the beginning of creating a subvolume/snapshot,
-the transaction won’t abort since it hasn’t started yet.
-
-Robbie Ko (3):
-  btrfs: refactor anon_dev with new_fs_root_args for create
-    subvolume/snapshot
-  btrfs: change snapshot_lock to dynamic pointer
-  btrfs: add snapshot_lock to new_fs_root_args
-
- fs/btrfs/ctree.h       |   2 +-
- fs/btrfs/disk-io.c     | 107 ++++++++++++++++++++++++++++++-----------
- fs/btrfs/disk-io.h     |  12 ++++-
- fs/btrfs/file.c        |   8 +--
- fs/btrfs/inode.c       |  12 ++---
- fs/btrfs/ioctl.c       |  38 +++++++--------
- fs/btrfs/transaction.c |   2 +-
- fs/btrfs/transaction.h |   5 +-
- 8 files changed, 123 insertions(+), 63 deletions(-)
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 5760c2b1a100..5704c8f5873c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1437,6 +1437,16 @@ struct btrfs_new_fs_root_args *btrfs_new_fs_root_args_prepare(gfp_t gfp_mask)
+ 	if (err)
+ 		goto error;
+ 
++	args->snapshot_lock = kzalloc(sizeof(*args->snapshot_lock), gfp_mask);
++	if (!args->snapshot_lock) {
++		err = -ENOMEM;
++		goto error;
++	}
++	ASSERT((gfp_mask & GFP_KERNEL) == GFP_KERNEL);
++	err = btrfs_drew_lock_init(args->snapshot_lock);
++	if (err)
++		goto error;
++
+ 	return args;
+ 
+ error:
+@@ -1448,6 +1458,9 @@ void btrfs_new_fs_root_args_destroy(struct btrfs_new_fs_root_args *args)
+ {
+ 	if (!args)
+ 		return;
++	if (args->snapshot_lock)
++		btrfs_drew_lock_destroy(args->snapshot_lock);
++	kfree(args->snapshot_lock);
+ 	if (args->anon_dev)
+ 		free_anon_bdev(args->anon_dev);
+ 	kfree(args);
+@@ -1464,20 +1477,25 @@ static int btrfs_init_fs_root(struct btrfs_root *root,
+ 	int ret;
+ 	unsigned int nofs_flag;
+ 
+-	root->snapshot_lock = kzalloc(sizeof(*root->snapshot_lock), GFP_NOFS);
+-	if (!root->snapshot_lock) {
+-		ret = -ENOMEM;
+-		goto fail;
++	if (new_fs_root_args && new_fs_root_args->snapshot_lock) {
++		root->snapshot_lock = new_fs_root_args->snapshot_lock;
++		new_fs_root_args->snapshot_lock = NULL;
++	} else {
++		root->snapshot_lock = kzalloc(sizeof(*root->snapshot_lock), GFP_NOFS);
++		if (!root->snapshot_lock) {
++			ret = -ENOMEM;
++			goto fail;
++		}
++		/*
++		 * We might be called under a transaction (e.g. indirect backref
++		 * resolution) which could deadlock if it triggers memory reclaim
++		 */
++		nofs_flag = memalloc_nofs_save();
++		ret = btrfs_drew_lock_init(root->snapshot_lock);
++		memalloc_nofs_restore(nofs_flag);
++		if (ret)
++			goto fail;
+ 	}
+-	/*
+-	 * We might be called under a transaction (e.g. indirect backref
+-	 * resolution) which could deadlock if it triggers memory reclaim
+-	 */
+-	nofs_flag = memalloc_nofs_save();
+-	ret = btrfs_drew_lock_init(root->snapshot_lock);
+-	memalloc_nofs_restore(nofs_flag);
+-	if (ret)
+-		goto fail;
+ 
+ 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID &&
+ 	    !btrfs_is_data_reloc_root(root)) {
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index a7c91bfb0c16..0e84927859ce 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -28,6 +28,8 @@ static inline u64 btrfs_sb_offset(int mirror)
+ struct btrfs_new_fs_root_args {
+ 	/* Preallocated anonymous block device number */
+ 	dev_t anon_dev;
++	/* Preallocated snapshot lock */
++	struct btrfs_drew_lock *snapshot_lock;
+ };
+ 
+ struct btrfs_device;
 -- 
 2.17.1
 

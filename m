@@ -2,74 +2,191 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF1DEC352A1
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Dec 2022 07:23:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 079D2C352A1
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Dec 2022 14:23:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229917AbiLGHXV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Dec 2022 02:23:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52368 "EHLO
+        id S230156AbiLGOXC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Dec 2022 09:23:02 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46850 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229734AbiLGHWl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2022 02:22:41 -0500
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4FD1041995
-        for <linux-btrfs@vger.kernel.org>; Tue,  6 Dec 2022 23:21:36 -0800 (PST)
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MgesG-1oScuY4Bhc-00h3Wn; Wed, 07
- Dec 2022 08:21:27 +0100
-Message-ID: <2579d457-ddd5-3cb6-658b-1dd0124a768f@gmx.com>
-Date:   Wed, 7 Dec 2022 15:21:23 +0800
+        with ESMTP id S230304AbiLGOWd (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2022 09:22:33 -0500
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29C825D680
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Dec 2022 06:22:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1670422949; x=1701958949;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=2JLPjyhI+JfRKihnABLAJNw5B4az/VCG8tUUYMk9MC0=;
+  b=Pgm7nRsDl6e3erPzjXzfRXQ/gCJCMQSGnYLqiVYfNu/3+cJe8iM3BrQR
+   bsJLi9knG6zyoJYl8bNhbVdo7ydSRKq0jeJ0hfsUbsTwCgI23VvTik1PX
+   9ooAFVIZYDvEzA/nJDDZQuT7q0hp0vXlf0TvTY2FOw3StzRXti5tvc4BD
+   6YEvFrGlPIDfYIMRq8YRqLLiAwbt5vaeKRjM73zOkfzE9e1HvsMlltKHe
+   KoYXo/n7qIkf3IqXzbf6Tx/t4e7TJfzVzrDzCV3eSBnQORRdM0SI1BiWc
+   UD7JTjX8csMTDb7zRbzF4U5fnthemisqF7dg7Z7NeG/RVxHrDdS+sEf6R
+   A==;
+X-IronPort-AV: E=Sophos;i="5.96,225,1665417600"; 
+   d="scan'208";a="218099478"
+Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
+  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2022 22:22:28 +0800
+IronPort-SDR: JuPouqinJ1+VAq9UgBgHtmxE959uJJCZJ2fx0FdpE43lGw3ZivfYi7NBKipgSyallQa/uhOvbF
+ CaMF9npVEaV4K1aqv9QLv3xIewXSi3fcmPuq8Hspmhsd5kO2qS926iIV7fghKORoKlN1FaB6rQ
+ a3rikMSJSdJkpb7VQBo8s7Ozeu4LW5eoSaTpX7p3i2sUC44IpaYrodJQikHZ/apA0qPxfEEwgZ
+ 2BPjwz0OZuGLVtF9dqNSxjdNr3ZM+I9mZ72YBqUuNMmNGSQFMkxkyzbqH63PMhziWWRcZj0oat
+ jz4=
+Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 07 Dec 2022 05:35:15 -0800
+IronPort-SDR: LFAqk3j9YD7wabEddLknrpXYbeamQuwRjTkdNCKQkobf6YXKv5FlSfRpjJpIPLc1xF4QpgFhnP
+ 3HZkimoclQndL/X8gcZoufEoyQOfe7l4WzjkQ666y9owhktWLqw9qrnKeg0yMfsmmo+/DqqLCS
+ on2OPT8w2llmA0Qv2jrGMuAX6DvpExC7sO8NBMOscZtPeVCzEt92Jp0kOnI7u7XGiyt4LJtl7b
+ Wu2TXOlR6uozj7+4bBr+17NSVz1QjbZjqMul1+oHrPoY+vvYH0h2pG8BFSJVZrimrjhaz3Lk7r
+ qoI=
+WDCIronportException: Internal
+Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
+  by uls-op-cesaip01.wdc.com with ESMTP; 07 Dec 2022 06:22:28 -0800
+From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        Naohiro Aota <Naohiro.Aota@wdc.com>
+Subject: [PATCH v4 2/9] btrfs: read raid-stripe-tree from disk
+Date:   Wed,  7 Dec 2022 06:22:11 -0800
+Message-Id: <2262ab233985a1fbed23b7ef5760f38f9318d156.1670422590.git.johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.38.1
+In-Reply-To: <cover.1670422590.git.johannes.thumshirn@wdc.com>
+References: <cover.1670422590.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.5.1
-Subject: Re: [PATCH] btrfs: make btrfs_get_io_geometry() to return void
-To:     Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <b3d2350ae3920a475a43dba6f979731420859dc8.1670390031.git.wqu@suse.com>
- <Y5A8IWC6z/LZHRcI@infradead.org>
-Content-Language: en-US
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <Y5A8IWC6z/LZHRcI@infradead.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Provags-ID: V03:K1:2+YgoIPtUMAfzoUVKRx4kSaAEvTKOTCzgUkFgUVut1olt9JXdpN
- fy48bz7w6XravEbuRmo4jZW9fKGrmrWxjGhDbb67b+niyewUDkVWSrwlfnbA5Lt9xUyPFNc
- 6aWcyQztnthORhidN2uZxywka7iivQeyKpViM+rJM3kw+tOYq8LXs+6uCOKqeYabVgmqw7N
- mQw3KLGCOKmkMWiD1NgrA==
-UI-OutboundReport: notjunk:1;M01:P0:/M4GPt6JT1I=;uZkF0u7eWE11Em7i56j8G0i4qDu
- pFYh10q5U6yP7DAdhgkeVEWR83iVGkHn6Yx6BGxW5ZFmTFOtIUdgEmapqFniGB07fOymvNVaP
- EGlXSqookMHPaW26Q4kjTFYKKfTtHciWx4ju1LPIbiigNkPHPhgtEkQdkWZLgoPkmFCvJwkxe
- hsSmveXFHWkMpYWVJ0sqm3QFcBe+UpVf06heFFe7bJ6tSt3M6Ge/4LEjezPocHcX/e5fFg68f
- WARz7gkMbmfIzcACmQXMl3/0IcAU2V7AzEgvt+GcM+JxVDWzwXmAPuQhGNRREnsE+l9q6Cpuu
- 1zGa/qipi+q4uzVg33T6RZuEUdrWwGubQEvAuT8cDq6ysk2nzH8cQwCIzktNkL8ogVFUmfs/g
- gl2momDOVkniWDSXM49xHszYQ8UBjY8dyb439oQ+CRJg3NnM8jtixb17pk3HGs5/pe+1dR0OS
- jke/y8oHvbLc1NeqsvN/7S/wgrvg6VMH41GtWspn7RDuKEttA5zSi/m+eIcM6j5VKznwat7xV
- OhCuk4T7GAcd3OCT61ewCEpdBdambG364Ac+N0Fv/i3C0qmwQc5Xo3DdVHFsAeTyDyVYGpA0Q
- Jh+v4RBpKzZqrrDuYd2i2b3088W88dJJ6lzW7/8HtPppfrxjRKj24mC2dPlykkWebpyKtHVJl
- /Q73bwi/A8+NQxdYrqR5w1BCSSM1qiQK3TmX/2kqe/c25opnjRV8rc/sfFUN7lPGb+VnuU8jT
- qQmi/CM/LE1UnTN6RbJoUmdtreIUHopQvzo12vJG2YyN9fKtnEE0Snha6XBpNNPdJMFYGbbk3
- bXUfwbBdCR6qRlxfaCWjsB5xcVQttS42/Xi0S/TpTUPHv5tpu/UityJKn87KOi30Tl+kpWWD6
- UzWUOG6Q41KwsTnYLmheIkbhcbGbqsFd+MpOwq4zqnw4CspMfdZ99Pa35cmZrMjsl2HgUc+qn
- qnZRVMQmfZmUY+Jh4OCWquR0aMU=
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+If we find a raid-stripe-tree on mount, read it from disk.
 
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
+ fs/btrfs/block-rsv.c       |  1 +
+ fs/btrfs/disk-io.c         | 19 +++++++++++++++++++
+ fs/btrfs/disk-io.h         |  5 +++++
+ fs/btrfs/fs.h              |  4 +++-
+ include/uapi/linux/btrfs.h |  1 +
+ 5 files changed, 29 insertions(+), 1 deletion(-)
 
-On 2022/12/7 15:09, Christoph Hellwig wrote:
-> On Wed, Dec 07, 2022 at 01:13:54PM +0800, Qu Wenruo wrote:
->> Since commit 420343131970 ("btrfs: let callers of btrfs_get_io_geometry
->> pass the em"), btrfs_get_io_geometry() no longer calls
->> btrfs_get_chunk_map(), thus there is no more source of errors.
->> (The remaining ASSERT()s are really for careless developers)
-> 
-> My btrfs-bio-split series removes btrfs_get_io_geometry entirely.  Can
-> we avoid spurious cleanups for now until that series is merged?
+diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+index 5367a14d44d2..384987343a64 100644
+--- a/fs/btrfs/block-rsv.c
++++ b/fs/btrfs/block-rsv.c
+@@ -402,6 +402,7 @@ void btrfs_init_root_block_rsv(struct btrfs_root *root)
+ 	case BTRFS_EXTENT_TREE_OBJECTID:
+ 	case BTRFS_FREE_SPACE_TREE_OBJECTID:
+ 	case BTRFS_BLOCK_GROUP_TREE_OBJECTID:
++	case BTRFS_RAID_STRIPE_TREE_OBJECTID:
+ 		root->block_rsv = &fs_info->delayed_refs_rsv;
+ 		break;
+ 	case BTRFS_ROOT_TREE_OBJECTID:
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f10b946454d7..5784c850a3ec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1444,6 +1444,9 @@ static struct btrfs_root *btrfs_get_global_root(struct btrfs_fs_info *fs_info,
+ 
+ 		return btrfs_grab_root(root) ? root : ERR_PTR(-ENOENT);
+ 	}
++	if (objectid == BTRFS_RAID_STRIPE_TREE_OBJECTID)
++		return btrfs_grab_root(fs_info->stripe_root) ?
++			fs_info->stripe_root : ERR_PTR(-ENOENT);
+ 	return NULL;
+ }
+ 
+@@ -1522,6 +1525,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
+ 	btrfs_put_root(fs_info->fs_root);
+ 	btrfs_put_root(fs_info->data_reloc_root);
+ 	btrfs_put_root(fs_info->block_group_root);
++	btrfs_put_root(fs_info->stripe_root);
+ 	btrfs_check_leaked_roots(fs_info);
+ 	btrfs_extent_buffer_leak_debug_check(fs_info);
+ 	kfree(fs_info->super_copy);
+@@ -2054,6 +2058,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, bool free_chunk_root)
+ 	free_root_extent_buffers(info->fs_root);
+ 	free_root_extent_buffers(info->data_reloc_root);
+ 	free_root_extent_buffers(info->block_group_root);
++	free_root_extent_buffers(info->stripe_root);
+ 	if (free_chunk_root)
+ 		free_root_extent_buffers(info->chunk_root);
+ }
+@@ -2506,6 +2511,20 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
+ 		fs_info->uuid_root = root;
+ 	}
+ 
++	if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE)) {
++		location.objectid = BTRFS_RAID_STRIPE_TREE_OBJECTID;
++		root = btrfs_read_tree_root(tree_root, &location);
++		if (IS_ERR(root)) {
++			if (!btrfs_test_opt(fs_info, IGNOREBADROOTS)) {
++				ret = PTR_ERR(root);
++				goto out;
++			}
++		} else {
++			set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
++			fs_info->stripe_root = root;
++		}
++	}
++
+ 	return 0;
+ out:
+ 	btrfs_warn(fs_info, "failed to read root (objectid=%llu): %d",
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index bc686de7eb80..e10f942c0a37 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -106,6 +106,11 @@ static inline struct btrfs_root *btrfs_grab_root(struct btrfs_root *root)
+ 	return NULL;
+ }
+ 
++static inline struct btrfs_root *btrfs_stripe_tree_root(struct btrfs_fs_info *fs_info)
++{
++	return fs_info->stripe_root;
++}
++
+ void btrfs_put_root(struct btrfs_root *root);
+ void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index d5224df7468b..f08b59320645 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -202,7 +202,8 @@ enum {
+ 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_RAID1C34	|	\
+ 	 BTRFS_FEATURE_INCOMPAT_ZONED		|	\
+-	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
++	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2  |	\
++	 BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE)
+ #else
+ #define BTRFS_FEATURE_INCOMPAT_SUPP			\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+@@ -355,6 +356,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *uuid_root;
+ 	struct btrfs_root *data_reloc_root;
+ 	struct btrfs_root *block_group_root;
++	struct btrfs_root *stripe_root;
+ 
+ 	/* The log root tree is a directory of all the other log roots */
+ 	struct btrfs_root *log_root_tree;
+diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
+index b4f0f9531119..593fb7930a37 100644
+--- a/include/uapi/linux/btrfs.h
++++ b/include/uapi/linux/btrfs.h
+@@ -322,6 +322,7 @@ struct btrfs_ioctl_fs_info_args {
+ #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
+ #define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
+ #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
++#define BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE	(1ULL << 14)
+ 
+ struct btrfs_ioctl_feature_flags {
+ 	__u64 compat_flags;
+-- 
+2.38.1
 
-Oh, didn't notice that.
-
-Sure, I'm completely fine.
-
-Thanks,
-Qu

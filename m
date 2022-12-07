@@ -2,191 +2,185 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 079D2C352A1
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Dec 2022 14:23:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B46AC4708E
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Dec 2022 14:23:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230156AbiLGOXC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Dec 2022 09:23:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46850 "EHLO
+        id S229658AbiLGOXE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Dec 2022 09:23:04 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47702 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230304AbiLGOWd (ORCPT
+        with ESMTP id S230314AbiLGOWd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Dec 2022 09:22:33 -0500
 Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29C825D680
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Dec 2022 06:22:29 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8366D5916D
+        for <linux-btrfs@vger.kernel.org>; Wed,  7 Dec 2022 06:22:27 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1670422949; x=1701958949;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=2JLPjyhI+JfRKihnABLAJNw5B4az/VCG8tUUYMk9MC0=;
-  b=Pgm7nRsDl6e3erPzjXzfRXQ/gCJCMQSGnYLqiVYfNu/3+cJe8iM3BrQR
-   bsJLi9knG6zyoJYl8bNhbVdo7ydSRKq0jeJ0hfsUbsTwCgI23VvTik1PX
-   9ooAFVIZYDvEzA/nJDDZQuT7q0hp0vXlf0TvTY2FOw3StzRXti5tvc4BD
-   6YEvFrGlPIDfYIMRq8YRqLLiAwbt5vaeKRjM73zOkfzE9e1HvsMlltKHe
-   KoYXo/n7qIkf3IqXzbf6Tx/t4e7TJfzVzrDzCV3eSBnQORRdM0SI1BiWc
-   UD7JTjX8csMTDb7zRbzF4U5fnthemisqF7dg7Z7NeG/RVxHrDdS+sEf6R
-   A==;
+  t=1670422947; x=1701958947;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=CGjChc/qHGKYseniLzzVqupqt2Kl7LbOxrkCVa6kupI=;
+  b=WbRXGXH4cWg1M9Nb9axFx1QaxKIZC+dAfkYFqk8VpNwqW7N3iljY0en7
+   HxBs4vxn5LdEiy3A6xWjejcANkMcbLN1tb9fcq+VuUaiHmX1ZTj+c8A8M
+   +u/jdIbDu1Guw2CVWXWcdTtX0ifqYgSIT/qQ4Iw/4BfxY+eloQWqAgO7I
+   JHra3ySUtMLadOQvLjXCJ4+oOPI9Uuo6qKX04TEQYVYqaJqSOHonLqz+t
+   Wx8RCRzX/jNgjWVklg0KUIrHNLNGI0OuDoYhmCBSMczaY1w11J3/3ukd1
+   cnp18R8NQvEzM1Zcqw9TU4JeRcC2URYdw5gePW8aExLwe+sTanV7ET8Js
+   g==;
 X-IronPort-AV: E=Sophos;i="5.96,225,1665417600"; 
-   d="scan'208";a="218099478"
+   d="scan'208";a="218099473"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2022 22:22:28 +0800
-IronPort-SDR: JuPouqinJ1+VAq9UgBgHtmxE959uJJCZJ2fx0FdpE43lGw3ZivfYi7NBKipgSyallQa/uhOvbF
- CaMF9npVEaV4K1aqv9QLv3xIewXSi3fcmPuq8Hspmhsd5kO2qS926iIV7fghKORoKlN1FaB6rQ
- a3rikMSJSdJkpb7VQBo8s7Ozeu4LW5eoSaTpX7p3i2sUC44IpaYrodJQikHZ/apA0qPxfEEwgZ
- 2BPjwz0OZuGLVtF9dqNSxjdNr3ZM+I9mZ72YBqUuNMmNGSQFMkxkyzbqH63PMhziWWRcZj0oat
- jz4=
+  by ob1.hgst.iphmx.com with ESMTP; 07 Dec 2022 22:22:27 +0800
+IronPort-SDR: hDN7pqOr7eD/MPulxCRC5b6w6hMK2FGCPKu8jB8mYesQKj0lghdkisGGyjU4/SZl9hGZpFnmnb
+ 9iBX06rLJ+S4shmz28Wqr2+vazNr/S1wHMjOjf5QSJxZilEjIz1Cuhk+6iXTHW2n60MyRFFsc6
+ rQ9UMzKWL+UsL6TU2QcoSQkB53QVmPD/bw05VqiUyDOCA132L2qtkulGq52nDsqIMWn/qO56Rw
+ ybdtLNypSY5MvMKtKbRfgE2ZZ6vOn42HYr9asvlaBt5ekC2a04p6iC/gfzmfHmB2HZ3hIYNJTK
+ M7U=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 07 Dec 2022 05:35:15 -0800
-IronPort-SDR: LFAqk3j9YD7wabEddLknrpXYbeamQuwRjTkdNCKQkobf6YXKv5FlSfRpjJpIPLc1xF4QpgFhnP
- 3HZkimoclQndL/X8gcZoufEoyQOfe7l4WzjkQ666y9owhktWLqw9qrnKeg0yMfsmmo+/DqqLCS
- on2OPT8w2llmA0Qv2jrGMuAX6DvpExC7sO8NBMOscZtPeVCzEt92Jp0kOnI7u7XGiyt4LJtl7b
- Wu2TXOlR6uozj7+4bBr+17NSVz1QjbZjqMul1+oHrPoY+vvYH0h2pG8BFSJVZrimrjhaz3Lk7r
- qoI=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 07 Dec 2022 05:35:13 -0800
+IronPort-SDR: /DSLC+1v3FLG6c5UINGnHxIm3FujSasxAjlgu+tMfItZN+HH9+s1RqudPwQEGaIZ/W8tnVhxVB
+ 1mJ0y5VJsbinHxr5moTL5UgZjrSpBrGq5xcuoyeNCmpjDjcHXg9H0z+h3luqYDC1VPeos0Ogdx
+ 3pmLpgia6QI4fbzOybykQLT0cDgZoSRnWyO4hm+2xIGpCZN+uhQkeHFVdUmHG7FEQOo/MBktLL
+ b53pbyLvcfkUn9lDR4M+R6BaYqVtwkbdtkTICykwQMHhv19vm2PPzDPowaDZixZsaFZyfDq/gP
+ qLI=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 07 Dec 2022 06:22:28 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 07 Dec 2022 06:22:26 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         Josef Bacik <josef@toxicpanda.com>,
         Naohiro Aota <Naohiro.Aota@wdc.com>
-Subject: [PATCH v4 2/9] btrfs: read raid-stripe-tree from disk
-Date:   Wed,  7 Dec 2022 06:22:11 -0800
-Message-Id: <2262ab233985a1fbed23b7ef5760f38f9318d156.1670422590.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH v4 0/9] btrfs: introduce RAID stripe tree
+Date:   Wed,  7 Dec 2022 06:22:09 -0800
+Message-Id: <cover.1670422590.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.38.1
-In-Reply-To: <cover.1670422590.git.johannes.thumshirn@wdc.com>
-References: <cover.1670422590.git.johannes.thumshirn@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-If we find a raid-stripe-tree on mount, read it from disk.
+Updates of the raid-stripe-tree are done at delayed-ref time to safe on
+bandwidth while for reading we do the stripe-tree lookup on bio mapping time,
+i.e. when the logical to physical translation happens for regular btrfs RAID
+as well.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/block-rsv.c       |  1 +
- fs/btrfs/disk-io.c         | 19 +++++++++++++++++++
- fs/btrfs/disk-io.h         |  5 +++++
- fs/btrfs/fs.h              |  4 +++-
- include/uapi/linux/btrfs.h |  1 +
- 5 files changed, 29 insertions(+), 1 deletion(-)
+The stripe tree is keyed by an extent's disk_bytenr and disk_num_bytes and
+it's contents are the respective physical device id and position.
 
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 5367a14d44d2..384987343a64 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -402,6 +402,7 @@ void btrfs_init_root_block_rsv(struct btrfs_root *root)
- 	case BTRFS_EXTENT_TREE_OBJECTID:
- 	case BTRFS_FREE_SPACE_TREE_OBJECTID:
- 	case BTRFS_BLOCK_GROUP_TREE_OBJECTID:
-+	case BTRFS_RAID_STRIPE_TREE_OBJECTID:
- 		root->block_rsv = &fs_info->delayed_refs_rsv;
- 		break;
- 	case BTRFS_ROOT_TREE_OBJECTID:
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f10b946454d7..5784c850a3ec 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1444,6 +1444,9 @@ static struct btrfs_root *btrfs_get_global_root(struct btrfs_fs_info *fs_info,
- 
- 		return btrfs_grab_root(root) ? root : ERR_PTR(-ENOENT);
- 	}
-+	if (objectid == BTRFS_RAID_STRIPE_TREE_OBJECTID)
-+		return btrfs_grab_root(fs_info->stripe_root) ?
-+			fs_info->stripe_root : ERR_PTR(-ENOENT);
- 	return NULL;
- }
- 
-@@ -1522,6 +1525,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
- 	btrfs_put_root(fs_info->fs_root);
- 	btrfs_put_root(fs_info->data_reloc_root);
- 	btrfs_put_root(fs_info->block_group_root);
-+	btrfs_put_root(fs_info->stripe_root);
- 	btrfs_check_leaked_roots(fs_info);
- 	btrfs_extent_buffer_leak_debug_check(fs_info);
- 	kfree(fs_info->super_copy);
-@@ -2054,6 +2058,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, bool free_chunk_root)
- 	free_root_extent_buffers(info->fs_root);
- 	free_root_extent_buffers(info->data_reloc_root);
- 	free_root_extent_buffers(info->block_group_root);
-+	free_root_extent_buffers(info->stripe_root);
- 	if (free_chunk_root)
- 		free_root_extent_buffers(info->chunk_root);
- }
-@@ -2506,6 +2511,20 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
- 		fs_info->uuid_root = root;
- 	}
- 
-+	if (btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE)) {
-+		location.objectid = BTRFS_RAID_STRIPE_TREE_OBJECTID;
-+		root = btrfs_read_tree_root(tree_root, &location);
-+		if (IS_ERR(root)) {
-+			if (!btrfs_test_opt(fs_info, IGNOREBADROOTS)) {
-+				ret = PTR_ERR(root);
-+				goto out;
-+			}
-+		} else {
-+			set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
-+			fs_info->stripe_root = root;
-+		}
-+	}
-+
- 	return 0;
- out:
- 	btrfs_warn(fs_info, "failed to read root (objectid=%llu): %d",
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index bc686de7eb80..e10f942c0a37 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -106,6 +106,11 @@ static inline struct btrfs_root *btrfs_grab_root(struct btrfs_root *root)
- 	return NULL;
- }
- 
-+static inline struct btrfs_root *btrfs_stripe_tree_root(struct btrfs_fs_info *fs_info)
-+{
-+	return fs_info->stripe_root;
-+}
-+
- void btrfs_put_root(struct btrfs_root *root);
- void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index d5224df7468b..f08b59320645 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -202,7 +202,8 @@ enum {
- 	 BTRFS_FEATURE_INCOMPAT_METADATA_UUID	|	\
- 	 BTRFS_FEATURE_INCOMPAT_RAID1C34	|	\
- 	 BTRFS_FEATURE_INCOMPAT_ZONED		|	\
--	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2)
-+	 BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2  |	\
-+	 BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE)
- #else
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
-@@ -355,6 +356,7 @@ struct btrfs_fs_info {
- 	struct btrfs_root *uuid_root;
- 	struct btrfs_root *data_reloc_root;
- 	struct btrfs_root *block_group_root;
-+	struct btrfs_root *stripe_root;
- 
- 	/* The log root tree is a directory of all the other log roots */
- 	struct btrfs_root *log_root_tree;
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b4f0f9531119..593fb7930a37 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -322,6 +322,7 @@ struct btrfs_ioctl_fs_info_args {
- #define BTRFS_FEATURE_INCOMPAT_RAID1C34		(1ULL << 11)
- #define BTRFS_FEATURE_INCOMPAT_ZONED		(1ULL << 12)
- #define BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2	(1ULL << 13)
-+#define BTRFS_FEATURE_INCOMPAT_RAID_STRIPE_TREE	(1ULL << 14)
- 
- struct btrfs_ioctl_feature_flags {
- 	__u64 compat_flags;
+For an example 1M write (split into 126K segments due to zone-append)
+rapido2:/home/johannes/src/fstests# xfs_io -fdc "pwrite -b 1M 0 1M" -c fsync /mnt/test/test
+wrote 1048576/1048576 bytes at offset 0
+1 MiB, 1 ops; 0.0065 sec (151.538 MiB/sec and 151.5381 ops/sec)
+
+The tree will look as follows:
+
+rapido2:/home/johannes/src/fstests# btrfs inspect-internal dump-tree -t raid_stripe /dev/nullb0
+btrfs-progs v5.16.1 
+raid stripe tree key (RAID_STRIPE_TREE ROOT_ITEM 0)
+leaf 805847040 items 9 free space 15770 generation 9 owner RAID_STRIPE_TREE
+leaf 805847040 flags 0x1(WRITTEN) backref revision 1
+checksum stored 1b22e13800000000000000000000000000000000000000000000000000000000
+checksum calced 1b22e13800000000000000000000000000000000000000000000000000000000
+fs uuid e4f523d1-89a1-41f9-ab75-6ba3c42a28fb
+chunk uuid 6f2d8aaa-d348-4bf2-9b5e-141a37ba4c77
+        item 0 key (939524096 RAID_STRIPE_KEY 126976) itemoff 16251 itemsize 32
+                        stripe 0 devid 1 offset 939524096
+                        stripe 1 devid 2 offset 536870912
+        item 1 key (939651072 RAID_STRIPE_KEY 126976) itemoff 16219 itemsize 32
+                        stripe 0 devid 1 offset 939651072
+                        stripe 1 devid 2 offset 536997888
+        item 2 key (939778048 RAID_STRIPE_KEY 126976) itemoff 16187 itemsize 32
+                        stripe 0 devid 1 offset 939778048
+                        stripe 1 devid 2 offset 537124864
+        item 3 key (939905024 RAID_STRIPE_KEY 126976) itemoff 16155 itemsize 32
+                        stripe 0 devid 1 offset 939905024
+                        stripe 1 devid 2 offset 537251840
+        item 4 key (940032000 RAID_STRIPE_KEY 126976) itemoff 16123 itemsize 32
+                        stripe 0 devid 1 offset 940032000
+                        stripe 1 devid 2 offset 537378816
+        item 5 key (940158976 RAID_STRIPE_KEY 126976) itemoff 16091 itemsize 32
+                        stripe 0 devid 1 offset 940158976
+                        stripe 1 devid 2 offset 537505792
+        item 6 key (940285952 RAID_STRIPE_KEY 126976) itemoff 16059 itemsize 32
+                        stripe 0 devid 1 offset 940285952
+                        stripe 1 devid 2 offset 537632768
+        item 7 key (940412928 RAID_STRIPE_KEY 126976) itemoff 16027 itemsize 32
+                        stripe 0 devid 1 offset 940412928
+                        stripe 1 devid 2 offset 537759744
+        item 8 key (940539904 RAID_STRIPE_KEY 32768) itemoff 15995 itemsize 32
+                        stripe 0 devid 1 offset 940539904
+                        stripe 1 devid 2 offset 537886720
+total bytes 26843545600
+bytes used 1245184
+uuid e4f523d1-89a1-41f9-ab75-6ba3c42a28fb
+
+A design document can be found here:
+https://docs.google.com/document/d/1Iui_jMidCd4MVBNSSLXRfO7p5KmvnoQL/edit?usp=sharing&ouid=103609947580185458266&rtpof=true&sd=true
+
+
+Changes to v3:
+- Rebased onto 20221120124734.18634-1-hch@lst.de
+- Incorporated Josef's review
+- Merged related patches
+
+v3 of the patchset can be found here:
+https://lore/kernel.org/linux-btrfs/cover.1666007330.git.johannes.thumshirn@wdc.com
+
+Changes to v2:
+- Bug fixes
+- Rebased onto 20220901074216.1849941-1-hch@lst.de
+- Added tracepoints
+- Added leak checker
+- Added RAID0 and RAID10
+
+v2 of the patchset can be found here:
+https://lore.kernel.org/linux-btrfs/cover.1656513330.git.johannes.thumshirn@wdc.com
+
+Changes to v1:
+- Write the stripe-tree at delayed-ref time (Qu)
+- Add a different write path for preallocation
+
+v1 of the patchset can be found here:
+https://lore.kernel.org/linux-btrfs/cover.1652711187.git.johannes.thumshirn@wdc.com/
+
+Johannes Thumshirn (9):
+  btrfs: add raid stripe tree definitions
+  btrfs: read raid-stripe-tree from disk
+  btrfs: add support for inserting raid stripe extents
+  btrfs: delete stripe extent on extent deletion
+  btrfs: lookup physical address from stripe extent
+  btrfs: add raid stripe tree pretty printer
+  btrfs: zoned: allow zoned RAID
+  btrfs: check for leaks of ordered stripes on umount
+  btrfs: add tracepoints for ordered stripes
+
+ fs/btrfs/Makefile               |   3 +-
+ fs/btrfs/accessors.h            |  29 +++
+ fs/btrfs/bio.c                  |  30 ++-
+ fs/btrfs/bio.h                  |   2 +
+ fs/btrfs/block-rsv.c            |   1 +
+ fs/btrfs/delayed-ref.c          |   5 +-
+ fs/btrfs/disk-io.c              |  24 ++
+ fs/btrfs/disk-io.h              |   5 +
+ fs/btrfs/extent-tree.c          |  57 +++++
+ fs/btrfs/fs.h                   |   7 +-
+ fs/btrfs/inode.c                |   6 +
+ fs/btrfs/print-tree.c           |  21 ++
+ fs/btrfs/raid-stripe-tree.c     | 402 ++++++++++++++++++++++++++++++++
+ fs/btrfs/raid-stripe-tree.h     |  81 +++++++
+ fs/btrfs/super.c                |   1 +
+ fs/btrfs/volumes.c              |  38 ++-
+ fs/btrfs/volumes.h              |  12 +-
+ fs/btrfs/zoned.c                |  43 ++++
+ include/trace/events/btrfs.h    |  50 ++++
+ include/uapi/linux/btrfs.h      |   1 +
+ include/uapi/linux/btrfs_tree.h |  20 +-
+ 21 files changed, 818 insertions(+), 20 deletions(-)
+ create mode 100644 fs/btrfs/raid-stripe-tree.c
+ create mode 100644 fs/btrfs/raid-stripe-tree.h
+
 -- 
 2.38.1
 

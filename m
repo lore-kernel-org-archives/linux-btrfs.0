@@ -2,106 +2,110 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B58CC10F31
-	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Dec 2022 09:03:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 04556C4332F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 12 Dec 2022 09:23:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231721AbiLLJDH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 12 Dec 2022 04:03:07 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37708 "EHLO
+        id S231935AbiLLJXJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 12 Dec 2022 04:23:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48736 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231730AbiLLJC7 (ORCPT
+        with ESMTP id S231985AbiLLJWJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 12 Dec 2022 04:02:59 -0500
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1E8D6353
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Dec 2022 01:02:58 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1670835778; x=1702371778;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=29WyzW0KaUCeypzRBWUMzRWkyxdtqldnF6bii/Y8veY=;
-  b=W3d3mPuUY+H2XryJXqegeTaBnZ/YBBdMsGbXDjh0LxLalFJMgnf7DGhW
-   LVc3VqETezVsMXJu7ZDDoBoWnM0iO7yIYrCnj8Dx7QfopeOQNqRmEEABe
-   d3RLT/o0v3hsvB+lO77c10C8QEJI9Chq++YONdrFn/yitAclVGrsqqzXu
-   Y1MP1suFLONy5cq2BK2xE1Oj7Rn1wrGMJLzcVFiuGZA2nB79Ago92j0Xm
-   5nxAGCWec/IZsp2uRbQ0kwJuA9fwxiUoRU7fJts54kQ37K4hanhADek0/
-   mLg/9e12t4Px8TvlVUAtB8SZTHdgb9Ozm+jjZNDYJwRCNL9jdUm/Ml4G7
-   Q==;
-X-IronPort-AV: E=Sophos;i="5.96,237,1665417600"; 
-   d="scan'208";a="322792942"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 12 Dec 2022 17:02:57 +0800
-IronPort-SDR: jjKeYv6/9DWK/6dvKuhJPOiBx/3crBHo+KSouBgCrSmTaMXnG2cWYJJ/ewOlUfptp9BFXkwz2H
- YnTT/UgthJVV4S+CytXU46yISvjSwJJzfuuCu7DLeN/CbE6B0Y9IL0yKJOfuxaPAQBpF2dnMtm
- MQZeuM908g66zaYao5yLkQvQ+wdjDjRLsj2x6vDGnslaTvqPpxKuHZ3wN/Y7k8i7PmoUIWEIph
- wahzfG76WBB5xgpIAFwuIjXNMsNmN2w1Su3p63x/Gf3cnMszzvNpL5eAgmqG0Zk+IlLYjQMYdI
- VEA=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 12 Dec 2022 00:21:22 -0800
-IronPort-SDR: N7fBAAvtUojR2fArroBjs7UNrIS0SRmqpPCcdJPG/sXKRqZ7cpBkFw7Pnnlc/hg69QGy4YSpxV
- pra1hwowkDeIe5JBjJjSSfokxTP6vcxzK/hFT6zj5mikRW9nt0GIvhFUZlKVaZKW+99moRsCR7
- 9xrRBw757EnLFKEEJwGfKus6dvquIOn41uwXxN9mhlggUZoZ9VeMA1/vzksXqRHEzLVuXElpFi
- xO6mO/gT3/cu3Z75CuXRWVXCu8/Nlrz4lDg4Nl7Yxn4TYFoMNOyaOLfRRFnF8hN/HutDj8S/5D
- JpI=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 12 Dec 2022 01:02:58 -0800
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 3/4] btrfs: drop trans parameter of insert_delayed_ref
-Date:   Mon, 12 Dec 2022 01:02:48 -0800
-Message-Id: <d47bb8668e2d3307923d653d781eda65582a6a1a.1670835448.git.johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.38.1
-In-Reply-To: <cover.1670835448.git.johannes.thumshirn@wdc.com>
-References: <cover.1670835448.git.johannes.thumshirn@wdc.com>
+        Mon, 12 Dec 2022 04:22:09 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D577F585
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Dec 2022 01:21:49 -0800 (PST)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MTzfG-1pUP5B0yMU-00R3Gv; Mon, 12
+ Dec 2022 10:21:44 +0100
+Message-ID: <395c6c66-7b34-a4c6-2b63-68c9b2e5ac76@gmx.com>
+Date:   Mon, 12 Dec 2022 17:21:40 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.5.1
+Subject: Re: [PATCH 1/4] btrfs: drop unused trans parameter of
+ drop_delayed_ref
+Content-Language: en-US
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org
+References: <cover.1670835448.git.johannes.thumshirn@wdc.com>
+ <96d11175d7b70318858469941ab125c3007b6a6e.1670835448.git.johannes.thumshirn@wdc.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <96d11175d7b70318858469941ab125c3007b6a6e.1670835448.git.johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:KU7OWtB5PLVqOJTiANgmUJmy6IEhH85GFn9u3N6KhRnMvEt+ZFb
+ lN1L02vbYgCSLQGJAUzN3vTulzey5jVW7Jiy7BS4qM3RfY1RZ4gj+2eiiz/nK/XzO33z4d0
+ cwyjdxv5Gb1s6WkwandB4dydEcyIHdRegKzEn8orUUPrlhTAEtx1xFDQloR3A+cErAHFB44
+ Ti0pfyQcBM20BJVbB+HIA==
+UI-OutboundReport: notjunk:1;M01:P0:IX5DlbKZLOg=;jwc/uzx5LQKSNOYLmNppMouLVby
+ pxdj5yQe+9597EY6Q5LAZ/cxAwfLvlV+DsyuWPB6Ob2M4+Qruau7Tx9jBAwEamss1yxjb7FKC
+ /GiRMtAte7vkcLMIO//DxHFdNq4IumcrhxkGwLKPz99z5nG0hmJSxpNh3RA8Ql8757X5DSXi4
+ 0vZBazRWy1TocBkHgT9hpmAAik2YPSdYdICP5T0v/5aiCLZuhEt3/f0ZdmEtMJR/RbjKscqUs
+ a7Ev18+WSJYnv6QrGVhzCHWRvt6ippZK152YmKqCBPvTRF8aW9e6D9l4v143uXTMTD2Q68GBz
+ 4OInP/S59uO39dKSKYiOHgx/fkzBbERp21hStc4COdKPug5KkMVwM3htZr28kzszwNuzb7Gxu
+ QbCW1wuB/GpbgM7PbgUXRIpNes2lPo6BnSAjjfpSioEhXAjJFLxzhnnr7ZB3eQq7QIAhc3+j/
+ enxlNas06vDU7aR48mf3GhLcl7nFRASxaSkisCU+jLj2s2Nadvk5oUvLQtou9jO/+qk2jZhoR
+ diOm3m0HLmvMtwHFIVTBMqEhfbGUsVC1jGgmhy5KW2MqAZmChOMp5lOqiFXjUxjeiAybOHFjW
+ ust+MwPGHHIC1BwJxc0XS9klcKEYQuQO+p+xYFg7ISn+Z7RYXRZ41Rcm1y6AMqafbDy4zGTnv
+ qifMhgGqTBjs3v7YtUQlZCqLCr9IG/vb3yaqcZxULQDG125asJlpGRi1AHiaJzoaxHT3rj7FK
+ K3B6DbFcqWOLmVEHrp645GZnUWfb5rWBNmAlyD4lxZywHxjofmm5tGx8+dATrbz3sO/qrWka6
+ dhJ/h5b+NyBmeucMX0gT+GdbW8jcCYX5hRPVCtJEj4JsSH9veSOK9gi+wnUuP9O7iyDfQrwDi
+ nNidE0ciMQt0ihew3Cqh8FJeEzPIMfsffOhsQGemBNgC2KSSvwHx3FUI4vtHOnSpxFI30hlQe
+ M1pw8r/BrJKdpORrbcvctlTJ1p4=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that drop_delayed_ref() doesn't need a btrfs_trans_handle, drop it
-from insert_delayed_ref() as well.
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/delayed-ref.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 046ba49b8f94..678ce95c04ac 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -599,8 +599,7 @@ void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
-  * Return 0 for insert.
-  * Return >0 for merge.
-  */
--static int insert_delayed_ref(struct btrfs_trans_handle *trans,
--			      struct btrfs_delayed_ref_root *root,
-+static int insert_delayed_ref(struct btrfs_delayed_ref_root *root,
- 			      struct btrfs_delayed_ref_head *href,
- 			      struct btrfs_delayed_ref_node *ref)
- {
-@@ -976,7 +975,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	head_ref = add_delayed_ref_head(trans, head_ref, record,
- 					action, &qrecord_inserted);
- 
--	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
-+	ret = insert_delayed_ref(delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	/*
-@@ -1068,7 +1067,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	head_ref = add_delayed_ref_head(trans, head_ref, record,
- 					action, &qrecord_inserted);
- 
--	ret = insert_delayed_ref(trans, delayed_refs, head_ref, &ref->node);
-+	ret = insert_delayed_ref(delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	/*
--- 
-2.38.1
+On 2022/12/12 17:02, Johannes Thumshirn wrote:
+> drop_delayed_ref() doesn't use the btrfs_trans_handle it gets passed in,
+> so remove it.
+> 
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+Thanks,
+Qu
+> ---
+>   fs/btrfs/delayed-ref.c | 9 ++++-----
+>   1 file changed, 4 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 573ebab886e2..663e7493926f 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -437,8 +437,7 @@ int btrfs_delayed_ref_lock(struct btrfs_delayed_ref_root *delayed_refs,
+>   	return 0;
+>   }
+>   
+> -static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
+> -				    struct btrfs_delayed_ref_root *delayed_refs,
+> +static inline void drop_delayed_ref(struct btrfs_delayed_ref_root *delayed_refs,
+>   				    struct btrfs_delayed_ref_head *head,
+>   				    struct btrfs_delayed_ref_node *ref)
+>   {
+> @@ -482,10 +481,10 @@ static bool merge_ref(struct btrfs_trans_handle *trans,
+>   			mod = -next->ref_mod;
+>   		}
+>   
+> -		drop_delayed_ref(trans, delayed_refs, head, next);
+> +		drop_delayed_ref(delayed_refs, head, next);
+>   		ref->ref_mod += mod;
+>   		if (ref->ref_mod == 0) {
+> -			drop_delayed_ref(trans, delayed_refs, head, ref);
+> +			drop_delayed_ref(delayed_refs, head, ref);
+>   			done = true;
+>   		} else {
+>   			/*
+> @@ -641,7 +640,7 @@ static int insert_delayed_ref(struct btrfs_trans_handle *trans,
+>   
+>   	/* remove existing tail if its ref_mod is zero */
+>   	if (exist->ref_mod == 0)
+> -		drop_delayed_ref(trans, root, href, exist);
+> +		drop_delayed_ref(root, href, exist);
+>   	spin_unlock(&href->lock);
+>   	return ret;
+>   inserted:

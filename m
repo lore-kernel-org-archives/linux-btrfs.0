@@ -2,213 +2,129 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 857FAC4332F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 17 Dec 2022 20:30:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 83382C4332F
+	for <linux-btrfs@archiver.kernel.org>; Sun, 18 Dec 2022 20:14:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229637AbiLQUaI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 17 Dec 2022 15:30:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39212 "EHLO
+        id S230383AbiLRULf (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 18 Dec 2022 15:11:35 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53994 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229480AbiLQUaH (ORCPT
+        with ESMTP id S230283AbiLRULe (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 17 Dec 2022 15:30:07 -0500
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 555F6F5A3
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Dec 2022 12:30:06 -0800 (PST)
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-        id DDC2268009D; Sat, 17 Dec 2022 15:29:55 -0500 (EST)
-Date:   Sat, 17 Dec 2022 15:29:43 -0500
-From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To:     Gerard Boor <gerard@tesseract.nl>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: Recurring CSUM errors in root -9 when balancing and various
- files on scrub
-Message-ID: <Y54mt9WQlIVrsGnj@hungrycats.org>
-References: <em070178a7-5d53-4e5e-a8ae-0356b942932b@1f91cd2f.com>
+        Sun, 18 Dec 2022 15:11:34 -0500
+Received: from mail-io1-f69.google.com (mail-io1-f69.google.com [209.85.166.69])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A89DA19B
+        for <linux-btrfs@vger.kernel.org>; Sun, 18 Dec 2022 12:11:33 -0800 (PST)
+Received: by mail-io1-f69.google.com with SMTP id j5-20020a5d9d05000000b006e2f0c28177so3180571ioj.17
+        for <linux-btrfs@vger.kernel.org>; Sun, 18 Dec 2022 12:11:33 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=PYdEzkcmM1dQWw1tCSlRiluskSPU7yQYmczw0vf6EAw=;
+        b=6lZy50u7WWtdcgAcDiJr3NgzcSNRdbBIKqtCGxb6KQwj8vxrZ22tuEyIa7HwH0b+bp
+         FJE90Yg2s7K7RR0TcJN+gSeKBWTfPOFcAA6q1F6BhAD5oXGy++uTNWV9HGhfF3M3Qjef
+         wesfFmTGMRlSX1kw7NhuLXkbBiusIGkN+hCBSZ/RswRHi8KzBxJfPxmb987HsdiFEp0k
+         tl+kWi9B7E87BrdsF/eGbH/VK2zABt5pJFE2598/I5jalyBhr3p4ZujjKjUxiv/frEJC
+         Y/h0NfPkl3wrt4sGNKwUnP1S8DP5t89rCVAmoM8qcd4HDLEhcVRYvBFoF+KAI9q9QUnZ
+         nmcQ==
+X-Gm-Message-State: ANoB5pmq9J+ITEJi28Zgqf3bMCRrSGlovP9bvU4J3FLggIIw/9h0uvqG
+        NcynWPdIdieXj8U4jTH9ewFBchZYccuOPuNJBH3Ki50Xl22C
+X-Google-Smtp-Source: AA0mqf7O+EfBtXFqK6D8+0MHVRbDp4g3/viKojgngFQoot8r445Yj77C/P/rLmKU+yQJ3WkD/YMeBwmYYmv9ClfW4b+b6NgdVweH
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <em070178a7-5d53-4e5e-a8ae-0356b942932b@1f91cd2f.com>
+X-Received: by 2002:a05:6602:1252:b0:6e4:8c1:d2d7 with SMTP id
+ o18-20020a056602125200b006e408c1d2d7mr1485178iou.27.1671394292609; Sun, 18
+ Dec 2022 12:11:32 -0800 (PST)
+Date:   Sun, 18 Dec 2022 12:11:32 -0800
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <0000000000001737cf05f01fcf7f@google.com>
+Subject: [syzbot] WARNING in add_to_free_space_tree
+From:   syzbot <syzbot+c251f57046d25dec244f@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Dec 13, 2022 at 09:12:49AM +0000, Gerard Boor wrote:
-> Hello all,
-> 
-> I have a btrfs array consisting of 4 disks, using RAID-1 for data and
-> RAID-1c4 for metadata and system. I have added disks over time and this has
-> generally worked fine. The first 3 disks are all 8 TB and the newest one
-> (less than a week old) is 16TB.
-> 
-> After adding the latest disk, I ran a btrfs rebalance to move the data
-> around more sensibly. The rebalance for metadata worked (also from 1c3 to
-> 1c4), but the rebalance for data keeps failing with errors like;
-> 
-> [152366.756416] BTRFS error (device sde): bdev /dev/sde errs: wr 0, rd 0,
-> flush 0, corrupt 262, gen 0
-> [152366.757415] BTRFS warning (device sde): csum failed root -9 ino 1720 off
-> 4055040 csum 0x19b6bbe6 expected csum 0x9bd067fb mirror 2
-> 
-> I was told that root -9 means these errors occur in the relocation tree and
-> not actually in the data itself. I managed to balance the array for maybe
-> 2/3rds by simply rebooting and rerunning the balance over and over, but now
-> it's at a point where it fails almost instantly when I try to run it.
+Hello,
 
-To find the offending file for balance failures, take the block group
-number from the last "relocating block group NNNNNN" message, add the
-'off NNNNNN' number from the "csum failed root -9" message, and pass the
-result to 'btrfs ins log -o NNNNNN /filesystem/path'.  This should give
-you a list of files that have read errors.  Remove them and the balance
-should be able to proceed.
+syzbot found the following issue on:
 
-Do the other stuff below first, as root -9 failures indicate _ongoing_
-uncorrectable filesystem corruption, and you'll want to solve that before
-doing any large amount of IO, especially balance.
+HEAD commit:    e2ca6ba6ba01 Merge tag 'mm-stable-2022-12-13' of git://git..
+git tree:       upstream
+console output: https://syzkaller.appspot.com/x/log.txt?x=12e54400480000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=276eb8ff64eb2c27
+dashboard link: https://syzkaller.appspot.com/bug?extid=c251f57046d25dec244f
+compiler:       Debian clang version 13.0.1-++20220126092033+75e33f71c2da-1~exp1~20220126212112.63, GNU ld (GNU Binutils for Debian) 2.35.2
 
-> For reference, the command I'm using is  btrfs balance start -d /mountpoint
-> 
-> When this problem first started, I ran a scrub to see what was wrong, but
-> the scrub returned clean.
-> 
-> Scrubbing is also where problem #2 comes in; whenever I run a scrub,
-> sometimes after leaving the whole thing turned off for days, there's a
-> 50%-ish chance it returns with some corrupted CSUM error. In most of these
-> cases it's about 2 or 3 files max and the files seem entirely random;
-> sometimes brand new files, but often files that have been on the array for
-> years without being touched. In most of these CSUM error cases, it also
-> affects BOTH copies of the file and the file cannot be fixed or recovered. I
-> find it hard to believe that a file that's been sitting there for years
-> without issue is suddenly corrupted on both disks it resides on and I think
-> it may be related to the CSUM error I face when rebalancing.
-> 
-> Things I have considered are; bad memory (though how would that corrupt BOTH
-> copies of a file that has been dormant for years?), or maybe a messed up
-> SATA controller resulting in frequent read errors that btrfs sees as CSUM
-> errors? The CSUM errors also affect all 4 disks, including the brand new
-> one.
+Unfortunately, I don't have any reproducer for this issue yet.
 
-Bad memory could, in theory, cause csum failures, even on old data.
-The data is read into memory, the memory fails, the csum is calculated
-based on the contents of memory (now corrupt), and compared to the stored
-csum on disk.  These are now different due to the memory failure.
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/8aad47431ccd/disk-e2ca6ba6.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/382636835ba9/vmlinux-e2ca6ba6.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/ac62c9f6a7cf/bzImage-e2ca6ba6.xz
 
-For writes, the order of operations is different, and leads to persistent
-data loss: the data starts in memory, a csum is calculated based on the
-contents of memory, the memory fails, the data (now corrupt) is written
-to disk (both mirrors), and the csum is written to disk soon after.
-Later reads will never have the csum and data agree.
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+c251f57046d25dec244f@syzkaller.appspotmail.com
 
-On the other hand, for bad memory to cause this kind of problem, the
-RAM failure frequency would have to be so high that the system would be
-barely functional.  The filesystem's metadata would already have been
-destroyed by this point.  There should also be other symptoms if RAM is
-failing:  frequent crashes, unusual kernel messages, security software
-complaining about potential hacking, etc.  and you haven't reported any
-symptoms like these.
-
-It doesn't seem likely that these problems are caused by memory failure
-(which includes components that support memory, like cooling and power
-supply).  You could run memtest86 for a few days to make sure the host
-RAM is healthy, but I would not expect that you'll find a problem there.
-
-SATA controller failure would cause csum failures on all incoming data,
-regardless of age.  SATA controller failure would be consistent with
-these symptoms, especially the corruptions that appear in the relocation
-tree during balance; however, this has the same impact on metadata as
-RAM failure--at this rate, it would likely have destroyed the filesystem
-by this point.
-
-That leaves kernel bugs, and 5.10 (and 5.15) has a few known ones,
-especially for read error correction and raid1c3 and raid1c4.  Some of
-the worst of these problems are fixed in 6.0, so I'd try upgrading to
-6.0 and see what problems remain.  (Don't bother with 5.19--that kernel
-only has some of the fixes, and introduces new bugs of its own)
-
-If you're using any applications that use O_DIRECT writes incorrectly,
-there's a small but non-zero chance they will write pages with bad csums.
-This doesn't seem likely because you've mentioned failures being detected
-after some days of downtime.
-
-> Some system data;
-> 
-> # uname -a
-> Linux nasseract 5.10.0-18-amd64 #1 SMP Debian 5.10.140-1 (2022-09-02) x86_64
-> GNU/Linux
-> # btrfs --version
-> btrfs-progs v5.10.1
-> # btrfs fi show
-> Label: 'NassierDomer'  uuid: 99d9748a-2afa-421f-b56d-970c68dac58a
->         Total devices 4 FS bytes used 10.76TiB
->         devid    1 size 7.28TiB used 4.88TiB path /dev/sdb1
->         devid    2 size 7.28TiB used 4.88TiB path /dev/sdd
->         devid    3 size 7.28TiB used 5.96TiB path /dev/sdc
->         devid    4 size 14.55TiB used 5.89TiB path /dev/sde
-> # btrfs fi df /srv/dev-disk-by-label-NassierDomer/
-> Data, RAID1: total=10.78TiB, used=10.75TiB
-> System, RAID1C4: total=32.00MiB, used=1.53MiB
-> Metadata, RAID1C4: total=12.00GiB, used=11.53GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
-> Relevant dmesg entries after boot;
-> 
-> [    7.998580] BTRFS info (device sdb1): bdev /dev/sdb1 errs: wr 0, rd 0,
-> flush 0, corrupt 308, gen 0
-> [    7.998587] BTRFS info (device sdb1): bdev /dev/sdd errs: wr 0, rd 0,
-> flush 0, corrupt 300, gen 0
-> [    7.998590] BTRFS info (device sdb1): bdev /dev/sdc errs: wr 0, rd 0,
-> flush 0, corrupt 177, gen 0
-> [    7.998593] BTRFS info (device sdb1): bdev /dev/sde errs: wr 0, rd 0,
-> flush 0, corrupt 53, gen 0
-> 
-> Note that /dev/sde is less than a week old.
-> 
-> I'm tempted to gut this entire machine and replace everything except the
-> drives, but maybe someone has some better (cheaper) ideas to fix what is
-> going on here?
-
-If you are able to confirm that it is a RAM or SATA controller issue,
-stop using that hardware immediately.  Failures in these subsystems will
-steadily corrupt everything the host touches, until a critical page of
-metadata is corrupted, then the filesystem is damaged beyond the reach
-of current tools to repair.
-
-There are two main scenarios consistent with the reported symptoms:  1)
-kernel bugs + hardware failure inside the disks, and 2) hardware failure
-outside of the disks without kernel bugs.
-
-In scenario 1, some drive or SATA controller is failing, and seeding the
-filesystem with a few random corruption errors.  Later, a kernel bug
-fails to handle or repair those errors, causing some more failures in
-downstream processing.  Most of these failures will not be persistent,
-i.e. most will be cleared by a umount/mount, and only the few that are
-actually caused by disks will remain.
-
-In scenario 2, the RAM or SATA controller is failing intermittently,
-causing all of the above symptoms, but it was initially OK (so the earlier
-metadata balance succeeded) and is now getting progressively worse--and
-so far, you've been lucky, and metadata hasn't been hit yet.
-
-The scary scenario is #2, because if that's the true scenario, then
-everything you do with this hardware will bring the filesystem closer to
-destruction.  If the hardware is getting progressively worse, catastrophic
-failure will happen even sooner.
-
-I'd recommend ruling out scenario 2 first.  Take the system offline
-and do some basic memory and SATA controller tests.  e.g. boot from
-external media and run 'sha1sum /dev/sd?' a few times, see if the
-results change.  Or 'head -c 100G /dev/sda | sha1sum' to read just a few
-hundred GB from each disk, and repeat several times to see if the results
-change.  A bad SATA controller will never return the same data twice.
-Run memtest86 for a few days.
-
-Once you're sure you're not in scenario 2 (or if you have good backups and
-are willing to rebuild if it turns out scenario 2 was the right one), then
-try doing what you're already doing, but on kernel 6.0.  I'd expect either
-the problems to stop completely, or be reduced to specific drives that are
-failing (and should be replaced).
+BTRFS info (device loop1): balance: ended with status: 0
+------------[ cut here ]------------
+BTRFS: Transaction aborted (error -28)
+WARNING: CPU: 0 PID: 30814 at fs/btrfs/free-space-tree.c:1056 add_to_free_space_tree+0x279/0x2c0 fs/btrfs/free-space-tree.c:1056
+Modules linked in:
+CPU: 0 PID: 30814 Comm: syz-executor.1 Not tainted 6.1.0-syzkaller-09941-ge2ca6ba6ba01 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/26/2022
+RIP: 0010:add_to_free_space_tree+0x279/0x2c0 fs/btrfs/free-space-tree.c:1056
+Code: ec 8c ba 20 04 00 00 44 89 e1 e8 8b 91 ee 06 e9 f9 fe ff ff e8 08 9b dd fd 48 c7 c7 e0 84 5b 8b 44 89 e6 31 c0 e8 e7 91 a4 fd <0f> 0b eb bb 89 e9 80 e1 07 38 c1 0f 8c fc fd ff ff be 08 00 00 00
+RSP: 0018:ffffc900176273d0 EFLAGS: 00010246
+RAX: 53abe3a95ad09b00 RBX: ffff88807b17c001 RCX: 0000000000040000
+RDX: ffffc90004441000 RSI: 000000000001f85f RDI: 000000000001f860
+RBP: dffffc0000000000 R08: ffffffff816ea35d R09: fffff52002ec4e35
+R10: fffff52002ec4e35 R11: 1ffff92002ec4e34 R12: 00000000ffffffe4
+R13: ffff88802d265e70 R14: 1ffff11005a4cbd8 R15: ffff88802d265ec0
+FS:  00007f281193d700(0000) GS:ffff8880b9800000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 000056102425b970 CR3: 000000002a41d000 CR4: 00000000003506f0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+Call Trace:
+ <TASK>
+ do_free_extent_accounting fs/btrfs/extent-tree.c:2849 [inline]
+ __btrfs_free_extent+0x14b3/0x29d0 fs/btrfs/extent-tree.c:3187
+ run_delayed_tree_ref fs/btrfs/extent-tree.c:1682 [inline]
+ run_one_delayed_ref fs/btrfs/extent-tree.c:1706 [inline]
+ btrfs_run_delayed_refs_for_head+0xe35/0x1e50 fs/btrfs/extent-tree.c:1950
+ __btrfs_run_delayed_refs+0x25f/0x490 fs/btrfs/extent-tree.c:2015
+ btrfs_run_delayed_refs+0x13b/0x480 fs/btrfs/extent-tree.c:2146
+ btrfs_commit_transaction+0x23d/0x3340 fs/btrfs/transaction.c:2151
+ del_balance_item fs/btrfs/volumes.c:3486 [inline]
+ reset_balance_state+0x256/0x390 fs/btrfs/volumes.c:3550
+ btrfs_balance+0xf43/0x1150 fs/btrfs/volumes.c:4388
+ btrfs_ioctl_balance+0x478/0x740 fs/btrfs/ioctl.c:3591
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:870 [inline]
+ __se_sys_ioctl+0xfb/0x170 fs/ioctl.c:856
+ do_syscall_x64 arch/x86/entry/common.c:50 [inline]
+ do_syscall_64+0x3d/0xb0 arch/x86/entry/common.c:80
+ entry_SYSCALL_64_after_hwframe+0x63/0xcd
+RIP: 0033:0x7f2810c8c0d9
+Code: 28 00 00 00 75 05 48 83 c4 28 c3 e8 f1 19 00 00 90 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 b8 ff ff ff f7 d8 64 89 01 48
+RSP: 002b:00007f281193d168 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 00007f2810dac050 RCX: 00007f2810c8c0d9
+RDX: 0000000020000480 RSI: 00000000c4009420 RDI: 0000000000000007
+RBP: 00007f2810ce7ae9 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
+R13: 00007ffe60b3e16f R14: 00007f281193d300 R15: 0000000000022000
+ </TASK>
 
 
-> Thanks,
-> Gerard
-> 
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.

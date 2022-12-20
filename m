@@ -2,117 +2,91 @@ Return-Path: <linux-btrfs-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1759AC4167B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Dec 2022 19:04:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B57EC4332F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 20 Dec 2022 19:17:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233672AbiLTTEW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 20 Dec 2022 14:04:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47104 "EHLO
+        id S233991AbiLTTRd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 20 Dec 2022 14:17:33 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51680 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229791AbiLTTEV (ORCPT
+        with ESMTP id S229791AbiLTTRb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 20 Dec 2022 14:04:21 -0500
+        Tue, 20 Dec 2022 14:17:31 -0500
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0C77D7F
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Dec 2022 11:04:20 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64D5FE1A
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Dec 2022 11:17:30 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 67C2D76856;
-        Tue, 20 Dec 2022 19:04:19 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 22B456029A;
+        Tue, 20 Dec 2022 19:17:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1671563059;
+        t=1671563849;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=ImpQCN4UYFLwxeio2nM0/YMC+fGV0xjva6lenoAixXI=;
-        b=EQkICw/N6CGaaCxM5nbzeWbP0JJ4MNrCV9X+CgBoW2BY3btPwtFEeg/5PZE35FnuVIE6Lf
-        DXy7PmQyE4l4QqEYpKEJZ5mRvIYJlG3+5b8XIX3PYiAQS+HYr1hUKR0d9bVx11PquSL3Qb
-        qusgcudeCNNSFcnfEhbbsNyyO4UtkDI=
+        bh=XHrlbZbAHx6HgiASBDYpw/iDxLRufFQU7asxqAEWK3M=;
+        b=pn/XCSg76MsSHQppOLN/VMlHqKubJTEHSHwthyRvXCV9S13zi81VmXpA526UMgn5fRzk+V
+        hxnDHEkUxOjMtIy8S0a63q3aQc8GzapASJ9A8HK9GGOz68Yx3T+O4MFUG6GxIv1u3QGY/S
+        G1ZxEf3ff2YNBefh4GcK8/94Icnz+Q0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1671563059;
+        s=susede2_ed25519; t=1671563849;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=ImpQCN4UYFLwxeio2nM0/YMC+fGV0xjva6lenoAixXI=;
-        b=kUFOc+edve9FQ8L3zGU1FV+PnXg2bw8yRmabrs+RlNQ+nlwskCrNMtpL7DfoTfHfjrtNY1
-        lfqfNQ1Aiux3ysBg==
+        bh=XHrlbZbAHx6HgiASBDYpw/iDxLRufFQU7asxqAEWK3M=;
+        b=hNTtSe7DRqrRwoFUZKSeHLR1UbHQodx0A23AXzv5Hsz5MlXbQ7Onr+fCleQ3uor+HKfIRQ
+        /ziCgl4wsS0hZ+Bg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 45D921390E;
-        Tue, 20 Dec 2022 19:04:19 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 064B413254;
+        Tue, 20 Dec 2022 19:17:29 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id U6tIEDMHomN/NAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 20 Dec 2022 19:04:19 +0000
-Date:   Tue, 20 Dec 2022 20:03:33 +0100
+        id GAe1AEkKomPmOQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 20 Dec 2022 19:17:29 +0000
+Date:   Tue, 20 Dec 2022 20:16:43 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     Josef Bacik <josef@toxicpanda.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "kernel-team@fb.com" <kernel-team@fb.com>
-Subject: Re: [PATCH 1/8] btrfs: fix uninit warning in run_one_async_start
-Message-ID: <20221220190333.GP10499@twin.jikos.cz>
+To:     Josef Bacik <josef@toxicpanda.com>
+Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH 3/8] btrfs: fix uninit warning from get_inode_gen usage
+Message-ID: <20221220191643.GQ10499@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1671221596.git.josef@toxicpanda.com>
- <5501d33f6ac5af3f371c8734793baeddcde75b4d.1671221596.git.josef@toxicpanda.com>
- <d9396fa4-0ad7-ce3c-e2d8-69bd8e08c898@wdc.com>
+ <aa2e624f5626b37a267ea123baf7db2d76be41ee.1671221596.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <d9396fa4-0ad7-ce3c-e2d8-69bd8e08c898@wdc.com>
+In-Reply-To: <aa2e624f5626b37a267ea123baf7db2d76be41ee.1671221596.git.josef@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Dec 19, 2022 at 07:51:31AM +0000, Johannes Thumshirn wrote:
-> On 16.12.22 21:17, Josef Bacik wrote:
-> > With -Wmaybe-uninitialized complains about ret being possibly
-> > uninitialized, which isn't possible, however we can init the value to
-> > get rid of the warning.
-> > 
-> > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> > ---
-> >  fs/btrfs/disk-io.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > 
-> > diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> > index 0888d484df80..c25b444027d6 100644
-> > --- a/fs/btrfs/disk-io.c
-> > +++ b/fs/btrfs/disk-io.c
-> > @@ -693,7 +693,7 @@ int btrfs_validate_metadata_buffer(struct btrfs_bio *bbio,
-> >  static void run_one_async_start(struct btrfs_work *work)
-> >  {
-> >  	struct async_submit_bio *async;
-> > -	blk_status_t ret;
-> > +	blk_status_t ret = BLK_STS_OK;
-> >  
-> >  	async = container_of(work, struct  async_submit_bio, work);
-> >  	switch (async->submit_cmd) {
+On Fri, Dec 16, 2022 at 03:15:53PM -0500, Josef Bacik wrote:
+> Anybody that calls get_inode_gen() can have an uninitialized gen if
+> there's an error.  This isn't a big deal because all the users just exit
+> if they get an error, however it makes -Wmaybe-uninitialized complain,
+> so fix this up to always init the passed in gen, this quiets all of the
+> uninitialized warnings in send.c.
 > 
-> Wouldn't that be more future proof:
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/send.c | 8 +++-----
+>  1 file changed, 3 insertions(+), 5 deletions(-)
 > 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 40f9c99aa44a..6ad5e5c6c858 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -707,6 +707,9 @@ static void run_one_async_start(struct btrfs_work *work)
->                 ret = btrfs_submit_bio_start_direct_io(async->inode,
->                                 async->bio, async->dio_file_offset);
->                 break;
-> +       default:
-> +               ret = BLK_STS_NOTSUPP;
-> +               ASSERT(0);
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 67f7c698ade3..25a235179edb 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -955,14 +955,12 @@ static int get_inode_info(struct btrfs_root *root, u64 ino,
+>  static int get_inode_gen(struct btrfs_root *root, u64 ino, u64 *gen)
+>  {
+>  	int ret;
+> -	struct btrfs_inode_info info;
+> +	struct btrfs_inode_info info = {};
 
-The assert and default: would probably make sense to catch any
-accidental misuse of the async API. All the submit_cmd values are from a
-fixed set and all are in the source code so any problem should be caught
-at development time.
-
-I'm not sure if there should be any fallback for the case where asserts
-are complied out and what's the expected outcome of the BLK_STS_NOTSUPP.
-This is a case that should never happen.
+The { 0 } initializer should be used.

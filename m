@@ -2,45 +2,45 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AC3FC46467
-	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Dec 2022 20:37:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29277C3DA7D
+	for <linux-btrfs@archiver.kernel.org>; Fri, 23 Dec 2022 20:37:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231547AbiLWUhN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 23 Dec 2022 15:37:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56452 "EHLO
+        id S233620AbiLWUhR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 23 Dec 2022 15:37:17 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56466 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233345AbiLWUhB (ORCPT
+        with ESMTP id S232428AbiLWUhB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Fri, 23 Dec 2022 15:37:01 -0500
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 24DCE1D309;
-        Fri, 23 Dec 2022 12:37:00 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4723F1DA66;
+        Fri, 23 Dec 2022 12:37:01 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id B3B5E61EF5;
-        Fri, 23 Dec 2022 20:36:59 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E024EC433D2;
-        Fri, 23 Dec 2022 20:36:58 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id D720461F25;
+        Fri, 23 Dec 2022 20:37:00 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 11D60C433D2;
+        Fri, 23 Dec 2022 20:37:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1671827819;
-        bh=5f4h1JTh7Ym7YmoePqqN9Pp+PtyJBLUnyId3SNpncmY=;
+        s=k20201202; t=1671827820;
+        bh=qLoSGFi2QkFfE5PAtk38FT/yWSIKsO+TzvgyJfycJFQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=h7bOrmUW3fhnTg+x+VidhjcdnxirPqapDdU+dX0eyaJNzRUfcdaufj8eyUp+calwr
-         OyiNLgf+6HE7ok378y0UR8FjTJQQu/V1DznM1pWjOE7PgLXgsQgDWeugloXgdPG6FA
-         tPb0VywVIDEM6DExy/uSrjb19zUJCNWhJGbf2V8HDg4FS1IlcP6Cms9Te/6XFL+s3y
-         8V4j2+7KcN0CTZrn6OOyi+3sqCmbbhvheg/VTaVhJlZcpX/BEPuy2RE4B+/nY9vrQ1
-         LlO0ZdiYXFtYTYnXitWhSrTkfxHWDzYdq1mLc1Bdr1nOP35niVNWtEsAM32+mIeGR7
-         VSxlsvBM+b0bQ==
+        b=XQdKCLLelfI4SoxzCMAnCUtgdS+h9/wA0ND1Sx878oRw5ipn2eXs8emLgIEWu7IIf
+         JBsFNvEu/j58OSutvkMWLShj6wyhrUy37JNS2DnPwotL4+tmwysUERhVyhSs7ei+h9
+         NKtBVyxLlMbc7C4ITMY+Kw7pVpPh7GXAnZFYIueqVWBYPwPpAXrpLLXbi8ujGYPUD5
+         QFlSPCJd9Yuo0zOm5Dldc8Jq66Lwkia/3lxTXrKYU+xSn7wVnfBP2VDx3inq3A52bz
+         ChvrTaw6ccDIJgTioKbE631T7CAD6ukJcDD2rq+lINmp6BCvnCVN2Uz2bCbYl+fKG8
+         rgFvJqVI6oY7w==
 From:   Eric Biggers <ebiggers@kernel.org>
 To:     linux-fscrypt@vger.kernel.org
 Cc:     linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net,
         linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
         Andrey Albershteyn <aalbersh@redhat.com>
-Subject: [PATCH v2 08/11] ext4: simplify ext4_readpage_limit()
-Date:   Fri, 23 Dec 2022 12:36:35 -0800
-Message-Id: <20221223203638.41293-9-ebiggers@kernel.org>
+Subject: [PATCH v2 11/11] ext4: allow verity with fs block size < PAGE_SIZE
+Date:   Fri, 23 Dec 2022 12:36:38 -0800
+Message-Id: <20221223203638.41293-12-ebiggers@kernel.org>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20221223203638.41293-1-ebiggers@kernel.org>
 References: <20221223203638.41293-1-ebiggers@kernel.org>
@@ -52,29 +52,51 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Eric Biggers <ebiggers@google.com>
 
-Now that the implementation of FS_IOC_ENABLE_VERITY has changed to not
-involve reading back Merkle tree blocks that were previously written,
-there is no need for ext4_readpage_limit() to allow for this case.
+Now that the needed changes have been made to fs/buffer.c, ext4 is ready
+to support the verity feature when the filesystem block size is less
+than the page size.  So remove the mount-time check that prevented this.
 
 Signed-off-by: Eric Biggers <ebiggers@google.com>
 ---
- fs/ext4/readpage.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ Documentation/filesystems/fsverity.rst | 8 +++++---
+ fs/ext4/super.c                        | 5 -----
+ 2 files changed, 5 insertions(+), 8 deletions(-)
 
-diff --git a/fs/ext4/readpage.c b/fs/ext4/readpage.c
-index d5266932ce6cd..c61dc8a7c0147 100644
---- a/fs/ext4/readpage.c
-+++ b/fs/ext4/readpage.c
-@@ -211,8 +211,7 @@ static void ext4_set_bio_post_read_ctx(struct bio *bio,
+diff --git a/Documentation/filesystems/fsverity.rst b/Documentation/filesystems/fsverity.rst
+index 948d202545240..c0c8a25b41bb8 100644
+--- a/Documentation/filesystems/fsverity.rst
++++ b/Documentation/filesystems/fsverity.rst
+@@ -497,9 +497,11 @@ To create verity files on an ext4 filesystem, the filesystem must have
+ been formatted with ``-O verity`` or had ``tune2fs -O verity`` run on
+ it.  "verity" is an RO_COMPAT filesystem feature, so once set, old
+ kernels will only be able to mount the filesystem readonly, and old
+-versions of e2fsck will be unable to check the filesystem.  Moreover,
+-currently ext4 only supports mounting a filesystem with the "verity"
+-feature when its block size is equal to PAGE_SIZE (often 4096 bytes).
++versions of e2fsck will be unable to check the filesystem.
++
++Originally, an ext4 filesystem with the "verity" feature could only be
++mounted when its block size was equal to the system page size
++(typically 4096 bytes).  In Linux v6.3, this limitation was removed.
  
- static inline loff_t ext4_readpage_limit(struct inode *inode)
- {
--	if (IS_ENABLED(CONFIG_FS_VERITY) &&
--	    (IS_VERITY(inode) || ext4_verity_in_progress(inode)))
-+	if (IS_ENABLED(CONFIG_FS_VERITY) && IS_VERITY(inode))
- 		return inode->i_sb->s_maxbytes;
+ ext4 sets the EXT4_VERITY_FL on-disk inode flag on verity files.  It
+ can only be set by `FS_IOC_ENABLE_VERITY`_, and it cannot be cleared.
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index 16a343e8047d4..798cb19e2258b 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -5336,11 +5336,6 @@ static int __ext4_fill_super(struct fs_context *fc, struct super_block *sb)
+ 		}
+ 	}
  
- 	return i_size_read(inode);
+-	if (ext4_has_feature_verity(sb) && sb->s_blocksize != PAGE_SIZE) {
+-		ext4_msg(sb, KERN_ERR, "Unsupported blocksize for fs-verity");
+-		goto failed_mount_wq;
+-	}
+-
+ 	/*
+ 	 * Get the # of file system overhead blocks from the
+ 	 * superblock if present.
 -- 
 2.39.0
 

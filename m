@@ -2,53 +2,53 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76BA9C7113C
-	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Jan 2023 21:16:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06223C71144
+	for <linux-btrfs@archiver.kernel.org>; Wed,  4 Jan 2023 21:16:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240531AbjADVP5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 4 Jan 2023 16:15:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57536 "EHLO
+        id S240083AbjADVPz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 4 Jan 2023 16:15:55 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57436 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240344AbjADVPQ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jan 2023 16:15:16 -0500
-Received: from mail-pj1-x1034.google.com (mail-pj1-x1034.google.com [IPv6:2607:f8b0:4864:20::1034])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C0DA1B9DA;
-        Wed,  4 Jan 2023 13:15:15 -0800 (PST)
-Received: by mail-pj1-x1034.google.com with SMTP id o21so7400111pjw.0;
-        Wed, 04 Jan 2023 13:15:15 -0800 (PST)
+        with ESMTP id S240318AbjADVPL (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jan 2023 16:15:11 -0500
+Received: from mail-pl1-x62b.google.com (mail-pl1-x62b.google.com [IPv6:2607:f8b0:4864:20::62b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 926D81CFF4;
+        Wed,  4 Jan 2023 13:15:08 -0800 (PST)
+Received: by mail-pl1-x62b.google.com with SMTP id g16so27542071plq.12;
+        Wed, 04 Jan 2023 13:15:08 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=x25JE3Kc6tv/CRPnK8Jr5HLS2sX0SCmIF/DAVcH2FqE=;
-        b=GGaN80QXsh4J1YXL+CzIWsFbPtYnvqnUAuR7BlWM5cg7Fb96IUWkf9YKtYSUX4xJiv
-         fdrgdThz8UL3P4MZ+eHMu/4K966siuQI6iAdHR2MVQjMjV6MN1GRnO6doH2uk5OhpsZO
-         LY78o+yIQS4ow8RQaNkPfGCKMNJtGI3xD9tlc5jEE555TQyh8J94/Gr9HVriMtas67IH
-         FB8OUwFz1Oy3rJJOCQeEa/ZHyPHJEdTE5f3SEzIDvxTL2bZ5bnEYjE/0AQom1yTmJR+y
-         hcZ12FlAB2hAIMkIDGdKE9vHxFNU1VPWGBB3MfQllfkg7rnUYN+U0mQERs2+5ZkIr7zC
-         Wx+Q==
+        bh=wfZkCFUzCyr5OXa7ytE85YOM9f5TCt/N2uJtwdJBiOM=;
+        b=ANmSn8BXHVDz0ywhmRcvLuF8DmLMxQ93lpCBxWPoHvl/LSFXfzY43Ai3sHGITPHyQv
+         UGZzlKZDcI52wvQqJokP4vvvyYwFacbOTKHFKBLZTgqtGB7SlcKPR1/yEL1Rk/1RY7FV
+         tlrzh6yP+L+Y3+ZGkeUhuel3RvMqL9274p714tcLuggAYT99ceFPsKAH/YBG+2giTF1e
+         eyw4SncaR+Kt5OfkjfrFa7F9COcHovEDwjB/dlalyP7DZPUQV2SabwF4hhl1H5GEIbyF
+         4m8vBFV3aeKB/xxOyyrXqMrlT7asP5ajHmmGEgqtrEunzP8BT+cK8xe4xARR13Gku/PW
+         jpgw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=x25JE3Kc6tv/CRPnK8Jr5HLS2sX0SCmIF/DAVcH2FqE=;
-        b=MjE9J8wGpejHf1+x2KNhj4tzDryf+ZnOojYIGmZZtwc4eY5hqqLymeyBuoFk19+eU3
-         4jUOvnW3PWKjj3f9rcQSfZj/5yqM+WsatrC2DpdcttulaVzIjD4T2yrg7jfKFNlv91Qk
-         e2+gcz7f8E+ntOFM4YSciSXBciB5ZDEInsopXPxJ3DdEKc11dz0HQ9jGmgExkf7I6Oyp
-         x4mNvuGbc25koULpNEcCAAxzhhHmMEp3+cI6VMqGQTGqBmHlAkmWmxceRkOala6hz3yG
-         aqJyJ3XTOkcGUu/LnA1sLUNvKO+ZWZINVZAdYqRmOsZaQo0MviwWN5sj8Rh8KDnwkFFh
-         rrfg==
-X-Gm-Message-State: AFqh2komkFWLi6T5QPH4jO+FpX4Dzo5POh5Dn+cuZDNtWsO4V29rhLez
-        XyuLZ40vsXMiEV8xGKvYfRZMTeEMCuDDDw==
-X-Google-Smtp-Source: AMrXdXtcJ2y8j2tl71bGDNWcQ9VdexuFiNN6QmVTJEdgM9Lahf3FnPeatjjBv8JIR91dEL59PwjIKg==
-X-Received: by 2002:a17:90a:930f:b0:225:be98:f5b5 with SMTP id p15-20020a17090a930f00b00225be98f5b5mr45592480pjo.23.1672866914778;
-        Wed, 04 Jan 2023 13:15:14 -0800 (PST)
+        bh=wfZkCFUzCyr5OXa7ytE85YOM9f5TCt/N2uJtwdJBiOM=;
+        b=3khU4rl2xmG/u3cTsrzemsWUdZveBZ8Itl/hKujwP4886N64BlHmCbFSUs1bwF8ccm
+         OOmKsaA1Q813Jk4HGZT14cSBR8h5S6hM6LD8w4rmsJjzANXxcbx3UCDy+9XErmg6XpDP
+         bWuMNRkcC6xhjE/bySZy89nZDiZrZKhkDnJkB8pDbXScil4+GDEvK/8te0+9aQlTIhFQ
+         weNiIWD7NMbksdKUOsAaooZ5ToF3QXLuPVyHDMrzA2Z6qU3FdDReN7LYzi05dFwzsxvC
+         qi/5lVQ+h1pCDVpzAnYn5FeppafJuThNPvkxqk4NbzepFJ4SQijTCpcAzoEOCTnDEMml
+         2dWQ==
+X-Gm-Message-State: AFqh2krj7QbIvbfb/kJMBQe7Gdt/WdfVJkQ1P8EMJ6wDX69HkN/jKWmK
+        keDVIw3dnyck7eQHJXnFU29cq4Dii+ODSQ==
+X-Google-Smtp-Source: AMrXdXtAkt1PiXf89KpZT/PVVs6pHX6w2TYw+klecmBeo8HqViRecFRkPGwHQvT7jR7OxpCa8lhGxg==
+X-Received: by 2002:a17:90a:5d08:b0:219:4578:6409 with SMTP id s8-20020a17090a5d0800b0021945786409mr52643871pji.41.1672866907758;
+        Wed, 04 Jan 2023 13:15:07 -0800 (PST)
 Received: from fedora.hsd1.ca.comcast.net ([2601:644:8002:1c20::a55d])
-        by smtp.googlemail.com with ESMTPSA id i8-20020a17090a138800b00226369149cesm6408pja.21.2023.01.04.13.15.13
+        by smtp.googlemail.com with ESMTPSA id i8-20020a17090a138800b00226369149cesm6408pja.21.2023.01.04.13.15.06
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 04 Jan 2023 13:15:14 -0800 (PST)
+        Wed, 04 Jan 2023 13:15:07 -0800 (PST)
 From:   "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
 To:     linux-fsdevel@vger.kernel.org
 Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
@@ -57,10 +57,10 @@ Cc:     linux-afs@lists.infradead.org, linux-kernel@vger.kernel.org,
         linux-f2fs-devel@lists.sourceforge.net, cluster-devel@redhat.com,
         linux-nilfs@vger.kernel.org, linux-mm@kvack.org,
         "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
-        Chao Yu <chao@kernel.org>
-Subject: [PATCH v5 13/23] f2fs: Convert f2fs_sync_node_pages() to use filemap_get_folios_tag()
-Date:   Wed,  4 Jan 2023 13:14:38 -0800
-Message-Id: <20230104211448.4804-14-vishal.moola@gmail.com>
+        Jeff Layton <jlayton@kernel.org>
+Subject: [PATCH v5 08/23] ceph: Convert ceph_writepages_start() to use filemap_get_folios_tag()
+Date:   Wed,  4 Jan 2023 13:14:33 -0800
+Message-Id: <20230104211448.4804-9-vishal.moola@gmail.com>
 X-Mailer: git-send-email 2.38.1
 In-Reply-To: <20230104211448.4804-1-vishal.moola@gmail.com>
 References: <20230104211448.4804-1-vishal.moola@gmail.com>
@@ -73,57 +73,152 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 Convert function to use a folio_batch instead of pagevec. This is in
 preparation for the removal of find_get_pages_range_tag().
 
-Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
-Acked-by: Chao Yu <chao@kernel.org>
----
- fs/f2fs/node.c | 17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
+Also some minor renaming for consistency.
 
-diff --git a/fs/f2fs/node.c b/fs/f2fs/node.c
-index 1c5dc7a3207e..51e9f286f53a 100644
---- a/fs/f2fs/node.c
-+++ b/fs/f2fs/node.c
-@@ -1938,23 +1938,24 @@ int f2fs_sync_node_pages(struct f2fs_sb_info *sbi,
- 				bool do_balance, enum iostat_type io_type)
- {
- 	pgoff_t index;
+Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+Acked-by: Jeff Layton <jlayton@kernel.org>
+---
+ fs/ceph/addr.c | 58 ++++++++++++++++++++++++++------------------------
+ 1 file changed, 30 insertions(+), 28 deletions(-)
+
+diff --git a/fs/ceph/addr.c b/fs/ceph/addr.c
+index 8c74871e37c9..905268bf9741 100644
+--- a/fs/ceph/addr.c
++++ b/fs/ceph/addr.c
+@@ -792,7 +792,7 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 	struct ceph_vino vino = ceph_vino(inode);
+ 	pgoff_t index, start_index, end = -1;
+ 	struct ceph_snap_context *snapc = NULL, *last_snapc = NULL, *pgsnapc;
 -	struct pagevec pvec;
 +	struct folio_batch fbatch;
- 	int step = 0;
- 	int nwritten = 0;
- 	int ret = 0;
--	int nr_pages, done = 0;
-+	int nr_folios, done = 0;
+ 	int rc = 0;
+ 	unsigned int wsize = i_blocksize(inode);
+ 	struct ceph_osd_request *req = NULL;
+@@ -821,7 +821,7 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 	if (fsc->mount_options->wsize < wsize)
+ 		wsize = fsc->mount_options->wsize;
  
 -	pagevec_init(&pvec);
 +	folio_batch_init(&fbatch);
  
- next_step:
- 	index = 0;
+ 	start_index = wbc->range_cyclic ? mapping->writeback_index : 0;
+ 	index = start_index;
+@@ -869,7 +869,7 @@ static int ceph_writepages_start(struct address_space *mapping,
  
--	while (!done && (nr_pages = pagevec_lookup_tag(&pvec,
--			NODE_MAPPING(sbi), &index, PAGECACHE_TAG_DIRTY))) {
-+	while (!done && (nr_folios = filemap_get_folios_tag(NODE_MAPPING(sbi),
-+				&index, (pgoff_t)-1, PAGECACHE_TAG_DIRTY,
-+				&fbatch))) {
- 		int i;
+ 	while (!done && index <= end) {
+ 		int num_ops = 0, op_idx;
+-		unsigned i, pvec_pages, max_pages, locked_pages = 0;
++		unsigned i, nr_folios, max_pages, locked_pages = 0;
+ 		struct page **pages = NULL, **data_pages;
+ 		struct page *page;
+ 		pgoff_t strip_unit_end = 0;
+@@ -879,13 +879,13 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 		max_pages = wsize >> PAGE_SHIFT;
  
--		for (i = 0; i < nr_pages; i++) {
--			struct page *page = pvec.pages[i];
-+		for (i = 0; i < nr_folios; i++) {
-+			struct page *page = &fbatch.folios[i]->page;
- 			bool submitted = false;
+ get_more_pages:
+-		pvec_pages = pagevec_lookup_range_tag(&pvec, mapping, &index,
+-						end, PAGECACHE_TAG_DIRTY);
+-		dout("pagevec_lookup_range_tag got %d\n", pvec_pages);
+-		if (!pvec_pages && !locked_pages)
++		nr_folios = filemap_get_folios_tag(mapping, &index,
++				end, PAGECACHE_TAG_DIRTY, &fbatch);
++		dout("pagevec_lookup_range_tag got %d\n", nr_folios);
++		if (!nr_folios && !locked_pages)
+ 			break;
+-		for (i = 0; i < pvec_pages && locked_pages < max_pages; i++) {
+-			page = pvec.pages[i];
++		for (i = 0; i < nr_folios && locked_pages < max_pages; i++) {
++			page = &fbatch.folios[i]->page;
+ 			dout("? %p idx %lu\n", page, page->index);
+ 			if (locked_pages == 0)
+ 				lock_page(page);  /* first page */
+@@ -995,7 +995,7 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 				len = 0;
+ 			}
  
- 			/* give a priority to WB_SYNC threads */
-@@ -2029,7 +2030,7 @@ int f2fs_sync_node_pages(struct f2fs_sb_info *sbi,
- 			if (--wbc->nr_to_write == 0)
- 				break;
+-			/* note position of first page in pvec */
++			/* note position of first page in fbatch */
+ 			dout("%p will write page %p idx %lu\n",
+ 			     inode, page, page->index);
+ 
+@@ -1005,30 +1005,30 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 				fsc->write_congested = true;
+ 
+ 			pages[locked_pages++] = page;
+-			pvec.pages[i] = NULL;
++			fbatch.folios[i] = NULL;
+ 
+ 			len += thp_size(page);
  		}
--		pagevec_release(&pvec);
-+		folio_batch_release(&fbatch);
- 		cond_resched();
  
- 		if (wbc->nr_to_write == 0) {
+ 		/* did we get anything? */
+ 		if (!locked_pages)
+-			goto release_pvec_pages;
++			goto release_folios;
+ 		if (i) {
+ 			unsigned j, n = 0;
+-			/* shift unused page to beginning of pvec */
+-			for (j = 0; j < pvec_pages; j++) {
+-				if (!pvec.pages[j])
++			/* shift unused page to beginning of fbatch */
++			for (j = 0; j < nr_folios; j++) {
++				if (!fbatch.folios[j])
+ 					continue;
+ 				if (n < j)
+-					pvec.pages[n] = pvec.pages[j];
++					fbatch.folios[n] = fbatch.folios[j];
+ 				n++;
+ 			}
+-			pvec.nr = n;
++			fbatch.nr = n;
+ 
+-			if (pvec_pages && i == pvec_pages &&
++			if (nr_folios && i == nr_folios &&
+ 			    locked_pages < max_pages) {
+-				dout("reached end pvec, trying for more\n");
+-				pagevec_release(&pvec);
++				dout("reached end fbatch, trying for more\n");
++				folio_batch_release(&fbatch);
+ 				goto get_more_pages;
+ 			}
+ 		}
+@@ -1164,10 +1164,10 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 		if (wbc->nr_to_write <= 0 && wbc->sync_mode == WB_SYNC_NONE)
+ 			done = true;
+ 
+-release_pvec_pages:
+-		dout("pagevec_release on %d pages (%p)\n", (int)pvec.nr,
+-		     pvec.nr ? pvec.pages[0] : NULL);
+-		pagevec_release(&pvec);
++release_folios:
++		dout("folio_batch release on %d folios (%p)\n", (int)fbatch.nr,
++		     fbatch.nr ? fbatch.folios[0] : NULL);
++		folio_batch_release(&fbatch);
+ 	}
+ 
+ 	if (should_loop && !done) {
+@@ -1184,15 +1184,17 @@ static int ceph_writepages_start(struct address_space *mapping,
+ 			unsigned i, nr;
+ 			index = 0;
+ 			while ((index <= end) &&
+-			       (nr = pagevec_lookup_tag(&pvec, mapping, &index,
+-						PAGECACHE_TAG_WRITEBACK))) {
++			       (nr = filemap_get_folios_tag(mapping, &index,
++						(pgoff_t)-1,
++						PAGECACHE_TAG_WRITEBACK,
++						&fbatch))) {
+ 				for (i = 0; i < nr; i++) {
+-					page = pvec.pages[i];
++					page = &fbatch.folios[i]->page;
+ 					if (page_snap_context(page) != snapc)
+ 						continue;
+ 					wait_on_page_writeback(page);
+ 				}
+-				pagevec_release(&pvec);
++				folio_batch_release(&fbatch);
+ 				cond_resched();
+ 			}
+ 		}
 -- 
 2.38.1
 

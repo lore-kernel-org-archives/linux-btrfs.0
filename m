@@ -2,140 +2,123 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED877C5479D
-	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Jan 2023 08:15:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3968CC4708D
+	for <linux-btrfs@archiver.kernel.org>; Fri,  6 Jan 2023 11:13:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230164AbjAFIPj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 6 Jan 2023 03:15:39 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42094 "EHLO
+        id S232967AbjAFLN2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 6 Jan 2023 06:13:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55086 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229554AbjAFIPi (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2023 03:15:38 -0500
-Received: from out20-2.mail.aliyun.com (out20-2.mail.aliyun.com [115.124.20.2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D52DA78E83
-        for <linux-btrfs@vger.kernel.org>; Fri,  6 Jan 2023 00:15:35 -0800 (PST)
-X-Alimail-AntiSpam: AC=CONTINUE;BC=0.04437578|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_alarm|0.0350478-0.000388976-0.964563;FP=0|0|0|0|0|-1|-1|-1;HT=ay29a033018047205;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=1;RT=1;SR=0;TI=SMTPD_---.QlrVp55_1672992932;
-Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.QlrVp55_1672992932)
-          by smtp.aliyun-inc.com;
-          Fri, 06 Jan 2023 16:15:33 +0800
-Date:   Fri, 06 Jan 2023 16:15:34 +0800
-From:   Wang Yugui <wangyugui@e16-tech.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: Re: unexpected ENOSPC(space_info METADATA has -105644032 free)
-In-Reply-To: <20230106152516.8451.409509F4@e16-tech.com>
-References: <20230106152516.8451.409509F4@e16-tech.com>
-Message-Id: <20230106161533.F59D.409509F4@e16-tech.com>
+        with ESMTP id S232856AbjAFLNY (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Jan 2023 06:13:24 -0500
+Received: from mout02.posteo.de (mout02.posteo.de [185.67.36.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E710171498
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Jan 2023 03:13:23 -0800 (PST)
+Received: from submission (posteo.de [185.67.36.169]) 
+        by mout02.posteo.de (Postfix) with ESMTPS id 199442407CF
+        for <linux-btrfs@vger.kernel.org>; Fri,  6 Jan 2023 12:13:21 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=posteo.de; s=2017;
+        t=1673003602; bh=J9P94BxtItXW6o/Iny554YNCicCoXKIp+co+M1D+aso=;
+        h=Date:Subject:To:Cc:From:From;
+        b=SExmUx/kJyWwtQ7cfipgJX639V6OBVc8pIMzkej3rGsmZXUR5TUNonBg/8Wv5xp1E
+         p4e8jkQSaJPUWI5biDwpkQ/Z5NUeIENvyPyLeiUUskW3D9fqZsUfK6meLAfzel/Abs
+         2NGlIW8Xp9Zi8wyt31oq+S7Ri2KUio9rWt2wr7bzjyd9r9sggPLBZmVLuzyG3d+6/C
+         LS9w74O5ncU49H9NWiu/7Y7bCSj0tnAYY5XbYHDnkqkIT9EAqSre0bK0Cn6+vzyUUd
+         MtJcOhKFrO0SsKWAilqaGqJOJzPOPLHjbj4I7pgaAzF+wgZw7bMJHnL6i+OModXdTy
+         Uq24h6VY1b4aQ==
+Received: from customer (localhost [127.0.0.1])
+        by submission (posteo.de) with ESMTPSA id 4NpLL92y9bz6tmH;
+        Fri,  6 Jan 2023 12:13:21 +0100 (CET)
+Message-ID: <d2f2cc90-a84a-1054-7be9-1bf4fc77c42c@posteo.de>
+Date:   Fri,  6 Jan 2023 11:13:21 +0000
 MIME-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
-Content-Transfer-Encoding: 7bit
-X-Mailer: Becky! ver. 2.81.04 [en]
+Subject: Re: btrfs send and receive showing errors
+Content-Language: de-DE
+To:     Andrei Borzenkov <arvidjaar@gmail.com>,
+        Filipe Manana <fdmanana@kernel.org>
+Cc:     linux-btrfs@vger.kernel.org
+References: <b732e1e7-7b3a-cfa7-1345-d39feaa6a7a8@posteo.de>
+ <CAL3q7H72Z7v038psf9rPSjfWn96WDbxpbRx_73HAPvzzV4SB8g@mail.gmail.com>
+ <0ee56d23-9a3d-08ea-a303-e995c99d3f43@posteo.de>
+ <CAL3q7H4+A1mW5+hrVj-OZT8bGnaOQWCzwWJESquS0-aEu7teKg@mail.gmail.com>
+ <58eef5ef-b066-b2cd-e465-6bab43c1c748@posteo.de>
+ <82ee24b6-fa58-b03e-7765-b157556a2b37@gmail.com>
+ <cba9edbc-bde4-00e4-0f73-5063f5aef11d@posteo.de>
+ <76b72107-71c0-bbe7-c20e-2b26dba24abe@gmail.com>
+ <13c659bb-9238-4e06-6e3f-27f9c52774e3@posteo.de>
+ <63e8183f-dffb-3ac9-e791-f59e85d2f093@posteo.de>
+ <1539bde6-0b5d-6d15-848b-75493a6ebe06@gmail.com>
+ <0fd1ae43-6605-cee0-4859-53b9226eb865@gmail.com>
+From:   =?UTF-8?Q?Randy_N=c3=bcrnberger?= <ranuberger@posteo.de>
+In-Reply-To: <0fd1ae43-6605-cee0-4859-53b9226eb865@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+On Thu, Jan 5, 2023 at 19:04, Andrei Borzenkov wrote:
+> On 05.01.2023 20:48, Andrei Borzenkov wrote:
+>> On 05.01.2023 19:47, Randy Nürnberger wrote:
+>>> On Thu, Jan 5, 2023 at 17:35, Randy Nürnberger wrote:
+>>>> On Thu, Jan 5, 2023 at 17:01, Andrei Borzenkov wrote:
+>>>>> On 05.01.2023 18:55, Randy Nürnberger wrote:
+>>>>>>
+>>>>>> I’ve attached the output of ‘btrfs subvolume list’ for the source 
+>>>>>> and
+>>>>>> the target filesystem.
+>>>>>>
+>>>>>
+>>>>> You have a lot of source subvolumes with the same received_uuid and
+>>>>> you have at least two destination subvolumes with the same
+>>>>> received_uuid. This is wrong, received_uuid is supposed to be unique
+>>>>> identification which explains your errors (incorrect subvolume is
+>>>>> selected).
+>>>>
+>>>> I guess many of my source subvolumes have the same received_uuid,
+>>>> because I created new snapshots from a snapshot that was previously
+>>>> received and the received_uuid just did get copied.
+>>>>
+>>>> I just did a small experiment on another system, created a snapshot
+>>>> from a snapshot that previously was received and could confirm that
+>>>> the received_uuid does indeed get copied. Is this a problem?
+>>>
+>>
+>> No, it is not a problem by itself. Subvolumes used for send/receive are
+>> supposed to be a remain read-only, so any clone of any subvolume should
+>> have identical content and you can use any of the clones with the same
+>> received_uuid. But as soon as you made subvolume read-write, you got
+>> multiple subvolumes with different content and the same receive_uuid.
+>> "Doctor, it hurts when I stab myself in the eye".
+>>
+>> Never, NEVER, ever, change  subvolume involved in send/receive to
+>> read-write to use it; clone it (create writable snapshot) and use clone.
 
-> Hi,
-> 
-> unexpected ENOSPC(space_info METADATA has -105644032 free) happen.
-> 
-> Test case: 
-> 1, run fstests generic/006 over nfs, and btrfs as nfsd back-end file
-> system
-> 2, kernel 6.1.4-rc1, with btrfs code 6.2-rc2+
-> 3, output of 'df -h'
-> /dev/nvme0n1p1          btrfs   20G  543M   19G   3% /mnt/test
-> /dev/nvme0n1p2          btrfs  100G  4.0M   98G   1% /mnt/scratch
-> 
-> test machine: ECC memory, and no ECC error.
-> 
-> dmesg output:
-> [ 3068.891594] run fstests generic/006 at 2023-01-06 15:08:56
-> [ 3070.740195] ------------[ cut here ]------------
-> [ 3070.744856] BTRFS: Transaction aborted (error -28)
-> [ 3070.749720] WARNING: CPU: 4 PID: 623014 at fs/btrfs/extent-tree.c:3077 __btrfs_free_extent.isra.49.cold.70+0xa27/0xa80 [btrfs]
-> [ 3070.761272] Modules linked in: overlay loop rpcsec_gss_krb5 nfsv4 dns_resolver nfs fscache netfs rpcrdma rdma_cm iw_cm ib_cm nfsd auth_rpcgss nfs_acl lockd grace rfkill ib_core sunrpc dm_multipath intel_rapl_msr intel_rapl_common snd_hda_codec_realtek sb_edac snd_hda_codec_generic snd_hda_codec_hdmi ledtrig_audio snd_hda_intel x86_pkg_temp_thermal snd_intel_dspcfg intel_powerclamp snd_intel_sdw_acpi snd_hda_codec coretemp nouveau snd_hda_core snd_hwdep kvm_intel snd_seq btrfs snd_seq_device mxm_wmi video mei_wdt kvm dcdbas blake2b_generic drm_display_helper snd_pcm xor iTCO_wdt cec raid6_pq irqbypass drm_ttm_helper iTCO_vendor_support dell_smm_hwmon zstd_compress mei_me snd_timer rapl intel_cstate dm_mod i2c_i801 snd ttm ses pcspkr intel_uncore lpc_ich enclosure mei i2c_smbus soundcore fuse xfs sd_mod sg nvme crct10dif_pclmul ahci crc32_pclmul libahci nvme_core crc32c_intel e1000e ata_generic ghash_clmulni_intel smartpqi libata nvme_common scsi_transport_sas t10_pi wmi i2c_dev
-> [ 3070.848445] CPU: 4 PID: 623014 Comm: nfsd Tainted: G        W          6.1.4-0.7.el7.x86_64 #1
-> [ 3070.857113] Hardware name: Dell Inc. Precision T3610/09M8Y8, BIOS A19 09/11/2019
-> [ 3070.864569] RIP: 0010:__btrfs_free_extent.isra.49.cold.70+0xa27/0xa80 [btrfs]
-> [ 3070.871816] Code: fa 48 c7 c6 58 6f 0b c1 48 8b 78 50 e8 ea 36 01 00 c6 44 24 27 01 e9 a1 fe ff ff 44 89 fe 48 c7 c7 28 6f 0b c1 e8 c1 6b 8b d2 <0f> 0b e9 49 fe ff ff 48 8b 44 24 08 44 89 fa 48 c7 c6 58 6f 0b c1
-> [ 3070.890707] RSP: 0018:ffffbb7d080df900 EFLAGS: 00010286
-> [ 3070.895978] RAX: 0000000000000000 RBX: ffffa0cac5aa30e0 RCX: 0000000000000000
-> [ 3070.903160] RDX: ffffa0d20fa2c300 RSI: ffffa0d20fa1f860 RDI: ffffa0d20fa1f860
-> [ 3070.910353] RBP: 00000000002b4000 R08: 0000000000000000 R09: c0000000fffdffff
-> [ 3070.917545] R10: 0000000000000001 R11: ffffbb7d080df798 R12: 0000000000000000
-> [ 3070.924788] R13: 0000000000000003 R14: 0000000000000003 R15: 00000000ffffffe4
-> [ 3070.931970] FS:  0000000000000000(0000) GS:ffffa0d20fa00000(0000) knlGS:0000000000000000
-> [ 3070.940110] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [ 3070.945905] CR2: 00007fdf74b3f090 CR3: 000000029ac10003 CR4: 00000000001706e0
-> [ 3070.953087] Call Trace:
-> [ 3070.955550]  <TASK>
-> [ 3070.957676]  ? free_unref_page+0x11c/0x160
-> [ 3070.961816]  ? call_rcu+0xca/0x5b0
-> [ 3070.965243]  btrfs_run_delayed_refs_for_head+0x41c/0x980 [btrfs]
-> [ 3070.971351]  ? btrfs_log_inode+0x486/0x1500 [btrfs]
-> [ 3070.976307]  ? btrfs_tree_mod_log_lowest_seq+0x44/0x50 [btrfs]
-> [ 3070.982238]  ? btrfs_merge_delayed_refs+0x31b/0x370 [btrfs]
-> [ 3070.987908]  __btrfs_run_delayed_refs+0x9c/0x600 [btrfs]
-> [ 3070.993306]  ? mutex_lock+0x1f/0x40
-> [ 3070.996865]  ? btrfs_log_inode_parent+0x367/0xcb0 [btrfs]
-> [ 3071.002351]  btrfs_run_delayed_refs+0x80/0x1a0 [btrfs]
-> [ 3071.007568]  btrfs_commit_transaction+0x71/0xba0 [btrfs]
-> [ 3071.012963]  ? dput.part.32+0xd6/0x2f0
-> [ 3071.016743]  btrfs_sync_file+0x52b/0x560 [btrfs]
-> [ 3071.021448]  nfsd_file_free+0xbf/0x210 [nfsd]
-> [ 3071.025870]  __nfs4_file_put_access.part.92+0x53/0x80 [nfsd]
-> [ 3071.031597]  nfs4_file_put_access+0x40/0x70 [nfsd]
-> [ 3071.036457]  release_all_access+0x6c/0x80 [nfsd]
-> [ 3071.041142]  nfs4_free_ol_stateid+0x22/0x60 [nfsd]
-> [ 3071.046003]  nfs4_put_stid+0x55/0xa0 [nfsd]
-> [ 3071.050255]  nfsd4_close+0x18e/0x3b0 [nfsd]
-> [ 3071.054505]  ? nfsd4_encode_getattr+0x28/0x30 [nfsd]
-> [ 3071.059539]  ? nfsd4_encode_operation+0xaa/0x280 [nfsd]
-> [ 3071.064835]  nfsd4_proc_compound+0x3a4/0x750 [nfsd]
-> [ 3071.069819]  nfsd_dispatch+0x15b/0x290 [nfsd]
-> [ 3071.074242]  svc_process_common+0x316/0x5d0 [sunrpc]
-> [ 3071.079282]  ? nfsd_svc+0x350/0x350 [nfsd]
-> [ 3071.083438]  ? nfsd_shutdown_threads+0x90/0x90 [nfsd]
-> [ 3071.088554]  svc_process+0xad/0x100 [sunrpc]
-> [ 3071.092897]  nfsd+0xd5/0x190 [nfsd]
-> [ 3071.096435]  kthread+0xe3/0x110
-> [ 3071.099611]  ? kthread_complete_and_exit+0x20/0x20
-> [ 3071.104445]  ret_from_fork+0x1f/0x30
-> [ 3071.108062]  </TASK>
-> [ 3071.110262] ---[ end trace 0000000000000000 ]---
-> [ 3071.114924] BTRFS info (device nvme0n1p1: state A): dumping space info:
-> [ 3071.121582] BTRFS info (device nvme0n1p1: state A): space_info DATA has 3730055168 free, is not full
-> [ 3071.130786] BTRFS info (device nvme0n1p1: state A): space_info total=4294967296, used=561876992, pinned=0, reserved=3035136, may_use=0, readonly=0 zone_unusable=0
-> [ 3071.145452] BTRFS info (device nvme0n1p1: state A): space_info METADATA has -105644032 free, is full
-> [ 3071.154643] BTRFS info (device nvme0n1p1: state A): space_info total=1073741824, used=3522560, pinned=1062944768, reserved=7208960, may_use=105644032, readonly=65536 zone_unusable=0
-> [ 3071.170927] BTRFS info (device nvme0n1p1: state A): space_info SYSTEM has 4161536 free, is not full
-> [ 3071.180033] BTRFS info (device nvme0n1p1: state A): space_info total=4194304, used=16384, pinned=0, reserved=16384, may_use=0, readonly=0 zone_unusable=0
-> [ 3071.193870] BTRFS info (device nvme0n1p1: state A): global_block_rsv: size 3670016 reserved 3670016
-> [ 3071.202975] BTRFS info (device nvme0n1p1: state A): trans_block_rsv: size 1310720 reserved 1310720
-> [ 3071.211991] BTRFS info (device nvme0n1p1: state A): chunk_block_rsv: size 0 reserved 0
-> [ 3071.220002] BTRFS info (device nvme0n1p1: state A): delayed_block_rsv: size 0 reserved 0
-> [ 3071.228143] BTRFS info (device nvme0n1p1: state A): delayed_refs_rsv: size 100663296 reserved 100663296
-> [ 3071.237599] BTRFS: error (device nvme0n1p1: state A) in __btrfs_free_extent:3077: errno=-28 No space left
-> [ 3071.247241] BTRFS info (device nvme0n1p1: state EA): forced readonly
-> [ 3071.253648] BTRFS error (device nvme0n1p1: state EA): failed to run delayed ref for logical 2834432 num_bytes 16384 type 176 action 2 ref_mod 1: -28
-> [ 3071.267058] BTRFS: error (device nvme0n1p1: state EA) in btrfs_run_delayed_refs:2151: errno=-28 No space left
-> [ 3071.277093] BTRFS warning (device nvme0n1p1: state EA): Skipping commit of aborted transaction.
-> [ 3071.285893] BTRFS: error (device nvme0n1p1: state EA) in cleanup_transaction:1984: errno=-28 No space left
+I mistakenly thought that creating a new writable snapshot and making a 
+read-only snapshot writable were the same operation.
 
-It is yet not clear why 'space_info METADATA has -105,644,032 free'.
+Thinking about it, I understand the difference and why it is there.
 
-but another 2 questions.
-1,  'global_block_rsv: size 3,670,016' < 'space_info METADATA has
--105,644,032 free', if we have bigger global_block_rsv(such as 2G), can
-we walk around this problem?
+>>
+>>> Ha! This seems to be the problem! I’m able to write a small script that
+>>> reproduces the bug! Give me a couple minutes.
+>>>
+>>> If this is a bug in the kernel,
+>>
+>> It is not so much a bug as the consequence of unfortunate design.
+>>
+>>> may I write the patch? :D Would be my
+>>> first one :)
+>>
+>> The problem is known for years (just search this list) and there are
+>> patches to clear received_uuid on ro -> rw transition but they are still
+>> not applied. Personally I would just prohibit such transition 
+>> completely.
+>
+> Correction - it was decided to implement in btrfs utils, not in 
+> kernel, so "btrfs property" will by default refuse to make read-write 
+> subvolume with received_uuid. This is implemented in 5.14.2.
 
-2, Is global_block_rsv reserved in memory only, or in disk device?
-if global_block_rsv is reserved in disk device, it will use which of 
-DATA/METADATA/SYSTEM group?
+With this knowledge I managed to repare and successfully copy my filesystem.
 
-Best Regards
-Wang Yugui (wangyugui@e16-tech.com)
-2023/01/06
-
-
+I have learned a lot. Thank you both for helping me and for your time.

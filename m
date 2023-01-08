@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD3D1C54EBE
-	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Jan 2023 16:57:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 789EEC678D7
+	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Jan 2023 16:57:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233580AbjAHQ5K (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 8 Jan 2023 11:57:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44090 "EHLO
+        id S235165AbjAHQ5M (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 8 Jan 2023 11:57:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44092 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233610AbjAHQ5I (ORCPT
+        with ESMTP id S233618AbjAHQ5I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jan 2023 11:57:08 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 04A502BF7;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B4E15FCC;
         Sun,  8 Jan 2023 08:57:03 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:In-Reply-To:References;
-        bh=n6RpjOdLAh3obh1YrtVlLsrD/ixSNbLSLNkGemSOvQw=; b=Tplevrq0ZXmD/12xpMEYpMkDac
-        PbPaoxYOWR4aUh46qukYYZiFJY5/zifkTJnuWRA4Mi8AcmWcLyOYRWr8gqJ4u05mryKVzansHNKxM
-        obMID6UuA/yndMNoIlVywMjiEU5hkA3R2ZeFhqCfQ4fxJrp1Nrwey5MC17pZ2F3DSa5M+m4iUoH3M
-        1lMnjRF0s5/FNZaJaBUmaL9a8vzGE56rcAmXPIJyAd0+z+MpttizMi7V6AYhVwxj1atl+9lARZwK8
-        BlPSlWPN6ZYEWSrsFA6Hxc7vYrW3HrPbdOrGd7h3KzkdK3isaTmzoLOSxULnZXjxe5vN4BUcjhpwj
-        mAGkrozg==;
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=BznR/4w1o26qgOdWpgaXoEzrG7xwT/5BaeqDtDNhkG0=; b=KycIApiWI5yISCZouDp8O8ipc4
+        dsl/ueN8sUNA33Tp9c717pqGJ+DRYXWPrwamlDfC9ftc159YEu3rH4iisYVgqRu/w53sUAME1wPCf
+        MTqnBKQrVKo99G/ggyD2TGlKA9HTNX06xjiq6D39LxRqspHtjdzrjwPj/R4YOGTbHKRoxYyqU+GgO
+        hplk+/amqkkU5IiaF7B9o2QiTNtdVdmhnSylKAIJ1PkTIFxh3AiZkBHips001Vc6L9c4I1xFVKuNI
+        30m27hquq2Q0Y5e4zNu+1vbMwCxkSGN7IoC06MseeAUTxFVjrgD8hhd2XQ2oWt/MRiFklab9eYZBQ
+        21VcibDQ==;
 Received: from [2001:4bb8:198:a591:1c7c:bf66:af15:b282] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pEYyV-00ERqE-Hb; Sun, 08 Jan 2023 16:56:48 +0000
+        id 1pEYyb-00ERql-3S; Sun, 08 Jan 2023 16:56:53 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Andrew Morton <akpm@linux-foundation.org>,
         Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -40,10 +40,12 @@ To:     Andrew Morton <akpm@linux-foundation.org>,
 Cc:     linux-btrfs@vger.kernel.org, jfs-discussion@lists.sourceforge.net,
         ocfs2-devel@oss.oracle.com, linux-fsdevel@vger.kernel.org,
         linux-mm@kvack.org
-Subject: remove write_one_page / folio_write_one
-Date:   Sun,  8 Jan 2023 17:56:38 +0100
-Message-Id: <20230108165645.381077-1-hch@lst.de>
+Subject: [PATCH 2/7] btrfs: stop using write_one_page in btrfs_scratch_superblock
+Date:   Sun,  8 Jan 2023 17:56:40 +0100
+Message-Id: <20230108165645.381077-3-hch@lst.de>
 X-Mailer: git-send-email 2.35.1
+In-Reply-To: <20230108165645.381077-1-hch@lst.de>
+References: <20230108165645.381077-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
@@ -51,27 +53,51 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+write_one_page is an awkward interface that expects the page locked
+and ->writepage to be implemented.  Just mark the sb dirty, put
+the page and then call the proper bdev helper to sync the range.
 
-this series removes the write_one_page API, and it's folioized
-implementation as folio_write_one.  These helpers internally call
-->writepage which we are gradually removing from the kernel.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/volumes.c | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
 
-For most callers there are better APIs to use, and this cleans them up.
-The big questionmark is jfs, where the metapage abstraction uses the
-pagecache in a bit of an odd way, and which would probably benefit from
-not using the page cache at all like the XFS buffer cache, but given
-that jfs has been in minimum maintaince mode for a long time that might
-not be worth it.  So for now it just moves the implementation of
-write_one_page into jfs instead.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1378f5ad5ed4c4..10e98b004a2fa3 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2009,23 +2009,22 @@ static void btrfs_scratch_superblock(struct btrfs_fs_info *fs_info,
+ 				     struct block_device *bdev, int copy_num)
+ {
+ 	struct btrfs_super_block *disk_super;
+-	struct page *page;
++	const size_t len = sizeof(disk_super->magic);
++	u64 bytenr = btrfs_sb_offset(copy_num);
+ 	int ret;
+ 
+-	disk_super = btrfs_read_dev_one_super(bdev, copy_num, false);
++	disk_super = btrfs_read_disk_super(bdev, bytenr, bytenr);
+ 	if (IS_ERR(disk_super))
+ 		return;
+-	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
+-	page = virt_to_page(disk_super);
+-	set_page_dirty(page);
+-	lock_page(page);
+-	/* write_on_page() unlocks the page */
+-	ret = write_one_page(page);
++	memset(&disk_super->magic, 0, len);
++	set_page_dirty(virt_to_page(disk_super));
++	btrfs_release_disk_super(disk_super);
++
++	ret = sync_blockdev_range(bdev, bytenr, bytenr + len - 1);
+ 	if (ret)
+ 		btrfs_warn(fs_info,
+ 			"error clearing superblock number %d (%d)",
+ 			copy_num, ret);
+-	btrfs_release_disk_super(disk_super);
+ }
+ 
+ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
+-- 
+2.35.1
 
-Diffstat:
- fs/btrfs/volumes.c      |   50 ++++++++++++++++++++++++------------------------
- fs/jfs/jfs_metapage.c   |   39 ++++++++++++++++++++++++++++++++-----
- fs/minix/dir.c          |   30 +++++++++++++++++++---------
- fs/ocfs2/refcounttree.c |    9 ++++----
- fs/sysv/dir.c           |   29 ++++++++++++++++++---------
- fs/ufs/dir.c            |   29 ++++++++++++++++++---------
- include/linux/pagemap.h |    6 -----
- mm/page-writeback.c     |   40 --------------------------------------
- 8 files changed, 122 insertions(+), 110 deletions(-)

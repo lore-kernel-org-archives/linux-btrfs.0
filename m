@@ -2,31 +2,31 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1798C54EBD
-	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Jan 2023 16:57:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29995C67871
+	for <linux-btrfs@archiver.kernel.org>; Sun,  8 Jan 2023 16:57:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235375AbjAHQ5O (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 8 Jan 2023 11:57:14 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44098 "EHLO
+        id S234558AbjAHQ5P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 8 Jan 2023 11:57:15 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44130 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233630AbjAHQ5I (ORCPT
+        with ESMTP id S234482AbjAHQ5I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Jan 2023 11:57:08 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E17FE2BD3;
-        Sun,  8 Jan 2023 08:57:04 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE0FD615F;
+        Sun,  8 Jan 2023 08:57:07 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=lFvtQi+fLwMAHlLvXJj+xcXbU2gUQgSohjqo1SaHtyU=; b=oCh8q89awjYtytoZeT3pHyKMkl
-        VyT99nkn9BUuSEHliHPt62EP8SCxWjNrcNLmisEoaHMhYjJ8blEV2oOQjss2Be8g/xEE9Xu6T3NXp
-        cX2D3XC22yjMYecCu3dMuigB7G2U+YrmmMECKpaqBwx1GZ7mj3KW96NRON6fZ4NNOhhoCXma7S6jX
-        kwHVVTH7ntlpydXJw1owjb0dtlCOQp1u4Psodi/w/rAdX6DMMVmMLise2oRJNsVxC9vWRy+Myt95+
-        CvWwxs1xVejbXQVUEiHnuz2WHplf41pBViKOvH7DT3UKkzeh0LnVga9cr6PVhw5F/KrNlu4CexH4y
-        TUx1FMmw==;
+        bh=LRWqWW8CxEBUBZTClfw9RwYeRYBhCeQ4pIrtvl3s68o=; b=oQx7Rv3KHPp6gTVM17C0X1F/0A
+        Ss7aKkMKn13YqMFTiyj9UovpO3YmHbFIkdRu6P1lm0x3YzRL/33E+Nm0c8v7BQiUB9dtCG6vzzb9d
+        G41l8V5rOwy6wLPJHKKUyuQ6evYLtxQubPvataSaZCelc+12PgJfW96pThp+vHnLueP3p23yrcT4r
+        T4i62q0kSRL41BsGk/4004k+MK+VqsohoC8D9EslgyHPJVq8uN74IO2CqRkbKPz+ZTHIKdyRRSA1J
+        LI9sFgAsTdSHr/VGk8960vHaAhlEZaxW4aRfr5eGg0W61z0hBEv5IpN8Y2QgFE8AkE/5sr+NKzDRt
+        VGJHblOw==;
 Received: from [2001:4bb8:198:a591:1c7c:bf66:af15:b282] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pEYyY-00ERqS-AO; Sun, 08 Jan 2023 16:56:50 +0000
+        id 1pEYyg-00ERsb-Mk; Sun, 08 Jan 2023 16:56:59 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Andrew Morton <akpm@linux-foundation.org>,
         Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
@@ -39,10 +39,10 @@ To:     Andrew Morton <akpm@linux-foundation.org>,
         "Matthew Wilcox (Oracle)" <willy@infradead.org>
 Cc:     linux-btrfs@vger.kernel.org, jfs-discussion@lists.sourceforge.net,
         ocfs2-devel@oss.oracle.com, linux-fsdevel@vger.kernel.org,
-        linux-mm@kvack.org, Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 1/7] btrfs: don't read the disk superblock for zoned devices in btrfs_scratch_superblocks
-Date:   Sun,  8 Jan 2023 17:56:39 +0100
-Message-Id: <20230108165645.381077-2-hch@lst.de>
+        linux-mm@kvack.org
+Subject: [PATCH 4/7] sysv: don't flush page immediately for DIRSYNC directories
+Date:   Sun,  8 Jan 2023 17:56:42 +0100
+Message-Id: <20230108165645.381077-5-hch@lst.de>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20230108165645.381077-1-hch@lst.de>
 References: <20230108165645.381077-1-hch@lst.de>
@@ -53,91 +53,104 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-For zoned devices, btrfs_scratch_superblocks just resets the sb zones,
-which means there is no need to even read the previous superblock.
-Split the code to read, zero and write the superblock for conventional
-devices into a separate helper so that it isn't called for zoned
-devices.
+We do not need to writeout modified directory blocks immediately when
+modifying them while the page is locked. It is enough to do the flush
+somewhat later which has the added benefit that inode times can be
+flushed as well. It also allows us to stop depending on
+write_one_page() function.
+
+Ported from an ext2 patch by Jan Kara.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/volumes.c | 51 +++++++++++++++++++++++-----------------------
- 1 file changed, 26 insertions(+), 25 deletions(-)
+ fs/sysv/dir.c | 29 +++++++++++++++++++----------
+ 1 file changed, 19 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index aa25fa335d3ed1..1378f5ad5ed4c4 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2005,42 +2005,43 @@ static u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
- 	return num_devices;
+diff --git a/fs/sysv/dir.c b/fs/sysv/dir.c
+index 88e38cd8f5c9ae..1d852ca6388297 100644
+--- a/fs/sysv/dir.c
++++ b/fs/sysv/dir.c
+@@ -34,21 +34,26 @@ static inline void dir_put_page(struct page *page)
+ 	put_page(page);
  }
  
-+static void btrfs_scratch_superblock(struct btrfs_fs_info *fs_info,
-+				     struct block_device *bdev, int copy_num)
-+{
-+	struct btrfs_super_block *disk_super;
-+	struct page *page;
-+	int ret;
-+
-+	disk_super = btrfs_read_dev_one_super(bdev, copy_num, false);
-+	if (IS_ERR(disk_super))
-+		return;
-+	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
-+	page = virt_to_page(disk_super);
-+	set_page_dirty(page);
-+	lock_page(page);
-+	/* write_on_page() unlocks the page */
-+	ret = write_one_page(page);
-+	if (ret)
-+		btrfs_warn(fs_info,
-+			"error clearing superblock number %d (%d)",
-+			copy_num, ret);
-+	btrfs_release_disk_super(disk_super);
+-static int dir_commit_chunk(struct page *page, loff_t pos, unsigned len)
++static void dir_commit_chunk(struct page *page, loff_t pos, unsigned len)
+ {
+ 	struct address_space *mapping = page->mapping;
+ 	struct inode *dir = mapping->host;
+-	int err = 0;
+ 
+ 	block_write_end(NULL, mapping, pos, len, len, page, NULL);
+ 	if (pos+len > dir->i_size) {
+ 		i_size_write(dir, pos+len);
+ 		mark_inode_dirty(dir);
+ 	}
+-	if (IS_DIRSYNC(dir))
+-		err = write_one_page(page);
+-	else
+-		unlock_page(page);
++	unlock_page(page);
 +}
 +
- void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
- 			       struct block_device *bdev,
- 			       const char *device_path)
- {
--	struct btrfs_super_block *disk_super;
- 	int copy_num;
++static int sysv_handle_dirsync(struct inode *dir)
++{
++	int err;
++
++	err = filemap_write_and_wait(dir->i_mapping);
++	if (!err)
++		err = sync_inode_metadata(dir, 1);
+ 	return err;
+ }
  
- 	if (!bdev)
- 		return;
+@@ -215,9 +220,10 @@ int sysv_add_link(struct dentry *dentry, struct inode *inode)
+ 	memcpy (de->name, name, namelen);
+ 	memset (de->name + namelen, 0, SYSV_DIRSIZE - namelen - 2);
+ 	de->inode = cpu_to_fs16(SYSV_SB(inode->i_sb), inode->i_ino);
+-	err = dir_commit_chunk(page, pos, SYSV_DIRSIZE);
++	dir_commit_chunk(page, pos, SYSV_DIRSIZE);
+ 	dir->i_mtime = dir->i_ctime = current_time(dir);
+ 	mark_inode_dirty(dir);
++	sysv_handle_dirsync(dir);
+ out_page:
+ 	dir_put_page(page);
+ out:
+@@ -238,10 +244,11 @@ int sysv_delete_entry(struct sysv_dir_entry *de, struct page *page)
+ 	err = sysv_prepare_chunk(page, pos, SYSV_DIRSIZE);
+ 	BUG_ON(err);
+ 	de->inode = 0;
+-	err = dir_commit_chunk(page, pos, SYSV_DIRSIZE);
++	dir_commit_chunk(page, pos, SYSV_DIRSIZE);
+ 	dir_put_page(page);
+ 	inode->i_ctime = inode->i_mtime = current_time(inode);
+ 	mark_inode_dirty(inode);
++	sysv_handle_dirsync(inode);
+ 	return err;
+ }
  
- 	for (copy_num = 0; copy_num < BTRFS_SUPER_MIRROR_MAX; copy_num++) {
--		struct page *page;
--		int ret;
--
--		disk_super = btrfs_read_dev_one_super(bdev, copy_num, false);
--		if (IS_ERR(disk_super))
--			continue;
--
--		if (bdev_is_zoned(bdev)) {
-+		if (bdev_is_zoned(bdev))
- 			btrfs_reset_sb_log_zones(bdev, copy_num);
--			continue;
--		}
--
--		memset(&disk_super->magic, 0, sizeof(disk_super->magic));
--
--		page = virt_to_page(disk_super);
--		set_page_dirty(page);
--		lock_page(page);
--		/* write_on_page() unlocks the page */
--		ret = write_one_page(page);
--		if (ret)
--			btrfs_warn(fs_info,
--				"error clearing superblock number %d (%d)",
--				copy_num, ret);
--		btrfs_release_disk_super(disk_super);
--
-+		else
-+			btrfs_scratch_superblock(fs_info, bdev, copy_num);
- 	}
+@@ -272,7 +279,8 @@ int sysv_make_empty(struct inode *inode, struct inode *dir)
+ 	strcpy(de->name,"..");
  
- 	/* Notify udev that device has changed */
+ 	kunmap(page);
+-	err = dir_commit_chunk(page, 0, 2 * SYSV_DIRSIZE);
++	dir_commit_chunk(page, 0, 2 * SYSV_DIRSIZE);
++	err = sysv_handle_dirsync(inode);
+ fail:
+ 	put_page(page);
+ 	return err;
+@@ -336,10 +344,11 @@ void sysv_set_link(struct sysv_dir_entry *de, struct page *page,
+ 	err = sysv_prepare_chunk(page, pos, SYSV_DIRSIZE);
+ 	BUG_ON(err);
+ 	de->inode = cpu_to_fs16(SYSV_SB(inode->i_sb), inode->i_ino);
+-	err = dir_commit_chunk(page, pos, SYSV_DIRSIZE);
++	dir_commit_chunk(page, pos, SYSV_DIRSIZE);
+ 	dir_put_page(page);
+ 	dir->i_mtime = dir->i_ctime = current_time(dir);
+ 	mark_inode_dirty(dir);
++	sysv_handle_dirsync(inode);
+ }
+ 
+ struct sysv_dir_entry * sysv_dotdot (struct inode *dir, struct page **p)
 -- 
 2.35.1
 

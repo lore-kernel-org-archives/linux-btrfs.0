@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 032DBC678D5
-	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Jan 2023 14:57:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C26DC54EBE
+	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Jan 2023 14:57:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238763AbjAJO50 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Jan 2023 09:57:26 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37532 "EHLO
+        id S238677AbjAJO5T (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Jan 2023 09:57:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37520 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238749AbjAJO4x (ORCPT
+        with ESMTP id S238747AbjAJO4u (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2023 09:56:53 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 704A9479CC
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 06:56:51 -0800 (PST)
+        Tue, 10 Jan 2023 09:56:50 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A874325C3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 06:56:49 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 126A7B81675
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:50 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D66F9C433F0
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:46 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 45C5F6174C
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:49 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9D000C433F2
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673362607;
-        bh=lu4lru6yzfzkLpd3u+WnCIu/Ui1fKhfpAtc6CspHGAA=;
+        s=k20201202; t=1673362609;
+        bh=UoFoxe9ZLPNVRdBv8DvgaAizG55O+eMh41+K5oF4CWI=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=aNmi7H2Rlxhu9PFS/K6LSyaqm0HeG0KU4jRTajQznrJf86aBD6URf3LHAXq69w6UY
-         1WO2LptsKBscdY5tClkk6QYJnXBYJbMonliu/pOzMSdRgXU9aFe4cHLxb3xs8nO0B/
-         K2fHRLybndXiu9oPLvzTP3BYXMsMEb5jBBxkkS6CxTAx+9UP/tqFookaF3S9Fx+A3U
-         oPAN6zXJAtv2Y1FKzY8nIsryLk7g9bbnrfnsBDs0GRDjZ1qWn04mUwFnalDb5L8IET
-         +7BTErJaT3s4JcznKkCL1NNvGPldWBu7ushC6RqVRBsHDL1DIewXoQ2H5iDAeqjyT5
-         93jGY+IrsAxzA==
+        b=mQAm/MfUh/05y6vjc223Yfk+LOvv3aMTduUjgbi1rMgaz4PiKx9RXkT0BfKD/lnKs
+         0oEmjNCuCwLNtjCD5EqTv6EpADSHTtxUq3CvRQXOtQxlYsTCidskEvd3eu4pcoFFR0
+         obEEaA6QLTfxpN9k/E/NGl+1reUEf5Sq32ZFlhwdkVA2w+pIeNNklZ8KBeFFLlawjo
+         csKWD1s2QFqGZrgvt+QnY4IZYryAAsxcncdCUNb+MThMcfhlzQbPzRt9PaNxN8n+fu
+         wwLuUlU6zWM/5GdD3Jz/6Rc2gmrTuSMbW6uBNdsBWBaz30vOIrWa/sYLH16D/v8DIb
+         fCUIVo+VnKoWw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/8] btrfs: add missing setup of log for full commit at add_conflicting_inode()
-Date:   Tue, 10 Jan 2023 14:56:36 +0000
-Message-Id: <47d6bbc4ce7158bafc6c1eac9d5c6aa3cd5aadf8.1673361215.git.fdmanana@suse.com>
+Subject: [PATCH 5/8] btrfs: do not abort transaction on failure to update log root
+Date:   Tue, 10 Jan 2023 14:56:38 +0000
+Message-Id: <937c64018b104e83fa8d26a1c54ae67eeb5806a4.1673361215.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673361215.git.fdmanana@suse.com>
 References: <cover.1673361215.git.fdmanana@suse.com>
@@ -48,38 +48,47 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When logging conflicting inodes, if we reach the maximum limit of inodes,
-we return BTRFS_LOG_FORCE_COMMIT to force a transaction commit. However
-we don't mark the log for full commit (with btrfs_set_log_full_commit()),
-which means that once we leave the log transaction and before we commit
-the transaction, some other task may sync the log, which is incomplete
-as we have not logged all conflicting inodes, leading to some inconsistent
-in case that log ends up being replayed.
+When syncing a log, if we fail to update a log root in the log root tree,
+we are aborting the transaction if the failure was not -ENOSPC. This is
+excessive because there is a chance that a transaction commit can succeed,
+and therefore avoid to turn the filesystem into RO mode. All we need to be
+careful about is to mark the log for a full commit, which we already do,
+to make sure no one commits a super block pointing to an oudated log root
+tree.
 
-So also call btrfs_set_log_full_commit() at add_conflicting_inode().
+So don't abort the transaction if we fail to update a log root in the log
+root tree, and log an error if the failure is not -ENOSPC, so that it does
+not go completely unnoticed.
 
-Fixes: e09d94c9e448 ("btrfs: log conflicting inodes without holding log mutex of the initial inode")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/tree-log.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index c09daab3f19e..afad44a0becf 100644
+index 1f70d4ebffae..d43261545264 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -5598,8 +5598,10 @@ static int add_conflicting_inode(struct btrfs_trans_handle *trans,
- 	 * LOG_INODE_EXISTS mode) and slow down other fsyncs or transaction
- 	 * commits.
- 	 */
--	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES)
-+	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES) {
-+		btrfs_set_log_full_commit(trans);
- 		return BTRFS_LOG_FORCE_COMMIT;
-+	}
+@@ -3044,15 +3044,12 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
  
- 	inode = btrfs_iget(root->fs_info->sb, ino, root);
- 	/*
+ 		blk_finish_plug(&plug);
+ 		btrfs_set_log_full_commit(trans);
+-
+-		if (ret != -ENOSPC) {
+-			btrfs_abort_transaction(trans, ret);
+-			mutex_unlock(&log_root_tree->log_mutex);
+-			goto out;
+-		}
++		if (ret != -ENOSPC)
++			btrfs_err(fs_info,
++				  "failed to update log for root %llu ret %d",
++				  root->root_key.objectid, ret);
+ 		btrfs_wait_tree_log_extents(log, mark);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+-		ret = BTRFS_LOG_FORCE_COMMIT;
+ 		goto out;
+ 	}
+ 
 -- 
 2.35.1
 

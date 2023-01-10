@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F671C678D7
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2130EC678D8
 	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Jan 2023 14:57:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238786AbjAJO53 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Jan 2023 09:57:29 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37584 "EHLO
+        id S238778AbjAJO52 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Jan 2023 09:57:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37548 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238761AbjAJO47 (ORCPT
+        with ESMTP id S238751AbjAJO44 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 10 Jan 2023 09:56:59 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A905458D16
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 06:56:57 -0800 (PST)
+        Tue, 10 Jan 2023 09:56:56 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A217350065
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 06:56:55 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 1A606B816AA
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:55 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4ACAEC433D2
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:51 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 0D2B1B81675
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:54 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 65F91C433EF
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673362611;
-        bh=vJalnNcCHxj47rpKQ8jOMYxy7T8XQYHqvl7ea3k3Ebk=;
+        s=k20201202; t=1673362610;
+        bh=Gy7KMkEcecrz0C7OP83NY1f/Vc4GQ6qoODEC33qAM10=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=aoCFaBNkK2ApYJMb00Ksc5He64Uas2vk+Rx4m9pqKh7aAdB55qgi+jDC4ZI3fyACc
-         zLZn+kUApXq2bXHaQd83WnEVJLCBSSefkXYGw/tGwMEbLa9ra4hA45uU+1SO2Z3u/p
-         mfPP30vWnAOHph5k5+jJ3iniDgbLNy/nAlGFhPZI0yOBql0Uv+mM9cMyZ6AVTHLHr6
-         wxgsYz2uiiKcl/U7ejx8uaCrVY8V4pLirHJjKwzrWV/q48E2Fne0Hu2dltknFbil3X
-         eVllnCRfdR4uMAptZkVNQFm2y2uTH9WUAWKQrmrfRgWmqLE6wUeIve9n4FDPx+UPXI
-         zRKL6IrAaN9hA==
+        b=J5cbnJG9PsZ6z8Ns30zIIZzbOXUSt0NmTVeDdhRUNNQwtVYRhNrQZTjugGEbCRzHR
+         R15UXlheV14044Ppi8NvbjuQdHpudva6/zkjEsg4h7iaOq/MzCwqLMEInbJjXvXzBg
+         HmzT51vqUe8z2GxEXW/m6/66B6G5tY36cAveVBcaT4IN9pYGiX9X7eYEI1Ty0aYHl0
+         6WKqGeAP143f9/fCllcyyLMM0Bb+kvufBBF2vteBSF9FDRSv38bywMgykF5FbVBhwM
+         5vYzP2Bih9D1NaM+Fd+047DSSCpiHVC4u7A8gHMd3Yu0DjW0vdSy2tlnbFpJJdlBzA
+         VEV/iXJXY4JBQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 8/8] btrfs: use a single variable to track return value for log_dir_items()
-Date:   Tue, 10 Jan 2023 14:56:41 +0000
-Message-Id: <237ac621b36388b5e35aad20adc90b1da9f41970.1673361215.git.fdmanana@suse.com>
+Subject: [PATCH 7/8] btrfs: use a negative value for BTRFS_LOG_FORCE_COMMIT
+Date:   Tue, 10 Jan 2023 14:56:40 +0000
+Message-Id: <776de7832fca78ad0e9297dab6105e889eb404c6.1673361215.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673361215.git.fdmanana@suse.com>
 References: <cover.1673361215.git.fdmanana@suse.com>
@@ -48,123 +48,90 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We currently use 'ret' and 'err' to track the return value for
-log_dir_items(), which is confusing and likely the cause for previous
-bugs where log_dir_items() did not return an error when it should, fixed
-in previous patches.
+Currently we use the value 1 for BTRFS_LOG_FORCE_COMMIT, but that value
+has a few inconveniences:
 
-So change this and use only a single variable, 'ret', to track the return
-value. This is simpler and makes it similar to most of the existing code.
+1) If it's ever used by btrfs_log_inode(), or any function down the call
+   chain, we have to remember to btrfs_set_log_full_commit(), which is
+   repetitive and has a chance to be forgotten in future use cases.
+   btrfs_log_inode_parent() only calls btrfs_set_log_full_commit() when
+   it gets a negative value from btrfs_log_inode();
+
+2) Down the call chain of btrfs_log_inode(), we may have functions that
+   need to force a log commit, but can return either an error (negative
+   value), false (0) or true (1). So they are forced to return some
+   random negative to force a log commit - using BTRFS_LOG_FORCE_COMMIT
+   would make the intention more clear. Currently the only example is
+   flush_dir_items_batch().
+
+So turn BTRFS_LOG_FORCE_COMMIT into a negative value. The chosen value
+is -(MAX_ERRNO + 1), so that it does not overlap any errno value and makes
+it easier to debug.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 37 ++++++++++++++++++-------------------
- 1 file changed, 18 insertions(+), 19 deletions(-)
+ fs/btrfs/tree-log.c | 10 +++-------
+ fs/btrfs/tree-log.h |  9 +++++++--
+ 2 files changed, 10 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 94fc8b08254c..997ba92481cb 100644
+index 58599189bd18..94fc8b08254c 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -3793,7 +3793,6 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 	struct btrfs_key min_key;
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_root *log = root->log_root;
--	int err = 0;
- 	int ret;
- 	u64 last_old_dentry_offset = min_offset - 1;
- 	u64 last_offset = (u64)-1;
-@@ -3834,8 +3833,8 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 					      path->slots[0]);
- 			if (tmp.type == BTRFS_DIR_INDEX_KEY)
- 				last_old_dentry_offset = tmp.offset;
--		} else if (ret < 0) {
--			err = ret;
-+		} else if (ret > 0) {
-+			ret = 0;
- 		}
- 
- 		goto done;
-@@ -3858,7 +3857,6 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 		if (tmp.type == BTRFS_DIR_INDEX_KEY)
- 			last_old_dentry_offset = tmp.offset;
- 	} else if (ret < 0) {
--		err = ret;
- 		goto done;
- 	}
- 
-@@ -3880,12 +3878,15 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 	 */
- search:
- 	ret = btrfs_search_slot(NULL, root, &min_key, path, 0, 0);
--	if (ret > 0)
-+	if (ret > 0) {
- 		ret = btrfs_next_item(root, path);
-+		if (ret > 0) {
-+			/* There are no more keys in the inode's root. */
-+			ret = 0;
-+			goto done;
-+		}
-+	}
- 	if (ret < 0)
--		err = ret;
--	/* If ret is 1, there are no more keys in the inode's root. */
--	if (ret != 0)
- 		goto done;
+@@ -3652,11 +3652,10 @@ static int flush_dir_items_batch(struct btrfs_trans_handle *trans,
  
  	/*
-@@ -3896,8 +3897,8 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 		ret = process_dir_items_leaf(trans, inode, path, dst_path, ctx,
- 					     &last_old_dentry_offset);
- 		if (ret != 0) {
--			if (ret < 0)
--				err = ret;
-+			if (ret > 0)
-+				ret = 0;
- 			goto done;
- 		}
- 		path->slots[0] = btrfs_header_nritems(path->nodes[0]);
-@@ -3908,10 +3909,10 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 		 */
- 		ret = btrfs_next_leaf(root, path);
- 		if (ret) {
--			if (ret == 1)
-+			if (ret == 1) {
- 				last_offset = (u64)-1;
--			else
--				err = ret;
-+				ret = 0;
-+			}
- 			goto done;
- 		}
- 		btrfs_item_key_to_cpu(path->nodes[0], &min_key, path->slots[0]);
-@@ -3942,7 +3943,7 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 	btrfs_release_path(path);
- 	btrfs_release_path(dst_path);
+ 	 * If for some unexpected reason the last item's index is not greater
+-	 * than the last index we logged, warn and return an error to fallback
+-	 * to a transaction commit.
++	 * than the last index we logged, warn and force a transaction commit.
+ 	 */
+ 	if (WARN_ON(last_index <= inode->last_dir_index_offset))
+-		ret = -EUCLEAN;
++		ret = BTRFS_LOG_FORCE_COMMIT;
+ 	else
+ 		inode->last_dir_index_offset = last_index;
+ out:
+@@ -5604,10 +5603,8 @@ static int add_conflicting_inode(struct btrfs_trans_handle *trans,
+ 	 * LOG_INODE_EXISTS mode) and slow down other fsyncs or transaction
+ 	 * commits.
+ 	 */
+-	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES) {
+-		btrfs_set_log_full_commit(trans);
++	if (ctx->num_conflict_inodes >= MAX_CONFLICT_INODES)
+ 		return BTRFS_LOG_FORCE_COMMIT;
+-	}
  
--	if (err == 0) {
-+	if (ret == 0) {
- 		*last_offset_ret = last_offset;
- 		/*
- 		 * In case the leaf was changed in the current transaction but
-@@ -3953,15 +3954,13 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
- 		 * a range, last_old_dentry_offset is == to last_offset.
- 		 */
- 		ASSERT(last_old_dentry_offset <= last_offset);
--		if (last_old_dentry_offset < last_offset) {
-+		if (last_old_dentry_offset < last_offset)
- 			ret = insert_dir_log_key(trans, log, path, ino,
- 						 last_old_dentry_offset + 1,
- 						 last_offset);
--			if (ret)
--				err = ret;
--		}
+ 	inode = btrfs_iget(root->fs_info->sb, ino, root);
+ 	/*
+@@ -6466,7 +6463,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+ 	 * result in losing the file after a log replay.
+ 	 */
+ 	if (full_dir_logging && inode->last_unlink_trans >= trans->transid) {
+-		btrfs_set_log_full_commit(trans);
+ 		ret = BTRFS_LOG_FORCE_COMMIT;
+ 		goto out_unlock;
  	}
--	return err;
-+
-+	return ret;
- }
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index 85cd24cb0540..bdeb5216718f 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -13,8 +13,13 @@
+ /* return value for btrfs_log_dentry_safe that means we don't need to log it at all */
+ #define BTRFS_NO_LOG_SYNC 256
  
- /*
+-/* We can't use the tree log for whatever reason, force a transaction commit */
+-#define BTRFS_LOG_FORCE_COMMIT				(1)
++/*
++ * We can't use the tree log for whatever reason, force a transaction commit.
++ * We use a negative value because there are functions through the logging code
++ * that need to return an error (< 0 value), false (0) or true (1). Any negative
++ * value will do, as it will cause the log to be marked for a full sync.
++ */
++#define BTRFS_LOG_FORCE_COMMIT				(-(MAX_ERRNO + 1))
+ 
+ struct btrfs_log_ctx {
+ 	int log_ret;
 -- 
 2.35.1
 

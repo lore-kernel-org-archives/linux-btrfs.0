@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AA75DC67871
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B8B17C678D6
 	for <linux-btrfs@archiver.kernel.org>; Tue, 10 Jan 2023 14:57:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238746AbjAJO5V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 10 Jan 2023 09:57:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37516 "EHLO
+        id S238752AbjAJO5X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 10 Jan 2023 09:57:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37512 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238745AbjAJO4t (ORCPT
+        with ESMTP id S238732AbjAJO4t (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 10 Jan 2023 09:56:49 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B3F711C3D
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 06:56:49 -0800 (PST)
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC8BD10FCE
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 06:56:48 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id C173261573
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B9F60C433D2
+        by ams.source.kernel.org (Postfix) with ESMTPS id 3E7A2B816AA
         for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:47 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1CAEDC433D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 14:56:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673362608;
-        bh=BWcYOWQnMIZoDIkSoIb3t8VtubY+R8piJaxbsdCbf2g=;
+        s=k20201202; t=1673362605;
+        bh=TPcb0N83Ojv3uuSsiRNIqW2wrR0rXtDPYvdZ1Qzz/Ts=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Jh6xdlML5y7apmpfVGAA6lzZzVE6NkzihZ7qrYArb/9IwVxWjYA65mwv77EaPVrmV
-         EzEAOrX7/Ba+KbT2h0ZslS104qaTfvm1BQZOuhNBUQWkhkyIya6T5o0Xh4+xKon8+u
-         aBMSJ1n+bP+zvzWPGOU4O5ZzeJUPRxidFeEde8e5Wf/6X/sAVVz9XqHWO6AVmzsUlJ
-         tMN7WCos6q+pW+hBPdwAcfOo/YBfv0hzO/lIEaYrknIBEJWPemNRJr8LaWDbvJH/Pi
-         0n4qKLwF+Zh15A8VKCkRljIcrlm8fv3rdnt2SaLo4lImVNPw///UGiVmR3QssJCe4A
-         nmLsXcMSpAsXQ==
+        b=NXGRulTqcFUs4pltlLT+Rm6Ln/dd5Kk+gEBef3UnAU7UNbM/H+L12TG8gMT7SzgiK
+         ACmHAMsMAcYVQEW6bndWs5ltgXnbrv8ykEHwFx/ul7nHj1lklgJehxQkdP0cD8mWU4
+         P2nnW/W+wt73SJYmI0xJPqOLL1Cey95HKtxXeLKNFk2SW27duFqL+Vu7AvirxgvG18
+         f5XSPBWiXPkiOhlfgBpAX+dghl5PalGNjiwhV3YDm4fFVm1wUXzUl0jVjwLwFS3LS3
+         8vuuj8gignWnR+2uYrY4ksD1/eXF/NOw/KfUW95JC4nxRwioLka9yoshcSSWbrR3BB
+         oRuN+2j125bTA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/8] btrfs: do not abort transaction on failure to write log tree when syncing log
-Date:   Tue, 10 Jan 2023 14:56:37 +0000
-Message-Id: <bd9231ea9024932a1c3da15d3e130f50fc2f9086.1673361215.git.fdmanana@suse.com>
+Subject: [PATCH 1/8] btrfs: fix missing error handling when logging directory items
+Date:   Tue, 10 Jan 2023 14:56:34 +0000
+Message-Id: <23a61ed49b94ac73f5a05ca17c6324c7ad7eaad3.1673361215.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673361215.git.fdmanana@suse.com>
 References: <cover.1673361215.git.fdmanana@suse.com>
@@ -48,67 +48,95 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When syncing the log, if we fail to write log tree extent buffers, we mark
-the log for a full commit and abort the transaction. However we don't need
-to abort the transaction, all we really need to do is to make sure no one
-can commit a superblock pointing to new log tree roots. Just because we
-got a failure writing extent buffers for a log tree, it does not mean we
-will also fail to do a transaction commit.
+When logging a directory, at log_dir_items(), if we get an error when
+attempting to search the subvolume tree for a dir index item, we end up
+returning 0 (success) from log_dir_items() because 'err' is left with a
+value of 0.
 
-One particular case is if due to a bug somewhere, when writing log tree
-extent buffers, the tree checker detects some corruption and the writeout
-fails because of that. Aborting the transaction can be very disruptive for
-a user, specially if the issue happened on a root filesystem. One example
-is the scenario in the Link tag below, where an isolated corruption on log
-tree leaves was causing transaction aborts when syncing the log.
+This can lead to a few problems, specially in the case the variable
+'last_offset' has a value of (u64)-1 (and it's initialized to that when
+it was declared):
 
+1) By returning from log_dir_items() with success (0) and a value of
+   (u64)-1 for '*last_offset_ret', we end up not logging any other dir
+   index keys that follow the missing, just deleted, index key. The
+   (u64)-1 value makes log_directory_changes() not call log_dir_items()
+   again;
+
+2) Before returning with success (0), log_dir_items(), will log a dir
+   index range item covering a range from the last old dentry index
+   (stored in the variable 'last_old_dentry_offset') to the value of
+   'last_offset'. If 'last_offset' has a value of (u64)-1, then it means
+   if the log is persisted and replayed after a power failure, it will
+   cause deletion of all the directory entries that have an index number
+   between last_old_dentry_offset + 1 and (u64)-1;
+
+3) We can end up returning from log_dir_items() with
+   ctx->last_dir_item_offset having a lower value than
+   inode->last_dir_index_offset, because the former is set to the current
+   key we are processing at process_dir_items_leaf(), and at the end of
+   log_directory_changes() we set inode->last_dir_index_offset to the
+   current value of ctx->last_dir_item_offset. So if for example a
+   deletion of a lower dir index key happened, we set
+   ctx->last_dir_item_offset to that index value, then if we return from
+   log_dir_items() because btrfs_search_slot() returned an error, we end up
+   returning without any error from log_dir_items() and then
+   log_directory_changes() sets inode->last_dir_index_offset to a lower
+   value than it had before.
+   This can result in unpredictable and unexpected behaviour when we
+   need to log again the directory in the same transaction, and can result
+   in ending up with a log tree leaf that has duplicated keys, as we do
+   batch insertions of dir index keys into a log tree.
+
+Fix this by setting 'err' to the value of 'ret' in case
+btrfs_search_slot() or btrfs_previous_item() returned an error. That will
+result in falling back to a full transaction commit.
+
+Reported-by: David Arendt <admin@prnet.org>
 Link: https://lore.kernel.org/linux-btrfs/ae169fc6-f504-28f0-a098-6fa6a4dfb612@leemhuis.info/
+Fixes: e02119d5a7b4 ("Btrfs: Add a write ahead tree log to optimize synchronous operations")
+CC: stable@vger.kernel.org # 4.14+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/disk-io.c  | 9 ++++++++-
- fs/btrfs/tree-log.c | 2 --
- 2 files changed, 8 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-log.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a7d5a3967ba0..7586a8e9b718 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -367,7 +367,14 @@ static int csum_one_extent_buffer(struct extent_buffer *eb)
- 	btrfs_print_tree(eb, 0);
- 	btrfs_err(fs_info, "block=%llu write time tree block corruption detected",
- 		  eb->start);
--	WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG));
-+	/*
-+	 * Be noisy if this is an extent buffer from a log tree. We don't abort
-+	 * a transaction in case there's a bad log tree extent buffer, we just
-+	 * fallback to a transaction commit. Still we want to know when there is
-+	 * a bad log tree extent buffer, as that may signal a bug somewhere.
-+	 */
-+	WARN_ON(IS_ENABLED(CONFIG_BTRFS_DEBUG) ||
-+		btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID);
- 	return ret;
- }
- 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index afad44a0becf..1f70d4ebffae 100644
+index fb52aa060093..3ef0266e9527 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -2980,7 +2980,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		ret = 0;
- 	if (ret) {
- 		blk_finish_plug(&plug);
--		btrfs_abort_transaction(trans, ret);
- 		btrfs_set_log_full_commit(trans);
- 		mutex_unlock(&root->log_mutex);
- 		goto out;
-@@ -3112,7 +3111,6 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		goto out_wake_log_root;
- 	} else if (ret) {
- 		btrfs_set_log_full_commit(trans);
--		btrfs_abort_transaction(trans, ret);
- 		mutex_unlock(&log_root_tree->log_mutex);
- 		goto out_wake_log_root;
+@@ -3826,7 +3826,10 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 					      path->slots[0]);
+ 			if (tmp.type == BTRFS_DIR_INDEX_KEY)
+ 				last_old_dentry_offset = tmp.offset;
++		} else if (ret < 0) {
++			err = ret;
+ 		}
++
+ 		goto done;
  	}
+ 
+@@ -3846,7 +3849,11 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 		 */
+ 		if (tmp.type == BTRFS_DIR_INDEX_KEY)
+ 			last_old_dentry_offset = tmp.offset;
++	} else if (ret < 0) {
++		err = ret;
++		goto done;
+ 	}
++
+ 	btrfs_release_path(path);
+ 
+ 	/*
+@@ -3859,6 +3866,8 @@ static noinline int log_dir_items(struct btrfs_trans_handle *trans,
+ 	 */
+ search:
+ 	ret = btrfs_search_slot(NULL, root, &min_key, path, 0, 0);
++	if (ret < 0)
++		err = ret;
+ 	if (ret != 0)
+ 		goto done;
+ 
 -- 
 2.35.1
 

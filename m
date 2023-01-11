@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 329FDC46467
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1851AC677F1
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231810AbjAKLjg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Jan 2023 06:39:36 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38134 "EHLO
+        id S238303AbjAKLjh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Jan 2023 06:39:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37884 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238303AbjAKLjG (ORCPT
+        with ESMTP id S238357AbjAKLjI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2023 06:39:06 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B4A9D137
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:35 -0800 (PST)
+        Wed, 11 Jan 2023 06:39:08 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE849BF65
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:38 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id A89EAB81AD3
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:34 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E0139C433EF
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:32 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 648A8B81AD3
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:37 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 935CEC43392
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673436993;
-        bh=HXV/Gb+mxi4s1k4nOv3b39QjeDGD/VgnxwTZaEwq//4=;
+        s=k20201202; t=1673436996;
+        bh=7jlLxKTxSDiDIFYJNaf/OYQGQzgs57SVysvvZ7QLgzI=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=XiGBTFXaSi4wvacXA2w3z+57B5JAsE4q8s/VbeuDaTgGW3U53FIRfNPHdKq1VLWFp
-         X9TK8l4sdX2jXMd3XYyFyKd/TaG+ph7Ng7sFVb+mF/vmWSYYOUvq+EpMD8/TftGvEg
-         t2oS0FO5TxaZ40FCwnbsN+CevmwIyklCQNFn80bFP7EvPpzkhcCVJsJ6aAcm9lzB8v
-         KAMyG7+3ITG6d/VYCsbfcFgdtRhBK7WkCX+bHkUdlnUABjQHfmR28pjAbZMowg5gpk
-         xGbvl9nXyfn3Wb0gZN+SbeBf0ug7VNHzmlLDcmOh4ZSRX9z3HpXt5XgntOGZFNq6Sz
-         ToZRya/1WzIjg==
+        b=kNodAHo54aY6rzuirG2+NqsIn05oDSnREtWs4h6iEhGJtFKUTh1Grmlu+hhY95Zi/
+         P/Ee5zq6iA1lQ4vET4ErUweXiti3xgHagUbnI3tFXDOTZS1cmVtHV9ipT0DApduyIg
+         D+USH1ssBy6Z06Xxorn//DHfpraeM6sz/g6ymGwzr+uXgw8hb+DQhK3MeXMtuVXMqZ
+         DUE7gOdSmwad6kTZDS4VOKE1NpHqQ51HI0XvNR54RHZZcOAyNWg7Mng3jM5t/r/9JI
+         coojCEE14hnc9nnJy21RpYKCuOoQI54BgG6Jgb5g4yiw8GTiSij79p8C3KySZMsKV7
+         B5pYEr5wbLOzQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/19] btrfs: send: initialize all the red black trees earlier
-Date:   Wed, 11 Jan 2023 11:36:12 +0000
-Message-Id: <9e69f33b0dcce18f81e2829cf629110baacd578a.1673436276.git.fdmanana@suse.com>
+Subject: [PATCH 14/19] btrfs: send: cache information about created directories
+Date:   Wed, 11 Jan 2023 11:36:15 +0000
+Message-Id: <668a05b55417e689a2ad9725c48f19b1fb1fdaa3.1673436276.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
 References: <cover.1673436276.git.fdmanana@suse.com>
@@ -48,21 +48,20 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-After we allocate the send context object and before we initialize all
-the red black trees, we can jump to the 'out' label if some errors happen,
-and then under the 'out' label we use RB_EMPTY_ROOT() against some of the
-those trees, which we have not yet initialized. This happens to work out
-ok because the send context object was initialized to zeroes with kzalloc
-and the RB_ROOT initializer just happens to have the following definition:
+During an incremental send, when processing the a reference for an inode
+we need to check if the directory where the new reference is located was
+already created before creating the new reference. This check, which is
+done by the helper did_create_dir(), can be expensive if the directory
+has many entries, since it consists in seaching the send root's b+tree
+and visiting every single dir index key until we either find one which
+points to an inode with a number smaller than the current inode's number
+or until we visited all index keys. So it doesn't scale well for very
+large directories.
 
-    #define RB_ROOT (struct rb_root) { NULL, }
-
-But it's really neither clean nor a good practice as RB_ROOT is supposed
-to be opaque and in case it changes or we change those red black trees to
-some other data structure, it leaves us in a precarious situation.
-
-So initialize all the red black trees immediately after allocating the
-send context and before any jump into the 'out' label.
+So improve on this by caching created directories using a lru cache, and
+limiting its size to 64 entries, which results in using at most 4096
+bytes of memory. The caching is optinal, if we fail to allocate memory,
+we just proceed as before and use the existing slower path.
 
 This patch is part of a larger patchset and the changelog of the last
 patch in the series contains a sample performance test and results.
@@ -90,39 +89,117 @@ The patches that comprise the patchset are the following:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/send.c | 41 ++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 40 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 5ac3cff7bd68..e60aa0cb0b5c 100644
+index b31af939bea8..bc232eb60e68 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -8142,6 +8142,12 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 	INIT_LIST_HEAD(&sctx->backref_cache.lru_list);
- 	mt_init_flags(&sctx->backref_cache.entries, MT_FLAGS_LOCK_EXTERN);
+@@ -117,6 +117,14 @@ struct backref_cache_entry {
+ /* See the comment at lru_cache.h about struct btrfs_lru_cache_entry. */
+ static_assert(offsetof(struct backref_cache_entry, entry) == 0);
  
-+	sctx->pending_dir_moves = RB_ROOT;
-+	sctx->waiting_dir_moves = RB_ROOT;
-+	sctx->orphan_dirs = RB_ROOT;
-+	sctx->rbtree_new_refs = RB_ROOT;
-+	sctx->rbtree_deleted_refs = RB_ROOT;
++/*
++ * Max number of entries in the cache that stores directories that were already
++ * created. The cache uses raw struct btrfs_lru_cache_entry entries, so it uses
++ * at most 4096 bytes - sizeof(struct btrfs_lru_cache_entry) is 40 bytes, but
++ * the kmalloc-64 slab is used, so we get 4096 bytes (64 bytes * 64).
++ */
++#define SEND_MAX_DIR_CREATED_CACHE_SIZE 64
 +
- 	sctx->flags = arg->flags;
+ struct send_ctx {
+ 	struct file *send_filp;
+ 	loff_t send_off;
+@@ -288,6 +296,8 @@ struct send_ctx {
  
- 	if (arg->flags & BTRFS_SEND_FLAG_VERSION) {
-@@ -8207,12 +8213,6 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 		goto out;
+ 	struct btrfs_lru_cache backref_cache;
+ 	u64 backref_cache_last_reloc_trans;
++
++	struct btrfs_lru_cache dir_created_cache;
+ };
+ 
+ struct pending_dir_move {
+@@ -2936,6 +2946,22 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
+ 	return ret;
+ }
+ 
++static void cache_dir_created(struct send_ctx *sctx, u64 dir)
++{
++	struct btrfs_lru_cache_entry *entry;
++	int ret;
++
++	/* Caching is optional, ignore any failures. */
++	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
++	if (!entry)
++		return;
++
++	entry->key = dir;
++	ret = btrfs_lru_cache_store(&sctx->dir_created_cache, entry, GFP_KERNEL);
++	if (ret < 0)
++		kfree(entry);
++}
++
+ /*
+  * We need some special handling for inodes that get processed before the parent
+  * directory got created. See process_recorded_refs for details.
+@@ -2951,6 +2977,9 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
+ 	struct btrfs_key di_key;
+ 	struct btrfs_dir_item *di;
+ 
++	if (btrfs_lru_cache_lookup(&sctx->dir_created_cache, dir))
++		return 1;
++
+ 	path = alloc_path_for_send();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -2974,6 +3003,7 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
+ 		if (di_key.type != BTRFS_ROOT_ITEM_KEY &&
+ 		    di_key.objectid < sctx->send_progress) {
+ 			ret = 1;
++			cache_dir_created(sctx, dir);
+ 			break;
+ 		}
+ 	}
+@@ -3003,7 +3033,12 @@ static int send_create_inode_if_needed(struct send_ctx *sctx)
+ 			return 0;
  	}
  
--	sctx->pending_dir_moves = RB_ROOT;
--	sctx->waiting_dir_moves = RB_ROOT;
--	sctx->orphan_dirs = RB_ROOT;
--	sctx->rbtree_new_refs = RB_ROOT;
--	sctx->rbtree_deleted_refs = RB_ROOT;
--
- 	sctx->clone_roots = kvcalloc(sizeof(*sctx->clone_roots),
- 				     arg->clone_sources_count + 1,
- 				     GFP_KERNEL);
+-	return send_create_inode(sctx, sctx->cur_ino);
++	ret = send_create_inode(sctx, sctx->cur_ino);
++
++	if (ret == 0 && S_ISDIR(sctx->cur_inode_mode))
++		cache_dir_created(sctx, sctx->cur_ino);
++
++	return ret;
+ }
+ 
+ struct recorded_ref {
+@@ -4401,6 +4436,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
+ 				ret = send_create_inode(sctx, cur->dir);
+ 				if (ret < 0)
+ 					goto out;
++				cache_dir_created(sctx, cur->dir);
+ 			}
+ 		}
+ 
+@@ -8109,6 +8145,8 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 	INIT_LIST_HEAD(&sctx->name_cache_list);
+ 
+ 	btrfs_lru_cache_init(&sctx->backref_cache, SEND_MAX_BACKREF_CACHE_SIZE);
++	btrfs_lru_cache_init(&sctx->dir_created_cache,
++			     SEND_MAX_DIR_CREATED_CACHE_SIZE);
+ 
+ 	sctx->pending_dir_moves = RB_ROOT;
+ 	sctx->waiting_dir_moves = RB_ROOT;
+@@ -8373,6 +8411,7 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 		close_current_inode(sctx);
+ 
+ 		btrfs_lru_cache_clear(&sctx->backref_cache);
++		btrfs_lru_cache_clear(&sctx->dir_created_cache);
+ 
+ 		kfree(sctx);
+ 	}
 -- 
 2.35.1
 

@@ -2,44 +2,42 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B70A0C46467
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C1EBAC54EBC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235452AbjAKLjV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Jan 2023 06:39:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38074 "EHLO
+        id S235627AbjAKLjW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Jan 2023 06:39:22 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37580 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238068AbjAKLjC (ORCPT
+        with ESMTP id S237970AbjAKLjC (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 11 Jan 2023 06:39:02 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D41D12BD3
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:27 -0800 (PST)
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C0C6AE4C
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:26 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 9E620B81B8D
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:26 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D58DBC433F1
+        by ams.source.kernel.org (Postfix) with ESMTPS id E2120B819EF
         for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:24 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 16C07C433EF
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673436985;
-        bh=bz2hjETIMiO1Y/a5EWyqQkJemp8px3E+gwWGVekGXa4=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=NbfqwwmjH6n9W7gqrHeqN+ZHHFU2X/OJvgAqJJorBKXQ1/csWj7vRzPXfEclll4ks
-         v3PRhow5rceaUIRXYiCkFM5Xr//5korjBE6vl/KXV34ytF7FD1hVL8lR8CpisMBi9z
-         bVcA2V6GIruJsOl0DXpwvQQ6s4UtnBLKacOcvSpxALnRlNYUsBEypue1234krqp7Vn
-         JQv9qoe9MIufJ/Lbno3lzkUAyjmx4ru4tw+GjJcC2ReY62g3o/MRPMup0iXcdcqypq
-         uRDbpTiqMV1N2cp8lwSH9XGAjkoOmT/XW4LGw65PlrQx6PNUmob/u3h/gJnfp1VSs1
-         u7NKQpFkV4t5g==
+        s=k20201202; t=1673436983;
+        bh=4RYtqwquwGZSYRXB7So8iNQgGGlwTvKWawMqNawnwQ0=;
+        h=From:To:Subject:Date:From;
+        b=CmgU0wfB+4C+fEZtM0nS/MeCJmdo7k0XexdgSxEBRXY5mdkslPA7ZdFaahEO2ZYw+
+         ypllPTQ5F/P7GeSm2K0VWnFnNq83/GioRu6CiKrGPZyUjZTJDEfdh4vs9hIUznwbuM
+         6TXIG/cVMfPTDfLNYeUu+x8rRxgBAhAeZ9b9qibM8Y4iNjJkY6TtVa0mRDkN4GwPwf
+         x9em4EQP4DJJGxuYE9/OEeyTfzZYQOPg3YM6rxeFchhLReFeA9S8QI2CK2mNGLAwf6
+         2qtZGfRM8vGDcs1atb2P662Itv9e5RNTZnLpPa4dTZR4d3kIXS9xu2fOO4zJQwlWNF
+         1GxiSe570fDRw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 02/19] btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
-Date:   Wed, 11 Jan 2023 11:36:03 +0000
-Message-Id: <22bedd046623def51d4bfcf1bd313da15f2e27ba.1673436276.git.fdmanana@suse.com>
+Subject: [PATCH 00/19] btrfs: some optimizations for send
+Date:   Wed, 11 Jan 2023 11:36:01 +0000
+Message-Id: <cover.1673436276.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
-References: <cover.1673436276.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -48,17 +46,13 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At did_overwrite_ref() we always call get_inode_gen() to find out the
-generation of the inode 'ow_inode'. However we don't always need to use
-that generation, and in fact it's very common to not use it, so we end
-up doing a b+tree search on the send root, allocating a path, etc, for
-nothing. So improve on this by getting the generation only if we need
-to use it.
+This adds some optimizations for send and some cleanups, mostly around
+processing directories. Some of the cleanups are independent.
 
-This patch is part of a larger patchset and the changelog of the last
-patch in the series contains a sample performance test and results.
-The patches that comprise the patchset are the following:
+More details in the individual changelogs, and the last one contains
+results for a performance test.
 
+Filipe Manana (19):
   btrfs: send: directly return from did_overwrite_ref() and simplify it
   btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
   btrfs: send: directly return from will_overwrite_ref() and simplify it
@@ -79,78 +73,14 @@ The patches that comprise the patchset are the following:
   btrfs: send: update size of roots array for backref cache entries
   btrfs: send: cache utimes operations for directories if possible
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/send.c | 31 ++++++++++++++++++++++---------
- 1 file changed, 22 insertions(+), 9 deletions(-)
+ fs/btrfs/Makefile    |   3 +-
+ fs/btrfs/lru_cache.c | 163 +++++++++++
+ fs/btrfs/lru_cache.h |  80 ++++++
+ fs/btrfs/send.c      | 645 ++++++++++++++++++++++---------------------
+ 4 files changed, 572 insertions(+), 319 deletions(-)
+ create mode 100644 fs/btrfs/lru_cache.c
+ create mode 100644 fs/btrfs/lru_cache.h
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 59106eb8b114..23060eec30de 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2193,8 +2193,8 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 			    const char *name, int name_len)
- {
- 	int ret;
--	u64 gen;
- 	u64 ow_inode;
-+	u64 ow_gen = 0;
- 
- 	if (!sctx->parent_root)
- 		return 0;
-@@ -2204,6 +2204,8 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 		return ret;
- 
- 	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
-+		u64 gen;
-+
- 		ret = get_inode_gen(sctx->send_root, dir, &gen);
- 		if (ret == -ENOENT)
- 			return 0;
-@@ -2224,12 +2226,15 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 		return ret;
- 	}
- 
--	ret = get_inode_gen(sctx->send_root, ow_inode, &gen);
--	if (ret < 0)
--		return ret;
-+	if (ow_inode == ino) {
-+		ret = get_inode_gen(sctx->send_root, ow_inode, &ow_gen);
-+		if (ret < 0)
-+			return ret;
- 
--	if (ow_inode == ino && gen == ino_gen)
--		return 0;
-+		/* It's the same inode, so no overwrite happened. */
-+		if (ow_gen == ino_gen)
-+			return 0;
-+	}
- 
- 	/*
- 	 * We know that it is or will be overwritten. Check this now.
-@@ -2237,11 +2242,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 	 * inode 'ino' to be orphanized, therefore check if ow_inode matches
- 	 * the current inode being processed.
- 	 */
--	if ((ow_inode < sctx->send_progress) ||
--	    (ino != sctx->cur_ino && ow_inode == sctx->cur_ino &&
--	     gen == sctx->cur_inode_gen))
-+	if (ow_inode < sctx->send_progress)
- 		return 1;
- 
-+	if (ino != sctx->cur_ino && ow_inode == sctx->cur_ino) {
-+		if (ow_gen == 0) {
-+			ret = get_inode_gen(sctx->send_root, ow_inode, &ow_gen);
-+			if (ret < 0)
-+				return ret;
-+		}
-+		if (ow_gen == sctx->cur_inode_gen)
-+			return 1;
-+	}
-+
- 	return 0;
- }
- 
 -- 
 2.35.1
 

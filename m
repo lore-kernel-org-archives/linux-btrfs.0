@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE2E1C5479D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 06:24:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F5E1C46467
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 06:24:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231261AbjAKGYN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Jan 2023 01:24:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41130 "EHLO
+        id S230124AbjAKGYP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Jan 2023 01:24:15 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41134 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230283AbjAKGYD (ORCPT
+        with ESMTP id S229688AbjAKGYG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2023 01:24:03 -0500
+        Wed, 11 Jan 2023 01:24:06 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8EF6D11807
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 22:23:54 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 71B59101DC
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jan 2023 22:23:59 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=zXPJ5+UjTkIW0+tP+iLoBQK0vOgtC/27soKXZbcECBw=; b=P7gWZtCPBuEj3iTjMLt/c30M0f
-        ZA/RKicuaZe7MayRd3Gf5slO+4+SoOiCAhfEART6TOOlssR8UU8QUPIb4ir/p+HrAEIpDIDojnPVO
-        3pveRv3wIMFAdzgVn+y81L0iQHzbKAfXxbxcOci6R7GMKnbdyY7KFCMtWwIRI0c/euoEtDMPsyMVV
-        lJ24U9apQ9lv9VMzx32Ls5H6T9kPpOa27HwR7oB5CEGD+J76NpjCdpNqOL94aEq/HmgJz3jOK2P3O
-        J74kEEuJB31UDGBA4+Icd7gr7W8IFUqlIGBYUgvhbBq0LUlQGddh1aHHWXd8EMHQ3B/iwrQA3HNeh
-        sRNkmKKg==;
+        bh=ur7fhPspL7yd82y+ZMwL7tHRdo7NtUrr5JHyOou6OMw=; b=dpUySYRzrF9s+Ffh2F8gecfF1z
+        hgoMvrVPJr16PCZDv5Q7NWlQkkYU3z7PX7ewhr+Y0ltC8ktO1YNQSrje2Cj7uE5shb8+O/NrKyNvp
+        3kYPrn4S/YKTw2w/cmY6nhoVLFWNfqjsCArL2cJtcRDWrMrZXgJ9XJFkTUom/cv4kzCqoNe+BpwVA
+        Rb3iH9Vs+nbMUs+T8yiYNt4mjVv0EVwPC/y3EgLSKwPIRTSsC8wz8JcQFB6iS0ZnqEQJADFV6XhXd
+        QlMfITwmLQUr1TNEF29jp3a//7lY8YebQIjBteMrPJmjWLZH6sXN4NfFUkCI7auyRkcg75JKsLqyu
+        SVGfBdqw==;
 Received: from [2001:4bb8:181:656b:8732:62ba:c286:a05b] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pFUWe-009rBl-Er; Wed, 11 Jan 2023 06:23:52 +0000
+        id 1pFUWj-009rCN-GF; Wed, 11 Jan 2023 06:23:57 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/10] btrfs: fold rmw_read_wait_recover into rmw_read_bios
-Date:   Wed, 11 Jan 2023 07:23:30 +0100
-Message-Id: <20230111062335.1023353-7-hch@lst.de>
+Subject: [PATCH 08/10] btrfs: call rbio_orig_end_io from rmw_rbio
+Date:   Wed, 11 Jan 2023 07:23:32 +0100
+Message-Id: <20230111062335.1023353-9-hch@lst.de>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20230111062335.1023353-1-hch@lst.de>
 References: <20230111062335.1023353-1-hch@lst.de>
@@ -45,117 +45,99 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is very little extra code in rmw_read_bios, and a large part of it
-is the superflous extra cleanup of the bio list.  Merge the two
-functions, and only clean up the bio list after it has been added to
-but before it has been emptied again by submit_read_wait_bio_list.
+Both callers of rmv_rbio call rbio_orig_end_io right after it, so
+move the call into the shared function.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/raid56.c | 70 ++++++++++++++++-------------------------------
- 1 file changed, 24 insertions(+), 46 deletions(-)
+ fs/btrfs/raid56.c | 30 ++++++++++--------------------
+ 1 file changed, 10 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 4e983ca8cd532c..88404a6b0b98e7 100644
+index 374c3873169b3f..a9947477daf26d 100644
 --- a/fs/btrfs/raid56.c
 +++ b/fs/btrfs/raid56.c
-@@ -1517,39 +1517,6 @@ static void submit_read_wait_bio_list(struct btrfs_raid_bio *rbio,
- 	wait_event(rbio->io_wait, atomic_read(&rbio->stripes_pending) == 0);
+@@ -2229,7 +2229,7 @@ static bool need_read_stripe_sectors(struct btrfs_raid_bio *rbio)
+ 	return false;
  }
  
--static int rmw_assemble_read_bios(struct btrfs_raid_bio *rbio,
--				  struct bio_list *bio_list)
--{
--	int total_sector_nr;
--	int ret = 0;
--
--	ASSERT(bio_list_size(bio_list) == 0);
--
--	/*
--	 * Build a list of bios to read all sectors (including data and P/Q).
--	 *
--	 * This behaviro is to compensate the later csum verification and
--	 * recovery.
--	 */
--	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
--	     total_sector_nr++) {
--		struct sector_ptr *sector;
--		int stripe = total_sector_nr / rbio->stripe_nsectors;
--		int sectornr = total_sector_nr % rbio->stripe_nsectors;
--
--		sector = rbio_stripe_sector(rbio, stripe, sectornr);
--		ret = rbio_add_io_sector(rbio, bio_list, sector,
--			       stripe, sectornr, REQ_OP_READ);
--		if (ret)
--			goto cleanup;
--	}
--	return 0;
--
--cleanup:
--	bio_list_put(bio_list);
--	return ret;
--}
--
- static int alloc_rbio_data_pages(struct btrfs_raid_bio *rbio)
+-static int rmw_rbio(struct btrfs_raid_bio *rbio)
++static void rmw_rbio(struct btrfs_raid_bio *rbio)
  {
- 	const int data_pages = rbio->nr_data * rbio->stripe_npages;
-@@ -2169,10 +2136,9 @@ static void fill_data_csums(struct btrfs_raid_bio *rbio)
+ 	struct bio_list bio_list;
+ 	int sectornr;
+@@ -2241,7 +2241,7 @@ static int rmw_rbio(struct btrfs_raid_bio *rbio)
+ 	 */
+ 	ret = alloc_rbio_parity_pages(rbio);
+ 	if (ret < 0)
+-		return ret;
++		goto out;
  
- static int rmw_read_wait_recover(struct btrfs_raid_bio *rbio)
+ 	/*
+ 	 * Either full stripe write, or we have every data sector already
+@@ -2254,13 +2254,13 @@ static int rmw_rbio(struct btrfs_raid_bio *rbio)
+ 		 */
+ 		ret = alloc_rbio_data_pages(rbio);
+ 		if (ret < 0)
+-			return ret;
++			goto out;
+ 
+ 		index_rbio_pages(rbio);
+ 
+ 		ret = rmw_read_wait_recover(rbio);
+ 		if (ret < 0)
+-			return ret;
++			goto out;
+ 	}
+ 
+ 	/*
+@@ -2293,7 +2293,7 @@ static int rmw_rbio(struct btrfs_raid_bio *rbio)
+ 	bio_list_init(&bio_list);
+ 	ret = rmw_assemble_write_bios(rbio, &bio_list);
+ 	if (ret < 0)
+-		return ret;
++		goto out;
+ 
+ 	/* We should have at least one bio assembled. */
+ 	ASSERT(bio_list_size(&bio_list));
+@@ -2310,32 +2310,22 @@ static int rmw_rbio(struct btrfs_raid_bio *rbio)
+ 			break;
+ 		}
+ 	}
+-	return ret;
++out:
++	rbio_orig_end_io(rbio, errno_to_blk_status(ret));
+ }
+ 
+ static void rmw_rbio_work(struct work_struct *work)
  {
--	struct bio_list bio_list;
+ 	struct btrfs_raid_bio *rbio;
+-	int ret;
+ 
+ 	rbio = container_of(work, struct btrfs_raid_bio, work);
+-
+-	ret = lock_stripe_add(rbio);
+-	if (ret == 0) {
+-		ret = rmw_rbio(rbio);
+-		rbio_orig_end_io(rbio, errno_to_blk_status(ret));
+-	}
++	if (lock_stripe_add(rbio) == 0)
++		rmw_rbio(rbio);
+ }
+ 
+ static void rmw_rbio_work_locked(struct work_struct *work)
+ {
+-	struct btrfs_raid_bio *rbio;
 -	int ret;
 -
--	bio_list_init(&bio_list);
-+	struct bio_list bio_list = BIO_EMPTY_LIST;
-+	int total_sector_nr;
-+	int ret = 0;
- 
- 	/*
- 	 * Fill the data csums we need for data verification.  We need to fill
-@@ -2181,21 +2147,33 @@ static int rmw_read_wait_recover(struct btrfs_raid_bio *rbio)
- 	 */
- 	fill_data_csums(rbio);
- 
--	ret = rmw_assemble_read_bios(rbio, &bio_list);
--	if (ret < 0)
--		goto out;
-+	/*
-+	 * Build a list of bios to read all sectors (including data and P/Q).
-+	 *
-+	 * This behaviro is to compensate the later csum verification and
-+	 * recovery.
-+	 */
-+	for (total_sector_nr = 0; total_sector_nr < rbio->nr_sectors;
-+	     total_sector_nr++) {
-+		struct sector_ptr *sector;
-+		int stripe = total_sector_nr / rbio->stripe_nsectors;
-+		int sectornr = total_sector_nr % rbio->stripe_nsectors;
- 
--	submit_read_wait_bio_list(rbio, &bio_list);
-+		sector = rbio_stripe_sector(rbio, stripe, sectornr);
-+		ret = rbio_add_io_sector(rbio, &bio_list, sector,
-+			       stripe, sectornr, REQ_OP_READ);
-+		if (ret) {
-+			bio_list_put(&bio_list);
-+			return ret;
-+		}
-+	}
- 
- 	/*
- 	 * We may or may not have any corrupted sectors (including missing dev
- 	 * and csum mismatch), just let recover_sectors() to handle them all.
- 	 */
--	ret = recover_sectors(rbio);
--	return ret;
--out:
--	bio_list_put(&bio_list);
--	return ret;
-+	submit_read_wait_bio_list(rbio, &bio_list);
-+	return recover_sectors(rbio);
+-	rbio = container_of(work, struct btrfs_raid_bio, work);
+-
+-	ret = rmw_rbio(rbio);
+-	rbio_orig_end_io(rbio, errno_to_blk_status(ret));
++	rmw_rbio(container_of(work, struct btrfs_raid_bio, work));
  }
  
- static void raid_wait_write_end_io(struct bio *bio)
+ /*
 -- 
 2.35.1
 

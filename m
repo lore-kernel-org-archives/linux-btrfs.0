@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77798C678D6
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AF0DC54EBC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238493AbjAKLjb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Jan 2023 06:39:31 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37344 "EHLO
+        id S238325AbjAKLja (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Jan 2023 06:39:30 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37820 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238228AbjAKLjE (ORCPT
+        with ESMTP id S238265AbjAKLjE (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 11 Jan 2023 06:39:04 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 871CB65B7
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:31 -0800 (PST)
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 565C7B499
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:32 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 38850B81BAE
+        by ams.source.kernel.org (Postfix) with ESMTPS id F0605B81AD3
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:31 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3997FC433EF
         for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:30 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6D4C5C433D2
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673436988;
-        bh=IZn6Ia3g/yg2V15zZbqJ5NKqtnKzpAhV4fNWgDDJTp0=;
+        s=k20201202; t=1673436990;
+        bh=mHo2nKykopTDW30Yps48wkFh0uy4OHLuGV6DkaDKO+8=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=aa6lnvZErdCQd9aLBzY1T0j1N/gVhvn3uI4XJLTDIoX4jA69t8MM0rOlhm/s0dtHv
-         e1KiiDal0UvLERziZ0zpVZbeuO0K8yjqao7Rdf4fI8ouEMOdOZTfntZOUC3QrNuhwT
-         N5AVXsTkNbBpH6m9cXlLuMhSEXCiPpvs7/hikuFJ/psm1OUbea9IML8f/duTESebux
-         EA05hLkQ1ehJpy1HonoEOlg+Cbu+LOUdzrQNAWR5lQijWh3/kRegLe3NqvKKQmjr5L
-         sgZ+tuwj45uBYcH7t8QBdTcY77sn5Sduk3lZlrfiWAScfbzWP1rN855v4mBkY2Zrpb
-         XcWyw/GJFJFvA==
+        b=e7g5GEi87u+2sMvT2be1mZgQFjXWsDiqLQVGk5Y5wSfhozDxatOdnNoE+lh2Ouedd
+         x8NOHZKkgK3o4RNO4DyIlSbHhiyr0HC2XYeZ31mfUgHPVtebz1t6ZfwsuEsveMMQpN
+         tdAbQiOkQNOIP/mnUIccYz3O9jsoprR8cKTqe/j3bqyrXn8q7sPCDk8mdX41SphGaF
+         P89nhMRJN9C+dYm51oH29ncqEmYmy5ukqX8qF0Ue3dLRPDkuem0cto/Yz1Mblx7vqe
+         QI5P3avM80Gq9ZatLva2UqFwOg76Tc00ZSPndBihI6mWLFiJjxN1WU9pePUEv5qTdO
+         th4bOFxQ3JFJA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/19] btrfs: send: avoid duplicated orphan dir allocation and initialization
-Date:   Wed, 11 Jan 2023 11:36:07 +0000
-Message-Id: <ecf486ee5db9b0acdfd57959500ae5b735dd1089.1673436276.git.fdmanana@suse.com>
+Subject: [PATCH 08/19] btrfs: send: reduce searches on parent root when checking if dir can be removed
+Date:   Wed, 11 Jan 2023 11:36:09 +0000
+Message-Id: <506db9ca6dafe05827d4e466b36558b563faa933.1673436276.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
 References: <cover.1673436276.git.fdmanana@suse.com>
@@ -48,11 +48,30 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At can_rmdir() we are allocating and initializing an orphan dir object
-twice. This can be deduplicated outside of the loop that iterates over
-the dir index keys. So deduplicate that code, even because other patch
-in the series will need to add more initializion code and another one
-will add one more condition.
+During an incremental send, every time we remove a reference (dentry) for
+an inode and the parent directory does not exists anymore in the send
+root, we go check if we can remove the directory by making a call to
+can_rmdir(). This helper can only return true (value 1) if all dentries
+were already removed, and for that it always does a search on the parent
+root for dir index keys - if it finds any dentry referring to an inode
+with a number higher then the inode currently being processed, then the
+directory can not be removed and it must return false (value 0).
+
+However that means if a directory that was deleted had 1000 dentries, and
+each one pointed to an inode with a number higher then the number of the
+directory's inode, we end up doing 1000 searches on the parent root.
+Typically files are created in a directory after the directory was created
+and therefore they get an higher inode number than the directory. It's
+also common to have the each dentry pointing to an inode with a higher
+number then the inodes the previous dentries point to, for example when
+creating a series of files inside a directory, a very common pattern.
+
+So improve on that by having the first call to can_rmdir() for a directory
+to check the number of the inode that the last dentry points to and cache
+that inode number in the orphan dir structure. Then every subsequent call
+to can_rmdir() can avoid doing a search on the parent root if the number
+of the inode currently being processed is smaller than cached inode number
+at the directory's orphan dir structure.
 
 This patch is part of a larger patchset and the changelog of the last
 patch in the series contains a sample performance test and results.
@@ -80,61 +99,126 @@ The patches that comprise the patchset are the following:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 27 ++++++++++++---------------
- 1 file changed, 12 insertions(+), 15 deletions(-)
+ fs/btrfs/send.c | 65 ++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 59 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 32dd88ed629a..f7d533c364b1 100644
+index bc57fa8a6bde..cd4aa0eae66c 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -3253,13 +3253,6 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+@@ -321,6 +321,7 @@ struct orphan_dir_info {
+ 	u64 ino;
+ 	u64 gen;
+ 	u64 last_dir_index_offset;
++	u64 dir_high_seq_ino;
+ };
  
+ struct name_cache_entry {
+@@ -3161,6 +3162,7 @@ static struct orphan_dir_info *add_orphan_dir_info(struct send_ctx *sctx,
+ 	odi->ino = dir_ino;
+ 	odi->gen = dir_gen;
+ 	odi->last_dir_index_offset = 0;
++	odi->dir_high_seq_ino = 0;
+ 
+ 	rb_link_node(&odi->node, parent, p);
+ 	rb_insert_color(&odi->node, &sctx->orphan_dirs);
+@@ -3221,6 +3223,8 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 	struct btrfs_key loc;
+ 	struct btrfs_dir_item *di;
+ 	struct orphan_dir_info *odi = NULL;
++	u64 dir_high_seq_ino = 0;
++	u64 last_dir_index_offset = 0;
+ 
+ 	/*
+ 	 * Don't try to rmdir the top/root subvolume dir.
+@@ -3228,17 +3232,62 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 	if (dir == BTRFS_FIRST_FREE_OBJECTID)
+ 		return 0;
+ 
++	odi = get_orphan_dir_info(sctx, dir, dir_gen);
++	if (odi && sctx->cur_ino < odi->dir_high_seq_ino)
++		return 0;
++
+ 	path = alloc_path_for_send();
+ 	if (!path)
+ 		return -ENOMEM;
+ 
++	if (!odi) {
++		/*
++		 * Find the inode number associated with the last dir index
++		 * entry. This is very likely the inode with the highest number
++		 * of all inodes that have an entry in the directory. We can
++		 * then use it to avoid future calls to can_rmdir(), when
++		 * processing inodes with a lower number, from having to search
++		 * the parent root b+tree for dir index keys.
++		 */
++		key.objectid = dir;
++		key.type = BTRFS_DIR_INDEX_KEY;
++		key.offset = (u64)-1;
++
++		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		if (ret < 0) {
++			goto out;
++		} else if (ret > 0) {
++			/* Can't happen, the root is never empty. */
++			ASSERT(path->slots[0] > 0);
++			if (WARN_ON(path->slots[0] == 0)) {
++				ret = -EUCLEAN;
++				goto out;
++			}
++			path->slots[0]--;
++		}
++
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++		if (key.objectid != dir || key.type != BTRFS_DIR_INDEX_KEY) {
++			/* No index keys, dir can be removed. */
++			ret = 1;
++			goto out;
++		}
++
++		di = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				    struct btrfs_dir_item);
++		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
++		dir_high_seq_ino = loc.objectid;
++		if (sctx->cur_ino < dir_high_seq_ino) {
++			ret = 0;
++			goto out;
++		}
++
++		btrfs_release_path(path);
++	}
++
+ 	key.objectid = dir;
+ 	key.type = BTRFS_DIR_INDEX_KEY;
+-	key.offset = 0;
+-
+-	odi = get_orphan_dir_info(sctx, dir, dir_gen);
+-	if (odi)
+-		key.offset = odi->last_dir_index_offset;
++	key.offset = odi ? odi->last_dir_index_offset : 0;
+ 
+ 	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
+ 		struct waiting_dir_move *dm;
+@@ -3251,6 +3300,9 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 				struct btrfs_dir_item);
+ 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
+ 
++		dir_high_seq_ino = max(dir_high_seq_ino, loc.objectid);
++		last_dir_index_offset = found_key.offset;
++
  		dm = get_waiting_dir_move(sctx, loc.objectid);
  		if (dm) {
--			odi = add_orphan_dir_info(sctx, dir, dir_gen);
--			if (IS_ERR(odi)) {
--				ret = PTR_ERR(odi);
--				goto out;
--			}
--			odi->gen = dir_gen;
--			odi->last_dir_index_offset = found_key.offset;
  			dm->rmdir_ino = dir;
- 			dm->rmdir_gen = dir_gen;
- 			ret = 0;
-@@ -3267,13 +3260,6 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
- 		}
+@@ -3286,7 +3338,8 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 		odi->gen = dir_gen;
+ 	}
  
- 		if (loc.objectid > sctx->cur_ino) {
--			odi = add_orphan_dir_info(sctx, dir, dir_gen);
--			if (IS_ERR(odi)) {
--				ret = PTR_ERR(odi);
--				goto out;
--			}
--			odi->gen = dir_gen;
--			odi->last_dir_index_offset = found_key.offset;
- 			ret = 0;
- 			goto out;
- 		}
-@@ -3288,7 +3274,18 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+-	odi->last_dir_index_offset = found_key.offset;
++	odi->last_dir_index_offset = last_dir_index_offset;
++	odi->dir_high_seq_ino = max(odi->dir_high_seq_ino, dir_high_seq_ino);
  
- out:
- 	btrfs_free_path(path);
--	return ret;
-+
-+	if (ret)
-+		return ret;
-+
-+	odi = add_orphan_dir_info(sctx, dir, dir_gen);
-+	if (IS_ERR(odi))
-+		return PTR_ERR(odi);
-+
-+	odi->gen = dir_gen;
-+	odi->last_dir_index_offset = found_key.offset;
-+
-+	return 0;
+ 	return 0;
  }
- 
- static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
 -- 
 2.35.1
 

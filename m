@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1851AC677F1
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2861BC54EBC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238303AbjAKLjh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Jan 2023 06:39:37 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37884 "EHLO
+        id S238522AbjAKLjj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Jan 2023 06:39:39 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37426 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238357AbjAKLjI (ORCPT
+        with ESMTP id S238368AbjAKLjI (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 11 Jan 2023 06:39:08 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE849BF65
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7688BF52
         for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:38 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 648A8B81AD3
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 7110A61C4B
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:38 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5F8D9C433F1
         for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:37 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 935CEC43392
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673436996;
-        bh=7jlLxKTxSDiDIFYJNaf/OYQGQzgs57SVysvvZ7QLgzI=;
+        s=k20201202; t=1673436997;
+        bh=Au6clPOEmouJABkMQxT/fuYcNhHEI8NAvw2yr78ElsI=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=kNodAHo54aY6rzuirG2+NqsIn05oDSnREtWs4h6iEhGJtFKUTh1Grmlu+hhY95Zi/
-         P/Ee5zq6iA1lQ4vET4ErUweXiti3xgHagUbnI3tFXDOTZS1cmVtHV9ipT0DApduyIg
-         D+USH1ssBy6Z06Xxorn//DHfpraeM6sz/g6ymGwzr+uXgw8hb+DQhK3MeXMtuVXMqZ
-         DUE7gOdSmwad6kTZDS4VOKE1NpHqQ51HI0XvNR54RHZZcOAyNWg7Mng3jM5t/r/9JI
-         coojCEE14hnc9nnJy21RpYKCuOoQI54BgG6Jgb5g4yiw8GTiSij79p8C3KySZMsKV7
-         B5pYEr5wbLOzQ==
+        b=EznKf77DcNv+yJGBcWAPLohLDPWieK4yQT4inrmH17mvriPFg0qnW3UCLt+hbPCDC
+         j48Cdz/iDYeW6FA42/QCX4rds9sTqv4B4B6+ExWzLFbZIb4Bgi7RTGoXpfAmJEVc6a
+         80tJk/gG9zvlVFfPxYZ6lqVJa7ebexKcDJ13nWOmL9yZJv4jKqJ1JCUfxbfEJP5unx
+         4hdrl1aEpm2v1nR/NssXmmONDJPyB6EJ96WPvB26ODiOd7xodMaUwNbUOPhCOxNURy
+         2DKkj2B6idDjrHDA1vW0bhrH4ZvZRury8RgUkzvRoMwADrRWjuWr3m1txXNJ+mQmMi
+         2gjST/VsgzGHA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 14/19] btrfs: send: cache information about created directories
-Date:   Wed, 11 Jan 2023 11:36:15 +0000
-Message-Id: <668a05b55417e689a2ad9725c48f19b1fb1fdaa3.1673436276.git.fdmanana@suse.com>
+Subject: [PATCH 16/19] btrfs: add an api to delete a specific entry from the lru cache
+Date:   Wed, 11 Jan 2023 11:36:17 +0000
+Message-Id: <ae7c9d42d0afb05010ff544844cefaa07aed195d.1673436276.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
 References: <cover.1673436276.git.fdmanana@suse.com>
@@ -48,20 +48,10 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-During an incremental send, when processing the a reference for an inode
-we need to check if the directory where the new reference is located was
-already created before creating the new reference. This check, which is
-done by the helper did_create_dir(), can be expensive if the directory
-has many entries, since it consists in seaching the send root's b+tree
-and visiting every single dir index key until we either find one which
-points to an inode with a number smaller than the current inode's number
-or until we visited all index keys. So it doesn't scale well for very
-large directories.
-
-So improve on this by caching created directories using a lru cache, and
-limiting its size to 64 entries, which results in using at most 4096
-bytes of memory. The caching is optinal, if we fail to allocate memory,
-we just proceed as before and use the existing slower path.
+In order to replace the open coded name cache in send with the lru cache,
+we need an API for the lru cache to delete a specific entry for which we
+did a previous lookup. This adds the API for it, and a next patch in the
+series will use it.
 
 This patch is part of a larger patchset and the changelog of the last
 patch in the series contains a sample performance test and results.
@@ -89,117 +79,64 @@ The patches that comprise the patchset are the following:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 41 ++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 40 insertions(+), 1 deletion(-)
+ fs/btrfs/lru_cache.c | 16 ++++++++++++----
+ fs/btrfs/lru_cache.h |  2 ++
+ 2 files changed, 14 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index b31af939bea8..bc232eb60e68 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -117,6 +117,14 @@ struct backref_cache_entry {
- /* See the comment at lru_cache.h about struct btrfs_lru_cache_entry. */
- static_assert(offsetof(struct backref_cache_entry, entry) == 0);
+diff --git a/fs/btrfs/lru_cache.c b/fs/btrfs/lru_cache.c
+index d85341946213..602801235921 100644
+--- a/fs/btrfs/lru_cache.c
++++ b/fs/btrfs/lru_cache.c
+@@ -56,8 +56,16 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
+ 	return entry;
+ }
  
+-static void delete_entry(struct btrfs_lru_cache *cache,
+-			 struct btrfs_lru_cache_entry *entry)
 +/*
-+ * Max number of entries in the cache that stores directories that were already
-+ * created. The cache uses raw struct btrfs_lru_cache_entry entries, so it uses
-+ * at most 4096 bytes - sizeof(struct btrfs_lru_cache_entry) is 40 bytes, but
-+ * the kmalloc-64 slab is used, so we get 4096 bytes (64 bytes * 64).
++ * Remove an entry from the cache.
++ *
++ * @cache:     The cache to remove from.
++ * @entry:     The entry to remove from the cache.
++ *
++ * Note: this also frees the memory used by the entry.
 + */
-+#define SEND_MAX_DIR_CREATED_CACHE_SIZE 64
-+
- struct send_ctx {
- 	struct file *send_filp;
- 	loff_t send_off;
-@@ -288,6 +296,8 @@ struct send_ctx {
++void btrfs_lru_cache_remove(struct btrfs_lru_cache *cache,
++			    struct btrfs_lru_cache_entry *entry)
+ {
+ 	struct list_head *prev = entry->list.prev;
  
- 	struct btrfs_lru_cache backref_cache;
- 	u64 backref_cache_last_reloc_trans;
-+
-+	struct btrfs_lru_cache dir_created_cache;
- };
- 
- struct pending_dir_move {
-@@ -2936,6 +2946,22 @@ static int send_create_inode(struct send_ctx *sctx, u64 ino)
- 	return ret;
- }
- 
-+static void cache_dir_created(struct send_ctx *sctx, u64 dir)
-+{
-+	struct btrfs_lru_cache_entry *entry;
-+	int ret;
-+
-+	/* Caching is optional, ignore any failures. */
-+	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
-+	if (!entry)
-+		return;
-+
-+	entry->key = dir;
-+	ret = btrfs_lru_cache_store(&sctx->dir_created_cache, entry, GFP_KERNEL);
-+	if (ret < 0)
-+		kfree(entry);
-+}
-+
- /*
-  * We need some special handling for inodes that get processed before the parent
-  * directory got created. See process_recorded_refs for details.
-@@ -2951,6 +2977,9 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
- 	struct btrfs_key di_key;
- 	struct btrfs_dir_item *di;
- 
-+	if (btrfs_lru_cache_lookup(&sctx->dir_created_cache, dir))
-+		return 1;
-+
- 	path = alloc_path_for_send();
- 	if (!path)
- 		return -ENOMEM;
-@@ -2974,6 +3003,7 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
- 		if (di_key.type != BTRFS_ROOT_ITEM_KEY &&
- 		    di_key.objectid < sctx->send_progress) {
- 			ret = 1;
-+			cache_dir_created(sctx, dir);
- 			break;
- 		}
- 	}
-@@ -3003,7 +3033,12 @@ static int send_create_inode_if_needed(struct send_ctx *sctx)
- 			return 0;
+@@ -126,7 +134,7 @@ int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
+ 		lru_entry = list_first_entry(&cache->lru_list,
+ 					     struct btrfs_lru_cache_entry,
+ 					     lru_list);
+-		delete_entry(cache, lru_entry);
++		btrfs_lru_cache_remove(cache, lru_entry);
  	}
  
--	return send_create_inode(sctx, sctx->cur_ino);
-+	ret = send_create_inode(sctx, sctx->cur_ino);
-+
-+	if (ret == 0 && S_ISDIR(sctx->cur_inode_mode))
-+		cache_dir_created(sctx, sctx->cur_ino);
-+
-+	return ret;
- }
+ 	list_add_tail(&new_entry->lru_list, &cache->lru_list);
+@@ -148,7 +156,7 @@ void btrfs_lru_cache_clear(struct btrfs_lru_cache *cache)
+ 	struct btrfs_lru_cache_entry *tmp;
  
- struct recorded_ref {
-@@ -4401,6 +4436,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 				ret = send_create_inode(sctx, cur->dir);
- 				if (ret < 0)
- 					goto out;
-+				cache_dir_created(sctx, cur->dir);
- 			}
- 		}
+ 	list_for_each_entry_safe(entry, tmp, &cache->lru_list, lru_list)
+-		delete_entry(cache, entry);
++		btrfs_lru_cache_remove(cache, entry);
  
-@@ -8109,6 +8145,8 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 	INIT_LIST_HEAD(&sctx->name_cache_list);
+ 	ASSERT(cache->size == 0);
+ 	ASSERT(mtree_empty(&cache->entries));
+diff --git a/fs/btrfs/lru_cache.h b/fs/btrfs/lru_cache.h
+index de887d438cfb..57e5bdc57e6d 100644
+--- a/fs/btrfs/lru_cache.h
++++ b/fs/btrfs/lru_cache.h
+@@ -58,6 +58,8 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
+ int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
+ 			  struct btrfs_lru_cache_entry *new_entry,
+ 			  gfp_t gfp);
++void btrfs_lru_cache_remove(struct btrfs_lru_cache *cache,
++			    struct btrfs_lru_cache_entry *entry);
+ void btrfs_lru_cache_clear(struct btrfs_lru_cache *cache);
  
- 	btrfs_lru_cache_init(&sctx->backref_cache, SEND_MAX_BACKREF_CACHE_SIZE);
-+	btrfs_lru_cache_init(&sctx->dir_created_cache,
-+			     SEND_MAX_DIR_CREATED_CACHE_SIZE);
- 
- 	sctx->pending_dir_moves = RB_ROOT;
- 	sctx->waiting_dir_moves = RB_ROOT;
-@@ -8373,6 +8411,7 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 		close_current_inode(sctx);
- 
- 		btrfs_lru_cache_clear(&sctx->backref_cache);
-+		btrfs_lru_cache_clear(&sctx->dir_created_cache);
- 
- 		kfree(sctx);
- 	}
+ #endif /* BTRFS_LRU_CACHE_H */
 -- 
 2.35.1
 

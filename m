@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50A3AC5479D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39783C46467
+	for <linux-btrfs@archiver.kernel.org>; Wed, 11 Jan 2023 11:39:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238397AbjAKLjk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 11 Jan 2023 06:39:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37886 "EHLO
+        id S232760AbjAKLjl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 11 Jan 2023 06:39:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37736 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238380AbjAKLjJ (ORCPT
+        with ESMTP id S231806AbjAKLjK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 11 Jan 2023 06:39:09 -0500
+        Wed, 11 Jan 2023 06:39:10 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B5905BE3C
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:39 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38A428FD8
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 03:36:42 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 41FBCB81BAD
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:38 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7A017C433D2
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:36 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id E080AB81BB6
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:40 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2BD07C433D2
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jan 2023 11:36:39 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1673436997;
-        bh=9j5W0lVj6TIU1yHV7NhWjifyNHGaw9QD8f4IlOIMQeE=;
+        s=k20201202; t=1673436999;
+        bh=1fX028zxFCx5/VXZF94TGwUkwBcK5Mkvrq51Ihk4WeM=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=M6sfizGH1RdJH9uTUYtDnGeywS3ETEDob4S5njDP9A8FPM2C67jGlOtHvcksCcG1n
-         p+LB5eGzkvM7eaT6SiHytwti4IhLbwmdRvJCyQq9TjYKr+aRHeB565KnVSawm5CKTB
-         NRUn5hi+GSK5qrzQG7ocP0abS5rdSaat/vUdqqGxoW+OqVHX1so6GSuvPp9jzZqkig
-         aDqM/JLcEUybA2PvBXBfX2xbwFouUeTWhNjkypg0d7RsWw8sqGXmrSfJA1hwNy6Q+5
-         rvLrrIn3udUHnkQ0qP2v7+M83du70/JpOMZR8li8eLqx4uRP+XyGATk7VSciX6dpNH
-         jyG+LlNOKmhJQ==
+        b=W+IiJMDpustMHilj/1L4E+GOLTYJPEr0t7ZCMgtpU0cOKCqrEhvYoUGQHTlktDI/U
+         25rlzAgiU9/0euCdxv5nsTGhFPPIrTZkKWE5hXkJ7b2mkfhpNx2o0+oQ5VCMgBnkni
+         tDa5Hr2Toa1R13mW/6ibSIg/aWF8nLOHGPDTtk8VCKLc3+2C6mRUiti5tFPgtrXvZy
+         hxg7Tr/pVgwrpWnVMSdG11gVdHXwaAsDZo/iYUdXhgH8i/BBw0Gx8ChqJbnAIvJ6fy
+         h+ur0R/Fmhy1t2bRa+Sq5IpEuaacrP/YT9nWRLC7OqVUdFLJXgDy7IETjbsSYx5Mnw
+         SQpEJt/IhG8xQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 15/19] btrfs: allow a generation number to be associated with lru cache entries
-Date:   Wed, 11 Jan 2023 11:36:16 +0000
-Message-Id: <226a658a3260bb4b25b43bc08345a79c8578fe9f.1673436276.git.fdmanana@suse.com>
+Subject: [PATCH 18/19] btrfs: send: update size of roots array for backref cache entries
+Date:   Wed, 11 Jan 2023 11:36:19 +0000
+Message-Id: <cdb915da279873161aecf299b9a1ecd102a5d246.1673436276.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
 References: <cover.1673436276.git.fdmanana@suse.com>
@@ -48,17 +48,21 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This allows an optional generation number to be associated to each entry
-of the lru cache. Entries with the same key but different generations, are
-stored in the linked list to which the maple tree points to. This is meant
-to be used when there's a small number of different generations, so the
-impact of searching a linked list is negligible. The goal is to get rid of
-the open coded name cache in the send code (which uses a radix tree and a
-a similar linked list of values/entries) and use instead the lru cache
-module. For that particular use case we have at most 2 generations that
-are associated to each key (inode number): one generation for the send
-root and another generation for the parent root. The actual migration of
-the send name cache is done in the next patch in the series.
+Currently we limit the size of the roots array, for backref cache entries,
+to 12 elements. This is because that number is enough for most cases and
+to make the backref cache entry size to be exactly 128 bytes, so that
+memory is allocated from the kmalloc-128 slab and no space is wasted.
+
+However recent changes in the series refactored the backref cache to be
+more generic and allow it to be reused for other purposes, which resulted
+in increasing the size of the embedded structure btrfs_lru_cache_entry in
+order to allow for supporting inode numbers as keys on 32 bits system and
+allow multiple generations per key. This resulted in increasing the size
+of struct backref_cache_entry from 128 bytes to 152 bytes. Since the cache
+entries are allocated with kmalloc(), it means we end up using the slab
+kmalloc-192, so we end up wasting 40 bytes of memory. So bump the size of
+the roots array from 12 elements to 17 elements, so we end up using 192
+bytes for each backref cache entry.
 
 This patch is part of a larger patchset and the changelog of the last
 patch in the series contains a sample performance test and results.
@@ -86,137 +90,41 @@ The patches that comprise the patchset are the following:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/lru_cache.c | 12 +++++++-----
- fs/btrfs/lru_cache.h |  9 ++++++++-
- fs/btrfs/send.c      |  8 +++++---
- 3 files changed, 20 insertions(+), 9 deletions(-)
+ fs/btrfs/send.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/lru_cache.c b/fs/btrfs/lru_cache.c
-index 10c1f9ceb706..d85341946213 100644
---- a/fs/btrfs/lru_cache.c
-+++ b/fs/btrfs/lru_cache.c
-@@ -18,12 +18,13 @@ void btrfs_lru_cache_init(struct btrfs_lru_cache *cache, unsigned int max_size)
- 	cache->max_size = max_size;
- }
- 
--static struct btrfs_lru_cache_entry *match_entry(struct list_head *head, u64 key)
-+static struct btrfs_lru_cache_entry *match_entry(struct list_head *head, u64 key,
-+						 u64 gen)
- {
- 	struct btrfs_lru_cache_entry *entry;
- 
- 	list_for_each_entry(entry, head, list)
--		if (entry->key == key)
-+		if (entry->key == key && entry->gen == gen)
- 			return entry;
- 
- 	return NULL;
-@@ -34,11 +35,12 @@ static struct btrfs_lru_cache_entry *match_entry(struct list_head *head, u64 key
-  *
-  * @cache:      The cache.
-  * @key:        The key of the entry we are looking for.
-+ * @gen:        Generation associated to the key.
-  *
-  * Returns the entry associated with the key or NULL if none found.
-  */
- struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cache,
--						     u64 key)
-+						     u64 key, u64 gen)
- {
- 	struct list_head *head;
- 	struct btrfs_lru_cache_entry *entry;
-@@ -47,7 +49,7 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
- 	if (!head)
- 		return NULL;
- 
--	entry = match_entry(head, key);
-+	entry = match_entry(head, key, gen);
- 	if (entry)
- 		list_move_tail(&entry->lru_list, &cache->lru_list);
- 
-@@ -110,7 +112,7 @@ int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
- 		kfree(head);
- 		head = mtree_load(&cache->entries, key);
- 		ASSERT(head != NULL);
--		if (match_entry(head, key) != NULL)
-+		if (match_entry(head, key, new_entry->gen) != NULL)
- 			return -EEXIST;
- 		list_add_tail(&new_entry->list, head);
- 	} else if (ret < 0) {
-diff --git a/fs/btrfs/lru_cache.h b/fs/btrfs/lru_cache.h
-index 368248be42a2..de887d438cfb 100644
---- a/fs/btrfs/lru_cache.h
-+++ b/fs/btrfs/lru_cache.h
-@@ -17,6 +17,13 @@
- struct btrfs_lru_cache_entry {
- 	struct list_head lru_list;
- 	u64 key;
-+	/*
-+	 * Optional generation associated to a key. Use 0 if not needed/used.
-+	 * Entries with the same key and different generations are stored in a
-+	 * linked list, so use this only for cases where there's a small number
-+	 * of different generations.
-+	 */
-+	u64 gen;
- 	/*
- 	 * The maple tree uses unsigned long type for the keys, which is 32 bits
- 	 * on 32 bits systems, and 64 bits on 64 bits systems. So if we want to
-@@ -47,7 +54,7 @@ static inline unsigned int btrfs_lru_cache_size(const struct btrfs_lru_cache *ca
- 
- void btrfs_lru_cache_init(struct btrfs_lru_cache *cache, unsigned int max_size);
- struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cache,
--						     u64 key);
-+						     u64 key, u64 gen);
- int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
- 			  struct btrfs_lru_cache_entry *new_entry,
- 			  gfp_t gfp);
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index bc232eb60e68..3966f8ce7e49 100644
+index 7d327d977fa0..ae2d462f647e 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -120,7 +120,7 @@ static_assert(offsetof(struct backref_cache_entry, entry) == 0);
+@@ -84,19 +84,20 @@ struct clone_root {
+ #define SEND_MAX_NAME_CACHE_SIZE 256
+ 
  /*
-  * Max number of entries in the cache that stores directories that were already
-  * created. The cache uses raw struct btrfs_lru_cache_entry entries, so it uses
-- * at most 4096 bytes - sizeof(struct btrfs_lru_cache_entry) is 40 bytes, but
-+ * at most 4096 bytes - sizeof(struct btrfs_lru_cache_entry) is 48 bytes, but
-  * the kmalloc-64 slab is used, so we get 4096 bytes (64 bytes * 64).
+- * Limit the root_ids array of struct backref_cache_entry to 12 elements.
+- * This makes the size of a cache entry to be exactly 128 bytes on x86_64.
++ * Limit the root_ids array of struct backref_cache_entry to 17 elements.
++ * This makes the size of a cache entry to be exactly 192 bytes on x86_64, which
++ * can be satisfied from the kmalloc-192 slab, without wasting any space.
+  * The most common case is to have a single root for cloning, which corresponds
+- * to the send root. Having the user specify more than 11 clone roots is not
++ * to the send root. Having the user specify more than 16 clone roots is not
+  * common, and in such rare cases we simply don't use caching if the number of
+- * cloning roots that lead down to a leaf is more than 12.
++ * cloning roots that lead down to a leaf is more than 17.
   */
- #define SEND_MAX_DIR_CREATED_CACHE_SIZE 64
-@@ -1422,7 +1422,7 @@ static bool lookup_backref_cache(u64 leaf_bytenr, void *ctx,
- 		return false;
- 	}
+-#define SEND_MAX_BACKREF_CACHE_ROOTS 12
++#define SEND_MAX_BACKREF_CACHE_ROOTS 17
  
--	raw_entry = btrfs_lru_cache_lookup(&sctx->backref_cache, key);
-+	raw_entry = btrfs_lru_cache_lookup(&sctx->backref_cache, key, 0);
- 	if (!raw_entry)
- 		return false;
+ /*
+  * Max number of entries in the cache.
+- * With SEND_MAX_BACKREF_CACHE_ROOTS as 12, the size in bytes, excluding
+- * maple tree's internal nodes, is 16K.
++ * With SEND_MAX_BACKREF_CACHE_ROOTS as 17, the size in bytes, excluding
++ * maple tree's internal nodes, is 24K.
+  */
+ #define SEND_MAX_BACKREF_CACHE_SIZE 128
  
-@@ -1455,6 +1455,7 @@ static void store_backref_cache(u64 leaf_bytenr, const struct ulist *root_ids,
- 		return;
- 
- 	new_entry->entry.key = leaf_bytenr >> fs_info->sectorsize_bits;
-+	new_entry->entry.gen = 0;
- 	new_entry->num_roots = 0;
- 	ULIST_ITER_INIT(&uiter);
- 	while ((node = ulist_next(root_ids, &uiter)) != NULL) {
-@@ -2957,6 +2958,7 @@ static void cache_dir_created(struct send_ctx *sctx, u64 dir)
- 		return;
- 
- 	entry->key = dir;
-+	entry->gen = 0;
- 	ret = btrfs_lru_cache_store(&sctx->dir_created_cache, entry, GFP_KERNEL);
- 	if (ret < 0)
- 		kfree(entry);
-@@ -2977,7 +2979,7 @@ static int did_create_dir(struct send_ctx *sctx, u64 dir)
- 	struct btrfs_key di_key;
- 	struct btrfs_dir_item *di;
- 
--	if (btrfs_lru_cache_lookup(&sctx->dir_created_cache, dir))
-+	if (btrfs_lru_cache_lookup(&sctx->dir_created_cache, dir, 0))
- 		return 1;
- 
- 	path = alloc_path_for_send();
 -- 
 2.35.1
 

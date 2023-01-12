@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 966B1C54EBC
-	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Jan 2023 09:12:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68550C54EBD
+	for <linux-btrfs@archiver.kernel.org>; Thu, 12 Jan 2023 09:12:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239993AbjALJLz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 12 Jan 2023 04:11:55 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56158 "EHLO
+        id S236730AbjALJMC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 12 Jan 2023 04:12:02 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57280 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239877AbjALJKX (ORCPT
+        with ESMTP id S239964AbjALJKZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 12 Jan 2023 04:10:23 -0500
+        Thu, 12 Jan 2023 04:10:25 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 07FB752C77;
-        Thu, 12 Jan 2023 01:06:12 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 382735130E;
+        Thu, 12 Jan 2023 01:06:18 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=DhsATXwlHmu+SZ1dPFlWB6mzroX2D/4ehn2O+8ff02k=; b=GjAJPutmyDUceY4lOI/Gk393i+
-        jqEQE3G0XCZVO0HjL3L3MA4b0bvRcmJBaJJgkhuJhrmsIr8bP7XanXWn0EuafeFhoRhB6WUBQr2mf
-        acTVzNT79BLUJSaaRf0F3Z50YCxZqtJnhHipy2jRxvcbuDcCSrNK2KTYIzSVFNGeK1jU+7C/I99fw
-        hqEyhLmm/BNl/SiBkf9RD5fYGVU8KAG8ZuTioU4E8k3fZQvzakTTRhj4bDRzVAnUR6QF2ezCzWBS3
-        QAnAYEp899AD+rSPvJK3DHq80o5xOnRM3QbjWcwLG4S1RPXTsFLz/Q7q6yTMZhoLABwYnPwe4591g
-        SKTPMGvw==;
+        bh=rxgocRSSsG31/epmYK904xbGZ2oxKgip0pe+IorJTRo=; b=sLuwBOkUBFynAng2QltFHyH7Ae
+        D7XSnLUFUeN8cnluGYhxdixpcyiJH+x9mYzy3Mn4j775fhW3XfbWxx8p+MLw0khLMb0ZTlpp5/4YM
+        yBQF68jpdI2lF+uiwasjFNNk9jDdvp869FOfHfYZFxYN/RjLVoLyjtfSsXc7iuwK4b8OSq9mhHw9W
+        gIbNYX65BSarvyayUaxXx32jVdVGlbc22q22iQjCj314SKPikJ/KjhaYx9iG8Do9bVUimKFOVd3/F
+        WyGa1hzC2kTRFjNwgnit7kFEmM//FICj37gz1qm/Y3lodRqeV3dTAqXeDW/mQFKSQM+0ENdjn2MMe
+        kzNPOUGw==;
 Received: from [2001:4bb8:181:656b:c87d:36c9:914c:c2ea] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pFtXD-00EGQF-Dh; Thu, 12 Jan 2023 09:06:07 +0000
+        id 1pFtXI-00EGSw-UO; Thu, 12 Jan 2023 09:06:13 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
@@ -37,9 +37,9 @@ Cc:     Damien Le Moal <damien.lemoal@wdc.com>,
         Qu Wenruo <wqu@suse.com>, Jens Axboe <axboe@kernel.dk>,
         "Darrick J. Wong" <djwong@kernel.org>, linux-block@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 11/19] btrfs: remove stripe boundary calculation for compressed I/O
-Date:   Thu, 12 Jan 2023 10:05:23 +0100
-Message-Id: <20230112090532.1212225-12-hch@lst.de>
+Subject: [PATCH 13/19] btrfs: remove struct btrfs_io_geometry
+Date:   Thu, 12 Jan 2023 10:05:25 +0100
+Message-Id: <20230112090532.1212225-14-hch@lst.de>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20230112090532.1212225-1-hch@lst.de>
 References: <20230112090532.1212225-1-hch@lst.de>
@@ -50,269 +50,216 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Qu Wenruo <wqu@suse.com>
+Now that btrfs_get_io_geometry has a single caller, we can massage it
+into a form that is more suitable for that caller and remove the
+marshalling into and out of struct btrfs_io_geometry.
 
-Stop looking at the stripe boundary in alloc_compressed_bio() now that
-that btrfs_submit_bio can split bios, open code the now trivial code
-from alloc_compressed_bio() in btrfs_submit_compressed_read and stop
-maintaining the pending_ios count for reads as there is always just
-a single bio now.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-[hch: remove more cruft in btrfs_submit_compressed_read,
-      use btrfs_zoned_get_device in alloc_compressed_bio]
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/compression.c | 131 +++++++++++------------------------------
- 1 file changed, 34 insertions(+), 97 deletions(-)
+ fs/btrfs/volumes.c | 115 +++++++++++++--------------------------------
+ fs/btrfs/volumes.h |  18 -------
+ 2 files changed, 32 insertions(+), 101 deletions(-)
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index efa040eb6b19d1..547cb626dfdeb9 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -141,12 +141,15 @@ static int compression_decompress(int type, struct list_head *ws,
- 
- static int btrfs_decompress_bio(struct compressed_bio *cb);
- 
--static void finish_compressed_bio_read(struct compressed_bio *cb)
-+static void end_compressed_bio_read(struct btrfs_bio *bbio)
- {
-+	struct compressed_bio *cb = bbio->private;
- 	unsigned int index;
- 	struct page *page;
- 
--	if (cb->status == BLK_STS_OK)
-+	if (bbio->bio.bi_status)
-+		cb->status = bbio->bio.bi_status;
-+	else
- 		cb->status = errno_to_blk_status(btrfs_decompress_bio(cb));
- 
- 	/* Release the compressed pages */
-@@ -162,17 +165,6 @@ static void finish_compressed_bio_read(struct compressed_bio *cb)
- 	/* Finally free the cb struct */
- 	kfree(cb->compressed_pages);
- 	kfree(cb);
--}
--
--static void end_compressed_bio_read(struct btrfs_bio *bbio)
--{
--	struct compressed_bio *cb = bbio->private;
--
--	if (bbio->bio.bi_status)
--		cb->status = bbio->bio.bi_status;
--
--	if (refcount_dec_and_test(&cb->pending_ios))
--		finish_compressed_bio_read(cb);
- 	bio_put(&bbio->bio);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index bcfef75b97da0d..675598c3cb35ab 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6266,91 +6266,43 @@ static bool need_full_stripe(enum btrfs_map_op op)
+ 	return (op == BTRFS_MAP_WRITE || op == BTRFS_MAP_GET_READ_MIRRORS);
  }
  
-@@ -289,43 +281,30 @@ static void end_compressed_bio_write(struct btrfs_bio *bbio)
-  *                      from or written to.
-  * @endio_func:         The endio function to call after the IO for compressed data
-  *                      is finished.
-- * @next_stripe_start:  Return value of logical bytenr of where next stripe starts.
-- *                      Let the caller know to only fill the bio up to the stripe
-- *                      boundary.
-  */
--
--
- static struct bio *alloc_compressed_bio(struct compressed_bio *cb, u64 disk_bytenr,
- 					blk_opf_t opf,
--					btrfs_bio_end_io_t endio_func,
--					u64 *next_stripe_start)
-+					btrfs_bio_end_io_t endio_func)
+-/*
+- * Calculate the geometry of a particular (address, len) tuple. This
+- * information is used to calculate how big a particular bio can get before it
+- * straddles a stripe.
+- *
+- * @fs_info: the filesystem
+- * @em:      mapping containing the logical extent
+- * @op:      type of operation - write or read
+- * @logical: address that we want to figure out the geometry of
+- * @io_geom: pointer used to return values
+- *
+- * Returns < 0 in case a chunk for the given logical address cannot be found,
+- * usually shouldn't happen unless @logical is corrupted, 0 otherwise.
+- */
+-int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, struct extent_map *em,
+-			  enum btrfs_map_op op, u64 logical,
+-			  struct btrfs_io_geometry *io_geom)
++static u64 btrfs_max_io_len(struct map_lookup *map, enum btrfs_map_op op,
++			    u64 offset, u64 *stripe_nr, u64 *stripe_offset,
++			    u64 *full_stripe_start)
  {
--	struct btrfs_fs_info *fs_info = btrfs_sb(cb->inode->i_sb);
--	struct btrfs_io_geometry geom;
--	struct extent_map *em;
- 	struct bio *bio;
--	int ret;
+-	struct map_lookup *map;
+-	u64 len;
+-	u64 offset;
+-	u64 stripe_offset;
+-	u64 stripe_nr;
+-	u32 stripe_len;
+-	u64 raid56_full_stripe_start = (u64)-1;
+-	int data_stripes;
++	u32 stripe_len = map->stripe_len;
  
- 	bio = btrfs_bio_alloc(BIO_MAX_VECS, opf, BTRFS_I(cb->inode), endio_func,
- 			      cb);
- 	bio->bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
+ 	ASSERT(op != BTRFS_MAP_DISCARD);
  
--	em = btrfs_get_chunk_map(fs_info, disk_bytenr, fs_info->sectorsize);
--	if (IS_ERR(em)) {
--		bio_put(bio);
--		return ERR_CAST(em);
--	}
-+	if (bio_op(bio) == REQ_OP_ZONE_APPEND) {
-+		struct btrfs_fs_info *fs_info = btrfs_sb(cb->inode->i_sb);
-+		struct btrfs_device *device;
+-	map = em->map_lookup;
+-	/* Offset of this logical address in the chunk */
+-	offset = logical - em->start;
+-	/* Len of a stripe in a chunk */
+-	stripe_len = map->stripe_len;
+ 	/*
+-	 * Stripe_nr is where this block falls in
+-	 * stripe_offset is the offset of this block in its stripe.
++	 * Stripe_nr is the stripe where this block falls.
++	 * Stripe_offset is the offset of this block in its stripe.
+ 	 */
+-	stripe_nr = div64_u64_rem(offset, stripe_len, &stripe_offset);
+-	ASSERT(stripe_offset < U32_MAX);
++	*stripe_nr = div64_u64_rem(offset, stripe_len, stripe_offset);
++	ASSERT(*stripe_offset < U32_MAX);
  
--	if (bio_op(bio) == REQ_OP_ZONE_APPEND)
--		bio_set_dev(bio, em->map_lookup->stripes[0].dev->bdev);
-+		device = btrfs_zoned_get_device(fs_info, disk_bytenr,
-+						fs_info->sectorsize);
-+		if (IS_ERR(device)) {
-+			bio_put(bio);
-+			return ERR_CAST(device);
-+		}
+-	data_stripes = nr_data_stripes(map);
++	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
++		unsigned long full_stripe_len =
++			stripe_len * nr_data_stripes(map);
  
--	ret = btrfs_get_io_geometry(fs_info, em, btrfs_op(bio), disk_bytenr, &geom);
--	free_extent_map(em);
--	if (ret < 0) {
--		bio_put(bio);
--		return ERR_PTR(ret);
-+		bio_set_dev(bio, device->bdev);
- 	}
--	*next_stripe_start = disk_bytenr + geom.len;
- 	refcount_inc(&cb->pending_ios);
- 	return bio;
- }
-@@ -352,7 +331,6 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 	struct bio *bio = NULL;
- 	struct compressed_bio *cb;
- 	u64 cur_disk_bytenr = disk_start;
--	u64 next_stripe_start;
- 	blk_status_t ret = BLK_STS_OK;
- 	const bool use_append = btrfs_use_zone_append(inode, disk_start);
- 	const enum req_op bio_op = REQ_BTRFS_ONE_ORDERED |
-@@ -388,8 +366,7 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 		/* Allocate new bio if submitted or not yet allocated */
- 		if (!bio) {
- 			bio = alloc_compressed_bio(cb, cur_disk_bytenr,
--				bio_op | write_flags, end_compressed_bio_write,
--				&next_stripe_start);
-+				bio_op | write_flags, end_compressed_bio_write);
- 			if (IS_ERR(bio)) {
- 				ret = errno_to_blk_status(PTR_ERR(bio));
- 				break;
-@@ -398,20 +375,12 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 			if (blkcg_css)
- 				bio->bi_opf |= REQ_CGROUP_PUNT;
- 		}
--		/*
--		 * We should never reach next_stripe_start start as we will
--		 * submit comp_bio when reach the boundary immediately.
--		 */
--		ASSERT(cur_disk_bytenr != next_stripe_start);
--
+-	/* Only stripe based profiles needs to check against stripe length. */
+-	if (map->type & BTRFS_BLOCK_GROUP_STRIPE_MASK) {
+-		u64 max_len = stripe_len - stripe_offset;
++		*full_stripe_start =
++			div64_u64(offset, full_stripe_len) * full_stripe_len;
+ 
  		/*
- 		 * We have various limits on the real read size:
--		 * - stripe boundary
- 		 * - page boundary
- 		 * - compressed length boundary
+-		 * In case of raid56, we need to know the stripe aligned start
++		 * For writes to RAID[56], allow to write a full stripe set, but
++		 * no straddling of stripe sets.
  		 */
--		real_size = min_t(u64, U32_MAX, next_stripe_start - cur_disk_bytenr);
--		real_size = min_t(u64, real_size, PAGE_SIZE - offset_in_page(offset));
-+		real_size = min_t(u64, U32_MAX, PAGE_SIZE - offset_in_page(offset));
- 		real_size = min_t(u64, real_size, compressed_len - offset);
- 		ASSERT(IS_ALIGNED(real_size, fs_info->sectorsize));
- 
-@@ -426,9 +395,6 @@ blk_status_t btrfs_submit_compressed_write(struct btrfs_inode *inode, u64 start,
- 			submit = true;
- 
- 		cur_disk_bytenr += added;
--		/* Reached stripe boundary */
--		if (cur_disk_bytenr == next_stripe_start)
--			submit = true;
- 
- 		/* Finished the range */
- 		if (cur_disk_bytenr == disk_start + compressed_len)
-@@ -623,10 +589,9 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	struct extent_map_tree *em_tree;
- 	struct compressed_bio *cb;
- 	unsigned int compressed_len;
--	struct bio *comp_bio = NULL;
-+	struct bio *comp_bio;
- 	const u64 disk_bytenr = bio->bi_iter.bi_sector << SECTOR_SHIFT;
- 	u64 cur_disk_byte = disk_bytenr;
--	u64 next_stripe_start;
- 	u64 file_offset;
- 	u64 em_len;
- 	u64 em_start;
-@@ -693,37 +658,24 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 	/* include any pages we added in add_ra-bio_pages */
- 	cb->len = bio->bi_iter.bi_size;
- 
-+	comp_bio = btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ,
-+				   BTRFS_I(cb->inode),
-+				   end_compressed_bio_read, cb);
-+	comp_bio->bi_iter.bi_sector = cur_disk_byte >> SECTOR_SHIFT;
-+
- 	while (cur_disk_byte < disk_bytenr + compressed_len) {
- 		u64 offset = cur_disk_byte - disk_bytenr;
- 		unsigned int index = offset >> PAGE_SHIFT;
- 		unsigned int real_size;
- 		unsigned int added;
- 		struct page *page = cb->compressed_pages[index];
--		bool submit = false;
- 
--		/* Allocate new bio if submitted or not yet allocated */
--		if (!comp_bio) {
--			comp_bio = alloc_compressed_bio(cb, cur_disk_byte,
--					REQ_OP_READ, end_compressed_bio_read,
--					&next_stripe_start);
--			if (IS_ERR(comp_bio)) {
--				cb->status = errno_to_blk_status(PTR_ERR(comp_bio));
--				break;
+-		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+-			unsigned long full_stripe_len = stripe_len * data_stripes;
+-			raid56_full_stripe_start = offset;
+-
+-			/*
+-			 * Allow a write of a full stripe, but make sure we
+-			 * don't allow straddling of stripes
+-			 */
+-			raid56_full_stripe_start = div64_u64(raid56_full_stripe_start,
+-					full_stripe_len);
+-			raid56_full_stripe_start *= full_stripe_len;
+-
+-			/*
+-			 * For writes to RAID[56], allow a full stripeset across
+-			 * all disks. For other RAID types and for RAID[56]
+-			 * reads, just allow a single stripe (on a single disk).
+-			 */
+-			if (op == BTRFS_MAP_WRITE) {
+-				max_len = stripe_len * data_stripes -
+-					  (offset - raid56_full_stripe_start);
 -			}
 -		}
--		/*
--		 * We should never reach next_stripe_start start as we will
--		 * submit comp_bio when reach the boundary immediately.
--		 */
--		ASSERT(cur_disk_byte != next_stripe_start);
- 		/*
- 		 * We have various limit on the real read size:
--		 * - stripe boundary
- 		 * - page boundary
- 		 * - compressed length boundary
- 		 */
--		real_size = min_t(u64, U32_MAX, next_stripe_start - cur_disk_byte);
--		real_size = min_t(u64, real_size, PAGE_SIZE - offset_in_page(offset));
-+		real_size = min_t(u64, U32_MAX, PAGE_SIZE - offset_in_page(offset));
- 		real_size = min_t(u64, real_size, compressed_len - offset);
- 		ASSERT(IS_ALIGNED(real_size, fs_info->sectorsize));
- 
-@@ -734,35 +686,20 @@ void btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
- 		 */
- 		ASSERT(added == real_size);
- 		cur_disk_byte += added;
--
--		/* Reached stripe boundary, need to submit */
--		if (cur_disk_byte == next_stripe_start)
--			submit = true;
--
--		/* Has finished the range, need to submit */
--		if (cur_disk_byte == disk_bytenr + compressed_len)
--			submit = true;
--
--		if (submit) {
--			/*
--			 * Save the initial offset of this chunk, as there
--			 * is no direct correlation between compressed pages and
--			 * the original file offset.  The field is only used for
--			 * priting error messages.
--			 */
--			btrfs_bio(comp_bio)->file_offset = file_offset;
--
--			ASSERT(comp_bio->bi_iter.bi_size);
--			btrfs_submit_bio(fs_info, comp_bio, mirror_num);
--			comp_bio = NULL;
--		}
+-		len = min_t(u64, em->len - offset, max_len);
+-	} else {
+-		len = em->len - offset;
++		if (op == BTRFS_MAP_WRITE)
++			return full_stripe_len - (offset - *full_stripe_start);
  	}
  
- 	if (memstall)
- 		psi_memstall_leave(&pflags);
- 
--	if (refcount_dec_and_test(&cb->pending_ios))
--		finish_compressed_bio_read(cb);
+-	io_geom->len = len;
+-	io_geom->offset = offset;
+-	io_geom->stripe_len = stripe_len;
+-	io_geom->stripe_nr = stripe_nr;
+-	io_geom->stripe_offset = stripe_offset;
+-	io_geom->raid56_stripe_offset = raid56_full_stripe_start;
+-
+-	return 0;
 +	/*
-+	 * Just stash the initial offset of this chunk, as there is no direct
-+	 * correlation between compressed pages and the original file offset.
-+	 * The field is only used for priting error messages anyway.
++	 * For other RAID types and for RAID[56] reads, just allow a single
++	 * stripe (on a single disk).
 +	 */
-+	btrfs_bio(comp_bio)->file_offset = file_offset;
-+
-+	ASSERT(comp_bio->bi_iter.bi_size);
-+	btrfs_submit_bio(fs_info, comp_bio, mirror_num);
- 	return;
++	if (map->type & BTRFS_BLOCK_GROUP_STRIPE_MASK)
++		return stripe_len - *stripe_offset;
++	return U64_MAX;
+ }
  
- fail:
+ static void set_io_stripe(struct btrfs_io_stripe *dst, const struct map_lookup *map,
+@@ -6369,6 +6321,7 @@ int __btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ {
+ 	struct extent_map *em;
+ 	struct map_lookup *map;
++	u64 map_offset;
+ 	u64 stripe_offset;
+ 	u64 stripe_nr;
+ 	u64 stripe_len;
+@@ -6387,7 +6340,7 @@ int __btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	int patch_the_first_stripe_for_dev_replace = 0;
+ 	u64 physical_to_patch_in_first_stripe = 0;
+ 	u64 raid56_full_stripe_start = (u64)-1;
+-	struct btrfs_io_geometry geom;
++	u64 max_len;
+ 
+ 	ASSERT(bioc_ret);
+ 	ASSERT(op != BTRFS_MAP_DISCARD);
+@@ -6395,18 +6348,14 @@ int __btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 	em = btrfs_get_chunk_map(fs_info, logical, *length);
+ 	ASSERT(!IS_ERR(em));
+ 
+-	ret = btrfs_get_io_geometry(fs_info, em, op, logical, &geom);
+-	if (ret < 0)
+-		return ret;
+-
+ 	map = em->map_lookup;
+-
+-	*length = geom.len;
+-	stripe_len = geom.stripe_len;
+-	stripe_nr = geom.stripe_nr;
+-	stripe_offset = geom.stripe_offset;
+-	raid56_full_stripe_start = geom.raid56_stripe_offset;
+ 	data_stripes = nr_data_stripes(map);
++	stripe_len = map->stripe_len;
++
++	map_offset = logical - em->start;
++	max_len = btrfs_max_io_len(map, op, map_offset, &stripe_nr,
++				   &stripe_offset, &raid56_full_stripe_start);
++	*length = min_t(u64, em->len - map_offset, max_len);
+ 
+ 	down_read(&dev_replace->rwsem);
+ 	dev_replace_is_ongoing = btrfs_dev_replace_is_ongoing(dev_replace);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6b7a05f6cf8237..7e51f2238f72e6 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -53,21 +53,6 @@ enum btrfs_raid_types {
+ 	BTRFS_NR_RAID_TYPES
+ };
+ 
+-struct btrfs_io_geometry {
+-	/* remaining bytes before crossing a stripe */
+-	u64 len;
+-	/* offset of logical address in chunk */
+-	u64 offset;
+-	/* length of single IO stripe */
+-	u32 stripe_len;
+-	/* offset of address in stripe */
+-	u32 stripe_offset;
+-	/* number of stripe where address falls */
+-	u64 stripe_nr;
+-	/* offset of raid56 stripe into the chunk */
+-	u64 raid56_stripe_offset;
+-};
+-
+ /*
+  * Use sequence counter to get consistent device stat data on
+  * 32-bit processors.
+@@ -545,9 +530,6 @@ int __btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
+ 					       u64 logical, u64 *length_ret,
+ 					       u32 *num_stripes);
+-int btrfs_get_io_geometry(struct btrfs_fs_info *fs_info, struct extent_map *map,
+-			  enum btrfs_map_op op, u64 logical,
+-			  struct btrfs_io_geometry *io_geom);
+ int btrfs_read_sys_array(struct btrfs_fs_info *fs_info);
+ int btrfs_read_chunk_tree(struct btrfs_fs_info *fs_info);
+ struct btrfs_block_group *btrfs_create_chunk(struct btrfs_trans_handle *trans,
 -- 
 2.35.1
 

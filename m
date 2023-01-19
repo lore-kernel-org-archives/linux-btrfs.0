@@ -2,152 +2,154 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DAECC38159
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:23:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A474AC678DF
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:36:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231366AbjATFXn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Jan 2023 00:23:43 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56132 "EHLO
+        id S231396AbjATFgx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Jan 2023 00:36:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42274 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231328AbjATFX2 (ORCPT
+        with ESMTP id S230508AbjATFgh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2023 00:23:28 -0500
+        Fri, 20 Jan 2023 00:36:37 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FDD1234DE
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:13:31 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE28F6A314
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:19 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 8D59BB825E0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 16:15:34 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E0CC4C433F0;
-        Thu, 19 Jan 2023 16:15:32 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 869B2B82716
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:37 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id BFEB9C433D2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674144933;
-        bh=u9R3uediswv9sW++fMyfqPvSdof6VitFCJo57xtdQwg=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=hqGc+ndR3SAC1g/XiJJBCqOn2YVdMOJ/mEUwPwl2WshZSS08Uzf2GPNXEHbbljclr
-         FWyJ6K4sB5Jl7kxSQ2vnRX/kp//WGqgLombEeQpFVEYGROfUXSmTL5GmTXzzDrZh9d
-         6vFQTIdW7V5HJwmYeNxPDEjPoH7kP4GPoB5ccwZ3h3iumEUtLQ3PZAEuk62kXBaAQT
-         vDC1p0kQTFj81v/Cb6Cj2ejEj/x4eLTwIe5j7cWeJliqOEPiazaktViB4vlecxu20e
-         4+q3UkJM9vbO23cGKhh51LsAPhlgTuP92m1q3+Y6vZRj/h4rwd4/f4CGIko+cUEgRx
-         sqtB22FmaNJKA==
-Date:   Thu, 19 Jan 2023 16:15:30 +0000
-From:   Filipe Manana <fdmanana@kernel.org>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     linux-btrfs@vger.kernel.org, Liam.Howlett@oracle.com
-Subject: Re: new lockdep warning about registering a non-static key
-Message-ID: <20230119161530.GA767320@falcondesktop>
-References: <20230119151929.GA29005@lst.de>
+        s=k20201202; t=1674157176;
+        bh=5VnDHugdVresDPNG53FGJP+zhSjtI3mOUxYWQINnPiQ=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=FWR7CkTxY7hx1MZqRr5RNZrV9AxrAdLpnYFkt0D1WX3t3ircgix97Tmmu+g+6Grzv
+         k8G5p8UHnbsFDTaZYUtj00C8R0eB892Kpl87AU656gJSWxk26kuFsj3mBq7fbyIgNQ
+         3nklAb85/yee+rsrsV4ZU3Db4EPI8CETkDfmXqCLMTsIGb7FtIHSd9WJ6hGjdUPihm
+         tw8mygcRLJ7G8p0rNYScpjjxHzBfFiGk184KiUXwVk1Bv2SvdkQKaz7+UB8d6fcJBA
+         UudxqVuP7xR4ngeGJxpF+yV4x3zmszp0ub1+Jn2Xt00gpgI4pQRQONOttmPDgpxPRv
+         KEetsf8IJSDng==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 02/18] btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
+Date:   Thu, 19 Jan 2023 19:39:14 +0000
+Message-Id: <d762e3b7912b891e83d6d98e67100447064196a8.1674157020.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1674157020.git.fdmanana@suse.com>
+References: <cover.1674157020.git.fdmanana@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230119151929.GA29005@lst.de>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jan 19, 2023 at 04:19:29PM +0100, Christoph Hellwig wrote:
-> xfstests btrfs/168 on current misc-next:
-> 
-> btrfs/168 1s ... [   32.860171] run fstests btrfs/168 at 2023-01-19 15:18:17
-> [   33.224255] BTRFS info (device vdb): using crc32c (crc32c-intel) checksum
-> alm
-> [   33.224835] BTRFS info (device vdb): using free space tree
-> [   33.229739] BTRFS info (device vdb): auto enabling async discard
-> [   33.442266] BTRFS: device fsid 62b088c0-2f9a-490e-a6d8-e661c167c616 devid 1
-> )
-> )[   33.489483] BTRFS info (device vdc): using crc32c (crc32c-intel) checksum
-> )alm
-> )[   33.490135] BTRFS info (device vdc): using free space tree
-> )[   33.494829] BTRFS info (device vdc): auto enabling async discard
-> )[   33.495469] BTRFS info (device vdc): checking UUID tree
-> )[   33.566003] INFO: trying to register non-static key.
-> )[   33.566400] The code is fine but needs lockdep annotation, or maybe
-> )[   33.566813] you didn't initialize this object before use?
-> )[   33.567172] turning off the locking correctness validator.
-> )[   33.567527] CPU: 0 PID: 7480 Comm: btrfs Not tainted 6.2.0-rc4+ #331
-> )[   33.567930] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS
-> )rel-4
-> )[   33.568665] Call Trace:
-> )[   33.568830]  <TASK>
-> )[   33.568996]  dump_stack_lvl+0x5b/0x73
-> )[   33.569256]  register_lock_class+0x48d/0x4a0
-> )[   33.569541]  ? __kmem_cache_alloc_node+0x28c/0x340
-> )[   33.569854]  ? kmalloc_trace+0x21/0x50
-> )[   33.569871]  ? btrfs_lru_cache_store+0x3e/0x1c0
-> )[   33.569871]  ? cache_dir_utimes+0xac/0xe0
-> )[   33.569871]  ? finish_inode_if_needed+0x14d1/0x17c0
-> )[   33.569871]  ? changed_cb+0x1c1/0xbd0
-> )[   33.569871]  ? btrfs_ioctl_send+0x1d6e/0x2080
-> )[   33.569871]  ? _btrfs_ioctl_send+0xd9/0x120
-> )[   33.569871]  __lock_acquire+0x6d/0x1ef0
-> )[   33.569871]  lock_acquire+0xd2/0x2e0
-> )[   33.569871]  ? mtree_insert_range+0x86/0x170
-> )[   33.569871]  ? btrfs_lru_cache_store+0x3e/0x1c0
-> )[   33.569871]  _raw_spin_lock+0x2a/0x40
-> )[   33.569871]  ? mtree_insert_range+0x86/0x170
-> )[   33.569871]  mtree_insert_range+0x86/0x170
-> )[   33.569871]  btrfs_lru_cache_store+0x5f/0x1c0
-> )[   33.569871]  cache_dir_utimes+0xac/0xe0
-> )[   33.569871]  finish_inode_if_needed+0x14d1/0x17c0
-> )[   33.569871]  ? lock_is_held_type+0xe3/0x140
-> )[   33.569871]  ? find_held_lock+0x2b/0x80
-> )[   33.569871]  changed_cb+0x1c1/0xbd0
-> )[   33.569871]  ? lock_is_held_type+0xe3/0x140
-> )[   33.569871]  ? find_held_lock+0x2b/0x80
-> )[   33.569871]  ? lock_release+0x145/0x2f0
-> )[   33.569871]  ? read_extent_buffer+0x92/0xb0
-> )[   33.569871]  btrfs_ioctl_send+0x1d6e/0x2080
-> )[   33.569871]  ? _btrfs_ioctl_send+0xf3/0x120
-> )[   33.569871]  ? rcu_read_lock_sched_held+0x36/0x70
-> )[   33.569871]  _btrfs_ioctl_send+0xd9/0x120
-> )[   33.569871]  ? __lock_acquire+0x397/0x1ef0
-> )[   33.569871]  btrfs_ioctl+0x11c1/0x3230
-> )[   33.569871]  ? lock_is_held_type+0xe3/0x140
-> )[   33.569871]  ? find_held_lock+0x2b/0x80
-> )[   33.569871]  ? lock_release+0x145/0x2f0
-> )[   33.569871]  __x64_sys_ioctl+0x80/0xb0
-> )[   33.569871]  do_syscall_64+0x34/0x80
+From: Filipe Manana <fdmanana@suse.com>
 
-Oddly I don't get anything reported here (and lockdep is enabled), but it's
-easy to see why it happens.
+At did_overwrite_ref() we always call get_inode_gen() to find out the
+generation of the inode 'ow_inode'. However we don't always need to use
+that generation, and in fact it's very common to not use it, so we end
+up doing a b+tree search on the send root, allocating a path, etc, for
+nothing. So improve on this by getting the generation only if we need
+to use it.
 
-We're passing MT_FLAGS_LOCK_EXTERN to mt_init_flags(), as we don't care
-about locking in btrfs' send, and because of that mt_init_flags() does not
-initialize the spinlock:
+This patch is part of a larger patchset and the changelog of the last
+patch in the series contains a sample performance test and results.
+The patches that comprise the patchset are the following:
 
-   (maple_tree.h)
+  btrfs: send: directly return from did_overwrite_ref() and simplify it
+  btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
+  btrfs: send: directly return from will_overwrite_ref() and simplify it
+  btrfs: send: avoid extra b+tree searches when checking reference overrides
+  btrfs: send: remove send_progress argument from can_rmdir()
+  btrfs: send: avoid duplicated orphan dir allocation and initialization
+  btrfs: send: avoid unnecessary orphan dir rbtree search at can_rmdir()
+  btrfs: send: reduce searches on parent root when checking if dir can be removed
+  btrfs: send: iterate waiting dir move rbtree only once when processing refs
+  btrfs: send: initialize all the red black trees earlier
+  btrfs: send: genericize the backref cache to allow it to be reused
+  btrfs: adapt lru cache to allow for 64 bits keys on 32 bits systems
+  btrfs: send: cache information about created directories
+  btrfs: allow a generation number to be associated with lru cache entries
+  btrfs: add an api to delete a specific entry from the lru cache
+  btrfs: send: use the lru cache to implement the name cache
+  btrfs: send: update size of roots array for backref cache entries
+  btrfs: send: cache utimes operations for directories if possible
 
-   static inline void mt_init_flags(struct maple_tree *mt, unsigned int flags)
-   {
-       mt->ma_flags = flags;
-       if (!mt_external_lock(mt))
-           spin_lock_init(&mt->ma_lock);
-       rcu_assign_pointer(mt->ma_root, NULL);
-   }
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 31 ++++++++++++++++++++++---------
+ 1 file changed, 22 insertions(+), 9 deletions(-)
 
-However at mtree_insert_range(), and other mtree_* functions, mtree_lock()
-is called unconditionally, which always tries to lock the spin lock, as it's
-defined as:
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 59106eb8b114..23060eec30de 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2193,8 +2193,8 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 			    const char *name, int name_len)
+ {
+ 	int ret;
+-	u64 gen;
+ 	u64 ow_inode;
++	u64 ow_gen = 0;
+ 
+ 	if (!sctx->parent_root)
+ 		return 0;
+@@ -2204,6 +2204,8 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 		return ret;
+ 
+ 	if (dir != BTRFS_FIRST_FREE_OBJECTID) {
++		u64 gen;
++
+ 		ret = get_inode_gen(sctx->send_root, dir, &gen);
+ 		if (ret == -ENOENT)
+ 			return 0;
+@@ -2224,12 +2226,15 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 		return ret;
+ 	}
+ 
+-	ret = get_inode_gen(sctx->send_root, ow_inode, &gen);
+-	if (ret < 0)
+-		return ret;
++	if (ow_inode == ino) {
++		ret = get_inode_gen(sctx->send_root, ow_inode, &ow_gen);
++		if (ret < 0)
++			return ret;
+ 
+-	if (ow_inode == ino && gen == ino_gen)
+-		return 0;
++		/* It's the same inode, so no overwrite happened. */
++		if (ow_gen == ino_gen)
++			return 0;
++	}
+ 
+ 	/*
+ 	 * We know that it is or will be overwritten. Check this now.
+@@ -2237,11 +2242,19 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 	 * inode 'ino' to be orphanized, therefore check if ow_inode matches
+ 	 * the current inode being processed.
+ 	 */
+-	if ((ow_inode < sctx->send_progress) ||
+-	    (ino != sctx->cur_ino && ow_inode == sctx->cur_ino &&
+-	     gen == sctx->cur_inode_gen))
++	if (ow_inode < sctx->send_progress)
+ 		return 1;
+ 
++	if (ino != sctx->cur_ino && ow_inode == sctx->cur_ino) {
++		if (ow_gen == 0) {
++			ret = get_inode_gen(sctx->send_root, ow_inode, &ow_gen);
++			if (ret < 0)
++				return ret;
++		}
++		if (ow_gen == sctx->cur_inode_gen)
++			return 1;
++	}
++
+ 	return 0;
+ }
+ 
+-- 
+2.35.1
 
-    #define mtree_lock(mt)		spin_lock((&(mt)->ma_lock))
-
-But the spinlock was not initialized, as the whole point of MT_FLAGS_LOCK_EXTERN
-is to skip locking (unless I misunderstood its purpose).
-It seems mtree_lock() should be something like:
-
-   static inline void mtree_lock(struct maple_tree *mt)
-   {
-       if (!mt_external_lock(mt))
-           spin_lock((&mt->ma_lock));
-   }
-
-And the equivalent for mtree_unlock() as well.
-
-So cc'ing Liam.
-
-Thanks.
-
-
-> )

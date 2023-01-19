@@ -2,44 +2,44 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F886C46467
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E852AC46467
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231482AbjATFhE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Jan 2023 00:37:04 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40940 "EHLO
+        id S230145AbjATFhX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Jan 2023 00:37:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42178 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230023AbjATFgm (ORCPT
+        with ESMTP id S230113AbjATFgr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2023 00:36:42 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20D304DCC2
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:19 -0800 (PST)
+        Fri, 20 Jan 2023 00:36:47 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C615460BA
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:24 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id D00B1B82714
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:35 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 09F86C433EF
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:33 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id A1726B8271A
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:50 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D5E06C433F1
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674157174;
-        bh=PUkXFO0vkBMmkKAioTgVadC6subhRz0l5q6u8bdK+AY=;
+        s=k20201202; t=1674157189;
+        bh=xKwEwzofOtFC7cTBu+gDDQtM4LGWw6uR8b+ckvS+/kQ=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=XTgb7xRYqnfWOkro2kEjQMtoIlqo9MYzUjfa95RL5DoyuKfOdAngF0E7ufRAdUyXp
-         WKkpKUxJyWyuhbTT1bj03KCx12Dx7cxbIyu+ZpzYwYBo/StQ4QW2xR9vCvvviLZUiy
-         2nuLbmu4C2xdJg39Rgle4VAOQiZpoZL/fInRfHP9L9c7ntgPRhQGfgfGylXDe0BNr4
-         aqmWEMM7vJyD6Goz1O59XKUwUELnE9IRDumSV5ReHe1b/2nobz9H/ecCiJCn7H6mW8
-         6Nkmdt1ae/ysRScgjgrOQcZcldywpzifDUtaykucDbLGzILueHl7Wh6t7PT6GU/tYD
-         ZsN3pOLqo4Ukw==
+        b=jA/KfwWT5+LHyFv4SVdQaUY66CrIdEf6frB+34/VRsb0f47PF99NYejjEvobWnzHJ
+         AfOWVsTIWe6b40Lwk6L8OLYIt3JYYdBq4pJOCNAdN3JtCtGgE1NCR9d51oLdjVZy4Y
+         xBGqtKwnFUPqcCOnwuw9yFG1tlMo09p8m3P9YgYW2zns5RzizQ6/UOF29v2LN1UD8z
+         fN/1gKApdxgNpf0VYMUll1dg28HKtxfrpY9F55a23G9d65OOYzhpIKEJ2VvWU9XAt5
+         ANmNrW8nq++rVZffNLkjJkvIt3HL91brxpiRLNr34H+rqOICzsPkAicD6aKJWKLD/e
+         YAidsCuWJMXqA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 00/18] btrfs: some optimizations for send
-Date:   Thu, 19 Jan 2023 19:39:12 +0000
-Message-Id: <cover.1674157020.git.fdmanana@suse.com>
+Subject: [PATCH v2 17/18] btrfs: send: update size of roots array for backref cache entries
+Date:   Thu, 19 Jan 2023 19:39:29 +0000
+Message-Id: <5c3179983276d6fe5096023e5b30e7b6564c53a6.1674157020.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
-References: <cover.1673436276.git.fdmanana@suse.com>
+In-Reply-To: <cover.1674157020.git.fdmanana@suse.com>
+References: <cover.1674157020.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -48,17 +48,26 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This adds some optimizations for send and some cleanups, mostly around
-processing directories. Some of the cleanups are independent.
+Currently we limit the size of the roots array, for backref cache entries,
+to 12 elements. This is because that number is enough for most cases and
+to make the backref cache entry size to be exactly 128 bytes, so that
+memory is allocated from the kmalloc-128 slab and no space is wasted.
 
-More details in the individual changelogs, and the last one contains
-results for a performance test.
+However recent changes in the series refactored the backref cache to be
+more generic and allow it to be reused for other purposes, which resulted
+in increasing the size of the embedded structure btrfs_lru_cache_entry in
+order to allow for supporting inode numbers as keys on 32 bits system and
+allow multiple generations per key. This resulted in increasing the size
+of struct backref_cache_entry from 128 bytes to 152 bytes. Since the cache
+entries are allocated with kmalloc(), it means we end up using the slab
+kmalloc-192, so we end up wasting 40 bytes of memory. So bump the size of
+the roots array from 12 elements to 17 elements, so we end up using 192
+bytes for each backref cache entry.
 
-V2: Dropped the patch that added the use of MT_FLAGS_LOCK_EXTERN,
-    it turns out it does not work how I expected it to, see:
-    https://lore.kernel.org/linux-btrfs/20230119151929.GA29005@lst.de/
+This patch is part of a larger patchset and the changelog of the last
+patch in the series contains a sample performance test and results.
+The patches that comprise the patchset are the following:
 
-Filipe Manana (18):
   btrfs: send: directly return from did_overwrite_ref() and simplify it
   btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
   btrfs: send: directly return from will_overwrite_ref() and simplify it
@@ -78,14 +87,43 @@ Filipe Manana (18):
   btrfs: send: update size of roots array for backref cache entries
   btrfs: send: cache utimes operations for directories if possible
 
- fs/btrfs/Makefile    |   3 +-
- fs/btrfs/lru_cache.c | 163 +++++++++++
- fs/btrfs/lru_cache.h |  80 ++++++
- fs/btrfs/send.c      | 645 ++++++++++++++++++++++---------------------
- 4 files changed, 572 insertions(+), 319 deletions(-)
- create mode 100644 fs/btrfs/lru_cache.c
- create mode 100644 fs/btrfs/lru_cache.h
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 7d327d977fa0..ae2d462f647e 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -84,19 +84,20 @@ struct clone_root {
+ #define SEND_MAX_NAME_CACHE_SIZE 256
+ 
+ /*
+- * Limit the root_ids array of struct backref_cache_entry to 12 elements.
+- * This makes the size of a cache entry to be exactly 128 bytes on x86_64.
++ * Limit the root_ids array of struct backref_cache_entry to 17 elements.
++ * This makes the size of a cache entry to be exactly 192 bytes on x86_64, which
++ * can be satisfied from the kmalloc-192 slab, without wasting any space.
+  * The most common case is to have a single root for cloning, which corresponds
+- * to the send root. Having the user specify more than 11 clone roots is not
++ * to the send root. Having the user specify more than 16 clone roots is not
+  * common, and in such rare cases we simply don't use caching if the number of
+- * cloning roots that lead down to a leaf is more than 12.
++ * cloning roots that lead down to a leaf is more than 17.
+  */
+-#define SEND_MAX_BACKREF_CACHE_ROOTS 12
++#define SEND_MAX_BACKREF_CACHE_ROOTS 17
+ 
+ /*
+  * Max number of entries in the cache.
+- * With SEND_MAX_BACKREF_CACHE_ROOTS as 12, the size in bytes, excluding
+- * maple tree's internal nodes, is 16K.
++ * With SEND_MAX_BACKREF_CACHE_ROOTS as 17, the size in bytes, excluding
++ * maple tree's internal nodes, is 24K.
+  */
+ #define SEND_MAX_BACKREF_CACHE_SIZE 128
+ 
 -- 
 2.35.1
 

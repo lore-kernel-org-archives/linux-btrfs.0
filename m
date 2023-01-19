@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ABB9BC678DC
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E6609C38159
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231172AbjATFhB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Jan 2023 00:37:01 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42294 "EHLO
+        id S231270AbjATFhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Jan 2023 00:37:03 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40218 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231156AbjATFgn (ORCPT
+        with ESMTP id S231146AbjATFgl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2023 00:36:43 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DBD853561
+        Fri, 20 Jan 2023 00:36:41 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE5FB6A31B
         for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:19 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id DB99AB82718
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:42 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07900C433EF
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:40 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id DE47CB82719
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:48 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1F3DCC433D2
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674157181;
-        bh=snGufMPm/cb5kRgMA0SO15pGrpkBwyPz1qeFOBbX5o8=;
+        s=k20201202; t=1674157187;
+        bh=gTL2A9flNzkxUhEVw4BmoY/h7oH7FnjGI79Re274aMY=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=RytAhhSTWqUIw0YVpAqsc1IrcNIDrNm1yzsbplH98DUv1n5l0GowjfkM8Y2dyYJrR
-         cTctrr5gly1RQTi/oKddDzYVvIw2ztqbPoTQEnVA/lGZxmOeCueCjzrXFjPOwzxbsY
-         aWo/oLPC4UkF4FNBSKiFP9mAWkMNqXVS2T3do4n9pokElL0HI1qqBXvOtAVg8iQOgH
-         6w1uHx2YI8S5vNS+E3tji2aiLb5svZ1NkLUPqZM4lkClywWLkOex28TX7hkM3sUWJ+
-         qVBgzd0rd2E4zV0bL0xAzim0qgKysr0nq0yqA5MRvbC/tCWGzesrsdMcEW9oMz4++y
-         Dvbcpokr1cSpg==
+        b=L0T+fWiINVZt6OZLWTyFJlGoQqoUBsoaLptviQXj4CajRwCXUjYcB8iQkWr7UwOsj
+         6pmCBkngR8ae0p/72EXM1RA54goPf7okyrJvArV0uuRioKfVVpZou74EAHjk1UgacZ
+         0j+7blQfpX+eBKNaJ2wLgUfoDQTGd/siM7bB7XkFC5GIM/LGfGbNRXzJTg0Cdi3BM7
+         f/IvUoknOfvdPC2klA2koXROIJP44YjdjePQ8PoqH3HdAs9TzD0fTDuLVk0nTBkHDw
+         WGTNDjbKjN4btmvhjrBl1qPnNqrMB/l5Lh8y8sH9hPloFqDUs/atyMK83US4Qr90OI
+         mNIMqRphKqnOg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 08/18] btrfs: send: reduce searches on parent root when checking if dir can be removed
-Date:   Thu, 19 Jan 2023 19:39:20 +0000
-Message-Id: <f6f2f7f039036c5fa7d52269649426b841e37788.1674157020.git.fdmanana@suse.com>
+Subject: [PATCH v2 15/18] btrfs: add an api to delete a specific entry from the lru cache
+Date:   Thu, 19 Jan 2023 19:39:27 +0000
+Message-Id: <0bd767c7525178993f30cb2dc71a82c383b9518e.1674157020.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1674157020.git.fdmanana@suse.com>
 References: <cover.1674157020.git.fdmanana@suse.com>
@@ -48,30 +48,10 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-During an incremental send, every time we remove a reference (dentry) for
-an inode and the parent directory does not exists anymore in the send
-root, we go check if we can remove the directory by making a call to
-can_rmdir(). This helper can only return true (value 1) if all dentries
-were already removed, and for that it always does a search on the parent
-root for dir index keys - if it finds any dentry referring to an inode
-with a number higher then the inode currently being processed, then the
-directory can not be removed and it must return false (value 0).
-
-However that means if a directory that was deleted had 1000 dentries, and
-each one pointed to an inode with a number higher then the number of the
-directory's inode, we end up doing 1000 searches on the parent root.
-Typically files are created in a directory after the directory was created
-and therefore they get an higher inode number than the directory. It's
-also common to have the each dentry pointing to an inode with a higher
-number then the inodes the previous dentries point to, for example when
-creating a series of files inside a directory, a very common pattern.
-
-So improve on that by having the first call to can_rmdir() for a directory
-to check the number of the inode that the last dentry points to and cache
-that inode number in the orphan dir structure. Then every subsequent call
-to can_rmdir() can avoid doing a search on the parent root if the number
-of the inode currently being processed is smaller than cached inode number
-at the directory's orphan dir structure.
+In order to replace the open coded name cache in send with the lru cache,
+we need an API for the lru cache to delete a specific entry for which we
+did a previous lookup. This adds the API for it, and a next patch in the
+series will use it.
 
 This patch is part of a larger patchset and the changelog of the last
 patch in the series contains a sample performance test and results.
@@ -98,126 +78,64 @@ The patches that comprise the patchset are the following:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 65 ++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 59 insertions(+), 6 deletions(-)
+ fs/btrfs/lru_cache.c | 16 ++++++++++++----
+ fs/btrfs/lru_cache.h |  2 ++
+ 2 files changed, 14 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index bc57fa8a6bde..cd4aa0eae66c 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -321,6 +321,7 @@ struct orphan_dir_info {
- 	u64 ino;
- 	u64 gen;
- 	u64 last_dir_index_offset;
-+	u64 dir_high_seq_ino;
- };
+diff --git a/fs/btrfs/lru_cache.c b/fs/btrfs/lru_cache.c
+index 23b061b69f65..260b4e5213a2 100644
+--- a/fs/btrfs/lru_cache.c
++++ b/fs/btrfs/lru_cache.c
+@@ -56,8 +56,16 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
+ 	return entry;
+ }
  
- struct name_cache_entry {
-@@ -3161,6 +3162,7 @@ static struct orphan_dir_info *add_orphan_dir_info(struct send_ctx *sctx,
- 	odi->ino = dir_ino;
- 	odi->gen = dir_gen;
- 	odi->last_dir_index_offset = 0;
-+	odi->dir_high_seq_ino = 0;
+-static void delete_entry(struct btrfs_lru_cache *cache,
+-			 struct btrfs_lru_cache_entry *entry)
++/*
++ * Remove an entry from the cache.
++ *
++ * @cache:     The cache to remove from.
++ * @entry:     The entry to remove from the cache.
++ *
++ * Note: this also frees the memory used by the entry.
++ */
++void btrfs_lru_cache_remove(struct btrfs_lru_cache *cache,
++			    struct btrfs_lru_cache_entry *entry)
+ {
+ 	struct list_head *prev = entry->list.prev;
  
- 	rb_link_node(&odi->node, parent, p);
- 	rb_insert_color(&odi->node, &sctx->orphan_dirs);
-@@ -3221,6 +3223,8 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
- 	struct btrfs_key loc;
- 	struct btrfs_dir_item *di;
- 	struct orphan_dir_info *odi = NULL;
-+	u64 dir_high_seq_ino = 0;
-+	u64 last_dir_index_offset = 0;
- 
- 	/*
- 	 * Don't try to rmdir the top/root subvolume dir.
-@@ -3228,17 +3232,62 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
- 	if (dir == BTRFS_FIRST_FREE_OBJECTID)
- 		return 0;
- 
-+	odi = get_orphan_dir_info(sctx, dir, dir_gen);
-+	if (odi && sctx->cur_ino < odi->dir_high_seq_ino)
-+		return 0;
-+
- 	path = alloc_path_for_send();
- 	if (!path)
- 		return -ENOMEM;
- 
-+	if (!odi) {
-+		/*
-+		 * Find the inode number associated with the last dir index
-+		 * entry. This is very likely the inode with the highest number
-+		 * of all inodes that have an entry in the directory. We can
-+		 * then use it to avoid future calls to can_rmdir(), when
-+		 * processing inodes with a lower number, from having to search
-+		 * the parent root b+tree for dir index keys.
-+		 */
-+		key.objectid = dir;
-+		key.type = BTRFS_DIR_INDEX_KEY;
-+		key.offset = (u64)-1;
-+
-+		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+		if (ret < 0) {
-+			goto out;
-+		} else if (ret > 0) {
-+			/* Can't happen, the root is never empty. */
-+			ASSERT(path->slots[0] > 0);
-+			if (WARN_ON(path->slots[0] == 0)) {
-+				ret = -EUCLEAN;
-+				goto out;
-+			}
-+			path->slots[0]--;
-+		}
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		if (key.objectid != dir || key.type != BTRFS_DIR_INDEX_KEY) {
-+			/* No index keys, dir can be removed. */
-+			ret = 1;
-+			goto out;
-+		}
-+
-+		di = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				    struct btrfs_dir_item);
-+		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
-+		dir_high_seq_ino = loc.objectid;
-+		if (sctx->cur_ino < dir_high_seq_ino) {
-+			ret = 0;
-+			goto out;
-+		}
-+
-+		btrfs_release_path(path);
-+	}
-+
- 	key.objectid = dir;
- 	key.type = BTRFS_DIR_INDEX_KEY;
--	key.offset = 0;
--
--	odi = get_orphan_dir_info(sctx, dir, dir_gen);
--	if (odi)
--		key.offset = odi->last_dir_index_offset;
-+	key.offset = odi ? odi->last_dir_index_offset : 0;
- 
- 	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
- 		struct waiting_dir_move *dm;
-@@ -3251,6 +3300,9 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
- 				struct btrfs_dir_item);
- 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
- 
-+		dir_high_seq_ino = max(dir_high_seq_ino, loc.objectid);
-+		last_dir_index_offset = found_key.offset;
-+
- 		dm = get_waiting_dir_move(sctx, loc.objectid);
- 		if (dm) {
- 			dm->rmdir_ino = dir;
-@@ -3286,7 +3338,8 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
- 		odi->gen = dir_gen;
+@@ -126,7 +134,7 @@ int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
+ 		lru_entry = list_first_entry(&cache->lru_list,
+ 					     struct btrfs_lru_cache_entry,
+ 					     lru_list);
+-		delete_entry(cache, lru_entry);
++		btrfs_lru_cache_remove(cache, lru_entry);
  	}
  
--	odi->last_dir_index_offset = found_key.offset;
-+	odi->last_dir_index_offset = last_dir_index_offset;
-+	odi->dir_high_seq_ino = max(odi->dir_high_seq_ino, dir_high_seq_ino);
+ 	list_add_tail(&new_entry->lru_list, &cache->lru_list);
+@@ -148,7 +156,7 @@ void btrfs_lru_cache_clear(struct btrfs_lru_cache *cache)
+ 	struct btrfs_lru_cache_entry *tmp;
  
- 	return 0;
- }
+ 	list_for_each_entry_safe(entry, tmp, &cache->lru_list, lru_list)
+-		delete_entry(cache, entry);
++		btrfs_lru_cache_remove(cache, entry);
+ 
+ 	ASSERT(cache->size == 0);
+ 	ASSERT(mtree_empty(&cache->entries));
+diff --git a/fs/btrfs/lru_cache.h b/fs/btrfs/lru_cache.h
+index de887d438cfb..57e5bdc57e6d 100644
+--- a/fs/btrfs/lru_cache.h
++++ b/fs/btrfs/lru_cache.h
+@@ -58,6 +58,8 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
+ int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
+ 			  struct btrfs_lru_cache_entry *new_entry,
+ 			  gfp_t gfp);
++void btrfs_lru_cache_remove(struct btrfs_lru_cache *cache,
++			    struct btrfs_lru_cache_entry *entry);
+ void btrfs_lru_cache_clear(struct btrfs_lru_cache *cache);
+ 
+ #endif /* BTRFS_LRU_CACHE_H */
 -- 
 2.35.1
 

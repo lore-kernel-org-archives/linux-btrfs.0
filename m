@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5411CC7112F
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:36:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABB9BC678DC
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231431AbjATFgz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Jan 2023 00:36:55 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40942 "EHLO
+        id S231172AbjATFhB (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Jan 2023 00:37:01 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42294 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230496AbjATFgh (ORCPT
+        with ESMTP id S231156AbjATFgn (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2023 00:36:37 -0500
+        Fri, 20 Jan 2023 00:36:43 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE6CB6A31F
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DBD853561
         for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:19 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 7494AB8271D
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:51 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B6A40C433D2
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:49 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id DB99AB82718
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07900C433EF
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674157190;
-        bh=pBgcnaEKimQGquxSVWRD6yR4nP+3nu0sU5mfw3OsVMQ=;
+        s=k20201202; t=1674157181;
+        bh=snGufMPm/cb5kRgMA0SO15pGrpkBwyPz1qeFOBbX5o8=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=u0c3ut2JHxXEZZkYW4oGZievyiHFVxoV2OpOJxlk+hZJi6lhv48FLfMl+IP4Nmi24
-         Jh5A9leMkRaDYikHBhJyiLmVUU9p/UZe/Bt0oHoKU5oUtcYHR90AJgf1ZOCOOpEzUF
-         qED+1Npun1fXCmDcvXv9TgRUB2z+SyFC44DfQ24ejupVZhefnf7/QBREhhCD2GF631
-         BZoq2ifamh+XNn8i3ilje+WrmNMz+qIbKMly1uSViJ6sA9n/hRrXdM7vWku3akM/U+
-         EjKFTn5Ja2suaaLO+b3E9g3WkWILuYnynm08fT8DI6mB4sa1EEj9yIUCI0pn7ayc4g
-         NoNALOg201q5Q==
+        b=RytAhhSTWqUIw0YVpAqsc1IrcNIDrNm1yzsbplH98DUv1n5l0GowjfkM8Y2dyYJrR
+         cTctrr5gly1RQTi/oKddDzYVvIw2ztqbPoTQEnVA/lGZxmOeCueCjzrXFjPOwzxbsY
+         aWo/oLPC4UkF4FNBSKiFP9mAWkMNqXVS2T3do4n9pokElL0HI1qqBXvOtAVg8iQOgH
+         6w1uHx2YI8S5vNS+E3tji2aiLb5svZ1NkLUPqZM4lkClywWLkOex28TX7hkM3sUWJ+
+         qVBgzd0rd2E4zV0bL0xAzim0qgKysr0nq0yqA5MRvbC/tCWGzesrsdMcEW9oMz4++y
+         Dvbcpokr1cSpg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 18/18] btrfs: send: cache utimes operations for directories if possible
-Date:   Thu, 19 Jan 2023 19:39:30 +0000
-Message-Id: <4483b872a3d205aa9db83be74ae7f7730b32380d.1674157020.git.fdmanana@suse.com>
+Subject: [PATCH v2 08/18] btrfs: send: reduce searches on parent root when checking if dir can be removed
+Date:   Thu, 19 Jan 2023 19:39:20 +0000
+Message-Id: <f6f2f7f039036c5fa7d52269649426b841e37788.1674157020.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1674157020.git.fdmanana@suse.com>
 References: <cover.1674157020.git.fdmanana@suse.com>
@@ -48,29 +48,34 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Whenever we add or remove an entry to a directory, we issue an utimes
-command for the directory. If we add 1000 entries to a directory (create
-1000 files under it or move 1000 files to it), then we issue the same
-utimes command 1000 times, which increases the send stream size, results
-in more pipe IO, one search in the send b+tree, allocating one path for
-the search, etc, as well as making the receiver do a system call for each
-duplicated utimes command.
+During an incremental send, every time we remove a reference (dentry) for
+an inode and the parent directory does not exists anymore in the send
+root, we go check if we can remove the directory by making a call to
+can_rmdir(). This helper can only return true (value 1) if all dentries
+were already removed, and for that it always does a search on the parent
+root for dir index keys - if it finds any dentry referring to an inode
+with a number higher then the inode currently being processed, then the
+directory can not be removed and it must return false (value 0).
 
-We also issue an utimes command when we create a new directory, but later
-we might add entries to it corresponding to inodes with an higher inode
-number, so it's pointless to issue the utimes command before we create
-the last inode under the directory.
+However that means if a directory that was deleted had 1000 dentries, and
+each one pointed to an inode with a number higher then the number of the
+directory's inode, we end up doing 1000 searches on the parent root.
+Typically files are created in a directory after the directory was created
+and therefore they get an higher inode number than the directory. It's
+also common to have the each dentry pointing to an inode with a higher
+number then the inodes the previous dentries point to, for example when
+creating a series of files inside a directory, a very common pattern.
 
-So use a lru cache to track directories for which we must send a utimes
-command. When we need to remove an entry from the cache, we issue the
-utimes command for the respective directory. When finishing the send
-operation, we go over each cache element and issue the respective utimes
-command. Finally the caching is entirely optional, just a performance
-optimization, meaning that if we fail to cache (due to memory allocation
-failure), we issue the utimes command right away, that is, we fallback
-to the previous, unoptimized, behaviour.
+So improve on that by having the first call to can_rmdir() for a directory
+to check the number of the inode that the last dentry points to and cache
+that inode number in the orphan dir structure. Then every subsequent call
+to can_rmdir() can avoid doing a search on the parent root if the number
+of the inode currently being processed is smaller than cached inode number
+at the directory's orphan dir structure.
 
-This patch belongs to a patchset comprised of the following patches:
+This patch is part of a larger patchset and the changelog of the last
+patch in the series contains a sample performance test and results.
+The patches that comprise the patchset are the following:
 
   btrfs: send: directly return from did_overwrite_ref() and simplify it
   btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
@@ -91,254 +96,128 @@ This patch belongs to a patchset comprised of the following patches:
   btrfs: send: update size of roots array for backref cache entries
   btrfs: send: cache utimes operations for directories if possible
 
-The following test was run before and after applying the whole patchset,
-and on a non-debug kernel (Debian's default kernel config):
-
-   #!/bin/bash
-
-   MNT=/mnt/sdi
-   DEV=/dev/sdi
-
-   mkfs.btrfs -f $DEV > /dev/null
-   mount $DEV $MNT
-
-   mkdir $MNT/A
-   for ((i = 1; i <= 20000; i++)); do
-       echo -n > $MNT/A/file_$i
-   done
-
-   btrfs subvolume snapshot -r $MNT $MNT/snap1
-
-   mkdir $MNT/B
-   for ((i = 20000; i <= 40000; i++)); do
-       echo -n > $MNT/B/file_$i
-   done
-
-   mv $MNT/A/file_* $MNT/B/
-
-   btrfs subvolume snapshot -r $MNT $MNT/snap2
-
-   start=$(date +%s%N)
-   btrfs send -p $MNT/snap1 $MNT/snap2 > /dev/null
-   end=$(date +%s%N)
-
-   dur=$(( (end - start) / 1000000 ))
-   echo "Incremental send took $dur milliseconds"
-
-   umount $MNT
-
-Before the whole patchset: 18408 milliseconds
-After the whole patchset:   1942 milliseconds  (9.5x speedup)
-
-Using 60000 files instead of 40000:
-
-Before the whole patchset: 39764 milliseconds
-After the whole patchset:   3076 milliseconds  (12.9x speedup)
-
-Using 20000 files instead of 40000:
-
-Before the whole patchset:  5072 milliseconds
-After the whole patchset:    916 milliseconds  (5.5x speedup)
-
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/lru_cache.h | 15 ++++++++
- fs/btrfs/send.c      | 81 +++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 91 insertions(+), 5 deletions(-)
+ fs/btrfs/send.c | 65 ++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 59 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/lru_cache.h b/fs/btrfs/lru_cache.h
-index 57e5bdc57e6d..9f3101cc89d5 100644
---- a/fs/btrfs/lru_cache.h
-+++ b/fs/btrfs/lru_cache.h
-@@ -47,11 +47,26 @@ struct btrfs_lru_cache {
- 	unsigned int max_size;
- };
- 
-+#define btrfs_lru_cache_for_each_entry_safe(cache, entry, tmp) \
-+	list_for_each_entry_safe_reverse((entry), (tmp), &(cache)->lru_list, lru_list)
-+
- static inline unsigned int btrfs_lru_cache_size(const struct btrfs_lru_cache *cache)
- {
- 	return cache->size;
- }
- 
-+static inline bool btrfs_lru_cache_is_full(const struct btrfs_lru_cache *cache)
-+{
-+	return cache->size >= cache->max_size;
-+}
-+
-+static inline struct btrfs_lru_cache_entry *btrfs_lru_cache_lru_entry(
-+					      struct btrfs_lru_cache *cache)
-+{
-+	return list_first_entry_or_null(&cache->lru_list,
-+					struct btrfs_lru_cache_entry, lru_list);
-+}
-+
- void btrfs_lru_cache_init(struct btrfs_lru_cache *cache, unsigned int max_size);
- struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cache,
- 						     u64 key, u64 gen);
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index ae2d462f647e..a271b39c1445 100644
+index bc57fa8a6bde..cd4aa0eae66c 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -125,6 +125,14 @@ static_assert(offsetof(struct backref_cache_entry, entry) == 0);
-  */
- #define SEND_MAX_DIR_CREATED_CACHE_SIZE 64
- 
-+/*
-+ * Max number of entries in the cache that stores directories that were already
-+ * created. The cache uses raw struct btrfs_lru_cache_entry entries, so it uses
-+ * at most 4096 bytes - sizeof(struct btrfs_lru_cache_entry) is 48 bytes, but
-+ * the kmalloc-64 slab is used, so we get 4096 bytes (64 bytes * 64).
-+ */
-+#define SEND_MAX_DIR_UTIMES_CACHE_SIZE 64
-+
- struct send_ctx {
- 	struct file *send_filp;
- 	loff_t send_off;
-@@ -296,6 +304,7 @@ struct send_ctx {
- 	u64 backref_cache_last_reloc_trans;
- 
- 	struct btrfs_lru_cache dir_created_cache;
-+	struct btrfs_lru_cache dir_utimes_cache;
+@@ -321,6 +321,7 @@ struct orphan_dir_info {
+ 	u64 ino;
+ 	u64 gen;
+ 	u64 last_dir_index_offset;
++	u64 dir_high_seq_ino;
  };
  
- struct pending_dir_move {
-@@ -2747,6 +2756,46 @@ static int send_utimes(struct send_ctx *sctx, u64 ino, u64 gen)
- 	return ret;
- }
+ struct name_cache_entry {
+@@ -3161,6 +3162,7 @@ static struct orphan_dir_info *add_orphan_dir_info(struct send_ctx *sctx,
+ 	odi->ino = dir_ino;
+ 	odi->gen = dir_gen;
+ 	odi->last_dir_index_offset = 0;
++	odi->dir_high_seq_ino = 0;
  
-+static int cache_dir_utimes(struct send_ctx *sctx, u64 dir, u64 gen)
-+{
-+	struct btrfs_lru_cache_entry *entry;
-+	int ret;
-+
-+	entry = btrfs_lru_cache_lookup(&sctx->dir_utimes_cache, dir, gen);
-+	if (entry != NULL)
+ 	rb_link_node(&odi->node, parent, p);
+ 	rb_insert_color(&odi->node, &sctx->orphan_dirs);
+@@ -3221,6 +3223,8 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 	struct btrfs_key loc;
+ 	struct btrfs_dir_item *di;
+ 	struct orphan_dir_info *odi = NULL;
++	u64 dir_high_seq_ino = 0;
++	u64 last_dir_index_offset = 0;
+ 
+ 	/*
+ 	 * Don't try to rmdir the top/root subvolume dir.
+@@ -3228,17 +3232,62 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 	if (dir == BTRFS_FIRST_FREE_OBJECTID)
+ 		return 0;
+ 
++	odi = get_orphan_dir_info(sctx, dir, dir_gen);
++	if (odi && sctx->cur_ino < odi->dir_high_seq_ino)
 +		return 0;
 +
-+	if (btrfs_lru_cache_is_full(&sctx->dir_utimes_cache)) {
-+		struct btrfs_lru_cache_entry *lru;
-+
-+		lru = btrfs_lru_cache_lru_entry(&sctx->dir_utimes_cache);
-+		ASSERT(lru != NULL);
-+
-+		ret = send_utimes(sctx, lru->key, lru->gen);
-+		if (ret)
-+			return ret;
-+
-+		btrfs_lru_cache_remove(&sctx->dir_utimes_cache, lru);
-+	}
-+
-+	/* Caching is optional, don't fail if we can't allocate memory. */
-+	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
-+	if (!entry)
-+		return send_utimes(sctx, dir, gen);
-+
-+	entry->key = dir;
-+	entry->gen = gen;
-+
-+	ret = btrfs_lru_cache_store(&sctx->dir_utimes_cache, entry, GFP_KERNEL);
-+	ASSERT(ret != -EEXIST);
-+	if (ret) {
-+		kfree(entry);
-+		return send_utimes(sctx, dir, gen);
-+	}
-+
-+	return 0;
-+}
-+
- /*
-  * Sends a BTRFS_SEND_C_MKXXX or SYMLINK command to user space. We don't have
-  * a valid path yet because we did not process the refs yet. So, the inode
-@@ -3540,7 +3589,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 	}
+ 	path = alloc_path_for_send();
+ 	if (!path)
+ 		return -ENOMEM;
  
- finish:
--	ret = send_utimes(sctx, pm->ino, pm->gen);
-+	ret = cache_dir_utimes(sctx, pm->ino, pm->gen);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -3560,7 +3609,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 		if (ret < 0)
- 			goto out;
- 
--		ret = send_utimes(sctx, cur->dir, cur->dir_gen);
-+		ret = cache_dir_utimes(sctx, cur->dir, cur->dir_gen);
- 		if (ret < 0)
- 			goto out;
- 	}
-@@ -4507,8 +4556,7 @@ static int process_recorded_refs(struct send_ctx *sctx, int *pending_move)
- 
- 		if (ret == inode_state_did_create ||
- 		    ret == inode_state_no_change) {
--			/* TODO delayed utimes */
--			ret = send_utimes(sctx, cur->dir, cur->dir_gen);
-+			ret = cache_dir_utimes(sctx, cur->dir, cur->dir_gen);
- 			if (ret < 0)
- 				goto out;
- 		} else if (ret == inode_state_did_delete &&
-@@ -6690,7 +6738,18 @@ static int finish_inode_if_needed(struct send_ctx *sctx, int at_end)
- 		 * it's moved/renamed, therefore we don't need to do it here.
- 		 */
- 		sctx->send_progress = sctx->cur_ino + 1;
--		ret = send_utimes(sctx, sctx->cur_ino, sctx->cur_inode_gen);
-+
++	if (!odi) {
 +		/*
-+		 * If the current inode is a non-empty directory, delay issuing
-+		 * the utimes command for it, as it's very likely we have inodes
-+		 * with an higher number inside it. We want to issue the utimes
-+		 * command only after adding all dentries to it.
++		 * Find the inode number associated with the last dir index
++		 * entry. This is very likely the inode with the highest number
++		 * of all inodes that have an entry in the directory. We can
++		 * then use it to avoid future calls to can_rmdir(), when
++		 * processing inodes with a lower number, from having to search
++		 * the parent root b+tree for dir index keys.
 +		 */
-+		if (S_ISDIR(sctx->cur_inode_mode) && sctx->cur_inode_size > 0)
-+			ret = cache_dir_utimes(sctx, sctx->cur_ino, sctx->cur_inode_gen);
-+		else
-+			ret = send_utimes(sctx, sctx->cur_ino, sctx->cur_inode_gen);
++		key.objectid = dir;
++		key.type = BTRFS_DIR_INDEX_KEY;
++		key.offset = (u64)-1;
 +
- 		if (ret < 0)
- 			goto out;
- 	}
-@@ -7980,6 +8039,8 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 	int clone_sources_to_rollback = 0;
- 	size_t alloc_size;
- 	int sort_clone_roots = 0;
-+	struct btrfs_lru_cache_entry *entry;
-+	struct btrfs_lru_cache_entry *tmp;
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -8035,6 +8096,8 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 	btrfs_lru_cache_init(&sctx->backref_cache, SEND_MAX_BACKREF_CACHE_SIZE);
- 	btrfs_lru_cache_init(&sctx->dir_created_cache,
- 			     SEND_MAX_DIR_CREATED_CACHE_SIZE);
-+	btrfs_lru_cache_init(&sctx->dir_utimes_cache,
-+			     SEND_MAX_DIR_UTIMES_CACHE_SIZE);
- 
- 	sctx->pending_dir_moves = RB_ROOT;
- 	sctx->waiting_dir_moves = RB_ROOT;
-@@ -8215,6 +8278,13 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 	if (ret < 0)
- 		goto out;
- 
-+	btrfs_lru_cache_for_each_entry_safe(&sctx->dir_utimes_cache, entry, tmp) {
-+		ret = send_utimes(sctx, entry->key, entry->gen);
-+		if (ret < 0)
++		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++		if (ret < 0) {
 +			goto out;
-+		btrfs_lru_cache_remove(&sctx->dir_utimes_cache, entry);
++		} else if (ret > 0) {
++			/* Can't happen, the root is never empty. */
++			ASSERT(path->slots[0] > 0);
++			if (WARN_ON(path->slots[0] == 0)) {
++				ret = -EUCLEAN;
++				goto out;
++			}
++			path->slots[0]--;
++		}
++
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++		if (key.objectid != dir || key.type != BTRFS_DIR_INDEX_KEY) {
++			/* No index keys, dir can be removed. */
++			ret = 1;
++			goto out;
++		}
++
++		di = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				    struct btrfs_dir_item);
++		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
++		dir_high_seq_ino = loc.objectid;
++		if (sctx->cur_ino < dir_high_seq_ino) {
++			ret = 0;
++			goto out;
++		}
++
++		btrfs_release_path(path);
 +	}
 +
- 	if (!(sctx->flags & BTRFS_SEND_FLAG_OMIT_END_CMD)) {
- 		ret = begin_cmd(sctx, BTRFS_SEND_C_END);
- 		if (ret < 0)
-@@ -8299,6 +8369,7 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
- 		btrfs_lru_cache_clear(&sctx->name_cache);
- 		btrfs_lru_cache_clear(&sctx->backref_cache);
- 		btrfs_lru_cache_clear(&sctx->dir_created_cache);
-+		btrfs_lru_cache_clear(&sctx->dir_utimes_cache);
+ 	key.objectid = dir;
+ 	key.type = BTRFS_DIR_INDEX_KEY;
+-	key.offset = 0;
+-
+-	odi = get_orphan_dir_info(sctx, dir, dir_gen);
+-	if (odi)
+-		key.offset = odi->last_dir_index_offset;
++	key.offset = odi ? odi->last_dir_index_offset : 0;
  
- 		kfree(sctx);
+ 	btrfs_for_each_slot(root, &key, &found_key, path, iter_ret) {
+ 		struct waiting_dir_move *dm;
+@@ -3251,6 +3300,9 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 				struct btrfs_dir_item);
+ 		btrfs_dir_item_key_to_cpu(path->nodes[0], di, &loc);
+ 
++		dir_high_seq_ino = max(dir_high_seq_ino, loc.objectid);
++		last_dir_index_offset = found_key.offset;
++
+ 		dm = get_waiting_dir_move(sctx, loc.objectid);
+ 		if (dm) {
+ 			dm->rmdir_ino = dir;
+@@ -3286,7 +3338,8 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen)
+ 		odi->gen = dir_gen;
  	}
+ 
+-	odi->last_dir_index_offset = found_key.offset;
++	odi->last_dir_index_offset = last_dir_index_offset;
++	odi->dir_high_seq_ino = max(odi->dir_high_seq_ino, dir_high_seq_ino);
+ 
+ 	return 0;
+ }
 -- 
 2.35.1
 

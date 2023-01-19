@@ -2,44 +2,44 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6609C38159
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F886C46467
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231270AbjATFhD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Jan 2023 00:37:03 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40218 "EHLO
+        id S231482AbjATFhE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Jan 2023 00:37:04 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231146AbjATFgl (ORCPT
+        with ESMTP id S230023AbjATFgm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2023 00:36:41 -0500
+        Fri, 20 Jan 2023 00:36:42 -0500
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CE5FB6A31B
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20D304DCC2
         for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:19 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id DE47CB82719
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1F3DCC433D2
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:46 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id D00B1B82714
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:35 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 09F86C433EF
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674157187;
-        bh=gTL2A9flNzkxUhEVw4BmoY/h7oH7FnjGI79Re274aMY=;
+        s=k20201202; t=1674157174;
+        bh=PUkXFO0vkBMmkKAioTgVadC6subhRz0l5q6u8bdK+AY=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=L0T+fWiINVZt6OZLWTyFJlGoQqoUBsoaLptviQXj4CajRwCXUjYcB8iQkWr7UwOsj
-         6pmCBkngR8ae0p/72EXM1RA54goPf7okyrJvArV0uuRioKfVVpZou74EAHjk1UgacZ
-         0j+7blQfpX+eBKNaJ2wLgUfoDQTGd/siM7bB7XkFC5GIM/LGfGbNRXzJTg0Cdi3BM7
-         f/IvUoknOfvdPC2klA2koXROIJP44YjdjePQ8PoqH3HdAs9TzD0fTDuLVk0nTBkHDw
-         WGTNDjbKjN4btmvhjrBl1qPnNqrMB/l5Lh8y8sH9hPloFqDUs/atyMK83US4Qr90OI
-         mNIMqRphKqnOg==
+        b=XTgb7xRYqnfWOkro2kEjQMtoIlqo9MYzUjfa95RL5DoyuKfOdAngF0E7ufRAdUyXp
+         WKkpKUxJyWyuhbTT1bj03KCx12Dx7cxbIyu+ZpzYwYBo/StQ4QW2xR9vCvvviLZUiy
+         2nuLbmu4C2xdJg39Rgle4VAOQiZpoZL/fInRfHP9L9c7ntgPRhQGfgfGylXDe0BNr4
+         aqmWEMM7vJyD6Goz1O59XKUwUELnE9IRDumSV5ReHe1b/2nobz9H/ecCiJCn7H6mW8
+         6Nkmdt1ae/ysRScgjgrOQcZcldywpzifDUtaykucDbLGzILueHl7Wh6t7PT6GU/tYD
+         ZsN3pOLqo4Ukw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 15/18] btrfs: add an api to delete a specific entry from the lru cache
-Date:   Thu, 19 Jan 2023 19:39:27 +0000
-Message-Id: <0bd767c7525178993f30cb2dc71a82c383b9518e.1674157020.git.fdmanana@suse.com>
+Subject: [PATCH v2 00/18] btrfs: some optimizations for send
+Date:   Thu, 19 Jan 2023 19:39:12 +0000
+Message-Id: <cover.1674157020.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1674157020.git.fdmanana@suse.com>
-References: <cover.1674157020.git.fdmanana@suse.com>
+In-Reply-To: <cover.1673436276.git.fdmanana@suse.com>
+References: <cover.1673436276.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -48,15 +48,17 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In order to replace the open coded name cache in send with the lru cache,
-we need an API for the lru cache to delete a specific entry for which we
-did a previous lookup. This adds the API for it, and a next patch in the
-series will use it.
+This adds some optimizations for send and some cleanups, mostly around
+processing directories. Some of the cleanups are independent.
 
-This patch is part of a larger patchset and the changelog of the last
-patch in the series contains a sample performance test and results.
-The patches that comprise the patchset are the following:
+More details in the individual changelogs, and the last one contains
+results for a performance test.
 
+V2: Dropped the patch that added the use of MT_FLAGS_LOCK_EXTERN,
+    it turns out it does not work how I expected it to, see:
+    https://lore.kernel.org/linux-btrfs/20230119151929.GA29005@lst.de/
+
+Filipe Manana (18):
   btrfs: send: directly return from did_overwrite_ref() and simplify it
   btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
   btrfs: send: directly return from will_overwrite_ref() and simplify it
@@ -76,66 +78,14 @@ The patches that comprise the patchset are the following:
   btrfs: send: update size of roots array for backref cache entries
   btrfs: send: cache utimes operations for directories if possible
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/lru_cache.c | 16 ++++++++++++----
- fs/btrfs/lru_cache.h |  2 ++
- 2 files changed, 14 insertions(+), 4 deletions(-)
+ fs/btrfs/Makefile    |   3 +-
+ fs/btrfs/lru_cache.c | 163 +++++++++++
+ fs/btrfs/lru_cache.h |  80 ++++++
+ fs/btrfs/send.c      | 645 ++++++++++++++++++++++---------------------
+ 4 files changed, 572 insertions(+), 319 deletions(-)
+ create mode 100644 fs/btrfs/lru_cache.c
+ create mode 100644 fs/btrfs/lru_cache.h
 
-diff --git a/fs/btrfs/lru_cache.c b/fs/btrfs/lru_cache.c
-index 23b061b69f65..260b4e5213a2 100644
---- a/fs/btrfs/lru_cache.c
-+++ b/fs/btrfs/lru_cache.c
-@@ -56,8 +56,16 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
- 	return entry;
- }
- 
--static void delete_entry(struct btrfs_lru_cache *cache,
--			 struct btrfs_lru_cache_entry *entry)
-+/*
-+ * Remove an entry from the cache.
-+ *
-+ * @cache:     The cache to remove from.
-+ * @entry:     The entry to remove from the cache.
-+ *
-+ * Note: this also frees the memory used by the entry.
-+ */
-+void btrfs_lru_cache_remove(struct btrfs_lru_cache *cache,
-+			    struct btrfs_lru_cache_entry *entry)
- {
- 	struct list_head *prev = entry->list.prev;
- 
-@@ -126,7 +134,7 @@ int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
- 		lru_entry = list_first_entry(&cache->lru_list,
- 					     struct btrfs_lru_cache_entry,
- 					     lru_list);
--		delete_entry(cache, lru_entry);
-+		btrfs_lru_cache_remove(cache, lru_entry);
- 	}
- 
- 	list_add_tail(&new_entry->lru_list, &cache->lru_list);
-@@ -148,7 +156,7 @@ void btrfs_lru_cache_clear(struct btrfs_lru_cache *cache)
- 	struct btrfs_lru_cache_entry *tmp;
- 
- 	list_for_each_entry_safe(entry, tmp, &cache->lru_list, lru_list)
--		delete_entry(cache, entry);
-+		btrfs_lru_cache_remove(cache, entry);
- 
- 	ASSERT(cache->size == 0);
- 	ASSERT(mtree_empty(&cache->entries));
-diff --git a/fs/btrfs/lru_cache.h b/fs/btrfs/lru_cache.h
-index de887d438cfb..57e5bdc57e6d 100644
---- a/fs/btrfs/lru_cache.h
-+++ b/fs/btrfs/lru_cache.h
-@@ -58,6 +58,8 @@ struct btrfs_lru_cache_entry *btrfs_lru_cache_lookup(struct btrfs_lru_cache *cac
- int btrfs_lru_cache_store(struct btrfs_lru_cache *cache,
- 			  struct btrfs_lru_cache_entry *new_entry,
- 			  gfp_t gfp);
-+void btrfs_lru_cache_remove(struct btrfs_lru_cache *cache,
-+			    struct btrfs_lru_cache_entry *entry);
- void btrfs_lru_cache_clear(struct btrfs_lru_cache *cache);
- 
- #endif /* BTRFS_LRU_CACHE_H */
 -- 
 2.35.1
 

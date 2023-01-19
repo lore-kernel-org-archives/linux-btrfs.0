@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6945BC6379F
-	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Jan 2023 22:14:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB0FEC004D4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 19 Jan 2023 22:14:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229811AbjASWOZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 19 Jan 2023 17:14:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47138 "EHLO
+        id S229819AbjASWO0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 19 Jan 2023 17:14:26 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47100 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229770AbjASWNe (ORCPT
+        with ESMTP id S229816AbjASWNq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 19 Jan 2023 17:13:34 -0500
-Received: from mail-qt1-x831.google.com (mail-qt1-x831.google.com [IPv6:2607:f8b0:4864:20::831])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7463B95186
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 13:53:29 -0800 (PST)
-Received: by mail-qt1-x831.google.com with SMTP id s4so2734931qtx.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 13:53:29 -0800 (PST)
+        Thu, 19 Jan 2023 17:13:46 -0500
+Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1977AA733E
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 13:53:34 -0800 (PST)
+Received: by mail-qt1-x834.google.com with SMTP id x7so2704330qtv.13
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 13:53:34 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=HfHIN8/bXamC0Vj0TM8XlhpoKocT6VORG+dBFhB+38s=;
-        b=6kj+6spLIFfIfZae6Dulb+4Rc6EpfbrgIhYTsAC81SA2nHMc7eW7IWcgp5pj+JxjSa
-         8fbYtXhleuu7KqRUm7b8Ld6je/kU2q/iaCRExwY/es6pmzyNTe7A3FhGbPamlBQsCMD1
-         W2VOfH+nEhxLQvoSvAU+X0ZBWDz6D6y8Sa1cg7AoM3KclBmG9Zje08D5UIlInckmpm30
-         HA75LZs9NJfS/GEC/wT84LRBU4KK1UdGvpufPObAEk28rWPDot78NA+AUUuTSfCXAbxZ
-         UmVCmdDSJUI9+HT/izREzUqbXYkQfYE4EpPQpC/HgXCpDAUw0pWuQcJn4eCWhQCDMEs6
-         zTPw==
+        bh=5W1ynQebnKH4VSeXjmhH7rt8v41FiS+6N7Vz+CoRsSg=;
+        b=R50aPaxZQm0D9XCcFB454K2yEV1d5E5UclzOL1wXK1JEUGGvvgTsFDaVKLSPSPi/wT
+         xmB4D/+UzirdTxOyNhrS5soMtGzabq02rf271TaqUp7ApDY+NJP06s5W0pdsntQ5oSLU
+         6aX72Ggo5fG9p/pIc2IX9COzMjZGv9Hbp+2UWFYEgmNM9RylR70AiTii0Tz+KUlTm+E3
+         YMJKity8iGFc0bajy1P2r+bQpMbgG8zsXzBh01fSo1/gQ4pOgwvopIewxL7qIq3cdFVy
+         rf72EopOiYrRXZ9X9UVwgjgTfAYwa1f6VYttRxa5qw/ndUI/2pnx1nVQDDzabBB0zemZ
+         Q3eg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=HfHIN8/bXamC0Vj0TM8XlhpoKocT6VORG+dBFhB+38s=;
-        b=ZYjFzGlMf28tlsyN9uOPlp1/lvX5vsDPU5ooEHf0SiaC7V/MMscSE4g/AHosQOg+nk
-         mgSnRAosYHU3gTRYoRH2FbdZtYDlwDsQm+BChzf4NB9KxKSYYlVzRfL6By92ZlhsAanH
-         DkkMYbI8t/OdvNQ/Ar4fhZYrpp+o2mF/41t6aNBUtGOg6qIs5ECTvrODULP0DU/wKLAQ
-         dnZZJPfZbfqQew7YB6EgaKZKMXs9qGNVKieNIVyc+6uhAfH2RzNPiEVgfYN2HyybfnxF
-         5Ld2DweUa2/80jJ/pnU8Ia9aNipKIl6l+ru56EL5YoZgn98d6GPKBrg908TmHIrkNmIv
-         Y/dg==
-X-Gm-Message-State: AFqh2kqzIfnlJ9eR+ZP5HftgV/Tf1vnoChXmlTt9qEYv2NixIXZUOKhg
-        ug6UVqpWUQocWT3VAsjdvGEKul6mLZtGhou+ReE=
-X-Google-Smtp-Source: AMrXdXukOAybmkL3/rvZD6glX1ogLfDHcJ7lVPG1CCD+o0gAoszWZ19ya6POQPgFaP+f9tGs5tQr1A==
-X-Received: by 2002:ac8:6f09:0:b0:3b6:3468:8417 with SMTP id bs9-20020ac86f09000000b003b634688417mr18984804qtb.17.1674165208554;
-        Thu, 19 Jan 2023 13:53:28 -0800 (PST)
+        bh=5W1ynQebnKH4VSeXjmhH7rt8v41FiS+6N7Vz+CoRsSg=;
+        b=RsShPYJ7m7wSqYM4z/YhmCIeryjMDfrgFNYVx0a35s9Sao19dmvD3hZb0e30bIqtaW
+         /+dSSn+0PuROZGRAWSC1W1uK5VUPX9bQEkFso2JOBBSKyJs97u5j24Zl2MbQZpncRv07
+         Hgo3SSVzoAcC4Bke/TULHkqI5rjXEuphrPpMT42aDNsJDHrVVMjaaV2d18YavQKwRpib
+         cqxN7fqEDSwUsqSjzYDuK8MddaJehXYz63VmC9XvHKq3WGfYgwqGOTiSsTr64WcsIhAH
+         M4w3tvIRytHK4ytTQJkSHMTmIZa1MhyLSsb7SSt6SOL3x3zdnTo70QbjB2YlnCdrUf6u
+         IJSA==
+X-Gm-Message-State: AFqh2krZvcbTD+zmxN71qPCh6JegpArx5zVd64u+hCbb1PKZeLJk/P99
+        hXjN4H+AimzJfSiIxGaFHWXsYpooxfx1mahWd6A=
+X-Google-Smtp-Source: AMrXdXvAkB+QK+vVQmFrOGSVS8bATpZeAKb358BDVCXjm+8mvRdFtqDRrg6DafhY/6X1OuWz81y8ZQ==
+X-Received: by 2002:ac8:748e:0:b0:3b6:2e37:3394 with SMTP id v14-20020ac8748e000000b003b62e373394mr14509074qtq.27.1674165212857;
+        Thu, 19 Jan 2023 13:53:32 -0800 (PST)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id d12-20020a05620a240c00b006fcc3858044sm25681581qkn.86.2023.01.19.13.53.27
+        by smtp.gmail.com with ESMTPSA id bm16-20020a05620a199000b006e16dcf99c8sm24972118qkb.71.2023.01.19.13.53.32
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 19 Jan 2023 13:53:28 -0800 (PST)
+        Thu, 19 Jan 2023 13:53:32 -0800 (PST)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v2 1/9] btrfs: do not call btrfs_clean_tree_block in update_ref_for_cow
-Date:   Thu, 19 Jan 2023 16:53:17 -0500
-Message-Id: <ff064f6f4cf17cc5eafc127dadfc3474d46869ad.1674164991.git.josef@toxicpanda.com>
+Subject: [PATCH v2 4/9] btrfs: do not set the header generation before btrfs_clean_tree_block
+Date:   Thu, 19 Jan 2023 16:53:20 -0500
+Message-Id: <0f34253ba98170618a777e227e467e3a549afd4e.1674164991.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.26.3
 In-Reply-To: <cover.1674164991.git.josef@toxicpanda.com>
 References: <cover.1674164991.git.josef@toxicpanda.com>
@@ -64,44 +64,29 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-My series cleaning up the btrfs_clean_tree_block usage uncovered a
-pretty nasty problem, we weren't writing out metadata that was getting
-cow'ed away before the transaction commit was able to write out the
-block.
-
-This was because I changed btrfs_clean_tree_block() to unconditionally
-clear the EXTENT_BUFFER_DIRTY flag, whereas before it was only doing it
-if the header generation == the transid of the currently running
-transaction.  This check exists purely for update_ref_for_cow's benefit,
-as we only really want to call this when we're sure we won't use the
-block again.  In the case of update_ref_for_cow() we're only truly
-wanting to avoid using the block if we're in the same transaction that
-dirtied it originally.  However we only get into update_ref_for_cow()
-with refs == 1 if we already wrote the block to disk via memory pressure
-or something, which means we won't have EXTENT_BUFFER_DIRTY set anyway.
-
-Remove this usage in update_ref_for_cow(), as it doesn't make sense, and
-is actually harmful with my other cleanups.  We want to reserve the use
-of this function for when we free a block in the current transaction,
-like with delete's or balances.
+We were doing this before to deal with possible uninitialized pages
+which was reported by syzbot.  Now that btrfs_clean_tree_block no longer
+checks the header generation simply remove this extra init.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/ctree.c | 1 -
- 1 file changed, 1 deletion(-)
+ fs/btrfs/extent-tree.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 5476d90a76ce..ac33dbb08263 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -459,7 +459,6 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 			if (ret)
- 				return ret;
- 		}
--		btrfs_clean_tree_block(buf);
- 		*last_ref = 1;
- 	}
- 	return 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index c85af644e353..971b1de50d9e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4897,9 +4897,6 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	    !test_bit(BTRFS_ROOT_RESET_LOCKDEP_CLASS, &root->state))
+ 		lockdep_owner = BTRFS_FS_TREE_OBJECTID;
+ 
+-	/* btrfs_clean_tree_block() accesses generation field. */
+-	btrfs_set_header_generation(buf, trans->transid);
+-
+ 	/*
+ 	 * This needs to stay, because we could allocate a freed block from an
+ 	 * old tree into a new tree, so we need to make sure this new block is
 -- 
 2.26.3
 

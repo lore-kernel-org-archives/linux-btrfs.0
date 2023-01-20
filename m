@@ -2,170 +2,264 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4128DC7112B
-	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 05:37:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30D06C25B4E
+	for <linux-btrfs@archiver.kernel.org>; Fri, 20 Jan 2023 07:48:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231411AbjATFhe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 20 Jan 2023 00:37:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40194 "EHLO
+        id S230156AbjATHs4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 20 Jan 2023 02:48:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52090 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230255AbjATFgt (ORCPT
+        with ESMTP id S230204AbjATHsx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 20 Jan 2023 00:36:49 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 696B560C99
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 21:33:25 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 663EAB82715
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:38 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A3980C433F0
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 19:39:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674157177;
-        bh=JZDTPPOKQWO3LkI1oPetOFxqhj5/jCkznUSbsY2PgEQ=;
-        h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=CR51n3+zczHPTRY+co0J+8CsPxgDFq0nUXN/fs8rFq+4uWn6Rqzc1Du+o0hzMiLo4
-         pCN49Wf3QFMp9PmZaYDNKEi4db2y2frC5DduZuB//HMiW8PGf8Ryt9A6tGpeFvVjs8
-         TQfs0omPgasbyU5WUBosGvOIb/KwcBbULjdlKMejQ9BPOnj8gINoKs9aQmUSF/Honr
-         Nz6Mgg62kqVGVx5Tjkmwgmbn6Tlx6OwN/v0BG90mh2WYCHImtWD0NNckVW+LT/IEFa
-         sv4sbGxEVaImEdH/m/EE1ec8ZmlAmrn08e7KG80taYXe0LO8DvmujtacYDRPHwtAKE
-         dww1/3GpZDRxA==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 03/18] btrfs: send: directly return from will_overwrite_ref() and simplify it
-Date:   Thu, 19 Jan 2023 19:39:15 +0000
-Message-Id: <1747b050e9ac81e0ddc845cffdb05c27c733aa18.1674157020.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1674157020.git.fdmanana@suse.com>
-References: <cover.1674157020.git.fdmanana@suse.com>
+        Fri, 20 Jan 2023 02:48:53 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A96A3891E7
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Jan 2023 23:48:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=QsezZ3Yyh4nvTrhpEwV8dLPvhr2dXb48IHLG2mnBDx4=; b=IQjfFYy/42E3aLejnSH0JyNw7z
+        wxtUByqV3Gijjult78Y2Erui0uE3sK1IkeZkHyzzYYyEHdpeJ0TpugHUb6uIih33neCKoX/MhI+uo
+        Lp+owglgT+yk/fTlEbtuhv8rwmy0mdUU32l1qG2A20Ab7lwVxgtJV0QtBnty8OcGk29EhWFPfyKbe
+        CFUxN85gZECeUsc9JW55cQMcZKZWgYyeaY7Iq8MnDCL3ZlRxaNxsssecHyzwBHtBa1z7rjZhNOHlw
+        GZ+PL6qZczm1gm/l/P5W97qVfRRWggPOuFc/5Tuy7tAUsVxxn3aBENbmMQizlFu0TVmapzoX1V9tJ
+        OgHWhGiA==;
+Received: from [2001:4bb8:19a:2039:1233:6ec3:7a32:5885] (helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pIm72-008rxU-J5; Fri, 20 Jan 2023 07:47:01 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: the raid56 code does not need irqsafe locking
+Date:   Fri, 20 Jan 2023 08:46:57 +0100
+Message-Id: <20230120074657.1095829-1-hch@lst.de>
+X-Mailer: git-send-email 2.39.0
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+These days all the operations that take locks in the raid56.c code
+are run from user context (mostly workqueues).  Drop all the irqsafe
+locking that is not required any more.
 
-There are no resources to release before will_overwrite_ref() returns, so
-we don't really need the 'out' label and jumping to it when conditions are
-met - we can directly return and get rid of the label and jumps. Also we
-can deal with -ENOENT and other errors in a single if-else logic, as it's
-more straightforward.
-
-This helps the next patch in the series to be more simple as well.
-
-This patch is part of a larger patchset and the changelog of the last
-patch in the series contains a sample performance test and results.
-The patches that comprise the patchset are the following:
-
-  btrfs: send: directly return from did_overwrite_ref() and simplify it
-  btrfs: send: avoid unnecessary generation search at did_overwrite_ref()
-  btrfs: send: directly return from will_overwrite_ref() and simplify it
-  btrfs: send: avoid extra b+tree searches when checking reference overrides
-  btrfs: send: remove send_progress argument from can_rmdir()
-  btrfs: send: avoid duplicated orphan dir allocation and initialization
-  btrfs: send: avoid unnecessary orphan dir rbtree search at can_rmdir()
-  btrfs: send: reduce searches on parent root when checking if dir can be removed
-  btrfs: send: iterate waiting dir move rbtree only once when processing refs
-  btrfs: send: initialize all the red black trees earlier
-  btrfs: send: genericize the backref cache to allow it to be reused
-  btrfs: adapt lru cache to allow for 64 bits keys on 32 bits systems
-  btrfs: send: cache information about created directories
-  btrfs: allow a generation number to be associated with lru cache entries
-  btrfs: add an api to delete a specific entry from the lru cache
-  btrfs: send: use the lru cache to implement the name cache
-  btrfs: send: update size of roots array for backref cache entries
-  btrfs: send: cache utimes operations for directories if possible
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/send.c | 38 ++++++++++++++++----------------------
- 1 file changed, 16 insertions(+), 22 deletions(-)
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 23060eec30de..9be3d7db85d6 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2119,17 +2119,17 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 			      const char *name, int name_len,
- 			      u64 *who_ino, u64 *who_gen, u64 *who_mode)
+Note: this sits on top of the "small raid56 cleanups v3" series
+
+ fs/btrfs/raid56.c | 50 +++++++++++++++++++++--------------------------
+ 1 file changed, 22 insertions(+), 28 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index d8dd25a8155a52..23f6550ea663d5 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -407,16 +407,15 @@ static void __remove_rbio_from_cache(struct btrfs_raid_bio *rbio)
+ static void remove_rbio_from_cache(struct btrfs_raid_bio *rbio)
  {
--	int ret = 0;
-+	int ret;
- 	u64 gen;
- 	u64 other_inode = 0;
- 	struct btrfs_inode_info info;
+ 	struct btrfs_stripe_hash_table *table;
+-	unsigned long flags;
  
- 	if (!sctx->parent_root)
--		goto out;
-+		return 0;
+ 	if (!test_bit(RBIO_CACHE_BIT, &rbio->flags))
+ 		return;
  
- 	ret = is_inode_existent(sctx, dir, dir_gen);
- 	if (ret <= 0)
--		goto out;
-+		return 0;
+ 	table = rbio->bioc->fs_info->stripe_hash_table;
  
- 	/*
- 	 * If we have a parent root we need to verify that the parent dir was
-@@ -2138,24 +2138,21 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	 */
- 	if (sctx->parent_root && dir != BTRFS_FIRST_FREE_OBJECTID) {
- 		ret = get_inode_gen(sctx->parent_root, dir, &gen);
--		if (ret < 0 && ret != -ENOENT)
--			goto out;
--		if (ret) {
--			ret = 0;
--			goto out;
--		}
-+		if (ret == -ENOENT)
-+			return 0;
-+		else if (ret < 0)
-+			return ret;
-+
- 		if (gen != dir_gen)
--			goto out;
-+			return 0;
- 	}
- 
- 	ret = lookup_dir_item_inode(sctx->parent_root, dir, name, name_len,
- 				    &other_inode);
--	if (ret < 0 && ret != -ENOENT)
--		goto out;
--	if (ret) {
--		ret = 0;
--		goto out;
--	}
-+	if (ret == -ENOENT)
-+		return 0;
-+	else if (ret < 0)
-+		return ret;
- 
- 	/*
- 	 * Check if the overwritten ref was already processed. If yes, the ref
-@@ -2166,18 +2163,15 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
- 	    is_waiting_for_move(sctx, other_inode)) {
- 		ret = get_inode_info(sctx->parent_root, other_inode, &info);
- 		if (ret < 0)
--			goto out;
-+			return ret;
- 
--		ret = 1;
- 		*who_ino = other_inode;
- 		*who_gen = info.gen;
- 		*who_mode = info.mode;
--	} else {
--		ret = 0;
-+		return 1;
- 	}
- 
--out:
--	return ret;
-+	return 0;
+-	spin_lock_irqsave(&table->cache_lock, flags);
++	spin_lock(&table->cache_lock);
+ 	__remove_rbio_from_cache(rbio);
+-	spin_unlock_irqrestore(&table->cache_lock, flags);
++	spin_unlock(&table->cache_lock);
  }
  
  /*
+@@ -425,19 +424,18 @@ static void remove_rbio_from_cache(struct btrfs_raid_bio *rbio)
+ static void btrfs_clear_rbio_cache(struct btrfs_fs_info *info)
+ {
+ 	struct btrfs_stripe_hash_table *table;
+-	unsigned long flags;
+ 	struct btrfs_raid_bio *rbio;
+ 
+ 	table = info->stripe_hash_table;
+ 
+-	spin_lock_irqsave(&table->cache_lock, flags);
++	spin_lock(&table->cache_lock);
+ 	while (!list_empty(&table->stripe_cache)) {
+ 		rbio = list_entry(table->stripe_cache.next,
+ 				  struct btrfs_raid_bio,
+ 				  stripe_cache);
+ 		__remove_rbio_from_cache(rbio);
+ 	}
+-	spin_unlock_irqrestore(&table->cache_lock, flags);
++	spin_unlock(&table->cache_lock);
+ }
+ 
+ /*
+@@ -467,14 +465,13 @@ void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info)
+ static void cache_rbio(struct btrfs_raid_bio *rbio)
+ {
+ 	struct btrfs_stripe_hash_table *table;
+-	unsigned long flags;
+ 
+ 	if (!test_bit(RBIO_CACHE_READY_BIT, &rbio->flags))
+ 		return;
+ 
+ 	table = rbio->bioc->fs_info->stripe_hash_table;
+ 
+-	spin_lock_irqsave(&table->cache_lock, flags);
++	spin_lock(&table->cache_lock);
+ 	spin_lock(&rbio->bio_list_lock);
+ 
+ 	/* bump our ref if we were not in the list before */
+@@ -501,7 +498,7 @@ static void cache_rbio(struct btrfs_raid_bio *rbio)
+ 			__remove_rbio_from_cache(found);
+ 	}
+ 
+-	spin_unlock_irqrestore(&table->cache_lock, flags);
++	spin_unlock(&table->cache_lock);
+ }
+ 
+ /*
+@@ -530,15 +527,14 @@ static void run_xor(void **pages, int src_cnt, ssize_t len)
+  */
+ static int rbio_is_full(struct btrfs_raid_bio *rbio)
+ {
+-	unsigned long flags;
+ 	unsigned long size = rbio->bio_list_bytes;
+ 	int ret = 1;
+ 
+-	spin_lock_irqsave(&rbio->bio_list_lock, flags);
++	spin_lock(&rbio->bio_list_lock);
+ 	if (size != rbio->nr_data * BTRFS_STRIPE_LEN)
+ 		ret = 0;
+ 	BUG_ON(size > rbio->nr_data * BTRFS_STRIPE_LEN);
+-	spin_unlock_irqrestore(&rbio->bio_list_lock, flags);
++	spin_unlock(&rbio->bio_list_lock);
+ 
+ 	return ret;
+ }
+@@ -657,14 +653,13 @@ static noinline int lock_stripe_add(struct btrfs_raid_bio *rbio)
+ 	struct btrfs_stripe_hash *h;
+ 	struct btrfs_raid_bio *cur;
+ 	struct btrfs_raid_bio *pending;
+-	unsigned long flags;
+ 	struct btrfs_raid_bio *freeit = NULL;
+ 	struct btrfs_raid_bio *cache_drop = NULL;
+ 	int ret = 0;
+ 
+ 	h = rbio->bioc->fs_info->stripe_hash_table->table + rbio_bucket(rbio);
+ 
+-	spin_lock_irqsave(&h->lock, flags);
++	spin_lock(&h->lock);
+ 	list_for_each_entry(cur, &h->hash_list, hash_list) {
+ 		if (cur->bioc->raid_map[0] != rbio->bioc->raid_map[0])
+ 			continue;
+@@ -724,7 +719,7 @@ static noinline int lock_stripe_add(struct btrfs_raid_bio *rbio)
+ 	refcount_inc(&rbio->refs);
+ 	list_add(&rbio->hash_list, &h->hash_list);
+ out:
+-	spin_unlock_irqrestore(&h->lock, flags);
++	spin_unlock(&h->lock);
+ 	if (cache_drop)
+ 		remove_rbio_from_cache(cache_drop);
+ 	if (freeit)
+@@ -742,7 +737,6 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ {
+ 	int bucket;
+ 	struct btrfs_stripe_hash *h;
+-	unsigned long flags;
+ 	int keep_cache = 0;
+ 
+ 	bucket = rbio_bucket(rbio);
+@@ -751,7 +745,7 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 	if (list_empty(&rbio->plug_list))
+ 		cache_rbio(rbio);
+ 
+-	spin_lock_irqsave(&h->lock, flags);
++	spin_lock(&h->lock);
+ 	spin_lock(&rbio->bio_list_lock);
+ 
+ 	if (!list_empty(&rbio->hash_list)) {
+@@ -788,7 +782,7 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 			list_add(&next->hash_list, &h->hash_list);
+ 			refcount_inc(&next->refs);
+ 			spin_unlock(&rbio->bio_list_lock);
+-			spin_unlock_irqrestore(&h->lock, flags);
++			spin_unlock(&h->lock);
+ 
+ 			if (next->operation == BTRFS_RBIO_READ_REBUILD)
+ 				start_async_work(next, recover_rbio_work_locked);
+@@ -808,7 +802,7 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 	}
+ done:
+ 	spin_unlock(&rbio->bio_list_lock);
+-	spin_unlock_irqrestore(&h->lock, flags);
++	spin_unlock(&h->lock);
+ 
+ done_nolock:
+ 	if (!keep_cache)
+@@ -891,16 +885,16 @@ static struct sector_ptr *sector_in_rbio(struct btrfs_raid_bio *rbio,
+ 	index = stripe_nr * rbio->stripe_nsectors + sector_nr;
+ 	ASSERT(index >= 0 && index < rbio->nr_sectors);
+ 
+-	spin_lock_irq(&rbio->bio_list_lock);
++	spin_lock(&rbio->bio_list_lock);
+ 	sector = &rbio->bio_sectors[index];
+ 	if (sector->page || bio_list_only) {
+ 		/* Don't return sector without a valid page pointer */
+ 		if (!sector->page)
+ 			sector = NULL;
+-		spin_unlock_irq(&rbio->bio_list_lock);
++		spin_unlock(&rbio->bio_list_lock);
+ 		return sector;
+ 	}
+-	spin_unlock_irq(&rbio->bio_list_lock);
++	spin_unlock(&rbio->bio_list_lock);
+ 
+ 	return &rbio->stripe_sectors[index];
+ }
+@@ -1148,11 +1142,11 @@ static void index_rbio_pages(struct btrfs_raid_bio *rbio)
+ {
+ 	struct bio *bio;
+ 
+-	spin_lock_irq(&rbio->bio_list_lock);
++	spin_lock(&rbio->bio_list_lock);
+ 	bio_list_for_each(bio, &rbio->bio_list)
+ 		index_one_bio(rbio, bio);
+ 
+-	spin_unlock_irq(&rbio->bio_list_lock);
++	spin_unlock(&rbio->bio_list_lock);
+ }
+ 
+ static void bio_get_trace_info(struct btrfs_raid_bio *rbio, struct bio *bio,
+@@ -1888,9 +1882,9 @@ static int recover_sectors(struct btrfs_raid_bio *rbio)
+ 
+ 	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
+ 	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
+-		spin_lock_irq(&rbio->bio_list_lock);
++		spin_lock(&rbio->bio_list_lock);
+ 		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+-		spin_unlock_irq(&rbio->bio_list_lock);
++		spin_unlock(&rbio->bio_list_lock);
+ 	}
+ 
+ 	index_rbio_pages(rbio);
+@@ -2259,9 +2253,9 @@ static void rmw_rbio(struct btrfs_raid_bio *rbio)
+ 	 * bio list any more, anyone else that wants to change this stripe
+ 	 * needs to do their own rmw.
+ 	 */
+-	spin_lock_irq(&rbio->bio_list_lock);
++	spin_lock(&rbio->bio_list_lock);
+ 	set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+-	spin_unlock_irq(&rbio->bio_list_lock);
++	spin_unlock(&rbio->bio_list_lock);
+ 
+ 	bitmap_clear(rbio->error_bitmap, 0, rbio->nr_sectors);
+ 
 -- 
-2.35.1
+2.39.0
 

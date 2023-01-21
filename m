@@ -2,32 +2,32 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F08CAC004D4
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB297C38141
 	for <linux-btrfs@archiver.kernel.org>; Sat, 21 Jan 2023 06:51:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229912AbjAUGvK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 21 Jan 2023 01:51:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38998 "EHLO
+        id S229672AbjAUGvM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 21 Jan 2023 01:51:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39320 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229907AbjAUGvD (ORCPT
+        with ESMTP id S229902AbjAUGvJ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 21 Jan 2023 01:51:03 -0500
+        Sat, 21 Jan 2023 01:51:09 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E990676FD;
-        Fri, 20 Jan 2023 22:51:02 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 62C276AF7A;
+        Fri, 20 Jan 2023 22:51:06 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=a62JE7EP9Bdj4j9gkWkXC98yRjn28j3glbZ5JsSIiw8=; b=ZMDOwyV9fp8+0t0fLbnfBkpRb4
-        j4gTEdgJ0ZWpwCQQI71nYbSNo4ARtSJuy2Xc9kGKe/GkIxgHWlj6feluzld9eGWEVeF2husTCaF20
-        N8X/3l2c4ArjZ8KqAXBWSJXyCFHRfnxL5V0Piebp7EgU/F/E5QBne0E/w2kBILSe3G/pdpPbDBTQ/
-        sD8skctw4N36G3wjxzWLBN542hweF+IYgpbW1zfuhxZwUGZV/Rl2O2cG8oCv8z5STF2G22HVaMHZr
-        vkO2hbM1QLJ1yOOs1TEi65sLIjgLCtvm+2rP4Iw54u/lPQrpr8GaLcR1cd8s6Lj3Y6ffPCTmLAD/e
-        b/soAS4w==;
+        bh=39g0q2GMkNoet87PSAKRXEi57Kz06JxJxed5jImNYqs=; b=scfHmbkpJOLfYvXGcV6I2DfMd5
+        LQrdEvNfU1eTndGNfskx0pdds1Y8ipWwDFlDGycNthu5iQxk/ouyFBjyIFk9CZKS0+WonU45VfqeY
+        m+VdmxOOfOu10RfWw+Q1f0xfKdK0eJ4MtHEWVpeooo7lDwTXU9Fwmz6jqqJNfJZ6qaggD2B/mmA1P
+        bwOdrDKGn6U898zPnaX2DY+/mIqCVO6Pv50PB11E6vNIt3PfnHI4DMFmVNv0iCYL9fQ04x1I3Yfot
+        IwtTxanUk8Z5nf63xKby5Ut3gcNr2yqeAWkWTYsd+2fH/W/yl596Z+cQhjqgD+Qf9afLeXEKZNG9a
+        E/4WCpTg==;
 Received: from [2001:4bb8:19a:2039:6754:cc81:9ace:36fc] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pJ7iL-00DRLI-EF; Sat, 21 Jan 2023 06:50:57 +0000
+        id 1pJ7iQ-00DROU-Jz; Sat, 21 Jan 2023 06:51:03 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
@@ -37,9 +37,9 @@ Cc:     Damien Le Moal <damien.lemoal@wdc.com>,
         Qu Wenruo <wqu@suse.com>, Jens Axboe <axboe@kernel.dk>,
         "Darrick J. Wong" <djwong@kernel.org>, linux-block@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: [PATCH 09/34] btrfs: add a btrfs_data_csum_ok helper
-Date:   Sat, 21 Jan 2023 07:50:06 +0100
-Message-Id: <20230121065031.1139353-10-hch@lst.de>
+Subject: [PATCH 11/34] btrfs: remove btrfs_bio_free_csum
+Date:   Sat, 21 Jan 2023 07:50:08 +0100
+Message-Id: <20230121065031.1139353-12-hch@lst.de>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230121065031.1139353-1-hch@lst.de>
 References: <20230121065031.1139353-1-hch@lst.de>
@@ -50,80 +50,52 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add a new checksumming helper that wraps btrfs_check_data_csum and
-does all the checks to if we're dealing with some form of nodatacsum
-I/O.  This helper will be used by the new storage layer checksum
-validation and repair code.
+btrfs_bio_free_csum has only one caller left, and that calle is always
+for an data inode and doesn't need zeroing of the csum pointer as that
+pointer will never be touched again.  Just open code the conditional
+kfree there.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/btrfs_inode.h |  2 ++
- fs/btrfs/inode.c       | 39 +++++++++++++++++++++++++++++++++++++++
- 2 files changed, 41 insertions(+)
+ fs/btrfs/bio.c |  3 ++-
+ fs/btrfs/bio.h | 10 ----------
+ 2 files changed, 2 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 195c09e20609e4..3faabcef9898fb 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -423,6 +423,8 @@ int btrfs_check_sector_csum(struct btrfs_fs_info *fs_info, struct page *page,
- 			    u32 pgoff, u8 *csum, const u8 * const csum_expected);
- int btrfs_check_data_csum(struct btrfs_inode *inode, struct btrfs_bio *bbio,
- 			  u32 bio_offset, struct page *page, u32 pgoff);
-+bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
-+			u32 bio_offset, struct bio_vec *bv);
- unsigned int btrfs_verify_data_csum(struct btrfs_bio *bbio,
- 				    u32 bio_offset, struct page *page,
- 				    u64 start, u64 end);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 598897b0d661da..12b76d272f08d5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3495,6 +3495,45 @@ int btrfs_check_data_csum(struct btrfs_inode *inode, struct btrfs_bio *bbio,
- 	return -EIO;
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index d1a545158bb0a0..cdee76e3a6121a 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -226,7 +226,8 @@ static void btrfs_check_read_bio(struct btrfs_bio *bbio,
+ 		offset += sectorsize;
+ 	}
+ 
+-	btrfs_bio_free_csum(bbio);
++	if (bbio->csum != bbio->csum_inline)
++		kfree(bbio->csum);
+ 
+ 	if (unlikely(fbio))
+ 		btrfs_repair_done(fbio);
+diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+index 8d69d0b226d99b..996275eb106260 100644
+--- a/fs/btrfs/bio.h
++++ b/fs/btrfs/bio.h
+@@ -94,16 +94,6 @@ static inline void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
+ 	bbio->end_io(bbio);
  }
  
-+/*
-+ * btrfs_data_csum_ok - verify the checksum of single data sector
-+ * @bbio:	btrfs_io_bio which contains the csum
-+ * @dev:	device the sector is on
-+ * @bio_offset:	offset to the beginning of the bio (in bytes)
-+ * @bv:		bio_vec to check
-+ *
-+ * Check if the checksum on a data block is valid.  When a checksum mismatch is
-+ * detected, report the error and fill the corrupted range with zero.
-+ *
-+ * Return %true if the sector is ok or had no checksum to start with, else
-+ * %false.
-+ */
-+bool btrfs_data_csum_ok(struct btrfs_bio *bbio, struct btrfs_device *dev,
-+			u32 bio_offset, struct bio_vec *bv)
-+{
-+	struct btrfs_inode *inode = bbio->inode;
-+	u64 file_offset = bbio->file_offset + bio_offset;
-+	u64 end = file_offset + bv->bv_len - 1;
-+
-+	if (!bbio->csum)
-+		return true;
-+
-+	if (btrfs_is_data_reloc_root(inode->root) &&
-+	    test_range_bit(&inode->io_tree, file_offset, end, EXTENT_NODATASUM,
-+			1, NULL)) {
-+		/* Skip the range without csum for data reloc inode */
-+		clear_extent_bits(&inode->io_tree, file_offset, end,
-+				  EXTENT_NODATASUM);
-+		return true;
-+	}
-+
-+	if (btrfs_check_data_csum(inode, bbio, bio_offset, bv->bv_page,
-+				  bv->bv_offset) < 0)
-+		return false;
-+	return true;
-+}
-+
-+
+-static inline void btrfs_bio_free_csum(struct btrfs_bio *bbio)
+-{
+-	if (bbio->is_metadata)
+-		return;
+-	if (bbio->csum != bbio->csum_inline) {
+-		kfree(bbio->csum);
+-		bbio->csum = NULL;
+-	}
+-}
+-
  /*
-  * When reads are done, we need to check csums to verify the data is correct.
-  * if there's a match, we allow the bio to finish.  If not, the code in
+  * Iterate through a btrfs_bio (@bbio) on a per-sector basis.
+  *
 -- 
 2.39.0
 

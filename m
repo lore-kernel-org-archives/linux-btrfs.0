@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F910C54EAA
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Jan 2023 13:43:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ACF44C38142
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Jan 2023 13:46:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234351AbjAXNnW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Jan 2023 08:43:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35298 "EHLO
+        id S234698AbjAXNq1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Jan 2023 08:46:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35770 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234363AbjAXNnB (ORCPT
+        with ESMTP id S234616AbjAXNpm (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2023 08:43:01 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 60CBC4615E;
-        Tue, 24 Jan 2023 05:42:26 -0800 (PST)
+        Tue, 24 Jan 2023 08:45:42 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8937247EDA;
+        Tue, 24 Jan 2023 05:44:01 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 999FCB811D7;
-        Tue, 24 Jan 2023 13:42:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 43794C433D2;
-        Tue, 24 Jan 2023 13:42:03 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 9BBC06117D;
+        Tue, 24 Jan 2023 13:43:21 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 21CCCC433D2;
+        Tue, 24 Jan 2023 13:43:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674567724;
-        bh=9JEVtjnph0hhEIUkMI8QRftqbaZD7QCZi/PDQ27S0Y8=;
+        s=k20201202; t=1674567801;
+        bh=0K5stELeHERXjhv2dWvOORmeQAJeCAaHKpjVpiGwT5Q=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=SIl7vbjSs+ByLT2IsER8xuVYRMDHLHX/U+qs0cJ5gy86ieaJNvP0Jn0Sf7QnkvbOF
-         jFr9UxqjGRT6Kfy+Lc4btkJ0m/w+4OIyn86WsmhCo3j3wMCQopQuNZ9ls2VCCFP8an
-         V2+oV11GpaDYpr1fSgLBC209FmJBsk+ZLxLBuj07o+G/LeGpEN4NKd/I90fHY2VCH3
-         ZGdy0bVMvWDsyd5N06o9vVbV+rBdYE+QmP3gAj09zxmSSKb9MuPQtU/T/WUdOdX3dC
-         u4IiZ2q+OIASfhXldQH9BwaOCR2f9iwSZdlFeMqqUv/UHIpgAIwXCDQPxNlR+7IS0C
-         jaK/2zoWK0klg==
+        b=jIuS2f4Gca3PtmUqFwpF4doG445eV+8eQzUd8QpEIYz5yeOUusCUvVEXsWXNprg74
+         LPVSe/R2t9p4Tx3irNOTl6Vr6e7WshV/LeGsAt8HlQ96vDhgyNUkQFlIY3uzVG6uZs
+         0ZjQgxbldKRzYlqu6/q55+N9/86SkS+PVb9lVukHAW2GpCZwmtHQMWqPwivz0kB1WK
+         nNOrVOzWVsFcaSFdR2oMaKJz5kUTB/rZOdl9E4kDPfni+l4Am0YDIfxo6UYOYxVOrs
+         5RM07nr3k5IXz/wQATQ4Sr7TJonOy7Ta4hVDlyjz1gcz890LQBpBfHHvY4PH08r846
+         hcNusaW7waFzA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Christoph Hellwig <hch@lst.de>,
@@ -39,12 +39,12 @@ Cc:     Christoph Hellwig <hch@lst.de>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 14/35] btrfs: factor out scratching of one regular super block
-Date:   Tue, 24 Jan 2023 08:41:10 -0500
-Message-Id: <20230124134131.637036-14-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.15 09/14] btrfs: factor out scratching of one regular super block
+Date:   Tue, 24 Jan 2023 08:42:52 -0500
+Message-Id: <20230124134257.637523-9-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.0
-In-Reply-To: <20230124134131.637036-1-sashal@kernel.org>
-References: <20230124134131.637036-1-sashal@kernel.org>
+In-Reply-To: <20230124134257.637523-1-sashal@kernel.org>
+References: <20230124134257.637523-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -72,10 +72,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 26 insertions(+), 25 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index dba087ad40ea..8fd14dc7f667 100644
+index f01549b8c7c5..1f236604dffd 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -2017,42 +2017,43 @@ static u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
+@@ -2060,42 +2060,43 @@ static u64 btrfs_num_devices(struct btrfs_fs_info *fs_info)
  	return num_devices;
  }
  

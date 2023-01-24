@@ -2,51 +2,109 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 33E05C54E94
-	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Jan 2023 13:23:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9F6CC54E94
+	for <linux-btrfs@archiver.kernel.org>; Tue, 24 Jan 2023 13:42:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234056AbjAXNW6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 24 Jan 2023 08:22:58 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52658 "EHLO
+        id S234347AbjAXNm4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 24 Jan 2023 08:42:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33838 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233322AbjAXNW5 (ORCPT
+        with ESMTP id S233664AbjAXNmc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 24 Jan 2023 08:22:57 -0500
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DE5E6EA8;
-        Tue, 24 Jan 2023 05:22:56 -0800 (PST)
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id 5AC6667373; Tue, 24 Jan 2023 14:22:52 +0100 (CET)
-Date:   Tue, 24 Jan 2023 14:22:52 +0100
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Damien Le Moal <damien.lemoal@wdc.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Qu Wenruo <wqu@suse.com>, Jens Axboe <axboe@kernel.dk>,
-        "Darrick J. Wong" <djwong@kernel.org>, linux-block@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
-Subject: Re: consolidate btrfs checksumming, repair and bio splitting v4
-Message-ID: <20230124132252.GA24407@lst.de>
-References: <20230121065031.1139353-1-hch@lst.de>
+        Tue, 24 Jan 2023 08:42:32 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96E8945F68;
+        Tue, 24 Jan 2023 05:42:06 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 02B63611E6;
+        Tue, 24 Jan 2023 13:42:06 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A39AFC433A7;
+        Tue, 24 Jan 2023 13:42:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1674567725;
+        bh=tinwDjVXJonAf/XEW4QsF0at+vcDfimwkCBKXz9sxCk=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=cCdqN13bzTuTWv7QbT2pBLUBDPXQazBM3Oc//Sy8Yrh2FspL0WwMsEBzSsyRThrCH
+         3LMGwN6Fa74cY8GWimEIbAwDgPe1s0bqQfQ1l6S3pFN7l3Yx9MNDxhI8qxtBA2JTwb
+         rMS3wl6VmBl8oPjWEd8hEioDWk5PEnEXHvm7e9+rOhZMXVLemlAQwlpX72bd8tcSN1
+         2YKjMIZfxYPCIQb5kiyqHNZZbW3tGa+QhI427+dzC4bl47/zGz+ylW/hmxUCGdEseU
+         8L2DeePB4NLQ4McDy8HmmJls0m5r4fTzNOnEAskQTV3IDasFdtHD63SQWmjEHL1gMF
+         rq++ElMs5GWmw==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.com>,
+        Sasha Levin <sashal@kernel.org>, clm@fb.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 6.1 15/35] btrfs: stop using write_one_page in btrfs_scratch_superblock
+Date:   Tue, 24 Jan 2023 08:41:11 -0500
+Message-Id: <20230124134131.637036-15-sashal@kernel.org>
+X-Mailer: git-send-email 2.39.0
+In-Reply-To: <20230124134131.637036-1-sashal@kernel.org>
+References: <20230124134131.637036-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230121065031.1139353-1-hch@lst.de>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Jan 21, 2023 at 07:49:57AM +0100, Christoph Hellwig wrote:
-> A git tree is also available:
-> 
->     git://git.infradead.org/users/hch/misc.git btrfs-bio-split
-> 
-> Gitweb:
-> 
->     http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/btrfs-bio-split
+From: Christoph Hellwig <hch@lst.de>
 
-I've update the git tree with the typos pointed out during the reviews
-fixed, and the Review tags added.
+[ Upstream commit 26ecf243e407be54807ad67210f7e83b9fad71ea ]
+
+write_one_page is an awkward interface that expects the page locked and
+->writepage to be implemented.  Replace that by zeroing the signature
+bytes and synchronize the block device page using the proper bdev
+helpers.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: David Sterba <dsterba@suse.com>
+[ update changelog ]
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/volumes.c | 17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 8fd14dc7f667..36bb664a25a2 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2021,23 +2021,22 @@ static void btrfs_scratch_superblock(struct btrfs_fs_info *fs_info,
+ 				     struct block_device *bdev, int copy_num)
+ {
+ 	struct btrfs_super_block *disk_super;
+-	struct page *page;
++	const size_t len = sizeof(disk_super->magic);
++	const u64 bytenr = btrfs_sb_offset(copy_num);
+ 	int ret;
+ 
+-	disk_super = btrfs_read_dev_one_super(bdev, copy_num, false);
++	disk_super = btrfs_read_disk_super(bdev, bytenr, bytenr);
+ 	if (IS_ERR(disk_super))
+ 		return;
+ 
+-	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
+-	page = virt_to_page(disk_super);
+-	set_page_dirty(page);
+-	lock_page(page);
+-	/* write_on_page() unlocks the page */
+-	ret = write_one_page(page);
++	memset(&disk_super->magic, 0, len);
++	folio_mark_dirty(virt_to_folio(disk_super));
++	btrfs_release_disk_super(disk_super);
++
++	ret = sync_blockdev_range(bdev, bytenr, bytenr + len - 1);
+ 	if (ret)
+ 		btrfs_warn(fs_info, "error clearing superblock number %d (%d)",
+ 			copy_num, ret);
+-	btrfs_release_disk_super(disk_super);
+ }
+ 
+ void btrfs_scratch_superblocks(struct btrfs_fs_info *fs_info,
+-- 
+2.39.0
+

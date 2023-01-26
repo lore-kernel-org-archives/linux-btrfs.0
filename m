@@ -2,136 +2,92 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C508DC05027
-	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Jan 2023 19:08:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2654DC05027
+	for <linux-btrfs@archiver.kernel.org>; Thu, 26 Jan 2023 21:01:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232467AbjAZTIW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 26 Jan 2023 14:08:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50388 "EHLO
+        id S231887AbjAZVBL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 26 Jan 2023 16:01:11 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34196 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232465AbjAZTIL (ORCPT
+        with ESMTP id S229510AbjAZVBK (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 26 Jan 2023 14:08:11 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E531470AE
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jan 2023 11:07:12 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1674760031;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=HAzPuEtZNKjq1ETKDrru2udxiQbSs8Nq94l8Ylte7oc=;
-        b=YZzK3eutY4l4Hs8tk92djc2MekEIqZ3c8hv7iHrX3aBG6Rvx5ZV2TLALGhouV3we5zhy45
-        2akujpFTXd4wZEssnIATlnsYpdXHSkgwoJs6vFpEiX7mUxE3+hlDALm2ZmwcGJUeKR1Xco
-        2lEM8ef4XGNh8VCHl5K9NSxOpO403+Q=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-186-SSu0E1y2OGuDi9AFpIeu1Q-1; Thu, 26 Jan 2023 14:07:07 -0500
-X-MC-Unique: SSu0E1y2OGuDi9AFpIeu1Q-1
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.rdu2.redhat.com [10.11.54.6])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 564F81C05AFC;
-        Thu, 26 Jan 2023 19:07:07 +0000 (UTC)
-Received: from [10.22.33.13] (unknown [10.22.33.13])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id B14112166B26;
-        Thu, 26 Jan 2023 19:07:06 +0000 (UTC)
-Message-ID: <2d0483b4-f94f-8935-1a05-91417e3bfe8d@redhat.com>
-Date:   Thu, 26 Jan 2023 14:07:06 -0500
+        Thu, 26 Jan 2023 16:01:10 -0500
+Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F182036474
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jan 2023 13:01:04 -0800 (PST)
+Received: by mail-qt1-x82c.google.com with SMTP id m26so2400736qtp.9
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jan 2023 13:01:04 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=HwdnYcIiWi7wHi2bXU/Fk7/olRy/K+ncT86VsG5nZ9o=;
+        b=dQ72jJbfdA296BDHhKL8Utno7XtXzSf+heK+rKl+qrYuId6E3Asmtxwz2o5NJQlW5t
+         NOCTbwVVgPnP43RKTYu56jOnI4S2VwtJstlMQcoVdG5+Nbda6tQwtFKl575k1nCxTyo7
+         fRvAMjoUmaUlrTeHIh59XAfPuUKfRLpa2NqD7h+OphmsJEzuPCG7x1aUmAxYdmmb7b1Y
+         Sk5SZnXHRjSbq0qAAulizvsetyAsyFRwbkjQgH81Up0NljAcLgyD9s5wEqYCpkMvaMGZ
+         QAcUf9cReQHaBjF563EHQYMjROr8yGNXfrvzqZVQGYTKjCYtmT4EXYGhwUvxKRSIHtxF
+         ErQQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=HwdnYcIiWi7wHi2bXU/Fk7/olRy/K+ncT86VsG5nZ9o=;
+        b=WheOYP60pLGdyUe2U78Ta6mz6cTZveaox5kf9FioBWjsyLH+Fe0oUik46fj1LwFWXB
+         9TiaTVHfQOfnZrYEFde5K75nvhlpS2RhVBnDjXmUO+WnoUXzxLU9jLKagqzalHgm2U13
+         7xaJeBq8i08cQKRjLqxZbJgewYNaII2kjcVtq/lzwz5adtXpMgegAi74nfjBTSBaan+H
+         jq64sfaSZVu6/0X4ssevuv/Bzpf01/bVTUO2SE4QDHZFnIQbmDby8Uf2/KB3taSMuIKL
+         k2uwT3lbT4MPujv4W/xzqPs4HpRd56WE82y4mzRNvCyH1wPVtok2VsO6KNVouai0VI+5
+         Dyrw==
+X-Gm-Message-State: AO0yUKVectUccedTiHG3S5JaK6bTAxk0FqBZEsQI9KYN0eO8o0O1qcH2
+        X1jlNUbMv0Y8kQw8atoQmde6QSwEQgG7KBS7R4o=
+X-Google-Smtp-Source: AK7set+Gy+TGpBLSYSfAW5k0TqC9faBsy/GYtzLQo2bm+RJmxBCRf5AklYBKHdaQq+TfzfZerEkLVA==
+X-Received: by 2002:ac8:5cc6:0:b0:3b6:414f:c2ba with SMTP id s6-20020ac85cc6000000b003b6414fc2bamr13287426qta.38.1674766863696;
+        Thu, 26 Jan 2023 13:01:03 -0800 (PST)
+Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
+        by smtp.gmail.com with ESMTPSA id s20-20020a05622a179400b003b81a90f117sm665624qtk.60.2023.01.26.13.01.03
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 26 Jan 2023 13:01:03 -0800 (PST)
+From:   Josef Bacik <josef@toxicpanda.com>
+To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: [PATCH v3 1/7] btrfs: always lock the block before calling btrfs_clean_tree_block
+Date:   Thu, 26 Jan 2023 16:00:54 -0500
+Message-Id: <298b929ac0435fce236af750f62cbd9423c0ed12.1674766637.git.josef@toxicpanda.com>
+X-Mailer: git-send-email 2.26.3
+In-Reply-To: <cover.1674766637.git.josef@toxicpanda.com>
+References: <cover.1674766637.git.josef@toxicpanda.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.0
-Subject: Re: BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
-Content-Language: en-US
-To:     Boqun Feng <boqun.feng@gmail.com>
-Cc:     Mikhail Gavrilov <mikhail.v.gavrilov@gmail.com>, dsterba@suse.cz,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Linux List Kernel Mailing <linux-kernel@vger.kernel.org>,
-        Chris Murphy <lists@colorremedies.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Ingo Molnar <mingo@redhat.com>, Will Deacon <will@kernel.org>,
-        Joel Fernandes <joel@joelfernandes.org>
-References: <CABXGCsN+BcaGO0+0bJszDPvA=5JF_bOPfXC=OLzMzsXY2M8hyQ@mail.gmail.com>
- <20220726164250.GE13489@twin.jikos.cz>
- <CABXGCsN1rzCoYiB-vN5grzsMdvgm1qv2jnWn0enXq5R-wke8Eg@mail.gmail.com>
- <20230125171517.GV11562@twin.jikos.cz>
- <CABXGCsOD7jVGYkFFG-nM9BgNq_7c16yU08EBfaUc6+iNsX338g@mail.gmail.com>
- <Y9K6m5USnON/19GT@boqun-archlinux>
- <017f7b9e-323c-f9aa-12fa-9c9a16dabd35@redhat.com>
- <Y9LNoDtOK4nun968@boqun-archlinux>
-From:   Waiman Long <longman@redhat.com>
-In-Reply-To: <Y9LNoDtOK4nun968@boqun-archlinux>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.6
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 1/26/23 13:59, Boqun Feng wrote:
-> On Thu, Jan 26, 2023 at 01:30:34PM -0500, Waiman Long wrote:
->> On 1/26/23 12:38, Boqun Feng wrote:
->>> [Cc lock folks]
->>>
->>> On Thu, Jan 26, 2023 at 02:47:42PM +0500, Mikhail Gavrilov wrote:
->>>> On Wed, Jan 25, 2023 at 10:21 PM David Sterba <dsterba@suse.cz> wrote:
->>>>> On Wed, Jan 25, 2023 at 01:27:48AM +0500, Mikhail Gavrilov wrote:
->>>>>> On Tue, Jul 26, 2022 at 9:47 PM David Sterba <dsterba@suse.cz> wrote:
->>>>>>> On Tue, Jul 26, 2022 at 05:32:54PM +0500, Mikhail Gavrilov wrote:
->>>>>>>> Hi guys.
->>>>>>>> Always with intensive writing on a btrfs volume, the message "BUG:
->>>>>>>> MAX_LOCKDEP_CHAIN_HLOCKS too low!" appears in the kernel logs.
->>>>>>> Increase the config value of LOCKDEP_CHAINS_BITS, default is 16, 18
->>>>>>> tends to work.
->>>>>> Hi,
->>>>>> Today I was able to get the message "BUG: MAX_LOCKDEP_CHAIN_HLOCKS too
->>>>>> low!" again even with LOCKDEP_CHAINS_BITS=18 and kernel 6.2-rc5.
->>>>>>
->>>>>> ❯ cat /boot/config-`uname -r` | grep LOCKDEP_CHAINS_BITS
->>>>>> CONFIG_LOCKDEP_CHAINS_BITS=18
->>>>>>
->>>>>> [88685.088099] BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
->>>>>> [88685.088124] turning off the locking correctness validator.
->>>>>> [88685.088133] Please attach the output of /proc/lock_stat to the bug report
->>>>>> [88685.088142] CPU: 14 PID: 1749746 Comm: mv Tainted: G        W    L
->>>>>>     -------  ---  6.2.0-0.rc5.20230123git2475bf0250de.38.fc38.x86_64 #1
->>>>>> [88685.088154] Hardware name: System manufacturer System Product
->>>>>> Name/ROG STRIX X570-I GAMING, BIOS 4408 10/28/2022
->>>>>>
->>>>>> What's next? Increase this value to 19?
->>>>> Yes, though increasing the value is a workaround so you may see the
->>>>> warning again.
->>>> Is there any sense in this WARNING if we would ignore it and every
->>>> time increase the threshold value?
->>> Lockdep uses static allocated array to track lock holdings chains to
->>> avoid dynmaic memory allocation in its own code. So if you see the
->>> warning it means your test has more combination of lock holdings than
->>> the array can record. In other words, you reach the resource limitation,
->>> and in that sense it makes sense to just ignore it and increase the
->>> value: you want to give lockdep enough resource to work, right?
->>>
->>>> May Be set 99 right away? Or remove such a check condition?
->>> That requires having 2^99 * 5 * sizeof(u16) memory for lock holding
->>> chains array..
->> Note that every increment of LOCKDEP_CHAINS_BITS double the storage space.
->> With 99, that will likely exceed the total amount of memory you have in your
->> system.
->>
->> Boqun, where does the 5 figure come from. It is just a simple u16 array of
-> 	#define MAX_LOCKDEP_CHAINS_BITS	CONFIG_LOCKDEP_CHAINS_BITS
-> 	#define MAX_LOCKDEP_CHAINS	(1UL << MAX_LOCKDEP_CHAINS_BITS)
->
-> 	#define MAX_LOCKDEP_CHAIN_HLOCKS (MAX_LOCKDEP_CHAINS*5)
->
-> I think the last one means we think the average length of a lock chain
-> is 5, in other words, in average, a task hold at most 5 locks. I don't
-> know where the 5 came from either, but it's there ;-)
+We want to clean up the dirty handling for extent buffers so it's a
+little more consistent, so skip the check for generation == transid and
+simply always lock the extent buffer before calling
+btrfs_clean_tree_block.
 
-You are right. I missed that when I looked. So 5 is assumed to the 
-average length of a lock chain.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ fs/btrfs/extent-tree.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-Thanks,
-Longman
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 876bea67f9a1..c85af644e353 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5534,8 +5534,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
+ 		/* make block locked assertion in btrfs_clean_tree_block happy */
+-		if (!path->locks[level] &&
+-		    btrfs_header_generation(eb) == trans->transid) {
++		if (!path->locks[level]) {
+ 			btrfs_tree_lock(eb);
+ 			path->locks[level] = BTRFS_WRITE_LOCK;
+ 		}
+-- 
+2.26.3
 

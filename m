@@ -2,143 +2,194 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BAACEC54EAA
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Jan 2023 15:34:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C3AF3C54EAA
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Jan 2023 20:11:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234571AbjA0PeD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Jan 2023 10:34:03 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60290 "EHLO
+        id S233687AbjA0ULW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Jan 2023 15:11:22 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55812 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233986AbjA0Pd7 (ORCPT
+        with ESMTP id S233671AbjA0UK6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Jan 2023 10:33:59 -0500
-Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AD2CF8001D;
-        Fri, 27 Jan 2023 07:33:57 -0800 (PST)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.nyi.internal (Postfix) with ESMTP id 8247D5C0152;
-        Fri, 27 Jan 2023 10:33:54 -0500 (EST)
-Received: from imap50 ([10.202.2.100])
-  by compute5.internal (MEProxy); Fri, 27 Jan 2023 10:33:54 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        colorremedies.com; h=cc:cc:content-type:date:date:from:from
-        :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm1; t=1674833634; x=
-        1674920034; bh=mMkolRQqhFuhBHkGFRthWYVcxUjVGgmdiIZP3rWXfo8=; b=b
-        VEGclL3nsewBRTBMu/WqMlqsX8fl+FJdzJ5b2A5Snb10ykrRUHAE4XUpSM0UuAt8
-        a9V21AZ6a4wJTIEq2YDN7XPjIki3A+VA/PFPSR0qDKqdrN2GLSnzIvKwBBcmAnXG
-        B3Yca93Tg+1/dulbg6P9/je/f7EQGf7A5A2a16KVineHhir3bwVZ7lTBEyQATKrv
-        ZPnSUp57f8llV2g1kB8xGylm/iCe3mp5pOClS+TKm2sHvqiJzJM9yE0iC79JQflb
-        ZjeLtrVSaiBaHWMN+RcrZYRYGAlPXMC0xyo99xfh1Et2AXtYKN86Dc1sIEKtbJTA
-        WrikxhsUUwOmygpBxYPzw==
+        Fri, 27 Jan 2023 15:10:58 -0500
+Received: from out2-smtp.messagingengine.com (out2-smtp.messagingengine.com [66.111.4.26])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E93D04996F
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 12:10:34 -0800 (PST)
+Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
+        by mailout.nyi.internal (Postfix) with ESMTP id A55A95C0353;
+        Fri, 27 Jan 2023 15:10:32 -0500 (EST)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute3.internal (MEProxy); Fri, 27 Jan 2023 15:10:32 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+        :content-type:date:date:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to; s=fm3; t=1674850232; x=1674936632; bh=Yf9Sah/03Z
+        egx19oRF/Krg9uu656PbVENq4kiGe8EjQ=; b=n7fBh6GSV2f6q3qZbXKa69fbem
+        i4cPy/WTBIHhJUm1yTnzFvJJoDq42yRZSBoRtmvrB/crt//CcXQE74PuJ+YaeVun
+        FTR3NvHJlj/oyntQbCBYlGvYePjP3QqKNzsNEmshOJMJRGMPNyQ73Byw5zQryR9N
+        uh0eHnpGu+YJO0iwpPC2p+jWDtswK6YPXeZ10A9oUnl/qHt+oLYB1GZ7AURln4Ym
+        mpo5JeuBus5DlzrCpcN9M9hqC/KQUxzn2SgZ4DS9b6poSWMM7869f0G0HG6CVY2d
+        4gM2m1cozp+NBWQEojU8erP2H7nK8kfZjHyYU4RDeQz0IiP8YgDhrRR9CAng==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
         :feedback-id:from:from:in-reply-to:in-reply-to:message-id
         :mime-version:references:reply-to:sender:subject:subject:to:to
         :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-        fm3; t=1674833634; x=1674920034; bh=mMkolRQqhFuhBHkGFRthWYVcxUjV
-        GgmdiIZP3rWXfo8=; b=qxccOcN+/vO9IvT4kOjvaKLq4uVrD3qFuLEqbhVIrl6m
-        eAvNrMdq1rwe+JZk/f9t+SIpkiwjEOEQYWkfgWq72vapMqzrYWmRg7ba1OA1TXkV
-        1oFWwFkuK4zdvS9q1yIkn52yAPYr7gt7U8KCy6CdSbFnO/X1vzsGkbmVKREh06ka
-        Gy44b5KmTQVlhtntz5InPbXlhkG1fnRz5wuoObOKF16eZVQtEIr7xLgj1Z6B2AOj
-        o8CY99hPvo3hZqlPDAUrWQGML7w/WmqJc/z8aygpKjv7TTvHDHPo9hlineiGgMyD
-        XtRf5Zvld7+5p6Rm3+ZSCKL3zvEd7klTJnQmd97CnA==
-X-ME-Sender: <xms:4u7TY_E_R4dab93dc7-YityhMsA9W6lhZp8UE7En10UXPRaO9iQ9Ng>
-    <xme:4u7TY8Xb6tQeMB6lhno7Kdqm10v9yFYlSwfbmZZRwosWUC9IPB1R4csMsNPFggjRO
-    -hRe4yiSxX-QvkTwCE>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedruddviedgjeeiucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedfvehh
-    rhhishcuofhurhhphhihfdcuoehlihhsthhssegtohhlohhrrhgvmhgvughivghsrdgtoh
-    hmqeenucggtffrrghtthgvrhhnpeehueelhfehhfeivdfgheeuffetgffhveetffetgefh
-    udejgeffgefgkefhfedtudenucffohhmrghinhepkhgvrhhnvghlrdhorhhgpdhgihhtlh
-    grsgdrtghomhenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhr
-    ohhmpehlihhsthhssegtohhlohhrrhgvmhgvughivghsrdgtohhm
-X-ME-Proxy: <xmx:4u7TYxLpbhAov5g3E0TjYC780cI67GUcavIAbL0jPcf0usGIunCOPg>
-    <xmx:4u7TY9HUGmLM-FQQRhE2-BMiCNeizB4d_Jz4oN-8lVcM_0CByX7meA>
-    <xmx:4u7TY1UnkIv7o2AGolqrgYxfO-3dNnbaz0VCZF42u7d9uq7CXD5THA>
-    <xmx:4u7TY0HhBk2RIz-ffLnwvHAa7rNYraMJIaSJl9UETzDEHQkhM93MtQ>
-Feedback-ID: i06494636:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id 22BD41700090; Fri, 27 Jan 2023 10:33:54 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-85-gd6d859e0cf-fm-20230116.001-gd6d859e0
-Mime-Version: 1.0
-Message-Id: <2ffd1b69-76c2-4e15-a139-1406746ae4ef@app.fastmail.com>
-In-Reply-To: <b112394d-7efa-c6f9-bbef-a73c501ff02c@redhat.com>
-References: <CABXGCsN+BcaGO0+0bJszDPvA=5JF_bOPfXC=OLzMzsXY2M8hyQ@mail.gmail.com>
- <20220726164250.GE13489@twin.jikos.cz>
- <CABXGCsN1rzCoYiB-vN5grzsMdvgm1qv2jnWn0enXq5R-wke8Eg@mail.gmail.com>
- <20230125171517.GV11562@twin.jikos.cz>
- <CABXGCsOD7jVGYkFFG-nM9BgNq_7c16yU08EBfaUc6+iNsX338g@mail.gmail.com>
- <Y9K6m5USnON/19GT@boqun-archlinux>
- <CABXGCsMD6nAPpF34c6oMK47kHUQqADQPUCWrxyY7WFiKi1qPNg@mail.gmail.com>
- <a8992f62-06e6-b183-3ab5-8118343efb3f@redhat.com>
- <7e48c1ec-c653-484e-88fb-69f3deb40b1d@app.fastmail.com>
- <Y9NN9CFWc40oxmzP@boqun-archlinux>
- <b112394d-7efa-c6f9-bbef-a73c501ff02c@redhat.com>
-Date:   Fri, 27 Jan 2023 10:33:27 -0500
-From:   "Chris Murphy" <lists@colorremedies.com>
-To:     "Waiman Long" <longman@redhat.com>,
-        "Boqun Feng" <boqun.feng@gmail.com>
-Cc:     =?UTF-8?Q?=D0=9C=D0=B8=D1=85=D0=B0=D0=B8=D0=BB_=D0=93=D0=B0=D0=B2=D1=80?=
-         =?UTF-8?Q?=D0=B8=D0=BB=D0=BE=D0=B2?= 
-        <mikhail.v.gavrilov@gmail.com>, "David Sterba" <dsterba@suse.cz>,
-        "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>,
-        "Peter Zijlstra" <peterz@infradead.org>,
-        "Ingo Molnar" <mingo@redhat.com>, "Will Deacon" <will@kernel.org>,
-        "Joel Fernandes" <joel@joelfernandes.org>
-Subject: Re: BUG: MAX_LOCKDEP_CHAIN_HLOCKS too low!
-Content-Type: text/plain
+        fm3; t=1674850232; x=1674936632; bh=Yf9Sah/03Zegx19oRF/Krg9uu656
+        PbVENq4kiGe8EjQ=; b=Uo01/Rp5HmRfy0K2kymURy1NQUpJZmodDOV8yt1EqkBg
+        XDV8qw+RYI4EYoPd+6+nJOp+4noDNN29AMArZQeNqS4+FTA6MAdN9F6Q5iejEFtT
+        mhGkrscUJJCKxy6mOKfAA1jov5TaSPIHuLV1y6cNInbWEs96vKW4tlZJhWOGhN0y
+        HCagj6qyX27d6rWgsiL47sbgc5hDUq8jJoWJaWkbxHYkx0b3QAw4/h3RhLajIy2z
+        qwUHlFaGULXuowFPVGmFPKlOZMgr+vvYbpSINw9GDi5hVm81kU9Ne3n5CB9i7qkb
+        IJ/g6XbbFcjCXyXFXHO75uFbU6avSis5m2DwQb/BOg==
+X-ME-Sender: <xms:uC_UYywoQP815rcaB_gDCf-IfEJCIhK2gSRWWyirA-5raJPt6WRvZQ>
+    <xme:uC_UY-S-7so3u9dUGui_ga30PEDsE9ut-VfWX50NjZQdxasbESrgpp4cmP4xGgadn
+    MQStBfZ16Qn9tAzp1Q>
+X-ME-Received: <xmr:uC_UY0V3uJBj9jKAdzPaL9FPMGXX8-SmL_l19lBQIxJYwhZePymA-EYG>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedruddviedgudefgecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpeffhffvvefukfhfgggtuggjsehttdertddttddvnecuhfhrohhmpeeuohhr
+    ihhsuceuuhhrkhhovhcuoegsohhrihhssegsuhhrrdhioheqnecuggftrfgrthhtvghrnh
+    epkedvkeffjeellefhveehvdejudfhjedthfdvveeiieeiudfguefgtdejgfefleejnecu
+    vehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepsghorhhish
+    essghurhdrihho
+X-ME-Proxy: <xmx:uC_UY4gyMmgID4UEzo_1h8naZLmIHTlftlq828RhaiPo_hReq7LkoA>
+    <xmx:uC_UY0B4aTiQVe_d9uewfnkZyc9PAkL1v7MBS6UoD2veEZ6QZ3weCA>
+    <xmx:uC_UY5JP2KLpr_u7Y81vvFVEQN7T7f1oHkMDy4949uFfss11xbzAWQ>
+    <xmx:uC_UY_pXIXpiskZmozcNoCb6uIoDejy6I1JtQdVpsPyw2i2SqrbVgg>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 27 Jan 2023 15:10:32 -0500 (EST)
+Date:   Fri, 27 Jan 2023 12:10:30 -0800
+From:   Boris Burkov <boris@bur.io>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: handle missing chunk mapping more gracefully
+Message-ID: <Y9QvpElwgi5+bjCv@zen>
+References: <7ff90508841683ca3aaeb5c84e27d7d823218146.1670389796.git.wqu@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <7ff90508841683ca3aaeb5c84e27d7d823218146.1670389796.git.wqu@suse.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Dec 07, 2022 at 01:09:59PM +0800, Qu Wenruo wrote:
+> [BUG]
+> During my scrub rework, I did a stupid thing like this:
+> 
+>         bio->bi_iter.bi_sector = stripe->logical;
+>         btrfs_submit_bio(fs_info, bio, stripe->mirror_num);
+> 
+> Above bi_sector assignment is using logical address directly, which
+> lacks ">> SECTOR_SHIFT".
+> 
+> This results a read on a range which has no chunk mapping.
+> 
+> This results the following crash:
+> 
+>  BTRFS critical (device dm-1): unable to find logical 11274289152 length 65536
+>  assertion failed: !IS_ERR(em), in fs/btrfs/volumes.c:6387
+>  ------------[ cut here ]------------
+> 
+> Sure this is all my fault, but this shows a possible problem in real
+> world, that some bitflip in file extents/tree block can point to
+> unmapped ranges, and trigger above ASSERT().
+> 
+> [PROBLEMS]
+> In above call chain, there are 2 locations not properly handling the
+> errors:
+> 
+> - __btrfs_map_block()
+>   If btrfs_get_chunk_map() returned error, we just trigger an ASSERT().
+> 
+> - btrfs_submit_bio()
+>   If the returned mapped length is smaller than expected, we just BUG().
+> 
+> [FIX]
+> This patch will fix the problems by:
+> 
+> - Add extra WARN_ON() if btrfs_get_chunk_map() failed
+>   I know syzbot will complain, but it's better noisy for fstests.
+> 
+> - Replace the ASSERT()
+>   By returning the error.
+> 
+> - Handle the error when mapped length is smaller than expected length
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
+Looks good to me, you can add
+Reviewed-by: Boris Burkov <boris@bur.io>
 
-On Fri, Jan 27, 2023, at 9:26 AM, Waiman Long wrote:
-> On 1/26/23 23:07, Boqun Feng wrote:
->> On Thu, Jan 26, 2023 at 10:37:56PM -0500, Chris Murphy wrote:
->>>
->>> On Thu, Jan 26, 2023, at 7:20 PM, Waiman Long wrote:
->>>> On 1/26/23 17:42, Mikhail Gavrilov wrote:
->>>>>> I'm not sure whether these options are better than just increasing the
->>>>>> number, maybe to unblock your ASAP, you can try make it 30 and make sure
->>>>>> you have large enough memory to test.
->>>>> About just to increase the LOCKDEP_CHAINS_BITS by 1. Where should this
->>>>> be done? In vanilla kernel on kernel.org? In a specific distribution?
->>>>> or the user must rebuild the kernel himself? Maybe increase
->>>>> LOCKDEP_CHAINS_BITS by 1 is most reliable solution, but it difficult
->>>>> to distribute to end users because the meaning of using packaged
->>>>> distributions is lost (user should change LOCKDEP_CHAINS_BITS in
->>>>> config and rebuild the kernel by yourself).
->>>> Note that lockdep is typically only enabled in a debug kernel shipped by
->>>> a distro because of the high performance overhead. The non-debug kernel
->>>> doesn't have lockdep enabled. When LOCKDEP_CHAINS_BITS isn't big enough
->>>> when testing on the debug kernel, you can file a ticket to the distro
->>>> asking for an increase in CONFIG_LOCKDEP_CHAIN_BITS. Or you can build
->>>> your own debug kernel with a bigger CONFIG_LOCKDEP_CHAIN_BITS.
->>> Fedora bumped CONFIG_LOCKDEP_CHAINS_BITS=17 to 18 just 6 months ago for debug kernels.
->>> https://gitlab.com/cki-project/kernel-ark/-/merge_requests/1921
->>>
->>> If 19 the recommended value I don't mind sending an MR for it. But if
->>> the idea is we're going to be back here talking about bumping it to 20
->>> in six months, I'd like to avoid that.
->>>
->> How about a boot parameter then?
->
-> A boot parameter doesn't work for a statically allocated array which is 
-> determined at compile time. Dynamic memory allocation isn't enabled yet 
-> at early boot when lockdep will be used.
+> ---
+>  fs/btrfs/bio.c     | 6 +++++-
+>  fs/btrfs/volumes.c | 5 ++++-
+>  2 files changed, 9 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index b8fb7ef6b520..8f7b56a0290f 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -246,7 +246,11 @@ void btrfs_submit_bio(struct btrfs_fs_info *fs_info, struct bio *bio, int mirror
+>  		btrfs_crit(fs_info,
+>  			   "mapping failed logical %llu bio len %llu len %llu",
+>  			   logical, length, map_length);
 
-Also, at least in Fedora Rawhide where the mainline debug kernels appear, mostly get used non-interactively with automated tests. So if we're going to discover lockdep issues, we need the kernel logs to be reliable at the time those tests are run, and we don't have a practical way of adding another boot parameter just for these tests.
+nit: for these WARN_ON(1)s, how about changing them from
+if (cond) {
+        btrfs_crit(<msg>);
+        WARN_ON(1);
+        <return error>;
+}
 
-Anyway I went ahead and submitted an MR to bump this to 19.
-https://gitlab.com/cki-project/kernel-ark/-/merge_requests/2271
+to
 
+if (WARN_ON(<cond>)) {
+        btrfs_crit(<msg>);
+	<return err>
+}
 
-
--- 
-Chris Murphy
+> -		BUG();
+> +		WARN_ON(1);
+> +		ret = -EINVAL;
+> +		btrfs_bio_counter_dec(fs_info);
+> +		btrfs_bio_end_io(btrfs_bio(bio), errno_to_blk_status(ret));
+> +		return;
+>  	}
+>  
+>  	if (!bioc) {
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index aa25fa335d3e..f69475fb1bc1 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3012,6 +3012,7 @@ struct extent_map *btrfs_get_chunk_map(struct btrfs_fs_info *fs_info,
+>  	if (!em) {
+>  		btrfs_crit(fs_info, "unable to find logical %llu length %llu",
+>  			   logical, length);
+> +		WARN_ON(1);
+>  		return ERR_PTR(-EINVAL);
+>  	}
+>  
+> @@ -3020,6 +3021,7 @@ struct extent_map *btrfs_get_chunk_map(struct btrfs_fs_info *fs_info,
+>  			   "found a bad mapping, wanted %llu-%llu, found %llu-%llu",
+>  			   logical, length, em->start, em->start + em->len);
+>  		free_extent_map(em);
+> +		WARN_ON(1);
+>  		return ERR_PTR(-EINVAL);
+>  	}
+>  
+> @@ -6384,7 +6386,8 @@ int __btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+>  	ASSERT(op != BTRFS_MAP_DISCARD);
+>  
+>  	em = btrfs_get_chunk_map(fs_info, logical, *length);
+> -	ASSERT(!IS_ERR(em));
+> +	if (IS_ERR(em))
+> +		return PTR_ERR(em);
+>  
+>  	ret = btrfs_get_io_geometry(fs_info, em, op, logical, &geom);
+>  	if (ret < 0)
+> -- 
+> 2.38.1

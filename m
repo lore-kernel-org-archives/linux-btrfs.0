@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5910C61DA3
-	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Jan 2023 05:41:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C9BAC61DA7
+	for <linux-btrfs@archiver.kernel.org>; Fri, 27 Jan 2023 05:41:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229791AbjA0Flp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 27 Jan 2023 00:41:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51982 "EHLO
+        id S231670AbjA0Flq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 27 Jan 2023 00:41:46 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51970 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231670AbjA0Fln (ORCPT
+        with ESMTP id S230015AbjA0Flo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 27 Jan 2023 00:41:43 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 55408721CF
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jan 2023 21:41:41 -0800 (PST)
+        Fri, 27 Jan 2023 00:41:44 -0500
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36623721D1
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Jan 2023 21:41:42 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id D0F4C21C70
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 05:41:38 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id ED3D21FF5F
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 05:41:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1674798098; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+        t=1674798100; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=QDZCWWpgULB40YxDEqg/vOhKoope109BO1h4pWEGtUM=;
-        b=UxALgJwpwFI4Be+OBYpRx7MxlJjbMctXs6HgmKWF/ejY2LrnaCQ0QAe8DtC+HgMPRdi1ej
-        TsYmBngc6M4ukwraVXfhqoPJpRFseHrVWStX2aKHAhh7CB8bluDHMf2lohTEH9oMQtsOj6
-        r+mjvlgJKZ/mgyQxsFETy2aVNFd5qwg=
+        bh=CpIZgtGzaQZ5PCJtGuXbLfblmSGTOwDexI9nsq3zou4=;
+        b=tlhz1UMX3shsrMkjL/12P4k7oDrVnmGXp8xSwLGdbxJB32DN9xbVM39OpANkV0JXNBY/si
+        Z6x7eXQPjd7bOw7J3eKD7jMeZshPwEl74befHaTPicfLwzRjG3TgJaaKGEJ8KtfRDIDxs0
+        hSMhcgju5VU5U5mSjqbwVfOKu6G3a9Y=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 30D83134F5
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 05:41:37 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 4CBF0134F5
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 05:41:40 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id EIjwOhFk02OnLwAAMHmgww
+        id YKUmBhRk02OnLwAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 05:41:37 +0000
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Jan 2023 05:41:40 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/5] btrfs-progs: fix a false alert on an uninitialized variable when BUG_ON() is involved.
-Date:   Fri, 27 Jan 2023 13:41:15 +0800
-Message-Id: <c1bd04c707a6ac03f9927b99a959058615ec9d05.1674797823.git.wqu@suse.com>
+Subject: [PATCH 4/5] btrfs-progs: move a union with variable sized type to the end
+Date:   Fri, 27 Jan 2023 13:41:17 +0800
+Message-Id: <34378b3e8906ca7e24f981caf7296087767510ac.1674797823.git.wqu@suse.com>
 X-Mailer: git-send-email 2.39.1
 In-Reply-To: <cover.1674797823.git.wqu@suse.com>
 References: <cover.1674797823.git.wqu@suse.com>
@@ -55,90 +55,59 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[FALSE ALERT]
-Clang 15.0.7 gives the following false alert in get_dev_extent_len():
+[WARNING]
+Clang 15.0.7 gives the following warning:
 
-  kernel-shared/extent-tree.c:3328:2: warning: variable 'div' is used uninitialized whenever switch default is taken [-Wsometimes-uninitialized]
-          default:
-          ^~~~~~~
-  kernel-shared/extent-tree.c:3332:24: note: uninitialized use occurs here
-          return map->ce.size / div;
-                                ^~~
-  kernel-shared/extent-tree.c:3311:9: note: initialize the variable 'div' to silence this warning
-          int div;
-                 ^
-                  = 0
-
-And one in btrfs_stripe_length() too:
-
-  kernel-shared/volumes.c:2781:2: warning: variable 'stripe_len' is used uninitialized whenever switch default is taken [-Wsometimes-uninitialized]
-          default:
-          ^~~~~~~
-  kernel-shared/volumes.c:2785:9: note: uninitialized use occurs here
-          return stripe_len;
-                 ^~~~~~~~~~
-  kernel-shared/volumes.c:2754:16: note: initialize the variable 'stripe_len' to silence this warning
-          u64 stripe_len;
-                        ^
-                         = 0
+  image/main.c:95:2: warning: field '' with variable sized type 'union metadump_struct::(anonymous at image/main.c:95:2)' not at the end of a struct or class is a GNU extension [-Wgnu-variable-sized-type-not-at-end]
+          union {
+          ^
 
 [CAUSE]
-Clang doesn't really understand what BUG_ON() means, thus in that
-default case, we won't get uninitialized value but crash directly.
+The union contains meta_cluster, which variable sized:
+
+  struct meta_cluster {
+  	struct meta_cluster_header header;
+  	struct meta_cluster_item items[];
+  } __attribute__ ((__packed__));
+
+Thus clang gives above warning since it's a GNU extension.
 
 [FIX]
-Silent the errors by assigning the default value properly using the
-value of SINGLE profile.
+Just move the union to the end of the structure.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- kernel-shared/extent-tree.c | 4 ++--
- kernel-shared/volumes.c     | 3 ++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ image/main.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
-index 0b0c40afe9a9..4c6ad64f5ba8 100644
---- a/kernel-shared/extent-tree.c
-+++ b/kernel-shared/extent-tree.c
-@@ -3308,7 +3308,7 @@ out:
+diff --git a/image/main.c b/image/main.c
+index ecf464e5b0a2..d4a1fe349d31 100644
+--- a/image/main.c
++++ b/image/main.c
+@@ -92,11 +92,6 @@ struct metadump_struct {
+ 	struct btrfs_root *root;
+ 	FILE *out;
  
- static u64 get_dev_extent_len(struct map_lookup *map)
- {
--	int div;
-+	int div = 1;
+-	union {
+-		struct meta_cluster cluster;
+-		char meta_cluster_bytes[IMAGE_BLOCK_SIZE];
+-	};
+-
+ 	pthread_t threads[MAX_WORKER_THREADS];
+ 	size_t num_threads;
+ 	pthread_mutex_t mutex;
+@@ -119,6 +114,11 @@ struct metadump_struct {
+ 	enum sanitize_mode sanitize_names;
  
- 	switch (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
- 	case 0: /* Single */
-@@ -3316,7 +3316,7 @@ static u64 get_dev_extent_len(struct map_lookup *map)
- 	case BTRFS_BLOCK_GROUP_RAID1:
- 	case BTRFS_BLOCK_GROUP_RAID1C3:
- 	case BTRFS_BLOCK_GROUP_RAID1C4:
--		div = 1;
-+		/* The default value can already handle it. */
- 		break;
- 	case BTRFS_BLOCK_GROUP_RAID5:
- 	case BTRFS_BLOCK_GROUP_RAID6:
-diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
-index 65147d064934..1e2c88955719 100644
---- a/kernel-shared/volumes.c
-+++ b/kernel-shared/volumes.c
-@@ -2758,6 +2758,7 @@ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
- 		      BTRFS_BLOCK_GROUP_PROFILE_MASK;
+ 	int error;
++
++	union {
++		struct meta_cluster cluster;
++		char meta_cluster_bytes[IMAGE_BLOCK_SIZE];
++	};
+ };
  
- 	chunk_len = btrfs_chunk_length(leaf, chunk);
-+	stripe_len = chunk_len;
- 
- 	switch (profile) {
- 	case 0: /* Single profile */
-@@ -2765,7 +2766,7 @@ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
- 	case BTRFS_BLOCK_GROUP_RAID1C3:
- 	case BTRFS_BLOCK_GROUP_RAID1C4:
- 	case BTRFS_BLOCK_GROUP_DUP:
--		stripe_len = chunk_len;
-+		/* The default value is already fine. */
- 		break;
- 	case BTRFS_BLOCK_GROUP_RAID0:
- 		stripe_len = chunk_len / num_stripes;
+ struct mdrestore_struct {
 -- 
 2.39.1
 

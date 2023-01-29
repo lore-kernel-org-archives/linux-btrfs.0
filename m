@@ -2,46 +2,46 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ECEB0C05027
-	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Jan 2023 08:00:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9EFD8C05027
+	for <linux-btrfs@archiver.kernel.org>; Sun, 29 Jan 2023 15:26:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231760AbjA2IA2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sun, 29 Jan 2023 03:00:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56160 "EHLO
+        id S233590AbjA2P0V (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sun, 29 Jan 2023 10:26:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230238AbjA2IA1 (ORCPT
+        with ESMTP id S229960AbjA2P0U (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sun, 29 Jan 2023 03:00:27 -0500
-Received: from mail-io1-f70.google.com (mail-io1-f70.google.com [209.85.166.70])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B0B4206A0
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jan 2023 00:00:23 -0800 (PST)
-Received: by mail-io1-f70.google.com with SMTP id r21-20020a0566022b9500b00707e4ee2b6fso5054329iov.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jan 2023 00:00:23 -0800 (PST)
+        Sun, 29 Jan 2023 10:26:20 -0500
+Received: from mail-io1-f71.google.com (mail-io1-f71.google.com [209.85.166.71])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7DE42193F0
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jan 2023 07:26:18 -0800 (PST)
+Received: by mail-io1-f71.google.com with SMTP id c8-20020a05660221c800b007164907d311so2021757ioc.11
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jan 2023 07:26:18 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=to:from:subject:message-id:in-reply-to:date:mime-version
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=iWUjXLTnw3h+L3dZwm5YKP98PHZMaQaUEy4gOEVllR0=;
-        b=au4zRNPCLR9pqa5xP0s62sC/Ii85jtm138I4NQrwBoIPdqeh1I9NN4fq3/N8cFusVR
-         Wm0HSTjWB9NHD7NQSzpmPupizh/gxy7O8gtu8ht2XIzzPW/c+kc+SRSiYcplMeI1twn9
-         +pS2KqEwJ9KXTFE8Rew0rsgSIZrboQMRR0G4YrYCC+OfFHjL70RTB+F1ZCWmSrKcaPs+
-         DN2kxyexIIXiBTHHBQf77t6iazq3RLhY1k3TXT4pGQyDEktpTy7ayUymJ9Lll6mJFfWl
-         v8nEvSwZT3qjnuywJ3L5oogBf6QDGH9vzNrXnlHtf9tq1yDu9JQxmWrz3+h/gzzl29gc
-         ZXKw==
-X-Gm-Message-State: AO0yUKV9H5GsTEjw0KSKJG38kabhVDqw6FEqPRTsMZpGyNOpLyKN7Y0g
-        XDdGmyFXysXb65xIpjss+DtOdvXOYXRJ/WAIKrO7f9yY3642
-X-Google-Smtp-Source: AK7set+kUJ90GQ7HGXxpBff9eEcbdEcLgNAdzlX2Mf8X4xcjkWW2R9ZNa7JKjDRN4WMZw4u6J7f3RfS2pX3PS1zWMS+aL+pM2RyE
+        bh=8cF9L9jLWY8TFRKz3jdp0+sMF5n63XrGkYgD+r/LrUM=;
+        b=P9LMaKcTsr5QuBNNr8XepBSpEwVbhD/gbs0f0mRo1KweA4x/NZoWR3k/j2lhQiSv82
+         pCXSAuyK+7L6qIeebVbZm+YcYeygYMwjOn4cJ8qIGVzFhuZyuUZGb4AcsZYmGj97O/q+
+         lLfx0EtEbcKbWTMbDLufk+qCrKqRzcKlQGF/r7z+yqvn1oOCRedmgJXG61KbUNF/P6pm
+         hYTPa4Fn/bnMsauITV/YcCTJ1alUv4F9kjkQYz1fIXdXR10wVM2HSFE0iHJk+lZiQsuN
+         5gXI5cQ+o3xMxs/IRGCMaifPTPCqQR4pCT3IqVwQ1ea6m6cXjZ0rUftIKL8EIZgStVHw
+         FuJw==
+X-Gm-Message-State: AO0yUKUKmxQkAzbw2fhrhLep3v9EvAHKm/qDmyumRDZK7wvSOQ6582ii
+        nw+5a4i49f9nD1Lps14dFMdY+xvZYyk/jA9eqIONVXtVK77Q
+X-Google-Smtp-Source: AK7set+J97wR6pyTkJQzNgrvEAzGQv2Coaf5oP9nuxQEXIut8CfO8ZG6G1elUbRDOv3uUOL8oT6D2A3Lpa4yxBs0atsxKTWirtU4
 MIME-Version: 1.0
-X-Received: by 2002:a92:3004:0:b0:310:bb17:2ffb with SMTP id
- x4-20020a923004000000b00310bb172ffbmr1222681ile.144.1674979222613; Sun, 29
- Jan 2023 00:00:22 -0800 (PST)
-Date:   Sun, 29 Jan 2023 00:00:22 -0800
-In-Reply-To: <00000000000076699c05ed7c54a2@google.com>
+X-Received: by 2002:a92:8e4d:0:b0:310:c52c:81ff with SMTP id
+ k13-20020a928e4d000000b00310c52c81ffmr1143173ilh.50.1675005977489; Sun, 29
+ Jan 2023 07:26:17 -0800 (PST)
+Date:   Sun, 29 Jan 2023 07:26:17 -0800
+In-Reply-To: <0000000000008f0ed405ed71ef58@google.com>
 X-Google-Appengine-App-Id: s~syzkaller
 X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <00000000000091f75805f3627ddd@google.com>
-Subject: Re: [syzbot] possible deadlock in btrfs_commit_transaction
-From:   syzbot <syzbot+52d708a0bca2efc4c9df@syzkaller.appspotmail.com>
+Message-ID: <00000000000048f87b05f368b832@google.com>
+Subject: Re: [syzbot] possible deadlock in btrfs_dirty_inode
+From:   syzbot <syzbot+37edf86c9b60581e523f@syzkaller.appspotmail.com>
 To:     anand.jain@oracle.com, clm@fb.com, dsterba@suse.com,
         hdanton@sina.com, josef@toxicpanda.com,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -59,13 +59,13 @@ Date:   Mon Nov 7 16:44:51 2022 +0000
 
     btrfs: free btrfs_path before copying root refs to userspace
 
-bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=14e58bae480000
-start commit:   08ad43d554ba Merge tag 'net-6.1-rc7' of git://git.kernel.o..
+bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=10cf123e480000
+start commit:   77c51ba552a1 Merge tag 'scsi-fixes' of git://git.kernel.or..
 git tree:       upstream
-kernel config:  https://syzkaller.appspot.com/x/.config?x=8d01b6e3197974dd
-dashboard link: https://syzkaller.appspot.com/bug?extid=52d708a0bca2efc4c9df
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=114d3e03880000
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=1320ea4b880000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=6f9416d398342c83
+dashboard link: https://syzkaller.appspot.com/bug?extid=37edf86c9b60581e523f
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=148fcd31880000
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=167bfb31880000
 
 If the result looks correct, please mark the issue as fixed by replying with:
 

@@ -2,85 +2,77 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91844C636D3
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Feb 2023 20:05:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8338CC636D3
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Feb 2023 20:16:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231251AbjBHUF4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Feb 2023 15:05:56 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32942 "EHLO
+        id S232036AbjBHUQV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Feb 2023 15:16:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37770 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229822AbjBHUFz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2023 15:05:55 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43175113D3
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2023 12:05:54 -0800 (PST)
+        with ESMTP id S231367AbjBHUQU (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2023 15:16:20 -0500
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 30AC5BB91;
+        Wed,  8 Feb 2023 12:16:19 -0800 (PST)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id EB046345B9;
-        Wed,  8 Feb 2023 20:05:52 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id BEFE22072F;
+        Wed,  8 Feb 2023 20:16:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1675886752;
+        t=1675887377;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=tC7vXniiKAUtMYKHURPh4uQDl1lzZBiXv4Bvz1mfLeI=;
-        b=BoMT6gCdCzVr+/3GXmuO1aScOAhehC4GxyARChc5RmMH8iUAuXvp3ibfsjE9iobU85gW6E
-        sMg287LxiuUsmOb4YYB+Lwxlqbr7FY3evIhp1W8K8dO/TQAmc/gourxrwAeope4UCr/Rk5
-        T9EMYgKd2l2ucOdaq+IP0fLmdjFyj+g=
+        bh=38eF0iECejPU1a+Mp9LNCQL5AtFm/MRsX4YHeT+eHjQ=;
+        b=OTKBCKRZ0paCbhC5M7ppg5l7EieTxW6EO6FOfgXB7EfQpHMjl2O1cwFlpYWiZ6CXK80DHV
+        HcIC9wmYQn4+1SMUmRVqdAjbbp8bzopce29yVcPX8TyttLWM+Om9ToVFAtwSpoHstFy1IS
+        Uqk36Oj1eawOpAT7RyMQ8KJfxjupOZw=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1675886752;
+        s=susede2_ed25519; t=1675887377;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=tC7vXniiKAUtMYKHURPh4uQDl1lzZBiXv4Bvz1mfLeI=;
-        b=hRCXV149aIZqeZsQY44JXFl+LEXNuZQnqHEKrQcSF4B9NBjTrIWCj3fW9601DHpo39soZk
-        14N6a5AT32mH08Ag==
+        bh=38eF0iECejPU1a+Mp9LNCQL5AtFm/MRsX4YHeT+eHjQ=;
+        b=AFiLHQGaQps31IHCAoJ0eIQqaZXKLlh6YfHwRpnwzIKgm+q0JaeY93T8UUWA6tIJ2QUzxD
+        4SYyJuE/6wXAGPBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BFAAE13425;
-        Wed,  8 Feb 2023 20:05:52 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9316D1358A;
+        Wed,  8 Feb 2023 20:16:17 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 9m/iLaAA5GP7KAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 08 Feb 2023 20:05:52 +0000
-Date:   Wed, 8 Feb 2023 21:00:03 +0100
+        id oML6IhED5GNNLAAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Wed, 08 Feb 2023 20:16:17 +0000
+Date:   Wed, 8 Feb 2023 21:10:28 +0100
 From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: small raid56 cleanups v3
-Message-ID: <20230208200003.GJ28288@twin.jikos.cz>
+To:     ye.xingchen@zte.com.cn
+Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix compile error about uninitialized variable
+Message-ID: <20230208201028.GK28288@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20230111062335.1023353-1-hch@lst.de>
+References: <202302011022199155711@zte.com.cn>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230111062335.1023353-1-hch@lst.de>
+In-Reply-To: <202302011022199155711@zte.com.cn>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Jan 11, 2023 at 07:23:24AM +0100, Christoph Hellwig wrote:
-> Hi all,
+On Wed, Feb 01, 2023 at 10:22:19AM +0800, ye.xingchen@zte.com.cn wrote:
+> From: Minghao Chi <chi.minghao@zte.com.cn>
 > 
-> this series has a few trivial code cleanups for the raid56 code while
-> I looked at it for another project.
-> 
-> Changes since v2:
->  - lots of reshuffling based on feedback from qu
-> 
-> Changes since v1:
->  - cleanup more of the work handlers
->  - cleanup cleaning up unused bios
-> 
-> Diffstat:
->  raid56.c |  324 ++++++++++++++++++++++-----------------------------------------
->  1 file changed, 114 insertions(+), 210 deletions(-)
+> fs/btrfs/tree-log.c:6166:6: note: 'last_range_start' was declared here
+> fs/btrfs/volumes.c:2598:27: note: 'seed_devices' was declared here
+> fs/btrfs/send.c:1909:13: error: 'right_gen' may be used uninitialized in this function [-Werror=maybe-uninitialized]
 
-Added to misc-next, with some subject adjustments, thanks.
+We have the warning -Wmaybe-uninitialized enabled locally for fs/btrfs/
+and no pending compiler warnings but in case you find something please
+tell us which compiler and version it is. Sometimes it makes sense to
+fix warnings for older yet still widely used versions.

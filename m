@@ -2,79 +2,132 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46A10C636CC
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Feb 2023 15:38:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD1F6C05027
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Feb 2023 17:48:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229895AbjBHPi1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Feb 2023 10:38:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58934 "EHLO
+        id S231706AbjBHRsJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Feb 2023 12:48:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231256AbjBHPiZ (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2023 10:38:25 -0500
-Received: from savella.carfax.org.uk (2001-ba8-1f1-f0e6-0-0-0-2.autov6rev.bitfolk.space [IPv6:2001:ba8:1f1:f0e6::2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1D9748A37
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2023 07:38:24 -0800 (PST)
-Received: from hrm by savella.carfax.org.uk with local (Exim 4.92)
-        (envelope-from <hrm@savella.carfax.org.uk>)
-        id 1pPmVX-0006di-0A; Wed, 08 Feb 2023 15:37:15 +0000
-Date:   Wed, 8 Feb 2023 15:37:14 +0000
-From:   Hugo Mills <hugo@carfax.org.uk>
-To:     Patrik Lundquist <patrik.lundquist@gmail.com>
-Cc:     Paul Boughner <paulboughner@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Leap Guest OS in Vbox =?utf-8?Q?parent?=
- =?utf-8?Q?_transid_verify_failed=E2=80=A6=2E613771?= wanted 613774
-Message-ID: <20230208153714.GE31918@savella.carfax.org.uk>
-Mail-Followup-To: Hugo Mills <hugo@carfax.org.uk>,
-        Patrik Lundquist <patrik.lundquist@gmail.com>,
-        Paul Boughner <paulboughner@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAKH6Scdg_BXDo9MR9O-RosM-VbR2Uz7Or=d_5-x3FSMSu75ziw@mail.gmail.com>
- <CAA7pwKPtkGH3HbJBWj7KA==Vwm+k8V4Q8j-Askxn9C7ZkSWbwQ@mail.gmail.com>
+        with ESMTP id S231796AbjBHRrv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Feb 2023 12:47:51 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D83D42E0D1
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2023 09:46:59 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 609C46177E
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2023 17:46:54 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 515FFC4339B
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Feb 2023 17:46:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1675878413;
+        bh=SrpgjZ5eSQNc3vXR70UsW8QhVddQeHyTQe7rLHRi70k=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=REzN+LkkI3Lmb8p94E8AjKIyaSKNIOPh2RNbLl0u0Y6MTiUOYmegU3Qj5QGaMlj6P
+         JCupMba6/Bj4zHzL1zeUyxLSINXpmHKrIjf1lEuuGEffOb0zwzOnZxoRHMPSA1/aSD
+         7FkrJRxhZgvVoho3I5UnXgRzh4Gk8ztkDtWf3H33eNJ5yDpsDyNJPWGLwEfH8gEbkJ
+         3WQUU5lmVZuI+B8hns81SIwrAv2iKQu2HhBA+5vH/a1pnC8hAF2o52TEG+vl8yjV/n
+         Eqti/6/c8K2ramsUMEUJyKzTgxgxGSd1Ljne1Dtn3mXGWdHi/niBwcE4uaAus9ynO8
+         DM6qyBE8Yd4qw==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs: eliminate extra call when doing binary search on extent buffer
+Date:   Wed,  8 Feb 2023 17:46:48 +0000
+Message-Id: <0b8ddfc0c2e415f31b3fcf1ae531b78abdafc494.1675877903.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1675877903.git.fdmanana@suse.com>
+References: <cover.1675877903.git.fdmanana@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAA7pwKPtkGH3HbJBWj7KA==Vwm+k8V4Q8j-Askxn9C7ZkSWbwQ@mail.gmail.com>
-X-GPG-Fingerprint: DD84 D558 9D81 DDEE 930D  2054 585E 1475 E2AB 1DE4
-X-GPG-Key: E2AB1DE4
-X-Parrot: It is no more. It has joined the choir invisible.
-X-IRC-Nicks: darksatanic darkersatanic darkling darkthing
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 08, 2023 at 04:23:02PM +0100, Patrik Lundquist wrote:
-> On Wed, 8 Feb 2023 at 16:03, Paul Boughner <paulboughner@gmail.com> wrote:
-> >
-> > This is in a VM so I am not sure how to get the log out and everything
-> > is in images.
-> >
-> >  I did a dumb thing and hibernated my Win10 host with the Leap guest
-> > still running then woke it up, then hibernated again, repeatedly 3x.
+From: Filipe Manana <fdmanana@suse.com>
 
-   This in itself shouldn't cause FS corruption, unless you were using
-the FS from a different OS during the hibernation (in which case, it's
-a miracle it lasted for 3 goes before breaking).
+The function btrfs_bin_search() is just a wrapper around the function
+generic_bin_search(), which passes the same arguments plus a default
+low slot with a value of 0. This adds an unnecessary extra function
+call, since btrfs_bin_search() is not static. So improve on this by
+making btrfs_bin_search() an inline function that calls
+generic_bin_search(), renaming the later to btrfs_generic_bin_search()
+and exporting it.
 
-> Loopback mount the disk image and run btrfs check?
-> 
-> https://superuser.com/questions/158908/how-to-mount-a-virtualbox-vdi-disk-on-linux
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/ctree.c | 16 +++-------------
+ fs/btrfs/ctree.h | 15 +++++++++++++++
+ 2 files changed, 18 insertions(+), 13 deletions(-)
 
-   btrfs check isn't likely to help here, but the loopback is useful
-if you can't boot the original VM into a recovery environment. Most
-desktop distributions will be able to drop you into some kind of
-recovery environment (maybe just the initramfs) even if the main OS
-can't boot.
-
-   Depending on the exact failure (in dmesg) when you try to mount the
-FS, it may be fixable. The first thing is to try to mount with
--orecovery=all. If that works, then everything should be sorted. If
-not, it would be useful to see the output of dmesg when you get the
-mount failure, and we can work out what to do from there.
-
-   Hugo.
-
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 4754c9101a4c..34c76b217b52 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -863,8 +863,8 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+  * Slot may point to the total number of items (i.e. one position beyond the last
+  * key) if the key is bigger than the last key in the extent buffer.
+  */
+-static noinline int generic_bin_search(struct extent_buffer *eb, int low,
+-				       const struct btrfs_key *key, int *slot)
++int btrfs_generic_bin_search(struct extent_buffer *eb, int low,
++			     const struct btrfs_key *key, int *slot)
+ {
+ 	unsigned long p;
+ 	int item_size;
+@@ -925,16 +925,6 @@ static noinline int generic_bin_search(struct extent_buffer *eb, int low,
+ 	return 1;
+ }
+ 
+-/*
+- * Simple binary search on an extent buffer. Works for both leaves and nodes, and
+- * always searches over the whole range of keys (slot 0 to slot 'nritems - 1').
+- */
+-int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+-		     int *slot)
+-{
+-	return generic_bin_search(eb, 0, key, slot);
+-}
+-
+ static void root_add_used(struct btrfs_root *root, u32 size)
+ {
+ 	spin_lock(&root->accounting_lock);
+@@ -1869,7 +1859,7 @@ static inline int search_for_key_slot(struct extent_buffer *eb,
+ 		return 0;
+ 	}
+ 
+-	return generic_bin_search(eb, search_low_slot, key, slot);
++	return btrfs_generic_bin_search(eb, search_low_slot, key, slot);
+ }
+ 
+ static int search_leaf(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6965703a81b6..322f2171275d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -507,6 +507,21 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range);
+ /* ctree.c */
+ int __init btrfs_ctree_init(void);
+ void __cold btrfs_ctree_exit(void);
++
++int btrfs_generic_bin_search(struct extent_buffer *eb, int low,
++			     const struct btrfs_key *key, int *slot);
++
++/*
++ * Simple binary search on an extent buffer. Works for both leaves and nodes, and
++ * always searches over the whole range of keys (slot 0 to slot 'nritems - 1').
++ */
++static inline int btrfs_bin_search(struct extent_buffer *eb,
++				   const struct btrfs_key *key,
++				   int *slot)
++{
++	return btrfs_generic_bin_search(eb, 0, key, slot);
++}
++
+ int btrfs_bin_search(struct extent_buffer *eb, const struct btrfs_key *key,
+ 		     int *slot);
+ int __pure btrfs_comp_cpu_keys(const struct btrfs_key *k1, const struct btrfs_key *k2);
 -- 
-Hugo Mills             | I'm all for giving people enough rope to shoot
-hugo@... carfax.org.uk | themselves in the foot.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                        Andreas Dilger
+2.35.1
+

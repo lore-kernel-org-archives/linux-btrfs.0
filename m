@@ -2,59 +2,57 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35B4AC636CC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 14:34:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F375CC636D4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 14:34:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229688AbjBOOd7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 09:33:59 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33028 "EHLO
+        id S229731AbjBOOeG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 09:34:06 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33172 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229698AbjBOOd6 (ORCPT
+        with ESMTP id S229711AbjBOOeD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 09:33:58 -0500
+        Wed, 15 Feb 2023 09:34:03 -0500
 Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CABF638EA5
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 06:33:43 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EFBA27481
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 06:33:58 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1676471623; x=1708007623;
+  t=1676471637; x=1708007637;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=48Cmk2aOaGJS0a991MSx59EPyaPSJ4uYMqgpkcDU7Zo=;
-  b=DC6YGmA8w8LR7Uos1iljlf9bWtBjo3SrXUVoEBoVXL6QEZk3OKKkKB7U
-   ZaCfrrMCSI5kMPs4x9B6u4HwuZPsiGm6ux2NVXSPrgwuv4s93wehFHNAj
-   1icyfWsLMMClYYRyPPCQHYN/LqzJJ1LqPfq6hF8SFtsUNskAhZE3YZGHG
-   TR0rlfLVLin48aXX0qO6N6ClsIpmCoGNFPpg9izxU39Bo+DAf7+/qWbDk
-   P+qlDqZpvYZE10pV3CfVQkDoojVKAOPaAJ1UevC3g3bFYeU0IyoAKZZG6
-   dMipf+wE+BFTP1WOc0qdALMjntT7uTMrR0DH/w486PSCqsR4XtCRGeijP
-   w==;
+  bh=DPLwugiUN11C/hYVLmrycfTWQUaMYko3yQ9Silebc68=;
+  b=ppJSuIdeLL4iD6NGy0BvNd/2Y6o+6DbQIEzmDKdHiDWrM/XKfh3boIdQ
+   10Be7pMyxRq/dwbwnyaZsW8zl6ddLhoZ2+eclBglLuc3psSp0plAxEq4F
+   MU71NfXtE+k/vYGzvPNhDOE1dAddhL3hsNA2qleeOOnn7TeB6kxBMG9e9
+   rwhMpzXn3D2delLdwM+0yKOkUm3ZbH209SqzqAVxw/WzDdzlC6xkCqqn8
+   vA6tFWeD9rfiaO36fE1Qnb4jCvkbnybxbaEHToMnq645/KIFpxExdM5Vu
+   5a4b2Gkxd4kqAdHbApPrwzbtkD+cg3IUAl7bX2TPxry1D6LJUY77ck7Cn
+   A==;
 X-IronPort-AV: E=Sophos;i="5.97,299,1669046400"; 
-   d="scan'208";a="223394064"
+   d="scan'208";a="223394067"
 Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 15 Feb 2023 22:33:41 +0800
-IronPort-SDR: d/1ay7bnWicEs7Zyp8NrC0gHrIQEXZ53wl989kAXUiUh3LDmcbc2VBlVRiBfztnMNyt68Ko9xU
- LKtQyKvZiUkJiX1+oOKqP3/3fMVOY2nZy13YWdgOKWFVOO0HzSMT52xSOkPRobdZy26RVoJ7Qi
- 0RRFkkZ2l2/JLHfQ+9zZXLVjOzMf89AfzX14LnXJKB+s7Sa38Irqph8NzDxkd1UPLJ74Hf7+hv
- 7mcpdKhHIqb/MCQFS9NY/ZDzxqg4sDcSmGL3u0G1y/pa31B6jYHYxHTnxogfTaqcdX09f9bl/X
- +dU=
+  by ob1.hgst.iphmx.com with ESMTP; 15 Feb 2023 22:33:43 +0800
+IronPort-SDR: qDTgJHuT6guBClUQARt7muABuRYpkG8ZdsUhzvcP7AtxJGJSjqShonNosLAK2ZJRsNDOZmLca+
+ OQyTrWaGErRmhMP+dbcVvHDw1XyH3ZlH+9C79mw1ckPEefE2Z6QA7WtLMETrfDk4ur/OAehP3n
+ vW3NBkQU2u4NlZtmsUMGIGC50JlL8mArNh8Cb2nimX9mCe8VZfJA+JDTvBhXA55ITXQtQX5Jrw
+ UKxPpBJvEA3jpVDo93qL/s6Ak+weUJ5Rh/roGrA7flYKYaHA/slhhygDCKY9owK8+PHsyl8VHz
+ Xts=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 15 Feb 2023 05:45:03 -0800
-IronPort-SDR: eIzhOwmbAGzVP8qMBOjrXlu1z+d6xX1C2ke0FAmYFnVNeISXpe2owMjueV2t7AC0Vh+ttkPp6P
- bmqYEDH9V50mHYxuEEaUpF0yyxZsgY+Zp3+1qQJF1qYqCsEkqRBPnVju+LWaeMAeG2yNhOLGF6
- 3heSFW3leoCR4P3cTHaxOwfaru4MCX97Xcp0qEW4Uck953hqYrcblW+e6jwlGDX1YmhWbzmk9t
- 1HpXPLu2CtXSZ7O+CGz2LJvrjSVCX/KVZoV7gE6tbFyF/lYE/0uuAHUNTUVoq7kA1Py46mxKZ8
- N9E=
+  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 15 Feb 2023 05:45:05 -0800
+IronPort-SDR: mWPHSLHwnbQKJZcp5jsuNAvPAjnhRRMaZqv4QdbXSuURumdIdR4cvsrWeWmDRPhLVDcXR/CLF+
+ rfUm/lYi39mXDrD/XvmATdwoiU/v83tfeCTe4jW4qnxVJLlb0dBgADUTcJ58XjhbZChglRGdVy
+ BJUMzQ0xcc81GCvhPG+bN4BIz360lma0m/qV0WfjTwPPLWtsPfBrRECNmzIIW3D2y7kf1IfQlc
+ o6fI6yiGIl2DOdve2SWomt4efBqEihDf4yU5wFRC09J/ISr/WRzebPX6u68dA4Z62nL14ge7jm
+ CJo=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 15 Feb 2023 06:33:41 -0800
+  by uls-op-cesaip01.wdc.com with ESMTP; 15 Feb 2023 06:33:44 -0800
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     linux-btrfs@vger.kernel.org
-Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH v6 02/13] btrfs: add raid stripe tree definitions
-Date:   Wed, 15 Feb 2023 06:33:23 -0800
-Message-Id: <3b9e1dba6f3249434a617a56f1af010d9d3d4df5.1676470614.git.johannes.thumshirn@wdc.com>
+Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v6 05/13] btrfs: delete stripe extent on extent deletion
+Date:   Wed, 15 Feb 2023 06:33:26 -0800
+Message-Id: <0f6a7e34d297565230d92c253418f2addc4849ad.1676470614.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <cover.1676470614.git.johannes.thumshirn@wdc.com>
 References: <cover.1676470614.git.johannes.thumshirn@wdc.com>
@@ -64,114 +62,90 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Add definitions for the raid stripe tree. This tree will hold information
-about the on-disk layout of the stripes in a RAID set.
+As each stripe extent is tied to an extent item, delete the stripe extent
+once the corresponding extent item is deleted.
 
-Each stripe extent has a 1:1 relationship with an on-disk extent item and
-is doing the logical to per-drive physical address translation for the
-extent item in question.
-
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/accessors.h            | 29 +++++++++++++++++++++++++++++
- include/uapi/linux/btrfs_tree.h | 20 ++++++++++++++++++--
- 2 files changed, 47 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c      |  8 ++++++++
+ fs/btrfs/raid-stripe-tree.c | 31 +++++++++++++++++++++++++++++++
+ fs/btrfs/raid-stripe-tree.h |  2 ++
+ 3 files changed, 41 insertions(+)
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index ceadfc5d6c66..6e753b63faae 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -306,6 +306,35 @@ BTRFS_SETGET_FUNCS(timespec_nsec, struct btrfs_timespec, nsec, 32);
- BTRFS_SETGET_STACK_FUNCS(stack_timespec_sec, struct btrfs_timespec, sec, 64);
- BTRFS_SETGET_STACK_FUNCS(stack_timespec_nsec, struct btrfs_timespec, nsec, 32);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 36a1476cc901..10827b7db13c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3238,6 +3238,14 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
  
-+BTRFS_SETGET_FUNCS(raid_stride_devid, struct btrfs_raid_stride, devid, 64);
-+BTRFS_SETGET_FUNCS(raid_stride_physical, struct btrfs_raid_stride, physical, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_raid_stride_devid, struct btrfs_raid_stride, devid, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_raid_stride_physical, struct btrfs_raid_stride, physical, 64);
++		if (is_data) {
++			ret = btrfs_delete_raid_extent(trans, bytenr, num_bytes);
++			if (ret) {
++				btrfs_abort_transaction(trans, ret);
++				return ret;
++			}
++		}
 +
-+static inline struct btrfs_raid_stride *btrfs_raid_stride_nr(
-+					 struct btrfs_stripe_extent *dps, int nr)
+ 		ret = btrfs_del_items(trans, extent_root, path, path->slots[0],
+ 				      num_to_del);
+ 		if (ret) {
+diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
+index 9d3e7bffe6f8..8912389d7c2f 100644
+--- a/fs/btrfs/raid-stripe-tree.c
++++ b/fs/btrfs/raid-stripe-tree.c
+@@ -124,6 +124,37 @@ void btrfs_put_ordered_stripe(struct btrfs_fs_info *fs_info,
+ 	}
+ }
+ 
++int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
++			     u64 length)
 +{
-+	unsigned long offset = (unsigned long)dps;
++	struct btrfs_fs_info *fs_info = trans->fs_info;
++	struct btrfs_root *stripe_root = btrfs_stripe_tree_root(fs_info);
++	struct btrfs_path *path;
++	struct btrfs_key stripe_key;
++	int ret;
 +
-+	offset += offsetof(struct btrfs_stripe_extent, strides);
-+	offset += nr * sizeof(struct btrfs_raid_stride);
-+	return (struct btrfs_raid_stride *)offset;
++	if (!stripe_root)
++		return 0;
++
++	stripe_key.objectid = start;
++	stripe_key.type = BTRFS_RAID_STRIPE_KEY;
++	stripe_key.offset = length;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	ret = btrfs_search_slot(trans, stripe_root, &stripe_key, path, -1, 1);
++	if (ret < 0)
++		goto out;
++
++	ret = btrfs_del_item(trans, stripe_root, path);
++out:
++	btrfs_free_path(path);
++	return ret;
++
 +}
 +
-+static inline u64 btrfs_raid_stride_devid_nr(const struct extent_buffer *eb,
-+					       struct btrfs_stripe_extent *dps,
-+					       int nr)
-+{
-+	return btrfs_raid_stride_devid(eb, btrfs_raid_stride_nr(dps, nr));
-+}
-+
-+static inline u64 btrfs_raid_stride_physical_nr(const struct extent_buffer *eb,
-+						  struct btrfs_stripe_extent *dps,
-+						  int nr)
-+{
-+	return btrfs_raid_stride_physical(eb, btrfs_raid_stride_nr(dps, nr));
-+}
-+
- /* struct btrfs_dev_extent */
- BTRFS_SETGET_FUNCS(dev_extent_chunk_tree, struct btrfs_dev_extent, chunk_tree, 64);
- BTRFS_SETGET_FUNCS(dev_extent_chunk_objectid, struct btrfs_dev_extent,
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index ab38d0f411fa..64e6bf2a10d8 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -4,9 +4,8 @@
+ int btrfs_insert_preallocated_raid_stripe(struct btrfs_fs_info *fs_info,
+ 					  u64 start, u64 len)
+ {
+diff --git a/fs/btrfs/raid-stripe-tree.h b/fs/btrfs/raid-stripe-tree.h
+index 60d3f8489cc9..12d2f588b22d 100644
+--- a/fs/btrfs/raid-stripe-tree.h
++++ b/fs/btrfs/raid-stripe-tree.h
+@@ -22,6 +22,8 @@ struct btrfs_ordered_stripe {
+ 	refcount_t ref;
+ };
  
- #include <linux/btrfs.h>
- #include <linux/types.h>
--#ifdef __KERNEL__
- #include <linux/stddef.h>
--#else
-+#ifndef __KERNEL__
- #include <stddef.h>
- #endif
- 
-@@ -73,6 +72,9 @@
- /* Holds the block group items for extent tree v2. */
- #define BTRFS_BLOCK_GROUP_TREE_OBJECTID 11ULL
- 
-+/* tracks RAID stripes in block groups. */
-+#define BTRFS_RAID_STRIPE_TREE_OBJECTID 12ULL
-+
- /* device stats in the device tree */
- #define BTRFS_DEV_STATS_OBJECTID 0ULL
- 
-@@ -281,6 +283,8 @@
-  */
- #define BTRFS_QGROUP_RELATION_KEY       246
- 
-+#define BTRFS_RAID_STRIPE_KEY		247
-+
- /*
-  * Obsolete name, see BTRFS_TEMPORARY_ITEM_KEY.
-  */
-@@ -715,6 +719,18 @@ struct btrfs_free_space_header {
- 	__le64 num_bitmaps;
- } __attribute__ ((__packed__));
- 
-+struct btrfs_raid_stride {
-+	/* btrfs device-id this raid extent lives on */
-+	__le64 devid;
-+	/* physical location on disk */
-+	__le64 physical;
-+};
-+
-+struct btrfs_stripe_extent {
-+	/* array of raid strides this stripe is composed of */
-+	__DECLARE_FLEX_ARRAY(struct btrfs_raid_stride, strides);
-+};
-+
- #define BTRFS_HEADER_FLAG_WRITTEN	(1ULL << 0)
- #define BTRFS_HEADER_FLAG_RELOC		(1ULL << 1)
- 
++int btrfs_delete_raid_extent(struct btrfs_trans_handle *trans, u64 start,
++			     u64 length);
+ int btrfs_insert_raid_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_ordered_stripe *stripe);
+ int btrfs_insert_preallocated_raid_stripe(struct btrfs_fs_info *fs_info,
 -- 
 2.39.0
 

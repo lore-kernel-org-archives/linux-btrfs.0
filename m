@@ -2,48 +2,48 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8203C6FA99
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:46:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AA36C64EC7
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:48:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229765AbjBOUqe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 15:46:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33018 "EHLO
+        id S229946AbjBOUs3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 15:48:29 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33110 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229749AbjBOUqZ (ORCPT
+        with ESMTP id S229942AbjBOUrx (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 15:46:25 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B0414347D;
-        Wed, 15 Feb 2023 12:46:12 -0800 (PST)
+        Wed, 15 Feb 2023 15:47:53 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 04F8042BE5;
+        Wed, 15 Feb 2023 12:47:00 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id CA6EC61D90;
-        Wed, 15 Feb 2023 20:46:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id EAA0AC4339E;
-        Wed, 15 Feb 2023 20:46:10 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 9862FB823B4;
+        Wed, 15 Feb 2023 20:46:56 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 040A3C433D2;
+        Wed, 15 Feb 2023 20:46:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1676493971;
-        bh=ui8NBwoBDB3st8tPy0olN7azK/ErkoSxJbl22aIS3Jg=;
+        s=k20201202; t=1676494015;
+        bh=Bten+99sPVsDdM0CvDxWdS7kL5uUfLWUk6B7Uc8QbuQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=cvUK6Dn4gy/X2pCfmhmJQkd+ShHGyuvEibq9VmPIdwcaOP7Em9h+Zwr4JIsbQ7b95
-         /vRgglnj/lDOOh4ZAa/FdYcs12mnL7DvXsv9ouN4+E+6rRo4dfBcwnyKGy7U+DIOC5
-         KrCLnUeIVfZDx5BOae2JKqIC7mIGZ0dU1JI8AmnA5GjuKUfsdHqNOmN6Z6H9bZtdk2
-         IO6ORLebAXbsuh/+kk/D7PHSAN/vLycbmlPXufOA2HHxSAuu12E1GiSdzeISZETuWS
-         Qq6MmdHSTEJjFjBxgESKzNauUifbWIi9DCa3OFniRw9ILZb4v2vvAoTUnAqJMyuaKo
-         VD9UyzKG6YF5g==
+        b=DrsUNgsPqalD7v7+4mQgsWoC3mU22yaYsetf3vYeG8I90bGF6Ipay0gK3qUkE9a7+
+         P1gkQuakRkXSE/+A7XLT9eSZEvhwt8EpRZmD1gohyDGqV6sT3tcPq8U1Y7MFX45SgZ
+         2MXg3N3FVmOmoU6t8uZKl0h3Zi/T9dIhjFN0U5lhS0f7A4+KoKpTH/V3xPb1gilhJ4
+         6h9klsBkJn1MpuLjsRvdsU7DBMY/PvJQyx6E1nLLzRV/9yegPNSJ+oeSxPHMbrSqzc
+         5FCOCh21CXymwvK3R7CWLQCEkuc9UKAAiCFUVYFyNu7MT75HA/f7js9OHIge82jTVx
+         15BTOe1IVWNQw==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>,
         syzbot+4376a9a073770c173269@syzkaller.appspotmail.com,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 11/24] btrfs: send: limit number of clones and allocated memory size
-Date:   Wed, 15 Feb 2023 15:45:34 -0500
-Message-Id: <20230215204547.2760761-11-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 5/8] btrfs: send: limit number of clones and allocated memory size
+Date:   Wed, 15 Feb 2023 15:46:46 -0500
+Message-Id: <20230215204649.2761225-5-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.0
-In-Reply-To: <20230215204547.2760761-1-sashal@kernel.org>
-References: <20230215204547.2760761-1-sashal@kernel.org>
+In-Reply-To: <20230215204649.2761225-1-sashal@kernel.org>
+References: <20230215204649.2761225-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -71,10 +71,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1c4b693ee4a3a..937b60ae576e0 100644
+index 4a6ba0997e399..b081b61e97c8d 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -7839,10 +7839,10 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+@@ -7276,10 +7276,10 @@ long btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
  	/*
  	 * Check that we don't overflow at later allocations, we request
  	 * clone_sources_count + 1 items, and compare to unsigned long inside

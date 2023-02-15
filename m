@@ -2,100 +2,119 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BED4C636D4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 07:02:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81700C636D4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 07:07:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230028AbjBOHCb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 02:02:31 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35026 "EHLO
+        id S233676AbjBOHHI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 02:07:08 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37580 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233571AbjBOHCT (ORCPT
+        with ESMTP id S233082AbjBOHG4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 02:02:19 -0500
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51B5B9EC3
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Feb 2023 23:02:18 -0800 (PST)
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MrQEx-1ooEWq2Htn-00oVbL; Wed, 15
- Feb 2023 07:56:44 +0100
-Message-ID: <d2f73a10-7ec8-0b42-1a4e-eb86b0740741@gmx.com>
-Date:   Wed, 15 Feb 2023 14:56:39 +0800
+        Wed, 15 Feb 2023 02:06:56 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A7B43525E;
+        Tue, 14 Feb 2023 23:06:29 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 83AB861A6A;
+        Wed, 15 Feb 2023 07:06:23 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AF68BC433D2;
+        Wed, 15 Feb 2023 07:06:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1676444782;
+        bh=ius7o69/YiCg0p/ta5M1yrgwHh91Pn97V+bDp9qvGXc=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=ce7+QWNqncV84N3TnRLgl7lBWIlrftRzO3fL6GaVhMeg0VRZbXRSwR+OKrpmKOt+d
+         F1WNpAgto5X5pvFhQQBgcMneL7MvgNc58sWdmN/z7jsNK/3YVprU6KJqhe3mmSr1Bp
+         GW80hhEMn9dJf3mL7iD5fZNlD/4P44zEtpnqKTizKmPUyyjVdioij/MmhEhVTAPCdn
+         duKLYsG6JkQmGSBZUOga73kl/osAO38mhUqQ4S3YYiUNx5tYh0i+bUmf/DpSBsw9tk
+         t1XIeXjHhlcuDoFdyI7AZ6+HwmMjalV33y4rjpuJIueC98Q7DgKbXxQwSueq/8fZNc
+         8Ar+QZgkqIeIQ==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>, clm@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 6.1 02/93] btrfs: limit device extents to the device size
+Date:   Wed, 15 Feb 2023 02:04:49 -0500
+Message-Id: <20230215070620.2718851-2-sashal@kernel.org>
+X-Mailer: git-send-email 2.39.0
+In-Reply-To: <20230215070620.2718851-1-sashal@kernel.org>
+References: <20230215070620.2718851-1-sashal@kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.7.0
-Content-Language: en-US
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        Stefan Behrens <sbehrens@giantdisaster.de>
-References: <2902738be4657ec16e5b5dd38eac1fb53aa5cc44.1675918006.git.wqu@suse.com>
- <Y+sy5xHfz6S16/oc@infradead.org>
- <e7a2cb06-d6b1-f40b-477a-dca130a4a5d2@gmx.com>
- <Y+x+GjgREMyYe5pP@infradead.org>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-Subject: Re: [PATCH RFC] btrfs: do not use the replace target device as an
- extra mirror
-In-Reply-To: <Y+x+GjgREMyYe5pP@infradead.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Provags-ID: V03:K1:dJK46pWFXV5HMqfHRAXeqjLN5HqV/lJhSxd8m6yVTRkaD4cRsuJ
- um64uHcVMTEncFeXKP17O7INNUEttS/WbQtWqDzDg16A/2vxS8qtKssBOzbo1vxOSdguxLH
- ooqFtfv8h8G8e8Bpf+dOlVm320Tg0Fq57QNx8jty9ysuo7PLkgxBfGbNYXs8y4wZsL4by19
- GmR6hG2euKkGeUGHkeXyw==
-UI-OutboundReport: notjunk:1;M01:P0:VpI1N/A3OEc=;rmTQ9ge2uZ7sKxx8Ctxsffi0r67
- wPJYYgJ7SToqj4JM7EhSqhUb81xXak5bOA6M6ZHk6HCmkvWkR8n3EgwhvHTv+IvyPgas+nMWI
- k6LNt+SNBTKvBU65WmzAHbVK7vE+5n/qs/5bdRqboaF2LRmfjejcjQhEJsCJTZ1uHvprFBqw1
- U9MUNwnztETtX3k9NCnEMHylgbA7r33Wznsq/BK97GiZHcA8dCUb32Bk85zBoMH4o9jv3I5ho
- Nmt0bfgRnyQm3aQ6xOesmGzWX7ju2PXJ7BzVVcHC49oaHa0uSD3AtPRrA1Q7cKsCEcrbehaFP
- EnIPhQPI4ZOYyUoewNuwlmle+Y2hqm1HUk7PrPH+NQQJ/56CZsmqQirdCKtBF2Qv3cewmzFvt
- Q5yxuaALzhPNCF1DuQKTrpihzu/xDztl6/flbOi2HyLdQ74k3euw8fsAtndvTA07aZZJtjoYQ
- A1QhA+K19JL6xSPCILdDlzMeWUPAk+4gbM9uUelIArE/BgvGj8MLF0VgPICQuKdk0l6zxU5Xr
- IJcI0+e/XRmcnfjshNOs4z1Q5rxFBSQwOmqiYb3+CShXWLiUPE9wpaEIppeBQLFtV0VUumRit
- REo+fG8E1FrMdNBoqJHLsPJicGHBQICxqyJDBnUcR8nVn7NnOQDwTh63bVcf83IoKUqva8/X6
- zJzthr3Xr5MS/AC6S4WJbXTMxccftJV2eOs8djHOiINH32dLxenRJuWTzhT0O8bUz78KvX5zv
- NNJmL8Z9eITOtUdnB/KlE025QoAv4WMaoYwwRTCRAdNMuIP6YP5qkq2Y6NmTYssF1RXbzk9ZU
- KbXcjfESJZEgviBq6jRwL8Ce4wMJWTgK66r9a3oYA3VTl+YsDYMtvjWmXYXy059n861mSUrVX
- 7bpdYHN+fM8I3Oat2bL6NT3n8RjcOQfa7JrmyukeR5LRpaJoKQEWvXxrHUHrdfv6jqIFoKklD
- Pmbp9J5TqHxTTZAcEEjq6YLTp7E=
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+From: Josef Bacik <josef@toxicpanda.com>
 
+commit 3c538de0f2a74d50aff7278c092f88ae59cee688 upstream.
 
-On 2023/2/15 14:39, Christoph Hellwig wrote:
-> On Tue, Feb 14, 2023 at 03:18:11PM +0800, Qu Wenruo wrote:
->>> from which I father that the idea is that when a drive is replaced
->>> due to a high number of read errors, it might be a better idea to
->>> redirect it to the target device.
->>
->> To me, avoiding reading from source != read from target.
-> 
-> Well, it's not identical, but it does severly reduce the redundancy.
+There was a recent regression in btrfs/177 that started happening with
+the size class patches ("btrfs: introduce size class to block group
+allocator").  This however isn't a regression introduced by those
+patches, but rather the bug was uncovered by a change in behavior in
+these patches.  The patches triggered more chunk allocations in the
+^free-space-tree case, which uncovered a race with device shrink.
 
-The problem is, the target device is not a reliable mirror.
+The problem is we will set the device total size to the new size, and
+use this to find a hole for a device extent.  However during shrink we
+may have device extents allocated past this range, so we could
+potentially find a hole in a range past our new shrink size.  We don't
+actually limit our found extent to the device size anywhere, we assume
+that we will not find a hole past our device size.  This isn't true with
+shrink as we're relocating block groups and thus creating holes past the
+device size.
 
-Its reliability is bound to the progress of the replace.
+Fix this by making sure we do not search past the new device size, and
+if we wander into any device extents that start after our device size
+simply break from the loop and use whatever hole we've already found.
 
-At the beginning, the reliability is 0, all read from target device is 
-garbage.
-While at the end of the replace, all read from that target device is 
-reliable (the same of the source device).
+CC: stable@vger.kernel.org # 4.14+
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ fs/btrfs/volumes.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-If you really want to use a single number to describe the reliability, 
-I'd say it's 0.5.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 65e4e887605f9..f66bf1a88edfc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1612,7 +1612,7 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	while (1) {
++	while (search_start < search_end) {
+ 		l = path->nodes[0];
+ 		slot = path->slots[0];
+ 		if (slot >= btrfs_header_nritems(l)) {
+@@ -1635,6 +1635,9 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
+ 		if (key.type != BTRFS_DEV_EXTENT_KEY)
+ 			goto next;
+ 
++		if (key.offset > search_end)
++			break;
++
+ 		if (key.offset > search_start) {
+ 			hole_size = key.offset - search_start;
+ 			dev_extent_hole_check(device, &search_start, &hole_size,
+@@ -1695,6 +1698,7 @@ static int find_free_dev_extent_start(struct btrfs_device *device,
+ 	else
+ 		ret = 0;
+ 
++	ASSERT(max_hole_start + max_hole_size <= search_end);
+ out:
+ 	btrfs_free_path(path);
+ 	*start = max_hole_start;
+-- 
+2.39.0
 
-But in reality, we treat it more like 1, not 0, not 0.5.
-
-And that unreliability can lead to data corruption cases, e.g., 
-NODATASUM read failed on one mirror, and read-repair started using the 
-target device.
-
-Meanwhile replace hasn't yet reached that bytenr, thus we're reading 
-garbage from target device.
-And since NODATASUM, we trust the garbage, thus corrupting the data.
-
-Thanks,
-Qu
-
-> 
-> But maybe Stefan will find some time to chime in.

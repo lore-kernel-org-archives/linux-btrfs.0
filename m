@@ -2,172 +2,94 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 133D8C636CC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:13:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39742C636CC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:17:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229657AbjBOUNq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 15:13:46 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38354 "EHLO
+        id S229454AbjBOURE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 15:17:04 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40902 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229523AbjBOUNp (ORCPT
+        with ESMTP id S229505AbjBOURD (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 15:13:45 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1567A2597E
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 12:13:44 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B59FA33952;
-        Wed, 15 Feb 2023 20:13:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1676492022;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Rt1vLtRWM6vT9y3wjHGyIYGt0aBlbGPKMNzuoVxBKVo=;
-        b=UdlemQy7kwNPaWvU+AVAvvhQI7T3ywymORsoKUibvmS1HjvOUTgtJABjqUConHthz9oPp+
-        9isKD0uC4nUodkdHwFj/pUJQLsbEHGYskiSkOI4X8BSJng04X0V1M9SC3wvU8YYumYWv3U
-        kHAzKjBqZzhgwJMpZo3+Xr/XLNR2z88=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1676492022;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Rt1vLtRWM6vT9y3wjHGyIYGt0aBlbGPKMNzuoVxBKVo=;
-        b=m2M09c1o75GC4K8OZyOIzEgxfobrMlYiRiIp+fF1eeggVT/sPvY1hzhkRMO6akk9YoEMMg
-        2DK6IvfqyRkfmrDA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8D82F134BA;
-        Wed, 15 Feb 2023 20:13:42 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 9xvEIfY87WNpGQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 15 Feb 2023 20:13:42 +0000
-Date:   Wed, 15 Feb 2023 21:07:49 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/4] btrfs: reduce the memory usage for
- btrfs_io_context, and reduce its variable sized members
-Message-ID: <20230215200749.GX28288@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1675743217.git.wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1675743217.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        Wed, 15 Feb 2023 15:17:03 -0500
+Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 89ADF2A6FB
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 12:17:01 -0800 (PST)
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+        by mailout.west.internal (Postfix) with ESMTP id 079313200900
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 15:17:00 -0500 (EST)
+Received: from imap50 ([10.202.2.100])
+  by compute5.internal (MEProxy); Wed, 15 Feb 2023 15:17:01 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        colorremedies.com; h=cc:content-type:date:date:from:from
+        :in-reply-to:in-reply-to:message-id:mime-version:references
+        :reply-to:sender:subject:subject:to:to; s=fm1; t=1676492220; x=
+        1676578620; bh=oEGdyz/W/1KbVi5d8As5uAOPTBYLeUpadP7LQriPkLQ=; b=T
+        5MknTdSfVSmRPv4LLPc/mteC0cPsQEmAgBRq0KB95pVabfKBpbUTaMhviXR8Qu//
+        PteImq63LdKxCZ/of9vr4zLEZRBBOxF+5H6BKzkuNfNKQrWbmdIe77nCP9LC5VvB
+        qftnwQnswdiYmu+d+f3cUCbZypf9TbxHBgF9YCwo8G+pyjkU0yhMItt+Cwq6++3E
+        Ic9/0fcaGP+nNsPF6Oleb8FV7hB6OgMo4WjL4/eQJ6xiDwEkJNK2SjVl9frJzRkM
+        InGnoaRK3cDDJIHkcETUqTo+nsNWLT+YISASynSCuP7CMvJ8+CeB5Fsk9NQrgiBj
+        pwvumuqew7R+raKptB9jA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:date:feedback-id
+        :feedback-id:from:from:in-reply-to:in-reply-to:message-id
+        :mime-version:references:reply-to:sender:subject:subject:to:to
+        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+        fm1; t=1676492220; x=1676578620; bh=oEGdyz/W/1KbVi5d8As5uAOPTBYL
+        eUpadP7LQriPkLQ=; b=hKrE4k0lSagsYQWmq1TFJaLH76GSst7Ru0Lf9XbWic4c
+        MEFyCM3P9FZNqufyWerIiVVTO12YCLTUj73ntD1YszYgn3qhK8X5ega5L2fNJlIi
+        AeG1dt7PGoxxDp2x6oaSTbpz580GkpunqPoIh5LT8mwywVBu+G/1TAerNZpQapi3
+        x7IAbU+pgmaqgHQJS1tNsxAf4Z7tBxfkAR+L59jtq5c82eDc7FpsgyYgDhUN0OYy
+        VEHnSZaBeJdj/1xpEq/U0PLM4UbiPDLQ21gW8d5Ca5mAsuJCUgSYeXuyzjGopWfK
+        dRLzJ3SoSb5oinFs3XR8gh04zQ3MMWMAjt2Y802Otw==
+X-ME-Sender: <xms:vD3tY1QSGTIyvojZ-c_iUr5Ehfh1m28uy9BnFVt9bM--Ou1EcPjbJQ>
+    <xme:vD3tY-xhiuBcnxi1lVnRlO6ztUjFnc9UmMGFTq3N_yRBHQiMAbbjdsWFJHGF3pQ5n
+    QENpDYslbvWG5nFqc8>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrudeihedguddvjecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpefofgggkfgjfhffhffvufgtsehttdertderredtnecuhfhrohhmpedfvehh
+    rhhishcuofhurhhphhihfdcuoegthhhrihhssegtohhlohhrrhgvmhgvughivghsrdgtoh
+    hmqeenucggtffrrghtthgvrhhnpedtvdfggfeikeffkedvheefveffhedujeeugedtudfg
+    ieefgfffiedufffhgefgkeenucffohhmrghinheprhgvughhrghtrdgtohhmnecuvehluh
+    hsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheptghhrhhishestgho
+    lhhorhhrvghmvgguihgvshdrtghomh
+X-ME-Proxy: <xmx:vD3tY60R1tNrVPacubNPnwT81xwNzAXQ0UsN44ElBPRgb7paRiE8hw>
+    <xmx:vD3tY9BgZhxrh1l2OozWFL1BONnMSX7MqZ_kbXz7SP8L6e3PmcxcOw>
+    <xmx:vD3tY-jcle6NmAm5XlE_Gpc1lirwUrnj0vvjRvlJ4lR5LLZzMsCQGg>
+    <xmx:vD3tY5vzEWa-slr33ZrIX584qxb-RcBbQRIw6-PIPzHthxAk8CPMPA>
+Feedback-ID: i07814636:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 56DA01700127; Wed, 15 Feb 2023 15:17:00 -0500 (EST)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-156-g081acc5ed5-fm-20230206.001-g081acc5e
+Mime-Version: 1.0
+Message-Id: <124a916c-786b-42ec-bc9d-db97bb081881@app.fastmail.com>
+In-Reply-To: <aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com>
+References: <aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com>
+Date:   Wed, 15 Feb 2023 15:16:39 -0500
+From:   "Chris Murphy" <chris@colorremedies.com>
+To:     "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+Subject: Re: LMDB mdb_copy produces a corrupt database on btrfs, but not on ext4
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 07, 2023 at 12:26:11PM +0800, Qu Wenruo wrote:
-> Changelog:
-> v2:
-> - Address the comments on various grammar errors
-> 
-> - Further reduce the memory used for replace
->   Now instead of two s16, it's just one s16 now.
-> 
-> - Replace raid_map with a single u64
->   This not only reduce the memory usage, but also makes btrfs_io_context
->   to only have one variable sized member (stripes), simplify the
->   allocation function
-> 
->   This also removes the need to bubble sort the stripes.
-> 
-> 
-> In btrfs_io_context, we have two members dedicated to replace, and one
-> extra array for raid56
-> 
-> - num_tgtdevs
->   This is straight-forward, just the number of extra stripes for replace
->   usage.
-> 
-> - tgtdev_map[]
->   This is a little complex, it represents the mapping between the
->   original stripes and dev-replace stripes.
-> 
->   This is mostly for RAID56, as only in RAID56 the stripes contain
->   different contents, thus it's important to know the mapping.
-> 
->   It goes like this:
-> 
->     num_stripes = 4 (3 + 1 for replace)
->     stripes[0]:		dev = devid 1, physical = X
->     stripes[1]:		dev = devid 2, physical = Y
->     stripes[2]:		dev = devid 3, physical = Z
->     stripes[3]:		dev = devid 0, physical = Y
-> 
->     num_tgtdevs = 1
->     tgtdev_map[0] = 0	<- Means stripes[0] is not involved in replace.
->     tgtdev_map[1] = 3	<- Means stripes[1] is involved in replace,
-> 			   and it's duplicated to stripes[3].
->     tgtdev_map[2] = 0	<- Means stripes[2] is not involved in replace.
-> 
->   Thus most space is wasted, and the more devices in the array, the more
->   space wasted.
-> 
-> - raid_map[]
->   A sorted array where the first one is always the logical bytenr of
->   the full stripe
-> 
->   But the truth is, since it's always sorted, we don't need it at all.
->   We can use a single u64 to indicate the full stripe start.
-> 
->   Currently we're reusing the array mostly to re-order our stripes for
->   RAID56, which is not ideal, because we can get it down right just in
->   one go.
-> 
-> All these tgdev_map[] and raid_map[] designs are  wasting quite some
-> space, and making alloc_btrfs_io_context() to do very complex and
-> dangerous pointer juggling.
-> 
-> This patch will replace those members by:
-> 
-> - num_tgtdevs -> replace_nr_stripes
->   Just a rename
-> 
-> - tgtdev_map[] -> replace_stripe_src
->   It's changed to a single s16 to indicate where the source stripe is.
->   This single s16 is enough for RAID56. For DUP, they don't care the
->   source as all stripes share the same content.
-> 
-> - raid_map[] -> full_stripe_logical
->   We remove the sort_parity_stripes(), and get the stripes selection
->   done correctly in RAID56 routines.
-> 
->   So we only need to record the logical bytenr of the full stripe start.
->   Existing call sites checking the type of stripe can compare with
->   their data stripes number to do the same work.
-> 
-> This not only saved some space for btrfs_io_context structure, but also
-> allows the following cleanups:
-> 
-> - Streamline handle_ops_on_dev_replace()
->   We go a common path for both WRITE and GET_READ_MIRRORS, and only
->   for DUP and GET_READ_MIRRORS, we shrink the bioc to keep the same
->   old behavior.
-> 
-> - Remove some unnecessary variables
-> 
-> - Remove variable sized members
->   Now there is only one variable sized member, stripes.
-> 
-> Although the series still increases the number of lines, the net
-> increase mostly comes from comments, in fact around 100 lines of comments
-> are added around the replace related members.
-> 
-> Qu Wenruo (4):
->   btrfs: simplify the @bioc argument for handle_ops_on_dev_replace()
->   btrfs: small improvement for btrfs_io_context structure
->   btrfs: use a more space efficient way to represent the source of
->     duplicated stripes
->   btrfs: replace btrfs_io_context::raid_map[] with a fixed u64 value
 
-With some fixups added to for-next as topic branch, thanks.
+
+On Wed, Feb 15, 2023, at 3:04 PM, Chris Murphy wrote:
+> Downstream bug report, reproducer test file, and gdb session transcript
+> https://bugzilla.redhat.com/show_bug.cgi?id=2169947
+>
+> I speculated that maybe it's similar to the issue we have with VM's 
+> when O_DIRECT is used, but it seems that's not the case here.
+
+I can reproduce the mismatching checksums whether the test files are datacow or nodatacow (using chattr +C). There are no kernel messages during the tests.
+
+kernel 6.2rc7 in my case; and in the bug report kernel series 6.1, 6.0, and 5.17 reproduce the problem.
+
+
+-- 
+Chris Murphy

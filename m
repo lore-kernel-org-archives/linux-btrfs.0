@@ -2,29 +2,27 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 979D9C636CC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 07:01:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BED4C636D4
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 07:02:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233502AbjBOHB5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 02:01:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58288 "EHLO
+        id S230028AbjBOHCb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 02:02:31 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35026 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233361AbjBOHB0 (ORCPT
+        with ESMTP id S233571AbjBOHCT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 02:01:26 -0500
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1BE19DBFF
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Feb 2023 23:01:24 -0800 (PST)
+        Wed, 15 Feb 2023 02:02:19 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51B5B9EC3
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Feb 2023 23:02:18 -0800 (PST)
 Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MI5QF-1pNZCs2phH-00FApu; Wed, 15
- Feb 2023 08:01:10 +0100
-Message-ID: <6ae86850-7819-543e-2fbe-0f7f0376ae4b@gmx.com>
-Date:   Wed, 15 Feb 2023 15:01:05 +0800
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MrQEx-1ooEWq2Htn-00oVbL; Wed, 15
+ Feb 2023 07:56:44 +0100
+Message-ID: <d2f73a10-7ec8-0b42-1a4e-eb86b0740741@gmx.com>
+Date:   Wed, 15 Feb 2023 14:56:39 +0800
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
  Thunderbird/102.7.0
-Subject: Re: [PATCH RFC] btrfs: do not use the replace target device as an
- extra mirror
 Content-Language: en-US
 To:     Christoph Hellwig <hch@infradead.org>
 Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
@@ -33,52 +31,71 @@ References: <2902738be4657ec16e5b5dd38eac1fb53aa5cc44.1675918006.git.wqu@suse.co
  <Y+sy5xHfz6S16/oc@infradead.org>
  <e7a2cb06-d6b1-f40b-477a-dca130a4a5d2@gmx.com>
  <Y+x+GjgREMyYe5pP@infradead.org>
- <d2f73a10-7ec8-0b42-1a4e-eb86b0740741@gmx.com>
- <Y+yCncfD0EyfsxTe@infradead.org>
 From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <Y+yCncfD0EyfsxTe@infradead.org>
+Subject: Re: [PATCH RFC] btrfs: do not use the replace target device as an
+ extra mirror
+In-Reply-To: <Y+x+GjgREMyYe5pP@infradead.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
-X-Provags-ID: V03:K1:TCqjFDYSDT8KE8jEIFZsbiSE24Mhbe+z6x1DmTgW4gxK6hrpPfJ
- Ugawkv6BTvs8BWiIWgH/Ch/gqgLAKyBs/mFy0fUsaXY7JNpXeZCvmoJBIfj3YeBNpeXNm+j
- jefNRBFl3ZisS42lk7b1eF95lPlp/uxFYOOH+RDD2UjeVsSj/PwheyyJI1I7KDHq5aZZ2FH
- IsXNV5zMZ+qYBoxAdr3uw==
-UI-OutboundReport: notjunk:1;M01:P0:J2kgZwWmvJE=;n4Otial14QKKmkfJIEvS1kH0eIW
- r4C0VocgHcVLGyp5T6q284qoWnavVCo3PTFnCQloOZr3irOv68R6hOho8BnNhP7xplyga3WT+
- W8Riiayt9CC+n/Y7BqckD+z7bfuMqDS+OerQ4Fx/d4g8CicwsFq7Goe9rUXRnbA5E9kb0MsM+
- kTXcs+gJ1lWFWwilJMk5qo7aRX20PqwyEXQeM+27ny4IBd5luFYfauy/XzFWqY1T6XfcIhL1F
- 3yvKpSiUzTUDUxzGjY3s1OrAPQo1xT1m5xuGRZuiZnplbyQinLPk3tDbpqRUpPHhBNQOyWgjO
- DBVyMt/2WuVTZCJDdeAgp1sGXu9SR9TZYsgGamSwEI6SV6DxJQUN1k0KacIiKwPqFIUQZG5wQ
- K2G6x2fTEAEqVjUKPe2WC+jGh09yu3oinIzgtKOMDkYu6tWvdUMylHKlymw2luX4c2LmS5kDk
- NoItp9s0rptBuqFXq8bMb6wg4jNMBo+/N0jdFE1JXpSvkuQ8l/jC4vUqLOjzdrdJkvbLTBie7
- ON+lM/wd/51JMaHtI8G9+TvloOAwi6jIDqdgKhXVgBpn308HVSEnu2pyoOGVowwtXBszyyMa+
- uwmDfje++OZGZIJiJmmt+sYqnAjFKGN6YA0bGpc3yQHW+VMLOts9t/Z9ESty7P5ZY/PHtL49w
- DOcmO4JC6hW5rfKKxC4wdzBJFg2LUoPxqChlqnYGe7O6FOx5h5d1slIYhZZOJfsqZAIaRNxMb
- xeuq6fTziBURVy6dx8PD2zEHCH8RamxK6EVRrRyArMnRyswEQWd/lwkfUlK8n0YtQuC71i/Jn
- nSWMLU3Yipqc2nLUQ/OLa0k62GWkZPWlwphOXLPXsFsomFdIhOgCpbwz7DsJV9JRjCd8+p10u
- 033cRsdx+Vy98aJnVBGkLJSisBu2yX7Og2FGYCR7cHt580lKaI1h1moj2S1TAxMyNgk26Qr3X
- vcxHVf+DsEj01nv5ydf90FtFeuI=
+X-Provags-ID: V03:K1:dJK46pWFXV5HMqfHRAXeqjLN5HqV/lJhSxd8m6yVTRkaD4cRsuJ
+ um64uHcVMTEncFeXKP17O7INNUEttS/WbQtWqDzDg16A/2vxS8qtKssBOzbo1vxOSdguxLH
+ ooqFtfv8h8G8e8Bpf+dOlVm320Tg0Fq57QNx8jty9ysuo7PLkgxBfGbNYXs8y4wZsL4by19
+ GmR6hG2euKkGeUGHkeXyw==
+UI-OutboundReport: notjunk:1;M01:P0:VpI1N/A3OEc=;rmTQ9ge2uZ7sKxx8Ctxsffi0r67
+ wPJYYgJ7SToqj4JM7EhSqhUb81xXak5bOA6M6ZHk6HCmkvWkR8n3EgwhvHTv+IvyPgas+nMWI
+ k6LNt+SNBTKvBU65WmzAHbVK7vE+5n/qs/5bdRqboaF2LRmfjejcjQhEJsCJTZ1uHvprFBqw1
+ U9MUNwnztETtX3k9NCnEMHylgbA7r33Wznsq/BK97GiZHcA8dCUb32Bk85zBoMH4o9jv3I5ho
+ Nmt0bfgRnyQm3aQ6xOesmGzWX7ju2PXJ7BzVVcHC49oaHa0uSD3AtPRrA1Q7cKsCEcrbehaFP
+ EnIPhQPI4ZOYyUoewNuwlmle+Y2hqm1HUk7PrPH+NQQJ/56CZsmqQirdCKtBF2Qv3cewmzFvt
+ Q5yxuaALzhPNCF1DuQKTrpihzu/xDztl6/flbOi2HyLdQ74k3euw8fsAtndvTA07aZZJtjoYQ
+ A1QhA+K19JL6xSPCILdDlzMeWUPAk+4gbM9uUelIArE/BgvGj8MLF0VgPICQuKdk0l6zxU5Xr
+ IJcI0+e/XRmcnfjshNOs4z1Q5rxFBSQwOmqiYb3+CShXWLiUPE9wpaEIppeBQLFtV0VUumRit
+ REo+fG8E1FrMdNBoqJHLsPJicGHBQICxqyJDBnUcR8nVn7NnOQDwTh63bVcf83IoKUqva8/X6
+ zJzthr3Xr5MS/AC6S4WJbXTMxccftJV2eOs8djHOiINH32dLxenRJuWTzhT0O8bUz78KvX5zv
+ NNJmL8Z9eITOtUdnB/KlE025QoAv4WMaoYwwRTCRAdNMuIP6YP5qkq2Y6NmTYssF1RXbzk9ZU
+ KbXcjfESJZEgviBq6jRwL8Ce4wMJWTgK66r9a3oYA3VTl+YsDYMtvjWmXYXy059n861mSUrVX
+ 7bpdYHN+fM8I3Oat2bL6NT3n8RjcOQfa7JrmyukeR5LRpaJoKQEWvXxrHUHrdfv6jqIFoKklD
+ Pmbp9J5TqHxTTZAcEEjq6YLTp7E=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 2023/2/15 14:58, Christoph Hellwig wrote:
-> On Wed, Feb 15, 2023 at 02:56:39PM +0800, Qu Wenruo wrote:
->> Meanwhile replace hasn't yet reached that bytenr, thus we're reading garbage
->> from target device.
->> And since NODATASUM, we trust the garbage, thus corrupting the data.
+On 2023/2/15 14:39, Christoph Hellwig wrote:
+> On Tue, Feb 14, 2023 at 03:18:11PM +0800, Qu Wenruo wrote:
+>>> from which I father that the idea is that when a drive is replaced
+>>> due to a high number of read errors, it might be a better idea to
+>>> redirect it to the target device.
+>>
+>> To me, avoiding reading from source != read from target.
 > 
-> Yes, for a read from the target device to be useful, the progress
-> needs to be tracked, and the read only needs to happen on data
-> that actually was written.
+> Well, it's not identical, but it does severly reduce the redundancy.
 
-I can still see some comments on this, but can not find the exact 
-commits removing the replace progress check...
+The problem is, the target device is not a reliable mirror.
 
-And if we go that path without a progress check, then the only valid way 
-is to distrust the target device completely.
+Its reliability is bound to the progress of the replace.
+
+At the beginning, the reliability is 0, all read from target device is 
+garbage.
+While at the end of the replace, all read from that target device is 
+reliable (the same of the source device).
+
+If you really want to use a single number to describe the reliability, 
+I'd say it's 0.5.
+
+But in reality, we treat it more like 1, not 0, not 0.5.
+
+And that unreliability can lead to data corruption cases, e.g., 
+NODATASUM read failed on one mirror, and read-repair started using the 
+target device.
+
+Meanwhile replace hasn't yet reached that bytenr, thus we're reading 
+garbage from target device.
+And since NODATASUM, we trust the garbage, thus corrupting the data.
 
 Thanks,
 Qu
+
+> 
+> But maybe Stefan will find some time to chime in.

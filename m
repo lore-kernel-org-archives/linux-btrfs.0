@@ -2,104 +2,84 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E2D6C636D4
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 19:32:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 40AD8C636CC
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:05:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229553AbjBOTcg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 14:32:36 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35274 "EHLO
+        id S229712AbjBOUFV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 15:05:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33214 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229518AbjBOTcf (ORCPT
+        with ESMTP id S229644AbjBOUFT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 14:32:35 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F74F3CE19
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 11:32:34 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id B71111F74D;
-        Wed, 15 Feb 2023 19:32:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1676489552;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=y+JbCXbKoRiNdQloOCNPFNvDigvauh/gx5wB2zLcOs4=;
-        b=vBO70GAVCF+JUsc5o1EHkRFAV9put4aP96CgUA5QmqmcvYguVbZj+LKWN9cWYZs593E5iE
-        cheCRqt5dtlGcsqENsjgrG+jRVytuym/9Fe/bwE2Ib/jd99iCa778pECa1orPh7TgkLHvV
-        cXRZbrTKCsrfhryQg5epuvi7P48l8Lk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1676489552;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=y+JbCXbKoRiNdQloOCNPFNvDigvauh/gx5wB2zLcOs4=;
-        b=dEJm1mlsVl9ZFz0hipGohPSnNqvP4MyH+6Ra7Ax/6LrtTVcUyiJ0uGmlSc9evPGO3nY6fK
-        YJ/CUpM1a2QPIKDw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 88F5B13483;
-        Wed, 15 Feb 2023 19:32:32 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id v914IFAz7WObCgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 15 Feb 2023 19:32:32 +0000
-Date:   Wed, 15 Feb 2023 20:26:39 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 0/7] Error handling fixes
-Message-ID: <20230215192639.GU28288@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1675787102.git.josef@toxicpanda.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cover.1675787102.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        Wed, 15 Feb 2023 15:05:19 -0500
+Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 585F93A842
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 12:05:18 -0800 (PST)
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+        by mailout.west.internal (Postfix) with ESMTP id 10725320099F
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 15:05:15 -0500 (EST)
+Received: from imap50 ([10.202.2.100])
+  by compute5.internal (MEProxy); Wed, 15 Feb 2023 15:05:16 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        colorremedies.com; h=cc:content-type:date:date:from:from
+        :in-reply-to:message-id:mime-version:reply-to:sender:subject
+        :subject:to:to; s=fm1; t=1676491515; x=1676577915; bh=9l05+nkhrK
+        lB487+AFvmOhH0qytQmW7qdNMCD8uryDg=; b=44ZvENefXD6GGluhXpAmRTFU2J
+        xUEwa0NqoGFfCjCz6o5jk2fXr8zqp8pDikxGQeZYNEl5ZtIs+xRdy+/p3mBJoT29
+        y4vQM49v+PqRZSlO8D9CvrzNGZh9EJHiLh+Ir5kAYjtsqHjoGu1nCnCxZNJ9PojE
+        Z3y15zy0PaupJYTTz83+H4EnOZAiisnMB0cNLiXbQ9mmA5yNIbhQCsVLQLTt0zyt
+        Al8sXzeJVmj6Uo2dJSQP/uXAwR3Zio+JcH31cpe6X0kSVIkVC5+0Sk5cTocY7MVJ
+        uIsqr0g5c4/W45xIz7zTxzCsb0azs1xOwOh9ZAYXdCZb/rmFGfxlsvT7jbOQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:content-type:date:date:feedback-id
+        :feedback-id:from:from:in-reply-to:message-id:mime-version
+        :reply-to:sender:subject:subject:to:to:x-me-proxy:x-me-proxy
+        :x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1676491515; x=
+        1676577915; bh=9l05+nkhrKlB487+AFvmOhH0qytQmW7qdNMCD8uryDg=; b=k
+        2B4vxFURocdbRhy1m7kF90R0iObKHRFP5GwMd73B7kjue0gl10f7FrjTbMbI1/Tq
+        AzFx5WJJaljJsJ2iPtxVrcwyfYPHSlzT533EvUUpjFmnriy6J9UcfNC9xgC9ALYO
+        UfWS5BlKHWl6i4PTb06ZeYLOcfpPUVZfxZ8vKWFvNQ/UMDCwGa37yNaT4yWx5Gsa
+        qfGk3rw0uT7H7B2oUEL1I+YXElb8MvCEDB3QNc7DvX8xqVQPIPR2v1Faz3lzssis
+        ZXK8F+b71mZM1Zd9gqcI5HnraZBVOGv8qzTA4IaJmSEU0xekQQ0f63Oj9o5sOprn
+        0fADK3F0PnSe7lZSxhIpw==
+X-ME-Sender: <xms:-zrtYx8pFP7o9ptp_FU4cbBB4mw-ZnsRrf1_cs8zDZ3NFudRqevF5A>
+    <xme:-zrtY1t4EV5l6NkT6byiuTHz4LXwmeN42J2MOXFsCCDW77uWhY4LHv5cubjhcMq2E
+    mcMqezIKc_fQrMm55A>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrudeihedguddvhecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
+    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
+    enucfjughrpefofgggkfffhffvufgtsehttdertderredtnecuhfhrohhmpedfvehhrhhi
+    shcuofhurhhphhihfdcuoehlihhsthhssegtohhlohhrrhgvmhgvughivghsrdgtohhmqe
+    enucggtffrrghtthgvrhhnpeeffeeltdejheefudetjedvleffvdevieegueegffdvffev
+    ffevkeeivdfhkeeikeenucffohhmrghinheprhgvughhrghtrdgtohhmnecuvehluhhsth
+    gvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheplhhishhtshestgholhho
+    rhhrvghmvgguihgvshdrtghomh
+X-ME-Proxy: <xmx:-zrtY_BY1pR0C7q2tt9MeaUTCuFW3-L5ef7NngG91S_AdBBjLBt_1g>
+    <xmx:-zrtY1fqTlVRENO_rs6dL1y67DjvwaznkFFZmldG8B2N4Q0MuJCtCw>
+    <xmx:-zrtY2O1m-_A5Eage1WjiyrYnLb1j0dh4ozn3A3xYFOyOv_Vs32QmA>
+    <xmx:-zrtY8b47gTrRW0-tevWO88Sh15sO-KZcCZ-bU2vEWBCe4Qqi_Uesg>
+Feedback-ID: i06494636:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 126DD170011F; Wed, 15 Feb 2023 15:05:14 -0500 (EST)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-156-g081acc5ed5-fm-20230206.001-g081acc5e
+Mime-Version: 1.0
+Message-Id: <aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com>
+Date:   Wed, 15 Feb 2023 15:04:54 -0500
+From:   "Chris Murphy" <lists@colorremedies.com>
+To:     "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
+Subject: LMDB mdb_copy produces a corrupt database on btrfs, but not on ext4
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Feb 07, 2023 at 11:57:18AM -0500, Josef Bacik wrote:
-> Hello,
-> 
-> For a short period of time our btrfs backport had 947a629988f1 ("btrfs: move
-> tree block parentness check into validate_extent_buffer()") without the
-> associated fix, which resulted in a lot of hilarity.
-> 
-> One of the things that popped was a WARN_ON(ret == 1) in __btrfs_free_extent
-> where we didn't find the bytenr we were looking for.  This was troubling, as it
-> appeared that we were losing the EIO and returning 1 from btrfs_search_slot.
-> 
-> I rigged up my error injection stress test with
-> btrfs_check_leaf/btrfs_check_node with balance (as this was the path that we saw
-> the error).  This of course uncovered a few other unrelated things, but
-> eventually I reproduced what we saw in production.  Thankfully it was not that
-> we were eating the -EIO and returning 1 instead, however the actual problem is
-> worse.  We do not handle the errors properly in snapshot delete (which also gets
-> used by reloation), and then we do not abort the transaction when we hit errors
-> in this path, which leads to the file system being corrupted and eventually
-> triggers the above WARN_ON().
-> 
-> With these fixes in place my stress testing was running overnight without
-> tripping over any other leaks, corruptions, or panics.  Previously I wasn't able
-> to run for longer than a couple of minutes without falling over.  Thanks,
-> 
-> Josef
-> 
-> Josef Bacik (7):
->   btrfs: use btrfs_handle_fs_error in btrfs_fill_super
->   btrfs: replace BUG_ON(level == 0) with ASSERT(level)
->   btrfs: handle errors from btrfs_read_node_slot in split
->   btrfs: iput on orphan cleanup failure
->   btrfs: drop root refs properly when orphan cleanup fails
->   btrfs: handle errors in walk_down_tree properly
->   btrfs: abort the transaction if we get an error during snapshot drop
+Downstream bug report, reproducer test file, and gdb session transcript
+https://bugzilla.redhat.com/show_bug.cgi?id=2169947
 
-Added to for-next as topic branch, will be moved to misc-next once the
-6.3 pull request is out. Thanks.
+I speculated that maybe it's similar to the issue we have with VM's when O_DIRECT is used, but it seems that's not the case here.
+
+
+
+--
+Chris Murphy

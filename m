@@ -2,75 +2,92 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C826C636CC
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:19:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8203C6FA99
+	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Feb 2023 20:46:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229505AbjBOUTV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Feb 2023 15:19:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42426 "EHLO
+        id S229765AbjBOUqe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Feb 2023 15:46:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33018 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229460AbjBOUTU (ORCPT
+        with ESMTP id S229749AbjBOUqZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Feb 2023 15:19:20 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79F5229143
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Feb 2023 12:19:19 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Wed, 15 Feb 2023 15:46:25 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3B0414347D;
+        Wed, 15 Feb 2023 12:46:12 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 3967C33744;
-        Wed, 15 Feb 2023 20:19:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1676492358;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=5mo22l+ZMRRy2cs0d6xjWq0O4pmfXdFoukV80xyK6Dg=;
-        b=SeJM0z5AtcO3y6skry32E74YjCMtilf3UcmClG658/HL9LQ80h/ugyx5gYzvzJ/cGU0r9x
-        8KpqtJMsijX0oGL5dopcfmK3jhLIjMvirGss4bmdbXI13bRDo1lcpq8w/UwEupovM3HwZ9
-        6ANfCzevQkzEvYhP8wdvqhvKhqpKaLc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1676492358;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=5mo22l+ZMRRy2cs0d6xjWq0O4pmfXdFoukV80xyK6Dg=;
-        b=QePWc1hAu0KkN91qDv+m8wA1jEfN+630kj9bRlzyZLqt5TEH0HI/mchyVz8Ea8CAwHO+bp
-        xlFOgK0OYJMPh5CA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 08B7E134BA;
-        Wed, 15 Feb 2023 20:19:18 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id NWsnAUY+7WNDGwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 15 Feb 2023 20:19:18 +0000
-Date:   Wed, 15 Feb 2023 21:13:25 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: the raid56 code does not need irqsafe locking
-Message-ID: <20230215201325.GY28288@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230120074657.1095829-1-hch@lst.de>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id CA6EC61D90;
+        Wed, 15 Feb 2023 20:46:11 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EAA0AC4339E;
+        Wed, 15 Feb 2023 20:46:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1676493971;
+        bh=ui8NBwoBDB3st8tPy0olN7azK/ErkoSxJbl22aIS3Jg=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=cvUK6Dn4gy/X2pCfmhmJQkd+ShHGyuvEibq9VmPIdwcaOP7Em9h+Zwr4JIsbQ7b95
+         /vRgglnj/lDOOh4ZAa/FdYcs12mnL7DvXsv9ouN4+E+6rRo4dfBcwnyKGy7U+DIOC5
+         KrCLnUeIVfZDx5BOae2JKqIC7mIGZ0dU1JI8AmnA5GjuKUfsdHqNOmN6Z6H9bZtdk2
+         IO6ORLebAXbsuh/+kk/D7PHSAN/vLycbmlPXufOA2HHxSAuu12E1GiSdzeISZETuWS
+         Qq6MmdHSTEJjFjBxgESKzNauUifbWIi9DCa3OFniRw9ILZb4v2vvAoTUnAqJMyuaKo
+         VD9UyzKG6YF5g==
+From:   Sasha Levin <sashal@kernel.org>
+To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>,
+        syzbot+4376a9a073770c173269@syzkaller.appspotmail.com,
+        Sasha Levin <sashal@kernel.org>, clm@fb.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH AUTOSEL 6.1 11/24] btrfs: send: limit number of clones and allocated memory size
+Date:   Wed, 15 Feb 2023 15:45:34 -0500
+Message-Id: <20230215204547.2760761-11-sashal@kernel.org>
+X-Mailer: git-send-email 2.39.0
+In-Reply-To: <20230215204547.2760761-1-sashal@kernel.org>
+References: <20230215204547.2760761-1-sashal@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230120074657.1095829-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-stable: review
+X-Patchwork-Hint: Ignore
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Jan 20, 2023 at 08:46:57AM +0100, Christoph Hellwig wrote:
-> These days all the operations that take locks in the raid56.c code
-> are run from user context (mostly workqueues).  Drop all the irqsafe
-> locking that is not required any more.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+From: David Sterba <dsterba@suse.com>
 
-Added to for-next, thansk.
+[ Upstream commit 33e17b3f5ab74af12aca58c515bc8424ff69a343 ]
+
+The arg->clone_sources_count is u64 and can trigger a warning when a
+huge value is passed from user space and a huge array is allocated.
+Limit the allocated memory to 8MiB (can be increased if needed), which
+in turn limits the number of clone sources to 8M / sizeof(struct
+clone_root) = 8M / 40 = 209715.  Real world number of clones is from
+tens to hundreds, so this is future proof.
+
+Reported-by: syzbot+4376a9a073770c173269@syzkaller.appspotmail.com
+Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ fs/btrfs/send.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 1c4b693ee4a3a..937b60ae576e0 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -7839,10 +7839,10 @@ long btrfs_ioctl_send(struct inode *inode, struct btrfs_ioctl_send_args *arg)
+ 	/*
+ 	 * Check that we don't overflow at later allocations, we request
+ 	 * clone_sources_count + 1 items, and compare to unsigned long inside
+-	 * access_ok.
++	 * access_ok. Also set an upper limit for allocation size so this can't
++	 * easily exhaust memory. Max number of clone sources is about 200K.
+ 	 */
+-	if (arg->clone_sources_count >
+-	    ULONG_MAX / sizeof(struct clone_root) - 1) {
++	if (arg->clone_sources_count > SZ_8M / sizeof(struct clone_root)) {
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-- 
+2.39.0
+

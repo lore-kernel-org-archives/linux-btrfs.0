@@ -2,328 +2,155 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C6736C05027
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Feb 2023 11:59:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52AF3C636CC
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Feb 2023 12:12:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231652AbjBTL7J (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Feb 2023 06:59:09 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51526 "EHLO
+        id S231254AbjBTMMO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Feb 2023 07:12:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59400 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230456AbjBTL7I (ORCPT
+        with ESMTP id S230383AbjBTMMN (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Feb 2023 06:59:08 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCB57B47D
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2023 03:59:06 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 7FA5522125;
-        Mon, 20 Feb 2023 11:59:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1676894344; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=ia3PALxwIq2quLuSsmKfNKS6iqHS+B6REnzf4KvOrh4=;
-        b=Yzj4ncgQuj/eyKsePSWncltQdg7Ji4f5qpog+rJZvCRSQQrGNnh9mDalT3+a1nMMSvHiQ1
-        FtVCjvOIzYhI7l2kVoTPYCjRQBlx68Eq5oLm7whGak+KtoUGFIlunUhSG04FoT7Hiz3UwE
-        r5bGcNhqJKofIWK++oKtF6bsfQyM5TA=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9FD28139DB;
-        Mon, 20 Feb 2023 11:59:03 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id am5fGodg82O0WgAAMHmgww
-        (envelope-from <wqu@suse.com>); Mon, 20 Feb 2023 11:59:03 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH v3] btrfs: make dev-replace properly follow its read mode
-Date:   Mon, 20 Feb 2023 19:58:45 +0800
-Message-Id: <f32490a9f366ce50b1d06786d15f4a467f9a7371.1676894272.git.wqu@suse.com>
-X-Mailer: git-send-email 2.39.1
+        Mon, 20 Feb 2023 07:12:13 -0500
+Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4144E1A645
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2023 04:12:12 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1676895131; x=1708431131;
+  h=from:to:cc:subject:date:message-id:references:
+   in-reply-to:content-id:content-transfer-encoding:
+   mime-version;
+  bh=NVExSWAErXc3tb3hFepV9ORPScG4TVo2gbI+QFxQY+Q=;
+  b=mellzv7QT9WuxG/qctyDB8u5NZWK3WNMu9SooC5TVxhl/Mkke/XwiYI6
+   a6RoEjU4OIrhuIiMM+Ce4jgWF54Q8hS0cYrm/TGRq8UeOnbueVsluwqa9
+   at0E8p7e+ySlWsiN1BWkYuQDu+y7YiDwu+3xLTxlXx7Fqyt1iZBmi5EQP
+   FKp1fFYEkurU69AYHsC8+m3zFj+XBpeVIAcLy1CK1bbxExoQGkZTK6FfF
+   WtpvDIgLavgNXGk7tftaYNdRUsN6VuCcAkOWyxSzEX4Crgkq1Nc6bF4nW
+   xCSZo85J+eIc5Pd1EyOobFGNfYIBa8lZkO45+7ZC2/Pl1+tAJylGonHBY
+   A==;
+X-IronPort-AV: E=Sophos;i="5.97,312,1669046400"; 
+   d="scan'208";a="335699481"
+Received: from mail-bn8nam11lp2168.outbound.protection.outlook.com (HELO NAM11-BN8-obe.outbound.protection.outlook.com) ([104.47.58.168])
+  by ob1.hgst.iphmx.com with ESMTP; 20 Feb 2023 20:12:10 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=kUqQFCawCJA+BIB4XJMs+Ck0HoIEKKzc3XMWxB76iiS8DPXAuw5QEDr9I7R6vIK02AOFxctOvhRKoVjR8TzsU5zKUsCKRtjWxtXJROrZus5WiA7gzpvWchFLlFQLOqwCNJQ8/0M2EiTyE2frDb93Fe54ROKXP3P4OXXwfREdu6cuBfpQTOHvi225dsqczZBfZvDAaWGxfSLAW1ZeKuQ4+2tOk1zUnoARdE/5TST8VfMcEOcbZM188nkkpORB95dzNMySXO6fZgjmUgDMAkg2nusOJlYixZcM1QA6zx1S8vCk5RxpvlPOw8QUMTXzwA9+MQiPmWzwB/Ed0q0LTDnCaw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=NVExSWAErXc3tb3hFepV9ORPScG4TVo2gbI+QFxQY+Q=;
+ b=jrHDLVbuQtFIvPfsecyeH2EH/M7PXWzCuYDK/Mm8jLJHHYhIKcgbc9LEwUsqebgDsVgPZ+LlXCtSz0xfoPUdbEOlb6mdI5DEOLtbE7totDPMpTKjCUFQe40Gzt+Vtq1+0KuicfT0j/hBTMEptUJyKeasY5R8Y5o2z82VeDKPgEAw2rGjh+Vs0wz286Jt6bnNhU22l6rJvEowNvVDclx8U7MdYC6T5z0KiJ/7jIJpObk1Hgy+v5voRogbdOYKuGy2qt7u2Zd+Gz2wH4mfxQ5lsFgxnxO5bskuGSvtcARAplM5e7WjuyhjVFu9Mcy9zmPwKLys+gwXTDEIhdndwCkyUA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=NVExSWAErXc3tb3hFepV9ORPScG4TVo2gbI+QFxQY+Q=;
+ b=AZtspx1upzTjstlzKY2C9zoGlwjBKJuIk25GeqAfWh/IH5jgDprdmBPa9P3bZ//sxaRumAPOtP9N9oFIaXXgxYlFTjKgd6Ry6pbgt9kzMFO2QRXMch5YayMou8EoNZLLsfN/Y8WdWGzwWLA/10bs2EjgVKACLurr8CNXAYk5MLE=
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com (2603:10b6:510:12::17)
+ by MN2PR04MB6224.namprd04.prod.outlook.com (2603:10b6:208:dd::11) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6111.18; Mon, 20 Feb
+ 2023 12:12:02 +0000
+Received: from PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::8ed8:3450:1525:c60a]) by PH0PR04MB7416.namprd04.prod.outlook.com
+ ([fe80::8ed8:3450:1525:c60a%7]) with mapi id 15.20.6111.020; Mon, 20 Feb 2023
+ 12:12:02 +0000
+From:   Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
+To:     Christoph Hellwig <hch@lst.de>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+CC:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 09/12] btrfs: remove the submit_extent_page return value
+Thread-Topic: [PATCH 09/12] btrfs: remove the submit_extent_page return value
+Thread-Index: AQHZQiS0/XWsFwmhVEazly26NeIfH67XxMmA
+Date:   Mon, 20 Feb 2023 12:12:02 +0000
+Message-ID: <94ee49b2-bb06-d394-9476-4d0cd6b696a2@wdc.com>
+References: <20230216163437.2370948-1-hch@lst.de>
+ <20230216163437.2370948-10-hch@lst.de>
+In-Reply-To: <20230216163437.2370948-10-hch@lst.de>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0)
+ Gecko/20100101 Thunderbird/102.7.2
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: PH0PR04MB7416:EE_|MN2PR04MB6224:EE_
+x-ms-office365-filtering-correlation-id: 7d37bf41-bbfa-4cb9-b6a1-08db133bac7e
+wdcipoutbound: EOP-TRUE
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info: KtutWSf5k86a/G92/7ADbQeDRcREJ+M91GpJHOUabeE47ldyhbNsvtO2JSabhP3WF+txzb3JqQ6UhEcnCOO4zJfVPXkggEvEBinj4C6VxR48jN6Dd3M1+pm5CcU0q5UhntSP7BqM/sAVsBgEGzBg0iPtjwepn7JjBGdloJmiZoC3080xBP2FNR0CI+C5HfQfVXmIbwuGurf47OfALyskStIJLmCfGtfoIHSs13SLgDEDkRr4ANEFir4H2R+WOwNsrp5D+K6kRsQCZdeh/6o5qogymFDUr0w0Q4srE4HB9ck+7lt+jXR/7RiiO9KGzDaf+p/jQPNYdLaPfixNdjNnV97kdtI3KBHGan6FekHENbkJZKdJgeg933lu3fANc4JfGpmLAN+JjWTM6oxqQmkpu8EQ+b8JqUSP056/f3RBSzJuzmaCk76JycZ9awEKxDusUrd83JQNl5pTmqEAfj3gp93TPdu5JXInHAgjmeB6MqqwgqxMzO8VPJNEpOqX/Ah0BBlh+LNXCXdheAI2THIvxP2B8r13hZ51RsU4+8zZc3UYu6MhJN15ATswKVb3OvYO6fjYrZsSmmerTWtSxYz2n81npBrFGXvUbr3SkkorDv1DFdtFKX9vU4OHxt8vSC+IuWi4rgkoo5klTdnOvdlGC/74e+JTWMgalKyCi/PpAyxUqUfOjnhgJst/wfxNMUFwjaldjOryEAYAGcPDkj43ax3quqlkLAsNcfW5TcpDb/6dzetF42h3camOEpwKLDDvAQqb4roxkKVQEz1XNGWECA==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR04MB7416.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230025)(4636009)(376002)(396003)(366004)(39860400002)(346002)(136003)(451199018)(31686004)(31696002)(86362001)(8676002)(36756003)(8936002)(4326008)(41300700001)(2906002)(64756008)(66556008)(66446008)(66476007)(4744005)(5660300002)(66946007)(76116006)(122000001)(38100700002)(82960400001)(71200400001)(6486002)(478600001)(316002)(38070700005)(91956017)(110136005)(6512007)(53546011)(26005)(2616005)(6506007)(186003)(45980500001)(43740500002);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0: =?utf-8?B?azR1S3JyREJUbjY3UmsyelQ4RUh5NmFFdUdZSlFlMWpuZ21DbmpxaEdsUEZm?=
+ =?utf-8?B?cDBlbXBRcmFqZ3IyRCt5V1g0Uzl3TEJBKzU4ZGpjbFBiT1greFpxWllXM1VS?=
+ =?utf-8?B?Z2U0UFNwVVg3RHI2STNZZVdhU25sczgrRzNLZXBuSzRnczcwSUp3S3dtM0hw?=
+ =?utf-8?B?aVNuVmNtTkh2TXpGMFVVVlBMRG1XV250STFpNFBDVkoyaUhJU0NmYlh5YWwv?=
+ =?utf-8?B?RVV1TGdTeno1M2RkdFhOclJTU2VpMStrUjlhVit1cVo4RWtTdzlZdFl3aVNl?=
+ =?utf-8?B?d0xzc3Q1NS9vRXlZK3VmbkFRZERMMVN2VndQRjA0TjV2bDRCVFdicDZYeFNM?=
+ =?utf-8?B?RXQrZmtuL010alF5bEVvVUxySkJmL2ltZ0dFRDRNYyt1VGQxRWwrOFU2OExG?=
+ =?utf-8?B?MGF0akRRL09BR1dIejVqcTZnNWk0OWt5QlY4RE9RNm1FeklXbkl2S0N2NS9V?=
+ =?utf-8?B?bGpSa3FTeDVsV005OE9DRFR2YmdwNEZNYkMxaXZHL2lNS3ZYQUxqNW9OU0p1?=
+ =?utf-8?B?Sk0ySmVqSGJDOEkySFRMNDd5ZkZEV0s3MUJzK01GNkFoZWt4QlBGRTFOMW9U?=
+ =?utf-8?B?R0FoeUxUeDVTMk56Wi9aZzIyZUNlbTRZc0pjMStVUXJuTmljOGV4UUpUTFhn?=
+ =?utf-8?B?b3dZdEtFblVRNGZBRk9mUm1yOGZ3SzUya3pQSmZsQlQrOXpYdHFkM0hNQ1hq?=
+ =?utf-8?B?b2xRZWpwa3dFMUN0dVY0bTdLcFhuekNLRjFzSERmNEZ3YlBGTTQvL2ZqMUt0?=
+ =?utf-8?B?ZHNVTFVpUEVJWmRPb0JkTCtMNC9TVnJtcWwwbVVrZE9XWWdoWk5mcGVNUURn?=
+ =?utf-8?B?RTV1UVFUb0RMeUdlY3QvMnhWajFncHUzRXBEOXV4YmFHdHRVZlYzT2FJT1p3?=
+ =?utf-8?B?Yk5EbGR4cGlhakllcXI3OTlBSTkvSWx4eGM1ZFUxSDJMSUJFcTJ1MXpaVHRy?=
+ =?utf-8?B?RGZxWStLeEY2SGpXbkVONDJvR2pNRmYvKzRDcERrV2JYVkk0bnYrNEVCaHlw?=
+ =?utf-8?B?aUhBVUxUekJiYWVURTdXVVFEZmtNNWsxMzVDdmgwcmU3OCtZODAxUzdjYTBM?=
+ =?utf-8?B?MHhSdFYrWUkrRDRCSk5RY0J3OUg4dkRPalpzZjg4Z29tbmUwakZoTFlZZDFO?=
+ =?utf-8?B?c1BKTXdZTUYyeXd3QVJTQWZpcHU1c0E5YUdNdWdjdXJHdDVRam9IRUt5cHpS?=
+ =?utf-8?B?bkFuVW9ZazBGR2NFM0lnMTd5MlVoNmVzV1h4UDk2eHRHemtZNXNtNmJRT3Mw?=
+ =?utf-8?B?ZFkvaGsreWp3MlYxbnIyS3dRRk1aa0NDS05FVzJRSzFiVHF0SHp1WndGa1FD?=
+ =?utf-8?B?a1NkaU5seExLWjdjS1MraTJWUzQycUt6WVViQm96ME41YUZJM0VHQlltUVUr?=
+ =?utf-8?B?cHB5TVhCT1pFOElQTnlHdVYzakdPalVUUmYybkozNzNaRHdzd0VPZXBWOC9G?=
+ =?utf-8?B?dFMvRGZDdVNjS0E2dStmQkc0NkExSXUwUkxuc1VhaWNBRm5rTWd1Ty9VMmx0?=
+ =?utf-8?B?WXpDOTk4Y0crSjQ4NzltTU1rVHVRUWU1TTBSY2tYQVNxMnBVQmFkZURaQ3Ba?=
+ =?utf-8?B?V1d2K0drS1hJeDBBN0toRFI3Y2prS0lYRjBEaGdVeW01bmtKYlJza0dubjBS?=
+ =?utf-8?B?MkloYWIxdkRxYjRqUkxrZm5mYytwSXk2MkRUV1lqTzE1VXc2SFNNK0RORzFw?=
+ =?utf-8?B?SERjRDRENHkxRHYvRllBbWpNUGQveVNCaXozK0lMVzNkWkp5ejFadW9UUUZz?=
+ =?utf-8?B?amlydGRVcmFMWXl0MDJaMlZDN1ZnTjJuUUFuc25vZTBuNUVmWFlQM2NIcGZq?=
+ =?utf-8?B?bUZBMkE5TGxYRjdxcHBJUGJtK3QyWFBwdjRmeFI0Zk1vQmJUWDFkbklCS0Na?=
+ =?utf-8?B?OVpNcFN1dThERi9VdENrSlpDbW9iZWZBZ29BdmRQRlB2MzRLNlR0SUJjdXg2?=
+ =?utf-8?B?V08zOHlQQ0VoY09GODJLT1FLMVkwZVhiWFlyVlhhYi9rek8wbDVZQ0trbW5Q?=
+ =?utf-8?B?c28zSUtvWVBLRVkzcDJzTS9ISWZqL1NSeGtMUEg0WUN6ckxVT0pXSDZ2WE5r?=
+ =?utf-8?B?SnFpY1JVOGZ4UVJ0dXkraXZXbitBU3FRN0I3OSszS2RnbnRJQlhKRVpWcjNk?=
+ =?utf-8?B?WTMzVWsySVE3SWxTdElDREdBNmtxdmFuZFRBVlY3OGJTdWFKVHVoTlJGQTBD?=
+ =?utf-8?B?cXc9PQ==?=
+Content-Type: text/plain; charset="utf-8"
+Content-ID: <F1A29E5AC2A5E140B19966C45FE87CED@namprd04.prod.outlook.com>
+Content-Transfer-Encoding: base64
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: q7zogEnmA65FlpeSTurby9G0wFNcpXDfoNMIzzelH1yVNuzgGm9hCVASxAuxxk8EBaddaJvIGA6JPPdnuLjy5TqxCB05rbUth39vR50ketn4ENC+p44LmolaeyIFRSN+ogkgAPoWyHY3236DO9YZS4qxMTDK1YbJSNXeImQGyU9FqctYvn6XdyEG6zxOC9GEo5yAMZviQILXdGmn92S754T+DIVyMkbzup+OkxL2tN8r90Z7G2W8+4iIcFZMyWBSWyqXeK0cxdlUgZ0Yzc/nj0fvPmBgyJzotLiztWv5FOBghaFY7usk+Fw1dj5P2p4Nj00VpwsQz5rn8wQxPmHdArO2wkCSxOp+AGpp2acuweNnDMdeXE1XnzNP1qbs7APP3i48Vaa0SzjeYoQPpMu7+21QHhnHeQT255I0dVE8jUcU7nz+6G201zesYlFD3mSEbVDhDs4TYieQmbkMNVACNJnE/myeLtDW//TFd6sZj8TE5DWqfaYdCDCLzQu77tGlGH3XsV9uFt/qT1TnSTOWzWis1t+/ZftWZw91WXYQ4+/zx1W+9Nu7yIdeEEEdGoshgf1Dg9t9ur5zLMJWUFP2jYdKgyFWAh8XOCodX5M993MQG3Ww2rUoHlUMI6j4SwKuxgGVpeKQPUhdW+jDWAI17B3dMdEviAyoHGJhugkI1e7kessYvxK1UFjXBfWb/+qG1Ye01lUpnZW0q3HFGjNdDfPvuF+Tw4qerwAUge5fkb360XSUBcXpCgofsGu9627rU+lXkuWHDiZnGepsX5ysyMxv7hXrhqTAoOJhp4/50VO21kHqeH8BM6fuEo+qkrKxFFgcTsB1EuHQ4EpC/ARudZ1+d+SqWRS34ZUNsfE9xVxX6nUGtnsyVG5ZdM02ZZyh
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR04MB7416.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 7d37bf41-bbfa-4cb9-b6a1-08db133bac7e
+X-MS-Exchange-CrossTenant-originalarrivaltime: 20 Feb 2023 12:12:02.0883
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: F9pO7JO8Ozt0mk+gHCgwAr/PkYclDnZ/+ASsIpnNVavV9ySbmOINTNo6MOKFutj3cvlWDmgJqbXOO/fDqC81ztk9HMUaMEAegiJeOD9IfwI=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR04MB6224
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Although dev replace ioctl has a way to specify the mode on whether we
-should read from the source device, it's not properly followed.
-
- # mkfs.btrfs -f -d raid1 -m raid1 $dev1 $dev2
- # mount $dev1 $mnt
- # xfs_io -f -c "pwrite 0 32M" $mnt/file
- # sync
- # btrfs replace start -r -f 1 $dev3 $mnt
-
-And one extra trace is added to scrub_submit(), showing the detail about
-the bio:
-
-           btrfs-1115669 [005] .....  5437.027093: scrub_submit.part.0: devid=1 logical=22036480 phy=22036480 len=16384
-           btrfs-1115669 [005] .....  5437.027372: scrub_submit.part.0: devid=1 logical=30457856 phy=30457856 len=32768
-           btrfs-1115669 [005] .....  5437.027440: scrub_submit.part.0: devid=1 logical=30507008 phy=30507008 len=49152
-           btrfs-1115669 [005] .....  5437.027487: scrub_submit.part.0: devid=1 logical=30605312 phy=30605312 len=32768
-           btrfs-1115669 [005] .....  5437.027556: scrub_submit.part.0: devid=1 logical=30703616 phy=30703616 len=65536
-           btrfs-1115669 [005] .....  5437.028186: scrub_submit.part.0: devid=1 logical=298844160 phy=298844160 len=131072
-           ...
-           btrfs-1115669 [005] .....  5437.076243: scrub_submit.part.0: devid=1 logical=322961408 phy=322961408 len=131072
-           btrfs-1115669 [005] .....  5437.076248: scrub_submit.part.0: devid=1 logical=323092480 phy=323092480 len=131072
-
-One can see that all the read are submitted to devid 1, even we have
-specified "-r" option to avoid read from the source device.
-
-[CAUSE]
-The dev-replace read mode is only set but not followed by scrub code
-at all.
-
-In fact, only common read path is properly following the read mode,
-but scrub itself has its own read path, thus not following the mode.
-
-[FIX]
-Here we enhance scrub_find_good_copy() to also follow the read mode.
-
-The idea is pretty simple, in the first loop, we avoid the following
-devices:
-
-- Missing devices
-  This is the existing condition
-
-- The source device if the replace wants to avoid it.
-
-And if above loop found no candidate (e.g. replace a single device),
-then we discard the 2nd condition, and try again.
-
-Since we're here, also enhance the function scrub_find_good_copy() by:
-
-- Remove the forward declaration
-
-- Makes it return int
-  To indicates errors, e.g. no good mirror found.
-
-- Add extra error messages
-
-Now with the same trace, "btrfs replace start -r" works as expected:
-
-           btrfs-1121013 [000] .....  5991.905971: scrub_submit.part.0: devid=2 logical=22036480 phy=1064960 len=16384
-           btrfs-1121013 [000] .....  5991.906276: scrub_submit.part.0: devid=2 logical=30457856 phy=9486336 len=32768
-           btrfs-1121013 [000] .....  5991.906365: scrub_submit.part.0: devid=2 logical=30507008 phy=9535488 len=49152
-           btrfs-1121013 [000] .....  5991.906423: scrub_submit.part.0: devid=2 logical=30605312 phy=9633792 len=32768
-           btrfs-1121013 [000] .....  5991.906504: scrub_submit.part.0: devid=2 logical=30703616 phy=9732096 len=65536
-           btrfs-1121013 [000] .....  5991.907314: scrub_submit.part.0: devid=2 logical=298844160 phy=277872640 len=131072
-           btrfs-1121013 [000] .....  5991.907575: scrub_submit.part.0: devid=2 logical=298975232 phy=278003712 len=131072
-           btrfs-1121013 [000] .....  5991.907822: scrub_submit.part.0: devid=2 logical=299106304 phy=278134784 len=131072
-           ...
-           btrfs-1121013 [000] .....  5991.947417: scrub_submit.part.0: devid=2 logical=318504960 phy=297533440 len=131072
-           btrfs-1121013 [000] .....  5991.947664: scrub_submit.part.0: devid=2 logical=318636032 phy=297664512 len=131072
-           btrfs-1121013 [000] .....  5991.947920: scrub_submit.part.0: devid=2 logical=318767104 phy=297795584 len=131072
-
-Reviewed-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Rename "replace read policy" to "replace read mode" in comments
-  This is avoid the confusion with the existing read policy.
-  No behavior change.
-
-v3:
-- Avoid using different mirrors if our profile is RAID56
-  RAID56 doesn't contain extra copies, they rebuilt data from P/Q.
-  Thus for RAID56, we can not directly select another stripe and
-  use it as a read source.
----
- fs/btrfs/scrub.c | 154 +++++++++++++++++++++++++++++++++++------------
- 1 file changed, 114 insertions(+), 40 deletions(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ee3fe6c291fe..8961dceae18b 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -423,11 +423,6 @@ static int scrub_sectors(struct scrub_ctx *sctx, u64 logical, u32 len,
- static void scrub_bio_end_io(struct bio *bio);
- static void scrub_bio_end_io_worker(struct work_struct *work);
- static void scrub_block_complete(struct scrub_block *sblock);
--static void scrub_find_good_copy(struct btrfs_fs_info *fs_info,
--				 u64 extent_logical, u32 extent_len,
--				 u64 *extent_physical,
--				 struct btrfs_device **extent_dev,
--				 int *extent_mirror_num);
- static int scrub_add_sector_to_wr_bio(struct scrub_ctx *sctx,
- 				      struct scrub_sector *sector);
- static void scrub_wr_submit(struct scrub_ctx *sctx);
-@@ -2709,6 +2704,112 @@ static int scrub_find_csum(struct scrub_ctx *sctx, u64 logical, u8 *csum)
- 	return 1;
- }
- 
-+static bool should_use_device(struct btrfs_fs_info *fs_info,
-+			      struct btrfs_device *dev,
-+			      bool follow_replace_read_mode)
-+{
-+	struct btrfs_device *replace_srcdev = fs_info->dev_replace.srcdev;
-+	struct btrfs_device *replace_tgtdev = fs_info->dev_replace.tgtdev;
-+
-+	if (!dev->bdev)
-+		return false;
-+
-+	/*
-+	 * We're doing scrub/replace, if it's pure scrub, no tgtdev should be
-+	 * here.
-+	 * If it's replace, we're going to write data to tgtdev, thus the current
-+	 * data of the tgtdev is all garbage, thus we can not use it at all.
-+	 */
-+	if (dev == replace_tgtdev)
-+		return false;
-+
-+	/* No need to follow replace read policy, any existing device is fine. */
-+	if (!follow_replace_read_mode)
-+		return true;
-+
-+	/* Need to follow the policy. */
-+	if (fs_info->dev_replace.cont_reading_from_srcdev_mode ==
-+	    BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_AVOID)
-+		return dev != replace_srcdev;
-+	return true;
-+}
-+static int scrub_find_good_copy(struct btrfs_fs_info *fs_info,
-+				u64 extent_logical, u32 extent_len,
-+				u64 *extent_physical,
-+				struct btrfs_device **extent_dev,
-+				int *extent_mirror_num)
-+{
-+	u64 mapped_length;
-+	struct btrfs_io_context *bioc = NULL;
-+	int ret;
-+	int i;
-+
-+	mapped_length = extent_len;
-+	ret = btrfs_map_block(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
-+			      extent_logical, &mapped_length, &bioc, 0);
-+	if (ret || !bioc || mapped_length < extent_len) {
-+		btrfs_put_bioc(bioc);
-+		btrfs_err_rl(fs_info, "btrfs_map_block() failed for logical %llu: %d",
-+				extent_logical, ret);
-+		return -EIO;
-+	}
-+
-+	/*
-+	 * First loop to exclude all missing devices and the source
-+	 * device if needed.
-+	 * And we don't want to use target device as mirror either,
-+	 * as we're doing the replace, the target device range
-+	 * contains nothing.
-+	 */
-+	for (i = 0; i < bioc->num_stripes - bioc->replace_nr_stripes; i++) {
-+		struct btrfs_io_stripe *stripe = &bioc->stripes[i];
-+
-+		if (!should_use_device(fs_info, stripe->dev, true))
-+			continue;
-+		goto found;
-+	}
-+	/*
-+	 * We didn't find any alternative mirrors, we have to break our
-+	 * replace read mode, or we can not read at all.
-+	 */
-+	for (i = 0; i < bioc->num_stripes - bioc->replace_nr_stripes; i++) {
-+		struct btrfs_io_stripe *stripe = &bioc->stripes[i];
-+
-+		if (!should_use_device(fs_info, stripe->dev, false))
-+			continue;
-+		goto found;
-+	}
-+
-+	btrfs_err_rl(fs_info, "failed to find any live mirror for logical %llu",
-+			extent_logical);
-+	return -EIO;
-+
-+found:
-+	*extent_physical = bioc->stripes[i].physical;
-+	*extent_mirror_num = i + 1;
-+	*extent_dev = bioc->stripes[i].dev;
-+	btrfs_put_bioc(bioc);
-+	return 0;
-+}
-+
-+static bool scrub_need_different_mirror(struct scrub_ctx *sctx,
-+					struct map_lookup *map,
-+					struct btrfs_device *dev)
-+{
-+	if (!dev->bdev)
-+		return true;
-+
-+	/*
-+	 * For RAID56, all the extra mirrors are rebuilt from other P/Q,
-+	 * can not utilize other mirrors direct.
-+	 */
-+	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
-+		return false;
-+
-+	return sctx->fs_info->dev_replace.cont_reading_from_srcdev_mode ==
-+		BTRFS_DEV_REPLACE_ITEM_CONT_READING_FROM_SRCDEV_MODE_AVOID;
-+}
-+
- /* scrub extent tries to collect up to 64 kB for each bio */
- static int scrub_extent(struct scrub_ctx *sctx, struct map_lookup *map,
- 			u64 logical, u32 len,
-@@ -2746,17 +2847,15 @@ static int scrub_extent(struct scrub_ctx *sctx, struct map_lookup *map,
- 	}
- 
- 	/*
--	 * For dev-replace case, we can have @dev being a missing device.
--	 * Regular scrub will avoid its execution on missing device at all,
--	 * as that would trigger tons of read error.
--	 *
--	 * Reading from missing device will cause read error counts to
--	 * increase unnecessarily.
--	 * So here we change the read source to a good mirror.
-+	 * For dev-replace case, we can have @dev being a missing device, or
-+	 * we want to avoid read from the source device if possible.
- 	 */
--	if (sctx->is_dev_replace && !dev->bdev)
--		scrub_find_good_copy(sctx->fs_info, logical, len, &src_physical,
--				     &src_dev, &src_mirror);
-+	if (sctx->is_dev_replace && scrub_need_different_mirror(sctx, map, dev)) {
-+		ret = scrub_find_good_copy(sctx->fs_info, logical, len,
-+					   &src_physical, &src_dev, &src_mirror);
-+		if (ret < 0)
-+			return ret;
-+	}
- 	while (len) {
- 		u32 l = min(len, blocksize);
- 		int have_csum = 0;
-@@ -4544,28 +4643,3 @@ int btrfs_scrub_progress(struct btrfs_fs_info *fs_info, u64 devid,
- 
- 	return dev ? (sctx ? 0 : -ENOTCONN) : -ENODEV;
- }
--
--static void scrub_find_good_copy(struct btrfs_fs_info *fs_info,
--				 u64 extent_logical, u32 extent_len,
--				 u64 *extent_physical,
--				 struct btrfs_device **extent_dev,
--				 int *extent_mirror_num)
--{
--	u64 mapped_length;
--	struct btrfs_io_context *bioc = NULL;
--	int ret;
--
--	mapped_length = extent_len;
--	ret = btrfs_map_block(fs_info, BTRFS_MAP_READ, extent_logical,
--			      &mapped_length, &bioc, 0);
--	if (ret || !bioc || mapped_length < extent_len ||
--	    !bioc->stripes[0].dev->bdev) {
--		btrfs_put_bioc(bioc);
--		return;
--	}
--
--	*extent_physical = bioc->stripes[0].physical;
--	*extent_mirror_num = bioc->mirror_num;
--	*extent_dev = bioc->stripes[0].dev;
--	btrfs_put_bioc(bioc);
--}
--- 
-2.39.1
-
+T24gMTYuMDIuMjMgMTc6MzUsIENocmlzdG9waCBIZWxsd2lnIHdyb3RlOg0KPiBzdWJtaXRfZXh0
+ZW50X3BhZ2UgYWx3YXlzIHJldHVybnMgMC4gIENoYW5nZSBpdCB0byBhIHZvaWQgcmV0dXJuIHR5
+cGUNCj4gYW5kIGFsbCB0aGUgdW5yZWFjaGFibGUgZXJyb3IgaGFuZGxpbmcgY29kZSBpbiB0aGUg
+Y2FsbGVycy4NCg0KZm9yIHRoZSByZWNvcmQ6DQpkNWU0Mzc3ZDUwNTEgKCJidHJmczogc3BsaXQg
+em9uZSBhcHBlbmQgYmlvcyBpbiBidHJmc19zdWJtaXRfYmlvIikNCnJlbW92ZWQgdGhlIGxhc3Qg
+bm9uIDAgcmV0dXJuIG9mIHN1Ym1pdF9leHRlbnRfcGFnZSgpIHdoZW4gYWxsb2NfbmV3X2Jpbygp
+DQp0dXJuZWQgaW50byBhIHZvaWQgZnVuY3Rpb24uDQoNCg0KUmV2aWV3ZWQtYnk6IEpvaGFubmVz
+IFRodW1zaGlybiA8am9oYW5uZXMudGh1bXNoaXJuQHdkYy5jb20+DQo=

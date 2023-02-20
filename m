@@ -2,109 +2,71 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16158C64ED9
-	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Feb 2023 21:11:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89B33C636D6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 20 Feb 2023 21:12:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232501AbjBTVLK (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Feb 2023 16:11:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48972 "EHLO
+        id S233009AbjBTVL7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Feb 2023 16:11:59 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50374 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232447AbjBTVLI (ORCPT
+        with ESMTP id S232562AbjBTVL6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Feb 2023 16:11:08 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F5B31CAC8
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Feb 2023 13:11:02 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Mon, 20 Feb 2023 16:11:58 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79B001CAE3;
+        Mon, 20 Feb 2023 13:11:45 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C25A420BBF;
-        Mon, 20 Feb 2023 21:11:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1676927460;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=erbvAZalrXrmdqdoO/HtInpfKpJhgcTMQUmg6yq2D/8=;
-        b=iJbV6sJmu26ZP4c85vEa1xcFL7KJhcmZmqDEl45CAb5F3a+8CQ//easO/nFknxzImcd0qw
-        dbKrQEPE2MMcuuZ4VnRO/u3JhNfgVaUfT85aQJ67jxw7hBhDxBOUlVUio9lYltgmrt27d6
-        qcHdJbAe2J0kVVaD3V5HD5F2dnIh/Cs=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1676927460;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=erbvAZalrXrmdqdoO/HtInpfKpJhgcTMQUmg6yq2D/8=;
-        b=YD8hcxTURFsMhRZrtl4fyQR1+2P4vR7T+fioTOM0O61QtDLcHBuZ1jIa5BN2eIYudo5nkk
-        8wRbXe6X9X8XjJDA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9AEAC134BA;
-        Mon, 20 Feb 2023 21:11:00 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id IkvYJOTh82NTbwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 20 Feb 2023 21:11:00 +0000
-Date:   Mon, 20 Feb 2023 22:05:05 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/6] btrfs: reduce div64 calls by limiting the number of
- stripes of a chunk to u32
-Message-ID: <20230220210505.GK10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1676611535.git.wqu@suse.com>
- <b478ecdd00a6f4d897e6b74cac6a01cd63a37356.1676611535.git.wqu@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <b478ecdd00a6f4d897e6b74cac6a01cd63a37356.1676611535.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 2776AB80DD3;
+        Mon, 20 Feb 2023 21:11:44 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id D040CC4339B;
+        Mon, 20 Feb 2023 21:11:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1676927502;
+        bh=6g4NDisHRG4qmLpa8BDv5tH4TBrlHaYvx8l5KIe7WXw=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=sdoTBEeNBYdtVmrVdNW//ChctssgK3NklmOKxnCz0WQyVtRiMbNshiNUHLRikVrtK
+         0LldUTSs15SzOMN8Ysxw3oPzk+RurcCGYQI9GlMEcrutCkEL0Zi6f7RFvShUcCElAd
+         lyrHaN73u9XSfWSTvXtWcRPeyRnfSXwGzOvvaFcciZh3W4gO4cUvCihHDYCsvJzrgH
+         c54e21B4a8tM4g+HPZGk3O3mTuM1EAwzOiD2yCMqhY9H3A5EPImcnwL5Q4+3ohORZE
+         TxstAJ+wnZDN2OMeBVZqTtwcmOjSPFMDxA61gfnawhf5gNfYL0FEtjboqdMBCVbaWS
+         ASCNuC0W/itdA==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id B98B8E68D20;
+        Mon, 20 Feb 2023 21:11:42 +0000 (UTC)
+Subject: Re: [GIT PULL] fsverity updates for 6.3
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <Y/KLHT3zaA0QFhVJ@sol.localdomain>
+References: <Y/KLHT3zaA0QFhVJ@sol.localdomain>
+X-PR-Tracked-List-Id: <linux-fsdevel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <Y/KLHT3zaA0QFhVJ@sol.localdomain>
+X-PR-Tracked-Remote: https://git.kernel.org/pub/scm/fs/fsverity/linux.git tags/fsverity-for-linus
+X-PR-Tracked-Commit-Id: 51e4e3153ebc32d3280d5d17418ae6f1a44f1ec1
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 6639c3ce7fd217c22b26aa9f2a3cb69dc19221f8
+Message-Id: <167692750275.16986.16446454723187739663.pr-tracker-bot@kernel.org>
+Date:   Mon, 20 Feb 2023 21:11:42 +0000
+To:     Eric Biggers <ebiggers@kernel.org>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        linux-btrfs@vger.kernel.org, linux-fscrypt@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Feb 17, 2023 at 01:36:59PM +0800, Qu Wenruo wrote:
-> -	u64 stripe_nr;
-> -	u64 stripe_nr_end;
-> +	u32 stripe_nr;
-> +	u32 stripe_nr_end;
-> +	u32 stripe_cnt;
->  	u64 stripe_end_offset;
-> -	u64 stripe_cnt;
->  	u64 stripe_offset;
->  	u32 stripe_index;
->  	u32 factor = 0;
->  	u32 sub_stripes = 0;
-> -	u64 stripes_per_dev = 0;
-> +	u32 stripes_per_dev = 0;
->  	u32 remaining_stripes = 0;
->  	u32 last_stripe = 0;
->  	int ret;
-> @@ -6015,18 +6015,19 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
->  		factor = map->num_stripes / sub_stripes;
->  		*num_stripes = min_t(u64, map->num_stripes,
->  				    sub_stripes * stripe_cnt);
-> -		stripe_nr = div_u64_rem(stripe_nr, factor, &stripe_index);
-> +		stripe_index = stripe_nr % factor;
-> +		stripe_nr /= factor;
->  		stripe_index *= sub_stripes;
-> -		stripes_per_dev = div_u64_rem(stripe_cnt, factor,
-> -					      &remaining_stripes);
-> -		div_u64_rem(stripe_nr_end - 1, factor, &last_stripe);
-> -		last_stripe *= sub_stripes;
-> +
-> +		remaining_stripes = stripe_cnt % factor;
-> +		stripes_per_dev = stripe_cnt / factor;
-> +		last_stripe = (stripe_nr_end - 1) % factor * sub_stripes;
+The pull request you sent on Sun, 19 Feb 2023 12:48:29 -0800:
 
-Please add ( ) where the operator precedence is not obvious, there are
-default C rules for that but for clarity I've added
+> https://git.kernel.org/pub/scm/fs/fsverity/linux.git tags/fsverity-for-linus
 
-		last_stripe = ((stripe_nr_end - 1) % factor) * sub_stripes;
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/6639c3ce7fd217c22b26aa9f2a3cb69dc19221f8
 
-* / and % are of same priority but it's not common to see
-them in one expression.
+Thank you!
+
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

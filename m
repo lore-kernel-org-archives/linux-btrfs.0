@@ -2,42 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CF66C64EC4
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Feb 2023 20:57:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DD986C636D7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Feb 2023 20:57:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229852AbjBUU5H (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Feb 2023 15:57:07 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35598 "EHLO
+        id S229831AbjBUU5G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Feb 2023 15:57:06 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35596 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229501AbjBUU5F (ORCPT
+        with ESMTP id S229622AbjBUU5F (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Tue, 21 Feb 2023 15:57:05 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E0C5A199DF
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7AC3AB761
         for <linux-btrfs@vger.kernel.org>; Tue, 21 Feb 2023 12:57:04 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=um+Xcd6h83pD0emvfVcDH2o8EAKFUyxKjqhwY7kaEw0=; b=0yHN26fHCY0KB3L+e8OZ8wc/A6
-        wIAgZPPDBA6PFnG0uZS9MZHHLHPXf6eQaFWFI6LcCjSoYtu5548Is15cp2ovgri5GcbFlq7u3MzU7
-        6TzKSJm4c7tCrhu2wpVS2R2iEDh8pfI+w/Zw/zRsQJSF9BhN//QJbVomq7TcD1jkqEwNrGxK5lPis
-        /MYdml7cJTGVjCKfln0s3dQwOYHPenBUV3OOooXnjzIvO5Umg4cnGnQxdxVlIU/Y1tLWJAH17+j9G
-        0tKmLQ25M3ljdxJB9PB8EQfaatX92caSMZBKQ/THp1J/jg7oM4Hd1P9/Uoniy5RUUWJvgvTK4Fu5q
-        NqreGVvg==;
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=qCq9t9/vIYKtyFvrygD+M2wtUHTOgbQhJS47y8GNgoI=; b=Zwt/Zw2Nl9Xs5yf704XDT40gOQ
+        QbEC0ViiscCFtppx32VhcKNPVCHn2eta39nSL5vi3X5whh1VkuwmmEBJ8peX+C4bgKUBvnHrV7gi2
+        CQR3Iq93GySCsPOVHZcksGvQZzSMJHylH9+c02gC7WFtc1+A9oKN73+l22fxwrqnI4Kfenh8IzvWI
+        V0jYraHUkNmI+snPPZu6muURVxE59AaX3NDv7mSND4sVpoFPovLYXWVGoQNdbFSL/e0DRawbfmh30
+        J400/Qi6jeUH+jCXfHm0MY7pmu5TWqNqMloIQETSpyZrlNkiShKf/0hiYMxkJe33PYSTT/sorWqvM
+        fxCBD57A==;
 Received: from [4.28.11.157] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pUZh8-009lKR-7Y; Tue, 21 Feb 2023 20:57:02 +0000
+        id 1pUZh7-009lKH-IV; Tue, 21 Feb 2023 20:57:01 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: cleanup btrfs_lookup_bio_sums
-Date:   Tue, 21 Feb 2023 12:56:59 -0800
-Message-Id: <20230221205659.530284-3-hch@lst.de>
+Subject: cleanup btrfs_lookup_bio_sums
+Date:   Tue, 21 Feb 2023 12:56:57 -0800
+Message-Id: <20230221205659.530284-1-hch@lst.de>
 X-Mailer: git-send-email 2.39.1
-In-Reply-To: <20230221205659.530284-1-hch@lst.de>
-References: <20230221205659.530284-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
@@ -45,81 +43,11 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Introduce a bio_offset variable for the current offset into the bio
-instead of recalculating it over and over, remove the now superflous
-search_len and reduce variable scope as applicable as well as switch
-count to and unsigned type for the unsigned values it holds.
+Hi all,
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/file-item.c | 31 +++++++++----------------------
- 1 file changed, 9 insertions(+), 22 deletions(-)
+this series takes advantage of the file_offset now provided in each btrfs_bio
+to clean up btrfs_lookup_bio_sums.
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 9df9b91dbc6463..efc914b2e17e08 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -350,10 +350,9 @@ blk_status_t btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
- 	const u32 csum_size = fs_info->csum_size;
- 	u32 orig_len = bio->bi_iter.bi_size;
- 	u64 orig_disk_bytenr = bio->bi_iter.bi_sector << SECTOR_SHIFT;
--	u64 cur_disk_bytenr;
- 	const unsigned int nblocks = orig_len >> fs_info->sectorsize_bits;
--	int count = 0;
- 	blk_status_t ret = BLK_STS_OK;
-+	u32 bio_offset = 0;
- 
- 	if ((inode->flags & BTRFS_INODE_NODATASUM) ||
- 	    test_bit(BTRFS_FS_STATE_NO_CSUMS, &fs_info->fs_state))
-@@ -404,25 +403,12 @@ blk_status_t btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
- 		path->skip_locking = 1;
- 	}
- 
--	for (cur_disk_bytenr = orig_disk_bytenr;
--	     cur_disk_bytenr < orig_disk_bytenr + orig_len;
--	     cur_disk_bytenr += (count * sectorsize)) {
--		u64 search_len = orig_disk_bytenr + orig_len - cur_disk_bytenr;
--		unsigned int sector_offset;
--		u8 *csum_dst;
--
--		/*
--		 * Although both cur_disk_bytenr and orig_disk_bytenr is u64,
--		 * we're calculating the offset to the bio start.
--		 *
--		 * Bio size is limited to UINT_MAX, thus unsigned int is large
--		 * enough to contain the raw result, not to mention the right
--		 * shifted result.
--		 */
--		ASSERT(cur_disk_bytenr - orig_disk_bytenr < UINT_MAX);
--		sector_offset = (cur_disk_bytenr - orig_disk_bytenr) >>
--				fs_info->sectorsize_bits;
--		csum_dst = bbio->csum + sector_offset * csum_size;
-+	while (bio_offset < orig_len) {
-+		u64 cur_disk_bytenr = orig_disk_bytenr + bio_offset;
-+		u64 search_len = orig_len - bio_offset;
-+		u8 *csum_dst = bbio->csum +
-+			(bio_offset >> fs_info->sectorsize_bits) * csum_size;
-+		u32 count = 0;
- 
- 		count = search_csum_tree(fs_info, path, cur_disk_bytenr,
- 					 search_len, csum_dst);
-@@ -451,7 +437,7 @@ blk_status_t btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
- 			if (inode->root->root_key.objectid ==
- 			    BTRFS_DATA_RELOC_TREE_OBJECTID) {
- 				u64 file_offset = bbio->file_offset +
--					cur_disk_bytenr - orig_disk_bytenr;
-+					bio_offset;
- 
- 				set_extent_bits(&inode->io_tree, file_offset,
- 						file_offset + sectorsize - 1,
-@@ -462,6 +448,7 @@ blk_status_t btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
- 				cur_disk_bytenr, cur_disk_bytenr + sectorsize);
- 			}
- 		}
-+		bio_offset += count * sectorsize;
- 	}
- 
- 	btrfs_free_path(path);
--- 
-2.39.1
-
+Diffstat:
+ file-item.c |   81 ++++++++----------------------------------------------------
+ 1 file changed, 11 insertions(+), 70 deletions(-)

@@ -2,136 +2,104 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 22AF0C61DA3
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Feb 2023 20:57:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EDD5C636D7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Feb 2023 21:45:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229918AbjBUU5I (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Feb 2023 15:57:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35600 "EHLO
+        id S230158AbjBUVpY (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Feb 2023 16:45:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47860 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229660AbjBUU5G (ORCPT
+        with ESMTP id S230120AbjBUVpQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Feb 2023 15:57:06 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 307971ABC2
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Feb 2023 12:57:05 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=qcCUOn22+pSdhqmwIeijfNzthK1ki/rm6LHNGlFR+VM=; b=NdTrkv7em4yx1LKyNyfcyLRGbj
-        5EQPk/o8Ok5UUyXozkqJZKs/mux7RQi/TdCHvKESm+hmN5Uue8bh/3lTp+cx+NXsCq5gKgUzzHLNK
-        MUOWgPtNMQbEHe7RFtg4G7PdMPOp07blasE8D4+uZSyURB5PVBnaqsI60gQMoGIvg2JEYn36zPDgo
-        uxHeEZ2Gw1a5k9Ql+8iFpaU4MqeWS+qXhpPJo8zZHVYfJUJMnvrfdgf3nAXcjIBPIviaU33+aA6PD
-        L1c+0OQSWos0uCpPrGv3wGERG+28CkWrP2udZ8TB0iCXtNo70D3E3zFPhGJ3zX+mPfFJrazJ4W8qo
-        WJHKFklA==;
-Received: from [4.28.11.157] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pUZh7-009lKO-SZ; Tue, 21 Feb 2023 20:57:01 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: remove search_file_offset_in_bio
-Date:   Tue, 21 Feb 2023 12:56:58 -0800
-Message-Id: <20230221205659.530284-2-hch@lst.de>
-X-Mailer: git-send-email 2.39.1
-In-Reply-To: <20230221205659.530284-1-hch@lst.de>
-References: <20230221205659.530284-1-hch@lst.de>
+        Tue, 21 Feb 2023 16:45:16 -0500
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7852B2FCEB
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Feb 2023 13:45:14 -0800 (PST)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id BE39A34ACD;
+        Tue, 21 Feb 2023 21:45:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1677015911;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=IqK9CIJ7L20cOKFyQs7faEK8yuIWv46LqgKvQjoDiHQ=;
+        b=acDPuSANG0O9PEEBueBln54PlL0GuxsulKWOkS5vD7Zf90zEoHsMyHzZ9f6Pqd/lnaGmlX
+        EZYMXpF1j6Hh92WtAs44YySgSVZmPubREl6s0/vagD1i4CoAoOppBX50QZSdP1LuCtkfkR
+        QUHlErEiEjiRM0vMG2IfTNMS7pdbjrA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1677015911;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=IqK9CIJ7L20cOKFyQs7faEK8yuIWv46LqgKvQjoDiHQ=;
+        b=WJrO3A/dP31yPQGdmVQ7Z0rkv3+DWxD+qbE7wUdTkjqJs6eAco1aFg2pKTRz27tkWUxnLx
+        0YdTy8KRCa12a0DQ==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8F74813223;
+        Tue, 21 Feb 2023 21:45:11 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 4p0cImc79WNDMgAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 21 Feb 2023 21:45:11 +0000
+Date:   Tue, 21 Feb 2023 22:39:15 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org, wqu@suse.com
+Subject: Re: [PATCH v2 0/2] btrfs-progs: read device fsid from the sysfs
+Message-ID: <20230221213915.GO10580@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1676124188.git.anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cover.1676124188.git.anand.jain@oracle.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There is no need to search for a file offset in a bio, it is now always
-provided in bbio->file_offset.  Just use that adjusted to the offset
-into the bio.
+On Mon, Feb 13, 2023 at 05:37:40PM +0800, Anand Jain wrote:
+> v2:
+>  Almost a resend; no code was altered, except for the change log.
+> 
+> The following test scenario (as in fstests btrfs/249) shows an issue
+> where the "usage" subcommand fails to retrieve the fsid from the
+> superblock for a missing device.
+> 
+> Create a raid1 seed device while one of its device missing.
+>    $ mkfs.btrfs -f -draid1 -mraid1 $DEV1 $DEV2
+>    $ btrfstune -S 1 $DEV1
+>    $ wipefs -a $DEV2
+> 
+> Mount the seed device
+>    $ btrfs device scan --forget
+>    $ mount -o degraded $DEV1 /btrfs
+> 
+> Add a sprout device
+>    $ btrfs device add $DEV3 /btrfs -f
+> 
+> The usage subommand fails because we try to read superblock for the missing
+> device
+>    $ btrfs filesystem usage /btrfs
+>      ERROR: unexpected number of devices: 1 >= 1
+>      ERROR: if seed device is used, try running this command as root
+> 
+> The commit a26d60dedf9a ("btrfs: sysfs: add devinfo/fsid to retrieve
+> actual fsid from the device") introduced a sysfs interface for
+> retrieving the fsid of a device. This change allows for the reading of the
+> device fsid through the sysfs interface in the kernel, while retaining the
+> old method of reading the superblock from the disk for backward
+> compatibility during normal, non-missing device conditions.
+> 
+> Anand Jain (2):
+>   btrfs-progs: prepare helper device_is_seed
+>   btrfs-progs: read fsid from the sysfs in device_is_seed
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/file-item.c | 52 +++-----------------------------------------
- 1 file changed, 3 insertions(+), 49 deletions(-)
-
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index fff09e5635e5f2..9df9b91dbc6463 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -335,48 +335,6 @@ static int search_csum_tree(struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
--/*
-- * Locate the file_offset of @cur_disk_bytenr of a @bio.
-- *
-- * Bio of btrfs represents read range of
-- * [bi_sector << 9, bi_sector << 9 + bi_size).
-- * Knowing this, we can iterate through each bvec to locate the page belong to
-- * @cur_disk_bytenr and get the file offset.
-- *
-- * @inode is used to determine if the bvec page really belongs to @inode.
-- *
-- * Return false if we can't find the file offset
-- * Return true if we find the file offset and restore it to @file_offset_ret
-- */
--static int search_file_offset_in_bio(struct bio *bio, struct inode *inode,
--				     u64 disk_bytenr, u64 *file_offset_ret)
--{
--	struct bvec_iter iter;
--	struct bio_vec bvec;
--	u64 cur = bio->bi_iter.bi_sector << SECTOR_SHIFT;
--	bool ret = false;
--
--	bio_for_each_segment(bvec, bio, iter) {
--		struct page *page = bvec.bv_page;
--
--		if (cur > disk_bytenr)
--			break;
--		if (cur + bvec.bv_len <= disk_bytenr) {
--			cur += bvec.bv_len;
--			continue;
--		}
--		ASSERT(in_range(disk_bytenr, cur, bvec.bv_len));
--		if (page->mapping && page->mapping->host &&
--		    page->mapping->host == inode) {
--			ret = true;
--			*file_offset_ret = page_offset(page) + bvec.bv_offset +
--					   disk_bytenr - cur;
--			break;
--		}
--	}
--	return ret;
--}
--
- /*
-  * Lookup the checksum for the read bio in csum tree.
-  *
-@@ -386,7 +344,6 @@ blk_status_t btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
- {
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
--	struct extent_io_tree *io_tree = &inode->io_tree;
- 	struct bio *bio = &bbio->bio;
- 	struct btrfs_path *path;
- 	const u32 sectorsize = fs_info->sectorsize;
-@@ -493,13 +450,10 @@ blk_status_t btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
- 
- 			if (inode->root->root_key.objectid ==
- 			    BTRFS_DATA_RELOC_TREE_OBJECTID) {
--				u64 file_offset;
-+				u64 file_offset = bbio->file_offset +
-+					cur_disk_bytenr - orig_disk_bytenr;
- 
--				if (search_file_offset_in_bio(bio,
--							      &inode->vfs_inode,
--							      cur_disk_bytenr,
--							      &file_offset))
--					set_extent_bits(io_tree, file_offset,
-+				set_extent_bits(&inode->io_tree, file_offset,
- 						file_offset + sectorsize - 1,
- 						EXTENT_NODATASUM);
- 			} else {
--- 
-2.39.1
-
+Added to devel with some fixups, thanks.

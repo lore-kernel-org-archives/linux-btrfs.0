@@ -2,181 +2,111 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D9E1DC636D7
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Feb 2023 05:11:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 74F6EC61DA4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Feb 2023 10:07:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232463AbjBWFLN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Feb 2023 00:11:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38560 "EHLO
+        id S233297AbjBWKHe (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Feb 2023 05:07:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40412 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229379AbjBWFLL (ORCPT
+        with ESMTP id S232935AbjBWKHd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Feb 2023 00:11:11 -0500
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5199F38657;
-        Wed, 22 Feb 2023 21:11:10 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 6484734674;
-        Thu, 23 Feb 2023 05:11:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1677129068; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=sWu4x91YC0eUQ1UqiNEytf8mMuQdnUWnTxOpaGL5N6s=;
-        b=koZ2hECHBmja3+mrfeR13qoaBtcN+QA/j/U3rfwOsn57+lA4Yn0hYiqq8KoVAhBP4PFiDQ
-        2BElnJkKK8hFARtJWyZuUZT9oTpIIyFRZUZ/UPN9GJP8BDwTJ9+ldqcEfUdBDTonKjSCtM
-        2Mq5zvmlKQUwS+/DHun1eZTOO+Tfjl8=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 775AE13524;
-        Thu, 23 Feb 2023 05:11:07 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id iGq3D2v19mMMGAAAMHmgww
-        (envelope-from <wqu@suse.com>); Thu, 23 Feb 2023 05:11:07 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-Subject: [PATCH] btrfs: add test case for NODATASUM dev-replace
-Date:   Thu, 23 Feb 2023 13:10:49 +0800
-Message-Id: <20230223051049.30086-1-wqu@suse.com>
-X-Mailer: git-send-email 2.39.1
+        Thu, 23 Feb 2023 05:07:33 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE1AF3B841
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Feb 2023 02:07:27 -0800 (PST)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N2mFY-1oWo5t1NRE-01399n; Thu, 23
+ Feb 2023 11:07:22 +0100
+Message-ID: <41570e39-6e49-8cb5-c2f1-4b77ed8260be@gmx.com>
+Date:   Thu, 23 Feb 2023 18:07:17 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.7.0
+Subject: Re: [PATCH] btrfs: fix percent calculation for reclaim message
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org
+Cc:     Forza <forza@tnonline.net>
+References: <6107ccae94e0af75c60d1d1f6a5a0dd59aaafc58.1677003060.git.johannes.thumshirn@wdc.com>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <6107ccae94e0af75c60d1d1f6a5a0dd59aaafc58.1677003060.git.johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:Gp4Xll7/hOyr//Ty6CaH4Co7tlGqgcOs7TXMt99d3XXjcniRLPZ
+ mVCH9nFd+06L9wkzFEdOnD2XBNr7hoceE4XYPSNKTsB/Hj3kHjEHlZ8L+eTU7Ms2KLQGhNy
+ LlnElK5cpJ2LF53loj69lVJ5I7o9vu1uDneKI9uiMCar29ogvM+jQ40nJFn2cLPIghUY3rD
+ brnC1yiIAjjBa2L7woJPg==
+UI-OutboundReport: notjunk:1;M01:P0:nQ/KjRtlbp4=;+JSyOv1wV74b7PeVBtiSCysNGFP
+ U+MrYfT8qx3zFMM2jffZ4id9Op4Kx+t55gw8MpTrnS3HuASf4wo5kAQFl3voyQA+fgeLkDr6G
+ uhuqdu/ji4fQEVIMGLX8Vxqe0nWzjRvNhy9Z5VbqkeILnx+GAIKDHEREKiSJEjsh6b/qA9a4y
+ HTZmCNe8JpsnQ2tQeHLQvKMCdOAcVZ2bIOrD5xoR6Ybgj7IbS3jWa66HdC64lWO+o4/a0pmDZ
+ Yxg+RUMxpzG0Gb+ZV88r6Rd2YwDsOkERuwPBAEFmvBAXQrrJtbK5326KzlP/o0pU6k5dPsJtv
+ Ia6w76C8gfsootKgK6jenmYElTM+wW3AS2BYbapT9eLiZ/RDiQnmFSeOFWQxRycgRaSko2HEh
+ 8XARNIxOknXaNZhRAIaD3HVuNDYXk81FrHqYoREnxrTyFytNN0PRDwHoIeisBDyEC8dTEzMRA
+ deKd9OLQrEEAr8PU2Gl1K/+ijbxP7hL/g3mrnSseN4JflZaUYFs/YbNPQdlzdCD+L1flXVLqu
+ F4lRyGEIOsrBirrvS8P5R4Ka4Lg+vMcBZ9RxDqdc7SL4omrozvVWWdRlvamtaqNJOirh7KOqs
+ AU4HRqmjHMHHyCntN0o5lPJUyrM5Lfh8CFpNprcMbCoCbLyYnJqIaSORDdEemgQ4Cn96dPPLG
+ jowzat/gizzaU2Z1jyRG5iDJg1S8dbfzKbUUugPiKI+hj3P+A8txkUuGcpAjt+pdl4jmogmx2
+ Q64IR/uNxNlVCnTTWs38/FiZzaL2BhuyP8CK5CmXBaKHnUEsNffW6y8CrzJZmFaFr1S2s1qZD
+ cyZulhoajiEOmewf1G5itfNj6oj2gcHVW+cBvMJYtG8yLCHtnRuJwkyRva/+aLfpC//OYm98y
+ Q+tIdOmiqSjODxC6xJwPN8h6N4UomZgtSGe+ZUyIhSHkQRUPf4xuKMybC2svWqI8BAQuOrjKn
+ UIWa5azStD71ufJyruxxwv2dOnc=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-During my development on dev-replace, I made a mistake in RAID56
-dev-replace code where it can lead to NODATASUM corruption.
-Thankfully such corruption didn't reach upstream.
 
-Inspired by such incident, here comes a new test case for btrfs
-dev-replace, the new case would:
 
-- Populate the filesystem with nodatasum mount option
+On 2023/2/22 02:11, Johannes Thumshirn wrote:
+> We have a report, that the info message for block-group reclaim is crossing the
+> 100% used mark.
+> 
+> This is happening as we were truncaating the divisor for the division (the
+> block_group->length) to a 32bit value.
+> 
+> Fix this by using div64_u64() to not truncate the divisor.
 
-- Run fssum to record the contents
-  Since the test case only cares about data contents, here we don't
-  include metadata like uid/gid/timestamp.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-- Wipe one device
+In the worst case, it can lead to a div by zero error.
 
-- Mount the fs with the missing device
+And I believe it's not that hard to trigger, just 4 disks RAID0, and 
+each device is large enough, then we're doomed:
 
-- Verify the contents is still correct
+   $ mkfs.btrfs  -f /dev/test/scratch[1234] -m raid1 -d raid0
+   btrfs-progs v6.1
+   [...]
+   Filesystem size:    40.00GiB
+   Block group profiles:
+     Data:             RAID0             4.00GiB <<<
+     Metadata:         RAID1           256.00MiB
+     System:           RAID1             8.00MiB
 
-- Replace the missing device
+Maybe this can be turned into a test case?
 
-- Verify the contents is still correct again
-  Before the verification, drop all cache to make sure the 2nd
-  verification is reading from the disks.
-
-For current kernels, the test case should pass as expected.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/286     | 78 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/286.out |  2 ++
- 2 files changed, 80 insertions(+)
- create mode 100755 tests/btrfs/286
- create mode 100644 tests/btrfs/286.out
-
-diff --git a/tests/btrfs/286 b/tests/btrfs/286
-new file mode 100755
-index 00000000..fb805256
---- /dev/null
-+++ b/tests/btrfs/286
-@@ -0,0 +1,78 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2023 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 286
-+#
-+# Make sure btrfs dev-replace on missing device won't cause data corruption
-+# for NODATASUM data.
-+#
-+. ./common/preamble
-+_begin_fstest auto replace
-+
-+# Import common functions.
-+. ./common/filter
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_require_command "$WIPEFS_PROG" wipefs
-+_btrfs_get_profile_configs replace-missing
-+_require_fssum
-+_require_scratch_dev_pool 5
-+_scratch_dev_pool_get 4
-+_spare_dev_get
-+
-+workload()
-+{
-+	local profile=$1
-+	local victim="$(echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}')"
-+
-+	echo "=== Profile: $profile ===" >> $seqres.full
-+	rm -f $tmp.fssum
-+	_scratch_pool_mkfs "$profile" >> $seqres.full 2>&1
-+
-+	# Use nodatasum mount option, so all data won't have checksum.
-+	_scratch_mount -o nodatasum
-+
-+	$FSSTRESS_PROG -p 10 -n 200 -d $SCRATCH_MNT > /dev/null 2>&1
-+	sync
-+
-+	# Generate fssum for later verification, here we only care
-+	# about the file contents, thus we don't bother metadata at all.
-+	$FSSUM_PROG -n -d -f -w $tmp.fssum $SCRATCH_MNT
-+	_scratch_unmount
-+
-+	# Wipe devid 2
-+	$WIPEFS_PROG -a $victim >> $seqres.full 2>&1
-+
-+	# Mount the fs with the victim device missing
-+	_scratch_mount -o degraded,nodatasum
-+
-+	# Verify no data corruption first.
-+	echo "=== Verify the contents before replace ===" >> $seqres.full
-+	$FSSUM_PROG -r $tmp.fssum $SCRATCH_MNT >> $seqres.full 2>&1
-+
-+	# Replace the missing device
-+	$BTRFS_UTIL_PROG replace start -Bf 2 $SPARE_DEV $SCRATCH_MNT >> $seqres.full
-+
-+	# Drop all cache to make sure later read are all from the disks
-+	echo 3 > /proc/sys/vm/drop_caches
-+
-+	# Re-check the file contents
-+	echo "=== Verify the contents after replace ===" >> $seqres.full
-+	$FSSUM_PROG -r $tmp.fssum $SCRATCH_MNT >> $seqres.full 2>&1
-+
-+	_scratch_unmount
-+}
-+
-+for t in "${_btrfs_profile_configs[@]}"; do
-+	workload "$t"
-+done
-+
-+echo "Silence is golden"
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/286.out b/tests/btrfs/286.out
-new file mode 100644
-index 00000000..35c48006
---- /dev/null
-+++ b/tests/btrfs/286.out
-@@ -0,0 +1,2 @@
-+QA output created by 286
-+Silence is golden
--- 
-2.39.0
-
+Thanks,
+Qu
+> 
+> Reported-by: Forza <forza@tnonline.net>
+> Link: https://lore.kernel.org/linux-btrfs/e99483.c11a58d.1863591ca52@tnonline.net/
+> Fixes: 5f93e776c673 ("btrfs: zoned: print unusable percentage when reclaiming block groups")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>   fs/btrfs/block-group.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index fe4a60d7a49e..c6b9d5a04f3e 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -1826,7 +1826,8 @@ void btrfs_reclaim_bgs_work(struct work_struct *work)
+>   
+>   		btrfs_info(fs_info,
+>   			"reclaiming chunk %llu with %llu%% used %llu%% unusable",
+> -				bg->start, div_u64(bg->used * 100, bg->length),
+> +				bg->start,
+> +				div64_u64(bg->used * 100, bg->length),
+>   				div64_u64(zone_unusable * 100, bg->length));
+>   		trace_btrfs_reclaim_block_group(bg);
+>   		ret = btrfs_relocate_chunk(fs_info, bg->start);

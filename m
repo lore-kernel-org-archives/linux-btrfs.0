@@ -2,40 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0C30C64ED8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Feb 2023 15:17:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B81DC7EE2E
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Feb 2023 15:17:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230172AbjB0PRR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Feb 2023 10:17:17 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59564 "EHLO
+        id S230026AbjB0PRT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Feb 2023 10:17:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59732 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229826AbjB0PRO (ORCPT
+        with ESMTP id S230029AbjB0PRO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Mon, 27 Feb 2023 10:17:14 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00399227A0
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2023 07:17:08 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0923F227A4
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2023 07:17:10 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=1sGa2xZrJRM6fD8FbtmJI3pvcLAkd+S4XhDBn/NVAYc=; b=hk9UzEGFQsu1/yF0fDO49QePSW
-        rnP94wEVWgXlGVWyJki8GJ35PNEMSzOya67R/pHyEi33AgQFXGFaRsxa/KaZeA8+OzxXrbwtcDb8d
-        0G9DREEHZ0ZIAVACrWvzAFBfrOUUB/gpxQiBjUA/sV/dXT/qY05iWAWWd/qc112aZ/QG57gOg93NC
-        ww/gA8gPhnubkb7vwEf5DOG8I9JkpnLIzvx0bJfbFA/drCgs6ZPkWu4mZrPej7s0p4mmOTcv5w1pn
-        Ub8L46eVYFdaDwiWB2MXhhuRU4mzIHHrCFVDhfdZEQEpTEOi5Vf52z3tMJqorKZBrlGtAKfjikMLE
-        TlBLWOiw==;
+        bh=c7H8fNnVmpUCzEmHv9F1XDpxPe5blDfmcW1bDZi0xoI=; b=mpjRsJXv3y8mb7k/inwvLXE902
+        WVi8oMZgp2TTu1DsQf9x7MVwth+hLT3PGlqPzgwciclFQDAXyqrLZikGWTxTT35QHaoaRxwkhn6Av
+        LjPhT/0p0U1nQfwWKn8onT7SLNt571iMK7g1kC/GbhB2fqWlbvSHywVX5WBBGret3SWjyvhA/qNSQ
+        giM1r5ljNtVXULfgkH1hcOIrjoMkQ9IyEyuY81ydiiRR9wASYq7ouoAvLrC2aISLayCj4ea4CJQKz
+        8p4+AskdhUPKOL4GSnVRrr7/e+c4FLNIKRKzu9B2SicDmMyVVUV2t3DR8VNBaPu+19z4GUFvXqgx/
+        TE/UJUcQ==;
 Received: from [136.36.117.140] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pWfFS-00AAsn-BG; Mon, 27 Feb 2023 15:17:06 +0000
+        id 1pWfFT-00AAt3-7w; Mon, 27 Feb 2023 15:17:07 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 04/12] btrfs: remove the sync_io flag in struct btrfs_bio_ctrl
-Date:   Mon, 27 Feb 2023 08:16:56 -0700
-Message-Id: <20230227151704.1224688-5-hch@lst.de>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 06/12] btrfs: move the compress_type check out of btrfs_bio_add_page
+Date:   Mon, 27 Feb 2023 08:16:58 -0700
+Message-Id: <20230227151704.1224688-7-hch@lst.de>
 X-Mailer: git-send-email 2.39.1
 In-Reply-To: <20230227151704.1224688-1-hch@lst.de>
 References: <20230227151704.1224688-1-hch@lst.de>
@@ -46,88 +45,73 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The sync_io flag is equivalent to wbc->sync_mode == WB_SYNC_ALL, so
-just check for that and remove the separate flag.
+The compress_type can only change on a per-extent basis.  So instead of
+checking it for every page in btrfs_bio_add_page, do the check once in
+btrfs_do_readpage, which is the only caller of btrfs_bio_add_page and
+submit_extent_page that deals with compressed extents.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/extent_io.c | 13 ++++---------
- 1 file changed, 4 insertions(+), 9 deletions(-)
+ fs/btrfs/extent_io.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2fb23e939b9975..432fd231935acc 100644
+index 1de56abd7308c7..eac31f212069a0 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -118,9 +118,6 @@ struct btrfs_bio_ctrl {
- 	 * does the unlocking.
- 	 */
- 	bool extent_locked;
--
--	/* Tell the submit_bio code to use REQ_SYNC */
--	bool sync_io;
- };
- 
- static void submit_one_bio(struct btrfs_bio_ctrl *bio_ctrl)
-@@ -1802,6 +1799,7 @@ static void end_extent_buffer_writeback(struct extent_buffer *eb)
-  * Return <0 if something went wrong, no page is locked.
-  */
- static noinline_for_stack int lock_extent_buffer_for_io(struct extent_buffer *eb,
-+			  struct writeback_control *wbc,
- 			  struct btrfs_bio_ctrl *bio_ctrl)
+@@ -875,7 +875,6 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array)
+  *                  a contiguous page to the previous one
+  * @size:	    portion of page that we want to write
+  * @pg_offset:	    starting offset in the page
+- * @compress_type:  compression type of the current bio to see if we can merge them
+  *
+  * Attempt to add a page to bio considering stripe alignment etc.
+  *
+@@ -886,8 +885,7 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array)
+ static int btrfs_bio_add_page(struct btrfs_bio_ctrl *bio_ctrl,
+ 			      struct page *page,
+ 			      u64 disk_bytenr, unsigned int size,
+-			      unsigned int pg_offset,
+-			      enum btrfs_compression_type compress_type)
++			      unsigned int pg_offset)
  {
- 	struct btrfs_fs_info *fs_info = eb->fs_info;
-@@ -1817,7 +1815,7 @@ static noinline_for_stack int lock_extent_buffer_for_io(struct extent_buffer *eb
+ 	struct bio *bio = bio_ctrl->bio;
+ 	u32 bio_size = bio->bi_iter.bi_size;
+@@ -898,9 +896,6 @@ static int btrfs_bio_add_page(struct btrfs_bio_ctrl *bio_ctrl,
+ 	ASSERT(bio);
+ 	/* The limit should be calculated when bio_ctrl->bio is allocated */
+ 	ASSERT(bio_ctrl->len_to_oe_boundary);
+-	if (bio_ctrl->compress_type != compress_type)
+-		return 0;
+-
  
- 	if (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags)) {
- 		btrfs_tree_unlock(eb);
--		if (!bio_ctrl->sync_io)
-+		if (wbc->sync_mode != WB_SYNC_ALL)
- 			return 0;
- 		if (!flush) {
- 			submit_write_bio(bio_ctrl, 0);
-@@ -2260,7 +2258,7 @@ static int submit_eb_subpage(struct page *page,
- 		if (!eb)
+ 	if (bio->bi_iter.bi_size == 0) {
+ 		/* We can always add a page into an empty bio. */
+@@ -1049,12 +1044,11 @@ static int submit_extent_page(struct btrfs_bio_ctrl *bio_ctrl,
+ 		 */
+ 		if (compress_type != BTRFS_COMPRESS_NONE)
+ 			added = btrfs_bio_add_page(bio_ctrl, page, disk_bytenr,
+-					size - offset, pg_offset + offset,
+-					compress_type);
++					size - offset, pg_offset + offset);
+ 		else
+ 			added = btrfs_bio_add_page(bio_ctrl, page,
+ 					disk_bytenr + offset, size - offset,
+-					pg_offset + offset, compress_type);
++					pg_offset + offset);
+ 
+ 		/* Metadata page range should never be split */
+ 		if (!is_data_inode(&inode->vfs_inode))
+@@ -1320,6 +1314,9 @@ static int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
  			continue;
+ 		}
  
--		ret = lock_extent_buffer_for_io(eb, bio_ctrl);
-+		ret = lock_extent_buffer_for_io(eb, wbc, bio_ctrl);
- 		if (ret == 0) {
- 			free_extent_buffer(eb);
- 			continue;
-@@ -2359,7 +2357,7 @@ static int submit_eb_page(struct page *page, struct writeback_control *wbc,
- 
- 	*eb_context = eb;
- 
--	ret = lock_extent_buffer_for_io(eb, bio_ctrl);
-+	ret = lock_extent_buffer_for_io(eb, wbc, bio_ctrl);
- 	if (ret <= 0) {
- 		btrfs_revert_meta_write_pointer(cache, eb);
- 		if (cache)
-@@ -2388,7 +2386,6 @@ int btree_write_cache_pages(struct address_space *mapping,
- 	struct btrfs_bio_ctrl bio_ctrl = {
- 		.opf = REQ_OP_WRITE | wbc_to_write_flags(wbc),
- 		.extent_locked = 0,
--		.sync_io = (wbc->sync_mode == WB_SYNC_ALL),
- 	};
- 	struct btrfs_fs_info *fs_info = BTRFS_I(mapping->host)->root->fs_info;
- 	int ret = 0;
-@@ -2684,7 +2681,6 @@ int extent_write_locked_range(struct inode *inode, u64 start, u64 end)
- 	struct btrfs_bio_ctrl bio_ctrl = {
- 		.opf = REQ_OP_WRITE | wbc_to_write_flags(&wbc_writepages),
- 		.extent_locked = 1,
--		.sync_io = 1,
- 	};
- 
- 	ASSERT(IS_ALIGNED(start, sectorsize) && IS_ALIGNED(end + 1, sectorsize));
-@@ -2731,7 +2727,6 @@ int extent_writepages(struct address_space *mapping,
- 	struct btrfs_bio_ctrl bio_ctrl = {
- 		.opf = REQ_OP_WRITE | wbc_to_write_flags(wbc),
- 		.extent_locked = 0,
--		.sync_io = (wbc->sync_mode == WB_SYNC_ALL),
- 	};
- 
- 	/*
++		if (bio_ctrl->compress_type != this_bio_flag)
++			submit_one_bio(bio_ctrl);
++
+ 		if (force_bio_submit)
+ 			submit_one_bio(bio_ctrl);
+ 		ret = submit_extent_page(bio_ctrl, disk_bytenr, page, iosize,
 -- 
 2.39.1
 

@@ -2,78 +2,114 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BDDB0C64ED8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Feb 2023 22:19:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E54A4C64ED6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Feb 2023 23:50:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229813AbjB0WTw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Feb 2023 17:19:52 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56940 "EHLO
+        id S229944AbjB0XuT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Feb 2023 18:50:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53962 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229569AbjB0WTw (ORCPT
+        with ESMTP id S229451AbjB0XuS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2023 17:19:52 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 27B54B442
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2023 14:19:51 -0800 (PST)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id B8E1F1FDA0;
-        Mon, 27 Feb 2023 22:19:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1677536389;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=79s+GLAeAh2sqlFYjmkHwdNGgEs7/a1VELt435q89R8=;
-        b=3F8jr9k11FoJGHp33Nmk/ERgONTOgy0uzglQpowSiiC6ae4u/D1yv6iak1Jd0UcNHkgl0g
-        4t3AvDDeKKCWPqOuC/+5sIgt2r1VOJV4IT9y2XHdhIyFPlP4t3xyJJ7vvqO+6o408hednE
-        bTReApfpraUHkvA3E1otqVTbtXIu/wY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1677536389;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=79s+GLAeAh2sqlFYjmkHwdNGgEs7/a1VELt435q89R8=;
-        b=tUkhKecLxyFctdWE6Uz9X12z4YRGB2WjQF6/DcuJjnLx2GoSPl7dNrmGRxI7zsec93SeRs
-        eIO/r+14QAm8QvAg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 80C9F13912;
-        Mon, 27 Feb 2023 22:19:49 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id v8zBHYUs/WNbTwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 27 Feb 2023 22:19:49 +0000
-Date:   Mon, 27 Feb 2023 23:13:50 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: cleanup btrfs_lookup_bio_sums v2
-Message-ID: <20230227221350.GN10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230222170702.713521-1-hch@lst.de>
+        Mon, 27 Feb 2023 18:50:18 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CD50E1CF78;
+        Mon, 27 Feb 2023 15:50:16 -0800 (PST)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MzhnN-1obPHS29iL-00vhw5; Tue, 28
+ Feb 2023 00:50:00 +0100
+Message-ID: <3c843d9e-3813-dc02-160c-4a46ad47f941@gmx.com>
+Date:   Tue, 28 Feb 2023 07:49:53 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230222170702.713521-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.7.0
+To:     Ammar Faizi <ammarfaizi2@gnuweeb.org>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, Tejun Heo <tj@kernel.org>,
+        Lai Jiangshan <jiangshanlai@gmail.com>,
+        Filipe Manana <fdmanana@suse.com>,
+        Linux Btrfs Mailing List <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux Fsdevel Mailing List <linux-fsdevel@vger.kernel.org>,
+        GNU/Weeb Mailing List <gwml@vger.gnuweeb.org>
+References: <20230226160259.18354-1-ammarfaizi2@gnuweeb.org>
+ <19732428-010d-582c-0aed-9dd09b11d403@gmx.com>
+ <Y/yzS7aQ6PDyFsbm@biznet-home.integral.gnuweeb.org>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: [RFC PATCH v1 0/6] Introducing `wq_cpu_set` mount option for
+ btrfs
+In-Reply-To: <Y/yzS7aQ6PDyFsbm@biznet-home.integral.gnuweeb.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:8U7vfGoppnHui+sb1hPoMVrAT9T7+PhUT+g8R09pRxR5vrU3RuK
+ zs37SUa6sEvTLT2hiu+qrQ7GGRW9wWDC/T64jUNB/Z83BsTdfNjEz805ujmxc4kJl5T9Jyl
+ fQpx3K5BaANta82BhfoKLBlQVhpqaZgIYKt2Jae7/DHD8kHqcwoXDH5QaPcJ6uFjL2vd/dc
+ x3DAdPqP7eZI+m7i8fKEA==
+UI-OutboundReport: notjunk:1;M01:P0:m6AqjQi+rdE=;Cd6yJ4f34yvH+hUmF7tn1wCCRvI
+ WTqAynjVD06InRrwdBWQ7WBnqUOTWNc/YPAM4+4LR97PVViwcv+MyhsBzwCYUBoVpaWsEibyo
+ P6DUMQoK3goleN1WNbmQbS+MEXdq6y7O/Jpi4rUOORKmhaVgXOb7Ka1UIj6wAkVDzmz4AllDs
+ LEDKvU2YTGtDd5DswYBQskKhSUYU35P7Dq4IOJkD6SUlMEQYtz8qzM7s/54JSmGOntW57rQHt
+ k15ehH6FNNo5Bf5KkZ509xd4bO5wiSbWfapnwddF2t2Iif2mRBTUqD76xk9EhMsoqOFTsJI/U
+ JPoztMp2+bE4BLxAxhTEq/ttuXXirxjMy4dvXnNeRoB96k5D/f2vd5Tb0ZEkG07OK6lRH7Xvv
+ 9CYKFhll6tmCQ3k4U6tIHx+8MHWP/o1B1crMNnAeW+ZJjWR5EMAglljlAYxdfno77V5TMnfaq
+ 6wTyqfybhD8Pug3U7tW1aQd+m8udRfhn+yvfxrbNDH7NzFBidvK/i6+lSBWxJL70EQzOvzxww
+ whxBo7wb9ZAyviZJ2Cz/ctIGxh1k6/0d5u6ewVvEWpzBL13EyWTNmsKCXIXrpf6GhIc5sadDL
+ XNFRYW8ejAlhXJ220v19u2/ynutwAJG+WC67GH4LH/xNnSVzmwkqZhG1rBlw50kzynk5DoXnP
+ 9lXjvG2T23shfNz3O1MJQPOYo0aYKv2Hum9hmAAZq7jzwyEfL9SaVHjKVhV6PfHvv2pgPKddy
+ +Z4r5uB6d/ku5rHZN+vqJvN2z5kj2cKMYe5NuMm5hDlJ7ORvPNLe9aw3pwLTEEoaP3vsp3DAH
+ tGyyoN65HvVKiHy+8pvhvUXK4G2wq/Fs9WaMSPmSjeM07qsAQiYraLCFCwzW4tMc6mBzpNL8l
+ MYH+lxbgQV7+R2TbZmET0zc/y5AAbBci6DJUcHgrkTrAQIVYz/bbYpl3u3cp6s3/tnwxe7e2E
+ xo/yR88EDbt0KcK1QiT7C8aunN0=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Feb 22, 2023 at 09:07:00AM -0800, Christoph Hellwig wrote:
-> Hi all,
-> 
-> this series takes advantage of the file_offset now provided in each btrfs_bio
-> to clean up btrfs_lookup_bio_sums.
-> 
-> Changs since v1:
->  - keep the count variable signed
->  - remove the search_len variable
 
-Added to misc-next, thanks.
+
+On 2023/2/27 21:42, Ammar Faizi wrote:
+> On Mon, Feb 27, 2023 at 06:18:43PM +0800, Qu Wenruo wrote:
+>> I'm not sure if pinning the wq is really the best way to your problem.
+>>
+>> Yes, I understand you want to limit the CPU usage of btrfs workqueues, but
+>> have you tried "thread_pool=" mount option?
+>>
+>> That mount option should limit the max amount of in-flight work items, thus
+>> at least limit the CPU usage.
+> 
+> I have tried to use the thread_poll=%u mount option previously. But I
+> didn't observe the effect intensively. I'll try to play with this option
+> more and see if it can yield the desired behavior.
+
+The thread_pool mount option is much harder to observe the behavior change.
+
+As wq pinned to one or two CPUs is easy to observe using htop, while the 
+unbounded wq, even with thread_pool, is much harder to observe.
+
+Thus it needs more systematic testing to find the difference.
+
+> 
+>> For the wq CPU pinning part, I'm not sure if it's really needed, although
+>> it's known CPU pinning can affect some performance characteristics.
+> 
+> What I like about CPU pinning is that we can dedicate CPUs for specific
+> workloads so it won't cause scheduling noise to the app we've dedicated
+> other CPUs for.
+> 
+
+I'm not 100% sure if we're really any better than the scheduler 
+developers, as there are a lot of more things to consider.
+
+E.g. for recent Intel CPUs, they have BIG and little cores, and BIG 
+cores even have SMT supports.
+For current kernels, scheduler would avoid putting workloads into the 
+threads sharing the same physical cores.
+
+Thus it can result seemingly weird priority like BIG core thread1 > 
+little core > BIG core thread2.
+But that results overall better performance.
+
+So overall, unless necessary I'd avoid manual CPU pinning.
+
+Thanks,
+Qu

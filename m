@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E243DC64ED8
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Feb 2023 15:17:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C763C64ED6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Feb 2023 15:17:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230196AbjB0PRW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Feb 2023 10:17:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59732 "EHLO
+        id S230134AbjB0PRX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Feb 2023 10:17:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59564 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230154AbjB0PRP (ORCPT
+        with ESMTP id S229709AbjB0PRQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Feb 2023 10:17:15 -0500
+        Mon, 27 Feb 2023 10:17:16 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2ECBF227A6
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2023 07:17:10 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90E09227AA
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Feb 2023 07:17:11 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=S1IUU0D1ej0C8nuu1y1wbl2gWAfWoOLH+7UTQUkBy/g=; b=a2jX4kCjYPBZBT2rdjlgq5k+X3
-        hZVH4GDRq8VPlVBnLWSqeeXZs81oHHuWIJclE+o64y/4kQryChz/Hao135SRhZ7QJO8XJxwj5MLLp
-        O310TY2YjVrYzMp5+jJiPWH++QyEoJdZHdp/EBcaEJdrn2ZfKEe51hxAxQoIfrSkeaqGbdNADrIjk
-        oAlrDNl0jFib6FQvtapQjjxgN949SJi+VNoQMz0y9bq3nZ0puQxR7+dYMAmXIhay5W4jwkY1SIyhr
-        yJU6S+dET0UZ2hLcQpVWZOGEAklBVK14JGMSVENWe3DfjoZCAgov+SMTKAdWAj1TiCKHHNMcytFua
-        1ELg/w+Q==;
+        bh=+JFECx0Y30G9fQlDyMMtcWNCVMQ8Mt9yQCXypNSHCfs=; b=1Nlp0syA9lKZ1Cax05VbKQXaLK
+        J15XbAj0odRbtVTwhBxeNNKea7lOezEG6gOmSSpTiLH1vHGhnLah4pxZerk1aJLwJXb1+PemuavKG
+        Zo6BWDFMnFf3qvQ95xqGNLa79p2HP08j0iMZD4K8Yce+DfQEBedWGUxeZY6vX6gNkIo824KRxBPip
+        svExP4oeCca+LBRoooNASe7TGtDbfzbPDnomb/sDjsLPXOCv2aUYgDfxxIGutXxzww3ddsX68mUJa
+        O/S36RVgdOwIfa1L+dcM5Pf2/ClLWOnNPnVE0cbBWEsdCQ/avjNcMA0toesP9lzrOL4gyiPabWPj8
+        ntfmmU3w==;
 Received: from [136.36.117.140] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pWfFU-00AAtP-5A; Mon, 27 Feb 2023 15:17:08 +0000
+        id 1pWfFV-00AAu1-Mw; Mon, 27 Feb 2023 15:17:09 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 08/12] btrfs: remove the compress_type argument to submit_extent_page
-Date:   Mon, 27 Feb 2023 08:17:00 -0700
-Message-Id: <20230227151704.1224688-9-hch@lst.de>
+Subject: [PATCH 11/12] btrfs: check for contiguity in submit_extent_page
+Date:   Mon, 27 Feb 2023 08:17:03 -0700
+Message-Id: <20230227151704.1224688-12-hch@lst.de>
 X-Mailer: git-send-email 2.39.1
 In-Reply-To: <20230227151704.1224688-1-hch@lst.de>
 References: <20230227151704.1224688-1-hch@lst.de>
@@ -46,144 +46,118 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Update the compress_type in the btrfs_bio_ctrl after forcing out the
-previous bio in btrfs_do_readpage, so that alloc_new_bio can just use
-the compress_type member in struct btrfs_bio_ctrl instead of passing the
-same information redudantly as a function argument.
+Different loop iterations in btrfs_bio_add_page not only have
+the same contiguity parameters, but also any non-initial operation
+operates on a fresh bio anyway.
+
+Factor out the contiguity check into a new btrfs_bio_is_contig and
+only call it once in submit_extent_page before descending into the
+bio_add_page loop.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- fs/btrfs/extent_io.c | 31 ++++++++++++++-----------------
- 1 file changed, 14 insertions(+), 17 deletions(-)
+ fs/btrfs/extent_io.c | 68 +++++++++++++++++++++++---------------------
+ 1 file changed, 35 insertions(+), 33 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b54e1911c476f8..5ab4d401505891 100644
+index d318b7f1b92cf3..8e6f0f07597e45 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -967,8 +967,7 @@ static void calc_bio_boundaries(struct btrfs_bio_ctrl *bio_ctrl,
+@@ -866,6 +866,37 @@ int btrfs_alloc_page_array(unsigned int nr_pages, struct page **page_array)
+ 	return 0;
+ }
  
- static void alloc_new_bio(struct btrfs_inode *inode,
- 			  struct btrfs_bio_ctrl *bio_ctrl,
--			  u64 disk_bytenr, u32 offset, u64 file_offset,
--			  enum btrfs_compression_type compress_type)
-+			  u64 disk_bytenr, u32 offset, u64 file_offset)
- {
- 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
- 	struct bio *bio;
-@@ -979,13 +978,12 @@ static void alloc_new_bio(struct btrfs_inode *inode,
- 	 * For compressed page range, its disk_bytenr is always @disk_bytenr
- 	 * passed in, no matter if we have added any range into previous bio.
- 	 */
--	if (compress_type != BTRFS_COMPRESS_NONE)
-+	if (bio_ctrl->compress_type != BTRFS_COMPRESS_NONE)
- 		bio->bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
- 	else
- 		bio->bi_iter.bi_sector = (disk_bytenr + offset) >> SECTOR_SHIFT;
- 	btrfs_bio(bio)->file_offset = file_offset;
- 	bio_ctrl->bio = bio;
--	bio_ctrl->compress_type = compress_type;
- 	calc_bio_boundaries(bio_ctrl, inode, file_offset);
- 
- 	if (bio_ctrl->wbc) {
-@@ -1006,7 +1004,6 @@ static void alloc_new_bio(struct btrfs_inode *inode,
-  * @size:	portion of page that we want to write to
-  * @pg_offset:	offset of the new bio or to check whether we are adding
-  *              a contiguous page to the previous one
-- * @compress_type:   compress type for current bio
++static bool btrfs_bio_is_contig(struct btrfs_bio_ctrl *bio_ctrl,
++				struct page *page, u64 disk_bytenr,
++				unsigned int pg_offset)
++{
++	struct bio *bio = bio_ctrl->bio;
++	struct bio_vec *bvec = bio_last_bvec_all(bio);
++	const sector_t sector = disk_bytenr >> SECTOR_SHIFT;
++
++	if (bio_ctrl->compress_type != BTRFS_COMPRESS_NONE) {
++		/*
++		 * For compression, all IO should have its logical bytenr
++		 * set to the starting bytenr of the compressed extent.
++		 */
++		return bio->bi_iter.bi_sector == sector;
++	}
++
++	/*
++	 * The contig check requires the following conditions to be met:
++	 * 1) The pages are belonging to the same inode
++	 *    This is implied by the call chain.
++	 *
++	 * 2) The range has adjacent logical bytenr
++	 *
++	 * 3) The range has adjacent file offset
++	 *    This is required for the usage of btrfs_bio->file_offset.
++	 */
++	return bio_end_sector(bio) == sector &&
++		page_offset(bvec->bv_page) + bvec->bv_offset + bvec->bv_len ==
++		page_offset(page) + pg_offset;
++}
++
+ /*
+  * Attempt to add a page to bio.
   *
-  * The will either add the page into the existing @bio_ctrl->bio, or allocate a
-  * new one in @bio_ctrl->bio.
-@@ -1015,8 +1012,7 @@ static void alloc_new_bio(struct btrfs_inode *inode,
-  */
- static int submit_extent_page(struct btrfs_bio_ctrl *bio_ctrl,
- 			      u64 disk_bytenr, struct page *page,
--			      size_t size, unsigned long pg_offset,
--			      enum btrfs_compression_type compress_type)
-+			      size_t size, unsigned long pg_offset)
- {
- 	struct btrfs_inode *inode = BTRFS_I(page->mapping->host);
- 	unsigned int cur = pg_offset;
-@@ -1035,14 +1031,13 @@ static int submit_extent_page(struct btrfs_bio_ctrl *bio_ctrl,
- 		/* Allocate new bio if needed */
- 		if (!bio_ctrl->bio) {
- 			alloc_new_bio(inode, bio_ctrl, disk_bytenr,
--				      offset, page_offset(page) + cur,
--				      compress_type);
-+				      offset, page_offset(page) + cur);
- 		}
- 		/*
- 		 * We must go through btrfs_bio_add_page() to ensure each
- 		 * page range won't cross various boundaries.
- 		 */
--		if (compress_type != BTRFS_COMPRESS_NONE)
-+		if (bio_ctrl->compress_type != BTRFS_COMPRESS_NONE)
- 			added = btrfs_bio_add_page(bio_ctrl, page, disk_bytenr,
- 					size - offset, pg_offset + offset);
- 		else
-@@ -1314,13 +1309,15 @@ static int btrfs_do_readpage(struct page *page, struct extent_map **em_cached,
- 			continue;
- 		}
+@@ -890,44 +921,11 @@ static int btrfs_bio_add_page(struct btrfs_bio_ctrl *bio_ctrl,
+ 	struct bio *bio = bio_ctrl->bio;
+ 	u32 bio_size = bio->bi_iter.bi_size;
+ 	u32 real_size;
+-	const sector_t sector = disk_bytenr >> SECTOR_SHIFT;
+-	bool contig = false;
  
--		if (bio_ctrl->compress_type != compress_type)
-+		if (bio_ctrl->compress_type != compress_type) {
- 			submit_one_bio(bio_ctrl);
-+			bio_ctrl->compress_type = compress_type;
-+		}
+ 	ASSERT(bio);
+ 	/* The limit should be calculated when bio_ctrl->bio is allocated */
+ 	ASSERT(bio_ctrl->len_to_oe_boundary);
  
- 		if (force_bio_submit)
- 			submit_one_bio(bio_ctrl);
- 		ret = submit_extent_page(bio_ctrl, disk_bytenr, page, iosize,
--					 pg_offset, compress_type);
-+					 pg_offset);
- 		if (ret) {
- 			/*
- 			 * We have to unlock the remaining range, or the page
-@@ -1626,7 +1623,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 		btrfs_page_clear_dirty(fs_info, page, cur, iosize);
+-	if (bio->bi_iter.bi_size == 0) {
+-		/* We can always add a page into an empty bio. */
+-		contig = true;
+-	} else if (bio_ctrl->compress_type == BTRFS_COMPRESS_NONE) {
+-		struct bio_vec *bvec = bio_last_bvec_all(bio);
+-
+-		/*
+-		 * The contig check requires the following conditions to be met:
+-		 * 1) The pages are belonging to the same inode
+-		 *    This is implied by the call chain.
+-		 *
+-		 * 2) The range has adjacent logical bytenr
+-		 *
+-		 * 3) The range has adjacent file offset
+-		 *    This is required for the usage of btrfs_bio->file_offset.
+-		 */
+-		if (bio_end_sector(bio) == sector &&
+-		    page_offset(bvec->bv_page) + bvec->bv_offset +
+-		    bvec->bv_len == page_offset(page) + pg_offset)
+-			contig = true;
+-	} else {
+-		/*
+-		 * For compression, all IO should have its logical bytenr
+-		 * set to the starting bytenr of the compressed extent.
+-		 */
+-		contig = bio->bi_iter.bi_sector == sector;
+-	}
+-
+-	if (!contig)
+-		return 0;
+-
+ 	real_size = min(bio_ctrl->len_to_oe_boundary - bio_size, size);
  
- 		ret = submit_extent_page(bio_ctrl, disk_bytenr, page,
--					 iosize, cur - page_offset(page), 0);
-+					 iosize, cur - page_offset(page));
- 		if (ret) {
- 			has_error = true;
- 			if (!saved_ret)
-@@ -2118,7 +2115,7 @@ static int write_one_subpage_eb(struct extent_buffer *eb,
- 	bio_ctrl->end_io_func = end_bio_subpage_eb_writepage;
+ 	/*
+@@ -1024,6 +1022,10 @@ static void submit_extent_page(struct btrfs_bio_ctrl *bio_ctrl,
  
- 	ret = submit_extent_page(bio_ctrl, eb->start, page, eb->len,
--			eb->start - page_offset(page), 0);
-+			eb->start - page_offset(page));
- 	if (ret) {
- 		btrfs_subpage_clear_writeback(fs_info, page, eb->start, eb->len);
- 		set_btree_ioerr(page, eb);
-@@ -2156,7 +2153,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 		clear_page_dirty_for_io(p);
- 		set_page_writeback(p);
- 		ret = submit_extent_page(bio_ctrl, disk_bytenr, p,
--					 PAGE_SIZE, 0, 0);
-+					 PAGE_SIZE, 0);
- 		if (ret) {
- 			set_btree_ioerr(p, eb);
- 			if (PageWriteback(p))
-@@ -4427,7 +4424,7 @@ static int read_extent_buffer_subpage(struct extent_buffer *eb, int wait,
+ 	ASSERT(bio_ctrl->end_io_func);
  
- 	btrfs_subpage_start_reader(fs_info, page, eb->start, eb->len);
- 	ret = submit_extent_page(&bio_ctrl, eb->start, page, eb->len,
--				 eb->start - page_offset(page), 0);
-+				 eb->start - page_offset(page));
- 	if (ret) {
- 		/*
- 		 * In the endio function, if we hit something wrong we will
-@@ -4538,7 +4535,7 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
- 			ClearPageError(page);
- 			err = submit_extent_page(&bio_ctrl,
- 						 page_offset(page), page,
--						 PAGE_SIZE, 0, 0);
-+						 PAGE_SIZE, 0);
- 			if (err) {
- 				/*
- 				 * We failed to submit the bio so it's the
++	if (bio_ctrl->bio &&
++	    !btrfs_bio_is_contig(bio_ctrl, page, disk_bytenr, pg_offset))
++		submit_one_bio(bio_ctrl);
++
+ 	while (cur < pg_offset + size) {
+ 		u32 offset = cur - pg_offset;
+ 		int added;
 -- 
 2.39.1
 

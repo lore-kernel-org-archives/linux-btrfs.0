@@ -2,133 +2,134 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 90BECC64ED6
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Feb 2023 20:49:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DF31C64EC7
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Feb 2023 22:46:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229844AbjB1UtO (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Feb 2023 15:49:14 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38812 "EHLO
+        id S229579AbjB1Wqu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Feb 2023 17:46:50 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39658 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229579AbjB1UtN (ORCPT
+        with ESMTP id S229518AbjB1Wqu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Feb 2023 15:49:13 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF8C0CA18;
-        Tue, 28 Feb 2023 12:49:06 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 555DCB80E4D;
-        Tue, 28 Feb 2023 20:49:05 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0B22CC433EF;
-        Tue, 28 Feb 2023 20:49:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1677617344;
-        bh=exxFF2JJICCNFK4dOi3fq/MWs7vdRA0W94WXLIxiaMA=;
-        h=Date:From:To:Cc:Subject:From;
-        b=NZLHVaPnPIL+PcCxdhDP46plItvfQj7yFr8kk5jUnG8tfTZnLRiCE2atNh2jEO1mC
-         hwKWANLAyuemrRVo40f3+hH8lnnO6oONMjMIQBb0pcGFlwCQ38+IqNOy2Ynfiq0wE/
-         ZWyIkNSaNqv+00IJ7pr9TNvZFvBhAjRTiyqOay+tiXGcyspYSh/YTlOemBJ6vhF60U
-         KF+AG0r44DFOPaZWwTkj+Vz00gYzN3fLS0B8IbciRpvneN4MQsMVw1ienOXR6jvH64
-         Sl7yx9dV4/k+4P6NkgYMEdnpbjA4I/6JtJlFYt6xB1whghPS3Wick9MirMW+h3aiFr
-         GB6rdk5692G2Q==
-Date:   Tue, 28 Feb 2023 12:49:03 -0800
-From:   "Darrick J. Wong" <djwong@kernel.org>
-To:     lsf-pc@lists.linux-foundation.org
-Cc:     linux-fsdevel@vger.kernel.org, xfs <linux-xfs@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [LSF TOPIC] online repair of filesystems: what next?
-Message-ID: <Y/5ovz6HI2Z47jbk@magnolia>
+        Tue, 28 Feb 2023 17:46:50 -0500
+Received: from mail-ed1-x533.google.com (mail-ed1-x533.google.com [IPv6:2a00:1450:4864:20::533])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A97B732504
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Feb 2023 14:46:48 -0800 (PST)
+Received: by mail-ed1-x533.google.com with SMTP id cy6so46547712edb.5
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Feb 2023 14:46:48 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=H3Np4Uxy82q5UtmpmAKLbFHeePlKVGu4IaEYZ4J/4B8=;
+        b=Ta6sBXt4gwt/FjTA6dX+pVeg03foOWKw5XnyK/ETmP6YsBSgw7pD+mFSK0iPgKBzts
+         2olYEzwAXjpXFdw7//CQeDrOogzcvvIIPr5YvJVRRI7ZSxDI4qjuLFpfL5bR0cmcLG8P
+         3AwusmZHm8ZNo9upAewix1sgmgp5WJeTZ+VyWWDqpv64CWusb0lvhMzu9kTCItiFO5wj
+         btqlFSgO2ZLmI12td43CEy8s6RAUvVfXkGVl19yPhIUhBDB7QOAXcL/vKNRVQ6KBJ/od
+         pBBLH8QWODF18KWioxuu1cLrhpiWuL/2f16INT0ecsWq4hto7FVlnEyItqtJorLqT+4W
+         YANA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=H3Np4Uxy82q5UtmpmAKLbFHeePlKVGu4IaEYZ4J/4B8=;
+        b=pUTMAy652WMYMcEEr2/KjQBmkGJ3/YrwJaROUun7gSbywjOjJZzG0tlMraLnceyjJ7
+         h49zryJ11w2cqhIHuY5dqmgua4LuF2DvJduyeoXzbc37bi7Uzw5/QnnS5b1pBEoJBDPL
+         JGeeZ4sKiWVx1H7ENi7aWPbtVoeVq/kmoD5V4FvjMqLPjti7a1i6eXnmWTp0v5gClf0I
+         MG8xOtRpq5PWj6MxwASP1cKer72brpLcd5vkXS9fIBpJ64TOC8omuadzkfIpMhhp3ANA
+         qHLdx7LP7zX7FD5V9q8x6Xz7ZiohwAyNbxSWGvEXQe2jmrDSEamUbMDSq+LNzNg95But
+         3crQ==
+X-Gm-Message-State: AO0yUKWFZGm06/aK8gR5IJ6Ur0H5ZjZAeJibZqr0Y+2shPOeWMgdr7nw
+        ty7oUg5SfWV+4DXn/+yThOGeFJEoNhJ5Io+r45Of3HoXwVGiUifO
+X-Google-Smtp-Source: AK7set+Lib9ZaOIQ9YVFtrcz6VUm2x5vgGCgUw8Eva/tji/o2T65cCWH6J6s9sTOQkflgzcoNzq+Es8ZrDYgEk3evME=
+X-Received: by 2002:a17:906:3d61:b0:8f1:4c6a:e77 with SMTP id
+ r1-20020a1709063d6100b008f14c6a0e77mr2155846ejf.12.1677624407049; Tue, 28 Feb
+ 2023 14:46:47 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+References: <20230228192335.12451-1-dsterba@suse.com>
+In-Reply-To: <20230228192335.12451-1-dsterba@suse.com>
+From:   Neal Gompa <ngompa13@gmail.com>
+Date:   Tue, 28 Feb 2023 17:46:10 -0500
+Message-ID: <CAEg-Je8FNefaKjYFeqw2Gh-TXSjVWbgczYtL3qpgJWQj3pJjCw@mail.gmail.com>
+Subject: Re: Btrfs progs release 6.2
+To:     David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello fsdevel people,
+On Tue, Feb 28, 2023 at 3:07=E2=80=AFPM David Sterba <dsterba@suse.com> wro=
+te:
+>
+> Hi,
+>
+> btrfs-progs version 6.2 have been released.
+>
+> Changelog:
+>    * receive: fix a corruption when decompressing zstd extents
+>    * subvol sync: print total number and deletion progress
+>    * accelerated hash algorithm implementations in fallback mode on x86_6=
+4
+>    * fi mkswapfile: new option --uuid
+>    * new global option --log=3Dlevel to set the verbosity level directly
+>    * other:
+>       * experimental: update checksum conversion (not usable yet)
+>       * build actually requires -std=3Dgnu11
+>       * refactor help option formatting, auto wrap long lines
+>
+> Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-prog=
+s/
+> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
-Five years ago[0], we started a conversation about cross-filesystem
-userspace tooling for online fsck.  I think enough time has passed for
-us to have another one, since a few things have happened since then:
+This release does not compile on Fedora Rawhide.
 
-1. ext4 has gained the ability to send corruption reports to a userspace
-   monitoring program via fsnotify.  Thanks, Collabora!
+With the current btrfs-progs spec file in Fedora bumped to 6.2, I get
+this error:
 
-2. XFS now tracks successful scrubs and corruptions seen during runtime
-   and during scrubs.  Userspace can query this information.
+>     [LD]     btrfstune
+> gcc -o btrfstune tune/main.o tune/seeding.o tune/change-uuid.o tune/chang=
+e-metadata-uuid.o tune/convert-bgt.o tune/change-csum.o kernel-lib/list_sor=
+t.o kernel-lib/raid56.o kernel-lib/rbtree.o kernel-lib/tables.o kernel-shar=
+ed/backref.o kernel-shared/ctree.o kernel-shared/delayed-ref.o kernel-share=
+d/dir-item.o kernel-shared/disk-io.o kernel-shared/extent-tree.o kernel-sha=
+red/extent_io.o kernel-shared/file-item.o kernel-shared/file.o kernel-share=
+d/free-space-cache.o kernel-shared/free-space-tree.o kernel-shared/inode-it=
+em.o kernel-shared/inode.o kernel-shared/print-tree.o kernel-shared/root-tr=
+ee.o kernel-shared/transaction.o kernel-shared/ulist.o kernel-shared/uuid-t=
+ree.o kernel-shared/volumes.o kernel-shared/zoned.o common/cpu-utils.o comm=
+on/device-scan.o common/device-utils.o common/extent-cache.o common/filesys=
+tem-utils.o common/format-output.o common/fsfeatures.o common/help.o common=
+/messages.o common/open-utils.o common/parse-utils.o common/path-utils.o co=
+mmon/rbtree-utils.o common/send-stream.o common/send-utils.o common/string-=
+table.o common/string-utils.o common/task-utils.o common/units.o common/uti=
+ls.o check/qgroup-verify.o check/repair.o cmds/receive-dump.o crypto/crc32c=
+.o crypto/hash.o crypto/xxhash.o libbtrfsutil/stubs.o libbtrfsutil/subvolum=
+e.o libbtrfsutil.a -Wl,-z,relro -Wl,--as-needed  -Wl,-z,now -specs=3D/usr/l=
+ib/rpm/redhat/redhat-hardened-ld -specs=3D/usr/lib/rpm/redhat/redhat-annobi=
+n-cc1  -Wl,--build-id=3Dsha1 -specs=3D/usr/lib/rpm/redhat/redhat-package-no=
+tes  -rdynamic -L.   -luuid -lblkid -ludev -L. -pthread -lgcrypt
+> /usr/bin/ld: /tmp/ccPRdR5s.ltrans5.ltrans.o: in function `hash_init_accel=
+':
+> /builddir/build/BUILD/btrfs-progs-v6.2/crypto/hash.c:26: undefined refere=
+nce to `blake2_init_accel'
+> /usr/bin/ld: /builddir/build/BUILD/btrfs-progs-v6.2/crypto/hash.c:27: und=
+efined reference to `sha256_init_accel'
+> /usr/bin/ld: /tmp/ccPRdR5s.ltrans5.ltrans.o: in function `hash_init_blake=
+2':
+> /builddir/build/BUILD/btrfs-progs-v6.2/crypto/hash.c:37: undefined refere=
+nce to `blake2_init_accel'
+> /usr/bin/ld: /tmp/ccPRdR5s.ltrans5.ltrans.o: in function `hash_init_sha25=
+6':
+> /builddir/build/BUILD/btrfs-progs-v6.2/crypto/hash.c:42: undefined refere=
+nce to `sha256_init_accel'
+> collect2: error: ld returned 1 exit status
+> make: *** [Makefile:673: btrfstune] Error 1
 
-3. Directory parent pointers, which enable online repair of the
-   directory tree, is nearing completion.
 
-4. Dave and I are working on merging online repair of space metadata for
-   XFS.  Online repair of directory trees is feature complete, but we
-   still have one or two unresolved questions in the parent pointer
-   code.
-
-5. I've gotten a bit better[1] at writing systemd service descriptions
-   for scheduling and performing background online fsck.
-
-Now that fsnotify_sb_error exists as a result of (1), I think we
-should figure out how to plumb calls into the readahead and writeback
-code so that IO failures can be reported to the fsnotify monitor.  I
-suspect there may be a few difficulties here since fsnotify (iirc)
-allocates memory and takes locks.
-
-As a result of (2), XFS now retains quite a bit of incore state about
-its own health.  The structure that fsnotify gives to userspace is very
-generic (superblock, inode, errno, errno count).  How might XFS export
-a greater amount of information via this interface?  We can provide
-details at finer granularity -- for example, a specific data structure
-under an allocation group or an inode, or specific quota records.
-
-With (4) on the way, I can envision wanting a system service that would
-watch for these fsnotify events, and transform the error reports into
-targeted repair calls in the kernel.  This of course would be very
-filesystem specific, but I would also like to hear from anyone pondering
-other usecases for fsnotify filesystem error monitors.
-
-Once (3) lands, XFS gains the ability to translate a block device IO
-error to an inode number and file offset, and then the inode number to a
-path.  In other words, your file breaks and now we can tell applications
-which file it was so they can failover or redownload it or whatever.
-Ric Wheeler mentioned this in 2018's session.
-
-The final topic from that 2018 session concerned generic wrappers for
-fsscrub.  I haven't pushed hard on that topic because XFS hasn't had
-much to show for that.  Now that I'm better versed in systemd services,
-I envision three ways to interact with online fsck:
-
-- A CLI program that can be run by anyone.
-
-- Background systemd services that fire up periodically.
-
-- A dbus service that programs can bind to and request a fsck.
-
-I still think there's an opportunity to standardize the naming to make
-it easier to use a variety of filesystems.  I propose for the CLI:
-
-/usr/sbin/fsscrub $mnt that calls /usr/sbin/fsscrub.$FSTYP $mnt
-
-For systemd services, I propose "fsscrub@<escaped mountpoint>".  I
-suspect we want a separate background service that itself runs
-periodically and invokes the fsscrub@$mnt services.  xfsprogs already
-has a xfs_scrub_all service that does that.  The services are nifty
-because it's really easy to restrict privileges, implement resource
-usage controls, and use private name/mountspaces to isolate the process
-from the rest of the system.
-
-dbus is a bit trickier, since there's no precedent at all.  I guess
-we'd have to define an interface for filesystem "object".  Then we could
-write a service that establishes a well-known bus name and maintains
-object paths for each mounted filesystem.  Each of those objects would
-export the filesystem interface, and that's how programs would call
-online fsck as a service.
-
-Ok, that's enough for a single session topic.  Thoughts? :)
-
---D
-
-[0] https://lwn.net/Articles/754504/
-[1] https://git.kernel.org/pub/scm/linux/kernel/git/djwong/xfsprogs-dev.git/log/?h=scrub-optimize-by-default
+--=20
+=E7=9C=9F=E5=AE=9F=E3=81=AF=E3=81=84=E3=81=A4=E3=82=82=E4=B8=80=E3=81=A4=EF=
+=BC=81/ Always, there's only one truth!

@@ -2,38 +2,38 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 617C1C7EE32
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Mar 2023 13:42:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0660EC64EC7
+	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Mar 2023 13:42:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229894AbjCANmy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        id S229895AbjCANmy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
         Wed, 1 Mar 2023 08:42:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35824 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35854 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229886AbjCANms (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2023 08:42:48 -0500
+        with ESMTP id S229888AbjCANmt (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2023 08:42:49 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E87153E09C
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Mar 2023 05:42:47 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 563F13E09E
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Mar 2023 05:42:48 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=Efh+cHcjZ6XZv2KlpQO1KaCXgzQFP8pC/0NRWqi2Vdg=; b=XyXOIjss3ypHJD5RCqW0N0bAco
-        UObQ6lJcmDRQpT9Oy0svo3/Jl8caqylsfYFrNGKTNn3my2U0XwNNcscP7eDEu0l1kcwZYT54Nw+Ql
-        25Ilsn3M2+it44i0FJuKuq+pyug9caZUmxqtYFoR/gRjI4R5b9vgPUhR0mWiCUY5c7tK4wDvPU6CJ
-        3Age0CL+5Ank54+suvDWj22PA1FzlBxRPfXZnk5mi/ksYmkMtHevt6S+Lxk/9LmruaGlVxBRiU/YX
-        4Hm9vtYuPM10syNOsDmwgs5+lk+hQ0X8uXnF+I5zDLGiW4FF6HxILTalLv3nCbV0E2praOEnbP6dJ
-        P5g82fiA==;
+        bh=K9UfKIw8AdCa+UNKIV8m9nQCParbjkc/K7mideqw42k=; b=ghmhk0KnDf2W3PlTup5G71ni6r
+        p4lgpgOZhlMZBQn2reo9kKqKMxIeXa3/d7OGKxrS1DlciWUNy5MrltxFoG81MLbGCFqnax4nnwHlC
+        Hs8fCF1gUWNuloLmSZ21wjBEFz1xsr4OpKfeF3zeedPSM6vHpLgrO2F4EXANqNqRIzx6xqCtqUsnP
+        Ct5zg6gt2T3NcVOxgbwrAvuqkMXEMnRAgJQypXYW9xhRNlT5K6LyCkZG0//GI0+l8PVKogwyO4Cr0
+        42FCa9GfIp0KIBBv2OwocNem4YXJZnvBczsOrWkvFoIDlpZWjUNEjcv2kzvgWKYdhAy5WbWQozeuh
+        1w3WMytg==;
 Received: from [136.36.117.140] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pXMjF-00GN7t-MD; Wed, 01 Mar 2023 13:42:45 +0000
+        id 1pXMjG-00GN8G-GR; Wed, 01 Mar 2023 13:42:46 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/10] btrfs: simplify finding the inode in submit_one_bio
-Date:   Wed,  1 Mar 2023 06:42:40 -0700
-Message-Id: <20230301134244.1378533-8-hch@lst.de>
+Subject: [PATCH 09/10] btrfs: return a btrfs_bio from btrfs_bio_alloc
+Date:   Wed,  1 Mar 2023 06:42:42 -0700
+Message-Id: <20230301134244.1378533-10-hch@lst.de>
 X-Mailer: git-send-email 2.39.1
 In-Reply-To: <20230301134244.1378533-1-hch@lst.de>
 References: <20230301134244.1378533-1-hch@lst.de>
@@ -44,47 +44,151 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-struct btrfs_bio now has an always valid inode pointer that can be used
-to find the inode in submit_one_bio, so use that and initialize all
-variables for which it is possible at declaration time.
+Return the conaining struct btrfs_bio instead of the less type safe
+struct bio from btrfs_bio_alloc.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/extent_io.c | 15 ++++-----------
- 1 file changed, 4 insertions(+), 11 deletions(-)
+ fs/btrfs/bio.c       | 12 +++++++-----
+ fs/btrfs/bio.h       |  6 +++---
+ fs/btrfs/extent_io.c | 18 +++++++++---------
+ fs/btrfs/inode.c     | 18 +++++++++---------
+ 4 files changed, 28 insertions(+), 26 deletions(-)
 
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index c04e103f876853..527081abca026f 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -48,15 +48,17 @@ void btrfs_bio_init(struct btrfs_bio *bbio, struct btrfs_inode *inode,
+  * Just like the underlying bio_alloc_bioset it will not fail as it is backed by
+  * a mempool.
+  */
+-struct bio *btrfs_bio_alloc(unsigned int nr_vecs, blk_opf_t opf,
+-			    struct btrfs_inode *inode,
+-			    btrfs_bio_end_io_t end_io, void *private)
++struct btrfs_bio *btrfs_bio_alloc(unsigned int nr_vecs, blk_opf_t opf,
++				  struct btrfs_inode *inode,
++				  btrfs_bio_end_io_t end_io, void *private)
+ {
++	struct btrfs_bio *bbio;
+ 	struct bio *bio;
+ 
+ 	bio = bio_alloc_bioset(NULL, nr_vecs, opf, GFP_NOFS, &btrfs_bioset);
+-	btrfs_bio_init(btrfs_bio(bio), inode, end_io, private);
+-	return bio;
++	bbio = btrfs_bio(bio);
++	btrfs_bio_init(bbio, inode, end_io, private);
++	return bbio;
+ }
+ 
+ static struct bio *btrfs_split_bio(struct btrfs_fs_info *fs_info,
+diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+index b4e7d5ab7d236d..dbf125f6fa336d 100644
+--- a/fs/btrfs/bio.h
++++ b/fs/btrfs/bio.h
+@@ -75,9 +75,9 @@ void __cold btrfs_bioset_exit(void);
+ 
+ void btrfs_bio_init(struct btrfs_bio *bbio, struct btrfs_inode *inode,
+ 		    btrfs_bio_end_io_t end_io, void *private);
+-struct bio *btrfs_bio_alloc(unsigned int nr_vecs, blk_opf_t opf,
+-			    struct btrfs_inode *inode,
+-			    btrfs_bio_end_io_t end_io, void *private);
++struct btrfs_bio *btrfs_bio_alloc(unsigned int nr_vecs, blk_opf_t opf,
++				  struct btrfs_inode *inode,
++				  btrfs_bio_end_io_t end_io, void *private);
+ 
+ static inline void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
+ {
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 6ea6f2c057ac3e..05b96a77fba104 100644
+index df143c5267e61b..2d5e4df3419b0f 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -123,23 +123,16 @@ struct btrfs_bio_ctrl {
- 
- static void submit_one_bio(struct btrfs_bio_ctrl *bio_ctrl)
+@@ -896,13 +896,13 @@ static void alloc_new_bio(struct btrfs_inode *inode,
+ 			  u64 disk_bytenr, u64 file_offset)
  {
+ 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
 -	struct bio *bio;
--	struct bio_vec *bv;
--	struct inode *inode;
--	int mirror_num;
-+	struct bio *bio = bio_ctrl->bio;
-+	int mirror_num = bio_ctrl->mirror_num;
++	struct btrfs_bio *bbio;
  
--	if (!bio_ctrl->bio)
-+	if (!bio)
- 		return;
+-	bio = btrfs_bio_alloc(BIO_MAX_VECS, bio_ctrl->opf, inode,
+-			      bio_ctrl->end_io_func, NULL);
+-	bio->bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
+-	btrfs_bio(bio)->file_offset = file_offset;
+-	bio_ctrl->bbio = btrfs_bio(bio);
++	bbio = btrfs_bio_alloc(BIO_MAX_VECS, bio_ctrl->opf, inode,
++			       bio_ctrl->end_io_func, NULL);
++	bbio->bio.bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
++	bbio->file_offset = file_offset;
++	bio_ctrl->bbio = bbio;
+ 	bio_ctrl->len_to_oe_boundary = U32_MAX;
  
--	bio = bio_ctrl->bio;
--	bv = bio_first_bvec_all(bio);
--	inode = bv->bv_page->mapping->host;
--	mirror_num = bio_ctrl->mirror_num;
--
- 	/* Caller should ensure the bio has at least some range added */
- 	ASSERT(bio->bi_iter.bi_size);
+ 	/*
+@@ -911,7 +911,7 @@ static void alloc_new_bio(struct btrfs_inode *inode,
+ 	 * them.
+ 	 */
+ 	if (bio_ctrl->compress_type == BTRFS_COMPRESS_NONE &&
+-	    btrfs_use_zone_append(btrfs_bio(bio))) {
++	    btrfs_use_zone_append(bbio)) {
+ 		struct btrfs_ordered_extent *ordered;
  
--	if (!is_data_inode(inode)) {
-+	if (!is_data_inode(&btrfs_bio(bio)->inode->vfs_inode)) {
- 		if (btrfs_op(bio) != BTRFS_MAP_WRITE) {
- 			/*
- 			 * For metadata read, we should have the parent_check,
+ 		ordered = btrfs_lookup_ordered_extent(inode, file_offset);
+@@ -930,8 +930,8 @@ static void alloc_new_bio(struct btrfs_inode *inode,
+ 		 * to always be set on the last added/replaced device.
+ 		 * This is a bit odd but has been like that for a long time.
+ 		 */
+-		bio_set_dev(bio, fs_info->fs_devices->latest_dev->bdev);
+-		wbc_init_bio(bio_ctrl->wbc, bio);
++		bio_set_dev(&bbio->bio, fs_info->fs_devices->latest_dev->bdev);
++		wbc_init_bio(bio_ctrl->wbc, &bbio->bio);
+ 	}
+ }
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index ed96c84f5be71d..7e691bab72dffa 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9959,24 +9959,24 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
+ 		.pending = ATOMIC_INIT(1),
+ 	};
+ 	unsigned long i = 0;
+-	struct bio *bio;
++	struct btrfs_bio *bbio;
+ 
+ 	init_waitqueue_head(&priv.wait);
+ 
+-	bio = btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, inode,
++	bbio = btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, inode,
+ 			      btrfs_encoded_read_endio, &priv);
+-	bio->bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
++	bbio->bio.bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
+ 
+ 	do {
+ 		size_t bytes = min_t(u64, disk_io_size, PAGE_SIZE);
+ 
+-		if (bio_add_page(bio, pages[i], bytes, 0) < bytes) {
++		if (bio_add_page(&bbio->bio, pages[i], bytes, 0) < bytes) {
+ 			atomic_inc(&priv.pending);
+-			btrfs_submit_bio(btrfs_bio(bio), 0);
++			btrfs_submit_bio(bbio, 0);
+ 
+-			bio = btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, inode,
+-					      btrfs_encoded_read_endio, &priv);
+-			bio->bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
++			bbio = btrfs_bio_alloc(BIO_MAX_VECS, REQ_OP_READ, inode,
++					       btrfs_encoded_read_endio, &priv);
++			bbio->bio.bi_iter.bi_sector = disk_bytenr >> SECTOR_SHIFT;
+ 			continue;
+ 		}
+ 
+@@ -9986,7 +9986,7 @@ int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
+ 	} while (disk_io_size);
+ 
+ 	atomic_inc(&priv.pending);
+-	btrfs_submit_bio(btrfs_bio(bio), 0);
++	btrfs_submit_bio(bbio, 0);
+ 
+ 	if (atomic_dec_return(&priv.pending))
+ 		io_wait_event(priv.wait, !atomic_read(&priv.pending));
 -- 
 2.39.1
 

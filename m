@@ -2,124 +2,109 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A523CC678D4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  1 Mar 2023 21:15:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1D5FC678D4
+	for <linux-btrfs@archiver.kernel.org>; Thu,  2 Mar 2023 01:54:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229615AbjCAVO6 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 1 Mar 2023 16:14:58 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47526 "EHLO
+        id S229796AbjCBByi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 1 Mar 2023 20:54:38 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59886 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229675AbjCAVOu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2023 16:14:50 -0500
-Received: from mail-qv1-xf33.google.com (mail-qv1-xf33.google.com [IPv6:2607:f8b0:4864:20::f33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E2944615E
-        for <linux-btrfs@vger.kernel.org>; Wed,  1 Mar 2023 13:14:49 -0800 (PST)
-Received: by mail-qv1-xf33.google.com with SMTP id jo29so10345201qvb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Mar 2023 13:14:49 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112; t=1677705288;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=bkJuyulNevmd7yk0hGOBaX8JL/71/bfAdog6KkOrzLM=;
-        b=zm5clUB5IPy4/3EWIUCiwSUbQ0r/UdJwtfsV4lTAtRKLU8zzBzRwr4I+Nqlsa1cq/w
-         zUVrONS19XvCz9AUYOSJGFJ1W0K25ojvlAhq2cTnyFXeccTGe1Fx77MppnwvRLYPkdp3
-         akSHLjqkneiNRKvUrJLX7zm0/o7QB1jDi8ez3qDE8VPgmxSUMXGaLZi/BTQbIRZucxUX
-         ZwrgT78NpcfC4Dh9cni26s3c3nmc3li8AORmg1gfPbBznq/1h0eP5+6tnJbL9ace5gv5
-         WIgKo+bIje3axYTtjhzgWc4phaU6aAExJg6GagUD2Hxq33ZLAVF1as/d6HEcGVAYQOG0
-         SKZg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1677705288;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=bkJuyulNevmd7yk0hGOBaX8JL/71/bfAdog6KkOrzLM=;
-        b=ua4PMg9IvcEGtdNaZiYjIFtLLppQYNF6gn0Uln5CnLLRkqlNkB1lYnsr89KaX5ZD8U
-         ytQy475z28xVYielRHchoh2kcwhpnOU24kZXY39JpHcZ2Z92wx5wnW8b/cXg7rWigEWM
-         z3UQB2rIqGuR/kNg7B7NkvnMcU9w/xWHCmOa+4AFfhjIT1g+dTVlasxw2V/4DmE47n4d
-         RYdyN3ng7Xm60fvv3YNOnLIctO704xch7XD9CEecVM9UQlRB67MN4w+R1WV6f70aq8MK
-         DFEMpDPLmSkZ5vRS7ifSwjJsPAigjWN4Kz6ghU15KPpxSEqakiHH1/0fFHfiduDyMrIX
-         cbdg==
-X-Gm-Message-State: AO0yUKUNmXgMZ2BGc23RrQ69WSQo1OqvnyfyoooBX+5e4ZwcTBKv2f4S
-        TB81Bu0Z+Ppzd0w/f7iFAeuCQqLnEthRytfIivQ=
-X-Google-Smtp-Source: AK7set8J0PjGiAxF4jmVuanh1/D6QF8qbMY6vZ5m8XpOKjukD6uKuF0E80B9nR0snXpqDJcfhiuyYw==
-X-Received: by 2002:a05:6214:dc5:b0:56f:8a99:1a67 with SMTP id 5-20020a0562140dc500b0056f8a991a67mr17268499qvt.3.1677705287772;
-        Wed, 01 Mar 2023 13:14:47 -0800 (PST)
-Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id t9-20020a05620a0b0900b0073b399700adsm9570420qkg.3.2023.03.01.13.14.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 01 Mar 2023 13:14:47 -0800 (PST)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 1/3] btrfs: rename BTRFS_FS_NO_OVERCOMMIT -> BTRFS_FS_ACTIVE_ZONE_TRACKING
-Date:   Wed,  1 Mar 2023 16:14:42 -0500
-Message-Id: <5cb6fa87af8959b0ee9b33591968812fc6b4ab87.1677705092.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.26.3
-In-Reply-To: <cover.1677705092.git.josef@toxicpanda.com>
-References: <cover.1677705092.git.josef@toxicpanda.com>
+        with ESMTP id S229804AbjCBByh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Mar 2023 20:54:37 -0500
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CA01739BA8
+        for <linux-btrfs@vger.kernel.org>; Wed,  1 Mar 2023 17:54:31 -0800 (PST)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 77F6421AF9
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Mar 2023 01:54:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1677722070; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=AoZCYLlyoOTWCrSHv8t0nBusu+MLxVwjXnCP2IyunC4=;
+        b=X6q5uSXxEnHzNA0AQ/PLhOa+alfGsi2dHhR8gjQjfpgKf8mC55wRj27C+t1Tl+aR/GyJ/T
+        Q8svKzXK5qnsIsTaR6Rg9IFY6XRIbQO3J//dh6lwK755SE3T470R4fnQW0C/N5Jei+Iucg
+        MpCWia1UUZwPUdCZXJvcUiPZZNJvgkU=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id CCC1313A63
+        for <linux-btrfs@vger.kernel.org>; Thu,  2 Mar 2023 01:54:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id HoeuJdUBAGTBegAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Mar 2023 01:54:29 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: handle missing chunk mapping more gracefully
+Date:   Thu,  2 Mar 2023 09:54:12 +0800
+Message-Id: <9b53f585503429f5c81eeb222f1e2cb8014807f5.1677722020.git.wqu@suse.com>
+X-Mailer: git-send-email 2.39.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This flag only gets set when we're doing active zone tracking, and I'm
-going to need to use this flag for things related to this behavior.
-Rename the flag to represent what it actually means for the file system
-so it can be used in other ways and still make sense.
+[BUG]
+During my scrub rework, I did a stupid thing like this:
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+        bio->bi_iter.bi_sector = stripe->logical;
+        btrfs_submit_bio(fs_info, bio, stripe->mirror_num);
+
+Above bi_sector assignment is using logical address directly, which
+lacks ">> SECTOR_SHIFT".
+
+This results a read on a range which has no chunk mapping.
+
+This results the following crash:
+
+ BTRFS critical (device dm-1): unable to find logical 11274289152 length 65536
+ assertion failed: !IS_ERR(em), in fs/btrfs/volumes.c:6387
+ ------------[ cut here ]------------
+
+Sure this is all my fault, but this shows a possible problem in real
+world, that some bitflip in file extents/tree block can point to
+unmapped ranges, and trigger above ASSERT(), or if CONFIG_BTRFS_ASSERT
+is not configured, cause invalid pointer.
+
+[PROBLEMS]
+In above call chain, we just don't handle the possible error from
+btrfs_get_chunk_map() inside __btrfs_map_block().
+
+[FIX]
+The fix is pretty straightforward, just replace the ASSERT() with proper
+error handling.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/fs.h         | 7 ++-----
- fs/btrfs/space-info.c | 2 +-
- fs/btrfs/zoned.c      | 3 +--
- 3 files changed, 4 insertions(+), 8 deletions(-)
+Changelog:
+v2:
+- Rebased to latest misc-next
+  The error path in bio.c is already fixed, thus only need to replace
+  the ASSERT() in __btrfs_map_block().
+---
+ fs/btrfs/volumes.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index 4c477eae6891..24cd49229408 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -120,11 +120,8 @@ enum {
- 	/* Indicate that we want to commit the transaction. */
- 	BTRFS_FS_NEED_TRANS_COMMIT,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4d479ac233a4..93bc45001e68 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6242,7 +6242,8 @@ int __btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
+ 		return -EINVAL;
  
--	/*
--	 * Indicate metadata over-commit is disabled. This is set when active
--	 * zone tracking is needed.
--	 */
--	BTRFS_FS_NO_OVERCOMMIT,
-+	/* This is set when active zone tracking is needed. */
-+	BTRFS_FS_ACTIVE_ZONE_TRACKING,
+ 	em = btrfs_get_chunk_map(fs_info, logical, *length);
+-	ASSERT(!IS_ERR(em));
++	if (IS_ERR(em))
++		return PTR_ERR(em);
  
- 	/*
- 	 * Indicate if we have some features changed, this is mostly for
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 69c09508afb5..2237685d1ed0 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -407,7 +407,7 @@ int btrfs_can_overcommit(struct btrfs_fs_info *fs_info,
- 		return 0;
- 
- 	used = btrfs_space_info_used(space_info, true);
--	if (test_bit(BTRFS_FS_NO_OVERCOMMIT, &fs_info->flags) &&
-+	if (test_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags) &&
- 	    (space_info->flags & BTRFS_BLOCK_GROUP_METADATA))
- 		avail = 0;
- 	else
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index f95b2c94d619..808cfa3091c5 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -524,8 +524,7 @@ int btrfs_get_dev_zone_info(struct btrfs_device *device, bool populate_cache)
- 		}
- 		atomic_set(&zone_info->active_zones_left,
- 			   max_active_zones - nactive);
--		/* Overcommit does not work well with active zone tacking. */
--		set_bit(BTRFS_FS_NO_OVERCOMMIT, &fs_info->flags);
-+		set_bit(BTRFS_FS_ACTIVE_ZONE_TRACKING, &fs_info->flags);
- 	}
- 
- 	/* Validate superblock log */
+ 	map = em->map_lookup;
+ 	data_stripes = nr_data_stripes(map);
 -- 
-2.26.3
+2.39.1
 

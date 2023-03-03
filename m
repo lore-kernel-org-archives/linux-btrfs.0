@@ -2,129 +2,95 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 65099C64EC4
-	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Mar 2023 19:05:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A84BFC61DA4
+	for <linux-btrfs@archiver.kernel.org>; Fri,  3 Mar 2023 23:03:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231391AbjCCTFV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 3 Mar 2023 14:05:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44482 "EHLO
+        id S231768AbjCCXDi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 3 Mar 2023 18:03:38 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34332 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230220AbjCCTFU (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2023 14:05:20 -0500
-Received: from mail.as397444.net (mail.as397444.net [IPv6:2620:6e:a000:1::99])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 78DB7193DC
-        for <linux-btrfs@vger.kernel.org>; Fri,  3 Mar 2023 11:05:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=bluematt.me
-        ; s=1677868862; h=In-Reply-To:From:References:Cc:To:Subject:From:Subject:To:
-        Cc:Reply-To; bh=ej/dRCKQZW8RnQTVvULpRFLbPFVllOkUFcMm5YthgOM=; b=iKvLXDoTBDwNo
-        S0qQ8tUrfPndDjslJX4M9S/Y3TyHaSNrqK0a1ZS9fo3Kz9Q4D4kS5+07zlkBbUL9ivcBgyPJH//Pz
-        lQd09j/Elaq9Y262m3Wv/ysMh/wcxhAL+UbKLEEGRbjlslDiftCJuzyExHo5KX5JH4hwi2Ug9d1SM
-        wZkmEFRmnvSAiQumW7EqjgAvOBzGKf3VafUoo1ivtcasXTOVBDxaBsvwWmTl68FeRJtI2z3hDMOJ7
-        mBzbd4axRin+ba50YNu0ZHQQ+Lo1Y067as5ACl/yLt9hZtj/GhLpNute5jxESiPNjTB1ZVDwh0ZtJ
-        LX1CGUDVUklWhJ6mYcPRQ==;
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=clients.mail.as397444.net; s=1677868863; h=In-Reply-To:From:References:Cc:
-        To:Subject:From:Subject:To:Cc:Reply-To;
-        bh=ej/dRCKQZW8RnQTVvULpRFLbPFVllOkUFcMm5YthgOM=; b=VQ3Yu31LUMAb/O7AApqZ3w7A5e
-        kjzFerONyIkl70daOnUAdaGNMvsJ+DGG4oFL82s7K8tFgAyB3uErC3JwGSdswdg+n3Uhi7dp3DbC6
-        b45pvA8u2fLJFm0GXsHpdxgl4Fi9O3VXXNGKRJDLnVtVPlJX0hqE/3XoaYVseEEM4/d6Zq/WnXu5w
-        hgxKmDL3W9E34cg6jiEHpbwpIR0/mHCD6CsVPVpjtVN9A3KnpPX8Ne6qBqYZuBS9mAb3zYs0FMqSG
-        QHMRL0liJTqNpziYb3PKd/EjMefJpHlCSd6/pYWPg1kRBv+KQMc7q8LzlKeEdYgjcaclc86nHesNI
-        fh0MZhiQ==;
-Received: by mail.as397444.net with esmtpsa (TLS1.3) (Exim)
-        (envelope-from <blnxfsl@bluematt.me>)
-        id 1pYAiT-000EkY-1m;
-        Fri, 03 Mar 2023 19:05:17 +0000
-Message-ID: <4d17590f-b938-6c6d-93ba-a6a61d3ea475@bluematt.me>
-Date:   Fri, 3 Mar 2023 11:05:17 -0800
+        with ESMTP id S231508AbjCCXDh (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Mar 2023 18:03:37 -0500
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9B68B521D5
+        for <linux-btrfs@vger.kernel.org>; Fri,  3 Mar 2023 15:03:25 -0800 (PST)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1M4JmN-1pYVXk2RRR-000KxU; Sat, 04
+ Mar 2023 00:03:06 +0100
+Message-ID: <2ace5cfb-afed-87a7-22d8-8f98a49c39b1@gmx.com>
+Date:   Sat, 4 Mar 2023 07:03:01 +0800
 MIME-Version: 1.0
-Subject: Re: Salvaging the performance of a high-metadata filesystem
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.7.0
+Subject: Re: [PATCH v7 04/13] btrfs: add support for inserting raid stripe
+ extents
+To:     Christoph Hellwig <hch@infradead.org>
+Cc:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        David Sterba <dsterba@suse.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <josef@toxicpanda.com>
+References: <cover.1677750131.git.johannes.thumshirn@wdc.com>
+ <94293952cdc120b46edf82672af874b0877e1e83.1677750131.git.johannes.thumshirn@wdc.com>
+ <3e2d5ede-fb00-3aa8-e55e-d088b8df9e60@gmx.com>
+ <b5bfe1a9-51dc-2a94-5ebd-4673b896d5ea@wdc.com>
+ <ZACrzUh82/9HPDV2@infradead.org>
+ <cb26ea54-a0b8-2102-6899-521ca8028b9c@gmx.com>
+ <ZAIA+a6G8kd2I8Pp@infradead.org>
 Content-Language: en-US
-To:     Forza <forza@tnonline.net>, Roman Mamedov <rm@romanrm.net>
-Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <59b6326d-42d4-5269-72c1-9adcda4cf66c@bluematt.me>
- <20230303102239.2ea867dd@nvm>
- <aca66935-0ee5-bdb9-2fbc-eac0e5682163@tnonline.net>
- <a851e040-9568-acf0-a08f-593280350840@bluematt.me>
-From:   Matt Corallo <blnxfsl@bluematt.me>
-In-Reply-To: <a851e040-9568-acf0-a08f-593280350840@bluematt.me>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <ZAIA+a6G8kd2I8Pp@infradead.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-DKIM-Note: Keys used to sign are likely public at https://as397444.net/dkim/bluematt.me
-X-DKIM-Note: For more info, see https://as397444.net/dkim/
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:VIq02A2BkPVxoxXKBOsmdC3fyNFQyVCR+zaH04iT0gxJncLTOS0
+ 3fbUZOkd5eDlgQF//k0S2UQg4Gc2HjpGz/58gwE08TKuCO1DmZuGF6qZcmDe8Ytbb3W8GEL
+ KHlYZBssyPpJy8vnU7uN3rRIW65T+k6Hbh4SJTq3smHqtmtF3y1AzWvClSLqIpsApm/wWct
+ pNxLI5LBAijst1DrP61sg==
+UI-OutboundReport: notjunk:1;M01:P0:NjRWAQ6bvtg=;sBqM1rUJf/3Z42ZCn3qATsxRlSj
+ 0KNAIOfTFJqYmnnVfRZ2OWIYQK0cRExtKoaeyxZJuUS9vSBBfub4PFUFWDfM3IwcvKRpw9KLy
+ /G64JURv8JpBgwwfzvo+HUi7b+UXTd3z50+FobgtI/DC/cuMV6r0hTIz9aZnN9SM9nCeDz9nf
+ vmGG9VX3gjtdCXDvc+apmr1U5mB40z77ZpISym3E/VoP90Uo4uUNK/QA5u/v3nk/0Tlesh8+J
+ lclFG6kNSjICf+djhwqPOezvP2o1ugNmhHpn8Z0duckK8ubRwdGvu08CbIxmwQJTcMLhbn2EZ
+ Vk6jGhG6wFDJWJ3j/GAaFxo8JrbxPJNBXytX2qQyp69Rg6G+jpaN1+X7pOFwkc99V3yWV+FvN
+ Ao1mhX1mBwbh38C/dvc6JyRIYJxvTHGpXnXttc7Bnu2qzfo6bqgP2h5UYqcCFOpL3zE6YTi+R
+ qUJPFGZTQ8tlrijoz9lYCEhXri34qkN2nKb2LtBiTaJ6GV/JegeLr2/Vwy/o4hQM3ayd8BTu/
+ yPebxcG/1uX7hUMPa53ncJ3mGu5wAF7FCNgSxXrnRWwZpkaMRnOMxWkhs6HOTmoKbQRQCwGHc
+ +HNYEk9/vtVARIiixfeQ4qpVwzKcADs5V/KcAaTu9IM0/67uA0UkeE0OiEbBC1RmujdYUvLBT
+ nvHrC2tcTORN+omHzH0pYevQL8dXGd56AxjomhZoDJ6kcfLh+eJMjhDSM1guNrgC4Yy/fTaBT
+ /cy8NfxwfYBvjVrW4Rj1nnD7QvlYTJUO9tzy4FC1+sBmxPmCOl+/Nwkvfkegg8gtXpZzSKlTr
+ l/+nR5G5E0KZInRP0yqRMkUb+WOEk+OAHxM0IpnXXJbz78r90EWxLTNlb7z8y6REM0gEHntwp
+ R41xRlazlj1+cwtdfYV+FdmClBO0Xfj0hI0lM8Ho0kfRSegYZt5/uCa11hGFplQy1DMCEFE4+
+ XTzhAzH+3YB+R1xB7474VVdl3n8=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
 
 
-On 3/3/23 11:04 AM, Matt Corallo wrote:
-> 
-> 
-> On 3/3/23 1:30 AM, Forza wrote:
+On 2023/3/3 22:15, Christoph Hellwig wrote:
+> On Fri, Mar 03, 2023 at 08:13:23AM +0800, Qu Wenruo wrote:
+>>> I have a series in my queue the limits every btrfs_bio (and thus bioc)
+>>> to a single ordered_extent.  The bio spanning ordered_extents is a very
+>>> strange corner case that rarely happens but causes a lot of problems.
 >>
+>> Really?
 >>
->> On 2023-03-03 06:22, Roman Mamedov wrote:
->>> On Thu, 2 Mar 2023 20:34:27 -0800
->>> Matt Corallo <blnxfsl@bluematt.me> wrote:
->>>
->>>> The problem is there's one folder that has backups of workstation, which were done by `cp
->>>> --reflink=always`ing the previous backup followed by rsync'ing over it.
->>>
->>> I believe this is what might cause the metadata inflation. Each time cp
->>> creates a whole another copy of all 3 million files in the metadata, just
->>> pointing to old extents for data.
->>>
->>> Could you instead make this backup destination a subvolume, so that during each
->>> backup you create a snapshot of it for historical storage, and then rsync over
->>> the current version?
->>>
+>> A not-so-large write (e.g. 4MiB) for RAID0 (64K stripe len) can easily lead
+>> to that situation.
 >>
->> I agree. If you make a snapshot of a subvolume, the additional metadata is effectively 0. Then you 
->> rsync into the source subvolume. This would add metadata for all changed files,
+>> If we really split ordered extents to that stripe len, it can cause a lot of
+>> small file extents thus bloat the size of subvolume trees.
 > 
-> Ah, good point, I hadn't considered that as an option, to be honest. I'll convert the snapshots to 
-> subvolumes and see how much metadata is reduced...may take a month or two to run, though :/
+> I might have been a little more clear in my wording.
 > 
->> Make sure you use `mount -o noatime` to prevent metadata updates when rsync checks all files.
-> 
-> Ah, that's quite the footgun. Shame noatime was never made default :(
-> 
->> Matt, what are your mount options for your filesystem (output of `mount`). Can you also provide 
->> the output of `btrfs fi us -T /your/mountpoint`
+> This is talking about the btrfs_bio submitted by the upper layers using
+> btrfs_submit_bio, not the ones split out by it at the extent boundaries.
 
-Oops, sorry, mount options are default with a long commit:
+Oh, that indeed solves most of the common cases.
 
-/dev/mapper/bigraid33_crypt on /bigraid type btrfs 
-(rw,relatime,space_cache=v2,commit=3600,subvolid=5,subvol=/)
+But I'm not familiar enough on the direct IO front, IIRC we have some 
+recent bugs related to page faulting during a larger direct IO write.
 
-> Sure:
-> 
-> btrfs filesystem usage -T /bigraid
-> Overall:
->      Device size:         85.50TiB
->      Device allocated:         64.67TiB
->      Device unallocated:         20.83TiB
->      Device missing:            0.00B
->      Used:             63.03TiB
->      Free (estimated):         10.10TiB    (min: 5.92TiB)
->      Free (statfs, df):          6.30TiB
->      Data ratio:                 2.22
->      Metadata ratio:             3.00
->      Global reserve:        512.00MiB    (used: 48.00KiB)
->      Multiple profiles:              yes    (data)
-> 
->                                 Data     Data      Metadata  System
-> Id Path                        RAID1    RAID1C3   RAID1C3   RAID1C4  Unallocated
-> -- --------------------------- -------- --------- --------- -------- -----------
->   1 /dev/mapper/bigraid33_crypt  7.48TiB   3.73TiB 808.00GiB 32.00MiB     2.56TiB
->   2 /dev/mapper/bigraid36_crypt  6.22TiB   4.00GiB 689.00GiB        -     2.20TiB
->   3 /dev/mapper/bigraid39_crypt  8.20TiB   3.36TiB 443.00GiB 32.00MiB     2.56TiB
->   4 /dev/mapper/bigraid37_crypt  3.64TiB   4.57TiB 152.00GiB 32.00MiB     2.56TiB
->   5 /dev/mapper/bigraid35_crypt  3.46TiB 367.00GiB 310.00GiB        -     1.33TiB
->   6 /dev/mapper/bigraid38_crypt  3.71TiB   3.24TiB   1.40TiB 32.00MiB     2.56TiB
->   7 /dev/mapper/bigraid41_crypt  3.05TiB  25.00GiB 377.00GiB        -     2.02TiB
->   8 /dev/mapper/bigraid20_crypt  6.66TiB   2.54TiB 322.00GiB        -     5.03TiB
-> -- --------------------------- -------- --------- --------- -------- -----------
->     Total                       21.21TiB   5.94TiB   1.48TiB 32.00MiB    20.83TiB
->     Used                        21.14TiB   5.46TiB   1.46TiB  4.70MiB
+Not sure if that would affect the use case.
+
+Thanks,
+Qu

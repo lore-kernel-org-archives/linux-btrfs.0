@@ -2,104 +2,139 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A185C61DA4
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Mar 2023 16:54:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 04FA1C61DA4
+	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Mar 2023 17:59:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229688AbjCFQyp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Mar 2023 11:54:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55658 "EHLO
+        id S230155AbjCFR7X (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Mar 2023 12:59:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50868 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229636AbjCFQyo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2023 11:54:44 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2EC594391D;
-        Mon,  6 Mar 2023 08:54:07 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=mJSF1Ywx6z0mGMzdYzVD02f9wlhXiIbZLi0DEBUkFeU=; b=4W+naTxVvLaKelVIlzOADVjTbz
-        zbCaq2xAMhoc7OJy1f/RCDyXZT4VA4nFUh6Ad2O9b6XMv5hTB0DjrLhd1nhvy2vGf2JAbiCGAefDa
-        1ERMrudAE+Nc4OleRwkXKoYBxjgignNHljhMKq7xs8taw1O7hhPFBCBrfRNuL7ggu7hcmWqVUnypN
-        YHZCRxKHA2Cza5puDW/i46JF61Yl8qFc/6rsFrLut8hhD4XmTKXHRvR6Y3WYX8b25O+MVt9V6wMBu
-        Lf9p6vplwjrvaI4z1gec6K+JUzilD9SJVASZdkLIYX566D/ZMoycan7ww4Yad0wBdNQBU4fiwtFg5
-        vv97/kng==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pZE58-00E0hR-CA; Mon, 06 Mar 2023 16:53:02 +0000
-Date:   Mon, 6 Mar 2023 08:53:02 -0800
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Goldwyn Rodrigues <rgoldwyn@suse.de>
-Cc:     linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>,
-        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        Matthew Wilcox <willy@infradead.org>
-Subject: Re: [PATCH 01/21] fs: readahead_begin() to call before locking folio
-Message-ID: <ZAYaboLpVfTC71+3@infradead.org>
-References: <cover.1677793433.git.rgoldwyn@suse.com>
- <4b8c7d11d7440523dba12205a88b7d43f61a07b1.1677793433.git.rgoldwyn@suse.com>
+        with ESMTP id S230474AbjCFR7C (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2023 12:59:02 -0500
+Received: from mail-io1-xd45.google.com (mail-io1-xd45.google.com [IPv6:2607:f8b0:4864:20::d45])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A0576BDE5
+        for <linux-btrfs@vger.kernel.org>; Mon,  6 Mar 2023 09:58:27 -0800 (PST)
+Received: by mail-io1-xd45.google.com with SMTP id v10-20020a056602058a00b007076e06ba3dso5743415iox.20
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Mar 2023 09:58:27 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1678125404;
+        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=xpXeWn+ld/QoRYa6dboRl0RpYBuFcgqvSJPJnISHoDQ=;
+        b=oZODG4l8U2U5EhWDBQtKGz+8CokipU7SVD1tp1K1x/4n2MZCLCvBOTR0uo7Ekhdlfj
+         B5S0aG3M5qkpDeHhfHCulxyRpayoCsXX6sFiRzGVc2lK/Neirg04pGfdn1Ccwd1L4JSu
+         CvsfkmeS4habMIR/QI5Cphje5zGl2JBFoCbusYTS8gYTDL6aoeDpQ0iKSmfPfRpfjnxK
+         ULpjijDmHOSbAfhzmWNU6/b7TW7OKXTUg0PL9O4Dq209W/5VrD5yGMPWKoQMjqGDbwis
+         Iy7UAPnrcv9t/t469Ta0/eI2VEx51iz+xfuN+vCElb6Wdg/cWG1ycviwDQSzOp+S8g1R
+         GCjw==
+X-Gm-Message-State: AO0yUKWDZ6rAPSTxro6XNJXOdNRDv3/nasePbaOhkVsN0wjPI15OWCQp
+        aPoGe8IbcOwBdQnjw/P8YdJFuyqLZnxDhEXVfESqEZeMNjzz
+X-Google-Smtp-Source: AK7set8vBerzS4513rHfr/KAGU/J5MHnpDKCUEBSnoM1kK8r1zMTjhA2CY+QPO1mQZiE3SCrv3zk82UWAIGMPkYIWwn8u9IL0dXJ
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4b8c7d11d7440523dba12205a88b7d43f61a07b1.1677793433.git.rgoldwyn@suse.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+X-Received: by 2002:a05:6e02:13f3:b0:310:d348:e59b with SMTP id
+ w19-20020a056e0213f300b00310d348e59bmr5881132ilj.4.1678125404672; Mon, 06 Mar
+ 2023 09:56:44 -0800 (PST)
+Date:   Mon, 06 Mar 2023 09:56:44 -0800
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <000000000000a25ab205f63f0461@google.com>
+Subject: [syzbot] [btrfs?] KMSAN: uninit-value in extent_fiemap
+From:   syzbot <syzbot+8d245945ddc97769435f@syzkaller.appspotmail.com>
+To:     clm@fb.com, dsterba@suse.com, glider@google.com,
+        josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+        syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 02, 2023 at 04:24:46PM -0600, Goldwyn Rodrigues wrote:
-> From: Goldwyn Rodrigues <rgoldwyn@suse.com>
-> 
-> The btrfs filesystem needs to lock the extents before locking folios
-> to be read from disk. So, introduce a function in
-> address_space_operaitons, called btrfs_readahead_begin() which is called
-> before the folio are allocateed and locked.
+Hello,
 
-Please Cc the mm and fsdevel and willy on these kinds of changes.
+syzbot found the following issue on:
 
-But I'd also like to take this opportunity to ask what the rationale
-behind the extent locking for reads in btrfs is to start with.
+HEAD commit:    49a9a20768f5 kmsan: allow using __msan_instrument_asm_stor..
+git tree:       https://github.com/google/kmsan.git master
+console output: https://syzkaller.appspot.com/x/log.txt?x=1597ff87880000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=d901b2d28729cb6a
+dashboard link: https://syzkaller.appspot.com/bug?extid=8d245945ddc97769435f
+compiler:       clang version 15.0.0 (https://github.com/llvm/llvm-project.git 610139d2d9ce6746b3c617fb3e2f7886272d26ff), GNU ld (GNU Binutils for Debian) 2.35.2
+userspace arch: i386
 
-All other file systems rely on filemap_invalidate_lock_shared for
-locking page reads vs invalidates and it seems to work great.  btrfs
-creates a lot of overhead with the extent locking, and introduces
-a lot of additional trouble like the readahead code here, or the problem
-with O_DIRECT writes that read from the same region that Boris recently
-fixed.
+Unfortunately, I don't have any reproducer for this issue yet.
 
-Maybe we can think really hard and find a way to normalize the locking
-and simply both btrfs and common infrastructure?
+Downloadable assets:
+disk image: https://storage.googleapis.com/syzbot-assets/4a944f9f50fb/disk-49a9a207.raw.xz
+vmlinux: https://storage.googleapis.com/syzbot-assets/a2ec5594e201/vmlinux-49a9a207.xz
+kernel image: https://storage.googleapis.com/syzbot-assets/3aafc1a9ba37/bzImage-49a9a207.xz
 
-> ---
->  include/linux/fs.h | 1 +
->  mm/readahead.c     | 3 +++
->  2 files changed, 4 insertions(+)
-> 
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index c1769a2c5d70..6b650db57ca3 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -363,6 +363,7 @@ struct address_space_operations {
->  	/* Mark a folio dirty.  Return true if this dirtied it */
->  	bool (*dirty_folio)(struct address_space *, struct folio *);
->  
-> +	void (*readahead_begin)(struct readahead_control *);
->  	void (*readahead)(struct readahead_control *);
->  
->  	int (*write_begin)(struct file *, struct address_space *mapping,
-> diff --git a/mm/readahead.c b/mm/readahead.c
-> index b10f0cf81d80..6924d5fed350 100644
-> --- a/mm/readahead.c
-> +++ b/mm/readahead.c
-> @@ -520,6 +520,9 @@ void page_cache_ra_order(struct readahead_control *ractl,
->  			new_order--;
->  	}
->  
-> +	if (mapping->a_ops->readahead_begin)
-> +		mapping->a_ops->readahead_begin(ractl);
-> +
->  	filemap_invalidate_lock_shared(mapping);
->  	while (index <= limit) {
->  		unsigned int order = new_order;
-> -- 
-> 2.39.2
-> 
----end quoted text---
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+8d245945ddc97769435f@syzkaller.appspotmail.com
+
+BTRFS info (device loop0): using xxhash64 (xxhash64-generic) checksum algorithm
+BTRFS info (device loop0): using free space tree
+BTRFS info (device loop0): enabling ssd optimizations
+=====================================================
+BUG: KMSAN: uninit-value in extent_fiemap+0x2ece/0x6040 fs/btrfs/extent_io.c:3966
+ extent_fiemap+0x2ece/0x6040 fs/btrfs/extent_io.c:3966
+ btrfs_fiemap+0x20c/0x260 fs/btrfs/inode.c:8126
+ ioctl_fiemap fs/ioctl.c:219 [inline]
+ do_vfs_ioctl+0x2daa/0x3c20 fs/ioctl.c:810
+ __do_compat_sys_ioctl fs/ioctl.c:962 [inline]
+ __se_compat_sys_ioctl+0x68c/0xfa0 fs/ioctl.c:910
+ __ia32_compat_sys_ioctl+0x8f/0xd0 fs/ioctl.c:910
+ do_syscall_32_irqs_on arch/x86/entry/common.c:112 [inline]
+ __do_fast_syscall_32+0xa2/0x100 arch/x86/entry/common.c:178
+ do_fast_syscall_32+0x33/0x70 arch/x86/entry/common.c:203
+ do_SYSENTER_32+0x1b/0x20 arch/x86/entry/common.c:246
+ entry_SYSENTER_compat_after_hwframe+0x70/0x82
+
+Uninit was stored to memory at:
+ read_extent_buffer fs/btrfs/extent_io.c:5185 [inline]
+ btrfs_item_key fs/btrfs/ctree.h:2201 [inline]
+ btrfs_item_key_to_cpu fs/btrfs/ctree.h:2306 [inline]
+ extent_fiemap+0x2092/0x6040 fs/btrfs/extent_io.c:3965
+ btrfs_fiemap+0x20c/0x260 fs/btrfs/inode.c:8126
+ ioctl_fiemap fs/ioctl.c:219 [inline]
+ do_vfs_ioctl+0x2daa/0x3c20 fs/ioctl.c:810
+ __do_compat_sys_ioctl fs/ioctl.c:962 [inline]
+ __se_compat_sys_ioctl+0x68c/0xfa0 fs/ioctl.c:910
+ __ia32_compat_sys_ioctl+0x8f/0xd0 fs/ioctl.c:910
+ do_syscall_32_irqs_on arch/x86/entry/common.c:112 [inline]
+ __do_fast_syscall_32+0xa2/0x100 arch/x86/entry/common.c:178
+ do_fast_syscall_32+0x33/0x70 arch/x86/entry/common.c:203
+ do_SYSENTER_32+0x1b/0x20 arch/x86/entry/common.c:246
+ entry_SYSENTER_compat_after_hwframe+0x70/0x82
+
+Uninit was created at:
+ __alloc_pages+0x9f1/0xe80 mm/page_alloc.c:5581
+ __alloc_pages_bulk+0x1a99/0x2690 mm/page_alloc.c:5506
+ alloc_pages_bulk_array include/linux/gfp.h:201 [inline]
+ btrfs_alloc_page_array fs/btrfs/extent_io.c:1317 [inline]
+ btrfs_clone_extent_buffer+0x48d/0x1230 fs/btrfs/extent_io.c:4303
+ fiemap_search_slot fs/btrfs/extent_io.c:3688 [inline]
+ extent_fiemap+0x1cf4/0x6040 fs/btrfs/extent_io.c:3940
+ btrfs_fiemap+0x20c/0x260 fs/btrfs/inode.c:8126
+ ioctl_fiemap fs/ioctl.c:219 [inline]
+ do_vfs_ioctl+0x2daa/0x3c20 fs/ioctl.c:810
+ __do_compat_sys_ioctl fs/ioctl.c:962 [inline]
+ __se_compat_sys_ioctl+0x68c/0xfa0 fs/ioctl.c:910
+ __ia32_compat_sys_ioctl+0x8f/0xd0 fs/ioctl.c:910
+ do_syscall_32_irqs_on arch/x86/entry/common.c:112 [inline]
+ __do_fast_syscall_32+0xa2/0x100 arch/x86/entry/common.c:178
+ do_fast_syscall_32+0x33/0x70 arch/x86/entry/common.c:203
+ do_SYSENTER_32+0x1b/0x20 arch/x86/entry/common.c:246
+ entry_SYSENTER_compat_after_hwframe+0x70/0x82
+
+CPU: 0 PID: 6991 Comm: syz-executor.0 Not tainted 6.1.0-rc7-syzkaller-63931-g49a9a20768f5 #0
+Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 10/26/2022
+=====================================================
+
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+syzbot will keep track of this issue. See:
+https://goo.gl/tpsmEJ#status for how to communicate with syzbot.

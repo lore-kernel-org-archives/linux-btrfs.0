@@ -2,505 +2,198 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87BB6C64EC4
-	for <linux-btrfs@archiver.kernel.org>; Mon,  6 Mar 2023 23:59:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FF03C64EC4
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Mar 2023 01:45:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229680AbjCFX7L (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 6 Mar 2023 18:59:11 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39700 "EHLO
+        id S229771AbjCGBpQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 6 Mar 2023 20:45:16 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45570 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229609AbjCFX7J (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2023 18:59:09 -0500
-Received: from out2-smtp.messagingengine.com (out2-smtp.messagingengine.com [66.111.4.26])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE74D14497
-        for <linux-btrfs@vger.kernel.org>; Mon,  6 Mar 2023 15:59:06 -0800 (PST)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-        by mailout.nyi.internal (Postfix) with ESMTP id 34E815C0106;
-        Mon,  6 Mar 2023 18:59:06 -0500 (EST)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute5.internal (MEProxy); Mon, 06 Mar 2023 18:59:06 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-        :content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm1; t=1678147146; x=1678233546; bh=fG
-        1nr4lo+6IJGARZp0+MtBNQ7VkGTbsZZbmHfJ3mjsE=; b=i/4JoRkI1oYTFJRbfY
-        TsBCkvkyekMv2Yg/1AWgT8NuypmWvtXUli8sLSftERo9uz2RYeETOFIIOe+HqacO
-        kGeeF69Sk121XauKYo2saqF4TPSTzAxuluUWr7CqGv21uiBheOfB8vC2VjQHXlyp
-        KCWi4ZsG7bnZbPdTP236822PBMqWz2wyD4ES1v1Rq6ETwNVG/YnTON/P0dAtJdaj
-        quqSkNsjRZ6HqRhHO2nrf0ow1ruf6fdYxe2fytdCKwsIeZci0T8F7/X0QE7Hl/PG
-        S5IrSSuoq3Pbu6XKHbh8F8775hGI/2HtEAjEh+UHaju/wW2t+DE1PZQo7wUatLZV
-        ryzw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm1; t=1678147146; x=1678233546; bh=fG1nr4lo+6IJG
-        ARZp0+MtBNQ7VkGTbsZZbmHfJ3mjsE=; b=L4zlAMOsjpTta9fJVCb8xM71H68+k
-        KSba7PtCjorbakfeBOuLGYPFk27TkLOZqJTOTn2BQv87Wmdm6ODaP9AcnqCB9a6o
-        4DwkmJW2Ilk0jQUy80x263/YppGFdzfYiFSZw/U8dKsQTVB0Q+tFmiumYX5NEa4V
-        xN5g/AiJ5IuqtEfkYKz4xvSSbBZkjF09F5tTa/Mc3UGflKSi5KdpQdSAaJZMIcMO
-        9S2NLdk1lIvyScu+cnPCVWjStZDObG3NKdJb8fM3/q58HkMIKUcD53WAClYjysux
-        CbbZ/+OnEuw0J9/G3r5EnFK50jVnqSnhSicT1fPx91uxq5GfXVAOIzFXg==
-X-ME-Sender: <xms:SX4GZHrjBcHHiYnK4Slekdztp9MHRZhJKtc0N-6_gZUIYzeynszPcA>
-    <xme:SX4GZBqTT0KYT0UTeEFtFKxzpWCcwPTUQJuwENz0ZLARZDSuFSemb12GBCbVcsFuY
-    s9zyPYpK3zP4iwvqwM>
-X-ME-Received: <xmr:SX4GZENWY9k46L_vJjOZD0-LxMjBukMQDZH-h1HvQOeTWm_pH3t3K0Xo>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrvddtledgudeiucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepfffhvfevuffkfhggtggujgesthdtredttddtvdenucfhrhhomhepuehorhhi
-    shcuuehurhhkohhvuceosghorhhishessghurhdrihhoqeenucggtffrrghtthgvrhhnpe
-    elvedtheffvdefleeffffhveetvdduveevledugfdvheehtdduudegieduffeifeenucff
-    ohhmrghinheprhgvughhrghtrdgtohhmpdhkvghrnhgvlhdrohhrghdpphgrshhtvggsih
-    hnrdgtohhmnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhho
-    mhepsghorhhishessghurhdrihho
-X-ME-Proxy: <xmx:SX4GZK5Yc7Ompa2dE47JXhnFohP2YagPquD1tCrxFUvNlobF7kBKXg>
-    <xmx:SX4GZG7adOqPVvwEPALL9xhDAJP4aR9ciV7mtVG51C7AAaoq5hMu7g>
-    <xmx:SX4GZChxThJYSCHoECaE3kti_8_m_vqAulroQYGRKPOlSEkbYBWsag>
-    <xmx:Sn4GZMSLb8TLpF7Pz34mJuQf_MJJE6xA-rxBC-t989H8aEfn2lMnLQ>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 6 Mar 2023 18:59:05 -0500 (EST)
-Date:   Mon, 6 Mar 2023 15:59:04 -0800
-From:   Boris Burkov <boris@bur.io>
-To:     Wang Yugui <wangyugui@e16-tech.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH v2 2/2] btrfs: fix dio continue after short write due to
- buffer page fault
-Message-ID: <20230306235904.GA5300@zen>
-References: <cover.1677026757.git.boris@bur.io>
- <b064d09d94fb2a15ad72427962df400e37788d0c.1677026757.git.boris@bur.io>
- <20230307070720.63BA.409509F4@e16-tech.com>
+        with ESMTP id S229483AbjCGBpO (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Mar 2023 20:45:14 -0500
+Received: from mx0a-00069f02.pphosted.com (mx0a-00069f02.pphosted.com [205.220.165.32])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 290396923E;
+        Mon,  6 Mar 2023 17:44:52 -0800 (PST)
+Received: from pps.filterd (m0246617.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 326Nwrcl024446;
+        Tue, 7 Mar 2023 01:44:47 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=message-id : date :
+ subject : to : cc : references : from : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=corp-2022-7-12;
+ bh=uP4gtgwgItBGunbtu3MW+rVlc7HejPFHSqhSi2Q9iGA=;
+ b=mBoMM6LBRyeULgBYEjIkaCDRdHHyduhdNKs2nMfPiSKz7qSZtQebOx0/XeYWzPDMyKaM
+ P7JQyP9Rcy/qGRIWps1GEPETUXMJexOc7jtRO1lYYFRd8R36SAfu4ZOoeKs4+7u3zC17
+ RsGgMNzkX6rVrZxvfZWSE1SajM6BBbf5ElIcAjRbY+uQb5OEKtdCy2zQIjBbSXe/8aqj
+ FYNDaBuXLT3Z+k6S9rjtF+4YawBB/khLpQxytmpv/U/PKf+YzMgRTBJSCFFryBjB7Hph
+ Gwi0Wj26QeFjSe/c8Qwvc22Q0lgtiyU67RcBr7O4A7dYl9s/pB3Kaqs0yuPF/5r7+zsp FA== 
+Received: from iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (iadpaimrmta02.appoci.oracle.com [147.154.18.20])
+        by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 3p416wmee9-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 07 Mar 2023 01:44:46 +0000
+Received: from pps.filterd (iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com [127.0.0.1])
+        by iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (8.17.1.5/8.17.1.5) with ESMTP id 326NZiA0029277;
+        Tue, 7 Mar 2023 01:44:45 GMT
+Received: from nam11-co1-obe.outbound.protection.outlook.com (mail-co1nam11lp2172.outbound.protection.outlook.com [104.47.56.172])
+        by iadpaimrmta02.imrmtpd1.prodappiadaev1.oraclevcn.com (PPS) with ESMTPS id 3p4u1eb8ky-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 07 Mar 2023 01:44:45 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=e0HP4mXx8wekR/y8YfNgybtFHSeH/8/U5xrjinWL8mCxCRE2tzthJtJQQ84k8tcVgF7pPE27YBhJDVEYGoUOyAI/sqgTCRBfPxLvO3c2MeRTFuDBKmx2ROIm+NyP1rAoaZHJYkXPZk+GwTFvJNHfVLnu8wBEfbaSWylR0Xd8ycH/ipr58LAXIHfc7XdX5mrKHeFNwkL0uhba+wnOnP/aUaI5BxEtc2/Bn0q2Snx13ylA8p9536mb0SXZQwxfdu+5YFLUjfk8BG04jK/543cZH7uYXoD/nst84K2Bf1TlB3eyamp2Zwfc+xNjRGdex2NPCh+cbo+xKShbGFtU6xhBBQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=uP4gtgwgItBGunbtu3MW+rVlc7HejPFHSqhSi2Q9iGA=;
+ b=PUBP0nQc8UzN1sF2L/FUwbdhQnaWfE+crPe8kKXCGZ5bOP05v9hn1/eXVNbIvCa6ip85cFFLonCzQIGYasaGuk0AuMh8l7DA/ON80MUc8PPZKm1r7lVWGv7X0JAHhvE0ZEzXeufCewMpm45o9uWytdhHoOsKH9AjL2lzkH60eSggyY1EWcFK5ksMtbEzznwy8n2gpVyubdoZjc+DaCQnDY+NUQSCe1rPBbWPc6o/jTuZVliud7R8C9l0G+Tpt8iId/naHp4OCjjxxb7OQTMaa+GJmv2UAQ8h/2TyWSwVdtC0mgasmMo5ucljUjjYVtCZk+B2MWHbX51AEPprKkG94A==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=uP4gtgwgItBGunbtu3MW+rVlc7HejPFHSqhSi2Q9iGA=;
+ b=zxppqlxGjTQ/tTEgMbDqwvmJn1E0ihO4kOWzvYkCPynu5HrlA48tUk3Luuw82LiUhnh0kIJOWZ0qRoyOchZ43neclDZlXFLok3ozQeiLEzVy1649G1rv36JeRZAtg/jldaNTPmhPz3Sc9R/lOilqccDd/Raw3n8cm2MxeoU+m6s=
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com (2603:10b6:510:148::10)
+ by SJ0PR10MB5567.namprd10.prod.outlook.com (2603:10b6:a03:3dd::22) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6156.27; Tue, 7 Mar
+ 2023 01:44:42 +0000
+Received: from PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::3eb1:c999:6a64:205c]) by PH0PR10MB5706.namprd10.prod.outlook.com
+ ([fe80::3eb1:c999:6a64:205c%4]) with mapi id 15.20.6156.026; Tue, 7 Mar 2023
+ 01:44:42 +0000
+Message-ID: <85aaae82-4a67-f7d8-885b-d2fbeddcc8e7@oracle.com>
+Date:   Tue, 7 Mar 2023 09:44:32 +0800
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.5.0
+Subject: Re: [PATCH v3] common/rc: don't clear superblock for zoned scratch
+ pools
+Content-Language: en-US
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Zorro Lang <zlang@redhat.com>
+Cc:     linux-btrfs@vger.kernel.org, fstests@vger.kernel.org,
+        David Disseldorp <ddiss@suse.de>,
+        Naohiro Aota <naohiro.aota@wdc.com>
+References: <20230302100321.566715-1-johannes.thumshirn@wdc.com>
+From:   Anand Jain <anand.jain@oracle.com>
+In-Reply-To: <20230302100321.566715-1-johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: SI1PR02CA0059.apcprd02.prod.outlook.com
+ (2603:1096:4:1f5::19) To PH0PR10MB5706.namprd10.prod.outlook.com
+ (2603:10b6:510:148::10)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230307070720.63BA.409509F4@e16-tech.com>
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: PH0PR10MB5706:EE_|SJ0PR10MB5567:EE_
+X-MS-Office365-Filtering-Correlation-Id: d2635016-70ea-48fd-9ff9-08db1ead8590
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: /EXM0adUWSgh9Dsr8yN1la+CEvIQVe7m9d3NgiQZ3isj58payuIssP1UBxHjeJqc3fu0NMnVRMRIWj7KS+GRpEJn68sD4GI+4Tv9Da5KMyGp4/MIfwlROWHHe/c1hY7mD+MVCwkjn7TmPO6uEt6TfURMxGyRy6kn1Uw82qqlENDjR8/c1Bu1W6LVmwaEDRijrZ6tS8EV7iPD8un6F5Qlu3NyPRWqwidtJpuAuo/yiSAqGSe5rBQ40iw+4hZg97Om8pGVsGPGXgLLWnlG/0vsPLsRBVCtgbLJ1JCz5eIRnvGTYvsWQb7457v8+ivSTzYIL1W+6QuuQzE2Uv8b9nPiA/T3PK0gsYePC5BltVoAwJFZ1qyTt5ojyrl9Ja28fbMdsqkC7yiAPdJUNUgOroQA5nTcV7L/qzilo/sKQZNsnl+QQqc9JQHlGnjN9gxOzPRR/PUNOSHB9zp7fyWaxmwJDCPS+gn1FAO8L4YgZpX0wogZJ25rMFrNg58KqDYm7K5HkoDX6sHnS4SYwRd2yGw5f8ZR0sTnEtf7CNNyRKj5xNUvUWfFG4qqbY145VsSTZimTkK0hXaVrdrLiJ6Gi0OtRhtFXZ79ieH7LHYxy3FD7gYu64e6grnEv6k++gRU3Oir+Yz5NDpGpavhVftbQNikmaiChfAWovKkoOip+FLUYKXJIwItZe7ZRweBu53iu80EaqvXzRn/Ih9NLtaX1L1wqw/V5whgUg3zE6IfTWgRBpc=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB5706.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230025)(136003)(39860400002)(366004)(396003)(376002)(346002)(451199018)(6512007)(6506007)(6486002)(53546011)(6666004)(36756003)(83380400001)(31696002)(86362001)(186003)(38100700002)(2616005)(26005)(41300700001)(66946007)(66476007)(8676002)(4326008)(2906002)(66556008)(8936002)(31686004)(44832011)(5660300002)(478600001)(316002)(110136005)(54906003)(45980500001)(43740500002);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?aVFXL29BR3pEY2cyWk1qeVZOR3FhaFRDOHVnM256RUFFWU96aTkvTlN3SmR4?=
+ =?utf-8?B?SmIwa2s5WndqRzFKUkFGNWxtdGdmck4yam9GanRNVTZnQkhwUXU5ZHZicmd6?=
+ =?utf-8?B?TTh4ZmFSZS91U1N0cXhOVWYvMG8veFJjLy9XZmh6WGdkVlozb3Z1eW81YkxR?=
+ =?utf-8?B?U2ZqcDAyZUp5cmRVWFQ2SkQwRk5pOTBmeC9YazMwUzlDUG4xaGlFdzE1djhq?=
+ =?utf-8?B?L0x1UlpKOFZSVUxCS3pINyt3eWg3UDdwK1FlWkxVenMrTFZSK3l6RXg0YUZm?=
+ =?utf-8?B?YThIamVuZ1AyaFBBQ2J1akZqV2VpNlI0WXl6NnpPS3dJMzBSeGMzS3hCNFI4?=
+ =?utf-8?B?bDlhMzYrU0ZIdzFpQ2s4VDdCQ3BGS1p0Z2hjYWVrVXJzMG9SRFFicklMRC9k?=
+ =?utf-8?B?Mi8yb2hQWTZmZXhlRlkwQkdRZm0rWFNEeWtuQ2tOay9sWk9zUy93RzQzeFBv?=
+ =?utf-8?B?T2xTTTRnSGdRSVdjMmpXckVwL082ZmlUUXBxdEZyZTd4L1MvZ3VhTHpVZ2Ny?=
+ =?utf-8?B?cHh2blc5a3FzV0tjcWFaa0pZTDJvaGlhYi9GelJHUms1RkdBSUt6K2h0by9m?=
+ =?utf-8?B?QWJheCtvVzI1Sm5pQnZZakY0UUgrNkdHSlFxa0xKZFRnWTFUQUpzczdGOVdz?=
+ =?utf-8?B?WFBaTnZoRjkzcEF0NlJRNVVIMnpoY1lEYTVhMHBjVkJZaVVKZUxFM090UEZU?=
+ =?utf-8?B?UXhKNFZlbGJMSyt4QklKSkpvUllsaWJDRXh6OTk2UzBwY05zVGlMR0dZYm9B?=
+ =?utf-8?B?Q1Jnblk4ZlAwTTc0RlNaTm1GcGRsOXA5S0ZRbktXa0ZucjNCWUhEMWdhMThN?=
+ =?utf-8?B?U3g1dnZVdzA0dmxwcGtNTkxJakpEWW0xVlF4QSttVjY3Mm12aDhLSXhxYkhR?=
+ =?utf-8?B?SjhXU09sdkx1WXROZ3lYOWVLWG1HRDg0cDlpZWprZytyN0twUnRnSFJsSFlM?=
+ =?utf-8?B?NVZIc2xTaUNSM1ArMGROdlNrMURTNmNFU1RFYm82Y3lhNEgvZUl4c2hNTDha?=
+ =?utf-8?B?bHRzMHQxYW0xMzhvQ0ZXNmlWSDIzYlZsOWFxd0x3MERhV2tXbXZtR016cmF2?=
+ =?utf-8?B?SXljTE15SWlmYUZ2bVM4SThoZTBVVDJSc3B1cHRDeG1lL0VpYUgxWWpBTnQy?=
+ =?utf-8?B?eHFFOGR3UVgvbEM1VzQ0K3hMUEpIeEh0RUZWdUd5NTBraVQ3R0ZudTJiMjNl?=
+ =?utf-8?B?TWdQT3Q1N3dRQ1ZtREJGQlZ6Q0MwMHZTZFBkQm1EWlVNUC8vNWhJNjZuMHgv?=
+ =?utf-8?B?UHk5djlCRm1VcFF4THBYbTdxdjZBMVZSUjNFSitJT3ZraU9rZmZFN0Zkc0ZF?=
+ =?utf-8?B?RWpKUFAzZnlFUEtweno1Q2s5eEFoM0lpL3poaGU0bEI4cmdPNzVJc2J6ZGdM?=
+ =?utf-8?B?R0ZuWm1UWkhyOHF6c3lJUEI5cCtyVmxvZ2l2amxjc0hDMm9Idk9ObnU1a2th?=
+ =?utf-8?B?QThzUmxCNG9ka3BsSDlWSDdyZDZHQ09mTVhpV0pEdWxCRVNBeXFjNGxtYlpT?=
+ =?utf-8?B?ZUJnUkl6S3RIZ2pEbTI2Nnd2SWxXa09oTjV1OTlJamxib3J0WDlRM1JPZmRn?=
+ =?utf-8?B?UjMydENXWjNjaDR2Y3hSOFZycnVtMExTYlZBU216NFJ1cXk2OUVLcW1LOFhQ?=
+ =?utf-8?B?V09UTjkwQ0NpVXpEN2xXY3ZnamRBNXZXVjFSTFFYZ0ZISFdBdXRHa1dVd2No?=
+ =?utf-8?B?WUJUQ2RHZjJqNmlpcWlQV3Vxc2VUbmFhVjdMRjg1Vk5NNGw4RENJZEFDN0tC?=
+ =?utf-8?B?eG10ZDdJWTNpYnVodkJxc0owWXloQ2FPQ0VrMXBCQjIrbS85ekdxR21Zb1dD?=
+ =?utf-8?B?UnJNR2w4VDUrbHVEaWhBWXQ2bFlPODBxMzhnSVhYMWliL1ROa01vWHAzRW1C?=
+ =?utf-8?B?TFVQd3BQcHlrZlJCbS8zYkxwRGh6T2ZETmhONkxNd2VJTUd0aC9jbWJZd3lG?=
+ =?utf-8?B?T0NVcDdHUEIxSGpKVVZzNFV4K0Z0dUViS0sweGxQSGFUWFFmZEkrcE5VZE43?=
+ =?utf-8?B?L2RMcy9taTlrZzlpVDRZdFc3OFhIMGhLaVBRc2R0L2hFUDJ1UjhKRkdiQVR0?=
+ =?utf-8?B?NlR6d1VGTWJLZE15UVVLajNkZmNOWXNaVnk0aytFVTlITW92MjZiU1BjUW92?=
+ =?utf-8?Q?verU71B8FWm8q+mRri/ii38TP?=
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0: Sgj5gd6nSl0nvgtGSjzE0PMhX+TNk1403ukyh8Quy1HRXWiEuKxT0wHxLvnoCwSJG47De7Xlstig29IfV716XDniF6Q++s9XaOX4I8fKIv8O35lNUlcNfOue8+qisxl/GCG3+IZjMPOvYUMJl5aj9moujJZ6k85sBVfMbbhYWdMu5hluJiQYWswRSG6ez2PLjDMo9g19kegk+mMr6wc1t7f2XmmAGcLBdvhKDUv2ru+We20MYbqcbrKeEaCmYATA0WQSDsOmzfMjVHwO4aL4GW2qZ9lljXXM3bMcqNe0JYYQJitLfMd+439lL1KlCmn1WWt+bomhyfOpvquKG5sjae3YTsEmItskBSAQqsOYJ1pqDVGqlehTfa3Jam9a9mSR2qryjOMG5juIm7HkxOLyKUiiOr4G4mLdiZg0y/On/qfq1Tl6IOSbQ3tOjqsRMXJ/P9nboX/lqn3h4KE7HrOAflnxmY+8pmRtaDfjzFg46oDvY7Fp8S/UB9yiPX6FjoKK/9o7kNbpDkyFpgQ/AEmHmEelOxY85Vi4BycsY2HTIXNgli9GEaniEIHN0n5xFI2FWuL//ENbJburKWOIlEvihzGBc8EgcMKRquUEy800TLxaFCsXq6Uede+yPzx9AtgFwuijOsqg+sK+jPZSkNs2+nFNhQ8DkIzmNGK0E1d+85MNsFJZnHQyAyqk0WQvwTUPMnkLqQ+ZSPmKn58JZAi0Phwa9qSDcozQlyoW6tHaWJt++w56JvNb/qOfeqz2D2PLRanKjqwLjv2mBYDiqNMHJSDt1IHqZ4eiYEkSjvNSJABu9Uo/11fcYKFaFr4olf6akoXfF/jZ4Vxz/2GbrbPY3A==
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: d2635016-70ea-48fd-9ff9-08db1ead8590
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB5706.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 07 Mar 2023 01:44:42.7092
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: Bm5QYWsWaiUIt9zxR3ybiE1cF1XgPSp5wHOjQXWHwwThnSxSmFYCigzOwFILcQJI/kFxO2mZbaxyCbBPxuRn2w==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SJ0PR10MB5567
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.219,Aquarius:18.0.942,Hydra:6.0.573,FMLib:17.11.170.22
+ definitions=2023-03-06_14,2023-03-06_01,2023-02-09_01
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 mlxscore=0 phishscore=0 bulkscore=0
+ adultscore=0 suspectscore=0 spamscore=0 mlxlogscore=999 malwarescore=0
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.12.0-2212070000
+ definitions=main-2303070014
+X-Proofpoint-GUID: a6LgIaKRv0iaBf-be7go6uLCcrqqEAeb
+X-Proofpoint-ORIG-GUID: a6LgIaKRv0iaBf-be7go6uLCcrqqEAeb
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 07, 2023 at 07:07:21AM +0800, Wang Yugui wrote:
-> Hi,
+On 02/03/2023 18:03, Johannes Thumshirn wrote:
+> _require_scratch_dev_pool() zeros the first 100 sectors of each device to
+> clear eventual remains of older filesystems.
 > 
-> fstests generic/276 trigger a deadloop with the patch in misc-next.
+> On zoned devices this won't work as a plain dd will end up creating
+> unaligned write errors failing all subsequent actions on the device.
 > 
-> sysrq(w) output:
+> For zoned devices it is enough to simply reset the first two zones of the
+> device to achieve the same result.
 > 
-> [33812.455122] sysrq: Show Blocked State
+> Reviewed-by: David Disseldorp <ddiss@suse.de>
+> Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>   common/rc | 12 +++++++++---
+>   1 file changed, 9 insertions(+), 3 deletions(-)
 > 
-> [33812.458831] task:kworker/u20:31  state:D stack:0     pid:1457865 ppid:2      flags:0x00004000
-> [33812.467371] Workqueue: btrfs-flush_delalloc btrfs_work_helper [btrfs]
-> [33812.473916] Call Trace:
-> [33812.476365]  <TASK>
-> [33812.478469]  __schedule+0x2cb/0x880
-> [33812.481965]  schedule+0x50/0xc0
-> [33812.485123]  btrfs_start_ordered_extent+0xf7/0x140 [btrfs]
-> [33812.490668]  ? add_wait_queue+0xa0/0xa0
-> [33812.494508]  btrfs_run_ordered_extent_work+0x1a/0x30 [btrfs]
-> [33812.500219]  btrfs_work_helper+0x27f/0x360 [btrfs]
-> [33812.505073]  process_one_work+0x1b0/0x390
-> [33812.509101]  worker_thread+0x3c/0x370
-> [33812.512779]  ? process_one_work+0x390/0x390
-> [33812.516979]  kthread+0xe3/0x110
-> [33812.520138]  ? kthread_complete_and_exit+0x20/0x20
-> [33812.524945]  ret_from_fork+0x1f/0x30
-> [33812.528542]  </TASK>
-> 
-> [33812.530751] task:umount          state:D stack:0     pid:1465218 ppid:1464868 flags:0x00004002
-> [33812.539372] Call Trace:
-> [33812.541823]  <TASK>
-> [33812.543938]  __schedule+0x2cb/0x880
-> [33812.547441]  ? wait_for_completion+0x83/0x160
-> [33812.551807]  schedule+0x50/0xc0
-> [33812.554964]  schedule_timeout+0x269/0x310
-> [33812.559005]  ? wait_for_completion+0x83/0x160
-> [33812.563370]  wait_for_completion+0xb5/0x160
-> [33812.567561]  btrfs_wait_ordered_extents+0x346/0x450 [btrfs]
-> [33812.573197]  btrfs_wait_ordered_roots+0x163/0x250 [btrfs]
-> [33812.578645]  btrfs_sync_fs+0x3e/0x1c0 [btrfs]
-> [33812.583052]  sync_filesystem+0x74/0x90
-> [33812.586830]  generic_shutdown_super+0x22/0x120
-> [33812.591281]  kill_anon_super+0x14/0x30
-> [33812.595049]  btrfs_kill_super+0x12/0x20 [btrfs]
-> [33812.599629]  deactivate_locked_super+0x2c/0x70
-> [33812.604079]  cleanup_mnt+0xb8/0x140
-> [33812.607585]  task_work_run+0x6a/0xb0
-> [33812.611168]  exit_to_user_mode_prepare+0x1b9/0x1c0
-> [33812.615977]  syscall_exit_to_user_mode+0x12/0x30
-> [33812.620617]  do_syscall_64+0x67/0x80
-> [33812.624198]  ? syscall_exit_to_user_mode+0x12/0x30
-> [33812.629007]  ? do_syscall_64+0x67/0x80
-> [33812.632771]  ? syscall_exit_to_user_mode+0x12/0x30
-> [33812.637579]  ? do_syscall_64+0x67/0x80
-> [33812.641346]  ? syscall_exit_to_user_mode+0x12/0x30
-> [33812.646144]  ? do_syscall_64+0x67/0x80
-> [33812.649907]  ? exc_page_fault+0x64/0x140
-> [33812.653847]  entry_SYSCALL_64_after_hwframe+0x63/0xcd
-> [33812.658932] RIP: 0033:0x7f2eb454e56b
-> [33812.662510] RSP: 002b:00007ffdf683ac78 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
-> [33812.670088] RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007f2eb454e56b
-> [33812.677242] RDX: 0000000000000000 RSI: 0000000000000000 RDI: 0000563731e5b5a0
-> [33812.684394] RBP: 0000563731e5b370 R08: 0000000000000000 R09: 00007ffdf6839a00
-> [33812.691536] R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-> [33812.698678] R13: 0000563731e5b5a0 R14: 0000563731e5b480 R15: 0000563731e5b370
-> [33812.705819]  </TASK>
-> 
-> 
-> Best Regards
-> Wang Yugui (wangyugui@e16-tech.com)
-> 2023/03/07
+> diff --git a/common/rc b/common/rc
+> index 654730b21ead..dd0d17959db3 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -3459,9 +3459,15 @@ _require_scratch_dev_pool()
+>   		            exit 1
+>   		        fi
+>   		fi
+> -		# to help better debug when something fails, we remove
+> -		# traces of previous btrfs FS on the dev.
+> -		dd if=/dev/zero of=$i bs=4096 count=100 > /dev/null 2>&1
+> +		# To help better debug when something fails, we remove
+> +		# traces of previous btrfs FS on the dev. For zoned devices we
+> +		# can't use dd as it'll lead to unaligned writes so simply
+> +		# reset the first two zones.
+> +		if [ "`_zone_type "$i"`" = "none" ]; then
+> +			dd if=/dev/zero of=$i bs=4096 count=100 > /dev/null 2>&1
+> +		else
+> +			$BLKZONE_PROG reset -c 2 $i
+> +		fi
+>   	done
+>   }
+>   
 
-Thanks for the report. We have seen a similar regression on a similar
-test (generic/250) on most test machines except unfortunately mine.
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-I have an idea for a fix, but it's hard to hack on it without a repro :(
 
-Hopefully should have a fix today or tomorrow.
-
-Boris
-
-> 
-> > If an application is doing direct io to a btrfs file and experiences a
-> > page fault reading from the write buffer, iomap will issue a partial
-> > bio, and allow the fs to keep going. However, there was a subtle bug in
-> > this codepath in the btrfs dio iomap implementation that led to the
-> > partial write ending up as a gap in the file's extents and to be read
-> > back as zeros.
-> > 
-> > The sequence of events in a partial write, lightly summarized and
-> > trimmed down for brevity is as follows:
-> > 
-> > ====WRITING TASK====
-> > btrfs_direct_write
-> > __iomap_dio_write
-> > iomap_iter
-> >   btrfs_dio_iomap_begin # create full ordered extent
-> > iomap_dio_bio_iter
-> >   bio_iov_iter_get_pages # page fault; partial read
-> >   submit_bio # partial bio
-> > iomap_iter
-> >   btrfs_dio_iomap_end
-> >     btrfs_mark_ordered_io_finished # sets BTRFS_ORDERED_IOERR;
-> >                                    # submit to finish_ordered_fn wq
-> > fault_in_iov_iter_readable # btrfs_direct_write detects partial write
-> > __iomap_dio_write
-> > iomap_iter
-> >   btrfs_dio_iomap_begin # create second partial ordered extent
-> > iomap_dio_bio_iter
-> >   bio_iov_iter_get_pages # read all of remainder
-> >   submit_bio # partial bio with all of remainder
-> > iomap_iter
-> >   btrfs_dio_iomap_end # nothing exciting to do with ordered io
-> > 
-> > ====DIO ENDIO====
-> > ==FIRST PARTIAL BIO==
-> > btrfs_dio_end_io
-> >   btrfs_mark_ordered_io_finished # bytes_left > 0
-> >                                  # don't submit to finish_ordered_fn wq
-> > ==SECOND PARTIAL BIO==
-> > btrfs_dio_end_io
-> >   btrfs_mark_ordered_io_finished # bytes_left == 0
-> >                                  # submit to finish_ordered_fn wq
-> > 
-> > ====BTRFS FINISH ORDERED WQ====
-> > ==FIRST PARTIAL BIO==
-> > btrfs_finish_ordered_io # called by dio_iomap_end_io, sees
-> >                         # BTRFS_ORDERED_IOERR, just drops the
-> >                         # ordered_extent
-> > ==SECOND PARTIAL BIO==
-> > btrfs_finish_ordered_io # called by btrfs_dio_end_io, writes out file
-> >                         # extents, csums, etc...
-> > 
-> > The essence of the problem is that while btrfs_direct_write and iomap
-> > properly interact to submit all the correct bios, there is insufficient
-> > logic in the btrfs dio functions (btrfs_dio_iomap_begin,
-> > btrfs_dio_submit_io, btrfs_dio_end_io, and btrfs_dio_iomap_end) to
-> > ensure that every bio is at least a part of a completed ordered_extent.
-> > And it is completing an ordered_extent that results in crucial
-> > functionality like writing out a file extent for the range.
-> > 
-> > More specifically, btrfs_dio_end_io treats the ordered extent as
-> > unfinished but btrfs_dio_iomap_end sets BTRFS_ORDERED_IOERR on it.
-> > Thus, the finish io work doesn't result in file extents, csums, etc...
-> > In the aftermath, such a file behaves as though it has a hole in it,
-> > instead of the purportedly written data.
-> > 
-> > We considered a few options for fixing the bug (apologies for any
-> > incorrect summary of a proposal which I didn't implement and fully
-> > understand):
-> > 1. treat the partial bio as if we had truncated the file, which would
-> > result in properly finishing it.
-> > 2. split the ordered extent when submitting a partial bio.
-> > 3. cache the ordered extent across calls to __iomap_dio_rw in
-> > iter->private, so that we could reuse it and correctly apply several
-> > bios to it.
-> > 
-> > I had trouble with 1, and it felt the most like a hack, so I tried 2
-> > and 3. Since 3 has the benefit of also not creating an extra file
-> > extent, and avoids an ordered extent lookup during bio submission, it
-> > felt like the best option.
-> > 
-> > A quick summary of the changes necessary to implement this cached
-> > ordered_extent behavior:
-> > - btrfs_direct_write keeps track of an ordered_extent for the duration
-> > of a call, possible across several __iomap_dio_rws.
-> > - zero the btrfs_dio_data before using it, since its fields constitute
-> > state now.
-> > - btrfs_dio_write uses dio_data to pass this ordered extent into and out
-> > of __iomap_dio_rw.
-> > - when the write is done, put the ordered_extent.
-> > - if the short write happens to be length 0, then we _don't_ get an
-> > extra bio, so we do need to cancel the ordered_extent like we used
-> > to (and ditch the cached ordered extent)
-> > - in btrfs_dio_iomap_begin, if the cached ordered extent is present,
-> > skip all the work of creating it, just look up the extent mapping and
-> > jump to setting up the iomap. (This part could likely be more
-> > elegant..)
-> > 
-> > Thanks to Josef, Christoph, and Filipe with their help figuring out the
-> > bug and the fix.
-> > 
-> > Fixes: 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
-> > Link: https://bugzilla.redhat.com/show_bug.cgi?id=2169947
-> > Link: https://lore.kernel.org/linux-btrfs/aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com/
-> > Link: https://pastebin.com/3SDaH8C6
-> > Signed-off-by: Boris Burkov <boris@bur.io>
-> > ---
-> >  fs/btrfs/btrfs_inode.h |  1 +
-> >  fs/btrfs/file.c        | 11 ++++++-
-> >  fs/btrfs/inode.c       | 75 +++++++++++++++++++++++++++++++-----------
-> >  3 files changed, 67 insertions(+), 20 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> > index 49a92aa65de1..87020aa58121 100644
-> > --- a/fs/btrfs/btrfs_inode.h
-> > +++ b/fs/btrfs/btrfs_inode.h
-> > @@ -516,6 +516,7 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
-> >  ssize_t btrfs_dio_read(struct kiocb *iocb, struct iov_iter *iter,
-> >  		       size_t done_before);
-> >  struct iomap_dio *btrfs_dio_write(struct kiocb *iocb, struct iov_iter *iter,
-> > +				  struct btrfs_ordered_extent **ordered_extent,
-> >  				  size_t done_before);
-> >  
-> >  extern const struct dentry_operations btrfs_dentry_operations;
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index 5cc5a1faaef5..ec5c5355906b 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -1465,6 +1465,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
-> >  	ssize_t err;
-> >  	unsigned int ilock_flags = 0;
-> >  	struct iomap_dio *dio;
-> > +	struct btrfs_ordered_extent *ordered_extent = NULL;
-> >  
-> >  	if (iocb->ki_flags & IOCB_NOWAIT)
-> >  		ilock_flags |= BTRFS_ILOCK_TRY;
-> > @@ -1526,7 +1527,7 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
-> >  	 * got -EFAULT, faulting in the pages before the retry.
-> >  	 */
-> >  	from->nofault = true;
-> > -	dio = btrfs_dio_write(iocb, from, written);
-> > +	dio = btrfs_dio_write(iocb, from, &ordered_extent, written);
-> >  	from->nofault = false;
-> >  
-> >  	/*
-> > @@ -1569,6 +1570,14 @@ static ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
-> >  			goto relock;
-> >  		}
-> >  	}
-> > +	/*
-> > +	 * We can't loop back to btrfs_dio_write, so we can drop the cached
-> > +	 * ordered extent. Typically btrfs_dio_iomap_end will run and put the
-> > +	 * ordered_extent, but this is needed to clean up in case of an error
-> > +	 * path breaking out of iomap_iter before the final iomap_end call.
-> > +	 */
-> > +	if (ordered_extent)
-> > +		btrfs_put_ordered_extent(ordered_extent);
-> >  
-> >  	/*
-> >  	 * If 'err' is -ENOTBLK or we have not written all data, then it means
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 44e9acc77a74..f1a59c5f3140 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -81,6 +81,7 @@ struct btrfs_dio_data {
-> >  	struct extent_changeset *data_reserved;
-> >  	bool data_space_reserved;
-> >  	bool nocow_done;
-> > +	struct btrfs_ordered_extent *ordered;
-> >  };
-> >  
-> >  struct btrfs_dio_private {
-> > @@ -6976,6 +6977,7 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
-> >  }
-> >  
-> >  static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
-> > +						  struct btrfs_dio_data *dio_data,
-> >  						  const u64 start,
-> >  						  const u64 len,
-> >  						  const u64 orig_start,
-> > @@ -6986,7 +6988,7 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
-> >  						  const int type)
-> >  {
-> >  	struct extent_map *em = NULL;
-> > -	int ret;
-> > +	struct btrfs_ordered_extent *ordered;
-> >  
-> >  	if (type != BTRFS_ORDERED_NOCOW) {
-> >  		em = create_io_em(inode, start, len, orig_start, block_start,
-> > @@ -6996,18 +6998,21 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
-> >  		if (IS_ERR(em))
-> >  			goto out;
-> >  	}
-> > -	ret = btrfs_add_ordered_extent(inode, start, len, len, block_start,
-> > -				       block_len, 0,
-> > -				       (1 << type) |
-> > -				       (1 << BTRFS_ORDERED_DIRECT),
-> > -				       BTRFS_COMPRESS_NONE);
-> > -	if (ret) {
-> > +	ordered = btrfs_alloc_ordered_extent(inode, start, len, len,
-> > +					     block_start, block_len, 0,
-> > +					     (1 << type) |
-> > +					     (1 << BTRFS_ORDERED_DIRECT),
-> > +					     BTRFS_COMPRESS_NONE);
-> > +	if (IS_ERR(ordered)) {
-> >  		if (em) {
-> >  			free_extent_map(em);
-> >  			btrfs_drop_extent_map_range(inode, start,
-> >  						    start + len - 1, false);
-> >  		}
-> > -		em = ERR_PTR(ret);
-> > +		em = ERR_PTR(PTR_ERR(ordered));
-> > +	} else {
-> > +		ASSERT(!dio_data->ordered);
-> > +		dio_data->ordered = ordered;
-> >  	}
-> >   out:
-> >  
-> > @@ -7015,6 +7020,7 @@ static struct extent_map *btrfs_create_dio_extent(struct btrfs_inode *inode,
-> >  }
-> >  
-> >  static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
-> > +						  struct btrfs_dio_data *dio_data,
-> >  						  u64 start, u64 len)
-> >  {
-> >  	struct btrfs_root *root = inode->root;
-> > @@ -7030,7 +7036,8 @@ static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
-> >  	if (ret)
-> >  		return ERR_PTR(ret);
-> >  
-> > -	em = btrfs_create_dio_extent(inode, start, ins.offset, start,
-> > +	em = btrfs_create_dio_extent(inode, dio_data,
-> > +				     start, ins.offset, start,
-> >  				     ins.objectid, ins.offset, ins.offset,
-> >  				     ins.offset, BTRFS_ORDERED_REGULAR);
-> >  	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
-> > @@ -7375,7 +7382,8 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
-> >  		}
-> >  		space_reserved = true;
-> >  
-> > -		em2 = btrfs_create_dio_extent(BTRFS_I(inode), start, len,
-> > +		em2 = btrfs_create_dio_extent(BTRFS_I(inode), dio_data,
-> > +					      start, len,
-> >  					      orig_start, block_start,
-> >  					      len, orig_block_len,
-> >  					      ram_bytes, type);
-> > @@ -7417,7 +7425,7 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
-> >  			goto out;
-> >  		space_reserved = true;
-> >  
-> > -		em = btrfs_new_extent_direct(BTRFS_I(inode), start, len);
-> > +		em = btrfs_new_extent_direct(BTRFS_I(inode), dio_data, start, len);
-> >  		if (IS_ERR(em)) {
-> >  			ret = PTR_ERR(em);
-> >  			goto out;
-> > @@ -7521,6 +7529,17 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
-> >  		}
-> >  	}
-> >  
-> > +	if (dio_data->ordered) {
-> > +		ASSERT(write);
-> > +		em = btrfs_get_extent(BTRFS_I(inode), NULL, 0,
-> > +				      dio_data->ordered->file_offset,
-> > +				      dio_data->ordered->bytes_left);
-> > +		if (IS_ERR(em)) {
-> > +			ret = PTR_ERR(em);
-> > +			goto err;
-> > +		}
-> > +		goto map_iomap;
-> > +	}
-> >  	memset(dio_data, 0, sizeof(*dio_data));
-> >  
-> >  	/*
-> > @@ -7662,6 +7681,7 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
-> >  	else
-> >  		free_extent_state(cached_state);
-> >  
-> > +map_iomap:
-> >  	/*
-> >  	 * Translate extent map information to iomap.
-> >  	 * We trim the extents (and move the addr) even though iomap code does
-> > @@ -7715,13 +7735,25 @@ static int btrfs_dio_iomap_end(struct inode *inode, loff_t pos, loff_t length,
-> >  	if (submitted < length) {
-> >  		pos += submitted;
-> >  		length -= submitted;
-> > -		if (write)
-> > -			btrfs_mark_ordered_io_finished(BTRFS_I(inode), NULL,
-> > -						       pos, length, false);
-> > -		else
-> > +		if (write) {
-> > +			if (submitted == 0) {
-> > +				btrfs_mark_ordered_io_finished(BTRFS_I(inode),
-> > +							       NULL, pos,
-> > +							       length, false);
-> > +				btrfs_put_ordered_extent(dio_data->ordered);
-> > +				dio_data->ordered = NULL;
-> > +			}
-> > +		} else {
-> >  			unlock_extent(&BTRFS_I(inode)->io_tree, pos,
-> >  				      pos + length - 1, NULL);
-> > +		}
-> >  		ret = -ENOTBLK;
-> > +	} else {
-> > +		/* On the last bio, release our cached ordered_extent */
-> > +		if (write) {
-> > +			btrfs_put_ordered_extent(dio_data->ordered);
-> > +			dio_data->ordered = NULL;
-> > +		}
-> >  	}
-> >  
-> >  	if (write)
-> > @@ -7784,19 +7816,24 @@ static const struct iomap_dio_ops btrfs_dio_ops = {
-> >  
-> >  ssize_t btrfs_dio_read(struct kiocb *iocb, struct iov_iter *iter, size_t done_before)
-> >  {
-> > -	struct btrfs_dio_data data;
-> > +	struct btrfs_dio_data data = { };
-> >  
-> >  	return iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
-> >  			    IOMAP_DIO_PARTIAL, &data, done_before);
-> >  }
-> >  
-> >  struct iomap_dio *btrfs_dio_write(struct kiocb *iocb, struct iov_iter *iter,
-> > +				  struct btrfs_ordered_extent **ordered_extent,
-> >  				  size_t done_before)
-> >  {
-> > -	struct btrfs_dio_data data;
-> > +	struct btrfs_dio_data dio_data = { .ordered = *ordered_extent };
-> > +	struct iomap_dio *dio;
-> >  
-> > -	return __iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
-> > -			    IOMAP_DIO_PARTIAL, &data, done_before);
-> > +	dio =  __iomap_dio_rw(iocb, iter, &btrfs_dio_iomap_ops, &btrfs_dio_ops,
-> > +			      IOMAP_DIO_PARTIAL, &dio_data, done_before);
-> > +	if (!IS_ERR_OR_NULL(dio))
-> > +		*ordered_extent = dio_data.ordered;
-> > +	return dio;
-> >  }
-> >  
-> >  static int btrfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
-> > -- 
-> > 2.38.1
-> 
-> 

@@ -2,100 +2,75 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F7B4C678D4
-	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Mar 2023 14:40:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A24BCC678D5
+	for <linux-btrfs@archiver.kernel.org>; Tue,  7 Mar 2023 14:58:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230486AbjCGOk4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 7 Mar 2023 09:40:56 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47766 "EHLO
+        id S229966AbjCGO6C (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 7 Mar 2023 09:58:02 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60460 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230121AbjCGOid (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2023 09:38:33 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20E67911E3;
-        Tue,  7 Mar 2023 06:34:41 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=J8Wv/S8hZkGarl/vdU2yd/Mb7/z5z/afVPXh/Kxsm98=; b=H2ObeCoc8auj571tf6mE3PvlmW
-        v7uz73zg80LebWXfbeT9jKI8uO4ZQk1c4nZSObeX4GMQXRAW3FIpO72F09zQcUyW9Gu/2P1tdR+93
-        1ESO4LKLuRhumNB1tdml7A9Nnd6uEgRxdBI/hG8RiWADv0eU5nGp1VbWcLp6oTNnvpbxT4mVH3iFp
-        Vu595d8mCCTWXMGmmbZSMKqXizM5d2t1yV7AbxlbetK8PLWqpk1IXX4tDAaPIaXksi91tbkhJDk2o
-        37ihKioXLopdZ7z4w4ynbc2Hxi+aX5ZhXuesV+yV9p0Y8XOV7y5NhsvKVCLkkYlfDjbFgNm+L1+eP
-        SLSenIbA==;
-Received: from [46.183.103.17] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pZYOc-000qBh-D3; Tue, 07 Mar 2023 14:34:31 +0000
+        with ESMTP id S230139AbjCGO4A (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Mar 2023 09:56:00 -0500
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DCA1E90784;
+        Tue,  7 Mar 2023 06:41:10 -0800 (PST)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 5C7AC68B05; Tue,  7 Mar 2023 15:41:06 +0100 (CET)
+Date:   Tue, 7 Mar 2023 15:41:06 +0100
 From:   Christoph Hellwig <hch@lst.de>
-To:     Andrew Morton <akpm@linux-foundation.org>,
-        Matthew Wilcox <willy@infradead.org>,
-        Hugh Dickins <hughd@google.com>
-Cc:     linux-afs@lists.infradead.org, linux-btrfs@vger.kernel.org,
-        linux-ext4@vger.kernel.org, cluster-devel@redhat.com,
-        linux-mm@kvack.org, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-nilfs@vger.kernel.org
-Subject: [PATCH 5/7] shmem: open code the page cache lookup in shmem_get_folio_gfp
-Date:   Tue,  7 Mar 2023 15:34:08 +0100
-Message-Id: <20230307143410.28031-6-hch@lst.de>
-X-Mailer: git-send-email 2.39.1
-In-Reply-To: <20230307143410.28031-1-hch@lst.de>
-References: <20230307143410.28031-1-hch@lst.de>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Christoph Hellwig <hch@lst.de>, Chris Mason <clm@fb.com>,
+        Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Qu Wenruo <wqu@suse.com>, Jens Axboe <axboe@kernel.dk>,
+        "Darrick J. Wong" <djwong@kernel.org>, linux-block@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 03/34] btrfs: add a btrfs_inode pointer to struct
+ btrfs_bio
+Message-ID: <20230307144106.GA19477@lst.de>
+References: <20230121065031.1139353-1-hch@lst.de> <20230121065031.1139353-4-hch@lst.de> <88b2fae1-8d95-2172-7bc4-c5dfc4ff7410@gmx.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <88b2fae1-8d95-2172-7bc4-c5dfc4ff7410@gmx.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use the very low level filemap_get_entry helper to look up the
-entry in the xarray, and then:
+On Tue, Mar 07, 2023 at 09:44:32AM +0800, Qu Wenruo wrote:
+> With my recent restart on scrub rework, this patch makes me wonder, what if 
+> scrub wants to use btrfs_bio, but don't want to pass a valid btrfs_inode 
+> pointer?
 
- - don't bother locking the folio if only doing a userfault notification
- - open code locking the page and checking for truncation in a related
-   code block
+The full inode is only really needed for the data repair code.  But a lot
+of code uses the fs_info, which would have to be added as a separate
+counter.  The other usage is the sync_writers counter, which is a bit
+odd and should probably be keyed off the REQ_SYNC flag instead.
 
-This will allow to eventually remove the FGP_ENTRY flag.
+> E.g. scrub code just wants to read certain mirror of a logical bytenr.
+> This can simplify the handling of RAID56, as for data stripes the repair 
+> path is the same, just try the next mirror(s).
+>
+> Furthermore most of the new btrfs_bio code is handling data reads by 
+> triggering read-repair automatically.
+> This can be unnecessary for scrub.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- mm/shmem.c | 14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+This sounds like you don't want to use the btrfs_bio at all as you
+don't rely on any of the functionality from it.
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 3705437c5757ba..714ff3fb02a938 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -1856,12 +1856,10 @@ static int shmem_get_folio_gfp(struct inode *inode, pgoff_t index,
- 	sbinfo = SHMEM_SB(inode->i_sb);
- 	charge_mm = vma ? vma->vm_mm : NULL;
- 
--	folio = __filemap_get_folio(mapping, index, FGP_ENTRY | FGP_LOCK, 0);
-+	folio = filemap_get_entry(mapping, index);
- 	if (folio && vma && userfaultfd_minor(vma)) {
--		if (!xa_is_value(folio)) {
--			folio_unlock(folio);
-+		if (!xa_is_value(folio))
- 			folio_put(folio);
--		}
- 		*fault_type = handle_userfault(vmf, VM_UFFD_MINOR);
- 		return 0;
- 	}
-@@ -1877,6 +1875,14 @@ static int shmem_get_folio_gfp(struct inode *inode, pgoff_t index,
- 	}
- 
- 	if (folio) {
-+		folio_lock(folio);
-+
-+		/* Has the page been truncated? */
-+		if (unlikely(folio->mapping != mapping)) {
-+			folio_unlock(folio);
-+			folio_put(folio);
-+			goto repeat;
-+		}
- 		if (sgp == SGP_WRITE)
- 			folio_mark_accessed(folio);
- 		if (folio_test_uptodate(folio))
--- 
-2.39.1
+>
+> And since we're here, can we also have btrfs equivalent of on-stack bio?
+> As scrub can benefit a lot from that, as for sector-by-sector read, we want 
+> to avoid repeating allocating/freeing a btrfs_bio just for reading one 
+> sector.
+> (The existing behavior is using on-stack bio with bio_init/bio_uninit 
+> inside scrub_recheck_block())
 
+You can do that right now by declaring a btrfs_bio on-stack and then
+calling bio_init on the embedded bio followed by a btrfs_bio_init on
+the btrfs_bio.  But I don't think doing this will actually be a win
+for the scrub code in terms of speed or code size.

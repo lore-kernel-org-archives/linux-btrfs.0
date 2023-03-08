@@ -2,67 +2,188 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E7A2FC64EC4
-	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Mar 2023 14:33:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 01D36C64EC4
+	for <linux-btrfs@archiver.kernel.org>; Wed,  8 Mar 2023 16:02:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231782AbjCHOdv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 8 Mar 2023 09:33:51 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37176 "EHLO
+        id S232441AbjCHQCU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 8 Mar 2023 11:02:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41868 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232001AbjCHOdp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2023 09:33:45 -0500
-Received: from verein.lst.de (verein.lst.de [213.95.11.211])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 894469AFC5
-        for <linux-btrfs@vger.kernel.org>; Wed,  8 Mar 2023 06:33:34 -0800 (PST)
-Received: by verein.lst.de (Postfix, from userid 2407)
-        id 15A8167373; Wed,  8 Mar 2023 15:33:31 +0100 (CET)
-Date:   Wed, 8 Mar 2023 15:33:30 +0100
-From:   Christoph Hellwig <hch@lst.de>
-To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>
-Cc:     "hch@infradead.org" <hch@infradead.org>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Christoph Hellwig <hch@lst.de>
-Subject: Re: [PATCH v7 04/13] btrfs: add support for inserting raid stripe
- extents
-Message-ID: <20230308143330.GB14929@lst.de>
-References: <94293952cdc120b46edf82672af874b0877e1e83.1677750131.git.johannes.thumshirn@wdc.com> <3e2d5ede-fb00-3aa8-e55e-d088b8df9e60@gmx.com> <b5bfe1a9-51dc-2a94-5ebd-4673b896d5ea@wdc.com> <6eabe69c-3abe-255b-797f-7917cd6a33cd@gmx.com> <7bd4ce91-58e6-f68b-6d69-3f9deff39ff5@wdc.com> <ZACsVI3mfprrj4j6@infradead.org> <bde5197e-7313-5017-ffbf-a528559c38cb@wdc.com> <48acd511-7f69-4c42-44ea-a39973d57c98@gmx.com> <ZAIBQ0hzLTjOIYcr@infradead.org> <e9e7820b-9cf3-8361-cf3c-e4d59baa5b21@wdc.com>
+        with ESMTP id S232251AbjCHQBr (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Mar 2023 11:01:47 -0500
+Received: from box.fidei.email (box.fidei.email [IPv6:2605:2700:0:2:a800:ff:feba:dc44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9AC299BE32
+        for <linux-btrfs@vger.kernel.org>; Wed,  8 Mar 2023 08:00:10 -0800 (PST)
+Received: from authenticated-user (box.fidei.email [71.19.144.250])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits))
+        (No client certificate requested)
+        by box.fidei.email (Postfix) with ESMTPSA id C6DCA80204;
+        Wed,  8 Mar 2023 11:00:09 -0500 (EST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=dorminy.me; s=mail;
+        t=1678291210; bh=N6NT81voNqYw33iHgVwrFl4prjG8yE4MAzq++Yi4RGI=;
+        h=Date:Subject:To:References:From:In-Reply-To:From;
+        b=QgW+ZaEz2dy8m9YX2gYeApa+9e6BfFiBF4sah5Ih9TI6WSx87U2wwnaZwiEeG4iiZ
+         FUo+qN/w6ipUe9qCDZYJ7gmdXwOzU82eH4J3vaK4hkzRzQb6dC1p3KgTcuo6OmwA+P
+         jySF6JLFyWXalMMZz6gKf/F9hJ56Dy4NV9ZCk4NLFH1zNPa+rSC/4Cgje94d34gjbD
+         vmThCI2s+Izu6ah5U41+XwxQ2YCtVb0O0lz86QZ586dj3PLhF4e8aoMmThifHky+El
+         gx/04qhbcGkFGyai0hgcQvhBCdEqkeaAyhXvbaDuCiWrQDVNvHrFif8oK4JoYGayLn
+         DkcK2beutnpdw==
+Message-ID: <252e452a-a9a4-ce5e-0dd8-1b0d1bd11466@dorminy.me>
+Date:   Wed, 8 Mar 2023 11:00:08 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e9e7820b-9cf3-8361-cf3c-e4d59baa5b21@wdc.com>
-User-Agent: Mutt/1.5.17 (2007-11-01)
+Subject: Re: [PATCH v3] btrfs: fix dio continue after short write due to
+ buffer page fault
+Content-Language: en-US
+To:     Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <6733f2fac24b674d9f60dc1093de30513c099629.1678212067.git.boris@bur.io>
+From:   Sweet Tea Dorminy <sweettea-kernel@dorminy.me>
+In-Reply-To: <6733f2fac24b674d9f60dc1093de30513c099629.1678212067.git.boris@bur.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 08, 2023 at 09:11:54AM +0000, Johannes Thumshirn wrote:
-> @@ -393,10 +378,12 @@ static void btrfs_orig_write_end_io(struct bio *bio)
->                 stripe->physical = bio->bi_iter.bi_sector << SECTOR_SHIFT;
->  
->         if (btrfs_need_stripe_tree_update(bioc->fs_info, bioc->map_type)) {
-> +               struct btrfs_ordered_extent *oe;
-> +
-> +               oe = btrfs_lookup_ordered_extent(bbio->inode, bbio->file_offset);
-> +               btrfs_get_bioc(bioc);
-> +               oe->bioc = bioc;
-> +               btrfs_put_ordered_extent(oe);
 
 
-> +       } else if (ordered_extent->bioc) {
-> +               ret = btrfs_add_ordered_stripe(ordered_extent->bioc);
-> +               btrfs_put_bioc(ordered_extent->bioc);
-> +               if (ret)
-> +                       goto out;
+On 3/7/23 15:49, Boris Burkov wrote:
+> If an application is doing direct io to a btrfs file and experiences a
+> page fault reading from the write buffer, iomap will issue a partial
+> bio, and allow the fs to keep going. However, there was a subtle bug in
+> this code path in the btrfs dio iomap implementation that led to the
+> partial write ending up as a gap in the file's extents and to be read
+> back as zeros.
+> 
+> The sequence of events in a partial write, lightly summarized and
+> trimmed down for brevity is as follows:
+> 
+>    ====WRITING TASK====
+>    btrfs_direct_write
+>    __iomap_dio_write
+>    iomap_iter
+>      btrfs_dio_iomap_begin # create full ordered extent
+>    iomap_dio_bio_iter
+>      bio_iov_iter_get_pages # page fault; partial read
+>      submit_bio # partial bio
+>    iomap_iter
+>      btrfs_dio_iomap_end
+>        btrfs_mark_ordered_io_finished # sets BTRFS_ORDERED_IOERR;
+> 				     # submit to finish_ordered_fn wq
+>    fault_in_iov_iter_readable # btrfs_direct_write detects partial write
+>    __iomap_dio_write
+>    iomap_iter
+>      btrfs_dio_iomap_begin # create second partial ordered extent
+>    iomap_dio_bio_iter
+>      bio_iov_iter_get_pages # read all of remainder
+>      submit_bio # partial bio with all of remainder
+>    iomap_iter
+>      btrfs_dio_iomap_end # nothing exciting to do with ordered io
+> 
+>    ====DIO ENDIO====
+>    ==FIRST PARTIAL BIO==
+>    btrfs_dio_end_io
+>      btrfs_mark_ordered_io_finished # bytes_left > 0
+> 				   # don't submit to finish_ordered_fn wq
+>    ==SECOND PARTIAL BIO==
+>    btrfs_dio_end_io
+>      btrfs_mark_ordered_io_finished # bytes_left == 0
+> 				   # submit to finish_ordered_fn wq
+> 
+>    ====BTRFS FINISH ORDERED WQ====
+>    ==FIRST PARTIAL BIO==
+>    btrfs_finish_ordered_io # called by dio_iomap_end_io, sees
+> 			  # BTRFS_ORDERED_IOERR, just drops the
+> 			  # ordered_extent
+>    ==SECOND PARTIAL BIO==
+>    btrfs_finish_ordered_io # called by btrfs_dio_end_io, writes out file
+> 			  # extents, csums, etc...
+> 
+> The essence of the problem is that while btrfs_direct_write and iomap
+> properly interact to submit all the correct bios, there is insufficient
+> logic in the btrfs dio functions (btrfs_dio_iomap_begin,
+> btrfs_dio_submit_io, btrfs_dio_end_io, and btrfs_dio_iomap_end) to
+> ensure that every bio is at least a part of a completed ordered_extent.
+> And it is completing an ordered_extent that results in crucial
+> functionality like inserting a file extent item for the range in the
+> subvolume/fs tree.
+> 
+> More specifically, btrfs_dio_end_io treats the ordered extent as
+> unfinished but btrfs_dio_iomap_end sets BTRFS_ORDERED_IOERR on it.
+> Thus, the finish io work doesn't result in file extents, csums, etc...
+> In the aftermath, such a file behaves as though it has a hole in it,
+> instead of the purportedly written data.
+> 
+> We considered a few options for fixing the bug:
+> 
+> 1. treat the partial bio as if we had truncated the file, which would
+>     result in properly finishing it.
+> 2. split the ordered extent when submitting a partial bio.
+> 3. cache the ordered extent across calls to __iomap_dio_rw in
+>     iter->private, so that we could reuse it and correctly apply several
+>     bios to it.
+> 
+> I had trouble with 1, and it felt the most like a hack, so I tried 2
+> and 3. Since 3 has the benefit of also not creating an extra file
+> extent, and avoids an ordered extent lookup during bio submission, it
+> felt like the best option.
+> 
+> A quick summary of the changes necessary to implement this cached
+> ordered_extent behavior:
+> 
+> - btrfs_direct_write keeps track of an ordered_extent for the duration
+>    of a call, possible across several __iomap_dio_rws.
+> - zero the btrfs_dio_data before using it, since its fields constitute
+>    state now.
+> - btrfs_dio_write uses dio_data to pass this ordered extent into and out
+>    of __iomap_dio_rw.
+> - when the write is done, put the ordered_extent.
+> - if the short write happens to be length 0, then we _don't_ get an
+>    extra bio, so we do need to cancel the ordered_extent like we used
+>    to (and ditch the cached ordered extent)
+> - if the short write ordered_extent has an error on it, drop the cached
+>    ordered extent, as before.
+> - in btrfs_dio_iomap_begin, if the cached ordered extent is present,
+>    skip all the work of creating it, just look up the extent mapping and
+>    jump to setting up the iomap. (This part could likely be more
+>    elegant..)
+> 
+> Thanks to Josef, Christoph, and Filipe with their help figuring out the
+> bug and the fix.
+> 
+> Fixes: 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
+> Link: https://bugzilla.redhat.com/show_bug.cgi?id=2169947
+> Link: https://lore.kernel.org/linux-btrfs/aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com/
+> Link: https://pastebin.com/3SDaH8C6
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> Reviewed-by: Christoph Hellwig <hch@lst.de>
+> Signed-off-by: Boris Burkov <boris@bur.io>
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+> Changelog:
+> v3:
+> - handle BTRFS_IOERR set on the ordered_extent in btrfs_dio_iomap_end.
+>    If the bio fails before we loop in the submission loop and exit from
+>    the loop early, we never submit a second bio covering the rest of the
+>    extent range, resulting in leaking the ordered_extent, which hangs umount.
+>    We can distinguish this from a short write in btrfs_dio_iomap_end by
+>    checking the ordered_extent.
+> v2:
+> - rename new ordered extent function
+> - pull the new function into a prep patch
+> - reorganize how the ordered_extent is stored/passed around to avoid so
+> many annoying memsets and exposing it to fs/btrfs/file.c
+> - lots of small code style improvements
+> - remove unintentional whitespace changes
+> - commit message improvements
+> - various ASSERTs for clarity/debugging
+> 
+>   fs/btrfs/btrfs_inode.h |  1 +
+>   fs/btrfs/file.c        | 11 +++++-
+>   fs/btrfs/inode.c       | 76 +++++++++++++++++++++++++++++++-----------
+>   3 files changed, 68 insertions(+), 20 deletions(-)
+> 
 
-Given that btrfs_add_ordered_stripe only really builds the
-btrfs_ordered_stripe structure and inserts it into the tree,
-can't we just allocate the btrfs_ordered_stripe structure
-in the end_io handler and have the ordered_extent point to it?
-
-Also if you don't to split the ordered_extent for each bio,
-you could instead have a list of btrfs_ordered_stripes in the
-ordered_extent and then process all of them in the ordered_extent
-completion handling.
+Ran generic/250 and generic/276 each 7500 times on this patchset, with 
+no failures; previously I'd hit the race condition in each after 10-50 
+times.

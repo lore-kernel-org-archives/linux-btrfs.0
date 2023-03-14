@@ -2,77 +2,108 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10B15C6FD1F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Mar 2023 17:52:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB05BC6FD1F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Mar 2023 17:55:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229838AbjCNRwF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Mar 2023 13:52:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53172 "EHLO
+        id S230154AbjCNRzT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Mar 2023 13:55:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59304 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230265AbjCNRwA (ORCPT
+        with ESMTP id S229692AbjCNRzS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Mar 2023 13:52:00 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DAD79B3E1B
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 10:51:31 -0700 (PDT)
+        Tue, 14 Mar 2023 13:55:18 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9058276B4
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 10:55:17 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 85F7621CA3;
-        Tue, 14 Mar 2023 17:51:30 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 45D0121AB2;
+        Tue, 14 Mar 2023 17:55:16 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1678816290;
+        t=1678816516;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=lZ40UwuzxkZVUXOtJ646FaAGmbhGfOd0KpUCdqcCCps=;
-        b=nddxjKFJR09aVXTpg9jkWS4rFB5AenA0592CNJYu4a+vaJMCPRWQytMwsszKwd/D2KRhaz
-        ODnrz4mXdJc9/OlC7iGaBwYQVV+vsGHug+IIVFaoKSPSc7DlWT1n/amoiDgP5NyJlbOQt0
-        +hxJ5ijBEUwkAW8qB1JYprhTzsKzue8=
+        bh=62QnF4KYJQfR2lQfdgpl8bkK7cIu3UEtkXg8qgdtkZk=;
+        b=A5D0+BoQT07ksRTEXhZIh1M2pmROqupTbHbt9yrWiw6cC+DZHVkw4oKiDW250DEj1nvBDP
+        61OF0OCmehS6UwmfEUuizaSNMymchr6pUkaLWJDA3Lc5zm/EyzzYXqYP6hscJal4IVn42x
+        INFTb0smEFI9q1byG6vsvZregKlPGyA=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1678816290;
+        s=susede2_ed25519; t=1678816516;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=lZ40UwuzxkZVUXOtJ646FaAGmbhGfOd0KpUCdqcCCps=;
-        b=RNOsqhHMlDe5bvv++7LUjgKtiSIXMQIbhV3jUaWLaTl9lFj1d/X3rSPZPaOyPfEwkU4iXT
-        NKZdzU78PosLlZBQ==
+        bh=62QnF4KYJQfR2lQfdgpl8bkK7cIu3UEtkXg8qgdtkZk=;
+        b=gIro6Y6M/nNeqtMwNuxlJZ+Y30rVkfJ31uA4yU8+7zr2+E/AX5ajNJbGdENd2eqrFZ7ykR
+        DeNTF0NW/F2BZrAQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6949613A1B;
-        Tue, 14 Mar 2023 17:51:30 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1412913A1B;
+        Tue, 14 Mar 2023 17:55:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id qpOEGCK0EGTNEwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 14 Mar 2023 17:51:30 +0000
-Date:   Tue, 14 Mar 2023 18:45:24 +0100
+        id X+LcAwS1EGTUFQAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 14 Mar 2023 17:55:16 +0000
+Date:   Tue, 14 Mar 2023 18:49:09 +0100
 From:   David Sterba <dsterba@suse.cz>
 To:     Naohiro Aota <naohiro.aota@wdc.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: relax bg_reclaim_threshold for debug purpose
-Message-ID: <20230314174523.GO10580@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs: zoned: fix btrfs_can_activate_zone() to support
+ DUP profile
+Message-ID: <20230314174909.GP10580@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <d04a158f989de1f564cd007f05fd51b6b154c006.1678693572.git.naohiro.aota@wdc.com>
+References: <b0e431dcee052cd66decba8a4484d28055d5d843.1678692557.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <d04a158f989de1f564cd007f05fd51b6b154c006.1678693572.git.naohiro.aota@wdc.com>
+In-Reply-To: <b0e431dcee052cd66decba8a4484d28055d5d843.1678692557.git.naohiro.aota@wdc.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 13, 2023 at 04:46:54PM +0900, Naohiro Aota wrote:
-> Currently, /sys/fs/btrfs/<UUID>/bg_reclaim_threshold is limited to 0
-> (disable) or [50 .. 100]%, so we need to fill 50% of a device to start the
-> auto reclaim process. It is cumbersome to do so when we want to shake out
-> possible race issues of normal write vs reclaim.
+On Mon, Mar 13, 2023 at 04:29:49PM +0900, Naohiro Aota wrote:
+> btrfs_can_activate_zone() returns true if at least one device has one zone
+> available for activation. This is OK for the single profile, but not OK for
+> DUP profile. We need two zones to create a DUP block group. Fix it buy
+> properly handle the case with the profile flags.
 > 
-> Relax the threshold check under the BTRFS_DEBUG option.
-> 
+> Fixes: 265f7237dd25 ("btrfs: zoned: allow DUP on meta-data block groups")
+> CC: stable@vger.kernel.org # 6.1+
 > Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
 
 Added to misc-next, thanks.
+
+> ---
+>  fs/btrfs/zoned.c | 14 ++++++++++++--
+>  1 file changed, 12 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index f3fcc3e09550..f7397680cde9 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -2099,11 +2099,21 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
+>  		if (!device->bdev)
+>  			continue;
+>  
+> -		if (!zinfo->max_active_zones ||
+> -		    atomic_read(&zinfo->active_zones_left)) {
+> +		if (!zinfo->max_active_zones) {
+>  			ret = true;
+>  			break;
+>  		}
+> +
+> +		switch (flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+> +		case 0: /* single */
+> +			ret = atomic_read(&zinfo->active_zones_left) >= 1;
+
+With ( ) around the expression it's more obvious that it's not a simple
+assignment:
+
+			ret = (atomic_read(&zinfo->active_zones_left) >= 1);
+
+Updated in the commit.

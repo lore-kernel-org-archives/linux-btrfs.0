@@ -2,168 +2,163 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 21607C74A44
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Mar 2023 06:18:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4B4F2C6FD1F
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Mar 2023 07:35:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230047AbjCNGSH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Mar 2023 02:18:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52892 "EHLO
+        id S229624AbjCNHfw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Mar 2023 03:35:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50138 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229482AbjCNGSF (ORCPT
+        with ESMTP id S230326AbjCNHfa (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Mar 2023 02:18:05 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3689C83D0
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Mar 2023 23:18:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=RgQmaP0oUs/FGyvrH4U0lCSwOBJyz0/By2BUIojaP/A=; b=wRN5YiLKsjN13l4HqOLddycgfj
-        ikIJF6pMsBNxxCEtGXZm1MBz4DA6jLb1h1qCMbwfxW+1+UwJe92MDGJ0q9fe5NioMO4e7wFU6nH3Q
-        OLH+6wpdudO1jn6x0HacpF5Rnl49GmxVYs7XWq6lYvz/ijjf1O4usU+mQdJaNPvXhkpfyF+Z0jMrg
-        m6k1T5VZXIZxakdoPBl5bfjaLZr9hjAKjFOmuCVfgMBuihNV7CeIXV8oOqDioGJw/PH5rnrTFecaW
-        EVnNna14sr63/SLXOUOByjy48q0u80ra3jfdAVgIOE/bVAbdkLbQuYd9fbzELGp96HetHfKWbABPU
-        77sUlzXg==;
-Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pbxyx-009Arn-9R; Tue, 14 Mar 2023 06:18:01 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 21/21] btrfs: merge write_one_subpage_eb into write_one_eb
-Date:   Tue, 14 Mar 2023 07:16:55 +0100
-Message-Id: <20230314061655.245340-22-hch@lst.de>
+        Tue, 14 Mar 2023 03:35:30 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CD00B8534C
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 00:35:27 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 618ED2219C
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 07:35:26 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1678779326; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=omkLkyiEMLgHzp7bviyG9MrDSG9c8PmFW1dCed7PaYI=;
+        b=QZ/5QrYdW+1I+xRt6GxXnjy37OanJ25RiwfPFtUHHkIoBBmBsqr75ynIk0UUoqNYZLZiLd
+        e05lDhg0SEOdcIuA+fdcao8t65wMVc588KNvhlcH1Gtp3CI5c1LYQO9d/gKEnN4H8eTboo
+        PDAPMRc3A/UsI2h6sRS0syviN/Hxa+U=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C488113A26
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 07:35:25 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id YICHJL0jEGTvJAAAMHmgww
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 07:35:25 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 01/12] btrfs: scrub: use dedicated super block verification function to scrub one super block
+Date:   Tue, 14 Mar 2023 15:34:56 +0800
+Message-Id: <cfea13b2a1649e4c295b020f2713660c879ef898.1678777941.git.wqu@suse.com>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230314061655.245340-1-hch@lst.de>
-References: <20230314061655.245340-1-hch@lst.de>
+In-Reply-To: <cover.1678777941.git.wqu@suse.com>
+References: <cover.1678777941.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Most of the code in write_one_subpage_eb and write_one_eb is shared,
-so merge the two functions into one.
+There is really no need to go through the super complex scrub_sectors()
+to just handle super blocks.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+This patch will introduce a dedicated function (less than 50 lines) to
+handle super block scrubing.
+
+This new function will introduce a behavior change, instead of using the
+complex but concurrent scrub_bio system, here we just go
+submit-and-wait.
+
+There is really not much sense to care the performance of super block
+scrubbing. It only has 3 super blocks at most, and they are all scattered
+around the devices already.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 77 ++++++++++++++------------------------------
- 1 file changed, 25 insertions(+), 52 deletions(-)
+ fs/btrfs/scrub.c | 54 +++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 46 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index da4ea02a56c8bf..14a8e1ecdf5f16 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1807,53 +1807,11 @@ static void prepare_eb_write(struct extent_buffer *eb)
- 	}
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3cdf73277e7e..e765eb8b8bcf 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -4243,18 +4243,59 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 	return ret;
  }
  
--/*
-- * Unlike the work in write_one_eb(), we rely completely on extent locking.
-- * Page locking is only utilized at minimum to keep the VMM code happy.
-- */
--static void write_one_subpage_eb(struct extent_buffer *eb,
--				 struct writeback_control *wbc)
--{
--	struct btrfs_fs_info *fs_info = eb->fs_info;
--	struct page *page = eb->pages[0];
--	bool no_dirty_ebs = false;
--	struct btrfs_bio *bbio;
--
--	prepare_eb_write(eb);
--
--	/* clear_page_dirty_for_io() in subpage helper needs page locked */
--	lock_page(page);
--	btrfs_subpage_set_writeback(fs_info, page, eb->start, eb->len);
--
--	/* Check if this is the last dirty bit to update nr_written */
--	no_dirty_ebs = btrfs_subpage_clear_and_test_dirty(fs_info, page,
--							  eb->start, eb->len);
--	if (no_dirty_ebs)
--		clear_page_dirty_for_io(page);
--
--	bbio = btrfs_bio_alloc(INLINE_EXTENT_BUFFER_PAGES,
--			       REQ_OP_WRITE | REQ_META | wbc_to_write_flags(wbc),
--			       BTRFS_I(eb->fs_info->btree_inode),
--			       extent_buffer_write_end_io, eb);
--	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
--	bbio->file_offset = eb->start;
--	__bio_add_page(&bbio->bio, page, eb->len, eb->start - page_offset(page));
--	unlock_page(page);
--	btrfs_submit_bio(bbio, 0);
--
--	/*
--	 * Submission finished without problem, if no range of the page is
--	 * dirty anymore, we have submitted a page.  Update nr_written in wbc.
--	 */
--	if (no_dirty_ebs)
--		wbc->nr_to_write--;
--}
--
- static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
- 					    struct writeback_control *wbc)
++static int scrub_one_super(struct scrub_ctx *sctx, struct btrfs_device *dev,
++			   struct page *page, u64 physical, u64 generation)
++{
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	struct bio_vec bvec;
++	struct bio bio;
++	struct btrfs_super_block *sb = page_address(page);
++	int ret;
++
++	bio_init(&bio, dev->bdev, &bvec, 1, REQ_OP_READ);
++	bio.bi_iter.bi_sector = physical >> SECTOR_SHIFT;
++	bio_add_page(&bio, page, BTRFS_SUPER_INFO_SIZE, 0);
++	ret = submit_bio_wait(&bio);
++	bio_uninit(&bio);
++
++	if (ret < 0)
++		return ret;
++	ret = btrfs_check_super_csum(fs_info, sb);
++	if (ret != 0) {
++		btrfs_err_rl(fs_info,
++			"super block at physical %llu devid %llu has bad csum",
++			physical, dev->devid);
++		return -EIO;
++	}
++	if (btrfs_super_generation(sb) != generation) {
++		btrfs_err_rl(fs_info,
++"super block at physical %llu devid %llu has bad generation, has %llu expect %llu",
++			     physical, dev->devid,
++			     btrfs_super_generation(sb), generation);
++		return -EUCLEAN;
++	}
++
++	ret = btrfs_validate_super(fs_info, sb, -1);
++	return ret;
++}
++
+ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 					   struct btrfs_device *scrub_dev)
  {
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
- 	struct btrfs_bio *bbio;
--	int i, num_pages;
+ 	int	i;
+ 	u64	bytenr;
+ 	u64	gen;
+-	int	ret;
++	int	ret = 0;
++	struct page *page;
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
  
- 	prepare_eb_write(eb);
+ 	if (BTRFS_FS_ERROR(fs_info))
+ 		return -EROFS;
  
-@@ -1863,17 +1821,32 @@ static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
- 			       extent_buffer_write_end_io, eb);
- 	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
- 	bbio->file_offset = eb->start;
--
--	num_pages = num_extent_pages(eb);
--	for (i = 0; i < num_pages; i++) {
--		struct page *p = eb->pages[i];
-+	if (fs_info->nodesize < PAGE_SIZE) {
-+		struct page *p = eb->pages[0];
- 
- 		lock_page(p);
--		clear_page_dirty_for_io(p);
--		set_page_writeback(p);
--		__bio_add_page(&bbio->bio, p, PAGE_SIZE, 0);
--		wbc->nr_to_write--;
-+		btrfs_subpage_set_writeback(fs_info, p, eb->start, eb->len);
-+		if (btrfs_subpage_clear_and_test_dirty(fs_info, p, eb->start,
-+						       eb->len)) {
-+			clear_page_dirty_for_io(p);
-+			wbc->nr_to_write--;
-+		}
-+		__bio_add_page(&bbio->bio, p, eb->len,
-+			       eb->start - page_offset(p));
- 		unlock_page(p);
-+	} else {
-+		int i;
++	page = alloc_page(GFP_KERNEL);
++	if (!page)
++		return -ENOMEM;
 +
-+		for (i = 0; i < num_extent_pages(eb); i++) {
-+			struct page *p = eb->pages[i];
-+
-+			lock_page(p);
-+			clear_page_dirty_for_io(p);
-+			set_page_writeback(p);
-+			__bio_add_page(&bbio->bio, p, PAGE_SIZE, 0);
-+			wbc->nr_to_write--;
-+			unlock_page(p);
-+		}
- 	}
- 	btrfs_submit_bio(bbio, 0);
- }
-@@ -1945,7 +1918,7 @@ static int submit_eb_subpage(struct page *page, struct writeback_control *wbc)
+ 	/* Seed devices of a new filesystem has their own generation. */
+ 	if (scrub_dev->fs_devices != fs_info->fs_devices)
+ 		gen = scrub_dev->generation;
+@@ -4269,15 +4310,12 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		if (!btrfs_check_super_location(scrub_dev, bytenr))
  			continue;
  
- 		if (lock_extent_buffer_for_io(eb, wbc)) {
--			write_one_subpage_eb(eb, wbc);
-+			write_one_eb(eb, wbc);
- 			submitted++;
- 		}
- 		free_extent_buffer(eb);
+-		ret = scrub_sectors(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
+-				    scrub_dev, BTRFS_EXTENT_FLAG_SUPER, gen, i,
+-				    NULL, bytenr);
++		ret = scrub_one_super(sctx, scrub_dev, page, bytenr, gen);
+ 		if (ret)
+-			return ret;
++			break;
+ 	}
+-	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
+-
+-	return 0;
++	__free_page(page);
++	return ret;
+ }
+ 
+ static void scrub_workers_put(struct btrfs_fs_info *fs_info)
 -- 
 2.39.2
 

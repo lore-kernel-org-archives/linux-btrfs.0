@@ -2,88 +2,53 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9C28C6FD1F
-	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Mar 2023 17:00:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F35EBC7618A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 14 Mar 2023 17:39:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230174AbjCNRAE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 14 Mar 2023 13:00:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49092 "EHLO
+        id S229932AbjCNRjm (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 14 Mar 2023 13:39:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33784 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229464AbjCNRAD (ORCPT
+        with ESMTP id S229742AbjCNRjl (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 14 Mar 2023 13:00:03 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1780A02A7
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 10:00:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=QyRndG+zkZ6ZZX/US0MinBnC97PmMnphDiTJKayrtHU=; b=jJuJAKllta3tVSW2vPsHxeQ2X3
-        S3RqZkQzOfI8eQkUBuHG8wSxHK81axTUf4aQHZ8JZFB/bdABsTihPIKTDgaSOKlgwUmZtAyT7chCN
-        tX3a/cpDS5k861yfIXusN4uH+UQpOVWwtYPCtNkqF27FxjUy7qeUOcOqYB78J7+o6YVl6edRPk3+Y
-        P5y5x8UvTfqSUbjG6rm69axYRKDMyZ6mmbr8IHcMhhfYwTl4DY6s0edtS7MPIR5lrouZNBXoSqSh5
-        imbf2oTVVqPkTB/FKTfOJ/hOSdcXwNOttDTXBMmZAQie0X4kXkkT9tk3wC4GRZxXDBs4jlvafcHNn
-        /JfK8Ekg==;
-Received: from [2001:4bb8:182:2e36:91ea:d0e2:233a:8356] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pc80F-00Avuh-0M;
-        Tue, 14 Mar 2023 17:00:00 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Johannes Thumshirn <jth@kernel.org>, linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/10] btrfs: remove confusing comments
-Date:   Tue, 14 Mar 2023 17:59:10 +0100
-Message-Id: <20230314165910.373347-11-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230314165910.373347-1-hch@lst.de>
-References: <20230314165910.373347-1-hch@lst.de>
+        Tue, 14 Mar 2023 13:39:41 -0400
+Received: from vps.thesusis.net (vps.thesusis.net [34.202.238.73])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 41538CC24
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Mar 2023 10:39:39 -0700 (PDT)
+Received: by vps.thesusis.net (Postfix, from userid 1000)
+        id D90D510F393; Tue, 14 Mar 2023 13:39:08 -0400 (EDT)
+References: <ba9fb1c9-ccbc-4b93-92f9-a8c17ffab7f6@business-insulting.de>
+User-agent: mu4e 1.7.12; emacs 27.1
+From:   Phillip Susi <phill@thesusis.net>
+To:     4censord <mail@4censord.de>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: Corruption with hibernation and other file system access.
+Date:   Tue, 14 Mar 2023 13:36:32 -0400
+In-reply-to: <ba9fb1c9-ccbc-4b93-92f9-a8c17ffab7f6@business-insulting.de>
+Message-ID: <87mt4f9qrn.fsf@vps.thesusis.net>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-As far as I can tell there is no such thing as set_bit and test_bit
-hooks, and there also isn't any irq disabling near the data structures
-used here.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/inode.c | 11 +----------
- 1 file changed, 1 insertion(+), 10 deletions(-)
+4censord <mail@4censord.de> writes:
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index afa564f46c6452..e26ba7104c2b2a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2402,11 +2402,7 @@ void btrfs_set_delalloc_extent(struct btrfs_inode *inode, struct extent_state *s
- 
- 	if ((bits & EXTENT_DEFRAG) && !(bits & EXTENT_DELALLOC))
- 		WARN_ON(1);
--	/*
--	 * set_bit and clear bit hooks normally require _irqsave/restore
--	 * but in this case, we are only testing for the DELALLOC
--	 * bit, which is only set or cleared with irqs on
--	 */
-+
- 	if (!(state->state & EXTENT_DELALLOC) && (bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = inode->root;
- 		u64 len = state->end + 1 - state->start;
-@@ -2458,11 +2454,6 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
- 		spin_unlock(&inode->lock);
- 	}
- 
--	/*
--	 * set_bit and clear bit hooks normally require _irqsave/restore
--	 * but in this case, we are only testing for the DELALLOC
--	 * bit, which is only set or cleared with irqs on
--	 */
- 	if ((state->state & EXTENT_DELALLOC) && (bits & EXTENT_DELALLOC)) {
- 		struct btrfs_root *root = inode->root;
- 		bool do_list = !btrfs_is_free_space_inode(inode);
--- 
-2.39.2
+> As for how i think the corruption happened:
+>
+> This is the rootfs from a laptop. Btrfs in a luks container on a normal partition.
+> Only other thing on this disk is a efi partition.
+>
+> The system was in hibernation while some maintenance took place.
+>
+> The system was booted via an external medium to make some changes to the
+> bootloader. For this, the rootfs had been mounted rw, but no mayor
+> changes took place. Most writes should have been on a separate EFI partition.
+
+You must never boot into a different kernel while one is hibernated, at
+least if there is any possibility that the other one will try to mount a
+filesystem that is mounted by the one in hibernation.  If you do, you
+MUST NOT attempt to resume the hibernated system or there will be fire,
+exposions, and death.
 

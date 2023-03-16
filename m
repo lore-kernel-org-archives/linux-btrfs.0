@@ -2,98 +2,87 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E993C6FD1D
-	for <linux-btrfs@archiver.kernel.org>; Wed, 15 Mar 2023 19:58:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C229C61DA4
+	for <linux-btrfs@archiver.kernel.org>; Thu, 16 Mar 2023 00:48:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231964AbjCOT6n (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 15 Mar 2023 15:58:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43620 "EHLO
+        id S229589AbjCPAst convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 15 Mar 2023 20:48:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58582 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230134AbjCOT6m (ORCPT
+        with ESMTP id S229516AbjCPAsq (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 15 Mar 2023 15:58:42 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 508E5E1BE
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2023 12:58:40 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id F0CD1219E9;
-        Wed, 15 Mar 2023 19:58:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1678910318;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=rC6m+YFf/phYs/M/mzwHhQDi5hcdL5eyPkOSHFHBtaA=;
-        b=DAhB1OG4EKbZ0lxj7Eg/M2KrCJ3/fKuxnP82M7WE4DmohBZR18xqUhrmXEImtm6U/ta+VM
-        wIALsNqsoF7M2DRq72p0KzuhxSNsv56IkcG80NmfEsLaoVtEF+7Zelsi0XfgkHM3mSK3pj
-        5uWycJKsS7BPrAiueqzRKry+pD/t5Xs=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1678910318;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=rC6m+YFf/phYs/M/mzwHhQDi5hcdL5eyPkOSHFHBtaA=;
-        b=Z6ZpOIggCQ/1w8Uh58Hc49GJx8F2OASDjp8lyE263JOJDSePnKNNeXZt7M+pdQ5vl83qer
-        XDJSSUDlerqr6XBw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BA08313A2F;
-        Wed, 15 Mar 2023 19:58:38 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id l+NxLG4jEmT8bQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 15 Mar 2023 19:58:38 +0000
-Date:   Wed, 15 Mar 2023 20:52:31 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Boris Burkov <boris@bur.io>
-Cc:     David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-        kernel-team@fb.com
-Subject: Re: [PATCH v3] btrfs: fix dio continue after short write due to
- buffer page fault
-Message-ID: <20230315195231.GW10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <6733f2fac24b674d9f60dc1093de30513c099629.1678212067.git.boris@bur.io>
- <20230309174050.GI10580@twin.jikos.cz>
- <20230315195255.GA27662@zen>
+        Wed, 15 Mar 2023 20:48:46 -0400
+Received: from mail-ed1-f53.google.com (mail-ed1-f53.google.com [209.85.208.53])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 09B90AA70C
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2023 17:48:44 -0700 (PDT)
+Received: by mail-ed1-f53.google.com with SMTP id eg48so1302904edb.13
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2023 17:48:43 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1678927722;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=ZfI+OxTHqv+XOpMIPiBKJ3nta14R4kgaMJ7BqnKa/ko=;
+        b=AL8esg4UryihMvAOquqJ9+/K6OlDUJOycR/j6O9WytNsjea3v6CSniaU8aX8+cWRu8
+         1fuuFTDddS9ENhawNgjpaaP2Ol7BsQ2OjplnRTf7KA/9YRfuqBWApNFPs1brBDbxaham
+         3difxhZ4pNmRSKs4GdUz4lp2UM1OLpVFH1ueikuy1ke0bO3UKJCRXsSz/TX1qAZbguMd
+         ZsCVhqIhSjWtLyyfH6MLYM6gITK7GAIEoVCxeY0puRypNAWW7kS/LUjxi4dIXwIE5rDV
+         jgwivagGQxYx3MTHvJwFHBXm563B9kFtNeONMNFpGUD7GXV6kSFi/6kbzgqBJluTevHd
+         Cr5w==
+X-Gm-Message-State: AO0yUKVVpapXFrQQnO0y//B+LtxOXxJ1lLVYKWLgftjvSZXzhoLrTo2m
+        dAgsAnfKWVtL48maN3bG6MZtigRSMJWg4Q==
+X-Google-Smtp-Source: AK7set8tq5MXoVpzTN9v5Vs9rt1ergYjxVhgK6lRB4FqEYj8EZa3FLODupdexURWVVVZSUf9LsqTdg==
+X-Received: by 2002:a17:906:bc46:b0:8b1:3d4:6a9d with SMTP id s6-20020a170906bc4600b008b103d46a9dmr8843243ejv.19.1678927722157;
+        Wed, 15 Mar 2023 17:48:42 -0700 (PDT)
+Received: from mail-ed1-f44.google.com (mail-ed1-f44.google.com. [209.85.208.44])
+        by smtp.gmail.com with ESMTPSA id g10-20020a50d0ca000000b004fc1bb4285fsm3091942edf.93.2023.03.15.17.48.41
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 15 Mar 2023 17:48:41 -0700 (PDT)
+Received: by mail-ed1-f44.google.com with SMTP id cy23so1323555edb.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Mar 2023 17:48:41 -0700 (PDT)
+X-Received: by 2002:a50:a68f:0:b0:4fb:c8e3:1adb with SMTP id
+ e15-20020a50a68f000000b004fbc8e31adbmr2039147edc.3.1678927721503; Wed, 15 Mar
+ 2023 17:48:41 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230315195255.GA27662@zen>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <ae81e48b0e954bae1c3451c0da1a24ae7146606c.1676684984.git.boris@bur.io>
+ <CAL3q7H7wVW_E70+qvb4S7w06RvjW_2dXxzTLLQO45_vC0SLTkA@mail.gmail.com> <Y/UOnKe6Ap8+lGx0@zen>
+In-Reply-To: <Y/UOnKe6Ap8+lGx0@zen>
+From:   Neal Gompa <ngompa@fedoraproject.org>
+Date:   Wed, 15 Mar 2023 20:48:04 -0400
+X-Gmail-Original-Message-ID: <CAEg-Je_03VLmcS_XzDytKWbkuDPy9DPesGvoPKa74BqzuRnm0A@mail.gmail.com>
+Message-ID: <CAEg-Je_03VLmcS_XzDytKWbkuDPy9DPesGvoPKa74BqzuRnm0A@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix dio continue after short write due to source fault
+To:     Boris Burkov <boris@bur.io>
+Cc:     Filipe Manana <fdmanana@kernel.org>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com, Davide Cavalca <dcavalca@fedoraproject.org>,
+        Michel Alexandre Salim <salimma@fedoraproject.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 15, 2023 at 12:53:24PM -0700, Boris Burkov wrote:
-> On Thu, Mar 09, 2023 at 06:40:50PM +0100, David Sterba wrote:
-> > On Tue, Mar 07, 2023 at 12:49:30PM -0800, Boris Burkov wrote:
-> > > Link: https://bugzilla.redhat.com/show_bug.cgi?id=2169947
-> > > Link: https://lore.kernel.org/linux-btrfs/aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com/
-> > > Link: https://pastebin.com/3SDaH8C6
-> > > Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> > > Reviewed-by: Christoph Hellwig <hch@lst.de>
-> > > Signed-off-by: Boris Burkov <boris@bur.io>
-> > > Signed-off-by: David Sterba <dsterba@suse.com>
-> > > ---
-> > > Changelog:
-> > > v3:
-> > > - handle BTRFS_IOERR set on the ordered_extent in btrfs_dio_iomap_end.
-> > >   If the bio fails before we loop in the submission loop and exit from
-> > >   the loop early, we never submit a second bio covering the rest of the
-> > >   extent range, resulting in leaking the ordered_extent, which hangs umount.
-> > >   We can distinguish this from a short write in btrfs_dio_iomap_end by
-> > >   checking the ordered_extent.
-> > 
-> > Replaced v2 in misc-next, thanks.
-> 
-> Embarassingly, I have now proven that this version is _still_ broken :(
-> 
-> TL;DR, this "fix" reintroduces the original bug Filipe was fixing in the
-> first place, just a more subtle version of it.
+On Tue, Feb 21, 2023 at 1:52 PM Boris Burkov <boris@bur.io> wrote:
+>
+> On Mon, Feb 20, 2023 at 02:01:39PM +0000, Filipe Manana wrote:
+> > On Sat, Feb 18, 2023 at 2:25 AM Boris Burkov <boris@bur.io> wrote:
+> > >
+> > > Downstream bug report:
+> > > https://bugzilla.redhat.com/show_bug.cgi?id=2169947
+> >
+> > You place this in a Link: tag at the bottom.
+> > Also the previous discussion is useful to be there too:
+> >
+> > Link: https://lore.kernel.org/linux-btrfs/aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com/
+>
+> Thank you for the tip, I'll include those in V2.
+>
 
-Ok thanks, I'll remove the patch from branches.
+What happened here? I haven't seen a V2 posted (unless I missed something?).
+
+
+
+--
+Neal Gompa (FAS: ngompa)

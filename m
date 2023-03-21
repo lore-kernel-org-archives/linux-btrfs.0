@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51DCDC74A5B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:15:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC0CEC6FD1D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:15:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230450AbjCULPF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:15:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55212 "EHLO
+        id S229541AbjCULPH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:15:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55202 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229685AbjCULOw (ORCPT
+        with ESMTP id S230437AbjCULOz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:52 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9EC683B858
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:28 -0700 (PDT)
+        Tue, 21 Mar 2023 07:14:55 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 505482CC66
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:30 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 4AF0CB815B4
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:27 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 99144C4339B
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:25 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 0C28961B04
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:24 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2690C433D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397266;
-        bh=UWqbeMMaFS3sux1zAjaQCy/q8tfylgXmh16CGfsTp84=;
+        s=k20201202; t=1679397263;
+        bh=fgYWrVixBIstXE1DwaAX2tdD7DI2fyiLH37lLmoykHM=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=UC9jItzqmrKhNlDklgtcBKr4iulV8BmD0wykxmAyHQ2X2Sl2HQeOI65zw8X0JWQwK
-         u4HIP8nKjqH4+VPAiHj5e2Ecoi44godZO/0AOpEWAiUKp3IE5uBW5fUj2Yn5V3ElIz
-         bZN7rbWdx8/+cMoUH7ikl8U9Q34uOqlhQB+QHUwdLshnh/vCm9wyNxQ3Iz2IKxdAq9
-         56L2fIRdP1G3aG/8u621LVBXLJJ/Qp84lZC6oVrvQc2LjYN3yntq4ezlU40cr+GTnc
-         GhMRRN/AmgSqYHajck1a8HVSaWkyx6ZQhYTxnLS6pGkBYiMdcoJyf80jk6gmBPYBT7
-         ljNRQn3DHM3aA==
+        b=dscPSf4NKz3fHVVGJQKvUx1O2xiagy140RqM/r7i80kg7yuSk7cBRAduQZvkIkUYW
+         hLWILiFFp1siFkEvZP0mFlTQIR8y0GYsAondXReAlJ1rxw9yGH/qdbrsklNxI/Fxxi
+         W8Rn/vXf0DLr7yLxtRpfBlzEpGeh5NZsZnxeEHhHpduXcGAelF2Fi6n4b6zWuJip+L
+         dDZCww4/vjr4Gz28ZG9V7SZd8yIW4ht3eSCdH3vnjMoMevtxFHbbvHyWBjOlNdalpu
+         ikd8Zr5RfZ+1oRaOpHV9svsIqUS1wOGYyKnX5/eh9f55pAyqi/oIKBgYvy9sF9DgxU
+         YVILeWjAHldHw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 24/24] btrfs: simplify exit paths of btrfs_evict_inode()
-Date:   Tue, 21 Mar 2023 11:14:00 +0000
-Message-Id: <b831b63a2d19c77f520898f0a0ead203670aa538.1679326435.git.fdmanana@suse.com>
+Subject: [PATCH 21/24] btrfs: fix calculation of the global block reserve's size
+Date:   Tue, 21 Mar 2023 11:13:57 +0000
+Message-Id: <30080cbfbfcb835e8c1cbd6762afa464a7b6454c.1679326434.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,101 +48,38 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Instead of using two labels at btrfs_evict_inode() for exiting depending
-on whether we need to delete the inode items and orphan or some error
-happened, we can use a single exit label if we initialize the block
-reserve to NULL, since btrfs_free_block_rsv() ignores a NULL block reserve
-pointer. So just do that. It will also make an upcoming change simpler by
-avoiding one extra error label.
+At btrfs_update_global_block_rsv(), we are assuming an unlink operation
+uses 5 metadata units, but that's not true anymore, it uses 6 since the
+commit bca4ad7c0b54 ("btrfs: reserve correct number of items for unlink
+and rmdir"). So update the code and comments to consider 6 units.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 21 ++++++++++-----------
- 1 file changed, 10 insertions(+), 11 deletions(-)
+ fs/btrfs/block-rsv.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0b3710d47dd0..865d56ff2ce1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5271,7 +5271,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_block_rsv *rsv;
-+	struct btrfs_block_rsv *rsv = NULL;
- 	int ret;
- 
- 	trace_btrfs_inode_evict(inode);
-@@ -5288,18 +5288,18 @@ void btrfs_evict_inode(struct inode *inode)
- 	    ((btrfs_root_refs(&root->root_item) != 0 &&
- 	      root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID) ||
- 	     btrfs_is_free_space_inode(BTRFS_I(inode))))
--		goto no_delete;
-+		goto out;
- 
- 	if (is_bad_inode(inode))
--		goto no_delete;
-+		goto out;
- 
- 	if (test_bit(BTRFS_FS_LOG_RECOVERING, &fs_info->flags))
--		goto no_delete;
-+		goto out;
- 
- 	if (inode->i_nlink > 0) {
- 		BUG_ON(btrfs_root_refs(&root->root_item) != 0 &&
- 		       root->root_key.objectid != BTRFS_ROOT_TREE_OBJECTID);
--		goto no_delete;
-+		goto out;
- 	}
+diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+index 90b8088e8fac..6edcb32ed4c9 100644
+--- a/fs/btrfs/block-rsv.c
++++ b/fs/btrfs/block-rsv.c
+@@ -350,14 +350,14 @@ void btrfs_update_global_block_rsv(struct btrfs_fs_info *fs_info)
  
  	/*
-@@ -5308,7 +5308,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * But we also want to reserve enough space so we can do the fallback
+-	 * global reserve for an unlink, which is an additional 5 items (see the
++	 * global reserve for an unlink, which is an additional 6 items (see the
+ 	 * comment in __unlink_start_trans for what we're modifying.)
+ 	 *
+ 	 * But we also need space for the delayed ref updates from the unlink,
+-	 * so its 10, 5 for the actual operation, and 5 for the delayed ref
++	 * so its 12, 6 for the actual operation, and 6 for the delayed ref
+ 	 * updates.
  	 */
- 	ret = btrfs_commit_inode_delayed_inode(BTRFS_I(inode));
- 	if (ret)
--		goto no_delete;
-+		goto out;
+-	min_items += 10;
++	min_items += 12;
  
- 	/*
- 	 * This drops any pending insert or delete operations we have for this
-@@ -5320,7 +5320,7 @@ void btrfs_evict_inode(struct inode *inode)
- 
- 	rsv = btrfs_alloc_block_rsv(fs_info, BTRFS_BLOCK_RSV_TEMP);
- 	if (!rsv)
--		goto no_delete;
-+		goto out;
- 	rsv->size = btrfs_calc_metadata_size(fs_info, 1);
- 	rsv->failfast = true;
- 
-@@ -5336,7 +5336,7 @@ void btrfs_evict_inode(struct inode *inode)
- 
- 		trans = evict_refill_and_join(root, rsv);
- 		if (IS_ERR(trans))
--			goto free_rsv;
-+			goto out;
- 
- 		trans->block_rsv = rsv;
- 
-@@ -5350,7 +5350,7 @@ void btrfs_evict_inode(struct inode *inode)
- 		 */
- 		btrfs_btree_balance_dirty_nodelay(fs_info);
- 		if (ret && ret != -ENOSPC && ret != -EAGAIN)
--			goto free_rsv;
-+			goto out;
- 		else if (!ret)
- 			break;
- 	}
-@@ -5372,9 +5372,8 @@ void btrfs_evict_inode(struct inode *inode)
- 		btrfs_end_transaction(trans);
- 	}
- 
--free_rsv:
-+out:
- 	btrfs_free_block_rsv(fs_info, rsv);
--no_delete:
- 	/*
- 	 * If we didn't successfully delete, the orphan item will still be in
- 	 * the tree and we'll retry on the next mount. Again, we might also want
+ 	num_bytes = max_t(u64, num_bytes,
+ 			  btrfs_calc_insert_metadata_size(fs_info, min_items));
 -- 
 2.34.1
 

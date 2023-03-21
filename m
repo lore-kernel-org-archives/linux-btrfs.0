@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9C9BC74A5B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 336E5C7618D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230274AbjCULOu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:14:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55074 "EHLO
+        id S230314AbjCULOw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:14:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55162 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230194AbjCULOq (ORCPT
+        with ESMTP id S229771AbjCULOt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:46 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44E9528E98
+        Tue, 21 Mar 2023 07:14:49 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FBF66EBE
         for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:24 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 5E2E761B11
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:14 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 52587C433D2
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:13 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 9526A61AEA
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:12 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8EBBBC433D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:11 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397253;
-        bh=iY2GJZUSbtMJJX5yM6Ehw66XVEcLIM5bmyMASSpLRpY=;
+        s=k20201202; t=1679397252;
+        bh=FJnfQ5I3a0N1gyIn4cKHc5U7EnTETAHGI88wfL9S1KY=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=Rr7H8EAa5zux+DX38ss4qWXBAh7n+xjZZWqKr+3g1/dEi2462adNcIqSFkXCUcxR+
-         qxxvWQCbcGRHnZjyNjv+7WdDx2yaShluuylgWhJ2M6U63/LhME78aj1NfgucmIH2CE
-         +/5GUq+C9b2XwcrJ/hWvIorYQU+nXiRlct2AEuFR7PP2iFXP+GdpE/2blv/uGD1nNV
-         Gs5yhPuyffnAwIgQ0Klk7hs8v15mAS7UZFfc8osVQ7mTTrUvK8F75zKW+6Rt7fD5wc
-         TwpD3/M0+YBWZUl63hHf6qsalF8NMed8ZDodDyjX06VOlbWWD/gO40dFs/TWJ6v0H/
-         JuPGDHoDmnsQA==
+        b=GJJF9Wmn/Xf57uTw5fHOAXjsEg4T0dj7ZihyYA4HY3rItmUI0w1gDhf+D1deK9qY0
+         e3XafTcoH7O6mw9Bh9rqrsTi/EKTGQmecov5QJWPbJuyHgShm7EaowqYmbaH+v89hc
+         VKITmNXwankTMzeIjTtNiCtP+T1UefTj6CBhKWV5kPDF2sHECp50RShfzwpb+fJdnC
+         ypUu3WMpW/dgpLkeL3yIhTRcyqQCxpjfkdNgn9UBX5Ysc9qLFJmvBtKlrmTdsOAYKZ
+         fcjOni4KBmr3+V4dm6WvmkyXfjUPmexBKGkiaDICngVMiJrQRQatBpUdwLhA7LuHOz
+         zd87jyoSNpJjw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/24] btrfs: count extents before taking inode's spinlock when reserving metadata
-Date:   Tue, 21 Mar 2023 11:13:46 +0000
-Message-Id: <bcdf4e4856f633dfbcc3525630063e204ae710dc.1679326432.git.fdmanana@suse.com>
+Subject: [PATCH 08/24] btrfs: collapse should_end_transaction() into btrfs_should_end_transaction()
+Date:   Tue, 21 Mar 2023 11:13:44 +0000
+Message-Id: <620d28d3978808483b962fc0024dda3600d45cb5.1679326431.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,35 +48,48 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When reserving metadata space for delalloc (and direct IO too), at
-btrfs_delalloc_reserve_metadata(), there's no need to count the number of
-extents while holding the inode's spinlock, since that does not require
-access to any field of the inode.
-
-This section of code can be called concurrently, when we have direct IO
-writes against different file ranges that don't increase the inode's
-i_size, so it's beneficial to shorten the critical section by counting
-the number of extents before taking the inode's spinlock.
+The function should_end_transaction() is very short and only has one
+caller, which is btrfs_should_end_transaction(). So move the code from
+should_end_transaction() into btrfs_should_end_transaction().
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/delalloc-space.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 15 ++++-----------
+ 1 file changed, 4 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
-index 7ddb1d104e8e..427abaf608b8 100644
---- a/fs/btrfs/delalloc-space.c
-+++ b/fs/btrfs/delalloc-space.c
-@@ -358,8 +358,8 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
- 	 * racing with an ordered completion or some such that would think it
- 	 * needs to free the reservation we just made.
- 	 */
--	spin_lock(&inode->lock);
- 	nr_extents = count_max_extents(fs_info, num_bytes);
-+	spin_lock(&inode->lock);
- 	btrfs_mod_outstanding_extents(inode, nr_extents);
- 	inode->csum_bytes += disk_num_bytes;
- 	btrfs_calculate_inode_block_rsv_size(fs_info, inode);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 18329ebcb1cb..c47b6838754e 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -942,16 +942,6 @@ void btrfs_throttle(struct btrfs_fs_info *fs_info)
+ 	wait_current_trans(fs_info);
+ }
+ 
+-static bool should_end_transaction(struct btrfs_trans_handle *trans)
+-{
+-	struct btrfs_fs_info *fs_info = trans->fs_info;
+-
+-	if (btrfs_check_space_for_delayed_refs(fs_info))
+-		return true;
+-
+-	return !!btrfs_block_rsv_check(&fs_info->global_block_rsv, 50);
+-}
+-
+ bool btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
+ {
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
+@@ -960,7 +950,10 @@ bool btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
+ 	    test_bit(BTRFS_DELAYED_REFS_FLUSHING, &cur_trans->delayed_refs.flags))
+ 		return true;
+ 
+-	return should_end_transaction(trans);
++	if (btrfs_check_space_for_delayed_refs(trans->fs_info))
++		return true;
++
++	return !!btrfs_block_rsv_check(&trans->fs_info->global_block_rsv, 50);
+ }
+ 
+ static void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans)
 -- 
 2.34.1
 

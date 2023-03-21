@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72F3AC74A5B
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C6A2C761A6
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229828AbjCULOk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:14:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54666 "EHLO
+        id S229923AbjCULOl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:14:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54696 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230296AbjCULOc (ORCPT
+        with ESMTP id S230333AbjCULOd (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:32 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13F94367D8
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:10 -0700 (PDT)
+        Tue, 21 Mar 2023 07:14:33 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E01635ED2
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:12 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id D56A8B815B8
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:08 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E7F8C4339B
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:07 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id D4C2A61B0F
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:10 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CB6E7C433EF
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397247;
-        bh=Qz4Nvb9iNHDAznpTD9/InGTGTZ371eFFpH8StlWErJ8=;
+        s=k20201202; t=1679397250;
+        bh=8Vw4mFbmx7jusR1EQ9Wt5RVqNnWrvsptg1gIM4H8pVE=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=WK+yq2g1l4g06MuXC7suaeQbrv4LQ9Rz/8W77c5sGCMDJJwngZ76/Du2mgmS2KDfh
-         w7dypRrwxqyJ80NxHo6/i9xj8Uks4myCm6n5rgGXC6EbdF8C8f+PXbCmM4sdlDUuzr
-         URr72erKUCPS9yedYaRFw5MHdfQW8PvvBsTguSegrIkDbjc+3Qt6KspNGAx9Ov5doY
-         S20p2gUfIa0f8wjRMUYCd9j00XiN98yTRGpP+D7Sp6xRwTgHr+LQt6XMxlzouHsPZy
-         3boYdu0x+5KapTPk7qOCPeVgSUPD3kpKoL3s58Ao7D552UVeKfMEwH9MbuoPgFudi0
-         5/b9hH1EtgvrA==
+        b=SkVlPELOpHSmQJa3Q0NBS9qGLVCXhXxuDZc76OGKAa32aev+FhpY14ACqaPcCX83Z
+         g9niwHZZNZdm5tOk74aFl6K/Kwc8D9Y49CzrZajQQmproc+eHtjQ08fF1fwawbnsIA
+         oj92y4sXA9i2A4z5iFPVAcT1ea2YEZhm/au/2U3XobdY03R4seIMkkoAi9sTptJsBJ
+         3YyvTkZpz4sdd2d1I5P8z8ygiyP69QlGtJhkG86H9XhWHik+V3F6vxePbbs7sOS04p
+         rwT5xgsSDArh/vw8UaTyl8PkU9eObMP42n16P1hFA/NGFZHz5u4qBBj/dcxb0l/wYE
+         GFvTb9bzKZjIA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/24] btrfs: remove check for NULL block reserve at btrfs_block_rsv_check()
-Date:   Tue, 21 Mar 2023 11:13:39 +0000
-Message-Id: <8a7ecbeffe854a442aacb7c5c0c97b9f44528ebe.1679326430.git.fdmanana@suse.com>
+Subject: [PATCH 06/24] btrfs: initialize ret to -ENOSPC at __reserve_bytes()
+Date:   Tue, 21 Mar 2023 11:13:42 +0000
+Message-Id: <e20f821150a7f888758021613820c70a268a072e.1679326431.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,30 +48,36 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The block reserve passed to btrfs_block_rsv_check() is never NULL, so
-remove the check. In case it can ever become NULL in the future, then
-we'll get a pretty obvious and clear NULL pointer dereference crash and
-stack trace.
+At space-info.c:__reserve_bytes(), instead of initializing 'ret' to 0 when
+it's declared and then shortly after set it to -ENOSPC under the space
+info's spinlock, initialize it to -ENOSPC when declaring it.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/block-rsv.c | 3 ---
- 1 file changed, 3 deletions(-)
+ fs/btrfs/space-info.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 5367a14d44d2..364a3d11bf88 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -232,9 +232,6 @@ int btrfs_block_rsv_check(struct btrfs_block_rsv *block_rsv, int min_percent)
- 	u64 num_bytes = 0;
- 	int ret = -ENOSPC;
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 379a0e778dfb..5eb161d96e35 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1599,7 +1599,7 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
+ 	struct reserve_ticket ticket;
+ 	u64 start_ns = 0;
+ 	u64 used;
+-	int ret = 0;
++	int ret = -ENOSPC;
+ 	bool pending_tickets;
  
--	if (!block_rsv)
--		return 0;
--
- 	spin_lock(&block_rsv->lock);
- 	num_bytes = mult_perc(block_rsv->size, min_percent);
- 	if (block_rsv->reserved >= num_bytes)
+ 	ASSERT(orig_bytes);
+@@ -1622,7 +1622,6 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
+ 		async_work = &fs_info->async_reclaim_work;
+ 
+ 	spin_lock(&space_info->lock);
+-	ret = -ENOSPC;
+ 	used = btrfs_space_info_used(space_info, true);
+ 
+ 	/*
 -- 
 2.34.1
 

@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC0CEC6FD1D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:15:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BEFBCC7618D
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:15:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229541AbjCULPH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:15:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55202 "EHLO
+        id S230497AbjCULPI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:15:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55484 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230437AbjCULOz (ORCPT
+        with ESMTP id S230298AbjCULPA (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:55 -0400
+        Tue, 21 Mar 2023 07:15:00 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 505482CC66
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 506DB2ED72
         for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:30 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 0C28961B04
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:24 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2690C433D2
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:22 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 8104F61B18
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:20 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 76E68C433EF
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:19 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397263;
-        bh=fgYWrVixBIstXE1DwaAX2tdD7DI2fyiLH37lLmoykHM=;
+        s=k20201202; t=1679397259;
+        bh=omYWRS+633ABZzbNsfh7CvBQsTvK758ID5Da2jNK4Dc=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=dscPSf4NKz3fHVVGJQKvUx1O2xiagy140RqM/r7i80kg7yuSk7cBRAduQZvkIkUYW
-         hLWILiFFp1siFkEvZP0mFlTQIR8y0GYsAondXReAlJ1rxw9yGH/qdbrsklNxI/Fxxi
-         W8Rn/vXf0DLr7yLxtRpfBlzEpGeh5NZsZnxeEHhHpduXcGAelF2Fi6n4b6zWuJip+L
-         dDZCww4/vjr4Gz28ZG9V7SZd8yIW4ht3eSCdH3vnjMoMevtxFHbbvHyWBjOlNdalpu
-         ikd8Zr5RfZ+1oRaOpHV9svsIqUS1wOGYyKnX5/eh9f55pAyqi/oIKBgYvy9sF9DgxU
-         YVILeWjAHldHw==
+        b=Ca5NbL5rkgaxMrqyQjI03wkGTlC358fp1QPf7IrPLBB0LdUmRp7nop15OonK2kpNz
+         z7l7r2YoCPJoG+veMr1ksD832o3O4YaLIXYn2EfCsGnuxuxcy+QKhk2Ff0+UBZKE4E
+         WoYGaOFRqG2tY2kLpYB3R0nVzLX4hdhrckULxqLIm/ZHjGtFThNdSRaUJnFwVFkgz9
+         uzw9WQTtqzpTYAcHQtFMDF6VfMK1v2eyv5eL3pMKEMNtAaHkShzLFAlP9NWYsX+4ts
+         3jNgk5y5Rs/Ryz8ba/hOmCg7OfgsZvghI9hPNHNg6vMEix3FXayxkFgCS+PPB+ddzp
+         HNzmoVJzs2Ygg==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 21/24] btrfs: fix calculation of the global block reserve's size
-Date:   Tue, 21 Mar 2023 11:13:57 +0000
-Message-Id: <30080cbfbfcb835e8c1cbd6762afa464a7b6454c.1679326434.git.fdmanana@suse.com>
+Subject: [PATCH 17/24] btrfs: constify fs_info argument of the metadata size calculation helpers
+Date:   Tue, 21 Mar 2023 11:13:53 +0000
+Message-Id: <9a763409b806ae4e3be981a554628e6f7dcb6fe6.1679326434.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,38 +48,38 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At btrfs_update_global_block_rsv(), we are assuming an unlink operation
-uses 5 metadata units, but that's not true anymore, it uses 6 since the
-commit bca4ad7c0b54 ("btrfs: reserve correct number of items for unlink
-and rmdir"). So update the code and comments to consider 6 units.
+The fs_info argument of the helpers btrfs_calc_insert_metadata_size() and
+btrfs_calc_metadata_size() is not modified so it can be const. This will
+also allow a new helper function in one of the next patches to have its
+fs_info argument as const.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/block-rsv.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/fs.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
-index 90b8088e8fac..6edcb32ed4c9 100644
---- a/fs/btrfs/block-rsv.c
-+++ b/fs/btrfs/block-rsv.c
-@@ -350,14 +350,14 @@ void btrfs_update_global_block_rsv(struct btrfs_fs_info *fs_info)
- 
- 	/*
- 	 * But we also want to reserve enough space so we can do the fallback
--	 * global reserve for an unlink, which is an additional 5 items (see the
-+	 * global reserve for an unlink, which is an additional 6 items (see the
- 	 * comment in __unlink_start_trans for what we're modifying.)
- 	 *
- 	 * But we also need space for the delayed ref updates from the unlink,
--	 * so its 10, 5 for the actual operation, and 5 for the delayed ref
-+	 * so its 12, 6 for the actual operation, and 6 for the delayed ref
- 	 * updates.
- 	 */
--	min_items += 10;
-+	min_items += 12;
- 
- 	num_bytes = max_t(u64, num_bytes,
- 			  btrfs_calc_insert_metadata_size(fs_info, min_items));
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 492436e1a59e..0ce43318ac0e 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -822,7 +822,7 @@ static inline u64 btrfs_csum_bytes_to_leaves(
+  * Use this if we would be adding new items, as we could split nodes as we cow
+  * down the tree.
+  */
+-static inline u64 btrfs_calc_insert_metadata_size(struct btrfs_fs_info *fs_info,
++static inline u64 btrfs_calc_insert_metadata_size(const struct btrfs_fs_info *fs_info,
+ 						  unsigned num_items)
+ {
+ 	return (u64)fs_info->nodesize * BTRFS_MAX_LEVEL * 2 * num_items;
+@@ -832,7 +832,7 @@ static inline u64 btrfs_calc_insert_metadata_size(struct btrfs_fs_info *fs_info,
+  * Doing a truncate or a modification won't result in new nodes or leaves, just
+  * what we need for COW.
+  */
+-static inline u64 btrfs_calc_metadata_size(struct btrfs_fs_info *fs_info,
++static inline u64 btrfs_calc_metadata_size(const struct btrfs_fs_info *fs_info,
+ 						 unsigned num_items)
+ {
+ 	return (u64)fs_info->nodesize * BTRFS_MAX_LEVEL * num_items;
 -- 
 2.34.1
 

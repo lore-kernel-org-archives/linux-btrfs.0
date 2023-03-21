@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 336E5C7618D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DA2FEC74A5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230314AbjCULOw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:14:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55162 "EHLO
+        id S230305AbjCULOv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:14:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55126 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229771AbjCULOt (ORCPT
+        with ESMTP id S229685AbjCULOr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:49 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FBF66EBE
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:24 -0700 (PDT)
+        Tue, 21 Mar 2023 07:14:47 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE36149DA
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:23 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 9526A61AEA
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:12 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8EBBBC433D2
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:11 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 16E8CB815BE
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:22 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 59190C433D2
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397252;
-        bh=FJnfQ5I3a0N1gyIn4cKHc5U7EnTETAHGI88wfL9S1KY=;
+        s=k20201202; t=1679397260;
+        bh=GL2LAIGNbxHFtqbPtd7Q1PrEWzXb3gGQDrHLqta0Lyo=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=GJJF9Wmn/Xf57uTw5fHOAXjsEg4T0dj7ZihyYA4HY3rItmUI0w1gDhf+D1deK9qY0
-         e3XafTcoH7O6mw9Bh9rqrsTi/EKTGQmecov5QJWPbJuyHgShm7EaowqYmbaH+v89hc
-         VKITmNXwankTMzeIjTtNiCtP+T1UefTj6CBhKWV5kPDF2sHECp50RShfzwpb+fJdnC
-         ypUu3WMpW/dgpLkeL3yIhTRcyqQCxpjfkdNgn9UBX5Ysc9qLFJmvBtKlrmTdsOAYKZ
-         fcjOni4KBmr3+V4dm6WvmkyXfjUPmexBKGkiaDICngVMiJrQRQatBpUdwLhA7LuHOz
-         zd87jyoSNpJjw==
+        b=aqje9iARLXT8ORJzh2Q7fW+thUXEuvXqKRmdSy4CC6rT/hjpU9lhZpXmKmp0eri/N
+         0i4EmdYfOvM0a6YvDSr7Vd5p+8Jl+BSH9CdGkJDcSTMORaIZx8Xe2fgxkdI8Mj25YH
+         OhYZXofAgUKqdHApq5/z27Q1TdesiaLuYxUeBGclBCdh79dmxiE5BF/A8g20lfMCKO
+         utUaOMolOIC7P+mhpT4DW3morl9ru7z3iwS10uXCV2NPDxJGRDr/WQS3EaZWdukEmP
+         1vlj4cnLLP9EM0nVQK6Xo6NzDNiDt/MahZ89as+95mlzIvVyNtj5jSP+kHY+hw8qEV
+         uc1j/fZgfPnrQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/24] btrfs: collapse should_end_transaction() into btrfs_should_end_transaction()
-Date:   Tue, 21 Mar 2023 11:13:44 +0000
-Message-Id: <620d28d3978808483b962fc0024dda3600d45cb5.1679326431.git.fdmanana@suse.com>
+Subject: [PATCH 18/24] btrfs: constify fs_info argument for the reclaim items calculation helpers
+Date:   Tue, 21 Mar 2023 11:13:54 +0000
+Message-Id: <70dff2b84bb04e277e8e62ae0709d08f44eeee60.1679326434.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,48 +48,37 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The function should_end_transaction() is very short and only has one
-caller, which is btrfs_should_end_transaction(). So move the code from
-should_end_transaction() into btrfs_should_end_transaction().
+Now that btrfs_calc_insert_metadata_size() can take a const fs_info
+argument, make the fs_info argument of calc_reclaim_items_nr() and of
+calc_delayed_refs_nr() const as well.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/transaction.c | 15 ++++-----------
- 1 file changed, 4 insertions(+), 11 deletions(-)
+ fs/btrfs/space-info.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 18329ebcb1cb..c47b6838754e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -942,16 +942,6 @@ void btrfs_throttle(struct btrfs_fs_info *fs_info)
- 	wait_current_trans(fs_info);
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index f36b16ee0a02..a2e14c410416 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -537,7 +537,7 @@ void btrfs_dump_space_info(struct btrfs_fs_info *fs_info,
+ 	up_read(&info->groups_sem);
  }
  
--static bool should_end_transaction(struct btrfs_trans_handle *trans)
--{
--	struct btrfs_fs_info *fs_info = trans->fs_info;
--
--	if (btrfs_check_space_for_delayed_refs(fs_info))
--		return true;
--
--	return !!btrfs_block_rsv_check(&fs_info->global_block_rsv, 50);
--}
--
- bool btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
+-static inline u64 calc_reclaim_items_nr(struct btrfs_fs_info *fs_info,
++static inline u64 calc_reclaim_items_nr(const struct btrfs_fs_info *fs_info,
+ 					u64 to_reclaim)
  {
- 	struct btrfs_transaction *cur_trans = trans->transaction;
-@@ -960,7 +950,10 @@ bool btrfs_should_end_transaction(struct btrfs_trans_handle *trans)
- 	    test_bit(BTRFS_DELAYED_REFS_FLUSHING, &cur_trans->delayed_refs.flags))
- 		return true;
- 
--	return should_end_transaction(trans);
-+	if (btrfs_check_space_for_delayed_refs(trans->fs_info))
-+		return true;
-+
-+	return !!btrfs_block_rsv_check(&trans->fs_info->global_block_rsv, 50);
+ 	u64 bytes;
+@@ -550,7 +550,7 @@ static inline u64 calc_reclaim_items_nr(struct btrfs_fs_info *fs_info,
+ 	return nr;
  }
  
- static void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans)
+-static inline u64 calc_delayed_refs_nr(struct btrfs_fs_info *fs_info,
++static inline u64 calc_delayed_refs_nr(const struct btrfs_fs_info *fs_info,
+ 				       u64 to_reclaim)
+ {
+ 	u64 bytes;
 -- 
 2.34.1
 

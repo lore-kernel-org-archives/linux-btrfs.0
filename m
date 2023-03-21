@@ -2,108 +2,123 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69A62C6FD1C
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 01:34:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B9A6C6FD1C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 02:04:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229794AbjCUBeJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 20 Mar 2023 21:34:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44062 "EHLO
+        id S229767AbjCUCEU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 20 Mar 2023 22:04:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48428 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229755AbjCUBeH (ORCPT
+        with ESMTP id S229641AbjCUCES (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 20 Mar 2023 21:34:07 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B16E12365C
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Mar 2023 18:34:06 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 6326E1F8D9;
-        Tue, 21 Mar 2023 01:34:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1679362445;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0AzWrL6zm95SKOY25BAZAmoBXFzKkiGnVwKeA8Yh/qU=;
-        b=xnIDaFdYKs5+nCwgdcnMhlvWOsPQlV8glQPwdnNTf22Ps06SVvms/3j60LznzP5A+I6/iq
-        pbikwtN7cCsGE/rKXf/R/Ha3giF4kEmrTLA/1DmZt6wWkqy7eMsJTl0hDDlo4ZDcvzfnfe
-        pD8LkuuxjoNBkTpFCouXJoZL+NwbGxU=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1679362445;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=0AzWrL6zm95SKOY25BAZAmoBXFzKkiGnVwKeA8Yh/qU=;
-        b=CgPc0l/ozO5cQ4NnaOxROc9HbG7RyhpYRBtwhtciEFX8y9SgdcoH6oq33qWCzKkMDaOh7i
-        /PTOmf8+nom+y0DA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2CFD813416;
-        Tue, 21 Mar 2023 01:34:05 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id nB+tCY0JGWS3ZAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 21 Mar 2023 01:34:05 +0000
-Date:   Tue, 21 Mar 2023 02:27:55 +0100
-From:   David Sterba <dsterba@suse.cz>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 03/12] btrfs: introduce a new helper to submit write
- bio for scrub
-Message-ID: <20230321012755.GO10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1679278088.git.wqu@suse.com>
- <c9482839875af328d7fe5ff6a9bebdc84c33c5ab.1679278088.git.wqu@suse.com>
- <20230321001445.GJ10580@twin.jikos.cz>
- <900424d7-0659-aabd-4456-277b60e808e8@gmx.com>
+        Mon, 20 Mar 2023 22:04:18 -0400
+Received: from mail-qt1-f175.google.com (mail-qt1-f175.google.com [209.85.160.175])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2A03A2ED5B
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Mar 2023 19:04:06 -0700 (PDT)
+Received: by mail-qt1-f175.google.com with SMTP id c19so16353815qtn.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Mar 2023 19:04:06 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1679364244;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=9njVCJrIQjld+/7I/yREHVWR6u9cpKpX0PR/OWJy6SU=;
+        b=2IO91ZbahuTO3YeagzeMS0QklEgZbzcyuuVCy7+Dx0t/JCaxHtGclZNqIrYgxTW7/U
+         i3hdrtHVfy1zvKCJ4gK85zcSq07FoUISeLJpL2YajjwJh2Ng5gM5qD6UbI9gvl0fbElO
+         Yetb+ch/8337N/eckxgifTtegQw9NNZuvYCOdz64nDbca8Z9x9fZeOpdTkjC07tzrc4c
+         amQ84RWLTmfT7pUQsUcZcmZwOf+rxGNTq69DAQuaJrnbG9VhjrBxRU5Yhx+ZLCfPZumV
+         p+93MtG7dQh7US55RuvrdCGH7WGp0PfIiyPlMoKHC7xyxlwf3BdxucgF1ynC64qu3OUQ
+         dwyQ==
+X-Gm-Message-State: AO0yUKWRzucHtNaTw+1wBG/tbOl+nlyivMRdYakuaqW8/YVoAQOpfxIA
+        hLz/c+i+otQ0VEVUCwGzxPeAu6DtALctgQ==
+X-Google-Smtp-Source: AK7set9K2QFGGAp22x2x+Gt5Ai/vuxCPJqy+GBtlZYk+BwYCIEW2eva6DllKTlw9KW+T7syPNkzrzA==
+X-Received: by 2002:ac8:5cc8:0:b0:3bf:c86b:3d2a with SMTP id s8-20020ac85cc8000000b003bfc86b3d2amr2070075qta.9.1679364244408;
+        Mon, 20 Mar 2023 19:04:04 -0700 (PDT)
+Received: from Belldandy-Slimbook.infra.opensuse.org (ool-18e49371.dyn.optonline.net. [24.228.147.113])
+        by smtp.gmail.com with ESMTPSA id o140-20020a374192000000b007343fceee5fsm2382428qka.8.2023.03.20.19.04.03
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 20 Mar 2023 19:04:03 -0700 (PDT)
+From:   Neal Gompa <neal@gompa.dev>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.cz>, Hector Martin <marcan@marcan.st>,
+        Davide Cavalca <davide@cavalca.name>,
+        Neal Gompa <neal@gompa.dev>
+Subject: [RFC PATCH] btrfs-progs: mkfs: Enforce 4k sectorsize by default
+Date:   Mon, 20 Mar 2023 22:03:20 -0400
+Message-Id: <20230321020320.2555362-1-neal@gompa.dev>
+X-Mailer: git-send-email 2.39.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <900424d7-0659-aabd-4456-277b60e808e8@gmx.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 21, 2023 at 08:54:22AM +0800, Qu Wenruo wrote:
-> 
-> 
-> On 2023/3/21 08:14, David Sterba wrote:
-> > On Mon, Mar 20, 2023 at 10:12:49AM +0800, Qu Wenruo wrote:
-> >> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-> >> index b96f40160b08..633447b6ba44 100644
-> >> --- a/fs/btrfs/bio.c
-> >> +++ b/fs/btrfs/bio.c
-> >> +	/* Map the RAID56 multi-stripe writes to a single one. */
-> >> +	if (bioc->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-> >> +		int data_stripes = bioc->map_type & BTRFS_BLOCK_GROUP_RAID5 ?
-> >> +				   bioc->num_stripes - 1 : bioc->num_stripes - 2;
-> > 
-> > When ternary operator is used in expression, please put ( ) around it so
-> > it's clear where it starts.
-> > 
-> >> +		int i;
-> >> +
-> >> +		/* This special write only works for data stripes. */
-> >> +		ASSERT(mirror_num == 1);
-> >> +		for (i = 0; i < data_stripes; i++) {
-> > 
-> > 		for (int i = 0; ...)
-> > 
-> > We can now use the iterator value defined inside for (), it's relatively
-> > new due to bumped minimum compiler version so I'd like to see it used
-> > where possible.
-> 
-> Just one question.
-> 
-> There are quite some for loops in the last few patches.
-> 
-> In that case, should we still go the "for (int i = 0;...)" way?
-> Or it's better to declare "i" as the old way?
+We have had working subpage support in Btrfs for many cycles now.
+Generally, we do not want people creating filesystems by default
+with non-4k sectorsizes since it creates portability problems.
 
-For 'i' I'd use the for() declarations, even if it's for multiple loops.
+Signed-off-by: Neal Gompa <neal@gompa.dev>
+---
+ Documentation/Subpage.rst    |  9 +++++----
+ Documentation/mkfs.btrfs.rst | 11 +++++++----
+ mkfs/main.c                  |  2 +-
+ 3 files changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/Documentation/Subpage.rst b/Documentation/Subpage.rst
+index 21a495d5..d7e9b241 100644
+--- a/Documentation/Subpage.rst
++++ b/Documentation/Subpage.rst
+@@ -9,10 +9,11 @@ to the exactly same size of the block and page. On x86_64 this is typically
+ pages, like 64KiB on 64bit ARM or PowerPC. This means filesystems created
+ with 64KiB sector size cannot be mounted on a system with 4KiB page size.
+ 
+-While with subpage support, systems with 64KiB page size can create (still needs
+-"-s 4k" option for mkfs.btrfs) and mount filesystems with 4KiB sectorsize,
+-allowing us to push 4KiB sectorsize as default sectorsize for all platforms in the
+-near future.
++Since v6.3, filesystems are created with a 4KiB sectorsize by default,
++though it remains possible to create filesystems with other page sizes
++(such as 64KiB with the "-s 64k" option for mkfs.btrfs). This ensures that
++new filesystems are compatible across other architecture variants using
++larger page sizes.
+ 
+ Requirements, limitations
+ -------------------------
+diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
+index ba7227b3..af0b9c03 100644
+--- a/Documentation/mkfs.btrfs.rst
++++ b/Documentation/mkfs.btrfs.rst
+@@ -116,10 +116,13 @@ OPTIONS
+ -s|--sectorsize <size>
+         Specify the sectorsize, the minimum data block allocation unit.
+ 
+-        The default value is the page size and is autodetected. If the sectorsize
+-        differs from the page size, the created filesystem may not be mountable by the
+-        running kernel. Therefore it is not recommended to use this option unless you
+-        are going to mount it on a system with the appropriate page size.
++        The default value is 4KiB (4096). If larger page sizes (such as 64KiB [16384])
++        are used, the created filesystem will only mount on systems with a running kernel
++        running on a matching page size. Therefore it is not recommended to use this option
++        unless you are going to mount it on a system with the appropriate page size.
++
++        .. note::
++                Versions up to 6.3 set the sectorsize matching to the page size.
+ 
+ -L|--label <string>
+         Specify a label for the filesystem. The *string* should be less than 256
+diff --git a/mkfs/main.c b/mkfs/main.c
+index f5e34cbd..5e1834d7 100644
+--- a/mkfs/main.c
++++ b/mkfs/main.c
+@@ -1207,7 +1207,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
+ 	}
+ 
+ 	if (!sectorsize)
+-		sectorsize = (u32)sysconf(_SC_PAGESIZE);
++		sectorsize = (u32)SZ_4K;
+ 	if (btrfs_check_sectorsize(sectorsize))
+ 		goto error;
+ 
+-- 
+2.39.2
+

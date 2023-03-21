@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ACCBEC6FD1D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72F3AC74A5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230196AbjCULOi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:14:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54662 "EHLO
+        id S229828AbjCULOk (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:14:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54666 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230274AbjCULOb (ORCPT
+        with ESMTP id S230296AbjCULOc (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:31 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E02C47828
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:11 -0700 (PDT)
+        Tue, 21 Mar 2023 07:14:32 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13F94367D8
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:10 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id F00B761ADB
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:09 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E9A8BC4339C
+        by ams.source.kernel.org (Postfix) with ESMTPS id D56A8B815B8
         for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:08 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E7F8C4339B
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397249;
-        bh=GxkFgYLUkN9hiqnChOMtjYmd77c/DWBPTB5t0tWvTS0=;
+        s=k20201202; t=1679397247;
+        bh=Qz4Nvb9iNHDAznpTD9/InGTGTZ371eFFpH8StlWErJ8=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=CTQk/2hWJFwK4cf0yWEDU4ndpgxG8XvwsH2Qp5ea0a4l87YHD0idhITB/vLJi9nVt
-         OcVJ5dHbxHZJ6EIi6J13EKtIf0Vc3W1AuERujKBx7rVVz4hzjE4NmpPnyXrylSvMQv
-         VZDQGpirFQ9WRh4kLHVftvvvgP7LSfwl979kAHnyxYYq9NCfyqIqd/bL2AYT7R5HgY
-         FSL3+cstwgQFaplWPqq3QAEEmPzDeyZJjmRgGwaVmYh7iar80ymLhCRxUig9u6Q3rb
-         U8+rj/2S3pr1Jq679iIirptnZk7epIRu8VbBJ+9BvspfS7Zs9TF3uqUIHrIOzYYPem
-         LnEiex3l5+ePQ==
+        b=WK+yq2g1l4g06MuXC7suaeQbrv4LQ9Rz/8W77c5sGCMDJJwngZ76/Du2mgmS2KDfh
+         w7dypRrwxqyJ80NxHo6/i9xj8Uks4myCm6n5rgGXC6EbdF8C8f+PXbCmM4sdlDUuzr
+         URr72erKUCPS9yedYaRFw5MHdfQW8PvvBsTguSegrIkDbjc+3Qt6KspNGAx9Ov5doY
+         S20p2gUfIa0f8wjRMUYCd9j00XiN98yTRGpP+D7Sp6xRwTgHr+LQt6XMxlzouHsPZy
+         3boYdu0x+5KapTPk7qOCPeVgSUPD3kpKoL3s58Ao7D552UVeKfMEwH9MbuoPgFudi0
+         5/b9hH1EtgvrA==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/24] btrfs: update flush method assertion when reserving space
-Date:   Tue, 21 Mar 2023 11:13:41 +0000
-Message-Id: <d15da757fef2ccec42fd1f7252d8a33b625d042f.1679326430.git.fdmanana@suse.com>
+Subject: [PATCH 03/24] btrfs: remove check for NULL block reserve at btrfs_block_rsv_check()
+Date:   Tue, 21 Mar 2023 11:13:39 +0000
+Message-Id: <8a7ecbeffe854a442aacb7c5c0c97b9f44528ebe.1679326430.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,50 +48,30 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When reserving space, at space-info.c:__reserve_bytes(), we assert that
-either the current task is not holding a transacion handle, or, if it is,
-that the flush method is not BTRFS_RESERVE_FLUSH_ALL. This is because that
-flush method can trigger transaction commits, and therefore could lead to
-a deadlock.
-
-However there are other 2 flush methods that can trigger transaction
-commits:
-
-1) BTRFS_RESERVE_FLUSH_ALL_STEAL
-2) BTRFS_RESERVE_FLUSH_EVICT
-
-So update the assertion to check the flush method is also not one those
-two methods if the current task is holding a transaction handle.
+The block reserve passed to btrfs_block_rsv_check() is never NULL, so
+remove the check. In case it can ever become NULL in the future, then
+we'll get a pretty obvious and clear NULL pointer dereference crash and
+stack trace.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/space-info.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ fs/btrfs/block-rsv.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 3eecce86f63f..379a0e778dfb 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -1603,7 +1603,18 @@ static int __reserve_bytes(struct btrfs_fs_info *fs_info,
- 	bool pending_tickets;
+diff --git a/fs/btrfs/block-rsv.c b/fs/btrfs/block-rsv.c
+index 5367a14d44d2..364a3d11bf88 100644
+--- a/fs/btrfs/block-rsv.c
++++ b/fs/btrfs/block-rsv.c
+@@ -232,9 +232,6 @@ int btrfs_block_rsv_check(struct btrfs_block_rsv *block_rsv, int min_percent)
+ 	u64 num_bytes = 0;
+ 	int ret = -ENOSPC;
  
- 	ASSERT(orig_bytes);
--	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_ALL);
-+	/*
-+	 * If have a transaction handle (current->journal_info != NULL), then
-+	 * the flush method can not be neither BTRFS_RESERVE_FLUSH_ALL* nor
-+	 * BTRFS_RESERVE_FLUSH_EVICT, as we could deadlock because those
-+	 * flushing methods can trigger transaction commits.
-+	 */
-+	if (current->journal_info) {
-+		/* One assert per line for easier debugging. */
-+		ASSERT(flush != BTRFS_RESERVE_FLUSH_ALL);
-+		ASSERT(flush != BTRFS_RESERVE_FLUSH_ALL_STEAL);
-+		ASSERT(flush != BTRFS_RESERVE_FLUSH_EVICT);
-+	}
- 
- 	if (flush == BTRFS_RESERVE_FLUSH_DATA)
- 		async_work = &fs_info->async_data_reclaim_work;
+-	if (!block_rsv)
+-		return 0;
+-
+ 	spin_lock(&block_rsv->lock);
+ 	num_bytes = mult_perc(block_rsv->size, min_percent);
+ 	if (block_rsv->reserved >= num_bytes)
 -- 
 2.34.1
 

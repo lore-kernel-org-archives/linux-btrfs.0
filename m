@@ -2,146 +2,100 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E23E7C6FD1D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 16:46:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BF83C74A5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 18:06:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229916AbjCUQqZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 12:46:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60950 "EHLO
+        id S229891AbjCUSGq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 14:06:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40030 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230024AbjCUQqW (ORCPT
+        with ESMTP id S229635AbjCUSGp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 12:46:22 -0400
-Received: from out5-smtp.messagingengine.com (out5-smtp.messagingengine.com [66.111.4.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6188711656
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 09:45:59 -0700 (PDT)
-Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
-        by mailout.nyi.internal (Postfix) with ESMTP id 1BEB85C00E0;
-        Tue, 21 Mar 2023 12:45:44 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute1.internal (MEProxy); Tue, 21 Mar 2023 12:45:44 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-        :content-transfer-encoding:content-type:date:date:from:from
-        :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm2; t=1679417144; x=
-        1679503544; bh=xxveT1NlhD1MHsMmSBTdjJEHd7Q8vXuSckDasrhE94A=; b=e
-        vNTOuVt0YsNi7ubkExamLmIFzQimYsS/bxyfEfCLeD2qp0cFW1tSsnwntHNCNzgK
-        hk0/4Xsx7S34Yp8lZQAdb8KE96Vr9pbC3cKgG8GKiDzkNoFHqCvmkm6+P0CMGzz7
-        Z/vJx8dN5cpwW91NVj6x7QDZm8sDxswX16vHQbtVVvltWP76nt6jGu9cG+d6O+x1
-        I07pSQiklAtKjslLy8neABcdw1OptMkG7s0BMp7jcF/vzhr3FnOgmKMoOam7S5DF
-        gaDGXCyDpcI7ZrlSEKckWHUPnJsUE2lF+tVdn7IBZUgTY7Rpyt/2M0YwI1c/vkrq
-        iPPlzhAi4clM9aDQSvQlw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:content-transfer-encoding:content-type
-        :date:date:feedback-id:feedback-id:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm2; t=1679417144; x=1679503544; bh=x
-        xveT1NlhD1MHsMmSBTdjJEHd7Q8vXuSckDasrhE94A=; b=rP4AIgLpFtyXSCucm
-        0zN2BbxValW3tolNshXODi4jOZxgSdMFEWX5M87VbLbHy80ZChh45eqMJZEaLFvW
-        SiLomBA0Zkyk437IvRYZ9+xbYX4tkkQtcJWbGsUPW1q9j5Yj4FCi2y0eiKEBDVnH
-        Ob/dxfFevkWqBT+l5QGQl40GzY/taI0fzx8tOLTg0OiLIAYQvQDtXL7/Yaj8k3nY
-        VWNNdrjQmk04hdxv0l3QLq/C7bCI5xJFGGVP0oDrFpHGHFB1zbrOCJw5Tn8/5mUG
-        XK62lr5oWBTUNfomBqLTCUK0Z6wOu9PiNEXMP3FZxJPB+GPmh0zGoHyMkm+5WeBv
-        PY39w==
-X-ME-Sender: <xms:N98ZZI0AuZ5udYbNCjraL3StuH3illAi-3cTa0g38gr-nAMDOSMOKw>
-    <xme:N98ZZDEGNttHtBnOx9lwJfA5J3Y-2XJ2VVY8iZwZWzQ0CVrXZqbCUUHQdKoGrU2MP
-    1kBr4RdcvUe8phjkKc>
-X-ME-Received: <xmr:N98ZZA4BHQpusbcAJDLVtRxUY-c8AzMCDgXUDArkf-zLOt_4LWtzpZAc>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrvdegtddgledtucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgjfhgggfestdekre
-    dtredttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdr
-    ihhoqeenucggtffrrghtthgvrhhnpeeiueffuedvieeujefhheeigfekvedujeejjeffve
-    dvhedtudefiefhkeegueehleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhep
-    mhgrihhlfhhrohhmpegsohhrihhssegsuhhrrdhioh
-X-ME-Proxy: <xmx:N98ZZB1zF7_ucLIMNFS04QBz-K3kajZFDXEhFrLCeAKB-j8o6TvzfA>
-    <xmx:N98ZZLHVZ--z5I6CiQSkO-iM-ithpnqwxoVrHYM_gy33Z-AqqT9YFg>
-    <xmx:N98ZZK-eRTeMcnGVQP9sKY_Kqdv4AfO_6rf6gDQAnNv663TT2Jf6aQ>
-    <xmx:ON8ZZOPxt1LekzwJ8fctgmjFkS-28o-zQcrOX6tyBzloGFejevqQ_g>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 21 Mar 2023 12:45:43 -0400 (EDT)
-From:   Boris Burkov <boris@bur.io>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 5/6] btrfs: fix crash with non-zero pre in btrfs_split_ordered_extent
-Date:   Tue, 21 Mar 2023 09:45:32 -0700
-Message-Id: <4154ce05313d40d1ba18e0648536426240119f41.1679416511.git.boris@bur.io>
-X-Mailer: git-send-email 2.38.1
-In-Reply-To: <cover.1679416511.git.boris@bur.io>
-References: <cover.1679416511.git.boris@bur.io>
+        Tue, 21 Mar 2023 14:06:45 -0400
+Received: from mail-qt1-f181.google.com (mail-qt1-f181.google.com [209.85.160.181])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC52F4D2A4
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:06:43 -0700 (PDT)
+Received: by mail-qt1-f181.google.com with SMTP id bz27so7198380qtb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:06:43 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1679422002;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=412pzojuSE2f0w3DYVguk4c8qRm7lPnYodGxkNfunN0=;
+        b=EjDbxjjWcoPXG3RYtx2w5zqSFPWYO1saA5dFvFyrgLCAb1aLSayd2CPFR53pXY6e6H
+         1MwEBhqlkvS2Y4Lnpq0xQ1FTR4dnf3KiNJ0Ek2S4UoH2Oau5zGAiI6Mxw1Pl+1JMtwJ6
+         B5VTv0VCMRHU03qBI7W8Z+xBsWQ6I1FFMmd5jwMTgM4Spq1FYKg9pwzYx6MFJetK6xL1
+         3fP/z23j/82/5XBDe9P3ZUjOQeAkFGzn9reixh8V/svFtb4r/4DE5bRZaHXIBJ5ZTy3D
+         TdeVE38mIt1ZrBVeUWyyAoIC9dMYOQfc2kXuOBE3CknoiN97l7HpTj9zrBWbK8ToWypN
+         vp0w==
+X-Gm-Message-State: AO0yUKUoBYthv7Z5puLwYZcBouoZJSPou2xFUWVRcrUm7wSKuQ8OPwQj
+        hIIqcBhi4nD0EyeGZEeo9UnoxwqF8WQW3pohWFU=
+X-Google-Smtp-Source: AK7set9+2p6eGp3S7sZ795vZUEMHFSO3IYC1ylRSkBax4pZ2Y2akTUJTXlMr3SaBE0KhhgdIPxkjQw==
+X-Received: by 2002:ac8:5b95:0:b0:3b8:340b:1aab with SMTP id a21-20020ac85b95000000b003b8340b1aabmr1291066qta.25.1679422002405;
+        Tue, 21 Mar 2023 11:06:42 -0700 (PDT)
+Received: from Belldandy-Slimbook.infra.opensuse.org (ool-18e49371.dyn.optonline.net. [24.228.147.113])
+        by smtp.gmail.com with ESMTPSA id 84-20020a370c57000000b0074698d81ffasm2328796qkm.44.2023.03.21.11.06.41
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 21 Mar 2023 11:06:42 -0700 (PDT)
+From:   Neal Gompa <neal@gompa.dev>
+To:     Linux BTRFS Development <linux-btrfs@vger.kernel.org>
+Cc:     Neal Gompa <neal@gompa.dev>, Anand Jain <anand.jain@oracle.com>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
+        David Sterba <dsterba@suse.cz>,
+        Hector Martin <marcan@marcan.st>,
+        Sven Peter <sven@svenpeter.dev>,
+        Davide Cavalca <davide@cavalca.name>,
+        Jens Axboe <axboe@fb.com>, Asahi Lina <lina@asahilina.net>,
+        Asahi Linux <asahi@lists.linux.dev>
+Subject: [RFC PATCH v2 0/1] Enforce 4k sectorize by default for mkfs
+Date:   Tue, 21 Mar 2023 14:06:09 -0400
+Message-Id: <20230321180610.2620012-1-neal@gompa.dev>
+X-Mailer: git-send-email 2.39.2
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-if pre != 0 in btrfs_split_ordered_extent, then we do the following:
-1. remove ordered (at file_offset) from the rb tree
-2. modify file_offset+=pre
-3. re-insert ordered
-4. clone an ordered extent at offset 0 length pre from ordered.
-5. clone an ordered extent for the post range, if necessary.
+The Fedora Asahi SIG[0] is working on bringing up support for
+Apple Silicon Macintosh computers through the Asahi Fedora Remix[1].
 
-step 4 is not correct, as at this point, the start of ordered is already
-the end of the desired new pre extent. Further this causes a panic when
-btrfs_alloc_ordered_extent sees that the node (from the modified and
-re-inserted ordered) is already present at file_offset + 0 = file_offset.
+Apple Silicon Macs are unusual in that they currently require 16k
+page sizes, which means that the current default for mkfs.btrfs(8)
+makes a filesystem that is unreadable on x86 PCs and most other ARM
+PCs.
 
-We can fix this by either using a negative offset, or by moving the
-clone of the pre extent to after we remove the original one, but before
-we modify and re-insert it. The former feels quite kludgy, as we are
-"cloning" from outside the range of the ordered extent, so opt for the
-latter, which does have some locking annoyances.
+Soon, this will be even more of a problem within Apple Silicon Macs
+as Asahi Lina is working on 4k support to enable x86 emulation[2]
+and since Linux does not support dynamically switching page sizes at
+runtime, users will likely regularly switch back and forth depending
+on their needs.
 
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/ordered-data.c | 20 +++++++++++++-------
- 1 file changed, 13 insertions(+), 7 deletions(-)
+Thus, I'd like to see us finally make the switchover to 4k sectorsize
+for new filesystems by default, regardless of page size.
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 4bebebb9b434..d14a3fe1a113 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -1161,6 +1161,17 @@ int btrfs_split_ordered_extent(struct btrfs_ordered_extent *ordered,
- 	if (tree->last == node)
- 		tree->last = NULL;
- 
-+	if (pre) {
-+		spin_unlock_irq(&tree->lock);
-+		oe = clone_ordered_extent(ordered, 0, pre);
-+		ret = IS_ERR(oe) ? PTR_ERR(oe) : 0;
-+		if (!ret && ret_pre)
-+			*ret_pre = oe;
-+		if (ret)
-+			goto out;
-+		spin_lock_irq(&tree->lock);
-+	}
-+
- 	ordered->file_offset += pre;
- 	ordered->disk_bytenr += pre;
- 	ordered->num_bytes -= (pre + post);
-@@ -1176,18 +1187,13 @@ int btrfs_split_ordered_extent(struct btrfs_ordered_extent *ordered,
- 
- 	spin_unlock_irq(&tree->lock);
- 
--	if (pre) {
--		oe = clone_ordered_extent(ordered, 0, pre);
--		ret = IS_ERR(oe) ? PTR_ERR(oe) : 0;
--		if (!ret && ret_pre)
--			*ret_pre = oe;
--	}
--	if (!ret && post) {
-+	if (post) {
- 		oe = clone_ordered_extent(ordered, pre + ordered->disk_num_bytes, post);
- 		ret = IS_ERR(oe) ? PTR_ERR(oe) : 0;
- 		if (!ret && ret_post)
- 			*ret_post = oe;
- 	}
-+out:
- 	return ret;
- }
- 
+The initial test run by Hector Martin[3] at request of Qu Wenruo
+looks promising[4], and I hope we can get this to land upstream soon.
+
+This is an update on the initial RFC patch[5], which addresses the
+documentation feedback from Anand Jain.
+
+[0]: https://fedoraproject.org/wiki/SIGs/Asahi
+[1]: https://asahi-fedora-remix.org/
+[2]: https://vt.social/@lina/110060963422545117
+[3]: https://lore.kernel.org/linux-btrfs/fdffeecd-964f-0c69-f869-eb9ceca20263@suse.com/T/#m11d7939de96c43b3a7cdabc7c568d8bcafc7ca83
+[4]: https://lore.kernel.org/linux-btrfs/fdffeecd-964f-0c69-f869-eb9ceca20263@suse.com/T/#mf382b78a8122b0cb82147a536c85b6a9098a2895
+[5]: https://lore.kernel.org/linux-btrfs/fdffeecd-964f-0c69-f869-eb9ceca20263@suse.com/T/#t
+
+Neal Gompa (1):
+  btrfs-progs: mkfs: Enforce 4k sectorsize by default
+
+ Documentation/Subpage.rst    | 15 ++++++++-------
+ Documentation/mkfs.btrfs.rst | 13 +++++++++----
+ mkfs/main.c                  |  2 +-
+ 3 files changed, 18 insertions(+), 12 deletions(-)
+
 -- 
-2.38.1
+2.39.2
 

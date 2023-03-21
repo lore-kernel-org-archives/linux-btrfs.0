@@ -2,71 +2,72 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ACEEBC7619A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 16:46:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 450DFC74A5B
+	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 16:46:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230017AbjCUQqM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 12:46:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59684 "EHLO
+        id S230000AbjCUQqW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 12:46:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60870 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230000AbjCUQqD (ORCPT
+        with ESMTP id S230024AbjCUQqS (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 12:46:03 -0400
+        Tue, 21 Mar 2023 12:46:18 -0400
 Received: from out5-smtp.messagingengine.com (out5-smtp.messagingengine.com [66.111.4.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A54542799B
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 09:45:41 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2098152F73
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 09:45:58 -0700 (PDT)
 Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
-        by mailout.nyi.internal (Postfix) with ESMTP id 8BB745C0160;
-        Tue, 21 Mar 2023 12:45:40 -0400 (EDT)
-Received: from mailfrontend2 ([10.202.2.163])
-  by compute2.internal (MEProxy); Tue, 21 Mar 2023 12:45:40 -0400
+        by mailout.nyi.internal (Postfix) with ESMTP id CB4865C0136;
+        Tue, 21 Mar 2023 12:45:45 -0400 (EDT)
+Received: from mailfrontend1 ([10.202.2.162])
+  by compute2.internal (MEProxy); Tue, 21 Mar 2023 12:45:45 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm2; t=1679417140; x=
-        1679503540; bh=rXsjMfASmVp3FdC7wSRSkWbq55i+g8Uq0zzQq3PALfE=; b=L
-        RdK+zphv3jGooxLp8xRg+KSQl8xA1G/mWJbWNCO/Wa/4VjqJ1RU+HUm9vG9HYak1
-        O++aqaNUG+vdedUKPanz6n0SzGFSOukHSIQVGOP4AUiBd+V/d5e62TCUeN/GUXaO
-        kNbqgPZ37z8oHa12KhWXuQQXtQ4CfBHxlSS8V8Il59dNdnUS5Dy/M+iwRpQzHBdE
-        sHU9EzDjUvxmb5lqDQbeLTYnas9IqXy4s//81NBUcidejZ4u0RV57x0caXTuir6v
-        f1ERhj17GYkhWB5o0BbXQPR0iEjpSWAC8HdcQTn5FC2vprXxRdRWTHRcLipjo3AE
-        Te0X54p/5vzHqetGw3mwA==
+        :reply-to:sender:subject:subject:to:to; s=fm2; t=1679417145; x=
+        1679503545; bh=SJXljvkua0QBQ/xrM+RYMut+xJvz2Y9iekPc3I/pppI=; b=f
+        19mEuDCs8mb2BD1zZ7BbLlhEzmh0yUw9oEv5wGPB5UV083D7Nkxum7DH6nu05t1L
+        7djyRkQ7sCdUZ3YuVUlMY+tv1kwzAGKdxilIJhr2s5O6bIGcL+S8NYQCox3E2Krn
+        oM0it4PSKRy7OjVZZg6U0wmKitCiHStx/83XjdyR42/FUQacpsxgME9A9VkZg3e8
+        EM4O1P6Z9EFyaD7fenCyayspeZqWDWpWLdbiPBeCZtSs0wvHbQRnE30AtfROqqor
+        DUSfXJTIRlyrQaPu4X203EpOww0DpJUFW9uPb00lsriWCo5JLbVj+fABcU6K8TNC
+        vMIcJDdbbGCykba+HT3NA==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm2; t=1679417140; x=1679503540; bh=r
-        XsjMfASmVp3FdC7wSRSkWbq55i+g8Uq0zzQq3PALfE=; b=PGOXpXsbFgbhmzLrD
-        1EKR703c5BtMtiFlgNJk3OrmGZAW6wAEfWYGrThNPLo1x7BrjyufGWBCtdWWOmu+
-        Ag2MrSDL7iofJmt8T481n9gXBYVHtJFAGAjBY5dIOXx3m/ByQqUKdcBf50I4C7IV
-        Cb+qvoBnAceaYmz8173alroYoLgx74iieXQn4vYE45BAQ3QkqrCw/+JLPAzKN1cG
-        oKJCxnV3cCJCIBmx0Ro2crs40BoO3oxCU6qhQlaF9z92i8bOjG+WUqvsogVw9+3t
-        Jf06p/4U/oVhLWgZsdM7UHx66BCj2EF3r9Lenzsnb5rxcL2jZMos0UX7dOTf9qwx
-        cnNwQ==
-X-ME-Sender: <xms:NN8ZZLIEP_BcxLrgMZA1UnVKaZFYut38Vzk2Dr1kz9UjcDO2DaGJKw>
-    <xme:NN8ZZPIHG-Gti0995PPd0RnT6jwsEv4xzOicVjEw4PH33jadY5Wn0UQgmadVtRg0k
-    A89bG46dv6cUrB8gzs>
-X-ME-Received: <xmr:NN8ZZDsmHkhDVTwOAPtQO-JQ6vfdVHw8xjCDw5Catey42ZpojLKDAf1R>
+        :x-me-sender:x-sasl-enc; s=fm2; t=1679417145; x=1679503545; bh=S
+        JXljvkua0QBQ/xrM+RYMut+xJvz2Y9iekPc3I/pppI=; b=F4G4GBueiFaUDGATS
+        6vSrl5k3eIQDFsaPHl/piXZNFgEsf42L5Bd/eCSGMiat3/4zASb2cdDkHXEEaFZ7
+        dobN0sxIBuGas818C0PDyD/ZL6tBOG48NwlTNdtLaGiPiTe6wobn8UQXbKc0KrBe
+        8bWte5Ld61/moaTS4y4/rIMXqrDBrIH9GwQY/IyWCgAsFGkOeKTgYeha1AG/Y8yQ
+        wmmbrU6Nqvps8b/v7d9B3Q2Lpn82Eu1iKKFhFX22kiDEAT8MpXQZ0NIzg/bRuw9f
+        9ku96jujdj6VMSrvvIAaE7e/60RQbueAoeCaxh69LvbxCoWP5jKrHOXkzoheu8rE
+        I9H0Q==
+X-ME-Sender: <xms:Od8ZZC4YPj6MnmC2I2_7LkVJao9MKhYpp6NHZN0FrEmCM10j5dTJig>
+    <xme:Od8ZZL67h8Cr3uR--bSazohHwrd03rFb5xEMQJffic619UiAkY4EngBj6BwLFBwzT
+    7m0fP2OkT2CdgZS1Js>
+X-ME-Received: <xmr:Od8ZZBf8_7rhLEavURYLrbTNCw629-6F4esLKj6UVzGnndJ43YRtgLQA>
 X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrvdegtddgleduucetufdoteggodetrfdotf
     fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
     uceurghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgjfhgggfestdekre
     dtredttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdr
-    ihhoqeenucggtffrrghtthgvrhhnpeeiueffuedvieeujefhheeigfekvedujeejjeffve
-    dvhedtudefiefhkeegueehleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhep
-    mhgrihhlfhhrohhmpegsohhrihhssegsuhhrrdhioh
-X-ME-Proxy: <xmx:NN8ZZEa1dngSlSt-QwIdKegBdvexCPn9Zf-o0rRiNFuO3TsMkS3TAQ>
-    <xmx:NN8ZZCbXM_43s6-55RAeh1CTmUkNWkgg5SihenIuqm_EBcJWh6rR8Q>
-    <xmx:NN8ZZIBbTZtiYZzcC6LBxJ-B_6QaRjlI-5iAOXOn6FIhoMLk8x4wLg>
-    <xmx:NN8ZZLCvdVmnWOncLZLl_7U7war8UD-n9EE0KJtd2QnSTFZ-lXMvkQ>
+    ihhoqeenucggtffrrghtthgvrhhnpedvtdetffelgeeguddugffgtddtgfehgeetffegue
+    eutdelgeeuheetfeetveelueenucffohhmrghinheprhgvughhrghtrdgtohhmpdhkvghr
+    nhgvlhdrohhrghdpphgrshhtvggsihhnrdgtohhmnecuvehluhhsthgvrhfuihiivgeptd
+    enucfrrghrrghmpehmrghilhhfrhhomhepsghorhhishessghurhdrihho
+X-ME-Proxy: <xmx:Od8ZZPJrkjc-4eUMm11czSPpwrJ8MthwSP02eepvO9QQ6U2HPfNgWg>
+    <xmx:Od8ZZGImr9FWW8Q-5pShayBJQ70u2P6EDDu7wkaKszgvMfFVND0Sxw>
+    <xmx:Od8ZZAwAToNvYvKm-ZiGwf70RepqnR0kPW_Xv22h9nnRRFHW9vRN1w>
+    <xmx:Od8ZZAzlMfm4NcIO--iSh-A3uB2Xkf7g7epbn37WExnK9pwNKknGEQ>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 21 Mar 2023 12:45:40 -0400 (EDT)
+ 21 Mar 2023 12:45:45 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH v4 3/6] btrfs: repurpose split_zoned_em for partial dio splitting
-Date:   Tue, 21 Mar 2023 09:45:30 -0700
-Message-Id: <5faf0148f526b4e9eb373c177de3c70284999ce7.1679416511.git.boris@bur.io>
+Subject: [PATCH v4 6/6] btrfs: split partial dio bios before submit
+Date:   Tue, 21 Mar 2023 09:45:33 -0700
+Message-Id: <1216b857841d01b0494199129068baf23546959e.1679416511.git.boris@bur.io>
 X-Mailer: git-send-email 2.38.1
 In-Reply-To: <cover.1679416511.git.boris@bur.io>
 References: <cover.1679416511.git.boris@bur.io>
@@ -76,213 +77,152 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In a subsequent patch I will be "extracting" a partial dio write bio
-from its ordered extent, creating a 1:1 bio<->ordered_extent relation.
-This is necessary to avoid triggering an assertion in unpin_extent_cache
-called from btrfs_finish_ordered_io that checks that the em matches the
-finished ordered extent.
+If an application is doing direct io to a btrfs file and experiences a
+page fault reading from the write buffer, iomap will issue a partial
+bio, and allow the fs to keep going. However, there was a subtle bug in
+this codepath in the btrfs dio iomap implementation that led to the
+partial write ending up as a gap in the file's extents and to be read
+back as zeros.
 
-Since there is already a function which splits an uncompressed
-extent_map for a zoned bio use case, adapt it to this new, similar
-use case. Mostly, modify it to handle the case where the extent_map is
-bigger than the ordered_extent, and we cannot assume the em "post" split
-can be computed from the ordered_extent and bio. This comes up in
-btrfs/250, for example.
+The sequence of events in a partial write, lightly summarized and
+trimmed down for brevity is as follows:
 
-I felt that these relaxations where not so damaging to the legibility of
-the zoned case as to merit a fully separate codepath, but I admit that is
-not my area of expertise.
+====WRITING TASK====
+btrfs_direct_write
+__iomap_dio_write
+iomap_iter
+btrfs_dio_iomap_begin # create full ordered extent
+iomap_dio_bio_iter
+bio_iov_iter_get_pages # page fault; partial read
+submit_bio # partial bio
+iomap_iter
+btrfs_dio_iomap_end
+btrfs_mark_ordered_io_finished # sets BTRFS_ORDERED_IOERR;
+			       # submit to finish_ordered_fn wq
+fault_in_iov_iter_readable # btrfs_direct_write detects partial write
+__iomap_dio_write
+iomap_iter
+btrfs_dio_iomap_begin # create second partial ordered extent
+iomap_dio_bio_iter
+bio_iov_iter_get_pages # read all of remainder
+submit_bio # partial bio with all of remainder
+iomap_iter
+btrfs_dio_iomap_end # nothing exciting to do with ordered io
 
+====DIO ENDIO====
+==FIRST PARTIAL BIO==
+btrfs_dio_end_io
+btrfs_mark_ordered_io_finished # bytes_left > 0
+			     # don't submit to finish_ordered_fn wq
+==SECOND PARTIAL BIO==
+btrfs_dio_end_io
+btrfs_mark_ordered_io_finished # bytes_left == 0
+			     # submit to finish_ordered_fn wq
+
+====BTRFS FINISH ORDERED WQ====
+==FIRST PARTIAL BIO==
+btrfs_finish_ordered_io # called by dio_iomap_end_io, sees
+		    # BTRFS_ORDERED_IOERR, just drops the
+		    # ordered_extent
+==SECOND PARTIAL BIO==
+btrfs_finish_ordered_io # called by btrfs_dio_end_io, writes out file
+		    # extents, csums, etc...
+
+The essence of the problem is that while btrfs_direct_write and iomap
+properly interact to submit all the correct bios, there is insufficient
+logic in the btrfs dio functions (btrfs_dio_iomap_begin,
+btrfs_dio_submit_io, btrfs_dio_end_io, and btrfs_dio_iomap_end) to
+ensure that every bio is at least a part of a completed ordered_extent.
+And it is completing an ordered_extent that results in crucial
+functionality like writing out a file extent for the range.
+
+More specifically, btrfs_dio_end_io treats the ordered extent as
+unfinished but btrfs_dio_iomap_end sets BTRFS_ORDERED_IOERR on it.
+Thus, the finish io work doesn't result in file extents, csums, etc...
+In the aftermath, such a file behaves as though it has a hole in it,
+instead of the purportedly written data.
+
+We considered a few options for fixing the bug (apologies for any
+incorrect summary of a proposal which I didn't implement and fully
+understand):
+1. treat the partial bio as if we had truncated the file, which would
+result in properly finishing it.
+2. split the ordered extent when submitting a partial bio.
+3. cache the ordered extent across calls to __iomap_dio_rw in
+iter->private, so that we could reuse it and correctly apply several
+bios to it.
+
+I had trouble with 1, and it felt the most like a hack, so I tried 2
+and 3. Since 3 has the benefit of also not creating an extra file
+extent, and avoids an ordered extent lookup during bio submission, it
+felt like the best option. However, that turned out to re-introduce a
+deadlock which this code discarding the ordered_extent between faults
+was meant to fix in the first place. (Link to an explanation of the
+deadlock below)
+
+Therefore, go with fix #2, which requires a bit more setup work but
+fixes the corruption without introducing the deadlock, which is
+fundamentally caused by the ordered extent existing when we attempt to
+fault in a range that overlaps with it.
+
+Put succinctly, what this patch does is: when we submit a dio bio, check
+if it is partial against the ordered extent stored in dio_data, and if it
+is, extract the ordered_extent that matches the bio exactly out of the
+larger ordered_extent. Keep the remaining ordered_extent around in dio_data
+for cancellation in iomap_end.
+
+Thanks to Josef, Christoph, and Filipe with their help figuring out the
+bug and the fix.
+
+Fixes: 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
+Link: https://bugzilla.redhat.com/show_bug.cgi?id=2169947
+Link: https://lore.kernel.org/linux-btrfs/aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com/
+Link: https://pastebin.com/3SDaH8C6
+Link: https://lore.kernel.org/linux-btrfs/20230315195231.GW10580@twin.jikos.cz/T/#t
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/inode.c | 104 ++++++++++++++++++++++++++++++++---------------
- 1 file changed, 71 insertions(+), 33 deletions(-)
+ fs/btrfs/inode.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5ab486f448eb..2f8baf4797ea 100644
+index dbea124c9fa3..69fdcbb89522 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2512,37 +2512,59 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
+@@ -7815,6 +7815,7 @@ static void btrfs_dio_submit_io(const struct iomap_iter *iter, struct bio *bio,
+ 	struct btrfs_dio_private *dip =
+ 		container_of(bbio, struct btrfs_dio_private, bbio);
+ 	struct btrfs_dio_data *dio_data = iter->private;
++	int err = 0;
+ 
+ 	btrfs_bio_init(bbio, BTRFS_I(iter->inode), btrfs_dio_end_io, bio->bi_private);
+ 	bbio->file_offset = file_offset;
+@@ -7823,7 +7824,25 @@ static void btrfs_dio_submit_io(const struct iomap_iter *iter, struct bio *bio,
+ 	dip->bytes = bio->bi_iter.bi_size;
+ 
+ 	dio_data->submitted += bio->bi_iter.bi_size;
+-	btrfs_submit_bio(bbio, 0);
++	/*
++	 * Check if we are doing a partial write. If we are, we need to split
++	 * the ordered extent to match the submitted bio. Hang on to the
++	 * remaining unfinishable ordered_extent in dio_data so that it can be
++	 * cancelled in iomap_end to avoid a deadlock wherein faulting the
++	 * remaining pages is blocked on the outstanding ordered extent.
++	 */
++	if (iter->flags & IOMAP_WRITE) {
++		struct btrfs_ordered_extent *ordered = dio_data->ordered;
++
++		ASSERT(ordered);
++		if (bio->bi_iter.bi_size < ordered->num_bytes)
++			err = btrfs_extract_ordered_extent_bio(bbio, ordered, NULL,
++							       &dio_data->ordered);
++	}
++	if (err)
++		btrfs_bio_end_io(bbio, err);
++	else
++		btrfs_submit_bio(bbio, 0);
  }
  
- /*
-- * Split an extent_map at [start, start + len]
-+ * Split out a middle extent_map [start, start+len] from within an extent_map.
-  *
-- * This function is intended to be used only for extract_ordered_extent().
-+ * @inode: the inode to which the extent map belongs.
-+ * @start: the start index of the middle split
-+ * @len: the length of the middle split
-+ *
-+ * The result is two or three extent_maps inserted in the tree, depending on
-+ * whether start and len imply an uncovered area at the beginning or end of the
-+ * extent map. If the implied split lines up with the end or beginning, there
-+ * will only be two extent maps in the resulting split, otherwise there will be
-+ * three. (If they both match, the split operation is a no-op)
-+ *
-+ * extent map splitting assumptions:
-+ * end = start + len
-+ * em-end = em-start + em-len
-+ * start >= em-start
-+ * len < em-len
-+ * end <= em-end
-+ *
-+ * Diagrams explaining the splitting cases:
-+ * original em:
-+ *   [em-start---start---end---em-end)
-+ * resulting ems:
-+ * start != em-start && end != em-end (full tri split):
-+ *   [em-start---start) [start---end) [end---em-end)
-+ * start == em-start (no pre split):
-+ *   [em-start---end) [end---em-end)
-+ * end == em-end (no post split):
-+ *   [em-start---start) [start--em-end)
-+ *
-+ * Returns: 0 on success, -errno on failure.
-  */
--static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
--			  u64 pre, u64 post)
-+static int split_em(struct btrfs_inode *inode, u64 start, u64 len)
- {
- 	struct extent_map_tree *em_tree = &inode->extent_tree;
- 	struct extent_map *em;
-+	u64 pre_start, pre_len, pre_end;
-+	u64 mid_start, mid_len, mid_end;
-+	u64 post_start, post_len, post_end;
- 	struct extent_map *split_pre = NULL;
- 	struct extent_map *split_mid = NULL;
- 	struct extent_map *split_post = NULL;
- 	int ret = 0;
- 	unsigned long flags;
- 
--	/* Sanity check */
--	if (pre == 0 && post == 0)
--		return 0;
--
- 	split_pre = alloc_extent_map();
--	if (pre)
--		split_mid = alloc_extent_map();
--	if (post)
--		split_post = alloc_extent_map();
--	if (!split_pre || (pre && !split_mid) || (post && !split_post)) {
-+	split_mid = alloc_extent_map();
-+	split_post = alloc_extent_map();
-+	if (!split_pre || !split_mid || !split_post) {
- 		ret = -ENOMEM;
- 		goto out;
- 	}
- 
--	ASSERT(pre + post < len);
--
- 	lock_extent(&inode->io_tree, start, start + len - 1, NULL);
- 	write_lock(&em_tree->lock);
- 	em = lookup_extent_mapping(em_tree, start, len);
-@@ -2551,19 +2573,38 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 		goto out_unlock;
- 	}
- 
--	ASSERT(em->len == len);
-+	pre_start = em->start;
-+	pre_end = start;
-+	pre_len = pre_end - pre_start;
-+	mid_start = start;
-+	mid_end = start + len;
-+	mid_len = len;
-+	post_start = mid_end;
-+	post_end = em->start + em->len;
-+	post_len = post_end - post_start;
-+	ASSERT(pre_start == em->start);
-+	ASSERT(pre_start + pre_len == mid_start);
-+	ASSERT(mid_start + mid_len == post_start);
-+	ASSERT(post_start + post_len == em->start + em->len);
-+
-+	/* Sanity check */
-+	if (pre_len == 0 && post_len == 0) {
-+		ret = 0;
-+		goto out_unlock;
-+	}
-+
- 	ASSERT(!test_bit(EXTENT_FLAG_COMPRESSED, &em->flags));
- 	ASSERT(em->block_start < EXTENT_MAP_LAST_BYTE);
--	ASSERT(test_bit(EXTENT_FLAG_PINNED, &em->flags));
- 	ASSERT(!test_bit(EXTENT_FLAG_LOGGING, &em->flags));
- 	ASSERT(!list_empty(&em->list));
- 
- 	flags = em->flags;
--	clear_bit(EXTENT_FLAG_PINNED, &em->flags);
-+	if (test_bit(EXTENT_FLAG_PINNED, &em->flags))
-+		clear_bit(EXTENT_FLAG_PINNED, &em->flags);
- 
- 	/* First, replace the em with a new extent_map starting from * em->start */
- 	split_pre->start = em->start;
--	split_pre->len = (pre ? pre : em->len - post);
-+	split_pre->len = (pre_len ? pre_len : mid_len);
- 	split_pre->orig_start = split_pre->start;
- 	split_pre->block_start = em->block_start;
- 	split_pre->block_len = split_pre->len;
-@@ -2577,16 +2618,15 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 
- 	/*
- 	 * Now we only have an extent_map at:
--	 *     [em->start, em->start + pre] if pre != 0
--	 *     [em->start, em->start + em->len - post] if pre == 0
-+	 *     [em->start, em->start + pre_len] if pre_len != 0
-+	 *     [em->start, em->start + mid_len] if pre == 0
- 	 */
--
--	if (pre) {
-+	if (pre_len) {
- 		/* Insert the middle extent_map */
--		split_mid->start = em->start + pre;
--		split_mid->len = em->len - pre - post;
-+		split_mid->start = mid_start;
-+		split_mid->len = mid_len;
- 		split_mid->orig_start = split_mid->start;
--		split_mid->block_start = em->block_start + pre;
-+		split_mid->block_start = em->block_start + pre_len;
- 		split_mid->block_len = split_mid->len;
- 		split_mid->orig_block_len = split_mid->block_len;
- 		split_mid->ram_bytes = split_mid->len;
-@@ -2596,11 +2636,11 @@ static int split_zoned_em(struct btrfs_inode *inode, u64 start, u64 len,
- 		add_extent_mapping(em_tree, split_mid, 1);
- 	}
- 
--	if (post) {
--		split_post->start = em->start + em->len - post;
--		split_post->len = post;
-+	if (post_len) {
-+		split_post->start = post_start;
-+		split_post->len = post_len;
- 		split_post->orig_start = split_post->start;
--		split_post->block_start = em->block_start + em->len - post;
-+		split_post->block_start = em->block_start + pre_len + mid_len;
- 		split_post->block_len = split_post->len;
- 		split_post->orig_block_len = split_post->block_len;
- 		split_post->ram_bytes = split_post->len;
-@@ -2632,7 +2672,6 @@ blk_status_t btrfs_extract_ordered_extent(struct btrfs_bio *bbio)
- 	u64 len = bbio->bio.bi_iter.bi_size;
- 	struct btrfs_inode *inode = bbio->inode;
- 	struct btrfs_ordered_extent *ordered;
--	u64 file_len;
- 	u64 end = start + len;
- 	u64 ordered_end;
- 	u64 pre, post;
-@@ -2671,14 +2710,13 @@ blk_status_t btrfs_extract_ordered_extent(struct btrfs_bio *bbio)
- 		goto out;
- 	}
- 
--	file_len = ordered->num_bytes;
- 	pre = start - ordered->disk_bytenr;
- 	post = ordered_end - end;
- 
- 	ret = btrfs_split_ordered_extent(ordered, pre, post);
- 	if (ret)
- 		goto out;
--	ret = split_zoned_em(inode, bbio->file_offset, file_len, pre, post);
-+	ret = split_em(inode, bbio->file_offset, len);
- 
- out:
- 	btrfs_put_ordered_extent(ordered);
+ static const struct iomap_ops btrfs_dio_iomap_ops = {
 -- 
 2.38.1
 

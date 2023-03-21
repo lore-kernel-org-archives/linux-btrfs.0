@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A65AC761AF
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 47EC9C6FD1D
 	for <linux-btrfs@archiver.kernel.org>; Tue, 21 Mar 2023 11:14:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230428AbjCULOz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 21 Mar 2023 07:14:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55180 "EHLO
+        id S230389AbjCULOx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 21 Mar 2023 07:14:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55176 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230172AbjCULOu (ORCPT
+        with ESMTP id S230259AbjCULOt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 21 Mar 2023 07:14:50 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C548D17CDB
+        Tue, 21 Mar 2023 07:14:49 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 91A1224C80
         for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 04:14:28 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id DA01561B13
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:17 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CF49FC433EF
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:16 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id D37FDB815C2
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:23 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1C51EC4339C
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Mar 2023 11:14:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679397257;
-        bh=uq4QFWAekvR44jIbqQLGG0s4VYEh3Ve6rrXqoYQW2iM=;
+        s=k20201202; t=1679397262;
+        bh=sxN2OgHqV+jAvsHFbRd7CbGMbD//bNO1W6W+F0zQ6No=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=GdA3RswWPIqnl5bG+SJqLpHBHihRCgrN1DGewkfVlY82JPNbVvOEHrsmHEg2uNPjZ
-         KGI2fW1hikjjKLW1lGvjFm0AO7I4U4bPnJ2r8+xSWCWuSrrX3trMTyenXuO+TQYKxI
-         S05StmPuGUa9Baq95C0KFVnQNH9O5i+H7NxtA7MMny5RbhNUh7vAdAel/L/nTA7Vtv
-         OfPxYp1hKSsusE8qIi2P0nm06z0B/oOyRTcPyB6/amqpHSh/kufOsrTnY98dQG4Wug
-         TAOCqbr446EZNUa63uckaKKJ3U32YqQSIQWBznOQbQ96DyStgDeYZsI043ngSh5maa
-         HYNlHhQGE6Lbw==
+        b=Ni/M23cQ5m+gx/Q2BH3pcXu/76rxnJUto1AwE+iOc7F9m6Tw7LaqEEjuuHEh3yDGD
+         DTxJi0ZwOWgzj+9I6ajPUilbGUD1UPCGkdwrykMvLLWGWaiCzlsyGznwR/T8tllyNH
+         ikwq04MSf7nBVJYI2Yra2Kyug5YwOEkO+3yxcVHKYohu9eJdZfe89KS+LAq4uqh88E
+         SpLzF+Wq+ZMEyPCOMy3stkREkU2vJZdM5OYONiKxK3wk404HstioV2Hzhk/g/K/FwV
+         wkIiRspETUdHLlRcGEV3v6eBIxWZQlx7StMuELKzj9oHyU6uDKAy+/y72M5DevlcE2
+         /x+3n2ZJ/Zxig==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 14/24] btrfs: don't throttle on delayed items when evicting deleted inode
-Date:   Tue, 21 Mar 2023 11:13:50 +0000
-Message-Id: <b50414f1d881a402ce2e1f9c821c683a16fd5f1b.1679326433.git.fdmanana@suse.com>
+Subject: [PATCH 20/24] btrfs: calculate correct amount of space for delayed reference when evicting
+Date:   Tue, 21 Mar 2023 11:13:56 +0000
+Message-Id: <485fb4c5b11a2fa22426656d09ca2ab6c96504bd.1679326434.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1679326426.git.fdmanana@suse.com>
 References: <cover.1679326426.git.fdmanana@suse.com>
@@ -48,38 +48,34 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-During inode eviction, if we are truncating a deleted inode, we don't add
-delayed items for our inode, so there's no need to throttle on delayed
-items on each iteration of the loop that truncates inode items from its
-subvolume tree. But we dirty extent buffers from its subvolume tree, so
-we only need to throttle on btree inode dirty pages.
+When evicting an inode, we are incorrectly calculating the amount of space
+required for a single delayed reference in case the free space tree is
+enabled. We have to multiply by 2 the result of
+btrfs_calc_insert_metadata_size(). We should be calculating according to
+the size update and space release of the delayed block reserve logic at
+btrfs_update_delayed_refs_rsv() and btrfs_delayed_refs_rsv_release().
 
-So use btrfs_btree_balance_dirty_nodelay() in the loop that truncates
-inode items.
+Fix this by using the btrfs_calc_delayed_ref_bytes() helper at
+evict_refill_and_join() instead of btrfs_calc_insert_metadata_size().
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7bae75973a4d..912d5f4aafbc 100644
+index 912d5f4aafbc..2e181a0a6f37 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -5350,7 +5350,12 @@ void btrfs_evict_inode(struct inode *inode)
- 		ret = btrfs_truncate_inode_items(trans, root, &control);
- 		trans->block_rsv = &fs_info->trans_block_rsv;
- 		btrfs_end_transaction(trans);
--		btrfs_btree_balance_dirty(fs_info);
-+		/*
-+		 * We have not added new delayed items for our inode after we
-+		 * have flushed its delayed items, so no need to throttle on
-+		 * delayed items. However we have modified extent buffers.
-+		 */
-+		btrfs_btree_balance_dirty_nodelay(fs_info);
- 		if (ret && ret != -ENOSPC && ret != -EAGAIN)
- 			goto free_rsv;
- 		else if (!ret)
+@@ -5230,7 +5230,7 @@ static struct btrfs_trans_handle *evict_refill_and_join(struct btrfs_root *root,
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_trans_handle *trans;
+-	u64 delayed_refs_extra = btrfs_calc_insert_metadata_size(fs_info, 1);
++	u64 delayed_refs_extra = btrfs_calc_delayed_ref_bytes(fs_info, 1);
+ 	int ret;
+ 
+ 	/*
 -- 
 2.34.1
 

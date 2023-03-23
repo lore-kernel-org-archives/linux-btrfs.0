@@ -2,85 +2,113 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04753C77B61
-	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Mar 2023 12:26:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 129D3C6FD1D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 23 Mar 2023 13:18:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231697AbjCWM0a (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Mar 2023 08:26:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45686 "EHLO
+        id S231217AbjCWNSG convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Mar 2023 09:18:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52890 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230367AbjCWM0X (ORCPT
+        with ESMTP id S230259AbjCWNSF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Mar 2023 08:26:23 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54A4027D51;
-        Thu, 23 Mar 2023 05:26:07 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id E391D6267B;
-        Thu, 23 Mar 2023 12:26:06 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C8231C433D2;
-        Thu, 23 Mar 2023 12:26:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1679574366;
-        bh=hSIUlO1HxyEpsf7qIxo9KBJ0VL8excdKGJYYFukRPL4=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=m6MeQSnsMeVy2O0Vk8RTY0vHNrmj2AIgXtab/TGNOFfzWTZud+JQGikV8JyH/6bL2
-         HXj5AQv7PGMyWu5gO4aQNckaFR7jMxyPlxC/GN/SkGd9UjEckISINsL0GjCLdhE22C
-         5zuGNqdawoE4Z0VJ+MBNSEjFCrSN9mJPfzKZRDpc=
-Date:   Thu, 23 Mar 2023 13:26:03 +0100
-From:   Greg KH <gregkh@linuxfoundation.org>
-To:     Yangtao Li <frank.li@vivo.com>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        xiang@kernel.org, chao@kernel.org, huyue2@coolpad.com,
-        jefflexu@linux.alibaba.com, jaegeuk@kernel.org,
-        trond.myklebust@hammerspace.com, anna@kernel.org,
-        konishi.ryusuke@gmail.com, mark@fasheh.com, jlbec@evilplan.org,
-        joseph.qi@linux.alibaba.com, richard@nod.at, djwong@kernel.org,
-        damien.lemoal@opensource.wdc.com, naohiro.aota@wdc.com,
-        jth@kernel.org, rafael@kernel.org, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-erofs@lists.ozlabs.org,
-        linux-f2fs-devel@lists.sourceforge.net, linux-nfs@vger.kernel.org,
-        linux-nilfs@vger.kernel.org, ocfs2-devel@oss.oracle.com,
-        linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH v3 01/10] kobject: introduce kobject_del_and_put()
-Message-ID: <ZBxFW5Yi0rwLvTsx@kroah.com>
-References: <20230322165830.55071-1-frank.li@vivo.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230322165830.55071-1-frank.li@vivo.com>
+        Thu, 23 Mar 2023 09:18:05 -0400
+Received: from mail-lf1-f49.google.com (mail-lf1-f49.google.com [209.85.167.49])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 231C5C5
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Mar 2023 06:18:04 -0700 (PDT)
+Received: by mail-lf1-f49.google.com with SMTP id c29so10214171lfv.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Mar 2023 06:18:04 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1679577482;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=omeepuzGEekd+0DUhsmFHFUb0anAnJEXChN3e4aPK08=;
+        b=LTBy0Sw31sTzTfGYoRdjrjWv0zcvDA3XI1nsftYccoIYBFismeXhwNrInosb7XXgcX
+         ReYvpThiPtHQWpzjcnbQPoR7aGGhLNc0+SKQGOeLuHRN8xsZx+rq30wzyuQyzcc3tlvi
+         2pFHT/SsrXvf0AGfdvaTmFsXoXClc1Uet0e8bPhag+hp2LV0gJnoQxSMTQOuZdKleX7W
+         14y1Zm8jVCeQXTMd6Mpq2/Vzd3+qiKlYlweoOkV33cH85vAfJlUB8wk4jijgQGLkiAsI
+         xcMF4tb2YxZt8bq23aqePCmi5iXPWmR3Jrz6VbUERC2OZQnbF+F7kwLczucAjoXjymmL
+         sCXw==
+X-Gm-Message-State: AO0yUKXJcvfMDOOr2pYhU6vkqAIze8F9IvMSY8hkOD+rMPZtKHsmUVpB
+        sQrqwXwKkcqZwA4Or/Px7LA=
+X-Google-Smtp-Source: AK7set+XegxlfRhRTlBzRjZDsn+Wp7APeqp6gy7fEI7PxIy0jIupjdQ9XOOoX6SeuS8Cmxmrel4V+Q==
+X-Received: by 2002:a05:6512:b08:b0:4d8:86c1:4782 with SMTP id w8-20020a0565120b0800b004d886c14782mr1681440lfu.23.1679577482147;
+        Thu, 23 Mar 2023 06:18:02 -0700 (PDT)
+Received: from smtpclient.apple ([2600:4040:7d3b:c500:707e:7adb:36c4:a4c7])
+        by smtp.gmail.com with ESMTPSA id u9-20020a2e8449000000b00293534d9760sm3013502ljh.127.2023.03.23.06.18.00
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Thu, 23 Mar 2023 06:18:01 -0700 (PDT)
+Content-Type: text/plain;
+        charset=us-ascii
+Mime-Version: 1.0 (Mac OS X Mail 16.0 \(3731.500.231\))
+Subject: Re: Kernel panic due to stack recursion when copying data from a
+ damaged filesystem
+From:   David Ryskalczyk <david@rysk.us>
+In-Reply-To: <ZBwJQcvt2TcqoCRh@infradead.org>
+Date:   Thu, 23 Mar 2023 09:17:49 -0400
+Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+Content-Transfer-Encoding: 8BIT
+Message-Id: <2F36C097-7549-49D8-8C70-C254A93FAC74@rysk.us>
+References: <E567648E-DEE9-49EB-8B01-3CE403E4E87C@rysk.us>
+ <b9ed921a-2cd2-411a-4374-c7682b56c45e@gmx.com>
+ <ZBwC7n9crUsk4Pfi@infradead.org>
+ <9628f5a7-2752-4f74-70e1-f8efd345bdc7@gmx.com>
+ <ZBwJQcvt2TcqoCRh@infradead.org>
+To:     Christoph Hellwig <hch@infradead.org>
+X-Mailer: Apple Mail (2.3731.500.231)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Mar 23, 2023 at 12:58:30AM +0800, Yangtao Li wrote:
-> There are plenty of using kobject_del() and kobject_put() together
-> in the kernel tree. This patch wraps these two calls in a single helper.
+
+> On Mar 23, 2023, at 3:42 AM, Christoph Hellwig <hch@infradead.org> wrote:
+
+> What is interesting above is that it tries to recover from 4 mirrors,
+> which seems very unusual.  I wonder if something went wrong
+> in btrfs_read_extent_buffer or btrfs_num_copies.
+
+This filesystem has metadata set to raid1c4, so 4 mirrors would be expected.
+All mirrors likely have identical damage, as the cause of the corruption was RAM issues leading to bitflips.
+
+
+> On Mar 23, 2023, at 4:09 AM, Christoph Hellwig <hch@infradead.org> wrote:
 > 
-> Signed-off-by: Yangtao Li <frank.li@vivo.com>
-> ---
-> v3:
-> -convert to inline helper
-> v2:
-> -add kobject_del_and_put() users
->  include/linux/kobject.h | 13 +++++++++++++
->  lib/kobject.c           |  3 +--
->  2 files changed, 14 insertions(+), 2 deletions(-)
+> On Thu, Mar 23, 2023 at 03:57:57PM +0800, Qu Wenruo wrote:
+>> It's metadata, but that's not the cause of the stack recursion.
+>> 
+>> If you go with the frames with certainty, the stack would look like this:
+>> 
+>> btrfs_search_slot (fs/btrfs/ctree.c:2225) btrfs
+>> btrfs_lookup_csum (fs/btrfs/file-item.c:221) btrfs
+>> btrfs_lookup_bio_sums (fs/btrfs/file-item.c:315 fs/btrfs/file-item.c:484)
+>> btrfs
+>> btrfs_submit_data_read_bio (fs/btrfs/inode.c:2787) btrfs
+>> btrfs_repair_one_sector (fs/btrfs/extent_io.c:775) btrfs
+>> end_compressed_bio_read (fs/btrfs/compression.c:197) btrfs
+>> btrfs_repair_one_sector (fs/btrfs/extent_io.c:775) btrfs
+>> end_compressed_bio_read (fs/btrfs/compression.c:197) btrfs
+>> btrfs_repair_one_sector (fs/btrfs/extent_io.c:775) btrfs
+>> end_compressed_bio_read (fs/btrfs/compression.c:197) btrfs
+>> btrfs_repair_one_sector (fs/btrfs/extent_io.c:775) btrfs
+>> end_compressed_bio_read (fs/btrfs/compression.c:197) btrfs
+>> btrfs_repair_one_sector (fs/btrfs/extent_io.c:775) btrfs
+>> ...
+>> 
+>> Thus it's still data repair path causing the stack recursion, the metadata
+>> is just the unfortunately one triggered it.
+> 
+> I still think it is a similar issue, and endless recursion trying
+> to call back into repair without ever breaking out of that loop.
+> 
+> The interesting reason is why we'll never hit the
+> 
+> if (failrec->this_mirror == failrec->failed_mirror) {
+> 
+> case and break out of the recursion.
+> 
+> Note that in 6.3-rc with the new repair code we'd at least not recurse,
+> although I suspect that whatever causes this endless loop would still
+> be present.
+> 
 
-Meta-comment, something is wrong with this email as it is not linked to
-the rest of the series.
-
-You can see that by looking at this message in lore.kernel.org:
-	https://lore.kernel.org/r/20230322165830.55071-1-frank.li@vivo.com
-
-No 2-10 patches linked there (they show up as a separate series.)
-
-So even if I wanted to take this series now, we can't as our tools can't
-find them...
-
-thanks,
-
-greg k-h

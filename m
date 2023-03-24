@@ -2,193 +2,126 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8F99C6FD1C
-	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Mar 2023 02:32:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AD5DC6FD1C
+	for <linux-btrfs@archiver.kernel.org>; Fri, 24 Mar 2023 02:35:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231447AbjCXCc4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 23 Mar 2023 22:32:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46742 "EHLO
+        id S231682AbjCXCfU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 23 Mar 2023 22:35:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48772 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229508AbjCXCcz (ORCPT
+        with ESMTP id S229508AbjCXCfT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 23 Mar 2023 22:32:55 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC1067DAD
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Mar 2023 19:32:54 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=J9V44wGXXmfUQHPkG4O4dnTG+VuidAUcoUI24gU3X4Q=; b=bg16pD9ODqfKmH1ZIxolpEPKiT
-        mOoOUKvV+tRu+cFtBwhHw37K+xyp2dLVoYDa8jifG1ojNzjnn8v3UI0b+RlF/lHNKB/ol0fVsJmsJ
-        X6bMiJb9DXGESSnNBR7j+FLgyTmyVPSEF249xbez4YRq2Mpb11bHgzQr5zw0i2PhoUdTnBCIMKfsT
-        9Rri423ibEzaohQ32kZ6pgO67TsazqLJk7uZNA4x/pcIScTWim0qpyNWNJgaiJzGd2Vro9j/blYQz
-        5w8D5eOHCewKgQOtk7WzT4ZbthC/hxug87OrWlpIKfJ0gZ8/NzspLdxqIB0/6r1pesLwY7ko5Notx
-        3nXbOGnQ==;
-Received: from [122.147.159.90] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pfXEY-003PL3-1e;
-        Fri, 24 Mar 2023 02:32:50 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>
-Cc:     Boris Burkov <boris@bur.io>,
-        Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
-        Naohiro Aota <Naohiro.Aota@wdc.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/11] btrfs: split partial dio bios before submit
-Date:   Fri, 24 Mar 2023 10:32:07 +0800
-Message-Id: <20230324023207.544800-12-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230324023207.544800-1-hch@lst.de>
-References: <20230324023207.544800-1-hch@lst.de>
+        Thu, 23 Mar 2023 22:35:19 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC1E9113C1;
+        Thu, 23 Mar 2023 19:35:17 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 75FCB1FE65;
+        Fri, 24 Mar 2023 02:35:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1679625316;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=sdIFxlKHqyPQauC3EA1CD6YM6MLgr5BPAenLXoxp8A4=;
+        b=UTEBNWwEiVAYDqhzhkGZAYjd0E7bKXT7WR8ZiErR8zbK/ak3DFu+vj+GpzXqNFdUP2PnUs
+        nBTzujqkrdSxnbEbvOdB5BYA7DUrijKNBzDYfn7d90g0B7P9k83JzJ7M7iN5ZqyAdW03/h
+        o+2rbUH4a0M6kMUG0rCbK88y/StmsIk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1679625316;
+        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+         cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=sdIFxlKHqyPQauC3EA1CD6YM6MLgr5BPAenLXoxp8A4=;
+        b=d35aHSEWmViEqFzHhayXYZ9KWzcDAXvUusXk8N6HMgyczMHcwkValIs17Uhr/i1ZyXiKDQ
+        aU7L5JLmTh/SkXAA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3813C133E5;
+        Fri, 24 Mar 2023 02:35:16 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id roqaDGQMHWQAYwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Fri, 24 Mar 2023 02:35:16 +0000
+Date:   Fri, 24 Mar 2023 03:29:04 +0100
+From:   David Sterba <dsterba@suse.cz>
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Genjian <zhanggenjian123@gmail.com>, clm@fb.com,
+        josef@toxicpanda.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Genjian Zhang <zhanggenjian@kylinos.cn>,
+        k2ci <kernel-bot@kylinos.cn>
+Subject: Re: [PATCH] btrfs: fix uninitialized variable warning
+Message-ID: <20230324022904.GD10580@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20230324020838.67149-1-zhanggenjian@kylinos.cn>
+ <78422b96-52ed-b48a-27d0-1cfaa89a6608@gmx.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <78422b96-52ed-b48a-27d0-1cfaa89a6608@gmx.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Boris Burkov <boris@bur.io>
+On Fri, Mar 24, 2023 at 10:24:55AM +0800, Qu Wenruo wrote:
+> On 2023/3/24 10:08, Genjian wrote:
+> > From: Genjian Zhang <zhanggenjian@kylinos.cn>
+> > 
+> > compiler warning:
+> 
+> Compiler version please.
+> 
+> > 
+> > ../fs/btrfs/volumes.c: In function ‘btrfs_init_new_device’:
+> > ../fs/btrfs/volumes.c:2703:3: error: ‘seed_devices’ may be used uninitialized in this function [-Werror=maybe-uninitialized]
+> >   2703 |   btrfs_setup_sprout(fs_info, seed_devices);
+> >        |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> > 
+> > ../fs/btrfs/send.c: In function ‘get_cur_inode_state’:
+> > ../include/linux/compiler.h:70:32: error: ‘right_gen’ may be used uninitialized in this function [-Werror=maybe-uninitialized]
+> >     70 |   (__if_trace.miss_hit[1]++,1) :  \
+> >        |                                ^
+> > ../fs/btrfs/send.c:1878:6: note: ‘right_gen’ was declared here
+> >   1878 |  u64 right_gen;
+> >        |      ^~~~~~~~~
+> > 
+> > Initialize the uninitialized variables.
+> > 
+> > Reported-by: k2ci <kernel-bot@kylinos.cn>
+> > Signed-off-by: Genjian Zhang <zhanggenjian@kylinos.cn>
+> > ---
+> >   fs/btrfs/send.c    | 2 +-
+> >   fs/btrfs/volumes.c | 2 +-
+> >   2 files changed, 2 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> > index e5c963bb873d..af2e153543a5 100644
+> > --- a/fs/btrfs/send.c
+> > +++ b/fs/btrfs/send.c
+> > @@ -1875,7 +1875,7 @@ static int get_cur_inode_state(struct send_ctx *sctx, u64 ino, u64 gen,
+> >   	int left_ret;
+> >   	int right_ret;
+> >   	u64 left_gen;
+> > -	u64 right_gen;
+> > +	u64 right_gen = 0;
+> 
+> IIRC this is not my first time explaining why this is a false alert.
+> 
+> Thus please report your compiler version first.
 
-If an application is doing direct io to a btrfs file and experiences a
-page fault reading from the write buffer, iomap will issue a partial
-bio, and allow the fs to keep going. However, there was a subtle bug in
-this codepath in the btrfs dio iomap implementation that led to the
-partial write ending up as a gap in the file's extents and to be read
-back as zeros.
-
-The sequence of events in a partial write, lightly summarized and
-trimmed down for brevity is as follows:
-
-====WRITING TASK====
-btrfs_direct_write
-__iomap_dio_write
-iomap_iter
-btrfs_dio_iomap_begin # create full ordered extent
-iomap_dio_bio_iter
-bio_iov_iter_get_pages # page fault; partial read
-submit_bio # partial bio
-iomap_iter
-btrfs_dio_iomap_end
-btrfs_mark_ordered_io_finished # sets BTRFS_ORDERED_IOERR;
-			       # submit to finish_ordered_fn wq
-fault_in_iov_iter_readable # btrfs_direct_write detects partial write
-__iomap_dio_write
-iomap_iter
-btrfs_dio_iomap_begin # create second partial ordered extent
-iomap_dio_bio_iter
-bio_iov_iter_get_pages # read all of remainder
-submit_bio # partial bio with all of remainder
-iomap_iter
-btrfs_dio_iomap_end # nothing exciting to do with ordered io
-
-====DIO ENDIO====
-==FIRST PARTIAL BIO==
-btrfs_dio_end_io
-btrfs_mark_ordered_io_finished # bytes_left > 0
-			     # don't submit to finish_ordered_fn wq
-==SECOND PARTIAL BIO==
-btrfs_dio_end_io
-btrfs_mark_ordered_io_finished # bytes_left == 0
-			     # submit to finish_ordered_fn wq
-
-====BTRFS FINISH ORDERED WQ====
-==FIRST PARTIAL BIO==
-btrfs_finish_ordered_io # called by dio_iomap_end_io, sees
-		    # BTRFS_ORDERED_IOERR, just drops the
-		    # ordered_extent
-==SECOND PARTIAL BIO==
-btrfs_finish_ordered_io # called by btrfs_dio_end_io, writes out file
-		    # extents, csums, etc...
-
-The essence of the problem is that while btrfs_direct_write and iomap
-properly interact to submit all the correct bios, there is insufficient
-logic in the btrfs dio functions (btrfs_dio_iomap_begin,
-btrfs_dio_submit_io, btrfs_dio_end_io, and btrfs_dio_iomap_end) to
-ensure that every bio is at least a part of a completed ordered_extent.
-And it is completing an ordered_extent that results in crucial
-functionality like writing out a file extent for the range.
-
-More specifically, btrfs_dio_end_io treats the ordered extent as
-unfinished but btrfs_dio_iomap_end sets BTRFS_ORDERED_IOERR on it.
-Thus, the finish io work doesn't result in file extents, csums, etc...
-In the aftermath, such a file behaves as though it has a hole in it,
-instead of the purportedly written data.
-
-We considered a few options for fixing the bug (apologies for any
-incorrect summary of a proposal which I didn't implement and fully
-understand):
-1. treat the partial bio as if we had truncated the file, which would
-result in properly finishing it.
-2. split the ordered extent when submitting a partial bio.
-3. cache the ordered extent across calls to __iomap_dio_rw in
-iter->private, so that we could reuse it and correctly apply several
-bios to it.
-
-I had trouble with 1, and it felt the most like a hack, so I tried 2
-and 3. Since 3 has the benefit of also not creating an extra file
-extent, and avoids an ordered extent lookup during bio submission, it
-felt like the best option. However, that turned out to re-introduce a
-deadlock which this code discarding the ordered_extent between faults
-was meant to fix in the first place. (Link to an explanation of the
-deadlock below)
-
-Therefore, go with fix #2, which requires a bit more setup work but
-fixes the corruption without introducing the deadlock, which is
-fundamentally caused by the ordered extent existing when we attempt to
-fault in a range that overlaps with it.
-
-Put succinctly, what this patch does is: when we submit a dio bio, check
-if it is partial against the ordered extent stored in dio_data, and if it
-is, extract the ordered_extent that matches the bio exactly out of the
-larger ordered_extent. Keep the remaining ordered_extent around in dio_data
-for cancellation in iomap_end.
-
-Thanks to Josef, Christoph, and Filipe with their help figuring out the
-bug and the fix.
-
-Fixes: 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
-Link: https://bugzilla.redhat.com/show_bug.cgi?id=2169947
-Link: https://lore.kernel.org/linux-btrfs/aa1fb69e-b613-47aa-a99e-a0a2c9ed273f@app.fastmail.com/
-Link: https://pastebin.com/3SDaH8C6
-Link: https://lore.kernel.org/linux-btrfs/20230315195231.GW10580@twin.jikos.cz/T/#t
-Signed-off-by: Boris Burkov <boris@bur.io>
-[hch: refactored the ordered_extent extraction]
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/inode.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f72ba14dcda55e..017696ebe3fb65 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7716,6 +7716,24 @@ static void btrfs_dio_submit_io(const struct iomap_iter *iter, struct bio *bio,
- 	dip->bytes = bio->bi_iter.bi_size;
- 
- 	dio_data->submitted += bio->bi_iter.bi_size;
-+
-+	/*
-+	 * Check if we are doing a partial write.  If we are, we need to split
-+	 * the ordered extent to match the submitted bio.  Hang on to the
-+	 * remaining unfinishable ordered_extent in dio_data so that it can be
-+	 * cancelled in iomap_end to avoid a deadlock wherein faulting the
-+	 * remaining pages is blocked on the outstanding ordered extent.
-+	 */
-+	if (iter->flags & IOMAP_WRITE) {
-+		int err;
-+
-+		err = btrfs_extract_ordered_extent(bbio, dio_data->ordered);
-+		if (err) {
-+			btrfs_bio_end_io(bbio, errno_to_blk_status(err));
-+			return;
-+		}
-+	}
-+
- 	btrfs_submit_bio(bbio, 0);
- }
- 
--- 
-2.39.2
-
+This is probably because of the -Wmaybe-uninitialized we enabled, on
+some combination of architecture and compiler. While I'm also interested
+in the compiler and version we need to fix the warnings before 6.3 final.
+We'd be gettting the warnings and reports/patches, which is wasting
+peoples' time, it's not a big deal to initialize the variables. But
+still I also want to know which version reports that.

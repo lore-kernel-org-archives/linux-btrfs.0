@@ -2,245 +2,180 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2065C76195
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Mar 2023 23:31:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 78F46C761A6
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Mar 2023 23:31:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229611AbjC0Xb1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Mar 2023 19:31:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38648 "EHLO
+        id S229677AbjC0Xb2 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Mar 2023 19:31:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38660 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229456AbjC0XbZ (ORCPT
+        with ESMTP id S229535AbjC0Xb0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2023 19:31:25 -0400
+        Mon, 27 Mar 2023 19:31:26 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D693CA6
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 16:31:23 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1942AC4
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 16:31:25 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id A0BE1219CB
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 23:31:21 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id CABA2219EE
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 23:31:23 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1679959881; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=9O/o+mBMEz6MzAi9mYppKaMujc1iX4XEDLLeaUxppo0=;
-        b=sq74E0gyv+V6c8LQDDppxGjsjLhC+dfBEzkrAWi4Ugn+sPsWF+DYEq0Di0AQ4fXu42Qp80
-        NW7TR/vNpiQyjGiThkJH1HoQw6KpaefbkdyjnZLXqbvyC7BW4yBNUQiJUO1wmRjbLekAwf
-        rWl1xVrY8QMRzBXQO+iCi8fhSom87JU=
+        t=1679959883; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=7vtQbI5So0pRBdifHXaDi6PDwlzR/FPZmEdvhSmpzdc=;
+        b=pDy1Pq5hODzfB1XqkB7V53h/cXVMv7vPQH2HQx52/FBH513TnN4NO3DdBS+g3k74d7agCE
+        RRSR1LyHvovUkb32YlLkXhJsHPx5Z7pJfki8qK2r62swMHcnURYC2b+1I1+EwoVPHamc3/
+        3jUGinoRziDPxkbwULqxZ0qnPh6OnCs=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0F30C13482
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 23:31:20 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2CACA13482
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 23:31:22 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id P3XJM0gnImTaaAAAMHmgww
+        id 2HcQO0onImTaaAAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 23:31:20 +0000
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 23:31:22 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH v5 00/13] btrfs: scrub: use a more reader friendly code to implement scrub_simple_mirror()
-Date:   Tue, 28 Mar 2023 07:30:50 +0800
-Message-Id: <cover.1679959770.git.wqu@suse.com>
+Subject: [PATCH v5 02/13] btrfs: introduce a new allocator for scrub specific btrfs_bio
+Date:   Tue, 28 Mar 2023 07:30:52 +0800
+Message-Id: <c77fd4fd93c34a6d229765088ce0a88f7f8718d4.1679959770.git.wqu@suse.com>
 X-Mailer: git-send-email 2.39.2
+In-Reply-To: <cover.1679959770.git.wqu@suse.com>
+References: <cover.1679959770.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This series can be found in my github repo:
+Currently we're doing a lot of work for btrfs_bio:
 
-https://github.com/adam900710/linux/tree/scrub_stripe
+- Checksum verification for data read bios
+- Bio splits if it crosses stripe boundary
+- Read repair for data read bios
 
-It's recommended to fetch from the repo, as our misc-next seems to
-change pretty rapidly.
+However for the incoming scrub patches, we don't want those extra
+functionality at all, just pure logical + mirror -> physical mapping
+ability.
 
-[Changelog]
-v5:
-- Fix a bug that unconditionally repairs a zoned block group
-  Only trigger the repair if we had any initial read failure
+Thus here we introduce:
 
-  Huge thanks to Johannes for the initial ZNS tests.
+- btrfs_bio::fs_info
+  This is for the new scrub specific btrfs_bio, which would not
+  populate btrfs_bio::inode.
+  Thus we need such new member to grab a fs_info
 
-v4:
-- Add a dedicated patch to add btrfs_bio::fs_info
-  Along with dedicated allocator for scrub btrfs bios.
-  The dedicated allocator is due to the fact that scrub and regular
-  btrfs bios have very different mandatory members (fs_info vs inode +
-  file_offset).
-  For now I believe a different allocator would be better.
+  This new member would always be populated.
 
-- Some code style change
-  * No more single letter temporray structure copied from old scrub code
-  * Use "for (int i = 0; ...)" when possible
-  * Some new lines fixes
-  * Extra brackets for tenrary operators
-  * A new macro for (BTRFS_STRIPE_LEN >> PAGE_SHIFT)
-  * Use enum for scrub_stripe::state bit flags
-  * Use extra brackets for double shifting
-  * Use explicit != 0 or == 0 comparing memcmp() results
-  * Remove unnecessary ASSERT()s after btrfs_bio allocation
+- btrfs_scrub_bio_alloc() helper
+  The main differences between this and btrfs_bio_alloc() are:
+  * No need for nr_vecs
+    As we know scrub bio should not cross stripe boundary.
 
-v3:
-- Add a dedicated @fs_info member for btrfs_bio
-  Unfortunately although we have a 32 bytes hole between @end_io_work and @bio,
-  compiler still choose not to use that hole for whatever reasons.
-  Thus this would increase the size of btrfs_bio by 4 bytes.
+  * Use @fs_info to replace @inode parameter
 
-- Rebased to lastest misc-next
+- An extra ASSERT() to make sure btrfs_bio::fs_info is populated
 
-- Fix various while space error not caught by btrfs-workflow
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/bio.c | 25 +++++++++++++++++++++++++
+ fs/btrfs/bio.h | 19 ++++++++++++++++++-
+ 2 files changed, 43 insertions(+), 1 deletion(-)
 
-v2:
-- Use batched scrub_stripe submission
-  This allows much better performance compared to the old scrub code
-
-- Add scrub specific bio layer helpers
-  This makes the scrub code to be completely rely on logical bytenr +
-  mirror_num.
-
-[PROBLEMS OF OLD SCRUB]
-
-- Too many delayed jumps, making it hard to read
-  Even starting from scrub_simple_mirror(), we have the following
-  functions:
-
-  scrub_extent()
-       |
-       v
-  scrub_sectors()
-       |
-       v
-  scrub_add_sector_to_rd_bio()
-       | endio function
-       v
-  scrub_bio_end_io()
-       | delayed work
-       v
-  scrub_bio_end_io_worker()
-       |
-       v
-  scrub_block_complete()
-       |
-       v
-  scrub_handle_errored_blocks()
-       |
-       v
-  scrub_recheck_block()
-       |
-       v
-  scrub_repair_sector_from_good_copy()
-
-  Not to mention the hidden jumps in certain branches.
-
-- IOPS inefficient for fragmented extents
-
-  The real block size of scrub read is between 4K and 128K.
-  If the extents are not adjacent, the blocksize drops to 4K and would
-  be an IOPS disaster.
-
-- All hardcoded to do the logical -> physical mapping by scrub itself
-  No usage of any existing bio facilities.
-  And even implemented a RAID56 recovery wrapper.
-
-[NEW SCRUB_STRIPE BASED SOLUTION]
-
-- Overall streamlined code base
-
-  queue_scrub_stripe()
-     |
-     v
-  scrub_find_fill_first_stripe()
-     |
-     v
-  done
-
-  Or
-
-  queue_scrub_stripe()
-     |
-     v
-  flush_scrub_stripes()
-     |
-     v
-  scrub_submit_initial_read()
-     | endio function
-     v
-  scrub_read_endio()
-     | delayed work
-     v
-  scrub_stripe_read_repair_worker()
-     |
-     v
-  scrub_verify_one_stripe()
-     |
-     v
-  scrub_stripe_submit_repair_read()
-     |
-     v
-  scrub_write_sectors()
-     |
-     v
-  scrub_stripe_report_errors()
-
-  Only one endio and delayed work, all other work are properly done in a
-  sequential workflow.
-
-- Always read in 64KiB block size
-  The real blocksize of read starts at 64KiB, and ends at 512K.
-  This already results a better performance even for the worst case:
-
-  With patchset:	404.81MiB/s
-  Without patchset:	369.30MiB/s
-
-  Around 10% performance improvement on an SATA SSD.
-
-- All logical bytenr/mirror_num based read and write
-
-  With the new single stripe fast path in btrfs_submit_bio(), scrub can
-  reuse most of the bio layer code, result much simpler scrub code.
-
-[TODO]
-
-- More testing on zoned devices
-  Now the patchset can already pass all scrub/replace groups with
-  regular devices.
-
-- More cleanup on RAID56 path
-  Now RAID56 still uses some old facility, resulting things like
-  scrub_sector and scrub_bio can not be fully cleaned up.
-
-
-Qu Wenruo (13):
-  btrfs: scrub: use dedicated super block verification function to scrub
-    one super block
-  btrfs: introduce a new allocator for scrub specific btrfs_bio
-  btrfs: introduce a new helper to submit read bio for scrub
-  btrfs: introduce a new helper to submit write bio for scrub
-  btrfs: scrub: introduce the structure for new BTRFS_STRIPE_LEN based
-    interface
-  btrfs: scrub: introduce a helper to find and fill the sector info for
-    a scrub_stripe
-  btrfs: scrub: introduce a helper to verify one metadata
-  btrfs: scrub: introduce a helper to verify one scrub_stripe
-  btrfs: scrub: introduce the main read repair worker for scrub_stripe
-  btrfs: scrub: introduce a writeback helper for scrub_stripe
-  btrfs: scrub: introduce error reporting functionality for scrub_stripe
-  btrfs: scrub: introduce the helper to queue a stripe for scrub
-  btrfs: scrub: switch scrub_simple_mirror() to scrub_stripe
-    infrastructure
-
- fs/btrfs/bio.c       |  165 ++++-
- fs/btrfs/bio.h       |   22 +-
- fs/btrfs/file-item.c |    9 +-
- fs/btrfs/file-item.h |    3 +-
- fs/btrfs/raid56.c    |    2 +-
- fs/btrfs/scrub.c     | 1655 ++++++++++++++++++++++++++++++------------
- 6 files changed, 1371 insertions(+), 485 deletions(-)
-
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index cf09c6271edb..c1edadc17260 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -36,6 +36,7 @@ void btrfs_bio_init(struct btrfs_bio *bbio, struct btrfs_inode *inode,
+ {
+ 	memset(bbio, 0, offsetof(struct btrfs_bio, bio));
+ 	bbio->inode = inode;
++	bbio->fs_info = inode->root->fs_info;
+ 	bbio->end_io = end_io;
+ 	bbio->private = private;
+ 	atomic_set(&bbio->pending_ios, 1);
+@@ -61,6 +62,30 @@ struct btrfs_bio *btrfs_bio_alloc(unsigned int nr_vecs, blk_opf_t opf,
+ 	return bbio;
+ }
+ 
++/*
++ * Allocate a scrub specific btrfs_bio structure.
++ *
++ * This btrfs_bio would not go through any the btrfs special handling like
++ * checksum verification nor read-repair.
++ */
++struct btrfs_bio *btrfs_scrub_bio_alloc(blk_opf_t opf,
++					struct btrfs_fs_info *fs_info,
++					btrfs_bio_end_io_t end_io, void *private)
++{
++	struct btrfs_bio *bbio;
++	struct bio *bio;
++
++	bio = bio_alloc_bioset(NULL, BTRFS_STRIPE_LEN >> fs_info->sectorsize_bits,
++			       opf, GFP_NOFS, &btrfs_bioset);
++	bbio = btrfs_bio(bio);
++	memset(bbio, 0, offsetof(struct btrfs_bio, bio));
++	bbio->fs_info = fs_info;
++	bbio->end_io = end_io;
++	bbio->private = private;
++	atomic_set(&bbio->pending_ios, 1);
++	return bbio;
++}
++
+ static struct btrfs_bio *btrfs_split_bio(struct btrfs_fs_info *fs_info,
+ 					 struct btrfs_bio *orig_bbio,
+ 					 u64 map_length, bool use_append)
+diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+index dbf125f6fa33..3b97ce54140a 100644
+--- a/fs/btrfs/bio.h
++++ b/fs/btrfs/bio.h
+@@ -30,7 +30,12 @@ typedef void (*btrfs_bio_end_io_t)(struct btrfs_bio *bbio);
+  * passed to btrfs_submit_bio for mapping to the physical devices.
+  */
+ struct btrfs_bio {
+-	/* Inode and offset into it that this I/O operates on. */
++	/*
++	 * Inode and offset into it that this I/O operates on.
++	 *
++	 * @inode can be NULL for callers who don't want any advanced features
++	 * like read-time repair.
++	 */
+ 	struct btrfs_inode *inode;
+ 	u64 file_offset;
+ 
+@@ -58,6 +63,15 @@ struct btrfs_bio {
+ 	atomic_t pending_ios;
+ 	struct work_struct end_io_work;
+ 
++	/*
++	 * For cases where callers only want to read/write from a logical
++	 * bytenr, in that case @inode can be NULL, and we need such
++	 * @fs_info pointer to grab the corresponding fs_info.
++	 *
++	 * Should always be populated.
++	 */
++	struct btrfs_fs_info *fs_info;
++
+ 	/*
+ 	 * This member must come last, bio_alloc_bioset will allocate enough
+ 	 * bytes for entire btrfs_bio but relies on bio being last.
+@@ -78,6 +92,9 @@ void btrfs_bio_init(struct btrfs_bio *bbio, struct btrfs_inode *inode,
+ struct btrfs_bio *btrfs_bio_alloc(unsigned int nr_vecs, blk_opf_t opf,
+ 				  struct btrfs_inode *inode,
+ 				  btrfs_bio_end_io_t end_io, void *private);
++struct btrfs_bio *btrfs_scrub_bio_alloc(blk_opf_t opf,
++					struct btrfs_fs_info *fs_info,
++					btrfs_bio_end_io_t end_io, void *private);
+ 
+ static inline void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
+ {
 -- 
 2.39.2
 

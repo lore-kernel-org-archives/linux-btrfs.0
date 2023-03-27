@@ -2,83 +2,164 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C5C26C76195
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Mar 2023 23:24:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C89C3C6FD1D
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Mar 2023 23:31:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229677AbjC0XYy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Mar 2023 19:24:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36002 "EHLO
+        id S229610AbjC0Xb0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Mar 2023 19:31:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38650 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229608AbjC0XYy (ORCPT
+        with ESMTP id S229512AbjC0XbZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2023 19:24:54 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 251AFB3;
-        Mon, 27 Mar 2023 16:24:53 -0700 (PDT)
+        Mon, 27 Mar 2023 19:31:25 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1BB89B3
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 16:31:24 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id B26B51FD7B;
-        Mon, 27 Mar 2023 23:24:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1679959491;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
+        by smtp-out1.suse.de (Postfix) with ESMTPS id C7B00219EC;
+        Mon, 27 Mar 2023 23:31:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1679959882; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=WdlRcu20z+c7BKlEbocvqiEmoAKTJAqHgdWdlNpOixc=;
-        b=zqEYwHVYk/1fekJ/HfRUW6geAiD0HQfgg52m7TfK+G+8OrzgnjABDvWweuIvPB3HIwq5sY
-        cGO343iBWZAsAFJMItu8X286rPBFSoMJcSW/BfYxJi7AZJTGtoKE3B19g2Mmz6hjxaVoMo
-        IZNCfEwjbZWTLPIy9HPuRi7zufKKpoE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1679959491;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=WdlRcu20z+c7BKlEbocvqiEmoAKTJAqHgdWdlNpOixc=;
-        b=K4g5C3QIXiicnrji11RJBHdEEg9C0358ty8j0k5lOA3D2CSdbOmpn+TgIo78Uwb6+4+1xr
-        DQ9aFhIMvev9AgBw==
+        bh=PIMesv8OljvEiAq8hVN+v0VnF8UmrBQQlihRgf63fuw=;
+        b=e0JWxjLiiU1ZFk20WKEDmc1S1SBXn7fT//I8SxYu+F14lNMdjMUwMM6XNS9M75MkaorReC
+        6dQecO4eGhOe2V5gkTNj01rymwacYHQMx08iy9WkhWpU4FVqnLZbH2OKHF9QAFqcFHxK/w
+        txy9Q+9cSt4pAdHC3+y2egVfGBnhC/E=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7476C13482;
-        Mon, 27 Mar 2023 23:24:51 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 0645E13482;
+        Mon, 27 Mar 2023 23:31:21 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id VaNrG8MlImTTZgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 27 Mar 2023 23:24:51 +0000
-Date:   Tue, 28 Mar 2023 01:18:37 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Josef Bacik <josef@toxicpanda.com>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.com>, Tejun Heo <tj@kernel.org>,
-        Jens Axboe <axboe@kernel.dk>, cgroups@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: move bio cgroup punting into btrfs
-Message-ID: <20230327231837.GK10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230327004954.728797-1-hch@lst.de>
+        id OMOlMUknImTaaAAAMHmgww
+        (envelope-from <wqu@suse.com>); Mon, 27 Mar 2023 23:31:21 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH v5 01/13] btrfs: scrub: use dedicated super block verification function to scrub one super block
+Date:   Tue, 28 Mar 2023 07:30:51 +0800
+Message-Id: <7e5544dfc26a6d0673dde60e07b1ef3bc91b98a3.1679959770.git.wqu@suse.com>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <cover.1679959770.git.wqu@suse.com>
+References: <cover.1679959770.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230327004954.728797-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 27, 2023 at 09:49:46AM +0900, Christoph Hellwig wrote:
-> Hi all,
-> 
-> the current code to offload bio submission into a cgroup-specific helper
-> thread when sent from the btrfs internal helper threads is a bit ugly.
-> 
-> This series moves it into btrfs with minimal interference in the core
-> code.
+There is really no need to go through the super complex scrub_sectors()
+to just handle super blocks.
 
-I can't speak for the cgroup side, but as btrfs is the only user of the
-REQ_CGROUP_PUNT flag pushing it down to the IO submission path makes
-sense. Code looks ok, it's a direct conversion.
+This patch will introduce a dedicated function (less than 50 lines) to
+handle super block scrubing.
 
-When the mm/block changes get an Ack I can put it to btrfs for-next.
+This new function will introduce a behavior change, instead of using the
+complex but concurrent scrub_bio system, here we just go
+submit-and-wait.
+
+There is really not much sense to care the performance of super block
+scrubbing. It only has 3 super blocks at most, and they are all scattered
+around the devices already.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/scrub.c | 54 +++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 46 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3cdf73277e7e..e765eb8b8bcf 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -4243,18 +4243,59 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 	return ret;
+ }
+ 
++static int scrub_one_super(struct scrub_ctx *sctx, struct btrfs_device *dev,
++			   struct page *page, u64 physical, u64 generation)
++{
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	struct bio_vec bvec;
++	struct bio bio;
++	struct btrfs_super_block *sb = page_address(page);
++	int ret;
++
++	bio_init(&bio, dev->bdev, &bvec, 1, REQ_OP_READ);
++	bio.bi_iter.bi_sector = physical >> SECTOR_SHIFT;
++	bio_add_page(&bio, page, BTRFS_SUPER_INFO_SIZE, 0);
++	ret = submit_bio_wait(&bio);
++	bio_uninit(&bio);
++
++	if (ret < 0)
++		return ret;
++	ret = btrfs_check_super_csum(fs_info, sb);
++	if (ret != 0) {
++		btrfs_err_rl(fs_info,
++			"super block at physical %llu devid %llu has bad csum",
++			physical, dev->devid);
++		return -EIO;
++	}
++	if (btrfs_super_generation(sb) != generation) {
++		btrfs_err_rl(fs_info,
++"super block at physical %llu devid %llu has bad generation, has %llu expect %llu",
++			     physical, dev->devid,
++			     btrfs_super_generation(sb), generation);
++		return -EUCLEAN;
++	}
++
++	ret = btrfs_validate_super(fs_info, sb, -1);
++	return ret;
++}
++
+ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 					   struct btrfs_device *scrub_dev)
+ {
+ 	int	i;
+ 	u64	bytenr;
+ 	u64	gen;
+-	int	ret;
++	int	ret = 0;
++	struct page *page;
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
+ 
+ 	if (BTRFS_FS_ERROR(fs_info))
+ 		return -EROFS;
+ 
++	page = alloc_page(GFP_KERNEL);
++	if (!page)
++		return -ENOMEM;
++
+ 	/* Seed devices of a new filesystem has their own generation. */
+ 	if (scrub_dev->fs_devices != fs_info->fs_devices)
+ 		gen = scrub_dev->generation;
+@@ -4269,15 +4310,12 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		if (!btrfs_check_super_location(scrub_dev, bytenr))
+ 			continue;
+ 
+-		ret = scrub_sectors(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
+-				    scrub_dev, BTRFS_EXTENT_FLAG_SUPER, gen, i,
+-				    NULL, bytenr);
++		ret = scrub_one_super(sctx, scrub_dev, page, bytenr, gen);
+ 		if (ret)
+-			return ret;
++			break;
+ 	}
+-	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
+-
+-	return 0;
++	__free_page(page);
++	return ret;
+ }
+ 
+ static void scrub_workers_put(struct btrfs_fs_info *fs_info)
+-- 
+2.39.2
+

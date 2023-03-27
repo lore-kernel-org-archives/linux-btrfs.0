@@ -2,148 +2,75 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 637B8C76195
-	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Mar 2023 17:18:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6621BC76195
+	for <linux-btrfs@archiver.kernel.org>; Mon, 27 Mar 2023 17:20:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230176AbjC0RSC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 27 Mar 2023 13:18:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50506 "EHLO
+        id S232769AbjC0RUu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 27 Mar 2023 13:20:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53408 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229783AbjC0RSB (ORCPT
+        with ESMTP id S232774AbjC0RUr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 27 Mar 2023 13:18:01 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 092DA3595
-        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 10:17:59 -0700 (PDT)
+        Mon, 27 Mar 2023 13:20:47 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4794044A3
+        for <linux-btrfs@vger.kernel.org>; Mon, 27 Mar 2023 10:20:43 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id AB82821D51;
-        Mon, 27 Mar 2023 17:17:58 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 79FDB1FDBC;
+        Mon, 27 Mar 2023 17:20:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1679937478;
+        t=1679937641;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=EztNUEx61hjGrteKvXjRpf7Jgix62Fw4MBoxmv+A93E=;
-        b=lSCOuvpiEurryFKrkeqle3MagQB3H1sWKpBX59bD7w4ZiRwjvJ92Uhxp98UUuIozZWFliI
-        ZYI5LL/9YBLNqf/UNyNbST3Mn7MP50Nx26IMBsAtXg8W/JLLzkpAqSmzJ1VHaBtknnPwh2
-        XDEVgK3YtiLmY29I+JUYcGpyBku8xxs=
+        bh=U0344ePVi6nN5DPvTdclyPnhZf8dtQBtMyz9q8y6qNg=;
+        b=cw3W8s5XfEa46KxUavYOOIF+J4i0pLZVctc1iaTWRmibuWa2QTcw0XGTIks0hk9cqrFILs
+        n/jwGhXPrzTKQ4P//HORv640CvQ4F15g64sGwRYQ7ZcKh548fmvvG7eefGHaDsnChM2nI2
+        H1mD3wf4gFgTUQB9srsTKU88x9Ixvmc=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1679937478;
+        s=susede2_ed25519; t=1679937641;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=EztNUEx61hjGrteKvXjRpf7Jgix62Fw4MBoxmv+A93E=;
-        b=0kpSee+Ut9+RCRuIR0vbiWhmpesrAEgUbotHsj/G5UZs8Qon+fsR1XQn8cLKwg0LfigEVN
-        07YhmQMMlbvG99DA==
+        bh=U0344ePVi6nN5DPvTdclyPnhZf8dtQBtMyz9q8y6qNg=;
+        b=Ez1khJbHzdwxOUwyTChYUEmhCHETceoJMjJ5xB6jbIuUdRIuWE6b+2062t3ibMvQ0fDKLx
+        R0ZA3B9VMtKbRJBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 641EB13329;
-        Mon, 27 Mar 2023 17:17:58 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5BD2213329;
+        Mon, 27 Mar 2023 17:20:41 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id gu3+FsbPIWSQaQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 27 Mar 2023 17:17:58 +0000
-Date:   Mon, 27 Mar 2023 19:11:45 +0200
+        id jjvcFGnQIWTLagAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 27 Mar 2023 17:20:41 +0000
+Date:   Mon, 27 Mar 2023 19:14:27 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Anand Jain <anand.jain@oracle.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/4] Btrfs: change wait_dev_flush() return type to bool
-Message-ID: <20230327171144.GH10580@twin.jikos.cz>
+Subject: Re: [PATCH 4/4] btrfs: use test_and_clear_bit() in wait_dev_flush()
+Message-ID: <20230327171427.GI10580@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1679910087.git.anand.jain@oracle.com>
- <3e067c8b0956f0134501c8eea2e19c8eb5adcedc.1679910088.git.anand.jain@oracle.com>
+ <7baf74b071f9d9002d2543cfc4f86bd3ddf7127f.1679910088.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <3e067c8b0956f0134501c8eea2e19c8eb5adcedc.1679910088.git.anand.jain@oracle.com>
+In-Reply-To: <7baf74b071f9d9002d2543cfc4f86bd3ddf7127f.1679910088.git.anand.jain@oracle.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, Mar 27, 2023 at 05:53:09PM +0800, Anand Jain wrote:
-> The flush error code is maintained in btrfs_device::last_flush_error, so
-> there is no point in returning it in wait_dev_flush() when it is not being
-> used. Instead, we can return a boolean value.
-> 
-> Note that even though btrfs_device::last_flush_error may not be used, we
-> will keep it for now.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  fs/btrfs/disk-io.c | 8 +++++---
->  1 file changed, 5 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 745be1f4ab6d..040142f2e76c 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -4102,13 +4102,14 @@ static void write_dev_flush(struct btrfs_device *device)
->  
->  /*
->   * If the flush bio has been submitted by write_dev_flush, wait for it.
-> + * Return false for any error, and true otherwise.
+On Mon, Mar 27, 2023 at 05:53:10PM +0800, Anand Jain wrote:
+> The function wait_dev_flush() tests for the BTRFS_DEV_STATE_FLUSH_SENT
+> bit and then clears it separately. Instead, use test_and_clear_bit().
 
-This does not match how the function is used, originally a zero value
-means no error, now zero (false) means an error.
-
-4152         list_for_each_entry(dev, head, dev_list) {
-4153                 if (test_bit(BTRFS_DEV_STATE_MISSING, &dev->dev_state))
-4154                         continue;
-4155                 if (!dev->bdev) {
-4156                         errors_wait++;
-4157                         continue;
-4158                 }
-4159                 if (!test_bit(BTRFS_DEV_STATE_IN_FS_METADATA, &dev->dev_state) ||
-4160                     !test_bit(BTRFS_DEV_STATE_WRITEABLE, &dev->dev_state))
-4161                         continue;
-4162
-4163                 ret = wait_dev_flush(dev);
-4164                 if (ret)
-4165                         errors_wait++;
-4166         }
-
-So here it's reversed (with all patches applied). You could keep the
-meaning of the retrun value to be true=ok, false=error, it's still
-understandable if there conditions looks like
-
-	ret = wait_dev_flush()
-	if (!ret)
-		errors++;
-
-Another pattern is to return true on errors (typically functions that
-check some condition), so it's the conditions are structured as:
-
-	if (error)
-		handle();
-
->   */
-> -static blk_status_t wait_dev_flush(struct btrfs_device *device)
-> +static bool wait_dev_flush(struct btrfs_device *device)
->  {
->  	struct bio *bio = &device->flush_bio;
->  
->  	if (!test_bit(BTRFS_DEV_STATE_FLUSH_SENT, &device->dev_state))
-> -		return BLK_STS_OK;
-> +		return true;
-
-This should be 'false'
-
->  
->  	clear_bit(BTRFS_DEV_STATE_FLUSH_SENT, &device->dev_state);
->  	wait_for_completion_io(&device->flush_wait);
-> @@ -4116,9 +4117,10 @@ static blk_status_t wait_dev_flush(struct btrfs_device *device)
->  	if (bio->bi_status) {
->  		device->last_flush_error = bio->bi_status;
->  		btrfs_dev_stat_inc_and_print(device, BTRFS_DEV_STAT_FLUSH_ERRS);
-> +		return false;
->  	}
->  
-> -	return bio->bi_status;
-> +	return true;
->  }
+But why would we need to do it like that? The write and wait are
+executed in one thread so we don't need atomic change to the status and
+thus a separate set/test/clear bit are fine. If not, then please
+explain. Thanks.

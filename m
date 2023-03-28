@@ -2,50 +2,50 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91318C76196
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:57:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A1C2C77B6C
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:57:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229874AbjC1X5G (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Mar 2023 19:57:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37950 "EHLO
+        id S229901AbjC1X5R (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Mar 2023 19:57:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38466 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229888AbjC1X5C (ORCPT
+        with ESMTP id S229888AbjC1X5I (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2023 19:57:02 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E0CD7359C
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:56:44 -0700 (PDT)
+        Tue, 28 Mar 2023 19:57:08 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 73D243AB4
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:56:51 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 0281921A25;
-        Tue, 28 Mar 2023 23:56:42 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id DC72F1FDB3;
+        Tue, 28 Mar 2023 23:56:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1680047802; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1680047798; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=0QO/FNWFiB5WvJqDAWumA2xOHVaoqfhgJes4XEMQP3A=;
-        b=XA8csg/W0Xko1J21r+h/ildRkwKUEoXaTR0s5PO3yS1arYWFf8HFI8LQ73hTuMtBcE3Hlw
-        JfbuQMlU86aL+hUJivXUi5veSxcBr2YLVFYukp4GVPjOiF0CtWEtTHMo7IUFkIX3PI0GDS
-        KdA3c3hqGwvJJ91vT9yIGZoSzER1iCI=
+        bh=PIMesv8OljvEiAq8hVN+v0VnF8UmrBQQlihRgf63fuw=;
+        b=O+VqeAeQEntP1Aho1gYfxWmN5nuNKka1ecB5lMzsTifGZagjL9VuCfI+FGrfaMEF96QFDB
+        gv61H8Pc0RHNNpeQArmgAFKX7h0HaM7FzyedxJa2jM8eTjv7OlPBPigF0kNZR0CjKaII0r
+        KEqQu9S7hlrT4XeG0eM+p4ZkyQ1UY14=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 402C013488;
-        Tue, 28 Mar 2023 23:56:41 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 23F4F13488;
+        Tue, 28 Mar 2023 23:56:37 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id gPfYBLl+I2T4eQAAMHmgww
-        (envelope-from <wqu@suse.com>); Tue, 28 Mar 2023 23:56:41 +0000
+        id oI2JObV+I2T4eQAAMHmgww
+        (envelope-from <wqu@suse.com>); Tue, 28 Mar 2023 23:56:37 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH v7 04/13] btrfs: introduce a new helper to submit write bio for scrub
-Date:   Wed, 29 Mar 2023 07:56:11 +0800
-Message-Id: <72f4fa26c35f2e649bc562a80a40955d745f1118.1680047473.git.wqu@suse.com>
+Subject: [PATCH v7 01/13] btrfs: scrub: use dedicated super block verification function to scrub one super block
+Date:   Wed, 29 Mar 2023 07:56:08 +0800
+Message-Id: <7e5544dfc26a6d0673dde60e07b1ef3bc91b98a3.1680047473.git.wqu@suse.com>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1680047473.git.wqu@suse.com>
 References: <cover.1680047473.git.wqu@suse.com>
@@ -55,152 +55,111 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Just like the special scrub read, scrub write also has its extra niches:
+There is really no need to go through the super complex scrub_sectors()
+to just handle super blocks.
 
-- Only write back to single device
-  Even for read-repair on RAID56, we only update the corrupted data
-  stripe itself, not triggering the full RMW path.
+This patch will introduce a dedicated function (less than 50 lines) to
+handle super block scrubing.
 
-  This makes scrub writeback a perfect match for the single stripe
-  quick path.
+This new function will introduce a behavior change, instead of using the
+complex but concurrent scrub_bio system, here we just go
+submit-and-wait.
 
-- Requires a valid @mirror_num
-  For RAID56 case, only @mirror_num == 1 is supported.
-  For non-RAID56 cases, we need @mirror_num to locate our stripe.
-
-- Need to manually specify if it's for dev-replace
-  For scrub path we can write back to the original device (for
-  read-repair) and to the target device (for replace) at the same
-  time, but with different sectors (read-repair only writes repaired
-  sectors, while dev-replace writes all good sectors).
-
-  So here we need a bool to specify the case.
-
-- No data csum generation
+There is really not much sense to care the performance of super block
+scrubbing. It only has 3 super blocks at most, and they are all scattered
+around the devices already.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/bio.c | 92 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/bio.h |  2 ++
- 2 files changed, 94 insertions(+)
+ fs/btrfs/scrub.c | 54 +++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 46 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index bdef346c542c..34902d58bb4b 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -754,6 +754,98 @@ void btrfs_submit_scrub_read(struct btrfs_bio *bbio, int mirror_num)
- 	btrfs_bio_end_io(bbio, errno_to_blk_status(ret));
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 3cdf73277e7e..e765eb8b8bcf 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -4243,18 +4243,59 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 	return ret;
  }
  
-+/*
-+ * Scrub write special version. Some extra limits:
-+ *
-+ * - Only support write back for dev-replace and scrub read-repair.
-+ *   This means, the write bio, even for RAID56, would only
-+ *   be mapped to single device.
-+ *
-+ * - @mirror_num must be >0.
-+ *   To indicate which mirror to be written.
-+ *   If it's RAID56, it must be 1 (data stripes).
-+ *
-+ * - The @bbio must not cross stripe boundary.
-+ *
-+ * - If @dev_replace is true, the resulted stripe must be mapped to
-+ *   replace source device.
-+ *
-+ * - No csum geneartion.
-+ */
-+void btrfs_submit_scrub_write(struct btrfs_bio *bbio, int mirror_num,
-+			      bool dev_replace)
++static int scrub_one_super(struct scrub_ctx *sctx, struct btrfs_device *dev,
++			   struct page *page, u64 physical, u64 generation)
 +{
-+	struct btrfs_fs_info *fs_info = bbio->fs_info;
-+	u64 logical = bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT;
-+	u64 length = bbio->bio.bi_iter.bi_size;
-+	u64 map_length = length;
-+	struct btrfs_io_context *bioc = NULL;
-+	struct btrfs_io_stripe smap;
++	struct btrfs_fs_info *fs_info = sctx->fs_info;
++	struct bio_vec bvec;
++	struct bio bio;
++	struct btrfs_super_block *sb = page_address(page);
 +	int ret;
 +
-+	ASSERT(fs_info);
-+	ASSERT(mirror_num > 0);
-+	ASSERT(btrfs_op(&bbio->bio) == BTRFS_MAP_WRITE);
-+	ASSERT(!bbio->inode);
++	bio_init(&bio, dev->bdev, &bvec, 1, REQ_OP_READ);
++	bio.bi_iter.bi_sector = physical >> SECTOR_SHIFT;
++	bio_add_page(&bio, page, BTRFS_SUPER_INFO_SIZE, 0);
++	ret = submit_bio_wait(&bio);
++	bio_uninit(&bio);
 +
-+	btrfs_bio_counter_inc_blocked(fs_info);
-+	ret = __btrfs_map_block(fs_info, btrfs_op(&bbio->bio), logical,
-+				&map_length, &bioc, &smap, &mirror_num, 1);
-+	if (ret)
-+		goto fail;
-+
-+	/* Caller should ensure the @bbio doesn't cross stripe boundary. */
-+	ASSERT(map_length >= length);
-+	if (btrfs_op(&bbio->bio) == BTRFS_MAP_WRITE && btrfs_is_zoned(fs_info)) {
-+		bbio->bio.bi_opf &= ~REQ_OP_WRITE;
-+		bbio->bio.bi_opf |= REQ_OP_ZONE_APPEND;
++	if (ret < 0)
++		return ret;
++	ret = btrfs_check_super_csum(fs_info, sb);
++	if (ret != 0) {
++		btrfs_err_rl(fs_info,
++			"super block at physical %llu devid %llu has bad csum",
++			physical, dev->devid);
++		return -EIO;
++	}
++	if (btrfs_super_generation(sb) != generation) {
++		btrfs_err_rl(fs_info,
++"super block at physical %llu devid %llu has bad generation, has %llu expect %llu",
++			     physical, dev->devid,
++			     btrfs_super_generation(sb), generation);
++		return -EUCLEAN;
 +	}
 +
-+	if (!bioc)
-+		goto submit;
-+
-+	/* Map the RAID56 multi-stripe writes to a single one. */
-+	if (bioc->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+		int data_stripes = (bioc->map_type & BTRFS_BLOCK_GROUP_RAID5) ?
-+				    bioc->num_stripes - 1 : bioc->num_stripes - 2;
-+		int i;
-+
-+		/* This special write only works for data stripes. */
-+		ASSERT(mirror_num == 1);
-+		for (i = 0; i < data_stripes; i++) {
-+			u64 stripe_start = bioc->full_stripe_logical +
-+					   (i << BTRFS_STRIPE_LEN_SHIFT);
-+
-+			if (logical >= stripe_start &&
-+			    logical < stripe_start + BTRFS_STRIPE_LEN)
-+				break;
-+		}
-+		ASSERT(i < data_stripes);
-+		smap.dev = bioc->stripes[i].dev;
-+		smap.physical = bioc->stripes[i].physical +
-+				((logical - bioc->full_stripe_logical) &
-+				 BTRFS_STRIPE_LEN_MASK);
-+		goto submit;
-+	}
-+	ASSERT(mirror_num <= bioc->num_stripes);
-+	smap.dev = bioc->stripes[mirror_num - 1].dev;
-+	smap.physical = bioc->stripes[mirror_num - 1].physical;
-+submit:
-+	ASSERT(smap.dev);
-+	btrfs_put_bioc(bioc);
-+	bioc = NULL;
-+	if (dev_replace) {
-+		ASSERT(smap.dev == fs_info->dev_replace.srcdev);
-+		smap.dev = fs_info->dev_replace.tgtdev;
-+	}
-+	__btrfs_submit_bio(&bbio->bio, bioc, &smap, mirror_num);
-+	return;
-+
-+fail:
-+	btrfs_bio_counter_dec(fs_info);
-+	btrfs_bio_end_io(bbio, errno_to_blk_status(ret));
++	ret = btrfs_validate_super(fs_info, sb, -1);
++	return ret;
 +}
 +
- void btrfs_submit_bio(struct btrfs_bio *bbio, int mirror_num)
+ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 					   struct btrfs_device *scrub_dev)
  {
- 	while (!btrfs_submit_chunk(bbio, mirror_num))
-diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
-index afbcf318fdda..ad5a6a558662 100644
---- a/fs/btrfs/bio.h
-+++ b/fs/btrfs/bio.h
-@@ -107,6 +107,8 @@ static inline void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
+ 	int	i;
+ 	u64	bytenr;
+ 	u64	gen;
+-	int	ret;
++	int	ret = 0;
++	struct page *page;
+ 	struct btrfs_fs_info *fs_info = sctx->fs_info;
  
- void btrfs_submit_bio(struct btrfs_bio *bbio, int mirror_num);
- void btrfs_submit_scrub_read(struct btrfs_bio *bbio, int mirror_num);
-+void btrfs_submit_scrub_write(struct btrfs_bio *bbio, int mirror_num,
-+			      bool dev_replace);
- int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
- 			    u64 length, u64 logical, struct page *page,
- 			    unsigned int pg_offset, int mirror_num);
+ 	if (BTRFS_FS_ERROR(fs_info))
+ 		return -EROFS;
+ 
++	page = alloc_page(GFP_KERNEL);
++	if (!page)
++		return -ENOMEM;
++
+ 	/* Seed devices of a new filesystem has their own generation. */
+ 	if (scrub_dev->fs_devices != fs_info->fs_devices)
+ 		gen = scrub_dev->generation;
+@@ -4269,15 +4310,12 @@ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+ 		if (!btrfs_check_super_location(scrub_dev, bytenr))
+ 			continue;
+ 
+-		ret = scrub_sectors(sctx, bytenr, BTRFS_SUPER_INFO_SIZE, bytenr,
+-				    scrub_dev, BTRFS_EXTENT_FLAG_SUPER, gen, i,
+-				    NULL, bytenr);
++		ret = scrub_one_super(sctx, scrub_dev, page, bytenr, gen);
+ 		if (ret)
+-			return ret;
++			break;
+ 	}
+-	wait_event(sctx->list_wait, atomic_read(&sctx->bios_in_flight) == 0);
+-
+-	return 0;
++	__free_page(page);
++	return ret;
+ }
+ 
+ static void scrub_workers_put(struct btrfs_fs_info *fs_info)
 -- 
 2.39.2
 

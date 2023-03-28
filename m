@@ -2,58 +2,79 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A692C6FD18
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:37:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D24A2C76196
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:45:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229554AbjC1XhL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Mar 2023 19:37:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49910 "EHLO
+        id S229569AbjC1XpR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Mar 2023 19:45:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55562 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229470AbjC1XhJ (ORCPT
+        with ESMTP id S229567AbjC1XpQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2023 19:37:09 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D0E1199
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:37:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=ezS0bjX6jxNz6VRKQ1AC7wlxIFe6eBWAkYw/IrXcKBg=; b=lLkhrlHtbt0fiXjy3IAEnmtwny
-        TqiZvDvJpEYTNmHstuQGfHhUcEiuixt/CMQoDsfA8QyaUil6BSQcBFSTfuth1qaccTzO9x6Do4JgM
-        GELCeNFc1hbxV17SUI4xSYqDK7p4vE4/D73WGkD48IfBqrDyokcMlYN47uaJPus6biNFGwyDzXvZA
-        EiBt55k/MSawxnN5rwAm/ABWP6o3MmWHczKgWQEKuPuFLTDShYZDgxRfpJr5J920eiXuWb4O3X+v9
-        Govqq7ZWh95NTlvhTog5rS8Sp+PqX+F/bOVShupwkNQwq3Xgqt3lwxaQY3Tj4fydiAUBW5brZ6i0M
-        Ny82MeTg==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
-        id 1phIsE-00G873-1t;
-        Tue, 28 Mar 2023 23:37:06 +0000
-Date:   Tue, 28 Mar 2023 16:37:06 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/12] btrfs: scrub: use a more reader friendly code
- to implement scrub_simple_mirror()
-Message-ID: <ZCN6Itm8dkY8w9P/@infradead.org>
+        Tue, 28 Mar 2023 19:45:16 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 72FD7271C
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:45:15 -0700 (PDT)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MmDIu-1q7o2o4AN6-00iCMd; Wed, 29
+ Mar 2023 01:45:03 +0200
+Message-ID: <c7ad6682-a3e0-ba70-b3f6-eed85388595f@gmx.com>
+Date:   Wed, 29 Mar 2023 07:44:59 +0800
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.8.0
+Subject: Re: [PATCH v2 00/12] btrfs: scrub: use a more reader friendly code to
+ implement scrub_simple_mirror()
+To:     Christoph Hellwig <hch@infradead.org>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
 References: <cover.1678777941.git.wqu@suse.com>
  <ZBF5M5R3pDdp/075@infradead.org>
  <2dfc49ef-e041-3efd-1c55-3685df22acb6@gmx.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <2dfc49ef-e041-3efd-1c55-3685df22acb6@gmx.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+ <ZCN6Itm8dkY8w9P/@infradead.org>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <ZCN6Itm8dkY8w9P/@infradead.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:uoNv4V403KM36f+oT+yU3jxuDxh0cvpeW17C75Phd1vT9U0jtd8
+ tT57sJgR66CajGxavxjGaGvix4ki2EVddxrMzX0qNni1zKH/iDvPfbj5xR8sW+AyHBBOYJf
+ u5NP6uOdndGHc2aB/av7agv4H8dEFMQNk0NNRbsmxypKOa+f3cL6E98413IyrWQzsCqlVFE
+ TeUoO1qkl6xlBIZzsFnjA==
+UI-OutboundReport: notjunk:1;M01:P0:+yGmITdLT9U=;OqDVBmR7CnhtmZbAYAYWXpddiKW
+ 90vGOl3gvgNsh4R3NcR+rvjqMZJqaBK1VDADJyC9AtZkZYKfR/N1HMG8pR4oKBihJ+Jtg9kp+
+ 9n9eugNCieGynt9UUOvX+prvEGMVqWu5d9sJIvZws6tiQaA/hbtCaom7h9LBVyUQuiZwt29Us
+ 3MV6Q6Elf3c9ibR7MN+c0Y5Nv6ZTz9XeUQgbNUCi0PSEr91x1RuxNAgBAMPewJj39Kf0utgNG
+ AXKi4URfnLLeZXnMZq1ZGOTBiqq+ixIqfxV4Ld/Y6A5FRyJ0Xb+fRMrb79JHDeHECHn6wKJIy
+ GVGMveSPVXMWmBCzlxH2ajs/zWRyDyPRfeTHqgI5Iz1cJ0cAExr/yoXOanWfE7RVXKQsDDYMP
+ TocumLPJ3i7TXat8DNXwEKWE7lVYtP5wQnacOkjMSa+jfTS9bIRnPJgPN9L+6Urz3TdlOPaA4
+ aAptOdYU1Opoo/QdMNRsoUEJMn0K+RCB/Ry25TxDkk1QPM4nXcnNdJf3KZvT1Gxdhg23D4i0S
+ pYTlxkEVZev233wZcUh427ZyiCRbfAYnjtqkPs0qDC9IbeWIgMEfb/0Afu3z+FHlLaMumGNVi
+ scPdrmybbQGmtXJWiLDDDHHpFrfDKTx1I1hXC+y58SdcXjXdSJqR2n8gjH2pw6QAtZVhSblbe
+ fSc75vorHza5UPoN8XxYey6RNaYyl8A2HBPJhyWEcBqTeyWEq+gDjgFwMfe1qAUTVqr8H3gAE
+ d1CknqAimi3BK19tBB7Ek+n59k86FfEu1oO5o85l808CfhuThaAKHHe5S3w53eJqkpBBJXiTy
+ dSP11NQjmGmgdIwZKwXKAKoL0FYhrex3FaQHNYjzFXkDq4RmfDZY/NNQM7dlncIuDlmtgREad
+ dyhOdJutitvEx0Ue89FWN6ETrOo6wYv0WtkA/NEAh4i3ixT2x8WJxRUkvWMUNTvgIVQ1qpRLr
+ 3HRy21GroFkTVRQAU7sQMuyl1xQ=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 28, 2023 at 05:34:03PM +0800, Qu Wenruo wrote:
-> Currently I just do a single patch to cleanup, the result is super aweful:
-> 
->  fs/btrfs/scrub.c | 2513 +---------------------------------------------
->  fs/btrfs/scrub.h |    4 -
->  2 files changed, 5 insertions(+), 2512 deletions(-)
 
-To me this looks perfect.  A patch that just removes a lot of code is
-always good.
+
+On 2023/3/29 07:37, Christoph Hellwig wrote:
+> On Tue, Mar 28, 2023 at 05:34:03PM +0800, Qu Wenruo wrote:
+>> Currently I just do a single patch to cleanup, the result is super aweful:
+>>
+>>   fs/btrfs/scrub.c | 2513 +---------------------------------------------
+>>   fs/btrfs/scrub.h |    4 -
+>>   2 files changed, 5 insertions(+), 2512 deletions(-)
+> 
+> To me this looks perfect.  A patch that just removes a lot of code is
+> always good.
+
+Isn't the patch split also important?
+
+Anyway I will try some different methods to split that.
+
+Thanks,
+Qu

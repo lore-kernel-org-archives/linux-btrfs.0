@@ -2,59 +2,173 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BC3D5C76196
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:51:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFD90C77B60
+	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:57:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229567AbjC1XvL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Mar 2023 19:51:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57334 "EHLO
+        id S229904AbjC1X5D (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Mar 2023 19:57:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38048 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229549AbjC1XvK (ORCPT
+        with ESMTP id S229682AbjC1X5A (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2023 19:51:10 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C7332D47
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:50:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=Rf0i3Hx3Ehzoe72CAg0C58+n/MAWqC4CMGqWmLMKTaQ=; b=H/23p6qwFiLqjK3P/mOzVaH6OG
-        vTfM+6Ko/AQSM6K3qTYRO/1WrhorhJOgw9DfZ+pMp9LPL5i/Breu+T1xvZsXDc4Zn37PVtYq/SIco
-        ibXN0GJtuxHNFRQdhiyMoFekysyoeP0hsTIqlR7MWX1FxZyUrOuEBLMJ6QegF6X7Vw4Ts9zymtjWp
-        rLvUy8mLyEw4QyCY36jsJ42GB6KCpz9fU35H4xc4wdYifQ4KRz+mEhzd73PVInE1RLilVwBS7Z/Q5
-        EfApye7HxHTaozoXqq6KX9jkp8dIAE77STeeHkdloneN9yw7CDGLgeyy8EcxsH3n6UVIa/8NTBnbu
-        GqURggbQ==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
-        id 1phJ5a-00G93R-2r;
-        Tue, 28 Mar 2023 23:50:54 +0000
-Date:   Tue, 28 Mar 2023 16:50:54 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 00/12] btrfs: scrub: use a more reader friendly code
- to implement scrub_simple_mirror()
-Message-ID: <ZCN9Xs7Cw75mc+jB@infradead.org>
-References: <cover.1678777941.git.wqu@suse.com>
- <ZBF5M5R3pDdp/075@infradead.org>
- <2dfc49ef-e041-3efd-1c55-3685df22acb6@gmx.com>
- <ZCN6Itm8dkY8w9P/@infradead.org>
- <c7ad6682-a3e0-ba70-b3f6-eed85388595f@gmx.com>
+        Tue, 28 Mar 2023 19:57:00 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1B9A2D51
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:56:42 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id E08811FDC3;
+        Tue, 28 Mar 2023 23:56:40 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1680047800; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=7XTObH/dduPMr91OEB1jp+0xWb7GSKMJRZZ2xxvFY/A=;
+        b=GfbikRXMyi9JnC7jZ38tVSA1gyMOeUe4nkEJYSA7hQSg2mKoDGLGdO5nghP9EobrRw2n1c
+        F/Rlfib6dOyCgXpvYXelG7azRSwvCvUWRami6RKjkmR7DhftSFpzIh48A0VKWSzgiM7DXq
+        WhnfcFN/qptMPQWsPHjE6AcCH48jpGw=
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 260B213488;
+        Tue, 28 Mar 2023 23:56:39 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id kKEROrd+I2T4eQAAMHmgww
+        (envelope-from <wqu@suse.com>); Tue, 28 Mar 2023 23:56:39 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Cc:     David Sterba <dsterba@suse.com>
+Subject: [PATCH v7 03/13] btrfs: introduce a new helper to submit read bio for scrub
+Date:   Wed, 29 Mar 2023 07:56:10 +0800
+Message-Id: <79a6604bc9ccb2a6e1355f9d897b45943c6bcca9.1680047473.git.wqu@suse.com>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <cover.1680047473.git.wqu@suse.com>
+References: <cover.1680047473.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c7ad6682-a3e0-ba70-b3f6-eed85388595f@gmx.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 29, 2023 at 07:44:59AM +0800, Qu Wenruo wrote:
-> Isn't the patch split also important?
-> 
-> Anyway I will try some different methods to split that.
+The new helper, btrfs_submit_scrub_read(), would be mostly a subset of
+btrfs_submit_bio(), with the following limitations:
 
-I'll have to defer to David as btrfs is sometimes a little different
-from the rest of the kernel in it's requirements, but everywhere
-else a patch that just removes code can be as big as it gets.
+- Only supports read
+- @mirror_num must be > 0
+- No read-time repair nor checksum verification
+- The @bbio must not cross stripe boundary
+
+This would provide the basis for unified read repair for scrub, as we no
+longer needs to handle RAID56 recovery all by scrub, and RAID56 data
+stripes scrub can share the same code of read and repair.
+
+The repair part would be the same as non-RAID56, as we only need to try
+the next mirror.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/bio.c | 48 ++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/bio.h |  1 +
+ 2 files changed, 45 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index c1edadc17260..bdef346c542c 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -333,8 +333,8 @@ static void btrfs_end_bio_work(struct work_struct *work)
+ {
+ 	struct btrfs_bio *bbio = container_of(work, struct btrfs_bio, end_io_work);
+ 
+-	/* Metadata reads are checked and repaired by the submitter. */
+-	if (bbio->bio.bi_opf & REQ_META)
++	/* Metadata or scrub reads are checked and repaired by the submitter. */
++	if (bbio->bio.bi_opf & REQ_META || !bbio->inode)
+ 		bbio->end_io(bbio);
+ 	else
+ 		btrfs_check_read_bio(bbio, bbio->bio.bi_private);
+@@ -344,7 +344,7 @@ static void btrfs_simple_end_io(struct bio *bio)
+ {
+ 	struct btrfs_bio *bbio = btrfs_bio(bio);
+ 	struct btrfs_device *dev = bio->bi_private;
+-	struct btrfs_fs_info *fs_info = bbio->inode->root->fs_info;
++	struct btrfs_fs_info *fs_info = bbio->fs_info;
+ 
+ 	btrfs_bio_counter_dec(fs_info);
+ 
+@@ -368,7 +368,8 @@ static void btrfs_raid56_end_io(struct bio *bio)
+ 
+ 	btrfs_bio_counter_dec(bioc->fs_info);
+ 	bbio->mirror_num = bioc->mirror_num;
+-	if (bio_op(bio) == REQ_OP_READ && !(bbio->bio.bi_opf & REQ_META))
++	if (bio_op(bio) == REQ_OP_READ && bbio->inode &&
++	    !(bbio->bio.bi_opf & REQ_META))
+ 		btrfs_check_read_bio(bbio, NULL);
+ 	else
+ 		btrfs_orig_bbio_end_io(bbio);
+@@ -714,6 +715,45 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
+ 	return true;
+ }
+ 
++/*
++ * Scrub read special version, with extra limits:
++ *
++ * - Only support read for scrub usage
++ * - @mirror_num must be >0
++ * - No read-time repair nor checksum verification.
++ * - The @bbio must not cross stripe boundary.
++ */
++void btrfs_submit_scrub_read(struct btrfs_bio *bbio, int mirror_num)
++{
++	struct btrfs_fs_info *fs_info = bbio->fs_info;
++	u64 logical = bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT;
++	u64 length = bbio->bio.bi_iter.bi_size;
++	u64 map_length = length;
++	struct btrfs_io_context *bioc = NULL;
++	struct btrfs_io_stripe smap;
++	int ret;
++
++	ASSERT(fs_info);
++	ASSERT(mirror_num > 0);
++	ASSERT(btrfs_op(&bbio->bio) == BTRFS_MAP_READ);
++	ASSERT(!bbio->inode);
++
++	btrfs_bio_counter_inc_blocked(fs_info);
++	ret = __btrfs_map_block(fs_info, btrfs_op(&bbio->bio), logical,
++				&map_length, &bioc, &smap, &mirror_num, 1);
++	if (ret)
++		goto fail;
++
++	/* Caller should ensure the @bbio doesn't cross stripe boundary. */
++	ASSERT(map_length >= length);
++	__btrfs_submit_bio(&bbio->bio, bioc, &smap, mirror_num);
++	return;
++
++fail:
++	btrfs_bio_counter_dec(fs_info);
++	btrfs_bio_end_io(bbio, errno_to_blk_status(ret));
++}
++
+ void btrfs_submit_bio(struct btrfs_bio *bbio, int mirror_num)
+ {
+ 	while (!btrfs_submit_chunk(bbio, mirror_num))
+diff --git a/fs/btrfs/bio.h b/fs/btrfs/bio.h
+index 3b97ce54140a..afbcf318fdda 100644
+--- a/fs/btrfs/bio.h
++++ b/fs/btrfs/bio.h
+@@ -106,6 +106,7 @@ static inline void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
+ #define REQ_BTRFS_ONE_ORDERED			REQ_DRV
+ 
+ void btrfs_submit_bio(struct btrfs_bio *bbio, int mirror_num);
++void btrfs_submit_scrub_read(struct btrfs_bio *bbio, int mirror_num);
+ int btrfs_repair_io_failure(struct btrfs_fs_info *fs_info, u64 ino, u64 start,
+ 			    u64 length, u64 logical, struct page *page,
+ 			    unsigned int pg_offset, int mirror_num);
+-- 
+2.39.2
+

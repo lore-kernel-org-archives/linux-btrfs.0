@@ -2,51 +2,51 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E543C761AF
-	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Mar 2023 17:08:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D23D6C761AF
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Mar 2023 17:08:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231528AbjC2RIX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 29 Mar 2023 13:08:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54270 "EHLO
+        id S231375AbjC2RIl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 29 Mar 2023 13:08:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54738 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231370AbjC2RHg (ORCPT
+        with ESMTP id S231372AbjC2RHh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 29 Mar 2023 13:07:36 -0400
+        Wed, 29 Mar 2023 13:07:37 -0400
 Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7904D30C2;
-        Wed, 29 Mar 2023 10:07:15 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 159AB65B3;
+        Wed, 29 Mar 2023 10:07:18 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
   d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1680109635; x=1711645635;
+  t=1680109638; x=1711645638;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=tkkYPg8owa+F6WBdgLFEdkckQq2ouOP6tkr56Y/Y4Vc=;
-  b=BNuOlcrz9Kf8VBjAqPMC8+DQDPB88opMCwOCoI0IfKZ7F11U+Fbc34iv
-   nSssIdoBubjPJIqfPb40HGWat2Pe85q/oieQr+XoOm+0qpvfe0Q1Jfbch
-   6QdircK9EVEF8H8O1R2XAjybaYpqoub3CumLUA+dhCvD3uaFQRzpHIkXu
-   3pIiyCzeXkPpF4a2cWcDohOMGxzfok6eOYiw8TZ0eajEt4Jw1VkVhC7He
-   qKwT6hsvjiNXMqEAXXbw/Wf/MT8AaJHZe7/b+ZNG5XE1BVhgPYKIFjzTv
-   SSExXq86ByJCF902t57k+v1nw4z8RdcMStcO6PK57TRNmOpwW90rvsMHN
-   w==;
+  bh=813zYQzJ3ygRpxAxwRlfdubSOcWGUy1xvUxQHtIWz2U=;
+  b=fE975ZFR/F65ORP3VK65C4IpimnfQq20lkwum/MaV5oY4uDOh2ko2HyL
+   3tdFV55opmHko1XoDgIbJXoqOu+bWjlClA6TlFLLgZ71qpMjfxxhkxeT+
+   fpP/KdksUpctcUkHeUzqE1PXlVv1kJyTp4n8kE1UPm0+2mp0HskncAmCx
+   yKEb9GjjXbstVLhToA1OUZAIj5EVfTHGdwQSiHRiAGLeRnNE4dVD5Xkcn
+   HOnTJPBSxevoVVrEe02P80okg5aSQ+ps99VX+bIDIIgFUz/T5YqRt3cAD
+   wehWdITYve8fvFb46pIbPTIQ0ekAf5iENat5EDASehkPGRXCsL3iLTtpK
+   Q==;
 X-IronPort-AV: E=Sophos;i="5.98,301,1673884800"; 
-   d="scan'208";a="225092896"
+   d="scan'208";a="225092904"
 Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Mar 2023 01:07:06 +0800
-IronPort-SDR: kzhmgV/gteykBR4KCyOu29vFlCI1zwFmfOmFaR6LHMAlHrSDzsxQeLj+kqnBWd3syKfclI6xpG
- 3RL9frQNeaG09kV2z9sHK8nAK2jXNNmHLBl6GvbxCymGTE3Zr8i6dH51FfWC5vZveHj+i9NP+y
- eCXdUuc5qul/cUeQ1IkyNzCF0VcECGRZ2qmQ5pg/11xlSadGX98CYbfiKzw/iSJihr3gN/pGh0
- 5GcACdZSFz+WXJSZkxBfYtPBkQOrg/2+VkZz/Sy2pHOjbkS6Z6f/L2f3wb9IPlCcXZgbCb40k2
- zEE=
+  by ob1.hgst.iphmx.com with ESMTP; 30 Mar 2023 01:07:12 +0800
+IronPort-SDR: 3BRWLB/ngjlgbGlghhUv2B88oRumIdq/HRK3rm1oI51hULpiccHglpXalHxb0PLT7mUhivyNZL
+ 0IpEM9xeftmoq+ru3b6z7afxxWTYROOelYJyb9NrDoJx6Z4k5RNn+AJGTvZUwatWaCEdcxH4gu
+ VPLO35JvxG97TljMWm8WrPu+SL1971V2FL94HCBVX4vqt1hPW8UNV74Hf2pP1QpMaczg6fz76W
+ EFf4JYuWxGpywwC1LqVMh18Oh+WkZEjZDnFkOKzlNHxqwdaAj7cJzsH4zs6ug44uLxtCSPU3W+
+ Ex4=
 Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 29 Mar 2023 09:23:16 -0700
-IronPort-SDR: BtjkC8ComN1O7uUI2Q3Yo6aG1eA7nqScdNM5LexHUYipB8t3szY5zi2i62F3kkpHkyVnHuIOGM
- Ek1ZitEwQvILodyDt/DD/P+4JSQ4FfZCzk5nYQwqhwhLdGUxHoidj3oHzHVwykM3dzMqWELiYj
- t3kpcItSpp4K3NBCUe8+FOUVxWGvOPb+JBxKANt7O1k/TIuS3Ep1qDEGkSLpmmBcrzqjxJn4El
- 2r0OJA5Y8NchSO4KSKjNHUAPoqdlwW5gG7Yff3aztbuLDzUEUgexB49y05wzoFymc9aBcG688l
- mnM=
+  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 29 Mar 2023 09:23:21 -0700
+IronPort-SDR: 5x6F8sxMltI4WaB27lEorTzv/W+x0JlN7rg04JjPfd38UU2ZZm/8DVpEHZF7Dz1SymcLD61OdU
+ pMAulltziCw14vrFFK29xsFqr89kB9UbrC7cwH7R1RI8Lt7mmLGDYyj8PgO4p5chUbgRB50fDX
+ pEWQG9uo914V+cwk1EfVh6hsltWKfNnh9Gqxgm0AGxlxSe7pa8UIAv+zE9lP4gByUZGpAjJ+IZ
+ Lyi/Xsr9WvBwip9Y4KMe0trG46KV0zl+LFfsw1hbin01REWR95Nk66NcjalZz84eqJSVFLmHCh
+ l0Q=
 WDCIronportException: Internal
 Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 29 Mar 2023 10:07:05 -0700
+  by uls-op-cesaip01.wdc.com with ESMTP; 29 Mar 2023 10:07:11 -0700
 From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
 To:     Jens Axboe <axboe@kernel.dk>
 Cc:     Christoph Hellwig <hch@lst.de>, Hannes Reinecke <hare@suse.de>,
@@ -63,9 +63,9 @@ Cc:     Christoph Hellwig <hch@lst.de>, Hannes Reinecke <hare@suse.de>,
         Andreas Gruenbacher <agruenba@redhat.com>,
         David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
         Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 16/19] md: raid1: use __bio_add_page for adding single page to bio
-Date:   Wed, 29 Mar 2023 10:06:02 -0700
-Message-Id: <8758569c543389604d8a6a9460de086246fabe89.1680108414.git.johannes.thumshirn@wdc.com>
+Subject: [PATCH 18/19] dm-crypt: check if adding pages to clone bio fails
+Date:   Wed, 29 Mar 2023 10:06:04 -0700
+Message-Id: <beea645603eccbb045ad9bb777e05a085b91808a.1680108414.git.johannes.thumshirn@wdc.com>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1680108414.git.johannes.thumshirn@wdc.com>
 References: <cover.1680108414.git.johannes.thumshirn@wdc.com>
@@ -75,32 +75,35 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The sync request code uses bio_add_page() to add a page to a newly created bio.
-bio_add_page() can fail, but the return value is never checked.
+Check if adding pages to clone bio fails and if bail out.
 
-Use __bio_add_page() as adding a single page to a newly created bio is
-guaranteed to succeed.
-
-This brings us a step closer to marking bio_add_page() as __must_check.
+This way we can mark bio_add_pages as __must_check.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 ---
- drivers/md/raid1.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/md/dm-crypt.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/md/raid1.c b/drivers/md/raid1.c
-index bd7c339a84a1..c226d293992f 100644
---- a/drivers/md/raid1.c
-+++ b/drivers/md/raid1.c
-@@ -2915,7 +2915,7 @@ static sector_t raid1_sync_request(struct mddev *mddev, sector_t sector_nr,
- 				 * won't fail because the vec table is big
- 				 * enough to hold all these pages
- 				 */
--				bio_add_page(bio, page, len, 0);
-+				__bio_add_page(bio, page, len, 0);
- 			}
- 		}
- 		nr_sectors += len>>9;
+diff --git a/drivers/md/dm-crypt.c b/drivers/md/dm-crypt.c
+index 3ba53dc3cc3f..19f7e087c6df 100644
+--- a/drivers/md/dm-crypt.c
++++ b/drivers/md/dm-crypt.c
+@@ -1693,7 +1693,14 @@ static struct bio *crypt_alloc_buffer(struct dm_crypt_io *io, unsigned int size)
+ 
+ 		len = (remaining_size > PAGE_SIZE) ? PAGE_SIZE : remaining_size;
+ 
+-		bio_add_page(clone, page, len, 0);
++		if (!bio_add_page(clone, page, len, 0)) {
++			mempool_free(page, &cc->page_pool);
++			crypt_free_buffer_pages(cc, clone);
++			bio_put(clone);
++			gfp_mask |= __GFP_DIRECT_RECLAIM;
++			goto retry;
++
++		}
+ 
+ 		remaining_size -= len;
+ 	}
 -- 
 2.39.2
 

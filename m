@@ -2,326 +2,112 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C64E2C76196
-	for <linux-btrfs@archiver.kernel.org>; Tue, 28 Mar 2023 23:58:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38416C76196
+	for <linux-btrfs@archiver.kernel.org>; Wed, 29 Mar 2023 00:13:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229801AbjC1X60 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 28 Mar 2023 19:58:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41036 "EHLO
+        id S229502AbjC2AN1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 28 Mar 2023 20:13:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52198 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229918AbjC1X6Z (ORCPT
+        with ESMTP id S229436AbjC2AN0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 28 Mar 2023 19:58:25 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E64CC268E
-        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 16:57:56 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 9A1BE21A48;
-        Tue, 28 Mar 2023 23:56:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1680047809; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=aN/0d3dMBkvdSh6ZrMlgiodBns0NKAjIz2c5NE9YG1g=;
-        b=RW1EUMkefeepdKPhEfWdW27kXEwOnjl3CoJZtBhPCy1Dr0185au/cKDJVZfK6KHMIHJbO0
-        q/k/3TdnRb4Y8oaKdu3ZmkEiXBwnEyxQv/7Evpb35fu9Hn4Uyvwv2DhgQ7LLuAxjCdBvuH
-        WmcODgd+fqXuuynPRDan41nEq7iCoIo=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D926C13488;
-        Tue, 28 Mar 2023 23:56:48 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id WI8+KsB+I2T4eQAAMHmgww
-        (envelope-from <wqu@suse.com>); Tue, 28 Mar 2023 23:56:48 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH v7 11/13] btrfs: scrub: introduce error reporting functionality for scrub_stripe
-Date:   Wed, 29 Mar 2023 07:56:18 +0800
-Message-Id: <f20a86d4d46ccf92e8a45d83f0f540c0fe268391.1680047473.git.wqu@suse.com>
+        Tue, 28 Mar 2023 20:13:26 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51C9D1737
+        for <linux-btrfs@vger.kernel.org>; Tue, 28 Mar 2023 17:13:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=t3oqXQlVWS+Mrq7D7uPldV7hw7+VU6vOEbLoWNd4m6g=; b=F4YTbpdGUllXbJtZrg2Wmww4lG
+        41wLyGcWNCkNNJu4F0d/qVwhp78Pd0q89+2uxVQ9tKcicvm1khe+CnlaEJ9aUc0gFlajssUhIC9uU
+        GNz9Lo8gu5mLWcI1Q/hZSKX4l4xVff/D/phWpE2r9mkFWEzEZ5O7Og9G4edpBKd0IH6KumekUTDCO
+        2DOsugxrhsOZ7beV+HZbDIUjVHZhTL/bLVOlUIt5C75DCLvCmS4nlUfyXVKiJZjjffQUIXtgisr/R
+        sRrRaerMRAEDgW0TlTMqV+NK3BYyAK1p7asEEpFIQe8KRl7rTZ0cbBrcjqbaDot0FuAnkI8M22770
+        oZMJYPZA==;
+Received: from mo146-160-37-65.air.mopera.net ([146.160.37.65] helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1phJRK-00GAyw-33;
+        Wed, 29 Mar 2023 00:13:23 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/4] btrfs: fix fast csum detection
+Date:   Wed, 29 Mar 2023 09:13:05 +0900
+Message-Id: <20230329001308.1275299-2-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1680047473.git.wqu@suse.com>
-References: <cover.1680047473.git.wqu@suse.com>
+In-Reply-To: <20230329001308.1275299-1-hch@lst.de>
+References: <20230329001308.1275299-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The new helper, scrub_stripe_report_errors(), will report the result of the
-scrub to dmesg.
+The BTRFS_FS_CSUM_IMPL_FAST flag is current set whenever a non-generic
+crc32c is detected, which is the incorrect check if the file system uses
+a different checksumming algorithm.  Refactor the code to only checks
+this if crc32 is actually used.  Note that in an ideal world the
+information if an algorithm is hardware accelerated or not should be
+provided by the crypto API instead, but that's left for another day.
 
-The main reporting is done by introducing a new helper,
-scrub_print_common_warning(), which is mostly the same content from
-scrub_print_wanring(), but without the need for a scrub_block.
-
-Since we're reporting the errors, it's the perfect timing to update the
-scrub stat too.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/scrub.c | 167 ++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 158 insertions(+), 9 deletions(-)
+ fs/btrfs/disk-io.c | 18 +++++++++++++++++-
+ fs/btrfs/super.c   |  2 --
+ 2 files changed, 17 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b6d2361a6ddb..7c331316ad92 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -105,6 +105,7 @@ enum scrub_stripe_flags {
-  * Represent one continuous range with a length of BTRFS_STRIPE_LEN.
-  */
- struct scrub_stripe {
-+	struct scrub_ctx *sctx;
- 	struct btrfs_block_group *bg;
- 
- 	struct page *pages[SCRUB_STRIPE_PAGES];
-@@ -119,6 +120,13 @@ struct scrub_stripe {
- 	/* Should be BTRFS_STRIPE_LEN / sectorsize. */
- 	u16 nr_sectors;
- 
-+	/*
-+	 * How many data/meta extents are in this stripe.
-+	 * Only for scrub stat report purpose.
-+	 */
-+	u16 nr_data_extents;
-+	u16 nr_meta_extents;
-+
- 	atomic_t pending_io;
- 	wait_queue_head_t io_wait;
- 	wait_queue_head_t repair_wait;
-@@ -377,6 +385,7 @@ static void release_scrub_stripe(struct scrub_stripe *stripe)
- 	kfree(stripe->csums);
- 	stripe->sectors = NULL;
- 	stripe->csums = NULL;
-+	stripe->sctx = NULL;
- 	stripe->state = 0;
- }
- 
-@@ -1046,9 +1055,9 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 num_bytes,
- 	return 0;
- }
- 
--static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
-+static void scrub_print_common_warning(const char *errstr, struct btrfs_device *dev,
-+				       bool is_super, u64 logical, u64 physical)
- {
--	struct btrfs_device *dev;
- 	struct btrfs_fs_info *fs_info;
- 	struct btrfs_path *path;
- 	struct btrfs_key found_key;
-@@ -1062,22 +1071,20 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
- 	u8 ref_level = 0;
- 	int ret;
- 
--	WARN_ON(sblock->sector_count < 1);
--	dev = sblock->dev;
--	fs_info = sblock->sctx->fs_info;
-+	fs_info = dev->fs_info;
- 
- 	/* Super block error, no need to search extent tree. */
--	if (sblock->sectors[0]->flags & BTRFS_EXTENT_FLAG_SUPER) {
-+	if (is_super) {
- 		btrfs_warn_in_rcu(fs_info, "%s on device %s, physical %llu",
--			errstr, btrfs_dev_name(dev), sblock->physical);
-+			errstr, btrfs_dev_name(dev), physical);
- 		return;
- 	}
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return;
- 
--	swarn.physical = sblock->physical;
--	swarn.logical = sblock->logical;
-+	swarn.physical = physical;
-+	swarn.logical = logical;
- 	swarn.errstr = errstr;
- 	swarn.dev = NULL;
- 
-@@ -1126,6 +1133,13 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
- 	btrfs_free_path(path);
- }
- 
-+static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
-+{
-+	scrub_print_common_warning(errstr, sblock->dev,
-+			sblock->sectors[0]->flags & BTRFS_EXTENT_FLAG_SUPER,
-+			sblock->logical, sblock->physical);
-+}
-+
- static inline void scrub_get_recover(struct scrub_recover *recover)
- {
- 	refcount_inc(&recover->refs);
-@@ -2470,6 +2484,132 @@ static void scrub_stripe_submit_repair_read(struct scrub_stripe *stripe,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3f57c41f41bf5f..ec765d6bc53673 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -154,6 +154,21 @@ static bool btrfs_supported_super_csum(u16 csum_type)
  	}
  }
  
-+static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
-+				       struct scrub_stripe *stripe)
++/*
++ * Check if the CSUM implementation is a fast accelerated one.
++ * As-is this is a bit of a hack and should be replaced once the
++ * csum implementations provide that information themselves.
++ */
++static bool btrfs_csum_is_fast(u16 csum_type)
 +{
-+	static DEFINE_RATELIMIT_STATE(rs, DEFAULT_RATELIMIT_INTERVAL,
-+				      DEFAULT_RATELIMIT_BURST);
-+	struct btrfs_fs_info *fs_info = sctx->fs_info;
-+	struct btrfs_device *dev = NULL;
-+	u64 physical = 0;
-+	int nr_data_sectors = 0;
-+	int nr_meta_sectors = 0;
-+	int nr_nodatacsum_sectors = 0;
-+	int nr_repaired_sectors = 0;
-+	int sector_nr;
-+
-+	/*
-+	 * Init needed infos for error reporting.
-+	 *
-+	 * Although our scrub_stripe infrastucture is mostly based on btrfs_submit_bio()
-+	 * thus no need for dev/physical, error reporting still needs dev and physical.
-+	 */
-+	if (!bitmap_empty(&stripe->init_error_bitmap, stripe->nr_sectors)) {
-+		u64 mapped_len = fs_info->sectorsize;
-+		struct btrfs_io_context *bioc = NULL;
-+		int stripe_index = stripe->mirror_num - 1;
-+		int ret;
-+
-+		/* For scrub, our mirror_num should always start at 1. */
-+		ASSERT(stripe->mirror_num >= 1);
-+		ret = btrfs_map_sblock(fs_info, BTRFS_MAP_GET_READ_MIRRORS,
-+				      stripe->logical, &mapped_len, &bioc);
-+		/*
-+		 * If we failed, dev will be NULL, and later detailed reports
-+		 * will just be skipped.
-+		 */
-+		if (ret < 0)
-+			goto skip;
-+		physical = bioc->stripes[stripe_index].physical;
-+		dev = bioc->stripes[stripe_index].dev;
-+		btrfs_put_bioc(bioc);
++	switch (csum_type) {
++	case BTRFS_CSUM_TYPE_CRC32:
++		return !strstr(crc32c_impl(), "generic");
++	default:
++		return false;
 +	}
-+
-+skip:
-+	for_each_set_bit(sector_nr, &stripe->extent_sector_bitmap,
-+			 stripe->nr_sectors) {
-+		bool repaired = false;
-+
-+		if (stripe->sectors[sector_nr].is_metadata) {
-+			nr_meta_sectors++;
-+		} else {
-+			nr_data_sectors++;
-+			if (!stripe->sectors[sector_nr].csum)
-+				nr_nodatacsum_sectors++;
-+		}
-+
-+		if (test_bit(sector_nr, &stripe->init_error_bitmap) &&
-+		    !test_bit(sector_nr, &stripe->error_bitmap)) {
-+			nr_repaired_sectors++;
-+			repaired = true;
-+		}
-+
-+		/* Good sector from the beginning, nothing need to be done. */
-+		if (!test_bit(sector_nr, &stripe->init_error_bitmap))
-+			continue;
-+
-+		/*
-+		 * Report error for the corrupted sectors.
-+		 * If repaired, just output the message of repaired message.
-+		 */
-+		if (repaired) {
-+			if (dev)
-+				btrfs_err_rl_in_rcu(fs_info,
-+			"fixed up error at logical %llu on dev %s physical %llu",
-+					    stripe->logical, btrfs_dev_name(dev),
-+					    physical);
-+			else
-+				btrfs_err_rl_in_rcu(fs_info,
-+			"fixed up error at logical %llu on mirror %u",
-+					    stripe->logical, stripe->mirror_num);
-+			continue;
-+		}
-+
-+		/* The remaining are all for unrepaired. */
-+		if (dev)
-+			btrfs_err_rl_in_rcu(fs_info,
-+	"unable to fixup (regular) error at logical %llu on dev %s physical %llu",
-+					    stripe->logical, btrfs_dev_name(dev),
-+					    physical);
-+		else
-+			btrfs_err_rl_in_rcu(fs_info,
-+	"unable to fixup (regular) error at logical %llu on mirror %u",
-+					    stripe->logical, stripe->mirror_num);
-+
-+		if (test_bit(sector_nr, &stripe->io_error_bitmap))
-+			if (__ratelimit(&rs) && dev)
-+				scrub_print_common_warning("i/o error", dev, false,
-+						     stripe->logical, physical);
-+		if (test_bit(sector_nr, &stripe->csum_error_bitmap))
-+			if (__ratelimit(&rs) && dev)
-+				scrub_print_common_warning("checksum error", dev, false,
-+						     stripe->logical, physical);
-+		if (test_bit(sector_nr, &stripe->meta_error_bitmap))
-+			if (__ratelimit(&rs) && dev)
-+				scrub_print_common_warning("header error", dev, false,
-+						     stripe->logical, physical);
-+	}
-+
-+	spin_lock(&sctx->stat_lock);
-+	sctx->stat.data_extents_scrubbed += stripe->nr_data_extents;
-+	sctx->stat.tree_extents_scrubbed += stripe->nr_meta_extents;
-+	sctx->stat.data_bytes_scrubbed += nr_data_sectors <<
-+					  fs_info->sectorsize_bits;
-+	sctx->stat.tree_bytes_scrubbed += nr_meta_sectors <<
-+					  fs_info->sectorsize_bits;
-+	sctx->stat.no_csum += nr_nodatacsum_sectors;
-+	sctx->stat.read_errors +=
-+		bitmap_weight(&stripe->io_error_bitmap, stripe->nr_sectors);
-+	sctx->stat.csum_errors +=
-+		bitmap_weight(&stripe->csum_error_bitmap, stripe->nr_sectors);
-+	sctx->stat.verify_errors +=
-+		bitmap_weight(&stripe->meta_error_bitmap, stripe->nr_sectors);
-+	sctx->stat.uncorrectable_errors +=
-+		bitmap_weight(&stripe->error_bitmap, stripe->nr_sectors);
-+	sctx->stat.corrected_errors += nr_repaired_sectors;
-+	spin_unlock(&sctx->stat_lock);
 +}
 +
  /*
-  * The main entrance for all read related scrub work, including:
-  *
-@@ -2544,6 +2684,7 @@ static void scrub_stripe_read_repair_worker(struct work_struct *work)
- 			goto out;
+  * Return 0 if the superblock checksum type matches the checksum value of that
+  * algorithm. Pass the raw disk superblock data.
+@@ -3373,7 +3388,8 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 		btrfs_release_disk_super(disk_super);
+ 		goto fail_alloc;
  	}
- out:
-+	scrub_stripe_report_errors(stripe->sctx, stripe);
- 	set_bit(SCRUB_STRIPE_FLAG_REPAIR_DONE, &stripe->state);
- 	wake_up(&stripe->repair_wait);
- }
-@@ -4213,6 +4354,10 @@ int scrub_find_fill_first_stripe(struct btrfs_block_group *bg,
- 		goto out;
- 	get_extent_info(&path, &extent_start, &extent_len,
- 			&extent_flags, &extent_gen);
-+	if (extent_flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+		stripe->nr_meta_extents++;
-+	if (extent_flags & BTRFS_EXTENT_FLAG_DATA)
-+		stripe->nr_data_extents++;
- 	cur_logical = max(extent_start, cur_logical);
+-
++	if (btrfs_csum_is_fast(csum_type))
++		set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
+ 	fs_info->csum_size = btrfs_super_csum_size(disk_super);
  
- 	/*
-@@ -4246,6 +4391,10 @@ int scrub_find_fill_first_stripe(struct btrfs_block_group *bg,
- 		}
- 		get_extent_info(&path, &extent_start, &extent_len,
- 				&extent_flags, &extent_gen);
-+		if (extent_flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+			stripe->nr_meta_extents++;
-+		if (extent_flags & BTRFS_EXTENT_FLAG_DATA)
-+			stripe->nr_data_extents++;
- 		fill_one_extent_info(fs_info, stripe, extent_start, extent_len,
- 				     extent_flags, extent_gen);
- 		cur_logical = extent_start + extent_len;
+ 	ret = btrfs_init_csum_hash(fs_info, csum_type);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index d8885966e801cd..e94a4cd06607e1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1517,8 +1517,6 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 		shrinker_debugfs_rename(&s->s_shrink, "sb-%s:%s", fs_type->name,
+ 					s->s_id);
+ 		btrfs_sb(s)->bdev_holder = fs_type;
+-		if (!strstr(crc32c_impl(), "generic"))
+-			set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
+ 		error = btrfs_fill_super(s, fs_devices, data);
+ 	}
+ 	if (!error)
 -- 
 2.39.2
 

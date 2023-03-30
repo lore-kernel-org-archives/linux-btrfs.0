@@ -2,102 +2,96 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D704EC761A6
-	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Mar 2023 10:47:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BCD4C6FD1D
+	for <linux-btrfs@archiver.kernel.org>; Thu, 30 Mar 2023 14:39:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231465AbjC3KrP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 30 Mar 2023 06:47:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34278 "EHLO
+        id S231375AbjC3OjQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 30 Mar 2023 10:39:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230085AbjC3Kp7 (ORCPT
+        with ESMTP id S232071AbjC3OjP (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 30 Mar 2023 06:45:59 -0400
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F1CCC9EF5;
-        Thu, 30 Mar 2023 03:45:20 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1680173121; x=1711709121;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=9YnFTpWsIBbNef/OiYe0uKZ66yfnQqenOqdfFhTWuvw=;
-  b=iGMu/L9fgOtfibbb1VDb+c5bVNJyPDUAIlLuCPl/SAuPEttkaJpYKSCW
-   VEIoIlmbgtDpIBh0IejCgxxQY0knILwStNSiwoLXwlFFWtwzwds36sJkv
-   bUaCyXaUOrdcoaTaHfOMkYAjGWPQzIeoSgMnzhx5vicbeEysGyhx1xdT5
-   YUaOq7f9MqkZJbzU5BDBo1DH8EDRqTAQHpp9MJ/MDVcSjQkv1SlR4gelU
-   m/fxwrs/zWQweACbzMxZOnlqsTgsgzPYAdpnDdBtLSBgY1+z7tvkUJs5P
-   E3og1lcio7n/1xq/AewEdPRvNkjNBZKqGpHWFHldu1W2U2ZIY8zdkydm5
-   A==;
-X-IronPort-AV: E=Sophos;i="5.98,303,1673884800"; 
-   d="scan'208";a="331317939"
-Received: from h199-255-45-14.hgst.com (HELO uls-op-cesaep01.wdc.com) ([199.255.45.14])
-  by ob1.hgst.iphmx.com with ESMTP; 30 Mar 2023 18:45:02 +0800
-IronPort-SDR: Oj3XXvuBoG4EbDpmh92r68PyzslfXegh6DwzwZj4SRi1waK/UBUGnoEEyc/9qwgY4UqCrH8tm1
- kxn9WTp8ndvKgRkRtHPJNqUnubk3ATXb9bcK6TgUVBNLr/OUEVq5K8vTvsKpIpn1IN80DpZA1J
- xNPa926zmR1wVfbGX8EZeFMx7nGXBdOosBUcC0PvUN2+mxdgHImS57At5QgxiApRYSiF4R3EcI
- 7s9cKHx55R1R/vmrAi9FHsJYeJVxddBfjY1GypsFHXCPd0T2s9EAARIaTqF3y3IDG/bs+bghQL
- W+g=
-Received: from uls-op-cesaip01.wdc.com ([10.248.3.36])
-  by uls-op-cesaep01.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 30 Mar 2023 03:01:10 -0700
-IronPort-SDR: 9/iVByN1BTBiF+2N/dyRq0R7dQSPqShiTdspahbVYlwZj+qd277O1HWwqfoLFDxzoWSe+cmGNO
- qkqMCZzgrdZnDhpQxYdEe8150myn5LsK8KEx5pL72+ObD0hqMaaHSizvdtrMKOqlTNP+VQELhc
- NlTnbrlHYwL6lfM55WWo+X+nqbpVvrNh8MXJJfN+oROGcrGXbtZ95QXnOLEHZI8U/WSie1EYFD
- ciM8A+htMWi8T8Q2A6kN9QQtMNJHy+EVASUqPt+O4sCYrrpZ40AnMpPDuYxlZJyUb2MJgf0HsW
- yDM=
-WDCIronportException: Internal
-Received: from unknown (HELO redsun91.ssa.fujisawa.hgst.com) ([10.149.66.72])
-  by uls-op-cesaip01.wdc.com with ESMTP; 30 Mar 2023 03:45:00 -0700
-From:   Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     Christoph Hellwig <hch@lst.de>, Hannes Reinecke <hare@suse.de>,
-        Chaitanya Kulkarni <kch@nvidia.com>,
-        Damien Le Moal <damien.lemoal@wdc.com>,
-        Ming Lei <ming.lei@redhat.com>, linux-block@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
-        dm-devel@redhat.com, Song Liu <song@kernel.org>,
-        linux-raid@vger.kernel.org, Mike Snitzer <snitzer@kernel.org>,
-        Matthew Wilcox <willy@infradead.org>,
-        Dave Kleikamp <shaggy@kernel.org>,
-        jfs-discussion@lists.sourceforge.net, cluster-devel@redhat.com,
-        Bob Peterson <rpeterso@redhat.com>,
-        Andreas Gruenbacher <agruenba@redhat.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Damien Le Moal <damien.lemoal@opensource.wdc.com>
-Subject: [PATCH v2 19/19] block: mark bio_add_page as __must_check
-Date:   Thu, 30 Mar 2023 03:44:01 -0700
-Message-Id: <981a2b8809dedbd6dd756d7af1df4251944f42b0.1680172791.git.johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1680172791.git.johannes.thumshirn@wdc.com>
-References: <cover.1680172791.git.johannes.thumshirn@wdc.com>
+        Thu, 30 Mar 2023 10:39:15 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB53BDE
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2023 07:39:14 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 35A976206F
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2023 14:39:14 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E1C2C433EF
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Mar 2023 14:39:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1680187153;
+        bh=d0z/EYtopePuyYijzLgLw8g1XqODOlNUFKzL1MwGHAA=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=UHejVH9OCSNfLmCVCMxyYW7aVePuk8sWm8WYSJpD9XWC+FcDzpy96IOplkXX0e/5p
+         LjDF/6o/aSrekARVaOkUxIwcZttgD62ifCuSrXeyJz+gcLGV8wmyiJG2LKHojRfsd4
+         +JkI1QypglOEP0ptnZ+/W3tzcCRlSoFO/E1uAI9US9p1JpzDhpR1/5sUpwchptUj6o
+         X79LPUyiukz4u7EORfenKAZrylOkDqBFHNfIuvggkZNXMtvDIikmdgZ1BCPLOiir8E
+         3puXHDwT0nG2FJg8XxSH9mWDcwvZVvC/BUVHUheSLfXLd4XpiFH+30mUcM15nDQoJ4
+         YxKgjVtNmUZmA==
+From:   fdmanana@kernel.org
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] btrfs: correctly calculate delayed ref bytes when starting transaction
+Date:   Thu, 30 Mar 2023 15:39:03 +0100
+Message-Id: <93c382a002210831e1051456cdc5c44dbcef4562.1680185833.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1680185833.git.fdmanana@suse.com>
+References: <cover.1680185833.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that all users of bio_add_page check for the return value, mark
-bio_add_page as __must_check.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Reviewed-by: Damien Le Moal <damien.lemoal@opensource.wdc.com>
+When starting a transaction, we are assuming the number of bytes used for
+each delayed ref update matches the number of bytes used for each item
+update, that is the return value of:
+
+   btrfs_calc_insert_metadata_size(fs_info, num_items)
+
+However that is not correct when we are using the free space tree, as we
+need to multiply that value by 2, since delayed ref updates need to modify
+the free space tree besides the extent tree.
+
+So fix this by using btrfs_calc_delayed_ref_bytes() to get the correct
+number of bytes used for delayed ref updates.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- include/linux/bio.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/transaction.c | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/include/linux/bio.h b/include/linux/bio.h
-index d766be7152e1..0f8a8d7a6384 100644
---- a/include/linux/bio.h
-+++ b/include/linux/bio.h
-@@ -465,7 +465,7 @@ extern void bio_uninit(struct bio *);
- void bio_reset(struct bio *bio, struct block_device *bdev, blk_opf_t opf);
- void bio_chain(struct bio *, struct bio *);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index a54a5c5a5db3..9e7ba07a35e8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -601,15 +601,16 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 		/*
+ 		 * We want to reserve all the bytes we may need all at once, so
+ 		 * we only do 1 enospc flushing cycle per transaction start.  We
+-		 * accomplish this by simply assuming we'll do 2 x num_items
+-		 * worth of delayed refs updates in this trans handle, and
+-		 * refill that amount for whatever is missing in the reserve.
++		 * accomplish this by simply assuming we'll do num_items worth
++		 * of delayed refs updates in this trans handle, and refill that
++		 * amount for whatever is missing in the reserve.
+ 		 */
+ 		num_bytes = btrfs_calc_insert_metadata_size(fs_info, num_items);
+ 		if (flush == BTRFS_RESERVE_FLUSH_ALL &&
+ 		    !btrfs_block_rsv_full(delayed_refs_rsv)) {
+-			delayed_refs_bytes = num_bytes;
+-			num_bytes <<= 1;
++			delayed_refs_bytes = btrfs_calc_delayed_ref_bytes(fs_info,
++									  num_items);
++			num_bytes += delayed_refs_bytes;
+ 		}
  
--int bio_add_page(struct bio *, struct page *, unsigned len, unsigned off);
-+int __must_check bio_add_page(struct bio *, struct page *, unsigned len, unsigned off);
- bool bio_add_folio(struct bio *, struct folio *, size_t len, size_t off);
- extern int bio_add_pc_page(struct request_queue *, struct bio *, struct page *,
- 			   unsigned int, unsigned int);
+ 		/*
 -- 
-2.39.2
+2.34.1
 

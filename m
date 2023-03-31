@@ -2,101 +2,104 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 71FC9C761A6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Mar 2023 17:51:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E33DC761A6
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Mar 2023 17:54:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232193AbjCaRvy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 31 Mar 2023 13:51:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49234 "EHLO
+        id S232556AbjCaRyV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 31 Mar 2023 13:54:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53458 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229646AbjCaRvw (ORCPT
+        with ESMTP id S231251AbjCaRyU (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2023 13:51:52 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 123E572B3;
-        Fri, 31 Mar 2023 10:51:51 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Fri, 31 Mar 2023 13:54:20 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3FEDA1A453;
+        Fri, 31 Mar 2023 10:54:18 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id B6EBC1FE2F;
-        Fri, 31 Mar 2023 17:51:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1680285109;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=BkNxQxQtLxOIATn942LBWqaiyWsz7ku+7E7J9rM6aUA=;
-        b=Eq7XmaCAuBaH8aqP9o9NRc/mibdZ2My0tlTjFdnvEq6o6jxmzg6aPnFIXQRcyCJWDZIkK2
-        c9uuo9SQlP9Nz3RQgrYiBULoSoKUWnftZA+GKcrQAivcarE/kEUacykmEDXCC6fJraSCS+
-        MC4bQqpFUq46crnc0Hn54wydxilYvLI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1680285109;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=BkNxQxQtLxOIATn942LBWqaiyWsz7ku+7E7J9rM6aUA=;
-        b=cu8GpRU01qeFVBHmk5sk0pxsnW7/eDWe/urGLJPUpyUs6RBXPojdV9rG/uVLSloR4ua+YL
-        6I2H9lX2AcTXicDg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6EDA0133B6;
-        Fri, 31 Mar 2023 17:51:49 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id oLtsGbUdJ2TbSwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 31 Mar 2023 17:51:49 +0000
-Date:   Fri, 31 Mar 2023 19:45:33 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     xiaoshoukui <xiaoshoukui@gmail.com>
-Cc:     dsterba@suse.cz, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, xiaoshoukui@ruijie.com.cn
-Subject: Re: [PATCH] btrfs: ioctl: fix inaccurate determination of
- exclusive_operation
-Message-ID: <20230331174533.GZ10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230328094335.107562-1-xiaoshoukui@gmail.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id D08B962AF4;
+        Fri, 31 Mar 2023 17:54:17 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3B9B9C433AA;
+        Fri, 31 Mar 2023 17:54:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1680285257;
+        bh=Ijr+WNx7ld4U5ZO+OP83Langs78qK2JwUNbqX48Y74E=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=NlUsYXunWuWGa5qJtzHr2cVFf2mzdtZdXDwqqDzEtj1erN4/UEH5oBLlA+R2q+o1M
+         an2FD0E0FdazXGvuATGaJmC6tuT0zRlQ77fXpvY6pFX1I42bhRwtRYb4EwVwsSCshv
+         /w7kqF7Q3A9R8Y/I8mdEGr3HrwyFsaYA6YJOFbpxZM1X9TKmHN/m1uW21mhvN0lJMK
+         W/4KbeJ5FOFz+PGsFgDTzifZVWsSERPeuLJNL5OC6eK7xe2WmPdFCF+EV4iuGiHj1+
+         6zB4x/ZbN1oFJEdXH97hYDgTq4gsGJ14oSMEKjopTYWGs3WLQoStd3EbVOC7opi8re
+         k+Npd+3KW4cdA==
+Received: by mail-lf1-f44.google.com with SMTP id c9so19523126lfb.1;
+        Fri, 31 Mar 2023 10:54:17 -0700 (PDT)
+X-Gm-Message-State: AAQBX9cEEI7El3iei4b7177WNMJsNMfSrtfbAb0MAFju7Ui/J6ACt5dV
+        r9xU4T8J6lHjGciZXzKFH1wKvIOOyyZkKhCxHB0=
+X-Google-Smtp-Source: AKy350YvKqb0dBoMYfGdDtedXvU05FWt6KdyndNuIJije8MdSUJrkHi6AamvXBmeJg5t6pczjm2RarPTQzd6MOIJepA=
+X-Received: by 2002:ac2:5610:0:b0:4dd:a4e1:4861 with SMTP id
+ v16-20020ac25610000000b004dda4e14861mr8234430lfd.3.1680285255256; Fri, 31 Mar
+ 2023 10:54:15 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230328094335.107562-1-xiaoshoukui@gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <cover.1680172791.git.johannes.thumshirn@wdc.com> <07ae41b981f1b5f8de80a3f0a8ab2f34034077a6.1680172791.git.johannes.thumshirn@wdc.com>
+In-Reply-To: <07ae41b981f1b5f8de80a3f0a8ab2f34034077a6.1680172791.git.johannes.thumshirn@wdc.com>
+From:   Song Liu <song@kernel.org>
+Date:   Fri, 31 Mar 2023 10:54:03 -0700
+X-Gmail-Original-Message-ID: <CAPhsuW4gxjRx-X6d46O7SsNb=nesrUKVv+s76C1DtkZdcGmyXw@mail.gmail.com>
+Message-ID: <CAPhsuW4gxjRx-X6d46O7SsNb=nesrUKVv+s76C1DtkZdcGmyXw@mail.gmail.com>
+Subject: Re: [PATCH v2 15/19] md: check for failure when adding pages in alloc_behind_master_bio
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, Christoph Hellwig <hch@lst.de>,
+        Hannes Reinecke <hare@suse.de>,
+        Chaitanya Kulkarni <kch@nvidia.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Ming Lei <ming.lei@redhat.com>, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        dm-devel@redhat.com, linux-raid@vger.kernel.org,
+        Mike Snitzer <snitzer@kernel.org>,
+        Matthew Wilcox <willy@infradead.org>,
+        Dave Kleikamp <shaggy@kernel.org>,
+        jfs-discussion@lists.sourceforge.net, cluster-devel@redhat.com,
+        Bob Peterson <rpeterso@redhat.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Mar 28, 2023 at 05:43:35AM -0400, xiaoshoukui wrote:
-> > Have you found some bug with the above or is there other combination of
-> > the exclusive operations that should not work? The changes to the state
-> > values are the same, besides the wrong locking.
-> 
-> Yes, there is a racy bewteen btrfs_exclop_balance and btrfs_exclop_finish
-> in btrfs_ioctl_add_dev, when cocurrently adding multiple devices to the
-> same mnt point. That will cause the assertion in btrfs_exclop_balance to fail.
-> 
-> > void btrfs_exclop_balance(struct btrfs_fs_info *fs_info,
-> > 			  enum btrfs_exclusive_operation op)
-> > {
-> > 	switch (op) {
-> > 	case BTRFS_EXCLOP_BALANCE_PAUSED:
-> > 		spin_lock(&fs_info->super_lock);
-> > 		ASSERT(fs_info->exclusive_operation == BTRFS_EXCLOP_BALANCE ||
-> > 		       fs_info->exclusive_operation == BTRFS_EXCLOP_DEV_ADD);
-> 
-> when btrfs_exclop_finish function was executed before the ASSERT, the
-> fs_info->exclusive_operation will change to BTRFS_EXCLOP_NONE. So this
-> assert will failed.
+On Thu, Mar 30, 2023 at 3:44=E2=80=AFAM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
 >
-> Please review whether we should patch the assert to add BTRFS_EXCLOP_NONE condtion.
-> I'll post a patch if needed. thx.
+> alloc_behind_master_bio() can possibly add multiple pages to a bio, but i=
+t
+> is not checking for the return value of bio_add_page() if adding really
+> succeeded.
+>
+> Check if the page adding succeeded and if not bail out.
+>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Reviewed-by: Damien Le Moal <damien.lemoal@opensource.wdc.com>
+> ---
+>  drivers/md/raid1.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/drivers/md/raid1.c b/drivers/md/raid1.c
+> index 68a9e2d9985b..bd7c339a84a1 100644
+> --- a/drivers/md/raid1.c
+> +++ b/drivers/md/raid1.c
+> @@ -1147,7 +1147,8 @@ static void alloc_behind_master_bio(struct r1bio *r=
+1_bio,
+>                 if (unlikely(!page))
+>                         goto free_pages;
+>
+> -               bio_add_page(behind_bio, page, len, 0);
+> +               if (!bio_add_page(behind_bio, page, len, 0))
+> +                       goto free_pages;
 
-Yeah I think the assertion should also check for NONE status. The paused
-balance makes the state tracking harder but in user-started (manual or
-scripted) commands it's typically not racing.
+We will leak page here, no?
 
-btrfs_exclop_start_try_lock does not allow to do the change from
-none -> op mandating an explicit btrfs_exclop_start first but the
-assertions do not care about that.
+Thanks,
+Song

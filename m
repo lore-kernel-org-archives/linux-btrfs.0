@@ -2,77 +2,88 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1877DC761A6
-	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Mar 2023 17:37:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 805DAC77B60
+	for <linux-btrfs@archiver.kernel.org>; Fri, 31 Mar 2023 17:47:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230241AbjCaRhl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 31 Mar 2023 13:37:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33454 "EHLO
+        id S231565AbjCaRr1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 31 Mar 2023 13:47:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43308 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230126AbjCaRhk (ORCPT
+        with ESMTP id S229483AbjCaRr0 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 31 Mar 2023 13:37:40 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D3521EA1F
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Mar 2023 10:37:39 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Fri, 31 Mar 2023 13:47:26 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 447D61DFB8;
+        Fri, 31 Mar 2023 10:47:25 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 107B41FE2E;
-        Fri, 31 Mar 2023 17:37:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1680284258;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=lfL6HgQGS+xxA5Eltd5A7866gUInB6pLTF4Cl/2o2ms=;
-        b=Pkq02AV6RANKfN2i9brviVUOx2UJOyC/agMsPBeuSt7fjnkuoZ/Hfa36HqTvlGBrTnBYOd
-        bkrOQQ71cYqjHBUzRhEt/tzrB4iB8kuMeJlgDKxNmVJFLl9o9xDKOkCqpMbyQSp0XqC2Xw
-        seaE1eTXE2soQJF9HrZoBrn/r6wiueY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1680284258;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=lfL6HgQGS+xxA5Eltd5A7866gUInB6pLTF4Cl/2o2ms=;
-        b=QdSA213cDM6qdKp+g3xfEqRLpKrj6/haVFxHUbpXHf2SNLUgQagLGEqGmDSYsrfX7+/n8L
-        GS7YNgbWU8nZvQDQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D9636133B6;
-        Fri, 31 Mar 2023 17:37:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Ibo4NGEaJ2THRQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Fri, 31 Mar 2023 17:37:37 +0000
-Date:   Fri, 31 Mar 2023 19:31:22 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: don't offload CRCs generation to helpers if it is fast
-Message-ID: <20230331173122.GY10580@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230329001308.1275299-1-hch@lst.de>
+        by ams.source.kernel.org (Postfix) with ESMTPS id D67ADB8313A;
+        Fri, 31 Mar 2023 17:47:23 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7FFF4C433A1;
+        Fri, 31 Mar 2023 17:47:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1680284842;
+        bh=agncQKz6RRQ+z2AndB9egaUCjOR2XStw/8eDPUmcjT8=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=PYEVYWIVUH7dS32tobiqHPv8N06Ir6XV+fO/AkMI4o66gPCmRSQrPmB/62RJDCjRX
+         iha1oZWcgsdLkZM/rC/W4UwfQyPsdCwFKNrqffhv/EmPvwZJeb3/ObjFsJC5MhDerl
+         6Cx7gxJLQOUG+zb6KxBg5qAHVQuMVVbqwicLztbutfgto8W9OzeTQAoEfC9vYWb3/6
+         WbIN0UoYXvJIMjz85vPFsRQBCcHBixj1M8VbsRnNKUNQKfu4VoW2MuoVPGJO1e3WM0
+         lskThRRIawrJ3Oyv3wDs0wMu+dVhpxnIUfenisVKNRTUmEG0HLG5WxSjGzb6R+Ni/e
+         jLYxlUQypWhrw==
+Received: by mail-lj1-f180.google.com with SMTP id s20so3581366ljp.7;
+        Fri, 31 Mar 2023 10:47:22 -0700 (PDT)
+X-Gm-Message-State: AAQBX9eNOdI5SU8oi0eu7AqwZQ0viFJ/v4IDc+T2/cikMeDc7CbcvFVp
+        U4EQSfamlSBSzpKAqvvrxMXBhTrqR2uZ7QFKOU4=
+X-Google-Smtp-Source: AKy350YsVC49X4YKPGPcvZZvpV/eK4Pm1deoqn4/arjrTKATbsjiI11VNkB5amsOZg1wLI0Ovo0EsryvUkWIU3e100g=
+X-Received: by 2002:a2e:9d16:0:b0:2a6:16b4:40a2 with SMTP id
+ t22-20020a2e9d16000000b002a616b440a2mr2329769lji.5.1680284840437; Fri, 31 Mar
+ 2023 10:47:20 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230329001308.1275299-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <cover.1680172791.git.johannes.thumshirn@wdc.com> <359e6d4d77ee175e2ce7c315a3176ca360e10fbc.1680172791.git.johannes.thumshirn@wdc.com>
+In-Reply-To: <359e6d4d77ee175e2ce7c315a3176ca360e10fbc.1680172791.git.johannes.thumshirn@wdc.com>
+From:   Song Liu <song@kernel.org>
+Date:   Fri, 31 Mar 2023 10:47:08 -0700
+X-Gmail-Original-Message-ID: <CAPhsuW5twFinPtGkAORYW04fqQP3L9NJZDX++_hAbKPrLbF95g@mail.gmail.com>
+Message-ID: <CAPhsuW5twFinPtGkAORYW04fqQP3L9NJZDX++_hAbKPrLbF95g@mail.gmail.com>
+Subject: Re: [PATCH v2 05/19] md: use __bio_add_page to add single page
+To:     Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc:     Jens Axboe <axboe@kernel.dk>, Christoph Hellwig <hch@lst.de>,
+        Hannes Reinecke <hare@suse.de>,
+        Chaitanya Kulkarni <kch@nvidia.com>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        Ming Lei <ming.lei@redhat.com>, linux-block@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        dm-devel@redhat.com, linux-raid@vger.kernel.org,
+        Mike Snitzer <snitzer@kernel.org>,
+        Matthew Wilcox <willy@infradead.org>,
+        Dave Kleikamp <shaggy@kernel.org>,
+        jfs-discussion@lists.sourceforge.net, cluster-devel@redhat.com,
+        Bob Peterson <rpeterso@redhat.com>,
+        Andreas Gruenbacher <agruenba@redhat.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Mar 29, 2023 at 09:13:04AM +0900, Christoph Hellwig wrote:
-> Hi all,
-> 
-> based on various observations from me and Chris, we really should never
-> offload CRCs generation to helpers if it is hardware accelerated.
-> 
-> This series implements that and also tidies up various lose ends around
-> that.
+On Thu, Mar 30, 2023 at 3:44=E2=80=AFAM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+>
+> The md-raid superblock writing code uses bio_add_page() to add a page to =
+a
+> newly created bio. bio_add_page() can fail, but the return value is never
+> checked.
+>
+> Use __bio_add_page() as adding a single page to a newly created bio is
+> guaranteed to succeed.
+>
+> This brings us a step closer to marking bio_add_page() as __must_check.
+>
+> Signed-of_-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> Reviewed-by: Damien Le Moal <damien.lemoal@opensource.wdc.com>
 
-Added to for-next, thanks.
+Acked-by: Song Liu <song@kernel.org>

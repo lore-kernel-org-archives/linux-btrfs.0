@@ -2,218 +2,122 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66D74C6FD1D
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Apr 2023 05:16:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 466D9C7618D
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Apr 2023 07:19:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232916AbjDDFQa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Apr 2023 01:16:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51320 "EHLO
+        id S233788AbjDDHTl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Apr 2023 03:19:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49256 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229481AbjDDFQ3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2023 01:16:29 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DA6E1739
-        for <linux-btrfs@vger.kernel.org>; Mon,  3 Apr 2023 22:16:28 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:In-Reply-To:References;
-        bh=4oDyBymq0cBzKpWPi1sRswPErxJT2V3+ayyG5Jkua6U=; b=R8uzk8dSJcjbEluwk7eRe7QOWD
-        EJ7Mj5DJysHdNpDK0YtgkGT5RkwvKqx8t/pXwPn/5VNBET6wsD6YzJCkoUpHW0OtfAFX20ASjdeZR
-        X7txoSuoBR4ZR07VGNgVcDpZfPcndN10Ln4eWSkGdF7rkawJWzA3gJ0xi6q0wvIUVa/UmTWzkn4N1
-        c2nUrcQnrW3LO8uhuXbauyy572QiNPaQaCjQJegpqChi5OAy5YMo1iH/PU2ZhPjQWvwe6u7p/wqzy
-        ITezYakIQ65FC+eNTX/lHyPyjuL2vBBcGX+XRgcjbl/GJoxQMuRLDenGqAEs/ZjsOsOOtN3dF/1Tz
-        CGxbtxpQ==;
-Received: from [2001:4bb8:191:a744:442d:91f6:d33c:d029] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pjZ1s-0004vL-2P;
-        Tue, 04 Apr 2023 05:16:25 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: remove struct processed_extent
-Date:   Tue,  4 Apr 2023 07:16:22 +0200
-Message-Id: <20230404051622.2006302-1-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
+        with ESMTP id S233352AbjDDHTj (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2023 03:19:39 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 72C39E5C
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2023 00:19:35 -0700 (PDT)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mxm3K-1qcwB82ccY-00zGan; Tue, 04
+ Apr 2023 09:18:45 +0200
+Message-ID: <16c0d29d-c986-0c9a-dd95-10d61eb6f29a@gmx.com>
+Date:   Tue, 4 Apr 2023 15:18:41 +0800
 MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.8.0
+Content-Language: en-US
+To:     Matthew Jurgens <mjurgens@edcint.co.nz>,
+        linux-btrfs@vger.kernel.org
+References: <01bc2043-28ea-905e-44f2-de61cd86934e@edcint.co.nz>
+ <02f70470-fd22-bfed-7f0b-2c0acf4259e2@gmx.com>
+ <7ae06bd0-4165-8e0b-8035-f1e676fac270@edcint.co.nz>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: Readonly file system: __btrfs_unlink_inode:4325: errno=-2 No such
+ entry
+In-Reply-To: <7ae06bd0-4165-8e0b-8035-f1e676fac270@edcint.co.nz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+X-Provags-ID: V03:K1:4d93sCkb/JkNBrj98pzFWJugV2NBtXpnmu0VNZMi5mDIlhKD5oa
+ EgRy9jfKPUjCLtfW2R4Bcpbjha2eh331JFxwGm19UNo2+WEnIHxtmmL+tInewy9nk4qjZOq
+ vflPDCQa2mKKc8zCUODuMIyioAAs93yI91497QmW7XAyU0wue3cATC8TpB0LfY/3bqBPjM2
+ jAUBH3UYLMThzc4lmPSRQ==
+UI-OutboundReport: notjunk:1;M01:P0:84gFv/AfyjQ=;skNY5ga5nUbwnR4Z8FwZ8PgNtXs
+ O4zvFLHZ/0N2UVfVN62jyVHJ7l8Re5+MFtiQncCegidHkJQ7SF4yP7V8oROYdnRE5osUPVxq/
+ CMbPidG1AeMI2E/YOcZ6Fb6FkKtH+Zu8APhGBtz2QKjl3Nxf9uZM53fS6zJXyZVwdLTovZSjq
+ fxnfiTHbTMTxz2BrV5SHqYSW//qNpH7xsA+6fCVtGZphqIaaFj9qh3+XfuyTON7M3k1+EAqts
+ JVIRHjnWlWxSFeZCcddISsBEfbLL9ZbyuVwX5QyfRrJIvLXrqknDoN/aK9rmtRZwV6DLQewtR
+ swcxG14lE3IrbqN3ETbwrRuSTHqBrImP8SjBLGa0MWZ3HjHUvk7RN8V/hRijzbtrrXhvv2IeU
+ 3vUIf6FIJ7Bb8EXAOBnS1ODpBj3eHi/8bo5+in9PWijRmPUBy/S3zHrYq/MBCS3qudZmZcx3Y
+ eKDci63y/ZkFmhiIxcUEyNxlzBuLBc/WIkDuYBKygH19dqKw/MxThJFFpmkqwph0EsJsow+tu
+ kMLSdPvqnYSrKM+kvZR08DgaAPEJywvmWSUb7ybxbc/CEr8KRaR1ikMui3Kn4NMBL5u+ziSon
+ gT7FgBgCEJMNBS3xeIbzf+52fDPBOo1QlKVoq+jnHgsT9Hs09GRx8vkKfsddEK8BlnN/0R3H7
+ ZsiAPeSvE5oimeZIwK0/ZVbrf4HOogJsSeLTieubVQDDGrRAwQaJBbr/6Ry7LctxSujlkUgup
+ kEb42FSGLyAPDtFQxOVP14VAMHj26YsI7WJFVLHK1jBIpAAkD66l+QRtw2VSNw13srhknHmmf
+ BMA0yw5fhN4W5DhwAM2BEhuEjqkpVkx9BLp0nQyM03x1mEIdGhFhwsJpG6W0rVsYU7AC5foa7
+ NoBoD7xIuzrMGVmkXqB746HRDKYxBheyJQCB9RJGQW746VrLORX2B/hZogWe+0BVrzmJJi5CI
+ GZtY4N16iq6j310r0jJRKGuqts8=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Since commit 4a445b7b6178 ("btrfs: don't merge pages into bio if thei
-r page offset is not contiguous"), all pages in buffered I/O bios
-are contigous.
 
-Remove the processed_extent machinery and just do a single unlock_extent
-for the entire bio, using the bbio-wide information like bbio->inode
-where applicable.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/extent_io.c | 115 +++++++------------------------------------
- 1 file changed, 19 insertions(+), 96 deletions(-)
+On 2023/4/4 10:22, Matthew Jurgens wrote:
+> On 3/04/2023 12:39 pm, Qu Wenruo wrote:
+>>
+>> This looks like an extent tree corruption.
+>>
+>> Before doing anything, strongly recommend a "btrfs check --readonly" 
+>> run on the unmounted fs.
+>>
+>> Thanks,
+>> Qu
+>>>
+> btrfs check --readonly /dev/sda
+> Opening filesystem to check...
+> Checking filesystem on /dev/sda
+> UUID: 3adb6756-7cab-4a7a-a7d8-9ff119032ee5
+> [1/7] checking root items
+> [2/7] checking extents
+> [3/7] checking free space cache
+> [4/7] checking fs roots
+>          unresolved ref dir 168755802 index 5462 namelen 49 name 
+> dd02f3c3-e4fe--b908-bd11845475af@starship.eml filetype 0 errors 3, no 
+> dir item, no dir index
+>          unresolved ref dir 168755802 index 5462 namelen 49 name 
+> dd02f3c3-e4fe-4f63-b908-bd11845475af@starship.eml filetype 1 errors 4, 
+> no inode ref
+> ERROR: errors found in fs roots
+> found 3501318352896 bytes used, error(s) found
+> total csum bytes: 3381392748
+> total tree bytes: 37968969728
+> total fs tree bytes: 33514553344
+> total extent tree bytes: 580124672
+> btree space waste bytes: 5546340662
+> file data blocks allocated: 3463349383168
+> 
+>   referenced 3582557282304
+> 
+> https://btrfs.readthedocs.io/en/latest/btrfs-check.html says "Do not use 
+> /--repair/ unless you are advised to do so by a developer or an 
+> experienced user" so is it safe to repair or is there something else I 
+> should do?
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a1adadd5d25ddb..8116be675f301b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -606,75 +606,6 @@ static void end_bio_extent_writepage(struct btrfs_bio *bbio)
- 	bio_put(bio);
- }
- 
--/*
-- * Record previously processed extent range
-- *
-- * For endio_readpage_release_extent() to handle a full extent range, reducing
-- * the extent io operations.
-- */
--struct processed_extent {
--	struct btrfs_inode *inode;
--	/* Start of the range in @inode */
--	u64 start;
--	/* End of the range in @inode */
--	u64 end;
--	bool uptodate;
--};
--
--/*
-- * Try to release processed extent range
-- *
-- * May not release the extent range right now if the current range is
-- * contiguous to processed extent.
-- *
-- * Will release processed extent when any of @inode, @uptodate, the range is
-- * no longer contiguous to the processed range.
-- *
-- * Passing @inode == NULL will force processed extent to be released.
-- */
--static void endio_readpage_release_extent(struct processed_extent *processed,
--			      struct btrfs_inode *inode, u64 start, u64 end,
--			      bool uptodate)
--{
--	struct extent_state *cached = NULL;
--	struct extent_io_tree *tree;
--
--	/* The first extent, initialize @processed */
--	if (!processed->inode)
--		goto update;
--
--	/*
--	 * Contiguous to processed extent, just uptodate the end.
--	 *
--	 * Several things to notice:
--	 *
--	 * - bio can be merged as long as on-disk bytenr is contiguous
--	 *   This means we can have page belonging to other inodes, thus need to
--	 *   check if the inode still matches.
--	 * - bvec can contain range beyond current page for multi-page bvec
--	 *   Thus we need to do processed->end + 1 >= start check
--	 */
--	if (processed->inode == inode && processed->uptodate == uptodate &&
--	    processed->end + 1 >= start && end >= processed->end) {
--		processed->end = end;
--		return;
--	}
--
--	tree = &processed->inode->io_tree;
--	/*
--	 * Now we don't have range contiguous to the processed range, release
--	 * the processed range now.
--	 */
--	unlock_extent(tree, processed->start, processed->end, &cached);
--
--update:
--	/* Update processed to current range */
--	processed->inode = inode;
--	processed->start = start;
--	processed->end = end;
--	processed->uptodate = uptodate;
--}
--
- static void begin_page_read(struct btrfs_fs_info *fs_info, struct page *page)
- {
- 	ASSERT(PageLocked(page));
-@@ -727,27 +658,28 @@ static struct extent_buffer *find_extent_buffer_readpage(
-  */
- static void end_bio_extent_readpage(struct btrfs_bio *bbio)
- {
-+	struct btrfs_fs_info *fs_info = bbio->inode->root->fs_info;
-+	const u32 sectorsize = fs_info->sectorsize;
-+	struct bvec_iter_all iter_all;
- 	struct bio *bio = &bbio->bio;
-+	bool uptodate = !bio->bi_status;
-+	int mirror = bbio->mirror_num;
- 	struct bio_vec *bvec;
--	struct processed_extent processed = { 0 };
--	/*
--	 * The offset to the beginning of a bio, since one bio can never be
--	 * larger than UINT_MAX, u32 here is enough.
--	 */
--	u32 bio_offset = 0;
--	int mirror;
--	struct bvec_iter_all iter_all;
-+	u64 bio_start = 0;
-+	u32 bio_len = 0;
- 
- 	ASSERT(!bio_flagged(bio, BIO_CLONED));
- 	bio_for_each_segment_all(bvec, bio, iter_all) {
--		bool uptodate = !bio->bi_status;
- 		struct page *page = bvec->bv_page;
- 		struct inode *inode = page->mapping->host;
--		struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb);
--		const u32 sectorsize = fs_info->sectorsize;
--		u64 start;
--		u64 end;
--		u32 len;
-+		u64 start = page_offset(page) + bvec->bv_offset;
-+		u64 end = start + bvec->bv_len - 1;
-+		u32 len = bvec->bv_len;
-+
-+		if (bio_len)
-+			ASSERT(start == bio_start + bio_len);
-+		else
-+			bio_start = start;
- 
- 		btrfs_debug(fs_info,
- 			"end_bio_extent_readpage: bi_sector=%llu, err=%d, mirror=%u",
-@@ -771,15 +703,9 @@ static void end_bio_extent_readpage(struct btrfs_bio *bbio)
- 		"incomplete page read with offset %u and length %u",
- 				   bvec->bv_offset, bvec->bv_len);
- 
--		start = page_offset(page) + bvec->bv_offset;
--		end = start + bvec->bv_len - 1;
--		len = bvec->bv_len;
--
--		mirror = bbio->mirror_num;
- 		if (uptodate && !is_data_inode(inode) &&
- 		    btrfs_validate_metadata_buffer(bbio, page, start, end, mirror))
- 			uptodate = false;
--
- 		if (likely(uptodate)) {
- 			loff_t i_size = i_size_read(inode);
- 			pgoff_t end_index = i_size >> PAGE_SHIFT;
-@@ -811,15 +737,12 @@ static void end_bio_extent_readpage(struct btrfs_bio *bbio)
- 
- 		/* Update page status and unlock. */
- 		end_page_read(page, uptodate, start, len);
--		endio_readpage_release_extent(&processed, BTRFS_I(inode),
--					      start, end, PageUptodate(page));
--
--		ASSERT(bio_offset + len > bio_offset);
--		bio_offset += len;
-+		bio_len += len;
- 
- 	}
--	/* Release the last extent */
--	endio_readpage_release_extent(&processed, NULL, 0, 0, false);
-+
-+	unlock_extent(&bbio->inode->io_tree, bio_start,
-+		      bio_start + bio_len - 1, NULL);
- 	bio_put(bio);
- }
- 
--- 
-2.39.2
+Yes, that particular problem should be able to be fixed by "btrfs check 
+--repair".
+At least "btrfs check --repair" should not make the case worse.
 
+
+But "--repair" is only recommended after you have verified your hardware 
+memory is fine.
+
+If the memory has bitflip, you always has the chance to screw up the fs, 
+no matter if it's "btrfs check --repair" or a, RW mount.
+
+Thanks,
+Qu
+> 
+> In this case, I am happy to lose the file, but this may not always be 
+> the case
+> 
+> Sorry, I forgot to send to the mailing list on my first reply
+> 
+> Thanks
+> 

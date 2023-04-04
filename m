@@ -2,140 +2,127 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86BDAC76188
-	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Apr 2023 23:45:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D3B2C761A6
+	for <linux-btrfs@archiver.kernel.org>; Tue,  4 Apr 2023 23:56:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236636AbjDDXpx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 4 Apr 2023 19:45:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58414 "EHLO
+        id S236625AbjDDX4j (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 4 Apr 2023 19:56:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60740 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236634AbjDDXpw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2023 19:45:52 -0400
-X-Greylist: delayed 498 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 04 Apr 2023 16:45:49 PDT
-Received: from wnew2-smtp.messagingengine.com (wnew2-smtp.messagingengine.com [64.147.123.27])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B9C31421E
-        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2023 16:45:49 -0700 (PDT)
-Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
-        by mailnew.west.internal (Postfix) with ESMTP id 322B02B066D4;
-        Tue,  4 Apr 2023 19:37:30 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute1.internal (MEProxy); Tue, 04 Apr 2023 19:37:31 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=fastmail.com; h=
-        cc:cc:content-transfer-encoding:content-type:content-type:date
-        :date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-        :references:reply-to:sender:subject:subject:to:to; s=fm2; t=
-        1680651449; x=1680655049; bh=J1BC/ZgMTCier5E+5tsATfmu2nswwvG40Pp
-        bGL8skUk=; b=RKrlzfzAIpmCS2O0dTAgEKCfGvIf0I6xJBkDMcAHH3+HsV+oYXQ
-        BWgi+Dj3auRNTYysGIPup+MFfUKMcA6hGVFpPXyQ0zzmL+ljhoDdDKpZ5EWholgk
-        X/9gS0R2ZGHZIrT8PhDXIY0vTT4U9ZYCVS0h5W0z4oHDDIclQO9Rtz4BluRT2GV4
-        CqJMwf4Ek+pxNWUNXdp2zDerQGdPshc4+thlZb5RTnIQ3yL+klzHn4HIOO6bYgYQ
-        Tia+fO+Tfxy9MMj2HOYjn99GcMGOLbeo8pgIbe/nlod0Oc3BgFf5HPhovHsAouzf
-        /L/a7oc/XI/9OXumavmQlRUfaDf2wgSdWOw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-transfer-encoding
-        :content-type:content-type:date:date:feedback-id:feedback-id
-        :from:from:in-reply-to:in-reply-to:message-id:mime-version
-        :references:reply-to:sender:subject:subject:to:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=i3db14652.fm2;
-         t=1680651449; x=1680655049; bh=J1BC/ZgMTCier5E+5tsATfmu2nswwvG4
-        0PpbGL8skUk=; b=NUli5819vPakZfjWOAk1xje+MXfC/fhCSAwJ8zfbE7+SYLD4
-        rqAjUXZV93did1jYpaKd8r2aO0IIOzBeB4VjNbAm+LMbHLzSSJ27WJ+62vKZwZdE
-        DXoePGw0z20s2iuK2Mn10gFO0ncYRWnZxIDzXpHoxKaG6HN0mY9AlvgS7RoHG+mX
-        XLZB2KPDLt7LNNdk7+gEBUudkxiVGeBCpgDmktz2GLsy2vYfKyPb8tyXWxrwv0Oc
-        XcynzqOQXvEeVwQx/3dd2CG7ezqO8OEOsGf563sDZQp9k8YICGdpQSpPJljB37l6
-        NOuyOUEGQRYnmEv8noIwLhPbTdSWuZcSb6RtCg==
-X-ME-Sender: <xms:ubQsZCpktNsxhPss0DA61dKPIJtiRZddlQpS8_M5usJ9bKxOlFB5JQ>
-    <xme:ubQsZAp-eqgCGJrnnKunNmHyV6cuGin9TioQCDnXLUexUjiejjEgd4VjwNytQv6kn
-    yskK5fF10XRUh8fSwg>
-X-ME-Received: <xmr:ubQsZHP-_J1-PVdGYOuG4no2mw4HK9-Au2YDBw4GwemeSu7rGA33Hp_ATaVNqSI01T_tvrCapEpcB7Vgc74p0sAtJSL3i-ss>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrvdejtddgvdduucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepkfffgggfuffvvehfhfgjtgfgsehtjeertddtfeejnecuhfhrohhmpeffrghm
-    ihgvnhcunfgvucfoohgrlhcuoegulhgvmhhorghlsehfrghsthhmrghilhdrtghomheqne
-    cuggftrfgrthhtvghrnhepteefiefhieetgfevhfegfeehffetteduieetudfgleetvdff
-    udelveejfefhfeejnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilh
-    hfrhhomhepughlvghmohgrlhesfhgrshhtmhgrihhlrdgtohhm
-X-ME-Proxy: <xmx:ubQsZB4VOyJ8rQxL1Y1HNN43un0cgZzjHBKa18xnjUsFxJQF5BLibg>
-    <xmx:ubQsZB62DGANJXcUpP6Ofbtx7b-XlywSkeq_c9SeCLgnJSIyXLUBeQ>
-    <xmx:ubQsZBgbl7kxlktD1d_VNpHHLG5LkgksPzFbR0m11AYpEz_Tj3ykVQ>
-    <xmx:ubQsZGG51xVmDn4Gbm1XGABQFHGUWX1HYk9RFlavU9xUQypX0LkCy52I6ME>
-Feedback-ID: i3db14652:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 4 Apr 2023 19:37:26 -0400 (EDT)
-Message-ID: <852ad310-092e-169c-d98a-9317aa0b4268@fastmail.com>
-Date:   Wed, 5 Apr 2023 08:37:24 +0900
+        with ESMTP id S236548AbjDDX4i (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 4 Apr 2023 19:56:38 -0400
+Received: from mail-pf1-x431.google.com (mail-pf1-x431.google.com [IPv6:2607:f8b0:4864:20::431])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 55BF43C3F
+        for <linux-btrfs@vger.kernel.org>; Tue,  4 Apr 2023 16:56:37 -0700 (PDT)
+Received: by mail-pf1-x431.google.com with SMTP id bt19so22577837pfb.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Apr 2023 16:56:37 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=fromorbit-com.20210112.gappssmtp.com; s=20210112; t=1680652597;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=CiwVxtHqh7PtMKcIrbTly4vzLJ3BWefIHUj9tJBpUIs=;
+        b=vimaQLlpEUMehiQFMsj9zfP0aw8/xBepI6GNmarhCk57b8UQ+tn2pqLKQED8ItRRuU
+         yF8SeMM3vB+68/MfMN+3QVByH6UzFxwNuWFtq5ftE0qjeYhWqPjWaGxRRrCcG7s+Sq2t
+         TZHNB2ng1SQRm73fUpFyK2Zs5RT6hgnCgmO7HkFUdKdL6knY6P5hyJf8HGbX6i8ol+oL
+         LlqjwoN3yKJCKPqRPVUAAs623zJmSloPMxmKQY24W37dtqAQrT3uUIUAAgzZOPO1c5zR
+         spxERhNZLoAfBmHPajMN/L3QcThXSpRgXAusvQ8ERdge4t8cKIJw6oM2DZo36HcqBMPC
+         BQ7A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1680652597;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=CiwVxtHqh7PtMKcIrbTly4vzLJ3BWefIHUj9tJBpUIs=;
+        b=NDd1CHwpW6ADV+s1eEoFVC5Y46hT07ldLXiGQ45bGy3CvNSFK3kimZ3kqGoQtB714O
+         98Tx2pi5WvgvyuxFIIUjBxqdr7gKsp17RX4J9R21NeGuFg3m067GyW/GI7V2MZ9qoMFY
+         niNGrmWPErqJgiNwuSDMPxBvp+81GLo0WLw/g+4Pwvrtj8ySzqQ4kw72pbm8XXGPav+l
+         0Wqcanm/3PC5BGSkC8ITQwZl9T5VQag75mqhhEc3u6VwDIF7w6DxOFJjdwO6VMbWQ4cZ
+         h7ElTo1g0koGgFOe/Ur9TdVIdnb+Dz/2HI+tq/sdIexuJOH1XbFxKrhvV2U+MahINELe
+         N8JQ==
+X-Gm-Message-State: AAQBX9dUNi6ypNy6Niu7wrAYaRWq+2zFEyz9R8QFzp6ITFfBS3PlRu1p
+        7qwYDnGEcm8tU6oliVLXVvOw/Q==
+X-Google-Smtp-Source: AKy350boc1NJttMEXbPWdN9rfQR7KWvZb/0IvD3DuAJJ+io4CZz0OVS7AP+iey99+szOCn0Wgij/bQ==
+X-Received: by 2002:a62:6454:0:b0:626:7c43:7cb8 with SMTP id y81-20020a626454000000b006267c437cb8mr3631280pfb.20.1680652596758;
+        Tue, 04 Apr 2023 16:56:36 -0700 (PDT)
+Received: from dread.disaster.area (pa49-181-91-157.pa.nsw.optusnet.com.au. [49.181.91.157])
+        by smtp.gmail.com with ESMTPSA id a18-20020a656412000000b005136b93f8e9sm8146027pgv.14.2023.04.04.16.56.35
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 04 Apr 2023 16:56:36 -0700 (PDT)
+Received: from dave by dread.disaster.area with local (Exim 4.92.3)
+        (envelope-from <david@fromorbit.com>)
+        id 1pjqVt-00H7ij-6l; Wed, 05 Apr 2023 09:56:33 +1000
+Date:   Wed, 5 Apr 2023 09:56:33 +1000
+From:   Dave Chinner <david@fromorbit.com>
+To:     Eric Biggers <ebiggers@kernel.org>
+Cc:     Andrey Albershteyn <aalbersh@redhat.com>, djwong@kernel.org,
+        dchinner@redhat.com, hch@infradead.org, linux-xfs@vger.kernel.org,
+        fsverity@lists.linux.dev, rpeterso@redhat.com, agruenba@redhat.com,
+        xiang@kernel.org, chao@kernel.org,
+        damien.lemoal@opensource.wdc.com, jth@kernel.org,
+        linux-erofs@lists.ozlabs.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        cluster-devel@redhat.com
+Subject: Re: [PATCH v2 16/23] xfs: add inode on-disk VERITY flag
+Message-ID: <20230404235633.GN3223426@dread.disaster.area>
+References: <20230404145319.2057051-1-aalbersh@redhat.com>
+ <20230404145319.2057051-17-aalbersh@redhat.com>
+ <20230404224123.GD1893@sol.localdomain>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.9.1
-Subject: Re: [6.2 regression][bisected]discard storm on idle since
- v6.1-rc8-59-g63a7cb130718 discard=async
-Content-Language: en-US
-To:     Christoph Hellwig <hch@infradead.org>,
-        Roman Mamedov <rm@romanrm.net>
-Cc:     Linux regressions mailing list <regressions@lists.linux.dev>,
-        Sergei Trofimovich <slyich@gmail.com>,
-        Josef Bacik <josef@toxicpanda.com>,
-        Christopher Price <pricechrispy@gmail.com>,
-        anand.jain@oracle.com, boris@bur.io, clm@fb.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org
-References: <CAHmG9huwQcQXvy3HS0OP9bKFxwUa3aQj9MXZCr74emn0U+efqQ@mail.gmail.com>
- <CAEzrpqeOAiYCeHCuU2O8Hg5=xMwW_Suw1sXZtQ=f0f0WWHe9aw@mail.gmail.com>
- <ZBq+ktWm2gZR/sgq@infradead.org> <20230323222606.20d10de2@nz>
- <20d85dc4-b6c2-dac1-fdc6-94e44b43692a@leemhuis.info>
- <ZCxKc5ZzP3Np71IC@infradead.org> <20230404212027.3730905d@nvm>
- <ZCxP/ll7YjPdb9Ou@infradead.org>
-From:   Damien Le Moal <dlemoal@fastmail.com>
-In-Reply-To: <ZCxP/ll7YjPdb9Ou@infradead.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230404224123.GD1893@sol.localdomain>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On 4/5/23 01:27, Christoph Hellwig wrote:
-> On Tue, Apr 04, 2023 at 09:20:27PM +0500, Roman Mamedov wrote:
->> SSDs do not physically erase blocks on discard, that would be very slow.
->>
->> Instead they nuke corresponding records in the Flash translation layer (FTL)
->> tables, so that the discarded areas point "nowhere" instead of the actual
->> stored blocks. And when facing such pointers on trying to resolve read
->> requests, the controller knows to just return zeroes.
+On Tue, Apr 04, 2023 at 03:41:23PM -0700, Eric Biggers wrote:
+> Hi Andrey,
 > 
-> Of course they don't erase blocks on every discard (although if you look
-> long enough you'll probably find a worst case implementation that does
-> this anyway).  But you still need to persist your FTL changes, and the
-> zeroing if any was done by the time your get a FLUSH command, because
-> without that you'd return different data when reading a block after a
-> powerfail (i.e. the old data) than before (zeros or a pattern), which is
-> a no-go.
+> On Tue, Apr 04, 2023 at 04:53:12PM +0200, Andrey Albershteyn wrote:
+> > Add flag to mark inodes which have fs-verity enabled on them (i.e.
+> > descriptor exist and tree is built).
+> > 
+> > Signed-off-by: Andrey Albershteyn <aalbersh@redhat.com>
+> > ---
+> >  fs/ioctl.c                 | 4 ++++
+> >  fs/xfs/libxfs/xfs_format.h | 4 +++-
+> >  fs/xfs/xfs_inode.c         | 2 ++
+> >  fs/xfs/xfs_iops.c          | 2 ++
+> >  include/uapi/linux/fs.h    | 1 +
+> >  5 files changed, 12 insertions(+), 1 deletion(-)
+> [...]
+> > diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
+> > index b7b56871029c..5172a2eb902c 100644
+> > --- a/include/uapi/linux/fs.h
+> > +++ b/include/uapi/linux/fs.h
+> > @@ -140,6 +140,7 @@ struct fsxattr {
+> >  #define FS_XFLAG_FILESTREAM	0x00004000	/* use filestream allocator */
+> >  #define FS_XFLAG_DAX		0x00008000	/* use DAX for IO */
+> >  #define FS_XFLAG_COWEXTSIZE	0x00010000	/* CoW extent size allocator hint */
+> > +#define FS_XFLAG_VERITY		0x00020000	/* fs-verity sealed inode */
+> >  #define FS_XFLAG_HASATTR	0x80000000	/* no DIFLAG for this	*/
+> >  
 > 
->> Of course there can be varying behaviors per SSD, e.g. I know of some that
->> return random garbage instead of zeroes, and some which for a puzzling reason
->> prefer to return the byte FF instead.
-> 
-> All of that is valid behavior per the relevant standards.  
-> 
->> But I think the 1st point above should
->> be universal, pretty certain there are none where a discard/TRIM would take
->> comparable time to "dd if=/dev/zero of=/dev/ssd" (making it unusable in
->> practice).
-> 
-> This is wishful thinking :)  SSDs generall optimize the fast path very
-> heavily, so slow path command even when they should in theory be faster
-> due to the underlying optimizations might not be, as they are processed
-> in software instead of hardware offloads, moved to slower cores, etc.
-> 
-> For discard things have gotten a lot better in the last years, but for
-> many older devices performance can be outright horrible.
-> 
-> For SATA SSDs the fact that classic TRIM isn't a queued command adds
-> insult to injury as it always means draining the queue first and not
-> issuing any I/O until the TRIM command is done.  There is a FPDMA
-> version not, but I don't think it ws all that widely implemented before
-> SATA SSDs fell out of favour.
+> I don't think "xfs: add inode on-disk VERITY flag" is an accurate description of
+> a patch that involves adding something to the UAPI.
 
-Not to mention that many of the SATA SSDs actually implementing queued trim are
-buggy. See ATA horkage flag ATA_HORKAGE_NO_NCQ_TRIM and the many consumer SSDs
-that need that flag.
+Well it does that, but it also adds the UAPI for querying the
+on-disk flag via the FS_IOC_FSGETXATTR interface as well.  It
+probably should be split up into two patches.
 
+> Should the other filesystems support this new flag too?
+
+I think they should get it automatically now that it has been
+defined for FS_IOC_FSGETXATTR and added to the generic fileattr flag
+fill functions in fs/ioctl.c.
+
+> I'd also like all ways of getting the verity flag to continue to be mentioned in
+> Documentation/filesystems/fsverity.rst.  The existing methods (FS_IOC_GETFLAGS
+> and statx) are already mentioned there.
+
+*nod*
+
+-Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

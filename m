@@ -2,139 +2,98 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBEA6C77B6C
-	for <linux-btrfs@archiver.kernel.org>; Thu,  6 Apr 2023 22:51:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D78EC761A6
+	for <linux-btrfs@archiver.kernel.org>; Fri,  7 Apr 2023 00:04:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239188AbjDFWvu convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 6 Apr 2023 18:51:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56082 "EHLO
+        id S237562AbjDGAEv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 6 Apr 2023 20:04:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58266 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238548AbjDFWvs (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2023 18:51:48 -0400
-Received: from mail-ej1-f50.google.com (mail-ej1-f50.google.com [209.85.218.50])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 708733596
-        for <linux-btrfs@vger.kernel.org>; Thu,  6 Apr 2023 15:51:47 -0700 (PDT)
-Received: by mail-ej1-f50.google.com with SMTP id qb20so4835400ejc.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Apr 2023 15:51:47 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1680821505; x=1683413505;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=H/Yq+RogF4NLB0ytnE2c8qbIFYDpm8Av/BOMlLi7ICo=;
-        b=HR1easvx/ITivfkovjsBFQo2jx/OXtZejaC9OLA9OIGecl+dDAEoPTh+SPu7ycK7LN
-         5ONRaP/a/FUlNqKqpmjKVJn3vWZ9i0iJyXEDcXLjwdsQm4B9LyRHQQFvqejv4Zmpn71H
-         6is+lXDCd1us2oEPphFIwjzuXqCZL6+XurLdNlDMZ/N0MbFtxT7noW7kVHybHUTLHXhn
-         3wscL2pQFE7fRpepFSbsuknlualFCROCXmNWozpkk52suwh4xD9JF0pUzUmyAmzrH/H+
-         esF966OCmIYJ9J/eP4pREgRM1eMRAjTrxxd9847/XcgRnm3p19CFfG4kzUZB/6SHLrYZ
-         /R5A==
-X-Gm-Message-State: AAQBX9fzdiJvzUJva7PlDeFaDg+dqpaFH31QwPgk3xNmfEE/+bp2BCUr
-        agRRktdfvk7YGOgRPsSQ6JLat31gOxwKLcUW
-X-Google-Smtp-Source: AKy350Z/+DKodeAPPN3CINvvHw9kLP+iO6W7/i8wc1eu4MNALQ7KTF3I7JJfS7AiMyjietzQefzhLQ==
-X-Received: by 2002:a17:906:8477:b0:925:5549:f81c with SMTP id hx23-20020a170906847700b009255549f81cmr465318ejc.6.1680821505424;
-        Thu, 06 Apr 2023 15:51:45 -0700 (PDT)
-Received: from mail-ej1-f46.google.com (mail-ej1-f46.google.com. [209.85.218.46])
-        by smtp.gmail.com with ESMTPSA id ck24-20020a170906c45800b0093348be32cfsm1341714ejb.90.2023.04.06.15.51.43
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 06 Apr 2023 15:51:44 -0700 (PDT)
-Received: by mail-ej1-f46.google.com with SMTP id qb20so4835256ejc.6
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Apr 2023 15:51:43 -0700 (PDT)
-X-Received: by 2002:a17:907:7b81:b0:949:d4ef:f6ff with SMTP id
- ne1-20020a1709077b8100b00949d4eff6ffmr70090ejc.0.1680821503642; Thu, 06 Apr
- 2023 15:51:43 -0700 (PDT)
+        with ESMTP id S237624AbjDGAEs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Apr 2023 20:04:48 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1A1006EAB
+        for <linux-btrfs@vger.kernel.org>; Thu,  6 Apr 2023 17:04:46 -0700 (PDT)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MvK4f-1qbAJW0tST-00rFP1; Fri, 07
+ Apr 2023 02:04:43 +0200
+Message-ID: <157773e1-103d-5a44-82a2-0d91066f34bf@gmx.com>
+Date:   Fri, 7 Apr 2023 08:04:40 +0800
 MIME-Version: 1.0
-References: <20230322221714.2702819-1-neal@gompa.dev> <20230322221714.2702819-2-neal@gompa.dev>
- <ce66a6b0-01e2-990a-326a-9730083a436e@oracle.com>
-In-Reply-To: <ce66a6b0-01e2-990a-326a-9730083a436e@oracle.com>
-From:   Neal Gompa <neal@gompa.dev>
-Date:   Thu, 6 Apr 2023 18:51:07 -0400
-X-Gmail-Original-Message-ID: <CAEg-Je9tccy8Xs=MzrfVRPiy667uv+BXoJVAPZLPvFELT_Vy6g@mail.gmail.com>
-Message-ID: <CAEg-Je9tccy8Xs=MzrfVRPiy667uv+BXoJVAPZLPvFELT_Vy6g@mail.gmail.com>
-Subject: Re: [PATCH 1/1] btrfs-progs: mkfs: Enforce 4k sectorsize by default
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     Linux BTRFS Development <linux-btrfs@vger.kernel.org>,
-        Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.cz>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Hector Martin <marcan@marcan.st>,
-        Sven Peter <sven@svenpeter.dev>,
-        Davide Cavalca <davide@cavalca.name>,
-        Jens Axboe <axboe@fb.com>, Asahi Lina <lina@asahilina.net>,
-        Asahi Linux <asahi@lists.linux.dev>,
-        Josef Bacik <josef@toxicpanda.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.8.0
+Subject: Re: [PATCH] btrfs: dev-replace: error out if we have unrepaired
+ metadata error during
+To:     dsterba@suse.cz, Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+References: <4db115f8781fbf68f30ca82a431cdd931767638d.1680765987.git.wqu@suse.com>
+ <20230406170909.GX19619@twin.jikos.cz>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <20230406170909.GX19619@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:RgH31hSi3yQaLDCzuDWDIg6x/5pLFqH7C3L0nj/Vjxrf8Ezh0S4
+ efWRkw7hWUty9EolSn6fPR2pTR4SM9Pkl8CLpVYic1Ve7ZMn46r9FyxbQkiTNDgQIorh2U5
+ 19Ops39upNTnc1UEZaWAVe1r3YdcR9MpE1yxx9ReKr7l986i+fN8AHHwgnAna2RHluzSs5q
+ iOx+nzy5q95DrgOKzOxmA==
+UI-OutboundReport: notjunk:1;M01:P0:fb73WAu/JN0=;aOtAfM2M3XZ21ArUV0LTJu1XFnU
+ lxquUweKgNEVrRxsy7BbRdUnn8V0yuRjdkoRtAbPv3wYUU1HA3lb+A+4mP1/vgESfTYT6ozXq
+ lXTqFS+IFxCu04Ft0By95d9g/mq307sQkJ0KkDJKtlmeHknZG+C7hDHjReLz7z7RamHdx8qR3
+ 4lP7VKERjk2ATwx+jKtjQne7tafpM5inL+LHT7BiZgLDJijQl/tHnWW/gzAPdQSUK71Yhn9AF
+ +MeU4Qyr1I8r2AeokfkunIo/nXOkIfo+5z8kKe5DgN8U7j2WzkW/P7Otr8dkhDD+HDUwEjZmX
+ FwZWC2GU1TUT0p+gL+hmhlnjTP4jtj0rvuYDgWL5mg4iqNMB0efYaYGajzWDqVlM4tt4OnvcB
+ QUdk4I4FIDkXRl5bM4Sa8jXBA4mZ5y4/nHNk3D+p54mvzAw9nEMeMGKuJ5jgcqVabS9Zsg1Ny
+ 9YYehzP4Yq0dkml20kUgTeCFXi3Imlt7FQVyEXv5T4OzhU952CeguryCtx64KyAsWdCrn9lgX
+ F5mmVD9AyYfCjkN8WVUFuZMe7Qkew8wkYRLRbx8bwUW41/7HSk6ZrzwVDKFlOc7BrcekUM4a0
+ 8+AYaQF1Ozrf+klAHoc9NHBpgbx3LvUgnn32BWQt9N4iVSxFFlUJWV0yY+UQhZQtDU2gmp8F/
+ gtp+V5+rAhq8izRSyfDasp648iTU7OpqbaZP+2HsWtw2YN+K/30ScSOdi7Yt9WfjVVFjCzSjM
+ Y2/Pkx7lRPd1+dxbiMTvtSXxdzDWCs1WXYDWgSsq4wKI2iFrTnRJBTmz+sZb0o3ASt6D80lj8
+ 9cROUhHHZh1nZnFx5bFLgBAaAz8crezLwUzUcRvbnOxB4pubsijGcip8p48Ufidi+9Qt/0d9Q
+ QSKFNq4PgBPk5rNgaGN0cLPa4keuhIH+OsSJDedBCz3nJ2aGGg137vADPQkgitwEsaDhQdxDx
+ x/oiDKuX3hNEEcMk9A47Tb6YB64=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Sat, Apr 1, 2023 at 1:31 AM Anand Jain <anand.jain@oracle.com> wrote:
->
->
-> [ fixed table format ]
->
-> Comparing btrfs sectorsize=64K with sectorsize=4K on an aarch64
-> virtual host with PAGESIZE=64k shows that switching to sectorsize
-> (ss) =4K by default for buffered IO has a low impact, while the
-> direct IO performance is improved by roughly 21% to 152% for
-> various fio block sizes as shown below.
->
->
-> aarch64 PAGESIZE=64K
-> ====================
->
-> Buffered IO:
-> ===========
->
-> FIO bs  ss=64k ss=4k   diff
-> K       MB/s   MB/s    %
-> 4        752    755
-> 8        783    832    +6
-> 64      1066   1173    +10
-> 128     1120   1098    +2
-> 256     1112   1079    -3
->
->
-> Dierct IO:
-> =========
->
-> FIO bs ss=64k  ss=4k  diff
-> K      MB/s    MB/s   %
-> 4       54      106   +96
-> 8      107      270   +152
-> 64     737      894   +21
-> 128    862     1130   +31
-> 256    846     1103   +30
->
->
-> FIO config file:
->
-> [global]
-> directory=/mnt/scratch
-> allrandrepeat=1
-> readwrite=readwrite
-> ioengine=io_uring
-> iodepth=256
-> end_fsync=1
-> fallocate=none
-> group_reporting
-> gtod_reduce=1
-> numjobs=8
-> size=10G
-> stonewall
->
-> [fio-direct-4k]
-> direct=1 <-- changed as appropriate
-> bs=4k    <---changed as appropriate
->
-
-Well, it's nice to see that there are performance advantages to using
-4k block sizes everywhere. :)
-
-Can we get this committed to btrfs-progs then?
 
 
+On 2023/4/7 01:09, David Sterba wrote:
+> On Thu, Apr 06, 2023 at 03:26:29PM +0800, Qu Wenruo wrote:
+>> [BUG]
+>> Even before the scrub rework, if we have some corrupted metadata failed
+>> to be repaired during replace, we still continue replace and let it
+>> finish just as there is nothing wrong:
+>>
+>>   BTRFS info (device dm-4): dev_replace from /dev/mapper/test-scratch1 (devid 1) to /dev/mapper/test-scratch2 started
+>>   BTRFS warning (device dm-4): tree block 5578752 mirror 1 has bad csum, has 0x00000000 want 0xade80ca1
+>>   BTRFS warning (device dm-4): tree block 5578752 mirror 0 has bad csum, has 0x00000000 want 0xade80ca1
+>>   BTRFS warning (device dm-4): checksum error at logical 5578752 on dev /dev/mapper/test-scratch1, physical 5578752: metadata leaf (level 0) in tree 5
+>>   BTRFS warning (device dm-4): checksum error at logical 5578752 on dev /dev/mapper/test-scratch1, physical 5578752: metadata leaf (level 0) in tree 5
+>>   BTRFS error (device dm-4): bdev /dev/mapper/test-scratch1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+>>   BTRFS warning (device dm-4): tree block 5578752 mirror 1 has bad bytenr, has 0 want 5578752
+>>   BTRFS error (device dm-4): unable to fixup (regular) error at logical 5578752 on dev /dev/mapper/test-scratch1
+>>   BTRFS info (device dm-4): dev_replace from /dev/mapper/test-scratch1 (devid 1) to /dev/mapper/test-scratch2 finished
+>>
+>> This can lead to unexpected problems for the result fs.
+>>
+>> [CAUSE]
+>> Btrfs reuses scrub code path for dev-replace to iterate all dev extents.
+>>
+>> But unlike scrub, dev-replace doesn't really bother to check the scrub
+>> progress, which records all the errors found during replace.
+>>
+>> And even if we checks the progress, we can not really determine which
+>> errors are minor, which are critical just by the plain numbers.
+>> (remember we don't treat metadata/data checksum error differently).
+>>
+>> This behavior is there from the very beginning.
+> 
+> The code depends on the scrub rewrite, should we do a backport for <=6.3
+> kernels?
 
---
-真実はいつも一つ！/ Always, there's only one truth!
+For older kernels, the backport can be more complex, thus I'm still 
+trying to figure out a way to do the same work, but no good progress yet.
+
+Thanks,
+Qu

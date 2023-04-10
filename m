@@ -2,98 +2,183 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A44F0C76196
-	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Apr 2023 18:11:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CED63C76196
+	for <linux-btrfs@archiver.kernel.org>; Mon, 10 Apr 2023 20:02:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230444AbjDJSLs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Apr 2023 14:11:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58116 "EHLO
+        id S229771AbjDJUCv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 10 Apr 2023 16:02:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43304 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230443AbjDJSLr (ORCPT
+        with ESMTP id S229683AbjDJUCu (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2023 14:11:47 -0400
-Received: from mail-qt1-x830.google.com (mail-qt1-x830.google.com [IPv6:2607:f8b0:4864:20::830])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 638C4198C
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2023 11:11:46 -0700 (PDT)
-Received: by mail-qt1-x830.google.com with SMTP id x17so24631416qtv.7
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2023 11:11:46 -0700 (PDT)
+        Mon, 10 Apr 2023 16:02:50 -0400
+Received: from mail-pj1-x1031.google.com (mail-pj1-x1031.google.com [IPv6:2607:f8b0:4864:20::1031])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F8871FCA
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2023 13:02:48 -0700 (PDT)
+Received: by mail-pj1-x1031.google.com with SMTP id c10-20020a17090abf0a00b0023d1bbd9f9eso8551410pjs.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2023 13:02:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20210112.gappssmtp.com; s=20210112; t=1681150305;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=CIkUkXhQYF2fir5Te0uHuQwCkBepWX/ri7xRzRhUbzk=;
-        b=kF44Cg8Ob8+BI4S9GUPCkMM6C3vUDWZKZ2F+C2iQf93RiyzkyvfHTLaCk0+whjTpQT
-         6wzBoSbACwA/2R7gxOdNl6gr4n2B83/o9Bce6/LzedYdxxeRMASYVHLtusDaUrbMZbsK
-         uNke4bA8VVijSwdH49CYpFgQWFvkjACbfy98pjSsG8t0vZurcbMeOdv7BM+ocHjN1sJX
-         if/OcUAgcKcsUmFjLL6VBb6f+8vHpV4+jicJHJwFkuo8ZukVLDpQ1X7wT63B7hN+Sqwv
-         6QRedDCBsQDPwD7jslIThEcmOMx2Wq2/Oe//zufDaO3gEzJEyQ68+The14oOooVeVJlY
-         1GOg==
+        d=google.com; s=20210112; t=1681156968; x=1683748968;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=HpioAPXxW+v4Q4xUafxth5Qioe7sUCWQU1eCRcCSF4E=;
+        b=OpSVB2xGYnoW5ZPOAmBnJFAuzcl4KWcOCssIXXoleg7BMgFiMKR6onztmHu2iPTwqV
+         nlirkxgXvfjkEPyH+/Rw9CqIAFpt6o0d5KXy01HdZ4VSxoR8Cdr5bJ+/wtCvtRInRhlp
+         Du9/tQ0WN8TytZHVtzCSsUEzJdQ4lnRPIeo8cTdnVr9SKRvHR4szvHAHahSq7IipAsLL
+         l3fiTUSzkx8hBk08XSdL2o0DNbEAqNUDwG56S6yWXYvoXxal+x23wrDXYtE7d3NAUMLw
+         Co11Qx7Q8VwF5wDNnGhH4ztFDGFLUNRgyq4wkQ2HewgSRwUVhVPkscfkT420mVaj04Ub
+         ejqw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1681150305;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=CIkUkXhQYF2fir5Te0uHuQwCkBepWX/ri7xRzRhUbzk=;
-        b=DMxnhus41hJWsnCBrTWBFcqen8LoRUhh53U+56mS36+rKMiThMbYuXZ0GXHxXsWkOA
-         jMBOCL0LyQ5fkETCr39GQ93zzDAti1lk5S52Z03eO/tMD+ZXardVP7WfobC5HtfBGun/
-         T8Yqwg+EvHedN2q0S79Ckm79wIkjJIwNvxBX9/8Fc92WetN5Qc2BC0CwanlYcXhpm+NC
-         rG+EB8LoVs4fWgSfRswFovIyAUe9f9B4WvKq9hH8A5ZSC/qD8S8wUhVNt6BF2/nnMIPk
-         a+60IrTwBD/0vjdnANE46NTTAwtOjzMMxqzNayJ8DpL+23GARbc0D8wsULvIvivepbl/
-         9BnA==
-X-Gm-Message-State: AAQBX9c/MZ0sPZn6b1OjqkTlJ1wpT5IXo+6mNqU6mdnXTiGxfb31ZTt4
-        d67rN9+JnfxJYM7l+31twZwSvGQVAbOLMbfHudzKdw==
-X-Google-Smtp-Source: AKy350ZSd9xGFAjlvkYe8feAUr8GyVdJFxD9eaQJvE7ScTEefpUg6HnRS6IaIgXdOECHPrxjpKT6Dw==
-X-Received: by 2002:ac8:7fd4:0:b0:3e3:8427:fb51 with SMTP id b20-20020ac87fd4000000b003e38427fb51mr18427825qtk.23.1681150304824;
-        Mon, 10 Apr 2023 11:11:44 -0700 (PDT)
-Received: from localhost (hs-nc-a03feba254-450087-1.tingfiber.com. [64.98.124.17])
-        by smtp.gmail.com with ESMTPSA id o5-20020ac872c5000000b003c033b23a9asm3119124qtp.12.2023.04.10.11.11.44
-        for <linux-btrfs@vger.kernel.org>
+        d=1e100.net; s=20210112; t=1681156968; x=1683748968;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=HpioAPXxW+v4Q4xUafxth5Qioe7sUCWQU1eCRcCSF4E=;
+        b=2KfyAo/O6ECILQYrs/q7VCwyP5SJ/tJbUUagvX3uCJofn0+EjVYuxvBTwOKaG/xYp7
+         3RXZNLWmNEi13isI3L2TJVB677aa9VXZuoMpqAMchWdoz3fL4/5dMs/EdvOzC1ef1Wxv
+         bUqenNOFw+eWh9IqGd56Jq2ChIfAsYVBHOqZ+MUxYEDRRf9lYvNULZLvFopn7M+WuIaA
+         mNFElf9YljdEy8+VW1A9BpwNs+/NrLtzWvD+522rl7ySu1StZFegETLffObbiXXE0zxe
+         qJ27Nn3qeSBwbfyMYbrIxg17NvFzIEOGFt6Xe4Yno646mXhKQMsSBxhlkWwZHM8fW61u
+         ldbA==
+X-Gm-Message-State: AAQBX9fyQs8rYNx42zc99fNJXKGzqGcs2MCckndr88MTdVH5diLqN2UO
+        uwucQJJzoCW5IjqiyBvNx1fdeA==
+X-Google-Smtp-Source: AKy350b82capCtNuSEsvxElVHvbtJETNgyp2B+atrv+RlVkQiQyDeGAflx7JoQTMQzRsKIJ+MsvcRg==
+X-Received: by 2002:a17:902:c404:b0:1a2:7356:1ecd with SMTP id k4-20020a170902c40400b001a273561ecdmr17301528plk.5.1681156967766;
+        Mon, 10 Apr 2023 13:02:47 -0700 (PDT)
+Received: from google.com ([2620:15c:2d1:203:8e63:90de:efab:9bf6])
+        by smtp.gmail.com with ESMTPSA id r19-20020a170902be1300b001a072aedec7sm8201345pls.75.2023.04.10.13.02.46
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 10 Apr 2023 11:11:44 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs-progs: fix fsck-tests/060 to run without root
-Date:   Mon, 10 Apr 2023 14:11:34 -0400
-Message-Id: <9fcda5f1661f9c15fe9514f3d8aa0e34a9f9b23c.1681150198.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1681150198.git.josef@toxicpanda.com>
-References: <cover.1681150198.git.josef@toxicpanda.com>
+        Mon, 10 Apr 2023 13:02:47 -0700 (PDT)
+Date:   Mon, 10 Apr 2023 13:02:35 -0700
+From:   Nick Desaulniers <ndesaulniers@google.com>
+To:     Josh Poimboeuf <jpoimboe@kernel.org>
+Cc:     x86@kernel.org, linux-kernel@vger.kernel.org,
+        Peter Zijlstra <peterz@infradead.org>,
+        Miroslav Benes <mbenes@suse.cz>, linux-btrfs@vger.kernel.org,
+        Mark Rutland <mark.rutland@arm.com>,
+        linux-scsi@vger.kernel.org, linux-hyperv@vger.kernel.org,
+        Arnd Bergmann <arnd@arndb.de>,
+        "Guilherme G . Piccoli" <gpiccoli@igalia.com>,
+        Michael Kelley <mikelley@microsoft.com>, nathan@kernel.org,
+        llvm@lists.linux.dev
+Subject: Re: [PATCH 01/11] init: Mark [arch_call_]rest_init() __noreturn
+Message-ID: <ZDRrW9+FrGxgw6Ok@google.com>
+References: <cover.1680912057.git.jpoimboe@kernel.org>
+ <b24a972397061a67d46ff5a98657e352040f427a.1680912057.git.jpoimboe@kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <b24a972397061a67d46ff5a98657e352040f427a.1680912057.git.jpoimboe@kernel.org>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We need to call the setup_root_helper before we start messing with the
-loop devices.
+On Fri, Apr 07, 2023 at 05:09:54PM -0700, Josh Poimboeuf wrote:
+> Fixes the following warning:
+> 
+>   init/main.o: warning: objtool: start_kernel+0x4ad: unreachable instruction
+> 
+> Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- tests/fsck-tests/060-degraded-check/test.sh | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Ha! I was just looking into this, by coincidence.
+https://github.com/ClangBuiltLinux/linux/issues/1815#issuecomment-1489113303
 
-diff --git a/tests/fsck-tests/060-degraded-check/test.sh b/tests/fsck-tests/060-degraded-check/test.sh
-index 6a1f50c8..f185a655 100755
---- a/tests/fsck-tests/060-degraded-check/test.sh
-+++ b/tests/fsck-tests/060-degraded-check/test.sh
-@@ -10,14 +10,14 @@ check_prereq mkfs.btrfs
- check_global_prereq losetup
- check_global_prereq wipefs
- 
-+setup_root_helper
-+
- setup_loopdevs 3
- prepare_loopdevs
- dev1=${loopdevs[1]}
- dev2=${loopdevs[2]}
- dev3=${loopdevs[3]}
- 
--setup_root_helper
--
- # Run 1: victim is dev1
- run_check $SUDO_HELPER "$TOP/mkfs.btrfs" -f -m raid5 -d raid5 "${loopdevs[@]}"
- run_check $SUDO_HELPER wipefs -fa $dev1
--- 
-2.39.2
+Generally, the compiler can infer when a function does not return, but
+it's not safe to do so when the definition is weak, since the strong
+definition may not be, so the caller must not make optimizations based
+on such an assumption.
 
+https://reviews.llvm.org/D147177 (abandoned, but has more info)
+
+Reviewed-by: Nick Desaulniers <ndesaulniers@google.com>
+
+(I agree with the first two patches, since those are ones I was just
+looking at.  Unfortunately, some security embargo just lifted on
+https://bugs.chromium.org/p/llvm/issues/detail?id=30 which a clang-16
+change is causing the stack canaries to be set+checked again in
+start_kernel. I'm about to meet with LLVM folks at Intel in 30 minutes
+to discuss walking back some of the changes since I strongly disagree
+with them.  But merging this series will cause boot failures with
+clang-16, and I would appreciate some time to sort this out before this
+series is merged. It's my top priority.)
+
+> ---
+>  arch/s390/kernel/setup.c     | 2 +-
+>  include/linux/start_kernel.h | 4 ++--
+>  init/main.c                  | 4 ++--
+>  tools/objtool/check.c        | 2 ++
+>  4 files changed, 7 insertions(+), 5 deletions(-)
+> 
+> diff --git a/arch/s390/kernel/setup.c b/arch/s390/kernel/setup.c
+> index 8ec5cdf9dadc..4259b6c50516 100644
+> --- a/arch/s390/kernel/setup.c
+> +++ b/arch/s390/kernel/setup.c
+> @@ -396,7 +396,7 @@ int __init arch_early_irq_init(void)
+>  	return 0;
+>  }
+>  
+> -void __init arch_call_rest_init(void)
+> +void __init __noreturn arch_call_rest_init(void)
+>  {
+>  	unsigned long stack;
+>  
+> diff --git a/include/linux/start_kernel.h b/include/linux/start_kernel.h
+> index 8b369a41c03c..864921e54c92 100644
+> --- a/include/linux/start_kernel.h
+> +++ b/include/linux/start_kernel.h
+> @@ -9,7 +9,7 @@
+>     up something else. */
+>  
+>  extern asmlinkage void __init start_kernel(void);
+> -extern void __init arch_call_rest_init(void);
+> -extern void __ref rest_init(void);
+> +extern void __init __noreturn arch_call_rest_init(void);
+> +extern void __ref __noreturn rest_init(void);
+>  
+>  #endif /* _LINUX_START_KERNEL_H */
+> diff --git a/init/main.c b/init/main.c
+> index 4425d1783d5c..161ed956d738 100644
+> --- a/init/main.c
+> +++ b/init/main.c
+> @@ -683,7 +683,7 @@ static void __init setup_command_line(char *command_line)
+>  
+>  static __initdata DECLARE_COMPLETION(kthreadd_done);
+>  
+> -noinline void __ref rest_init(void)
+> +noinline void __ref __noreturn rest_init(void)
+>  {
+>  	struct task_struct *tsk;
+>  	int pid;
+> @@ -889,7 +889,7 @@ static int __init early_randomize_kstack_offset(char *buf)
+>  early_param("randomize_kstack_offset", early_randomize_kstack_offset);
+>  #endif
+>  
+> -void __init __weak arch_call_rest_init(void)
+> +void __init __weak __noreturn arch_call_rest_init(void)
+>  {
+>  	rest_init();
+>  }
+> diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+> index cae6ac6ff246..e7442e7ad676 100644
+> --- a/tools/objtool/check.c
+> +++ b/tools/objtool/check.c
+> @@ -202,6 +202,7 @@ static bool __dead_end_function(struct objtool_file *file, struct symbol *func,
+>  		"__reiserfs_panic",
+>  		"__stack_chk_fail",
+>  		"__ubsan_handle_builtin_unreachable",
+> +		"arch_call_rest_init",
+>  		"arch_cpu_idle_dead",
+>  		"cpu_bringup_and_idle",
+>  		"cpu_startup_entry",
+> @@ -217,6 +218,7 @@ static bool __dead_end_function(struct objtool_file *file, struct symbol *func,
+>  		"machine_real_restart",
+>  		"make_task_dead",
+>  		"panic",
+> +		"rest_init",
+>  		"rewind_stack_and_make_dead",
+>  		"sev_es_terminate",
+>  		"snp_abort",
+> -- 
+> 2.39.2
+> 
+> 

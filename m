@@ -2,205 +2,57 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 117CFC77B61
-	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Apr 2023 02:31:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D4414C77B70
+	for <linux-btrfs@archiver.kernel.org>; Tue, 11 Apr 2023 05:02:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229833AbjDKCbb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 10 Apr 2023 22:31:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34254 "EHLO
+        id S229845AbjDKFCG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 11 Apr 2023 01:02:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60806 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229785AbjDKCb3 (ORCPT
+        with ESMTP id S229692AbjDKFCF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 10 Apr 2023 22:31:29 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DF8F026B2
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Apr 2023 19:31:27 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id A8C741FDFA
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2023 02:31:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1681180285; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=L43IinhMCgExty2IBqQjT0VbqQ7tAzNU9ZwDVt4oZvA=;
-        b=PsYQzC9BoBqPlbvfgfxLSx8AnXauS0WsO87xdX3RJ3K93Zsy6T54n4N08oH8ZMRE3pQYMY
-        xbrXte/I/UAOsATvU2ldARNaJhskO3L8lNwD+a+SJLQ1pmGhuNiMfr1DJ1KY8bgDovGPdh
-        pcSUfSpzUzc6rGxYQidYptN7030ar1o=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1981413638
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2023 02:31:24 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id SDykNnzGNGRWDgAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Apr 2023 02:31:24 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: mkfs: make -R|--runtime-features option deprecated
-Date:   Tue, 11 Apr 2023 10:31:05 +0800
-Message-Id: <1ca85433fb63d9c9cf66da72e407381c0146b76c.1681180159.git.wqu@suse.com>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1681180159.git.wqu@suse.com>
-References: <cover.1681180159.git.wqu@suse.com>
+        Tue, 11 Apr 2023 01:02:05 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D9F8E199F;
+        Mon, 10 Apr 2023 22:02:00 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=KBhNfUOcD8iQz+TMuW2IJQH6CYVeRvhGPDElxngGpyE=; b=SuYCXB7pkcbxWbG1OHBZx7juNA
+        pku0+MY68aN+S95h6lBSIC3+WUupYPcZ/eHTEqYAFMoLUQnYO8MeMYSbBdMCyQylUcDHHLHcmIXd7
+        e5NqbRZSQB0gMOfbiVnUErygHRgsOtoOGaC/2EcI+J1zpIrNhA2wJV2TkXNBC4tU7LeHeSTqUrrZO
+        VIlNf2JBzbM+1SJ8Gb7TZBAgltRuPGZead5QKLPM2er7apLZLYmpxUY511LIx0AYMvAIJ3J+L1juU
+        k1OlPAFQtvgOTFojCSEo3+oOplG9rBmr5OVIw9zq4j1KxjAJOgfkDHNzOUYwe4/ft+nr670+zJOBn
+        JIilyNgg==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1pm68l-00GQYB-0D;
+        Tue, 11 Apr 2023 05:01:59 +0000
+Date:   Mon, 10 Apr 2023 22:01:59 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Eric Biggers <ebiggers@kernel.org>
+Cc:     fsverity@lists.linux.dev, linux-crypto@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH] fsverity: use shash API instead of ahash API
+Message-ID: <ZDTpx15RX/64lbjY@infradead.org>
+References: <20230406003714.94580-1-ebiggers@kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230406003714.94580-1-ebiggers@kernel.org>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The option -R|--runtime-features is introduced to support features that
-doesn't result a full incompat flag change, thus things like
-free-space-tree and quota features are put here.
+On Wed, Apr 05, 2023 at 05:37:14PM -0700, Eric Biggers wrote:
+> Therefore, let's convert fs/verity/ from ahash to shash.  This
+> simplifies the code, and it should also slightly improve performance for
+> everyone who wasn't actually using one of these ahash-only crypto
+> accelerators, i.e. almost everyone (or maybe even everyone)!
 
-But to end users, such separation of features is not helpful and can be
-sometimes confusing.
-
-Thus we're already migrating those runtime features into -O|--features
-option under experimental builds.
-
-I believe this is the proper time to move those runtime features into
--O|--features option, and mark the -R|--runtime-features option
-deprecated.
-
-For now we still keep the old option as for compatibility purposes.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Documentation/mkfs.btrfs.rst | 25 ++++---------------------
- common/fsfeatures.c          |  6 ------
- mkfs/main.c                  |  3 ++-
- 3 files changed, 6 insertions(+), 28 deletions(-)
-
-diff --git a/Documentation/mkfs.btrfs.rst b/Documentation/mkfs.btrfs.rst
-index ba7227b31f72..e80f4c5c83ee 100644
---- a/Documentation/mkfs.btrfs.rst
-+++ b/Documentation/mkfs.btrfs.rst
-@@ -161,18 +161,6 @@ OPTIONS
- 
-                 $ mkfs.btrfs -O list-all
- 
---R|--runtime-features <feature1>[,<feature2>...]
--        A list of features that be can enabled at mkfs time, otherwise would have
--        to be turned on on a mounted filesystem.
--        To disable a feature, prefix it with *^*.
--
--        See section *RUNTIME FEATURES* for more details.  To see all available
--        runtime features that **mkfs.btrfs** supports run:
--
--        .. code-block:: bash
--
--                $ mkfs.btrfs -R list-all
--
- -f|--force
-         Forcibly overwrite the block devices when an existing filesystem is detected.
-         By default, **mkfs.btrfs** will utilize *libblkid* to check for any known
-@@ -199,6 +187,10 @@ OPTIONS
- -l|--leafsize <size>
-         Removed in 6.0, used to be alias for *--nodesize*.
- 
-+-R|--runtime-features <feature1>[,<feature2>...]
-+        Removed in 6.4, used to specify features not affecting on-disk format.
-+        Now all such features are merged into `-O|--features` option.
-+
- SIZE UNITS
- ----------
- 
-@@ -279,15 +271,6 @@ zoned
-         see *ZONED MODE* in :doc:`btrfs(5)<btrfs-man5>`, the mode is automatically selected when
-         a zoned device is detected
- 
--
--RUNTIME FEATURES
------------------
--
--Features that are typically enabled on a mounted filesystem, e.g. by a mount
--option or by an ioctl. Some of them can be enabled early, at mkfs time.  This
--applies to features that need to be enabled once and then the status is
--permanent, this does not replace mount options.
--
- quota
-         (kernel support since 3.4)
- 
-diff --git a/common/fsfeatures.c b/common/fsfeatures.c
-index 169e47e92582..4aca96f6e4fe 100644
---- a/common/fsfeatures.c
-+++ b/common/fsfeatures.c
-@@ -99,7 +99,6 @@ static const struct btrfs_feature mkfs_features[] = {
- 		VERSION_NULL(default),
- 		.desc		= "mixed data and metadata block groups"
- 	},
--#if EXPERIMENTAL
- 	{
- 		.name		= "quota",
- 		.runtime_flag	= BTRFS_FEATURE_RUNTIME_QUOTA,
-@@ -109,7 +108,6 @@ static const struct btrfs_feature mkfs_features[] = {
- 		VERSION_NULL(default),
- 		.desc		= "quota support (qgroups)"
- 	},
--#endif
- 	{
- 		.name		= "extref",
- 		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
-@@ -143,7 +141,6 @@ static const struct btrfs_feature mkfs_features[] = {
- 		VERSION_TO_STRING2(default, 5,15),
- 		.desc		= "no explicit hole extents for files"
- 	},
--#if EXPERIMENTAL
- 	{
- 		.name		= "free-space-tree",
- 		.compat_ro_flag	= BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |
-@@ -154,7 +151,6 @@ static const struct btrfs_feature mkfs_features[] = {
- 		VERSION_TO_STRING2(default, 5,15),
- 		.desc		= "free space tree (space_cache=v2)"
- 	},
--#endif
- 	{
- 		.name		= "raid1c34",
- 		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_RAID1C34,
-@@ -185,8 +181,6 @@ static const struct btrfs_feature mkfs_features[] = {
- 		VERSION_NULL(default),
- 		.desc		= "block group tree to reduce mount time"
- 	},
--#endif
--#if EXPERIMENTAL
- 	{
- 		.name		= "extent-tree-v2",
- 		.incompat_flag	= BTRFS_FEATURE_INCOMPAT_EXTENT_TREE_V2,
-diff --git a/mkfs/main.c b/mkfs/main.c
-index f5e34cbda612..78cc2b598b25 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -424,7 +424,6 @@ static const char * const mkfs_usage[] = {
- 	OPTLINE("-n|--nodesize SIZE", "size of btree nodes"),
- 	OPTLINE("-s|--sectorsize SIZE", "data block size (may not be mountable by current kernel)"),
- 	OPTLINE("-O|--features LIST", "comma separated list of filesystem features (use '-O list-all' to list features)"),
--	OPTLINE("-R|--runtime-features LIST", "comma separated list of runtime features (use '-R list-all' to list runtime features)"),
- 	OPTLINE("-L|--label LABEL", "set the filesystem label"),
- 	OPTLINE("-U|--uuid UUID", "specify the filesystem UUID (must be unique)"),
- 	"Creation:",
-@@ -440,6 +439,7 @@ static const char * const mkfs_usage[] = {
- 	OPTLINE("--help", "print this help and exit"),
- 	"Deprecated:",
- 	OPTLINE("-l|--leafsize SIZE", "removed in 6.0, use --nodesize"),
-+	OPTLINE("-R|--runtime-features LIST", "removed in 6.4, use -O|--features"),
- 	NULL
- };
- 
-@@ -1140,6 +1140,7 @@ int BOX_MAIN(mkfs)(int argc, char **argv)
- 				char *orig = strdup(optarg);
- 				char *tmp = orig;
- 
-+				warning("runtime features are deprecated, use -O|--features instead.");
- 				tmp = btrfs_parse_runtime_features(tmp,
- 						&features);
- 				if (tmp) {
--- 
-2.39.2
-
+This looks like a very nice cleanup to me.  So unless someone really
+uses async crypto offload heavily for fsverity and can come up with
+a convincing argument for that, I'm all for the change.

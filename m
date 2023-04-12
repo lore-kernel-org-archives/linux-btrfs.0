@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0537C77B6C
-	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Apr 2023 23:50:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9FEDCC77B78
+	for <linux-btrfs@archiver.kernel.org>; Wed, 12 Apr 2023 23:50:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230009AbjDLXuP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 12 Apr 2023 19:50:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45580 "EHLO
+        id S230111AbjDLXuV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 12 Apr 2023 19:50:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45660 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229532AbjDLXuE (ORCPT
+        with ESMTP id S229902AbjDLXuG (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 12 Apr 2023 19:50:04 -0400
+        Wed, 12 Apr 2023 19:50:06 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 67D365FE0;
-        Wed, 12 Apr 2023 16:50:02 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1A91F6A4D;
+        Wed, 12 Apr 2023 16:50:05 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 49220637C0;
-        Wed, 12 Apr 2023 23:50:02 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3D50FC433A0;
-        Wed, 12 Apr 2023 23:50:01 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id E092763A40;
+        Wed, 12 Apr 2023 23:50:04 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CDB37C4339E;
+        Wed, 12 Apr 2023 23:50:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1681343401;
-        bh=L2F/xi1PSFrTTzo1OeYf2miT5FskQWydRqNTuOMsSLw=;
+        s=k20201202; t=1681343404;
+        bh=b7H0OJvgITv94oCGcITa5YVvEl/zb04TPx9I9PIgGgo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=ArojZA5AfgAYVbdaA5nwlw1jG/yfs7yE/sO2HSAuyTZEe77gdqFpGN47dnNspN74/
-         VcTpa7jgqv8zZzS/CHw1vpHCY+2GSHJSuOHUc30VRMachOFY7doNABFbs0hls1q7iS
-         Ze/T13uUDjWRYi4BMmUC0uMf4zhQBQOfvNxbqo4YfDeLZtBNOYyZ7dXNxO9YvOZuEQ
-         qTscX90D+zeiYmsdx7ASI3Rq2qundmiuKkZlU75v4cf59pDh79i9oGnP4TWR4l+qjP
-         4UgqNdkVjgNX+3VFbDwt3UCqQ9muhKJX1VimTryc2E07Iz88sOpSF9iv4cYASuGuNm
-         g/6yJmytZD91w==
+        b=sgXvqcgO8S/huUHYkPIWf6A1TYBBpJ6x0TY5qyPabj9iVthVARVRqchnngLYFY7P3
+         bxgW0McN7dRrjgj+Ntr8BWHyTCh+bQK1fitf+5OzhURtF5KRMT9c7MEe+GymyI8+mP
+         xWHsauWUwTeEyFoa3+FeI6+AbEuOihgeIOeUFtWjAD5ukCjjW3PFGFqrOJIcpLLcIn
+         6YwE6d9D+EHHpxyY1hve8Hc1/rxrCirj8g31OLKLLB9SbVX7vAHlgM+4lD5IQEEy1k
+         5zh5xeziXrJkvk+L13P0hhi/jaw2jvJ+Mb6ONeeGCXw2sBcCL7xQOs4kBVmA+kj5w5
+         ChIH9EexYLsQA==
 From:   Josh Poimboeuf <jpoimboe@kernel.org>
 To:     x86@kernel.org
 Cc:     linux-kernel@vger.kernel.org,
@@ -43,10 +43,11 @@ Cc:     linux-kernel@vger.kernel.org,
         "Guilherme G . Piccoli" <gpiccoli@igalia.com>,
         Michael Kelley <mikelley@microsoft.com>,
         Nick Desaulniers <ndesaulniers@google.com>,
-        Nathan Chancellor <nathan@kernel.org>
-Subject: [PATCH v2 06/11] cpu: Mark nmi_panic_self_stop() __noreturn
-Date:   Wed, 12 Apr 2023 16:49:36 -0700
-Message-Id: <316fc6dfab5a8c4e024c7185484a1ee5fb0afb79.1681342859.git.jpoimboe@kernel.org>
+        Nathan Chancellor <nathan@kernel.org>,
+        kernel test robot <lkp@intel.com>
+Subject: [PATCH v2 10/11] scsi: message: fusion: Mark mpt_halt_firmware() __noreturn
+Date:   Wed, 12 Apr 2023 16:49:40 -0700
+Message-Id: <d8129817423422355bf30e90dadc6764261b53e0.1681342859.git.jpoimboe@kernel.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1681342859.git.jpoimboe@kernel.org>
 References: <cover.1681342859.git.jpoimboe@kernel.org>
@@ -57,81 +58,62 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In preparation for improving objtool's handling of weak noreturn
-functions, mark nmi_panic_self_stop() __noreturn.
+mpt_halt_firmware() doesn't return.  Mark it as such.
 
+Fixes the following warnings:
+
+  vmlinux.o: warning: objtool: mptscsih_abort+0x7f4: unreachable instruction
+  vmlinux.o: warning: objtool: mptctl_timeout_expired+0x310: unreachable instruction
+
+Reported-by: kernel test robot <lkp@intel.com>
+Link: https://lore.kernel.org/oe-kbuild-all/202302271743.78emit6I-lkp@intel.com/
+Reported-by: Mark Rutland <mark.rutland@arm.com>
+Debugged-by: Peter Zijlstra <peterz@infradead.org>
 Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
 ---
- arch/x86/include/asm/reboot.h | 1 -
- arch/x86/kernel/reboot.c      | 2 +-
- include/linux/smp.h           | 2 +-
- kernel/panic.c                | 2 +-
- tools/objtool/check.c         | 1 +
- 5 files changed, 4 insertions(+), 4 deletions(-)
+ drivers/message/fusion/mptbase.c | 2 +-
+ drivers/message/fusion/mptbase.h | 2 +-
+ tools/objtool/check.c            | 1 +
+ 3 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/x86/include/asm/reboot.h b/arch/x86/include/asm/reboot.h
-index bc5b4d788c08..9177b4354c3f 100644
---- a/arch/x86/include/asm/reboot.h
-+++ b/arch/x86/include/asm/reboot.h
-@@ -28,7 +28,6 @@ void __noreturn machine_real_restart(unsigned int type);
- void cpu_emergency_disable_virtualization(void);
- 
- typedef void (*nmi_shootdown_cb)(int, struct pt_regs*);
--void nmi_panic_self_stop(struct pt_regs *regs);
- void nmi_shootdown_cpus(nmi_shootdown_cb callback);
- void run_crash_ipi_callback(struct pt_regs *regs);
- 
-diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
-index d03c551defcc..3adbe97015c1 100644
---- a/arch/x86/kernel/reboot.c
-+++ b/arch/x86/kernel/reboot.c
-@@ -920,7 +920,7 @@ void run_crash_ipi_callback(struct pt_regs *regs)
- }
- 
- /* Override the weak function in kernel/panic.c */
--void nmi_panic_self_stop(struct pt_regs *regs)
-+void __noreturn nmi_panic_self_stop(struct pt_regs *regs)
+diff --git a/drivers/message/fusion/mptbase.c b/drivers/message/fusion/mptbase.c
+index 9b3ba2df71c7..4f0afce8428d 100644
+--- a/drivers/message/fusion/mptbase.c
++++ b/drivers/message/fusion/mptbase.c
+@@ -6935,7 +6935,7 @@ EXPORT_SYMBOL(mpt_clear_taskmgmt_in_progress_flag);
+  *	@ioc: Pointer to MPT_ADAPTER structure
+  *
+  **/
+-void
++void __noreturn
+ mpt_halt_firmware(MPT_ADAPTER *ioc)
  {
- 	while (1) {
- 		/* If no CPU is preparing crash dump, we simply loop here. */
-diff --git a/include/linux/smp.h b/include/linux/smp.h
-index 2a737b39cf0a..7b93504eed26 100644
---- a/include/linux/smp.h
-+++ b/include/linux/smp.h
-@@ -60,7 +60,7 @@ int smp_call_function_single_async(int cpu, struct __call_single_data *csd);
-  * Architecture-dependent code may override them.
-  */
- void __noreturn panic_smp_self_stop(void);
--void nmi_panic_self_stop(struct pt_regs *regs);
-+void __noreturn nmi_panic_self_stop(struct pt_regs *regs);
- void crash_smp_send_stop(void);
+ 	u32	 ioc_raw_state;
+diff --git a/drivers/message/fusion/mptbase.h b/drivers/message/fusion/mptbase.h
+index 4bd0682c65d3..0f226cdad64f 100644
+--- a/drivers/message/fusion/mptbase.h
++++ b/drivers/message/fusion/mptbase.h
+@@ -945,7 +945,7 @@ extern int	mpt_raid_phys_disk_get_num_paths(MPT_ADAPTER *ioc,
+ 		u8 phys_disk_num);
+ extern int	 mpt_set_taskmgmt_in_progress_flag(MPT_ADAPTER *ioc);
+ extern void	 mpt_clear_taskmgmt_in_progress_flag(MPT_ADAPTER *ioc);
+-extern void     mpt_halt_firmware(MPT_ADAPTER *ioc);
++extern void __noreturn mpt_halt_firmware(MPT_ADAPTER *ioc);
+ 
  
  /*
-diff --git a/kernel/panic.c b/kernel/panic.c
-index 5e4982db8dc9..886d2ebd0a0d 100644
---- a/kernel/panic.c
-+++ b/kernel/panic.c
-@@ -151,7 +151,7 @@ void __weak __noreturn panic_smp_self_stop(void)
-  * Stop ourselves in NMI context if another CPU has already panicked. Arch code
-  * may override this to prepare for crash dumping, e.g. save regs info.
-  */
--void __weak nmi_panic_self_stop(struct pt_regs *regs)
-+void __weak __noreturn nmi_panic_self_stop(struct pt_regs *regs)
- {
- 	panic_smp_self_stop();
- }
 diff --git a/tools/objtool/check.c b/tools/objtool/check.c
-index 43946188cd2c..ed42717463f9 100644
+index a42a2af99ea2..8586d4c36600 100644
 --- a/tools/objtool/check.c
 +++ b/tools/objtool/check.c
-@@ -217,6 +217,7 @@ static bool __dead_end_function(struct objtool_file *file, struct symbol *func,
+@@ -219,6 +219,7 @@ static bool __dead_end_function(struct objtool_file *file, struct symbol *func,
  		"lbug_with_loc",
  		"machine_real_restart",
  		"make_task_dead",
-+		"nmi_panic_self_stop",
++		"mpt_halt_firmware",
+ 		"nmi_panic_self_stop",
  		"panic",
  		"panic_smp_self_stop",
- 		"rest_init",
 -- 
 2.39.2
 

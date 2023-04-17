@@ -2,185 +2,316 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16187C77B70
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Apr 2023 10:30:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88F5FC77B7C
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Apr 2023 11:44:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230045AbjDQKan (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Apr 2023 06:30:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33732 "EHLO
+        id S230075AbjDQLo4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Apr 2023 07:44:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35500 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229854AbjDQKam (ORCPT
+        with ESMTP id S230090AbjDQLow (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2023 06:30:42 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1623B1FC3
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 03:29:59 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id C7738621E5
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 10:19:23 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 39609C4339B
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 10:19:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1681726763;
-        bh=zntXQSrKzFvgi9ovtqjUXbDn5f/IEiOR0XbFZR4xORs=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=g9rviCHG3ALoiCqt6oddUQCZcpDsBWQGYTL00hJkoNFoS8GlYS/tvhdXBXEAXX8Y1
-         8gYkavBwf5JeyOXe6vt5Be7zz/vxjGVFKVvSCRIepPUeeh4CYhDlcEeLkKzCWvF/cm
-         W2dC6cWiyR194bVW8FSXRTRPkAoT6zEZ858pD4hsb5HMtqGvZ2wqdNLs6DXGz1dQyG
-         GYJ+yB0uCUYRuOn3Pv1ynZ6zYpZvUspb1NOQuneeQ0nFOJjvvrr43ShEkTw9NGarYW
-         hd2DeIfpdtlPOBwx8DzCb66o1mWvTd9P3Ge7zml6ROvql7VeY4YuJVf4QNDjtHaCe+
-         QLZAIaCCeOHGg==
-Received: by mail-oo1-f51.google.com with SMTP id e24-20020a4ae0d8000000b0054101f316c7so566596oot.13
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 03:19:23 -0700 (PDT)
-X-Gm-Message-State: AAQBX9cNVoqeKWSKUMePtt2dhb4LNsUbDRLSAcHhXNbMG1fuv0/VAjvy
-        eSS9MEn8HdNu+5tjghzE0qJxZZG8l+Eau017FSk=
-X-Google-Smtp-Source: AKy350aib9v9v8JO/H48+52dtcKSciFeqVY+Usf/hFnEUrrW/9Z5qdmpN5DYrlpgShKhppOcD03zp0Irtz9du6Gu2eg=
-X-Received: by 2002:a05:6820:1aa0:b0:546:e85c:8bba with SMTP id
- bt32-20020a0568201aa000b00546e85c8bbamr354926oob.1.1681726762352; Mon, 17 Apr
- 2023 03:19:22 -0700 (PDT)
+        Mon, 17 Apr 2023 07:44:52 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D17F4E5
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 04:43:51 -0700 (PDT)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MxDou-1qYmio15z6-00xcdG; Mon, 17
+ Apr 2023 13:37:23 +0200
+Message-ID: <225b296a-8618-2788-da7b-f629d1d0d343@gmx.com>
+Date:   Mon, 17 Apr 2023 19:37:19 +0800
 MIME-Version: 1.0
-References: <e6eaa082d536fc5223eae4627bc7dc6369e257d9.1681295111.git.fdmanana@suse.com>
- <20230414035734.6DF7.409509F4@e16-tech.com> <20230414114340.57ED.409509F4@e16-tech.com>
-In-Reply-To: <20230414114340.57ED.409509F4@e16-tech.com>
-From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Mon, 17 Apr 2023 11:18:46 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6CoXvJGdf9Af4qQPyhwP-3gDPDOLNtK3YWqw1HV28rHw@mail.gmail.com>
-Message-ID: <CAL3q7H6CoXvJGdf9Af4qQPyhwP-3gDPDOLNtK3YWqw1HV28rHw@mail.gmail.com>
-Subject: Re: [PATCH 1/2] btrfs: fix btrfs_prev_leaf() to not return the same
- key twice
-To:     Wang Yugui <wangyugui@e16-tech.com>
-Cc:     linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.8.0
+Content-Language: en-US
+To:     Otto Strassen <otto@tostr.ch>
+Cc:     "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <sY9YYJrpztwzxhv_9p28An7hkWNiF8hHF0we0ToIQ69b3lpaeBc7l77Kd4jYdsXA6Rps73Xa3guq3XA8c3mZdxDIvSwO5Cyh2eeO5Aqh3-s=@tostr.ch>
+ <c3bf3d9d-9be4-713f-64b8-769d2a014d1a@gmx.com>
+ <BWQf5N5kpHk5W540zTSqzDYn2kLi7lwJt-3odaRz1xs751TcwplGjnVGU-ytnar_lcoaKZHghhONSHAdSPtC98yyq52HXIUTCq1x65RWGwU=@tostr.ch>
+ <fb3714a3-ab30-30b0-f336-68e2717b20d8@gmx.com>
+ <vU62kpQ14yw_mYWcogz5KZy0j0wZ_1bNBQnJvvc-zqlqZAYpjFderRCnigBCG3F2Sv5g9PKexYTf9_dO8H1OxDkQQg1Vlz4UZzMmkwsx7Z0=@tostr.ch>
+ <974217d6-0246-3732-0fe5-e443c8158edc@gmx.com>
+ <OIBWDuFqZbh7w1v3A2Nxs13HKeULqY96iN3so8KdD5YfpqhzoxglwFYxQj7rS2f2tnz9jMkJFzl4w4jTVSRzw9wuLKCyMv_gkn17caOy1H0=@tostr.ch>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: Filesystem ro mode, check shows a lot of missing backrefs, no
+ idea on how to proceed
+In-Reply-To: <OIBWDuFqZbh7w1v3A2Nxs13HKeULqY96iN3so8KdD5YfpqhzoxglwFYxQj7rS2f2tnz9jMkJFzl4w4jTVSRzw9wuLKCyMv_gkn17caOy1H0=@tostr.ch>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:WO4AJycJCD3joQi9zW9tgmV+9Q6jCuRlNQVaaPdPU/0GH1Eu/lc
+ KnQG+StccGj8THU2BhGvwiW8IbEHQTvj2+a6159cvy2EmWXI79JI+xusMZzG3/AIHnP3K15
+ zk2AEZnUeZAqfS6CitVXqeqdzs4HA3+mICK4+MbQqW9uhkNVAXY9+u6HpIHb4lNms7iwbTS
+ ArONcJjYpZ5x2cW91p6Vw==
+UI-OutboundReport: notjunk:1;M01:P0:gnz6d+eisrc=;GKQEDyxbRzgwkHXvNTFTIBfT2Jd
+ 074G10SpdKIntIYgozqPjbeU254wH3cxG8fO2vVfgoGArJZrTlgd4ERIOXVh4uqD75Tctlyfa
+ d2ugtPvX+8MdMKLSI9LRmN/ZShCUAcyN6g+ThRkVSKTmdtALD3I25K+IQAOC66iuYiEY6vFk3
+ tV6X+LZKpqRtPkFKI7tHGuCX5FgP89ejcqY9x+ohGLgRH6MnFEty0GZuOij+FxJM9Uw7X7VRv
+ zy+7gGvSLbgplwkS6Rb4lUQFC43Aiu0Qb9EOIKNAB2Q9tPoX+PpNBaeaKUEgoZA8zGd/eaIkb
+ T2aIEiA4H0hiUvyJscUUgb5dj1m1MQL0EqB5o/Q+gnEUoIxpQEsn+DomSV8xCek2+cG87Zu0Q
+ zVWTALKy978vsU2Z6PNZeNJfWRQeDVmwn5f9hrJ8FTgvSSLX8ZpiXGWmModmogkbyeeGVPyEQ
+ arsLO5OkGv/nx2GNuPl0AXWsIazvHsPY6AfXJtWpyrPgeqOlAIIsaogC5btelIPmTg1JS00JL
+ CRD/5U43/ZGAbZVULVp1F5ottC5iFqQ16Zfb3YucLtdubS7g5APBBKKTh94/vCWQCyio9uBCf
+ oIkbQQMcaFYB2YTm+n6JkkyjmxORnNaA0ugbwkGMKNyQ0H6MaPOaHLuEZMVtdS3RQj4VB89Po
+ xVkO+/AmNxbaohEqV2M9La1lfimihJPo5MY/zbOTXJwTW8DlrpM14fEE0V1swSjLYP+LwG0YY
+ q6cvRkmxrzjroKNXnVQaWQVrgFeRLCp518DOgkoN0H1xiEqWZecOw/16zz3ZcQo/NNQVSAgz0
+ foQORPK2/GJ4ueXrD+zDYhtqDRAUcMAZrBVVrgjG6zgxfSBWwg5JZo+8U1OFtrD9Bou5OyQTB
+ Bv+4RZyaWKdio4KjorbnAHc/jORSpZ78xBTn6dtZANqd7ov+de0Rif8WnfOwJDsZrUP1sdUIg
+ DYZWmb+h6gmdmKaa/zr7mOynSdc=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Fri, Apr 14, 2023 at 4:44=E2=80=AFAM Wang Yugui <wangyugui@e16-tech.com>=
- wrote:
->
-> Hi,
->
-> > Hi,
-> >
-> > > From: Filipe Manana <fdmanana@suse.com>
-> > >
-> > > A call to btrfs_prev_leaf() may end up returning a path that points t=
-o the
-> > > same item (key) again. This happens if while btrfs_prev_leaf(), after=
- we
-> > > release the path, a concurrent insertion happens, which moves items o=
-ff
-> > > from a sibbling into the front of the previous leaf, and an item with=
- the
-> > > computed previous key does not exists.
-> > >
-> > > For example, suppose we have the two following leaves:
-> > >
-> > >   Leaf A
-> > >
-> > >   -------------------------------------------------------------
-> > >   | ...   key (300 96 10)   key (300 96 15)   key (300 96 16) |
-> > >   -------------------------------------------------------------
-> > >               slot 20             slot 21             slot 22
-> > >
-> > >   Leaf B
-> > >
-> > >   -------------------------------------------------------------
-> > >   | key (300 96 20)   key (300 96 21)   key (300 96 22)   ... |
-> > >   -------------------------------------------------------------
-> > >       slot 0             slot 1             slot 2
-> > >
-> > > If we call btrfs_prev_leaf(), from btrfs_previous_item() for example,=
- with
-> > > a path pointing to leaf B and slot 0 and the following happens:
-> > >
-> > > 1) At btrfs_prev_leaf() we compute the previous key to search as:
-> > >    (300 96 19), which is a key that does not exists in the tree;
-> > >
-> > > 2) Then we call btrfs_release_path() at btrfs_prev_leaf();
-> > >
-> > > 3) Some other task inserts a key at leaf A, that sorts before the key=
- at
-> > >    slot 20, for example it has an objectid of 299. In order to make r=
-oom
-> > >    for the new key, the key at slot 22 is moved to the front of leaf =
-B.
-> > >    This happens at push_leaf_right(), called from split_leaf().
-> > >
-> > >    After this leaf B now looks like:
-> > >
-> > >   -------------------------------------------------------------------=
--------------
-> > >   | key (300 96 16)    key (300 96 20)   key (300 96 21)   key (300 9=
-6 22)   ... |
-> > >   -------------------------------------------------------------------=
--------------
-> > >        slot 0              slot 1             slot 2             slot=
- 3
-> > >
-> > > 4) At btrfs_prev_leaf() we call btrfs_search_slot() for the computed
-> > >    previous key: (300 96 19). Since the key does not exists,
-> > >    btrfs_search_slot() returns 1 and with a path pointing to leaf B
-> > >    and slot 1, the item with key (300 96 20);
-> > >
-> > > 5) This makes btrfs_prev_leaf() return a path that points to slot 1 o=
-f
-> > >    leaf B, the same key as before it was called, since the key at slo=
-t 0
-> > >    of leaf B (300 96 16) is less than the computed previous key, whic=
-h is
-> > >    (300 96 19);
-> > >
-> > > 6) As a consequence btrfs_previous_item() returns a path that points =
-again
-> > >    to the item with key (300 96 20).
-> > >
-> > > For some users of btrfs_prev_leaf() or btrfs_previous_item() this may=
- not
-> > > be functional a problem, despite not making sense to return a new pat=
-h
-> > > pointing again to the same item/key. However for a caller such as
-> > > tree-log.c:log_dir_items(), this has a bad consequence, as it can res=
-ult
-> > > in not logging some dir index deletions in case the directory is bein=
-g
-> > > logged without holding the inode's VFS lock (logging triggered while
-> > > logging a child inode for example) - for the example scenario above, =
-in
-> > > case the dir index keys 17, 18 and 19 were deleted in the current
-> > > transaction.
-> >
-> > fstests(btrfs/080) had few frequency(<1/10) to fail after this pacth is=
- applied.
-> > but it is yet not clear enough.
-> >
-> > # cat results//btrfs/080.out.bad
-> > QA output created by 080
-> > Unexpected digest for file /mnt/scratch/20_40_30_986878191_snap/foobar_=
-63
-> > (see /usr/hpc-bio/xfstests/results//btrfs/080.full for details)
->
-> fstests(btrfs/080) failure happened without this patch too.
->
-> the next info update may take some long time, because of the low reproduc=
-e
-> frequency.
 
-That test sporadically fails without the patch yes.
 
-Also, more important: the test does not exercise at all the function
-changed by this patch.
-So you can save time and skip doing that pointless info update on
-frequency failure...
+On 2023/4/17 19:16, Otto Strassen wrote:
+> ------- Original Message -------
+> On Monday, April 17th, 2023 at 12:54, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+[...]
+>> What's the dmesg of the RO flipping?
+> 
+> All logs are filtered 'grep -i btrfs' and limited to today.
+> 
+> This is the dmesg
+> 
+> [   34.596250] systemd[1]: Created slice BTRFS Optimization.
+> [   34.606240] systemd[1]: Starting BTRFS Optimization.
+> [   34.657037] systemd[1]: Created slice BTRFS Space Reclaim.
+> [   34.667201] systemd[1]: Starting BTRFS Space Reclaim.
+> [   46.361813] Btrfs loaded, crc32c=crc32c-intel
+> [   46.366895] BTRFS: device label 2022.05.04-10:06:00 v42218 devid 1 transid 240742 /dev/mapper/cachedev_0
+> [   46.376657] BTRFS: device label 2022.05.04-10:06:47 v42218 devid 1 transid 23878 /dev/mapper/cachedev_1
+> [   46.386638] BTRFS info (device dm-3): enabling auto syno reclaim space
+> [   46.393174] BTRFS info (device dm-3): use ssd allocation scheme
+> [   46.399103] BTRFS info (device dm-3): using free block group cache tree
+> [   46.405723] BTRFS info (device dm-3): has skinny extents
+> [   46.411064] BTRFS info (device dm-4): enabling auto syno reclaim space
+> [   46.417592] BTRFS info (device dm-4): use ssd allocation scheme
+> [   46.423517] BTRFS info (device dm-4): using free space tree
+> [   46.429095] BTRFS info (device dm-4): using free block group cache tree
 
-Thanks.
+This is not something upstream supported.
 
->
-> Best Regards
-> Wang Yugui (wangyugui@e16-tech.com)
-> 2023/04/14
->
->
+
+> [   46.435711] BTRFS info (device dm-4): has skinny extents
+> [   46.531776] BTRFS info (device dm-4): BTRFS: root of syno feature tree is null
+
+So is the whatever the "syno feature tree".
+
+It looks like most of your fs should already be fine, but Synology has 
+implemented something proprietary, and that's blocking the proper mount.
+
+I'm not sure if Synology is properly fixing their trees during "btrfs 
+check --repair", but this is already something upstream can not help.
+
+If you can find a way to move the disks to other non-Synology systems, 
+we may be able to help (without using whatever Synology special features).
+
+But for now, I don't think upstream can help at all for the proprietary 
+downstream features.
+
+Thanks,
+Qu
+> [   46.564148] WARNING: CPU: 0 PID: 11955 at fs/btrfs/disk-io.c:3314 open_ctree+0x2fc3/0x3350 [btrfs]()
+> [   46.573288] Modules linked in: btrfs ecryptfs zstd_decompress zstd_compress xxhash raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq leds_lp3943 aesni_intel glue_helper lrw gf128mul openvswitch zram gre ablk_helper nf_defrag_ipv6 bnxt_en(O) nf_conntrack v1000_synobios(PO) hid_generic usbhid hid usblp adt7475 hwmon_vid etxhci_hcd usb_storage bnx2x(O) mdio qede(O) qed(O) mlx5_core(O) mlx4_en(O) mlx4_core(O) mlx_compat(O) atlantic_v2(O) atlantic(O) r8168(O) i40e(O) ixgbe(O) amd_xgbe marvell10g sg dm_snapshot dm_bufio crc_itu_t crc_ccitt psnap p8022 llc hfsplus md4 hmac sit tunnel4 ipv6 flashcache_syno(O) flashcache(O) syno_flashcache_control(O) dm_mod arc4 crc32c_intel cryptd ecb aes_x86_64 authenc des_generic ansi_cprng cts md5 cbc cpufreq_powersave cpufreq_performance
+> [   46.723067]  [<ffffffffa10fe4d3>] open_ctree+0x2fc3/0x3350 [btrfs]
+> [   46.729255]  [<ffffffffa10ca642>] btrfs_mount+0xaf2/0xc60 [btrfs]
+> [   46.763310]  [<ffffffffa10c9ce9>] btrfs_mount+0x199/0xc60 [btrfs]
+> [   47.621353] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   47.760094] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   48.146261] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   48.166801] WARNING: CPU: 5 PID: 4188 at fs/btrfs/disk-io.c:924 btree_io_failed_hook+0x12d/0x220 [btrfs]()
+> [   48.176452] Modules linked in: synoacl_vfs(PO) btrfs ecryptfs zstd_decompress zstd_compress xxhash raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq leds_lp3943 aesni_intel glue_helper lrw gf128mul openvswitch zram gre ablk_helper nf_defrag_ipv6 bnxt_en(O) nf_conntrack v1000_synobios(PO) hid_generic usbhid hid usblp adt7475 hwmon_vid etxhci_hcd usb_storage bnx2x(O) mdio qede(O) qed(O) mlx5_core(O) mlx4_en(O) mlx4_core(O) mlx_compat(O) atlantic_v2(O) atlantic(O) r8168(O) i40e(O) ixgbe(O) amd_xgbe marvell10g sg dm_snapshot dm_bufio crc_itu_t crc_ccitt psnap p8022 llc hfsplus md4 hmac sit tunnel4 ipv6 flashcache_syno(O) flashcache(O) syno_flashcache_control(O) dm_mod arc4 crc32c_intel cryptd ecb aes_x86_64 authenc des_generic ansi_cprng cts md5 cbc cpufreq_powersave cpufreq_performance
+> [   48.286469] Workqueue: btrfs-endio-meta btrfs_endio_meta_helper [btrfs]
+> [   48.335031]  [<ffffffffa10f694d>] btree_io_failed_hook+0x12d/0x220 [btrfs]
+> [   48.341916]  [<ffffffffa112a5aa>] end_bio_extent_readpage+0x18a/0x910 [btrfs]
+> [   48.361353]  [<ffffffffa10f5307>] end_workqueue_fn+0x27/0x40 [btrfs]
+> [   48.367720]  [<ffffffffa113a496>] btrfs_worker_helper+0xc6/0x390 [btrfs]
+> [   48.380179]  [<ffffffffa113a7c9>] btrfs_endio_meta_helper+0x9/0x10 [btrfs]
+> [   48.392638]  [<ffffffffa113a7c0>] ? btrfs_endio_helper+0x10/0x10 [btrfs]
+> [   48.453716] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   48.592300] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   48.978477] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   48.994980] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   49.010905] BTRFS error (device dm-3): failed to read block groups: -5
+> [   49.034464] BTRFS: open_ctree failed
+> [   49.140834] BTRFS info (device dm-3): enabling auto syno reclaim space
+> [   49.147366] BTRFS info (device dm-3): use ssd allocation scheme
+> [   49.153289] BTRFS info (device dm-3): using free block group cache tree
+> [   49.159907] BTRFS info (device dm-3): has skinny extents
+> [   49.641488] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   49.780327] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   50.166612] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   50.183130] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   50.321970] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   50.709391] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   50.725846] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   50.741774] BTRFS error (device dm-3): failed to read block groups: -5
+> [   50.764722] BTRFS: open_ctree failed
+> [   50.788040] BTRFS info (device dm-3): enabling auto syno reclaim space
+> [   50.794578] BTRFS info (device dm-3): use ssd allocation scheme
+> [   50.800503] BTRFS info (device dm-3): using free block group cache tree
+> [   50.807119] BTRFS info (device dm-3): has skinny extents
+> [   50.974290] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   51.112924] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   51.500803] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   51.517251] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   51.656495] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   52.042224] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   52.058747] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> [   52.074674] BTRFS error (device dm-3): failed to read block groups: -5
+> [   52.096755] BTRFS: open_ctree failed
+> [   52.125295] BTRFS info (device dm-3): enabling auto syno reclaim space
+> [   52.131839] BTRFS info (device dm-3): use ssd allocation scheme
+> [   52.137776] BTRFS info (device dm-3): disabling log replay at mount time
+> [   52.144477] BTRFS info (device dm-3): using free block group cache tree
+> [   52.151090] BTRFS info (device dm-3): has skinny extents
+> [   52.160941] BTRFS error (device dm-3): qgroup generation mismatch, marked as inconsistent
+> [   52.169325] BTRFS error (device dm-3): set inconsistent
+> [   52.360887] BTRFS info (device dm-3): BTRFS: root of syno feature tree is null
+> [   52.368318] BTRFS warning (device dm-3): Failed to generation mismatch for syno usage
+> [  241.442261] BTRFS error (device dm-3): no_block_group must be used with ro mount option
+> [  280.060783] BTRFS info (device dm-4): using free space tree
+> [  280.066365] BTRFS info (device dm-4): using free block group cache tree
+> 
+> 
+> This is the /var/log/kern.log
+> 
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.564148] WARNING: CPU: 0 PID: 11955 at fs/btrfs/disk-io.c:3314 open_ctree+0x2fc3/0x3350 [btrfs]()
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.573288] Modules linked in: btrfs ecryptfs zstd_decompress zstd_compress xxhash raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq leds_lp3943 aesni_intel glue_helper lrw gf128mul openvswitch zram gre ablk_helper nf_defrag_ipv6 bnxt_en(O) nf_conntrack v1000_synobios(PO) hid_generic usbhid hid usblp adt7475 hwmon_vid etxhci_hcd usb_storage bnx2x(O) mdio qede(O) qed(O) mlx5_core(O) mlx4_en(O) mlx4_core(O) mlx_compat(O) atlantic_v2(O) atlantic(O) r8168(O) i40e(O) ixgbe(O) amd_xgbe marvell10g sg dm_snapshot dm_bufio crc_itu_t crc_ccitt psnap p8022 llc hfsplus md4 hmac sit tunnel4 ipv6 flashcache_syno(O) flashcache(O) syno_flashcache_control(O) dm_mod arc4 crc32c_intel cryptd ecb aes_x86_64 authenc des_generic ansi_cprng cts md5 cbc cpufreq_powersave cpufreq_performance
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.723067]  [<ffffffffa10fe4d3>] open_ctree+0x2fc3/0x3350 [btrfs]
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.729255]  [<ffffffffa10ca642>] btrfs_mount+0xaf2/0xc60 [btrfs]
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.763310]  [<ffffffffa10c9ce9>] btrfs_mount+0x199/0xc60 [btrfs]
+> 2023-04-17T12:01:06+02:00 Windhoek kernel: [   47.621353] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:06+02:00 Windhoek kernel: [   47.760094] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.146261] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.166801] WARNING: CPU: 5 PID: 4188 at fs/btrfs/disk-io.c:924 btree_io_failed_hook+0x12d/0x220 [btrfs]()
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.176452] Modules linked in: synoacl_vfs(PO) btrfs ecryptfs zstd_decompress zstd_compress xxhash raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq leds_lp3943 aesni_intel glue_helper lrw gf128mul openvswitch zram gre ablk_helper nf_defrag_ipv6 bnxt_en(O) nf_conntrack v1000_synobios(PO) hid_generic usbhid hid usblp adt7475 hwmon_vid etxhci_hcd usb_storage bnx2x(O) mdio qede(O) qed(O) mlx5_core(O) mlx4_en(O) mlx4_core(O) mlx_compat(O) atlantic_v2(O) atlantic(O) r8168(O) i40e(O) ixgbe(O) amd_xgbe marvell10g sg dm_snapshot dm_bufio crc_itu_t crc_ccitt psnap p8022 llc hfsplus md4 hmac sit tunnel4 ipv6 flashcache_syno(O) flashcache(O) syno_flashcache_control(O) dm_mod arc4 crc32c_intel cryptd ecb aes_x86_64 authenc des_generic ansi_cprng cts md5 cbc cpufreq_powersave cpufreq_performance
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.286469] Workqueue: btrfs-endio-meta btrfs_endio_meta_helper [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.335031]  [<ffffffffa10f694d>] btree_io_failed_hook+0x12d/0x220 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.341916]  [<ffffffffa112a5aa>] end_bio_extent_readpage+0x18a/0x910 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.361353]  [<ffffffffa10f5307>] end_workqueue_fn+0x27/0x40 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.367720]  [<ffffffffa113a496>] btrfs_worker_helper+0xc6/0x390 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.380179]  [<ffffffffa113a7c9>] btrfs_endio_meta_helper+0x9/0x10 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.392638]  [<ffffffffa113a7c0>] ? btrfs_endio_helper+0x10/0x10 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.453716] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.592300] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.978477] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.994980] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   49.010905] BTRFS error (device dm-3): failed to read block groups: -5
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   49.034464] BTRFS: open_ctree failed
+> 2023-04-17T12:01:08+02:00 Windhoek kernel: [   49.641488] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:08+02:00 Windhoek kernel: [   49.780327] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.166612] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.183130] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.321970] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.709391] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.725846] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.741774] BTRFS error (device dm-3): failed to read block groups: -5
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.764722] BTRFS: open_ctree failed
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.974290] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.112924] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.500803] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.517251] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.656495] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   52.042224] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   52.058747] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.074674] BTRFS error (device dm-3): failed to read block groups: -5
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.096755] BTRFS: open_ctree failed
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.160941] BTRFS error (device dm-3): qgroup generation mismatch, marked as inconsistent
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.169325] BTRFS error (device dm-3): set inconsistent
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.368318] BTRFS warning (device dm-3): Failed to generation mismatch for syno usage
+> 2023-04-17T12:04:21+02:00 Windhoek kernel: [  241.442261] BTRFS error (device dm-3): no_block_group must be used with ro mount option
+> 
+> And the /var/log/messages
+> 
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_eb_miss
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_meta_write_pages
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_data_write_pages
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/write_fua
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/volume_eb_miss
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/volume_meta_write_pages
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/volume_data_write_pages
+> 2023-04-17T11:17:51+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/write_fua
+> 2023-04-17T11:18:01+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_eb_miss
+> 2023-04-17T11:18:01+02:00 Windhoek synostgd-volume[12576]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_meta_write_pages
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.564148] WARNING: CPU: 0 PID: 11955 at fs/btrfs/disk-io.c:3314 open_ctree+0x2fc3/0x3350 [btrfs]()
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.573288] Modules linked in: btrfs ecryptfs zstd_decompress zstd_compress xxhash raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq leds_lp3943 aesni_intel glue_helper lrw gf128mul openvswitch zram gre ablk_helper nf_defrag_ipv6 bnxt_en(O) nf_conntrack v1000_synobios(PO) hid_generic usbhid hid usblp adt7475 hwmon_vid etxhci_hcd usb_storage bnx2x(O) mdio qede(O) qed(O) mlx5_core(O) mlx4_en(O) mlx4_core(O) mlx_compat(O) atlantic_v2(O) atlantic(O) r8168(O) i40e(O) ixgbe(O) amd_xgbe marvell10g sg dm_snapshot dm_bufio crc_itu_t crc_ccitt psnap p8022 llc hfsplus md4 hmac sit tunnel4 ipv6 flashcache_syno(O) flashcache(O) syno_flashcache_control(O) dm_mod arc4 crc32c_intel cryptd ecb aes_x86_64 authenc des_generic ansi_cprng cts md5 cbc cpufreq_powersave cpufreq_performance
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.723067]  [<ffffffffa10fe4d3>] open_ctree+0x2fc3/0x3350 [btrfs]
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.729255]  [<ffffffffa10ca642>] btrfs_mount+0xaf2/0xc60 [btrfs]
+> 2023-04-17T12:01:05+02:00 Windhoek kernel: [   46.763310]  [<ffffffffa10c9ce9>] btrfs_mount+0x199/0xc60 [btrfs]
+> 2023-04-17T12:01:06+02:00 Windhoek kernel: [   47.621353] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:06+02:00 Windhoek kernel: [   47.760094] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.146261] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.166801] WARNING: CPU: 5 PID: 4188 at fs/btrfs/disk-io.c:924 btree_io_failed_hook+0x12d/0x220 [btrfs]()
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.176452] Modules linked in: synoacl_vfs(PO) btrfs ecryptfs zstd_decompress zstd_compress xxhash raid456 async_raid6_recov async_memcpy async_pq async_xor xor async_tx raid6_pq leds_lp3943 aesni_intel glue_helper lrw gf128mul openvswitch zram gre ablk_helper nf_defrag_ipv6 bnxt_en(O) nf_conntrack v1000_synobios(PO) hid_generic usbhid hid usblp adt7475 hwmon_vid etxhci_hcd usb_storage bnx2x(O) mdio qede(O) qed(O) mlx5_core(O) mlx4_en(O) mlx4_core(O) mlx_compat(O) atlantic_v2(O) atlantic(O) r8168(O) i40e(O) ixgbe(O) amd_xgbe marvell10g sg dm_snapshot dm_bufio crc_itu_t crc_ccitt psnap p8022 llc hfsplus md4 hmac sit tunnel4 ipv6 flashcache_syno(O) flashcache(O) syno_flashcache_control(O) dm_mod arc4 crc32c_intel cryptd ecb aes_x86_64 authenc des_generic ansi_cprng cts md5 cbc cpufreq_powersave cpufreq_performance
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.286469] Workqueue: btrfs-endio-meta btrfs_endio_meta_helper [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.335031]  [<ffffffffa10f694d>] btree_io_failed_hook+0x12d/0x220 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.341916]  [<ffffffffa112a5aa>] end_bio_extent_readpage+0x18a/0x910 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.361353]  [<ffffffffa10f5307>] end_workqueue_fn+0x27/0x40 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.367720]  [<ffffffffa113a496>] btrfs_worker_helper+0xc6/0x390 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.380179]  [<ffffffffa113a7c9>] btrfs_endio_meta_helper+0x9/0x10 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.392638]  [<ffffffffa113a7c0>] ? btrfs_endio_helper+0x10/0x10 [btrfs]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.453716] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.592300] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.978477] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   48.994980] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   49.010905] BTRFS error (device dm-3): failed to read block groups: -5
+> 2023-04-17T12:01:07+02:00 Windhoek spacetool[11954]: volume_mount.c:69 Fail to do [/bin/mount -t btrfs -o auto_reclaim_space,ssd,synoacl,relatime,nodev /dev/mapper/cachedev_0 /volume1]
+> 2023-04-17T12:01:07+02:00 Windhoek kernel: [   49.034464] BTRFS: open_ctree failed
+> 2023-04-17T12:01:08+02:00 Windhoek kernel: [   49.641488] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:08+02:00 Windhoek kernel: [   49.780327] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.166612] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.183130] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.321970] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.709391] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.725846] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.741774] BTRFS error (device dm-3): failed to read block groups: -5
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.764722] BTRFS: open_ctree failed
+> 2023-04-17T12:01:09+02:00 Windhoek spacetool[12254]: volume_mount.c:69 Fail to do [/bin/mount -t btrfs -o auto_reclaim_space,ssd,synoacl,relatime,nodev, /dev/mapper/cachedev_0 /volume1]
+> 2023-04-17T12:01:09+02:00 Windhoek kernel: [   50.974290] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.112924] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.500803] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.517251] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   51.656495] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   52.042224] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:10+02:00 Windhoek kernel: [   52.058747] BTRFS critical (device dm-3): corrupt leaf: block=11054295220224 slot=76 extent bytenr=9957296721920 len=589824 invalid generation, have 4306501632 expect (0, 240743]
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.074674] BTRFS error (device dm-3): failed to read block groups: -5
+> 2023-04-17T12:01:11+02:00 Windhoek spacetool[12574]: volume_mount.c:69 Fail to do [/bin/mount -t btrfs -o auto_reclaim_space,ssd,synoacl,relatime,nodev,drop_log_tree /dev/mapper/cachedev_0 /volume1]
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.096755] BTRFS: open_ctree failed
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.160941] BTRFS error (device dm-3): qgroup generation mismatch, marked as inconsistent
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.169325] BTRFS error (device dm-3): set inconsistent
+> 2023-04-17T12:01:11+02:00 Windhoek kernel: [   52.368318] BTRFS warning (device dm-3): Failed to generation mismatch for syno usage
+> 2023-04-17T12:01:12+02:00 Windhoek synobtrfssnap[13112]: fs_btrfs_snapshot_count.c:276 Failed to setxattr on /volume1, name: user.snapcount, value: 1, strerror: Read-only file system
+> 2023-04-17T12:01:12+02:00 Windhoek synobtrfssnap[13112]: fs_btrfs_snapshot_count.c:453 Fail to set Btrfs snap count of [/volume1] to 1.[0x0000 volume_mount_vol_info_enum.c:29]
+> 2023-04-17T12:04:21+02:00 Windhoek kernel: [  241.442261] BTRFS error (device dm-3): no_block_group must be used with ro mount option
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_eb_miss
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_meta_write_pages
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_data_write_pages
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/write_fua
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/volume_eb_miss
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/volume_meta_write_pages
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/volume_data_write_pages
+> 2023-04-17T12:05:04+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/1a33aa07-a170-4cd9-ba2a-c3d8e2314088/write_fua
+> 2023-04-17T12:05:14+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_eb_miss
+> 2023-04-17T12:05:14+02:00 Windhoek synostgd-volume[13227]: Failed to fopen /sys/kernel/debug/btrfs/c14c923f-2038-4841-aa89-504f1044d3be/volume_meta_write_pages
+> 
+> 
+> Thanks and best
+> Otto
+> 
+> 
+>>
+> 
+>> Thanks,
+>> Qu
+>>
+> 
+>>> Thanks and best
+>>> Otto
+>>>
+> 
+>>>> If it doesn't work, go the rebuild as planned.
+>>>> But if it works, you saved a lot of time and should be able to use the
+>>>> fs without any problem (as long as btrfs check --readonly returns no error).
+>>>> <snip>

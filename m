@@ -2,237 +2,185 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D84AEC77B72
-	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Apr 2023 09:50:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 16187C77B70
+	for <linux-btrfs@archiver.kernel.org>; Mon, 17 Apr 2023 10:30:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231230AbjDQJup (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Apr 2023 05:50:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49174 "EHLO
+        id S230045AbjDQKan (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Apr 2023 06:30:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33732 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231235AbjDQJu3 (ORCPT
+        with ESMTP id S229854AbjDQKam (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2023 05:50:29 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5ECC193E0
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 02:49:24 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Mon, 17 Apr 2023 06:30:42 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1623B1FC3
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 03:29:59 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 665251F38D;
-        Mon, 17 Apr 2023 09:48:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1681724909; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=8OcPHwMiVu67a3dEQn2ZtslAhkS+2aL8o3z7nkRzRz4=;
-        b=uS0dWWUY4KZWYRV5o1I9BmYAbXEW/F4Xb0K29cuzoePOrzB329XUb6Qajy7YRV8qh70uOT
-        VhrK8Z9I0Aov28IH2HN3tytu57a+HiI7gdYbsJUuMFy3UOASTKsWOesvgQrzckyDEAYGzC
-        nvD46+MsPNVIumcXo3E8VpdRyLW/M3M=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3F1DA13319;
-        Mon, 17 Apr 2023 09:48:28 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 04zvAewVPWQPbwAAMHmgww
-        (envelope-from <wqu@suse.com>); Mon, 17 Apr 2023 09:48:28 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Cc:     Torstein Eide <torsteine@gmail.com>
-Subject: [PATCH] btrfs-progs: logical-resolve: fix the subvolume path resolution
-Date:   Mon, 17 Apr 2023 17:48:10 +0800
-Message-Id: <20230417094810.42214-1-wqu@suse.com>
-X-Mailer: git-send-email 2.39.2
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C7738621E5
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 10:19:23 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 39609C4339B
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 10:19:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1681726763;
+        bh=zntXQSrKzFvgi9ovtqjUXbDn5f/IEiOR0XbFZR4xORs=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=g9rviCHG3ALoiCqt6oddUQCZcpDsBWQGYTL00hJkoNFoS8GlYS/tvhdXBXEAXX8Y1
+         8gYkavBwf5JeyOXe6vt5Be7zz/vxjGVFKVvSCRIepPUeeh4CYhDlcEeLkKzCWvF/cm
+         W2dC6cWiyR194bVW8FSXRTRPkAoT6zEZ858pD4hsb5HMtqGvZ2wqdNLs6DXGz1dQyG
+         GYJ+yB0uCUYRuOn3Pv1ynZ6zYpZvUspb1NOQuneeQ0nFOJjvvrr43ShEkTw9NGarYW
+         hd2DeIfpdtlPOBwx8DzCb66o1mWvTd9P3Ge7zml6ROvql7VeY4YuJVf4QNDjtHaCe+
+         QLZAIaCCeOHGg==
+Received: by mail-oo1-f51.google.com with SMTP id e24-20020a4ae0d8000000b0054101f316c7so566596oot.13
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 03:19:23 -0700 (PDT)
+X-Gm-Message-State: AAQBX9cNVoqeKWSKUMePtt2dhb4LNsUbDRLSAcHhXNbMG1fuv0/VAjvy
+        eSS9MEn8HdNu+5tjghzE0qJxZZG8l+Eau017FSk=
+X-Google-Smtp-Source: AKy350aib9v9v8JO/H48+52dtcKSciFeqVY+Usf/hFnEUrrW/9Z5qdmpN5DYrlpgShKhppOcD03zp0Irtz9du6Gu2eg=
+X-Received: by 2002:a05:6820:1aa0:b0:546:e85c:8bba with SMTP id
+ bt32-20020a0568201aa000b00546e85c8bbamr354926oob.1.1681726762352; Mon, 17 Apr
+ 2023 03:19:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <e6eaa082d536fc5223eae4627bc7dc6369e257d9.1681295111.git.fdmanana@suse.com>
+ <20230414035734.6DF7.409509F4@e16-tech.com> <20230414114340.57ED.409509F4@e16-tech.com>
+In-Reply-To: <20230414114340.57ED.409509F4@e16-tech.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Mon, 17 Apr 2023 11:18:46 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6CoXvJGdf9Af4qQPyhwP-3gDPDOLNtK3YWqw1HV28rHw@mail.gmail.com>
+Message-ID: <CAL3q7H6CoXvJGdf9Af4qQPyhwP-3gDPDOLNtK3YWqw1HV28rHw@mail.gmail.com>
+Subject: Re: [PATCH 1/2] btrfs: fix btrfs_prev_leaf() to not return the same
+ key twice
+To:     Wang Yugui <wangyugui@e16-tech.com>
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-There is a bug report that "btrfs inspect logical-resolve" can not even
-handle any file inside non-top-level subvolumes:
+On Fri, Apr 14, 2023 at 4:44=E2=80=AFAM Wang Yugui <wangyugui@e16-tech.com>=
+ wrote:
+>
+> Hi,
+>
+> > Hi,
+> >
+> > > From: Filipe Manana <fdmanana@suse.com>
+> > >
+> > > A call to btrfs_prev_leaf() may end up returning a path that points t=
+o the
+> > > same item (key) again. This happens if while btrfs_prev_leaf(), after=
+ we
+> > > release the path, a concurrent insertion happens, which moves items o=
+ff
+> > > from a sibbling into the front of the previous leaf, and an item with=
+ the
+> > > computed previous key does not exists.
+> > >
+> > > For example, suppose we have the two following leaves:
+> > >
+> > >   Leaf A
+> > >
+> > >   -------------------------------------------------------------
+> > >   | ...   key (300 96 10)   key (300 96 15)   key (300 96 16) |
+> > >   -------------------------------------------------------------
+> > >               slot 20             slot 21             slot 22
+> > >
+> > >   Leaf B
+> > >
+> > >   -------------------------------------------------------------
+> > >   | key (300 96 20)   key (300 96 21)   key (300 96 22)   ... |
+> > >   -------------------------------------------------------------
+> > >       slot 0             slot 1             slot 2
+> > >
+> > > If we call btrfs_prev_leaf(), from btrfs_previous_item() for example,=
+ with
+> > > a path pointing to leaf B and slot 0 and the following happens:
+> > >
+> > > 1) At btrfs_prev_leaf() we compute the previous key to search as:
+> > >    (300 96 19), which is a key that does not exists in the tree;
+> > >
+> > > 2) Then we call btrfs_release_path() at btrfs_prev_leaf();
+> > >
+> > > 3) Some other task inserts a key at leaf A, that sorts before the key=
+ at
+> > >    slot 20, for example it has an objectid of 299. In order to make r=
+oom
+> > >    for the new key, the key at slot 22 is moved to the front of leaf =
+B.
+> > >    This happens at push_leaf_right(), called from split_leaf().
+> > >
+> > >    After this leaf B now looks like:
+> > >
+> > >   -------------------------------------------------------------------=
+-------------
+> > >   | key (300 96 16)    key (300 96 20)   key (300 96 21)   key (300 9=
+6 22)   ... |
+> > >   -------------------------------------------------------------------=
+-------------
+> > >        slot 0              slot 1             slot 2             slot=
+ 3
+> > >
+> > > 4) At btrfs_prev_leaf() we call btrfs_search_slot() for the computed
+> > >    previous key: (300 96 19). Since the key does not exists,
+> > >    btrfs_search_slot() returns 1 and with a path pointing to leaf B
+> > >    and slot 1, the item with key (300 96 20);
+> > >
+> > > 5) This makes btrfs_prev_leaf() return a path that points to slot 1 o=
+f
+> > >    leaf B, the same key as before it was called, since the key at slo=
+t 0
+> > >    of leaf B (300 96 16) is less than the computed previous key, whic=
+h is
+> > >    (300 96 19);
+> > >
+> > > 6) As a consequence btrfs_previous_item() returns a path that points =
+again
+> > >    to the item with key (300 96 20).
+> > >
+> > > For some users of btrfs_prev_leaf() or btrfs_previous_item() this may=
+ not
+> > > be functional a problem, despite not making sense to return a new pat=
+h
+> > > pointing again to the same item/key. However for a caller such as
+> > > tree-log.c:log_dir_items(), this has a bad consequence, as it can res=
+ult
+> > > in not logging some dir index deletions in case the directory is bein=
+g
+> > > logged without holding the inode's VFS lock (logging triggered while
+> > > logging a child inode for example) - for the example scenario above, =
+in
+> > > case the dir index keys 17, 18 and 19 were deleted in the current
+> > > transaction.
+> >
+> > fstests(btrfs/080) had few frequency(<1/10) to fail after this pacth is=
+ applied.
+> > but it is yet not clear enough.
+> >
+> > # cat results//btrfs/080.out.bad
+> > QA output created by 080
+> > Unexpected digest for file /mnt/scratch/20_40_30_986878191_snap/foobar_=
+63
+> > (see /usr/hpc-bio/xfstests/results//btrfs/080.full for details)
+>
+> fstests(btrfs/080) failure happened without this patch too.
+>
+> the next info update may take some long time, because of the low reproduc=
+e
+> frequency.
 
- # mkfs.btrfs $dev
- # mount $dev $mnt
- # btrfs subvol create $mnt/subv1
- # xfs_io -f -c "pwrite 0 16k" $mnt/subv1/file
- # sync
- # btrfs inspect logical-resolve 13631488 $mnt
- inode 257 subvol subv1 could not be accessed: not mounted
+That test sporadically fails without the patch yes.
 
-This means the command "btrfs inspect logical-resolve" is almost useless
-for resolving logical bytenr to files.
+Also, more important: the test does not exercise at all the function
+changed by this patch.
+So you can save time and skip doing that pointless info update on
+frequency failure...
 
-[CAUSE]
-"btrfs inspect logical-resolve" firstly resolve the logical bytenr to
-root/ino pairs, then call btrfs_subvolid_resolve() to resolve the path
-to the subvolume.
+Thanks.
 
-Then to handle cases where the subvolume is already mounted somewhere
-else, we call find_mount_fsroot().
-
-But if that target subvolume is not yet mounted, we just error out, even
-if the @path is the top-level subvolume, and we have already know the
-path to the subvolume.
-
-[FIX]
-Instead of doing unnecessary subvolume mount point check, just require
-the @path to be the mount point of the top-level subvolume.
-
-So that we can access all subvolumes without mounting each one.
-
-Now the command works as expected:
-
- # ./btrfs inspect logical-resolve 13631488 $mnt
- /mnt/btrfs/subv1/file
-
-And since we're changing the behavior of "logical-resolve" (to a more
-user-friendly one), we have to update the test case misc/042 to reflect
-that.
-
-Reported-by: Torstein Eide <torsteine@gmail.com>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- Documentation/btrfs-inspect-internal.rst      |  3 ++
- cmds/inspect.c                                | 54 ++++++++-----------
- .../test.sh                                   | 25 ---------
- 3 files changed, 24 insertions(+), 58 deletions(-)
-
-diff --git a/Documentation/btrfs-inspect-internal.rst b/Documentation/btrfs-inspect-internal.rst
-index 4265fab6..69da468a 100644
---- a/Documentation/btrfs-inspect-internal.rst
-+++ b/Documentation/btrfs-inspect-internal.rst
-@@ -149,6 +149,9 @@ logical-resolve [-Pvo] [-s <bufsize>] <logical> <path>
- 
-         resolve paths to all files at given *logical* address in the linear filesystem space
- 
-+        User should make sure *path* is the mount point of the top-level
-+        subvolume (subvolid 5).
-+
-         ``Options``
- 
-         -P
-diff --git a/cmds/inspect.c b/cmds/inspect.c
-index 20f433b9..dc0e587f 100644
---- a/cmds/inspect.c
-+++ b/cmds/inspect.c
-@@ -158,6 +158,9 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 	int ret;
- 	int fd;
- 	int i;
-+	const char *top_subvol = "/";
-+	const char *top_subvolid = "5";
-+	char *mounted = NULL;
- 	bool getpath = true;
- 	int bytes_left;
- 	struct btrfs_ioctl_logical_ino_args loi = { 0 };
-@@ -216,6 +219,23 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 		goto out;
- 	}
- 
-+	/*
-+	 * For logical-resolve, we want the mount point to be top level
-+	 * subvolume (5), so that we can access all subvolumes.
-+	 */
-+	ret = find_mount_fsroot(top_subvol, top_subvolid, &mounted);
-+	if (ret) {
-+		error("failed to parse mountinfo");
-+		goto out;
-+	}
-+	if (!mounted) {
-+		ret = -ENOENT;
-+		error("mount point \"%s\" is not the top-level subvolume",
-+		      argv[optind + 1]);
-+		goto out;
-+	}
-+	free(mounted);
-+
- 	ret = ioctl(fd, request, &loi);
- 	if (ret < 0) {
- 		error("logical ino ioctl: %m");
-@@ -258,39 +278,7 @@ static int cmd_inspect_logical_resolve(const struct cmd_struct *cmd,
- 				path_fd = fd;
- 				strncpy(mount_path, full_path, PATH_MAX);
- 			} else {
--				char *mounted = NULL;
--				char subvol[PATH_MAX];
--				char subvolid[PATH_MAX];
--
--				/*
--				 * btrfs_subvolid_resolve returns the full
--				 * path to the subvolume pointed by root, but the
--				 * subvolume can be mounted in a directory name
--				 * different from the subvolume name. In this
--				 * case we need to find the correct mount point
--				 * using same subvolume path and subvol id found
--				 * before.
--				 */
--
--				snprintf(subvol, PATH_MAX, "/%s", name);
--				snprintf(subvolid, PATH_MAX, "%llu", root);
--
--				ret = find_mount_fsroot(subvol, subvolid, &mounted);
--
--				if (ret) {
--					error("failed to parse mountinfo");
--					goto out;
--				}
--
--				if (!mounted) {
--					printf(
--			"inode %llu subvol %s could not be accessed: not mounted\n",
--						inum, name);
--					continue;
--				}
--
--				strncpy(mount_path, mounted, PATH_MAX);
--				free(mounted);
-+				snprintf(mount_path, PATH_MAX, "%s%s", full_path, name);
- 
- 				path_fd = btrfs_open_dir(mount_path, &dirs, 1);
- 				if (path_fd < 0) {
-diff --git a/tests/misc-tests/042-inspect-internal-logical-resolve/test.sh b/tests/misc-tests/042-inspect-internal-logical-resolve/test.sh
-index 2ba7331e..d20d5f74 100755
---- a/tests/misc-tests/042-inspect-internal-logical-resolve/test.sh
-+++ b/tests/misc-tests/042-inspect-internal-logical-resolve/test.sh
-@@ -51,34 +51,9 @@ run_check $SUDO_HELPER "$TOP/btrfs" subvolume snapshot "$TEST_MNT/@/vol1/subvol1
- 
- run_check "$TOP/btrfs" filesystem sync "$TEST_MNT"
- 
--run_check_umount_test_dev
--
--run_check $SUDO_HELPER mount -o subvol=/@/vol1 "$TEST_DEV" "$TEST_MNT"
--# Create a bind mount to vol1. logical-resolve should avoid bind mounts,
--# otherwise the test will fail
--run_check $SUDO_HELPER mkdir -p "$TEST_MNT/dir"
--run_check mkdir -p mnt2
--run_check $SUDO_HELPER mount --bind "$TEST_MNT/dir" mnt2
--# Create another bind mount to confuse logical-resolve even more.
--# logical-resolve can return the original mount or mnt3, both are valid
--run_check mkdir -p mnt3
--run_check $SUDO_HELPER mount --bind "$TEST_MNT" mnt3
--
- for offset in $("$TOP/btrfs" inspect-internal dump-tree -t "$vol1id" "$TEST_DEV" |
- 		awk '/disk byte/ { print $5 }'); do
- 	check_logical_offset_filename "$offset"
- done
- 
--run_check_umount_test_dev mnt3
--run_check rmdir -- mnt3
--run_check_umount_test_dev mnt2
--run_check rmdir -- mnt2
--run_check_umount_test_dev
--
--run_check $SUDO_HELPER mount -o subvol="/@/vol1/subvol1" "$TEST_DEV" "$TEST_MNT"
--for offset in $("$TOP/btrfs" inspect-internal dump-tree -t "$subvol1id" "$TEST_DEV" |
--		awk '/disk byte/ { print $5 }'); do
--	check_logical_offset_filename "$offset"
--done
--
- run_check_umount_test_dev
--- 
-2.39.0
-
+>
+> Best Regards
+> Wang Yugui (wangyugui@e16-tech.com)
+> 2023/04/14
+>
+>

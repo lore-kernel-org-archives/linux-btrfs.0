@@ -2,370 +2,157 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02E72C77B75
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Apr 2023 01:16:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CFFA9C77B75
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Apr 2023 01:18:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229685AbjDRBQJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 17 Apr 2023 21:16:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40638 "EHLO
+        id S229963AbjDRBSR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 17 Apr 2023 21:18:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42204 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229524AbjDRBQI (ORCPT
+        with ESMTP id S229510AbjDRBSQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 17 Apr 2023 21:16:08 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E17E43C0D
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 18:16:06 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id D59591F8AF
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2023 01:16:04 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1681780564; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=RnWAYDe0CPdysihH8Obin3tMHse+eUJ3jzHf5FTmSKQ=;
-        b=sPb6V3TGk70xLqG7pGw92TNkfGYKarobsFqvRzbXcTGwWUVlU9ENW/4koMUZnbOPA5osFW
-        Cq+Oqc0pt1lNbbnBnW0Vv9tmUvwn5I6XrBvALll4G/+NWoeL9shC+3JWadzZxcyvxAfyVm
-        Dq3vIkbSJ1RUrG1sNbKWOENHME0pqqA=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 41B8413319
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2023 01:16:04 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id uWhLBFTvPWQRQgAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Apr 2023 01:16:04 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: output affected files when relocation failed
-Date:   Tue, 18 Apr 2023 09:15:46 +0800
-Message-Id: <aa446804b679949a1bd77e653a205408af43048e.1681780522.git.wqu@suse.com>
-X-Mailer: git-send-email 2.39.2
+        Mon, 17 Apr 2023 21:18:16 -0400
+Received: from nautica.notk.org (ipv6.notk.org [IPv6:2001:41d0:1:7a93::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E70B75275
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 18:17:57 -0700 (PDT)
+Received: by nautica.notk.org (Postfix, from userid 108)
+        id E88BCC01E; Tue, 18 Apr 2023 03:17:55 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=codewreck.org; s=2;
+        t=1681780675; bh=PkmCiQrLL96YjUanWM39Rl4r3Fvd3m+dxKjvFbXSGJY=;
+        h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+        b=x0wQjItY1a08pEs/jBZdRfoK+1LmesvgY+fHTuktkpy2HL5g7J30l5U/aqnL4pt3U
+         9DtY7Vln7MSBkGMAJmgKxd4gBD/GlTYpLSQKO/GlLiozEXEzQtY1PviakRK/KUgBop
+         fQZVJC+36bEucdUjClJaw6BwyqQEjUD9pCsJ6jGs3ZFbWxcNJUuJVqHg20lWXEH100
+         y8cXEwsW7WVbO0z5TQQ/4i9SNX87NnghlEy74SnXIPIi9mN2efyFkUbqcvcEwL6C/h
+         H8LmkRnng5wSTTUh4h2eGaaLJ1sjLpPW/8kS81W4+LSdw15TYsfUSszq70OB9UYU9w
+         I3pu2oQR+gerg==
+Received: from odin.codewreck.org (localhost [127.0.0.1])
+        by nautica.notk.org (Postfix) with ESMTPS id E621FC01A;
+        Tue, 18 Apr 2023 03:17:52 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=codewreck.org; s=2;
+        t=1681780675; bh=PkmCiQrLL96YjUanWM39Rl4r3Fvd3m+dxKjvFbXSGJY=;
+        h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+        b=x0wQjItY1a08pEs/jBZdRfoK+1LmesvgY+fHTuktkpy2HL5g7J30l5U/aqnL4pt3U
+         9DtY7Vln7MSBkGMAJmgKxd4gBD/GlTYpLSQKO/GlLiozEXEzQtY1PviakRK/KUgBop
+         fQZVJC+36bEucdUjClJaw6BwyqQEjUD9pCsJ6jGs3ZFbWxcNJUuJVqHg20lWXEH100
+         y8cXEwsW7WVbO0z5TQQ/4i9SNX87NnghlEy74SnXIPIi9mN2efyFkUbqcvcEwL6C/h
+         H8LmkRnng5wSTTUh4h2eGaaLJ1sjLpPW/8kS81W4+LSdw15TYsfUSszq70OB9UYU9w
+         I3pu2oQR+gerg==
+Received: from [127.0.0.2] (localhost [::1])
+        by odin.codewreck.org (OpenSMTPD) with ESMTP id f0ea5edb;
+        Tue, 18 Apr 2023 01:17:47 +0000 (UTC)
+From:   Dominique Martinet <asmadeus@codewreck.org>
+Date:   Tue, 18 Apr 2023 10:17:33 +0900
+Subject: [PATCH U-BOOT 1/3] btrfs: fix offset within
+ btrfs_read_extent_reg()
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20230418-btrfs-extent-reads-v1-1-47ba9839f0cc@codewreck.org>
+References: <20230418-btrfs-extent-reads-v1-0-47ba9839f0cc@codewreck.org>
+In-Reply-To: <20230418-btrfs-extent-reads-v1-0-47ba9839f0cc@codewreck.org>
+To:     =?utf-8?q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
+        Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, u-boot@lists.denx.de,
+        Dominique Martinet <dominique.martinet@atmark-techno.com>
+X-Mailer: b4 0.13-dev-f371f
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3027;
+ i=asmadeus@codewreck.org; h=from:subject:message-id;
+ bh=zXCI+2WXL0xQZjXCJ7JbhDsxIxPG1DYINwdsoueMUxk=;
+ b=owEBbQKS/ZANAwAIAatOm+xqmOZwAcsmYgBkPe+7UM3z+mAW/rG27aWAaxpGjZGEF3hH4Zfxl
+ g71s9rxEL+JAjMEAAEIAB0WIQT8g9txgG5a3TOhiE6rTpvsapjmcAUCZD3vuwAKCRCrTpvsapjm
+ cMf0D/991mQmrNQKw1rM7MT3B/m23XBniBrnN6ftSdX1iUTha/gF501CPsboTCiGLwmOBmAGkAn
+ ysmugWIKNY0QWKtDqRILlxu9AeZVs8CDCteu80QcFa/XA8rQV0lpo6lCSgvWw9TmizdW8/kYMAG
+ wzYCGYGvdKX3keBvrT0tlVchsmyh2ep94/jzo3asTdXckSl68O9BMDSnRtu+AtVxuoBG5NsTgfK
+ eUZv9VIvfJljw3yfXYU7Q0yFRgHYmJffnxJXFUW8cKDXHBv/FXlQYx4mni8vEVS06yuxVK3SszL
+ HmThvO/JRVWeuHDlzHKIl3jg1vt4rIk0pwj4p4DINyV+ZTXlnUYHrb3ZWl2GpOU8sryAJo5NlYF
+ 1UKUFAN/fTKYM8e/52qBfswZTq2P+hN+ynuzZq0AHwuuokCX1v83E5yxHGUZDosslhyvxWrfNUV
+ ZOl5NOfSUJzLoorCOxi5YEOGHhnKO+cGoag9NDSihTslAypoSoMhKxjWS2iv1YkjqyVAf9MUu+L
+ C5bPlYQSNcjLCv0KBKg9oXctbUZwGjpXs1tTPcCA9RddR6NfRB7CKlNt5klSPzkDSzvtpSKUrnc
+ PTVAFwfxiMfYJl++5kqzhBQbnLDZuxh22tmCSepShGrBMf8YFjI1l9IdArD3eLjFgzQWa6LOo6/
+ x/TMpGnD2Fw5B4g==
+X-Developer-Key: i=asmadeus@codewreck.org; a=openpgp;
+ fpr=B894379F662089525B3FB1B9333F1F391BBBB00A
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[PROBLEM]
-When relocation failed (mostly due to checksum mismatch), we only got
-very cryptic error messages like
+From: Dominique Martinet <dominique.martinet@atmark-techno.com>
 
-  BTRFS info (device dm-4): relocating block group 13631488 flags data
-  BTRFS warning (device dm-4): csum failed root -9 ino 257 off 0 csum 0x373e1ae3 expected csum 0x98757625 mirror 1
-  BTRFS error (device dm-4): bdev /dev/mapper/test-scratch1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-  BTRFS info (device dm-4): balance: ended with status: -5
+btrfs_read_extent_reg correctly computed the extent offset in the
+BTRFS_COMPRESS_NONE case, but did not account for the 'offset - key.offset'
+part correctly in the compressed case, making the function read
+incorrect data.
 
-The end user has to decrypt the above messages and use various tools to
-locate the affected files and find a way to fix the problem (mostly
-deleting the file).
+In the case I examined, the last 4k of a file was corrupted and
+contained data from a few blocks prior:
+btrfs_file_read()
+ -> btrfs_read_extent_reg
+    (aligned part loop from 0x40480000 to 0x40ba0000, 128KB at a time)
+     last read had 0x4000 bytes in extent, but aligned_end - cur limited
+     the read to 0x3000 (offset 0x720000)
+ -> read_and_truncate_page
+   -> btrfs_read_extent_reg
+      reading the last 0x1000 bytes from offset 0x73000 (end of the
+      previous 0x4000) into 0x40ba3000
+      here key.offset = 0x70000 so we need to use it to recover the
+      0x3000 offset.
 
-This is not an easy work even for experienced developer, not to mention
-the end users.
+Confirmed by checking data, before patch:
+u-boot=> mmc load 1:1 $loadaddr boot/uImage
+u-boot=> md 0x40ba0000
+40ba0000: c0232ff8 c0c722cb 030e94be bf10000c    ./#.."..........
+u-boot=> md 0x40ba3000
+40ba3000: c0232ff8 c0c722cb 030e94be bf10000c    ./#.."..........
 
-[SCRUB IS DOING BETTER]
-By contrast, scrub is providing much better error messages:
+After patch (also confirmed with data read from linux):
+u-boot=> md 0x40ba3000
+40ba3000: 64cc9f03 81142256 6910000c 0c03483c    ...dV".....i<H..
 
- BTRFS error (device dm-4): unable to fixup (regular) error at logical 13631488 on dev /dev/mapper/test-scratch1 physical 13631488
- BTRFS warning (device dm-4): checksum error at logical 13631488 on dev /dev/mapper/test-scratch1, physical 13631488, root 5, inode 257, offset 0, length 4096, links 1 (path: file)
- BTRFS info (device dm-4): scrub: finished on devid 1 with status: 0
+Note that the code previously (before commit e3427184f38a ("fs: btrfs:
+Implement btrfs_file_read()")) did not split that read in two, so
+this is a regression.
 
-Which provides the affected files directly to the end user.
-
-[IMPROVEMENT]
-Instead of the generic data checksum error messages, which is not doing
-a good job for data reloc inodes, this patch introduce a scrub like
-backref walking based solution.
-
-When a sector failed its checksum for data reloc inode, we go the
-following workflow:
-
-- Get the real logical bytenr
-  For data reloc inode, the file offset is the offset inside the block
-  group.
-  Thus the real logical bytenr is @file_off + @block_group->start.
-
-- Do an extent type check
-  If it's tree blocks it's much easier to handle, just go through
-  all the tree block backref.
-
-- Do a backref walk and inode path resolution for data extents
-  This is mostly the same as scrub.
-  But unfortunately we can not reuse the same function as the output
-  format is different.
-
-Now the new output would be more user friendly:
-
- BTRFS info (device dm-4): relocating block group 13631488 flags data
- BTRFS warning (device dm-4): csum failed root -9 ino 257 off 0 logical 13631488 csum 0x373e1ae3 expected csum 0x98757625 mirror 1
- BTRFS warning (device dm-4): checksum error at logical 13631488 mirror 1, root 5, inode 257, offset 0, length 4096, links 1 (path: file)
- BTRFS error (device dm-4): bdev /dev/mapper/test-scratch1 errs: wr 0, rd 0, flush 0, corrupt 2, gen 0
- BTRFS info (device dm-4): balance: ended with status: -5
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: a26a6bedafcf ("fs: btrfs: Introduce btrfs_read_extent_inline() and btrfs_read_extent_reg()")
+Signed-off-by: Dominique Martinet <dominique.martinet@atmark-techno.com>
 ---
- fs/btrfs/inode.c      | 186 +++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/relocation.c |  16 ++++
- fs/btrfs/relocation.h |   1 +
- 3 files changed, 202 insertions(+), 1 deletion(-)
+ fs/btrfs/inode.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 57d070025c7a..feb57ac3da84 100644
+index 40025662f250..3d6e39e6544d 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -70,6 +70,7 @@
- #include "verity.h"
- #include "super.h"
- #include "orphan.h"
-+#include "backref.h"
+@@ -443,6 +443,8 @@ int btrfs_read_extent_reg(struct btrfs_path *path,
+ 	       IS_ALIGNED(len, fs_info->sectorsize));
+ 	ASSERT(offset >= key.offset &&
+ 	       offset + len <= key.offset + extent_num_bytes);
++	/* offset is now offset within extent */
++	offset = btrfs_file_extent_offset(leaf, fi) + offset - key.offset;
  
- struct btrfs_iget_args {
- 	u64 ino;
-@@ -100,6 +101,14 @@ struct btrfs_rename_ctx {
- 	u64 index;
- };
+ 	/* Preallocated or hole , fill @dest with zero */
+ 	if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_PREALLOC ||
+@@ -454,9 +456,7 @@ int btrfs_read_extent_reg(struct btrfs_path *path,
+ 	if (btrfs_file_extent_compression(leaf, fi) == BTRFS_COMPRESS_NONE) {
+ 		u64 logical;
  
-+struct data_reloc_warn {
-+	struct btrfs_path path;
-+	struct btrfs_fs_info *fs_info;
-+	u64 extent_item_size;
-+	u64 logical;
-+	int mirror_num;
-+};
-+
- static const struct inode_operations btrfs_dir_inode_operations;
- static const struct inode_operations btrfs_symlink_inode_operations;
- static const struct inode_operations btrfs_special_inode_operations;
-@@ -122,14 +131,189 @@ static struct extent_map *create_io_em(struct btrfs_inode *inode, u64 start,
- 				       u64 ram_bytes, int compress_type,
- 				       int type);
+-		logical = btrfs_file_extent_disk_bytenr(leaf, fi) +
+-			  btrfs_file_extent_offset(leaf, fi) +
+-			  offset - key.offset;
++		logical = btrfs_file_extent_disk_bytenr(leaf, fi) + offset;
+ 		read = len;
  
-+static int data_reloc_print_warning_inode(u64 inum, u64 offset, u64 num_bytes,
-+					  u64 root, void *warn_ctx)
-+{
-+	struct data_reloc_warn *warn = warn_ctx;
-+	struct btrfs_fs_info *fs_info = warn->fs_info;
-+	struct extent_buffer *eb;
-+	struct btrfs_inode_item *inode_item;
-+	struct inode_fs_paths *ipath = NULL;
-+	struct btrfs_root *local_root;
-+	struct btrfs_key key;
-+	unsigned int nofs_flag;
-+	u32 nlink;
-+	int ret;
-+
-+	local_root = btrfs_get_fs_root(fs_info, root, true);
-+	if (IS_ERR(local_root)) {
-+		ret = PTR_ERR(local_root);
-+		goto err;
-+	}
-+
-+	/*
-+	 * this makes the path point to (inum INODE_ITEM ioff)
-+	 */
-+	key.objectid = inum;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, local_root, &key, &warn->path, 0, 0);
-+	if (ret) {
-+		btrfs_put_root(local_root);
-+		btrfs_release_path(&warn->path);
-+		goto err;
-+	}
-+
-+	eb = warn->path.nodes[0];
-+	inode_item = btrfs_item_ptr(eb, warn->path.slots[0],
-+				    struct btrfs_inode_item);
-+	nlink = btrfs_inode_nlink(eb, inode_item);
-+	btrfs_release_path(&warn->path);
-+
-+	nofs_flag = memalloc_nofs_save();
-+	ipath = init_ipath(4096, local_root, &warn->path);
-+	memalloc_nofs_restore(nofs_flag);
-+	if (IS_ERR(ipath)) {
-+		btrfs_put_root(local_root);
-+		ret = PTR_ERR(ipath);
-+		ipath = NULL;
-+		goto err;
-+	}
-+	ret = paths_from_inode(inum, ipath);
-+	if (ret < 0)
-+		goto err;
-+
-+	/*
-+	 * We deliberately ignore the bit ipath might have been too small to
-+	 * hold all of the paths here
-+	 */
-+	for (int i = 0; i < ipath->fspath->elem_cnt; i++)
-+		btrfs_warn_in_rcu(fs_info,
-+"checksum error at logical %llu mirror %u, root %llu, inode %llu, offset %llu, length %u, links %u (path: %s)",
-+				  warn->logical, warn->mirror_num,
-+				  root, inum, offset,
-+				  fs_info->sectorsize, nlink,
-+				  (char *)(unsigned long)ipath->fspath->val[i]);
-+
-+	btrfs_put_root(local_root);
-+	free_ipath(ipath);
-+	return 0;
-+
-+err:
-+	btrfs_warn_in_rcu(fs_info,
-+			  "checksum error at logical %llu mirror %u, root %llu, inode %llu offset %llu: path resolving failed with ret=%d",
-+			  warn->logical, warn->mirror_num,
-+			  root, inum, offset, ret);
-+
-+	free_ipath(ipath);
-+	return ret;
-+
-+}
-+
-+/*
-+ * Do extra user-friendly error output (e.g. lookup all the affected files).
-+ *
-+ * Return true if we succeeded doing the backref lookup.
-+ * Return false if such lookup failed, and has to fallback to the old error message.
-+ */
-+static void print_data_reloc_error(struct btrfs_inode *inode, u64 file_off,
-+				   u8 *csum, u8 *csum_expected, int mirror_num)
-+{
-+	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-+	struct btrfs_path path = { 0 };
-+	struct btrfs_key found_key = { 0 };
-+	struct extent_buffer *eb;
-+	struct btrfs_extent_item *ei;
-+	const u32 csum_size = fs_info->csum_size;
-+	u64 logical;
-+	u64 flags;
-+	u32 item_size;
-+	int ret;
-+
-+	mutex_lock(&fs_info->reloc_mutex);
-+	logical = btrfs_get_reloc_bg_bytenr(fs_info);
-+	mutex_unlock(&fs_info->reloc_mutex);
-+
-+	if (logical == U64_MAX) {
-+		btrfs_warn_rl(fs_info, "has data reloc tree but no running relocation");
-+		btrfs_warn_rl(fs_info,
-+"csum failed root %lld ino %lld off %llu csum " CSUM_FMT " expected csum " CSUM_FMT " mirror %d",
-+			inode->root->root_key.objectid, btrfs_ino(inode), file_off,
-+			CSUM_FMT_VALUE(csum_size, csum),
-+			CSUM_FMT_VALUE(csum_size, csum_expected),
-+			mirror_num);
-+		return;
-+	}
-+
-+	logical += file_off;
-+	btrfs_warn_rl(fs_info,
-+"csum failed root %lld ino %llu off %llu logical %llu csum " CSUM_FMT " expected csum " CSUM_FMT " mirror %d",
-+			inode->root->root_key.objectid,
-+			btrfs_ino(inode), file_off, logical,
-+			CSUM_FMT_VALUE(csum_size, csum),
-+			CSUM_FMT_VALUE(csum_size, csum_expected),
-+			mirror_num);
-+
-+	ret = extent_from_logical(fs_info, logical, &path, &found_key, &flags);
-+	if (ret < 0) {
-+		btrfs_err_rl(fs_info, "failed to lookup extent item for logical %llu: %d",
-+			     logical, ret);
-+		return;
-+	}
-+	eb = path.nodes[0];
-+	ei = btrfs_item_ptr(eb, path.slots[0], struct btrfs_extent_item);
-+	item_size = btrfs_item_size(eb, path.slots[0]);
-+	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+		unsigned long ptr = 0;
-+		u64 ref_root;
-+		u8 ref_level;
-+
-+		do {
-+			ret = tree_backref_for_extent(&ptr, eb, &found_key, ei,
-+						      item_size, &ref_root,
-+						      &ref_level);
-+			btrfs_warn_in_rcu(fs_info,
-+"csum error at logical %llu mirror %u: metadata %s (level %d) in tree %llu",
-+				logical, mirror_num,
-+				ref_level ? "node" : "leaf",
-+				ret < 0 ? -1 : ref_level,
-+				ret < 0 ? -1 : ref_root);
-+		} while (ret != 1);
-+		btrfs_release_path(&path);
-+	} else {
-+		struct btrfs_backref_walk_ctx ctx = { 0 };
-+		struct data_reloc_warn reloc_warn = { 0 };
-+
-+		btrfs_release_path(&path);
-+
-+		ctx.bytenr = found_key.objectid;
-+		ctx.extent_item_pos = logical - found_key.objectid;
-+		ctx.fs_info = fs_info;
-+
-+		reloc_warn.logical = logical;
-+		reloc_warn.extent_item_size = found_key.offset;
-+		reloc_warn.mirror_num = mirror_num;
-+		reloc_warn.fs_info = fs_info;
-+
-+		iterate_extent_inodes(&ctx, true,
-+				      data_reloc_print_warning_inode, &reloc_warn);
-+	}
-+}
-+
- static void __cold btrfs_print_data_csum_error(struct btrfs_inode *inode,
- 		u64 logical_start, u8 *csum, u8 *csum_expected, int mirror_num)
- {
- 	struct btrfs_root *root = inode->root;
- 	const u32 csum_size = root->fs_info->csum_size;
- 
--	/* Output without objectid, which is more meaningful */
-+	/* For data reloc tree, it's better doing a backref lookup instead. */
-+	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID)
-+		return print_data_reloc_error(inode, logical_start, csum,
-+					      csum_expected, mirror_num);
-+
- 	if (root->root_key.objectid >= BTRFS_LAST_FREE_OBJECTID) {
-+	/* Output without objectid, which is more meaningful */
- 		btrfs_warn_rl(root->fs_info,
- "csum failed root %lld ino %lld off %llu csum " CSUM_FMT " expected csum " CSUM_FMT " mirror %d",
- 			root->root_key.objectid, btrfs_ino(inode),
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 09b1988d1791..1c74cbe2fc57 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4523,3 +4523,19 @@ int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
- 		ret = clone_backref_node(trans, rc, root, reloc_root);
- 	return ret;
- }
-+
-+/*
-+ * Get the current bytenr for the block group which is being relocated.
-+ *
-+ * Return U64_MAX if no running relocation.
-+ */
-+u64 btrfs_get_reloc_bg_bytenr(struct btrfs_fs_info *fs_info)
-+{
-+	u64 logical = U64_MAX;
-+
-+	lockdep_assert_held(&fs_info->reloc_mutex);
-+
-+	if (fs_info->reloc_ctl && fs_info->reloc_ctl->block_group)
-+		logical = fs_info->reloc_ctl->block_group->start;
-+	return logical;
-+}
-diff --git a/fs/btrfs/relocation.h b/fs/btrfs/relocation.h
-index 2041a86186de..57cbac5c8ddd 100644
---- a/fs/btrfs/relocation.h
-+++ b/fs/btrfs/relocation.h
-@@ -19,5 +19,6 @@ int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
- int btrfs_should_cancel_balance(struct btrfs_fs_info *fs_info);
- struct btrfs_root *find_reloc_root(struct btrfs_fs_info *fs_info, u64 bytenr);
- int btrfs_should_ignore_reloc_root(struct btrfs_root *root);
-+u64 btrfs_get_reloc_bg_bytenr(struct btrfs_fs_info *fs_info);
- 
- #endif
+ 		num_copies = btrfs_num_copies(fs_info, logical, len);
+@@ -511,7 +511,7 @@ int btrfs_read_extent_reg(struct btrfs_path *path,
+ 	if (ret < dsize)
+ 		memset(dbuf + ret, 0, dsize - ret);
+ 	/* Then copy the needed part */
+-	memcpy(dest, dbuf + btrfs_file_extent_offset(leaf, fi), len);
++	memcpy(dest, dbuf + offset, len);
+ 	ret = len;
+ out:
+ 	free(cbuf);
+
 -- 
 2.39.2
 

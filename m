@@ -2,143 +2,169 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FD89C77B71
-	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Apr 2023 05:17:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 296E3C77B71
+	for <linux-btrfs@archiver.kernel.org>; Tue, 18 Apr 2023 06:42:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229862AbjDRFRw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 18 Apr 2023 01:17:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55576 "EHLO
+        id S230401AbjDRGmg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 18 Apr 2023 02:42:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39872 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229685AbjDRFRv (ORCPT
+        with ESMTP id S230123AbjDRGmf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 18 Apr 2023 01:17:51 -0400
-Received: from nautica.notk.org (nautica.notk.org [91.121.71.147])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6CE6E35BE
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 22:17:49 -0700 (PDT)
+        Tue, 18 Apr 2023 02:42:35 -0400
+Received: from nautica.notk.org (ipv6.notk.org [IPv6:2001:41d0:1:7a93::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E83B935BE
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Apr 2023 23:42:32 -0700 (PDT)
 Received: by nautica.notk.org (Postfix, from userid 108)
-        id 08A58C01B; Tue, 18 Apr 2023 07:17:48 +0200 (CEST)
+        id 92309C009; Tue, 18 Apr 2023 08:42:31 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=codewreck.org; s=2;
-        t=1681795068; bh=Ll7vrWHPGhV4iCKnaSu9wq9bgBBNAUSK7/7GVdVe4FU=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=ydmv8KMLuTPo48Tr5yg53+bUT2pGOW/4FOmjPZEiaZ9Dmw5vsOzF9CXp0tW+XC3M4
-         OMbqNm/GFtMkVtwcnduIovwUv3n1PS1NAeN2jGHs1YoicofXsTCilJzq1JXuFNgrBr
-         KZN4BmupJ5MNiQQQarVrfMnIby2u1MQer8O2kui0qWZxFT1NwRcDZ2eogyUZx59TVo
-         18sKrr1Kw1+OaY6N6J9mA0jNog9Ietm+MCfJ1RI6QkZkLsYamRC0x0fuRVL/u8WEN8
-         6J1Cp3XAyu0UyEcGZM3qH9pqcJxX5TPPIICtq+Yd1NPqsKQ9lfLl1x4Ql3KEL/B0jU
-         CARw7Y9U573GQ==
+        t=1681800151; bh=CLoc2nYkGUH0ySh9uuLEtH9C4qapdF3krFLb/C+nEUw=;
+        h=From:Date:Subject:To:Cc:From;
+        b=ETqTMgTsEA0JqaxTG0QYd/J64P6FFIgmKd/oZOGGE5x8pIYPXo73UuA8qMhuTJPh5
+         0AxYaQgCRRMCTZGcX5bc4W9SyHAM2tXW+anRain0EggMh67ENTG2E4YoqQOC9opLDD
+         w5UCVSKvS1w2voehGP/YyIyeAao0VqfJcii6p6UCdkBYJ0LbNQnie06sDfBUpkX/PD
+         hvnGJ9sc2kraCmwq/wBagAxOs2E0MUY10EQb4xt8TLjc2B1VBPOkNlAKpDpUhbQnQV
+         pESvpE8BrL52CS33bSMOQA4K7Ila+pG5T1SI+IdAyexIXr1z20hSPjdVD1/z6g9LEt
+         tba+LVOZ0QSPg==
 Received: from odin.codewreck.org (localhost [127.0.0.1])
-        by nautica.notk.org (Postfix) with ESMTPS id 68338C009;
-        Tue, 18 Apr 2023 07:17:44 +0200 (CEST)
+        by nautica.notk.org (Postfix) with ESMTPS id 36950C009;
+        Tue, 18 Apr 2023 08:42:28 +0200 (CEST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=codewreck.org; s=2;
-        t=1681795066; bh=Ll7vrWHPGhV4iCKnaSu9wq9bgBBNAUSK7/7GVdVe4FU=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=mrJHcHCMeE6bzGVpqaOyLcPboSpCZI+S9JOKMjhbvSkvUCENcVw9+c3WVOCgsXVUM
-         mkv/5hw3Ay4Yq/u8u5dcN/EUzdeUNpT4S6geZdCqoARJvsbXwGBX6L5l07qihf5ds8
-         5nO0UUGyRb7nNWzaVtgeshC74OJyAP2YqKvXZXP1m44/L5tvF37/Ih78hJDTN+GXzW
-         FyZVWXNHvOW7+sllmKnJpEML/Uqr+C9Jo+qEz+1BkqSP1B8fPLihUXqdKgJztmAzVm
-         MgY93Lbrz8S1k21mfu8N6Qq8Zc8Ok/ZMUzWkzAlczk3II6DHdA4wl3vfypdB5nZ+PD
-         nL+H44gHweHsQ==
-Received: from localhost (odin.codewreck.org [local])
-        by odin.codewreck.org (OpenSMTPD) with ESMTPA id bfb086f3;
-        Tue, 18 Apr 2023 05:17:41 +0000 (UTC)
-Date:   Tue, 18 Apr 2023 14:17:26 +0900
+        t=1681800150; bh=CLoc2nYkGUH0ySh9uuLEtH9C4qapdF3krFLb/C+nEUw=;
+        h=From:Date:Subject:To:Cc:From;
+        b=Pfq8PhsQUhqOsluN7TT6XJasPRYHgxGOhUxtgWijQKoRZoMURfI7OMsVhYxvjWpVK
+         /9fU7dH28JdC7lSPRMiDSMp9ZGxQUEOPZc7LKhyiEukUm8ut5kdTx2pOIYBG5NYFPV
+         qk81MD9qPogSLGsnpzBk7iUSN12IR+GqaN8ygwg9M1qBTP2lc6qkPcHIbGEnyYOpbA
+         ZIf2wVEeSQfKmAVfI2Eyr2YQVpBLNVpRvH8snPqCEtwtFvgqP+6bDMZ8muoORDxudL
+         cs1sNpWoGu55AR32aaQokUajB5CLRmGuQUyNaN4BvCxaN2rBRrN+1M9oDjMWPH4pK1
+         kvEnC6TqmZpqQ==
+Received: from [127.0.0.2] (localhost [::1])
+        by odin.codewreck.org (OpenSMTPD) with ESMTP id f040317a;
+        Tue, 18 Apr 2023 06:42:26 +0000 (UTC)
 From:   Dominique Martinet <asmadeus@codewreck.org>
-To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc:     Marek =?utf-8?B?QmVow7pu?= <kabel@kernel.org>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        u-boot@lists.denx.de,
-        Dominique Martinet <dominique.martinet@atmark-techno.com>
-Subject: Re: [PATCH U-BOOT 2/3] btrfs: btrfs_file_read: allow opportunistic
- read until the end
-Message-ID: <ZD4n5piHQlPDod3D@codewreck.org>
-References: <20230418-btrfs-extent-reads-v1-0-47ba9839f0cc@codewreck.org>
- <20230418-btrfs-extent-reads-v1-2-47ba9839f0cc@codewreck.org>
- <6c82ddd9-0e3d-4213-5cd3-af7ad69ebe48@gmx.com>
- <ZD4DV49fqKmPjMjU@codewreck.org>
- <fca50995-0745-4374-a64a-40378ea95262@gmx.com>
- <ZD4Jiagu0sWIPZDa@codewreck.org>
- <58fdd612-d2ac-1a77-25e5-59e8f7b668a2@gmx.com>
- <ZD4UP8oqlU0sP6Tt@codewreck.org>
+Date:   Tue, 18 Apr 2023 15:41:55 +0900
+Subject: [PATCH U-BOOT v2] btrfs: fix offset when reading compressed
+ extents
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <ZD4UP8oqlU0sP6Tt@codewreck.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20230418-btrfs-extent-reads-v2-1-772a6be2ea9a@codewreck.org>
+X-B4-Tracking: v=1; b=H4sIALI7PmQC/32OTQ6CMBSEr2Le2ppSiIIr4wXY6Mqw6M8rNMbWv
+ DaIIdzdwgFcfjP5MjNDRHIY4bybgXB00QWfQex3oAfpe2TOZAbBRcmromYqkY0Mp4Q+MUJpMgh
+ jj1iKRpoKsqhkRKZIej2s6kvGhLQWb0Lrpm3tAXd2bdsbdDkfXEyBvtuJsdjaf3tjwTirTko2d
+ dlYrvVFB4MfQv08BOqhW5blBxcb3EXZAAAA
+To:     =?utf-8?q?Marek_Beh=C3=BAn?= <kabel@kernel.org>,
+        Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, u-boot@lists.denx.de,
+        Dominique Martinet <dominique.martinet@atmark-techno.com>
+X-Mailer: b4 0.13-dev-f371f
+X-Developer-Signature: v=1; a=openpgp-sha256; l=3260;
+ i=asmadeus@codewreck.org; h=from:subject:message-id;
+ bh=ukdUzhfywYgG2oTIbH7xDAzoLU14yAR7rBOZX7P6Ek0=;
+ b=owEBbQKS/ZANAwAIAatOm+xqmOZwAcsmYgBkPjvS/oBvPXkm59cjaCKURjNL/FYhmpN+ogfrN
+ vH68YyLh0OJAjMEAAEIAB0WIQT8g9txgG5a3TOhiE6rTpvsapjmcAUCZD470gAKCRCrTpvsapjm
+ cK3fD/9RI/3tby15603LlVrVyVXTIUjz8YzB1/X6QRifLguHPZK9CYUbnBF+9LoaakPp+4x1gM2
+ D29cNGFm0drC5kqhlMFqipszhRmms6+JLFrNW/N5zXe6+GD9nnZRYhAAhbJEfLKky1xTigvn93/
+ Q6ZP8jNZ2qsqROdN/r0YrfvqABhmXZNJqBD+hqvPGDrYaYmgOF/uyNY3LgDXFN4V9wejOAf3pQD
+ GHzCb9w5mM/GF/c7JbjTzNMT89OG+EgrzbbjGUmb+SgPP5LPO2Ituidxg4tbM9hJEHFGF+UIKnu
+ YsQaKEJq5UNwfBXV+rddJSo7SVhCNUubdof9ykO+NCr5yJGPfro/NI+PjcNxNHny7tKyOb1fI+N
+ TrLDDGwt0BX+w1QIYDxXpXMCSZmpKAmXoFBz9j9QDMNGb4ZuMWgOfB1EWt8KCyCNNyMc4zsE1lb
+ tGyQ10XT1nrkmhgNWm4egbHqyJpjxlD2PTphMxdUo+jgbAN5la3j4myM5yw4GKQGfKnH+NIxT/q
+ HsDWZReiKIOSYXzUWQ11stH/Frzv/dZ5X1qnZLifzbcDaAVEMW9fSbXpDGLfsZ2Ea0CXry7gj/X
+ hBI86e0oP9v3ieRnyeeOlbR51ba6aw9dyQQEBTH3sR8xV6it+3IKGkB/KDjLTA+UXVaNTtQNJQ8
+ A40Tr4YFK1hNopA==
+X-Developer-Key: i=asmadeus@codewreck.org; a=openpgp;
+ fpr=B894379F662089525B3FB1B9333F1F391BBBB00A
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Dominique Martinet wrote on Tue, Apr 18, 2023 at 12:53:35PM +0900:
-> Ok, there is one exception for inline extents apparently.. But I'm not
-> still not convinced the `aligned_start != file_offset` check is enough
-> for that either; I'd say it's unlikely but the inline part can be
-> compressed, so we could have a file which has > 4k (sectorsize) of
-> expanded data, so a read from the 4k offset would skip the special
-> handling and fail (reading the whole extent in dest)
+From: Dominique Martinet <dominique.martinet@atmark-techno.com>
 
-(Wasn't able to create such a file, I assume that means the uncompressed
-data must fits in a page -- if we deal with arm machines with 16k or 64k
-page size that'll probably change things again but I'll just pretend
-sector size will magically match in this case..)
+btrfs_read_extent_reg correctly computed the extent offset in the
+BTRFS_COMPRESS_NONE case, but did not account for the 'offset - key.offset'
+part correctly in the compressed case, making the function read
+incorrect data.
 
-> Even if that's not possible, reading just the first 10 bytes of an
-> inline extent will be aligned and go through the main loop which just
-> reads the whole extent, so it'll need the same handling as the regular
-> btrfs_read_extent_reg handling at which point it might just as well
-> handle start offset too.
+In the case I examined, the last 4k of a file was corrupted and
+contained data from a few blocks prior, e.g. reading a 10k file with a
+single extent:
+btrfs_file_read()
+ -> btrfs_read_extent_reg
+    (aligned part loop, until 8k)
+ -> read_and_truncate_page
+   -> btrfs_read_extent_reg
+      (re-reads the last extent from 8k to the end,
+      incorrectly reading the first 2k of data)
 
-Question regarding inline extent: the main loop goes straight out after
-reading an inline extent, assuming it is always alone (or last) -- is
-that correct?
-By playing with `filefrag -v` I could sometimes see files that
-temporarily have inline + a delalloc extent, but wasn't able to make a
-file that kept the inline extent after appending more data, so I guess
-it is also sane enough... Just making it continue and letting the loop
-end seems just as simple now there is no trailing if, but if inline
-extents cannot be mixed I'll be happy to keep it going out.
+This can be reproduced as follow:
+$ truncate -s 200M btr
+$ mount btr -o compress /mnt
+$ pat() { dd if=/dev/zero bs=1M count=$1 iflag=count_bytes status=none | tr '\0' "\\$2"; }
+$ { pat 4K 1; pat 4K 2; pat 2K 3; }  > /mnt/file
+$ sync
+$ filefrag -v /mnt/file
+File size of /mnt/file is 10240 (3 blocks of 4096 bytes)
+ ext:     logical_offset:        physical_offset: length:   expected: flags:
+   0:        0..       2:       3328..      3330:      3:             last,encoded,eof
+$ umount /mnt
 
+Then in u-boot:
+=> load scsi 0 2000000 file
+10240 bytes read in 3 ms (3.3 MiB/s)
+=> md 2001ff0
+02001ff0: 02020202 02020202 02020202 02020202  ................
+02002000: 01010101 01010101 01010101 01010101  ................
+02002010: 01010101 01010101 01010101 01010101  ................
 
-back to btrfs_read_extent_reg:
-merging the tail back into the main loop breaks the first assert
-(IS_ALIGNED(len, fs_info->sectorsize) in particular).
-The old loop invocation made sure it was aligned and
-read_and_truncate_page used to take care of calling it with a bigger
-buffer when it was not.
+(02002000 onwards should contain '03' pattern but went back to 01,
+start of the extent)
 
-I was only looking at the compressed path and that does not care about
-'len' alignment because it makes an intermediate copy for decompression,
-but the BTRFS_COMPRESS_NONE's read_extent_data might care?
-I didn't see anything that actually requires alignment there (len in
-particular should be ok, but even offset->logical seems to properly be
-used as "being part of a range" in lookups so alignment doesn't actually
-matter), but if this isn't tested I can understand wanting to be more
-careful there.
+After patch, data is read properly:
+=> md 2001ff0
+02001ff0: 02020202 02020202 02020202 02020202  ................
+02002000: 03030303 03030303 03030303 03030303  ................
+02002010: 03030303 03030303 03030303 03030303  ................
 
-Ok so this is rightfully less obvious than I had first assumed -- sorry
-for rushing in. Let's do baby steps:
-- I'll resend just the first patch shortly, it's a real fix and I'll be
-using it right away.
-- I'll double check 'len' doesn't need to be aligned in
-btrfs_read_extent_reg and just rework the main loop to allow removing
-the tail exception, that'll avoid a double read in many cases and I
-think it's worth doing.
-Might take a bit more time as I want to finish some other work, let's
-say a few days.
-- That leaves the two issues I brought up with the main loop:
- * inline case ignoring end; this is minor enough but easy to fix
- * btrfs_read_extent_reg() assuming start of extent in its length
- agument; I believe it'll be easier to stop trying to set a upper limit
- in the main loop and just have btrfs_read_extent_reg() do it itself, we
- can use its return value to know how much was actually read.
- (Probably just substract offset - key.offset to extent_num_bytes to
- have a new cap, but I still don't understand btrfs_file_extent_offset()
- in all of this as it's always 0 when I looked)
-Will try to do that over the next few weeks, but if you want to look at
-it feel free to do this before me.
-- At this point it might be worth considering removing the initial check
-as that also makes an extra small read in the unaligned case, but it's
-not a bug and can wait.
+Note that the code previously (before commit e3427184f38a ("fs: btrfs:
+Implement btrfs_file_read()")) did not split that read in two, so
+this is a regression even if the previous code might not have been
+handling offsets correctly either (something that booted now fails to
+boot)
 
+Fixes: a26a6bedafcf ("fs: btrfs: Introduce btrfs_read_extent_inline() and btrfs_read_extent_reg()")
+Signed-off-by: Dominique Martinet <dominique.martinet@atmark-techno.com>
+---
+Changes in v2:
+- Keep offset decomposition explicit where it is used
+- Add reproducer/clarify explanation in commit message
+- Drop other patches temporarily
+- Link to v1: https://lore.kernel.org/r/20230418-btrfs-extent-reads-v1-0-47ba9839f0cc@codewreck.org
+---
+ fs/btrfs/inode.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-What do you think?
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 40025662f250..38e285bf94b0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -511,7 +511,9 @@ int btrfs_read_extent_reg(struct btrfs_path *path,
+ 	if (ret < dsize)
+ 		memset(dbuf + ret, 0, dsize - ret);
+ 	/* Then copy the needed part */
+-	memcpy(dest, dbuf + btrfs_file_extent_offset(leaf, fi), len);
++	memcpy(dest,
++	       dbuf + btrfs_file_extent_offset(leaf, fi) + offset - key.offset,
++	       len);
+ 	ret = len;
+ out:
+ 	free(cbuf);
+
+---
+base-commit: 5db4972a5bbdbf9e3af48ffc9bc4fec73b7b6a79
+change-id: 20230418-btrfs-extent-reads-e2df6e329ad4
+
+Best regards,
 -- 
 Dominique Martinet | Asmadeus
+

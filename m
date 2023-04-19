@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 008E9C6FD18
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:23:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28BB2C6FD18
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:23:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231608AbjDSVW7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:22:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45594 "EHLO
+        id S231582AbjDSVX0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:23:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46176 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230030AbjDSVW6 (ORCPT
+        with ESMTP id S231490AbjDSVXT (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:22:58 -0400
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CED037EFD
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:33 -0700 (PDT)
-Received: by mail-qt1-x832.google.com with SMTP id ei23so677900qtb.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:33 -0700 (PDT)
+        Wed, 19 Apr 2023 17:23:19 -0400
+Received: from mail-qt1-f181.google.com (mail-qt1-f181.google.com [209.85.160.181])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 34B185BB2
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:57 -0700 (PDT)
+Received: by mail-qt1-f181.google.com with SMTP id fy11so594892qtb.12
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939265; x=1684531265;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939258; x=1684531258;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=JQGcgc7znl8Vmhgxyjz/2T51un9Yluw+ia9GUneEN1A=;
-        b=pQt56q+DJ+5CeP6eANyZ0rKTJx2iI/KL5o++9/U7atkIQO1TBM+8SfRF1rQ2TXqHV0
-         p+w29ojSsM7jPMY6kU9bpAKwYOmPioDoiOm7itZlplBS3t77BMYATHsMcVNmNLeLhbMY
-         bLm0nrpZqQK6CxqJ+jqaOcPz9UMdk0cChN+0yl5BPogFi9J2y53nH4vJGPfukYcwJSfu
-         n/PlWrTc6ZQCqfQEUHvznhTRtnSIbUkErul6/Jsh1GWkLtYr3ziEq3snL+ad/pYz/E0u
-         NPG2bXsWO7KovHaW2Gc3wrHxT+NpQKP1osVHuvbuzvA20wE6tU6gWFET/VVKnBLZgeIV
-         EOVg==
+        bh=a1F3Va4ZvJHGkHs0CIEZEWjSXJYpO1ErBYNd34ZGR8s=;
+        b=C973+sju0MjVp6PnRqJ6293n8VbJERRalLldIf2+p6ZlzPHE2VqpnEWFpFDmeu6/c1
+         wXU2V+xVeTLKp3FRV0pEsyNiv7pRcQn4CJJZupAPiIeH52HjIQ1spUHGiqFOQCPtFcBA
+         tDxg1NI19CN5rUKBMu4gCtPEVNfAjhiW1xzHCO5YF4sOxn8NsjF5jyCTkzolKi2bgd0k
+         Zg5WCOgv07uXlhUfFtaH0zWwZZIdEHUZgWuJvuzcWAVyOjqy8WV8clHKiPpGMr/5e2uh
+         wEyZxzRsQ4Z0OU0fkgenX1LDT6p8AbyQZJMuuepwkL7ccOEoWjUIXNqJBCzdexSc1dMR
+         C1Wg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939265; x=1684531265;
+        d=1e100.net; s=20221208; t=1681939258; x=1684531258;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=JQGcgc7znl8Vmhgxyjz/2T51un9Yluw+ia9GUneEN1A=;
-        b=VIpvgYf6o35UGuACsMzoWCdK0DD0YoiA038i+6ezw1pH9OycgtR54ePEm/NKdLifTc
-         RHjDFpSgbAeY7+5CaatVWfNvf0OyxLdH9/zv87J1alzo9FKqlhRrVf5MhKmXz1T8n+8I
-         ePqeZtiomEc1g94rCX5PvHxe00sjtnkoIvFxfsqhefDL4hxIE2Wy7Z07ZHeulxxckloC
-         U5m3QaeCa7QXDTD/sa80BdQ3tNLchPmo7YyGIoEVLcKsdF1GJ6bghzUXra9it9CRppFx
-         Gx95/4++dhpjXKg7++Ol9S0scrr4Yc/oduE6nk5Splcg45o2sOIcIaV/JKIp8UCRpPks
-         sXqQ==
-X-Gm-Message-State: AAQBX9fieEK0NIx0lwwkKsW1m7LiEUo964bF+k/ttUK6HIJrQZ3dUvHA
-        YiGNDYeKwICm0CylETeUaSFK/VY+eNd4jnJ1pJErfA==
-X-Google-Smtp-Source: AKy350aIAI97UbfObTLRYteunt2RPyHJSY6CzfG7imCIkRy+SmdOyovn4DmlWuqF2RdQgqxrdnV+dQ==
-X-Received: by 2002:a05:622a:1193:b0:3ed:a811:23d0 with SMTP id m19-20020a05622a119300b003eda81123d0mr8463761qtk.41.1681939265528;
-        Wed, 19 Apr 2023 14:21:05 -0700 (PDT)
+        bh=a1F3Va4ZvJHGkHs0CIEZEWjSXJYpO1ErBYNd34ZGR8s=;
+        b=H8A+1iGLxUjrzAdgDJZLt6Ar0oJOYyAzpd+bxyY+TFVd2ANo0bZn52aES9V9DBuFD1
+         xPghZ8gaOIpv2SnBpMLqmh7Zd7No9vHStFJO3NlVcSJ4rKaHh6DGOrLaAEGJ30d/JzEj
+         uyv8cwuQC42VpNZmhBCUuJObMjrvBAihsRKPA86t97cMm/INxDRfT/qI2TLcM//NKWGQ
+         2Yk2fs46zT96jKUWRDFaPvk86AzsZIKMgDKwrCB4I2mTeWL0VyaQn/gy7ncXy11UfYHt
+         9Mch+s8f2FpKeI3toJ5SoEFWi75I0Ru9HrpYBoH8ri8Uq4SOdaxbRbwQIMul4WiEnqOF
+         W5rA==
+X-Gm-Message-State: AAQBX9f5yXGk3XqqwfjxmxadfB15jqMAfc8Gm2UvADI7hNSXtHHo4ubS
+        SfqN4DOhXCByEcIWbJ3VBj9tBw8NQcfUr5VxettnCg==
+X-Google-Smtp-Source: AKy350bkTz3QZadYCMqGvkkTy6A2+7CTZ+20Y0OndudOkyub1gKM38ash9X69Qf/Abi54h0cJAKrDQ==
+X-Received: by 2002:ac8:7d54:0:b0:3e6:386b:2314 with SMTP id h20-20020ac87d54000000b003e6386b2314mr8487651qtb.62.1681939257683;
+        Wed, 19 Apr 2023 14:20:57 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id b10-20020a05620a0cca00b0074c398c0bf7sm2289663qkj.71.2023.04.19.14.21.05
+        by smtp.gmail.com with ESMTPSA id q9-20020a05620a0d8900b00706b09b16fasm4944669qkl.11.2023.04.19.14.20.57
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:21:05 -0700 (PDT)
+        Wed, 19 Apr 2023 14:20:57 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 09/10] btrfs-progs: rename clear_extent_buffer_dirty => btrfs_clear_buffer_dirty
-Date:   Wed, 19 Apr 2023 17:20:49 -0400
-Message-Id: <b2492dc25783d9cf8668bfe9952fdb125e358b1f.1681939107.git.josef@toxicpanda.com>
+Subject: [PATCH 03/10] btrfs-progs: rename btrfs_alloc_free_block to btrfs_alloc_tree_block
+Date:   Wed, 19 Apr 2023 17:20:43 -0400
+Message-Id: <b221a1bcbe28651c06929e40155994452a068716.1681939107.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1681939107.git.josef@toxicpanda.com>
 References: <cover.1681939107.git.josef@toxicpanda.com>
@@ -64,180 +64,151 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This is a mirror of the change I've done in the kernel, but in progs
-it's even more simply because clean_tree_block was just a wrapper around
-clear_extent_buffer_dirty.  Change this to btrfs_clear_buffer_dirty, and
-then update all the callers to use this helper instead of
-clean_tree_block and clear_extent_buffer_dirty.
+This is in keeping with what the function actually does, and is named
+this way in the kernel.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- cmds/rescue.c               |  2 +-
- kernel-shared/ctree.c       | 12 ++++++------
- kernel-shared/disk-io.c     |  7 +------
+ check/main.c                |  2 +-
+ cmds/rescue-chunk-recover.c |  2 +-
+ kernel-shared/ctree.c       | 14 +++++++-------
+ kernel-shared/ctree.h       |  2 +-
+ kernel-shared/disk-io.c     |  2 +-
  kernel-shared/extent-tree.c |  2 +-
- kernel-shared/extent_io.c   |  2 +-
- kernel-shared/extent_io.h   |  2 +-
- kernel-shared/transaction.c |  4 ++--
- 7 files changed, 13 insertions(+), 18 deletions(-)
+ 6 files changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/cmds/rescue.c b/cmds/rescue.c
-index cbeaa6f2..b84166ea 100644
---- a/cmds/rescue.c
-+++ b/cmds/rescue.c
-@@ -340,7 +340,7 @@ static int clear_uuid_tree(struct btrfs_fs_info *fs_info)
- 	if (ret < 0)
- 		goto out;
- 	list_del(&uuid_root->dirty_list);
--	ret = clean_tree_block(uuid_root->node);
-+	ret = btrfs_clear_buffer_dirty(uuid_root->node);
- 	if (ret < 0)
- 		goto out;
- 	ret = btrfs_free_tree_block(trans, uuid_root, uuid_root->node, 0, 1);
+diff --git a/check/main.c b/check/main.c
+index 45e3442d..c5131b7a 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -9096,7 +9096,7 @@ static struct extent_buffer *btrfs_fsck_clear_root(
+ 	if (!path)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	c = btrfs_alloc_free_block(trans, gfs_info->tree_root,
++	c = btrfs_alloc_tree_block(trans, gfs_info->tree_root,
+ 				   gfs_info->nodesize, key->objectid,
+ 				   &disk_key, 0, 0, 0);
+ 	if (IS_ERR(c)) {
+diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
+index ce53da2e..b18d422e 100644
+--- a/cmds/rescue-chunk-recover.c
++++ b/cmds/rescue-chunk-recover.c
+@@ -1146,7 +1146,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
+ 	btrfs_set_disk_key_type(&disk_key, BTRFS_DEV_ITEM_KEY);
+ 	btrfs_set_disk_key_offset(&disk_key, min_devid);
+ 
+-	cow = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
++	cow = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 				     BTRFS_CHUNK_TREE_OBJECTID,
+ 				     &disk_key, 0, 0, 0);
+ 	btrfs_set_header_bytenr(cow, cow->start);
 diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index ea2a7af3..4d33994d 100644
+index cfbcc689..230dae1b 100644
 --- a/kernel-shared/ctree.c
 +++ b/kernel-shared/ctree.c
-@@ -433,7 +433,7 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 			ret = btrfs_dec_ref(trans, root, buf, 1);
- 			BUG_ON(ret);
- 		}
--		clean_tree_block(buf);
-+		btrfs_clear_buffer_dirty(buf);
- 	}
- 	return 0;
- }
-@@ -936,7 +936,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
- 		root->node = child;
- 		add_root_to_dirty_list(root);
- 		path->nodes[level] = NULL;
--		clean_tree_block(mid);
-+		btrfs_clear_buffer_dirty(mid);
- 		/* once for the path */
- 		free_extent_buffer(mid);
+@@ -167,7 +167,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 		btrfs_item_key(buf, &disk_key, 0);
+ 	else
+ 		btrfs_node_key(buf, &disk_key, 0);
+-	cow = btrfs_alloc_free_block(trans, new_root, buf->len,
++	cow = btrfs_alloc_tree_block(trans, new_root, buf->len,
+ 				     new_root_objectid, &disk_key,
+ 				     level, buf->start, 0);
+ 	if (IS_ERR(cow)) {
+@@ -230,7 +230,7 @@ int btrfs_create_root(struct btrfs_trans_handle *trans,
+ 	new_root->root_key.type = BTRFS_ROOT_ITEM_KEY;
+ 	new_root->root_key.offset = 0;
  
-@@ -991,7 +991,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
- 			u64 bytenr = right->start;
- 			u32 blocksize = right->len;
+-	node = btrfs_alloc_free_block(trans, new_root, fs_info->nodesize,
++	node = btrfs_alloc_tree_block(trans, new_root, fs_info->nodesize,
+ 				      objectid, &disk_key, 0, 0, 0);
+ 	if (IS_ERR(node)) {
+ 		ret = PTR_ERR(node);
+@@ -285,7 +285,7 @@ int btrfs_create_root(struct btrfs_trans_handle *trans,
+ 	/*
+ 	 * Essential trees can't be created by this function, yet.
+ 	 * As we expect such skeleton exists, or a lot of functions like
+-	 * btrfs_alloc_free_block() doesn't work at all
++	 * btrfs_alloc_tree_block() doesn't work at all
+ 	 */
+ 	case BTRFS_ROOT_TREE_OBJECTID:
+ 	case BTRFS_EXTENT_TREE_OBJECTID:
+@@ -461,7 +461,7 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_node_key(buf, &disk_key, 0);
  
--			clean_tree_block(right);
-+			btrfs_clear_buffer_dirty(right);
- 			free_extent_buffer(right);
- 			right = NULL;
- 			wret = btrfs_del_ptr(root, path, level + 1, pslot + 1);
-@@ -1039,7 +1039,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
- 		/* we've managed to empty the middle node, drop it */
- 		u64 bytenr = mid->start;
- 		u32 blocksize = mid->len;
--		clean_tree_block(mid);
-+		btrfs_clear_buffer_dirty(mid);
- 		free_extent_buffer(mid);
- 		mid = NULL;
- 		wret = btrfs_del_ptr(root, path, level + 1, pslot);
-@@ -3012,7 +3012,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		if (leaf == root->node) {
- 			btrfs_set_header_level(leaf, 0);
- 		} else {
--			clean_tree_block(leaf);
-+			btrfs_clear_buffer_dirty(leaf);
- 			wret = btrfs_del_leaf(trans, root, path, leaf);
- 			BUG_ON(ret);
- 			if (wret)
-@@ -3048,7 +3048,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 			}
+-	cow = btrfs_alloc_free_block(trans, root, buf->len,
++	cow = btrfs_alloc_tree_block(trans, root, buf->len,
+ 				     root->root_key.objectid, &disk_key,
+ 				     level, search_start, empty_size);
+ 	if (IS_ERR(cow))
+@@ -1732,7 +1732,7 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
+ 	else
+ 		btrfs_node_key(lower, &lower_key, 0);
  
- 			if (btrfs_header_nritems(leaf) == 0) {
--				clean_tree_block(leaf);
-+				btrfs_clear_buffer_dirty(leaf);
- 				path->slots[1] = slot;
- 				ret = btrfs_del_leaf(trans, root, path, leaf);
- 				BUG_ON(ret);
+-	c = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
++	c = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 				   root->root_key.objectid, &lower_key,
+ 				   level, root->node->start, 0);
+ 
+@@ -1858,7 +1858,7 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	mid = (c_nritems + 1) / 2;
+ 	btrfs_node_key(c, &disk_key, mid);
+ 
+-	split = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
++	split = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 					root->root_key.objectid,
+ 					&disk_key, level, c->start, 0);
+ 	if (IS_ERR(split))
+@@ -2425,7 +2425,7 @@ again:
+ 	else
+ 		btrfs_item_key(l, &disk_key, mid);
+ 
+-	right = btrfs_alloc_free_block(trans, root, root->fs_info->nodesize,
++	right = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 					root->root_key.objectid,
+ 					&disk_key, 0, l->start, 0);
+ 	if (IS_ERR(right)) {
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 84acefef..af60ba66 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -849,7 +849,7 @@ struct btrfs_block_group *btrfs_lookup_block_group(struct btrfs_fs_info *info,
+ struct btrfs_block_group *btrfs_lookup_first_block_group(struct
+ 						       btrfs_fs_info *info,
+ 						       u64 bytenr);
+-struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
++struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root,
+ 					u32 blocksize, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
 diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 7ee45ad1..7bbcc381 100644
+index 44462d8f..6f9dc327 100644
 --- a/kernel-shared/disk-io.c
 +++ b/kernel-shared/disk-io.c
-@@ -2255,11 +2255,6 @@ skip_commit:
- 	return err;
- }
+@@ -2333,7 +2333,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	btrfs_setup_root(root, fs_info, key->objectid);
+ 	memcpy(&root->root_key, key, sizeof(struct btrfs_key));
  
--int clean_tree_block(struct extent_buffer *eb)
--{
--	return clear_extent_buffer_dirty(eb);
--}
--
- void btrfs_mark_buffer_dirty(struct extent_buffer *eb)
- {
- 	set_extent_buffer_dirty(eb);
-@@ -2303,7 +2298,7 @@ int btrfs_delete_and_free_root(struct btrfs_trans_handle *trans,
- 		return ret;
- 
- 	list_del(&root->dirty_list);
--	ret = clean_tree_block(root->node);
-+	ret = btrfs_clear_buffer_dirty(root->node);
- 	if (ret)
- 		return ret;
- 	ret = btrfs_free_tree_block(trans, root, root->node, 0, 1);
+-	leaf = btrfs_alloc_free_block(trans, root, fs_info->nodesize,
++	leaf = btrfs_alloc_tree_block(trans, root, fs_info->nodesize,
+ 				      root->root_key.objectid, NULL, 0, 0, 0);
+ 	if (IS_ERR(leaf)) {
+ 		ret = PTR_ERR(leaf);
 diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
-index cfce4426..4dfb35d4 100644
+index 8f3477bf..d0b3aee3 100644
 --- a/kernel-shared/extent-tree.c
 +++ b/kernel-shared/extent-tree.c
-@@ -1902,7 +1902,7 @@ static int pin_down_bytes(struct btrfs_trans_handle *trans, u64 bytenr,
- 		if (header_owner != BTRFS_TREE_LOG_OBJECTID &&
- 		    header_transid == trans->transid &&
- 		    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
--			clean_tree_block(buf);
-+			btrfs_clear_buffer_dirty(buf);
- 			free_extent_buffer(buf);
- 			return 1;
- 		}
-diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
-index f740b3a6..4dff81bd 100644
---- a/kernel-shared/extent_io.c
-+++ b/kernel-shared/extent_io.c
-@@ -579,7 +579,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
- 	return 0;
- }
- 
--int clear_extent_buffer_dirty(struct extent_buffer *eb)
-+int btrfs_clear_buffer_dirty(struct extent_buffer *eb)
- {
- 	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
- 	if (eb->flags & EXTENT_BUFFER_DIRTY) {
-diff --git a/kernel-shared/extent_io.h b/kernel-shared/extent_io.h
-index 103f93cb..09f3c82a 100644
---- a/kernel-shared/extent_io.h
-+++ b/kernel-shared/extent_io.h
-@@ -124,7 +124,7 @@ void memset_extent_buffer(const struct extent_buffer *eb, char c,
- int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
- 			   unsigned long nr);
- int set_extent_buffer_dirty(struct extent_buffer *eb);
--int clear_extent_buffer_dirty(struct extent_buffer *eb);
-+int btrfs_clear_buffer_dirty(struct extent_buffer *eb);
- int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 logical,
- 			u64 *len, int mirror);
- int write_data_to_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
-diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
-index b16c07c3..f99bc684 100644
---- a/kernel-shared/transaction.c
-+++ b/kernel-shared/transaction.c
-@@ -161,7 +161,7 @@ again:
- 				goto cleanup;
- 			}
- 			start += eb->len;
--			clear_extent_buffer_dirty(eb);
-+			btrfs_clear_buffer_dirty(eb);
- 			free_extent_buffer(eb);
- 		}
- 	}
-@@ -184,7 +184,7 @@ cleanup:
- 			eb = find_first_extent_buffer(fs_info, start);
- 			BUG_ON(!eb || eb->start != start);
- 			start += eb->len;
--			clear_extent_buffer_dirty(eb);
-+			btrfs_clear_buffer_dirty(eb);
- 			free_extent_buffer(eb);
- 		}
- 	}
+@@ -2555,7 +2555,7 @@ static int alloc_tree_block(struct btrfs_trans_handle *trans,
+  * helper function to allocate a block for a given tree
+  * returns the tree buffer or NULL.
+  */
+-struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
++struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root,
+ 					u32 blocksize, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
 -- 
 2.40.0
 

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 203CFC6FD18
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:23:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87241C6FD18
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:23:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232008AbjDSVXb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:23:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46164 "EHLO
+        id S230030AbjDSVXp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:23:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47050 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232422AbjDSVXZ (ORCPT
+        with ESMTP id S229573AbjDSVXo (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:23:25 -0400
-Received: from mail-qv1-f54.google.com (mail-qv1-f54.google.com [209.85.219.54])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 72F3F7EFD
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:23:05 -0700 (PDT)
-Received: by mail-qv1-f54.google.com with SMTP id oo30so982229qvb.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:23:05 -0700 (PDT)
+        Wed, 19 Apr 2023 17:23:44 -0400
+Received: from mail-qt1-f174.google.com (mail-qt1-f174.google.com [209.85.160.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F122E6A66
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:23:22 -0700 (PDT)
+Received: by mail-qt1-f174.google.com with SMTP id gb12so642138qtb.6
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:23:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939267; x=1684531267;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939263; x=1684531263;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=1D3d8BY++HkXeNeR5D26QjZUpybljb+AlCx9JHGZMug=;
-        b=oLYWNeIhMJPEtdzHK6A5gzghZzMnoNXUP6JOwQiVXAefz2/11QJq1iHYcwn76jJGXs
-         bXPtNaHdajWTE3EtBeax8WCXLgBr3W480QgoZ6DGpKov2b4LIH2saIiERox1ZQ+O/adS
-         gyiL9wsybPGMCs37q9A7CDFUACD7sGo/rTuEVbydROstyi9YYiS04TDPSH3Qib72+FgN
-         /mJVskiY9+TYI3JFz+P3KGzBl2qqurUlw4LrYGaxxoFZhFVQ1IUkPbQYd1oTi6CqQUYp
-         IXCrI4SvDFQEE5jPh3Ny+LeJV24jTQ6lOIORxNoxeBIwZMOXNL+LqG96udbpKc810T6o
-         HawA==
+        bh=Ksq8LnPUyd2VA7eDtt0QHlRpPKRWB2/v6YOoeF68kiQ=;
+        b=QG0/LUvbO4K2kgoWiTuTPD9sUSfUYojm4ORSaJvoYFkyz7Q89xTbu6S/+FhbJhfRPm
+         yFYIjS1XIkUiKJK/rSdZE5XWFoQB1Lg4QfCKXpRKZMLmLQ3udZsgaw9sxsdbJEZVqsDl
+         fwr6Hq+AhlBU0e3hb7AbIPixI40g6I6+zhANM9zUfxkoCTN+LfN05COeMdk4ugOdaHK3
+         EjIjqHeRECjiGldXhN9Ir0w5wEu2bSwQb6l/yD3xGZvLr+H+nqbDoF+xVaM4E4FNnnhh
+         ezcQV+BoG0OscTRSGx60YJU/0h3RNm4iBYRqUCpG8vWwwnubscOoBpofR5A7/xfb7YVk
+         7GWw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939267; x=1684531267;
+        d=1e100.net; s=20221208; t=1681939263; x=1684531263;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=1D3d8BY++HkXeNeR5D26QjZUpybljb+AlCx9JHGZMug=;
-        b=h4q73BwNdFlG6bE36Sp+8pkb3b7vivdigYi4/ZlP/C3e+Wllgk+xQgDeHOe5i9rmhf
-         jwHUBgC+kaX3TFax8xuwiZw/IG3XU8RUHot63S1AbJPSryp5cOWafpY0KKiq++CAXdRB
-         GbVkOdH02LEyCsvbsop4NKbFEPVcFJsH2BEnmGvJAdvSZbZ898+np7TSU83hNc+WnHsy
-         yRs/OzpxQhSRZHIwufYBm97LKm+IQoVDyRYIoSjFjIeeU1lTsqaE6cpUoW7Ncn1NBWpG
-         KZ661z6xe5A0SrWBxgtulH5dFpUuEsQYsBB+ONIjkS4WYyo8/LN+GyVsy0hrMnETr0WJ
-         L/vQ==
-X-Gm-Message-State: AAQBX9dUYLAeohwjK6pod2Gkt9eh+FMIDF8iSY0Tkkf1jffe0b2YKmJo
-        B+9NE1iKZlXVGqfNo2mK06QQ9pXWLZKZbP5nwtuJPQ==
-X-Google-Smtp-Source: AKy350YFQTmRsOrWF7A65E356ka/l8hl3eqKoBVsAk9X4LZ4J9MzlW861EKtX0EoiTJYdlfOcaBeVw==
-X-Received: by 2002:a05:6214:406:b0:5a2:6074:6cfa with SMTP id z6-20020a056214040600b005a260746cfamr37759348qvx.38.1681939266761;
-        Wed, 19 Apr 2023 14:21:06 -0700 (PDT)
+        bh=Ksq8LnPUyd2VA7eDtt0QHlRpPKRWB2/v6YOoeF68kiQ=;
+        b=hgJT0EwP3xSytcfzlaYXCsuNr+E9Py5OVKj/T86d5w5wznRmEbqDq2xi+kzE/t3BSQ
+         jn5eEHEcdCfpZaeCZt1MDBeWF4rI31Y94uDrH9TUfgOhVgQbFAJZ/40WJVxwbDDA/W/G
+         E+w+0eH01Ynd7lQU2FYOll+Q/Z11TSMc7IZrokkX8Dw2JQEnNFc2RGX/okB6AeHyV2PJ
+         A/W1XtMTQNB+gUif+FFX/cMSWPqJqVWX1a1Bnuu6K04elpYqDb4R7LTqHLtIS2ldkXjp
+         lNi2XldFcyqTtfJTcEULgGOflKJhTuPkHjtivTM1o09M77srOUhPT6sTw8bFQm2mhzf3
+         I8Rg==
+X-Gm-Message-State: AAQBX9desAwV9wIHM6R2NIuIZjbOiY9b7/FpYCK1gw072+6GO9QZEiNG
+        /ZRPNMuN9SnhqdSS6POvBca9e01bfdg8791COul33A==
+X-Google-Smtp-Source: AKy350YnqqW/if0E/PxpWF/IGui4F7zepnRMkH01N/PaXkH3HQwEKiZyR7X8dc4/wklDYpjPHjPAJw==
+X-Received: by 2002:a05:622a:14a:b0:3ef:20fc:6f99 with SMTP id v10-20020a05622a014a00b003ef20fc6f99mr9093450qtw.49.1681939262886;
+        Wed, 19 Apr 2023 14:21:02 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id ei18-20020ad45a12000000b005eac706d223sm4625436qvb.124.2023.04.19.14.21.06
+        by smtp.gmail.com with ESMTPSA id j13-20020a05620a288d00b0073b8745fd39sm4906873qkp.110.2023.04.19.14.21.02
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:21:06 -0700 (PDT)
+        Wed, 19 Apr 2023 14:21:02 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 10/10] btrfs-progs: make __btrfs_cow_block static
-Date:   Wed, 19 Apr 2023 17:20:50 -0400
-Message-Id: <75f9f2e629a446d747d138364f3354543e5e9ae3.1681939107.git.josef@toxicpanda.com>
+Subject: [PATCH 07/10] btrfs-progs: rename btrfs_set_block_flags -> btrfs_set_disk_extent_flags
+Date:   Wed, 19 Apr 2023 17:20:47 -0400
+Message-Id: <9ac26c031920b4f4dad3edafe10cb0fd783f9c0d.1681939107.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1681939107.git.josef@toxicpanda.com>
 References: <cover.1681939107.git.josef@toxicpanda.com>
@@ -64,44 +64,64 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-This isn't used anywhere other than ctree.c, make it static.
+This helper in the kernel is named btrfs_set_disk_extent_flags, which is
+a more accurate description than btrfs_set_block_flags.  Rename to the
+in kernel name to make sync'ing ctree.c easier.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- kernel-shared/ctree.c | 2 +-
- kernel-shared/ctree.h | 6 ------
- 2 files changed, 1 insertion(+), 7 deletions(-)
+ kernel-shared/ctree.c       | 6 +++---
+ kernel-shared/ctree.h       | 4 ++--
+ kernel-shared/extent-tree.c | 4 ++--
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index 4d33994d..da9282b9 100644
+index cad15093..e95dcc79 100644
 --- a/kernel-shared/ctree.c
 +++ b/kernel-shared/ctree.c
-@@ -438,7 +438,7 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
- 	return 0;
- }
- 
--int __btrfs_cow_block(struct btrfs_trans_handle *trans,
-+static int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     struct extent_buffer *buf,
- 			     struct extent_buffer *parent, int parent_slot,
+@@ -419,9 +419,9 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 			BUG_ON(ret);
+ 		}
+ 		if (new_flags != 0) {
+-			ret = btrfs_set_block_flags(trans, buf->start,
+-						    btrfs_header_level(buf),
+-						    new_flags);
++			ret = btrfs_set_disk_extent_flags(trans, buf->start,
++							  btrfs_header_level(buf),
++							  new_flags);
+ 			BUG_ON(ret);
+ 		}
+ 	} else {
 diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 069e000d..655b714f 100644
+index f416fc36..aaace45e 100644
 --- a/kernel-shared/ctree.h
 +++ b/kernel-shared/ctree.h
-@@ -936,12 +936,6 @@ int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		    struct btrfs_root *root, struct extent_buffer *buf,
- 		    struct extent_buffer *parent, int parent_slot,
- 		    struct extent_buffer **cow_ret);
--int __btrfs_cow_block(struct btrfs_trans_handle *trans,
--			     struct btrfs_root *root,
--			     struct extent_buffer *buf,
--			     struct extent_buffer *parent, int parent_slot,
--			     struct extent_buffer **cow_ret,
--			     u64 search_start, u64 empty_size);
- int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root,
- 		      struct extent_buffer *buf,
+@@ -859,8 +859,8 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info, u64 bytenr,
+ 			     u64 offset, int metadata, u64 *refs, u64 *flags);
+-int btrfs_set_block_flags(struct btrfs_trans_handle *trans, u64 bytenr,
+-			  int level, u64 flags);
++int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans, u64 bytenr,
++				int level, u64 flags);
+ int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		  struct extent_buffer *buf, int record_parent);
+ int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
+index 916eb840..8a6ab996 100644
+--- a/kernel-shared/extent-tree.c
++++ b/kernel-shared/extent-tree.c
+@@ -1375,8 +1375,8 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_set_block_flags(struct btrfs_trans_handle *trans, u64 bytenr,
+-			  int level, u64 flags)
++int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans, u64 bytenr,
++				int level, u64 flags)
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, bytenr);
 -- 
 2.40.0
 

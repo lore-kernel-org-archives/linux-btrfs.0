@@ -2,183 +2,139 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 107AFC77B73
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:17:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 684F5C6FD18
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:17:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229683AbjDSVR0 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:17:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39726 "EHLO
+        id S230086AbjDSVRd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:17:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39830 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229602AbjDSVRZ (ORCPT
+        with ESMTP id S229602AbjDSVRb (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:17:25 -0400
-Received: from mail-qt1-x833.google.com (mail-qt1-x833.google.com [IPv6:2607:f8b0:4864:20::833])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5188A44BE
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:17:24 -0700 (PDT)
-Received: by mail-qt1-x833.google.com with SMTP id a23so616617qtj.8
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:17:24 -0700 (PDT)
+        Wed, 19 Apr 2023 17:17:31 -0400
+Received: from mail-qk1-x736.google.com (mail-qk1-x736.google.com [IPv6:2607:f8b0:4864:20::736])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1CC14C37
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:17:30 -0700 (PDT)
+Received: by mail-qk1-x736.google.com with SMTP id af79cd13be357-74dd7f52f18so304785a.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:17:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939043; x=1684531043;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=ilZ4mJFKYkjLpZAtQrnGdND7Z/IV5NOJYzap5/4LEcw=;
-        b=yH4diatyyWMSsMklRrL/hDWbN5i+8fioPRic8x+/B2nGN6cU8Da4edm9B0M571VILX
-         y75oy3qzZm+AM03GGksoP0t+FLov0FuHrQpDxlmRCrp8syBJ2wlwxqBWnizp1fYoWVbT
-         ge6B1Zf/rFg9dMW7zT5OHwy+FJqBL5pzrqk6H7OUGlAiUjtOGPT/VDWCaxaU/EVW4JCI
-         xKqyZm7AERoEXUXFQvbUQmeYeH5xXvX79MjkYZ1mfNdN8FhMXb+wNOlFE8nXHSrQfbT3
-         OC55FRRgFHLpnUEYPnPsLdR5VYLE5hb/LUKCu9GguJWedWB9uX2UMOIeq4QXqrCxwbdh
-         n2pQ==
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939049; x=1684531049;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=T3GO2XLvZPNia8l2y6FQ8F/ozta7KsGyMfyHU4RwaX8=;
+        b=ty66nLS/D/FoXGm+0vZyUyuqIz7nFyMyD1PbgoNKBKmuLnuO/4LOmVXRqimdckzQ7l
+         TCBvWqKLsH9kyNzICc8aoGtHAvxHQ9Y+8hnqyU+5NFmFKhHtRLlntEbS8Fd43ft8NHcS
+         d+WuZIDjeJx/tbPlD+W367cmqrfp3uwYMqnVv6j+q0vtFdT7Cv1miI4bFGexald6NX2Z
+         TShzAlhcWmtVznEYlWe9G7MCkdLp3r/WyRfr+P9iTQnITOPAfQiU7hSWNBAw8u5vrpDP
+         6nOOuflRRw3Ynw0yUuPV9J7tWplDqgr2qj8SBKj02PRLRNbyKndLBCHI+mbSuGvEyifk
+         iNKQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939043; x=1684531043;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=ilZ4mJFKYkjLpZAtQrnGdND7Z/IV5NOJYzap5/4LEcw=;
-        b=BvlyQtZz5+IJxV0h5DNVu2mTr/T7TLr7RIG/R3bSt9cx60ypvnWT2aVFVClDeS5q9C
-         n+6GovzvoWDQlr9XPjYbQWIgHXleLyw/IX46tYvZw3d3DXzMdxxOeRFWrXpfjhvCjfhy
-         yZngcblotC/wIioF1Ze9RMQIjP+moHZLBhxF+EDx5klZVPv1zGVyEou/hTqpSBUYMhO3
-         bBN477apl/pQyzX9AlOsC3oNmdvn7uxfMKnESvsJ+IeI0tWSXBj55A+VrcdbygTG886c
-         9i6sRqpnBCu2XVz4r4xPhv+/MKpGqziCa6R6HPXQ2loVB+i52f4UgRm73Kkqp/TCAWde
-         YELQ==
-X-Gm-Message-State: AAQBX9doOSm3pSH7+B0/clu3RR9+n17YB8Ghc3+7Y9+cZ7xwj65pE8bq
-        HJJgA5ucXfCQ2apwsCWui48dMGqPKPyhdZwL+cT19Q==
-X-Google-Smtp-Source: AKy350bZ5H2QEw78A6H/xOwGldgjNmDdpT/hSfjb/zPncKy13F5/qgg6H6H/zkn9ghF2eFNGgHsx1w==
-X-Received: by 2002:a05:622a:44c:b0:3ef:3c3e:ab5b with SMTP id o12-20020a05622a044c00b003ef3c3eab5bmr7957272qtx.19.1681939043077;
-        Wed, 19 Apr 2023 14:17:23 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1681939049; x=1684531049;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=T3GO2XLvZPNia8l2y6FQ8F/ozta7KsGyMfyHU4RwaX8=;
+        b=CRcFfBALfGFaga9+mBEr90e96s+hIhLJ5Ly+VHoMV7xxL5NmQfEo4WFcRpXRfrwcIg
+         4kGaJ+L9i45kcFkaQqEQMLeTgZNl8XmkqFiEk+7v/tD0DuYH8nBLI7G/57zYz9+A1tzJ
+         AtPAq0kO+UTJsATOBrgPYKUfj93jqnbGTKvfA2oLoSL85HZkQAE+4PPiSJQXFGWTi6Ti
+         IECoAYLCxBoJwzr6RPMtX9JHefxNUkiVl/RTEhxXqKZ8MuXTNE/zP3kYdz23QgVsp+rN
+         m6Js6Y16wM5rcooAIJy+J9SPyUDC1I46A6i5PJTwIb8AdZCl1WxdJqsmRm2Qp5JMT5Gs
+         2gvg==
+X-Gm-Message-State: AAQBX9fRy8+gLwcTLHOF/YFhikmJ2b37vcqpJqBnuhtkekRFhe6W0dS4
+        mkPj1+6zVKlzbJJlTUJcJinPQFRA+4743D5NNOpT4g==
+X-Google-Smtp-Source: AKy350ZEkw4xE6NFesfDHUROj3IgBeUhbwJR6rbZnlIS3VUXj44Nbv06WwWLxybJalsgvyPo883R6Q==
+X-Received: by 2002:ac8:7f07:0:b0:3db:9289:6949 with SMTP id f7-20020ac87f07000000b003db92896949mr24530qtk.3.1681939049353;
+        Wed, 19 Apr 2023 14:17:29 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id i3-20020ac85c03000000b003ee08d3e073sm36628qti.42.2023.04.19.14.17.22
+        by smtp.gmail.com with ESMTPSA id u28-20020a05620a085c00b0074df7857e72sm2211740qku.34.2023.04.19.14.17.28
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:17:22 -0700 (PDT)
+        Wed, 19 Apr 2023 14:17:29 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 0/8] btrfs-progs: sync basic code from the kernel
-Date:   Wed, 19 Apr 2023 17:17:11 -0400
-Message-Id: <cover.1681938911.git.josef@toxicpanda.com>
+Subject: [PATCH 4/8] btrfs-progs: add struct va_format support to our btrfs_no_printk helper
+Date:   Wed, 19 Apr 2023 17:17:15 -0400
+Message-Id: <4e645609d525e855ca2a0b87d23c5fc2d1329d54.1681938911.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
+In-Reply-To: <cover.1681938911.git.josef@toxicpanda.com>
+References: <cover.1681938911.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+We use the struct va_format to do nested printk's internally with our
+message handling.  Add the appropriate user space code to make this work
+properly so when we start copying this code into btrfs-progs we get the
+proper messages.
 
-This series copies the easier to sync files from the kernel into btrfs-progs and
-updates all the users to include the appropriate headers.  There's an extra
-change in here to deal with va_format, which we'll need for future syncs.  I put
-it in here because it's related to the messages sync, so it seemed appropriate.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ common/messages.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-This depends on the series
-
- btrfs-progs: prep work for syncing files into kernel-shared
-
-Thanks,
-
-Josef
-
-Josef Bacik (8):
-  btrfs-progs: sync uapi/btrfs.h into btrfs-progs
-  btrfs-progs: sync ondisk definitions from the kernel
-  btrfs-progs: sync messages.* from the kernel
-  btrfs-progs: add struct va_format support to our btrfs_no_printk
-    helper
-  btrfs-progs: sync accessors.[ch] from the kernel
-  btrfs-progs: sync file-item.h into progs
-  btrfs-progs: sync async-thread.[ch] from the kernel
-  btrfs-progs: sync extent-io-tree.[ch] and misc.h from the kernel
-
- Makefile                                      |    4 +
- btrfs-corrupt-block.c                         |    3 +-
- btrfs-fragments.c                             |    2 +-
- check/clear-cache.c                           |   15 +-
- check/common.h                                |    2 +-
- check/main.c                                  |   34 +-
- check/mode-common.c                           |   19 +-
- check/mode-lowmem.c                           |   11 +-
- check/repair.c                                |   16 +-
- cmds/balance.c                                |    2 +-
- cmds/device.c                                 |    2 +-
- cmds/filesystem-usage.h                       |    2 +-
- cmds/filesystem.c                             |    2 +-
- cmds/inspect-tree-stats.c                     |    1 +
- cmds/inspect.c                                |    2 +-
- cmds/property.c                               |    2 +-
- cmds/qgroup.c                                 |    2 +-
- cmds/qgroup.h                                 |    2 +-
- cmds/quota.c                                  |    2 +-
- cmds/receive.c                                |    2 +-
- cmds/replace.c                                |    2 +-
- cmds/rescue-chunk-recover.c                   |    4 +-
- cmds/restore.c                                |    3 +-
- cmds/scrub.c                                  |    2 +-
- cmds/send.c                                   |    2 +-
- cmds/subvolume-list.c                         |    2 +-
- cmds/subvolume.c                              |    2 +-
- common/device-scan.c                          |    2 +-
- common/device-scan.h                          |    2 +-
- common/fsfeatures.c                           |    2 +-
- common/internal.h                             |    4 +
- common/messages.c                             |   42 +
- common/messages.h                             |   18 +
- common/send-stream.c                          |    2 +-
- common/send-utils.c                           |    2 +-
- common/utils.c                                |    2 +-
- common/utils.h                                |    2 +-
- convert/common.c                              |    2 +-
- convert/main.c                                |    1 +
- convert/source-ext2.c                         |    1 +
- image/main.c                                  |   12 +-
- include/kerncompat.h                          |  285 ++-
- kernel-lib/bitops.h                           |   12 +
- kernel-lib/trace.h                            |   55 +
- kernel-shared/accessors.c                     |  117 +
- kernel-shared/accessors.h                     | 1087 ++++++++++
- kernel-shared/async-thread.c                  |  339 +++
- kernel-shared/async-thread.h                  |   46 +
- kernel-shared/backref.c                       |    1 +
- kernel-shared/ctree.h                         | 1890 +----------------
- kernel-shared/delayed-ref.c                   |    1 +
- kernel-shared/dir-item.c                      |    8 +-
- kernel-shared/disk-io.c                       |   16 +-
- kernel-shared/extent-io-tree.c                | 1733 +++++++++++++++
- kernel-shared/extent-io-tree.h                |  239 +++
- kernel-shared/extent-tree.c                   |   52 +-
- kernel-shared/extent_io.c                     |  474 +----
- kernel-shared/extent_io.h                     |   39 +-
- kernel-shared/file-item.c                     |   13 +-
- kernel-shared/file-item.h                     |   89 +
- kernel-shared/file.c                          |    1 +
- kernel-shared/free-space-tree.c               |    1 +
- kernel-shared/inode.c                         |    2 +-
- kernel-shared/messages.c                      |  336 +++
- kernel-shared/messages.h                      |  216 ++
- kernel-shared/misc.h                          |  143 ++
- kernel-shared/print-tree.c                    |   17 +-
- kernel-shared/transaction.c                   |    5 +-
- include/ioctl.h => kernel-shared/uapi/btrfs.h |  566 +++--
- kernel-shared/uapi/btrfs_tree.h               | 1259 +++++++++++
- kernel-shared/ulist.c                         |    1 +
- kernel-shared/zoned.h                         |    1 +
- libbtrfs/kerncompat.h                         |   20 -
- mkfs/common.c                                 |    3 +-
- mkfs/rootdir.c                                |    1 +
- tests/ioctl-test.c                            |    2 +-
- tune/change-metadata-uuid.c                   |    2 +-
- tune/change-uuid.c                            |    2 +-
- 78 files changed, 6530 insertions(+), 2782 deletions(-)
- create mode 100644 kernel-lib/trace.h
- create mode 100644 kernel-shared/accessors.c
- create mode 100644 kernel-shared/accessors.h
- create mode 100644 kernel-shared/async-thread.c
- create mode 100644 kernel-shared/async-thread.h
- create mode 100644 kernel-shared/extent-io-tree.c
- create mode 100644 kernel-shared/extent-io-tree.h
- create mode 100644 kernel-shared/file-item.h
- create mode 100644 kernel-shared/messages.c
- create mode 100644 kernel-shared/messages.h
- create mode 100644 kernel-shared/misc.h
- rename include/ioctl.h => kernel-shared/uapi/btrfs.h (72%)
- create mode 100644 kernel-shared/uapi/btrfs_tree.h
-
+diff --git a/common/messages.c b/common/messages.c
+index 8bcfcc6a..aff5ce48 100644
+--- a/common/messages.c
++++ b/common/messages.c
+@@ -16,6 +16,7 @@
+ 
+ #include <stdio.h>
+ #include <stdarg.h>
++#include <printf.h>
+ #include "common/messages.h"
+ #include "common/utils.h"
+ 
+@@ -25,6 +26,8 @@ static const char *common_error_string[] = {
+ 	[ERROR_MSG_COMMIT_TRANS] = "failed to commit transaction",
+ };
+ 
++static int va_modifier = -1;
++
+ __attribute__ ((format (printf, 1, 2)))
+ void __btrfs_printf(const char *fmt, ...)
+ {
+@@ -35,11 +38,39 @@ void __btrfs_printf(const char *fmt, ...)
+ 	va_end(args);
+ }
+ 
++static int print_va_format(FILE *stream, const struct printf_info *info,
++			   const void *const *args)
++{
++	const struct va_format *fmt;
++
++	if (!(info->user & va_modifier))
++		return -2;
++
++	fmt = *((const struct va_format **)(args[0]));
++	return vfprintf(stream, fmt->fmt, *(fmt->va));
++}
++
++static int print_va_format_arginfo(const struct printf_info *info,
++				   size_t n, int *argtypes, int *size)
++{
++	if (n > 0) {
++		argtypes[0] = PA_POINTER;
++		size[0] = sizeof(struct va_format *);
++	}
++	return 1;
++ }
++
+ __attribute__ ((format (printf, 2, 3)))
+ void btrfs_no_printk(const void *fs_info, const char *fmt, ...)
+ {
+ 	va_list args;
+ 
++	if (va_modifier == -1) {
++		register_printf_specifier('V', print_va_format,
++					  print_va_format_arginfo);
++		va_modifier = register_printf_modifier(L"p");
++	}
++
+ 	va_start(args, fmt);
+ 	vfprintf(stderr, fmt, args);
+ 	va_end(args);
 -- 
 2.40.0
 

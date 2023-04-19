@@ -2,142 +2,202 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B9079C6FD18
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:29:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7129C77B75
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 23:08:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229655AbjDSV3A (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:29:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53058 "EHLO
+        id S232508AbjDSXH7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 19:07:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39124 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229602AbjDSV27 (ORCPT
+        with ESMTP id S231686AbjDSXH6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:28:59 -0400
-Received: from mail-oo1-xc2d.google.com (mail-oo1-xc2d.google.com [IPv6:2607:f8b0:4864:20::c2d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F1F95170E
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:28:55 -0700 (PDT)
-Received: by mail-oo1-xc2d.google.com with SMTP id 006d021491bc7-5472ead2f56so110603eaf.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:28:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939735; x=1684531735;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=BT7Zbax0bpxmHqvJ/MXdpLOfsE8EUXSfjxvOFFyb5kQ=;
-        b=UpkD5sjMFVuNvqqDcdcGcdZhUQCJp6pYfyEhx+nR21tc3xnXi6wVqYCpc2oYVkEHSK
-         q58M0l1QK7Rg4w9WmqyBiZQELM0SkKR/RrM2Nm2WAaFnG34jsIqSNB4/F8keNomy7KdQ
-         AKMLgLDDg/V3X8gGNRMSDtLqNayVa8JkZLdB5Dt7D6nOBeaPNTLxQU1FPKhphK+BxMIc
-         VucOVMOsnaV3uDnxUt8X9z72kF4jtFxObszG9+pvu80xpSO2TqGZv/Uv2QRHu2qz7sHB
-         FlW2DV9YiwxCt4LdKK+2ImN2WrN3jrLETew/tZq26PzmK8pbLk0Ati8youRmFkmIUeh3
-         dGqw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939735; x=1684531735;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=BT7Zbax0bpxmHqvJ/MXdpLOfsE8EUXSfjxvOFFyb5kQ=;
-        b=TpZnxLauLMpGjRwIMv+vi9aExPaNf6QkiVY5qm2ZHSQ9FSem0DiCkhfp8TQzfWXlVd
-         DTZh47hcdE59568iCB/Fwk5dbMIrhu7/8XkeAnUJfxMtPPwPjsPLT61sAy5CepuXukNm
-         rivCcWlstu2hHoDqGBtOMgEkGieypq7zF93JHma6eGLEfclVH2v104hw3F0mpwMy6B8r
-         /TYfyYN4lFvUbPqhRpr6CqDrLbmMGjDC40LgdCpTIoioxztuPn8D321dAuWwfugwOT7y
-         Hj6J3rt5vnFV+HtF2TQdzhmQyaPG9Fy3JK/u4KRBMtOYVCX4Ox0mWaK5JtwzswPFXeiX
-         IN3g==
-X-Gm-Message-State: AAQBX9fvl47wlt0/vmNw5tW201VZk8hKp219MQzZOTlaAi4Vx3knSTMz
-        zzNQ14lwQdtQVNbGTOdH7QWeYs7BCIUwVLqlPcYt/Q==
-X-Google-Smtp-Source: AKy350brXqmv5svzm8zXiGzRvzYPlVRQIluiAqTg0esrLJWn70mwldJ46vRfWkIJ17K4fNHWjDTD8g==
-X-Received: by 2002:a05:6214:f2c:b0:5f1:6c0a:1df6 with SMTP id iw12-20020a0562140f2c00b005f16c0a1df6mr7041694qvb.37.1681939255189;
-        Wed, 19 Apr 2023 14:20:55 -0700 (PDT)
-Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id i8-20020a05620a27c800b0074e1625917bsm552183qkp.32.2023.04.19.14.20.54
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:20:54 -0700 (PDT)
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 01/10] btrfs-progs: const-ify the extent buffer helpers
-Date:   Wed, 19 Apr 2023 17:20:41 -0400
-Message-Id: <9e136253b6e9ae2cbd929552f4e36a3a641cad1f.1681939107.git.josef@toxicpanda.com>
-X-Mailer: git-send-email 2.40.0
-In-Reply-To: <cover.1681939107.git.josef@toxicpanda.com>
-References: <cover.1681939107.git.josef@toxicpanda.com>
+        Wed, 19 Apr 2023 19:07:58 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D30BA1BD6;
+        Wed, 19 Apr 2023 16:07:55 -0700 (PDT)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MzQkK-1qBK1z3ynQ-00vQmg; Thu, 20
+ Apr 2023 01:07:48 +0200
+Message-ID: <aab28979-0e54-2a02-6641-e23e9e525f90@gmx.com>
+Date:   Thu, 20 Apr 2023 07:07:44 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.8.0
+Subject: Re: [PATCH pre-6.4] btrfs: dev-replace: error out if we have
+ unrepaired metadata error during
+To:     Torstein Eide <torsteine@gmail.com>, anand.jain@oracle.com
+Cc:     linux-btrfs@vger.kernel.org, stable@vger.kernel.org,
+        Qu Wenruo <wqu@suse.com>
+References: <CAL5DHTEcqoUnbMLVgEEPr21zLqj+FSVckPepxxL-Gg9yhkGNvA@mail.gmail.com>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <CAL5DHTEcqoUnbMLVgEEPr21zLqj+FSVckPepxxL-Gg9yhkGNvA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:YfQwZx/pIaw9+dB9V6FHFzOln07y9c6YJmniRzUnxmD3OZS2POS
+ +ou2H6bBgBbOcz9E8u/Wlr1/2LU+PriH4icMdZNpfzjN+Y9lxoZbPYYsoPoHZSnah5H20Dm
+ X035chf3HVzKy5FI2avvkO+WlHm1TaD63A7X7DSYhJrvkR8HKfKXp4cncOjm/yeVk4ZoptY
+ Yivb2Upb3HTR2NEOhvfsQ==
+UI-OutboundReport: notjunk:1;M01:P0:l8MWzbRWLc8=;4f6l0FGEdJ5+sF3BBD2VpDGbkO7
+ FJJGyDcoJA5nrc9dLz5AauTrQUTAN/iRyH3dEJrtledc2FP3FAmGmzD1t88jzLpRW83kG/mpI
+ 0L6sJ/LEc5hmlXlnqvEB14JT0zEuz6FDf1ypKqjpWoSq0YSdeVpjy/m166ajtpFJ94lR/Q02g
+ 16BxrClJslBXtsJVpMOsPWY23R6QEVb8jlcxsxntK7OptPnuBMhBDT0WWArPeIpGvmRmlcTKG
+ N0yYTm/LmQSIxzfjmBcAexDZQNY6fibY7irI28/RV0OI0fBlzfPDNCztno9LTIB6Gr8d0z1im
+ XngdR2Q03PzcD8h3VyuDz53rMe3ukO5wVhpSc7fI30LE+shMJoMtO1SIZogtnSk2x+oLSVMkj
+ Wp58imN2gHgbNckREqAAmyp4xqhbUUmxeJJzfWjDBkuRjwXv1W9UcYHLff/Qex9py+h6LTFeu
+ HZWpEbnSyTdLsGYHWi7DB7y7M2QLeHs4T+JRIdIgWy0DwOsXsOUzGLYxb0jj2+MAwc5f0l1cS
+ pqQoh/VMO8ViA5aWNIBO4nl/N1y6w/OaOxq7YwmrWlRWVeMRXSNJIp1paPwrfyiVelC5iWk5R
+ PsafI2s/WxoZETroHyGYj0iWijE10bxMGubewKDRol4teIz76gyM6UXXG7CaNL9wd8D8Aqxow
+ fEYlN2TnUKr7BNhpm5ANbliXVi8iI1GhD6mQMN2XNm9Ti0/gvQH/1mPDvZ5mOI24Coo8R/iqY
+ IUNrA6zJ6uYq5zzF79zK9dnrxDvnaTUyRb3iUEE/g2X+n0lBGSurL/eTuFkw7j3vB81xufnPR
+ bYCXifcAAieeyE305a+f5mBL+fjlJ15558wk0IZfU2J+jD7FgZBzpTTSuOxQVtGW7jSZKrLen
+ jmr1Alk4+yE4pkrM+3nHy1BV8sl1mIFvXO0zgkSQ7j8fQDy8ALWNPLVD/eT28KM7uOX7MLTNc
+ g7dQs+UC84GkyLg47h07VoY4B2A=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-These helpers are all take const struct extent_buffer in the kernel, do
-the same in btrfs-progs in order to enable us to more easily sync
-ctree.c.
 
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- kernel-shared/extent_io.c | 15 ++++++++-------
- kernel-shared/extent_io.h | 10 ++++++----
- 2 files changed, 14 insertions(+), 11 deletions(-)
 
-diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
-index 46c0fb3f..01dc5b1e 100644
---- a/kernel-shared/extent_io.c
-+++ b/kernel-shared/extent_io.c
-@@ -609,26 +609,27 @@ void write_extent_buffer(const struct extent_buffer *eb, const void *src,
- 	memcpy((void *)eb->data + start, src, len);
- }
- 
--void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
-+void copy_extent_buffer(const struct extent_buffer *dst,
-+			const struct extent_buffer *src,
- 			unsigned long dst_offset, unsigned long src_offset,
- 			unsigned long len)
- {
--	memcpy(dst->data + dst_offset, src->data + src_offset, len);
-+	memcpy((void *)dst->data + dst_offset, src->data + src_offset, len);
- }
- 
--void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
-+void memmove_extent_buffer(const struct extent_buffer *dst, unsigned long dst_offset,
- 			   unsigned long src_offset, unsigned long len)
- {
--	memmove(dst->data + dst_offset, dst->data + src_offset, len);
-+	memmove((void *)dst->data + dst_offset, dst->data + src_offset, len);
- }
- 
--void memset_extent_buffer(struct extent_buffer *eb, char c,
-+void memset_extent_buffer(const struct extent_buffer *eb, char c,
- 			  unsigned long start, unsigned long len)
- {
--	memset(eb->data + start, c, len);
-+	memset((void *)eb->data + start, c, len);
- }
- 
--int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
- 			   unsigned long nr)
- {
- 	return le_test_bit(nr, (u8 *)eb->data + start);
-diff --git a/kernel-shared/extent_io.h b/kernel-shared/extent_io.h
-index 8ba56eed..69133c3c 100644
---- a/kernel-shared/extent_io.h
-+++ b/kernel-shared/extent_io.h
-@@ -110,14 +110,16 @@ void read_extent_buffer(const struct extent_buffer *eb, void *dst,
- 			unsigned long start, unsigned long len);
- void write_extent_buffer(const struct extent_buffer *eb, const void *src,
- 			 unsigned long start, unsigned long len);
--void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
-+void copy_extent_buffer(const struct extent_buffer *dst,
-+			const struct extent_buffer *src,
- 			unsigned long dst_offset, unsigned long src_offset,
- 			unsigned long len);
--void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
-+void memmove_extent_buffer(const struct extent_buffer *dst,
-+			   const unsigned long dst_offset,
- 			   unsigned long src_offset, unsigned long len);
--void memset_extent_buffer(struct extent_buffer *eb, char c,
-+void memset_extent_buffer(const struct extent_buffer *eb, char c,
- 			  unsigned long start, unsigned long len);
--int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
- 			   unsigned long nr);
- int set_extent_buffer_dirty(struct extent_buffer *eb);
- int clear_extent_buffer_dirty(struct extent_buffer *eb);
--- 
-2.40.0
+On 2023/4/20 04:23, Torstein Eide wrote:
+>> This is for pre-6.4 kernels, as scrub code goes through a huge rework.
+>>
+>> [BUG]
+>> Even before the scrub rework, if we have some corrupted metadata failed
+>> to be repaired during replace, we still continue replace and let it
+>> finish just as there is nothing wrong:
+>>
+>>    BTRFS info (device dm-4): dev_replace from /dev/mapper/test-scratch1 (devid 1) to /dev/mapper/test-scratch2 started
+>>    BTRFS warning (device dm-4): tree block 5578752 mirror 1 has bad csum, has 0x00000000 want 0xade80ca1
+>>    BTRFS warning (device dm-4): tree block 5578752 mirror 0 has bad csum, has 0x00000000 want 0xade80ca1
+>>    BTRFS warning (device dm-4): checksum error at logical 5578752 on dev /dev/mapper/test-scratch1, physical 5578752: metadata leaf (level 0) in tree 5
+>>    BTRFS warning (device dm-4): checksum error at logical 5578752 on dev /dev/mapper/test-scratch1, physical 5578752: metadata leaf (level 0) in tree 5
+>>    BTRFS error (device dm-4): bdev /dev/mapper/test-scratch1 errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+>>    BTRFS warning (device dm-4): tree block 5578752 mirror 1 has bad bytenr, has 0 want 5578752
+>>    BTRFS error (device dm-4): unable to fixup (regular) error at logical 5578752 on dev /dev/mapper/test-scratch1
+>>    BTRFS info (device dm-4): dev_replace from /dev/mapper/test-scratch1 (devid 1) to /dev/mapper/test-scratch2 finished
+>>
+>> This can lead to unexpected problems for the result fs.
+>>
+>> [CAUSE]
+>> Btrfs reuses scrub code path for dev-replace to iterate all dev extents.
+>>
+>> But unlike scrub, dev-replace doesn't really bother to check the scrub
+>> progress, which records all the errors found during replace.
+>>
+>> And even if we checks the progress, we can not really determine which
+>> errors are minor, which are critical just by the plain numbers.
+>> (remember we don't treat metadata/data checksum error differently).
+>>
+>> This behavior is there from the very beginning.
+>>
+>> [FIX]
+>> Instead of continue the replace, just error out if we hit an unrepaired
+>> metadata sector.
+>>
+>> Now the dev-replace would be rejected with -EIO, to inform the user.
+>> Although it also means, the fs has some metadata error which can not be
+>> repaired, the user would be super upset anyway.
+> 
+> If one sector is bad in metadata how much secondary data is damaged?
 
+If it's metadata, it's highly possible the metadata has extra copy by 
+default.
+(Single disk btrfs goes DUP for meta, while multi-disk one goes RAID1 by 
+default).
+
+And if it's a metadata corruption, good luck it's not a critical one, or 
+this would be your last time to mount the fs.
+
+> 
+> As someone who recently had to remove, and currently replace a disk.
+> it is upsetting, if it stopped if we stopped because 0,01% of data is
+> unrepairable, if we can save the other 99,99%. Can we have it
+> continue, print an error message to standard out, and a way for the
+> user to delete or copy it (with som option like -force-delete or
+> --force-copy) with the error to the new disk?
+> "Metadata at block 5578752 is damaged and unrepaired. Skipping. Read
+> `man btrfs-replace` for more info. "
+> At the end if possible, list files affected by the damaged metadata blocks.
+> 
+> In man answer:
+> How can the user know what files are connected to the metadata?
+> How can a user decide what to do with the damaged metadata?
+> 
+> 
+> At minimum,  can there be some useful info to the info to the error output? like
+> "Replace has stopped, due to reading unrepaired metadata block, was
+> working on block 5578752, se `dmesg` for more details. (\s Sorry but
+> you are currently f..k)"
+
+I'd say, if your metadata is already corrupted, you don't want a 
+"generic" solution, but ask for a developer to guide you how to recover.
+
+Thanks,
+Qu
+
+> 
+> 
+> 
+>>
+>> The new dmesg would look like this:
+>>
+>>    BTRFS info (device dm-4): dev_replace from /dev/mapper/test-scratch1 (devid 1) to /dev/mapper/test-scratch2 started
+>>    BTRFS warning (device dm-4): tree block 5578752 mirror 1 has bad csum, has 0x00000000 want 0xade80ca1
+>>    BTRFS warning (device dm-4): tree block 5578752 mirror 1 has bad csum, has 0x00000000 want 0xade80ca1
+>>    BTRFS error (device dm-4): unable to fixup (regular) error at logical 5570560 on dev /dev/mapper/test-scratch1 physical 5570560
+>>    BTRFS warning (device dm-4): header error at logical 5570560 on dev /dev/mapper/test-scratch1, physical 5570560: metadata leaf (level 0) in tree 5
+>>    BTRFS warning (device dm-4): header error at logical 5570560 on dev /dev/mapper/test-scratch1, physical 5570560: metadata leaf (level 0) in tree 5
+>>    BTRFS error (device dm-4): stripe 5570560 has unrepaired metadata sector at 5578752
+>>    BTRFS error (device dm-4): btrfs_scrub_dev(/dev/mapper/test-scratch1, 1, /dev/mapper/test-scratch2) failed -5
+>>
+>> CC: stable@vger.kernel.org
+>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>> ---
+>> I'm not sure how should we merge this patch.
+>>
+>> The misc-next is already merging the new scrub code, but the problem is
+>> there for all old kernels thus we need such fixes.
+>>
+>> Maybe we can merge this fix before the scrub rework, then the rework,
+>> and finally the better fix using reworked interface?
+>> ---
+>>    fs/btrfs/scrub.c | 9 +++++++++
+>>    1 file changed, 9 insertions(+)
+>>
+>> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+>> index ef4046a2572c..71f64b9bcd9f 100644
+>> --- a/fs/btrfs/scrub.c
+>> +++ b/fs/btrfs/scrub.c
+>> @@ -195,6 +195,7 @@ struct scrub_ctx {
+>>    struct mutex            wr_lock;
+>>    struct btrfs_device     *wr_tgtdev;
+>>    bool                    flush_all_writes;
+>> + bool has_meta_failed;
+>>
+>>    /*
+>>    * statistics
+>> @@ -1380,6 +1381,8 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+>>    btrfs_err_rl_in_rcu(fs_info,
+>>    "unable to fixup (regular) error at logical %llu on dev %s",
+>>    logical, btrfs_dev_name(dev));
+>> + if (is_metadata)
+>> + sctx->has_meta_failed = true;
+>>    }
+>>
+>>    out:
+>> @@ -3838,6 +3841,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+>>
+>>    blk_finish_plug(&plug);
+>>
+>> + /*
+>> + * If we have metadata unable to be repaired, we should error
+>> + * out the dev-replace.
+>> + */
+>> + if (sctx->is_dev_replace && sctx->has_meta_failed && ret >= 0)
+>> + ret = -EIO;
+>>    if (sctx->is_dev_replace && ret >= 0) {
+>>    int ret2;
+>>
+> 
+> 

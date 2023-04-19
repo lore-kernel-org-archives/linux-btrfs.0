@@ -2,113 +2,224 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA1D1C77B73
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:22:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C5E38C6FD18
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:22:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232240AbjDSVWg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:22:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43972 "EHLO
+        id S231953AbjDSVWi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:22:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44480 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232282AbjDSVWc (ORCPT
+        with ESMTP id S229960AbjDSVWh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:22:32 -0400
-Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D39B98A53
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:21:59 -0700 (PDT)
-Received: by mail-qt1-x834.google.com with SMTP id bb13so600513qtb.11
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:21:59 -0700 (PDT)
+        Wed, 19 Apr 2023 17:22:37 -0400
+Received: from mail-qt1-x82d.google.com (mail-qt1-x82d.google.com [IPv6:2607:f8b0:4864:20::82d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02FBC7D92
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:04 -0700 (PDT)
+Received: by mail-qt1-x82d.google.com with SMTP id fg9so684417qtb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939254; x=1684531254;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:from:to:cc:subject:date:message-id:reply-to;
-        bh=tSw4rmUOXRn7OYhfT9BRUMA3Zbn3jxs/ofC6YnIL8Rs=;
-        b=5FDdk/+6NOWIUzZj+SA1/O3eJ9I6FCaJVz4mXJS0qyTlsYZCcP7V65fF3riPYGybwW
-         htUsfQ6+5Ujz+kT1qrppe8tgvJkb1ME4oMop6XzMTFGcgThVPd2wy4Yf+eVkGpVSdvgL
-         eveDp1S88fMiHuuTFM0e4QnIrbF6F8t3pp9U1EvQ0Ry1jLKyURmsalm33Ir/sx8UD8KE
-         20nLYlPNeJ6bX6t0J0qiApdIUGdFArnmSyn32FT4O1yHcnZVz7x4u4UCIrTEkV4/rBSG
-         f9wFUAsdnysWvbCc7cw0KVx2YCsy3PA/RShVheFdGuS8TbC18n6GkbwlnpCrhqWeus1I
-         cAKA==
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939260; x=1684531260;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=mJL4BH5zfjlEK7ouLKrTVZCqb3jUq7HRx2RxvhPzGVE=;
+        b=z4u88xZduHWoLJ5b8+7cAtW+tvGvHzYe//e+lFgt5GY5F9aDn0ShdwwrikbnCX1RpY
+         fZcipgW+q3tSgTN6Iqce74zc61WbwtxfgDQFMDVjV1JBT6cN5bZ/w2IywcgUx/KKB5zC
+         JLqs7+Hv6q75jSATpXD/nTLVLD77oY9TvSeMDWTb/pLPpKte3yYM4OGWjqovcO1gU7d7
+         jr9ShXsiYHZpl9CUGmbNqakchB2iuaLbDdVgDktMHjJD4iKnPHFRAsyNcTyZeKo8fEXl
+         0OnW8B8OdAPKZn3wzV/uZySDTcAw/by+Hhi9Tiy6yNe548LQ/3oY7w/Ix0a+FpH9YGz1
+         j9dA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939254; x=1684531254;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=tSw4rmUOXRn7OYhfT9BRUMA3Zbn3jxs/ofC6YnIL8Rs=;
-        b=G5jF5p6IgGd4V5oHQqRpvNSzhIwk0F0mGf+XEqNE2Ok46X8mSkYA+s8/MNxDSOFekC
-         CBZHOaRQR/FcDZXh3xYQKo+9aGsXoxRKp2qRUfPF3mUMwnkWj9Lu8A/Ulc9XB+AgpoGv
-         +UHCBIRdC6Ht2zgzuqAd6vUILQ+MvDcmlaDr/CBYIMWQHwqJt16pwnbSFn4OvQRH7+WG
-         QgH4WMZzXjoim//MkqU6Xf/kbUXEciI5Mp960qWT1xCg+tz6KBDNaHZfzfqpmfs/uSBw
-         7A4TJHepFjhgzg5FICQniUV/g3cnFvVpCDzzqCBiJnDSPVnTAV/U9n8QP2nZvKmm78kX
-         vhRg==
-X-Gm-Message-State: AAQBX9dKKYEaC5b8NQTTym5QPEEJw0fmyP6DPJ02+kdR+SfQY5JFHdPr
-        kE5mvk731gIXbuEYRlEY6Snq9/7LpFU0I81I9W+mTA==
-X-Google-Smtp-Source: AKy350YEym1KORpL6Z2P7L0T0gRQyrH/xJ+jAq7Tps76+EBYD7z2HnTyYXO2z0D7znaCqLfFRYnxEg==
-X-Received: by 2002:ac8:5acb:0:b0:3ef:414e:fb6a with SMTP id d11-20020ac85acb000000b003ef414efb6amr7098688qtd.55.1681939253796;
-        Wed, 19 Apr 2023 14:20:53 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1681939260; x=1684531260;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=mJL4BH5zfjlEK7ouLKrTVZCqb3jUq7HRx2RxvhPzGVE=;
+        b=YE1YpqiOF34EeSXypakIAKMuyKv3kZS9VR3IGsPIeGaI3xvcbneJ79Cx8m1WuOGoCM
+         6nLj7GpYYd+wXmVOucSEjsG4N9ZqI7kB9hboWCNyVPNbMqxNyqn4IyuHo+SH2i4uCvc0
+         woOmzkzNoKVhQstA/wh7sRMIh50JUUnplhjXu7+VFW55mp0ieWSthFZGocDGZLW0EscU
+         9fsohpxaeh272IAdzELRHmSJG52ifobzmQRgZJgwxTrnVb0W9oUeqmgpDw6lQdmAd5jm
+         HGpscHn98rA2Bp2R+Spkf2vlZ8ELRTWYVifN+tTMB1ogHYVviomOnpKFoDPUdFQOQ7r3
+         /1PA==
+X-Gm-Message-State: AAQBX9f838o9bJ2xH/TBtNJnd8YxTACNvXuG7rL5umQwU6KGrF5BbTSo
+        PAKPKScP1jy0AvQZiFkeQmAvpHgfbiv9VZTVdcHI6w==
+X-Google-Smtp-Source: AKy350YsAJujj4dGNNM2q7kUEBukfDyhuL45Y7WH+KB99w1tnzhF55CijRm9KLRVaeOlRKsN/GoQyg==
+X-Received: by 2002:a05:622a:1454:b0:3e8:69dd:c62d with SMTP id v20-20020a05622a145400b003e869ddc62dmr9669570qtx.57.1681939260307;
+        Wed, 19 Apr 2023 14:21:00 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id c11-20020ac853cb000000b003d5358ffa83sm33672qtq.62.2023.04.19.14.20.53
+        by smtp.gmail.com with ESMTPSA id i2-20020a05620a404200b007468765b411sm4950333qko.45.2023.04.19.14.20.59
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:20:53 -0700 (PDT)
+        Wed, 19 Apr 2023 14:20:59 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 00/10] btrfs-progs: prep work for syncing ctree.c
-Date:   Wed, 19 Apr 2023 17:20:40 -0400
-Message-Id: <cover.1681939107.git.josef@toxicpanda.com>
+Subject: [PATCH 05/10] btrfs-progs: add btrfs_locking_nest to btrfs_alloc_tree_block
+Date:   Wed, 19 Apr 2023 17:20:45 -0400
+Message-Id: <f1ae58e279715442a595f71ead51f3b2beee0bde.1681939107.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
+In-Reply-To: <cover.1681939107.git.josef@toxicpanda.com>
+References: <cover.1681939107.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+This is how btrfs_alloc_tree_block is defined in the kernel, so when we
+go to sync this code in it'll be easier if we're already setup to accept
+this argument.  Since we're in progs we don't care about nesting so just
+use BTRFS_NORMAL_NESTING everywhere, as we sync in the kernel code it'll
+get updated to whatever is appropriate.
 
-These patches update a lot of the different ctree.c related helpers that have
-diverged from the kernel in order to make ite easier syncing ctree.c directly.
-This also syncs locking.[ch], but this is to just stub out the locking.  This
-will make it easier to sync ctree.c as well since there's locking in the kernel
-that didn't exist when we had this in btrfs-progs.
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+---
+ check/main.c                |  2 +-
+ cmds/rescue-chunk-recover.c |  2 +-
+ kernel-shared/ctree.c       | 18 ++++++++++++------
+ kernel-shared/ctree.h       |  4 +++-
+ kernel-shared/disk-io.c     |  3 ++-
+ kernel-shared/extent-tree.c |  3 ++-
+ 6 files changed, 21 insertions(+), 11 deletions(-)
 
-This series depends on
-
-	btrfs-progs: prep work for syncing files into kernel-shared
-	btrfs-progs: sync basic code from the kernel
-
-Thanks,
-
-Josef
-
-Josef Bacik (10):
-  btrfs-progs: const-ify the extent buffer helpers
-  btrfs-progs: bring root->state into btrfs-progs
-  btrfs-progs: rename btrfs_alloc_free_block to btrfs_alloc_tree_block
-  btrfs-progs: sync locking.h and stub out all the helpers
-  btrfs-progs: add btrfs_locking_nest to btrfs_alloc_tree_block
-  btrfs-progs: add some missing extent buffer helpers
-  btrfs-progs: rename btrfs_set_block_flags ->
-    btrfs_set_disk_extent_flags
-  btrfs-progs: cleanup args for btrfs_set_disk_extent_flags
-  btrfs-progs: rename clear_extent_buffer_dirty =>
-    btrfs_clear_buffer_dirty
-  btrfs-progs: make __btrfs_cow_block static
-
- Makefile                    |   1 +
- check/main.c                |   7 +-
- cmds/rescue-chunk-recover.c |   4 +-
- cmds/rescue.c               |   2 +-
- include/kerncompat.h        |   4 +
- kernel-shared/ctree.c       |  72 +++++-----
- kernel-shared/ctree.h       |  82 ++++++++++--
- kernel-shared/disk-io.c     |  33 +++--
- kernel-shared/extent-tree.c |  28 ++--
- kernel-shared/extent_io.c   |  28 ++--
- kernel-shared/extent_io.h   |  15 ++-
- kernel-shared/locking.c     |  22 +++
- kernel-shared/locking.h     | 258 ++++++++++++++++++++++++++++++++++++
- kernel-shared/transaction.c |   4 +-
- 14 files changed, 464 insertions(+), 96 deletions(-)
- create mode 100644 kernel-shared/locking.c
- create mode 100644 kernel-shared/locking.h
-
+diff --git a/check/main.c b/check/main.c
+index c5131b7a..09805511 100644
+--- a/check/main.c
++++ b/check/main.c
+@@ -9098,7 +9098,7 @@ static struct extent_buffer *btrfs_fsck_clear_root(
+ 
+ 	c = btrfs_alloc_tree_block(trans, gfs_info->tree_root,
+ 				   gfs_info->nodesize, key->objectid,
+-				   &disk_key, 0, 0, 0);
++				   &disk_key, 0, 0, 0, BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(c)) {
+ 		btrfs_free_path(path);
+ 		return c;
+diff --git a/cmds/rescue-chunk-recover.c b/cmds/rescue-chunk-recover.c
+index b18d422e..52119d98 100644
+--- a/cmds/rescue-chunk-recover.c
++++ b/cmds/rescue-chunk-recover.c
+@@ -1148,7 +1148,7 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
+ 
+ 	cow = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 				     BTRFS_CHUNK_TREE_OBJECTID,
+-				     &disk_key, 0, 0, 0);
++				     &disk_key, 0, 0, 0, BTRFS_NESTING_NORMAL);
+ 	btrfs_set_header_bytenr(cow, cow->start);
+ 	btrfs_set_header_generation(cow, trans->transid);
+ 	btrfs_set_header_nritems(cow, 0);
+diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
+index 230dae1b..cad15093 100644
+--- a/kernel-shared/ctree.c
++++ b/kernel-shared/ctree.c
+@@ -169,7 +169,8 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 		btrfs_node_key(buf, &disk_key, 0);
+ 	cow = btrfs_alloc_tree_block(trans, new_root, buf->len,
+ 				     new_root_objectid, &disk_key,
+-				     level, buf->start, 0);
++				     level, buf->start, 0,
++				     BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(cow)) {
+ 		kfree(new_root);
+ 		return PTR_ERR(cow);
+@@ -231,7 +232,8 @@ int btrfs_create_root(struct btrfs_trans_handle *trans,
+ 	new_root->root_key.offset = 0;
+ 
+ 	node = btrfs_alloc_tree_block(trans, new_root, fs_info->nodesize,
+-				      objectid, &disk_key, 0, 0, 0);
++				      objectid, &disk_key, 0, 0, 0,
++				      BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(node)) {
+ 		ret = PTR_ERR(node);
+ 		error("failed to create root node for tree %llu: %d (%m)",
+@@ -463,7 +465,8 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 
+ 	cow = btrfs_alloc_tree_block(trans, root, buf->len,
+ 				     root->root_key.objectid, &disk_key,
+-				     level, search_start, empty_size);
++				     level, search_start, empty_size,
++				     BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
+ 
+@@ -1734,7 +1737,8 @@ static int noinline insert_new_root(struct btrfs_trans_handle *trans,
+ 
+ 	c = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 				   root->root_key.objectid, &lower_key,
+-				   level, root->node->start, 0);
++				   level, root->node->start, 0,
++				   BTRFS_NESTING_NORMAL);
+ 
+ 	if (IS_ERR(c))
+ 		return PTR_ERR(c);
+@@ -1860,7 +1864,8 @@ static int split_node(struct btrfs_trans_handle *trans, struct btrfs_root
+ 
+ 	split = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 					root->root_key.objectid,
+-					&disk_key, level, c->start, 0);
++					&disk_key, level, c->start, 0,
++					BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(split))
+ 		return PTR_ERR(split);
+ 
+@@ -2427,7 +2432,8 @@ again:
+ 
+ 	right = btrfs_alloc_tree_block(trans, root, root->fs_info->nodesize,
+ 					root->root_key.objectid,
+-					&disk_key, 0, l->start, 0);
++					&disk_key, 0, l->start, 0,
++					BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(right)) {
+ 		BUG_ON(1);
+ 		return PTR_ERR(right);
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index af60ba66..f416fc36 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -29,6 +29,7 @@
+ #include "kernel-shared/uapi/btrfs_tree.h"
+ #include "accessors.h"
+ #include "extent-io-tree.h"
++#include "locking.h"
+ 
+ struct btrfs_root;
+ struct btrfs_trans_handle;
+@@ -853,7 +854,8 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root,
+ 					u32 blocksize, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
+-					u64 hint, u64 empty_size);
++					u64 hint, u64 empty_size,
++					enum btrfs_lock_nesting nest);
+ int btrfs_lookup_extent_info(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_fs_info *fs_info, u64 bytenr,
+ 			     u64 offset, int metadata, u64 *refs, u64 *flags);
+diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+index 6f9dc327..7ee45ad1 100644
+--- a/kernel-shared/disk-io.c
++++ b/kernel-shared/disk-io.c
+@@ -2334,7 +2334,8 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+ 	memcpy(&root->root_key, key, sizeof(struct btrfs_key));
+ 
+ 	leaf = btrfs_alloc_tree_block(trans, root, fs_info->nodesize,
+-				      root->root_key.objectid, NULL, 0, 0, 0);
++				      root->root_key.objectid, NULL, 0, 0, 0,
++				      BTRFS_NESTING_NORMAL);
+ 	if (IS_ERR(leaf)) {
+ 		ret = PTR_ERR(leaf);
+ 		leaf = NULL;
+diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
+index d0b3aee3..916eb840 100644
+--- a/kernel-shared/extent-tree.c
++++ b/kernel-shared/extent-tree.c
+@@ -2559,7 +2559,8 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root,
+ 					u32 blocksize, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
+-					u64 hint, u64 empty_size)
++					u64 hint, u64 empty_size,
++					enum btrfs_lock_nesting nest)
+ {
+ 	struct btrfs_key ins;
+ 	int ret;
 -- 
 2.40.0
 

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85779C77B73
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C396C6FD18
 	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:14:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231508AbjDSVOo (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:14:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38258 "EHLO
+        id S231446AbjDSVOn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:14:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38116 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231627AbjDSVOW (ORCPT
+        with ESMTP id S231497AbjDSVOO (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:14:22 -0400
-Received: from mail-qt1-x82c.google.com (mail-qt1-x82c.google.com [IPv6:2607:f8b0:4864:20::82c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 411247A81
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:15 -0700 (PDT)
-Received: by mail-qt1-x82c.google.com with SMTP id ay32so51054qtb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:15 -0700 (PDT)
+        Wed, 19 Apr 2023 17:14:14 -0400
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC3E98A46
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:11 -0700 (PDT)
+Received: by mail-qv1-xf2c.google.com with SMTP id js7so1038400qvb.5
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:11 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681938854; x=1684530854;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681938851; x=1684530851;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=j/qID2aK7guLS3RQBbBN2oiEtayDypekSvW8QS8Mam0=;
-        b=sGgvGHu95egDROVS9xHTSZaL/H54pNg20489r3S2JyYkUzrE1cIX1EOCmzTctLalL1
-         82Jya8lC0BEf/iunr2dhCct4v5bq+QwW4y+z/05+DTN+toSffWm1KO1fmCuKN7TGbQO0
-         5qKq7D00Vin8HLhCRSQE9Jbzom3Nsx9Op4Puyr6l34EqG1veMjvJUxa8GqY67YQ/Qbt9
-         ZKjiXtNJd11RQ2WWQO51NEYlpHwV/aLsNJX/T4m6IGgZVXcoLUa4Nn2xchcGpt9hF7oG
-         so7u8wcabRV30MdKZOvset5q/e/KKLWIw8Wt7r+Sjr6cK5GJIW9ExGNSP0KtYd0ph6u/
-         Jj5Q==
+        bh=d+WPaH+BJdDVExYFVFvljS9QVfX7dpOxEOOc15sE7t4=;
+        b=bXuoHvj2OI4ej26oQlqlT7KfPiuHYrCeccGbnRo2L6ew3vha7RUpITirGlxtcM9fnS
+         xIwXxDf8mYBJyvzs1627pYvmTAw5ANFC/qvKarFpaK2R/BFbefJ/c4dkRcloWLfFNuNm
+         efvEnSQMYAsrXjRfpAuedfuU/SfcG6BAekb3f6cLucyOur36OIBXv7WGYtFRjctZFMc3
+         OIVvVCL99bTsYBD0VeL/jILkdG5AWnf375w7CQmjsZjBX4Ha+aLasDaD2BlH+HH4QV/2
+         q1PIUToy7gKRszgClEMRz4p9sFFxqGrp4XUSU+ygIJhXi+t3Us6lXjRapDETKWoh/kWa
+         sS1w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681938854; x=1684530854;
+        d=1e100.net; s=20221208; t=1681938851; x=1684530851;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=j/qID2aK7guLS3RQBbBN2oiEtayDypekSvW8QS8Mam0=;
-        b=fPqGmMS7PMd8aB/OYZr/5Fkz7VspkeNAS8rzqg2LT5Vt6elW3w4yHG0opsnGT886m4
-         DnHMMedinF1ZepN9WhM2Rtl6xCpxRAA7KJ9xrucH1czN2YHyElYLw1sSadKNn/if1EvR
-         ALWi3ZMBz6qjlm118Hntn5wv+SX8zXnhr4UQlc6pni3TCv2Df2aFvBnPpi+Bo17WJFdV
-         ZF/RZYGTvHDqtYwgXuioJ5qTt4LQqwVzQI/RuqJXO+zFbxPlIiiGN/Wo6UU1ow7bhFOc
-         55PMDelvT1FH6hmm4ybQb9emyurU09Pg9f3Vmxy0QDu54QSiVS9gKj2onf5xLPg6PtAC
-         RJYA==
-X-Gm-Message-State: AAQBX9fufmidzRuPYCRUQ9CWMLWta1LSo1ntzWwMwV/oHbJfQtDp5M2N
-        InQb1Tp+brVyNFR0Ax5T1MpIZb2hznPPMmsi0RgQKA==
-X-Google-Smtp-Source: AKy350ZGCIPdUUbnsz9gPR/4Ay+9aTlgTXablpATguNCHt7ZP1tsUHuEXpZNXDVm9maT98xPK3cyWw==
-X-Received: by 2002:ac8:58d5:0:b0:3ed:4a17:8b04 with SMTP id u21-20020ac858d5000000b003ed4a178b04mr7616595qta.68.1681938854367;
-        Wed, 19 Apr 2023 14:14:14 -0700 (PDT)
+        bh=d+WPaH+BJdDVExYFVFvljS9QVfX7dpOxEOOc15sE7t4=;
+        b=GpSI33cL8+26ImL8uGJNWyZ62kRSYTVdF1toKutS5xKAxtTvXXs5gwgEduR790j7iU
+         GXM66YK2SaFHiXJwAqqNnq0R2KseuyozGko45gG0z6WLRncbqOlIrPcjVaRFK5puB7BM
+         MYv125DSV3L57QrxXQhJeXn2pwioM7EVHvQDe3EziFbyQg1MErvXy1bsNX/y3HioKaRQ
+         XgfsOXai0DfxGK0pJll754rC60lhlTq3+Xr01OcIZRtoNQ6gN+z3ROvPBCyfIOrzMyoR
+         RpV9e33o6dxoMrYsr3qNnQtE5AbNhGEryBH7OgTKVe/WpMJQIC5/ZE0JQc1Mil1MVCWE
+         BNYA==
+X-Gm-Message-State: AAQBX9f6fShxvYZOjepzUTraMz1h3TYgFG+Qkh4W9htyzvybT30o/+Wl
+        TYDQiCZzhm3Vcs47dtAQLh4cFCVoY9hdo/LNvgQYZw==
+X-Google-Smtp-Source: AKy350a1nI8TQlqODqy3sD82H1BQ5GQEElwKA6N9VZQRMmG34cZ1KJqTHYJWsK3FAWULZTa4PQoWsA==
+X-Received: by 2002:a05:6214:76a:b0:5ab:e259:b2a9 with SMTP id f10-20020a056214076a00b005abe259b2a9mr3799238qvz.14.1681938850565;
+        Wed, 19 Apr 2023 14:14:10 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id u18-20020a05622a14d200b003eda962ed24sm39190qtx.22.2023.04.19.14.14.13
+        by smtp.gmail.com with ESMTPSA id w10-20020a0cff0a000000b005e45f6cb74bsm4581921qvt.79.2023.04.19.14.14.10
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:14:14 -0700 (PDT)
+        Wed, 19 Apr 2023 14:14:10 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 10/11] btrfs-progs: add a btrfs check helper for checking blocks
-Date:   Wed, 19 Apr 2023 17:13:52 -0400
-Message-Id: <4f7342dabcc239185623abebdac57a30d0db259e.1681938648.git.josef@toxicpanda.com>
+Subject: [PATCH 08/11] btrfs-progs: rename the qgroup structs to match the kernel
+Date:   Wed, 19 Apr 2023 17:13:50 -0400
+Message-Id: <51b703790d273fe3104a5ae1920836b942310b1a.1681938648.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1681938648.git.josef@toxicpanda.com>
 References: <cover.1681938648.git.josef@toxicpanda.com>
@@ -64,197 +64,249 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs check wants to be able to record corrupted extents if it finds any
-bad blocks.  This has been done directly inside of the
-btrfs_check_leaf/btrfs_check_node helpers, but these are going to be
-sync'ed from the kernel in the future.  Add another helper and move the
-corrupt block handling into this helper and keep it inside of the check
-code.
+Now that the libbtrfs stuff has it's own local copy of ctree.h and
+ioctl.h, let's rename these qgroup struct members to match the kernel
+names, this way it'll make it easier to sync the kernel code into
+btrfs-progs.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/main.c          | 16 +++-------------
- check/mode-lowmem.c   | 11 ++++-------
- check/repair.c        | 29 +++++++++++++++++++++++++++++
- check/repair.h        |  3 ++-
- kernel-shared/ctree.c | 22 ++--------------------
- 5 files changed, 40 insertions(+), 41 deletions(-)
+ check/qgroup-verify.c      | 16 ++++----
+ cmds/qgroup.c              | 20 ++++------
+ kernel-shared/ctree.h      | 80 +++++++++++++++++++-------------------
+ kernel-shared/print-tree.c | 18 ++++-----
+ 4 files changed, 64 insertions(+), 70 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 8c3a10a1..467c8a57 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -1920,10 +1920,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 			goto out;
- 		}
+diff --git a/check/qgroup-verify.c b/check/qgroup-verify.c
+index 3d7b9ddf..db49e3c9 100644
+--- a/check/qgroup-verify.c
++++ b/check/qgroup-verify.c
+@@ -870,12 +870,12 @@ static struct qgroup_count *alloc_count(struct btrfs_disk_key *key,
+ 		c->key = *key;
  
--		if (btrfs_is_leaf(next))
--			status = btrfs_check_leaf(NULL, next);
--		else
--			status = btrfs_check_node(NULL, next);
-+		status = btrfs_check_block_for_repair(next, NULL);
- 		if (status != BTRFS_TREE_BLOCK_CLEAN) {
- 			free_extent_buffer(next);
- 			err = -EIO;
-@@ -3701,10 +3698,7 @@ static int check_fs_root(struct btrfs_root *root,
- 	wc->root_level = level;
+ 		item = &c->diskinfo;
+-		item->referenced = btrfs_qgroup_info_referenced(leaf, disk);
++		item->referenced = btrfs_qgroup_info_rfer(leaf, disk);
+ 		item->referenced_compressed =
+-			btrfs_qgroup_info_referenced_compressed(leaf, disk);
+-		item->exclusive = btrfs_qgroup_info_exclusive(leaf, disk);
++			btrfs_qgroup_info_rfer_cmpr(leaf, disk);
++		item->exclusive = btrfs_qgroup_info_excl(leaf, disk);
+ 		item->exclusive_compressed =
+-			btrfs_qgroup_info_exclusive_compressed(leaf, disk);
++			btrfs_qgroup_info_excl_cmpr(leaf, disk);
+ 		INIT_LIST_HEAD(&c->groups);
+ 		INIT_LIST_HEAD(&c->members);
+ 		INIT_LIST_HEAD(&c->bad_list);
+@@ -1594,14 +1594,14 @@ static int repair_qgroup_info(struct btrfs_fs_info *info,
+ 	btrfs_set_qgroup_info_generation(path.nodes[0], info_item,
+ 					 trans->transid);
  
- 	/* We may not have checked the root block, lets do that now */
--	if (btrfs_is_leaf(root->node))
--		status = btrfs_check_leaf(NULL, root->node);
--	else
--		status = btrfs_check_node(NULL, root->node);
-+	status = btrfs_check_block_for_repair(root->node, NULL);
- 	if (status != BTRFS_TREE_BLOCK_CLEAN)
- 		return -EIO;
+-	btrfs_set_qgroup_info_referenced(path.nodes[0], info_item,
++	btrfs_set_qgroup_info_rfer(path.nodes[0], info_item,
+ 					 count->info.referenced);
+-	btrfs_set_qgroup_info_referenced_compressed(path.nodes[0], info_item,
++	btrfs_set_qgroup_info_rfer_cmpr(path.nodes[0], info_item,
+ 					    count->info.referenced_compressed);
  
-@@ -4607,11 +4601,7 @@ static int check_block(struct btrfs_root *root,
- 	}
- 	rec->info_level = level;
+-	btrfs_set_qgroup_info_exclusive(path.nodes[0], info_item,
++	btrfs_set_qgroup_info_excl(path.nodes[0], info_item,
+ 					count->info.exclusive);
+-	btrfs_set_qgroup_info_exclusive_compressed(path.nodes[0], info_item,
++	btrfs_set_qgroup_info_excl_cmpr(path.nodes[0], info_item,
+ 					   count->info.exclusive_compressed);
  
--	if (btrfs_is_leaf(buf))
--		status = btrfs_check_leaf(&rec->parent_key, buf);
--	else
--		status = btrfs_check_node(&rec->parent_key, buf);
--
-+	status = btrfs_check_block_for_repair(buf, &rec->parent_key);
- 	if (status != BTRFS_TREE_BLOCK_CLEAN) {
- 		if (opt_check_repair)
- 			status = try_to_fix_bad_block(root, buf, status);
-diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
-index 1672da26..3cf8d97f 100644
---- a/check/mode-lowmem.c
-+++ b/check/mode-lowmem.c
-@@ -2695,7 +2695,7 @@ static int check_inode_item(struct btrfs_root *root, struct btrfs_path *path)
- 		 * we need to bail otherwise we could end up stuck.
- 		 */
- 		if (path->slots[0] == 0 &&
--		    btrfs_check_leaf(NULL, path->nodes[0]))
-+		    btrfs_check_block_for_repair(path->nodes[0], NULL))
- 			ret = -EIO;
+ 	btrfs_mark_buffer_dirty(path.nodes[0]);
+diff --git a/cmds/qgroup.c b/cmds/qgroup.c
+index 125362b8..ab4e9ecf 100644
+--- a/cmds/qgroup.c
++++ b/cmds/qgroup.c
+@@ -807,12 +807,11 @@ static int update_qgroup_info(int fd, struct qgroup_lookup *qgroup_lookup, u64 q
+ 		return PTR_ERR(bq);
  
- 		if (ret < 0) {
-@@ -5001,7 +5001,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 		if (*level == 0) {
- 			/* skip duplicate check */
- 			if (check || !check_all) {
--				ret = btrfs_check_leaf(NULL, cur);
-+				ret = btrfs_check_block_for_repair(cur, NULL);
- 				if (ret != BTRFS_TREE_BLOCK_CLEAN) {
- 					err |= -EIO;
- 					break;
-@@ -5018,7 +5018,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 			break;
- 		}
- 		if (check || !check_all) {
--			ret = btrfs_check_node(NULL, cur);
-+			ret = btrfs_check_block_for_repair(cur, NULL);
- 			if (ret != BTRFS_TREE_BLOCK_CLEAN) {
- 				err |= -EIO;
- 				break;
-@@ -5065,10 +5065,7 @@ static int walk_down_tree(struct btrfs_root *root, struct btrfs_path *path,
- 		if (ret < 0)
- 			break;
+ 	bq->info.generation = btrfs_stack_qgroup_info_generation(info);
+-	bq->info.referenced = btrfs_stack_qgroup_info_referenced(info);
++	bq->info.referenced = btrfs_stack_qgroup_info_rfer(info);
+ 	bq->info.referenced_compressed =
+-			btrfs_stack_qgroup_info_referenced_compressed(info);
+-	bq->info.exclusive = btrfs_stack_qgroup_info_exclusive(info);
+-	bq->info.exclusive_compressed =
+-			btrfs_stack_qgroup_info_exclusive_compressed(info);
++		btrfs_stack_qgroup_info_rfer_cmpr(info);
++	bq->info.exclusive = btrfs_stack_qgroup_info_excl(info);
++	bq->info.exclusive_compressed = btrfs_stack_qgroup_info_excl_cmpr(info);
  
--		if (btrfs_is_leaf(next))
--			status = btrfs_check_leaf(NULL, next);
--		else
--			status = btrfs_check_node(NULL, next);
-+		status = btrfs_check_block_for_repair(next, NULL);
- 		if (status != BTRFS_TREE_BLOCK_CLEAN) {
- 			free_extent_buffer(next);
- 			err |= -EIO;
-diff --git a/check/repair.c b/check/repair.c
-index f84df9cf..71b2a277 100644
---- a/check/repair.c
-+++ b/check/repair.c
-@@ -299,3 +299,32 @@ out:
- 	extent_io_tree_cleanup(&used);
- 	return ret;
+ 	return 0;
  }
-+
-+enum btrfs_tree_block_status btrfs_check_block_for_repair(struct extent_buffer *eb,
-+							  struct btrfs_key *first_key)
-+{
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
-+	enum btrfs_tree_block_status status;
-+
-+	if (btrfs_is_leaf(eb))
-+		status = btrfs_check_leaf(first_key, eb);
-+	else
-+		status = btrfs_check_node(first_key, eb);
-+
-+	if (status == BTRFS_TREE_BLOCK_CLEAN)
-+		return status;
-+
-+	if (btrfs_header_owner(eb) == BTRFS_EXTENT_TREE_OBJECTID) {
-+		struct btrfs_key key;
-+
-+		if (first_key)
-+			memcpy(&key, first_key, sizeof(struct btrfs_key));
-+		else
-+			btrfs_node_key_to_cpu(eb, &key, 0);
-+		btrfs_add_corrupt_extent_record(fs_info, &key,
-+						eb->start, eb->len,
-+						btrfs_header_level(eb));
-+	}
-+	return status;
-+
-+}
-diff --git a/check/repair.h b/check/repair.h
-index 3e6ffcf6..d4222600 100644
---- a/check/repair.h
-+++ b/check/repair.h
-@@ -43,5 +43,6 @@ int btrfs_mark_used_tree_blocks(struct btrfs_fs_info *fs_info,
- 				struct extent_io_tree *tree);
- int btrfs_mark_used_blocks(struct btrfs_fs_info *fs_info,
- 			   struct extent_io_tree *tree);
--
-+enum btrfs_tree_block_status btrfs_check_block_for_repair(struct extent_buffer *eb,
-+							  struct btrfs_key *first_key);
- #endif
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index fb56a863..c1c2059b 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -668,17 +668,8 @@ btrfs_check_node(struct btrfs_key *parent_key, struct extent_buffer *node)
- 			goto fail;
- 		}
- 	}
--	return BTRFS_TREE_BLOCK_CLEAN;
-+	ret = BTRFS_TREE_BLOCK_CLEAN;
- fail:
--	if (btrfs_header_owner(node) == BTRFS_EXTENT_TREE_OBJECTID) {
--		if (parent_key)
--			memcpy(&key, parent_key, sizeof(struct btrfs_key));
--		else
--			btrfs_node_key_to_cpu(node, &key, 0);
--		btrfs_add_corrupt_extent_record(fs_info, &key,
--						node->start, node->len,
--						btrfs_header_level(node));
--	}
- 	return ret;
+@@ -828,13 +827,10 @@ static int update_qgroup_limit(int fd, struct qgroup_lookup *qgroup_lookup,
+ 		return PTR_ERR(bq);
+ 
+ 	bq->limit.flags = btrfs_stack_qgroup_limit_flags(limit);
+-	bq->limit.max_referenced =
+-			btrfs_stack_qgroup_limit_max_referenced(limit);
+-	bq->limit.max_exclusive =
+-			btrfs_stack_qgroup_limit_max_exclusive(limit);
+-	bq->limit.rsv_referenced =
+-			btrfs_stack_qgroup_limit_rsv_referenced(limit);
+-	bq->limit.rsv_exclusive = btrfs_stack_qgroup_limit_rsv_exclusive(limit);
++	bq->limit.max_referenced = btrfs_stack_qgroup_limit_max_rfer(limit);
++	bq->limit.max_exclusive = btrfs_stack_qgroup_limit_max_excl(limit);
++	bq->limit.rsv_referenced = btrfs_stack_qgroup_limit_rsv_rfer(limit);
++	bq->limit.rsv_exclusive = btrfs_stack_qgroup_limit_rsv_excl(limit);
+ 
+ 	return 0;
+ }
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 93e1850c..df7526d4 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -1103,10 +1103,10 @@ struct btrfs_free_space_info {
+ 
+ struct btrfs_qgroup_info_item {
+ 	__le64 generation;
+-	__le64 referenced;
+-	__le64 referenced_compressed;
+-	__le64 exclusive;
+-	__le64 exclusive_compressed;
++	__le64 rfer;
++	__le64 rfer_cmpr;
++	__le64 excl;
++	__le64 excl_cmpr;
+ } __attribute__ ((__packed__));
+ 
+ /* flags definition for qgroup limits */
+@@ -1119,10 +1119,10 @@ struct btrfs_qgroup_info_item {
+ 
+ struct btrfs_qgroup_limit_item {
+ 	__le64 flags;
+-	__le64 max_referenced;
+-	__le64 max_exclusive;
+-	__le64 rsv_referenced;
+-	__le64 rsv_exclusive;
++	__le64 max_rfer;
++	__le64 max_excl;
++	__le64 rsv_rfer;
++	__le64 rsv_excl;
+ } __attribute__ ((__packed__));
+ 
+ struct btrfs_space_info {
+@@ -2466,48 +2466,48 @@ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_status_rescan,
+ /* btrfs_qgroup_info_item */
+ BTRFS_SETGET_FUNCS(qgroup_info_generation, struct btrfs_qgroup_info_item,
+ 		   generation, 64);
+-BTRFS_SETGET_FUNCS(qgroup_info_referenced, struct btrfs_qgroup_info_item,
+-		   referenced, 64);
+-BTRFS_SETGET_FUNCS(qgroup_info_referenced_compressed,
+-		   struct btrfs_qgroup_info_item, referenced_compressed, 64);
+-BTRFS_SETGET_FUNCS(qgroup_info_exclusive, struct btrfs_qgroup_info_item,
+-		   exclusive, 64);
+-BTRFS_SETGET_FUNCS(qgroup_info_exclusive_compressed,
+-		   struct btrfs_qgroup_info_item, exclusive_compressed, 64);
++BTRFS_SETGET_FUNCS(qgroup_info_rfer, struct btrfs_qgroup_info_item,
++		   rfer, 64);
++BTRFS_SETGET_FUNCS(qgroup_info_rfer_cmpr,
++		   struct btrfs_qgroup_info_item, rfer_cmpr, 64);
++BTRFS_SETGET_FUNCS(qgroup_info_excl, struct btrfs_qgroup_info_item,
++		   excl, 64);
++BTRFS_SETGET_FUNCS(qgroup_info_excl_cmpr,
++		   struct btrfs_qgroup_info_item, excl_cmpr, 64);
+ 
+ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_generation,
+ 			 struct btrfs_qgroup_info_item, generation, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_referenced,
+-			 struct btrfs_qgroup_info_item, referenced, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_referenced_compressed,
+-		   struct btrfs_qgroup_info_item, referenced_compressed, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_exclusive,
+-			 struct btrfs_qgroup_info_item, exclusive, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_exclusive_compressed,
+-		   struct btrfs_qgroup_info_item, exclusive_compressed, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_rfer,
++			 struct btrfs_qgroup_info_item, rfer, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_rfer_cmpr,
++		   struct btrfs_qgroup_info_item, rfer_cmpr, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_excl,
++			 struct btrfs_qgroup_info_item, excl, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_excl_cmpr,
++		   struct btrfs_qgroup_info_item, excl_cmpr, 64);
+ 
+ /* btrfs_qgroup_limit_item */
+ BTRFS_SETGET_FUNCS(qgroup_limit_flags, struct btrfs_qgroup_limit_item,
+ 		   flags, 64);
+-BTRFS_SETGET_FUNCS(qgroup_limit_max_referenced, struct btrfs_qgroup_limit_item,
+-		   max_referenced, 64);
+-BTRFS_SETGET_FUNCS(qgroup_limit_max_exclusive, struct btrfs_qgroup_limit_item,
+-		   max_exclusive, 64);
+-BTRFS_SETGET_FUNCS(qgroup_limit_rsv_referenced, struct btrfs_qgroup_limit_item,
+-		   rsv_referenced, 64);
+-BTRFS_SETGET_FUNCS(qgroup_limit_rsv_exclusive, struct btrfs_qgroup_limit_item,
+-		   rsv_exclusive, 64);
++BTRFS_SETGET_FUNCS(qgroup_limit_max_rfer, struct btrfs_qgroup_limit_item,
++		   max_rfer, 64);
++BTRFS_SETGET_FUNCS(qgroup_limit_max_excl, struct btrfs_qgroup_limit_item,
++		   max_excl, 64);
++BTRFS_SETGET_FUNCS(qgroup_limit_rsv_rfer, struct btrfs_qgroup_limit_item,
++		   rsv_rfer, 64);
++BTRFS_SETGET_FUNCS(qgroup_limit_rsv_excl, struct btrfs_qgroup_limit_item,
++		   rsv_excl, 64);
+ 
+ BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_flags,
+ 			 struct btrfs_qgroup_limit_item, flags, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_max_referenced,
+-			 struct btrfs_qgroup_limit_item, max_referenced, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_max_exclusive,
+-			 struct btrfs_qgroup_limit_item, max_exclusive, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_rsv_referenced,
+-			 struct btrfs_qgroup_limit_item, rsv_referenced, 64);
+-BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_rsv_exclusive,
+-			 struct btrfs_qgroup_limit_item, rsv_exclusive, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_max_rfer,
++			 struct btrfs_qgroup_limit_item, max_rfer, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_max_excl,
++			 struct btrfs_qgroup_limit_item, max_excl, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_rsv_rfer,
++			 struct btrfs_qgroup_limit_item, rsv_rfer, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_qgroup_limit_rsv_excl,
++			 struct btrfs_qgroup_limit_item, rsv_excl, 64);
+ 
+ /* btrfs_balance_item */
+ BTRFS_SETGET_FUNCS(balance_item_flags, struct btrfs_balance_item, flags, 64);
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 3fb6a37c..37a1f74c 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -1089,12 +1089,10 @@ static void print_qgroup_info(struct extent_buffer *eb, int slot)
+ 		"\t\treferenced %llu referenced_compressed %llu\n"
+ 		"\t\texclusive %llu exclusive_compressed %llu\n",
+ 		(unsigned long long)btrfs_qgroup_info_generation(eb, qg_info),
+-		(unsigned long long)btrfs_qgroup_info_referenced(eb, qg_info),
+-		(unsigned long long)btrfs_qgroup_info_referenced_compressed(eb,
+-								       qg_info),
+-		(unsigned long long)btrfs_qgroup_info_exclusive(eb, qg_info),
+-		(unsigned long long)btrfs_qgroup_info_exclusive_compressed(eb,
+-								      qg_info));
++		(unsigned long long)btrfs_qgroup_info_rfer(eb, qg_info),
++		(unsigned long long)btrfs_qgroup_info_rfer_cmpr(eb, qg_info),
++		(unsigned long long)btrfs_qgroup_info_excl(eb, qg_info),
++		(unsigned long long)btrfs_qgroup_info_excl_cmpr(eb, qg_info));
  }
  
-@@ -782,17 +773,8 @@ btrfs_check_leaf(struct btrfs_key *parent_key, struct extent_buffer *leaf)
- 		prev_key.offset = key.offset;
- 	}
- 
--	return BTRFS_TREE_BLOCK_CLEAN;
-+	ret = BTRFS_TREE_BLOCK_CLEAN;
- fail:
--	if (btrfs_header_owner(leaf) == BTRFS_EXTENT_TREE_OBJECTID) {
--		if (parent_key)
--			memcpy(&key, parent_key, sizeof(struct btrfs_key));
--		else
--			btrfs_item_key_to_cpu(leaf, &key, 0);
--
--		btrfs_add_corrupt_extent_record(fs_info, &key,
--						leaf->start, leaf->len, 0);
--	}
- 	return ret;
+ static void print_qgroup_limit(struct extent_buffer *eb, int slot)
+@@ -1106,10 +1104,10 @@ static void print_qgroup_limit(struct extent_buffer *eb, int slot)
+ 		"\t\tmax_referenced %lld max_exclusive %lld\n"
+ 		"\t\trsv_referenced %lld rsv_exclusive %lld\n",
+ 		(unsigned long long)btrfs_qgroup_limit_flags(eb, qg_limit),
+-		(long long)btrfs_qgroup_limit_max_referenced(eb, qg_limit),
+-		(long long)btrfs_qgroup_limit_max_exclusive(eb, qg_limit),
+-		(long long)btrfs_qgroup_limit_rsv_referenced(eb, qg_limit),
+-		(long long)btrfs_qgroup_limit_rsv_exclusive(eb, qg_limit));
++		(long long)btrfs_qgroup_limit_max_rfer(eb, qg_limit),
++		(long long)btrfs_qgroup_limit_max_excl(eb, qg_limit),
++		(long long)btrfs_qgroup_limit_rsv_rfer(eb, qg_limit),
++		(long long)btrfs_qgroup_limit_rsv_excl(eb, qg_limit));
  }
  
+ static void print_persistent_item(struct extent_buffer *eb, void *ptr,
 -- 
 2.39.1
 

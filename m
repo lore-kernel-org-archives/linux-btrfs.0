@@ -2,42 +2,42 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 99C4DC7EE20
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 14:11:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1163C77B7E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 14:12:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232762AbjDSOLz (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 10:11:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39386 "EHLO
+        id S232800AbjDSOML (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 10:12:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39720 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232243AbjDSOLJ (ORCPT
+        with ESMTP id S232588AbjDSOLW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 10:11:09 -0400
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9180516DD6;
-        Wed, 19 Apr 2023 07:10:58 -0700 (PDT)
-Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-2fe3fb8e2f7so703060f8f.0;
-        Wed, 19 Apr 2023 07:10:58 -0700 (PDT)
+        Wed, 19 Apr 2023 10:11:22 -0400
+Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7CFB16F89;
+        Wed, 19 Apr 2023 07:11:01 -0700 (PDT)
+Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-3f17b967bfbso33329165e9.1;
+        Wed, 19 Apr 2023 07:11:01 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681913457; x=1684505457;
+        d=1e100.net; s=20221208; t=1681913460; x=1684505460;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=C0hLQVWAy93GtM7oc6TpMOtkbIMql7YOXfxv+ovXyBI=;
-        b=G4cc5dGkkDNaiDS6LDJLs4MNke9gNqfCWnWv3ZALpHSfa22lUxouevYuGt0+dtB7L+
-         1UvLrfOT+fZRrU4clUdq6wzas58HCdtbTKNO1SIeY3pTA7FX9hc8zBpY2ZQatyUEUeAH
-         uR3A1ztO/1LR2+Om0nw9NyHaBtNXNK1/gN/lxv1V0dl8ADYY1rjig2a49baml3kEdduR
-         vmu3Mgx4q1d+LmzbMnFIHl3XautP0CEXl4qGhdL8+LTvoasg/yO5N5iKc/5TKSu+BH37
-         25P84NPN5NQzmEiROxm6FPIi2114gEZMgmVt0tc64GZdcupuxNw/vFrq2LKaFPhAseLM
-         1ItQ==
-X-Gm-Message-State: AAQBX9eefwMxW+4NHFX38F8rFWzGnPLTESJTkygwE8Ihwh/yRN7tADPe
-        t0lLnmrAViricZk3UWswkjU=
-X-Google-Smtp-Source: AKy350aVLE+txxcZm9LeX2yItutcTFI6YYsrFgCoIWHLD8EDS9H+yj3niCnWRjhD3VeCviDrTQZ6vw==
-X-Received: by 2002:a05:6000:1a47:b0:2ce:d84d:388f with SMTP id t7-20020a0560001a4700b002ced84d388fmr5447194wry.40.1681913456733;
-        Wed, 19 Apr 2023 07:10:56 -0700 (PDT)
+        bh=ExnlLXqiP3hLS8bpFiqaYIxJLAKQF5DCX5VPxtSPsPo=;
+        b=C1F7xo/X//QRE7wFkbsq/0iZKIo0+cdZKuXXwnQGlDVBJt2v9FvzQw/lRZnX63rlS3
+         HUBPsQyPdYDDcdenJ+vjfGWnm5l6RuX2Mw/LR4RuistP4HTs5RcfBCCuBKOfni4CRmAy
+         qOYiBn0f1HL3kdei94VjP/gIUkeYTxMx8Fkv5bMNLB7EROFm3vN4ORVLjMXnFoyB06F8
+         c9SdI+1hrjKe7FSSQxP2QeG4d5W/P8LXdDU9XtLhalwryc5uOkLGZlv2pKVp5Bk0XAfv
+         B65JfZkLjgaEQuNz5LPVQ/nOR4p6/KMZIHD8KxY32wcyO85uqZmhb65VeFFuVKFhDnqs
+         SFdQ==
+X-Gm-Message-State: AAQBX9dGKcRLAgHL6YUIuBt6D8no4LgUsVNW9xP/zJsWW8hB64IqXbvO
+        D/IyaSK74uPywIsqNzUInik=
+X-Google-Smtp-Source: AKy350a8brYKmUYvrzlJUafn/qJwxJEsZNYSYhzDz8VqjHAs/A8j+oRFG+qGVgXdrE5NcZ5HHKx+1Q==
+X-Received: by 2002:adf:f111:0:b0:2fa:2f1e:c1a8 with SMTP id r17-20020adff111000000b002fa2f1ec1a8mr2109123wro.3.1681913460203;
+        Wed, 19 Apr 2023 07:11:00 -0700 (PDT)
 Received: from localhost.localdomain (aftr-62-216-205-204.dynamic.mnet-online.de. [62.216.205.204])
-        by smtp.googlemail.com with ESMTPSA id q17-20020a5d61d1000000b002faaa9a1721sm7612089wrv.58.2023.04.19.07.10.55
+        by smtp.googlemail.com with ESMTPSA id q17-20020a5d61d1000000b002faaa9a1721sm7612089wrv.58.2023.04.19.07.10.58
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 07:10:56 -0700 (PDT)
+        Wed, 19 Apr 2023 07:10:59 -0700 (PDT)
 From:   Johannes Thumshirn <jth@kernel.org>
 To:     axboe@kernel.dk
 Cc:     johannes.thumshirn@wdc.com, agruenba@redhat.com,
@@ -50,9 +50,9 @@ Cc:     johannes.thumshirn@wdc.com, agruenba@redhat.com,
         rpeterso@redhat.com, shaggy@kernel.org, snitzer@kernel.org,
         song@kernel.org, willy@infradead.org,
         Damien Le Moal <damien.lemoal@opensource.wdc.com>
-Subject: [PATCH v3 17/19] md: raid1: check if adding pages to resync bio fails
-Date:   Wed, 19 Apr 2023 16:09:27 +0200
-Message-Id: <20230419140929.5924-18-jth@kernel.org>
+Subject: [PATCH v3 19/19] block: mark bio_add_page as __must_check
+Date:   Wed, 19 Apr 2023 16:09:29 +0200
+Message-Id: <20230419140929.5924-20-jth@kernel.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230419140929.5924-1-jth@kernel.org>
 References: <20230419140929.5924-1-jth@kernel.org>
@@ -64,80 +64,28 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-Check if adding pages to resync bio fails and if bail out.
-
-As the comment above suggests this cannot happen, WARN if it actually
-happens.
-
-This way we can mark bio_add_pages as __must_check.
+Now that all users of bio_add_page check for the return value, mark
+bio_add_page as __must_check.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Reviewed-by: Damien Le Moal <damien.lemoal@opensource.wdc.com>
 ---
- drivers/md/raid1-10.c | 11 ++++++-----
- drivers/md/raid10.c   | 20 ++++++++++----------
- 2 files changed, 16 insertions(+), 15 deletions(-)
+ include/linux/bio.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/md/raid1-10.c b/drivers/md/raid1-10.c
-index e61f6cad4e08..cd349e69ed77 100644
---- a/drivers/md/raid1-10.c
-+++ b/drivers/md/raid1-10.c
-@@ -101,11 +101,12 @@ static void md_bio_reset_resync_pages(struct bio *bio, struct resync_pages *rp,
- 		struct page *page = resync_fetch_page(rp, idx);
- 		int len = min_t(int, size, PAGE_SIZE);
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index d766be7152e1..0f8a8d7a6384 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -465,7 +465,7 @@ extern void bio_uninit(struct bio *);
+ void bio_reset(struct bio *bio, struct block_device *bdev, blk_opf_t opf);
+ void bio_chain(struct bio *, struct bio *);
  
--		/*
--		 * won't fail because the vec table is big
--		 * enough to hold all these pages
--		 */
--		bio_add_page(bio, page, len, 0);
-+		if (WARN_ON(!bio_add_page(bio, page, len, 0))) {
-+			bio->bi_status = BLK_STS_RESOURCE;
-+			bio_endio(bio);
-+			return;
-+		}
-+
- 		size -= len;
- 	} while (idx++ < RESYNC_PAGES && size > 0);
- }
-diff --git a/drivers/md/raid10.c b/drivers/md/raid10.c
-index 6c66357f92f5..59e52cf01569 100644
---- a/drivers/md/raid10.c
-+++ b/drivers/md/raid10.c
-@@ -3804,11 +3804,11 @@ static sector_t raid10_sync_request(struct mddev *mddev, sector_t sector_nr,
- 		for (bio= biolist ; bio ; bio=bio->bi_next) {
- 			struct resync_pages *rp = get_resync_pages(bio);
- 			page = resync_fetch_page(rp, page_idx);
--			/*
--			 * won't fail because the vec table is big enough
--			 * to hold all these pages
--			 */
--			bio_add_page(bio, page, len, 0);
-+			if (WARN_ON(!bio_add_page(bio, page, len, 0))) {
-+				bio->bi_status = BLK_STS_RESOURCE;
-+				bio_endio(bio);
-+				goto giveup;
-+			}
- 		}
- 		nr_sectors += len>>9;
- 		sector_nr += len>>9;
-@@ -4985,11 +4985,11 @@ static sector_t reshape_request(struct mddev *mddev, sector_t sector_nr,
- 		if (len > PAGE_SIZE)
- 			len = PAGE_SIZE;
- 		for (bio = blist; bio ; bio = bio->bi_next) {
--			/*
--			 * won't fail because the vec table is big enough
--			 * to hold all these pages
--			 */
--			bio_add_page(bio, page, len, 0);
-+			if (WARN_ON(!bio_add_page(bio, page, len, 0))) {
-+				bio->bi_status = BLK_STS_RESOURCE;
-+				bio_endio(bio);
-+				return sectors_done;
-+			}
- 		}
- 		sector_nr += len >> 9;
- 		nr_sectors += len >> 9;
+-int bio_add_page(struct bio *, struct page *, unsigned len, unsigned off);
++int __must_check bio_add_page(struct bio *, struct page *, unsigned len, unsigned off);
+ bool bio_add_folio(struct bio *, struct folio *, size_t len, size_t off);
+ extern int bio_add_pc_page(struct request_queue *, struct bio *, struct page *,
+ 			   unsigned int, unsigned int);
 -- 
 2.39.2
 

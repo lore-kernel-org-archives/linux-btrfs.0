@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8F10C77B78
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:14:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF78CC77B78
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:14:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230102AbjDSVOI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:14:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37746 "EHLO
+        id S230195AbjDSVOS (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:14:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38046 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231254AbjDSVOF (ORCPT
+        with ESMTP id S229739AbjDSVON (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:14:05 -0400
-Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B33064C1A
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:04 -0700 (PDT)
-Received: by mail-qv1-xf2c.google.com with SMTP id oo30so967263qvb.12
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:04 -0700 (PDT)
+        Wed, 19 Apr 2023 17:14:13 -0400
+Received: from mail-qv1-xf35.google.com (mail-qv1-xf35.google.com [IPv6:2607:f8b0:4864:20::f35])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A4F536A66
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:07 -0700 (PDT)
+Received: by mail-qv1-xf35.google.com with SMTP id m16so993820qvx.9
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:14:07 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681938843; x=1684530843;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681938846; x=1684530846;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=SD7EFyz1yLBLPVn7LfRqego19EUivGa1u7H8Jm5a5zk=;
-        b=1vzg6y6KPAe92vfL76UUADSFcIjsGewQdNK9jAQfprZ0GfcxZSszFzRoX3/ejCszn/
-         WGKnhRg7X9lELjCQYnL8pGNJecenITEzLmNHcDOQ5HST476DlP/ixD+SoGZwDH2gXg7J
-         0DcfoffnYDgWVctkvLTbgmk5co1yPIcyxue6nJvDSR2haxkW5yY8LZaFOsyPzGn5V6jo
-         ChMIa+hW5kSNhlgyyhkQY1pvC70ebRyqJeGWoxvbkiYW6gbySQRn9R1vePZiQhhjL1oo
-         t1fP2yklTVAL6w21VWOP0Kw4mnBBQf1AfleQw+8trpd80xyzwKETaPsbfGbquN5vHpSN
-         dDHg==
+        bh=VZPuTKMf29prda0AlpX7LFRIYMCQ9eqOXnvIkO1GWUI=;
+        b=g6PhRLv43QNTVE/1mn+ib47qTnp/ZWpn7Xihy9sJDl2ua1uboNKT16HN3Yu4evvxfH
+         hUa0ggep/JExU8FmiLnliaWy6poNkDKbh4h8JxLo+4hU7DiEbjfw/OtuhOjrA7Tx+fiu
+         XVwG0ANJvT4T+x19aoPS24Oq4kyvduAvz8AmegPXvZZMjYVXsGBU81z+lRWMiFRiRx2u
+         lfnAHSIICEasW/LFQGv0+oVEoW6aXzJH6JDV4uSUUqrM+yyarbzpQ5KyOTin/hDDGGau
+         XdYb4qL81G1raRAAqwREoJGmK5v5QK2f+L+M9GYma4MqVzM8XFE98qukh8lLa4PVYly2
+         ZymQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681938843; x=1684530843;
+        d=1e100.net; s=20221208; t=1681938846; x=1684530846;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=SD7EFyz1yLBLPVn7LfRqego19EUivGa1u7H8Jm5a5zk=;
-        b=cfMKz5gTaelwZ6geG7czr5aUYCRGVd1Icyr5pRRzJlluPoKbBT49zPHg8AtUSfIwlO
-         ScFQqZ0QMuKLWuw6a+/lGjLJabXlBC6cNx3FcZHyA9dN4zLMXS21kGkDSxHY71f5y7on
-         hwrIY5yUnJBjaKv6MtUVJJ6x65GaTT01dN5ah5x4MEf66n1NtyS0AvE8Zm4V0NXfShiJ
-         FsgWVzRWGZGqDdXb1M9A20vTZq+F+tTCMWgNsMMj8IH5Y5l41gdI4un3A+xi62yRsVCw
-         B5idR5bbULHXC6n00eN7wMlL52c9U2qMEbE5qUkEZl+Nxo6kSNvYUKLpiyo8aJxeFDGT
-         tzuQ==
-X-Gm-Message-State: AAQBX9eYNqT3vNvKgyfV4Lb9f4dtp+M8Nsy7uvEzYIpagIsQeYKvoRcF
-        FWCIy44ocKj1rm9KHpAC7cimK9Y4gPEJU8ob94HNDg==
-X-Google-Smtp-Source: AKy350ba4xzRhXf9cDUB9YofuwS6vDrhhfqoUpY/YF/4hDX/DembK3qDTcWYXYD8NZzpmXLJnskEjg==
-X-Received: by 2002:a05:6214:2305:b0:5f1:6a35:60be with SMTP id gc5-20020a056214230500b005f16a3560bemr7053456qvb.23.1681938843630;
-        Wed, 19 Apr 2023 14:14:03 -0700 (PDT)
+        bh=VZPuTKMf29prda0AlpX7LFRIYMCQ9eqOXnvIkO1GWUI=;
+        b=ErVxcLB0g8taz4dcNfIDc0Dn0N1Fvsm+WbL370sJfwsjpl+wGQSdk113WENjf+/o6P
+         RiN14V6hHhdApAFemBvI02i/vbF4tUP1Gp8hze08SftdjcL9tCGIjEPHbIaShpwAY+sQ
+         el0l1Dhn+Q4hkD9To9liSYVyCsQbapmrHx69FlzV7wTu8LvxdkOs2d+EXh3RbMoCtAxI
+         l6TVHP5MvHd7suMFElzKhBFus4sjjryFFsyrMAt/wmnrqnRVEh3SRXeGc2unqB2OEzmB
+         ZsUbHruoGb7+ZPBej4GezBrXfngfxHdtbG9fZwcjo2O+L4oB6613KtO7vnDekCmcD/an
+         dNEA==
+X-Gm-Message-State: AAQBX9fld1M/TZt0aBdheGp2jYgzpHZQBefjHa6fSgvT1yPzRs228ZP0
+        7qB9Om4O0kGDmuloV0+WUfveU7LGTPE0wgrr2i6fQg==
+X-Google-Smtp-Source: AKy350b44mqYcrjeW468KISOC+ECalofzIEfpFCVSIisOavfG/v95u+LvL6USRak7QSoEIh+zKPzUA==
+X-Received: by 2002:a05:6214:c66:b0:5b8:6efe:77f4 with SMTP id t6-20020a0562140c6600b005b86efe77f4mr31973047qvj.46.1681938846456;
+        Wed, 19 Apr 2023 14:14:06 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id h1-20020a05620a21c100b0074bcf3ac7casm2046904qka.44.2023.04.19.14.14.03
+        by smtp.gmail.com with ESMTPSA id l19-20020a0ce093000000b005eee5f1f30bsm327qvk.46.2023.04.19.14.14.06
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:14:03 -0700 (PDT)
+        Wed, 19 Apr 2023 14:14:06 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 03/11] btrfs-progs: re-add __init to include/kerncompat.h
-Date:   Wed, 19 Apr 2023 17:13:45 -0400
-Message-Id: <5a4ffce3fba84f2989eed75fe6ef7a96d0bbf0eb.1681938648.git.josef@toxicpanda.com>
+Subject: [PATCH 05/11] btrfs-progs: move BTRFS_DISABLE_BACKTRACE check in print_trace
+Date:   Wed, 19 Apr 2023 17:13:47 -0400
+Message-Id: <ae1535f4741a70488bb30000dfe429fca624c536.1681938648.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1681938648.git.josef@toxicpanda.com>
 References: <cover.1681938648.git.josef@toxicpanda.com>
@@ -64,31 +64,75 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Now that we're properly separated with libbtrfs/kerncompat.h and
-include/kerncompat.h, go ahead and add the __init definition back so we
-can have it available for the kernel synced files.
+Everybody who calls print_trace wraps it around this check, move the
+check instead to print_trace and remove the check from all the callers.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- include/kerncompat.h | 4 ----
- 1 file changed, 4 deletions(-)
+ common/messages.c    |  3 ---
+ include/kerncompat.h | 10 +++-------
+ 2 files changed, 3 insertions(+), 10 deletions(-)
 
+diff --git a/common/messages.c b/common/messages.c
+index 2d9d55c0..4ef7a34a 100644
+--- a/common/messages.c
++++ b/common/messages.c
+@@ -96,10 +96,7 @@ void internal_error(const char *fmt, ...)
+ 	vfprintf(stderr, fmt, vargs);
+ 	va_end(vargs);
+ 	fputc('\n', stderr);
+-
+-#ifndef BTRFS_DISABLE_BACKTRACE
+ 	print_trace();
+-#endif
+ }
+ 
+ static bool should_print(int level)
 diff --git a/include/kerncompat.h b/include/kerncompat.h
-index 4dce65c0..62b6a357 100644
+index 62b6a357..cb2a9400 100644
 --- a/include/kerncompat.h
 +++ b/include/kerncompat.h
-@@ -578,11 +578,7 @@ struct work_struct {
- typedef struct wait_queue_head_s {
- } wait_queue_head_t;
- 
--/*
-- * __init cannot be defined in kerncompat.h as it's still part of libbtrfs and
-- * the macro name is too generic and can break build.
- #define __init
--*/
- #define __cold
- 
+@@ -94,17 +94,17 @@
+ #define BUILD_ASSERT(x)
  #endif
+ 
+-#ifndef BTRFS_DISABLE_BACKTRACE
+-#define MAX_BACKTRACE	16
+ static inline void print_trace(void)
+ {
++#ifndef BTRFS_DISABLE_BACKTRACE
++#define MAX_BACKTRACE	16
+ 	void *array[MAX_BACKTRACE];
+ 	int size;
+ 
+ 	size = backtrace(array, MAX_BACKTRACE);
+ 	backtrace_symbols_fd(array, size, 2);
+-}
+ #endif
++}
+ 
+ static inline void warning_trace(const char *assertion, const char *filename,
+ 			      const char *func, unsigned line, long val)
+@@ -114,9 +114,7 @@ static inline void warning_trace(const char *assertion, const char *filename,
+ 	fprintf(stderr,
+ 		"%s:%u: %s: Warning: assertion `%s` failed, value %ld\n",
+ 		filename, line, func, assertion, val);
+-#ifndef BTRFS_DISABLE_BACKTRACE
+ 	print_trace();
+-#endif
+ }
+ 
+ static inline void bugon_trace(const char *assertion, const char *filename,
+@@ -127,9 +125,7 @@ static inline void bugon_trace(const char *assertion, const char *filename,
+ 	fprintf(stderr,
+ 		"%s:%u: %s: BUG_ON `%s` triggered, value %ld\n",
+ 		filename, line, func, assertion, val);
+-#ifndef BTRFS_DISABLE_BACKTRACE
+ 	print_trace();
+-#endif
+ 	abort();
+ 	exit(1);
+ }
 -- 
 2.39.1
 

@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B2955C6FD18
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:25:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 10395C77B73
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:25:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232411AbjDSVZN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:25:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47796 "EHLO
+        id S232165AbjDSVZP (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:25:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48676 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232659AbjDSVY5 (ORCPT
+        with ESMTP id S232791AbjDSVY7 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:24:57 -0400
-Received: from mail-qv1-xf34.google.com (mail-qv1-xf34.google.com [IPv6:2607:f8b0:4864:20::f34])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3346B5FE9
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:24:27 -0700 (PDT)
-Received: by mail-qv1-xf34.google.com with SMTP id me15so1100039qvb.4
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:24:27 -0700 (PDT)
+        Wed, 19 Apr 2023 17:24:59 -0400
+Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 12CD693F4
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:24:30 -0700 (PDT)
+Received: by mail-qt1-x834.google.com with SMTP id u37so614942qtc.10
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:24:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939465; x=1684531465;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939468; x=1684531468;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=AYxJwfplDQ982XTUrmfS13Uhz8ITO+4fKZPwQuX5rag=;
-        b=rA+gHAOYg7y+cvYFB3umqUzmu5uSXhhGVpnSqopNZ9hlgPBru07Q9x9+VDGHV1wcAU
-         lu9SwXMtYdhhD1UF5MLs2iN1NTcAjg0clyqbpargFcB4uF7GNxraso1zBMcNwplgucVE
-         evWAebmM+WGBU/d8oly+XgAL7Z4XQ440jVTas5o0J6dOcg1brlPW/7HpZday1WKHv+D2
-         78E59yZujCgPMpiz0hcv7IS2epNbmIjzxQiLYwQwjGnu2g0rw0unL4pkdSw+SE33/le+
-         3MBEwU3Q+mm2oe2qL851uYqBuUpAw7NgVBmyClrbyqMeSCJYYIrVN/LpqiTwIf8p4tLS
-         VRFQ==
+        bh=NG7Dbkejip9+x4XlvwyLfvoLHh2Gff9UKUY/juBnKik=;
+        b=FSOWDo3jD5kbkKqWHwGnj5nzFAh7SMVaYWlICaoHHtScyZTyTAsRfWAD16aG6AueYF
+         G4xTacND379sU6abvLB+T1PjEDI2tY1oCkQ4xISAiWXK4pIZ8bqBV8Wcl1jL50A6KVyc
+         z0MJ/n9Ne9ZHovhP29GCg8gHDq8NTJvSWZzvbQscxY2OKIPZrq6wCMGKngJVZG5tr3iH
+         QtHDHMxQCaDiZaJGSlQjHSJ4hVvyFzhwrYN4S6SBlPfRbww82pF7sdQM6AlvD+Ej3tyf
+         T0GqHP4xj9X/B4adlQ+4eHshmXCs4RTcrtDvLoyexZQkfz/8yerb9v8tIiRBh9wprtOd
+         wlAQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939465; x=1684531465;
+        d=1e100.net; s=20221208; t=1681939468; x=1684531468;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=AYxJwfplDQ982XTUrmfS13Uhz8ITO+4fKZPwQuX5rag=;
-        b=TvG85PgUuwZMKInAOgi3dbz1jK7p6wWlfvLy7qYrIH/h8tHxT28zKRVtcerUmYmZWK
-         D33zv/jL+Ccz9ICeiYvnQb0t41ti7l6+v29CPCjTweP5zANS+JxXTPTWpO2Z7RBLt/De
-         lb/mtWnMPAYoYKICqIOIbzJzAFRJ0JbE5W8a56Mzau8TCpX535g37JaEQQ3Kfpo3VgJY
-         smLZzbHlLx50ub18di57VX7atmPNcs8aL2cReF/qJ/E1nIW3jiNYUEkEIouZ68+mUy+d
-         itx8kOGvxMim70lUo1Q4ctB5ZxwBwtAF17ihB1muWVcTp1mTVE/h6FjUj57BLdoO56Na
-         U9yg==
-X-Gm-Message-State: AAQBX9cK5hMJPTmQh+YzDfKvC7BOJ23atfJYr+YGck0vRygDHOhrCiwy
-        BXmH/fEK4QUdCOS/KuR8yQuA5f2NW6W8a9lV/WedHQ==
-X-Google-Smtp-Source: AKy350ZS/Qixy3j6JE0RK4fXDZQpxmTHqDvp0uewKqelxu1mYwgGxgsIroLPsvtAZXyZW7fgy9BiGg==
-X-Received: by 2002:a05:6214:409:b0:5c1:59b9:40b4 with SMTP id z9-20020a056214040900b005c159b940b4mr36316765qvx.48.1681939465169;
-        Wed, 19 Apr 2023 14:24:25 -0700 (PDT)
+        bh=NG7Dbkejip9+x4XlvwyLfvoLHh2Gff9UKUY/juBnKik=;
+        b=aAyAR5wMIf5VQp4AM7UB/Ru79nTEZnt1OhHiNRC9zj3R1mDCz6PmVsN5dMLuhzwuSj
+         B0mepzQU9mOrGcccI3keRafW8PrEM3VPMSRKBlZnwkY3/iJPJPtDDngaUwgbmmpOAizF
+         Lwe0a5yNZfIoXokxFzKOXmffLmMlaBfWOctMnQugtb4zjPacVHA6fQt24mf2lYzkHuYW
+         YSCHeB7GRTIef/9KJy14sPT3ZDfMpy0XD9nPP8+8Kum/67KFKcSieAK7PFHxHGYD72pg
+         FvyBrO9AB9jHoLxj7atUfEYRHqHOlrqHlPsno751Us/ZE2TWPyEU2Nd7+7GwLYGPYRl8
+         Ykyw==
+X-Gm-Message-State: AAQBX9f2GY+ZI9MBvcSPWhsl/G2hmq9iB4N4yalXUv+lcjYGX1q07GoB
+        HP2hIEYyECj3FvWgKZCG/E1f5NxxvfGSeuieb46WYw==
+X-Google-Smtp-Source: AKy350Yvx/v5Ma7FOIwS7CtVlhseVZetsx150euQ/2rMqx6sqQi/Lh5QcapbnSduToAbuoHDr+fG7w==
+X-Received: by 2002:ac8:7d52:0:b0:3e3:8bbc:d152 with SMTP id h18-20020ac87d52000000b003e38bbcd152mr8071341qtb.66.1681939467642;
+        Wed, 19 Apr 2023 14:24:27 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id y19-20020a0cd993000000b005f66296da7bsm208877qvj.94.2023.04.19.14.24.24
+        by smtp.gmail.com with ESMTPSA id fu36-20020a05622a5da400b003ec4b2ca4f8sm42122qtb.35.2023.04.19.14.24.27
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:24:24 -0700 (PDT)
+        Wed, 19 Apr 2023 14:24:27 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 09/18] btrfs-progs: make reada_for_search static
-Date:   Wed, 19 Apr 2023 17:24:00 -0400
-Message-Id: <0bce8f5d59f15495ebee3491b7991296728cbef5.1681939316.git.josef@toxicpanda.com>
+Subject: [PATCH 11/18] btrfs-progs: update arguments of find_extent_buffer
+Date:   Wed, 19 Apr 2023 17:24:02 -0400
+Message-Id: <919bf2d763a0caaaceaf00e0fc82b9ca3ca60b8d.1681939316.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1681939316.git.josef@toxicpanda.com>
 References: <cover.1681939316.git.josef@toxicpanda.com>
@@ -64,69 +64,68 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We were using this in cmds/restore.c, however it only does anything if
-path->reada is set, and we don't set that in cmds/restore.c.  Remove
-this usage of reada_for_search and make the function static.
+In the kernel we only take a bytenr for this as the extent buffer cache
+is indexed on bytenr.  Since we're passing in the btrfs_fs_info we can
+simply use the ->nodesize for the blocksize, and drop the blocksize
+argument completely.  This brings us into parity with the kernel, which
+will allow the syncing of ctree.c.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- cmds/restore.c        | 5 -----
- kernel-shared/ctree.c | 5 +++--
- kernel-shared/ctree.h | 2 --
- 3 files changed, 3 insertions(+), 9 deletions(-)
+ kernel-shared/disk-io.c   | 2 +-
+ kernel-shared/extent_io.c | 7 ++++---
+ kernel-shared/extent_io.h | 2 +-
+ 3 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/cmds/restore.c b/cmds/restore.c
-index 72fc7a07..9fe7b4d2 100644
---- a/cmds/restore.c
-+++ b/cmds/restore.c
-@@ -267,9 +267,6 @@ again:
- 			continue;
- 		}
- 
--		if (path->reada)
--			reada_for_search(fs_info, path, level, slot, 0);
--
- 		next = read_node_slot(fs_info, c, slot);
- 		if (extent_buffer_uptodate(next))
- 			break;
-@@ -284,8 +281,6 @@ again:
- 		path->slots[level] = 0;
- 		if (!level)
- 			break;
--		if (path->reada)
--			reada_for_search(fs_info, path, level, 0, 0);
- 		next = read_node_slot(fs_info, next, 0);
- 		if (!extent_buffer_uptodate(next))
- 			goto again;
-diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index 35133268..3e1085a0 100644
---- a/kernel-shared/ctree.c
-+++ b/kernel-shared/ctree.c
-@@ -1205,8 +1205,9 @@ static int noinline push_nodes_for_insert(struct btrfs_trans_handle *trans,
- /*
-  * readahead one full node of leaves
-  */
--void reada_for_search(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
--		      int level, int slot, u64 objectid)
-+static void reada_for_search(struct btrfs_fs_info *fs_info,
-+			     struct btrfs_path *path, int level, int slot,
-+			     u64 objectid)
+diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
+index 688b1c8e..3b3188da 100644
+--- a/kernel-shared/disk-io.c
++++ b/kernel-shared/disk-io.c
+@@ -228,7 +228,7 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_fs_info *fs_info,
+ 					    u64 bytenr, u32 blocksize)
  {
- 	struct extent_buffer *node;
- 	struct btrfs_disk_key disk_key;
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 50f97533..2237f3ef 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -929,8 +929,6 @@ int btrfs_del_ptr(struct btrfs_root *root, struct btrfs_path *path,
- 		int level, int slot);
- enum btrfs_tree_block_status btrfs_check_node(struct extent_buffer *buf);
- enum btrfs_tree_block_status btrfs_check_leaf(struct extent_buffer *buf);
--void reada_for_search(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
--		      int level, int slot, u64 objectid);
- struct extent_buffer *read_node_slot(struct btrfs_fs_info *fs_info,
- 				   struct extent_buffer *parent, int slot);
- int btrfs_previous_item(struct btrfs_root *root,
+-	return find_extent_buffer(fs_info, bytenr, blocksize);
++	return find_extent_buffer(fs_info, bytenr);
+ }
+ 
+ struct extent_buffer* btrfs_find_create_tree_block(
+diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
+index 992b5f35..d6705e37 100644
+--- a/kernel-shared/extent_io.c
++++ b/kernel-shared/extent_io.c
+@@ -210,14 +210,15 @@ void free_extent_buffer_stale(struct extent_buffer *eb)
+ }
+ 
+ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+-					 u64 bytenr, u32 blocksize)
++					 u64 bytenr)
+ {
+ 	struct extent_buffer *eb = NULL;
+ 	struct cache_extent *cache;
+ 
+-	cache = lookup_cache_extent(&fs_info->extent_cache, bytenr, blocksize);
++	cache = lookup_cache_extent(&fs_info->extent_cache, bytenr,
++				    fs_info->nodesize);
+ 	if (cache && cache->start == bytenr &&
+-	    cache->size == blocksize) {
++	    cache->size == fs_info->nodesize) {
+ 		eb = container_of(cache, struct extent_buffer, cache_node);
+ 		list_move_tail(&eb->lru, &fs_info->lru);
+ 		eb->refs++;
+diff --git a/kernel-shared/extent_io.h b/kernel-shared/extent_io.h
+index e4da3c57..b4c2ac97 100644
+--- a/kernel-shared/extent_io.h
++++ b/kernel-shared/extent_io.h
+@@ -94,7 +94,7 @@ static inline int extent_buffer_uptodate(struct extent_buffer *eb)
+ }
+ 
+ struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
+-					 u64 bytenr, u32 blocksize);
++					 u64 bytenr);
+ struct extent_buffer *find_first_extent_buffer(struct btrfs_fs_info *fs_info,
+ 					       u64 start);
+ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
 -- 
 2.40.0
 

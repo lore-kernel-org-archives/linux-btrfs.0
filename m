@@ -2,42 +2,42 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77741C6FD18
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 14:11:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B120C77B73
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 14:11:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232356AbjDSOLG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 10:11:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39034 "EHLO
+        id S232390AbjDSOLI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 10:11:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39036 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231590AbjDSOK4 (ORCPT
+        with ESMTP id S232125AbjDSOK4 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
         Wed, 19 Apr 2023 10:10:56 -0400
-Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3497616B24;
-        Wed, 19 Apr 2023 07:10:36 -0700 (PDT)
-Received: by mail-wm1-f47.google.com with SMTP id eo4-20020a05600c82c400b003f05a99a841so1503473wmb.3;
-        Wed, 19 Apr 2023 07:10:36 -0700 (PDT)
+Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CF1B2AF3A;
+        Wed, 19 Apr 2023 07:10:39 -0700 (PDT)
+Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-2f7c281a015so2126432f8f.1;
+        Wed, 19 Apr 2023 07:10:39 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681913434; x=1684505434;
+        d=1e100.net; s=20221208; t=1681913438; x=1684505438;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=THHWtCWhqF512rUBihGspkzbDFWU17ewgGDnTehbMVM=;
-        b=Q5xCnygSQUhrVqIkPPTJei7APjikXCUWOw1C7uXa3mPs/lF1M2ksQcis2jcUpTJO62
-         wZVAz1cJlXtMdepB0DUbSaMXtBln9B6ABUIzkf3Jf9SiJZbx3FUEk36p40ExCtSm6anh
-         7RRFjFrV37jFOzygyKFJI382zZstbp/QPtHwA3SSkJFSPY0KDM3OQTL8MfwOTW8UraMi
-         B4Cf4roUbr90m2UPsv+i+u2QdA6g4sRWPLzngllFt7jbe+a4oLjEDlH+Uz1Ev8SypgxG
-         S4EZXZ09ipL4hT0A6tkn33gt6xPsVn5REKy04IrUTCbhyhSql+9x77wFFETzkLbB6fJ6
-         iesA==
-X-Gm-Message-State: AAQBX9eR5Od6S6rz1t8nGoqDHoQqVGiDgEDAnaRg8iDaUFulIL2eo7Lz
-        MlHHrcsqdn4i1ds+IbUCr50=
-X-Google-Smtp-Source: AKy350ZcCj3OtSCuaFlwa1p5GTFo/DcYXTM4La563Vsxtqwo67FQ//DkWW6/Tk+RebbTzBTqG0zNZg==
-X-Received: by 2002:a1c:7410:0:b0:3ef:df3:1693 with SMTP id p16-20020a1c7410000000b003ef0df31693mr16905947wmc.32.1681913434708;
-        Wed, 19 Apr 2023 07:10:34 -0700 (PDT)
+        bh=2Fzr57yVT4AGfP8f/rHc++3o/RNaaVBknK7ki+b7wqg=;
+        b=O3prWpcZliWfCiWFUXVNcTK2I3r6awgjBoDK9MAphBmjRjeClXB4iD5NHQfihZet2X
+         C4TJzX5/eXF0uMNy1c9VJlTf54oMDkUcx1SqMvacyaIIeoM7l7fnhMEtZliwCJw1EWj0
+         /YrhYq7z/3lqpFHIJck1fIeCSMwjEVQY9pezR5INcz7sQAHAlotZtAnOKo1y/MPlXWNI
+         lSdFWiEOGaRCOgCpCSTo/nMGhJd0z5VtU2xU6mNUh04iNBFH+Boq0/G0GDzgSU6umUZy
+         kwVTtxPsV7qzJ8PxoS9AZbKRog25F9zVJrQIFCnbBNiLaNdzit7m+AzON0k4aEacvpwp
+         9O0Q==
+X-Gm-Message-State: AAQBX9dDBh7TFc90ubRIeLr3WP37BBKCWFFLxtm8heXbbowoUEMuTT6w
+        dhuhzE1PSqg5Ae2LeZyAJ4I=
+X-Google-Smtp-Source: AKy350b+UwzbHTOCNn17UYnXZKHlXNJQwvx+l7TgssVsB5tDN4gwDjzdQ+Z4ngjORp4WObNT+HzhDA==
+X-Received: by 2002:adf:f10f:0:b0:2f7:efb1:ec8c with SMTP id r15-20020adff10f000000b002f7efb1ec8cmr4366904wro.23.1681913438239;
+        Wed, 19 Apr 2023 07:10:38 -0700 (PDT)
 Received: from localhost.localdomain (aftr-62-216-205-204.dynamic.mnet-online.de. [62.216.205.204])
-        by smtp.googlemail.com with ESMTPSA id q17-20020a5d61d1000000b002faaa9a1721sm7612089wrv.58.2023.04.19.07.10.33
+        by smtp.googlemail.com with ESMTPSA id q17-20020a5d61d1000000b002faaa9a1721sm7612089wrv.58.2023.04.19.07.10.36
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 07:10:34 -0700 (PDT)
+        Wed, 19 Apr 2023 07:10:37 -0700 (PDT)
 From:   Johannes Thumshirn <jth@kernel.org>
 To:     axboe@kernel.dk
 Cc:     johannes.thumshirn@wdc.com, agruenba@redhat.com,
@@ -50,9 +50,9 @@ Cc:     johannes.thumshirn@wdc.com, agruenba@redhat.com,
         rpeterso@redhat.com, shaggy@kernel.org, snitzer@kernel.org,
         song@kernel.org, willy@infradead.org,
         Damien Le Moal <damien.lemoal@opensource.wdc.com>
-Subject: [PATCH v3 04/19] fs: buffer: use __bio_add_page to add single page to bio
-Date:   Wed, 19 Apr 2023 16:09:14 +0200
-Message-Id: <20230419140929.5924-5-jth@kernel.org>
+Subject: [PATCH v3 06/19] md: raid5-log: use __bio_add_page to add single page
+Date:   Wed, 19 Apr 2023 16:09:16 +0200
+Message-Id: <20230419140929.5924-7-jth@kernel.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230419140929.5924-1-jth@kernel.org>
 References: <20230419140929.5924-1-jth@kernel.org>
@@ -64,9 +64,9 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-The buffer_head submission code uses bio_add_page() to add a page to a
-newly created bio. bio_add_page() can fail, but the return value is never
-checked.
+The raid5 log metadata submission code uses bio_add_page() to add a page
+to a newly created bio. bio_add_page() can fail, but the return value is
+never checked.
 
 Use __bio_add_page() as adding a single page to a newly created bio is
 guaranteed to succeed.
@@ -75,23 +75,24 @@ This brings us a step closer to marking bio_add_page() as __must_check.
 
 Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Reviewed-by: Damien Le Moal <damien.lemoal@opensource.wdc.com>
+Acked-by: Song Liu <song@kernel.org>
 ---
- fs/buffer.c | 2 +-
+ drivers/md/raid5-cache.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/buffer.c b/fs/buffer.c
-index 9e1e2add541e..855dc41fe162 100644
---- a/fs/buffer.c
-+++ b/fs/buffer.c
-@@ -2733,7 +2733,7 @@ static void submit_bh_wbc(blk_opf_t opf, struct buffer_head *bh,
+diff --git a/drivers/md/raid5-cache.c b/drivers/md/raid5-cache.c
+index 46182b955aef..852b265c5db4 100644
+--- a/drivers/md/raid5-cache.c
++++ b/drivers/md/raid5-cache.c
+@@ -792,7 +792,7 @@ static struct r5l_io_unit *r5l_new_meta(struct r5l_log *log)
+ 	io->current_bio = r5l_bio_alloc(log);
+ 	io->current_bio->bi_end_io = r5l_log_endio;
+ 	io->current_bio->bi_private = io;
+-	bio_add_page(io->current_bio, io->meta_page, PAGE_SIZE, 0);
++	__bio_add_page(io->current_bio, io->meta_page, PAGE_SIZE, 0);
  
- 	bio->bi_iter.bi_sector = bh->b_blocknr * (bh->b_size >> 9);
+ 	r5_reserve_log_entry(log, io);
  
--	bio_add_page(bio, bh->b_page, bh->b_size, bh_offset(bh));
-+	__bio_add_page(bio, bh->b_page, bh->b_size, bh_offset(bh));
- 	BUG_ON(bio->bi_iter.bi_size != bh->b_size);
- 
- 	bio->bi_end_io = end_bio_bh_io_sync;
 -- 
 2.39.2
 

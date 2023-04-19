@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27DDCC77B73
-	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:22:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 008E9C6FD18
+	for <linux-btrfs@archiver.kernel.org>; Wed, 19 Apr 2023 21:23:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232353AbjDSVW5 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 19 Apr 2023 17:22:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45646 "EHLO
+        id S231608AbjDSVW7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 19 Apr 2023 17:22:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45594 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231608AbjDSVW4 (ORCPT
+        with ESMTP id S230030AbjDSVW6 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 19 Apr 2023 17:22:56 -0400
-Received: from mail-qv1-xf32.google.com (mail-qv1-xf32.google.com [IPv6:2607:f8b0:4864:20::f32])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 22A9876BD
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:29 -0700 (PDT)
-Received: by mail-qv1-xf32.google.com with SMTP id op30so1106070qvb.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:29 -0700 (PDT)
+        Wed, 19 Apr 2023 17:22:58 -0400
+Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CED037EFD
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:33 -0700 (PDT)
+Received: by mail-qt1-x832.google.com with SMTP id ei23so677900qtb.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Apr 2023 14:22:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939256; x=1684531256;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1681939265; x=1684531265;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=xz8gpPaByzawAWuecubJhEojv5oZuLnDMLW4n8G5Ikk=;
-        b=SO+xpz7s/GDz4q1tB7Jjr+LcJUzgU497VQEMtdlikctbJJBnfYOS2yZGHE3T1teY+W
-         TmkeJ1LSmSRL9mJJ+OhLC7dR97LrsH0v/Tt79rChT949By9rznT7eZ+Ojd8HEvX1blQ2
-         Gca2Yd66m5wc+oiQEQ0ho+B2qW7Aw7BxGYg85Vd9kbqJGpiK7l4H8euzHWmxgOtezelO
-         YKZOlWvvNQv8X3X+EO14SLMuWiFuDvfrp0YBJoU0zitKiEH/yOJPn2I+NJ6vyHiKfyrv
-         ESaPQ/NN1CgT/R28HTa8i9raPDszimcVwxqfu5p79Ov1l37c2VCujRnpetVM7oJAn6kO
-         2ETQ==
+        bh=JQGcgc7znl8Vmhgxyjz/2T51un9Yluw+ia9GUneEN1A=;
+        b=pQt56q+DJ+5CeP6eANyZ0rKTJx2iI/KL5o++9/U7atkIQO1TBM+8SfRF1rQ2TXqHV0
+         p+w29ojSsM7jPMY6kU9bpAKwYOmPioDoiOm7itZlplBS3t77BMYATHsMcVNmNLeLhbMY
+         bLm0nrpZqQK6CxqJ+jqaOcPz9UMdk0cChN+0yl5BPogFi9J2y53nH4vJGPfukYcwJSfu
+         n/PlWrTc6ZQCqfQEUHvznhTRtnSIbUkErul6/Jsh1GWkLtYr3ziEq3snL+ad/pYz/E0u
+         NPG2bXsWO7KovHaW2Gc3wrHxT+NpQKP1osVHuvbuzvA20wE6tU6gWFET/VVKnBLZgeIV
+         EOVg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681939256; x=1684531256;
+        d=1e100.net; s=20221208; t=1681939265; x=1684531265;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=xz8gpPaByzawAWuecubJhEojv5oZuLnDMLW4n8G5Ikk=;
-        b=lIRFvq3Oqfr87wvMwiBG2fsYXuz/jTONLhxQMecO+eAX4Q28PmpdrqRQlyYb+T9O26
-         fWubOK8KlmchxuNCv3erm/09FHrI1td2ZFbCM/uiEWCMz8309AcNfds07ugyQeTL3cYm
-         P1B4apv1tte+qEBvT7N1DgUPRBl5cQQWl8AUSEny22ItbF/s26qMYM/SH6GO8XhlWgxv
-         q/F1jHwCEu6TAjibiN8TJ/I479fdaqSUnyVYFKjcBUBfaX7yZN/pnyrvQnu2t8Xm0ElL
-         q/QWlgmyqRJeHY83QRpT1rFrOAcKlnoJk8I5yG8zGBu5TCC7PjXuy6Yulhhd2DFwOCeY
-         e5/Q==
-X-Gm-Message-State: AAQBX9e9zLfETAqoaAFjKsl53AiKf/oELtmI+m4XwEjfXJTB0t8tviFg
-        I+BN8FOor8Y5qNth2fhC717oefm8Dpi2groTplnFBw==
-X-Google-Smtp-Source: AKy350bGaRsaoIltxUxa4hWK3pbdvfMwZgH48UFup1ZqWWxxq0tmvkIUwWSHZsfiLYFKL8v7P60WTg==
-X-Received: by 2002:ad4:4eae:0:b0:5ca:83ed:12be with SMTP id ed14-20020ad44eae000000b005ca83ed12bemr37095458qvb.21.1681939256435;
-        Wed, 19 Apr 2023 14:20:56 -0700 (PDT)
+        bh=JQGcgc7znl8Vmhgxyjz/2T51un9Yluw+ia9GUneEN1A=;
+        b=VIpvgYf6o35UGuACsMzoWCdK0DD0YoiA038i+6ezw1pH9OycgtR54ePEm/NKdLifTc
+         RHjDFpSgbAeY7+5CaatVWfNvf0OyxLdH9/zv87J1alzo9FKqlhRrVf5MhKmXz1T8n+8I
+         ePqeZtiomEc1g94rCX5PvHxe00sjtnkoIvFxfsqhefDL4hxIE2Wy7Z07ZHeulxxckloC
+         U5m3QaeCa7QXDTD/sa80BdQ3tNLchPmo7YyGIoEVLcKsdF1GJ6bghzUXra9it9CRppFx
+         Gx95/4++dhpjXKg7++Ol9S0scrr4Yc/oduE6nk5Splcg45o2sOIcIaV/JKIp8UCRpPks
+         sXqQ==
+X-Gm-Message-State: AAQBX9fieEK0NIx0lwwkKsW1m7LiEUo964bF+k/ttUK6HIJrQZ3dUvHA
+        YiGNDYeKwICm0CylETeUaSFK/VY+eNd4jnJ1pJErfA==
+X-Google-Smtp-Source: AKy350aIAI97UbfObTLRYteunt2RPyHJSY6CzfG7imCIkRy+SmdOyovn4DmlWuqF2RdQgqxrdnV+dQ==
+X-Received: by 2002:a05:622a:1193:b0:3ed:a811:23d0 with SMTP id m19-20020a05622a119300b003eda81123d0mr8463761qtk.41.1681939265528;
+        Wed, 19 Apr 2023 14:21:05 -0700 (PDT)
 Received: from localhost (cpe-174-109-170-245.nc.res.rr.com. [174.109.170.245])
-        by smtp.gmail.com with ESMTPSA id pr27-20020a056214141b00b005dd8b9345f8sm4570844qvb.144.2023.04.19.14.20.55
+        by smtp.gmail.com with ESMTPSA id b10-20020a05620a0cca00b0074c398c0bf7sm2289663qkj.71.2023.04.19.14.21.05
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 14:20:56 -0700 (PDT)
+        Wed, 19 Apr 2023 14:21:05 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 02/10] btrfs-progs: bring root->state into btrfs-progs
-Date:   Wed, 19 Apr 2023 17:20:42 -0400
-Message-Id: <c7e604aca3db88c138c0fab04fccfc909035c0c9.1681939107.git.josef@toxicpanda.com>
+Subject: [PATCH 09/10] btrfs-progs: rename clear_extent_buffer_dirty => btrfs_clear_buffer_dirty
+Date:   Wed, 19 Apr 2023 17:20:49 -0400
+Message-Id: <b2492dc25783d9cf8668bfe9952fdb125e358b1f.1681939107.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1681939107.git.josef@toxicpanda.com>
 References: <cover.1681939107.git.josef@toxicpanda.com>
@@ -64,311 +64,180 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We changed from members in the root for all the different flags to a
-bit based flag system.  In order to make syncing the kernel code into
-btrfs-progs easier go ahead and sync in the bits we use and update all
-the users of the old ->track_dirty and ->ref_cows to use the state bits.
+This is a mirror of the change I've done in the kernel, but in progs
+it's even more simply because clean_tree_block was just a wrapper around
+clear_extent_buffer_dirty.  Change this to btrfs_clear_buffer_dirty, and
+then update all the callers to use this helper instead of
+clean_tree_block and clear_extent_buffer_dirty.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- check/main.c                |  3 +-
- kernel-shared/ctree.c       | 22 ++++++++-----
- kernel-shared/ctree.h       | 66 +++++++++++++++++++++++++++++++++++--
- kernel-shared/disk-io.c     | 21 ++++++------
- kernel-shared/extent-tree.c | 10 +++---
- 5 files changed, 94 insertions(+), 28 deletions(-)
+ cmds/rescue.c               |  2 +-
+ kernel-shared/ctree.c       | 12 ++++++------
+ kernel-shared/disk-io.c     |  7 +------
+ kernel-shared/extent-tree.c |  2 +-
+ kernel-shared/extent_io.c   |  2 +-
+ kernel-shared/extent_io.h   |  2 +-
+ kernel-shared/transaction.c |  4 ++--
+ 7 files changed, 13 insertions(+), 18 deletions(-)
 
-diff --git a/check/main.c b/check/main.c
-index 99ff3bc3..45e3442d 100644
---- a/check/main.c
-+++ b/check/main.c
-@@ -63,6 +63,7 @@
- #include "check/qgroup-verify.h"
- #include "check/clear-cache.h"
- #include "kernel-shared/uapi/btrfs.h"
-+#include "kernel-lib/bitops.h"
- 
- /* Global context variables */
- struct btrfs_fs_info *gfs_info;
-@@ -467,7 +468,7 @@ static void record_root_in_trans(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root)
- {
- 	if (root->last_trans != trans->transid) {
--		root->track_dirty = 1;
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
- 		root->last_trans = trans->transid;
- 		root->commit_root = root->node;
- 		extent_buffer_get(root->node);
+diff --git a/cmds/rescue.c b/cmds/rescue.c
+index cbeaa6f2..b84166ea 100644
+--- a/cmds/rescue.c
++++ b/cmds/rescue.c
+@@ -340,7 +340,7 @@ static int clear_uuid_tree(struct btrfs_fs_info *fs_info)
+ 	if (ret < 0)
+ 		goto out;
+ 	list_del(&uuid_root->dirty_list);
+-	ret = clean_tree_block(uuid_root->node);
++	ret = btrfs_clear_buffer_dirty(uuid_root->node);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = btrfs_free_tree_block(trans, uuid_root, uuid_root->node, 0, 1);
 diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
-index 911ec51c..cfbcc689 100644
+index ea2a7af3..4d33994d 100644
 --- a/kernel-shared/ctree.c
 +++ b/kernel-shared/ctree.c
-@@ -20,6 +20,7 @@
- #include "kernel-shared/disk-io.h"
- #include "kernel-shared/transaction.h"
- #include "kernel-shared/print-tree.h"
-+#include "kernel-lib/bitops.h"
- #include "crypto/crc32c.h"
- #include "common/internal.h"
- #include "common/messages.h"
-@@ -119,7 +120,8 @@ void btrfs_release_path(struct btrfs_path *p)
- 
- void add_root_to_dirty_list(struct btrfs_root *root)
- {
--	if (root->track_dirty && list_empty(&root->dirty_list)) {
-+	if (test_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state) &&
-+	    list_empty(&root->dirty_list)) {
- 		list_add(&root->dirty_list,
- 			 &root->fs_info->dirty_cowonly_roots);
+@@ -433,7 +433,7 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 			ret = btrfs_dec_ref(trans, root, buf, 1);
+ 			BUG_ON(ret);
+ 		}
+-		clean_tree_block(buf);
++		btrfs_clear_buffer_dirty(buf);
  	}
-@@ -155,9 +157,10 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 	memcpy(new_root, root, sizeof(*new_root));
- 	new_root->root_key.objectid = new_root_objectid;
- 
--	WARN_ON(root->ref_cows && trans->transid !=
--		root->fs_info->running_transaction->transid);
--	WARN_ON(root->ref_cows && trans->transid != root->last_trans);
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
-+		trans->transid != root->fs_info->running_transaction->transid);
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
-+		trans->transid != root->last_trans);
- 
- 	level = btrfs_header_level(buf);
- 	if (level == 0)
-@@ -219,7 +222,7 @@ int btrfs_create_root(struct btrfs_trans_handle *trans,
- 
- 	btrfs_setup_root(new_root, fs_info, objectid);
- 	if (!is_fstree(objectid))
--		new_root->track_dirty = 1;
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &new_root->state);
- 	add_root_to_dirty_list(new_root);
- 
- 	new_root->objectid = objectid;
-@@ -332,7 +335,7 @@ static int btrfs_block_can_be_shared(struct btrfs_root *root,
- 	 * snapshot and the block was not allocated by tree relocation,
- 	 * we know the block is not shared.
- 	 */
--	if (root->ref_cows &&
-+	if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
- 	    buf != root->node && buf != root->commit_root &&
- 	    (btrfs_header_generation(buf) <=
- 	     btrfs_root_last_snapshot(&root->root_item) ||
-@@ -446,9 +449,10 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	struct btrfs_disk_key disk_key;
- 	int level;
- 
--	WARN_ON(root->ref_cows && trans->transid !=
--		root->fs_info->running_transaction->transid);
--	WARN_ON(root->ref_cows && trans->transid != root->last_trans);
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
-+		trans->transid != root->fs_info->running_transaction->transid);
-+	WARN_ON(test_bit(BTRFS_ROOT_SHAREABLE, &root->state) &&
-+		trans->transid != root->last_trans);
- 
- 	level = btrfs_header_level(buf);
- 
-diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
-index 8de1fba4..84acefef 100644
---- a/kernel-shared/ctree.h
-+++ b/kernel-shared/ctree.h
-@@ -388,6 +388,68 @@ static inline bool btrfs_is_zoned(const struct btrfs_fs_info *fs_info)
- 	return fs_info->zoned != 0;
+ 	return 0;
  }
+@@ -936,7 +936,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
+ 		root->node = child;
+ 		add_root_to_dirty_list(root);
+ 		path->nodes[level] = NULL;
+-		clean_tree_block(mid);
++		btrfs_clear_buffer_dirty(mid);
+ 		/* once for the path */
+ 		free_extent_buffer(mid);
  
-+/*
-+ * The state of btrfs root
-+ */
-+enum {
-+	/*
-+	 * btrfs_record_root_in_trans is a multi-step process, and it can race
-+	 * with the balancing code.   But the race is very small, and only the
-+	 * first time the root is added to each transaction.  So IN_TRANS_SETUP
-+	 * is used to tell us when more checks are required
-+	 */
-+	BTRFS_ROOT_IN_TRANS_SETUP,
-+
-+	/*
-+	 * Set if tree blocks of this root can be shared by other roots.
-+	 * Only subvolume trees and their reloc trees have this bit set.
-+	 * Conflicts with TRACK_DIRTY bit.
-+	 *
-+	 * This affects two things:
-+	 *
-+	 * - How balance works
-+	 *   For shareable roots, we need to use reloc tree and do path
-+	 *   replacement for balance, and need various pre/post hooks for
-+	 *   snapshot creation to handle them.
-+	 *
-+	 *   While for non-shareable trees, we just simply do a tree search
-+	 *   with COW.
-+	 *
-+	 * - How dirty roots are tracked
-+	 *   For shareable roots, btrfs_record_root_in_trans() is needed to
-+	 *   track them, while non-subvolume roots have TRACK_DIRTY bit, they
-+	 *   don't need to set this manually.
-+	 */
-+	BTRFS_ROOT_SHAREABLE,
-+	BTRFS_ROOT_TRACK_DIRTY,
-+	BTRFS_ROOT_IN_RADIX,
-+	BTRFS_ROOT_ORPHAN_ITEM_INSERTED,
-+	BTRFS_ROOT_DEFRAG_RUNNING,
-+	BTRFS_ROOT_FORCE_COW,
-+	BTRFS_ROOT_MULTI_LOG_TASKS,
-+	BTRFS_ROOT_DIRTY,
-+	BTRFS_ROOT_DELETING,
-+
-+	/*
-+	 * Reloc tree is orphan, only kept here for qgroup delayed subtree scan
-+	 *
-+	 * Set for the subvolume tree owning the reloc tree.
-+	 */
-+	BTRFS_ROOT_DEAD_RELOC_TREE,
-+	/* Mark dead root stored on device whose cleanup needs to be resumed */
-+	BTRFS_ROOT_DEAD_TREE,
-+	/* The root has a log tree. Used for subvolume roots and the tree root. */
-+	BTRFS_ROOT_HAS_LOG_TREE,
-+	/* Qgroup flushing is in progress */
-+	BTRFS_ROOT_QGROUP_FLUSHING,
-+	/* We started the orphan cleanup for this root. */
-+	BTRFS_ROOT_ORPHAN_CLEANUP,
-+	/* This root has a drop operation that was started previously. */
-+	BTRFS_ROOT_UNFINISHED_DROP,
-+	/* This reloc root needs to have its buffers lockdep class reset. */
-+	BTRFS_ROOT_RESET_LOCKDEP_CLASS,
-+};
-+
- /*
-  * in ram representation of the tree.  extent_root is used for all allocations
-  * and for the extent tree extent_root root.
-@@ -401,9 +463,7 @@ struct btrfs_root {
- 	u64 objectid;
- 	u64 last_trans;
+@@ -991,7 +991,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
+ 			u64 bytenr = right->start;
+ 			u32 blocksize = right->len;
  
--	int ref_cows;
--	int track_dirty;
--
-+	unsigned long state;
+-			clean_tree_block(right);
++			btrfs_clear_buffer_dirty(right);
+ 			free_extent_buffer(right);
+ 			right = NULL;
+ 			wret = btrfs_del_ptr(root, path, level + 1, pslot + 1);
+@@ -1039,7 +1039,7 @@ static int balance_level(struct btrfs_trans_handle *trans,
+ 		/* we've managed to empty the middle node, drop it */
+ 		u64 bytenr = mid->start;
+ 		u32 blocksize = mid->len;
+-		clean_tree_block(mid);
++		btrfs_clear_buffer_dirty(mid);
+ 		free_extent_buffer(mid);
+ 		mid = NULL;
+ 		wret = btrfs_del_ptr(root, path, level + 1, pslot);
+@@ -3012,7 +3012,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		if (leaf == root->node) {
+ 			btrfs_set_header_level(leaf, 0);
+ 		} else {
+-			clean_tree_block(leaf);
++			btrfs_clear_buffer_dirty(leaf);
+ 			wret = btrfs_del_leaf(trans, root, path, leaf);
+ 			BUG_ON(ret);
+ 			if (wret)
+@@ -3048,7 +3048,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			}
  
- 	u32 type;
- 	u64 last_inode_alloc;
+ 			if (btrfs_header_nritems(leaf) == 0) {
+-				clean_tree_block(leaf);
++				btrfs_clear_buffer_dirty(leaf);
+ 				path->slots[1] = slot;
+ 				ret = btrfs_del_leaf(trans, root, path, leaf);
+ 				BUG_ON(ret);
 diff --git a/kernel-shared/disk-io.c b/kernel-shared/disk-io.c
-index 030bc780..44462d8f 100644
+index 7ee45ad1..7bbcc381 100644
 --- a/kernel-shared/disk-io.c
 +++ b/kernel-shared/disk-io.c
-@@ -32,6 +32,7 @@
- #include "crypto/crc32c.h"
- #include "common/utils.h"
- #include "kernel-shared/print-tree.h"
-+#include "kernel-lib/bitops.h"
- #include "common/rbtree-utils.h"
- #include "common/device-scan.h"
- #include "common/device-utils.h"
-@@ -491,8 +492,7 @@ void btrfs_setup_root(struct btrfs_root *root, struct btrfs_fs_info *fs_info,
- {
- 	root->node = NULL;
- 	root->commit_root = NULL;
--	root->ref_cows = 0;
--	root->track_dirty = 0;
-+	root->state = 0;
- 
- 	root->fs_info = fs_info;
- 	root->objectid = objectid;
-@@ -654,9 +654,9 @@ out:
- 	}
- insert:
- 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
--		root->track_dirty = 1;
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
- 	if (is_fstree(root->root_key.objectid))
--		root->ref_cows = 1;
-+		set_bit(BTRFS_ROOT_SHAREABLE, &root->state);
- 	return root;
+@@ -2255,11 +2255,6 @@ skip_commit:
+ 	return err;
  }
  
-@@ -1062,7 +1062,7 @@ static int load_global_roots_objectid(struct btrfs_fs_info *fs_info,
- 			free(root);
- 			break;
- 		}
--		root->track_dirty = 1;
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
+-int clean_tree_block(struct extent_buffer *eb)
+-{
+-	return clear_extent_buffer_dirty(eb);
+-}
+-
+ void btrfs_mark_buffer_dirty(struct extent_buffer *eb)
+ {
+ 	set_extent_buffer_dirty(eb);
+@@ -2303,7 +2298,7 @@ int btrfs_delete_and_free_root(struct btrfs_trans_handle *trans,
+ 		return ret;
  
- 		ret = btrfs_global_root_insert(fs_info, root);
- 		if (ret) {
-@@ -1099,7 +1099,7 @@ static int load_global_roots_objectid(struct btrfs_fs_info *fs_info,
- 			root->root_key.objectid = objectid;
- 			root->root_key.type = BTRFS_ROOT_ITEM_KEY;
- 			root->root_key.offset = i;
--			root->track_dirty = 1;
-+			set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
- 			root->node = btrfs_find_create_tree_block(fs_info, 0);
- 			if (!root->node) {
- 				free(root);
-@@ -1232,7 +1232,8 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 			error("couldn't load block group tree");
- 			return -EIO;
- 		}
--		fs_info->block_group_root->track_dirty = 1;
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY,
-+			&fs_info->block_group_root->state);
- 	}
- 
- 	ret = btrfs_find_and_setup_root(root, fs_info,
-@@ -1242,7 +1243,7 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 		printk("Couldn't setup device tree\n");
- 		return -EIO;
- 	}
--	fs_info->dev_root->track_dirty = 1;
-+	set_bit(BTRFS_ROOT_TRACK_DIRTY, &fs_info->dev_root->state);
- 
- 	ret = btrfs_find_and_setup_root(root, fs_info,
- 					BTRFS_UUID_TREE_OBJECTID,
-@@ -1251,7 +1252,7 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 		free(fs_info->uuid_root);
- 		fs_info->uuid_root = NULL;
- 	} else {
--		fs_info->uuid_root->track_dirty = 1;
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &fs_info->uuid_root->state);
- 	}
- 
- 	ret = btrfs_find_and_setup_root(root, fs_info,
-@@ -2355,7 +2356,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 
- 	extent_buffer_get(root->node);
- 	root->commit_root = root->node;
--	root->track_dirty = 1;
-+	set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
- 
- 	root->root_item.flags = 0;
- 	root->root_item.byte_limit = 0;
+ 	list_del(&root->dirty_list);
+-	ret = clean_tree_block(root->node);
++	ret = btrfs_clear_buffer_dirty(root->node);
+ 	if (ret)
+ 		return ret;
+ 	ret = btrfs_free_tree_block(trans, root, root->node, 0, 1);
 diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
-index 2a71b97a..8f3477bf 100644
+index cfce4426..4dfb35d4 100644
 --- a/kernel-shared/extent-tree.c
 +++ b/kernel-shared/extent-tree.c
-@@ -1471,7 +1471,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 	nritems = btrfs_header_nritems(buf);
- 	level = btrfs_header_level(buf);
+@@ -1902,7 +1902,7 @@ static int pin_down_bytes(struct btrfs_trans_handle *trans, u64 bytenr,
+ 		if (header_owner != BTRFS_TREE_LOG_OBJECTID &&
+ 		    header_transid == trans->transid &&
+ 		    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN)) {
+-			clean_tree_block(buf);
++			btrfs_clear_buffer_dirty(buf);
+ 			free_extent_buffer(buf);
+ 			return 1;
+ 		}
+diff --git a/kernel-shared/extent_io.c b/kernel-shared/extent_io.c
+index f740b3a6..4dff81bd 100644
+--- a/kernel-shared/extent_io.c
++++ b/kernel-shared/extent_io.c
+@@ -579,7 +579,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ 	return 0;
+ }
  
--	if (!root->ref_cows && level == 0)
-+	if (!test_bit(BTRFS_ROOT_SHAREABLE, &root->state) && level == 0)
- 		return 0;
- 
- 	if (inc)
-@@ -2359,11 +2359,11 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+-int clear_extent_buffer_dirty(struct extent_buffer *eb)
++int btrfs_clear_buffer_dirty(struct extent_buffer *eb)
+ {
+ 	struct extent_io_tree *tree = &eb->fs_info->dirty_buffers;
+ 	if (eb->flags & EXTENT_BUFFER_DIRTY) {
+diff --git a/kernel-shared/extent_io.h b/kernel-shared/extent_io.h
+index 103f93cb..09f3c82a 100644
+--- a/kernel-shared/extent_io.h
++++ b/kernel-shared/extent_io.h
+@@ -124,7 +124,7 @@ void memset_extent_buffer(const struct extent_buffer *eb, char c,
+ int extent_buffer_test_bit(const struct extent_buffer *eb, unsigned long start,
+ 			   unsigned long nr);
+ int set_extent_buffer_dirty(struct extent_buffer *eb);
+-int clear_extent_buffer_dirty(struct extent_buffer *eb);
++int btrfs_clear_buffer_dirty(struct extent_buffer *eb);
+ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 logical,
+ 			u64 *len, int mirror);
+ int write_data_to_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+diff --git a/kernel-shared/transaction.c b/kernel-shared/transaction.c
+index b16c07c3..f99bc684 100644
+--- a/kernel-shared/transaction.c
++++ b/kernel-shared/transaction.c
+@@ -161,7 +161,7 @@ again:
+ 				goto cleanup;
+ 			}
+ 			start += eb->len;
+-			clear_extent_buffer_dirty(eb);
++			btrfs_clear_buffer_dirty(eb);
+ 			free_extent_buffer(eb);
+ 		}
  	}
- 
- 	/*
--	 * Also preallocate metadata for csum tree and fs trees (root->ref_cows
--	 * already set), as they can consume a lot of metadata space.
--	 * Pre-allocate to avoid unexpected ENOSPC.
-+	 * Also preallocate metadata for csum tree and fs trees
-+	 * (BTRFS_ROOT_SHAREABLE already set) as they can consume a lot of
-+	 * metadata space.  Pre-allocate to avoid unexpected ENOSPC.
- 	 */
--	if (root->ref_cows ||
-+	if (test_bit(BTRFS_ROOT_SHAREABLE, &root->state) ||
- 	    root->root_key.objectid == BTRFS_CSUM_TREE_OBJECTID) {
- 		if (!(profile & BTRFS_BLOCK_GROUP_METADATA)) {
- 			ret = do_chunk_alloc(trans, info,
+@@ -184,7 +184,7 @@ cleanup:
+ 			eb = find_first_extent_buffer(fs_info, start);
+ 			BUG_ON(!eb || eb->start != start);
+ 			start += eb->len;
+-			clear_extent_buffer_dirty(eb);
++			btrfs_clear_buffer_dirty(eb);
+ 			free_extent_buffer(eb);
+ 		}
+ 	}
 -- 
 2.40.0
 

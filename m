@@ -2,118 +2,120 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F0BFC77B7E
-	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Apr 2023 09:37:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B3CD4C77B7E
+	for <linux-btrfs@archiver.kernel.org>; Thu, 20 Apr 2023 10:06:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234353AbjDTJhv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 20 Apr 2023 05:37:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51968 "EHLO
+        id S234354AbjDTKGZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 20 Apr 2023 06:06:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47756 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234472AbjDTJg5 (ORCPT
+        with ESMTP id S234457AbjDTKGB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 20 Apr 2023 05:36:57 -0400
-Received: from mail-io1-f77.google.com (mail-io1-f77.google.com [209.85.166.77])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 99FAB35BE
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Apr 2023 02:36:42 -0700 (PDT)
-Received: by mail-io1-f77.google.com with SMTP id ca18e2360f4ac-760ed929d24so133133539f.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Apr 2023 02:36:42 -0700 (PDT)
+        Thu, 20 Apr 2023 06:06:01 -0400
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C55182690;
+        Thu, 20 Apr 2023 03:05:52 -0700 (PDT)
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-3f0a0c4e505so3521735e9.0;
+        Thu, 20 Apr 2023 03:05:52 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681983402; x=1684575402;
-        h=to:from:subject:message-id:date:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=I7H2xOuyMfKKw8Cz3kgRz9OwKi3ZnzM005yfTOCX8Dc=;
-        b=G/j9E32tzTXxYIxs6re1Tsjl3PIvMaoEEiZCA3g2KzdAi3yT26kHVxCxfkM4DACQfF
-         ChSReCkW+lGIkRmwIQX6vqbUmeoGw8LmYMH6l/1ZNc7tJ3fpKqeHip1cZZB/0r1vBduM
-         jxh9owvPTgEAmsw/UOtB8KDmxfQrcvtJoXZ97FMxYEO8XDEwCzK+/VN1Fu3xvvwpS95i
-         vfqM+xT3v7WflYTf3ZxPW80GPXG9KlNSmDxaQvsEZiEkGd+DYwdTWvupgcS2OEMFtrIs
-         WkUBxEmNJIFef7ULeE8bYCdplIHRit0sGrqZx1wp1dVeIpbl6Kd4bRLNEuDS2qfRzQcA
-         aP0Q==
-X-Gm-Message-State: AAQBX9fGEPp8+roo6tBTIW1YA1HyNpX1/Xsx8V4ubsVlkk/R00TzPErb
-        kivECaQ5e5ZLVbWthfx11iZubvMfiAoyWb3TLZFDvAcH/d+s
-X-Google-Smtp-Source: AKy350bffhmeNWTFMGPSYlI5SDPCwW36yvX9w7ztHwAOf+XiOffwbJHw4LSGuDD/V6Z3u4Pls56qashA1AFFxL0GZMUdjMruIw7w
+        d=1e100.net; s=20221208; t=1681985151; x=1684577151;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=s93ifE1gU+0FrrRIOdnaALh6w14X2Hkv+dazvnzybyI=;
+        b=awtxNKrrf4o7r0DPtDHyrqLo/Ql+TjsX7Mb6Ae3KRmQyd1ocAmFbzkpAAakb8XuF6+
+         Q+rn211GLS9d/i0+MtVnxz3F0Sh8S2TEOZ0zrH1vHlj4WhZdCnmnwzypVXvjVgdk8Mh8
+         52bNhf+SrfywvAV71cA8HYYANKD4XJN2QlKxn98VqsULkpf9mmhFSqAIbhNqqpFc1IV2
+         e2m2I24gZTR9IQf9O+9Ufyt92ReixeqxFz53i4kxkE7JSVG8YkMCY34txO4xrvT88C2G
+         Aslo9Y508dHgHePVUs1Iq0CSBbv8wu2TuQWop9UlaHdJaw6k5qHJm3MkC06w6buAccUO
+         /WYA==
+X-Gm-Message-State: AAQBX9fpeQ2YRGIizUasrHr8GWYJfHTYPEJl29/jCsMPVczaQyYkPqz7
+        RCB6ZWTPh9s9jm450jvnuL8=
+X-Google-Smtp-Source: AKy350ZJizpAlK8UcdkIuYKpQ5Y/PZoh+EKKcTgVEjvN6d0zqGLWnY/auHncEOXRAbbDYcB+iyhuyg==
+X-Received: by 2002:a5d:6149:0:b0:2fb:9dbb:3407 with SMTP id y9-20020a5d6149000000b002fb9dbb3407mr833176wrt.51.1681985151089;
+        Thu, 20 Apr 2023 03:05:51 -0700 (PDT)
+Received: from localhost.localdomain (aftr-62-216-205-208.dynamic.mnet-online.de. [62.216.205.208])
+        by smtp.googlemail.com with ESMTPSA id l11-20020a5d674b000000b0030276f42f08sm201410wrw.88.2023.04.20.03.05.49
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 20 Apr 2023 03:05:50 -0700 (PDT)
+From:   Johannes Thumshirn <jth@kernel.org>
+To:     axboe@kernel.dk
+Cc:     johannes.thumshirn@wdc.com, agruenba@redhat.com,
+        cluster-devel@redhat.com, damien.lemoal@wdc.com,
+        dm-devel@redhat.com, dsterba@suse.com, hare@suse.de, hch@lst.de,
+        jfs-discussion@lists.sourceforge.net, kch@nvidia.com,
+        linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-raid@vger.kernel.org, ming.lei@redhat.com,
+        rpeterso@redhat.com, shaggy@kernel.org, snitzer@kernel.org,
+        song@kernel.org, willy@infradead.org,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>
+Subject: [PATCH v4 01/22] swap: use __bio_add_page to add page to bio
+Date:   Thu, 20 Apr 2023 12:04:40 +0200
+Message-Id: <20230420100501.32981-2-jth@kernel.org>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230420100501.32981-1-jth@kernel.org>
+References: <20230420100501.32981-1-jth@kernel.org>
 MIME-Version: 1.0
-X-Received: by 2002:a5d:9f49:0:b0:760:ec21:a8ab with SMTP id
- u9-20020a5d9f49000000b00760ec21a8abmr575074iot.0.1681983401920; Thu, 20 Apr
- 2023 02:36:41 -0700 (PDT)
-Date:   Thu, 20 Apr 2023 02:36:41 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <00000000000030932c05f9c1472f@google.com>
-Subject: [syzbot] [btrfs?] WARNING in btrfs_mark_ordered_io_finished
-From:   syzbot <syzbot+049b5ea03bae9d6acc9b@syzkaller.appspotmail.com>
-To:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hello,
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-syzbot found the following issue on:
+The swap code only adds a single page to a newly created bio. So use
+__bio_add_page() to add the page which is guaranteed to succeed in this
+case.
 
-HEAD commit:    a7a55e27ad72 Merge tag 'i2c-for-6.3-rc7' of git://git.kern..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=104304fbc80000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=759d5e665e47a55
-dashboard link: https://syzkaller.appspot.com/bug?extid=049b5ea03bae9d6acc9b
-compiler:       Debian clang version 15.0.7, GNU ld (GNU Binutils for Debian) 2.35.2
+This brings us closer to marking bio_add_page() as __must_check.
 
-Unfortunately, I don't have any reproducer for this issue yet.
-
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/89778cf51c73/disk-a7a55e27.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/8d826c46f139/vmlinux-a7a55e27.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/fb0e22b4bb2a/bzImage-a7a55e27.xz
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+049b5ea03bae9d6acc9b@syzkaller.appspotmail.com
-
-------------[ cut here ]------------
-WARNING: CPU: 1 PID: 1070 at fs/btrfs/ordered-data.c:388 btrfs_mark_ordered_io_finished+0x993/0xcf0
-Modules linked in:
-CPU: 1 PID: 1070 Comm: kworker/u4:5 Not tainted 6.3.0-rc6-syzkaller-00183-ga7a55e27ad72 #0
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 03/30/2023
-Workqueue: events_unbound btrfs_async_reclaim_metadata_space
-RIP: 0010:btrfs_mark_ordered_io_finished+0x993/0xcf0 fs/btrfs/ordered-data.c:388
-Code: f8 ff ff e8 af 8a fe fd 48 c7 c7 80 45 2a 8b 48 c7 c6 e0 43 2a 8b ba 71 01 00 00 e8 c7 fe 10 07 e9 06 fd ff ff e8 8d 8a fe fd <0f> 0b 48 8b 84 24 a0 00 00 00 42 80 3c 28 00 4c 8b 7c 24 68 74 0a
-RSP: 0018:ffffc90005cfee98 EFLAGS: 00010093
-RAX: ffffffff838bec33 RBX: 00000000000ca000 RCX: ffff8880212a1d40
-RDX: 0000000000000000 RSI: 00000000000ca000 RDI: 0000000000085000
-RBP: fffffffffffbb000 R08: ffffffff838be9b7 R09: 0000000000000003
-R10: ffffffffffffffff R11: dffffc0000000001 R12: 1ffff110048753ad
-R13: dffffc0000000000 R14: 0000000000002000 R15: 00000000000ca000
-FS:  0000000000000000(0000) GS:ffff8880b9900000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000001b32025000 CR3: 000000002ec18000 CR4: 00000000003506e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
-Call Trace:
- <TASK>
- btrfs_run_delalloc_range+0xee2/0x11d0 fs/btrfs/inode.c:2258
- writepage_delalloc+0x261/0x590 fs/btrfs/extent_io.c:1424
- __extent_writepage+0x850/0x16d0 fs/btrfs/extent_io.c:1724
- extent_write_cache_pages fs/btrfs/extent_io.c:2635 [inline]
- extent_writepages+0xc31/0x1930 fs/btrfs/extent_io.c:2755
- do_writepages+0x3a6/0x670 mm/page-writeback.c:2551
- filemap_fdatawrite_wbc+0x125/0x180 mm/filemap.c:390
- start_delalloc_inodes+0x7e1/0xcb0 fs/btrfs/inode.c:9287
- btrfs_start_delalloc_roots+0x745/0xab0 fs/btrfs/inode.c:9366
- shrink_delalloc fs/btrfs/space-info.c:611 [inline]
- flush_space+0x61d/0xe30 fs/btrfs/space-info.c:719
- btrfs_async_reclaim_metadata_space+0x29f/0x350 fs/btrfs/space-info.c:1066
- process_one_work+0x8a0/0x10e0 kernel/workqueue.c:2390
- worker_thread+0xa63/0x1210 kernel/workqueue.c:2537
- kthread+0x270/0x300 kernel/kthread.c:376
- ret_from_fork+0x1f/0x30 arch/x86/entry/entry_64.S:308
- </TASK>
-
-
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Reviewed-by: Damien Le Moal <damien.lemoal@opensource.wdc.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ mm/page_io.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/mm/page_io.c b/mm/page_io.c
+index 87b682d18850..684cd3c7b59b 100644
+--- a/mm/page_io.c
++++ b/mm/page_io.c
+@@ -338,7 +338,7 @@ static void swap_writepage_bdev_sync(struct page *page,
+ 	bio_init(&bio, sis->bdev, &bv, 1,
+ 		 REQ_OP_WRITE | REQ_SWAP | wbc_to_write_flags(wbc));
+ 	bio.bi_iter.bi_sector = swap_page_sector(page);
+-	bio_add_page(&bio, page, thp_size(page), 0);
++	__bio_add_page(&bio, page, thp_size(page), 0);
+ 
+ 	bio_associate_blkg_from_page(&bio, page);
+ 	count_swpout_vm_event(page);
+@@ -360,7 +360,7 @@ static void swap_writepage_bdev_async(struct page *page,
+ 			GFP_NOIO);
+ 	bio->bi_iter.bi_sector = swap_page_sector(page);
+ 	bio->bi_end_io = end_swap_bio_write;
+-	bio_add_page(bio, page, thp_size(page), 0);
++	__bio_add_page(bio, page, thp_size(page), 0);
+ 
+ 	bio_associate_blkg_from_page(bio, page);
+ 	count_swpout_vm_event(page);
+@@ -468,7 +468,7 @@ static void swap_readpage_bdev_sync(struct page *page,
+ 
+ 	bio_init(&bio, sis->bdev, &bv, 1, REQ_OP_READ);
+ 	bio.bi_iter.bi_sector = swap_page_sector(page);
+-	bio_add_page(&bio, page, thp_size(page), 0);
++	__bio_add_page(&bio, page, thp_size(page), 0);
+ 	/*
+ 	 * Keep this task valid during swap readpage because the oom killer may
+ 	 * attempt to access it in the page fault retry time check.
+@@ -488,7 +488,7 @@ static void swap_readpage_bdev_async(struct page *page,
+ 	bio = bio_alloc(sis->bdev, 1, REQ_OP_READ, GFP_KERNEL);
+ 	bio->bi_iter.bi_sector = swap_page_sector(page);
+ 	bio->bi_end_io = end_swap_bio_read;
+-	bio_add_page(bio, page, thp_size(page), 0);
++	__bio_add_page(bio, page, thp_size(page), 0);
+ 	count_vm_event(PSWPIN);
+ 	submit_bio(bio);
+ }
+-- 
+2.39.2
+

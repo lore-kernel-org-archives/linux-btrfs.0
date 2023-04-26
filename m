@@ -2,155 +2,183 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10125C77B60
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Apr 2023 11:50:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 319BEC77B60
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Apr 2023 12:01:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240415AbjDZLug (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Apr 2023 07:50:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44486 "EHLO
+        id S240695AbjDZMBC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Apr 2023 08:01:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53902 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240408AbjDZLuf (ORCPT
+        with ESMTP id S240555AbjDZMBB (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Apr 2023 07:50:35 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 26B92422D
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 04:50:32 -0700 (PDT)
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MPokN-1penTI2lNL-00MvJK; Wed, 26
- Apr 2023 13:50:24 +0200
-Message-ID: <2936900a-a62e-8d27-1098-9505cc95a890@gmx.com>
-Date:   Wed, 26 Apr 2023 19:50:20 +0800
+        Wed, 26 Apr 2023 08:01:01 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C058C4C3C
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 05:00:59 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 3FBDC63119
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 12:00:59 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9E3F7C433EF
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 12:00:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1682510458;
+        bh=aRSJX38kD8mUlI74KN31C8TQdXhbRZhy+37NzCjWDzU=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=bgjGyVlB9qT1MXvl/imVdr/CgibHUjO7Ie61tqw/jqaL/n54U6WkXrJGejYR6QYTu
+         8S37RcYwDqAVe9f1WLhJ+xMl+Tlx+Hhbxq21lkUxqatlMBSXTld3YGqxDNSeM4i/YE
+         i2UKb2ucCSycMMHG1fWZlluwlJ1hExZQWF7+RhiUvBfiz9ZrXfRp4bt/lXB2ItmNRi
+         vhBB5uEoFUiD6208L4MOCCpc/shtn3LDFYlzmMEdQql72xJ+hWFLbbeEe5mqMlSb/C
+         iKl49uutGHklR3N8p6WYMq9VuRD9q7E3hUoyp0WPaOwMc55tn+LwjYh8XLizScXHfN
+         ud2Zzoj6B6YAw==
+Received: by mail-oi1-f173.google.com with SMTP id 5614622812f47-38bef0af6e9so3837060b6e.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 05:00:58 -0700 (PDT)
+X-Gm-Message-State: AAQBX9fs+JvhCxrLXhJZOrQZzPxietQPD7BFLcyZBXbuYfYLxjI6qKkd
+        llfqYdtOKxB8WY1Y8nznm6xssd6ADFfm7k/DwAk=
+X-Google-Smtp-Source: AKy350ZXcLdRmijzdfBX3sWP0LNyqob0PqTI9gHlxodTo576olPBeg1y/+sx5x6FAKes8NhVN+ee5khSq7pRCHUYFUM=
+X-Received: by 2002:aca:be55:0:b0:38e:3eb6:91d3 with SMTP id
+ o82-20020acabe55000000b0038e3eb691d3mr8703422oif.21.1682510457723; Wed, 26
+ Apr 2023 05:00:57 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.8.0
-Subject: Re: [PATCH 2/3] btrfs: print extent buffers when sibling keys check
- fails
-Content-Language: en-US
-To:     Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>
-Cc:     linux-btrfs@vger.kernel.org
-References: <cover.1682505780.git.fdmanana@suse.com>
- <14f4089a9d26606c7a15e398536ca75f9c484c9c.1682505780.git.fdmanana@suse.com>
- <84ed9592-ac1e-8344-c0f6-4e114b2835ec@gmx.com>
- <CAL3q7H7B3Cyn9RXzT24u+x2hjgmWjNCrMBJ-WHjGP5Cs-kUFjQ@mail.gmail.com>
- <6377fb9d-fec9-6c2a-1f38-6ffd775eb773@suse.com>
- <CAL3q7H64Gk9hXNgtgH2CAha=EpS9oFirgoyFjVCsqusa6hCJzQ@mail.gmail.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <CAL3q7H64Gk9hXNgtgH2CAha=EpS9oFirgoyFjVCsqusa6hCJzQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-Provags-ID: V03:K1:Y0+nMkjjZdq8MAWxUeedzROVMiXWRuhn6iyPwLyBavxpAOrkW49
- Ecw52QiZVTTwdXHvud0GwrSXishWvdoQpH31myTpb4v8Fx1zRQGKlxt+VuPOnmOzSCkmQ4M
- 482Lw9srYXAGQFtuf9q3DTxWBKFnNj/gHw9AXCxH9DEXOpMihsrSKelYzAtT0rhZ2zYxJ8o
- ZekgiYus6MEIKTUiliiVw==
-UI-OutboundReport: notjunk:1;M01:P0:V2t55CWH3Eo=;AzTr66gNQ/KO34mPYqe/p3y3dUv
- WigSIJDo3yf2ZH+Fnn1nwd9hJYouQLIhxziQsazgT4ExoiVKZvGIGLwCjcXTTwuVyHxS1AgB0
- rfDx8R/c6zVQm240Wv/42lLlvi5MRs9arYEodqjhWqbtfXgL8De6D3qniL4obHzv7C1W4SnUT
- ns+88CDvpnWDRdxMmLujuet2E31h6x4OQPbz4ZjKvS+oW3FxF0CZoB0fyvmgE/NRUAfOpyKid
- BwgVlekjUuwWW0UJaeoSf426nH674WCcIkO87ZhVAxqzNHzvTuTc87DP0o/BHiJmEaQVHNMp1
- vH+ziL7tIkvzrE76QSj3jljEsoqBh/FrFOggT1eJ3owza7wjijbXyVgqASlWMiAU55Zc/mu2J
- HFkddLBvYl0Ub1pPgx7uiHOGZyaAqSKyFMo3yDX3CdMeJgrW6Xr6pFKybGDUnnfGkd7pTCsk6
- K1ENRGA2YoEqEkNF2a6I0vlj8w5rYHX0hEAfuJ5gU4rMj3Z2Gl9yRvzrjv89iqhMhCSiyyINX
- UGKLpOZa23t08/0+I/jensZAS009+5Tdr0Uv6iLx1JVZFAVYFSGQ6RLSAm/XrvpFtASeMpq6l
- X63Ll0QyGBD54FxAOgDE5hOnDmFpHEJ8oU2VqdFjs5o5B8SZiVCaqJh7VJHMVraB0odeCaAc0
- 9cG4Vfe5rjXOgBu+CQk26c0il5JixEi8M1nG4N5lqU6CmOUHc4RDnyQ7EOOwzvUlbFW69oZaM
- b/mT5qtZPYcjaYqVYHK7ShDLY5HDFiiU7BH3c1+Mp8T2mHfk7c5+RJm+aD2rKcz2yR/spjAY6
- l8hSZKrH1YaLwv+cqbJWdBV/w5k7RaIc8ANpEfxDG49BEVMyQDdqVgpvUQlQKgqcMc0O4AXNd
- Cr3bBuANnAggVa/fowBHikpelEW1i10t1jOutQl1DkSbdBsYFYl3wFOHzm6aFyx02UCNI28Ta
- OrIeK33RWgswLk71ucE0wNrqnho=
+References: <cover.1682505780.git.fdmanana@suse.com> <14f4089a9d26606c7a15e398536ca75f9c484c9c.1682505780.git.fdmanana@suse.com>
+ <84ed9592-ac1e-8344-c0f6-4e114b2835ec@gmx.com> <CAL3q7H7B3Cyn9RXzT24u+x2hjgmWjNCrMBJ-WHjGP5Cs-kUFjQ@mail.gmail.com>
+ <6377fb9d-fec9-6c2a-1f38-6ffd775eb773@suse.com> <CAL3q7H64Gk9hXNgtgH2CAha=EpS9oFirgoyFjVCsqusa6hCJzQ@mail.gmail.com>
+ <2936900a-a62e-8d27-1098-9505cc95a890@gmx.com>
+In-Reply-To: <2936900a-a62e-8d27-1098-9505cc95a890@gmx.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Wed, 26 Apr 2023 13:00:21 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6S1bOH2d1G+YPHEQUgiibf8fP3ST7iOcV0kc3j5QUtaA@mail.gmail.com>
+Message-ID: <CAL3q7H6S1bOH2d1G+YPHEQUgiibf8fP3ST7iOcV0kc3j5QUtaA@mail.gmail.com>
+Subject: Re: [PATCH 2/3] btrfs: print extent buffers when sibling keys check fails
+To:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+On Wed, Apr 26, 2023 at 12:50=E2=80=AFPM Qu Wenruo <quwenruo.btrfs@gmx.com>=
+ wrote:
+>
+>
+>
+> On 2023/4/26 19:44, Filipe Manana wrote:
+> > On Wed, Apr 26, 2023 at 12:40=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote=
+:
+> >>
+> >>
+> >>
+> >> On 2023/4/26 19:31, Filipe Manana wrote:
+> >>> On Wed, Apr 26, 2023 at 12:21=E2=80=AFPM Qu Wenruo <quwenruo.btrfs@gm=
+x.com> wrote:
+> >>>>
+> >>>>
+> >>>>
+> >>>> On 2023/4/26 18:51, fdmanana@kernel.org wrote:
+> >>>>> From: Filipe Manana <fdmanana@suse.com>
+> >>>>>
+> >>>>> When trying to move keys from one node/leaf to another sibling node=
+/leaf,
+> >>>>> if the sibling keys check fails we just print an error message with=
+ the
+> >>>>> last key of the left sibling and the first key of the right sibling=
+.
+> >>>>> However it's also useful to print all the keys of each sibling, as =
+it
+> >>>>> may provide some clues to what went wrong, which code path may be
+> >>>>> inserting keys in an incorrect order. So just do that, print the si=
+blings
+> >>>>> with btrfs_print_tree(), as it works for both leaves and nodes.
+> >>>>>
+> >>>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> >>>>
+> >>>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> >>>>
+> >>>> However my concern is, printing two tree blocks may be a little too =
+large.
+> >>>> Definitely not something can be capture by one screen.
+> >>>
+> >>> What?
+> >>> If I check syslog/dmesg, I can certainly access hundreds, thousands o=
+f lines...
+> >>>
+> >>> I suppose by "capture by one screen" you mean a screenshot?
+> >>
+> >> Yep, mostly a phone shot of a physical monitor, which a lot of end use=
+rs
+> >> choose to use to report their initial trans abort.
+> >>
+> >> E.g.
+> >> https://lore.kernel.org/linux-btrfs/f057bdd1-bdd9-459f-b25f-6a2faa6524=
+99@betaapp.fastmail.com/
+> >>
+> >> I guess the reason is, if the trans abort happens on the root fs, ther=
+e
+> >> will be no persistent log files anyway.
+> >> (Although it's still possible to pass the dmesg to another machine or =
+go
+> >> netconsole, but not everyone has such setup ready).
+> >
+> > So what?
+> > I don't see how that invalidates printing extent buffers... Many users
+> > are able to access dmesg/syslog
+> > and paste what they get there... It's also useful for development
+> > where we can certainly access everything...
+>
+> That's why I gave the reviewed-by tag.
+>
+> Maybe we can shrink the output to the first several and last several
+> items in the future.
 
+That's not really useful for most cases, and I've certainly run into key
+ordering bugs in the past where having an entire leaf printed made the
+problem easier to debug,
+sometimes it made it immediately obvious where the bug happened and why.
 
-On 2023/4/26 19:44, Filipe Manana wrote:
-> On Wed, Apr 26, 2023 at 12:40 PM Qu Wenruo <wqu@suse.com> wrote:
->>
->>
->>
->> On 2023/4/26 19:31, Filipe Manana wrote:
->>> On Wed, Apr 26, 2023 at 12:21 PM Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>>>
->>>>
->>>>
->>>> On 2023/4/26 18:51, fdmanana@kernel.org wrote:
->>>>> From: Filipe Manana <fdmanana@suse.com>
->>>>>
->>>>> When trying to move keys from one node/leaf to another sibling node/leaf,
->>>>> if the sibling keys check fails we just print an error message with the
->>>>> last key of the left sibling and the first key of the right sibling.
->>>>> However it's also useful to print all the keys of each sibling, as it
->>>>> may provide some clues to what went wrong, which code path may be
->>>>> inserting keys in an incorrect order. So just do that, print the siblings
->>>>> with btrfs_print_tree(), as it works for both leaves and nodes.
->>>>>
->>>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->>>>
->>>> Reviewed-by: Qu Wenruo <wqu@suse.com>
->>>>
->>>> However my concern is, printing two tree blocks may be a little too large.
->>>> Definitely not something can be capture by one screen.
->>>
->>> What?
->>> If I check syslog/dmesg, I can certainly access hundreds, thousands of lines...
->>>
->>> I suppose by "capture by one screen" you mean a screenshot?
->>
->> Yep, mostly a phone shot of a physical monitor, which a lot of end users
->> choose to use to report their initial trans abort.
->>
->> E.g.
->> https://lore.kernel.org/linux-btrfs/f057bdd1-bdd9-459f-b25f-6a2faa652499@betaapp.fastmail.com/
->>
->> I guess the reason is, if the trans abort happens on the root fs, there
->> will be no persistent log files anyway.
->> (Although it's still possible to pass the dmesg to another machine or go
->> netconsole, but not everyone has such setup ready).
-> 
-> So what?
-> I don't see how that invalidates printing extent buffers... Many users
-> are able to access dmesg/syslog
-> and paste what they get there... It's also useful for development
-> where we can certainly access everything...
+We are avoiding printing useful stuff just because we assume people will ta=
+ke
+a photo from their phone... For those with access to dmesg/syslog, we
+lose useful
+information.
 
-That's why I gave the reviewed-by tag.
-
-Maybe we can shrink the output to the first several and last several 
-items in the future.
-
-But for now since it's just a trans abort, it should be mostly fine for 
-the end uesrs to access the full dump.
-
-Thanks,
-Qu
-> 
-> 
->>
->> Thanks,
->> Qu
->>>
->>>>
->>>> Although dumping single tree block is already too large for a single
->>>> screen, I don't have any better way...
->>>>
->>>> Thanks,
->>>> Qu
->>>>> ---
->>>>>     fs/btrfs/ctree.c | 4 ++++
->>>>>     1 file changed, 4 insertions(+)
->>>>>
->>>>> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
->>>>> index a0b97a6d075a..a061d7092369 100644
->>>>> --- a/fs/btrfs/ctree.c
->>>>> +++ b/fs/btrfs/ctree.c
->>>>> @@ -2708,6 +2708,10 @@ static bool check_sibling_keys(struct extent_buffer *left,
->>>>>         }
->>>>>
->>>>>         if (btrfs_comp_cpu_keys(&left_last, &right_first) >= 0) {
->>>>> +             btrfs_crit(left->fs_info, "left extent buffer:");
->>>>> +             btrfs_print_tree(left, false);
->>>>> +             btrfs_crit(left->fs_info, "right extent buffer:");
->>>>> +             btrfs_print_tree(right, false);
->>>>>                 btrfs_crit(left->fs_info,
->>>>>     "bad key order, sibling blocks, left last (%llu %u %llu) right first (%llu %u %llu)",
->>>>>                            left_last.objectid, left_last.type,
+>
+> But for now since it's just a trans abort, it should be mostly fine for
+> the end uesrs to access the full dump.
+>
+> Thanks,
+> Qu
+> >
+> >
+> >>
+> >> Thanks,
+> >> Qu
+> >>>
+> >>>>
+> >>>> Although dumping single tree block is already too large for a single
+> >>>> screen, I don't have any better way...
+> >>>>
+> >>>> Thanks,
+> >>>> Qu
+> >>>>> ---
+> >>>>>     fs/btrfs/ctree.c | 4 ++++
+> >>>>>     1 file changed, 4 insertions(+)
+> >>>>>
+> >>>>> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> >>>>> index a0b97a6d075a..a061d7092369 100644
+> >>>>> --- a/fs/btrfs/ctree.c
+> >>>>> +++ b/fs/btrfs/ctree.c
+> >>>>> @@ -2708,6 +2708,10 @@ static bool check_sibling_keys(struct extent=
+_buffer *left,
+> >>>>>         }
+> >>>>>
+> >>>>>         if (btrfs_comp_cpu_keys(&left_last, &right_first) >=3D 0) {
+> >>>>> +             btrfs_crit(left->fs_info, "left extent buffer:");
+> >>>>> +             btrfs_print_tree(left, false);
+> >>>>> +             btrfs_crit(left->fs_info, "right extent buffer:");
+> >>>>> +             btrfs_print_tree(right, false);
+> >>>>>                 btrfs_crit(left->fs_info,
+> >>>>>     "bad key order, sibling blocks, left last (%llu %u %llu) right =
+first (%llu %u %llu)",
+> >>>>>                            left_last.objectid, left_last.type,

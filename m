@@ -2,65 +2,107 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BA013C7EE21
-	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Apr 2023 10:53:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 47969C7618E
+	for <linux-btrfs@archiver.kernel.org>; Wed, 26 Apr 2023 11:18:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240553AbjDZKxH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 26 Apr 2023 06:53:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46724 "EHLO
+        id S240555AbjDZLSy (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 26 Apr 2023 07:18:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59570 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240282AbjDZKxD (ORCPT
+        with ESMTP id S240537AbjDZLSw (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 26 Apr 2023 06:53:03 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BC18355A3
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 03:52:35 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 29AAC63536
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 10:51:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 02C9AC4339B
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 10:51:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1682506300;
-        bh=zUioMPoM+71SACqhcR200IzbiuhNcXpi5McrsK1H0aA=;
-        h=From:To:Subject:Date:From;
-        b=KbJjY4eYInzR/Lahh+JBLzc2YCSQHN+PXisOthOmWlocLwA6Lc9MqsTguV3sO2fH+
-         /h6iq/V6b4hxM7Y2bd0oxrzH8fBlBsdKVmYEVO9ySPm4ji/0qeCQBC/3chPT5Pxe7I
-         rYzBulihDWCcawIQ35pd+EYmwKIQPtZKEQ406VVL70CkEIYMJ/TepZohlOe+HyWzGI
-         EKPgihYmzuTrPYOyRDvnS3otN3GaF/lvOC36P2lPHcmI84gX/DUoZy6+qQCMjwTvB3
-         JFsH23V1MEZWUwEC8ktttZPVS3d/Vrt1uUkJ1ZUb5zxa0p5z148nIaP7QuBxHVELNr
-         W57cgFFuq/hFQ==
-From:   fdmanana@kernel.org
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: improve sibling keys check failure report
-Date:   Wed, 26 Apr 2023 11:51:34 +0100
-Message-Id: <cover.1682505780.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
+        Wed, 26 Apr 2023 07:18:52 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3BDEB5592
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Apr 2023 04:18:36 -0700 (PDT)
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mo6qp-1qcHnh1Rgh-00pdAK; Wed, 26
+ Apr 2023 13:18:31 +0200
+Message-ID: <a6097029-68f6-266a-c820-00bde56cdeb6@gmx.com>
+Date:   Wed, 26 Apr 2023 19:18:27 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.8.0
+Subject: Re: [PATCH 1/3] btrfs: abort transaction when sibling keys check
+ fails for leaves
+Content-Language: en-US
+To:     fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <cover.1682505780.git.fdmanana@suse.com>
+ <df0094379bdfae431142657c27dd00a854a4b402.1682505780.git.fdmanana@suse.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <df0094379bdfae431142657c27dd00a854a4b402.1682505780.git.fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Provags-ID: V03:K1:m6xFPO48sMMHDMIEM90igAAp97iwVS8mDEV9jfmy9Fq6MbJ/2wf
+ rCJldVabM8FAyY8Z7InDBmtUWUxxTfamCqiz4fqfydUhS4leyUL6Wqb8mh8NLna4OxHoCBW
+ b7ZF1yRDejvhCQnbB4cEjooHIaCQFLvSKASZg42Sm3BPtUR5EqsyIviBlTukyGg8pr5HpS1
+ sJz4D1D+sLPdPxmQwqAvg==
+UI-OutboundReport: notjunk:1;M01:P0:ugtp7y5AfPM=;ca8oZdi4DgbNrmTTcKsCjX25f6q
+ 3+3UEztzTGLROngmQVU3WGMj7as0N5iS0sUfPNnec8dBVoT7HkAQ21T+tmYGnuhKqNDGDB0yg
+ plsVbaMzNqg5wtiQmOXFEn10KgtY3PJO6LI6XJ8LWYoe/WY1zhciNh1SC4O8D5ATUD6T4lnUN
+ nT0A7F43gzkB9i3MpK4QsxCnLo7gXvDF7tIhXDC4fD3/nP68MEbAbRphgzQd+kXQBi1oT780H
+ pmy6Pq4LpuvP27pKvAsNvzT0O5t47JPQCUkeHpC7JHVVGreVJDOmfLNnZTJ38XCkZUj0EsJ8L
+ 76x3xiQEE04YoANCyl7S9q82V2b8lQxl7WmujjYFJJEQ2gdwQ/+4IWWIxxzbNyFGkOLD2GtUQ
+ 5Je2hD4AEooqc/I16Wnx74gQQ84G1eUeJ6Wn/H3mmQmtMbQ8SzbG2iJBRUliCT0MobJ0aaphR
+ 4ozt2qDkuf2OWBQdMMstf/KIDH4p9++xhIrGFf6K5w3cIPwkFCvvuDz5iF494W1PDxrm7b849
+ AgWC+U6qejn6LsntUTmcDbPHF0lN1JFQ7xKHYcZbiMkkGG5KSEXs5QC4u6vJDxKIMMeEs+FeH
+ rVCKOECrjaO9pG/8sh9khWzPstowBQ2rAG5nw0Pzkw9o7uN4SOicnKz1etoeqTw9uZ5rGhYZA
+ dBFB9ZYw+qN8qwCbaleK4LOFkJCCnUDCukyVYJOidM0UnvwXjby5KGa+YcGpYXea8ZiijPhqv
+ Gv7LEeP6ACO3hAbHglZmpNm5Y0bSqwLNCfvT+Hwbfw+6RpOJGZM14IcDLE/pmvitoOYjmEkEC
+ UH+ZRjYixbiXklvR5Vwp8++2uiK4z+X1hbf3/rUCFI7xr1EhOkjTxXMzzVQEwW1tVqVl09RAc
+ LY4c/DN9K6vXL2+HmPPkNxfZ88CPAbIA6Y54xtp66Bh2GGBUegz3dAIzidXUD//1DZ5uGvTHk
+ tVWOh49bGIaW9wrD6QdjuAWjCIQ=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
 
-This makes reporting of sibling key check failures more useful, by
-printing more exact stack traces in case the extent buffers are leaves
-and dumping the extent buffers. This is motivated by a recent report [1].
-More details on the changelogs of each patch.
 
-[1] https://lore.kernel.org/linux-btrfs/20230423222213.5391.409509F4@e16-tech.com/
+On 2023/4/26 18:51, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If the sibling keys check fails before we move keys from one sibling
+> leaf to another, we are not aborting the transaction - we leave that to
+> some higher level caller of btrfs_search_slot() (or anything else that
+> uses it to insert items into a b+tree).
+> 
+> This means that the transaction abort will provide a stack trace that
+> omits the b+tree modification call chain. So change this to immediately
+> abort the transaction and therefore get a more useful stack trace that
+> shows us the call chain in the bt+tree modification code.
+> 
+> It's also important to immediately abort the transaction just in case
+> some higher level caller is not doing it, as this indicates a very
+> serious corruption and we should stop the possibility of doing further
+> damage.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Filipe Manana (3):
-  btrfs: abort transaction when sibling keys check fails for leaves
-  btrfs: print extent buffers when sibling keys check fails
-  btrfs: tag as unlikely the key comparison when checking sibling keys
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
- fs/btrfs/ctree.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
-
--- 
-2.34.1
-
+Thanks,
+Qu
+> ---
+>   fs/btrfs/ctree.c | 2 ++
+>   1 file changed, 2 insertions(+)
+> 
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index d94429e0f16a..a0b97a6d075a 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -3296,6 +3296,7 @@ static int push_leaf_right(struct btrfs_trans_handle *trans, struct btrfs_root
+>   
+>   	if (check_sibling_keys(left, right)) {
+>   		ret = -EUCLEAN;
+> +		btrfs_abort_transaction(trans, ret);
+>   		btrfs_tree_unlock(right);
+>   		free_extent_buffer(right);
+>   		return ret;
+> @@ -3514,6 +3515,7 @@ static int push_leaf_left(struct btrfs_trans_handle *trans, struct btrfs_root
+>   
+>   	if (check_sibling_keys(left, right)) {
+>   		ret = -EUCLEAN;
+> +		btrfs_abort_transaction(trans, ret);
+>   		goto out;
+>   	}
+>   	return __push_leaf_left(trans, path, min_data_size, empty, left,

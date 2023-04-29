@@ -2,59 +2,59 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F6E3C77B7F
-	for <linux-btrfs@archiver.kernel.org>; Sat, 29 Apr 2023 20:20:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E973AC77B7C
+	for <linux-btrfs@archiver.kernel.org>; Sat, 29 Apr 2023 20:20:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229900AbjD2UUL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Sat, 29 Apr 2023 16:20:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45076 "EHLO
+        id S229972AbjD2UUN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Sat, 29 Apr 2023 16:20:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45178 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229975AbjD2UUJ (ORCPT
+        with ESMTP id S229975AbjD2UUM (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Sat, 29 Apr 2023 16:20:09 -0400
-Received: from mail-yb1-xb2f.google.com (mail-yb1-xb2f.google.com [IPv6:2607:f8b0:4864:20::b2f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5DD64E7A
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Apr 2023 13:20:08 -0700 (PDT)
-Received: by mail-yb1-xb2f.google.com with SMTP id 3f1490d57ef6-b9a7e639656so1970255276.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Apr 2023 13:20:08 -0700 (PDT)
+        Sat, 29 Apr 2023 16:20:12 -0400
+Received: from mail-yw1-x1129.google.com (mail-yw1-x1129.google.com [IPv6:2607:f8b0:4864:20::1129])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BB2FE6C
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Apr 2023 13:20:10 -0700 (PDT)
+Received: by mail-yw1-x1129.google.com with SMTP id 00721157ae682-5562c93f140so10856687b3.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Apr 2023 13:20:10 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1682799607; x=1685391607;
+        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1682799609; x=1685391609;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=90TVpregLfTN8aIVCSeAhQNQKYWfvkrvrWKSEVNGrho=;
-        b=HduhfxSzxERqtCrYmRRuV7+JuquIRPY0sI5rFjAd2yZHrCnUDERtpRuFgOeUQCmSVg
-         yL0PyJLA2il1LcP+KRV0txLoRL4Sl/SE/0obO+R6txhimDtSOvIDCvMaX98rI7ZJRSzr
-         Ju3d+gxDTooS5JE4YbVGJbxh1TXc7sE/eAg/6lQhBhHuY+Ow3YKVmI5g0H/3HzI6nbM2
-         1UuZX4HCqtYYLCnBzRZsWpb6LhOUZvZWFPS8qvBKU+qSh2J/hVhyv0pl+o55SmJOz8o0
-         HDa7tQ2cNwz/tFQR+qTPD6GP0w9ce27RnTAvsVbSZeXLVuO2QsTFRAla35mRvxMU7fxT
-         GyrQ==
+        bh=LnN241K7LXD/Glp4haAL2w2w1cE1ZjHjvJ9h+WX3H+c=;
+        b=CtzhjkZvYcJXgHrUDIWpnGLrc5AP5If7ZSVhz+hE7DHfoL91GrTpqSreFweDFuHrVk
+         M1hBe8bkiFvHhNJbzM2YS5numYymt5OeDYuqRQ82yg4/QNi+Rvh6V2odYtwnMoL4asqZ
+         HHRpljZ2hJ9Fe1kSjF+EM9DMjbooEnIPxQixZVTEduCi4AosrK7LoC45murjEUVz75DA
+         jZwVGQTKI1FbmtFce6Jgi/pEgsYY2RKDog6NM4t2t+hZkVPTvGGkciWo3TjUpkEO9A39
+         pdyAvNR4UfrNuPvMpWZs/kaN+OAdjDrWmY9opXj1e6dmGfPMR1mDt26yjFwv6dR51rHo
+         8Arg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1682799607; x=1685391607;
+        d=1e100.net; s=20221208; t=1682799609; x=1685391609;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=90TVpregLfTN8aIVCSeAhQNQKYWfvkrvrWKSEVNGrho=;
-        b=Y2yZmoEa8DYIh0H1Y2J5l98f0gtYg+Z9PM838V7X8knuClHiOo8zGZeyLBl3wf80GT
-         qlIIUkoSE6jb6nABOR6snr5RXY47FiDEc5kI/gWzjDLCLhvNaGqMdvw6TpXRdfE3qNGo
-         NbvdIdtkutCr1RKbaXyoXFKNM6X8WKYv57PDsIkpSHoZrsbkeFx6bmSRBMQ6A1CfhQJb
-         cTCy9RwcO19H9/zsVzhakVrwDVUHQWx32fkwmGwjcCOQPyJpbExgzZYfW+NJn9C1JI7S
-         3Uu53ixMNriqZ0Nza60FL8J0dt0LsVBLx6elj20Y+xLsdWvr981KswbYAU4zGteF7xUB
-         6hhg==
-X-Gm-Message-State: AC+VfDyMVsItCiK2hYa28TbXXIDOhLuJ+oW2f/iTtph4KtqNor74U6VO
-        w5P4myTEq8fno0xtxTLIxLGBUesUqt3dhmXoaHYfQA==
-X-Google-Smtp-Source: ACHHUZ5JUdx87BEIciFIxm56nnWxuaCqqla/JponFEliOk4jYLnNImAnOK0YAnZIo89Ntq9cgwZXtw==
-X-Received: by 2002:a25:f801:0:b0:b9d:9fbe:e83d with SMTP id u1-20020a25f801000000b00b9d9fbee83dmr2460828ybd.29.1682799607277;
-        Sat, 29 Apr 2023 13:20:07 -0700 (PDT)
+        bh=LnN241K7LXD/Glp4haAL2w2w1cE1ZjHjvJ9h+WX3H+c=;
+        b=KHgvu5V2W0aGE7uRZh//wMbJZroiB11f9H6qaN/p7ltpgGqjps9gzxAWBuBmFDNYfB
+         q3/xIFj0BFktU1aydCdQeKhAKcynZw6pnabjSPJnoCNmj3fumhsRTSXtofmq0yQBW+36
+         It/XBlxYSuXv2oIxvacq7zf4b49hG+xUYz9UtFcVZ8/Wy8AaMvqByAYYYnWHBr2o27gj
+         +z+TvxNqokeMDGkUJf4BzsGzkafxLR399/hJE7h94eL0nOkSHWyyvu9295FXhuIkOi9V
+         xKwqsQoID9ZrWHxz+G7JaTyfkbO5LLAkEMlRycQbUA4+zxKsCgkm9C1dWmnCEEs1pCxv
+         XFFA==
+X-Gm-Message-State: AC+VfDzFAKXHZtJcGEVgVzHPfZwzgM3ddGjE29Xy1Vox+9Tj+N7mBeF2
+        F2rG3U6/WZ5SHkhmFG9D5K9Gdi9W6c64RPhLygZIRA==
+X-Google-Smtp-Source: ACHHUZ6+2ylilZcP1stE9O9q8oIgPZy7OuAK8l6FdAZ0WN/U9CacgI/b3ZWbNONorR1sdALzvjXgGg==
+X-Received: by 2002:a0d:e64a:0:b0:54f:8171:38db with SMTP id p71-20020a0de64a000000b0054f817138dbmr7925250ywe.32.1682799609392;
+        Sat, 29 Apr 2023 13:20:09 -0700 (PDT)
 Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id c16-20020a5b0150000000b00b96ae6e1f57sm5844312ybp.41.2023.04.29.13.20.06
+        by smtp.gmail.com with ESMTPSA id u188-20020a8160c5000000b00556aa81f615sm3697148ywb.68.2023.04.29.13.20.08
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 29 Apr 2023 13:20:06 -0700 (PDT)
+        Sat, 29 Apr 2023 13:20:09 -0700 (PDT)
 From:   Josef Bacik <josef@toxicpanda.com>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 02/26] btrfs-progs: remove useless add_root_to_dirty_list call in mkfs
-Date:   Sat, 29 Apr 2023 16:19:33 -0400
-Message-Id: <ff68c401f848ac47437f047c9797c9e695affb2c.1682799405.git.josef@toxicpanda.com>
+Subject: [PATCH 04/26] btrfs-progs: make add_root_to_dirty_list static and unexport it
+Date:   Sat, 29 Apr 2023 16:19:35 -0400
+Message-Id: <df79d38d775726ed76a584c15d18d37cbaeb8ef1.1682799405.git.josef@toxicpanda.com>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1682799405.git.josef@toxicpanda.com>
 References: <cover.1682799405.git.josef@toxicpanda.com>
@@ -64,27 +64,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-We are calling this when creating the UUID tree, however when we create
-the tree it inserts the root item into the tree_root, so this call is
-superfluous.
+Now that there are no users of this helper outside of ctree.c, unexport
+it and make it static.
 
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- mkfs/main.c | 1 -
- 1 file changed, 1 deletion(-)
+ kernel-shared/ctree.c | 2 +-
+ kernel-shared/ctree.h | 1 -
+ 2 files changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/mkfs/main.c b/mkfs/main.c
-index 4856cf96..418c721c 100644
---- a/mkfs/main.c
-+++ b/mkfs/main.c
-@@ -789,7 +789,6 @@ static int create_uuid_tree(struct btrfs_trans_handle *trans)
- 		goto out;
- 	}
+diff --git a/kernel-shared/ctree.c b/kernel-shared/ctree.c
+index d5a1f90b..3cb3378e 100644
+--- a/kernel-shared/ctree.c
++++ b/kernel-shared/ctree.c
+@@ -119,7 +119,7 @@ void btrfs_release_path(struct btrfs_path *p)
+ 	memset(p, 0, sizeof(*p));
+ }
  
--	add_root_to_dirty_list(root);
- 	fs_info->uuid_root = root;
- 	ret = btrfs_uuid_tree_add(trans, fs_info->fs_root->root_item.uuid,
- 				  BTRFS_UUID_KEY_SUBVOL,
+-void add_root_to_dirty_list(struct btrfs_root *root)
++static void add_root_to_dirty_list(struct btrfs_root *root)
+ {
+ 	if (test_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state) &&
+ 	    list_empty(&root->dirty_list)) {
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 5eba9c14..ce050cec 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -988,7 +988,6 @@ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
+ 		u64 iobjectid, u64 ioff, u8 key_type,
+ 		struct btrfs_key *found_key);
+ void btrfs_release_path(struct btrfs_path *p);
+-void add_root_to_dirty_list(struct btrfs_root *root);
+ struct btrfs_path *btrfs_alloc_path(void);
+ void btrfs_free_path(struct btrfs_path *p);
+ void btrfs_init_path(struct btrfs_path *p);
 -- 
 2.40.0
 

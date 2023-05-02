@@ -2,86 +2,79 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45B78C77B78
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 May 2023 21:16:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DEADC77B75
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 May 2023 21:31:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229457AbjEBVQU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 May 2023 17:16:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54368 "EHLO
+        id S229621AbjEBVbb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 May 2023 17:31:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35834 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229515AbjEBVQR (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2023 17:16:17 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 150D210E3
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 14:16:16 -0700 (PDT)
+        with ESMTP id S229496AbjEBVba (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2023 17:31:30 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D389B10EF
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 14:31:29 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id C1A241F88B;
-        Tue,  2 May 2023 21:16:14 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 8780621A2E;
+        Tue,  2 May 2023 21:31:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1683062174;
+        t=1683063088;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=DIb6Sip+O9s6fgZyHZNG3WMTU6vUpzlo6RClvqC26Tg=;
-        b=mgO+wBQu9rRFAslVyefKycIeLhdvApWPXalgpLji7B7f3yPcplbs4L1Qlb0t29NDjWnFSG
-        msvrcWfRmJjytqYdNbjvY6UxdeJJ6mawQ3KSTpBnvL9LF5GrFpy86EPCJUtDrH79WmZI3a
-        KClxn5ys6COjyDbiM+e2OmaVP+4aj+8=
+        bh=vsc0XuPgXcG+0NQBONoqw5DIlgLOBooZCyv8A+ltpQg=;
+        b=uvxtIdfY4UZF2r3XmmERZODeCKDtmBkwfnjXkEplWh6N88kl+3M3N+Hn64IRRpGTPoy7LY
+        xcYBxzQtqY6ImMWyuAgyqw8u/6NyXZhFoK45mh38WUCrgygqWyEETRcZSA5AQKZUkuiwdK
+        w2PYYevXnEqsE2XauVOG9nciZvLnEbY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1683062174;
+        s=susede2_ed25519; t=1683063088;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=DIb6Sip+O9s6fgZyHZNG3WMTU6vUpzlo6RClvqC26Tg=;
-        b=y3lgTR4zEefj1r92PUs7VrFjC7ZGggDt4aP8N+fRdx/iyUybvrDfnevLqys/2c4wcmiqy/
-        qu+p3fnj4xwZQVCA==
+        bh=vsc0XuPgXcG+0NQBONoqw5DIlgLOBooZCyv8A+ltpQg=;
+        b=0wr+C1Z143pZyAJwcPus3b9Q3qxkAM7t8TuDk7+gp2YW8+FlD3IGWAg7cuiyLAPcBjN88c
+        6oK7cGfoTwB/kODw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9945F139C3;
-        Tue,  2 May 2023 21:16:14 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 6E118139C3;
+        Tue,  2 May 2023 21:31:28 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id eriHJJ59UWRzRQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 02 May 2023 21:16:14 +0000
-Date:   Tue, 2 May 2023 23:10:19 +0200
+        id grs3GjCBUWTjSwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 02 May 2023 21:31:28 +0000
+Date:   Tue, 2 May 2023 23:25:33 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Josef Bacik <josef@toxicpanda.com>
 Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH 1/8] btrfs-progs: sync uapi/btrfs.h into btrfs-progs
-Message-ID: <20230502211019.GQ8111@twin.jikos.cz>
+Subject: Re: [PATCH 3/8] btrfs-progs: sync messages.* from the kernel
+Message-ID: <20230502212533.GR8111@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1681938911.git.josef@toxicpanda.com>
- <93f8af4b6a6164504f0aeb1221d57c59673f6df5.1681938911.git.josef@toxicpanda.com>
+ <0a0542fd7abb9fed5f87148ac849cfb7e9577100.1681938911.git.josef@toxicpanda.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <93f8af4b6a6164504f0aeb1221d57c59673f6df5.1681938911.git.josef@toxicpanda.com>
+In-Reply-To: <0a0542fd7abb9fed5f87148ac849cfb7e9577100.1681938911.git.josef@toxicpanda.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, Apr 19, 2023 at 05:17:12PM -0400, Josef Bacik wrote:
-> We want to keep this file locally as we want to be uptodate with
-> upstream, so we can build btrfs-progs regardless of which kernel is
-> currently installed.  Sync this with the upstream version and put it in
-> kernel-shared/uapi to maintain some semblance of where this file comes
-> from.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
-> ---
->  include/ioctl.h => kernel-shared/uapi/btrfs.h | 566 ++++++++++--------
+On Wed, Apr 19, 2023 at 05:17:14PM -0400, Josef Bacik wrote:
+> --- a/kernel-shared/backref.c
+> +++ b/kernel-shared/backref.c
+> @@ -23,6 +23,7 @@
+>  #include "kernel-shared/ulist.h"
+>  #include "kernel-shared/transaction.h"
+>  #include "common/internal.h"
+> +#include "messages.h"
 
-When files are moved it's good to do a
-
-$ git grep ioctl.h
-Makefile:ioctl-test.o: tests/ioctl-test.c include/ioctl.h include/kerncompat.h kernel-shared/ctree.h
-Makefile:ioctl-test-32.o: tests/ioctl-test.c include/ioctl.h include/kerncompat.h kernel-shared/ctree.h
-Makefile:ioctl-test-64.o: tests/ioctl-test.c include/ioctl.h include/kerncompat.h kernel-shared/ctree.h
-
-to see if there's something using it which is not built by default. In
-this case library-test, the ioctl test, so path updated in Makefile.
+The includes should be specified by the path though there's the -Idir/
+for the toplevel directories so it works. In case of messages.h we have
+two, common/ and kernel-shared/ so this needs to be the kernel-shared
+one. Updated.

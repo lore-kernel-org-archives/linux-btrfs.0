@@ -2,95 +2,98 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 946FFC77B7C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 May 2023 01:02:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF5D0C77B73
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 May 2023 01:02:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232467AbjEBBCQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 1 May 2023 21:02:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50354 "EHLO
+        id S233102AbjEBBCT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 1 May 2023 21:02:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50420 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230202AbjEBBCP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2023 21:02:15 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE67C30F6
-        for <linux-btrfs@vger.kernel.org>; Mon,  1 May 2023 18:02:09 -0700 (PDT)
+        with ESMTP id S230202AbjEBBCR (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 May 2023 21:02:17 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C77DE3584
+        for <linux-btrfs@vger.kernel.org>; Mon,  1 May 2023 18:02:13 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 727111F854
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 01:02:08 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 131E21F74D
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 01:02:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1682989328; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=m40easRD3g+cccI1U1Ub9+cOATt2e81kaIk0ouUp6fY=;
-        b=qVqV2tyFI9WaTus1rj4AZrxMcsIg025CXYADuEsiCQc7j36wVbdPT4jwrK4QQoETe40k+H
-        V0VJ7jQzxLPLLmN1gnq8GTHzJIiqx5g6VrM1P82qHe1sgiKlHWIz5EFCSd2Tu+oY4I2nYy
-        SIDBLGS9A0mlhsMltQHg70Vf8HTU/0k=
+        t=1682989325; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=wDbGRNwE6kUez33ABZWd4e0bx3jyPcPMvE/S+COBPCM=;
+        b=uTCdFnrveWb1HR1vdbiUy0LnuABpL2XHfKSZpQLFdj9feAwuqv/WZ1bFa4Om+6Ebg772Af
+        71yVbeBtn5+MaATOOu5h2Hw82fUaZRdUelInGrN+CP/B0ceNg2DlveNdd0WebFaWqLKVQd
+        WjCmq2YxNG7y83atG7GP5isgtbCzh28=
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BD5D913580
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 01:02:07 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5C0C013580
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 01:02:04 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id kJnYIA9hUGTldQAAMHmgww
+        id qOPuCAxhUGTldQAAMHmgww
         (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 May 2023 01:02:07 +0000
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 May 2023 01:02:04 +0000
 From:   Qu Wenruo <wqu@suse.com>
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: misc-tests: add test case to verify btrfstune --convert-to-free-space-tree option
-Date:   Tue,  2 May 2023 09:01:46 +0800
-Message-Id: <b97e23c9f3e40480e48d3547fd3d365d43f81208.1682988988.git.wqu@suse.com>
+Subject: [PATCH 0/3] btrfs-progs: add the ability to enable fst for btrfstune
+Date:   Tue,  2 May 2023 09:01:43 +0800
+Message-Id: <cover.1682988988.git.wqu@suse.com>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1682988988.git.wqu@suse.com>
-References: <cover.1682988988.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-The new test case would create a fs without free space tree, then
-popluate it, convert to free-space-tree feature, and make sure
-everything is fine.
+At the beginning of free space tree feature, it's enabled by
+"space_cache=v2" mount option.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../057-btrfstune-free-space-tree/test.sh     | 21 +++++++++++++++++++
- 1 file changed, 21 insertions(+)
+However this introduced some problems:
+
+- Lack of proper v1 cache clearing in the past
+  In the past we didn't properly clear v1 cache before enabling v2.
+
+- More and more complex v2 cache dependency
+  Extent tree v2 and bgt all depend on v2 cache, but we have some
+  mount options like clear_cache can screw this up.
+
+Instead introducing some mount options to tinkering the filesystem
+features (either compat_ro or incompat), we should always go through
+btrfstune to enable new features (just like what we did in bgt).
+
+This allows us to move the heavy lifting and proper checks into
+btrfs-progs.
+
+Although it's already late, it's still better than never, thus this
+patchset introduce the --convert-to-free-space-tree feature to
+btrfstune.
+
+Unlike bgt, v1 cache is going to fade out soon, thus no rollback
+functionality provided.
+
+I hope we can deprecate the "space_cache=" mount option soon.
+
+Qu Wenruo (3):
+  btrfs-progs: make check/clear-cache.c to be separate from check/main.c
+  btrfs-progs: tune: add --convert-to-free-space-tree option
+  btrfs-progs: misc-tests: add test case to verify btrfstune
+    --convert-to-free-space-tree option
+
+ Documentation/btrfstune.rst                   |  5 ++
+ Makefile                                      |  2 +-
+ check/clear-cache.c                           | 84 ++++++++++---------
+ check/clear-cache.h                           |  9 +-
+ check/main.c                                  |  6 +-
+ .../057-btrfstune-free-space-tree/test.sh     | 21 +++++
+ tune/main.c                                   | 57 ++++++++++++-
+ 7 files changed, 135 insertions(+), 49 deletions(-)
  create mode 100755 tests/misc-tests/057-btrfstune-free-space-tree/test.sh
 
-diff --git a/tests/misc-tests/057-btrfstune-free-space-tree/test.sh b/tests/misc-tests/057-btrfstune-free-space-tree/test.sh
-new file mode 100755
-index 000000000000..c69f99cfbd38
---- /dev/null
-+++ b/tests/misc-tests/057-btrfstune-free-space-tree/test.sh
-@@ -0,0 +1,21 @@
-+#!/bin/bash
-+# test btrfstune --convert-to-free-space-tree option
-+
-+source "$TEST_TOP/common" || exit
-+source "$TEST_TOP/common.convert" || exit
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfstune
-+check_prereq btrfs
-+
-+setup_root_helper
-+prepare_test_dev
-+
-+run_check_mkfs_test_dev -O ^free-space-tree
-+run_check_mount_test_dev
-+populate_fs
-+run_check_umount_test_dev
-+
-+run_check $SUDO_HELPER "$TOP/btrfstune" --convert-to-free-space-tree $TEST_DEV
-+
-+run_check "$TOP/btrfs" check "$TEST_DEV"
 -- 
 2.39.2
 

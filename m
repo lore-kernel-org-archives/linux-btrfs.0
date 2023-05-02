@@ -2,116 +2,102 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E546DC77B73
-	for <linux-btrfs@archiver.kernel.org>; Tue,  2 May 2023 14:25:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DC6BFC77B73
+	for <linux-btrfs@archiver.kernel.org>; Tue,  2 May 2023 14:52:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233837AbjEBOZq (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 May 2023 10:25:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42892 "EHLO
+        id S234479AbjEBOwg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 May 2023 10:52:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51206 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234001AbjEBOZo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2023 10:25:44 -0400
-Received: from mail-qk1-x730.google.com (mail-qk1-x730.google.com [IPv6:2607:f8b0:4864:20::730])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2779410E7
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 07:25:43 -0700 (PDT)
-Received: by mail-qk1-x730.google.com with SMTP id af79cd13be357-74e4f839ae4so171676185a.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 May 2023 07:25:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1683037542; x=1685629542;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=39dR4/opLDOkyzl/R13Xozl1AfW4XkQ5A19FjhwIfSU=;
-        b=5obc7HZ62OPAXlSIm7ozrv1e5xzIBI58e9DnqaBwV6tNsWIJEtG8u1+9e+58Kh94oi
-         JikBh2UU30H18JKMt0MBKtq2BHafkgr3ID5OQsVYFfLfGuooY4YfqRbPZbl0Yzk0XHlz
-         bzTxEjhJj/4fBTcS6NRK2Eu3VRcxOvDTj8rQUvvF86t+IJt2jiRdWuwT0xnD3dQiBjvB
-         evWlCxBYHkQQOy+JIs1JdwGxXfXn1I7y6KDEdrE3UT+qlZZe8xqrb2KNZQoOFeyFKb2D
-         OOqBcu3CsPhfr5JL5aoFPgmIeimlGVv5RFboSqBVxcRScjG8lRHCjnGnCxyVdfHuE47F
-         RwSA==
+        with ESMTP id S234410AbjEBOwe (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2023 10:52:34 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02469211B
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 07:51:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1683039094;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=rlI4i5NkJUU4v3/TaCr79bgC9FfiCXPR9/G1iFN8MDM=;
+        b=hB+shG8BrxkDzC/AbSekjd1FkOpJk4t2uK0fpKGtawVX9NDRTDSriAiJSZRcHX9AKb9oGk
+        3MfvYGR2F/iiLKefQrwQX8I4TtiVpI+iASRueb8giksPFjat2wq9Cyazu2DR/ZT4qgQOjl
+        8cfHq5apCumrqr4ccpLcOBVtPhLnP80=
+Received: from mail-qv1-f71.google.com (mail-qv1-f71.google.com
+ [209.85.219.71]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-172-ybC3aLHXNXOYjlXh05vkLA-1; Tue, 02 May 2023 10:51:32 -0400
+X-MC-Unique: ybC3aLHXNXOYjlXh05vkLA-1
+Received: by mail-qv1-f71.google.com with SMTP id 6a1803df08f44-61b591eb0cfso11714356d6.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 May 2023 07:51:32 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1683037542; x=1685629542;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=39dR4/opLDOkyzl/R13Xozl1AfW4XkQ5A19FjhwIfSU=;
-        b=UqrgLUUmg3puG10orzWt9ZtWuA5+Kxa8yBc6q+M12bGOi1GrHGnlyLYGqLuMYwODKn
-         dl66qGWf3KJ08oj7/7s+8Zqji8b0T19JHljeN21Hs/c66aYnte1IGvtLu2dHI59GxU9I
-         F9yHmOQdSvmOdEiOExP235WOYAmEpKBmmQmHL5ZhJPzFcFzekTqC1B1OBAh/K+yC50rb
-         B0ZJPcibJKBHJ+4dZd8SFgUTyrwxvJlzH/J5K7fOOvHRBi35fifUWBA1GByzSP3v2bdg
-         669EFdFuXn6nh4xORbq+YBaydVphoP9xNdbWJUnPKNTPC1j4O53MceC0jj3TH7tQ8BpO
-         AkaA==
-X-Gm-Message-State: AC+VfDwa5QkmjqhQbee8KBo1/gIqWRlmBueVxgfvpEEBXEjjpac7xLfw
-        Ta2PRwBmi2x6LHevB2Urag7qag==
-X-Google-Smtp-Source: ACHHUZ6OVEIpLcEW4dkWaYXEfwi/T8jNbIop8tJgJxABRpCR9XD+JvBSdd5KbQ0Csi5Fax9lJJVPAw==
-X-Received: by 2002:a05:6214:b67:b0:5f1:5f73:aee0 with SMTP id ey7-20020a0562140b6700b005f15f73aee0mr5252581qvb.15.1683037542057;
-        Tue, 02 May 2023 07:25:42 -0700 (PDT)
-Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id o10-20020a0cecca000000b005f227de6b1bsm9492683qvq.116.2023.05.02.07.25.41
+        d=1e100.net; s=20221208; t=1683039092; x=1685631092;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=rlI4i5NkJUU4v3/TaCr79bgC9FfiCXPR9/G1iFN8MDM=;
+        b=FZPrHE61pHr/XX/cti5YIy5gbQ2nPndpLj1r3isntHeYbjSKps4V8eMoUDNXuCu9ib
+         DU+JQAj7X9hIH3twdUK+FUvFq/owuNa+T+sVxuCwmeU6q01xEW6qGCT9BMUR485dIOtr
+         A7xBHGo9L1aw7OFVmRjVpj6pp+ONZZdcDEv8xiWWXuDMreIkOpLBiswRUFazZFuUrzUM
+         N27Z38P1PYXaNBLCryViaU4ri3ASYcjitSp5hM0CKsVYgFaG7wX2V0FR1EdRvZMITO+o
+         aOTx4Gq4r8zSe9PLOvQJMlHsbhlWx2CbYfwYXfKBIiRRhvH97uZsanqlJxtyTXOtRnv1
+         021Q==
+X-Gm-Message-State: AC+VfDzENc/zX/FnEE9t3OVxyo8S5OWgNbZ03eQ6H0CDVKiiHUvwcOII
+        OpByjf6YJFv/bcg1m8Q5EXVez3Wc4FWedMcpaYNEM/oIbPxC+GWG6XbXdMnLbM1izPaTeHgXdEn
+        qdfekqzJIdK0tmGnB9x7FO8o=
+X-Received: by 2002:a05:6214:1305:b0:5ab:28aa:2429 with SMTP id pn5-20020a056214130500b005ab28aa2429mr6745867qvb.30.1683039092281;
+        Tue, 02 May 2023 07:51:32 -0700 (PDT)
+X-Google-Smtp-Source: ACHHUZ6dDegzBLcQBdCcxYpqd+dYi2UlOninPF6u15FNk6D4g/uiioJP24FRBYakE8yyzmhtVJMY5w==
+X-Received: by 2002:a05:6214:1305:b0:5ab:28aa:2429 with SMTP id pn5-20020a056214130500b005ab28aa2429mr6745835qvb.30.1683039092025;
+        Tue, 02 May 2023 07:51:32 -0700 (PDT)
+Received: from dell-per740-01.7a2m.lab.eng.bos.redhat.com (nat-pool-bos-t.redhat.com. [66.187.233.206])
+        by smtp.gmail.com with ESMTPSA id j13-20020a0cf50d000000b005dd8b9345besm9613655qvm.86.2023.05.02.07.51.31
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 02 May 2023 07:25:41 -0700 (PDT)
-Date:   Tue, 2 May 2023 10:25:33 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: enable -Wmissing-prototypes for debug builds
-Message-ID: <20230502142533.GA1493492@perftesting>
-References: <8cf9b5f14a52067bec9c4bb9f2d2c13821e0d7b6.1682990969.git.wqu@suse.com>
- <20230502114142.GA8111@twin.jikos.cz>
- <f0af43f7-dd50-85aa-ff92-4bcac5d40ce5@suse.com>
- <20230502133045.GD8111@suse.cz>
+        Tue, 02 May 2023 07:51:31 -0700 (PDT)
+From:   Tom Rix <trix@redhat.com>
+To:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com
+Cc:     linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Tom Rix <trix@redhat.com>
+Subject: [PATCH] btrfs: replace else-statement with initialization
+Date:   Tue,  2 May 2023 10:51:29 -0400
+Message-Id: <20230502145129.2927253-1-trix@redhat.com>
+X-Mailer: git-send-email 2.27.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230502133045.GD8111@suse.cz>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 02, 2023 at 03:30:45PM +0200, David Sterba wrote:
-> On Tue, May 02, 2023 at 08:00:57PM +0800, Qu Wenruo wrote:
-> > 
-> > 
-> > On 2023/5/2 19:41, David Sterba wrote:
-> > > On Tue, May 02, 2023 at 09:29:30AM +0800, Qu Wenruo wrote:
-> > >> During development I'm a little surpirsed we don't have
-> > >> -Wmissing-prototypes enabled even for debug builds.
-> > > 
-> > > The build supports W=levels like kernel and -Wmissing-prototypes is in
-> > > level 1. In some cases we may want to add the warnings to be on by
-> > > default for debugging builds though.
-> > 
-> > I just did a quick search for the word "missing" of progs Makefile, 
-> > unforunately no hit, thus I doubt if it's even in debug level 1.
-> > 
-> > And the missing prototypes warning is by default enabled for kernel.
-> 
-> $ grep missing Makefile.extrawarn
-> warning-1 += -Wmissing-declarations
-> warning-1 += -Wmissing-format-attribute
-> warning-1 += $(call cc-option, -Wmissing-prototypes)
-> warning-1 += $(call cc-option, -Wmissing-include-dirs)
-> warning-1 += $(call cc-disable-warning, missing-field-initializers)
-> warning-2 += $(call cc-option, -Wmissing-field-initializers)
-> 
-> > [...]
-> > >>   
-> > >> +#include "sha.h"
-> > > 
-> > > This does not seem necessary, include whole file just for one prototype.
-> > 
-> > This is necessary as we would define a global function, without 
-> > including the header we got the missing prototype warning.
-> > 
-> > All the other comments make sense and I would update the patchset.
-> > 
-> > 
-> > The only other concern is, would this extra warning causing more hassles 
-> > for Josef to sync the kernel and progs code?
-> 
-> I don't know yet but it is possible that it would.  In that case the separate
-> patch would make it easier to enable once all warnings are fixed, I can keep it
-> at the top of the branch.
+A small optimization
+Move the default value of transid to its initialization
+and remove the else-statement.
 
-Do you want me to run these warnings through my series and re-send?  That may be
-faster than trying to merge everything together.  Thanks,
+Signed-off-by: Tom Rix <trix@redhat.com>
+---
+ fs/btrfs/ioctl.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 25833b4eeaf5..4694301aa91e 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3132,14 +3132,13 @@ static noinline long btrfs_ioctl_start_sync(struct btrfs_root *root,
+ static noinline long btrfs_ioctl_wait_sync(struct btrfs_fs_info *fs_info,
+ 					   void __user *argp)
+ {
+-	u64 transid;
++	u64 transid = 0;  /* current trans */
+ 
+ 	if (argp) {
+ 		if (copy_from_user(&transid, argp, sizeof(transid)))
+ 			return -EFAULT;
+-	} else {
+-		transid = 0;  /* current trans */
+ 	}
++
+ 	return btrfs_wait_for_commit(fs_info, transid);
+ }
+ 
+-- 
+2.27.0
+

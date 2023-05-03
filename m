@@ -2,126 +2,102 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DAD3C77B78
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 13:03:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A082DC77B75
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 13:06:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229705AbjECNDR (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 May 2023 09:03:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33730 "EHLO
+        id S229788AbjECNGt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 May 2023 09:06:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34728 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229688AbjECNDP (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2023 09:03:15 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C88DE5B9C
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 06:02:53 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S229618AbjECNGs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2023 09:06:48 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 854A6DF
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 06:06:47 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 83ABF20091;
-        Wed,  3 May 2023 13:02:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1683118972;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=m7WL0qxAUCS4+sAES7xZEXRTFBdt5gihY7f86MIX9ks=;
-        b=yq3L3rNnIYp1Wbew7PcTe9aIdOgRL/l7/t2yXn8OdKEMsnCz4ERUyej9rq38hvvFrB9skq
-        HgzGechqvXO4kNyS3rSQClez7Q6BrDEpMKFEf4D5GOHGgRf9OFYhOy6xEd9jNRfSY8gBsx
-        tsai1GCNitFg/nsi0rvKJaEHmJTxF6Y=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1683118972;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=m7WL0qxAUCS4+sAES7xZEXRTFBdt5gihY7f86MIX9ks=;
-        b=uZhB05bHeO5hKV4wBzS4LrSnlgYFwDOW32H2KaK0djDGnWLV/ZKc4l+c9EyG/eVFYLe4HK
-        lqSXZFFLZx7xy7AA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 60DAF13584;
-        Wed,  3 May 2023 13:02:52 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id wDjQFnxbUmSREgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Wed, 03 May 2023 13:02:52 +0000
-Date:   Wed, 3 May 2023 14:56:56 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: Re: [PATCH] btrfs: don't free qgroup space unless specified
-Message-ID: <20230503125656.GB6373@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <e65d1d3fd413623f9d0c58614a296f0ab5422a05.1683057598.git.josef@toxicpanda.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 22EE96152D
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 13:06:47 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 89226C433D2
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 13:06:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1683119206;
+        bh=Ov9+iugcaJkncWlEdvhI9E1Sp2oGUs6WkGVX5G4IKMg=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=H55dm49RHW7iNNtTcKtmQhzwU9Wrh/oFgl4CD1lTS6OoCNX96iAAmKcZoYB3qgn9B
+         o3SU9habydfXTvlJ74V7fYc/u2AvFx4ep41rfOWfdw0kFWpzE0jobnbtpGlJtH3U9h
+         QD3ISeXNHowZJ4l0tvCv0PNc/9qO1qa0Mp39PH11QrwZuLzHq/oCOjnnaL7OKooYyB
+         Dd0d0PooF2AbhTs5Dlu2UiYo9CUPOEblmrP5bfniaQ5+8uXWWSbRzVtsjX4OSq9jlX
+         VHug/mqCqLGHfutG5GzoU0WjspDULyszXGJKdphrp5XgmPJiz49tuwpO3o2bigTDKK
+         CrzPzDvm27WEw==
+Received: by mail-oo1-f49.google.com with SMTP id 006d021491bc7-54974b6851fso2713141eaf.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 May 2023 06:06:46 -0700 (PDT)
+X-Gm-Message-State: AC+VfDwIZp0+i/wypI6VdCQF2PP84xutX7NJezlA93HnQCPLD1MTHfiF
+        adLyDZ4smikl0MBSjnAtzl7s+dXrZscoC/ZtUoQ=
+X-Google-Smtp-Source: ACHHUZ6LSHvEn0mfwuCB5JWx5B5I+5lVTyZCsXVrg6eBuLw58hC02MPJF6r07UCjMpn+7JkYUE7Q/RlrKBuv4ywWmxg=
+X-Received: by 2002:aca:a897:0:b0:392:593f:bb1c with SMTP id
+ r145-20020acaa897000000b00392593fbb1cmr26145oie.20.1683119205701; Wed, 03 May
+ 2023 06:06:45 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <e65d1d3fd413623f9d0c58614a296f0ab5422a05.1683057598.git.josef@toxicpanda.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <CAHhfkvwo=nmzrJSqZ2qMfF-rZB-ab6ahHnCD_sq9h4o8v+M7QQ@mail.gmail.com>
+ <CAL3q7H5yKd1=WuZaU-s7hQ-MwzWONsOtVNoA6cjpLW0-3DDEEQ@mail.gmail.com>
+ <CAL3q7H7FyF6YYuMbz0GTBb9G3WYxy9Pr9xQ11rde7jR3zVXuwA@mail.gmail.com> <CAHhfkvzQaRtxBqSKodAj2Gy21TMRC_fOd0cq9ECcxnU4QeuV_w@mail.gmail.com>
+In-Reply-To: <CAHhfkvzQaRtxBqSKodAj2Gy21TMRC_fOd0cq9ECcxnU4QeuV_w@mail.gmail.com>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Wed, 3 May 2023 14:06:09 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6255X42N1gMy78ViXuPw4GExyhv-fptOwi_K3yJvAk1Q@mail.gmail.com>
+Message-ID: <CAL3q7H6255X42N1gMy78ViXuPw4GExyhv-fptOwi_K3yJvAk1Q@mail.gmail.com>
+Subject: Re: 6.2 regression: BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET broken
+To:     Vladimir Panteleev <git@vladimir.panteleev.md>
+Cc:     Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 02, 2023 at 04:00:06PM -0400, Josef Bacik wrote:
-> Boris noticed in his simple quotas testing that he was getting a leak
-> with Sweet Tea's change to subvol create that stopped doing a
-> transaction commit.  This was just a side effect of that change.
-> 
-> In the delayed inode code we have an optimization that will free extra
-> reservations if we think we can pack a dir item into an already modified
-> leaf.  Previously this wouldn't be triggered in the subvolume create
-> case because we'd commit the transaction, it was still possible but
-> much harder to trigger.  It could actually be triggered if we did a
-> mkdir && subvol create with qgroups enabled.
-> 
-> This occurs because in btrfs_insert_delayed_dir_index(), which gets
-> called when we're adding the dir item, we do the following
-> 
-> btrfs_block_rsv_release(fs_info, trans->block_rsv, bytes, NULL);
-> 
-> if we're able to skip reserving space.
-> 
-> The problem here is that trans->block_rsv points at the temporary block
-> rsv for the subvolume create, which has qgroup reservations in the block
-> rsv.
-> 
-> This is a problem because btrfs_block_rsv_release() will do the
-> following
-> 
->   if (block_rsv->qgroup_rsv_reserved >= block_rsv->qgroup_rsv_size) {
-> 	  qgroup_to_release = block_rsv->qgroup_rsv_reserved -
-> 		  block_rsv->qgroup_rsv_size;
-> 	  block_rsv->qgroup_rsv_reserved = block_rsv->qgroup_rsv_size;
->   }
-> 
-> The temporary block rsv just has ->qgroup_rsv_reserved set,
-> ->qgroup_rsv_size == 0.  The optimization in
-> btrfs_insert_delayed_dir_index() sets ->qgroup_rsv_reserved = 0.  Then
-> later on when we call btrfs_subvolume_release_metadata() which has
-> 
->   btrfs_block_rsv_release(fs_info, rsv, (u64)-1, &qgroup_to_release);
->   btrfs_qgroup_convert_reserved_meta(root, qgroup_to_release);
-> 
-> qgroup_to_release is set to 0, and we do not convert the reserved
-> metadata space.
-> 
-> The problem here is that the block rsv code has been unconditionally
-> messing with ->qgroup_rsv_reserved, because the main place this is used
-> is delalloc, and any time we call btrfs_block_rsv_release() we do it
-> with qgroup_to_release set, and thus do the proper accounting.
-> 
-> The subvolume code is the only other code that uses the qgroup
-> reservation stuff, but it's intermingled with the above optimization,
-> and thus was getting its reservation freed out from underneath it and
-> thus leaking the reserved space.
-> 
-> The solution is to simply not mess with the qgroup reservations if we
-> don't have qgroup_to_release set.  This works with the existing code as
-> anything that messes with the delalloc reservations always have
-> qgroup_to_release set.  This fixes the leak that Boris was observing.
-> 
-> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+On Wed, May 3, 2023 at 2:01=E2=80=AFPM Vladimir Panteleev
+<git@vladimir.panteleev.md> wrote:
+>
+> On Wed, 3 May 2023 at 12:49, Filipe Manana <fdmanana@kernel.org> wrote:
+> >
+> > On Wed, May 3, 2023 at 1:37=E2=80=AFPM Filipe Manana <fdmanana@kernel.o=
+rg> wrote:
+> > > Are you able to apply and test a kernel patch?
+> > >
+> > > If so, try the following one (also at:
+> > > https://gist.github.com/fdmanana/9ae7f6c62779aacf4bfd3b155d175792)
+> > >
+> > > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> > > index e54f0884802a..c4c5784e897a 100644
+> > > --- a/fs/btrfs/backref.c
+> > > +++ b/fs/btrfs/backref.c
+> > > @@ -45,7 +45,8 @@ static int check_extent_in_eb(struct
+> > > btrfs_backref_walk_ctx *ctx,
+> > >         int root_count;
+> > >         bool cached;
+> > >
+> > > -       if (!btrfs_file_extent_compression(eb, fi) &&
+> > > +       if (!ctx->ignore_extent_item_pos &&
+> >
+> > This misses a:
+> >
+> > .. && ctx->extent_item_pos > 0 &&
+> >
+> > I've updated the gist with it:
+> > https://gist.githubusercontent.com/fdmanana/9ae7f6c62779aacf4bfd3b155d1=
+75792/raw/3f41c8486eb73a038f026c8bfe767bd763a016c9/logical_ino2_fix.patch
+> >
+> > Thanks.
+>
+> Yes, it works!
 
-Added to misc-next, thanks.
+Ok, great.
+I'll add a changelog and send it to the list.
+
+Thanks for the testing and report.
+
+>
+> The first version of the patch seemed to work too.

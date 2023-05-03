@@ -2,168 +2,119 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72070C77B75
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 15:25:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1578C77B75
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 15:47:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230463AbjECPZp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 May 2023 11:25:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51902 "EHLO
+        id S230436AbjECPrj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 May 2023 11:47:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34482 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230457AbjECPZo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2023 11:25:44 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEC2E6A74
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 08:25:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=7uA7l8GIB3O33gwguBLxdyz3WRvTLBLBdgC+7MRzfDM=; b=AbNzbymXZg8otXNW6WQwb0VwYV
-        zhfpwR/fXi+nJzADEU4lre2HTBjCxI5GCi10rw+PLvCgvNo2llByaeKwdSHSUJMKsvBqY8Q24bftI
-        VCGVlOmucNi9XvXZ8JFOVuIjeMS2CZ+gsHZdAJGhN5C71nyv+YFuQwpKNdKjBT2zx7porMdaSA43v
-        IZOUaleCjzrfchxkE/cQwPAEHF0Wql9TZ8+LgRgsjT0QByWoKHTB220MxeKCM0kP9q6Rq1UWbzyx0
-        okf+toTZeWHdNXQuh9TVmaVtyWk7t38qiSWi6RW0o2woltLVJfGLRxejSFqZ40ErM5qvp3mBYGUZn
-        pvmKWQLw==;
-Received: from [2001:4bb8:181:617f:7279:c4cd:ae56:e444] (helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1puEMO-004xsC-0V;
-        Wed, 03 May 2023 15:25:40 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        with ESMTP id S229675AbjECPri (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2023 11:47:38 -0400
+X-Greylist: delayed 456 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 03 May 2023 08:47:37 PDT
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 0B7605FF9
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 08:47:36 -0700 (PDT)
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+        id 0B1E4861E46; Wed,  3 May 2023 11:39:59 -0400 (EDT)
+Date:   Wed, 3 May 2023 11:39:59 -0400
+From:   Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To:     Filipe Manana <fdmanana@kernel.org>
+Cc:     Vladimir Panteleev <git@vladimir.panteleev.md>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
         David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH 21/21] btrfs: merge write_one_subpage_eb into write_one_eb
-Date:   Wed,  3 May 2023 17:24:41 +0200
-Message-Id: <20230503152441.1141019-22-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230503152441.1141019-1-hch@lst.de>
-References: <20230503152441.1141019-1-hch@lst.de>
+Subject: Re: 6.2 regression: BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET broken
+Message-ID: <ZFKAT6u7XEY1Y4yQ@hungrycats.org>
+References: <CAHhfkvwo=nmzrJSqZ2qMfF-rZB-ab6ahHnCD_sq9h4o8v+M7QQ@mail.gmail.com>
+ <CAL3q7H5yKd1=WuZaU-s7hQ-MwzWONsOtVNoA6cjpLW0-3DDEEQ@mail.gmail.com>
+ <CAL3q7H7FyF6YYuMbz0GTBb9G3WYxy9Pr9xQ11rde7jR3zVXuwA@mail.gmail.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+In-Reply-To: <CAL3q7H7FyF6YYuMbz0GTBb9G3WYxy9Pr9xQ11rde7jR3zVXuwA@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Most of the code in write_one_subpage_eb and write_one_eb is shared,
-so merge the two functions into one.
+On Wed, May 03, 2023 at 01:49:16PM +0100, Filipe Manana wrote:
+> On Wed, May 3, 2023 at 1:37 PM Filipe Manana <fdmanana@kernel.org> wrote:
+> >
+> > On Wed, May 3, 2023 at 1:33 PM Vladimir Panteleev
+> > <git@vladimir.panteleev.md> wrote:
+> > >
+> > > Hi,
+> > >
+> > > Commit 6ce6ba534418132f4c727d5707fe2794c797299c appears to have broken
+> > > the BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET flag to
+> > > BTRFS_IOC_LOGICAL_INO_V2. The ioctl now always seems to return zero
+> > > inodes with the flag, if the same happened without the flag, thus
+> > > making it not very useful.
+> > >
+> > > Context: I maintain btdu, a disk usage profiler for btrfs. It uses
+> > > BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET to help users estimate the amount
+> > > of space wasted by bookend extents, and identify files / applications
+> > > / IO patterns which create excessive amounts of them.
+> >
+> > Are you able to apply and test a kernel patch?
+> >
+> > If so, try the following one (also at:
+> > https://gist.github.com/fdmanana/9ae7f6c62779aacf4bfd3b155d175792)
+> >
+> > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> > index e54f0884802a..c4c5784e897a 100644
+> > --- a/fs/btrfs/backref.c
+> > +++ b/fs/btrfs/backref.c
+> > @@ -45,7 +45,8 @@ static int check_extent_in_eb(struct
+> > btrfs_backref_walk_ctx *ctx,
+> >         int root_count;
+> >         bool cached;
+> >
+> > -       if (!btrfs_file_extent_compression(eb, fi) &&
+> > +       if (!ctx->ignore_extent_item_pos &&
+> 
+> This misses a:
+> 
+> .. && ctx->extent_item_pos > 0 &&
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
----
- fs/btrfs/extent_io.c | 77 ++++++++++++++------------------------------
- 1 file changed, 25 insertions(+), 52 deletions(-)
+Ummm...why?
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4088acf259c4c8..0e7796f6b5928e 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1808,53 +1808,11 @@ static void prepare_eb_write(struct extent_buffer *eb)
- 	}
- }
- 
--/*
-- * Unlike the work in write_one_eb(), we rely completely on extent locking.
-- * Page locking is only utilized at minimum to keep the VMM code happy.
-- */
--static void write_one_subpage_eb(struct extent_buffer *eb,
--				 struct writeback_control *wbc)
--{
--	struct btrfs_fs_info *fs_info = eb->fs_info;
--	struct page *page = eb->pages[0];
--	bool no_dirty_ebs = false;
--	struct btrfs_bio *bbio;
--
--	prepare_eb_write(eb);
--
--	/* clear_page_dirty_for_io() in subpage helper needs page locked */
--	lock_page(page);
--	btrfs_subpage_set_writeback(fs_info, page, eb->start, eb->len);
--
--	/* Check if this is the last dirty bit to update nr_written */
--	no_dirty_ebs = btrfs_subpage_clear_and_test_dirty(fs_info, page,
--							  eb->start, eb->len);
--	if (no_dirty_ebs)
--		clear_page_dirty_for_io(page);
--
--	bbio = btrfs_bio_alloc(INLINE_EXTENT_BUFFER_PAGES,
--			       REQ_OP_WRITE | REQ_META | wbc_to_write_flags(wbc),
--			       eb->fs_info, extent_buffer_write_end_io, eb);
--	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
--	bbio->inode = BTRFS_I(eb->fs_info->btree_inode);
--	bbio->file_offset = eb->start;
--	__bio_add_page(&bbio->bio, page, eb->len, eb->start - page_offset(page));
--	unlock_page(page);
--	btrfs_submit_bio(bbio, 0);
--
--	/*
--	 * Submission finished without problem, if no range of the page is
--	 * dirty anymore, we have submitted a page.  Update nr_written in wbc.
--	 */
--	if (no_dirty_ebs)
--		wbc->nr_to_write--;
--}
--
- static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
- 					    struct writeback_control *wbc)
- {
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
- 	struct btrfs_bio *bbio;
--	int i, num_pages;
- 
- 	prepare_eb_write(eb);
- 
-@@ -1864,17 +1822,32 @@ static noinline_for_stack void write_one_eb(struct extent_buffer *eb,
- 	bbio->bio.bi_iter.bi_sector = eb->start >> SECTOR_SHIFT;
- 	bbio->inode = BTRFS_I(eb->fs_info->btree_inode);
- 	bbio->file_offset = eb->start;
--
--	num_pages = num_extent_pages(eb);
--	for (i = 0; i < num_pages; i++) {
--		struct page *p = eb->pages[i];
-+	if (fs_info->nodesize < PAGE_SIZE) {
-+		struct page *p = eb->pages[0];
- 
- 		lock_page(p);
--		clear_page_dirty_for_io(p);
--		set_page_writeback(p);
--		__bio_add_page(&bbio->bio, p, PAGE_SIZE, 0);
--		wbc->nr_to_write--;
-+		btrfs_subpage_set_writeback(fs_info, p, eb->start, eb->len);
-+		if (btrfs_subpage_clear_and_test_dirty(fs_info, p, eb->start,
-+						       eb->len)) {
-+			clear_page_dirty_for_io(p);
-+			wbc->nr_to_write--;
-+		}
-+		__bio_add_page(&bbio->bio, p, eb->len,
-+			       eb->start - page_offset(p));
- 		unlock_page(p);
-+	} else {
-+		int i;
-+
-+		for (i = 0; i < num_extent_pages(eb); i++) {
-+			struct page *p = eb->pages[i];
-+
-+			lock_page(p);
-+			clear_page_dirty_for_io(p);
-+			set_page_writeback(p);
-+			__bio_add_page(&bbio->bio, p, PAGE_SIZE, 0);
-+			wbc->nr_to_write--;
-+			unlock_page(p);
-+		}
- 	}
- 	btrfs_submit_bio(bbio, 0);
- }
-@@ -1946,7 +1919,7 @@ static int submit_eb_subpage(struct page *page, struct writeback_control *wbc)
- 			continue;
- 
- 		if (lock_extent_buffer_for_io(eb, wbc)) {
--			write_one_subpage_eb(eb, wbc);
-+			write_one_eb(eb, wbc);
- 			submitted++;
- 		}
- 		free_extent_buffer(eb);
--- 
-2.39.2
+With IGNORE_OFFSET set, we want to ignore the offset on the candidate
+matching extent and on the original search bytenr, so we get matches in
+cases where the search bytenr happens to be at offset 0 in the extent.
 
+I think your first patch was the better one.  What am I missing?
+
+> I've updated the gist with it:
+> https://gist.githubusercontent.com/fdmanana/9ae7f6c62779aacf4bfd3b155d175792/raw/3f41c8486eb73a038f026c8bfe767bd763a016c9/logical_ino2_fix.patch
+> 
+> Thanks.
+> 
+> > +           !btrfs_file_extent_compression(eb, fi) &&
+> >             !btrfs_file_extent_encryption(eb, fi) &&
+> >             !btrfs_file_extent_other_encoding(eb, fi)) {
+> >                 u64 data_offset;
+> > @@ -552,13 +553,10 @@ static int add_all_parents(struct
+> > btrfs_backref_walk_ctx *ctx,
+> >                                 count++;
+> >                         else
+> >                                 goto next;
+> > -                       if (!ctx->ignore_extent_item_pos) {
+> > -                               ret = check_extent_in_eb(ctx, &key,
+> > eb, fi, &eie);
+> > -                               if (ret == BTRFS_ITERATE_EXTENT_INODES_STOP ||
+> > -                                   ret < 0)
+> > -                                       break;
+> > -                       }
+> > -                       if (ret > 0)
+> > +                       ret = check_extent_in_eb(ctx, &key, eb, fi, &eie);
+> > +                       if (ret == BTRFS_ITERATE_EXTENT_INODES_STOP || ret < 0)
+> > +                               break;
+> > +                       else if (ret > 0)
+> >                                 goto next;
+> >                         ret = ulist_add_merge_ptr(parents, eb->start,
+> >                                                   eie, (void **)&old, GFP_NOFS);
+> >
+> > Thanks.
+> > >
+> > > Thanks!

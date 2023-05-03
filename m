@@ -2,70 +2,70 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23AB1C77B78
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D9A1C7EE29
 	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 01:00:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229487AbjECA7z (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 2 May 2023 20:59:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52754 "EHLO
+        id S229498AbjECA77 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 2 May 2023 20:59:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52816 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229464AbjECA7x (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2023 20:59:53 -0400
+        with ESMTP id S229492AbjECA75 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 May 2023 20:59:57 -0400
 Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7AC0A2D6D
-        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 17:59:51 -0700 (PDT)
-Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
-        by mailout.nyi.internal (Postfix) with ESMTP id DCED55C0313;
-        Tue,  2 May 2023 20:59:50 -0400 (EDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6692D358E
+        for <linux-btrfs@vger.kernel.org>; Tue,  2 May 2023 17:59:56 -0700 (PDT)
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+        by mailout.nyi.internal (Postfix) with ESMTP id D6C3C5C0311;
+        Tue,  2 May 2023 20:59:55 -0400 (EDT)
 Received: from mailfrontend1 ([10.202.2.162])
-  by compute2.internal (MEProxy); Tue, 02 May 2023 20:59:50 -0400
+  by compute5.internal (MEProxy); Tue, 02 May 2023 20:59:55 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
         :content-transfer-encoding:content-type:date:date:from:from
         :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to; s=fm3; t=1683075590; x=
-        1683161990; bh=PCORDII6Wiz2/v0fesGnD8bC3KEQqaeyyEhdGdw8v1g=; b=h
-        oFFLLx29ydj9lD1hYcZFqFQFCmQdjL27KtA7izumzig5k8CCQcOoXQM3HizFz3aJ
-        VhSoXz+yws9gWbIbX4+KEqt4aV5hTZuMcpMS10FbPiMH1Zwi4UFQeN/ne4gPcbLT
-        ZefOnJa/FOrOGSTcYQKv2r9V0Zg1U1lkH7jyUavYBaOadcWDk2LLRM6Idj3ql6IX
-        UwBpLOQ4q+mZIyflxv/puOaDuCod3VimFJ8bud9VFnGnWyfqnYuBW7NiWXb4E+8T
-        MRea8xbxSWeUvmEIqxWfMlcLVG2IyP+ymWbjHdGxS0iZAzjP4ZxVEfy/GiLDTPZW
-        WhjWsRIFjEjxiZFozuz9A==
+        :reply-to:sender:subject:subject:to:to; s=fm3; t=1683075595; x=
+        1683161995; bh=B4QVcOh1n1iRTg3zT022aoBauHMxFlmaxBHP1x45Oqk=; b=h
+        L0VigQbHODUY13nrzpDaS+jzaesqNaZkBV9zbrtC4mgCVUYiEGEO2FS4mW2ZZcMb
+        WSoSEMQvrUHxvEgmFnYpgu3KINGng4/BCrOS2dDi9Xj1fbpMY8xpj9wWwYKWJyAE
+        Cx6EqIYnHDNMbIUCZUQScqA4JYMdewSy/SbCAXcRzFwPMTTcJtXzA6fOPO9CUZyF
+        wlbyd87GOoOkKORGW4c5RXFcM4pJ7LLRmNUm+//Ax5yFYYvbSWIhWgi7AWkSwBm7
+        fh3ugqdAnMJMq0mmuD22+AwZV3aoFmnOnY1uRihbloJapH32ChrRJ3lbRGR0+Fxz
+        a3ZGPmdwESvo/IAKdjOpw==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
         messagingengine.com; h=cc:content-transfer-encoding:content-type
         :date:date:feedback-id:feedback-id:from:from:in-reply-to
         :in-reply-to:message-id:mime-version:references:reply-to:sender
         :subject:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender
-        :x-me-sender:x-sasl-enc; s=fm3; t=1683075590; x=1683161990; bh=P
-        CORDII6Wiz2/v0fesGnD8bC3KEQqaeyyEhdGdw8v1g=; b=A0SVk0UkUTS6kcHVb
-        6HFkaT0u5nD/8YbPahNKQLMizieQ7OJZexoEF/sCJZHqfw6khLG1NthwAqnG8kN5
-        JKOMeUcWK+D/eov+1/q8r/vaQ4n3K9vQ5jsH9C2FUs8IusBewg+B0QSIk32lpVZv
-        EaKYCyAbtDm0TnJmcZKuVtLSOdiD0vsfPPgj2MWHTriDPpfclP5mw5UkrPYzYrYv
-        Jsu1lc++vfltPkZXPkgBakuFR6r0vJv0fYCq+u+zMW/5fIyopy4PsAIKPRXMUJ5L
-        f/3vg2RdCCk8/5VyTahEzZs4IJu7Au/eEqTEf/uoAWfZaCED3zhOs6LuJuDGm3TW
-        c8+xA==
-X-ME-Sender: <xms:BrJRZHxlPnRJAuBbRKeFBWbj5nFnoPMM7jDLX4kzkv38q41yc8jZaw>
-    <xme:BrJRZPS5BOww3YG2Ovg7xuRwo56uZLhzpcLAoU8JwAZKEPGOIHhzZXABOjsKN4s0h
-    RFOqXU4E76p-vNm84U>
-X-ME-Received: <xmr:BrJRZBW9ZLlXh92t42rAM1HFHKX60hc5wqELeRPCcR3sARjVY39H32HZ>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrfedvjedgfeelucetufdoteggodetrfdotf
+        :x-me-sender:x-sasl-enc; s=fm3; t=1683075595; x=1683161995; bh=B
+        4QVcOh1n1iRTg3zT022aoBauHMxFlmaxBHP1x45Oqk=; b=PLDr824L8aRbcFmTp
+        oVLuPbh3PVpWA6vJOHJCSJ85De9wB0LuYs9I3p87PaNbHVBlL6mahZAUwXhtNffT
+        R9B3g30CctH7DQ8wGxQpyZIOnMIEULnZwJROcj7E7N1N9yy4aF1YFd2YGbNU/YKC
+        g8heDYRRpwlVYWBPfNm7K8Vb96Ez8wN8oLGmcxomq4BlTAvsNUjCQI06KjeGXRPC
+        BB/gcsSU0WNw+Gnhog9usJCpqxdiLIZTqpvxVgz328J1h83njUoWxwCZDK4+JOYY
+        Fe4v/e3zz/C2fGgOOZG0ft0MBwc5HFVxsyGLlpFJQtwNycxZHYCLjqdZIGLeDk+V
+        QYUPw==
+X-ME-Sender: <xms:C7JRZA7f-e9J0kG9cQ4KmW5O8BvjDPlOcibjl7OqDXeuv_ssluIIRQ>
+    <xme:C7JRZB6pqLhvgTtiDPQZEACvkXU9OBnwFuBmZGGNxifVilw7olGt4QrGM99QEMQEI
+    63rAqKsBAzPhfcvsVI>
+X-ME-Received: <xmr:C7JRZPdNyQrfFDD5V_8Ogm6Ee2rwndOyn16sTYaqCdP1icPP5wsblb9W>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrfedvjedggedtucetufdoteggodetrfdotf
     fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
     uceurghilhhouhhtmecufedttdenucenucfjughrpefhvffufffkofgjfhgggfestdekre
     dtredttdenucfhrhhomhepuehorhhishcuuehurhhkohhvuceosghorhhishessghurhdr
     ihhoqeenucggtffrrghtthgvrhhnpeeiueffuedvieeujefhheeigfekvedujeejjeffve
-    dvhedtudefiefhkeegueehleenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhep
+    dvhedtudefiefhkeegueehleenucevlhhushhtvghrufhiiigvpedvnecurfgrrhgrmhep
     mhgrihhlfhhrohhmpegsohhrihhssegsuhhrrdhioh
-X-ME-Proxy: <xmx:BrJRZBjMBDynMQSc8oD4du6TwQclxiLCa0NyJ1FwNdTckeLjHxuJkQ>
-    <xmx:BrJRZJA6zA-F-xSyTRndSKyclnBlV-Oq_pqya71-rYD58VzuV44b8A>
-    <xmx:BrJRZKLrOJTCuJPMnxqEabq7j_r9ywf_f8ISAxx9gI9qBWMlmqITng>
-    <xmx:BrJRZMqHwv6_d7B2e2hN7yk_58GNNwZ9zgrsPx8NjQgKuQ3YruepOg>
+X-ME-Proxy: <xmx:C7JRZFKIWcqHPzcsO1VYLMSVUXghcpaZrBkF109UpwY7TXQT4aJldg>
+    <xmx:C7JRZEJ7dJxXEHzB46YpBtd07-rx-9gBbjkRqvRefHiE6_cbCZ5FUA>
+    <xmx:C7JRZGxjFKIJAfwO4Uw6fmywnB6F-vZoedCD1728GhYOd_TwZktIeg>
+    <xmx:C7JRZOySX0HEc8JvL1o3ouA9Hw15wok-dlNXDydCP2XKsGKzl38GRA>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Tue,
- 2 May 2023 20:59:50 -0400 (EDT)
+ 2 May 2023 20:59:55 -0400 (EDT)
 From:   Boris Burkov <boris@bur.io>
 To:     linux-btrfs@vger.kernel.org, kernel-team@fb.com
-Subject: [PATCH 3/9] btrfs: track original extent subvol in a new inline ref
-Date:   Tue,  2 May 2023 17:59:24 -0700
-Message-Id: <7a4b78e240d2f26eb3d7be82d4c0b8ddaa409519.1683075170.git.boris@bur.io>
+Subject: [PATCH 6/9] btrfs: auto hierarchy for simple qgroups of nested subvols
+Date:   Tue,  2 May 2023 17:59:27 -0700
+Message-Id: <b311f17d76094253b5b38be3ea845438628f17ad.1683075170.git.boris@bur.io>
 X-Mailer: git-send-email 2.40.0
 In-Reply-To: <cover.1683075170.git.boris@bur.io>
 References: <cover.1683075170.git.boris@bur.io>
@@ -75,306 +75,175 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-In order to implement simple quota groups, we need to be able to
-associate a data extent with the subvolume that created it. Once you
-account for reflink, this information cannot be recovered without
-explicitly storing it. Options for storing it are:
-- a new key/item
-- a new extent inline ref item
+Consider the following sequence:
+- enable quotas
+- create subvol S id 256 at dir outer/
+- create a qgroup 1/100
+- add 0/256 (S's auto qgroup) to 1/100
+- create subvol T id 257 at dir outer/inner/
 
-The former is backwards compatible, but wastes space, the latter is
-incompat, but is efficient in space and reuses the existing inline ref
-machinery, while only abusing it a tiny amount -- specifically, the new
-item is not a ref, per-se.
+With full qgroups, there is no relationship between 0/257 and either of
+0/256 or 1/100. There is an inherit feature that the creator of inner/
+can use to specify it ought to be in 1/100.
+
+Simple quotas are targeted at container isolation, where such automatic
+inheritance for not necessarily trusted/controlled nested subvol
+creation would be quite helpful. Therefore, add a new default behavior
+for simple quotas: when you create a nested subvol, automatically
+inherit as parents any parents of the qgroup of the subvol the new inode
+is going in.
+
+In our example, 257/0 would also be under 1/100, allowing easy control
+of a total quota over an arbitrary hierarchy of subvolumes.
+
+I think this _might_ be a generally useful behavior, so it could be
+interesting to put it behind a new inheritance flag that simple quotas
+always use while traditional quotas let the user specify, but this is a
+minimally intrusive change to start.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/accessors.h            |  4 +++
- fs/btrfs/backref.c              |  3 ++
- fs/btrfs/extent-tree.c          | 50 +++++++++++++++++++++++++--------
- fs/btrfs/print-tree.c           | 12 ++++++++
- fs/btrfs/ref-verify.c           |  3 ++
- fs/btrfs/tree-checker.c         |  3 ++
- include/uapi/linux/btrfs_tree.h |  6 ++++
- 7 files changed, 70 insertions(+), 11 deletions(-)
+ fs/btrfs/ioctl.c       |  2 +-
+ fs/btrfs/qgroup.c      | 46 +++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/qgroup.h      |  6 +++---
+ fs/btrfs/transaction.c |  2 +-
+ 4 files changed, 48 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/accessors.h b/fs/btrfs/accessors.h
-index ceadfc5d6c66..aab61312e4e8 100644
---- a/fs/btrfs/accessors.h
-+++ b/fs/btrfs/accessors.h
-@@ -350,6 +350,8 @@ BTRFS_SETGET_FUNCS(extent_data_ref_count, struct btrfs_extent_data_ref, count, 3
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ca7d2ef739c8..4d6d28feb5c6 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -652,7 +652,7 @@ static noinline int create_subvol(struct mnt_idmap *idmap,
+ 	/* Tree log can't currently deal with an inode which is a new root. */
+ 	btrfs_set_log_full_commit(trans);
  
- BTRFS_SETGET_FUNCS(shared_data_ref_count, struct btrfs_shared_data_ref, count, 32);
+-	ret = btrfs_qgroup_inherit(trans, 0, objectid, inherit);
++	ret = btrfs_qgroup_inherit(trans, 0, objectid, root->root_key.objectid, inherit);
+ 	if (ret)
+ 		goto out;
  
-+BTRFS_SETGET_FUNCS(extent_owner_ref_root_id, struct btrfs_extent_owner_ref, root_id, 64);
-+
- BTRFS_SETGET_FUNCS(extent_inline_ref_type, struct btrfs_extent_inline_ref,
- 		   type, 8);
- BTRFS_SETGET_FUNCS(extent_inline_ref_offset, struct btrfs_extent_inline_ref,
-@@ -366,6 +368,8 @@ static inline u32 btrfs_extent_inline_ref_size(int type)
- 	if (type == BTRFS_EXTENT_DATA_REF_KEY)
- 		return sizeof(struct btrfs_extent_data_ref) +
- 		       offsetof(struct btrfs_extent_inline_ref, offset);
-+	if (type == BTRFS_EXTENT_OWNER_REF_KEY)
-+		return sizeof(struct btrfs_extent_inline_ref);
- 	return 0;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index e3d0630fef0c..6816e01f00b5 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1504,8 +1504,7 @@ static int quick_update_accounting(struct btrfs_fs_info *fs_info,
+ 	return ret;
  }
  
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index e54f0884802a..8cd8ed6c572f 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1128,6 +1128,9 @@ static int add_inline_refs(struct btrfs_backref_walk_ctx *ctx,
- 						       count, sc, GFP_NOFS);
- 			break;
- 		}
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			WARN_ON(!btrfs_fs_incompat(ctx->fs_info, SIMPLE_QUOTA));
-+			break;
- 		default:
- 			WARN_ON(1);
- 		}
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5cd289de4e92..b9a2f1e355b7 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -363,9 +363,13 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 				     struct btrfs_extent_inline_ref *iref,
- 				     enum btrfs_inline_ref_type is_data)
+-int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
+-			      u64 dst)
++int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src, u64 dst)
  {
-+	struct btrfs_fs_info *fs_info = eb->fs_info;
- 	int type = btrfs_extent_inline_ref_type(eb, iref);
- 	u64 offset = btrfs_extent_inline_ref_offset(eb, iref);
- 
-+	if (type == BTRFS_EXTENT_OWNER_REF_KEY && btrfs_fs_incompat(fs_info, SIMPLE_QUOTA))
-+		return type;
-+
- 	if (type == BTRFS_TREE_BLOCK_REF_KEY ||
- 	    type == BTRFS_SHARED_BLOCK_REF_KEY ||
- 	    type == BTRFS_SHARED_DATA_REF_KEY ||
-@@ -374,26 +378,25 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 			if (type == BTRFS_TREE_BLOCK_REF_KEY)
- 				return type;
- 			if (type == BTRFS_SHARED_BLOCK_REF_KEY) {
--				ASSERT(eb->fs_info);
-+				ASSERT(fs_info);
- 				/*
- 				 * Every shared one has parent tree block,
- 				 * which must be aligned to sector size.
- 				 */
--				if (offset &&
--				    IS_ALIGNED(offset, eb->fs_info->sectorsize))
-+				if (offset && IS_ALIGNED(offset, fs_info->sectorsize))
- 					return type;
- 			}
- 		} else if (is_data == BTRFS_REF_TYPE_DATA) {
- 			if (type == BTRFS_EXTENT_DATA_REF_KEY)
- 				return type;
- 			if (type == BTRFS_SHARED_DATA_REF_KEY) {
--				ASSERT(eb->fs_info);
-+				ASSERT(fs_info);
- 				/*
- 				 * Every shared one has parent tree block,
- 				 * which must be aligned to sector size.
- 				 */
- 				if (offset &&
--				    IS_ALIGNED(offset, eb->fs_info->sectorsize))
-+				    IS_ALIGNED(offset, fs_info->sectorsize))
- 					return type;
- 			}
- 		} else {
-@@ -403,7 +406,7 @@ int btrfs_get_extent_inline_ref_type(const struct extent_buffer *eb,
- 	}
- 
- 	btrfs_print_leaf((struct extent_buffer *)eb);
--	btrfs_err(eb->fs_info,
-+	btrfs_err(fs_info,
- 		  "eb %llu iref 0x%lx invalid extent inline ref type %d",
- 		  eb->start, (unsigned long)iref, type);
- 	WARN_ON(1);
-@@ -912,6 +915,11 @@ int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
- 		}
- 		iref = (struct btrfs_extent_inline_ref *)ptr;
- 		type = btrfs_get_extent_inline_ref_type(leaf, iref, needed);
-+		if (type == BTRFS_EXTENT_OWNER_REF_KEY) {
-+			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-+			ptr += btrfs_extent_inline_ref_size(type);
-+			continue;
-+		}
- 		if (type == BTRFS_REF_TYPE_INVALID) {
- 			err = -EUCLEAN;
- 			goto out;
-@@ -1708,6 +1716,8 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
- 		 node->type == BTRFS_SHARED_DATA_REF_KEY)
- 		ret = run_delayed_data_ref(trans, node, extent_op,
- 					   insert_reserved);
-+	else if (node->type == BTRFS_EXTENT_OWNER_REF_KEY)
-+		ret = 0;
- 	else
- 		BUG();
- 	if (ret && insert_reserved)
-@@ -2275,6 +2285,7 @@ static noinline int check_committed_ref(struct btrfs_root *root,
- 	struct btrfs_extent_item *ei;
- 	struct btrfs_key key;
- 	u32 item_size;
-+	u32 expected_size;
- 	int type;
- 	int ret;
- 
-@@ -2301,10 +2312,17 @@ static noinline int check_committed_ref(struct btrfs_root *root,
- 	ret = 1;
- 	item_size = btrfs_item_size(leaf, path->slots[0]);
- 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
-+	expected_size = sizeof(*ei) + btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY);
-+
-+	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-+	type = btrfs_get_extent_inline_ref_type(leaf, iref, BTRFS_REF_TYPE_DATA);
-+	if (btrfs_fs_incompat(fs_info, SIMPLE_QUOTA) && type == BTRFS_EXTENT_OWNER_REF_KEY) {
-+		expected_size += btrfs_extent_inline_ref_size(BTRFS_EXTENT_OWNER_REF_KEY);
-+		iref = (struct btrfs_extent_inline_ref *)(iref + 1);
-+	}
- 
- 	/* If extent item has more than 1 inline ref then it's shared */
--	if (item_size != sizeof(*ei) +
--	    btrfs_extent_inline_ref_size(BTRFS_EXTENT_DATA_REF_KEY))
-+	if (item_size != expected_size)
- 		goto out;
- 
- 	/*
-@@ -2316,8 +2334,6 @@ static noinline int check_committed_ref(struct btrfs_root *root,
- 	     btrfs_root_last_snapshot(&root->root_item)))
- 		goto out;
- 
--	iref = (struct btrfs_extent_inline_ref *)(ei + 1);
--
- 	/* If this extent has SHARED_DATA_REF then it's shared */
- 	type = btrfs_get_extent_inline_ref_type(leaf, iref, BTRFS_REF_TYPE_DATA);
- 	if (type != BTRFS_EXTENT_DATA_REF_KEY)
-@@ -4572,6 +4588,7 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *extent_root;
- 	int ret;
- 	struct btrfs_extent_item *extent_item;
-+	struct btrfs_extent_owner_ref *oref;
- 	struct btrfs_extent_inline_ref *iref;
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
-@@ -4583,7 +4600,10 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	else
- 		type = BTRFS_EXTENT_DATA_REF_KEY;
- 
--	size = sizeof(*extent_item) + btrfs_extent_inline_ref_size(type);
-+	size = sizeof(*extent_item);
-+	if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE)
-+		size += btrfs_extent_inline_ref_size(BTRFS_EXTENT_OWNER_REF_KEY);
-+	size += btrfs_extent_inline_ref_size(type);
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -4604,8 +4624,16 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	btrfs_set_extent_flags(leaf, extent_item,
- 			       flags | BTRFS_EXTENT_FLAG_DATA);
- 
-+
- 	iref = (struct btrfs_extent_inline_ref *)(extent_item + 1);
-+	if (btrfs_fs_incompat(fs_info, SIMPLE_QUOTA)) {
-+		btrfs_set_extent_inline_ref_type(leaf, iref, BTRFS_EXTENT_OWNER_REF_KEY);
-+		oref = (struct btrfs_extent_owner_ref *)(&iref->offset);
-+		btrfs_set_extent_owner_ref_root_id(leaf, oref, root_objectid);
-+		iref = (struct btrfs_extent_inline_ref *)(oref + 1);
-+	}
- 	btrfs_set_extent_inline_ref_type(leaf, iref, type);
-+
- 	if (parent > 0) {
- 		struct btrfs_shared_data_ref *ref;
- 		ref = (struct btrfs_shared_data_ref *)(iref + 1);
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index b93c96213304..1114cd915bd8 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -80,12 +80,20 @@ static void print_extent_data_ref(struct extent_buffer *eb,
- 	       btrfs_extent_data_ref_count(eb, ref));
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_qgroup *parent;
+@@ -2945,6 +2944,42 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans)
+ 	return ret;
  }
  
-+static void print_extent_owner_ref(struct extent_buffer *eb,
-+				   struct btrfs_extent_owner_ref *ref)
++static int qgroup_auto_inherit(struct btrfs_fs_info *fs_info,
++			       u64 inode_rootid,
++			       struct btrfs_qgroup_inherit **inherit)
 +{
-+	WARN_ON(!btrfs_fs_incompat(eb->fs_info, SIMPLE_QUOTA));
-+	pr_cont("extent data owner root %llu\n", btrfs_extent_owner_ref_root_id(eb, ref));
++	int i = 0;
++	u64 num_qgroups = 0;
++	struct btrfs_qgroup *inode_qg;
++	struct btrfs_qgroup_list *qg_list;
++
++	if (*inherit)
++		return -EEXIST;
++
++	inode_qg = find_qgroup_rb(fs_info, inode_rootid);
++	if (!inode_qg)
++		return -ENOENT;
++
++	list_for_each_entry(qg_list, &inode_qg->groups, next_group) {
++		++num_qgroups;
++	}
++
++	if (!num_qgroups)
++		return 0;
++
++	*inherit = kzalloc(sizeof(**inherit) + num_qgroups * sizeof(u64), GFP_NOFS);
++	if (!*inherit)
++		return -ENOMEM;
++	(*inherit)->num_qgroups = num_qgroups;
++
++	list_for_each_entry(qg_list, &inode_qg->groups, next_group) {
++		u64 qg_id = qg_list->group->qgroupid;
++		*((u64 *)((*inherit)+1) + i) = qg_id;
++	}
++
++	return 0;
 +}
 +
- static void print_extent_item(struct extent_buffer *eb, int slot, int type)
- {
- 	struct btrfs_extent_item *ei;
- 	struct btrfs_extent_inline_ref *iref;
- 	struct btrfs_extent_data_ref *dref;
- 	struct btrfs_shared_data_ref *sref;
-+	struct btrfs_extent_owner_ref *oref;
- 	struct btrfs_disk_key key;
- 	unsigned long end;
- 	unsigned long ptr;
-@@ -159,6 +167,10 @@ static void print_extent_item(struct extent_buffer *eb, int slot, int type)
- 			"\t\t\t(parent %llu not aligned to sectorsize %u)\n",
- 				     offset, eb->fs_info->sectorsize);
- 			break;
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			oref = (struct btrfs_extent_owner_ref *)(&iref->offset);
-+			print_extent_owner_ref(eb, oref);
-+			break;
- 		default:
- 			pr_cont("(extent %llu has INVALID ref type %d)\n",
- 				  eb->start, type);
-diff --git a/fs/btrfs/ref-verify.c b/fs/btrfs/ref-verify.c
-index 95d28497de7c..9edc87eaff1f 100644
---- a/fs/btrfs/ref-verify.c
-+++ b/fs/btrfs/ref-verify.c
-@@ -485,6 +485,9 @@ static int process_extent_item(struct btrfs_fs_info *fs_info,
- 			ret = add_shared_data_ref(fs_info, offset, count,
- 						  key->objectid, key->offset);
- 			break;
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-+			break;
- 		default:
- 			btrfs_err(fs_info, "invalid key type in iref");
- 			ret = -EINVAL;
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index e2b54793bf0c..27d4230a38a8 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1451,6 +1451,9 @@ static int check_extent_item(struct extent_buffer *leaf,
- 			}
- 			inline_refs += btrfs_shared_data_ref_count(leaf, sref);
- 			break;
-+		case BTRFS_EXTENT_OWNER_REF_KEY:
-+			WARN_ON(!btrfs_fs_incompat(fs_info, SIMPLE_QUOTA));
-+			break;
- 		default:
- 			extent_err(leaf, slot, "unknown inline ref type: %u",
- 				   inline_type);
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index ab38d0f411fa..424c7f342712 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -226,6 +226,8 @@
- 
- #define BTRFS_SHARED_DATA_REF_KEY	184
- 
-+#define BTRFS_EXTENT_OWNER_REF_KEY	190
-+
  /*
-  * block groups give us hints into the extent allocation trees.  Which
-  * blocks are free etc etc
-@@ -783,6 +785,10 @@ struct btrfs_shared_data_ref {
- 	__le32 count;
- } __attribute__ ((__packed__));
+  * Copy the accounting information between qgroups. This is necessary
+  * when a snapshot or a subvolume is created. Throwing an error will
+@@ -2952,7 +2987,8 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans)
+  * when a readonly fs is a reasonable outcome.
+  */
+ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+-			 u64 objectid, struct btrfs_qgroup_inherit *inherit)
++			 u64 objectid, u64 inode_rootid,
++			 struct btrfs_qgroup_inherit *inherit)
+ {
+ 	int ret = 0;
+ 	int i;
+@@ -2994,6 +3030,9 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+ 		goto out;
+ 	}
  
-+struct btrfs_extent_owner_ref {
-+	u64 root_id;
-+} __attribute__ ((__packed__));
++	if (!inherit && btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE)
++		qgroup_auto_inherit(fs_info, inode_rootid, &inherit);
 +
- struct btrfs_extent_inline_ref {
- 	__u8 type;
- 	__le64 offset;
+ 	if (inherit) {
+ 		i_qgroups = (u64 *)(inherit + 1);
+ 		nums = inherit->num_qgroups + 2 * inherit->num_ref_copies +
+@@ -3020,6 +3059,7 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+ 	if (ret)
+ 		goto out;
+ 
++
+ 	/*
+ 	 * add qgroup to all inherited groups
+ 	 */
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index b300998dcbc7..aecebe9d0d62 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -272,8 +272,7 @@ int btrfs_qgroup_rescan(struct btrfs_fs_info *fs_info);
+ void btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info);
+ int btrfs_qgroup_wait_for_completion(struct btrfs_fs_info *fs_info,
+ 				     bool interruptible);
+-int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
+-			      u64 dst);
++int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src, u64 dst);
+ int btrfs_del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
+ 			      u64 dst);
+ int btrfs_create_qgroup(struct btrfs_trans_handle *trans, u64 qgroupid);
+@@ -367,7 +366,8 @@ int btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans, u64 bytenr,
+ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans);
+ int btrfs_run_qgroups(struct btrfs_trans_handle *trans);
+ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans, u64 srcid,
+-			 u64 objectid, struct btrfs_qgroup_inherit *inherit);
++			 u64 objectid, u64 inode_rootid,
++			 struct btrfs_qgroup_inherit *inherit);
+ void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
+ 			       u64 ref_root, u64 num_bytes,
+ 			       enum btrfs_qgroup_rsv_type type);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 0edfb58afd80..6befcf1b4b1f 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1557,7 +1557,7 @@ static int qgroup_account_snapshot(struct btrfs_trans_handle *trans,
+ 
+ 	/* Now qgroup are all updated, we can inherit it to new qgroups */
+ 	ret = btrfs_qgroup_inherit(trans, src->root_key.objectid, dst_objectid,
+-				   inherit);
++				   parent->root_key.objectid, inherit);
+ 	if (ret < 0)
+ 		goto out;
+ 
 -- 
 2.40.0
 

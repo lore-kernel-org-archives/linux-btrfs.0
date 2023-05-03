@@ -2,40 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03096C77B78
-	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 15:25:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EC9AC7EE29
+	for <linux-btrfs@archiver.kernel.org>; Wed,  3 May 2023 15:25:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230336AbjECPZA (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 3 May 2023 11:25:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50678 "EHLO
+        id S230399AbjECPZD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 3 May 2023 11:25:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50926 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230466AbjECPYz (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2023 11:24:55 -0400
+        with ESMTP id S230389AbjECPZC (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 May 2023 11:25:02 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C71B59F9
-        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 08:24:52 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B0D646A63
+        for <linux-btrfs@vger.kernel.org>; Wed,  3 May 2023 08:25:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=MUp/VGWk63Ke5NGUfu84IC+tO6Ch4/K9lCMcWFxn/2g=; b=UTNSc1r1XNT5I+VTM762N/TV13
-        5Cu+LWER77vv60X401POIZA6pY7uHkxPJQ/5pfbu0lN/A17ceJnFP01Un9vN7/p+g0peDiE/5Hnbl
-        K2UQ+07I6Uw+KMLvBI1aR4Ktf0EZP7HpX/zEgURCvLydsX4m3UjQA1UkYOe9neg80mJg6Tm6U268K
-        V4jDqLvCKJMpykEwQ0PlKmVaK2KPiVXKA9PgDUbSNpUgi4ocW/I+pUTDsgUqwZy2QF9FLWJP2BFmw
-        qctUr93dOFhI6i7LQMN58USIkFe3oFWI9Qi22fnivyBZoxvPEwHkmx15xEnTHB/QXBWS9VvvfVJxk
-        gglzD6aQ==;
+        bh=z2Cz181nsjifhTLDyhPeOdK9X9Biw4Ryugid0CD5ZCI=; b=1OytYSgUKpgOYVJekfh9F1LIL+
+        c8tWK2fvTZbLSX1U+4/pjq5Q23vvViL7MPPL++J0PGVBpr+MrCKUDQmQBfkcuk2n2itBggf/nyP6H
+        XiHdthqx4QwrWlo12iz6cErHBAKjOBDUkYl2ZUHpzCMdU5BNHRVEjAW26f96uvtgQJnueY8/FQ79g
+        xL2Q75DrMzUwAOji/WVu8d7FLkZFWPirpOfBwXMT1KJ9Jk5OGLOjGkLyXEfgcbuoMbli3Tvcg+83c
+        7+Cs4ukkiXm1a20+YHQrszzkAmZbprFaOU/M7MNihMvFiYEdzJwOIYUonQtab/peIYM7+d6k13DuN
+        48Fmw0Fg==;
 Received: from [2001:4bb8:181:617f:7279:c4cd:ae56:e444] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1puELa-004xcx-1P;
-        Wed, 03 May 2023 15:24:50 +0000
+        id 1puELi-004xeF-0t;
+        Wed, 03 May 2023 15:24:58 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
-Cc:     linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+Cc:     linux-btrfs@vger.kernel.org,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         Qu Wenruo <wqu@suse.com>
-Subject: [PATCH 02/21] btrfs: fix sub-page error handling in end_bio_subpage_eb_writepage
-Date:   Wed,  3 May 2023 17:24:22 +0200
-Message-Id: <20230503152441.1141019-3-hch@lst.de>
+Subject: [PATCH 05/21] btrfs: always read the entire extent_buffer
+Date:   Wed,  3 May 2023 17:24:25 +0200
+Message-Id: <20230503152441.1141019-6-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230503152441.1141019-1-hch@lst.de>
 References: <20230503152441.1141019-1-hch@lst.de>
@@ -46,30 +47,77 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Call btrfs_page_clear_uptodate instead of ClearPageUptodate to properly
-manage the uptodate bit for the subpage case.
+Currently read_extent_buffer_pages skips pages that are already uptodate
+when reading in an extent_buffer.  While this reduces the amount of data
+read, it increases the number of I/O operations as we now need to do
+multiple I/Os when reading an extent buffer with one or more uptodate
+pages in the middle of it.  On any modern storage device, be that hard
+drives or SSDs this actually decreases I/O performance.  Fortunately
+this case is pretty rare as the pages are always initially read together
+and then aged the same way.  Besides simplifying the code a bit as-is
+this will allow for major simplifications to the I/O completion handler
+later on.
 
-Reported-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Note that the case where all pages are uptodate is still handled by an
+optimized fast path that does not read any data from disk.
+
 Signed-off-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/extent_io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/extent_io.c | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2e0ca7e8138295..07ce8199960b6a 100644
+index 07ce8199960b6a..c2c36afb41955e 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1915,7 +1915,8 @@ static void end_bio_subpage_eb_writepage(struct btrfs_bio *bbio)
+@@ -4315,7 +4315,6 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
+ 	int locked_pages = 0;
+ 	int all_uptodate = 1;
+ 	int num_pages;
+-	unsigned long num_reads = 0;
+ 	struct btrfs_bio_ctrl bio_ctrl = {
+ 		.opf = REQ_OP_READ,
+ 		.mirror_num = mirror_num,
+@@ -4361,10 +4360,8 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
+ 	 */
+ 	for (i = 0; i < num_pages; i++) {
+ 		page = eb->pages[i];
+-		if (!PageUptodate(page)) {
+-			num_reads++;
++		if (!PageUptodate(page))
+ 			all_uptodate = 0;
+-		}
+ 	}
  
- 			if (bio->bi_status ||
- 			    test_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags)) {
--				ClearPageUptodate(page);
-+				btrfs_page_clear_uptodate(fs_info, page,
-+							  eb->start, eb->len);
- 				set_btree_ioerr(page, eb);
- 			}
+ 	if (all_uptodate) {
+@@ -4374,7 +4371,7 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
  
+ 	clear_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
+ 	eb->read_mirror = 0;
+-	atomic_set(&eb->io_pages, num_reads);
++	atomic_set(&eb->io_pages, num_pages);
+ 	/*
+ 	 * It is possible for release_folio to clear the TREE_REF bit before we
+ 	 * set io_pages. See check_buffer_tree_ref for a more detailed comment.
+@@ -4384,13 +4381,9 @@ int read_extent_buffer_pages(struct extent_buffer *eb, int wait, int mirror_num,
+ 	for (i = 0; i < num_pages; i++) {
+ 		page = eb->pages[i];
+ 
+-		if (!PageUptodate(page)) {
+-			ClearPageError(page);
+-			submit_extent_page(&bio_ctrl, page_offset(page), page,
+-					   PAGE_SIZE, 0);
+-		} else {
+-			unlock_page(page);
+-		}
++		ClearPageError(page);
++		submit_extent_page(&bio_ctrl, page_offset(page), page,
++				   PAGE_SIZE, 0);
+ 	}
+ 
+ 	submit_one_bio(&bio_ctrl);
 -- 
 2.39.2
 

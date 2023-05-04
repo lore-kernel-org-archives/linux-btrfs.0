@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6B09C77B78
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 11:04:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E007C7EE23
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 11:04:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230167AbjEDLEt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 May 2023 07:04:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39310 "EHLO
+        id S230183AbjEDLE4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 May 2023 07:04:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39314 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230183AbjEDLEl (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 07:04:41 -0400
+        with ESMTP id S229826AbjEDLEm (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 07:04:42 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 174973C3D
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 04:04:38 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95BE54EDA
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 04:04:39 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 9FA866176C
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:37 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8EBFBC433EF
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:36 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 667BA6129B
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:39 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5CEBCC433EF
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1683198277;
-        bh=uMU/BpmrKjgJLDqlj9eTIHQvSNnLweR2Z1WdEbGiuUQ=;
+        s=k20201202; t=1683198278;
+        bh=6LvE9M4jg1PtpyKkneV7Kv51VKE0GShkQFksh1Q94yU=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=EPmypvwWhkUalek52TnAP7fENk0IrO34NBg6Y9FOujQK/wKdwkzgWYp32IlJbkGEz
-         wAOnkJNVqZgKiM0fSH59j9cSyG9gCNb9fduj2KAcoup2XH+qRpvkAdjx2UJOdCQYMr
-         0nAgnA4sDyo8QLtH4T/gjrjYXMIftG8hFxZiS+tE8GNzjVPby1KEkLHbEzzCR/5JmY
-         QQR3S7Mi3/0BV08oHGu9UPlhKUuo+5SPU5FLwIJ7lWT3++jR5B6yB2RD+8LuJgAv42
-         dsqEGR41hUjR++4gDedN3nlp9pxydYE/b+XND2zxJ5RhQ3s+eu9GliPMnk0WVz0bz1
-         lTzLZb8ILAbUA==
+        b=id+v0gdAOcC8OJ9EA5fkRkgTlGzkUxSjCPIl0mYdp0o73hqOtILTqAGAdMokLe3UU
+         cw0tj3blWHjANRUA6Zo7rqQqocyvP04hbOiRSpAsZ4/yo66n4I/48p0PrXqbXscqeW
+         81laG5bvWUtQQOertnL3/JsYqlgV9lglclTTzrUcULo0w4cTgwRMXMrbceGnfOi+4m
+         rInzpJEpr6ucnq2WrCoKJRdF1NBrPPn2qG8CFfwEEJGnmNnNeuzQByUa68U0aPEXiE
+         jleon9wjXOoYbICTyLc1CWU84KkjgCKDCbEhHQDQ7OJQmprmhu/SxORmN6O9e9L5FF
+         832jZ10uOo27w==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/9] btrfs: assert proper locks are held at tree_insert_offset()
-Date:   Thu,  4 May 2023 12:04:23 +0100
-Message-Id: <19d432471a2a0c856fc1fc64a3ae683f23444148.1683196407.git.fdmanana@suse.com>
+Subject: [PATCH 8/9] btrfs: assert tree lock is held when linking free space
+Date:   Thu,  4 May 2023 12:04:25 +0100
+Message-Id: <018ffcab35457b341195411e85614029f3e25764.1683196407.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1683196407.git.fdmanana@suse.com>
 References: <cover.1683196407.git.fdmanana@suse.com>
@@ -47,85 +47,37 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-There are multiple code paths leading to tree_insert_offset(), and each
-path takes the necessary locks before tree_insert_offset() is called,
-since they do other things that require those locks to be held. This makes
-it easy to miss the locking somewhere, so make tree_insert_offset() assert
-that the required locks are being held by the calling task.
+When linking a free space entry, at link_free_space(), the caller should
+be holding the spinlock 'tree_lock' of the given btrfs_free_space_ctl
+argument, which is necessary for manipulating the red black tree of free
+space entries (done by tree_insert_offset(), which already asserts the
+lock is held) and for manipulating the 'free_space', 'free_extents',
+'discardable_extents' and 'discardable_bytes' counters of the given
+struct btrfs_free_space_ctl.
+
+So assert that the spinlock 'tree_lock' of the given btrfs_free_space_ctl
+is held by the current task. We have multiple code paths that end up
+calling link_free_space(), and all currently take the lock before calling
+it.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/free-space-cache.c | 25 +++++++++++++++++++------
- 1 file changed, 19 insertions(+), 6 deletions(-)
+ fs/btrfs/free-space-cache.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 4cdc7d857158..31d9bb958dc7 100644
+index 84e09ac50103..f5ddfb2e58a9 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -1598,12 +1598,25 @@ static inline u64 offset_to_bitmap(struct btrfs_free_space_ctl *ctl,
- 	return bitmap_start;
- }
- 
--static int tree_insert_offset(struct rb_root *root,
-+static int tree_insert_offset(struct btrfs_free_space_ctl *ctl,
-+			      struct btrfs_free_cluster *cluster,
- 			      struct btrfs_free_space *new_entry)
+@@ -1850,6 +1850,8 @@ static int link_free_space(struct btrfs_free_space_ctl *ctl,
  {
--	struct rb_node **p = &root->rb_node;
-+	struct rb_root *root;
-+	struct rb_node **p;
- 	struct rb_node *parent = NULL;
+ 	int ret = 0;
  
 +	lockdep_assert_held(&ctl->tree_lock);
 +
-+	if (cluster) {
-+		lockdep_assert_held(&cluster->lock);
-+		root = &cluster->root;
-+	} else {
-+		root = &ctl->free_space_offset;
-+	}
-+
-+	p = &root->rb_node;
-+
- 	while (*p) {
- 		struct btrfs_free_space *info;
- 
-@@ -1836,7 +1849,7 @@ static int link_free_space(struct btrfs_free_space_ctl *ctl,
- 	int ret = 0;
- 
  	ASSERT(info->bytes || info->bitmap);
--	ret = tree_insert_offset(&ctl->free_space_offset, info);
-+	ret = tree_insert_offset(ctl, NULL, info);
+ 	ret = tree_insert_offset(ctl, NULL, info);
  	if (ret)
- 		return ret;
- 
-@@ -3014,7 +3027,7 @@ static void __btrfs_return_cluster_to_free_space(
- 					entry->bytes;
- 			}
- 		}
--		tree_insert_offset(&ctl->free_space_offset, entry);
-+		tree_insert_offset(ctl, NULL, entry);
- 		rb_add_cached(&entry->bytes_index, &ctl->free_space_bytes,
- 			      entry_less);
- 	}
-@@ -3388,7 +3401,7 @@ static int btrfs_bitmap_cluster(struct btrfs_block_group *block_group,
- 	 */
- 	RB_CLEAR_NODE(&entry->bytes_index);
- 
--	ret = tree_insert_offset(&cluster->root, entry);
-+	ret = tree_insert_offset(ctl, cluster, entry);
- 	ASSERT(!ret); /* -EEXIST; Logic error */
- 
- 	trace_btrfs_setup_cluster(block_group, cluster,
-@@ -3478,7 +3491,7 @@ setup_cluster_no_bitmap(struct btrfs_block_group *block_group,
- 
- 		rb_erase(&entry->offset_index, &ctl->free_space_offset);
- 		rb_erase_cached(&entry->bytes_index, &ctl->free_space_bytes);
--		ret = tree_insert_offset(&cluster->root, entry);
-+		ret = tree_insert_offset(ctl, cluster, entry);
- 		total_size += entry->bytes;
- 		ASSERT(!ret); /* -EEXIST; Logic error */
- 	} while (node && entry != last);
 -- 
 2.35.1
 

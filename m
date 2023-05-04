@@ -2,41 +2,43 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58D66C7EE21
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 11:04:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8570EC77B78
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 11:04:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229914AbjEDLEn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 May 2023 07:04:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39374 "EHLO
+        id S230056AbjEDLEp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 May 2023 07:04:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39380 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230162AbjEDLEg (ORCPT
+        with ESMTP id S229545AbjEDLEg (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 07:04:36 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A523B19A2
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 04:04:32 -0700 (PDT)
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 701E2212B
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 04:04:34 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3D1A46129B
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 0C3016176C
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:34 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F3F6AC433D2
         for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:32 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 30A18C433D2
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1683198271;
-        bh=EGjOFHkl+N/3kWIxZlYhT0VaaVBTvY8BXBsDAEi4bRs=;
-        h=From:To:Subject:Date:From;
-        b=H1GvN6kqRhLM4er+jGfFU5IhKiWDzjAf4iDdHHkp+m1cAcsQ0wwujuRE4fHhOZNGO
-         z1jyKNTG4B4cNsaxjUgrTIeE20In2tmzBBUVKibR1awsAtoL+eOu3BxCv5dwKuHkBj
-         h8eAlR7ES79x06HrfqmIJKdbACM/DI+FUwk5HDZ3MWPxMxrDKYvo+mco6ZtXBJSfl/
-         xOqSnV2iYTRm4YjroylXWwJ2UT97MCrassRdiSL0aFQ67C4/gaVUNWSm0TBuDzZcT+
-         x1WemJKVC0F1TMvomyZhRuF76QZnuq+GgjCX6BUoXyPInc27tAFODgsMnCJc7JDw/m
-         Ryu6xA8ZuBo9A==
+        s=k20201202; t=1683198273;
+        bh=8GYL/l6+msrX/iONuyy4y/X13M4oVcbKSlSZPhhWmL8=;
+        h=From:To:Subject:Date:In-Reply-To:References:From;
+        b=hA88ebBIA8UYhTTaFbC4xLXEknlXYFvesISajh8zv478TzCHjDce7XiLFoxSmh5G6
+         TmUtNpf1czRiSWn9nLKULVUykf7aFP0IzaUOq2fbS8q+yFJoifuTWj+xF/myZhk0ES
+         s/DMx6nk/7QOqCUqKt6TV04b+AL8Pd8tcx/4ffjHcOml4TBdkCAzf3XBVfS+TPbAge
+         Tby3PWXoMuNVUrV6e9iY6nkur3zf7jAKplD4LgbHnS+qwP940WqGMxzV3eC8tMKnv/
+         YEa17wwNd9IlfIblMqE8gQkU/cwJOJmRA/br4+vmysVaaDd/EQvcMnqW6V94Ty0BGk
+         JxoN0G/UTKfNw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/9] btrfs: some free space cache fixes and updates
-Date:   Thu,  4 May 2023 12:04:17 +0100
-Message-Id: <cover.1683196407.git.fdmanana@suse.com>
+Subject: [PATCH 2/9] btrfs: avoid extra memory allocation when copying free space cache
+Date:   Thu,  4 May 2023 12:04:19 +0100
+Message-Id: <f4cb3735fa8b97e14f71ac89cce3c938f84023f6.1683196407.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1683196407.git.fdmanana@suse.com>
+References: <cover.1683196407.git.fdmanana@suse.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
@@ -45,29 +47,38 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Several updates to the free space cache code (most of it to the in memory
-data structure, shared between the free space cache and the free space
-tree). A bug fix, some cleanups, minor optimizations and adding several
-asserts to verify we are holding the necessary lock(s) when udpating the
-in memory space cache - this was motivated by an attempt to debug an
-invalid memory access when manipulating the in memory free space cache,
-as I suspected we had some code path not taking a required lock before
-manipulating the in memory red black tree of free space entries.
+At copy_free_space_cache(), we add a new entry to the block group's ctl
+before we free the entry from the temporary ctl. Adding a new entry
+requires the allocation of a new struct btrfs_free_space, so we can
+avoid a temporary extra allocation by freeing the entry from the
+temporary ctl before we add a new entry to the main ctl, which possibly
+also reduces the chances for a memory allocation failure in case of very
+high memory pressure. So just do that.
 
-Filipe Manana (9):
-  btrfs: fix space cache inconsistency after error loading it from disk
-  btrfs: avoid extra memory allocation when copying free space cache
-  btrfs: avoid searching twice for previous node when merging free space entries
-  btrfs: use precomputed end offsets at do_trimming()
-  btrfs: simplify arguments to tree_insert_offset()
-  btrfs: assert proper locks are held at tree_insert_offset()
-  btrfs: assert tree lock is held when searching for free space entries
-  btrfs: assert tree lock is held when linking free space
-  btrfs: assert tree lock is held when removing free space entries
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/free-space-cache.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
- fs/btrfs/free-space-cache.c | 111 +++++++++++++++++++++++-------------
- 1 file changed, 72 insertions(+), 39 deletions(-)
-
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index cf98a3c05480..ec53119d4cfb 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -923,10 +923,12 @@ static int copy_free_space_cache(struct btrfs_block_group *block_group,
+ 	while (!ret && (n = rb_first(&ctl->free_space_offset)) != NULL) {
+ 		info = rb_entry(n, struct btrfs_free_space, offset_index);
+ 		if (!info->bitmap) {
++			const u64 offset = info->offset;
++			const u64 bytes = info->bytes;
++
+ 			unlink_free_space(ctl, info, true);
+-			ret = btrfs_add_free_space(block_group, info->offset,
+-						   info->bytes);
+ 			kmem_cache_free(btrfs_free_space_cachep, info);
++			ret = btrfs_add_free_space(block_group, offset, bytes);
+ 		} else {
+ 			u64 offset = info->offset;
+ 			u64 bytes = ctl->unit;
 -- 
 2.35.1
 

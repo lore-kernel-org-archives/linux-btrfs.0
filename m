@@ -2,235 +2,152 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AADECC77B78
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 10:12:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EFDCBC77B7C
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 10:14:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230082AbjEDKMb (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 May 2023 06:12:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44420 "EHLO
+        id S230011AbjEDKOZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 May 2023 06:14:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45996 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230134AbjEDKMY (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 06:12:24 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 22FB84C2D
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 03:12:21 -0700 (PDT)
+        with ESMTP id S229515AbjEDKOX (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 06:14:23 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3360C2128;
+        Thu,  4 May 2023 03:14:22 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 9324663304
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 10:12:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F3B49C4339B
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 10:12:19 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 74EE661724;
+        Thu,  4 May 2023 10:14:19 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CF169C433EF;
+        Thu,  4 May 2023 10:14:18 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1683195140;
-        bh=qYI7PkIp9EgQJ/t+SGRtMJ1Yfi3gvIz/i7mZt0jagks=;
+        s=k20201202; t=1683195258;
+        bh=CyFrcoXV1ArJAmol5dgwUGVF/D8IaZ8XeL06Rqjlqhs=;
         h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=M9fAWb398McVD1ZjonXhg7zEmIKPEI12r8QVOdHRLFzjwdL7NRjnCLgD0YYhUTGBC
-         Sr2YOLjGbAN089IJ0jfxEsgnMU1IuvmvyT+LnFAz6C5FoYzZmQi9OGGX0CZi2rS/7q
-         JTTfj6EkehYijsxC58zcergdwn0fhgiKfnAClWS2nmmzoTO0oyJAH+cC5NPMACm9rh
-         C0eeqrpGxBKZkdC/hkjY8csLd83Yo8ePYJPx7x68hl51eMxlQXDDsAxDDw8CyTmTfd
-         AqZ/IXpyc+2Zv0sweS3xSQ2P5/9QjAUaGXyL6ls+l1u7MTqAwSKCxxdnrNHIsvaVfH
-         gJpFq97sOMXtw==
-Received: by mail-oo1-f49.google.com with SMTP id 006d021491bc7-5475e0147c9so81360eaf.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 May 2023 03:12:19 -0700 (PDT)
-X-Gm-Message-State: AC+VfDyr5V0jcjtKkM3VuZ1YbEVey64/wcTMmtjBOl7u7pOWpx8B96GJ
-        8E3yW7Ye8ShjOtPo980P6UHQ2Pkv+q2Nq5qYrq0=
-X-Google-Smtp-Source: ACHHUZ5XnZ5agwrCnvZmFa4wtJIk7SkPG6dU1D5awLeqDwwCynJCxw/ke6kKIiKBYP60Vk+ukn38hmpXwqYOk9Hr9ZY=
-X-Received: by 2002:a05:6808:2215:b0:38e:6933:e761 with SMTP id
- bd21-20020a056808221500b0038e6933e761mr1562778oib.6.1683195139126; Thu, 04
- May 2023 03:12:19 -0700 (PDT)
+        b=lnm8ITFfnVKUa25+2bNNRWx1SSIrGJBHGo3bw+z+tbQ0w11mgyjxer0+Ds5Fj4xmo
+         V73m9HMeVkf3KyLLwDuIdVvkxWaDlmKi/JTz4svTQG/m5A0W7jbFqGD0M2cxanqp6Z
+         E+/RvokZEDP+fuqaJWG3luLmVD1HDpfND7cZ30XopJDkhxt0WmFbOXul9LOqzLKW18
+         uQyo2FHMPoHhM6pbaYsK7JgHhRD5vRf7mwbB/Xx6IWjg77fHMrqYtlFA9o0Eqm8GQu
+         iCVFJAxDhqRA/fNM+nmtQA9pDotZNbiWwPpFc6QWqoBiQHsHLCC9p1ZqaBq9HlV943
+         g+FXVGiWqpUOg==
+Received: by mail-ot1-f52.google.com with SMTP id 46e09a7af769-6a5f6349ec3so68439a34.0;
+        Thu, 04 May 2023 03:14:18 -0700 (PDT)
+X-Gm-Message-State: AC+VfDyTNukw/bUlRSvhVa5tHLuVXWcjzMqBp/sjvDAPZPu37APwIalS
+        nLUYGAJR/T40WRE70Q6qN8foYibN36bOCjiQNpM=
+X-Google-Smtp-Source: ACHHUZ4WN8+8AQ5toPzUi6g99K87lNKXo2jfEnD4NOhv0/IfX5bGVqKPEj7uoqr8t9IZ2EHajYQUheD9mLULDcgWtZw=
+X-Received: by 2002:a05:6808:1247:b0:38b:efe8:dfa8 with SMTP id
+ o7-20020a056808124700b0038befe8dfa8mr1476886oiv.51.1683195257897; Thu, 04 May
+ 2023 03:14:17 -0700 (PDT)
 MIME-Version: 1.0
-References: <CAHhfkvwo=nmzrJSqZ2qMfF-rZB-ab6ahHnCD_sq9h4o8v+M7QQ@mail.gmail.com>
- <CAL3q7H5yKd1=WuZaU-s7hQ-MwzWONsOtVNoA6cjpLW0-3DDEEQ@mail.gmail.com>
- <CAL3q7H7FyF6YYuMbz0GTBb9G3WYxy9Pr9xQ11rde7jR3zVXuwA@mail.gmail.com>
- <ZFKAT6u7XEY1Y4yQ@hungrycats.org> <CAL3q7H4idLr3VNB_UG30BMoW9=HcZmWotgnfue4QuQtSHnGJ9w@mail.gmail.com>
- <ZFLYv8rawcgDfymY@hungrycats.org>
-In-Reply-To: <ZFLYv8rawcgDfymY@hungrycats.org>
+References: <77994dd9ede2084d45dd0a36938c67de70d8e859.1683123587.git.fdmanana@suse.com>
+ <20230504174118.4D5F.409509F4@e16-tech.com>
+In-Reply-To: <20230504174118.4D5F.409509F4@e16-tech.com>
 From:   Filipe Manana <fdmanana@kernel.org>
-Date:   Thu, 4 May 2023 11:11:43 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6jY487q9_BAgwMfCXYW0tVSL+15ZZGLykE+j-O3kxqgw@mail.gmail.com>
-Message-ID: <CAL3q7H6jY487q9_BAgwMfCXYW0tVSL+15ZZGLykE+j-O3kxqgw@mail.gmail.com>
-Subject: Re: 6.2 regression: BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET broken
-To:     Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc:     Vladimir Panteleev <git@vladimir.panteleev.md>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
+Date:   Thu, 4 May 2023 11:13:41 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H4UtPrtu4mjyF5Q1LtfGUYULZfGH4EwjXm9wdmFix_b4Q@mail.gmail.com>
+Message-ID: <CAL3q7H4UtPrtu4mjyF5Q1LtfGUYULZfGH4EwjXm9wdmFix_b4Q@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix backref walking not returning all inode refs
+To:     Wang Yugui <wangyugui@e16-tech.com>
+Cc:     linux-btrfs@vger.kernel.org, git@vladimir.panteleev.md,
+        Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 3, 2023 at 10:57=E2=80=AFPM Zygo Blaxell
-<ce3g8jdj@umail.furryterror.org> wrote:
+On Thu, May 4, 2023 at 10:41=E2=80=AFAM Wang Yugui <wangyugui@e16-tech.com>=
+ wrote:
 >
-> On Wed, May 03, 2023 at 04:56:39PM +0100, Filipe Manana wrote:
-> > On Wed, May 3, 2023 at 4:40=E2=80=AFPM Zygo Blaxell
-> > <ce3g8jdj@umail.furryterror.org> wrote:
-> > >
-> > > On Wed, May 03, 2023 at 01:49:16PM +0100, Filipe Manana wrote:
-> > > > On Wed, May 3, 2023 at 1:37=E2=80=AFPM Filipe Manana <fdmanana@kern=
-el.org> wrote:
-> > > > >
-> > > > > On Wed, May 3, 2023 at 1:33=E2=80=AFPM Vladimir Panteleev
-> > > > > <git@vladimir.panteleev.md> wrote:
-> > > > > >
-> > > > > > Hi,
-> > > > > >
-> > > > > > Commit 6ce6ba534418132f4c727d5707fe2794c797299c appears to have=
- broken
-> > > > > > the BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET flag to
-> > > > > > BTRFS_IOC_LOGICAL_INO_V2. The ioctl now always seems to return =
-zero
-> > > > > > inodes with the flag, if the same happened without the flag, th=
-us
-> > > > > > making it not very useful.
-> > > > > >
-> > > > > > Context: I maintain btdu, a disk usage profiler for btrfs. It u=
-ses
-> > > > > > BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET to help users estimate the=
- amount
-> > > > > > of space wasted by bookend extents, and identify files / applic=
-ations
-> > > > > > / IO patterns which create excessive amounts of them.
-> > > > >
-> > > > > Are you able to apply and test a kernel patch?
-> > > > >
-> > > > > If so, try the following one (also at:
-> > > > > https://gist.github.com/fdmanana/9ae7f6c62779aacf4bfd3b155d175792=
-)
-> > > > >
-> > > > > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> > > > > index e54f0884802a..c4c5784e897a 100644
-> > > > > --- a/fs/btrfs/backref.c
-> > > > > +++ b/fs/btrfs/backref.c
-> > > > > @@ -45,7 +45,8 @@ static int check_extent_in_eb(struct
-> > > > > btrfs_backref_walk_ctx *ctx,
-> > > > >         int root_count;
-> > > > >         bool cached;
-> > > > >
-> > > > > -       if (!btrfs_file_extent_compression(eb, fi) &&
-> > > > > +       if (!ctx->ignore_extent_item_pos &&
-> > > >
-> > > > This misses a:
-> > > >
-> > > > .. && ctx->extent_item_pos > 0 &&
-> > >
-> > > Ummm...why?
+> Hi,
+>
+> > From: Filipe Manana <fdmanana@suse.com>
 > >
-> > Because if it's 0 it will trigger an underflow at check_extent_in_eb():
+> > When using the logical to ino ioctl v2, if the flag to ignore offsets o=
+f
+> > file extent items (BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET) is given, the
+> > backref walking code ends up not returning references for all file offs=
+ets
+> > of an inode that point to the given logical bytenr. This happens since
+> > kernel 6.2, commit 6ce6ba534418 ("btrfs: use a single argument for exte=
+nt
+> > offset in backref walking functions"), as it mistakenly skipped the sea=
+rch
+> > for file extent items in a leaf that point to the target extent if that
+> > flag is given. Instead it should only skip the filtering done by
+> > check_extent_in_eb() - that is, it should not avoid the calls to that
+> > function.
 > >
-> > offset +=3D ctx->extent_item_pos - data_offset;
-> >
-> > if the file extent item's data offset is > 0.
-> > So the filtering must happen only if the offset is not zero, and it was=
- computed
-> > earlier at iterate_inodes_from_logical().
-> >
-> > > With IGNORE_OFFSET set, we want to ignore the offset on the candidate
-> > > matching extent and on the original search bytenr, so we get matches =
-in
-> > > cases where the search bytenr happens to be at offset 0 in the extent=
-.
-> >
-> > And that's what happens with the patch.
+> > So fix this by always calling check_extent_in_eb() and have this functi=
+on
+> > do the filtering only if an extent offset is given and the flag to igno=
+re
+> > offsets is not set.
+> > Fixes: 6ce6ba534418 ("btrfs: use a single argument for extent offset in=
+ backref walking functions")
+> > Reported-by: Vladimir Panteleev <git@vladimir.panteleev.md>
+> > Link: https://lore.kernel.org/linux-btrfs/CAHhfkvwo=3DnmzrJSqZ2qMfF-rZB=
+-ab6ahHnCD_sq9h4o8v+M7QQ@mail.gmail.com/
+> > Tested-by: Vladimir Panteleev <git@vladimir.panteleev.md>
+> > CC: stable@vger.kernel.org # 6.2+
+> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 >
-> That's true, but the real reason why it works for the IGNORE_OFFSET case
-> is that I misread the condition:
->
->         if (!ctx->ignore_extent_item_pos &&
->                 // nothing else matters
->                 // because !ctx->ignore_extent_item_pos is false,
->                 // so the rest of the && aren't evaluated, or the
->                 // if true branch
->
-> so the rest of the code carries on using the extent's bytenr as 'offset'.
->
-> The true branch of the 'if' is only relevant if we are _not_ ignoring
-> the offset, since that is where the offset gets checked against the
-> file extent item.  In that case, the target block could be on either
-> side of the file extent item's reference range (below data_offset,
-> or above data_offset + data_length) as well as inside the range.
-> The outside-the-range case is handled here:
->
->                 data_offset =3D btrfs_file_extent_offset(eb, fi);
->
->                 if (ctx->extent_item_pos < data_offset ||
->                     ctx->extent_item_pos >=3D data_offset + data_len)
->                         return 1;
->
-> so we don't get to the line you mentioned:
->
->         offset +=3D ctx->extent_item_pos - data_offset;
+> fstests(btrfs/299) will fail with this patch.
 
-Yes.
-I realized that later and left tests running overnight after removing
-that and integrating Vladimir's patch.
-
-I think I was originally confused by looking at the old code where
-there was an "extent_item_pos" which was a u64 pointer in some
-functions and a plain u64 in others.
-
-I removed it from v2.
-
-I'm also writing a test case for fstests to exercise the logical to
-ino ioctl, to cover these cases and many others, as unfortunately we
-don't have any coverage for it in fstests.
-
+Yes, I noticed it later, and it is fixed in v2.
 Thanks.
 
 >
-> ctx->extent_item_pos >=3D data_offset and
-> ctx->extent_item_pos < data_offset + data_len, so
-> offset + ctx->extent_item_pos - data_offset must be within the extent
-> (assuming the referencing file_extent_item isn't busted).
+> Best Regards
+> Wang Yugui (wangyugui@e16-tech.com)
+> 2023/05/04
 >
-> > Any file extent item that points to the target bytenr, will be
-> > considered when the ignore flag is given.
+> > ---
+> >  fs/btrfs/backref.c | 15 +++++++--------
+> >  1 file changed, 7 insertions(+), 8 deletions(-)
 > >
-> > > I think your first patch was the better one.  What am I missing?
+> > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+> > index e54f0884802a..8e61be3fe9a8 100644
+> > --- a/fs/btrfs/backref.c
+> > +++ b/fs/btrfs/backref.c
+> > @@ -45,7 +45,9 @@ static int check_extent_in_eb(struct btrfs_backref_wa=
+lk_ctx *ctx,
+> >       int root_count;
+> >       bool cached;
 > >
-> > I think the above explains it.
-> >
-> > >
-> > > > I've updated the gist with it:
-> > > > https://gist.githubusercontent.com/fdmanana/9ae7f6c62779aacf4bfd3b1=
-55d175792/raw/3f41c8486eb73a038f026c8bfe767bd763a016c9/logical_ino2_fix.pat=
-ch
-> > > >
-> > > > Thanks.
-> > > >
-> > > > > +           !btrfs_file_extent_compression(eb, fi) &&
-> > > > >             !btrfs_file_extent_encryption(eb, fi) &&
-> > > > >             !btrfs_file_extent_other_encoding(eb, fi)) {
-> > > > >                 u64 data_offset;
-> > > > > @@ -552,13 +553,10 @@ static int add_all_parents(struct
-> > > > > btrfs_backref_walk_ctx *ctx,
-> > > > >                                 count++;
-> > > > >                         else
-> > > > >                                 goto next;
-> > > > > -                       if (!ctx->ignore_extent_item_pos) {
-> > > > > -                               ret =3D check_extent_in_eb(ctx, &=
-key,
-> > > > > eb, fi, &eie);
-> > > > > -                               if (ret =3D=3D BTRFS_ITERATE_EXTE=
-NT_INODES_STOP ||
-> > > > > -                                   ret < 0)
-> > > > > -                                       break;
-> > > > > -                       }
-> > > > > -                       if (ret > 0)
-> > > > > +                       ret =3D check_extent_in_eb(ctx, &key, eb,=
+> > -     if (!btrfs_file_extent_compression(eb, fi) &&
+> > +     if (!ctx->ignore_extent_item_pos &&
+> > +         ctx->extent_item_pos > 0 &&
+> > +         !btrfs_file_extent_compression(eb, fi) &&
+> >           !btrfs_file_extent_encryption(eb, fi) &&
+> >           !btrfs_file_extent_other_encoding(eb, fi)) {
+> >               u64 data_offset;
+> > @@ -552,13 +554,10 @@ static int add_all_parents(struct btrfs_backref_w=
+alk_ctx *ctx,
+> >                               count++;
+> >                       else
+> >                               goto next;
+> > -                     if (!ctx->ignore_extent_item_pos) {
+> > -                             ret =3D check_extent_in_eb(ctx, &key, eb,=
  fi, &eie);
-> > > > > +                       if (ret =3D=3D BTRFS_ITERATE_EXTENT_INODE=
-S_STOP || ret < 0)
-> > > > > +                               break;
-> > > > > +                       else if (ret > 0)
-> > > > >                                 goto next;
-> > > > >                         ret =3D ulist_add_merge_ptr(parents, eb->=
-start,
-> > > > >                                                   eie, (void **)&=
-old, GFP_NOFS);
-> > > > >
-> > > > > Thanks.
-> > > > > >
-> > > > > > Thanks!
+> > -                             if (ret =3D=3D BTRFS_ITERATE_EXTENT_INODE=
+S_STOP ||
+> > -                                 ret < 0)
+> > -                                     break;
+> > -                     }
+> > -                     if (ret > 0)
+> > +                     ret =3D check_extent_in_eb(ctx, &key, eb, fi, &ei=
+e);
+> > +                     if (ret =3D=3D BTRFS_ITERATE_EXTENT_INODES_STOP |=
+| ret < 0)
+> > +                             break;
+> > +                     else if (ret > 0)
+> >                               goto next;
+> >                       ret =3D ulist_add_merge_ptr(parents, eb->start,
+> >                                                 eie, (void **)&old, GFP=
+_NOFS);
+> > --
+> > 2.35.1
+>
+>

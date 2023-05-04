@@ -2,40 +2,40 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8570EC77B78
-	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 11:04:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E171C7EE26
+	for <linux-btrfs@archiver.kernel.org>; Thu,  4 May 2023 11:04:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230056AbjEDLEp (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 4 May 2023 07:04:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39380 "EHLO
+        id S230124AbjEDLEr (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 4 May 2023 07:04:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39398 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229545AbjEDLEg (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 07:04:36 -0400
+        with ESMTP id S230169AbjEDLEi (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 May 2023 07:04:38 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 701E2212B
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 04:04:34 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3EDE54EF1
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 04:04:36 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 0C3016176C
+        by dfw.source.kernel.org (Postfix) with ESMTPS id CE131617BE
+        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:35 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C03D3C4339B
         for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:34 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F3F6AC433D2
-        for <linux-btrfs@vger.kernel.org>; Thu,  4 May 2023 11:04:32 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1683198273;
-        bh=8GYL/l6+msrX/iONuyy4y/X13M4oVcbKSlSZPhhWmL8=;
+        s=k20201202; t=1683198275;
+        bh=uzLa4oy/9aDF2XBfpYIetgYL3KUdJwxmMH5y8gabBx4=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=hA88ebBIA8UYhTTaFbC4xLXEknlXYFvesISajh8zv478TzCHjDce7XiLFoxSmh5G6
-         TmUtNpf1czRiSWn9nLKULVUykf7aFP0IzaUOq2fbS8q+yFJoifuTWj+xF/myZhk0ES
-         s/DMx6nk/7QOqCUqKt6TV04b+AL8Pd8tcx/4ffjHcOml4TBdkCAzf3XBVfS+TPbAge
-         Tby3PWXoMuNVUrV6e9iY6nkur3zf7jAKplD4LgbHnS+qwP940WqGMxzV3eC8tMKnv/
-         YEa17wwNd9IlfIblMqE8gQkU/cwJOJmRA/br4+vmysVaaDd/EQvcMnqW6V94Ty0BGk
-         JxoN0G/UTKfNw==
+        b=iDNbJKXUky9zwrhQLN9QCH/ygd4UA9OqaU004TraqLqVV3KAKxHqruYPh5je0YZ8U
+         NXAChSLuPTUo73Ydzlf8vAnme3mtewAR/5f8d7KFD8w+b/WhYd+TFa0Hct43uRRhEE
+         bAv2qnwOG6H6m8O0u+fYxYZ8EdVULSQXPuTrgNrW36y6hwnr4BUmgf44w1AcgEjymZ
+         3P/KXeTGIOgB1HJehtCU0wW27HMfGASfk/zEI6HcB45XfiRVR1Kf2LAe7x64RPdM2i
+         9I3N194pj0OZVslAZ0wL7GcVZORj+1s3HKZaQzmHAOGutzZR0naJkQ9+RtC5I9Quay
+         8P2FCFy7I499w==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/9] btrfs: avoid extra memory allocation when copying free space cache
-Date:   Thu,  4 May 2023 12:04:19 +0100
-Message-Id: <f4cb3735fa8b97e14f71ac89cce3c938f84023f6.1683196407.git.fdmanana@suse.com>
+Subject: [PATCH 4/9] btrfs: use precomputed end offsets at do_trimming()
+Date:   Thu,  4 May 2023 12:04:21 +0100
+Message-Id: <0a9ca970dbc9d8f3109c0ec25cae3227f4cc7e4b.1683196407.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1683196407.git.fdmanana@suse.com>
 References: <cover.1683196407.git.fdmanana@suse.com>
@@ -47,38 +47,29 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-At copy_free_space_cache(), we add a new entry to the block group's ctl
-before we free the entry from the temporary ctl. Adding a new entry
-requires the allocation of a new struct btrfs_free_space, so we can
-avoid a temporary extra allocation by freeing the entry from the
-temporary ctl before we add a new entry to the main ctl, which possibly
-also reduces the chances for a memory allocation failure in case of very
-high memory pressure. So just do that.
+The are two computations of end offsets at do_trimming() that are not
+necessary, as they were previously computed and stored in local const
+variables. So just use the variables instead, to make the source code
+shorter and easier to read.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/free-space-cache.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+ fs/btrfs/free-space-cache.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index cf98a3c05480..ec53119d4cfb 100644
+index 7d842d356d9f..b16ed01c76ff 100644
 --- a/fs/btrfs/free-space-cache.c
 +++ b/fs/btrfs/free-space-cache.c
-@@ -923,10 +923,12 @@ static int copy_free_space_cache(struct btrfs_block_group *block_group,
- 	while (!ret && (n = rb_first(&ctl->free_space_offset)) != NULL) {
- 		info = rb_entry(n, struct btrfs_free_space, offset_index);
- 		if (!info->bitmap) {
-+			const u64 offset = info->offset;
-+			const u64 bytes = info->bytes;
-+
- 			unlink_free_space(ctl, info, true);
--			ret = btrfs_add_free_space(block_group, info->offset,
--						   info->bytes);
- 			kmem_cache_free(btrfs_free_space_cachep, info);
-+			ret = btrfs_add_free_space(block_group, offset, bytes);
- 		} else {
- 			u64 offset = info->offset;
- 			u64 bytes = ctl->unit;
+@@ -3677,7 +3677,7 @@ static int do_trimming(struct btrfs_block_group *block_group,
+ 		__btrfs_add_free_space(block_group, reserved_start,
+ 				       start - reserved_start,
+ 				       reserved_trim_state);
+-	if (start + bytes < reserved_start + reserved_bytes)
++	if (end < reserved_end)
+ 		__btrfs_add_free_space(block_group, end, reserved_end - end,
+ 				       reserved_trim_state);
+ 	__btrfs_add_free_space(block_group, start, bytes, trim_state);
 -- 
 2.35.1
 

@@ -2,40 +2,42 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41B5FC7EE24
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 16:08:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E077BC7EE22
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 16:08:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232840AbjEHQIv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 May 2023 12:08:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46358 "EHLO
+        id S233098AbjEHQIx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 May 2023 12:08:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46352 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232287AbjEHQIt (ORCPT
+        with ESMTP id S230414AbjEHQIt (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 12:08:49 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AEB8E658C
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 721104EE5
         for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2023 09:08:48 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:In-Reply-To:References;
-        bh=hSxFG7KbS5+bUhMU5o5AHbwxV3oNdUKEI09g2VXXyLQ=; b=NHrmZNLEcj/wdH6qoC4wzl7Xvw
-        wVxQYaqxI8V83eCD6I9yJee7YIYB1GtmLchhUcvZ1HyFKmIqlYN5Kr4P8WOaLEwXIWKR9GqWC+5Fs
-        EFzXyCLOPdM1BczqEXXsDwAfhfDCUeTiLoZEVrKN+aAMJNaOvINoST+OZ4/5LvEF9agMJdB0+4tD7
-        iISM/JB3JaZIUajR4VueCNI266vCsdHEux7hjiux0on1IojNg2+bLq4AYWFGRTg84PICymY+HOl2V
-        IOPCTZu053C0SVYQdF2lPkbVkRbBJI0YeDhCUfQ7N+1o+fW085gKWrbGHPB6SPiPNIRv6JVEnGXeb
-        o4CrHhnQ==;
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=4of+mpuzF0uqA1N81tVzZ0M4R7lBJ+9pGzXtukj9jgM=; b=soP2MZX9sYpv0qYEC5KZiV9BKg
+        VhbYKtJVCh6eydRh+AJYbGJWlxfApFNN/7zwF2sPbKVtSWgJJkW5iHvJMgycZXGQTBPglnjPLKtry
+        aaRI96EcDpVZbUhkNvO3sIufxqRN/N1qa+pX/dKKTbQUfI2DsN5lQG8dMzal2nzEdtSCj0ppTjES/
+        MgQ8Y6dA121mxaulwbDsDuXbYKlaL4rYqG7jgKz9FbMXk/hGgJCC6ZMgIt6HLUj4vaHL3ShdsOMGs
+        tuvkK1ZmseoBS+7f4cO2vhiFM+Ug74qqYqyzchW3dtfXZ5GV165td4y2jw/OE4B4NLSCBmAMmsUMe
+        2L0tbruw==;
 Received: from [208.98.210.70] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pw3Pn-000vyo-2W;
-        Mon, 08 May 2023 16:08:43 +0000
+        id 1pw3Pq-000w00-1F;
+        Mon, 08 May 2023 16:08:46 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: add an ordered_extent pointer to struct btrfs_bio
-Date:   Mon,  8 May 2023 09:08:22 -0700
-Message-Id: <20230508160843.133013-1-hch@lst.de>
+Subject: [PATCH 04/21] btrfs: merge the two calls to btrfs_add_ordered_extent in run_delalloc_nocow
+Date:   Mon,  8 May 2023 09:08:26 -0700
+Message-Id: <20230508160843.133013-5-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230508160843.133013-1-hch@lst.de>
+References: <20230508160843.133013-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
@@ -43,32 +45,79 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi all,
+Refactor run_delalloc_nocow a little bit so that there is only a single
+call to btrfs_add_ordered_extent instead of two.
 
-this series adds a pointer to the ordered_extent to struct btrfs_bio to
-reduce the repeated lookups in the rbtree.  For non-buffered I/Os the
-I/O will now never do a lookup of the ordered extent tree (other places
-like waiting for I/O still do).  For buffered I/O there is still a lookup
-as the writepages code is structured in a way that makes it impossible
-to just pass the ordered_extent down.  With some of the work from Goldwyn
-this should eventually become possible as well, though.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/inode.c | 37 +++++++++++++++----------------------
+ 1 file changed, 15 insertions(+), 22 deletions(-)
 
-Note that the first patch from Johannes is included here to avoid a
-conflict.  It really should be merged independently and ASAP.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4f9ef5ca385650..f0372a01c12423 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2145,6 +2145,7 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 		u64 ram_bytes;
+ 		u64 nocow_end;
+ 		int extent_type;
++		bool is_prealloc;
+ 
+ 		nocow = false;
+ 
+@@ -2283,8 +2284,8 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 		}
+ 
+ 		nocow_end = cur_offset + nocow_args.num_bytes - 1;
+-
+-		if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
++		is_prealloc = extent_type == BTRFS_FILE_EXTENT_PREALLOC;
++		if (is_prealloc) {
+ 			u64 orig_start = found_key.offset - nocow_args.extent_offset;
+ 			struct extent_map *em;
+ 
+@@ -2300,29 +2301,21 @@ static noinline int run_delalloc_nocow(struct btrfs_inode *inode,
+ 				goto error;
+ 			}
+ 			free_extent_map(em);
+-			ret = btrfs_add_ordered_extent(inode,
+-					cur_offset, nocow_args.num_bytes,
+-					nocow_args.num_bytes,
+-					nocow_args.disk_bytenr,
+-					nocow_args.num_bytes, 0,
+-					1 << BTRFS_ORDERED_PREALLOC,
+-					BTRFS_COMPRESS_NONE);
+-			if (ret) {
++		}
++
++		ret = btrfs_add_ordered_extent(inode, cur_offset,
++				nocow_args.num_bytes, nocow_args.num_bytes,
++				nocow_args.disk_bytenr, nocow_args.num_bytes, 0,
++				is_prealloc ?
++					(1 << BTRFS_ORDERED_PREALLOC) :
++					(1 << BTRFS_ORDERED_NOCOW),
++				BTRFS_COMPRESS_NONE);
++		if (ret) {
++			if (is_prealloc) {
+ 				btrfs_drop_extent_map_range(inode, cur_offset,
+ 							    nocow_end, false);
+-				goto error;
+ 			}
+-		} else {
+-			ret = btrfs_add_ordered_extent(inode, cur_offset,
+-						       nocow_args.num_bytes,
+-						       nocow_args.num_bytes,
+-						       nocow_args.disk_bytenr,
+-						       nocow_args.num_bytes,
+-						       0,
+-						       1 << BTRFS_ORDERED_NOCOW,
+-						       BTRFS_COMPRESS_NONE);
+-			if (ret)
+-				goto error;
++			goto error;
+ 		}
+ 
+ 		if (nocow) {
+-- 
+2.39.2
 
-Diffstat:
- fs/btrfs/bio.c               |   87 ++++++++++++-------
- fs/btrfs/bio.h               |   19 +---
- fs/btrfs/compression.c       |   40 +++------
- fs/btrfs/compression.h       |    5 -
- fs/btrfs/extent_io.c         |   29 ++----
- fs/btrfs/file-item.c         |   52 -----------
- fs/btrfs/inode.c             |  128 +++++++++++++++--------------
- fs/btrfs/ordered-data.c      |  188 +++++++++++++++++++++++--------------------
- fs/btrfs/ordered-data.h      |   10 +-
- fs/btrfs/relocation.c        |   35 +++-----
- fs/btrfs/relocation.h        |    2 
- fs/btrfs/zoned.c             |   13 --
- fs/btrfs/zoned.h             |    5 -
- include/trace/events/btrfs.h |   29 ++++++
- 14 files changed, 314 insertions(+), 328 deletions(-)

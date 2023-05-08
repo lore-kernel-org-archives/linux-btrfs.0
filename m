@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C35CC7EE22
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 97EF8C7EE24
 	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 16:09:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233775AbjEHQJM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 May 2023 12:09:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46538 "EHLO
+        id S233391AbjEHQJN (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 May 2023 12:09:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46558 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233391AbjEHQI4 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 12:08:56 -0400
+        with ESMTP id S233424AbjEHQI5 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 12:08:57 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D40B365AB
-        for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2023 09:08:54 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 75B8C658E
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2023 09:08:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=AePrBrt5hj8Dih6JViE7MLHGtyPDkRI/jp1GQbGbY4w=; b=BvN6rvBFwtt8GIjK4NHIldfS//
-        AuCkSi3gC5ajlc5iOUtV7wClEuHW3leBGfr2dk5+5DeZlEanNcI4EwT/8TtLVZ3f7ug+RhQ33wG56
-        uqoJNBseUB4W1Vh2RY2mD26RJfOKIYrtiF+7s+bi3SgxkmIDvox333Y9IqR/owhTcAOAQnksdu99i
-        eKNqd0WAnixd23uH4uVCRD3o+thCleeVlVNBY6snJZ0d+FKxuiH70EQriff0zxgfpqYGvA6UtLjfM
-        A+qh70kOu0g5CBa6nt2fZXo74tpMLRHBai9sxgZ10lC0BY0ASfqRELU59WU5uFf/rMnFtAKOJkXLY
-        NLSOXl7Q==;
+        bh=OqqypU+aKqc926oUL6ED0h5SbV6n+oqGaeXw5yBTkos=; b=bZA2V5n+ouPlg1EqRYhg+xKky2
+        8c+nFK9w37ZzZVMlI4w1jLh4sARN91RoXoSLsVuPy2Tp4I8mGfr8qUPKOS/f7ykf/rrE9UCzQk1Mw
+        h2/Kng+Cc0BZbr66eiBE/oe1z3ZtK5mZcwn4KR66Kr1vwB+U2UjinN9N1RhW4o36AIjS1CRASwQcQ
+        fn1eJ7LEV2ud6aBz/U0lEo2gQcmDlRwd2biNowfMf13VDndmvSHgbAJg9YGYjBkAb5h2NRajjwkdT
+        JEoiLGACpxupSL8qAzpIC8oCEH1gsSIhvHtWcRd9VEaNxIOq7JltVvBqQx42unq+fl/o+Te2yO4kH
+        XvNaW8Yw==;
 Received: from [208.98.210.70] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pw3Pw-000w3B-36;
-        Mon, 08 May 2023 16:08:53 +0000
+        id 1pw3Py-000w3n-0u;
+        Mon, 08 May 2023 16:08:54 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 14/21] btrfs: use bbio->ordered for zone append completions
-Date:   Mon,  8 May 2023 09:08:36 -0700
-Message-Id: <20230508160843.133013-15-hch@lst.de>
+Subject: [PATCH 16/21] btrfs: factor out a btrfs_queue_ordered_fn helper
+Date:   Mon,  8 May 2023 09:08:38 -0700
+Message-Id: <20230508160843.133013-17-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230508160843.133013-1-hch@lst.de>
 References: <20230508160843.133013-1-hch@lst.de>
@@ -45,77 +45,66 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Use the ordered_extent pointer in the btrfs_bio instead of looking it
-up manually.
+Factor out a helper to queue up an ordered_extent completion in a work
+queue.  This new helper will later be used complete an ordered_extent
+without first doing a lookup.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/bio.c   |  3 ++-
- fs/btrfs/zoned.c | 13 -------------
- fs/btrfs/zoned.h |  5 -----
- 3 files changed, 2 insertions(+), 19 deletions(-)
+ fs/btrfs/ordered-data.c | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index a1ad9aba2f7fc2..d697c4c9ef3c73 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -376,7 +376,8 @@ static void btrfs_simple_end_io(struct bio *bio)
- 		queue_work(btrfs_end_io_wq(fs_info, bio), &bbio->end_io_work);
- 	} else {
- 		if (bio_op(bio) == REQ_OP_ZONE_APPEND)
--			btrfs_record_physical_zoned(bbio);
-+			bbio->ordered->physical =
-+				bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT;
- 		btrfs_orig_bbio_end_io(bbio);
- 	}
- }
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index e3fe02aae641f3..5882eca045a9d4 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -1675,19 +1675,6 @@ bool btrfs_use_zone_append(struct btrfs_bio *bbio)
- 	return ret;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 36e4d2517b28fd..f474585e6234fe 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -345,6 +345,17 @@ static bool can_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+ 	return true;
  }
  
--void btrfs_record_physical_zoned(struct btrfs_bio *bbio)
--{
--	const u64 physical = bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT;
--	struct btrfs_ordered_extent *ordered;
--
--	ordered = btrfs_lookup_ordered_extent(bbio->inode, bbio->file_offset);
--	if (WARN_ON(!ordered))
--		return;
--
--	ordered->physical = physical;
--	btrfs_put_ordered_extent(ordered);
--}
--
- void btrfs_rewrite_logical_zoned(struct btrfs_ordered_extent *ordered)
++static void btrfs_queue_ordered_fn(struct btrfs_ordered_extent *ordered)
++{
++	struct btrfs_inode *inode = BTRFS_I(ordered->inode);
++	struct btrfs_fs_info *fs_info = inode->root->fs_info;
++	struct btrfs_workqueue *wq = btrfs_is_free_space_inode(inode) ?
++		fs_info->endio_freespace_worker : fs_info->endio_write_workers;
++
++	btrfs_init_work(&ordered->work, finish_ordered_fn, NULL, NULL);
++	btrfs_queue_work(wq, &ordered->work);
++}
++
+ /*
+  * Mark all ordered extents io inside the specified range finished.
+  *
+@@ -363,18 +374,11 @@ void btrfs_mark_ordered_io_finished(struct btrfs_inode *inode,
+ 				    u64 num_bytes, bool uptodate)
  {
- 	struct btrfs_inode *inode = BTRFS_I(ordered->inode);
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index c0570d35fea291..f01d096f87d59b 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -56,7 +56,6 @@ void btrfs_redirty_list_add(struct btrfs_transaction *trans,
- 			    struct extent_buffer *eb);
- void btrfs_free_redirty_list(struct btrfs_transaction *trans);
- bool btrfs_use_zone_append(struct btrfs_bio *bbio);
--void btrfs_record_physical_zoned(struct btrfs_bio *bbio);
- void btrfs_rewrite_logical_zoned(struct btrfs_ordered_extent *ordered);
- bool btrfs_check_meta_write_pointer(struct btrfs_fs_info *fs_info,
- 				    struct extent_buffer *eb,
-@@ -186,10 +185,6 @@ static inline bool btrfs_use_zone_append(struct btrfs_bio *bbio)
- 	return false;
- }
+ 	struct btrfs_ordered_inode_tree *tree = &inode->ordered_tree;
+-	struct btrfs_fs_info *fs_info = inode->root->fs_info;
+-	struct btrfs_workqueue *wq;
+ 	struct rb_node *node;
+ 	struct btrfs_ordered_extent *entry = NULL;
+ 	unsigned long flags;
+ 	u64 cur = file_offset;
  
--static inline void btrfs_record_physical_zoned(struct btrfs_bio *bbio)
--{
--}
+-	if (btrfs_is_free_space_inode(inode))
+-		wq = fs_info->endio_freespace_worker;
+-	else
+-		wq = fs_info->endio_write_workers;
 -
- static inline void btrfs_rewrite_logical_zoned(
- 				struct btrfs_ordered_extent *ordered) { }
+ 	spin_lock_irqsave(&tree->lock, flags);
+ 	while (cur < file_offset + num_bytes) {
+ 		u64 entry_end;
+@@ -429,8 +433,7 @@ void btrfs_mark_ordered_io_finished(struct btrfs_inode *inode,
  
+ 		if (can_finish_ordered_extent(entry, page, cur, len, uptodate)) {
+ 			spin_unlock_irqrestore(&tree->lock, flags);
+-			btrfs_init_work(&entry->work, finish_ordered_fn, NULL, NULL);
+-			btrfs_queue_work(wq, &entry->work);
++			btrfs_queue_ordered_fn(entry);
+ 			spin_lock_irqsave(&tree->lock, flags);
+ 		}
+ 		cur += len;
 -- 
 2.39.2
 

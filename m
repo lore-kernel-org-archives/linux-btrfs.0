@@ -2,179 +2,81 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA1DAC77B7F
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 11:52:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EBB7C77B75
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 14:58:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236209AbjEHLwn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 May 2023 07:52:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51596 "EHLO
+        id S234285AbjEHO6q (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 May 2023 10:58:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60738 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236293AbjEHLw3 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 07:52:29 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00EE1473E8;
-        Mon,  8 May 2023 04:51:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com; s=s31663417;
-        t=1683546666; i=quwenruo.btrfs@gmx.com;
-        bh=RbOR+wvnNGsRTrnJPjo+92s5OuOpCNmax3K4T/qjYRE=;
-        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
-        b=olA1a/UzzXwuS42+1ShDixr5TXbUK8Qv3Z+qTOKdhTdgyknr/EJT5swEyPwXWlbTF
-         HYQyrjZ6QJmoiKBtLm/W4HEeuH61uCiU5VHo2gz+trnuCg/n9HD2Chr9PgibAMBBOl
-         45ztlDoFYJYW5huxVkDJ3IbDgeQEWqENhgLmdN22mQqEoFG0/p/g6VIQqQmYbcfayB
-         ho2WIw+pAPOZSxWOY/ZEeBwGpYga5wi8e3fvDeiV/EZ6TkVPycW85aCYn9his+u9Gb
-         5R5s9k22MX7yV67E9fg8ZQvcJmgOSOHFu+UM/piJCDG1siZ7OGM1pes543o0lrcmHM
-         xgW/hZ7QjdEMQ==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MWzjt-1pgmzA1s2j-00XOdC; Mon, 08
- May 2023 13:51:06 +0200
-Message-ID: <7eaf251e-2369-1a07-a81f-87e4da8b6780@gmx.com>
-Date:   Mon, 8 May 2023 19:50:55 +0800
+        with ESMTP id S230141AbjEHO6o (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 10:58:44 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 07AE4A3
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2023 07:58:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=+mdXbOY2x3pJBV86qK/GMt0Wc7SuGlS+Wcf+r6ukRXQ=; b=Guhe2rm2Df5H9XGke+fI5kiAz5
+        7Vm6gKkfmp0G9ceugMuvBLmQMd6LN1uG+UoOndsg0cwrzV0bv0rGYjsK7GiBfLR+Er/kCwYZFThMd
+        M9DquOvhh1I25uFDya76Rss0s6SreZ8zticfp9zXFGM08u+hvSuDzgExGscjrqeDsIa4T7PfGHKQ0
+        ogs6xQ58ym2fKVQwXynGvctS+3EAw4VhF3gKbqGaLsJ4KvFzB8wvAnCB3dXEq0MZ4uGOozPtEHiI/
+        Yo3bPoD3tGhYqlwSYaL06Q5Kg/9AFJDkDO70fBq7TozRUB4beVkN2MD8z2CSVyMtnw2i5OxiU6vRX
+        fJOTXbAA==;
+Received: from [208.98.210.70] (helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1pw2K1-000ogO-0B;
+        Mon, 08 May 2023 14:58:41 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>
+Cc:     linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM)
+Subject: [PATCH 1/3] btrfs: zero the buffer before marking it dirty in btrfs_redirty_list_add
+Date:   Mon,  8 May 2023 07:58:37 -0700
+Message-Id: <20230508145839.43725-2-hch@lst.de>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230508145839.43725-1-hch@lst.de>
+References: <20230508145839.43725-1-hch@lst.de>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.1
-Subject: Re: [PATCH 1/2] btrfs: Introduce the virtual_fsid feature
-Content-Language: en-US
-To:     Anand Jain <anand.jain@oracle.com>, dsterba@suse.cz
-Cc:     "Guilherme G. Piccoli" <gpiccoli@igalia.com>,
-        linux-btrfs@vger.kernel.org, clm@fb.com, josef@toxicpanda.com,
-        dsterba@suse.com, linux-fsdevel@vger.kernel.org,
-        kernel@gpiccoli.net, kernel-dev@igalia.com, vivek@collabora.com,
-        ludovico.denittis@collabora.com, johns@valvesoftware.com,
-        nborisov@suse.com
-References: <20230504170708.787361-1-gpiccoli@igalia.com>
- <20230504170708.787361-2-gpiccoli@igalia.com>
- <2892ff0d-9225-07b7-03e4-a3c96d0bff59@gmx.com>
- <20230505133810.GO6373@twin.jikos.cz>
- <9839c86a-10e9-9c3c-0ddb-fc8011717221@oracle.com>
-From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
-In-Reply-To: <9839c86a-10e9-9c3c-0ddb-fc8011717221@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:kerb16AerRTbKT78OBETkkwJmsnftnRH6x+4gZHI4Gnri3+oHTL
- JOwL49fC7KByRCMo7x94OXMvtaOJ10EsLSmuGGOYCnZcGwFTME60DzI9mWGUg2FQ7evE0my
- XIlRa01yiu/8mT2PnA3jjlq8rXXnfmRCunV3oP2jpBzA22NkIPGOnvqS1xWY6E3sc/0XN4B
- vA0d47ESWPpUsFlONS+vw==
-UI-OutboundReport: notjunk:1;M01:P0:ysjUo3Xz5AI=;kibXP5r2cKSp9BeShMToBBbwj+n
- 7t4uAr/dmx5J87oHCfzqsbZmS6iK+L58cTj57ahYYZ8xB3lVw45sQUfVVmQnDTDaeEBUM1ne3
- 5KVPCoeGVbYokYS2gkQM2XsoWWlkCKXmY8+XxitVJyr3VmPbTSijbay0aKIrbUBt/K9UjVtmN
- hu8FA9bGPS6KeZzJLXmHpego5GxXKwjvBGVAVYPYAe9eR2OOLA9Ti+CI75PM2FUe59gZzF7q3
- X0z/G2r1iudnG5D6J+gVE0YF5cMgRGXTV7DsJZtYzmtDoelWhKU3kZLnJlT5ZgJjMKXHhAJht
- AtqTgCLTscjCTOTiAF4TJsP28/1dGC9VWC5RGjCjsM/IGveWiO/YnXnsQzLtHTQ95ne0ztSUB
- JcWIYLK3T996w5RaZB0WxJ9nIQpb7KcbwqvtvN2BaEr89AZgePvIJ+wiQumpopPyD3E35OcW5
- UEAtX/C3SX1eB4lwDPBHpseynrwzhTYWL8be8lj4/bpTs0QbLe8dyBTpk1XkyAItK8E7/2oWs
- J/V9sv3+hxuZ2lHVqLYq2nC6/FYUR+8oOTULHkAfuE0TjiIFTU19lpqhBw8dEI+O4i1aNFF/k
- uLKw/FYYqoJQJN87EptBi/nT/DuNNo+vxHTZ/cUn0oI3++AJ5W5YBaNGLvzl5HcCac3fvza7b
- nMCgAe8IwAmmrb7MTxmuz0eZ7xydqNNsLgSBjuSku2rC7RMnkQOEfFOaIAwf9/bFHdVIRGULE
- Z8Q23utEN3bElflWwqbM+l8m0Wk2OWk+bH1Ft4EblFAVJ0T8G6MuGGMMq/U5ZgzIcIzPjfmgv
- JCKyWNJd5YE3VlsiEcAlfOX4wBFC9IizW+KB/U14cv7WuhaZ9LFg/aZNH64birBiEvWW41S5L
- RT2XvZ8cbleazVJLQoMnu6n53+jFXXn89Ubt+MEaNZqkdSKHE6Wx1ts41gS6iUUcbziEkouBB
- d6k/uqQXnukrEgUcb+gP1efoKkY=
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
+btrfs_redirty_list_add zeroes the buffer data and sets the
+EXTENT_BUFFER_NO_CHECK to make sure writeback is fine with a bogus
+header.  But it does that after already marking the buffer dirty, which
+means that writeback could already be looking at the buffer.
 
+Switch the order of operations around so that the buffer is only marked
+dirty when we're ready to write it.
 
-On 2023/5/8 19:27, Anand Jain wrote:
-> On 05/05/2023 21:38, David Sterba wrote:
->> On Fri, May 05, 2023 at 03:21:35PM +0800, Qu Wenruo wrote:
->>> On 2023/5/5 01:07, Guilherme G. Piccoli wrote:
->>>> Btrfs doesn't currently support to mount 2 different devices holding
->>>> the
->>>> same filesystem - the fsid is used as a unique identifier in the
->>>> driver.
->>>> This case is supported though in some other common filesystems, like
->>>> ext4; one of the reasons for which is not trivial supporting this cas=
-e
->>>> on btrfs is due to its multi-device filesystem nature, native RAID,
->>>> etc.
->>>
->>> Exactly, the biggest problem is the multi-device support.
->>>
->>> Btrfs needs to search and assemble all devices of a multi-device
->>> filesystem, which is normally handled by things like LVM/DMraid, thus
->>> other traditional fses won't need to bother that.
->>>
->>>>
->>>> Supporting the same-fsid mounts has the advantage of allowing btrfs t=
-o
->>>> be used in A/B partitioned devices, like mobile phones or the Steam
->>>> Deck
->>>> for example. Without this support, it's not safe for users to keep th=
-e
->>>> same "image version" in both A and B partitions, a setup that is quit=
-e
->>>> common for development, for example. Also, as a big bonus, it allows =
-fs
->>>> integrity check based on block devices for RO devices (whereas
->>>> currently
->>>> it is required that both have different fsid, breaking the block devi=
-ce
->>>> hash comparison).
->>>>
->>>> Such same-fsid mounting is hereby added through the usage of the
->>>> mount option "virtual_fsid" - when such option is used, btrfs generat=
-es
->>>> a random fsid for the filesystem and leverages the metadata_uuid
->>>> infrastructure (introduced by [0]) to enable the usage of this
->>>> secondary
->>>> virtual fsid. But differently from the regular metadata_uuid flag, th=
-is
->>>> is not written into the disk superblock - effectively, this is a
->>>> spoofed
->>>> fsid approach that enables the same filesystem in different devices t=
-o
->>>> appear as different filesystems to btrfs on runtime.
->>>
->>> I would prefer a much simpler but more explicit method.
->>>
->>> Just introduce a new compat_ro feature, maybe call it SINGLE_DEV.
->>>
->>> By this, we can avoid multiple meanings of the same super member, nor
->>> need any special mount option.
->>> Remember, mount option is never a good way to enable/disable a new
->>> feature.
->>>
->>> The better method to enable/disable a feature should be mkfs and
->>> btrfstune.
->>>
->>> Then go mostly the same of your patch, but maybe with something extra:
->>>
->>> - Disbale multi-dev code
->>> =C2=A0=C2=A0=C2=A0 Include device add/replace/removal, this is already=
- done in your
->>> =C2=A0=C2=A0=C2=A0 patch.
->>>
->>> - Completely skip device scanning
->>> =C2=A0=C2=A0=C2=A0 I see no reason to keep btrfs with SINGLE_DEV featu=
-re to be added to
->>> =C2=A0=C2=A0=C2=A0 the device list at all.
->>> =C2=A0=C2=A0=C2=A0 It only needs to be scanned at mount time, and neve=
-r be kept in the
->>> =C2=A0=C2=A0=C2=A0 in-memory device list.
->>
->> This is actually a good point, we can do that already. As a conterpart
->> to 5f58d783fd7823 ("btrfs: free device in btrfs_close_devices for a
->> single device filesystem") that drops single device from the list,
->> single fs devices wouldn't be added to the list but some checks could b=
-e
->> still done like superblock validation for eventual error reporting.
->
-> Something similar occurred to me earlier. However, even for a single
-> device, we need to perform the scan because there may be an unfinished
-> replace target from a previous reboot, or a sprout Btrfs filesystem may
-> have a single seed device. If we were to make an exception for replace
-> targets and seed devices, it would only complicate the scan logic, which
-> goes against our attempt to simplify it.
+Fixes: d3575156f662 ("btrfs: zoned: redirty released extent buffers")
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/zoned.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-If we go SINGLE_DEV compat_ro flags, then no such problem at all, we can
-easily reject any multi-dev features from such SINGLE_DEV fs.
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index e3fe02aae641f3..7095cfca2fdde1 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -1610,11 +1610,11 @@ void btrfs_redirty_list_add(struct btrfs_transaction *trans,
+ 	    !list_empty(&eb->release_list))
+ 		return;
+ 
++	memzero_extent_buffer(eb, 0, eb->len);
++	set_bit(EXTENT_BUFFER_NO_CHECK, &eb->bflags);
+ 	set_extent_buffer_dirty(eb);
+ 	set_extent_bits_nowait(&trans->dirty_pages, eb->start,
+ 			       eb->start + eb->len - 1, EXTENT_DIRTY);
+-	memzero_extent_buffer(eb, 0, eb->len);
+-	set_bit(EXTENT_BUFFER_NO_CHECK, &eb->bflags);
+ 
+ 	spin_lock(&trans->releasing_ebs_lock);
+ 	list_add_tail(&eb->release_list, &trans->releasing_ebs);
+-- 
+2.39.2
 
-Thanks,
-Qu
-
->
-> Thanks, Anand
->
->

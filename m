@@ -2,39 +2,39 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C432DC7EE2E
-	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 16:09:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2A20C7EE24
+	for <linux-btrfs@archiver.kernel.org>; Mon,  8 May 2023 16:09:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233699AbjEHQJD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 8 May 2023 12:09:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46428 "EHLO
+        id S233752AbjEHQJE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 8 May 2023 12:09:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46442 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232935AbjEHQIw (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 12:08:52 -0400
+        with ESMTP id S233057AbjEHQIx (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 May 2023 12:08:53 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02A0465A1
-        for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2023 09:08:50 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 26EF66EA2
+        for <linux-btrfs@vger.kernel.org>; Mon,  8 May 2023 09:08:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=+bNBPEBDZq/ti6ccN9tX78n/lLCsqMuVy8+1rijmzWE=; b=3/qr9d7uP3CW8l73kL29dvI19P
-        tTCODdRid7QL9k1ij8mEC9I5yETGWB597ZzEcCloiHf4nnMe28AzC/teJiVGsGFnwlBBdeaAWad1i
-        w6A+LjUo0+23zGnkAYIRFn36FheL1DI9wLWpuKKNHsOBYQie56bW+BeTLdZ/caWMGW7W+/CzqfG8C
-        4N7bDwQIXYrAjcgRtORzPBFmQk3V6y4J3FUD3+12XkWu/ihJSASCb65AeXiVMwUT0oAKoLUBrPShB
-        7mAfYWpxBZmdaS/ehDmHYfSkf5XENxslzwD7maB8WJOS+q9dQOZ3uy30y9Fo0MlBAleO/fRhwXmSS
-        vAF1VI4g==;
+        bh=YXE2wrNkKvYjH5/mlqKZrK9JlA/p2/0j+caHMvI421U=; b=ofxBMo2yeL2RqE0zoSZ0BFSxCE
+        C2lx9wCmubMRUWUQGYGpWTyT0cRQSTrsnr3X66S8wNRYGeECnyadeHWfLmk6nLU4dbj05ZM9FEIrL
+        NwtT4/YueYViICBrG0f8569kzCLz/X/nTg4eiCevimTk/LvXAYTjXulxoohRb553+t9txNZXhhHSt
+        +fpYN0S9emY/XeSe37hADAMA+Q0NmtONG5LE3wz/Qb8TIQnwcR6CdXjDuqt8Bvyx70GtfRcJnMMtS
+        6DlANjFZ0QAorXSXPslk7uYnPNsV5zaMUJ7r1xkxyCuwt20B8okipN7urGtnZZnxuaKKtCFeaLn0G
+        HBMtcBlQ==;
 Received: from [208.98.210.70] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pw3Pt-000w1I-28;
-        Mon, 08 May 2023 16:08:49 +0000
+        id 1pw3Pu-000w20-34;
+        Mon, 08 May 2023 16:08:51 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/21] btrfs: remove btrfs_add_ordered_extent
-Date:   Mon,  8 May 2023 09:08:31 -0700
-Message-Id: <20230508160843.133013-10-hch@lst.de>
+Subject: [PATCH 11/21] btrfs: open code btrfs_bio_end_io in btrfs_dio_submit_io
+Date:   Mon,  8 May 2023 09:08:33 -0700
+Message-Id: <20230508160843.133013-12-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230508160843.133013-1-hch@lst.de>
 References: <20230508160843.133013-1-hch@lst.de>
@@ -45,72 +45,31 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-All callers are gone now.
+btrfs_dio_submit_io is the only place that uses btrfs_bio_end_io to end a
+bio that hasn't been submitted using btrfs_submit_bio yet, and this
+invariant will become a problem with upcoming changes to the btrfs bio
+layer.  Just open code the assignment of bi_status and the call to
+btrfs_dio_end_io.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/btrfs/ordered-data.c | 25 +------------------------
- fs/btrfs/ordered-data.h |  4 ----
- 2 files changed, 1 insertion(+), 28 deletions(-)
+ fs/btrfs/inode.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index f6855e37e7f94d..0ea4efc1264512 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -264,29 +264,6 @@ struct btrfs_ordered_extent *btrfs_alloc_ordered_extent(
- 	return entry;
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3dceedf612d4ba..a425658cfbae0c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7925,7 +7925,8 @@ static void btrfs_dio_submit_io(const struct iomap_iter *iter, struct bio *bio,
  
--/*
-- * Add a new btrfs_ordered_extent for the range, but drop the reference instead
-- * of returning it to the caller.
-- */
--int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
--			     u64 num_bytes, u64 ram_bytes, u64 disk_bytenr,
--			     u64 disk_num_bytes, u64 offset, unsigned long flags,
--			     int compress_type)
--{
--	struct btrfs_ordered_extent *ordered;
--
--	ordered = btrfs_alloc_ordered_extent(inode, file_offset, num_bytes,
--					     ram_bytes, disk_bytenr,
--					     disk_num_bytes, offset, flags,
--					     compress_type);
--
--	if (IS_ERR(ordered))
--		return PTR_ERR(ordered);
--	btrfs_put_ordered_extent(ordered);
--
--	return 0;
--}
--
- /*
-  * Add a struct btrfs_ordered_sum into the list of checksums to be inserted
-  * when an ordered extent is finished.  If the list covers more than one
-@@ -564,7 +541,7 @@ void btrfs_remove_ordered_extent(struct btrfs_inode *btrfs_inode,
- 	freespace_inode = btrfs_is_free_space_inode(btrfs_inode);
- 
- 	btrfs_lockdep_acquire(fs_info, btrfs_trans_pending_ordered);
--	/* This is paired with btrfs_add_ordered_extent. */
-+	/* This is paired with btrfs_alloc_ordered_extent. */
- 	spin_lock(&btrfs_inode->lock);
- 	btrfs_mod_outstanding_extents(btrfs_inode, -1);
- 	spin_unlock(&btrfs_inode->lock);
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 150f75a155ca0c..87a61a2bb722fd 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -183,10 +183,6 @@ struct btrfs_ordered_extent *btrfs_alloc_ordered_extent(
- 			u64 num_bytes, u64 ram_bytes, u64 disk_bytenr,
- 			u64 disk_num_bytes, u64 offset, unsigned long flags,
- 			int compress_type);
--int btrfs_add_ordered_extent(struct btrfs_inode *inode, u64 file_offset,
--			     u64 num_bytes, u64 ram_bytes, u64 disk_bytenr,
--			     u64 disk_num_bytes, u64 offset, unsigned long flags,
--			     int compress_type);
- void btrfs_add_ordered_sum(struct btrfs_ordered_extent *entry,
- 			   struct btrfs_ordered_sum *sum);
- struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct btrfs_inode *inode,
+ 		ret = btrfs_extract_ordered_extent(bbio, dio_data->ordered);
+ 		if (ret) {
+-			btrfs_bio_end_io(bbio, errno_to_blk_status(ret));
++			bbio->bio.bi_status = errno_to_blk_status(ret);
++			btrfs_dio_end_io(bbio);
+ 			return;
+ 		}
+ 	}
 -- 
 2.39.2
 

@@ -2,367 +2,221 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32DFAC77B7C
-	for <linux-btrfs@archiver.kernel.org>; Tue,  9 May 2023 11:52:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DE94C77B75
+	for <linux-btrfs@archiver.kernel.org>; Tue,  9 May 2023 12:31:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235589AbjEILwZ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 9 May 2023 07:52:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38384 "EHLO
+        id S235532AbjEIMbC (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 9 May 2023 08:31:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235582AbjEILwX (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2023 07:52:23 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCFDE198E;
-        Tue,  9 May 2023 04:52:20 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        with ESMTP id S235478AbjEIMaw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 May 2023 08:30:52 -0400
+Received: from trent.utfs.org (trent.utfs.org [94.185.90.103])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 08A4113D
+        for <linux-btrfs@vger.kernel.org>; Tue,  9 May 2023 05:30:49 -0700 (PDT)
+Received: from localhost (localhost [IPv6:::1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 6399260C61;
-        Tue,  9 May 2023 11:52:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D01DFC433EF;
-        Tue,  9 May 2023 11:52:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1683633139;
-        bh=JAYF+KYxSpe+e/npHXCa/jNTnnQeJxDX5lO1OJPjvoo=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=mAlyClIBO+MckzMpFNB+F5oOYjb6p/SIiKzNiidc2J1cDGciwXAAWpiE35zqN6I5k
-         1SfeGr5GZF+Bb9gd5s6DNuPxXoAGzInlNjk+OCUXy90QgDFVwsAQ8vDT3lDjsMbtW/
-         A/ma84DU/yEcoxlkA/u+MSafwbB2PxMq995NMJeyOp9Jy4Hw5CF0QrCKNuNoPS42jM
-         WSNv5pZgzacDgSF9VLcN+/B0fyGj1XVELHd0JiWeQ2NpaS0hoE1Bt9ttWymoo7ot35
-         otuP84YEX7H5wMRTamqrt4rUmS3VbijFnmBd6dZeg4VASV+J5oCqhisDD8ToN6/0ie
-         TWAw6NHXWz6uQ==
-From:   fdmanana@kernel.org
-To:     fstests@vger.kernel.org
-Cc:     linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/3] btrfs: add a test case for the logical to ino ioctl
-Date:   Tue,  9 May 2023 12:52:05 +0100
-Message-Id: <928d682f857556ebfa30e2cfb333e96f6be6a1c1.1683632565.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1683632565.git.fdmanana@suse.com>
-References: <cover.1683632565.git.fdmanana@suse.com>
+        by trent.utfs.org (Postfix) with ESMTPS id AB2D15F8C9;
+        Tue,  9 May 2023 14:30:47 +0200 (CEST)
+Date:   Tue, 9 May 2023 14:30:47 +0200 (CEST)
+From:   Christian Kujau <lists@nerdbynature.de>
+To:     linux-btrfs@vger.kernel.org
+cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: btrfs-transaction stalls
+In-Reply-To: <1a1a6ccf-25f9-d362-d890-8a609ff743f2@nerdbynature.de>
+Message-ID: <7d4287c6-e854-e79a-874a-0f76ea4285a4@nerdbynature.de>
+References: <837c4ca9-7694-4633-50b8-57547e120444@nerdbynature.de> <8a3f47c0-5b0f-a6c8-d1c4-714e3251b9eb@nerdbynature.de> <61025b77-2057-5a90-032b-f36ffa85deb4@gmx.com> <1a1a6ccf-25f9-d362-d890-8a609ff743f2@nerdbynature.de>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-From: Filipe Manana <fdmanana@suse.com>
+After upgrading from Fedora 37 to Fedora 38 the problem did NOT magically 
+go away (heh!) and I've run another full balance (and a scrub too), 
+although this did not help much in the past.
 
-Add a test case to exercise the logical to ino ioctl, including the v2
-version (which adds the ignore offset option). This is motivated by the
-fact that we have no test cases giving full coverage to that ioctl, only
-two test cases partially exercise it (btrfs/004 and btrfs/299) and
-absolutely no coverage for the v2 ioctl. This resulted in a recent
-regression fixed by the patch mentioned in the _fixed_by_kernel_commit
-tag of the introduced test case.
+I've since switched the mount option from "discard" to "discard=async" and 
+the problem has not recurred....yet :-)
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- common/btrfs        |  29 +++++++++
- tests/btrfs/287     | 154 ++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/287.out |  95 +++++++++++++++++++++++++++
- 3 files changed, 278 insertions(+)
- create mode 100755 tests/btrfs/287
- create mode 100644 tests/btrfs/287.out
+Christian.
 
-diff --git a/common/btrfs b/common/btrfs
-index 42777df2..bd4dc31f 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -647,3 +647,32 @@ _btrfs_get_file_extent_item_bytenr()
- 		grep -A4 "$file_extent_key" | grep "disk byte" | \
- 		$AWK_PROG '{ print $5 }'
- }
-+
-+# Check that btrfs-progs has support for the logical-resolve command, with the
-+# -o option, and that the kernel supports the logical to ino ioctl v2 (which
-+# adds the ignore offset parameter).
-+_require_btrfs_scratch_logical_resolve_v2()
-+{
-+	local bytenr
-+
-+	# First check if we have support for calling the v2 logical resolve
-+	# ioctl in btrfs-progs. Check if the -o options exists, which makes
-+	# btrfs-progs call v2 of the ioctl (because the flag
-+	# BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET is only supported in v2).
-+	_require_btrfs_command inspect-internal logical-resolve -o
-+	_require_scratch
-+
-+	_scratch_mkfs > /dev/null || \
-+		_fail "_require_btrfs_scratch_logical_resolve_v2: mkfs failed"
-+	_scratch_mount
-+
-+	$XFS_IO_PROG -f -c "pwrite -q 0 128K" "$SCRATCH_MNT/file1"
-+	bytenr=$(_btrfs_get_file_extent_item_bytenr "$SCRATCH_MNT/file1" 0)
-+	$BTRFS_UTIL_PROG inspect-internal logical-resolve -o $bytenr \
-+			 $SCRATCH_MNT > /dev/null
-+	if [ $? -ne 0 ]; then
-+		_scratch_unmount
-+		_notrun "Logical resolve ioctl v2 not supported in the kernel"
-+	fi
-+	_scratch_unmount
-+}
-diff --git a/tests/btrfs/287 b/tests/btrfs/287
-new file mode 100755
-index 00000000..a7e29e2b
---- /dev/null
-+++ b/tests/btrfs/287
-@@ -0,0 +1,154 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (C) 2023 SUSE Linux Products GmbH. All Rights Reserved.
-+#
-+# FS QA Test 287
-+#
-+# Test btrfs' logical to inode ioctls (v1 and v2).
-+#
-+. ./common/preamble
-+_begin_fstest auto quick snapshot clone punch
-+
-+. ./common/filter
-+. ./common/reflink
-+
-+_supported_fs btrfs
-+_require_btrfs_scratch_logical_resolve_v2
-+_require_scratch_reflink
-+_require_xfs_io_command "fpunch"
-+
-+# This is a test case to test the logical to ino ioctl in general but it also
-+# serves as a regression a test for an issue fixed by the following commit.
-+_fixed_by_kernel_commit XXXXXXXXXXXX \
-+	"btrfs: fix backref walking not returning all inode refs"
-+
-+query_logical_ino()
-+{
-+	$BTRFS_UTIL_PROG inspect-internal logical-resolve -P $* $SCRATCH_MNT
-+}
-+
-+_scratch_mkfs >> $seqres.full || _fail "mkfs failed"
-+_scratch_mount
-+
-+# Create a file with two extents:
-+#
-+# 1) One 4M extent covering the file range [0, 4M)
-+# 2) Another 4M extent covering the file range [4M, 8M)
-+$XFS_IO_PROG -f -c "pwrite -S 0xab -b 4M 0 4M" \
-+	     -c "fsync" \
-+	     -c "pwrite -S 0xcd -b 4M 4M 8M" \
-+	     -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+echo "resolve first extent:"
-+first_extent_bytenr=$(_btrfs_get_file_extent_item_bytenr "$SCRATCH_MNT/foo" 0)
-+query_logical_ino $first_extent_bytenr
-+
-+echo "resolve second extent:"
-+sz_4m=$((4 * 1024 * 1024))
-+second_extent_bytenr=$(_btrfs_get_file_extent_item_bytenr "$SCRATCH_MNT/foo" $sz_4m)
-+query_logical_ino $second_extent_bytenr
-+
-+# Now clone both extents twice to the end of the file.
-+sz_8m=$((8 * 1024 * 1024))
-+$XFS_IO_PROG -c "reflink $SCRATCH_MNT/foo 0 $sz_8m $sz_8m" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+sz_16m=$((16 * 1024 * 1024))
-+$XFS_IO_PROG -c "reflink $SCRATCH_MNT/foo 0 $sz_16m $sz_8m" $SCRATCH_MNT/foo \
-+	| _filter_xfs_io
-+
-+# Now lets resolve the extents again. They should now be listed 3 times each, at
-+# the right file offsets.
-+echo "resolve first extent:"
-+query_logical_ino $first_extent_bytenr
-+
-+echo "resolve second extent:"
-+query_logical_ino $second_extent_bytenr
-+
-+# Now lets punch a 2M hole at file offset 0. This changes the first file extent
-+# item to point to the first extent with an offset of 2M and a length of 2M, so
-+# doing a logical resolve with the bytenr of the first extent should not return
-+# file offset 0.
-+$XFS_IO_PROG -c "fpunch 0 2M" $SCRATCH_MNT/foo
-+echo "resolve first extent after punching hole at file range [0, 2M):"
-+query_logical_ino $first_extent_bytenr
-+
-+# Doing a logical resolve call with the BTRFS_LOGICAL_INO_ARGS_IGNORE_OFFSET
-+# flag (passing -o to logical-resolve command) should ignore file extent offsets
-+# and return file offsets for all file extent items that point to any section of
-+# the extent (3 of them, file offsets 2M, 8M and 16M).
-+echo "resolve first extent with ignore offset option:"
-+query_logical_ino -o $first_extent_bytenr
-+
-+# Now query for file extent items containing the first extent at offset +1M.
-+# Should only return the file offsets 9M and 17M.
-+bytenr=$(( $first_extent_bytenr + 1024 * 1024))
-+echo "resolve first extent +1M offset:"
-+query_logical_ino $bytenr
-+
-+# Now do the same query again but with the ignore offset ioctl argument. This
-+# should returns 3 results, for file offsets 2M, 8M and 16M.
-+echo "resolve first extent +1M offset with ignore offset option:"
-+query_logical_ino -o $bytenr
-+
-+# Now query for file extent items containing the first extent at offset +3M.
-+# Should return the file offsets 3M and 11M and 19M.
-+bytenr=$(( $first_extent_bytenr + 3 * 1024 * 1024))
-+echo "resolve first extent +3M offset:"
-+query_logical_ino $bytenr
-+
-+# Now do the same query again but with the ignore offset ioctl argument. This
-+# should returns 3 results, for file offsets 2M, 8M and 16M.
-+echo "resolve first extent +3M offset with ignore offset option:"
-+query_logical_ino -o $bytenr
-+
-+# Now create two snapshots and then do some queries.
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1 \
-+	| _filter_scratch
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2 \
-+	| _filter_scratch
-+
-+# Query for the first extent (at offset 0). Should give two entries for each
-+# root - default subvolume and the 2 snapshots, for file offsets 8M and 16M.
-+echo "resolve first extent:"
-+query_logical_ino $first_extent_bytenr
-+
-+# Query for the first extent (at offset 0) with the ignore offset option.
-+# Should give 3 entries for each root - default subvolume and the 2 snapshots,
-+# for file offsets 2M, 8M and 16M.
-+echo "resolve first extent with ignore offset option:"
-+query_logical_ino -o $first_extent_bytenr
-+
-+# Now lets punch a 1M hole at file offset 4M. This changes the second file
-+# extent item to point to the second extent with an offset of 1M and a length
-+# of 3M, so doing a logical resolve with the bytenr of the second extent should
-+# not return file offset 4M for root 5 (default subvolume), bit it should return
-+# file offset 4M for the files in the snapshots. For all the roots, it should
-+# return file offsets 12M and 20M.
-+$XFS_IO_PROG -c "fpunch 4M 1M" $SCRATCH_MNT/foo
-+echo "resolve second extent after punching hole at file range [4M, 5M):"
-+query_logical_ino $second_extent_bytenr
-+
-+# Repeat the query but with the ignore offset option. We should get 3 entries
-+# for each root. For the snapshot roots, we should get entries for file offsets
-+# 4M, 12M and 20M, while for the default subvolume (root 5) we should get for
-+# file offsets 5M, 12M and 20M.
-+echo "resolve second extent with ignore offset option:"
-+query_logical_ino -o $second_extent_bytenr
-+
-+# Now delete the first snapshot and repeat the last 2 queries.
-+$BTRFS_UTIL_PROG subvolume delete -C $SCRATCH_MNT/snap1 | _filter_scratch
-+
-+# Query the second extent with an offset of 0, should return file offsets 12M
-+# and 20M for the default subvolume (root 5) and file offsets 4M, 12M and 20M
-+# for the second snapshot root.
-+echo "resolve second extent:"
-+query_logical_ino $second_extent_bytenr
-+
-+# Query the second extent with the ignore offset option, should return file
-+# offsets 5M, 12M and 20M for the default subvolume (root 5) and file offsets
-+# 4M, 12M and 20M for the second snapshot root.
-+echo "resolve second extent with ignore offset option:"
-+query_logical_ino -o $second_extent_bytenr
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/287.out b/tests/btrfs/287.out
-new file mode 100644
-index 00000000..683f9875
---- /dev/null
-+++ b/tests/btrfs/287.out
-@@ -0,0 +1,95 @@
-+QA output created by 287
-+wrote 4194304/4194304 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 8388608/8388608 bytes at offset 4194304
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+resolve first extent:
-+inode 257 offset 0 root 5
-+resolve second extent:
-+inode 257 offset 4194304 root 5
-+linked 8388608/8388608 bytes at offset 8388608
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+linked 8388608/8388608 bytes at offset 16777216
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+resolve first extent:
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+inode 257 offset 0 root 5
-+resolve second extent:
-+inode 257 offset 20971520 root 5
-+inode 257 offset 12582912 root 5
-+inode 257 offset 4194304 root 5
-+resolve first extent after punching hole at file range [0, 2M):
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+resolve first extent with ignore offset option:
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+inode 257 offset 2097152 root 5
-+resolve first extent +1M offset:
-+inode 257 offset 17825792 root 5
-+inode 257 offset 9437184 root 5
-+resolve first extent +1M offset with ignore offset option:
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+inode 257 offset 2097152 root 5
-+resolve first extent +3M offset:
-+inode 257 offset 19922944 root 5
-+inode 257 offset 11534336 root 5
-+inode 257 offset 3145728 root 5
-+resolve first extent +3M offset with ignore offset option:
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+inode 257 offset 2097152 root 5
-+Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap1'
-+Create a readonly snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap2'
-+resolve first extent:
-+inode 257 offset 16777216 root 257
-+inode 257 offset 8388608 root 257
-+inode 257 offset 16777216 root 256
-+inode 257 offset 8388608 root 256
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+resolve first extent with ignore offset option:
-+inode 257 offset 16777216 root 257
-+inode 257 offset 8388608 root 257
-+inode 257 offset 2097152 root 257
-+inode 257 offset 16777216 root 256
-+inode 257 offset 8388608 root 256
-+inode 257 offset 2097152 root 256
-+inode 257 offset 16777216 root 5
-+inode 257 offset 8388608 root 5
-+inode 257 offset 2097152 root 5
-+resolve second extent after punching hole at file range [4M, 5M):
-+inode 257 offset 20971520 root 257
-+inode 257 offset 12582912 root 257
-+inode 257 offset 4194304 root 257
-+inode 257 offset 20971520 root 256
-+inode 257 offset 12582912 root 256
-+inode 257 offset 4194304 root 256
-+inode 257 offset 20971520 root 5
-+inode 257 offset 12582912 root 5
-+resolve second extent with ignore offset option:
-+inode 257 offset 20971520 root 257
-+inode 257 offset 12582912 root 257
-+inode 257 offset 4194304 root 257
-+inode 257 offset 20971520 root 256
-+inode 257 offset 12582912 root 256
-+inode 257 offset 4194304 root 256
-+inode 257 offset 20971520 root 5
-+inode 257 offset 12582912 root 5
-+inode 257 offset 5242880 root 5
-+Delete subvolume (commit): 'SCRATCH_MNT/snap1'
-+resolve second extent:
-+inode 257 offset 20971520 root 257
-+inode 257 offset 12582912 root 257
-+inode 257 offset 4194304 root 257
-+inode 257 offset 20971520 root 5
-+inode 257 offset 12582912 root 5
-+resolve second extent with ignore offset option:
-+inode 257 offset 20971520 root 257
-+inode 257 offset 12582912 root 257
-+inode 257 offset 4194304 root 257
-+inode 257 offset 20971520 root 5
-+inode 257 offset 12582912 root 5
-+inode 257 offset 5242880 root 5
+On Tue, 18 Apr 2023, Christian Kujau wrote:
+> On Tue, 18 Apr 2023, Qu Wenruo wrote:
+> > Disable qgroup, or don't delete large shared subvolumes, or use the latest
+> > /sys/fs/btrfs/<UUID>/qgroups/drop_subtree_threshold file to make qgroup to
+> > automatically skip such large snapshot drop.
+> 
+> I don't have Quota Groups enabled anywhere on the system, and snapshots 
+> are disabled too, see below. There's no qgroups subdirectory on this 
+> machine, only:
+> 
+> $ grep . /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/*
+> grep: /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/allocation: Is a directory
+> grep: /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/bdi: Is a directory
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/bg_reclaim_threshold:75
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/checksum:crc32c (crc32c-intel)
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/clone_alignment:4096
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/commit_stats:commits 2106
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/commit_stats:last_commit_ms 2805
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/commit_stats:max_commit_ms 371767
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/commit_stats:total_commit_ms 6460389
+> grep: /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/devices: Is a directory
+> grep: /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/devinfo: Is a directory
+> grep: /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/discard: Is a directory
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/exclusive_operation:none
+> grep: /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/features: Is a directory
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/generation:636168
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/metadata_uuid:f1093dd0-ba7e-47c7-98de-e0ac85a34972
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/nodesize:16384
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/quota_override:0
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/read_policy:[pid]
+> /sys/fs/btrfs/f1093dd0-ba7e-47c7-98de-e0ac85a34972/sectorsize:4096
+> 
+> 
+> $ mount | grep btrfs
+> /dev/mapper/luks-root on / type btrfs (rw,relatime,seclabel,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=5,subvol=/)
+> 
+> $ btrfs qgroup show /
+> ERROR: can't list qgroups: quotas not enabled
+> 
+> $ btrfs subvolume list /
+> ID 262 gen 636159 top level 5 path var/lib/machines
+> ID 263 gen 634062 top level 5 path srv
+> 
+> $ rpm -qf /var/lib/machines /srv
+> systemd-container-251.14-2.fc37.x86_64
+> filesystem-3.18-2.fc37.x86_64
+> 
+> The subvolumes must have been added by the distribution, but are not 
+> actively used (both directories are empty).
+> 
+> 
+> Thanks,
+> Christian.
+> 
+> > 
+> > Thanks,
+> > Qu
+> > > 
+> > > Thanks,
+> > > Christian.
+> > > 
+> > > 
+> > > > The system load applet is still working and shows very high I/O wait
+> > > > times, and I wait ~60 seconds and the system recovers and works again.
+> > > > And while all this happened rarely in the past, I notice it more often
+> > > > lately.
+> > > > 
+> > > > Some specs: Thinkpad T470, with a single Crucial NVMe 1 TB disk installed.
+> > > > I opted for full-disk-encryption and so the rootfs is (compressed) Btrfs
+> > > > on-top a LUKS2 dm-crypt device. I'm not using snapshots.
+> > > > 
+> > > > I ran a full btrfs-balance some time ago, but I can't say it helped much.
+> > > > If recommended, I can run another one of course.
+> > > > 
+> > > > Whenever these stalls happen, and I manage to fire up iotop-c, I can see
+> > > > "btrfs-transaction" at the very top, utilizing 100% of the disk's IO, but
+> > > > not generating _that_ much of I/O traffic (the encrypted disk can do ~250
+> > > > MB/s read). With even more luck I manage to run "perf record" during these
+> > > > stalls ("cd /tmp" before, so it can record to tmpfs, because of the
+> > > > stall), and while I can see "btrfs-transaction" in there, I don't see it
+> > > > in the top-10. Or maybe I'm to stupid to use perf report:
+> > > > 
+> > > >    https://nerdbynature.de/bits/6.1.14-200/perf_1.data.xz
+> > > > 
+> > > > This all can even be reproduced somewhat reliably: I was writing above how
+> > > > fast the disk is, and wanted to test _write_ speed as well:
+> > > > 
+> > > >   $ pv < /dev/zero > /foo
+> > > >   [wait....1.7GB/s.., cool...ok, let's stop after 9GB or so...]
+> > > >   ^C
+> > > >   $ rm -f /foo
+> > > > 
+> > > > And all that comes back instantly. But then running "/bin/sync" afterwards
+> > > > took 8 minutes (!) until the command came back, and I can see the I/O wait
+> > > > again in the system load applet in my window manager. This time I could
+> > > > no longer start iotop-c, but "perf record" recorded something, if you want
+> > > > to have a look:
+> > > > 
+> > > >   https://nerdbynature.de/bits/6.1.14-200/perf_2.data.xz
+> > > > 
+> > > > Some Btrfs infos below. Does anybody have an idea what's going on? Or how
+> > > > to debug this? Disable compression? Run another btrfs-balance? fsck?
+> > > > 
+> > > > Thank you,
+> > > > Christian.
+> > > > 
+> > > > $ mount | grep btrfs
+> > > > /dev/mapper/luks-root on / type btrfs
+> > > > (rw,relatime,seclabel,compress=zstd:3,ssd,discard,space_cache=v2,subvolid=5,subvol=/)
+> > > > 
+> > > > $ df -h /
+> > > > Filesystem             Size  Used Avail Use% Mounted on
+> > > > /dev/mapper/luks-root  250G  162G   88G  66% /
+> > > > 
+> > > > $ btrfs filesystem df /
+> > > > Data, single: total=164.00GiB, used=159.79GiB
+> > > > System, single: total=32.00MiB, used=48.00KiB
+> > > > Metadata, single: total=3.00GiB, used=1.73GiB
+> > > > GlobalReserve, single: total=329.44MiB, used=0.00B
+> > > > 
+> > > > $ sudo btrfs filesystem usage -T /
+> > > > Overall:
+> > > >      Device size:                 249.98GiB
+> > > >      Device allocated:            167.03GiB
+> > > >      Device unallocated:           82.95GiB
+> > > >      Device missing:                  0.00B
+> > > >      Device slack:                    0.00B
+> > > >      Used:                        161.53GiB
+> > > >      Free (estimated):             87.16GiB      (min: 87.16GiB)
+> > > >      Free (statfs, df):            87.16GiB
+> > > >      Data ratio:                       1.00
+> > > >      Metadata ratio:                   1.00
+> > > >      Global reserve:              329.44MiB      (used: 0.00B)
+> > > >      Multiple profiles:                  no
+> > > > 
+> > > >                           Data      Metadata System
+> > > > Id Path                  single    single   single   Unallocated Total
+> > > > Slack
+> > > > -- --------------------- --------- -------- -------- -----------
+> > > > --------- ----
+> > > >   1 /dev/mapper/luks-root 164.00GiB  3.00GiB 32.00MiB    82.95GiB
+> > > > 249.98GiB -
+> > > > -- --------------------- --------- -------- -------- -----------
+> > > > --------- ----
+> > > >     Total                 164.00GiB  3.00GiB 32.00MiB    82.95GiB
+> > > > 249.98GiB 0.00B
+> > > >     Used                  159.79GiB  1.73GiB 48.00KiB
+> > > > 
+> > > > 
+> > > > $ sudo compsize -x /
+> > > > Processed 1263684 files, 1173537 regular extents (1252947 refs), 612785
+> > > > inline.
+> > > > Type       Perc     Disk Usage   Uncompressed Referenced
+> > > > TOTAL       82%      160G         193G         199G
+> > > > none       100%      144G         144G         145G
+> > > > zlib        33%       14K          43K          43K
+> > > > zstd        32%       15G          48G          53G
+> > > > prealloc   100%       66M          66M          72M
+> > > > 
+> > > > -- 
+> > > > BOFH excuse #227:
+> > > > 
+> > > > Fatal error right in front of screen
+> > > > 
+> > > 
+> > 
+> 
+> -- 
+> BOFH excuse #99:
+> 
+> SIMM crosstalk.
+> 
+
 -- 
-2.35.1
+BOFH excuse #391:
 
+We already sent around a notice about that.

@@ -2,79 +2,129 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4ADEC77B75
-	for <linux-btrfs@archiver.kernel.org>; Mon, 15 May 2023 11:19:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 54A2FC77B75
+	for <linux-btrfs@archiver.kernel.org>; Mon, 15 May 2023 11:44:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239693AbjEOLTI (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 15 May 2023 07:19:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59154 "EHLO
+        id S241539AbjEOLoJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 15 May 2023 07:44:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47860 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238780AbjEOLTD (ORCPT
+        with ESMTP id S241308AbjEOLmH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 15 May 2023 07:19:03 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81B3F114
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 May 2023 04:18:38 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Mon, 15 May 2023 07:42:07 -0400
+Received: from phobos.denx.de (phobos.denx.de [85.214.62.61])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 15DCF172B
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 May 2023 04:37:27 -0700 (PDT)
+Received: from [IPV6:2001:a61:6143:6401:ff2e:a0e1:456a:bd5b] (unknown [IPv6:2001:a61:6143:6401:ff2e:a0e1:456a:bd5b])
+        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits))
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id DE2EF1FD88;
-        Mon, 15 May 2023 11:18:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1684149516;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=sEUnfBTU2Zqkrt1AoBmpzjEKULEC+914WIbNx60za1g=;
-        b=1suPjdxtUKy5t5KZrJxLcC5V3SAMSukAGc96YjD5OmbXLZbZAroDqR/h/oU+43rDEp4pvp
-        mtlCFXCHNK5qbpolNbpxyftOy6rKNNXkbaNYSx70T0EStlWgpZVtLmniSmwIYxDdiNVmiC
-        GvJTZybM6YlAFMs0K6w01s/vzREARCY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1684149516;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=sEUnfBTU2Zqkrt1AoBmpzjEKULEC+914WIbNx60za1g=;
-        b=xT5PPK/7ROuk1zRuniFkfiaafjrlKdXJ6SO6WtDHCMtMOR6QtzpdBKY7J0Z3Q+B9i9eM2Y
-        8IuO/CMqWyQNu0Dw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B303913466;
-        Mon, 15 May 2023 11:18:36 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id sRfsKgwVYmR+BAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 15 May 2023 11:18:36 +0000
-Date:   Mon, 15 May 2023 13:12:34 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: add an ordered_extent pointer to struct btrfs_bio
-Message-ID: <20230515111234.GG32559@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230508160843.133013-1-hch@lst.de>
- <20230515064048.GA10647@lst.de>
+        (Authenticated sender: sbabic@denx.de)
+        by phobos.denx.de (Postfix) with ESMTPSA id E6C5C86371;
+        Mon, 15 May 2023 13:37:24 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=denx.de;
+        s=phobos-20191101; t=1684150645;
+        bh=F1en7jVwGHL6M7oNgByQXYWo+2jg0MMoXOJZeQlXSjM=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=L6v/o98RZF1Ue2Vn7RAvulUdkrh1MHhYTyYhrJPSkkS9w3cO8s5ETjUt9sTNhbbSY
+         GQ53rNNQpucsmXs5kpaNCRgshzLpdt/PFkBzzyJ01y8DPwnMrVz6bm3mH8mU4l7Nhk
+         +HaLeRUkX0qN+zItLDKs2/xrPDWxVWp28h+NO5fNUGRVy+y6sXB62BIaqVUje2dSvQ
+         O51lkuZe8RIhjXCZjnPU94wPL7qhtvhf5SvEDGYVqZNQ0pumG9sSmZz5XH2tf+mpAj
+         sIC3fEEyNq1x1ffrlRuNLQA7DBJLXOHyhWIUNjb99rGtAf817Ek5PueAeRja5vyWzD
+         iaDBFta9KUV+w==
+Message-ID: <f83b6f51-1ca9-19df-18d1-24457d45b095@denx.de>
+Date:   Mon, 15 May 2023 13:37:24 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230515064048.GA10647@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [RFC PATCH] Makefile: add library for mkfs.btrfs
+Content-Language: de-DE
+To:     dsterba@suse.cz, Stefano Babic <sbabic@denx.de>
+Cc:     linux-btrfs@vger.kernel.org
+References: <20230514114930.285147-1-sbabic@denx.de>
+ <20230515105958.GF32559@twin.jikos.cz>
+From:   Stefano Babic <sbabic@denx.de>
+In-Reply-To: <20230515105958.GF32559@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Virus-Scanned: clamav-milter 0.103.8 at phobos.denx.de
+X-Virus-Status: Clean
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 15, 2023 at 08:40:48AM +0200, Christoph Hellwig wrote:
-> It turns out this broke the zoned case that's splitting the bio.
-> I didn't notice as my zoned tests where with a follow on page
-> series fixing this again.
-> 
-> Dave, sorry for the mess, but can you drop this?  I'll try to
-> rebase it on the other ordered_extent changes and will resubmit
-> them.  It might end up needing a prep series before this one.
+Hi David,
 
-No big deal yet, I've moved the patchset to a branch and deleted it from
-misc-next, for-next has been also refreshed.
+On 15.05.23 12:59, David Sterba wrote:
+> On Sun, May 14, 2023 at 01:49:30PM +0200, Stefano Babic wrote:
+>> Even if mkfs.btrfs can be executed from a shell, there are conditions
+>> (see the reasons for the creation of libbtrfsutil) to call a function
+>> inside own applicatiuon code (security, better control, etc.).
+>>
+>> Create a libmkfsbtrfs library with min_mkfs as entry point and the same
+>> syntax like mkfs.btrfs. This can be linked to applications requiring to
+>> create the filesystem.
+>>
+>> Signed-off-by: Stefano Babic <sbabic@denx.de>
+>> ---
+>>
+>> This requires some explanation. Goal is to export mkfs.btrfs as library
+>> to let it be be called from an application. There are use cases in embedded systems
+>> where this is desired and the reasons are exactly the same
+>> that lead to libbtrfsutil. I can shell out mkfs.btrfs, but this is not
+>> the best option (security if shell is compromised, dependency that mkfs is available,
+>> having a self contained application, output format not parsable, etc.).
+>>
+>> For all these reasons, a library that creates a btrfs filesystem is desired.
+>> The patch here just export mkfs.btrfs in the busybox way, that is exports mkfs_main(),
+>> and just builds a library. It does not touch existing code (Makefile).
+>>
+>> Agree that this can be just used by other Open Source projects that are compliant with
+>> GPLv2, but this is exactly my use case :-).
+>>
+>> I would like to know if such as extension can be accepted, even if I know
+>> this is not a topic for most Linux distributions.
+> 
+> The use case is reasonable, but creating a separate library is not a good
+> solution IMHO. There needs to be stable versione API, symbol versioning
+> for backward compatibility. If you already link against libbtrfsutil
+> then the mkfs should be provided there.
+
+Fully agree - it was just to show the use case and reason. If such a 
+call was available in libbtrfsutil, it would be perfect - not only for 
+my use case (a GPLv2 project), but also for application whose sources 
+are not available.
+
+> 
+> Do you need to create multi device filesystem?
+
+On embedded devices, not. A single device is enough.
+
+> Compared to a single
+> device the API would be easier, the one device file descriptor and the
+> flags and numeric parameters like nodesize. The string interface in
+> argc/argv is flexible and extensible but not a real library API.
+
+Agree. It is not an API at all.
+
+> 
+> So for a single device we can extract the functions from mkfs and wrap
+> them to a single call. The libbtrfsutil code is sepate so it would need
+> a rewrite and it also has a different license, that's another thing to
+> consider.
+
+It has a separate license, that is for me just an advantage. But most 
+code in kernel_shared, etc used by mkfs is GPLv2, thet means it should 
+be relicensed or a new implementation should be done to be part of 
+libbtrfsutil.
+
+Best regards,
+Stefano
+
+
+-- 
+=====================================================================
+DENX Software Engineering GmbH,        Managing Director: Erika Unter
+HRB 165235 Munich,   Office: Kirchenstr.5, 82194 Groebenzell, Germany
+Phone: +49-8142-66989-53 Fax: +49-8142-66989-80 Email: sbabic@denx.de
+=====================================================================
+

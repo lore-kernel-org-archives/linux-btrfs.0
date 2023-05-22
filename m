@@ -2,89 +2,87 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 233C6C77B73
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 May 2023 12:36:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B45B2C77B75
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 May 2023 12:36:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234064AbjEVMgW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 May 2023 08:36:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38022 "EHLO
+        id S234020AbjEVMgj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 May 2023 08:36:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39022 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234094AbjEVMgB (ORCPT
+        with ESMTP id S234032AbjEVMgQ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2023 08:36:01 -0400
+        Mon, 22 May 2023 08:36:16 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9672DE58
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:35:13 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86EA7F1
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:35:39 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id BB46F1FECE;
-        Mon, 22 May 2023 12:29:26 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 630511FEC2;
+        Mon, 22 May 2023 12:20:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1684758566;
+        t=1684758022;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=GcsiVuFK/pFfBHfh8vu5OxzAKvN+7TP0Lmf3CnYFu5U=;
-        b=dkjMAxj+Y6qVUJKDGLvhjLEVVtvvlDajzu/hdAsLZXEwQsXO+zVhC7pI+KabuqU1Cp8zYY
-        0Dc5Szqe7RJVkMROU+fZFB7zAZZ7PR1hxSaRubEgbi+WaTLb/AG6LbHBdnRzrwJFWf+F9Z
-        yCkiZkkO5Dq5UKgjI+k4UEiuftpla0g=
+        bh=+HLOpd51YVJtj7NyJTS6XR8JwHtjHn5zir1PMJ1Sq/c=;
+        b=F1WUtuMcNhUl7i71dblvyKaZL/uxJk2yHL1nFU0+55YZV+CBN7PLAW7gyudAk2zo/1gOeC
+        amSoq9hojUVQ8LqDCCwGqQ0KFxF2Bh2Fo4tEWSKE2xkUFQ3xKNoatTurpQHE6oipZmyQ8z
+        xEjfUAgERvf2maHq5HvZK7nkT+j0Yu4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1684758566;
+        s=susede2_ed25519; t=1684758022;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=GcsiVuFK/pFfBHfh8vu5OxzAKvN+7TP0Lmf3CnYFu5U=;
-        b=GcG9Dc24M684gXSd9t8eRAy9X1wBLAqOU6VCQgYPCFLBCKPLanqqJrIZj/cdNWiwEW1iRK
-        TpIPUPJEjlc1k6Dg==
+        bh=+HLOpd51YVJtj7NyJTS6XR8JwHtjHn5zir1PMJ1Sq/c=;
+        b=Qad/VBTwilXyLjeoYVJ55mIDdnN7SGjWT9ZQhUD/dAYXCxvK+vxcsxUoxsdt2uv4Ow8aUH
+        J82NokYrGIwvfoAQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9041113776;
-        Mon, 22 May 2023 12:29:26 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 39A6013776;
+        Mon, 22 May 2023 12:20:22 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id A8csIiZga2Q7WAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 22 May 2023 12:29:26 +0000
-Date:   Mon, 22 May 2023 14:23:20 +0200
+        id cbZSDQZea2S1UwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Mon, 22 May 2023 12:20:22 +0000
+Date:   Mon, 22 May 2023 14:14:16 +0200
 From:   David Sterba <dsterba@suse.cz>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: dump-tree: skip tree-checker when dumpping
- tree blocks
-Message-ID: <20230522122320.GO32559@twin.jikos.cz>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/7] btrfs-progs: csum-change: add the initial support
+ for offline csum type change
+Message-ID: <20230522121416.GN32559@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <a6b4198481004f1ddcdbac00f8559c787646557e.1684236530.git.wqu@suse.com>
- <4263b93e-8154-b4c2-56a0-095a26653f29@oracle.com>
+References: <cover.1684375729.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <4263b93e-8154-b4c2-56a0-095a26653f29@oracle.com>
+In-Reply-To: <cover.1684375729.git.wqu@suse.com>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 17, 2023 at 11:58:33AM +0800, Anand Jain wrote:
-> On 16/5/23 19:28, Qu Wenruo wrote:
-> > Since commit c8593f65cbf3 ("btrfs-progs: sync tree-checker.[ch] from
-> > kernel"), btrfs-progs can do the kernel level tree block checks, which
-> > is not really sutiable for dump-tree.
-> > 
-> > Under a lot of cases, we're using dump-tree tool to debug to collect the
-> > details from end users.
-> > If it's a bitflip causing a rejection, we would be unable to determine
-> > the cause.
-> > 
+On Thu, May 18, 2023 at 10:10:38AM +0800, Qu Wenruo wrote:
+> [CHANGELOG]
+> v2:
+> - Skip csum item checks if the fs is under csum change
+>   Tree-checker can be too sensitive if the csum size doesn not match the
+>   old csum size, which can lead to false alerts on overlapping csum
+>   items.
 > 
->   Yep. Agreed.
-> 
-> > So this patch would add OPEN_CTREE_SKIP_LEAF_ITEM_CHECKS for dump-tree.
-> 
->   By default, it is a good idea to skip the tree checker for the
->   dump-tree. Additionally, we may requires an option to dump the
->   tree with the tree checker. However, I don't see any use case yet.
+>   But we still want the tree checker functionality overall, so just
+>   disable csum item related checks for csum change.
 
-Yeah we can add an option to "fail on first error" if needed.
+I still see some errors with v2, the same test that rotates the checksum
+types on an increasingly filled filesystem (the one I sent you before):
+
+ERROR: failed to insert csum change item: File exists
+ERROR: failed to generate new data csums: File exists
+WARNING: reserved space leaked, flag=0x4 bytes_reserved=16384
+extent buffer leak: start 610811904 len 16384
+extent buffer leak: start 5242880 len 16384
+WARNING: dirty eb leak (aborted trans): start 5242880 len 16384

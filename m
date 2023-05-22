@@ -2,53 +2,54 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF4ADC7EE32
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 May 2023 12:25:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A84CDC77B73
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 May 2023 12:25:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234025AbjEVMZt (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 May 2023 08:25:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55734 "EHLO
+        id S234038AbjEVMZu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 May 2023 08:25:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57656 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234308AbjEVMZf (ORCPT
+        with ESMTP id S234322AbjEVMZh (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2023 08:25:35 -0400
-Received: from mail-lj1-x22e.google.com (mail-lj1-x22e.google.com [IPv6:2a00:1450:4864:20::22e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5132E6E
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:23:25 -0700 (PDT)
-Received: by mail-lj1-x22e.google.com with SMTP id 38308e7fff4ca-2af29b37bd7so34182811fa.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:23:25 -0700 (PDT)
+        Mon, 22 May 2023 08:25:37 -0400
+Received: from mail-lf1-x12a.google.com (mail-lf1-x12a.google.com [IPv6:2a00:1450:4864:20::12a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 318E810E6
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:23:29 -0700 (PDT)
+Received: by mail-lf1-x12a.google.com with SMTP id 2adb3069b0e04-4f3baf04f0cso1925047e87.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:23:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1684758181; x=1687350181;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=cUJaXRMKrJZfSuo4O6oHzmU/rUOVfjL2sH+Txpo7XaI=;
-        b=alXzzb2V8vmbFWjROTmWQUXQA/rCquA21gy8kDMqQN1ISRu4R5nnerb7sYZb6M5xsj
-         TCxA4XIo/7ejgwENQENVbtSVC0aVuL+2Odc/Stx63GdRiCtECWJHS78Mr+bY81BJ4Mta
-         reOLAVeLtngYe+cRN2d6qglyy1WXjAARhQHUwAuzJpzExUxWde5KRJqu7iJQ09H+GkF7
-         Ecfabmweku5HeardZEMImRIPnmLGcD88dLOCzUQRr8/2an6a60JBIj5uLYKRpNqXWYW5
-         rlvdYw47JtpEtlYmui20fJ22ewvKsWJxOAz/wva7lzhMvE3f6gt+lD+vjvTCbteRuEu+
-         bs4w==
+        d=linaro.org; s=google; t=1684758183; x=1687350183;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=1IyoCNdPUejBx0Nfm2fy7tQjrPviRbLySXuMppjkmh8=;
+        b=gcgacHdAPcgEhgCGaZG7QK1H1+uKPTsNo0kUUb7TgKgRfAMt0O67jgYz3zwNpvaDJ8
+         YLD6IU4Jqe5CtpinZUEHkWpKEw0q02EEKdJzDfGDYHoaKWLYLlAZ32OJwoTB/NRq0nQF
+         nWuvHq0XN0XF0mI4GZd6FToZXD1nSzWLtskMoMjRa51hgqzNDHudxRY2Ky4Z7Ft8D4SX
+         AtV5+C5q2VDQmIIKvP/AeijYjiPNTAB28wg8M/UPxmCQuLDEO1XoI2U/0O7VzF8xd16g
+         qW1kxzGRwVPfjmjxKMc6bQIDxzpV0CtsntTHX7IcBEf7lKqT5poODgBoCRB7uGiRkIHx
+         DApw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1684758181; x=1687350181;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=cUJaXRMKrJZfSuo4O6oHzmU/rUOVfjL2sH+Txpo7XaI=;
-        b=mBjsaynhYpyjqDbv+F2HDWhCK4k0mtP9OQIiddLov06LfXwalK5Nqk9TNR8BdmNT5h
-         oJpvXjSij+OQPVoQ/hysJ1uFODP+K3dtC5vMuDLRsWoKH92HNXZYNladCixnYUbI1XvY
-         5/lf6mGVZUlAFIrwrdoP1cQEIGFfjdIX67CL02YHb5lf8RkgEFI/G6WCzXS5CE+LjLY+
-         IFg1MSQtDQuVgj01X+S9NpPPhEC9vPE3eUWmLwVe7MMMsavs6suG65jVCpzNTu/L6E3m
-         NtZI2wxSr3LVPk7myT1V16qN79z8lw5cmioYJYcwoLFQgxYYx5g7hYy8GvUDSvzv/tLX
-         WNZA==
-X-Gm-Message-State: AC+VfDwCmS4rpXWf8TFqIuH/B9HreRkaOwqcVoR/6flc8t4EJiFv6D4j
-        Sp+6GkGcQk4obthKTW26wKIlikxVjSssRBeIJCE=
-X-Google-Smtp-Source: ACHHUZ4c/EF4pEY/c1jvx/7JM/1UA+HULM+i+GCXQ4VVh8LOcI27LmwnjJiFxcGTV8jx2kKStYCvOA==
-X-Received: by 2002:ac2:4c14:0:b0:4f0:81c:73eb with SMTP id t20-20020ac24c14000000b004f0081c73ebmr3500821lfq.42.1684758181304;
-        Mon, 22 May 2023 05:23:01 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1684758183; x=1687350183;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=1IyoCNdPUejBx0Nfm2fy7tQjrPviRbLySXuMppjkmh8=;
+        b=barnMncFD8m++0YzSndop4tRIYkQNYXF81se/odc36sYEhCJxuI3biiHpPaP2ThPGO
+         WF52jP8uGdoOLmTVKUuVg9Tflgq0ocz8qz8kWYNiP55Ky6RPP41s0WZGl/qGbTtKps2C
+         w9B42PoZW/BRy9lYRDb1irxMTzX4w+uJaw5lqZoGa6XGCSWz4ztag0VoYOHrIkbMxEe9
+         XuIAr4uspxDihKowJRRyfGFr8aYDoVqvs6WwSzFXvZfxWtMQ6sJVqO+CTARUXPdwddfz
+         KUIJMWfTKgWZfhcOgaA585Eo4JANBbE5Pb6vKzaF6cDcbve7//ahbFyalQsegN0T7dkF
+         v0lQ==
+X-Gm-Message-State: AC+VfDynewRl8eKpTA+7lJZ66SPlQ8nXjM91lT9/nphs9SVDkQ4TuP+L
+        9QMRbjCfsqsKvXvckv+FT6Hl0w==
+X-Google-Smtp-Source: ACHHUZ7GyrHaRLxZJn5CX+edppeQYtkDH6CWlWi/SgK14OWJ9VGKS0i2Zrq5Mv+0/A2rkwsEN2zsJg==
+X-Received: by 2002:ac2:5636:0:b0:4f3:89ca:246d with SMTP id b22-20020ac25636000000b004f389ca246dmr3437740lff.41.1684758183253;
+        Mon, 22 May 2023 05:23:03 -0700 (PDT)
 Received: from rayden.urgonet (h-46-59-78-111.A175.priv.bahnhof.se. [46.59.78.111])
-        by smtp.gmail.com with ESMTPSA id y9-20020ac24469000000b004efe8174586sm974633lfl.126.2023.05.22.05.23.00
+        by smtp.gmail.com with ESMTPSA id y9-20020ac24469000000b004efe8174586sm974633lfl.126.2023.05.22.05.23.02
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 22 May 2023 05:23:00 -0700 (PDT)
+        Mon, 22 May 2023 05:23:02 -0700 (PDT)
 From:   Jens Wiklander <jens.wiklander@linaro.org>
 To:     u-boot@lists.denx.de, linux-btrfs@vger.kernel.org
 Cc:     Ilias Apalodimas <ilias.apalodimas@linaro.org>,
@@ -60,50 +61,53 @@ Cc:     Ilias Apalodimas <ilias.apalodimas@linaro.org>,
         Marek Behun <kabel@kernel.org>, Qu Wenruo <wqu@suse.com>,
         Tom Rini <trini@konsulko.com>,
         Jens Wiklander <jens.wiklander@linaro.org>
-Subject: [PATCH 0/8] Cleanup unaligned access macros
-Date:   Mon, 22 May 2023 14:22:30 +0200
-Message-Id: <20230522122238.4191762-1-jens.wiklander@linaro.org>
+Subject: [PATCH 2/8] sh: use asm-generic/unaligned.h
+Date:   Mon, 22 May 2023 14:22:32 +0200
+Message-Id: <20230522122238.4191762-3-jens.wiklander@linaro.org>
 X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20230522122238.4191762-1-jens.wiklander@linaro.org>
+References: <20230522122238.4191762-1-jens.wiklander@linaro.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Hi,
+Sh essentially duplicates the content of asm-generic/unaligned.h, so use
+that file directly instead.
 
-There are two versions of get/set_unaligned, get_unaligned_be64,
-put_unaligned_le64 etc in U-Boot causing confusion (and bugs).
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ arch/sh/include/asm/unaligned.h | 22 ++--------------------
+ 1 file changed, 2 insertions(+), 20 deletions(-)
 
-In this patch-set, I'm trying to fix that with a single unified version of
-the access macros to be used across all archs. This work is inspired by
-similar changes in this Linux kernel by Arnd Bergman,
-https://lore.kernel.org/lkml/20210514100106.3404011-1-arnd@kernel.org/
-
-Thanks,
-Jens
-
-Jens Wiklander (8):
-  arm: use asm-generic/unaligned.h
-  sh: use asm-generic/unaligned.h
-  mips: use asm-generic/unaligned.h
-  m68k: use asm-generic/unaligned.h
-  powerpc: use asm-generic/unaligned.h
-  fs/btrfs: use asm/unaligned.h
-  linux/unaligned: remove unused access_ok.h
-  asm-generic: simplify unaligned.h
-
- arch/arm/include/asm/unaligned.h     | 21 +------
- arch/m68k/include/asm/unaligned.h    | 17 +-----
- arch/mips/include/asm/unaligned.h    | 23 +------
- arch/powerpc/include/asm/unaligned.h | 18 +-----
- arch/sh/include/asm/unaligned.h      | 22 +------
- fs/btrfs/crypto/hash.c               |  2 +-
- include/asm-generic/unaligned.h      | 89 +++++++++++++++++++++++-----
- include/linux/unaligned/access_ok.h  | 66 ---------------------
- 8 files changed, 83 insertions(+), 175 deletions(-)
- delete mode 100644 include/linux/unaligned/access_ok.h
-
+diff --git a/arch/sh/include/asm/unaligned.h b/arch/sh/include/asm/unaligned.h
+index 5acf0819620e..7fb482abc383 100644
+--- a/arch/sh/include/asm/unaligned.h
++++ b/arch/sh/include/asm/unaligned.h
+@@ -1,20 +1,2 @@
+-#ifndef _ASM_SH_UNALIGNED_H
+-#define _ASM_SH_UNALIGNED_H
+-
+-/* Copy from linux-kernel. */
+-
+-/* Other than SH4A, SH can't handle unaligned accesses. */
+-#include <linux/compiler.h>
+-#if defined(__BIG_ENDIAN__)
+-#define get_unaligned   __get_unaligned_be
+-#define put_unaligned   __put_unaligned_be
+-#elif defined(__LITTLE_ENDIAN__)
+-#define get_unaligned   __get_unaligned_le
+-#define put_unaligned   __put_unaligned_le
+-#endif
+-
+-#include <linux/unaligned/le_byteshift.h>
+-#include <linux/unaligned/be_byteshift.h>
+-#include <linux/unaligned/generic.h>
+-
+-#endif /* _ASM_SH_UNALIGNED_H */
++/* SPDX-License-Identifier: GPL-2.0 */
++#include <asm-generic/unaligned.h>
 -- 
 2.34.1
 

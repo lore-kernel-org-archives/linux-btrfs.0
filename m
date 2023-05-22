@@ -2,111 +2,111 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E1D5C77B73
-	for <linux-btrfs@archiver.kernel.org>; Mon, 22 May 2023 12:08:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13A23C7EE31
+	for <linux-btrfs@archiver.kernel.org>; Mon, 22 May 2023 12:25:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232786AbjEVMIi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 May 2023 08:08:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45414 "EHLO
+        id S234018AbjEVMZs (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 May 2023 08:25:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57620 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231492AbjEVMIh (ORCPT
+        with ESMTP id S234307AbjEVMZf (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2023 08:08:37 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC615AC
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:08:24 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 65ECF1FEB8;
-        Mon, 22 May 2023 12:08:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1684757303;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=wT2cUu94a2ucoZZh0uohbe9WAzIDGIA0TkA47g5G+mg=;
-        b=yoFPdo6HaYhK2vLdc1dJ2qu9ITuDe481rW5Pk5OyuiYIIHAyE9nvrcySFNVcvF+nxDCZ0P
-        u/6NPl8c65BwKsVzx7N6VdONU6lfwFlS4NtUc9MV39OI3ODYhUK5OMFHuV5+qyFbFSdh/a
-        pE2QXQdd95uRxqdYQdHvl0xYkGkMQJM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1684757303;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=wT2cUu94a2ucoZZh0uohbe9WAzIDGIA0TkA47g5G+mg=;
-        b=BhfV5+F3gFdOYp9mPptTh0Dvkm8ieLiTCOymXxujcSpK9lw+iyK66v3YOEvJzOuD6mcafv
-        U3Oq19AqZkJ6SzBA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3856B13336;
-        Mon, 22 May 2023 12:08:23 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id /bjgDDdba2QmTgAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 22 May 2023 12:08:23 +0000
-Date:   Mon, 22 May 2023 14:02:17 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     David Sterba <dsterba@suse.cz>
-Cc:     Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC] btrfs: trigger orphan inodes cleanup during sync
- ioctl
-Message-ID: <20230522120217.GM32559@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <79d32abc0d6c1a3afcf9224bd44875f5594c80b6.1683848508.git.wqu@suse.com>
- <20230522114329.GK32559@twin.jikos.cz>
- <89804ef5-2dfc-ecb0-cc48-87bed8694e67@gmx.com>
- <20230522115332.GL32559@twin.jikos.cz>
+        Mon, 22 May 2023 08:25:35 -0400
+Received: from mail-lf1-x12a.google.com (mail-lf1-x12a.google.com [IPv6:2a00:1450:4864:20::12a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E8F3710DD
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:23:25 -0700 (PDT)
+Received: by mail-lf1-x12a.google.com with SMTP id 2adb3069b0e04-4f4b384c09fso729827e87.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 05:23:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google; t=1684758182; x=1687350182;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=QNGtYZHP+K0ibUJVp062Om/gTc5vNRdHlING4IaIZzs=;
+        b=fLHAUMJE8wSslvQMdWoVmJPTUxLmmJXq6lrPAOjCD7b7WdJBGdTqFAaNBI9jAZ0JnN
+         1lML9Dvcdw8cfKAS5ZwZzear3U1/ExvV9Dq0uwg4AbG9X930/+8klNVewm2TS3f5RYM6
+         YJlL0KdOgaD4sdtPBX3atS4uhxD3S9K4PapPDDlBqEeyuYE1Pbk/4NyOGXMj8JBJcEVp
+         Q5XSkl2M8oLm3mNJGPUwGGTPLdm4PSGp91X0g1U1EPP3OKwOWXOEOvpAoXQXjs0dZrJQ
+         Jn8VjriZB29nI6Dm9mlh/o25bKdLJjDC3s6DeR0Papit83bnIIoJQMUuKxaNVWOhA0f9
+         Ct5Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1684758182; x=1687350182;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=QNGtYZHP+K0ibUJVp062Om/gTc5vNRdHlING4IaIZzs=;
+        b=gkINNTPil/u/Mcq7/bxerSXyPe6XA6pzX7lP35RRbcQORApdVAcgEDmco0XTj6wrRf
+         2ezrDTGadHhNJmpiTcYw7FqIyP/0XiIMFyw2OpLXLrm6NU1T96sh0Oy9pjqARF39mR/z
+         lgvh/u1x9rWabYK2qbRV8QLEj9zsoU3VsVtgWnNkhJthytvLkX2z5+wRjDC3HTg/WsGh
+         OTksrf9UF5HstVgbafpfIiLiekkVzWk+uW+e+ScJocfHQDvaok06omrEDUeM+S+4K4/u
+         gj4NyV8gwQiUqS97YkxKrhfZFm91MH4vXdXw+uHyqUDX9JJTGt0dzkSHc5i64GEAC+JS
+         IK8w==
+X-Gm-Message-State: AC+VfDyF2wbbbO74Fog0iLxx2TEeRepgAftNQKBUsu9J/1FdmU7WxWzt
+        wbpaM7vvSTDDz1IcbzXU5K3+vQ==
+X-Google-Smtp-Source: ACHHUZ75C39ShNDSb5J/HnD7gSQQwUoKvdbJfUs/lt1VYFYSSAAnerCgHJ23litPwTEt4Ouev7iEfw==
+X-Received: by 2002:a19:ad02:0:b0:4f1:866d:9b01 with SMTP id t2-20020a19ad02000000b004f1866d9b01mr3249814lfc.3.1684758182323;
+        Mon, 22 May 2023 05:23:02 -0700 (PDT)
+Received: from rayden.urgonet (h-46-59-78-111.A175.priv.bahnhof.se. [46.59.78.111])
+        by smtp.gmail.com with ESMTPSA id y9-20020ac24469000000b004efe8174586sm974633lfl.126.2023.05.22.05.23.01
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 22 May 2023 05:23:01 -0700 (PDT)
+From:   Jens Wiklander <jens.wiklander@linaro.org>
+To:     u-boot@lists.denx.de, linux-btrfs@vger.kernel.org
+Cc:     Ilias Apalodimas <ilias.apalodimas@linaro.org>,
+        Arnd Bergmann <arnd@arndb.de>, Huan Wang <alison.wang@nxp.com>,
+        Angelo Dureghello <angelo@kernel-space.org>,
+        Daniel Schwierzeck <daniel.schwierzeck@gmail.com>,
+        Wolfgang Denk <wd@denx.de>, Marek Vasut <marex@denx.de>,
+        Nobuhiro Iwamatsu <iwamatsu@nigauri.org>,
+        Marek Behun <kabel@kernel.org>, Qu Wenruo <wqu@suse.com>,
+        Tom Rini <trini@konsulko.com>,
+        Jens Wiklander <jens.wiklander@linaro.org>
+Subject: [PATCH 1/8] arm: use asm-generic/unaligned.h
+Date:   Mon, 22 May 2023 14:22:31 +0200
+Message-Id: <20230522122238.4191762-2-jens.wiklander@linaro.org>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20230522122238.4191762-1-jens.wiklander@linaro.org>
+References: <20230522122238.4191762-1-jens.wiklander@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230522115332.GL32559@twin.jikos.cz>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 22, 2023 at 01:53:32PM +0200, David Sterba wrote:
-> On Mon, May 22, 2023 at 07:51:17PM +0800, Qu Wenruo wrote:
-> > On 2023/5/22 19:43, David Sterba wrote:
-> > > On Fri, May 12, 2023 at 07:42:05AM +0800, Qu Wenruo wrote:
-> > >> --- a/fs/btrfs/ioctl.c
-> > >> +++ b/fs/btrfs/ioctl.c
-> > >> @@ -3111,6 +3111,11 @@ static noinline long btrfs_ioctl_start_sync(struct btrfs_root *root,
-> > >>   {
-> > >>   	struct btrfs_trans_handle *trans;
-> > >>   	u64 transid;
-> > >> +	int ret;
-> > >> +
-> > >> +	ret = btrfs_orphan_cleanup(root);
-> > >> +	if (ret < 0)
-> > >> +		return ret;
-> > >
-> > > I think this should not fail the whole sync ioctl, namely when it would
-> > > not even try to start the transaction commit.
-> > 
-> > If the cleanup failed, it's mostly possible that the subvolume tree is
-> > corrupted, and we would still abort transaction during that subvolume
-> > tree operation.
-> 
-> Yes, and that's the right place to detect the error.
+Arm duplicates the content of asm-generic/unaligned.h, so use that file
+directly instead.
 
-I've updated with
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ arch/arm/include/asm/unaligned.h | 21 ++-------------------
+ 1 file changed, 2 insertions(+), 19 deletions(-)
 
----
--       int ret;
- 
--       ret = btrfs_orphan_cleanup(root);
--       if (ret < 0)
--               return ret;
-+       /*
-+        * Start orphan cleanup here for the given root in case it hasn't been
-+        * started already by other means. Errors are handled in the other
-+        * functions during transaction commit.
-+        */
-+       btrfs_orphan_cleanup(root);
----
+diff --git a/arch/arm/include/asm/unaligned.h b/arch/arm/include/asm/unaligned.h
+index 0a228fb8eea8..7fb482abc383 100644
+--- a/arch/arm/include/asm/unaligned.h
++++ b/arch/arm/include/asm/unaligned.h
+@@ -1,19 +1,2 @@
+-#ifndef _ASM_ARM_UNALIGNED_H
+-#define _ASM_ARM_UNALIGNED_H
+-
+-#include <linux/unaligned/le_byteshift.h>
+-#include <linux/unaligned/be_byteshift.h>
+-#include <linux/unaligned/generic.h>
+-
+-/*
+- * Select endianness
+- */
+-#if __BYTE_ORDER == __LITTLE_ENDIAN
+-#define get_unaligned	__get_unaligned_le
+-#define put_unaligned	__put_unaligned_le
+-#else
+-#define get_unaligned	__get_unaligned_be
+-#define put_unaligned	__put_unaligned_be
+-#endif
+-
+-#endif /* _ASM_ARM_UNALIGNED_H */
++/* SPDX-License-Identifier: GPL-2.0 */
++#include <asm-generic/unaligned.h>
+-- 
+2.34.1
+

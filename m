@@ -2,59 +2,63 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BF20C7EE26
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 May 2023 16:27:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AC40C7EE26
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 May 2023 16:30:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235217AbjEWQ1r (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 May 2023 12:27:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42534 "EHLO
+        id S236315AbjEWQaL (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 May 2023 12:30:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43576 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235167AbjEWQ1q (ORCPT
+        with ESMTP id S233209AbjEWQaH (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2023 12:27:46 -0400
+        Tue, 23 May 2023 12:30:07 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F6F3CD
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2023 09:27:45 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 68EE4DD
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2023 09:30:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
         :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=umT/3hwQ+kwkqudx2zOEjL2MSs11z9kzaL/QqprTgBQ=; b=b5qbXlfrfLjyrhUc8iSVVJGt0D
-        zz+Co3T4XONkOQyN0utKR3jEaFdh7tWKhbs6RPHz8QLSjgl8RVsRLzZvBJycqTn+w0Tv+zlfVb4Hx
-        5OKsgMlpkNsY4V/RWP2EUxztz/NBfhOtqC9oq6p7TZL2Hy3XH/OR434rLItzANFxmdfgtO2SNaEux
-        C8pcBpoWcpF01Zlo+oDicBhrWY8hdShIgsvclNIb/uyQRfKuiI2dTpndvxzdJncJUdK/WSLDtoW3I
-        I3EI4dUjWX5qwFxCI8750iTgiJyJfEGPZtwlS4+AUpMHc5vzOdegqeV2zrvJhvcRSwfTSk3xBWZ7G
-        dyiV1sPQ==;
+        bh=fPH9D92LiVgDrmbDXkeNFIIImZlg9QrF7WTmo1VWrAs=; b=HN53Qu5b+v9hBAQPqazNpZVoX9
+        cjPSxKYibk+H6PopxbfF9eh36WbPQL/YYXA9d4Vtc9f+QgEXqNszUgIKYPJEcfc5ncs5rbe+6zpjL
+        8Fscg4uxLcPUHFbDYy0mKzakpC5RikLBsfqkJc5aptlamOf77snJB/YPV6wOh5OsUQgpMNazq7vaD
+        91HUAHgT3edlRbrKFIqh8eZU+kec8th18MEshx7PlhvYK4jBxQOp+bYMxb6ONagf/dXs4MOr1341R
+        LJNyNwG2eBMxmsQKCaSB1CWQvXS+j0evsjcagZiq0Nea4VKNMCs04Rz5oxZGOg7kKd3Sz7O3jo8ti
+        oQJ0/V4Q==;
 Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
-        id 1q1UrQ-00AnQj-2s;
-        Tue, 23 May 2023 16:27:44 +0000
-Date:   Tue, 23 May 2023 09:27:44 -0700
+        id 1q1Utg-00AntN-0k;
+        Tue, 23 May 2023 16:30:04 +0000
+Date:   Tue, 23 May 2023 09:30:04 -0700
 From:   Christoph Hellwig <hch@infradead.org>
 To:     Anand Jain <anand.jain@oracle.com>
 Cc:     linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/9] btrfs: reduce struct btrfs_fs_devices size relocate
- fsid_change
-Message-ID: <ZGzpgG8o5pv5+hNL@infradead.org>
+Subject: Re: [PATCH 2/9] btrfs: streamline fsid checks in alloc_fs_devices
+Message-ID: <ZGzqDIVyRiDT7PSX@infradead.org>
 References: <cover.1684826246.git.anand.jain@oracle.com>
- <844fa765ab173b8dd24549f145534f41d412d3ea.1684826247.git.anand.jain@oracle.com>
+ <5113dde5d6f756818885c39bc8ec6f5b8e45ae54.1684826247.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <844fa765ab173b8dd24549f145534f41d412d3ea.1684826247.git.anand.jain@oracle.com>
+In-Reply-To: <5113dde5d6f756818885c39bc8ec6f5b8e45ae54.1684826247.git.anand.jain@oracle.com>
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 23, 2023 at 06:03:15PM +0800, Anand Jain wrote:
-> By relocating the bool fsid_change near other bool declarations in the
-> struct btrfs_fs_devices, approximately 6 bytes is saved.
-> 
->    before: 512 bytes
->    after: 496 bytes
-> 
-> Furthermore, adding comments.
+On Tue, May 23, 2023 at 06:03:16PM +0800, Anand Jain wrote:
+> +	ASSERT(!(fsid == NULL && metadata_fsid != NULL));
 
-I like the better backing.  But what looks access to fsid_change
-and the other bools?  For sub-word members atomicy guarantees are
-very limited, so they'd better all use the same lock.
+The more readable way to write this would be;
+
+	ASSERT(fsid || !metadata_fsid);
+
+or just throw a 
+
+	ASSERT(!metadata_fsid);
+
+into the else branch of the if (fsid) check.
+
+> +	if (fsid){
+
+missing whitespace before the opening brace.
+

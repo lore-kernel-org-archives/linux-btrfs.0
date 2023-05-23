@@ -2,168 +2,109 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75808C77B73
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 May 2023 00:48:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD4A4C77B73
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 May 2023 01:52:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233034AbjEWAsa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 22 May 2023 20:48:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49286 "EHLO
+        id S232134AbjEWBwa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 22 May 2023 21:52:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56070 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233996AbjEWAsM (ORCPT
+        with ESMTP id S229655AbjEWBw3 (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 22 May 2023 20:48:12 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC8BD4C27
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 May 2023 17:37:33 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8C71D2236E
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2023 00:37:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1684802252; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=hwuyl+YlmnhMaiqB+9vXiDdlZbn3K3urnM4RhrzU64k=;
-        b=Z8zzwXZy9ryhdIHd5ot+6kUZTlopPlpIQuZfhjr8ALeExmMcfSYI5lPDsdGisLFgdpnW7I
-        jHHyfYfsfHt13x5k9HqFA5Tg2oJCwuHpHFYRtY0UM4D1D6KcDls8fl6hZyrUTTy/Sbzf/w
-        Fb1Zi2mKd6XJH1TQN319jirisDTJt9M=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E31C713588
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2023 00:37:31 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id wJPvKssKbGTIIgAAMHmgww
-        (envelope-from <wqu@suse.com>)
-        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2023 00:37:31 +0000
-From:   Qu Wenruo <wqu@suse.com>
-To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: tune: delete the csum change item after converting the fs
-Date:   Tue, 23 May 2023 08:37:12 +0800
-Message-Id: <bda7d23000be5d97a782e8c56c99ddb66ca7a2bb.1684802060.git.wqu@suse.com>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <cover.1684802060.git.wqu@suse.com>
-References: <cover.1684802060.git.wqu@suse.com>
+        Mon, 22 May 2023 21:52:29 -0400
+Received: from mail-pg1-x530.google.com (mail-pg1-x530.google.com [IPv6:2607:f8b0:4864:20::530])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6D98CCD;
+        Mon, 22 May 2023 18:52:28 -0700 (PDT)
+Received: by mail-pg1-x530.google.com with SMTP id 41be03b00d2f7-53202149ae2so4641266a12.3;
+        Mon, 22 May 2023 18:52:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1684806748; x=1687398748;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=YJHAFjFAFtXjAaqHIvSdrHTyDRtStagvgqxmFGoZrEs=;
+        b=Q1ivivjYzqcZM+FCwjRh4OgXuEHgSTMaQeOeos2jjM79DArhX3fq1r47YUeZwlzF8y
+         JI8PUflxQQlaglrZcf9GQTBU3oKLX/ijR4TCm6GkQNZU9Do4ZBFzRw2LhwsxNkNTGNcS
+         QBKg+Xd0HTDJFKXKsTiXzLXc6z3dWgNT6X4SUX3kdzBlDIbIzDIXMfhUBr0Q8MTgl4b3
+         L63/4sFZNnWGVj95q0ND8i8f9B8z9lBx/OPSdY69PgbDD6/7yfW8NqQ8NipXDX6Q1PJB
+         G4PVfnbbj+VRExEp71iDQtq1oIFe1NVEtaY6kAMP40TNhE8K8/Oy0w/Zjr2bBAi3bsox
+         5WKg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1684806748; x=1687398748;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=YJHAFjFAFtXjAaqHIvSdrHTyDRtStagvgqxmFGoZrEs=;
+        b=jjdjZEEJ72bPLvYChyupFZ32W29L4XRBSsnEaP4NV2sYVqNE3Z9A6L/HwbShatwq9u
+         +gOmXFlJtvzw2G4We1HBedE+zdiOym0z989rD5lKbQSz8a0OyweSBbCUX7/c6enAN9Eq
+         rxJnuDqM1ByUYXTGuuWGFR83I9gAkjDkAraPR2Px6ZMaGjmclV088na82pDblePADtW1
+         gdspTQt029dHlZh+th0cTemLrdyj19AiByL+YpkjZfyfJjz+UO+95UyDdPpZEuq9Gevt
+         vIyryoDfYcYfQYZwDDe5ByUN0Se0MMVx15nL9A6lp1sgugFCRRneml3n1PyoHcUCZROY
+         pAVA==
+X-Gm-Message-State: AC+VfDyGytqyn0bdtbhlqR+XVJmQVi+vnh3Cv1Ha7dsVN071I37clD3r
+        FMxA+Xn6JMocHRz5lbaTk5I=
+X-Google-Smtp-Source: ACHHUZ65ZrBdnHglzvC2r3og9XZPcPvr1clzbhLbJrV2UUKfcgNkL/RDkzgg80OEUwNJDiuQwvH3LQ==
+X-Received: by 2002:a17:903:1208:b0:1aa:feca:b616 with SMTP id l8-20020a170903120800b001aafecab616mr13317495plh.65.1684806747723;
+        Mon, 22 May 2023 18:52:27 -0700 (PDT)
+Received: from debian.me (subs02-180-214-232-65.three.co.id. [180.214.232.65])
+        by smtp.gmail.com with ESMTPSA id jj20-20020a170903049400b001aaf1679c9fsm5423489plb.221.2023.05.22.18.52.26
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 22 May 2023 18:52:27 -0700 (PDT)
+Received: by debian.me (Postfix, from userid 1000)
+        id 4A973106998; Tue, 23 May 2023 08:52:21 +0700 (WIB)
+Date:   Tue, 23 May 2023 08:52:21 +0700
+From:   Bagas Sanjaya <bagasdotme@gmail.com>
+To:     Forza <forza@tnonline.net>,
+        Linux btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux Regressions <regressions@lists.linux.dev>,
+        Linux Stable <stable@vger.kernel.org>
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, a1bert@atlas.cz
+Subject: Re: Fwd: vmalloc error: btrfs-delalloc btrfs_work_helper [btrfs] in
+ kernel 6.3.x
+Message-ID: <ZGwcVTpQNBoJHBB+@debian.me>
+References: <efa04d56-cd7f-6620-bca7-1df89f49bf4b@gmail.com>
+ <fcf1d04.faed4a1a.18844d8e78f@tnonline.net>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="vilJHAGKshW8eYzU"
+Content-Disposition: inline
+In-Reply-To: <fcf1d04.faed4a1a.18844d8e78f@tnonline.net>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-[BUG]
-Doing the following csum change in a row, it would fail:
 
- # mkfs.btrfs -f --csum crc32c $dev
- # btrfstune --csum sha256 $dev
- # btrfstune --csum crc32c $dev
- # btrfstune --csum sha256 $dev
- WARNING: Experimental build with unstable or unfinished features
- WARNING: Switching checksums is experimental, do not use for valuable data!
+--vilJHAGKshW8eYzU
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
- Proceed to switch checksums
- ERROR: failed to insert csum change item: File exists
- ERROR: failed to generate new data csums: File exists
- WARNING: reserved space leaked, flag=0x4 bytes_reserved=16384
- extent buffer leak: start 30572544 len 16384
- extent buffer leak: start 30441472 len 16384
- WARNING: dirty eb leak (aborted trans): start 30441472 len 16384
+On Mon, May 22, 2023 at 09:04:05PM +0200, Forza wrote:
+> I have a similar experience with kernel 6.3 where vmalloc fails in a simi=
+lar way. I was able to reproduce it in a QEMU VM as well as on my system.=
+=20
+>=20
+> https://lore.kernel.org/all/d11418b6-38e5-eb78-1537-c39245dc0b78@tnonline=
+=2Enet/T/
 
-[CAUSE]
-During every csum change operation, btrfstune would insert an temporaray
-csum change item into root tree.
+Thanks for your similar report. Telling regzbot about it:
 
-But unfortunately after the conversion btrfstune doesn't properly delete
-the csum change item, result the following items in the root tree:
+#regzbot link: https://lore.kernel.org/all/d11418b6-38e5-eb78-1537-c39245dc=
+0b78@tnonline.net/
 
-	item 10 key (CSUM_CHANGE TEMPORARY_ITEM 0) itemoff 13423 itemsize 0
-		temporary item objectid CSUM_CHANGE offset 0
-		target csum type crc32c (0)
-	item 11 key (CSUM_CHANGE TEMPORARY_ITEM 2) itemoff 13423 itemsize 0
-		temporary item objectid CSUM_CHANGE offset 2
-		target csum type sha256 (2)
+--=20
+An old man doll... just what I always wanted! - Clara
 
-Thus at the last conversion try to go back to SHA256, we failed to
-insert the same item, and caused the above error.
+--vilJHAGKshW8eYzU
+Content-Type: application/pgp-signature; name="signature.asc"
 
-[FIX]
-After finishing the metadata csum conversion, do a proper removal of the
-csum item.
+-----BEGIN PGP SIGNATURE-----
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tune/change-csum.c | 42 ++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 38 insertions(+), 4 deletions(-)
+iHUEABYKAB0WIQSSYQ6Cy7oyFNCHrUH2uYlJVVFOowUCZGwcUgAKCRD2uYlJVVFO
+o3JoAP4i8o9ucMk1qqpBMd8ABO/bcREF3CrJ2WPC/g31f/TX0gEAxA5XA9TJOQcO
+qMAV7/h2Dj3zsyNZYLkYlk+euTGovgM=
+=Jj6d
+-----END PGP SIGNATURE-----
 
-diff --git a/tune/change-csum.c b/tune/change-csum.c
-index c8809300a143..b5efc3a8807f 100644
---- a/tune/change-csum.c
-+++ b/tune/change-csum.c
-@@ -583,10 +583,13 @@ out:
- 	btrfs_release_path(&path);
- 
- 	/*
--	 * Finish the change by clearing the csum change flag and update the superblock
--	 * csum type.
-+	 * Finish the change by clearing the csum change flag, update the superblock
-+	 * csum type, and delete the csum change item in the fs with new csum type.
- 	 */
- 	if (ret == 0) {
-+		struct btrfs_root *tree_root = fs_info->tree_root;
-+		struct btrfs_trans_handle *trans;
-+
- 		u64 super_flags = btrfs_super_flags(fs_info->super_copy);
- 
- 		btrfs_set_super_csum_type(fs_info->super_copy, new_csum_type);
-@@ -596,11 +599,42 @@ out:
- 
- 		fs_info->csum_type = new_csum_type;
- 		fs_info->csum_size = btrfs_csum_type_size(new_csum_type);
-+		fs_info->skip_csum_check = 0;
- 
--		ret = write_all_supers(fs_info);
-+		trans = btrfs_start_transaction(tree_root, 1);
-+		if (IS_ERR(trans)) {
-+			ret = PTR_ERR(trans);
-+			errno = -ret;
-+			error("failed to start new transaction with new csum type: %m");
-+			return ret;
-+		}
-+		key.objectid = BTRFS_CSUM_CHANGE_OBJECTID;
-+		key.type = BTRFS_TEMPORARY_ITEM_KEY;
-+		key.offset = new_csum_type;
-+
-+		ret = btrfs_search_slot(trans, tree_root, &key, &path, -1, 1);
-+		if (ret > 0)
-+			ret = -ENOENT;
- 		if (ret < 0) {
- 			errno = -ret;
--			error("failed to write super blocks: %m");
-+			error("failed to locate the csum change item: %m");
-+			btrfs_release_path(&path);
-+			btrfs_abort_transaction(trans, ret);
-+			return ret;
-+		}
-+		ret = btrfs_del_item(trans, tree_root, &path);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("failed to delete the csum change item: %m");
-+			btrfs_release_path(&path);
-+			btrfs_abort_transaction(trans, ret);
-+			return ret;
-+		}
-+		btrfs_release_path(&path);
-+		ret = btrfs_commit_transaction(trans, tree_root);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error("failed to finalize the csum change: %m");
- 		}
- 	}
- 	return ret;
--- 
-2.40.1
-
+--vilJHAGKshW8eYzU--

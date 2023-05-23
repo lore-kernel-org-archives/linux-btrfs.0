@@ -2,93 +2,53 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D06EC7EE2D
-	for <linux-btrfs@archiver.kernel.org>; Tue, 23 May 2023 16:30:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 675F2C77B75
+	for <linux-btrfs@archiver.kernel.org>; Tue, 23 May 2023 16:31:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236608AbjEWQaM (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 23 May 2023 12:30:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43572 "EHLO
+        id S237497AbjEWQb4 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 23 May 2023 12:31:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44632 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235459AbjEWQaJ (ORCPT
+        with ESMTP id S231770AbjEWQbz (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 23 May 2023 12:30:09 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D1595C2;
-        Tue, 23 May 2023 09:30:07 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 23957227E1;
-        Tue, 23 May 2023 16:30:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1684859405;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=wrLx0Egcaw0whIq7DRTtuN+cxqWzcno7lSmgBonJeXA=;
-        b=LC+69jToeST6d2IF1TdJH6kiCDDPcm7fdmkXnivKpaoxE1boWMPwxiPVqzyJE65siJY23V
-        uuj7yTe+4srNnFdmw23A53bYIXXJiWou5+DQ1XPfS14+9D6xHV2rU1RnHQ8E5+ulOUfWTu
-        xAfgWOweUgC/SzDJDdx0ilBwX2yX01I=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1684859405;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=wrLx0Egcaw0whIq7DRTtuN+cxqWzcno7lSmgBonJeXA=;
-        b=MpvjYiTfjUOWbbzzdRvKMyyQIar/RVwcbR8LuwtUCm21Kk9fsoIpT/ns/pnqmZa7xkKxMG
-        4SWPukg946lcdfDQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DD9E813588;
-        Tue, 23 May 2023 16:30:04 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id VdFTNQzqbGQdHwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 23 May 2023 16:30:04 +0000
-Date:   Tue, 23 May 2023 18:23:57 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     pengfuyuan <pengfuyuan@kylinos.cn>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, k2ci <kernel-bot@kylinos.cn>
-Subject: Re: [PATCH] btrfs: fix uninitialized variable warnings
-Message-ID: <20230523162357.GX32559@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230523085935.713859-1-pengfuyuan@kylinos.cn>
+        Tue, 23 May 2023 12:31:55 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44D60C2
+        for <linux-btrfs@vger.kernel.org>; Tue, 23 May 2023 09:31:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=HjizjmSbSnEnp47JHZUDXyB7yIKhhUrfbA/tpkHvmvE=; b=TSifdAq2xyE+KiJsPFaDhHCf+m
+        AHmdHjSyzCFst/O4mSdC3PHU18vceuw9TQohZNy1yH0oPZ9aREBTKMWHkCzw9h+YJq2zzHtzUTdJR
+        p6SviT7v0HnbqYj1SF2P5LVJjVS4yPeWRqUGqd+HMP3oqwITa60peWYsFLoq+Lla+br1TAP75uMgP
+        FvstI/75mPereXKFSH9pZLmL83aEqP5ufk8gIQz12gbliqFTO4tUg2CvZUPovVZwFO6iy2cMHjcXo
+        miFD+qZ3e0QwKm5EabZuHYwdG8IDI9EZuAw1krZ20LQZqqvlDLYgrnvRD+urHhZXSkU7fkx5HoABj
+        a2EzCtwg==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1q1UvT-00AoEG-0E;
+        Tue, 23 May 2023 16:31:55 +0000
+Date:   Tue, 23 May 2023 09:31:55 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Anand Jain <anand.jain@oracle.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 7/9] btrfs: refactor with memcmp_fsid_changed helper
+Message-ID: <ZGzqe5b/whDTQjAz@infradead.org>
+References: <cover.1684826246.git.anand.jain@oracle.com>
+ <22107504d4d780ff15382ec0abf531314069692a.1684826247.git.anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230523085935.713859-1-pengfuyuan@kylinos.cn>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <22107504d4d780ff15382ec0abf531314069692a.1684826247.git.anand.jain@oracle.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 23, 2023 at 04:59:35PM +0800, pengfuyuan wrote:
-> 
-> There are some warnings on older compilers (gcc 10, 7) or non-x86_64
-> architectures (mips64).  As btrfs wants to enable -Wmaybe-uninitialized
-> by default, fix the warnings even though it's not necessary on recent
-> compilers (gcc 12+).
-> 
->     fs/btrfs/tree-log.c: In function ???btrfs_log_inode???:
->     fs/btrfs/tree-log.c:6211:9: error: ???last_range_start??? may be used uninitialized in this function [-Werror=maybe-uninitialized]
->      6211 |   ret = insert_dir_log_key(trans, log, path, key.objectid,
->           |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
->      6212 |       first_dir_index, last_dir_index);
->           |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
->     fs/btrfs/tree-log.c:6161:6: note: ???last_range_start??? was declared here
->      6161 |  u64 last_range_start;
->           |      ^~~~~~~~~~~~~~~~
->     cc1: all warnings being treated as errors
-> 
-> Reported-by: k2ci <kernel-bot@kylinos.cn>
-> Signed-off-by: pengfuyuan <pengfuyuan@kylinos.cn>
+On Tue, May 23, 2023 at 06:03:23PM +0800, Anand Jain wrote:
+> +	return (memcmp(fs_devices->fsid, fs_devices->metadata_uuid,
+> +		       BTRFS_FSID_SIZE) != 0 &&
+> +		memcmp(fs_devices->metadata_uuid, fsid, BTRFS_FSID_SIZE) == 0);
 
-Thanks, this warning got reported reported recently [1] and the fix is
-now in queue.
+no need for the outer braces.
 
-[1] https://lore.kernel.org/linux-btrfs/20230516013430.2712449-1-zhangshida@kylinos.cn/

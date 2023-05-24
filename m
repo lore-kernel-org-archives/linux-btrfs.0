@@ -2,45 +2,43 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3DA39C7EE23
-	for <linux-btrfs@archiver.kernel.org>; Wed, 24 May 2023 15:03:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EDFAC7EE2C
+	for <linux-btrfs@archiver.kernel.org>; Wed, 24 May 2023 15:03:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236423AbjEXPDi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 24 May 2023 11:03:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49762 "EHLO
+        id S231688AbjEXPDj (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 24 May 2023 11:03:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49778 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236416AbjEXPDh (ORCPT
+        with ESMTP id S236397AbjEXPDi (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 24 May 2023 11:03:37 -0400
+        Wed, 24 May 2023 11:03:38 -0400
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A9CE1A6
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 557F6132
         for <linux-btrfs@vger.kernel.org>; Wed, 24 May 2023 08:03:30 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=UMyE1bk35BydsclRtPx2FFQO7xoXpaKy5j1gRizYx2Q=; b=Bzp2WbVsinAItGHOpD8ZFiVoP+
-        +kJXII/l6tZX280CLL/Q6SIVplt1Ygk4aiIwSPi0dxVTwFLN/IDnLbGqiq22XW/9m0MfqOCy1GuWq
-        Axoy4VgmvjhGFWTcegIz3Nhd4icdQd5NpAC9rFIzXvgUx/j2oLul9pwuiTGpOZiUQ+2iUfr/NUcTj
-        nQsimxhde0cP02gW44Esps/TWo7YVY55xiG8VX4XaNHbDg6s58ZSGtbLhYVQC5wCGWUr5qwEgBrqM
-        FXeLshfvtUtdDadEViMBzjdI/PrI78BfuUK8/PcSQGXccpKwCgLJTyDOb3NuNJwY8JQYY4kYdyhqi
-        MMBGWp1g==;
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=W+4+t5smRUpwMnPJ7sXMAxOidowB5dzlaPuTBYysVJ8=; b=IATlzW1jzpy3vBlfIZ86GtHfAY
+        swwhQnwC/SUUNyTC6n035e1dx5j5qgajcucsDayMWw3npmK92LR865mjpBKZUdoINDC6BqeGFO8eU
+        VCPEC5L6Xa7G149ApKgWKuAQb/AlxJUHcaVxBTPzT6+UI1BJoRO9e/tJXKHW7n2p/lTBsoMrSMLbE
+        ZDY/qzvwgVbBGRUzb9AkMmPtDNtOrQjr1Xy6H7e5UOioYEfBTrGHG06qhKd6dmlWiVOIVrPsbHjRR
+        11iCi+DHLALpfDcOFspMz3iTlrMr9zoomL8ybwALObf9+eMJOW/Aardg58CvrYreNtW8jeX5ExQkW
+        UiILaAxQ==;
 Received: from [89.144.223.4] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1q1q1P-00DmaM-1p;
-        Wed, 24 May 2023 15:03:27 +0000
+        id 1q1q1J-00DmZt-0h;
+        Wed, 24 May 2023 15:03:21 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         Naohiro Aota <naohiro.aota@wdc.com>,
         linux-btrfs@vger.kernel.org
-Subject: [PATCH 02/14] btrfs: don't call btrfs_record_physical_zoned for failed append
-Date:   Wed, 24 May 2023 17:03:05 +0200
-Message-Id: <20230524150317.1767981-3-hch@lst.de>
+Subject: don't split ordered_extents for zoned writes at I/O submission time
+Date:   Wed, 24 May 2023 17:03:03 +0200
+Message-Id: <20230524150317.1767981-1-hch@lst.de>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230524150317.1767981-1-hch@lst.de>
-References: <20230524150317.1767981-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
@@ -48,27 +46,40 @@ Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-When a zoned append command fails there is no written address reported,
-so don't try to record it.
+Hi all,
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/bio.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+this series removes the unconditional splitting of ordered extents for
+zoned writes at I/O submission time, and instead splits them only when
+actually needed in the I/O completion handler.
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 4ecc5f31c0190e..5fad6e032e6c76 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -348,7 +348,7 @@ static void btrfs_simple_end_io(struct bio *bio)
- 		INIT_WORK(&bbio->end_io_work, btrfs_end_bio_work);
- 		queue_work(btrfs_end_io_wq(fs_info, bio), &bbio->end_io_work);
- 	} else {
--		if (bio_op(bio) == REQ_OP_ZONE_APPEND)
-+		if (bio_op(bio) == REQ_OP_ZONE_APPEND && !bio->bi_status)
- 			btrfs_record_physical_zoned(bbio);
- 		btrfs_orig_bbio_end_io(bbio);
- 	}
--- 
-2.39.2
+This something I've been wanting to do for a while as it is a lot more
+efficient, but it is also really needed to make the ordered_extent
+pointer in the btrfs_bio work for zoned file systems, which made it a bit
+more urgent.  This series also borrow two patches from the series that
+adds the ordered_extent pointer to the btrfs_bio.
 
+Currently due to the submission time splitting, there is one extra lookup
+in both the ordered extent tree and inode extent tree for each bio
+submission, and extra ordered extent lookup in the bio completion
+handler, and two extent tree lookups per bio / split ordered extent in
+the ordered extent completion handler.  With this series this is reduced
+to a single inode extent tree lookup for the best case, with an extra
+inode extent tree and ordered extent lookup when a split actually needs
+to occur due to reordering inside an ordered_extent.
+
+Diffstat:
+ bio.c          |   20 -----
+ bio.h          |   17 +++-
+ btrfs_inode.h  |    2 
+ extent_map.c   |  101 ++++++++++++++++++++++++++--
+ extent_map.h   |    6 -
+ file-item.c    |   15 +++-
+ fs.h           |    2 
+ inode.c        |  138 +++++++-------------------------------
+ ordered-data.c |  205 +++++++++++++++++++++++++++++++++++----------------------
+ ordered-data.h |   22 ++----
+ relocation.c   |    4 -
+ tree-log.c     |   12 +--
+ zoned.c        |   94 ++++++++++++++------------
+ zoned.h        |    6 -
+ 14 files changed, 352 insertions(+), 292 deletions(-)

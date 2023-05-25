@@ -2,80 +2,135 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 002B5C7EE29
-	for <linux-btrfs@archiver.kernel.org>; Thu, 25 May 2023 23:22:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C0F1C77B7A
+	for <linux-btrfs@archiver.kernel.org>; Thu, 25 May 2023 23:26:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229944AbjEYXWD (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 25 May 2023 19:22:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52328 "EHLO
+        id S234081AbjEYX0b (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 25 May 2023 19:26:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53382 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229832AbjEYXWC (ORCPT
+        with ESMTP id S229832AbjEYX0a (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Thu, 25 May 2023 19:22:02 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 550A5E7
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 May 2023 16:22:01 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 1535821BE4;
-        Thu, 25 May 2023 23:22:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1685056920;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=WjkyuRTiVMwieZv07yEpiS3J60BcZ+bljODjGAbFGUY=;
-        b=SAcvfjyU1ASnNba9vAKSJDIJcga9SfprzEL51mz6AycgYYEhJiEND9Mdw7d5HdMlausYce
-        MAXJ7NVCu+w7Km7eHF3IVmyxCahTXSJhzRtqul4leZUXsHwQIKvYki0UwIaMVRCxcJDvBU
-        TbPMnNCLaWi/lzlEvUYQzQ3vIuKB+Rw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1685056920;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=WjkyuRTiVMwieZv07yEpiS3J60BcZ+bljODjGAbFGUY=;
-        b=V5j++DTMvhFwuca5gEmfJEcjMFa2w0QK03KyDMvhcF/tNz4d0UwYA51W//yXjIO9X60JxV
-        itP4e47xG/92piCQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DFEE4134B2;
-        Thu, 25 May 2023 23:21:59 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id vRkwNZftb2TuWwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Thu, 25 May 2023 23:21:59 +0000
-Date:   Fri, 26 May 2023 01:15:51 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     clm@fb.com, josef@toxicpanda.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/3] btrfs: fix the btrfs_get_global_root return value
-Message-ID: <20230525231551.GN30909@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230523084020.336697-1-hch@lst.de>
+        Thu, 25 May 2023 19:26:30 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1B329E7
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 May 2023 16:26:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1685057185; x=1685661985; i=quwenruo.btrfs@gmx.com;
+ bh=sxDXZR7QIok0ars9CAtrClsEbcZBUEA9F3ftvYc7hpM=;
+ h=X-UI-Sender-Class:Date:To:Cc:References:From:Subject:In-Reply-To;
+ b=O0KQzbrDBRm83EnLJrJjh1vl7LSsstYveHDAbqWxWxCGWVp5x+rxOG6cIywqCTltXRRMJXU
+ +dGzB/xxJ4czWjf6oMNzrMN1lRQooXaG4/78eGdMWPz8duDYMrrGozbsovTVZZaJhryb4AsyX
+ c25r2ZfzNmVAOeqc+YfsBshO97R3uEZTZDXFmgXyKV7rJH9PM3t1U8sw1LnS2fJJfqPW1HMiz
+ f7Hq5khniXls+Q3rtrTH05goXFBmOC8w3MA4F/7ctw1IbGFHcKIrK2+YpA6OPLzQ4unsIP/6j
+ ajB/uKDnZAzWWM3KY4qp0/XH8Sx3EQRf+ocGjdnTrIhl9fgx0NZw==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MZTmY-1peaQh0VnS-00WVru; Fri, 26
+ May 2023 01:26:25 +0200
+Message-ID: <30ccb91f-7a08-a1d4-b3b9-437c7830c6e9@gmx.com>
+Date:   Fri, 26 May 2023 07:26:22 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230523084020.336697-1-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.1
+To:     dsterba@suse.cz
+Cc:     David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+References: <cover.1684967923.git.dsterba@suse.com>
+ <232abb666a6901f909aeb21dc6f5998f0250e073.1684967923.git.dsterba@suse.com>
+ <58561722-bb40-ffd5-0154-b466810c4cf0@gmx.com>
+ <20230525230028.GL30909@twin.jikos.cz>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: [PATCH 7/9] btrfs: drop NOFAIL from set_extent_bit allocation
+ masks
+In-Reply-To: <20230525230028.GL30909@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:I//wAgcjLh0Um+UzT4rA9hyyaZzN1Ir9IPfgIYXz99tX4+4WJLO
+ 9gQ2ab07uI3NnyHuktRGSPEHd710VfWRzNcHjRefSoDbbK+hdCpy+FiTmCtDS6d+UtV75Nm
+ lndUhU4+bfYJz/DrJ8mN07/hSV49RoPJGQuHK6NEyESFRgRQpx9Y+Gz4wcJ7Z5mIhOYjZpc
+ A3sO1qnNWL4VPE9V4Of0g==
+UI-OutboundReport: notjunk:1;M01:P0:wbEW0HOuuj4=;AMcQu/qeZPIAEZ0x+wObRySAtoz
+ 9mPjY4HnfO0JdilKu6rvhiCoLbHfrjhDbUS4EWOncRuGUqRfjyk/KFy1em48Z7yrDERHmFqPB
+ MUpzcJ0c+C1cuDLqbllMoX2qEYFom0Jco/YoErfq65GpcxPWkoB9ZF6pgpzLapWUiPwUK9tqp
+ he0N4a3+/PjVa44fXbHbKHT7quzYKzEC4eeav1IizNrPYVnG9FDQ5PlOu/ebfS3uPzkkQpJRj
+ lMIup1A2JcEvkpcm04OVQA9op8VNlFqoNOED5xw/5SIaxS/6Il/Bbkb9uO0yUW62xVxtyreBm
+ nErJGIjB98H+jCDCmsRsU+OwWn3TfxxK/iEdcCqo81CuPmOnL+S7s01kyqxpKDa4StnaotdXO
+ CRHzHX1AOauUH53Npq7hef0OIzQSkf8yjcA0iD2T12Mu6FfY/gFuFJ56N0yrl3CJlcK0ge/gX
+ 3WaVQad2/Wg8jvKLeK1j+JE/Nqxvb+x62CSQxgNyqWQPPgke1bI3yjJBQnbFoyqMzZ96nyfk3
+ cfvnMGQjTCBY22rCmR9GrYeW67o8+I4o+M6JLxXGOZ+jTdkhidx3AmUg7qxNo9/YcqD09UJT6
+ 2lfeZ8cp9T5/DL+3nBZ1kRuQqA1t9ARt9egJi9T3HOXBZ1dFIkPOWUOXPfDVhU5Phe8Fa9f27
+ 6zGrkErLj9drPJiPa2lWh7kpvcIDw7N65NvDs6lFJUwyGOGrxqhr/S/pZiAXi0j4ygGg7/2k1
+ cupwjp4okb9/I3iVh6QhXzOofVY9hSEwjdRf6k+tY/Eu2x89GkipM5ZnvfIXe6M3RJmhEVKTk
+ 6qb1Q4s4zfcl9Ki+N0lIGJ4aS7+Y0hHwcYwhNkhXBW8120MEv4h6APdE8kx25A9fSMcIOJILa
+ p1ksjtZXucN6qagWI9O2069d8lF+Ze5kwBk2RocQHMJiQygzN6zrgGjJtwslid6QyFZLSUzzN
+ kmUceosy1WWm0tmnjroQ94GujDQ=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, May 23, 2023 at 10:40:18AM +0200, Christoph Hellwig wrote:
-> btrfs_grab_root returns either the root or NULL, and the callers of
-> btrfs_get_global_root expect it to return the same.  But all the more
-> recently added roots instead return an ERR_PTR, so fix this.
-> 
-> Fixes: bcef60f24903 ("Btrfs: quota tree support and startup")
-> Fixes: f7a81ea4cc6b ("Btrfs: create UUID tree if required")
-> Fixes: 70f6d82ec73c ("Btrfs: add free space tree mount option")
-> Fixes: 14033b08a029 ("btrfs: don't save block group root into super block")
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-1-3 added to misc-next, thanks. I dropped the Fixes: lines here,
-replaced by CC:stable 6.1+.
+
+On 2023/5/26 07:00, David Sterba wrote:
+> On Thu, May 25, 2023 at 06:38:51PM +0800, Qu Wenruo wrote:
+>> On 2023/5/25 07:04, David Sterba wrote:
+>>> The __GFP_NOFAIL passed to set_extent_bit first appeared in 2010
+>>> (commit f0486c68e4bd9a ("Btrfs: Introduce contexts for metadata
+>>> reservation")), without any explanation why it would be needed.
+>>>
+>>> Meanwhile we've updated the semantics of set_extent_bit to handle fail=
+ed
+>>> allocations and do unlock, sleep and retry if needed.  The use of the
+>>> NOFAIL flag is also an outlier, we never want any of the set/clear
+>>> extent bit helpers to fail, they're used for many critical changes lik=
+e
+>>> extent locking, besides the extent state bit changes.
+>>
+>> As I mentioned in the cover letter, if we really want to set/clear bits
+>> to not fail, and can accept the extra memory usage (as high as twice th=
+e
+>> number of extent states), then we should really consider the following
+>> changes:
+>>
+>> - Introduce hole extent_state
+>>     For ranges without any bit set, there still needs to be an
+>>     extent_state.
+>>
+>> - Make callers to pre-allocate 2 extent_state and pass them as mandator=
+y
+>>     parameters to set/clear bits
+>>
+>> - Make set/clear bits to use the preallocated 2 extent states
+>>
+>> By this, we should be able to completely get rid of the memory
+>> allocation inside the extent io tree set/clear calls.
+>
+> I did not understand what you mean from the cover letter comment but now
+> I see it. The size of extent_state is 72 bytes on release build, which
+> is not that much, doubling that size is still in acceptable range even
+> if we'd never utilize the preallocated memory at some point. That we
+> dont't see any failures now is 1) GFP_NOFS does not fail 2) we're using
+> a slab cache and the objects get reused within the same allocated space
+> due to frequent state changes. Even if 1) wasn't true we'd still have to
+> hit a hard memory allocation error, i.e. no available pages for a slab
+> extension.
+
+Well, I still remember an internal bugzilla that openSUSE on RPI4
+triggered failure at the extent_state allocation.
+
+>
+> If the preallocation prevents any failure due to memory allocations then
+> we can keep the current way of dealing with extent bit change error
+> handling, i.e. none because we rely on the allocator.
+
+The preallocation is not going to help much after the first allocation
+is being used.
+
+After that, all later states are allocated using GFP_ATOMIC, which has a
+much smaller pool to fulfill from.
+And considering how many call sites don't check the return value at all,
+we'd either go forward changing all call sites, or really make the
+set/clear bits bulletproof (and only fail out of the set/clear call).
+
+Thanks,
+Qu

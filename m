@@ -2,107 +2,99 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6229C77B7A
-	for <linux-btrfs@archiver.kernel.org>; Fri, 26 May 2023 13:40:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84CC3C77B73
+	for <linux-btrfs@archiver.kernel.org>; Fri, 26 May 2023 13:42:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230263AbjEZNkl (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Fri, 26 May 2023 09:40:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39866 "EHLO
+        id S231533AbjEZNml (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Fri, 26 May 2023 09:42:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40140 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229895AbjEZNkk (ORCPT
+        with ESMTP id S229895AbjEZNmk (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Fri, 26 May 2023 09:40:40 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 958139B
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2023 06:40:39 -0700 (PDT)
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 4AFDC21A1C;
-        Fri, 26 May 2023 13:40:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1685108438;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=5sGnmoVEfkaMZrhHBzBfM+h7wzBMEmTLVI14kU3qyPg=;
-        b=pbvNE1AWbFGc5fPS+X5td0zvThZ+IwJQ3G79c4MbyKB+g6mfO0G7nevYhKEl512XcsVew3
-        VCSlwzV9OPjYAp6AGixctW+iTJTRyAlx9sj4M3wcYRDw7MGn1OT7qQveRM1X/LQ+TQN1vA
-        Q8VZWQMMDDASMsUPSQMYjijOylcMAVs=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1685108438;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=5sGnmoVEfkaMZrhHBzBfM+h7wzBMEmTLVI14kU3qyPg=;
-        b=G1RAeHKcH0K+yzRqzUjbguWiF/sWIWX3ZU3CJBKS6THrxE0dTB2saMvSw6+N2z/hwEcL+x
-        5s7Btmum7UIEv3Aw==
-Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id 1320F134AB;
-        Fri, 26 May 2023 13:40:38 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap1.suse-dmz.suse.de with ESMTPSA
-        id Sl50A9a2cGQQbAAAGKfGzw
-        (envelope-from <dsterba@suse.cz>); Fri, 26 May 2023 13:40:38 +0000
-Date:   Fri, 26 May 2023 15:34:29 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: Re: [PATCH 10/21] btrfs: return bool from lock_extent_buffer_for_io
-Message-ID: <20230526133429.GC14830@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20230503152441.1141019-1-hch@lst.de>
- <20230503152441.1141019-11-hch@lst.de>
- <20230523184317.GY32559@twin.jikos.cz>
- <20230524054449.GA19255@lst.de>
+        Fri, 26 May 2023 09:42:40 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18B9012F
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 May 2023 06:42:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=oGiof5W73OGehUsFFmqWBF+qTn0BzyPAqlHfGqALegk=; b=iJ+LDGHNWLkRdPIWiu9ZIMEKmn
+        d5OCevHxV328pLCRwShgRD7YLF648wRkHi+vUXppbw8RlWDPsWT/Rof6WcExhevEsxZA97a6M6lQr
+        rBQ2/HHyc9LWZyGIiIBc7Nwxlfe90jea2J6VGlLE8JqzyKcTQoOXU/tr8LozpLFpA6U8WTviJ90d6
+        p/hwYFl0qsak3npVRusQ8wP/3DqNg/Lu/xWYZmbNFT19cWd2vMkM0ISGD8zhRHN8Zl8urMb+i+0UL
+        deci/11rzX3IZARRsnoHO97CH0KWM7PkuDogwcIk/tMyvAtXFuk8oJ4VvoIzXMWT8Q9OXEiKasxmX
+        nhTzt5lg==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1q2XiJ-002fkn-2u;
+        Fri, 26 May 2023 13:42:39 +0000
+Date:   Fri, 26 May 2023 06:42:39 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix a crash in metadata repair path
+Message-ID: <ZHC3T+OMEJ7VIkwi@infradead.org>
+References: <cd4159ae5d32fdb87deba4bf6485819614016c11.1685088405.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230524054449.GA19255@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+In-Reply-To: <cd4159ae5d32fdb87deba4bf6485819614016c11.1685088405.git.wqu@suse.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 24, 2023 at 07:44:49AM +0200, Christoph Hellwig wrote:
-> On Tue, May 23, 2023 at 08:43:17PM +0200, David Sterba wrote:
-> > On Wed, May 03, 2023 at 05:24:30PM +0200, Christoph Hellwig wrote:
-> > > lock_extent_buffer_for_io never returns a negative error value, so switch
-> > > the return value to a simple bool.  Also remove the noinline_for_stack
-> > > annotation given that nothing in lock_extent_buffer_for_io or its callers
-> > > is particularly stack hungry.
-> > 
-> > AFAIK the reason for noinline_for_stack is not because of a function is
-> > stack hungry but because we want to prevent inlining it so we can see it
-> > on stack in case there's an implied waiting. This makes it easier to
-> > debug when IO is stuck or there's some deadlock.
-> > 
-> > This is not consistent in btrfs code though, quick search shows lots of
-> > historical noinline_for_stack everywhere without an obvious reason.
-> 
-> Hmm.  noinline_for_stack is explicitly documented to only exist as an
-> annotation that noinline is used for stack usage.  So this is very odd.
+On Fri, May 26, 2023 at 08:30:20PM +0800, Qu Wenruo wrote:
+>  	struct btrfs_fs_info *fs_info = eb->fs_info;
+> -	u64 start = eb->start;
+>  	int i, num_pages = num_extent_pages(eb);
+>  	int ret = 0;
+>  
+> @@ -185,12 +184,14 @@ static int btrfs_repair_eb_io_failure(const struct extent_buffer *eb,
+>  
+>  	for (i = 0; i < num_pages; i++) {
+>  		struct page *p = eb->pages[i];
+> +		u64 start = max_t(u64, eb->start, page_offset(p));
+> +		u64 end = min_t(u64, eb->start + eb->len, page_offset(p) + PAGE_SIZE);
+> +		u32 len = end - start;
+>  
+> -		ret = btrfs_repair_io_failure(fs_info, 0, start, PAGE_SIZE,
+> -				start, p, start - page_offset(p), mirror_num);
+> +		ret = btrfs_repair_io_failure(fs_info, 0, start, len,
+> +				start, p, offset_in_page(start), mirror_num);
+>  		if (ret)
+>  			break;
+> -		start += PAGE_SIZE;
 
-Yes that's the documented way, I found one commit fixing the stack
-problem, 8ddc319706e5 ("btrfs: reduce stack usage for
-btrfsic_process_written_block").
+I actually just noticed this a week or so ago, but didn't have a
+reproducer.  My fix  does this a little differeny by adding a branch
+for nodesize < PAGE_SIZE similar to write_one_eb or
+read_extent_buffer_pages, which feels a bit simpler and easier to read
+to me:
 
-> If you want a normal noinline here I can add one, but to be honest
-> I don't really see the point even for stack traces.
 
-What I had in mind was based on 6939f667247e ("Btrfs: fix confusing
-worker helper info in stacktrace"), but digging in the mail archives the
-patch was sent with noinline
-(https://lore.kernel.org/linux-btrfs/20170908213445.1601-1-bo.li.liu@oracle.com/).
-I don't remember where I read about the noinline_for_stack use for the
-stack trace.
-
-We can audit and remove some of the attributes but this tends to break
-only on non-x86 builds so verification would need to go via linux-next
-and let build bots report.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 48ac9fccca06ae..3d498d08e61b65 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -182,11 +182,19 @@ static int btrfs_repair_eb_io_failure(const struct extent_buffer *eb,
+ 	if (sb_rdonly(fs_info->sb))
+ 		return -EROFS;
+ 
++	if (fs_info->nodesize < PAGE_SIZE) {
++		struct page *p = eb->pages[0];
++
++		return btrfs_repair_io_failure(fs_info, 0, start, eb->len,
++					       start, p, start - page_offset(p),
++					       mirror_num);
++	}
++
+ 	for (i = 0; i < num_pages; i++) {
+ 		struct page *p = eb->pages[i];
+ 
+ 		ret = btrfs_repair_io_failure(fs_info, 0, start, PAGE_SIZE,
+-				start, p, start - page_offset(p), mirror_num);
++					      start, p, 0, mirror_num);
+ 		if (ret)
+ 			break;
+ 		start += PAGE_SIZE;

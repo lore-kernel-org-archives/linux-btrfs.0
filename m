@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F62EC7EE29
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 May 2023 15:17:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85461C7EE2F
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 May 2023 15:17:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229739AbjE2PRV (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 May 2023 11:17:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55648 "EHLO
+        id S229763AbjE2PRh (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 May 2023 11:17:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55662 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229524AbjE2PRU (ORCPT
+        with ESMTP id S229489AbjE2PRW (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 May 2023 11:17:20 -0400
+        Mon, 29 May 2023 11:17:22 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F2E4C9
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 08:17:19 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A064FC4
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 08:17:21 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A491C615DD
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:18 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 917A5C433EF
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:17 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 80450615AF
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:21 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6D314C433EF
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:20 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1685373438;
-        bh=GnM9+H8HNqWtwUPyvqjLvbhwrnnY5k50Jv246I/XFiQ=;
+        s=k20201202; t=1685373440;
+        bh=pz2MAxyOZ3d+9a0F8cJTuIQmhVZjESvuXajfhu55W6k=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=sOrFljfiKN1HI4uYbC/b6s4jSrSCsWm7yWV0Mn5a0tohznB5tHLCXrH8c69az0DQd
-         NZ2ovA08JjcTMCXS5JxFj3MhBESW+6h0YE2RKakaPjfnlHqog/G4cA/xk5Up099ZFE
-         0Jhm5vOm7Rz3FvGfwrnXFPk/F1XPsa3AF79lOJdxB/5jm6m2SdE39nBrLRKOS8+rN0
-         nMy21oN+jF2WS/IyYffcMtxo3Cro3RaLsTp1o+gmGhBHjo2lfv4nOXefS4pSvzVC4i
-         8oosz7Mu3YM2ick/9mSGazwrPdv/hk858P2oiGzpbQCKfXQZcbJi2RUDByb01vDMYe
-         2pH3rt+ZlUPqw==
+        b=A01Xrcuiux1HKDTcWZgL6cPCG4+aguRxpF3ExtQIxNbB4PB9sJ38+ms6csYvlbZIX
+         pK4I/P8MqbfMP3HfVVf4no9DJIfbzGPQGo8B79v/dgjV4lNAgmDvbPGr7HYxDgH9nk
+         V2dBOMRE8nBXn0DrYWX1l7X6s6U0VjfhegXw8lfhn90utdtNgPY7B+I2QV90wyCLLw
+         w4vOSzOirHl8k3zxE+gTBnoa2XrO96kc51KiK9bfHilXs1usFq95rzGoqQ0bNWcYEM
+         gSdx9u4l+c0PlLVLjDBeT3V5i9Gb3q7DrAT4XWwj07FQaPr7lwVEPHAaiTFKSXXhTX
+         3TVV1eZDLhfFQ==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/11] btrfs: remove pointless in_tree field from struct btrfs_delayed_ref_node
-Date:   Mon, 29 May 2023 16:16:59 +0100
-Message-Id: <18656b6d56a9813f52f3594637ab3acb31e129ba.1685363099.git.fdmanana@suse.com>
+Subject: [PATCH 06/11] btrfs: get rid of label and goto at insert_delayed_ref()
+Date:   Mon, 29 May 2023 16:17:02 +0100
+Message-Id: <5ef479b0dfa2c93bf010fc9d613baed9cd9f1043.1685363099.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1685363099.git.fdmanana@suse.com>
 References: <cover.1685363099.git.fdmanana@suse.com>
@@ -48,85 +48,59 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The 'in_tree' field is really not needed in struct btrfs_delayed_ref_node,
-as we can check whether a reference is in the tree or not simply by
-checking its red black tree node member with RB_EMPTY_NODE(), as when we
-remove it from the tree we always call RB_CLEAR_NODE(). So remove that
-field and use RB_EMPTY_NODE().
+At insert_delayed_ref() there's no point of having a label and goto in the
+case we were able to insert the delayed ref head. We can just add the code
+under label to the if statement's body and return immediately, and also
+there is no need to track the return value in a variable, we can just
+return a literal true or false value directly. So do those changes.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/delayed-ref.c | 2 --
- fs/btrfs/delayed-ref.h | 3 +--
- fs/btrfs/disk-io.c     | 1 -
- fs/btrfs/extent-tree.c | 1 -
- 4 files changed, 1 insertion(+), 6 deletions(-)
+ fs/btrfs/delayed-ref.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index be1d18ec5cef..d6dce5792c0f 100644
+index c3da7c3185de..e4579e66a57a 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
-@@ -407,7 +407,6 @@ static inline void drop_delayed_ref(struct btrfs_delayed_ref_root *delayed_refs,
- 	RB_CLEAR_NODE(&ref->ref_node);
- 	if (!list_empty(&ref->add_list))
- 		list_del(&ref->add_list);
--	ref->in_tree = 0;
- 	btrfs_put_delayed_ref(ref);
- 	atomic_dec(&delayed_refs->num_entries);
- }
-@@ -853,7 +852,6 @@ static void init_delayed_ref_common(struct btrfs_fs_info *fs_info,
- 	ref->num_bytes = num_bytes;
- 	ref->ref_mod = 1;
- 	ref->action = action;
--	ref->in_tree = 1;
- 	ref->seq = seq;
- 	ref->type = ref_type;
- 	RB_CLEAR_NODE(&ref->ref_node);
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 77b3e735772d..9b103bf27185 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -48,7 +48,6 @@ struct btrfs_delayed_ref_node {
- 
- 	unsigned int action:8;
- 	unsigned int type:8;
--	unsigned int in_tree:1;
- };
- 
- struct btrfs_delayed_extent_op {
-@@ -341,7 +340,7 @@ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+@@ -565,15 +565,18 @@ static bool insert_delayed_ref(struct btrfs_delayed_ref_root *root,
  {
- 	WARN_ON(refcount_read(&ref->refs) == 0);
- 	if (refcount_dec_and_test(&ref->refs)) {
--		WARN_ON(ref->in_tree);
-+		WARN_ON(!RB_EMPTY_NODE(&ref->ref_node));
- 		switch (ref->type) {
- 		case BTRFS_TREE_BLOCK_REF_KEY:
- 		case BTRFS_SHARED_BLOCK_REF_KEY:
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 96f144094af6..793f7e48d62e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4849,7 +4849,6 @@ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 		while ((n = rb_first_cached(&head->ref_tree)) != NULL) {
- 			ref = rb_entry(n, struct btrfs_delayed_ref_node,
- 				       ref_node);
--			ref->in_tree = 0;
- 			rb_erase_cached(&ref->ref_node, &head->ref_tree);
- 			RB_CLEAR_NODE(&ref->ref_node);
- 			if (!list_empty(&ref->add_list))
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4f7ac5a5d29e..0aa775ac31e4 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1913,7 +1913,6 @@ static int btrfs_run_delayed_refs_for_head(struct btrfs_trans_handle *trans,
- 			return -EAGAIN;
- 		}
+ 	struct btrfs_delayed_ref_node *exist;
+ 	int mod;
+-	bool ret = false;
  
--		ref->in_tree = 0;
- 		rb_erase_cached(&ref->ref_node, &locked_ref->ref_tree);
- 		RB_CLEAR_NODE(&ref->ref_node);
- 		if (!list_empty(&ref->add_list))
+ 	spin_lock(&href->lock);
+ 	exist = tree_insert(&href->ref_tree, ref);
+-	if (!exist)
+-		goto inserted;
++	if (!exist) {
++		if (ref->action == BTRFS_ADD_DELAYED_REF)
++			list_add_tail(&ref->add_list, &href->ref_add_list);
++		atomic_inc(&root->num_entries);
++		spin_unlock(&href->lock);
++		return false;
++	}
+ 
+ 	/* Now we are sure we can merge */
+-	ret = true;
+ 	if (exist->action == ref->action) {
+ 		mod = ref->ref_mod;
+ 	} else {
+@@ -600,13 +603,7 @@ static bool insert_delayed_ref(struct btrfs_delayed_ref_root *root,
+ 	if (exist->ref_mod == 0)
+ 		drop_delayed_ref(root, href, exist);
+ 	spin_unlock(&href->lock);
+-	return ret;
+-inserted:
+-	if (ref->action == BTRFS_ADD_DELAYED_REF)
+-		list_add_tail(&ref->add_list, &href->ref_add_list);
+-	atomic_inc(&root->num_entries);
+-	spin_unlock(&href->lock);
+-	return ret;
++	return true;
+ }
+ 
+ /*
 -- 
 2.34.1
 

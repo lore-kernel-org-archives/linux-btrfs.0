@@ -2,41 +2,41 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1027AC7EE2E
-	for <linux-btrfs@archiver.kernel.org>; Mon, 29 May 2023 15:17:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D9FBC7EE23
+	for <linux-btrfs@archiver.kernel.org>; Mon, 29 May 2023 15:18:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229715AbjE2PRg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 May 2023 11:17:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55660 "EHLO
+        id S229764AbjE2PRi (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 May 2023 11:17:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55668 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229748AbjE2PRW (ORCPT
+        with ESMTP id S229759AbjE2PRX (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Mon, 29 May 2023 11:17:22 -0400
+        Mon, 29 May 2023 11:17:23 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AEF5CC9
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 08:17:20 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9517BC9
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 08:17:22 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 8F3FC615DD
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 79342C4339B
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:19 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 755FE615E4
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:22 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 608F3C4339C
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 15:17:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1685373440;
-        bh=liZg0k6dA9xK9FgwVhiFcWh0ae7z5w7Slls3N/dBNRk=;
+        s=k20201202; t=1685373441;
+        bh=ZeYnw0hLiYn/FPymdlt6NnvBUqWGXjwIVP/K7IEhrzI=;
         h=From:To:Subject:Date:In-Reply-To:References:From;
-        b=cxWNnT/qsf+0g5kiEY05uz1BvD/STtzPmQFP+FLS9zFg6EBCj5UWhA1DCPKe/FXJw
-         BBsi5AVjDrVPvzHSyhhs9GjVfg11EbV+G5Yv6aHQwjEAbtK4Mo4g0MGdZZGLPStnxq
-         OS7/JxlPeq93WqY1BrKDfMohZTB5jydKVYs0rgvgn24ZZJE2zWOHOc41xJFenaKTIZ
-         8D33eXQ+NmaXvtlXgJiajy9UmXB4DpLHkidSsWZv96/jGKToQ8PAV1KONeytxbFr0o
-         WjnK9QjF4vq0QRnQyh0bopVPCfIULl0J4hiSe51xgNSPMfzIevsckpbXKBGIvDCjRF
-         2ZvjXur2KI45Q==
+        b=VTYuCzuXAQEsHlv5YDxdJLYKtPuirgZ+cryV+NAa5Z07wF1lyziyIaA4dSwDi3qZ+
+         7CE2GloKQv0VqonaSILgSTc5Sdg8Og+bICE3MZlKlhNfg53zNZXS/mpBHpIfyd0men
+         4JaopRjBqA5fe4s8Tdjn0KfKCnAmLmQJgDKiNSAALlrjvUaXpXatAJthZANFuYW5K8
+         bqAlOzorBE+svU7xqm2WD9ON5XO/k03k9XE9AwDtQybm6iIeiZkf7Kv6ffjI3BWzfD
+         a9KnrLCHhyHaXxTWB4wA/atsCXMAltXCxQiuCnaOS14PK0C+EpaYQFtauiYGl4Lizb
+         xK2Goi6YtSGtw==
 From:   fdmanana@kernel.org
 To:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/11] btrfs: make insert_delayed_ref() return a bool instead of an int
-Date:   Mon, 29 May 2023 16:17:01 +0100
-Message-Id: <3913b547b4fb8c1c99cc69e8e489d076c494a49c.1685363099.git.fdmanana@suse.com>
+Subject: [PATCH 07/11] btrfs: assert correct lock is held at btrfs_select_ref_head()
+Date:   Mon, 29 May 2023 16:17:03 +0100
+Message-Id: <83affb7dc94093940cba2485afedb9d661191335.1685363099.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <cover.1685363099.git.fdmanana@suse.com>
 References: <cover.1685363099.git.fdmanana@suse.com>
@@ -48,109 +48,31 @@ X-Mailing-List: linux-btrfs@vger.kernel.org
 
 From: Filipe Manana <fdmanana@suse.com>
 
-insert_delayed_ref() can only return 0 or 1, to indicate if the given
-delayed reference was added to the head reference or if it was merged
-into an existing delayed ref, respectively. So just make it return a
-boolean instead.
+The function btrfs_select_ref_head() iterates over the red black tree of
+delayed reference heads, which is protected by the spinlock in the delayed
+refs root. The function doesn't take the lock, it's taken by its single
+caller, btrfs_obtain_ref_head(), because it needs to call that function
+and btrfs_delayed_ref_lock() in the same critical section (delimited by
+that spinlock). So assert at btrfs_select_ref_head() that we are holding
+the expected lock.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/delayed-ref.c | 27 ++++++++++++++-------------
- 1 file changed, 14 insertions(+), 13 deletions(-)
+ fs/btrfs/delayed-ref.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 0bcec428766c..c3da7c3185de 100644
+index e4579e66a57a..c61af9012a82 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
-@@ -555,16 +555,17 @@ void btrfs_delete_ref_head(struct btrfs_delayed_ref_root *delayed_refs,
- /*
-  * Helper to insert the ref_node to the tail or merge with tail.
-  *
-- * Return 0 for insert.
-- * Return >0 for merge.
-+ * Return false if the ref was inserted.
-+ * Return true if the ref was merged into an existing one (and therefore can be
-+ * freed by the caller).
-  */
--static int insert_delayed_ref(struct btrfs_delayed_ref_root *root,
--			      struct btrfs_delayed_ref_head *href,
--			      struct btrfs_delayed_ref_node *ref)
-+static bool insert_delayed_ref(struct btrfs_delayed_ref_root *root,
-+			       struct btrfs_delayed_ref_head *href,
-+			       struct btrfs_delayed_ref_node *ref)
+@@ -506,6 +506,7 @@ struct btrfs_delayed_ref_head *btrfs_select_ref_head(
  {
- 	struct btrfs_delayed_ref_node *exist;
- 	int mod;
--	int ret = 0;
-+	bool ret = false;
+ 	struct btrfs_delayed_ref_head *head;
  
- 	spin_lock(&href->lock);
- 	exist = tree_insert(&href->ref_tree, ref);
-@@ -572,7 +573,7 @@ static int insert_delayed_ref(struct btrfs_delayed_ref_root *root,
- 		goto inserted;
- 
- 	/* Now we are sure we can merge */
--	ret = 1;
-+	ret = true;
- 	if (exist->action == ref->action) {
- 		mod = ref->ref_mod;
- 	} else {
-@@ -874,9 +875,9 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 	bool qrecord_inserted;
- 	bool is_system;
-+	bool merged;
- 	int action = generic_ref->action;
- 	int level = generic_ref->tree_ref.level;
--	int ret;
- 	u64 bytenr = generic_ref->bytenr;
- 	u64 num_bytes = generic_ref->len;
- 	u64 parent = generic_ref->parent;
-@@ -932,7 +933,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	head_ref = add_delayed_ref_head(trans, head_ref, record,
- 					action, &qrecord_inserted);
- 
--	ret = insert_delayed_ref(delayed_refs, head_ref, &ref->node);
-+	merged = insert_delayed_ref(delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	/*
-@@ -944,7 +945,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 	trace_add_delayed_tree_ref(fs_info, &ref->node, ref,
- 				   action == BTRFS_ADD_DELAYED_EXTENT ?
- 				   BTRFS_ADD_DELAYED_REF : action);
--	if (ret > 0)
-+	if (merged)
- 		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
- 
- 	if (qrecord_inserted)
-@@ -967,7 +968,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 	bool qrecord_inserted;
- 	int action = generic_ref->action;
--	int ret;
-+	bool merged;
- 	u64 bytenr = generic_ref->bytenr;
- 	u64 num_bytes = generic_ref->len;
- 	u64 parent = generic_ref->parent;
-@@ -1024,7 +1025,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	head_ref = add_delayed_ref_head(trans, head_ref, record,
- 					action, &qrecord_inserted);
- 
--	ret = insert_delayed_ref(delayed_refs, head_ref, &ref->node);
-+	merged = insert_delayed_ref(delayed_refs, head_ref, &ref->node);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	/*
-@@ -1036,7 +1037,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 	trace_add_delayed_data_ref(trans->fs_info, &ref->node, ref,
- 				   action == BTRFS_ADD_DELAYED_EXTENT ?
- 				   BTRFS_ADD_DELAYED_REF : action);
--	if (ret > 0)
-+	if (merged)
- 		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
- 
- 
++	lockdep_assert_held(&delayed_refs->lock);
+ again:
+ 	head = find_ref_head(delayed_refs, delayed_refs->run_delayed_start,
+ 			     true);
 -- 
 2.34.1
 

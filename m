@@ -2,106 +2,101 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86869C77B7A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 May 2023 16:04:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CC17C77B73
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 May 2023 16:51:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232524AbjE3QER (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 May 2023 12:04:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50864 "EHLO
+        id S231371AbjE3Qv1 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 May 2023 12:51:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232476AbjE3QEP (ORCPT
+        with ESMTP id S229922AbjE3QvZ (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2023 12:04:15 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B963B2
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 09:03:48 -0700 (PDT)
+        Tue, 30 May 2023 12:51:25 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 93A42EA
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 09:51:22 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 6E24F1FDD9;
-        Tue, 30 May 2023 16:02:59 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 108C01F38A;
+        Tue, 30 May 2023 16:51:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1685462579;
+        t=1685465481;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=NgOUGLrq65o8fiotajYsKZbpLVSfHiI0MxC/4vY3kN4=;
-        b=DYXpvjZvLbvyE4nRGfiym6OdhJ+cXcKDh9U18iyDHP6YtfXtPmyCd6LrirYiybUmYH254g
-        ukk4LV4otMp0cLta9ir5CsGL5KNR/FAou/G1FNCkLCxpMqx+PWd/YuEyYKySFr/Vf9IOj1
-        GD/KkZbUPkr+kV8CrmUQD1FcN8T3h60=
+        bh=Q3iA7oGZ4o7TxFNHCNB9ePSIDzoRs0F26u7ILvLibxI=;
+        b=qZIXhBPrUv5B+VQtnjZ75fKW+ue/wOIBDBvWJjzoFH3fihs8ve6q17jqzsV2/ZMchZOf/T
+        jTQAeOrg6X7AoGP6QVTZVJn5feEov9TAmkhVboPbX0B85Sy/gU+TVvfP09IogLKWGtf1Fy
+        xmb68Wdk9JUSqbw0YQOToai39BztX+0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1685462579;
+        s=susede2_ed25519; t=1685465481;
         h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
          cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=NgOUGLrq65o8fiotajYsKZbpLVSfHiI0MxC/4vY3kN4=;
-        b=NZobAQy5PwWPRoAOBTz3au+hlpjv9bfX47/baC8VXOronRobxmIENmEB6GdFJNi+JbGPsZ
-        gsZUwxO+X2uR5dDw==
+        bh=Q3iA7oGZ4o7TxFNHCNB9ePSIDzoRs0F26u7ILvLibxI=;
+        b=uN4KM8jrUTMaRqkEPednkRjGorYiCR5Gn5wngrKgkgWSJDleCbBvUC+k5PV5T+uynQtlTc
+        tm3KufZama5PEtBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3A0FB13597;
-        Tue, 30 May 2023 16:02:59 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id CC27813478;
+        Tue, 30 May 2023 16:51:20 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id r+p0DTMedmScIAAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 30 May 2023 16:02:59 +0000
-Date:   Tue, 30 May 2023 17:56:48 +0200
+        id UvUUMYgpdmQEOwAAMHmgww
+        (envelope-from <dsterba@suse.cz>); Tue, 30 May 2023 16:51:20 +0000
+Date:   Tue, 30 May 2023 18:45:10 +0200
 From:   David Sterba <dsterba@suse.cz>
 To:     Christoph Hellwig <hch@lst.de>
-Cc:     David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>,
-        Josef Bacik <josef@toxicpanda.com>,
+Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
         David Sterba <dsterba@suse.com>,
-        "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
-        naohiro.aota@wdc.com
-Subject: Re: [PATCH 3/3] btrfs: don't hold an extra reference for redirtied
- buffers
-Message-ID: <20230530155648.GB30110@twin.jikos.cz>
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        Naohiro Aota <naohiro.aota@wdc.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 03/14] btrfs: mark the len field in struct
+ btrfs_ordered_sum as unsigned
+Message-ID: <20230530164509.GC30110@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <20230508145839.43725-1-hch@lst.de>
- <20230508145839.43725-4-hch@lst.de>
- <20230509225737.GK32559@twin.jikos.cz>
- <20230515092254.GA21580@lst.de>
+References: <20230524150317.1767981-1-hch@lst.de>
+ <20230524150317.1767981-4-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230515092254.GA21580@lst.de>
+In-Reply-To: <20230524150317.1767981-4-hch@lst.de>
 User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 15, 2023 at 11:22:54AM +0200, Christoph Hellwig wrote:
-> On Wed, May 10, 2023 at 12:57:37AM +0200, David Sterba wrote:
-> > On Mon, May 08, 2023 at 07:58:39AM -0700, Christoph Hellwig wrote:
-> > > When btrfs_redirty_list_add redirties a buffer, it also acquires
-> > > an extra reference that is released on transaction commit.  But
-> > > this is not required as buffers that are dirty or under writeback
-> > > are never freed (look for calls to extent_buffer_under_io())).
-> > > 
-> > > Remove the extra reference and the infrastructure used to drop it
-> > > again.
-> > 
-> > I vaguely remember that the redirty list was need for zoned to avoid
-> > some write pattern that disrupts the ordering, added in d3575156f662
-> > ("btrfs: zoned: redirty released extent buffers").
+On Wed, May 24, 2023 at 05:03:06PM +0200, Christoph Hellwig wrote:
+> len can't ever be negative, so mark it as an u32 instead of int.
 > 
-> So the redirting itself is needed for that - without it buffers where
-> the dirty bit wasn't ever set would never get written, leading to a
-> write outside of the zone pointer.  But the extra reference can't
-> influece the write pattern, as we don't make writeback descriptions
-> based of it.
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+> ---
+>  fs/btrfs/ordered-data.h | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> > I'd appreciate more eyes on this patch, with the indirections and
-> > writeback involved it's not clear to me that we don't need the list at
-> > all.
-> 
-> My suspicision is that Aoto-san wanted the extra safety of the extra
-> reference because he didn't want to trust or hadn't noticed the
-> extent_buffer_under_io() magic.  Auto-san, can you confirm or deny? :)
+> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+> index f0f1138d23c331..2e54820a5e6ff7 100644
+> --- a/fs/btrfs/ordered-data.h
+> +++ b/fs/btrfs/ordered-data.h
+> @@ -20,7 +20,7 @@ struct btrfs_ordered_sum {
+>  	/*
+>  	 * this is the length in bytes covered by the sums array below.
+>  	 */
+> -	int len;
+> +	u32 len;
 
-The number of patches above this one in the queue is increasing so it
-would get harder to remove it. I took another look and agree that
-regarding the references it's safe but would still like a confirmation.
+Due to the int there was one cast to be removed
+
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -561,7 +561,7 @@ int btrfs_lookup_csums_list(struct btrfs_root *root, u64 start, u64 end,
+                        }
+ 
+                        sums->bytenr = start;
+-                       sums->len = (int)size;
++                       sums->len = size;

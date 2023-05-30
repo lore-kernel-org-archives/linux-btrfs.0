@@ -2,91 +2,99 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A1AAC77B73
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 May 2023 15:51:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE492C77B7A
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 May 2023 16:03:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232806AbjE3Pvv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 30 May 2023 11:51:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39512 "EHLO
+        id S233228AbjE3QC7 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 30 May 2023 12:02:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49458 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232689AbjE3PvG (ORCPT
+        with ESMTP id S233271AbjE3QCp (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Tue, 30 May 2023 11:51:06 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A014F1A2
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 08:50:27 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        Tue, 30 May 2023 12:02:45 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9341CE6A
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 09:02:15 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 2BE0B21A3D;
-        Tue, 30 May 2023 15:50:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1685461826;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=C/+GAJsuD4s7Y/tnFgARUxJTW+W1NiiF+pfUlsE/v0k=;
-        b=u5ffqMOzQFrYM5Fw4ovFEGubnTis8SxGvX85Qcn3fi8cKM6b46pyhgqvoFafxgxUdEB3xA
-        IhN0DrCvLr8rVB/3QBEX0xTt962c5BGsfS6FpE7I++Oht23XYt6j1B2XAYanAb5cHsOf18
-        tvCUd5veWBXM1G4yzqKpAfxkESt/csc=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1685461826;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=C/+GAJsuD4s7Y/tnFgARUxJTW+W1NiiF+pfUlsE/v0k=;
-        b=0SSFNnJfFCb/WQcgowtN71lW+Ti6jUXoNns8OZ+YD2g+Vgx4zk/vsZUv6SpOLbrPfiLnEM
-        a9qXWofGnal3aCDQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id EB4EA13597;
-        Tue, 30 May 2023 15:50:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id rLSyOEEbdmSeGQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 30 May 2023 15:50:25 +0000
-Date:   Tue, 30 May 2023 17:44:15 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        Naohiro Aota <naohiro.aota@wdc.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 09/14] btrfs: return void from btrfs_finish_ordered_io
-Message-ID: <20230530154415.GA30110@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230524150317.1767981-1-hch@lst.de>
- <20230524150317.1767981-10-hch@lst.de>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 0CCE260D32
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 16:02:15 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 739E8C433EF
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 16:02:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1685462534;
+        bh=V8L/n/rq7STenMs7QStihxN4w6LmCGwfsKNls91KIjk=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=SgFJ+noHOLdat4mFFNQXZBXiSXhDMkJFZmfdWVplDhY7ZdZxcmt9esgzr0QO6spU5
+         y6ogvBYCkfF8lE8HCjhRzyiwu64G8UlukFIw1P1uXHvVRqnfHvlVR3ipAUY8jNjenG
+         sAl7EmFTnZpGoJF9F7dEbgY1ADi3e2Iw0pDvp7A0jT6PoT+0lSuN7E21hIB1U0Qht+
+         N1E5RfvUL/L7pqE0/WI2J7XwsmUjtDwX4Xr7LiwD51yDnh0LGgLZAKj90ILsbDcR9y
+         cCBPOtcwZcdmTmUggHzFlPPmiKCIFpEhj1KD7BYyJFwTIcVsgQx8bKTpFHBoCpN6Qu
+         H0EZYXxT26T5A==
+Received: by mail-oo1-f52.google.com with SMTP id 006d021491bc7-5552f7a9bc5so1142279eaf.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 09:02:14 -0700 (PDT)
+X-Gm-Message-State: AC+VfDxSvlJrBQc2bPjnFb9baPzyI3Svn5RS6JLbEnpbv3juq89Oa/SL
+        MMWZvBXbvBlTRpvG8ValfTwiEduJBurGu9nW+1Y=
+X-Google-Smtp-Source: ACHHUZ5KA8jVrMSgL8Dm4l60PIvO7jrdx8kUUZH9R3secFCJX/PSjNBjQqSrys0EiSKNB0PGVW+okFTjKgCVUGou0Ds=
+X-Received: by 2002:a4a:330b:0:b0:54c:ab15:a609 with SMTP id
+ q11-20020a4a330b000000b0054cab15a609mr1019391ooq.9.1685462533611; Tue, 30 May
+ 2023 09:02:13 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230524150317.1767981-10-hch@lst.de>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+References: <cover.1685363099.git.fdmanana@suse.com> <8f1298da5496557ca89592916cd4a445b6048b8f.1685363099.git.fdmanana@suse.com>
+ <20230530150359.GS575@twin.jikos.cz>
+In-Reply-To: <20230530150359.GS575@twin.jikos.cz>
+From:   Filipe Manana <fdmanana@kernel.org>
+Date:   Tue, 30 May 2023 17:01:37 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5jE-qac+d6zFQC4mzAwFNWQVqOCUSF7a6tK2bTQtc7Og@mail.gmail.com>
+Message-ID: <CAL3q7H5jE-qac+d6zFQC4mzAwFNWQVqOCUSF7a6tK2bTQtc7Og@mail.gmail.com>
+Subject: Re: [PATCH 11/11] btrfs: make btrfs_destroy_delayed_refs() return void
+To:     dsterba@suse.cz
+Cc:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 24, 2023 at 05:03:12PM +0200, Christoph Hellwig wrote:
-> The callers don't check the btrfs_finish_ordered_io return value, so
-> drop it.
+On Tue, May 30, 2023 at 4:10=E2=80=AFPM David Sterba <dsterba@suse.cz> wrot=
+e:
+>
+> On Mon, May 29, 2023 at 04:17:07PM +0100, fdmanana@kernel.org wrote:
+> > From: Filipe Manana <fdmanana@suse.com>
+> >
+> > btrfs_destroy_delayed_refs() always returns 0 and its single caller doe=
+s
+> > not even check its return value, so make it return void.
+>
+> Function can return void if none of its callees return an error,
+> directly or indirectly, there are no BUG_ONs left to be turned to
+> proper error handling or there's no missing error handling.
+>
+> There's still:
+>
+> 4610                         cache =3D btrfs_lookup_block_group(fs_info, =
+head->bytenr);
+> 4611                         BUG_ON(!cache);
+>
+> and calling
+>
+> btrfs_error_unpin_extent_range
+>   unpin_extent_range
+>     cache =3D btrfs_lookup_block_group()
+>     BUG_ON(!cache)
+>
+> If a function like btrfs_cleanup_one_transaction has limited options how
+> to handle errors then we can ignore them there but at least a comment
+> would be good that we're doing that intentionally.
+>
+> This case is a bit special because there's only one caller so we know
+> the context and btrfs_destroy_delayed_refs() should eventually return
+> void but I'd rather do that as the last step after the call graph is
+> audited for proper error handling.
 
-Same general comments like in
-https://lore.kernel.org/linux-btrfs/20230530150359.GS575@twin.jikos.cz/
+What possible error handling are you expecting?
+This is the transaction abort path, we have no way of dealing with
+errors - every cleanup of resources is best effort.
 
-"Function can return void if none of its callees return an error,
- directly or indirectly, there are no BUG_ONs left to be turned to
- proper error handling or there's no missing error handling"
-
-btrfs_finish_ordered_io mixes a few error handling styles, there's
-direct return -ERROR, transaction abort or mapping_set_error. Some
-called functions are not error handling everything propely and at least
-btrfs_free_reserved_extent() returns an error but is not handled.
-
-I'm not counting the state bit handlers (clear_extent_bit) as we know
-they "should not fail". unpin_extent_cache() does not look clean either.
-
-If 'callers don't check error values' the question is 'Should they?'.
+Thanks.

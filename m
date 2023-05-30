@@ -2,103 +2,89 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E6CBC77B7A
-	for <linux-btrfs@archiver.kernel.org>; Tue, 30 May 2023 01:02:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F422FC77B7E
+	for <linux-btrfs@archiver.kernel.org>; Tue, 30 May 2023 01:18:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229750AbjE3BCn (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 29 May 2023 21:02:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54184 "EHLO
+        id S229836AbjE3BSa (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 29 May 2023 21:18:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56994 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229455AbjE3BCm (ORCPT
-        <rfc822;Linux-btrfs@vger.kernel.org>);
-        Mon, 29 May 2023 21:02:42 -0400
-Received: from mail-pl1-x62a.google.com (mail-pl1-x62a.google.com [IPv6:2607:f8b0:4864:20::62a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B0A529D
-        for <Linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 18:02:40 -0700 (PDT)
-Received: by mail-pl1-x62a.google.com with SMTP id d9443c01a7336-1b01d912924so29997275ad.1
-        for <Linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 18:02:40 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1685408560; x=1688000560;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=5ha9TC87QJe2YtLMi41G7ciPSeHB8zDGXZdFeNRNDHY=;
-        b=d2fDdbjw5rKDjAIECyNPPLN4HHxSL5pvZ9XxmPBQLu8w4CzQy4QR7KqcyYBWbmTqce
-         xG9DqYDzVg0+DIcHc7Is8Wo2FXfq9+ibVkCIwGfb3L5h3JfTJ81ixuxO5mC3r1o4YPy3
-         m+Py9ja8Ha8O0rVri5vLse96vHUMNAnLYmgw+UosEOmizseymt4vWEj74K1Nwf6i9X/s
-         sLWd/Djaqj/ziooFJtMnjukwz0R+YZ1Y5hLG5OFYjPUEqHrWAzlazzRpNiFVvsVGNby6
-         8mNcmNEplq0FAubBo3gXfrRc9jl5ppIOG7MSgqssHm0iH/x2V+PnZzQlUYxqfjNrM9z0
-         tpFA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1685408560; x=1688000560;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=5ha9TC87QJe2YtLMi41G7ciPSeHB8zDGXZdFeNRNDHY=;
-        b=gkhgvCwS9uiToAYr/UjBTkyx2/yX5LsM0nmHgd2B6oQOb3CL16INYxFNn9IXn2uRDS
-         V8CUZ2a1I62SQchMen52KYitvFEfoBBJhu+MFgJWtzVGnEWRJKsIk4Q49Snv0fRwo8Ka
-         N0T5QlNgqWK2upI9Hl/M2KVP8fRpuQJRyuZztaGM9zX6HsVvoFTrcVElI4NU8DzlBm7g
-         GiTLFc4ODuRF3AMosb9uShYWwxabf/fYgawaSUmoTyoTWetGvL41TNXwqcGHRiq5hsnF
-         r5xlQw81O/Wqi3wyt5z1q8kg0ZFNSRlLphap3y19G9CD+CIjHlPO3P0sBT/6k6MhdC2L
-         ERyA==
-X-Gm-Message-State: AC+VfDxtUKOdk836uKlp7x6rLVYMAfRqxKYgNXeSmOx2ih8P2E1Ic9ip
-        eT3aXfHxJtQ6uVa2U4UVtLgJPZSYtAI=
-X-Google-Smtp-Source: ACHHUZ5WDYHuZnxW8P702rlbjfpSBjojJJMEbrzNzj0r0XKWg4kU09cppvvJ9lc2KRpUvfdvCDchww==
-X-Received: by 2002:a17:902:8307:b0:1ae:5914:cbec with SMTP id bd7-20020a170902830700b001ae5914cbecmr710554plb.10.1685408560031;
-        Mon, 29 May 2023 18:02:40 -0700 (PDT)
-Received: from flip-desktop (97-113-131-190.tukw.qwest.net. [97.113.131.190])
-        by smtp.gmail.com with ESMTPSA id n8-20020a170902e54800b001ab09f5ca61sm8879809plf.55.2023.05.29.18.02.39
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 29 May 2023 18:02:39 -0700 (PDT)
-Date:   Mon, 29 May 2023 18:02:38 -0700
-From:   Phillip Duncan <turtlekernelsanders@gmail.com>
-To:     Josef Bacik <josef@toxicpanda.com>
-Cc:     Linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: tests: fix formatting in btrfs-tests
-Message-ID: <ZHVLLpTHRvifOIHP@flip-desktop>
+        with ESMTP id S229647AbjE3BS3 (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>);
+        Mon, 29 May 2023 21:18:29 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE6CCDB
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 May 2023 18:18:25 -0700 (PDT)
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 7991B1FDDD
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 01:18:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+        t=1685409504; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=VogHfS6Hpg5PeV9xmuf3aWOXV4y/phRmvYgzwvKizi8=;
+        b=GiTUVb3AjQJU405Rv3qb1IIwmA77uDPhaKcNPJxI4hK6zqfFsT6hIvVlpBWGix6AwLyuUp
+        xFZyB/ivzPEig86md2VdhfCTRh8HKH8p9kvqOZZVqptR54bRHVzjmwrHP9Dpb8xWjf9G0W
+        QIJa45dUMYnrMwDwI0tx2T27vEHndwA=
+Received: from imap1.suse-dmz.suse.de (imap1.suse-dmz.suse.de [192.168.254.73])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap1.suse-dmz.suse.de (Postfix) with ESMTPS id E736C1341B
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 01:18:23 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap1.suse-dmz.suse.de with ESMTPSA
+        id gDLoLd9OdWRIIQAAGKfGzw
+        (envelope-from <wqu@suse.com>)
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 May 2023 01:18:23 +0000
+From:   Qu Wenruo <wqu@suse.com>
+To:     linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs: make alloc_extent_buffer() handle previously uptodate range more efficient for subpage
+Date:   Tue, 30 May 2023 09:18:03 +0800
+Message-Id: <dcacf1177cd31b969bb61910e49ed3397d796ee3.1685408905.git.wqu@suse.com>
+X-Mailer: git-send-email 2.40.1
+In-Reply-To: <cover.1685408905.git.wqu@suse.com>
+References: <cover.1685408905.git.wqu@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-checkpatch.pl had a couple of formatting suggestions:
-- #38: Don't use multiple blank lines
-- #42: Missing a blank line after declarations
-- #282: Alignment should match open parenthesis
+Currently alloc_extent_buffer() would make the extent buffer uptodate if
+the corresponding pages are also uptodate.
 
-Fixed these format suggestions, checkpatch.pl is a little cleaner now.
+But this check is only checking PageUptodate, which is fine for regular
+cases, but not for subpage cases, as we can have multiple extent buffers
+in the same page.
 
-Signed-off-by: Phillip Duncan <turtlekernelsanders@gmail.com>
+So here we go btrfs_page_test_uptodate() instead.
+
+The old code doesn't cause any problem, but not efficient, as it would
+cause extra metadata read even if the range is already uptodate.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/tests/btrfs-tests.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/tests/btrfs-tests.c b/fs/btrfs/tests/btrfs-tests.c
-index ca09cf9afce8..1653456560c2 100644
---- a/fs/btrfs/tests/btrfs-tests.c
-+++ b/fs/btrfs/tests/btrfs-tests.c
-@@ -35,10 +35,10 @@ static const struct super_operations btrfs_test_super_ops = {
- 	.destroy_inode	= btrfs_test_destroy_inode,
- };
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index bbf212c7a43f..9afdcf0c70dd 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3708,7 +3708,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
  
--
- static int btrfs_test_init_fs_context(struct fs_context *fc)
- {
- 	struct pseudo_fs_context *ctx = init_pseudo(fc, BTRFS_TEST_MAGIC);
-+
- 	if (!ctx)
- 		return -ENOMEM;
- 	ctx->ops = &btrfs_test_super_ops;
-@@ -278,8 +278,7 @@ int btrfs_run_sanity_tests(void)
- 			ret = btrfs_test_free_space_cache(sectorsize, nodesize);
- 			if (ret)
- 				goto out;
--			ret = btrfs_test_extent_buffer_operations(sectorsize,
--				nodesize);
-+			ret = btrfs_test_extent_buffer_operations(sectorsize, nodesize);
- 			if (ret)
- 				goto out;
- 			ret = btrfs_test_extent_io(sectorsize, nodesize);
+ 		WARN_ON(btrfs_page_test_dirty(fs_info, p, eb->start, eb->len));
+ 		eb->pages[i] = p;
+-		if (!PageUptodate(p))
++		if (!btrfs_page_test_uptodate(fs_info, p, eb->start, eb->len))
+ 			uptodate = 0;
+ 
+ 		/*
 -- 
-2.34.1
+2.40.1
 

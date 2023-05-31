@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DE8DC7EE23
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 May 2023 13:45:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 550AFC77B7A
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 May 2023 13:49:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236631AbjEaNpQ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 May 2023 09:45:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54758 "EHLO
+        id S236995AbjEaNtX (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 May 2023 09:49:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60308 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236671AbjEaNoU (ORCPT
+        with ESMTP id S237007AbjEaNsr (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 May 2023 09:44:20 -0400
+        Wed, 31 May 2023 09:48:47 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F3E319BA;
-        Wed, 31 May 2023 06:42:46 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E934CE41;
+        Wed, 31 May 2023 06:44:55 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 1131C637AA;
-        Wed, 31 May 2023 13:42:31 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 70662C4339C;
-        Wed, 31 May 2023 13:42:29 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 552E863B47;
+        Wed, 31 May 2023 13:43:40 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9CA3CC433EF;
+        Wed, 31 May 2023 13:43:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1685540550;
-        bh=Qvxj74D67uU3ptFtjNBZ01IkRpGiV41YlE4yyitA/3Y=;
+        s=k20201202; t=1685540619;
+        bh=Vvji4uh0s4T1YrkOa9+Z9ZOuG3eJAbPAuPjElVTyO2s=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=KsYcA6qM05nAe3ML/wXCb7rsUfwICydVCUMKG1O4A5CxUrdPIyP80v+n7GoxkhpjB
-         410mS3c6jktF8d2LaKCJE3Q+52VlxPCvpBxWw3UPZOeJBgdZ9pOQwlTglKAFukpn6j
-         Yo5QmFAn3XVcWWK+La1c2YWvDYT+jeFlGDKj2DcvgAf86V6RM7ohOl2rjwRvYiWdty
-         aKz4jPLRkq90dTn+9Yn6bfnlfWP5LYxlobGbb632AxSug5BRfXri9CdqMlhPw/CulJ
-         UXyiCmpvwtgKOzcVSmqlNnIqslPde2/6r88T7+xQvUlxyf0VgJ6KhffTCNcimgnQ6c
-         H0ri1lp95hn/g==
+        b=r0VD+4Fbc7wDXNTddmtc7ge81tzpf278+N5D5eWJVJtrS8qeYIJH/FVONz6MdPaO6
+         a1fhEIE5tgZERykDy5Lc1KBzDqPzxtX53/DFozxI0m9ZeOoJeV29YTCjJjcThmv07e
+         rTMx99AoyLCe1ssztvVimGu+6uPcP+slcP4xyOQ2t89Uk06Xhrc+YjGfOn66E97nfH
+         FbRliX/bHIKJHHVJwzOIU4esMW8rWdOFuNTAiM60ST39UkEXMUo/Wyl3ZV0/8sl0ww
+         LQcqipU0bmkA3i8AKz9hhSSegB3BcRvnGHIq5Z9mn7UPhQ/0FmufJimhiOOUsU0yVb
+         t7/EEPcsI1c9A==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
@@ -41,12 +41,12 @@ Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 17/33] btrfs: handle memory allocation failure in btrfs_csum_one_bio
-Date:   Wed, 31 May 2023 09:41:43 -0400
-Message-Id: <20230531134159.3383703-17-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.15 13/24] btrfs: handle memory allocation failure in btrfs_csum_one_bio
+Date:   Wed, 31 May 2023 09:43:09 -0400
+Message-Id: <20230531134320.3384102-13-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230531134159.3383703-1-sashal@kernel.org>
-References: <20230531134159.3383703-1-sashal@kernel.org>
+In-Reply-To: <20230531134320.3384102-1-sashal@kernel.org>
+References: <20230531134320.3384102-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -81,10 +81,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 4fab7da632594..b14d2da9b26d3 100644
+index dd8b02a2a14a0..4c210b2ac6994 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
-@@ -717,7 +717,9 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
+@@ -700,7 +700,9 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
  				sums = kvzalloc(btrfs_ordered_sum_size(fs_info,
  						      bytes_left), GFP_KERNEL);
  				memalloc_nofs_restore(nofs_flag);

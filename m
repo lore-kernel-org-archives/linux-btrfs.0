@@ -2,87 +2,216 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51BC3C77B7A
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 May 2023 16:39:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36307C77B73
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 May 2023 22:26:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229719AbjEaQjH (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 May 2023 12:39:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33208 "EHLO
+        id S229940AbjEaW0P (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 May 2023 18:26:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44068 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229520AbjEaQjG (ORCPT
+        with ESMTP id S229476AbjEaW0N (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 May 2023 12:39:06 -0400
-Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 89DEE12C
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2023 09:39:05 -0700 (PDT)
-Received: by mail-qk1-x732.google.com with SMTP id af79cd13be357-75b08ceddd1so686846785a.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2023 09:39:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda-com.20221208.gappssmtp.com; s=20221208; t=1685551144; x=1688143144;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=WkMqorMco6wXsDGobcaP2+P1weqa8NbEJ4ZSR07dGmA=;
-        b=exoNeqwqXJ3HjhNYVG2g+7Q9xdCyXArkqhA4F/nKIC5exZDx7jc7EJ7Lb+xHO+PH/d
-         2kpRfe2YUhDifNFidwJ0McXI7WasZAKU44SFpr0OmiX6b3otZaod3MpE/+xf8uYp/dYF
-         44Yp0Q0uyPtPYHfKkdE0+kE1I8ypXvfe/0xVeT15Pn8roWbaTdgYd2JNuvh6EA09+fu3
-         8+xmnZ5uD1BOCcalpuOAzmRlBC5zoY17hQFo7OXZLkMPKZVibq2pMkGxU25Gk8VskR0W
-         VRplVkCC83W6g5OKOe4OaSzsHbUi+U3Z3encMtom5aoDsI70YCgWjsuIDZ7v1HXoUqtS
-         LUMA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1685551144; x=1688143144;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=WkMqorMco6wXsDGobcaP2+P1weqa8NbEJ4ZSR07dGmA=;
-        b=LECLdTdWOJDCxvIcWDH4hQISFnLuyJ3sQ0TielktAYEgpkvk7Qb/mRkPqPeOG6K8pt
-         bU7sSwDxxz4TCq9Db9z2p4NlGMhMPvCdyt6qI9P/JYFeM/QT7IvFDAufyc6Lg1/LNjlp
-         mGcsmj/XTwkvWs841OpgZ+7Y5L6aKrGudrYHa+/OAGl8/38v/7jj7/Y8Y3qssIX0dQ5v
-         bu/SN5hfPOrVIVaknBTJMWc83jGn6WsKQhyd/Gy0RGpyvNKR+9napIj994JK3IgGbcwb
-         nZ2dF43OU7kxz/baciCBfNX678X2S4vZcMZsRlrsTNg0wJisgVK0sewsf0yJEnYj2+go
-         sUjA==
-X-Gm-Message-State: AC+VfDworZZELCrYWxnjwNCr3p35cHpmS3N/Nbh8JUBTa9TQaaaUn0AS
-        YlAbm/oXeRkHYI+y9raH6NiHt3tDgvxk/wWApttctA==
-X-Google-Smtp-Source: ACHHUZ5YcO6DZbvVT7Wr7J+pyLpUsUWhEakXuD3hzx6j+U92AGqRLkp+XdN0honyS41gyO3C0rjzLQ==
-X-Received: by 2002:a05:620a:8782:b0:75b:23a0:dea0 with SMTP id py2-20020a05620a878200b0075b23a0dea0mr4917421qkn.30.1685551144580;
-        Wed, 31 May 2023 09:39:04 -0700 (PDT)
-Received: from localhost (cpe-76-182-20-124.nc.res.rr.com. [76.182.20.124])
-        by smtp.gmail.com with ESMTPSA id c19-20020a05620a165300b0075b0ded49b0sm5274142qko.13.2023.05.31.09.39.04
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 31 May 2023 09:39:04 -0700 (PDT)
-Date:   Wed, 31 May 2023 12:39:03 -0400
-From:   Josef Bacik <josef@toxicpanda.com>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: writeback fixlets and tidyups v2
-Message-ID: <20230531163903.GB2884256@perftesting>
-References: <20230531060505.468704-1-hch@lst.de>
+        Wed, 31 May 2023 18:26:13 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEDC19F
+        for <linux-btrfs@vger.kernel.org>; Wed, 31 May 2023 15:26:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com; s=s31663417;
+        t=1685571963; i=quwenruo.btrfs@gmx.com;
+        bh=48hFjeo9PrNXcuESTWVFfS7/mfIej0hn7bO8F26rgbU=;
+        h=X-UI-Sender-Class:Date:To:Cc:References:From:Subject:In-Reply-To;
+        b=Py3q9r74e+kuKd14Sy7t+kva4wkVwkit2OeoFmmYE+glPLcgXLCQkYRZSYRHTeJNZ
+         +3IVMGUCF8dG24Y0b/F858Oj5dxKjYv/8FyVmfMUcffj/BLVGt3XiRCRTSM6Il0V/F
+         E/nuWIm5W+9XtnJrhd2RAqPsSOv9W/PRVrZqRKcA2BSKt1jK2L88+S+x3NjnjSqQJd
+         CggJm3wS6Qny6hqL1xSYt6s3gLVeUoVElI6amgvwPbR2/svOeFVJQsq0yUREb0Lo8C
+         RmNto1Sk+x/FeUdtJLyPsCxpMjCLsfWrE+vpukxnJbe4fa6u2d+M6kjYJw0aPSNYD5
+         Rrga33HJWgmJQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MUGeB-1pdEKm03gh-00REme; Thu, 01
+ Jun 2023 00:26:03 +0200
+Message-ID: <ea984319-decb-ce86-aed4-d4520bf3ad3d@gmx.com>
+Date:   Thu, 1 Jun 2023 06:25:59 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230531060505.468704-1-hch@lst.de>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.1
+To:     Johannes Thumshirn <Johannes.Thumshirn@wdc.com>,
+        Christoph Hellwig <hch@lst.de>
+Cc:     Naohiro Aota <Naohiro.Aota@wdc.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <20230531125224.GB27468@lst.de>
+ <546fad79-f436-c561-8b9b-0d9a7db09522@wdc.com>
+ <20230531132032.GA30016@lst.de>
+ <821003e3-b457-90ba-e733-8c2fdd0c3b3c@wdc.com>
+ <20230531133038.GA30855@lst.de>
+ <a59b2274-9d64-f11e-f726-9283f560a495@wdc.com>
+Content-Language: en-US
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+Subject: Re: new scrub code vs zoned file systems
+In-Reply-To: <a59b2274-9d64-f11e-f726-9283f560a495@wdc.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:vLFIOxxj9r2y4RXQSgX8U06iMsQCpFhwk7Y3EcTuSJY9Ax1WraW
+ yJozeY+4S2DOOIepVxH7VmxYv3cu6J5+4Isk56rZFTJWVUI5yRj0FbgNuGzib89XIJ6vw+D
+ 3ryZm1NSTPHKJ1Mlk58tYj2IKMajv+/bQFo+EfbKXSuHv+hhOS/GCci4UmoNIyLNTLXl+YY
+ Q7kTRSmaFla1fxQ/b711Q==
+UI-OutboundReport: notjunk:1;M01:P0:zBtZ5aMzfD0=;p97FOz6dTLqQLSFs/9SlSX3c+qR
+ N1zIsR0i7tiKGxN3G8qtMqVMK/4CJwyV7NOreaVP4PwMR5Qw4pFsfiejUYc+sgiz2hrqXg+IV
+ XZbIdcRJgez8023afZ8qM4jS8hl8+s0qXYKWTafKsfDbUNZoQ+Kx2ICJccL82+OtI6j51gmxx
+ 3E2ISTsr5Y56ru9Lz496njwdcMGdpBAL9evjpiyq4COm4F0QN7pzX2fxubIvXnQXOMJ3nP39h
+ 8IaObbCzatmhJ8g+oFHCMIw2yhHsOmJ+xJuewijc0rV3Aa72NCK1W2vcebbOd2kO44kymToQE
+ m4fCj4H7rlpxNMbRYE8zkTfzjXVpUda/5K/i1iC+ZQasfe7+HUjAsyABiDMtNd6ChVuh8H5MX
+ 8HJvtKJQ8Gu/W1vrB5FPnKJusFXPC/8ngZIGjzmrHHyDSjJc+14ni3uLHNLmkZAZs9/YhyRjL
+ ludVKJqfTTj3cMPHUG/cmRyquiBa4p4mVyrdGSdrN3xNc6aV5GYzfI8iQ2kzsrL6PBdw6aaxh
+ k70KrB6OReym9v2bXFWxrV9gkzwrUhHQ99S2BiuhjD7/61dNyfS7tMJgh/ikXBzplQYHtPbCu
+ kg1ypBtMGG5m5zT4WldV7PT+ZcuAYJtJTnNdmCA/4qfB7TIp7sVKA36RzqNIwTSeYcofMGjs0
+ I/GZi81iutrcrZTBdZwo/3PtIs44Q7eLWe27r7V+vwvZtnnrrmo+uFDdkK80RHwJCI3b16OEy
+ t7q1K1cGbbBUzgYaZjzYEiG7QjZCyQ/oLshQcZ9uCnrfM0WkgiVQ9Y3DjewcdGl/BrFzKF/9r
+ 3M0jKk4CaX1AsGKqt94Aos31VPdkpJ6Qh5eA5Fo8BZCrhfYc0eEC0pQStAxiMPggTYL7eJYg2
+ hkFwr2TgiTp7AsO2p6HOe0S+E+NW9duVg7sbw/C27TGM8u/98JkddGqyFYxOtmvb1oWaEi+fT
+ gHGNA+eaZmQcqHRAuaT+v+o3KAc=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 31, 2023 at 08:04:49AM +0200, Christoph Hellwig wrote:
-> Hi all,
-> 
-> this little series fixes a few minors bugs found by code inspection in the
-> writeback code, and then goes on to remove the use of PageError.
-> 
-> This replaces the earlier version in the for-next branch.
-> 
-> Changes:
->  - rebased to the latest misc-next tree
->  - remove a set but unused variable in pages_processed
->  - remove a spurious folio_set_error
->  - return bool from btrfs_verify_page
->  - update various commit message
-> 
 
-Reviewed-by: Josef Bacik <josef@toxicpanda.com>
+
+On 2023/5/31 22:04, Johannes Thumshirn wrote:
+> On 31.05.23 15:31, Christoph Hellwig wrote:
+>> On Wed, May 31, 2023 at 01:25:14PM +0000, Johannes Thumshirn wrote:
+>>> Hmm at least flush_scrub_stripes() should not go into the simple write
+>>> path at all:
+>>
+>> Except for the dev-replace case, which seems to trigger this
+>> write.
+>>
+>
+> Heh and this has never actually worked IMHO.
+>
+> I did a crude hack to bandaid scrub:
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index d7d8faf1978a..b20115bd0675 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -1709,9 +1709,20 @@ static int flush_scrub_stripes(struct scrub_ctx *=
+sctx)
+>
+>                          ASSERT(stripe->dev =3D=3D fs_info->dev_replace.=
+srcdev);
+>
+> -                       bitmap_andnot(&good, &stripe->extent_sector_bitm=
+ap,
+> -                                     &stripe->error_bitmap, stripe->nr_=
+sectors);
+> -                       scrub_write_sectors(sctx, stripe, good, true);
+> +                       if (btrfs_is_zoned(fs_info)) {
+> +                               if (!bitmap_empty(&stripe->extent_sector=
+_bitmap,
+> +                                                 stripe->nr_sectors)) {
+> +                                       btrfs_repair_one_zone(fs_info,
+> +                                                             sctx->stri=
+pes[0].bg->start);
+> +                                       break;
+
+This doesn't look good, is this a hack to use repair to do the dev-replace=
+?
+
+> +                               }
+> +                       } else {
+> +                               bitmap_andnot(&good,
+> +                                             &stripe->extent_sector_bit=
+map,
+> +                                             &stripe->error_bitmap,
+> +                                             stripe->nr_sectors);
+> +                               scrub_write_sectors(sctx, stripe, good, =
+true);
+> +                       }
+>                  }
+>          }
+>
+>
+>
+> But then it doesn't work as well because:
+>
+> static int relocating_repair_kthread(void *data)
+> {
+> 	[...]
+>          sb_start_write(fs_info->sb);
+>          if (!btrfs_exclop_start(fs_info, BTRFS_EXCLOP_BALANCE)) {
+>                  btrfs_info(fs_info,
+>                             "zoned: skip relocating block group %llu to =
+repair: EBUSY",
+>                             target);
+>                  sb_end_write(fs_info->sb);
+>                  return -EBUSY;
+>
+> That will always fail, because in the case of dev-replace we already hav=
+e
+> BTRFS_EXCLOP_DEV_REPLACE set.
+>
+> I've just spotted btrfs_exclop_start_try_lock(), that could solve our pr=
+oblem
+> here.
+
+To me, the problem can be solved in a much simpler way, if it's
+dev-replace for zoned device, let's write the whole stripe to the target
+device, and wait for it.
+
+For the btrfs_record_physical_zoned(), we can skip the OE things if
+bbio::inode is NULL.
+
+Would the following change solves the problem?
 
 Thanks,
+Qu
 
-Josef
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index d7d8faf1978a..3fa480cd905e 100644
+=2D-- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1709,8 +1709,15 @@ static int flush_scrub_stripes(struct scrub_ctx
+*sctx)
+
+                         ASSERT(stripe->dev =3D=3D fs_info->dev_replace.sr=
+cdev);
+
+-                       bitmap_andnot(&good, &stripe->extent_sector_bitmap=
+,
+-                                     &stripe->error_bitmap,
+stripe->nr_sectors);
++                       if (btrfs_is_zoned(fs_info))
++                               /*
++                                * For zoned case, we need to write the
+whole
++                                * stripe back, no gaps allowed.
++                                */
++                               bitmap_set(&good, 0, stripe->nr_sectors);
++                       else
++                               bitmap_andnot(&good,
+&stripe->extent_sector_bitmap,
++                                             &stripe->error_bitmap,
+stripe->nr_sectors);
+                         scrub_write_sectors(sctx, stripe, good, true);
+                 }
+         }
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 98d6b8cc3874..cced6aeff8d7 100644
+=2D-- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -1659,6 +1659,13 @@ void btrfs_record_physical_zoned(struct btrfs_bio
+*bbio)
+         const u64 physical =3D bbio->bio.bi_iter.bi_sector << SECTOR_SHIF=
+T;
+         struct btrfs_ordered_extent *ordered;
+
++       /*
++        * For scrub case we have no inode, and doesn't need to bother
+ordered
++        * extents.
++        */
++       if (!bbio->inode)
++               return;
++
+         ordered =3D btrfs_lookup_ordered_extent(bbio->inode,
+bbio->file_offset);
+         if (WARN_ON(!ordered))
+                 return;

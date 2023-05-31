@@ -2,36 +2,36 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B9A3C7EE2E
-	for <linux-btrfs@archiver.kernel.org>; Wed, 31 May 2023 13:51:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 426C6C7EE31
+	for <linux-btrfs@archiver.kernel.org>; Wed, 31 May 2023 13:51:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236639AbjEaNvF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 31 May 2023 09:51:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60622 "EHLO
+        id S236785AbjEaNvG (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 31 May 2023 09:51:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59682 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237222AbjEaNuB (ORCPT
+        with ESMTP id S237015AbjEaNtF (ORCPT
         <rfc822;linux-btrfs@vger.kernel.org>);
-        Wed, 31 May 2023 09:50:01 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4FC31BEA;
-        Wed, 31 May 2023 06:45:38 -0700 (PDT)
+        Wed, 31 May 2023 09:49:05 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B2A8C19B9;
+        Wed, 31 May 2023 06:45:06 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id C35D463703;
-        Wed, 31 May 2023 13:45:17 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 300B1C4339B;
-        Wed, 31 May 2023 13:45:16 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 6B09563B64;
+        Wed, 31 May 2023 13:44:33 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CB289C4339B;
+        Wed, 31 May 2023 13:44:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1685540717;
-        bh=zLuyDAoDlFV+nZmcBKc3zhRvwWdjtze/tneGOZjD9rY=;
+        s=k20201202; t=1685540672;
+        bh=17r4sRdx2d9H3cuuwSjBss/gdo6osSzCRUjgvaBcQ6E=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=vJak3yLZS2Bp/rbF/SCqavbITQB+Jz3hVL2wWPRoozU/3Qt4ewGKYnc2btlaga5s9
-         hV7EhcqqJs3YkTWiEKKMgj8DeDUky4aS3ctFQBh2Mic7xpbnPn63wBXlDJfJZYwJCf
-         9lFAUAAeMkfZLPAlYf0HsXCSs0pRj1fPgbU4AHAN68Al+jrmfN8eJdI8EALumVVo9o
-         w2oQ9x2F8ZuzFJZSoj06jGneZy9vHhMp6Cp6s0kv8x6kvOenmO+9HVM1TPiftLvh8D
-         5wxZBGLT0Dlu6pN0k+fVKl0xkUvSNQU4ZDk7OBn1MULj5nbxSID7WvfP73ajmulYhG
-         n1JJp3SfV3neg==
+        b=cJ0ihJvXkndKKhUC5yQqF2LxAz/gPkET7RO2qJQhPzd9dXEeBDSqKbUOzoOwmsn+D
+         +EO1PVmN7pfB74PCoDXN3yoduZGxnujjz4mj4t1wDFuHMmgZ7a2xhzjoYSM3KKVSAY
+         aXI00UOdw24XpBxeswYKfTF1Y+uGA8bEF+TnkARw2GwqKio3ArmQGomyS/FhrrgU2M
+         Z9t4ZHrNtjuHCR2X14tQepTwf4KrAsXXdK5CxWrzjbzfsDLrL1jUYNFttauPWs5bW7
+         UE3LWpFyhM66ZziUXI+H2S0OH7A8A0rObJkfDuXhM+JnHmORxAjZxj2NOudDM8e1vd
+         62Xy+IjVPC93g==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
@@ -41,12 +41,12 @@ Cc:     Johannes Thumshirn <johannes.thumshirn@wdc.com>,
         David Sterba <dsterba@suse.com>,
         Sasha Levin <sashal@kernel.org>, clm@fb.com,
         josef@toxicpanda.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.4 10/17] btrfs: handle memory allocation failure in btrfs_csum_one_bio
-Date:   Wed, 31 May 2023 09:44:54 -0400
-Message-Id: <20230531134502.3384828-10-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 5.10 12/21] btrfs: handle memory allocation failure in btrfs_csum_one_bio
+Date:   Wed, 31 May 2023 09:44:05 -0400
+Message-Id: <20230531134415.3384458-12-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230531134502.3384828-1-sashal@kernel.org>
-References: <20230531134502.3384828-1-sashal@kernel.org>
+In-Reply-To: <20230531134415.3384458-1-sashal@kernel.org>
+References: <20230531134415.3384458-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -81,10 +81,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 61b82c69eed50..1a7183cdfe950 100644
+index 2de1d8247494e..cbea4f572155e 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
-@@ -499,7 +499,9 @@ blk_status_t btrfs_csum_one_bio(struct inode *inode, struct bio *bio,
+@@ -602,7 +602,9 @@ blk_status_t btrfs_csum_one_bio(struct btrfs_inode *inode, struct bio *bio,
  				sums = kvzalloc(btrfs_ordered_sum_size(fs_info,
  						      bytes_left), GFP_KERNEL);
  				memalloc_nofs_restore(nofs_flag);

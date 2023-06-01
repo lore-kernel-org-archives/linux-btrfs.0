@@ -2,134 +2,139 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BD17C7EE23
-	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Jun 2023 09:33:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B964C77B7A
+	for <linux-btrfs@archiver.kernel.org>; Thu,  1 Jun 2023 09:37:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231969AbjFAJdx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Thu, 1 Jun 2023 05:33:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49802 "EHLO
+        id S232486AbjFAJhx (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Thu, 1 Jun 2023 05:37:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51960 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232848AbjFAJdt (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2023 05:33:49 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 864EDD7
-        for <linux-btrfs@vger.kernel.org>; Thu,  1 Jun 2023 02:33:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1685611984;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=xX4DWUXuUgkUkDBynfRPO9UP4HYgJT6wwsFaYxT3dmA=;
-        b=YVPUxa6BsR25a8sWto0+HWCpSQCsUEg1sAAZURqRdRzvyK783P/iAQaqB4ZucCZhISn+ja
-        ufhgyKK0eGAbRWHaan+b+7Qg+9o+ZkjXz7DJhOWab0fa5d4sg8VG5gDeSD6XFDr+zcbU6G
-        zPjqGFvtSVj45EX1bgYT1MmcrX4L6P4=
-Received: from mail-pl1-f199.google.com (mail-pl1-f199.google.com
- [209.85.214.199]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-148-nnrRUC7RPtS0PO3P7sMviw-1; Thu, 01 Jun 2023 05:33:03 -0400
-X-MC-Unique: nnrRUC7RPtS0PO3P7sMviw-1
-Received: by mail-pl1-f199.google.com with SMTP id d9443c01a7336-1b03ae23eacso6717645ad.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Jun 2023 02:33:03 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1685611982; x=1688203982;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=xX4DWUXuUgkUkDBynfRPO9UP4HYgJT6wwsFaYxT3dmA=;
-        b=Bj5RDNpOYGltrmXvFGuRf/EKT8G0gOGJXqHAKFgkyzGIq8x6vEjBH0JEOmWs79nSi0
-         MuaSJLgMzYh8/NxveMVD+aqpiv1NDN9akOLwJhti3I8rmPAufCM8wQR5IS7a1JsnMW0D
-         KD80/PQNtKArVdvP+vZUeZP7vJI5ErF9CDPbv/G3G0ESHgFjMQn0c3mhGv9CJIdSJ0IA
-         c2wbYOWDXkW+K007aTnBOIxryH2hIc/ezvFD7mCd0nAP+WPDjClFUx6ricOIvS44LJKM
-         SAWlHDB4/4LFsHamplQKusW8kf7qzGk/nd1qSEkmVFNm+rTw5M+lgZ6edbEnv398jF+J
-         uxxg==
-X-Gm-Message-State: AC+VfDwUsPvrD/Qh/VD/T1AQo/NZV+I4BvZOOAy1KYYnAvRtO4u3c6Kw
-        rKUvXgKpJZqqaL454QYr1WDTpG8KAdiNRgJ8M/DKlG7ifV3ILA/TyYNFjRY/SXm513ijjhUwV89
-        57lr4uHZVrYS4cuOOpjjWp48=
-X-Received: by 2002:a17:902:ec91:b0:1a6:d15f:3ce1 with SMTP id x17-20020a170902ec9100b001a6d15f3ce1mr9761511plg.34.1685611982350;
-        Thu, 01 Jun 2023 02:33:02 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ6bF9//rKmP6OHnN241NLMJwvQIYa4l0eoJL+X+INfN0NMATaMLhmsQ0Kny/T/KW95WLnS1Mw==
-X-Received: by 2002:a17:902:ec91:b0:1a6:d15f:3ce1 with SMTP id x17-20020a170902ec9100b001a6d15f3ce1mr9761496plg.34.1685611981943;
-        Thu, 01 Jun 2023 02:33:01 -0700 (PDT)
-Received: from zlang-mailbox ([43.228.180.230])
-        by smtp.gmail.com with ESMTPSA id jw11-20020a170903278b00b001b03a1a3173sm2960584plb.145.2023.06.01.02.33.00
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 01 Jun 2023 02:33:01 -0700 (PDT)
-Date:   Thu, 1 Jun 2023 17:32:57 +0800
-From:   Zorro Lang <zlang@redhat.com>
-To:     Anand Jain <anand.jain@oracle.com>
-Cc:     fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs/122: adjust nodesize to match pagesize
-Message-ID: <20230601093257.d7q3mdfliwly4o77@zlang-mailbox>
-References: <04c928cb434dae18eb4d4c2745847ed67dc3b213.1685365902.git.anand.jain@oracle.com>
+        with ESMTP id S231599AbjFAJhw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Jun 2023 05:37:52 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DCFB1136
+        for <linux-btrfs@vger.kernel.org>; Thu,  1 Jun 2023 02:37:50 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id D26CC67373; Thu,  1 Jun 2023 11:37:47 +0200 (CEST)
+Date:   Thu, 1 Jun 2023 11:37:47 +0200
+From:   Christoph Hellwig <hch@lst.de>
+To:     Qu Wenruo <wqu@suse.com>
+Cc:     linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>
+Subject: Re: [PATCH] btrfs: fix dev-replace after the scrub rework
+Message-ID: <20230601093747.GA6652@lst.de>
+References: <0113e9e82b06106940e8ef7323fd4a9c01aa5afc.1685610531.git.wqu@suse.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <04c928cb434dae18eb4d4c2745847ed67dc3b213.1685365902.git.anand.jain@oracle.com>
+In-Reply-To: <0113e9e82b06106940e8ef7323fd4a9c01aa5afc.1685610531.git.wqu@suse.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Mon, May 29, 2023 at 09:13:20PM +0800, Anand Jain wrote:
-> btrf/122 is failing on a system with 64k page size:
-> 
->      QA output created by 122
->     +ERROR: illegal nodesize 16384 (smaller than 65536)
->     +mount: /mnt/scratch: wrong fs type, bad option, bad superblock on /dev/vdb2, missing codepage or helper program, or other error.
->     +mount /dev/vdb2 /mnt/scratch failed
->     +(see /xfstests-dev/results//btrfs/122.full for details)
-> 
-> This test case requires the use of a 16k node size, however, it is not
-> possible on a system with a 64k page size. The smallest possible node size
-> is the page size. So, set nodesize to the system page size instead.
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  tests/btrfs/122 | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
-> 
-> diff --git a/tests/btrfs/122 b/tests/btrfs/122
-> index 345317536f40..e7694173cc24 100755
-> --- a/tests/btrfs/122
-> +++ b/tests/btrfs/122
-> @@ -18,9 +18,10 @@ _supported_fs btrfs
->  _require_scratch
->  _require_btrfs_qgroup_report
->  
-> -# Force a small leaf size to make it easier to blow out our root
-> +# Force a smallest possible leaf size to make it easier to blow out our root
->  # subvolume tree
-> -_scratch_mkfs "--nodesize 16384" >/dev/null
-> +pagesize=$(get_page_size)
-> +_scratch_mkfs "--nodesize $pagesize" >> $seqres.full || _fail "mkfs failed"
+This fixes the tests case for me.  I'd much prefer to not
+duplicate all this logic though, so something like this should
+be folded in:
 
-Will this patch change the original test target? Due to it hopes to test
-nodesize=16k in 4k pagesize machine, but now it tests 4k nodesize as this
-change.
-
-How about:
-  nodesize=16384
-  pagesize=$(get_page_size)
-  if [ $pagesize -gt $nodesize ];then
-  	nodesize=$pagesize
-  fi
-  _scratch_mkfs "--nodesize $nodesize" ...
-
-Or
-  pagesize=$(get_page_size)
-  nodesize=$((4 * pagesize))
-  if [ $nodesize -gt 65536 ];then
-      nodesize=65536
-  fi
-  _scratch_mkfs "--nodesize $nodesize" ...
-
-Thanks,
-Zorro
-
-
->  _scratch_mount
->  _run_btrfs_util_prog quota enable $SCRATCH_MNT
->  
-> -- 
-> 2.38.1
-> 
-
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 4e74105bc97191..6fbf30bea27ab0 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1102,6 +1102,33 @@ static void scrub_write_endio(struct btrfs_bio *bbio)
+ 		wake_up(&stripe->io_wait);
+ }
+ 
++static void btrfs_submit_scrub_bio(struct scrub_ctx *sctx,
++				   struct scrub_stripe *stripe,
++				   struct btrfs_bio *bbio,
++				   bool dev_replace)
++{
++	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
++	u32 bio_len = bbio->bio.bi_iter.bi_size;
++	u32 bio_off = (bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT) -
++		stripe->logical;
++
++	fill_writer_pointer_gap(sctx, stripe->physical + bio_off);
++	atomic_inc(&stripe->pending_io);
++	btrfs_submit_repair_write(bbio, stripe->mirror_num, dev_replace);
++
++	/* For zoned writeback, queue depth must be 1. */
++	if (!btrfs_is_zoned(fs_info))
++		return;
++
++	/*
++	 * If the write finished without error, forward the write pointer.
++	 */
++	wait_scrub_stripe_io(stripe);
++	if (!test_bit(bio_off >> fs_info->sectorsize_bits,
++		      &stripe->write_error_bitmap))
++		sctx->write_pointer += bio_len;
++}
++
+ /*
+  * Submit the write bio(s) for the sectors specified by @write_bitmap.
+  *
+@@ -1120,7 +1147,6 @@ static void scrub_write_sectors(struct scrub_ctx *sctx, struct scrub_stripe *str
+ {
+ 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
+ 	struct btrfs_bio *bbio = NULL;
+-	const bool zoned = btrfs_is_zoned(fs_info);
+ 	int sector_nr;
+ 
+ 	for_each_set_bit(sector_nr, &write_bitmap, stripe->nr_sectors) {
+@@ -1133,25 +1159,7 @@ static void scrub_write_sectors(struct scrub_ctx *sctx, struct scrub_stripe *str
+ 
+ 		/* Cannot merge with previous sector, submit the current one. */
+ 		if (bbio && sector_nr && !test_bit(sector_nr - 1, &write_bitmap)) {
+-			u32 bio_len = bbio->bio.bi_iter.bi_size;
+-			u32 bio_off = (bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT) -
+-				      stripe->logical;
+-
+-			fill_writer_pointer_gap(sctx, stripe->physical + bio_off);
+-			atomic_inc(&stripe->pending_io);
+-			btrfs_submit_repair_write(bbio, stripe->mirror_num, dev_replace);
+-			/* For zoned writeback, queue depth must be 1. */
+-			if (zoned) {
+-				wait_scrub_stripe_io(stripe);
+-
+-				/*
+-				 * Write finished without error, forward the
+-				 * write pointer.
+-				 */
+-				if (!test_bit(bio_off >> fs_info->sectorsize_bits,
+-					     &stripe->write_error_bitmap))
+-					sctx->write_pointer += bio_len;
+-			}
++			btrfs_submit_scrub_bio(sctx, stripe, bbio, dev_replace);
+ 			bbio = NULL;
+ 		}
+ 		if (!bbio) {
+@@ -1164,26 +1172,9 @@ static void scrub_write_sectors(struct scrub_ctx *sctx, struct scrub_stripe *str
+ 		ret = bio_add_page(&bbio->bio, page, fs_info->sectorsize, pgoff);
+ 		ASSERT(ret == fs_info->sectorsize);
+ 	}
+-	if (bbio) {
+-		u32 bio_len = bbio->bio.bi_iter.bi_size;
+-		u32 bio_off = (bbio->bio.bi_iter.bi_sector << SECTOR_SHIFT) -
+-			      stripe->logical;
+ 
+-		fill_writer_pointer_gap(sctx, stripe->physical + bio_off);
+-		atomic_inc(&stripe->pending_io);
+-		btrfs_submit_repair_write(bbio, stripe->mirror_num, dev_replace);
+-		if (zoned) {
+-			wait_scrub_stripe_io(stripe);
+-
+-			/*
+-			 * Write finished without error, forward the
+-			 * write pointer.
+-			 */
+-			if (!test_bit(bio_off >> fs_info->sectorsize_bits,
+-				     &stripe->write_error_bitmap))
+-				sctx->write_pointer += bio_len;
+-		}
+-	}
++	if (bbio)
++		btrfs_submit_scrub_bio(sctx, stripe, bbio, dev_replace);
+ }
+ 
+ /*

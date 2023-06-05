@@ -2,184 +2,353 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED874C77B73
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Jun 2023 14:50:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BCB5C7EE2F
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Jun 2023 16:00:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233748AbjFEOuv (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Jun 2023 10:50:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37976 "EHLO
+        id S233412AbjFEQAu (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Jun 2023 12:00:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59512 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233467AbjFEOuu (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2023 10:50:50 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C2029F4
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jun 2023 07:50:48 -0700 (PDT)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 7E0801FD5E;
-        Mon,  5 Jun 2023 14:50:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1685976647; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-        bh=lxx7nxv/eOTgl/5M62+rK2Wqp2an9YkCbuktnj6ag0o=;
-        b=jQptto5xnDgCL0kECGLQvaSg9oKMiyL5rmPZblHNkSepCgZMDz2t/pGBEhUHfDo2Pd0JvZ
-        mOzdSWaU/Uurp4K1FFCxSjnxZUFPVqcRbvQ4/xbKReEkWVDAd1vBfg00Cxebe1B4Ir7/vI
-        sREgEa21e61CsF6owAuodAPLjWxdaIc=
-Received: from ds.suse.cz (ds.suse.cz [10.100.12.205])
-        by relay2.suse.de (Postfix) with ESMTP id 6E8C32C141;
-        Mon,  5 Jun 2023 14:50:47 +0000 (UTC)
-Received: by ds.suse.cz (Postfix, from userid 10065)
-        id D9F55DA85A; Mon,  5 Jun 2023 16:44:33 +0200 (CEST)
-From:   David Sterba <dsterba@suse.com>
-To:     linux-btrfs@vger.kernel.org, jpoimboe@kernel.org
-Cc:     David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: print assertion failure report and stack trace from the same line
-Date:   Mon,  5 Jun 2023 16:44:32 +0200
-Message-Id: <20230605144432.29591-1-dsterba@suse.com>
-X-Mailer: git-send-email 2.40.0
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        with ESMTP id S230445AbjFEQAs (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2023 12:00:48 -0400
+Received: from mga07.intel.com (mga07.intel.com [134.134.136.100])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B88294;
+        Mon,  5 Jun 2023 09:00:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1685980846; x=1717516846;
+  h=date:from:to:cc:subject:message-id;
+  bh=1XMWJYaZIA+06520U05wDEJCcPWqKpSnIw3WPggaMuE=;
+  b=NQvg/cGAzZikxr6Et/mX+yMMpp26zK42Nc4SqmJ2K/4vhyXq4bOimjio
+   kUgFoRI6xzc4mY87OOazs/CKg67hKOtO7Xg1wCl37q3QumoZHe7WOohJ3
+   HYVJlNoMj0ytRY9BM+++sW1SMav1ORq8qmUmq6VLekEcLXlf81a3usvGZ
+   zCz0xLIlvmkKYngvIdslevksVjS4DEBIxpY5U8LnBri2fBXDxsesKdwJq
+   HwHSZLHPOL3qpNQmE80uodrCZQspXuMGJVWsDvtWh7CZpmVEq7OerwcOu
+   joyCJNT6eOvgfeW67ZnxvgMA/1mA86sndOapqlhRrpcO+cJThI88ZYyOr
+   g==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10732"; a="422229224"
+X-IronPort-AV: E=Sophos;i="6.00,217,1681196400"; 
+   d="scan'208";a="422229224"
+Received: from orsmga007.jf.intel.com ([10.7.209.58])
+  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Jun 2023 09:00:15 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10732"; a="702796973"
+X-IronPort-AV: E=Sophos;i="6.00,217,1681196400"; 
+   d="scan'208";a="702796973"
+Received: from lkp-server01.sh.intel.com (HELO 15ab08e44a81) ([10.239.97.150])
+  by orsmga007.jf.intel.com with ESMTP; 05 Jun 2023 09:00:10 -0700
+Received: from kbuild by 15ab08e44a81 with local (Exim 4.96)
+        (envelope-from <lkp@intel.com>)
+        id 1q6Ccs-0004GI-07;
+        Mon, 05 Jun 2023 16:00:10 +0000
+Date:   Mon, 05 Jun 2023 23:59:17 +0800
+From:   kernel test robot <lkp@intel.com>
+To:     Andrew Morton <akpm@linux-foundation.org>
+Cc:     Linux Memory Management List <linux-mm@kvack.org>,
+        bpf@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        kasan-dev@googlegroups.com, kunit-dev@googlegroups.com,
+        linux-arm-msm@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-kselftest@vger.kernel.org, linux-perf-users@vger.kernel.org,
+        linux-pm@vger.kernel.org, linux-usb@vger.kernel.org,
+        linux-xfs@vger.kernel.org, samba-technical@lists.samba.org
+Subject: [linux-next:master] BUILD REGRESSION
+ 9ca10bfb8aa8fbf19ee22e702c8cf9b66ea73a54
+Message-ID: <20230605155917.CRiQj%lkp@intel.com>
+User-Agent: s-nail v14.9.24
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Assertions reports are split into two parts, the exact file and location
-of the condition and then the stack trace printed from
-btrfs_assertfail(). This means all the stack traces report the same line
-and this is what's typically reported by various tools, making it harder
-to distinguish the reports.
+tree/branch: https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git master
+branch HEAD: 9ca10bfb8aa8fbf19ee22e702c8cf9b66ea73a54  Add linux-next specific files for 20230605
 
-  [403.2467] assertion failed: refcount_read(&block_group->refs) == 1, in fs/btrfs/block-group.c:4259
-  [403.2479] ------------[ cut here ]------------
-  [403.2484] kernel BUG at fs/btrfs/messages.c:259!
-  [403.2488] invalid opcode: 0000 [#1] PREEMPT SMP KASAN
-  [403.2493] CPU: 2 PID: 23202 Comm: umount Not tainted 6.2.0-rc4-default+ #67
-  [403.2499] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.16.0-0-gd239552-rebuilt.opensuse.org 04/01/2014
-  [403.2509] RIP: 0010:btrfs_assertfail+0x19/0x1b [btrfs]
-  ...
-  [403.2595] Call Trace:
-  [403.2598]  <TASK>
-  [403.2601]  btrfs_free_block_groups.cold+0x52/0xae [btrfs]
-  [403.2608]  close_ctree+0x6c2/0x761 [btrfs]
-  [403.2613]  ? __wait_for_common+0x2b8/0x360
-  [403.2618]  ? btrfs_cleanup_one_transaction.cold+0x7a/0x7a [btrfs]
-  [403.2626]  ? mark_held_locks+0x6b/0x90
-  [403.2630]  ? lockdep_hardirqs_on_prepare+0x13d/0x200
-  [403.2636]  ? __call_rcu_common.constprop.0+0x1ea/0x3d0
-  [403.2642]  ? trace_hardirqs_on+0x2d/0x110
-  [403.2646]  ? __call_rcu_common.constprop.0+0x1ea/0x3d0
-  [403.2652]  generic_shutdown_super+0xb0/0x1c0
-  [403.2657]  kill_anon_super+0x1e/0x40
-  [403.2662]  btrfs_kill_super+0x25/0x30 [btrfs]
-  [403.2668]  deactivate_locked_super+0x4c/0xc0
+Error/Warning reports:
 
-By making btrfs_assertfail a macro we'll get the same line number for
-the BUG output:
+https://lore.kernel.org/oe-kbuild-all/202305070840.X0G3ofjl-lkp@intel.com
+https://lore.kernel.org/oe-kbuild-all/202305132244.DwzBUcUd-lkp@intel.com
+https://lore.kernel.org/oe-kbuild-all/202306021936.OktTcMAT-lkp@intel.com
+https://lore.kernel.org/oe-kbuild-all/202306051319.EihCQZPs-lkp@intel.com
+https://lore.kernel.org/oe-kbuild-all/202306051812.1YdWyZca-lkp@intel.com
+https://lore.kernel.org/oe-kbuild-all/202306051823.Gbzkjb7e-lkp@intel.com
 
-  [63.5736] assertion failed: 0, in fs/btrfs/super.c:1572
-  [63.5758] ------------[ cut here ]------------
-  [63.5782] kernel BUG at fs/btrfs/super.c:1572!
-  [63.5807] invalid opcode: 0000 [#2] PREEMPT SMP KASAN
-  [63.5831] CPU: 0 PID: 859 Comm: mount Tainted: G      D            6.3.0-rc7-default+ #2062
-  [63.5868] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.14.0-0-g155821a-rebuilt.opensuse.org 04/01/2014
-  [63.5905] RIP: 0010:btrfs_mount+0x24/0x30 [btrfs]
-  [63.5964] RSP: 0018:ffff88800e69fcd8 EFLAGS: 00010246
-  [63.5982] RAX: 000000000000002d RBX: ffff888008fc1400 RCX: 0000000000000000
-  [63.6004] RDX: 0000000000000000 RSI: ffffffffb90fd868 RDI: ffffffffbcc3ff20
-  [63.6026] RBP: ffffffffc081b200 R08: 0000000000000001 R09: ffff88800e69fa27
-  [63.6046] R10: ffffed1001cd3f44 R11: 0000000000000001 R12: ffff888005a3c370
-  [63.6062] R13: ffffffffc058e830 R14: 0000000000000000 R15: 00000000ffffffff
-  [63.6081] FS:  00007f7b3561f800(0000) GS:ffff88806c600000(0000) knlGS:0000000000000000
-  [63.6105] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-  [63.6120] CR2: 00007fff83726e10 CR3: 0000000002a9e000 CR4: 00000000000006b0
-  [63.6137] Call Trace:
-  [63.6143]  <TASK>
-  [63.6148]  legacy_get_tree+0x80/0xd0
-  [63.6158]  vfs_get_tree+0x43/0x120
-  [63.6166]  do_new_mount+0x1f3/0x3d0
-  [63.6176]  ? do_add_mount+0x140/0x140
-  [63.6187]  ? cap_capable+0xa4/0xe0
-  [63.6197]  path_mount+0x223/0xc10
+Error/Warning: (recently discovered and may have been fixed)
 
-This comes at a cost of bloating the final btrfs.ko module due all the
-inlining, as long as assertions are compiled in. This is a must for
-debugging builds but this is often enabled on release builds too.
+arch/x86/tests/amd-ibs-via-core-pmu.c:47:25: error: 'pmus' undeclared (first use in this function)
+arch/x86/tests/amd-ibs-via-core-pmu.c:48:17: error: implicit declaration of function 'perf_pmu__scan'; did you mean 'perf_pmus__scan'? [-Werror=implicit-function-declaration]
+arch/x86/tests/amd-ibs-via-core-pmu.c:50:17: error: assignment to 'struct perf_pmu *' from 'int' makes pointer from integer without a cast [-Werror=int-conversion]
+arch/x86/tests/amd-ibs-via-core-pmu.c:50:19: error: implicit declaration of function 'perf_pmu__find'; did you mean 'perf_pmus__find'? [-Werror=implicit-function-declaration]
+drivers/bus/fsl-mc/fsl-mc-allocator.c:108:12: warning: variable 'mc_bus_dev' is uninitialized when used here [-Wuninitialized]
+drivers/cpufreq/cpufreq-dt-platdev.c:104:34: warning: 'blocklist' defined but not used [-Wunused-const-variable=]
+drivers/cpufreq/cpufreq-dt-platdev.c:17:34: warning: 'allowlist' defined but not used [-Wunused-const-variable=]
+include/drm/drm_print.h:456:39: error: format '%ld' expects argument of type 'long int', but argument 4 has type 'size_t' {aka 'unsigned int'} [-Werror=format=]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:330:18: warning: no previous prototype for 'bpf_kfunc_call_test_offset' [-Wmissing-prototypes]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:336:1: warning: no previous prototype for 'bpf_kfunc_call_memb_acquire' [-Wmissing-prototypes]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:342:18: warning: no previous prototype for 'bpf_kfunc_call_memb1_release' [-Wmissing-prototypes]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:394:18: warning: no previous prototype for 'bpf_kfunc_call_test_fail1' [-Wmissing-prototypes]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:398:18: warning: no previous prototype for 'bpf_kfunc_call_test_fail2' [-Wmissing-prototypes]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:402:18: warning: no previous prototype for 'bpf_kfunc_call_test_fail3' [-Wmissing-prototypes]
+tools/testing/selftests/bpf/bpf_testmod/bpf_testmod.c:410:18: warning: no previous prototype for 'bpf_kfunc_call_test_mem_len_fail1' [-Wmissing-prototypes]
 
-Release build:
+Unverified Error/Warning (likely false positive, please contact us if interested):
 
-   text    data     bss     dec     hex filename
-1251676   20317   16088 1288081  13a791 pre/btrfs.ko
-1260612   29473   16088 1306173  13ee3d post/btrfs.ko
+drivers/clk/qcom/gpucc-sm8550.c:37:22: sparse: sparse: decimal constant 2300000000 is between LONG_MAX and ULONG_MAX. For C99 that means long long, C90 compilers are very likely to produce unsigned long (and a warning) here
+drivers/clk/qcom/videocc-sm8550.c:34:22: sparse: sparse: decimal constant 2300000000 is between LONG_MAX and ULONG_MAX. For C99 that means long long, C90 compilers are very likely to produce unsigned long (and a warning) here
+drivers/usb/cdns3/cdns3-starfive.c:23: warning: expecting prototype for cdns3(). Prototype was for USB_STRAP_HOST() instead
+drivers/usb/typec/tcpm/qcom/qcom_pmic_typec_pdphy.c:217:30: sparse: sparse: incorrect type in argument 1 (different base types)
+fs/btrfs/volumes.c:6407 btrfs_map_block() error: we previously assumed 'mirror_num_ret' could be null (see line 6245)
+fs/smb/client/cifsfs.c:982 cifs_smb3_do_mount() warn: possible memory leak of 'cifs_sb'
+fs/smb/client/cifssmb.c:4089 CIFSFindFirst() warn: missing error code? 'rc'
+fs/smb/client/cifssmb.c:4216 CIFSFindNext() warn: missing error code? 'rc'
+fs/smb/client/connect.c:2725 cifs_match_super() error: 'tlink' dereferencing possible ERR_PTR()
+fs/smb/client/connect.c:2924 generic_ip_connect() error: we previously assumed 'socket' could be null (see line 2912)
+fs/xfs/scrub/fscounters.c:459 xchk_fscounters() warn: ignoring unreachable code.
+kernel/events/uprobes.c:478 uprobe_write_opcode() warn: passing zero to 'PTR_ERR'
+lib/kunit/test.c:336 __kunit_abort() warn: ignoring unreachable code.
+{standard input}:1078: Error: pcrel too far
 
-DELTA: +8936
+Error/Warning ids grouped by kconfigs:
 
-This partially reverts f372463124df ("btrfs: mark btrfs_assertfail()
-__noreturn").
+gcc_recent_errors
+|-- alpha-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- arc-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- arm-allmodconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- arm-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- arm-randconfig-c031-20230605
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- arm64-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- i386-allyesconfig
+|   `-- include-drm-drm_print.h:error:format-ld-expects-argument-of-type-long-int-but-argument-has-type-size_t-aka-unsigned-int
+|-- i386-randconfig-m021-20230605
+|   |-- fs-smb-client-cifsfs.c-cifs_smb3_do_mount()-warn:possible-memory-leak-of-cifs_sb
+|   |-- fs-smb-client-cifssmb.c-CIFSFindFirst()-warn:missing-error-code-rc
+|   |-- fs-smb-client-cifssmb.c-CIFSFindNext()-warn:missing-error-code-rc
+|   |-- fs-smb-client-connect.c-cifs_match_super()-error:tlink-dereferencing-possible-ERR_PTR()
+|   |-- fs-smb-client-connect.c-generic_ip_connect()-error:we-previously-assumed-socket-could-be-null-(see-line-)
+|   |-- fs-xfs-scrub-fscounters.c-xchk_fscounters()-warn:ignoring-unreachable-code.
+|   `-- kernel-events-uprobes.c-uprobe_write_opcode()-warn:passing-zero-to-PTR_ERR
+|-- i386-randconfig-s042-20230605
+|   |-- drivers-cpufreq-cpufreq-dt-platdev.c:warning:allowlist-defined-but-not-used
+|   `-- drivers-cpufreq-cpufreq-dt-platdev.c:warning:blocklist-defined-but-not-used
+|-- m68k-allmodconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- m68k-randconfig-m041-20230605
+|   `-- lib-kunit-test.c-__kunit_abort()-warn:ignoring-unreachable-code.
+|-- m68k-randconfig-s043-20230605
+|   |-- drivers-clk-qcom-gpucc-sm8550.c:sparse:sparse:decimal-constant-is-between-LONG_MAX-and-ULONG_MAX.-For-C99-that-means-long-long-C90-compilers-are-very-likely-to-produce-unsigned-long-(and-a-warning)-he
+|   `-- drivers-clk-qcom-videocc-sm8550.c:sparse:sparse:decimal-constant-is-between-LONG_MAX-and-ULONG_MAX.-For-C99-that-means-long-long-C90-compilers-are-very-likely-to-produce-unsigned-long-(and-a-warning)-
+|-- mips-allmodconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- mips-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- powerpc-allmodconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- powerpc-randconfig-s053-20230604
+|   `-- drivers-usb-typec-tcpm-qcom-qcom_pmic_typec_pdphy.c:sparse:sparse:incorrect-type-in-argument-(different-base-types)-expected-unsigned-short-usertype-header-got-restricted-__le16-const-usertype-header
+|-- riscv-allmodconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- s390-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- s390-randconfig-s052-20230604
+|   |-- mm-filemap.c:sparse:sparse:Using-plain-integer-as-NULL-pointer
+|   `-- mm-kfence-core.c:sparse:sparse:cast-to-restricted-__le64
+|-- sh-allmodconfig
+|   `-- standard-input:Error:pcrel-too-far
+|-- sparc-allyesconfig
+|   `-- drivers-usb-cdns3-cdns3-starfive.c:warning:expecting-prototype-for-cdns3().-Prototype-was-for-USB_STRAP_HOST()-instead
+|-- x86_64-randconfig-k001-20230605
+|   |-- arch-x86-tests-amd-ibs-via-core-pmu.c:error:assignment-to-struct-perf_pmu-from-int-makes-pointer-from-integer-without-a-cast
+|   |-- arch-x86-tests-amd-ibs-via-core-pmu.c:error:implicit-declaration-of-function-perf_pmu__find
+|   |-- arch-x86-tests-amd-ibs-via-core-pmu.c:error:implicit-declaration-of-function-perf_pmu__scan
+|   |-- arch-x86-tests-amd-ibs-via-core-pmu.c:error:pmus-undeclared-(first-use-in-this-function)
+|   |-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_memb1_release
+|   |-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_memb_acquire
+|   |-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_test_fail1
+|   |-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_test_fail2
+|   |-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_test_fail3
+|   |-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_test_mem_len_fail1
+|   `-- tools-testing-selftests-bpf-bpf_testmod-bpf_testmod.c:warning:no-previous-prototype-for-bpf_kfunc_call_test_offset
+`-- x86_64-randconfig-m001-20230605
+    |-- fs-btrfs-volumes.c-btrfs_map_block()-error:we-previously-assumed-mirror_num_ret-could-be-null-(see-line-)
+    `-- fs-xfs-scrub-fscounters.c-xchk_fscounters()-warn:ignoring-unreachable-code.
+clang_recent_errors
+`-- arm-randconfig-r046-20230605
+    `-- drivers-bus-fsl-mc-fsl-mc-allocator.c:warning:variable-mc_bus_dev-is-uninitialized-when-used-here
 
-CC: Josh Poimboeuf <jpoimboe@kernel.org>
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/messages.c   | 8 --------
- fs/btrfs/messages.h   | 8 +++++++-
- tools/objtool/check.c | 1 -
- 3 files changed, 7 insertions(+), 10 deletions(-)
+elapsed time: 726m
 
-diff --git a/fs/btrfs/messages.c b/fs/btrfs/messages.c
-index 310a05cf95ef..23fc11af498a 100644
---- a/fs/btrfs/messages.c
-+++ b/fs/btrfs/messages.c
-@@ -252,14 +252,6 @@ void __cold _btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt,
- }
- #endif
- 
--#ifdef CONFIG_BTRFS_ASSERT
--void __cold __noreturn btrfs_assertfail(const char *expr, const char *file, int line)
--{
--	pr_err("assertion failed: %s, in %s:%d\n", expr, file, line);
--	BUG();
--}
--#endif
--
- void __cold btrfs_print_v0_err(struct btrfs_fs_info *fs_info)
- {
- 	btrfs_err(fs_info,
-diff --git a/fs/btrfs/messages.h b/fs/btrfs/messages.h
-index 99143bbf78a5..deedc1a168e2 100644
---- a/fs/btrfs/messages.h
-+++ b/fs/btrfs/messages.h
-@@ -4,6 +4,8 @@
- #define BTRFS_MESSAGES_H
- 
- #include <linux/types.h>
-+#include <linux/printk.h>
-+#include <linux/bug.h>
- 
- struct btrfs_fs_info;
- 
-@@ -167,7 +169,11 @@ do {								\
- } while (0)
- 
- #ifdef CONFIG_BTRFS_ASSERT
--void __cold __noreturn btrfs_assertfail(const char *expr, const char *file, int line);
-+
-+#define btrfs_assertfail(expr, file, line)	({				\
-+	pr_err("assertion failed: %s, in %s:%d\n", (expr), (file), (line));	\
-+	BUG();								\
-+})
- 
- #define ASSERT(expr)						\
- 	(likely(expr) ? (void)0 : btrfs_assertfail(#expr, __FILE__, __LINE__))
-diff --git a/tools/objtool/check.c b/tools/objtool/check.c
-index 0fcf99c91400..c19b1103e4ec 100644
---- a/tools/objtool/check.c
-+++ b/tools/objtool/check.c
-@@ -204,7 +204,6 @@ static bool __dead_end_function(struct objtool_file *file, struct symbol *func,
- 		"__ubsan_handle_builtin_unreachable",
- 		"arch_call_rest_init",
- 		"arch_cpu_idle_dead",
--		"btrfs_assertfail",
- 		"cpu_bringup_and_idle",
- 		"cpu_startup_entry",
- 		"do_exit",
+configs tested: 162
+configs skipped: 9
+
+tested configs:
+alpha                            allyesconfig   gcc  
+alpha        buildonly-randconfig-r005-20230605   gcc  
+alpha                               defconfig   gcc  
+arc                              allyesconfig   gcc  
+arc                                 defconfig   gcc  
+arc                        nsimosci_defconfig   gcc  
+arc                  randconfig-r005-20230605   gcc  
+arc                  randconfig-r012-20230605   gcc  
+arc                  randconfig-r013-20230605   gcc  
+arc                  randconfig-r043-20230605   gcc  
+arm                              allmodconfig   gcc  
+arm                              allyesconfig   gcc  
+arm                                 defconfig   gcc  
+arm                       imx_v4_v5_defconfig   clang
+arm                         lpc18xx_defconfig   gcc  
+arm                  randconfig-r006-20230605   gcc  
+arm                  randconfig-r036-20230605   gcc  
+arm                  randconfig-r046-20230605   clang
+arm                        vexpress_defconfig   clang
+arm64                            allyesconfig   gcc  
+arm64        buildonly-randconfig-r003-20230605   clang
+arm64                               defconfig   gcc  
+arm64                randconfig-r006-20230605   clang
+arm64                randconfig-r014-20230605   gcc  
+csky                                defconfig   gcc  
+csky                 randconfig-r033-20230605   gcc  
+hexagon              randconfig-r002-20230605   clang
+hexagon              randconfig-r011-20230605   clang
+hexagon              randconfig-r034-20230605   clang
+hexagon              randconfig-r041-20230605   clang
+hexagon              randconfig-r045-20230605   clang
+i386                             allyesconfig   gcc  
+i386                              debian-10.3   gcc  
+i386                                defconfig   gcc  
+i386                 randconfig-i001-20230605   clang
+i386                 randconfig-i002-20230605   clang
+i386                 randconfig-i003-20230605   clang
+i386                 randconfig-i004-20230605   clang
+i386                 randconfig-i005-20230605   clang
+i386                 randconfig-i006-20230605   clang
+i386                 randconfig-i011-20230605   gcc  
+i386                 randconfig-i012-20230605   gcc  
+i386                 randconfig-i013-20230605   gcc  
+i386                 randconfig-i014-20230605   gcc  
+i386                 randconfig-i015-20230605   gcc  
+i386                 randconfig-i016-20230605   gcc  
+i386                 randconfig-i051-20230605   clang
+i386                 randconfig-i052-20230605   clang
+i386                 randconfig-i053-20230605   clang
+i386                 randconfig-i054-20230605   clang
+i386                 randconfig-i055-20230605   clang
+i386                 randconfig-i056-20230605   clang
+i386                 randconfig-i061-20230605   clang
+i386                 randconfig-i062-20230605   clang
+i386                 randconfig-i063-20230605   clang
+i386                 randconfig-i064-20230605   clang
+i386                 randconfig-i065-20230605   clang
+i386                 randconfig-i066-20230605   clang
+ia64                      gensparse_defconfig   gcc  
+loongarch                        allmodconfig   gcc  
+loongarch                         allnoconfig   gcc  
+loongarch                           defconfig   gcc  
+m68k                             allmodconfig   gcc  
+m68k                                defconfig   gcc  
+m68k                 randconfig-r024-20230605   gcc  
+microblaze           randconfig-r005-20230605   gcc  
+microblaze           randconfig-r014-20230605   gcc  
+mips                             allmodconfig   gcc  
+mips                             allyesconfig   gcc  
+mips                  cavium_octeon_defconfig   clang
+mips                         db1xxx_defconfig   gcc  
+mips                      fuloong2e_defconfig   gcc  
+mips                           gcw0_defconfig   gcc  
+mips                      pic32mzda_defconfig   clang
+mips                        qi_lb60_defconfig   clang
+mips                 randconfig-r023-20230605   clang
+mips                 randconfig-r035-20230605   gcc  
+nios2                         3c120_defconfig   gcc  
+nios2                               defconfig   gcc  
+nios2                randconfig-r016-20230605   gcc  
+nios2                randconfig-r025-20230605   gcc  
+nios2                randconfig-r031-20230605   gcc  
+openrisc     buildonly-randconfig-r001-20230605   gcc  
+openrisc                  or1klitex_defconfig   gcc  
+openrisc             randconfig-r002-20230605   gcc  
+openrisc             randconfig-r016-20230605   gcc  
+openrisc             randconfig-r021-20230605   gcc  
+openrisc             randconfig-r022-20230605   gcc  
+parisc                              defconfig   gcc  
+parisc               randconfig-r032-20230605   gcc  
+parisc64                            defconfig   gcc  
+powerpc                          allmodconfig   gcc  
+powerpc                           allnoconfig   gcc  
+powerpc      buildonly-randconfig-r006-20230605   gcc  
+powerpc                     mpc5200_defconfig   clang
+powerpc                 mpc8315_rdb_defconfig   clang
+powerpc              randconfig-r011-20230605   gcc  
+powerpc              randconfig-r015-20230605   gcc  
+powerpc                     sequoia_defconfig   gcc  
+riscv                            allmodconfig   gcc  
+riscv                             allnoconfig   gcc  
+riscv                               defconfig   gcc  
+riscv                randconfig-r033-20230605   clang
+riscv                randconfig-r042-20230605   gcc  
+riscv                          rv32_defconfig   gcc  
+s390                             allmodconfig   gcc  
+s390                             allyesconfig   gcc  
+s390                                defconfig   gcc  
+s390                 randconfig-r003-20230605   clang
+s390                 randconfig-r004-20230605   clang
+s390                 randconfig-r032-20230605   clang
+s390                 randconfig-r044-20230605   gcc  
+sh                               allmodconfig   gcc  
+sh                ecovec24-romimage_defconfig   gcc  
+sh                        edosk7760_defconfig   gcc  
+sh                             espt_defconfig   gcc  
+sh                            hp6xx_defconfig   gcc  
+sh                   randconfig-r001-20230605   gcc  
+sh                   randconfig-r012-20230605   gcc  
+sh                   randconfig-r013-20230605   gcc  
+sh                   randconfig-r031-20230605   gcc  
+sh                           se7722_defconfig   gcc  
+sh                   sh7770_generic_defconfig   gcc  
+sh                  sh7785lcr_32bit_defconfig   gcc  
+sparc                               defconfig   gcc  
+sparc64              randconfig-r026-20230605   gcc  
+um                             i386_defconfig   gcc  
+um                           x86_64_defconfig   gcc  
+x86_64                           allyesconfig   gcc  
+x86_64       buildonly-randconfig-r002-20230605   clang
+x86_64                              defconfig   gcc  
+x86_64                                  kexec   gcc  
+x86_64               randconfig-a001-20230605   clang
+x86_64               randconfig-a002-20230605   clang
+x86_64               randconfig-a003-20230605   clang
+x86_64               randconfig-a004-20230605   clang
+x86_64               randconfig-a005-20230605   clang
+x86_64               randconfig-a006-20230605   clang
+x86_64               randconfig-a011-20230605   gcc  
+x86_64               randconfig-a012-20230605   gcc  
+x86_64               randconfig-a013-20230605   gcc  
+x86_64               randconfig-a014-20230605   gcc  
+x86_64               randconfig-a015-20230605   gcc  
+x86_64               randconfig-a016-20230605   gcc  
+x86_64               randconfig-k001-20230605   gcc  
+x86_64               randconfig-x051-20230605   gcc  
+x86_64               randconfig-x052-20230605   gcc  
+x86_64               randconfig-x053-20230605   gcc  
+x86_64               randconfig-x054-20230605   gcc  
+x86_64               randconfig-x055-20230605   gcc  
+x86_64               randconfig-x056-20230605   gcc  
+x86_64               randconfig-x061-20230605   gcc  
+x86_64               randconfig-x062-20230605   gcc  
+x86_64               randconfig-x063-20230605   gcc  
+x86_64               randconfig-x064-20230605   gcc  
+x86_64               randconfig-x065-20230605   gcc  
+x86_64               randconfig-x066-20230605   gcc  
+x86_64                               rhel-8.3   gcc  
+xtensa       buildonly-randconfig-r004-20230605   gcc  
+xtensa               randconfig-r003-20230605   gcc  
+xtensa               randconfig-r004-20230605   gcc  
+xtensa               randconfig-r015-20230605   gcc  
+
 -- 
-2.40.0
-
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

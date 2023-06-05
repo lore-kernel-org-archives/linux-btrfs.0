@@ -2,114 +2,72 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29C51C7EE23
-	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Jun 2023 16:04:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DBAA4C7EE2C
+	for <linux-btrfs@archiver.kernel.org>; Mon,  5 Jun 2023 16:26:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232186AbjFEQEU (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Mon, 5 Jun 2023 12:04:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60818 "EHLO
+        id S231213AbjFEQ0k (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Mon, 5 Jun 2023 12:26:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42298 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231845AbjFEQET (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2023 12:04:19 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 443AAB7
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jun 2023 09:04:17 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id F1FAC1F8CC;
-        Mon,  5 Jun 2023 16:04:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1685981056;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=QFQpHkmL69hzvater7kr/irD2P63/PqyUz4tbVqpPAs=;
-        b=D/Coyt9FQoOyYRP6qKYgAX0u+icDZ5Z99HSaD9t3yTDbtzAozlB9faUTnfnXtD3RmD2ILA
-        0UY3nZHjYOUF5DA1hur/tr+S8VpusUVW9zWEXcjHdGivrIG532ABP82Mf9Aayre2qZpjbV
-        Xs7YTpULHTIMmNVp6siMQ1VsStc29BI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1685981056;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=QFQpHkmL69hzvater7kr/irD2P63/PqyUz4tbVqpPAs=;
-        b=z93hjiCNMgD4qY0QUkUPkhBb7QbQBZL+ImgUHKHo6XIYK9EVLUCy4xqSABPf3hEkQlW8kJ
-        4qkB+83yOPvBp8AQ==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id B9F5E139C7;
-        Mon,  5 Jun 2023 16:04:15 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id wQumLH8HfmTUCQAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Mon, 05 Jun 2023 16:04:15 +0000
-Date:   Mon, 5 Jun 2023 17:58:01 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     Naohiro Aota <Naohiro.Aota@wdc.com>
-Cc:     Christoph Hellwig <hch@lst.de>, David Sterba <dsterba@suse.cz>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>,
-        "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 3/3] btrfs: don't hold an extra reference for redirtied
- buffers
-Message-ID: <20230605155801.GA25292@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20230508145839.43725-1-hch@lst.de>
- <20230508145839.43725-4-hch@lst.de>
- <20230509225737.GK32559@twin.jikos.cz>
- <20230515092254.GA21580@lst.de>
- <20230530155648.GB30110@twin.jikos.cz>
- <20230531041626.GA32582@lst.de>
- <lf4rdsuwr74avwruytrngh5e4tre3g6xz2mazhrjeh2g7pjsrr@aofeztgnhdgn>
+        with ESMTP id S230326AbjFEQ0j (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Jun 2023 12:26:39 -0400
+Received: from mail1.merlins.org (magic.merlins.org [209.81.13.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 66087CD
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jun 2023 09:26:38 -0700 (PDT)
+Received: from svh-gw.merlins.org ([76.132.34.178]:53128 helo=sauron.svh.merlins.org)
+        by mail1.merlins.org with esmtpsa 
+        (Cipher TLS1.3:ECDHE_SECP256R1__RSA_PSS_RSAE_SHA256__AES_256_GCM:256) (Exim 4.94.2 #2)
+        id 1q6C64-0002Oz-Lh by authid <merlins.org> with srv_auth_plain; Mon, 05 Jun 2023 09:26:37 -0700
+Received: from merlin by sauron.svh.merlins.org with local (Exim 4.92)
+        (envelope-from <marc@merlins.org>)
+        id 1q6D2S-00BghS-Qb; Mon, 05 Jun 2023 09:26:36 -0700
+Date:   Mon, 5 Jun 2023 09:26:36 -0700
+From:   Marc MERLIN <marc@merlins.org>
+To:     linux-btrfs@vger.kernel.org
+Subject: How to find/reclaim missing space in volume
+Message-ID: <20230605162636.GE105809@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <lf4rdsuwr74avwruytrngh5e4tre3g6xz2mazhrjeh2g7pjsrr@aofeztgnhdgn>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Sysadmin: BOFH
+X-URL:  http://marc.merlins.org/
+X-SA-Exim-Connect-IP: 76.132.34.178
+X-SA-Exim-Mail-From: marc@merlins.org
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Wed, May 31, 2023 at 03:04:26PM +0000, Naohiro Aota wrote:
-> On Wed, May 31, 2023 at 06:16:26AM +0200, Christoph Hellwig wrote:
-> > On Tue, May 30, 2023 at 05:56:48PM +0200, David Sterba wrote:
-> > > > > I'd appreciate more eyes on this patch, with the indirections and
-> > > > > writeback involved it's not clear to me that we don't need the list at
-> > > > > all.
-> > > > 
-> > > > My suspicision is that Aoto-san wanted the extra safety of the extra
-> > > > reference because he didn't want to trust or hadn't noticed the
-> > > > extent_buffer_under_io() magic.  Auto-san, can you confirm or deny? :)
-> > > 
-> > > The number of patches above this one in the queue is increasing so it
-> > > would get harder to remove it. I took another look and agree that
-> > > regarding the references it's safe but would still like a confirmation.
-> > 
-> > As stated, I am very confident that this is safe based on all my
-> > recent work with the extent_buffer code base.  I'd love to hear
-> > from Aota, but there's not much more I can add here myself.
-> 
-> Sorry. I missed this thread is on-going.
-> 
-> I ran my test runs on misc-next containing this patch, and got no issue
-> regarding this. So, the patch should be good.
-> 
-> I didn't notice the extent_buffer_under_io() magic. If we can remove it,
-> let's remove unnecessary variable from extent_buffer.
-> 
-> Also, I dig into the "redirty" history to make it sure. In the first place,
-> it used releasing_list to hold all the to-be-released extent buffers, and
-> decided which buffers to re-dirty at the commit time. Then, in a later
-> version, I change the behavior to re-dirty a necessary buffer and add
-> re-dirtied one to the list in btrfs_free_tree_block(). In short, the list
-> was there mostly for the patch series' historical reason.
-> 
-> So, not sure still I can add this but, for the whole series:
-> 
-> Reviewed-by: Naohiro Aota <naohiro.aota@wdc.com>
+I have this:
+sauron [mc]# df -h .
+Filesystem         Size  Used Avail Use% Mounted on
+/dev/mapper/pool2  1.1T  853G  212G  81% /mnt/btrfs_pool2
+sauron [mc]# btrfs fi show .
+Label: 'btrfs_pool2'  uuid: fde3da31-67e9-4f88-b90d-6c3f6becd56a
+	Total devices 1 FS bytes used 847.89GiB
+	devid    1 size 1.04TiB used 890.02GiB path /dev/mapper/pool2
+sauron [mc]# btrfs fi df .
+Data, single: total=878.00GiB, used=843.85GiB
+System, DUP: total=8.00MiB, used=128.00KiB
+Metadata, DUP: total=6.00GiB, used=4.04GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-Perfect, thanks. Changelog updated and rev-by added.
+
+sauron:/mnt/btrfs_pool2# du -sh *
+599G	varchange2
+598G	varchange2_ggm_daily_ro.20230605_07:57:43
+4.0K	varchange2_last
+599G	varchange2_ro.20230605_08:01:30
+599G	varchange2_ro.20230605_09:01:43
+
+I'm confused, the volumes above are snapshots with mostly the same data
+(made within the last 2 hours) and I didn't delete any data in the FS
+(they are mostly identical and used for btfrs send/receive)
+
+Why do they add up ot 600GB, but btrfs says 847FB is used?
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+ 
+Home page: http://marc.merlins.org/                       | PGP 7F55D5F27AAF9D08

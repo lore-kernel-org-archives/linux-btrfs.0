@@ -2,199 +2,167 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76029C7EE33
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 07:42:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A55DC77B7A
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 07:42:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236272AbjFFHmd (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Jun 2023 03:42:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50130 "EHLO
+        id S236436AbjFFHmg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Jun 2023 03:42:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51156 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234915AbjFFHlo (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 03:41:44 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9B345172D;
-        Tue,  6 Jun 2023 00:40:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=GRb2siPC1DZT81TbqsVYwuRj0OU14yvBnzPJAp5ualo=; b=Tae/SEkuVda0iNXdzFxAviNULS
-        XWidhkWLSqw/tDa8djf+uWGy1QXd6U5gnkCHO1g/9X+rpreA2LUXtYGBjY5xQvDb1s7SNYd5JlOtK
-        Fkv57oX7Yp6U4VCJTCkQgO1GVCRtB7cJnbvIA7afHSTFa3ywXkflQCV307hCn2PZvudWdMDFV+lz6
-        YIbdt2aetZtD/etWSKn9PyumbmB47K4TL8OxetIFQKuoI5RlMi+uGHDF6650diUELOh9sNPMTPLCb
-        7XK7Kuh/tdtzvzwgVi6qj4eMuydoYLRk2+N5mvAlEiQq5FZohGUvGKv7o9lwcbc0aEw9sl9mrgoVU
-        7+Bj9oIQ==;
-Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1q6RJ4-000ZMJ-0X;
-        Tue, 06 Jun 2023 07:40:42 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     Richard Weinberger <richard@nod.at>,
-        Josef Bacik <josef@toxicpanda.com>,
-        "Md. Haris Iqbal" <haris.iqbal@ionos.com>,
-        Jack Wang <jinpu.wang@ionos.com>,
-        Phillip Potter <phil@philpotter.co.uk>,
-        Coly Li <colyli@suse.de>,
-        Miquel Raynal <miquel.raynal@bootlin.com>,
-        Vignesh Raghavendra <vigneshr@ti.com>,
-        "Martin K. Petersen" <martin.petersen@oracle.com>,
-        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christian Brauner <brauner@kernel.org>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Pavel Machek <pavel@ucw.cz>, dm-devel@redhat.com,
-        linux-block@vger.kernel.org, linux-um@lists.infradead.org,
-        linux-scsi@vger.kernel.org, linux-bcache@vger.kernel.org,
-        linux-mtd@lists.infradead.org, linux-nvme@lists.infradead.org,
-        linux-btrfs@vger.kernel.org,
-        linux-f2fs-devel@lists.sourceforge.net,
-        linux-nilfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-pm@vger.kernel.org
-Subject: [PATCH 15/31] btrfs: don't pass a holder for non-exclusive blkdev_get_by_path
-Date:   Tue,  6 Jun 2023 09:39:34 +0200
-Message-Id: <20230606073950.225178-16-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230606073950.225178-1-hch@lst.de>
-References: <20230606073950.225178-1-hch@lst.de>
+        with ESMTP id S235343AbjFFHlp (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 03:41:45 -0400
+Received: from mail-wr1-x431.google.com (mail-wr1-x431.google.com [IPv6:2a00:1450:4864:20::431])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0723D1733;
+        Tue,  6 Jun 2023 00:41:02 -0700 (PDT)
+Received: by mail-wr1-x431.google.com with SMTP id ffacd0b85a97d-30ae967ef74so4526826f8f.0;
+        Tue, 06 Jun 2023 00:41:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1686037260; x=1688629260;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=Q02VMVV6a5mqDYOgkecqdsRCWj1sQmCKyjrDOCTCTiA=;
+        b=Z8IPTJ6St8ijvSNbBViuSpCfeNj53xQBDuBOgwpJuU8+5bnHJZmHlEAZG6zOuZz/2u
+         03GtHPrAAyFBwSz+5AhUJkDlVBOU2AcYwczAYYXBvFZzxg+b7+Ln3NRSb4r20lw8QvEM
+         XtAjTioyZi6P1r/df3OYe/XGNbRB0MvbU9JGjceTRcL/w3acNKJtKUhQGg8n7J7RdoJx
+         MgSfeW/r0VNzl1W9ike6GjPVa61025sbq1/IuRB59hS9LErPI6nBK7MDjqllBOrMa8/2
+         hSGmFrDfLBMxOorsTsG2LYIvz996R6euVWwwdU29Aoc4ohdomK+1c1GEChkqMKhmGzOT
+         bUyQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1686037260; x=1688629260;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=Q02VMVV6a5mqDYOgkecqdsRCWj1sQmCKyjrDOCTCTiA=;
+        b=g7/Z4cCy8ygDBueLJ96BV27ZGrqAmpFYDi3rVXuyuIyBEdrxS5WoEfkherQM6pDruU
+         YNb59JifEryXSbhA1HCBtoLU+FxSP05kBWR35O+BQnQp7NgqaLAwYMqtySPGKVta7ZJV
+         vtc8yFCimBSXs51h0RZbLfORtbpzgoaSxnQxC9fc/iwIqwOhkg81jzsuUikrmaVa68Gt
+         RinpEgrNg9fTcnHfOm8zylGIQdbj49pbMAQZgcGdl00HWEGv6rF+a+HtC4AfBmOHbmxa
+         UDFdYbLPHplkVakUc6aYtV7hvDvLR1nOCkZtTwWc9ge3zYz3EflNn4z9g5YWouxGTwFg
+         Wuzw==
+X-Gm-Message-State: AC+VfDz78LGG9SJWWSMVqFGeDW5TT59bhdyWHB7wrxOGdtmdHVnmRfxX
+        ncrjylR2eAHpb7eJR1FnErxM3ZM68H4=
+X-Google-Smtp-Source: ACHHUZ6TLYFd4Dxobh0/0obSA2bWZtpVg2zb8zP5vwIxG/Okp2U6Rt65IWyqlcXtEQyNVSpO9vmOdA==
+X-Received: by 2002:a05:6000:1287:b0:30d:e113:2dd6 with SMTP id f7-20020a056000128700b0030de1132dd6mr1193262wrx.62.1686037260159;
+        Tue, 06 Jun 2023 00:41:00 -0700 (PDT)
+Received: from localhost ([2a00:23c5:dc8c:8701:1663:9a35:5a7b:1d76])
+        by smtp.gmail.com with ESMTPSA id z6-20020a1c4c06000000b003f42ceb3bf4sm13107348wmf.32.2023.06.06.00.40.59
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 06 Jun 2023 00:40:59 -0700 (PDT)
+Date:   Tue, 6 Jun 2023 08:40:58 +0100
+From:   Lorenzo Stoakes <lstoakes@gmail.com>
+To:     Vlastimil Babka <vbabka@suse.cz>
+Cc:     linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Baoquan He <bhe@redhat.com>,
+        Uladzislau Rezki <urezki@gmail.com>,
+        Christoph Hellwig <hch@infradead.org>,
+        Bagas Sanjaya <bagasdotme@gmail.com>,
+        Linux btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Regressions <regressions@lists.linux.dev>,
+        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
+        David Sterba <dsterba@suse.com>, a1bert@atlas.cz,
+        Forza <forza@tnonline.net>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Song Liu <song@kernel.org>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Matthew Wilcox <willy@infradead.org>
+Subject: Re: [PATCH] mm/vmalloc: do not output a spurious warning when huge
+ vmalloc() fails
+Message-ID: <f6b42d95-09f1-48d6-8274-e6145febb31d@lucifer.local>
+References: <20230605201107.83298-1-lstoakes@gmail.com>
+ <cd47d6ac-69ce-0315-dd45-2cb9dce57f36@suse.cz>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <cd47d6ac-69ce-0315-dd45-2cb9dce57f36@suse.cz>
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-Passing a holder to blkdev_get_by_path when FMODE_EXCL isn't set doesn't
-make sense, so pass NULL instead and remove the holder argument from the
-call chains the only end up in non-FMODE_EXCL blkdev_get_by_path calls.
+On Tue, Jun 06, 2023 at 09:13:24AM +0200, Vlastimil Babka wrote:
+>
+> On 6/5/23 22:11, Lorenzo Stoakes wrote:
+> > In __vmalloc_area_node() we always warn_alloc() when an allocation
+> > performed by vm_area_alloc_pages() fails unless it was due to a pending
+> > fatal signal.
+> >
+> > However, huge page allocations instigated either by vmalloc_huge() or
+> > __vmalloc_node_range() (or a caller that invokes this like kvmalloc() or
+> > kvmalloc_node()) always falls back to order-0 allocations if the huge page
+> > allocation fails.
+> >
+> > This renders the warning useless and noisy, especially as all callers
+> > appear to be aware that this may fallback. This has already resulted in at
+> > least one bug report from a user who was confused by this (see link).
+> >
+> > Therefore, simply update the code to only output this warning for order-0
+> > pages when no fatal signal is pending.
+> >
+> > Link: https://bugzilla.suse.com/show_bug.cgi?id=1211410
+> > Signed-off-by: Lorenzo Stoakes <lstoakes@gmail.com>
+>
+> I think there are more reports of same thing from the btrfs context, that
+> appear to be a 6.3 regression
+>
+> https://bugzilla.kernel.org/show_bug.cgi?id=217466
+> Link: https://lore.kernel.org/all/efa04d56-cd7f-6620-bca7-1df89f49bf4b@gmail.com/
+>
+> If this indeed helps, it would make sense to Cc: stable here. Although I
+> don't see what caused the regression, the warning itself is not new, so is
+> it new source of order-9 attempts in vmalloc() or new reasons why order-9
+> pages would not be possible to allocate?
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/super.c   | 16 ++++++----------
- fs/btrfs/volumes.c | 17 ++++++++---------
- fs/btrfs/volumes.h |  3 +--
- 3 files changed, 15 insertions(+), 21 deletions(-)
+Linus updated kvmalloc() to use huge vmalloc() allocations in 9becb6889130
+("kvmalloc: use vmalloc_huge for vmalloc allocations") and Song update
+alloc_large_system_hash() to as well in f2edd118d02d ("page_alloc: use
+vmalloc_huge for large system hash") both of which are ~1y old, however
+these would impact ~5.18, so it's weird to see reports citing 6.2 -> 6.3.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index ec18e22106023b..1a2ee9407f5414 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -849,8 +849,7 @@ int btrfs_parse_options(struct btrfs_fs_info *info, char *options,
-  * All other options will be parsed on much later in the mount process and
-  * only when we need to allocate a new super block.
-  */
--static int btrfs_parse_device_options(const char *options, fmode_t flags,
--				      void *holder)
-+static int btrfs_parse_device_options(const char *options, fmode_t flags)
- {
- 	substring_t args[MAX_OPT_ARGS];
- 	char *device_name, *opts, *orig, *p;
-@@ -884,8 +883,7 @@ static int btrfs_parse_device_options(const char *options, fmode_t flags,
- 				error = -ENOMEM;
- 				goto out;
- 			}
--			device = btrfs_scan_one_device(device_name, flags,
--					holder);
-+			device = btrfs_scan_one_device(device_name, flags);
- 			kfree(device_name);
- 			if (IS_ERR(device)) {
- 				error = PTR_ERR(device);
-@@ -1477,13 +1475,13 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
- 	}
- 
- 	mutex_lock(&uuid_mutex);
--	error = btrfs_parse_device_options(data, mode, fs_type);
-+	error = btrfs_parse_device_options(data, mode);
- 	if (error) {
- 		mutex_unlock(&uuid_mutex);
- 		goto error_fs_info;
- 	}
- 
--	device = btrfs_scan_one_device(device_name, mode, fs_type);
-+	device = btrfs_scan_one_device(device_name, mode);
- 	if (IS_ERR(device)) {
- 		mutex_unlock(&uuid_mutex);
- 		error = PTR_ERR(device);
-@@ -2190,8 +2188,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
- 		mutex_lock(&uuid_mutex);
--		device = btrfs_scan_one_device(vol->name, FMODE_READ,
--					       &btrfs_root_fs_type);
-+		device = btrfs_scan_one_device(vol->name, FMODE_READ);
- 		ret = PTR_ERR_OR_ZERO(device);
- 		mutex_unlock(&uuid_mutex);
- 		break;
-@@ -2205,8 +2202,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 		break;
- 	case BTRFS_IOC_DEVICES_READY:
- 		mutex_lock(&uuid_mutex);
--		device = btrfs_scan_one_device(vol->name, FMODE_READ,
--					       &btrfs_root_fs_type);
-+		device = btrfs_scan_one_device(vol->name, FMODE_READ);
- 		if (IS_ERR(device)) {
- 			mutex_unlock(&uuid_mutex);
- 			ret = PTR_ERR(device);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 784ccc8f6c69c1..035868cee3ddc3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1348,8 +1348,7 @@ int btrfs_forget_devices(dev_t devt)
-  * and we are not allowed to call set_blocksize during the scan. The superblock
-  * is read via pagecache
-  */
--struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
--					   void *holder)
-+struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags)
- {
- 	struct btrfs_super_block *disk_super;
- 	bool new_device_added = false;
-@@ -1368,16 +1367,16 @@ struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags,
- 	 */
- 
- 	/*
--	 * Avoid using flag |= FMODE_EXCL here, as the systemd-udev may
--	 * initiate the device scan which may race with the user's mount
--	 * or mkfs command, resulting in failure.
--	 * Since the device scan is solely for reading purposes, there is
--	 * no need for FMODE_EXCL. Additionally, the devices are read again
-+	 * Avoid an exclusive open here, as the systemd-udev may initiate the
-+	 * device scan which may race with the user's mount or mkfs command,
-+	 * resulting in failure.
-+	 * Since the device scan is solely for reading purposes, there is no
-+	 * need for an exclusive open. Additionally, the devices are read again
- 	 * during the mount process. It is ok to get some inconsistent
- 	 * values temporarily, as the device paths of the fsid are the only
- 	 * required information for assembling the volume.
- 	 */
--	bdev = blkdev_get_by_path(path, flags, holder, NULL);
-+	bdev = blkdev_get_by_path(path, flags, NULL, NULL);
- 	if (IS_ERR(bdev))
- 		return ERR_CAST(bdev);
- 
-@@ -2381,7 +2380,7 @@ int btrfs_get_dev_args_from_path(struct btrfs_fs_info *fs_info,
- 		return -ENOMEM;
- 	}
- 
--	ret = btrfs_get_bdev_and_sb(path, FMODE_READ, fs_info->bdev_holder, 0,
-+	ret = btrfs_get_bdev_and_sb(path, FMODE_READ, NULL, 0,
- 				    &bdev, &disk_super);
- 	if (ret) {
- 		btrfs_put_dev_args_from_path(args);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index bf47a1a70813ba..eb97a397b3c3fb 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -600,8 +600,7 @@ struct btrfs_block_group *btrfs_create_chunk(struct btrfs_trans_handle *trans,
- void btrfs_mapping_tree_free(struct extent_map_tree *tree);
- int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 		       fmode_t flags, void *holder);
--struct btrfs_device *btrfs_scan_one_device(const char *path,
--					   fmode_t flags, void *holder);
-+struct btrfs_device *btrfs_scan_one_device(const char *path, fmode_t flags);
- int btrfs_forget_devices(dev_t devt);
- void btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_free_extra_devids(struct btrfs_fs_devices *fs_devices);
--- 
-2.39.2
+Will dig to see if something else changed that would increase the
+prevalence of this.
 
+Also while we're here, ugh at us immediately splitting the non-compound
+(also ugh) huge page. Nicholas explains why in the patch that introduces it
+- 3b8000ae185c ("mm/vmalloc: huge vmalloc backing pages should be split
+rather than compound") - but it'd be nice if we could find a way to avoid
+this.
+
+If only there were a data type (perhaps beginning with 'f') that abstracted
+the order of the page entirely and could be guaranteed to always be the one
+with which you manipulated ref count, etc... ;)
+
+>
+> > ---
+> >  mm/vmalloc.c | 17 +++++++++++++----
+> >  1 file changed, 13 insertions(+), 4 deletions(-)
+> >
+> > diff --git a/mm/vmalloc.c b/mm/vmalloc.c
+> > index ab606a80f475..e563f40ad379 100644
+> > --- a/mm/vmalloc.c
+> > +++ b/mm/vmalloc.c
+> > @@ -3149,11 +3149,20 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
+> >  	 * allocation request, free them via vfree() if any.
+> >  	 */
+> >  	if (area->nr_pages != nr_small_pages) {
+> > -		/* vm_area_alloc_pages() can also fail due to a fatal signal */
+> > -		if (!fatal_signal_pending(current))
+> > +		/*
+> > +		 * vm_area_alloc_pages() can fail due to insufficient memory but
+> > +		 * also:-
+> > +		 *
+> > +		 * - a pending fatal signal
+> > +		 * - insufficient huge page-order pages
+> > +		 *
+> > +		 * Since we always retry allocations at order-0 in the huge page
+> > +		 * case a warning for either is spurious.
+> > +		 */
+> > +		if (!fatal_signal_pending(current) && page_order == 0)
+> >  			warn_alloc(gfp_mask, NULL,
+> > -				"vmalloc error: size %lu, page order %u, failed to allocate pages",
+> > -				area->nr_pages * PAGE_SIZE, page_order);
+> > +				"vmalloc error: size %lu, failed to allocate pages",
+> > +				area->nr_pages * PAGE_SIZE);
+> >  		goto fail;
+> >  	}
+> >
+>

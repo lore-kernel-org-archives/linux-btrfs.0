@@ -2,213 +2,305 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB64FC7EE24
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 14:30:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 34ABFC7EE24
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 14:35:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237936AbjFFOa3 (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Jun 2023 10:30:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35642 "EHLO
+        id S233159AbjFFOfT (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Jun 2023 10:35:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39194 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237838AbjFFOa1 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 10:30:27 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E54CE70;
-        Tue,  6 Jun 2023 07:30:21 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 9E2C0219CF;
-        Tue,  6 Jun 2023 14:30:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1686061820;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Q69f4icfkOHrbAxFFRNRY6kAZj6ABf80i3vTyuJnkR0=;
-        b=akejJ6cNzIhIozryk9dClUe9WjihrRXXXINQzJ6/rnDO0tAmE0EfzlPtFrfT8bR99REvI3
-        PY1N85qn7sx2ZsQFKbnxKZ5ivfHDMbUssf/h/IiFxUPJB3uQI9KxNonhYHi9XTcOZzIh16
-        gL6zxsLo5WUmic25UO78twuekTGyeQA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1686061820;
-        h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-         cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=Q69f4icfkOHrbAxFFRNRY6kAZj6ABf80i3vTyuJnkR0=;
-        b=91m1GEoKjNSxTlKIh3KIHX9xvdTAiEAULUDalM33VQdRUv7QyojYwvIJXl92VYI2fNm1w6
-        gOyhy1h4o00/n/Cg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 321DB13519;
-        Tue,  6 Jun 2023 14:30:20 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id Q4boCvxCf2QdfwAAMHmgww
-        (envelope-from <dsterba@suse.cz>); Tue, 06 Jun 2023 14:30:20 +0000
-Date:   Tue, 6 Jun 2023 16:24:05 +0200
-From:   David Sterba <dsterba@suse.cz>
-To:     syzbot <syzbot+a694851c6ab28cbcfb9c@syzkaller.appspotmail.com>
-Cc:     clm@fb.com, dsterba@suse.com, josef@toxicpanda.com,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
-Subject: Re: [syzbot] [btrfs?] INFO: task hung in btrfs_sync_file (2)
-Message-ID: <20230606142405.GI25292@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <00000000000086021605fd1b484c@google.com>
+        with ESMTP id S237553AbjFFOeo (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 10:34:44 -0400
+Received: from mail-pj1-x102b.google.com (mail-pj1-x102b.google.com [IPv6:2607:f8b0:4864:20::102b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D44D61738
+        for <linux-btrfs@vger.kernel.org>; Tue,  6 Jun 2023 07:34:19 -0700 (PDT)
+Received: by mail-pj1-x102b.google.com with SMTP id 98e67ed59e1d1-2553663f71eso2714294a91.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 06 Jun 2023 07:34:19 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1686062058; x=1688654058;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=ABOC+h3uRVlVEsbsFosmPcJVLKpbQE83AKy/aosRZgE=;
+        b=mTiaI3OlCYQecxeiKq3vEpjOZcICkoYZSHUbMp5YhEuwZvdcGCtZKgPx6kK8Kh3xLw
+         VmaKNfQJ/fqKUcFRHGtmNythjA5z1pUtH+BjWzT3IdCF+bbs4xOwlhMbxS0aJZdjIE0S
+         4lUAvOCm/75968P62D0vwY7yPn6WCzmhLP+hYwAWmgieapn7oDFy8NUAtfUm0GwXu5ZZ
+         cTYx22yNQ/sJEsMK58kxMqLqeYsGYJgzMTQLKHaJM5grf5rRs226YHRpOQHg2djheuf9
+         kRvja9PU3oH153HQYv51G8v0gYvIGYBwyiA81itOjmG7oLuRHU0qtSC8ieadhQuBF7Nl
+         h22g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1686062058; x=1688654058;
+        h=to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=ABOC+h3uRVlVEsbsFosmPcJVLKpbQE83AKy/aosRZgE=;
+        b=WGDmIjAHdM6ayp/6qZ+ZykRU1xsjIT8u4SS9VU8mErrZXkJscJMDzCjytmTOeBMYmY
+         Pd3Hr/Xa6SxkQrzoVzpm934Z2NLVRzbmE69mYgQlESyctz7h9rw/WWecIcNAYYTREN4d
+         VN01YDmne4YcFvfxV3qJ2C3YcnWpzuBD8NckobgLSJmC5mWhZpSw1mKOvfaJveEnrwMO
+         D/tOeGdISJ47JPonYoLd2VU0JP4PnJ9UUDW8/eZ992SCfqeWLpj9hhyC/qF7p8psfBv8
+         igN7SNn9qI8R5f2j2hgq+V/vzp33qKrZT9tImBxAwiqcpV8GCwuZbtGUVc2VvJ+Mf8ry
+         oclQ==
+X-Gm-Message-State: AC+VfDwv9L/GMTYCX6uSGbOxmCM1IvDYXIWZ0i9CprQ5iQs6Ck8qumTn
+        0hQzUVYLTg262hImLquvASjprKJPQyo82jb/NGnPtYYwjQw=
+X-Google-Smtp-Source: ACHHUZ4LavIb+UouUWNgZaJrAd0SCBE6moC8Jx+w5h1PYH4/mS9Ji15ll4YZZ9Ft23ATRgr+/GKxeWOxlHkPIU5FH30=
+X-Received: by 2002:a17:90a:384d:b0:255:4635:830c with SMTP id
+ l13-20020a17090a384d00b002554635830cmr968916pjf.40.1686062058211; Tue, 06 Jun
+ 2023 07:34:18 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <00000000000086021605fd1b484c@google.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+From:   Massimiliano Alberti <xanatos78@gmail.com>
+Date:   Tue, 6 Jun 2023 16:34:06 +0200
+Message-ID: <CALgeF5=8Www=aG8=6XXTYsiD-A=dBdGUN8Drj=h4d92yoZNXHw@mail.gmail.com>
+Subject: parent transid verify failed + Couldn't setup device tree
+To:     linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Thu, Jun 01, 2023 at 06:15:06PM -0700, syzbot wrote:
-> Hello,
-> 
-> syzbot found the following issue on:
-> 
-> HEAD commit:    715abedee4cd Add linux-next specific files for 20230515
-> git tree:       linux-next
-> console output: https://syzkaller.appspot.com/x/log.txt?x=16cc8ced280000
-> kernel config:  https://syzkaller.appspot.com/x/.config?x=6a2745d066dda0ec
-> dashboard link: https://syzkaller.appspot.com/bug?extid=a694851c6ab28cbcfb9c
-> compiler:       gcc (Debian 10.2.1-6) 10.2.1 20210110, GNU ld (GNU Binutils for Debian) 2.35.2
-> syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=146e7c35280000
-> C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=12ea7ffe280000
-> 
-> Downloadable assets:
-> disk image: https://storage.googleapis.com/syzbot-assets/d4d1d06b34b8/disk-715abede.raw.xz
-> vmlinux: https://storage.googleapis.com/syzbot-assets/3ef33a86fdc8/vmlinux-715abede.xz
-> kernel image: https://storage.googleapis.com/syzbot-assets/e0006b413ed1/bzImage-715abede.xz
-> mounted in repro: https://storage.googleapis.com/syzbot-assets/8a4c583d7fb5/mount_0.gz
-> 
-> IMPORTANT: if you fix the issue, please add the following tag to the commit:
-> Reported-by: syzbot+a694851c6ab28cbcfb9c@syzkaller.appspotmail.com
-> 
-> INFO: task syz-executor274:6164 blocked for more than 143 seconds.
+I was using my btrfs partition through a usb-sata box when there was a
+power failure. Now I cannot mount it anymore. I'm using Ubuntu 22.04.
 
-143+ seconds in a lock might be a lot, but this is file sync and the
-the system could be overloaded.
+If I try to do a btrfs check:
 
->       Not tainted 6.4.0-rc2-next-20230515-syzkaller #0
-> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> task:syz-executor274 state:D stack:24920 pid:6164  ppid:5041   flags:0x00004004
-> Call Trace:
->  <TASK>
->  context_switch kernel/sched/core.c:5343 [inline]
->  __schedule+0x1d15/0x5790 kernel/sched/core.c:6669
->  schedule+0xde/0x1a0 kernel/sched/core.c:6745
->  schedule_preempt_disabled+0x13/0x20 kernel/sched/core.c:6804
->  rwsem_down_write_slowpath+0x3e2/0x1220 kernel/locking/rwsem.c:1178
->  __down_write_common kernel/locking/rwsem.c:1306 [inline]
->  __down_write kernel/locking/rwsem.c:1315 [inline]
->  down_write+0x1d2/0x200 kernel/locking/rwsem.c:1574
->  inode_lock include/linux/fs.h:775 [inline]
+root@ubuntu:/home/ubuntu# btrfs check /dev/sdc1
 
-Inode lock
+parent transid verify failed on 4390576160768 wanted 9196 found 3295
+parent transid verify failed on 4390576160768 wanted 9196 found 3295
+parent transid verify failed on 4390576160768 wanted 9196 found 3295
+Ignoring transid failure
+Couldn't setup device tree
+ERROR: cannot open file system
 
->  btrfs_inode_lock+0x7e/0xf0 fs/btrfs/inode.c:377
->  btrfs_sync_file+0x455/0x12d0 fs/btrfs/file.c:1808
->  vfs_fsync_range+0x13e/0x230 fs/sync.c:188
->  generic_write_sync include/linux/fs.h:2469 [inline]
->  btrfs_do_write_iter+0x520/0x1210 fs/btrfs/file.c:1680
->  call_write_iter include/linux/fs.h:1868 [inline]
->  new_sync_write fs/read_write.c:491 [inline]
->  vfs_write+0x945/0xd50 fs/read_write.c:584
->  ksys_write+0x12b/0x250 fs/read_write.c:637
->  do_syscall_x64 arch/x86/entry/common.c:50 [inline]
->  do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
->  entry_SYSCALL_64_after_hwframe+0x63/0xcd
-> RIP: 0033:0x7f0de39026c9
-> RSP: 002b:00007f0de38a5208 EFLAGS: 00000246 ORIG_RAX: 0000000000000001
-> RAX: ffffffffffffffda RBX: 00007f0de3984788 RCX: 00007f0de39026c9
-> RDX: 0000000000000128 RSI: 0000000020004400 RDI: 0000000000000006
-> RBP: 00007f0de3984780 R08: 0000000000000000 R09: 0000000000000000
-> R10: 0000000000000000 R11: 0000000000000246 R12: 00007f0de398478c
-> R13: 00007fffb0c5635f R14: 00007f0de38a5300 R15: 0000000000022000
->  </TASK>
-> INFO: task syz-executor274:6181 blocked for more than 143 seconds.
->       Not tainted 6.4.0-rc2-next-20230515-syzkaller #0
-> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> task:syz-executor274 state:D stack:26416 pid:6181  ppid:5041   flags:0x00004004
-> Call Trace:
->  <TASK>
->  context_switch kernel/sched/core.c:5343 [inline]
->  __schedule+0x1d15/0x5790 kernel/sched/core.c:6669
->  schedule+0xde/0x1a0 kernel/sched/core.c:6745
->  wait_on_state fs/btrfs/extent-io-tree.c:707 [inline]
->  wait_extent_bit+0x56e/0x670 fs/btrfs/extent-io-tree.c:751
->  lock_extent+0x120/0x1c0 fs/btrfs/extent-io-tree.c:1742
->  btrfs_page_mkwrite+0x652/0x11a0 fs/btrfs/inode.c:8336
->  do_page_mkwrite+0x1a1/0x690 mm/memory.c:2934
->  wp_page_shared mm/memory.c:3283 [inline]
->  do_wp_page+0x356/0x34e0 mm/memory.c:3365
->  handle_pte_fault mm/memory.c:4967 [inline]
->  __handle_mm_fault+0x1635/0x4170 mm/memory.c:5092
->  handle_mm_fault+0x2af/0x9f0 mm/memory.c:5246
->  do_user_addr_fault+0x51a/0x1210 arch/x86/mm/fault.c:1440
->  handle_page_fault arch/x86/mm/fault.c:1534 [inline]
->  exc_page_fault+0x98/0x170 arch/x86/mm/fault.c:1590
->  asm_exc_page_fault+0x26/0x30 arch/x86/include/asm/idtentry.h:570
-> RIP: 0010:rep_movs_alternative+0x33/0xb0 arch/x86/lib/copy_user_64.S:56
-> Code: 46 83 f9 08 73 21 85 c9 74 0f 8a 06 88 07 48 ff c7 48 ff c6 48 ff c9 75 f1 c3 66 66 2e 0f 1f 84 00 00 00 00 00 66 90 48 8b 06 <48> 89 07 48 83 c6 08 48 83 c7 08 83 e9 08 74 df 83 f9 08 73 e8 eb
-> RSP: 0018:ffffc9000becf728 EFLAGS: 00050206
-> RAX: 0000000000000000 RBX: 0000000000000038 RCX: 0000000000000038
-> RDX: fffff520017d9efb RSI: ffffc9000becf7a0 RDI: 0000000020000120
-> RBP: 0000000020000120 R08: 0000000000000000 R09: fffff520017d9efa
-> R10: ffffc9000becf7d7 R11: 0000000000000001 R12: ffffc9000becf7a0
-> R13: 0000000020000158 R14: 0000000000000000 R15: ffffc9000becf7a0
->  copy_user_generic arch/x86/include/asm/uaccess_64.h:112 [inline]
->  raw_copy_to_user arch/x86/include/asm/uaccess_64.h:133 [inline]
->  _copy_to_user lib/usercopy.c:41 [inline]
->  _copy_to_user+0xab/0xc0 lib/usercopy.c:34
->  copy_to_user include/linux/uaccess.h:191 [inline]
->  fiemap_fill_next_extent+0x217/0x370 fs/ioctl.c:144
->  emit_fiemap_extent+0x18e/0x380 fs/btrfs/extent_io.c:2616
->  fiemap_process_hole+0x516/0x610 fs/btrfs/extent_io.c:2874
+The supers seems to be valid
 
-and extent enumeration from FIEMAP, this would qualify as a stress on
-the inode
+root@ubuntu:~# btrfs rescue super-recover -v /dev/sdc1
+All Devices:
+Device: id = 1, name = /dev/sdc1
 
->  extent_fiemap+0x123b/0x1950 fs/btrfs/extent_io.c:3089
->  btrfs_fiemap+0xe9/0x170 fs/btrfs/inode.c:8008
->  ioctl_fiemap fs/ioctl.c:219 [inline]
->  do_vfs_ioctl+0x466/0x1670 fs/ioctl.c:810
->  __do_sys_ioctl fs/ioctl.c:868 [inline]
->  __se_sys_ioctl fs/ioctl.c:856 [inline]
->  __x64_sys_ioctl+0x10c/0x210 fs/ioctl.c:856
->  do_syscall_x64 arch/x86/entry/common.c:50 [inline]
->  do_syscall_64+0x39/0xb0 arch/x86/entry/common.c:80
->  entry_SYSCALL_64_after_hwframe+0x63/0xcd
-> RIP: 0033:0x7f0de39026c9
-> RSP: 002b:00007f0ddc484208 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-> RAX: ffffffffffffffda RBX: 00007f0de3984798 RCX: 00007f0de39026c9
-> RDX: 0000000020000100 RSI: 00000000c020660b RDI: 0000000000000005
-> RBP: 00007f0de3984790 R08: 00007f0ddc484700 R09: 0000000000000000
-> R10: 00007f0ddc484700 R11: 0000000000000246 R12: 00007f0de398479c
-> R13: 00007fffb0c5635f R14: 00007f0ddc484300 R15: 0000000000022000
->  </TASK>
-> 
-> This report is generated by a bot. It may contain errors.
-> See https://goo.gl/tpsmEJ for more information about syzbot.
-> syzbot engineers can be reached at syzkaller@googlegroups.com.
-> 
-> syzbot will keep track of this issue. See:
-> https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
-> 
-> If the bug is already fixed, let syzbot know by replying with:
-> #syz fix: exact-commit-title
+Before Recovering:
+[All good supers]:
+device name = /dev/sdc1
+superblock bytenr = 65536
 
-I was not able to decipher from the reproducer what exactly is the
-workload, there are some writes, there's one ioctl called by number
-(syscall(__NR_ioctl, r[0], 0xc020660b, 0x20000100ul)), no sync or fsync
-so they're implicit.
+device name = /dev/sdc1
+superblock bytenr = 67108864
 
-This seems to be an 'invalid' report, the system is overloaded. There
-are several other reports stuck in fsync() with the same time out. IIRC
-the default is 300 so perhaps the syzkaller can be updated not to
-trigger too early.
+device name = /dev/sdc1
+superblock bytenr = 274877906944
+
+[All bad supers]:
+
+All supers are valid, no need to recover
+
+
+The result of insp dump-s
+
+btrfs insp dump-s /dev/sdc1
+
+superblock: bytenr=65536, device=/dev/sdc1
+---------------------------------------------------------
+csum_type 0 (crc32c)
+csum_size 4
+csum 0xc93391cc [match]
+bytenr 65536
+flags 0x1
+( WRITTEN )
+magic _BHRfS_M [match]
+fsid 1524cb0d-c1cd-4ba8-9908-7bfe91bc377f
+metadata_uuid 1524cb0d-c1cd-4ba8-9908-7bfe91bc377f
+label
+generation 9196
+root 4390576160768
+sys_array_size 129
+chunk_root_generation 9146
+root_level 0
+chunk_root 25559040
+chunk_root_level 1
+log_root 0
+log_root_transid 0
+log_root_level 0
+total_bytes 17965846102016
+bytes_used 15526065344512
+sectorsize 4096
+nodesize 16384
+leafsize (deprecated) 16384
+stripesize 4096
+root_dir 6
+num_devices 1
+compat_flags 0x0
+compat_ro_flags 0x3
+( FREE_SPACE_TREE |
+  FREE_SPACE_TREE_VALID )
+incompat_flags 0x161
+( MIXED_BACKREF |
+  BIG_METADATA |
+  EXTENDED_IREF |
+  SKINNY_METADATA )
+cache_generation 0
+uuid_tree_generation 9196
+dev_item.uuid 632b9c90-95bf-44f3-9374-dddc6c571136
+dev_item.fsid 1524cb0d-c1cd-4ba8-9908-7bfe91bc377f [match]
+dev_item.type 0
+dev_item.total_bytes 17965846102016
+dev_item.bytes_used 15723900436480
+dev_item.io_align 4096
+dev_item.io_width 4096
+dev_item.sector_size 4096
+dev_item.devid 1
+dev_item.dev_group 0
+dev_item.seek_speed 0
+dev_item.bandwidth 0
+dev_item.generation 0
+
+
+and of dump-super
+
+root@ubuntu:/home/ubuntu# btrfs inspect-internal dump-super --full /dev/sdc1
+
+superblock: bytenr=65536, device=/dev/sdc1
+---------------------------------------------------------
+csum_type 0 (crc32c)
+csum_size 4
+csum 0xc93391cc [match]
+bytenr 65536
+flags 0x1
+( WRITTEN )
+magic _BHRfS_M [match]
+fsid 1524cb0d-c1cd-4ba8-9908-7bfe91bc377f
+metadata_uuid 1524cb0d-c1cd-4ba8-9908-7bfe91bc377f
+label
+generation 9196
+root 4390576160768
+sys_array_size 129
+chunk_root_generation 9146
+root_level 0
+chunk_root 25559040
+chunk_root_level 1
+log_root 0
+log_root_transid 0
+log_root_level 0
+total_bytes 17965846102016
+bytes_used 15526065344512
+sectorsize 4096
+nodesize 16384
+leafsize (deprecated) 16384
+stripesize 4096
+root_dir 6
+num_devices 1
+compat_flags 0x0
+compat_ro_flags 0x3
+( FREE_SPACE_TREE |
+  FREE_SPACE_TREE_VALID )
+incompat_flags 0x161
+( MIXED_BACKREF |
+  BIG_METADATA |
+  EXTENDED_IREF |
+  SKINNY_METADATA )
+cache_generation 0
+uuid_tree_generation 9196
+dev_item.uuid 632b9c90-95bf-44f3-9374-dddc6c571136
+dev_item.fsid 1524cb0d-c1cd-4ba8-9908-7bfe91bc377f [match]
+dev_item.type 0
+dev_item.total_bytes 17965846102016
+dev_item.bytes_used 15723900436480
+dev_item.io_align 4096
+dev_item.io_width 4096
+dev_item.sector_size 4096
+dev_item.devid 1
+dev_item.dev_group 0
+dev_item.seek_speed 0
+dev_item.bandwidth 0
+dev_item.generation 0
+sys_chunk_array[2048]:
+item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 22020096)
+length 8388608 owner 2 stripe_len 65536 type SYSTEM|DUP
+io_align 65536 io_width 65536 sector_size 4096
+num_stripes 2 sub_stripes 1
+stripe 0 devid 1 offset 22020096
+dev_uuid 632b9c90-95bf-44f3-9374-dddc6c571136
+stripe 1 devid 1 offset 30408704
+dev_uuid 632b9c90-95bf-44f3-9374-dddc6c571136
+backup_roots[4]:
+backup 0:
+backup_tree_root: 2633533751296 gen: 9193 level: 0
+backup_chunk_root: 25559040 gen: 9146 level: 1
+backup_extent_root: 2633547710464 gen: 9193 level: 2
+backup_fs_root: 2633526263808 gen: 9193 level: 2
+backup_dev_root: 39927808 gen: 9181 level: 1
+backup_csum_root: 15490589523968 gen: 9179 level: 3
+backup_total_bytes: 17965846102016
+backup_bytes_used: 15526065311744
+backup_num_devices: 1
+
+backup 1:
+backup_tree_root: 3518234607616 gen: 9194 level: 0
+backup_chunk_root: 25559040 gen: 9146 level: 1
+backup_extent_root: 3518158962688 gen: 9194 level: 2
+backup_fs_root: 3518155571200 gen: 9194 level: 2
+backup_dev_root: 39927808 gen: 9181 level: 1
+backup_csum_root: 15490589523968 gen: 9179 level: 3
+backup_total_bytes: 17965846102016
+backup_bytes_used: 15526065328128
+backup_num_devices: 1
+
+backup 2:
+backup_tree_root: 4390562365440 gen: 9195 level: 0
+backup_chunk_root: 25559040 gen: 9146 level: 1
+backup_extent_root: 3518246305792 gen: 9195 level: 2
+backup_fs_root: 3518155571200 gen: 9194 level: 2
+backup_dev_root: 39927808 gen: 9181 level: 1
+backup_csum_root: 15490589523968 gen: 9179 level: 3
+backup_total_bytes: 17965846102016
+backup_bytes_used: 15526065344512
+backup_num_devices: 1
+
+backup 3:
+backup_tree_root: 4390576160768 gen: 9196 level: 0
+backup_chunk_root: 25559040 gen: 9146 level: 1
+backup_extent_root: 4390576488448 gen: 9196 level: 2
+backup_fs_root: 3518155571200 gen: 9194 level: 2
+backup_dev_root: 39927808 gen: 9181 level: 1
+backup_csum_root: 15490589523968 gen: 9179 level: 3
+backup_total_bytes: 17965846102016
+backup_bytes_used: 15526065344512
+backup_num_devices: 1
+
+I've already tried checking starting from the various root trees:
+
+root@ubuntu:/home/ubuntu# btrfs check -r 2633533751296 /dev/sdc1
+Opening filesystem to check...
+parent transid verify failed on 2633533751296 wanted 9196 found 3310
+parent transid verify failed on 2633533751296 wanted 9196 found 3310
+parent transid verify failed on 2633533751296 wanted 9196 found 3310
+Ignoring transid failure
+Couldn't setup device tree
+ERROR: cannot open file system
+
+root@ubuntu:/home/ubuntu# btrfs check -r 3518234607616 /dev/sdc1
+Opening filesystem to check...
+parent transid verify failed on 3518234607616 wanted 9196 found 9122
+parent transid verify failed on 3518234607616 wanted 9196 found 9122
+parent transid verify failed on 3518234607616 wanted 9196 found 9122
+Ignoring transid failure
+ERROR: root [1 0] level 1 does not match 0
+
+Couldn't read tree root
+ERROR: cannot open file system
+
+root@ubuntu:/home/ubuntu# btrfs check -r 4390562365440 /dev/sdc1
+Opening filesystem to check...
+parent transid verify failed on 4390562365440 wanted 9196 found 3295
+parent transid verify failed on 4390562365440 wanted 9196 found 3295
+parent transid verify failed on 4390562365440 wanted 9196 found 3295
+Ignoring transid failure
+Couldn't setup device tree
+ERROR: cannot open file system
+
+root@ubuntu:/home/ubuntu# btrfs check -r 4390562365440 /dev/sdc1
+Opening filesystem to check...
+parent transid verify failed on 4390562365440 wanted 9196 found 3295
+parent transid verify failed on 4390562365440 wanted 9196 found 3295
+parent transid verify failed on 4390562365440 wanted 9196 found 3295
+Ignoring transid failure
+Couldn't setup device tree
+ERROR: cannot open file system
+
+Someone has some idea/suggestion? Thanks!

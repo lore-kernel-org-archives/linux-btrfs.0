@@ -2,98 +2,120 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1772CC77B7A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 05:37:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C096C7EE2A
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 05:37:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232883AbjFFFhE (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Jun 2023 01:37:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48162 "EHLO
+        id S233008AbjFFFhF (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Jun 2023 01:37:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48188 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232261AbjFFFhB (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 01:37:01 -0400
-Received: from mail-ot1-x32c.google.com (mail-ot1-x32c.google.com [IPv6:2607:f8b0:4864:20::32c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E74D1A7
-        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jun 2023 22:36:59 -0700 (PDT)
-Received: by mail-ot1-x32c.google.com with SMTP id 46e09a7af769-6b29b9f5a94so51949a34.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jun 2023 22:36:59 -0700 (PDT)
+        with ESMTP id S229596AbjFFFhD (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 01:37:03 -0400
+Received: from mail-pf1-x42e.google.com (mail-pf1-x42e.google.com [IPv6:2607:f8b0:4864:20::42e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C9291A7
+        for <linux-btrfs@vger.kernel.org>; Mon,  5 Jun 2023 22:37:02 -0700 (PDT)
+Received: by mail-pf1-x42e.google.com with SMTP id d2e1a72fcca58-6532671ccc7so4652720b3a.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Jun 2023 22:37:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=slowstart.org; s=google; t=1686029818; x=1688621818;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:sender:from:to:cc:subject:date:message-id:reply-to;
-        bh=iDzf2DGvZpDlGPnorbsFzPajHit9/3dL9YikJJ8ab4I=;
-        b=AoreQQ6ZI0axQaUyVxGpkFWyFpslRzhH9dsI1TKqDtrJEa63CKmEcGx8UGY1oskSo5
-         0I+C3w1jN59Gs/gFCJLztW5zoMSG8DWW+Y9KmQbRpOch7uKb6KwYxHRbTQrjwPmC3ZtU
-         Jn8yFUTwQ7u+aYSw8jnHJ3/PFXFLWMgkSoJYmcVYORGBEopt4sr9esGKTKIG8iosToM1
-         0g/fYZg0xN4Ytgc1S8meIp8R1YspxiOBvlnfmyMwLT6JJXUPryCCt/0w1gAj6vI1BrZ1
-         APtVXIRF7govAFoZGYABz+EBGg0mrl91LxHbogZjO8SDa5VFv1QDa0pKzRJkSEh+Uc2q
-         4v+w==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=elisp-net.20221208.gappssmtp.com; s=20221208; t=1686029818; x=1688621818;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:sender:from:to:cc:subject:date:message-id:reply-to;
-        bh=iDzf2DGvZpDlGPnorbsFzPajHit9/3dL9YikJJ8ab4I=;
-        b=kRBTBR/ndIQf8ryWUj1HuY3Mj0ujG01Hp3CNU3Y8nIPr9xLJIQUdT3xz5ZPSD5lNSj
-         6shxMbB0V8RoTcpsZl22NhnpvAt9MJnAOc4Nmb5/vXtFKSMF6xJfYPjhCsCWT0GPJ1Q8
-         of75Jfd6VU43Br6cG2SphKWA0KPHIdU5aGRjgYWMrt7toFK1oNdr9SSUB2lbvcZZXLcm
-         7zeIj9YgJvx2OOLbSqUPsn/awATYTbMfX1EwJNAJVrkamU64YxsLOQr8+rfqvshnR3U2
-         SHqtx01tn3jWbrOJjDz6GMpdO+Py3pExPivBnk1k5O0Egm1EwXa4HOOOHGlbe3mVdaWr
-         nbxA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686029818; x=1688621818;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:sender:x-gm-message-state:from:to:cc:subject:date
+        d=slowstart.org; s=google; t=1686029821; x=1688621821;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:sender:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=iDzf2DGvZpDlGPnorbsFzPajHit9/3dL9YikJJ8ab4I=;
-        b=djpjMeqAnDru6i62QQo8GQ6wkFk3kvcXeLdWRlMPMGZtvDTwJh4yjBqLZ6+drsBStZ
-         8OHfk0+qdGDB7HCRM9Ya9gZ2kPmWLGJFy1vsmge/F7Ag79eVcs6wWxQ2XY2efpDhH0XS
-         tdz3VmVjCbStRzzj0WtczGl+M3kOZedwSrF+X/C+Rv9CBwvHx3vXJEY3Nq/V0a83HsZc
-         Kz2qXB0kUkeNSdWoebgSeKskACg0+YWY6S0vOOHZmjzNbXNKBbnKHKIsfSjyDT4slgqJ
-         PaNG0vDAk8U7J4wZWvFY9MSxycroKBiLSWzrT4r65aVMOO/lCn0uk1AQC8tUpo40S8mf
-         v5xw==
-X-Gm-Message-State: AC+VfDysRp3ZF/mw7FAlrBxEidJY0XuR1OtaprsLRtR+fb3wCP1jL8dl
-        9wFQ53BVoiigJl8Gcc7CYYzpuV7RuTTLUUpknmh4qJcSw0J0k1/Ny/wH1f71cn7o/HgZWtHKSl+
-        /S7HYlV9yY4NIH3B4ikbZRhRddMaKAcIGJ4Dmob4eWzGgKMHh/uLPkwstSi3NTf1T7rhpdipt2d
-        5ujboD1Pwk9nwo
-X-Google-Smtp-Source: ACHHUZ4rn0wNIv3Nai6gw8iAqHq7+hXKFGVJXfmZ9oERIFbXbI/+p4G7hFHGa8vuljTqOHut8oGPWQ==
-X-Received: by 2002:a05:6870:76a9:b0:19e:eb89:bbee with SMTP id dx41-20020a05687076a900b0019eeb89bbeemr1308461oab.8.1686029817719;
-        Mon, 05 Jun 2023 22:36:57 -0700 (PDT)
+        bh=A3+xiEI337AU8hRkvpfals6+m/yNEy48+V0XCft029k=;
+        b=ag+3DBEmYwlaxBM1tsekRFA6MsgLYYuHFB3f7CcHdch/bOcwG2KSJjDxV0h/aHXpWb
+         XKr1xbgUKbwE8xvYHm1q6L9pLLyemGxJmv6WUdbJ283tFQKdfMB75JV80OaUhhQp0ST3
+         1DVjSnWpl0nnUSuKRfu9myL804u9BhoUXURHPu4TriEjLiCq35ivoAW3w5BmBgLE6Dn+
+         JV49tO2vw1ObEqBP1hdbqaPOVsdFTI95Cw2X3wWWc2Pc+i4Wbi/uTP9EVeyfrGS8dZOm
+         gW44Eb3vk2BR59Yy/kVMHciPMs9g/T596m6pi1h/pWYsyV1AwWyu9RLEeAkAOG8xSs35
+         erFQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=elisp-net.20221208.gappssmtp.com; s=20221208; t=1686029821; x=1688621821;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:sender:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=A3+xiEI337AU8hRkvpfals6+m/yNEy48+V0XCft029k=;
+        b=Ye90u+m4bPTi/sK5WUFx4IxLqhV12NMJ9QT/tMa4guMFmqPtB+Dxx1Hg6WiBWcgPxb
+         VSl/2o2V2cPo/CWYDS+KgjfjfynJ3SF3BKbgs9aPNxlaqa8//AzMY8yPhBxEQWYiH1p6
+         p8EObT155UPUHDSbIOK2BhEl19N4lY6ZUguBnXlWmTWeEmdlRPzzx3ZE4Wppt/NnAJNH
+         0rKWc4CbIp5F0WaM+7PWNRUWopM6EMoUVoqwKV8A0qxY37J8N2AKIt5DgmrqaUH8jlVz
+         lw+p60s25591vNBc7Eawz4bP47SY3/OA5jMEsYQwS5ABnKmMVfaOzN/qH4PIYjdZ7+rn
+         FEMw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1686029821; x=1688621821;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:sender:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=A3+xiEI337AU8hRkvpfals6+m/yNEy48+V0XCft029k=;
+        b=lQku+oKPgzopIC09EKDnVxZN8sqQLIYA6r1TYdUSTYB2yeoQ1TMS1R0CYF5rbThqKK
+         rk7bP4A9pvSgUU651k1bUTkWHz2L6pxIlhnGft7jHWWYeBk+ahB9EdzgPw4K8Qk1ocwp
+         q7n+V5XA0j9U+aI78E2VdSaUJSn0CnyZF2jsx7/Xh6ZkOCn/4hUAwZutlVYTQkCXsJ36
+         /Wa6jGDWoC1nKixH0FJDu+Q7r9JySUPMNFInAfbpv8aqnjgf7djm0Z+CtgwyYMB/FcFf
+         iJWQgTeFBqaEpwrbpigM4Tby8wKEyqqy9y8LvrEA3EJeThMxZgk49xDKyg/KAdK0iBAm
+         6Z/g==
+X-Gm-Message-State: AC+VfDzKlK8G9AHdY3feZxTSEIe5EpgqlVqh8fg9I9U+JNPL0DCwTkPz
+        FRfRIQGGQZBqcIGm/TP/F22W+Wb+lrIQnh92CrjPbtVFcgrEwmYjAdzPmsb9ly/YbyqoTbuEkKm
+        dW5oAy99ElpMCS4tz+2REYhUFuj/0GWzMCvpNiLNXfxaW0KCWYM4lfWxgewoIze2w03IPkZkodZ
+        aMMbpqxhMcVPxM
+X-Google-Smtp-Source: ACHHUZ6nwCiH9rUT/q6CJovbceh6mcJOSkH4ntDuXrvX1YTJFydLIX5ToN2C6Ur4Mc39uzJlag9Zow==
+X-Received: by 2002:a05:6a21:6704:b0:10d:d18b:95ce with SMTP id wh4-20020a056a21670400b0010dd18b95cemr1389972pzb.22.1686029821292;
+        Mon, 05 Jun 2023 22:37:01 -0700 (PDT)
 Received: from naota-xeon.wdc.com (fp96936df3.ap.nuro.jp. [150.147.109.243])
-        by smtp.gmail.com with ESMTPSA id d9-20020a170902cec900b001b06f7f5333sm7521853plg.1.2023.06.05.22.36.55
+        by smtp.gmail.com with ESMTPSA id d9-20020a170902cec900b001b06f7f5333sm7521853plg.1.2023.06.05.22.36.59
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 05 Jun 2023 22:36:56 -0700 (PDT)
+        Mon, 05 Jun 2023 22:37:00 -0700 (PDT)
 Sender: Naohiro Aota <naohiro@slowstart.org>
 From:   Naohiro Aota <naota@elisp.net>
 X-Google-Original-From: Naohiro Aota <naohiro.aota@wdc.com>
 To:     linux-btrfs@vger.kernel.org
 Cc:     Naohiro Aota <naohiro.aota@wdc.com>
-Subject: [PATCH 0/4] btrfs: fixes for reclaim
-Date:   Tue,  6 Jun 2023 14:36:32 +0900
-Message-Id: <cover.1686028197.git.naohiro.aota@wdc.com>
+Subject: [PATCH 2/4] btrfs: move out now unused BG from the reclaim list
+Date:   Tue,  6 Jun 2023 14:36:34 +0900
+Message-Id: <6a25b9266b8fb08ff990214aae9efd04fed6b549.1686028197.git.naohiro.aota@wdc.com>
 X-Mailer: git-send-email 2.40.1
+In-Reply-To: <cover.1686028197.git.naohiro.aota@wdc.com>
+References: <cover.1686028197.git.naohiro.aota@wdc.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-There are several issues on the reclaim process out there:
+An unused block group is easy to remove to free up space and should be
+reclaimed fast. Such block group can often already be a target of the
+reclaim process. As we check list_empty(&bg->bg_list), we keep it in the
+reclaim list. That block group is never reclaimed until the file system is
+filled e.g, 75%.
 
- - Long-running reclaim process blocks removing unused BGs
- - Belonging to the reclaim list blocks it goes to the unused list
- - It tries relocation even when FS is read-only
- - Temporal failure keep a block group un-reclaimed
+Instead, we can move unused block group to the unused list and delete it
+fast.
 
-This series fixes them.
+Fixes: 18bb8bbf13c1 ("btrfs: zoned: automatically reclaim zones")
+CC: stable@vger.kernel.org # 5.15+
+Signed-off-by: Naohiro Aota <naohiro.aota@wdc.com>
+---
+ fs/btrfs/block-group.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Naohiro Aota (4):
-  btrfs: delete unused BGs while reclaiming BGs
-  btrfs: move out now unused BG from the reclaim list
-  btrfs: bail out reclaim process if filesystem is read-only
-  btrfs: reinsert BGs failed to reclaim
-
- fs/btrfs/block-group.c | 43 ++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 39 insertions(+), 4 deletions(-)
-
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index c5547da0f6eb..d5bba02167be 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -1633,11 +1633,14 @@ void btrfs_mark_bg_unused(struct btrfs_block_group *bg)
+ {
+ 	struct btrfs_fs_info *fs_info = bg->fs_info;
+ 
++	trace_btrfs_add_unused_block_group(bg);
+ 	spin_lock(&fs_info->unused_bgs_lock);
+ 	if (list_empty(&bg->bg_list)) {
+ 		btrfs_get_block_group(bg);
+-		trace_btrfs_add_unused_block_group(bg);
+ 		list_add_tail(&bg->bg_list, &fs_info->unused_bgs);
++	} else {
++		/* Pull out the BG from the reclaim_bgs list. */
++		list_move_tail(&bg->bg_list, &fs_info->unused_bgs);
+ 	}
+ 	spin_unlock(&fs_info->unused_bgs_lock);
+ }
 -- 
 2.40.1
 

@@ -2,167 +2,176 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A55DC77B7A
-	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 07:42:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57D42C7EE32
+	for <linux-btrfs@archiver.kernel.org>; Tue,  6 Jun 2023 07:43:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236436AbjFFHmg (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Tue, 6 Jun 2023 03:42:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51156 "EHLO
+        id S236368AbjFFHnJ (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Tue, 6 Jun 2023 03:43:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51198 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235343AbjFFHlp (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 03:41:45 -0400
-Received: from mail-wr1-x431.google.com (mail-wr1-x431.google.com [IPv6:2a00:1450:4864:20::431])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0723D1733;
-        Tue,  6 Jun 2023 00:41:02 -0700 (PDT)
-Received: by mail-wr1-x431.google.com with SMTP id ffacd0b85a97d-30ae967ef74so4526826f8f.0;
-        Tue, 06 Jun 2023 00:41:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1686037260; x=1688629260;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=Q02VMVV6a5mqDYOgkecqdsRCWj1sQmCKyjrDOCTCTiA=;
-        b=Z8IPTJ6St8ijvSNbBViuSpCfeNj53xQBDuBOgwpJuU8+5bnHJZmHlEAZG6zOuZz/2u
-         03GtHPrAAyFBwSz+5AhUJkDlVBOU2AcYwczAYYXBvFZzxg+b7+Ln3NRSb4r20lw8QvEM
-         XtAjTioyZi6P1r/df3OYe/XGNbRB0MvbU9JGjceTRcL/w3acNKJtKUhQGg8n7J7RdoJx
-         MgSfeW/r0VNzl1W9ike6GjPVa61025sbq1/IuRB59hS9LErPI6nBK7MDjqllBOrMa8/2
-         hSGmFrDfLBMxOorsTsG2LYIvz996R6euVWwwdU29Aoc4ohdomK+1c1GEChkqMKhmGzOT
-         bUyQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686037260; x=1688629260;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=Q02VMVV6a5mqDYOgkecqdsRCWj1sQmCKyjrDOCTCTiA=;
-        b=g7/Z4cCy8ygDBueLJ96BV27ZGrqAmpFYDi3rVXuyuIyBEdrxS5WoEfkherQM6pDruU
-         YNb59JifEryXSbhA1HCBtoLU+FxSP05kBWR35O+BQnQp7NgqaLAwYMqtySPGKVta7ZJV
-         vtc8yFCimBSXs51h0RZbLfORtbpzgoaSxnQxC9fc/iwIqwOhkg81jzsuUikrmaVa68Gt
-         RinpEgrNg9fTcnHfOm8zylGIQdbj49pbMAQZgcGdl00HWEGv6rF+a+HtC4AfBmOHbmxa
-         UDFdYbLPHplkVakUc6aYtV7hvDvLR1nOCkZtTwWc9ge3zYz3EflNn4z9g5YWouxGTwFg
-         Wuzw==
-X-Gm-Message-State: AC+VfDz78LGG9SJWWSMVqFGeDW5TT59bhdyWHB7wrxOGdtmdHVnmRfxX
-        ncrjylR2eAHpb7eJR1FnErxM3ZM68H4=
-X-Google-Smtp-Source: ACHHUZ6TLYFd4Dxobh0/0obSA2bWZtpVg2zb8zP5vwIxG/Okp2U6Rt65IWyqlcXtEQyNVSpO9vmOdA==
-X-Received: by 2002:a05:6000:1287:b0:30d:e113:2dd6 with SMTP id f7-20020a056000128700b0030de1132dd6mr1193262wrx.62.1686037260159;
-        Tue, 06 Jun 2023 00:41:00 -0700 (PDT)
-Received: from localhost ([2a00:23c5:dc8c:8701:1663:9a35:5a7b:1d76])
-        by smtp.gmail.com with ESMTPSA id z6-20020a1c4c06000000b003f42ceb3bf4sm13107348wmf.32.2023.06.06.00.40.59
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 06 Jun 2023 00:40:59 -0700 (PDT)
-Date:   Tue, 6 Jun 2023 08:40:58 +0100
-From:   Lorenzo Stoakes <lstoakes@gmail.com>
-To:     Vlastimil Babka <vbabka@suse.cz>
-Cc:     linux-mm@kvack.org, linux-kernel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Baoquan He <bhe@redhat.com>,
-        Uladzislau Rezki <urezki@gmail.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        Bagas Sanjaya <bagasdotme@gmail.com>,
-        Linux btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Regressions <regressions@lists.linux.dev>,
-        Chris Mason <clm@fb.com>, Josef Bacik <josef@toxicpanda.com>,
-        David Sterba <dsterba@suse.com>, a1bert@atlas.cz,
-        Forza <forza@tnonline.net>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Song Liu <song@kernel.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Matthew Wilcox <willy@infradead.org>
-Subject: Re: [PATCH] mm/vmalloc: do not output a spurious warning when huge
- vmalloc() fails
-Message-ID: <f6b42d95-09f1-48d6-8274-e6145febb31d@lucifer.local>
-References: <20230605201107.83298-1-lstoakes@gmail.com>
- <cd47d6ac-69ce-0315-dd45-2cb9dce57f36@suse.cz>
+        with ESMTP id S234238AbjFFHlv (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Jun 2023 03:41:51 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C40C1E79;
+        Tue,  6 Jun 2023 00:41:10 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=R/taWYn/VrvQVP7vJekvmlkcZ3skKwwlLMp5HGMR5SQ=; b=zg6tGoNyOaOlC2ng1tcChxTDEU
+        LdAZ4j1dxKst+JUHQ7DfSAnPcWCIcboHQ0f+ymC6ACmj4ou4JBddjNg/SNyZd8k6IZzymPXRmHYkc
+        pJv2J67DSIdPO9e3djSugFbPGi4YBMT7AyNMl/pwqstPo/nsGaKJVRejuqbjtppr1BlfDcK3sQzUd
+        yeJMpsetPbMhB1CbT2g+jKQ6Qcga2qnvsXabnR7Lo6V4uWhybFuvVpwBsQX0aZX6C7Xiys/5yYwyz
+        PJx+kGGfEsHhO3Tk20F7UdXeu120UGnUS2YrhImUjFIHlVJp9Ya5Xlta4wlVLfHhIt50MyGbWuODg
+        vQRWVfQg==;
+Received: from 2a02-8389-2341-5b80-39d3-4735-9a3c-88d8.cable.dynamic.v6.surfer.at ([2a02:8389:2341:5b80:39d3:4735:9a3c:88d8] helo=localhost)
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1q6RJB-000ZUg-1x;
+        Tue, 06 Jun 2023 07:40:50 +0000
+From:   Christoph Hellwig <hch@lst.de>
+To:     Jens Axboe <axboe@kernel.dk>
+Cc:     Richard Weinberger <richard@nod.at>,
+        Josef Bacik <josef@toxicpanda.com>,
+        "Md. Haris Iqbal" <haris.iqbal@ionos.com>,
+        Jack Wang <jinpu.wang@ionos.com>,
+        Phillip Potter <phil@philpotter.co.uk>,
+        Coly Li <colyli@suse.de>,
+        Miquel Raynal <miquel.raynal@bootlin.com>,
+        Vignesh Raghavendra <vigneshr@ti.com>,
+        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Chris Mason <clm@fb.com>, David Sterba <dsterba@suse.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christian Brauner <brauner@kernel.org>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Pavel Machek <pavel@ucw.cz>, dm-devel@redhat.com,
+        linux-block@vger.kernel.org, linux-um@lists.infradead.org,
+        linux-scsi@vger.kernel.org, linux-bcache@vger.kernel.org,
+        linux-mtd@lists.infradead.org, linux-nvme@lists.infradead.org,
+        linux-btrfs@vger.kernel.org,
+        linux-f2fs-devel@lists.sourceforge.net,
+        linux-nilfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-pm@vger.kernel.org
+Subject: [PATCH 17/31] block: add a sb_open_mode helper
+Date:   Tue,  6 Jun 2023 09:39:36 +0200
+Message-Id: <20230606073950.225178-18-hch@lst.de>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230606073950.225178-1-hch@lst.de>
+References: <20230606073950.225178-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <cd47d6ac-69ce-0315-dd45-2cb9dce57f36@suse.cz>
+Content-Transfer-Encoding: 8bit
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-On Tue, Jun 06, 2023 at 09:13:24AM +0200, Vlastimil Babka wrote:
->
-> On 6/5/23 22:11, Lorenzo Stoakes wrote:
-> > In __vmalloc_area_node() we always warn_alloc() when an allocation
-> > performed by vm_area_alloc_pages() fails unless it was due to a pending
-> > fatal signal.
-> >
-> > However, huge page allocations instigated either by vmalloc_huge() or
-> > __vmalloc_node_range() (or a caller that invokes this like kvmalloc() or
-> > kvmalloc_node()) always falls back to order-0 allocations if the huge page
-> > allocation fails.
-> >
-> > This renders the warning useless and noisy, especially as all callers
-> > appear to be aware that this may fallback. This has already resulted in at
-> > least one bug report from a user who was confused by this (see link).
-> >
-> > Therefore, simply update the code to only output this warning for order-0
-> > pages when no fatal signal is pending.
-> >
-> > Link: https://bugzilla.suse.com/show_bug.cgi?id=1211410
-> > Signed-off-by: Lorenzo Stoakes <lstoakes@gmail.com>
->
-> I think there are more reports of same thing from the btrfs context, that
-> appear to be a 6.3 regression
->
-> https://bugzilla.kernel.org/show_bug.cgi?id=217466
-> Link: https://lore.kernel.org/all/efa04d56-cd7f-6620-bca7-1df89f49bf4b@gmail.com/
->
-> If this indeed helps, it would make sense to Cc: stable here. Although I
-> don't see what caused the regression, the warning itself is not new, so is
-> it new source of order-9 attempts in vmalloc() or new reasons why order-9
-> pages would not be possible to allocate?
+Add a helper to return the open flags for blkdev_get_by* for passed in
+super block flags instead of open coding the logic in many places.
 
-Linus updated kvmalloc() to use huge vmalloc() allocations in 9becb6889130
-("kvmalloc: use vmalloc_huge for vmalloc allocations") and Song update
-alloc_large_system_hash() to as well in f2edd118d02d ("page_alloc: use
-vmalloc_huge for large system hash") both of which are ~1y old, however
-these would impact ~5.18, so it's weird to see reports citing 6.2 -> 6.3.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/btrfs/super.c       |  5 +----
+ fs/nilfs2/super.c      |  7 ++-----
+ fs/super.c             | 15 ++++-----------
+ include/linux/blkdev.h |  7 +++++++
+ 4 files changed, 14 insertions(+), 20 deletions(-)
 
-Will dig to see if something else changed that would increase the
-prevalence of this.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 1a2ee9407f5414..fd02b92e39106a 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1440,12 +1440,9 @@ static struct dentry *btrfs_mount_root(struct file_system_type *fs_type,
+ 	struct btrfs_fs_devices *fs_devices = NULL;
+ 	struct btrfs_fs_info *fs_info = NULL;
+ 	void *new_sec_opts = NULL;
+-	fmode_t mode = FMODE_READ;
++	fmode_t mode = sb_open_mode(flags);
+ 	int error = 0;
+ 
+-	if (!(flags & SB_RDONLY))
+-		mode |= FMODE_WRITE;
+-
+ 	if (data) {
+ 		error = security_sb_eat_lsm_opts(data, &new_sec_opts);
+ 		if (error)
+diff --git a/fs/nilfs2/super.c b/fs/nilfs2/super.c
+index 61d5e79a5e81df..a41fd84d4e28ab 100644
+--- a/fs/nilfs2/super.c
++++ b/fs/nilfs2/super.c
+@@ -1278,14 +1278,11 @@ nilfs_mount(struct file_system_type *fs_type, int flags,
+ {
+ 	struct nilfs_super_data sd;
+ 	struct super_block *s;
+-	fmode_t mode = FMODE_READ;
+ 	struct dentry *root_dentry;
+ 	int err, s_new = false;
+ 
+-	if (!(flags & SB_RDONLY))
+-		mode |= FMODE_WRITE;
+-
+-	sd.bdev = blkdev_get_by_path(dev_name, mode, fs_type, NULL);
++	sd.bdev = blkdev_get_by_path(dev_name, sb_open_mode(flags), fs_type,
++				     NULL);
+ 	if (IS_ERR(sd.bdev))
+ 		return ERR_CAST(sd.bdev);
+ 
+diff --git a/fs/super.c b/fs/super.c
+index 8563794a8bc462..dc7f328398339d 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -1255,17 +1255,13 @@ int get_tree_bdev(struct fs_context *fc,
+ {
+ 	struct block_device *bdev;
+ 	struct super_block *s;
+-	fmode_t mode = FMODE_READ;
+ 	int error = 0;
+ 
+-	if (!(fc->sb_flags & SB_RDONLY))
+-		mode |= FMODE_WRITE;
+-
+ 	if (!fc->source)
+ 		return invalf(fc, "No source specified");
+ 
+-	bdev = blkdev_get_by_path(fc->source, mode, fc->fs_type,
+-				  &fs_holder_ops);
++	bdev = blkdev_get_by_path(fc->source, sb_open_mode(fc->sb_flags),
++				  fc->fs_type, &fs_holder_ops);
+ 	if (IS_ERR(bdev)) {
+ 		errorf(fc, "%s: Can't open blockdev", fc->source);
+ 		return PTR_ERR(bdev);
+@@ -1344,13 +1340,10 @@ struct dentry *mount_bdev(struct file_system_type *fs_type,
+ {
+ 	struct block_device *bdev;
+ 	struct super_block *s;
+-	fmode_t mode = FMODE_READ;
+ 	int error = 0;
+ 
+-	if (!(flags & SB_RDONLY))
+-		mode |= FMODE_WRITE;
+-
+-	bdev = blkdev_get_by_path(dev_name, mode, fs_type, &fs_holder_ops);
++	bdev = blkdev_get_by_path(dev_name, sb_open_mode(flags), fs_type,
++				  &fs_holder_ops);
+ 	if (IS_ERR(bdev))
+ 		return ERR_CAST(bdev);
+ 
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index d5b99796f12c11..97803603902076 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -1473,6 +1473,13 @@ struct blk_holder_ops {
+ 	void (*mark_dead)(struct block_device *bdev);
+ };
+ 
++/*
++ * Return the correct open flags for blkdev_get_by_* for super block flags
++ * as stored in sb->s_flags.
++ */
++#define sb_open_mode(flags) \
++	(FMODE_READ | (((flags) & SB_RDONLY) ? 0 : FMODE_WRITE))
++
+ struct block_device *blkdev_get_by_dev(dev_t dev, fmode_t mode, void *holder,
+ 		const struct blk_holder_ops *hops);
+ struct block_device *blkdev_get_by_path(const char *path, fmode_t mode,
+-- 
+2.39.2
 
-Also while we're here, ugh at us immediately splitting the non-compound
-(also ugh) huge page. Nicholas explains why in the patch that introduces it
-- 3b8000ae185c ("mm/vmalloc: huge vmalloc backing pages should be split
-rather than compound") - but it'd be nice if we could find a way to avoid
-this.
-
-If only there were a data type (perhaps beginning with 'f') that abstracted
-the order of the page entirely and could be guaranteed to always be the one
-with which you manipulated ref count, etc... ;)
-
->
-> > ---
-> >  mm/vmalloc.c | 17 +++++++++++++----
-> >  1 file changed, 13 insertions(+), 4 deletions(-)
-> >
-> > diff --git a/mm/vmalloc.c b/mm/vmalloc.c
-> > index ab606a80f475..e563f40ad379 100644
-> > --- a/mm/vmalloc.c
-> > +++ b/mm/vmalloc.c
-> > @@ -3149,11 +3149,20 @@ static void *__vmalloc_area_node(struct vm_struct *area, gfp_t gfp_mask,
-> >  	 * allocation request, free them via vfree() if any.
-> >  	 */
-> >  	if (area->nr_pages != nr_small_pages) {
-> > -		/* vm_area_alloc_pages() can also fail due to a fatal signal */
-> > -		if (!fatal_signal_pending(current))
-> > +		/*
-> > +		 * vm_area_alloc_pages() can fail due to insufficient memory but
-> > +		 * also:-
-> > +		 *
-> > +		 * - a pending fatal signal
-> > +		 * - insufficient huge page-order pages
-> > +		 *
-> > +		 * Since we always retry allocations at order-0 in the huge page
-> > +		 * case a warning for either is spurious.
-> > +		 */
-> > +		if (!fatal_signal_pending(current) && page_order == 0)
-> >  			warn_alloc(gfp_mask, NULL,
-> > -				"vmalloc error: size %lu, page order %u, failed to allocate pages",
-> > -				area->nr_pages * PAGE_SIZE, page_order);
-> > +				"vmalloc error: size %lu, failed to allocate pages",
-> > +				area->nr_pages * PAGE_SIZE);
-> >  		goto fail;
-> >  	}
-> >
->

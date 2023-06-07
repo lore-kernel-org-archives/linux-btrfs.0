@@ -2,174 +2,513 @@ Return-Path: <linux-btrfs-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B40EC7EE29
-	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 07:35:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F15AAC7EE43
+	for <linux-btrfs@archiver.kernel.org>; Wed,  7 Jun 2023 07:43:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238403AbjFGHfw (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
-        Wed, 7 Jun 2023 03:35:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33344 "EHLO
+        id S239223AbjFGHnW (ORCPT <rfc822;linux-btrfs@archiver.kernel.org>);
+        Wed, 7 Jun 2023 03:43:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37408 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239334AbjFGHe5 (ORCPT
-        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 03:34:57 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD89126B5
-        for <linux-btrfs@vger.kernel.org>; Wed,  7 Jun 2023 00:30:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
-        Content-ID:Content-Description:In-Reply-To:References;
-        bh=2GmX2pIkiQX9v5FycqrXMp7dTiNuyf2f1CnN+RVln2E=; b=Ekx7U/yCOAcy0DTB/zErFoxouI
-        UZ61eCiWlVNuFKAaMjvm+p+XecDkBz5LkxyDN3TjCKn1nI8R9En2gwxm5NfOA3Z7Q+7KRtgKN7j55
-        vUW5L9UTI6nPJmUhbWLHMd1MOBxXzpK6aWscnerUHwmzttx5p6mAU+V/I1c43Y1LMjYZERoAzktU9
-        X5yAMypN1TsSQtdfd21HI+iCH24KJzKPOWWiKHsmRV6uR1M8Z7K8Hn2GCccMBPdphlKSsPJ13anc6
-        cTkdU/k9MxeL/yxfUBuUdBhVfN8bBF+EJqn5PcHpFlRzUoG3CGs78MeQ/4oG+4BAPF1wg+VBwHkY4
-        AMI4FwmA==;
-Received: from 089144221144.atnat0030.highway.webapn.at ([89.144.221.144] helo=localhost)
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1q6nd0-004k58-2j;
-        Wed, 07 Jun 2023 07:30:47 +0000
-From:   Christoph Hellwig <hch@lst.de>
-To:     dsterba@suse.cz, clm@fb.com, josef@toxicpanda.com
-Cc:     linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: remove btrfs_writepage_endio_finish_ordered
-Date:   Wed,  7 Jun 2023 09:30:44 +0200
-Message-Id: <20230607073045.97261-1-hch@lst.de>
-X-Mailer: git-send-email 2.39.2
+        with ESMTP id S238784AbjFGHmw (ORCPT
+        <rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Jun 2023 03:42:52 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B389358A;
+        Wed,  7 Jun 2023 00:40:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.com;
+ s=s31663417; t=1686123601; x=1686728401; i=quwenruo.btrfs@gmx.com;
+ bh=muIWV8ofVmm0GcmNwynoYIPCKGvPkZeQ2k4VlwAOfPg=;
+ h=X-UI-Sender-Class:Date:Subject:To:References:From:In-Reply-To;
+ b=ZT0+6lUr2X7oF2YEvTJ4JRskPXpG8v0OLmMtr4VbCL9nlA3XnEt3TeNm3ZkeVXEUszeh8Ck
+ 9tbQpZiXuOozhDgezqjfwHpCEirfmZfXN/ahsYLIB60Mak0l8E0lAy+j5beUoiyDxFB2CETXI
+ jbdf58A1y8WYsD8pDIgx9RWsQ2pR2SCJAQg4OLmUmY9RdFo3YN6vIuQMaoFTnSH+TA5eBzAC+
+ v5rGAdRpN2UOYDj3VdRx+SK9fPzErK1dGDvdt7IlPVoSWH5pU4LWdEtI4BoG/Cp+clerEqnWr
+ Dq93okBKYSJ3d46Q53ksw15TOYmtrDoNUOcsWo1KA4RYAZHPi64g==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [0.0.0.0] ([149.28.201.231]) by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MQe5u-1qUV1T0Wms-00Nj6Z; Wed, 07
+ Jun 2023 09:40:01 +0200
+Message-ID: <46c2f952-7d13-5e56-56ec-902fd0387632@gmx.com>
+Date:   Wed, 7 Jun 2023 15:39:57 +0800
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.2
+Subject: Re: [PATCH] btrfs/266: test case enhancement to cover more possible
+ failures
+Content-Language: en-US
+To:     Anand Jain <anand.jain@oracle.com>, Qu Wenruo <wqu@suse.com>,
+        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+References: <20230606103027.125617-1-wqu@suse.com>
+ <2f4659d6-667d-d9d2-7bf8-656019fd3c99@oracle.com>
+ <f0745b27-2e93-7e35-384a-e5cd7b832a3f@gmx.com>
+From:   Qu Wenruo <quwenruo.btrfs@gmx.com>
+In-Reply-To: <f0745b27-2e93-7e35-384a-e5cd7b832a3f@gmx.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:yrAj3S33sGekUOwoP5m7BTnB4c5orody6eDZxkj0Hf4PCeHVWbQ
+ p7C0JuMthj/6ua7Os+UCR0/0f9GmtxEIKcOG4IbgGs6ManDRh6imSZO05IRg76lie+0ckxv
+ icRQDpjaf3KANYkHKzP/4BcT2VbZddiWgUs4PZp2e0FfYGuI78WSlLmwWiSE9WVXdDUUW4A
+ +K+TM265+ogOrLEwROKRA==
+UI-OutboundReport: notjunk:1;M01:P0:m14clE1PHLI=;yLSkJjl57FNoV3b6RMeM3w7FzKc
+ 1Z16cCJXoKxkI4mJ1MH4ozdjf03Axb7qcrhvvg3vvYjo+2UqJipU6s5JVg17cxqzVntZ2331o
+ 5uFltnp11FbqbMrqjn52qXPVK0owUG73bNCoZiv3rVpqCuqEYQfiDAo+qoHVWK5SPb1P2mov9
+ POhmM6AniZTKZaSRPHh0po8kI+Ip0y190BS2RoCIKNw4kMJdtShbPkiQ7UaYSlW9XCaxWLICx
+ gU5GnlSpCU12vbFTzQJX9n0THhwTLrNDD1MkW34jSdUos/tLKkBdvII0ibG1sqj7XNmm9cGOd
+ NjI4qT7xBfaIqOrJ9t4J0yFSvdLx0gxsWk9KxvHaCVxxwq00HavmaJSzgDSvk0BdPZhl9HbYV
+ mTKXoQ27f8LlHNUo+SalMg6MGy1HWnCnD4IpDOUVzIu/1pfI6CFqinY2ofNVZa+b9vhMdq3Pa
+ y4J5Ro/FWtho71qq8+AGO00fz+owdTNGdK0h/HnCTPEW4I/9YdL5KdJF7l7pgxAV6TUh+zBAJ
+ KK0FkL4rM/jJOQHnCK5ybt6nezGpU4D9xH5sJMMFN2gpliJGMRu7qI0KN+tdupg0Dlfj5ocCL
+ mwJTN0N11MDQsUEvqIVde44UNrnWPL67cpD63ZLcBhL+yrK89xYtxx9CY02CKuj9DLL0vFS4L
+ fpH6uGtW/abC+ep2rE3AItesNnjlTSM5RgrbMkM+ngizLuMiSHSHfpec2cjCxPBgpYI5GhMYY
+ 0DOuXK+9fC56Su5/uuAa7Di5msSE1BAKOsSurl9wT+XRmt15/9Cyr4A9j42Mh7AWVkkrjgeqn
+ yCRcq8fORxWBK1qnjcWVsgWJ2VmMKS9iHO4I/geKtG5w8yfo2KE/BaNk9SIPE/dyDcZ0+PQ9v
+ UUA/f+QfIUgKbCjlw6/Y7LhIEtIUrisbZ44e9b8FP/IC+ElWZv97lNrlNXL2z5FFx+BBP99ik
+ xXls4Boa9jLtKAQ7Y7hP5hmA/ms=
 Precedence: bulk
 List-ID: <linux-btrfs.vger.kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 
-btrfs_writepage_endio_finish_ordered is a small wrapper around
-btrfs_mark_ordered_io_finished that just changs the argument passing
-slightly, and adds a tracepoint.
 
-Move the tracpoint to btrfs_mark_ordered_io_finished, which means
-it now also covers the error handling in btrfs_cleanup_ordered_extent
-and switch all callers to just call btrfs_mark_ordered_io_finished
-directly.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- fs/btrfs/btrfs_inode.h  |  3 ---
- fs/btrfs/extent_io.c    | 17 ++++++++---------
- fs/btrfs/inode.c        |  9 ---------
- fs/btrfs/ordered-data.c |  4 ++++
- 4 files changed, 12 insertions(+), 21 deletions(-)
+On 2023/6/7 09:52, Qu Wenruo wrote:
+>
+>
+> On 2023/6/7 08:13, Anand Jain wrote:
+>>
+>>
+>> =C2=A0=C2=A0It is failing on sectorsize 64k.
+>
+> That's what I'm investigating.
+>
+> And the failure is random, if you ran more times it would pass (the
+> failure rate is 1/3~1/5 in my case).
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 8abf96cfea8fae..532c10bd2c222a 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -501,9 +501,6 @@ int btrfs_run_delalloc_range(struct btrfs_inode *inode, struct page *locked_page
- 			     u64 start, u64 end, int *page_started,
- 			     unsigned long *nr_written, struct writeback_control *wbc);
- int btrfs_writepage_cow_fixup(struct page *page);
--void btrfs_writepage_endio_finish_ordered(struct btrfs_inode *inode,
--					  struct page *page, u64 start,
--					  u64 end, bool uptodate);
- int btrfs_encoded_io_compression_from_extent(struct btrfs_fs_info *fs_info,
- 					     int compress_type);
- int btrfs_encoded_read_regular_fill_pages(struct btrfs_inode *inode,
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 36c3ae947ae8e0..af05237dc2f186 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -473,17 +473,15 @@ void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 	struct btrfs_inode *inode;
- 	const bool uptodate = (err == 0);
- 	int ret = 0;
-+	u32 len = end + 1 - start;
- 
-+	ASSERT(end + 1 - start <= U32_MAX);
- 	ASSERT(page && page->mapping);
- 	inode = BTRFS_I(page->mapping->host);
--	btrfs_writepage_endio_finish_ordered(inode, page, start, end, uptodate);
-+	btrfs_mark_ordered_io_finished(inode, page, start, len, uptodate);
- 
- 	if (!uptodate) {
- 		const struct btrfs_fs_info *fs_info = inode->root->fs_info;
--		u32 len;
--
--		ASSERT(end + 1 - start <= U32_MAX);
--		len = end + 1 - start;
- 
- 		btrfs_page_clear_uptodate(fs_info, page, start, len);
- 		ret = err < 0 ? err : -EIO;
-@@ -1328,6 +1326,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 
- 	bio_ctrl->end_io_func = end_bio_extent_writepage;
- 	while (cur <= end) {
-+		u32 len = end - cur + 1;
- 		u64 disk_bytenr;
- 		u64 em_end;
- 		u64 dirty_range_start = cur;
-@@ -1335,8 +1334,8 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 		u32 iosize;
- 
- 		if (cur >= i_size) {
--			btrfs_writepage_endio_finish_ordered(inode, page, cur,
--							     end, true);
-+			btrfs_mark_ordered_io_finished(inode, page, cur, len,
-+						       true);
- 			/*
- 			 * This range is beyond i_size, thus we don't need to
- 			 * bother writing back.
-@@ -1345,7 +1344,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 			 * writeback the sectors with subpage dirty bits,
- 			 * causing writeback without ordered extent.
- 			 */
--			btrfs_page_clear_dirty(fs_info, page, cur, end + 1 - cur);
-+			btrfs_page_clear_dirty(fs_info, page, cur, len);
- 			break;
- 		}
- 
-@@ -1356,7 +1355,7 @@ static noinline_for_stack int __extent_writepage_io(struct btrfs_inode *inode,
- 			continue;
- 		}
- 
--		em = btrfs_get_extent(inode, NULL, 0, cur, end - cur + 1);
-+		em = btrfs_get_extent(inode, NULL, 0, cur, len);
- 		if (IS_ERR(em)) {
- 			ret = PTR_ERR_OR_ZERO(em);
- 			goto out_error;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3ddfdcb587f4d8..3f29a6451976fa 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3384,15 +3384,6 @@ int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered)
- 	return btrfs_finish_one_ordered(ordered);
- }
- 
--void btrfs_writepage_endio_finish_ordered(struct btrfs_inode *inode,
--					  struct page *page, u64 start,
--					  u64 end, bool uptodate)
--{
--	trace_btrfs_writepage_end_io_hook(inode, start, end, uptodate);
--
--	btrfs_mark_ordered_io_finished(inode, page, start, end + 1 - start, uptodate);
--}
--
- /*
-  * Verify the checksum for a single sector without any extra action that depend
-  * on the type of I/O.
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index a629532283bc33..109e80ed25b669 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -410,6 +410,10 @@ void btrfs_mark_ordered_io_finished(struct btrfs_inode *inode,
- 	unsigned long flags;
- 	u64 cur = file_offset;
- 
-+	trace_btrfs_writepage_end_io_hook(inode, file_offset,
-+					  file_offset + num_bytes - 1,
-+					  uptodate);
-+
- 	spin_lock_irqsave(&tree->lock, flags);
- 	while (cur < file_offset + num_bytes) {
- 		u64 entry_end;
--- 
-2.39.2
+And to my surprise, this is in fact not a bug in btrfs, but more likely
+a bug in drop_caches.
 
+I added several trace printk() for __btrfs_submit_bio(),
+btrfs_check_read_bio(), and __end_bio_extent_readpage() to grasp the
+repair work flow.
+
+It turns out, when the test failed, at least one mirror is not read from
+disk, but directly using page cache.
+Thus no wonder the data would be repaired, just because that mirror is
+not properly read at all.
+
+I'll start a new thread on this particular problem.
+
+Thanks,
+Qu
+>
+> Thanks,
+> Qu
+>>
+>> ---------
+>> btrfs/266 2s ... - output mismatch (see
+>> /xfstests-dev/results//btrfs/266.out.bad)
+>> =C2=A0=C2=A0=C2=A0=C2=A0 --- tests/btrfs/266.out=C2=A0=C2=A0=C2=A0 2023=
+-06-06 20:02:48.900915702 -0400
+>> =C2=A0=C2=A0=C2=A0=C2=A0 +++ /xfstests-dev/results//btrfs/266.out.bad=
+=C2=A0=C2=A0=C2=A0 2023-06-06
+>> 20:02:56.665554779 -0400
+>> =C2=A0=C2=A0=C2=A0=C2=A0 @@ -19,11 +19,11 @@
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Physical offset + 64K:
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa =
+aa aa aa aa aa aa aa aa
+>> ................
+>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 Physical offset + 128K:
+>> =C2=A0=C2=A0=C2=A0=C2=A0 -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa=
+ aa aa aa aa aa aa
+>> ................
+>> =C2=A0=C2=A0=C2=A0=C2=A0 +XXXXXXXX:=C2=A0 bb bb bb bb bb bb bb bb bb bb=
+ bb bb bb bb bb bb
+>> ................
+>> -------
+>>
+>> Thanks, Anand
+>>
+>>
+>> On 06/06/2023 18:30, Qu Wenruo wrote:
+>>> [BACKGROUND]
+>>> Recently I'm debugging a random failure with btrfs/266 with larger pag=
+e
+>>> sizes (64K page size, with either 64K sector size or 4K sector size).
+>>>
+>>> During the tests, I found the test case itself can be further enhanced
+>>> to make better coverage and easier debugging.
+>>>
+>>> [ENHANCEMENT]
+>>>
+>>> - Ensure every 64K block only has one good mirror
+>>> =C2=A0=C2=A0 The initial layout is not pushing hard enough, some range=
+s have 2
+>>> good
+>>> =C2=A0=C2=A0 mirrors while some only has one.
+>>>
+>>> - Simplify the golden output
+>>> =C2=A0=C2=A0 The current golden output contains 512 bytes output for t=
+he beginning
+>>> =C2=A0=C2=A0 of each mirror.
+>>>
+>>> =C2=A0=C2=A0 The 512 bytes output itself is both duplicating and not c=
+omprehensive
+>>> =C2=A0=C2=A0 enough (see the next output).
+>>>
+>>> =C2=A0=C2=A0 This patch would remove the duplication part by only outp=
+ut one
+>>> single
+>>> =C2=A0=C2=A0 line for 16 bytes.
+>>>
+>>> - Add extra output for all the 3 64K blocks
+>>> =C2=A0=C2=A0 Each 64K of the involved file now has only one good mirro=
+r, and they
+>>> =C2=A0=C2=A0 are all on different devices.
+>>> =C2=A0=C2=A0 Thus only checking the beginning of the first 64K block i=
+s not good
+>>> =C2=A0=C2=A0 enough.
+>>>
+>>> =C2=A0=C2=A0 This patch would enhance this by output the first 16 byte=
+s for all
+>>> the
+>>> =C2=A0=C2=A0 3 64K blocks on each device.
+>>>
+>>> - Add a final safenet to catch unexpected corruption
+>>> =C2=A0=C2=A0 If we have some weird corruption after the first 16 bytes=
+ of each
+>>> =C2=A0=C2=A0 64K blocks, we can still detect them using "btrfs check
+>>> =C2=A0=C2=A0 --check-data-csum", which acts as offline scrub.
+>>>
+>>> Signed-off-by: Qu Wenruo <wqu@suse.com>
+>>> ---
+>>> =C2=A0 tests/btrfs/266=C2=A0=C2=A0=C2=A0=C2=A0 |=C2=A0 59 ++++++++++++=
+++++++++----
+>>> =C2=A0 tests/btrfs/266.out | 109 ++++++++-----------------------------=
+-------
+>>> =C2=A0 2 files changed, 68 insertions(+), 100 deletions(-)
+>>>
+>>> diff --git a/tests/btrfs/266 b/tests/btrfs/266
+>>> index 42aff7c0..894c5c6e 100755
+>>> --- a/tests/btrfs/266
+>>> +++ b/tests/btrfs/266
+>>> @@ -25,7 +25,7 @@ _require_odirect
+>>> =C2=A0 _require_non_zoned_device "${SCRATCH_DEV}"
+>>> =C2=A0 _scratch_dev_pool_get 3
+>>> -# step 1, create a raid1 btrfs which contains one 128k file.
+>>> +# step 1, create a raid1 btrfs which contains one 192k file.
+>>> =C2=A0 echo "step 1......mkfs.btrfs"
+>>> =C2=A0 mkfs_opts=3D"-d raid1c3 -b 1G"
+>>> @@ -33,7 +33,7 @@ _scratch_pool_mkfs $mkfs_opts >>$seqres.full 2>&1
+>>> =C2=A0 _scratch_mount
+>>> -$XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 256K 0 256K" \
+>>> +$XFS_IO_PROG -f -d -c "pwrite -S 0xaa -b 192K 0 192K" \
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 "$SCRATCH_MNT/foobar" | \
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> @@ -56,6 +56,13 @@ devpath3=3D$(_btrfs_get_device_path ${logical} 3)
+>>> =C2=A0 _scratch_unmount
+>>> +# We corrupt the mirrors so that every 64K block only has one
+>>> +# good mirror. (X =3D corruption)
+>>> +#
+>>> +#=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 0=C2=A0=C2=A0=C2=A0 64K=
+=C2=A0=C2=A0=C2=A0 128K=C2=A0=C2=A0=C2=A0 192K
+>>> +# Mirror 1=C2=A0=C2=A0=C2=A0 |XXXXXXXXXXXXXXX|=C2=A0=C2=A0=C2=A0 |
+>>> +# Mirror 2=C2=A0=C2=A0=C2=A0 |=C2=A0=C2=A0=C2=A0 |XXXXXXXXXXXXXXX|
+>>> +# Mirror 3=C2=A0=C2=A0=C2=A0 |XXXXXXX|=C2=A0=C2=A0=C2=A0 |XXXXXXX|
+>>> =C2=A0 $XFS_IO_PROG -d -c "pwrite -S 0xbd -b 64K $physical3 64K" \
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 $devpath3 > /dev/null
+>>> @@ -65,7 +72,7 @@ $XFS_IO_PROG -d -c "pwrite -S 0xba -b 64K $physical1
+>>> 128K" \
+>>> =C2=A0 $XFS_IO_PROG -d -c "pwrite -S 0xbb -b 64K $((physical2 + 65536)=
+)
+>>> 128K" \
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 $devpath2 > /dev/null
+>>> -$XFS_IO_PROG -d -c "pwrite -S 0xbc -b 64K $((physical3 + (2 *
+>>> 65536))) 128K"=C2=A0 \
+>>> +$XFS_IO_PROG -d -c "pwrite -S 0xbc -b 64K $((physical3 + (2 *
+>>> 65536))) 64K"=C2=A0 \
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 $devpath3 > /dev/null
+>>> =C2=A0 _scratch_mount
+>>> @@ -73,19 +80,53 @@ _scratch_mount
+>>> =C2=A0 # step 3, 128k dio read (this read can repair bad copy)
+>>> =C2=A0 echo "step 3......repair the bad copy"
+>>> -_btrfs_buffered_read_on_mirror 0 3 "$SCRATCH_MNT/foobar" 0 256K
+>>> -_btrfs_buffered_read_on_mirror 1 3 "$SCRATCH_MNT/foobar" 0 256K
+>>> -_btrfs_buffered_read_on_mirror 2 3 "$SCRATCH_MNT/foobar" 0 256K
+>>> +_btrfs_buffered_read_on_mirror 0 3 "$SCRATCH_MNT/foobar" 0 192K
+>>> +_btrfs_buffered_read_on_mirror 1 3 "$SCRATCH_MNT/foobar" 0 192K
+>>> +_btrfs_buffered_read_on_mirror 2 3 "$SCRATCH_MNT/foobar" 0 192K
+>>> =C2=A0 _scratch_unmount
+>>> =C2=A0 echo "step 4......check if the repair worked"
+>>> -$XFS_IO_PROG -d -c "pread -v -b 512 $physical1 512" $devpath1 |\
+>>> +echo "Dev 1:"
+>>> +echo "=C2=A0 Physical offset + 0:"
+>>> +$XFS_IO_PROG -c "pread -qv $physical1 16" $devpath1 |\
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> -$XFS_IO_PROG -d -c "pread -v -b 512 $physical2 512" $devpath2 |\
+>>> +echo "=C2=A0 Physical offset + 64K:"
+>>> +$XFS_IO_PROG -c "pread -qv $((physical1 + 65536)) 16" $devpath1 |\
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> -$XFS_IO_PROG -d -c "pread -v -b 512 $physical3 512" $devpath3 |\
+>>> +echo "=C2=A0 Physical offset + 128K:"
+>>> +$XFS_IO_PROG -c "pread -qv $((physical1 + 131072)) 16" $devpath1 |\
+>>> =C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +echo
+>>> +
+>>> +echo "Dev 2:"
+>>> +echo "=C2=A0 Physical offset + 0:"
+>>> +$XFS_IO_PROG -c "pread -qv $physical2 16" $devpath2 |\
+>>> +=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +echo "=C2=A0 Physical offset + 64K:"
+>>> +$XFS_IO_PROG -c "pread -qv $((physical2 + 65536)) 16" $devpath2 |\
+>>> +=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +echo "=C2=A0 Physical offset + 128K:"
+>>> +$XFS_IO_PROG -c "pread -qv $((physical2 + 131072)) 16" $devpath2 |\
+>>> +=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +echo
+>>> +
+>>> +echo "Dev 3:"
+>>> +echo "=C2=A0 Physical offset + 0:"
+>>> +$XFS_IO_PROG -c "pread -v $physical3 16" $devpath3 |\
+>>> +=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +echo "=C2=A0 Physical offset + 64K:"
+>>> +$XFS_IO_PROG -c "pread -v $((physical3 + 65536)) 16" $devpath3 |\
+>>> +=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +echo "=C2=A0 Physical offset + 128K:"
+>>> +$XFS_IO_PROG -c "pread -v $((physical3 + 131072)) 16" $devpath3 |\
+>>> +=C2=A0=C2=A0=C2=A0 _filter_xfs_io_offset
+>>> +
+>>> +# Final step to use btrfs check to verify the csum of all mirrors.
+>>> +$BTRFS_UTIL_PROG check --check-data-csum $SCRATCH_DEV >> $seqres.full
+>>> 2>&1
+>>> +if [ $? -ne 0 ]; then
+>>> +=C2=A0=C2=A0=C2=A0 echo "btrfs check found some data csum mismatch"
+>>> +fi
+>>> =C2=A0 _scratch_dev_pool_put
+>>> =C2=A0 # success, all done
+>>> diff --git a/tests/btrfs/266.out b/tests/btrfs/266.out
+>>> index fcf2f5b8..305e9c83 100644
+>>> --- a/tests/btrfs/266.out
+>>> +++ b/tests/btrfs/266.out
+>>> @@ -1,109 +1,36 @@
+>>> =C2=A0 QA output created by 266
+>>> =C2=A0 step 1......mkfs.btrfs
+>>> -wrote 262144/262144 bytes
+>>> +wrote 196608/196608 bytes
+>>> =C2=A0 XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+>>> =C2=A0 step 2......corrupt file extent
+>>> =C2=A0 step 3......repair the bad copy
+>>> =C2=A0 step 4......check if the repair worked
+>>> +Dev 1:
+>>> +=C2=A0 Physical offset + 0:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> +=C2=A0 Physical offset + 64K:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> +=C2=A0 Physical offset + 128K:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> +
+>>> +Dev 2:
+>>> +=C2=A0 Physical offset + 0:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> +=C2=A0 Physical offset + 64K:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> +=C2=A0 Physical offset + 128K:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> +
+>>> +Dev 3:
+>>> +=C2=A0 Physical offset + 0:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -read 512/512 bytes
+>>> +read 16/16 bytes
+>>> =C2=A0 XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+>>> +=C2=A0 Physical offset + 64K:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -read 512/512 bytes
+>>> +read 16/16 bytes
+>>> =C2=A0 XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+>>> +=C2=A0 Physical offset + 128K:
+>>> =C2=A0 XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -XXXXXXXX:=C2=A0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>>> ................
+>>> -read 512/512 bytes
+>>> +read 16/16 bytes
+>>> =C2=A0 XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+>>
